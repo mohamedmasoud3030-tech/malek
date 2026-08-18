@@ -24,7 +24,7 @@ function getContextLabel(row: OverdueInvoiceReportRow) {
 export function OverdueInvoicesTable({ rows, selectedInvoiceId, onSelectInvoice, onCollectInvoice }: OverdueInvoicesTableProps) {
   const columns: ColumnDef<OverdueInvoiceReportRow>[] = [
     {
-      key: 'invoice_id',
+      key: 'invoice_id', priority: 'identity' as const,
       header: 'الفاتورة',
       render: (row) => (
         <Button variant="link" className="min-h-11 px-1 font-black" onClick={() => onSelectInvoice(row.invoiceId)}>
@@ -32,29 +32,34 @@ export function OverdueInvoicesTable({ rows, selectedInvoiceId, onSelectInvoice,
         </Button>
       ),
     },
-    { key: 'tenant', header: 'المستأجر', render: (row) => row.tenantName ?? EMPTY_FIELD_VALUE },
-    { key: 'context', header: 'العقار / الوحدة', render: (row) => getContextLabel(row) },
-    { key: 'contract_id', header: 'العقد', render: (row) => row.contractReference ?? 'عقد بلا مرجع' },
-    { key: 'due_date', header: 'الاستحقاق', render: (row) => formatDate(row.dueDate) },
-    { key: 'days_overdue', header: 'أيام التأخير', render: (row) => formatLatinNumber(row.daysOverdue, ARABIC_LOCALE) },
-    { key: 'amount', header: 'الإجمالي', render: (row) => <span dir="ltr">{formatMoney(row.amount)}</span> },
-    { key: 'paid', header: 'المدفوع', render: (row) => <span dir="ltr">{formatMoney(row.paidAmount)}</span> },
-    { key: 'remaining', header: 'المتبقي', render: (row) => <span dir="ltr" className="font-black text-destructive">{formatMoney(row.remainingAmount)}</span> },
+    { key: 'tenant', priority: 'secondary' as const, header: 'المستأجر', render: (row) => row.tenantName ?? EMPTY_FIELD_VALUE },
+    { key: 'context', priority: 'detail' as const, header: 'العقار / الوحدة', render: (row) => getContextLabel(row) },
+    { key: 'contract_id', priority: 'detail' as const, header: 'العقد', render: (row) => row.contractReference ?? 'عقد بلا مرجع' },
+    { key: 'due_date', priority: 'secondary' as const, header: 'الاستحقاق', render: (row) => formatDate(row.dueDate) },
+    { key: 'days_overdue', priority: 'secondary' as const, header: 'أيام التأخير', render: (row) => formatLatinNumber(row.daysOverdue, ARABIC_LOCALE) },
+    { key: 'amount', priority: 'detail' as const, header: 'الإجمالي', render: (row) => <span dir="ltr">{formatMoney(row.amount)}</span> },
+    { key: 'paid', priority: 'detail' as const, header: 'المدفوع', render: (row) => <span dir="ltr">{formatMoney(row.paidAmount)}</span> },
+    { key: 'remaining', priority: 'primary' as const, header: 'المتبقي', render: (row) => <span dir="ltr" className="font-black text-destructive">{formatMoney(row.remainingAmount)}</span> },
     {
-      key: 'status',
+      key: 'status', priority: 'secondary' as const,
       header: 'الحالة',
       render: (row) => <StatusBadge tone="neutral">{formatInvoiceStatusLabel(row.status)}</StatusBadge>,
     },
-    { key: 'bucket', header: 'العمر', render: (row) => getArrearsBucketLabel(getOverdueRowBucketKey(row)) },
-    ...(onCollectInvoice ? [{
-      key: 'actions',
-      header: 'إجراء',
-      render: (row: OverdueInvoiceReportRow) => (
-        <Button className="min-h-11" onClick={() => onCollectInvoice(row.invoiceId)} title="انتقال مباشر لتسجيل دفعة على هذه الفاتورة">
-          <HandCoins className="me-1 size-4" />تحصيل
-        </Button>
-      ),
-    }] : []),
+    { key: 'bucket', priority: 'detail' as const, header: 'العمر', render: (row) => getArrearsBucketLabel(getOverdueRowBucketKey(row)) },
+    ...(onCollectInvoice
+      ? ([
+          {
+            key: 'actions',
+            priority: 'actions' as const,
+            header: 'إجراء',
+            render: (row: OverdueInvoiceReportRow) => (
+              <Button className="min-h-11" onClick={() => onCollectInvoice(row.invoiceId)} title="انتقال مباشر لتسجيل دفعة على هذه الفاتورة">
+                <HandCoins className="me-1 size-4" />تحصيل
+              </Button>
+            ),
+          },
+        ] satisfies ColumnDef<OverdueInvoiceReportRow>[])
+      : []),
   ];
 
   return (

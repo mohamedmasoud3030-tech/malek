@@ -80,11 +80,12 @@ export async function updateExpense(id: string, payload: ExpensePayload): Promis
       .select('*')
       .eq('id', id)
       .is('deleted_at', null)
-      .single()
+      .maybeSingle()
       .returns<Expense>();
     if (fetchError) throw fetchError;
-    if (!expense) throw new Error('Expense not found after update');
-    return expense;
+    const expenseRow = (Array.isArray(expense) ? expense[0] ?? null : expense) as Expense | null;
+    if (!expenseRow) throw new Error('المصروف غير موجود بعد التحديث');
+    return expenseRow;
   } catch (error) {
     handleSupabaseError(error, 'تعذر تعديل المصروف');
     throw error instanceof Error ? error : new Error('تعذر تعديل المصروف');

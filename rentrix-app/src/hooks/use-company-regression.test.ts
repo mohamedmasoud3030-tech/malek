@@ -65,6 +65,13 @@ describe('active company write guard', () => {
     expect(companyHook.indexOf('queryClient.clear()')).toBeLessThan(companyHook.indexOf('setActiveCompany(company)'));
   });
 
+  it('loads the switched membership with maybeSingle so a dropped row fails closed without 406', () => {
+    expect(companyHook).toMatch(
+      /\.from\('company_members'\)[\s\S]*?\.eq\('is_active', true\)[\s\S]*?\.maybeSingle\(\)/,
+    );
+    expect(companyHook).toContain('if (!membership) throw new Error(ACTIVE_COMPANY_ERROR)');
+  });
+
   it('fails closed and clears tenant cache across logout/login user changes', () => {
     expect(companyHook).toContain('const [resolvedUserId, setResolvedUserId]');
     expect(companyHook).toContain('const isCompanyContextTransition = authenticatedUserId !== resolvedUserId');

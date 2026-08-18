@@ -267,7 +267,7 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
 
   const meterColumns: ColumnDef<UtilityMeter>[] = [
     {
-      key: 'meter',
+      key: 'meter', priority: 'identity' as const,
       header: 'العداد',
       render: (meter) => {
         const Icon = utilityIcons[meter.utility_type];
@@ -279,12 +279,12 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
         );
       },
     },
-    { key: 'property', header: 'العقار', render: (meter) => propertyName(meter.property_id) },
-    { key: 'account', header: 'رقم الحساب', render: (meter) => <span dir="ltr" className="tabular-nums">{meter.account_number}</span> },
-    { key: 'responsible', header: 'المسؤول', render: (meter) => responsiblePartyLabels[meter.responsible_party] },
-    { key: 'status', header: 'الحالة', render: (meter) => <StatusBadge tone={meter.is_active ? 'success' : 'neutral'}>{meter.is_active ? 'نشط' : 'غير نشط'}</StatusBadge> },
+    { key: 'property', priority: 'secondary' as const, header: 'العقار', render: (meter) => propertyName(meter.property_id) },
+    { key: 'account', priority: 'detail' as const, header: 'رقم الحساب', render: (meter) => <span dir="ltr" className="tabular-nums">{meter.account_number}</span> },
+    { key: 'responsible', priority: 'detail' as const, header: 'المسؤول', render: (meter) => responsiblePartyLabels[meter.responsible_party] },
+    { key: 'status', priority: 'secondary' as const, header: 'الحالة', render: (meter) => <StatusBadge tone={meter.is_active ? 'success' : 'neutral'}>{meter.is_active ? 'نشط' : 'غير نشط'}</StatusBadge> },
     {
-      key: 'actions',
+      key: 'actions', priority: 'actions' as const,
       header: 'إجراء',
       render: (meter) => (
         <Button variant="danger" size="sm" aria-label={`أرشفة العداد ${meter.meter_number}`} onClick={() => setMeterToArchive(meter)}>
@@ -295,15 +295,15 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
   ];
 
   const billColumns: ColumnDef<UtilityBill>[] = [
-    { key: 'bill', header: 'الفاتورة', render: (bill) => <span className="font-bold">{bill.bill_number || 'فاتورة مرافق بلا مرجع'}</span> },
-    { key: 'property', header: 'العقار', render: (bill) => propertyName(bill.property_id) },
-    { key: 'amount', header: 'المبلغ', render: (bill) => <strong dir="ltr">{money(bill.amount)}</strong> },
-    { key: 'paid', header: 'المسدد', render: (bill) => <strong dir="ltr" className="text-success">{money(bill.paid_amount)}</strong> },
-    { key: 'due', header: 'الاستحقاق', render: (bill) => <span dir="ltr">{bill.due_date}</span> },
-    { key: 'responsible', header: 'المسؤول', render: (bill) => responsiblePartyLabels[bill.responsible_party] },
-    { key: 'status', header: 'الحالة', render: (bill) => <StatusBadge tone={utilityBillStatusTone(bill.status)}>{utilityBillStatusLabels[bill.status]}</StatusBadge> },
+    { key: 'bill', priority: 'identity' as const, header: 'الفاتورة', render: (bill) => <span className="font-bold">{bill.bill_number || 'فاتورة مرافق بلا مرجع'}</span> },
+    { key: 'property', priority: 'secondary' as const, header: 'العقار', render: (bill) => propertyName(bill.property_id) },
+    { key: 'amount', priority: 'primary' as const, header: 'المبلغ', render: (bill) => <strong dir="ltr">{money(bill.amount)}</strong> },
+    { key: 'paid', priority: 'detail' as const, header: 'المسدد', render: (bill) => <strong dir="ltr" className="text-success">{money(bill.paid_amount)}</strong> },
+    { key: 'due', priority: 'secondary' as const, header: 'الاستحقاق', render: (bill) => <span dir="ltr">{bill.due_date}</span> },
+    { key: 'responsible', priority: 'detail' as const, header: 'المسؤول', render: (bill) => responsiblePartyLabels[bill.responsible_party] },
+    { key: 'status', priority: 'secondary' as const, header: 'الحالة', render: (bill) => <StatusBadge tone={utilityBillStatusTone(bill.status)}>{utilityBillStatusLabels[bill.status]}</StatusBadge> },
     {
-      key: 'actions',
+      key: 'actions', priority: 'actions' as const,
       header: 'إجراء',
       render: (bill) => (
         <Button variant="danger" size="sm" aria-label={`أرشفة فاتورة المرافق ${bill.bill_number ?? 'فاتورة مرافق بلا مرجع'}`} onClick={() => setBillToArchive(bill)}>

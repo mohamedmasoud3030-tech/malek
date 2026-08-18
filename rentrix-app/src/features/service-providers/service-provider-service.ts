@@ -241,10 +241,12 @@ export async function getServiceProvider(providerId: string): Promise<ServicePro
     .select(providerListSelect)
     .eq('id', providerId)
     .is('deleted_at', null)
-    .single();
+    .maybeSingle();
   if (error) handleSupabaseError(error, 'تعذر تحميل ملف مزود الخدمة');
-  if (!data) throw new Error('ملف مزود الخدمة غير متاح');
-  return mapProviderRow(data as ProviderRelationRow);
+  // Zero-row lookups must not surface as PostgREST 406 from `.single()`.
+  const row = Array.isArray(data) ? data[0] ?? null : data;
+  if (!row) throw new Error('ملف مزود الخدمة غير متاح');
+  return mapProviderRow(row as ProviderRelationRow);
 }
 
 export async function getServiceProviderDossier(providerId: string): Promise<ServiceProviderDossier> {

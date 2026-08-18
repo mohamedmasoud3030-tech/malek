@@ -42,6 +42,15 @@ describe('CompanySelectorPage', () => {
     expect(screen.getByText('مكتب الإسكندرية')).toBeInTheDocument();
   });
 
+  it('uses formal Arabic product copy for multi-company selection', () => {
+    render(<CompanySelectorPage />);
+    expect(screen.getByRole('heading', { name: 'اختر مساحة العمل' })).toBeInTheDocument();
+    expect(
+      screen.getByText('أنت عضو في أكثر من مكتب — اختر المكتب الذي تريد الدخول إليه'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/أكتر|عايز|اللي /)).not.toBeInTheDocument();
+  });
+
   it('marks the active company as selected', () => {
     render(<CompanySelectorPage />);
     const activeButton = screen.getByText('مكتب القاهرة').closest('button');

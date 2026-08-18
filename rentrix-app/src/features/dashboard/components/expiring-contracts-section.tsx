@@ -14,10 +14,12 @@ interface ExpiringContractsSectionProps {
    */
   totalCount?: number;
   isLoading: boolean;
+  /** When true, do not paint a successful empty queue (error is shown at page level). */
+  isError?: boolean;
   settings: ReturnType<typeof import('@/hooks/useCompanyFormatters').useCompanyFormatters>;
 }
 
-export function ExpiringContractsSection({ rows, totalCount, isLoading, settings }: ExpiringContractsSectionProps) {
+export function ExpiringContractsSection({ rows, totalCount, isLoading, isError = false, settings }: ExpiringContractsSectionProps) {
   const badgeCount = totalCount ?? rows.length;
   const { date } = settings;
   const navigate = useNavigate();
@@ -35,7 +37,7 @@ export function ExpiringContractsSection({ rows, totalCount, isLoading, settings
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {!isLoading ? <StatusBadge tone={badgeCount > 0 ? 'warning' : 'success'}>{badgeCount}</StatusBadge> : null}
+          {!isLoading && !isError ? <StatusBadge tone={badgeCount > 0 ? 'warning' : 'success'}>{badgeCount}</StatusBadge> : null}
           <Link to="/contracts" data-dashboard-section-action className="dashboard-section-link">عرض الكل</Link>
         </div>
       </div>
@@ -48,14 +50,21 @@ export function ExpiringContractsSection({ rows, totalCount, isLoading, settings
         </div>
       )}
 
-      {!isLoading && rows.length === 0 && (
+      {!isLoading && isError && (
+        <div className="dashboard-queue-empty" role="alert">
+          <p className="font-semibold">تعذر تحميل العقود المنتهية قريباً</p>
+          <p>راجع تنبيه أعلى الصفحة ثم أعد المحاولة. لن نعرض قائمة فارغة عند فشل التحميل.</p>
+        </div>
+      )}
+
+      {!isLoading && !isError && rows.length === 0 && (
         <div className="dashboard-queue-empty" role="status">
           <p className="font-semibold">لا توجد عقود تنتهي قريباً</p>
           <p>ستظهر هنا العقود القريبة من الانتهاء عند توفرها.</p>
         </div>
       )}
 
-      {!isLoading && rows.length > 0 && (
+      {!isLoading && !isError && rows.length > 0 && (
         /* role="listitem" is invalid on <button>/<a> (axe aria-allowed-role):
            the list is a real <ul> and each row is wrapped in the <li> that
            owns the listitem semantics. */

@@ -170,11 +170,13 @@ export function InvoiceListSection({
                 {
                   key: 'id',
                   header: 'رقم الفاتورة',
+                  priority: 'identity',
                   render: (invoice) => <span className="font-bold tabular-nums">{invoice.reference ?? 'فاتورة بلا مرجع'}</span>,
                 },
                 {
                   key: 'due_date',
                   header: 'تاريخ الاستحقاق',
+                  priority: 'secondary',
                   render: (invoice) => (
                     <span dir="ltr" className="tabular-nums">
                       {formatDate(invoice.due_date)}
@@ -184,6 +186,7 @@ export function InvoiceListSection({
                 {
                   key: 'gross',
                   header: 'الإجمالي شامل VAT',
+                  priority: 'detail',
                   render: (invoice) => {
                     const grossAmount = getInvoiceGrossAmount(invoice);
                     return (
@@ -201,11 +204,13 @@ export function InvoiceListSection({
                 {
                   key: 'paid_amount',
                   header: 'المدفوع',
+                  priority: 'detail',
                   render: (invoice) => <FinanceAmount className="text-success">{formatMoney(invoice.paid_amount)}</FinanceAmount>,
                 },
                 {
                   key: 'remaining',
                   header: 'المتبقي',
+                  priority: 'primary',
                   render: (invoice) => {
                     const grossAmount = getInvoiceGrossAmount(invoice);
                     return (
@@ -218,6 +223,7 @@ export function InvoiceListSection({
                 {
                   key: 'status',
                   header: 'الحالة',
+                  priority: 'secondary',
                   render: (invoice) => {
                     const kind = mapInvoiceStatusToFinanceKind(invoice.status);
                     return (
@@ -228,6 +234,7 @@ export function InvoiceListSection({
                 {
                   key: 'actions',
                   header: 'إجراءات',
+                  priority: 'actions',
                   render: (invoice) => {
                     const showCollect = canCollectPayments && onCollectInvoice && isInvoiceCollectible(invoice);
                     if (!showCollect && !onPrintInvoice && !onExportInvoice) return null;

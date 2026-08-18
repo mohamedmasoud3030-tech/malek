@@ -249,6 +249,7 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
                 {
                   key: "unit_number",
                   header: "الوحدة",
+                  priority: "identity",
                   render: (unit) => (
                     <span className="font-bold">{unit.unit_number}</span>
                   ),
@@ -256,6 +257,7 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
                 {
                   key: "property",
                   header: "العقار",
+                  priority: "secondary",
                   render: (unit) => {
                     const property = ctrl.propertyById.get(unit.property_id);
                     return property ? (
@@ -275,11 +277,13 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
                 {
                   key: "floor",
                   header: "الدور",
+                  priority: "detail",
                   render: (unit) => unit.floor ?? "—",
                 },
                 {
                   key: "status",
                   header: "الحالة",
+                  priority: "primary",
                   render: (unit) => {
                     const unitStatus = getUnitPageStatus(unit);
                     return (
@@ -292,6 +296,7 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
                 {
                   key: "rent",
                   header: "الإيجار",
+                  priority: "secondary",
                   render: (unit) => (
                     <span dir="ltr" className="block font-bold tabular-nums">
                       {formatMoney(unit.rent_amount)}
@@ -301,11 +306,13 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
                 {
                   key: "notes",
                   header: "ملاحظات",
+                  priority: "detail",
                   render: (unit) => unit.notes ?? "—",
                 },
                 {
                   key: "action",
                   header: "إجراء",
+                  priority: "actions",
                   render: (unit) => (
                     <div
                       className="flex gap-2"

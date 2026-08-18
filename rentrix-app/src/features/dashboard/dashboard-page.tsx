@@ -155,12 +155,14 @@ export function DashboardPage() {
                   rows={expiringContracts}
                   totalCount={snapshot?.contracts.expiring30}
                   isLoading={isLoading}
+                  isError={hasDashboardError}
                   settings={settings}
                 />
                 <OverdueSection
                   rows={overdueRows}
                   totalCount={snapshot?.arrears.overdueCount}
                   isLoading={isLoading}
+                  isError={hasDashboardError}
                   settings={settings}
                 />
               </div>

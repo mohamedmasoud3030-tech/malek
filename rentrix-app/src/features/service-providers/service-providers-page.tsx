@@ -78,21 +78,24 @@ export function ServiceProvidersWorkspace({ embedded = false }: Readonly<{ embed
     {
       key: 'provider',
       header: 'مزود الخدمة',
+      priority: 'identity',
       render: (provider) => <EntityCell icon={BriefcaseBusiness} tone="primary" title={provider.name} subtitle={provider.legal_name ?? provider.contact_name ?? provider.service_area} />,
     },
     {
       key: 'categories',
       header: 'الخدمات المدعومة',
+      priority: 'secondary',
       render: (provider) => provider.categories.length > 0 ? (
         <div className="flex max-w-72 flex-wrap gap-1.5">{provider.categories.slice(0, 3).map((category) => <StatusBadge key={category.id} tone="info">{category.name}</StatusBadge>)}{provider.categories.length > 3 ? <StatusBadge tone="neutral">+{formatCount(provider.categories.length - 3)}</StatusBadge> : null}</div>
       ) : <span className="text-muted-foreground">غير محددة</span>,
     },
-    { key: 'contact', header: 'التواصل', render: (provider) => <div><p dir="ltr" className="text-right font-medium">{provider.phone ?? '—'}</p><p dir="ltr" className="text-right text-xs text-muted-foreground">{provider.email ?? ''}</p></div> },
-    { key: 'jobs', header: 'أعمال الصيانة', render: (provider) => <div className="tabular-nums"><span className="font-bold">{formatCount(provider.maintenance_jobs_count)}</span>{provider.open_jobs_count > 0 ? <span className="ms-2 text-xs text-warning">{formatCount(provider.open_jobs_count)} جارية</span> : null}</div> },
-    { key: 'status', header: 'الحالة', render: (provider) => <StatusBadge tone={provider.is_active ? 'success' : 'neutral'} dot>{provider.is_active ? 'نشط' : 'غير نشط'}</StatusBadge> },
+    { key: 'contact', header: 'التواصل', priority: 'detail', render: (provider) => <div><p dir="ltr" className="text-right font-medium">{provider.phone ?? '—'}</p><p dir="ltr" className="text-right text-xs text-muted-foreground">{provider.email ?? ''}</p></div> },
+    { key: 'jobs', header: 'أعمال الصيانة', priority: 'secondary', render: (provider) => <div className="tabular-nums"><span className="font-bold">{formatCount(provider.maintenance_jobs_count)}</span>{provider.open_jobs_count > 0 ? <span className="ms-2 text-xs text-warning">{formatCount(provider.open_jobs_count)} جارية</span> : null}</div> },
+    { key: 'status', header: 'الحالة', priority: 'primary', render: (provider) => <StatusBadge tone={provider.is_active ? 'success' : 'neutral'} dot>{provider.is_active ? 'نشط' : 'غير نشط'}</StatusBadge> },
     {
       key: 'actions',
       header: 'إجراءات',
+      priority: 'actions',
       render: (provider) => (
         <div className="flex flex-wrap gap-2" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
           <Button type="button" variant="secondary" className="min-h-11" onClick={() => void navigate({ to: '/service-providers/$providerId', params: { providerId: provider.id } })}>عرض</Button>

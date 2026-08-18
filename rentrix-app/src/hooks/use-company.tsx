@@ -260,15 +260,18 @@ export function CompanyProvider({ children }: PropsWithChildren) {
       }
 
       // Role comes from the authorized membership row, never from the request.
+      // maybeSingle: a race that drops membership between the company list load
+      // and switch must fail closed with ACTIVE_COMPANY_ERROR, not a PostgREST 406.
       const { data: membership, error: membershipError } = await supabase
         .from('company_members')
         .select('role')
         .eq('company_id', companyId)
         .eq('user_id', session.user.id)
         .eq('is_active', true)
-        .single();
+        .maybeSingle();
 
       if (membershipError) throw membershipError;
+      if (!membership) throw new Error(ACTIVE_COMPANY_ERROR);
 
       await queryClient.cancelQueries();
       queryClient.clear();
@@ -302,7 +305,7 @@ export function CompanyProvider({ children }: PropsWithChildren) {
   if (isLoading || isCompanyContextTransition) {
     return (
       <main className="grid min-h-dvh place-items-center bg-background p-6" dir="rtl" aria-busy="true">
-        <p className="text-sm font-semibold text-muted-foreground">جاري تحديد الشركة النشطة…</p>
+        <p className="text-sm font-semibold text-muted-foreground">جارٍ تحديد الشركة النشطة…</p>
       </main>
     );
   }

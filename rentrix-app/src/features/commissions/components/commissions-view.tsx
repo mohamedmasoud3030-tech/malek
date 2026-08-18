@@ -434,7 +434,7 @@ function CommissionRows({
       mobileVisibleSecondaryKey="amount"
       columns={[
         {
-          key: "staff_name",
+          key: "staff_name", priority: 'identity' as const,
           header: "المستفيد",
           render: (row) => (
             <span className="max-w-56 whitespace-normal break-words">
@@ -443,10 +443,10 @@ function CommissionRows({
             </span>
           ),
         },
-        { key: "type", header: "النوع", render: (row) => typeLabels[row.type ?? ""] ?? row.type ?? "—" },
-        { key: "amount", header: "المبلغ", render: (row) => <span dir="ltr" className="tabular-nums font-bold">{money(row.amount)}</span> },
+        { key: "type", priority: 'secondary' as const, header: "النوع", render: (row) => typeLabels[row.type ?? ""] ?? row.type ?? "—" },
+        { key: "amount", priority: 'primary' as const, header: "المبلغ", render: (row) => <span dir="ltr" className="tabular-nums font-bold">{money(row.amount)}</span> },
         {
-          key: "status",
+          key: "status", priority: 'secondary' as const,
           header: "الحالة",
           render: (row) => (
             <span className="flex flex-col items-start gap-1">
@@ -455,7 +455,7 @@ function CommissionRows({
             </span>
           ),
         },
-        { key: "actions", header: "إجراءات", render: actionsFor },
+        { key: "actions", priority: 'actions' as const, header: "إجراءات", render: actionsFor },
       ]}
     />
   );

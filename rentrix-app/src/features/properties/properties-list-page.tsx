@@ -20,7 +20,7 @@ import { OperationalCommandPanel, OperationalMetricCard } from "@/components/ui/
 import { Select } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { ActiveFilterBar } from "@/components/ui/active-filter-bar";
-import { DataTable } from "@/components/ui/data-table";
+import { EntityTable } from "@/components/ui/entity-table";
 import { ActionMenu } from "@/components/ui/action-menu";
 import { getAppLanguageState, translateSharedLabel } from "@/lib/i18n";
 import { toast } from "sonner";
@@ -268,15 +268,17 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
               }
             >
               {
-                <DataTable
+                <EntityTable
                   aria-label="جدول العقارات"
                   rows={controller.properties}
                   keyOf={(property) => property.id}
                   onRowClick={(property) => controller.navigateToProperty(property.id)}
+                  mobileVisibleSecondaryKey="status"
                   columns={[
                     {
                       key: "title",
                       header: "العقار",
+                      priority: "identity",
                       render: (property) => (
                         <EntityCell icon={Building2} title={property.title ?? "—"} />
                       ),
@@ -284,6 +286,7 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
                     {
                       key: "status",
                       header: "الحالة",
+                      priority: "primary",
                       render: (property) => (
                         <StatusBadge
                           tone={
@@ -301,11 +304,13 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
                     {
                       key: "workflow",
                       header: "المالك والتشغيل",
+                      priority: "secondary",
                       render: (property) => <PropertyWorkflowStatus property={property} />,
                     },
                     {
                       key: "address",
                       header: "العنوان",
+                      priority: "detail",
                       render: (property) => (
                         <span className="text-sm text-muted-foreground">
                           {property.address ?? "—"}
@@ -315,6 +320,7 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
                     {
                       key: "actions",
                       header: "إجراءات",
+                      priority: "actions",
                       render: (property) => (
                         <div
                           className="flex"

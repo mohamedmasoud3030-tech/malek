@@ -124,8 +124,13 @@ export function PaymentTermsSettingsSection() {
             </div>
           </div>
         ))}
-        {paymentTermsQuery.isLoading ? <p className="text-sm text-muted-foreground">جار تحميل شروط السداد...</p> : null}
-        {!paymentTermsQuery.isLoading && (paymentTermsQuery.data ?? []).length === 0 ? (
+        {paymentTermsQuery.isLoading ? <p className="text-sm text-muted-foreground">جارٍ تحميل شروط السداد...</p> : null}
+        {paymentTermsQuery.isError ? (
+          <p className="rounded-2xl border border-danger/30 bg-danger/5 p-4 text-sm font-medium text-danger" role="alert">
+            تعذر تحميل شروط السداد. أعد المحاولة بعد لحظات.
+          </p>
+        ) : null}
+        {!paymentTermsQuery.isLoading && !paymentTermsQuery.isError && (paymentTermsQuery.data ?? []).length === 0 ? (
           <p className="rounded-2xl border border-dashed p-4 text-sm text-muted-foreground">لا توجد شروط سداد محفوظة بعد.</p>
         ) : null}
       </div>

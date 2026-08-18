@@ -72,6 +72,10 @@ function createQueryBuilder(table: string, responses: TableResponses, log: Query
       log.push({ table, method: 'single', args: [] });
       return builder;
     }),
+    maybeSingle: vi.fn(() => {
+      log.push({ table, method: 'maybeSingle', args: [] });
+      return builder;
+    }),
     returns: vi.fn(async () => {
       log.push({ table, method: 'returns', args: [] });
       const data = (responses[table as TableName] ?? []).filter((row) => (
@@ -80,8 +84,10 @@ function createQueryBuilder(table: string, responses: TableResponses, log: Query
           return (row as Record<string, unknown>)[filter.column] === filter.value;
         })
       ));
+      const wantsSingle =
+        builder.single.mock.calls.length > 0 || builder.maybeSingle.mock.calls.length > 0;
       return {
-        data: table === 'payments' && builder.single.mock.calls.length > 0 ? data[0] ?? null : data,
+        data: table === 'payments' && wantsSingle ? data[0] ?? null : data,
         error: null,
       };
     }),
@@ -225,6 +231,13 @@ describe('receiptService', () => {
     expect(log.filter((entry) => entry.table === 'payments' && entry.method === 'eq')).toEqual([
       { table: 'payments', method: 'eq', args: ['id', 'pay_1234567890abcdef'] },
     ]);
+    expect(log).toContainEqual({ table: 'payments', method: 'maybeSingle', args: [] });
+  });
+
+  it('returns an explicit Arabic not-found when the payment row is missing', async () => {
+    mockSupabaseTables({ payments: [] });
+    const { getReceiptDetail } = await import('./receiptService');
+    await expect(getReceiptDetail('missing-payment')).rejects.toThrow('الإيصال غير موجود');
   });
 
   it('loads receipt detail with the payment-backed identifier returned after posting a payment', async () => {

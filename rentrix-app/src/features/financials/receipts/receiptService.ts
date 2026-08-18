@@ -195,11 +195,14 @@ export async function getReceiptDetail(receiptOrPaymentId: string): Promise<Rece
     .select('*')
     .eq('id', receiptOrPaymentId)
     .is('deleted_at', null)
-    .single()
+    .maybeSingle()
     .returns<Payment>();
-  if (error || !payment) throw error ?? new Error('Receipt not found');
-  const [receipt] = await loadReceiptRecords([payment]);
-  if (!receipt) throw new Error('Receipt not found');
+  if (error) throw error;
+  // Missing receipts must be an explicit not-found, not a 406 from `.single()`.
+  const paymentRow = (Array.isArray(payment) ? payment[0] ?? null : payment) as Payment | null;
+  if (!paymentRow) throw new Error('الإيصال غير موجود أو غير متاح لصلاحياتك.');
+  const [receipt] = await loadReceiptRecords([paymentRow]);
+  if (!receipt) throw new Error('الإيصال غير موجود أو غير متاح لصلاحياتك.');
   return receipt;
 }
 

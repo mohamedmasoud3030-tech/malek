@@ -29,7 +29,7 @@ export function CompanySelectorPage() {
           </div>
           <h1 className="text-xl font-bold">اختر مساحة العمل</h1>
           <p className="mt-1.5 text-sm text-muted-foreground">
-            أنت عضو في أكتر من مكتب — اختر المكتب اللي عايز تدخله
+            أنت عضو في أكثر من مكتب — اختر المكتب الذي تريد الدخول إليه
           </p>
         </div>
 

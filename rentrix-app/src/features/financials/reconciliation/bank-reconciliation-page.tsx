@@ -14,9 +14,9 @@ import { PageStateCard, WriteErrorCard } from '@/components/page-state-card';
 import { ActiveFilterBar, type ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { EntityCard } from '@/components/ui/entity-card';
 import { EntityForm } from '@/components/ui/entity-form';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
+import { ErrorState } from '@/components/ui/error-state';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { Input } from '@/components/ui/input';
 import { FinanceKpiGrid, FinanceKpiCard } from '../components/finance-reporting-visual-foundations';
@@ -121,19 +121,22 @@ export function BankReconciliationWorkspace({ embedded = false }: BankReconcilia
         </Button>
       )}
     >
-      <FinanceKpiGrid desktopColumns={4}>
-        <FinanceKpiCard label="إجمالي الحركات" value={ctrl.summary.totalLines} sub="ضمن الفلاتر الحالية" icon={Landmark} accent="primary" />
-        <FinanceKpiCard label="غير مطابقة" value={ctrl.summary.unmatchedCount} sub="تحتاج إلى مراجعة" icon={Unlink} accent="primary" trend="down" trendValue="مراجعة" onDrill={() => ctrl.setFilters({ ...ctrl.filters, status: 'unmatched' })} />
-        <FinanceKpiCard label="مطابقة" value={ctrl.summary.matchedCount} sub="تم ربطها بسجلات النظام" icon={CheckCircle2} accent="primary" trend="up" trendValue="مطابق" onDrill={() => ctrl.setFilters({ ...ctrl.filters, status: 'matched' })} />
-        <FinanceKpiCard
-          label="صافي غير مطابق"
-          value={formatCompanyMoney(companySettings, ctrl.summary.unmatchedAmount)}
-          sub="إجمالي المبالغ غير المحسومة"
-          icon={Banknote}
-          accent="primary"
-          unit={companySettings.defaultCurrency}
-        />
-      </FinanceKpiGrid>
+      {/* KPI zeros from failed loads would look like “no bank activity”. Hide them until a successful read. */}
+      {!ctrl.accountsQuery.isError && !ctrl.linesQuery.isError ? (
+        <FinanceKpiGrid desktopColumns={4}>
+          <FinanceKpiCard label="إجمالي الحركات" value={ctrl.summary.totalLines} sub="ضمن الفلاتر الحالية" icon={Landmark} accent="primary" />
+          <FinanceKpiCard label="غير مطابقة" value={ctrl.summary.unmatchedCount} sub="تحتاج إلى مراجعة" icon={Unlink} accent="primary" trend="down" trendValue="مراجعة" onDrill={() => ctrl.setFilters({ ...ctrl.filters, status: 'unmatched' })} />
+          <FinanceKpiCard label="مطابقة" value={ctrl.summary.matchedCount} sub="تم ربطها بسجلات النظام" icon={CheckCircle2} accent="primary" trend="up" trendValue="مطابق" onDrill={() => ctrl.setFilters({ ...ctrl.filters, status: 'matched' })} />
+          <FinanceKpiCard
+            label="صافي غير مطابق"
+            value={formatCompanyMoney(companySettings, ctrl.summary.unmatchedAmount)}
+            sub="إجمالي المبالغ غير المحسومة"
+            icon={Banknote}
+            accent="primary"
+            unit={companySettings.defaultCurrency}
+          />
+        </FinanceKpiGrid>
+      ) : null}
 
       <FilterBar
         filters={(
@@ -167,19 +170,38 @@ export function BankReconciliationWorkspace({ embedded = false }: BankReconcilia
 
       {ctrl.writeError ? <WriteErrorCard message={ctrl.writeError instanceof Error ? ctrl.writeError.message : 'تعذر حفظ التغيير في مطابقة البنك.'} /> : null}
       {ctrl.accountsQuery.isLoading || ctrl.linesQuery.isLoading ? <PageStateCard title="جارٍ تحميل حركات البنك..." /> : null}
-      {!ctrl.accountsQuery.isLoading && ctrl.accounts.length === 0 ? (
+
+      {/* Read failures must never render as empty lists (false “no data” signal). */}
+      {ctrl.accountsQuery.isError ? (
+        <ErrorState
+          title="تعذر تحميل الحسابات البنكية"
+          description="تحقق من الاتصال والصلاحيات ثم أعد المحاولة. لن نعرض قائمة فارغة عند فشل التحميل."
+          error={ctrl.accountsQuery.error}
+          onRetry={() => { void ctrl.accountsQuery.refetch(); }}
+        />
+      ) : null}
+      {ctrl.linesQuery.isError ? (
+        <ErrorState
+          title="تعذر تحميل حركات كشف البنك"
+          description="تحقق من الاتصال أو الفلاتر ثم أعد المحاولة. الخطأ لا يُعرض كـ«لا توجد حركات»."
+          error={ctrl.linesQuery.error}
+          onRetry={() => { void ctrl.linesQuery.refetch(); }}
+        />
+      ) : null}
+
+      {!ctrl.accountsQuery.isLoading && !ctrl.accountsQuery.isError && ctrl.accounts.length === 0 ? (
         <PageStateCard
           title="لا توجد حسابات بنكية بعد"
           description="أضف حساباً بنكياً قبل تسجيل أو استيراد حركات كشف البنك."
         />
       ) : null}
 
-      {!ctrl.linesQuery.isLoading && ctrl.lines.length === 0 ? (
+      {!ctrl.linesQuery.isLoading && !ctrl.linesQuery.isError && ctrl.lines.length === 0 ? (
         <PageStateCard
           title="لا توجد حركات كشف ضمن الفلاتر"
           description={ctrl.hasFilters ? 'غيّر الفلاتر أو امسحها لعرض نتائج أخرى.' : 'أضف حركة يدوية أو استورد كشفاً بنكياً للبدء.'}
         />
-      ) : (
+      ) : !ctrl.linesQuery.isError ? (
         <BankStatementLinesTable
           companySettings={companySettings}
           lines={ctrl.lines}
@@ -195,7 +217,7 @@ export function BankReconciliationWorkspace({ embedded = false }: BankReconcilia
           }}
           isIgnoring={!ctrl.canManageReconciliation || ctrl.ignoreLine.isPending}
         />
-      )}
+      ) : null}
 
       <EntityForm.Overlay
         open={ctrl.lineFormOpen}
@@ -356,20 +378,31 @@ function BankStatementLinesTable({
   isIgnoring: boolean;
 }>) {
   const columns: ColumnDef<BankStatementLine>[] = [
-    { key: 'date', header: 'التاريخ', render: (line) => formatDate(companySettings, line.transaction_date) },
-    { key: 'description', header: 'الوصف', render: (line) => <span className="font-bold">{line.description}</span> },
-    { key: 'reference', header: 'المرجع', render: (line) => line.reference ?? '—' },
-    { key: 'amount', header: 'المبلغ', render: (line) => <span dir="ltr" className="font-black tabular-nums">{formatCompanyMoney(companySettings, line.amount)}</span> },
-    { key: 'status', header: 'الحالة', render: (line) => <StatusBadge tone={statusTone(line.status)}>{statusLabels[line.status]}</StatusBadge> },
+    { key: 'date', header: 'التاريخ', priority: 'secondary', render: (line) => formatDate(companySettings, line.transaction_date) },
+    { key: 'description', header: 'الوصف', priority: 'identity', render: (line) => <span className="font-bold">{line.description}</span> },
+    { key: 'reference', header: 'المرجع', priority: 'detail', render: (line) => line.reference ?? '—' },
+    {
+      key: 'amount',
+      header: 'المبلغ',
+      priority: 'primary',
+      render: (line) => <span dir="ltr" className="font-black tabular-nums">{formatCompanyMoney(companySettings, line.amount)}</span>,
+    },
+    {
+      key: 'status',
+      header: 'الحالة',
+      priority: 'secondary',
+      render: (line) => <StatusBadge tone={statusTone(line.status)}>{statusLabels[line.status]}</StatusBadge>,
+    },
     {
       key: 'action',
       header: 'الإجراء',
-      render: (line) => line.status === 'unmatched' ? (
+      priority: 'actions',
+      render: (line) => (line.status === 'unmatched' ? (
         <div className="flex gap-2">
           <Button variant="secondary" className="min-h-11 px-3 text-xs" onClick={() => onMatch(line)}>مطابقة</Button>
           <Button variant="secondary" className="min-h-11 px-3 text-xs" disabled={isIgnoring} onClick={() => onIgnore(line.id)}>تجاهل</Button>
         </div>
-      ) : '—',
+      ) : '—'),
     },
   ];
 
@@ -379,7 +412,7 @@ function BankStatementLinesTable({
       rows={lines}
       columns={columns}
       keyOf={(line) => line.id}
-      mobileVisibleSecondaryKey="status"
+      mobileVisibleSecondaryKey="amount"
       emptyTitle="لا توجد حركات كشف"
       emptyDescription="لا توجد حركات تطابق الفلاتر الحالية."
     />

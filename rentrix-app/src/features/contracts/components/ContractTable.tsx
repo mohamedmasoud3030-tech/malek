@@ -60,6 +60,7 @@ export function ContractTable({
     {
       key: "contract_number",
       header: "العقد رقم",
+      priority: "identity",
       render: (contract) => {
         const expiringSoon = isExpiringSoon(contract);
         const daysUntilEnd = getDaysUntilEnd(contract);
@@ -71,14 +72,40 @@ export function ContractTable({
         );
       },
     },
-    { key: "tenant", header: "المستأجر", render: (contract) => <EntityCell icon={User} title={contract.people?.full_name ?? "—"} /> },
-    { key: "unit", header: "الوحدة", render: (contract) => contract.units?.unit_number ?? contract.properties?.title ?? "—" },
-    { key: "start_date", header: "تاريخ البداية", render: (contract) => formatContractDate(companySettings, contract.start_date) },
-    { key: "end_date", header: "تاريخ النهاية", render: (contract) => formatContractDate(companySettings, contract.end_date) },
-    { key: "rent_amount", header: "قيمة الإيجار", render: (contract) => formatContractMoney(companySettings, contract.rent_amount) },
+    {
+      key: "tenant",
+      header: "المستأجر",
+      priority: "primary",
+      render: (contract) => <EntityCell icon={User} title={contract.people?.full_name ?? "—"} />,
+    },
+    {
+      key: "unit",
+      header: "الوحدة",
+      priority: "secondary",
+      render: (contract) => contract.units?.unit_number ?? contract.properties?.title ?? "—",
+    },
+    {
+      key: "start_date",
+      header: "تاريخ البداية",
+      priority: "detail",
+      render: (contract) => formatContractDate(companySettings, contract.start_date),
+    },
+    {
+      key: "end_date",
+      header: "تاريخ النهاية",
+      priority: "secondary",
+      render: (contract) => formatContractDate(companySettings, contract.end_date),
+    },
+    {
+      key: "rent_amount",
+      header: "قيمة الإيجار",
+      priority: "detail",
+      render: (contract) => formatContractMoney(companySettings, contract.rent_amount),
+    },
     {
       key: "status",
       header: "الحالة",
+      priority: "secondary",
       render: (contract) => (
         <StatusBadge tone={contractStatusTone[normalizeContractStatus(contract.status)]}>
           {contractStatusLabels[normalizeContractStatus(contract.status)]}
@@ -88,6 +115,7 @@ export function ContractTable({
     {
       key: "actions",
       header: "إجراءات",
+      priority: "actions",
       className: "w-52",
       render: (contract) => (
         <div className="flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>

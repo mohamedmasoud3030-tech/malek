@@ -124,30 +124,30 @@ export function AutomationCenterView() {
 
   const ruleColumns: ColumnDef<AutomationRule>[] = [
     {
-      key: 'rule',
+      key: 'rule', priority: 'identity' as const,
       header: 'القاعدة',
       render: (rule) => <div><p className="font-bold">{rule.name}</p><p className="max-w-lg truncate text-xs text-muted-foreground">{rule.description || '—'}</p></div>,
     },
-    { key: 'category', header: 'الفئة', render: (rule) => <Badge variant="outline">{mapRuleTypeToCategory(rule.rule_type)}</Badge> },
-    { key: 'last_run', header: 'آخر تشغيل', render: (rule) => formatAutomationDate(rule.last_run_at) },
-    { key: 'result', header: 'النتيجة', render: (rule) => rule.last_run_result || '—' },
-    { key: 'status', header: 'الحالة', render: (rule) => <StatusBadge tone={rule.is_enabled ? 'success' : 'warning'}>{rule.is_enabled ? 'مفعّل' : 'متوقف'}</StatusBadge> },
-    { key: 'actions', header: 'إجراءات', render: ruleActions },
+    { key: 'category', priority: 'secondary' as const, header: 'الفئة', render: (rule) => <Badge variant="outline">{mapRuleTypeToCategory(rule.rule_type)}</Badge> },
+    { key: 'last_run', priority: 'detail' as const, header: 'آخر تشغيل', render: (rule) => formatAutomationDate(rule.last_run_at) },
+    { key: 'result', priority: 'detail' as const, header: 'النتيجة', render: (rule) => rule.last_run_result || '—' },
+    { key: 'status', priority: 'primary' as const, header: 'الحالة', render: (rule) => <StatusBadge tone={rule.is_enabled ? 'success' : 'warning'}>{rule.is_enabled ? 'مفعّل' : 'متوقف'}</StatusBadge> },
+    { key: 'actions', priority: 'actions' as const, header: 'إجراءات', render: ruleActions },
   ];
 
   const runColumns: ColumnDef<AutomationRun>[] = [
-    { key: 'job', header: 'التشغيل', render: (run) => <span className="font-bold">{run.job_name}</span> },
-    { key: 'started', header: 'وقت البدء', render: (run) => formatAutomationDate(run.started_at) },
-    { key: 'processed', header: 'تمت معالجته', render: (run) => run.items_processed },
-    { key: 'failed', header: 'فشل', render: (run) => <span className={run.items_failed > 0 ? 'font-bold text-destructive' : undefined}>{run.items_failed}</span> },
-    { key: 'status', header: 'الحالة', render: (run) => <StatusBadge tone={automationRunStatusTone(run.status)}>{run.status}</StatusBadge> },
+    { key: 'job', priority: 'identity' as const, header: 'التشغيل', render: (run) => <span className="font-bold">{run.job_name}</span> },
+    { key: 'started', priority: 'secondary' as const, header: 'وقت البدء', render: (run) => formatAutomationDate(run.started_at) },
+    { key: 'processed', priority: 'detail' as const, header: 'تمت معالجته', render: (run) => run.items_processed },
+    { key: 'failed', priority: 'secondary' as const, header: 'فشل', render: (run) => <span className={run.items_failed > 0 ? 'font-bold text-destructive' : undefined}>{run.items_failed}</span> },
+    { key: 'status', priority: 'primary' as const, header: 'الحالة', render: (run) => <StatusBadge tone={automationRunStatusTone(run.status)}>{run.status}</StatusBadge> },
   ];
 
   const notificationColumns: ColumnDef<AutomationNotification>[] = [
-    { key: 'title', header: 'الإشعار', render: (notification) => <div><p className="font-bold">{notification.title}</p><p className="max-w-xl truncate text-xs text-muted-foreground">{notification.body}</p></div> },
-    { key: 'created', header: 'التاريخ', render: (notification) => formatAutomationDate(notification.created_at) },
+    { key: 'title', priority: 'identity' as const, header: 'الإشعار', render: (notification) => <div><p className="font-bold">{notification.title}</p><p className="max-w-xl truncate text-xs text-muted-foreground">{notification.body}</p></div> },
+    { key: 'created', priority: 'secondary' as const, header: 'التاريخ', render: (notification) => formatAutomationDate(notification.created_at) },
     {
-      key: 'related',
+      key: 'related', priority: 'detail' as const,
       header: 'السياق',
       render: (notification) => notification.related_entity_type ? `مرتبط بـ ${notification.related_entity_type}` : 'عام',
     },

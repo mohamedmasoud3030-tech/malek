@@ -209,14 +209,14 @@ function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Rea
   };
 
   const receiptColumns: ColumnDef<ReceiptRecord>[] = [
-    { key: 'receipt_number', header: 'رقم الإيصال', render: (receipt) => <span className="font-black">{receipt.receipt_number}</span> },
-    { key: 'payment_date', header: 'تاريخ الدفع', render: (receipt) => formatDate(receipt.payment_date) },
-    { key: 'amount', header: 'المبلغ', render: (receipt) => <span dir="ltr" className="block font-bold tabular-nums">{formatMoney(receipt.amount)}</span> },
-    { key: 'method', header: 'طريقة الدفع', render: (receipt) => paymentMethodLabels[receipt.payment_method] ?? receipt.payment_method },
-    { key: 'invoice_id', header: 'الفاتورة', render: (receipt) => formatShortId(receipt.invoice_id) },
-    { key: 'context', header: 'السياق', render: (receipt) => formatReceiptContext(receipt) },
-    { key: 'status', header: 'الحالة', render: (receipt) => <StatusBadge tone={receiptStatusTone(receipt.status)}>{receiptStatusLabels[receipt.status] ?? receipt.status}</StatusBadge> },
-    { key: 'actions', header: 'الإجراءات', render: (receipt) => (
+    { key: 'receipt_number', header: 'رقم الإيصال', priority: 'identity', render: (receipt) => <span className="font-black">{receipt.receipt_number}</span> },
+    { key: 'payment_date', header: 'تاريخ الدفع', priority: 'secondary', render: (receipt) => formatDate(receipt.payment_date) },
+    { key: 'amount', header: 'المبلغ', priority: 'primary', render: (receipt) => <span dir="ltr" className="block font-bold tabular-nums">{formatMoney(receipt.amount)}</span> },
+    { key: 'method', header: 'طريقة الدفع', priority: 'detail', render: (receipt) => paymentMethodLabels[receipt.payment_method] ?? receipt.payment_method },
+    { key: 'invoice_id', header: 'الفاتورة', priority: 'detail', render: (receipt) => formatShortId(receipt.invoice_id) },
+    { key: 'context', header: 'السياق', priority: 'secondary', render: (receipt) => formatReceiptContext(receipt) },
+    { key: 'status', header: 'الحالة', priority: 'secondary', render: (receipt) => <StatusBadge tone={receiptStatusTone(receipt.status)}>{receiptStatusLabels[receipt.status] ?? receipt.status}</StatusBadge> },
+    { key: 'actions', header: 'الإجراءات', priority: 'actions', render: (receipt) => (
       <div className="flex flex-wrap gap-2" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
         <Button variant="secondary" className="min-h-11 px-3" onClick={() => setSelectedReceiptId(receipt.id)}>عرض</Button>
         <Button variant="secondary" className="min-h-11 px-3" onClick={() => openReceiptPrintView(receipt.id)}><Printer className="me-2 size-4" />طباعة</Button>

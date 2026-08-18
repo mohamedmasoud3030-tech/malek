@@ -43,17 +43,18 @@ export function AuditLogView({ state }: Readonly<{ state: AuditLogViewState }>) 
   }
 
   const columns: ColumnDef<AuditLogRecord>[] = [
-    { key: 'time', header: 'الوقت', render: (record) => <span className="font-bold">{formatAuditDate(companySettings, record.occurredAt)}</span> },
-    { key: 'actor', header: 'المستخدم', render: (record) => record.actor },
-    { key: 'action', header: 'الإجراء', render: (record) => <StatusBadge tone="info">{record.action}</StatusBadge> },
-    { key: 'scope', header: 'النطاق', render: (record) => record.entityType || 'عام' },
-    { key: 'description', header: 'الوصف', render: (record) => <span className="max-w-lg whitespace-normal text-muted-foreground">{record.description ?? 'لا يوجد وصف'}</span> },
+    { key: 'time', priority: 'identity' as const, header: 'الوقت', render: (record) => <span className="font-bold">{formatAuditDate(companySettings, record.occurredAt)}</span> },
+    { key: 'actor', priority: 'secondary' as const, header: 'المستخدم', render: (record) => record.actor },
+    { key: 'action', priority: 'primary' as const, header: 'الإجراء', render: (record) => <StatusBadge tone="info">{record.action}</StatusBadge> },
+    { key: 'scope', priority: 'secondary' as const, header: 'النطاق', render: (record) => record.entityType || 'عام' },
+    { key: 'description', priority: 'detail' as const, header: 'الوصف', render: (record) => <span className="max-w-lg whitespace-normal text-muted-foreground">{record.description ?? 'لا يوجد وصف'}</span> },
   ];
 
   return (
     <EntityTable
       aria-label="جدول سجل التدقيق"
       rows={[...records]}
+      mobileVisibleSecondaryKey="action"
       columns={columns}
       keyOf={(record) => record.id}
       emptyTitle="لا توجد أحداث تدقيق"

@@ -1,7 +1,7 @@
 import { CheckCircle2, Edit, Eye } from "lucide-react";
 import { ActionMenu } from "@/components/ui/action-menu";
 import { Button } from "@/components/ui/button";
-import { DataTable } from "@/components/ui/data-table";
+import { EntityTable, type ColumnDef } from "@/components/ui/entity-table";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { Property, Unit } from "@/types/domain";
 import type { ServiceProviderOption } from "@/features/service-providers/service-provider-service";
@@ -73,117 +73,120 @@ export function MaintenanceList(props: MaintenanceListProps) {
     onStatusAction,
   } = props;
 
+  // Mobile register: title (identity) + status (work queue datum) + actions.
+  // Priority/location stay desktop comparison fields.
+  const columns: ColumnDef<Maintenance>[] = [
+    {
+      key: "title",
+      header: "العنوان",
+      priority: "identity",
+      render: (row) => <span className="font-medium">{row.title}</span>,
+    },
+    {
+      key: "location",
+      header: "الموقع",
+      priority: "secondary",
+      render: (row) => buildMaintenanceLocationLabel(row, properties, allUnits),
+    },
+    {
+      key: "provider",
+      header: "مزود الخدمة",
+      priority: "detail",
+      render: (row) =>
+        providerOptions.find((provider) => provider.id === row.service_provider_id)?.name
+        ?? (row.service_provider_id ? "مزود مؤرشف أو غير متاح" : "غير معين"),
+    },
+    {
+      key: "status",
+      header: "الحالة",
+      priority: "primary",
+      render: (row) => (
+        <StatusBadge
+          tone={
+            maintenanceStatusTone[row.status as keyof typeof maintenanceStatusTone] ?? "neutral"
+          }
+        >
+          {maintenanceStatusLabels[row.status as keyof typeof maintenanceStatusLabels]
+            ?? row.status
+            ?? "—"}
+        </StatusBadge>
+      ),
+    },
+    {
+      key: "priority",
+      header: "الأولوية",
+      priority: "secondary",
+      render: (row) => (
+        <StatusBadge
+          tone={
+            maintenancePriorityTone[row.priority as keyof typeof maintenancePriorityTone]
+            ?? "neutral"
+          }
+        >
+          {maintenancePriorityLabels[row.priority as keyof typeof maintenancePriorityLabels]
+            ?? row.priority
+            ?? "—"}
+        </StatusBadge>
+      ),
+    },
+    {
+      key: "action",
+      header: "الإجراء",
+      priority: "actions",
+      render: (row) => {
+        const actions = getMaintenanceStatusActions(
+          (row.status ?? "") as keyof typeof maintenanceStatusLabels,
+        );
+        return actions.length === 0 ? (
+          <span className="flex items-center gap-1 text-xs text-muted-foreground">
+            <CheckCircle2 className="size-3.5" aria-hidden="true" />
+            مكتمل
+          </span>
+        ) : (
+          <div
+            className="flex"
+            onClick={(event) => event.stopPropagation()}
+            onKeyDown={(event) => event.stopPropagation()}
+          >
+            <ActionMenu
+              label="تحديث الطلب"
+              items={[
+                {
+                  id: "details",
+                  label: "التفاصيل",
+                  icon: Eye,
+                  onClick: () => onViewDetails(row),
+                },
+                {
+                  id: "edit",
+                  label: "تعديل",
+                  icon: Edit,
+                  onClick: () => onEdit(row),
+                },
+                ...actions.map((action) => ({
+                  id: String(action.status),
+                  label: action.label,
+                  onClick: () => onStatusAction(row, action.status),
+                  disabled: actionsPending,
+                })),
+              ]}
+            />
+          </div>
+        );
+      },
+    },
+  ];
+
   return (
-    <div data-visual-wave="malek-pro">
-      <DataTable
+    <div data-visual-wave="malek-pro" data-maintenance-list>
+      <EntityTable
         aria-label="جدول طلبات الصيانة"
         mobileVisibleSecondaryKey="status"
-      rows={rows}
-      columns={[
-        {
-          key: "title",
-          header: "العنوان",
-          render: (row) => <span className="font-medium">{row.title}</span>,
-        },
-        {
-          key: "location",
-          header: "الموقع",
-          render: (row) =>
-            buildMaintenanceLocationLabel(row, properties, allUnits),
-        },
-        {
-          key: "provider",
-          header: "مزود الخدمة",
-          render: (row) => providerOptions.find((provider) => provider.id === row.service_provider_id)?.name ?? (row.service_provider_id ? 'مزود مؤرشف أو غير متاح' : 'غير معين'),
-        },
-        {
-          key: "status",
-          header: "الحالة",
-          render: (row) => (
-            <StatusBadge
-              tone={
-                maintenanceStatusTone[
-                  row.status as keyof typeof maintenanceStatusTone
-                ] ?? "neutral"
-              }
-            >
-              {maintenanceStatusLabels[
-                row.status as keyof typeof maintenanceStatusLabels
-              ] ??
-                row.status ??
-                "—"}
-            </StatusBadge>
-          ),
-        },
-        {
-          key: "priority",
-          header: "الأولوية",
-          render: (row) => (
-            <StatusBadge
-              tone={
-                maintenancePriorityTone[
-                  row.priority as keyof typeof maintenancePriorityTone
-                ] ?? "neutral"
-              }
-            >
-              {maintenancePriorityLabels[
-                row.priority as keyof typeof maintenancePriorityLabels
-              ] ??
-                row.priority ??
-                "—"}
-            </StatusBadge>
-          ),
-        },
-        {
-          key: "action",
-          header: "الإجراء",
-          render: (row) => {
-            const actions = getMaintenanceStatusActions(
-              (row.status ?? "") as keyof typeof maintenanceStatusLabels,
-            );
-            return actions.length === 0 ? (
-              <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                <CheckCircle2 className="size-3.5" aria-hidden="true" />
-                مكتمل
-              </span>
-            ) : (
-              <div
-                className="flex"
-                onClick={(event) => event.stopPropagation()}
-                onKeyDown={(event) => event.stopPropagation()}
-              >
-                <ActionMenu
-                  label="تحديث الطلب"
-                  items={[
-                    {
-                      id: "details",
-                      label: "التفاصيل",
-                      icon: Eye,
-                      onClick: () => onViewDetails(row),
-                    },
-                    {
-                      id: "edit",
-                      label: "تعديل",
-                      icon: Edit,
-                      onClick: () => onEdit(row),
-                    },
-                    ...actions.map((action) => ({
-                      id: String(action.status),
-                      label: action.label,
-                      onClick: () => onStatusAction(row, action.status),
-                      disabled: actionsPending,
-                    })),
-                  ]}
-                />
-              </div>
-            );
-          },
-        },
-      ]}
-      keyOf={(row) => row.id}
-      emptyTitle="لا توجد طلبات صيانة"
-      emptyDescription="لا توجد طلبات تطابق الفلاتر الحالية."
-
+        rows={rows}
+        columns={columns}
+        keyOf={(row) => row.id}
+        emptyTitle="لا توجد طلبات صيانة"
+        emptyDescription="لا توجد طلبات تطابق الفلاتر الحالية."
       />
     </div>
   );

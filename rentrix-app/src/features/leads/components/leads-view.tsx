@@ -120,16 +120,14 @@ export function LeadsView(props: Props) {
   }
   if (filters.status !== "all") {
     activeFilters.push({
-      key: "status",
-      label: "الحالة",
+      key: "status", label: "الحالة",
       value: statusLabels[filters.status] ?? filters.status,
       onRemove: () => onFiltersChange({ ...filters, status: "all" }),
     });
   }
   if (filters.source !== "all") {
     activeFilters.push({
-      key: "source",
-      label: "المصدر",
+      key: "source", label: "المصدر",
       value: sourceLabels[filters.source] ?? filters.source,
       onRemove: () => onFiltersChange({ ...filters, source: "all" }),
     });
@@ -436,7 +434,7 @@ function LeadRows({
 }>) {
   const columns: ColumnDef<LeadRecord>[] = [
     {
-      key: "name",
+      key: "name", priority: 'identity' as const,
       header: "العميل",
       className: "max-w-56",
       render: (row) => (
@@ -449,12 +447,12 @@ function LeadRows({
       ),
     },
     {
-      key: "source",
+      key: "source", priority: 'secondary' as const,
       header: "المصدر",
       render: (row) => sourceLabels[row.source ?? ""] ?? row.source ?? "—",
     },
     {
-      key: "budget",
+      key: "budget", priority: 'detail' as const,
       header: "الميزانية",
       render: (row) => (
         <span dir="ltr">
@@ -463,7 +461,7 @@ function LeadRows({
       ),
     },
     {
-      key: "status",
+      key: "status", priority: 'primary' as const,
       header: "الحالة",
       render: (row) => (
         <StatusBadge tone={statusTone[row.status ?? ""] ?? "neutral"}>
@@ -472,7 +470,7 @@ function LeadRows({
       ),
     },
     {
-      key: "actions",
+      key: "actions", priority: 'actions' as const,
       header: "إجراءات",
       render: (row) => (
         <RowActions

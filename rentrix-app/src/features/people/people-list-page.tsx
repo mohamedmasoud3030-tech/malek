@@ -150,8 +150,7 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
     ...(type !== "all"
       ? [
           {
-            key: "type",
-            label: "النوع",
+            key: "type", label: "النوع",
             value: personTypeLabels[type as Exclude<PersonTypeFilter, "all">],
             onRemove: () => {
               setType("all");
@@ -169,7 +168,7 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
 
   const columns: ColumnDef<Person>[] = [
     {
-      key: "name",
+      key: "name", priority: 'identity' as const,
       header: "الاسم",
       render: (person) => (
         <EntityCell
@@ -190,7 +189,7 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
       ),
     },
     {
-      key: "type",
+      key: "type", priority: 'primary' as const,
       header: "النوع",
       render: (person) => (
         <span
@@ -204,9 +203,9 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
         </span>
       ),
     },
-    { key: "phone", header: "الهاتف", render: (person) => person.phone ?? "—" },
+    { key: "phone", priority: 'secondary' as const, header: "الهاتف", render: (person) => person.phone ?? "—" },
     {
-      key: "email",
+      key: "email", priority: 'detail' as const,
       header: "البريد",
       render: (person) => (
         <span dir="ltr" className="block text-right">
@@ -215,12 +214,12 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
       ),
     },
     {
-      key: "national_id",
+      key: "national_id", priority: 'detail' as const,
       header: "رقم الهوية",
       render: (person) => person.national_id ?? "—",
     },
     {
-      key: "actions",
+      key: "actions", priority: 'actions' as const,
       header: "إجراءات",
       className: "w-40",
       render: (person) => (
@@ -360,6 +359,7 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
             <EntityTable
               aria-label="جدول الأشخاص"
               rows={rows}
+              mobileVisibleSecondaryKey="type"
               columns={columns}
               keyOf={(person) => person.id}
               isLoading={peopleQuery.isLoading}

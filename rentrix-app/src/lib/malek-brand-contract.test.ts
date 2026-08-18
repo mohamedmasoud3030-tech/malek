@@ -45,6 +45,10 @@ describe('MALEK canonical brand contract', () => {
     expect(manifest.name).toContain('MALEK');
     expect(manifest.short_name).toBe('MALEK');
     expect(manifest.icons.map((icon) => icon.src)).toEqual([
+      '/malek-icon-192.png',
+      '/malek-icon-512.png',
+      '/malek-maskable-192.png',
+      '/malek-maskable-512.png',
       '/malek-mark.svg',
       '/malek-maskable.svg',
     ]);

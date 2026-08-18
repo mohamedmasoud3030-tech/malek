@@ -114,7 +114,9 @@ export default defineConfig({
       manifest: false,
       // Keep MALEK's launch and offline identity available with the app shell.
       // Legacy Rentrix/MALIK PNGs stay on disk as unreferenced assets pending deletion.
-      includeAssets: ["offline.html", "malek-mark.svg", "malek-lockup.svg", "malek-maskable.svg"],
+      // Do not also list offline/brand assets here: workbox.globPatterns already
+      // precaches them. includeAssets + globPatterns would emit duplicate SW entries.
+      includeAssets: [],
       workbox: {
         // Measured production build on 2026-08-17 (Vite 7.3.2): a catch-all
         // asset glob precached 335 entries / 5558 KiB, including every lazy
@@ -129,6 +131,9 @@ export default defineConfig({
           "assets/*.css",
           "fonts/**/*.{css,woff2}",
           "malek-*.svg",
+          "malek-icon-*.png",
+          "malek-maskable-*.png",
+          "malek-apple-touch-180.png",
         ],
         // Legacy Rentrix/MALIK icons still sit in public/ for git history; keep
         // them out of the precache so the MALEK build ships no legacy brand asset.

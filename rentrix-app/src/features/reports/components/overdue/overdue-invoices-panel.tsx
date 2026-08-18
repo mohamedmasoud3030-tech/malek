@@ -26,15 +26,15 @@ export function OverdueInvoicesPanel({ rows, action, isLoading }: Readonly<{ row
   };
   const columns: ColumnDef<OverdueInvoiceReportRow>[] = [
     { key: 'invoice', header: 'الفاتورة', priority: 'identity', render: (row) => <Button variant="link" className="min-h-11 px-1 font-black" onClick={() => setSelected(row)}>{row.invoiceReference ?? 'فاتورة بلا مرجع'}</Button> },
-    { key: 'tenant', header: 'المستأجر', priority: 'primary', render: (row) => row.tenantName ?? 'غير محدد' },
-    { key: 'property_unit', header: 'العقار / الوحدة', priority: 'primary', render: (row) => [row.propertyTitle, row.unitNumber ? `وحدة ${row.unitNumber}` : null].filter(Boolean).join(' · ') || 'غير محدد' },
+    { key: 'tenant', header: 'المستأجر', priority: 'secondary', render: (row) => row.tenantName ?? 'غير محدد' },
+    { key: 'property_unit', header: 'العقار / الوحدة', priority: 'secondary', render: (row) => [row.propertyTitle, row.unitNumber ? `وحدة ${row.unitNumber}` : null].filter(Boolean).join(' · ') || 'غير محدد' },
     { key: 'contract', header: 'العقد', priority: 'secondary', render: (row) => row.contractReference ?? 'عقد بلا مرجع' },
     { key: 'due', header: 'الاستحقاق', priority: 'secondary', render: (row) => formatDate(row.dueDate) },
-    { key: 'aging', header: 'التعتيق', priority: 'primary', render: (row) => <StatusBadge tone={row.daysOverdue > 90 ? 'warning' : 'neutral'}>{getAgingLabel(row.daysOverdue)}</StatusBadge> },
+    { key: 'aging', header: 'التعتيق', priority: 'secondary', render: (row) => <StatusBadge tone={row.daysOverdue > 90 ? 'warning' : 'neutral'}>{getAgingLabel(row.daysOverdue)}</StatusBadge> },
     { key: 'days', header: 'أيام التأخير', priority: 'detail', render: (row) => `${formatLatinNumber(row.daysOverdue, 'ar')} يوم` },
     { key: 'gross', header: 'الأصلي', priority: 'detail', render: (row) => <span dir="ltr">{formatMoney(row.amount)}</span> },
     { key: 'paid', header: 'المدفوع', priority: 'detail', render: (row) => <span dir="ltr">{formatMoney(row.paidAmount)}</span> },
-    { key: 'remaining', header: 'المتبقي', priority: 'secondary', render: (row) => <span dir="ltr" className="font-black text-destructive">{formatMoney(row.remainingAmount)}</span> },
+    { key: 'remaining', header: 'المتبقي', priority: 'primary', render: (row) => <span dir="ltr" className="font-black text-destructive">{formatMoney(row.remainingAmount)}</span> },
     { key: 'status', header: 'الحالة', priority: 'detail', render: (row) => <StatusBadge tone="neutral">{formatInvoiceStatusLabel(row.status)}</StatusBadge> },
     { key: 'actions', header: 'إجراء', priority: 'actions', render: (row) => <Button variant="secondary" className="min-h-11" onClick={() => setSelected(row)}>عرض</Button> },
   ];
