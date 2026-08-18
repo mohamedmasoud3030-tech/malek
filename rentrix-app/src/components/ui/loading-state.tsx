@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils';
 import { Skeleton } from './skeleton';
 
-type LoadingStateVariant = 'page' | 'section' | 'cards' | 'table' | 'inline';
+type LoadingStateVariant = 'route' | 'page' | 'section' | 'cards' | 'table' | 'inline';
 
 type LoadingStateProps = {
   variant?: LoadingStateVariant;
@@ -61,6 +61,26 @@ export function LoadingState({
         {Array.from({ length: rows }).map((_, index) => (
           <Skeleton key={index} className="h-12 rounded-lg" />
         ))}
+      </div>
+    );
+  }
+
+  if (variant === 'route') {
+    return (
+      <div
+        data-loading-state
+        role="status"
+        aria-live="polite"
+        aria-label={label}
+        className={cn('space-y-6 p-6', className)}
+      >
+        <Skeleton className="h-10 w-64" />
+        <div className="grid gap-4 md:grid-cols-3">
+          <Skeleton className="h-32" />
+          <Skeleton className="h-32" />
+          <Skeleton className="h-32" />
+        </div>
+        <Skeleton className="h-80" />
       </div>
     );
   }

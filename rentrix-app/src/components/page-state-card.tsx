@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ErrorState } from '@/components/ui/error-state';
 
 type PageStateCardProps = Readonly<{
   title: string;
@@ -23,13 +24,15 @@ export function PageStateCard({ title, description, action }: PageStateCardProps
   );
 }
 
+/**
+ * Write-error surface — a variant of the shared ErrorState component.
+ *
+ * Presents a compact error card with the fixed title "لم يتم حفظ التغيير"
+ * and the caller-supplied message. Delegates to ErrorState variant="write"
+ * for a single canonical implementation.
+ */
 export function WriteErrorCard({ message }: WriteErrorCardProps) {
   return (
-    <Card role="alert" className="border-destructive/40 bg-destructive/5">
-      <CardHeader>
-        <CardTitle>لم يتم حفظ التغيير</CardTitle>
-        <CardDescription>{message}</CardDescription>
-      </CardHeader>
-    </Card>
+    <ErrorState variant="write" title="لم يتم حفظ التغيير" description={message} />
   );
 }

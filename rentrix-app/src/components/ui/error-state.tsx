@@ -10,6 +10,7 @@ type ErrorStateProps = {
   onRetry?: () => void;
   action?: ReactNode;
   compact?: boolean;
+  variant?: 'default' | 'write';
 };
 
 function resolveErrorMessage(error: unknown): string | null {
@@ -27,8 +28,23 @@ export function ErrorState({
   onRetry,
   action,
   compact = false,
+  variant = 'default',
 }: ErrorStateProps) {
   const detail = resolveErrorMessage(error);
+
+  if (variant === 'write') {
+    return (
+      <Card data-error-state role="alert" className="border-destructive/40 bg-destructive/5">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <AlertTriangle className="size-5 text-danger" />
+            {title}
+          </CardTitle>
+          <CardDescription>{description}</CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
 
   return (
     <Card data-error-state role="alert" className={compact ? 'border-danger/20' : 'border-danger/25'}>

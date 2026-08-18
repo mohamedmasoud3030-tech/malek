@@ -1,16 +1,14 @@
 import { translateSharedLabel } from '@/lib/i18n';
-import { Skeleton } from '@/components/ui/skeleton';
+import { LoadingState } from '@/components/ui/loading-state';
 
+/**
+ * Route-level loading skeleton.
+ *
+ * Thin alias over the shared `LoadingState` `route` variant so existing route
+ * components keep a stable import path. The canonical implementation lives in
+ * `components/ui/loading-state.tsx`; this file exists only to preserve the
+ * historical `RouteLoadingState` name and its Arabic accessible label.
+ */
 export function RouteLoadingState() {
-  return (
-    <div className="space-y-6 p-6" role="status" aria-live="polite" aria-label={translateSharedLabel('routeLoadingAria')}>
-      <Skeleton className="h-10 w-64" />
-      <div className="grid gap-4 md:grid-cols-3">
-        <Skeleton className="h-32" />
-        <Skeleton className="h-32" />
-        <Skeleton className="h-32" />
-      </div>
-      <Skeleton className="h-80" />
-    </div>
-  );
+  return <LoadingState variant="route" label={translateSharedLabel('routeLoadingAria')} />;
 }

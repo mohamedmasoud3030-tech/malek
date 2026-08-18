@@ -32,11 +32,6 @@
   background: hsl(var(--muted) / 0.2);
 }
 
-/* ── Page section rhythm ──────────────────── */
-[data-page-section] + [data-page-section] {
-  margin-block-start: 1.25rem;
-}
-
 /* ── Financial amount emphasis ────────────── */
 [data-financial-amount] {
   font-feature-settings: "tnum";
