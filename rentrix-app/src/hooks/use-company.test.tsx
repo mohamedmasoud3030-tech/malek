@@ -89,6 +89,8 @@ function makeFromChain() {
     return orderCalls >= 2 ? Promise.resolve(membershipsResult) : chain;
   });
   chain.single = vi.fn(() => Promise.resolve(mode === 'role' ? roleResult : membershipsResult));
+  // switchCompany reads membership with maybeSingle to avoid PostgREST 406.
+  chain.maybeSingle = vi.fn(() => Promise.resolve(mode === 'role' ? roleResult : membershipsResult));
   return chain;
 }
 

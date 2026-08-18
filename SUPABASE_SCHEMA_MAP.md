@@ -1,26 +1,28 @@
 # Supabase Schema Map
 
 Generated: 2026-08-18  
-Source of truth for this document: **repository migration chain replayed into disposable PGlite** (281 / 281 files).  
-Live Production (`nnggcnpcuomwfuupupwg`): **Not verifiable remotely** in this sandbox (no `SUPABASE_DB_URL`, no `psql`, no management token). Historical read-only snapshot: `evidence/preflight/production_live_reconciliation_20260721.md`.
+Source of truth for this document: **repository migration chain replayed into disposable PGlite**.  
+Live Production (`nnggcnpcuomwfuupupwg`): **Not verifiable remotely** from this sandbox (outbound TLS blocked). Historical read-only snapshot: `evidence/preflight/production_live_reconciliation_20260721.md`.
 
 This map describes the schema the repository builds today. It is not a claim that Production matches it.
 
 ## 1. Inventory (Confirmed — PGlite replay)
 
-| Object | Count |
+| Object | Count (after `20260831000000`) |
 |---|---:|
-| SQL migrations applied | 281 |
+| SQL migrations applied | **282** |
 | Public tables | 114 |
-| Public views / materialized | 11 |
+| Public views | 11 |
 | RLS policies | 229 |
 | Foreign keys | 257 |
-| Indexes | 377 |
+| Indexes | **401** (was 377) |
 | Public functions / RPCs | 342 |
 | Tables with `company_id` | 99 |
 | Tables with RLS disabled | **0** |
+| Unindexed public FKs | **84** (was 102) |
+| Hot-path unindexed FKs (operational tables) | **0** after index migration |
 
-Every public table has RLS enabled. Isolation scan (`findIsolationViolations`) reports no missing company fence on tenant tables.
+Every public table has RLS enabled. Isolation scan (`findIsolationViolations` / `db0:isolation`) reports no missing company fence on tenant tables when the full gate is run.
 
 ## 2. Tenant and write authority
 
@@ -42,7 +44,7 @@ Every public table has RLS enabled. Isolation scan (`findIsolationViolations`) r
 | `role_has_app_permission(role, permission)` | six-role **catalog** (intended capability) |
 | `current_user_has_effective_app_permission(...)` | catalog + per-user grants; used by some resources (e.g. service providers) |
 
-`role_has_app_permission` still lists `properties.write` / `contracts.write` / `expenses.write` / `documents.write` for `OPERATIONS`. That is catalog capacity. **Current RLS/RPC write authority for those four is `is_admin_or_manager()` only.** The frontend now follows RLS (`serverEnforcedWriteRoles`). Do not change the SQL catalog in this PR — `supabase/tests/wp01_six_role_authorization.sql` locks it.
+`role_has_app_permission` still lists `properties.write` / `contracts.write` / `expenses.write` / `documents.write` for `OPERATIONS`. That is catalog capacity. **Current RLS/RPC write authority for those four is `is_admin_or_manager()` only.** The frontend follows RLS (`serverEnforcedWriteRoles`). Do not change the SQL catalog casually — `supabase/tests/wp01_six_role_authorization.sql` locks it.
 
 ### Core entity write policies
 
@@ -105,34 +107,33 @@ All 11 public views use `security_invoker = true` (Confirmed — replay). They i
 
 ## 5. Foreign keys and indexes
 
-- 257 FKs, 377 indexes (Confirmed — replay).
-- Existing additive FK-index migration: `20260820090000_rc1_release_integration_fk_indexes.sql` (`owner_funds_events.owner_id` / `contract_id`).
-- Unindexed-FK scan on the replayed schema found **102** FKs with no supporting index (or no index whose leading column is the FK). The largest cluster is `*_company_id_fkey` on tenant tables plus journal-batch / tax-snapshot / settlement-link FKs.
+- 257 FKs, **401** indexes after `20260831000000_hot_path_fk_covering_indexes.sql`.
+- Prior additive FK-index migration: `20260820090000_rc1_release_integration_fk_indexes.sql`.
+- **This pass** closed the operational hot-path unindexed FK set (company_id on core registers + receipt_allocations.receipt_id + settlement link settlement/company pairs + maintenance expense/invoice reverse links + deposit reversal link).
+- Remaining **84** unindexed FKs are mostly lower-traffic automation/AI/history tables. They are documented, not auto-indexed in bulk (over-indexing risk without workload proof).
 
-**No new index migration is included in this PR.** Adding ~100 indexes without a live workload or advisor confirmation is REQUIRES CARE. Historical Production advisor (2026-07-21) already listed unindexed FKs and unused-index warnings. Revisit with a hosted read-only advisor after backup/deploy policy is resolved.
-
-Suspicious type/shape items (`payments.invoice_id`, `maintenance_records.invoice_id`, `account_balances.account_id`, legacy `profiles.roles`, company locale defaults) were **not changed**. No active write path was proven to depend on “fixing” them.
+Suspicious type/shape items (`payments.invoice_id` optional shadow, legacy `profiles.roles`, company locale defaults) were **not changed**. No active write path was proven to require a destructive type rewrite in this pass.
 
 ## 6. Auth hook (repo-proven; hosted enablement not verifiable)
 
 | Check | Repo status |
 |---|---|
 | Function `public.custom_access_token_hook(jsonb)` exists | Confirmed |
-| `SECURITY DEFINER` + pinned `search_path` | Confirmed (`struct.hook_definer_search_path`) |
-| EXECUTE granted only to `supabase_auth_admin` | Confirmed (`struct.hook_grants`) |
+| `SECURITY DEFINER` + pinned `search_path` | Confirmed |
+| EXECUTE granted only to `supabase_auth_admin` | Confirmed |
 | Stamps membership company + `user_role`; ignores spoofed incoming claim | Confirmed |
 | No membership / inactive membership → no `company_id` | Confirmed |
-| Missing JWT company claim → `current_company_id()` is null | Confirmed (`auth.current_company_missing_claim`) |
+| Missing JWT company claim → `current_company_id()` is null | Confirmed |
 | Hosted Auth Hook toggle enabled on the project | **Not verifiable remotely** (`GAP-003/021`) |
 
-Production action (manual, outside this PR): in the Supabase dashboard for project `nnggcnpcuomwfuupupwg`, Auth → Hooks → enable `custom_access_token_hook` on access-token issuance. RLS trusts the **issued** claim; if the hook is off, a minted JWT that already contains another `company_id` is trusted.
+Production action (manual, outside autonomous apply): Supabase dashboard → Auth → Hooks → enable `custom_access_token_hook` on access-token issuance if not already on.
 
 ## 7. Compatibility notes
 
-- This PR changes **no** database objects, RLS policies, grants, or RPC signatures.
-- Frontend write affordances for `properties.write`, `contracts.write`, `expenses.write`, and `documents.write` now require ADMIN or MANAGER even if a per-user grant exists. OPERATIONS keeps `service_providers.write`.
+- New migration is **index-only** (`CREATE INDEX IF NOT EXISTS`). No RLS, grant, RPC, or column change.
+- Frontend query contracts continue to use explicit FK hint names (`!contracts_property_id_fkey`) to avoid PostgREST ambiguity.
 - Catalog SQL (`role_has_app_permission`) is unchanged.
 
 ## 8. Live drift
 
-**Not verifiable remotely.** Last hosted ledger comparison (2026-07-21) found remote-only historical versions and three then-pending local files, plus automatic Production deploy blocked by “Remote migration versions not found in local migrations directory.” Backup: Free plan, no restorable artifact. Production writes remain **HOLD**. See `SUPABASE_MIGRATION_AUDIT.md`.
+**Not verifiable remotely** from this sandbox. Last hosted ledger comparison (2026-07-21) found remote-only historical versions and pending local files, plus automatic Production deploy blocked by remote-only versions. Backup: Free plan, no restorable artifact. Production writes remain **HOLD**. See `SUPABASE_MIGRATION_AUDIT.md`.

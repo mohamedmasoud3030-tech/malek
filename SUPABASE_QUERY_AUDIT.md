@@ -1,172 +1,187 @@
 # Supabase Query Audit
 
 Generated: 2026-08-18  
-Scope: browser query paths in `rentrix-app/src` against the current PostgREST contract.  
-Live row counts / 406 traces: **Not verifiable remotely**. Defects below are proven from source + unit tests + the already-green RLS matrix.
+Scope: browser query paths in `rentrix-app/src` against the current PostgREST contract + structural index support.  
+Live row counts / 406 traces: **Not verifiable remotely** (sandbox egress). Defects below are proven from source + unit tests + PGlite inventory.
 
 ## How to read statuses
 
 | Status | Meaning |
 |---|---|
-| Confirmed | Source + regression test (and/or PGlite RLS) prove the defect or the fix |
+| Confirmed | Source + regression test (and/or PGlite inventory) prove the defect or the fix |
 | Probable | Same pattern as a confirmed defect; not yet given its own failing-then-fixed test |
 | Not verifiable remotely | Needs hosted PostgREST / Production data |
 
-## 1. Confirmed defects fixed in this PR
+---
+
+## 1. Confirmed defects fixed (this program of work)
 
 ### Q1 — OPERATIONS UI offered writes RLS always denies
 
 | Field | Value |
 |---|---|
-| Status | Confirmed |
-| Evidence | Frontend `OPERATIONS` default set included `properties.write`, `contracts.write`, `expenses.write`, `documents.write` (`permissions.ts`). RLS / atomic RPCs / vault + storage mutations use `is_admin_or_manager()` (`20250101000002` and later). RLS matrix case `rls.operationsA.insert.properties` already denied the insert. |
-| Root cause | Catalog capacity (`role_has_app_permission`) was copied into the UI. Database authority is narrower. Per-user `grantedPermissions` could also light up those actions. |
-| Severity | High (fail-closed, but users see actions that always 403) |
-| Fix | `serverEnforcedWriteRoles` fence in `canAccess`. Strip the four writes from the OPERATIONS default set. Keep `service_providers.write` (DB-enforced via `current_user_has_effective_app_permission`). Grants cannot bypass the fence. |
-| Compatibility | Additive frontend contract. SQL catalog unchanged. ADMIN/MANAGER unchanged. |
-| Migration | None |
-| Rollback | Revert `permissions.ts` + auth tests |
-| Verification | `permissions.test.ts`, `r5-authorization-matrix.test.ts` |
-| Tests | OPERATIONS write cells now `false`. USER + `properties.write` grant stays read-only. USER + `service_providers.write` grant still opens shell write posture. |
-
-### Q2 — `getProperty` used `.single()` (406 / phantom array)
-
-| Field | Value |
-|---|---|
-| Status | Confirmed |
-| Evidence | `property-service.ts` called `.single()`. Existing comments already documented 406 and `200 + []` phantom property UI. Callers (`useProperty`) treat `null` as empty. |
-| Root cause | PostgREST `.single()` errors on 0 rows (406) and does not normalize a lenient empty array. |
-| Severity | Medium (detail page errors or renders a blank property) |
-| Fix | `.maybeSingle()` + keep array-normalize to `null` |
-| Compatibility | Return type stays `Property \| null` |
-| Migration | None |
-| Rollback | Revert `getProperty` |
-| Tests | `property-service.test.ts` — empty array → null; maybeSingle null → null; real error still throws |
-
-### Q3 — `getContract` used `.single()`
-
-| Field | Value |
-|---|---|
-| Status | Confirmed |
-| Evidence | `contractService.ts`. `ContractDetailPage` already branches `isError` vs empty (`!data`). A 406 became an error instead of “العقد غير موجود”. |
-| Root cause | Same as Q2 |
-| Severity | Medium |
-| Fix | `.maybeSingle()`, return `ContractDetail \| null`, array-normalize |
-| Compatibility | Callers already handle null |
-| Migration | None |
-| Tests | `contractService.test.ts` missing-row suite |
-
-### Q4 — `getUnitDetail` used `.single()`
-
-| Field | Value |
-|---|---|
-| Status | Confirmed |
-| Evidence | `unit-service.ts` PK lookup |
-| Root cause | Same as Q2 |
-| Severity | Medium |
-| Fix | `.maybeSingle()`; if `!data` throw the existing Arabic not-found. Return type stays `UnitDetail`. |
-| Tests | `unit-service.test.ts` |
-
-### Q5 — `getLandDossier` used `.single()`
-
-| Field | Value |
-|---|---|
-| Status | Confirmed |
-| Evidence | `lands-service.ts` |
-| Root cause | Same as Q2 |
-| Severity | Medium |
-| Fix | `.maybeSingle()` then the existing not-found throw |
-| Tests | `lands-service.test.ts` |
-
-### Q6 — `getPerson` used `.single()`
-
-| Field | Value |
-|---|---|
-| Status | Confirmed |
-| Evidence | `people-service.ts` then `requirePersonData` |
-| Root cause | Same as Q2 |
-| Severity | Medium |
-| Fix | `.maybeSingle()` then `requirePersonData` |
-| Tests | `people-service.test.ts` |
-
-### Q7 — `listPropertyTitles` unbounded, unordered
-
-| Field | Value |
-|---|---|
-| Status | Confirmed |
-| Evidence | `property-service.ts` selected `id, title` with no `order` and no `.range()`. Used by reports occupancy labels (`reports-page.helpers.ts`). PostgREST silently caps at 1000. Missing titles render as “عقار بدون اسم”. |
-| Root cause | Unpaged PostgREST read |
-| Severity | Medium (silent wrong occupancy labels above 1000 properties) |
-| Fix | `.order('title').order('id')` + `fetchAllRows` (page 1000, max 20). **Fail closed** on truncation — the hook does not expose a warning. |
-| Compatibility | Same return type `PropertyTitleRow[]` |
-| Tests | `property-service.test.ts` listPropertyTitles suite |
-
-### Q8 — `listPeople` order was only `created_at`
-
-| Field | Value |
-|---|---|
-| Status | Confirmed (non-deterministic pagination on ties) |
-| Evidence | `people-service.ts` |
-| Fix | Also `.order('id', { ascending: false })` to match properties/contracts |
-| Severity | Low |
+| Status | Confirmed (prior + still valid) |
+| Fix | `serverEnforcedWriteRoles` fence in `canAccess` |
 | Migration | None |
 
-## 2. Remaining query issues (not changed)
+### Q2–Q6 — Core detail reads used `.single()` (property/contract/unit/land/person)
 
-### Same-class `.single()` PK lookups — Probable
+| Field | Value |
+|---|---|
+| Status | Confirmed (prior) |
+| Fix | `.maybeSingle()` + null / Arabic not-found |
+| Tests | property/contract/unit/land/people service tests |
 
-Insert/update `.single()` after a write that must return one row is **intentional** and left alone.
+### Q7 — `listPropertyTitles` unbounded / unordered
 
-Remaining **read** `.single()` PK lookups (same 406 / phantom-array class as Q2–Q6):
+| Field | Value |
+|---|---|
+| Status | Confirmed (prior) |
+| Fix | deterministic order + `fetchAllRows` fail-closed ceiling |
+
+### Q8 — `listPeople` order only `created_at`
+
+| Field | Value |
+|---|---|
+| Status | Confirmed (prior) |
+| Fix | secondary `.order('id')` |
+
+### Q9 — Remaining critical detail reads used `.single()` (this branch)
+
+| Field | Value |
+|---|---|
+| Status | **Confirmed → fixed** |
+| Surfaces | `getOwner`, `getInvoiceDetail`, `getTenantDossier`, `getReceiptDetail`, expense re-read, `getServiceProvider`, leads status pre-read, contextual document replace |
+| Root cause | PostgREST 406 on zero rows; UI treated as hard failure / “missing data” |
+| Fix | `.maybeSingle()` + array-normalize + Arabic not-found |
+| Migration | None |
+| Tests | owners/invoices/receipts (+ related) suites PASS |
+
+### Q10 — Owners hub listed soft-deleted owners
+
+| Field | Value |
+|---|---|
+| Status | **Confirmed → fixed** |
+| Evidence | `listOperationalOwners` filtered `deleted_at`; `listOwners` did not |
+| Fix | `.is('deleted_at', null)` on `listOwners` |
+| Impact | Hub vs detail / property-owner joins no longer disagree |
+
+### Q11 — Utility lists non-deterministic page order
+
+| Field | Value |
+|---|---|
+| Status | **Confirmed → fixed** |
+| Evidence | `listUtilityMeters` / `listUtilityBills` ordered by date only while using `fetchAllRows` |
+| Fix | secondary `.order('id', { ascending: false })`; bill balance pre-read uses `maybeSingle` |
+| Tests | `utilities-service.test.ts` source contract |
+
+### Q12 — Company switch membership read used `.single()`
+
+| Field | Value |
+|---|---|
+| Status | **Confirmed → fixed** |
+| Evidence | `use-company.tsx` `switchCompany` role lookup |
+| Fix | `.maybeSingle()` + fail closed with `ACTIVE_COMPANY_ERROR` if membership vanished |
+| Tests | `use-company.test.tsx`, `use-company-regression.test.ts` |
+
+### Q13 — Hot-path FKs lacked supporting indexes (structural / performance)
+
+| Field | Value |
+|---|---|
+| Status | **Confirmed → fixed (repo migration)** |
+| Evidence | PGlite inventory: 102 unindexed FKs; 24 on operational hot tables (company_id on properties/units/people/owners/…, `receipt_allocations.receipt_id`, settlement link settlement side, maintenance expense/invoice FKs) |
+| Root cause | Multi-tenant `company_id` FKs added without leading indexes; relationship reverse lookups used unindexed columns |
+| Fix | Additive migration `20260831000000_hot_path_fk_covering_indexes.sql` |
+| Result | indexes 377→401; unindexed FK 102→84; **hot-path unindexed = 0** |
+| Compatibility | Index-only; no RLS/RPC change |
+| Live apply | **Not applied to Production** — see migration audit approval gate |
+| Tests | `hot-path-fk-index-migration.contract.test.ts`; inventory replay |
+
+---
+
+## 2. Remaining query notes (not changed this pass)
+
+### Intentional write-path `.single()`
+
+Insert/update `.select('*').single()` after a mutation that must return exactly one row remains correct (create owner/person/unit, vault upload, category create, maintenance RPC payloads).
+
+### Probable same-class reads still using `.single()` on niche paths
 
 | Path | Notes |
 |---|---|
-| `owners/services/owner-service.ts` `getOwner` | Same as `getPerson` |
-| `financials/invoices/invoiceService.ts` `getInvoiceDetail` | Same as `getContract` |
-| `maintenance/maintenance-service.ts` get-by-id | PK lookup |
-| `tenants/tenantWorkspaceService.ts` | PK lookup |
-| `service-providers/service-provider-service.ts` | mix of read + write |
-| `documents` / `contractDocumentsService` / `documents-vault` | some reads, some writes |
-| `settings/companySettingsService.ts`, `costCenterService.ts`, `paymentTermsService.ts` | singleton-ish |
-| `use-company.tsx` membership `.single()` | after the company is already known; fail-closed path exists |
+| `settings/companySettingsService.ts`, cost centers, payment terms | singleton-ish writes/reads |
+| `documents-vault` upload return | write path |
+| `utilities` create/update meter/bill return | write path (read pre-check fixed) |
+| `deposits` some RPC wrappers | write path |
 
-Left out of this PR to keep the change set to the already-proven call sites. Next pass should convert the remaining **read** lookups to `.maybeSingle()` with the same null / not-found contract.
+### Inner joins that intentionally hide parents
 
-### Unbounded / under-ordered lists — Probable
+| Path | Behavior |
+|---|---|
+| `listOwnerProperties` `property_owners!inner` | Correct: only properties linked to the owner |
+| `listInvoicesForProperty` `contracts!inner` | Correct: invoices for contracts of that property |
+| Command palette contract search `!inner` on property/tenant | Correct: search requires both labels |
+| Company membership `companies!inner` | Correct: only active companies |
 
-`listContracts` / `listProperties` / `listUnits` / owner lists already page or use `fetchAllRows` with deterministic order. Other feature lists (lands after fetchAllRows, communication, leads) were not re-proven here.
+These are **not** defects.
 
-### Live data integrity — Not verifiable remotely
+### Explicit FK relationship hints
 
-Cannot compare Production row counts, orphan FKs, or 406 rates without hosted read-only access.
+Contract/tenant/people/deposit selects use `!contracts_property_id_fkey` / `!contracts_tenant_id_fkey` / `!contracts_unit_id_fkey` to prevent PostgREST ambiguous-relationship errors. Keep this pattern when adding new embeds.
 
-### Unindexed FKs — Confirmed in repo replay, not fixed
+### Unbounded reads
 
-102 FKs lack a supporting index in PGlite. Mostly `company_id` plus journal-batch / tax / settlement links. **No index migration in this PR** (REQUIRES CARE; needs live advisor + workload). See `SUPABASE_SCHEMA_MAP.md` §5.
+High-traffic lists use `fetchAllRows` or range pagination. Remaining low-traffic admin lists were not re-proven; prefer `fetchAllRows` + deterministic order when touching them.
 
-### Auth hook hosted enablement — Not verifiable remotely
+### Live data integrity
 
-Repo function, grants, and fail-closed claim handling are proven. The dashboard toggle is a production action (`GAP-003/021`).
+Cannot compare Production row counts, orphan FKs, or real 406 rates without hosted read-only access.
+
+---
 
 ## 3. RLS impact
 
-None. No policy, grant, or RPC body was edited. The frontend now **hides** actions the database already denied.
+- Index migration: **none** (no policy change).
+- Query fixes: **none** (still company-scoped SELECT).
+- Frontend write fence (Q1): aligns UI with existing RLS.
+
+---
 
 ## 4. Compatibility / rollback
 
-- Frontend-only. No schema change.
-- Rollback = revert the listed TypeScript files.
-- OPERATIONS users lose four write buttons they could not successfully use.
-
-## 5. Verification / tests
-
-| Suite | What it covers |
+| Change | Rollback |
 |---|---|
-| `permissions.test.ts` / `r5-authorization-matrix.test.ts` | Fence + OPERATIONS matrix |
-| `property-service.test.ts` | `getProperty`, `listPropertyTitles` |
-| `contractService.test.ts` | `getContract` null path |
-| `unit-service.test.ts` / `people-service.test.ts` / `lands-service.test.ts` | not-found paths |
-| `scripts/supabase-tests/rls-matrix.mjs` | extra hook `search_path` + missing-claim fail-closed |
-| `pnpm test:supabase` | key scan + RLS matrix + visibility Vitest |
+| Query `.maybeSingle` / soft-delete filters | Revert TypeScript files |
+| Index migration | `DROP INDEX IF EXISTS` each named index |
+| Write fence | Revert `permissions.ts` |
 
-Exact counts after this PR: `SUPABASE_TEST_RESULTS.md`.
+---
+
+## 5. Verification / tests (this session)
+
+| Suite | Result |
+|---|---|
+| PGlite schema inventory (full replay) | 282 migrations; 401 indexes; hot unindexed FK 0 |
+| Migration hygiene guard | OK |
+| `use-company` + regression | 19 PASS |
+| utilities service | 6 PASS |
+| hot-path index contract | 2 PASS |
+| owners / invoices / receipts (prior visibility pack) | included in earlier 110 PASS set |
+| typecheck | PASS |
+| Privileged-key scan | PASS (prior) |
+| Hosted PostgREST | Not executable here |
+
+---
+
+## 6. Page → query → structural support (summary)
+
+| Domain | Primary query pattern | Structural support after this pass |
+|---|---|---|
+| Today dashboard | RPC `rpt_dashboard_*` | unchanged RPCs |
+| Properties / units / people / owners | company RLS lists + detail maybeSingle | **company_id indexes added** |
+| Contracts / tenants | FK-hinted embeds | existing property/unit/tenant indexes + company index |
+| Invoices / payments / receipts | lists + receipt allocation batch | **receipt_id + company indexes** |
+| Owner settlements | settlement link tables | **settlement_id, company_id pair indexes** |
+| Maintenance | company lists + reverse expense/invoice | **company + expense/invoice indexes** |
+| Utilities | fetchAllRows meters/bills | **company indexes + deterministic order** |
+| Vault / leads / communication | company lists | **company indexes** |

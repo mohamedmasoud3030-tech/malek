@@ -15,6 +15,17 @@ describe('utilities real implementation - no mock data', () => {
     expect(content).not.toMatch(/شركة كهرباء مسقط/);
   });
 
+  it('lists meters and bills with deterministic order and paged reads', () => {
+    const servicePath = resolve(import.meta.dirname, './utilities-service.ts');
+    const content = readFileSync(servicePath, 'utf8');
+    expect(content).toContain('fetchAllRows');
+    expect(content).toContain(".order('created_at', { ascending: false })");
+    expect(content).toContain(".order('due_date', { ascending: false })");
+    // Secondary id order prevents duplicate/missing pages on timestamp ties.
+    expect(content.match(/\.order\('id', \{ ascending: false \}\)/g)?.length ?? 0).toBeGreaterThanOrEqual(2);
+    expect(content).toContain('.maybeSingle()');
+  });
+
   it('page file does not contain hardcoded mock bills', () => {
     const pagePath = resolve(import.meta.dirname, './utilities-page.tsx');
     const content = readFileSync(pagePath, 'utf8');

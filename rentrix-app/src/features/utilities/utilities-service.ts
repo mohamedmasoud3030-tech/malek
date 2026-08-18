@@ -207,7 +207,14 @@ function toBillPayload(values: UtilityBillFormValues) {
 }
 
 export async function listUtilityMeters(propertyId?: string): Promise<UtilityMeter[]> {
-  let query: any = supabase.from('utility_meters' as any).select('*').is('deleted_at', null).order('created_at', { ascending: false });
+  // Deterministic order (created_at + id) keeps paged fetchAllRows stable when
+  // multiple meters share the same timestamp.
+  let query: any = supabase
+    .from('utility_meters' as any)
+    .select('*')
+    .is('deleted_at', null)
+    .order('created_at', { ascending: false })
+    .order('id', { ascending: false });
   if (propertyId) query = query.eq('property_id', propertyId);
 
   try {
@@ -281,7 +288,14 @@ export async function softDeleteUtilityMeter(id: string): Promise<void> {
 }
 
 export async function listUtilityBills(filter?: { propertyId?: string; status?: UtilityBillStatus; meterId?: string }): Promise<UtilityBill[]> {
-  let query = (supabase as any).from('utility_bills').select('*').is('deleted_at', null).order('due_date', { ascending: false });
+  // Deterministic order (due_date + id) avoids duplicated/missing rows across
+  // paged reads when due dates collide.
+  let query = (supabase as any)
+    .from('utility_bills')
+    .select('*')
+    .is('deleted_at', null)
+    .order('due_date', { ascending: false })
+    .order('id', { ascending: false });
   if (filter?.propertyId) query = query.eq('property_id', filter.propertyId);
   if (filter?.meterId) query = query.eq('meter_id', filter.meterId);
 
@@ -340,12 +354,14 @@ async function resolveBillAmounts(id: string, values: Partial<UtilityBillFormVal
     .select('amount,paid_amount')
     .eq('id', id)
     .is('deleted_at', null)
-    .single() as any);
+    .maybeSingle() as any);
   if (error) handleSupabaseError(error, 'تعذر تحميل رصيد فاتورة المرافق');
+  const row = Array.isArray(data) ? data[0] ?? null : data;
+  if (!row) throw new Error('فاتورة المرافق غير موجودة أو غير متاحة لصلاحياتك.');
 
   return {
-    amount: values.amount ?? Number(data?.amount ?? 0),
-    paidAmount: values.paid_amount ?? Number(data?.paid_amount ?? 0),
+    amount: values.amount ?? Number(row.amount ?? 0),
+    paidAmount: values.paid_amount ?? Number(row.paid_amount ?? 0),
   };
 }
 
