@@ -78,7 +78,10 @@ describe('P6b — owner and property operational dossiers (closeout)', () => {
 
   it('keeps property financial context property-scoped in the shared service', () => {
     const service = read('../services/property-workspace-service.ts');
-    expect(service).toContain('propertyContractIds.has(invoice.contract_id)');
+    expect(service).toContain('listInvoicesForProperty');
+    expect(service).not.toContain("listInvoices({ search: '', status: 'all' })");
+    expect(service).toContain('listContractsForProperty');
+    expect(service).not.toContain('pageSize: 50');
   });
 
   it('gates owner edit affordances with the canonical owners write gate (owners.hub.view)', () => {

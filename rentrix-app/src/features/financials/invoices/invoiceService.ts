@@ -1,3 +1,4 @@
+import { fetchAllRows } from '@/lib/paginatedRead';
 import { supabase } from '@/lib/supabase';
 import type { Invoice, Payment } from '@/types/domain';
 import { getInvoiceStatusVariants } from '../components/invoice-status-labels';
@@ -46,22 +47,45 @@ export function summarizeInvoices(invoices: Array<Pick<Invoice, 'amount' | 'paid
   );
 }
 
+function applyInvoiceSearch<Q extends { or(filters: string): Q }>(query: Q, search: string): Q {
+  if (!search) return query;
+  const escaped = search.replaceAll('%', '\\%').replaceAll('_', '\\_');
+  const term = `"%${escaped}%"`;
+  return query.or(`id.ilike.${term},status.ilike.${term}`);
+}
+
 export async function listInvoices(params: InvoiceStatusFilter | InvoiceListParams): Promise<InvoiceListItem[]> {
   const status = typeof params === 'string' ? params : params.status;
   const search = typeof params === 'string' ? '' : params.search?.trim() ?? '';
-  let query = supabase.from('invoices').select(invoiceSelect).is('deleted_at', null).order('due_date', { ascending: false });
 
-  query = applyStatusFilter(query, status);
+  // PostgREST silently caps a single response at 1000 rows. Walking pages
+  // keeps list totals from going quietly wrong once a company exceeds that.
+  const { rows } = await fetchAllRows<InvoiceListItem>(() => {
+    let query = supabase.from('invoices').select(invoiceSelect).is('deleted_at', null).order('due_date', { ascending: false });
+    query = applyStatusFilter(query, status);
+    query = applyInvoiceSearch(query, search);
+    return query as never;
+  });
+  return rows;
+}
 
-  if (search) {
-    const escaped = search.replaceAll('%', '\\%').replaceAll('_', '\\_');
-    const term = `"%${escaped}%"`;
-    query = query.or(`id.ilike.${term},status.ilike.${term}`);
-  }
-
-  const { data, error } = await query.returns<InvoiceListItem[]>();
-  if (error) throw error;
-  return data ?? [];
+/**
+ * Property-scoped invoice read. Filters through the contract inner join so
+ * the browser never downloads the company-wide invoice table and then
+ * discards other properties in memory.
+ */
+export async function listInvoicesForProperty(propertyId: string): Promise<InvoiceListItem[]> {
+  const { rows } = await fetchAllRows<InvoiceListItem>(() =>
+    supabase
+      .from('invoices')
+      .select(invoiceSelectWithContractFilter)
+      .is('deleted_at', null)
+      .is('contracts.deleted_at', null)
+      .eq('contracts.property_id', propertyId)
+      .order('due_date', { ascending: false })
+      .order('id', { ascending: false }) as never,
+  );
+  return rows;
 }
 
 export async function getInvoiceDetail(invoiceId: string): Promise<InvoiceDetail> {
@@ -122,12 +146,7 @@ export async function listInvoicesPaginated(params: InvoicePaginationParams): Pr
   if (hasContractFilter) query = query.is('contracts.deleted_at', null);
   if (tenantId) query = query.eq('contracts.tenant_id', tenantId);
   if (propertyId) query = query.eq('contracts.property_id', propertyId);
-
-  if (search) {
-    const escaped = search.replaceAll('%', '\\%').replaceAll('_', '\\_');
-    const term = `"%${escaped}%"`;
-    query = query.or(`id.ilike.${term},status.ilike.${term}`);
-  }
+  query = applyInvoiceSearch(query, search?.trim() ?? '');
 
   const { data, error, count } = await query.range(from, to).returns<InvoiceListItem[]>();
   if (error) throw error;

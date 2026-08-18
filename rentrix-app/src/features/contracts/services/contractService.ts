@@ -72,6 +72,21 @@ export async function listContracts(params: ContractListParams): Promise<Paginat
  * `truncated` flag and visibly blocks complete-result assumptions, so this is
  * an intentional opt-in to the partial-read contract.
  */
+export async function listContractsForProperty(propertyId: string): Promise<ContractListItem[]> {
+  const { rows } = await fetchAllRows<ContractListItem>(
+    () =>
+      supabase
+        .from('contracts')
+        .select(CONTRACT_BASE_SELECT)
+        .is('deleted_at', null)
+        .eq('property_id', propertyId)
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
+        .returns<ContractListItem[]>(),
+  );
+  return rows;
+}
+
 export async function listAllContracts(status: ContractStatusFilter = 'all'): Promise<AllContractsRead> {
   const buildQuery = () => {
     let query = supabase
