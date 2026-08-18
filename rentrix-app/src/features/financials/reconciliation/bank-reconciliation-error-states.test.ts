@@ -51,3 +51,17 @@ describe('payment terms settings error honesty', () => {
     );
   });
 });
+
+describe('bank reconciliation mobile register hierarchy', () => {
+  const page = readFileSync(
+    resolve(import.meta.dirname, './bank-reconciliation-page.tsx'),
+    'utf8',
+  );
+
+  it('surfaces amount as the mobile primary datum for unmatched money work', () => {
+    expect(page).toContain('mobileVisibleSecondaryKey="amount"');
+    expect(page).toContain("priority: 'identity'");
+    expect(page).toContain("priority: 'primary'");
+    expect(page).toContain("priority: 'actions'");
+  });
+});

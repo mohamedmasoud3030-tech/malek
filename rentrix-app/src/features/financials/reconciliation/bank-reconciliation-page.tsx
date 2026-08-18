@@ -14,7 +14,6 @@ import { PageStateCard, WriteErrorCard } from '@/components/page-state-card';
 import { ActiveFilterBar, type ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { EntityCard } from '@/components/ui/entity-card';
 import { EntityForm } from '@/components/ui/entity-form';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { ErrorState } from '@/components/ui/error-state';
@@ -379,20 +378,31 @@ function BankStatementLinesTable({
   isIgnoring: boolean;
 }>) {
   const columns: ColumnDef<BankStatementLine>[] = [
-    { key: 'date', header: 'التاريخ', render: (line) => formatDate(companySettings, line.transaction_date) },
-    { key: 'description', header: 'الوصف', render: (line) => <span className="font-bold">{line.description}</span> },
-    { key: 'reference', header: 'المرجع', render: (line) => line.reference ?? '—' },
-    { key: 'amount', header: 'المبلغ', render: (line) => <span dir="ltr" className="font-black tabular-nums">{formatCompanyMoney(companySettings, line.amount)}</span> },
-    { key: 'status', header: 'الحالة', render: (line) => <StatusBadge tone={statusTone(line.status)}>{statusLabels[line.status]}</StatusBadge> },
+    { key: 'date', header: 'التاريخ', priority: 'secondary', render: (line) => formatDate(companySettings, line.transaction_date) },
+    { key: 'description', header: 'الوصف', priority: 'identity', render: (line) => <span className="font-bold">{line.description}</span> },
+    { key: 'reference', header: 'المرجع', priority: 'detail', render: (line) => line.reference ?? '—' },
+    {
+      key: 'amount',
+      header: 'المبلغ',
+      priority: 'primary',
+      render: (line) => <span dir="ltr" className="font-black tabular-nums">{formatCompanyMoney(companySettings, line.amount)}</span>,
+    },
+    {
+      key: 'status',
+      header: 'الحالة',
+      priority: 'secondary',
+      render: (line) => <StatusBadge tone={statusTone(line.status)}>{statusLabels[line.status]}</StatusBadge>,
+    },
     {
       key: 'action',
       header: 'الإجراء',
-      render: (line) => line.status === 'unmatched' ? (
+      priority: 'actions',
+      render: (line) => (line.status === 'unmatched' ? (
         <div className="flex gap-2">
           <Button variant="secondary" className="min-h-11 px-3 text-xs" onClick={() => onMatch(line)}>مطابقة</Button>
           <Button variant="secondary" className="min-h-11 px-3 text-xs" disabled={isIgnoring} onClick={() => onIgnore(line.id)}>تجاهل</Button>
         </div>
-      ) : '—',
+      ) : '—'),
     },
   ];
 
@@ -402,7 +412,7 @@ function BankStatementLinesTable({
       rows={lines}
       columns={columns}
       keyOf={(line) => line.id}
-      mobileVisibleSecondaryKey="status"
+      mobileVisibleSecondaryKey="amount"
       emptyTitle="لا توجد حركات كشف"
       emptyDescription="لا توجد حركات تطابق الفلاتر الحالية."
     />

@@ -1,8 +1,8 @@
-import { Building2, Eye, LinkIcon, Pencil, Users } from 'lucide-react';
+import { Eye, LinkIcon, Pencil, Users } from 'lucide-react';
 import { useState } from 'react';
 import { ActionMenu } from '@/components/ui/action-menu';
 import { Button } from '@/components/ui/button';
-import { DataTable } from '@/components/ui/data-table';
+import { DataTable, type ColumnDef } from '@/components/ui/data-table';
 import { EmptyState } from '@/components/empty-state';
 import { EntityCell } from '@/components/ui/entity-cell';
 import { EntityPreviewDialog } from '@/components/ui/entity-preview-dialog';
@@ -97,8 +97,57 @@ export function OwnerWorkspaceTable({
     onEditOwner(previewRow.owner);
   };
 
+  // Column priorities drive the shared EntityTable mobile card: identity + one
+  // operational datum (active contracts) + actions. Dense ownership/property
+  // columns stay desktop/tablet comparison fields.
+  const columns: ColumnDef<OwnerWorkspaceRow>[] = [
+    {
+      key: 'name',
+      header: 'اسم المالك',
+      priority: 'identity',
+      render: (row) => (
+        <EntityCell
+          icon={Users}
+          title={(
+            <Button variant="link" className="min-h-11 px-0 text-start font-bold" onClick={() => openPreview(row.owner.id)}>
+              {getOwnerDisplayLabel(row.owner)}
+            </Button>
+          )}
+          subtitle={row.owner.display_name ? row.owner.full_name : null}
+        />
+      ),
+    },
+    { key: 'contact', header: 'الهاتف والإيميل', priority: 'secondary', render: (row) => <OwnerContact owner={row.owner} /> },
+    { key: 'property_count', header: 'عدد العقارات', priority: 'secondary', render: (row) => formatLatinNumber(row.propertyCount, 'ar') },
+    { key: 'property_links', header: 'العقارات', priority: 'detail', render: (row) => <OwnerPropertyLinks row={row} /> },
+    { key: 'ownership', header: 'الملكية/الدور', priority: 'detail', render: (row) => <OwnershipSummary row={row} /> },
+    {
+      key: 'contracts',
+      header: 'العقود النشطة',
+      priority: 'primary',
+      render: (row) => (row.activeContractCount > 0 ? formatLatinNumber(row.activeContractCount, 'ar') : '—'),
+    },
+    {
+      key: 'actions',
+      header: 'إجراءات',
+      priority: 'actions',
+      render: (row) => (
+        <div className="flex" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+          <ActionMenu
+            label={`إجراءات ${getOwnerDisplayLabel(row.owner)}`}
+            items={[
+              { id: 'details', label: 'التفاصيل', icon: Eye, onClick: () => openPreview(row.owner.id) },
+              { id: 'relationships', label: 'العلاقات', icon: LinkIcon, onClick: () => onSelectOwner(row.owner.id) },
+              { id: 'edit', label: 'تعديل', icon: Pencil, onClick: () => onEditOwner(row.owner) },
+            ]}
+          />
+        </div>
+      ),
+    },
+  ];
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" data-owner-workspace-table>
       <FilterBar
         searchValue={search}
         onSearchChange={onSearchChange}
@@ -111,44 +160,7 @@ export function OwnerWorkspaceTable({
           rows={rows}
           onRowClick={(row) => openPreview(row.owner.id)}
           mobileVisibleSecondaryKey="contracts"
-          columns={[
-            {
-              key: 'name',
-              header: 'اسم المالك',
-              render: (row) => (
-                <EntityCell
-                  icon={Users}
-                  title={(
-                    <Button variant="link" className="min-h-11 px-0 text-start font-bold" onClick={() => openPreview(row.owner.id)}>
-                      {getOwnerDisplayLabel(row.owner)}
-                    </Button>
-                  )}
-                  subtitle={row.owner.display_name ? row.owner.full_name : null}
-                />
-              ),
-            },
-            { key: 'contact', header: 'الهاتف والإيميل', render: (row) => <OwnerContact owner={row.owner} /> },
-            { key: 'property_count', header: 'عدد العقارات', render: (row) => formatLatinNumber(row.propertyCount, 'ar') },
-            { key: 'property_links', header: 'العقارات', render: (row) => <OwnerPropertyLinks row={row} /> },
-            { key: 'ownership', header: 'الملكية/الدور', render: (row) => <OwnershipSummary row={row} /> },
-            { key: 'contracts', header: 'العقود النشطة', render: (row) => row.activeContractCount > 0 ? formatLatinNumber(row.activeContractCount, 'ar') : '—' },
-            {
-              key: 'actions',
-              header: 'إجراءات',
-              render: (row) => (
-                <div className="flex" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
-                  <ActionMenu
-                    label={`إجراءات ${getOwnerDisplayLabel(row.owner)}`}
-                    items={[
-                      { id: 'details', label: 'التفاصيل', icon: Eye, onClick: () => openPreview(row.owner.id) },
-                      { id: 'relationships', label: 'العلاقات', icon: LinkIcon, onClick: () => onSelectOwner(row.owner.id) },
-                      { id: 'edit', label: 'تعديل', icon: Pencil, onClick: () => onEditOwner(row.owner) },
-                    ]}
-                  />
-                </div>
-              ),
-            },
-          ]}
+          columns={columns}
           keyOf={(row) => row.owner.id}
           emptyTitle="لا يوجد ملاك"
           emptyDescription="أضف أول مالك لبدء ربطه بالعقارات."
