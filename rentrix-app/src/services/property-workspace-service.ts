@@ -3,8 +3,8 @@
  * Provides filtered queries across contracts, invoices, maintenance, and audit log
  * without violating feature dependency boundaries or presentation import rules.
  */
-import { listContracts } from '@/features/contracts/services/contractService';
-import { listInvoices, type InvoiceListItem } from '@/features/financials/invoices/invoiceService';
+import { listContractsForProperty } from '@/features/contracts/services/contractService';
+import { listInvoicesForProperty } from '@/features/financials/invoices/invoiceService';
 import { listMaintenance } from '@/features/maintenance/maintenance-service';
 import { fetchAuditLog } from '@/features/audit/services/audit-log-service';
 import type { AuditLogRecord } from '@/features/audit/types';
@@ -18,20 +18,11 @@ export interface PropertyActivityRecord {
 }
 
 export async function fetchPropertyContracts(propertyId: string) {
-  const result = await listContracts({ status: 'all', page: 1, pageSize: 50 });
-  return (result.rows ?? []).filter((contract) => contract.property_id === propertyId);
+  return listContractsForProperty(propertyId);
 }
 
 export async function fetchPropertyInvoices(propertyId: string) {
-  // Property-scoped: only invoices whose contract belongs to this property.
-  // Previously the filter only checked `contract_id != null`, which leaked
-  // invoices from other properties into this property's financial context.
-  const propertyContracts = await fetchPropertyContracts(propertyId);
-  const propertyContractIds = new Set(propertyContracts.map((contract) => contract.id));
-  const result = await listInvoices({ search: '', status: 'all' });
-  return (result ?? []).filter(
-    (invoice: InvoiceListItem) => invoice.contract_id != null && propertyContractIds.has(invoice.contract_id),
-  );
+  return listInvoicesForProperty(propertyId);
 }
 
 export async function fetchPropertyMaintenance(propertyId: string) {
