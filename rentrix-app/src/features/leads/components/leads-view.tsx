@@ -25,29 +25,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { Textarea } from "@/components/ui/textarea";
 import type { LeadFilters, LeadFormValues, LeadRecord } from "../types";
 
-const statusLabels: Record<string, string> = {
-  new: "جديد",
-  contacted: "تم التواصل",
-  qualified: "مؤهل",
-  converted: "تم التحويل",
-  lost: "مغلق",
-  archived: "مؤرشف",
-};
-const sourceLabels: Record<string, string> = {
-  walk_in: "زيارة المكتب",
-  phone: "اتصال",
-  referral: "ترشيح",
-  social: "منصات اجتماعية",
-  website: "الموقع",
-};
-const statusTone: Record<string, "success" | "warning" | "danger" | "info" | "neutral"> = {
-  new: "info",
-  contacted: "warning",
-  qualified: "success",
-  converted: "success",
-  lost: "danger",
-  archived: "neutral",
-};
+import { leadStatusLabels, leadSourceLabels, leadStatusTone } from "../labels";
 
 type Props = Readonly<{
   rows: LeadRecord[];
@@ -121,14 +99,14 @@ export function LeadsView(props: Props) {
   if (filters.status !== "all") {
     activeFilters.push({
       key: "status", label: "الحالة",
-      value: statusLabels[filters.status] ?? filters.status,
+      value: leadStatusLabels[filters.status] ?? filters.status,
       onRemove: () => onFiltersChange({ ...filters, status: "all" }),
     });
   }
   if (filters.source !== "all") {
     activeFilters.push({
       key: "source", label: "المصدر",
-      value: sourceLabels[filters.source] ?? filters.source,
+      value: leadSourceLabels[filters.source] ?? filters.source,
       onRemove: () => onFiltersChange({ ...filters, source: "all" }),
     });
   }
@@ -207,7 +185,7 @@ export function LeadsView(props: Props) {
               className="w-full sm:w-48"
             >
               <option value="all">كل الحالات</option>
-              {Object.entries(statusLabels).map(([value, label]) => (
+              {Object.entries(leadStatusLabels).map(([value, label]) => (
                 <option key={value} value={value}>
                   {label}
                 </option>
@@ -222,7 +200,7 @@ export function LeadsView(props: Props) {
               className="w-full sm:w-48"
             >
               <option value="all">كل المصادر</option>
-              {Object.entries(sourceLabels).map(([value, label]) => (
+              {Object.entries(leadSourceLabels).map(([value, label]) => (
                 <option key={value} value={value}>
                   {label}
                 </option>
@@ -338,7 +316,7 @@ export function LeadsView(props: Props) {
                 onDraftChange({ ...draft, source: event.target.value })
               }
             >
-              {Object.entries(sourceLabels).map(([value, label]) => (
+              {Object.entries(leadSourceLabels).map(([value, label]) => (
                 <option key={value} value={value}>
                   {label}
                 </option>
@@ -352,7 +330,7 @@ export function LeadsView(props: Props) {
                 onDraftChange({ ...draft, status: event.target.value })
               }
             >
-              {Object.entries(statusLabels).map(([value, label]) => (
+              {Object.entries(leadStatusLabels).map(([value, label]) => (
                 <option key={value} value={value}>
                   {label}
                 </option>
@@ -449,7 +427,7 @@ function LeadRows({
     {
       key: "source", priority: 'secondary' as const,
       header: "المصدر",
-      render: (row) => sourceLabels[row.source ?? ""] ?? row.source ?? "—",
+      render: (row) => leadSourceLabels[row.source ?? ""] ?? row.source ?? "—",
     },
     {
       key: "budget", priority: 'detail' as const,
@@ -464,8 +442,8 @@ function LeadRows({
       key: "status", priority: 'primary' as const,
       header: "الحالة",
       render: (row) => (
-        <StatusBadge tone={statusTone[row.status ?? ""] ?? "neutral"}>
-          {statusLabels[row.status ?? ""] ?? row.status ?? "—"}
+        <StatusBadge tone={leadStatusTone[row.status ?? ""] ?? "neutral"}>
+          {leadStatusLabels[row.status ?? ""] ?? row.status ?? "—"}
         </StatusBadge>
       ),
     },

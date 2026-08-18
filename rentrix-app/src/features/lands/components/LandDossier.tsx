@@ -12,9 +12,7 @@ import { LoadingState } from '@/components/ui/loading-state';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useAuth } from '@/hooks/use-auth';
 import { useLandDossier } from '../use-lands';
-
-const statusLabels: Record<string, string> = { available: 'متاحة', reserved: 'محجوزة', sold: 'مباعة', archived: 'مؤرشفة' };
-const categoryLabels: Record<string, string> = { residential: 'سكني', commercial: 'تجاري', agricultural: 'زراعي', investment: 'استثماري' };
+import { landStatusLabels, landCategoryLabels } from '../labels';
 
 export function LandDossierContent({ landId }: Readonly<{ landId: string }>) {
   const { canAccess } = useAuth();
@@ -29,8 +27,8 @@ export function LandDossierContent({ landId }: Readonly<{ landId: string }>) {
     <div className="space-y-5">
       <Card><CardHeader><div className="flex items-center gap-3"><span className="grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary"><MapPinned className="size-6" /></span><div><CardTitle>{land.name || land.plot_no || 'أرض مسجلة'}</CardTitle><p className="mt-1 text-sm text-muted-foreground">{land.location || 'الموقع غير موثق'}</p></div></div></CardHeader><CardContent><DetailFields columns={3} fields={[
         { label: 'رقم القطعة', value: land.plot_no ?? 'غير موثق' },
-        { label: 'التصنيف', value: categoryLabels[land.category ?? ''] ?? land.category ?? '—' },
-        { label: 'الحالة', value: <StatusBadge tone={land.status === 'available' ? 'success' : land.status === 'reserved' ? 'warning' : 'neutral'}>{statusLabels[land.status ?? ''] ?? land.status ?? '—'}</StatusBadge> },
+        { label: 'التصنيف', value: landCategoryLabels[land.category ?? ''] ?? land.category ?? '—' },
+        { label: 'الحالة', value: <StatusBadge tone={land.status === 'available' ? 'success' : land.status === 'reserved' ? 'warning' : 'neutral'}>{landStatusLabels[land.status ?? ''] ?? land.status ?? '—'}</StatusBadge> },
         { label: 'المساحة', value: land.area == null ? 'غير موثقة' : `${land.area} م²` },
         { label: 'المالك', value: dossier.owner ? <Link to="/owners/$ownerId" params={{ ownerId: dossier.owner.id }} className="text-primary underline-offset-4 hover:underline">{ownerName}</Link> : ownerName },
         { label: 'سعر المالك', value: land.owner_price == null ? 'غير موثق' : Number(land.owner_price).toFixed(3) },

@@ -22,34 +22,7 @@ import { formatMoney, formatNumber } from '@/hooks/useCompanyFormatters';
 import type { LandFilters, LandRecord } from '../types';
 import type { LandFormValues } from '../land-schema';
 import { MONEY_STEP } from '@/lib/money';
-
-const statusLabels: Record<string, string> = {
-  available: 'متاحة',
-  reserved: 'محجوزة',
-  sold: 'مباعة',
-  archived: 'مؤرشفة',
-};
-
-const categoryLabels: Record<string, string> = {
-  residential: 'سكني',
-  commercial: 'تجاري',
-  agricultural: 'زراعي',
-  investment: 'استثماري',
-};
-
-function money(value: number | null | undefined) {
-  return value == null ? '—' : formatMoney(value);
-}
-
-function area(value: number | null | undefined) {
-  return value == null ? '—' : `${formatNumber(value)} م²`;
-}
-
-function tone(status: string | null | undefined) {
-  if (status === 'available') return 'success' as const;
-  if (status === 'reserved') return 'warning' as const;
-  if (status === 'sold') return 'info' as const;
-  return 'neutral' as const;
+import { landStatusLabels, landCategoryLabels, landStatusTone } from '../labels';
 }
 
 type Props = Readonly<{
@@ -109,7 +82,7 @@ export function LandsView({
       ? [{ key: 'query', label: 'بحث', value: filters.query.trim(), onRemove: () => onFiltersChange({ ...filters, query: '' }) }]
       : []),
     ...(filters.status !== 'all'
-      ? [{ key: 'status', label: 'الحالة', value: statusLabels[filters.status] ?? filters.status, onRemove: () => onFiltersChange({ ...filters, status: 'all' }) }]
+      ? [{ key: 'status', label: 'الحالة', value: landStatusLabels[filters.status] ?? filters.status, onRemove: () => onFiltersChange({ ...filters, status: 'all' }) }]
       : []),
   ];
 
@@ -136,7 +109,7 @@ export function LandsView({
       render: (row) => (
         <div className="min-w-0">
           <p className="font-bold">{row.name || row.plot_no || 'بدون اسم'}</p>
-          <p className="text-xs text-muted-foreground">{categoryLabels[row.category ?? ''] ?? row.category ?? '—'}</p>
+          <p className="text-xs text-muted-foreground">{landCategoryLabels[row.category ?? ''] ?? row.category ?? '—'}</p>
         </div>
       ),
     },
@@ -144,7 +117,7 @@ export function LandsView({
     { key: 'area', priority: 'detail' as const, header: 'المساحة', render: (row) => <span dir="ltr">{area(row.area)}</span> },
     { key: 'owner', priority: 'secondary' as const, header: 'المالك', render: (row) => ownerLabel(row.owner_id) },
     { key: 'value', priority: 'detail' as const, header: 'القيمة', render: (row) => <span dir="ltr">{money(row.owner_price ?? row.purchase_price)}</span> },
-    { key: 'status', priority: 'primary' as const, header: 'الحالة', render: (row) => <StatusBadge tone={tone(row.status)}>{statusLabels[row.status ?? ''] ?? row.status ?? '—'}</StatusBadge> },
+    { key: 'status', priority: 'primary' as const, header: 'الحالة', render: (row) => <StatusBadge tone={landStatusTone[row.status ?? ""] ?? "neutral"}>{landStatusLabels[row.status ?? ''] ?? row.status ?? '—'}</StatusBadge> },
     { key: 'actions', priority: 'actions' as const, header: 'إجراءات', render: rowActions },
   ];
 
@@ -184,7 +157,7 @@ export function LandsView({
         filters={(
           <Select value={filters.status} onChange={(event) => onFiltersChange({ ...filters, status: event.target.value })} aria-label="حالة الأرض" className="w-full sm:w-48">
             <option value="all">كل الحالات</option>
-            {Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            {Object.entries(landStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </Select>
         )}
       />
@@ -233,8 +206,8 @@ export function LandsView({
               <EntityForm.Field label="رقم القطعة"><Input value={draft.plot_no} onChange={(event) => onDraftChange({ ...draft, plot_no: event.target.value })} /></EntityForm.Field>
               <EntityForm.Field label="الموقع"><Input value={draft.location} onChange={(event) => onDraftChange({ ...draft, location: event.target.value })} /></EntityForm.Field>
               <EntityForm.Field label="المساحة (م²)"><Input type="number" min="0" step="0.01" inputMode="decimal" dir="ltr" value={draft.area} onChange={(event) => onDraftChange({ ...draft, area: event.target.value })} /></EntityForm.Field>
-              <EntityForm.Field label="التصنيف"><Select value={draft.category} onChange={(event) => onDraftChange({ ...draft, category: event.target.value as LandFormValues['category'] })}>{Object.entries(categoryLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></EntityForm.Field>
-              <EntityForm.Field label="الحالة"><Select value={draft.status} onChange={(event) => onDraftChange({ ...draft, status: event.target.value as LandFormValues['status'] })}>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></EntityForm.Field>
+              <EntityForm.Field label="التصنيف"><Select value={draft.category} onChange={(event) => onDraftChange({ ...draft, category: event.target.value as LandFormValues['category'] })}>{Object.entries(landCategoryLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></EntityForm.Field>
+              <EntityForm.Field label="الحالة"><Select value={draft.status} onChange={(event) => onDraftChange({ ...draft, status: event.target.value as LandFormValues['status'] })}>{Object.entries(landStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></EntityForm.Field>
             </div>
           </EntityForm.Section>
 

@@ -1,3 +1,4 @@
+import { communicationChannelLabels, communicationDirectionLabels, communicationStatusLabels, communicationStatusTone } from "../labels";
 import { Archive, CheckCircle2, Edit, Rows3, UserRoundSearch } from 'lucide-react';
 import { useState } from 'react';
 import { ActiveFilterBar, type ActiveFilterItem } from '@/components/ui/active-filter-bar';
@@ -16,21 +17,6 @@ import { AsyncContentState } from '@/components/async-content-state';
 import { WriteErrorCard } from '@/components/page-state-card';
 import type { CommunicationFilters, CommunicationFormValues, CommunicationRecord } from '../types';
 
-const channelLabels: Record<string, string> = {
-  phone: 'هاتف',
-  whatsapp: 'واتساب',
-  email: 'بريد إلكتروني',
-  meeting: 'اجتماع',
-  note: 'ملاحظة تشغيلية',
-};
-const directionLabels: Record<string, string> = { inbound: 'وارد', outbound: 'صادر', internal: 'تشغيلي' };
-const statusLabels: Record<string, string> = {
-  logged: 'مسجل',
-  follow_up: 'متابعة مطلوبة',
-  resolved: 'مغلق',
-  archived: 'مؤرشف',
-};
-const statusTone: Record<string, 'success' | 'warning' | 'neutral' | 'info'> = {
   logged: 'info',
   follow_up: 'warning',
   resolved: 'success',
@@ -86,8 +72,8 @@ export function CommunicationHubView({
 
   const activeFilters: ActiveFilterItem[] = [
     ...(filters.query.trim() ? [{ key: 'query', label: 'بحث', value: filters.query.trim(), onRemove: () => onFiltersChange({ ...filters, query: '' }) }] : []),
-    ...(filters.channel !== 'all' ? [{ key: 'channel', label: 'القناة', value: channelLabels[filters.channel] ?? filters.channel, onRemove: () => onFiltersChange({ ...filters, channel: 'all' }) }] : []),
-    ...(filters.status !== 'all' ? [{ key: 'status', label: 'الحالة', value: statusLabels[filters.status] ?? filters.status, onRemove: () => onFiltersChange({ ...filters, status: 'all' }) }] : []),
+    ...(filters.channel !== 'all' ? [{ key: 'channel', label: 'القناة', value: communicationChannelLabels[filters.channel] ?? filters.channel, onRemove: () => onFiltersChange({ ...filters, channel: 'all' }) }] : []),
+    ...(filters.status !== 'all' ? [{ key: 'status', label: 'الحالة', value: communicationStatusLabels[filters.status] ?? filters.status, onRemove: () => onFiltersChange({ ...filters, status: 'all' }) }] : []),
   ];
   const clearFilters = () => onFiltersChange({ query: '', channel: 'all', status: 'all' });
 
@@ -111,8 +97,8 @@ export function CommunicationHubView({
         </div>
       ),
     },
-    { key: 'channel', priority: 'secondary' as const, header: 'القناة', render: (row) => channelLabels[row.channel] ?? row.channel },
-    { key: 'direction', priority: 'detail' as const, header: 'الاتجاه', render: (row) => directionLabels[row.direction] ?? row.direction },
+    { key: 'channel', priority: 'secondary' as const, header: 'القناة', render: (row) => communicationChannelLabels[row.channel] ?? row.channel },
+    { key: 'direction', priority: 'detail' as const, header: 'الاتجاه', render: (row) => communicationDirectionLabels[row.direction] ?? row.direction },
     {
       key: 'subject', priority: 'secondary' as const,
       header: 'الموضوع',
@@ -123,7 +109,7 @@ export function CommunicationHubView({
         </div>
       ),
     },
-    { key: 'status', priority: 'primary' as const, header: 'الحالة', render: (row) => <StatusBadge tone={statusTone[row.status] ?? 'neutral'}>{statusLabels[row.status] ?? row.status}</StatusBadge> },
+    { key: 'status', priority: 'primary' as const, header: 'الحالة', render: (row) => <StatusBadge tone={communicationStatusTone[row.status] ?? 'neutral'}>{communicationStatusLabels[row.status] ?? row.status}</StatusBadge> },
     { key: 'actions', priority: 'actions' as const, header: 'إجراءات', render: rowActions },
   ];
 
@@ -150,11 +136,11 @@ export function CommunicationHubView({
           <>
             <Select value={filters.channel} onChange={(event) => onFiltersChange({ ...filters, channel: event.target.value })} aria-label="قناة التواصل" className="w-full sm:w-48">
               <option value="all">كل القنوات</option>
-              {Object.entries(channelLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+              {Object.entries(communicationChannelLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </Select>
             <Select value={filters.status} onChange={(event) => onFiltersChange({ ...filters, status: event.target.value })} aria-label="حالة التواصل" className="w-full sm:w-48">
               <option value="all">كل الحالات</option>
-              {Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+              {Object.entries(communicationStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </Select>
           </>
         )}
@@ -208,9 +194,9 @@ export function CommunicationHubView({
 
           <EntityForm.Section title="تفاصيل التواصل">
             <div className="grid gap-4 sm:grid-cols-3">
-              <EntityForm.Field label="القناة *"><Select required value={draft.channel} onChange={(event) => onDraftChange({ ...draft, channel: event.target.value as CommunicationFormValues['channel'] })}>{Object.entries(channelLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></EntityForm.Field>
-              <EntityForm.Field label="الاتجاه *"><Select required value={draft.direction} onChange={(event) => onDraftChange({ ...draft, direction: event.target.value as CommunicationFormValues['direction'] })}>{Object.entries(directionLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></EntityForm.Field>
-              <EntityForm.Field label="الحالة *"><Select required value={draft.status} onChange={(event) => onDraftChange({ ...draft, status: event.target.value as CommunicationFormValues['status'] })}>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></EntityForm.Field>
+              <EntityForm.Field label="القناة *"><Select required value={draft.channel} onChange={(event) => onDraftChange({ ...draft, channel: event.target.value as CommunicationFormValues['channel'] })}>{Object.entries(communicationChannelLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></EntityForm.Field>
+              <EntityForm.Field label="الاتجاه *"><Select required value={draft.direction} onChange={(event) => onDraftChange({ ...draft, direction: event.target.value as CommunicationFormValues['direction'] })}>{Object.entries(communicationDirectionLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></EntityForm.Field>
+              <EntityForm.Field label="الحالة *"><Select required value={draft.status} onChange={(event) => onDraftChange({ ...draft, status: event.target.value as CommunicationFormValues['status'] })}>{Object.entries(communicationStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></EntityForm.Field>
             </div>
             <EntityForm.Field label="المحتوى *"><Textarea required className="min-h-28" value={draft.body} onChange={(event) => onDraftChange({ ...draft, body: event.target.value })} /></EntityForm.Field>
             {editingRecord?.related_entity_id ? (
