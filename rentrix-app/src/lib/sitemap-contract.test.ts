@@ -42,4 +42,10 @@ describe('MALEK public sitemap contract', () => {
     expect(sitemap).toContain('<loc>https://malek-plus.vercel.app/</loc>');
     expect(sitemap).toContain('<loc>https://malek-plus.vercel.app/landing</loc>');
   });
+
+  it('publishes an absolute sitemap URL in robots.txt', () => {
+    const robots = read('public/robots.txt');
+    expect(robots).toContain('Sitemap: https://malek-plus.vercel.app/sitemap.xml');
+    expect(robots).not.toMatch(/Sitemap:\s*\/sitemap\.xml\b/);
+  });
 });

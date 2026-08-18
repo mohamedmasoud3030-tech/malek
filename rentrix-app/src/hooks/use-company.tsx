@@ -302,7 +302,7 @@ export function CompanyProvider({ children }: PropsWithChildren) {
   if (isLoading || isCompanyContextTransition) {
     return (
       <main className="grid min-h-dvh place-items-center bg-background p-6" dir="rtl" aria-busy="true">
-        <p className="text-sm font-semibold text-muted-foreground">جاري تحديد الشركة النشطة…</p>
+        <p className="text-sm font-semibold text-muted-foreground">جارٍ تحديد الشركة النشطة…</p>
       </main>
     );
   }

@@ -56,6 +56,11 @@
     "overrides": {
       "dompurify": ">=3.4.13",
       "ws": ">=8.21.0"
-    }
+    },
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "core-js",
+      "supabase"
+    ]
   }
 }

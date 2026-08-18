@@ -23,6 +23,17 @@ export const APP_BRAND_LOCKUP_ASSET = '/malek-lockup.svg';
 export const APP_BRAND_MASKABLE_ASSET = '/malek-maskable.svg';
 
 /**
+ * Raster install icons derived from the canonical mark/maskable SVGs.
+ * Required for iOS home-screen install and Android/Chrome PWA install surfaces
+ * that do not reliably consume SVG icons.
+ */
+export const APP_BRAND_PWA_ICON_192 = '/malek-icon-192.png';
+export const APP_BRAND_PWA_ICON_512 = '/malek-icon-512.png';
+export const APP_BRAND_PWA_MASKABLE_192 = '/malek-maskable-192.png';
+export const APP_BRAND_PWA_MASKABLE_512 = '/malek-maskable-512.png';
+export const APP_BRAND_APPLE_TOUCH_ICON = '/malek-apple-touch-180.png';
+
+/**
  * Technical identifiers intentionally keep the legacy `rentrix` prefix during
  * the display rebrand. Persisted storage keys, auth/session keys, package
  * names, repository paths, and Supabase objects are stable contracts.

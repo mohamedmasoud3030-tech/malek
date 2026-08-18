@@ -422,16 +422,26 @@ describe('MALEK brand contract — PWA and document metadata', () => {
     expect(manifest.name).not.toContain('MALIK');
     expect(manifest.description).not.toContain('Rentrix');
     expect(manifest.icons).toEqual([
+      { src: '/malek-icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+      { src: '/malek-icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+      { src: '/malek-maskable-192.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
+      { src: '/malek-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
       { src: '/malek-mark.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
       { src: '/malek-maskable.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'maskable' },
     ]);
 
-    // Every shipped manifest icon must embed the canonical MALEK identity mark.
+    // Vector icons embed the canonical MALEK identity mark in the SVG itself.
+    // Raster icons are generated from those same canonical SVGs and must exist
+    // on disk at the exact install sizes required by iOS/Android.
     for (const icon of manifest.icons ?? []) {
-      const svg = readApp(`public${icon.src}`);
-      expect(svg, `${icon.src} must render the canonical MALEK identity`).toMatch(
-        /<title[^>]*>[^<]*MALEK<\/title>/,
-      );
+      const assetPath = `public${icon.src}`;
+      expect(existsSync(join(appRoot, assetPath)), `${icon.src} must exist`).toBe(true);
+      if (icon.type === 'image/svg+xml') {
+        const svg = readApp(assetPath);
+        expect(svg, `${icon.src} must render the canonical MALEK identity`).toMatch(
+          /<title[^>]*>[^<]*MALEK<\/title>/,
+        );
+      }
     }
   });
 
@@ -445,7 +455,9 @@ describe('MALEK brand contract — PWA and document metadata', () => {
     expect(indexHtml).toContain(`"name": "${APP_BRAND_NAME}"`);
     expect(indexHtml).toContain('apple-mobile-web-app-title" content="MALEK"');
     expect(indexHtml).toContain('rel="icon" href="/malek-mark.svg"');
-    expect(indexHtml).toContain('rel="apple-touch-icon" href="/malek-mark.svg"');
+    expect(indexHtml).toContain('rel="apple-touch-icon" href="/malek-apple-touch-180.png"');
+    expect(indexHtml).toContain('sizes="180x180"');
+    expect(existsSync(join(appRoot, 'public/malek-apple-touch-180.png'))).toBe(true);
     expect(indexHtml).not.toContain('MALIK');
     expect(indexHtml).not.toContain('Rentrix');
   });
