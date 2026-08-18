@@ -1,8 +1,7 @@
 import { Suspense, lazy, useCallback, useMemo, useRef, type ComponentType } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { AccessDenied } from '@/components/layout/access-denied';
-import { PageHeader } from '@/components/layout/page-header';
-import { PageLayout } from '@/components/layout/page-layout';
+import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { SectionTabs } from '@/components/ui/section-tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/hooks/use-auth';
@@ -85,12 +84,12 @@ export function LeasingHubWorkspace() {
   );
 
   return (
-    <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro">
-      <PageHeader
-        title="التأجير"
-        description="من الفرصة والمستأجر إلى العقد والمتابعة والتجديد — دورة التأجير في سياق واحد."
-      />
-
+    <EmbeddableWorkspace
+      title="التأجير"
+      description="من الفرصة والمستأجر إلى العقد والمتابعة والتجديد — دورة التأجير في سياق واحد."
+      size="wide"
+      visualVariant="malek-pro"
+    >
       {isRequestedForbidden ? (
         <AccessDenied message="ليس لديك صلاحية لعرض هذا القسم من التأجير." />
       ) : (
@@ -122,7 +121,7 @@ export function LeasingHubWorkspace() {
             })}
         </>
       )}
-    </PageLayout>
+    </EmbeddableWorkspace>
   );
 }
 
