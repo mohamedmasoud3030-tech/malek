@@ -27,4 +27,15 @@ describe('platform security and PWA boundaries', () => {
     expect(vite).toContain('navigateFallbackDenylist: [/^\\/api\\//]');
     expect(vite).not.toMatch(/urlPattern:[^\n]*supabase/i);
   });
+
+  it('precaches the install shell only — not every lazy JS chunk or landing PNG', () => {
+    const vite = readFileSync(resolve(root, 'rent' + 'rix-app/vite.config.ts'), 'utf8');
+    expect(vite).toContain('"index.html"');
+    expect(vite).toContain('"offline.html"');
+    expect(vite).toContain('"assets/*.css"');
+    expect(vite).toContain('"fonts/**/*.{css,woff2}"');
+    expect(vite).toContain('"malek-*.svg"');
+    expect(vite).not.toContain('**/*.{js,css,html,ico,png,svg,webp,woff2}');
+    expect(vite).not.toMatch(/globPatterns:\s*\[[^\]]*js,/);
+  });
 });

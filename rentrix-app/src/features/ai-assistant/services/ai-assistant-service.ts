@@ -1,3 +1,4 @@
+import { getInvoiceStatusVariants } from '@/features/financials/components/invoice-status-labels';
 import { getContractStatusVariants } from '@/lib/contractStatus';
 import { fetchAllRows } from '@/lib/paginatedRead';
 import { env } from '@/lib/env';
@@ -67,7 +68,20 @@ function isActivePayment(payment: PaymentSnapshotRow): boolean {
   return !payment.deleted_at && payment.status?.toUpperCase() !== 'VOID';
 }
 
-async function fetchOverdueInvoices(asOf: string) {
+const closedInvoiceStatuses = [
+  'paid',
+  'PAID',
+  'void',
+  'VOID',
+  'draft',
+  'DRAFT',
+  'cancelled',
+  'CANCELLED',
+  'canceled',
+  'CANCELED',
+];
+
+async function fetchOpenInvoiceContextRows(asOf: string) {
   let data: InvoiceContextRow[];
   try {
     ({ rows: data } = await fetchAllRows<InvoiceContextRow>(() => supabase
@@ -75,16 +89,13 @@ async function fetchOverdueInvoices(asOf: string) {
       .select('id, contract_id, due_date, amount, paid_amount, status, deleted_at')
       .is('deleted_at', null)
       .lte('due_date', asOf)
+      .not('status', 'in', closedInvoiceStatuses)
       .order('due_date', { ascending: true }) as any));
   } catch (error) {
     handleSupabaseError(error, 'تعذر تجهيز ملخص الفواتير المتأخرة');
     throw error;
   }
-  const rows = data
-    .filter((invoice) => isOpenInvoiceStatus(invoice.status) && remainingAmount(invoice) > 0)
-    .sort((a, b) => a.due_date.localeCompare(b.due_date));
-
-  return rows;
+  return data.filter((invoice) => isOpenInvoiceStatus(invoice.status));
 }
 
 async function fetchContractRenewals(asOf: string, until: string) {
@@ -106,22 +117,20 @@ async function fetchContractRenewals(asOf: string, until: string) {
 async function fetchSnapshotRows(asOf: string, thirtyDaysAgo: string, ninetyDaysAgo: string) {
   // Context totals are sent to the assistant as facts. Sampling them at 500
   // silently changed portfolio-level answers once a tenant grew beyond that.
+  // Invoices are loaded once by fetchOpenInvoiceContextRows (open statuses only).
+  // Expenses for 30 days are a subset of the 90-day window — one query is enough.
   const results = await Promise.all([
     fetchAllRows<PropertySnapshotRow>(() => supabase.from('properties').select('id, status, deleted_at').is('deleted_at', null) as any),
     fetchAllRows<UnitSnapshotRow>(() => supabase.from('units').select('id, status, deleted_at').is('deleted_at', null) as any),
-    fetchAllRows<InvoiceContextRow>(() => supabase.from('invoices').select('id, contract_id, due_date, amount, paid_amount, status, deleted_at').is('deleted_at', null).lte('due_date', asOf) as any),
     fetchAllRows<PaymentSnapshotRow>(() => supabase.from('payments').select('id, amount, payment_date, status, deleted_at').is('deleted_at', null).gte('payment_date', thirtyDaysAgo).lte('payment_date', asOf) as any),
     fetchAllRows<ExpenseSnapshotRow>(() => supabase.from('expenses').select('id, amount, expense_date, deleted_at').is('deleted_at', null).gte('expense_date', ninetyDaysAgo).lte('expense_date', asOf) as any),
-    fetchAllRows<ExpenseSnapshotRow>(() => supabase.from('expenses').select('id, amount, expense_date, deleted_at').is('deleted_at', null).gte('expense_date', thirtyDaysAgo).lte('expense_date', asOf) as any),
   ]);
 
   return {
     properties: results[0].rows,
     units: results[1].rows,
-    invoices: results[2].rows,
-    payments: results[3].rows,
-    expenses90: results[4].rows,
-    expenses30: results[5].rows,
+    payments: results[2].rows,
+    expenses90: results[3].rows,
   };
 }
 
@@ -132,17 +141,20 @@ export async function buildAiAssistantContext(): Promise<AiAssistantContext> {
   const thirtyDaysAgo = toDateOnly(addDays(now, -30));
   const ninetyDaysAgo = toDateOnly(addDays(now, -90));
 
-  const [overdueInvoices, contractRenewals, snapshot] = await Promise.all([
-    fetchOverdueInvoices(asOf),
+  const [openInvoices, contractRenewals, snapshot] = await Promise.all([
+    fetchOpenInvoiceContextRows(asOf),
     fetchContractRenewals(asOf, renewalUntil),
     fetchSnapshotRows(asOf, thirtyDaysAgo, ninetyDaysAgo),
   ]);
 
-  const openSnapshotInvoices = snapshot.invoices.filter((invoice) => isOpenInvoiceStatus(invoice.status) && remainingAmount(invoice) > 0);
+  const overdueInvoices = openInvoices
+    .filter((invoice) => remainingAmount(invoice) > 0)
+    .sort((left, right) => left.due_date.localeCompare(right.due_date));
   const activePayments = snapshot.payments.filter(isActivePayment);
-  const invoiceAmountLast30Days = snapshot.invoices
-    .filter((invoice) => invoice.due_date >= thirtyDaysAgo && isOpenInvoiceStatus(invoice.status))
+  const invoiceAmountLast30Days = openInvoices
+    .filter((invoice) => invoice.due_date >= thirtyDaysAgo)
     .map((invoice) => Number(invoice.amount ?? 0));
+  const expenses30 = snapshot.expenses90.filter((expense) => expense.expense_date >= thirtyDaysAgo);
   const occupiedUnitCount = snapshot.units.filter((unit) => ['occupied', 'rented'].includes(String(unit.status ?? '').trim().toLowerCase())).length;
   const unitCount = snapshot.units.length;
 
@@ -180,7 +192,7 @@ export async function buildAiAssistantContext(): Promise<AiAssistantContext> {
       unitCount,
       occupiedUnitCount,
       occupancyRate: unitCount > 0 ? Number(((occupiedUnitCount / unitCount) * 100).toFixed(2)) : 0,
-      outstandingInvoiceAmount: sum(openSnapshotInvoices.map(remainingAmount)),
+      outstandingInvoiceAmount: sum(overdueInvoices.map(remainingAmount)),
       expensesLast90Days: sum(snapshot.expenses90.map((expense) => Number(expense.amount ?? 0))),
     },
     reportSummary: {
@@ -188,8 +200,8 @@ export async function buildAiAssistantContext(): Promise<AiAssistantContext> {
       invoiceAmountLast30Days: sum(invoiceAmountLast30Days),
       paymentsLast30Days: activePayments.length,
       paymentAmountLast30Days: sum(activePayments.map((payment) => Number(payment.amount ?? 0))),
-      expensesLast30Days: snapshot.expenses30.length,
-      expenseAmountLast30Days: sum(snapshot.expenses30.map((expense) => Number(expense.amount ?? 0))),
+      expensesLast30Days: expenses30.length,
+      expenseAmountLast30Days: sum(expenses30.map((expense) => Number(expense.amount ?? 0))),
     },
   };
 }

@@ -116,7 +116,20 @@ export default defineConfig({
       // Legacy Rentrix/MALIK PNGs stay on disk as unreferenced assets pending deletion.
       includeAssets: ["offline.html", "malek-mark.svg", "malek-lockup.svg", "malek-maskable.svg"],
       workbox: {
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,webp,woff2}"],
+        // Measured production build on 2026-08-17 (Vite 7.3.2): a catch-all
+        // asset glob precached 335 entries / 5558 KiB, including every lazy
+        // JS chunk (DocumentRenderer 651 kB, html2canvas 201 kB) and landing
+        // PNG screenshots. The app is online-first (Supabase). Precache only
+        // the install shell; runtime StaleWhileRevalidate already caches
+        // scripts after the first visit.
+        globPatterns: [
+          "index.html",
+          "offline.html",
+          "manifest.json",
+          "assets/*.css",
+          "fonts/**/*.{css,woff2}",
+          "malek-*.svg",
+        ],
         // Legacy Rentrix/MALIK icons still sit in public/ for git history; keep
         // them out of the precache so the MALEK build ships no legacy brand asset.
         globIgnores: ["**/icon-rentrix-*.png", "**/icon-malik-*.png", "**/icon-maskable-*.png", "**/malik-mark.svg"],
