@@ -17,7 +17,7 @@ import { describe, expect, it } from 'vitest';
 const stylesDir = resolve(dirname(fileURLToPath(import.meta.url)));
 const tokens = readFileSync(resolve(stylesDir, 'tokens.css'), 'utf8');
 const globals = readFileSync(resolve(stylesDir, 'globals.css'), 'utf8');
-const productPalette = readFileSync(resolve(stylesDir, 'product-palette.css'), 'utf8');
+const pagePolish = readFileSync(resolve(stylesDir, 'page-polish.css'), 'utf8');
 const visualWave = readFileSync(resolve(stylesDir, 'malek-pro-visual-wave.css'), 'utf8');
 
 function block(source: string, opener: string): string {
@@ -66,10 +66,10 @@ describe('design tokens — single source of truth', () => {
     expect(visualWave).not.toMatch(/(^|\n)\s*:root\s*\{/);
   });
 
-  it('product-palette.css consumes tokens instead of redefining them', () => {
-    expect(productPalette).not.toContain('--tone-emerald:');
-    expect(productPalette).not.toContain('--accent-foreground:');
-    expect(productPalette).toContain('var(--tone-');
+  it('page-polish.css consumes tokens instead of redefining them', () => {
+    expect(pagePolish).not.toContain('--tone-emerald:');
+    expect(pagePolish).not.toContain('--accent-foreground:');
+    expect(pagePolish).toContain('var(--tone-');
   });
 
   it('no dead tailwind.config.js remains to masquerade as the token source', () => {
