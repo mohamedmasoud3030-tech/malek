@@ -99,7 +99,7 @@ export async function getUnitDetail(unitId: string): Promise<UnitDetail> {
     .select('*, property:property_id(id,title,address)')
     .eq('id', unitId)
     .is('deleted_at', null)
-    .single();
+    .maybeSingle();
   if (error) throw new Error(error.message || 'تعذر تحميل الوحدة.');
   if (!data) throw new Error('الوحدة غير موجودة أو غير متاحة لصلاحياتك.');
   const normalized = normalizeUnitRecord(data as UnitWithLegacyRent);

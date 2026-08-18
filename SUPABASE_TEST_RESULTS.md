@@ -1,9 +1,11 @@
 # Supabase Test Results
 
-Generated: 2026-08-18T14:20:47Z  
+Generated: 2026-08-18T16:00:00Z  
 Branch: `arena/01a01531-malik`  
 Environment: Arena sandbox — Node 22, pnpm 10.11.1, PGlite 0.5.4.  
 **No Docker, no `psql`, no hosted Supabase credentials.**
+
+Remediation pass (this update): frontend write fence + `.maybeSingle()` / paged title reads. No RLS or migration changes.
 
 This is not “the database works for one admin.” Every critical role below was
 proven as **allowed** and **denied** on the schema the repository builds today.
@@ -15,9 +17,10 @@ proven as **allowed** and **denied** on the schema the repository builds today.
 | 1 | `pnpm install --frozen-lockfile` | PASS |
 | 2 | `node scripts/supabase-tests/privileged-key-scan.mjs` | PASS (after excluding non-shipped `*.test.*` files that mention forbidden markers as search needles) |
 | 3 | `pnpm --filter ./rentrix-app exec vitest run --config vite.config.ts` (focused visibility/session/function files) | PASS 148/148 then 50/50 |
-| 4 | `node scripts/supabase-tests/rls-matrix.mjs` | PASS **79 passed / 0 failed / 0 skipped** (6.2s after fixture correction) |
+| 4 | `node scripts/supabase-tests/rls-matrix.mjs` | PASS **81 passed / 0 failed / 0 skipped** (9.0s; +hook search_path + missing-claim fail-closed) |
 | 5 | `pnpm --filter ./rentrix-app run typecheck:test` | PASS |
-| 6 | `pnpm test:supabase` | PASS — 1 + 79 + 198 |
+| 6 | `pnpm test:supabase` | PASS — 1 + 81 + 198 |
+| 7 | Focused remediation Vitest (permissions, R5, property/contract/unit/people/lands services) | PASS **208 / 208** |
 
 Not executed here (environment limitation, not a product pass):
 
@@ -37,9 +40,9 @@ Not executed here (environment limitation, not a product pass):
 | Layer | Passed | Failed | Skipped | Seconds |
 |---|---:|---:|---:|---:|
 | Privileged-key scan | 1 | 0 | 0 | 0.1 |
-| Current-schema RLS / auth / integrity matrix | 79 | 0 | 0 | 9.7 |
+| Current-schema RLS / auth / integrity matrix | 81 | 0 | 0 | 9.0 |
 | Client session / visibility / function Vitest | 198 | 0 | 0 | 13.4 |
-| **Total this run** | **278** | **0** | **0** | **23.2** |
+| **Total this run** | **280** | **0** | **0** | **23** |
 
 Replay: **281 / 281** migrations applied into disposable PGlite.
 
@@ -98,7 +101,7 @@ Findings were classified as follows:
 |---|---|---|
 | First key-scan hit on `documentAcceptanceHarness.test.ts` (`BEGIN PRIVATE KEY` as a **search needle**) | Test-scan false positive | Scanner now skips non-shipped `*.test.*` / `*.spec.*` files. Browser source still scanned. |
 | Forged JWT with `company_id=B` can read B if the hook is bypassed | **Test defect**, then remaining risk | Tests now go hook → RLS. Product design: RLS trusts the **issued** claim; the hook is the membership gate. RLS was **not** weakened. |
-| `OPERATIONS` has `properties.write` in the UI matrix; DB write uses `is_admin_or_manager()` | Product/UI mismatch, not a leak | Matrix records the **database deny**. RLS was not opened to match the UI. |
+| `OPERATIONS` UI had `properties.write` / `contracts.write` / `expenses.write` / `documents.write`; DB write uses `is_admin_or_manager()` | Product/UI mismatch, not a leak | **Fixed in the frontend** (`serverEnforcedWriteRoles`). SQL catalog and RLS unchanged. |
 
 No expected behavior was silently redefined to make a leak look like a pass.
 
@@ -117,12 +120,13 @@ No expected behavior was silently redefined to make a leak look like a pass.
 
 ## 6. Remaining security / data risks
 
-1. **Auth Hook must be enabled on the hosted project.** RLS scopes by `current_company_id()` from the JWT. If the hook is off, a minted JWT that already contains another `company_id` is trusted. Repository tests cannot see the hosted hook switch (`GAP-003/021`).
-2. **OPERATIONS write affordances in the UI are broader than RLS.** A user with the OPERATIONS role will see property-write actions that the database rejects. That is fail-closed, but it is a product inconsistency.
+1. **Auth Hook must be enabled on the hosted project.** RLS scopes by `current_company_id()` from the JWT. If the hook is off, a minted JWT that already contains another `company_id` is trusted. Repository tests cannot see the hosted hook switch (`GAP-003/021`). Extra repo health checks now cover hook `search_path` and a missing-claim fail-closed `current_company_id()`.
+2. **OPERATIONS UI writes that RLS always denies are now fenced in the frontend.** Remaining same-class `.single()` PK reads (`getOwner`, `getInvoiceDetail`, maintenance/tenant lookups) are documented in `SUPABASE_QUERY_AUDIT.md` and were not all converted in this pass.
 3. **Maker-checker is not uniform** across every VOID / settlement path (`GAP-002`).
 4. **47 financial columns remain `numeric(_,2)`** (accepted GAP-009).
-5. **Live schema drift** is unproven in this sandbox. `pnpm db0:gate` proves the repo; it does not prove Production.
+5. **Live schema drift** is unproven in this sandbox. `pnpm db0:gate` proves the repo; it does not prove Production. 145 local files are at or after the last hosted ledger snapshot (2026-07-21). Production writes remain HOLD.
 6. **`service_role` bypasses RLS by design.** It must never appear in the browser. The new scan and the existing dist scan enforce that locally/CI; hosted secret handling is operational.
+7. **102 unindexed FKs** on the replayed schema (mostly `company_id` and journal/tax links). No index migration shipped — needs live advisor + workload.
 
 ## 7. CI and production-smoke status
 

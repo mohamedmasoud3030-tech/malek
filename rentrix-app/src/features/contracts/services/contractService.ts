@@ -108,9 +108,16 @@ export async function listAllContracts(status: ContractStatusFilter = 'all'): Pr
   );
 }
 
-export async function getContract(contractId: string): Promise<ContractDetail> {
-  const { data, error } = await supabase.from('contracts').select(CONTRACT_DETAIL_SELECT).eq('id', contractId).is('deleted_at', null).single().returns<ContractDetail>();
+export async function getContract(contractId: string): Promise<ContractDetail | null> {
+  const { data, error } = await supabase
+    .from('contracts')
+    .select(CONTRACT_DETAIL_SELECT)
+    .eq('id', contractId)
+    .is('deleted_at', null)
+    .maybeSingle()
+    .returns<ContractDetail>();
   if (error) throw error;
+  if (Array.isArray(data)) return data[0] ?? null;
   return data;
 }
 

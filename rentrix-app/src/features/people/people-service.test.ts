@@ -11,6 +11,7 @@ function createQueryMock(result: unknown) {
     range: vi.fn(() => chain),
     select: vi.fn(() => chain),
     single: vi.fn(() => chain),
+    maybeSingle: vi.fn(() => chain),
     update: vi.fn(() => chain),
     returns: vi.fn(() => Promise.resolve(result)),
   };
@@ -108,5 +109,20 @@ describe('people service write workflow', () => {
     expect(chain.update).toHaveBeenCalledWith({ deleted_at: expect.any(String) });
     expect(chain.eq).toHaveBeenCalledWith('id', 'person-1');
     expect(chain.is).toHaveBeenCalledWith('deleted_at', null);
+  });
+});
+
+describe('getPerson missing-row handling', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('throws a clear Arabic not-found message when maybeSingle returns no row', async () => {
+    const chain = createQueryMock({ data: null, error: null });
+    supabaseMock.from.mockReturnValue(chain);
+    const { getPerson } = await import('./people-service');
+
+    await expect(getPerson('missing-person')).rejects.toThrow('تعذر تحميل بيانات الشخص');
+    expect(chain.maybeSingle).toHaveBeenCalled();
   });
 });

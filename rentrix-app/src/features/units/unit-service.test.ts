@@ -15,6 +15,7 @@ function createQueryMock(result: unknown) {
     limit: vi.fn(() => Promise.resolve(result)),
     select: vi.fn(() => chain),
     single: vi.fn(() => chain),
+    maybeSingle: vi.fn(() => chain),
     update: vi.fn(() => chain),
     returns: vi.fn(() => Promise.resolve(result)),
   };
@@ -130,5 +131,49 @@ describe('unit service write workflow', () => {
 
     expect(archiveGuard).toContain("from('contracts').select('id').eq('unit_id', unitId).limit(1)");
     expect(archiveGuard).not.toContain("eq('unit_id', unitId).is('deleted_at', null)");
+  });
+});
+
+describe('getUnitDetail missing-row handling', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  function getUnitDetailQueryMock(result: { data: unknown; error: unknown }) {
+    const chain = {
+      select: vi.fn(() => chain),
+      eq: vi.fn(() => chain),
+      is: vi.fn(() => chain),
+      maybeSingle: vi.fn(() => Promise.resolve(result)),
+    };
+    return chain;
+  }
+
+  it('throws a clear not-found message instead of a PostgREST 406', async () => {
+    supabaseMock.from.mockReturnValue(getUnitDetailQueryMock({ data: null, error: null }));
+    const { getUnitDetail } = await import('./unit-service');
+    await expect(getUnitDetail('missing-unit')).rejects.toThrow('غير موجودة');
+  });
+
+  it('returns the normalized unit when one row exists', async () => {
+    supabaseMock.from.mockReturnValue(getUnitDetailQueryMock({
+      data: {
+        id: 'unit-1',
+        property_id: 'property-1',
+        unit_number: '101',
+        floor: null,
+        status: 'available',
+        rent_amount: 250,
+        notes: null,
+        property: { id: 'property-1', title: 'برج الموج', address: 'الخوير' },
+      },
+      error: null,
+    }));
+    const { getUnitDetail } = await import('./unit-service');
+    await expect(getUnitDetail('unit-1')).resolves.toMatchObject({
+      id: 'unit-1',
+      status: 'available',
+      property: { id: 'property-1', title: 'برج الموج' },
+    });
   });
 });

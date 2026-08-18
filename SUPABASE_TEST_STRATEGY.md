@@ -176,9 +176,12 @@ These cannot be honestly automated in this sandbox:
 - Historical P0 Vitest probes still replay a pre-fix checkpoint. They are
   evidence of the original leak and fix, not a proof of the current 280+
   migration chain. The new matrix is the current-schema proof.
-- Frontend `OPERATIONS` has `properties.write`; database write policies still
-  use `is_admin_or_manager()`. The matrix records the **database** truth and
-  does not weaken RLS to match the UI.
+- Frontend `OPERATIONS` no longer exposes `properties.write` /
+  `contracts.write` / `expenses.write` / `documents.write`. Database write
+  policies still use `is_admin_or_manager()`. The SQL catalog
+  (`role_has_app_permission`) still lists those OPERATIONS capabilities;
+  that is catalog capacity, not current RLS authority. The matrix records
+  the **database** truth and does not weaken RLS.
 - Maker-checker is proven for contracts and some settlements, not uniformly
   for every VOID path (`GAP-002`).
 - 47 financial columns remain `numeric(_,2)` (accepted GAP-009).

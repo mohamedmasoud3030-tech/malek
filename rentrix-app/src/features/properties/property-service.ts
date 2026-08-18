@@ -1,4 +1,5 @@
 import { getCrudWriteErrorMessage } from '@/lib/data/crud-write-error';
+import { fetchAllRows } from '@/lib/paginatedRead';
 import { supabase } from '@/lib/supabase';
 import type { Database } from '@/types/database';
 import type { Contract, Property } from '@/types/domain';
@@ -189,16 +190,15 @@ export async function getProperty(propertyId: string): Promise<Property | null> 
     .select('*')
     .eq('id', propertyId)
     .is('deleted_at', null)
-    .single()
+    .maybeSingle()
     .returns<Property>();
   if (error) throw error;
-  // `.single()` only negotiates the object Accept header; it does NOT normalize
-  // an empty result like `.maybeSingle()` does. Against a strict PostgREST the
-  // zero-row case is a 406 error (handled above), but a lenient server/proxy or
-  // a 200+[] response resolves data to `[]` — a truthy array. Returning that
-  // made the UI render a phantom property (blank fields, default «عقار» title)
-  // instead of the not-found state. Normalize to null so callers' truthiness
-  // checks always mean "a real record".
+  // `.maybeSingle()` returns null for the zero-row case instead of a 406.
+  // A lenient server/proxy or a 200+[] response can still resolve data to
+  // `[]` — a truthy array. Returning that made the UI render a phantom
+  // property (blank fields, default «عقار» title) instead of the not-found
+  // state. Normalize to null so callers' truthiness checks always mean
+  // "a real record".
   if (Array.isArray(data)) return data[0] ?? null;
   return data;
 }
@@ -206,13 +206,21 @@ export async function getProperty(propertyId: string): Promise<Property | null> 
 export type PropertyTitleRow = Readonly<{ id: string; title: string }>;
 
 export async function listPropertyTitles(): Promise<PropertyTitleRow[]> {
-  const { data, error } = await supabase
-    .from('properties')
-    .select('id, title')
-    .is('deleted_at', null)
-    .returns<Array<Pick<Property, 'id' | 'title'>>>();
-  if (error) throw error;
-  return (data ?? [])
+  // Occupancy labels treat a missing title as "عقار بدون اسم". A silent
+  // 1000-row PostgREST cap would therefore invent unnamed properties.
+  // Fail closed if the portfolio exceeds the paged-read ceiling — the
+  // reports hook does not expose a truncated warning for this list.
+  const { rows } = await fetchAllRows<Pick<Property, 'id' | 'title'>>(
+    () =>
+      supabase
+        .from('properties')
+        .select('id, title')
+        .is('deleted_at', null)
+        .order('title', { ascending: true })
+        .order('id', { ascending: true })
+        .returns<Array<Pick<Property, 'id' | 'title'>>>(),
+  );
+  return rows
     .map((row) => ({ id: row.id, title: (row.title ?? '').trim() }))
     .filter((row) => row.title.length > 0);
 }

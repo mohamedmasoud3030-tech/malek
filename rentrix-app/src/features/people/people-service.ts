@@ -69,6 +69,7 @@ export async function listPeople(params: PeopleListParams): Promise<PaginatedPeo
     .select('*', { count: 'exact' })
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
     .range(from, to);
 
   const trimmedSearch = params.search.trim();
@@ -93,7 +94,7 @@ export async function getPerson(personId: string): Promise<Person> {
     .select('*')
     .eq('id', personId)
     .is('deleted_at', null)
-    .single()
+    .maybeSingle()
     .returns<Person>();
   if (error) handleSupabaseError(error, 'تعذر تحميل بيانات الشخص');
   return requirePersonData(data, 'تعذر تحميل بيانات الشخص');

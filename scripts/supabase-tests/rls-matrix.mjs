@@ -408,6 +408,23 @@ async function runStructural(db, schema) {
     detail: JSON.stringify(hookGrants),
   });
 
+  const hookMeta = (await db.query(`
+    select p.prosecdef as security_definer,
+           coalesce(array_to_string(p.proconfig, ','), '') as config
+      from pg_proc p
+      join pg_namespace n on n.oid = p.pronamespace
+     where n.nspname = 'public'
+       and p.proname = 'custom_access_token_hook'
+       and pg_get_function_identity_arguments(p.oid) = 'event jsonb'
+  `)).rows[0];
+  record({
+    id: 'struct.hook_definer_search_path',
+    group: 'auth',
+    title: 'auth hook is SECURITY DEFINER with a pinned search_path',
+    status: hookMeta?.security_definer === true && /search_path/i.test(hookMeta?.config ?? '') ? 'pass' : 'fail',
+    detail: JSON.stringify(hookMeta),
+  });
+
   const views = schema.views ?? [];
   const insecureViews = views.filter((view) => String(view.security_invoker) !== 'true');
   record({
@@ -436,6 +453,13 @@ async function runAuthLifecycle(db) {
     'select public.current_company_id()::text as v',
     COMPANY_B,
     { id: 'auth.current_company_admin_b', group: 'auth', title: 'ADMIN B JWT resolves Company B' },
+  );
+  await expectHelper(
+    db,
+    { pgRole: 'authenticated', userId: ADMIN_A, companyId: null, userRole: 'ADMIN', label: 'adminA-no-claim' },
+    'select public.current_company_id()::text as v',
+    null,
+    { id: 'auth.current_company_missing_claim', group: 'auth', title: 'missing company claim fail-closes current_company_id()' },
   );
   await expectHelper(
     db,
@@ -734,9 +758,9 @@ async function runMutations(db) {
     { id: 'rls.managerA.update.propertyA', group: 'rls-write', title: 'MANAGER A can update own-company property' },
   );
 
-  // OPERATIONS is a product write role in the UI matrix, but the current
-  // properties write policy is is_admin_or_manager(). Record the live
-  // database truth rather than the frontend wish.
+  // OPERATIONS may still appear in the SQL catalog for properties.write,
+  // but the current properties write policy is is_admin_or_manager().
+  // Record the live database truth. The frontend now fences the same way.
   const operationsWrite = await queryAs(
     db,
     ids.operationsA,

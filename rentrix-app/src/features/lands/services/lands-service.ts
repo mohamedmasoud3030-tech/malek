@@ -56,7 +56,7 @@ export type LandDossier = Readonly<{
 }>;
 
 export async function getLandDossier(landId: string, options: { includeCommissions: boolean; includeActivity: boolean }): Promise<LandDossier> {
-  const { data: land, error: landError } = await supabase.from('lands').select('*').eq('id', landId).single().returns<LandRecord>();
+  const { data: land, error: landError } = await supabase.from('lands').select('*').eq('id', landId).maybeSingle().returns<LandRecord>();
   if (landError) handleSupabaseError(landError, 'تعذر تحميل ملف الأرض');
   if (!land) throw new Error('الأرض غير موجودة أو غير متاحة لصلاحياتك.');
   const [ownerResult, commissionResult, activityResult] = await Promise.all([
