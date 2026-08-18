@@ -310,7 +310,7 @@ export function OwnerSettlementWorkspace({ ownerId }: Readonly<{ ownerId?: strin
 
   const columns: ColumnDef<OwnerSettlementRecord>[] = [
     {
-      key: 'owner',
+      key: 'owner', priority: 'identity' as const,
       header: 'المالك والعقار',
       render: (settlement) => (
         <div className="min-w-0">
@@ -320,25 +320,25 @@ export function OwnerSettlementWorkspace({ ownerId }: Readonly<{ ownerId?: strin
       ),
     },
     {
-      key: 'period',
+      key: 'period', priority: 'secondary' as const,
       header: 'الفترة',
       render: (settlement) => <span dir="ltr" className="text-xs tabular-nums">{settlement.period_start} → {settlement.period_end}</span>,
     },
-    { key: 'gross', header: 'المحصّل', render: (settlement) => <strong dir="ltr">{formatMoney(settlement.gross_rent_collected)}</strong> },
-    { key: 'fees', header: 'أتعاب المكتب', render: (settlement) => <strong dir="ltr" className="text-primary">{formatMoney(settlement.management_fee_amount)}</strong> },
+    { key: 'gross', priority: 'detail' as const, header: 'المحصّل', render: (settlement) => <strong dir="ltr">{formatMoney(settlement.gross_rent_collected)}</strong> },
+    { key: 'fees', priority: 'detail' as const, header: 'أتعاب المكتب', render: (settlement) => <strong dir="ltr" className="text-primary">{formatMoney(settlement.management_fee_amount)}</strong> },
     {
-      key: 'expenses',
+      key: 'expenses', priority: 'detail' as const,
       header: 'مصروفات المالك',
       render: (settlement) => <strong dir="ltr" className="text-destructive">{formatMoney(settlement.owner_expenses)}</strong>,
     },
     {
-      key: 'feeVat',
+      key: 'feeVat', priority: 'detail' as const,
       header: 'ضريبة الأتعاب',
       render: (settlement) => <strong dir="ltr" className="text-destructive">{formatMoney(settlement.fee_vat_amount)}</strong>,
     },
-    { key: 'net', header: 'الصافي', render: (settlement) => <strong dir="ltr" className="text-success">{formatMoney(settlement.net_payable_amount)}</strong> },
-    { key: 'status', header: 'الحالة', render: (settlement) => <StatusBadge tone={settlementTone(settlement.status)}>{settlementStatusLabels[settlement.status]}</StatusBadge> },
-    { key: 'actions', header: 'إجراءات', render: (settlement) => <ActionMenu label={`إجراءات تسوية ${settlement.owner_name}`} items={settlementActions(settlement)} /> },
+    { key: 'net', priority: 'primary' as const, header: 'الصافي', render: (settlement) => <strong dir="ltr" className="text-success">{formatMoney(settlement.net_payable_amount)}</strong> },
+    { key: 'status', priority: 'secondary' as const, header: 'الحالة', render: (settlement) => <StatusBadge tone={settlementTone(settlement.status)}>{settlementStatusLabels[settlement.status]}</StatusBadge> },
+    { key: 'actions', priority: 'actions' as const, header: 'إجراءات', render: (settlement) => <ActionMenu label={`إجراءات تسوية ${settlement.owner_name}`} items={settlementActions(settlement)} /> },
   ];
 
   return (

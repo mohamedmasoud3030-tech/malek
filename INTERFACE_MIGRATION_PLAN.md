@@ -24,7 +24,7 @@
 ## Milestone M3 — Error≠empty sweep + register hierarchy lock
 
 **Status:** VERIFIED COMPLETE (repository)  
-**Work:** dashboard queue sections distinguish error vs empty; properties/units/tenants/invoices/receipts/deposits/providers column priorities locked; cross-register hierarchy contract test added.
+**Work:** dashboard queue error honesty; full operational register hierarchy (23 surfaces) including lands/leads/communication/commissions/people/utilities/settlements/audit/automation; hierarchy contract expanded.
 
 ## Milestone M4 — Consumer import rename DataTable→EntityTable (optional)
 

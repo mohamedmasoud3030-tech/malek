@@ -58,13 +58,13 @@ export function ReceiptsSection({
             rows={receipts}
             mobileVisibleSecondaryKey="amount"
             columns={[
-              { key: 'receipt_number', header: 'رقم الإيصال', render: (receipt) => <span className="font-bold">{`إيصال ${receipt.receipt_number}`}</span> },
-              { key: 'payment_date', header: 'التاريخ والطريقة', render: (receipt) => <span>{formatDate(receipt.payment_date)} · {paymentMethodLabels[receipt.payment_method] ?? receipt.payment_method}</span> },
-              { key: 'invoice', header: 'الفاتورة والسياق', render: (receipt) => <span>{formatShortId(receipt.invoice_id)} · {formatReceiptContext(receipt)}</span> },
-              { key: 'amount', header: 'المبلغ المحصل', render: (receipt) => <span dir="ltr" className="font-black text-success">{formatMoney(receipt.amount)}</span> },
-              { key: 'status', header: 'الحالة', render: (receipt) => <StatusBadge tone={receipt.status === 'void' ? 'danger' : 'success'}>{receiptStatusLabels[receipt.status] ?? receipt.status}</StatusBadge> },
+              { key: 'receipt_number', priority: 'identity' as const, header: 'رقم الإيصال', render: (receipt) => <span className="font-bold">{`إيصال ${receipt.receipt_number}`}</span> },
+              { key: 'payment_date', priority: 'secondary' as const, header: 'التاريخ والطريقة', render: (receipt) => <span>{formatDate(receipt.payment_date)} · {paymentMethodLabels[receipt.payment_method] ?? receipt.payment_method}</span> },
+              { key: 'invoice', priority: 'detail' as const, header: 'الفاتورة والسياق', render: (receipt) => <span>{formatShortId(receipt.invoice_id)} · {formatReceiptContext(receipt)}</span> },
+              { key: 'amount', priority: 'primary' as const, header: 'المبلغ المحصل', render: (receipt) => <span dir="ltr" className="font-black text-success">{formatMoney(receipt.amount)}</span> },
+              { key: 'status', priority: 'secondary' as const, header: 'الحالة', render: (receipt) => <StatusBadge tone={receipt.status === 'void' ? 'danger' : 'success'}>{receiptStatusLabels[receipt.status] ?? receipt.status}</StatusBadge> },
               {
-                key: 'actions',
+                key: 'actions', priority: 'actions' as const,
                 header: 'إجراءات',
                 render: (receipt) => (
                   <div className="flex flex-wrap gap-2" onClick={(event) => event.stopPropagation()}>

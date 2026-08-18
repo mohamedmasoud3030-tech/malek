@@ -131,7 +131,7 @@ export function LandsView({
 
   const columns: ColumnDef<LandRecord>[] = [
     {
-      key: 'name',
+      key: 'name', priority: 'identity' as const,
       header: 'الأرض',
       render: (row) => (
         <div className="min-w-0">
@@ -140,12 +140,12 @@ export function LandsView({
         </div>
       ),
     },
-    { key: 'location', header: 'الموقع', render: (row) => row.location || '—' },
-    { key: 'area', header: 'المساحة', render: (row) => <span dir="ltr">{area(row.area)}</span> },
-    { key: 'owner', header: 'المالك', render: (row) => ownerLabel(row.owner_id) },
-    { key: 'value', header: 'القيمة', render: (row) => <span dir="ltr">{money(row.owner_price ?? row.purchase_price)}</span> },
-    { key: 'status', header: 'الحالة', render: (row) => <StatusBadge tone={tone(row.status)}>{statusLabels[row.status ?? ''] ?? row.status ?? '—'}</StatusBadge> },
-    { key: 'actions', header: 'إجراءات', render: rowActions },
+    { key: 'location', priority: 'secondary' as const, header: 'الموقع', render: (row) => row.location || '—' },
+    { key: 'area', priority: 'detail' as const, header: 'المساحة', render: (row) => <span dir="ltr">{area(row.area)}</span> },
+    { key: 'owner', priority: 'secondary' as const, header: 'المالك', render: (row) => ownerLabel(row.owner_id) },
+    { key: 'value', priority: 'detail' as const, header: 'القيمة', render: (row) => <span dir="ltr">{money(row.owner_price ?? row.purchase_price)}</span> },
+    { key: 'status', priority: 'primary' as const, header: 'الحالة', render: (row) => <StatusBadge tone={tone(row.status)}>{statusLabels[row.status ?? ''] ?? row.status ?? '—'}</StatusBadge> },
+    { key: 'actions', priority: 'actions' as const, header: 'إجراءات', render: rowActions },
   ];
 
   return (

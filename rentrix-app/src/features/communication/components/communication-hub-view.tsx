@@ -102,7 +102,7 @@ export function CommunicationHubView({
 
   const columns: ColumnDef<CommunicationRecord>[] = [
     {
-      key: 'contact',
+      key: 'contact', priority: 'identity' as const,
       header: 'جهة التواصل',
       render: (row) => (
         <div className="min-w-0">
@@ -111,10 +111,10 @@ export function CommunicationHubView({
         </div>
       ),
     },
-    { key: 'channel', header: 'القناة', render: (row) => channelLabels[row.channel] ?? row.channel },
-    { key: 'direction', header: 'الاتجاه', render: (row) => directionLabels[row.direction] ?? row.direction },
+    { key: 'channel', priority: 'secondary' as const, header: 'القناة', render: (row) => channelLabels[row.channel] ?? row.channel },
+    { key: 'direction', priority: 'detail' as const, header: 'الاتجاه', render: (row) => directionLabels[row.direction] ?? row.direction },
     {
-      key: 'subject',
+      key: 'subject', priority: 'secondary' as const,
       header: 'الموضوع',
       render: (row) => (
         <div className="max-w-72">
@@ -123,8 +123,8 @@ export function CommunicationHubView({
         </div>
       ),
     },
-    { key: 'status', header: 'الحالة', render: (row) => <StatusBadge tone={statusTone[row.status] ?? 'neutral'}>{statusLabels[row.status] ?? row.status}</StatusBadge> },
-    { key: 'actions', header: 'إجراءات', render: rowActions },
+    { key: 'status', priority: 'primary' as const, header: 'الحالة', render: (row) => <StatusBadge tone={statusTone[row.status] ?? 'neutral'}>{statusLabels[row.status] ?? row.status}</StatusBadge> },
+    { key: 'actions', priority: 'actions' as const, header: 'إجراءات', render: rowActions },
   ];
 
   return (
