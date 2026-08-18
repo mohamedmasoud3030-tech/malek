@@ -1,8 +1,7 @@
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { Suspense, lazy, useCallback, useMemo, useRef, type ComponentType } from 'react';
 import { AccessDenied } from '@/components/layout/access-denied';
-import { PageHeader } from '@/components/layout/page-header';
-import { PageLayout } from '@/components/layout/page-layout';
+import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SectionTabs } from '@/components/ui/section-tabs';
 import { useAuth } from '@/hooks/use-auth';
@@ -84,49 +83,50 @@ export function PortfolioHubWorkspace({
     [navigate],
   );
 
-  const shell = (children: React.ReactNode) => {
-    if (mode === 'embedded') {
-      return <div data-visual-wave="malek-pro" className="min-w-0 space-y-4 sm:space-y-5">{children}</div>;
+  const content = useMemo(() => {
+    if (hasNoVisibleSections) {
+      return <AccessDenied message="ليس لديك صلاحية لعرض أي من أقسام المحفظة." />;
+    }
+
+    if (isRequestedSectionForbidden || !activeSection) {
+      return <AccessDenied message="ليس لديك صلاحية لعرض هذا القسم من المحفظة." />;
     }
 
     return (
-      <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro">
-        <PageHeader title={title} description={description} />
-        {children}
-      </PageLayout>
+      <>
+        <SectionTabs items={visibleSections} activeId={activeSection} onChange={handleSectionChange} ariaLabel="أقسام المحفظة" />
+        {portfolioHubSections
+          .filter((section) => mountedSections.current.has(section.id) && visibleSections.some((visible) => visible.id === section.id))
+          .map((section) => {
+            const SectionBody = sectionComponents[section.id];
+            const isActive = section.id === activeSection;
+            return (
+              <div
+                key={section.id}
+                id={`section-panel-${section.id}`}
+                role="tabpanel"
+                aria-labelledby={`section-tab-${section.id}`}
+                data-portfolio-section={section.id}
+                hidden={!isActive}
+              >
+                <Suspense fallback={<SectionFallback />}><SectionBody /></Suspense>
+              </div>
+            );
+          })}
+      </>
     );
-  };
+  }, [hasNoVisibleSections, isRequestedSectionForbidden, activeSection, visibleSections, handleSectionChange]);
 
-  if (hasNoVisibleSections) {
-    return shell(<AccessDenied message="ليس لديك صلاحية لعرض أي من أقسام المحفظة." />);
-  }
-
-  if (isRequestedSectionForbidden || !activeSection) {
-    return shell(<AccessDenied message="ليس لديك صلاحية لعرض هذا القسم من المحفظة." />);
-  }
-
-  return shell(
-    <>
-      <SectionTabs items={visibleSections} activeId={activeSection} onChange={handleSectionChange} ariaLabel="أقسام المحفظة" />
-      {portfolioHubSections
-        .filter((section) => mountedSections.current.has(section.id) && visibleSections.some((visible) => visible.id === section.id))
-        .map((section) => {
-          const SectionBody = sectionComponents[section.id];
-          const isActive = section.id === activeSection;
-          return (
-            <div
-              key={section.id}
-              id={`section-panel-${section.id}`}
-              role="tabpanel"
-              aria-labelledby={`section-tab-${section.id}`}
-              data-portfolio-section={section.id}
-              hidden={!isActive}
-            >
-              <Suspense fallback={<SectionFallback />}><SectionBody /></Suspense>
-            </div>
-          );
-        })}
-    </>,
+  return (
+    <EmbeddableWorkspace
+      embedded={mode === 'embedded'}
+      title={title}
+      description={description}
+      size="wide"
+      visualVariant="malek-pro"
+    >
+      {content}
+    </EmbeddableWorkspace>
   );
 }
 
