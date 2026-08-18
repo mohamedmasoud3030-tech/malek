@@ -88,8 +88,14 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
-      - name: Install Chromium system dependencies
-        run: pnpm --filter ./rentrix-app exec playwright install-deps chromium
+      # ubuntu-latest already provides the Chromium runtime libraries. Avoid
+      # networked apt install-deps so a mirror outage cannot block this gate
+      # before Playwright starts. MALEK ships its Arabic font assets itself.
+      - name: Verify self-hosted Arabic font assets
+        run: |
+          test -f rentrix-app/public/fonts/cairo/cairo-arabic-400-normal.woff2
+          test -f rentrix-app/public/fonts/cairo/cairo-arabic-700-normal.woff2
+          grep -q "cairo-arabic-400-normal.woff2" rentrix-app/public/fonts/fonts.css
       - name: Install Chromium binary on cache miss
         if: steps.single-office-playwright-cache.outputs.cache-hit != 'true'
         run: pnpm --filter ./rentrix-app exec playwright install chromium
@@ -157,8 +163,11 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
-      - name: Install Chromium system dependencies
-        run: pnpm --filter ./rentrix-app exec playwright install-deps chromium
+      - name: Verify self-hosted Arabic font assets
+        run: |
+          test -f rentrix-app/public/fonts/cairo/cairo-arabic-400-normal.woff2
+          test -f rentrix-app/public/fonts/cairo/cairo-arabic-700-normal.woff2
+          grep -q "cairo-arabic-400-normal.woff2" rentrix-app/public/fonts/fonts.css
       - name: Install Chromium binary on cache miss
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: pnpm --filter ./rentrix-app exec playwright install chromium
