@@ -174,16 +174,44 @@ describe('canonical authorization permissions', () => {
   it('uses effective grants for shell write posture while retaining action-level gates', () => {
     const approvedWriter = {
       ...getAuthorizationContextFromUser(userWithRole('USER'))!,
+      grantedPermissions: ['service_providers.write'] as const,
+    };
+    const doomedPropertyWriter = {
+      ...getAuthorizationContextFromUser(userWithRole('USER'))!,
       grantedPermissions: ['properties.write'] as const,
     };
     const readOnlyUser = getAuthorizationContextFromUser(userWithRole('USER'));
 
     expect(getWriteAccessState(approvedWriter)).toBe('full');
-    expect(canAccessRoute(approvedWriter, 'properties.write')).toBe(true);
-    expect(canShowNavigationItem(approvedWriter, 'properties.write')).toBe(true);
+    expect(canAccessRoute(approvedWriter, 'service_providers.write')).toBe(true);
+    expect(canShowNavigationItem(approvedWriter, 'service_providers.write')).toBe(true);
     expect(canAccess(approvedWriter, 'contracts.write')).toBe(false);
+    expect(getWriteAccessState(doomedPropertyWriter)).toBe('read-only');
+    expect(canAccessRoute(doomedPropertyWriter, 'properties.write')).toBe(false);
+    expect(canShowNavigationItem(doomedPropertyWriter, 'properties.write')).toBe(false);
     expect(getWriteAccessState(readOnlyUser)).toBe('read-only');
     expect(canAccessRoute(readOnlyUser, 'properties.write')).toBe(false);
+  });
+
+  it('fences server-enforced writes so doomed grants cannot open UI actions', () => {
+    const operationsGrant = {
+      ...getAuthorizationContextFromUser(userWithRole('OPERATIONS'))!,
+      grantedPermissions: ['properties.write', 'contracts.write', 'expenses.write', 'documents.write'] as const,
+    };
+    const accountantGrant = {
+      ...getAuthorizationContextFromUser(userWithRole('ACCOUNTANT'))!,
+      grantedPermissions: ['properties.write', 'documents.write'] as const,
+    };
+
+    for (const permission of ['properties.write', 'contracts.write', 'expenses.write', 'documents.write'] as const) {
+      expect(canAccess(operationsGrant, permission)).toBe(false);
+      expect(canAccessRoute(operationsGrant, permission)).toBe(false);
+    }
+    expect(canAccess(operationsGrant, 'service_providers.write')).toBe(true);
+    expect(canAccess(accountantGrant, 'properties.write')).toBe(false);
+    expect(canAccess(accountantGrant, 'documents.write')).toBe(false);
+    expect(canAccess(getAuthorizationContextFromUser(userWithRole('ADMIN')), 'properties.write')).toBe(true);
+    expect(canAccess(getAuthorizationContextFromUser(userWithRole('MANAGER')), 'documents.write')).toBe(true);
   });
 
   it('recognizes all six canonical roles', () => {
@@ -240,7 +268,6 @@ describe('canonical authorization permissions', () => {
     expect(canAccess(ctx, 'service_providers.view')).toBe(true);
     expect(canAccess(ctx, 'service_providers.write')).toBe(true);
     expect(canAccess(ctx, 'cost_centers.manage')).toBe(true);
-    expect(canAccess(ctx, 'documents.write')).toBe(true);
     expect(canAccess(ctx, 'owners.hub.view')).toBe(true);
     expect(canAccess(ctx, 'owners.detail.view')).toBe(true);
     expect(canAccess(ctx, 'lands.view')).toBe(true);
@@ -248,11 +275,15 @@ describe('canonical authorization permissions', () => {
     expect(canAccess(ctx, 'communication.view')).toBe(true);
     expect(canAccess(ctx, 'automation.view')).toBe(true);
     expect(canAccess(ctx, 'auth.password.change')).toBe(true);
-    expect(canAccess(ctx, 'properties.write')).toBe(true);
-    expect(canAccess(ctx, 'contracts.write')).toBe(true);
     expect(canAccess(ctx, 'expenses.view')).toBe(true);
-    expect(canAccess(ctx, 'expenses.write')).toBe(true);
     expect(canAccess(ctx, 'arrears.view')).toBe(true);
+
+    // These writes exist in the SQL catalog for OPERATIONS but RLS/RPCs
+    // always require is_admin_or_manager(). The frontend follows the DB.
+    expect(canAccess(ctx, 'documents.write')).toBe(false);
+    expect(canAccess(ctx, 'properties.write')).toBe(false);
+    expect(canAccess(ctx, 'contracts.write')).toBe(false);
+    expect(canAccess(ctx, 'expenses.write')).toBe(false);
 
     // Does NOT have financial/approval/admin permissions.
     expect(canAccess(ctx, 'financial.payments.create')).toBe(false);

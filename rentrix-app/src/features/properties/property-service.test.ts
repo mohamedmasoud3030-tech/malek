@@ -10,6 +10,9 @@ function createQueryMock(result: unknown) {
     limit: vi.fn(() => Promise.resolve(result)),
     select: vi.fn(() => chain),
     single: vi.fn(() => chain),
+    maybeSingle: vi.fn(() => chain),
+    order: vi.fn(() => chain),
+    range: vi.fn(() => Promise.resolve(result)),
     update: vi.fn(() => chain),
     returns: vi.fn(() => Promise.resolve(result)),
   };
@@ -153,17 +156,24 @@ describe('getProperty zero-row normalization', () => {
       is: vi.fn(() => chain),
       select: vi.fn(() => chain),
       single: vi.fn(() => chain),
+      maybeSingle: vi.fn(() => chain),
       returns: vi.fn(() => Promise.resolve(result)),
     };
     return chain;
   }
 
   it('returns null for a 200-empty response instead of a phantom truthy array', async () => {
-    // `.single()` does not normalize an empty result (only `.maybeSingle()`
-    // does). A lenient server/proxy resolving 200 + [] used to reach the UI as
-    // a truthy array, rendering a phantom property. Regression: the service
+    // A lenient server/proxy resolving 200 + [] used to reach the UI as a
+    // truthy array, rendering a phantom property. Regression: the service
     // must return null so callers' truthiness checks mean "a real record".
     supabaseMock.from.mockReturnValue(getPropertyQueryMock({ data: [], error: null }));
+
+    const { getProperty } = await import('./property-service');
+    await expect(getProperty('not-a-real-id')).resolves.toBeNull();
+  });
+
+  it('returns null when maybeSingle finds no row', async () => {
+    supabaseMock.from.mockReturnValue(getPropertyQueryMock({ data: null, error: null }));
 
     const { getProperty } = await import('./property-service');
     await expect(getProperty('not-a-real-id')).resolves.toBeNull();
@@ -177,11 +187,56 @@ describe('getProperty zero-row normalization', () => {
     await expect(getProperty('property-1')).resolves.toMatchObject(row);
   });
 
-  it('propagates a real PostgREST single() error (406 zero-row)', async () => {
-    const err = new Error('JSON object requested, multiple (or no) rows returned');
+  it('propagates a real PostgREST error instead of inventing an empty property', async () => {
+    const err = new Error('permission denied for table properties');
     supabaseMock.from.mockReturnValue(getPropertyQueryMock({ data: null, error: err }));
 
     const { getProperty } = await import('./property-service');
     await expect(getProperty('not-a-real-id')).rejects.toThrow();
+  });
+});
+
+describe('listPropertyTitles paged read', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  function getTitlesQueryMock() {
+    const chain = {
+      is: vi.fn(() => chain),
+      select: vi.fn(() => chain),
+      order: vi.fn(() => chain),
+      returns: vi.fn(() => chain),
+      range: vi.fn(),
+    };
+    return chain;
+  }
+
+  it('orders titles deterministically and pages instead of taking the first 1000', async () => {
+    const chain = getTitlesQueryMock();
+    chain.range.mockResolvedValueOnce({
+      data: [{ id: 'property-1', title: '  برج الموج  ' }, { id: 'property-2', title: '' }],
+      error: null,
+    });
+    supabaseMock.from.mockReturnValue(chain);
+
+    const { listPropertyTitles } = await import('./property-service');
+    await expect(listPropertyTitles()).resolves.toEqual([{ id: 'property-1', title: 'برج الموج' }]);
+    expect(chain.order).toHaveBeenNthCalledWith(1, 'title', { ascending: true });
+    expect(chain.order).toHaveBeenNthCalledWith(2, 'id', { ascending: true });
+    expect(chain.range).toHaveBeenCalledWith(0, 999);
+  });
+
+  it('fails closed when the paged-read ceiling is exceeded', async () => {
+    const chain = getTitlesQueryMock();
+    const fullPage = Array.from({ length: 1000 }, (_, index) => ({
+      id: `property-${index}`,
+      title: `عقار ${index}`,
+    }));
+    chain.range.mockResolvedValue({ data: fullPage, error: null });
+    supabaseMock.from.mockReturnValue(chain);
+
+    const { listPropertyTitles } = await import('./property-service');
+    await expect(listPropertyTitles()).rejects.toThrow('سقف الأمان');
   });
 });

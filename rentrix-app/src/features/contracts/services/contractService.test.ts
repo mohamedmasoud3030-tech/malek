@@ -9,6 +9,51 @@ vi.mock('@/lib/supabase', () => ({
   supabase: supabaseMock,
 }));
 
+describe('getContract missing-row handling', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  function getContractQueryMock(result: { data: unknown; error: unknown }) {
+    const chain = {
+      select: vi.fn(() => chain),
+      eq: vi.fn(() => chain),
+      is: vi.fn(() => chain),
+      maybeSingle: vi.fn(() => chain),
+      returns: vi.fn(() => Promise.resolve(result)),
+    };
+    return chain;
+  }
+
+  it('returns null when the contract is missing instead of throwing a 406', async () => {
+    supabaseMock.from.mockReturnValue(getContractQueryMock({ data: null, error: null }));
+    const { getContract } = await import('./contractService');
+    await expect(getContract('missing-contract')).resolves.toBeNull();
+  });
+
+  it('normalizes a phantom empty array to null', async () => {
+    supabaseMock.from.mockReturnValue(getContractQueryMock({ data: [], error: null }));
+    const { getContract } = await import('./contractService');
+    await expect(getContract('missing-contract')).resolves.toBeNull();
+  });
+
+  it('returns the contract when one row exists', async () => {
+    const row = { id: 'contract-1', status: 'active' };
+    supabaseMock.from.mockReturnValue(getContractQueryMock({ data: row, error: null }));
+    const { getContract } = await import('./contractService');
+    await expect(getContract('contract-1')).resolves.toMatchObject(row);
+  });
+
+  it('propagates a real query error', async () => {
+    supabaseMock.from.mockReturnValue(getContractQueryMock({
+      data: null,
+      error: new Error('permission denied for table contracts'),
+    }));
+    const { getContract } = await import('./contractService');
+    await expect(getContract('contract-1')).rejects.toThrow('permission denied');
+  });
+});
+
 describe('renewContract', () => {
   beforeEach(() => {
     vi.clearAllMocks();

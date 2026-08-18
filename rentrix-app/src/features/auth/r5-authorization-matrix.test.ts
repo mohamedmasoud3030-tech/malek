@@ -51,8 +51,8 @@ const financialMatrix: MatrixRow[] = [
   { permission: 'financial.owner_settlements.pay',      ADMIN: true, MANAGER: false, ACCOUNTANT: false, OPERATIONS: false, USER: false, VIEWER: false },
   { permission: 'financial.fixed_monthly_accruals.execute', ADMIN: true, MANAGER: true, ACCOUNTANT: true, OPERATIONS: false, USER: false, VIEWER: false },
   { permission: 'financial.fixed_monthly_accruals.reverse', ADMIN: true, MANAGER: true, ACCOUNTANT: true, OPERATIONS: false, USER: false, VIEWER: false },
-  { permission: 'expenses.write',                       ADMIN: true, MANAGER: true, ACCOUNTANT: false, OPERATIONS: true,  USER: false, VIEWER: false },
-  { permission: 'contracts.write',                      ADMIN: true, MANAGER: true, ACCOUNTANT: false, OPERATIONS: true,  USER: false, VIEWER: false },
+  { permission: 'expenses.write',                       ADMIN: true, MANAGER: true, ACCOUNTANT: false, OPERATIONS: false, USER: false, VIEWER: false },
+  { permission: 'contracts.write',                      ADMIN: true, MANAGER: true, ACCOUNTANT: false, OPERATIONS: false, USER: false, VIEWER: false },
 ];
 
 describe('R5 — locked financial authorization matrix (allow AND deny)', () => {

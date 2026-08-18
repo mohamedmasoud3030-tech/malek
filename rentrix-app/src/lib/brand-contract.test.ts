@@ -137,6 +137,14 @@ const DISPLAY_NAME_ALLOWLIST = new Map<string, string>([
     'Supabase client storageKey rentrix-auth-session — renaming would sign every user out.',
   ],
   [
+    'src/lib/supabase-client-boundary.test.ts',
+    'Intentionally asserts the frozen rentrix-auth-session Supabase storageKey. This is a stable technical/session compatibility contract, not display branding; renaming it would break persisted authentication and sign users out.',
+  ],
+  [
+    'src/services/auth-service.test.ts',
+    'Intentionally seeds and asserts the frozen rentrix-auth-session key to prove corrupted/stale auth-session cleanup. This is a stable technical identifier and never user-facing branding.',
+  ],
+  [
     'src/lib/pwa-install.ts',
     'Persisted localStorage key rentrix.pwa-install-dismissed-at.',
   ],

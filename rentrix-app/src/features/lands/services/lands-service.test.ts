@@ -1,15 +1,29 @@
 import { describe, expect, it, vi } from 'vitest';
-import { archiveLand, createLand, toPayload, updateLand } from './lands-service';
+import { archiveLand, createLand, getLandDossier, toPayload, updateLand } from './lands-service';
 import type { LandFormInput } from '../land-schema';
+
+const supabaseFrom = vi.hoisted(() => vi.fn());
 
 vi.mock('@/lib/supabase', () => ({
   supabase: {
-    from: () => ({
-      insert: () => ({ select: () => ({ single: () => ({ returns: async () => ({ data: null, error: null }) }) }) }),
-      update: () => ({ eq: () => ({ select: () => ({ single: () => ({ returns: async () => ({ data: null, error: null }) }) }) }) }),
-    }),
+    from: (...args: unknown[]) => supabaseFrom(...args),
   },
 }));
+
+function defaultLandsFrom() {
+  return {
+    insert: () => ({ select: () => ({ single: () => ({ returns: async () => ({ data: null, error: null }) }) }) }),
+    update: () => ({ eq: () => ({ select: () => ({ single: () => ({ returns: async () => ({ data: null, error: null }) }) }) }) }),
+    select: () => ({
+      eq: () => ({
+        maybeSingle: () => ({ returns: async () => ({ data: null, error: null }) }),
+        single: () => ({ returns: async () => ({ data: null, error: null }) }),
+      }),
+    }),
+  };
+}
+
+supabaseFrom.mockImplementation(defaultLandsFrom);
 
 const baseValues: LandFormInput = {
   plot_no: ' A-12 ',
@@ -95,6 +109,23 @@ describe('lands service validation', () => {
 
   it('rejects negative numeric input', async () => {
     await expect(createLand({ ...baseValues, area: '-5' })).rejects.toThrow();
+  });
+});
+
+describe('getLandDossier missing-row handling', () => {
+  it('throws a clear not-found message instead of a PostgREST 406', async () => {
+    supabaseFrom.mockReturnValueOnce({
+      select: () => ({
+        eq: () => ({
+          maybeSingle: () => ({
+            returns: async () => ({ data: null, error: null }),
+          }),
+        }),
+      }),
+    });
+
+    await expect(getLandDossier('missing-land', { includeCommissions: false, includeActivity: false }))
+      .rejects.toThrow('غير موجودة');
   });
 });
 

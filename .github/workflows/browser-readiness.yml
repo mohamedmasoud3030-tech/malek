@@ -52,17 +52,16 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
-      - name: Install Chromium system dependencies
-        run: pnpm --filter ./rentrix-app exec playwright install-deps chromium
-      # The document/print/PDF acceptance suite renders Arabic A4 output via
-      # html2canvas; captured pixels need a real Arabic-script font. Install
-      # one only when the runner lacks coverage (idempotent no-op otherwise).
-      - name: Ensure Arabic script fonts for document rendering
+      # ubuntu-latest already ships a Chromium-capable browser runtime. Avoid
+      # networked apt install-deps here: a transient runner mirror outage must
+      # not cancel Browser Readiness before Playwright itself starts.
+      # MALEK also ships Cairo Arabic fonts with the app, so document rendering
+      # must use the product assets rather than mutate the runner's font set.
+      - name: Verify self-hosted Arabic font assets
         run: |
-          if ! fc-list :lang=ar 2>/dev/null | grep -q .; then
-            sudo apt-get update -y
-            sudo apt-get install -y --no-install-recommends fonts-noto-core
-          fi
+          test -f rentrix-app/public/fonts/cairo/cairo-arabic-400-normal.woff2
+          test -f rentrix-app/public/fonts/cairo/cairo-arabic-700-normal.woff2
+          grep -q "cairo-arabic-400-normal.woff2" rentrix-app/public/fonts/fonts.css
       - name: Install Chromium binary on cache miss
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: pnpm --filter ./rentrix-app exec playwright install chromium
@@ -121,7 +120,6 @@ jobs:
           node-version: 24
           cache: pnpm
       # Keep install deterministic and block arbitrary package lifecycle scripts.
-      # esbuild is the only approved native toolchain package that needs its binary shim rebuilt.
       - name: Install dependencies with lifecycle scripts disabled
         run: pnpm install --frozen-lockfile --ignore-scripts
       - name: Rebuild approved native toolchain package
@@ -138,17 +136,11 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
-      - name: Install Chromium system dependencies
-        run: pnpm --filter ./rentrix-app exec playwright install-deps chromium
-      # The document/print/PDF acceptance suite renders Arabic A4 output via
-      # html2canvas; captured pixels need a real Arabic-script font. Install
-      # one only when the runner lacks coverage (idempotent no-op otherwise).
-      - name: Ensure Arabic script fonts for document rendering
+      - name: Verify self-hosted Arabic font assets
         run: |
-          if ! fc-list :lang=ar 2>/dev/null | grep -q .; then
-            sudo apt-get update -y
-            sudo apt-get install -y --no-install-recommends fonts-noto-core
-          fi
+          test -f rentrix-app/public/fonts/cairo/cairo-arabic-400-normal.woff2
+          test -f rentrix-app/public/fonts/cairo/cairo-arabic-700-normal.woff2
+          grep -q "cairo-arabic-400-normal.woff2" rentrix-app/public/fonts/fonts.css
       - name: Install Chromium binary on cache miss
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: pnpm --filter ./rentrix-app exec playwright install chromium

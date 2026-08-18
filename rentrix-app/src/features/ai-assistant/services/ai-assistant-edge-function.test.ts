@@ -74,6 +74,19 @@ describe('AI assistant edge function', () => {
     expect(content).toContain('checkRateLimitForUser');
   });
 
+  it('rejects unauthenticated, non-POST, and CORS-preflight-only traffic at the boundary', () => {
+    const content = readEdgeFunction();
+
+    expect(content).toContain("request.method === 'OPTIONS'");
+    expect(content).toContain("Access-Control-Allow-Origin");
+    expect(content).toContain("Access-Control-Allow-Headers");
+    expect(content).toContain("METHOD_NOT_ALLOWED");
+    expect(content).toContain("request.method !== 'POST'");
+    expect(content).toContain("authHeader.startsWith('Bearer ')");
+    expect(content).toContain('AUTH_REQUIRED');
+    expect(content).toContain('SQL_NOT_ACCEPTED');
+  });
+
   it('frontend service does not contain mock data', () => {
     const servicePath = resolve(import.meta.dirname, './ai-assistant-service.ts');
     const content = readFileSync(servicePath, 'utf8');

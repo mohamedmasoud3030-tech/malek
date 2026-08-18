@@ -233,7 +233,6 @@ const rolePermissions = {
     'service_providers.view',
     'service_providers.write',
     'cost_centers.manage',
-    'documents.write',
     'owners.hub.view',
     'owners.detail.view',
     'lands.view',
@@ -241,10 +240,7 @@ const rolePermissions = {
     'communication.view',
     'automation.view',
     'auth.password.change',
-    'properties.write',
-    'contracts.write',
     'expenses.view',
-    'expenses.write',
     'arrears.view',
   ]),
   USER: new Set<AppPermission>(['app.dashboard.view', 'auth.password.change']),
@@ -316,8 +312,33 @@ export function hasRole(context: AuthorizationContext | null | undefined, role: 
   return context?.role === role;
 }
 
+/**
+ * Writes the database always denies unless the actor is ADMIN or MANAGER
+ * (`is_admin_or_manager()` on properties/units/owners/people/contracts/
+ * expenses, contract atomic RPCs, vault/contract documents, and storage
+ * attachment mutations).
+ *
+ * The SQL catalog may still list these as OPERATIONS capabilities via
+ * `role_has_app_permission`. That is intended catalog capacity, not current
+ * RLS authority. The frontend must not show actions the database will always
+ * reject — including per-user grants. `service_providers.write` is NOT in
+ * this fence: the database enforces it through
+ * `current_user_has_effective_app_permission`.
+ */
+export const serverEnforcedWriteRoles = {
+  'properties.write': ['ADMIN', 'MANAGER'],
+  'contracts.write': ['ADMIN', 'MANAGER'],
+  'expenses.write': ['ADMIN', 'MANAGER'],
+  'documents.write': ['ADMIN', 'MANAGER'],
+} as const satisfies Partial<Record<AppPermission, readonly AuthorizationRole[]>>;
+
 export function canAccess(context: AuthorizationContext | null | undefined, permission: AppPermission): boolean {
   if (!context) return false;
+
+  const requiredRoles = serverEnforcedWriteRoles[permission as keyof typeof serverEnforcedWriteRoles];
+  if (requiredRoles && !(requiredRoles as readonly AuthorizationRole[]).includes(context.role)) {
+    return false;
+  }
 
   return Boolean(context.grantedPermissions?.includes(permission)) || (rolePermissions[context.role]?.has(permission) ?? false);
 }
