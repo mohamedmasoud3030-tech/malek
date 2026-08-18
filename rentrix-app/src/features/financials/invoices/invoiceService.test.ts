@@ -16,7 +16,7 @@ type QueryLogEntry = { table: string; method: string; args: unknown[] };
 type InvoiceSummaryFixture = Pick<Invoice, 'amount' | 'paid_amount'>;
 type InvoiceFixture = InvoiceSummaryFixture & Pick<Invoice, 'id' | 'status'> & { contracts: null };
 type PaymentFixture = Pick<Payment, 'id' | 'invoice_id' | 'amount' | 'payment_date' | 'deleted_at'>;
-type ChainMethod = 'select' | 'is' | 'eq' | 'in' | 'or' | 'order';
+type ChainMethod = 'select' | 'is' | 'eq' | 'in' | 'or' | 'order' | 'range';
 type QueryBuilder = Record<ChainMethod | 'single' | 'returns', ReturnType<typeof vi.fn>>;
 
 const chainMethods: ChainMethod[] = ['select', 'is', 'eq', 'in', 'or', 'order'];
@@ -64,6 +64,11 @@ function createQueryBuilder(table: string, responses: TableResponses, log: Query
   builder.single = vi.fn(() => {
     log.push({ table, method: 'single', args: [] });
     return builder;
+  });
+  builder.range = vi.fn(async (from: number, to: number) => {
+    log.push({ table, method: 'range', args: [from, to] });
+    const rows = responses[table as TableName] ?? [];
+    return { data: rows.slice(from, to + 1), error: null };
   });
   builder.returns = vi.fn(async () => {
     log.push({ table, method: 'returns', args: [] });
