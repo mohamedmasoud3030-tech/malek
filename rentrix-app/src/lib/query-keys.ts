@@ -28,6 +28,8 @@
  * };
  * ```
  */
+import { type QueryClient } from '@tanstack/react-query';
+
 export function defineEntityKeys(name: string) {
   const all = [name] as const;
 
@@ -41,4 +43,25 @@ export function defineEntityKeys(name: string) {
     /** Single entity detail: `[name, 'detail', id]` */
     detail: (id: string) => [...all, 'detail', id] as const,
   } as const;
+}
+
+/**
+ * Invalidate one or more entity query key namespaces.
+ *
+ * Uses prefix matching so all sub-keys (list, detail, custom) for each entity
+ * are cleared.  Centralises invalidation so the write→affected-namespace matrix
+ * is visible from a single call site rather than scattered across mutations.
+ *
+ * @example
+ * ```ts
+ * await invalidateEntity(queryClient, contractKeys.all, invoiceKeys.all);
+ * ```
+ */
+export async function invalidateEntity(
+  queryClient: QueryClient,
+  ...entityKeys: readonly (readonly string[])[]
+): Promise<void> {
+  await Promise.all(
+    entityKeys.map((keys) => queryClient.invalidateQueries({ queryKey: keys })),
+  );
 }

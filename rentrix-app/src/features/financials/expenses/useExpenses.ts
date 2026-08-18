@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { invalidateEntity } from '@/lib/query-keys';
 import { financialReportKeys } from '../reports/useFinancialReports';
 import { createExpenseWithJournal, listExpenses, updateExpense, type ExpenseFilters, type ExpensePayload, type ExpenseWithJournalPayload } from './expenseService';
 
@@ -15,10 +16,7 @@ export function useCreateExpenseAtomic() {
   return useMutation({
     mutationFn: (p: ExpenseWithJournalPayload) => createExpenseWithJournal(p),
     onSuccess: async () => {
-      await Promise.all([
-        qc.invalidateQueries({ queryKey: expenseKeys.all }),
-        qc.invalidateQueries({ queryKey: financialReportKeys.all }),
-      ]);
+      await invalidateEntity(qc, expenseKeys.all, financialReportKeys.all);
       toast.success('تم إضافة المصروف وترحيله محاسبياً');
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر إضافة المصروف'),

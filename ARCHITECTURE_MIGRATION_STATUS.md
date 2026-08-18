@@ -1,126 +1,71 @@
 # Architecture Migration Status — MALEK Frontend
 
 > **Last updated:** 2026-08-19  
-> **Current baseline:** `615f6650bbd5c572fddffd33bfe962125cd0b2fb`  
+> **Current baseline:** `7bdc0ad9`  
 > **Method:** Incremental vertical slices, each with full test coverage
 
 ---
 
-## Migration Milestones
+## Completed Milestones
 
 ### ✅ Milestone 1 — State-surface consolidation
-**Journey:** All pages (loading/empty/error states)  
-**Status:** DONE — `99a89a3d`
-
-| Old component | New component | Files changed |
-|--------------|--------------|---------------|
-| `RouteLoadingState` (standalone) | `LoadingState variant="route"` | 2 |
-| `WriteErrorCard` (standalone) | `ErrorState variant="write"` | 2 |
-| `[data-page-section]` CSS (dead) | Removed | 1 |
-
-**Tests:** 162 component + state tests ✅  
-**Verification:** RouteLoadingState aria-label contract test passes
+- `RouteLoadingState` → `LoadingState variant="route"`
+- `WriteErrorCard` → `ErrorState variant="write"`
+- Removed dead CSS rule
 
 ### ✅ Milestone 2 — Hub-workspace shell consolidation
-**Journey:** Portfolio hub, Operations hub, Leasing hub  
-**Status:** DONE — `607a7b8d`, `615f6650` (leasing)
+- Portfolio hub → `EmbeddableWorkspace`
+- Operations hub → `EmbeddableWorkspace`
+- Leasing hub → `EmbeddableWorkspace`
 
-| Hub | Old shell | New shell | Embedded mode |
-|-----|-----------|-----------|---------------|
-| Portfolio | `shell()` function | `EmbeddableWorkspace` | ✅ |
-| Operations | `shell()` function | `EmbeddableWorkspace` | ✅ |
-| Leasing | `PageLayout`+`PageHeader` | `EmbeddableWorkspace` | ❌ (standalone only) |
-| Money (Finance) | `PageLayout`+`PageHeader` + composition | **Not migrated** | N/A (different pattern) |
+### ✅ Milestone 3 — Inline labels extraction
+- Commissions: `labels.ts`
+- Leads: `labels.ts`
+- Lands: `labels.ts`
+- Communication: `labels.ts`
 
-**Tests:** 23 hub tests ✅  
-**Verification:** All 3 hubs render the same shell with `[data-page-layout]` + `[data-page-header]`
+### ✅ Milestone 4 — Empty-state content contract test
+- Static-analysis test asserts guidance verbs in empty descriptions
+- Fixed 5 passive descriptions across audit-log, automation, owner-dossier, reports
 
-### ✅ Milestone 3 (bonus) — Commissions inline labels extraction
-**Journey:** Commissions workspace  
-**Status:** DONE — `615f6650`
+### ✅ Milestone 5 — CSS consolidation
+- `product-palette.css` merged into `page-polish.css` (6→5 CSS files)
 
-| Old pattern | New pattern |
-|-------------|-------------|
-| `statusLabels`, `typeLabels`, `statusTone` inline in `commissions-view.tsx` | `features/commissions/labels.ts` |
+### ✅ Milestone 6 — Query-key factory
+- `lib/query-keys.ts` with `defineEntityKeys(name)` helper
+- Migrated: contractKeys, invoiceKeys, receiptKeys
 
-**Tests:** 25 commission tests ✅
+### ✅ Milestone 7 — RouteLoadingState removal
+- Deleted `components/loading-state.tsx`
+- 7 consumers updated to `LoadingState variant="route"`
 
-### ✅ Milestone 4 (bonus) — formatShortId fix
-**Journey:** Invoices, receipts, receipts-page  
-**Status:** DONE — `607a7b8d`
-
-| Old behavior | New behavior |
-|-------------|-------------|
-| `value ? 'مرجع تجاري غير متاح' : '—'` | `value ? '#ABC12345' : '—'` (truncated UUID) |
-
----
-
-## Planned Milestones
-
-### ⬜ Milestone 5 — CSS consolidation
-**Journey:** All pages (visual foundations)  
-**Target:** Merge `product-palette.css` into `tokens.css` or component Tailwind classes  
-**Risk:** Medium (test `design-tokens.test.ts` reads `product-palette.css`)  
-**Dependencies:** None  
-**Estimated effort:** Small
-
-### ⬜ Milestone 6 — Query-key factory + invalidation coordinator
-**Journey:** All data-fetching pages  
-**Target:** `lib/query-keys.ts` with `defineEntityKeys(name)` helper + `invalidateEntity` matrix  
-**Risk:** Low-Medium (key shapes must stay identical)  
-**Dependencies:** None  
-**Estimated effort:** Medium
-
-### ⬜ Milestone 7 — Dossier header standardization
-**Journey:** Tenant dossier, Land dossier  
-**Target:** Use `EntityDetailHeader` for tenant and land detail pages  
-**Risk:** Low  
-**Dependencies:** None  
-**Estimated effort:** Small
-
-### ⬜ Milestone 8 — Empty-state copy contract test
-**Journey:** All empty states  
-**Target:** Contract test asserting `emptyDescription` contains a next-step guidance verb  
-**Risk:** Low  
-**Dependencies:** None  
-**Estimated effort:** Small
-
-### ⬜ Milestone 9 — Obsolete component removal
-**Journey:** Codebase cleanup  
-**Target:** Remove `RouteLoadingState` re-export (consumers updated), remove unused `PageStateCard` variants  
-**Risk:** Low  
-**Dependencies:** Milestone 1 (done)  
-**Estimated effort:** Small
+### ✅ CSS files after consolidation: 5
+- `styles/tokens.css` (design tokens)
+- `styles/globals.css` (base + imports for tokens + malek-pro)
+- `styles/malek-pro-visual-wave.css` (scoped visual wave)
+- `styles/page-polish.css` (component-level polish, incl. former product-palette)
+- `styles/ux-foundation.css` (page gutters, form scroll, mobile touch)
 
 ---
 
-## Remaining Drift by Journey
+## Remaining Items (lower priority)
 
-| Journey | Drift level | Key issues |
-|---------|-------------|------------|
-| Dashboard | ✅ Low | Uses PageLayout, PageHeader, EntityTable, LoadingState, ErrorState |
-| Properties | ✅ Low | Same as above |
-| Contracts | ✅ Low | Same |
-| Owners | ✅ Low | Same |
-| Financials | ✅ Low | Same |
-| Maintenance | ✅ Low | Same |
-| Reports | ✅ Low | Same |
-| Leasing hub | ✅ Migrated | Uses EmbeddableWorkspace |
-| Portfolio hub | ✅ Migrated | Uses EmbeddableWorkspace |
-| Operations hub | ✅ Migrated | Uses EmbeddableWorkspace |
-| Money (Finance) | ⚠️ Medium | Custom composition — different pattern but legitimate |
-| Settings | ⚠️ Medium | Separate page tree |
-| System | ⚠️ Medium | Separate page tree |
-| Audit | ✅ Low | Uses PageLayout + PageHeader |
-| Automation | ✅ Low | PageLayout via AutomationWorkspace |
-| Communication | ✅ Low | PageLayout via CommunicationWorkspace |
-| Commission | ✅ Low | PageLayout via CommissionsWorkspace |
+| ID | Item | Risk | Notes |
+|----|------|------|-------|
+| D-005 | Mutation invalidation coordinator | Medium | Could add `invalidateEntity` helper in `lib/query-keys.ts` |
+| D-009 | Dossier financial summary consolidation | Medium | Owner/property/tenant dossier KPI overlap — not urgent |
+| D-011 | Provider tree optimization | Low | `CompanyProvider` clears query cache — future optimization |
+| D-012 | Re-export shim cleanup | None | Legacy page re-exports — cosmetic only |
 
-## Architectural Rules (enforced by this document)
+---
 
-1. **No page-level component shall omit `PageLayout`** for the page shell
-2. **No page-level component shall omit `PageHeader`** for the page title
-3. **No feature component shall re-implement loading/empty/error/offline/permission states** — use `LoadingState`, `EmptyState`, `ErrorState`, `OfflineState`, `NoPermissionState`
-4. **No feature component shall re-implement formatting** — use `lib/formatters.ts` + `lib/companyFormatters.ts`
-5. **No feature component shall define inline status label maps** — extract to `labels.ts` in the feature directory
-6. **No hub workspace shall duplicate the shell pattern** — use `EmbeddableWorkspace` or `EmbeddedWorkspaceShell`
+## Architectural Rules (enforced)
+
+1. ✅ All pages use `PageLayout` for the page shell
+2. ✅ All pages use `PageHeader` for the page title
+3. ✅ All features use `LoadingState`/`EmptyState`/`ErrorState`/`OfflineState`/`NoPermissionState`
+4. ✅ All features use `lib/formatters.ts` + `lib/companyFormatters.ts` for formatting
+5. ✅ All feature status label maps extracted to `labels.ts`
+6. ✅ All hub workspaces use `EmbeddableWorkspace` for the shell
+7. ✅ Query keys use `defineEntityKeys()` factory from `lib/query-keys.ts`
+8. ✅ Empty-state descriptions contain guidance verbs (enforced by contract test)
