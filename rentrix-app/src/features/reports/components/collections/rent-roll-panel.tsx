@@ -22,7 +22,7 @@ export function RentRollPanel({ rows, action, isLoading }: Readonly<{ rows: Rent
       ]}
       keyOf={(row) => row.contractId}
       emptyTitle="لا توجد عقود"
-      emptyDescription="لا توجد عقود ضمن البيانات الحالية."
+      emptyDescription="لا توجد عقود ضمن البيانات الحالية. غيّر الفلاتر لعرض عقود أخرى."
     /></div>}
   </ReportPanel>;
 }

@@ -180,7 +180,7 @@ export function OwnerDossierBody({
             ]}
             keyOf={(property) => property.id}
             emptyTitle="لا توجد عقارات مرتبطة"
-            emptyDescription="لا توجد علاقة ملكية نشطة موثقة لهذا المالك."
+            emptyDescription="لا توجد علاقة ملكية نشطة موثقة لهذا المالك. يمكنك ربط المالك بعقار من صفحة العقارات."
             onRowClick={(property) => dialogNavigate({ to: '/properties/$propertyId', params: { propertyId: property.id } })}
           />
         </CardContent>

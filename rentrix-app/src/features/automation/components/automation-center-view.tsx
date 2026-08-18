@@ -191,7 +191,7 @@ export function AutomationCenterView() {
         errorTitle="تعذر تحميل قواعد الأتمتة"
         errorAction={<Button onClick={() => rulesQuery.refetch()}>إعادة المحاولة</Button>}
         emptyTitle="لا توجد قواعد أتمتة"
-        emptyDescription="لا توجد قواعد مطابقة للحالة الحالية."
+        emptyDescription="جرّب تغيير فلتر الحالة لعرض قواعد أخرى."
       >
         <EntityTable
           aria-label="جدول قواعد الأتمتة"

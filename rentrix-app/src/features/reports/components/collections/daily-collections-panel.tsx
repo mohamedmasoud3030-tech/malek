@@ -22,7 +22,7 @@ export function DailyCollectionsPanel({ rows, action, isLoading }: Readonly<{ ro
       ]}
       keyOf={(row) => row.paymentDate}
       emptyTitle="لا توجد تحصيلات"
-      emptyDescription="لا توجد تحصيلات في الفترة المحددة."
+      emptyDescription="لا توجد تحصيلات في الفترة المحددة. غيّر الفترة أو امسح الفلاتر لعرض تحصيلات أخرى."
     /></div>}
   </ReportPanel>;
 }

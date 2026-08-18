@@ -36,7 +36,7 @@ export function AuditLogView({ state }: Readonly<{ state: AuditLogViewState }>) 
     return (
       <EmptyState
         title="لا توجد أحداث تدقيق"
-        description="لم يرجع مصدر سجل التدقيق أي أحداث للعرض."
+        description="لم يرجع مصدر سجل التدقيق أي أحداث للعرض ضمن الفترة الحالية."
         action={<Button asChild><Link to="/dashboard">العودة إلى لوحة التحكم</Link></Button>}
       />
     );
@@ -58,7 +58,7 @@ export function AuditLogView({ state }: Readonly<{ state: AuditLogViewState }>) 
       columns={columns}
       keyOf={(record) => record.id}
       emptyTitle="لا توجد أحداث تدقيق"
-      emptyDescription="لا توجد أحداث للعرض."
+      emptyDescription="لا توجد أحداث للعرض حالياً — يمكنك العودة لاحقاً بعد تسجيل المزيد من الأحداث."
     />
   );
 }
