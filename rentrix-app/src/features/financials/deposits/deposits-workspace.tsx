@@ -394,6 +394,7 @@ export function DepositsWorkspace() {
     {
       key: 'contract',
       header: 'العقد والمستأجر',
+      priority: 'identity',
       render: (deposit) => (
         <div className="min-w-0">
           <p className="font-bold">{formatDepositContractReference(deposit)}</p>
@@ -404,36 +405,43 @@ export function DepositsWorkspace() {
     {
       key: 'received_date',
       header: 'تاريخ الاستلام',
+      priority: 'detail',
       render: (deposit) => <span dir="ltr" className="tabular-nums">{deposit.received_date}</span>,
     },
     {
       key: 'original',
       header: 'الأصلي',
+      priority: 'detail',
       render: (deposit) => <span dir="ltr" className="font-bold tabular-nums">{formatDepositMoney(deposit.deposit_amount)}</span>,
     },
     {
       key: 'deducted',
       header: 'المخصوم',
+      priority: 'secondary',
       render: (deposit) => <span dir="ltr" className="font-bold text-destructive tabular-nums">{formatDepositMoney(deposit.deducted_amount)}</span>,
     },
     {
       key: 'refunded',
       header: 'المسترد',
+      priority: 'secondary',
       render: (deposit) => <span dir="ltr" className="font-bold text-success tabular-nums">{formatDepositMoney(deposit.refunded_amount)}</span>,
     },
     {
       key: 'remaining',
       header: 'المتبقي',
+      priority: 'primary',
       render: (deposit) => <span dir="ltr" className="font-black text-primary tabular-nums">{formatDepositMoney(deposit.remaining_amount)}</span>,
     },
     {
       key: 'status',
       header: 'الحالة',
+      priority: 'secondary',
       render: (deposit) => <StatusBadge tone={getDepositTone(deposit.status)}>{depositStatusLabels[deposit.status]}</StatusBadge>,
     },
     {
       key: 'actions',
       header: 'إجراءات',
+      priority: 'actions',
       render: (deposit) => <ActionMenu label={`إجراءات ${formatDepositContractReference(deposit)}`} items={depositActions(deposit)} />,
     },
   ];

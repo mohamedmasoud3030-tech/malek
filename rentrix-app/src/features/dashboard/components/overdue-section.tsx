@@ -14,10 +14,12 @@ interface OverdueSectionProps {
    */
   totalCount?: number;
   isLoading: boolean;
+  /** When true, do not paint a successful empty queue (error is shown at page level). */
+  isError?: boolean;
   settings: ReturnType<typeof import('@/hooks/useCompanyFormatters').useCompanyFormatters>;
 }
 
-export function OverdueSection({ rows, totalCount, isLoading, settings }: OverdueSectionProps) {
+export function OverdueSection({ rows, totalCount, isLoading, isError = false, settings }: OverdueSectionProps) {
   const { date, money } = settings;
   const badgeCount = totalCount ?? rows.length;
   return (
@@ -33,7 +35,7 @@ export function OverdueSection({ rows, totalCount, isLoading, settings }: Overdu
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {!isLoading ? <StatusBadge tone={badgeCount > 0 ? 'danger' : 'success'}>{badgeCount}</StatusBadge> : null}
+          {!isLoading && !isError ? <StatusBadge tone={badgeCount > 0 ? 'danger' : 'success'}>{badgeCount}</StatusBadge> : null}
           <Link to="/arrears" data-dashboard-section-action className="dashboard-section-link">عرض الكل</Link>
         </div>
       </div>
@@ -46,14 +48,21 @@ export function OverdueSection({ rows, totalCount, isLoading, settings }: Overdu
         </div>
       )}
 
-      {!isLoading && rows.length === 0 && (
+      {!isLoading && isError && (
+        <div className="dashboard-queue-empty" role="alert">
+          <p className="font-semibold">تعذر تحميل المتأخرات</p>
+          <p>راجع تنبيه أعلى الصفحة ثم أعد المحاولة. لن نعرض قائمة فارغة عند فشل التحميل.</p>
+        </div>
+      )}
+
+      {!isLoading && !isError && rows.length === 0 && (
         <div className="dashboard-queue-empty" role="status">
           <p className="font-semibold">لا توجد فواتير متأخرة</p>
           <p>ستظهر أعلى المتأخرات هنا عند وجود فواتير غير مسددة.</p>
         </div>
       )}
 
-      {!isLoading && rows.length > 0 && (
+      {!isLoading && !isError && rows.length > 0 && (
         /* role="listitem" is invalid on <a> (axe aria-allowed-role): the list
            is a real <ul> and each row is wrapped in the <li> that owns the
            listitem semantics. */

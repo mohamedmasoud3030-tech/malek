@@ -17,6 +17,8 @@
 | Hot-path FK index migration (repo) | `VERIFIED COMPLETE` (PGlite) | 282 mig / 401 indexes |
 | QA index apply on hosted project | `BLOCKED BY OWNER/EXTERNAL ACTION` | TLS egress; pack in `evidence/qa-index-apply/` |
 | Milestone E bank error≠empty | `VERIFIED COMPLETE` (repo) | page fix + 4 contract tests + typecheck |
+| Register mobile hierarchy lock | `VERIFIED COMPLETE` (repo) | 12 registers + dashboard queues; hierarchy contract 13 tests |
+| ContractMobileCard removal | `VERIFIED COMPLETE` | file deleted; detail-preview contract asserts absence |
 | Milestone F freeze guards | `VERIFIED COMPLETE` | sensitive-write, business-rules, GL boundary OK |
 | Owner login (preview) | `VERIFIED COMPLETE` (owner-reported earlier) | |
 | Live API from sandbox | `BLOCKED BY OWNER/EXTERNAL ACTION` | SSL_ERROR_SYSCALL |

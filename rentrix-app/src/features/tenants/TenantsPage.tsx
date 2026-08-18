@@ -130,6 +130,7 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
     {
       key: 'name',
       header: 'الاسم',
+      priority: 'identity',
       render: (tenant) => (
         <div className="flex flex-col gap-1">
           <span className="font-bold">{tenant.person.full_name}</span>
@@ -140,6 +141,7 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
     {
       key: 'property',
       header: 'العقار والوحدة',
+      priority: 'secondary',
       render: (tenant) => {
         const location = getTenantLocationText(tenant);
         return location.hasLocation ? (
@@ -153,11 +155,13 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
     {
       key: 'contracts',
       header: 'العقود النشطة',
+      priority: 'secondary',
       render: (tenant) => tenant.activeContractCount > 0 ? tenant.activeContractCount : '—',
     },
     {
       key: 'arrears',
       header: 'المتأخرات',
+      priority: 'primary',
       render: (tenant) => tenant.hasArrears ? (
         <span className="inline-flex items-center gap-1 rounded-full border border-warning/20 bg-warning/10 px-2.5 py-0.5 text-xs font-bold text-warning">
           <TriangleAlert className="size-3" />له متأخرات
@@ -167,6 +171,7 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
     {
       key: 'actions',
       header: 'إجراءات',
+      priority: 'actions',
       render: (tenant) => (
         <div className="flex flex-wrap gap-2" onClick={(event) => event.stopPropagation()}>
           <Button variant="secondary" className="min-h-11 px-3" onClick={() => dialogNavigate({ to: '/tenants/$tenantId', params: { tenantId: tenant.person.id } })}>عرض</Button>

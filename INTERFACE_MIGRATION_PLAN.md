@@ -21,10 +21,10 @@
 **Work:** Deleted `ContractMobileCard.tsx`; contracts/maintenance/expenses registers now declare explicit EntityTable column priorities; detail-preview contract asserts file absence.  
 **Risk:** low — no production imports remained.
 
-## Milestone M3 — Error≠empty sweep
+## Milestone M3 — Error≠empty sweep + register hierarchy lock
 
-**Status:** NOT STARTED (partial done)  
-**Work:** payment terms done; scan cost centers / other settings lists.
+**Status:** VERIFIED COMPLETE (repository)  
+**Work:** dashboard queue sections distinguish error vs empty; properties/units/tenants/invoices/receipts/deposits/providers column priorities locked; cross-register hierarchy contract test added.
 
 ## Milestone M4 — Consumer import rename DataTable→EntityTable (optional)
 
