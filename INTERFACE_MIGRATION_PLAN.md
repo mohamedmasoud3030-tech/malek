@@ -17,9 +17,9 @@
 
 ## Milestone M2 — Residual ContractMobileCard deprecation
 
-**Status:** NOT STARTED  
-**Work:** Point remaining tests at EntityTable mobile; delete file when unused.  
-**Risk:** low if tests updated first.
+**Status:** VERIFIED COMPLETE (repository)  
+**Work:** Deleted `ContractMobileCard.tsx`; contracts/maintenance/expenses registers now declare explicit EntityTable column priorities; detail-preview contract asserts file absence.  
+**Risk:** low — no production imports remained.
 
 ## Milestone M3 — Error≠empty sweep
 
