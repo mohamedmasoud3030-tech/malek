@@ -38,7 +38,7 @@ export function ConfirmDialog({
   open,
   onOpenChange,
   title = 'هل أنت متأكد؟',
-  description = 'تأكيد الإجراء المطلوب. يتم الاحتفاظ بالسجلات المحاسبية والتاريخية في الأرشيف لحماية سلامة البيانات.',
+  description = 'يُرجى تأكيد الإجراء. سجلات الفواتير والمدفوعات المرتبطة تبقى محفوظة في سجل التدقيق.',
   confirmLabel = 'تأكيد',
   cancelLabel = 'إلغاء',
   variant = 'danger',

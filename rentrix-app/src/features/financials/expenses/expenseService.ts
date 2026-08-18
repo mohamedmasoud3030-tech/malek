@@ -29,7 +29,7 @@ export async function listExpenses(filters: ExpenseFilters): Promise<PagedExpens
       { allowTruncated: true },
     );
   } catch (error) {
-    handleSupabaseError(error, 'تعذر تحميل المصاريف');
+    handleSupabaseError(error, 'تعذر تحميل المصروفات');
     return { rows: [], truncated: false };
   }
 }

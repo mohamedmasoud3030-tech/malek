@@ -108,7 +108,7 @@ export function FinancialReportsPreviewSection({
                 drillSearch={{ section: 'invoices' }}
               />
               <FinanceKpiCard
-                label="المصاريف"
+                label="المصروفات"
                 value={formatMoney(collectionSummary.expensesTotal)}
                 sub="تشغيلية"
                 icon={Building2}

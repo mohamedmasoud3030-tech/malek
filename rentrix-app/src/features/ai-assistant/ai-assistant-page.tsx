@@ -45,7 +45,7 @@ const assistantActions = [
   {
     action: 'explain_property_financial_snapshot',
     title: 'شرح لقطة مالية للعقارات',
-    description: 'إشغال، مبالغ قائمة، تحصيلات، ومصاريف حديثة.',
+    description: 'إشغال، مبالغ قائمة، تحصيلات، ومصروفات حديثة.',
     prompt: 'اشرح اللقطة المالية الحالية للعقارات وحدد المخاطر أو المؤشرات التي تحتاج متابعة.',
   },
 ] as const satisfies AssistantAction[];

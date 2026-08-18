@@ -102,7 +102,7 @@ export function ReportsWorkspace({
     { id: 'overview', label: 'نظرة عامة على الأداء', icon: LayoutDashboard },
     { id: 'collections', label: 'تحليلات التحصيل', icon: Receipt },
     { id: 'overdue', label: 'تعتيق المتأخرات', icon: AlertTriangle },
-    { id: 'expenses', label: 'تحليلات المصاريف', icon: ClipboardList },
+    { id: 'expenses', label: 'تحليلات المصروفات', icon: ClipboardList },
     { id: 'property_analytics', label: 'تحليلات العقارات', icon: Building2 },
     { id: 'occupancy', label: 'تحليلات الإشغال', icon: Building2 },
     { id: 'maintenance_analytics', label: 'تحليلات الصيانة', icon: Wrench },

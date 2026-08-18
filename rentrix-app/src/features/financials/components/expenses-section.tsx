@@ -167,8 +167,8 @@ export function ExpensesSection({
     <Card className="overflow-hidden rounded-2xl">
       <CardHeader className="gap-4 border-b border-border/60 bg-muted/20 sm:flex sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <CardTitle>المصاريف التشغيلية</CardTitle>
-          <CardDescription className="mt-1 leading-6">فلترة المصاريف وتصدير النتائج أو تسجيل مصروف جديد دون ازدحام الصفحة.</CardDescription>
+          <CardTitle>المصروفات التشغيلية</CardTitle>
+          <CardDescription className="mt-1 leading-6">فلترة المصروفات وتصدير النتائج أو تسجيل مصروف جديد دون ازدحام الصفحة.</CardDescription>
         </div>
         <div className="grid grid-cols-1 gap-2 sm:flex sm:shrink-0">
           <Button variant="secondary" onClick={exportVisibleExpenses} disabled={expenses.length === 0}>
@@ -188,7 +188,7 @@ export function ExpensesSection({
         </p>
 
         <ResponsiveCardGrid gap="sm">
-          <KpiCard label="عدد المصاريف" value={summary.visibleCount} icon={ReceiptText} accent="primary" compact />
+          <KpiCard label="عدد المصروفات" value={summary.visibleCount} icon={ReceiptText} accent="primary" compact />
           <KpiCard label="الإجمالي" value={formatMoney(summary.visibleAmount)} icon={WalletCards} accent="amber" compact />
           <KpiCard label="العقارات" value={summary.byPropertyCount} icon={Building2} accent="sky" compact />
           <KpiCard label="التصنيفات" value={summary.byCategoryCount} icon={Tags} accent="violet" compact />
@@ -226,11 +226,11 @@ export function ExpensesSection({
         />
 
         <EntityTable
-          aria-label="جدول المصاريف"
+          aria-label="جدول المصروفات"
           rows={expenses}
           keyOf={(expense) => expense.id}
           mobileVisibleSecondaryKey="amount"
-          emptyTitle={hasFilters ? 'لا توجد مصاريف مطابقة' : 'لا توجد مصاريف بعد'}
+          emptyTitle={hasFilters ? 'لا توجد مصروفات مطابقة' : 'لا توجد مصروفات بعد'}
           emptyDescription={hasFilters ? 'غيّر الفلاتر أو امسحها لعرض نتائج أخرى.' : 'اضغط إضافة مصروف لتسجيل أول مصروف تشغيلي.'}
           isLoading={isLoading}
           error={error}
