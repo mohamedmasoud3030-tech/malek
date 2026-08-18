@@ -13,6 +13,7 @@ pnpm --filter ./rentrix-app run typecheck:test
 pnpm --filter ./rentrix-app test
 pnpm --filter ./rentrix-app run test:financials
 pnpm e2e
+pnpm test:supabase            # privileged-key scan + current-schema RLS matrix + focused visibility tests
 pnpm supabase:live-readiness # optional; requires SUPABASE_DB_URL + psql
 pnpm qa:preflight # hosted QA Auth/RLS/API proof; requires injected QA credentials
 pnpm qa:lifecycle # explicitly approved hosted-QA financial lifecycle only
@@ -43,6 +44,9 @@ procedure is [`AGENT_QA_RUNTIME.md`](AGENT_QA_RUNTIME.md).
 - **`pnpm qa:database-contracts`** — runs a read-only PostgreSQL catalog contract against the QA project: core tables/columns, business RPCs, RLS enablement/policies, financial `SECURITY DEFINER` boundaries, and migration ledger visibility. It fails on drift rather than reporting it as informational.
 - **`pnpm qa:lifecycle`** — the agent-operated hosted QA sequence: preflight → idempotent QA seed → real browser invoice/payment/receipt/void journey → financial/RPC verification. It requires `QA_MUTATION_APPROVED=1`, a QA-only service-role key, and will refuse Production. Setup details are in `docs/AGENT_QA_RUNTIME.md`.
 - **`pnpm test:qa-runtime`** — runs offline fail-closed checks for the hosted-QA guard: a Production reference is mandatory, QA cannot equal Production, and the URL must exactly match the declared QA project.
+- **`pnpm test:supabase`** — the local Supabase proof suite: privileged-key exposure, current-schema RLS/auth/integrity matrix on PGlite, and focused client visibility/session/function tests. It never talks to Production. See `SUPABASE_TEST_STRATEGY.md`.
+- **`pnpm test:supabase:rls`** — only the current-schema allow/deny matrix.
+- **`pnpm test:supabase:secrets`** — only the browser privileged-key scan.
 
 ## When to run what
 

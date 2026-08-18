@@ -30,3 +30,6 @@ rentrix-app/e2e/evidence/*.png
 
 # WP-DB0 audit output (regenerate with `pnpm db0:audit`)
 .db0-artifacts/
+
+# Local Supabase proof artifacts
+scripts/supabase-tests/last-run.json
