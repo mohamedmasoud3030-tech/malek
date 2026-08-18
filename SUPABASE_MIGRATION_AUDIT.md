@@ -64,19 +64,33 @@ Files containing `DROP TABLE`, `DROP COLUMN`, or `ALTER … TYPE` remain out of 
 | Rollback | `DROP INDEX IF EXISTS` for each named index (no data loss) |
 | Hygiene guard | OK (base `origin/main`) |
 
-## 5. Recommended owner yes/no (only for live apply)
+## 5. Owner approval and apply status
 
-**Recommended action:** after a restorable backup exists and the remote-only ledger versions are reconciled, apply **only** the additive index migration `20260831000000` (or the full replayed chain under a controlled release procedure) to the authorized QA project first.
+**Owner decision:** **YES** — apply additive index migration to authorized QA project only.
+
+| Field | Status |
+|---|---|
+| Approval recorded | 2026-08-18 — owner replied «موافق» |
+| Intended target | Supabase project `nnggcnpcuomwfuupupwg` (treated as QA for this session) |
+| Agent remote apply | **BLOCKED BY ENVIRONMENT** — sandbox outbound HTTPS TLS fails (`SSL_ERROR_SYSCALL` / handshake EOF) to `api.supabase.com` and `*.supabase.co` |
+| Repository / PGlite proof | **VERIFIED** — 282/282 migrations, 401 indexes, hot-path unindexed FK = 0 |
+| Ready-to-run pack | `evidence/qa-index-apply/` (SQL + verify + rollback + README) |
+| Production apply | **Not approved / not attempted** |
+
+### How to finish the approved QA apply (one-time, SQL Editor)
+
+1. Supabase Dashboard → project `nnggcnpcuomwfuupupwg` → **SQL Editor**.
+2. Run `evidence/qa-index-apply/20260831000000_hot_path_fk_covering_indexes.sql`.
+3. Run `evidence/qa-index-apply/VERIFY_AFTER_APPLY.sql` — expect `hot_path_indexes_present = 24`.
+4. If anything is wrong, run `evidence/qa-index-apply/ROLLBACK.sql`.
+
+Do **not** run a full history `db push` until remote-only ledger versions are reconciled.
 
 | Impact | Faster company-scoped lists and relationship lookups |
 | Cost | Index build time; disk; no row rewrite |
-| Downtime | None expected with `IF NOT EXISTS` (may briefly lock on large tables if not concurrent — prefer maintenance window on huge tenants) |
-| Risk | Low on empty/small QA; medium on large live without `CONCURRENTLY` (Postgres standard `CREATE INDEX` locks writes) |
-| Rollback | Drop the named indexes |
-
-**Do you approve applying the additive index migration to the authorized QA Supabase project?** (yes/no)
-
-Until then, the migration ships in the repository and is proven on disposable PGlite only.
+| Downtime | None expected with `IF NOT EXISTS` (may briefly lock writes on large tables) |
+| Risk | Low on small/empty QA; schedule a quiet window if QA is already large |
+| Rollback | `evidence/qa-index-apply/ROLLBACK.sql` |
 
 ## 6. What was deliberately not done
 
