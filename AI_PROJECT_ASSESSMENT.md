@@ -1,121 +1,53 @@
 # MALEK — AI Project Assessment
 
 > **Type:** Non-canonical agent assessment. Canonical authority remains `docs/source-of-truth/`.  
-> **Assessed SHA base:** `6500ff5240160278b9700ef743bb0e921473cb58`  
-> **Branch:** `arena/01a0163e-malik`  
-> **Date:** 2026-08-18  
-> **Method:** repository inspection, canonical pack review, local install/dev server, focused contract tests, static product audit cross-check.
+> **Branch tip:** `arena/01a0163e-malik`  
+> **Date:** 2026-08-18 (session continuation)  
+> **Method:** repository inspection, canonical pack, prior PGlite/schema audits, local dev server, focused Vitest, security/business guards. Live Supabase API from this sandbox remains TLS-blocked.
 
 ## 1. Product definition
 
-**MALEK** is an Arabic-first, RTL, multi-company rental property operations system for real-estate offices in Oman (OMR, 3 decimal places).
+**MALEK** is an Arabic-first, RTL, multi-company rental property operations system for real-estate offices (Oman/OMR 3dp baseline).
 
-Primary value:
+Primary value: one controlled operational and accounting record of properties, units, owners, tenants, contracts, collections, expenses, deposits, owner settlements, maintenance, banking, reports, and documents.
 
-- one controlled operational record of properties, units, owners, tenants, contracts;
-- collections, expenses, deposits, owner settlements, maintenance;
-- accounting-traceable money flows (subledger + posted GL);
-- reports, documents, settings, and governed administration.
-
-It is **not** a generic ERP, investment platform, marketplace, or owner/tenant consumer portal for the current release.
-
-Compatibility note: user-visible brand is MALEK; technical paths may still say `rentrix-app` / `rentrix`.
+Not in current release scope as finished products: generic ERP, owner/tenant consumer portals, full Master Lease UI, historical backfill without S08 approval.
 
 ## 2. Users and roles
 
-| Role | Intended use |
-|---|---|
-| Admin | company setup, users/roles, sensitive approvals, settings |
-| Manager | day-to-day operations + many approvals |
-| Accountant | financial posting, settlements, reports, S08 review path |
-| Operations | properties/units/contracts/maintenance execution |
-| Viewer | read-only operational visibility |
-| (effective grants) | temporary capability elevation via request/review lifecycle |
+Admin, Manager, Accountant, Operations, Viewer (+ effective grants). Company isolation is mandatory. Auth is Supabase; tenancy is JWT `app_metadata.company_id` via access-token hook + RLS/`current_company_id()`.
 
-Owner and tenant **portals** are out of release scope even though party records exist.
-
-## 3. Business / domain workflow (canonical)
-
-1. Company auth + active company selection + onboarding checklist.
-2. Properties/units (+ lands where present) and people (owners/tenants/providers).
-3. Owner agreements (versioned terms, collection role, fee basis).
-4. Tenant contracts (draft → review → approve → sign → active; evidence separate).
-5. Invoicing/collections according to collection role (owner-creditor vs office-creditor).
-6. RATE fee on collection; FIXED_MONTHLY daily accrual.
-7. Expenses, Due-from-Owner, lawful offset, deposits (2200 liability lifecycle).
-8. Owner settlements with atomic source reservation.
-9. Bank CSV preview/import and reconciliation.
-10. GL statements + control reconciliations; S08 frozen analysis before any S09 correction.
-11. Maintenance/services and document vault/print outputs.
-12. Reports workspace separate from Financials hub.
-
-Supported operating models:
-
-- **Owner-agency / property management** (agent-net) — primary RC1 path.
-- **Master lease / principal** — kernels exist; full product journey not release-complete.
-
-## 4. Technical stack (observed)
+## 3. Architecture (observed)
 
 | Layer | Reality |
 |---|---|
-| Frontend | React + Vite + TanStack Router/Query, Tailwind, PWA (`rentrix-app/`) |
-| Backend | Supabase Auth + Postgres + RLS + SECURITY DEFINER RPCs + Storage |
-| Accounting | Stage-3 GL (18 accounts), journal batches/lines, periods, idempotent posting |
-| Tests | Vitest unit/integration, Playwright e2e, pgTAP/DB0 migration gates |
-| CI/Deploy | GitHub Actions, Vercel SPA, extensive governance/script guards |
-| Docs | Canonical pack D01–D08 + governance D01–D18 decisions |
+| Frontend | React + Vite + TanStack Router/Query, PWA (`rentrix-app/`) |
+| Backend | Supabase Auth + Postgres RLS + SECURITY DEFINER RPCs + private Storage |
+| Accounting | Stage-3 GL, 18 accounts, append-only corrections, OMR 3dp |
+| Quality | Vitest, Playwright, pgTAP/DB0, governance guards |
+| Deploy | Vercel SPA + GitHub Actions |
 
-## 5. Critical journeys
+## 4. Maturity
 
-| Journey | Repository state | Runtime/live |
-|---|---|---|
-| Public landing / legal / login | Present, branded, Arabic RTL | Local dev shell serves 200; no authenticated backend in this sandbox |
-| Password recovery | Implemented with neutral copy | Hosted email/redirect proof external |
-| Onboarding first value | Backend-driven checklist | Hosted proof pending |
-| Property → unit → owner agreement | Strong UI + version RPCs | Hosted pending |
-| Contract lifecycle + evidence | Repository-complete framework | Legal profile empty by default; hosted pending |
-| Invoice → collect → fee/tax → void/credit | RC1 owner-agency golden tests | Synthetic/ephemeral only |
-| Deposits claim/refund/reverse | Governed RPC lifecycle tests | Hosted pending |
-| Owner settlement reserve/approve/pay | Atomic reservation tests | Ephemeral gate historically green |
-| Bank CSV import | Fail-closed preview/import | Hosted bank file pending |
-| Reports / GL / reconciliation | WP-05 engines + report UI | Hosted cycle/sign-off pending |
-| Master lease full ops | Kernels only | Not finished product |
-| One-office pilot | Contract tests only | **Not done** |
+- **Repository:** mature RC candidate — deep financial/security design, broad tests, canonical pack.
+- **Runtime/live:** not production-proven here (egress blocked; hosted Auth Hook / pilot / backup external).
+- **Owner login on preview:** previously confirmed working with real project env.
 
-## 6. What is strong
+## 5. Confirmed findings in this continuation
 
-- Deep financial/security design: company RLS, RPC-owned sensitive writes, maker-checker, OMR 3dp, append-only corrections.
-- Clear separation of canonical rule vs repository reality vs governed stage credit vs live proof.
-- Broad automated coverage (thousands of app tests, financial suites, DB0, guards).
-- Arabic-first UX with task-centric IA (Today, Portfolio, Leasing, Money, Services, Reports, Settings).
-- Fail-closed posture for missing tax/legal configuration and unauthorized financial writes.
+| ID | Severity | Evidence | Impact | Root cause | Correction | Effort/risk | Verification |
+|---|---|---|---|---|---|---|---|
+| UX-BANK-ERR | High | `bank-reconciliation-page.tsx` treated `!isLoading && length===0` as empty without `isError` | Operators see “no bank activity” on failed loads; KPI zeros look trustworthy | Error collapsed into empty | `ErrorState` + gate empty/table/KPI on `!isError` | S / low | contract tests 4/4 + typecheck |
+| UX-PAYTERMS-ERR | Medium | `payment-terms-settings-section.tsx` empty copy when query fails | Settings look empty instead of failed | Missing `isError` branch | Alert on error; empty only when success | S / low | same contract test file |
+| DATA-VIS (prior) | High | detail `.single()` 406, soft-deleted owners in hub | Missing/wrong detail and list disagreement | Cardinality + soft-delete filter | maybeSingle + filters (shipped) | M / low | 110+ tests prior |
+| IDX-HOT (prior) | Medium | 24 hot FKs unindexed | Slow company lists at scale | company_id FKs without indexes | additive migration (repo; QA apply pack) | M / low apply | PGlite 401 indexes |
+| SEC-WRITE | — | sensitive-write boundary guard | — | — | still OK this session | — | guard PASS |
+| BIZ-RULES | — | canonical business rules guard | — | — | still OK | — | guard PASS |
 
-## 7. What is incomplete, risky, or external
+## 6. External blockers (unchanged)
 
-| Area | Severity | Notes |
-|---|---|---|
-| Live Auth Hook / RLS / schema drift proof | Release blocker | Needs authorized QA credentials |
-| Backup/restore rehearsal | Release blocker | Documented PENDING_LIVE_EXECUTION |
-| One-office full-period pilot | Release blocker | No real pilot evidence |
-| Oman legal templates / tax codes | External | Engineering frameworks exist; professional approval required |
-| Master lease product completion | High / optional RC1 exclusion | Kernels without full UI/reports |
-| Hosted browser acceptance on current SHA | High | Prior runs cancelled/skipped in places |
-| SonarCloud automatic gate | Medium | workflow_dispatch only; owner/cost decision |
-| PWA install icons on iOS | Low→fixed this session | Was SVG-only; PNG install set added |
-| robots.txt sitemap URL | Low→fixed this session | Was relative; now absolute |
-| Bundle size / CSP unsafe-inline | Low–medium | Known, not silent data risk |
-| Observability/monitoring | Medium ops | No centralized alerts proven |
+Sandbox→Supabase HTTPS, hosted Auth Hook proof, backup/restore, one-office pilot, tax/legal activation, full browser readiness on current SHA, Production migration ledger reconciliation.
 
-## 8. Evidence from this session
+## 7. Verdict
 
-- `pnpm install --frozen-lockfile` succeeded (pnpm 10.11.1).
-- Dev server started on `0.0.0.0:5173`; public routes `/`, `/landing`, `/login`, `/privacy`, `/terms`, `/manifest.json` returned HTTP 200.
-- Focused brand/sitemap contract tests: **31/31 PASS**.
-- No production secrets were present or required for the first safe milestone.
-- Authenticated financial journeys could **not** be exercised here (no QA Supabase credentials).
-
-## 9. Assessment verdict
-
-MALEK is a **mature brownfield Release Candidate candidate** with a strong security/accounting core in the repository. It is **not** proven production-ready until live environment, backup restore, hosted acceptance, professional tax/legal sign-off, and a reconciled one-office pilot complete.
-
-Highest owner-facing product risk is not “missing screens”; it is **claiming readiness without live money-cycle proof**. Highest safe autonomous engineering value now is closing remaining repository UX/install/ops defects and keeping financial invariants protected while external gates wait for credentials/approvals.
+Continue shipping **safe repository honesty fixes** (error≠empty, cardinality, indexes) while live money-cycle proof waits on environment/owner ops. Do not claim production readiness from green unit tests alone.
