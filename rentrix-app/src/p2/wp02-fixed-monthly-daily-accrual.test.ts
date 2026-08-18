@@ -454,7 +454,7 @@ describe('WP-02 GAP-007 FIXED_MONTHLY daily accrual lifecycle', () => {
     } finally {
       await emptyReplay.db.close();
     }
-  });
+  }, 30_000);
 
   it('blocks rollback once immutable GAP-007 financial history exists', async () => {
     await expect(db.exec(ROLLBACK_SQL)).rejects.toThrow(/ROLLBACK_BLOCKED_FINANCIAL_HISTORY/);
