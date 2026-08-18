@@ -1,7 +1,7 @@
 import { CheckCircle2, Edit, Eye } from "lucide-react";
 import { ActionMenu } from "@/components/ui/action-menu";
 import { Button } from "@/components/ui/button";
-import { DataTable, type ColumnDef } from "@/components/ui/data-table";
+import { EntityTable, type ColumnDef } from "@/components/ui/entity-table";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { Property, Unit } from "@/types/domain";
 import type { ServiceProviderOption } from "@/features/service-providers/service-provider-service";
@@ -179,7 +179,7 @@ export function MaintenanceList(props: MaintenanceListProps) {
 
   return (
     <div data-visual-wave="malek-pro" data-maintenance-list>
-      <DataTable
+      <EntityTable
         aria-label="جدول طلبات الصيانة"
         mobileVisibleSecondaryKey="status"
         rows={rows}

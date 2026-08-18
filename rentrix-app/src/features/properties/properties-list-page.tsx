@@ -20,7 +20,7 @@ import { OperationalCommandPanel, OperationalMetricCard } from "@/components/ui/
 import { Select } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { ActiveFilterBar } from "@/components/ui/active-filter-bar";
-import { DataTable } from "@/components/ui/data-table";
+import { EntityTable } from "@/components/ui/entity-table";
 import { ActionMenu } from "@/components/ui/action-menu";
 import { getAppLanguageState, translateSharedLabel } from "@/lib/i18n";
 import { toast } from "sonner";
@@ -268,7 +268,7 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
               }
             >
               {
-                <DataTable
+                <EntityTable
                   aria-label="جدول العقارات"
                   rows={controller.properties}
                   keyOf={(property) => property.id}

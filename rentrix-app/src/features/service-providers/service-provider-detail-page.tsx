@@ -136,11 +136,11 @@ export function ServiceProviderDetailPage() {
             rows={[...maintenanceJobs]}
             mobileVisibleSecondaryKey="status"
             columns={[
-              { key: 'title', header: 'الطلب', render: (job) => <div><p className="font-bold">{job.title ?? 'طلب صيانة'}</p><p className="text-xs text-muted-foreground" dir="ltr">{job.reference ?? ''}</p></div> },
-              { key: 'location', header: 'الموقع', render: (job) => `${job.properties?.title ?? 'عقار غير محدد'}${job.units?.unit_number ? ` / ${job.units.unit_number}` : ''}` },
-              { key: 'category', header: 'نوع الخدمة', render: (job) => job.category?.name ?? 'غير محدد' },
-              { key: 'priority', header: 'الأولوية', render: (job) => maintenancePriorityLabels[job.priority ?? ''] ?? job.priority ?? '—' },
-              { key: 'status', header: 'الحالة', render: (job) => <StatusBadge tone={statusTone(job.status)}>{maintenanceStatusLabels[job.status ?? ''] ?? job.status ?? '—'}</StatusBadge> },
+              { key: 'title', priority: 'identity' as const, header: 'الطلب', render: (job) => <div><p className="font-bold">{job.title ?? 'طلب صيانة'}</p><p className="text-xs text-muted-foreground" dir="ltr">{job.reference ?? ''}</p></div> },
+              { key: 'location', priority: 'secondary' as const, header: 'الموقع', render: (job) => `${job.properties?.title ?? 'عقار غير محدد'}${job.units?.unit_number ? ` / ${job.units.unit_number}` : ''}` },
+              { key: 'category', priority: 'detail' as const, header: 'نوع الخدمة', render: (job) => job.category?.name ?? 'غير محدد' },
+              { key: 'priority', priority: 'secondary' as const, header: 'الأولوية', render: (job) => maintenancePriorityLabels[job.priority ?? ''] ?? job.priority ?? '—' },
+              { key: 'status', priority: 'primary' as const, header: 'الحالة', render: (job) => <StatusBadge tone={statusTone(job.status)}>{maintenanceStatusLabels[job.status ?? ''] ?? job.status ?? '—'}</StatusBadge> },
             ]}
             keyOf={(job) => job.id}
             emptyTitle="لا توجد أعمال صيانة مرتبطة"

@@ -10,8 +10,8 @@ import { describe, expect, it } from 'vitest';
 describe('owner workspace table display architecture', () => {
   const source = readFileSync(resolve(import.meta.dirname, './owner-workspace-table.tsx'), 'utf8');
 
-  it('uses the shared DataTable/EntityTable foundation (not a page-local mobile card)', () => {
-    expect(source).toContain("from '@/components/ui/data-table'");
+  it('uses the shared EntityTable foundation (not a page-local mobile card)', () => {
+    expect(source).toContain("from '@/components/ui/entity-table'");
     expect(source).toContain('data-owner-workspace-table');
     expect(source).not.toContain('ContractMobileCard');
     expect(source).not.toContain('renderMobileCard');

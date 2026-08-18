@@ -5,8 +5,8 @@ import { describe, expect, it } from 'vitest';
 describe('maintenance list display architecture', () => {
   const source = readFileSync(resolve(import.meta.dirname, './maintenance-list.tsx'), 'utf8');
 
-  it('uses shared DataTable with status as the mobile work-queue datum', () => {
-    expect(source).toContain('DataTable');
+  it('uses shared EntityTable with status as the mobile work-queue datum', () => {
+    expect(source).toContain('EntityTable');
     expect(source).toContain('mobileVisibleSecondaryKey="status"');
     expect(source).toContain('priority: "identity"');
     expect(source).toContain('priority: "primary"');

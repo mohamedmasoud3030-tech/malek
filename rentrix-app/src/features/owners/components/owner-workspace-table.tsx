@@ -2,7 +2,7 @@ import { Eye, LinkIcon, Pencil, Users } from 'lucide-react';
 import { useState } from 'react';
 import { ActionMenu } from '@/components/ui/action-menu';
 import { Button } from '@/components/ui/button';
-import { DataTable, type ColumnDef } from '@/components/ui/data-table';
+import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { EmptyState } from '@/components/empty-state';
 import { EntityCell } from '@/components/ui/entity-cell';
 import { EntityPreviewDialog } from '@/components/ui/entity-preview-dialog';
@@ -155,7 +155,7 @@ export function OwnerWorkspaceTable({
         searchAriaLabel="بحث في الملاك"
       />
       {rows.length > 0 ? (
-        <DataTable
+        <EntityTable
           aria-label="جدول الملاك"
           rows={rows}
           onRowClick={(row) => openPreview(row.owner.id)}

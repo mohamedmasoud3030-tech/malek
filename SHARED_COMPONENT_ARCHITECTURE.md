@@ -19,7 +19,9 @@ Smallest justified system already exists. **Prefer improving consumers over new 
 | FilterBar / ActiveFilterBar / SectionTabs | KEEP | Filters |
 | KPI/Stat cards | KEEP | Only with real decision value |
 | MobileCard | IMPROVE/limit | Prefer EntityTable mobile path; MobileCard for non-register summaries only |
-| ContractMobileCard | REMOVE AFTER MIGRATION | No production list consumer; tests only |
+| ContractMobileCard | REMOVED | Deleted; EntityTable only |
+| FinanceMobileCard | REMOVED | Unused page-local finance card; EntityTable mobile path |
+| DataTable import path in features | IMPROVE→DONE | Features import entity-table; data-table.tsx stays alias |
 | bottom-sheet | KEEP | Drawers on small screens |
 | Dialog / ConfirmDialog | KEEP | Destructive confirms |
 | DataTable name | KEEP alias | Do not fork implementation |

@@ -38,3 +38,9 @@ Replacing Tailwind/Radix; new dashboard product; phone 5-tab bar; merging Report
 ## Status labels
 
 Use only: VERIFIED COMPLETE | IMPLEMENTED BUT NOT VERIFIED | BLOCKED BY OWNER OR EXTERNAL ACTION | NOT STARTED
+
+
+## Milestone M4 — EntityTable import unification + dead finance mobile card
+
+**Status:** VERIFIED COMPLETE (repository)  
+**Work:** Production feature files import `@/components/ui/entity-table` directly; `data-table.tsx` remains thin alias; removed unused `FinanceMobileCard`; contract payments / report panels / provider detail hierarchy completed; import consistency contract added.

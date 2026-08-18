@@ -44,6 +44,11 @@ describe('interface register mobile hierarchy', () => {
     { file: 'features/utilities/components/utilities-workspace.tsx', datum: 'amount' },
     { file: 'features/audit/components/audit-log-view.tsx', datum: 'action', requireActions: false },
     { file: 'features/automation/components/automation-center-view.tsx', datum: 'status' },
+    { file: 'features/contracts/contractPaymentsTab.tsx', datum: 'remaining', requireActions: false },
+    { file: 'features/reports/components/collections/daily-collections-panel.tsx', datum: 'total', requireActions: false },
+    { file: 'features/reports/components/collections/rent-roll-panel.tsx', datum: 'status', requireActions: false },
+    { file: 'features/reports/components/overdue/overdue-invoices-panel.tsx', datum: 'remaining' },
+    { file: 'features/service-providers/service-provider-detail-page.tsx', datum: 'status', requireActions: false },
   ];
 
   it.each(cases)('$file exposes $datum as mobile datum with identity/primary priorities', ({ file, datum, requireActions = true }) => {

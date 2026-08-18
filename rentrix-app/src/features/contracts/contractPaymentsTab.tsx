@@ -45,19 +45,19 @@ function ContractPaymentsSummary({ snapshot }: Readonly<{ snapshot: ContractPaym
 
 function ContractInvoicesTable({ snapshot }: Readonly<{ snapshot: ContractPaymentsSnapshot }>) {
   const columns: ColumnDef<Invoice>[] = [
-    { key: 'id', header: 'الفاتورة', render: (inv) => <span className="font-mono text-xs font-bold">{inv.reference ?? 'فاتورة بلا مرجع'}</span> },
+    { key: 'id', priority: 'identity' as const, header: 'الفاتورة', render: (inv) => <span className="font-mono text-xs font-bold">{inv.reference ?? 'فاتورة بلا مرجع'}</span> },
     { key: 'due_date', header: 'الاستحقاق', render: (inv) => formatDate(inv.due_date) },
     {
-      key: 'status', header: 'الحالة',
+      key: 'status', header: 'الحالة', priority: 'secondary' as const,
       render: (inv) => (
         <StatusBadge tone={invoiceStatusTone[inv.status ?? ''] ?? 'neutral'}>
           {invoiceStatusLabels[inv.status]}
         </StatusBadge>
       ),
     },
-    { key: 'amount', header: 'المبلغ', render: (inv) => <span className="font-bold">{formatDefaultCompanyMoney(inv.amount)}</span> },
-    { key: 'paid_amount', header: 'المدفوع', render: (inv) => <span className="font-bold text-success tabular-nums">{formatDefaultCompanyMoney(inv.paid_amount)}</span> },
-    { key: 'remaining', header: 'المتبقي', render: (inv) => <span className="font-bold">{formatDefaultCompanyMoney(inv.remaining_amount)}</span> },
+    { key: 'amount', priority: 'detail' as const, header: 'المبلغ', render: (inv) => <span className="font-bold">{formatDefaultCompanyMoney(inv.amount)}</span> },
+    { key: 'paid_amount', priority: 'detail' as const, header: 'المدفوع', render: (inv) => <span className="font-bold text-success tabular-nums">{formatDefaultCompanyMoney(inv.paid_amount)}</span> },
+    { key: 'remaining', priority: 'primary' as const, header: 'المتبقي', render: (inv) => <span className="font-bold">{formatDefaultCompanyMoney(inv.remaining_amount)}</span> },
   ];
 
   return (
@@ -66,7 +66,7 @@ function ContractInvoicesTable({ snapshot }: Readonly<{ snapshot: ContractPaymen
       rows={snapshot.invoices}
       columns={columns}
       keyOf={(inv) => inv.id}
-      mobileVisibleSecondaryKey="status"
+      mobileVisibleSecondaryKey="remaining"
       emptyTitle="لا توجد فواتير مرتبطة"
       emptyDescription="لم يتم العثور على فواتير حالية لهذا العقد عبر مسار البيانات المعتمد."
     />
@@ -75,17 +75,18 @@ function ContractInvoicesTable({ snapshot }: Readonly<{ snapshot: ContractPaymen
 
 function ContractPaymentsTable({ snapshot }: Readonly<{ snapshot: ContractPaymentsSnapshot }>) {
   const columns: ColumnDef<Payment>[] = [
-    { key: 'payment_date', header: 'تاريخ الدفع', render: (p) => formatDate(p.payment_date) },
-    { key: 'amount', header: 'المبلغ', render: (p) => <span className="font-bold">{formatDefaultCompanyMoney(p.amount)}</span> },
-    { key: 'method', header: 'طريقة الدفع', render: (p) => paymentMethodLabels[p.payment_method] },
-    { key: 'invoice_id', header: 'مرجع الفاتورة', render: (p) => <span className="font-mono text-xs font-bold">{p.invoice_reference ?? 'فاتورة بلا مرجع'}</span> },
-    { key: 'receipt_ref', header: 'مرجع الإيصال', render: (p) => <span className="font-mono text-xs font-bold">{p.receipt_reference}</span> },
-    { key: 'ref_number', header: 'مرجع خارجي', render: (p) => p.reference_number ?? '—' },
+    { key: 'payment_date', priority: 'identity' as const, header: 'تاريخ الدفع', render: (p) => formatDate(p.payment_date) },
+    { key: 'amount', priority: 'detail' as const, header: 'المبلغ', render: (p) => <span className="font-bold">{formatDefaultCompanyMoney(p.amount)}</span> },
+    { key: 'method', priority: 'detail' as const, header: 'طريقة الدفع', render: (p) => paymentMethodLabels[p.payment_method] },
+    { key: 'invoice_id', priority: 'secondary' as const, header: 'مرجع الفاتورة', render: (p) => <span className="font-mono text-xs font-bold">{p.invoice_reference ?? 'فاتورة بلا مرجع'}</span> },
+    { key: 'receipt_ref', priority: 'detail' as const, header: 'مرجع الإيصال', render: (p) => <span className="font-mono text-xs font-bold">{p.receipt_reference}</span> },
+    { key: 'ref_number', priority: 'detail' as const, header: 'مرجع خارجي', render: (p) => p.reference_number ?? '—' },
   ];
 
   return (
     <EntityTable
       aria-label="جدول دفعات العقد"
+      mobileVisibleSecondaryKey="amount"
       rows={snapshot.payments}
       columns={columns}
       keyOf={(p) => p.id}

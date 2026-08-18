@@ -191,20 +191,13 @@ describe('Wave 2 finance table desktop behavior', () => {
       />,
     );
 
-    // Find button that opens detail (MobileCard onClick)
-    const cards = document.querySelectorAll('[data-finance-mobile-card]');
-    expect(cards.length).toBeGreaterThanOrEqual(0);
-    if (cards.length > 0) {
-      // Mobile cards exist — they should have primary action or be clickable
-      // In desktop hidden mode (md:hidden) they still exist in DOM, but click may be on inner button
-      const mobileCard = cards[0] as HTMLElement;
-      expect(mobileCard).not.toBeNull();
-      // Ensure card shows amount/status/date per requirement (at least one text)
-      expect(mobileCard.textContent?.length).toBeGreaterThan(0);
-    } else {
-      // If no mobile cards (because desktop table is primary), ensure table rows are clickable
-      const table = document.querySelector('table');
-      expect(table).not.toBeNull();
+    // Registers use shared EntityTable (desktop table + built-in mobile cards).
+    // Prefer table presence; mobile cards from EntityTable may use different markers.
+    const table = document.querySelector('table');
+    const entityMobile = document.querySelectorAll('[data-entity-mobile-card], [data-mobile-register-card]');
+    expect(table !== null || entityMobile.length > 0).toBe(true);
+    if (entityMobile.length > 0) {
+      expect((entityMobile[0] as HTMLElement).textContent?.length).toBeGreaterThan(0);
     }
   });
 

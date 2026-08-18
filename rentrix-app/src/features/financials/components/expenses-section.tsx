@@ -5,7 +5,7 @@ import { Controller } from 'react-hook-form';
 import { Building2, Download, Edit, Eye, Plus, Printer, ReceiptText, Tags, WalletCards } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { DataTable } from '@/components/ui/data-table';
+import { EntityTable } from '@/components/ui/entity-table';
 import { ActionMenu } from '@/components/ui/action-menu';
 import { EntityForm } from '@/components/ui/entity-form';
 import { FilterBar } from '@/components/ui/filter-bar';
@@ -225,7 +225,7 @@ export function ExpensesSection({
           actions={hasFilters ? <Button variant="secondary" onClick={clearFilters}>مسح الفلاتر</Button> : undefined}
         />
 
-        <DataTable
+        <EntityTable
           aria-label="جدول المصاريف"
           rows={expenses}
           keyOf={(expense) => expense.id}
