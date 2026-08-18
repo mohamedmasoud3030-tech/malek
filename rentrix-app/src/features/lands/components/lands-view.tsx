@@ -23,7 +23,15 @@ import type { LandFilters, LandRecord } from '../types';
 import type { LandFormValues } from '../land-schema';
 import { MONEY_STEP } from '@/lib/money';
 import { landStatusLabels, landCategoryLabels, landStatusTone } from '../labels';
+
+function money(value: number | null | undefined) {
+  return value == null ? '—' : formatMoney(value);
 }
+
+function area(value: number | null | undefined) {
+  return value == null ? '—' : `${formatNumber(value)} م²`;
+}
+
 
 type Props = Readonly<{
   rows: LandRecord[];

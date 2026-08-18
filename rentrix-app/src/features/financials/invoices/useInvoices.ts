@@ -1,15 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { defineEntityKeys } from '@/lib/query-keys';
 import { financialReportKeys } from '../reports/useFinancialReports';
 import { generateInvoicesFromActiveContracts, getInvoiceDetail, listInvoices, listInvoicesPaginated, type InvoiceListParams, type InvoicePaginationParams, type InvoiceStatusFilter } from './invoiceService';
 
+const invoiceBase = defineEntityKeys('invoices');
+
 export const invoiceKeys = {
-  all: ['invoices'] as const,
-  lists: () => [...invoiceKeys.all, 'list'] as const,
-  list: (params: InvoiceStatusFilter | InvoiceListParams) => [...invoiceKeys.lists(), params] as const,
-  paginated: (params: InvoicePaginationParams) => [...invoiceKeys.lists(), 'paginated', params] as const,
-  detail: (invoiceId: string) => [...invoiceKeys.all, 'detail', invoiceId] as const,
-};
+  ...invoiceBase,
+  paginated: (params: InvoicePaginationParams) => [...invoiceBase.lists(), 'paginated', params] as const,
+} as const;
 
 export function useInvoices(params: InvoiceStatusFilter | InvoiceListParams) {
   return useQuery({ queryKey: invoiceKeys.list(params), queryFn: () => listInvoices(params) });

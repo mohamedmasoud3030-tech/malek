@@ -17,11 +17,6 @@ import { AsyncContentState } from '@/components/async-content-state';
 import { WriteErrorCard } from '@/components/page-state-card';
 import type { CommunicationFilters, CommunicationFormValues, CommunicationRecord } from '../types';
 
-  logged: 'info',
-  follow_up: 'warning',
-  resolved: 'success',
-  archived: 'neutral',
-};
 
 type Props = Readonly<{
   rows: CommunicationRecord[];

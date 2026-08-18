@@ -1,15 +1,15 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { defineEntityKeys } from '@/lib/query-keys';
 import type { ContractPayload, RenewalPayload } from './contractSchema';
 import { activateContract, approveContract, createContract, getContract, listAllContracts, listContracts, rejectContract, renewContract, softDeleteContract, submitContractForApproval, terminateContract, updateContract, type ContractListParams, type ContractStatusFilter } from './services/contractService';
 
+const contractBase = defineEntityKeys('contracts');
+
 export const contractKeys = {
-  all: ['contracts'] as const,
-  lists: () => [...contractKeys.all, 'list'] as const,
-  list: (params: ContractListParams) => [...contractKeys.lists(), params] as const,
-  allPages: (status: ContractStatusFilter) => [...contractKeys.lists(), 'all-pages', status] as const,
-  detail: (contractId: string) => [...contractKeys.all, 'detail', contractId] as const,
-};
+  ...contractBase,
+  allPages: (status: ContractStatusFilter) => [...contractBase.lists(), 'all-pages', status] as const,
+} as const;
 
 export function useAllContracts(status: ContractStatusFilter = 'all', options?: Readonly<{ enabled?: boolean }>) {
   return useQuery({

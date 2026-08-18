@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { defineEntityKeys } from '@/lib/query-keys';
 import { getActionableSupabaseErrorMessage } from '@/lib/supabase-error';
 import {
   approveReceiptVoid,
@@ -10,12 +11,12 @@ import {
   type ReceiptListParams,
 } from './receiptService';
 
+const receiptBase = defineEntityKeys('receipts');
+
 export const receiptKeys = {
-  all: ['receipts'] as const,
-  list: (params: ReceiptListParams = {}) => [...receiptKeys.all, 'list', params] as const,
-  detail: (receiptOrPaymentId: string) => [...receiptKeys.all, 'detail', receiptOrPaymentId] as const,
-  pendingVoidRequests: () => [...receiptKeys.all, 'void-requests', 'pending'] as const,
-};
+  ...receiptBase,
+  pendingVoidRequests: () => [...receiptBase.all, 'void-requests', 'pending'] as const,
+} as const;
 
 export function useReceipts(params: ReceiptListParams = {}, options?: Readonly<{ enabled?: boolean }>) {
   return useQuery({
