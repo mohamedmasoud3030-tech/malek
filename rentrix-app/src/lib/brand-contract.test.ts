@@ -44,6 +44,10 @@ const DISPLAY_NAME_ALLOWLIST = new Map<string, string>([
     'This contract test necessarily names the legacy brand to search for it.',
   ],
   [
+    'src/lib/toolchain-contract.test.ts',
+    'Reads rentrix-app/package.json by repository path to pin the Vite/Vitest pair.',
+  ],
+  [
     'src/features/settings/companySettingsService.test.ts',
     'Fixture tenant names ("Rentrix Oman"/"Rentrix LLC") assert string normalization, not product identity.',
   ],
