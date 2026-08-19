@@ -62,6 +62,33 @@
 }
 
 /* ============================================
+   Dark mode — restrained blue ambient glow
+   ============================================
+   A controlled, premium light-radiation effect on the app background and
+   elevated surfaces. Kept subtle (single radial + faint inner tint) — never
+   neon, never gaming-style. */
+@layer base {
+  [data-theme='dark'] body {
+    background:
+      radial-gradient(1100px 620px at 82% -8%, hsl(217 82% 54% / 0.13), transparent 60%),
+      radial-gradient(900px 560px at 8% 108%, hsl(224 70% 46% / 0.10), transparent 55%),
+      hsl(var(--background));
+    background-attachment: fixed;
+  }
+
+  [data-theme='dark'] [data-app-shell] {
+    background: transparent;
+  }
+
+  [data-theme='dark'] [data-unified-surface='page-header'],
+  [data-theme='dark'] .dashboard-ops-header {
+    box-shadow:
+      var(--shadow-card),
+      inset 0 1px 0 0 hsl(217 70% 60% / 0.08);
+  }
+}
+
+/* ============================================
    Utility classes
    (Color/shadow/radius utilities تولّد من @theme
    في tokens.css — لا تعرّف هنا يدويًا)

@@ -57,10 +57,10 @@ describe('design tokens — single source of truth', () => {
     }
   });
 
-  it('contains the Malek-pro-inspired emerald/slate operational theme in a scoped layer, not :root', () => {
+  it('contains the Malek-pro-inspired blue/slate operational theme in a scoped layer, not :root', () => {
     expect(globals).toContain("@import './malek-pro-visual-wave.css';");
     expect(visualWave).toContain("[data-visual-wave='malek-pro']");
-    expect(visualWave).toContain('--primary: 160');
+    expect(visualWave).toContain('--primary: 217');
     expect(visualWave).toContain('--background: 210');
     expect(visualWave).toContain("[data-theme='dark'] [data-visual-wave='malek-pro']");
     expect(visualWave).not.toMatch(/(^|\n)\s*:root\s*\{/);
