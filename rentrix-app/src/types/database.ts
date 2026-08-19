@@ -8810,6 +8810,12 @@ export type Database = {
         };
         Returns: Json;
       };
+      record_invoice_payment_atomic_engine: {
+        Args: {
+          payload: Json | null;
+        };
+        Returns: Json;
+      };
       recover_owner_receivable_atomic: {
         Args: {
           p_payload: Json | null;
