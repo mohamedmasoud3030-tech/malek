@@ -1,158 +1,54 @@
+import { useMemo } from 'react';
+import { useAuth } from '@/hooks/use-auth';
+import flagDefinitions from './feature-flag-definitions.json';
+
 /**
- * MALEK Feature Flags — lightweight, config‑backed, provider‑neutral.
+ * MALEK Feature Flags — lightweight, config-backed, provider-neutral.
  *
- * == Principles ==
+ * Security invariant:
+ * Feature flags are presentation/rollout controls only. They are never
+ * authorization. RLS, RPC permissions, route permissions and backend validation
+ * remain authoritative for privileged operations.
  *
- * 1. **Flags are NOT authorization.**  Server‑side enforcement (RLS/RPC) is the
- *    only gate for destructive or privileged actions.  A client flag can hide
- *    a UI element but must never prevent a direct API call.
+ * Evaluation order:
+ *   1. Unknown flag -> OFF
+ *   2. Kill switch (`VITE_KILL_<NAME>=false`) -> force OFF
+ *   3. Role gate -> fail closed for missing/unknown/unauthorized roles
+ *   4. Vite deployment override (`VITE_FEATURE_<NAME>=true`) -> ON
+ *   5. Authorized local preview (`ff:<name>=1|0`) -> ON/OFF
+ *   6. Definition default
  *
- * 2. **Default is OFF.**  Every flag defaults to `false` so new work never
- *    reaches production until deliberately enabled.
+ * VITE_* values are browser build-time configuration in Vite. Changing them on
+ * Vercel requires a deployment/rebuild before users receive the new bundle.
  *
- * 3. **Kill switch wins.**  `VITE_KILL_<FLAG_NAME>=false` overrides every other
- *    source.  Set it in the Vercel dashboard during an incident; no code deploy
- *    required.
- *
- * 4. **Expire & clean up.**  Each flag has a target cleanup commit reference.
- *    Run `scripts/check-expired-flags.mjs` before every release.
- *
- * == Evaluation order ==
- *
- *   1. Kill‑switch env var (`VITE_KILL_<NAME>`) → force OFF if `=false`
- *   2. Env‑var default (`VITE_FEATURE_<NAME>=true`) → deployment‑level ON
- *   3. `localStorage` override (`ff:<name>=1`) → per‑user ON (staff only)
- *   4. Role gate → limited to roles in the `roles` array
- *   5. Fallback → `defaultValue` from the definition
- *
- * @see FEATURE_ROLLOUT_POLICY.md for rollout stages, owners, and cleanup.
+ * @see FEATURE_ROLLOUT_POLICY.md
  */
 
 const FLAG_KILL_PREFIX = 'VITE_KILL_';
 const FLAG_ENV_PREFIX = 'VITE_FEATURE_';
 const LOCAL_STORAGE_PREFIX = 'ff:';
+const VALID_ROLES = new Set<UserRole>(['ADMIN', 'MANAGER', 'USER']);
 
-// ---------------------------------------------------------------------------
-// Flag inventory — single source of truth
-// ---------------------------------------------------------------------------
+type UserRole = 'ADMIN' | 'MANAGER' | 'USER';
+type FeaturePhase = 'alpha' | 'beta' | 'stable' | 'deprecated';
+type FeatureFlagEnv = Record<string, string | undefined>;
 
 export interface FeatureFlagDef {
-  /** Short kebab‑case identifier (used for kill/env/localStorage keys). */
   key: string;
-  /** Human‑readable Arabic name for dashboards. */
   labelAr: string;
-  /** Human‑readable English name. */
   labelEn: string;
-  /** Owner team or person (email / GitHub handle). */
   owner: string;
-  /** Short description of what this flag controls. */
   description: string;
-  /** Target cleanup (SHA, tag, or date). */
   cleanupBy: string;
-  /** Phase: alpha / beta / stable / deprecated. */
-  phase: 'alpha' | 'beta' | 'stable' | 'deprecated';
-  /** Default value when no override is present. */
+  phase: FeaturePhase;
   defaultValue: boolean;
-  /** If set, only these roles see the feature when enabled. */
-  roles?: readonly ('ADMIN' | 'MANAGER' | 'USER')[];
-  /** If true, this flag is safe to expose to browser DevTools. */
+  roles?: readonly UserRole[];
   public: boolean;
-  /** Link to the product requirement or issue. */
   tracker?: string;
 }
 
-const FLAGS: readonly FeatureFlagDef[] = [
-  {
-    key: 'ai-assistant',
-    labelAr: 'المساعد الذكي',
-    labelEn: 'AI Assistant',
-    owner: 'platform',
-    description: 'AI‑powered chat assistant for operational queries.',
-    cleanupBy: '2026-12-01',
-    phase: 'beta',
-    defaultValue: true,
-    roles: ['ADMIN', 'MANAGER'],
-    public: true,
-  },
-  {
-    key: 'reports-v2',
-    labelAr: 'التقارير المتقدمة',
-    labelEn: 'Reports V2',
-    owner: 'platform',
-    description: 'New reports architecture with aggregated read models.',
-    cleanupBy: '2026-11-01',
-    phase: 'alpha',
-    defaultValue: false,
-    roles: ['ADMIN'],
-    public: true,
-  },
-  {
-    key: 'financial-wave-2',
-    labelAr: 'الموجة المالية الثانية',
-    labelEn: 'Financial Wave 2',
-    owner: 'platform',
-    description: 'Enhanced bank reconciliation, expense categories, and cash‑flow projections.',
-    cleanupBy: '2026-11-01',
-    phase: 'alpha',
-    defaultValue: false,
-    roles: ['ADMIN'],
-    public: true,
-  },
-  {
-    key: 'owner-agreements-v2',
-    labelAr: 'اتفاقيات الملاك المتقدمة',
-    labelEn: 'Owner Agreements V2',
-    owner: 'platform',
-    description: 'Versioned owner agreements with maker‑checker approval workflow.',
-    cleanupBy: '2026-10-15',
-    phase: 'alpha',
-    defaultValue: false,
-    roles: ['ADMIN'],
-    public: true,
-  },
-  {
-    key: 'dashboard-v2',
-    labelAr: 'لوحة التحكم الجديدة',
-    labelEn: 'Dashboard V2',
-    owner: 'platform',
-    description: 'Redesigned dashboard with task‑centric layout.',
-    cleanupBy: '2026-10-01',
-    phase: 'alpha',
-    defaultValue: false,
-    roles: ['ADMIN'],
-    public: true,
-  },
-  {
-    key: 'malek-pro-visual',
-    labelAr: 'الهوية البصرية MALEK Pro',
-    labelEn: 'MALEK Pro Visual',
-    owner: 'platform',
-    description: 'Emerald/slate operational visual wave (data‑visual‑wave="malek‑pro").',
-    cleanupBy: '2026-09-15',
-    phase: 'beta',
-    defaultValue: true,
-    roles: ['ADMIN', 'MANAGER', 'USER'],
-    public: true,
-  },
-  {
-    key: 'commission-lifecycle-v2',
-    labelAr: 'دورة العمولات المتقدمة',
-    labelEn: 'Commission Lifecycle V2',
-    owner: 'platform',
-    description: 'Atomic commission pay/reverse with GL integration.',
-    cleanupBy: '2026-10-01',
-    phase: 'alpha',
-    defaultValue: false,
-    roles: ['ADMIN', 'MANAGER'],
-    public: true,
-  },
-] as const;
-
-// ---------------------------------------------------------------------------
-// Lookup helpers
-// ---------------------------------------------------------------------------
-
-const flagByKey = new Map<string, FeatureFlagDef>(FLAGS.map((f) => [f.key, f]));
+const FLAGS = flagDefinitions as FeatureFlagDef[];
+const flagByKey = new Map<string, FeatureFlagDef>(FLAGS.map((flag) => [flag.key, flag]));
 
 export function getFlagDefinition(key: string): FeatureFlagDef | undefined {
   return flagByKey.get(key);
@@ -162,92 +58,76 @@ export function listAllFlags(): readonly FeatureFlagDef[] {
   return FLAGS;
 }
 
-// ---------------------------------------------------------------------------
-// Evaluation
-// ---------------------------------------------------------------------------
-
 /**
- * Resolve whether `key` is enabled for the current session.
- *
- * Order:  kill switch → env‑var → localStorage → role gate → default.
+ * Exposes only Vite public environment values to the flag evaluator.
+ * Tests may inject an explicit env object through isFeatureEnabled options.
  */
+export function getFeatureFlagEnv(): FeatureFlagEnv {
+  return import.meta.env as FeatureFlagEnv;
+}
+
 export function isFeatureEnabled(
   key: string,
-  options?: { role?: string | null; env?: Record<string, string | undefined> },
+  options?: { role?: string | null; env?: FeatureFlagEnv },
 ): boolean {
   const def = flagByKey.get(key);
   if (!def) return false;
 
-  const env = options?.env ?? (typeof process !== 'undefined' ? process.env : {});
-  const role = options?.role;
+  const env = options?.env ?? getFeatureFlagEnv();
+  const role = normalizeRole(options?.role);
 
-  // 1. Kill switch (force OFF)
+  // 1. Kill switch always wins.
   const killKey = `${FLAG_KILL_PREFIX}${toEnvKey(key)}`;
   if (env[killKey] === 'false') return false;
 
-  // 2. Env var (deployment‑level override)
+  // 2. Role restrictions are eligibility boundaries for rollout only.
+  // Missing, unknown and unauthorized roles fail closed before any ON override.
+  if (def.roles) {
+    if (!role || !def.roles.includes(role)) return false;
+  }
+
+  // 3. Deployment-level Vite rollout override.
   const envKey = `${FLAG_ENV_PREFIX}${toEnvKey(key)}`;
   if (env[envKey] === 'true') return true;
 
-  // 3. localStorage override (staff preview)
+  // 4. Local preview override. This is evaluated only after role eligibility.
   if (typeof localStorage !== 'undefined') {
     try {
-      const ls = localStorage.getItem(`${LOCAL_STORAGE_PREFIX}${key}`);
-      if (ls === '1') return true;
-      if (ls === '0') return false;
+      const localOverride = localStorage.getItem(`${LOCAL_STORAGE_PREFIX}${key}`);
+      if (localOverride === '1') return true;
+      if (localOverride === '0') return false;
     } catch {
-      // localStorage may be blocked (private browsing, SSR)
+      // Storage can be unavailable in SSR/private contexts; fall through safely.
     }
   }
 
-  // 4. Role gate
-  if (def.roles && role && !def.roles.includes(role as any)) return false;
-
-  // 5. Default
+  // 5. Canonical definition default.
   return def.defaultValue;
 }
 
-/**
- * Return a plain object of all public flag states for hydration into
- * page‑level contexts (never use for server‑side enforcement).
- */
 export function getPublicFlagStates(options?: {
   role?: string | null;
-  env?: Record<string, string | undefined>;
+  env?: FeatureFlagEnv;
 }): Record<string, boolean> {
   const result: Record<string, boolean> = {};
   for (const def of FLAGS) {
-    if (def.public) {
-      result[def.key] = isFeatureEnabled(def.key, options);
-    }
+    if (def.public) result[def.key] = isFeatureEnabled(def.key, options);
   }
   return result;
 }
 
-// ---------------------------------------------------------------------------
-// Internal helpers
-// ---------------------------------------------------------------------------
-
-function toEnvKey(kebab: string): string {
-  return kebab.replace(/-/g, '_').toUpperCase();
+function normalizeRole(role: string | null | undefined): UserRole | null {
+  if (!role || !VALID_ROLES.has(role as UserRole)) return null;
+  return role as UserRole;
 }
 
-// ---------------------------------------------------------------------------
-// React hook
-// ---------------------------------------------------------------------------
-
-import { useMemo } from 'react';
-import { useAuth } from '@/hooks/use-auth';
+function toEnvKey(kebab: string): string {
+  return kebab.replaceAll('-', '_').toUpperCase();
+}
 
 /**
- * React hook wrapping `isFeatureEnabled` with the current auth role.
- *
- * @example
- * ```tsx
- * const showAssistant = useFeatureFlag('ai-assistant');
- * if (!showAssistant) return null;
- * return <AiAssistantPanel />;
- * ```
+ * React wrapper using the authorization role resolved by the existing auth
+ * subsystem. Restricted flags remain OFF until authorization is available.
  */
 export function useFeatureFlag(key: string): boolean {
   const { authorization } = useAuth();
