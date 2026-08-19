@@ -42,6 +42,8 @@ jobs:
         run: pnpm install --frozen-lockfile --ignore-scripts
       - name: Rebuild approved native toolchain package
         run: pnpm rebuild esbuild
+      - name: Enforce feature-flag cleanup deadlines
+        run: pnpm check:expired-flags
       - name: Validate hosted QA runtime guards
         run: |
           node --check scripts/agent-qa-preflight.mjs
