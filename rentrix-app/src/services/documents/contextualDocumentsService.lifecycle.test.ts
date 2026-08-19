@@ -15,6 +15,7 @@ function resolvedChain(result: () => { data: any; error: any }) {
     select: vi.fn(() => chain),
     order: vi.fn(() => chain),
     single: vi.fn(async () => result()),
+    maybeSingle: vi.fn(async () => result()),
     then: (resolve: (value: unknown) => unknown, reject: (reason: unknown) => unknown) => Promise.resolve(result()).then(resolve, reject),
   };
   return chain;

@@ -80,6 +80,11 @@ const LATER_GOVERNED_STAGE_MARKERS = [
   // This forward-only audit-contract repair depends on the receipt VOID
   // request ledger introduced after historical Phase 3A-1B checkpoints.
   'wp01_receipt_void_audit_contract_restore',
+  // Additive hot-path FK covering indexes reference the FA-003 settlement link
+  // tables and deposit_transactions.reversal_of_id (GAP-009), both of which
+  // historical checkpoint baselines intentionally omit. Keep this later
+  // migration out of those replays rather than weakening production deps.
+  'hot_path_fk_covering_indexes',
 ] as const;
 
 export async function createFullReplayedDatabase(options?: {

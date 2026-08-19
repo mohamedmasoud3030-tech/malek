@@ -125,6 +125,10 @@ beforeAll(async () => {
       && !f.includes('rc1_release_integration_fk_indexes')
       && !f.includes('rc1_owner_offset_2000_control')
       && !f.includes('sole_admin_exception')
+      // Additive hot-path FK covering indexes reference the FA-003 settlement
+      // link tables and deposit_transactions.reversal_of_id (GAP-009) omitted
+      // by this historical P1 checkpoint; keep it out like the RC1 family.
+      && !f.includes('hot_path_fk_covering_indexes')
     )
     .sort((a, b) => a.localeCompare(b));
   const failed: { file: string; error: string }[] = [];
