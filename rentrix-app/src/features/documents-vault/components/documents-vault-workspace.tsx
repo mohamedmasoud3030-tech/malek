@@ -130,7 +130,7 @@ export function DocumentsVaultWorkspace({ mode = 'standalone' }: DocumentsVaultW
       queryClient.invalidateQueries({ queryKey: ['vault-documents'] });
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : 'فشل رفع المستند');
+      toast.error(error instanceof Error ? error.message : 'تعذر رفع المستند');
     },
   });
 
@@ -142,7 +142,7 @@ export function DocumentsVaultWorkspace({ mode = 'standalone' }: DocumentsVaultW
       queryClient.invalidateQueries({ queryKey: ['vault-documents'] });
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : 'فشل أرشفة المستند');
+      toast.error(error instanceof Error ? error.message : 'تعذر أرشفة المستند');
     },
   });
 
