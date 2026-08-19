@@ -194,7 +194,7 @@ export function DepositsWorkspace() {
       setCreateForm({ contract_id: '', amount: 0, received_date: getTodayLocalDateString(), notes: '' });
       invalidateFinancial();
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : 'فشل إنشاء الوديعة'),
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر إنشاء الوديعة'),
   });
 
   const claimMut = useMutation({
@@ -222,7 +222,7 @@ export function DepositsWorkspace() {
       setInvoiceInput('');
       void queryClient.invalidateQueries({ queryKey: ['deposit-claims'] });
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : 'فشل إنشاء الطلب'),
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر إنشاء الطلب'),
   });
 
   const approveMut = useMutation({
@@ -231,7 +231,7 @@ export function DepositsWorkspace() {
       toast.success('تم اعتماد الطلب');
       invalidateFinancial();
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : 'فشل الاعتماد'),
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر الاعتماد'),
   });
 
   const applyMut = useMutation({
@@ -240,7 +240,7 @@ export function DepositsWorkspace() {
       toast.success('تم تطبيق التخصيص على الحسابات والفواتير');
       invalidateFinancial();
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : 'فشل تطبيق التخصيص'),
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر تطبيق التخصيص'),
   });
 
   const rejectMut = useMutation({
@@ -255,7 +255,7 @@ export function DepositsWorkspace() {
       setReasonInput('');
       invalidateFinancial();
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : 'فشل رفض الطلب'),
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر رفض الطلب'),
   });
 
   const reverseClaimMut = useMutation({
@@ -270,7 +270,7 @@ export function DepositsWorkspace() {
       setReasonInput('');
       invalidateFinancial();
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : 'فشل إلغاء التخصيص'),
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر إلغاء التخصيص'),
   });
 
   const refundMut = useMutation({
@@ -293,7 +293,7 @@ export function DepositsWorkspace() {
       setClaimNoteInput('');
       invalidateFinancial();
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : 'فشل الاسترداد - تحقق من الرصيد'),
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر الاسترداد - تحقق من الرصيد'),
   });
 
   const reverseRefundMut = useMutation({
@@ -308,7 +308,7 @@ export function DepositsWorkspace() {
       setReasonInput('');
       invalidateFinancial();
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : 'فشل إلغاء الاسترداد'),
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر إلغاء الاسترداد'),
   });
 
   const totalHeld = useMemo(() => deposits.reduce((sum, deposit) => sum + deposit.remaining_amount, 0), [deposits]);

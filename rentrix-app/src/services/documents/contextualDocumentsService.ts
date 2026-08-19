@@ -102,7 +102,7 @@ export async function uploadContextualDocument(params: {
   validateContextualDocumentFile(params.file);
   const storagePath = buildStoragePath(params.relatedEntityType, params.relatedEntityId, params.file);
   const { error: uploadError } = await supabase.storage.from('attachments').upload(storagePath, params.file, { upsert: false, contentType: params.file.type });
-  if (uploadError) { handleSupabaseError(uploadError, 'فشل رفع المستند'); throw uploadError; }
+  if (uploadError) { handleSupabaseError(uploadError, 'تعذر رفع المستند'); throw uploadError; }
   try {
     const { data, error } = await (supabase as any).from('vault_documents').insert({
       title: params.title.trim() || params.file.name,
