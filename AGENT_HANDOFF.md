@@ -71,6 +71,32 @@
 
 - **لا شيء مهم**. كل تغييرات هذه الجلسة مبنية على تحقق محلي فعلي (اختبارات/typecheck/build) وليس فقط على CI.
 
+## Auth admin/users 500 — root cause محدد (2026-08-19)
+
+- **السبب الجذري**: مستخدم واحد محدد `84501d15-e68b-4475-b1d2-a654f73fc6f3` (البريد `qa-agent-test@rentrix.local`) عنده سجل تالف في `auth.users` يكسر serialization الـ GoTrue.
+- **الأثر**: أي استعلام `admin/users` يتضمنه (list بـ per_page ≥2) يرجع 500 `Database error finding users`. المستخدمون الآخرون (`yaqoop@jiwda.com`, `demo@rentrix.test`, `mohamedmasoud303@gmail.com`) سليمون.
+- **محاولة الإصلاح عبر API فشلت**: `DELETE /admin/users/<id>` يرجع 500 `Database error loading user` — التلف يمنع القراءة والحذف معًا.
+- **الحل المتبقي (يحتاج وصول SQL للمالك)**: من Supabase Dashboard → SQL Editor:
+  ```sql
+  delete from auth.users where id = '84501d15-e68b-4475-b1d2-a654f73fc6f3';
+  ```
+  ثم تنظيف اليتيمات (إن لزم): `delete from public.users where id = '84501d15-...';` و `delete from public.company_members where user_id = '84501d15-...';`
+- **مصنّف: BLOCKED** — لا يمكن إصلاحه من بيئة الوكيل (لا وصول Postgres مباشر؛ IPv6-only + pooler tenant-not-found).
+
+## زراعة Demo Data (منفّذة، 2026-08-19)
+
+زرعت **21 صفًا** في الوحدات الفارغة، مربوطة بـ company `00000000-0000-4000-8000-000000000001` وبالعقارات/الوحدات/العقود الموجودة (مبني 25/٢٠، غرف 13/14/15، عقود CNT-001/002):
+
+| الوحدة | الصفوف | ملاحظة |
+|---|---|---|
+| `service_providers` | 3 | شركة كهرباء، ورشة صيانة، تنظيف |
+| `leads` | 5 | حالات متنوعة (new/contacted/qualified/converted) |
+| `maintenance_records` | 5 | open/in_progress/resolved/closed + أولويات |
+| `expenses` | 5 | تصنيفات صيانة/مرافق/إدارية/تأمين |
+| `tenant_deposits` | 3 | held/partially_deducted/refunded |
+
+**مهم**: الإدراج تم مباشرةً عبر REST (service role) — **لم تمر عبر RPCs المحاسبية** (`create_expense_with_journal_atomic` وغيرها)، لذا لا توجد قيود دفتر أستاذ (journal/GL) مطابقة لهذه الصفوف. مقبول لأغراض العرض التجريبي، لكن أي تقرير محاسبي يعتمد على GL لن يرى هذه المصروفات/التأمينات. إن طُلبت سلامة محاسبية كاملة، أعد الزراعة عبر الـ RPCs.
+
 ## العيوب والمخاطر المعروفة
 
 1. **«بعض الصفحات فارغة» = وحدات بلا بيانات تجريبية، وليس عطلًا** (تشخيص نهائي بعد فحص فعلي). تم التحقق:
