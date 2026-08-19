@@ -12,6 +12,7 @@ vi.mock('@tanstack/react-router', () => ({
   Outlet: () => null,
   useRouter: () => ({ navigate: vi.fn() }),
   useMatches: () => [{ staticData: { title: 'العقارات' } }],
+  useLocation: () => ({ pathname: '/dashboard', search: {} }),
 }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 vi.mock('@/hooks/use-auth', () => ({
@@ -32,10 +33,6 @@ vi.mock('@/store/ui-store', () => ({
     setSyncStatus: vi.fn(),
   }),
 }));
-vi.mock('./layout-navigation-view', () => ({
-  NavigationLinks: () => null,
-  MobileFloatingControl: () => null,
-}));
 vi.mock('./notifications-menu', () => ({ NotificationsMenu: () => null }));
 vi.mock('@/features/command-palette/command-palette-trigger', () => ({ CommandPaletteTrigger: () => null }));
 vi.mock('@/features/command-palette/command-palette-dialog', () => ({ CommandPaletteDialog: () => null }));
@@ -44,16 +41,14 @@ vi.mock('@/features/ai-assistant/ai-assistant-global-action', () => ({ AiAssista
 import { AppShell } from './app-shell';
 
 /**
- * WP-06 / GAP-020 regression.
+ * WP-06 / GAP-020 regression — updated for the bottom-sheet navigation.
  *
- * The mobile navigation drawer is opened from a plain header button rather
- * than a Radix <DialogTrigger>, so Radix's internal triggerRef is null and its
- * default close-autofocus handler dropped focus onto <body>. That violates
- * WCAG 2.4.3 (focus order) and was caught by the Browser Readiness
- * chromium-desktop shard. AppShell now owns the trigger ref and restores focus
- * explicitly; these tests lock both the scroll lock and the focus contract.
+ * The mobile navigation is a bottom sheet opened from the floating control
+ * center button (not a Radix <DialogTrigger>), so Radix's internal triggerRef
+ * is null and its default close-autofocus drops focus onto <body>. AppShell
+ * owns the trigger ref (on the bottom launcher) and restores focus explicitly.
  */
-describe('AppShell mobile drawer — scroll lock and focus restoration', () => {
+describe('AppShell mobile bottom-sheet nav — scroll lock and focus restoration', () => {
   let host: HTMLDivElement;
   let root: ReturnType<typeof createRoot>;
 
@@ -71,16 +66,17 @@ describe('AppShell mobile drawer — scroll lock and focus restoration', () => {
   });
 
   function getTrigger() {
-    const trigger = host.querySelector<HTMLButtonElement>('[data-mobile-menu-trigger]');
+    // The menu launcher lives in the bottom control center (data-mobile-control-center).
+    const trigger = host.querySelector<HTMLButtonElement>('button[aria-label="فتح القائمة"]');
     expect(trigger).not.toBeNull();
     return trigger as HTMLButtonElement;
   }
 
-  function getDrawer() {
-    return document.querySelector<HTMLElement>('[data-mobile-drawer]');
+  function getSheet() {
+    return document.querySelector<HTMLElement>('[data-mobile-nav-sheet]');
   }
 
-  it('opens a real modal drawer, locks body and html scroll, and exposes aria-modal', () => {
+  it('opens a bottom-sheet navigation (not a full-height drawer), locks scroll, and exposes aria-modal', () => {
     act(() => { root.render(<AppShell />); });
 
     expect(document.body.style.overflow).not.toBe('hidden');
@@ -89,16 +85,18 @@ describe('AppShell mobile drawer — scroll lock and focus restoration', () => {
 
     act(() => { trigger.click(); });
 
-    const drawer = getDrawer();
-    expect(drawer).not.toBeNull();
-    expect(drawer?.getAttribute('role')).toBe('dialog');
-    expect(drawer?.getAttribute('aria-modal')).toBe('true');
+    const sheet = getSheet();
+    expect(sheet).not.toBeNull();
+    expect(sheet?.getAttribute('role')).toBe('dialog');
+    expect(sheet?.getAttribute('aria-modal')).toBe('true');
+    // Bottom-sheet shape: anchored to the bottom, not full height.
+    expect(sheet?.className).toContain('bottom-0');
+    expect(sheet?.className).toContain('rounded-t-3xl');
     expect(document.body.style.overflow).toBe('hidden');
     expect(document.documentElement.style.overflow).toBe('hidden');
-    expect(trigger.getAttribute('aria-expanded')).toBe('true');
   });
 
-  it('restores focus to the header trigger and unlocks scroll when the drawer closes', () => {
+  it('restores focus to the bottom launcher and unlocks scroll when the sheet closes', () => {
     act(() => { root.render(<AppShell />); });
 
     const trigger = getTrigger();
@@ -106,14 +104,14 @@ describe('AppShell mobile drawer — scroll lock and focus restoration', () => {
     expect(document.activeElement).toBe(trigger);
 
     act(() => { trigger.click(); });
-    expect(getDrawer()).not.toBeNull();
+    expect(getSheet()).not.toBeNull();
 
-    const closeButton = getDrawer()?.querySelector<HTMLButtonElement>('button[aria-label="إغلاق القائمة"]');
+    const closeButton = getSheet()?.querySelector<HTMLButtonElement>('button[aria-label="إغلاق القائمة"]');
     expect(closeButton).not.toBeNull();
 
     act(() => { closeButton?.click(); });
 
-    expect(getDrawer()).toBeNull();
+    expect(getSheet()).toBeNull();
     // Focus must return to the control that opened the overlay, not <body>.
     expect(document.activeElement).toBe(trigger);
     expect(document.body.style.overflow).not.toBe('hidden');

@@ -115,16 +115,14 @@ describe('AppShell — fixed global MALEK header', () => {
     }
   });
 
-  it('exposes the ARIA contract for the two menu controls (dialog + expanded state)', () => {
+  it('removes the duplicate mobile hamburger from the header (bottom control center is the nav entry)', () => {
     act(() => { root.render(<AppShell />); });
 
-    // Mobile/tablet hamburger opens the navigation as a dialog.
-    const mobileTrigger = host.querySelector<HTMLElement>('[data-mobile-menu-trigger]');
-    expect(mobileTrigger).not.toBeNull();
-    expect(mobileTrigger?.getAttribute('aria-haspopup')).toBe('dialog');
-    expect(mobileTrigger?.getAttribute('aria-expanded')).toBe('false');
+    // The header no longer carries a mobile hamburger — the bottom control
+    // center is the single mobile navigation entry point.
+    expect(host.querySelector('[data-mobile-menu-trigger]')).toBeNull();
 
-    // Desktop collapse toggle reports the sidebar expansion state.
+    // Desktop collapse toggle still reports the sidebar expansion state.
     const collapseTrigger = Array.from(host.querySelectorAll<HTMLElement>('button[aria-expanded]')).find(
       (button) => button.getAttribute('aria-expanded') === 'true',
     );

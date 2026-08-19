@@ -184,11 +184,10 @@ function MobileNavigationDrawer({
       <DialogContent
         showCloseButton={false}
         aria-describedby={undefined}
-        // The drawer is opened from a header button rather than a Radix
-        // <DialogTrigger>, so Radix's internal triggerRef is null and its
-        // default close-autofocus lands on <body>. Restore focus to the real
-        // trigger ourselves (WCAG 2.4.3 — focus order must return to the
-        // control that opened the overlay).
+        // The bottom-sheet navigation is opened from the floating control
+        // center button rather than a Radix <DialogTrigger>, so Radix's
+        // internal triggerRef is null and its default close-autofocus lands
+        // on <body>. Restore focus to the launcher ourselves (WCAG 2.4.3).
         onCloseAutoFocus={(event) => {
           const trigger = triggerRef.current;
           if (!trigger) return;
@@ -196,10 +195,12 @@ function MobileNavigationDrawer({
           trigger.focus();
         }}
         data-mobile-drawer
-        className="fixed bottom-0 left-auto right-0 top-0 z-[101] flex h-dvh w-[min(20rem,88vw)] max-h-none max-w-none flex-col gap-0 overflow-hidden rounded-none border-0 border-l border-sidebar-border bg-sidebar text-sidebar-foreground shadow-elevated sm:max-h-none md:w-[min(22rem,70vw)] sm:p-0 lg:hidden"
+        data-mobile-nav-sheet
+        className="fixed inset-x-0 bottom-0 z-[101] flex max-h-[82dvh] w-full max-w-none flex-col gap-0 overflow-hidden rounded-none rounded-t-3xl border-0 border-t border-white/10 bg-sidebar text-sidebar-foreground shadow-[0_-18px_50px_-18px_rgb(0_0_0_/_0.7)] sm:max-h-none lg:hidden"
       >
         <DialogTitle className="sr-only">القائمة الرئيسية</DialogTitle>
-        <div className="flex min-h-24 items-center justify-between gap-3 border-b border-white/8 px-4 py-4 pt-[calc(1rem+env(safe-area-inset-top,0px))]">
+        <div className="mx-auto mt-2.5 h-1.5 w-10 shrink-0 rounded-full bg-white/20" aria-hidden="true" />
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/8 px-4 py-3">
           <Brand expanded />
           <Button
             autoFocus
@@ -211,7 +212,7 @@ function MobileNavigationDrawer({
             <X className="size-5" />
           </Button>
         </div>
-        <nav className="sidebar-scroll flex-1 overflow-y-auto overscroll-contain p-3">
+        <nav className="sidebar-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
           {authorization === null && (
             <div className="mb-4 rounded-xl border border-[hsl(var(--color-warning-text)/0.25)] bg-[hsl(var(--color-warning-bg)/0.08)] px-3 py-2.5">
               <p className="text-xs font-semibold text-warning">الصلاحيات غير مكتملة</p>
@@ -222,7 +223,7 @@ function MobileNavigationDrawer({
           )}
           <NavigationLinks authorization={authorization} expanded sharedLabel={sharedLabel} onNavigate={onClose} />
         </nav>
-        <div className="border-t border-white/8 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
+        <div className="shrink-0 border-t border-white/8 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
           <Button
             variant="ghost"
             className="min-h-11 w-full justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-white"
@@ -353,19 +354,6 @@ export function AppShell() {
         >
           <div className="mx-auto flex min-h-14 w-full max-w-[110rem] items-center gap-1.5 px-2 py-1 sm:min-h-14 sm:gap-2 sm:px-4">
             <Button
-              ref={mobileNavTriggerRef}
-              variant="ghost"
-              data-mobile-menu-trigger
-              className="inline-flex size-11 shrink-0 rounded-xl px-0 text-muted-foreground hover:bg-muted hover:text-foreground lg:hidden"
-              onClick={() => setMobileNavOpen(true)}
-              aria-label={sharedLabel('openMenu')}
-              aria-haspopup="dialog"
-              aria-expanded={mobileNavOpen}
-            >
-              <Menu className="size-[1.15rem]" aria-hidden="true" />
-            </Button>
-
-            <Button
               variant="ghost"
               className="hidden size-11 shrink-0 rounded-xl px-0 text-muted-foreground hover:bg-muted hover:text-foreground lg:inline-flex"
               onClick={toggleSidebar}
@@ -453,7 +441,7 @@ export function AppShell() {
         </main>
       </div>
 
-      <MobileFloatingControl onMenu={() => setMobileNavOpen(true)} />
+      <MobileFloatingControl menuRef={mobileNavTriggerRef} onMenu={() => setMobileNavOpen(true)} />
       <CommandPaletteDialog />
     </div>
   );

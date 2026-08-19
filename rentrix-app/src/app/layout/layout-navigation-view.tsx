@@ -1,5 +1,5 @@
 import { Link, useLocation } from '@tanstack/react-router';
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useState, type Ref } from 'react';
 import { ChevronDown, Lock, Menu, Search } from 'lucide-react';
 import { useCommandPaletteStore } from '@/features/command-palette/command-palette-store';
 import { canShowNavigationItem, canAccessRoute, type AuthorizationContext, type AppPermission } from '@/features/auth/permissions';
@@ -151,16 +151,36 @@ export function NavigationLinks({
   );
 }
 
-export function MobileFloatingControl({ onMenu }: Readonly<{ onMenu: () => void }>) {
+export function MobileFloatingControl({ onMenu, menuRef }: Readonly<{ onMenu: () => void; menuRef?: Ref<HTMLButtonElement> }>) {
   const { open } = useCommandPaletteStore();
   return (
-    <div className="fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] md:hidden" data-mobile-floating-control aria-label="أدوات الوصول السريع">
-      <div className="flex items-center gap-1 rounded-2xl border border-border/80 bg-background/95 p-1 shadow-[0_14px_40px_-16px_rgb(15_23_42_/_0.45)] backdrop-blur-xl">
-        <button type="button" onClick={onMenu} aria-label="فتح القائمة" className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl px-3 text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-4 focus-visible:ring-primary/25">
-          <Menu className="size-5" aria-hidden="true" /><span className="sr-only">القائمة</span>
+    <div
+      className="fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] md:hidden"
+      data-mobile-floating-control
+      data-mobile-control-center
+      aria-label="مركز التحكم"
+    >
+      <div className="flex w-full max-w-xs items-center gap-1 rounded-2xl border border-border/70 bg-card/95 p-1.5 shadow-[0_18px_50px_-18px_rgb(15_23_42_/_0.55)] backdrop-blur-xl">
+        <button
+          ref={menuRef}
+          type="button"
+          onClick={onMenu}
+          aria-label="فتح القائمة"
+          aria-haspopup="dialog"
+          className="inline-flex min-h-11 min-w-11 flex-1 items-center justify-center gap-2 rounded-xl px-3 text-foreground outline-none transition-colors hover:bg-muted focus-visible:ring-4 focus-visible:ring-primary/25"
+        >
+          <Menu className="size-5" aria-hidden="true" />
+          <span className="text-xs font-semibold">القائمة</span>
         </button>
-        <button type="button" onClick={open} aria-label="فتح البحث" className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl px-3 text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-4 focus-visible:ring-primary/25">
-          <Search className="size-5" aria-hidden="true" /><span className="sr-only">بحث</span>
+        <span className="h-6 w-px bg-border/80" aria-hidden="true" />
+        <button
+          type="button"
+          onClick={open}
+          aria-label="فتح البحث"
+          className="inline-flex min-h-11 min-w-11 flex-1 items-center justify-center gap-2 rounded-xl px-3 text-foreground outline-none transition-colors hover:bg-muted focus-visible:ring-4 focus-visible:ring-primary/25"
+        >
+          <Search className="size-5" aria-hidden="true" />
+          <span className="text-xs font-semibold">بحث</span>
         </button>
       </div>
     </div>
