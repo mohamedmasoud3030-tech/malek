@@ -128,7 +128,7 @@ function ContextSnapshot({ context }: Readonly<{ context: AiAssistantContext | n
   );
 }
 
-export function AiAssistantPage() {
+export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
   const [messages, setMessages] = useState<AiAssistantMessage[]>([initialMessage]);
   const [input, setInput] = useState('');
   const [latestContext, setLatestContext] = useState<AiAssistantContext | null>(null);
@@ -167,11 +167,13 @@ export function AiAssistantPage() {
   }
 
   return (
-    <PageLayout size="wide" dir="rtl" lang="ar" visualVariant="malek-pro">
-      <PageHeader
-        title="مساعد الذكاء الاصطناعي"
-        description={`مساعد تشغيلي قراءة فقط يستخدم ملخصات آمنة من بيانات ${APP_BRAND_NAME} المسموح لحسابك بقراءتها، ولا ينفذ أي تعديل أو SQL.`}
-      />
+    <PageLayout size="wide" dir="rtl" lang="ar" visualVariant="malek-pro" className={embedded ? 'p-0' : undefined}>
+      {embedded ? null : (
+        <PageHeader
+          title="مساعد الذكاء الاصطناعي"
+          description={`مساعد تشغيلي قراءة فقط يستخدم ملخصات آمنة من بيانات ${APP_BRAND_NAME} المسموح لحسابك بقراءتها، ولا ينفذ أي تعديل أو SQL.`}
+        />
+      )}
 
       {configurationMissing ? (
         <Card role="alert" aria-live="assertive" variant="outlined" className="border-warning/50 bg-warning/10">
@@ -191,7 +193,7 @@ export function AiAssistantPage() {
 
       <ContextSnapshot context={latestContext} />
 
-      <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_20rem] lg:grid-cols-[minmax(0,1fr)_22rem]">
+      <div className={cn('grid gap-4', embedded ? '' : 'md:grid-cols-[minmax(0,1fr)_20rem] lg:grid-cols-[minmax(0,1fr)_22rem]')}>
         <Card className="min-w-0">
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><Bot className="size-5 text-primary" />المحادثة</CardTitle>
