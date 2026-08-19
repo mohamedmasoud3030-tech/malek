@@ -38,7 +38,7 @@ describe('destructive action terminology and confirmation dialogs UX contract', 
 
   it('updates default confirm dialog description to explain archival record retention', () => {
     expect(confirmDialogSource).not.toContain("description = 'لا يمكن التراجع عن هذا الإجراء.'");
-    expect(confirmDialogSource).toContain('يتم الاحتفاظ بالسجلات المحاسبية والتاريخية في الأرشيف لحماية سلامة البيانات');
+    expect(confirmDialogSource).toContain('سجلات الفواتير والمدفوعات المرتبطة تبقى محفوظة في سجل التدقيق');
   });
 
   it('accurately describes contract termination as ending planned duration while preserving prior accounting history', () => {
