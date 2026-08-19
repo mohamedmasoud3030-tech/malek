@@ -53,6 +53,6 @@ describe('listExpenses paged reads', () => {
     const result = await listExpenses({ propertyId: '', category: '', from: '', to: '' });
 
     expect(result).toEqual({ rows: [], truncated: false });
-    expect(mocks.handleSupabaseError).toHaveBeenCalledWith(expect.any(Error), 'تعذر تحميل المصاريف');
+    expect(mocks.handleSupabaseError).toHaveBeenCalledWith(expect.any(Error), 'تعذر تحميل المصروفات');
   });
 });
