@@ -33,7 +33,7 @@ export function DatePicker({
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined}
         className={cn(
-          'min-h-11 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm font-bold text-foreground outline-none transition',
+          'min-h-11 w-full rounded-xl border border-input bg-background px-3 py-2 text-base font-bold text-foreground outline-none transition sm:text-sm',
           'focus:border-primary focus:ring-4 focus:ring-primary/10',
           'disabled:cursor-not-allowed disabled:opacity-50',
           error && 'border-destructive focus:border-destructive focus:ring-destructive/20',

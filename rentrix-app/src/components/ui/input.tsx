@@ -6,7 +6,7 @@ export const inputVariants = cva(
   [
     /* Touch contract (RENTRIX_MOBILE_UX): inputs 44px min / 48px preferred —
        mirrors select.tsx (min-h-12 touch-first, sm:min-h-11). */
-    'flex min-h-12 w-full min-w-0 scroll-mb-16 rounded-xl border bg-background px-3 py-2 text-sm outline-none transition sm:min-h-11',
+    'flex min-h-12 w-full min-w-0 scroll-mb-16 rounded-xl border bg-background px-3 py-2 text-base outline-none transition sm:min-h-11 sm:text-sm',
     'placeholder:text-muted-foreground',
     'disabled:cursor-not-allowed disabled:opacity-50',
     'read-only:cursor-default read-only:bg-muted/40 read-only:opacity-100',
