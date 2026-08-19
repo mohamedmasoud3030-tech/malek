@@ -44,7 +44,7 @@ A flag is enabled for the current session only when **all** of these resolve to 
 
 ---
 
-## 2. Flag lifecycle phases
+## 3. Flag lifecycle phases
 
 ```
 idea → alpha → beta → stable → deprecated → removed
@@ -59,7 +59,7 @@ idea → alpha → beta → stable → deprecated → removed
 
 ---
 
-## 3. Flag inventory
+## 4. Flag inventory
 
 | Key | Phase | Default | Roles | Owner | Cleanup by |
 |-----|-------|---------|-------|-------|-----------|
@@ -73,7 +73,7 @@ idea → alpha → beta → stable → deprecated → removed
 
 ---
 
-## 4. Rollout stages
+## 5. Rollout stages
 
 Every rollout follows these stages. Do not skip any.
 
@@ -112,7 +112,7 @@ Every rollout follows these stages. Do not skip any.
 
 ---
 
-## 5. Observability
+## 6. Observability
 
 Each flag evaluation is intentionally **not logged** to avoid noise. Instead:
 
@@ -122,7 +122,7 @@ Each flag evaluation is intentionally **not logged** to avoid noise. Instead:
 
 ---
 
-## 6. Kill switch procedure
+## 7. Kill switch procedure
 
 If a flagged feature causes a production incident:
 
@@ -138,7 +138,7 @@ No code change, no PR, no commit. Rollback in ≤ 5 minutes (one redeploy).
 
 ---
 
-## 7. Cleanup enforcement
+## 8. Cleanup enforcement
 
 Every release must pass:
 
@@ -150,7 +150,61 @@ If a flag has passed its `cleanupBy` date, the build fails.  Extend the date onl
 
 ---
 
-## 8. Ownership
+## 9. Environment separation
+
+| Environment | Flag source | Purpose |
+|---|---|---|
+| **Local dev** | `localStorage` (`ff:<name>=1|0`) | Fast per-session preview; never deployed |
+| **QA / Preview** | `VITE_FEATURE_<NAME>=true` on the QA Vercel project | Owner validation before production |
+| **Production** | `VITE_FEATURE_<NAME>` + `VITE_KILL_<NAME>` on the prod Vercel project | The only environment real users hit |
+
+> `VITE_*` values are baked at build time and are **environment-scoped** by Vercel (each project has its own env vars), so QA and Production can differ. Never reuse a single Supabase project for QA and Production flag testing — QA uses the dedicated QA Supabase project (`QA_SUPABASE_PROJECT_REF`).
+
+> **Role model:** the flag evaluator mirrors the full authorization role set (`ADMIN`, `MANAGER`, `ACCOUNTANT`, `OPERATIONS`, `USER`, `VIEWER` — from `domain/types.ts`), so any real role can be targeted and no real role is silently dropped to "unknown".
+
+---
+
+## 10. Percentage / gradual rollout
+
+**Current decision: no percentage rollout.** Percentage rollout requires a **stable, trustworthy identity** (a consistent tenant/company key available at evaluation time). MALEK's multi-tenant identity is server-side (RLS via `current_company_id()`), not exposed as a stable client key in the bundle, so hashing a client value would produce unstable cohorts and is unsafe.
+
+**Use the role gate instead** for staged exposure at this scale:
+- `alpha` = ADMIN only, `beta` = ADMIN + MANAGER, `stable` = all roles.
+- If finer-grained office-by-office rollout is ever needed, the correct approach is a **server-side flag column** (e.g. `company.feature_flags jsonb` read through a dedicated RPC), not a client hash.
+
+---
+
+## 11. Metrics and stop/rollback thresholds
+
+Measure per flag during alpha/beta. Stop (kill switch) immediately when **any** of these triggers on Production:
+
+| Signal | Threshold | Window |
+|---|---|---|
+| Browser error rate on gated surface | > 2% | rolling 1 hour |
+| Failed financial/ledger RPCs | any non-zero | immediate |
+| p95 latency regression on gated flow | > 2× baseline | rolling 24 hours |
+| Support reports tied to the feature | 3 distinct offices | any |
+
+**Rollback = kill switch** (`VITE_KILL_<NAME>=false` → redeploy). It is the one unconditional lever; all other actions (revert PR, re-run migration rollback) follow the normal incident process.
+
+> Sources today: Vercel deployment logs, Supabase RPC error logs, and support channel. There is no product-analytics provider; if observability needs exceed what logs provide, that is the trigger to consider an external flag/analytics provider (see §12).
+
+---
+
+## 12. Provider recommendation
+
+**Stay with the config-backed system.** At MALEK's current scale (single-digit flags, role-based staging, small office count), the JSON + Vite env + localStorage system is simpler, cheaper, and auditable in git. An external provider (LaunchDarkly / Flagsmith / PostHog flags) is justified only when **two or more** of these become true:
+
+1. Need per-office or per-user percentage targeting with live (no-redeploy) control.
+2. Need an audit trail of who changed which flag when.
+3. Need real-time metric correlation per flag (kill on error-rate without human action).
+4. Non-technical staff must toggle flags without a deploy.
+
+If that day comes, prefer a provider with a **server-side SDK + RLS-friendly evaluation** and keep the same invariant: flags gate presentation, never authorization.
+
+---
+
+## 13. Ownership
 
 | Flag | Owner | Backup |
 |------|-------|--------|

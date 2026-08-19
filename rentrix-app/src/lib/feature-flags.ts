@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useAuth } from '@/hooks/use-auth';
+import type { UserRole } from '@/domain/types';
 import flagDefinitions from './feature-flag-definitions.json';
 
 /**
@@ -27,9 +28,8 @@ import flagDefinitions from './feature-flag-definitions.json';
 const FLAG_KILL_PREFIX = 'VITE_KILL_';
 const FLAG_ENV_PREFIX = 'VITE_FEATURE_';
 const LOCAL_STORAGE_PREFIX = 'ff:';
-const VALID_ROLES = new Set<UserRole>(['ADMIN', 'MANAGER', 'USER']);
+const VALID_ROLES = new Set<UserRole>(['ADMIN', 'MANAGER', 'ACCOUNTANT', 'OPERATIONS', 'USER', 'VIEWER']);
 
-type UserRole = 'ADMIN' | 'MANAGER' | 'USER';
 type FeaturePhase = 'alpha' | 'beta' | 'stable' | 'deprecated';
 type FeatureFlagEnv = Record<string, string | undefined>;
 
