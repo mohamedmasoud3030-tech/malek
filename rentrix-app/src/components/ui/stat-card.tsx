@@ -34,7 +34,7 @@ const toneMap: Record<StatTone, { bg: string; value: string }> = {
 export function StatCard({ label, value, sub, tone = "default", className }: StatCardProps) {
   const colors = toneMap[tone];
   return (
-    <div data-stat-card data-tone={tone} className={cn("rounded-2xl p-3", colors.bg, className)}>
+    <div data-stat-card data-tone={tone} className={cn("rounded-xl p-3", colors.bg, className)}>
       <p className="text-[11px] font-bold text-muted-foreground">{label}</p>
       <p className={cn("mt-1.5 text-base font-bold tabular-nums leading-none", colors.value)} dir="ltr">
         {value}
