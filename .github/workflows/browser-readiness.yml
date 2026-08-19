@@ -26,11 +26,11 @@ jobs:
           - chromium-mobile
     env:
       # Browser Readiness is hermetic and must exercise the usable login form.
-      # Use syntactically configured test-only values rather than the runtime
-      # placeholders that intentionally fail closed and disable authentication.
-      # The .test host is reserved for testing and the Supabase HTTP boundary is
-      # stubbed per browser context, so no real project is contacted.
-      VITE_SUPABASE_URL: https://e2e-harness.supabase.test
+      # Use syntactically configured test-only values rather than the exact
+      # runtime placeholders that intentionally fail closed and disable auth.
+      # The isolated .local hostname is never a real Supabase project, and the
+      # HTTP boundary is stubbed per browser context.
+      VITE_SUPABASE_URL: https://e2e.invalid.supabase.local
       VITE_SUPABASE_ANON_KEY: e2e-browser-public-key
       # Browser Readiness is hermetic: the Supabase HTTP boundary is stubbed
       # per browser context. Database/release gates do not set this value and
