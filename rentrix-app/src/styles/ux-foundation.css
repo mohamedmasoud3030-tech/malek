@@ -143,8 +143,7 @@
   }
 
   /* Prevent ghost hover states after tap */
-  [data-entity-card]:hover:not(:active),
-  .hover-card:hover:not(:active) {
+  [data-entity-card]:hover:not(:active) {
     box-shadow: var(--shadow-card);
     border-color: hsl(var(--border));
   }
