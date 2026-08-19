@@ -59,6 +59,27 @@ schema_dump() {
   pnpm exec supabase db dump --local --schema public,app_private -f "$output"
 }
 
+write_bootstrap_baseline() {
+  local schema_sql="$1"
+  local output="$2"
+  cat >"$output" <<'SQL'
+-- MALEK canonical database baseline.
+-- Generated only after the historical chain passes the database suite and the
+-- canonicalization transform passes its assertions on real local Supabase.
+--
+-- Supabase schema dumps do not reliably include extension installation when a
+-- schema filter is used. These are application-required extensions used by the
+-- canonical schema (UUID/crypto helpers, exclusion constraints, and citext
+-- compatibility). Platform-managed extensions remain Supabase-owned.
+create schema if not exists extensions;
+create extension if not exists pgcrypto with schema extensions;
+create extension if not exists btree_gist with schema extensions;
+create extension if not exists citext with schema extensions;
+
+SQL
+  cat "$schema_sql" >>"$output"
+}
+
 run_canonical_checks() {
   psql "$DB_URL" -v ON_ERROR_STOP=1 -f "$VERIFY_SQL"
 
@@ -168,6 +189,12 @@ if [[ "$is_final_layout" == "true" ]]; then
   exit 0
 fi
 
+# ---------------------------------------------------------------------------
+# Generation mode: prove the historical chain first, canonicalize only inside
+# the ephemeral database, dump the reconciled end-state, then prove that dump
+# can replace the entire active historical bootstrap.
+# ---------------------------------------------------------------------------
+
 echo "Generation mode: replay historical chain on real local Supabase."
 start_fresh
 read_db_url
@@ -177,9 +204,14 @@ pnpm exec supabase test db | tee "$DIAG_DIR/historical-supabase-test.log"
 psql "$DB_URL" -v ON_ERROR_STOP=1 -f "$CANONICALIZE_SQL" | tee "$DIAG_DIR/canonicalize.log"
 run_canonical_checks
 
+# Keep the pure canonical schema dump for equality comparison. The executable
+# baseline adds only extension bootstrap statements ahead of this dump.
+CANONICAL_SCHEMA_DUMP="$OUT_DIR/canonical-schema.sql"
+schema_dump "$CANONICAL_SCHEMA_DUMP"
+normalize_dump "$CANONICAL_SCHEMA_DUMP" "$OUT_DIR/generated-baseline.normalized.sql"
+
 RAW_BASELINE="$OUT_DIR/$BASELINE_NAME"
-schema_dump "$RAW_BASELINE"
-normalize_dump "$RAW_BASELINE" "$OUT_DIR/generated-baseline.normalized.sql"
+write_bootstrap_baseline "$CANONICAL_SCHEMA_DUMP" "$RAW_BASELINE"
 
 pnpm exec supabase stop --no-backup >/dev/null 2>&1 || true
 mkdir -p "$HISTORY_DIR"
