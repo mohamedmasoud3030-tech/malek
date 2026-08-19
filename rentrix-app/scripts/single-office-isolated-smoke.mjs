@@ -371,6 +371,111 @@ async function seed() {
   console.log(JSON.stringify(evidence));
 }
 
+async function signInAs(email, password, label) {
+  const client = createClient(supabaseUrl.toString(), process.env.VITE_SUPABASE_ANON_KEY.trim(), {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+  });
+  const signedIn = await client.auth.signInWithPassword({ email, password });
+  assertNoError(`sign in ${label}`, signedIn);
+  const companyClaim = signedIn.data.session?.user?.app_metadata?.company_id
+    ?? signedIn.data.session?.user?.app_metadata?.companyId
+    ?? null;
+  if (companyClaim !== COMPANY_ID) {
+    throw new Error(`${label} JWT is missing the isolated company claim; custom access token / app_metadata is not canonical.`);
+  }
+  return client;
+}
+
+// Authoritative database lifecycle used by canonical rebuild and the release
+// blocker. This is the same RPC contract the browser calls (payment -> receipt
+// -> maker request VOID -> distinct checker approve). Playwright remains a
+// separate browser-readiness proof and must not be the only way a payment row
+// is created before verify.
+async function lifecycle() {
+  const maker = await signInAs(EMAIL, PASSWORD, 'maker');
+  const paymentRequestId = crypto.randomUUID();
+  const payment = assertNoError(
+    'record_invoice_payment_atomic',
+    await maker.rpc('record_invoice_payment_atomic', {
+      payload: {
+        invoice_id: IDS.invoice,
+        amount: 1000,
+        method: 'cash',
+        date: PAYMENT_DATE,
+        reference: PAYMENT_REFERENCE,
+        request_id: paymentRequestId,
+      },
+    }),
+  );
+  if (!payment?.receipt_id || !payment?.payment_id) {
+    throw new Error(`record_invoice_payment_atomic returned an incomplete payload: ${JSON.stringify(payment)}`);
+  }
+
+  const persisted = assertNoError(
+    'load posted lifecycle payment',
+    await serviceClient.from('payments')
+      .select('id,receipt_id,status,reference_number,reference_no')
+      .eq('id', payment.payment_id)
+      .single(),
+  );
+  if (persisted.reference_number !== PAYMENT_REFERENCE && persisted.reference_no !== PAYMENT_REFERENCE) {
+    throw new Error(
+      `Payment ${payment.payment_id} did not persist reference ${PAYMENT_REFERENCE}: ${JSON.stringify(persisted)}`,
+    );
+  }
+  if (persisted.reference_number !== PAYMENT_REFERENCE) {
+    throw new Error(
+      `Payment wrote reference_no but not reference_number (${persisted.reference_number}). Canonical compatibility trigger/RPC is incomplete.`,
+    );
+  }
+
+  const voidRequest = assertNoError(
+    'request_receipt_void_atomic',
+    await maker.rpc('request_receipt_void_atomic', {
+      payload: {
+        receipt_id: payment.receipt_id,
+        reason: 'اختبار إلغاء معزول قبل إطلاق المكتب الأول',
+        request_id: crypto.randomUUID(),
+      },
+    }),
+  );
+  if (!voidRequest?.void_request_id) {
+    throw new Error(`request_receipt_void_atomic returned no void_request_id: ${JSON.stringify(voidRequest)}`);
+  }
+
+  const checker = await signInAs(CHECKER_EMAIL, CHECKER_PASSWORD, 'checker');
+  const approved = assertNoError(
+    'approve_receipt_void_atomic',
+    await checker.rpc('approve_receipt_void_atomic', {
+      payload: {
+        void_request_id: voidRequest.void_request_id,
+        request_id: crypto.randomUUID(),
+      },
+    }),
+  );
+  if (String(approved?.status ?? approved?.void_request_status ?? '').toUpperCase() !== 'VOID'
+    && String(approved?.void_request_status ?? '').toUpperCase() !== 'EXECUTED') {
+    throw new Error(`approve_receipt_void_atomic did not execute VOID: ${JSON.stringify(approved)}`);
+  }
+
+  const evidence = {
+    action: 'lifecycle',
+    environment: ENVIRONMENT_KIND === 'qa' ? 'hosted-qa-supabase' : 'disposable-local-supabase',
+    productionMutation: false,
+    companyId: COMPANY_ID,
+    invoiceId: IDS.invoice,
+    paymentId: payment.payment_id,
+    receiptId: payment.receipt_id,
+    paymentRequestId,
+    voidRequestId: voidRequest.void_request_id,
+    paymentReference: PAYMENT_REFERENCE,
+    paymentDate: PAYMENT_DATE,
+    completedAt: new Date().toISOString(),
+  };
+  await writeEvidence(evidence);
+  console.log(JSON.stringify(evidence));
+}
+
 async function verify() {
   const signedIn = await authenticatedClient.auth.signInWithPassword({ email: EMAIL, password: PASSWORD });
   assertNoError('sign in for lifecycle verification', signedIn);
@@ -493,5 +598,6 @@ async function verify() {
 
 const action = process.argv[2];
 if (action === 'seed') await seed();
+else if (action === 'lifecycle') await lifecycle();
 else if (action === 'verify') await verify();
-else throw new Error('Usage: node scripts/single-office-isolated-smoke.mjs <seed|verify>');
+else throw new Error('Usage: node scripts/single-office-isolated-smoke.mjs <seed|lifecycle|verify>');
