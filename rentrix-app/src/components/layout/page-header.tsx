@@ -7,7 +7,7 @@ import { PageHeaderActions } from './page-header-actions';
 
 interface PageHeaderProps {
   title: string;
-  description?: string;
+  description?: ReactNode;
   count?: number | string;
   backTo?: string;
   backLabel?: string;
