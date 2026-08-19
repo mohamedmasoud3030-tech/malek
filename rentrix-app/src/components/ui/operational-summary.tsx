@@ -28,7 +28,7 @@ export function OperationalMetricCard({
   icon: LucideIcon;
 }>) {
   return (
-    <article data-operational-metric className="group relative overflow-hidden rounded-2xl border border-border/75 bg-card p-4 shadow-card">
+    <article data-operational-metric className="group relative overflow-hidden rounded-xl border border-border/75 bg-card p-4 shadow-card">
       <div className="relative flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-xs font-bold text-muted-foreground">{label}</p>

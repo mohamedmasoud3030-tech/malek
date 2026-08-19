@@ -16,7 +16,7 @@ interface InlineStatCardProps {
  */
 export function InlineStatCard({ label, value, className }: InlineStatCardProps) {
   return (
-    <div className={cn('rounded-2xl border bg-background/70 p-4', className)}>
+    <div className={cn('rounded-xl border bg-background/70 p-4', className)}>
       <p className="text-xs font-bold text-muted-foreground">{label}</p>
       <p className="mt-1 text-2xl font-bold">{value}</p>
     </div>
