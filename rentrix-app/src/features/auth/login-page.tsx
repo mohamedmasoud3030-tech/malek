@@ -50,15 +50,27 @@ export function LoginPage() {
   }, []);
 
   return (
-    <main className="min-h-screen min-h-dvh w-full bg-background px-5 py-8 sm:px-6" data-login-surface dir="rtl">
-      <section className="safe-top-app safe-bottom-overlay mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-[25rem] flex-col justify-center" data-login-main data-login-card>
-        <header className="mb-8 text-center" data-login-brand>
-          <img src={APP_BRAND_LOCKUP_ASSET} alt={APP_BRAND_NAME} className="mx-auto size-16 object-contain sm:size-[4.5rem]" data-malek-canonical-lockup />
-          <h1 className="mt-4 text-2xl font-extrabold tracking-tight text-foreground">مرحبًا بعودتك</h1>
-          <p className="mt-1.5 text-sm leading-6 text-muted-foreground" data-login-tagline>سجّل الدخول إلى مساحة عملك في {APP_BRAND_NAME}</p>
-        </header>
+    <main
+      className="relative min-h-screen min-h-dvh w-full overflow-hidden px-5 py-8 sm:px-6"
+      data-login-surface
+      dir="rtl"
+    >
+      {/* MALEK ambient brand backdrop — a soft blue glow, not a flat surface */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
+        <div className="absolute inset-0 bg-background" />
+        <div className="absolute -top-32 right-0 h-96 w-96 rounded-full bg-primary/10 blur-3xl" />
+        <div className="absolute -bottom-40 left-0 h-[28rem] w-[28rem] rounded-full bg-primary/8 blur-3xl" />
+      </div>
 
-        <form className="space-y-4" onSubmit={handleSubmit} noValidate={false} aria-describedby={hasFieldError ? 'login-error' : undefined}>
+      <section className="safe-top-app safe-bottom-overlay mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-[26rem] flex-col justify-center" data-login-main>
+        <div className="rounded-3xl border border-border/70 bg-card/90 p-6 shadow-card backdrop-blur-sm sm:p-8" data-login-card>
+          <header className="mb-8 text-center" data-login-brand>
+            <img src={APP_BRAND_LOCKUP_ASSET} alt={APP_BRAND_NAME} className="mx-auto size-16 object-contain sm:size-[4.5rem]" data-malek-canonical-lockup />
+            <h1 className="mt-5 text-2xl font-extrabold text-foreground">مرحبًا بعودتك</h1>
+            <p className="mt-1.5 text-sm leading-6 text-muted-foreground" data-login-tagline>سجّل الدخول إلى مساحة عملك في {APP_BRAND_NAME}</p>
+          </header>
+
+          <form className="space-y-4" onSubmit={handleSubmit} noValidate={false} aria-describedby={hasFieldError ? 'login-error' : undefined}>
           <div className="grid gap-1.5">
             <label htmlFor="login-email" className="text-sm font-semibold text-foreground">البريد الإلكتروني</label>
             <div className="relative">
@@ -87,9 +99,9 @@ export function LoginPage() {
           <Button className="h-12 w-full gap-2 rounded-xl text-base font-bold shadow-sm transition-all active:scale-[0.99] md:text-sm" type="submit" disabled={isSubmitting || Boolean(runtimeError)} aria-busy={isSubmitting}>
             {isSubmitting ? <><span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />جارٍ التحقق...</> : <>تسجيل الدخول<ArrowLeft className="size-4 rtl:rotate-180" /></>}
           </Button>
-        </form>
+          </form>
 
-        <footer className="mt-6 text-center" data-contact-footer aria-label="بيانات الدعم والتواصل">
+          <footer className="mt-6 text-center" data-contact-footer aria-label="بيانات الدعم والتواصل">
           <button type="button" className="inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-medium text-muted-foreground outline-none transition-colors hover:text-primary focus-visible:ring-4 focus-visible:ring-primary/20" onClick={() => setShowSupport((value) => !value)} aria-expanded={showSupport}>
             <MessageCircle className="size-4" aria-hidden="true" />
             تحتاج مساعدة؟ تواصل معنا
@@ -104,7 +116,8 @@ export function LoginPage() {
               </div>
             </div>
           ) : null}
-        </footer>
+          </footer>
+        </div>
       </section>
     </main>
   );
