@@ -120,6 +120,28 @@ run_runtime_seed_and_verify() {
   : "${anon_key:?local Supabase anon key missing}"
   : "${service_role_key:?local Supabase service role key missing}"
 
+  # A canonical fresh database intentionally contains no default tenant/company
+  # row. The isolated lifecycle fixture therefore bootstraps its own disposable
+  # company before creating auth identities/memberships. This stays outside the
+  # schema and reference seed and runs only on local/QA smoke environments.
+  psql "$DB_URL" -v ON_ERROR_STOP=1 -q <<'SQL'
+insert into public.companies
+  (id, name, slug, currency, locale, timezone, is_active)
+values
+  ('00000000-0000-4000-8000-000000000001'::uuid,
+   'Canonical Isolated Smoke Company',
+   'canonical-isolated-smoke',
+   'OMR', 'ar-OM', 'Asia/Muscat', true)
+on conflict (id) do update set
+  name = excluded.name,
+  slug = excluded.slug,
+  currency = excluded.currency,
+  locale = excluded.locale,
+  timezone = excluded.timezone,
+  is_active = true,
+  updated_at = now();
+SQL
+
   E2E_ENVIRONMENT_KIND=local \
   E2E_SINGLE_OFFICE_EMAIL=canonical-admin@rentrix.test \
   E2E_SINGLE_OFFICE_PASSWORD='Canonical-Aa1!' \
