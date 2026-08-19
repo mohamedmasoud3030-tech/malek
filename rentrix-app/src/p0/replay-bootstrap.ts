@@ -65,6 +65,9 @@ export const P0_CHECKPOINT_EXCLUDED_MIGRATIONS = [
   // RC1 accounting family.
   'rc1_release_integration_fk_indexes',
   'rc1_owner_offset_2000_control',
+  // The hot-path index migration is a current-schema optimization and indexes
+  // link/precision columns introduced after this historical checkpoint.
+  'hot_path_fk_covering_indexes',
   // Roadmap V2 read models/authorities are downstream of the phase3/RC1
   // layers this historical checkpoint omits (credited_amount,
   // owner_funds_events, billing_day). Same rule as the RC1 family above;
