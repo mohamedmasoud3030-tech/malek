@@ -13,7 +13,7 @@ export function formatMoney(value: number | null | undefined) {
 }
 
 export function formatDate(value: string | number | Date) {
-  return formatCompanyDate(defaultFinanceLocalSettings, value);
+  return formatCompanyDate(defaultCompanyLocalSettings, value);
 }
 
 export function getErrorMessage(error: unknown, fallback: string) {
