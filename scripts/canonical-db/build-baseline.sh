@@ -142,6 +142,10 @@ on conflict (id) do update set
   updated_at = now();
 SQL
 
+  # The lifecycle contract has three deliberate stages: seed deterministic
+  # fixtures, exercise the real browser mutation journey (payment -> receipt ->
+  # maker/checker VOID), then inspect the resulting database state. Calling
+  # verify directly after seed is invalid because no payment should exist yet.
   E2E_ENVIRONMENT_KIND=local \
   E2E_SINGLE_OFFICE_EMAIL=canonical-admin@rentrix.test \
   E2E_SINGLE_OFFICE_PASSWORD='Canonical-Aa1!' \
@@ -151,6 +155,17 @@ SQL
   PRODUCTION_SUPABASE_PROJECT_REF=nnggcnpcuomwfuupupwg \
   SINGLE_OFFICE_EVIDENCE_PATH="$DIAG_DIR/canonical-seed.json" \
   pnpm --filter ./rentrix-app exec node scripts/single-office-isolated-smoke.mjs seed
+
+  E2E_ENVIRONMENT_KIND=local \
+  E2E_SINGLE_OFFICE_ENABLED=1 \
+  E2E_SINGLE_OFFICE_EMAIL=canonical-admin@rentrix.test \
+  E2E_SINGLE_OFFICE_PASSWORD='Canonical-Aa1!' \
+  VITE_SUPABASE_URL="$api_url" \
+  VITE_SUPABASE_ANON_KEY="$anon_key" \
+  SUPABASE_SERVICE_ROLE_KEY="$service_role_key" \
+  PRODUCTION_SUPABASE_PROJECT_REF=nnggcnpcuomwfuupupwg \
+  pnpm --filter ./rentrix-app exec playwright test e2e/single-office-isolated.spec.ts \
+    --config playwright.config.ts --project=chromium-desktop
 
   E2E_ENVIRONMENT_KIND=local \
   E2E_SINGLE_OFFICE_EMAIL=canonical-admin@rentrix.test \
