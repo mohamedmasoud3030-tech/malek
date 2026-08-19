@@ -1,5 +1,5 @@
-import { Activity, Building2, CalendarDays, RefreshCw, ShieldCheck } from 'lucide-react';
-import { formatCompanyDate } from '@/lib/companyFormatters';
+import { Activity, Building2, CalendarDays, RefreshCw, ShieldCheck, TrendingUp, AlertTriangle } from 'lucide-react';
+import { formatCompanyDate, formatCompanyMoney } from '@/lib/companyFormatters';
 import type { CompanySettingsContract } from '@/lib/companySettings';
 import { cn } from '@/lib/utils';
 import type { DashboardSnapshot } from '../dashboard-snapshot';
@@ -47,6 +47,11 @@ export function HeroBanner({ snapshot, isLoading, settings, today, isRefreshing 
   const activeContracts = compactNumber(snapshot?.contracts.active, isLoading ? '…' : 'غير متاح');
   const occupancyRate = compactNumber(snapshot?.occupancy.occupancyRate, isLoading ? '…' : 'غير متاح');
 
+  // Executive metrics — the most decision-relevant numbers surface here so the
+  // owner reads the office's position before scrolling into any queue.
+  const collectedAmount = snapshot?.collections.collectedAmount;
+  const totalOverdue = snapshot?.arrears.totalOverdue;
+
   return (
     <header
       className="dashboard-ops-header"
@@ -63,16 +68,31 @@ export function HeroBanner({ snapshot, isLoading, settings, today, isRefreshing 
         <p className="dashboard-ops-header__support">ما يحتاج تنفيذًا الآن، ثم وضع المكتب، ثم التفاصيل عند الحاجة.</p>
       </div>
 
-      <dl className="dashboard-ops-header__meta" aria-label="سياق العمل اليومي">
-        <div className="dashboard-ops-header__pill" aria-label="تاريخ تحديث بيانات اليوم">
+      <dl className="dashboard-ops-header__meta" aria-label="ملخص تنفيذي اليوم">
+        <div className="dashboard-ops-header__pill dashboard-ops-header__pill--money" aria-label="التحصيل الشهري">
           {isRefreshing ? (
             <RefreshCw className="size-4 shrink-0 animate-spin text-primary motion-reduce:animate-none" aria-hidden="true" />
           ) : (
-            <CalendarDays className="size-4 shrink-0 text-primary" aria-hidden="true" />
+            <TrendingUp className="size-4 shrink-0 text-primary" aria-hidden="true" />
           )}
-          <dt className="sr-only">التحديث</dt>
-          <dd>{freshnessLabel}</dd>
+          <dt>التحصيل</dt>
+          <dd className={cn(isLoading && 'dashboard-ops-header__pill--loading')}>
+            <b dir="ltr" className="tabular-nums">
+              {typeof collectedAmount === 'number' ? formatCompanyMoney(settings, collectedAmount) : isLoading ? '…' : 'غير متاح'}
+            </b>
+          </dd>
         </div>
+
+        <div className={cn('dashboard-ops-header__pill dashboard-ops-header__pill--danger', isLoading && 'dashboard-ops-header__pill--loading')}>
+          <AlertTriangle className="size-4 shrink-0" aria-hidden="true" />
+          <dt>متأخرات</dt>
+          <dd>
+            <b dir="ltr" className="tabular-nums">
+              {typeof totalOverdue === 'number' ? formatCompanyMoney(settings, totalOverdue) : isLoading ? '…' : 'غير متاح'}
+            </b>
+          </dd>
+        </div>
+
         <div className={cn('dashboard-ops-header__pill', isLoading && 'dashboard-ops-header__pill--loading')}>
           <Building2 className="size-4 shrink-0 text-primary" aria-hidden="true" />
           <dt>الإشغال</dt>
@@ -80,10 +100,21 @@ export function HeroBanner({ snapshot, isLoading, settings, today, isRefreshing 
             <b dir="ltr" className="tabular-nums">{occupancyRate}</b>{isSnapshotReady || isLoading ? '%' : ''}
           </dd>
         </div>
+
         <div className={cn('dashboard-ops-header__pill dashboard-ops-header__pill--success', isLoading && 'dashboard-ops-header__pill--loading')}>
           <ShieldCheck className="size-4 shrink-0" aria-hidden="true" />
-          <dt>العقود النشطة</dt>
+          <dt>عقود نشطة</dt>
           <dd><b dir="ltr" className="tabular-nums">{activeContracts}</b></dd>
+        </div>
+
+        <div className="dashboard-ops-header__pill dashboard-ops-header__pill--freshness" aria-label="تاريخ تحديث بيانات اليوم">
+          {isRefreshing ? (
+            <RefreshCw className="size-4 shrink-0 animate-spin text-primary motion-reduce:animate-none" aria-hidden="true" />
+          ) : (
+            <CalendarDays className="size-4 shrink-0 text-primary" aria-hidden="true" />
+          )}
+          <dt className="sr-only">التحديث</dt>
+          <dd>{freshnessLabel}</dd>
         </div>
       </dl>
     </header>

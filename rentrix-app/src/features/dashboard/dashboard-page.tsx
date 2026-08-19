@@ -132,6 +132,7 @@ export function DashboardPage() {
 
             <section className="dashboard-section" aria-label="مطلوب منك الآن" data-dashboard-section="work-now">
               <SectionHeader
+                eyebrow="أولوية"
                 title="مطلوب منك الآن"
                 description="ابدأ بالحالات التي تحتاج قراراً أو متابعة؛ التفاصيل الأقل إلحاحاً تأتي بعدها."
               />
@@ -177,6 +178,7 @@ export function DashboardPage() {
 
             <section className="dashboard-section" aria-label="وضع المكتب" data-dashboard-section="office-state">
               <SectionHeader
+                eyebrow="نظرة عامة"
                 title="وضع المكتب"
                 description="المؤشرات التي تكفي للحكم على التحصيل والالتزامات وحالة المحفظة بدون تحويل الصفحة إلى تقرير."
               />
@@ -187,6 +189,7 @@ export function DashboardPage() {
             {showAnalytics ? (
               <section className="dashboard-section" aria-label="تفاصيل عند الحاجة" data-dashboard-section="analytics">
                 <SectionHeader
+                  eyebrow="تحليل"
                   title="تفاصيل عند الحاجة"
                   description="تفصيل أعمار الذمم يظهر فقط عندما توجد متأخرات تستحق التحليل."
                 />

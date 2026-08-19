@@ -44,7 +44,7 @@ export function EntityDetailHeader({ title, subtitle, backTo, backLabel = 'ال�
       <div className="flex flex-wrap items-start justify-between gap-3 sm:gap-5">
         <div className="min-w-0 flex-1 overflow-hidden">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <h1 className="min-w-0 break-words text-balance text-xl font-bold tracking-tight [overflow-wrap:anywhere] sm:text-2xl">{title}</h1>
+            <h1 className="min-w-0 break-words text-balance text-xl font-bold [overflow-wrap:anywhere] sm:text-2xl">{title}</h1>
             {status}
           </div>
           {subtitle && <p className="mt-0.5 max-w-3xl break-words text-[0.8125rem] leading-5 text-muted-foreground [overflow-wrap:anywhere] sm:mt-1 sm:text-sm sm:leading-6">{subtitle}</p>}

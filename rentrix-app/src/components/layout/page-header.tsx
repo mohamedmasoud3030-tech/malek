@@ -50,7 +50,7 @@ export function PageHeader({
         {/* Title + description */}
         <div className="min-w-0 flex-1 overflow-hidden">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <h1 className="min-w-0 break-words text-balance text-xl font-bold tracking-tight [overflow-wrap:anywhere] sm:text-2xl">{title}</h1>
+            <h1 className="min-w-0 break-words text-balance text-xl font-bold [overflow-wrap:anywhere] sm:text-2xl">{title}</h1>
             {count !== undefined ? (
               <span
                 className="inline-flex min-h-5 shrink-0 items-center rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[11px] font-semibold tabular-nums text-muted-foreground"

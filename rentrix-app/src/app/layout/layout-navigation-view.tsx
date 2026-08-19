@@ -100,7 +100,7 @@ export function NavigationLinks({
         return (
           <section key={sectionTitle} className="space-y-0.5">
             {expanded
-              ? <div className="px-3 pb-1 pt-1"><p className="text-[10px] font-semibold tracking-[0.08em] text-sidebar-foreground/50">{sectionTitle}</p></div>
+              ? <div className="px-3 pb-1 pt-1"><p className="text-[10px] font-bold text-sidebar-foreground/50">{sectionTitle}</p></div>
               : <div aria-hidden="true" className="mx-3 mb-1 h-px bg-white/10" />}
             {items.map((item) => {
               const [to] = item;

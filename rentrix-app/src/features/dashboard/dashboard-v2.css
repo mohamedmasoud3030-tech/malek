@@ -41,7 +41,7 @@
 
   --app-page-gutter-inline: clamp(1rem, 4vw, 1.25rem);
   --app-page-gutter-block: clamp(1rem, 3vw, 1.5rem);
-  --dashboard-section-gap: 1.5rem;
+  --dashboard-section-gap: 2rem;
   --dashboard-cluster-gap: 0.75rem;
 
   --background: var(--color-bg);
@@ -156,7 +156,6 @@
   color: hsl(var(--color-text-primary));
   font-size: clamp(1.25rem, 6vw, 1.625rem);
   font-weight: 800;
-  letter-spacing: -0.02em;
   line-height: 1.25;
 }
 
@@ -176,12 +175,20 @@
   gap: 0.5rem;
 }
 
+@media (min-width: 768px) {
+  [data-visual-contract='v2'] .dashboard-ops-header__meta {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
 [data-visual-contract='v2'] .dashboard-ops-header__pill {
   display: flex;
-  min-block-size: 44px;
+  min-block-size: 52px;
   min-width: 0;
-  align-items: center;
-  gap: 0.45rem;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.1rem;
   border: 1px solid hsl(var(--color-border-light) / 0.92);
   border-radius: var(--radius-button);
   background: hsl(var(--color-card-muted) / 0.62);
@@ -189,11 +196,19 @@
   font-size: 0.75rem;
   font-weight: 700;
   line-height: 1.35;
-  padding: 0.55rem 0.65rem;
+  padding: 0.5rem 0.7rem;
 }
 
-[data-visual-contract='v2'] .dashboard-ops-header__pill:first-child {
+[data-visual-contract='v2'] .dashboard-ops-header__pill--freshness {
   grid-column: 1 / -1;
+  flex-direction: row;
+  align-items: center;
+  min-block-size: 34px;
+  background: transparent;
+  border-color: transparent;
+  color: hsl(var(--color-text-muted));
+  font-weight: 500;
+  padding-block: 0;
 }
 
 [data-visual-contract='v2'] .dashboard-ops-header__pill dt,
@@ -212,10 +227,26 @@
   overflow-wrap: anywhere;
 }
 
+[data-visual-contract='v2'] .dashboard-ops-header__pill dd b {
+  font-size: 0.9375rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
 [data-visual-contract='v2'] .dashboard-ops-header__pill--success {
   border-color: hsl(var(--color-success-text) / 0.18);
   background: hsl(var(--color-success-bg) / 0.68);
   color: hsl(var(--color-success-text));
+}
+
+[data-visual-contract='v2'] .dashboard-ops-header__pill--money {
+  border-color: hsl(var(--color-info-text) / 0.18);
+  background: hsl(var(--color-info-bg) / 0.55);
+}
+
+[data-visual-contract='v2'] .dashboard-ops-header__pill--danger {
+  border-color: hsl(var(--color-danger-text) / 0.2);
+  background: hsl(var(--color-danger-bg) / 0.6);
 }
 
 [data-visual-contract='v2'] .dashboard-ops-header__pill--loading {
@@ -871,7 +902,7 @@
 
 @media (min-width: 1024px) {
   [data-visual-contract='v2'] {
-    --dashboard-section-gap: 1.65rem;
+    --dashboard-section-gap: 2.25rem;
   }
 
   [data-visual-contract='v2'] .dashboard-kpi-grid {

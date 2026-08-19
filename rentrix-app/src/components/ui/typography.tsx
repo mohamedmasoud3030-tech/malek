@@ -38,10 +38,10 @@ type TypographyProps = HTMLAttributes<HTMLElement> & {
 };
 
 const variantClasses: Record<TypographyVariant, string> = {
-  display: 'text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl',
-  h1: 'text-3xl font-bold leading-tight tracking-tight',
-  h2: 'text-2xl font-bold leading-tight tracking-tight',
-  h3: 'text-xl font-bold leading-snug tracking-tight',
+  display: 'text-4xl font-extrabold leading-tight sm:text-5xl',
+  h1: 'text-3xl font-bold leading-tight',
+  h2: 'text-2xl font-bold leading-tight',
+  h3: 'text-xl font-bold leading-snug',
   h4: 'text-lg font-bold leading-snug',
   h5: 'text-base font-bold leading-snug',
   h6: 'text-sm font-bold leading-snug',
