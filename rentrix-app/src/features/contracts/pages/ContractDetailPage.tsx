@@ -1,5 +1,5 @@
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
-import { Edit, MessageCircle, Printer, RefreshCw, Share2, ShieldAlert } from 'lucide-react';
+import { Edit, RefreshCw, ShieldAlert } from 'lucide-react';
 import { useState } from 'react';
 import { AsyncContentState } from '@/components/async-content-state';
 import { EntityDetailHeader } from '@/components/layout/entity-detail-header';
@@ -64,11 +64,10 @@ export function ContractDetailPage() {
     onPdf: documentSettings.isReady ? () => exportContractPdf(contract, documentSettings.companySettings) : undefined,
     onWhatsApp: () => openContractWhatsApp(contract),
     onShare: handleShare,
-    onRenew: renewalAllowed ? openRenewal : undefined,
-    onTerminate: terminationAllowed ? openTermination : undefined,
+    // Renew/terminate are primary inline actions in the header, not menu items.
   });
 
-  return <PageLayout dir="rtl" size="wide" visualVariant="malek-pro">{!documentSettings.isReady && !documentSettings.isLoading ? <DocumentReadinessNotice /> : null}<EntityDetailHeader title="تفاصيل العقد" subtitle={`${contract.reference ?? 'عقد بلا مرجع تجاري'} — عرض كامل للعقد وسجل مراحله.`} backTo="/contracts" actions={<><Button variant="secondary" className="hidden sm:inline-flex" disabled={!renewalAllowed} onClick={openRenewal}><RefreshCw className="me-2 size-4" />تجديد</Button>{terminationAllowed && <Button variant="destructive" className="hidden sm:inline-flex" onClick={openTermination}><ShieldAlert className="me-2 size-4" />إنهاء العقد</Button>}<Button variant="secondary" className="hidden md:inline-flex" disabled={!documentSettings.isReady} onClick={() => printContractView(contract, documentSettings.companySettings)}><Printer className="me-2 size-4" />طباعة</Button><Button variant="secondary" className="hidden md:inline-flex" disabled={!documentSettings.isReady} onClick={() => exportContractPdf(contract, documentSettings.companySettings)}>تصدير PDF</Button><Button variant="secondary" className="hidden lg:inline-flex" onClick={() => openContractWhatsApp(contract)}><MessageCircle className="me-2 size-4" />واتساب</Button><Button variant="secondary" className="hidden lg:inline-flex" onClick={handleShare}><Share2 className="me-2 size-4" />مشاركة</Button><ActionMenu items={contractMenuActions} label="إجراءات العقد" /><Button asChild className="min-h-11"><Link to="/contracts/$contractId/edit" params={{ contractId }}><Edit className="me-2 size-4" />تعديل</Link></Button></>} />
+  return <PageLayout dir="rtl" size="wide" visualVariant="malek-pro">{!documentSettings.isReady && !documentSettings.isLoading ? <DocumentReadinessNotice /> : null}<EntityDetailHeader title="تفاصيل العقد" subtitle={`${contract.reference ?? 'عقد بلا مرجع تجاري'} — عرض كامل للعقد وسجل مراحله.`} backTo="/contracts" actions={<>{renewalAllowed && <Button variant="secondary" className="min-h-11" onClick={openRenewal}><RefreshCw className="me-2 size-4" />تجديد</Button>}{terminationAllowed && <Button variant="destructive" className="min-h-11" onClick={openTermination}><ShieldAlert className="me-2 size-4" />إنهاء العقد</Button>}<Button asChild className="min-h-11"><Link to="/contracts/$contractId/edit" params={{ contractId }}><Edit className="me-2 size-4" />تعديل</Link></Button><ActionMenu items={contractMenuActions} label="إجراءات أخرى" /></>} />
     <ContractOverviewSection contract={contract} settings={companySettings} />
     <ContractApprovalSection contract={contract} />
     <ContractLifecycleSection contract={contract} settings={companySettings} renewalAllowed={renewalAllowed} onRenew={openRenewal} canTerminate={terminationAllowed} onTerminate={openTermination} />
