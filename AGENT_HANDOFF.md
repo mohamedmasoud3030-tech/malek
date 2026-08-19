@@ -73,11 +73,13 @@
 
 ## العيوب والمخاطر المعروفة
 
-1. **قاعدة البيانات ليست فارغة — البيانات موجودة لكنها لا تظهر في بعض الصفحات** (تصحيح تشخيص سابق خاطئ). تم التحقق:
-   - يوجد **105 جدول في schema `public`**، وشركة تجريبية واحدة «ادارة وتشغيل العقارات» (id `00000000-0000-4000-8000-000000000001`)، و3 صفوف `company_members`، وخمسة عقارات على الأقل.
-   - **سبب التشخيص الخاطئ**: PostgREST عند الاستعلام **بدون** ترويسة `Accept-Profile` يرجع **صفر جداول** (الـ schema المكشوف افتراضيًا ليس `public`). عند تمرير `Accept-Profile: public` يرجع الـ 105 جداول بشكل سليم.
-   - **سبب «البيانات لا تظهر في بعض الصفحات» (الأرجح)**: RLS مبنية على `current_company_id()` (تقرأ claim الـ `company_id` من JWT). إذا لم تكن جلسة المستخدم تحمل claim شركة صحيح + صف `company_members` نشط، تُفلتر كل الجداول المقيدة بالشركة إلى صفر صفوف → صفحات فارغة رغم وجود البيانات. الـ `.env.qa.example` يوثق هذا الشرط صراحة.
-   - **المطلوب للتحقق النهائي**: وصول المالك لـ Supabase Dashboard (مصادقة + SQL Editor) لتأكيد: (أ) هل `public` في قائمة «Exposed schemas»، و(ب) هل المستخدم المُسجَّل لديه صف `company_members` نشط + claim شركة في JWT. الوصول المباشر بالـ Postgres محجوب بيئيًا (IPv6 فقط).
+1. **«بعض الصفحات فارغة» = وحدات بلا بيانات تجريبية، وليس عطلًا** (تشخيص نهائي بعد فحص فعلي). تم التحقق:
+   - يوجد **105 جدول** في `public`، شركة واحدة «ادارة وتشغيل العقارات»، 3 صفوف `company_members`، مستخدمان في `public.users` (المالك `mohamedmasoud303@gmail.com` = ADMIN + `qa-agent-test` = ADMIN).
+   - **البيانات الموجودة** (count بالخدمة): properties 14، units 41، owners 12، tenants 40، contracts 8، invoices 12، payments 11، receipts 13، people 53، companies 1.
+   - **الوحدات الفارغة (0 صف، بلا بيانات تجريبية)**: expenses، maintenance_records، leads، service_providers، deposit_txs (تأمينات). هذه تعرض حالة «فارغ» صحيحة لأنها لم تُزرع بيانات لها — وليست مشكلة RLS.
+   - **سبب التشخيص الخاطئ الأول**: PostgREST يرجع صفر جداول بدون ترويسة `Accept-Profile: public`؛ معها يرجع الـ 105 جداول.
+   - **ملاحظة ثانوية**: استعلام GoTrue `admin/users` يرجع 500 «Database error finding users» — إشارة لخلل محتمل في schema الـ auth تستحق فحصًا، لكنه لا يؤثر على عرض بيانات الوحدات المذكورة (التي تُقرأ عبر PostgREST مباشرة).
+   - **ما يبقى للمالك (اختياري)**: تأكيد من Supabase Dashboard أن `custom_access_token_hook` مفعّل في Auth → Hooks (هو موجود كدالة، والحقن يعمل عندما يوجد صف `company_members` للمستخدم)، وأن «Exposed schemas» تشمل `public`.
 2. **صفحة التسويق مفصولة** — `/` يحوّل إلى `/login`؛ الزائر الجديد لا يرى عرض القيمة. قرار منتج معلّق (موثّق في `UI_UX_MASTER_REVIEW.md` #6).
 3. **browser-smoke (Playwright على متصفح حي)** تاريخيًا أحمر في بعض الـ PRs — أثر بيئي/استضافة، خارج نطاق هذه الجلسة. CI النهائي على main يُظهر `build`/`deploy` ناجحين.
 4. **`deprecated` components**: `FormField` (`form-field.tsx`) و`TextField` (`text-field.tsx`) معلّمان كبدائل لصالح `EntityForm.Field` — أُبقيا للتوافق الرجعي.
