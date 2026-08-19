@@ -23,7 +23,7 @@ function resolveErrorMessage(error: unknown): string | null {
 /** Shared recoverable error surface for list/detail pages. */
 export function ErrorState({
   title = 'تعذر تحميل البيانات',
-  description = 'تحقق من الاتصال والصلاحيات ثم أعد المحاولة.',
+  description = 'تحقق من الاتصال واكتمال إعداد صلاحيات حسابك، ثم أعد المحاولة.',
   error,
   onRetry,
   action,
