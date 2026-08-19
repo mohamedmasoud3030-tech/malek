@@ -310,6 +310,10 @@ beforeAll(async () => {
     !f.includes('fa003_') &&
     !f.includes('sole_admin_exception') &&
     !f.includes('pay_commission_atomic') &&
+    // This runtime hardening landed after the original P0 checkpoint. Keep
+    // the historical before/after fixture stable; full-chain + DB0 isolation
+    // gates still execute and validate the migration itself.
+    !f.includes('enforce_active_company_rls_on_expenses_and_deposits') &&
     // Additive hot-path FK covering indexes reference the FA-003 settlement
     // link tables and deposit_transactions.reversal_of_id (GAP-009) that this
     // historical P0 checkpoint omits. Exclude it like the other downstream
