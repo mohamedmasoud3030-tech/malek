@@ -14,10 +14,14 @@ begin;
 -- 1. Canonical tenant identity: public.people is the identity/contact record.
 --    Preserve tenant-only attributes in a 1:1 profile instead of maintaining a
 --    second full identity table (`tenants`).
+--
+-- Historical `tenants.id` is text, while the canonical `people.id` is UUID.
+-- The preflight therefore proves every legacy id is exactly the textual form of
+-- an existing people UUID before casting it. No best-effort conversion is used.
 -- ---------------------------------------------------------------------------
 
 create table if not exists public.tenant_profiles (
-  tenant_id text primary key references public.people(id) on delete cascade,
+  tenant_id uuid primary key references public.people(id) on delete cascade,
   company_id uuid not null references public.companies(id) on delete restrict,
   nationality text,
   status text not null default 'active',
@@ -44,7 +48,7 @@ begin
     if exists (
       select 1
       from public.tenants t
-      left join public.people p on p.id = t.id
+      left join public.people p on p.id::text = t.id
       where p.id is null
          or p.type <> 'tenant'
          or p.company_id is distinct from t.company_id
@@ -57,7 +61,7 @@ begin
       cr_number, postal_code, po_box, archived_at, created_at, updated_at
     )
     select
-      t.id,
+      t.id::uuid,
       t.company_id,
       nullif(btrim(t.nationality), ''),
       case lower(coalesce(nullif(btrim(t.status), ''), 'active'))
