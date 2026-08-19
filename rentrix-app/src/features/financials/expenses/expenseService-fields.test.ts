@@ -3,8 +3,8 @@ import { updateExpense } from './expenseService';
 
 const mocks = vi.hoisted(() => {
   const returns = vi.fn();
-  const single = vi.fn(() => ({ returns }));
-  const is = vi.fn(() => ({ single }));
+  const maybeSingle = vi.fn(() => ({ returns }));
+  const is = vi.fn(() => ({ maybeSingle }));
   const eq = vi.fn(() => ({ is }));
   const select = vi.fn(() => ({ eq }));
   return {
@@ -13,7 +13,7 @@ const mocks = vi.hoisted(() => {
     select,
     eq,
     is,
-    single,
+    maybeSingle,
     returns,
     handleSupabaseError: vi.fn(),
   };
