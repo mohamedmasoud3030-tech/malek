@@ -80,6 +80,9 @@ const LATER_GOVERNED_STAGE_MARKERS = [
   // This forward-only audit-contract repair depends on the receipt VOID
   // request ledger introduced after historical Phase 3A-1B checkpoints.
   'wp01_receipt_void_audit_contract_restore',
+  // Current-schema optimization: indexes settlement links and deposit reversal
+  // columns introduced after these historical P1/P3 checkpoints.
+  'hot_path_fk_covering_indexes',
 ] as const;
 
 export async function createFullReplayedDatabase(options?: {
