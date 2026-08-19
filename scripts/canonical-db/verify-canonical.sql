@@ -135,9 +135,11 @@ begin
     raise exception 'CANONICAL_OMR_PRECISION_FAILURE: %', v_bad;
   end if;
 
-  -- Critical read/write contracts must exist in the clean foundation.
-  if to_regprocedure('public.rpt_dashboard_snapshot()') is null
-     or to_regprocedure('public.post_journal_event(jsonb)') is null then
+  -- Critical read/write contracts must exist with the signatures actually used
+  -- by the current app/live Demo contract.
+  if to_regprocedure('public.rpt_dashboard_snapshot(date,date,date)') is null
+     or to_regprocedure('public.post_journal_event(jsonb)') is null
+     or to_regprocedure('public.create_contract_atomic(text,uuid,uuid,uuid,date,date,numeric,text,uuid,text,text,text,text,integer,integer)') is null then
     raise exception 'CANONICAL_CRITICAL_RPC_MISSING';
   end if;
 
