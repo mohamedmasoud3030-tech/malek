@@ -145,4 +145,43 @@ export const REPLAY_TRANSFORMS: { file: string; pattern: RegExp; replacement: st
     reason:
       'Env-specific grant-chain difference aborts this file under PGlite; downgraded to WARNING so replay completes. void_receipt anon-grant assertions are verified statically instead.',
   },
+  {
+    file: '20260831000000_hot_path_fk_covering_indexes.sql',
+    pattern: /create index if not exists owner_settlement_payment_links_settlement_company_idx\s+on public\.owner_settlement_payment_links \(settlement_id, company_id\);/gi,
+    replacement: `do $$ begin
+      if to_regclass('public.owner_settlement_payment_links') is not null then
+        execute 'create index if not exists owner_settlement_payment_links_settlement_company_idx on public.owner_settlement_payment_links (settlement_id, company_id)';
+      end if;
+    end $$;`,
+    reason:
+      'Historical P0/P1/P3 checkpoints can intentionally omit the later settlement-link table; the production migration remains immutable and current-schema replay still creates the index when the table exists.',
+  },
+  {
+    file: '20260831000000_hot_path_fk_covering_indexes.sql',
+    pattern: /create index if not exists owner_settlement_expense_links_settlement_company_idx\s+on public\.owner_settlement_expense_links \(settlement_id, company_id\);/gi,
+    replacement: `do $$ begin
+      if to_regclass('public.owner_settlement_expense_links') is not null then
+        execute 'create index if not exists owner_settlement_expense_links_settlement_company_idx on public.owner_settlement_expense_links (settlement_id, company_id)';
+      end if;
+    end $$;`,
+    reason:
+      'Historical P0/P1/P3 checkpoints can intentionally omit the later settlement-link table; the production migration remains immutable and current-schema replay still creates the index when the table exists.',
+  },
+  {
+    file: '20260831000000_hot_path_fk_covering_indexes.sql',
+    pattern: /create index if not exists deposit_transactions_reversal_of_id_idx\s+on public\.deposit_transactions \(reversal_of_id\)\s+where reversal_of_id is not null;/gi,
+    replacement: `do $$ begin
+      if to_regclass('public.deposit_transactions') is not null
+         and exists (
+           select 1 from pg_attribute
+           where attrelid = to_regclass('public.deposit_transactions')
+             and attname = 'reversal_of_id'
+             and not attisdropped
+         ) then
+        execute 'create index if not exists deposit_transactions_reversal_of_id_idx on public.deposit_transactions (reversal_of_id) where reversal_of_id is not null';
+      end if;
+    end $$;`,
+    reason:
+      'Historical checkpoints can omit the later deposit reversal column; guard only in the PGlite harness without editing the immutable production migration.',
+  },
 ];
