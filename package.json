@@ -23,6 +23,7 @@
     "check:gl-write-boundary": "node scripts/check-no-new-legacy-journal-writes.mjs",
     "test:gl-write-boundary": "node scripts/check-no-new-legacy-journal-writes.test.mjs",
     "supabase:migration-evidence": "bash scripts/collect-supabase-migration-evidence.sh",
+    "check:expired-flags": "node scripts/check-expired-flags.mjs",
     "db0:replay": "node scripts/db0/replay-migrations.mjs --all",
     "db0:audit": "node scripts/db0/audit.mjs",
     "db0:gen-types": "node scripts/db0/gen-types.mjs",
