@@ -92,7 +92,7 @@ export function ChangePasswordWorkspace({ variant = 'standalone' }: ChangePasswo
           submitDisabled={!form.password || !form.confirmPassword}
         />
       </EntityForm.Root>
-      {serviceError ? <DataErrorScreen title="فشل تحديث كلمة المرور" fallbackMessage="تحقق من الجلسة الحالية وحاول مرة أخرى." error={serviceError} /> : null}
+      {serviceError ? <DataErrorScreen title="تعذر تحديث كلمة المرور" fallbackMessage="تحقق من الجلسة الحالية وحاول مرة أخرى." error={serviceError} /> : null}
     </div>
   );
 

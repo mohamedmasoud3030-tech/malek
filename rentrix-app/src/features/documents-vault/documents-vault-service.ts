@@ -146,7 +146,7 @@ export async function uploadVaultDocument(params: UploadVaultDocumentParams): Pr
     contentType: params.file.type,
   });
 
-  if (uploadError) handleSupabaseError(uploadError as any, 'فشل رفع الملف إلى التخزين');
+  if (uploadError) handleSupabaseError(uploadError as any, 'تعذر رفع الملف إلى التخزين');
 
   try {
     const { data, error } = await ((supabase as any)

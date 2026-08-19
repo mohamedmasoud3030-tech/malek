@@ -63,7 +63,7 @@ export async function toggleAutomationRule(id: string, isEnabled: boolean): Prom
 
 export async function executeAutomationRule(ruleId: string): Promise<{ success: boolean; run_id: string; processed: number; failed: number; notifications: number }> {
   const { data, error } = await (supabase.rpc as any)('execute_automation_rule', { p_rule_id: ruleId });
-  if (error) handleSupabaseError(error, 'فشل تنفيذ قاعدة الأتمتة');
+  if (error) handleSupabaseError(error, 'تعذر تنفيذ قاعدة الأتمتة');
   return data as any;
 }
 
@@ -88,13 +88,13 @@ export async function markNotificationRead(id: string): Promise<void> {
 
 export async function retryAutomationRun(runId: string): Promise<any> {
   const { data, error } = await (supabase.rpc as any)('retry_automation_run', { p_run_id: runId });
-  if (error) handleSupabaseError(error, 'فشل إعادة محاولة تشغيل الأتمتة');
+  if (error) handleSupabaseError(error, 'تعذر إعادة محاولة تشغيل الأتمتة');
   return data;
 }
 
 export async function runScheduledAutomationRules(): Promise<any> {
   const { data, error } = await (supabase.rpc as any)('run_scheduled_automation_rules');
-  if (error) handleSupabaseError(error, 'فشل تشغيل الأتمتة المجدولة');
+  if (error) handleSupabaseError(error, 'تعذر تشغيل الأتمتة المجدولة');
   return data;
 }
 
@@ -113,7 +113,7 @@ export const localAutomationGateway = {
       await toggleAutomationRule(command.ruleId, isEnabled);
       return { accepted: true, provider: 'automation-worker', message: `تم ${isEnabled ? 'تفعيل' : 'إيقاف'} القاعدة بنجاح` };
     } catch (e) {
-      return { accepted: false, provider: 'automation-worker', message: e instanceof Error ? e.message : 'فشل تحديث القاعدة' };
+      return { accepted: false, provider: 'automation-worker', message: e instanceof Error ? e.message : 'تعذر تحديث القاعدة' };
     }
   },
   previewRule(_rule?: any) {

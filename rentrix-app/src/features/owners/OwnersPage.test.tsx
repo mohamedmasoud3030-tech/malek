@@ -89,7 +89,7 @@ function renderOwnerDetail(
 
 describe('Owner detail recovery states', () => {
   it('renders the owner detail loading state', () => {
-    expect(renderToStaticMarkup(<OwnerDetailView state={{ status: 'loading' }} />)).toContain('aria-label="جار التحميل"');
+    expect(renderToStaticMarkup(<OwnerDetailView state={{ status: 'loading' }} />)).toContain('aria-label="جارٍ التحميل');
   });
 
   it('renders the owner detail surface', () => {

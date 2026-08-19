@@ -9,9 +9,8 @@
 }
 
 [data-entity-table] thead th {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 600;
-  text-transform: uppercase;
   color: hsl(var(--color-text-muted));
   background: hsl(var(--muted) / 0.55);
   padding: 1rem 1.25rem;

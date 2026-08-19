@@ -88,7 +88,7 @@
   --color-card-muted: 210 20% 96%;
 
   /* Brand */
-  --color-primary: 200 85% 38%;
+  --color-primary: 160 84% 27%;
   --color-primary-fg: 0 0% 100%;
 
   /* Text */
@@ -104,7 +104,7 @@
   /* Sidebar (dark — same in both modes) */
   --color-sidebar-bg: 215 28% 12%;
   --color-sidebar-text: 210 20% 85%;
-  --color-sidebar-active-bg: 200 85% 38%;
+  --color-sidebar-active-bg: 160 84% 27%;
   --color-sidebar-active-text: 0 0% 100%;
   --color-sidebar-hover-bg: 215 28% 18%;
 
@@ -168,7 +168,7 @@
   --sidebar-accent: var(--color-sidebar-hover-bg);
   --sidebar-accent-foreground: var(--color-sidebar-active-text);
   --sidebar-border: 215 20% 20%;
-  --accent: 200 85% 38%;
+  --accent: 174 72% 33%;
 
   /* Bridge aliases (channel refs) — required because a Tailwind
      @theme key may not reference a CSS variable with its own name:
@@ -226,8 +226,8 @@
   --color-bg: 215 28% 9%;
   --color-card: 215 25% 13%;
   --color-card-muted: 215 20% 11%;
-  --color-primary: 200 85% 48%;
-  --color-primary-fg: 0 0% 100%;
+  --color-primary: 160 70% 43%;
+  --color-primary-fg: 222 37% 8%;
   --color-text-primary: 210 20% 92%;
   --color-text-secondary: 210 14% 68%;
   /* WCAG AA guard: 50% measured 4.05:1 on dark cards (axe); 58% ≈ 4.8–5.0:1
@@ -237,7 +237,7 @@
   --color-border-light: 215 16% 17%;
   --color-sidebar-bg: 215 30% 7%;
   --color-sidebar-text: 210 20% 80%;
-  --color-sidebar-active-bg: 200 85% 38%;
+  --color-sidebar-active-bg: 160 84% 27%;
   --color-sidebar-active-text: 0 0% 100%;
   --color-sidebar-hover-bg: 215 28% 14%;
 
@@ -289,7 +289,7 @@
   --sidebar-accent: var(--color-sidebar-hover-bg);
   --sidebar-accent-foreground: var(--color-sidebar-active-text);
   --sidebar-border: 215 16% 16%;
-  --accent: 200 85% 48%;
+  --accent: 174 62% 43%;
 
   /* ── Wave 3: dark semantic surfaces ───────── */
   --surface: var(--color-card);

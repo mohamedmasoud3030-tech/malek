@@ -68,15 +68,6 @@
    ============================================ */
 
 @layer utilities {
-  /* Subtle card interaction */
-  .hover-card {
-    transition: box-shadow 0.18s ease, border-color 0.18s ease;
-  }
-  .hover-card:hover {
-    box-shadow: var(--shadow-card-hover);
-    border-color: hsl(var(--border));
-  }
-
   .pressable {
     transition: background-color 0.15s ease, opacity 0.15s ease;
   }
@@ -95,13 +86,6 @@
     animation: shimmer 1.4s infinite;
   }
 
-  .auth-grid {
-    background-image:
-      linear-gradient(hsl(0 0% 100% / 0.04) 1px, transparent 1px),
-      linear-gradient(90deg, hsl(0 0% 100% / 0.04) 1px, transparent 1px);
-    background-size: 32px 32px;
-  }
-
   .sidebar-scroll {
     scrollbar-width: thin;
     scrollbar-color: hsl(var(--sidebar-foreground) / 0.18) transparent;
@@ -110,22 +94,10 @@
   .sidebar-scroll::-webkit-scrollbar-track    { background: transparent; }
   .sidebar-scroll::-webkit-scrollbar-thumb    { border-radius: 999px; background: hsl(var(--sidebar-foreground) / 0.18); }
 
-  .safe-bottom-app {
-    padding-bottom: calc(var(--mobile-floating-control-height, 4.5rem) + 1rem + env(safe-area-inset-bottom, 0px));
-  }
-  @media (min-width: 768px) {
-    .safe-bottom-app {
-      padding-bottom: 1.5rem;
-    }
-  }
   .safe-top-app     { padding-top: env(safe-area-inset-top, 0px); }
   .safe-bottom-overlay { padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px)); }
 
   .touch-target { min-height: 44px; min-width: 44px; }
-
-  .app-container {
-    width: 100%; min-width: 0; max-width: 80rem; margin-inline: auto;
-  }
 
   .no-scrollbar { scrollbar-width: none; }
   .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -304,10 +276,6 @@
 
 /* Landing headline text follows the app token system. */
 .text-gradient {
-  @apply text-primary;
-}
-
-.text-gradient-light {
   @apply text-primary;
 }
 

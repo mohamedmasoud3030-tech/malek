@@ -1,0 +1,85 @@
+[
+  {
+    "key": "ai-assistant",
+    "labelAr": "المساعد الذكي",
+    "labelEn": "AI Assistant",
+    "owner": "platform",
+    "description": "AI-powered chat assistant for operational queries.",
+    "cleanupBy": "2026-12-01",
+    "phase": "beta",
+    "defaultValue": true,
+    "roles": ["ADMIN", "MANAGER"],
+    "public": true
+  },
+  {
+    "key": "reports-v2",
+    "labelAr": "التقارير المتقدمة",
+    "labelEn": "Reports V2",
+    "owner": "platform",
+    "description": "New reports architecture with aggregated read models.",
+    "cleanupBy": "2026-11-01",
+    "phase": "alpha",
+    "defaultValue": false,
+    "roles": ["ADMIN"],
+    "public": true
+  },
+  {
+    "key": "financial-wave-2",
+    "labelAr": "الموجة المالية الثانية",
+    "labelEn": "Financial Wave 2",
+    "owner": "platform",
+    "description": "Enhanced bank reconciliation, expense categories, and cash-flow projections.",
+    "cleanupBy": "2026-11-01",
+    "phase": "alpha",
+    "defaultValue": false,
+    "roles": ["ADMIN"],
+    "public": true
+  },
+  {
+    "key": "owner-agreements-v2",
+    "labelAr": "اتفاقيات الملاك المتقدمة",
+    "labelEn": "Owner Agreements V2",
+    "owner": "platform",
+    "description": "Versioned owner agreements with maker-checker approval workflow.",
+    "cleanupBy": "2026-10-15",
+    "phase": "alpha",
+    "defaultValue": false,
+    "roles": ["ADMIN"],
+    "public": true
+  },
+  {
+    "key": "dashboard-v2",
+    "labelAr": "لوحة التحكم الجديدة",
+    "labelEn": "Dashboard V2",
+    "owner": "platform",
+    "description": "Redesigned dashboard with task-centric layout.",
+    "cleanupBy": "2026-10-01",
+    "phase": "alpha",
+    "defaultValue": false,
+    "roles": ["ADMIN"],
+    "public": true
+  },
+  {
+    "key": "malek-pro-visual",
+    "labelAr": "الهوية البصرية MALEK Pro",
+    "labelEn": "MALEK Pro Visual",
+    "owner": "platform",
+    "description": "Emerald/slate operational visual wave (data-visual-wave=malek-pro).",
+    "cleanupBy": "2026-09-15",
+    "phase": "beta",
+    "defaultValue": true,
+    "public": true
+  },
+  {
+    "key": "commission-lifecycle-v2",
+    "labelAr": "دورة العمولات المتقدمة",
+    "labelEn": "Commission Lifecycle V2",
+    "owner": "platform",
+    "description": "Atomic commission pay/reverse with GL integration.",
+    "cleanupBy": "2026-10-01",
+    "phase": "alpha",
+    "defaultValue": false,
+    "roles": ["ADMIN", "MANAGER"],
+    "public": true
+  }
+]

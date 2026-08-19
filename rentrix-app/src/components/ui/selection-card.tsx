@@ -33,7 +33,7 @@ export function SelectionCard({
       aria-pressed={selected}
       disabled={disabled}
       className={cn(
-        'relative flex min-h-24 w-full min-w-0 flex-col rounded-2xl border bg-card p-4 text-start outline-none transition-[background-color,border-color,box-shadow,transform] duration-150',
+        'relative flex min-h-24 w-full min-w-0 flex-col rounded-xl border bg-card p-4 text-start outline-none transition-[background-color,border-color,box-shadow,transform] duration-150',
         'focus-visible:ring-4 focus-visible:ring-primary/20 disabled:pointer-events-none disabled:opacity-50 motion-reduce:transition-none',
         selected
           ? 'border-primary/60 bg-primary/[0.06] text-foreground shadow-[0_0_0_1px_hsl(var(--primary)/0.12),0_8px_18px_hsl(var(--primary)/0.08)]'

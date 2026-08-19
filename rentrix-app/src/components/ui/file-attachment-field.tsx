@@ -79,7 +79,7 @@ export function FileAttachmentField({
     try {
       onChange(await uploadAttachment(file));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'فشل رفع الملف');
+      setError(err instanceof Error ? err.message : 'تعذر رفع الملف');
     } finally {
       setUploading(false);
     }

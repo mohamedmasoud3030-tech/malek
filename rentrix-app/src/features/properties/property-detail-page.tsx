@@ -163,7 +163,7 @@ export function PropertyDetailPage() {
               <div className="space-y-4 p-2">
                 {(['basic', 'operations', 'ownership'] as const).map((category) => (
                   <div key={category}>
-                    <p className="px-2 pb-1.5 text-[10px] font-extrabold uppercase tracking-[0.12em] text-muted-foreground">
+                    <p className="px-2 pb-1.5 text-[10px] font-extrabold text-muted-foreground">
                       {categoryLabels[category]}
                     </p>
                     <div className="space-y-1">

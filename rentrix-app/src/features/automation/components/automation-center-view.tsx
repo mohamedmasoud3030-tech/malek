@@ -81,7 +81,7 @@ export function AutomationCenterView() {
       toast.success('تم تحديث حالة القاعدة');
       void queryClient.invalidateQueries({ queryKey: ['automation-rules'] });
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : 'فشل تحديث القاعدة'),
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر تحديث القاعدة'),
   });
 
   const executeMut = useMutation({
@@ -94,7 +94,7 @@ export function AutomationCenterView() {
         queryClient.invalidateQueries({ queryKey: ['automation-notifications'] }),
       ]);
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : 'فشل التنفيذ'),
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر التنفيذ'),
   });
 
   const rules = rulesQuery.data ?? [];

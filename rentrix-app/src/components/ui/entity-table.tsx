@@ -212,7 +212,7 @@ function MobileRegisterSkeleton({ rows }: { rows: number }) {
   return (
     <div className="space-y-3" aria-hidden="true" data-entity-table-mobile-skeleton>
       {Array.from({ length: rows }, (_, index) => (
-        <div key={index} className="rounded-2xl border border-border/70 bg-card p-3">
+        <div key={index} className="rounded-xl border border-border/70 bg-card p-3">
           <div className="flex items-center gap-3">
             <div className="min-w-0 flex-1 space-y-2">
               <Skeleton className="h-4 w-2/3" />
@@ -281,7 +281,7 @@ function MobileRegisterListItem<T>({
 
   return (
     <li role="listitem" className="min-w-0">
-      <article data-entity-table-mobile-card className="min-w-0 overflow-hidden rounded-2xl border border-border/70 bg-card p-3 shadow-card">
+      <article data-entity-table-mobile-card className="min-w-0 overflow-hidden rounded-xl border border-border/70 bg-card p-3 shadow-card">
         <div className="flex min-w-0 items-start gap-3">
           <div className="min-w-0 flex-1">
             {onRowClick ? (
@@ -455,7 +455,7 @@ export function EntityTable<T>({
 
       {/* Desktop/tablet dense register table — widths >= 768px */}
       <div className="hidden md:block">
-        <Card data-entity-table-wrapper data-compact-responsive-table className="overflow-hidden rounded-2xl border-border/70 bg-card shadow-card">
+        <Card data-entity-table-wrapper data-compact-responsive-table className="overflow-hidden rounded-xl border-border/70 bg-card shadow-card">
           <div
             data-entity-table-scroll
             tabIndex={0}

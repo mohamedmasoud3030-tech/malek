@@ -95,7 +95,7 @@ function EntityCardShell({
       onClick={onClick}
       onKeyDown={(event) => handleCardKeyDown(event, onClick)}
       className={cn(
-        'relative w-full min-w-0 overflow-hidden rounded-2xl border border-border/70 bg-card p-3 text-start shadow-card transition-[border-color,box-shadow] sm:p-4',
+        'relative w-full min-w-0 overflow-hidden rounded-xl border border-border/70 bg-card p-3 text-start shadow-card transition-[border-color,box-shadow] sm:p-4',
         clickable &&
           'cursor-pointer hover:border-primary/25 hover:shadow-card-hover focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/15',
         className,
