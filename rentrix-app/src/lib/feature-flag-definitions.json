@@ -68,7 +68,6 @@
     "cleanupBy": "2026-09-15",
     "phase": "beta",
     "defaultValue": true,
-    "roles": ["ADMIN", "MANAGER", "USER"],
     "public": true
   },
   {

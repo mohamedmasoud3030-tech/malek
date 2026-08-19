@@ -16,6 +16,8 @@
 --   * Partial indexes where soft-delete is the normal list filter.
 --   * Reversible: DROP INDEX IF EXISTS in the reverse order of creation.
 --   * Does not enable/disable RLS or alter grants.
+--   * Late-added tables/columns are guarded so historical replay baselines can
+--     apply this additive migration without assuming future schema objects.
 
 -- ── Tenant-scoped operational registers (company_id leading) ───────────────
 
@@ -93,16 +95,21 @@ create index if not exists receipt_allocations_receipt_id_idx
 create index if not exists receipt_allocations_company_id_idx
   on public.receipt_allocations (company_id);
 
--- Settlement workspace joins links by settlement_id. Unique partial indexes
--- exist on (company_id, payment_id)/(company_id, expense_id) and unique
--- (settlement_id, payment_id)/(settlement_id, expense_id), but the composite
--- FK is (settlement_id, company_id). A matching leading pair index covers
--- both FK validation and settlement-side list lookups.
-create index if not exists owner_settlement_payment_links_settlement_company_idx
-  on public.owner_settlement_payment_links (settlement_id, company_id);
+-- Settlement workspace joins links by settlement_id. Some historical replay
+-- baselines intentionally stop before these link tables were introduced, so
+-- guard their additive indexes rather than making old baselines depend on a
+-- future table.
+do $$
+begin
+  if to_regclass('public.owner_settlement_payment_links') is not null then
+    execute 'create index if not exists owner_settlement_payment_links_settlement_company_idx on public.owner_settlement_payment_links (settlement_id, company_id)';
+  end if;
 
-create index if not exists owner_settlement_expense_links_settlement_company_idx
-  on public.owner_settlement_expense_links (settlement_id, company_id);
+  if to_regclass('public.owner_settlement_expense_links') is not null then
+    execute 'create index if not exists owner_settlement_expense_links_settlement_company_idx on public.owner_settlement_expense_links (settlement_id, company_id)';
+  end if;
+end
+$$;
 
 -- Maintenance reverse links used when resolving cost / invoice context.
 create index if not exists maintenance_records_expense_id_idx
@@ -113,7 +120,20 @@ create index if not exists maintenance_records_invoice_id_idx
   on public.maintenance_records (invoice_id)
   where invoice_id is not null;
 
--- Deposit reverse-link for compensating reversals.
-create index if not exists deposit_transactions_reversal_of_id_idx
-  on public.deposit_transactions (reversal_of_id)
-  where reversal_of_id is not null;
+-- Deposit reverse-link for compensating reversals. The column was introduced
+-- after some phase replay fixtures; create the index only when that column is
+-- actually present in the replayed schema.
+do $$
+begin
+  if to_regclass('public.deposit_transactions') is not null
+     and exists (
+       select 1
+       from pg_attribute
+       where attrelid = to_regclass('public.deposit_transactions')
+         and attname = 'reversal_of_id'
+         and not attisdropped
+     ) then
+    execute 'create index if not exists deposit_transactions_reversal_of_id_idx on public.deposit_transactions (reversal_of_id) where reversal_of_id is not null';
+  end if;
+end
+$$;
