@@ -54,7 +54,7 @@ export function ReceiptDetailCard({ selectedReceiptId, receiptDetail, isLoading,
               <a href={getReceiptPrintHref(receiptDetail.id)}><Printer className="me-2 size-4" />عرض/طباعة الإيصال</a>
             </Button>
           </div>
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
             <div className="rounded-xl bg-muted/30 p-3">
               <p className="text-xs text-muted-foreground">رقم الإيصال</p>
               <p className="mt-1 font-bold">{receiptDetail.receipt_number}</p>

@@ -24,7 +24,7 @@ export function ArrearsAgingBuckets({ agedReceivablesReport }: ArrearsAgingBucke
         </div>
         <span className="rounded-full bg-background px-3 py-1 text-xs font-bold text-muted-foreground">الإجمالي {formatMoney(totalOutstanding)}</span>
       </div>
-      <div className="grid gap-3 md:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
         {arrearsBucketKeys.map((bucketKey) => {
           const bucket = agedReceivablesReport?.buckets[bucketKey];
           const amount = bucket?.total ?? 0;

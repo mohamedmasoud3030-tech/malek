@@ -55,13 +55,6 @@ export function LoginPage() {
       data-login-surface
       dir="rtl"
     >
-      {/* MALEK ambient brand backdrop — a soft blue glow, not a flat surface */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute inset-0 bg-background" />
-        <div className="absolute -top-32 right-0 h-96 w-96 rounded-full bg-primary/10 blur-3xl" />
-        <div className="absolute -bottom-40 left-0 h-[28rem] w-[28rem] rounded-full bg-primary/8 blur-3xl" />
-      </div>
-
       <section className="safe-top-app safe-bottom-overlay mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-[26rem] flex-col justify-center" data-login-main>
         <div className="rounded-3xl border border-border/70 bg-card/90 p-6 shadow-card backdrop-blur-sm sm:p-8" data-login-card>
           <header className="mb-8 text-center" data-login-brand>

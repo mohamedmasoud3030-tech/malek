@@ -88,6 +88,15 @@
   }
 }
 
+/* Login ambient brand backdrop — radial gradients (no blur utilities, per the
+   design-system blur contract). */
+[data-login-surface] {
+  background:
+    radial-gradient(42rem 42rem at 112% -12%, hsl(217 71% 45% / 0.12), transparent 60%),
+    radial-gradient(40rem 40rem at -12% 112%, hsl(213 74% 52% / 0.09), transparent 58%),
+    hsl(var(--background));
+}
+
 /* ============================================
    Utility classes
    (Color/shadow/radius utilities تولّد من @theme

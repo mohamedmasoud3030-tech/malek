@@ -24,11 +24,11 @@ export interface DetailField {
  * />
  */
 export function DetailFields({ fields, columns = 4, className }: { fields: DetailField[]; columns?: 2 | 3 | 4; className?: string }) {
-  const colsClass = columns === 2 ? 'md:grid-cols-2' : columns === 3 ? 'md:grid-cols-3' : 'md:grid-cols-2 xl:grid-cols-4';
+  const colsClass = columns === 2 ? 'grid-cols-2' : columns === 3 ? 'grid-cols-2 md:grid-cols-3' : 'grid-cols-2 xl:grid-cols-4';
   return (
-    <div className={cn('grid gap-4', colsClass, className)}>
+    <div className={cn('grid gap-3 sm:gap-4', colsClass, className)}>
       {fields.map((field) => (
-        <div key={field.label} className={cn('min-w-0 overflow-hidden rounded-2xl border border-border bg-background p-4', field.wide && 'md:col-span-2')}>
+        <div key={field.label} className={cn('min-w-0 overflow-hidden rounded-2xl border border-border bg-background p-3 sm:p-4', field.wide && 'col-span-2')}>
           <p className="text-xs font-bold text-muted-foreground">{field.label}</p>
           <div className="mt-1 min-w-0 break-words font-semibold [overflow-wrap:anywhere]">{field.value === null || field.value === undefined || field.value === '' ? '—' : field.value}</div>
         </div>

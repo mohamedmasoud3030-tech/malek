@@ -21,9 +21,9 @@ describe('DetailFields', () => {
     expect(dashCount).toBe(2);
   });
 
-  it('spans wide fields across two columns', () => {
+  it('spans wide fields across the full row (all breakpoints)', () => {
     const html = renderToStaticMarkup(<DetailFields fields={[{ label: 'ملاحظات', value: 'نص طويل', wide: true }]} />);
-    expect(html).toContain('md:col-span-2');
+    expect(html).toContain('col-span-2');
   });
 });
 
