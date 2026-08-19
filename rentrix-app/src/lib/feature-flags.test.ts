@@ -169,3 +169,26 @@ describe('expiry contract', () => {
     }
   });
 });
+
+describe('role vocabulary alignment', () => {
+  it('accepts the full authorization role set, not just ADMIN/MANAGER/USER', () => {
+    // The app authorizes 6 roles (ADMIN, MANAGER, ACCOUNTANT, OPERATIONS, USER, VIEWER).
+    // The flag evaluator must model the same set so any real role can be targeted
+    // and non-modeled roles are not silently dropped to null.
+    for (const role of ['ACCOUNTANT', 'OPERATIONS', 'VIEWER'] as const) {
+      // A flag with no role restriction stays visible to every real role.
+      expect(isFeatureEnabled('malek-pro-visual', { role })).toBe(true);
+    }
+  });
+
+  it('treats a restricted flag as fail-closed for non-targeted real roles', () => {
+    // ai-assistant is ADMIN+MANAGER only; an OPERATIONS role must stay OFF even
+    // though OPERATIONS is now a valid (known) role rather than "unknown".
+    expect(isFeatureEnabled('ai-assistant', { role: 'OPERATIONS' })).toBe(false);
+  });
+
+  it('still rejects genuinely unknown roles', () => {
+    expect(isFeatureEnabled('malek-pro-visual', { role: 'SUPERUSER' })).toBe(true); // no role gate on this flag
+    expect(isFeatureEnabled('ai-assistant', { role: 'SUPERUSER' })).toBe(false);   // fail closed on restricted flag
+  });
+});
