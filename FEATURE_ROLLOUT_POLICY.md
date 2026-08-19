@@ -1,144 +1,123 @@
 # MALEK Feature Rollout Policy
 
-> **Version:** 1.0 — 2026-08-19  
+> **Version:** 1.1 — 2026-08-19  
 > **Owner:** Platform  
-> **Scope:** All feature flags defined in `rentrix-app/src/lib/feature-flags.ts`
+> **Canonical inventory:** `rentrix-app/src/lib/feature-flag-definitions.json`
 
----
+## 1. Security invariant
 
-## 1. Where flags help (and where they don't)
+Feature flags are presentation and rollout controls only. They are **never authorization**. RLS, RPC permissions, route permissions, and backend validation remain authoritative for privileged operations.
 
-### ✅ Use a flag when:
-- A change touches **financial calculations**, **ledger writes**, or **owner money**
-- A change replaces a **read model** (dashboard snapshot, report aggregation)
-- A change introduces a **new UI section or navigation item** that isn't ready for all offices
-- A change requires a **one‑click rollback** without a full deploy
+A rollout source may decide whether an eligible user sees a feature, but it must never expand which roles are eligible.
 
-### ❌ Do NOT use a flag when:
-- The change is a **bug fix** — ship it
-- The change is a **permission rule** — enforce in RLS/RPC, not in a flag
-- The change is **copy** (labels, error messages) — use i18n
-- The change is a **tracking pixel or analytics tag** — ship it
-- The change is a **database migration** — use migration-rollback, not a flag
+## 2. Evaluation order
 
-> **Rule:** A flag is a temporary circuit breaker, not a permanent configuration knob.
+Every browser evaluation follows this fail-closed order:
 
----
-
-## 2. Flag lifecycle phases
-
-```
-idea → alpha → beta → stable → deprecated → removed
+```text
+1. Unknown flag -> OFF
+2. VITE_KILL_<KEY>=false -> force OFF
+3. Role eligibility -> missing/unknown/unauthorized role => OFF
+4. VITE_FEATURE_<KEY>=true -> ON for eligible roles
+5. localStorage ff:<key>=1|0 -> local preview ON/OFF for eligible roles only
+6. defaultValue
 ```
 
-| Phase | Meaning | Who can see it | Cleanup requirement |
-|-------|---------|---------------|-------------------|
-| **alpha** | Experiment, may break | ADMIN only | Must have `cleanupBy` ≤ 4 weeks |
-| **beta** | Validated, accepting trial | ADMIN + MANAGER | Must have `cleanupBy` ≤ 8 weeks |
-| **stable** | On for everyone | All roles | No deadline (remove definition when code is permanent) |
-| **deprecated** | Superseded, pending removal | All roles (if enabled) | Must be removed within one release cycle |
+`localStorage` is user-controlled and must never be treated as trusted authorization state.
 
----
+## 3. Vite/Vercel behavior
 
-## 3. Flag inventory
+MALEK uses Vite. `VITE_*` variables are public browser build configuration and are embedded into the generated client bundle.
 
-| Key | Phase | Default | Roles | Owner | Cleanup by |
-|-----|-------|---------|-------|-------|-----------|
-| `ai-assistant` | beta | ON | ADMIN, MANAGER | platform | 2026-12-01 |
-| `reports-v2` | alpha | OFF | ADMIN | platform | 2026-11-01 |
-| `financial-wave-2` | alpha | OFF | ADMIN | platform | 2026-11-01 |
-| `owner-agreements-v2` | alpha | OFF | ADMIN | platform | 2026-10-15 |
-| `dashboard-v2` | alpha | OFF | ADMIN | platform | 2026-10-01 |
-| `malek-pro-visual` | beta | ON | All | platform | 2026-09-15 |
-| `commission-lifecycle-v2` | alpha | OFF | ADMIN, MANAGER | platform | 2026-10-01 |
+Therefore changing `VITE_FEATURE_*` or `VITE_KILL_*` in Vercel requires a deployment/rebuild before users receive the changed flag state. This is intentionally a lightweight deployment-level rollout system, not a runtime remote-config service.
 
----
+No secret may be stored in a `VITE_*` variable.
 
-## 4. Rollout stages
+## 4. When to use flags
 
-Every rollout follows these stages. Do not skip any.
+Use a flag for temporary rollout of a new UI, read model, financial workflow surface, or other feature that needs staged exposure. Do not use flags for permissions, database migration safety, normal bug fixes, or backend authorization.
+
+A flag is temporary. Alpha/beta flags require a cleanup date and must be removed when rollout is complete.
+
+## 5. Lifecycle
+
+```text
+idea -> alpha -> beta -> stable -> deprecated -> removed
+```
+
+| Phase | Meaning | Typical audience | Cleanup requirement |
+|---|---|---|---|
+| alpha | Experimental | restricted roles | cleanup date required |
+| beta | Validated trial | selected eligible roles | cleanup date required |
+| stable | permanent behavior | intended roles | remove temporary flag when practical |
+| deprecated | superseded | none/new path | remove within release cycle |
+
+## 6. Current inventory
+
+The JSON inventory is authoritative. This table is human-readable documentation only.
+
+| Key | Phase | Default | Eligible roles | Cleanup by |
+|---|---|---:|---|---|
+| `ai-assistant` | beta | ON | ADMIN, MANAGER | 2026-12-01 |
+| `reports-v2` | alpha | OFF | ADMIN | 2026-11-01 |
+| `financial-wave-2` | alpha | OFF | ADMIN | 2026-11-01 |
+| `owner-agreements-v2` | alpha | OFF | ADMIN | 2026-10-15 |
+| `dashboard-v2` | alpha | OFF | ADMIN | 2026-10-01 |
+| `malek-pro-visual` | beta | ON | ADMIN, MANAGER, USER | 2026-09-15 |
+| `commission-lifecycle-v2` | alpha | OFF | ADMIN, MANAGER | 2026-10-01 |
+
+## 7. Rollout stages
 
 ### Stage 0 — Code complete
-- [ ] Flag definition added to `feature-flags.ts`
-- [ ] Gated code reviewed (no auth bypass)
-- [ ] Tests pass with flag OFF and ON
-- [ ] Migration has rollback script
+- [ ] Add/update the canonical JSON definition.
+- [ ] Confirm no backend authorization relies on a feature flag.
+- [ ] Test OFF, ON, unauthorized-role, unresolved-role, and kill-switch paths.
+- [ ] Keep migrations and their rollback strategy independent from flags.
 
-### Stage 1 — Alpha (ADMIN preview)
-- [ ] Set `VITE_FEATURE_<KEY>=true` on the **QA/Preview** deployment
-- [ ] Owner tests the feature
-- [ ] No customer impact if broken (ADMIN only)
-- **Duration:** 1–3 days
+### Stage 1 — QA/Preview
+- [ ] Set `VITE_FEATURE_<KEY>=true` in the QA/Preview environment.
+- [ ] Deploy/rebuild that environment.
+- [ ] Verify only eligible roles can see the feature.
 
-### Stage 2 — Beta (ADMIN + MANAGER)
-- [ ] Change default to `true` OR set env var on **Production**
-- [ ] Verify MANAGER can use it, USER cannot
-- [ ] Verify kill switch works (`VITE_KILL_<KEY>=false` via Vercel dashboard)
-- [ ] Monitor error rates for 48 hours
-- **Duration:** 1 week
+### Stage 2 — Production beta
+- [ ] Set the production rollout value or intentionally change the default.
+- [ ] Deploy/rebuild Production.
+- [ ] Verify eligible and ineligible roles explicitly.
+- [ ] Verify the kill-switch path on a non-production environment before relying on it operationally.
 
-### Stage 3 — Stable (all roles)
-- [ ] Remove role restriction from flag definition
-- [ ] Set `defaultValue: true` if not already
-- [ ] Announce to pilot offices
-- [ ] Monitor for 1 full accounting cycle
-- **Duration:** 2 weeks minimum
+### Stage 3 — Stable
+- [ ] Finalize intended role eligibility.
+- [ ] Make permanent behavior explicit.
+- [ ] Remove temporary rollout branches when the feature no longer needs a flag.
 
 ### Stage 4 — Cleanup
-- [ ] Delete gated code (both branches)
-- [ ] Remove flag definition from `feature-flags.ts`
-- [ ] Remove env var from Vercel dashboard
-- [ ] Test that the feature works without the flag
-- [ ] Close the tracker issue
+- [ ] Delete dead gated code.
+- [ ] Remove the canonical definition when the flag is no longer needed.
+- [ ] Remove obsolete Vercel environment variables.
+- [ ] Re-run all release gates.
 
----
+## 8. Kill-switch procedure
 
-## 5. Observability
+If a flagged browser feature causes an incident:
 
-Each flag evaluation is intentionally **not logged** to avoid noise. Instead:
-
-- **Pre‑release check**: `node scripts/check-expired-flags.mjs` (run before every deploy)
-- **Contract test**: `feature-flags.test.ts` asserts every alpha/beta flag has a valid `cleanupBy`
-- **Vercel dashboard**: Env vars `VITE_KILL_*` and `VITE_FEATURE_*` are visible in the deployment log
-
----
-
-## 6. Kill switch procedure
-
-If a flagged feature causes a production incident:
-
-```
-1. Go to Vercel Dashboard → Project → Environment Variables
-2. Add `VITE_KILL_<KEY> = false` to the **Production** environment
-3. Redeploy (or wait for the next automatic deploy)
-4. The feature is now OFF for all users
-5. Confirm by checking the deployment log
+```text
+1. Vercel Dashboard -> Project -> Environment Variables
+2. Set VITE_KILL_<KEY>=false for the affected environment
+3. Trigger a deployment/rebuild
+4. Verify the new deployment is serving the updated bundle
+5. Confirm the feature is OFF for eligible and ineligible roles
 ```
 
-No code change, no PR, no commit. Rollback in ≤ 5 minutes.
+This requires no source-code change, PR, or commit, but it **does require a new browser deployment/build**. It is not an instantaneous server-side remote switch.
 
----
+For risks that require a truly immediate server-side stop, use backend authorization/configuration or an operational circuit breaker designed for that purpose; do not rely on a Vite client flag.
 
-## 7. Cleanup enforcement
+## 9. Cleanup enforcement
 
-Every release must pass:
+Every PR/release gate must run:
 
 ```bash
-node scripts/check-expired-flags.mjs
+pnpm check:expired-flags
 ```
 
-If a flag has passed its `cleanupBy` date, the build fails.  Extend the date only when there is an explicit product decision and a new target date in the same PR.
-
----
-
-## 8. Ownership
-
-| Flag | Owner | Backup |
-|------|-------|--------|
-| `ai-assistant` | @platform | @leads |
-| `reports-v2` | @platform | @leads |
-| `financial-wave-2` | @platform | @leads |
-| `owner-agreements-v2` | @platform | @leads |
-| `dashboard-v2` | @platform | @leads |
-| `malek-pro-visual` | @platform | @leads |
-| `commission-lifecycle-v2` | @platform | @leads |
+The checker reads the same canonical JSON inventory used by the browser flag system. An expired alpha/beta flag blocks the gate until it is removed or its cleanup date is explicitly extended with a product decision.
