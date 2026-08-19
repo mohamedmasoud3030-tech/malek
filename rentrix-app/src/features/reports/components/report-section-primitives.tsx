@@ -37,7 +37,7 @@ export function ReportPanel({
             </span>
           ) : null}
           <div className="min-w-0">
-            {eyebrow ? <p className="mb-1 text-[10px] font-extrabold uppercase tracking-[0.14em] text-primary">{eyebrow}</p> : null}
+            {eyebrow ? <p className="mb-1 text-[10px] font-extrabold text-primary">{eyebrow}</p> : null}
             <CardTitle className="text-sm font-extrabold sm:text-[15px]">{title}</CardTitle>
             {description ? <CardDescription className="mt-1 max-w-3xl leading-5">{description}</CardDescription> : null}
           </div>
