@@ -3,18 +3,13 @@ import { defaultCompanyLocalSettings } from '@/lib/companySettings';
 import { toFinancialNumber } from '../financialMath';
 
 /**
- * Finance surfaces must never fall back to OMR when company settings have not
- * resolved yet. The product's accounting baseline is EGP; screens with a live
- * company-settings contract may still override this with the configured
- * currency through formatCompanyMoney at their call site.
+ * Finance surfaces render money through the company-settings contract.
+ * The canonical default currency is OMR (DEFAULT_CURRENCY in lib/formatters);
+ * a live company-settings contract overrides it at the call site through
+ * formatCompanyMoney. No screen hard-codes a currency.
  */
-const defaultFinanceLocalSettings = {
-  ...defaultCompanyLocalSettings,
-  defaultCurrency: 'EGP' as const,
-};
-
 export function formatMoney(value: number | null | undefined) {
-  return formatCompanyMoney(defaultFinanceLocalSettings, toFinancialNumber(value));
+  return formatCompanyMoney(defaultCompanyLocalSettings, toFinancialNumber(value));
 }
 
 export function formatDate(value: string | number | Date) {
