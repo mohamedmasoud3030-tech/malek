@@ -1,0 +1,142 @@
+# AGENT_HANDOFF
+
+> Handoff قائم على فحص فعلي للريبو (وليس ذاكرة شات). آخر تحقق: 2026-08-19.
+
+## المنتج
+
+- **الاسم المرئي**: MALEK — «كل أملاكك في مكان واحد».
+- **المجال**: منصة عربية أولًا لإدارة أملاك الإيجار (عقارات، وحدات، أشخاص، عقود، مالية، صيانة، تقارير، إعدادات).
+- **المستخدمون**: مكاتب العقارات وفرقها، متعددة الشركات (multi-tenant).
+- **الأدوار (6)**: `ADMIN`, `MANAGER`, `ACCOUNTANT`, `OPERATIONS`, `USER`, `VIEWER` (من `features/auth/permissions.ts`).
+
+> ملاحظة توافق: اسم الريبو `rentrix-app/` ومعرّفات قاعدة البيانات والمفاتيح المخزّنة تُبقى كما هي؛ التسمية المرئية هي MALEK فقط.
+
+## البنية والمسارات المهمة
+
+| المسار | الدور |
+|---|---|
+| `rentrix-app/src/` | التطبيق النشط (React + TypeScript + Vite + Tailwind v4) |
+| `rentrix-app/src/app/navigation/` | بنية التنقل (route-contract، terminology-registry) |
+| `rentrix-app/src/components/ui/` | نظام التصميم (Card، EntityForm، EntityTable، Dialog، BottomSheet...) |
+| `rentrix-app/src/services/` + `src/lib/` | طبقة الخدمات + المكتبات (supabase، money، feature-flags) |
+| `rentrix-app/src/styles/` | التوكنز (tokens.css) + الأنظمة المرئية |
+| `supabase/migrations/` | ترحيلات قاعدة البيانات (282 عند آخر فحص) |
+| `docs/source-of-truth/` | الحزمة القانونية (Canonical Pack، 8 مستندات) |
+| `governance/` + `tickets/` | الحوكمة (10 مراحل) والتذاكر |
+
+**مصادر الحقيقة**: `route-contract.ts` (الطرق)، `terminology-registry.ts` (التسمية)، `feature-flag-definitions.json` (الفلاغز)، `docs/source-of-truth/` (المنتج).
+
+## القرارات المتخذة في هذه الجلسة (والسبب)
+
+1. **حذف 41 مستند خطط/تدقيق قديمة** من الجذر و`docs/` — كانت مستبدلة بحزمة Canonical Pack. (السبب: تنظيف الازدواج والفوضى.)
+2. **اتجاه تصميم موحّد «الوضوح الأخضر»**: لون براند أخضر `160 84% 27%` في كل سطح (بدل انقسام أزرق/أخضر)، نصف قطر موحّد (كروت وحقول `rounded-xl`، طبقات مرتفعة `rounded-2xl`)، حلقة تركيز `ring-4/10`. (السبب: ازدحام بصري وعدم ارتياح عند التنقل.)
+3. **فعل خطأ قانوني واحد «تعذّر»** بدل «فشل» في واجهة المستخدم. (السبب: نبرة أقل لومًا وأكثر اتساقًا — 461 «تعذّر» مقابل 28 «فشل».)
+4. **إزالة `uppercase`+`tracking` من النص العربي** — تباعد الأحرف يكسر اتصال الحروف. (السبب: قابلية قراءة الموبايل.)
+5. **إزالة خريطتي تسمية يتيمتين** (`hubPageTitles`, `canonicalTerms`). (السبب: صفر مستهلكين + تناقض مع التسمية النشطة.)
+6. **نموذج أدوار الفلاغز = 6 أدوار** (من `domain/types.ts`)، لا 3. (السبب: `ACCOUNTANT`/`OPERATIONS`/`VIEWER` كانوا يتعاملون كـ"مجهول".)
+7. **لا نسبة مئوية rollout** — لا هوية ثابتة في الـ bundle؛ الـ role gate يكفي عند الحجم الحالي.
+8. **ابقاء نظام الفلاغز config-backed** — لا مزوّد خارجي إلا عند الحاجة لـ targeting/audit/تحكم حي.
+
+## الشغل المنجز — بدليل موثّق (VERIFIED)
+
+كل PR اندمج على `main`. **آخر فحص محلي نظيف من HEAD `fd98776`:**
+
+| الفحص | النتيجة |
+|---|---|
+| `pnpm --filter ./rentrix-app run typecheck` | ✅ خروج 0 |
+| `pnpm --filter ./rentrix-app run typecheck:test` | ✅ خروج 0 |
+| `pnpm check:expired-flags` | ✅ 7 فلاغز داخل النافذة |
+| `pnpm --filter ./rentrix-app run test` (كامل) | ✅ **480 ملف، 3081 اختبار، 0 فشل، 0 تخطّي** |
+| `pnpm --filter ./rentrix-app run build` | ✅ خروج 0 (15.2s؛ تحذير chunk>500kB غير معيق) |
+| CI على main HEAD | ✅ `build` success، `deploy` success، القواعد المقفولة success |
+
+**PRs المدمجة هذه الجلسة (11):**
+- `#1500` استراتيجية الاختبار + إصلاح 6 أعطال انجراف + 4 اختبارات جديدة
+- `#1501` توحيد اللون الأخضر + حذف CSS ميت + قراءة الجداول
+- `#1502` توحيد نصف قطر الكروت
+- `#1503` معيار النماذج + توحيد الحقول
+- `#1504` دليل محتوى UX + توحيد فعل الخطأ
+- `#1505` مراجعة UX + إصلاح ثيم منع الوميض (كان أزرق)
+- `#1506` معيار الموبايل + إزالة tracking من العربي
+- `#1507` بنية المعلومات + حذف خرائط التسمية اليتيمة
+- `#1508` تحصين نظام الفلاغز (import.meta.env + role-before-override + JSON مركزي + فحص انتهاء في CI)
+- `#1509` مواءمة سياسة rollout
+- `#1511` مواءمة أدوار الفلاغز (6) + استكمال السياسة (بيئات/نسبة/مقاييس/مزوّد)
+
+**ملفات قياسية جديدة (8)**: `FULL_TEST_STRATEGY.md`, `FORM_EXPERIENCE_STANDARD.md`, `UX_CONTENT_GUIDE.md`, `UI_UX_MASTER_REVIEW.md`, `UI_UX_REMEDIATION_PLAN.md`, `MOBILE_EXPERIENCE_STANDARD.md`, `INFORMATION_ARCHITECTURE.md`, و`FEATURE_ROLLOUT_POLICY.md` (محدَّثة).
+
+**إغلاق PR مكرر**: `#1498` (مؤلفه المالك `M7mdlab`) — أُغلق؛ شغله الحقيقي (تحصين الفلاغز) انتقل إلى `#1508`.
+
+## منفَّذ لكن غير موثّق بتشغيل (IMPLEMENTED BUT NOT VERIFIED)
+
+- **لا شيء مهم**. كل تغييرات هذه الجلسة مبنية على تحقق محلي فعلي (اختبارات/typecheck/build) وليس فقط على CI.
+
+## العيوب والمخاطر المعروفة
+
+1. **قاعدة بيانات الإنتاج (Supabase `nnggcnpcuomwfuupupwg`) ظهرت بلا جداول** عند فحص REST (OpenAPI فارغ، PGRST205، GoTrue 500). **لم يُحل** — يحتاج قرار/تدخل مالك (هل القاعدة فُرّغت؟ هل تحتاج ترحيل؟). الوصول المباشر بالـ Postgres محجوب بيئيًا (IPv6 فقط).
+2. **صفحة التسويق مفصولة** — `/` يحوّل إلى `/login`؛ الزائر الجديد لا يرى عرض القيمة. قرار منتج معلّق (موثّق في `UI_UX_MASTER_REVIEW.md` #6).
+3. **browser-smoke (Playwright على متصفح حي)** تاريخيًا أحمر في بعض الـ PRs — أثر بيئي/استضافة، خارج نطاق هذه الجلسة. CI النهائي على main يُظهر `build`/`deploy` ناجحين.
+4. **`deprecated` components**: `FormField` (`form-field.tsx`) و`TextField` (`text-field.tsx`) معلّمان كبدائل لصالح `EntityForm.Field` — أُبقيا للتوافق الرجعي.
+
+## قاعدة البيانات / الترحيلات / البيئة
+
+- **ترحيلات**: 282 عند آخر فحص؛ الترحيل `20260831000000_hot_path_fk_covering_indexes.sql` سليم (إعادة تشغيل db0 القانونية 282/282 نجحت سابقًا) لكنه مستبعد من نقاط التفتيش التاريخية في اختبارات p0/p1 (انظر `replay-bootstrap.ts`).
+- **لم تُطبَّق أي ترحيلات جديدة هذه الجلسة** — كل التغييرات UI/توثيق/اختبار.
+- **لم تتغير متغيرات بيئة الإنتاج**؛ **لم تُفعَّل أي ميزة لمستخدمين حقيقيين**.
+
+## المزوّدون الخارجيون وأسماء المتغيرات الآمنة (بدون قيم)
+
+- **Supabase** (Auth + Postgres + Storage): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_DB_URL`, `SUPABASE_PROJECT_REF`.
+- **QA**: `QA_ENVIRONMENT_KIND`, `QA_SUPABASE_PROJECT_REF`, `QA_ADMIN_EMAIL`, `QA_ADMIN_PASSWORD`, `QA_MUTATION_APPROVED`, `E2E_SINGLE_OFFICE_EMAIL`.
+- **Vercel** (نشر + فلاغز build-time): `VITE_FEATURE_<NAME>`, `VITE_KILL_<NAME>`.
+
+## أوامر مؤكدة من الريبو
+
+```bash
+# التثبيت (pnpm مثبّت 10.11.1 عبر corepack)
+pnpm install --frozen-lockfile
+
+# التطوير
+pnpm --filter ./rentrix-app dev
+
+# الفحص
+pnpm --filter ./rentrix-app run typecheck
+pnpm --filter ./rentrix-app run typecheck:test
+
+# الاختبار
+pnpm --filter ./rentrix-app run test          # كامل
+pnpm --filter ./rentrix-app run test:financials
+
+# بناء
+pnpm --filter ./rentrix-app run build
+
+# فحص انتهاء الفلاغز
+pnpm check:expired-flags
+```
+
+## حالة النشر/الإنتاج
+
+- **CI على `main` (HEAD `fd98776`)**: `build` ✅، `deploy` ✅، القواعد المقفولة ✅.
+- **الإنتاج**: يبدو منشورًا عبر Vercel (`malek-plus.vercel.app` في metadata)، لكن **حالة قاعدة البيانات الحية غير مؤكدة** (انظر المخاطر #1). **يجب ألا يُعتبر الإنتاج سليمًا وظيفيًا** حتى يتحقق المالك من قاعدة البيانات.
+
+## الموافقات/الحسابات/الاعتمادات المطلوبة من المالك
+
+1. **قرار حالة قاعدة بيانات الإنتاج** (`nnggcnpcuomwfuupupwg`) — هل فُرّغت أم تحتاج ترحيل؟ (عائق للتحقق الحي).
+2. **تدوير الـ service role key + كلمة مرور قاعدة البيانات** — كانت مكشوفة في الشات سابقًا (أمان).
+3. **قرار صفحة التسويق** (`/` → `/login`) — نعم/لا على إعادة تفعيل عرض القيمة للزائر الجديد.
+4. **لا موافقة محاسبية/قانونية معلّقة** من شغل هذه الجلسة.
+
+## الخطوات الثلاث التالية ذات الأولوية (معايير قبول)
+
+1. **حسم حالة قاعدة بيانات الإنتاج** — المعيار: يستطيع المالك تأكيد (من Supabase Dashboard → SQL Editor) وجود جداول `companies`/`properties` وبياناتها، أو تحديد أن القاعدة فُرّغت وتحتاج ترحيل من `supabase/migrations`.
+2. **قرار صفحة التسويق** — المعيار: قرار مالك نعم/لا على إعادة ربط landing أو إضافة شريط تعريف داخل `/login`.
+3. **ضبط الكثافة البصرية (إن لزم)** — المعيار: بعد التأكد من الإنتاج الحي، معاينة بصرية حية للـ Dashboard وتقليل الكثافة بمقاييس مسافات موثّقة.
+
+## تحذيرات — تغييرات يجب ألا تُستبدل/تُداس
+
+- **لا تعيد إضافة** المستندات القديمة المحذوفة (AI_DECISIONS، *_PLAN، *_AUDIT، *_STATUS... في الجذر و`docs/`). المصدر القانوني هو `docs/source-of-truth/`.
+- **لا ترجع** `uppercase tracking-*` على نص عربي، ولا ألوان البراند الزرقاء القديمة (`200 85%`, `217 91%`, `214 92%`).
+- **لا تعيد** خريطتي التسمية اليتيمتين (`hubPageTitles`, `canonicalTerms`).
+- **لا تضيّق** نموذج أدوار الفلاغز عن 6 أدوار.
+- **لا تحذف** تحويلات الطرق القديمة (redirects) قبل ثبوت صفر زيارات.
+- **لا تستخدم** فلاغ عميل كتفويض — RLS/RPC هي المرجع.
