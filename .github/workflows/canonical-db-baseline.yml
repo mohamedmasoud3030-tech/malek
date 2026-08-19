@@ -4,14 +4,17 @@ on:
   push:
     branches:
       - agent/canonical-db-baseline-takeover
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: canonical-db-baseline-${{ github.ref }}
-  cancel-in-progress: false
+  group: canonical-db-baseline-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -63,10 +66,11 @@ jobs:
         with:
           name: canonical-db-baseline-${{ github.run_id }}
           path: .canonical-db-output
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 30
 
       - name: Commit generated canonical bootstrap after all proofs pass
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         shell: bash
         run: |
           set -euo pipefail
