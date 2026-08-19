@@ -1,8 +1,8 @@
 # MALEK Feature Rollout Policy
 
-> **Version:** 1.0 — 2026-08-19  
+> **Version:** 1.1 — 2026-08-19  
 > **Owner:** Platform  
-> **Scope:** All feature flags defined in `rentrix-app/src/lib/feature-flags.ts`
+> **Scope:** All feature flags defined in `rentrix-app/src/lib/feature-flag-definitions.json` — the single canonical inventory shared by the browser evaluator (`feature-flags.ts`) and the release guard (`scripts/check-expired-flags.mjs`)
 
 ---
 
@@ -22,6 +22,25 @@
 - The change is a **database migration** — use migration-rollback, not a flag
 
 > **Rule:** A flag is a temporary circuit breaker, not a permanent configuration knob.
+
+---
+
+## 2. Evaluation order (authoritative)
+
+A flag is enabled for the current session only when **all** of these resolve to ON:
+
+```
+1. Known flag            — unknown key → OFF (fail closed)
+2. Kill switch           — VITE_KILL_<NAME>=false → OFF (highest precedence)
+3. Role eligibility      — roles gate fails closed for missing/unknown/unauthorized roles
+4. Deployment override   — VITE_FEATURE_<NAME>=true → ON
+5. Local preview         — localStorage ff:<name>=1|0 (staff only, after role gate)
+6. Definition default    — defaultValue from the JSON
+```
+
+> **Security invariant:** role eligibility (step 3) is evaluated **before** any ON override, so a rollout env var can never expose a restricted feature to an unauthorized role. Flags are presentation controls only — never authorization.
+
+> **Build-time note:** `VITE_*` values are browser build-time configuration in Vite. Changing them on Vercel **requires a rebuild/redeploy** before users receive the new bundle.
 
 ---
 
@@ -59,7 +78,7 @@ idea → alpha → beta → stable → deprecated → removed
 Every rollout follows these stages. Do not skip any.
 
 ### Stage 0 — Code complete
-- [ ] Flag definition added to `feature-flags.ts`
+- [ ] Flag definition added to `feature-flag-definitions.json`
 - [ ] Gated code reviewed (no auth bypass)
 - [ ] Tests pass with flag OFF and ON
 - [ ] Migration has rollback script
@@ -86,8 +105,8 @@ Every rollout follows these stages. Do not skip any.
 
 ### Stage 4 — Cleanup
 - [ ] Delete gated code (both branches)
-- [ ] Remove flag definition from `feature-flags.ts`
-- [ ] Remove env var from Vercel dashboard
+- [ ] Remove flag definition from `feature-flag-definitions.json`
+- [ ] Remove env var from Vercel dashboard (and redeploy)
 - [ ] Test that the feature works without the flag
 - [ ] Close the tracker issue
 
@@ -110,12 +129,12 @@ If a flagged feature causes a production incident:
 ```
 1. Go to Vercel Dashboard → Project → Environment Variables
 2. Add `VITE_KILL_<KEY> = false` to the **Production** environment
-3. Redeploy (or wait for the next automatic deploy)
+3. Redeploy — the new value is baked into the next build
 4. The feature is now OFF for all users
 5. Confirm by checking the deployment log
 ```
 
-No code change, no PR, no commit. Rollback in ≤ 5 minutes.
+No code change, no PR, no commit. Rollback in ≤ 5 minutes (one redeploy).
 
 ---
 
