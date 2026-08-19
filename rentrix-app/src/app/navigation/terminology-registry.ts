@@ -78,67 +78,10 @@ export const workspaceLabels: Record<string, string> = {
   system: 'إدارة النظام',
 };
 
-export const hubPageTitles: Record<string, string> = {
-  '/dashboard': 'لوحة التحكم',
-  '/properties': 'العقارات',
-  '/properties/new': 'إضافة عقار',
-  '/properties/$propertyId': 'تفاصيل العقار',
-  '/properties/$propertyId/edit': 'تعديل عقار',
-  '/owners': 'الملاك',
-  '/owners/$ownerId': 'ملف المالك',
-  '/tenants/$tenantId': 'ملف المستأجر',
-  '/people/$personId': 'ملف الشخص',
-  '/lands/$landId': 'ملف الأرض',
-  '/tenants': 'المستأجرون',
-  '/contracts': 'العقود',
-  '/contracts/new': 'إنشاء عقد',
-  '/contracts/$contractId': 'تفاصيل العقد',
-  '/contracts/$contractId/edit': 'تعديل عقد',
-  '/maintenance': 'التشغيل والصيانة',
-  '/service-providers': 'مزودو الخدمات',
-  '/service-providers/new': 'إضافة مزود خدمة',
-  '/service-providers/$providerId': 'ملف مزود الخدمة',
-  '/service-providers/$providerId/edit': 'تعديل مزود خدمة',
-  '/financials': 'المالية',
-  '/finance/collections': 'التحصيل والفواتير',
-  '/finance/expenses': 'المصروفات والمتأخرات',
-  '/finance/deposits': 'التأمينات وتسويات الملاك',
-  '/finance/banking': 'البنوك والعمولات',
-  '/invoices': 'الفواتير',
-  '/receipts': 'الإيصالات',
-  '/expenses': 'المصروفات',
-  '/arrears': 'المتأخرات',
-  '/deposits': 'التأمينات',
-  '/owner-settlements': 'تسويات الملاك',
-  '/bank-reconciliation': 'المطابقة البنكية',
-  '/commissions': 'العمولات',
-  '/reports': 'المحاسبة والتقارير',
-  '/accounting': 'المحاسبة والتقارير',
-  '/settings': 'الإعدادات',
-  '/ai-assistant': 'المساعد الذكي',
-  '/people': 'جهات التعامل',
-  '/leads': 'العملاء المحتملون',
-  '/communication': 'التواصل والمتابعات',
-  '/utilities': 'المرافق',
-  '/automation': 'الأتمتة',
-  '/documents-vault': 'خزينة المستندات',
-  '/units': 'الوحدات',
-  '/lands': 'الأراضي',
-  '/change-password': 'تغيير كلمة المرور',
-  '/audit-log': 'سجل التدقيق',
-  '/data-integrity': 'سلامة البيانات',
-  '/system': 'إدارة النظام',
-};
-
-export const canonicalTerms = {
-  expenses: 'المصروفات',
-  receipts: 'الإيصالات',
-  arrears: 'المتأخرات',
-  deposits: 'التأمينات',
-  tenants: 'المستأجرون',
-  owners: 'الملاك',
-  invoices: 'الفواتير',
-  commissions: 'العمولات',
-  bankReconciliation: 'المطابقة البنكية',
-  ownerSettlements: 'تسويات الملاك',
-} as const;
+// NOTE: A legacy `hubPageTitles` map (entity-centric page titles such as
+// «لوحة التحكم»/«التشغيل والصيانة») and a redundant `canonicalTerms` map
+// were removed here. They were orphan (zero consumers) and contradicted the
+// active task-centric `navigationLabels` used by the sidebar and hub page
+// headers (اليوم/المحفظة/التأجير/المال/الخدمات/التقارير والكشوف).
+// Single source of truth for visible naming is `navigationLabels` +
+// `workspaceLabels` below.
