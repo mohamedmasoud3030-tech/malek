@@ -91,10 +91,12 @@ values
   ('00000000-0000-0000-0000-000000000102', 'release-user@rentrix.test', 'Release User', 'USER', 'ACTIVE', true)
 on conflict (id) do update set role = excluded.role, status = excluded.status, is_active = excluded.is_active;
 
+-- Migration 08 removed OWNER and MEMBER from company_members.role.
+-- Updated to canonical six-role model: ADMIN (was OWNER) and USER (was MEMBER).
 insert into public.company_members (company_id, user_id, role)
 values
-  ('00000000-0000-4000-8000-000000000001', '00000000-0000-0000-0000-000000000101', 'OWNER'),
-  ('00000000-0000-4000-8000-000000000001', '00000000-0000-0000-0000-000000000102', 'MEMBER')
+  ('00000000-0000-4000-8000-000000000001', '00000000-0000-0000-0000-000000000101', 'ADMIN'),
+  ('00000000-0000-4000-8000-000000000001', '00000000-0000-0000-0000-000000000102', 'USER')
 on conflict (company_id, user_id) do update set role = excluded.role;
 
 -- The RATE payment path posts through the canonical per-company chart. Keep
