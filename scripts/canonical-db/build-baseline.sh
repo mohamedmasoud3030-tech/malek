@@ -225,10 +225,7 @@ verify_rebuild() {
 
 is_final_layout=false
 if [[ -d "$HISTORY_DIR" ]] && [[ -f "$BASELINE_PATH" ]]; then
-  migration_count="$(find supabase/migrations -maxdepth 1 -type f -name '*.sql' | wc -l | tr -d ' ')"
-  if [[ "$migration_count" == "1" ]]; then
-    is_final_layout=true
-  fi
+  is_final_layout=true
 fi
 
 if [[ "$is_final_layout" == "true" ]]; then
