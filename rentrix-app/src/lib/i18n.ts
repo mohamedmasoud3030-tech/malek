@@ -61,6 +61,7 @@ const sharedTranslationEntries = [
   ['maintenance', 'الصيانة', 'Maintenance'],
   ['serviceProviders', 'مزودو الخدمات', 'Service providers'],
   ['system', 'النظام', 'System'],
+  ['supportOperations', 'عمليات الدعم', 'Support operations'],
   ['auditLog', 'سجل التدقيق', 'Audit log'],
   ['dataIntegrity', 'سلامة البيانات', 'Data integrity'],
   ['changePassword', 'تغيير كلمة المرور', 'Change password'],
