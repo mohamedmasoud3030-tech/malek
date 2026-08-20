@@ -183,7 +183,7 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
               )}
             />
 
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               <OperationalMetricCard
                 label="إجمالي العقارات"
                 value={formatCount(controller.totalCount)}
@@ -195,12 +195,6 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
                 value={formatCount(linkedOwnerCount)}
                 hint="ضمن الصفحة الحالية"
                 icon={Handshake}
-              />
-              <OperationalMetricCard
-                label="تحتاج متابعة"
-                value={formatCount(attentionCount)}
-                hint="مالك أو اتفاقية تشغيل"
-                icon={TriangleAlert}
               />
             </div>
           </section>
