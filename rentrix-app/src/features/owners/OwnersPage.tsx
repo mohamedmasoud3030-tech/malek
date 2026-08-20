@@ -83,7 +83,7 @@ export function OwnersWorkspace({ embedded = false }: OwnersWorkspaceProps) {
           )}
         />
 
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2">
           <OperationalMetricCard
             label="إجمالي الملاك"
             value={formatCount(controller.summary.totalOwners)}
@@ -95,12 +95,6 @@ export function OwnersWorkspace({ embedded = false }: OwnersWorkspaceProps) {
             value={formatCount(controller.summary.activeOwners)}
             hint="متاحون للتشغيل والربط"
             icon={Users}
-          />
-          <OperationalMetricCard
-            label="عقارات مرتبطة"
-            value={formatCount(controller.summary.linkedPropertiesCount)}
-            hint="علاقات ملكية سارية"
-            icon={Building2}
           />
         </div>
       </section>
