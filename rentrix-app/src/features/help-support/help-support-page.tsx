@@ -50,14 +50,12 @@ import {
   type SupportRequestInput,
   type SupportUrgency,
 } from "./support-service";
-
 const articleOwnerLabels = {
   product: "المنتج",
   operations: "العمليات",
   security: "الأمن",
   finance: "المالية",
 } as const;
-
 const categoryLabels: Readonly<Record<SupportCategory, string>> = {
   HOW_TO: "سؤال عن طريقة العمل",
   ACCESS: "الحساب أو الصلاحيات",
@@ -66,14 +64,12 @@ const categoryLabels: Readonly<Record<SupportCategory, string>> = {
   PAYMENT_POSTING: "تحصيل أو قيد مالي غير واضح",
   SECURITY: "أمن أو خصوصية",
 };
-
 const urgencyLabels: Readonly<Record<SupportUrgency, string>> = {
   LOW: "منخفضة — سؤال لا يوقف العمل",
   NORMAL: "عادية — يوجد مسار بديل",
   HIGH: "عالية — مهمة أساسية متوقفة",
   CRITICAL: "حرجة — أمن، فقد بيانات، أو أثر مالي محتمل",
 };
-
 const statusLabels = {
   ACKNOWLEDGED: "تم الاستلام",
   IN_REVIEW: "قيد المراجعة",
@@ -81,15 +77,12 @@ const statusLabels = {
   RESOLVED: "تم الحل",
   CLOSED: "مغلق",
 } as const;
-
 const supportQueryKey = ["support", "my-requests"] as const;
-
 function currentSupportContextPath(): string {
   if (typeof window === "undefined") return "/help";
   const from = new URLSearchParams(window.location.search).get("from");
   return sanitizeSupportRoute(from || window.location.pathname);
 }
-
 function getInitialArticle(): string {
   if (typeof window === "undefined") return "first-office-setup";
   const requested = new URLSearchParams(window.location.search).get("article");
@@ -100,12 +93,10 @@ function getInitialArticle(): string {
     )
   );
 }
-
 function buildDeepLink(article: HelpArticle["links"][number]): string {
   if (!article.search) return article.to;
   return `${article.to}?${new URLSearchParams(article.search).toString()}`;
 }
-
 function ArticleCard({
   article,
   expanded,
@@ -192,7 +183,6 @@ function ArticleCard({
     </Card>
   );
 }
-
 function KnowledgeBase() {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<HelpArticleCategory | "all">("all");
@@ -285,7 +275,6 @@ function KnowledgeBase() {
     </section>
   );
 }
-
 function SystemStatusCard() {
   const [online, setOnline] = useState(
     () => typeof navigator === "undefined" || navigator.onLine,
@@ -336,7 +325,6 @@ function SystemStatusCard() {
     </Card>
   );
 }
-
 function SupportIntake() {
   const queryClient = useQueryClient();
   const [receipt, setReceipt] = useState<Awaited<
@@ -370,7 +358,6 @@ function SupportIntake() {
       await queryClient.invalidateQueries({ queryKey: supportQueryKey });
     },
   });
-
   function submit(event: FormEvent) {
     event.preventDefault();
     const input: SupportRequestInput = {
@@ -388,7 +375,6 @@ function SupportIntake() {
     setReceipt(null);
     mutation.mutate(input);
   }
-
   const errorMessage =
     mutation.error instanceof Error ? mutation.error.message : null;
 
@@ -635,7 +621,6 @@ function SupportIntake() {
     </section>
   );
 }
-
 export function HelpSupportPage() {
   return (
     <PageLayout size="wide" dir="rtl" lang="ar" visualVariant="malek-pro">
