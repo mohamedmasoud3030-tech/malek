@@ -12,7 +12,7 @@ import { env } from '@/lib/env';
 import { formatLatinNumber } from '@/lib/formatters';
 import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
-import type { AiAssistantAction, AiAssistantContext, AiAssistantMessage } from './types';
+import type { AiAssistantAction, AiAssistantContext, AiAssistantMessage, AiAssistantResponse } from './types';
 import { useSmartAssistant } from './use-smart-assistant';
 import { isAiAssistantConfigurationError } from './services/ai-assistant-service';
 
@@ -84,6 +84,16 @@ function getErrorMessage(error: unknown): string | null {
   return error instanceof Error ? error.message : 'تعذر تشغيل مساعد الذكاء الاصطناعي.';
 }
 
+function formatAssistantResponse(response: AiAssistantResponse): string {
+  const sourceLabel = response.source === 'model'
+    ? 'تمت الصياغة بالذكاء الاصطناعي'
+    : response.source === 'fallback'
+      ? 'رد احتياطي دون اعتماد على نتيجة المزود'
+      : 'ملخص حتمي محسوب دون استخدام نموذج';
+  const caveats = response.caveats.length > 0 ? `\n\nتنبيهات:\n${response.caveats.map((item) => `• ${item}`).join('\n')}` : '';
+  return `${response.reply}\n\n— ${sourceLabel}${caveats}`;
+}
+
 function AssistantCapabilities() {
   return (
     <div
@@ -152,7 +162,7 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
       {
         onSuccess: (response) => {
           setLatestContext(response.context);
-          setMessages((current) => [...current, createMessage('assistant', response.reply, action)]);
+          setMessages((current) => [...current, createMessage('assistant', formatAssistantResponse(response), action)]);
         },
         onError: (error) => {
           if (isAiAssistantConfigurationError(error)) setConfigurationMissing(true);
@@ -180,7 +190,7 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-warning-foreground"><AlertTriangle className="size-5" aria-hidden="true" />{translateSharedLabel('aiUnavailable', getAppLanguageState().language)}</CardTitle>
             <CardDescription>
-              اضبط دالة Supabase Edge Function باسم <span dir="ltr">ai-assistant</span> ومتغير <span dir="ltr">AI_PROVIDER_API_KEY</span>، ثم أعد تحميل الصفحة. لا يتم استخدام أي مفتاح مزود من الواجهة الأمامية.
+              اضبط دالة Supabase Edge Function باسم <span dir="ltr">ai-assistant</span> ومتغيرات المزود المعتمدة في الخادم، ثم أعد تحميل الصفحة. لا يتم استخدام أي مفتاح مزود من الواجهة الأمامية، ولا ينبغي إدخال بيانات شخصية في السؤال.
             </CardDescription>
             <div className="pt-2">
               <Button asChild variant="secondary" className="min-h-11">
