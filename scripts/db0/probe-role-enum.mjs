@@ -6,9 +6,7 @@
 // A CHECK constraint cannot widen an enum, so this probe determines whether
 // WP-01 six-role authorization is physically representable.
 
-import { createDatabase, replay } from './lib/replay.mjs';
-
-import { listMigrations } from './lib/replay.mjs';
+import { createDatabase, listMigrations, replay } from './lib/replay.mjs';
 
 const files = await listMigrations();
 if (files.length === 1 && String(files[0]).includes('20260901000000_canonical_baseline')) {
