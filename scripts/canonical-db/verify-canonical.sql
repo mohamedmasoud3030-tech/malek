@@ -177,3 +177,53 @@ begin
   end if;
 end
 $gl_verify$;
+
+
+-- Forward canonical platform foundations must exist, remain RLS-protected,
+-- and deny browser table writes. Feature-specific behavior is exercised by
+-- authenticated contract tests after deterministic seed.
+do $canonical_platform_foundations$
+declare
+  v_table text;
+  v_bad integer;
+begin
+  foreach v_table in array array[
+    'ai_assistant_budget_reservations',
+    'support_requests',
+    'support_request_events',
+    'communication_preferences',
+    'communication_delivery_outbox',
+    'admin_support_audit_events',
+    'admin_user_access_change_proposals',
+    'background_jobs',
+    'background_job_events',
+    'background_job_schedules'
+  ] loop
+    if to_regclass('public.' || v_table) is null then
+      raise exception 'CANONICAL_PLATFORM_TABLE_MISSING: %', v_table;
+    end if;
+    select count(*) into v_bad
+      from pg_class c join pg_namespace n on n.oid=c.relnamespace
+      where n.nspname='public' and c.relname=v_table and c.relrowsecurity;
+    if v_bad <> 1 then
+      raise exception 'CANONICAL_PLATFORM_RLS_MISSING: %', v_table;
+    end if;
+    if has_table_privilege('authenticated', 'public.' || v_table, 'INSERT, UPDATE, DELETE') then
+      raise exception 'CANONICAL_PLATFORM_BROWSER_WRITE_GRANT: %', v_table;
+    end if;
+  end loop;
+
+  if to_regprocedure('public.reserve_ai_assistant_budget_atomic(uuid,bigint,integer,bigint)') is null
+     or to_regprocedure('public.create_support_request_atomic(text,text,text,text,text,text,text)') is null
+     or to_regprocedure('public.prepare_communication_preview_atomic(text,text,uuid,text,uuid,uuid,text,boolean,boolean)') is null
+     or to_regprocedure('public.triage_support_request_atomic(uuid,text,text,text,uuid)') is null
+     or to_regprocedure('public.enqueue_automation_rule_job_atomic(text,uuid)') is null
+     or to_regprocedure('public.claim_background_jobs_atomic(uuid,uuid,integer)') is null then
+    raise exception 'CANONICAL_PLATFORM_RPC_MISSING';
+  end if;
+
+  if has_table_privilege('authenticated', 'public.users', 'INSERT, UPDATE, DELETE') then
+    raise exception 'CANONICAL_USERS_BROWSER_WRITE_GRANT';
+  end if;
+end
+$canonical_platform_foundations$;
