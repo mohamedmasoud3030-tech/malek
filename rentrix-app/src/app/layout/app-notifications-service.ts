@@ -10,6 +10,24 @@ export type AppNotification = Readonly<{
   type: string | null;
 }>;
 
+const sensitivePreviewPattern = /password|token|secret|authorization\s*:|[^\s@]+@[^\s@]+\.[^\s@]+|(?:\d[\s-]*){8,}/i;
+const identifierInUrlPattern = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|@/i;
+const allowedLinkPrefixes = ['/dashboard', '/settings', '/contracts', '/financials', '/maintenance', '/reports', '/help'];
+
+export function sanitizeNotificationPreview(value: unknown, fallback: string, maxLength: number): string {
+  if (typeof value !== 'string') return fallback;
+  const trimmed = value.trim();
+  if (!trimmed || sensitivePreviewPattern.test(trimmed)) return fallback;
+  return trimmed.slice(0, maxLength);
+}
+
+export function sanitizeNotificationLink(value: unknown): string {
+  if (typeof value !== 'string' || !value.startsWith('/') || value.startsWith('//') || identifierInUrlPattern.test(value)) {
+    return '/dashboard';
+  }
+  return allowedLinkPrefixes.some((prefix) => value === prefix || value.startsWith(`${prefix}?`)) ? value : '/dashboard';
+}
+
 export async function listAppNotifications(): Promise<AppNotification[]> {
   const { data, error } = await (supabase as any)
     .from('app_notifications')
@@ -19,17 +37,18 @@ export async function listAppNotifications(): Promise<AppNotification[]> {
     .limit(30);
   if (error) throw error;
   return (data ?? []).map((row: any) => ({
-    id: row.id,
-    title: row.title || 'إشعار',
-    message: row.message || '',
-    link: row.link || '/dashboard',
+    id: String(row.id),
+    title: sanitizeNotificationPreview(row.title, 'إشعار', 120),
+    message: sanitizeNotificationPreview(row.message, 'يوجد تحديث يحتاج مراجعة داخل MALEK.', 240),
+    link: sanitizeNotificationLink(row.link),
     isRead: Boolean(row.is_read),
-    createdAt: row.created_at || '',
-    type: row.type ?? null,
+    createdAt: typeof row.created_at === 'string' ? row.created_at : '',
+    type: typeof row.type === 'string' ? row.type : null,
   }));
 }
 
 export async function markAppNotificationRead(id: string) {
+  if (!id.trim() || id.length > 200) throw new Error('معرف الإشعار غير صالح.');
   const { error } = await (supabase as any).from('app_notifications').update({ is_read: true }).eq('id', id);
   if (error) throw error;
 }

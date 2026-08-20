@@ -62,7 +62,7 @@ vi.mock('./useContractDocuments', () => ({
   useDeleteContractDocument: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 vi.mock('@/services/pdfService', () => ({ exportContractToPdf: vi.fn() }));
-vi.mock('@/services/action-service', () => ({ openWhatsApp: vi.fn(), shareOrCopy: vi.fn().mockResolvedValue('copied') }));
+vi.mock('@/services/action-service', () => ({ shareOrCopy: vi.fn().mockResolvedValue('copied') }));
 
 function activeContract() {
   return {

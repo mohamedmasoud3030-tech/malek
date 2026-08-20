@@ -1,11 +1,9 @@
-import { buildWhatsAppUrl, openWhatsApp } from './whatsapp';
-
 /**
  * Browser action boundary for release-candidate surfaces.
  *
  * Pages call these small adapters instead of duplicating browser-specific
- * print/share/WhatsApp behavior. Provider integrations remain outside the UI;
- * these helpers only open native/browser hand-offs and never mutate domain data.
+ * print/share behavior. Provider integrations remain outside the UI;
+ * these helpers use explicit native/browser hand-offs and never mutate domain data.
  */
 
 export type SharePayload = Readonly<{
@@ -37,15 +35,16 @@ export async function shareOrCopy(payload: SharePayload): Promise<'shared' | 'co
     return 'shared';
   }
 
-  if (typeof navigator !== 'undefined' && navigator.clipboard && payload.url) {
-    await navigator.clipboard.writeText(payload.url);
-    return 'copied';
+  if (typeof navigator !== 'undefined' && navigator.clipboard) {
+    const safeValue = payload.text ?? payload.url;
+    if (safeValue) {
+      await navigator.clipboard.writeText(safeValue);
+      return 'copied';
+    }
   }
 
   return 'unavailable';
 }
-
-export { buildWhatsAppUrl, openWhatsApp };
 
 export function downloadTextFile(filename: string, contents: string, mimeType = 'text/plain;charset=utf-8'): void {
   if (typeof document === 'undefined' || typeof URL === 'undefined') return;

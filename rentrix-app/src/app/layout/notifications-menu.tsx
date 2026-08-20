@@ -241,14 +241,11 @@ export function NotificationsMenu({
                         >
                           <span className="min-w-0 flex-1">
                             <span className="block truncate text-[12px] font-bold text-foreground">
-                              {request.requester_name?.trim() || request.requester_email || 'مستخدم مسجل'}
+                              طلب صلاحية جديد
                             </span>
                             <span className="mt-0.5 block truncate text-[11px] font-semibold text-muted-foreground">
                               {getPermissionLabel(request.permission)}
                             </span>
-                            {request.reason ? (
-                              <span className="mt-0.5 block truncate text-[10px] font-medium text-muted-foreground">{request.reason}</span>
-                            ) : null}
                           </span>
                           <StatusBadge tone="warning" dot>قيد المراجعة</StatusBadge>
                           <span className="shrink-0 rounded-lg bg-warning/15 px-2 py-1 text-[10px] font-extrabold text-warning">مراجعة</span>

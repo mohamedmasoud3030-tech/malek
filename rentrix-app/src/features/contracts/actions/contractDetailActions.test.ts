@@ -10,7 +10,7 @@ vi.mock('@/services/documents/DocumentService', () => ({
   },
 }));
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
-vi.mock('@/services/action-service', () => ({ openWhatsApp: vi.fn(), shareOrCopy: vi.fn(async () => 'copied') }));
+vi.mock('@/services/action-service', () => ({ shareOrCopy: vi.fn(async () => 'copied') }));
 
 const { documentService } = await import('@/services/documents/DocumentService');
 

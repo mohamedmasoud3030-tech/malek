@@ -14,27 +14,27 @@ const fixtureRules = [
     id: 'r-01',
     icon: CalendarClock,
     title: 'تنبيه انتهاء العقود',
-    description: 'إشعار تلقائي قبل انتهاء أي عقد بـ 45 يوماً مع قائمة الوحدات المرتبطة.',
+    description: 'تنبيه داخلي قبل انتهاء العقد؛ البريد الخارجي معاينة غير مفعلة.',
     schedule: 'يومياً 8:00 صباحاً',
-    channel: 'داخل التطبيق + بريد',
+    channel: 'داخل التطبيق',
     active: true,
   },
   {
     id: 'r-02',
     icon: MessageSquareText,
     title: 'تذكير دفع الإيجار',
-    description: 'رسالة واتساب مهذبة للمستأجر قبل استحقاق الفاتورة بـ 3 أيام.',
+    description: 'معاينة واتساب آمنة تتطلب موافقة ومراجعة بشرية ولا تُرسل تلقائياً.',
     schedule: 'قبل الاستحقاق بـ 3 أيام',
-    channel: 'واتساب',
-    active: true,
+    channel: 'واتساب — معاينة',
+    active: false,
   },
   {
     id: 'r-03',
     icon: BellRing,
     title: 'إشعار المتأخرات الأسبوعي',
-    description: 'ملخص أعمار الديون والفواتير المتجاوزة يصل مدير المكتب كل أحد.',
+    description: 'ملخص داخلي مجمع للمتأخرات؛ لا توجد قناة بريد حية.',
     schedule: 'كل أحد 9:00 صباحاً',
-    channel: 'بريد إلكتروني',
+    channel: 'داخل التطبيق',
     active: true,
   },
   {
@@ -63,7 +63,7 @@ export function AutomationE2EFixture() {
       <PageLayout dir="rtl" size="wide">
         <PageHeader
           title="مركز الأتمتة والتذكيرات"
-          description="قواعد تشغيل جاهزة تراقب العقود والإيجار والصيانة نيابة عنك — فعّلها مرة واحدة وتعمل بصمت كل يوم."
+          description="قواعد داخلية مجمعة للعقود والإيجار والصيانة؛ القنوات الخارجية تبقى معاينة متوقفة حتى اعتماد مزود وموافقة المستلم."
         />
 
         <div className="grid gap-3 md:grid-cols-2">

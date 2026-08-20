@@ -1,4 +1,4 @@
-import { AlertTriangle, BellRing, CalendarClock, ExternalLink, Mail, MessageCircle, PauseCircle, PlayCircle, RefreshCw, Smartphone, Wrench } from 'lucide-react';
+import { AlertTriangle, BellRing, CalendarClock, Mail, MessageCircle, PauseCircle, PlayCircle, RefreshCw, Smartphone, Wrench } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { AsyncContentState } from '@/components/async-content-state';
 import { Badge } from '@/components/ui/badge';
@@ -20,7 +20,6 @@ import {
   toggleAutomationRule,
 } from '../automation-service';
 import { automationTemplatePreviews } from '../automation-catalog';
-import { buildTemplateWhatsAppDemoUrl } from '../automation-whatsapp';
 import type { AutomationChannel } from '../types';
 import { formatLatinDateTime } from '@/lib/formatters';
 
@@ -235,7 +234,6 @@ export function AutomationCenterView() {
         <div className="grid gap-3 md:grid-cols-2">
           {automationTemplatePreviews.map((template) => {
             const Icon = channelIcon[template.channel as AutomationChannel] || MessageCircle;
-            const whatsappPreviewUrl = buildTemplateWhatsAppDemoUrl(template);
             return (
               <Card key={template.id}>
                 <CardHeader className="pb-2">
@@ -244,11 +242,7 @@ export function AutomationCenterView() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <pre className="whitespace-pre-wrap rounded-2xl bg-muted/50 p-3 text-xs font-bold leading-6 text-muted-foreground">{template.body}</pre>
-                  {whatsappPreviewUrl ? (
-                    <Button type="button" variant="secondary" size="sm" asChild>
-                      <a href={whatsappPreviewUrl} target="_blank" rel="noreferrer"><ExternalLink className="size-4" />معاينة واتساب</a>
-                    </Button>
-                  ) : null}
+                  <Badge variant="outline">معاينة محلية فقط · لا يوجد إرسال خارجي</Badge>
                 </CardContent>
               </Card>
             );
