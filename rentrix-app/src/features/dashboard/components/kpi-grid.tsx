@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { AlertTriangle, Receipt, TrendingUp, WalletCards } from 'lucide-react';
+import { HandCoins, Percent, Receipt, TrendingUp } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { LoadingState } from '@/components/ui/loading-state';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -47,9 +47,11 @@ function DashboardKpiCard({ item }: { item: DashboardKpi }) {
 }
 
 /**
- * KPI summary cards. Each KPI is a decision destination, so the whole card is
- * a real link (data-dashboard-kpi-link) into the owning surface — never a
- * click-handler div — preserving keyboard navigation and focus visibility.
+ * Secondary decision KPIs — deliberately complements, never repeats, the
+ * executive hero strip (which already surfaces تحصيل / متأخرات / إشغال /
+ * عقود نشطة). These four add a different decision context: the bottom-line
+ * cash position, collection efficiency, outflow, and the owner-money
+ * liability the office owes.
  */
 export function KpiGrid({ snapshot, isLoading, settings }: KpiGridProps) {
   if (isLoading) {
@@ -59,56 +61,52 @@ export function KpiGrid({ snapshot, isLoading, settings }: KpiGridProps) {
   const money = (value: number | null | undefined) => (
     typeof value === 'number' && Number.isFinite(value) ? formatCompanyMoney(settings, value) : 'غير متاح'
   );
-  const overdue = snapshot?.arrears.totalOverdue;
   const net = snapshot?.netCash;
-  const collected = snapshot?.collections.collectedAmount;
-  const rentDue = snapshot?.billing.invoicedAmount;
-  const outstanding = snapshot?.collections.outstandingAmount;
-  const invoiceCount = snapshot?.billing.invoicesCount;
-  const paymentsCount = snapshot?.collections.paymentsCount;
+  const collectionRate = snapshot?.collections.collectionRate;
+  const expensesTotal = snapshot?.expenses.totalAmount;
   const expensesCount = snapshot?.expenses.count;
-  const overdueInvoiceCount = snapshot?.arrears.overdueCount;
+  const ownerNetPayable = snapshot?.ownerFunds.netPayable;
+  const settlementsDraft = snapshot?.ownerFunds.settlementsDraft;
 
   const items: DashboardKpi[] = [
-    {
-      label: 'التحصيل الشهري',
-      value: money(collected),
-      icon: WalletCards,
-      support: rentDue !== undefined ? `من ${money(rentDue)} مستحق · ${paymentsCount ?? 'غير متاح'} دفعات` : 'تعذر تحميل المستحقات',
-      stateTone: (collected ?? 0) > 0 ? 'success' : 'neutral',
-      stateLabel: (collected ?? 0) > 0 ? 'محصّل' : 'بدون تحصيل',
-      to: '/financials',
-      destinationLabel: 'المركز المالي',
-    },
-    {
-      label: 'المتبقي والمتأخر',
-      value: money(outstanding),
-      icon: AlertTriangle,
-      support: overdue !== undefined ? `${money(overdue)} متأخر · ${overdueInvoiceCount ?? 'غير متاح'} فاتورة` : 'تعذر تحميل المتأخرات',
-      stateTone: (overdue ?? 0) > 0 ? 'danger' : 'success',
-      stateLabel: (overdue ?? 0) > 0 ? 'إجراء مطلوب' : 'سليم',
-      to: '/arrears',
-      destinationLabel: 'سجل المتأخرات',
-    },
     {
       label: 'صافي النقد',
       value: money(net),
       icon: TrendingUp,
-      support: 'بعد خصم المصروفات ضمن الفترة الحالية',
+      support: 'الموقف النقدي بعد خصم المصروفات ضمن الفترة الحالية',
       stateTone: (net ?? 0) >= 0 ? 'success' : 'danger',
       stateLabel: (net ?? 0) >= 0 ? 'موجب' : 'سالب',
       to: '/reports',
       destinationLabel: 'التقارير المالية',
     },
     {
+      label: 'نسبة التحصيل',
+      value: typeof collectionRate === 'number' && Number.isFinite(collectionRate) ? `${collectionRate}%` : 'غير متاح',
+      icon: Percent,
+      support: 'كفاءة تحصيل المستحقات ضمن الفترة',
+      stateTone: (collectionRate ?? 0) >= 80 ? 'success' : (collectionRate ?? 0) >= 50 ? 'warning' : 'danger',
+      stateLabel: (collectionRate ?? 0) >= 80 ? 'ممتاز' : (collectionRate ?? 0) >= 50 ? 'مراقبة' : 'منخفض',
+      to: '/financials',
+      destinationLabel: 'المركز المالي',
+    },
+    {
       label: 'المصروفات',
-      value: money(snapshot?.expenses.totalAmount),
+      value: money(expensesTotal),
       icon: Receipt,
       support: `${expensesCount ?? 'غير متاح'} قيود مصروفات خلال الفترة`,
       stateTone: 'neutral',
-      stateLabel: invoiceCount !== undefined ? `${invoiceCount} فواتير` : undefined,
       to: '/expenses',
       destinationLabel: 'سجل المصروفات',
+    },
+    {
+      label: 'مستحقات الملاك',
+      value: money(ownerNetPayable),
+      icon: HandCoins,
+      support: settlementsDraft !== undefined ? `${settlementsDraft} تسوية بانتظار الاعتماد` : 'التزامات الملاك ضمن الفترة',
+      stateTone: (ownerNetPayable ?? 0) > 0 ? 'warning' : 'success',
+      stateLabel: (settlementsDraft ?? 0) > 0 ? 'بانتظار الاعتماد' : 'لا تعليق',
+      to: '/owner-settlements',
+      destinationLabel: 'تسويات الملاك',
     },
   ];
 
