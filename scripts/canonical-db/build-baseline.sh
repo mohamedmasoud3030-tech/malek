@@ -236,7 +236,8 @@ if [[ "$is_final_layout" == "true" ]]; then
   diff -u "$OUT_DIR/final-rebuild-1.normalized.sql" "$OUT_DIR/final-rebuild-2.normalized.sql"
   sha256sum "$OUT_DIR/final-rebuild-1.normalized.sql" "$OUT_DIR/final-rebuild-2.normalized.sql" \
     | tee "$OUT_DIR/final-schema-sha256.txt"
-  printf 'mode=verify-final\nactive_migrations=1\nrebuild_1=PASS\nrebuild_2=PASS\nschema_diff=ZERO\n' \
+  active_migrations="$(find "$ROOT_DIR/supabase/migrations" -maxdepth 1 -type f -name '*.sql' | wc -l | tr -d ' ')"
+  printf 'mode=verify-final\nactive_migrations=%s\nrebuild_1=PASS\nrebuild_2=PASS\nschema_diff=ZERO\n' "$active_migrations" \
     | tee "$OUT_DIR/result.env"
   exit 0
 fi
