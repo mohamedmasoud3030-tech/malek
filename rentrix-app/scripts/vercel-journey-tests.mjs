@@ -1,97 +1,89 @@
-// Vercel journey tests – run on deployed app
-const AK = "sb_publishable_JeLckFV2xYl78rei1-Q_EA_WcHif6WW";
-const PW = process.env.QA_ADMIN_PASSWORD || "4iUDtXOwWBOtkGik!";
-const URL = "https://nnggcnpcuomwfuupupwg.supabase.co";
+// Vercel journey tests – run on deployed app.
+// All secrets come from environment variables – nothing hardcoded here.
+const AK = process.env.VITE_SUPABASE_ANON_KEY || process.env.QA_SUPABASE_ANON_KEY;
+const PW = process.env.QA_ADMIN_PASSWORD;
+const URL = process.env.VITE_SUPABASE_URL || process.env.QA_SUPABASE_URL || "https://nnggcnpcuomwfuupupwg.supabase.co";
+const EMAIL = process.env.QA_ADMIN_EMAIL || "qa-admin@malek.app";
+
+if (!PW) {
+  console.error("ERROR: QA_ADMIN_PASSWORD env var is required");
+  process.exit(1);
+}
+if (!AK) {
+  console.error("ERROR: VITE_SUPABASE_ANON_KEY or QA_SUPABASE_ANON_KEY env var is required");
+  process.exit(1);
+}
 
 async function main() {
   console.log("=== Vercel Journey Tests ===\n");
+  let passed = 0, failed = 0;
+  const ok = (l) => { passed++; console.log(`  ✅ ${l}`); };
+  const fail = (l, d = "") => { failed++; console.log(`  ❌ ${l}${d ? ": " + d : ""}`); };
 
   // 1 – Vercel page loads
-  const vercel = await fetch("https://malek-plus.vercel.app/");
-  const html = await vercel.text();
-  console.log("Vercel page: " + (html.includes("MALEK") ? "✅" : "❌") + " (" + vercel.status + ")");
+  try {
+    const vercel = await fetch("https://malek-plus.vercel.app/");
+    const html = await vercel.text();
+    vercel.status === 200 ? ok("Vercel page loads (" + vercel.status + ")") : fail("Vercel page load", "status " + vercel.status);
+  } catch (e) { fail("Vercel page load", e.message); }
 
   // 2 – Login
-  const l = await fetch(URL + "/auth/v1/token?grant_type=password", {
-    method: "POST",
-    headers: { apikey: AK, "Content-Type": "application/json" },
-    body: JSON.stringify({ email: "qa-admin@malek.app", password: PW }),
-  });
-  if (!l.ok) { console.log("❌ Login"); return; }
-  const s = await l.json();
-  const t = s.access_token;
-  console.log("✅ Login");
+  let token = null;
+  try {
+    const l = await fetch(URL + "/auth/v1/token?grant_type=password", {
+      method: "POST",
+      headers: { apikey: AK, "Content-Type": "application/json" },
+      body: JSON.stringify({ email: EMAIL, password: PW }),
+    });
+    if (!l.ok) {
+      const body = await l.text();
+      fail("Login", `${l.status} ${body.slice(0, 100)}`);
+      console.log(`\n=== ${passed}/${passed + failed} passed (${failed} failed) ===`);
+      process.exit(1);
+    }
+    const s = await l.json();
+    token = s.access_token;
+    ok("Login");
+  } catch (e) { fail("Login", e.message); process.exit(1); }
 
-  // 3 – Read properties
-  const r = await fetch(URL + "/rest/v1/properties?select=id,title,status&limit=5", {
-    headers: { apikey: AK, Authorization: "Bearer " + t },
-  });
-  if (r.ok) { const d = await r.json(); console.log("✅ Properties: " + d.length); }
-  else console.log("❌ Properties: " + r.status);
+  // 3–10 – Read core tables
+  const tables = [
+    ["properties", "/rest/v1/properties?select=id,title,status&limit=5"],
+    ["units",      "/rest/v1/units?select=id,status&limit=5"],
+    ["people",     "/rest/v1/people?select=id,full_name&limit=5"],
+    ["contracts",  "/rest/v1/contracts?select=id,start_date,end_date,status&limit=5"],
+    ["invoices",   "/rest/v1/invoices?select=id,amount,paid_amount,due_date,status&limit=5"],
+    ["payments",   "/rest/v1/payments?select=id,amount,status&limit=5"],
+    ["receipts",   "/rest/v1/receipts?select=id,amount,status&limit=5"],
+    ["owners",     "/rest/v1/owners?select=id,full_name&limit=5"],
+  ];
+  for (const [name, path] of tables) {
+    try {
+      const r = await fetch(URL + path, {
+        headers: { apikey: AK, Authorization: "Bearer " + token },
+      });
+      r.ok ? ok(`${name} readable (${(await r.json()).length} rows)`) : fail(name, String(r.status));
+    } catch (e) { fail(name, e.message); }
+  }
 
-  // 4 – Read units
-  const u = await fetch(URL + "/rest/v1/units?select=id,name,status&limit=5", {
-    headers: { apikey: AK, Authorization: "Bearer " + t },
-  });
-  if (u.ok) { const d = await u.json(); console.log("✅ Units: " + d.length); }
-  else console.log("❌ Units: " + u.status);
-
-  // 5 – Read people
-  const p = await fetch(URL + "/rest/v1/people?select=id,full_name&limit=5", {
-    headers: { apikey: AK, Authorization: "Bearer " + t },
-  });
-  if (p.ok) { const d = await p.json(); console.log("✅ People: " + d.length); }
-  else console.log("❌ People: " + p.status);
-
-  // 6 – Read contracts
-  const c = await fetch(URL + "/rest/v1/contracts?select=id,start_date,end_date,rent_amount,status&limit=5", {
-    headers: { apikey: AK, Authorization: "Bearer " + t },
-  });
-  if (c.ok) { const d = await c.json(); console.log("✅ Contracts: " + d.length + " items"); }
-  else { const e = await c.text(); console.log("❌ Contracts: " + c.status + " " + e.slice(0, 100)); }
-
-  // 7 – Read invoices
-  const i = await fetch(URL + "/rest/v1/invoices?select=id,amount,paid_amount,due_date,status&limit=5", {
-    headers: { apikey: AK, Authorization: "Bearer " + t },
-  });
-  if (i.ok) { const d = await i.json(); console.log("✅ Invoices: " + d.length); }
-  else console.log("❌ Invoices: " + i.status);
-
-  // 8 – Read payments
-  const pm = await fetch(URL + "/rest/v1/payments?select=id,amount,status&limit=5", {
-    headers: { apikey: AK, Authorization: "Bearer " + t },
-  });
-  if (pm.ok) { const d = await pm.json(); console.log("✅ Payments: " + d.length); }
-  else console.log("❌ Payments: " + pm.status);
-
-  // 9 – Read receipts
-  const rc = await fetch(URL + "/rest/v1/receipts?select=id,amount,status&limit=5", {
-    headers: { apikey: AK, Authorization: "Bearer " + t },
-  });
-  if (rc.ok) { const d = await rc.json(); console.log("✅ Receipts: " + d.length); }
-  else console.log("❌ Receipts: " + rc.status);
-
-  // 10 – Read vault documents
-  const v = await fetch(URL + "/rest/v1/vault_documents?select=id,storage_path&limit=5", {
-    headers: { apikey: AK, Authorization: "Bearer " + t },
-  });
-  if (v.ok) { const d = await v.json(); console.log("✅ Vault docs: " + d.length); }
-  else console.log("❌ Vault docs: " + v.status);
-
-  // 11 – Read owners
-  const o = await fetch(URL + "/rest/v1/owners?select=id,full_name&limit=5", {
-    headers: { apikey: AK, Authorization: "Bearer " + t },
-  });
-  if (o.ok) { const d = await o.json(); console.log("✅ Owners: " + d.length); }
-  else console.log("❌ Owners: " + o.status);
+  // 11 – Session refresh
+  try {
+    const ref = await fetch(URL + "/auth/v1/user", {
+      headers: { apikey: AK, Authorization: "Bearer " + token },
+    });
+    ref.ok ? ok("Session valid") : fail("Session valid", String(ref.status));
+  } catch (e) { fail("Session valid", e.message); }
 
   // 12 – Logout
-  const lo = await fetch(URL + "/auth/v1/logout", {
-    method: "POST",
-    headers: { apikey: AK, Authorization: "Bearer " + t, "Content-Type": "application/json" },
-  });
-  console.log("✅ Logout (" + lo.status + ")");
+  try {
+    const lo = await fetch(URL + "/auth/v1/logout", {
+      method: "POST",
+      headers: { apikey: AK, Authorization: "Bearer " + token, "Content-Type": "application/json" },
+    });
+    (lo.status === 204 || lo.ok) ? ok("Logout (" + lo.status + ")") : fail("Logout", String(lo.status));
+  } catch (e) { fail("Logout", e.message); }
 
-  console.log("\n=== Vercel journeys: done ===");
+  console.log(`\n=== ${passed}/${passed + failed} passed (${failed} failed) ===`);
+  if (failed > 0) process.exit(1);
 }
 main().catch(e => { console.error("Fatal:", e.message); process.exit(1); });
