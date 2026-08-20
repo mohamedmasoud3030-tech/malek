@@ -9,32 +9,6 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 export type Database = {
   public: {
     Tables: {
-      account_balances: {
-        Row: {
-          account_id: string;
-          balance: number | null;
-          company_id: string;
-        };
-        Insert: {
-          account_id: string;
-          balance?: number | null;
-          company_id?: string;
-        };
-        Update: {
-          account_id?: string;
-          balance?: number | null;
-          company_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'account_balances_company_id_fkey';
-            columns: ['company_id'];
-            isOneToOne: false;
-            referencedRelation: 'companies';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
       accounting_periods: {
         Row: {
           id: string;
@@ -355,30 +329,6 @@ export type Database = {
           old_value?: Json | null;
           new_value?: Json | null;
           action_timestamp?: string;
-        };
-        Relationships: [];
-      };
-      auto_backups: {
-        Row: {
-          id: string;
-          created_at: string | null;
-          size: number | null;
-          checksum: string | null;
-          updated_at: string | null;
-        };
-        Insert: {
-          id: string;
-          created_at?: string | null;
-          size?: number | null;
-          checksum?: string | null;
-          updated_at?: string | null;
-        };
-        Update: {
-          id?: string;
-          created_at?: string | null;
-          size?: number | null;
-          checksum?: string | null;
-          updated_at?: string | null;
         };
         Relationships: [];
       };
@@ -985,44 +935,6 @@ export type Database = {
           },
         ];
       };
-      budgets: {
-        Row: {
-          id: string;
-          year: number | null;
-          items: Json | null;
-          notes: string | null;
-          created_at: string | null;
-          updated_at: string | null;
-          company_id: string;
-        };
-        Insert: {
-          id: string;
-          year?: number | null;
-          items?: Json | null;
-          notes?: string | null;
-          created_at?: string | null;
-          updated_at?: string | null;
-          company_id?: string;
-        };
-        Update: {
-          id?: string;
-          year?: number | null;
-          items?: Json | null;
-          notes?: string | null;
-          created_at?: string | null;
-          updated_at?: string | null;
-          company_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'budgets_company_id_fkey';
-            columns: ['company_id'];
-            isOneToOne: false;
-            referencedRelation: 'companies';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
       commissions: {
         Row: {
           id: string;
@@ -1564,7 +1476,7 @@ export type Database = {
           {
             foreignKeyName: 'company_settings_company_id_fkey';
             columns: ['company_id'];
-            isOneToOne: false;
+            isOneToOne: true;
             referencedRelation: 'companies';
             referencedColumns: ['id'];
           },
@@ -2173,7 +2085,7 @@ export type Database = {
           end_date: string;
           rent_amount: number;
           payment_cycle: 'monthly' | 'quarterly' | 'semi_annual' | 'annual';
-          status: 'draft' | 'active' | 'expired' | 'terminated' | 'ENDED' | 'ACTIVE';
+          status: 'draft' | 'active' | 'expired' | 'terminated';
           cancellation_reason: string | null;
           renewed_from_id: string | null;
           notes: string | null;
@@ -2211,7 +2123,7 @@ export type Database = {
           end_date: string;
           rent_amount: number;
           payment_cycle?: 'monthly' | 'quarterly' | 'semi_annual' | 'annual';
-          status?: 'draft' | 'active' | 'expired' | 'terminated' | 'ENDED' | 'ACTIVE';
+          status?: 'draft' | 'active' | 'expired' | 'terminated';
           cancellation_reason?: string | null;
           renewed_from_id?: string | null;
           notes?: string | null;
@@ -2249,7 +2161,7 @@ export type Database = {
           end_date?: string;
           rent_amount?: number;
           payment_cycle?: 'monthly' | 'quarterly' | 'semi_annual' | 'annual';
-          status?: 'draft' | 'active' | 'expired' | 'terminated' | 'ENDED' | 'ACTIVE';
+          status?: 'draft' | 'active' | 'expired' | 'terminated';
           cancellation_reason?: string | null;
           renewed_from_id?: string | null;
           notes?: string | null;
@@ -2699,63 +2611,6 @@ export type Database = {
             columns: ['reversal_of_id'];
             isOneToOne: false;
             referencedRelation: 'deposit_transactions';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      deposit_txs: {
-        Row: {
-          id: string;
-          contract_id: string | null;
-          type: string | null;
-          amount: number | null;
-          date: string | null;
-          notes: string | null;
-          created_at: string | null;
-          note: string | null;
-          updated_at: string | null;
-          deleted_at: string | null;
-          company_id: string;
-        };
-        Insert: {
-          id: string;
-          contract_id?: string | null;
-          type?: string | null;
-          amount?: number | null;
-          date?: string | null;
-          notes?: string | null;
-          created_at?: string | null;
-          note?: string | null;
-          updated_at?: string | null;
-          deleted_at?: string | null;
-          company_id?: string;
-        };
-        Update: {
-          id?: string;
-          contract_id?: string | null;
-          type?: string | null;
-          amount?: number | null;
-          date?: string | null;
-          notes?: string | null;
-          created_at?: string | null;
-          note?: string | null;
-          updated_at?: string | null;
-          deleted_at?: string | null;
-          company_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'deposit_txs_company_id_fkey';
-            columns: ['company_id'];
-            isOneToOne: false;
-            referencedRelation: 'companies';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'deposit_txs_contract_id_fkey';
-            columns: ['contract_id'];
-            isOneToOne: false;
-            referencedRelation: 'contracts';
             referencedColumns: ['id'];
           },
         ];
@@ -3913,85 +3768,6 @@ export type Database = {
           },
         ];
       };
-      journal_entries_archive: {
-        Row: {
-          id: string;
-          no: string | null;
-          date: string;
-          account_id: string | null;
-          amount: number;
-          type: 'DEBIT' | 'CREDIT';
-          source_id: string | null;
-          entity_type: string | null;
-          entity_id: string | null;
-          created_at: string;
-          cost_center_id: string | null;
-          status: 'draft' | 'posted';
-          batch_id: string | null;
-          request_id: string | null;
-          deleted_at: string | null;
-          company_id: string;
-        };
-        Insert: {
-          id?: string;
-          no?: string | null;
-          date?: string;
-          account_id?: string | null;
-          amount: number;
-          type: 'DEBIT' | 'CREDIT';
-          source_id?: string | null;
-          entity_type?: string | null;
-          entity_id?: string | null;
-          created_at?: string;
-          cost_center_id?: string | null;
-          status?: 'draft' | 'posted';
-          batch_id?: string | null;
-          request_id?: string | null;
-          deleted_at?: string | null;
-          company_id?: string;
-        };
-        Update: {
-          id?: string;
-          no?: string | null;
-          date?: string;
-          account_id?: string | null;
-          amount?: number;
-          type?: 'DEBIT' | 'CREDIT';
-          source_id?: string | null;
-          entity_type?: string | null;
-          entity_id?: string | null;
-          created_at?: string;
-          cost_center_id?: string | null;
-          status?: 'draft' | 'posted';
-          batch_id?: string | null;
-          request_id?: string | null;
-          deleted_at?: string | null;
-          company_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'journal_entries_account_id_fkey';
-            columns: ['account_id'];
-            isOneToOne: false;
-            referencedRelation: 'accounts';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'journal_entries_company_id_fkey';
-            columns: ['company_id'];
-            isOneToOne: false;
-            referencedRelation: 'companies';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'journal_entries_cost_center_id_fkey';
-            columns: ['cost_center_id'];
-            isOneToOne: false;
-            referencedRelation: 'cost_centers';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
       journal_lines: {
         Row: {
           id: string;
@@ -4061,38 +3837,6 @@ export type Database = {
           },
           {
             foreignKeyName: 'journal_lines_company_id_fkey';
-            columns: ['company_id'];
-            isOneToOne: false;
-            referencedRelation: 'companies';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      kpi_snapshots: {
-        Row: {
-          id: string;
-          total_owner_net_balance: number | null;
-          total_contract_ar_balance: number | null;
-          total_tenant_ar_balance: number | null;
-          company_id: string;
-        };
-        Insert: {
-          id: string;
-          total_owner_net_balance?: number | null;
-          total_contract_ar_balance?: number | null;
-          total_tenant_ar_balance?: number | null;
-          company_id?: string;
-        };
-        Update: {
-          id?: string;
-          total_owner_net_balance?: number | null;
-          total_contract_ar_balance?: number | null;
-          total_tenant_ar_balance?: number | null;
-          company_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'kpi_snapshots_company_id_fkey';
             columns: ['company_id'];
             isOneToOne: false;
             referencedRelation: 'companies';
@@ -4656,68 +4400,6 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'master_lease_measurements';
             referencedColumns: ['id', 'company_id'];
-          },
-        ];
-      };
-      missions: {
-        Row: {
-          id: string;
-          no: string | null;
-          date: string | null;
-          description: string | null;
-          assigned_to: string | null;
-          status: string | null;
-          notes: string | null;
-          created_at: string | null;
-          title: string | null;
-          time: string | null;
-          owner_id: string | null;
-          lead_id: string | null;
-          result_summary: string | null;
-          updated_at: string | null;
-          company_id: string;
-        };
-        Insert: {
-          id: string;
-          no?: string | null;
-          date?: string | null;
-          description?: string | null;
-          assigned_to?: string | null;
-          status?: string | null;
-          notes?: string | null;
-          created_at?: string | null;
-          title?: string | null;
-          time?: string | null;
-          owner_id?: string | null;
-          lead_id?: string | null;
-          result_summary?: string | null;
-          updated_at?: string | null;
-          company_id?: string;
-        };
-        Update: {
-          id?: string;
-          no?: string | null;
-          date?: string | null;
-          description?: string | null;
-          assigned_to?: string | null;
-          status?: string | null;
-          notes?: string | null;
-          created_at?: string | null;
-          title?: string | null;
-          time?: string | null;
-          owner_id?: string | null;
-          lead_id?: string | null;
-          result_summary?: string | null;
-          updated_at?: string | null;
-          company_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'missions_company_id_fkey';
-            columns: ['company_id'];
-            isOneToOne: false;
-            referencedRelation: 'companies';
-            referencedColumns: ['id'];
           },
         ];
       };
@@ -5792,54 +5474,6 @@ export type Database = {
           },
         ];
       };
-      profiles: {
-        Row: {
-          id: string;
-          username: string;
-          role: 'ADMIN' | 'USER';
-          must_change_password: boolean;
-          created_at: string;
-          is_disabled: boolean;
-          auth_user_id: string | null;
-          updated_at: string | null;
-        };
-        Insert: {
-          id: string;
-          username: string;
-          role?: 'ADMIN' | 'USER';
-          must_change_password?: boolean;
-          created_at?: string;
-          is_disabled?: boolean;
-          auth_user_id?: string | null;
-          updated_at?: string | null;
-        };
-        Update: {
-          id?: string;
-          username?: string;
-          role?: 'ADMIN' | 'USER';
-          must_change_password?: boolean;
-          created_at?: string;
-          is_disabled?: boolean;
-          auth_user_id?: string | null;
-          updated_at?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'profiles_auth_user_id_fkey';
-            columns: ['auth_user_id'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'profiles_id_fkey';
-            columns: ['id'];
-            isOneToOne: true;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
       properties: {
         Row: {
           id: string;
@@ -6427,30 +6061,6 @@ export type Database = {
           },
         ];
       };
-      schema_refactor_notes: {
-        Row: {
-          id: string;
-          category: string;
-          note: string;
-          created_at: string;
-          updated_at: number | null;
-        };
-        Insert: {
-          id?: string;
-          category: string;
-          note: string;
-          created_at?: string;
-          updated_at?: number | null;
-        };
-        Update: {
-          id?: string;
-          category?: string;
-          note?: string;
-          created_at?: string;
-          updated_at?: number | null;
-        };
-        Relationships: [];
-      };
       serials: {
         Row: {
           id: number;
@@ -6655,97 +6265,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: 'service_providers_company_id_fkey';
-            columns: ['company_id'];
-            isOneToOne: false;
-            referencedRelation: 'companies';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      sessions: {
-        Row: {
-          id: string;
-          user_id: string;
-          token: string;
-          expires_at: string;
-          created_at: string | null;
-        };
-        Insert: {
-          id?: string;
-          user_id: string;
-          token: string;
-          expires_at: string;
-          created_at?: string | null;
-        };
-        Update: {
-          id?: string;
-          user_id?: string;
-          token?: string;
-          expires_at?: string;
-          created_at?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'sessions_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      settings: {
-        Row: {
-          id: number;
-          data: Json;
-          automation_config: Json | null;
-          updated_at: number | null;
-        };
-        Insert: {
-          id?: number;
-          data?: Json;
-          automation_config?: Json | null;
-          updated_at?: number | null;
-        };
-        Update: {
-          id?: number;
-          data?: Json;
-          automation_config?: Json | null;
-          updated_at?: number | null;
-        };
-        Relationships: [];
-      };
-      snapshots: {
-        Row: {
-          id: string;
-          ts: number | null;
-          note: string | null;
-          data: Json | null;
-          updated_at: string | null;
-          created_at: string | null;
-          company_id: string;
-        };
-        Insert: {
-          id: string;
-          ts?: number | null;
-          note?: string | null;
-          data?: Json | null;
-          updated_at?: string | null;
-          created_at?: string | null;
-          company_id?: string;
-        };
-        Update: {
-          id?: string;
-          ts?: number | null;
-          note?: string | null;
-          data?: Json | null;
-          updated_at?: string | null;
-          created_at?: string | null;
-          company_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'snapshots_company_id_fkey';
             columns: ['company_id'];
             isOneToOne: false;
             referencedRelation: 'companies';
@@ -7069,87 +6588,59 @@ export type Database = {
           },
         ];
       };
-      tenants: {
+      tenant_profiles: {
         Row: {
-          id: string;
-          name: string;
-          phone: string | null;
-          email: string | null;
-          id_no: string | null;
+          tenant_id: string;
+          company_id: string;
           nationality: string | null;
-          notes: string | null;
-          created_at: string | null;
-          status: string | null;
-          updated_at: string | null;
-          tenant_type: string | null;
+          status: 'active' | 'inactive' | 'archived';
+          tenant_type: 'individual' | 'company';
           cr_number: string | null;
-          address: string | null;
           postal_code: string | null;
           po_box: string | null;
-          unit_id: string | null;
           archived_at: string | null;
-          company_id: string;
+          created_at: string;
+          updated_at: string;
         };
         Insert: {
-          id: string;
-          name: string;
-          phone?: string | null;
-          email?: string | null;
-          id_no?: string | null;
+          tenant_id: string;
+          company_id: string;
           nationality?: string | null;
-          notes?: string | null;
-          created_at?: string | null;
-          status?: string | null;
-          updated_at?: string | null;
-          tenant_type?: string | null;
+          status?: 'active' | 'inactive' | 'archived';
+          tenant_type?: 'individual' | 'company';
           cr_number?: string | null;
-          address?: string | null;
           postal_code?: string | null;
           po_box?: string | null;
-          unit_id?: string | null;
           archived_at?: string | null;
-          company_id?: string;
+          created_at?: string;
+          updated_at?: string;
         };
         Update: {
-          id?: string;
-          name?: string;
-          phone?: string | null;
-          email?: string | null;
-          id_no?: string | null;
+          tenant_id?: string;
+          company_id?: string;
           nationality?: string | null;
-          notes?: string | null;
-          created_at?: string | null;
-          status?: string | null;
-          updated_at?: string | null;
-          tenant_type?: string | null;
+          status?: 'active' | 'inactive' | 'archived';
+          tenant_type?: 'individual' | 'company';
           cr_number?: string | null;
-          address?: string | null;
           postal_code?: string | null;
           po_box?: string | null;
-          unit_id?: string | null;
           archived_at?: string | null;
-          company_id?: string;
+          created_at?: string;
+          updated_at?: string;
         };
         Relationships: [
           {
-            foreignKeyName: 'fk_unit';
-            columns: ['unit_id'];
-            isOneToOne: false;
-            referencedRelation: 'units';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'tenants_company_id_fkey';
+            foreignKeyName: 'tenant_profiles_company_id_fkey';
             columns: ['company_id'];
             isOneToOne: false;
             referencedRelation: 'companies';
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'tenants_unit_id_fkey';
-            columns: ['unit_id'];
-            isOneToOne: false;
-            referencedRelation: 'units';
+            foreignKeyName: 'tenant_profiles_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: true;
+            referencedRelation: 'people';
             referencedColumns: ['id'];
           },
         ];
