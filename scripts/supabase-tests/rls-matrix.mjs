@@ -138,15 +138,15 @@ async function seed(db) {
 
     insert into public.company_members (company_id, user_id, role, is_active, created_at)
     values
-      ('${COMPANY_A}', '${ADMIN_A}', 'OWNER', true, timestamptz '2026-01-01 00:00:00+00'),
-      ('${COMPANY_A}', '${MANAGER_A}', 'ADMIN', true, timestamptz '2026-01-01 00:00:01+00'),
-      ('${COMPANY_A}', '${ACCOUNTANT_A}', 'MEMBER', true, timestamptz '2026-01-01 00:00:02+00'),
-      ('${COMPANY_A}', '${OPERATIONS_A}', 'MEMBER', true, timestamptz '2026-01-01 00:00:03+00'),
-      ('${COMPANY_A}', '${USER_A}', 'MEMBER', true, timestamptz '2026-01-01 00:00:04+00'),
+      ('${COMPANY_A}', '${ADMIN_A}', 'ADMIN', true, timestamptz '2026-01-01 00:00:00+00'),
+      ('${COMPANY_A}', '${MANAGER_A}', 'MANAGER', true, timestamptz '2026-01-01 00:00:01+00'),
+      ('${COMPANY_A}', '${ACCOUNTANT_A}', 'ACCOUNTANT', true, timestamptz '2026-01-01 00:00:02+00'),
+      ('${COMPANY_A}', '${OPERATIONS_A}', 'OPERATIONS', true, timestamptz '2026-01-01 00:00:03+00'),
+      ('${COMPANY_A}', '${USER_A}', 'USER', true, timestamptz '2026-01-01 00:00:04+00'),
       ('${COMPANY_A}', '${VIEWER_A}', 'VIEWER', true, timestamptz '2026-01-01 00:00:05+00'),
-      ('${COMPANY_A}', '${INACTIVE_A}', 'OWNER', true, timestamptz '2026-01-01 00:00:06+00'),
-      ('${COMPANY_A}', '${DELETED_A}', 'OWNER', true, timestamptz '2026-01-01 00:00:07+00'),
-      ('${COMPANY_B}', '${ADMIN_B}', 'OWNER', true, timestamptz '2026-01-01 00:00:08+00')
+      ('${COMPANY_A}', '${INACTIVE_A}', 'ADMIN', true, timestamptz '2026-01-01 00:00:06+00'),
+      ('${COMPANY_A}', '${DELETED_A}', 'ADMIN', true, timestamptz '2026-01-01 00:00:07+00'),
+      ('${COMPANY_B}', '${ADMIN_B}', 'ADMIN', true, timestamptz '2026-01-01 00:00:08+00')
     on conflict (company_id, user_id) do update
       set role = excluded.role, is_active = excluded.is_active;
 
