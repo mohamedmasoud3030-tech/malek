@@ -68,7 +68,8 @@ jobs:
         run: |
           set -euo pipefail
           git fetch --no-tags origin main
-          changed="$(git diff --name-only origin/main...HEAD -- rentrix-app/src rentrix-app/e2e rentrix-app/public || true)"
+          changed="$(git diff --name-only origin/main...HEAD -- rentrix-app/src rentrix-app/e2e rentrix-app/public \
+            | grep -v '^rentrix-app/src/types/database.ts$' || true)"
           if [[ -n "$changed" ]]; then
             echo "Database baseline branch modified frontend/UI paths:" >&2
             printf '%s\n' "$changed" >&2
