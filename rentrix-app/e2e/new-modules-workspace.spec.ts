@@ -69,6 +69,6 @@ test.describe('New Real Modules - Utilities, Vault, Deposits, Automation', () =>
     // Current product policy is preview-only: no direct wa.me action is exposed
     // from Automation until the external channel is explicitly approved.
     await expect(page.locator('a[href^="https://wa.me/"]')).toHaveCount(0);
-    await expect(page.locator('body')).toContainText('لا تُرسل تلقائياً');
+    await expect(page.locator('body')).toContainText('معاينة محلية فقط · لا يوجد إرسال خارجي');
   });
 });
