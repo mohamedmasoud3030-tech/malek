@@ -116,6 +116,7 @@ export const ROUTE_CONTRACT: readonly RouteContractEntry[] = [
 
   // Tools/settings
   { canonical: '/ai-assistant', titleAr: 'المساعد الذكي', sidebarRoot: '/dashboard', isPrimaryNav: false, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: null },
+  { canonical: '/help', titleAr: 'المساعدة والدعم', sidebarRoot: '/settings', isPrimaryNav: false, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: null },
   { canonical: '/settings', titleAr: 'الإعدادات', sidebarRoot: '/settings', isPrimaryNav: true, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: null },
   { canonical: '/automation', titleAr: 'الأتمتة', sidebarRoot: '/settings', isPrimaryNav: false, inMobileNav: false, permission: 'automation.view', legacyAliases: [], viewBinding: { param: 'section', section: 'automation' } },
   { canonical: '/change-password', titleAr: 'تغيير كلمة المرور', sidebarRoot: '/settings', isPrimaryNav: false, inMobileNav: false, permission: 'auth.password.change', legacyAliases: [], viewBinding: { param: 'section', section: 'change-password' } },

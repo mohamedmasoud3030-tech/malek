@@ -1,6 +1,6 @@
 import { Link, Outlet, useMatches, useRouter } from '@tanstack/react-router';
 import { useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type RefObject } from 'react';
-import { LogOut, Menu, Moon, Plus, ShieldAlert, Sun, X } from 'lucide-react';
+import { CircleHelp, LogOut, Menu, Moon, Plus, ShieldAlert, Sun, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { MalikBrand } from '@/components/brand/malik-brand';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,7 @@ import { NotificationsMenu } from './notifications-menu';
 import { CommandPaletteTrigger } from '@/features/command-palette/command-palette-trigger';
 import { CommandPaletteDialog } from '@/features/command-palette/command-palette-dialog';
 import { AiAssistantGlobalAction } from '@/features/ai-assistant/ai-assistant-global-action';
+import { sanitizeSupportRoute } from '@/features/help-support/help-context';
 
 function statusLabel(status: SyncStatus) {
   if (status === 'syncing') return 'جارٍ التحديث';
@@ -143,12 +144,14 @@ function MobileNavigationDrawer({
   onClose,
   onLogout,
   triggerRef,
+  supportFrom,
 }: Readonly<{
   authorization: AuthorizationContext | null;
   sharedLabel: SharedLabel;
   onClose: () => void;
   onLogout: () => void;
   triggerRef: RefObject<HTMLButtonElement | null>;
+  supportFrom: string;
 }>) {
   // Lock body scroll while the mobile drawer is open — prevents background
   // content from scrolling behind the overlay, a common mobile UX defect.
@@ -223,7 +226,13 @@ function MobileNavigationDrawer({
           )}
           <NavigationLinks authorization={authorization} expanded sharedLabel={sharedLabel} onNavigate={onClose} />
         </nav>
-        <div className="shrink-0 border-t border-white/8 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
+        <div className="shrink-0 space-y-1 border-t border-white/8 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
+          <Button asChild variant="ghost" className="min-h-11 w-full justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-white">
+            <Link to="/help" search={{ from: supportFrom }} onClick={onClose}>
+              <CircleHelp className="size-5" aria-hidden="true" />
+              <span>المساعدة والدعم</span>
+            </Link>
+          </Button>
           <Button
             variant="ghost"
             className="min-h-11 w-full justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-white"
@@ -309,6 +318,7 @@ export function AppShell() {
           onClose={() => setMobileNavOpen(false)}
           onLogout={handleLogout}
           triggerRef={mobileNavTriggerRef}
+          supportFrom={sanitizeSupportRoute(router.state?.location?.pathname ?? '/dashboard')}
         />
       ) : null}
 
@@ -332,7 +342,20 @@ export function AppShell() {
         <nav className="sidebar-scroll flex-1 overflow-y-auto p-4">
           <NavigationLinks authorization={authorization} expanded={isSidebarExpanded} sharedLabel={sharedLabel} />
         </nav>
-        <div className="border-t border-white/8 p-3">
+        <div className="space-y-1 border-t border-white/8 p-3">
+          <Button
+            asChild
+            variant="ghost"
+            className={cn(
+              'w-full gap-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-white',
+              sidebarCollapsed ? 'justify-center px-0' : 'justify-start',
+            )}
+          >
+            <Link to="/help" search={{ from: sanitizeSupportRoute(router.state?.location?.pathname ?? '/dashboard') }} title="المساعدة والدعم">
+              <CircleHelp className="size-5" aria-hidden="true" />
+              {sidebarCollapsed ? null : <span>المساعدة والدعم</span>}
+            </Link>
+          </Button>
           <Button
             variant="ghost"
             className={cn(
@@ -385,6 +408,15 @@ export function AppShell() {
 
               <NotificationsMenu authorization={authorization} sharedLabel={sharedLabel} />
               <AiAssistantGlobalAction />
+              <Link
+                to="/help"
+                search={{ from: sanitizeSupportRoute(router.state?.location?.pathname ?? '/dashboard') }}
+                aria-label="فتح المساعدة والدعم"
+                title="المساعدة والدعم"
+                className="hidden size-11 items-center justify-center rounded-xl border border-border/70 bg-card text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-4 focus-visible:ring-primary/25 motion-reduce:transition-none sm:inline-flex"
+              >
+                <CircleHelp className="size-[1.05rem]" aria-hidden="true" />
+              </Link>
 
               <button
                 type="button"

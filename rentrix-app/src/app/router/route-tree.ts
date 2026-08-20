@@ -326,6 +326,12 @@ const aiAssistantRoute = createRoute({
   component: lazyRouteComponent(() => import('@/routes/_protected.ai-assistant'), 'AiAssistantRouteComponent'),
   staticData: { title: 'المساعد الذكي' },
 });
+const helpSupportRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/help',
+  component: lazyRouteComponent(() => import('@/routes/_protected.help'), 'HelpSupportRouteComponent'),
+  staticData: { title: 'المساعدة والدعم' },
+});
 
 const automationRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/automation', beforeLoad: async () => { await requirePermission('automation.view')(); throw redirect({ to: '/settings', search: (previous: Record<string, unknown>) => ({ ...previous, section: 'automation' }) }); }, staticData: { title: 'الأتمتة' } });
 const utilitiesRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/utilities', beforeLoad: () => { throw redirect({ to: '/maintenance', search: (previous: Record<string, unknown>) => ({ ...previous, section: 'utilities' }) }); }, staticData: { title: 'المرافق والعدادات' } });
@@ -442,6 +448,7 @@ export const routeTree = rootRoute.addChildren([
     accountingRoute,
     reportsRoute,
     aiAssistantRoute,
+    helpSupportRoute,
     automationRoute,
     utilitiesRoute,
     documentsVaultRoute,
