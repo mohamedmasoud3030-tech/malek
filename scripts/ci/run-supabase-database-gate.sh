@@ -100,6 +100,17 @@ wait_for_supabase_api() {
 
 node scripts/ci/check-cron-quoting.mjs
 
+# The canonical layout intentionally archives the historical chain. Its old
+# pgTAP files assert transitional objects/grants which no longer belong to the
+# approved schema, so replaying every historical test against the new baseline
+# produces false failures. The canonical builder performs two real clean
+# rebuilds, deterministic seed, RLS/auth/financial lifecycle verification,
+# schema equality and controlled teardown instead.
+if [[ -f "supabase/migrations/20260901000000_canonical_baseline.sql" ]] \
+   && [[ -d "supabase/migrations_history" ]]; then
+  exec bash scripts/canonical-db/build-baseline.sh
+fi
+
 # Single full-stack bring-up on a FRESH project volume. `supabase start`
 # applies every migration under supabase/migrations to the empty database, so
 # the migration chain is replayed exactly once with no `db reset`. This is a
