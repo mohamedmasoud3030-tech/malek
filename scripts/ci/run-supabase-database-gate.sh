@@ -179,6 +179,9 @@ SINGLE_OFFICE_EVIDENCE_PATH="$LOG_DIR/single-office-seed.json" \
 pnpm --filter ./rentrix-app exec node scripts/single-office-isolated-smoke.mjs seed \
   2>&1 | tee "$LOG_DIR/single-office-seed.log"
 
+# Browser path remains e2e/single-office-isolated.spec.ts (Browser Readiness).
+# The database gate proves collect/VOID through the same RPCs without Chromium.
+
 E2E_ENVIRONMENT_KIND=local \
 E2E_SINGLE_OFFICE_EMAIL=single-office-admin@rentrix.test \
 E2E_SINGLE_OFFICE_PASSWORD='SingleOffice-Aa1!' \
