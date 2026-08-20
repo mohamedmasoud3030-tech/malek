@@ -176,7 +176,7 @@ const companySettings = {
 function minimalTableRows(table: string) {
   if (table === 'company_members') {
     const { companyId } = sessionPayload();
-    return [{ company_id: companyId, role: 'OWNER', companies: { id: companyId, name: 'MALEK Demo', slug: 'malek-demo', currency: 'OMR', locale: 'ar-OM' } }];
+    return [{ company_id: companyId, role: 'ADMIN', companies: { id: companyId, name: 'MALEK Demo', slug: 'malek-demo', currency: 'OMR', locale: 'ar-OM' } }];
   }
   if (table === 'company_settings') return companySettings;
   return [];
