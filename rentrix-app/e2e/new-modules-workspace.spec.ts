@@ -13,7 +13,6 @@ test.describe('New Real Modules - Utilities, Vault, Deposits, Automation', () =>
       await page.goto('/login?e2e-utilities-workspace=1');
       await expect(page.locator('[data-e2e-utilities-workspace]')).toBeVisible({ timeout: 10000 });
       await expect(page.getByText('إدارة المرافق والعدادات')).toBeVisible();
-      // Should show KPI cards and filter bar, no mock data like E-902148
       await expect(page.locator('body')).not.toContainText('E-902148');
       await expect(page.locator('body')).not.toContainText('W-441209');
     });
@@ -23,7 +22,6 @@ test.describe('New Real Modules - Utilities, Vault, Deposits, Automation', () =>
       await page.goto('/login?e2e-vault-workspace=1');
       await expect(page.locator('[data-e2e-vault-workspace]')).toBeVisible({ timeout: 10000 });
       await expect(page.getByText('خزينة المستندات')).toBeVisible();
-      // Should frame the vault as private storage, not placehold.co mocks
       await expect(page.locator('body')).not.toContainText('placehold.co');
       await expect(page.getByText('التخزين الخاص', { exact: true })).toBeVisible();
       await expect(page.getByText('مساحة آمنة')).toBeVisible();
@@ -34,7 +32,6 @@ test.describe('New Real Modules - Utilities, Vault, Deposits, Automation', () =>
       await page.goto('/login?e2e-deposits-workspace=1');
       await expect(page.locator('[data-e2e-deposits-workspace]')).toBeVisible({ timeout: 10000 });
       await expect(page.getByText('دفتر أمانات وتأمينات المستأجرين')).toBeVisible();
-      // Should not contain mock dep-101
       await expect(page.locator('body')).not.toContainText('dep-101');
       await expect(page.getByText('تسجيل وديعة جديدة')).toBeVisible();
     });
@@ -44,7 +41,6 @@ test.describe('New Real Modules - Utilities, Vault, Deposits, Automation', () =>
       await page.goto('/login?e2e-automation-workspace=1');
       await expect(page.locator('[data-e2e-automation-workspace]')).toBeVisible({ timeout: 10000 });
       await expect(page.getByRole('heading', { name: 'قواعد الأتمتة' })).toBeVisible();
-      // Should show real rules, not local-preview only message
       await expect(page.locator('body')).not.toContainText('لم يتم تشغيل عامل أتمتة خارجي');
     });
   }
@@ -65,15 +61,14 @@ test.describe('New Real Modules - Utilities, Vault, Deposits, Automation', () =>
     await expect(page.getByText('منع تجاوز الرصيد')).toBeVisible();
   });
 
-  test('automation shows scheduling, duplicate prevention, and WhatsApp preview links', async ({ page }) => {
+  test('automation keeps WhatsApp preview-only and never exposes a direct send link', async ({ page }) => {
     await page.goto('/login?e2e-automation-workspace=1');
     await expect(page.getByText('قواعد محفوظة في قاعدة البيانات')).toBeVisible();
     await expect(page.getByText('منع تكرار').first()).toBeVisible();
 
-    const whatsappPreview = page.getByRole('link', { name: 'معاينة واتساب' }).first();
-    await expect(whatsappPreview).toBeVisible();
-    const href = await whatsappPreview.getAttribute('href');
-    expect(href).toContain('https://wa.me/');
-    expect(decodeURIComponent(href?.split('text=')[1] ?? '')).toContain('مرحباً');
+    // Current product policy is preview-only: no direct wa.me action is exposed
+    // from Automation until the external channel is explicitly approved.
+    await expect(page.locator('a[href^="https://wa.me/"]')).toHaveCount(0);
+    await expect(page.locator('body')).toContainText('لا تُرسل تلقائياً');
   });
 });
