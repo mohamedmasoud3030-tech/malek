@@ -51,6 +51,7 @@ Entity registers and specialist tools remain deep-linkable canonical routes, but
 | Reports | `/reports`; `/accounting` redirects to Reports accounting view | Reports | CANONICAL + COMPATIBILITY redirect |
 | Services | `/maintenance`; maintenance/providers/utilities/documents are Services children | Services | CANONICAL WORKSPACE + COMPATIBILITY routes |
 | Settings/admin | `/settings`; company/users/cost-centers/automation/system are permission-aware Settings children | Settings | CANONICAL WORKSPACE + COMPATIBILITY routes |
+| Help and support | `/help`; `/admin-support` is a permission-aware operational child | Global utility / Settings child | CANONICAL secondary utilities; admin support remains least-privilege and non-financial |
 | AI Assistant | `/ai-assistant` is a standalone separate route reached through the global action/search | no primary nav root | VERIFIED_IMPLEMENTED (`GAP-023` unblocked) |
 | Documents Vault | `/documents-vault` redirects to `/maintenance?section=documents_vault`; `documents_vault` is a real Services child (embedded DocumentsVaultWorkspace) acting as the aggregate documents authority, while contextual entity-level panels remain complementary | Services child | CANONICAL WORKSPACE + COMPATIBILITY redirect |
 | Dev design system | `/dev/design-system`, DEV-only | none | HIDDEN development surface, not product IA |

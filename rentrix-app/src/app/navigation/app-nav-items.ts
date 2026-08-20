@@ -8,6 +8,7 @@ import {
   FileText,
   FolderKanban,
   LayoutDashboard,
+  LifeBuoy,
   MapPinned,
   MessageSquareText,
   PieChart,
@@ -84,6 +85,7 @@ export const workspaceChildNavItems: Record<string, readonly NavItem[]> = {
   ],
   '/reports': [],
   '/settings': [
+    ['/admin-support', 'supportOperations', 'طلبات الدعم والتحقيق المقنّع والأحداث', LifeBuoy, 'support.operations.view'],
     ['/settings', 'companySettings', 'بيانات الشركة وإعداداتها', Building2, 'company.settings.manage', { section: 'company' }],
     ['/settings', 'usersPermissions', 'المستخدمون وطلبات الصلاحيات', ShieldCheck, 'permission_requests.review', { section: 'users-permissions' }],
     ['/settings', 'costCenters', 'مراكز التكلفة', FolderKanban, 'cost_centers.manage', { section: 'cost-centers' }],

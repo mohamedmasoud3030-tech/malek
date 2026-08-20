@@ -15,6 +15,8 @@ const operationalFormRoutePrefixes = [
   '/automation',
   '/documents-vault',
   '/ai-assistant',
+  '/help',
+  '/admin-support',
   '/communication',
   '/portfolio',
   '/relationships',

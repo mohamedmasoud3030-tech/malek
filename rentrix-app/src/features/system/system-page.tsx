@@ -18,6 +18,7 @@ type GovernanceLink = Readonly<{
 }>;
 
 const governanceLinks: readonly GovernanceLink[] = [
+  { to: '/admin-support', title: 'عمليات الدعم والتحقيق', description: 'طلبات الدعم وبحث مقنّع وسجل أحداث محدود حسب الدور.', permission: 'support.operations.view', icon: ShieldCheck },
   { to: '/settings', search: { section: 'audit-log' }, title: 'سجل التدقيق', description: 'عرض أحداث الحوكمة قراءة فقط — لا يُعدَّل أي سجل.', permission: 'audit.view', icon: ListChecks },
   { to: '/settings', search: { section: 'data-integrity' }, title: 'سلامة البيانات', description: 'تشغيل فحوصات قراءة فقط على العلاقات الأساسية في المخطط.', permission: 'integrity.view', icon: SearchCheck },
   { to: '/settings', search: { section: 'security' }, title: 'تغيير كلمة المرور', description: 'تحديث كلمة مرور حسابك الحالي بأمان.', permission: 'auth.password.change', icon: KeyRound },

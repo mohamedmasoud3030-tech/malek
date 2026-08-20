@@ -63,6 +63,7 @@ export const routeNavRoot = new Map<string, string>([
   ['/accounting', '/reports'],
   ['/ai-assistant', '/dashboard'],
   ['/help', '/settings'],
+  ['/admin-support', '/settings'],
 
   ['/settings', '/settings'],
   ['/change-password', '/settings'],

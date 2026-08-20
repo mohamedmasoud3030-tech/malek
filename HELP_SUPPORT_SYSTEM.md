@@ -112,7 +112,7 @@ The server raises SECURITY, DATA_QUALITY and PAYMENT_POSTING requests to at leas
 `ACKNOWLEDGED → IN_REVIEW → WAITING_USER → RESOLVED → CLOSED`
 
 - The requester sees reference, category, status, safe public note and updated date only. The list does not re-publish expected/actual descriptions.
-- Only an active-company ADMIN may update status through `update_support_request_status_atomic`.
+- An active-company ADMIN or MANAGER with `support.requests.triage` may perform reasoned transitions through `triage_support_request_atomic`; only ADMIN may close.
 - Every creation and changed status appends a `support_request_events` row.
 - A CLOSED request is immutable. A new recurrence gets a new request and references the old opaque ID in the operator's internal workflow—not in user free text.
 - Public notes are limited to 500 characters and receive the same sensitive-content screening.
@@ -163,10 +163,12 @@ Do not export `expected_behavior` or `actual_behavior` into chat, email or analy
 ### Status update under the authenticated company-admin session
 
 ```sql
-select public.update_support_request_status_atomic(
+select public.triage_support_request_atomic(
   '<request-id>'::uuid,
   'IN_REVIEW',
-  'جارٍ فحص المرجع التقني'
+  'جارٍ فحص المرجع التقني',
+  'بدء التحقيق في المرجع المبلغ عنه',
+  '<idempotency-key>'::uuid
 );
 ```
 
