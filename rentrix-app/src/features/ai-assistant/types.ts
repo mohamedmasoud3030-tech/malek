@@ -76,4 +76,7 @@ export type AiAssistantRequest = {
 export type AiAssistantResponse = {
   reply: string;
   context: AiAssistantContext;
+  grounded: boolean;
+  caveats: string[];
+  source: 'deterministic' | 'model' | 'fallback';
 };
