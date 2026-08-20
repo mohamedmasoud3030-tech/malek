@@ -3768,32 +3768,6 @@ export type Database = {
           },
         ];
       };
-      journal_entries_archive: {
-        Row: {
-          id: string;
-          company_id: string | null;
-          created_at: string | null;
-        };
-        Insert: {
-          id?: string;
-          company_id?: string | null;
-          created_at?: string | null;
-        };
-        Update: {
-          id?: string;
-          company_id?: string | null;
-          created_at?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'journal_entries_archive_company_id_fkey';
-            columns: ['company_id'];
-            isOneToOne: false;
-            referencedRelation: 'companies';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
       journal_lines: {
         Row: {
           id: string;
