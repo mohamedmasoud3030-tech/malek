@@ -1,12 +1,12 @@
 // @vitest-environment happy-dom
 import { describe, expect, it, vi } from 'vitest';
-import { buildWhatsAppUrl, downloadTextFile, shareOrCopy } from './action-service';
+import { downloadTextFile, shareOrCopy } from './action-service';
 
 describe('browser action service', () => {
-  it('builds a safe WhatsApp hand-off URL', () => {
-    expect(buildWhatsAppUrl('+968 9000 0000', 'مرحباً بالعقد')).toBe(
-      `https://wa.me/96890000000?text=${encodeURIComponent('مرحباً بالعقد')}`,
-    );
+  it('does not expose a WhatsApp URL hand-off from the browser boundary', async () => {
+    const actionService = await import('./action-service');
+    expect(Object.keys(actionService)).not.toContain('buildWhatsAppUrl');
+    expect(Object.keys(actionService)).not.toContain('openWhatsApp');
   });
 
   it('uses native share when available', async () => {
@@ -24,6 +24,15 @@ describe('browser action service', () => {
 
     await expect(shareOrCopy({ title: 'العقد', url: 'https://example.test/contracts/1' })).resolves.toBe('copied');
     expect(writeText).toHaveBeenCalledWith('https://example.test/contracts/1');
+  });
+
+  it('can copy generic text without putting record data in a URL', async () => {
+    Object.defineProperty(navigator, 'share', { configurable: true, value: undefined });
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
+
+    await expect(shareOrCopy({ title: 'تحديث', text: 'يوجد تحديث داخل MALEK.' })).resolves.toBe('copied');
+    expect(writeText).toHaveBeenCalledWith('يوجد تحديث داخل MALEK.');
   });
 
   it('keeps file download at the browser boundary without ever printing the app view', () => {
