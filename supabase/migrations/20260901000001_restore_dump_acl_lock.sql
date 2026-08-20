@@ -51,10 +51,17 @@ $revoke_internal$;
 -- the live archive while keeping journal_batches/lines as the store.
 create table if not exists public.journal_entries_archive (
   id uuid primary key default gen_random_uuid(),
-  company_id uuid,
+  company_id uuid references public.companies(id),
   created_at timestamptz default now()
 );
 alter table public.journal_entries_archive enable row level security;
 revoke all on table public.journal_entries_archive from public, anon, authenticated;
+drop policy if exists journal_entries_archive_deny_all on public.journal_entries_archive;
+create policy journal_entries_archive_deny_all
+  on public.journal_entries_archive
+  for all
+  to authenticated
+  using (false)
+  with check (false);
 
 commit;
