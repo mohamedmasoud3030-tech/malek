@@ -131,18 +131,12 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
           </div>
         </article>
 
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2">
           <UnitSummaryCard
             label="إجمالي الوحدات"
             value={formatNumber(totalUnits)}
             hint="كل الوحدات النشطة"
             icon={DoorOpen}
-          />
-          <UnitSummaryCard
-            label="الوحدات المتاحة"
-            value={formatNumber(ctrl.kpis.availableCount)}
-            hint="جاهزة للتأجير"
-            icon={Home}
           />
           <UnitSummaryCard
             label="الإيجار المتوقع"
