@@ -1,174 +1,257 @@
 # AGENT_HANDOFF
 
-> Handoff قائم على فحص فعلي للريبو (وليس ذاكرة شات). آخر تحقق: 2026-08-19.
+> **تاريخ الإغلاق:** 2026-08-20
+> **الفرع:** `arena/01a01c75-malek`
+> **Implementation HEAD قبل commit وثائق الإغلاق:** `a817b7ca7e316a09d5356677b33d1739e1437e03`
+> **حالة Git عند الإغلاق:** نظيفة ومتطابقة مع `origin/arena/01a01c75-malek`
+> **الدمج/النشر:** لم يُفتح فرع إضافي، ولم يُفتح PR، ولم يحدث merge أو نشر إنتاجي.
 
-## المنتج
+## 1. المنتج والمجال والمستخدمون
 
-- **الاسم المرئي**: MALEK — «كل أملاكك في مكان واحد».
-- **المجال**: منصة عربية أولًا لإدارة أملاك الإيجار (عقارات، وحدات، أشخاص، عقود، مالية، صيانة، تقارير، إعدادات).
-- **المستخدمون**: مكاتب العقارات وفرقها، متعددة الشركات (multi-tenant).
-- **الأدوار (6)**: `ADMIN`, `MANAGER`, `ACCOUNTANT`, `OPERATIONS`, `USER`, `VIEWER` (من `features/auth/permissions.ts`).
+- **الاسم المرئي:** MALEK.
+- **الغرض:** منصة عربية أولاً وRTL لإدارة مكاتب وأملاك الإيجار: الشركات، العقارات، الوحدات، الملاك، المستأجرون، العقود، التحصيلات، الإيصالات، المصروفات، التأمينات، التسويات، الصيانة، التقارير، الوثائق والحوكمة.
+- **نطاق الشركات:** multi-tenant؛ الشركة الفعالة وRLS/RPC هما حدود العزل، ولا تُوثق واجهة العميل كسلطة أمنية.
+- **الأدوار الستة:** `ADMIN`, `MANAGER`, `ACCOUNTANT`, `OPERATIONS`, `USER`, `VIEWER`.
+- **نماذج التشغيل:** owner-agency/property management، وMASTER_LEASE المنفصل حيث نُفذ واعتمد. خط الأساس المالي OMR بدقة 3 منازل.
 
-> ملاحظة توافق: اسم الريبو `rentrix-app/` ومعرّفات قاعدة البيانات والمفاتيح المخزّنة تُبقى كما هي؛ التسمية المرئية هي MALEK فقط.
+## 2. البنية والمسارات المهمة
 
-## البنية والمسارات المهمة
-
-| المسار | الدور |
+| المسار | المسؤولية |
 |---|---|
-| `rentrix-app/src/` | التطبيق النشط (React + TypeScript + Vite + Tailwind v4) |
-| `rentrix-app/src/app/navigation/` | بنية التنقل (route-contract، terminology-registry) |
-| `rentrix-app/src/components/ui/` | نظام التصميم (Card، EntityForm، EntityTable، Dialog، BottomSheet...) |
-| `rentrix-app/src/services/` + `src/lib/` | طبقة الخدمات + المكتبات (supabase، money، feature-flags) |
-| `rentrix-app/src/styles/` | التوكنز (tokens.css) + الأنظمة المرئية |
-| `supabase/migrations/` | ترحيلات قاعدة البيانات (282 عند آخر فحص) |
-| `docs/source-of-truth/` | الحزمة القانونية (Canonical Pack، 8 مستندات) |
-| `governance/` + `tickets/` | الحوكمة (10 مراحل) والتذاكر |
+| `rentrix-app/src/app/router/route-tree.ts` | تسجيل الطرق والحراس |
+| `rentrix-app/src/app/navigation/` | عقد التنقل والظهور حسب الصلاحية |
+| `rentrix-app/src/features/auth/permissions.ts` | مصفوفة أدوار/صلاحيات العميل؛ الخادم يظل المرجع |
+| `rentrix-app/src/features/ai-assistant/` | واجهة وسياق واختبارات المساعد |
+| `supabase/functions/ai-assistant/` + `_shared/` | حدود AI، adapter، validation، fallback |
+| `rentrix-app/src/features/help-support/` | مقالات المساعدة وطلب الدعم الداخلي |
+| `rentrix-app/src/features/admin-support/` | التحقيق المقنّع وفرز الدعم ومقترحات الوصول غير المنفذة |
+| `rentrix-app/src/features/communication/` | سجل التواصل ومعاينات القوالب الآمنة |
+| `rentrix-app/src/features/automation/` | قواعد الأتمتة وحالة المهام المتينة |
+| `supabase/functions/background-worker/` | عامل الوظائف المحمي؛ لا يختار المستدعي job/company/payload |
+| `supabase/migrations/` | الترحيلات forward-only؛ لا تعدّل التاريخ |
+| `supabase/rollback/` | rollback يدوي وتحذيري فقط |
+| `docs/source-of-truth/` | Canonical Pack وحقيقة التنفيذ |
+| `AI_FEATURE_SYSTEM.md` | عقد AI والجودة/الخصوصية/التكلفة |
+| `HELP_SUPPORT_SYSTEM.md` | خريطة المساعدة والدعم وrunbook |
+| `COMMUNICATION_SYSTEM_SPEC.md` | مصفوفة الأحداث/القنوات والتفضيلات |
+| `ADMIN_SUPPORT_OPERATIONS_SPEC.md` | صلاحيات وقيود عمليات الدعم |
+| `BACKGROUND_JOB_ARCHITECTURE.md` | الجرد، queue، worker، retry، التشغيل |
 
-**مصادر الحقيقة**: `route-contract.ts` (الطرق)، `terminology-registry.ts` (التسمية)، `feature-flag-definitions.json` (الفلاغز)، `docs/source-of-truth/` (المنتج).
+**Stack:** React 19 + TypeScript + Vite + TanStack Router/Query + Supabase Auth/Postgres/Storage/Edge Functions + PGlite لاختبار migration replay.
 
-## القرارات المتخذة في هذه الجلسة (والسبب)
+## 3. قرارات هذه الجلسة وسببها
 
-1. **حذف 41 مستند خطط/تدقيق قديمة** من الجذر و`docs/` — كانت مستبدلة بحزمة Canonical Pack. (السبب: تنظيف الازدواج والفوضى.)
-2. **اتجاه تصميم موحّد «الوضوح الأخضر»**: لون براند أخضر `160 84% 27%` في كل سطح (بدل انقسام أزرق/أخضر)، نصف قطر موحّد (كروت وحقول `rounded-xl`، طبقات مرتفعة `rounded-2xl`)، حلقة تركيز `ring-4/10`. (السبب: ازدحام بصري وعدم ارتياح عند التنقل.)
-3. **فعل خطأ قانوني واحد «تعذّر»** بدل «فشل» في واجهة المستخدم. (السبب: نبرة أقل لومًا وأكثر اتساقًا — 461 «تعذّر» مقابل 28 «فشل».)
-4. **إزالة `uppercase`+`tracking` من النص العربي** — تباعد الأحرف يكسر اتصال الحروف. (السبب: قابلية قراءة الموبايل.)
-5. **إزالة خريطتي تسمية يتيمتين** (`hubPageTitles`, `canonicalTerms`). (السبب: صفر مستهلكين + تناقض مع التسمية النشطة.)
-6. **نموذج أدوار الفلاغز = 6 أدوار** (من `domain/types.ts`)، لا 3. (السبب: `ACCOUNTANT`/`OPERATIONS`/`VIEWER` كانوا يتعاملون كـ"مجهول".)
-7. **لا نسبة مئوية rollout** — لا هوية ثابتة في الـ bundle؛ الـ role gate يكفي عند الحجم الحالي.
-8. **ابقاء نظام الفلاغز config-backed** — لا مزوّد خارجي إلا عند الحاجة لـ targeting/audit/تحكم حي.
+### AI
 
-## الشغل المنجز — بدليل موثّق (VERIFIED)
+- الملخصات الرقمية (المتأخرات، التجديدات، اللقطة المالية) أصبحت deterministic؛ النموذج بقي للصياغة الحرة/المسودة فقط.
+- adapter محايد للمزود، JSON schema صارم، تحقق مزدوج، zero paid retry، fallback محلي.
+- authorization قبل المزود، context allowlist، host allowlist، request UUID، quota/budget يومي.
+- **السبب:** منع hallucination والتسريب والتكلفة المكررة؛ لا تغيير live model بلا موافقة.
 
-كل PR اندمج على `main`. **آخر فحص محلي نظيف من HEAD `fd98776`:**
+### المساعدة والدعم
 
-| الفحص | النتيجة |
-|---|---|
-| `pnpm --filter ./rentrix-app run typecheck` | ✅ خروج 0 |
-| `pnpm --filter ./rentrix-app run typecheck:test` | ✅ خروج 0 |
-| `pnpm check:expired-flags` | ✅ 7 فلاغز داخل النافذة |
-| `pnpm --filter ./rentrix-app run test` (كامل) | ✅ **480 ملف، 3081 اختبار، 0 فشل، 0 تخطّي** |
-| `pnpm --filter ./rentrix-app run build` | ✅ خروج 0 (15.2s؛ تحذير chunk>500kB غير معيق) |
-| CI على main HEAD | ✅ `build` success، `deploy` success، القواعد المقفولة success |
+- `/help` يقدم مقالات مهمة قصيرة وبحثاً عربياً ومساعدة سياقية بدلاً من Help Center ضخم.
+- طلب الدعم داخلي في Supabase، بلا منصة خارجية أو مرفقات، مع screening للبيانات الخاصة.
+- **السبب:** حل المشاكل المتكررة دون نسخ الواجهة أو تصدير بيانات المستخدم.
 
-**PRs المدمجة هذه الجلسة (11):**
-- `#1500` استراتيجية الاختبار + إصلاح 6 أعطال انجراف + 4 اختبارات جديدة
-- `#1501` توحيد اللون الأخضر + حذف CSS ميت + قراءة الجداول
-- `#1502` توحيد نصف قطر الكروت
-- `#1503` معيار النماذج + توحيد الحقول
-- `#1504` دليل محتوى UX + توحيد فعل الخطأ
-- `#1505` مراجعة UX + إصلاح ثيم منع الوميض (كان أزرق)
-- `#1506` معيار الموبايل + إزالة tracking من العربي
-- `#1507` بنية المعلومات + حذف خرائط التسمية اليتيمة
-- `#1508` تحصين نظام الفلاغز (import.meta.env + role-before-override + JSON مركزي + فحص انتهاء في CI)
-- `#1509` مواءمة سياسة rollout
-- `#1511` مواءمة أدوار الفلاغز (6) + استكمال السياسة (بيئات/نسبة/مقاييس/مزوّد)
+### الاتصالات
 
-**ملفات قياسية جديدة (8)**: `FULL_TEST_STRATEGY.md`, `FORM_EXPERIENCE_STANDARD.md`, `UX_CONTENT_GUIDE.md`, `UI_UX_MASTER_REVIEW.md`, `UI_UX_REMEDIATION_PLAN.md`, `MOBILE_EXPERIENCE_STANDARD.md`, `INFORMATION_ARCHITECTURE.md`, و`FEATURE_ROLLOUT_POLICY.md` (محدَّثة).
+- in-app هو القناة الفعلية الوحيدة؛ email/WhatsApp معاينة محلية؛ SMS/push معطلان.
+- أزيلت روابط `wa.me`/`mailto` التي تحمل recipient/content من مسارات المنتج، وأصبحت القوالب عامة بالعربية/الإنجليزية.
+- **السبب:** لا مزود/موافقة/ميزانية حية، ومنع البيانات الحساسة في URL/preview/log.
 
-**إغلاق PR مكرر**: `#1498` (مؤلفه المالك `M7mdlab`) — أُغلق؛ شغله الحقيقي (تحصين الفلاغز) انتقل إلى `#1508`.
+### عمليات الإدارة والدعم
 
-## منفَّذ لكن غير موثّق بتشغيل (IMPLEMENTED BUT NOT VERIFIED)
+- `/admin-support` أقل صلاحية: MANAGER يفرز الدعم؛ ADMIN فقط يرى بحث مستخدمين مقنّع ويُنشئ access proposal غير منفذ.
+- أوقفت browser writes المباشرة على `public.users`؛ لا impersonation/export/bulk/financial action.
+- **السبب:** إزالة super-admin عملي ومنع self-lockout/last-admin bypass والتغيير بلا reason/audit.
 
-- **لا شيء مهم**. كل تغييرات هذه الجلسة مبنية على تحقق محلي فعلي (اختبارات/typecheck/build) وليس فقط على CI.
+### الوظائف الخلفية
 
-## Auth admin/users 500 — root cause محدد (2026-08-19)
+- أبقيت المالية والعقود والاستيراد الذري والتقارير/المستندات وAI التفاعلي synchronous.
+- حُولت automation evaluation إلى durable Postgres queue؛ أضيف worker محمي، lease، idempotency، retry/backoff، DEAD، cancellation، progress، retention.
+- أُلغي افتراض cron التاريخي؛ كل schedule جديد `enabled=false` ولا يوجد `cron.schedule` في migration.
+- **السبب:** أبسط آلية موثوقة ضمن Supabase الحالي، بلا Queue مدفوعة وبلا background financial side effects.
 
-- **السبب الجذري**: مستخدم واحد محدد `84501d15-e68b-4475-b1d2-a654f73fc6f3` (البريد `qa-agent-test@rentrix.local`) عنده سجل تالف في `auth.users` يكسر serialization الـ GoTrue.
-- **الأثر**: أي استعلام `admin/users` يتضمنه (list بـ per_page ≥2) يرجع 500 `Database error finding users`. المستخدمون الآخرون (`yaqoop@jiwda.com`, `demo@rentrix.test`, `mohamedmasoud303@gmail.com`) سليمون.
-- **محاولة الإصلاح عبر API فشلت**: `DELETE /admin/users/<id>` يرجع 500 `Database error loading user` — التلف يمنع القراءة والحذف معًا.
-- **الحل المتبقي (يحتاج وصول SQL للمالك)**: من Supabase Dashboard → SQL Editor:
-  ```sql
-  delete from auth.users where id = '84501d15-e68b-4475-b1d2-a654f73fc6f3';
-  ```
-  ثم تنظيف اليتيمات (إن لزم): `delete from public.users where id = '84501d15-...';` و `delete from public.company_members where user_id = '84501d15-...';`
-- **مصنّف: BLOCKED** — لا يمكن إصلاحه من بيئة الوكيل (لا وصول Postgres مباشر؛ IPv6-only + pooler tenant-not-found).
+## 4. العمل المكتمل مع دليل VERIFIED
 
-## زراعة Demo Data (منفّذة، 2026-08-19)
+### الكود/الترحيلات
 
-زرعت **21 صفًا** في الوحدات الفارغة، مربوطة بـ company `00000000-0000-4000-8000-000000000001` وبالعقارات/الوحدات/العقود الموجودة (مبني 25/٢٠، غرف 13/14/15، عقود CNT-001/002):
+- `20260901000000_ai_assistant_budget_idempotency.sql`
+- `20260902000000_self_service_support_requests.sql`
+- `20260903000000_communication_preview_foundation.sql`
+- `20260904000000_admin_support_operations_foundation.sql`
+- `20260905000000_background_job_foundation.sql`
+- rollback يدوي مقابل لكل migration.
+- Edge Functions: `ai-assistant`, `background-worker`.
+- طرق جديدة: `/help`, `/admin-support`.
 
-| الوحدة | الصفوف | ملاحظة |
+### أدلة التحقق المرصودة في هذه الجلسة
+
+| النطاق | الأمر/الدليل | النتيجة |
 |---|---|---|
-| `service_providers` | 3 | شركة كهرباء، ورشة صيانة، تنظيف |
-| `leads` | 5 | حالات متنوعة (new/contacted/qualified/converted) |
-| `maintenance_records` | 5 | open/in_progress/resolved/closed + أولويات |
-| `expenses` | 5 | تصنيفات صيانة/مرافق/إدارية/تأمين |
-| `tenant_deposits` | 3 | held/partially_deducted/refunded |
+| AI | focused Vitest: service/context/edge/foundation/quota | **26/26 PASS** |
+| Help/support | content + DB replay + route/header/mobile tests | **31/31 PASS** في الجولة المجمعة |
+| Communication | policy/DB/outbound/automation/notification/action tests | الجولات المركزة PASS؛ آخر مجموعة شاملة ذات صلة **33/33 PASS** |
+| Admin/support | capability/DB/UI/route/auth/governance tests | **86/86 PASS** في الجولة الموسعة؛ replay يثبت ACL/masking/idempotency/immutability |
+| Background jobs | queue/worker/automation/bank import tests | **29/29 PASS** |
+| TypeScript app | `corepack pnpm --filter @workspace/rentrix run typecheck` | PASS، exit 0 |
+| TypeScript tests | `corepack pnpm --filter @workspace/rentrix run typecheck:test` | PASS، exit 0 |
+| Build | `corepack pnpm --filter @workspace/rentrix run build` | PASS؛ تحذيرات placeholder Supabase وchunk size فقط |
+| Docs | `corepack pnpm check:docs` | PASS؛ 161 ملفاً مُصاناً |
+| Migration hygiene | `corepack pnpm check:migration-hygiene` | PASS مع legacy warnings معروفة |
+| Secret scan | `bash scripts/check-release-secret-leaks.sh` | PASS |
+| Enterprise freeze | `corepack pnpm check:enterprise-freeze` | PASS |
+| Diff hygiene | `git diff --check` | PASS قبل commits النهائية |
+| Git remote | fetch + SHA comparison | local HEAD = remote branch SHA |
 
-**مهم**: الإدراج تم مباشرةً عبر REST (service role) — **لم تمر عبر RPCs المحاسبية** (`create_expense_with_journal_atomic` وغيرها)، لذا لا توجد قيود دفتر أستاذ (journal/GL) مطابقة لهذه الصفوف. مقبول لأغراض العرض التجريبي، لكن أي تقرير محاسبي يعتمد على GL لن يرى هذه المصروفات/التأمينات. إن طُلبت سلامة محاسبية كاملة، أعد الزراعة عبر الـ RPCs.
+لم تُشغّل في الإغلاق أي مجموعة تتجاوز 5 دقائق، ولم تُعد المجموعة الكاملة أو Playwright لأن النتائج المركزة والبناء كانت خضراء ولأن المستخدم منع الاختبارات الأطول من 5 دقائق.
 
-## العيوب والمخاطر المعروفة
+## 5. منفذ لكن غير متحقق حياً — IMPLEMENTED BUT NOT VERIFIED
 
-1. **«بعض الصفحات فارغة» = وحدات بلا بيانات تجريبية، وليس عطلًا** (تشخيص نهائي بعد فحص فعلي). تم التحقق:
-   - يوجد **105 جدول** في `public`، شركة واحدة «ادارة وتشغيل العقارات»، 3 صفوف `company_members`، مستخدمان في `public.users` (المالك `mohamedmasoud303@gmail.com` = ADMIN + `qa-agent-test` = ADMIN).
-   - **البيانات الموجودة** (count بالخدمة): properties 14، units 41، owners 12، tenants 40، contracts 8، invoices 12، payments 11، receipts 13، people 53، companies 1.
-   - **الوحدات الفارغة (0 صف، بلا بيانات تجريبية)**: expenses، maintenance_records، leads، service_providers، deposit_txs (تأمينات). هذه تعرض حالة «فارغ» صحيحة لأنها لم تُزرع بيانات لها — وليست مشكلة RLS.
-   - **سبب التشخيص الخاطئ الأول**: PostgREST يرجع صفر جداول بدون ترويسة `Accept-Profile: public`؛ معها يرجع الـ 105 جداول.
-   - **ملاحظة ثانوية**: استعلام GoTrue `admin/users` يرجع 500 «Database error finding users» — إشارة لخلل محتمل في schema الـ auth تستحق فحصًا، لكنه لا يؤثر على عرض بيانات الوحدات المذكورة (التي تُقرأ عبر PostgREST مباشرة).
-   - **ما يبقى للمالك (اختياري)**: تأكيد من Supabase Dashboard أن `custom_access_token_hook` مفعّل في Auth → Hooks (هو موجود كدالة، والحقن يعمل عندما يوجد صف `company_members` للمستخدم)، وأن «Exposed schemas» تشمل `public`.
-2. **صفحة التسويق مفصولة** — `/` يحوّل إلى `/login`؛ الزائر الجديد لا يرى عرض القيمة. قرار منتج معلّق (موثّق في `UI_UX_MASTER_REVIEW.md` #6).
-3. **browser-smoke (Playwright على متصفح حي)** تاريخيًا أحمر في بعض الـ PRs — أثر بيئي/استضافة، خارج نطاق هذه الجلسة. CI النهائي على main يُظهر `build`/`deploy` ناجحين.
-4. **`deprecated` components**: `FormField` (`form-field.tsx`) و`TextField` (`text-field.tsx`) معلّمان كبدائل لصالح `EntityForm.Field` — أُبقيا للتوافق الرجعي.
+- تطبيق migrations الخمسة على Supabase hosted.
+- نشر Edge Functions وإعداد secrets في staging/Production.
+- worker runtime تحت Edge timeout وحجم Production حقيقي.
+- Supabase Cron/`pg_net` + Vault invocation للـ worker.
+- browser/device acceptance المصادق عليه لـ Help/Admin/Communication/Automation.
+- AI model semantic evaluation، latency والتكلفة بمزود معتمد.
+- live email provider/webhooks/unsubscribe؛ لا يوجد مزود حي الآن.
+- support staffing وSLA فعلي.
 
-## قاعدة البيانات / الترحيلات / البيئة
+## 6. العيوب والمخاطر المعروفة
 
-- **ترحيلات**: 282 عند آخر فحص؛ الترحيل `20260831000000_hot_path_fk_covering_indexes.sql` سليم (إعادة تشغيل db0 القانونية 282/282 نجحت سابقًا) لكنه مستبعد من نقاط التفتيش التاريخية في اختبارات p0/p1 (انظر `replay-bootstrap.ts`).
-- **لم تُطبَّق أي ترحيلات جديدة هذه الجلسة** — كل التغييرات UI/توثيق/اختبار.
-- **لم تتغير متغيرات بيئة الإنتاج**؛ **لم تُفعَّل أي ميزة لمستخدمين حقيقيين**.
+1. **Production schedules معطلة عمداً:** التاريخي `rentrix-automation-hourly` يُلغى؛ كل schedule جديد disabled. لا تدّع أن reminders تعمل آلياً حتى التفعيل المصرح.
+2. **User access execution غير موجود عمداً:** يوجد proposal فقط (`executed=false`). هذا قد يوقف workflow الإدارة القديم لكنه يغلق browser direct-write خطر. يحتاج maker-checker + recent re-auth قبل أي تنفيذ.
+3. **Background worker محدود:** الأنواع المدعومة فقط contract expiry / overdue invoices / maintenance overdue + metadata cleanup. لا تضف financial/import/export/AI job type بلا قرار جديد.
+4. **Worker deployment unverified:** `verify_jwt=false` مقصود لأن الوظيفة تتحقق من `BACKGROUND_WORKER_SECRET` بنفسها؛ أي سوء إعداد للسر خطر ويجب أن يفشل مغلقاً.
+5. **External communication غير مفعلة:** Postmark مجرد مرشح؛ WhatsApp/SMS/push معطلة؛ لا توجد delivery/callback evidence.
+6. **AI provider غير معتمد:** OpenAI-compatible adapter موجود، لكن لا privacy/DPA/model-quality/cost evidence حي.
+7. **No hosted browser pass:** الوحدة/التكامل والبناء نجحوا، لكن keyboard/screen reader/mobile authenticated acceptance لم يُشغّل في بيئة مستضافة.
+8. **Build warnings غير مانعة:** local build استخدم Supabase placeholders؛ Rollup أبلغ عن chunks أكبر من 500 kB وdynamic/static import overlap.
+9. **Bank import:** synchronous ومحدود إلى 5 MB و5,000 صف؛ الملفات الأكبر يجب تقسيمها، ولا يوجد resumable background import.
+10. **Retention schedules غير مفعلة:** سيظل metadata يتراكم إلى أن تعتمد cleanup schedules؛ لا تحذف business/audit/financial data عبر generic worker.
 
-## المزوّدون الخارجيون وأسماء المتغيرات الآمنة (بدون قيم)
+## 7. قاعدة البيانات والبيئة
 
-- **Supabase** (Auth + Postgres + Storage): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_DB_URL`, `SUPABASE_PROJECT_REF`.
-- **QA**: `QA_ENVIRONMENT_KIND`, `QA_SUPABASE_PROJECT_REF`, `QA_ADMIN_EMAIL`, `QA_ADMIN_PASSWORD`, `QA_MUTATION_APPROVED`, `E2E_SINGLE_OFFICE_EMAIL`.
-- **Vercel** (نشر + فلاغز build-time): `VITE_FEATURE_<NAME>`, `VITE_KILL_<NAME>`.
+- الترحيلات الجديدة forward-only ولم تُطبق حياً في هذه الجلسة.
+- `supabase/config.toml` يعرّف `[functions.background-worker] verify_jwt=false` مع مصادقة سر مخصصة؛ لا schedule مفعّل.
+- جداول جديدة تشمل AI budgets، support requests/events، communication preferences/outbox، admin-support audit/proposals، background jobs/events/schedules.
+- direct authenticated writes أُلغيت عن `public.users` وعن legacy automation job/run/log evidence.
+- automation manual execution يضع job في queue؛ worker ينشئ إشعاراً داخلياً aggregate واحداً كحد أقصى.
 
-## أوامر مؤكدة من الريبو
+## 8. المزوّدون ومتغيرات البيئة الآمنة (بدون قيم)
+
+### Supabase
+
+- Browser: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_APP_VERSION`
+- Edge/server: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
+- Worker: `BACKGROUND_WORKER_SECRET`
+- Deployment/QA عند الحاجة: `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF`, `SUPABASE_DB_URL`, `SUPABASE_READONLY_DB_URL`, `SUPABASE_DB_PASSWORD`
+
+### AI provider (غير مفعل تلقائياً)
+
+- `AI_PROVIDER_API_KEY`
+- `AI_PROVIDER_MODEL`
+- `AI_PROVIDER_BASE_URL`
+- `AI_PROVIDER_ALLOWED_HOSTS`
+- `AI_REQUEST_RESERVATION_MICROUSD`
+- `AI_COMPANY_DAILY_BUDGET_MICROUSD`
+- `AI_USER_DAILY_REQUEST_LIMIT`
+
+### Feature/QA
+
+- `VITE_FEATURE_<NAME>`, `VITE_KILL_<NAME>`, `VITE_E2E`
+- `E2E_BASE_URL`, `E2E_ENVIRONMENT_KIND`, `E2E_TEST_EMAIL`, `E2E_TEST_PASSWORD`, `E2E_SUPABASE_URL`, `E2E_SUPABASE_ANON_KEY`, `E2E_WORKERS`
+
+### External communication
+
+- لا يوجد Postmark/WhatsApp/SMS/push secret في الريبو أو البيئة المطلوبة حالياً.
+- Postmark مرشح staging فقط بعد موافقة منفصلة؛ لا تنشئ حساباً أو خطة قبلها.
+
+## 9. أوامر مؤكدة من الريبو
+
+> الـ package manager المثبت في العقد: `pnpm@10.11.1`. في بيئة لا تضع `pnpm` على PATH استخدم `corepack pnpm` كما حدث في هذه الجلسة.
 
 ```bash
-# التثبيت (pnpm مثبّت 10.11.1 عبر corepack)
-pnpm install --frozen-lockfile
+# Install
+corepack pnpm install --frozen-lockfile
 
-# التطوير
-pnpm --filter ./rentrix-app dev
+# Development / preview
+corepack pnpm --filter @workspace/rentrix run dev
+corepack pnpm --filter @workspace/rentrix run serve
 
-# الفحص
-pnpm --filter ./rentrix-app run typecheck
-pnpm --filter ./rentrix-app run typecheck:test
+# Type/lint (lint alias = app typecheck)
+corepack pnpm --filter @workspace/rentrix run typecheck
+corepack pnpm --filter @workspace/rentrix run typecheck:test
+corepack pnpm --filter @workspace/rentrix run lint
 
-# الاختبار
-pnpm --filter ./rentrix-app run test          # كامل
-pnpm --filter ./rentrix-app run test:financials
+# Focused tests (keep under the user's 5-minute ceiling)
+corepack pnpm --filter @workspace/rentrix exec vitest run --config vite.config.ts <test-files...>
 
-# بناء
-pnpm --filter ./rentrix-app run build
+# Full tests — repository command exists, but was not rerun at closeout
+corepack pnpm --filter @workspace/rentrix run test
+corepack pnpm --filter @workspace/rentrix run test:financials
 
-# فحص انتهاء الفلاغز
-pnpm check:expired-flags
+# Build
+corepack pnpm --filter @workspace/rentrix run build
+
+# Repository guards
+corepack pnpm check:docs
+corepack pnpm check:migration-hygiene
+corepack pnpm test:migration-hygiene
+corepack pnpm check:enterprise-freeze
+bash scripts/check-release-secret-leaks.sh
+
+# Database/release commands (non-production unless explicitly authorized)
+corepack pnpm db0:replay
+corepack pnpm db0:gate
+corepack pnpm test:supabase
+corepack pnpm qa:preflight
+corepack pnpm supabase:live-readiness
 ```
 
-## حالة النشر/الإنتاج
+## 10. Deployment/Production status
 
-- **CI على `main` (HEAD `fd98776`)**: `build` ✅، `deploy` ✅، القواعد المقفولة ✅.
-- **الإنتاج**: منشور عبر Vercel (`malek-plus.vercel.app`). قاعدة البيانات **تحتوي بيانات تجريبية** (105 جداول، شركة واحدة، 3 أعضاء، عقارات) — التشخيص السابق «قاعدة فارغة» كان خاطئًا. المشكلة الفعلية المبلغ عنها: **بعض الصفحات فارغة**، والسبب الأرجح RLS/company-scoping (انظر المخاطر #1)، ويحتاج تأكيد المالك.
+- Branch pushed only: `arena/01a01c75-malek`.
+- لم يُفتح فرع آخر، لم يُفتح PR، لم يحدث merge إلى `main`.
+- لا migrations مطبقة على Production، لا Edge Functions منشورة من هذه الجلسة، لا schedules مفعلة.
+- لا رسالة/إشعار خارجي حقيقي، لا AI paid usage، لا replay لوظيفة فاشلة حقيقية.
+- لا runtime server يعمل داخل sandbox عند الإغلاق.
 
-## الموافقات/الحسابات/الاعتمادات المطلوبة من المالك
+## 11. موافقات/حسابات/اعتمادات مطلوبة
 
-1. **قرار حالة قاعدة بيانات الإنتاج** (`nnggcnpcuomwfuupupwg`) — هل فُرّغت أم تحتاج ترحيل؟ (عائق للتحقق الحي).
-2. **تدوير الـ service role key + كلمة مرور قاعدة البيانات** — كانت مكشوفة في الشات سابقًا (أمان).
-3. **قرار صفحة التسويق** (`/` → `/login`) — نعم/لا على إعادة تفعيل عرض القيمة للزائر الجديد.
-4. **لا موافقة محاسبية/قانونية معلّقة** من شغل هذه الجلسة.
+1. وصول staging Supabase مخول لتطبيق migrations ونشر Edge Functions والتحقق من Auth/RLS.
+2. قرار owner منفصل لتقييم AI provider/نموذج وخصوصيته؛ لا بيانات خاصة قبل ذلك.
+3. قرار owner منفصل لتقييم Postmark staging بعناوين اصطناعية فقط.
+4. قرار owner لتصميم access-change execution maker-checker/re-auth؛ Production execution يبقى معطلاً.
+5. قرار owner لتفعيل pilot background schedules لشركة واحدة بعد staging evidence.
+6. `BACKGROUND_WORKER_SECRET` قوي في Secret Manager، وخطة تدوير؛ لا قيمة في chat/repo.
 
-## الخطوات الثلاث التالية ذات الأولوية (معايير قبول)
+## 12. الخطوات الثلاث التالية ذات الأولوية
 
-1. **تشخيص «البيانات لا تظهر في بعض الصفحات»** — المعيار: من Supabase Dashboard → Authentication/SQL، تأكيد أن المستخدم المُسجَّل لديه (أ) صف `company_members` نشط لشركة `00000000-0000-4000-8000-000000000001`، و(ب) claim الـ `company_id` مضبوط في JWT (عبر Auth Hook أو app_metadata). وإذا كانت «Exposed schemas» لا تشمل `public` افتراضيًا، إضافتها.
-2. **قرار صفحة التسويق** — المعيار: قرار مالك نعم/لا على إعادة ربط landing أو إضافة شريط تعريف داخل `/login`.
-3. **ضبط الكثافة البصرية (إن لزم)** — المعيار: بعد التأكد من الإنتاج الحي، معاينة بصرية حية للـ Dashboard وتقليل الكثافة بمقاييس مسافات موثّقة.
+### 1) Hosted staging foundation verification
 
-## تحذيرات — تغييرات يجب ألا تُستبدل/تُداس
+**المعيار:** تطبيق migrations `20260901`–`20260905` بالترتيب على staging مخول؛ نشر `ai-assistant` و`background-worker`؛ إثبات RLS لشركتين ورفض normal user/manager حسب المصفوفة؛ كل schedules تظل disabled؛ لا provider calls ولا بيانات حقيقية.
 
-- **لا تعيد إضافة** المستندات القديمة المحذوفة (AI_DECISIONS، *_PLAN، *_AUDIT، *_STATUS... في الجذر و`docs/`). المصدر القانوني هو `docs/source-of-truth/`.
-- **لا ترجع** `uppercase tracking-*` على نص عربي، ولا ألوان البراند الزرقاء القديمة (`200 85%`, `217 91%`, `214 92%`).
-- **لا تعيد** خريطتي التسمية اليتيمتين (`hubPageTitles`, `canonicalTerms`).
-- **لا تضيّق** نموذج أدوار الفلاغز عن 6 أدوار.
-- **لا تحذف** تحويلات الطرق القديمة (redirects) قبل ثبوت صفر زيارات.
-- **لا تستخدم** فلاغ عميل كتفويض — RLS/RPC هي المرجع.
+### 2) Authenticated browser + worker acceptance باستخدام synthetic data
+
+**المعيار:** desktop/mobile/RTL/keyboard لـ `/help`, `/admin-support`, Communication Center, Automation؛ enqueue/claim/process/cancel/retry/DEAD لوظائف صناعية؛ صفر financial jobs وصفر external sends؛ logs metadata-only؛ worker secrets غير ظاهرة.
+
+### 3) Owner go/no-go لطيار إنتاج محدود
+
+**المعيار:** موافقة مسجلة لتفعيل شركة واحدة فقط لـ internal aggregate automation وAI/job metadata cleanup؛ Supabase Cron/`pg_net` يستدعي worker من Vault؛ alerts للـ DEAD/lease/lag؛ rollback مجرب بتعطيل schedule/invocation؛ external delivery وuser-access execution يظلان disabled.
+
+## 13. تحذيرات: تغييرات لا يجب الكتابة فوقها
+
+- لا تعدّل migrations التاريخية؛ أضف forward migration فقط.
+- لا تعيد `users_admin_write` أو browser direct update على `public.users`.
+- لا تضف impersonation/backdoor/service key إلى المتصفح.
+- لا تعرض support descriptions أو payloads أو recipient/content في URL/log/notification preview.
+- لا تعيد `wa.me`/`mailto` handoffs التي تحمل بيانات العقد/الإيصال.
+- لا تحول financial/destructive work إلى generic background jobs.
+- لا تعيد تشغيل `rentrix-automation-hourly` أو تضف `cron.schedule` بلا موافقة.
+- لا تجعل schedule seed مفعلاً افتراضياً.
+- لا تعيد raw SQL/provider errors إلى run logs أو UI.
+- لا تسمح retry غير محدود أو تغيير DEAD إلى QUEUED؛ replay = job جديد بعد مراجعة.
+- لا ترفع AI/communication/job budgets أو تفعّل provider بلا owner approval.
+- لا تدمج هذا الفرع أو تفتح فرعاً/PR جديداً ضمن هذا الإغلاق.
