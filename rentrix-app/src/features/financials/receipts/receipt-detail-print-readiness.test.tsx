@@ -61,7 +61,6 @@ vi.mock('@/services/documents/DocumentService', () => ({
 }));
 
 vi.mock('@/services/action-service', () => ({
-  openWhatsApp: vi.fn(),
   shareOrCopy: vi.fn(),
 }));
 
