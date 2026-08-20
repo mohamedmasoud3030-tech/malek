@@ -13,7 +13,7 @@ export type Company = {
   locale: string;
 };
 
-export type CompanyMemberRole = 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER';
+export type CompanyMemberRole = 'ADMIN' | 'MANAGER' | 'ACCOUNTANT' | 'OPERATIONS' | 'USER' | 'VIEWER';
 
 export type CompanyContextValue = {
   companies: Company[];
