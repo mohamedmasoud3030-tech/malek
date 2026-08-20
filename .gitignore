@@ -33,3 +33,5 @@ rentrix-app/e2e/evidence/*.png
 
 # Local Supabase proof artifacts
 scripts/supabase-tests/last-run.json
+.env.qa.*
+.env.local
