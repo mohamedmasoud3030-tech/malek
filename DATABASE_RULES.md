@@ -4,9 +4,8 @@ This file is the permanent operating contract for database work in MALEK.
 
 ## Source of truth
 
-- `supabase/migrations/20260901000000_canonical_baseline.sql` is the **single authoritative canonical baseline**. It contains the complete schema including all extensions, types, tables, views, functions, triggers, indexes, RLS policies, security grants, and seed data.
-- Historical migrations are preserved in `supabase/migrations_history/` for audit but are **never replayed** on fresh installs.
-- A merged migration is immutable. Fixes after the consolidated baseline are new forward migrations (numbered `20260901000007+`).
+- `supabase/migrations/` is the only executable schema-bootstrap path.
+- A merged migration is immutable. Fixes are new forward migrations.
 - `supabase/seed.sql` contains deterministic reference/bootstrap data only.
 - Disposable Demo transactions must be created through the same governed RPC/business paths used by the application, not by bypassing accounting rules with raw inserts.
 - Supabase Dashboard/manual SQL must never be a hidden source of schema truth.
@@ -41,15 +40,6 @@ This file is the permanent operating contract for database work in MALEK.
 
 ## Migration rules
 
-### Consolidated baseline (established 2026-08-20)
-
-All pre-canonical migrations have been consolidated into a single authoritative baseline file:
-- `supabase/migrations/20260901000000_canonical_baseline.sql`
-- Contains: original pg_dump baseline, ACL lock, AI assistant, support requests, communication preview, admin support ops, background jobs, and security fixes
-- Historical migrations remain in `migrations_history/` for audit only
-
-### Forward migration rules
-
 Every schema change must:
 
 1. inspect current schema/runtime dependencies first;
@@ -61,13 +51,6 @@ Every schema change must:
 7. pass the blocking database gate before merge.
 
 Do not use `DROP`, rename, type narrowing, or destructive data transformation solely to simplify history. Such changes require proof that consumers/data have been migrated and a recovery/cutover plan.
-
-### Internal function security
-
-SECURITY DEFINER helper functions that are only called internally by other SECURITY DEFINER functions must be revoked from `authenticated` role. This includes:
-- `recalculate_invoice_status(uuid)` — internal GL status recalculation
-- `assert_*`, `backfill_*`, `_internal` functions
-- All functions starting with `_` (underscore prefix)
 
 ## Seed rules
 
