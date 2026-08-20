@@ -1689,7 +1689,7 @@ export type Database = {
           id: string;
           company_id: string;
           user_id: string;
-          role: 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER';
+          role: 'ADMIN' | 'MANAGER' | 'ACCOUNTANT' | 'OPERATIONS' | 'USER' | 'VIEWER';
           is_active: boolean;
           created_at: string;
           updated_at: string;
@@ -1698,7 +1698,7 @@ export type Database = {
           id?: string;
           company_id?: string;
           user_id: string;
-          role?: 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER';
+          role?: 'ADMIN' | 'MANAGER' | 'ACCOUNTANT' | 'OPERATIONS' | 'USER' | 'VIEWER';
           is_active?: boolean;
           created_at?: string;
           updated_at?: string;
@@ -1707,7 +1707,7 @@ export type Database = {
           id?: string;
           company_id?: string;
           user_id?: string;
-          role?: 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER';
+          role?: 'ADMIN' | 'MANAGER' | 'ACCOUNTANT' | 'OPERATIONS' | 'USER' | 'VIEWER';
           is_active?: boolean;
           created_at?: string;
           updated_at?: string;
