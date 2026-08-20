@@ -152,10 +152,10 @@ afterEach(() => {
 describe('CompanyProvider resolution', () => {
   it('opens immediately from the issued JWT claim even when user.app_metadata has no company_id', async () => {
     mocks.sessionHolder.current = makeSession(USER_ID, COMPANY_A.id);
-    membershipsResult = { data: [membershipRow(COMPANY_A, 'OWNER')], error: null };
+    membershipsResult = { data: [membershipRow(COMPANY_A, 'ADMIN')], error: null };
     renderProvider();
     await waitFor(() => expect(screen.getByTestId('active')).toHaveTextContent(COMPANY_A.id));
-    expect(screen.getByTestId('role')).toHaveTextContent('OWNER');
+    expect(screen.getByTestId('role')).toHaveTextContent('ADMIN');
     expect(mocks.sessionHolder.current?.user.app_metadata).not.toHaveProperty('company_id');
     expect(mocks.refreshSession).not.toHaveBeenCalled();
     expect(mocks.updateUser).not.toHaveBeenCalled();
@@ -163,7 +163,7 @@ describe('CompanyProvider resolution', () => {
 
   it('recovers a stale cached token with one refresh', async () => {
     mocks.sessionHolder.current = makeSession(USER_ID, null);
-    membershipsResult = { data: [membershipRow(COMPANY_A, 'OWNER')], error: null };
+    membershipsResult = { data: [membershipRow(COMPANY_A, 'ADMIN')], error: null };
     refreshReturns(COMPANY_A.id);
     renderProvider();
     await waitFor(() => expect(screen.getByTestId('active')).toHaveTextContent(COMPANY_A.id));
@@ -173,7 +173,7 @@ describe('CompanyProvider resolution', () => {
 
   it('syncs a deterministic membership preference and verifies the issued access-token claim', async () => {
     mocks.sessionHolder.current = makeSession(USER_ID, null);
-    membershipsResult = { data: [membershipRow(COMPANY_A, 'MEMBER')], error: null };
+    membershipsResult = { data: [membershipRow(COMPANY_A, 'USER')], error: null };
     mocks.refreshSession
       .mockResolvedValueOnce({ data: { session: makeSession(USER_ID, null) }, error: null })
       .mockResolvedValueOnce({ data: { session: makeSession(USER_ID, COMPANY_A.id) }, error: null });
@@ -184,7 +184,7 @@ describe('CompanyProvider resolution', () => {
 
   it('honours the server JWT claim for a second membership', async () => {
     mocks.sessionHolder.current = makeSession(USER_ID, COMPANY_B.id);
-    membershipsResult = { data: [membershipRow(COMPANY_A, 'OWNER'), membershipRow(COMPANY_B, 'VIEWER')], error: null };
+    membershipsResult = { data: [membershipRow(COMPANY_A, 'ADMIN'), membershipRow(COMPANY_B, 'VIEWER')], error: null };
     renderProvider();
     await waitFor(() => expect(screen.getByTestId('active')).toHaveTextContent(COMPANY_B.id));
     expect(screen.getByTestId('role')).toHaveTextContent('VIEWER');
@@ -193,7 +193,7 @@ describe('CompanyProvider resolution', () => {
 
   it('switches companies only after server access-token claim verification', async () => {
     mocks.sessionHolder.current = makeSession(USER_ID, COMPANY_A.id);
-    membershipsResult = { data: [membershipRow(COMPANY_A, 'OWNER'), membershipRow(COMPANY_B, 'ADMIN')], error: null };
+    membershipsResult = { data: [membershipRow(COMPANY_A, 'ADMIN'), membershipRow(COMPANY_B, 'ADMIN')], error: null };
     roleResult = { data: { role: 'ADMIN' }, error: null };
     mocks.getSession.mockResolvedValue({ data: { session: makeSession(USER_ID, COMPANY_A.id) }, error: null });
     refreshReturns(COMPANY_B.id);
@@ -207,7 +207,7 @@ describe('CompanyProvider resolution', () => {
 
   it('fails closed when the server refuses the requested switch claim', async () => {
     mocks.sessionHolder.current = makeSession(USER_ID, COMPANY_A.id);
-    membershipsResult = { data: [membershipRow(COMPANY_A, 'OWNER'), membershipRow(COMPANY_B, 'ADMIN')], error: null };
+    membershipsResult = { data: [membershipRow(COMPANY_A, 'ADMIN'), membershipRow(COMPANY_B, 'ADMIN')], error: null };
     mocks.getSession.mockResolvedValue({ data: { session: makeSession(USER_ID, COMPANY_A.id) }, error: null });
     refreshReturns(COMPANY_A.id);
     renderProvider();
@@ -238,7 +238,7 @@ describe('CompanyProvider resolution', () => {
 
   it('recovers across logout/login user changes without leaking tenant context', async () => {
     mocks.sessionHolder.current = makeSession(USER_ID, COMPANY_A.id);
-    membershipsResult = { data: [membershipRow(COMPANY_A, 'OWNER')], error: null };
+    membershipsResult = { data: [membershipRow(COMPANY_A, 'ADMIN')], error: null };
     const { rerender, queryClient } = renderProvider();
     await waitFor(() => expect(screen.getByTestId('active')).toHaveTextContent(COMPANY_A.id));
 
@@ -251,7 +251,7 @@ describe('CompanyProvider resolution', () => {
     await waitFor(() => expect(screen.getByTestId('active')).toHaveTextContent('none'));
 
     mocks.sessionHolder.current = makeSession(OTHER_USER_ID, COMPANY_B.id);
-    membershipsResult = { data: [membershipRow(COMPANY_B, 'MEMBER')], error: null };
+    membershipsResult = { data: [membershipRow(COMPANY_B, 'USER')], error: null };
     rerender(
       <QueryClientProvider client={queryClient}>
         <CompanyProvider><ContextProbe /></CompanyProvider>
