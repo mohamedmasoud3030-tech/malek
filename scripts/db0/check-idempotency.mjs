@@ -61,7 +61,7 @@ function diffSchemas(before, after) {
 }
 
 const all = await listMigrations();
-if (all.length === 1 && String(all[0]).includes('20260901000000_canonical_baseline')) {
+if (all.some((f) => String(f).includes('20260901000000_canonical_baseline'))) {
   console.log('WP-DB0 idempotency gate: skipped for the single canonical dump bootstrap (not a forward incremental migration).');
   process.exit(0);
 }
