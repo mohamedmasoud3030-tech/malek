@@ -198,10 +198,13 @@ verify_rebuild() {
   read_db_url
   run_reference_seed
   run_canonical_checks
-  run_runtime_seed_and_verify
-  run_canonical_checks
+  # Schema equality is a bootstrap contract. Capture it before the isolated
+  # lifecycle writes demo rows; those RPCs must not be required to leave
+  # GRANT/ACL fingerprints in pg_dump output.
   schema_dump "$dump_path"
   normalize_dump "$dump_path" "$normalized_path"
+  run_runtime_seed_and_verify
+  run_canonical_checks
 }
 
 is_final_layout=false
