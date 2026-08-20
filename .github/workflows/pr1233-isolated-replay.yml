@@ -46,6 +46,7 @@ jobs:
       - name: Fresh Docker-backed replay, pgTAP lifecycle, RLS and cleanup
         run: bash scripts/ci/run-supabase-database-gate.sh
       - name: Upload isolated replay diagnostics
+        continue-on-error: true
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
