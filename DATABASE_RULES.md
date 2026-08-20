@@ -10,6 +10,15 @@ This file is the permanent operating contract for database work in MALEK.
 - Disposable Demo transactions must be created through the same governed RPC/business paths used by the application, not by bypassing accounting rules with raw inserts.
 - Supabase Dashboard/manual SQL must never be a hidden source of schema truth.
 
+## Frontend / redesign database freeze
+
+- Frontend, UX, UI, browser-readiness, documentation, test-maintenance, and redesign work is **DB-FROZEN by default**.
+- Those tasks must not modify `supabase/**`, SQL migrations, RLS, database RPCs, Auth schema/configuration, or generated `rentrix-app/src/types/database.ts`.
+- The frontend must adapt to the canonical database contract; a redesign is never a reason to reshape the database.
+- A genuine database requirement must be split into an explicitly authorized `database-change` PR and pass the complete database gates independently.
+- Historical migrations removed by canonicalization must never be recreated merely to satisfy an old test. Update, archive, or replace the stale test instead.
+- CI enforces this boundary through `scripts/check-db-freeze.mjs`; normal PRs touching protected database paths fail closed unless explicitly authorized.
+
 ## Tenant and authorization safety
 
 - Every company-owned row must be isolated by `company_id` and RLS.
