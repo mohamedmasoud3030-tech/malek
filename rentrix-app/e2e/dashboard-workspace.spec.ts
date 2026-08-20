@@ -238,7 +238,7 @@ function tableRows(table: string, mode: DashboardHarnessMode) {
   if (table === 'company_members') {
     return [{
       company_id: companyId,
-      role: 'OWNER',
+      role: 'ADMIN',
       companies: { id: companyId, name: 'MALEK Demo', slug: 'malek-demo', currency: 'OMR', locale: 'ar-OM' },
     }];
   }
