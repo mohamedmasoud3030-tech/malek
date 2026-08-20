@@ -1,5 +1,5 @@
 import { toast } from 'sonner';
-import { openWhatsApp, shareOrCopy } from '@/services/action-service';
+import { shareOrCopy } from '@/services/action-service';
 import { documentService } from '@/services/documents/DocumentService';
 import { toContractDocumentPayload, type ContractDocumentData } from '@/services/documents/documentPayloadAdapters';
 import { hasCompleteCompanyIdentity, type DocumentCompanySettings } from '@/services/documents/companyIdentity';
@@ -65,19 +65,15 @@ export function printContractView(contract: ContractDetail, companySettings: Doc
   });
 }
 
-export async function shareContractLink(contract: ContractDetail) {
-  const title = contract.reference ?? 'عقد مسجل';
+export async function shareContractLink(_contract: ContractDetail) {
   try {
-    const result = await shareOrCopy({ title, url: window.location.href });
-    if (result === 'copied') toast.success('تم نسخ رابط العقد');
-    if (result === 'unavailable') toast.error('تعذر مشاركة رابط العقد من هذا المتصفح');
+    const result = await shareOrCopy({
+      title: 'متابعة عقد',
+      text: 'يوجد عقد يحتاج متابعة. يرجى استخدام القناة المعتمدة والتواصل مع المكتب دون مشاركة بيانات العقد في الرسالة.',
+    });
+    if (result === 'copied') toast.success('تم نسخ رسالة متابعة عامة');
+    if (result === 'unavailable') toast.error('تعذر تجهيز المشاركة من هذا المتصفح');
   } catch {
-    toast.error('تعذر مشاركة رابط العقد');
+    toast.error('تعذر تجهيز المشاركة');
   }
-}
-
-export function openContractWhatsApp(contract: ContractDetail) {
-  const tenantName = contract.people?.full_name ? ` ${contract.people.full_name}` : '';
-  const message = `مرحباً${tenantName}، بخصوص ${contract.reference ?? 'العقد المسجل'} على ${contract.properties?.title ?? 'العقار'} / ${contract.units?.unit_number ?? 'الوحدة'}.`;
-  openWhatsApp(contract.people?.phone, message);
 }

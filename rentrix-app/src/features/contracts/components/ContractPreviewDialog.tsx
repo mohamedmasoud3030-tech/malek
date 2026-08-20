@@ -1,4 +1,4 @@
-import { MessageCircle, Printer, RefreshCw, Share2, ShieldAlert } from 'lucide-react';
+import { Printer, RefreshCw, Share2, ShieldAlert } from 'lucide-react';
 import { EntityPreviewDialog } from '@/components/ui/entity-preview-dialog';
 import { Button } from '@/components/ui/button';
 import { LoadingState } from '@/components/ui/loading-state';
@@ -16,7 +16,7 @@ import {
 import { ContractRenewalDialog } from '../lifecycle/ContractRenewalDialog';
 import { ContractTerminationDialog } from '../lifecycle/ContractTerminationDialog';
 import { canRenewContract, canTerminateContract } from '../lifecycle/contractLifecycleRules';
-import { exportContractPdf, openContractWhatsApp, printContractView, shareContractLink } from '../actions/contractDetailActions';
+import { exportContractPdf, printContractView, shareContractLink } from '../actions/contractDetailActions';
 import { useContract } from '../useContracts';
 import { useState } from 'react';
 
@@ -53,9 +53,6 @@ export function ContractPreviewDialog({
       </Button>
       <Button variant="secondary" className="min-h-11" disabled={!documentSettings.isReady} onClick={() => exportContractPdf(contract, documentSettings.companySettings)}>
         PDF
-      </Button>
-      <Button variant="secondary" className="min-h-11" onClick={() => openContractWhatsApp(contract)}>
-        <MessageCircle className="me-2 size-4" />واتساب
       </Button>
       <Button variant="secondary" className="min-h-11" onClick={() => shareContractLink(contract)}>
         <Share2 className="me-2 size-4" />مشاركة

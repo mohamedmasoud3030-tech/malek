@@ -1,15 +1,21 @@
-import { APP_BRAND_NAME } from '@/lib/brand';
-import { buildWhatsAppUrl, renderMessageTemplate } from '@/services/whatsapp';
+import {
+  PreviewCommunicationAdapter,
+  communicationTemplates,
+  prepareCommunicationPreview,
+  type CommunicationEventType,
+  type CommunicationLocale,
+  type CommunicationPreviewResult,
+  type CommunicationProviderAdapter,
+} from "../communication-system";
 
 /**
- * Outbound communication service boundary.
+ * Provider-neutral outbound boundary.
  *
- * UI components must call this layer (or a future provider adapter) instead of
- * embedding WhatsApp/Email SDKs directly. Implementations can later swap in
- * real providers without rewriting the Communication Center UI.
+ * External channels are preview-only. No recipient, body or subject is put in
+ * a URL, browser log or provider call. A live adapter requires a separately
+ * approved server-side implementation.
  */
-
-export type OutboundChannel = 'whatsapp' | 'email' | 'sms';
+export type OutboundChannel = "whatsapp" | "email" | "sms";
 
 export type OutboundMessageRequest = Readonly<{
   channel: OutboundChannel;
@@ -20,137 +26,212 @@ export type OutboundMessageRequest = Readonly<{
   variables?: Record<string, string>;
   relatedEntityType?: string;
   relatedEntityId?: string;
+  locale?: CommunicationLocale;
+  consentGranted?: boolean;
+  humanReviewed?: boolean;
 }>;
 
 export type OutboundMessageResult = Readonly<{
   accepted: boolean;
-  provider: 'local-preview' | 'whatsapp-provider' | 'email-provider' | 'sms-provider';
-  previewUrl?: string;
+  provider: "local-preview";
+  mode: "preview";
+  preview?: Pick<
+    CommunicationPreviewResult,
+    "subject" | "body" | "templateKey" | "templateVersion"
+  >;
   message: string;
 }>;
 
-export type OutboundProviderAdapter = Readonly<{
-  id: string;
-  channel: OutboundChannel;
-  mode: 'preview' | 'external';
-  prepare: (request: OutboundMessageRequest, body: string) => OutboundMessageResult;
-}>;
-
-export const outboundProviderCapabilities: readonly Readonly<{
-  channel: OutboundChannel;
-  provider: string;
-  mode: 'preview' | 'external';
-  configured: boolean;
-}>[] = [
-  { channel: 'whatsapp', provider: 'local-preview', mode: 'preview', configured: true },
-  { channel: 'email', provider: 'local-preview', mode: 'preview', configured: true },
-  { channel: 'sms', provider: 'sms-provider', mode: 'external', configured: false },
-];
+export const outboundProviderCapabilities = [
+  {
+    channel: "whatsapp",
+    provider: "local-preview",
+    mode: "preview",
+    configured: true,
+    live: false,
+  },
+  {
+    channel: "email",
+    provider: "local-preview",
+    mode: "preview",
+    configured: true,
+    live: false,
+  },
+  {
+    channel: "sms",
+    provider: "none",
+    mode: "disabled",
+    configured: false,
+    live: false,
+  },
+] as const;
 
 export function getOutboundProviderCapability(channel: OutboundChannel) {
-  return outboundProviderCapabilities.find((capability) => capability.channel === channel);
+  return outboundProviderCapabilities.find(
+    (capability) => capability.channel === channel,
+  );
 }
 
 export type NotificationTemplate = Readonly<{
   id: string;
   name: string;
-  channel: OutboundChannel | 'in_app';
+  channel: OutboundChannel | "in_app";
+  eventType: CommunicationEventType;
   subject?: string;
   body: string;
   variables: readonly string[];
+  locale: CommunicationLocale;
+  version: number;
 }>;
 
-export const notificationTemplates: readonly NotificationTemplate[] = [
+const compatibilityTemplates = [
   {
-    id: 'whatsapp-rent-reminder',
-    name: 'تذكير إيجار عبر واتساب',
-    channel: 'whatsapp',
-    body: 'مرحباً {{name}}، تذكير باستحقاق إيجار {{unit}} بتاريخ {{date}} بمبلغ {{amount}}.',
-    variables: ['name', 'unit', 'date', 'amount'],
+    id: "whatsapp-rent-reminder",
+    name: "تذكير استحقاق عبر واتساب",
+    channel: "whatsapp",
+    eventType: "RENT_DUE_REMINDER",
   },
   {
-    id: 'email-owner-statement',
-    name: 'كشف مالك بالبريد',
-    channel: 'email',
-    subject: 'كشف حساب {{month}} — {{property}}',
-    body: 'نرفق ملخص التحصيل والمصروفات لصافي {{net}} عن فترة {{month}}.',
-    variables: ['month', 'property', 'net'],
+    id: "email-owner-statement",
+    name: "جاهزية ملخص المالك بالبريد",
+    channel: "email",
+    eventType: "OWNER_STATEMENT_READY",
   },
   {
-    id: 'whatsapp-contract-renewal',
-    name: 'دعوة تجديد عقد',
-    channel: 'whatsapp',
-    body: 'عقدكم على {{property}} / {{unit}} ينتهي بتاريخ {{end_date}}. هل نبدأ إجراءات التجديد؟',
-    variables: ['property', 'unit', 'end_date'],
+    id: "whatsapp-contract-renewal",
+    name: "متابعة عقد عبر واتساب",
+    channel: "whatsapp",
+    eventType: "CONTRACT_EXPIRING",
   },
   {
-    id: 'email-payment-receipt',
-    name: 'إرسال إيصال تحصيل',
-    channel: 'email',
-    subject: 'إيصال تحصيل {{receipt_no}}',
-    body: 'تم تسجيل دفعتكم بمبلغ {{amount}} بتاريخ {{date}}. رقم الإيصال: {{receipt_no}}.',
-    variables: ['amount', 'date', 'receipt_no'],
+    id: "email-payment-receipt",
+    name: "تحديث التحصيل بالبريد",
+    channel: "email",
+    eventType: "PAYMENT_RECEIPT_POSTED",
   },
 ] as const;
 
-/**
- * Queue/preview an outbound message without binding UI to a paid provider.
- * Current behavior is a local preview adapter suitable for product UX.
- */
+export const notificationTemplates: readonly NotificationTemplate[] =
+  compatibilityTemplates.flatMap((entry) =>
+    (["ar", "en"] as const).map((locale) => {
+      const canonical = communicationTemplates.find(
+        (template) =>
+          template.eventType === entry.eventType &&
+          template.channel === entry.channel &&
+          template.locale === locale,
+      );
+      if (!canonical)
+        throw new Error(
+          `Missing communication template: ${entry.eventType}/${entry.channel}/${locale}`,
+        );
+      return {
+        ...entry,
+        id: locale === "ar" ? entry.id : `${entry.id}-en`,
+        subject: canonical.subject,
+        body: canonical.body,
+        variables: [],
+        locale,
+        version: canonical.version,
+      };
+    }),
+  );
+
+const previewAdapter: CommunicationProviderAdapter =
+  new PreviewCommunicationAdapter();
+
+function resultMessage(result: CommunicationPreviewResult): string {
+  switch (result.reason) {
+    case "CONSENT_REQUIRED":
+      return "يجب تأكيد موافقة المستلم قبل تجهيز معاينة لقناة خارجية.";
+    case "HUMAN_REVIEW_REQUIRED":
+      return "تتطلب هذه الرسالة مراجعة بشرية قبل تجهيز المعاينة.";
+    case "PREFERENCE_DISABLED":
+      return "تفضيل هذه القناة غير مفعّل للمستلم.";
+    case "QUIET_HOURS":
+      return "تقع المعاينة ضمن ساعات الهدوء المحددة.";
+    case "RECIPIENT_INVALID":
+      return "بيانات المستلم غير صالحة لهذه القناة.";
+    default:
+      return "القناة أو الحدث غير مسموح بهما.";
+  }
+}
+
 export async function sendOutboundMessage(
   request: OutboundMessageRequest,
 ): Promise<OutboundMessageResult> {
-  const body = request.templateId
-    ? renderMessageTemplate(
-        notificationTemplates.find((template) => template.id === request.templateId)?.body ?? request.body,
-        request.variables,
-      )
-    : request.body;
-
-  if (request.channel === 'whatsapp') {
-    if (!request.to.trim()) {
-      return {
-        accepted: false,
-        provider: 'local-preview',
-        message: 'رقم واتساب مطلوب قبل إنشاء رابط الإرسال.',
-      };
-    }
-
+  if (request.channel === "sms") {
     return {
-      accepted: true,
-      provider: 'local-preview',
-      previewUrl: buildWhatsAppUrl(request.to, body),
-      message: 'تم تجهيز رابط واتساب للمعاينة. لم يتم الإرسال التلقائي.',
+      accepted: false,
+      provider: "local-preview",
+      mode: "preview",
+      message: "قناة SMS غير مفعّلة أو مبررة في هذه البيئة.",
+    };
+  }
+  const template =
+    notificationTemplates.find(
+      (candidate) => candidate.id === request.templateId,
+    ) ??
+    notificationTemplates.find(
+      (candidate) =>
+        candidate.channel === request.channel &&
+        candidate.locale === (request.locale ?? "ar"),
+    );
+  if (!template || template.channel === "in_app") {
+    return {
+      accepted: false,
+      provider: "local-preview",
+      mode: "preview",
+      message: "القالب المحدد غير صالح لهذه القناة.",
     };
   }
 
-  if (request.channel === 'email') {
-    if (!request.to.trim()) {
-      return {
-        accepted: false,
-        provider: 'local-preview',
-        message: 'البريد الإلكتروني مطلوب قبل تجهيز الرسالة.',
-      };
-    }
-
-    const subject = request.subject ?? `رسالة من ${APP_BRAND_NAME}`;
-    const mailto = `mailto:${encodeURIComponent(request.to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  const result = await previewAdapter.prepare({
+    eventType: template.eventType,
+    channel: request.channel,
+    locale: template.locale,
+    recipient: request.to,
+    consentGranted: request.consentGranted === true,
+    humanReviewed: request.humanReviewed === true,
+    preference: {
+      enabled: true,
+      locale: template.locale,
+      timezone: "Asia/Muscat",
+      quietHoursStart: 0,
+      quietHoursEnd: 0,
+    },
+  });
+  if (!result.accepted) {
     return {
-      accepted: true,
-      provider: 'local-preview',
-      previewUrl: mailto,
-      message: 'تم تجهيز مسودة البريد. لم يتم الإرسال التلقائي.',
+      accepted: false,
+      provider: "local-preview",
+      mode: "preview",
+      message: resultMessage(result),
     };
   }
-
   return {
-    accepted: false,
-    provider: 'local-preview',
-    message: 'قناة الإرسال غير مفعّلة بعد في هذه البيئة.',
+    accepted: true,
+    provider: "local-preview",
+    mode: "preview",
+    preview: {
+      subject: result.subject,
+      body: result.body,
+      templateKey: result.templateKey,
+      templateVersion: result.templateVersion,
+    },
+    message:
+      "تم تجهيز معاينة محلية فقط. لم تُفتح قناة خارجية ولم تُرسل أي رسالة.",
   };
 }
 
-export function listNotificationTemplates(channel?: NotificationTemplate['channel']) {
-  if (!channel) return [...notificationTemplates];
-  return notificationTemplates.filter((template) => template.channel === channel);
+export function listNotificationTemplates(
+  channel?: NotificationTemplate["channel"],
+  locale: CommunicationLocale = "ar",
+) {
+  return notificationTemplates.filter(
+    (template) =>
+      template.locale === locale && (!channel || template.channel === channel),
+  );
 }
+
+// Exported for focused contract tests without invoking an adapter.
+export { prepareCommunicationPreview };

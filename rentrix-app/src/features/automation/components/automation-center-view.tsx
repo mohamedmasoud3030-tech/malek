@@ -1,4 +1,4 @@
-import { AlertTriangle, BellRing, CalendarClock, ExternalLink, Mail, MessageCircle, PauseCircle, PlayCircle, RefreshCw, Smartphone, Wrench } from 'lucide-react';
+import { AlertTriangle, BellRing, CalendarClock, Mail, MessageCircle, PauseCircle, PlayCircle, RefreshCw, Smartphone, Wrench } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { AsyncContentState } from '@/components/async-content-state';
 import { Badge } from '@/components/ui/badge';
@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { FilterTabs } from '@/components/ui/filter-tabs';
+import { Input } from '@/components/ui/input';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { SectionHeader } from '@/components/ui/section-header';
@@ -13,14 +14,15 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
+  cancelAutomationJob,
   executeAutomationRule,
+  getAutomationJobStatus,
   listAutomationNotifications,
   listAutomationRules,
   listAutomationRuns,
   toggleAutomationRule,
 } from '../automation-service';
 import { automationTemplatePreviews } from '../automation-catalog';
-import { buildTemplateWhatsAppDemoUrl } from '../automation-whatsapp';
 import type { AutomationChannel } from '../types';
 import { formatLatinDateTime } from '@/lib/formatters';
 
@@ -70,7 +72,20 @@ function formatAutomationDate(value: string | number | null | undefined) {
 
 export function AutomationCenterView() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [latestJobId, setLatestJobId] = useState<string | null>(null);
+  const [cancelRequestKey, setCancelRequestKey] = useState('');
+  const [cancelReason, setCancelReason] = useState('');
   const queryClient = useQueryClient();
+  const latestJobQuery = useQuery({
+    queryKey: ['background-job-status', latestJobId],
+    queryFn: () => getAutomationJobStatus(latestJobId!),
+    enabled: Boolean(latestJobId),
+    retry: false,
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      return status && ['SUCCEEDED', 'DEAD', 'CANCELLED'].includes(status) ? false : 3_000;
+    },
+  });
   const rulesQuery = useQuery({ queryKey: ['automation-rules'], queryFn: listAutomationRules });
   const runsQuery = useQuery({ queryKey: ['automation-runs'], queryFn: () => listAutomationRuns(10) });
   const notificationsQuery = useQuery({ queryKey: ['automation-notifications'], queryFn: () => listAutomationNotifications(20) });
@@ -87,7 +102,10 @@ export function AutomationCenterView() {
   const executeMut = useMutation({
     mutationFn: (ruleId: string) => executeAutomationRule(ruleId),
     onSuccess: (result) => {
-      toast.success(`تم التنفيذ: ${result.processed} عنصر، ${result.notifications} إشعار`);
+      setLatestJobId(result.run_id);
+      setCancelRequestKey(globalThis.crypto.randomUUID());
+      setCancelReason('');
+      toast.success(result.queued ? 'تم إدراج المهمة في قائمة الانتظار المتينة.' : 'تم قبول المهمة.');
       void Promise.all([
         queryClient.invalidateQueries({ queryKey: ['automation-rules'] }),
         queryClient.invalidateQueries({ queryKey: ['automation-runs'] }),
@@ -95,6 +113,16 @@ export function AutomationCenterView() {
       ]);
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر التنفيذ'),
+  });
+
+  const cancelJobMutation = useMutation({
+    mutationFn: ({ id, reason, requestKey }: { id: string; reason: string; requestKey: string }) => cancelAutomationJob(id, reason, requestKey),
+    onSuccess: async () => {
+      toast.success('تم تسجيل طلب إلغاء المهمة.');
+      setCancelReason('');
+      await latestJobQuery.refetch();
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر إلغاء المهمة'),
   });
 
   const rules = rulesQuery.data ?? [];
@@ -110,17 +138,20 @@ export function AutomationCenterView() {
     disabled: rules.filter((rule) => !rule.is_enabled).length,
   }), [rules]);
 
-  const ruleActions = (rule: AutomationRule) => (
+  const ruleActions = (rule: AutomationRule) => {
+    const queueSupported = ['contract_expiry', 'overdue_invoice', 'maintenance_overdue'].includes(rule.rule_type);
+    return (
     <div className="flex flex-wrap gap-2" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
       <Button variant="secondary" disabled={toggleMut.isPending} onClick={() => toggleMut.mutate({ id: rule.id, enabled: !rule.is_enabled })}>
         {rule.is_enabled ? <PauseCircle className="size-4" /> : <PlayCircle className="size-4" />}
         {rule.is_enabled ? 'إيقاف' : 'تفعيل'}
       </Button>
-      <Button variant="outline" disabled={executeMut.isPending} onClick={() => executeMut.mutate(rule.id)}>
-        <RefreshCw className="size-4" />تشغيل الآن
+      <Button variant="outline" disabled={executeMut.isPending || !queueSupported} title={queueSupported ? undefined : 'نوع القاعدة غير مدعوم في العامل المتين'} onClick={() => executeMut.mutate(rule.id)}>
+        <RefreshCw className="size-4" />{queueSupported ? 'تشغيل الآن' : 'غير مدعوم'}
       </Button>
     </div>
-  );
+    );
+  };
 
   const ruleColumns: ColumnDef<AutomationRule>[] = [
     {
@@ -174,6 +205,36 @@ export function AutomationCenterView() {
           <KpiCard label="إشعارات النظام" value={notifications.length} icon={Wrench} accent="emerald" />
         </ResponsiveCardGrid>
       </div>
+
+      {latestJobId ? (
+        <Card aria-live="polite">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">حالة آخر مهمة متينة</CardTitle>
+            <CardDescription>التنفيذ غير متزامن. حدّثت الحالة تلقائياً دون إعادة إرسال المهمة.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {latestJobQuery.isLoading ? <p role="status" className="text-sm text-muted-foreground">جارٍ تحميل حالة المهمة...</p> : null}
+            {latestJobQuery.isError ? <p role="alert" className="text-sm text-destructive">تعذر تحميل حالة المهمة. لا تُعد إرسال القاعدة قبل التحقق.</p> : null}
+            {latestJobQuery.data ? (
+              <>
+                <div className="flex flex-wrap items-center gap-2">
+                  <StatusBadge tone={latestJobQuery.data.status === 'SUCCEEDED' ? 'success' : latestJobQuery.data.status === 'DEAD' ? 'danger' : latestJobQuery.data.status === 'CANCELLED' ? 'neutral' : 'warning'}>
+                    {latestJobQuery.data.status}
+                  </StatusBadge>
+                  <span className="text-xs text-muted-foreground">المحاولة {latestJobQuery.data.attempt_count} من {latestJobQuery.data.max_attempts}</span>
+                  <span className="text-xs text-muted-foreground">التقدم {latestJobQuery.data.progress_current}/{latestJobQuery.data.progress_total ?? '—'}</span>
+                </div>
+                {['QUEUED', 'RUNNING', 'RETRY_WAIT'].includes(latestJobQuery.data.status) ? (
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <Input value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} maxLength={300} placeholder="سبب إلغاء واضح (10 أحرف على الأقل)" aria-label="سبب إلغاء المهمة" />
+                    <Button variant="secondary" disabled={cancelReason.trim().length < 10 || cancelJobMutation.isPending} onClick={() => cancelJobMutation.mutate({ id: latestJobId, reason: cancelReason, requestKey: cancelRequestKey })}>طلب الإلغاء</Button>
+                  </div>
+                ) : null}
+              </>
+            ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
 
       <FilterTabs
         value={statusFilter}
@@ -235,7 +296,6 @@ export function AutomationCenterView() {
         <div className="grid gap-3 md:grid-cols-2">
           {automationTemplatePreviews.map((template) => {
             const Icon = channelIcon[template.channel as AutomationChannel] || MessageCircle;
-            const whatsappPreviewUrl = buildTemplateWhatsAppDemoUrl(template);
             return (
               <Card key={template.id}>
                 <CardHeader className="pb-2">
@@ -244,11 +304,7 @@ export function AutomationCenterView() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <pre className="whitespace-pre-wrap rounded-2xl bg-muted/50 p-3 text-xs font-bold leading-6 text-muted-foreground">{template.body}</pre>
-                  {whatsappPreviewUrl ? (
-                    <Button type="button" variant="secondary" size="sm" asChild>
-                      <a href={whatsappPreviewUrl} target="_blank" rel="noreferrer"><ExternalLink className="size-4" />معاينة واتساب</a>
-                    </Button>
-                  ) : null}
+                  <Badge variant="outline">معاينة محلية فقط · لا يوجد إرسال خارجي</Badge>
                 </CardContent>
               </Card>
             );

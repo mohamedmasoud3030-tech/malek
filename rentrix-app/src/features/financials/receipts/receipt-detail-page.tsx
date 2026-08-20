@@ -1,5 +1,5 @@
 import { Link, useSearch } from '@tanstack/react-router';
-import { ArrowRight, Printer, MessageCircle, Share2, Copy, ExternalLink, Download } from 'lucide-react';
+import { ArrowRight, Printer, Share2, Copy, ExternalLink, Download } from 'lucide-react';
 import { useState, useCallback } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
@@ -14,7 +14,7 @@ import { formatDate, formatMoney, getErrorMessage } from '../components/financia
 import { toFinancialNumber } from '../financialMath';
 import { formatReceiptContext, paymentMethodLabels, receiptStatusLabels } from '../components/receipt-formatters';
 import { toast } from 'sonner';
-import { openWhatsApp, shareOrCopy } from '@/services/action-service';
+import { shareOrCopy } from '@/services/action-service';
 import { documentService } from '@/services/documents/DocumentService';
 import { toReceiptDocumentPayload } from '@/services/documents/documentPayloadAdapters';
 import { DocumentReadinessError, runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
@@ -95,21 +95,14 @@ export function ReceiptDetailPage() {
     });
   }, [buildReceiptDocument, documentSettings.isReady]);
 
-  const handleWhatsApp = useCallback(() => {
-    if (!receipt) return;
-    const message = `إيصال استلام\nرقم: ${receipt.receipt_number}\nالتاريخ: ${formatDate(receipt.payment_date)}\nالمبلغ: ${formatMoney(receipt.amount)}\nطريقة الدفع: ${paymentMethodLabels[receipt.payment_method] ?? receipt.payment_method}`;
-    openWhatsApp(null, message);
-  }, [receipt]);
-
   const handleShare = useCallback(async () => {
     setIsSharing(true);
     try {
       const result = await shareOrCopy({
-        title: `إيصال ${receipt?.receipt_number ?? ''}`,
-        text: `إيصال استلام رقم ${receipt?.receipt_number}`,
-        url: window.location.href,
+        title: 'تحديث حالة تحصيل',
+        text: 'تم تحديث حالة تحصيل. يرجى مراجعة الإيصال من المسار المعتمد قبل اتخاذ أي إجراء.',
       });
-      if (result === 'copied') toast.success('تم نسخ رابط الإيصال');
+      if (result === 'copied') toast.success('تم نسخ رسالة عامة دون بيانات الإيصال');
       if (result === 'unavailable') toast.error('تعذر مشاركة الإيصال من هذا المتصفح');
     } catch (error) {
       if ((error as Error).name !== 'AbortError') toast.error('تعذر مشاركة الإيصال');
@@ -190,10 +183,6 @@ export function ReceiptDetailPage() {
                 <Download className="me-2 size-4" />
                 تنزيل PDF
               </Button>
-              <Button variant="secondary" onClick={handleWhatsApp} className="min-h-11">
-                <MessageCircle className="me-2 size-4" />
-                واتساب
-              </Button>
               <Button variant="secondary" onClick={handleShare} disabled={isSharing} className="min-h-11">
                 <Share2 className="me-2 size-4" />
                 {isSharing ? 'جارٍ المشاركة...' : 'مشاركة'}
@@ -237,7 +226,7 @@ export function ReceiptDetailPage() {
             <div className="rounded-2xl border border-border/70 bg-muted/20 p-4">
               <p className="text-xs font-bold text-muted-foreground">المستأجر</p>
               <p className="mt-1 text-lg font-black">{receipt.tenant_name ?? '—'}</p>
-              <p className="text-xs text-muted-foreground">يمكن تجهيز مشاركة الإيصال عبر واتساب من شريط الإجراءات.</p>
+              <p className="text-xs text-muted-foreground">استخدم المستند المعتمد للمشاركة بعد التحقق من المستلم والقناة.</p>
             </div>
             <div className="rounded-2xl border border-border/70 bg-muted/20 p-4">
               <p className="text-xs font-bold text-muted-foreground">العقار / الوحدة</p>

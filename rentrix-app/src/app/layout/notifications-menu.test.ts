@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { sanitizeNotificationLink, sanitizeNotificationPreview } from './app-notifications-service';
 import { buildNotificationItems } from './notifications-menu';
 
 describe('buildNotificationItems', () => {
@@ -23,6 +24,16 @@ describe('buildNotificationItems', () => {
       ['/contracts', 2],
       ['/maintenance', 1],
     ]);
+  });
+
+  it('sanitizes persisted lock-screen-style copy and deep links', () => {
+    expect(sanitizeNotificationPreview('token abc', 'تحديث آمن', 120)).toBe('تحديث آمن');
+    expect(sanitizeNotificationPreview('اتصل على 99112233', 'تحديث آمن', 120)).toBe('تحديث آمن');
+    expect(sanitizeNotificationPreview('طلب يحتاج مراجعة', 'تحديث آمن', 120)).toBe('طلب يحتاج مراجعة');
+    expect(sanitizeNotificationLink('/contracts/00000000-0000-0000-0000-000000000123')).toBe('/dashboard');
+    expect(sanitizeNotificationLink('https://evil.example')).toBe('/dashboard');
+    expect(sanitizeNotificationLink('/reset-password?token=expired-secret')).toBe('/dashboard');
+    expect(sanitizeNotificationLink('/settings?section=users-permissions')).toBe('/settings?section=users-permissions');
   });
 
   it('attaches the route-guard permissions so the menu can mirror navigation visibility', () => {

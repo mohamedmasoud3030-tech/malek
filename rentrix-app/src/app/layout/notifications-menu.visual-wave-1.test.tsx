@@ -150,10 +150,12 @@ describe('Visual Wave 1 — app-shell notification states', () => {
     // The pending request must be reflected in the bell count.
     expect(host.querySelector('button[aria-label="التنبيهات (1)"]')).toBeTruthy();
     open(host);
-    // Distinct group communicates "this requires action" with requester,
-    // requested permission, pending badge, and a direct review CTA.
+    // Distinct group communicates "this requires action" without exposing
+    // requester identity or free-text reason in the notification preview.
     expect(host.textContent).toContain('طلبات تحتاج إجراء (1)');
-    expect(host.textContent).toContain('أحمد السالمي');
+    expect(host.textContent).toContain('طلب صلاحية جديد');
+    expect(host.textContent).not.toContain('أحمد السالمي');
+    expect(host.textContent).not.toContain('لإدارة سجل الأراضي');
     expect(host.textContent).toContain('عرض الأراضي');
     expect(host.textContent).toContain('قيد المراجعة');
     expect(host.querySelector('[data-permission-requests-need-action]')).not.toBeNull();
