@@ -34,13 +34,13 @@ export const contractStatusLabels: Record<(typeof contractStatusValues)[number],
   terminated: 'ملغي',
 };
 
-type ContractStatusTone = 'blue' | 'green' | 'red' | 'gray' | 'gold';
+type ContractStatusTone = 'success' | 'warning' | 'danger' | 'info' | 'neutral';
 
 export const contractStatusTone: Record<(typeof contractStatusValues)[number], ContractStatusTone> = {
-  draft: 'gray',
-  active: 'green',
-  expired: 'gold',
-  terminated: 'red',
+  draft: 'neutral',
+  active: 'success',
+  expired: 'warning',
+  terminated: 'danger',
 };
 
 export const paymentCycleLabels: Record<(typeof paymentCycleValues)[number], string> = {
