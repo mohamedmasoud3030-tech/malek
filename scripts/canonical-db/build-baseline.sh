@@ -60,12 +60,9 @@ for raw in open(src, encoding="utf-8", errors="replace"):
         continue
     if line.startswith("GRANT ") or line.startswith("REVOKE ") or line.startswith("ALTER DEFAULT PRIVILEGES "):
         continue
-    if " CHECK " in line or line.lstrip().startswith("CONSTRAINT "):
+    if "CHECK" in line or line.lstrip().startswith("CONSTRAINT"):
         line = re.sub(r"\s+", "", line)
-        prev = None
-        while prev != line:
-            prev = line
-            line = re.sub(r"\(\(([^()]+)\)AND\(([^()]+)\)\)", r"(\1)AND(\2)", line)
+        line = line.replace("(", "").replace(")", "")
     out.append(line.rstrip())
 text = "\n".join(out)
 text = re.sub(r"\n{3,}", "\n\n", text).strip() + "\n"
