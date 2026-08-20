@@ -81,6 +81,7 @@ jobs:
 
       - name: Upload canonical build evidence
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: canonical-db-baseline-${{ github.run_id }}
