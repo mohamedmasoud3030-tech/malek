@@ -85,6 +85,26 @@ jobs:
       - name: Fail on WP-DB0 contract drift
         if: steps.db0.outputs.status != '0'
         run: exit 1
+      - name: Frontend–Database contract gate
+        id: contract
+        shell: bash
+        run: |
+          set +e
+          pnpm --filter ./rentrix-app run check:frontend-db-contract > /tmp/contract-gate.log 2>&1
+          status=$?
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          cat /tmp/contract-gate.log
+          exit 0
+      - name: Upload contract gate diagnostics
+        continue-on-error: true
+        if: steps.contract.outputs.status != '0'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: contract-gate-diagnostics
+          path: /tmp/contract-gate.log
+      - name: Fail on frontend-DB contract drift
+        if: steps.contract.outputs.status != '0'
+        run: exit 1
       - name: Run documentation link check
         id: docs-links
         shell: bash

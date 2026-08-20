@@ -73,7 +73,33 @@ Before database work is considered complete:
 - subledger reconciliation passes;
 - generated database contract/type drift is reviewed;
 - a second completely fresh bootstrap produces the same canonical schema;
-- unexplained schema drift is zero.
+- unexplained schema drift is zero;
+- **frontend–database contract gate passes** — every table, column, FK, RPC, and enum value the frontend uses is present in generated types (`pnpm --filter ./rentrix-app run check:frontend-db-contract`);
+- **live contract gate passes** — same inventory verified against the connected Supabase schema when `SUPABASE_MGMT_TOKEN` is set.
+
+## Contract gate maintenance
+
+The frontend inventory lives in `rentrix-app/scripts/check-frontend-db-contract.mjs`.
+Update it whenever a new `.from()` or `.rpc()` call is added to frontend source code:
+
+1. Add the new table/RPC to the `TABLES`/`RPCS` array.
+2. Add explicit columns to `SELECTED_COLS` if the select is not `*`.
+3. Run `pnpm --filter ./rentrix-app run check:frontend-db-contract` to verify.
+4. The CI gate (`ci.yml` step `Frontend–Database contract gate`) will block the merge if the contract drifts.
+
+## Migration chain
+
+| # | File | Description |
+|---|------|-------------|
+| 00 | `20260901000000_canonical_baseline.sql` | Canonical schema baseline (112 tables, 375 functions, 211 RLS policies) |
+| 01 | `20260901000001_restore_dump_acl_lock.sql` | Revoke PUBLIC/anon grants, lock internal functions |
+| 02 | `20260901000002_ai_assistant_budget_idempotency.sql` | AI usage budget and idempotency |
+| 03 | `20260901000003_self_service_support_requests.sql` | Internal support tickets |
+| 04 | `20260901000004_communication_preview_foundation.sql` | Communication prefs & outbox |
+| 05 | `20260901000005_admin_support_operations_foundation.sql` | Admin support toolkit |
+| 06 | `20260901000006_background_job_foundation.sql` | Durable Postgres-backed jobs |
+| 07 | `20260901000007_restrict_recalculate_invoice_status.sql` | Revoke authenticated execute on recalculate_invoice_status |
+| **08** | **`20260901000008_company_members_six_role_constraint.sql`** | **Align company_members.role CHECK with canonical 6-role model** |
 
 ## Remote environments
 
