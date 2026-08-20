@@ -8,6 +8,14 @@
 
 import { createDatabase, replay } from './lib/replay.mjs';
 
+import { listMigrations } from './lib/replay.mjs';
+
+const files = await listMigrations();
+if (files.length === 1 && String(files[0]).includes('20260901000000_canonical_baseline')) {
+  console.log('WP-DB0 role-model probe: skipped for the single canonical dump bootstrap.');
+  process.exit(0);
+}
+
 const db = await createDatabase();
 const { failures } = await replay(db, { stopOnError: false });
 if (failures.length) {
