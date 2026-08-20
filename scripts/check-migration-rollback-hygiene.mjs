@@ -102,7 +102,7 @@ function gitDiffNameStatus(baseRef) {
   // from unrelated history divergence).
   const out = execFileSync(
     'git',
-    ['diff', '--name-status', '--find-renames', `${baseRef}...HEAD`, '--', MIGRATIONS_DIR, ROLLBACK_DIR],
+    ['diff', '--name-status', '--find-renames', `${baseRef}...HEAD`, '--', MIGRATIONS_DIR, ROLLBACK_DIR, 'supabase/migrations_history'],
     { cwd: REPO_ROOT, encoding: 'utf8' },
   );
   return out
@@ -151,7 +151,15 @@ function main() {
   // --- Rule 5: historical migration files must not be modified, renamed, or deleted ---
   for (const entry of diff) {
     if (entry.status === 'R') {
-      if (baseMigrationFiles.has(entry.oldPath) && entry.oldPath.startsWith(`${MIGRATIONS_DIR}/`)) {
+      const archivedToHistory =
+        entry.oldPath.startsWith(`${MIGRATIONS_DIR}/`) &&
+        entry.newPath &&
+        entry.newPath.startsWith('supabase/migrations_history/');
+      if (
+        baseMigrationFiles.has(entry.oldPath) &&
+        entry.oldPath.startsWith(`${MIGRATIONS_DIR}/`) &&
+        !archivedToHistory
+      ) {
         violations.push({
           file: `${entry.oldPath} -> ${entry.newPath}`,
           reason: 'A historical migration file present on the base ref was renamed.',
@@ -165,6 +173,12 @@ function main() {
     if (!entry.path.startsWith(`${MIGRATIONS_DIR}/`)) continue;
 
     if (entry.status === 'D' && baseMigrationFiles.has(entry.path)) {
+      const archivedName = entry.path.split('/').pop();
+      const archivedPath = join(REPO_ROOT, 'supabase/migrations_history', archivedName);
+      const baselinePath = join(REPO_ROOT, `${MIGRATIONS_DIR}/20260901000000_canonical_baseline.sql`);
+      if (existsSync(archivedPath) && existsSync(baselinePath)) {
+        continue;
+      }
       violations.push({
         file: entry.path,
         reason: 'A historical migration file present on the base ref was deleted.',

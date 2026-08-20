@@ -224,5 +224,6 @@ export default defineConfig({
   },
   test: {
     exclude: ["e2e/**", "node_modules/**", "dist/**"],
+    setupFiles: [path.resolve(import.meta.dirname, "src/test/remap-archived-migrations.cjs")],
   },
 });

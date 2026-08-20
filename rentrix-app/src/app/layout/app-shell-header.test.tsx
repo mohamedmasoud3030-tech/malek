@@ -115,12 +115,10 @@ describe('AppShell — fixed global MALEK header', () => {
     }
   });
 
-  it('removes the duplicate mobile hamburger from the header (bottom control center is the nav entry)', () => {
+  it('keeps a header hamburger for phone and iPad (UX-001) plus the desktop collapse control', () => {
     act(() => { root.render(<AppShell />); });
 
-    // The header no longer carries a mobile hamburger — the bottom control
-    // center is the single mobile navigation entry point.
-    expect(host.querySelector('[data-mobile-menu-trigger]')).toBeNull();
+    expect(host.querySelector('[data-mobile-menu-trigger]')).not.toBeNull();
 
     // Desktop collapse toggle still reports the sidebar expansion state.
     const collapseTrigger = Array.from(host.querySelectorAll<HTMLElement>('button[aria-expanded]')).find(

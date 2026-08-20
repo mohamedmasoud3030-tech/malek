@@ -43,6 +43,18 @@ describe('bankCsvImportService', () => {
     expect(() => toImportPayloadRows(parsed)).toThrow(/fail-closed/);
   });
 
+  it('caps synchronous imports so large batches cannot monopolize one request', () => {
+    const parsed = parser.parseBankCsv(
+      'date,description,reference,amount\n2026-01-01,Test,REF1,100.500',
+      'test.csv',
+      100,
+    );
+    expect(() => toImportPayloadRows({
+      ...parsed,
+      validRows: Array.from({ length: 5_001 }, () => parsed.validRows[0]),
+    })).toThrow(/5000/);
+  });
+
   it('does not trust client-supplied company ID and uses fingerprint', async () => {
     const { supabase } = await import('@/lib/supabase');
     const mockRpc = supabase.rpc as unknown as ReturnType<typeof vi.fn>;

@@ -19,7 +19,11 @@ select plan(50);
 select has_table('public', 'journal_batches', 'journal_batches table exists');
 select has_table('public', 'journal_lines', 'journal_lines table exists');
 select has_table('public', 'accounting_periods', 'accounting_periods table exists');
-select has_table('public', 'journal_entries_archive', 'pre-Stage-3 archive table exists');
+select is(
+  to_regclass('public.journal_entries_archive') is null,
+  true,
+  'pre-Stage-3 archive table is retired in the canonical bootstrap'
+);
 select has_view('public', 'journal_entries', 'journal_entries compatibility view exists');
 
 -- ── 2. RLS is enabled on every Stage 3 table ─────────────────────────────────

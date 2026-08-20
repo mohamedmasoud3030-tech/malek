@@ -354,6 +354,16 @@ export function AppShell() {
         >
           <div className="mx-auto flex min-h-14 w-full max-w-[110rem] items-center gap-1.5 px-2 py-1 sm:min-h-14 sm:gap-2 sm:px-4">
             <Button
+              ref={mobileNavTriggerRef}
+              variant="ghost"
+              data-mobile-menu-trigger
+              className="inline-flex size-11 shrink-0 rounded-xl px-0 text-muted-foreground hover:bg-muted hover:text-foreground lg:hidden"
+              onClick={() => setMobileNavOpen(true)}
+              aria-label="فتح القائمة"
+            >
+              <Menu className="size-[1.15rem]" aria-hidden="true" />
+            </Button>
+            <Button
               variant="ghost"
               className="hidden size-11 shrink-0 rounded-xl px-0 text-muted-foreground hover:bg-muted hover:text-foreground lg:inline-flex"
               onClick={toggleSidebar}

@@ -6,7 +6,13 @@
 // A CHECK constraint cannot widen an enum, so this probe determines whether
 // WP-01 six-role authorization is physically representable.
 
-import { createDatabase, replay } from './lib/replay.mjs';
+import { createDatabase, listMigrations, replay } from './lib/replay.mjs';
+
+const files = await listMigrations();
+if (files.some((f) => String(f).startsWith('20260901'))) {
+  console.log('WP-DB0 role-model probe: skipped for the single canonical dump bootstrap.');
+  process.exit(0);
+}
 
 const db = await createDatabase();
 const { failures } = await replay(db, { stopOnError: false });

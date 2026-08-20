@@ -1,10 +1,23 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const migrationPath = resolve(
-  process.cwd(),
+const candidates = [
   'supabase/migrations/20260718101201_automation_scheduling_and_fixed_exception.sql',
-);
+  'supabase/migrations_history/20260718101201_automation_scheduling_and_fixed_exception.sql',
+];
+const migrationPath = candidates
+  .map((rel) => resolve(process.cwd(), rel))
+  .find((full) => {
+    try {
+      readFileSync(full, 'utf8');
+      return true;
+    } catch {
+      return false;
+    }
+  });
+if (!migrationPath) {
+  throw new Error('pg_cron quoting contract file is missing from migrations and migrations_history.');
+}
 const sql = readFileSync(migrationPath, 'utf8');
 
 const requiredFragments = [

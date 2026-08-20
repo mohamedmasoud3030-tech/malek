@@ -7,13 +7,13 @@ describe('automation real execution', () => {
     const servicePath = resolve(import.meta.dirname, './automation-service.ts');
     const content = readFileSync(servicePath, 'utf8');
     expect(content).toContain('automation_rules');
-    expect(content).toContain('execute_automation_rule');
+    expect(content).toContain('enqueue_automation_rule_job_atomic');
     expect(content).toContain('automation_runs');
     expect(content).toContain('automation_notifications');
     expect(content).toContain('toggleAutomationRule');
+    expect(content).toContain('get_background_job_status');
+    expect(content).toContain('cancel_background_job_atomic');
     expect(content).toContain('supabase');
-    expect(content).toContain('retryAutomationRun');
-    expect(content).toContain('runScheduledAutomationRules');
   });
 
   it('service does not use old local-preview only gateway pattern', () => {
@@ -139,12 +139,14 @@ describe('automation real execution', () => {
     expect(content).not.toContain('لم يتم تشغيل عامل أتمتة خارجي');
   });
 
-  it('service has retry and scheduled execution', () => {
+  it('service delegates retry/scheduling to the durable worker instead of browser RPCs', () => {
     const servicePath = resolve(import.meta.dirname, './automation-service.ts');
     const content = readFileSync(servicePath, 'utf8');
-    expect(content).toContain('retryAutomationRun');
-    expect(content).toContain('runScheduledAutomationRules');
-    expect(content).toContain('retry_automation_run');
-    expect(content).toContain('run_scheduled_automation_rules');
+    expect(content).not.toContain('retryAutomationRun');
+    expect(content).not.toContain('runScheduledAutomationRules');
+    expect(content).not.toContain("('retry_automation_run'");
+    expect(content).not.toContain("('run_scheduled_automation_rules'");
+    expect(content).toContain('getAutomationJobStatus');
+    expect(content).toContain('cancelAutomationJob');
   });
 });

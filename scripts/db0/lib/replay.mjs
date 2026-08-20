@@ -88,8 +88,15 @@ export async function replay(db, { files, stopOnError = true, onProgress } = {})
   const shimmed = [];
 
   for (const file of list) {
-    const sql = await readFile(join(MIGRATIONS_DIR, file), 'utf8');
+    let sql = await readFile(join(MIGRATIONS_DIR, file), 'utf8');
     const shims = detectPlatformShims(sql);
+    if (/create extension if not exists (pgcrypto|btree_gist|citext)/i.test(sql)) {
+      shims.push('create_extension_sql');
+      sql = sql.replace(
+        /create extension if not exists (pgcrypto|btree_gist|citext) with schema extensions;/gi,
+        'select 1;',
+      );
+    }
     if (shims.length) shimmed.push({ file, shims });
 
     try {

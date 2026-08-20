@@ -61,10 +61,16 @@ export async function toggleAutomationRule(id: string, isEnabled: boolean): Prom
   return data as AutomationRuleRecord;
 }
 
-export async function executeAutomationRule(ruleId: string): Promise<{ success: boolean; run_id: string; processed: number; failed: number; notifications: number }> {
-  const { data, error } = await (supabase.rpc as any)('execute_automation_rule', { p_rule_id: ruleId });
-  if (error) handleSupabaseError(error, 'تعذر تنفيذ قاعدة الأتمتة');
-  return data as any;
+export async function executeAutomationRule(ruleId: string): Promise<{ success: boolean; queued: boolean; run_id: string; processed: number; failed: number; notifications: number }> {
+  const requestId = globalThis.crypto.randomUUID();
+  const { data, error } = await (supabase.rpc as any)('enqueue_automation_rule_job_atomic', {
+    p_rule_id: ruleId,
+    p_request_id: requestId,
+  });
+  if (error) handleSupabaseError(error, 'تعذر إدراج قاعدة الأتمتة في قائمة الانتظار');
+  const result = data as { job_id?: string; status?: string } | null;
+  if (!result?.job_id) throw new Error('تعذر تأكيد إدراج مهمة الأتمتة.');
+  return { success: true, queued: true, run_id: result.job_id, processed: 0, failed: 0, notifications: 0 };
 }
 
 export async function listAutomationRuns(limit = 20): Promise<AutomationRun[]> {
@@ -86,16 +92,32 @@ export async function markNotificationRead(id: string): Promise<void> {
   if (error) handleSupabaseError(error, 'تعذر تحديث حالة الإشعار');
 }
 
-export async function retryAutomationRun(runId: string): Promise<any> {
-  const { data, error } = await (supabase.rpc as any)('retry_automation_run', { p_run_id: runId });
-  if (error) handleSupabaseError(error, 'تعذر إعادة محاولة تشغيل الأتمتة');
-  return data;
+export type BackgroundJobStatus = Readonly<{
+  id: string;
+  job_type: string;
+  status: 'QUEUED' | 'RUNNING' | 'RETRY_WAIT' | 'SUCCEEDED' | 'DEAD' | 'CANCELLED';
+  attempt_count: number;
+  max_attempts: number;
+  progress_current: number;
+  progress_total: number | null;
+  progress_code: string | null;
+  last_error_code: string | null;
+  cancellation_requested: boolean;
+}>;
+
+export async function getAutomationJobStatus(jobId: string): Promise<BackgroundJobStatus> {
+  const { data, error } = await (supabase.rpc as any)('get_background_job_status', { p_job_id: jobId });
+  if (error) handleSupabaseError(error, 'تعذر تحميل حالة مهمة الأتمتة');
+  return data as BackgroundJobStatus;
 }
 
-export async function runScheduledAutomationRules(): Promise<any> {
-  const { data, error } = await (supabase.rpc as any)('run_scheduled_automation_rules');
-  if (error) handleSupabaseError(error, 'تعذر تشغيل الأتمتة المجدولة');
-  return data;
+export async function cancelAutomationJob(jobId: string, reason: string, idempotencyKey: string): Promise<void> {
+  const { error } = await (supabase.rpc as any)('cancel_background_job_atomic', {
+    p_job_id: jobId,
+    p_reason: reason.trim(),
+    p_idempotency_key: idempotencyKey,
+  });
+  if (error) handleSupabaseError(error, 'تعذر طلب إلغاء مهمة الأتمتة');
 }
 
 // Legacy gateway compatibility for old tests

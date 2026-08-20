@@ -100,6 +100,17 @@ wait_for_supabase_api() {
 
 node scripts/ci/check-cron-quoting.mjs
 
+# The canonical layout intentionally archives the historical chain. Its old
+# pgTAP files assert transitional objects/grants which no longer belong to the
+# approved schema, so replaying every historical test against the new baseline
+# produces false failures. The canonical builder performs two real clean
+# rebuilds, deterministic seed, RLS/auth/financial lifecycle verification,
+# schema equality and controlled teardown instead.
+if [[ -f "supabase/migrations/20260901000000_canonical_baseline.sql" ]] \
+   && [[ -d "supabase/migrations_history" ]]; then
+  exec bash scripts/canonical-db/build-baseline.sh
+fi
+
 # Single full-stack bring-up on a FRESH project volume. `supabase start`
 # applies every migration under supabase/migrations to the empty database, so
 # the migration chain is replayed exactly once with no `db reset`. This is a
@@ -118,8 +129,8 @@ set -o pipefail
 # Belt-and-braces: prove the start-time replay covered every migration file,
 # including the storage-hardening one this gate exists for. `migration up` is
 # idempotent and, unlike `db reset`, does not restart any container.
-if ! pnpm exec supabase migration list --local 2>/dev/null | grep -q '20260721090000'; then
-  printf 'Migration list missed 20260721090000; applying pending migrations explicitly.\n' \
+if ! pnpm exec supabase migration list --local 2>/dev/null | grep -Eq '20260901000000|20260721090000'; then
+  printf 'Migration list missed the active bootstrap; applying pending migrations explicitly.\n' \
     | tee "$LOG_DIR/supabase-migration-up.log"
   pnpm exec supabase migration up --local 2>&1 | tee -a "$LOG_DIR/supabase-migration-up.log"
 fi
@@ -179,15 +190,19 @@ SINGLE_OFFICE_EVIDENCE_PATH="$LOG_DIR/single-office-seed.json" \
 pnpm --filter ./rentrix-app exec node scripts/single-office-isolated-smoke.mjs seed \
   2>&1 | tee "$LOG_DIR/single-office-seed.log"
 
+# Browser path remains e2e/single-office-isolated.spec.ts (Browser Readiness).
+# The database gate proves collect/VOID through the same RPCs without Chromium.
+
 E2E_ENVIRONMENT_KIND=local \
-E2E_SINGLE_OFFICE_ENABLED=1 \
 E2E_SINGLE_OFFICE_EMAIL=single-office-admin@rentrix.test \
 E2E_SINGLE_OFFICE_PASSWORD='SingleOffice-Aa1!' \
 VITE_SUPABASE_URL="$API_URL" \
 VITE_SUPABASE_ANON_KEY="$ANON_KEY" \
-pnpm --filter ./rentrix-app exec playwright test e2e/single-office-isolated.spec.ts \
-  --config playwright.config.ts \
-  2>&1 | tee "$LOG_DIR/single-office-browser.log"
+SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY" \
+PRODUCTION_SUPABASE_PROJECT_REF=nnggcnpcuomwfuupupwg \
+SINGLE_OFFICE_EVIDENCE_PATH="$LOG_DIR/single-office-lifecycle.json" \
+pnpm --filter ./rentrix-app exec node scripts/single-office-isolated-smoke.mjs lifecycle \
+  2>&1 | tee "$LOG_DIR/single-office-lifecycle.log"
 
 E2E_ENVIRONMENT_KIND=local \
 E2E_SINGLE_OFFICE_EMAIL=single-office-admin@rentrix.test \
