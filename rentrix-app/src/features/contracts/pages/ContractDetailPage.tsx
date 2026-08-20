@@ -10,7 +10,7 @@ import { buildContractActions } from '@/components/ui/entity-action-presets';
 import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
 import { DocumentReadinessNotice } from '@/features/settings/components/document-readiness-notice';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
-import { exportContractPdf, openContractWhatsApp, printContractView, shareContractLink } from '../actions/contractDetailActions';
+import { exportContractPdf, printContractView, shareContractLink } from '../actions/contractDetailActions';
 import { ContractDocumentsShell } from '../contractDocumentsShell';
 import { ContractPaymentsTab } from '../contractPaymentsTab';
 import { ContractFinancialTimelineSection, ContractLifecycleSection, ContractOverviewSection, ContractTimelineSection } from '../components/ContractDetailSections';
@@ -62,7 +62,6 @@ export function ContractDetailPage() {
   const contractMenuActions = buildContractActions({
     onPrint: documentSettings.isReady ? () => printContractView(contract, documentSettings.companySettings) : undefined,
     onPdf: documentSettings.isReady ? () => exportContractPdf(contract, documentSettings.companySettings) : undefined,
-    onWhatsApp: () => openContractWhatsApp(contract),
     onShare: handleShare,
     // Renew/terminate are primary inline actions in the header, not menu items.
   });
