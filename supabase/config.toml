@@ -14,3 +14,8 @@ schema_paths = []
 [db.seed]
 enabled = false
 sql_paths = []
+
+# Scheduled worker uses a dedicated 32+ character invocation secret and performs
+# its own constant-time check. No Production schedule is enabled by this config.
+[functions.background-worker]
+verify_jwt = false
