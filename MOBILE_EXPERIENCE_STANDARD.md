@@ -97,3 +97,19 @@
 4. `features/reports/components/ReportsWorkspace.tsx` — «لوحة القرار».
 
 **المحتفظ به** (صحيح): الشعار اللاتيني «MALEK» (`dir="ltr"` + خط Sora) يبقي `uppercase tracking-[0.16em]` — صحيح للاتيني.
+
+---
+
+## 9. التحقق الفعلي المؤكد (Chromium headless، هذه الجولة)
+
+- **صفر overflow أفقي** على widths **360 / 390 / 430** لكل الشاشات الرئيسية (dashboard, properties, contracts, financials, maintenance).
+- **RTL صحيح** (`dir=rtl`) في كل الشاشات المفحوصة.
+- **16px** على حقول الإدخال — يمنع زوم iOS التلقائي.
+- **Tab order** صحيح (email → password)، **Enter** يُرسل بدون stuck.
+- **التركيز ثابت** أثناء الكتابة (لا فقدان تركيز عند أول حرف).
+- **bottom sheet navigation** مفتوحة من الأسفل (rounded-t-3xl + max 82dvh + مقبض سحب) — مش drawer جانبي كامل.
+- **OMR** هو العرض النقدي الوحيد (صفر EGP/جنيه في كل شاشات المال).
+
+### ملاحظة بيئية
+المتصفح يحتاج مكتبات نظام (`libnspr4 libnss3 libatk libgbm …`) غير مثبّتة افتراضيًا في الساندبوكس؛ تُثبَّت بـ:
+`sudo apt-get install -y libnspr4 libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libxkbcommon0 libgbm1 libpango-1.0-0 libcairo2 libasound2`
