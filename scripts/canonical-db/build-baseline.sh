@@ -44,21 +44,29 @@ read_db_url() {
 normalize_dump() {
   local input="$1"
   local output="$2"
-  # Privilege lines are not a stable bootstrap fingerprint: applying a
-  # pg_dump through `supabase start` re-materializes default grants that the
-  # live historical dump had already revoked. Object definitions remain the
-  # compared contract; ACL hardening stays in migrations/canonicalize.
-  sed -E \
-    -e '/^-- Dumped from database version/d' \
-    -e '/^-- Dumped by pg_dump version/d' \
-    -e '/^-- Started on /d' \
-    -e '/^-- Completed on /d' \
-    -e '/^\\restrict /d' \
-    -e '/^\\unrestrict /d' \
-    -e '/^GRANT /d' \
-    -e '/^REVOKE /d' \
-    -e '/^ALTER DEFAULT PRIVILEGES /d' \
-    "$input" >"$output"
+  python3 - "$input" "$output" <<'PY'
+import re, sys
+src, dst = sys.argv[1], sys.argv[2]
+skip = (
+    "-- Dumped from database version",
+    "-- Dumped by pg_dump version",
+    "-- Started on ",
+    "-- Completed on ",
+)
+out = []
+for raw in open(src, encoding="utf-8", errors="replace"):
+    line = raw.rstrip("\n")
+    if line.startswith(skip) or line.startswith("\\restrict ") or line.startswith("\\unrestrict "):
+        continue
+    if line.startswith("GRANT ") or line.startswith("REVOKE ") or line.startswith("ALTER DEFAULT PRIVILEGES "):
+        continue
+    if " CHECK " in line or line.lstrip().startswith("CONSTRAINT "):
+        line = re.sub(r"\s+", "", line)
+    out.append(line.rstrip())
+text = "\n".join(out)
+text = re.sub(r"\n{3,}", "\n\n", text).strip() + "\n"
+open(dst, "w", encoding="utf-8").write(text)
+PY
 }
 
 schema_dump() {
