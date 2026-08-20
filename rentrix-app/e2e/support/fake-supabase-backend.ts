@@ -285,7 +285,7 @@ export function buildAcceptanceSeed(mode: CompanySettingsMode): AcceptanceSeed {
     id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
     company_id: IDS.company,
     user_id: IDS.user,
-    role: 'OWNER',
+    role: 'ADMIN',
     is_active: true,
     created_at: created,
     updated_at: created,
