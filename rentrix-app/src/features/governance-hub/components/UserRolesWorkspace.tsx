@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { Link } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { RefreshCw, ShieldCheck, UserCog, UsersRound } from 'lucide-react';
 import { toast } from 'sonner';
@@ -20,10 +21,10 @@ import {
   type PermissionRequest,
 } from '@/features/auth/permission-request-service';
 import { canManageGovernedUser, getRoleLabel, governedUserRoles } from '../user-roles-model';
-import { fetchGovernedUsers, updateGovernedUserAccess, type GovernedUser } from '../user-roles-service';
+import { fetchGovernedUsers, type GovernedUser } from '../user-roles-service';
 
 const roleDescriptions: ReadonlyArray<Readonly<{ role: UserRole; description: string }>> = [
-  { role: 'ADMIN', description: 'إدارة كاملة للمكتب والمستخدمين والحوكمة.' },
+  { role: 'ADMIN', description: 'حوكمة المكتب وعرض المستخدمين؛ تغييرات الوصول مقترحات غير منفذة حتى اعتماد المسار عالي التأثير.' },
   { role: 'MANAGER', description: 'تشغيل يومي ومراجعة طلبات الصلاحية فقط، دون إدارة الأدوار أو الشركة.' },
   { role: 'ACCOUNTANT', description: 'عرض ومراجعة البيانات المالية وإعداد التقارير وعمليات المطابقة البنكية. لا يملك صلاحية الاعتماد أو الصرف.' },
   { role: 'OPERATIONS', description: 'إدارة العقارات والعقود والصيانة ومراكز التكلفة. لا يملك صلاحيات مالية.' },
@@ -31,45 +32,31 @@ const roleDescriptions: ReadonlyArray<Readonly<{ role: UserRole; description: st
   { role: 'VIEWER', description: 'عرض فقط لجميع الوحدات والبيانات الأساسية دون أي صلاحية تعديل أو إنشاء.' },
 ];
 
-function UserAccessCard({ user, currentUserId, isSaving, onSave }: Readonly<{
+function UserAccessCard({ user, currentUserId }: Readonly<{
   user: GovernedUser;
   currentUserId: string | null | undefined;
-  isSaving: boolean;
-  onSave: (input: Readonly<{ id: string; role: UserRole; isActive: boolean }>) => void;
 }>) {
-  const [role, setRole] = useState<UserRole>(user.role ?? 'USER');
-  const [isActive, setIsActive] = useState(user.isActive);
   const isCurrentUser = !canManageGovernedUser(currentUserId, user.id);
-
-  useEffect(() => {
-    setRole(user.role ?? 'USER');
-    setIsActive(user.isActive);
-  }, [user.id, user.isActive, user.role]);
-
-  const hasChanges = role !== (user.role ?? 'USER') || isActive !== user.isActive;
   const displayName = user.fullName?.trim() || user.name || user.email;
   return (
     <Card className="rounded-2xl">
       <CardHeader className="gap-2 pb-3">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0"><CardTitle className="truncate text-base">{displayName}</CardTitle><CardDescription className="mt-1 truncate" dir="ltr">{user.email}</CardDescription></div>
-          {isCurrentUser ? <Badge variant="info">حسابك</Badge> : <Badge variant={isActive ? 'success' : 'warning'} dot>{isActive ? 'نشط' : 'موقوف'}</Badge>}
+          {isCurrentUser ? <Badge variant="info">حسابك</Badge> : <Badge variant={user.isActive ? 'success' : 'warning'} dot>{user.isActive ? 'نشط' : 'موقوف'}</Badge>}
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        <label className="block space-y-1.5 text-sm font-bold">
-          <span>الدور</span>
-          <Select value={role} disabled={isCurrentUser || isSaving} onChange={(event) => setRole(event.target.value as UserRole)}>
-            {governedUserRoles.map((candidate) => <option key={candidate} value={candidate}>{getRoleLabel(candidate)}</option>)}
-          </Select>
-        </label>
-        <label className="flex min-h-11 items-center justify-between gap-3 rounded-xl border border-border px-3 text-sm font-bold">
-          <span>الحساب نشط</span>
-          <input type="checkbox" className="size-5 accent-primary" checked={isActive} disabled={isCurrentUser || isSaving} onChange={(event) => setIsActive(event.target.checked)} />
-        </label>
-        {isCurrentUser
-          ? <p className="text-xs leading-5 text-muted-foreground">لا يمكنك خفض صلاحية حسابك أو إيقافه من هذه الشاشة.</p>
-          : <Button className="w-full" disabled={!hasChanges || isSaving} onClick={() => onSave({ id: user.id, role, isActive })}>{isSaving ? 'جارٍ الحفظ...' : 'حفظ الصلاحيات'}</Button>}
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-border px-3 py-2 text-sm">
+          <span className="font-bold">الدور الحالي</span>
+          <Badge variant="outline">{getRoleLabel(user.role ?? 'USER')}</Badge>
+        </div>
+        <p className="text-xs leading-5 text-muted-foreground">التعديل المباشر متوقف. يمكن للمسؤول إنشاء مقترح غير منفذ من عمليات الدعم بعد بحث مقنّع.</p>
+        {!isCurrentUser ? (
+          <Button asChild variant="secondary" className="w-full">
+            <Link to="/admin-support">فتح عمليات الدعم</Link>
+          </Button>
+        ) : null}
       </CardContent>
     </Card>
   );
@@ -157,12 +144,6 @@ export function UserRolesWorkspace() {
   const canManageUsers = canAccess('users.manage');
   const canReviewRequests = canAccess('permission_requests.review');
   const usersQuery = useQuery({ queryKey: ['governance-users'], queryFn: fetchGovernedUsers, enabled: canManageUsers });
-  const updateMutation = useMutation({
-    mutationFn: updateGovernedUserAccess,
-    onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: ['governance-users'] }); toast.success('تم حفظ دور المستخدم وحالته.'); },
-    onError: () => toast.error('تعذر حفظ صلاحيات المستخدم. تحقق من صلاحية إدارة المستخدمين.'),
-  });
-
   if (!canManageUsers && !canReviewRequests) return <AccessDenied message="لا تملك صلاحية إدارة المستخدمين أو مراجعة طلبات الصلاحية." />;
 
   return (
@@ -176,7 +157,7 @@ export function UserRolesWorkspace() {
           <div className="grid gap-3 md:grid-cols-3">{roleDescriptions.map(({ role, description }) => <div key={role} className="rounded-2xl border border-border bg-muted/20 p-4"><div className="flex items-center gap-2"><ShieldCheck className="size-4 text-primary" /><p className="font-black">{getRoleLabel(role)}</p></div><p className="mt-2 text-xs leading-5 text-muted-foreground">{description}</p></div>)}</div>
           {usersQuery.isPending ? <LoadingState variant="section" label="جارٍ تحميل المستخدمين والأدوار..." /> : null}
           {usersQuery.isError ? <p role="alert" className="rounded-2xl bg-destructive/10 p-5 text-sm text-destructive">تعذر تحميل المستخدمين.</p> : null}
-          {usersQuery.data ? <><div className="flex items-center gap-2 text-sm text-muted-foreground"><UsersRound className="size-4" />{usersQuery.data.length} مستخدمين</div><div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{usersQuery.data.map((governedUser) => <UserAccessCard key={governedUser.id} user={governedUser} currentUserId={user?.id} isSaving={updateMutation.isPending && updateMutation.variables?.id === governedUser.id} onSave={(input) => updateMutation.mutate(input)} />)}</div></> : null}
+          {usersQuery.data ? <><div className="flex items-center gap-2 text-sm text-muted-foreground"><UsersRound className="size-4" />{usersQuery.data.length} مستخدمين</div><div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{usersQuery.data.map((governedUser) => <UserAccessCard key={governedUser.id} user={governedUser} currentUserId={user?.id} />)}</div></> : null}
         </>
       ) : (
         <div className="rounded-2xl border border-border bg-muted/20 p-4 text-sm text-muted-foreground">يمكنك مراجعة طلبات الصلاحية، لكن إدارة أدوار المستخدمين وإعدادات الشركة تتطلب صلاحية مستقلة.</div>
