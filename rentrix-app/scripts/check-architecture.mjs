@@ -10,7 +10,9 @@ const violations = [];
 // Every existing cross-feature edge is explicit. A new feature starts with no
 // cross-feature access until its integration seam is reviewed and added here.
 const featureDependencyAllowList = new Map([
+  ['admin-support', new Set(['auth'])],
   ['ai-assistant', new Set(['financials'])],
+  ['automation', new Set(['communication'])],
   ['audit', new Set(['auth', 'settings'])],
   // UX-049: commissions source selector queries contracts, leads, lands, people, and
   // properties to build a typed, permission-aware source selector that replaces
