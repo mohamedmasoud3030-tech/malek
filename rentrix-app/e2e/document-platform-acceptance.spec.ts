@@ -646,7 +646,7 @@ test.describe('الجوال — mobile acceptance', () => {
     await page.goto(`/contracts/${IDS.contract}`);
     await expect(page.getByRole('heading', { name: 'تفاصيل العقد', exact: true })).toBeVisible({ timeout: 20_000 });
 
-    await page.getByRole('button', { name: 'إجراءات العقد' }).click();
+    await page.getByRole('button', { name: 'إجراءات أخرى' }).click();
     await expect(page.getByRole('option', { name: 'طباعة العقد' })).toBeVisible({ timeout: 15_000 });
     const popup = await openPrintPopup(page, () => page.getByRole('option', { name: 'طباعة العقد' }).click());
     await assertPopupIdentity(popup, [TENANT_NAME, 'عقد إيجار ساري المفعول']);
