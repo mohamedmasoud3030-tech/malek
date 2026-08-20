@@ -66,6 +66,7 @@ jobs:
           tail -n 200 /tmp/rentrix-db0-gate.log
           exit 0
       - name: Upload WP-DB0 gate diagnostics
+        continue-on-error: true
         if: steps.db0.outputs.status != '0'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -75,6 +76,7 @@ jobs:
         if: steps.db0.outputs.status != '0'
         run: pnpm db0:gen-types
       - name: Upload expected DB0 generated types
+        continue-on-error: true
         if: steps.db0.outputs.status != '0'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -94,6 +96,7 @@ jobs:
           cat /tmp/rentrix-doc-links.log
           exit 0
       - name: Upload documentation link diagnostics
+        continue-on-error: true
         if: steps.docs-links.outputs.status != '0'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -113,6 +116,7 @@ jobs:
           tail -n 200 /tmp/rentrix-typecheck.log
           exit 0
       - name: Upload typecheck diagnostics
+        continue-on-error: true
         if: steps.typecheck.outputs.status != '0'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -141,6 +145,7 @@ jobs:
           tail -n 220 /tmp/rentrix-full-tests.log
           exit 0
       - name: Upload full test diagnostics
+        continue-on-error: true
         if: steps.full-tests.outputs.status != '0'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -160,6 +165,7 @@ jobs:
           tail -n 160 /tmp/rentrix-financial-tests.log
           exit 0
       - name: Upload financial test diagnostics
+        continue-on-error: true
         if: steps.financial-tests.outputs.status != '0'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
