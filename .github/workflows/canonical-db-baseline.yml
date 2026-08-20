@@ -64,6 +64,9 @@ jobs:
       - name: Build and prove canonical database foundation
         run: bash scripts/canonical-db/build-baseline.sh
 
+      - name: Generate canonical TypeScript database contract
+        run: pnpm db0:gen-types
+
       - name: Reject UI/frontend implementation changes in this database branch
         run: |
           set -euo pipefail
@@ -100,7 +103,7 @@ jobs:
 
           git config user.name "arena-agent"
           git config user.email "arena-agent@users.noreply.github.com"
-          git add -A supabase
+          git add -A supabase\n          git add -- rentrix-app/src/types/database.ts
           git commit -m "refactor(db): replace historical bootstrap with proven canonical baseline"
           git push origin HEAD:agent/canonical-db-baseline-takeover
  || true)"
