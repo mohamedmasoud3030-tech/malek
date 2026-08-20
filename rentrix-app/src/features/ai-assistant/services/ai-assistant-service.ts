@@ -36,6 +36,11 @@ type FunctionErrorBody = {
 
 type FunctionSuccessBody = {
   reply?: string;
+  grounded?: boolean;
+  caveats?: string[];
+  meta?: {
+    source?: 'deterministic' | 'model' | 'fallback';
+  };
 };
 
 function toDateOnly(date: Date): string {
@@ -222,7 +227,19 @@ function readErrorBody(value: unknown): FunctionErrorBody {
 
 function readSuccessBody(value: unknown): FunctionSuccessBody {
   if (!isRecord(value)) return {};
-  return { reply: typeof value.reply === 'string' ? value.reply : undefined };
+  const meta = isRecord(value.meta) && ['deterministic', 'model', 'fallback'].includes(String(value.meta.source))
+    ? { source: value.meta.source as 'deterministic' | 'model' | 'fallback' }
+    : undefined;
+  const caveats = Array.isArray(value.caveats) && value.caveats.length <= 5
+    && value.caveats.every((entry) => typeof entry === 'string' && entry.length <= 500)
+    ? value.caveats as string[]
+    : undefined;
+  return {
+    reply: typeof value.reply === 'string' && value.reply.length <= 6_000 ? value.reply : undefined,
+    grounded: typeof value.grounded === 'boolean' ? value.grounded : undefined,
+    caveats,
+    meta,
+  };
 }
 
 async function readJson(response: Response): Promise<unknown> {
@@ -258,7 +275,7 @@ async function invokeAiAssistant(prompt: string, action: AiAssistantAction | und
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ prompt, action, history: history.slice(-6), context }),
+      body: JSON.stringify({ requestId: globalThis.crypto.randomUUID(), prompt, action, history: history.slice(-6), context }),
       signal: controller.signal,
     });
   } catch (error) {
@@ -278,8 +295,18 @@ async function invokeAiAssistant(prompt: string, action: AiAssistantAction | und
   }
 
   const successBody = readSuccessBody(body);
-  if (!successBody.reply?.trim()) throw new Error('عاد مساعد الذكاء الاصطناعي برد فارغ.');
-  return successBody.reply.trim();
+  if (
+    !successBody.reply?.trim()
+    || successBody.grounded === undefined
+    || !successBody.caveats
+    || !successBody.meta?.source
+  ) throw new Error('عاد مساعد الذكاء الاصطناعي برد غير صالح.');
+  return {
+    reply: successBody.reply.trim(),
+    grounded: successBody.grounded,
+    caveats: successBody.caveats,
+    source: successBody.meta.source,
+  };
 }
 
 export async function requestAiAssistantResponse(request: AiAssistantRequest): Promise<AiAssistantResponse> {
@@ -288,6 +315,6 @@ export async function requestAiAssistantResponse(request: AiAssistantRequest): P
   if (looksLikeRawSqlPrompt(prompt)) throw new Error('لا يقبل المساعد أوامر SQL ولا ينفذ استعلامات مباشرة. استخدم سؤالاً تشغيلياً بصيغة عادية.');
 
   const context = await buildAiAssistantContext();
-  const reply = await invokeAiAssistant(prompt, request.action, request.history, context);
-  return { reply, context };
+  const response = await invokeAiAssistant(prompt, request.action, request.history, context);
+  return { ...response, context };
 }
