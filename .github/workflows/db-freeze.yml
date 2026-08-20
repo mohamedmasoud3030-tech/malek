@@ -1,0 +1,22 @@
+name: DB Freeze Guard
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  db-freeze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          fetch-depth: 0
+      - name: Fetch main
+        run: git fetch --no-tags origin main
+      - name: Block unapproved database changes
+        run: node scripts/check-db-freeze.mjs --base origin/main
