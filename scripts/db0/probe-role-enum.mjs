@@ -9,7 +9,7 @@
 import { createDatabase, listMigrations, replay } from './lib/replay.mjs';
 
 const files = await listMigrations();
-if (files.length === 1 && String(files[0]).includes('20260901000000_canonical_baseline')) {
+if (files.some((f) => String(f).startsWith('20260901'))) {
   console.log('WP-DB0 role-model probe: skipped for the single canonical dump bootstrap.');
   process.exit(0);
 }
