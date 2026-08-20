@@ -57,7 +57,7 @@
 
 ## العيوب والمخاطر المعروفة
 
-1. **10 اختبارات contracts فاشلة (migration-contract tests)** — كانت بتشير لملفات ترحيلات (`20260730091200_contract_workflow_invariants.sql` وغيرها) الـ database agent شالها في الـ "canonical baseline" refactor. **في نطاق الـ database agent** مش نطاقي. (تحتاج إعادة تحقق بعد دمج الـ rebuild — آخر ما رأيته `#1519 regenerate database types`).
+1. **~45 اختبار migration-contract فاشل (ENOENT)** — بتشير لمسارات ترحيلات قديمة (`20260730091200_contract_workflow_invariants.sql` وغيرها) الـ database agent دمجها في `20260901000000_canonical_baseline.sql` واحد (1.4MB). **الـ database agent شغال عليها بنفسه** على فرع `fix/frontend-db-contract-gate` (آخر commit `7e250dcd` «frontend-DB contract gate + QA data + full contract verification» + `check-frontend-db-contract.mjs`). **ممنوع التداخل** — دي حدود الـ database agent (SQL/migrations/contracts).
 2. **`rpt_dashboard_snapshot`** كان غائبًا من الـ live DB (PGRST202) — الـ database agent أعاد البناء؛ تحتاج إعادة تحقق.
 3. **browser headless** يحتاج مكتبات نظام (`libnspr4 libnss3 libatk libgbm …`) مش مثبّتة افتراضيًا في الساندبوكس.
 

@@ -495,6 +495,11 @@
   --kpi-soft: var(--color-info-bg);
 }
 
+[data-visual-contract='v2'] .dashboard-kpi-card[data-tone='info'] {
+  --kpi-tone: var(--color-info-text);
+  --kpi-soft: var(--color-info-bg);
+}
+
 [data-visual-contract='v2'] .dashboard-kpi-card[data-tone='success'] {
   --kpi-tone: var(--color-success-text);
   --kpi-soft: var(--color-success-bg);

@@ -32,7 +32,7 @@
 
 ## الإخفاقات غير المحلولة
 
-- **10 اختبارات contracts (migration-contract)** — بتشير لترحيلات الـ database agent شالها. **BLOCKED** — في نطاق الـ database agent.
+- **~45 اختبار migration-contract (ENOENT)** — بتشير لمسارات ترحيلات قديمة دمجها الـ database agent في `20260901000000_canonical_baseline.sql`. **الـ database agent شغال عليها بنفسه** على فرع `fix/frontend-db-contract-gate` (آخر commit `7e250dcd`). **BLOCKED من ناحيتي** — ممنوع التداخل مع حدود الـ database agent.
 - **final integration** للفرع المعزول — معلّق على اكتمال الـ database rebuild.
 
 ## حالة Git
@@ -47,5 +47,5 @@
 |---|---|
 | **VERIFIED COMPLETE** | الهوية الزرقاء + bottom-sheet + OMR + توحيد الألوان + إزالة الازدواج (6 شاشات) + AI panel + login + التوحيد اللوني semantic + المعايير الموثّقة + walkthrough الفعلي |
 | **IMPLEMENTED BUT NOT VERIFIED** | الـ final integration (rebase+merge) — معلّق على استقرار القاعدة |
-| **BLOCKED** | الـ 10 اختبارات contracts (migration-contract) — في نطاق الـ database agent |
+| **BLOCKED** | ~45 اختبار migration-contract (ENOENT) — الـ database agent شغال عليها على فرع `fix/frontend-db-contract-gate` |
 | **NOT STARTED** | الـ 6 مستندات audit (`01_PROJECT_DISCOVERY` → `06_TEST_RELIABILITY`) — غير موجودة في الريبو |

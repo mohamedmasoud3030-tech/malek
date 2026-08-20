@@ -14,7 +14,7 @@ interface KpiGridProps {
   settings: CompanySettingsContract;
 }
 
-type KpiTone = 'primary' | 'success' | 'warning' | 'danger' | 'neutral';
+type KpiTone = 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'neutral';
 
 type DashboardKpi = Readonly<{
   label: string;
@@ -103,8 +103,11 @@ export function KpiGrid({ snapshot, isLoading, settings }: KpiGridProps) {
       value: money(ownerNetPayable),
       icon: HandCoins,
       support: settlementsDraft !== undefined ? `${settlementsDraft} تسوية بانتظار الاعتماد` : 'التزامات الملاك ضمن الفترة',
-      stateTone: (ownerNetPayable ?? 0) > 0 ? 'warning' : 'success',
-      stateLabel: (settlementsDraft ?? 0) > 0 ? 'بانتظار الاعتماد' : 'لا تعليق',
+      // Tone follows the real decision state: pending approval is the only
+      // actionable warning; an outstanding payable without pending approval
+      // is informational; zero balance is neutral (never a false "success").
+      stateTone: (settlementsDraft ?? 0) > 0 ? 'warning' : (ownerNetPayable ?? 0) > 0 ? 'info' : 'neutral',
+      stateLabel: (settlementsDraft ?? 0) > 0 ? 'بانتظار الاعتماد' : (ownerNetPayable ?? 0) > 0 ? 'مستحق' : 'لا التزامات',
       to: '/owner-settlements',
       destinationLabel: 'تسويات الملاك',
     },
