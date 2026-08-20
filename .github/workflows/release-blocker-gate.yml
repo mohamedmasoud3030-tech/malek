@@ -107,6 +107,7 @@ jobs:
         shell: bash
         run: bash scripts/ci/run-supabase-database-gate.sh
       - name: Upload single-office launch evidence
+        continue-on-error: true
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -118,6 +119,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
       - name: Upload database and Storage diagnostics
+        continue-on-error: true
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -178,6 +180,7 @@ jobs:
       - name: Run PR candidate read-only authentication lifecycle with zero skips
         run: pnpm --filter ./rentrix-app exec playwright test e2e/release-blocker-auth.spec.ts --config playwright.config.ts --project=chromium-desktop
       - name: Upload failed read-only authentication traces
+        continue-on-error: true
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
