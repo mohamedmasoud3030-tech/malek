@@ -1,16 +1,26 @@
 name: Canonical Database Baseline
 
 on:
-  push:
-    branches:
-      - agent/canonical-db-baseline-takeover
   pull_request:
-    branches:
-      - main
+    branches: [main]
+    paths:
+      - 'supabase/**'
+      - 'scripts/canonical-db/**'
+      - 'scripts/db0/**'
+      - 'rentrix-app/src/types/database.ts'
+      - '.github/workflows/canonical-db-baseline.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/**'
+      - 'scripts/canonical-db/**'
+      - 'scripts/db0/**'
+      - 'rentrix-app/src/types/database.ts'
+      - '.github/workflows/canonical-db-baseline.yml'
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: canonical-db-baseline-${{ github.event.pull_request.number || github.ref }}
@@ -29,7 +39,6 @@ jobs:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           fetch-depth: 0
-          ref: agent/canonical-db-baseline-takeover
 
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
 
@@ -64,27 +73,15 @@ jobs:
       - name: Build and prove canonical database foundation
         run: bash scripts/canonical-db/build-baseline.sh
 
-      - name: Generate canonical TypeScript database contract
+      - name: Regenerate canonical TypeScript database contract
         run: pnpm db0:gen-types
 
-      - name: Reject UI/frontend implementation changes in this database branch
-        run: |
-          set -euo pipefail
-          git fetch --no-tags origin main
-          # This DB branch permits only the small application-contract adapters required
-          # to prove canonical RPC/security boundaries. Visual/routes/components stay out.
-          changed="$(git diff --name-only origin/main...HEAD -- rentrix-app/src rentrix-app/e2e rentrix-app/public \
-            | grep -Ev '^(rentrix-app/src/types/database\.ts|rentrix-app/src/app/layout/app-shell\.tsx|rentrix-app/src/app/layout/app-shell-header\.test\.tsx|rentrix-app/src/app/layout/app-notifications-service\.ts|rentrix-app/src/features/automation/automation-service(\.ts|-real\.test\.ts)$|rentrix-app/src/features/financials/reconciliation/bankCsvImportService(\.ts|\.test\.ts)$|rentrix-app/src/test/remap-archived-migrations\.cjs|rentrix-app/vite\.config\.ts|rentrix-app/scripts/single-office-isolated-smoke\.mjs)
-          if [[ -n "$changed" ]]; then
-            echo "Database baseline branch modified frontend/UI paths:" >&2
-            printf '%s\n' "$changed" >&2
-            exit 1
-          fi
+      - name: Reject generated schema or type drift
+        run: git diff --exit-code -- supabase rentrix-app/src/types/database.ts
 
       - name: Upload canonical build evidence
-
-        continue-on-error: true
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: canonical-db-baseline-${{ github.run_id }}
@@ -92,53 +89,3 @@ jobs:
           include-hidden-files: true
           if-no-files-found: warn
           retention-days: 30
-
-      - name: Commit generated canonical bootstrap after all proofs pass
-        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-        shell: bash
-        run: |
-          set -euo pipefail
-          if git diff --quiet -- supabase && git diff --cached --quiet -- supabase; then
-            echo "Canonical layout already committed; verification-only run."
-            exit 0
-          fi
-
-          git config user.name "arena-agent"
-          git config user.email "arena-agent@users.noreply.github.com"
-          git add -A supabase\n          git add -- rentrix-app/src/types/database.ts
-          git commit -m "refactor(db): replace historical bootstrap with proven canonical baseline"
-          git push origin HEAD:agent/canonical-db-baseline-takeover
- || true)"
-          if [[ -n "$changed" ]]; then
-            echo "Database baseline branch modified frontend/UI paths:" >&2
-            printf '%s\n' "$changed" >&2
-            exit 1
-          fi
-
-      - name: Upload canonical build evidence
-
-        continue-on-error: true
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: canonical-db-baseline-${{ github.run_id }}
-          path: .canonical-db-output
-          include-hidden-files: true
-          if-no-files-found: warn
-          retention-days: 30
-
-      - name: Commit generated canonical bootstrap after all proofs pass
-        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-        shell: bash
-        run: |
-          set -euo pipefail
-          if git diff --quiet -- supabase && git diff --cached --quiet -- supabase; then
-            echo "Canonical layout already committed; verification-only run."
-            exit 0
-          fi
-
-          git config user.name "arena-agent"
-          git config user.email "arena-agent@users.noreply.github.com"
-          git add -A supabase
-          git commit -m "refactor(db): replace historical bootstrap with proven canonical baseline"
-          git push origin HEAD:agent/canonical-db-baseline-takeover

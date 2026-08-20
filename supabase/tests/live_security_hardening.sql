@@ -147,15 +147,20 @@ select ok(
   'company membership writes use live membership authority, not JWT role metadata'
 );
 
--- 12. Membership management authority must require an active OWNER/ADMIN in
--- an active company with an active database user.
+-- 12. Membership management authority must follow the canonical six-role
+-- model, use effective permission authority, and keep an active company/user.
 select ok(
-  pg_get_functiondef('app_private.can_manage_company_members(uuid)'::regprocedure) ilike '%cm.is_active%'
+  (select column_default = '''USER''::text'
+   from information_schema.columns
+   where table_schema='public' and table_name='company_members' and column_name='role')
+  and pg_get_functiondef('app_private.can_manage_company_members(uuid)'::regprocedure) ilike '%current_company_id()%'
+  and pg_get_functiondef('app_private.can_manage_company_members(uuid)'::regprocedure) ilike '%current_user_has_effective_app_permission(''users.manage'')%'
+  and pg_get_functiondef('app_private.can_manage_company_members(uuid)'::regprocedure) ilike '%cm.is_active%'
   and pg_get_functiondef('app_private.can_manage_company_members(uuid)'::regprocedure) ilike '%c.is_active%'
   and pg_get_functiondef('app_private.can_manage_company_members(uuid)'::regprocedure) ilike '%u.is_active%'
   and pg_get_functiondef('app_private.can_manage_company_members(uuid)'::regprocedure) ilike '%u.status::text = ''ACTIVE''%'
-  and pg_get_functiondef('app_private.can_manage_company_members(uuid)'::regprocedure) ilike '%OWNER%'
-  and pg_get_functiondef('app_private.can_manage_company_members(uuid)'::regprocedure) ilike '%ADMIN%'
+  and pg_get_functiondef('app_private.can_manage_company_members(uuid)'::regprocedure) not ilike '%OWNER%'
+  and pg_get_functiondef('app_private.can_manage_company_members(uuid)'::regprocedure) not ilike '%MEMBER%'
   and not has_function_privilege('anon', 'app_private.can_manage_company_members(uuid)', 'EXECUTE')
   and exists (
     select 1 from pg_policies p
@@ -164,7 +169,7 @@ select ok(
       and p.qual ilike '%is_app_user()%'
       and p.qual ilike '%is_company_member%'
   ),
-  'company membership authority requires live active OWNER/ADMIN state'
+  'company membership authority uses USER default and effective users.manage permission'
 );
 
 -- 13. Reading authorized memberships must remain cross-company so the switcher

@@ -139,7 +139,7 @@ async function ensureIdentity(email, password, name) {
   await upsert('company_members', {
     company_id: COMPANY_ID,
     user_id: user.id,
-    role: 'OWNER',
+    role: 'ADMIN',
     is_active: true,
   }, 'company_id,user_id');
 

@@ -55,7 +55,7 @@ async function installAuthHarness(page: Page) {
     let body: unknown = [];
     if (table === 'company_members') {
       const { companyId } = sessionPayload();
-      body = [{ company_id: companyId, role: 'OWNER', companies: { id: companyId, name: 'MALEK Demo', slug: 'malek-demo', currency: 'OMR', locale: 'ar-OM' } }];
+      body = [{ company_id: companyId, role: 'ADMIN', companies: { id: companyId, name: 'MALEK Demo', slug: 'malek-demo', currency: 'OMR', locale: 'ar-OM' } }];
     } else if (table === 'company_settings') { body = companySettings; }
     const arr = Array.isArray(body) ? body : [body];
     await route.fulfill({ status: 200, contentType: 'application/json; charset=utf-8', headers: { 'access-control-allow-origin': '*', 'access-control-expose-headers': 'content-range', 'content-range': arr.length > 0 ? `0-${arr.length - 1}/${arr.length}` : '*/0' }, body: JSON.stringify(body) });
