@@ -10,7 +10,7 @@ import { contractStatusLabels, contractStatusTone, paymentCycleLabels } from '..
 import { isContractStatus, normalizeContractStatus } from '@/lib/contractStatus';
 import type { ContractDetail } from '../services/contractService';
 
-type TimelineTone = 'blue' | 'green' | 'red' | 'gray' | 'gold';
+type TimelineTone = 'success' | 'warning' | 'danger' | 'info' | 'neutral';
 type TimelineItem = Readonly<{ title: string; value: string; description: string; tone: TimelineTone }>;
 
 export function getExpiryDescription(settings: CompanySettingsContract, contract: ContractDetail): string {
@@ -22,15 +22,15 @@ export function getExpiryDescription(settings: CompanySettingsContract, contract
 
 function getTimeline(settings: CompanySettingsContract, contract: ContractDetail): TimelineItem[] {
   const expiryDays = getContractRemainingDays(contract.end_date);
-  let expiryTone: TimelineTone = 'green';
-  if (isContractStatus(contract.status, 'terminated')) expiryTone = 'red';
-  else if (expiryDays < 0) expiryTone = 'gray';
-  else if (expiryDays <= 30) expiryTone = 'gold';
+  let expiryTone: TimelineTone = 'success';
+  if (isContractStatus(contract.status, 'terminated')) expiryTone = 'danger';
+  else if (expiryDays < 0) expiryTone = 'neutral';
+  else if (expiryDays <= 30) expiryTone = 'warning';
   return [
-    { title: 'إنشاء العقد', value: formatContractDateTime(settings, contract.created_at), description: 'وقت تسجيل العقد في النظام.', tone: 'blue' },
-    { title: 'تاريخ البداية', value: formatContractDate(settings, contract.start_date), description: `بداية الالتزام التجاري لمدة ${formatContractDayCount(settings, getContractInclusiveDays(contract.start_date, contract.end_date))} يوم.`, tone: 'green' },
+    { title: 'إنشاء العقد', value: formatContractDateTime(settings, contract.created_at), description: 'وقت تسجيل العقد في النظام.', tone: 'info' },
+    { title: 'تاريخ البداية', value: formatContractDate(settings, contract.start_date), description: `بداية الالتزام التجاري لمدة ${formatContractDayCount(settings, getContractInclusiveDays(contract.start_date, contract.end_date))} يوم.`, tone: 'success' },
     { title: 'تاريخ النهاية', value: formatContractDate(settings, contract.end_date), description: getExpiryDescription(settings, contract), tone: expiryTone },
-    { title: 'آخر تحديث', value: formatContractDateTime(settings, contract.updated_at), description: 'آخر تعديل محفوظ على بيانات العقد.', tone: 'gray' },
+    { title: 'آخر تحديث', value: formatContractDateTime(settings, contract.updated_at), description: 'آخر تعديل محفوظ على بيانات العقد.', tone: 'neutral' },
   ];
 }
 
