@@ -44,6 +44,10 @@ read_db_url() {
 normalize_dump() {
   local input="$1"
   local output="$2"
+  # Privilege lines are not a stable bootstrap fingerprint: applying a
+  # pg_dump through `supabase start` re-materializes default grants that the
+  # live historical dump had already revoked. Object definitions remain the
+  # compared contract; ACL hardening stays in migrations/canonicalize.
   sed -E \
     -e '/^-- Dumped from database version/d' \
     -e '/^-- Dumped by pg_dump version/d' \
@@ -51,6 +55,9 @@ normalize_dump() {
     -e '/^-- Completed on /d' \
     -e '/^\\restrict /d' \
     -e '/^\\unrestrict /d' \
+    -e '/^GRANT /d' \
+    -e '/^REVOKE /d' \
+    -e '/^ALTER DEFAULT PRIVILEGES /d' \
     "$input" >"$output"
 }
 
