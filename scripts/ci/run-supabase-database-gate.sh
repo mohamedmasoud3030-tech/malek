@@ -118,8 +118,8 @@ set -o pipefail
 # Belt-and-braces: prove the start-time replay covered every migration file,
 # including the storage-hardening one this gate exists for. `migration up` is
 # idempotent and, unlike `db reset`, does not restart any container.
-if ! pnpm exec supabase migration list --local 2>/dev/null | grep -q '20260721090000'; then
-  printf 'Migration list missed 20260721090000; applying pending migrations explicitly.\n' \
+if ! pnpm exec supabase migration list --local 2>/dev/null | grep -Eq '20260901000000|20260721090000'; then
+  printf 'Migration list missed the active bootstrap; applying pending migrations explicitly.\n' \
     | tee "$LOG_DIR/supabase-migration-up.log"
   pnpm exec supabase migration up --local 2>&1 | tee -a "$LOG_DIR/supabase-migration-up.log"
 fi
