@@ -5,12 +5,18 @@ import type { Json } from '@/types/database';
 
 export type { BankCsvParseResult } from '@/lib/bankCsvParser';
 
+export const MAX_SYNCHRONOUS_BANK_IMPORT_ROWS = 5_000;
+
 export interface BankImportPreview extends BankCsvParseResult {
   fileFingerprint: string;
 }
 
 export async function previewBankCsvFile(file: File): Promise<BankImportPreview> {
   const text = await file.text();
+  const nonEmptyLines = text.split(/\r?\n/).filter((line) => line.trim().length > 0).length;
+  if (nonEmptyLines > MAX_SYNCHRONOUS_BANK_IMPORT_ROWS + 1) {
+    throw new Error(`الحد الأقصى للاستيراد المتزامن هو ${MAX_SYNCHRONOUS_BANK_IMPORT_ROWS} صف. قسّم الملف إلى دفعات مستقلة.`);
+  }
   const fingerprint = await computeFileFingerprint(text);
   const parsed = parseBankCsv(text, file.name, file.size);
   return { ...parsed, fileFingerprint: fingerprint };
@@ -134,6 +140,9 @@ export function toImportPayloadRows(parsed: BankCsvParseResult): BankImportPaylo
   }
   if (parsed.validRows.length === 0) {
     throw new Error('لا توجد صفوف صالحة للاستيراد');
+  }
+  if (parsed.validRows.length > MAX_SYNCHRONOUS_BANK_IMPORT_ROWS) {
+    throw new Error(`الحد الأقصى للاستيراد المتزامن هو ${MAX_SYNCHRONOUS_BANK_IMPORT_ROWS} صف. قسّم الملف إلى دفعات مستقلة.`);
   }
 
   return parsed.validRows.map((row) => ({
