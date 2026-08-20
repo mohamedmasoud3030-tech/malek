@@ -93,11 +93,26 @@ const DATE_COLUMNS = [
 const types = readFileSync(TYPES_PATH, 'utf8');
 const MGMT_TOKEN = process.env.SUPABASE_MGMT_TOKEN;
 const PROJECT_REF = process.env.SUPABASE_PROJECT_REF || 'nnggcnpcuomwfuupupwg';
-let passed = 0, failed = 0;
+let passed = 0, failed = 0, skipped = 0;
 
 function ok(l) { passed++; console.log(`  ✅ ${l}`); }
 function fail(l, d) { failed++; console.log(`  ❌ ${l}: ${d || ''}`); }
+function skip(l, d) { skipped++; console.log(`  ⏭️  ${l}: ${d}`); }
 function check(l, c, d) { (c ? ok : fail)(l, d); }
+
+function tableBlock(table) {
+  const marker = `\n      ${table}: {`;
+  const start = types.indexOf(marker);
+  if (start < 0) return '';
+  const rest = types.slice(start + marker.length);
+  const nextTable = rest.search(/\n      [A-Za-z0-9_]+: \{/);
+  return nextTable < 0 ? rest : rest.slice(0, nextTable);
+}
+
+function enumDeclaration(enumName) {
+  const match = types.match(new RegExp(`\\n      ${enumName}: ([^\\n]+)`));
+  return match?.[1] ?? '';
+}
 
 async function sql(q) {
   const r = await fetch(
@@ -139,25 +154,28 @@ async function main() {
   // 5 – Selected columns
   console.log('\n── 5. Explicit columns ──');
   for (const [tbl, cols] of Object.entries(SELECTED_COLS)) {
+    const block = tableBlock(tbl);
     for (const col of cols) {
       const re = new RegExp(`\\n\\s{10}${col}\\??:`);
-      check(`Column ${tbl}.${col}`, !!types.match(re));
+      check(`Column ${tbl}.${col}`, re.test(block), 'missing from that table Row/Insert/Update contract');
     }
   }
 
   // 6 – Enums
   console.log('\n── 6. Enums ──');
   for (const [en, vals] of Object.entries(ENUMS)) {
-    for (const v of vals) check(`Enum ${en} '${v}'`, types.includes(`'${v}'`));
+    const declaration = enumDeclaration(en);
+    for (const v of vals) check(`Enum ${en} '${v}'`, declaration.includes(`'${v}'`), 'missing from that enum declaration');
   }
 
-  // 7 – Date columns (tracked)
-  console.log('\n── 7. Date columns ──');
-  for (const [tbl, col] of DATE_COLUMNS) ok(`${tbl}.${col}`);
-
-  // 8 – Storage
-  console.log('\n── 8. Storage ──');
-  for (const b of STORAGE_BUCKETS) ok(`Bucket ${b}`);
+  // Date SQL types and Storage configuration are not representable in the
+  // generated TypeScript file. The migration replay gate proves them locally;
+  // this focused gate verifies them directly only when live credentials exist.
+  console.log('\n── 7. Database-only contracts ──');
+  if (!hasLive) {
+    for (const [tbl, col] of DATE_COLUMNS) skip(`${tbl}.${col}`, 'covered by migration replay; live check unavailable');
+    for (const b of STORAGE_BUCKETS) skip(`Bucket ${b}`, 'covered by migration replay; live check unavailable');
+  }
 
   // ── LIVE tests ──
   if (hasLive) {
@@ -188,10 +206,37 @@ async function main() {
       check(`Bucket ${b} exists`, buckets.some(x => x.name === b));
       check(`Bucket ${b} is private`, buckets.some(x => x.name === b && !x.public));
     }
+
+    console.log('\n── 14. Six-role membership authority ──');
+    const membership = await sql(`
+      select
+        (select column_default from information_schema.columns
+         where table_schema='public' and table_name='company_members' and column_name='role') as role_default,
+        (select pg_get_constraintdef(oid) from pg_constraint
+         where conrelid='public.company_members'::regclass and conname='company_members_role_check') as role_check,
+        pg_get_functiondef('app_private.can_manage_company_members(uuid)'::regprocedure) as manager_function,
+        has_function_privilege('anon', 'app_private.can_manage_company_members(uuid)', 'EXECUTE') as anon_execute,
+        (select count(*)::int from public.company_members where upper(role) in ('OWNER','MEMBER')) as legacy_rows
+    `);
+    const contract = membership[0] ?? {};
+    const sixRoles = ['ADMIN','MANAGER','ACCOUNTANT','OPERATIONS','USER','VIEWER'];
+    check('company_members role default is USER', contract.role_default === "'USER'::text", contract.role_default);
+    check('company_members CHECK has six canonical roles',
+      sixRoles.every(role => contract.role_check?.includes(`'${role}'`))
+        && !contract.role_check?.includes("'OWNER'")
+        && !contract.role_check?.includes("'MEMBER'"),
+      contract.role_check);
+    check('membership management uses effective users.manage permission',
+      contract.manager_function?.includes("current_user_has_effective_app_permission('users.manage')")
+        && contract.manager_function?.includes('current_company_id()')
+        && !contract.manager_function?.includes("'OWNER'")
+        && !contract.manager_function?.includes("'MEMBER'"));
+    check('anon cannot execute membership authority helper', contract.anon_execute === false);
+    check('no legacy membership rows remain', contract.legacy_rows === 0, String(contract.legacy_rows));
   }
 
-  const total = passed + failed;
-  console.log(`\n=== ${passed}/${total} passed (${failed} failed) ===`);
+  const total = passed + failed + skipped;
+  console.log(`\n=== ${passed}/${total} passed (${failed} failed, ${skipped} skipped) ===`);
   if (failed > 0) process.exit(1);
 }
 
