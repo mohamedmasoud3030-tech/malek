@@ -13,7 +13,7 @@ interface FilterTabsProps<T extends string> {
   onChange: (value: T) => void;
   className?: string;
   ariaLabel?: string;
-  /** Module context — selects the semantic tint for the active pill. */
+  /** Module context — selects the semantic tint for the active segment. */
   tone?: 'primary' | 'contracts' | 'maintenance' | 'finance' | 'neutral';
 }
 
@@ -23,20 +23,9 @@ type ScrollState = Readonly<{
 }>;
 
 /**
- * Horizontal pill-style filter tabs — used on list pages for status filtering.
- * The edge fades respond to the actual scroll position, including RTL layouts,
- * so the control hints at hidden options without obscuring the first or last tab.
- *
- * @example
- * <FilterTabs
- *   options={[
- *     { value: 'all', label: 'الكل' },
- *     { value: 'active', label: 'نشط', count: 12 },
- *     { value: 'expired', label: 'منتهي' },
- *   ]}
- *   value={filter}
- *   onChange={setFilter}
- * />
+ * Canonical compact filter segments for MALEK data registers.
+ * The control keeps the speed of status tabs while visually belonging to the
+ * same dense toolbar language as search, sort and table utilities.
  */
 export function FilterTabs<T extends string>({
   options,
@@ -100,7 +89,7 @@ export function FilterTabs<T extends string>({
         ref={scrollRef}
         data-filter-tabs-scroll
         className={cn(
-          '-mx-3 flex scroll-px-3 gap-1.5 overflow-x-auto px-3 pb-0.5 no-scrollbar sm:mx-0 sm:px-0',
+          '-mx-2 flex scroll-px-2 gap-1 overflow-x-auto px-2 no-scrollbar sm:mx-0 sm:px-0',
           className,
         )}
         role="group"
@@ -109,16 +98,16 @@ export function FilterTabs<T extends string>({
         {options.map((option) => {
           const isActive = value === option.value;
           const activeClasses = {
-            primary: 'border-primary/25 bg-primary/10 text-primary shadow-[inset_0_0_0_1px_hsl(var(--primary)/0.05)]',
-            contracts: 'border-[hsl(var(--tone-amber)/0.25)] bg-[hsl(var(--tone-amber-soft))] text-[hsl(var(--tone-amber))]',
-            maintenance: 'border-[hsl(var(--tone-sky)/0.25)] bg-[hsl(var(--tone-sky-soft))] text-[hsl(var(--tone-sky))]',
+            primary: 'border-primary/25 bg-primary/10 text-primary shadow-[inset_0_0_0_1px_hsl(var(--primary)/0.04)]',
+            contracts: 'border-[hsl(var(--tone-amber)/0.24)] bg-[hsl(var(--tone-amber-soft))] text-[hsl(var(--tone-amber))]',
+            maintenance: 'border-[hsl(var(--tone-sky)/0.24)] bg-[hsl(var(--tone-sky-soft))] text-[hsl(var(--tone-sky))]',
             finance: 'border-success/25 bg-success/10 text-success',
-            neutral: 'border-foreground/10 bg-foreground/[0.06] text-foreground',
+            neutral: 'border-foreground/12 bg-foreground/[0.055] text-foreground',
           }[tone];
           const activeCountClasses = {
             primary: 'bg-primary/15 text-primary',
-            contracts: 'bg-[hsl(var(--tone-amber)/0.16)] text-[hsl(var(--tone-amber))]',
-            maintenance: 'bg-[hsl(var(--tone-sky)/0.14)] text-[hsl(var(--tone-sky))]',
+            contracts: 'bg-[hsl(var(--tone-amber)/0.14)] text-[hsl(var(--tone-amber))]',
+            maintenance: 'bg-[hsl(var(--tone-sky)/0.13)] text-[hsl(var(--tone-sky))]',
             finance: 'bg-success/15 text-success',
             neutral: 'bg-foreground/10 text-foreground',
           }[tone];
@@ -130,18 +119,18 @@ export function FilterTabs<T extends string>({
               aria-pressed={isActive}
               onClick={() => onChange(option.value)}
               className={cn(
-                'flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-bold transition-[background-color,border-color,color,box-shadow,transform] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 active:scale-[0.98]',
+                'flex min-h-10 shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1 text-[11px] font-bold transition-[background-color,border-color,color,box-shadow,transform] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/15 active:scale-[0.985]',
                 isActive
                   ? activeClasses
-                  : 'border-border/70 bg-background text-muted-foreground hover:border-primary/15 hover:bg-muted/70 hover:text-foreground',
+                  : 'border-border/75 bg-background text-muted-foreground hover:border-foreground/15 hover:bg-muted/55 hover:text-foreground',
               )}
             >
               {option.label}
               {option.count !== undefined ? (
                 <span
                   className={cn(
-                    'rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums',
-                    isActive ? activeCountClasses : 'bg-muted text-foreground/80',
+                    'rounded-md px-1.5 py-0.5 text-[9px] font-bold tabular-nums',
+                    isActive ? activeCountClasses : 'bg-muted text-foreground/75',
                   )}
                 >
                   {option.count}
