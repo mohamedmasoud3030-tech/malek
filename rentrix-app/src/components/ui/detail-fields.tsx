@@ -5,7 +5,7 @@ export interface DetailField {
   label: string;
   /** Pass formatted, ready-to-display content — formatting stays in the feature. */
   value: ReactNode;
-  /** Span 2 grid columns on md+ — use for notes/long text. */
+  /** Span 2 grid columns — use for notes/long text. */
   wide?: boolean;
 }
 
@@ -14,19 +14,23 @@ export interface DetailField {
  * owners, receipts…). Replaces the local `Info`/field-card components that
  * were duplicated per page. Empty values render as "—" automatically.
  *
- * @example
- * <DetailFields
- *   columns={4}
- *   fields={[
- *     { label: 'المستأجر', value: contract.people?.full_name },
- *     { label: 'ملاحظات', value: contract.notes, wide: true },
- *   ]}
- * />
+ * MALEK layout contract:
+ * - two columns is the normal mobile + desktop rhythm;
+ * - three columns is allowed only when a caller explicitly asks for it;
+ * - legacy `columns={4}` is retained for compatibility but renders as two.
  */
-export function DetailFields({ fields, columns = 4, className }: { fields: DetailField[]; columns?: 2 | 3 | 4; className?: string }) {
-  const colsClass = columns === 2 ? 'grid-cols-2' : columns === 3 ? 'grid-cols-2 md:grid-cols-3' : 'grid-cols-2 xl:grid-cols-4';
+export function DetailFields({ fields, columns = 2, className }: { fields: DetailField[]; columns?: 2 | 3 | 4; className?: string }) {
+  const useThreeColumns = columns === 3;
   return (
-    <div className={cn('grid gap-3 sm:gap-4', colsClass, className)}>
+    <div
+      data-detail-fields
+      data-detail-columns={useThreeColumns ? '3' : '2'}
+      className={cn(
+        'grid grid-cols-2 gap-3 sm:gap-4',
+        useThreeColumns ? 'lg:grid-cols-3' : '[&>*:last-child:nth-child(odd)]:col-span-2',
+        className,
+      )}
+    >
       {fields.map((field) => (
         <div key={field.label} className={cn('min-w-0 overflow-hidden rounded-2xl border border-border bg-background p-3 sm:p-4', field.wide && 'col-span-2')}>
           <p className="text-xs font-bold text-muted-foreground">{field.label}</p>
