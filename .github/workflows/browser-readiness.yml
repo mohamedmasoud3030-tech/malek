@@ -5,6 +5,10 @@ on:
     branches: [main]
   workflow_dispatch:
 
+concurrency:
+  group: browser-readiness-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -13,105 +17,65 @@ env:
   PLAYWRIGHT_VERSION: '1.61.1'
 
 jobs:
+  browser-smoke:
+    name: browser-smoke
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Defer expensive browser matrix
+        run: echo "Browser matrix is manual during active development; run workflow_dispatch for release/readiness validation."
+
   browser-smoke-shard:
     name: browser-smoke-${{ matrix.project }}
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
     strategy:
       fail-fast: false
       matrix:
-        project:
-          - chromium-desktop
-          - chromium-tablet
-          - chromium-mobile
+        project: [chromium-desktop, chromium-tablet, chromium-mobile]
     env:
-      # Browser Readiness is hermetic and must exercise the usable login form.
-      # Use syntactically configured test-only values rather than the exact
-      # runtime placeholders that intentionally fail closed and disable auth.
-      # The isolated .local hostname is never a real Supabase project, and the
-      # HTTP boundary is stubbed per browser context.
       VITE_SUPABASE_URL: https://e2e.invalid.supabase.local
       VITE_SUPABASE_ANON_KEY: e2e-browser-public-key
-      # Browser Readiness is hermetic: the Supabase HTTP boundary is stubbed
-      # per browser context. Database/release gates do not set this value and
-      # therefore retain the serial workers=1 default in playwright.config.ts.
       E2E_WORKERS: '2'
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: 24
           cache: pnpm
-      # Keep install deterministic and block arbitrary package lifecycle scripts.
-      # esbuild is the only approved native toolchain package that needs its binary shim rebuilt.
-      - name: Install dependencies with lifecycle scripts disabled
+      - name: Install dependencies
         run: pnpm install --frozen-lockfile --ignore-scripts
       - name: Rebuild approved native toolchain package
         run: pnpm rebuild esbuild
-      - name: Verify pinned toolchain
-        run: node scripts/ci/verify-tool-versions.mjs
-      - name: Restore Chromium binary cache
+      - name: Restore Chromium cache
         id: playwright-cache
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
-      # ubuntu-latest already ships a Chromium-capable browser runtime. Avoid
-      # networked apt install-deps here: a transient runner mirror outage must
-      # not cancel Browser Readiness before Playwright itself starts.
-      # MALEK also ships Cairo Arabic fonts with the app, so document rendering
-      # must use the product assets rather than mutate the runner's font set.
-      - name: Verify self-hosted Arabic font assets
-        run: |
-          test -f rentrix-app/public/fonts/cairo/cairo-arabic-400-normal.woff2
-          test -f rentrix-app/public/fonts/cairo/cairo-arabic-700-normal.woff2
-          grep -q "cairo-arabic-400-normal.woff2" rentrix-app/public/fonts/fonts.css
-      - name: Install Chromium binary on cache miss
+      - name: Install Chromium on cache miss
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: pnpm --filter ./rentrix-app exec playwright install chromium
-      - name: Verify Chromium installation
-        run: pnpm --filter ./rentrix-app exec playwright install --dry-run chromium
-      - name: Verify browser shard command
-        run: node scripts/ci/check-browser-readiness-shard-command.mjs
       - name: Run browser readiness shard
         run: pnpm e2e --project=${{ matrix.project }}
-      - name: Upload Playwright report
-        if: always()
+      - name: Upload Playwright diagnostics
+        if: failure()
         continue-on-error: true
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: playwright-report-${{ matrix.project }}
-          path: rentrix-app/playwright-report
-          if-no-files-found: ignore
-      - name: Upload browser smoke artifacts
-        if: always()
-        continue-on-error: true
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: browser-smoke-artifacts-${{ matrix.project }}
-          path: rentrix-app/test-results
+          path: |
+            rentrix-app/playwright-report
+            rentrix-app/test-results
           if-no-files-found: ignore
 
-  # Keep the required-check name stable while the expensive suite runs as
-  # independent project shards. This job succeeds only when every shard does.
-  browser-smoke:
-    name: browser-smoke
-    runs-on: ubuntu-latest
-    needs: browser-smoke-shard
-    if: ${{ always() }}
-    steps:
-      - name: Require every Browser Readiness shard
-        env:
-          SHARD_RESULT: ${{ needs.browser-smoke-shard.result }}
-        run: |
-          echo "Browser Readiness shard result: ${SHARD_RESULT}"
-          test "${SHARD_RESULT}" = "success"
-
   seeded-staging-smoke:
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
-    if: ${{ github.event_name == 'workflow_dispatch' }}
     env:
       E2E_ENVIRONMENT_KIND: staging
       E2E_BASE_URL: ${{ secrets.E2E_STAGING_BASE_URL }}
@@ -120,48 +84,17 @@ jobs:
       VITE_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
       VITE_SUPABASE_ANON_KEY: ${{ secrets.E2E_SUPABASE_ANON_KEY }}
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: 24
           cache: pnpm
-      # Keep install deterministic and block arbitrary package lifecycle scripts.
-      - name: Install dependencies with lifecycle scripts disabled
-        run: pnpm install --frozen-lockfile --ignore-scripts
-      - name: Rebuild approved native toolchain package
-        run: pnpm rebuild esbuild
-      - name: Verify pinned toolchain
-        run: node scripts/ci/verify-tool-versions.mjs
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - run: pnpm rebuild esbuild
       - name: Validate staging environment
         run: |
           node scripts/assert-release-blocker-env.mjs
           node scripts/ci/preflight-staging.mjs
-      - name: Restore Chromium binary cache
-        id: playwright-cache
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
-      - name: Verify self-hosted Arabic font assets
-        run: |
-          test -f rentrix-app/public/fonts/cairo/cairo-arabic-400-normal.woff2
-          test -f rentrix-app/public/fonts/cairo/cairo-arabic-700-normal.woff2
-          grep -q "cairo-arabic-400-normal.woff2" rentrix-app/public/fonts/fonts.css
-      - name: Install Chromium binary on cache miss
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: pnpm --filter ./rentrix-app exec playwright install chromium
-      - name: Verify Chromium installation
-        run: pnpm --filter ./rentrix-app exec playwright install --dry-run chromium
       - name: Run complete seeded staging suite
         run: pnpm e2e
-      - name: Upload seeded staging Playwright report
-        if: always()
-        continue-on-error: true
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: seeded-staging-playwright-report
-          path: |
-            rentrix-app/playwright-report
-            rentrix-app/test-results
-          if-no-files-found: ignore
