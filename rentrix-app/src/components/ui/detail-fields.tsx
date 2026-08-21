@@ -26,15 +26,15 @@ export function DetailFields({ fields, columns = 2, className }: { fields: Detai
       data-detail-fields
       data-detail-columns={useThreeColumns ? '3' : '2'}
       className={cn(
-        'grid grid-cols-2 gap-3 sm:gap-4',
+        'grid grid-cols-2 gap-2.5 sm:gap-3',
         useThreeColumns ? 'lg:grid-cols-3' : '[&>*:last-child:nth-child(odd)]:col-span-2',
         className,
       )}
     >
       {fields.map((field) => (
-        <div key={field.label} className={cn('min-w-0 overflow-hidden rounded-2xl border border-border bg-background p-3 sm:p-4', field.wide && 'col-span-2')}>
-          <p className="text-xs font-bold text-muted-foreground">{field.label}</p>
-          <div className="mt-1 min-w-0 break-words font-semibold [overflow-wrap:anywhere]">{field.value === null || field.value === undefined || field.value === '' ? '—' : field.value}</div>
+        <div key={field.label} className={cn('min-w-0 overflow-hidden rounded-xl border border-border/70 bg-muted/[0.16] p-3 sm:p-3.5', field.wide && 'col-span-2')}>
+          <p className="text-[11px] font-bold text-muted-foreground">{field.label}</p>
+          <div className="mt-1 min-w-0 break-words text-sm font-bold leading-5 [overflow-wrap:anywhere]">{field.value === null || field.value === undefined || field.value === '' ? '—' : field.value}</div>
         </div>
       ))}
     </div>
