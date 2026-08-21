@@ -90,6 +90,7 @@ export function useMaintenancePageController() {
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as Record<string, unknown>;
   const requestedId = typeof search.requestId === 'string' ? search.requestId : '';
+  const requestedQuickAdd = search.quickAdd === 'maintenance';
   const [statusFilter, setStatusFilter] = useState<MaintenanceStatusFilter>('all');
   const [priorityFilter, setPriorityFilter] = useState<MaintenancePriorityFilter>('all');
   const [propertyFilterId, setPropertyFilterId] = useState('');
@@ -129,6 +130,22 @@ export function useMaintenancePageController() {
   const providerOptions = providerOptionsQuery.data ?? [];
   const filteredProviderOptions = getCompatibleServiceProviderOptions(providerOptions, selectedProviderCategoryId);
   const maintenanceRows = maintenanceQuery.data ?? [];
+
+  useEffect(() => {
+    if (!requestedQuickAdd) return;
+    setEditingRequest(null);
+    form.reset(emptyFormValues);
+    setShowForm(true);
+    void navigate({
+      to: '/maintenance',
+      replace: true,
+      search: (previous: Record<string, unknown>) => {
+        const next = { ...previous };
+        delete next.quickAdd;
+        return next;
+      },
+    });
+  }, [form, navigate, requestedQuickAdd]);
 
   useEffect(() => {
     if (!requestedId) {
