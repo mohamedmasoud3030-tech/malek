@@ -1,7 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 type AccessDeniedProps = Readonly<{
   message?: string;
@@ -9,22 +8,24 @@ type AccessDeniedProps = Readonly<{
 
 export function AccessDenied({ message }: AccessDeniedProps) {
   return (
-    <div className="flex min-h-[60vh] items-center justify-center p-4" dir="rtl">
-      <Card className="w-full max-w-md overflow-hidden">
-        <div className="h-1.5 bg-destructive" />
-        <CardHeader className="items-center text-center">
-          <ShieldAlert className="size-10 text-destructive" />
-          <CardTitle className="text-xl">غير مصرح بالوصول</CardTitle>
-          <CardDescription>
-            {message ?? 'ليس لديك الصلاحية اللازمة لعرض هذه الصفحة. تواصل مع المدير أو المسؤول إذا كنت تحتاج إلى الوصول.'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex justify-center">
-          <Button asChild className="min-h-11">
-            <Link to="/dashboard">العودة إلى لوحة التحكم</Link>
-          </Button>
-        </CardContent>
-      </Card>
+    <div className="px-3 py-6 sm:px-4 sm:py-8" dir="rtl">
+      <section className="mx-auto w-full max-w-xl overflow-hidden rounded-xl border border-destructive/20 bg-card shadow-card" role="alert">
+        <div className="h-1 bg-destructive" aria-hidden="true" />
+        <div className="flex items-start gap-3 p-4 sm:p-5">
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-destructive/8 text-destructive">
+            <ShieldAlert className="size-5" aria-hidden="true" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-lg font-black">غير مصرح بالوصول</h1>
+            <p className="mt-1 text-xs leading-5 text-muted-foreground sm:text-sm">
+              {message ?? 'ليس لديك الصلاحية اللازمة لعرض هذه الصفحة. تواصل مع المدير أو المسؤول إذا كنت تحتاج إلى الوصول.'}
+            </p>
+            <Button asChild size="sm" className="mt-3 min-h-11">
+              <Link to="/dashboard">العودة إلى لوحة التحكم</Link>
+            </Button>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
