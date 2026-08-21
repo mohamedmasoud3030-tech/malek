@@ -17,7 +17,7 @@ The repository baseline is designed to fail closed and does not justify a broad 
 - The active company is a server-issued access-token claim, validated against an active `company_members` row. Missing, stale or mismatched context fails closed.
 - The privileged background worker is protected by an independent 32+ character secret and uses the service role only inside the Edge Function; browser use is prohibited.
 
-This audit adds a static regression gate. It does **not** apply a migration because repository evidence did not establish a safe defect requiring one. Production rollout remains blocked on the runtime checks below.
+This audit adds a static regression gate **and** a forward Auth-Hook hardening migration. It has not been applied to any hosted project. Production rollout remains blocked on the runtime checks below.
 
 ## Authorization matrix
 
@@ -49,8 +49,8 @@ All 102 public tables have RLS enabled. Company-owned tables carry `company_id`;
 | automation, notification, communication, support and AI budget data | active-company constrained; internal queues/rate limits deny direct browser writes |
 | audit, status history, governance, correction/frozen-review data | read/action policy only; no unrestricted browser mutation |
 | document references and financial idempotency records | RLS enabled with no permissive client policy: server/RPC-only |
-| Storage objects and signed documents | repository policies/scripts exist; hosted bucket configuration remains unverified |
-| views and functions | 268 `SECURITY DEFINER` functions reviewed structurally; safe search paths and public/anon grant absence are regression-gated |
+| Storage objects and signed documents | private-bucket smoke test exists, but `storage.objects` policies/bucket definition are not committed in this migration chain; hosted configuration remains unverified |
+| views and functions | all repository-defined public views use `security_invoker`; 268 `SECURITY DEFINER` functions have pinned search paths and no `anon`/`PUBLIC` execution grant; both are regression-gated |
 
 ## Confirmed findings
 
@@ -58,7 +58,9 @@ All 102 public tables have RLS enabled. Company-owned tables carry `company_id`;
 2. **No confirmed SECURITY DEFINER public-execute exposure.** Repository baseline grants no such function to `anon` or `PUBLIC`; public execute revocations are present.
 3. **No browser service-role exposure found in the repository trust model.** Existing privileged-key scan and this audit’s role boundary treat any browser secret as a release blocker.
 4. **Deliberate deny-by-default tables:** `document_reference_sequences` and `financial_operation_idempotency` are RLS-enabled with no browser policy. This is correct for internal sequencing/idempotency state.
-5. **Confirmed repair — inactive identity token claim:** the previous hook checked `status = ACTIVE` but did not explicitly require `is_active` and `deleted_at IS NULL` before resolving company membership. Forward migration `20260901000012_harden_custom_access_token_hook_identity.sql` now withholds/removes `company_id` for inactive or soft-deleted application identities and limits invocation to Auth/server roles.\n6. **Runtime gap:** Custom Access Token Hook enablement, deployed migration state, Storage bucket policies, Realtime publication and actual Edge Function deployment cannot be proven from Git. They must be checked in QA before a production claim.
+5. **Confirmed repair — inactive identity token claim:** the previous hook checked `status = ACTIVE` but did not explicitly require `is_active` and `deleted_at IS NULL` before resolving company membership. Forward migration `20260901000012_harden_custom_access_token_hook_identity.sql` now withholds/removes `company_id` for inactive or soft-deleted application identities and limits invocation to Auth/server roles.
+6. **Storage configuration evidence gap:** `attachments` has a non-production, cleanup-safe smoke test for private access and MIME limits, but its `storage.objects` policies and bucket definition are not represented in the committed migration chain. No policy is invented from client code; QA must inspect the deployed private-bucket/object-policy configuration before release.
+7. **Realtime scope:** the repository contains one `postgres_changes` subscription for a user's permission grants, filtered to that user. Hosted publication and Realtime-RLS behavior remain unverified and must be proved in QA.
 
 ## Secure design selected
 
@@ -82,7 +84,7 @@ All 102 public tables have RLS enabled. Company-owned tables carry `company_id`;
 
 ### Rollback
 
-This change adds documentation and a read-only static gate only; there is no database migration and therefore no schema/data rollback. If the gate exposes legacy drift, stop deployment and repair with one forward migration after QA reproduction. Never disable RLS or broaden a policy to make a test pass.
+Rollback is a forward restoration of the previous known-safe hook definition from the canonical baseline, followed by forced session refresh/revocation for affected identities. Do not roll back by disabling RLS or widening any policy. Take a production backup and obtain explicit approval before applying or reverting this migration.
 
 ## Required role-based tests
 
@@ -95,7 +97,7 @@ The existing behavioural matrix is retained and the new static gate enforces bas
 - inactive, deleted and no-membership identities: receive no company claim and fail closed;
 - privileged worker: succeeds only with server-held worker secret; every browser-style invocation is denied;
 - direct PostgREST/RPC calls, not just UI behaviour;
-- Storage object list/read/write/delete and Realtime subscription parity with normal RLS;
+- Storage object list/read/write/delete across two companies, MIME and private-public URL checks; and Realtime subscription parity with normal RLS;
 - account deletion/deactivation: session/access revocation and no accessible orphan records.
 
 ## Remaining blockers
