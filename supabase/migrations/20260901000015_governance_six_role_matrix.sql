@@ -6,8 +6,8 @@
 --   * ADMIN remains dynamic: every catalog permission.
 --   * MANAGER loses sensitive finance/admin: payments.create, receipts.void,
 --     bank_reconciliation.match, owner settlements approve/pay, accruals
---     execute/reverse, invoices.generate, permission_requests.review, and
---     financial reports.view/export (office operations only).
+--     execute/reverse, invoices.generate, permission_requests.review.
+--     MANAGER keeps office operations including financial.reports.view/export.
 --   * ACCOUNTANT gains financial.payments.create; keeps reconciliation,
 --     accruals and invoice generation; no user/company admin.
 --   * OPERATIONS is operational only (maintenance, service providers,

@@ -8024,6 +8024,10 @@ export type Database = {
         };
         Returns: Json;
       };
+      active_company_role: {
+        Args: Record<PropertyKey, never>;
+        Returns: string;
+      };
       apply_deposit_claim_atomic: {
         Args: {
           p_payload: Json | null;

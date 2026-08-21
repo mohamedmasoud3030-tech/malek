@@ -39,7 +39,7 @@ export async function runGovernanceChecks() {
   const db = await createDatabase();
   const r = await replay(db, { stopOnError: false });
   if (r.failures.length) {
-    for (const f of r.failures.length) {
+    for (const f of r.failures) {
       findings.push(finding({
         id: 'DG-MIG-001', severity: SEVERITY.CRITICAL, category: 'migration',
         title: `Migration ${f.file} fails to replay`, evidence: f.error,
@@ -172,6 +172,72 @@ export async function runGovernanceChecks() {
         remediation: 'Authorize the RPC against current_user_has_effective_app_permission(<permission>).',
       }));
     }
+  }
+
+  // Authority-path checker: no public SECURITY DEFINER function may bypass the
+  // canonical permission resolver with a direct role comparison. This catches
+  // support/finance helpers that historically used by-name role shortcuts.
+  //   - direct compare of current_app_role() in ('ADMIN',...) without going
+  //     through role_has_app_permission / the permission resolver
+  //   - reading users.role for an authorization decision
+  // The canonical resolver chain is current_user_has_effective_app_permission /
+  // role_has_app_permission / active_company_role comparisons in the role
+  // predicate helpers themselves.
+  const bypass = await db.query(`
+    select p.proname, pg_get_function_identity_arguments(p.oid) args
+      from pg_proc p
+      join pg_namespace n on n.oid = p.pronamespace
+     where n.nspname = 'public'
+       and p.prosecdef
+       and (
+         (position('current_app_role()' in pg_get_functiondef(p.oid)) > 0
+          and position('current_user_has_effective_app_permission' in pg_get_functiondef(p.oid)) = 0
+          and position('role_has_app_permission' in pg_get_functiondef(p.oid)) = 0
+          and pg_get_functiondef(p.oid) ~* 'current_app_role\(\)\s*(=|in|<>|any)')
+         or
+         (pg_get_functiondef(p.oid) ~* 'from\s+public\.users\s+\w+'
+          and pg_get_functiondef(p.oid) ~* '\w+\.role(::text)?\s*(=|in|<>|any)')
+       )
+  `);
+  for (const row of bypass.rows) {
+    findings.push(finding({
+      id: 'DG-GOV-007', severity: SEVERITY.HIGH, category: 'authorization',
+      title: `Function ${row.proname}(${row.args}) bypasses the canonical permission resolver with a direct role check`,
+      evidence: `${row.proname}(${row.args})`,
+      remediation: 'Authorize via current_user_has_effective_app_permission or active_company_role; do not compare users.role/current_app_role directly.',
+    }));
+  }
+
+  // Every frontend-called public RPC that mutates data and is sensitive should
+  // appear in the governance contract OR contain a recognizable in-body
+  // authority check. An RPC missing from the contract is an inventory gap
+  // (LOW); an RPC with neither a contract entry NOR an in-body authority
+  // check is a HIGH finding.
+  const ungoverned = await db.query(`
+    select p.proname, pg_get_function_identity_arguments(p.oid) args,
+           pg_get_functiondef(p.oid) def
+      from pg_proc p
+      join pg_namespace n on n.oid = p.pronamespace
+     where n.nspname = 'public'
+       and p.prosecdef
+       and p.proname ~ '(_atomic|_at_once)$'
+       and p.proname not in (select jsonb_object_keys($1::jsonb))
+  `, [JSON.stringify(contract.rpc)]);
+  const authPattern = /current_user_has_effective_app_permission|role_has_app_permission|active_company_role\(\)|is_background_service_worker\(\)|is_admin_or_manager\(\)|is_admin\(\)|is_accountant\(\)|is_operations\(\)|current_user_has_support_capability|auth\.uid\(\)\s+is\s+null|require_company_id\(\)|current_company_id\(\)\s+is\s+null|role\s*=\s*'ADMIN'|cm\.role\s*=\s*'ADMIN'|raise exception/i;
+  for (const row of ungoverned.rows) {
+    const hasAuth = authPattern.test(row.def);
+    if (!hasAuth) {
+      findings.push(finding({
+        id: 'DG-GOV-008', severity: SEVERITY.HIGH, category: 'authorization',
+        title: `SECURITY DEFINER RPC ${row.proname} has no recognizable authority check and is not in the governance contract`,
+        evidence: `${row.proname}(${row.args})`,
+        remediation: 'Add an authority check or list the RPC in governance-contract.json.',
+      }));
+    }
+    // Ungoverned-but-checked RPCs are intentionally not emitted as findings:
+    // they are an inventory-coverage backlog, tracked separately by the
+    // operation-map gate. Emitting them here would create noise without
+    // indicating an authority defect.
   }
 
   await db.close();

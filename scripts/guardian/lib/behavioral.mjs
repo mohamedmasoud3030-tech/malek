@@ -688,6 +688,51 @@ export async function runBehavioralChecks() {
     `resolved=${roleFromDb}`,
   ));
 
+  // Authority-source conflict test: deliberately make JWT, users.role, and
+  // company_members.role disagree. The effective role must come from the
+  // canonical active membership, regardless of what the JWT or users.role say.
+  //   JWT claim      = ADMIN
+  //   users.role     = VIEWER
+  //   members.role   = OPERATIONS
+  //   expected       = OPERATIONS (company_members.role wins)
+  const CONFLICT_USER = 'a2000000-0000-4000-8000-0000000000ff';
+  await db.exec(`
+    insert into auth.users (id, email, phone) values ('${CONFLICT_USER}', 'conflict@test', 'conflict-${CONFLICT_USER}') on conflict do nothing;
+    insert into public.users (id, email, name, role, status, is_active)
+      values ('${CONFLICT_USER}', 'conflict@test', 'Conflict', 'VIEWER', 'ACTIVE', true)
+      on conflict (id) do update set role='VIEWER', is_active=true, status='ACTIVE';
+    insert into public.company_members (company_id, user_id, role, is_active)
+      values ('${COMPANY_A}', '${CONFLICT_USER}', 'OPERATIONS', true)
+      on conflict (company_id, user_id) do update set role='OPERATIONS', is_active=true;
+  `);
+  const conflictRole = (await withIdentity(
+    db,
+    { userId: CONFLICT_USER, companyId: COMPANY_A, userRole: 'ADMIN' },
+    async () => (await db.query(`select public.active_company_role() r, public.current_app_role() c, public.is_admin() a, public.is_viewer() v`)).rows[0],
+  )).value;
+  checks.push(check(
+    'governance.authority_source.company_members_wins',
+    conflictRole?.r === 'OPERATIONS'
+      && conflictRole?.c === 'OPERATIONS'
+      && conflictRole?.a === false
+      && conflictRole?.v === false,
+    `membership=${conflictRole?.r} current=${conflictRole?.c} is_admin=${conflictRole?.a} is_viewer=${conflictRole?.v}`,
+  ));
+
+  // Reverse conflict: a JWT/user claim of VIEWER must not demote a membership
+  // that is actually ADMIN.
+  await db.query(`update public.users set role='USER' where id=$1`, [CONFLICT_USER]);
+  const reversed = (await withIdentity(
+    db,
+    { userId: CONFLICT_USER, companyId: COMPANY_A, userRole: 'VIEWER' },
+    async () => (await db.query(`select public.active_company_role() r, public.is_admin() a`)).rows[0],
+  )).value;
+  checks.push(check(
+    'governance.authority_source.no_jwt_demotion',
+    reversed?.r === 'OPERATIONS' && reversed?.a === false,
+    `role=${reversed?.r} is_admin=${reversed?.a}`,
+  ));
+
   // No membership / invalid company fails closed: require_company_id raises
   // when the JWT company claim is absent.
   const noCompany = await withIdentity(db, { userId: USER_A, companyId: null, userRole: 'USER' }, async () =>
