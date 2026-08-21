@@ -124,6 +124,8 @@ export const i18nResources = {
   en: { common: buildSharedTranslationResources('en') },
 } as const satisfies Record<SupportedLanguage, Readonly<Record<typeof I18N_NAMESPACE, SharedTranslationResources>>>;
 
+export type SharedLabel = (key: string) => string;
+
 export type AppLanguageState = Readonly<{
   language: SupportedLanguage;
   locale: string;
