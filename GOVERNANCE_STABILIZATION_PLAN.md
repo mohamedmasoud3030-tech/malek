@@ -76,8 +76,8 @@ correctly; their defects are not carried forward.
 ## Phased execution plan
 
 - **Phase 1 — State verification.** DONE. Findings above.
-- **Phase 2/3 — Canonical authority foundation + Auth Hook.** IN PROGRESS
-  (this commit). New migration introducing:
+- **Phase 2/3 — Canonical authority foundation + Auth Hook.** VERIFIED
+  COMPLETE. New migration `supabase/migrations/20260901000012_canonical_authority_foundation.sql`:
   - `active_company_role(uuid)` — the single canonical resolver. Validates
     user identity (`status='ACTIVE'`, `is_active`, `deleted_at IS NULL`),
     active membership, active company, and returns the `company_members.role`
@@ -93,6 +93,31 @@ correctly; their defects are not carried forward.
     the existing deterministic-fallback-company selection logic preserved
     (product already intentionally supports it), and no company/role claim
     emitted when authority cannot be proven (fail closed, per rule 9).
+
+  **Verification evidence:**
+  - Clean-database migration replay: `node scripts/db0/replay-migrations.mjs --all`
+    → 13/13 migrations applied, 0 failures (includes the new migration).
+  - New behavioral test `scripts/supabase-tests/canonical-authority-matrix.mjs`:
+    20/20 assertions pass. Covers every scenario listed in the mission's
+    Phase 3 test requirements: `users.role`/`company_members.role` conflicts
+    in both directions (resolver and `is_admin()` follow membership, not
+    `users.role`), inactive user, deleted user, inactive membership, inactive
+    company, no-membership, and positive/negative coverage for all six role
+    helpers via their matching `company_members.role`.
+  - Existing `scripts/supabase-tests/rls-matrix.mjs`: 55 passed / 25 failed /
+    1 skipped — **identical pass/fail count to `main`** (verified by running
+    the same script unmodified against a `main` worktree). The 25 failures
+    are pre-existing (a PGlite RESTRICTIVE-policy planner limitation
+    affecting several SELECT-policy assertions, plus the `six_role_matrix`
+    RPC test) and are out of scope for this phase per the mission's
+    no-false-regression rule. One test (`auth.inactive_admin_not_manager`)
+    initially showed as a new failure; root cause was the test harness's
+    strict `String(actual) === String(expected)` comparison not treating
+    SQL `NULL` (the new resolver's correct fail-closed return value) as
+    equivalent to `false` for boolean predicates — fixed in
+    `rls-matrix.mjs`'s `expectHelper` (NULL now normalizes to false only
+    when the expectation itself is false), not by weakening the
+    authorization logic. Confirmed no other test's pass/fail state changed.
 - **Phase 4 — Sensitive RPC authorization.** NOT STARTED. Preserve real
   `preview_bank_statement_batch_atomic`, `import_bank_statement_batch_atomic`,
   `post_receipt_atomic` bodies; add/verify minimal authorization checks using

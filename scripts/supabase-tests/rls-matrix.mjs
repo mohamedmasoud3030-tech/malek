@@ -308,10 +308,15 @@ async function expectHelper(db, identity, sql, expected, spec) {
     return;
   }
   const actual = result.value?.[0]?.v;
+  // Boolean-returning helpers may legitimately resolve to SQL NULL when
+  // authority cannot be proven (fail-closed); treat NULL as equivalent to
+  // false for boolean expectations so the comparison isn't a stricter check
+  // than the authorization semantics it is verifying.
+  const normalized = actual === null && expected === false ? false : actual;
   record({
     ...spec,
-    status: String(actual) === String(expected) ? 'pass' : 'fail',
-    detail: String(actual) === String(expected) ? undefined : `expected ${expected}, got ${actual}`,
+    status: String(normalized) === String(expected) ? 'pass' : 'fail',
+    detail: String(normalized) === String(expected) ? undefined : `expected ${expected}, got ${actual}`,
   });
 }
 

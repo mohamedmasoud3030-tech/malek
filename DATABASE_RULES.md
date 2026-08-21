@@ -15,6 +15,10 @@ This file is the permanent operating contract for database work in MALEK.
 - Every company-owned row must be isolated by `company_id` and RLS.
 - Company context must be server-validated. Missing/invalid company context fails closed.
 - The canonical roles are `ADMIN`, `MANAGER`, `ACCOUNTANT`, `OPERATIONS`, `USER`, `VIEWER`.
+- `company_members.role` for the caller's validated active membership is the only operational role authority. `users.role` is identity/profile metadata only and must never be read for authorization decisions.
+- All role authority resolves through `public.active_company_role(company_id)` (or `current_app_role()`, which calls it for the caller's current company context). No helper or RPC re-implements this lookup against `public.users.role` or `company_members` directly.
+- The resolver and every predicate built on it (`is_admin`, `is_admin_or_manager`, `is_accountant`, `is_operations`, `is_viewer`, `is_app_user`) return `NULL`/`false` when identity, membership, or company activity cannot be proven. There is no fallback to a default role.
+- `custom_access_token_hook()` derives the `app_metadata.user_role` JWT claim from `company_members.role` for a validated active membership in an active company, never from `users.role`. It validates user identity (`status='ACTIVE'`, `is_active`, `deleted_at IS NULL`) before any membership lookup, and strips both the role and company claims when authority cannot be proven.
 - Frontend visibility is never an authorization boundary.
 - New SECURITY DEFINER functions must pin `search_path`, validate company context, and receive the minimum grants required.
 - Auth-hook/runtime configuration that cannot be expressed as SQL must have an automated hosted smoke check; documentation alone is not proof.
