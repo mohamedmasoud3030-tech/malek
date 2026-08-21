@@ -9,6 +9,7 @@ import { useUnits } from '@/features/units/use-units';
 import { useAgreementCoverage } from '@/features/owners/useOwnerAgreements';
 import { useContract, useCreateContract, useUpdateContract } from './useContracts';
 import { useUnitContractConflicts } from './queries/useUnitContractConflicts';
+import { useUnitContractDrafts } from './queries/useUnitContractDrafts';
 import {
   contractSchema,
   contractStatusLabels,
@@ -49,6 +50,8 @@ interface UseContractFormReturn {
   unitsQuery: ReturnType<typeof useUnits>;
   unitConflictsQuery: ReturnType<typeof useUnitContractConflicts>;
   unitConflictsByUnitId: ReadonlyMap<string, import('./domain/unitAvailability').ContractUnitConflict>;
+  unitDraftsQuery: ReturnType<typeof useUnitContractDrafts>;
+  unitDraftsByUnitId: ReadonlyMap<string, readonly import('./services/unitAvailabilityService').UnitDraftContract[]>;
   agreementCoverageQuery: ReturnType<typeof useAgreementCoverage>;
   selectedProperty: Pick<Property, 'id' | 'title' | 'address'> | undefined;
   currentLinkedUnitId: string | null;
@@ -118,6 +121,18 @@ export function useContractForm({
     excludedContractId: contractId ?? null,
   });
   const unitConflictsByUnitId = new Map((unitConflictsQuery.data ?? []).flatMap((conflict) => conflict.unit_id ? [[conflict.unit_id, conflict] as const] : []));
+  const unitDraftsQuery = useUnitContractDrafts({
+    propertyId: propertyId || '',
+    unitIds,
+    excludedContractId: contractId ?? null,
+  });
+  const unitDraftsByUnitId = new Map<string, import('./services/unitAvailabilityService').UnitDraftContract[]>();
+  for (const draft of unitDraftsQuery.data ?? []) {
+    if (!draft.unit_id) continue;
+    const drafts = unitDraftsByUnitId.get(draft.unit_id) ?? [];
+    drafts.push(draft);
+    unitDraftsByUnitId.set(draft.unit_id, drafts);
+  }
   const agreementCoverageQuery = useAgreementCoverage(propertyId, startDate, endDate);
   const selectedProperty = propertiesQuery.data?.rows.find((property) => property.id === propertyId);
   const currentLinkedUnitId = isEdit ? contractQuery.data?.unit_id ?? null : null;
@@ -178,6 +193,16 @@ export function useContractForm({
         form.setError('unit_id', { type: 'validate', message: unitIssue });
         return;
       }
+      const matchingDraft = payload.status === 'draft'
+        ? unitDraftsByUnitId.get(payload.unit_id)?.find((draft) => draft.tenant_id === payload.tenant_id)
+        : undefined;
+      if (matchingDraft) {
+        form.setError('unit_id', {
+          type: 'validate',
+          message: 'توجد بالفعل مسودة عقد لهذه الوحدة والمستأجر. افتح المسودة الحالية وعدّلها بدلاً من إنشاء مسودة أخرى.',
+        });
+        return;
+      }
       const agreementId = agreementCoverageQuery.data?.id ?? null;
       const finalPayload = { ...payload, agreement_id: agreementId };
       const savedContract = isEdit && contractId
@@ -201,6 +226,8 @@ export function useContractForm({
     unitsQuery,
     unitConflictsQuery,
     unitConflictsByUnitId,
+    unitDraftsQuery,
+    unitDraftsByUnitId,
     agreementCoverageQuery,
     selectedProperty,
     currentLinkedUnitId,

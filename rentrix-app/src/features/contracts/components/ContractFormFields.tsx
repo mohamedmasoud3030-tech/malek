@@ -89,6 +89,8 @@ export function ContractFormFields({
     unitsQuery,
     unitConflictsQuery,
     unitConflictsByUnitId,
+    unitDraftsQuery,
+    unitDraftsByUnitId,
     agreementCoverageQuery,
     selectedProperty,
     currentLinkedUnitId,
@@ -146,6 +148,9 @@ export function ContractFormFields({
     [unitsQuery.data, unitId],
   );
 
+  const selectedUnitDrafts = selectedUnit ? unitDraftsByUnitId.get(selectedUnit.id) ?? [] : [];
+  const selectedTenantHasDraft = selectedUnitDrafts.some((draft) => draft.tenant_id === tenantId);
+
   const selectedTenant = useMemo(
     () => peopleQuery.data?.rows.find((p) => p.id === tenantId),
     [peopleQuery.data, tenantId],
@@ -162,6 +167,7 @@ export function ContractFormFields({
     peopleQuery.isLoading ||
     unitsQuery.isLoading ||
     unitConflictsQuery.isLoading ||
+    unitDraftsQuery.isLoading ||
     agreementCoverageQuery.isLoading;
   let submitLabel = 'حفظ العقد';
   if (prerequisitesLoading) {
@@ -274,6 +280,15 @@ export function ContractFormFields({
             </EntityForm.Field>
           )}
         </div>
+
+        {selectedUnitDrafts.length > 0 ? (
+          <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-foreground" role="status">
+            <span className="font-bold">مسودة عقد قيد الإعداد لهذه الوحدة.</span>{' '}
+            {selectedTenantHasDraft
+              ? 'لهذا المستأجر مسودة موجودة بالفعل؛ افتحها وعدّلها بدلاً من حفظ مسودة مكررة.'
+              : 'الوحدة ليست مشغولة بعد، لكن راجع المسودة قبل بدء عقد جديد.'}
+          </div>
+        ) : null}
 
         {selectedProperty ? (
           <div className="mt-4 rounded-xl border border-border/60 bg-muted/20 p-3 text-xs space-y-1">

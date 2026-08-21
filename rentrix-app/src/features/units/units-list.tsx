@@ -19,6 +19,7 @@ import type { Unit } from "@/types/domain";
 import { unitStatusLabels } from "./unit-schema";
 import { UnitFormModal } from "./unit-form-modal";
 import { useSoftDeleteUnit } from "./use-units";
+import { useUnitContractDrafts } from "@/features/contracts/queries/useUnitContractDrafts";
 
 const unitStatusTone = {
   available: "success",
@@ -47,6 +48,11 @@ export function UnitsList({
   const [modalOpen, setModalOpen] = useState(false);
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultUnitColumns]);
   const navigate = useNavigate();
+  const unitDraftsQuery = useUnitContractDrafts({ propertyId, unitIds: unitsQuery.data?.map((unit) => unit.id) ?? [] });
+  const unitDraftsByUnitId = new Map<string, string>();
+  for (const draft of unitDraftsQuery.data ?? []) {
+    if (draft.unit_id && !unitDraftsByUnitId.has(draft.unit_id)) unitDraftsByUnitId.set(draft.unit_id, draft.id);
+  }
 
   const openForCreate = () => {
     setEditingUnit(null);
@@ -90,9 +96,12 @@ export function UnitsList({
       header: "الحالة",
       priority: "primary",
       render: (unit) => (
-        <StatusBadge tone={unitStatusTone[unit.status]}>
-          {unitStatusLabels[unit.status]}
-        </StatusBadge>
+        <span className="flex flex-wrap gap-1.5">
+          <StatusBadge tone={unitStatusTone[unit.status]}>
+            {unitStatusLabels[unit.status]}
+          </StatusBadge>
+          {unitDraftsByUnitId.has(unit.id) ? <StatusBadge tone="warning">مسودة عقد قيد الإعداد</StatusBadge> : null}
+        </span>
       ),
     },
     {
@@ -121,7 +130,17 @@ export function UnitsList({
           onClick={(e) => e.stopPropagation()}
           onKeyDown={(e) => e.stopPropagation()}
         >
-          {unit.status === "available" ? (
+          {unitDraftsByUnitId.has(unit.id) ? (
+            <Button
+              variant="secondary"
+              className="min-h-11 px-3"
+              aria-label={`مراجعة مسودة عقد وحدة ${unit.unit_number}`}
+              onClick={() => void navigate({ to: "/contracts/$contractId", params: { contractId: unitDraftsByUnitId.get(unit.id)! } })}
+            >
+              <FilePlus2 className="me-1 size-4" aria-hidden="true" />
+              مراجعة المسودة
+            </Button>
+          ) : unit.status === "available" ? (
             <Button
               className="min-h-11 px-3"
               aria-label={`بدء تأجير وحدة ${unit.unit_number}`}

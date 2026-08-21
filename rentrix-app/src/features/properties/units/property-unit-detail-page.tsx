@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { UnitFormModal } from '@/features/units/unit-form-modal';
 import { useUnits } from '@/features/units/use-units';
+import { useUnitContractDrafts } from '@/features/contracts/queries/useUnitContractDrafts';
 import { formatMoney } from '@/hooks/useCompanyFormatters';
 import { PropertyInfoItem } from '../components/property-info-item';
 import { useProperty } from '../use-properties';
@@ -21,9 +22,11 @@ export function PropertyUnitDetailPage() {
   const propertyQuery = useProperty(propertyId);
   const unitsQuery = useUnits(propertyId);
   const [editOpen, setEditOpen] = useState(false);
+  const unitDraftsQuery = useUnitContractDrafts({ propertyId, unitIds: unitId ? [unitId] : [] });
 
   const property = propertyQuery.data;
   const unit = unitsQuery.data?.find((candidate) => candidate.id === unitId);
+  const pendingDraft = unitDraftsQuery.data?.[0] ?? null;
 
   return (
     <AsyncContentState
@@ -40,13 +43,23 @@ export function PropertyUnitDetailPage() {
             backTo={`/properties/${propertyId}/units`}
             backLabel="العودة للوحدات"
             status={
-              <StatusBadge tone={unitStatusTone[unit.status as keyof typeof unitStatusTone] ?? 'neutral'}>
-                {unitStatusLabels[unit.status as keyof typeof unitStatusLabels] ?? unit.status}
-              </StatusBadge>
+              <span className="flex flex-wrap gap-1.5">
+                <StatusBadge tone={unitStatusTone[unit.status as keyof typeof unitStatusTone] ?? 'neutral'}>
+                  {unitStatusLabels[unit.status as keyof typeof unitStatusLabels] ?? unit.status}
+                </StatusBadge>
+                {pendingDraft ? <StatusBadge tone="warning">مسودة عقد قيد الإعداد</StatusBadge> : null}
+              </span>
             }
             actions={
               <>
-                {unit.status === 'available' ? (
+                {pendingDraft ? (
+                  <Button asChild variant="secondary" className="min-h-11">
+                    <Link to="/contracts/$contractId" params={{ contractId: pendingDraft.id }}>
+                      <FilePlus2 className="me-1 size-4" aria-hidden="true" />
+                      مراجعة المسودة
+                    </Link>
+                  </Button>
+                ) : unit.status === 'available' ? (
                   <Button asChild className="min-h-11">
                     <Link
                       to="/contracts/new"

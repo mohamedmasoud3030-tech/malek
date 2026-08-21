@@ -3,6 +3,36 @@ import { supabase } from '@/lib/supabase';
 import type { Contract } from '@/types/domain';
 import type { ContractUnitConflict } from '../domain/unitAvailability';
 
+export type UnitDraftContract = Readonly<Pick<Contract, 'id' | 'unit_id' | 'tenant_id' | 'status'>>;
+
+/**
+ * Drafts do not occupy a unit, but they are operational context: a colleague
+ * must see that work has already started before opening another lease draft.
+ */
+export async function listUnitDraftContracts({
+  unitIds,
+  excludedContractId,
+}: Readonly<{
+  unitIds: readonly string[];
+  excludedContractId?: string | null;
+}>): Promise<UnitDraftContract[]> {
+  const ids = [...new Set(unitIds.filter(Boolean))];
+  if (ids.length === 0) return [];
+
+  let query = supabase
+    .from('contracts')
+    .select('id,unit_id,tenant_id,status')
+    .is('deleted_at', null)
+    .in('unit_id', ids)
+    .in('status', getContractStatusVariants('draft') as Contract['status'][]);
+
+  if (excludedContractId) query = query.neq('id', excludedContractId);
+
+  const { data, error } = await query.returns<UnitDraftContract[]>();
+  if (error) throw error;
+  return data ?? [];
+}
+
 export async function listUnitContractConflicts({
   unitIds,
   startDate,

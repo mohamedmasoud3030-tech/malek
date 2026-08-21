@@ -54,6 +54,51 @@ describe('getContract missing-row handling', () => {
   });
 });
 
+
+describe('draft duplicate guard', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const payload = {
+    property_id: 'prop-1', unit_id: 'unit-1', tenant_id: 'tenant-1', agreement_id: null,
+    start_date: '2026-09-01', end_date: '2027-08-31', rent_amount: 100,
+    payment_cycle: 'monthly', billing_day: 1, grace_days: 0, payment_terms_id: null,
+    status: 'draft', cancellation_reason: null, notes: null, attachment_url: null,
+  } as const;
+
+  function propertyQuery() {
+    const chain = { select: vi.fn(), eq: vi.fn(), is: vi.fn(), maybeSingle: vi.fn() };
+    chain.select.mockReturnValue(chain); chain.eq.mockReturnValue(chain); chain.is.mockReturnValue(chain);
+    chain.maybeSingle.mockResolvedValue({ data: { id: 'prop-1', status: 'active' }, error: null });
+    return chain;
+  }
+
+  function draftQuery(rows: unknown[]) {
+    const chain = { select: vi.fn(), eq: vi.fn(), is: vi.fn(), in: vi.fn(), neq: vi.fn(), limit: vi.fn() };
+    chain.select.mockReturnValue(chain); chain.eq.mockReturnValue(chain); chain.is.mockReturnValue(chain);
+    chain.in.mockReturnValue(chain); chain.neq.mockReturnValue(chain); chain.limit.mockResolvedValue({ data: rows, error: null });
+    return chain;
+  }
+
+  it('refuses a second draft for the same unit and tenant before the write RPC', async () => {
+    supabaseMock.from.mockReturnValueOnce(propertyQuery()).mockReturnValueOnce(draftQuery([{ id: 'draft-1' }]));
+    const { createContract } = await import('./contractService');
+
+    await expect(createContract(payload)).rejects.toThrow('توجد بالفعل مسودة عقد');
+    expect(supabaseMock.rpc).not.toHaveBeenCalled();
+  });
+
+  it('allows the first draft after the duplicate guard returns no row', async () => {
+    supabaseMock.from.mockReturnValueOnce(propertyQuery()).mockReturnValueOnce(draftQuery([]));
+    supabaseMock.rpc.mockResolvedValue({ data: { id: 'contract-1', ...payload }, error: null });
+    const { createContract } = await import('./contractService');
+
+    await expect(createContract(payload)).resolves.toMatchObject({ id: 'contract-1' });
+    expect(supabaseMock.rpc).toHaveBeenCalledWith('create_contract_atomic', expect.objectContaining({ p_unit_id: 'unit-1', p_tenant_id: 'tenant-1' }));
+  });
+});
+
 describe('renewContract', () => {
   beforeEach(() => {
     vi.clearAllMocks();

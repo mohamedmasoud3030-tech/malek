@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { listUnitContractConflicts } from './unitAvailabilityService';
+import { listUnitContractConflicts, listUnitDraftContracts } from './unitAvailabilityService';
 
 const query = { select: vi.fn(), is: vi.fn(), in: vi.fn(), lte: vi.fn(), gte: vi.fn(), neq: vi.fn(), returns: vi.fn() };
 vi.mock('@/lib/supabase', () => ({ supabase: { from: vi.fn(() => query) } }));
@@ -7,6 +7,15 @@ vi.mock('@/lib/supabase', () => ({ supabase: { from: vi.fn(() => query) } }));
 beforeEach(() => {
   for (const fn of Object.values(query)) fn.mockReset();
   query.select.mockReturnValue(query); query.is.mockReturnValue(query); query.in.mockReturnValue(query); query.lte.mockReturnValue(query); query.gte.mockReturnValue(query); query.neq.mockReturnValue(query); query.returns.mockResolvedValue({ data: [], error: null });
+});
+
+describe('listUnitDraftContracts', () => {
+  it('fetches every current draft for the displayed units without treating it as occupancy', async () => {
+    await listUnitDraftContracts({ unitIds: ['unit-1', 'unit-1', 'unit-2'], excludedContractId: 'contract-1' });
+    expect(query.in).toHaveBeenCalledWith('unit_id', ['unit-1', 'unit-2']);
+    expect(query.in).toHaveBeenCalledWith('status', ['draft']);
+    expect(query.neq).toHaveBeenCalledWith('id', 'contract-1');
+  });
 });
 
 describe('listUnitContractConflicts', () => {
