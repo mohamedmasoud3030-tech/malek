@@ -1,6 +1,6 @@
 import { Link, Outlet, useMatches, useRouter } from '@tanstack/react-router';
 import { useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type RefObject } from 'react';
-import { CircleHelp, LogOut, Menu, Plus, ShieldAlert, X } from 'lucide-react';
+import { CircleHelp, LogOut, Plus, ShieldAlert, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { MalikBrand } from '@/components/brand/malik-brand';
 import { Button } from '@/components/ui/button';
@@ -422,7 +422,7 @@ export function AppShell() {
       </div>
 
       <MobileFloatingControl menuRef={mobileNavTriggerRef} onMenu={() => setMobileNavOpen(true)} />
-      <AiAssistantGlobalAction />
+      <AiAssistantGlobalAction showTrigger={false} />
       <CommandPaletteDialog />
     </div>
   );
