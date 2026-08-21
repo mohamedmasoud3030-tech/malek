@@ -138,10 +138,11 @@ export default defineConfig({
           "malek-apple-touch-180.png",
         ],
         cleanupOutdatedCaches: true,
-        // MALEK is online-first. A protected route must never fall back to a
-        // cached SPA document that may be stale or imply offline data access.
-        navigateFallback: "/offline.html",
-        navigateFallbackDenylist: [/^\/api\//, /^\/auth\//],
+        // MALEK is online-first. Do not install a global navigation fallback:
+        // Workbox would serve offline.html for ordinary online route requests
+        // before the server is reached, which falsely reports an online user as
+        // offline. Sensitive application pages therefore remain network-only.
+        // offline.html is retained as an explicit static recovery document.
         runtimeCaching: [
           {
             urlPattern: ({ request }) =>
