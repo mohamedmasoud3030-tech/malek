@@ -1,0 +1,81 @@
+/* MALEK shared visual foundations.
+   This layer contains only cross-screen behavior; component variants remain
+   the source of truth for component appearance. */
+@layer base {
+  :where(button, a, input, select, textarea, [role='button'], [tabindex]:not([tabindex='-1'])) {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  :where(button, a, input, select, textarea, [role='button'], [tabindex]:not([tabindex='-1'])):focus-visible {
+    outline: var(--focus-ring-width) solid hsl(var(--focus-ring) / 0.32);
+    outline-offset: 2px;
+  }
+
+  :where(input, select, textarea) {
+    color-scheme: light;
+  }
+
+  [data-theme='dark'] :where(input, select, textarea) {
+    color-scheme: dark;
+  }
+
+  :where(img, video) {
+    height: auto;
+  }
+
+  :where(svg[aria-hidden='true']) {
+    pointer-events: none;
+  }
+}
+
+@layer components {
+  /* Shared surfaces must not jump when interactive content appears. */
+  [data-component-card],
+  [data-list-toolbar],
+  [data-list-results] {
+    min-width: 0;
+  }
+
+  [data-component-card] :where(button, a, input, select, textarea) {
+    max-width: 100%;
+  }
+
+  /* Keep table borders and row states consistent across feature tables. */
+  :where(table) {
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  :where(thead th:first-child) {
+    border-start-start-radius: var(--radius);
+  }
+
+  :where(thead th:last-child) {
+    border-start-end-radius: var(--radius);
+  }
+
+  /* Prevent long identifiers from forcing the whole app wider. */
+  :where([data-list-results], [data-component-card]) :where(code, kbd, a[href^='http']) {
+    overflow-wrap: anywhere;
+  }
+
+  /* Fixed mobile controls must not cover the final actionable content. */
+  @media (max-width: 767px) {
+    [data-mobile-floating-control] ~ * {
+      scroll-margin-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+    }
+  }
+}
+
+@media (forced-colors: active) {
+  :where(button, a, input, select, textarea, [role='button']):focus-visible {
+    outline: 2px solid CanvasText;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-mobile-floating-control],
+  [data-component-card] {
+    scroll-behavior: auto;
+  }
+}
