@@ -1,6 +1,7 @@
 import { CircleCheck, Download, HandCoins, Printer, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import type { Payment } from '@/types/domain';
 import { getInvoiceGrossAmount, type InvoiceDetail } from '../invoices/invoiceService';
 import { openReceiptPrintTab } from '../receipts/receipt-print';
@@ -105,7 +106,7 @@ export function InvoiceDetailSection({
             </Button>
           </div>
 
-          <div className="grid gap-3 md:grid-cols-6">
+          <ResponsiveCardGrid gap="sm">
             <div className="rounded-2xl border bg-muted/30 p-4">
               <p className="text-sm text-muted-foreground">رقم الفاتورة</p>
               <p className="mt-2 font-black">{invoiceDetail.reference ?? 'فاتورة بلا مرجع'}</p>
@@ -130,7 +131,7 @@ export function InvoiceDetailSection({
               <p className="text-sm text-muted-foreground">المتبقي</p>
               <p className="mt-2 font-black">{formatMoney(remaining)}</p>
             </div>
-          </div>
+          </ResponsiveCardGrid>
 
           <div className="rounded-2xl border p-4">
             <h4 className="font-black">سجل المدفوعات</h4>
@@ -199,19 +200,21 @@ export function InvoiceDetailSection({
               ) : null}
 
               {collectionReceiptDetail ? (
-                <div className="mt-3 grid gap-2 rounded-xl border border-success/20 bg-background/75 p-3 sm:grid-cols-2 lg:grid-cols-3">
-                  <div>
-                    <p className="text-[11px] font-bold text-muted-foreground">رقم الإيصال المعتمد</p>
-                    <p className="mt-1 font-black tabular-nums" dir="ltr">{collectionReceiptDetail.receipt_number}</p>
-                  </div>
-                  <div>
-                    <p className="text-[11px] font-bold text-muted-foreground">الفاتورة</p>
-                    <p className="mt-1 font-black">{collectionReceiptDetail.invoice_reference ?? formatShortId(collectionReceiptDetail.invoice_id)}</p>
-                  </div>
-                  <div className="sm:col-span-2 lg:col-span-1">
-                    <p className="text-[11px] font-bold text-muted-foreground">السياق</p>
-                    <p className="mt-1 font-black">{formatReceiptContext(collectionReceiptDetail)}</p>
-                  </div>
+                <div className="mt-3 rounded-xl border border-success/20 bg-background/75 p-3">
+                  <ResponsiveCardGrid desktopColumns={3} gap="sm">
+                    <div>
+                      <p className="text-[11px] font-bold text-muted-foreground">رقم الإيصال المعتمد</p>
+                      <p className="mt-1 font-black tabular-nums" dir="ltr">{collectionReceiptDetail.receipt_number}</p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-bold text-muted-foreground">الفاتورة</p>
+                      <p className="mt-1 font-black">{collectionReceiptDetail.invoice_reference ?? formatShortId(collectionReceiptDetail.invoice_id)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-bold text-muted-foreground">السياق</p>
+                      <p className="mt-1 font-black">{formatReceiptContext(collectionReceiptDetail)}</p>
+                    </div>
+                  </ResponsiveCardGrid>
                 </div>
               ) : null}
 
