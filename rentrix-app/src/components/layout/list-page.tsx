@@ -35,8 +35,8 @@ interface ListPageProps {
 
 /**
  * Canonical MALEK list-page scaffold.
- * Search, filters and compact utilities share one register toolbar so data-heavy
- * screens feel like one product instead of a collection of unrelated cards.
+ * Search owns the first compact line on mobile; filters and table utilities
+ * share the second line so register controls never become a tall card stack.
  */
 export function ListPage({
   title,
@@ -76,10 +76,10 @@ export function ListPage({
         <ListControlSurface>
           <div
             data-list-toolbar
-            className="flex min-w-0 flex-col gap-2.5 lg:flex-row lg:items-center"
+            className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-1.5 lg:flex lg:items-center lg:gap-2"
           >
             {search ? (
-              <div data-list-search className="min-w-0 flex-1 lg:max-w-xl">
+              <div data-list-search className="col-span-2 min-w-0 flex-1 lg:max-w-xl">
                 <SearchInput
                   value={search.value}
                   onChange={search.onChange}
@@ -101,7 +101,7 @@ export function ListPage({
             {toolbarActions ? (
               <div
                 data-list-toolbar-actions
-                className="flex min-w-0 shrink-0 items-center gap-1.5 overflow-x-auto no-scrollbar"
+                className={`flex min-w-0 shrink-0 items-center justify-end gap-1.5 overflow-x-auto no-scrollbar ${filters ? '' : 'col-span-2'}`}
               >
                 {toolbarActions}
               </div>
