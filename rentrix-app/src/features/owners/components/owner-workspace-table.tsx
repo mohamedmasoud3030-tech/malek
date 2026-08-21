@@ -2,6 +2,7 @@ import { Eye, LinkIcon, Pencil, Users } from 'lucide-react';
 import { useState } from 'react';
 import { ActionMenu } from '@/components/ui/action-menu';
 import { Button } from '@/components/ui/button';
+import { DataTableColumnsMenu } from '@/components/ui/data-table';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { EmptyState } from '@/components/empty-state';
 import { EntityCell } from '@/components/ui/entity-cell';
@@ -17,6 +18,18 @@ import {
   getOwnerPropertyOwnershipLabel,
   type OwnerWorkspaceRow,
 } from '../utils/owner-ui-helpers';
+
+const ownerColumnOptions = [
+  { key: 'name', label: 'اسم المالك', locked: true },
+  { key: 'contact', label: 'الهاتف والإيميل' },
+  { key: 'property_count', label: 'عدد العقارات' },
+  { key: 'property_links', label: 'العقارات' },
+  { key: 'ownership', label: 'الملكية/الدور' },
+  { key: 'contracts', label: 'العقود النشطة' },
+  { key: 'actions', label: 'الإجراءات', locked: true },
+] as const;
+
+const defaultOwnerColumns = ownerColumnOptions.map((column) => column.key);
 
 function OwnerContact({ owner }: Readonly<{ owner: Owner }>) {
   return (
@@ -80,6 +93,7 @@ export function OwnerWorkspaceTable({
   const navigate = useNavigate();
   const location = useLocation();
   const [previewOwnerId, setPreviewOwnerId] = useState<string | null>(null);
+  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultOwnerColumns]);
   const previewRow = rows.find((row) => row.owner.id === previewOwnerId) ?? null;
   const hasSearch = Boolean(search.trim());
   const emptyState = (
@@ -97,9 +111,9 @@ export function OwnerWorkspaceTable({
     onEditOwner(previewRow.owner);
   };
 
-  // Column priorities drive the shared EntityTable mobile card: identity + one
-  // operational datum (active contracts) + actions. Dense ownership/property
-  // columns stay desktop/tablet comparison fields.
+  // Column priorities drive the shared EntityTable mobile register: identity +
+  // one operational datum (active contracts) + actions. Dense ownership and
+  // property columns remain optional comparison fields on wider viewports.
   const columns: ColumnDef<OwnerWorkspaceRow>[] = [
     {
       key: 'name',
@@ -147,12 +161,19 @@ export function OwnerWorkspaceTable({
   ];
 
   return (
-    <div className="space-y-4" data-owner-workspace-table>
+    <div className="space-y-3" data-owner-workspace-table>
       <FilterBar
         searchValue={search}
         onSearchChange={onSearchChange}
         searchPlaceholder="بحث باسم المالك أو الهاتف أو الإيميل أو العقار"
         searchAriaLabel="بحث في الملاك"
+        actions={(
+          <DataTableColumnsMenu
+            columns={ownerColumnOptions}
+            visibleKeys={visibleColumnKeys}
+            onChange={setVisibleColumnKeys}
+          />
+        )}
       />
       {rows.length > 0 ? (
         <EntityTable
@@ -161,6 +182,7 @@ export function OwnerWorkspaceTable({
           onRowClick={(row) => openPreview(row.owner.id)}
           mobileVisibleSecondaryKey="contracts"
           columns={columns}
+          visibleColumnKeys={visibleColumnKeys}
           keyOf={(row) => row.owner.id}
           emptyTitle="لا يوجد ملاك"
           emptyDescription="أضف أول مالك لبدء ربطه بالعقارات."
