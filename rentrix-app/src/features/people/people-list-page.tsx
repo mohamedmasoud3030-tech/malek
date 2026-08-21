@@ -6,6 +6,7 @@ import { PersonFormModal } from "./person-form-modal";
 import { useDialogNavigate } from "@/app/router/background-location";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { DataTableColumnsMenu } from "@/components/ui/data-table";
 import { EntityCell } from "@/components/ui/entity-cell";
 import {
   ActiveFilterBar,
@@ -28,6 +29,17 @@ import type { PersonTypeFilter } from "./people-service";
 import { usePeople, useSoftDeletePerson } from "./use-people";
 
 const pageSize = 10;
+
+const peopleColumnOptions = [
+  { key: "name", label: "الاسم", locked: true },
+  { key: "type", label: "النوع" },
+  { key: "phone", label: "الهاتف" },
+  { key: "email", label: "البريد" },
+  { key: "national_id", label: "رقم الهوية" },
+  { key: "actions", label: "الإجراءات", locked: true },
+] as const;
+
+const defaultPeopleColumns = peopleColumnOptions.map((column) => column.key);
 
 function formatCount(value: number) {
   return new Intl.NumberFormat("en-US").format(value);
@@ -73,6 +85,7 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editPersonId, setEditPersonId] = useState<string | undefined>();
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultPeopleColumns]);
   const dialogNavigate = useDialogNavigate();
   const debouncedSearch = useDebounce(search, 300);
 
@@ -281,7 +294,7 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
           placeholder: "بحث بالاسم أو الهاتف أو الهوية",
         }}
         filters={
-          <div className="space-y-3">
+          <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto no-scrollbar">
             <Select
               aria-label="تصفية الأشخاص حسب النوع"
               value={type}
@@ -289,6 +302,7 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
                 setType(event.target.value as PersonTypeFilter);
                 setPage(1);
               }}
+              className="h-10 w-36 shrink-0 rounded-lg"
             >
               <option value="all">كل الأنواع</option>
               {personTypeValues.map((item) => (
@@ -302,6 +316,13 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
               onClearAll={clearFilters}
             />
           </div>
+        }
+        toolbarActions={
+          <DataTableColumnsMenu
+            columns={peopleColumnOptions}
+            visibleKeys={visibleColumnKeys}
+            onChange={setVisibleColumnKeys}
+          />
         }
       >
         {!peopleQuery.isLoading && !peopleQuery.isError ? (
@@ -337,63 +358,59 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
           </section>
         ) : null}
 
-        <section
-          data-people-register
-          className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card"
-        >
-          <header className="flex items-start justify-between gap-3 border-b border-border/70 bg-muted/35 px-4 py-4 sm:px-5">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="grid size-9 place-items-center rounded-xl bg-primary/9 text-primary">
-                  <Users className="size-4.5" aria-hidden="true" />
-                </span>
-                <h2 className="text-base font-black">سجل الأشخاص</h2>
+        <section data-people-register className="min-w-0 space-y-2.5">
+          <header className="flex min-h-11 items-center justify-between gap-3 px-1">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <span className="grid size-8 shrink-0 place-items-center rounded-lg border border-primary/10 bg-primary/[0.06] text-primary">
+                <Users className="size-4" aria-hidden="true" />
+              </span>
+              <div className="min-w-0">
+                <h2 className="truncate text-sm font-black">سجل الأشخاص</h2>
+                <p className="truncate text-[11px] font-medium text-muted-foreground">
+                  {formatCount(rows.length)} سجل في الصفحة الحالية
+                </p>
               </div>
-              <p className="mt-1.5 text-xs font-medium text-muted-foreground">
-                {formatCount(rows.length)} سجل في الصفحة الحالية.
-              </p>
             </div>
           </header>
 
-          <div className="p-3 sm:p-4">
-            <EntityTable
-              aria-label="جدول الأشخاص"
-              rows={rows}
-              mobileVisibleSecondaryKey="type"
-              columns={columns}
-              keyOf={(person) => person.id}
-              isLoading={peopleQuery.isLoading}
-              error={peopleQuery.isError ? peopleQuery.error : null}
-              errorTitle="تعذر تحميل الأشخاص"
-              onRetry={() => peopleQuery.refetch()}
-              emptyTitle={
-                hasFilterValues
-                  ? "لا توجد نتائج مطابقة للفلاتر"
-                  : "لا توجد سجلات أشخاص"
-              }
-              emptyDescription={
-                hasFilterValues
-                  ? "غيّر البحث أو النوع أو امسح الفلاتر لعرض سجلات أخرى."
-                  : "أضف مستأجراً أو مالكاً أو جهة اتصال."
-              }
-              emptyAction={
-                hasFilterValues ? (
-                  <Button variant="secondary" onClick={clearFilters}>
-                    مسح الفلاتر
-                  </Button>
-                ) : (
-                  <Button onClick={openCreate}>إضافة شخص</Button>
-                )
-              }
-              pagination={{
-                page,
-                pageSize,
-                total: totalCount,
-                onPageChange: setPage,
-              }}
-              onRowClick={(person) => dialogNavigate({ to: '/people/$personId', params: { personId: person.id } })}
-            />
-          </div>
+          <EntityTable
+            aria-label="جدول الأشخاص"
+            rows={rows}
+            mobileVisibleSecondaryKey="type"
+            columns={columns}
+            visibleColumnKeys={visibleColumnKeys}
+            keyOf={(person) => person.id}
+            isLoading={peopleQuery.isLoading}
+            error={peopleQuery.isError ? peopleQuery.error : null}
+            errorTitle="تعذر تحميل الأشخاص"
+            onRetry={() => peopleQuery.refetch()}
+            emptyTitle={
+              hasFilterValues
+                ? "لا توجد نتائج مطابقة للفلاتر"
+                : "لا توجد سجلات أشخاص"
+            }
+            emptyDescription={
+              hasFilterValues
+                ? "غيّر البحث أو النوع أو امسح الفلاتر لعرض سجلات أخرى."
+                : "أضف مستأجراً أو مالكاً أو جهة اتصال."
+            }
+            emptyAction={
+              hasFilterValues ? (
+                <Button variant="secondary" onClick={clearFilters}>
+                  مسح الفلاتر
+                </Button>
+              ) : (
+                <Button onClick={openCreate}>إضافة شخص</Button>
+              )
+            }
+            pagination={{
+              page,
+              pageSize,
+              total: totalCount,
+              onPageChange: setPage,
+            }}
+            onRowClick={(person) => dialogNavigate({ to: '/people/$personId', params: { personId: person.id } })}
+          />
         </section>
       </ListPage>
 
