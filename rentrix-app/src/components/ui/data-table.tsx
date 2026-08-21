@@ -14,3 +14,5 @@ export {
   type RowSelectionState,
   type EntityTableProps as DataTableProps,
 } from './entity-table';
+
+export { DataTableColumnsMenu } from './data-table-columns-menu';
