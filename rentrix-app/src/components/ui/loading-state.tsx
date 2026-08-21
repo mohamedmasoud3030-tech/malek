@@ -39,7 +39,7 @@ export function LoadingState({
         role="status"
         aria-live="polite"
         aria-label={label}
-        className={cn('grid grid-cols-2 gap-3 sm:grid-cols-4', className)}
+        className={cn('grid grid-cols-2 gap-3 [&>*:last-child:nth-child(odd)]:col-span-2', className)}
       >
         {Array.from({ length: rows }).map((_, index) => (
           <Skeleton key={index} className="h-28 rounded-xl" />
@@ -75,7 +75,7 @@ export function LoadingState({
         className={cn('space-y-6 p-6', className)}
       >
         <Skeleton className="h-10 w-64" />
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid grid-cols-2 gap-4 [&>*:last-child:nth-child(odd)]:col-span-2">
           <Skeleton className="h-32" />
           <Skeleton className="h-32" />
           <Skeleton className="h-32" />
@@ -95,7 +95,7 @@ export function LoadingState({
         className={cn('space-y-5', className)}
       >
         <Skeleton className="h-24 rounded-xl" />
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3">
           <Skeleton className="h-28 rounded-xl" />
           <Skeleton className="h-28 rounded-xl" />
           <Skeleton className="h-28 rounded-xl" />
