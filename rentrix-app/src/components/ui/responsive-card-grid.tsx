@@ -28,8 +28,8 @@ const gapClasses = {
  *   is the only supported wider rhythm.
  * - Legacy requests for 4+ columns intentionally collapse to 2 so dense
  *   dashboards do not become sparse strips of tiny cards.
- * - In the normal two-column mode, an odd final card spans the full row so
- *   the page never ends with a visually empty half-row.
+ * - Odd final cards fill the remaining mobile row; two-column desktop grids
+ *   keep that full-row treatment so pages do not end with a large empty gap.
  */
 export function ResponsiveCardGrid({
   children,
@@ -47,7 +47,7 @@ export function ResponsiveCardGrid({
       className={cn(
         'grid min-w-0 grid-cols-2',
         allowThreeColumns
-          ? 'lg:grid-cols-3'
+          ? '[&>*:last-child:nth-child(odd)]:col-span-2 lg:grid-cols-3 lg:[&>*:last-child:nth-child(odd)]:col-span-1'
           : '[&>*:last-child:nth-child(odd)]:col-span-2',
         gapClasses[gap],
         '[&>*]:min-w-0',
