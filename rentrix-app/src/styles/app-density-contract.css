@@ -12,7 +12,6 @@
 [data-app-shell] .grid:is([class*='grid-cols-4'], [class*='grid-cols-5'], [class*='grid-cols-6']):has(> [data-component-card]),
 [data-app-shell] .grid:is([class*='grid-cols-4'], [class*='grid-cols-5'], [class*='grid-cols-6']):has(> [data-kpi-card]),
 [data-app-shell] .grid:is([class*='grid-cols-4'], [class*='grid-cols-5'], [class*='grid-cols-6']):has(> [data-finance-kpi-drill]),
-[data-app-shell] [data-finance-kpi-grid].grid:is([class*='grid-cols-4'], [class*='grid-cols-5'], [class*='grid-cols-6']),
 [data-app-shell] [data-entity-form] .grid:is([class*='grid-cols-4'], [class*='grid-cols-5'], [class*='grid-cols-6']):has(> [class~='rounded-xl'][class*='bg-muted']),
 [data-app-shell] .grid:is([class*='grid-cols-4'], [class*='grid-cols-5'], [class*='grid-cols-6']):has(> article) {
   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -22,7 +21,6 @@
 [data-app-shell] .grid:is([class*='grid-cols-4'], [class*='grid-cols-5'], [class*='grid-cols-6']):has(> [data-component-card]) > :last-child:nth-child(odd),
 [data-app-shell] .grid:is([class*='grid-cols-4'], [class*='grid-cols-5'], [class*='grid-cols-6']):has(> [data-kpi-card]) > :last-child:nth-child(odd),
 [data-app-shell] .grid:is([class*='grid-cols-4'], [class*='grid-cols-5'], [class*='grid-cols-6']):has(> [data-finance-kpi-drill]) > :last-child:nth-child(odd),
-[data-app-shell] [data-finance-kpi-grid].grid:is([class*='grid-cols-4'], [class*='grid-cols-5'], [class*='grid-cols-6']) > :last-child:nth-child(odd),
 [data-app-shell] [data-entity-form] .grid:is([class*='grid-cols-4'], [class*='grid-cols-5'], [class*='grid-cols-6']):has(> [class~='rounded-xl'][class*='bg-muted']) > :last-child:nth-child(odd),
 [data-app-shell] .grid:is([class*='grid-cols-4'], [class*='grid-cols-5'], [class*='grid-cols-6']):has(> article) > :last-child:nth-child(odd) {
   grid-column: span 2 / span 2;
