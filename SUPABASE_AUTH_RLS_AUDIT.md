@@ -3,7 +3,7 @@
 **Date:** 2026-08-21  
 **Repository evidence:** `main@abf12cb39d6a7507734f7f1f2b29b92443eccde8`  
 **Scope:** Auth, JWT tenancy, Postgres RLS/grants/RPC, Edge Functions, Storage and Realtime.  
-**Evidence status:** repository-static only. No hosted Supabase project, production data or production settings were queried or changed.
+**Evidence status:** repository-static plus read-only hosted catalog/config inspection on 2026-08-21. No application rows, customer data, production settings or production schema were changed.
 
 ## Executive decision
 
@@ -12,7 +12,7 @@ The repository baseline is designed to fail closed and does not justify a broad 
 - 102/102 `public` tables have RLS enabled.
 - 203 repository-visible policies protect the baseline; every company-owned row carries `company_id`, while the narrow global/identity inventory is explicitly classified below.
 - The two RLS-enabled tables with no browser policy — `document_reference_sequences` and `financial_operation_idempotency` — are intentionally server/RPC-only and deny browser access by default.
-- 268 `SECURITY DEFINER` functions in the baseline pin `search_path`; none is granted to `anon` or `PUBLIC`.
+- 268 `SECURITY DEFINER` functions in the baseline pin `search_path`; static source control is necessary but hosted grants must also be inspected per function.
 - The client-facing role model is `ADMIN`, `MANAGER`, `ACCOUNTANT`, `OPERATIONS`, `USER`, `VIEWER`; authorisation is capability/effective-grant based, not a mutable browser role.
 - The active company is a server-issued access-token claim, validated against an active `company_members` row. Missing, stale or mismatched context fails closed.
 - The privileged background worker is protected by an independent 32+ character secret and uses the service role only inside the Edge Function; browser use is prohibited.
@@ -62,6 +62,10 @@ All 102 public tables have RLS enabled. Company-owned tables carry `company_id`;
 6. **Confirmed repair — legacy public attachment references:** the client previously returned stored absolute `http(s)` URLs unchanged. It now rejects them, so a historical public link cannot be re-published by the application. Such records require a controlled server-side migration into the private bucket before display.
 7. **Storage configuration evidence gap:** `attachments` has a non-production, cleanup-safe smoke test for private access and MIME limits, but its `storage.objects` policies and bucket definition are not represented in the committed migration chain. No policy is invented from client code; the read-only `supabase:live-readiness` check now inventories the deployed bucket and object policies in QA before release.
 8. **Realtime scope:** the repository contains one `postgres_changes` subscription for a user's permission grants, filtered to that user. The read-only readiness check now reports whether that table is in the `supabase_realtime` publication; an actual anonymous/cross-company subscription denial test is still required in QA.
+9. **Confirmed hosted helper exposure — repair prepared, not deployed:** the live catalog showed that `next_document_reference(uuid, text, text, integer)` and `wp05_provision_default_cashflow_classifications(uuid)` are `SECURITY DEFINER` helpers whose caller supplies a company ID, yet they had browser-role execution. `assign_document_reference()` and `update_unit_status_from_activity()` are trigger helpers and also do not need browser execution. Migration `20260901000013_revoke_internal_security_definer_helpers.sql` revokes `PUBLIC`, `anon`, and `authenticated` execution for precisely those four signatures, preserving only explicit `service_role` execution. The static regression test enforces this grant contract. It has **not** been applied to the live project.
+10. **Hosted migration-history drift:** the live migration history does not list repository migrations 10 and 11, while the live catalog confirms their unique index and invoice-lineage trigger/function are present. This is evidence drift, not proof the safeguards are absent. Reconcile migration history against the canonical chain in QA before production rollout; do not re-run migrations 10/11 blindly.
+11. **Hosted Auth warning:** Supabase reports leaked-password protection disabled. This does not explain the offline screen, but it weakens future password safety. Recommended production decision: enable it first in QA, then in production during the approved maintenance window.
+12. **Hosted advisor inventory requires staged work:** 169 `authenticated SECURITY DEFINER executable` warnings, 99 unindexed foreign-key notices, 35 multiple-permissive-policy notices, 7 RLS init-plan notices, and 158 unused-index notices remain. These are not safe to “bulk fix”: many business RPCs are deliberately authenticated and indexes/policies require workload evidence. Each must be classified and tested per function/table; no broad grant, RLS, or index change is approved by this audit.
 
 ## Secure design selected
 
@@ -70,6 +74,7 @@ All 102 public tables have RLS enabled. Company-owned tables carry `company_id`;
 - Resolve current company from the server-issued JWT claim and fail closed on invalid/missing membership.
 - Keep role changes, invitation/membership lifecycle, financial mutation, approvals and deletion behind narrow authorization RPCs.
 - Keep privileged credentials only in server/Edge Function secrets. The worker requires both deployment-held service credentials and a dedicated invocation secret.
+- Treat private/internal `SECURITY DEFINER` helpers as server-only: revoke `PUBLIC`, `anon` and `authenticated` execution; do not expose caller-supplied tenant identifiers through RPC.
 - Keep storage private and authorize by company/entity at the object-policy layer; signed URLs are short-lived access mechanisms, not a permission bypass.
 - Preserve append-only financial/audit history; account deletion must revoke access before any scheduled retention/pseudonymisation workflow.
 
@@ -81,7 +86,8 @@ All 102 public tables have RLS enabled. Company-owned tables carry `company_id`;
 2. Run `pnpm qa:preflight` and `pnpm qa:database-contracts` against QA only.
 3. In Supabase QA, verify Custom Access Token Hook is enabled and the new access token contains the validated company claim.
 4. Run `pnpm supabase:live-readiness` with an approved **read-only QA** database URL, then verify private Storage object policies and Realtime publication against anonymous, unrelated-company and intended-member tokens.
-5. Back up production and obtain explicit production-change approval before any migration/configuration action.
+5. Reconcile hosted migration history with the canonical chain in QA and confirm migrations 10/11 safeguards by catalog before planning the forward migration.
+6. Back up production and obtain explicit production-change approval before any migration/configuration action, including enabling Auth leaked-password protection and applying migrations 12/13.
 
 ### Rollback
 
@@ -97,13 +103,17 @@ The existing behavioural matrix is retained and the new static gate enforces bas
 - ADMIN, MANAGER, ACCOUNTANT, OPERATIONS, USER and VIEWER: intended capability allow/deny behaviour;
 - inactive, deleted and no-membership identities: receive no company claim and fail closed;
 - privileged worker: succeeds only with server-held worker secret; every browser-style invocation is denied;
-- direct PostgREST/RPC calls, not just UI behaviour;
+- direct PostgREST/RPC calls, not just UI behaviour, including denial of direct calls to the four internal helper signatures;
 - Storage object list/read/write/delete across two companies, MIME and private-public URL checks; and Realtime subscription parity with normal RLS;
 - account deletion/deactivation: session/access revocation and no accessible orphan records.
 
+## Hosted inspection note
+
+The live Supabase project reported `ACTIVE_HEALTHY` during the read-only inspection. The mobile “offline” screenshot is the application’s `offline.html` PWA fallback, not a Supabase health signal; its unsafe global navigation fallback is separately removed in UI PR #1542 and still awaits deployment. The hosted inspection read catalog, ACL, migration and advisor metadata only; it did not query application records.
+
 ## Remaining blockers
 
-No production remediation was applied. Runtime/live verification is required for Auth Hook activation, migration drift, Storage, Realtime, deployed Edge Function versions, backups and retention/deletion operations.
+No production remediation was applied. Runtime/live verification is required for Auth Hook activation, migration-history reconciliation, Storage, Realtime, deployed Edge Function versions, backups and retention/deletion operations. Production deployment of migrations 12/13 and the Auth leaked-password setting remains blocked pending QA evidence, backup and explicit production-change approval.
 
 **Canonical rule anchors:** `SEC-001` through `SEC-010` in `docs/source-of-truth/05_SYSTEM_ARCHITECTURE_AND_SECURITY.md`.  
 **Governed stage credit:** unchanged by this repository-only audit.
