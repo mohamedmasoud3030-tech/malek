@@ -51,8 +51,8 @@ The project has a substantial implementation and verification history, but the c
 | Repository instructions | VERIFIED COMPLETE | `AGENTS.md`, README, Canonical Pack authority rules read |
 | Current main ref | VERIFIED COMPLETE | GitHub reports `main@b1bb5a9...` |
 | Working-tree cleanliness | NOT VERIFIED | No local checkout was mounted in the session; remote branch/PR state was inspected instead |
-| Credential exposure scan | NOT STARTED | Existing scripts were identified but not executed against a local checkout |
-| Sensitive financial write boundary | NOT STARTED | Existing guard is documented; current execution result absent |
+| Credential exposure scan | IMPLEMENTED BUT NOT VERIFIED | Static search found privileged-key markers only in QA examples, server/Edge Functions, guards, and tests; no marker was found in browser runtime files inspected. Existing scan not executed. |
+| Sensitive financial write boundary | IMPLEMENTED BUT NOT VERIFIED | Static search found no production `.from('journal_entries').insert` result; existing regression guard not executed. |
 | Migration hygiene / DB0 gate | NOT STARTED | Historical evidence exists, current execution absent |
 | Typecheck | NOT VERIFIED | No current command result |
 | Lint | NOT VERIFIED | No current command result |
@@ -62,6 +62,14 @@ The project has a substantial implementation and verification history, but the c
 | Supabase/Auth/RLS live verification | BLOCKED_EXTERNAL | Requires authorized QA/demo credentials and target |
 | Design-system foundation | IMPLEMENTED BUT NOT VERIFIED | PR #1531 contains the change; rendered runtime verification remains |
 | Governed stage credit | VERIFIED AS REPORTED | Master plan remains the authority; no credit was changed |
+
+## M1 source-audit observations
+
+- `rentrix-app/src/lib/supabase.ts` constructs the browser client solely from `env.supabaseAnonKey`; `env.ts` reads only public `VITE_SUPABASE_*` values.
+- The privileged-key scan covers browser source/public/index files and explicitly rejects service-role/private-key/OpenAI markers.
+- Search at the observed main SHA located `SUPABASE_SERVICE_ROLE_KEY` only in QA templates, server/Edge Function code, isolated local/QA smoke scripts, tests, and guard scripts. This is source evidence, not execution proof.
+- `supabase/functions/background-worker/index.ts` requires a separate `BACKGROUND_WORKER_SECRET` before using its server-side service role key.
+- QA mutation scripts refuse production targets before client creation; the intentional lifecycle additionally requires an explicit QA approval flag.
 
 ## External blockers
 
