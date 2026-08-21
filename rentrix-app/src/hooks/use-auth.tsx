@@ -220,12 +220,19 @@ export function AuthProvider({ children }: PropsWithChildren) {
       },
       logout: async () => {
         explicitLogoutRef.current = true;
-        await signOut();
-        // Clear client-side authority immediately. CompanyProvider observes the
-        // null session and clears all React Query data before another account
-        // can enter this browser.
-        setGrantedPermissions([]);
-        setSession(null);
+        try {
+          await signOut();
+        } finally {
+          // This must happen even if both remote and local Supabase calls fail:
+          // a shared browser must never continue to show the previous
+          // operator's session or protected screen.
+          setGrantedPermissions([]);
+          setSession(null);
+          hadSessionRef.current = false;
+          if (appRouter.state.location.pathname !== LOGIN_PATH) {
+            void appRouter.navigate({ to: LOGIN_PATH, replace: true });
+          }
+        }
       },
     }),
     [appRouter, authorization, authorizationDiagnostics, isLoading, refreshPermissions, session],
