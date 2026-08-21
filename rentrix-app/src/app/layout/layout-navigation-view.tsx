@@ -227,7 +227,7 @@ export function MobileFloatingControl({ onMenu, menuRef }: Readonly<{ onMenu: ()
     >
       <div
         ref={quickRootRef}
-        className="pointer-events-auto relative flex w-full max-w-[20rem] items-center gap-1 rounded-[1.35rem] border border-border/80 bg-background/94 p-1 shadow-[0_16px_44px_-24px_hsl(var(--foreground)/0.5),0_1px_6px_hsl(var(--foreground)/0.08)] ring-1 ring-background/70 backdrop-blur-xl supports-[backdrop-filter]:bg-background/86"
+        className="pointer-events-auto relative flex w-auto items-center gap-0.5 rounded-2xl border border-border/80 bg-background/94 p-1 shadow-[0_16px_44px_-24px_hsl(var(--foreground)/0.5),0_1px_6px_hsl(var(--foreground)/0.08)] ring-1 ring-background/70 backdrop-blur-xl supports-[backdrop-filter]:bg-background/86"
       >
         {quickOpen && visibleQuickActions.length > 0 ? (
           <div
@@ -265,10 +265,9 @@ export function MobileFloatingControl({ onMenu, menuRef }: Readonly<{ onMenu: ()
           aria-label="فتح القائمة"
           aria-haspopup="dialog"
           data-mobile-dock-menu
-          className="flex min-h-10 min-w-0 flex-1 items-center justify-start gap-2 rounded-xl border border-foreground bg-foreground px-3 text-start text-background outline-none transition-[background-color,box-shadow,transform] duration-150 hover:bg-foreground/92 active:scale-[0.99] focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none motion-reduce:transform-none"
+          className="grid size-10 shrink-0 place-items-center rounded-xl border border-transparent text-muted-foreground outline-none transition-[background-color,color,box-shadow,transform] duration-150 hover:bg-muted hover:text-foreground active:scale-[0.97] focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none motion-reduce:transform-none"
         >
-          <Menu className="size-4 shrink-0" aria-hidden="true" />
-          <span className="min-w-0 flex-1 truncate text-xs font-black">القائمة</span>
+          <Menu className="size-4" aria-hidden="true" />
         </button>
 
         <button

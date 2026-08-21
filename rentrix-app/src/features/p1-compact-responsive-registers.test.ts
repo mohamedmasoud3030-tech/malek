@@ -22,8 +22,10 @@ describe('P1 — shared responsive register contract', () => {
     const productionSources = registerRoots.flatMap(sourceFiles).map((path) => readFileSync(path, 'utf8'));
     expect(productionSources.some((source) => source.includes('renderMobileCard'))).toBe(false);
     expect(productionSources.some((source) => source.includes('enableViewModeToggle'))).toBe(false);
-    expect(readFileSync(new URL('../components/ui/entity-table.tsx', import.meta.url), 'utf8')).toContain('data-compact-responsive-table');
-    expect(readFileSync(new URL('../components/ui/entity-table.tsx', import.meta.url), 'utf8')).toContain('data-entity-table-mobile-list');
+    const sharedRegister = readFileSync(new URL('../components/ui/entity-table.tsx', import.meta.url), 'utf8');
+    expect(sharedRegister).toContain('data-compact-responsive-table');
+    expect(sharedRegister).toContain('data-entity-table-mobile-list');
+    expect(sharedRegister).toContain('data-entity-table-grid');
   });
 
   it('regression guard — every active register still routes through the shared responsive foundation', () => {
