@@ -9,6 +9,7 @@ import { EntityActions } from '@/components/ui/entity-actions';
 import { useLocation, useNavigate, useSearch } from '@tanstack/react-router';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { FilterBar } from '@/components/ui/filter-bar';
+import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { PersonFormModal } from '@/features/people/person-form-modal';
 import type { TenantWorkspaceRow } from './tenantWorkspaceService';
 import { useTenantWorkspace } from './useTenantWorkspace';
@@ -88,22 +89,22 @@ function TenantSummary({ rows, total }: Readonly<{ rows: TenantWorkspaceRow[]; t
   ];
 
   return (
-    <section data-tenant-summary aria-label="ملخص المستأجرين" className="grid gap-3 sm:grid-cols-3">
+    <ResponsiveCardGrid data-tenant-summary={undefined as never} aria-label="ملخص المستأجرين" desktopColumns={3}>
       {items.map(({ label, value, icon: Icon, hint }) => (
-        <div key={label} className="group relative overflow-hidden rounded-2xl border border-border/75 bg-card p-4 shadow-card">
-          <div className="relative flex items-start justify-between gap-3">
-            <div>
-              <p className="text-xs font-bold text-muted-foreground">{label}</p>
-              <p className="mt-2 text-2xl font-black tabular-nums">{value}</p>
-              <p className="mt-1 text-[11px] font-medium text-muted-foreground">{hint}</p>
+        <article key={label} className="group relative min-w-0 overflow-hidden rounded-xl border border-border/75 bg-card p-3 shadow-card sm:p-3.5">
+          <div className="relative flex min-w-0 items-start justify-between gap-2.5">
+            <div className="min-w-0">
+              <p className="truncate text-[11px] font-bold text-muted-foreground sm:text-xs">{label}</p>
+              <p className="mt-1.5 text-xl font-black tabular-nums sm:text-2xl">{value}</p>
+              <p className="mt-0.5 line-clamp-2 text-[10px] font-medium leading-4 text-muted-foreground sm:text-[11px]">{hint}</p>
             </div>
-            <span className="grid size-11 place-items-center rounded-xl border border-primary/15 bg-primary/8 text-primary">
-              <Icon className="size-5" aria-hidden="true" />
+            <span className="grid size-9 shrink-0 place-items-center rounded-lg border border-primary/15 bg-primary/8 text-primary sm:size-10">
+              <Icon className="size-4 sm:size-[1.05rem]" aria-hidden="true" />
             </span>
           </div>
-        </div>
+        </article>
       ))}
-    </section>
+    </ResponsiveCardGrid>
   );
 }
 
