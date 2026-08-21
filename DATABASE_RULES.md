@@ -101,6 +101,7 @@ Update it whenever a new `.from()` or `.rpc()` call is added to frontend source 
 | 07 | `20260901000007_restrict_recalculate_invoice_status.sql` | Revoke authenticated execute on recalculate_invoice_status |
 | **08** | **`20260901000008_company_members_six_role_constraint.sql`** | **Align company_members.role CHECK with canonical 6-role model** |
 | **09** | **`20260901000009_company_members_six_role_authority.sql`** | **Set canonical USER default and authorize membership management through effective `users.manage` permission** |
+| **10** | **`20260901000010_contracts_one_live_draft_per_unit_tenant.sql`** | **Prevent duplicate live drafts for the same company, unit and tenant** |
 
 ## Remote environments
 
