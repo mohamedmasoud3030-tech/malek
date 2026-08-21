@@ -89,22 +89,24 @@ function TenantSummary({ rows, total }: Readonly<{ rows: TenantWorkspaceRow[]; t
   ];
 
   return (
-    <ResponsiveCardGrid data-tenant-summary={undefined as never} aria-label="ملخص المستأجرين" desktopColumns={3}>
-      {items.map(({ label, value, icon: Icon, hint }) => (
-        <article key={label} className="group relative min-w-0 overflow-hidden rounded-xl border border-border/75 bg-card p-3 shadow-card sm:p-3.5">
-          <div className="relative flex min-w-0 items-start justify-between gap-2.5">
-            <div className="min-w-0">
-              <p className="truncate text-[11px] font-bold text-muted-foreground sm:text-xs">{label}</p>
-              <p className="mt-1.5 text-xl font-black tabular-nums sm:text-2xl">{value}</p>
-              <p className="mt-0.5 line-clamp-2 text-[10px] font-medium leading-4 text-muted-foreground sm:text-[11px]">{hint}</p>
+    <section data-tenant-summary aria-label="ملخص المستأجرين">
+      <ResponsiveCardGrid desktopColumns={3}>
+        {items.map(({ label, value, icon: Icon, hint }) => (
+          <article key={label} className="group relative min-w-0 overflow-hidden rounded-xl border border-border/75 bg-card p-3 shadow-card sm:p-3.5">
+            <div className="relative flex min-w-0 items-start justify-between gap-2.5">
+              <div className="min-w-0">
+                <p className="truncate text-[11px] font-bold text-muted-foreground sm:text-xs">{label}</p>
+                <p className="mt-1.5 text-xl font-black tabular-nums sm:text-2xl">{value}</p>
+                <p className="mt-0.5 line-clamp-2 text-[10px] font-medium leading-4 text-muted-foreground sm:text-[11px]">{hint}</p>
+              </div>
+              <span className="grid size-9 shrink-0 place-items-center rounded-lg border border-primary/15 bg-primary/8 text-primary sm:size-10">
+                <Icon className="size-4 sm:size-[1.05rem]" aria-hidden="true" />
+              </span>
             </div>
-            <span className="grid size-9 shrink-0 place-items-center rounded-lg border border-primary/15 bg-primary/8 text-primary sm:size-10">
-              <Icon className="size-4 sm:size-[1.05rem]" aria-hidden="true" />
-            </span>
-          </div>
-        </article>
-      ))}
-    </ResponsiveCardGrid>
+          </article>
+        ))}
+      </ResponsiveCardGrid>
+    </section>
   );
 }
 
