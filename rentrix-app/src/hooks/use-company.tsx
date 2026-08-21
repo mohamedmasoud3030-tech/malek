@@ -13,12 +13,12 @@ export const ACTIVE_COMPANY_RESOLUTION_TIMEOUT_MS = 12_000;
  * clear recovery screen instead of a blank workspace.
  */
 export function withCompanyResolutionTimeout<T>(
-  operation: Promise<T>,
+  operation: PromiseLike<T>,
   timeoutMs = ACTIVE_COMPANY_RESOLUTION_TIMEOUT_MS,
 ): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     const timeout = globalThis.setTimeout(() => reject(new Error(ACTIVE_COMPANY_ERROR)), timeoutMs);
-    operation.then(
+    Promise.resolve(operation).then(
       (value) => {
         globalThis.clearTimeout(timeout);
         resolve(value);
