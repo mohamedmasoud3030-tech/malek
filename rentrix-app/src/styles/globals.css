@@ -1,7 +1,8 @@
 @import 'tailwindcss';
 @import './tokens.css';
 @import './malek-pro-visual-wave.css';
-@import './app-density-contract.css';\n@import './design-system-foundation.css';
+@import './app-density-contract.css';
+@import './design-system-foundation.css';
 
 /* ============================================
    MALIK Visual Contract v2.0

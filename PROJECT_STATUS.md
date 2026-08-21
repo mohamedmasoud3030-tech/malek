@@ -90,3 +90,26 @@ The project has a substantial implementation and verification history, but the c
 ## Next milestone
 
 M1: execute the existing current-SHA security and boundary guards from a runnable checkout. The first code change will only be made after a reproducible finding is captured.
+
+## UX mobile recovery milestone
+
+- **Rendered evidence:** owner-supplied authenticated mobile screenshots confirmed a full-height permission-request dialog with large unused space, repeated access denial states, and an unbounded active-company loading state.
+- **IMPLEMENTED BUT NOT VERIFIED:** PR #1535 scopes the full-height mobile Dialog behavior to `EntityForm` only, adds active-company resolution timeout/recovery copy, restores valid CSS imports, and adds focused regression coverage.
+- **VERIFIED DEFECT:** Vercel build log for branch `arena/mobile-recovery-surfaces` found `globals.css:4` invalid because a literal `\\n` joined CSS imports. The repair is on the branch; the current Vercel quota/rate-limit has not produced a build for the repair commit.
+- **BLOCKED:** Current account access to Portfolio/Services is a live role/grant configuration issue. No permission was escalated or data was changed.
+
+
+## Auth role-claim milestone
+
+- **Outcome:** a valid `ADMIN` account must not be marked “permissions incomplete” merely because Supabase’s session user object omits a custom access-token claim.
+- **VERIFIED ROOT CAUSE:** live `custom_access_token_hook` reads `public.users.role` and stamps `app_metadata.user_role` into the JWT. The previous client authorization code instead read `session.user.app_metadata`. Supabase documents that token hooks modify the JWT, not that session user object.
+- **Live read-only evidence:** all active company membership roles match their account role; this includes two `ADMIN` memberships. The reported screenshots are therefore consistent with a client token-claim consumption defect, not missing Admin configuration.
+- **IMPLEMENTED BUT NOT VERIFIED:** PR #1535 now decodes only the server-issued access-token role for client UI authorization, falling back to existing metadata only when the token has no valid role. Unknown or malformed claims deny access. Focused regression tests cover the valid `ADMIN` token claim and malformed/unknown claim rejection.
+- **No production mutation:** no user, membership, permission grant, RLS policy, JWT hook, or deployment was changed.
+
+## PWA build dependency milestone
+
+- **VERIFIED DEFECT:** Vercel deployment `dpl_EYf9QgKzpkZasJfbTXvYm8BDJdxt` passed the earlier CSS parse point and then failed because Rollup could not resolve `workbox-window` from Vite PWA's virtual registration module.
+- **Root cause:** `workbox-window@7.4.1` existed as a transitive lockfile package but was not a direct `rentrix-app` dependency. pnpm's isolated module layout correctly prevents the virtual module from using an undeclared dependency.
+- **IMPLEMENTED BUT NOT VERIFIED:** declared `workbox-window@^7.4.1`, synchronized its existing lockfile resolution, and added `pwa-dependency-contract.test.ts`.
+- **Next evidence:** a Vercel preview build of the branch must pass, then its generated manifest/service worker can be inspected. No deployment was promoted and no production configuration was changed.
