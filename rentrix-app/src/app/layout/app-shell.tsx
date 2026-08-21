@@ -44,7 +44,7 @@ function HeaderDateTime() {
     <span
       data-header-date-time
       dir="ltr"
-      className="hidden whitespace-nowrap text-[11px] font-semibold tabular-nums text-muted-foreground sm:inline-flex"
+      className="inline-flex whitespace-nowrap text-[9px] font-semibold tabular-nums text-muted-foreground min-[380px]:text-[10px] sm:text-[11px]"
       aria-label={`التاريخ ${date}، الوقت ${time}`}
     >
       {date} · {time}
