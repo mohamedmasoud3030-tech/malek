@@ -6,11 +6,10 @@
  * loading/error/empty states, pagination and optional row selection. Pages only
  * provide columns/data/actions; they do not build parallel table systems.
  *
- * Desktop/tablet renders the semantic data grid. Mobile keeps the same visual
- * language in a compact register surface: one shared header, dense bordered
- * rows, identity + one high-value datum + actions. This preserves the existing
- * no-horizontal-scroll accessibility contract while matching the desktop grid
- * much more closely than card stacks.
+ * Every viewport renders the same semantic data grid. On narrow screens the
+ * grid is intentionally horizontally scrollable, so every configured column
+ * stays available just like an operational database console; the identity and
+ * actions columns remain sticky while the middle columns move.
  */
 
 import {
@@ -488,11 +487,8 @@ export function EntityTable<T>({
   if (isLoading) {
     return (
       <div className={cn('space-y-2.5', className)} data-entity-table-register>
-        <div className="hidden md:block">
+        <div>
           <TableSkeleton rows={skeletonRows} cols={resolvedColumns.length || columns.length} hasSelection={Boolean(rowSelection)} />
-        </div>
-        <div className="md:hidden">
-          <MobileRegisterSkeleton rows={skeletonRows} />
         </div>
       </div>
     );
@@ -543,7 +539,7 @@ export function EntityTable<T>({
         </div>
       ) : null}
 
-      <div className="md:hidden" data-entity-table-mobile>
+      <div className="hidden" data-entity-table-mobile aria-hidden="true">
         <div className="overflow-hidden rounded-2xl border border-border/85 bg-card shadow-[0_10px_24px_-22px_hsl(var(--foreground)/0.45)]">
           <div
             data-entity-table-mobile-header
@@ -590,20 +586,20 @@ export function EntityTable<T>({
         </div>
       </div>
 
-      <div className="hidden md:block">
+      <div className="block">
         <Card data-entity-table-wrapper data-compact-responsive-table data-entity-table-grid className="overflow-hidden rounded-2xl border-border/85 bg-card shadow-[0_12px_28px_-26px_hsl(var(--foreground)/0.45)]">
           <div
             data-entity-table-scroll
             tabIndex={0}
             role="region"
             aria-label={`${ariaLabel} — منطقة جدول قابلة للتمرير أفقياً عند الحاجة`}
-            className="mobile-scroll-x overscroll-x-contain focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
+            className="mobile-scroll-x overscroll-x-contain touch-pan-x focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
           >
             <Table
               data-entity-table
               density="compact"
               aria-label={ariaLabel}
-              className="min-w-full text-xs md:text-[13px] [&_td+td]:border-s [&_td+td]:border-border/60 [&_th+th]:border-s [&_th+th]:border-border/70"
+              className="min-w-max text-xs md:min-w-full md:text-[13px] [&_td+td]:border-s [&_td+td]:border-border/60 [&_th+th]:border-s [&_th+th]:border-border/70"
             >
               <TableHeader className="bg-muted/35">
                 <TableRow className="hover:bg-transparent">
