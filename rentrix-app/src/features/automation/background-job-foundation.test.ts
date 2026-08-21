@@ -53,7 +53,7 @@ describe("durable background job foundation", () => {
         ('${ADMIN}','jobs-admin@test.invalid','Jobs Admin','ADMIN','ACTIVE',true),
         ('${USER}','jobs-user@test.invalid','Jobs User','USER','ACTIVE',true);
       insert into public.company_members(company_id,user_id,role) values
-        ('${COMPANY}','${ADMIN}','ADMIN'),('${COMPANY}','${USER}','MEMBER');
+        ('${COMPANY}','${ADMIN}','ADMIN'),('${COMPANY}','${USER}','USER');
       insert into public.automation_rules(id,name,description,rule_type,is_enabled,config,company_id)
       values('${RULE}','Job test','Internal notification only','contract_expiry',true,'{}','${COMPANY}');
       insert into public.background_job_schedules(company_id,schedule_name,job_type,payload,interval_minutes,enabled,next_run_at,source_type,source_id)

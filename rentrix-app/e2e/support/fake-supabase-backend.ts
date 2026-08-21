@@ -9,7 +9,7 @@ import { buildAcceptanceAccessToken } from './document-acceptance-session';
  * components, action handlers, `documentService`, engine, renderer, popup,
  * downloads). The only stubbed boundary is the Supabase HTTP API, which has
  * no live project in hermetic CI. Every row below is shaped to match the
- * repository migrations (`supabase/migrations/20250101000001_core_schema.sql`)
+ * repository migrations (`supabase/migrations/20260901000000_canonical_baseline.sql`)
  * and the exact selects/normalizers in `src/`.
  */
 

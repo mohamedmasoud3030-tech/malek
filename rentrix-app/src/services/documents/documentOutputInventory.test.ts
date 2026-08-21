@@ -66,8 +66,8 @@ const rel = (file: string) => relative(srcDir, file).split('\\').join('/');
  * fails the inventory test below — the new surface must be reviewed against
  * the readiness/guard contract and then listed here.
  *
- * route → document type → guard are documented in the WP-06 evidence file
- * `evidence/wp06-document-output/INVENTORY.md`.
+ * route → document type → guard are documented in the canonical pack
+ * `docs/source-of-truth/06_UX_IA_AND_DESIGN_CONTRACT.md`.
  */
 const APPROVED_DOCUMENT_CALL_SITES: ReadonlySet<string> = new Set([
   // contracts — contract/legal document
@@ -104,8 +104,8 @@ describe('Print/PDF call-site inventory', () => {
     expect(
       unlisted,
       'A new Print/PDF call site appeared. Route it through documentService with a handler-level '
-        + 'readiness guard (runGuardedDocumentAction), document it in '
-        + 'evidence/wp06-document-output/INVENTORY.md, then add it to APPROVED_DOCUMENT_CALL_SITES.',
+        + 'readiness guard (runGuardedDocumentAction), then add it to '
+        + 'APPROVED_DOCUMENT_CALL_SITES.',
     ).toEqual([]);
   });
 

@@ -48,7 +48,7 @@ describe('WP-03 GAP-005 onboarding authority (PGlite behavioral)', () => {
 
       insert into public.company_members (company_id, user_id, role) values
         ('${COMPANY_A}', '${ADMIN_A}', 'ADMIN'),
-        ('${COMPANY_A}', '${MANAGER_A}', 'MEMBER'),
+        ('${COMPANY_A}', '${MANAGER_A}', 'MANAGER'),
         ('${COMPANY_B}', '${ADMIN_B}', 'ADMIN')
       on conflict (company_id, user_id) do update set role = excluded.role;
     `);

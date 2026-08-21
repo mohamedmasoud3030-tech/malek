@@ -39,17 +39,3 @@ export const APP_BRAND_APPLE_TOUCH_ICON = '/malek-apple-touch-180.png';
  * names, repository paths, and Supabase objects are stable contracts.
  */
 export const LEGACY_TECHNICAL_BRAND_PREFIX = 'rentrix';
-
-/**
- * Historical assets retained only as compatibility inputs and for migration
- * evidence. They must never be referenced by a visible runtime surface.
- */
-export const LEGACY_UNUSED_BRAND_ASSETS = [
-  'public/icon-rentrix-192.png',
-  'public/icon-rentrix-512.png',
-  'public/icon-malik-192.png',
-  'public/icon-malik-512.png',
-  'public/icon-maskable-192.png',
-  'public/icon-maskable-512.png',
-  'public/malik-mark.svg',
-] as const;

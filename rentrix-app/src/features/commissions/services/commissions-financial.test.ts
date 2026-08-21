@@ -65,7 +65,7 @@ describe('pay_commission_atomic and reverse_commission_atomic live runtime finan
       insert into public.company_members (company_id, user_id, role) values
         ('${COMPANY_A}', '${ADMIN_A}', 'ADMIN'),
         ('${COMPANY_B}', '${ADMIN_B}', 'ADMIN'),
-        ('${COMPANY_A}', '${USER_A}',  'MEMBER')
+        ('${COMPANY_A}', '${USER_A}',  'USER')
       on conflict do nothing;
 
       update public.accounts set company_id = '${COMPANY_A}' where no in ('1111', '6100');

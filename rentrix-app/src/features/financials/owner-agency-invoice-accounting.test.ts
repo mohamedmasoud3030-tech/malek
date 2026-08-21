@@ -138,7 +138,7 @@ beforeAll(async () => {
     insert into public.company_settings
       (id, singleton_key, company_name, currency, default_vat_rate, vat_enabled, vat_rate, company_id)
     values
-      (gen_random_uuid(), false, 'RC1 Accounting Co', 'OMR', 99, true, 99, '${COMPANY}');
+      (gen_random_uuid(), true, 'RC1 Accounting Co', 'OMR', 99, true, 99, '${COMPANY}');
 
     insert into public.company_tax_profiles
       (id, company_id, version_no, tax_code, tax_rate, effective_from,

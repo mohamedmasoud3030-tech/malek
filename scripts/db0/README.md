@@ -5,8 +5,6 @@ are one contract. Runs entirely offline against an ephemeral PostgreSQL 18
 (PGlite/WASM) — no hosted database, no Docker, no paid Supabase Database
 Branching, and it never touches the live project or its demo data.
 
-Full rationale and findings: [`docs/database/WP_DB0_CONTRACT_FREEZE.md`](../../docs/database/WP_DB0_CONTRACT_FREEZE.md).
-
 ## Commands
 
 ```bash
@@ -47,5 +45,5 @@ pnpm db0:isolation     # RLS, company isolation, FK and definer integrity
 `contract-baseline.json` pins accepted finding counts. The gate fails if a
 count rises, and any finding class **not** listed is allowed zero occurrences —
 so a new kind of drift can never appear silently. Lowering a number is always
-safe; raising one requires an explicit contract decision recorded in the
-freeze document.
+safe; raising one requires an explicit contract decision recorded with the
+change.

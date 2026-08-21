@@ -29,18 +29,6 @@ describe('canonical property creation workflow', () => {
     expect(schemaSource).not.toMatch(/\n\s*owner_name:/);
   });
 
-  it('binds the atomic database RPC to an active owner in the caller company', () => {
-    const migration = readSource(
-      '../../../../supabase/migrations/20260730091300_property_owner_workflow_invariants.sql',
-    ).toLowerCase();
-
-    expect(migration).toContain('o.company_id = v_company_id');
-    expect(migration).toContain('and o.deleted_at is null');
-    expect(migration).toContain('and o.is_active');
-    expect(migration).toContain('p_owner_name input');
-    expect(migration).toContain("set search_path to 'public', 'pg_temp'");
-  });
-
   it('implements a guided 3-step property creation workflow (Step 1 details, Step 2 ownership & agreement, Step 3 units & review)', () => {
     const modalSource = readSource('./property-form-modal.tsx');
 

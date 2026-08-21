@@ -5,7 +5,7 @@
  * replay helper compatible with that source of truth instead of teaching tests
  * to resurrect deleted historical migrations.
  */
-import { readFileSync, readdirSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
@@ -22,7 +22,6 @@ import {
 } from '../p0/replay-stubs';
 
 export const repoRoot = fileURLToPath(new URL('../../../', import.meta.url));
-export const evidenceDir = join(repoRoot, 'evidence', 'p1');
 
 export type ReplayResult = {
   db: PGlite;
@@ -107,14 +106,6 @@ export async function createFullReplayedDatabase(options?: {
     } finally {
       if (provided) await removeS02AclPrerequisites(db).catch(() => undefined);
     }
-  }
-
-  if (options?.writeEvidence === true) {
-    mkdirSync(evidenceDir, { recursive: true });
-    writeFileSync(join(evidenceDir, 'replay-coverage.json'), JSON.stringify({
-      generatedAt: new Date().toISOString(), total: files.length, applied: applied.length,
-      failedCount: failed.length, failedFiles: failed,
-    }, null, 2));
   }
 
   return { db, applied, failed };

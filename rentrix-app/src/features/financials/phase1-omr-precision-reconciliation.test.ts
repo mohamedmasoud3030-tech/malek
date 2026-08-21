@@ -83,13 +83,13 @@ beforeAll(async () => {
       ('${COMPANY}', '${MAKER}', 'ADMIN'),
       ('${OTHER_COMPANY}', '${OTHER}', 'ADMIN');
 
-    -- singleton_key is globally unique (default true row already exists), so a
-    -- company-scoped settings row must use a distinct non-true singleton_key.
+    -- company_settings is one row per company; singleton_key is a legacy flag
+    -- that the canonical schema pins to TRUE via a CHECK constraint.
     insert into public.company_settings
       (id, singleton_key, company_name, currency, invoice_prefix, contract_prefix, receipt_prefix,
        default_vat_rate, vat_enabled, vat_rate, company_id)
     values
-      (gen_random_uuid(), false, 'Phase1 Co', 'OMR', 'INV', 'CON', 'REC', ${VAT_RATE}, true, ${VAT_RATE}, '${COMPANY}');
+      (gen_random_uuid(), true, 'Phase1 Co', 'OMR', 'INV', 'CON', 'REC', ${VAT_RATE}, true, ${VAT_RATE}, '${COMPANY}');
 
     -- Rate authority is the effective versioned profile, not company_settings.vat_rate.
     insert into public.company_tax_profiles

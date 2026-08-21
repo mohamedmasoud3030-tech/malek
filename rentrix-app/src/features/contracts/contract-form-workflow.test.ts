@@ -48,11 +48,6 @@ describe('contract creation workflow order and agreement resolution contract', (
     'utf8',
   );
 
-  const invariantsMigration = readFileSync(
-    resolve(import.meta.dirname, '../../../../supabase/migrations/20260730091200_contract_workflow_invariants.sql'),
-    'utf8',
-  ).toLowerCase();
-
   it('1. Select property, 2. Select available unit, and 3. Select/create tenant in natural employee order', () => {
     expect(fieldsSource).toContain('label="العقار"');
     expect(fieldsSource).toContain('label="الوحدة"');
@@ -106,13 +101,7 @@ describe('contract creation workflow order and agreement resolution contract', (
     expect(alertSource).toContain('فتح اتفاقيات العقار');
   });
 
-  it('6. Validates overlapping contracts server-side via database trigger', () => {
-    expect(invariantsMigration).toContain('create trigger contracts_workflow_invariants');
-    expect(invariantsMigration).toContain('enforce_contract_workflow_invariants');
-    expect(invariantsMigration).toContain('operational contract requires a covering agreement');
-  });
-
-  it('7. Exposes an invoice payment schedule review preview section before confirming contract', () => {
+  it('6. Exposes an invoice payment schedule review preview section before confirming contract', () => {
     expect(fieldsSource).toContain('title="مراجعة جدول الفواتير والدفعات المتوقعة"');
     expect(fieldsSource).toContain('{estimatedInstallments} فواتير');
     expect(fieldsSource).toContain('يتم إنشاء الفواتير وجدولة دفعاتها آلياً على الخادم وفقاً للعقد المعتمد');

@@ -16,7 +16,6 @@
 //
 // Excluded:
 //   - tests / fixtures / mocks
-//   - supabase/rollback/**
 //   - docs / evidence
 //
 // What fails:
@@ -89,7 +88,6 @@ function resolveBaseRef(cliBase) {
 function isProductionTarget(path) {
   if (!path || !TARGET_ROOTS.some((root) => path.startsWith(root))) return false;
   if (!PRODUCTION_EXT.test(path)) return false;
-  if (path.startsWith('supabase/rollback/')) return false;
   if (path.endsWith('/20260901000000_canonical_baseline.sql')) return false;
   if (TEST_OR_FIXTURE.test(path)) return false;
   return true;
