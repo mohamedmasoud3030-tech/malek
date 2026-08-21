@@ -60,6 +60,13 @@ M3 duplicate-draft handling is VERIFIED COMPLETE in the live database after owne
 - **Repository source of truth:** `supabase/migrations/20260901000010_contracts_one_live_draft_per_unit_tenant.sql` records the forward schema guard. The historical data cleanup is intentionally not embedded in a bootstrap migration.
 - **Follow-up:** the retained draft has one invoice although it is not active; this is a distinct data-lifecycle finding and remains NOT STARTED pending focused inspection.
 
+## Invoice posting lifecycle guard (2026-08-21)
+
+- **VERIFIED COMPLETE:** live inspection found `invoice_lineage_guard` previously checked only contract existence and company scope; its trigger did not run on a `document_status` change. A `POSTED` invoice was consequently possible on a `draft` contract.
+- **VERIFIED COMPLETE:** the live forward guard now checks the contract status whenever an invoice is inserted or its `document_status` changes. It permits `DRAFT` preparation but rejects `POSTED` unless the related contract is `active` (`INVOICE_POSTING_REQUIRES_ACTIVE_CONTRACT`, SQLSTATE `23514`). No existing invoice, contract, payment, receipt, or ledger entry was changed.
+- **IMPLEMENTED BUT NOT VERIFIED:** `20260901000011_require_active_contract_before_invoice_posting.sql` reproduces the guard for fresh environments; `phase2-invoice-truth.test.ts` adds the full-replay regression case. The runnable repository test gate remains pending.
+- **BLOCKED:** disposition of existing `INV-2026-000001` remains a separate financial decision. It must not be altered merely to satisfy this guard.
+
 ## Evidence policy
 
 Do not write “fixed”, “complete”, or “production-ready” from a plan, code diff, component test, old CI run, or preview availability alone. Use the status vocabulary:

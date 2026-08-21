@@ -24,6 +24,8 @@ const PROPERTY = 'b1000000-0000-4000-8000-000000000031';
 const UNIT = 'b1000000-0000-4000-8000-000000000041';
 const TENANT = 'b1000000-0000-4000-8000-000000000051';
 const CONTRACT = 'b1000000-0000-4000-8000-000000000061';
+const DRAFT_UNIT = 'b1000000-0000-4000-8000-000000000042';
+const DRAFT_CONTRACT = 'b1000000-0000-4000-8000-000000000062';
 const AGREEMENT = 'b1000000-0000-4000-8000-000000000071';
 
 const RENT = 1000;
@@ -83,6 +85,9 @@ beforeAll(async () => {
     insert into public.people (id, full_name, type, company_id)
     values ('${TENANT}', 'P2 Tenant', 'tenant', '${COMPANY}');
 
+    insert into public.units (id, property_id, name, unit_number, company_id)
+    values ('${DRAFT_UNIT}', '${PROPERTY}', 'P2 Draft Unit', 'P2-2', '${COMPANY}');
+
     -- billing_day=15, grace_days=5 => deterministic issue/due dates.
     insert into public.contracts
       (id, property_id, unit_id, tenant_id, agreement_id, start_date, end_date,
@@ -90,6 +95,14 @@ beforeAll(async () => {
     values (
       '${CONTRACT}', '${PROPERTY}', '${UNIT}', '${TENANT}', '${AGREEMENT}',
       date '2026-01-01', date '2026-12-31', ${RENT}, 'active', '${COMPANY}', 15, 5
+    );
+
+    insert into public.contracts
+      (id, property_id, unit_id, tenant_id, agreement_id, start_date, end_date,
+       rent_amount, status, company_id, billing_day, grace_days)
+    values (
+      '${DRAFT_CONTRACT}', '${PROPERTY}', '${DRAFT_UNIT}', '${TENANT}', '${AGREEMENT}',
+      date '2026-10-01', date '2026-10-31', ${RENT}, 'draft', '${COMPANY}', 15, 5
     );
   `);
 
@@ -241,6 +254,27 @@ describe('PHASE 2 — invoice truth & billing integrity', () => {
     await expect(
       db.query(`update public.invoices set amount = 700 where id = $1::uuid`, [draftId]),
     ).rejects.toThrow(/POSTED_INVOICE_IMMUTABLE|42501/);
+  });
+
+  it('rejects a DRAFT-to-POSTED invoice transition until its contract is active', async () => {
+    const draft = await db.query<{ id: string }>(
+      `insert into public.invoices
+         (contract_id, issue_date, due_date, amount, tax_amount, status, company_id,
+          document_status, charge_type, billing_period_start, billing_period_end)
+       values ($1::uuid, date '2026-10-01', date '2026-10-31', 500, 0, 'UNPAID', $2::uuid,
+          'DRAFT', 'RENT', date '2026-10-01', date '2026-10-31')
+       returning id::text as id`,
+      [DRAFT_CONTRACT, COMPANY],
+    );
+
+    await expect(
+      db.query(`update public.invoices set document_status = 'POSTED' where id = $1::uuid`, [draft.rows[0].id]),
+    ).rejects.toThrow(/INVOICE_POSTING_REQUIRES_ACTIVE_CONTRACT|23514/);
+
+    const persisted = await db.query<{ document_status: string }>(
+      `select document_status from public.invoices where id = $1::uuid`, [draft.rows[0].id],
+    );
+    expect(persisted.rows[0].document_status).toBe('DRAFT');
   });
 
   it('rejects cross-company invoice creation at the DB level (lineage)', async () => {
