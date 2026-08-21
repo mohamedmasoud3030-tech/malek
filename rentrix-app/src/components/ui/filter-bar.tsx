@@ -50,7 +50,7 @@ export function FilterBar({
       ) : null}
 
       {filters ? (
-        <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto no-scrollbar [&>*]:shrink-0 [&_input]:h-10 [&_select]:h-10">
+        <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto no-scrollbar [&>*]:shrink-0 [&_input]:min-h-11 [&_input]:h-11 [&_select]:min-h-11 [&_select]:h-11">
           {filters}
         </div>
       ) : null}
