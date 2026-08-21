@@ -10,7 +10,7 @@
 The repository baseline is designed to fail closed and does not justify a broad policy rewrite. The verified repository controls are:
 
 - 102/102 `public` tables have RLS enabled.
-- 203 repository-visible policies protect the baseline; tenant-owned rows carry `company_id`.
+- 203 repository-visible policies protect the baseline; every company-owned row carries `company_id`, while the narrow global/identity inventory is explicitly classified below.
 - The two RLS-enabled tables with no browser policy — `document_reference_sequences` and `financial_operation_idempotency` — are intentionally server/RPC-only and deny browser access by default.
 - 268 `SECURITY DEFINER` functions in the baseline pin `search_path`; none is granted to `anon` or `PUBLIC`.
 - The client-facing role model is `ADMIN`, `MANAGER`, `ACCOUNTANT`, `OPERATIONS`, `USER`, `VIEWER`; authorisation is capability/effective-grant based, not a mutable browser role.
@@ -39,7 +39,7 @@ This audit adds a static regression gate. It does **not** apply a migration beca
 
 ## Resource inventory and policy evidence
 
-All 102 public tables are company-scoped. The baseline has RLS enabled on all of them. The tenant-isolation policy convention is restrictive `USING` and `WITH CHECK` equality to `public.current_company_id()`, with narrower permissive policies for valid operations.
+All 102 public tables have RLS enabled. Company-owned tables carry `company_id`; the explicit global/identity inventory is `app_permission_catalog`, `audit_log`, `automation_jobs`, `companies`, `financial_operation_idempotency`, `governance`, `onboarding_requirement_templates`, `payment_terms_templates`, `tax_code_catalog`, and `users`. The tenant-isolation policy convention is restrictive `USING` and `WITH CHECK` equality to `public.current_company_id()`, with narrower permissive policies for valid operations.
 
 | Resource inventory | Browser posture |
 |---|---|
