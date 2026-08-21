@@ -104,6 +104,7 @@ Update it whenever a new `.from()` or `.rpc()` call is added to frontend source 
 | **10** | **`20260901000010_contracts_one_live_draft_per_unit_tenant.sql`** | **Prevent duplicate live drafts for the same company, unit and tenant** |
 | **11** | **`20260901000011_require_active_contract_before_invoice_posting.sql`** | **Require an active contract before an invoice can become `POSTED`** |
 | **12** | **`20260901000012_harden_custom_access_token_hook_identity.sql`** | **Deny company JWT claims for inactive or soft-deleted application identities** |
+| **13** | **`20260901000013_revoke_internal_security_definer_helpers.sql`** | **Remove browser execution of internal document-sequencing, trigger and cashflow-provisioning helpers** |
 
 ## Remote environments
 
