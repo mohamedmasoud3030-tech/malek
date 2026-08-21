@@ -243,27 +243,6 @@ function TableSkeleton({ rows, cols, hasSelection }: { rows: number; cols: numbe
   );
 }
 
-function MobileRegisterSkeleton({ rows }: { rows: number }) {
-  return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card" aria-hidden="true" data-entity-table-mobile-skeleton>
-      <div className="grid min-h-10 grid-cols-[minmax(0,1fr)_minmax(6.5rem,0.72fr)_3rem] items-center border-b border-border/70 bg-muted/35 px-3">
-        <Skeleton className="h-3.5 w-20" />
-        <Skeleton className="h-3.5 w-14" />
-        <Skeleton className="mx-auto size-4" />
-      </div>
-      <div className="divide-y divide-border/65">
-        {Array.from({ length: rows }, (_, index) => (
-          <div key={index} className="grid min-h-14 grid-cols-[minmax(0,1fr)_minmax(6.5rem,0.72fr)_3rem] items-center px-3">
-            <Skeleton className="h-4 w-2/3" />
-            <Skeleton className="h-4 w-4/5" />
-            <Skeleton className="mx-auto size-8 rounded-lg" />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function PaginationBar({ pagination }: { pagination: PaginationState }) {
   const totalPages = Math.max(1, Math.ceil(pagination.total / pagination.pageSize));
   const { page, onPageChange } = pagination;
