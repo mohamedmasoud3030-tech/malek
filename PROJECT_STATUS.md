@@ -3,12 +3,12 @@
 Updated: 2026-08-21  
 Observed repository: `mohamedmasoud3030-tech/malek`  
 Observed default branch: `main`  
-Observed main SHA: `b1bb5a901b7adff1aa36b0483195465fe99deeca`
+Observed main SHA: `a87e6641b26ecec0442dd944b9fd0bc43b332061`
 
 ## Executive status
 
 **Repository control:** VERIFIED COMPLETE  
-**Current build/test baseline:** BLOCKED  
+**Current build/test baseline:** PARTIALLY VERIFIED  
 **Security baseline at current SHA:** NOT VERIFIED  
 **Runtime journey baseline:** NOT VERIFIED  
 **Governed stage credit:** unchanged; see `governance/10-stage-master-plan.json`  
@@ -56,7 +56,7 @@ The project has a substantial implementation and verification history, but the c
 | Migration hygiene / DB0 gate | NOT STARTED | Historical evidence exists, current execution absent |
 | Typecheck | NOT VERIFIED | No current command result |
 | Lint | NOT VERIFIED | No current command result |
-| Production build | BLOCKED | No local runner; current Vercel status reports external `build-rate-limit` |
+| Production build | VERIFIED COMPLETE | Vercel production `dpl_EtLf1g7tzWmoNcrz4jhHSehLWQV1` reached READY for main@91a0ae9; subsequent PR #1537 preview reached READY |
 | Application tests | NOT VERIFIED | No current command result |
 | Browser/e2e journeys | NOT VERIFIED | No running QA/preview journey opened in this session |
 | Supabase/Auth/RLS live verification | BLOCKED_EXTERNAL | Requires authorized QA/demo credentials and target |
@@ -80,6 +80,16 @@ The project has a substantial implementation and verification history, but the c
 - **Implemented:** PR #1534 first attempts remote sign-out, then local-only sign-out; local storage is removed in either case. `AuthProvider` now clears permissions/session and navigates to `/login` in `finally`.
 - **Focused coverage added:** remote success, remote failure with local fallback, and fallback failure in `auth-service.test.ts`.
 - **Status:** IMPLEMENTED BUT NOT VERIFIED. No test/build/browser run is claimed.
+
+
+## Contract draft/availability milestone
+
+- **Observed live read-only data:** two non-deleted contracts share one unit and tenant, but both have status `draft`; neither is `active`. Their periods do not overlap.
+- **Why the unit appeared available:** occupancy represents an active legal/financial tenancy; a draft must not automatically mark a unit occupied or create invoices.
+- **IMPLEMENTED BUT NOT VERIFIED:** PR #1537 merged as `main@a87e664`. The service blocks create/update of a second draft for the same unit and tenant, the contract form explains the pending draft, and list/detail actions open the existing draft for review.
+- **VERIFIED:** Vercel preview `dpl_3RYHinXDqtikGipXzB1iXE7esYfs` is READY; `vite` build completed in 20 seconds. Only non-blocking >500KB chunk warning was emitted.
+- **Not changed:** live Supabase rows, contracts, roles, RLS, migrations, or automatic activation.
+- **Remaining risk:** protection is at the application service boundary. A database-level concurrency guarantee needs a separately reviewed migration after deliberate disposition of current duplicate draft rows.
 
 ## External blockers
 
