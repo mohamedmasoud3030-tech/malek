@@ -2,7 +2,7 @@
 
 Status: ACTIVE  
 Baseline branch: `main`  
-Baseline SHA: `b1bb5a901b7adff1aa36b0483195465fe0de9eca`  
+Baseline SHA: `b1bb5a901b7adff1aa36b0483195465fe99deeca`  
 Updated: 2026-08-21
 
 This is an execution ledger, not a replacement for the MALEK Canonical Pack. Canonical business/security/UX rules remain in `docs/source-of-truth/`; governed stage credit remains in `governance/10-stage-master-plan.json`.
@@ -24,18 +24,20 @@ This is an execution ledger, not a replacement for the MALEK Canonical Pack. Can
 | M2 | P2 reliability | Prove current install, typecheck, lint, architecture checks, production build, and focused/full application tests | BLOCKED_EXTERNAL | requires a runnable checkout/CI runner; current Vercel status is blocked by external build-rate-limit |
 | M3 | P2 journeys | Verify authenticated critical journeys: login/recovery, dashboard, property/unit, contract, financial collection/receipt, maintenance, reports, settings | NOT STARTED | QA/preview browser evidence with console/network results; no production mutation |
 | M4 | P3 backend/security | Reconcile current repository migrations/types/RLS/RPC contracts with authorized disposable or QA Supabase evidence | BLOCKED_EXTERNAL | requires approved Supabase access and correct QA/demo target; no production database edits |
-| M5 | P4 regression | Add focused regression tests only for reproduced defects in M1–M4 | NOT STARTED | test reproduces defect before fix and passes after fix; no weakened assertions |
-| M6 | P5 mobile/RTL/a11y/PWA | Verify responsive, RTL, keyboard, reduced-motion, install/offline, and accessible state behavior | IN PROGRESS | design-system foundation PR #1531 is open; remaining rendered/e2e proof required |
+| M5 | P4 regression | Verify the offline shared-device logout safety regression and run focused/full checks | IMPLEMENTED BUT NOT VERIFIED | PR #1534 adds focused auth-service cases; execution and browser proof are still required |
+| M6 | P5 mobile/RTL/a11y/PWA | Verify responsive, RTL, keyboard, reduced-motion, install/offline, and accessible state behavior | IMPLEMENTED BUT NOT VERIFIED | PR #1531 contains design foundations and PR #1533 hardens PWA cache/update behavior; rendered/e2e/device proof remains |
 | M7 | P6 maintainability | Consolidate only proven duplicate patterns and update canonical evidence/docs | NOT STARTED | reduced duplicate surface with unchanged contracts and passing regression suite |
 | M8 | Release | Controlled one-office QA/pilot and release decision | BLOCKED_EXTERNAL | all release-blocking gates green, hosted evidence, financial reconciliation, pilot evidence, explicit sign-off |
 
 ## Next milestone
 
-M1 static source review is complete with no defect found. The remaining acceptance step is execution of the existing security/boundary guards from a current checkout. M2 is next only after those results are available; do not add a new security mechanism without a concrete finding.
+M5 is the highest safe follow-up: execute PR #1534 focused auth regression and an offline browser logout journey. M1/M2 remain required current-SHA evidence before broader technical changes.
 
 ## Existing work being tracked
 
-- PR #1531 `feat: establish MALEK design system foundation`: IN PROGRESS, draft, frontend-only.
+- PR #1531 `feat: establish MALEK design system foundation`: IMPLEMENTED BUT NOT VERIFIED, draft, frontend-only.
+- PR #1533 `fix(pwa): fail closed offline and prompt safe updates`: IMPLEMENTED BUT NOT VERIFIED, draft; generated artifacts and device behavior still require execution.
+- PR #1534 `fix(auth): protect shared devices when logout is offline`: IMPLEMENTED BUT NOT VERIFIED, draft; local-first logout and focused regression cases await execution.
 - Canonical governance plan: `S01 COMPLETE; S02 PARTIAL; S03 PARTIAL; S04 NOT_STARTED; S05 PARTIAL; S06 NOT_STARTED; S07 PARTIAL; S08 NOT_STARTED; S09 NOT_STARTED; S10 NOT_STARTED`. This is governed credit, not a claim that repository implementation is absent.
 - Current traceability baseline is historical and must be revalidated before using its old test counts as current evidence.
 
