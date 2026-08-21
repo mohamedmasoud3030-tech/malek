@@ -3,8 +3,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { useDialogNavigate } from '@/app/router/background-location';
-import { AsyncContentState } from '@/components/async-content-state';
 import { Button } from '@/components/ui/button';
+import { DataTableColumnsMenu } from '@/components/ui/data-table';
 import { EntityActions } from '@/components/ui/entity-actions';
 import { useLocation, useNavigate, useSearch } from '@tanstack/react-router';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
@@ -14,6 +14,16 @@ import type { TenantWorkspaceRow } from './tenantWorkspaceService';
 import { useTenantWorkspace } from './useTenantWorkspace';
 
 const pageSize = 10;
+
+const tenantColumnOptions = [
+  { key: 'name', label: 'الاسم', locked: true },
+  { key: 'property', label: 'العقار والوحدة' },
+  { key: 'contracts', label: 'العقود النشطة' },
+  { key: 'arrears', label: 'المتأخرات' },
+  { key: 'actions', label: 'الإجراءات', locked: true },
+] as const;
+
+const defaultTenantColumns = tenantColumnOptions.map((column) => column.key);
 
 function valueOrDash(value: string | number | null | undefined) {
   return value === null || value === undefined || value === '' ? '—' : String(value);
@@ -53,7 +63,7 @@ function TenantSafeLinks({ tenant, onEdit, onPreview }: Readonly<{ tenant: Tenan
   const navigate = useNavigate();
   const location = useLocation();
   return (
-        <EntityActions className="flex flex-wrap gap-2">
+    <EntityActions className="flex flex-wrap gap-2">
       <Button variant="secondary" className="min-h-11 px-3" onClick={() => onPreview(tenant)}>عرض</Button>
       <Button variant="secondary" className="min-h-11 px-3" onClick={() => onEdit(tenant.person.id)}>
         <Edit className="me-1 size-4" />تعديل
@@ -111,10 +121,13 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
   const [page, setPage] = useState(typeof routeSearch.page === 'number' && routeSearch.page > 0 ? routeSearch.page : 1);
   const [formOpen, setFormOpen] = useState(false);
   const [editingPersonId, setEditingPersonId] = useState<string | undefined>();
+  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultTenantColumns]);
+
   useEffect(() => {
     if (embedded) return;
     void navigate({ to: '/tenants', replace: true, search: (previous: Record<string, unknown>) => ({ ...previous, search: search || undefined, page: page === 1 ? undefined : page }) });
   }, [embedded, navigate, page, search]);
+
   const params = useMemo(() => ({ search, page, pageSize }), [page, search]);
   const tenantsQuery = useTenantWorkspace(params);
   const rows = tenantsQuery.data?.rows ?? [];
@@ -197,49 +210,45 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
         onSearchChange={(value) => { setSearch(value); setPage(1); }}
         searchPlaceholder="بحث باسم المستأجر أو الهاتف أو الإيميل أو رقم الهوية"
         searchAriaLabel="بحث في المستأجرين"
+        actions={(
+          <DataTableColumnsMenu
+            columns={tenantColumnOptions}
+            visibleKeys={visibleColumnKeys}
+            onChange={setVisibleColumnKeys}
+          />
+        )}
       />
 
-      <section data-tenant-register className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
-        <header className="flex items-start justify-between gap-3 border-b border-border/70 bg-muted/35 px-4 py-4 sm:px-5">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="grid size-9 place-items-center rounded-xl bg-primary/9 text-primary">
-                <Users className="size-4.5" aria-hidden="true" />
-              </span>
-              <h2 className="text-base font-black">سجل المستأجرين</h2>
+      <section data-tenant-register className="min-w-0 space-y-2.5">
+        <header className="flex min-h-11 items-center justify-between gap-3 px-1">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span className="grid size-8 shrink-0 place-items-center rounded-lg border border-primary/10 bg-primary/[0.06] text-primary">
+              <Users className="size-4" aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <h2 className="truncate text-sm font-black">سجل المستأجرين</h2>
+              <p className="truncate text-[11px] font-medium text-muted-foreground">{rows.length} مستأجر في الصفحة الحالية</p>
             </div>
-            <p className="mt-1.5 text-xs font-medium text-muted-foreground">{rows.length} مستأجر في الصفحة الحالية.</p>
           </div>
         </header>
 
-        <div className="p-3 sm:p-4">
-          <AsyncContentState
-            status={tenantsQuery.isLoading ? 'loading' : tenantsQuery.isError ? 'error' : rows.length === 0 ? 'empty' : 'ready'}
-            error={tenantsQuery.error}
-            errorTitle="تعذر تحميل المستأجرين"
-            errorAction={<Button onClick={() => tenantsQuery.refetch()}>إعادة المحاولة</Button>}
-            emptyTitle="لا توجد سجلات مستأجرين"
-            emptyDescription="سيظهر هنا أي شخص مصنف كمستأجر من نموذج الأشخاص الحالي."
-            emptyAction={<Button onClick={openCreate}><Plus className="me-2 size-4" />إضافة مستأجر</Button>}
-          >
-            <EntityTable
-              aria-label="جدول المستأجرين"
-              rows={rows}
-              columns={columns}
-              keyOf={(tenant) => tenant.person.id}
-              mobileVisibleSecondaryKey="arrears"
-              isLoading={tenantsQuery.isLoading}
-              error={tenantsQuery.isError ? tenantsQuery.error : null}
-              errorTitle="تعذر تحميل المستأجرين"
-              onRetry={() => tenantsQuery.refetch()}
-              emptyTitle="لا توجد سجلات مستأجرين"
-              emptyDescription="سيظهر هنا أي شخص مصنف كمستأجر من نموذج الأشخاص الحالي."
-              emptyAction={<Button onClick={openCreate}><Plus className="me-2 size-4" />إضافة مستأجر</Button>}
-              pagination={{ page, pageSize, total: totalCount, onPageChange: setPage }}
-              onRowClick={(tenant) => dialogNavigate({ to: '/tenants/$tenantId', params: { tenantId: tenant.person.id } })}
-            />
-          </AsyncContentState>
-        </div>
+        <EntityTable
+          aria-label="جدول المستأجرين"
+          rows={rows}
+          columns={columns}
+          visibleColumnKeys={visibleColumnKeys}
+          keyOf={(tenant) => tenant.person.id}
+          mobileVisibleSecondaryKey="arrears"
+          isLoading={tenantsQuery.isLoading}
+          error={tenantsQuery.isError ? tenantsQuery.error : null}
+          errorTitle="تعذر تحميل المستأجرين"
+          onRetry={() => tenantsQuery.refetch()}
+          emptyTitle="لا توجد سجلات مستأجرين"
+          emptyDescription="سيظهر هنا أي شخص مصنف كمستأجر من نموذج الأشخاص الحالي."
+          emptyAction={<Button onClick={openCreate}><Plus className="me-2 size-4" />إضافة مستأجر</Button>}
+          pagination={{ page, pageSize, total: totalCount, onPageChange: setPage }}
+          onRowClick={(tenant) => dialogNavigate({ to: '/tenants/$tenantId', params: { tenantId: tenant.person.id } })}
+        />
       </section>
     </>
   );
@@ -270,8 +279,6 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
 }
 
 export function TenantsPage() {
-  const navigate = useNavigate();
-  const location = useLocation();
   return <TenantsWorkspace />;
 }
 
