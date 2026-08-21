@@ -17,6 +17,10 @@ const roleMigration = await readFile(
   resolve(migrationDirectory, "20260901000008_company_members_six_role_constraint.sql"),
   "utf8",
 );
+const roleAuthorityMigration = await readFile(
+  resolve(migrationDirectory, "20260901000009_company_members_six_role_authority.sql"),
+  "utf8",
+);
 const failures = [];
 
 function requireInvariant(condition, message) {
@@ -87,6 +91,29 @@ requireInvariant(
   /'ADMIN'::text,[\s\S]*?'MANAGER'::text,[\s\S]*?'ACCOUNTANT'::text,[\s\S]*?'OPERATIONS'::text,[\s\S]*?'USER'::text,[\s\S]*?'VIEWER'::text/.test(roleMigration),
   "company_members must retain the canonical six-role constraint in its forward migration.",
 );
+requireInvariant(
+  /alter column role set default 'USER';/i.test(roleAuthorityMigration),
+  "company_members must default new members to USER.",
+);
+requireInvariant(
+  /auth\.uid\(\) is not null[\s\S]*?target_company_id = public\.current_company_id\(\)[\s\S]*?current_user_has_effective_app_permission\('users\.manage'\)/.test(roleAuthorityMigration),
+  "Membership management must require an authenticated active-company actor with users.manage.",
+);
+requireInvariant(
+  /revoke all on function app_private\.can_manage_company_members\(uuid\) from public;[\s\S]*?revoke all on function app_private\.can_manage_company_members\(uuid\) from anon;[\s\S]*?grant execute on function app_private\.can_manage_company_members\(uuid\) to authenticated;[\s\S]*?grant execute on function app_private\.can_manage_company_members\(uuid\) to service_role;/i.test(roleAuthorityMigration),
+  "Membership authority helper must revoke public/anon and grant only authenticated/service_role.",
+);
+for (const policyName of [
+  "company_members_admin_write_ins",
+  "company_members_admin_write_upd",
+  "company_members_tenant_write_scope_ins",
+  "company_members_tenant_write_scope_upd",
+]) {
+  requireInvariant(
+    baseline.includes('CREATE POLICY "' + policyName + '" ON "public"."company_members"'),
+    "company_members must retain " + policyName + ".",
+  );
+}
 
 if (failures.length) {
   console.error("Auth/RLS static audit failed:");
