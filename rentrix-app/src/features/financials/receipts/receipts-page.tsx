@@ -4,6 +4,7 @@ import { useDeferredValue, useMemo, useState } from 'react';
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { DataTableColumnsMenu } from '@/components/ui/data-table';
 import { EntityForm } from '@/components/ui/entity-form';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { FilterBar } from '@/components/ui/filter-bar';
@@ -28,6 +29,19 @@ import { formatLatinNumber } from '@/lib/formatters';
 export { createReceiptPrintHref };
 
 type MethodFilter = 'all' | ReceiptRecord['payment_method'];
+
+const receiptColumnOptions = [
+  { key: 'receipt_number', label: 'رقم الإيصال', locked: true },
+  { key: 'payment_date', label: 'تاريخ الدفع' },
+  { key: 'amount', label: 'المبلغ' },
+  { key: 'method', label: 'طريقة الدفع' },
+  { key: 'invoice_id', label: 'الفاتورة' },
+  { key: 'context', label: 'السياق' },
+  { key: 'status', label: 'الحالة' },
+  { key: 'actions', label: 'الإجراءات', locked: true },
+] as const;
+
+const defaultReceiptColumns = receiptColumnOptions.map((column) => column.key);
 
 function getReceiptIdFromSearch(search: Record<string, unknown>) {
   return typeof search.receiptId === 'string' ? search.receiptId : '';
@@ -84,8 +98,6 @@ function receiptStatusTone(status: string): 'success' | 'neutral' | 'danger' | '
   if (status === 'draft') return 'neutral';
   return 'warning';
 }
-
-
 
 function createVoidRequestId() {
   return globalThis.crypto?.randomUUID?.() ?? `void-${Date.now()}`;
@@ -159,6 +171,7 @@ function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Rea
   const [to, setTo] = useState('');
   const [voidDialog, setVoidDialog] = useState<VoidDialogState>({ receipt: null, reason: '' });
   const [receiptsLimit, setReceiptsLimit] = useState(RECEIPTS_PAGE_SIZE);
+  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultReceiptColumns]);
 
   const deferredQuery = useDeferredValue(query.trim().toLowerCase());
   const receiptsQuery = useReceipts({ limit: receiptsLimit });
@@ -240,7 +253,6 @@ function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Rea
         <Button onClick={() => openReceiptPrintView(selectedReceiptId)}><Printer className="me-2 size-4" />طباعة المحدد</Button>
       ) : undefined}
     >
-
       <ResponsiveCardGrid desktopColumns={4}>
         <KpiCard label="الإيصالات المعروضة" value={filteredReceipts.length} sub="ضمن الفلاتر الحالية" icon={ReceiptText} accent="primary" />
         <KpiCard label="إجمالي التحصيل" value={formatMoney(totalAmount)} sub="الإيصالات المنشورة فقط" icon={WalletCards} accent="emerald" />
@@ -266,20 +278,30 @@ function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Rea
             <label className="grid gap-1 text-sm font-bold"><span className="sr-only">إلى تاريخ</span><Input aria-label="إلى تاريخ" type="date" value={to} onChange={(event) => setTo(event.target.value)} /></label>
           </>
         )}
-        actions={hasFilters ? (
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => {
-              setQuery('');
-              setMethod('all');
-              setFrom('');
-              setTo('');
-            }}
-          >
-            مسح الفلاتر
-          </Button>
-        ) : undefined}
+        actions={(
+          <>
+            <DataTableColumnsMenu
+              columns={receiptColumnOptions}
+              visibleKeys={visibleColumnKeys}
+              onChange={setVisibleColumnKeys}
+            />
+            {hasFilters ? (
+              <Button
+                type="button"
+                variant="secondary"
+                className="min-h-10 rounded-lg px-3 text-xs"
+                onClick={() => {
+                  setQuery('');
+                  setMethod('all');
+                  setFrom('');
+                  setTo('');
+                }}
+              >
+                مسح الفلاتر
+              </Button>
+            ) : null}
+          </>
+        )}
       />
 
       {canVoidReceipt ? (
@@ -341,49 +363,55 @@ function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Rea
         </Card>
       ) : null}
 
-      <Card className="overflow-hidden">
-        <CardHeader className="border-b border-border/60 bg-muted/20">
-          <CardTitle>تاريخ الإيصالات</CardTitle>
-          <CardDescription>اختر إيصالاً لعرض تفاصيله. على الهاتف تظهر البيانات الأساسية أولاً والإجراءات داخل البطاقة.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-5 p-3 sm:p-5">
-          <EntityTable
-            aria-label="جدول الإيصالات"
-            rows={filteredReceipts}
-            columns={receiptColumns}
-            keyOf={(receipt) => receipt.id}
-            mobileVisibleSecondaryKey="amount"
-            isLoading={receiptsQuery.isLoading}
-            error={receiptsQuery.error}
-            onRetry={() => { void receiptsQuery.refetch(); }}
-            emptyTitle="لا توجد إيصالات مطابقة"
-            emptyDescription={hasFilters ? 'غيّر البحث أو الفلاتر لعرض إيصالات أخرى.' : 'لا توجد إيصالات منشورة حتى الآن.'}
-            onRowClick={(receipt) => setSelectedReceiptId(receipt.id)}
-
-          />
-
-          {(hasMoreReceipts || receiptsLimit > RECEIPTS_PAGE_SIZE) ? (
-            <div className="flex flex-col items-center justify-between gap-3 rounded-2xl border border-border/60 bg-muted/20 p-3 sm:flex-row">
-              <p className="text-xs font-bold text-muted-foreground" aria-live="polite">
-                {describeReceiptsViewport(receipts.length, hasMoreReceipts)}
-              </p>
-              {hasMoreReceipts ? (
-                <Button variant="outline" className="min-h-11 rounded-xl" onClick={loadMoreReceipts} disabled={receiptsQuery.isFetching}>
-                  {receiptsQuery.isFetching ? 'جارٍ التحميل...' : `عرض ${formatLatinNumber(RECEIPTS_PAGE_SIZE, 'ar')} إيصال أقدم`}
-                </Button>
-              ) : null}
+      <section data-receipts-register className="min-w-0 space-y-2.5">
+        <header className="flex min-h-11 items-center justify-between gap-3 px-1">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span className="grid size-8 shrink-0 place-items-center rounded-lg border border-primary/10 bg-primary/[0.06] text-primary">
+              <ReceiptText className="size-4" aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <h2 className="truncate text-sm font-black">سجل الإيصالات</h2>
+              <p className="truncate text-[11px] font-medium text-muted-foreground">{filteredReceipts.length} إيصال ضمن النتائج الحالية</p>
             </div>
-          ) : null}
+          </div>
+        </header>
 
-          <ReceiptDetailCard
-            selectedReceiptId={selectedReceiptId}
-            receiptDetail={selectedDetailQuery.data}
-            isLoading={selectedDetailQuery.isLoading}
-            isError={selectedDetailQuery.isError}
-            error={selectedDetailQuery.error}
-          />
-        </CardContent>
-      </Card>
+        <EntityTable
+          aria-label="جدول الإيصالات"
+          rows={filteredReceipts}
+          columns={receiptColumns}
+          visibleColumnKeys={visibleColumnKeys}
+          keyOf={(receipt) => receipt.id}
+          mobileVisibleSecondaryKey="amount"
+          isLoading={receiptsQuery.isLoading}
+          error={receiptsQuery.error}
+          onRetry={() => { void receiptsQuery.refetch(); }}
+          emptyTitle="لا توجد إيصالات مطابقة"
+          emptyDescription={hasFilters ? 'غيّر البحث أو الفلاتر لعرض إيصالات أخرى.' : 'لا توجد إيصالات منشورة حتى الآن.'}
+          onRowClick={(receipt) => setSelectedReceiptId(receipt.id)}
+        />
+
+        {(hasMoreReceipts || receiptsLimit > RECEIPTS_PAGE_SIZE) ? (
+          <div className="flex flex-col items-center justify-between gap-3 rounded-xl border border-border/70 bg-muted/15 p-3 sm:flex-row">
+            <p className="text-xs font-bold text-muted-foreground" aria-live="polite">
+              {describeReceiptsViewport(receipts.length, hasMoreReceipts)}
+            </p>
+            {hasMoreReceipts ? (
+              <Button variant="outline" className="min-h-10 rounded-lg" onClick={loadMoreReceipts} disabled={receiptsQuery.isFetching}>
+                {receiptsQuery.isFetching ? 'جارٍ التحميل...' : `عرض ${formatLatinNumber(RECEIPTS_PAGE_SIZE, 'ar')} إيصال أقدم`}
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
+
+        <ReceiptDetailCard
+          selectedReceiptId={selectedReceiptId}
+          receiptDetail={selectedDetailQuery.data}
+          isLoading={selectedDetailQuery.isLoading}
+          isError={selectedDetailQuery.isError}
+          error={selectedDetailQuery.error}
+        />
+      </section>
 
       <VoidReceiptDialog
         state={voidDialog}
