@@ -58,12 +58,12 @@ All 102 public tables have RLS enabled. Company-owned tables carry `company_id`;
 2. **No confirmed SECURITY DEFINER public-execute exposure.** Repository baseline grants no such function to `anon` or `PUBLIC`; public execute revocations are present.
 3. **No browser service-role exposure found in the repository trust model.** Existing privileged-key scan and this audit’s role boundary treat any browser secret as a release blocker.
 4. **Deliberate deny-by-default tables:** `document_reference_sequences` and `financial_operation_idempotency` are RLS-enabled with no browser policy. This is correct for internal sequencing/idempotency state.
-5. **Runtime gap, not a code finding:** Custom Access Token Hook enablement, deployed migration state, Storage bucket policies, Realtime publication and actual Edge Function deployment cannot be proven from Git. They must be checked in QA before a production claim.
+5. **Confirmed repair — inactive identity token claim:** the previous hook checked `status = ACTIVE` but did not explicitly require `is_active` and `deleted_at IS NULL` before resolving company membership. Forward migration `20260901000012_harden_custom_access_token_hook_identity.sql` now withholds/removes `company_id` for inactive or soft-deleted application identities and limits invocation to Auth/server roles.\n6. **Runtime gap:** Custom Access Token Hook enablement, deployed migration state, Storage bucket policies, Realtime publication and actual Edge Function deployment cannot be proven from Git. They must be checked in QA before a production claim.
 
 ## Secure design selected
 
 - Keep RLS enabled; never substitute UI guards for authorization.
-- Keep `company_members` as the source of membership truth; `user_metadata.company_id` is only an untrusted selection request.
+- Keep `company_members` as the source of membership truth; `user_metadata.company_id` is only an untrusted selection request. The Auth Hook must additionally require `status = ACTIVE`, `is_active = true`, and `deleted_at IS NULL` before it issues a company claim.
 - Resolve current company from the server-issued JWT claim and fail closed on invalid/missing membership.
 - Keep role changes, invitation/membership lifecycle, financial mutation, approvals and deletion behind narrow authorization RPCs.
 - Keep privileged credentials only in server/Edge Function secrets. The worker requires both deployment-held service credentials and a dedicated invocation secret.
@@ -92,7 +92,7 @@ The existing behavioural matrix is retained and the new static gate enforces bas
 - user A: own active-company visibility only;
 - unrelated user B/company B: no SELECT/INSERT/UPDATE/DELETE or RPC side effect against company A;
 - ADMIN, MANAGER, ACCOUNTANT, OPERATIONS, USER and VIEWER: intended capability allow/deny behaviour;
-- inactive, deleted and no-membership identities: fail closed;
+- inactive, deleted and no-membership identities: receive no company claim and fail closed;
 - privileged worker: succeeds only with server-held worker secret; every browser-style invocation is denied;
 - direct PostgREST/RPC calls, not just UI behaviour;
 - Storage object list/read/write/delete and Realtime subscription parity with normal RLS;
