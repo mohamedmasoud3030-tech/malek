@@ -43,35 +43,35 @@ export function ContractKpiGrid({
     <section
       data-contract-summary
       aria-label="ملخص دورة العقود"
-      className="grid gap-3 lg:grid-cols-[minmax(17rem,1.05fr)_minmax(0,2fr)]"
+      className="grid grid-cols-2 gap-3 lg:grid-cols-3"
     >
-      <OperationalCommandPanel
-        label="العقود النشطة في الصفحة"
-        value={`${formatCount(activeRate)}%`}
-        icon={WalletCards}
-        progress={activeRate}
-        footer={(
-          <>
-            <span>{formatCount(listSummary.active)} نشطة</span>
-            <span>{formatCount(listSummary.expiringSoon)} تنتهي قريبًا</span>
-          </>
-        )}
-      />
-
-      <div className="grid gap-3 sm:grid-cols-2">
-        <OperationalMetricCard
-          label="إجمالي العقود"
-          value={formatCount(totalCount)}
-          hint="حسب فلتر الحالة الحالي"
-          icon={FileText}
-        />
-        <OperationalMetricCard
-          label="إيجار العقود الظاهرة"
-          value={formatContractMoney(companySettings, visibleSummary.rentTotal)}
-          hint="بعد البحث والفلاتر"
+      <div className="col-span-2 lg:col-span-1">
+        <OperationalCommandPanel
+          label="العقود النشطة في الصفحة"
+          value={`${formatCount(activeRate)}%`}
           icon={WalletCards}
+          progress={activeRate}
+          footer={(
+            <>
+              <span>{formatCount(listSummary.active)} نشطة</span>
+              <span>{formatCount(listSummary.expiringSoon)} تنتهي قريبًا</span>
+            </>
+          )}
         />
       </div>
+
+      <OperationalMetricCard
+        label="إجمالي العقود"
+        value={formatCount(totalCount)}
+        hint="حسب فلتر الحالة الحالي"
+        icon={FileText}
+      />
+      <OperationalMetricCard
+        label="إيجار العقود الظاهرة"
+        value={formatContractMoney(companySettings, visibleSummary.rentTotal)}
+        hint="بعد البحث والفلاتر"
+        icon={WalletCards}
+      />
     </section>
   );
 }
