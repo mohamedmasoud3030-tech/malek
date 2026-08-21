@@ -188,7 +188,7 @@ export function ContractTable({
       pagination={pagination}
       onRowClick={(contract) => setExpandedId((current) => current === contract.id ? null : contract.id)}
       renderRowExpansion={(contract) => (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <div className="grid grid-cols-2 gap-4 [&>*:last-child:nth-child(odd)]:col-span-2">
           <DetailBox label="بيانات المستأجر">
             <p className="font-bold">{contract.people?.full_name ?? "—"}</p>
             <p className="text-muted-foreground">هاتف: {contract.people?.phone ?? "—"}</p>
