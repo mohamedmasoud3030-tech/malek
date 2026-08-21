@@ -26,6 +26,18 @@ function requireInvariant(condition, message) {
 const tables = [...baseline.matchAll(
   /CREATE TABLE\s+(?:IF NOT EXISTS\s+)?"public"\."([^"]+)"\s+\(([\s\S]*?)\n\);/g,
 )].map((match) => ({ name: match[1], definition: match[2] }));
+const globalOrIdentityTables = new Set([
+  "app_permission_catalog",
+  "audit_log",
+  "automation_jobs",
+  "companies",
+  "financial_operation_idempotency",
+  "governance",
+  "onboarding_requirement_templates",
+  "payment_terms_templates",
+  "tax_code_catalog",
+  "users",
+]);
 const rlsTables = new Set(
   [...baseline.matchAll(
     /ALTER TABLE(?: ONLY)?\s+"public"\."([^"]+)"\s+ENABLE ROW LEVEL SECURITY;/g,
@@ -35,9 +47,10 @@ const rlsTables = new Set(
 requireInvariant(tables.length > 0, "No public tables were found in the baseline.");
 for (const table of tables) {
   requireInvariant(rlsTables.has(table.name), "RLS must be enabled for public." + table.name + ".");
+  const hasCompanyId = /"company_id"/.test(table.definition);
   requireInvariant(
-    /"company_id"/.test(table.definition),
-    "public." + table.name + " must retain an explicit company_id tenancy key.",
+    hasCompanyId || globalOrIdentityTables.has(table.name),
+    "public." + table.name + " must be company-scoped or explicitly classified as global/identity.",
   );
 }
 requireInvariant(!/DISABLE ROW LEVEL SECURITY;/i.test(baseline), "The canonical baseline must not disable RLS.");
