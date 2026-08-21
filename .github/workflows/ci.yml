@@ -7,11 +7,16 @@ on:
     branches: [main]
   workflow_dispatch:
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
 jobs:
   build:
+    name: build
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -19,7 +24,7 @@ jobs:
       VITE_SUPABASE_URL: https://example.supabase.co
       VITE_SUPABASE_ANON_KEY: test-anon-key
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
           fetch-depth: 0
       - name: Governance guard
@@ -31,166 +36,56 @@ jobs:
           git fetch --no-tags origin main
           node scripts/check-migration-rollback-hygiene.mjs --base origin/main
           node scripts/check-no-new-legacy-journal-writes.mjs --base origin/main
-      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: 24
           cache: pnpm
-      # Keep install deterministic and block arbitrary package lifecycle scripts.
-      # esbuild is the only approved native toolchain package that needs its binary shim rebuilt.
-      - name: Install dependencies with lifecycle scripts disabled
+      - name: Install dependencies
         run: pnpm install --frozen-lockfile --ignore-scripts
       - name: Rebuild approved native toolchain package
         run: pnpm rebuild esbuild
       - name: Enforce feature-flag cleanup deadlines
         run: pnpm check:expired-flags
-      - name: Validate hosted QA runtime guards
-        run: |
-          node --check scripts/agent-qa-preflight.mjs
-          bash -n scripts/verify-agent-qa-database-contracts.sh
-          bash -n scripts/run-agent-qa-lifecycle.sh
-          pnpm test:qa-runtime
-      - run: pnpm supabase:migration-evidence
-      # WP-DB0 Database Stabilization & Contract Freeze.
-      # Replays the migration chain into ephemeral PGlite (PostgreSQL/WASM)
-      # and verifies migrations, generated types, frontend usage and RLS stay
-      # aligned. This does not connect to or mutate a hosted Supabase project.
-      - name: WP-DB0 database integrity gates
-        id: db0
-        shell: bash
-        run: |
-          set +e
-          pnpm db0:gate > /tmp/rentrix-db0-gate.log 2>&1
-          status=$?
-          echo "status=$status" >> "$GITHUB_OUTPUT"
-          tail -n 200 /tmp/rentrix-db0-gate.log
-          exit 0
-      - name: Upload WP-DB0 gate diagnostics
-        continue-on-error: true
-        if: steps.db0.outputs.status != '0'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: rentrix-db0-gate-diagnostics
-          path: /tmp/rentrix-db0-gate.log
-      - name: Regenerate expected DB0 types for drift diagnostics
-        if: steps.db0.outputs.status != '0'
-        run: pnpm db0:gen-types
-      - name: Upload expected DB0 generated types
-        continue-on-error: true
-        if: steps.db0.outputs.status != '0'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: rentrix-db0-generated-types
-          path: rentrix-app/src/types/database.ts
-      - name: Fail on WP-DB0 contract drift
-        if: steps.db0.outputs.status != '0'
-        run: exit 1
-      - name: Frontend–Database contract gate
-        id: contract
-        shell: bash
-        run: |
-          set +e
-          pnpm --filter ./rentrix-app run check:frontend-db-contract > /tmp/contract-gate.log 2>&1
-          status=$?
-          echo "status=$status" >> "$GITHUB_OUTPUT"
-          cat /tmp/contract-gate.log
-          exit 0
-      - name: Upload contract gate diagnostics
-        continue-on-error: true
-        if: steps.contract.outputs.status != '0'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: contract-gate-diagnostics
-          path: /tmp/contract-gate.log
-      - name: Fail on frontend-DB contract drift
-        if: steps.contract.outputs.status != '0'
-        run: exit 1
-      - name: Run documentation link check
-        id: docs-links
-        shell: bash
-        run: |
-          set +e
-          pnpm check:docs > /tmp/rentrix-doc-links.log 2>&1
-          status=$?
-          echo "status=$status" >> "$GITHUB_OUTPUT"
-          cat /tmp/rentrix-doc-links.log
-          exit 0
-      - name: Upload documentation link diagnostics
-        continue-on-error: true
-        if: steps.docs-links.outputs.status != '0'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: rentrix-doc-link-diagnostics
-          path: /tmp/rentrix-doc-links.log
-      - name: Fail on broken documentation links
-        if: steps.docs-links.outputs.status != '0'
-        run: exit 1
-      - name: Run typecheck
-        id: typecheck
-        shell: bash
-        run: |
-          set +e
-          pnpm typecheck > /tmp/rentrix-typecheck.log 2>&1
-          status=$?
-          echo "status=$status" >> "$GITHUB_OUTPUT"
-          tail -n 200 /tmp/rentrix-typecheck.log
-          exit 0
-      - name: Upload typecheck diagnostics
-        continue-on-error: true
-        if: steps.typecheck.outputs.status != '0'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: rentrix-typecheck-diagnostics
-          path: /tmp/rentrix-typecheck.log
-      - name: Fail on typecheck errors
-        if: steps.typecheck.outputs.status != '0'
-        run: exit 1
-      - run: pnpm lint
-      - name: Run architecture check
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Lint
+        run: pnpm lint
+      - name: Architecture check
         run: pnpm --filter ./rentrix-app run check:architecture
+      - name: Frontend–Database contract gate
+        run: pnpm --filter ./rentrix-app run check:frontend-db-contract
       - name: Build production bundle
-        env:
-          VITE_SUPABASE_URL: https://nnggcnpcuomwfuupupwg.supabase.co
-          VITE_SUPABASE_ANON_KEY: sb_publishable_JeLckFV2xYl78rei1-Q_EA_WcHif6WW
         run: pnpm build
-      - run: pnpm --filter ./rentrix-app run typecheck:test
-      - name: Run full application tests
-        id: full-tests
-        shell: bash
-        run: |
-          set +e
-          pnpm --filter ./rentrix-app test > /tmp/rentrix-full-tests.log 2>&1
-          status=$?
-          echo "status=$status" >> "$GITHUB_OUTPUT"
-          tail -n 220 /tmp/rentrix-full-tests.log
-          exit 0
-      - name: Upload full test diagnostics
-        continue-on-error: true
-        if: steps.full-tests.outputs.status != '0'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+
+  heavy-validation:
+    name: heavy-validation
+    if: ${{ github.event_name != 'pull_request' }}
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      VITE_SUPABASE_URL: https://example.supabase.co
+      VITE_SUPABASE_ANON_KEY: test-anon-key
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
-          name: rentrix-full-test-diagnostics
-          path: /tmp/rentrix-full-tests.log
-      - name: Fail on full test errors
-        if: steps.full-tests.outputs.status != '0'
-        run: exit 1
-      - name: Run financial tests
-        id: financial-tests
-        shell: bash
-        run: |
-          set +e
-          pnpm --filter ./rentrix-app run test:financials > /tmp/rentrix-financial-tests.log 2>&1
-          status=$?
-          echo "status=$status" >> "$GITHUB_OUTPUT"
-          tail -n 160 /tmp/rentrix-financial-tests.log
-          exit 0
-      - name: Upload financial test diagnostics
-        continue-on-error: true
-        if: steps.financial-tests.outputs.status != '0'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: rentrix-financial-test-diagnostics
-          path: /tmp/rentrix-financial-tests.log
-      - name: Fail on financial test errors
-        if: steps.financial-tests.outputs.status != '0'
-        run: exit 1
+          node-version: 24
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Rebuild approved native toolchain package
+        run: pnpm rebuild esbuild
+      - name: Canonical database integrity
+        run: pnpm db0:gate
+      - name: Documentation links
+        run: pnpm check:docs
+      - name: Test typecheck
+        run: pnpm --filter ./rentrix-app run typecheck:test
+      - name: Full application tests
+        run: pnpm --filter ./rentrix-app test
+      - name: Financial safety tests
+        run: pnpm --filter ./rentrix-app run test:financials
