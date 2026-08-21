@@ -3,7 +3,7 @@
 Updated: 2026-08-21  
 Observed repository: `mohamedmasoud3030-tech/malek`  
 Observed default branch: `main`  
-Observed main SHA: `b1bb5a901b7adff1aa36b0483195465fe0de9eca`
+Observed main SHA: `b1bb5a901b7adff1aa36b0483195465fe99deeca`
 
 ## Executive status
 
@@ -31,9 +31,9 @@ The project has a substantial implementation and verification history, but the c
 ### Current Git/GitHub state
 
 - Default branch: `main`
-- Current main SHA observed: `b1bb5a901b7adff1aa36b0483195465fe0de9eca`
-- Open PRs observed: PR #1531 only
-- PR #1531: draft, frontend-only design-system foundation, base `main`, head `arena/design-system-foundation`
+- Current main SHA observed: `b1bb5a901b7adff1aa36b0483195465fe99deeca`
+- Open draft PRs observed: PR #1531, PR #1532, PR #1533, and PR #1534.
+- PR #1531: frontend-only design-system foundation; PR #1533: PWA safety remediation; PR #1534: offline shared-device logout hardening. All require executable verification.
 - No branch was reset, cleaned, force-updated, or overwritten.
 
 ### Application shape
@@ -61,6 +61,8 @@ The project has a substantial implementation and verification history, but the c
 | Browser/e2e journeys | NOT VERIFIED | No running QA/preview journey opened in this session |
 | Supabase/Auth/RLS live verification | BLOCKED_EXTERNAL | Requires authorized QA/demo credentials and target |
 | Design-system foundation | IMPLEMENTED BUT NOT VERIFIED | PR #1531 contains the change; rendered runtime verification remains |
+| PWA safety remediation | IMPLEMENTED BUT NOT VERIFIED | PR #1533 removes unsafe navigation/API caching and adds a controlled update prompt; build artifacts and device checks are not run |
+| Offline logout safety | IMPLEMENTED BUT NOT VERIFIED | PR #1534 clears local session/UI authority if remote sign-out fails and adds focused service tests; tests/browser journey are not run |
 | Governed stage credit | VERIFIED AS REPORTED | Master plan remains the authority; no credit was changed |
 
 ## M1 source-audit observations
@@ -70,6 +72,14 @@ The project has a substantial implementation and verification history, but the c
 - Search at the observed main SHA located `SUPABASE_SERVICE_ROLE_KEY` only in QA templates, server/Edge Function code, isolated local/QA smoke scripts, tests, and guard scripts. This is source evidence, not execution proof.
 - `supabase/functions/background-worker/index.ts` requires a separate `BACKGROUND_WORKER_SECRET` before using its server-side service role key.
 - QA mutation scripts refuse production targets before client creation; the intentional lifecycle additionally requires an explicit QA approval flag.
+
+## M5 auth/logout milestone
+
+- **Outcome:** an explicit logout must remove a previous operator from a shared browser even when remote Auth is unreachable.
+- **Reproduced by source:** the former `logout()` awaited remote sign-out before clearing in-memory session; a rejected request could retain protected UI.
+- **Implemented:** PR #1534 first attempts remote sign-out, then local-only sign-out; local storage is removed in either case. `AuthProvider` now clears permissions/session and navigates to `/login` in `finally`.
+- **Focused coverage added:** remote success, remote failure with local fallback, and fallback failure in `auth-service.test.ts`.
+- **Status:** IMPLEMENTED BUT NOT VERIFIED. No test/build/browser run is claimed.
 
 ## External blockers
 
