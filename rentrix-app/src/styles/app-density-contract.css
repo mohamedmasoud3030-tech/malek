@@ -1,29 +1,26 @@
 /*
  * MALEK authenticated-app density contract.
  *
- * Repeated grids must not fan out into four, five, or six narrow columns.
- * The normal rhythm is two columns on mobile and desktop. Screens that truly
- * need three columns can keep an explicit `grid-cols-3` layout; wider legacy
- * grid declarations collapse to two here until they are migrated to the
- * shared ResponsiveCardGrid primitive.
+ * Repeated card/KPI grids must not fan out into four, five, or six narrow
+ * columns. The normal rhythm is two columns on mobile and desktop. Screens
+ * that truly need three columns can keep an explicit `grid-cols-3` layout.
  *
- * Scope is intentionally limited to the authenticated app shell so landing,
- * document rendering, and specialist non-app surfaces keep their own layout.
+ * Scope is intentionally limited to the authenticated app shell and to grids
+ * whose direct children are card-like surfaces. Forms, calendars, document
+ * layouts, landing pages, and specialist structural grids are not rewritten.
  */
-[data-app-shell] .grid:is(
-  [class*='grid-cols-4'],
-  [class*='grid-cols-5'],
-  [class*='grid-cols-6']
-) {
+[data-app-shell] .grid:is([class*='grid-cols-4'], [class*='grid-cols-5'], [class*='grid-cols-6']):has(> [data-component-card]),
+[data-app-shell] .grid:is([class*='grid-cols-4'], [class*='grid-cols-5'], [class*='grid-cols-6']):has(> [data-kpi-card]),
+[data-app-shell] .grid:is([class*='grid-cols-4'], [class*='grid-cols-5'], [class*='grid-cols-6']):has(> [data-finance-kpi-drill]),
+[data-app-shell] .grid:is([class*='grid-cols-4'], [class*='grid-cols-5'], [class*='grid-cols-6']):has(> article) {
   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
 }
 
 /* Do not finish an overridden repeated-card grid with an empty half-row. */
-[data-app-shell] .grid:is(
-  [class*='grid-cols-4'],
-  [class*='grid-cols-5'],
-  [class*='grid-cols-6']
-) > :last-child:nth-child(odd) {
+[data-app-shell] .grid:is([class*='grid-cols-4'], [class*='grid-cols-5'], [class*='grid-cols-6']):has(> [data-component-card]) > :last-child:nth-child(odd),
+[data-app-shell] .grid:is([class*='grid-cols-4'], [class*='grid-cols-5'], [class*='grid-cols-6']):has(> [data-kpi-card]) > :last-child:nth-child(odd),
+[data-app-shell] .grid:is([class*='grid-cols-4'], [class*='grid-cols-5'], [class*='grid-cols-6']):has(> [data-finance-kpi-drill]) > :last-child:nth-child(odd),
+[data-app-shell] .grid:is([class*='grid-cols-4'], [class*='grid-cols-5'], [class*='grid-cols-6']):has(> article) > :last-child:nth-child(odd) {
   grid-column: span 2 / span 2;
 }
 
