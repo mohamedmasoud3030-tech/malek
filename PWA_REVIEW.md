@@ -98,7 +98,7 @@ No source evidence found that Supabase REST/RPC requests, payment responses, pri
 | Manifest/icon reference inspection | VERIFIED IN SOURCE |
 | Cache-policy inspection | VERIFIED IN SOURCE |
 | Focused PWA regression test | IMPLEMENTED BUT NOT RUN (no runnable checkout in this session) |
-| Production build/generated `sw.js` inspection | IMPLEMENTED BUT NOT VERIFIED: CSS parse failure and missing `workbox-window` dependency corrected; the next Vercel build is required |
+| Production build | VERIFIED COMPLETE: Vercel production deployment `dpl_EtLf1g7tzWmoNcrz4jhHSehLWQV1` for `main@91a0ae9` reached READY after the CSS and `workbox-window` corrections |
 | Browser registration/update/offline test | BLOCKED: no running preview/QA browser in this session |
 | Android Chrome installation | MANUAL DEVICE CHECK REQUIRED |
 | iOS Safari Add-to-Home-Screen | MANUAL DEVICE CHECK REQUIRED |
