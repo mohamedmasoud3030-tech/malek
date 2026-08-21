@@ -1,0 +1,60 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { describe, expect, it } from 'vitest';
+
+const appRoot = resolve(import.meta.dirname, '..', '..');
+
+function read(relativePath: string) {
+  return readFileSync(resolve(appRoot, relativePath), 'utf8');
+}
+
+describe('PWA safety contract', () => {
+  it('fails closed to the explicit offline page and never caches navigation HTML at runtime', () => {
+    const config = read('vite.config.ts');
+
+    expect(config).toContain('registerType: "prompt"');
+    expect(config).toContain('injectRegister: false');
+    expect(config).toContain('navigateFallback: "/offline.html"');
+    expect(config).not.toContain('cacheName: "rentrix-pages"');
+    expect(config).not.toContain('handler: "NetworkFirst"');
+  });
+
+  it('keeps sensitive Supabase and private data outside runtime cache rules', () => {
+    const config = read('vite.config.ts');
+    const runtimeCaching = config.slice(config.indexOf('runtimeCaching:'));
+
+    expect(runtimeCaching).not.toMatch(/supabase|rest\/v1|storage\/v1|auth\/v1/i);
+    expect(runtimeCaching).not.toMatch(/BackgroundSync|queueName/i);
+  });
+
+  it('registers updates only in production and leaves activation to an explicit callback', () => {
+    const source = read('src/lib/pwa-update.ts');
+
+    expect(source).toContain("import { registerSW } from 'virtual:pwa-register'");
+    expect(source).toContain('if (!import.meta.env.PROD || registrationStarted) return;');
+    expect(source).toContain('onNeedRefresh()');
+    expect(source).toContain('updateServiceWorker(true)');
+  });
+
+  it('ships a rooted Arabic manifest with Apple and maskable icon support', () => {
+    const manifest = JSON.parse(read('public/manifest.json')) as {
+      start_url: string;
+      scope: string;
+      lang: string;
+      dir: string;
+      display: string;
+      icons: Array<{ purpose?: string; sizes?: string }>;
+    };
+
+    expect(manifest.start_url).toBe('/');
+    expect(manifest.scope).toBe('/');
+    expect(manifest.lang).toBe('ar');
+    expect(manifest.dir).toBe('rtl');
+    expect(manifest.display).toBe('standalone');
+    expect(manifest.icons.some((icon) => icon.purpose === 'maskable' && icon.sizes === '512x512')).toBe(true);
+
+    const index = read('index.html');
+    expect(index).toContain('apple-mobile-web-app-capable');
+    expect(index).toContain('apple-touch-icon');
+  });
+});

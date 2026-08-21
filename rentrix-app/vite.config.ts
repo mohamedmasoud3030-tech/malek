@@ -110,7 +110,10 @@ export default defineConfig({
     react(),
     runtimeErrorOverlay(),
     VitePWA({
-      registerType: "autoUpdate",
+      registerType: "prompt",
+      // Registration is owned by src/lib/pwa-update.ts so updates can wait
+      // for an explicit user action instead of replacing an active workflow.
+      injectRegister: false,
       manifest: false,
       // Keep MALEK's launch and offline identity available with the app shell.
       // Do not also list offline/brand assets here: workbox.globPatterns already
@@ -121,10 +124,10 @@ export default defineConfig({
         // asset glob precached 335 entries / 5558 KiB, including every lazy
         // JS chunk (DocumentRenderer 651 kB, html2canvas 201 kB) and landing
         // PNG screenshots. The app is online-first (Supabase). Precache only
-        // the install shell; runtime StaleWhileRevalidate already caches
-        // scripts after the first visit.
+        // the install shell. Runtime StaleWhileRevalidate caches only public
+        // static assets after the first visit; Supabase and private data are
+        // intentionally excluded from all Workbox runtime caches.
         globPatterns: [
-          "index.html",
           "offline.html",
           "manifest.json",
           "assets/*.css",
@@ -135,18 +138,11 @@ export default defineConfig({
           "malek-apple-touch-180.png",
         ],
         cleanupOutdatedCaches: true,
-        navigateFallback: "/index.html",
-        navigateFallbackDenylist: [/^\/api\//],
+        // MALEK is online-first. A protected route must never fall back to a
+        // cached SPA document that may be stale or imply offline data access.
+        navigateFallback: "/offline.html",
+        navigateFallbackDenylist: [/^\/api\//, /^\/auth\//],
         runtimeCaching: [
-          {
-            urlPattern: ({ request }) => request.mode === "navigate",
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "rentrix-pages",
-              networkTimeoutSeconds: 3,
-              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 },
-            },
-          },
           {
             urlPattern: ({ request }) =>
               request.destination === "style" ||
