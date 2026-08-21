@@ -133,13 +133,13 @@ function HeaderUserMenu({
           <div className="space-y-0.5 p-1.5">
             {canOpenSettings ? (
               <Link to="/settings" role="menuitem" className={itemClass} onClick={() => setOpen(false)}>
-                <Settings className="size-4.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <Settings className="size-[1.125rem] shrink-0 text-muted-foreground" aria-hidden="true" />
                 <span>إعدادات المنشأة</span>
               </Link>
             ) : null}
 
             <Link to="/change-password" role="menuitem" className={itemClass} onClick={() => setOpen(false)}>
-              <KeyRound className="size-4.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+              <KeyRound className="size-[1.125rem] shrink-0 text-muted-foreground" aria-hidden="true" />
               <span>تغيير كلمة المرور</span>
             </Link>
 
@@ -150,7 +150,7 @@ function HeaderUserMenu({
               className={itemClass}
               onClick={() => setOpen(false)}
             >
-              <CircleHelp className="size-4.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+              <CircleHelp className="size-[1.125rem] shrink-0 text-muted-foreground" aria-hidden="true" />
               <span>المساعدة والدعم</span>
             </Link>
 
@@ -165,7 +165,7 @@ function HeaderUserMenu({
                 void onLogout();
               }}
             >
-              <LogOut className="size-4.5 shrink-0" aria-hidden="true" />
+              <LogOut className="size-[1.125rem] shrink-0" aria-hidden="true" />
               <span>تسجيل الخروج</span>
             </button>
           </div>
@@ -317,28 +317,28 @@ function MobileNavigationDrawer({
         }}
         data-mobile-drawer
         data-mobile-nav-sheet
-        className="fixed inset-x-0 bottom-0 z-[101] flex max-h-[82dvh] w-full max-w-none flex-col gap-0 overflow-hidden rounded-none rounded-t-3xl border-0 border-t border-white/10 bg-sidebar text-sidebar-foreground shadow-[0_-18px_50px_-18px_rgb(0_0_0_/_0.7)] sm:max-h-none lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-[101] flex max-h-[88dvh] w-full max-w-none flex-col gap-0 overflow-hidden rounded-none rounded-t-2xl border-0 border-t border-white/10 bg-sidebar text-sidebar-foreground shadow-[0_-18px_50px_-18px_rgb(0_0_0_/_0.7)] sm:max-h-none lg:hidden"
       >
         <DialogTitle className="sr-only">القائمة الرئيسية</DialogTitle>
-        <div className="mx-auto mt-2.5 h-1.5 w-10 shrink-0 rounded-full bg-white/20" aria-hidden="true" />
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/8 px-4 py-3">
+        <div className="mx-auto mt-2 h-1 w-9 shrink-0 rounded-full bg-white/20" aria-hidden="true" />
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/8 px-3.5 py-2.5">
           <Brand expanded />
           <Button
             autoFocus
             variant="ghost"
-            className="size-10 shrink-0 px-0 text-sidebar-foreground hover:bg-sidebar-accent hover:text-white"
+            className="size-9 shrink-0 px-0 text-sidebar-foreground hover:bg-sidebar-accent hover:text-white"
             onClick={onClose}
             aria-label="إغلاق القائمة"
           >
-            <X className="size-5" />
+            <X className="size-4.5" />
           </Button>
         </div>
-        <nav className="sidebar-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
+        <nav className="sidebar-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain p-2.5 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
           {authorization === null && (
-            <div className="mb-4 rounded-xl border border-[hsl(var(--color-warning-text)/0.25)] bg-[hsl(var(--color-warning-bg)/0.08)] px-3 py-2.5">
-              <p className="text-xs font-semibold text-warning">الصلاحيات غير مكتملة</p>
-              <p className="mt-1 text-[11px] font-medium text-warning/80">
-                يرجى التواصل مع مسؤول النظام لاستكمال إعداد صلاحيات حسابك.
+            <div className="mb-2 rounded-lg border border-[hsl(var(--color-warning-text)/0.2)] bg-[hsl(var(--color-warning-bg)/0.07)] px-2.5 py-2">
+              <p className="text-[11px] font-semibold text-warning">الصلاحيات غير مكتملة</p>
+              <p className="mt-0.5 text-[10px] font-medium leading-4 text-warning/75">
+                راجع مسؤول النظام لاستكمال صلاحيات الحساب.
               </p>
             </div>
           )}
@@ -486,24 +486,25 @@ export function AppShell() {
               data-global-offline-notice
               role="status"
               aria-live="polite"
-              className="mx-3 mt-3 flex items-start gap-3 rounded-xl border border-[hsl(var(--color-warning-text)/0.28)] bg-[hsl(var(--color-warning-bg)/0.12)] px-4 py-3 text-warning sm:mx-4"
+              className="mx-3 mt-2 flex items-center gap-2 rounded-lg border border-[hsl(var(--color-warning-text)/0.25)] bg-[hsl(var(--color-warning-bg)/0.09)] px-3 py-2 text-warning sm:mx-4"
             >
-              <ShieldAlert className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
-              <div className="min-w-0">
-                <p className="text-sm font-semibold">لا يوجد اتصال بالشبكة</p>
-                <p className="mt-0.5 text-xs leading-5 text-warning/85">يمكنك مراجعة البيانات الظاهرة، لكن الحفظ والتحديث قد يفشلان حتى يعود الاتصال.</p>
+              <ShieldAlert className="size-4 shrink-0" aria-hidden="true" />
+              <div className="min-w-0 sm:flex sm:items-baseline sm:gap-2">
+                <p className="text-xs font-semibold">لا يوجد اتصال بالشبكة</p>
+                <p className="mt-0.5 text-[11px] leading-4 text-warning/80 sm:mt-0">قد يفشل الحفظ والتحديث حتى يعود الاتصال.</p>
               </div>
             </div>
           ) : null}
           {writeAccessNotice ? (
             <div
+              data-write-access-notice
               role="status"
-              className="mb-4 flex items-start gap-3 rounded-xl border border-[hsl(var(--color-warning-text)/0.25)] bg-[hsl(var(--color-warning-bg)/0.1)] px-4 py-3 text-warning"
+              className="mx-3 mb-2 mt-2 flex items-center gap-2 rounded-lg border border-[hsl(var(--color-warning-text)/0.2)] bg-[hsl(var(--color-warning-bg)/0.07)] px-3 py-2 text-warning sm:mx-4"
             >
-              <ShieldAlert className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
-              <div className="min-w-0">
-                <p className="text-sm font-semibold">{writeAccessNotice.title}</p>
-                <p className="mt-0.5 text-xs leading-5 text-warning/80">{writeAccessNotice.description}</p>
+              <ShieldAlert className="size-4 shrink-0" aria-hidden="true" />
+              <div className="min-w-0 sm:flex sm:items-baseline sm:gap-2">
+                <p className="text-xs font-semibold">{writeAccessNotice.title}</p>
+                <p className="mt-0.5 text-[11px] leading-4 text-warning/75 sm:mt-0">{writeAccessNotice.description}</p>
               </div>
             </div>
           ) : null}
