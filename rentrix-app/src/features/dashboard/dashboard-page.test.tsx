@@ -146,12 +146,14 @@ describe('Today workspace query boundary tests', () => {
     expect(sectionOrder).toEqual(['work-now', 'office-state', 'analytics']);
   });
 
-  it('renders KPI surfaces as real destination links', async () => {
+  it('renders KPI surfaces as real destination links without duplicating the executive hero', async () => {
     (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
     await renderPage();
     const kpiLinks = Array.from(container?.querySelectorAll('[data-dashboard-kpi-grid] a[data-dashboard-kpi-link]') ?? []);
     expect(kpiLinks).toHaveLength(4);
-    expect(kpiLinks.map((link) => link.getAttribute('href'))).toEqual(['/financials', '/arrears', '/reports', '/expenses']);
+    // Secondary decision KPIs: net cash, collection rate, expenses, owner
+    // payouts — none repeats the hero (تحصيل/متأخرات/إشغال/عقود).
+    expect(kpiLinks.map((link) => link.getAttribute('href'))).toEqual(['/reports', '/financials', '/expenses', '/owner-settlements']);
   });
 
   it('hides create shortcuts for roles with no actionable permission', async () => {

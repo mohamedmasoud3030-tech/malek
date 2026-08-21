@@ -1,4 +1,4 @@
-import { CalendarClock, FileText, WalletCards } from 'lucide-react';
+import { FileText, WalletCards } from 'lucide-react';
 import { OperationalCommandPanel, OperationalMetricCard } from '@/components/ui/operational-summary';
 import type { CompanySettingsContract } from '@/lib/companySettings';
 import { isContractStatus } from '@/lib/contractStatus';
@@ -58,18 +58,12 @@ export function ContractKpiGrid({
         )}
       />
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2">
         <OperationalMetricCard
           label="إجمالي العقود"
           value={formatCount(totalCount)}
           hint="حسب فلتر الحالة الحالي"
           icon={FileText}
-        />
-        <OperationalMetricCard
-          label="تنتهي قريبًا"
-          value={formatCount(listSummary.expiringSoon)}
-          hint="خلال 30 يومًا"
-          icon={CalendarClock}
         />
         <OperationalMetricCard
           label="إيجار العقود الظاهرة"

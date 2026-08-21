@@ -20,10 +20,10 @@ import { UnitFormModal } from "./unit-form-modal";
 import { useSoftDeleteUnit } from "./use-units";
 
 const unitStatusTone = {
-  available: "green",
-  occupied: "blue",
-  maintenance: "gold",
-  reserved: "gray",
+  available: "success",
+  occupied: "info",
+  maintenance: "warning",
+  reserved: "neutral",
 } as const;
 
 export function UnitsList({

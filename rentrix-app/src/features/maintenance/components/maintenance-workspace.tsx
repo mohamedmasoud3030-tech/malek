@@ -1,4 +1,4 @@
-import { AlertCircle, Clock, Flame, PlusCircle, Printer, Wrench } from 'lucide-react';
+import { Flame, PlusCircle, Printer, Wrench } from 'lucide-react';
 import { useMemo } from 'react';
 import { AsyncContentState } from '@/components/async-content-state';
 import { PageHeader } from '@/components/layout/page-header';
@@ -209,24 +209,12 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
           </div>
         </article>
 
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3">
           <MaintenanceMetric
             label="إجمالي الطلبات"
             value={controller.maintenanceSummary.total}
             hint="ضمن الفلاتر الحالية"
             icon={Wrench}
-          />
-          <MaintenanceMetric
-            label="طلبات مفتوحة"
-            value={controller.maintenanceSummary.open}
-            hint="تحتاج إلى بدء المتابعة"
-            icon={AlertCircle}
-          />
-          <MaintenanceMetric
-            label="قيد التنفيذ"
-            value={controller.maintenanceSummary.inProgress}
-            hint="يعمل عليها الفريق"
-            icon={Clock}
           />
         </div>
       </section>
