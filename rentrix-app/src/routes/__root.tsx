@@ -1,11 +1,12 @@
 import { Outlet } from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import { useEffect } from 'react';
-import { Toaster } from 'sonner';
+import { Toaster, toast } from 'sonner';
 import { AppProviders } from '@/app/providers/app-providers';
 import { AppCatchBoundary } from '@/components/error-boundary';
 import { PwaInstallPrompt } from '@/components/layout/pwa-install-prompt';
 import { getAppLanguageState } from '@/lib/i18n';
+import { registerPwaUpdateLifecycle } from '@/lib/pwa-update';
 
 function useVisualViewportCssVariable() {
   useEffect(() => {
@@ -54,6 +55,19 @@ function useVisualViewportCssVariable() {
 
 export function RootRouteComponent() {
   useVisualViewportCssVariable();
+
+  useEffect(() => {
+    registerPwaUpdateLifecycle(async (applyUpdate) => {
+      toast.message('يتوفر تحديث للتطبيق', {
+        description: 'احفظ عملك الحالي ثم حدّث عند الاستعداد.',
+        duration: Number.POSITIVE_INFINITY,
+        action: {
+          label: 'تحديث الآن',
+          onClick: () => void applyUpdate(),
+        },
+      });
+    });
+  }, []);
 
   return (
     <AppCatchBoundary>
