@@ -8,17 +8,22 @@ interface ListControlSurfaceProps {
 }
 
 /**
- * Canonical register control surface used by entity list pages.
- * It deliberately behaves like table chrome rather than a dashboard card:
- * thin border, compact spacing, neutral background and no decorative shadow.
+ * Canonical register toolbar surface used by entity list pages.
+ * Inspired by professional data consoles, but deliberately MALEK-specific:
+ * thin borders, dense spacing, quiet hierarchy and one continuous toolbar
+ * surface instead of stacked dashboard cards.
  */
 export function ListControlSurface({ children, className, ariaLabel = 'البحث والتصفية' }: ListControlSurfaceProps) {
   return (
     <section
       data-list-controls
+      data-register-toolbar
       aria-label={ariaLabel}
       className={cn(
-        'rounded-xl border border-border bg-background p-2 shadow-[0_1px_2px_hsl(var(--foreground)/0.025)] sm:p-2.5',
+        'overflow-hidden rounded-xl border border-border/85 bg-background shadow-[0_1px_2px_hsl(var(--foreground)/0.025)]',
+        'p-2 sm:p-2.5',
+        '[&_[data-filter-tabs-scroll]]:pb-0',
+        '[&_button]:shrink-0',
         className,
       )}
     >
