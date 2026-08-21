@@ -8,8 +8,13 @@ import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+const migrationDirectory = resolve(root, "supabase/migrations");
 const baseline = await readFile(
-  resolve(root, "supabase/migrations/20260901000000_canonical_baseline.sql"),
+  resolve(migrationDirectory, "20260901000000_canonical_baseline.sql"),
+  "utf8",
+);
+const roleMigration = await readFile(
+  resolve(migrationDirectory, "20260901000008_company_members_six_role_constraint.sql"),
   "utf8",
 );
 const failures = [];
@@ -19,7 +24,7 @@ function requireInvariant(condition, message) {
 }
 
 const tables = [...baseline.matchAll(
-  /CREATE TABLE\s+"public"\."([^"]+)"\s+\(([\s\S]*?)\n\);/g,
+  /CREATE TABLE\s+(?:IF NOT EXISTS\s+)?"public"\."([^"]+)"\s+\(([\s\S]*?)\n\);/g,
 )].map((match) => ({ name: match[1], definition: match[2] }));
 const rlsTables = new Set(
   [...baseline.matchAll(
@@ -66,8 +71,8 @@ requireInvariant(
   "custom_access_token_hook must remain revoked from PUBLIC.",
 );
 requireInvariant(
-  /'ADMIN'::"public"\."user_role", 'MANAGER'::"public"\."user_role", 'ACCOUNTANT'::"public"\."user_role", 'OPERATIONS'::"public"\."user_role", 'USER'::"public"\."user_role", 'VIEWER'::"public"\."user_role"/.test(baseline),
-  "company_members must retain the canonical six-role constraint.",
+  /'ADMIN'::text,[\s\S]*?'MANAGER'::text,[\s\S]*?'ACCOUNTANT'::text,[\s\S]*?'OPERATIONS'::text,[\s\S]*?'USER'::text,[\s\S]*?'VIEWER'::text/.test(roleMigration),
+  "company_members must retain the canonical six-role constraint in its forward migration.",
 );
 
 if (failures.length) {
