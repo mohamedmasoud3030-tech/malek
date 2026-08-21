@@ -39,7 +39,22 @@ export async function signInWithEmail(email: string, password: string) {
   return data;
 }
 
-export async function signOut() {
+/**
+ * Prefer global sign-out while online. If the network cannot reach Auth, clear
+ * the browser session locally as a shared-device safety boundary; a stale local
+ * token must never keep a previous operator signed in.
+ */
+export async function signOut(): Promise<'remote' | 'local'> {
   const { error } = await supabase.auth.signOut();
-  if (error) throw error;
+  if (!error) {
+    clearStoredSession();
+    return 'remote';
+  }
+
+  const { error: localError } = await supabase.auth.signOut({ scope: 'local' });
+  clearStoredSession();
+  if (localError) throw localError;
+
+  console.warn('Remote sign-out failed; cleared this browser session locally.', error.message);
+  return 'local';
 }
