@@ -108,6 +108,24 @@ export async function createFullReplayedDatabase(options?: {
     }
   }
 
+  // `supabase db reset` applies the canonical reference seed after the migration
+  // chain. Mirror that contract for full canonical PGlite replays so tests see
+  // global/system reference rows (for example tax_code_catalog) without
+  // resurrecting company/demo data. Checkpoint/exclusion replays intentionally
+  // remain migration-only because they model partial historical states.
+  const isFullCanonicalReplay = canonicalChain
+    && !options?.throughMigration
+    && (options?.excludeMigrations?.length ?? 0) === 0;
+  if (isFullCanonicalReplay && failed.length === 0) {
+    try {
+      await db.exec(readFileSync(join(repoRoot, 'supabase', 'seed.sql'), 'utf8'));
+    } catch (error) {
+      failed.push({ file: 'seed.sql', error: String(error).slice(0, 400) });
+      await db.exec('ROLLBACK;').catch(() => undefined);
+      await db.exec("SELECT set_config('request.jwt.claims','{}', false);").catch(() => undefined);
+    }
+  }
+
   return { db, applied, failed };
 }
 
