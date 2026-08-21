@@ -10,10 +10,11 @@ Production mutation: none
 
 MALEK is intentionally **online-first**. Its PWA is an installable secure application shell, not an offline property/financial database.
 
-Two high-priority correctness issues were confirmed in source and remediated in this branch:
+Three high-priority correctness issues were confirmed in source/build logs and remediated in this branch:
 
 1. `offline.html` was precached but navigation fallback returned `/index.html`, so users could be shown a stale application shell rather than the explicit connection-required state.
 2. `registerType: "autoUpdate"` had no user-visible update/reload control. An update could activate while an operator was entering data or completing a sensitive workflow.
+3. The Vercel production build could not resolve `workbox-window` from Vite PWA's virtual registration module because pnpm requires it as a direct application dependency.
 
 No source evidence found that Supabase REST/RPC requests, payment responses, private attachments, or authenticated API data are runtime-cached by the current Workbox rules.
 
@@ -25,7 +26,7 @@ No source evidence found that Supabase REST/RPC requests, payment responses, pri
 | Hosting assumption | Vercel/root deployment; static SPA fallback required server-side | IMPLEMENTED BUT NOT VERIFIED |
 | Secure context | Service workers/install require HTTPS or localhost | PLATFORM REQUIREMENT |
 | Auth/data | Supabase browser client, persisted session token in local storage | VERIFIED IN SOURCE |
-| PWA registration | Vite PWA generated service worker; prompt update lifecycle in this remediation | IMPLEMENTED BUT NOT VERIFIED |
+| PWA registration | Vite PWA generated service worker; prompt update lifecycle in this remediation; direct `workbox-window` dependency declared | IMPLEMENTED BUT NOT VERIFIED |
 | Base path | Current manifest uses root-relative URLs and assumes `BASE_PATH=/` | VERIFIED ASSUMPTION; non-root hosting requires dedicated validation |
 
 ## Manifest and install review
@@ -87,6 +88,7 @@ No source evidence found that Supabase REST/RPC requests, payment responses, pri
 | High | Auto update had no safe user choice | Use prompt registration plus explicit refresh notification |
 | Medium | Navigation HTML runtime cache could serve stale app shell | Remove navigation `NetworkFirst` runtime caching; online navigation now fails closed to offline page |
 | Medium | PWA behavior had no focused regression contract | Add PWA configuration/lifecycle contract test |
+| Critical | Vercel build failed: virtual PWA registration could not resolve `workbox-window` | Declare `workbox-window@^7.4.1` directly in `rentrix-app`, synchronize `pnpm-lock.yaml`, and add a dependency-contract test |
 
 ## Verification ledger
 
@@ -96,11 +98,11 @@ No source evidence found that Supabase REST/RPC requests, payment responses, pri
 | Manifest/icon reference inspection | VERIFIED IN SOURCE |
 | Cache-policy inspection | VERIFIED IN SOURCE |
 | Focused PWA regression test | IMPLEMENTED BUT NOT RUN (no runnable checkout in this session) |
-| Production build/generated `sw.js` inspection | BLOCKED: no runnable checkout/build artifact |
+| Production build/generated `sw.js` inspection | IMPLEMENTED BUT NOT VERIFIED: CSS parse failure and missing `workbox-window` dependency corrected; the next Vercel build is required |
 | Browser registration/update/offline test | BLOCKED: no running preview/QA browser in this session |
 | Android Chrome installation | MANUAL DEVICE CHECK REQUIRED |
 | iOS Safari Add-to-Home-Screen | MANUAL DEVICE CHECK REQUIRED |
-| Deployment HTTPS/headers | BLOCKED: deployment inspection unavailable; Vercel check currently external/pending or rate-limited |
+| Deployment HTTPS/headers | IMPLEMENTED BUT NOT VERIFIED: Vercel build logs inspected; current branch must produce a successful preview before header/artifact inspection |
 
 ## Phased remediation
 
