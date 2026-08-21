@@ -56,9 +56,9 @@ describe('createSignedAttachmentUrl', () => {
     vi.clearAllMocks();
   });
 
-  it('passes legacy absolute URLs through untouched', async () => {
+  it('rejects a legacy public URL instead of re-publishing an attachment outside the private bucket', async () => {
     await expect(createSignedAttachmentUrl('https://files.example/attachment.pdf'))
-      .resolves.toBe('https://files.example/attachment.pdf');
+      .rejects.toThrow('يحتاج ترحيلاً آمناً');
     expect(storage.createSignedUrl).not.toHaveBeenCalled();
   });
 
