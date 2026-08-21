@@ -12,12 +12,12 @@ describe('user roles model', () => {
   });
 
   it('uses clear Arabic role labels for all six roles', () => {
-    expect(getRoleLabel('ADMIN')).toBe('مسؤول');
-    expect(getRoleLabel('MANAGER')).toBe('مدير');
+    expect(getRoleLabel('ADMIN')).toBe('مالك الشركة');
+    expect(getRoleLabel('MANAGER')).toBe('مسؤول المكتب');
     expect(getRoleLabel('ACCOUNTANT')).toBe('محاسب');
-    expect(getRoleLabel('OPERATIONS')).toBe('عمليات');
-    expect(getRoleLabel('USER')).toBe('مستخدم');
-    expect(getRoleLabel('VIEWER')).toBe('مشاهد');
+    expect(getRoleLabel('OPERATIONS')).toBe('التشغيل');
+    expect(getRoleLabel('USER')).toBe('مستخدم محدود');
+    expect(getRoleLabel('VIEWER')).toBe('مشاهدة فقط');
     expect(getRoleLabel(null)).toBe('غير مهيأ');
     expect(getRoleLabel('UNKNOWN' as never)).toBe('غير مهيأ');
   });

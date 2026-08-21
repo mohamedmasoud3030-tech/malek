@@ -24,12 +24,12 @@ import { canManageGovernedUser, getRoleLabel, governedUserRoles } from '../user-
 import { fetchGovernedUsers, type GovernedUser } from '../user-roles-service';
 
 const roleDescriptions: ReadonlyArray<Readonly<{ role: UserRole; description: string }>> = [
-  { role: 'ADMIN', description: 'حوكمة المكتب وعرض المستخدمين؛ تغييرات الوصول مقترحات غير منفذة حتى اعتماد المسار عالي التأثير.' },
-  { role: 'MANAGER', description: 'تشغيل يومي ومراجعة طلبات الصلاحية فقط، دون إدارة الأدوار أو الشركة.' },
-  { role: 'ACCOUNTANT', description: 'عرض ومراجعة البيانات المالية وإعداد التقارير وعمليات المطابقة البنكية. لا يملك صلاحية الاعتماد أو الصرف.' },
-  { role: 'OPERATIONS', description: 'إدارة العقارات والعقود والصيانة ومراكز التكلفة. لا يملك صلاحيات مالية.' },
-  { role: 'USER', description: 'وصول أساسي مع صلاحيات إضافية معتمدة حسب الحاجة.' },
-  { role: 'VIEWER', description: 'عرض فقط لجميع الوحدات والبيانات الأساسية دون أي صلاحية تعديل أو إنشاء.' },
+  { role: 'ADMIN', description: 'مالك الشركة: الصلاحية الكاملة على كل المناطق، الإدارة، الإعدادات، المستخدمين، التقارير والعمليات المالية بما فيها الاعتماد والصرف.' },
+  { role: 'MANAGER', description: 'مسؤول المكتب: تشغيل يومي للمكتب (عقارات، عقود، مصروفات، مستندات) دون إدارة المستخدمين أو الإعدادات أو التحكم المالي الحساس (التحصيل، الإلغاء، المطابقة، اعتماد/صرف التسويات).' },
+  { role: 'ACCOUNTANT', description: 'محاسب: عمل محاسبي من تحصيل وتوليد فواتير وتقارير ومطابقة بنكية وتسويات عرضًا، دون إدارة مستخدمين أو إعدادات الشركة أو صلاحيات الاعتماد/الصرف.' },
+  { role: 'OPERATIONS', description: 'التشغيل: صيانة، مزودو خدمة، تواصل، مستندات تشغيلية. لا يملك صلاحيات محاسبية.' },
+  { role: 'USER', description: 'مستخدم محدود: وصول تشغيلي أساسي آمن فقط.' },
+  { role: 'VIEWER', description: 'مشاهدة فقط: عرض للبيانات الأساسية دون أي صلاحية تعديل أو إنشاء.' },
 ];
 
 function UserAccessCard({ user, currentUserId }: Readonly<{

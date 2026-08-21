@@ -1,0 +1,129 @@
+{
+  "$schema": "./governance-schema.json",
+  "version": 1,
+  "generatedAt": "2026-08-22",
+  "authorityModel": {
+    "membershipSource": "public.company_members.role (database)",
+    "activeRoleSource": "public.users.role joined to active membership (public.current_app_role())",
+    "jwt": "Server-issued claims are a performance cache; never an independent authority. Browser-editable metadata must never elevate.",
+    "grants": "public.user_permission_grants add grantable permissions only; role-bound permissions ignore grants.",
+    "failClosed": true
+  },
+  "roles": [
+    { "id": "ADMIN", "labelAr": "مالك الشركة", "description": "Full product, administration, settings, users, reports and financial authority." },
+    { "id": "MANAGER", "labelAr": "مسؤول المكتب", "description": "Daily office operations. No sensitive administration or sensitive financial control by default." },
+    { "id": "ACCOUNTANT", "labelAr": "محاسب", "description": "Finance/accounting, reconciliation and reporting. No user or company administration." },
+    { "id": "OPERATIONS", "labelAr": "التشغيل", "description": "Operational execution: maintenance, service providers, communication, operational documents." },
+    { "id": "USER", "labelAr": "مستخدم محدود", "description": "Minimal safe operational access." },
+    { "id": "VIEWER", "labelAr": "مشاهدة فقط", "description": "Read-only. No mutation through UI, RPC or table access." }
+  ],
+  "permissions": [
+    "app.dashboard.view", "audit.view", "integrity.view", "maintenance.view",
+    "service_providers.view", "service_providers.write", "system.view",
+    "users.manage", "permission_requests.review", "support.operations.view",
+    "support.requests.triage", "support.user_lookup.view",
+    "company.settings.manage", "cost_centers.manage", "documents.write",
+    "owners.hub.view", "owners.detail.view", "lands.view", "leads.view",
+    "commissions.view", "communication.view", "automation.view",
+    "auth.password.change", "settings.manage", "properties.write",
+    "contracts.write", "expenses.view", "expenses.write", "arrears.view",
+    "financial.deposits.view", "financial.invoices.generate",
+    "financial.invoices.export", "financial.payments.create",
+    "financial.receipts.void", "financial.reports.view",
+    "financial.reports.export", "financial.bank_reconciliation.view",
+    "financial.bank_reconciliation.match", "financial.owner_settlements.view",
+    "financial.owner_settlements.approve", "financial.owner_settlements.pay",
+    "financial.fixed_monthly_accruals.view",
+    "financial.fixed_monthly_accruals.execute",
+    "financial.fixed_monthly_accruals.reverse"
+  ],
+  "roleMatrix": {
+    "ADMIN": "*",
+    "MANAGER": [
+      "app.dashboard.view", "maintenance.view", "service_providers.view",
+      "service_providers.write", "cost_centers.manage", "documents.write",
+      "owners.hub.view", "owners.detail.view", "lands.view", "leads.view",
+      "commissions.view", "communication.view", "automation.view",
+      "auth.password.change", "properties.write", "contracts.write",
+      "expenses.view", "expenses.write", "arrears.view",
+      "financial.deposits.view", "financial.invoices.export",
+      "financial.reports.view", "financial.reports.export",
+      "financial.bank_reconciliation.view", "financial.owner_settlements.view"
+    ],
+    "ACCOUNTANT": [
+      "app.dashboard.view", "audit.view", "expenses.view", "arrears.view",
+      "financial.deposits.view", "financial.invoices.generate",
+      "financial.invoices.export", "financial.payments.create",
+      "financial.reports.view", "financial.reports.export",
+      "financial.bank_reconciliation.view",
+      "financial.bank_reconciliation.match",
+      "financial.owner_settlements.view",
+      "financial.fixed_monthly_accruals.view",
+      "financial.fixed_monthly_accruals.execute",
+      "financial.fixed_monthly_accruals.reverse", "auth.password.change"
+    ],
+    "OPERATIONS": [
+      "app.dashboard.view", "maintenance.view", "service_providers.view",
+      "service_providers.write", "documents.write", "owners.hub.view",
+      "owners.detail.view", "lands.view", "leads.view", "communication.view",
+      "automation.view", "expenses.view", "arrears.view", "auth.password.change"
+    ],
+    "USER": ["app.dashboard.view", "auth.password.change"],
+    "VIEWER": [
+      "app.dashboard.view", "maintenance.view", "service_providers.view",
+      "owners.hub.view", "owners.detail.view", "lands.view", "leads.view",
+      "commissions.view", "communication.view", "automation.view",
+      "expenses.view", "arrears.view", "financial.deposits.view",
+      "financial.reports.view", "financial.owner_settlements.view",
+      "financial.bank_reconciliation.view", "auth.password.change"
+    ]
+  },
+  "roleBound": [
+    "users.manage", "company.settings.manage", "system.view", "audit.view",
+    "integrity.view", "settings.manage", "permission_requests.review",
+    "support.operations.view", "support.requests.triage",
+    "support.user_lookup.view", "financial.payments.create",
+    "financial.receipts.void", "financial.bank_reconciliation.match",
+    "financial.owner_settlements.approve", "financial.owner_settlements.pay",
+    "financial.fixed_monthly_accruals.execute",
+    "financial.fixed_monthly_accruals.reverse", "financial.invoices.generate"
+  ],
+  "mutationPermissions": [
+    "service_providers.write", "cost_centers.manage", "documents.write",
+    "properties.write", "contracts.write", "expenses.write",
+    "financial.invoices.generate", "financial.payments.create",
+    "financial.receipts.void", "financial.bank_reconciliation.match",
+    "financial.owner_settlements.approve", "financial.owner_settlements.pay",
+    "financial.fixed_monthly_accruals.execute",
+    "financial.fixed_monthly_accruals.reverse", "users.manage",
+    "company.settings.manage", "permission_requests.review",
+    "support.requests.triage", "settings.manage"
+  ],
+  "rpc": {
+    "record_invoice_payment_atomic": { "permission": "financial.payments.create", "roles": ["ADMIN", "ACCOUNTANT"] },
+    "approve_receipt_void_atomic": { "permission": "financial.receipts.void", "roles": ["ADMIN"] },
+    "process_bank_reconciliation_match_atomic": { "permission": "financial.bank_reconciliation.match", "roles": ["ADMIN", "ACCOUNTANT"] },
+    "approve_owner_settlement_atomic": { "permission": "financial.owner_settlements.approve", "roles": ["ADMIN"] },
+    "pay_owner_settlement_atomic": { "permission": "financial.owner_settlements.pay", "roles": ["ADMIN"] },
+    "execute_fixed_monthly_accruals_atomic": { "permission": "financial.fixed_monthly_accruals.execute", "roles": ["ADMIN", "ACCOUNTANT"] },
+    "generate_invoices_from_active_contracts": { "permission": "financial.invoices.generate", "roles": ["ADMIN", "ACCOUNTANT"] },
+    "decide_permission_request": { "permission": "permission_requests.review", "roles": ["ADMIN"] }
+  },
+  "protectedTables": [
+    "journal_lines", "journal_batches", "receipt_allocations",
+    "invoice_credits", "deposit_transactions", "owner_funds_events",
+    "invoice_payment_tax_allocations", "taxable_line_tax_snapshots",
+    "fixed_monthly_daily_accruals", "fixed_monthly_daily_accrual_reversals",
+    "owner_settlement_payment_links", "owner_settlement_expense_links",
+    "bank_reconciliation_matches", "deposit_application_claims",
+    "deposit_refund_events", "financial_operation_idempotency"
+  ],
+  "companyIsolation": {
+    "column": "company_id",
+    "rules": [
+      "Every company-owned row scoped by company_id and RLS",
+      "Privileged RPCs re-derive company via require_company_id()",
+      "Cross-company SELECT/INSERT/UPDATE/DELETE denied"
+    ]
+  }
+}

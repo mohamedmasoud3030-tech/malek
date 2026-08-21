@@ -5,7 +5,8 @@ describe('permission request semantic authorization', () => {
   it('separates review authority from users, roles, and company settings', () => {
     const manager = getAuthorizationContextFromUser({ id: 'manager', email: 'manager@example.com', app_metadata: { user_role: 'MANAGER' } });
     const admin = getAuthorizationContextFromUser({ id: 'admin', email: 'admin@example.com', app_metadata: { user_role: 'ADMIN' } });
-    expect(canAccess(manager, 'permission_requests.review')).toBe(true);
+    // Governance V1: permission request review is ADMIN-only (role-bound).
+    expect(canAccess(manager, 'permission_requests.review')).toBe(false);
     expect(canAccess(manager, 'users.manage')).toBe(false);
     expect(canAccess(manager, 'company.settings.manage')).toBe(false);
     expect(canAccess(manager, 'system.view')).toBe(false);

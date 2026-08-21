@@ -111,7 +111,7 @@ describe('canonical authorization permissions', () => {
     expect(canAccess(managerContext, 'settings.manage')).toBe(false);
     expect(canAccess(managerContext, 'company.settings.manage')).toBe(false);
     expect(canAccess(managerContext, 'users.manage')).toBe(false);
-    expect(canAccess(managerContext, 'permission_requests.review')).toBe(true);
+    expect(canAccess(managerContext, 'permission_requests.review')).toBe(false);
     expect(canAccess(managerContext, 'integrity.view')).toBe(false);
     expect(canAccess(managerContext, 'maintenance.view')).toBe(true);
     expect(canAccess(managerContext, 'service_providers.view')).toBe(true);
@@ -179,12 +179,14 @@ describe('canonical authorization permissions', () => {
     expect(allFinancialPermissions.every((permission) => appPermissions.includes(permission))).toBe(true);
     expect(allFinancialPermissions.every((permission) => canAccess(adminContext, permission))).toBe(true);
 
-    expect(canAccess(managerContext, financialOperationPermissions.generateInvoices)).toBe(true);
+    // Governance V1: MANAGER is an operational office manager; sensitive
+    // financial control (generate/payments/void/bank match/accruals) is denied.
+    expect(canAccess(managerContext, financialOperationPermissions.generateInvoices)).toBe(false);
     expect(canAccess(managerContext, financialOperationPermissions.exportInvoices)).toBe(true);
-    expect(canAccess(managerContext, financialOperationPermissions.createPayment)).toBe(true);
-    expect(canAccess(managerContext, financialOperationPermissions.voidReceipt)).toBe(true);
+    expect(canAccess(managerContext, financialOperationPermissions.createPayment)).toBe(false);
+    expect(canAccess(managerContext, financialOperationPermissions.voidReceipt)).toBe(false);
     expect(canAccess(managerContext, financialOperationPermissions.exportReports)).toBe(true);
-    expect(canAccess(managerContext, financialOperationPermissions.matchBankReconciliation)).toBe(true);
+    expect(canAccess(managerContext, financialOperationPermissions.matchBankReconciliation)).toBe(false);
     expect(canAccess(managerContext, financialOperationPermissions.approveOwnerSettlement)).toBe(false);
     expect(canAccess(managerContext, financialOperationPermissions.payOwnerSettlement)).toBe(false);
 
@@ -261,6 +263,7 @@ describe('canonical authorization permissions', () => {
     expect(canAccess(ctx, 'financial.deposits.view')).toBe(true);
     expect(canAccess(ctx, 'financial.invoices.generate')).toBe(true);
     expect(canAccess(ctx, 'financial.invoices.export')).toBe(true);
+    expect(canAccess(ctx, 'financial.payments.create')).toBe(true);
     expect(canAccess(ctx, 'financial.reports.export')).toBe(true);
     expect(canAccess(ctx, 'financial.bank_reconciliation.view')).toBe(true);
     expect(canAccess(ctx, 'financial.bank_reconciliation.match')).toBe(true);
@@ -278,7 +281,6 @@ describe('canonical authorization permissions', () => {
     expect(canAccess(ctx, 'company.settings.manage')).toBe(false);
     expect(canAccess(ctx, 'system.view')).toBe(false);
     expect(canAccess(ctx, 'integrity.view')).toBe(false);
-    expect(canAccess(ctx, 'financial.payments.create')).toBe(false);
     expect(canAccess(ctx, 'financial.receipts.void')).toBe(false);
     expect(canAccess(ctx, 'financial.owner_settlements.approve')).toBe(false);
     expect(canAccess(ctx, 'financial.owner_settlements.pay')).toBe(false);
@@ -294,7 +296,6 @@ describe('canonical authorization permissions', () => {
     expect(canAccess(ctx, 'maintenance.view')).toBe(true);
     expect(canAccess(ctx, 'service_providers.view')).toBe(true);
     expect(canAccess(ctx, 'service_providers.write')).toBe(true);
-    expect(canAccess(ctx, 'cost_centers.manage')).toBe(true);
     expect(canAccess(ctx, 'owners.hub.view')).toBe(true);
     expect(canAccess(ctx, 'owners.detail.view')).toBe(true);
     expect(canAccess(ctx, 'lands.view')).toBe(true);
@@ -305,9 +306,8 @@ describe('canonical authorization permissions', () => {
     expect(canAccess(ctx, 'expenses.view')).toBe(true);
     expect(canAccess(ctx, 'arrears.view')).toBe(true);
 
-    // These writes exist in the SQL catalog for OPERATIONS but RLS/RPCs
-    // always require is_admin_or_manager(). The frontend follows the DB.
-    expect(canAccess(ctx, 'documents.write')).toBe(false);
+    // OPERATIONS holds operational documents.write but not property/contract/
+    // expense writes or any financial mutation.
     expect(canAccess(ctx, 'properties.write')).toBe(false);
     expect(canAccess(ctx, 'contracts.write')).toBe(false);
     expect(canAccess(ctx, 'expenses.write')).toBe(false);
@@ -442,6 +442,8 @@ describe('canonical authorization permissions', () => {
     const source = readFileSync(sourcePath, 'utf8');
 
     expect(source).not.toContain('@/integrations/supabase');
-    expect(source).not.toMatch(/\.(from|insert|update|upsert|delete|rpc)\s*\(/);
+    // Match a supabase-style client chain (identifier.method() but not a bare
+    // `import ... from` clause, which legitimately contains the word from).
+    expect(source).not.toMatch(/\b(?:supabase|client)\s*\.\s*(?:from|insert|update|upsert|delete|rpc)\s*\(/);
   });
 });

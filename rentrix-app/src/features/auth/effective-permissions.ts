@@ -33,9 +33,9 @@ export async function loadGrantedPermissions(userId: string): Promise<readonly A
 }
 
 export async function getEffectiveAuthorizationContextFromSession(
-  session: Pick<Session, 'user'> | null | undefined,
+  session: (Pick<Session, 'user'> & Partial<Pick<Session, 'access_token'>>) | null | undefined,
 ): Promise<AuthorizationContext | null> {
-  const base = getAuthorizationContextFromSession(session);
+  const base = getAuthorizationContextFromSession(session as Parameters<typeof getAuthorizationContextFromSession>[0]);
   if (!base) return null;
   const grantedPermissions = await loadGrantedPermissions(base.userId);
   return { ...base, grantedPermissions };

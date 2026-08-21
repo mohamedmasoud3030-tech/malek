@@ -5,17 +5,17 @@ export const governedUserRoles = ['ADMIN', 'MANAGER', 'ACCOUNTANT', 'OPERATIONS'
 export function getRoleLabel(role: UserRole | null): string {
   switch (role) {
     case 'ADMIN':
-      return 'مسؤول';
+      return 'مالك الشركة';
     case 'MANAGER':
-      return 'مدير';
+      return 'مسؤول المكتب';
     case 'ACCOUNTANT':
       return 'محاسب';
     case 'OPERATIONS':
-      return 'عمليات';
+      return 'التشغيل';
     case 'USER':
-      return 'مستخدم';
+      return 'مستخدم محدود';
     case 'VIEWER':
-      return 'مشاهد';
+      return 'مشاهدة فقط';
     default:
       return 'غير مهيأ';
   }

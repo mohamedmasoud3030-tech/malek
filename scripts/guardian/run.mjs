@@ -22,6 +22,7 @@ import { runBehavioralChecks } from './lib/behavioral.mjs';
 import { runIntegrityChecks } from './lib/integrity.mjs';
 import { runOperationMap } from './lib/operation-map.mjs';
 import { runMigrationChecks } from './lib/migration.mjs';
+import { runGovernanceChecks } from './lib/governance.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, '..', '..');
@@ -88,8 +89,14 @@ async function main() {
   log(`${opmap.findings.length} finding(s) (${opmap.ms}ms)`);
   gates.push(opmap);
 
-  // 5. Migration hygiene
-  process.stdout.write('[5/5] Migration hygiene ... ');
+  // 5. Governance (six-role authorization matrix)
+  process.stdout.write('[5/6] Governance & authorization matrix ... ');
+  const gov = await gate('governance', runGovernanceChecks);
+  log(`${gov.findings.length} finding(s) (${gov.ms}ms)`);
+  gates.push(gov);
+
+  // 6. Migration hygiene
+  process.stdout.write('[6/6] Migration hygiene ... ');
   const mig = await gate('migration', () => runMigrationChecks({ baseRef: BASE_REF }));
   log(`${mig.findings.length} finding(s) (${mig.ms}ms)`);
   gates.push(mig);

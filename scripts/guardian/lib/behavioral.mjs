@@ -23,6 +23,10 @@ const PROP_A = 'a3000000-0000-4000-8000-00000000000a';
 const PROP_B = 'b3000000-0000-4000-8000-00000000000b';
 const EXP_A = 'a7000000-0000-4000-8000-00000000000a';
 const EXP_B = 'b7000000-0000-4000-8000-00000000000b';
+const MANAGER_A = 'a2000000-0000-4000-8000-000000000002';
+const ACCOUNTANT_A = 'a2000000-0000-4000-8000-000000000003';
+const OPERATIONS_A = 'a2000000-0000-4000-8000-000000000004';
+const VIEWER_A = 'a2000000-0000-4000-8000-000000000006';
 
 function firstLine(e) {
   return String(e?.message ?? e).split('\n')[0].slice(0, 300);
@@ -81,6 +85,10 @@ async function seedFixtures(db) {
     values
       ('${ADMIN_A}', 'authenticated', 'authenticated', 'g.admin.a@test', 'x', now(), now(), now(), '{}'::jsonb),
       ('${ADMIN_B}', 'authenticated', 'authenticated', 'g.admin.b@test', 'x', now(), now(), now(), '{}'::jsonb),
+      ('${MANAGER_A}', 'authenticated', 'authenticated', 'g.mgr.a@test', 'x', now(), now(), now(), '{}'::jsonb),
+      ('${ACCOUNTANT_A}', 'authenticated', 'authenticated', 'g.acct.a@test', 'x', now(), now(), now(), '{}'::jsonb),
+      ('${OPERATIONS_A}', 'authenticated', 'authenticated', 'g.ops.a@test', 'x', now(), now(), now(), '{}'::jsonb),
+      ('${VIEWER_A}', 'authenticated', 'authenticated', 'g.viewer.a@test', 'x', now(), now(), now(), '{}'::jsonb),
       ('${USER_A}',  'authenticated', 'authenticated', 'g.user.a@test',  'x', now(), now(), now(), '{}'::jsonb)
     on conflict (id) do nothing;
 
@@ -88,6 +96,10 @@ async function seedFixtures(db) {
     values
       ('${ADMIN_A}', 'g.admin.a@test', 'Admin A', 'ADMIN', 'ACTIVE', true),
       ('${ADMIN_B}', 'g.admin.b@test', 'Admin B', 'ADMIN', 'ACTIVE', true),
+      ('${MANAGER_A}', 'g.mgr.a@test', 'Manager A', 'MANAGER', 'ACTIVE', true),
+      ('${ACCOUNTANT_A}', 'g.acct.a@test', 'Accountant A', 'ACCOUNTANT', 'ACTIVE', true),
+      ('${OPERATIONS_A}', 'g.ops.a@test', 'Operations A', 'OPERATIONS', 'ACTIVE', true),
+      ('${VIEWER_A}', 'g.viewer.a@test', 'Viewer A', 'VIEWER', 'ACTIVE', true),
       ('${USER_A}',  'g.user.a@test',  'User A',  'USER',  'ACTIVE', true)
     on conflict (id) do nothing;
 
@@ -95,6 +107,10 @@ async function seedFixtures(db) {
     values
       ('${COMPANY_A}', '${ADMIN_A}', 'ADMIN', true),
       ('${COMPANY_B}', '${ADMIN_B}', 'ADMIN', true),
+      ('${COMPANY_A}', '${MANAGER_A}', 'MANAGER', true),
+      ('${COMPANY_A}', '${ACCOUNTANT_A}', 'ACCOUNTANT', true),
+      ('${COMPANY_A}', '${OPERATIONS_A}', 'OPERATIONS', true),
+      ('${COMPANY_A}', '${VIEWER_A}', 'VIEWER', true),
       ('${COMPANY_A}', '${USER_A}',  'USER',  true)
     on conflict (company_id, user_id) do nothing;
 
@@ -538,6 +554,150 @@ export async function runBehavioralChecks() {
       idx.rows.length ? idx.rows.map((r) => r.indexname).join(',') : `no unique index on (company_id, ${col})`,
     ));
   }
+
+  // --- 13. Six-role governance matrix (behavioral) ------------------------
+  const managerA = { userId: MANAGER_A, companyId: COMPANY_A, userRole: 'MANAGER' };
+  const accountantA = { userId: ACCOUNTANT_A, companyId: COMPANY_A, userRole: 'ACCOUNTANT' };
+  const operationsA = { userId: OPERATIONS_A, companyId: COMPANY_A, userRole: 'OPERATIONS' };
+  const viewerA = { userId: VIEWER_A, companyId: COMPANY_A, userRole: 'VIEWER' };
+
+  async function roleHas(identity, permission) {
+    const r = await withIdentity(db, identity, async () =>
+      (await db.query(`select public.current_user_has_effective_app_permission($1) ok`, [permission])).rows[0]?.ok,
+    );
+    return r.ok ? Boolean(r.value) : false;
+  }
+
+  // ADMIN has full authority (every catalog permission), including sensitive.
+  const adminSensitive = await Promise.all([
+    'users.manage', 'company.settings.manage', 'system.view', 'audit.view',
+    'financial.payments.create', 'financial.receipts.void',
+    'financial.owner_settlements.approve', 'financial.owner_settlements.pay',
+  ].map((p) => roleHas(adminA, p)));
+  checks.push(check(
+    'governance.admin.full_authority',
+    adminSensitive.every(Boolean),
+    `ADMIN missing: ${['users.manage','company.settings.manage','system.view','audit.view','financial.payments.create','financial.receipts.void','financial.owner_settlements.approve','financial.owner_settlements.pay'].filter((_, i) => !adminSensitive[i]).join(', ')}`,
+  ));
+
+  // MANAGER is denied sensitive finance/admin.
+  const managerDenied = await Promise.all([
+    'users.manage', 'company.settings.manage', 'system.view', 'audit.view',
+    'financial.payments.create', 'financial.receipts.void',
+    'financial.bank_reconciliation.match', 'financial.owner_settlements.approve',
+    'financial.owner_settlements.pay', 'financial.fixed_monthly_accruals.execute',
+    'permission_requests.review', 'financial.invoices.generate',
+  ].map((p) => roleHas(managerA, p)));
+  checks.push(check(
+    'governance.manager.sensitive_denied',
+    managerDenied.every((v) => v === false),
+    `MANAGER wrongly holds: ${['users.manage','company.settings.manage','system.view','audit.view','financial.payments.create','financial.receipts.void','financial.bank_reconciliation.match','financial.owner_settlements.approve','financial.owner_settlements.pay','financial.fixed_monthly_accruals.execute','permission_requests.review','financial.invoices.generate'].filter((_, i) => managerDenied[i]).join(', ')}`,
+  ));
+  // MANAGER keeps normal office operations.
+  checks.push(check(
+    'governance.manager.operational_allowed',
+    await roleHas(managerA, 'properties.write') && await roleHas(managerA, 'expenses.write'),
+  ));
+
+  // ACCOUNTANT: finance scope, not user/admin, can record payments.
+  checks.push(check(
+    'governance.accountant.finance_scope',
+    (await roleHas(accountantA, 'financial.payments.create'))
+    && (await roleHas(accountantA, 'financial.bank_reconciliation.match'))
+    && (await roleHas(accountantA, 'financial.invoices.generate'))
+    && !(await roleHas(accountantA, 'users.manage'))
+    && !(await roleHas(accountantA, 'company.settings.manage'))
+    && !(await roleHas(accountantA, 'financial.owner_settlements.approve')),
+  ));
+
+  // OPERATIONS: operational only, no finance mutations or admin.
+  checks.push(check(
+    'governance.operations.operational_scope',
+    (await roleHas(operationsA, 'service_providers.write'))
+    && (await roleHas(operationsA, 'documents.write'))
+    && !(await roleHas(operationsA, 'financial.payments.create'))
+    && !(await roleHas(operationsA, 'properties.write'))
+    && !(await roleHas(operationsA, 'users.manage')),
+  ));
+
+  // USER: minimal.
+  checks.push(check(
+    'governance.user.limited',
+    (await roleHas(userA, 'app.dashboard.view'))
+    && !(await roleHas(userA, 'properties.write'))
+    && !(await roleHas(userA, 'users.manage'))
+    && !(await roleHas(userA, 'financial.payments.create')),
+  ));
+
+  // VIEWER: read-only — no mutation permission.
+  const viewerMutations = await Promise.all(
+    [
+      'service_providers.write', 'documents.write', 'properties.write',
+      'contracts.write', 'expenses.write', 'financial.payments.create',
+      'financial.receipts.void', 'financial.bank_reconciliation.match',
+      'users.manage', 'company.settings.manage',
+    ].map((p) => roleHas(viewerA, p)),
+  );
+  checks.push(check(
+    'governance.viewer.no_mutation',
+    viewerMutations.every((v) => v === false),
+  ));
+  checks.push(check(
+    'governance.viewer.read_allowed',
+    await roleHas(viewerA, 'app.dashboard.view'),
+  ));
+
+  // Per-user grants cannot confer a role-bound/owner-only permission.
+  // granted_by must reference a real user (FK); ADMIN_A exists.
+  await db.exec(`
+    insert into public.user_permission_grants (company_id, user_id, permission, granted_by)
+    values
+      ('${COMPANY_A}', '${USER_A}', 'users.manage', '${ADMIN_A}'),
+      ('${COMPANY_A}', '${VIEWER_A}', 'financial.payments.create', '${ADMIN_A}')
+    on conflict (company_id, user_id, permission) do nothing;
+  `);
+  checks.push(check(
+    'governance.grants.cannot_escalate_user',
+    !(await roleHas(userA, 'users.manage')),
+    'USER acquired users.manage through a per-user grant',
+  ));
+  checks.push(check(
+    'governance.grants.cannot_escalate_viewer',
+    !(await roleHas(viewerA, 'financial.payments.create')),
+    'VIEWER acquired financial.payments.create through a per-user grant',
+  ));
+
+  // Sensitive payment RPC rejects MANAGER (behavioral), accepts ACCOUNTANT.
+  // We assert the permission gate directly without constructing a full invoice.
+  const mgrCanPay = await roleHas(managerA, 'financial.payments.create');
+  const acctCanPay = await roleHas(accountantA, 'financial.payments.create');
+  checks.push(check(
+    'governance.rpc.payment_role_gate',
+    !mgrCanPay && acctCanPay,
+    `manager=${mgrCanPay} accountant=${acctCanPay}`,
+  ));
+
+  // Single-company membership resolves current_app_role() from the database
+  // (the authoritative source), not from a client-supplied claim.
+  const roleFromDb = (await withIdentity(db, managerA, async () =>
+    (await db.query(`select public.current_app_role() r`)).rows[0]?.r,
+  )).value;
+  checks.push(check(
+    'governance.active_role.database_sourced',
+    roleFromDb === 'MANAGER',
+    `resolved=${roleFromDb}`,
+  ));
+
+  // No membership / invalid company fails closed: require_company_id raises
+  // when the JWT company claim is absent.
+  const noCompany = await withIdentity(db, { userId: USER_A, companyId: null, userRole: 'USER' }, async () =>
+    (await db.query(`select public.require_company_id() c`)).rows[0]?.c,
+  );
+  checks.push(check(
+    'governance.company.missing_claim_fails_closed',
+    !noCompany.ok,
+    noCompany.ok ? 'require_company_id returned without a company' : firstLine(noCompany.error),
+  ));
 
   await db.close();
 

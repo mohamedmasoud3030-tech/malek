@@ -38,19 +38,21 @@ const financialMatrix: MatrixRow[] = [
   { permission: 'financial.deposits.view',              ADMIN: true, MANAGER: true, ACCOUNTANT: true, OPERATIONS: false, USER: false, VIEWER: true },
   { permission: 'financial.bank_reconciliation.view',   ADMIN: true, MANAGER: true, ACCOUNTANT: true, OPERATIONS: false, USER: false, VIEWER: true },
   { permission: 'financial.owner_settlements.view',     ADMIN: true, MANAGER: true, ACCOUNTANT: true, OPERATIONS: false, USER: false, VIEWER: true },
-  { permission: 'financial.fixed_monthly_accruals.view', ADMIN: true, MANAGER: true, ACCOUNTANT: true, OPERATIONS: false, USER: false, VIEWER: false },
+  { permission: 'financial.fixed_monthly_accruals.view', ADMIN: true, MANAGER: false, ACCOUNTANT: true, OPERATIONS: false, USER: false, VIEWER: false },
 
   // Action capabilities — every sensitive financial mutation.
-  { permission: 'financial.invoices.generate',          ADMIN: true, MANAGER: true, ACCOUNTANT: true, OPERATIONS: false, USER: false, VIEWER: false },
+  // Governance V1: MANAGER is an operational office manager and is denied
+  // sensitive financial control. ACCOUNTANT holds the accounting mutations.
+  { permission: 'financial.invoices.generate',          ADMIN: true, MANAGER: false, ACCOUNTANT: true, OPERATIONS: false, USER: false, VIEWER: false },
   { permission: 'financial.invoices.export',            ADMIN: true, MANAGER: true, ACCOUNTANT: true, OPERATIONS: false, USER: false, VIEWER: false },
-  { permission: 'financial.payments.create',            ADMIN: true, MANAGER: true, ACCOUNTANT: false, OPERATIONS: false, USER: false, VIEWER: false },
-  { permission: 'financial.receipts.void',              ADMIN: true, MANAGER: true, ACCOUNTANT: false, OPERATIONS: false, USER: false, VIEWER: false },
+  { permission: 'financial.payments.create',            ADMIN: true, MANAGER: false, ACCOUNTANT: true, OPERATIONS: false, USER: false, VIEWER: false },
+  { permission: 'financial.receipts.void',              ADMIN: true, MANAGER: false, ACCOUNTANT: false, OPERATIONS: false, USER: false, VIEWER: false },
   { permission: 'financial.reports.export',             ADMIN: true, MANAGER: true, ACCOUNTANT: true, OPERATIONS: false, USER: false, VIEWER: false },
-  { permission: 'financial.bank_reconciliation.match',  ADMIN: true, MANAGER: true, ACCOUNTANT: true, OPERATIONS: false, USER: false, VIEWER: false },
+  { permission: 'financial.bank_reconciliation.match',  ADMIN: true, MANAGER: false, ACCOUNTANT: true, OPERATIONS: false, USER: false, VIEWER: false },
   { permission: 'financial.owner_settlements.approve',  ADMIN: true, MANAGER: false, ACCOUNTANT: false, OPERATIONS: false, USER: false, VIEWER: false },
   { permission: 'financial.owner_settlements.pay',      ADMIN: true, MANAGER: false, ACCOUNTANT: false, OPERATIONS: false, USER: false, VIEWER: false },
-  { permission: 'financial.fixed_monthly_accruals.execute', ADMIN: true, MANAGER: true, ACCOUNTANT: true, OPERATIONS: false, USER: false, VIEWER: false },
-  { permission: 'financial.fixed_monthly_accruals.reverse', ADMIN: true, MANAGER: true, ACCOUNTANT: true, OPERATIONS: false, USER: false, VIEWER: false },
+  { permission: 'financial.fixed_monthly_accruals.execute', ADMIN: true, MANAGER: false, ACCOUNTANT: true, OPERATIONS: false, USER: false, VIEWER: false },
+  { permission: 'financial.fixed_monthly_accruals.reverse', ADMIN: true, MANAGER: false, ACCOUNTANT: true, OPERATIONS: false, USER: false, VIEWER: false },
   { permission: 'expenses.write',                       ADMIN: true, MANAGER: true, ACCOUNTANT: false, OPERATIONS: false, USER: false, VIEWER: false },
   { permission: 'contracts.write',                      ADMIN: true, MANAGER: true, ACCOUNTANT: false, OPERATIONS: false, USER: false, VIEWER: false },
 ];
