@@ -48,6 +48,7 @@ export const ACTIVE_REGISTER_INVENTORY = [
   { component: 'features/financials/components/overdue-invoices-table.tsx', routes: ['/financials?section=collections&view=arrears', '/arrears'] },
   { component: 'features/financials/components/expenses-section.tsx', routes: ['/financials?section=expenses', '/expenses'] },
   { component: 'features/financials/deposits/deposits-workspace.tsx', routes: ['/financials?section=funds&view=deposits', '/deposits'] },
+  { component: 'features/financials/fixed-monthly-accruals/fixed-monthly-accrual-workspace.tsx', routes: ['/financials?section=funds&view=fixed_monthly_accruals'] },
   { component: 'features/financials/receipts/receipts-page.tsx', routes: ['/receipts'] },
   { component: 'features/financials/reconciliation/bank-reconciliation-page.tsx', routes: ['/financials?section=banking', '/bank-reconciliation'] },
   { component: 'features/service-providers/service-providers-page.tsx', routes: ['/service-providers'] },
