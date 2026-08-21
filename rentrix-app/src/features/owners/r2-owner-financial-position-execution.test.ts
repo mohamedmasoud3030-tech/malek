@@ -121,7 +121,7 @@ beforeAll(async () => {
       ('e2000000-0000-4000-8000-000000000301', '${PROPERTY}', 'maintenance', 120, date '2026-07-10', '2026-07-10', 'POSTED', 'OWNER', 'R2 expense', '${COMPANY}');
 
     -- Payout accounts for the pay path (fixture provisioning, P1 pattern).
-    update public.accounts set company_id = '${COMPANY}' where no in ('1111', '2000');
+    select public.provision_company_chart_of_accounts('${COMPANY}'::uuid);
 
     -- RC1 owner-funds control: in the live flow every owner collection posts a
     -- canonical GL batch (Dr 1111 Cash / Cr 2000 Owner Funds Payable) and
