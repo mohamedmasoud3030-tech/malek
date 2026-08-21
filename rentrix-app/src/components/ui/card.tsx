@@ -15,9 +15,9 @@ export const cardVariants = cva(
           'border border-border/70 bg-card shadow-card transition-colors hover:border-primary/40 hover:shadow-card-hover focus-within:border-primary/40 focus-within:shadow-card-hover cursor-pointer',
         compact: 'border border-border/70 bg-card p-0 shadow-card [&_[data-card-header]]:p-3 [&_[data-card-content]]:px-3 [&_[data-card-footer]]:px-3',
         statistic:
-          'border border-border/70 bg-card p-5 shadow-card',
+          'border border-border/70 bg-card p-4 shadow-card',
         financial:
-          'relative overflow-hidden border border-border/70 bg-card p-5 shadow-card before:absolute before:inset-inline-start-0 before:inset-block-0 before:w-1 before:bg-primary/60 before:content-[""]',
+          'relative overflow-hidden border border-border/70 bg-card p-4 shadow-card before:absolute before:inset-inline-start-0 before:inset-block-0 before:w-1 before:bg-primary/60 before:content-[""]',
       },
     },
     defaultVariants: { variant: 'default' },
