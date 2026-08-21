@@ -21,7 +21,7 @@ This is an execution ledger, not a replacement for the MALEK Canonical Pack. Can
 | --- | --- | --- | --- | --- |
 | M0 | Control | Establish a current Git/CI/test/runtime baseline and keep status documents current | VERIFIED COMPLETE | main SHA recorded; instructions and Canonical Pack read; current PR/branch state inspected; missing local/runtime evidence explicitly recorded |
 | M1 | P1 security | Re-run repository credential, sensitive-write, auth/permission, migration-hygiene, and tenant-isolation guards from a current checkout | IMPLEMENTED BUT NOT VERIFIED | static source audit found no browser-secret exposure or direct journal mutation; current executable guard results are still required |
-| M2 | P2 reliability | Restore a verified production build, typecheck, lint, architecture checks, and focused/full application tests | IN PROGRESS | PR #1535 repairs a Vercel-observed PostCSS build failure; latest repair build is blocked by external build-rate-limit |
+| M2 | P2 reliability | Restore a verified production build, typecheck, lint, architecture checks, and focused/full application tests | IN PROGRESS | Vercel production build for main@91a0ae9 is READY; typecheck, lint, architecture checks, and focused/full tests still require execution |
 | M3 | P2 journeys | Verify authenticated critical journeys: login/recovery, dashboard, property/unit, contract, financial collection/receipt, maintenance, reports, settings | IN PROGRESS | Auth claim path corrected in PR #1535; require authenticated Admin evidence with console/network results and no production mutation |
 | M4 | P3 backend/security | Reconcile current repository migrations/types/RLS/RPC contracts with authorized disposable or QA Supabase evidence | BLOCKED_EXTERNAL | requires approved Supabase access and correct QA/demo target; no production database edits |
 | M5 | P4 regression | Verify the offline shared-device logout safety regression and run focused/full checks | IMPLEMENTED BUT NOT VERIFIED | PR #1534 adds focused auth-service cases; execution and browser proof are still required |
@@ -31,7 +31,7 @@ This is an execution ledger, not a replacement for the MALEK Canonical Pack. Can
 
 ## Next milestone
 
-M2 remains the highest priority: verify the PR #1535 production build repair and focused tests. Then M3 must verify a real Admin JWT claim reaches the UI across the affected mobile routes. Live authorization data was inspected read-only and requires no grant escalation.
+M2 production-build gate is VERIFIED COMPLETE for main@91a0ae9. The next priority is M3: verify a real Admin JWT claim reaches the UI across affected mobile routes, then run the remaining focused checks.
 
 ## Existing work being tracked
 
