@@ -20,7 +20,7 @@ This is an execution ledger, not a replacement for the MALEK Canonical Pack. Can
 | ID | Priority | Outcome | Status | Acceptance evidence |
 | --- | --- | --- | --- | --- |
 | M0 | Control | Establish a current Git/CI/test/runtime baseline and keep status documents current | VERIFIED COMPLETE | main SHA recorded; instructions and Canonical Pack read; current PR/branch state inspected; missing local/runtime evidence explicitly recorded |
-| M1 | P1 security | Re-run repository credential, sensitive-write, auth/permission, migration-hygiene, and tenant-isolation guards from a current checkout | NOT STARTED | current SHA results for all applicable guards; no secrets in tracked files; no unapproved browser writes; no new isolation findings |
+| M1 | P1 security | Re-run repository credential, sensitive-write, auth/permission, migration-hygiene, and tenant-isolation guards from a current checkout | IMPLEMENTED BUT NOT VERIFIED | static source audit found no browser-secret exposure or direct journal mutation; current executable guard results are still required |
 | M2 | P2 reliability | Prove current install, typecheck, lint, architecture checks, production build, and focused/full application tests | BLOCKED_EXTERNAL | requires a runnable checkout/CI runner; current Vercel status is blocked by external build-rate-limit |
 | M3 | P2 journeys | Verify authenticated critical journeys: login/recovery, dashboard, property/unit, contract, financial collection/receipt, maintenance, reports, settings | NOT STARTED | QA/preview browser evidence with console/network results; no production mutation |
 | M4 | P3 backend/security | Reconcile current repository migrations/types/RLS/RPC contracts with authorized disposable or QA Supabase evidence | BLOCKED_EXTERNAL | requires approved Supabase access and correct QA/demo target; no production database edits |
@@ -31,7 +31,7 @@ This is an execution ledger, not a replacement for the MALEK Canonical Pack. Can
 
 ## Next milestone
 
-M1 is the next safe implementation/verification target after M0: run the existing security and boundary guards from the current repository checkout. Do not add a new security mechanism until an existing guard or current evidence identifies a concrete gap.
+M1 static source review is complete with no defect found. The remaining acceptance step is execution of the existing security/boundary guards from a current checkout. M2 is next only after those results are available; do not add a new security mechanism without a concrete finding.
 
 ## Existing work being tracked
 
