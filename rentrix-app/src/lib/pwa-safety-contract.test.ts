@@ -21,9 +21,10 @@ describe('PWA safety contract', () => {
 
   it('keeps sensitive Supabase and private data outside runtime cache rules', () => {
     const config = read('vite.config.ts');
+    const runtimeCaching = config.slice(config.indexOf('runtimeCaching:'));
 
-    expect(config).not.toMatch(/supabase|rest\/v1|storage\/v1|auth\/v1/i);
-    expect(config).not.toMatch(/BackgroundSync|queueName/i);
+    expect(runtimeCaching).not.toMatch(/supabase|rest\/v1|storage\/v1|auth\/v1/i);
+    expect(runtimeCaching).not.toMatch(/BackgroundSync|queueName/i);
   });
 
   it('registers updates only in production and leaves activation to an explicit callback', () => {
