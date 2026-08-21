@@ -1,7 +1,8 @@
 import { Link, useLocation } from '@tanstack/react-router';
 import { useEffect, useId, useState, type Ref } from 'react';
-import { ChevronDown, CircleHelp, Lock, Menu, Search } from 'lucide-react';
+import { Bot, ChevronDown, Lock, Menu, Search } from 'lucide-react';
 import { useCommandPaletteStore } from '@/features/command-palette/command-palette-store';
+import { OPEN_AI_ASSISTANT_EVENT } from '@/features/ai-assistant/ai-assistant-global-action';
 import { canShowNavigationItem, canAccessRoute, type AuthorizationContext, type AppPermission } from '@/features/auth/permissions';
 import { PermissionRequestDialog } from '@/components/layout/permission-request-dialog';
 import { getNavRoot } from '@/app/navigation/route-nav-map';
@@ -10,7 +11,6 @@ import { cn } from '@/lib/utils';
 import { navGroups, workspaceChildNavItems, type NavItem } from '@/app/navigation/app-nav-items';
 import { useAuth } from '@/hooks/use-auth';
 import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
-import { sanitizeSupportRoute } from '@/features/help-support/help-context';
 import { NotificationsMenu } from './notifications-menu';
 
 export type SharedLabel = (key: string) => string;
@@ -168,20 +168,20 @@ export function NavigationLinks({
 }
 
 /**
- * MALEK mobile command dock. The supplied reference informs the compact,
- * thumb-reachable control-center idea, but the hierarchy is intentionally ours:
- * search is the primary wide action while support, notifications and navigation
- * stay compact utility controls.
+ * MALEK mobile command dock. Search remains the primary wide action; AI,
+ * notifications and navigation are compact utilities. Help deliberately lives
+ * in the quiet top bar instead of competing for dock space.
  */
 export function MobileFloatingControl({ onMenu, menuRef }: Readonly<{ onMenu: () => void; menuRef?: Ref<HTMLButtonElement> }>) {
   const { open, isOpen } = useCommandPaletteStore();
   const { authorization } = useAuth();
-  const location = useLocation();
   const appLanguage = getAppLanguageState();
   const sharedLabel = (key: string) => translateSharedLabel(key, appLanguage.language);
-  const supportFrom = sanitizeSupportRoute(location.pathname);
-  const isHelpActive = location.pathname === '/help' || location.pathname.startsWith('/help/');
   const utilityActionClass = 'grid size-11 shrink-0 place-items-center rounded-full border border-transparent text-muted-foreground outline-none transition-[background-color,color,border-color,box-shadow,transform] duration-150 hover:bg-muted hover:text-foreground active:scale-[0.97] focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none motion-reduce:transform-none';
+
+  const openAiAssistant = () => {
+    window.dispatchEvent(new Event(OPEN_AI_ASSISTANT_EVENT));
+  };
 
   return (
     <div
@@ -207,18 +207,16 @@ export function MobileFloatingControl({ onMenu, menuRef }: Readonly<{ onMenu: ()
           <span className={cn('size-1.5 shrink-0 rounded-full bg-primary', isOpen && 'bg-background')} aria-hidden="true" />
         </button>
 
-        <Link
-          to="/help"
-          search={{ from: supportFrom }}
-          aria-label="المساعدة والدعم"
-          aria-current={isHelpActive ? 'page' : undefined}
-          className={cn(
-            utilityActionClass,
-            isHelpActive && 'border-foreground bg-foreground text-background shadow-sm hover:bg-foreground hover:text-background',
-          )}
+        <button
+          type="button"
+          onClick={openAiAssistant}
+          aria-label="فتح المساعد الذكي"
+          title="المساعد الذكي"
+          data-mobile-dock-ai
+          className={cn(utilityActionClass, 'text-primary hover:bg-primary/10 hover:text-primary')}
         >
-          <CircleHelp className="size-[1.1rem]" aria-hidden="true" />
-        </Link>
+          <Bot className="size-[1.1rem]" aria-hidden="true" />
+        </button>
 
         <div
           className="relative [&>div>button]:rounded-full [&>div>button]:border-transparent [&>div>button]:text-muted-foreground [&>div>button]:shadow-none [&>div>button]:hover:bg-muted [&>div>button]:hover:text-foreground [&>div>button[aria-expanded='true']]:bg-foreground [&>div>button[aria-expanded='true']]:text-background [&>div>[role='dialog']]:!bottom-14 [&>div>[role='dialog']]:!top-auto"
