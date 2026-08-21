@@ -18,7 +18,7 @@ export const OPEN_AI_ASSISTANT_EVENT = 'malek:open-ai-assistant';
  * window event, so there is still only one assistant instance and chat state
  * survives close/reopen.
  */
-export function AiAssistantGlobalAction() {
+export function AiAssistantGlobalAction({ showTrigger = true }: Readonly<{ showTrigger?: boolean }>) {
   const search = useSearch({ strict: false }) as Record<string, unknown>;
   const navigate = useNavigate();
   const requestedByLegacyUrl = search.globalAction === 'ai-assistant';
@@ -72,19 +72,21 @@ export function AiAssistantGlobalAction() {
 
   return (
     <>
-      <Button
-        type="button"
-        variant="ghost"
-        className="size-11 shrink-0 rounded-xl px-0 text-muted-foreground hover:bg-muted hover:text-foreground"
-        aria-label="فتح مساعد الذكاء الاصطناعي"
-        aria-expanded={open}
-        aria-haspopup="dialog"
-        title="مساعد الذكاء الاصطناعي"
-        onClick={() => setOpen((value) => !value)}
-        data-ai-assistant-trigger
-      >
-        <Bot className="size-[1.1rem]" aria-hidden="true" />
-      </Button>
+      {showTrigger ? (
+        <Button
+          type="button"
+          variant="ghost"
+          className="size-11 shrink-0 rounded-xl px-0 text-muted-foreground hover:bg-muted hover:text-foreground"
+          aria-label="فتح مساعد الذكاء الاصطناعي"
+          aria-expanded={open}
+          aria-haspopup="dialog"
+          title="مساعد الذكاء الاصطناعي"
+          onClick={() => setOpen((value) => !value)}
+          data-ai-assistant-trigger
+        >
+          <Bot className="size-[1.1rem]" aria-hidden="true" />
+        </Button>
+      ) : null}
 
       <div
         ref={panelRef}
