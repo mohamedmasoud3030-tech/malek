@@ -1,6 +1,6 @@
 import { Link, useLocation } from '@tanstack/react-router';
 import { useEffect, useId, useState, type Ref } from 'react';
-import { ChevronDown, Lock, Menu, Search } from 'lucide-react';
+import { ChevronDown, CircleHelp, Lock, Menu, Search } from 'lucide-react';
 import { useCommandPaletteStore } from '@/features/command-palette/command-palette-store';
 import { canShowNavigationItem, canAccessRoute, type AuthorizationContext, type AppPermission } from '@/features/auth/permissions';
 import { PermissionRequestDialog } from '@/components/layout/permission-request-dialog';
@@ -8,6 +8,10 @@ import { getNavRoot } from '@/app/navigation/route-nav-map';
 import { navigationLabels } from '@/app/navigation/terminology-registry';
 import { cn } from '@/lib/utils';
 import { navGroups, workspaceChildNavItems, type NavItem } from '@/app/navigation/app-nav-items';
+import { useAuth } from '@/hooks/use-auth';
+import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
+import { sanitizeSupportRoute } from '@/features/help-support/help-context';
+import { NotificationsMenu } from './notifications-menu';
 
 export type SharedLabel = (key: string) => string;
 
@@ -151,36 +155,72 @@ export function NavigationLinks({
   );
 }
 
+/**
+ * Mobile command dock inspired by compact professional control bars rather than
+ * a traditional bottom navigation. Search, help, notifications and the main
+ * navigation live in one thumb-reachable surface, while each action keeps an
+ * accessible 44px target and its native permission/runtime behavior.
+ */
 export function MobileFloatingControl({ onMenu, menuRef }: Readonly<{ onMenu: () => void; menuRef?: Ref<HTMLButtonElement> }>) {
-  const { open } = useCommandPaletteStore();
+  const { open, isOpen } = useCommandPaletteStore();
+  const { authorization } = useAuth();
+  const location = useLocation();
+  const appLanguage = getAppLanguageState();
+  const sharedLabel = (key: string) => translateSharedLabel(key, appLanguage.language);
+  const supportFrom = sanitizeSupportRoute(location.pathname);
+  const isHelpActive = location.pathname === '/help' || location.pathname.startsWith('/help/');
+  const dockActionClass = 'grid size-11 shrink-0 place-items-center rounded-full border border-transparent text-muted-foreground outline-none transition-[background-color,color,border-color,box-shadow,transform] duration-150 hover:bg-muted hover:text-foreground active:scale-[0.97] focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none motion-reduce:transform-none';
+
   return (
     <div
-      className="fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] md:hidden"
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] md:hidden"
       data-mobile-floating-control
       data-mobile-control-center
       aria-label="مركز التحكم"
     >
-      <div className="flex w-full max-w-xs items-center gap-1 rounded-2xl border border-border/70 bg-card/95 p-1.5 shadow-[0_18px_50px_-18px_rgb(15_23_42_/_0.55)] backdrop-blur-xl">
+      <div className="pointer-events-auto flex items-center gap-1.5 rounded-[1.7rem] border border-border/80 bg-background/92 p-1.5 shadow-[0_20px_60px_-24px_hsl(var(--foreground)/0.5),0_2px_10px_hsl(var(--foreground)/0.08)] ring-1 ring-background/70 backdrop-blur-2xl supports-[backdrop-filter]:bg-background/82">
+        <button
+          type="button"
+          onClick={open}
+          aria-label="فتح البحث والأوامر"
+          aria-pressed={isOpen}
+          className={cn(
+            dockActionClass,
+            isOpen && 'border-foreground bg-foreground text-background shadow-sm hover:bg-foreground hover:text-background',
+          )}
+        >
+          <Search className="size-[1.15rem]" aria-hidden="true" />
+        </button>
+
+        <Link
+          to="/help"
+          search={{ from: supportFrom }}
+          aria-label="المساعدة والدعم"
+          aria-current={isHelpActive ? 'page' : undefined}
+          className={cn(
+            dockActionClass,
+            isHelpActive && 'border-foreground bg-foreground text-background shadow-sm hover:bg-foreground hover:text-background',
+          )}
+        >
+          <CircleHelp className="size-[1.15rem]" aria-hidden="true" />
+        </Link>
+
+        <div
+          className="relative [&>div>button]:rounded-full [&>div>button]:border-transparent [&>div>button]:text-muted-foreground [&>div>button]:shadow-none [&>div>button]:hover:bg-muted [&>div>button]:hover:text-foreground [&>div>button[aria-expanded='true']]:bg-foreground [&>div>button[aria-expanded='true']]:text-background [&>div>[role='dialog']]:!bottom-14 [&>div>[role='dialog']]:!top-auto"
+          data-mobile-dock-notifications
+        >
+          <NotificationsMenu authorization={authorization} sharedLabel={sharedLabel} />
+        </div>
+
         <button
           ref={menuRef}
           type="button"
           onClick={onMenu}
-          aria-label="فتح القائمة"
+          aria-label="فتح القائمة الرئيسية"
           aria-haspopup="dialog"
-          className="inline-flex min-h-11 min-w-11 flex-1 items-center justify-center gap-2 rounded-xl px-3 text-foreground outline-none transition-colors hover:bg-muted focus-visible:ring-4 focus-visible:ring-primary/25"
+          className={cn(dockActionClass, 'border-foreground bg-foreground text-background shadow-sm hover:bg-foreground hover:text-background')}
         >
-          <Menu className="size-5" aria-hidden="true" />
-          <span className="text-xs font-semibold">القائمة</span>
-        </button>
-        <span className="h-6 w-px bg-border/80" aria-hidden="true" />
-        <button
-          type="button"
-          onClick={open}
-          aria-label="فتح البحث"
-          className="inline-flex min-h-11 min-w-11 flex-1 items-center justify-center gap-2 rounded-xl px-3 text-foreground outline-none transition-colors hover:bg-muted focus-visible:ring-4 focus-visible:ring-primary/25"
-        >
-          <Search className="size-5" aria-hidden="true" />
-          <span className="text-xs font-semibold">بحث</span>
+          <Menu className="size-[1.15rem]" aria-hidden="true" />
         </button>
       </div>
     </div>
