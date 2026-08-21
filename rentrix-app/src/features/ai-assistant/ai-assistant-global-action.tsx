@@ -10,16 +10,13 @@ const AiAssistantExperience = lazy(async () => {
   return { default: module.AiAssistantPage };
 });
 
+export const OPEN_AI_ASSISTANT_EVENT = 'malek:open-ai-assistant';
+
 /**
  * The one canonical AI experience as a compact, persistent floating panel.
- *
- * - Not a full page: a fixed chat card (bottom-start on desktop, bottom sheet
- *   on mobile) that opens over the current work without taking over the route.
- * - Persistent: the conversation stays mounted for the whole session, so
- *   closing and reopening preserves the in-progress chat. Only the visual
- *   visibility toggles (no unmount → no state loss).
- * - Does not clutter the mobile header: the trigger is a single icon button
- *   in the header actions rail, and the panel is anchored to the viewport.
+ * The mobile command dock opens this same mounted conversation through a
+ * window event, so there is still only one assistant instance and chat state
+ * survives close/reopen.
  */
 export function AiAssistantGlobalAction() {
   const search = useSearch({ strict: false }) as Record<string, unknown>;
@@ -32,7 +29,12 @@ export function AiAssistantGlobalAction() {
     if (requestedByLegacyUrl) setOpen(true);
   }, [requestedByLegacyUrl]);
 
-  // Close via Escape (keyboard parity with dialogs) and return focus to trigger.
+  useEffect(() => {
+    const openAssistant = () => setOpen(true);
+    window.addEventListener(OPEN_AI_ASSISTANT_EVENT, openAssistant);
+    return () => window.removeEventListener(OPEN_AI_ASSISTANT_EVENT, openAssistant);
+  }, []);
+
   useEffect(() => {
     if (!open) return;
     const onKeyDown = (event: KeyboardEvent) => {
@@ -78,13 +80,12 @@ export function AiAssistantGlobalAction() {
         aria-expanded={open}
         aria-haspopup="dialog"
         title="مساعد الذكاء الاصطناعي"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => setOpen((value) => !value)}
+        data-ai-assistant-trigger
       >
         <Bot className="size-[1.1rem]" aria-hidden="true" />
       </Button>
 
-      {/* Persistent panel — stays mounted; visibility toggles via data-state so
-          the conversation is preserved across close/reopen. */}
       <div
         ref={panelRef}
         data-ai-assistant-panel
@@ -93,9 +94,7 @@ export function AiAssistantGlobalAction() {
         inert={open ? undefined : true}
         className={cn(
           'fixed z-[90] flex flex-col overflow-hidden border border-border/80 bg-card shadow-elevated transition-[transform,opacity] duration-200 motion-reduce:transition-none',
-          // Desktop: compact bottom-start card
           'max-w-[26rem] w-[calc(100vw-2rem)] h-[34rem] max-h-[80dvh] rounded-2xl start-3 bottom-[calc(4.5rem+env(safe-area-inset-bottom,0px))]',
-          // Mobile: bottom sheet
           'md:start-4 md:bottom-4 md:max-h-[min(40rem,80dvh)]',
           open ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-4 opacity-0',
         )}
