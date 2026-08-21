@@ -101,6 +101,13 @@ The project has a substantial implementation and verification history, but the c
 - **Security-advisor note:** the post-change Supabase advisor returned pre-existing warnings for callable `SECURITY DEFINER` functions and leaked-password protection. This remediation added no function, grant, or RLS policy; those warnings are a separate prioritized security audit.
 - **New finding, NOT STARTED:** a `draft` contract has one invoice. No invoice was changed because its issuance policy needs focused lifecycle evidence.
 
+## Invoice posting lifecycle guard
+
+- **VERIFIED COMPLETE:** live function and trigger inspection showed `invoice_lineage_guard` did not inspect the contract status and did not fire when `document_status` changed. This explains how a `POSTED` invoice could coexist with a `draft` contract; it does not prove which client/process created the historical row.
+- **VERIFIED COMPLETE:** a forward-only live database change now rejects `POSTED` invoices unless their contract status is `active`, while retaining the existing contract/company lineage checks. The trigger now includes `document_status`; the guard raises `INVOICE_POSTING_REQUIRES_ACTIVE_CONTRACT` with SQLSTATE `23514`.
+- **No financial data mutation:** no existing invoice, contract, payment, receipt, or journal entry was modified. Existing `INV-2026-000001` needs a separately authorized financial disposition.
+- **IMPLEMENTED BUT NOT VERIFIED:** matching migration `20260901000011_require_active_contract_before_invoice_posting.sql` and a full-replay PGlite regression case are on the current branch. The runnable test gate is still required.
+
 ## External blockers
 
 1. Vercel status for current observed main/PR head reports `build-rate-limit`; this is an external account/service limitation, not code evidence.
