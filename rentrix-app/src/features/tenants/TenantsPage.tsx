@@ -1,4 +1,4 @@
-import { AlertTriangle, Edit, FileText, KeyRound, Mail, Phone, Plus, ShieldCheck, TriangleAlert, Users } from 'lucide-react';
+import { AlertTriangle, Building2, Edit, FileText, KeyRound, Mail, Phone, Plus, ShieldCheck, TriangleAlert, Users } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
@@ -81,16 +81,18 @@ function TenantSafeLinks({ tenant, onEdit, onPreview }: Readonly<{ tenant: Tenan
 function TenantSummary({ rows, total }: Readonly<{ rows: TenantWorkspaceRow[]; total: number }>) {
   const activeContracts = rows.reduce((sum, tenant) => sum + tenant.activeContractCount, 0);
   const arrearsCount = rows.filter((tenant) => tenant.hasArrears).length;
+  const assignedCount = rows.filter((tenant) => tenant.propertyTitle !== null || tenant.unitNumber !== null).length;
 
   const items = [
     { label: 'إجمالي المستأجرين', value: total, icon: Users, hint: 'جميع السجلات المطابقة' },
     { label: 'العقود النشطة', value: activeContracts, icon: KeyRound, hint: 'ضمن الصفحة الحالية' },
+    { label: 'مرتبطون بوحدات', value: assignedCount, icon: Building2, hint: 'لديهم عقار أو وحدة حالية' },
     { label: 'بحاجة لمتابعة', value: arrearsCount, icon: AlertTriangle, hint: 'ضمن الصفحة الحالية' },
   ];
 
   return (
     <section data-tenant-summary aria-label="ملخص المستأجرين">
-      <ResponsiveCardGrid desktopColumns={3}>
+      <ResponsiveCardGrid desktopColumns={2}>
         {items.map(({ label, value, icon: Icon, hint }) => (
           <article key={label} className="group relative min-w-0 overflow-hidden rounded-xl border border-border/75 bg-card p-3 shadow-card sm:p-3.5">
             <div className="relative flex min-w-0 items-start justify-between gap-2.5">
