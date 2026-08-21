@@ -1,12 +1,13 @@
 /**
  * Storage attachment contract — single client-side source of truth for the
- * private `attachments` bucket policy. These values must mirror:
+ * private `attachments` bucket configuration. The committed database
+ * migration chain does not currently include the `storage` schema, so these
+ * constants are a client contract, not evidence of the deployed bucket policy.
  *
- *   - supabase/migrations/20260901000000_canonical_baseline.sql
- *
- * Any drift between these constants and the canonical bucket policy is a
- * release blocker, not a cosmetic bug: the bucket rejects what the client
- * allows (confusing UX) or the client allows what the bucket rejects.
+ * A QA-only Storage smoke must verify the bucket's privacy, MIME and size
+ * configuration before release. Any drift is a release blocker: the bucket
+ * rejects what the client allows (confusing UX) or the client allows what the
+ * bucket rejects.
  */
 
 export const ATTACHMENTS_BUCKET_ID = 'attachments' as const;
