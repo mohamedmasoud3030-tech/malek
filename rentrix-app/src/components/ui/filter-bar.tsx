@@ -14,8 +14,8 @@ type FilterBarProps = {
 
 /**
  * Canonical MALEK register toolbar for search, filters and compact utilities.
- * It uses the same dense, quiet chrome as the shared DataTable instead of
- * presenting controls as a separate dashboard card.
+ * Mobile keeps search on one line and packs filters/utilities into a second
+ * compact rail instead of stacking several card-height rows.
  */
 export function FilterBar({
   searchValue,
@@ -33,13 +33,13 @@ export function FilterBar({
       data-filter-bar
       data-register-toolbar
       className={cn(
-        'flex min-w-0 flex-col gap-2.5 rounded-xl border border-border/85 bg-background p-2 shadow-[0_1px_2px_hsl(var(--foreground)/0.025)] sm:p-2.5 lg:flex-row lg:items-center',
+        'grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-1.5 rounded-xl border border-border/85 bg-background p-1.5 shadow-[0_1px_2px_hsl(var(--foreground)/0.025)] sm:p-2 lg:flex lg:items-center lg:gap-2',
         className,
       )}
       aria-label="البحث والتصفية"
     >
       {showSearch ? (
-        <div className="min-w-0 flex-1 lg:max-w-xl">
+        <div className="col-span-2 min-w-0 flex-1 lg:max-w-xl">
           <SearchInput
             value={searchValue ?? ''}
             onChange={onSearchChange}
@@ -56,7 +56,10 @@ export function FilterBar({
       ) : null}
 
       {actions ? (
-        <div className="flex min-w-0 shrink-0 items-center gap-1.5 overflow-x-auto no-scrollbar [&>*]:shrink-0">
+        <div className={cn(
+          'flex min-w-0 shrink-0 items-center justify-end gap-1.5 overflow-x-auto no-scrollbar [&>*]:shrink-0',
+          !filters && 'col-span-2',
+        )}>
           {actions}
         </div>
       ) : null}
