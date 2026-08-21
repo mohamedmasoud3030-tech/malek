@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from '@tanstack/react-router';
 import { Command } from 'cmdk';
 import { ArrowUpLeft, Loader2, Search, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { MalikBrand } from '@/components/brand/malik-brand';
 import { useCommandPaletteStore } from './command-palette-store';
 import { useCommandSearch } from './use-command-search';
 import { cn } from '@/lib/utils';
@@ -108,6 +109,20 @@ export function CommandPaletteDialog() {
         <Command className="flex min-h-0 flex-1 flex-col bg-transparent focus-visible:outline-none" label="مركز البحث والأوامر">
           <div className="shrink-0 border-b border-border/70 bg-background/95 px-3 pb-3 pt-2 backdrop-blur-xl sm:px-4 sm:pt-4" data-command-input-container>
             <div className="mx-auto mb-2 h-1.5 w-11 rounded-full bg-border sm:hidden" aria-hidden="true" />
+
+            <div className="mb-2 flex items-center justify-between gap-3 px-1 sm:mb-3">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <MalikBrand compact className="shrink-0" markClassName="size-7" />
+                <div className="min-w-0">
+                  <p className="truncate text-xs font-black text-foreground">مركز مالك</p>
+                  <p className="truncate text-[10px] font-semibold text-muted-foreground">صفحات · سجلات · أوامر</p>
+                </div>
+              </div>
+              <span className="hidden rounded-full border border-border/70 bg-muted/35 px-2.5 py-1 text-[10px] font-bold text-muted-foreground sm:inline-flex">
+                وصول موحّد
+              </span>
+            </div>
+
             <div className="flex items-center gap-2">
               <div className="flex min-h-12 min-w-0 flex-1 items-center rounded-xl border border-border bg-muted/20 px-3 shadow-[inset_0_1px_0_hsl(var(--background))] transition focus-within:border-foreground/30 focus-within:bg-background focus-within:ring-4 focus-within:ring-primary/10">
                 {isLoading ? (
@@ -119,7 +134,7 @@ export function CommandPaletteDialog() {
                   autoFocus
                   value={search}
                   onValueChange={setSearch}
-                  placeholder="ابحث أو نفّذ أمراً..."
+                  placeholder="ابحث عن سجل أو انتقل إلى مهمة..."
                   className="min-h-12 min-w-0 flex-1 border-0 bg-transparent text-base font-medium text-foreground outline-none placeholder:text-muted-foreground/70 sm:text-sm"
                   dir="rtl"
                 />
