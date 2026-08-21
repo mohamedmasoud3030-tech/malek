@@ -91,7 +91,7 @@ Update it whenever a new `.from()` or `.rpc()` call is added to frontend source 
 
 | # | File | Description |
 |---|------|-------------|
-| 00 | `20260901000000_canonical_baseline.sql` | Canonical schema baseline (112 tables, 375 functions, 211 RLS policies) |
+| 00 | `20260901000000_canonical_baseline.sql` | Canonical schema baseline (112 tables, 375 functions, 209 RLS policies) |
 | 01 | `20260901000001_restore_dump_acl_lock.sql` | Revoke PUBLIC/anon grants, lock internal functions |
 | 02 | `20260901000002_ai_assistant_budget_idempotency.sql` | AI usage budget and idempotency |
 | 03 | `20260901000003_self_service_support_requests.sql` | Internal support tickets |
@@ -103,6 +103,16 @@ Update it whenever a new `.from()` or `.rpc()` call is added to frontend source 
 | **09** | **`20260901000009_company_members_six_role_authority.sql`** | **Set canonical USER default and authorize membership management through effective `users.manage` permission** |
 | **10** | **`20260901000010_contracts_one_live_draft_per_unit_tenant.sql`** | **Prevent duplicate live drafts for the same company, unit and tenant** |
 | **11** | **`20260901000011_require_active_contract_before_invoice_posting.sql`** | **Require an active contract before an invoice can become `POSTED`** |
+| **12** | **`20260901000012_guardian_hardening.sql`** | **Database Guardian V1: revoke browser writes on protected financial tables, enforce document-number uniqueness, anchor `company_id` FKs, and add append-only DELETE guards** |
+
+## Database Guardian
+
+`pnpm db:guardian` is the permanent V1 protection. It replays the migration
+chain into an ephemeral PostgreSQL (PGlite), inventories the schema, runs
+real two-tenant RLS/RPC/financial behavioral tests, executes data-integrity
+detectors, builds a frontend→RPC→table operation map, and enforces migration
+hygiene. `CRITICAL`/`HIGH` findings block the merge via
+`.github/workflows/database-guardian.yml`. See `scripts/guardian/README.md`.
 
 ## Remote environments
 

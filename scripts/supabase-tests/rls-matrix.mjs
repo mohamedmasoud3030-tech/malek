@@ -72,6 +72,9 @@ async function withIdentity(db, identity, fn) {
   await db.exec('begin');
   try {
     await db.query(`select set_config('request.jwt.claims', $1, true)`, [claims]);
+    // PGlite defaults row_security=off in a superuser-owned session; force it
+    // on so RLS is evaluated the same way Supabase enforces it in production.
+    await db.exec(`set local row_security = on`);
     await db.exec(`set local role ${pgRole}`);
     const value = await fn();
     await db.exec('rollback');

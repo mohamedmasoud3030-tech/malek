@@ -4886,6 +4886,13 @@ export type Database = {
             referencedRelation: 'master_lease_measurements';
             referencedColumns: ['id', 'company_id'];
           },
+          {
+            foreignKeyName: 'master_lease_schedule_rows_company_fk';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'companies';
+            referencedColumns: ['id'];
+          },
         ];
       };
       notification_templates: {
@@ -5451,6 +5458,13 @@ export type Database = {
         };
         Relationships: [
           {
+            foreignKeyName: 'owner_settlement_expense_links_company_fk';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'companies';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'owner_settlement_expense_links_expense_fkey';
             columns: ['expense_id', 'company_id'];
             isOneToOne: false;
@@ -5507,6 +5521,13 @@ export type Database = {
           updated_at?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'owner_settlement_payment_links_company_fk';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'companies';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'owner_settlement_payment_links_payment_fkey';
             columns: ['payment_id', 'company_id'];
