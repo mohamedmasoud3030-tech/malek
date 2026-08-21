@@ -20,7 +20,7 @@ export function ActiveFilterBar({ filters, onClearAll, className }: ActiveFilter
   if (filters.length === 0) return null;
 
   return (
-    <div className={cn('rounded-2xl border border-primary/20 bg-primary/5 px-3 py-2', className)} aria-label="الفلاتر النشطة">
+    <div className={cn('rounded-xl border border-border/75 bg-muted/[0.28] px-2.5 py-2', className)} aria-label="الفلاتر النشطة">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           <span className="text-xs font-semibold text-primary">الفلاتر النشطة</span>
