@@ -4,6 +4,32 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/use-auth';
 
 export const ACTIVE_COMPANY_ERROR = 'تعذر تحديد الشركة النشطة';
+export const ACTIVE_COMPANY_RESOLUTION_TIMEOUT_MS = 12_000;
+
+/**
+ * A company claim is a security boundary, but the UI must not remain in a
+ * permanent loading state when an Auth/PostgREST request stalls. Timing out
+ * preserves the existing fail-closed behavior and returns the operator to a
+ * clear recovery screen instead of a blank workspace.
+ */
+export function withCompanyResolutionTimeout<T>(
+  operation: Promise<T>,
+  timeoutMs = ACTIVE_COMPANY_RESOLUTION_TIMEOUT_MS,
+): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timeout = globalThis.setTimeout(() => reject(new Error(ACTIVE_COMPANY_ERROR)), timeoutMs);
+    operation.then(
+      (value) => {
+        globalThis.clearTimeout(timeout);
+        resolve(value);
+      },
+      (error) => {
+        globalThis.clearTimeout(timeout);
+        reject(error);
+      },
+    );
+  });
+}
 
 export type Company = {
   id: string;
@@ -165,14 +191,16 @@ export function CompanyProvider({ children }: PropsWithChildren) {
         // Authorized memberships are the source of truth for resolution.
         // Ordering matches the access-token hook fallback
         // (ORDER BY cm.created_at, cm.id) so client and server defaults agree.
-        const { data, error } = await supabase
-          .from('company_members')
-          .select('company_id, role, companies!inner(id, name, slug, currency, locale)')
-          .eq('user_id', sessionUser.id)
-          .eq('is_active', true)
-          .eq('companies.is_active', true)
-          .order('created_at', { ascending: true })
-          .order('id', { ascending: true });
+        const { data, error } = await withCompanyResolutionTimeout(
+          supabase
+            .from('company_members')
+            .select('company_id, role, companies!inner(id, name, slug, currency, locale)')
+            .eq('user_id', sessionUser.id)
+            .eq('is_active', true)
+            .eq('companies.is_active', true)
+            .order('created_at', { ascending: true })
+            .order('id', { ascending: true }),
+        );
 
         if (error) throw error;
         if (!mounted) return;
@@ -194,7 +222,7 @@ export function CompanyProvider({ children }: PropsWithChildren) {
         // Step 2 — a cached token may predate the membership or the hook:
         // refresh once (no writes) and let the server re-derive the claim.
         if (!selectedCompany) {
-          const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+          const { data: refreshed, error: refreshError } = await withCompanyResolutionTimeout(supabase.auth.refreshSession());
           if (refreshError) throw refreshError;
           jwtCompanyId = readCompanyIdFromAccessToken(refreshed.session?.access_token);
           selectedCompany = pickClaimMatchedCompany(companyList, jwtCompanyId);
@@ -205,7 +233,7 @@ export function CompanyProvider({ children }: PropsWithChildren) {
         // unlock only if the ACCESS TOKEN issued by the server verifies it.
         if (!selectedCompany) {
           const membershipDefault = companyList[0];
-          const verifiedClaim = await requestServerClaimSync(membershipDefault.id);
+          const verifiedClaim = await withCompanyResolutionTimeout(requestServerClaimSync(membershipDefault.id));
           if (!mounted) return;
           if (verifiedClaim !== membershipDefault.id) {
             throw new Error(ACTIVE_COMPANY_ERROR);
@@ -315,12 +343,13 @@ export function CompanyProvider({ children }: PropsWithChildren) {
       <main className="grid min-h-dvh place-items-center bg-background p-6" dir="rtl">
         <section className="w-full max-w-md rounded-2xl border bg-card p-6 text-center shadow-sm" role="alert">
           <h1 className="text-lg font-bold text-foreground">{ACTIVE_COMPANY_ERROR}</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            لم يتم فتح التطبيق لحماية البيانات ومنع إنشاء سجلات بدون شركة.
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">
+            لم يتم فتح مساحة العمل لحماية البيانات ومنع إنشاء سجلات بدون شركة.
+            تحقق من الاتصال ثم أعد المحاولة. إذا استمرت المشكلة، راجع مسؤول النظام لتفعيل عضويتك في الشركة.
           </p>
           <button
             type="button"
-            className="mt-5 min-h-11 rounded-xl bg-primary px-5 py-2 text-sm font-bold text-primary-foreground"
+            className="mt-5 min-h-11 rounded-xl bg-primary px-5 py-2 text-sm font-bold text-primary-foreground focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
             onClick={() => setReloadVersion((version) => version + 1)}
           >
             إعادة المحاولة
