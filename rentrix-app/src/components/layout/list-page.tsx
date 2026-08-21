@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 import { SearchInput } from '@/components/ui/search-input';
-import { cn } from '@/lib/utils';
 import { EmbeddableWorkspace } from './embeddable-workspace';
 import { ListControlSurface } from './list-controls';
 
@@ -19,6 +18,8 @@ interface ListPageProps {
     placeholder?: string;
   };
   filters?: ReactNode;
+  /** Optional compact utilities such as view, columns, export, or sort controls. */
+  toolbarActions?: ReactNode;
   children: ReactNode;
   className?: string;
   dir?: 'rtl' | 'ltr';
@@ -33,20 +34,9 @@ interface ListPageProps {
 }
 
 /**
- * Full list-page scaffold: PageLayout + PageHeader + a shared control surface + content.
- * Mobile keeps search before filters for fast thumb access; desktop places filters at the
- * logical start and search beside them to reduce vertical depth.
- *
- * @example
- * <ListPage
- *   title="العقارات"
- *   description="إدارة جميع العقارات"
- *   action={<Button onClick={open}><Plus /> إضافة</Button>}
- *   search={{ value: query, onChange: setQuery, placeholder: 'ابحث عن عقار...' }}
- *   filters={<FilterTabs options={statusOptions} value={filter} onChange={setFilter} />}
- * >
- *   <PropertyList items={filtered} />
- * </ListPage>
+ * Canonical MALEK list-page scaffold.
+ * Search, filters and compact utilities share one register toolbar so data-heavy
+ * screens feel like one product instead of a collection of unrelated cards.
  */
 export function ListPage({
   title,
@@ -59,13 +49,13 @@ export function ListPage({
   backLabel,
   search,
   filters,
+  toolbarActions,
   children,
   className,
   dir,
   embedded = false,
   visualVariant,
 }: ListPageProps) {
-  const hasSearchAndFilters = Boolean(search && filters);
   const resolvedPrimary = primaryAction ?? action;
 
   return (
@@ -82,24 +72,39 @@ export function ListPage({
       dir={dir}
       visualVariant={visualVariant}
     >
-      {search || filters ? (
+      {search || filters || toolbarActions ? (
         <ListControlSurface>
           <div
-            className={cn(
-              'grid min-w-0 gap-2.5',
-              hasSearchAndFilters && 'lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.72fr)] lg:items-center lg:gap-3',
-            )}
+            data-list-toolbar
+            className="flex min-w-0 flex-col gap-2.5 lg:flex-row lg:items-center"
           >
             {search ? (
-              <SearchInput
-                value={search.value}
-                onChange={search.onChange}
-                placeholder={search.placeholder}
-                className={cn('w-full', hasSearchAndFilters && 'lg:order-2')}
-              />
+              <div data-list-search className="min-w-0 flex-1 lg:max-w-xl">
+                <SearchInput
+                  value={search.value}
+                  onChange={search.onChange}
+                  placeholder={search.placeholder}
+                  className="w-full"
+                />
+              </div>
             ) : null}
+
             {filters ? (
-              <div className={cn('min-w-0', hasSearchAndFilters && 'lg:order-1')}>{filters}</div>
+              <div
+                data-list-filters
+                className="min-w-0 flex-1 overflow-hidden lg:flex lg:items-center"
+              >
+                {filters}
+              </div>
+            ) : null}
+
+            {toolbarActions ? (
+              <div
+                data-list-toolbar-actions
+                className="flex min-w-0 shrink-0 items-center gap-1.5 overflow-x-auto no-scrollbar"
+              >
+                {toolbarActions}
+              </div>
             ) : null}
           </div>
         </ListControlSurface>
