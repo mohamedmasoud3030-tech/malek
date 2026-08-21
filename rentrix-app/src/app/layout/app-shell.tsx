@@ -1,17 +1,16 @@
 import { Link, Outlet, useMatches, useRouter } from '@tanstack/react-router';
-import { useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type RefObject } from 'react';
-import { CircleHelp, KeyRound, LogOut, Moon, Plus, Settings, ShieldAlert, Sun, UserRound, X } from 'lucide-react';
+import { useEffect, useId, useRef, useState, type RefObject } from 'react';
+import { CircleHelp, KeyRound, LogOut, Moon, Settings, ShieldAlert, Sun, UserRound, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { MalikBrand } from '@/components/brand/malik-brand';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import { canAccessRoute, canShowNavigationItem, getWriteAccessState, type AuthorizationContext } from '@/features/auth/permissions';
+import { canAccessRoute, getWriteAccessState, type AuthorizationContext } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
 import { APP_BRAND_NAME } from '@/lib/brand';
 import { getAppLanguageState, translateSharedLabel, type SharedLabel } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { useUiStore } from '@/store/ui-store';
-import { quickCreateItems } from '@/app/navigation/app-nav-items';
 import { MobileFloatingControl, NavigationLinks } from './layout-navigation-view';
 import { CommandPaletteDialog } from '@/features/command-palette/command-palette-dialog';
 import { AiAssistantGlobalAction } from '@/features/ai-assistant/ai-assistant-global-action';
@@ -169,111 +168,6 @@ function HeaderUserMenu({
               <span>تسجيل الخروج</span>
             </button>
           </div>
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-/**
- * Header quick-create menu (#1240). Retained as a compatibility export for
- * existing call sites/tests, but intentionally removed from the global top bar.
- * Creation remains available in each workspace and through commands.
- */
-export function QuickAddMenu({
-  authorization,
-  sharedLabel,
-}: Readonly<{ authorization: AuthorizationContext | null; sharedLabel: SharedLabel }>) {
-  const [isOpen, setIsOpen] = useState(false);
-  const menuId = useId();
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const rootRef = useRef<HTMLDivElement>(null);
-  const itemRefs = useRef<Array<HTMLAnchorElement | null>>([]);
-  const visibleItems = quickCreateItems.filter(([, , , permission]) => canShowNavigationItem(authorization, permission));
-
-  const closeAndRestoreFocus = () => {
-    setIsOpen(false);
-    triggerRef.current?.focus();
-  };
-
-  const handleMenuKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
-    const currentIndex = itemRefs.current.findIndex((item) => item === document.activeElement);
-    let nextIndex: number | null = null;
-    if (event.key === 'ArrowDown') nextIndex = (currentIndex + 1 + visibleItems.length) % visibleItems.length;
-    if (event.key === 'ArrowUp') nextIndex = (currentIndex - 1 + visibleItems.length) % visibleItems.length;
-    if (event.key === 'Home') nextIndex = 0;
-    if (event.key === 'End') nextIndex = visibleItems.length - 1;
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      closeAndRestoreFocus();
-      return;
-    }
-    if (nextIndex === null) return;
-    event.preventDefault();
-    itemRefs.current[nextIndex]?.focus();
-  };
-
-  useEffect(() => {
-    if (!isOpen) return;
-    itemRefs.current[0]?.focus();
-
-    function handlePointerDown(event: PointerEvent) {
-      if (rootRef.current?.contains(event.target as Node)) return;
-      setIsOpen(false);
-    }
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') closeAndRestoreFocus();
-    }
-
-    document.addEventListener('pointerdown', handlePointerDown);
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('pointerdown', handlePointerDown);
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [isOpen]);
-
-  if (visibleItems.length === 0) return null;
-
-  return (
-    <div ref={rootRef} className="relative">
-      <button
-        ref={triggerRef}
-        type="button"
-        onClick={() => setIsOpen((open) => !open)}
-        aria-label={sharedLabel('quickAdd')}
-        aria-haspopup="menu"
-        aria-expanded={isOpen}
-        aria-controls={isOpen ? menuId : undefined}
-        className="pressable inline-flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm outline-none transition-colors hover:bg-primary/90 focus-visible:ring-4 focus-visible:ring-primary/35 motion-reduce:transition-none"
-      >
-        <Plus className="size-[1.1rem]" aria-hidden="true" />
-      </button>
-      {isOpen ? (
-        <div
-          id={menuId}
-          role="menu"
-          aria-label={sharedLabel('quickAdd')}
-          onKeyDown={handleMenuKeyDown}
-          className="absolute end-0 top-12 z-50 w-56 max-w-[calc(100vw-1rem)] rounded-2xl border border-border/90 bg-card p-1.5 text-start text-card-foreground shadow-elevated"
-        >
-          <p className="border-b border-border/60 px-3 pb-2 pt-0.5 text-[11px] font-semibold text-muted-foreground">
-            {sharedLabel('quickAdd')}
-          </p>
-          {visibleItems.map(([to, labelKey, Icon], index) => (
-            <Link
-              key={to}
-              ref={(node) => { itemRefs.current[index] = node; }}
-              to={to}
-              role="menuitem"
-              onClick={() => setIsOpen(false)}
-              className="mt-0.5 flex min-h-11 items-center gap-2.5 rounded-xl px-3 text-[12px] font-semibold text-foreground/90 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none"
-            >
-              <Icon className="size-4 shrink-0 text-primary" aria-hidden="true" />
-              <span className="min-w-0 flex-1 truncate">{sharedLabel(labelKey)}</span>
-              <Plus className="size-3.5 shrink-0 opacity-40" aria-hidden="true" />
-            </Link>
-          ))}
         </div>
       ) : null}
     </div>
