@@ -21,6 +21,10 @@ const roleAuthorityMigration = await readFile(
   resolve(migrationDirectory, "20260901000009_company_members_six_role_authority.sql"),
   "utf8",
 );
+const authHookMigration = await readFile(
+  resolve(migrationDirectory, "20260901000012_harden_custom_access_token_hook_identity.sql"),
+  "utf8",
+);
 const failures = [];
 
 function requireInvariant(condition, message) {
@@ -114,6 +118,18 @@ for (const policyName of [
     "company_members must retain " + policyName + ".",
   );
 }
+requireInvariant(
+  /u\.status = 'ACTIVE'[\s\S]*?u\.is_active[\s\S]*?u\.deleted_at is null/i.test(authHookMigration),
+  "The token hook must require an active, non-deleted application identity.",
+);
+requireInvariant(
+  /if actor_is_active and user_company is not null then[\s\S]*?else[\s\S]*?claims := claims #- '\{app_metadata,company_id\}'/i.test(authHookMigration),
+  "The token hook must clear company_id for inactive or unscoped identities.",
+);
+requireInvariant(
+  /revoke all on function public\.custom_access_token_hook\(jsonb\) from public;[\s\S]*?revoke all on function public\.custom_access_token_hook\(jsonb\) from anon;[\s\S]*?revoke all on function public\.custom_access_token_hook\(jsonb\) from authenticated;[\s\S]*?grant execute on function public\.custom_access_token_hook\(jsonb\) to service_role;[\s\S]*?grant execute on function public\.custom_access_token_hook\(jsonb\) to supabase_auth_admin;/i.test(authHookMigration),
+  "The token hook must be callable only by the Auth/server roles.",
+);
 
 if (failures.length) {
   console.error("Auth/RLS static audit failed:");
