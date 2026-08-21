@@ -151,8 +151,36 @@ async function assertContractPropertyIsOperational(propertyId: string, contractS
   }
 }
 
+async function assertNoDuplicateDraftForUnitTenant({
+  unitId,
+  tenantId,
+  excludedContractId,
+}: Readonly<{
+  unitId: string | null | undefined;
+  tenantId: string;
+  excludedContractId?: string | null;
+}>): Promise<void> {
+  if (!unitId) return;
+
+  let query = supabase
+    .from('contracts')
+    .select('id')
+    .eq('unit_id', unitId)
+    .eq('tenant_id', tenantId)
+    .is('deleted_at', null)
+    .in('status', getContractStatusVariants('draft') as Contract['status'][]);
+  if (excludedContractId) query = query.neq('id', excludedContractId);
+
+  const { data, error } = await query.limit(1);
+  if (error) throw new Error('تعذر التحقق من مسودة العقد الحالية. أعد المحاولة قبل الحفظ.');
+  if ((data ?? []).length > 0) {
+    throw new Error('توجد بالفعل مسودة عقد لهذه الوحدة والمستأجر. افتح المسودة الحالية وعدّلها بدلاً من إنشاء مسودة أخرى.');
+  }
+}
+
 export async function createContract(payload: ContractPayload): Promise<Contract> {
   await assertContractPropertyIsOperational(payload.property_id);
+  if (payload.status === 'draft') await assertNoDuplicateDraftForUnitTenant({ unitId: payload.unit_id, tenantId: payload.tenant_id });
   const { data, error } = await supabase.rpc('create_contract_atomic', {
     p_property_id: payload.property_id,
     p_unit_id: payload.unit_id ?? null,
@@ -180,6 +208,7 @@ export async function updateContract(contractId: string, payload: ContractPayloa
   // re-validated on edit, matching create_contract_atomic's checks. See
   // supabase/migrations/20260901000000_canonical_baseline.sql.
   await assertContractPropertyIsOperational(payload.property_id, payload.status);
+  if (payload.status === 'draft') await assertNoDuplicateDraftForUnitTenant({ unitId: payload.unit_id, tenantId: payload.tenant_id, excludedContractId: contractId });
   // R4: billing policy is DRAFT-only editable and lives behind its own
   // server command; run it BEFORE the general update so a rejected policy
   // change fails the whole edit atomically from the user's perspective.
