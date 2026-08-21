@@ -115,7 +115,7 @@ export function OwnerFinancialAuthoritySection({
                 </div>
                 {position.operating_model ? <StatusBadge tone="neutral">{position.operating_model}</StatusBadge> : null}
               </div>
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="grid grid-cols-2 gap-3">
                 <FinancialValue label="متبقي مستحق للمالك" value={formatCompanyMoney(companySettings, position.lifecycle_all_time.remaining_payable)} />
                 <FinancialValue label="صافي مدفوع سابقاً" value={formatCompanyMoney(companySettings, position.lifecycle_all_time.paid_net)} />
                 <FinancialValue label="صافي تسويات معلقة" value={formatCompanyMoney(companySettings, position.lifecycle_all_time.settled_pending_net)} />
