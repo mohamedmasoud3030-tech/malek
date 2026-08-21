@@ -3,7 +3,7 @@
 Updated: 2026-08-21  
 Observed repository: `mohamedmasoud3030-tech/malek`  
 Observed default branch: `main`  
-Observed main SHA: `a87e6641b26ecec0442dd944b9fd0bc43b332061`
+Observed main SHA: `e978b101562d09f8c75f5b3c1f599868e98c92bd`
 
 ## Executive status
 
@@ -90,6 +90,16 @@ The project has a substantial implementation and verification history, but the c
 - **VERIFIED:** Vercel preview `dpl_3RYHinXDqtikGipXzB1iXE7esYfs` is READY; `vite` build completed in 20 seconds. Only non-blocking >500KB chunk warning was emitted.
 - **Not changed:** live Supabase rows, contracts, roles, RLS, migrations, or automatic activation.
 - **Remaining risk:** protection is at the application service boundary. A database-level concurrency guarantee needs a separately reviewed migration after deliberate disposition of current duplicate draft rows.
+
+
+## Live duplicate-draft remediation
+
+- **VERIFIED COMPLETE:** with owner approval, soft-archived `CNT-2026-000002` only after confirming it was a `draft` with no invoice, payment, receipt, or attachment reference. It remains recoverable in the database through its `deleted_at` audit state; it was not physically deleted.
+- **VERIFIED COMPLETE:** retained `CNT-2026-000001` unchanged because it has one linked invoice. It remains `draft`, not `active`.
+- **VERIFIED COMPLETE:** created live partial unique index `contracts_one_live_draft_per_unit_tenant_uidx` on `(company_id, unit_id, tenant_id)` for non-deleted `draft` contracts. Read-back confirms the affected relationship now has one live draft.
+- **IMPLEMENTED BUT NOT VERIFIED:** repository forward migration `20260901000010_contracts_one_live_draft_per_unit_tenant.sql` records the index; fresh-bootstrap/database-gate execution still requires a runnable checkout.
+- **Security-advisor note:** the post-change Supabase advisor returned pre-existing warnings for callable `SECURITY DEFINER` functions and leaked-password protection. This remediation added no function, grant, or RLS policy; those warnings are a separate prioritized security audit.
+- **New finding, NOT STARTED:** a `draft` contract has one invoice. No invoice was changed because its issuance policy needs focused lifecycle evidence.
 
 ## External blockers
 
