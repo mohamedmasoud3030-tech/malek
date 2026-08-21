@@ -24,14 +24,14 @@ export function ArrearsAgingBuckets({ agedReceivablesReport }: ArrearsAgingBucke
         </div>
         <span className="rounded-full bg-background px-3 py-1 text-xs font-bold text-muted-foreground">الإجمالي {formatMoney(totalOutstanding)}</span>
       </div>
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 [&>*:last-child:nth-child(odd)]:col-span-2">
         {arrearsBucketKeys.map((bucketKey) => {
           const bucket = agedReceivablesReport?.buckets[bucketKey];
           const amount = bucket?.total ?? 0;
           const count = bucket?.invoiceCount ?? 0;
           const percentage = safePercentage(amount, totalOutstanding);
           return (
-            <div key={bucketKey} className="rounded-2xl border bg-background p-3">
+            <div key={bucketKey} className="min-w-0 rounded-2xl border bg-background p-3">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-sm font-black">{getArrearsBucketLabel(bucketKey)}</p>
                 <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-bold text-secondary-foreground">{formatPercentage(percentage)}</span>
