@@ -59,8 +59,9 @@ All 102 public tables have RLS enabled. Company-owned tables carry `company_id`;
 3. **No browser service-role exposure found in the repository trust model.** Existing privileged-key scan and this audit’s role boundary treat any browser secret as a release blocker.
 4. **Deliberate deny-by-default tables:** `document_reference_sequences` and `financial_operation_idempotency` are RLS-enabled with no browser policy. This is correct for internal sequencing/idempotency state.
 5. **Confirmed repair — inactive identity token claim:** the previous hook checked `status = ACTIVE` but did not explicitly require `is_active` and `deleted_at IS NULL` before resolving company membership. Forward migration `20260901000012_harden_custom_access_token_hook_identity.sql` now withholds/removes `company_id` for inactive or soft-deleted application identities and limits invocation to Auth/server roles.
-6. **Storage configuration evidence gap:** `attachments` has a non-production, cleanup-safe smoke test for private access and MIME limits, but its `storage.objects` policies and bucket definition are not represented in the committed migration chain. No policy is invented from client code; QA must inspect the deployed private-bucket/object-policy configuration before release.
-7. **Realtime scope:** the repository contains one `postgres_changes` subscription for a user's permission grants, filtered to that user. Hosted publication and Realtime-RLS behavior remain unverified and must be proved in QA.
+6. **Confirmed repair — legacy public attachment references:** the client previously returned stored absolute `http(s)` URLs unchanged. It now rejects them, so a historical public link cannot be re-published by the application. Such records require a controlled server-side migration into the private bucket before display.
+7. **Storage configuration evidence gap:** `attachments` has a non-production, cleanup-safe smoke test for private access and MIME limits, but its `storage.objects` policies and bucket definition are not represented in the committed migration chain. No policy is invented from client code; the read-only `supabase:live-readiness` check now inventories the deployed bucket and object policies in QA before release.
+8. **Realtime scope:** the repository contains one `postgres_changes` subscription for a user's permission grants, filtered to that user. The read-only readiness check now reports whether that table is in the `supabase_realtime` publication; an actual anonymous/cross-company subscription denial test is still required in QA.
 
 ## Secure design selected
 
@@ -79,7 +80,7 @@ All 102 public tables have RLS enabled. Company-owned tables carry `company_id`;
 1. Run `pnpm test:supabase:auth-rls` and existing `pnpm test:supabase:rls` on a fresh disposable database.
 2. Run `pnpm qa:preflight` and `pnpm qa:database-contracts` against QA only.
 3. In Supabase QA, verify Custom Access Token Hook is enabled and the new access token contains the validated company claim.
-4. Verify private Storage bucket policies and any Realtime publication against anonymous, unrelated-company and intended-member tokens.
+4. Run `pnpm supabase:live-readiness` with an approved **read-only QA** database URL, then verify private Storage object policies and Realtime publication against anonymous, unrelated-company and intended-member tokens.
 5. Back up production and obtain explicit production-change approval before any migration/configuration action.
 
 ### Rollback
