@@ -100,7 +100,7 @@ export function SelectedOverdueInvoiceCard({ row, onShowInvoice, onCollectInvoic
         </div>
         <StatusBadge tone="danger">{getArrearsBucketLabel(bucket)}</StatusBadge>
       </div>
-      <dl className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <dl className="mt-4 grid grid-cols-2 gap-3">
         <div><dt className="text-xs text-muted-foreground">المستأجر</dt><dd className="font-bold">{row.tenantName ?? EMPTY_FIELD_VALUE}</dd></div>
         <div><dt className="text-xs text-muted-foreground">السياق</dt><dd className="font-bold">{getContextLabel(row)}</dd></div>
         <div><dt className="text-xs text-muted-foreground">تاريخ الاستحقاق</dt><dd className="font-bold">{formatDate(row.dueDate)}</dd></div>
