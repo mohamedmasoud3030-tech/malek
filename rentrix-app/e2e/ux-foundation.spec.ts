@@ -106,7 +106,7 @@ test('shared entity Dialog follows a reduced visual viewport and keeps actions r
   await assertNoHorizontalOverflow(page);
 });
 
-test('legacy dialog forms become a stable full-height mobile surface', async ({ page }) => {
+test('short legacy dialogs remain compact on mobile', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await openFixture(page, 'light', 'raw-dialog');
 
@@ -120,10 +120,9 @@ test('legacy dialog forms become a stable full-height mobile surface', async ({ 
   await expect(dialog).toBeVisible();
   const dialogBox = await dialog.boundingBox();
   const layoutWidth = await page.evaluate(() => document.documentElement.clientWidth);
-  expect(dialogBox?.x).toBe(0);
-  expect(dialogBox?.y).toBe(36);
-  expect(dialogBox?.width).toBe(layoutWidth);
-  expect(dialogBox?.height).toBeLessThanOrEqual(560);
+  expect(dialogBox?.x ?? 0).toBeGreaterThan(0);
+  expect(dialogBox?.width ?? Number.POSITIVE_INFINITY).toBeLessThan(layoutWidth);
+  expect(dialogBox?.height ?? Number.POSITIVE_INFINITY).toBeLessThan(560);
 
   const lastField = page.locator('[data-e2e-last-field]');
   await lastField.scrollIntoViewIfNeeded();
