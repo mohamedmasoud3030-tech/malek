@@ -68,7 +68,7 @@ describe('pay_commission_atomic and reverse_commission_atomic live runtime finan
         ('${COMPANY_A}', '${USER_A}',  'USER')
       on conflict do nothing;
 
-      update public.accounts set company_id = '${COMPANY_A}' where no in ('1111', '6100');
+      select public.provision_company_chart_of_accounts('${COMPANY_A}'::uuid);
 
       insert into public.properties (id, title, name, type, address, company_id, status)
       values ('f5000000-0000-4000-8000-000000000001', 'عقار العمولات', 'عقار العمولات', 'residential', 'مسقط', '${COMPANY_A}', 'active')
