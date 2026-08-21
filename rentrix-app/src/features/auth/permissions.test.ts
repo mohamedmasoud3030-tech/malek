@@ -7,8 +7,10 @@ import {
   canShowNavigationItem,
   financialOperationPermissions,
   appPermissions,
+  getAuthorizationContextFromSession,
   getAuthorizationContextFromUser,
   getAuthorizationDiagnosticsFromUser,
+  getRoleFromAccessToken,
   getWriteAccessState,
   hasRole,
   normalizeRole,
@@ -22,7 +24,32 @@ const userWithRole = (role: unknown) => ({
   app_metadata: { user_role: role },
 });
 
+const accessTokenWithRole = (role: unknown) => [
+  'header',
+  Buffer.from(JSON.stringify({ app_metadata: { user_role: role } })).toString('base64url'),
+  'signature',
+].join('.');
+
 describe('canonical authorization permissions', () => {
+  it('uses the custom-hook role from the server-issued access token before stale Auth user metadata', () => {
+    const session = {
+      user: { ...userWithRole('USER'), app_metadata: {} },
+      access_token: accessTokenWithRole('ADMIN'),
+    };
+
+    expect(getRoleFromAccessToken(session.access_token)).toBe('ADMIN');
+    expect(getAuthorizationContextFromSession(session as never)).toEqual({
+      userId: 'user-1',
+      email: 'user@example.com',
+      role: 'ADMIN',
+    });
+  });
+
+  it('fails closed for malformed access-token role claims', () => {
+    expect(getRoleFromAccessToken('not-a-jwt')).toBeNull();
+    expect(getRoleFromAccessToken(accessTokenWithRole('OWNER'))).toBeNull();
+  });
+
   it('allows settings access for a known authorized role', () => {
     const context = getAuthorizationContextFromUser(userWithRole('ADMIN'));
 
