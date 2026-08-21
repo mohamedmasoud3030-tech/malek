@@ -18,11 +18,7 @@ interface PageHeaderProps {
   className?: string;
 }
 
-/**
- * Page title + actions — a shared elevated page-header surface.
- * Mobile: primary always visible compact, secondary collapsed into overflow menu.
- * Destructive actions separated, touch targets 44px, safe-area preserved.
- */
+/** Compact shared page heading. Operational density stays high on mobile. */
 export function PageHeader({
   title,
   description,
@@ -42,18 +38,17 @@ export function PageHeader({
       data-page-header
       data-unified-surface="page-header"
       className={cn(
-        'rounded-2xl border border-border/70 bg-card px-3 py-3 shadow-card sm:px-5 sm:py-4 md:px-6 md:py-5',
+        'rounded-xl border border-border/70 bg-card px-3 py-2.5 shadow-[0_1px_2px_hsl(var(--foreground)/0.035)] sm:px-4 sm:py-3',
         className,
       )}
     >
-      <div className="flex min-w-0 items-start justify-between gap-3 sm:gap-5">
-        {/* Title + description */}
+      <div className="flex min-w-0 items-start justify-between gap-2.5 sm:gap-4">
         <div className="min-w-0 flex-1 overflow-hidden">
-          <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <h1 className="min-w-0 break-words text-balance text-xl font-bold [overflow-wrap:anywhere] sm:text-2xl">{title}</h1>
+          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+            <h1 className="min-w-0 break-words text-balance text-lg font-black leading-7 [overflow-wrap:anywhere] sm:text-xl">{title}</h1>
             {count !== undefined ? (
               <span
-                className="inline-flex min-h-5 shrink-0 items-center rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[11px] font-semibold tabular-nums text-muted-foreground"
+                className="inline-flex min-h-5 shrink-0 items-center rounded-md border border-border bg-muted/45 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-muted-foreground"
                 aria-label={`عدد السجلات ${count}`}
               >
                 {count}
@@ -61,19 +56,18 @@ export function PageHeader({
             ) : null}
           </div>
           {description ? (
-            <p className="mt-0.5 max-w-3xl break-words text-[0.8125rem] leading-5 text-muted-foreground [overflow-wrap:anywhere] sm:mt-1 sm:text-sm sm:leading-6">
+            <p className="mt-0.5 max-w-3xl break-words text-xs leading-5 text-muted-foreground [overflow-wrap:anywhere] sm:text-[13px]">
               {description}
             </p>
           ) : null}
         </div>
 
-        {/* Actions — mobile aware */}
         {hasActions ? (
-          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+          <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
             {backTo ? (
               <Button variant="secondary" size="sm" asChild className="min-h-11">
                 <Link to={backTo}>
-                  <ArrowLeft className="me-1 size-3.5 rtl:rotate-180 sm:me-1.5 sm:size-4" />
+                  <ArrowLeft className="me-1 size-3.5 rtl:rotate-180" />
                   <span className="hidden sm:inline">{backLabel}</span>
                   <span className="sm:hidden">رجوع</span>
                 </Link>
