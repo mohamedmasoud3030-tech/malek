@@ -22,7 +22,7 @@ export function OperationalMetricCard({
   icon: LucideIcon;
 }>) {
   return (
-    <article data-operational-metric className="group relative min-w-0 overflow-hidden rounded-xl border border-border/75 bg-card p-3 shadow-card sm:p-3.5">
+    <article data-operational-metric className="group relative min-w-0 overflow-hidden rounded-xl border border-border/75 bg-card p-3 shadow-card before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-l before:from-transparent before:via-primary/45 before:to-transparent sm:p-3.5">
       <div className="relative flex min-w-0 items-start justify-between gap-2.5">
         <div className="min-w-0">
           <p className="truncate text-[11px] font-bold text-muted-foreground sm:text-xs">{label}</p>
