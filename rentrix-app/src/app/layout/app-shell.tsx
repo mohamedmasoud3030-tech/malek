@@ -1,6 +1,6 @@
 import { Link, Outlet, useMatches, useRouter } from '@tanstack/react-router';
 import { useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type RefObject } from 'react';
-import { CircleHelp, LogOut, Menu, Moon, Plus, ShieldAlert, Sun, X } from 'lucide-react';
+import { CircleHelp, LogOut, Menu, Plus, ShieldAlert, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { MalikBrand } from '@/components/brand/malik-brand';
 import { Button } from '@/components/ui/button';
@@ -8,35 +8,54 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { canShowNavigationItem, getWriteAccessState, type AuthorizationContext } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
 import { APP_BRAND_NAME } from '@/lib/brand';
-import { formatLatinTime } from '@/lib/formatters';
 import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { useUiStore } from '@/store/ui-store';
-import type { SyncStatus } from '@/types/domain';
 import { quickCreateItems } from '@/app/navigation/app-nav-items';
 import { MobileFloatingControl, NavigationLinks, type SharedLabel } from './layout-navigation-view';
-import { NotificationsMenu } from './notifications-menu';
-import { CommandPaletteTrigger } from '@/features/command-palette/command-palette-trigger';
 import { CommandPaletteDialog } from '@/features/command-palette/command-palette-dialog';
 import { AiAssistantGlobalAction } from '@/features/ai-assistant/ai-assistant-global-action';
 import { sanitizeSupportRoute } from '@/features/help-support/help-context';
-
-function statusLabel(status: SyncStatus) {
-  if (status === 'syncing') return 'جارٍ التحديث';
-  if (status === 'offline') return 'وضع دون اتصال';
-  if (status === 'error') return 'تحتاج المزامنة إلى مراجعة';
-  return 'متصل بالشبكة';
-}
 
 function Brand({ expanded }: Readonly<{ expanded: boolean }>) {
   return <MalikBrand compact={!expanded} inverse showTagline={expanded} />;
 }
 
+function HeaderDateTime() {
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const date = new Intl.DateTimeFormat('en-GB', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(now);
+  const time = new Intl.DateTimeFormat('en-GB', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(now);
+
+  return (
+    <span
+      data-header-date-time
+      dir="ltr"
+      className="hidden whitespace-nowrap text-[11px] font-semibold tabular-nums text-muted-foreground sm:inline-flex"
+      aria-label={`التاريخ ${date}، الوقت ${time}`}
+    >
+      {date} · {time}
+    </span>
+  );
+}
+
 /**
- * Header quick-create menu (#1240). Only offered to roles with write access;
- * each entry additionally respects its destination route guard so MANAGER
- * never sees actions they cannot complete. Exported for interaction regression
- * coverage; it remains owned and rendered exclusively by <AppShell> in production.
+ * Header quick-create menu (#1240). Retained as a compatibility export for
+ * existing call sites/tests, but intentionally removed from the global top bar.
+ * Creation remains available in each workspace and through commands.
  */
 export function QuickAddMenu({
   authorization,
@@ -153,17 +172,6 @@ function MobileNavigationDrawer({
   triggerRef: RefObject<HTMLButtonElement | null>;
   supportFrom: string;
 }>) {
-  // Lock body scroll while the mobile drawer is open — prevents background
-  // content from scrolling behind the overlay, a common mobile UX defect.
-  //
-  // The same effect owns focus restoration. AppShell unmounts this component
-  // outright when `mobileNavOpen` flips to false, so Radix's own
-  // `onCloseAutoFocus` handler is not guaranteed to run; and because the
-  // drawer is opened from a plain header button rather than a
-  // <DialogTrigger>, Radix's internal triggerRef is null and its default
-  // restoration would land on <body>. Returning focus to the opening control
-  // on unmount satisfies WCAG 2.4.3 (focus order) in every close path:
-  // Escape, the close button, overlay dismiss, and navigation.
   useEffect(() => {
     const prevBodyOverflow = document.body.style.overflow;
     const prevHtmlOverflow = document.documentElement.style.overflow;
@@ -178,19 +186,10 @@ function MobileNavigationDrawer({
   }, [triggerRef]);
 
   return (
-    <Dialog
-      open
-      onOpenChange={(isOpen) => {
-        if (!isOpen) onClose();
-      }}
-    >
+    <Dialog open onOpenChange={(isOpen) => { if (!isOpen) onClose(); }}>
       <DialogContent
         showCloseButton={false}
         aria-describedby={undefined}
-        // The bottom-sheet navigation is opened from the floating control
-        // center button rather than a Radix <DialogTrigger>, so Radix's
-        // internal triggerRef is null and its default close-autofocus lands
-        // on <body>. Restore focus to the launcher ourselves (WCAG 2.4.3).
         onCloseAutoFocus={(event) => {
           const trigger = triggerRef.current;
           if (!trigger) return;
@@ -250,8 +249,8 @@ function MobileNavigationDrawer({
 export function AppShell() {
   const router = useRouter();
   const matches = useMatches();
-  const { authorization, logout, user } = useAuth();
-  const { sidebarCollapsed, theme, toggleSidebar, setTheme, syncStatus, lastSyncedAt, setSyncStatus } = useUiStore();
+  const { authorization, logout } = useAuth();
+  const { sidebarCollapsed, syncStatus, setSyncStatus } = useUiStore();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const mobileNavTriggerRef = useRef<HTMLButtonElement | null>(null);
   const appLanguage = getAppLanguageState();
@@ -332,8 +331,6 @@ export function AppShell() {
         <div
           className={cn(
             'min-h-24 border-b border-white/8 py-5',
-            // The collapsed rail is 4.5rem wide; tighten the inline padding so the
-            // compact MALIK mark stays centered and has a comfortable touch target.
             isSidebarExpanded ? 'px-5' : 'px-1.5',
           )}
         >
@@ -375,69 +372,20 @@ export function AppShell() {
           data-app-shell-header
           className="sticky top-0 z-20 border-b border-border/70 bg-card/95 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md supports-[backdrop-filter]:bg-card/85"
         >
-          <div className="mx-auto flex min-h-14 w-full max-w-[110rem] items-center gap-1.5 px-2 py-1 sm:min-h-14 sm:gap-2 sm:px-4">
-            <Button
-              variant="ghost"
-              className="hidden size-11 shrink-0 rounded-xl px-0 text-muted-foreground hover:bg-muted hover:text-foreground lg:inline-flex"
-              onClick={toggleSidebar}
-              aria-label={sharedLabel('collapseMenu')}
-              aria-expanded={isSidebarExpanded}
-            >
-              <Menu className="size-[1.15rem]" aria-hidden="true" />
-            </Button>
+          <div className="mx-auto flex min-h-14 w-full max-w-[110rem] items-center px-3 py-1 sm:px-4">
+            <MalikBrand className="min-w-0" />
 
-            <div className="min-w-0 flex-1 px-1 flex items-center justify-between gap-4">
-              {/* Fixed application identity in the global header — the dynamic
-                  page name lives in <PageHeader> inside the page content. */}
-              <MalikBrand className="min-w-0" />
-
-              <CommandPaletteTrigger />
-            </div>
-
-            <div className="flex items-center gap-1 sm:gap-1.5">
-              {writeAccessState === 'full' ? (
-                <QuickAddMenu authorization={authorization} sharedLabel={sharedLabel} />
-              ) : null}
-
-              <span className="hidden rounded-xl border border-border/70 bg-muted/60 px-2.5 py-1 text-[10px] font-semibold text-muted-foreground sm:inline-flex lg:text-[11px] lg:px-3 lg:py-1.5">
-                {statusLabel(syncStatus)}
-                {lastSyncedAt
-                  ? ` · ${formatLatinTime(new Date(lastSyncedAt), appLanguage.locale)}`
-                  : ''}
-              </span>
-
-              <NotificationsMenu authorization={authorization} sharedLabel={sharedLabel} />
-              <AiAssistantGlobalAction />
+            <div className="ms-auto flex shrink-0 items-center gap-2 sm:gap-3" data-header-quiet-utilities>
+              <HeaderDateTime />
               <Link
                 to="/help"
                 search={{ from: sanitizeSupportRoute(router.state?.location?.pathname ?? '/dashboard') }}
                 aria-label="فتح المساعدة والدعم"
                 title="المساعدة والدعم"
-                className="hidden size-11 items-center justify-center rounded-xl border border-border/70 bg-card text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-4 focus-visible:ring-primary/25 motion-reduce:transition-none sm:inline-flex"
+                className="inline-flex size-10 items-center justify-center rounded-xl text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-4 focus-visible:ring-primary/20"
               >
                 <CircleHelp className="size-[1.05rem]" aria-hidden="true" />
               </Link>
-
-              <button
-                type="button"
-                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                aria-label={sharedLabel('toggleTheme')}
-                className="inline-flex size-11 items-center justify-center rounded-xl border border-border/70 bg-card text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-4 focus-visible:ring-primary/25 motion-reduce:transition-none"
-              >
-                {theme === 'dark' ? (
-                  <Sun className="size-[1.05rem]" aria-hidden="true" />
-                ) : (
-                  <Moon className="size-[1.05rem]" aria-hidden="true" />
-                )}
-              </button>
-
-              <span
-                className="hidden size-10 place-items-center rounded-xl bg-primary text-xs font-bold text-primary-foreground shadow-sm sm:grid xl:size-11"
-                title={user?.email}
-                aria-label={user?.email ?? undefined}
-              >
-                {user?.email?.charAt(0).toUpperCase() || 'M'}
-              </span>
             </div>
           </div>
         </header>
@@ -474,6 +422,7 @@ export function AppShell() {
       </div>
 
       <MobileFloatingControl menuRef={mobileNavTriggerRef} onMenu={() => setMobileNavOpen(true)} />
+      <AiAssistantGlobalAction />
       <CommandPaletteDialog />
     </div>
   );
