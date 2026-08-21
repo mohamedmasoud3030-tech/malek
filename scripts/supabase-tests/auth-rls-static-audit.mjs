@@ -153,7 +153,8 @@ if (failures.length) {
   process.exitCode = 1;
 } else {
   console.log(
-    "Auth/RLS static audit passed: " + tables.length + " RLS-enabled company tables and " +
+    "Auth/RLS static audit passed: " + tables.length + " RLS-enabled public tables, " +
+      views.length + " security_invoker views and " +
       functionBlocks.filter((entry) => entry.securityDefiner).length +
       " pinned SECURITY DEFINER functions.",
   );
