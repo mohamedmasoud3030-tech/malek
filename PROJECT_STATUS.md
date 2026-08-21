@@ -113,3 +113,9 @@ M1: execute the existing current-SHA security and boundary guards from a runnabl
 - **Root cause:** `workbox-window@7.4.1` existed as a transitive lockfile package but was not a direct `rentrix-app` dependency. pnpm's isolated module layout correctly prevents the virtual module from using an undeclared dependency.
 - **IMPLEMENTED BUT NOT VERIFIED:** declared `workbox-window@^7.4.1`, synchronized its existing lockfile resolution, and added `pwa-dependency-contract.test.ts`.
 - **Next evidence:** a Vercel preview build of the branch must pass, then its generated manifest/service worker can be inspected. No deployment was promoted and no production configuration was changed.
+
+## Vercel production-build verification
+
+- **VERIFIED COMPLETE:** production deployment `dpl_EtLf1g7tzWmoNcrz4jhHSehLWQV1` for `main@91a0ae9` reached `READY` on 2026-08-21. It includes the repaired CSS imports and direct `workbox-window` dependency.
+- **Observed build result:** `Build Completed` in 26 seconds. The only reported item is Rollup's non-blocking warning about chunks larger than 500 kB after minification.
+- **Remaining risk:** runtime/PWA device journeys and chunk-size performance work are not yet verified; no production data or authorization configuration changed.
