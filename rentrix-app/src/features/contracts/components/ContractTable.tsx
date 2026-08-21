@@ -1,6 +1,7 @@
 import { Edit, Eye, Trash2, User } from "lucide-react";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
+import { DataTableColumnsMenu } from "@/components/ui/data-table";
 import { EntityCell } from "@/components/ui/entity-cell";
 import { EntityTable, type ColumnDef } from "@/components/ui/entity-table";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -24,6 +25,19 @@ function DetailBox({ label, children }: { label: string; children: ReactNode }) 
     </div>
   );
 }
+
+const contractColumnOptions = [
+  { key: "contract_number", label: "رقم العقد", locked: true },
+  { key: "tenant", label: "المستأجر" },
+  { key: "unit", label: "الوحدة" },
+  { key: "start_date", label: "تاريخ البداية" },
+  { key: "end_date", label: "تاريخ النهاية" },
+  { key: "rent_amount", label: "قيمة الإيجار" },
+  { key: "status", label: "الحالة" },
+  { key: "actions", label: "الإجراءات", locked: true },
+] as const;
+
+const defaultContractColumns = contractColumnOptions.map((column) => column.key);
 
 export function ContractTable({
   companySettings,
@@ -56,6 +70,8 @@ export function ContractTable({
   pagination?: { page: number; pageSize: number; total: number; onPageChange: (page: number) => void };
   setExpandedId: (updater: (value: string | null) => string | null) => void;
 }) {
+  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultContractColumns]);
+
   const columns: ColumnDef<ContractListItem>[] = [
     {
       key: "contract_number",
@@ -147,6 +163,16 @@ export function ContractTable({
       rows={contracts}
       columns={columns}
       keyOf={(c) => c.id}
+      toolbar={(
+        <div className="flex min-w-0 items-center justify-end gap-2">
+          <DataTableColumnsMenu
+            columns={contractColumnOptions}
+            visibleKeys={visibleColumnKeys}
+            onChange={setVisibleColumnKeys}
+          />
+        </div>
+      )}
+      visibleColumnKeys={visibleColumnKeys}
       // The mobile register shows the identity column plus exactly one datum.
       // A contract is identified in practice by its counterparty, so the tenant
       // name is the datum that keeps the mobile row recognisable; the rent value
