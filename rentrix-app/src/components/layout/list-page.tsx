@@ -76,7 +76,7 @@ export function ListPage({
         <ListControlSurface>
           <div
             data-list-toolbar
-            className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-1.5 lg:flex lg:items-center lg:gap-2"
+            className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-1.5 lg:flex lg:items-center lg:gap-1.5"
           >
             {search ? (
               <div data-list-search className="col-span-2 min-w-0 flex-1 lg:max-w-xl">
@@ -101,7 +101,7 @@ export function ListPage({
             {toolbarActions ? (
               <div
                 data-list-toolbar-actions
-                className={`flex min-w-0 shrink-0 items-center justify-end gap-1.5 overflow-x-auto no-scrollbar ${filters ? '' : 'col-span-2'}`}
+                className={`flex min-w-0 shrink-0 items-center justify-end gap-1 overflow-x-auto no-scrollbar ${filters ? '' : 'col-span-2'}`}
               >
                 {toolbarActions}
               </div>
