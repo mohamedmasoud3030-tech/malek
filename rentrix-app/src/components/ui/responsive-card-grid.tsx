@@ -12,6 +12,9 @@ type ResponsiveCardGridProps = Readonly<{
   desktopColumns?: 2 | 3 | 4 | 5 | 6 | 7;
   gap?: 'sm' | 'md' | 'lg';
   as?: 'div' | 'section' | 'dl';
+  /** Passed through when `as="section"` (or any labelled landmark) needs an accessible name. */
+  'aria-label'?: string;
+  'aria-labelledby'?: string;
   /**
    * Optional extra boolean-style data attribute (e.g. a section-specific
    * marker like `data-finance-kpi-grid`) for callers that wrap this
@@ -44,6 +47,8 @@ export function ResponsiveCardGrid({
   desktopColumns = 2,
   gap = 'md',
   as: Component = 'div',
+  'aria-label': ariaLabel,
+  'aria-labelledby': ariaLabelledBy,
   'data-finance-kpi-grid': financeKpiGridMarker,
 }: ResponsiveCardGridProps) {
   const allowThreeColumns = desktopColumns === 3;
@@ -53,6 +58,8 @@ export function ResponsiveCardGrid({
       data-responsive-card-grid
       data-finance-kpi-grid={financeKpiGridMarker}
       data-desktop-columns={allowThreeColumns ? '3' : '2'}
+      aria-label={ariaLabel}
+      aria-labelledby={ariaLabelledBy}
       className={cn(
         'grid min-w-0 grid-cols-2',
         allowThreeColumns
