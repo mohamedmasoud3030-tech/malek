@@ -35,15 +35,18 @@ export async function uploadAttachment(file: File): Promise<string> {
 }
 
 /**
- * Resolve a stored attachment reference for display: absolute URLs (legacy
- * rows) pass through unchanged; storage paths get a signed URL for the
- * private bucket.
+ * Resolve a stored attachment reference for display. Stored objects must be
+ * private-bucket paths; an absolute legacy URL is intentionally rejected so
+ * this client never re-publishes a historic public attachment. Migrate those
+ * records through a server-controlled workflow instead.
  */
 export async function createSignedAttachmentUrl(
   value: string,
   expiresInSeconds = 60 * 60,
 ): Promise<string> {
-  if (/^https?:\/\//i.test(value)) return value;
+  if (/^https?:\/\//i.test(value)) {
+    throw new Error('المرفق القديم يحتاج ترحيلاً آمناً قبل عرضه.');
+  }
   const { data, error } = await supabase.storage
     .from(attachmentBucket)
     .createSignedUrl(value, expiresInSeconds);
