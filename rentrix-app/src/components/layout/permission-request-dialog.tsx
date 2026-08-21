@@ -97,49 +97,52 @@ export function PermissionRequestDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent dir="rtl" className="max-w-lg">
-        <DialogHeader>
-          <div className="flex items-center gap-3">
-            <span className="grid size-11 place-items-center rounded-2xl bg-warning/15 text-warning"><LockKeyhole className="size-5" aria-hidden="true" /></span>
-            <div>
-              <DialogTitle>ليس لديك صلاحية</DialogTitle>
-              <DialogDescription className="mt-1">الوصول إلى «{label}» يحتاج إلى صلاحية إضافية.</DialogDescription>
+      <DialogContent dir="rtl" className="max-w-lg gap-3 p-3 sm:gap-4 sm:p-5">
+        <DialogHeader className="pe-10">
+          <div className="flex items-start gap-2.5">
+            <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-warning/12 text-warning">
+              <LockKeyhole className="size-4" aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <DialogTitle className="text-base">ليس لديك صلاحية</DialogTitle>
+              <DialogDescription className="mt-0.5 text-xs leading-5">الوصول إلى «{label}» يحتاج إلى صلاحية إضافية.</DialogDescription>
             </div>
           </div>
         </DialogHeader>
 
-        <div className="space-y-2">
-          <label htmlFor="permission-request-reason" className="text-sm font-bold">سبب الطلب</label>
+        <div className="space-y-1.5">
+          <label htmlFor="permission-request-reason" className="text-xs font-bold">سبب الطلب</label>
           <Textarea
             id="permission-request-reason"
             value={reason}
             onChange={(event) => setReason(event.target.value)}
             placeholder="اشرح سبب احتياجك لهذه الصلاحية"
-            rows={4}
+            rows={3}
+            className="min-h-24"
             disabled={pending || existingRequest?.status === 'PENDING' || (existingRequest?.status === 'APPROVED' && existingRequest.grant_active)}
           />
-          {loadingExisting ? <p role="status" className="text-xs text-muted-foreground">جارٍ التحقق من الطلبات السابقة...</p> : null}
+          {loadingExisting ? <p role="status" className="text-[11px] text-muted-foreground">جارٍ التحقق من الطلبات السابقة...</p> : null}
           {statusText ? (
-            <p className="rounded-xl bg-muted/40 px-3 py-2 text-xs font-bold" role="status">
-              {existingRequest?.status === 'APPROVED' && existingRequest.grant_active ? <CheckCircle2 className="me-1 inline size-4 text-success" aria-hidden="true" /> : null}
+            <p className="rounded-lg bg-muted/40 px-2.5 py-2 text-[11px] font-bold leading-5" role="status">
+              {existingRequest?.status === 'APPROVED' && existingRequest.grant_active ? <CheckCircle2 className="me-1 inline size-3.5 text-success" aria-hidden="true" /> : null}
               {statusText}
             </p>
           ) : null}
-          {error ? <p role="alert" className="text-sm font-bold text-destructive">{error}</p> : null}
+          {error ? <p role="alert" className="text-xs font-bold text-destructive">{error}</p> : null}
         </div>
 
-        <div className="flex flex-wrap justify-end gap-2">
-          <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={pending}>إغلاق</Button>
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 sm:flex sm:justify-end">
           {existingRequest?.status === 'APPROVED' && existingRequest.grant_active ? (
-            <Button onClick={() => void refreshApprovedPermission()} disabled={pending}>
-              <RefreshCw className="me-2 size-4" aria-hidden="true" />تحديث الصلاحيات والمتابعة
+            <Button className="min-h-10" onClick={() => void refreshApprovedPermission()} disabled={pending}>
+              <RefreshCw className="me-1.5 size-3.5" aria-hidden="true" />تحديث الصلاحيات
             </Button>
           ) : (
-            <Button onClick={() => void submit()} disabled={pending || loadingExisting || existingRequest?.status === 'PENDING'}>
-              <Send className="me-2 size-4" aria-hidden="true" />
-              {pending ? 'جارٍ الإرسال...' : existingRequest?.status === 'REJECTED' || existingRequest?.status === 'APPROVED' ? 'إعادة إرسال الطلب' : 'إرسال طلب الصلاحية'}
+            <Button className="min-h-10" onClick={() => void submit()} disabled={pending || loadingExisting || existingRequest?.status === 'PENDING'}>
+              <Send className="me-1.5 size-3.5" aria-hidden="true" />
+              {pending ? 'جارٍ الإرسال...' : existingRequest?.status === 'REJECTED' || existingRequest?.status === 'APPROVED' ? 'إعادة إرسال الطلب' : 'إرسال الطلب'}
             </Button>
           )}
+          <Button className="min-h-10" variant="secondary" onClick={() => onOpenChange(false)} disabled={pending}>إغلاق</Button>
         </div>
       </DialogContent>
     </Dialog>
