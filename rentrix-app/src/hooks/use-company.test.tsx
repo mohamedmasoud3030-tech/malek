@@ -27,7 +27,13 @@ vi.mock('@/hooks/use-auth', () => ({
   useAuth: () => ({ session: mocks.sessionHolder.current, isLoading: false }),
 }));
 
-const { CompanyProvider, useCompany, ACTIVE_COMPANY_ERROR } = await import('@/hooks/use-company');
+const {
+  CompanyProvider,
+  useCompany,
+  ACTIVE_COMPANY_ERROR,
+  ACTIVE_COMPANY_RESOLUTION_TIMEOUT_MS,
+  withCompanyResolutionTimeout,
+} = await import('@/hooks/use-company');
 
 type CompanyShape = { id: string; name: string; slug: string; currency: string; locale: string };
 
@@ -147,6 +153,20 @@ afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
   mocks.from.mockReset();
+});
+
+describe('company resolution timeout', () => {
+  it('fails closed instead of leaving a stalled company request on screen forever', async () => {
+    vi.useFakeTimers();
+    try {
+      const stalledOperation = new Promise<void>(() => undefined);
+      const pending = withCompanyResolutionTimeout(stalledOperation);
+      await vi.advanceTimersByTimeAsync(ACTIVE_COMPANY_RESOLUTION_TIMEOUT_MS);
+      await expect(pending).rejects.toThrow(ACTIVE_COMPANY_ERROR);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
 
 describe('CompanyProvider resolution', () => {
