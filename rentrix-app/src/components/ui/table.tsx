@@ -6,8 +6,8 @@ import { Skeleton } from './skeleton';
 const tableVariants = cva('w-full min-w-max caption-bottom text-sm', {
   variants: {
     density: {
-      default: '',
-      compact: '[&_td]:py-2.5 [&_th]:h-10',
+      default: '[&_td]:py-3 [&_th]:h-11',
+      compact: '[&_td]:py-2 [&_th]:h-10',
     },
   },
   defaultVariants: { density: 'default' },
@@ -36,7 +36,7 @@ export function TableRow({
     <tr
       data-selected={selected ? 'true' : undefined}
       className={cn(
-        'border-b border-border/70 transition-colors hover:bg-muted/45',
+        'border-b border-border/60 transition-colors hover:bg-muted/45',
         selected && 'bg-primary/8 hover:bg-primary/12',
         className,
       )}
@@ -49,7 +49,7 @@ export function TableHead({ className, ...props }: ThHTMLAttributes<HTMLTableCel
   return (
     <th
       className={cn(
-        'h-14 whitespace-nowrap bg-muted/55 px-4 text-start align-middle text-xs font-bold text-muted-foreground sm:px-5',
+        'h-11 whitespace-nowrap bg-muted/50 px-3.5 text-start align-middle text-[11px] font-black text-muted-foreground sm:px-4',
         className,
       )}
       {...props}
@@ -58,7 +58,7 @@ export function TableHead({ className, ...props }: ThHTMLAttributes<HTMLTableCel
 }
 
 export function TableCell({ className, ...props }: TdHTMLAttributes<HTMLTableCellElement>) {
-  return <td className={cn('px-4 py-5 align-middle sm:px-5', className)} {...props} />;
+  return <td className={cn('px-3.5 py-3 align-middle sm:px-4', className)} {...props} />;
 }
 
 export function TableCaption({ className, ...props }: HTMLAttributes<HTMLElement>) {
