@@ -1,5 +1,5 @@
-import { FileText, WalletCards } from 'lucide-react';
-import { OperationalCommandPanel, OperationalMetricCard } from '@/components/ui/operational-summary';
+import { Clock3, FileText, WalletCards } from 'lucide-react';
+import { OperationalMetricCard } from '@/components/ui/operational-summary';
 import type { CompanySettingsContract } from '@/lib/companySettings';
 import { isContractStatus } from '@/lib/contractStatus';
 import { formatContractMoney } from '../contractDisplayFormatters';
@@ -43,28 +43,25 @@ export function ContractKpiGrid({
     <section
       data-contract-summary
       aria-label="ملخص دورة العقود"
-      className="grid grid-cols-2 gap-3 lg:grid-cols-3"
+      className="grid grid-cols-2 gap-2.5 sm:gap-3"
     >
-      <div className="col-span-2 lg:col-span-1">
-        <OperationalCommandPanel
-          label="العقود النشطة في الصفحة"
-          value={`${formatCount(activeRate)}%`}
-          icon={WalletCards}
-          progress={activeRate}
-          footer={(
-            <>
-              <span>{formatCount(listSummary.active)} نشطة</span>
-              <span>{formatCount(listSummary.expiringSoon)} تنتهي قريبًا</span>
-            </>
-          )}
-        />
-      </div>
-
+      <OperationalMetricCard
+        label="نسبة العقود النشطة"
+        value={`${formatCount(activeRate)}%`}
+        hint={`${formatCount(listSummary.active)} نشطة في الصفحة`}
+        icon={WalletCards}
+      />
       <OperationalMetricCard
         label="إجمالي العقود"
         value={formatCount(totalCount)}
         hint="حسب فلتر الحالة الحالي"
         icon={FileText}
+      />
+      <OperationalMetricCard
+        label="تنتهي قريبًا"
+        value={formatCount(listSummary.expiringSoon)}
+        hint="خلال نافذة المتابعة الحالية"
+        icon={Clock3}
       />
       <OperationalMetricCard
         label="إيجار العقود الظاهرة"
