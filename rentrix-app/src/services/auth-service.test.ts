@@ -54,12 +54,34 @@ describe('auth service session lifecycle', () => {
     await expect(signInWithEmail('a@b.test', 'bad')).rejects.toThrow('Invalid login credentials');
   });
 
-  it('signs out through the Auth API', async () => {
+  it('signs out through the Auth API and clears browser storage', async () => {
     auth.signOut.mockResolvedValue({ error: null });
-    await expect(signOut()).resolves.toBeUndefined();
-    expect(auth.signOut).toHaveBeenCalledTimes(1);
 
-    auth.signOut.mockResolvedValue({ error: new Error('network') });
-    await expect(signOut()).rejects.toThrow('network');
+    await expect(signOut()).resolves.toBe('remote');
+    expect(auth.signOut).toHaveBeenCalledTimes(1);
+    expect(window.localStorage.getItem('rentrix-auth-session')).toBeNull();
+  });
+
+  it('fails closed to local sign-out when the remote call is unavailable', async () => {
+    auth.signOut
+      .mockResolvedValueOnce({ error: new Error('network') })
+      .mockResolvedValueOnce({ error: null });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    await expect(signOut()).resolves.toBe('local');
+    expect(auth.signOut).toHaveBeenNthCalledWith(1);
+    expect(auth.signOut).toHaveBeenNthCalledWith(2, { scope: 'local' });
+    expect(window.localStorage.getItem('rentrix-auth-session')).toBeNull();
+
+    warn.mockRestore();
+  });
+
+  it('surfaces a failure only when local session clearing also fails', async () => {
+    auth.signOut
+      .mockResolvedValueOnce({ error: new Error('network') })
+      .mockResolvedValueOnce({ error: new Error('local storage failed') });
+
+    await expect(signOut()).rejects.toThrow('local storage failed');
+    expect(window.localStorage.getItem('rentrix-auth-session')).toBeNull();
   });
 });
