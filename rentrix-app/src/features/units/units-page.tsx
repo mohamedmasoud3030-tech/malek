@@ -8,6 +8,7 @@ import {
   Plus,
   Wrench,
 } from "lucide-react";
+import { useState } from "react";
 import {
   useUnitsListController,
   getUnitPageStatus,
@@ -15,12 +16,14 @@ import {
 import { EmbeddableWorkspace } from "@/components/layout/embeddable-workspace";
 import { LoadingState } from "@/components/ui/loading-state";
 import { Button } from "@/components/ui/button";
+import { DataTableColumnsMenu } from "@/components/ui/data-table";
 import { Select } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { EntityTable } from "@/components/ui/entity-table";
+import { EntityTable, type ColumnDef } from "@/components/ui/entity-table";
 import { FilterBar } from "@/components/ui/filter-bar";
 import { formatMoney, formatNumber } from "@/hooks/useCompanyFormatters";
 import { UnitFormModal } from "./unit-form-modal";
+import type { Unit } from "@/types/domain";
 
 const unitStatusTone = {
   available: "success",
@@ -28,6 +31,18 @@ const unitStatusTone = {
   maintenance: "warning",
   reserved: "neutral",
 } as const;
+
+const unitRegisterColumnOptions = [
+  { key: "unit_number", label: "الوحدة", locked: true },
+  { key: "property", label: "العقار" },
+  { key: "floor", label: "الدور" },
+  { key: "status", label: "الحالة" },
+  { key: "rent", label: "الإيجار" },
+  { key: "notes", label: "ملاحظات" },
+  { key: "action", label: "الإجراء", locked: true },
+] as const;
+
+const defaultUnitRegisterColumns = unitRegisterColumnOptions.map((column) => column.key);
 
 function UnitSummaryCard({
   icon: Icon,
@@ -62,6 +77,7 @@ export type UnitsWorkspaceProps = Readonly<{
 
 export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
   const ctrl = useUnitsListController();
+  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultUnitRegisterColumns]);
   if (ctrl.isLoading) return <LoadingState variant="route" />;
 
   const totalUnits = ctrl.units.length;
@@ -88,6 +104,95 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
       ) : null}
     </div>
   );
+
+  const columns: ColumnDef<Unit>[] = [
+    {
+      key: "unit_number",
+      header: "الوحدة",
+      priority: "identity",
+      render: (unit) => <span className="font-bold">{unit.unit_number}</span>,
+    },
+    {
+      key: "property",
+      header: "العقار",
+      priority: "secondary",
+      render: (unit) => {
+        const property = ctrl.propertyById.get(unit.property_id);
+        return property ? (
+          <Link
+            className="font-bold text-primary hover:underline"
+            to="/properties/$propertyId"
+            params={{ propertyId: property.id }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            {property.title}
+          </Link>
+        ) : (
+          "—"
+        );
+      },
+    },
+    {
+      key: "floor",
+      header: "الدور",
+      priority: "detail",
+      render: (unit) => unit.floor ?? "—",
+    },
+    {
+      key: "status",
+      header: "الحالة",
+      priority: "primary",
+      render: (unit) => {
+        const unitStatus = getUnitPageStatus(unit);
+        return (
+          <StatusBadge tone={unitStatusTone[unitStatus]}>
+            {ctrl.statusLabels[unitStatus]}
+          </StatusBadge>
+        );
+      },
+    },
+    {
+      key: "rent",
+      header: "الإيجار",
+      priority: "secondary",
+      render: (unit) => (
+        <span dir="ltr" className="block font-bold tabular-nums">
+          {formatMoney(unit.rent_amount)}
+        </span>
+      ),
+    },
+    {
+      key: "notes",
+      header: "ملاحظات",
+      priority: "detail",
+      render: (unit) => unit.notes ?? "—",
+    },
+    {
+      key: "action",
+      header: "إجراء",
+      priority: "actions",
+      render: (unit) => (
+        <div
+          className="flex gap-2"
+          onClick={(event) => event.stopPropagation()}
+          onKeyDown={(event) => event.stopPropagation()}
+        >
+          <Button variant="secondary" onClick={() => ctrl.openEdit(unit)}>
+            <Edit className="me-1 size-4" aria-hidden="true" />
+            تعديل
+          </Button>
+          <Button variant="ghost" asChild>
+            <Link
+              to="/properties/$propertyId/units/$unitId"
+              params={{ propertyId: unit.property_id, unitId: unit.id }}
+            >
+              التفاصيل
+            </Link>
+          </Button>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <EmbeddableWorkspace
@@ -174,11 +279,7 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
               <Select
                 aria-label="الحالة"
                 value={ctrl.status}
-                onChange={(event) =>
-                  ctrl.setStatus(
-                    event.target.value as "all" | typeof ctrl.status,
-                  )
-                }
+                onChange={(event) => ctrl.setStatus(event.target.value as "all" | typeof ctrl.status)}
               >
                 <option value="all">كل الحالات</option>
                 {ctrl.statusValues.map((value) => (
@@ -193,9 +294,7 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
               <Select
                 aria-label="الإشغال"
                 value={ctrl.occupancy}
-                onChange={(event) =>
-                  ctrl.setOccupancy(event.target.value as typeof ctrl.occupancy)
-                }
+                onChange={(event) => ctrl.setOccupancy(event.target.value as typeof ctrl.occupancy)}
               >
                 <option value="all">كل الوحدات</option>
                 <option value="occupied">مشغولة فقط</option>
@@ -204,158 +303,61 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
             </label>
           </>
         }
+        actions={(
+          <DataTableColumnsMenu
+            columns={unitRegisterColumnOptions}
+            visibleKeys={visibleColumnKeys}
+            onChange={setVisibleColumnKeys}
+          />
+        )}
       />
 
-      <section
-        data-unit-register
-        className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card"
-      >
-        <header className="flex flex-col gap-3 border-b border-border/70 bg-muted/35 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="grid size-9 place-items-center rounded-xl bg-primary/9 text-primary">
-                <DoorOpen className="size-4.5" aria-hidden="true" />
-              </span>
-              <h2 className="text-base font-black">سجل الوحدات</h2>
+      <section data-unit-register className="min-w-0 space-y-2.5">
+        <header className="flex min-h-11 flex-wrap items-center justify-between gap-3 px-1">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span className="grid size-8 shrink-0 place-items-center rounded-lg border border-primary/10 bg-primary/[0.06] text-primary">
+              <DoorOpen className="size-4" aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <h2 className="truncate text-sm font-black">سجل الوحدات</h2>
+              <p className="truncate text-[11px] font-medium text-muted-foreground">
+                {formatNumber(ctrl.filteredUnits.length)} وحدة ضمن الفلاتر الحالية
+              </p>
             </div>
-            <p className="mt-1.5 text-xs font-medium text-muted-foreground">
-              {formatNumber(ctrl.filteredUnits.length)} وحدة ضمن الفلاتر الحالية.
-            </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-muted-foreground">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-success/20 bg-success-bg px-2.5 py-1 text-success">
+          <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5 rounded-lg border border-success/20 bg-success-bg px-2.5 py-1 text-success">
               <Home className="size-3.5" aria-hidden="true" />
               {formatNumber(ctrl.kpis.availableCount)} متاحة
             </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-warning/20 bg-warning-bg px-2.5 py-1 text-warning">
+            <span className="inline-flex items-center gap-1.5 rounded-lg border border-warning/20 bg-warning-bg px-2.5 py-1 text-warning">
               <Wrench className="size-3.5" aria-hidden="true" />
               {formatNumber(maintenanceCount)} صيانة
             </span>
           </div>
         </header>
 
-        <div className="p-3 sm:p-4">
-          {
-            <EntityTable
-              aria-label="جدول الوحدات"
-              rows={ctrl.filteredUnits}
-              columns={[
-                {
-                  key: "unit_number",
-                  header: "الوحدة",
-                  priority: "identity",
-                  render: (unit) => (
-                    <span className="font-bold">{unit.unit_number}</span>
-                  ),
-                },
-                {
-                  key: "property",
-                  header: "العقار",
-                  priority: "secondary",
-                  render: (unit) => {
-                    const property = ctrl.propertyById.get(unit.property_id);
-                    return property ? (
-                      <Link
-                        className="font-bold text-primary hover:underline"
-                        to="/properties/$propertyId"
-                        params={{ propertyId: property.id }}
-                        onClick={(event) => event.stopPropagation()}
-                      >
-                        {property.title}
-                      </Link>
-                    ) : (
-                      "—"
-                    );
-                  },
-                },
-                {
-                  key: "floor",
-                  header: "الدور",
-                  priority: "detail",
-                  render: (unit) => unit.floor ?? "—",
-                },
-                {
-                  key: "status",
-                  header: "الحالة",
-                  priority: "primary",
-                  render: (unit) => {
-                    const unitStatus = getUnitPageStatus(unit);
-                    return (
-                      <StatusBadge tone={unitStatusTone[unitStatus]}>
-                        {ctrl.statusLabels[unitStatus]}
-                      </StatusBadge>
-                    );
-                  },
-                },
-                {
-                  key: "rent",
-                  header: "الإيجار",
-                  priority: "secondary",
-                  render: (unit) => (
-                    <span dir="ltr" className="block font-bold tabular-nums">
-                      {formatMoney(unit.rent_amount)}
-                    </span>
-                  ),
-                },
-                {
-                  key: "notes",
-                  header: "ملاحظات",
-                  priority: "detail",
-                  render: (unit) => unit.notes ?? "—",
-                },
-                {
-                  key: "action",
-                  header: "إجراء",
-                  priority: "actions",
-                  render: (unit) => (
-                    <div
-                      className="flex gap-2"
-                      onClick={(event) => event.stopPropagation()}
-                      onKeyDown={(event) => event.stopPropagation()}
-                    >
-                      <Button
-                        variant="secondary"
-                        onClick={() => ctrl.openEdit(unit)}
-                      >
-                        <Edit className="me-1 size-4" aria-hidden="true" />
-                        تعديل
-                      </Button>
-                      <Button variant="ghost" asChild>
-                        <Link
-                          to="/properties/$propertyId/units/$unitId"
-                          params={{
-                            propertyId: unit.property_id,
-                            unitId: unit.id,
-                          }}
-                        >
-                          التفاصيل
-                        </Link>
-                      </Button>
-                    </div>
-                  ),
-                },
-              ]}
-              onRowClick={ctrl.navigateToUnit}
-              mobileVisibleSecondaryKey="status"
-
-              keyOf={(unit) => unit.id}
-              isLoading={
-                ctrl.unitsQuery.isLoading || ctrl.propertiesQuery.isLoading
-              }
-              error={ctrl.isError ? new Error("تعذر تحميل الوحدات") : null}
-              errorTitle="تعذر تحميل الوحدات"
-              onRetry={ctrl.refetchAll}
-              emptyTitle="لا توجد وحدات مطابقة"
-              emptyDescription="غيّر البحث أو الفلاتر لعرض وحدات أخرى، أو أضف وحدة مرتبطة بعقار قائم."
-              emptyAction={
-                <Button onClick={ctrl.openCreate}>
-                  <Plus className="me-2 size-4" />
-                  إضافة وحدة
-                </Button>
-              }
-            />
+        <EntityTable
+          aria-label="جدول الوحدات"
+          rows={ctrl.filteredUnits}
+          columns={columns}
+          visibleColumnKeys={visibleColumnKeys}
+          onRowClick={ctrl.navigateToUnit}
+          mobileVisibleSecondaryKey="status"
+          keyOf={(unit) => unit.id}
+          isLoading={ctrl.unitsQuery.isLoading || ctrl.propertiesQuery.isLoading}
+          error={ctrl.isError ? new Error("تعذر تحميل الوحدات") : null}
+          errorTitle="تعذر تحميل الوحدات"
+          onRetry={ctrl.refetchAll}
+          emptyTitle="لا توجد وحدات مطابقة"
+          emptyDescription="غيّر البحث أو الفلاتر لعرض وحدات أخرى، أو أضف وحدة مرتبطة بعقار قائم."
+          emptyAction={
+            <Button onClick={ctrl.openCreate}>
+              <Plus className="me-2 size-4" />
+              إضافة وحدة
+            </Button>
           }
-        </div>
+        />
       </section>
 
       <UnitFormModal
