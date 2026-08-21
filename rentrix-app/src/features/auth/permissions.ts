@@ -133,6 +133,7 @@ export type AuthorizationDiagnostics = Readonly<{
 }>;
 
 type AuthorizationUserLike = Pick<User, 'id' | 'email' | 'app_metadata'>;
+type AuthorizationSessionLike = Pick<Session, 'user' | 'access_token'>;
 
 const knownRoles = new Set<string>(authorizationRoles);
 
@@ -287,6 +288,38 @@ export function getRoleFromUser(user: AuthorizationUserLike | null | undefined):
   return normalizeRole(user?.app_metadata?.user_role ?? user?.app_metadata?.role);
 }
 
+/**
+ * Custom Access Token Hooks amend the JWT, not session.user.app_metadata.
+ * Decode the role from the same server-issued access token that PostgREST
+ * validates. A malformed or absent claim fails closed.
+ */
+export function getRoleFromAccessToken(accessToken: string | null | undefined): AuthorizationRole | null {
+  if (!accessToken) return null;
+
+  try {
+    const payloadSegment = accessToken.split('.')[1];
+    if (!payloadSegment) return null;
+
+    const base64 = payloadSegment.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=');
+    const binary = globalThis.atob(padded);
+    const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+    const claims = JSON.parse(new TextDecoder().decode(bytes)) as unknown;
+    if (!claims || typeof claims !== 'object') return null;
+
+    const appMetadata = (claims as Record<string, unknown>).app_metadata;
+    if (!appMetadata || typeof appMetadata !== 'object') return null;
+    const metadata = appMetadata as Record<string, unknown>;
+    return normalizeRole(metadata.user_role ?? metadata.role);
+  } catch {
+    return null;
+  }
+}
+
+export function getRoleFromSession(session: AuthorizationSessionLike | null | undefined): AuthorizationRole | null {
+  return getRoleFromAccessToken(session?.access_token) ?? getRoleFromUser(session?.user);
+}
+
 export function getAuthorizationDiagnosticsFromUser(user: AuthorizationUserLike | null | undefined): AuthorizationDiagnostics {
   const userRole = user?.app_metadata?.user_role;
   const role = user?.app_metadata?.role;
@@ -300,8 +333,13 @@ export function getAuthorizationDiagnosticsFromUser(user: AuthorizationUserLike 
   };
 }
 
-export function getAuthorizationDiagnosticsFromSession(session: Pick<Session, 'user'> | null | undefined): AuthorizationDiagnostics {
-  return getAuthorizationDiagnosticsFromUser(session?.user);
+export function getAuthorizationDiagnosticsFromSession(session: AuthorizationSessionLike | null | undefined): AuthorizationDiagnostics {
+  const tokenRole = getRoleFromAccessToken(session?.access_token);
+  const metadataDiagnostics = getAuthorizationDiagnosticsFromUser(session?.user);
+
+  return tokenRole
+    ? { ...metadataDiagnostics, resolvedRole: tokenRole, metadataMismatch: false }
+    : metadataDiagnostics;
 }
 
 export function getAuthorizationContextFromUser(user: AuthorizationUserLike | null | undefined): AuthorizationContext | null {
@@ -315,8 +353,15 @@ export function getAuthorizationContextFromUser(user: AuthorizationUserLike | nu
   };
 }
 
-export function getAuthorizationContextFromSession(session: Pick<Session, 'user'> | null | undefined): AuthorizationContext | null {
-  return getAuthorizationContextFromUser(session?.user);
+export function getAuthorizationContextFromSession(session: AuthorizationSessionLike | null | undefined): AuthorizationContext | null {
+  const role = getRoleFromSession(session);
+  if (!session?.user?.id || !role) return null;
+
+  return {
+    userId: session.user.id,
+    email: session.user.email ?? null,
+    role,
+  };
 }
 
 export function hasRole(context: AuthorizationContext | null | undefined, role: AuthorizationRole): boolean {
