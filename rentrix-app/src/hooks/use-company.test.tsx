@@ -161,8 +161,9 @@ describe('company resolution timeout', () => {
     try {
       const stalledOperation = new Promise<void>(() => undefined);
       const pending = withCompanyResolutionTimeout(stalledOperation);
+      const assertion = expect(pending).rejects.toThrow(ACTIVE_COMPANY_ERROR);
       await vi.advanceTimersByTimeAsync(ACTIVE_COMPANY_RESOLUTION_TIMEOUT_MS);
-      await expect(pending).rejects.toThrow(ACTIVE_COMPANY_ERROR);
+      await assertion;
     } finally {
       vi.useRealTimers();
     }
