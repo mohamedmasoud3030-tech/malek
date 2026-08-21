@@ -103,6 +103,7 @@ Update it whenever a new `.from()` or `.rpc()` call is added to frontend source 
 | **09** | **`20260901000009_company_members_six_role_authority.sql`** | **Set canonical USER default and authorize membership management through effective `users.manage` permission** |
 | **10** | **`20260901000010_contracts_one_live_draft_per_unit_tenant.sql`** | **Prevent duplicate live drafts for the same company, unit and tenant** |
 | **11** | **`20260901000011_require_active_contract_before_invoice_posting.sql`** | **Require an active contract before an invoice can become `POSTED`** |
+| **12** | **`20260901000012_harden_custom_access_token_hook_identity.sql`** | **Deny company JWT claims for inactive or soft-deleted application identities** |
 
 ## Remote environments
 
