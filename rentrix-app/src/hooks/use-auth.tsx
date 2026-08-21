@@ -221,6 +221,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
       logout: async () => {
         explicitLogoutRef.current = true;
         await signOut();
+        // Clear client-side authority immediately. CompanyProvider observes the
+        // null session and clears all React Query data before another account
+        // can enter this browser.
+        setGrantedPermissions([]);
         setSession(null);
       },
     }),
