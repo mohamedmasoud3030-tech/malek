@@ -74,7 +74,7 @@ function Root({ className, children, onSubmit, onInvalidCapture, noValidate = tr
   return (
     <form
       data-entity-form
-      className={cn('entity-form grid min-w-0 gap-4', className)}
+      className={cn('entity-form grid min-w-0 gap-3.5', className)}
       noValidate={noValidate}
       onSubmit={handleSubmit}
       onInvalidCapture={handleInvalidCapture}
@@ -160,7 +160,7 @@ function Actions({ submitLabel, cancelLabel = 'إلغاء', onCancel, isSubmitti
     <div
       data-entity-form-actions
       className={cn(
-        'sticky bottom-[var(--entity-form-action-offset,0px)] z-20 -mx-3 grid gap-2 border-t border-border/70 bg-background/96 px-3 pb-[calc(0.625rem+env(safe-area-inset-bottom,0px))] pt-2.5 shadow-[0_-10px_24px_hsl(var(--background)/0.9)] backdrop-blur',
+        'sticky bottom-[var(--entity-form-action-offset,0px)] z-20 -mx-3 grid gap-2 border-t border-border/70 bg-background/96 px-3 pb-[calc(0.625rem+env(safe-area-inset-bottom,0px))] pt-2 shadow-[0_-8px_20px_hsl(var(--background)/0.88)] backdrop-blur',
         onCancel ? 'grid-cols-[minmax(0,1fr)_minmax(6.5rem,0.42fr)]' : 'grid-cols-1',
         'sm:static sm:mx-0 sm:flex sm:flex-row-reverse sm:justify-start sm:border-0 sm:bg-transparent sm:px-0 sm:pb-0 sm:pt-0 sm:shadow-none',
         className,
@@ -221,9 +221,9 @@ function Overlay({
       <DialogContent
         data-entity-form-surface="dialog"
         data-entity-form-variant={resolvedVisualVariant}
-        className={cn('flex max-h-[calc(var(--visual-viewport-height,100dvh)-1rem)] max-w-2xl flex-col gap-0 overflow-hidden p-0 sm:max-h-[min(calc(var(--visual-viewport-height,100dvh)-2rem),54rem)]', className)}
+        className={cn('flex max-h-[86dvh] max-w-2xl flex-col gap-0 overflow-hidden p-0 sm:max-h-[min(calc(var(--visual-viewport-height,100dvh)-2rem),50rem)]', className)}
       >
-        <DialogHeader className="shrink-0 border-b border-border/70 bg-card px-4 py-3.5 pe-14 text-card-foreground sm:px-5 sm:py-4">
+        <DialogHeader className="shrink-0 border-b border-border/70 bg-card px-4 py-3 pe-14 text-card-foreground sm:px-5 sm:py-3.5">
           <div className="flex flex-wrap items-center gap-2">
             <DialogTitle className="text-base text-foreground sm:text-lg">{title}</DialogTitle>
             {headerExtra}
