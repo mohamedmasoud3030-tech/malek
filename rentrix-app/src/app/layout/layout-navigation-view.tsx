@@ -9,10 +9,8 @@ import { navigationLabels } from '@/app/navigation/terminology-registry';
 import { cn } from '@/lib/utils';
 import { navGroups, workspaceChildNavItems, type NavItem } from '@/app/navigation/app-nav-items';
 import { useAuth } from '@/hooks/use-auth';
-import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
+import { getAppLanguageState, translateSharedLabel, type SharedLabel } from '@/lib/i18n';
 import { NotificationsMenu } from './notifications-menu';
-
-export type SharedLabel = (key: string) => string;
 
 function navLabel(labelKey: string, sharedLabel: SharedLabel) {
   return navigationLabels[labelKey] ?? sharedLabel(labelKey);
