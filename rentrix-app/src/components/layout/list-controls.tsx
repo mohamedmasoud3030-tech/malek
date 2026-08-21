@@ -20,7 +20,7 @@ export function ListControlSurface({ children, className, ariaLabel = 'البح�
       data-register-toolbar
       aria-label={ariaLabel}
       className={cn(
-        'overflow-hidden rounded-xl border border-border/85 bg-background shadow-[0_1px_2px_hsl(var(--foreground)/0.025)]',
+        'relative rounded-xl border border-border/85 bg-background shadow-[0_1px_2px_hsl(var(--foreground)/0.025)]',
         'p-2 sm:p-2.5',
         '[&_[data-filter-tabs-scroll]]:pb-0',
         '[&_button]:shrink-0',
