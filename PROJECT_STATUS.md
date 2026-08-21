@@ -90,3 +90,11 @@ The project has a substantial implementation and verification history, but the c
 ## Next milestone
 
 M1: execute the existing current-SHA security and boundary guards from a runnable checkout. The first code change will only be made after a reproducible finding is captured.
+
+## UX mobile recovery milestone
+
+- **Rendered evidence:** owner-supplied authenticated mobile screenshots confirmed a full-height permission-request dialog with large unused space, repeated access denial states, and an unbounded active-company loading state.
+- **IMPLEMENTED BUT NOT VERIFIED:** PR #1535 scopes the full-height mobile Dialog behavior to `EntityForm` only, adds active-company resolution timeout/recovery copy, restores valid CSS imports, and adds focused regression coverage.
+- **VERIFIED DEFECT:** Vercel build log for branch `arena/mobile-recovery-surfaces` found `globals.css:4` invalid because a literal `\\n` joined CSS imports. The repair is on the branch; the current Vercel quota/rate-limit has not produced a build for the repair commit.
+- **BLOCKED:** Current account access to Portfolio/Services is a live role/grant configuration issue. No permission was escalated or data was changed.
+
