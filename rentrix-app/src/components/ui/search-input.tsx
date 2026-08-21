@@ -10,15 +10,7 @@ interface SearchInputProps {
   'aria-label'?: string;
 }
 
-/**
- * Consistent search input used across all list pages.
- * Includes a clear button when there is text.
- * Uses a 16px mobile font size to avoid iOS input zoom, then compacts on larger screens.
- * The clear button keeps a 44px touch target while preserving the visual icon size.
- *
- * @example
- * <SearchInput value={query} onChange={setQuery} placeholder="ابحث عن عقد..." />
- */
+/** Canonical dense-register search control used across entity list pages. */
 export function SearchInput({
   value,
   onChange,
@@ -30,31 +22,31 @@ export function SearchInput({
 
   return (
     <div className={cn('relative', className)}>
-      <Search className="pointer-events-none absolute inset-y-0 end-3 my-auto size-4 text-muted-foreground" />
+      <Search className="pointer-events-none absolute inset-y-0 start-3 my-auto size-4 text-muted-foreground" aria-hidden="true" />
       <input
         ref={inputRef}
         type="search"
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         aria-label={ariaLabel}
         className={cn(
-          'h-11 w-full rounded-xl border border-input bg-background pe-9 ps-3 text-base sm:text-sm',
-          'outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10',
-          'placeholder:text-muted-foreground',
-          value && 'pe-16',
+          'h-11 w-full rounded-lg border border-input bg-background ps-9 pe-3 text-base font-medium text-foreground sm:text-sm',
+          'outline-none transition-[border-color,box-shadow,background-color] focus:border-foreground/30 focus:bg-background focus:ring-4 focus:ring-primary/10',
+          'placeholder:font-normal placeholder:text-muted-foreground/75',
+          value && 'pe-12',
         )}
       />
-      {value && (
+      {value ? (
         <button
           type="button"
           onClick={() => { onChange(''); inputRef.current?.focus(); }}
-          className="absolute inset-y-0 end-1 grid w-11 place-items-center rounded-full text-muted-foreground transition hover:text-foreground focus:outline-none focus:ring-4 focus:ring-primary/10"
+          className="absolute inset-y-0 end-0 grid w-11 place-items-center rounded-lg text-muted-foreground outline-none transition hover:bg-muted/70 hover:text-foreground focus-visible:ring-4 focus-visible:ring-primary/10"
           aria-label="مسح البحث"
         >
-          <X className="size-3.5" />
+          <X className="size-3.5" aria-hidden="true" />
         </button>
-      )}
+      ) : null}
     </div>
   );
 }
