@@ -8,13 +8,9 @@ interface ListControlSurfaceProps {
 }
 
 /**
- * Shared list-page controls surface — the card that wraps search + filters
- * on every entity list page (Properties, Contracts, …).
- *
- * Extraction contract: ListPage renders its search/filter grid inside this
- * surface, and pages that keep their KPI grid above the filters (Contracts)
- * wrap their filter row with it directly — so both shapes share the exact
- * same border, radius, padding, and shadow tokens.
+ * Canonical register control surface used by entity list pages.
+ * It deliberately behaves like table chrome rather than a dashboard card:
+ * thin border, compact spacing, neutral background and no decorative shadow.
  */
 export function ListControlSurface({ children, className, ariaLabel = 'البحث والتصفية' }: ListControlSurfaceProps) {
   return (
@@ -22,7 +18,7 @@ export function ListControlSurface({ children, className, ariaLabel = 'البح�
       data-list-controls
       aria-label={ariaLabel}
       className={cn(
-        'rounded-2xl border border-border/70 bg-card p-2.5 shadow-[0_6px_20px_hsl(var(--foreground)/0.035)] sm:p-3',
+        'rounded-xl border border-border bg-background p-2 shadow-[0_1px_2px_hsl(var(--foreground)/0.025)] sm:p-2.5',
         className,
       )}
     >
