@@ -7,18 +7,31 @@ import type { AuthorizationContext } from '@/features/auth/permissions';
 let pathname = '/dashboard';
 
 vi.mock('@/components/layout/permission-request-dialog', () => ({ PermissionRequestDialog: () => null }));
+vi.mock('@/features/command-palette/command-palette-store', () => ({
+  useCommandPaletteStore: () => ({ open: vi.fn(), isOpen: false }),
+}));
+vi.mock('@/hooks/use-auth', () => ({
+  useAuth: () => ({
+    authorization: { userId: 'admin-1', email: 'admin@malek.test', role: 'ADMIN' },
+  }),
+}));
+vi.mock('./notifications-menu', () => ({
+  NotificationsMenu: () => <button type="button" aria-label="الإشعارات">تنبيهات</button>,
+}));
 
 vi.mock('@tanstack/react-router', () => ({
   Link: ({
     children,
     to,
     activeOptions: _activeOptions,
+    search: _search,
     className,
     ...props
   }: {
     children: ReactNode;
     to: string;
     activeOptions?: unknown;
+    search?: unknown;
     className?: string;
   } & Record<string, unknown>) => (
     <a href={to} className={className} {...props}>{children}</a>
@@ -60,14 +73,20 @@ describe('Visual Wave 1 — route-derived app navigation', () => {
     expect(anchor(html, '/contracts')?.getAttribute('aria-current')).toBeNull();
   });
 
-  it('renders only Menu and Search in the mobile floating control', () => {
+  it('renders the MALEK search-first mobile dock with help, notifications and menu', () => {
+    pathname = '/dashboard';
     const html = renderToStaticMarkup(<MobileFloatingControl onMenu={() => undefined} />);
     const host = document.createElement('div');
     host.innerHTML = html;
 
-    expect(host.querySelector('[data-mobile-floating-control]')).not.toBeNull();
-    expect(host.querySelectorAll('button')).toHaveLength(2);
-    expect(host.querySelectorAll('a')).toHaveLength(0);
+    const dock = host.querySelector('[data-mobile-floating-control]');
+    expect(dock).not.toBeNull();
+    expect(host.querySelector('[data-mobile-dock-search]')?.textContent).toContain('بحث وأوامر');
+    expect(host.querySelector('a[href="/help"]')).not.toBeNull();
+    expect(host.querySelector('button[aria-label="الإشعارات"]')).not.toBeNull();
+    expect(host.querySelector('button[aria-label="فتح القائمة"]')).not.toBeNull();
+    expect(host.querySelectorAll('button')).toHaveLength(3);
+    expect(host.querySelectorAll('a')).toHaveLength(1);
   });
 
   it('keeps the Settings shell reachable while locking unauthorized children', () => {
