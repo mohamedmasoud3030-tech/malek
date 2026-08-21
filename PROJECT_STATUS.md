@@ -106,3 +106,10 @@ M1: execute the existing current-SHA security and boundary guards from a runnabl
 - **Live read-only evidence:** all active company membership roles match their account role; this includes two `ADMIN` memberships. The reported screenshots are therefore consistent with a client token-claim consumption defect, not missing Admin configuration.
 - **IMPLEMENTED BUT NOT VERIFIED:** PR #1535 now decodes only the server-issued access-token role for client UI authorization, falling back to existing metadata only when the token has no valid role. Unknown or malformed claims deny access. Focused regression tests cover the valid `ADMIN` token claim and malformed/unknown claim rejection.
 - **No production mutation:** no user, membership, permission grant, RLS policy, JWT hook, or deployment was changed.
+
+## PWA build dependency milestone
+
+- **VERIFIED DEFECT:** Vercel deployment `dpl_EYf9QgKzpkZasJfbTXvYm8BDJdxt` passed the earlier CSS parse point and then failed because Rollup could not resolve `workbox-window` from Vite PWA's virtual registration module.
+- **Root cause:** `workbox-window@7.4.1` existed as a transitive lockfile package but was not a direct `rentrix-app` dependency. pnpm's isolated module layout correctly prevents the virtual module from using an undeclared dependency.
+- **IMPLEMENTED BUT NOT VERIFIED:** declared `workbox-window@^7.4.1`, synchronized its existing lockfile resolution, and added `pwa-dependency-contract.test.ts`.
+- **Next evidence:** a Vercel preview build of the branch must pass, then its generated manifest/service worker can be inspected. No deployment was promoted and no production configuration was changed.
