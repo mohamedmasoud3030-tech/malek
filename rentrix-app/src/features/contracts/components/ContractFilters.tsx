@@ -38,27 +38,30 @@ export function ContractFilters({
   }));
 
   return (
-    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-      <div className="flex flex-wrap items-center gap-2">
-        <FilterTabs options={filterOptions} value={status} onChange={setStatus} tone="contracts" />
-        <Button
-          variant={expiringOnly ? 'primary' : 'secondary'}
-          onClick={() => setExpiringOnly((value) => !value)}
-          className="shrink-0"
-        >
-          <AlertTriangle className="me-2 size-4" />
-          تنتهي خلال 30 يوم
-        </Button>
-        {hasActiveFilters && (
-          <Button variant="ghost" onClick={resetFilters}>مسح الفلاتر</Button>
-        )}
-      </div>
+    <div className="flex min-w-0 flex-col gap-2.5 lg:flex-row lg:items-center">
       <SearchInput
         value={searchTerm}
         onChange={setSearchTerm}
         placeholder="بحث باسم المستأجر، الوحدة، العقار، أو رقم العقد"
-        className="w-full lg:max-w-md"
+        className="w-full lg:max-w-xl lg:flex-1"
       />
+
+      <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto no-scrollbar">
+        <FilterTabs options={filterOptions} value={status} onChange={setStatus} tone="contracts" />
+        <Button
+          variant={expiringOnly ? 'primary' : 'secondary'}
+          onClick={() => setExpiringOnly((value) => !value)}
+          className="min-h-10 shrink-0 rounded-lg px-3 text-xs"
+        >
+          <AlertTriangle className="me-1.5 size-3.5" />
+          تنتهي خلال 30 يوم
+        </Button>
+        {hasActiveFilters ? (
+          <Button variant="ghost" className="min-h-10 shrink-0 rounded-lg px-3 text-xs" onClick={resetFilters}>
+            مسح الفلاتر
+          </Button>
+        ) : null}
+      </div>
     </div>
   );
 }
