@@ -157,10 +157,10 @@ export function NavigationLinks({
 }
 
 /**
- * Mobile command dock inspired by compact professional control bars rather than
- * a traditional bottom navigation. Search, help, notifications and the main
- * navigation live in one thumb-reachable surface, while each action keeps an
- * accessible 44px target and its native permission/runtime behavior.
+ * MALEK mobile command dock. The supplied reference informs the compact,
+ * thumb-reachable control-center idea, but the hierarchy is intentionally ours:
+ * search is the primary wide action while support, notifications and navigation
+ * stay compact utility controls.
  */
 export function MobileFloatingControl({ onMenu, menuRef }: Readonly<{ onMenu: () => void; menuRef?: Ref<HTMLButtonElement> }>) {
   const { open, isOpen } = useCommandPaletteStore();
@@ -170,27 +170,30 @@ export function MobileFloatingControl({ onMenu, menuRef }: Readonly<{ onMenu: ()
   const sharedLabel = (key: string) => translateSharedLabel(key, appLanguage.language);
   const supportFrom = sanitizeSupportRoute(location.pathname);
   const isHelpActive = location.pathname === '/help' || location.pathname.startsWith('/help/');
-  const dockActionClass = 'grid size-11 shrink-0 place-items-center rounded-full border border-transparent text-muted-foreground outline-none transition-[background-color,color,border-color,box-shadow,transform] duration-150 hover:bg-muted hover:text-foreground active:scale-[0.97] focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none motion-reduce:transform-none';
+  const utilityActionClass = 'grid size-11 shrink-0 place-items-center rounded-full border border-transparent text-muted-foreground outline-none transition-[background-color,color,border-color,box-shadow,transform] duration-150 hover:bg-muted hover:text-foreground active:scale-[0.97] focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none motion-reduce:transform-none';
 
   return (
     <div
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] md:hidden"
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] md:hidden"
       data-mobile-floating-control
       data-mobile-control-center
       aria-label="مركز التحكم"
     >
-      <div className="pointer-events-auto flex items-center gap-1.5 rounded-[1.7rem] border border-border/80 bg-background/92 p-1.5 shadow-[0_20px_60px_-24px_hsl(var(--foreground)/0.5),0_2px_10px_hsl(var(--foreground)/0.08)] ring-1 ring-background/70 backdrop-blur-2xl supports-[backdrop-filter]:bg-background/82">
+      <div className="pointer-events-auto flex w-full max-w-[22rem] items-center gap-1.5 rounded-[1.7rem] border border-border/80 bg-background/92 p-1.5 shadow-[0_20px_60px_-24px_hsl(var(--foreground)/0.5),0_2px_10px_hsl(var(--foreground)/0.08)] ring-1 ring-background/70 backdrop-blur-2xl supports-[backdrop-filter]:bg-background/82">
         <button
           type="button"
           onClick={open}
           aria-label="فتح البحث والأوامر"
           aria-pressed={isOpen}
+          data-mobile-dock-search
           className={cn(
-            dockActionClass,
-            isOpen && 'border-foreground bg-foreground text-background shadow-sm hover:bg-foreground hover:text-background',
+            'flex min-h-11 min-w-0 flex-1 items-center justify-start gap-2 rounded-[1.2rem] border border-border/80 bg-muted/55 px-3.5 text-start text-foreground outline-none transition-[background-color,color,border-color,box-shadow,transform] duration-150 hover:bg-muted active:scale-[0.99] focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none motion-reduce:transform-none',
+            isOpen && 'border-foreground bg-foreground text-background shadow-sm hover:bg-foreground',
           )}
         >
-          <Search className="size-[1.15rem]" aria-hidden="true" />
+          <Search className="size-[1.05rem] shrink-0" aria-hidden="true" />
+          <span className="min-w-0 flex-1 truncate text-xs font-black">بحث وأوامر</span>
+          <span className={cn('size-1.5 shrink-0 rounded-full bg-primary', isOpen && 'bg-background')} aria-hidden="true" />
         </button>
 
         <Link
@@ -199,11 +202,11 @@ export function MobileFloatingControl({ onMenu, menuRef }: Readonly<{ onMenu: ()
           aria-label="المساعدة والدعم"
           aria-current={isHelpActive ? 'page' : undefined}
           className={cn(
-            dockActionClass,
+            utilityActionClass,
             isHelpActive && 'border-foreground bg-foreground text-background shadow-sm hover:bg-foreground hover:text-background',
           )}
         >
-          <CircleHelp className="size-[1.15rem]" aria-hidden="true" />
+          <CircleHelp className="size-[1.1rem]" aria-hidden="true" />
         </Link>
 
         <div
@@ -219,9 +222,9 @@ export function MobileFloatingControl({ onMenu, menuRef }: Readonly<{ onMenu: ()
           onClick={onMenu}
           aria-label="فتح القائمة"
           aria-haspopup="dialog"
-          className={cn(dockActionClass, 'border-foreground bg-foreground text-background shadow-sm hover:bg-foreground hover:text-background')}
+          className={cn(utilityActionClass, 'border-foreground bg-foreground text-background shadow-sm hover:bg-foreground hover:text-background')}
         >
-          <Menu className="size-[1.15rem]" aria-hidden="true" />
+          <Menu className="size-[1.1rem]" aria-hidden="true" />
         </button>
       </div>
     </div>
