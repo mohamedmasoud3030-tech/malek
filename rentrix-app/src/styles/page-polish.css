@@ -148,15 +148,16 @@
 [data-status-badge][data-tone='slate'] { --status-tone: var(--tone-slate); --status-soft: var(--tone-slate-soft); }
 [data-status-badge] [data-status-dot] { background: currentColor; }
 
-/* DialogContent classifies itself after rendering. Data-entry dialogs receive
-   the same full-height mobile contract as EntityForm, while confirmation and
-   information dialogs remain compact. Physical edges avoid RTL ambiguity. */
+/* Only long EntityForm workflows use the full-height mobile surface. Short
+   dialogs such as permission requests must remain compact: expanding every
+   dialog that happens to contain a textarea strands the decision and action
+   at opposite ends of the screen. Physical edges avoid RTL ambiguity. */
 @media (max-width: 639px) {
   html {
     scrollbar-gutter: auto;
   }
 
-  [data-dialog-content][data-dialog-form='true'] {
+  [data-dialog-content][data-entity-form-surface='dialog'][data-dialog-form='true'] {
     left: 0 !important;
     right: 0 !important;
     top: var(--visual-viewport-offset-top, 0px) !important;
