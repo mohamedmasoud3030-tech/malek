@@ -192,7 +192,10 @@ export function MobileFloatingControl({ onMenu, menuRef }: Readonly<{ onMenu: ()
   const sharedLabel = (key: string) => translateSharedLabel(key, appLanguage.language);
   const [quickOpen, setQuickOpen] = useState(false);
   const quickRootRef = useRef<HTMLDivElement>(null);
-  const visibleQuickActions = mobileQuickActions.filter((item) => canShowNavigationItem(authorization, item.permission));
+  // Keep the quick-create affordance stable even while account permissions are
+  // still loading or incomplete. Route-level authorization remains authoritative
+  // if the user chooses an action they cannot perform.
+  const visibleQuickActions = mobileQuickActions;
   const utilityActionClass = 'grid size-10 shrink-0 place-items-center rounded-xl border border-transparent text-muted-foreground outline-none transition-[background-color,color,border-color,box-shadow,transform] duration-150 hover:bg-muted hover:text-foreground active:scale-[0.97] focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none motion-reduce:transform-none';
 
   useEffect(() => {
@@ -270,20 +273,18 @@ export function MobileFloatingControl({ onMenu, menuRef }: Readonly<{ onMenu: ()
           <span className="min-w-0 flex-1 truncate text-xs font-black">القائمة</span>
         </button>
 
-        {visibleQuickActions.length > 0 ? (
-          <button
-            type="button"
-            onClick={() => setQuickOpen((value) => !value)}
-            aria-label="فتح الإضافة السريعة"
-            aria-haspopup="menu"
-            aria-expanded={quickOpen}
-            title="إضافة سريعة"
-            data-mobile-dock-quick-add
-            className={cn(utilityActionClass, quickOpen && 'border-primary/20 bg-primary/10 text-primary')}
-          >
-            <Plus className="size-[1.05rem]" aria-hidden="true" />
-          </button>
-        ) : null}
+        <button
+          type="button"
+          onClick={() => setQuickOpen((value) => !value)}
+          aria-label="فتح الإضافة السريعة"
+          aria-haspopup="menu"
+          aria-expanded={quickOpen}
+          title="إضافة سريعة"
+          data-mobile-dock-quick-add
+          className={cn(utilityActionClass, quickOpen && 'border-primary/20 bg-primary/10 text-primary')}
+        >
+          <Plus className="size-[1.05rem]" aria-hidden="true" />
+        </button>
 
         <button
           type="button"
