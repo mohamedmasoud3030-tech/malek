@@ -1,6 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Download, HandCoins, Printer, ReceiptText } from 'lucide-react';
+import { useState } from 'react';
+import { DataTableColumnsMenu } from '@/components/ui/data-table';
 import { EntityTable } from '@/components/ui/entity-table';
 import { getSafeRemainingAmount } from '../financialMath';
 import { isInvoiceCollectible } from '../invoices/quick-collect';
@@ -11,19 +13,28 @@ import {
   type InvoiceSummary,
 } from '../invoices/invoiceService';
 import { formatDate, formatInvoiceStatusLabel, formatMoney } from './financials-formatters';
-import { normalizeInvoiceStatus } from './invoice-status-labels';
 import { InvoiceFilters, type InvoiceFilterOption } from './invoice-filters';
 import { InvoiceSummaryCards } from './invoice-summary-cards';
-import { formatLatinNumber } from '@/lib/formatters';
 import {
   FinanceSection,
-  FinanceCluster,
   FinanceFilterBar,
   FinanceStatusBadge,
   mapInvoiceStatusToFinanceKind,
   FinanceAmount,
 } from './finance-reporting-visual-foundations';
 import { ActionMenu } from '@/components/ui/action-menu';
+
+const invoiceColumnOptions = [
+  { key: 'id', label: 'رقم الفاتورة', locked: true },
+  { key: 'due_date', label: 'تاريخ الاستحقاق' },
+  { key: 'gross', label: 'الإجمالي شامل VAT' },
+  { key: 'paid_amount', label: 'المدفوع' },
+  { key: 'remaining', label: 'المتبقي' },
+  { key: 'status', label: 'الحالة' },
+  { key: 'actions', label: 'الإجراءات', locked: true },
+] as const;
+
+const defaultInvoiceColumns = invoiceColumnOptions.map((column) => column.key);
 
 type InvoiceListSectionProps = {
   summary: InvoiceSummary;
@@ -96,7 +107,7 @@ export function InvoiceListSection({
   onPropertyChange,
   onPageChange,
 }: InvoiceListSectionProps) {
-  const totalPages = pageSize > 0 ? Math.max(1, Math.ceil(total / pageSize)) : 1;
+  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultInvoiceColumns]);
 
   return (
     <Card className="overflow-hidden" data-component-card>
@@ -114,7 +125,6 @@ export function InvoiceListSection({
         </div>
       </CardHeader>
       <CardContent className="space-y-5 p-3 sm:p-5">
-        {/* 3. Summary KPIs with drill-down preserving filters */}
         <FinanceSection ariaLabel="ملخص الفواتير">
           <InvoiceSummaryCards
             summary={summary}
@@ -123,9 +133,8 @@ export function InvoiceListSection({
           />
         </FinanceSection>
 
-        {/* 4. Filters and period context — preserved during drill-down */}
         <FinanceSection ariaLabel="فلاتر الفواتير">
-          <FinanceFilterBar ariaLabel="فلاتر الفواتير" className="rounded-2xl">
+          <FinanceFilterBar ariaLabel="فلاتر الفواتير" className="rounded-xl border-border/85 bg-background shadow-[0_1px_2px_hsl(var(--foreground)/0.025)]">
             <InvoiceFilters
               status={status}
               invoiceSearch={invoiceSearch}
@@ -148,7 +157,6 @@ export function InvoiceListSection({
           </FinanceFilterBar>
         </FinanceSection>
 
-        {/* 5. Main table/list — desktop stays table, tabular-nums, LTR islands */}
         <FinanceSection ariaLabel="قائمة الفواتير">
           <div data-finance-table-wrapper>
             <EntityTable
@@ -156,6 +164,16 @@ export function InvoiceListSection({
               rows={invoices}
               keyOf={(invoice) => invoice.id}
               mobileVisibleSecondaryKey="remaining"
+              visibleColumnKeys={visibleColumnKeys}
+              toolbar={(
+                <div className="flex justify-end">
+                  <DataTableColumnsMenu
+                    columns={invoiceColumnOptions}
+                    visibleKeys={visibleColumnKeys}
+                    onChange={setVisibleColumnKeys}
+                  />
+                </div>
+              )}
               isLoading={isLoading}
               error={isError ? error : undefined}
               errorTitle="تعذر تحميل الفواتير"
@@ -166,6 +184,7 @@ export function InvoiceListSection({
                   : 'أنشئ فواتير جديدة من الأعلى. لن يظهر خطأ التحميل كحالة فارغة.'
               }
               onRowClick={(invoice) => onSelectInvoice(invoice.id)}
+              pagination={{ page, pageSize, total, onPageChange }}
               columns={[
                 {
                   key: 'id',
@@ -273,38 +292,8 @@ export function InvoiceListSection({
                   },
                 },
               ]}
-
             />
           </div>
-
-          <FinanceCluster>
-            <div className="flex flex-col gap-3 rounded-2xl border border-border/60 bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-xs font-bold text-muted-foreground" aria-live="polite" dir="ltr">
-                إجمالي {formatLatinNumber(total, 'ar')} فاتورة · صفحة {formatLatinNumber(page, 'ar')} من{' '}
-                {formatLatinNumber(totalPages, 'ar')} — الفلاتر محفوظة أثناء التنقل
-              </p>
-              <div className="grid grid-cols-2 gap-2 sm:flex">
-                <Button
-                  variant="outline"
-                  className="min-h-11 rounded-xl"
-                  disabled={page <= 1}
-                  onClick={() => onPageChange(page - 1)}
-                  aria-label="الصفحة السابقة"
-                >
-                  السابق
-                </Button>
-                <Button
-                  variant="outline"
-                  className="min-h-11 rounded-xl"
-                  disabled={page >= totalPages}
-                  onClick={() => onPageChange(page + 1)}
-                  aria-label="الصفحة التالية"
-                >
-                  التالي
-                </Button>
-              </div>
-            </div>
-          </FinanceCluster>
         </FinanceSection>
       </CardContent>
     </Card>

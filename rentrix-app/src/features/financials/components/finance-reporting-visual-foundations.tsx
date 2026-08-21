@@ -18,6 +18,7 @@
 import type { LucideIcon } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import { cn } from '@/lib/utils';
+import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { KpiCard, type KpiAccent } from '@/components/ui/kpi-card';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Button } from '@/components/ui/button';
@@ -242,7 +243,7 @@ export function FinanceKpiCard({
         data-drillable={isDrillable ? 'true' : 'false'}
         className="block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
       >
-        <div data-finance-kpi-grid data-drillable={isDrillable ? 'true' : 'false'} className="h-full">
+        <div data-finance-kpi-card data-drillable={isDrillable ? 'true' : 'false'} className="h-full">
           {cardContent}
         </div>
       </Link>
@@ -259,14 +260,14 @@ export function FinanceKpiCard({
         data-drillable={isDrillable ? 'true' : 'false'}
         className="block w-full rounded-xl text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
       >
-        <div data-finance-kpi-grid data-drillable={isDrillable ? 'true' : 'false'} className="h-full">
+        <div data-finance-kpi-card data-drillable={isDrillable ? 'true' : 'false'} className="h-full">
           {cardContent}
         </div>
       </button>
     );
   }
 
-  return <div data-finance-kpi-grid className="h-full">{cardContent}</div>;
+  return <div data-finance-kpi-card className="h-full">{cardContent}</div>;
 }
 
 // ─────────────────────────────────────────────
@@ -311,26 +312,33 @@ export function FinanceCluster({
   );
 }
 
+/**
+ * Finance KPI grid.
+ *
+ * This is a thin, finance-labelled wrapper over the canonical
+ * `ResponsiveCardGrid`. Finance previously enforced its own 2–6 column
+ * rhythm here and relied on a separate CSS override
+ * (`[data-finance-kpi-grid]` in app-density-contract.css) to claw wider
+ * requests back down to the shared density contract. Routing through
+ * `ResponsiveCardGrid` means the finance section now shares the same
+ * single enforcement point (2 columns on mobile, 2 or the opt-in 3 on
+ * desktop) as every other register/KPI surface in the app, so the
+ * contract lives in one place instead of two.
+ */
 export function FinanceKpiGrid({
   children,
   desktopColumns = 4,
   className,
 }: Readonly<{ children: React.ReactNode; desktopColumns?: 2 | 3 | 4 | 5 | 6; className?: string }>) {
   return (
-    <div
-      data-finance-kpi-grid
-      className={cn(
-        'grid gap-3',
-        desktopColumns === 2 && 'sm:grid-cols-2',
-        desktopColumns === 3 && 'sm:grid-cols-2 lg:grid-cols-3',
-        desktopColumns === 4 && 'sm:grid-cols-2 lg:grid-cols-4',
-        desktopColumns === 5 && 'sm:grid-cols-2 lg:grid-cols-5',
-        desktopColumns === 6 && 'sm:grid-cols-2 lg:grid-cols-6',
-        className,
-      )}
+    <ResponsiveCardGrid
+      data-finance-kpi-grid=""
+      desktopColumns={desktopColumns === 3 ? 3 : 2}
+      gap="sm"
+      className={className}
     >
       {children}
-    </div>
+    </ResponsiveCardGrid>
   );
 }
 

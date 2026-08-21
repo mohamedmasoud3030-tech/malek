@@ -1,14 +1,18 @@
 /**
  * DataTable — product-facing alias for EntityTable.
- * Keeps the ADR-008 table implementation as the single source of truth
- * while matching the design-system naming used across product docs.
+ * Keeps the canonical MALEK register implementation as the single source of
+ * truth while exposing the product-facing design-system naming.
  */
 export {
   EntityTable as DataTable,
   CompactResponsiveTable,
   type ColumnDef,
+  type ColumnPriority,
   type SortState,
   type SortDirection,
   type PaginationState,
+  type RowSelectionState,
   type EntityTableProps as DataTableProps,
 } from './entity-table';
+
+export { DataTableColumnsMenu } from './data-table-columns-menu';

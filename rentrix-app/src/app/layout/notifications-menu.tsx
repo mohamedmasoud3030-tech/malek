@@ -9,7 +9,7 @@ import { listPermissionRequestsForReview, type PermissionRequest } from '@/featu
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { cn } from '@/lib/utils';
-import type { SharedLabel } from './layout-navigation-view';
+import type { SharedLabel } from '@/lib/i18n';
 import { listAppNotifications, markAppNotificationRead } from './app-notifications-service';
 
 /**

@@ -3,8 +3,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { useAuth } from '@/hooks/use-auth';
 import { canAccess } from '@/features/auth/permissions';
 import { getTodayLocalDateString } from '@/features/financials/financials-date-utils';
@@ -134,6 +136,89 @@ export function FixedMonthlyAccrualWorkspace() {
     }
   };
 
+  const accrualColumns = useMemo<ColumnDef<FixedMonthlyAccrualRow>[]>(() => [
+    {
+      key: 'date',
+      header: 'التاريخ الاقتصادي',
+      priority: 'identity',
+      render: (row) => <span className="whitespace-nowrap font-bold" dir="ltr">{row.accrualDate}</span>,
+    },
+    {
+      key: 'propertyOwner',
+      header: 'العقار / المالك',
+      priority: 'primary',
+      render: (row) => (
+        <span className="min-w-0">
+          <span className="block truncate font-bold">{row.propertyName}</span>
+          <span className="block truncate text-[11px] text-muted-foreground">{row.ownerName} · نسخة {row.versionNo}</span>
+        </span>
+      ),
+    },
+    {
+      key: 'monthly',
+      header: 'المبلغ الشهري',
+      priority: 'secondary',
+      render: (row) => <span className="whitespace-nowrap tabular-nums">{formatOmr(row.monthlyAmountOmr)}</span>,
+    },
+    {
+      key: 'net',
+      header: 'الصافي',
+      priority: 'secondary',
+      render: (row) => <span className="whitespace-nowrap tabular-nums">{formatOmr(row.netAmount)}</span>,
+    },
+    {
+      key: 'tax',
+      header: 'الضريبة',
+      priority: 'detail',
+      render: (row) => <span className="whitespace-nowrap tabular-nums">{formatOmr(row.taxAmount)}</span>,
+    },
+    {
+      key: 'gross',
+      header: 'الإجمالي',
+      priority: 'primary',
+      render: (row) => <span className="whitespace-nowrap font-bold tabular-nums">{formatOmr(row.grossAmount)}</span>,
+    },
+    {
+      key: 'status',
+      header: 'حالة الترحيل',
+      priority: 'secondary',
+      render: (row) => {
+        const status = statusPresentation(row);
+        return (
+          <span className="block min-w-0">
+            <Badge variant={status.variant}>{status.label}</Badge>
+            {row.latePosting ? <span className="mt-1 block text-[10px] text-warning">فترة لاحقة مفتوحة</span> : null}
+            {row.reversalReason ? <span className="mt-1 block max-w-48 truncate text-[10px] text-muted-foreground">{row.reversalReason}</span> : null}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'postingDate',
+      header: 'تاريخ الترحيل',
+      priority: 'detail',
+      render: (row) => <span className="whitespace-nowrap" dir="ltr">{row.postingDate ?? '—'}</span>,
+    },
+    {
+      key: 'actions',
+      header: 'الإجراء',
+      priority: 'actions',
+      render: (row) => canReverse && row.status !== 'REVERSED' ? (
+        <Button
+          size="sm"
+          variant="outline"
+          leftIcon={<RotateCcw className="size-3.5" />}
+          onClick={() => {
+            setReversalAccrualId(row.id);
+            setReversalReason('');
+          }}
+        >
+          عكس
+        </Button>
+      ) : <span className="text-muted-foreground">—</span>,
+    },
+  ], [canReverse]);
+
   return (
     <section className="space-y-4" aria-label="استحقاقات العمولة الشهرية الثابتة">
       <Card>
@@ -152,8 +237,8 @@ export function FixedMonthlyAccrualWorkspace() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end">
-            <div className="space-y-1.5">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="min-w-0 space-y-1.5">
               <Label htmlFor="fixed-accrual-from">من تاريخ</Label>
               <Input
                 id="fixed-accrual-from"
@@ -162,7 +247,7 @@ export function FixedMonthlyAccrualWorkspace() {
                 onChange={(event) => setDateFrom(event.target.value)}
               />
             </div>
-            <div className="space-y-1.5">
+            <div className="min-w-0 space-y-1.5">
               <Label htmlFor="fixed-accrual-to">إلى تاريخ</Label>
               <Input
                 id="fixed-accrual-to"
@@ -172,23 +257,25 @@ export function FixedMonthlyAccrualWorkspace() {
                 onChange={(event) => setDateTo(event.target.value)}
               />
             </div>
-            <Button
-              variant="outline"
-              onClick={() => void load()}
-              loading={isLoading}
-              leftIcon={<RefreshCw className="size-4" />}
-            >
-              تحديث
-            </Button>
-            {canExecute ? (
+            <div className="col-span-2 flex flex-wrap gap-2">
               <Button
-                onClick={() => void handleExecute()}
-                loading={isExecuting}
-                leftIcon={<Play className="size-4" />}
+                variant="outline"
+                onClick={() => void load()}
+                loading={isLoading}
+                leftIcon={<RefreshCw className="size-4" />}
               >
-                تنفيذ الاستحقاق
+                تحديث
               </Button>
-            ) : null}
+              {canExecute ? (
+                <Button
+                  onClick={() => void handleExecute()}
+                  loading={isExecuting}
+                  leftIcon={<Play className="size-4" />}
+                >
+                  تنفيذ الاستحقاق
+                </Button>
+              ) : null}
+            </div>
           </div>
 
           <div className="flex gap-2 rounded-xl border border-warning/30 bg-warning/5 p-3 text-xs leading-6 text-foreground">
@@ -213,12 +300,12 @@ export function FixedMonthlyAccrualWorkspace() {
       </Card>
 
       {data ? (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <ResponsiveCardGrid gap="sm">
           <Card variant="statistic"><p className="text-xs text-muted-foreground">عدد الأيام</p><p className="mt-1 text-xl font-black">{data.totalCount}</p></Card>
           <Card variant="statistic"><p className="text-xs text-muted-foreground">الصافي</p><p className="mt-1 text-xl font-black">{formatOmr(data.netAmount)}</p></Card>
           <Card variant="statistic"><p className="text-xs text-muted-foreground">الضريبة</p><p className="mt-1 text-xl font-black">{formatOmr(data.taxAmount)}</p></Card>
           <Card variant="statistic"><p className="text-xs text-muted-foreground">الإجمالي</p><p className="mt-1 text-xl font-black">{formatOmr(data.grossAmount)}</p></Card>
-        </div>
+        </ResponsiveCardGrid>
       ) : null}
 
       {reversalAccrualId ? (
@@ -252,78 +339,32 @@ export function FixedMonthlyAccrualWorkspace() {
         </Card>
       ) : null}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>سجل الاستحقاقات</CardTitle>
-          <CardDescription>
-            يعرض التاريخ الاقتصادي والمبلغ الشهري المجمد والقيد الناتج وحالة الترحيل أو العكس.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <p className="py-10 text-center text-sm text-muted-foreground">جارٍ تحميل الاستحقاقات...</p>
-          ) : !data?.accruals.length ? (
-            <p className="py-10 text-center text-sm text-muted-foreground">لا توجد استحقاقات في النطاق المحدد.</p>
-          ) : (
-            <div className="overflow-x-auto rounded-xl border border-border/70">
-              <table className="w-full min-w-[980px] text-right text-xs">
-                <thead className="bg-muted/40 text-muted-foreground">
-                  <tr>
-                    <th className="px-3 py-3 font-bold">التاريخ الاقتصادي</th>
-                    <th className="px-3 py-3 font-bold">العقار / المالك</th>
-                    <th className="px-3 py-3 font-bold">المبلغ الشهري</th>
-                    <th className="px-3 py-3 font-bold">الصافي</th>
-                    <th className="px-3 py-3 font-bold">الضريبة</th>
-                    <th className="px-3 py-3 font-bold">الإجمالي</th>
-                    <th className="px-3 py-3 font-bold">حالة الترحيل</th>
-                    <th className="px-3 py-3 font-bold">تاريخ الترحيل</th>
-                    <th className="px-3 py-3 font-bold">الإجراء</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/60">
-                  {data.accruals.map((row) => {
-                    const status = statusPresentation(row);
-                    return (
-                      <tr key={row.id} className="bg-card align-top">
-                        <td className="whitespace-nowrap px-3 py-3 font-bold" dir="ltr">{row.accrualDate}</td>
-                        <td className="px-3 py-3">
-                          <span className="block font-bold">{row.propertyName}</span>
-                          <span className="block text-muted-foreground">{row.ownerName} · نسخة {row.versionNo}</span>
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-3">{formatOmr(row.monthlyAmountOmr)}</td>
-                        <td className="whitespace-nowrap px-3 py-3">{formatOmr(row.netAmount)}</td>
-                        <td className="whitespace-nowrap px-3 py-3">{formatOmr(row.taxAmount)}</td>
-                        <td className="whitespace-nowrap px-3 py-3 font-bold">{formatOmr(row.grossAmount)}</td>
-                        <td className="px-3 py-3">
-                          <Badge variant={status.variant}>{status.label}</Badge>
-                          {row.latePosting ? <span className="mt-1 block text-[10px] text-warning">فترة لاحقة مفتوحة</span> : null}
-                          {row.reversalReason ? <span className="mt-1 block max-w-48 text-[10px] text-muted-foreground">{row.reversalReason}</span> : null}
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-3" dir="ltr">{row.postingDate ?? '—'}</td>
-                        <td className="px-3 py-3">
-                          {canReverse && row.status !== 'REVERSED' ? (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              leftIcon={<RotateCcw className="size-3.5" />}
-                              onClick={() => { setReversalAccrualId(row.id); setReversalReason(''); }}
-                            >
-                              عكس
-                            </Button>
-                          ) : '—'}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
+      <section className="space-y-2" aria-labelledby="fixed-accrual-register-title">
+        <div className="flex flex-wrap items-end justify-between gap-2 px-0.5">
+          <div>
+            <h3 id="fixed-accrual-register-title" className="text-sm font-black">سجل الاستحقاقات</h3>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              التاريخ الاقتصادي والمبالغ والقيد الناتج وحالة الترحيل أو العكس في سجل موحد.
+            </p>
+          </div>
           {data?.truncated ? (
-            <p className="mt-3 text-xs text-warning">تم عرض أول 500 سجل فقط. قلّل نطاق التاريخ لعرض جميع النتائج.</p>
+            <span className="text-xs font-bold text-warning">أول 500 سجل فقط · قلّل نطاق التاريخ</span>
           ) : null}
-        </CardContent>
-      </Card>
+        </div>
+
+        <EntityTable
+          rows={data?.accruals ?? []}
+          columns={accrualColumns}
+          keyOf={(row) => row.id}
+          isLoading={isLoading}
+          error={error && !data ? error : undefined}
+          onRetry={() => void load()}
+          emptyTitle="لا توجد استحقاقات"
+          emptyDescription="لا توجد استحقاقات في النطاق المحدد."
+          mobileVisibleSecondaryKey="gross"
+          aria-label="سجل الاستحقاقات الشهرية الثابتة"
+        />
+      </section>
     </section>
   );
 }

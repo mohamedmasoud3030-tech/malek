@@ -38,7 +38,7 @@ export function PageLayout({
       <div
         className={cn(
           pageSizes[size],
-          'min-w-0 space-y-4 pb-4 sm:space-y-5 sm:pb-6 md:space-y-6 md:pb-8',
+          'min-w-0 space-y-3 pb-3 sm:space-y-4 sm:pb-5 md:space-y-4 md:pb-6',
           contentClassName,
         )}
       >

@@ -8,21 +8,22 @@ interface ListControlSurfaceProps {
 }
 
 /**
- * Shared list-page controls surface — the card that wraps search + filters
- * on every entity list page (Properties, Contracts, …).
- *
- * Extraction contract: ListPage renders its search/filter grid inside this
- * surface, and pages that keep their KPI grid above the filters (Contracts)
- * wrap their filter row with it directly — so both shapes share the exact
- * same border, radius, padding, and shadow tokens.
+ * Canonical register toolbar surface used by entity list pages.
+ * Inspired by professional data consoles, but deliberately MALEK-specific:
+ * thin borders, dense spacing, quiet hierarchy and one continuous toolbar
+ * surface instead of stacked dashboard cards.
  */
 export function ListControlSurface({ children, className, ariaLabel = 'البحث والتصفية' }: ListControlSurfaceProps) {
   return (
     <section
       data-list-controls
+      data-register-toolbar
       aria-label={ariaLabel}
       className={cn(
-        'rounded-2xl border border-border/70 bg-card p-2.5 shadow-[0_6px_20px_hsl(var(--foreground)/0.035)] sm:p-3',
+        'relative rounded-xl border border-border/85 bg-background shadow-[0_1px_2px_hsl(var(--foreground)/0.025)]',
+        'p-2 sm:p-2.5',
+        '[&_[data-filter-tabs-scroll]]:pb-0',
+        '[&_button]:shrink-0',
         className,
       )}
     >

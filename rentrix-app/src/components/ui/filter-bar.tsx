@@ -13,11 +13,9 @@ type FilterBarProps = {
 };
 
 /**
- * Unified list toolbar: search, compact filters and trailing actions.
- *
- * Controls stack into a full-width mobile grid instead of shrinking desktop
- * controls into an unusable row. At desktop widths the same content returns to
- * a compact toolbar.
+ * Canonical MALEK register toolbar for search, filters and compact utilities.
+ * Mobile keeps search on one line and packs filters/utilities into a second
+ * compact rail instead of stacking several card-height rows.
  */
 export function FilterBar({
   searchValue,
@@ -33,15 +31,15 @@ export function FilterBar({
   return (
     <section
       data-filter-bar
+      data-register-toolbar
       className={cn(
-        'grid min-w-0 gap-3 rounded-xl border border-border/70 bg-card p-3 shadow-card sm:p-4 lg:grid-cols-[minmax(15rem,1fr)_auto_auto] lg:items-center',
-        !showSearch && 'lg:grid-cols-[minmax(0,1fr)_auto]',
+        'grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-1.5 rounded-xl border border-border/85 bg-background p-1.5 shadow-[0_1px_2px_hsl(var(--foreground)/0.025)] sm:p-2 lg:flex lg:items-center lg:gap-2',
         className,
       )}
       aria-label="البحث والتصفية"
     >
       {showSearch ? (
-        <div className="min-w-0">
+        <div className="col-span-2 min-w-0 flex-1 lg:max-w-xl">
           <SearchInput
             value={searchValue ?? ''}
             onChange={onSearchChange}
@@ -52,13 +50,16 @@ export function FilterBar({
       ) : null}
 
       {filters ? (
-        <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 lg:flex lg:flex-wrap lg:items-center lg:justify-end [&>*]:min-w-0 [&_input]:w-full [&_select]:w-full lg:[&_input]:w-auto lg:[&_select]:w-auto">
+        <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto no-scrollbar [&>*]:shrink-0 [&_input]:min-h-11 [&_input]:h-11 [&_select]:min-h-11 [&_select]:h-11">
           {filters}
         </div>
       ) : null}
 
       {actions ? (
-        <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 lg:flex lg:shrink-0 lg:flex-wrap lg:items-center lg:justify-end [&>*]:w-full lg:[&>*]:w-auto">
+        <div className={cn(
+          'flex min-w-0 shrink-0 items-center justify-end gap-1.5 overflow-x-auto no-scrollbar [&>*]:shrink-0',
+          !filters && 'col-span-2',
+        )}>
           {actions}
         </div>
       ) : null}

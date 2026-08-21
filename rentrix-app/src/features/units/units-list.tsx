@@ -10,8 +10,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { DataTableColumnsMenu } from "@/components/ui/data-table";
 import { EntityCell } from "@/components/ui/entity-cell";
-import { EntityTable } from "@/components/ui/entity-table";
+import { EntityTable, type ColumnDef } from "@/components/ui/entity-table";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { formatMoney } from "@/hooks/useCompanyFormatters";
 import type { Unit } from "@/types/domain";
@@ -26,6 +27,16 @@ const unitStatusTone = {
   reserved: "neutral",
 } as const;
 
+const unitColumnOptions = [
+  { key: "unit_number", label: "رقم الوحدة", locked: true },
+  { key: "status", label: "الحالة" },
+  { key: "rent_amount", label: "الإيجار" },
+  { key: "notes", label: "ملاحظات" },
+  { key: "actions", label: "الإجراءات", locked: true },
+] as const;
+
+const defaultUnitColumns = unitColumnOptions.map((column) => column.key);
+
 export function UnitsList({
   propertyId,
   unitsQuery,
@@ -34,6 +45,7 @@ export function UnitsList({
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
   const [archiveCandidate, setArchiveCandidate] = useState<Unit | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultUnitColumns]);
   const navigate = useNavigate();
 
   const openForCreate = () => {
@@ -60,6 +72,87 @@ export function UnitsList({
     }
   };
 
+  const columns: ColumnDef<Unit>[] = [
+    {
+      key: "unit_number",
+      header: "رقم الوحدة",
+      priority: "identity",
+      render: (unit) => (
+        <EntityCell
+          icon={DoorOpen}
+          title={`وحدة ${unit.unit_number}`}
+          subtitle={unit.floor ? `الدور: ${unit.floor}` : null}
+        />
+      ),
+    },
+    {
+      key: "status",
+      header: "الحالة",
+      priority: "primary",
+      render: (unit) => (
+        <StatusBadge tone={unitStatusTone[unit.status]}>
+          {unitStatusLabels[unit.status]}
+        </StatusBadge>
+      ),
+    },
+    {
+      key: "rent_amount",
+      header: "الإيجار",
+      priority: "secondary",
+      render: (unit) => (
+        <span dir="ltr" className="block font-bold">
+          {formatMoney(unit.rent_amount)}
+        </span>
+      ),
+    },
+    {
+      key: "notes",
+      header: "ملاحظات",
+      priority: "detail",
+      render: (unit) => unit.notes ?? "—",
+    },
+    {
+      key: "actions",
+      header: "إجراءات",
+      priority: "actions",
+      render: (unit) => (
+        <div
+          className="flex flex-wrap gap-2"
+          onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
+        >
+          {unit.status === "available" ? (
+            <Button
+              className="min-h-11 px-3"
+              aria-label={`بدء تأجير وحدة ${unit.unit_number}`}
+              onClick={() => startLeasing(unit)}
+            >
+              <FilePlus2 className="me-1 size-4" aria-hidden="true" />
+              تأجير
+            </Button>
+          ) : null}
+          <Button
+            variant="secondary"
+            className="min-h-11 px-3"
+            aria-label={`تعديل وحدة ${unit.unit_number}`}
+            onClick={() => openForEdit(unit)}
+          >
+            <Edit className="size-4" />
+          </Button>
+          <Button
+            variant="danger"
+            className="min-h-11 px-3"
+            aria-label={`أرشفة وحدة ${unit.unit_number}`}
+            onClick={() => setArchiveCandidate(unit)}
+            disabled={deleteMutation.isPending}
+          >
+            <Archive className="size-4" />
+          </Button>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-start justify-between gap-3">
@@ -67,93 +160,28 @@ export function UnitsList({
           <CardTitle>الوحدات</CardTitle>
           <CardDescription>إدارة وحدات العقار الحالي فقط.</CardDescription>
         </div>
-        {!unitsQuery.isError ? (
-          <Button onClick={openForCreate}>
-            <Plus className="me-2 size-4" />
-            إضافة وحدة
-          </Button>
-        ) : null}
+        <div className="flex items-center gap-2">
+          <DataTableColumnsMenu
+            columns={unitColumnOptions}
+            visibleKeys={visibleColumnKeys}
+            onChange={setVisibleColumnKeys}
+          />
+          {!unitsQuery.isError ? (
+            <Button onClick={openForCreate}>
+              <Plus className="me-2 size-4" />
+              إضافة وحدة
+            </Button>
+          ) : null}
+        </div>
       </CardHeader>
 
       <div className="px-3 pb-4 sm:px-6 sm:pb-6">
         <EntityTable
           aria-label="جدول وحدات العقار"
           rows={unitsQuery.data ?? []}
-          columns={[
-            {
-              key: "unit_number",
-              header: "رقم الوحدة",
-              render: (unit) => (
-                <EntityCell
-                  icon={DoorOpen}
-                  title={`وحدة ${unit.unit_number}`}
-                  subtitle={unit.floor ? `الدور: ${unit.floor}` : null}
-                />
-              ),
-            },
-            {
-              key: "status",
-              header: "الحالة",
-              render: (unit) => (
-                <StatusBadge tone={unitStatusTone[unit.status]}>
-                  {unitStatusLabels[unit.status]}
-                </StatusBadge>
-              ),
-            },
-            {
-              key: "rent_amount",
-              header: "الإيجار",
-              render: (unit) => (
-                <span dir="ltr" className="block font-bold">
-                  {formatMoney(unit.rent_amount)}
-                </span>
-              ),
-            },
-            {
-              key: "notes",
-              header: "ملاحظات",
-              render: (unit) => unit.notes ?? "—",
-            },
-            {
-              key: "actions",
-              header: "إجراءات",
-              render: (unit) => (
-                <div
-                  className="flex flex-wrap gap-2"
-                  onClick={(e) => e.stopPropagation()}
-                  onKeyDown={(e) => e.stopPropagation()}
-                >
-                  {unit.status === "available" ? (
-                    <Button
-                      className="min-h-11 px-3"
-                      aria-label={`بدء تأجير وحدة ${unit.unit_number}`}
-                      onClick={() => startLeasing(unit)}
-                    >
-                      <FilePlus2 className="me-1 size-4" aria-hidden="true" />
-                      تأجير
-                    </Button>
-                  ) : null}
-                  <Button
-                    variant="secondary"
-                    className="min-h-11 px-3"
-                    aria-label={`تعديل وحدة ${unit.unit_number}`}
-                    onClick={() => openForEdit(unit)}
-                  >
-                    <Edit className="size-4" />
-                  </Button>
-                  <Button
-                    variant="danger"
-                    className="min-h-11 px-3"
-                    aria-label={`أرشفة وحدة ${unit.unit_number}`}
-                    onClick={() => setArchiveCandidate(unit)}
-                    disabled={deleteMutation.isPending}
-                  >
-                    <Archive className="size-4" />
-                  </Button>
-                </div>
-              ),
-            },
-          ]}
+          columns={columns}
+          visibleColumnKeys={visibleColumnKeys}
+          mobileVisibleSecondaryKey="status"
           keyOf={(u) => u.id}
           isLoading={unitsQuery.isLoading}
           error={unitsQuery.isError ? unitsQuery.error : null}

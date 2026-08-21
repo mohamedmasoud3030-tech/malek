@@ -22,6 +22,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { ResponsiveCardGrid } from "@/components/ui/responsive-card-grid";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { AuthorizationRole } from "@/features/auth/permissions";
@@ -145,7 +146,7 @@ export function AdminSupportOperationsPage() {
         description="أدوات محدودة حسب الشركة: طلبات الدعم، بحث مستخدمين مقنّع للمسؤول، وسجل أحداث غير قابل للتعديل. لا انتحال أو تصدير أو إجراءات مالية."
       />
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <ResponsiveCardGrid desktopColumns={4} gap="sm">
         <Card variant="muted">
           <CardContent className="p-4">
             <p className="text-xs font-bold text-muted-foreground">
@@ -186,7 +187,7 @@ export function AdminSupportOperationsPage() {
             </p>
           </CardContent>
         </Card>
-      </div>
+      </ResponsiveCardGrid>
 
       <Card>
         <CardHeader>

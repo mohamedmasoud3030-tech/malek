@@ -74,7 +74,7 @@ function Root({ className, children, onSubmit, onInvalidCapture, noValidate = tr
   return (
     <form
       data-entity-form
-      className={cn('entity-form grid min-w-0 gap-5', className)}
+      className={cn('entity-form grid min-w-0 gap-3.5', className)}
       noValidate={noValidate}
       onSubmit={handleSubmit}
       onInvalidCapture={handleInvalidCapture}
@@ -102,9 +102,9 @@ type EntityFormFieldProps = Readonly<{
 
 function Field({ label, children, description, error, className }: EntityFormFieldProps) {
   return (
-    <label data-entity-form-field className={cn('grid min-w-0 gap-2 text-sm font-bold', className)}>
+    <label data-entity-form-field className={cn('grid min-w-0 gap-1.5 text-sm font-bold', className)}>
       <span>{label}</span>
-      {description ? <span className="text-xs font-medium leading-5 text-muted-foreground">{description}</span> : null}
+      {description ? <span className="text-[11px] font-medium leading-5 text-muted-foreground">{description}</span> : null}
       {children}
       {error ? (
         <span data-field-error className="text-xs font-bold leading-5 text-destructive" role="alert">
@@ -117,14 +117,14 @@ function Field({ label, children, description, error, className }: EntityFormFie
 
 function Section({ title, description, children, className }: EntityFormSectionProps) {
   return (
-    <section className={cn('min-w-0 space-y-4 rounded-2xl border border-border/60 bg-muted/15 p-3.5 sm:p-4', className)}>
+    <section className={cn('min-w-0 space-y-3 rounded-xl border border-border/60 bg-muted/10 p-3 sm:p-3.5', className)}>
       {title || description ? (
-        <div className="border-b border-border/50 pb-3">
+        <div className="border-b border-border/50 pb-2.5">
           {title ? <h2 className="text-sm font-semibold leading-6">{title}</h2> : null}
-          {description ? <p className="mt-0.5 text-xs font-medium leading-5 text-muted-foreground">{description}</p> : null}
+          {description ? <p className="mt-0.5 text-[11px] font-medium leading-5 text-muted-foreground">{description}</p> : null}
         </div>
       ) : null}
-      <div className="grid min-w-0 gap-4">{children}</div>
+      <div className="grid min-w-0 gap-3">{children}</div>
     </section>
   );
 }
@@ -136,7 +136,7 @@ function ErrorSummary({ message, className }: EntityFormErrorSummaryProps) {
   return (
     <div
       data-entity-form-error-summary
-      className={cn('rounded-2xl border border-destructive/30 bg-destructive/5 p-3 text-sm font-bold leading-6 text-destructive', className)}
+      className={cn('rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm font-bold leading-6 text-destructive', className)}
       role="alert"
       aria-live="assertive"
     >
@@ -160,7 +160,7 @@ function Actions({ submitLabel, cancelLabel = 'إلغاء', onCancel, isSubmitti
     <div
       data-entity-form-actions
       className={cn(
-        'sticky bottom-[var(--entity-form-action-offset,0px)] z-20 -mx-4 grid gap-2 border-t border-border/70 bg-background/96 px-4 pb-[calc(0.625rem+env(safe-area-inset-bottom,0px))] pt-2.5 shadow-[0_-12px_30px_hsl(var(--background)/0.92)] backdrop-blur',
+        'sticky bottom-[var(--entity-form-action-offset,0px)] z-20 -mx-3 grid gap-2 border-t border-border/70 bg-background/96 px-3 pb-[calc(0.625rem+env(safe-area-inset-bottom,0px))] pt-2 shadow-[0_-8px_20px_hsl(var(--background)/0.88)] backdrop-blur',
         onCancel ? 'grid-cols-[minmax(0,1fr)_minmax(6.5rem,0.42fr)]' : 'grid-cols-1',
         'sm:static sm:mx-0 sm:flex sm:flex-row-reverse sm:justify-start sm:border-0 sm:bg-transparent sm:px-0 sm:pb-0 sm:pt-0 sm:shadow-none',
         className,
@@ -203,18 +203,6 @@ type EntityFormOverlayProps = Readonly<{
   visualVariant?: EntityFormVisualVariant;
 }>;
 
-function OverlayHeader({ title, description, headerExtra }: Pick<EntityFormOverlayProps, 'title' | 'description' | 'headerExtra'>) {
-  return (
-    <div className="min-w-0 flex-1">
-      <div className="flex min-w-0 flex-wrap items-center gap-2">
-        <h2 className="min-w-0 text-lg font-bold leading-7">{title}</h2>
-        {headerExtra}
-      </div>
-      {description ? <p className="mt-1 text-sm font-medium leading-6 text-muted-foreground">{description}</p> : null}
-    </div>
-  );
-}
-
 function Overlay({
   open,
   onOpenChange,
@@ -233,16 +221,16 @@ function Overlay({
       <DialogContent
         data-entity-form-surface="dialog"
         data-entity-form-variant={resolvedVisualVariant}
-        className={cn('flex max-h-[calc(var(--visual-viewport-height,100dvh)-1rem)] max-w-2xl flex-col gap-0 overflow-hidden p-0 sm:max-h-[min(calc(var(--visual-viewport-height,100dvh)-2rem),54rem)]', className)}
+        className={cn('flex max-h-[86dvh] max-w-2xl flex-col gap-0 overflow-hidden p-0 sm:max-h-[min(calc(var(--visual-viewport-height,100dvh)-2rem),50rem)]', className)}
       >
-        <DialogHeader className="shrink-0 bg-[hsl(var(--sidebar))] px-4 py-4 pe-14 text-white shadow-sm sm:px-6 sm:py-5">
+        <DialogHeader className="shrink-0 border-b border-border/70 bg-card px-4 py-3 pe-14 text-card-foreground sm:px-5 sm:py-3.5">
           <div className="flex flex-wrap items-center gap-2">
-            <DialogTitle className="text-white">{title}</DialogTitle>
+            <DialogTitle className="text-base text-foreground sm:text-lg">{title}</DialogTitle>
             {headerExtra}
           </div>
-          {description ? <DialogDescription className="leading-6 text-white/75">{description}</DialogDescription> : null}
+          {description ? <DialogDescription className="mt-0.5 text-xs leading-5 text-muted-foreground sm:text-sm sm:leading-6">{description}</DialogDescription> : null}
         </DialogHeader>
-        <DialogBody data-entity-form-scroll className="px-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] pt-4 sm:px-6 sm:pb-6">
+        <DialogBody data-entity-form-scroll className="px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] pt-3 sm:px-5 sm:pb-5 sm:pt-4">
           {children}
         </DialogBody>
       </DialogContent>

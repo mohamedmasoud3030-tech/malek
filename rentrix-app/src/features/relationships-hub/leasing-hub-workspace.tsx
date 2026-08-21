@@ -40,9 +40,9 @@ const sectionComponents: Record<LeasingHubSectionId, ComponentType> = {
 
 function SectionFallback() {
   return (
-    <div className="space-y-3" role="status" aria-label="جارٍ تحميل قسم التأجير">
-      <Skeleton className="h-24" />
-      <Skeleton className="h-64" />
+    <div className="space-y-2.5" role="status" aria-label="جارٍ تحميل قسم التأجير">
+      <Skeleton className="h-12 rounded-xl" />
+      <Skeleton className="h-40 rounded-xl" />
     </div>
   );
 }
@@ -111,7 +111,7 @@ export function LeasingHubWorkspace() {
                   key={section.id}
                   id={`leasing-panel-${section.id}`}
                   role="tabpanel"
-                  aria-labelledby={`leasing-tab-${section.id}`}
+                  aria-labelledby={`section-tab-${section.id}`}
                   data-leasing-section={section.id}
                   hidden={!isActive}
                 >

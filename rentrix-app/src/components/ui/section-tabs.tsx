@@ -15,19 +15,15 @@ type SectionTabsProps<TId extends string> = Readonly<{
   /**
    * ID of the tabpanel this tab list controls. When unset each tab's
    * aria-controls is `section-panel-${item.id}` (one panel per tab). View
-   * switchers that share a single panel (e.g. report sub-views rendered inside
-   * one SectionTabPanel) must pass the real panel id so aria-controls never
-   * points at an element that does not exist (axe aria-valid-attr-value).
+   * switchers that share a single panel must pass the real panel id.
    */
   panelId?: string;
 }>;
 
 /**
- * Horizontal, scrollable tab bar for one in-page workspace section at a time.
- *
- * It follows the ARIA tabs keyboard pattern: Tab enters the active tab, then
- * arrows/Home/End move focus and activate another section. RTL swaps the
- * physical left/right direction so arrow movement remains visually natural.
+ * Compact, horizontally scrollable workspace switcher.
+ * The previous gradient mask was intentionally removed because WebKit can
+ * render mask-backed scroll strips inconsistently inside composited dialogs.
  */
 export function SectionTabs<TId extends string>({ items, activeId, onChange, ariaLabel, panelId }: SectionTabsProps<TId>) {
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
@@ -65,11 +61,11 @@ export function SectionTabs<TId extends string>({ items, activeId, onChange, ari
   };
 
   return (
-    <div className="relative -mx-3 mb-2 min-w-0 sm:-mx-1">
+    <div className="min-w-0">
       <nav
         aria-label={ariaLabel}
         role="tablist"
-        className="flex scroll-px-3 gap-2 overflow-x-auto px-3 pb-1 [mask-image:linear-gradient(to_left,transparent,black_16px,black_calc(100%-16px),transparent)] [scrollbar-width:none] sm:px-1 [&::-webkit-scrollbar]:hidden"
+        className="flex min-w-0 gap-1 overflow-x-auto rounded-xl border border-border/70 bg-card/75 p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {items.map((item, index) => {
           const isActive = activeId === item.id;
@@ -86,14 +82,14 @@ export function SectionTabs<TId extends string>({ items, activeId, onChange, ari
               aria-controls={panelId ?? `section-panel-${item.id}`}
               id={`section-tab-${item.id}`}
               className={cn(
-                'flex min-h-11 shrink-0 items-center gap-2 rounded-full border px-4 py-2.5 text-[13px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none',
+                'flex min-h-10 shrink-0 items-center gap-1.5 rounded-lg border border-transparent px-3 py-1.5 text-xs font-semibold outline-none transition-colors focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none',
                 isActive
-                  ? 'border-primary bg-primary text-primary-foreground shadow-sm'
-                  : 'border-border bg-card text-muted-foreground hover:border-primary/30 hover:text-foreground',
+                  ? 'border-primary/20 bg-primary/10 text-primary'
+                  : 'text-muted-foreground hover:bg-muted/65 hover:text-foreground',
               )}
             >
-              <item.icon className="size-4" aria-hidden="true" />
-              {item.label}
+              <item.icon className="size-3.5" aria-hidden="true" />
+              <span className="whitespace-nowrap">{item.label}</span>
             </button>
           );
         })}

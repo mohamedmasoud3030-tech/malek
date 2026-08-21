@@ -135,7 +135,7 @@ export function OverviewSection({
                 </BarChart>
               </ResponsiveContainer>
             </div>
-            <div className="mt-3 grid grid-cols-2 gap-2 text-center sm:grid-cols-4">
+            <div className="mt-3 grid grid-cols-2 gap-2 text-center">
               <MiniSummary label="الفواتير" value={formatMoney(collectionSummary?.invoiced ?? report.invoiced)} />
               <MiniSummary label="المحصّل" value={formatMoney(collectionSummary?.paid ?? report.paid)} />
               <MiniSummary label="المصروفات" value={formatMoney(collectionSummary?.expensesTotal ?? report.expenses)} />

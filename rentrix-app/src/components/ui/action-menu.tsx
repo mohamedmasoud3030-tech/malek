@@ -146,7 +146,7 @@ export function MobileActionGrid({ actions, className }: MobileActionGridProps) 
   if (visibleActions.length === 0) return null;
 
   return (
-    <div className={cn('grid grid-cols-2 gap-2 sm:grid-cols-4', className)}>
+    <div className={cn('grid grid-cols-2 gap-2 [&>*:last-child:nth-child(odd)]:col-span-2', className)}>
       {visibleActions.map((action) => {
         const Icon = action.icon;
         return (

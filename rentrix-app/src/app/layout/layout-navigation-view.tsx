@@ -1,15 +1,16 @@
 import { Link, useLocation } from '@tanstack/react-router';
-import { useEffect, useId, useState, type Ref } from 'react';
-import { ChevronDown, Lock, Menu, Search } from 'lucide-react';
-import { useCommandPaletteStore } from '@/features/command-palette/command-palette-store';
+import { useEffect, useId, useRef, useState, type Ref } from 'react';
+import { Bot, ChevronDown, FileText, HandCoins, Lock, Menu, Plus, ReceiptText, Wrench } from 'lucide-react';
+import { OPEN_AI_ASSISTANT_EVENT } from '@/features/ai-assistant/ai-assistant-global-action';
 import { canShowNavigationItem, canAccessRoute, type AuthorizationContext, type AppPermission } from '@/features/auth/permissions';
 import { PermissionRequestDialog } from '@/components/layout/permission-request-dialog';
 import { getNavRoot } from '@/app/navigation/route-nav-map';
 import { navigationLabels } from '@/app/navigation/terminology-registry';
 import { cn } from '@/lib/utils';
 import { navGroups, workspaceChildNavItems, type NavItem } from '@/app/navigation/app-nav-items';
-
-export type SharedLabel = (key: string) => string;
+import { useAuth } from '@/hooks/use-auth';
+import { getAppLanguageState, translateSharedLabel, type SharedLabel } from '@/lib/i18n';
+import { NotificationsMenu } from './notifications-menu';
 
 function navLabel(labelKey: string, sharedLabel: SharedLabel) {
   return navigationLabels[labelKey] ?? sharedLabel(labelKey);
@@ -79,28 +80,40 @@ export function NavigationLinks({
         className={cn(
           'group relative flex min-h-11 items-center gap-2.5 rounded-xl border border-transparent px-3 py-1.5 text-sidebar-foreground outline-none transition-[background-color,border-color,color,box-shadow] duration-150',
           'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-4 focus-visible:ring-sidebar-accent/35 motion-reduce:transition-none',
-          isChild && 'ms-3 min-h-11 border-s-2 border-s-sidebar-border/70 ps-3',
+          '[[data-mobile-nav-sheet]_&]:min-h-10 [[data-mobile-nav-sheet]_&]:rounded-lg [[data-mobile-nav-sheet]_&]:px-2.5 [[data-mobile-nav-sheet]_&]:py-1 [[data-mobile-nav-sheet]_&]:text-sidebar-foreground/88 [[data-mobile-nav-sheet]_&]:hover:bg-white/[0.06] [[data-mobile-nav-sheet]_&]:hover:text-white [[data-mobile-nav-sheet]_&]:focus-visible:ring-primary/25',
+          isChild && 'ms-3 min-h-11 border-s-2 border-s-sidebar-border/70 ps-3 [[data-mobile-nav-sheet]_&]:min-h-10 [[data-mobile-nav-sheet]_&]:border-s-white/10',
           isLocked && 'cursor-not-allowed opacity-70',
-          isActive && 'border-sidebar-accent/20 bg-sidebar-accent text-sidebar-accent-foreground shadow-[inset_3px_0_0_0_hsl(var(--sidebar-accent-foreground)),0_12px_28px_-20px_rgb(0_0_0_/_0.9)] rtl:shadow-[inset_-3px_0_0_0_hsl(var(--sidebar-accent-foreground)),0_12px_28px_-20px_rgb(0_0_0_/_0.9)]',
+          isActive && 'border-sidebar-accent/20 bg-sidebar-accent text-sidebar-accent-foreground shadow-[inset_3px_0_0_0_hsl(var(--sidebar-accent-foreground)),0_12px_28px_-20px_rgb(0_0_0_/_0.9)] rtl:shadow-[inset_-3px_0_0_0_hsl(var(--sidebar-accent-foreground)),0_12px_28px_-20px_rgb(0_0_0_/_0.9)] [[data-mobile-nav-sheet]_&]:border-white/10 [[data-mobile-nav-sheet]_&]:bg-white/[0.08] [[data-mobile-nav-sheet]_&]:text-white [[data-mobile-nav-sheet]_&]:shadow-none',
         )}
       >
-        <Icon className={cn(isChild ? 'size-4' : 'size-5', 'shrink-0')} aria-hidden="true" />
+        <span
+          className={cn(
+            'grid size-8 shrink-0 place-items-center rounded-lg transition-colors',
+            '[[data-mobile-nav-sheet]_&]:size-7 [[data-mobile-nav-sheet]_&]:bg-white/[0.04] [[data-mobile-nav-sheet]_&]:text-sidebar-foreground/75',
+            isActive && '[[data-mobile-nav-sheet]_&]:bg-primary/15 [[data-mobile-nav-sheet]_&]:text-primary',
+          )}
+        >
+          <Icon className={cn(isChild ? 'size-4' : 'size-[1.05rem]', 'shrink-0 [[data-mobile-nav-sheet]_&]:size-4')} aria-hidden="true" />
+        </span>
         {expanded ? <span className="min-w-0 flex-1 truncate text-[13px] font-semibold">{label}</span> : null}
         {isLocked ? <Lock className="ms-auto size-3.5 text-warning" aria-hidden="true" /> : null}
-        {isActive ? <span className="size-1.5 shrink-0 rounded-full bg-sidebar-accent-foreground" aria-hidden="true" /> : null}
+        {isActive ? <span className="size-1.5 shrink-0 rounded-full bg-sidebar-accent-foreground [[data-mobile-nav-sheet]_&]:bg-primary" aria-hidden="true" /> : null}
       </Link>
     );
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 [[data-mobile-nav-sheet]_&]:space-y-2">
       {navGroups.map(([sectionTitle, items, adminOnly]) => {
         if (adminOnly && !items.some(([, , , , permission]) => canShowNavigationItem(authorization, permission))) return null;
         if (items.length === 0) return null;
         return (
-          <section key={sectionTitle} className="space-y-0.5">
+          <section
+            key={sectionTitle}
+            className="space-y-0.5 [[data-mobile-nav-sheet]_&]:rounded-xl [[data-mobile-nav-sheet]_&]:border [[data-mobile-nav-sheet]_&]:border-white/8 [[data-mobile-nav-sheet]_&]:bg-white/[0.025] [[data-mobile-nav-sheet]_&]:p-1 [[data-mobile-nav-sheet]_&]:shadow-none"
+          >
             {expanded
-              ? <div className="px-3 pb-1 pt-1"><p className="text-[10px] font-bold text-sidebar-foreground/50">{sectionTitle}</p></div>
+              ? <div className="px-3 pb-1 pt-1.5"><p className="text-[10px] font-bold text-sidebar-foreground/50 [[data-mobile-nav-sheet]_&]:text-sidebar-foreground/50">{sectionTitle}</p></div>
               : <div aria-hidden="true" className="mx-3 mb-1 h-px bg-white/10" />}
             {items.map((item) => {
               const [to] = item;
@@ -114,7 +127,7 @@ export function NavigationLinks({
                     {expanded && children.length > 0 ? (
                       <button
                         type="button"
-                        className="me-1 grid size-11 shrink-0 place-items-center rounded-xl text-sidebar-foreground/65 outline-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-4 focus-visible:ring-sidebar-accent/35"
+                        className="me-1 grid size-11 shrink-0 place-items-center rounded-xl text-sidebar-foreground/65 outline-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-4 focus-visible:ring-sidebar-accent/35 [[data-mobile-nav-sheet]_&]:size-10 [[data-mobile-nav-sheet]_&]:rounded-lg [[data-mobile-nav-sheet]_&]:text-sidebar-foreground/55 [[data-mobile-nav-sheet]_&]:hover:bg-white/[0.06] [[data-mobile-nav-sheet]_&]:hover:text-white [[data-mobile-nav-sheet]_&]:focus-visible:ring-primary/25"
                         aria-label={`${isOpen ? 'طي' : 'توسيع'} ${navLabel(item[1], sharedLabel)}`}
                         aria-expanded={isOpen}
                         aria-controls={childrenId}
@@ -151,37 +164,143 @@ export function NavigationLinks({
   );
 }
 
+type MobileQuickAction = Readonly<{
+  id: string;
+  label: string;
+  to: string;
+  search?: Readonly<Record<string, string>>;
+  icon: typeof FileText;
+  permission?: AppPermission;
+}>;
+
+const mobileQuickActions: readonly MobileQuickAction[] = [
+  { id: 'contract', label: 'عقد جديد', to: '/contracts/new', icon: FileText, permission: 'contracts.write' },
+  { id: 'collect', label: 'تحصيل مبلغ', to: '/financials', search: { section: 'collections', view: 'invoices', quickAdd: 'collect' }, icon: HandCoins, permission: 'financial.payments.create' },
+  { id: 'maintenance', label: 'طلب صيانة', to: '/maintenance', search: { section: 'maintenance', quickAdd: 'maintenance' }, icon: Wrench, permission: 'maintenance.view' },
+  { id: 'utility-bill', label: 'فاتورة مرافق', to: '/maintenance', search: { section: 'utilities', quickAdd: 'utility-bill' }, icon: ReceiptText, permission: 'maintenance.view' },
+];
+
+/**
+ * Compact MALEK mobile dock inspired by data-console density: navigation is
+ * the primary wide action, while quick-create, AI and notifications stay small.
+ */
 export function MobileFloatingControl({ onMenu, menuRef }: Readonly<{ onMenu: () => void; menuRef?: Ref<HTMLButtonElement> }>) {
-  const { open } = useCommandPaletteStore();
+  const { authorization } = useAuth();
+  const appLanguage = getAppLanguageState();
+  const sharedLabel = (key: string) => translateSharedLabel(key, appLanguage.language);
+  const [quickOpen, setQuickOpen] = useState(false);
+  const quickRootRef = useRef<HTMLDivElement>(null);
+  // Keep the quick-create affordance stable even while account permissions are
+  // still loading or incomplete. Route-level authorization remains authoritative
+  // if the user chooses an action they cannot perform.
+  const visibleQuickActions = mobileQuickActions;
+  const utilityActionClass = 'grid size-10 shrink-0 place-items-center rounded-xl border border-transparent text-muted-foreground outline-none transition-[background-color,color,border-color,box-shadow,transform] duration-150 hover:bg-muted hover:text-foreground active:scale-[0.97] focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none motion-reduce:transform-none';
+
+  useEffect(() => {
+    if (!quickOpen) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (quickRootRef.current?.contains(event.target as Node)) return;
+      setQuickOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setQuickOpen(false);
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [quickOpen]);
+
+  const openAiAssistant = () => {
+    setQuickOpen(false);
+    window.dispatchEvent(new Event(OPEN_AI_ASSISTANT_EVENT));
+  };
+
   return (
     <div
-      className="fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] md:hidden"
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-3 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] md:hidden"
       data-mobile-floating-control
       data-mobile-control-center
       aria-label="مركز التحكم"
     >
-      <div className="flex w-full max-w-xs items-center gap-1 rounded-2xl border border-border/70 bg-card/95 p-1.5 shadow-[0_18px_50px_-18px_rgb(15_23_42_/_0.55)] backdrop-blur-xl">
+      <div
+        ref={quickRootRef}
+        className="pointer-events-auto relative flex w-full max-w-[20rem] items-center gap-1 rounded-[1.35rem] border border-border/80 bg-background/94 p-1 shadow-[0_16px_44px_-24px_hsl(var(--foreground)/0.5),0_1px_6px_hsl(var(--foreground)/0.08)] ring-1 ring-background/70 backdrop-blur-xl supports-[backdrop-filter]:bg-background/86"
+      >
+        {quickOpen && visibleQuickActions.length > 0 ? (
+          <div
+            role="menu"
+            aria-label="الإضافة السريعة"
+            data-mobile-quick-add-menu
+            className="absolute inset-x-0 bottom-[calc(100%+0.45rem)] grid grid-cols-2 gap-1 rounded-xl border border-border/85 bg-background/98 p-1.5 shadow-elevated backdrop-blur-xl"
+          >
+            {visibleQuickActions.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.id}
+                  to={item.to}
+                  search={item.search as Record<string, string> | undefined}
+                  role="menuitem"
+                  onClick={() => setQuickOpen(false)}
+                  className="flex min-h-10 items-center gap-2 rounded-lg px-2.5 text-xs font-bold text-foreground outline-none transition-colors hover:bg-muted focus-visible:ring-4 focus-visible:ring-primary/20"
+                >
+                  <Icon className="size-4 shrink-0 text-primary" aria-hidden="true" />
+                  <span className="truncate">{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        ) : null}
+
         <button
           ref={menuRef}
           type="button"
-          onClick={onMenu}
+          onClick={() => {
+            setQuickOpen(false);
+            onMenu();
+          }}
           aria-label="فتح القائمة"
           aria-haspopup="dialog"
-          className="inline-flex min-h-11 min-w-11 flex-1 items-center justify-center gap-2 rounded-xl px-3 text-foreground outline-none transition-colors hover:bg-muted focus-visible:ring-4 focus-visible:ring-primary/25"
+          data-mobile-dock-menu
+          className="flex min-h-10 min-w-0 flex-1 items-center justify-start gap-2 rounded-xl border border-foreground bg-foreground px-3 text-start text-background outline-none transition-[background-color,box-shadow,transform] duration-150 hover:bg-foreground/92 active:scale-[0.99] focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none motion-reduce:transform-none"
         >
-          <Menu className="size-5" aria-hidden="true" />
-          <span className="text-xs font-semibold">القائمة</span>
+          <Menu className="size-4 shrink-0" aria-hidden="true" />
+          <span className="min-w-0 flex-1 truncate text-xs font-black">القائمة</span>
         </button>
-        <span className="h-6 w-px bg-border/80" aria-hidden="true" />
+
         <button
           type="button"
-          onClick={open}
-          aria-label="فتح البحث"
-          className="inline-flex min-h-11 min-w-11 flex-1 items-center justify-center gap-2 rounded-xl px-3 text-foreground outline-none transition-colors hover:bg-muted focus-visible:ring-4 focus-visible:ring-primary/25"
+          onClick={() => setQuickOpen((value) => !value)}
+          aria-label="فتح الإضافة السريعة"
+          aria-haspopup="menu"
+          aria-expanded={quickOpen}
+          title="إضافة سريعة"
+          data-mobile-dock-quick-add
+          className={cn(utilityActionClass, quickOpen && 'border-primary/20 bg-primary/10 text-primary')}
         >
-          <Search className="size-5" aria-hidden="true" />
-          <span className="text-xs font-semibold">بحث</span>
+          <Plus className="size-[1.05rem]" aria-hidden="true" />
         </button>
+
+        <button
+          type="button"
+          onClick={openAiAssistant}
+          aria-label="فتح المساعد الذكي"
+          title="المساعد الذكي"
+          data-mobile-dock-ai
+          className={cn(utilityActionClass, 'text-primary hover:bg-primary/10 hover:text-primary')}
+        >
+          <Bot className="size-4" aria-hidden="true" />
+        </button>
+
+        <div
+          className="relative [&>div>button]:!size-10 [&>div>button]:!rounded-xl [&>div>button]:!border-transparent [&>div>button]:!text-muted-foreground [&>div>button]:!shadow-none [&>div>button]:hover:!bg-muted [&>div>button]:hover:!text-foreground [&>div>button[aria-expanded='true']]:!bg-foreground [&>div>button[aria-expanded='true']]:!text-background [&>div>[role='dialog']]:!bottom-12 [&>div>[role='dialog']]:!top-auto"
+          data-mobile-dock-notifications
+        >
+          <NotificationsMenu authorization={authorization} sharedLabel={sharedLabel} />
+        </div>
       </div>
     </div>
   );

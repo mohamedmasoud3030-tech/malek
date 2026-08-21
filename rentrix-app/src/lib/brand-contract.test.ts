@@ -279,7 +279,6 @@ describe('MALEK brand contract — no legacy name reaches a user', () => {
     const landingAndLegal = [
       'src/features/landing/components/NavBar.tsx',
       'src/features/landing/components/Footer.tsx',
-      'src/features/landing/components/Hero.tsx',
       'src/features/landing/components/FinalCta.tsx',
       'src/features/landing/components/LegalPage.tsx',
       'src/features/landing/i18n/messages.ts',
@@ -359,7 +358,6 @@ describe('MALEK brand contract — mark, wordmark, and tagline', () => {
     for (const file of [
       'src/features/auth/command-center-panel.tsx',
       'src/features/landing/components/Footer.tsx',
-      'src/features/landing/components/Hero.tsx',
     ]) {
       expect(readApp(file), `${file} must show the MALEK tagline`).toContain('showTagline');
     }

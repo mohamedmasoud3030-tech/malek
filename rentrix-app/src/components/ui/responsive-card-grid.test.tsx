@@ -14,8 +14,8 @@ describe('ResponsiveCardGrid', () => {
     );
 
     expect(html).toContain('grid-cols-2');
-    expect(html).toContain('lg:grid-cols-4');
-    expect(html).not.toContain('sm:grid-cols-3');
+    expect(html).not.toContain('lg:grid-cols-3');
+    expect(html).not.toContain('lg:grid-cols-4');
     expect(html.match(/<article>/g)).toHaveLength(4);
   });
 });

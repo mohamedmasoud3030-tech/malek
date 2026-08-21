@@ -8,6 +8,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EntityCell } from '@/components/ui/entity-cell';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { OperationalMetricCard } from '@/components/ui/operational-summary';
+import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { ListPage } from '@/components/layout/list-page';
@@ -144,12 +145,12 @@ export function ServiceProvidersWorkspace({ embedded = false }: Readonly<{ embed
         )}
       >
         {summaryQuery.data ? (
-          <section aria-label="ملخص مزودي الخدمات" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <ResponsiveCardGrid as="section" aria-label="ملخص مزودي الخدمات" desktopColumns={4} gap="sm">
             <OperationalMetricCard label="إجمالي المزودين" value={formatCount(summaryQuery.data.total)} hint="سجلات غير مؤرشفة" icon={BriefcaseBusiness} />
             <OperationalMetricCard label="مزودون نشطون" value={formatCount(summaryQuery.data.active)} hint="متاحون للتعيين الجديد" icon={BriefcaseBusiness} />
             <OperationalMetricCard label="أنواع الخدمات" value={formatCount(summaryQuery.data.categories)} hint="أنواع نشطة قابلة للصيانة" icon={FolderCog} />
             <OperationalMetricCard label="أعمال جارية" value={formatCount(summaryQuery.data.openJobs)} hint="مفتوحة أو قيد التنفيذ" icon={Wrench} />
-          </section>
+          </ResponsiveCardGrid>
         ) : summaryQuery.isError ? (
           <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
             <span>تعذر تحميل ملخص مزودي الخدمات.</span><Button type="button" variant="secondary" onClick={() => void summaryQuery.refetch()}>إعادة المحاولة</Button>
