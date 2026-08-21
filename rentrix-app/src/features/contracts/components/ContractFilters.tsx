@@ -1,7 +1,7 @@
 import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { FilterBar } from '@/components/ui/filter-bar';
 import { FilterTabs } from '@/components/ui/filter-tabs';
-import { SearchInput } from '@/components/ui/search-input';
 import { contractStatusValues } from '../contractSchema';
 import type { ContractStatusFilter } from '../services/contractService';
 
@@ -38,30 +38,34 @@ export function ContractFilters({
   }));
 
   return (
-    <div className="flex min-w-0 flex-col gap-2.5 lg:flex-row lg:items-center">
-      <SearchInput
-        value={searchTerm}
-        onChange={setSearchTerm}
-        placeholder="بحث باسم المستأجر، الوحدة، العقار، أو رقم العقد"
-        className="w-full lg:max-w-xl lg:flex-1"
-      />
-
-      <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto no-scrollbar">
-        <FilterTabs options={filterOptions} value={status} onChange={setStatus} tone="contracts" />
-        <Button
-          variant={expiringOnly ? 'primary' : 'secondary'}
-          onClick={() => setExpiringOnly((value) => !value)}
-          className="min-h-10 shrink-0 rounded-lg px-3 text-xs"
-        >
-          <AlertTriangle className="me-1.5 size-3.5" />
-          تنتهي خلال 30 يوم
-        </Button>
-        {hasActiveFilters ? (
-          <Button variant="ghost" className="min-h-10 shrink-0 rounded-lg px-3 text-xs" onClick={resetFilters}>
-            مسح الفلاتر
+    <FilterBar
+      searchValue={searchTerm}
+      onSearchChange={setSearchTerm}
+      searchPlaceholder="المستأجر، الوحدة، العقار، أو رقم العقد"
+      searchAriaLabel="بحث في العقود"
+      mobileFilterCount={Number(status !== 'all') + Number(expiringOnly)}
+      mobileFilterTitle="تصفية العقود"
+      filters={(
+        <>
+          <div className="grid min-w-0 gap-1">
+            <span className="text-xs font-bold text-muted-foreground md:sr-only">الحالة</span>
+            <FilterTabs options={filterOptions} value={status} onChange={setStatus} tone="contracts" />
+          </div>
+          <Button
+            variant={expiringOnly ? 'primary' : 'secondary'}
+            onClick={() => setExpiringOnly((value) => !value)}
+            className="min-h-11 shrink-0 rounded-lg px-3 text-xs"
+          >
+            <AlertTriangle className="me-1.5 size-3.5" />
+            تنتهي خلال 30 يوم
           </Button>
-        ) : null}
-      </div>
-    </div>
+          {hasActiveFilters ? (
+            <Button variant="ghost" className="min-h-11 shrink-0 rounded-lg px-3 text-xs" onClick={resetFilters}>
+              مسح الفلاتر
+            </Button>
+          ) : null}
+        </>
+      )}
+    />
   );
 }

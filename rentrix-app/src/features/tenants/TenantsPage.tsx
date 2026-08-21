@@ -1,15 +1,14 @@
-import { AlertTriangle, Building2, Edit, FileText, KeyRound, Mail, Phone, Plus, ShieldCheck, TriangleAlert, Users } from 'lucide-react';
+import { Edit, FileText, Plus, TriangleAlert } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { useDialogNavigate } from '@/app/router/background-location';
 import { Button } from '@/components/ui/button';
 import { DataTableColumnsMenu } from '@/components/ui/data-table';
-import { EntityActions } from '@/components/ui/entity-actions';
 import { useLocation, useNavigate, useSearch } from '@tanstack/react-router';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { FilterBar } from '@/components/ui/filter-bar';
-import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
+import { EntitySummaryStrip } from '@/components/ui/entity-summary-strip';
 import { PersonFormModal } from '@/features/people/person-form-modal';
 import type { TenantWorkspaceRow } from './tenantWorkspaceService';
 import { useTenantWorkspace } from './useTenantWorkspace';
@@ -26,10 +25,6 @@ const tenantColumnOptions = [
 
 const defaultTenantColumns = tenantColumnOptions.map((column) => column.key);
 
-function valueOrDash(value: string | number | null | undefined) {
-  return value === null || value === undefined || value === '' ? '—' : String(value);
-}
-
 function getTenantLocationText(tenant: TenantWorkspaceRow) {
   return {
     hasLocation: tenant.propertyTitle !== null || tenant.unitNumber !== null,
@@ -38,77 +33,23 @@ function getTenantLocationText(tenant: TenantWorkspaceRow) {
   };
 }
 
-function InfoPill({ icon: Icon, label, value, dir }: Readonly<{ icon: typeof Phone; label: string; value: string | number | null | undefined; dir?: 'ltr' | 'rtl' }>) {
-  return (
-    <div className="rounded-xl border border-border/70 bg-background/85 px-3 py-2.5">
-      <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground">
-        <Icon className="size-3.5" aria-hidden="true" /><span>{label}</span>
-      </div>
-      <p className="mt-1 truncate text-sm font-black" dir={dir}>{valueOrDash(value)}</p>
-    </div>
-  );
-}
-
-function TenantLocation({ tenant }: Readonly<{ tenant: TenantWorkspaceRow }>) {
-  const location = getTenantLocationText(tenant);
-  return (
-    <div className="rounded-xl border border-border/70 bg-muted/35 p-3">
-      <p className="text-xs font-bold text-muted-foreground">الوحدة والعقار</p>
-      <p className="mt-1 font-black">{location.hasLocation ? location.propertyLabel : '—'}</p>
-      {location.hasLocation ? <p className="mt-0.5 text-xs text-muted-foreground">{location.unitLabel}</p> : null}
-    </div>
-  );
-}
-
-function TenantSafeLinks({ tenant, onEdit, onPreview }: Readonly<{ tenant: TenantWorkspaceRow; onEdit: (personId: string) => void; onPreview: (tenant: TenantWorkspaceRow) => void }>) {
-  const navigate = useNavigate();
-  const location = useLocation();
-  return (
-    <EntityActions className="flex flex-wrap gap-2">
-      <Button variant="secondary" className="min-h-11 px-3" onClick={() => onPreview(tenant)}>عرض</Button>
-      <Button variant="secondary" className="min-h-11 px-3" onClick={() => onEdit(tenant.person.id)}>
-        <Edit className="me-1 size-4" />تعديل
-      </Button>
-      {tenant.primaryContractId !== null && (
-        <Button variant="secondary" className="min-h-11 px-3" onClick={() => (navigate as unknown as (opts: unknown) => void)({ to: '/contracts/$contractId', params: { contractId: tenant.primaryContractId! }, state: { backgroundLocation: location } as unknown as Record<string, unknown> })}>
-          <FileText className="me-1 size-4" />فتح العقد
-        </Button>
-      )}
-    </EntityActions>
-  );
-}
-
 function TenantSummary({ rows, total }: Readonly<{ rows: TenantWorkspaceRow[]; total: number }>) {
   const activeContracts = rows.reduce((sum, tenant) => sum + tenant.activeContractCount, 0);
   const arrearsCount = rows.filter((tenant) => tenant.hasArrears).length;
   const assignedCount = rows.filter((tenant) => tenant.propertyTitle !== null || tenant.unitNumber !== null).length;
 
-  const items = [
-    { label: 'إجمالي المستأجرين', value: total, icon: Users, hint: 'جميع السجلات المطابقة' },
-    { label: 'العقود النشطة', value: activeContracts, icon: KeyRound, hint: 'ضمن الصفحة الحالية' },
-    { label: 'مرتبطون بوحدات', value: assignedCount, icon: Building2, hint: 'لديهم عقار أو وحدة حالية' },
-    { label: 'بحاجة لمتابعة', value: arrearsCount, icon: AlertTriangle, hint: 'ضمن الصفحة الحالية' },
-  ];
-
   return (
-    <section data-tenant-summary aria-label="ملخص المستأجرين">
-      <ResponsiveCardGrid desktopColumns={2}>
-        {items.map(({ label, value, icon: Icon, hint }) => (
-          <article key={label} className="group relative min-w-0 overflow-hidden rounded-xl border border-border/75 bg-card p-3 shadow-card sm:p-3.5">
-            <div className="relative flex min-w-0 items-start justify-between gap-2.5">
-              <div className="min-w-0">
-                <p className="truncate text-[11px] font-bold text-muted-foreground sm:text-xs">{label}</p>
-                <p className="mt-1.5 text-xl font-black tabular-nums sm:text-2xl">{value}</p>
-                <p className="mt-0.5 line-clamp-2 text-[10px] font-medium leading-4 text-muted-foreground sm:text-[11px]">{hint}</p>
-              </div>
-              <span className="grid size-9 shrink-0 place-items-center rounded-lg border border-primary/15 bg-primary/8 text-primary sm:size-10">
-                <Icon className="size-4 sm:size-[1.05rem]" aria-hidden="true" />
-              </span>
-            </div>
-          </article>
-        ))}
-      </ResponsiveCardGrid>
-    </section>
+    <div data-tenant-summary>
+      <EntitySummaryStrip
+        ariaLabel="ملخص سجل المستأجرين"
+        items={[
+          { label: 'النتائج', value: total },
+          { label: 'عقود نشطة', value: activeContracts },
+          { label: 'مرتبطون بوحدات', value: assignedCount },
+          { label: 'تحتاج متابعة', value: arrearsCount, tone: 'warning', hidden: arrearsCount === 0 },
+        ]}
+      />
+    </div>
   );
 }
 
@@ -208,8 +149,6 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
 
   const workspaceContent = (
     <>
-      {!tenantsQuery.isLoading && !tenantsQuery.isError ? <TenantSummary rows={rows} total={totalCount} /> : null}
-
       <FilterBar
         searchValue={search}
         onSearchChange={(value) => { setSearch(value); setPage(1); }}
@@ -224,26 +163,16 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
         )}
       />
 
-      <section data-tenant-register className="min-w-0 space-y-2.5">
-        <header className="flex min-h-11 items-center justify-between gap-3 px-1">
-          <div className="flex min-w-0 items-center gap-2.5">
-            <span className="grid size-8 shrink-0 place-items-center rounded-lg border border-primary/10 bg-primary/[0.06] text-primary">
-              <Users className="size-4" aria-hidden="true" />
-            </span>
-            <div className="min-w-0">
-              <h2 className="truncate text-sm font-black">سجل المستأجرين</h2>
-              <p className="truncate text-[11px] font-medium text-muted-foreground">{rows.length} مستأجر في الصفحة الحالية</p>
-            </div>
-          </div>
-        </header>
+      {!tenantsQuery.isLoading && !tenantsQuery.isError ? <TenantSummary rows={rows} total={totalCount} /> : null}
 
+      <section data-tenant-register className="min-w-0">
         <EntityTable
           aria-label="جدول المستأجرين"
           rows={rows}
           columns={columns}
           visibleColumnKeys={visibleColumnKeys}
           keyOf={(tenant) => tenant.person.id}
-          mobileVisibleSecondaryKey="arrears"
+          mobileVisibleSecondaryKeys={["property", "arrears"]}
           isLoading={tenantsQuery.isLoading}
           error={tenantsQuery.isError ? tenantsQuery.error : null}
           errorTitle="تعذر تحميل المستأجرين"

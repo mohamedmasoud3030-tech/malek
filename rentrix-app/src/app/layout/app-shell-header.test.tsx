@@ -98,7 +98,7 @@ describe('AppShell — fixed global MALEK header', () => {
     expect(notice).not.toBeNull();
     expect(notice?.getAttribute('role')).toBe('status');
     expect(notice?.textContent).toContain('لا يوجد اتصال بالشبكة');
-    expect(notice?.textContent).toContain('الحفظ والتحديث قد يفشلان');
+    expect(notice?.textContent).toContain('قد يفشل الحفظ والتحديث');
   });
 
   it('synchronizes the global connection state with browser online/offline events', () => {
@@ -115,15 +115,9 @@ describe('AppShell — fixed global MALEK header', () => {
     }
   });
 
-  it('keeps a header hamburger for phone and iPad (UX-001) plus the desktop collapse control', () => {
+  it('keeps a header menu trigger for tablet', () => {
     act(() => { root.render(<AppShell />); });
 
     expect(host.querySelector('[data-mobile-menu-trigger]')).not.toBeNull();
-
-    // Desktop collapse toggle still reports the sidebar expansion state.
-    const collapseTrigger = Array.from(host.querySelectorAll<HTMLElement>('button[aria-expanded]')).find(
-      (button) => button.getAttribute('aria-expanded') === 'true',
-    );
-    expect(collapseTrigger).toBeDefined();
   });
 });

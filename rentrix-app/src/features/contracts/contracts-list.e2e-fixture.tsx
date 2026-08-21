@@ -1,6 +1,5 @@
 import { Download, Plus } from 'lucide-react';
 import { useState } from 'react';
-import { ListControlSurface } from '@/components/layout/list-controls';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
@@ -13,7 +12,7 @@ import type { ContractListItem, ContractStatusFilter } from './services/contract
 
 /**
  * Static marketing/demo capture of the real contracts workspace —
- * same header, KPI grid, filters and results components as production,
+ * same header, compact summary, filters and results components as production,
  * fed with showcase rows. Rendered only behind VITE_E2E.
  */
 // WP-DB0: the fixture rows below must satisfy the frozen `contracts` row
@@ -160,24 +159,22 @@ export function ContractsListE2EFixture() {
             </Button>
           }
         />
+        <ContractFilters
+          expiringOnly={expiringOnly}
+          hasActiveFilters={hasActiveFilters}
+          resetFilters={() => { setStatus('all'); setSearchTerm(''); setExpiringOnly(false); }}
+          searchTerm={searchTerm}
+          setExpiringOnly={(updater) => setExpiringOnly(updater)}
+          setSearchTerm={setSearchTerm}
+          setStatus={setStatus}
+          status={status}
+        />
         <ContractKpiGrid
           companySettings={defaultCompanySettingsContract}
           contracts={fixtureContracts}
           filteredContracts={filteredContracts}
           totalCount={fixtureContracts.length}
         />
-        <ListControlSurface>
-          <ContractFilters
-            expiringOnly={expiringOnly}
-            hasActiveFilters={hasActiveFilters}
-            resetFilters={() => { setStatus('all'); setSearchTerm(''); setExpiringOnly(false); }}
-            searchTerm={searchTerm}
-            setExpiringOnly={(updater) => setExpiringOnly(updater)}
-            setSearchTerm={setSearchTerm}
-            setStatus={setStatus}
-            status={status}
-          />
-        </ListControlSurface>
         <ContractResults
           companySettings={defaultCompanySettingsContract}
           contracts={filteredContracts}

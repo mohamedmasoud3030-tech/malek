@@ -1,8 +1,8 @@
-import { Building2, LinkIcon, Plus, Users } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { EntityForm } from '@/components/ui/entity-form';
-import { OperationalCommandPanel, OperationalMetricCard } from '@/components/ui/operational-summary';
+import { EntitySummaryStrip } from '@/components/ui/entity-summary-strip';
 import { AsyncContentState } from '@/components/async-content-state';
 import { OwnerFormDialog } from './components/owner-form-dialog';
 import { OwnerRelationshipsList, OwnershipLinkForm } from './components/owner-relationships';
@@ -42,13 +42,6 @@ export function OwnersWorkspace({ embedded = false }: OwnersWorkspaceProps) {
     );
   }
 
-  const totalProperties =
-    controller.summary.linkedPropertiesCount +
-    controller.summary.propertiesWithoutLinkedOwner;
-  const linkedCoverage = totalProperties > 0
-    ? Math.round((controller.summary.linkedPropertiesCount / totalProperties) * 100)
-    : 0;
-
   return (
     <EmbeddableWorkspace
       embedded={embedded}
@@ -65,69 +58,37 @@ export function OwnersWorkspace({ embedded = false }: OwnersWorkspaceProps) {
         </Button>
       )}
     >
-      <section
-        data-owner-summary
-        aria-label="ملخص الملاك والملكية"
-        className="grid gap-3 lg:grid-cols-[minmax(17rem,1.05fr)_minmax(0,2fr)]"
-      >
-        <OperationalCommandPanel
-          label="تغطية ربط العقارات"
-          value={`${formatCount(linkedCoverage)}%`}
-          icon={LinkIcon}
-          progress={linkedCoverage}
-          footer={(
-            <>
-              <span>{formatCount(controller.summary.linkedPropertiesCount)} مرتبطة</span>
-              <span>{formatCount(controller.summary.propertiesWithoutLinkedOwner)} بلا مالك</span>
-            </>
-          )}
-        />
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          <OperationalMetricCard
-            label="إجمالي الملاك"
-            value={formatCount(controller.summary.totalOwners)}
-            hint="كل ملفات الملاك"
-            icon={Users}
-          />
-          <OperationalMetricCard
-            label="الملاك النشطون"
-            value={formatCount(controller.summary.activeOwners)}
-            hint="متاحون للتشغيل والربط"
-            icon={Users}
-          />
-        </div>
-      </section>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.18fr)_minmax(22rem,0.82fr)]">
-        <section
-          data-owner-register
-          className="min-w-0 overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card"
-        >
-          <header className="flex items-start justify-between gap-3 border-b border-border/70 bg-muted/35 px-4 py-4 sm:px-5">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="grid size-9 place-items-center rounded-xl bg-primary/9 text-primary">
-                  <Users className="size-4.5" aria-hidden="true" />
-                </span>
-                <h2 className="text-base font-black">سجل الملاك</h2>
+        <section data-owner-register className="min-w-0">
+          <OwnerWorkspaceTable
+            rows={controller.filteredOwnerRows}
+            search={controller.ownerSearch}
+            selectedOwner={controller.selectedOwner}
+            summary={(
+              <div data-owner-summary>
+                <EntitySummaryStrip
+                  ariaLabel="ملخص سجل الملاك"
+                  items={[
+                    { label: 'الملاك', value: formatCount(controller.summary.totalOwners) },
+                    { label: 'نشطون', value: formatCount(controller.summary.activeOwners) },
+                    { label: 'عقارات مرتبطة', value: formatCount(controller.summary.linkedPropertiesCount) },
+                    {
+                      label: 'بلا مالك',
+                      value: formatCount(controller.summary.propertiesWithoutLinkedOwner),
+                      tone: 'warning',
+                      hidden: controller.summary.propertiesWithoutLinkedOwner === 0,
+                    },
+                  ]}
+                />
               </div>
-              <p className="mt-1.5 max-w-2xl text-xs font-medium leading-5 text-muted-foreground">
-                بيانات الملاك والعقارات المرتبطة فقط، دون أرصدة أو أرقام تسويات افتراضية.
-              </p>
-            </div>
-          </header>
-          <div className="p-3 sm:p-4">
-            <OwnerWorkspaceTable
-              rows={controller.filteredOwnerRows}
-              search={controller.ownerSearch}
-              selectedOwner={controller.selectedOwner}
-              onCreateOwner={controller.openCreateForm}
-              onEditOwner={controller.openEditForm}
-              onSearchChange={controller.setOwnerSearch}
-              onSelectOwner={controller.setSelectedOwnerId}
-            />
-          </div>
+            )}
+            onCreateOwner={controller.openCreateForm}
+            onEditOwner={controller.openEditForm}
+            onSearchChange={controller.setOwnerSearch}
+            onSelectOwner={controller.setSelectedOwnerId}
+          />
         </section>
 
         <aside
@@ -137,12 +98,7 @@ export function OwnersWorkspace({ embedded = false }: OwnersWorkspaceProps) {
           <header className="border-b border-border/70 bg-muted/35 px-4 py-4 sm:px-5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="grid size-9 place-items-center rounded-xl bg-primary/9 text-primary">
-                    <Building2 className="size-4.5" aria-hidden="true" />
-                  </span>
-                  <h2 className="text-base font-black">علاقات الملكية</h2>
-                </div>
+                <h2 className="text-base font-black">علاقات الملكية</h2>
                 <p className="mt-1.5 text-xs font-medium leading-5 text-muted-foreground">
                   {controller.selectedOwner
                     ? `العقارات المرتبطة بـ ${getOwnerDisplayLabel(controller.selectedOwner)}`
@@ -173,10 +129,7 @@ export function OwnersWorkspace({ embedded = false }: OwnersWorkspaceProps) {
             ) : (
               <div className="grid min-h-44 place-items-center rounded-xl border border-dashed border-border/80 bg-muted/20 p-6 text-center">
                 <div>
-                  <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-primary/9 text-primary">
-                    <LinkIcon className="size-5" aria-hidden="true" />
-                  </span>
-                  <p className="mt-3 text-sm font-black">لم يتم اختيار مالك</p>
+                  <p className="text-sm font-black">لم يتم اختيار مالك</p>
                   <p className="mt-1 text-xs font-medium text-muted-foreground">
                     اختر سجلًا من القائمة لعرض العقارات ونسب الملكية.
                   </p>

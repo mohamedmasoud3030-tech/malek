@@ -103,12 +103,15 @@ Permission requests that require action must be visibly actionable, with enough 
 
 - Desktop (≥ 1024px) uses a right-side collapsible sidebar generated from `navGroups`/workspace children.
 - Tablet / iPad (768–1023px) is a first-class class: header hamburger + header search, no floating bottom control, dense registers, and two-column composition. It must not be treated as a stretched phone.
-- Phone (< 768px) has no legacy five-item bottom navigation. `mobileNavItems` is empty. The header hamburger and `MobileFloatingControl` (Menu + Search) both open the full permitted drawer. Documentation must not claim a maintenance-priority bottom tab at this baseline.
-- Avoid oversized single-column card stacks where a compact 2-column mobile grid is clearer. Metric groups stay 2 columns below 1024px and may open to 4 columns on desktop.
+- Phone (< 768px) has no legacy five-item bottom navigation. `mobileNavItems` is empty. The `MobileFloatingControl` opens the permitted navigation hub as a content-height bottom sheet: top-level tasks are direct rows, workspace children expand in place, and desktop sidebar cards/chrome are not reproduced inside the sheet.
+- Entity-register routes prioritize the operating sequence `workspace tabs → primary action → search/filter toolbar → records`. Recurring explanatory copy is removed from the phone flow, summary numbers use a quiet semantic strip rather than KPI cards, and completed 100% setup/readiness cards are not persistent page heroes.
+- Register filters use one shared toolbar. On phone, search stays direct while advanced filters open in a labelled bottom sheet; desktop-only column visibility controls do not consume phone space. Pagination is absent when `total <= pageSize`.
+- Avoid oversized single-column card stacks where a compact 2-column mobile grid is clearer. Metric cards are reserved for information whose comparison/decision value justifies the visual weight; ordinary register counts do not become cards.
 - Long contract/agreement forms may use mobile steppers while desktop retains an efficient single-scroll workflow.
-- Shared entity registers render a dense semantic table on desktop/tablet (≥ 768px) and, below 768px, a true mobile register presentation: each record shows identity, one meaningful primary/secondary datum (status/amount/date), and a compact accessible «إجراءات» menu containing only the record's existing actions. Mobile registers never use horizontal scrolling, clipped labels, overlapping RTL text, disclosure/expansion rows, sticky action columns, or bulk expand-all controls.
+- Shared entity registers render a dense semantic table on desktop/tablet (≥ 768px) and, below 768px, a true mobile data-row presentation: each record shows identity, a concise supporting line of up to three meaningful facts (for example property · status · amount), and a compact accessible «إجراءات» menu containing only the record's existing actions. Mobile registers never use horizontal scrolling, clipped labels, overlapping RTL text, disclosure/expansion rows, sticky action columns, or bulk expand-all controls.
+- Today is an exception/decision workspace, not a duplicated report: urgent queues and follow-up remain primary, global-create shortcuts are not repeated, finance/report KPI grids stay in their owning workspaces, and portfolio state remains as one compact summary.
 - Safe-area/sticky actions must not hide validation or prevent access to submit/cancel.
-- Page headers, dossier headers, register cards and list controls share one elevated surface (`rounded-2xl` / token radius) so remaining workspaces do not invent a second chrome.
+- Page headers and register controls use the compact token radius (`rounded-xl`); dossier/detail overlays may use the elevated `rounded-2xl` radius. Remaining workspaces do not invent a second chrome.
 
 ## Design system
 

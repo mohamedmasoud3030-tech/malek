@@ -116,7 +116,7 @@ describe('shared mobile register — only identity + designated datum are render
       'utf8',
     );
 
-    expect(source).toContain('mobileVisibleSecondaryKey="tenant"');
+    expect(source).toContain('mobileVisibleSecondaryKeys={["tenant", "unit", "status"]}');
     expect(source).not.toContain('mobileVisibleSecondaryKey="rent_amount"');
     // The designated key must correspond to a real column on that table.
     expect(source).toContain('key: "tenant"');

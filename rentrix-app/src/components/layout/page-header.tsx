@@ -56,7 +56,7 @@ export function PageHeader({
             ) : null}
           </div>
           {description ? (
-            <p className="mt-0.5 max-w-3xl break-words text-xs leading-5 text-muted-foreground [overflow-wrap:anywhere] sm:text-[13px]">
+            <p className="mt-0.5 hidden max-w-3xl break-words text-xs leading-5 text-muted-foreground [overflow-wrap:anywhere] sm:block sm:text-[13px]">
               {description}
             </p>
           ) : null}

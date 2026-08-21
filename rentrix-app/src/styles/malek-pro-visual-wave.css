@@ -363,8 +363,12 @@
   }
 
   [data-operational-route='true'] [data-visual-wave='malek-pro'] :is([data-list-controls], [data-filter-bar]) {
-    padding: 0.65rem;
-    border-radius: 1rem;
+    padding: 0;
+    border-inline: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
   }
 }
 

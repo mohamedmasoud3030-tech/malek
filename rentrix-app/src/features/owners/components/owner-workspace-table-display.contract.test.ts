@@ -4,8 +4,8 @@ import { describe, expect, it } from 'vitest';
 
 /**
  * Owner register mobile/desktop display contract (IA).
- * Desktop compares many ownership columns; mobile must surface identity +
- * active-contracts datum + actions via shared EntityTable priorities.
+ * Desktop compares many ownership columns; mobile surfaces identity plus
+ * contact/property/status context and actions via shared EntityTable priorities.
  */
 describe('owner workspace table display architecture', () => {
   const source = readFileSync(resolve(import.meta.dirname, './owner-workspace-table.tsx'), 'utf8');
@@ -22,7 +22,7 @@ describe('owner workspace table display architecture', () => {
     expect(source).toContain("priority: 'primary'");
     expect(source).toContain("priority: 'actions'");
     expect(source).toContain("priority: 'detail'");
-    expect(source).toContain("mobileVisibleSecondaryKey=\"contracts\"");
+    expect(source).toContain('mobileVisibleSecondaryKeys={["contact", "property_count", "status"]}');
   });
 
   it('keeps contextual owner actions without internal identifiers', () => {

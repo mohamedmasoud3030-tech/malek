@@ -1,8 +1,8 @@
-import { Edit, Eye, Trash2, User } from "lucide-react";
+import { Edit, Eye, Trash2 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { DataTableColumnsMenu } from "@/components/ui/data-table";
-import { EntityCell } from "@/components/ui/entity-cell";
+import { ActionMenu } from "@/components/ui/action-menu";
 import { EntityTable, type ColumnDef } from "@/components/ui/entity-table";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { CompanySettingsContract } from "@/lib/companySettings";
@@ -92,7 +92,7 @@ export function ContractTable({
       key: "tenant",
       header: "المستأجر",
       priority: "primary",
-      render: (contract) => <EntityCell icon={User} title={contract.people?.full_name ?? "—"} />,
+      render: (contract) => <span className="font-black">{contract.people?.full_name ?? "—"}</span>,
     },
     {
       key: "unit",
@@ -132,26 +132,16 @@ export function ContractTable({
       key: "actions",
       header: "إجراءات",
       priority: "actions",
-      className: "w-52",
       render: (contract) => (
-        <div className="flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
-          <Button
-            variant="secondary"
-            className="min-h-11 px-3"
-            aria-label={`معاينة تفاصيل العقد ${getContractNumber(contract)}`}
-            onClick={() => onPreview(contract.id)}
-          >
-            <Eye className="size-4" aria-hidden="true" />
-            عرض
-          </Button>
-          <Button variant="secondary" className="min-h-11 px-3" onClick={() => onEdit(contract.id)}>
-            <Edit className="size-4" aria-hidden="true" />
-            تعديل
-          </Button>
-          <Button variant="danger" className="min-h-11 px-3" aria-label={`أرشفة العقد ${getContractNumber(contract)}`} onClick={() => onDelete(contract.id)}>
-            <Trash2 className="size-4" aria-hidden="true" />
-            أرشفة
-          </Button>
+        <div className="flex" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+          <ActionMenu
+            label={`إجراءات العقد ${getContractNumber(contract)}`}
+            items={[
+              { id: 'view', label: 'عرض', icon: Eye, onClick: () => onPreview(contract.id) },
+              { id: 'edit', label: 'تعديل', icon: Edit, onClick: () => onEdit(contract.id) },
+              { id: 'archive', label: 'أرشفة', icon: Trash2, variant: 'destructive', onClick: () => onDelete(contract.id) },
+            ]}
+          />
         </div>
       ),
     },
@@ -173,11 +163,7 @@ export function ContractTable({
         </div>
       )}
       visibleColumnKeys={visibleColumnKeys}
-      // The mobile register shows the identity column plus exactly one datum.
-      // A contract is identified in practice by its counterparty, so the tenant
-      // name is the datum that keeps the mobile row recognisable; the rent value
-      // stays available on the detail view and on wider viewports.
-      mobileVisibleSecondaryKey="tenant"
+      mobileVisibleSecondaryKeys={["tenant", "unit", "status"]}
       isLoading={isLoading}
       error={error}
       errorTitle="تعذر تحميل العقود"
@@ -186,7 +172,8 @@ export function ContractTable({
       emptyDescription={emptyDescription}
       emptyAction={onCreate ? <Button onClick={onCreate}>إنشاء عقد</Button> : undefined}
       pagination={pagination}
-      onRowClick={(contract) => setExpandedId((current) => current === contract.id ? null : contract.id)}
+      onRowClick={(contract) => onPreview(contract.id)}
+      onExpandedRowChange={(rowId) => setExpandedId(() => rowId)}
       renderRowExpansion={(contract) => (
         <div className="grid grid-cols-2 gap-4 [&>*:last-child:nth-child(odd)]:col-span-2">
           <DetailBox label="بيانات المستأجر">

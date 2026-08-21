@@ -45,6 +45,7 @@ export { ConfirmDialog } from "./confirm-dialog";
 export { StatCard } from "./stat-card";
 export { FilterTabs } from "./filter-tabs";
 export { FilterBar } from "./filter-bar";
+export { EntitySummaryStrip, type EntitySummaryItem } from "./entity-summary-strip";
 export { KpiCard } from "./kpi-card";
 export { InlineStatCard } from "./inline-stat-card";
 export { ResponsiveCardGrid } from "./responsive-card-grid";

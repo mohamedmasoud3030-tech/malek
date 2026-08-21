@@ -80,7 +80,7 @@ export function NavigationLinks({
         className={cn(
           'group relative flex min-h-11 items-center gap-2.5 rounded-xl border border-transparent px-3 py-1.5 text-sidebar-foreground outline-none transition-[background-color,border-color,color,box-shadow] duration-150',
           'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-4 focus-visible:ring-sidebar-accent/35 motion-reduce:transition-none',
-          '[[data-mobile-nav-sheet]_&]:min-h-10 [[data-mobile-nav-sheet]_&]:rounded-lg [[data-mobile-nav-sheet]_&]:px-2.5 [[data-mobile-nav-sheet]_&]:py-1 [[data-mobile-nav-sheet]_&]:text-sidebar-foreground/88 [[data-mobile-nav-sheet]_&]:hover:bg-white/[0.06] [[data-mobile-nav-sheet]_&]:hover:text-white [[data-mobile-nav-sheet]_&]:focus-visible:ring-primary/25',
+          '[[data-mobile-nav-sheet]_&]:min-h-11 [[data-mobile-nav-sheet]_&]:rounded-lg [[data-mobile-nav-sheet]_&]:px-2 [[data-mobile-nav-sheet]_&]:py-1 [[data-mobile-nav-sheet]_&]:text-sidebar-foreground/88 [[data-mobile-nav-sheet]_&]:hover:bg-white/[0.06] [[data-mobile-nav-sheet]_&]:hover:text-white [[data-mobile-nav-sheet]_&]:focus-visible:ring-primary/25',
           isChild && 'ms-3 min-h-11 border-s-2 border-s-sidebar-border/70 ps-3 [[data-mobile-nav-sheet]_&]:min-h-10 [[data-mobile-nav-sheet]_&]:border-s-white/10',
           isLocked && 'cursor-not-allowed opacity-70',
           isActive && 'border-sidebar-accent/20 bg-sidebar-accent text-sidebar-accent-foreground shadow-[inset_3px_0_0_0_hsl(var(--sidebar-accent-foreground)),0_12px_28px_-20px_rgb(0_0_0_/_0.9)] rtl:shadow-[inset_-3px_0_0_0_hsl(var(--sidebar-accent-foreground)),0_12px_28px_-20px_rgb(0_0_0_/_0.9)] [[data-mobile-nav-sheet]_&]:border-white/10 [[data-mobile-nav-sheet]_&]:bg-white/[0.08] [[data-mobile-nav-sheet]_&]:text-white [[data-mobile-nav-sheet]_&]:shadow-none',
@@ -89,7 +89,7 @@ export function NavigationLinks({
         <span
           className={cn(
             'grid size-8 shrink-0 place-items-center rounded-lg transition-colors',
-            '[[data-mobile-nav-sheet]_&]:size-7 [[data-mobile-nav-sheet]_&]:bg-white/[0.04] [[data-mobile-nav-sheet]_&]:text-sidebar-foreground/75',
+            '[[data-mobile-nav-sheet]_&]:size-7 [[data-mobile-nav-sheet]_&]:bg-transparent [[data-mobile-nav-sheet]_&]:text-sidebar-foreground/65',
             isActive && '[[data-mobile-nav-sheet]_&]:bg-primary/15 [[data-mobile-nav-sheet]_&]:text-primary',
           )}
         >
@@ -103,17 +103,17 @@ export function NavigationLinks({
   };
 
   return (
-    <div className="space-y-3 [[data-mobile-nav-sheet]_&]:space-y-2">
+    <div className="space-y-3 [[data-mobile-nav-sheet]_&]:space-y-3">
       {navGroups.map(([sectionTitle, items, adminOnly]) => {
         if (adminOnly && !items.some(([, , , , permission]) => canShowNavigationItem(authorization, permission))) return null;
         if (items.length === 0) return null;
         return (
           <section
             key={sectionTitle}
-            className="space-y-0.5 [[data-mobile-nav-sheet]_&]:rounded-xl [[data-mobile-nav-sheet]_&]:border [[data-mobile-nav-sheet]_&]:border-white/8 [[data-mobile-nav-sheet]_&]:bg-white/[0.025] [[data-mobile-nav-sheet]_&]:p-1 [[data-mobile-nav-sheet]_&]:shadow-none"
+            className="space-y-0.5 [[data-mobile-nav-sheet]_&]:border-0 [[data-mobile-nav-sheet]_&]:bg-transparent [[data-mobile-nav-sheet]_&]:p-0 [[data-mobile-nav-sheet]_&]:shadow-none"
           >
             {expanded
-              ? <div className="px-3 pb-1 pt-1.5"><p className="text-[10px] font-bold text-sidebar-foreground/50 [[data-mobile-nav-sheet]_&]:text-sidebar-foreground/50">{sectionTitle}</p></div>
+              ? <div className="px-3 pb-1 pt-1.5"><p className="text-[10px] font-bold text-sidebar-foreground/50 [[data-mobile-nav-sheet]_&]:text-sidebar-foreground/45">{sectionTitle}</p></div>
               : <div aria-hidden="true" className="mx-3 mb-1 h-px bg-white/10" />}
             {items.map((item) => {
               const [to] = item;
@@ -194,7 +194,7 @@ export function MobileFloatingControl({ onMenu, menuRef }: Readonly<{ onMenu: ()
   // still loading or incomplete. Route-level authorization remains authoritative
   // if the user chooses an action they cannot perform.
   const visibleQuickActions = mobileQuickActions;
-  const utilityActionClass = 'grid size-10 shrink-0 place-items-center rounded-xl border border-transparent text-muted-foreground outline-none transition-[background-color,color,border-color,box-shadow,transform] duration-150 hover:bg-muted hover:text-foreground active:scale-[0.97] focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none motion-reduce:transform-none';
+  const utilityActionClass = 'grid size-11 min-h-11 min-w-11 shrink-0 place-items-center rounded-xl border border-transparent text-muted-foreground outline-none transition-[background-color,color,border-color,box-shadow,transform] duration-150 hover:bg-muted hover:text-foreground active:scale-[0.97] focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none motion-reduce:transform-none';
 
   useEffect(() => {
     if (!quickOpen) return;
@@ -227,7 +227,7 @@ export function MobileFloatingControl({ onMenu, menuRef }: Readonly<{ onMenu: ()
     >
       <div
         ref={quickRootRef}
-        className="pointer-events-auto relative flex w-full max-w-[20rem] items-center gap-1 rounded-[1.35rem] border border-border/80 bg-background/94 p-1 shadow-[0_16px_44px_-24px_hsl(var(--foreground)/0.5),0_1px_6px_hsl(var(--foreground)/0.08)] ring-1 ring-background/70 backdrop-blur-xl supports-[backdrop-filter]:bg-background/86"
+        className="pointer-events-auto relative flex w-full max-w-[20rem] items-center gap-1 rounded-2xl border border-border/80 bg-background/94 p-1 shadow-[0_16px_44px_-24px_hsl(var(--foreground)/0.5),0_1px_6px_hsl(var(--foreground)/0.08)] ring-1 ring-background/70 backdrop-blur-xl supports-[backdrop-filter]:bg-background/86"
       >
         {quickOpen && visibleQuickActions.length > 0 ? (
           <div
@@ -265,7 +265,7 @@ export function MobileFloatingControl({ onMenu, menuRef }: Readonly<{ onMenu: ()
           aria-label="فتح القائمة"
           aria-haspopup="dialog"
           data-mobile-dock-menu
-          className="flex min-h-10 min-w-0 flex-1 items-center justify-start gap-2 rounded-xl border border-foreground bg-foreground px-3 text-start text-background outline-none transition-[background-color,box-shadow,transform] duration-150 hover:bg-foreground/92 active:scale-[0.99] focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none motion-reduce:transform-none"
+          className="flex min-h-11 min-w-11 flex-1 items-center justify-start gap-2 rounded-xl border border-foreground bg-foreground px-3 text-start text-background outline-none transition-[background-color,box-shadow,transform] duration-150 hover:bg-foreground/92 active:scale-[0.99] focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none motion-reduce:transform-none"
         >
           <Menu className="size-4 shrink-0" aria-hidden="true" />
           <span className="min-w-0 flex-1 truncate text-xs font-black">القائمة</span>
@@ -296,7 +296,7 @@ export function MobileFloatingControl({ onMenu, menuRef }: Readonly<{ onMenu: ()
         </button>
 
         <div
-          className="relative [&>div>button]:!size-10 [&>div>button]:!rounded-xl [&>div>button]:!border-transparent [&>div>button]:!text-muted-foreground [&>div>button]:!shadow-none [&>div>button]:hover:!bg-muted [&>div>button]:hover:!text-foreground [&>div>button[aria-expanded='true']]:!bg-foreground [&>div>button[aria-expanded='true']]:!text-background [&>div>[role='dialog']]:!bottom-12 [&>div>[role='dialog']]:!top-auto"
+          className="relative [&>div>button]:!size-11 [&>div>button]:!rounded-xl [&>div>button]:!border-transparent [&>div>button]:!text-muted-foreground [&>div>button]:!shadow-none [&>div>button]:hover:!bg-muted [&>div>button]:hover:!text-foreground [&>div>button[aria-expanded='true']]:!bg-foreground [&>div>button[aria-expanded='true']]:!text-background [&>div>[role='dialog']]:!bottom-12 [&>div>[role='dialog']]:!top-auto"
           data-mobile-dock-notifications
         >
           <NotificationsMenu authorization={authorization} sharedLabel={sharedLabel} />

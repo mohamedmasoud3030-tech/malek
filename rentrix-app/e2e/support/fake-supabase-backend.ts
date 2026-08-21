@@ -535,6 +535,7 @@ function fulfillJson(route: Route, status: number, body: unknown, headers: Recor
     contentType: 'application/json',
     headers: {
       'access-control-allow-origin': '*',
+      'access-control-expose-headers': 'content-range',
       ...headers,
     },
     body: JSON.stringify(body),

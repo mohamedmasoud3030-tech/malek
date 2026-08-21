@@ -24,7 +24,8 @@ describe('cross-device design unification', () => {
 
   it('shows a header hamburger on phone and iPad, not only the floating control', () => {
     expect(shell).toContain('data-mobile-menu-trigger');
-    expect(shell).toContain('inline-flex size-11 shrink-0 rounded-xl');
+    expect(shell).toContain('size-11 shrink-0');
+    expect(shell).toContain('md:grid lg:hidden');
     expect(shell).toContain('lg:hidden');
     expect(shell).not.toMatch(/data-mobile-menu-trigger[\s\S]{0,80}className="hidden size-11/);
   });
@@ -41,7 +42,7 @@ describe('cross-device design unification', () => {
   });
 
   it('unifies page and dossier headers on the elevated token radius', () => {
-    expect(pageHeader).toContain('rounded-2xl');
+    expect(pageHeader).toContain('rounded-xl');
     expect(detailHeader).toContain('rounded-2xl');
     expect(pageHeader).toContain('data-unified-surface="page-header"');
     expect(detailHeader).toContain('data-unified-surface="page-header"');

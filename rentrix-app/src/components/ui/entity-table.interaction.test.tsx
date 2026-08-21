@@ -52,6 +52,21 @@ describe("EntityTable — السجل الموحد: عرض الجدول على س
     expect(html).toContain("data-entity-table-mobile-datum");
   });
 
+  it("supports a dense mobile supporting line with up to three designated facts", () => {
+    const html = renderToStaticMarkup(
+      <EntityTable
+        {...tableProps({
+          columns: richColumns,
+          mobileVisibleSecondaryKeys: ["amount", "detail"],
+        })}
+      />,
+    );
+    expect(html).toContain('data-mobile-data-row');
+    expect(html).toContain('data-entity-table-mobile-data');
+    expect(html).toContain('الأول مبلغ');
+    expect(html).toContain('تفاصيل الأول');
+  });
+
   it("renders shared empty, loading, and error states", () => {
     expect(renderToStaticMarkup(<EntityTable {...tableProps({ rows: [], emptyTitle: "لا عناصر هنا", emptyDescription: "أضف أول عنصر." })} />)).toContain("لا عناصر هنا");
     const loading = renderToStaticMarkup(<EntityTable {...tableProps({ isLoading: true })} />);
@@ -89,6 +104,14 @@ describe("EntityTable — التفاعل", () => {
     expect(onPageChange).toHaveBeenCalledWith(2);
     act(() => { container.querySelector("tbody tr")?.dispatchEvent(new MouseEvent("click", { bubbles: true })); });
     expect(onRowClick).toHaveBeenCalledWith(rows[0]);
+  });
+
+  it("hides pagination when all results fit on the current page", () => {
+    const html = renderToStaticMarkup(
+      <EntityTable {...tableProps({ pagination: { page: 1, pageSize: 10, total: 2, onPageChange: () => undefined } })} />,
+    );
+    expect(html).not.toContain('aria-label="ترقيم الصفحات"');
+    expect(html).not.toContain('الصفحة 1 من 1');
   });
 
   it("supports sorting and keyboard row activation on the desktop table", () => {

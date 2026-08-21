@@ -1,5 +1,4 @@
-import { Clock3, FileText, WalletCards } from 'lucide-react';
-import { OperationalMetricCard } from '@/components/ui/operational-summary';
+import { EntitySummaryStrip } from '@/components/ui/entity-summary-strip';
 import type { CompanySettingsContract } from '@/lib/companySettings';
 import { isContractStatus } from '@/lib/contractStatus';
 import { formatContractMoney } from '../contractDisplayFormatters';
@@ -22,6 +21,7 @@ export function summarizeContracts(contracts: ContractListItem[]) {
   );
 }
 
+/** Keeps contract context visible without a four-card dashboard above the list. */
 export function ContractKpiGrid({
   companySettings,
   contracts,
@@ -40,35 +40,16 @@ export function ContractKpiGrid({
     : 0;
 
   return (
-    <section
-      data-contract-summary
-      aria-label="ملخص دورة العقود"
-      className="grid grid-cols-2 gap-2.5 sm:gap-3"
-    >
-      <OperationalMetricCard
-        label="نسبة العقود النشطة"
-        value={`${formatCount(activeRate)}%`}
-        hint={`${formatCount(listSummary.active)} نشطة في الصفحة`}
-        icon={WalletCards}
+    <div data-contract-summary>
+      <EntitySummaryStrip
+        ariaLabel="ملخص سجل العقود"
+        items={[
+          { label: 'العقود', value: formatCount(totalCount) },
+          { label: 'نشطة في الصفحة', value: `${formatCount(listSummary.active)} · ${formatCount(activeRate)}%`, tone: 'success' },
+          { label: 'تنتهي قريبًا', value: formatCount(listSummary.expiringSoon), tone: 'warning', hidden: listSummary.expiringSoon === 0 },
+          { label: 'إيجار النتائج', value: formatContractMoney(companySettings, visibleSummary.rentTotal) },
+        ]}
       />
-      <OperationalMetricCard
-        label="إجمالي العقود"
-        value={formatCount(totalCount)}
-        hint="حسب فلتر الحالة الحالي"
-        icon={FileText}
-      />
-      <OperationalMetricCard
-        label="تنتهي قريبًا"
-        value={formatCount(listSummary.expiringSoon)}
-        hint="خلال نافذة المتابعة الحالية"
-        icon={Clock3}
-      />
-      <OperationalMetricCard
-        label="إيجار العقود الظاهرة"
-        value={formatContractMoney(companySettings, visibleSummary.rentTotal)}
-        hint="بعد البحث والفلاتر"
-        icon={WalletCards}
-      />
-    </section>
+    </div>
   );
 }

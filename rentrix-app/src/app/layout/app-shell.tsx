@@ -1,6 +1,6 @@
 import { Link, Outlet, useMatches, useRouter } from '@tanstack/react-router';
 import { useEffect, useId, useRef, useState, type RefObject } from 'react';
-import { CircleHelp, KeyRound, LogOut, Moon, Settings, ShieldAlert, Sun, UserRound, X } from 'lucide-react';
+import { CircleHelp, KeyRound, LogOut, Menu, Moon, Settings, ShieldAlert, Sun, UserRound, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { MalikBrand } from '@/components/brand/malik-brand';
 import { Button } from '@/components/ui/button';
@@ -211,12 +211,12 @@ function MobileNavigationDrawer({
         }}
         data-mobile-drawer
         data-mobile-nav-sheet
-        className="fixed inset-x-0 bottom-0 top-auto z-[101] flex max-h-[88dvh] w-full max-w-none flex-col gap-0 overflow-hidden rounded-none rounded-t-2xl border-0 border-t border-white/10 bg-sidebar text-sidebar-foreground shadow-[0_-18px_50px_-18px_rgb(0_0_0_/_0.7)] sm:max-h-none lg:hidden"
+        data-mobile-navigation-hub
+        className="fixed inset-x-0 bottom-0 top-auto z-[101] flex max-h-[min(78dvh,42rem)] w-full max-w-none flex-col gap-0 overflow-hidden rounded-none rounded-t-3xl border-0 border-t border-white/10 bg-sidebar text-sidebar-foreground shadow-[0_-18px_50px_-18px_rgb(0_0_0_/_0.7)] lg:hidden"
       >
-        <DialogTitle className="sr-only">القائمة الرئيسية</DialogTitle>
         <div className="mx-auto mt-2 h-1 w-9 shrink-0 rounded-full bg-white/20" aria-hidden="true" />
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/8 px-3.5 py-2.5">
-          <Brand expanded />
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/8 px-4 py-2">
+          <DialogTitle className="text-sm font-black text-white">القائمة الرئيسية</DialogTitle>
           <Button
             autoFocus
             variant="ghost"
@@ -227,7 +227,7 @@ function MobileNavigationDrawer({
             <X className="size-[1.125rem]" />
           </Button>
         </div>
-        <nav className="sidebar-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain p-2.5 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
+        <nav className="sidebar-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-2 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
           {authorization === null && (
             <div className="mb-2 rounded-lg border border-[hsl(var(--color-warning-text)/0.2)] bg-[hsl(var(--color-warning-bg)/0.07)] px-2.5 py-2">
               <p className="text-[11px] font-semibold text-warning">الصلاحيات غير مكتملة</p>
@@ -250,6 +250,8 @@ export function AppShell() {
   const { sidebarCollapsed, theme, setTheme, syncStatus, setSyncStatus } = useUiStore();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const mobileNavTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const tabletNavTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const activeNavTriggerRef = useRef<HTMLButtonElement | null>(null);
   const appLanguage = getAppLanguageState();
   const isSidebarExpanded = sidebarCollapsed === false;
   const sharedLabel = (key: string) => translateSharedLabel(key, appLanguage.language);
@@ -314,7 +316,7 @@ export function AppShell() {
           authorization={authorization}
           sharedLabel={sharedLabel}
           onClose={() => setMobileNavOpen(false)}
-          triggerRef={mobileNavTriggerRef}
+          triggerRef={activeNavTriggerRef}
         />
       ) : null}
 
@@ -347,6 +349,21 @@ export function AppShell() {
             <MalikBrand className="min-w-0" />
 
             <div className="ms-auto flex shrink-0 items-center gap-1.5 sm:gap-2" data-header-quiet-utilities>
+              <button
+                ref={tabletNavTriggerRef}
+                type="button"
+                data-mobile-menu-trigger
+                aria-label="فتح القائمة"
+                aria-haspopup="dialog"
+                onClick={() => {
+                  activeNavTriggerRef.current = tabletNavTriggerRef.current;
+                  setMobileNavOpen(true);
+                }}
+                className="hidden size-11 shrink-0 place-items-center rounded-xl text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-4 focus-visible:ring-primary/20 md:grid lg:hidden"
+              >
+                <Menu className="size-[1.05rem]" aria-hidden="true" />
+              </button>
+
               <HeaderDateTime />
 
               <button
@@ -406,7 +423,13 @@ export function AppShell() {
         </main>
       </div>
 
-      <MobileFloatingControl menuRef={mobileNavTriggerRef} onMenu={() => setMobileNavOpen(true)} />
+      <MobileFloatingControl
+        menuRef={mobileNavTriggerRef}
+        onMenu={() => {
+          activeNavTriggerRef.current = mobileNavTriggerRef.current;
+          setMobileNavOpen(true);
+        }}
+      />
       <AiAssistantGlobalAction showTrigger={false} />
       <CommandPaletteDialog />
     </div>

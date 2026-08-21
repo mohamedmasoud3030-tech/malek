@@ -130,7 +130,7 @@ describe('UnitsPage controller regression', () => {
     expect(container.querySelector('[data-compact-responsive-table]')).toBeTruthy();
   });
 
-  it('renders KPI cards with computed values', async () => {
+  it('renders the compact operational summary with computed values', async () => {
     await act(async () => { root.render(<UnitsPage />); });
     const text = container.textContent ?? '';
     // Arabic locale uses Arabic-Indic numerals: ٣=3, ١=1
@@ -139,10 +139,11 @@ describe('UnitsPage controller regression', () => {
     expect(text).toContain('OMR'); // expected rent currency
   });
 
-  it('renders filter selects: property, status, occupancy', async () => {
+  it('renders labelled property/occupancy selects and status chips', async () => {
     await act(async () => { root.render(<UnitsPage />); });
     const selects = container.querySelectorAll('select');
-    expect(selects.length).toBe(3);
+    expect(selects.length).toBe(2);
+    expect(container.querySelector('[aria-label="حالة الوحدة"]')).toBeTruthy();
 
     const propertySelect = selects[0];
     const options = Array.from(propertySelect.options).map(o => o.textContent);
@@ -197,10 +198,10 @@ describe('UnitsPage controller regression', () => {
     expect(searchInput.placeholder).toBe('رقم الوحدة، الدور، العقار');
   });
 
-  it('displays unit count in card description', async () => {
+  it('displays unit count in the compact summary strip', async () => {
     await act(async () => { root.render(<UnitsPage />); });
-    const text = container.textContent ?? '';
-    // Arabic locale uses Arabic-Indic numerals; description ends with period
-    expect(text).toContain('وحدة ضمن الفلاتر الحالية');
+    const summary = container.querySelector('[data-unit-summary]');
+    expect(summary?.textContent).toContain('الوحدات');
+    expect(summary?.textContent).toContain('3');
   });
 });

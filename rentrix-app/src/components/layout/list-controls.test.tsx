@@ -16,9 +16,9 @@ describe('ListControlSurface — سطح البحث والفلاتر الموحد
 
   it('applies the shared surface tokens (border/card/radius/shadow)', () => {
     const html = renderToStaticMarkup(<ListControlSurface>x</ListControlSurface>);
-    expect(html).toContain('border-border/70');
-    expect(html).toContain('bg-card');
-    expect(html).toContain('rounded-2xl');
+    expect(html).toContain('border-border/85');
+    expect(html).toContain('bg-background');
+    expect(html).toContain('rounded-xl');
   });
 
   it('accepts a className override and a custom aria label', () => {

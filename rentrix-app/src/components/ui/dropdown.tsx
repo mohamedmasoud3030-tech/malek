@@ -19,6 +19,8 @@ type DropdownProps = {
   label?: string;
   disabled?: boolean;
   className?: string;
+  trigger?: ReactNode;
+  triggerAriaLabel?: string;
 };
 
 /**
@@ -33,6 +35,8 @@ export function Dropdown({
   label,
   disabled = false,
   className,
+  trigger,
+  triggerAriaLabel,
 }: DropdownProps) {
   const [open, setOpen] = useState(false);
   const menuId = useId();
@@ -78,21 +82,29 @@ export function Dropdown({
         type="button"
         variant="outline"
         disabled={disabled}
-        className="w-full justify-between gap-2 font-bold"
+        className={cn('font-bold', trigger ? 'size-11 min-h-11 min-w-11 justify-center px-0' : 'w-full justify-between gap-2')}
+        aria-label={trigger ? (triggerAriaLabel ?? placeholder) : undefined}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
         onClick={() => setOpen((current) => !current)}
       >
-        <span className="min-w-0 truncate">{selected?.label ?? placeholder}</span>
-        <ChevronDown className={cn('size-4 shrink-0 transition', open && 'rotate-180')} />
+        {trigger ?? (
+          <>
+            <span className="min-w-0 truncate">{selected?.label ?? placeholder}</span>
+            <ChevronDown className={cn('size-4 shrink-0 transition', open && 'rotate-180')} />
+          </>
+        )}
       </Button>
 
       {open ? (
         <div
           id={menuId}
           role="listbox"
-          className="absolute start-0 end-0 z-50 mt-1 max-h-64 overflow-y-auto rounded-2xl border border-border bg-card p-1 shadow-elevated"
+          className={cn(
+            'absolute z-50 mt-1 max-h-64 overflow-y-auto rounded-2xl border border-border bg-card p-1 shadow-elevated',
+            trigger ? 'end-0 w-52' : 'start-0 end-0',
+          )}
         >
           {options.map((option) => {
             const isSelected = option.id === value;

@@ -438,40 +438,27 @@ for (const viewport of viewportMatrix) {
       const sectionNames = await page.locator('[data-dashboard-section]').evaluateAll((nodes) =>
         nodes.map((node) => node.getAttribute('data-dashboard-section')),
       );
-      expect(sectionNames).toEqual(['work-now', 'actions', 'office-state', 'analytics']);
+      expect(sectionNames).toEqual(['work-now', 'portfolio']);
 
-      await expect(page.locator('[data-dashboard-action-grid] > a')).toHaveCount(4);
-      const kpiLinks = page.locator('[data-dashboard-kpi-grid] a[data-dashboard-kpi-link]');
-      await expect(kpiLinks).toHaveCount(4);
-      const kpiHrefs = await kpiLinks.evaluateAll((nodes) => nodes.map((node) => node.getAttribute('href')));
-      expect(kpiHrefs).toEqual(['/financials', '/arrears', '/reports', '/expenses']);
-
-      const actionColumns = await page.locator('[data-dashboard-action-grid]').evaluate((node) =>
-        getComputedStyle(node).gridTemplateColumns.split(' ').filter(Boolean).length,
-      );
-      // The KPI grid is now a semantic <ul class="dashboard-kpi-grid"> (axe
-      // aria-allowed-role: role="listitem" is invalid on <a>), so the column
-      // count is read from the ul element, not the old div child.
-      const kpiColumns = await page.locator('[data-dashboard-kpi-grid] .dashboard-kpi-grid').evaluate((node) =>
-        getComputedStyle(node).gridTemplateColumns.split(' ').filter(Boolean).length,
-      );
-      expect(actionColumns).toBe(viewport.width >= 1024 ? 4 : 2);
-      expect(kpiColumns).toBe(viewport.width >= 1024 ? 4 : 2);
+      await expect(page.locator('[data-dashboard-action-grid]')).toHaveCount(0);
+      await expect(page.locator('[data-dashboard-kpi-grid]')).toHaveCount(0);
+      const portfolioLink = page.locator('.dashboard-portfolio-strip');
+      await expect(portfolioLink).toHaveAttribute('href', '/properties');
+      await expect(portfolioLink).toContainText('شاغرة');
 
       if (viewport.width === 375) {
         const firstScreen = await page.locator('[data-dashboard-section="work-now"]').evaluate((node) => {
           const rect = node.getBoundingClientRect();
           return {
             workNowVisible: rect.top < window.innerHeight && rect.bottom > 0,
-            firstKpiTop: document.querySelector('a[data-dashboard-kpi-link]')?.getBoundingClientRect().top ?? null,
+            portfolioTop: document.querySelector('.dashboard-portfolio-strip')?.getBoundingClientRect().top ?? null,
           };
         });
-        // Today is action-first: urgent work must occupy the first screen.
-        // Office-state KPIs remain available immediately after the work and
-        // quick-action sections instead of displacing priority work above fold.
+        // Today is action-first: urgent work occupies the first screen and the
+        // compact portfolio strip follows without a duplicate KPI report.
         expect(firstScreen.workNowVisible).toBe(true);
-        expect(firstScreen.firstKpiTop).not.toBeNull();
-        expect(firstScreen.firstKpiTop ?? 0).toBeGreaterThan(0);
+        expect(firstScreen.portfolioTop).not.toBeNull();
+        expect(firstScreen.portfolioTop ?? 0).toBeGreaterThan(0);
       }
 
       await assertTouchTargets(page);
@@ -546,10 +533,10 @@ test('real dashboard route exposes loading, empty, error, partial and stale stat
   await page.context().clearCookies();
   await page.evaluate(() => window.localStorage.clear());
   await openDashboardRoute(page, 'light', 'stale-refetch-error');
-  await expect(page.locator('[data-dashboard-kpi-grid]')).toBeVisible();
+  await expect(page.locator('.dashboard-portfolio-strip')).toBeVisible();
   await page.evaluate(() => window.dispatchEvent(new Event('malek-dashboard-e2e-refetch')));
   await expect(page.getByText('تعذر تحديث بيانات اليوم')).toBeVisible();
-  await expect(page.locator('[data-dashboard-kpi-grid]')).toBeVisible();
+  await expect(page.locator('.dashboard-portfolio-strip')).toBeVisible();
 
   await page.screenshot({ path: testInfo.outputPath('dashboard-real-states.png'), fullPage: true });
 });

@@ -6,6 +6,10 @@ import { createRoot } from 'react-dom/client';
 import type { AuthorizationContext } from '@/features/auth/permissions';
 
 vi.mock('@/components/layout/permission-request-dialog', () => ({ PermissionRequestDialog: () => null }));
+vi.mock('@/hooks/use-auth', () => ({
+  useAuth: () => ({ authorization: { userId: 'admin-1', email: 'admin@malek.test', role: 'ADMIN' } }),
+}));
+vi.mock('./notifications-menu', () => ({ NotificationsMenu: () => <button type="button" aria-label="الإشعارات">تنبيهات</button> }));
 
 vi.mock('@tanstack/react-router', () => ({
   Link: ({ children, to, className, ...props }: { children: React.ReactNode; to: string; className?: string } & Record<string, unknown>) => (
@@ -60,9 +64,9 @@ describe('WP-06 / GAP-020 Browser & UX Acceptance Hardening', () => {
       const html = renderToStaticMarkup(<MobileFloatingControl onMenu={() => undefined} />);
       const host = document.createElement('div');
       host.innerHTML = html;
-      const buttons = host.querySelectorAll('button');
-      expect(buttons.length).toBe(2);
-      // Each button must have accessible label and min touch target classes
+      const buttons = host.querySelectorAll('[data-mobile-dock-menu], [data-mobile-dock-quick-add], [data-mobile-dock-ai]');
+      expect(buttons.length).toBe(3);
+      // Each direct dock control keeps an accessible name and 44px class floor.
       for (const btn of Array.from(buttons)) {
         expect(btn.getAttribute('aria-label')).toBeTruthy();
         expect(btn.className).toContain('min-h-11');
@@ -72,7 +76,7 @@ describe('WP-06 / GAP-020 Browser & UX Acceptance Hardening', () => {
 
     it('mobile floating control container has bottom safe-area padding', () => {
       const html = renderToStaticMarkup(<MobileFloatingControl onMenu={() => undefined} />);
-      expect(html).toContain('pb-[calc(0.75rem+env(safe-area-inset-bottom');
+      expect(html).toContain('pb-[calc(0.5rem+env(safe-area-inset-bottom');
       expect(html).toContain('data-mobile-floating-control');
     });
   });

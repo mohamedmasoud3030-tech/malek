@@ -106,13 +106,13 @@ describe('ContractsListPage load states', () => {
 
   it('shows the server-exact totals instead of the loaded page size', () => {
     // One page wired (1 row) while the server reports 342 matching contracts:
-    // header and the «إجمالي العقود» KPI must show 342, not 1.
+    // Header and compact register summary must show 342, not the loaded page size.
     contractsMocks.contractsQuery.data = { rows: [contractFixture], count: 342 };
 
     const html = renderToStaticMarkup(<ContractsListPage />);
 
     expect(html).toContain('عدد السجلات 342');
-    expect(html).toContain('إجمالي العقود');
+    expect(html).toContain('ملخص سجل العقود');
     expect(html).toContain('>342<');
   });
 
@@ -124,10 +124,10 @@ describe('ContractsListPage load states', () => {
     expect(html).toContain('data-page-header');
     expect(html.match(/<h1/g)).toHaveLength(1);
     expect(html).toContain('عدد السجلات 1');
-    expect(html).toContain('data-list-controls');
+    expect(html).toContain('data-filter-bar');
     expect(html).toContain('data-contract-summary');
     expect(html).toContain('data-contract-register');
-    expect(html).toContain('<h2');
+    expect(html).toContain('data-entity-summary-strip');
   });
 });
 

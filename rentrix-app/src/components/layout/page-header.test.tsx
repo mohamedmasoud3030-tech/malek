@@ -23,6 +23,13 @@ describe('PageHeader — العنوان الموحد للصفحات', () => {
     expect(html).toContain('tabular-nums');
   });
 
+  it('keeps recurring descriptions available on desktop but out of the phone flow', () => {
+    const html = renderToStaticMarkup(<PageHeader title="المحفظة" description="وصف تمهيدي متكرر" />);
+    expect(html).toContain('وصف تمهيدي متكرر');
+    expect(html).toContain('hidden');
+    expect(html).toContain('sm:block');
+  });
+
   it('renders primary and secondary actions', () => {
     const html = renderToStaticMarkup(
       <PageHeader

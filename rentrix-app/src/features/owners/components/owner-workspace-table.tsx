@@ -1,11 +1,10 @@
-import { Eye, LinkIcon, Pencil, Users } from 'lucide-react';
-import { useState } from 'react';
+import { Eye, LinkIcon, Pencil } from 'lucide-react';
+import { useState, type ReactNode } from 'react';
 import { ActionMenu } from '@/components/ui/action-menu';
 import { Button } from '@/components/ui/button';
 import { DataTableColumnsMenu } from '@/components/ui/data-table';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { EmptyState } from '@/components/empty-state';
-import { EntityCell } from '@/components/ui/entity-cell';
 import { EntityPreviewDialog } from '@/components/ui/entity-preview-dialog';
 import { useLocation, useNavigate } from '@tanstack/react-router';
 import { DetailFields } from '@/components/ui/detail-fields';
@@ -23,6 +22,7 @@ const ownerColumnOptions = [
   { key: 'name', label: 'اسم المالك', locked: true },
   { key: 'contact', label: 'الهاتف والإيميل' },
   { key: 'property_count', label: 'عدد العقارات' },
+  { key: 'status', label: 'الحالة' },
   { key: 'property_links', label: 'العقارات' },
   { key: 'ownership', label: 'الملكية/الدور' },
   { key: 'contracts', label: 'العقود النشطة' },
@@ -75,6 +75,7 @@ export type OwnerWorkspaceTableProps = Readonly<{
   rows: OwnerWorkspaceRow[];
   search: string;
   selectedOwner: Owner | null;
+  summary?: ReactNode;
   onCreateOwner: () => void;
   onEditOwner: (owner: Owner) => void;
   onSearchChange: (search: string) => void;
@@ -85,6 +86,7 @@ export function OwnerWorkspaceTable({
   rows,
   search,
   selectedOwner: _selectedOwner,
+  summary,
   onCreateOwner,
   onEditOwner,
   onSearchChange,
@@ -111,28 +113,33 @@ export function OwnerWorkspaceTable({
     onEditOwner(previewRow.owner);
   };
 
-  // Column priorities drive the shared EntityTable mobile register: identity +
-  // one operational datum (active contracts) + actions. Dense ownership and
-  // property columns remain optional comparison fields on wider viewports.
+  // Column priorities drive the shared mobile data row: identity, compact
+  // contact/property/status context, then the existing actions menu. Dense
+  // ownership fields remain comparison columns on wider viewports.
   const columns: ColumnDef<OwnerWorkspaceRow>[] = [
     {
       key: 'name',
       header: 'اسم المالك',
       priority: 'identity',
       render: (row) => (
-        <EntityCell
-          icon={Users}
-          title={(
-            <Button variant="link" className="min-h-11 px-0 text-start font-bold" onClick={() => openPreview(row.owner.id)}>
-              {getOwnerDisplayLabel(row.owner)}
-            </Button>
-          )}
-          subtitle={row.owner.display_name ? row.owner.full_name : null}
-        />
+        <div className="min-w-0">
+          <p className="font-black">{getOwnerDisplayLabel(row.owner)}</p>
+          {row.owner.display_name ? <p className="text-xs font-medium text-muted-foreground">{row.owner.full_name}</p> : null}
+        </div>
       ),
     },
     { key: 'contact', header: 'الهاتف والإيميل', priority: 'secondary', render: (row) => <OwnerContact owner={row.owner} /> },
     { key: 'property_count', header: 'عدد العقارات', priority: 'secondary', render: (row) => formatLatinNumber(row.propertyCount, 'ar') },
+    {
+      key: 'status',
+      header: 'الحالة',
+      priority: 'primary',
+      render: (row) => (
+        <StatusBadge tone={row.owner.is_active ? 'success' : 'neutral'}>
+          {row.owner.is_active ? 'نشط' : 'غير نشط'}
+        </StatusBadge>
+      ),
+    },
     { key: 'property_links', header: 'العقارات', priority: 'detail', render: (row) => <OwnerPropertyLinks row={row} /> },
     { key: 'ownership', header: 'الملكية/الدور', priority: 'detail', render: (row) => <OwnershipSummary row={row} /> },
     {
@@ -175,12 +182,13 @@ export function OwnerWorkspaceTable({
           />
         )}
       />
+      {summary}
       {rows.length > 0 ? (
         <EntityTable
           aria-label="جدول الملاك"
           rows={rows}
           onRowClick={(row) => openPreview(row.owner.id)}
-          mobileVisibleSecondaryKey="contracts"
+          mobileVisibleSecondaryKeys={["contact", "property_count", "status"]}
           columns={columns}
           visibleColumnKeys={visibleColumnKeys}
           keyOf={(row) => row.owner.id}

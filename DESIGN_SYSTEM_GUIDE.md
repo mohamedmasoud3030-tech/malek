@@ -112,7 +112,7 @@ Use `TextField`/`FormField` for label, help, error, and required-state behavior.
 
 ### Data
 
-Use `EntityTable` for entity registers and `DataTable` for general tabular data. Use `TableEmpty`, `TableLoading`, and `TableError` instead of custom state rows. On narrow screens provide the existing mobile card/read-model path; do not force users to decode a desktop table.
+Use `EntityTable` for entity registers and `DataTable` for general tabular data. Use `TableEmpty`, `TableLoading`, and `TableError` instead of custom state rows. On narrow screens use the shared dense mobile data row (identity + up to three concise supporting facts + actions); do not force users to decode a desktop table. Ordinary register counts belong in `EntitySummaryStrip`, not separate KPI cards. Search stays direct while advanced phone filters use `FilterBar`'s bottom sheet; column visibility remains a desktop utility.
 
 ### Overlays
 

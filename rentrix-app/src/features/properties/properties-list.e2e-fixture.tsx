@@ -1,17 +1,8 @@
-import {
-  Building2,
-  CircleCheck,
-  Download,
-  Edit,
-  Handshake,
-  Plus,
-  Trash2,
-  TriangleAlert,
-} from 'lucide-react';
+import { Download, Plus } from 'lucide-react';
 import { ListPage } from '@/components/layout/list-page';
 import { Button } from '@/components/ui/button';
-import { DataTable } from '@/components/ui/data-table';
-import { EntityCell } from '@/components/ui/entity-cell';
+import { EntityTable } from '@/components/ui/entity-table';
+import { EntitySummaryStrip } from '@/components/ui/entity-summary-strip';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { propertyStatusTone } from './components/property-status';
@@ -133,38 +124,9 @@ const statusLabels: Record<Property['status'], string> = {
   sold: 'مباع',
 };
 
-function Metric({
-  label,
-  value,
-  hint,
-  icon: Icon,
-}: Readonly<{
-  label: string;
-  value: number;
-  hint: string;
-  icon: typeof Building2;
-}>) {
-  return (
-    <article className="group relative overflow-hidden rounded-2xl border border-border/75 bg-card p-4 shadow-card">
-      <div className="relative flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-bold text-muted-foreground">{label}</p>
-          <p className="mt-2 text-2xl font-black tabular-nums">{value}</p>
-          <p className="mt-1 text-[11px] font-medium text-muted-foreground">{hint}</p>
-        </div>
-        <span className="grid size-11 shrink-0 place-items-center rounded-xl border border-primary/15 bg-primary/8 text-primary">
-          <Icon className="size-5" aria-hidden="true" />
-        </span>
-      </div>
-    </article>
-  );
-}
-
 export function PropertiesListE2EFixture() {
-  const readyCount = fixtureProperties.filter((property) => property.status === 'active').length;
-  const attentionCount = fixtureProperties.length - readyCount;
   const linkedOwnerCount = fixtureProperties.filter((property) => Boolean(property.owner_name)).length;
-  const readinessRate = Math.round((readyCount / fixtureProperties.length) * 100);
+  const attentionCount = fixtureProperties.filter((property) => property.status !== 'active').length;
 
   return (
     <main className="fixed inset-0 z-[200] overflow-y-auto bg-background text-foreground outline-none" dir="rtl" tabIndex={-1} data-e2e-properties-workspace>
@@ -183,11 +145,7 @@ export function PropertiesListE2EFixture() {
             <Download className="me-2 size-4" aria-hidden="true" />تصدير CSV
           </Button>
         )}
-        search={{
-          value: '',
-          onChange: () => undefined,
-          placeholder: 'ابحث باسم العقار أو العنوان…',
-        }}
+        search={{ value: '', onChange: () => undefined, placeholder: 'ابحث باسم العقار أو العنوان…' }}
         filters={(
           <Select aria-label="تصفية حسب الحالة" value="all" onChange={() => undefined}>
             <option value="all">كل الحالات</option>
@@ -197,88 +155,45 @@ export function PropertiesListE2EFixture() {
           </Select>
         )}
       >
-        <section
-          data-property-summary
-          aria-label="ملخص جاهزية العقارات"
-          className="grid gap-3 lg:grid-cols-[minmax(17rem,1.05fr)_minmax(0,2fr)]"
-        >
-          <article className="relative overflow-hidden rounded-2xl border border-sidebar-border bg-sidebar p-5 text-sidebar-foreground shadow-elevated">
-            <div className="relative">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-xs font-bold text-sidebar-foreground/65">جاهزية التشغيل</p>
-                  <p className="mt-2 text-4xl font-black tabular-nums">{readinessRate}%</p>
-                </div>
-                <span className="grid size-12 place-items-center rounded-2xl border border-sidebar-border bg-sidebar-accent text-sidebar-accent-foreground">
-                  <CircleCheck className="size-6" aria-hidden="true" />
-                </span>
-              </div>
-              <div className="mt-5 h-2 overflow-hidden rounded-full bg-sidebar-accent">
-                <div className="h-full rounded-full bg-primary" style={{ width: `${readinessRate}%` }} aria-hidden="true" />
-              </div>
-              <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs font-bold text-sidebar-foreground/72">
-                <span>{readyCount} جاهزة</span>
-                <span>{attentionCount} تحتاج متابعة</span>
-              </div>
-            </div>
-          </article>
+        <div data-property-summary>
+          <EntitySummaryStrip
+            ariaLabel="ملخص سجل العقارات"
+            items={[
+              { label: 'النتائج', value: fixtureProperties.length },
+              { label: 'مرتبطة بمالك', value: linkedOwnerCount },
+              { label: 'تحتاج متابعة', value: attentionCount, tone: 'warning' },
+            ]}
+          />
+        </div>
 
-          <div className="grid gap-3 sm:grid-cols-3">
-            <Metric label="إجمالي العقارات" value={fixtureProperties.length} hint="كل النتائج المطابقة" icon={Building2} />
-            <Metric label="مرتبطة بمالك" value={linkedOwnerCount} hint="ضمن الصفحة الحالية" icon={Handshake} />
-            <Metric label="تحتاج متابعة" value={attentionCount} hint="حالة تشغيل أو مراجعة" icon={TriangleAlert} />
-          </div>
-        </section>
-
-        <section data-property-register className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
-          <header className="flex flex-col gap-3 border-b border-border/70 bg-muted/35 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="grid size-9 place-items-center rounded-xl bg-primary/9 text-primary">
-                  <Building2 className="size-4.5" aria-hidden="true" />
-                </span>
-                <h2 className="text-base font-black">سجل العقارات</h2>
-              </div>
-              <p className="mt-1.5 text-xs font-medium text-muted-foreground">{fixtureProperties.length} عقارات في العرض الحالي.</p>
-            </div>
-            <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-warning/20 bg-warning-bg px-3 py-1.5 text-xs font-black text-warning">
-              <TriangleAlert className="size-3.5" aria-hidden="true" />
-              {attentionCount} تحتاج متابعة
-            </span>
-          </header>
-
-          <div className="p-3 sm:p-4">
-            <DataTable
-              aria-label="جدول العقارات"
-              rows={fixtureProperties}
-              keyOf={(property) => property.id}
-              onRowClick={() => undefined}
-
-              columns={[
-                {
-                  key: 'title',
-                  header: 'العقار',
-                  render: (property) => <EntityCell icon={Building2} title={property.title ?? '—'} subtitle={property.type ?? undefined} />,
-                },
-                { key: 'address', header: 'العنوان', render: (property) => property.address ?? '—' },
-                { key: 'owner_name', header: 'المالك', render: (property) => property.owner_name ?? '—' },
-                {
-                  key: 'current_value',
-                  header: 'القيمة الحالية',
-                  render: (property) => (property.current_value ? `${property.current_value.toLocaleString('en-US')} ر.ع.` : '—'),
-                },
-                {
-                  key: 'status',
-                  header: 'الحالة',
-                  render: (property) => (
-                    <StatusBadge tone={propertyStatusTone[property.status] ?? 'neutral'} dot>
-                      {statusLabels[property.status] ?? property.status}
-                    </StatusBadge>
-                  ),
-                },
-              ]}
-            />
-          </div>
+        <section data-property-register className="min-w-0">
+          <EntityTable
+            aria-label="جدول العقارات"
+            rows={fixtureProperties}
+            keyOf={(property) => property.id}
+            onRowClick={() => undefined}
+            mobileVisibleSecondaryKeys={['status', 'owner_name']}
+            columns={[
+              {
+                key: 'title',
+                header: 'العقار',
+                priority: 'identity',
+                render: (property) => <span className="font-black">{property.title ?? '—'}</span>,
+              },
+              {
+                key: 'status',
+                header: 'الحالة',
+                priority: 'primary',
+                render: (property) => (
+                  <StatusBadge tone={propertyStatusTone[property.status] ?? 'neutral'}>
+                    {statusLabels[property.status] ?? property.status}
+                  </StatusBadge>
+                ),
+              },
+              { key: 'owner_name', header: 'المالك', priority: 'secondary', render: (property) => property.owner_name ?? '—' },
+              { key: 'address', header: 'العنوان', priority: 'detail', render: (property) => property.address ?? '—' },
+            ]}
+          />
         </section>
       </ListPage>
     </main>

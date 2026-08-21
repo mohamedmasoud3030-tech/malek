@@ -14,6 +14,7 @@ describe('shared design system barrel', () => {
       'MobileCard',
       'SearchInput',
       'FilterBar',
+      'EntitySummaryStrip',
       'DatePicker',
       'Modal',
       'Drawer',

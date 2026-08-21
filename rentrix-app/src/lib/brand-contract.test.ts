@@ -262,10 +262,11 @@ describe('MALEK brand contract — no legacy name reaches a user', () => {
     expect(routeTree).not.toContain('Rentrix');
   });
 
-  it('keeps the sidebar and drawer on the MALEK lockup and login on the PWA identity', () => {
+  it('keeps the desktop sidebar on the MALEK lockup and the compact mobile hub clearly titled', () => {
     const appShell = readApp('src/app/layout/app-shell.tsx');
-    // Both the expanded sidebar and the mobile drawer render the same <Brand/>.
-    expect(appShell.match(/<Brand\s/g)?.length ?? 0).toBeGreaterThanOrEqual(2);
+    expect(appShell.match(/<Brand\s/g)?.length ?? 0).toBeGreaterThanOrEqual(1);
+    expect(appShell).toContain('data-mobile-navigation-hub');
+    expect(appShell).toContain('القائمة الرئيسية');
 
     const loginPage = readApp('src/features/auth/login-page.tsx');
     expect(loginPage).toContain('APP_BRAND_LOCKUP_ASSET');

@@ -65,7 +65,7 @@ export function HeroBanner({ snapshot, isLoading, settings, today, isRefreshing 
           <span>{getGreeting()} — ابدأ بما يحتاج قرارك</span>
         </div>
         <h1 id="dashboard-title" className="dashboard-ops-header__title">اليوم</h1>
-        <p className="dashboard-ops-header__support">ما يحتاج تنفيذًا الآن، ثم وضع المكتب، ثم التفاصيل عند الحاجة.</p>
+        <p className="dashboard-ops-header__support">ما يحتاج تنفيذًا الآن، مع ملخص سريع لحالة المحفظة.</p>
       </div>
 
       <dl className="dashboard-ops-header__meta" aria-label="ملخص تنفيذي اليوم">

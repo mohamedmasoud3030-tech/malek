@@ -118,14 +118,15 @@ describe('Today workspace query boundary tests', () => {
     const text = container?.textContent ?? '';
     expect(text).toContain('اليوم');
     expect(text).toContain('مطلوب منك الآن');
-    expect(text).toContain('وضع المكتب');
-    expect(text).toContain('نسبة الإشغال');
+    expect(text).toContain('حالة المحفظة');
+    expect(text).toContain('الإشغال');
     expect(text).toContain('العقود المنتهية قريباً');
     expect(text).toContain('سالم الكعبي');
     expect(text).toContain('أعلى المتأخرات');
     expect(text).toContain('أحمد الفارسي');
     expect(text).toContain('الأولوية الآن');
-    expect(text).toContain('حالة التحصيل');
+    expect(text).not.toContain('حالة التحصيل');
+    expect(text).not.toContain('وضع المكتب');
   });
 
   it('scopes Visual Contract V2 on a real Today-owned wrapper', async () => {
@@ -134,26 +135,25 @@ describe('Today workspace query boundary tests', () => {
     const scope = container?.querySelector('[data-visual-contract="v2"]');
     expect(scope).not.toBeNull();
     expect(scope?.querySelector('[data-dashboard-hero]')).not.toBeNull();
-    expect(scope?.querySelectorAll('[data-dashboard-section]').length).toBeGreaterThanOrEqual(3);
+    expect(scope?.querySelectorAll('[data-dashboard-section]')).toHaveLength(2);
     expect(container?.querySelector('[data-page-layout][data-visual-contract]')).toBeNull();
   });
 
-  it('orders work first, office state second, analysis last', async () => {
+  it('orders decisions first and keeps only a compact portfolio summary after them', async () => {
     (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
     await renderPage();
     const sectionOrder = Array.from(container?.querySelectorAll('[data-dashboard-section]') ?? [])
       .map((section) => section.getAttribute('data-dashboard-section'));
-    expect(sectionOrder).toEqual(['work-now', 'office-state', 'analytics']);
+    expect(sectionOrder).toEqual(['work-now', 'portfolio']);
   });
 
-  it('renders KPI surfaces as real destination links without duplicating the executive hero', async () => {
+  it('removes the duplicate financial KPI report and keeps one compact portfolio destination', async () => {
     (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
     await renderPage();
-    const kpiLinks = Array.from(container?.querySelectorAll('[data-dashboard-kpi-grid] a[data-dashboard-kpi-link]') ?? []);
-    expect(kpiLinks).toHaveLength(4);
-    // Secondary decision KPIs: net cash, collection rate, expenses, owner
-    // payouts — none repeats the hero (تحصيل/متأخرات/إشغال/عقود).
-    expect(kpiLinks.map((link) => link.getAttribute('href'))).toEqual(['/reports', '/financials', '/expenses', '/owner-settlements']);
+    expect(container?.querySelector('[data-dashboard-kpi-grid]')).toBeNull();
+    const portfolioLink = container?.querySelector('[data-dashboard-analytics-link]');
+    expect(portfolioLink?.getAttribute('href')).toBe('/properties');
+    expect(portfolioLink?.textContent).toContain('شاغرة');
   });
 
   it('hides create shortcuts for roles with no actionable permission', async () => {
@@ -164,14 +164,13 @@ describe('Today workspace query boundary tests', () => {
     expect(container?.querySelector('[data-dashboard-section="actions"]')).toBeNull();
   });
 
-  it('shows permitted create shortcuts after existing work for a manager', async () => {
+  it('keeps manager setup context without duplicating the global create menu', async () => {
     (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
     mockRole = 'MANAGER';
     await renderPage();
     const text = container?.textContent ?? '';
-    expect(text).toContain('ابدأ إجراء');
-    expect(text).toContain('إنشاء عقد');
-    expect(container?.querySelectorAll('[data-dashboard-action-grid] > *')).toHaveLength(4);
+    expect(text).not.toContain('ابدأ إجراء');
+    expect(container?.querySelector('[data-dashboard-action-grid]')).toBeNull();
     const onboardingSlot = container?.querySelector('[data-dashboard-onboarding-slot]');
     const workNow = container?.querySelector('[data-dashboard-section="work-now"]');
     expect(onboardingSlot).not.toBeNull();
@@ -180,7 +179,7 @@ describe('Today workspace query boundary tests', () => {
     expect(onboardingSlot.compareDocumentPosition(workNow) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     const sectionOrder = Array.from(container?.querySelectorAll('[data-dashboard-section]') ?? [])
       .map((section) => section.getAttribute('data-dashboard-section'));
-    expect(sectionOrder).toEqual(['work-now', 'actions', 'office-state', 'analytics']);
+    expect(sectionOrder).toEqual(['work-now', 'portfolio']);
   });
 
   it('handles query loading state without fabricating current work', async () => {

@@ -12,11 +12,8 @@ import { fetchIntegrityWarningsCount } from '@/services/action-center-counts';
 import { getDashboardSnapshot } from './dashboard-snapshot';
 import { DashboardVisualScope } from './dashboard-visual-scope';
 import { HeroBanner } from './components/hero-banner';
-import { KpiGrid } from './components/kpi-grid';
-import { QuickActions, filterQuickActionsByPermission } from './components/quick-actions';
 import { ExpiringContractsSection } from './components/expiring-contracts-section';
 import { OverdueSection } from './components/overdue-section';
-import { ArrearsBreakdown } from './components/arrears-breakdown';
 import { DashboardCharts } from './components/dashboard-charts';
 import { AlertCenter } from './components/alert-center';
 import { buildExpiringContracts, buildOverdueTenantRows, toDateInputValue } from './dashboard-utils';
@@ -26,10 +23,10 @@ import { buildExpiringContracts, buildOverdueTenantRows, toDateInputValue } from
  *
  * Financial and operational truth remains server-authoritative through
  * rpt_dashboard_snapshot. This component only changes decision hierarchy:
- * work requiring action first, current office position second, analysis last.
+ * work requiring action first, followed only by compact portfolio context.
  */
 export function DashboardPage() {
-  const { authorization, canAccess } = useAuth();
+  const { authorization } = useAuth();
   const canManageSetup = authorization?.role === 'ADMIN' || authorization?.role === 'MANAGER';
   const now = useMemo(() => new Date(), []);
   const settings = useCompanyFormatters();
@@ -92,8 +89,6 @@ export function DashboardPage() {
   // into a reassuring fake zero on the user's action list.
   const integrityWarningsCount = integrityWarningsQuery.isError ? undefined : (integrityWarningsQuery.data ?? 0);
 
-  const hasQuickActions = filterQuickActionsByPermission(canAccess).length > 0;
-  const showAnalytics = (snapshot?.arrears.totalOverdue ?? 0) > 0;
   const hasDashboardError = isError || isRefetchError;
   const snapshotUnavailable = hasDashboardError && !snapshot;
 
@@ -131,11 +126,7 @@ export function DashboardPage() {
             ) : null}
 
             <section className="dashboard-section" aria-label="مطلوب منك الآن" data-dashboard-section="work-now">
-              <SectionHeader
-                eyebrow="أولوية"
-                title="مطلوب منك الآن"
-                description="ابدأ بالحالات التي تحتاج قراراً أو متابعة؛ التفاصيل الأقل إلحاحاً تأتي بعدها."
-              />
+              <SectionHeader eyebrow="أولوية" title="مطلوب منك الآن" />
 
               {isLoading ? (
                 <LoadingState variant="section" label="جارٍ تحميل الأعمال المطلوبة" />
@@ -169,33 +160,10 @@ export function DashboardPage() {
               </div>
             </section>
 
-            {hasQuickActions ? (
-              <section className="dashboard-section" aria-label="ابدأ إجراء" data-dashboard-section="actions">
-                <SectionHeader title="ابدأ إجراء" description="اختصارات للأعمال الجديدة؛ المتابعات القائمة تظل في أعلى الصفحة." />
-                <QuickActions />
-              </section>
-            ) : null}
-
-            <section className="dashboard-section" aria-label="وضع المكتب" data-dashboard-section="office-state">
-              <SectionHeader
-                eyebrow="نظرة عامة"
-                title="وضع المكتب"
-                description="المؤشرات التي تكفي للحكم على التحصيل والالتزامات وحالة المحفظة بدون تحويل الصفحة إلى تقرير."
-              />
-              <KpiGrid snapshot={snapshot} isLoading={isLoading} settings={settings} />
+            <section className="dashboard-section" aria-label="حالة المحفظة" data-dashboard-section="portfolio">
+              <SectionHeader title="حالة المحفظة" />
               <DashboardCharts snapshot={snapshot} isLoading={isLoading} settings={settings} />
             </section>
-
-            {showAnalytics ? (
-              <section className="dashboard-section" aria-label="تفاصيل عند الحاجة" data-dashboard-section="analytics">
-                <SectionHeader
-                  eyebrow="تحليل"
-                  title="تفاصيل عند الحاجة"
-                  description="تفصيل أعمار الذمم يظهر فقط عندما توجد متأخرات تستحق التحليل."
-                />
-                <ArrearsBreakdown snapshot={snapshot} settings={settings} />
-              </section>
-            ) : null}
           </>
         )}
       </DashboardVisualScope>

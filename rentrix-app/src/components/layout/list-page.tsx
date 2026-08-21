@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
-import { SearchInput } from '@/components/ui/search-input';
+import { FilterBar } from '@/components/ui/filter-bar';
 import { EmbeddableWorkspace } from './embeddable-workspace';
-import { ListControlSurface } from './list-controls';
 
 interface ListPageProps {
   title: string;
@@ -18,8 +17,9 @@ interface ListPageProps {
     placeholder?: string;
   };
   filters?: ReactNode;
-  /** Optional compact utilities such as view, columns, export, or sort controls. */
+  /** Optional compact desktop utilities such as columns, export, or sort. */
   toolbarActions?: ReactNode;
+  mobileFilterCount?: number;
   children: ReactNode;
   className?: string;
   dir?: 'rtl' | 'ltr';
@@ -34,9 +34,9 @@ interface ListPageProps {
 }
 
 /**
- * Canonical MALEK list-page scaffold.
- * Search owns the first compact line on mobile; filters and table utilities
- * share the second line so register controls never become a tall card stack.
+ * Canonical MALEK entity-page scaffold: action → one toolbar → records.
+ * Filters collapse into the shared mobile sheet instead of becoming a second
+ * row of clipped controls; desktop table utilities stay desktop-only.
  */
 export function ListPage({
   title,
@@ -50,6 +50,7 @@ export function ListPage({
   search,
   filters,
   toolbarActions,
+  mobileFilterCount,
   children,
   className,
   dir,
@@ -73,41 +74,15 @@ export function ListPage({
       visualVariant={visualVariant}
     >
       {search || filters || toolbarActions ? (
-        <ListControlSurface>
-          <div
-            data-list-toolbar
-            className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-1.5 lg:flex lg:items-center lg:gap-2"
-          >
-            {search ? (
-              <div data-list-search className="col-span-2 min-w-0 flex-1 lg:max-w-xl">
-                <SearchInput
-                  value={search.value}
-                  onChange={search.onChange}
-                  placeholder={search.placeholder}
-                  className="w-full"
-                />
-              </div>
-            ) : null}
-
-            {filters ? (
-              <div
-                data-list-filters
-                className="min-w-0 flex-1 overflow-hidden lg:flex lg:items-center"
-              >
-                {filters}
-              </div>
-            ) : null}
-
-            {toolbarActions ? (
-              <div
-                data-list-toolbar-actions
-                className={`flex min-w-0 shrink-0 items-center justify-end gap-1.5 overflow-x-auto no-scrollbar ${filters ? '' : 'col-span-2'}`}
-              >
-                {toolbarActions}
-              </div>
-            ) : null}
-          </div>
-        </ListControlSurface>
+        <FilterBar
+          searchValue={search?.value}
+          onSearchChange={search?.onChange}
+          searchPlaceholder={search?.placeholder}
+          filters={filters}
+          actions={toolbarActions}
+          mobileFilterCount={mobileFilterCount}
+          mobileFilterTitle={`تصفية ${title}`}
+        />
       ) : null}
 
       <div data-list-results className="space-y-2.5 sm:space-y-3">

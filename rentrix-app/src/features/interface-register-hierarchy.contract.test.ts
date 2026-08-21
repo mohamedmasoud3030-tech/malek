@@ -28,7 +28,7 @@ describe('interface register mobile hierarchy', () => {
     { file: 'features/financials/receipts/receipts-page.tsx', datum: 'amount' },
     { file: 'features/financials/deposits/deposits-workspace.tsx', datum: 'remaining' },
     { file: 'features/service-providers/service-providers-page.tsx', datum: 'status' },
-    { file: 'features/owners/components/owner-workspace-table.tsx', datum: 'contracts' },
+    { file: 'features/owners/components/owner-workspace-table.tsx', datum: 'status' },
     { file: 'features/contracts/components/ContractTable.tsx', datum: 'tenant' },
     { file: 'features/maintenance/components/maintenance-list.tsx', datum: 'status' },
     { file: 'features/financials/components/expenses-section.tsx', datum: 'amount' },
@@ -53,7 +53,9 @@ describe('interface register mobile hierarchy', () => {
 
   it.each(cases)('$file exposes $datum as mobile datum with identity/primary priorities', ({ file, datum, requireActions = true }) => {
     const source = read(file);
-    expect(source, file).toContain(`mobileVisibleSecondaryKey="${datum}"`);
+    const hasSingleDatum = source.includes(`mobileVisibleSecondaryKey="${datum}"`);
+    const hasDenseDataRow = source.includes('mobileVisibleSecondaryKeys') && source.includes(`"${datum}"`);
+    expect(hasSingleDatum || hasDenseDataRow, `${file} must expose ${datum} in its mobile data row`).toBe(true);
     expect(source, file).toMatch(/priority:\s*['"]identity['"]/);
     expect(source, file).toMatch(/priority:\s*['"]primary['"]/);
     if (requireActions) {

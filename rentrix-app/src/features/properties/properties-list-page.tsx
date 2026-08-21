@@ -1,13 +1,9 @@
 import {
   Building2,
-  CircleCheck,
   Download,
   Edit,
-  Handshake,
-  MapPin,
   Plus,
   Trash2,
-  TriangleAlert,
 } from "lucide-react";
 import { useState } from "react";
 import { PropertyFormModal } from "./property-form-modal";
@@ -16,8 +12,7 @@ import { ListPage } from "@/components/layout/list-page";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { DataTableColumnsMenu } from "@/components/ui/data-table";
-import { EntityCell } from "@/components/ui/entity-cell";
-import { OperationalCommandPanel, OperationalMetricCard } from "@/components/ui/operational-summary";
+import { EntitySummaryStrip } from "@/components/ui/entity-summary-strip";
 import { Select } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { ActiveFilterBar } from "@/components/ui/active-filter-bar";
@@ -87,9 +82,6 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
     (property) => Boolean(property.current_owner_name),
   ).length;
   const attentionCount = controller.properties.length - readyCount;
-  const readinessRate = controller.properties.length > 0
-    ? Math.round((readyCount / controller.properties.length) * 100)
-    : 0;
 
   const handleExportCsv = () => {
     if (controller.properties.length === 0) {
@@ -175,6 +167,7 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
             />
           </div>
         }
+        mobileFilterCount={controller.status === "all" ? 0 : 1}
         toolbarActions={
           <DataTableColumnsMenu
             columns={propertyColumnOptions}
@@ -184,68 +177,25 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
         }
       >
         {!controller.propertiesQuery.isLoading && !controller.propertiesQuery.isError ? (
-          <section
-            data-property-summary
-            aria-label="ملخص جاهزية العقارات"
-            className="grid gap-3 lg:grid-cols-[minmax(17rem,1.05fr)_minmax(0,2fr)]"
-          >
-            <OperationalCommandPanel
-              label="جاهزية التشغيل"
-              value={`${formatCount(readinessRate)}%`}
-              icon={CircleCheck}
-              progress={readinessRate}
-              footer={(
-                <>
-                  <span>{formatCount(readyCount)} جاهزة</span>
-                  <span>{formatCount(attentionCount)} تحتاج متابعة</span>
-                </>
-              )}
+          <div data-property-summary>
+            <EntitySummaryStrip
+              ariaLabel="ملخص سجل العقارات"
+              items={[
+                { label: "النتائج", value: formatCount(controller.totalCount) },
+                { label: "مرتبطة بمالك", value: formatCount(linkedOwnerCount) },
+                { label: "تحتاج متابعة", value: formatCount(attentionCount), tone: "warning", hidden: attentionCount === 0 },
+              ]}
             />
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              <OperationalMetricCard
-                label="إجمالي العقارات"
-                value={formatCount(controller.totalCount)}
-                hint="كل النتائج المطابقة"
-                icon={Building2}
-              />
-              <OperationalMetricCard
-                label="مرتبطة بمالك"
-                value={formatCount(linkedOwnerCount)}
-                hint="ضمن الصفحة الحالية"
-                icon={Handshake}
-              />
-            </div>
-          </section>
+          </div>
         ) : null}
 
-        <section data-property-register className="min-w-0 space-y-2.5">
-          <header className="flex min-h-11 items-center justify-between gap-3 px-1">
-            <div className="flex min-w-0 items-center gap-2.5">
-              <span className="grid size-8 shrink-0 place-items-center rounded-lg border border-primary/10 bg-primary/[0.06] text-primary">
-                <Building2 className="size-4" aria-hidden="true" />
-              </span>
-              <div className="min-w-0">
-                <h2 className="truncate text-sm font-black">سجل العقارات</h2>
-                <p className="truncate text-[11px] font-medium text-muted-foreground">
-                  {formatCount(controller.properties.length)} عقار في الصفحة الحالية
-                </p>
-              </div>
-            </div>
-            {attentionCount > 0 ? (
-              <span className="inline-flex w-fit shrink-0 items-center gap-1.5 rounded-lg border border-warning/20 bg-warning-bg px-2.5 py-1.5 text-[11px] font-black text-warning">
-                <TriangleAlert className="size-3.5" aria-hidden="true" />
-                {formatCount(attentionCount)} تحتاج متابعة
-              </span>
-            ) : null}
-          </header>
-
+        <section data-property-register className="min-w-0">
           <EntityTable
             aria-label="جدول العقارات"
             rows={controller.properties}
             keyOf={(property) => property.id}
             onRowClick={(property) => controller.navigateToProperty(property.id)}
-            mobileVisibleSecondaryKey="status"
+            mobileVisibleSecondaryKeys={["status", "workflow"]}
             visibleColumnKeys={visibleColumnKeys}
             isLoading={controller.propertiesQuery.isLoading}
             error={controller.propertiesQuery.isError ? controller.propertiesQuery.error : null}
@@ -271,7 +221,7 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
                 header: "العقار",
                 priority: "identity",
                 render: (property) => (
-                  <EntityCell icon={Building2} title={property.title ?? "—"} />
+                  <span className="font-black">{property.title ?? "—"}</span>
                 ),
               },
               {

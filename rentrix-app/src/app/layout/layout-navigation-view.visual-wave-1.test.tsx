@@ -73,7 +73,7 @@ describe('Visual Wave 1 — route-derived app navigation', () => {
     expect(anchor(html, '/contracts')?.getAttribute('aria-current')).toBeNull();
   });
 
-  it('renders the MALEK search-first mobile dock with help, notifications and menu', () => {
+  it('renders the compact MALEK mobile dock with menu, create, AI and notifications', () => {
     pathname = '/dashboard';
     const html = renderToStaticMarkup(<MobileFloatingControl onMenu={() => undefined} />);
     const host = document.createElement('div');
@@ -81,12 +81,12 @@ describe('Visual Wave 1 — route-derived app navigation', () => {
 
     const dock = host.querySelector('[data-mobile-floating-control]');
     expect(dock).not.toBeNull();
-    expect(host.querySelector('[data-mobile-dock-search]')?.textContent).toContain('بحث وأوامر');
-    expect(host.querySelector('a[href="/help"]')).not.toBeNull();
-    expect(host.querySelector('button[aria-label="الإشعارات"]')).not.toBeNull();
     expect(host.querySelector('button[aria-label="فتح القائمة"]')).not.toBeNull();
-    expect(host.querySelectorAll('button')).toHaveLength(3);
-    expect(host.querySelectorAll('a')).toHaveLength(1);
+    expect(host.querySelector('button[aria-label="فتح الإضافة السريعة"]')).not.toBeNull();
+    expect(host.querySelector('button[aria-label="فتح المساعد الذكي"]')).not.toBeNull();
+    expect(host.querySelector('button[aria-label="الإشعارات"]')).not.toBeNull();
+    expect(host.querySelectorAll('button')).toHaveLength(4);
+    expect(host.querySelectorAll('a')).toHaveLength(0);
   });
 
   it('keeps the Settings shell reachable while locking unauthorized children', () => {

@@ -20,7 +20,7 @@ const pages = [
     name: 'dashboard',
     url: '/login?e2e-dashboard-workspace=1',
     ready: 'main[data-e2e-dashboard-workspace]',
-    content: '[data-dashboard-kpi-grid]',
+    content: '.dashboard-portfolio-strip',
   },
   {
     name: 'properties',
@@ -92,7 +92,7 @@ test('contracts: unified PageHeader renders h1 with record count badge', async (
   const header = page.locator('[data-page-header]');
   await expect(header.locator('h1')).toHaveText('العقود');
   await expect(header.getByLabel(/عدد السجلات/)).toBeVisible();
-  await expect(page.locator('[data-list-controls]')).toBeVisible();
+  await expect(page.locator('[data-filter-bar]')).toBeVisible();
 });
 
 test('theme dark follows the app toggle (data-theme), not prefers-color-scheme', async ({ page }) => {

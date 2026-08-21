@@ -77,7 +77,7 @@ export function ActionMenu({ items, label = 'الإجراءات', className }: A
   }));
 
   return (
-    <div className={cn('w-32 min-w-0', className)}>
+    <div className={cn('w-11 min-w-11', className)}>
       <Dropdown
         options={options}
         onChange={(id) => {
@@ -86,6 +86,8 @@ export function ActionMenu({ items, label = 'الإجراءات', className }: A
         }}
         placeholder={label}
         label=""
+        trigger={<MoreVertical className="size-4" aria-hidden="true" />}
+        triggerAriaLabel={label}
       />
     </div>
   );
