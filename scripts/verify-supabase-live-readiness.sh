@@ -107,5 +107,64 @@ join pg_namespace n on n.oid = p.pronamespace
 where n.nspname = 'public'
   and p.proname in ('record_invoice_payment_atomic', 'void_receipt_atomic', 'find_payment_account_id');
 
+-- Runtime configuration evidence only: no application rows are selected.
+select 'attachments_bucket=' || coalesce(
+  jsonb_build_object(
+    'public', b.public,
+    'file_size_limit', b.file_size_limit,
+    'allowed_mime_types', b.allowed_mime_types
+  )::text,
+  'missing'
+)
+from storage.buckets b
+where b.id = 'attachments'
+union all
+select 'attachments_bucket=missing'
+where not exists (select 1 from storage.buckets where id = 'attachments');
+
+select 'attachments_object_policy_count=' || count(*)
+from pg_policies
+where schemaname = 'storage'
+  and tablename = 'objects';
+
+select 'attachments_object_policy_names=' || coalesce(
+  string_agg(policyname, ', ' order by policyname),
+  'none'
+)
+from pg_policies
+where schemaname = 'storage'
+  and tablename = 'objects';
+
+select 'realtime_user_permission_grants_published=' || exists (
+  select 1
+  from pg_publication_tables
+  where pubname = 'supabase_realtime'
+    and schemaname = 'public'
+    and tablename = 'user_permission_grants'
+);
+
+select 'custom_access_token_hook_acl=' || coalesce(
+  array_to_string(p.proacl, ','),
+  'default'
+)
+from pg_proc p
+join pg_namespace n on n.oid = p.pronamespace
+where n.nspname = 'public'
+  and p.proname = 'custom_access_token_hook'
+  and pg_get_function_identity_arguments(p.oid) = 'event jsonb'
+union all
+select 'custom_access_token_hook_acl=missing'
+where not exists (
+  select 1
+  from pg_proc p
+  join pg_namespace n on n.oid = p.pronamespace
+  where n.nspname = 'public'
+    and p.proname = 'custom_access_token_hook'
+    and pg_get_function_identity_arguments(p.oid) = 'event jsonb'
+);
+
+-- The Auth dashboard's Custom Access Token Hook toggle is configuration outside
+-- PostgreSQL catalogues; verify it manually in QA after this read-only output.
+
 ROLLBACK;
 SQL
