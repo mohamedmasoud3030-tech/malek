@@ -9,12 +9,13 @@ import {
   Trash2,
   TriangleAlert,
 } from "lucide-react";
+import { useState } from "react";
 import { PropertyFormModal } from "./property-form-modal";
 import { usePropertyListController } from "./use-property-list-controller";
-import { AsyncContentState } from "@/components/async-content-state";
 import { ListPage } from "@/components/layout/list-page";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { DataTableColumnsMenu } from "@/components/ui/data-table";
 import { EntityCell } from "@/components/ui/entity-cell";
 import { OperationalCommandPanel, OperationalMetricCard } from "@/components/ui/operational-summary";
 import { Select } from "@/components/ui/select";
@@ -30,6 +31,16 @@ import {
 } from "./property-list-export";
 import { propertyStatusTone } from "./components/property-status";
 import type { PropertyListItem } from "./property-service";
+
+const propertyColumnOptions = [
+  { key: "title", label: "العقار", locked: true },
+  { key: "status", label: "الحالة" },
+  { key: "workflow", label: "المالك والتشغيل" },
+  { key: "address", label: "العنوان" },
+  { key: "actions", label: "الإجراءات", locked: true },
+] as const;
+
+const defaultPropertyColumns = propertyColumnOptions.map((column) => column.key);
 
 function formatCount(value: number) {
   return new Intl.NumberFormat("en-US").format(value);
@@ -68,6 +79,7 @@ export type PropertiesListPageProps = Readonly<{
 
 export function PropertiesListPage({ embedded = false }: PropertiesListPageProps) {
   const controller = usePropertyListController();
+  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultPropertyColumns]);
   const readyCount = controller.properties.filter(
     (property) => property.workflow_health === "ready",
   ).length;
@@ -140,7 +152,7 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
           placeholder: "بحث بالاسم أو العنوان...",
         }}
         filters={
-          <div className="space-y-2">
+          <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto no-scrollbar">
             <Select
               aria-label="الحالة"
               value={controller.status}
@@ -148,7 +160,7 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
                 controller.setStatus(event.target.value as typeof controller.status);
                 controller.setPage(1);
               }}
-              className="w-full rounded-xl sm:w-36"
+              className="h-10 w-36 shrink-0 rounded-lg"
             >
               <option value="all">كل الحالات</option>
               {controller.statusValues.map((status) => (
@@ -162,6 +174,13 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
               onClearAll={controller.clearFilters}
             />
           </div>
+        }
+        toolbarActions={
+          <DataTableColumnsMenu
+            columns={propertyColumnOptions}
+            visibleKeys={visibleColumnKeys}
+            onChange={setVisibleColumnKeys}
+          />
         }
       >
         {!controller.propertiesQuery.isLoading && !controller.propertiesQuery.isError ? (
@@ -200,184 +219,132 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
           </section>
         ) : null}
 
-        <section
-          data-property-register
-          className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card"
-        >
-          <header className="flex flex-col gap-3 border-b border-border/70 bg-muted/35 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="grid size-9 place-items-center rounded-xl bg-primary/9 text-primary">
-                  <Building2 className="size-4.5" aria-hidden="true" />
-                </span>
-                <h2 className="text-base font-black">سجل العقارات</h2>
+        <section data-property-register className="min-w-0 space-y-2.5">
+          <header className="flex min-h-11 items-center justify-between gap-3 px-1">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <span className="grid size-8 shrink-0 place-items-center rounded-lg border border-primary/10 bg-primary/[0.06] text-primary">
+                <Building2 className="size-4" aria-hidden="true" />
+              </span>
+              <div className="min-w-0">
+                <h2 className="truncate text-sm font-black">سجل العقارات</h2>
+                <p className="truncate text-[11px] font-medium text-muted-foreground">
+                  {formatCount(controller.properties.length)} عقار في الصفحة الحالية
+                </p>
               </div>
-              <p className="mt-1.5 text-xs font-medium text-muted-foreground">
-                {formatCount(controller.properties.length)} عقار في الصفحة الحالية.
-              </p>
             </div>
             {attentionCount > 0 ? (
-              <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-warning/20 bg-warning-bg px-3 py-1.5 text-xs font-black text-warning">
+              <span className="inline-flex w-fit shrink-0 items-center gap-1.5 rounded-lg border border-warning/20 bg-warning-bg px-2.5 py-1.5 text-[11px] font-black text-warning">
                 <TriangleAlert className="size-3.5" aria-hidden="true" />
                 {formatCount(attentionCount)} تحتاج متابعة
               </span>
             ) : null}
           </header>
 
-          <div className="p-3 sm:p-4">
-            <AsyncContentState
-              status={
-                controller.propertiesQuery.isLoading
-                  ? "loading"
-                  : controller.propertiesQuery.isError
-                    ? "error"
-                    : controller.properties.length === 0
-                      ? "empty"
-                      : "ready"
-              }
-              error={controller.propertiesQuery.error}
-              errorTitle="تعذر تحميل قائمة العقارات"
-              errorAction={
-                <Button onClick={() => controller.propertiesQuery.refetch()}>
-                  إعادة المحاولة
-                </Button>
-              }
-              emptyTitle={
-                controller.hasFilterValues
-                  ? "لا توجد نتائج مطابقة للبحث"
-                  : "لم تُضف عقارات بعد"
-              }
-              emptyDescription={
-                controller.hasFilterValues
-                  ? "جرّب تغيير عوامل البحث أو إزالة الفلتر."
-                  : "ابدأ بإضافة أول عقار لك."
-              }
-              emptyAction={
-                !controller.hasFilterValues ? (
-                  <Button onClick={controller.openCreateModal}>
-                    <Building2 className="me-2 size-4" />
-                    إضافة أول عقار
-                  </Button>
-                ) : undefined
-              }
-            >
+          <EntityTable
+            aria-label="جدول العقارات"
+            rows={controller.properties}
+            keyOf={(property) => property.id}
+            onRowClick={(property) => controller.navigateToProperty(property.id)}
+            mobileVisibleSecondaryKey="status"
+            visibleColumnKeys={visibleColumnKeys}
+            isLoading={controller.propertiesQuery.isLoading}
+            error={controller.propertiesQuery.isError ? controller.propertiesQuery.error : null}
+            errorTitle="تعذر تحميل قائمة العقارات"
+            onRetry={() => controller.propertiesQuery.refetch()}
+            emptyTitle={controller.hasFilterValues ? "لا توجد نتائج مطابقة للبحث" : "لم تُضف عقارات بعد"}
+            emptyDescription={controller.hasFilterValues ? "جرّب تغيير عوامل البحث أو إزالة الفلتر." : "ابدأ بإضافة أول عقار لك."}
+            emptyAction={!controller.hasFilterValues ? (
+              <Button onClick={controller.openCreateModal}>
+                <Building2 className="me-2 size-4" />
+                إضافة أول عقار
+              </Button>
+            ) : undefined}
+            pagination={{
+              page: controller.page,
+              pageSize: 10,
+              total: controller.totalCount,
+              onPageChange: controller.setPage,
+            }}
+            columns={[
               {
-                <EntityTable
-                  aria-label="جدول العقارات"
-                  rows={controller.properties}
-                  keyOf={(property) => property.id}
-                  onRowClick={(property) => controller.navigateToProperty(property.id)}
-                  mobileVisibleSecondaryKey="status"
-                  columns={[
-                    {
-                      key: "title",
-                      header: "العقار",
-                      priority: "identity",
-                      render: (property) => (
-                        <EntityCell icon={Building2} title={property.title ?? "—"} />
-                      ),
-                    },
-                    {
-                      key: "status",
-                      header: "الحالة",
-                      priority: "primary",
-                      render: (property) => (
-                        <StatusBadge
-                          tone={
-                            propertyStatusTone[
-                              property.status as keyof typeof propertyStatusTone
-                            ] ?? "gray"
-                          }
-                        >
-                          {controller.statusLabels[
-                            property.status as keyof typeof controller.statusLabels
-                          ] ?? property.status}
-                        </StatusBadge>
-                      ),
-                    },
-                    {
-                      key: "workflow",
-                      header: "المالك والتشغيل",
-                      priority: "secondary",
-                      render: (property) => <PropertyWorkflowStatus property={property} />,
-                    },
-                    {
-                      key: "address",
-                      header: "العنوان",
-                      priority: "detail",
-                      render: (property) => (
-                        <span className="text-sm text-muted-foreground">
-                          {property.address ?? "—"}
-                        </span>
-                      ),
-                    },
-                    {
-                      key: "actions",
-                      header: "إجراءات",
-                      priority: "actions",
-                      render: (property) => (
-                        <div
-                          className="flex"
-                          onClick={(event) => event.stopPropagation()}
-                          onKeyDown={(event) => event.stopPropagation()}
-                        >
-                          <ActionMenu
-                            label="إجراءات العقار"
-                            items={[
-                              {
-                                id: "edit",
-                                label: "تعديل",
-                                icon: Edit,
-                                onClick: () => controller.openEditModal(property.id),
-                              },
-                              {
-                                id: "archive",
-                                label: "أرشفة",
-                                icon: Trash2,
-                                variant: "destructive",
-                                onClick: () => controller.requestArchive(
-                                  property.id,
-                                  property.title ?? "عقار",
-                                ),
-                              },
-                            ]}
-                          />
-                        </div>
-                      ),
-                    },
-                  ]}
-
-                />
-              }
-            </AsyncContentState>
-          </div>
+                key: "title",
+                header: "العقار",
+                priority: "identity",
+                render: (property) => (
+                  <EntityCell icon={Building2} title={property.title ?? "—"} />
+                ),
+              },
+              {
+                key: "status",
+                header: "الحالة",
+                priority: "primary",
+                render: (property) => (
+                  <StatusBadge
+                    tone={
+                      propertyStatusTone[
+                        property.status as keyof typeof propertyStatusTone
+                      ] ?? "gray"
+                    }
+                  >
+                    {controller.statusLabels[
+                      property.status as keyof typeof controller.statusLabels
+                    ] ?? property.status}
+                  </StatusBadge>
+                ),
+              },
+              {
+                key: "workflow",
+                header: "المالك والتشغيل",
+                priority: "secondary",
+                render: (property) => <PropertyWorkflowStatus property={property} />,
+              },
+              {
+                key: "address",
+                header: "العنوان",
+                priority: "detail",
+                render: (property) => (
+                  <span className="text-sm text-muted-foreground">
+                    {property.address ?? "—"}
+                  </span>
+                ),
+              },
+              {
+                key: "actions",
+                header: "إجراءات",
+                priority: "actions",
+                render: (property) => (
+                  <div
+                    className="flex"
+                    onClick={(event) => event.stopPropagation()}
+                    onKeyDown={(event) => event.stopPropagation()}
+                  >
+                    <ActionMenu
+                      label="إجراءات العقار"
+                      items={[
+                        {
+                          id: "edit",
+                          label: "تعديل",
+                          icon: Edit,
+                          onClick: () => controller.openEditModal(property.id),
+                        },
+                        {
+                          id: "archive",
+                          label: "أرشفة",
+                          icon: Trash2,
+                          variant: "destructive",
+                          onClick: () => controller.requestArchive(
+                            property.id,
+                            property.title ?? "عقار",
+                          ),
+                        },
+                      ]}
+                    />
+                  </div>
+                ),
+              },
+            ]}
+          />
         </section>
-
-        {!controller.propertiesQuery.isLoading &&
-          !controller.propertiesQuery.isError &&
-          controller.totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 rounded-xl border border-border/70 bg-card px-3 py-2.5 shadow-card">
-              <Button
-                variant="secondary"
-                className="rounded-xl"
-                disabled={controller.page <= 1}
-                onClick={() => controller.setPage((page) => Math.max(1, page - 1))}
-              >
-                السابق
-              </Button>
-              <span className="text-sm font-bold text-muted-foreground">
-                {controller.page} / {controller.totalPages}
-              </span>
-              <Button
-                variant="secondary"
-                className="rounded-xl"
-                disabled={controller.page >= controller.totalPages}
-                onClick={() => controller.setPage((page) => Math.min(controller.totalPages, page + 1))}
-              >
-                التالي
-              </Button>
-            </div>
-          )}
       </ListPage>
 
       <PropertyFormModal
