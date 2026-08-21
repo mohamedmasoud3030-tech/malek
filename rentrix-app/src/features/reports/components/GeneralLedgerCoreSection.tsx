@@ -1,10 +1,12 @@
 import { BookOpenCheck, CalendarClock, ListChecks, RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
 import { useGeneralLedgerCore, type AccountType, type NormalBalance, type AccountingPeriodStatus, type JournalBatchStatus } from '../use-general-ledger-core';
+import type { ChartAccount, AccountingPeriod, JournalBatch } from '@/features/accounting/accountingDomain';
 
 function accountTypeLabel(type: AccountType): string {
   switch (type) {
@@ -103,44 +105,14 @@ export function GeneralLedgerCoreSection() {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          {accounts.length === 0 ? (
-            <div className="p-6 text-center text-sm text-muted-foreground">لا توجد حسابات مسجلة بعد في شجرة الحسابات.</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-start text-xs">
-                <thead className="border-b border-border/60 bg-muted/30 text-muted-foreground">
-                  <tr>
-                    <th className="p-3 text-start font-bold">رقم الحساب</th>
-                    <th className="p-3 text-start font-bold">اسم الحساب</th>
-                    <th className="p-3 text-start font-bold">التصنيف المحاسبي</th>
-                    <th className="p-3 text-start font-bold">الرصيد الطبيعي</th>
-                    <th className="p-3 text-start font-bold">العملة</th>
-                    <th className="p-3 text-start font-bold">الحالة</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/40">
-                  {accounts.map((account) => (
-                    <tr key={account.id} className="hover:bg-muted/15">
-                      <td className="p-3 font-mono font-bold text-foreground">{account.no || (account as Record<string, unknown>).account_no as string || '—'}</td>
-                      <td className="p-3 font-semibold">{account.name}</td>
-                      <td className="p-3">
-                        <span className="inline-flex rounded-md bg-muted px-2 py-0.5 text-[11px] font-medium">
-                          {accountTypeLabel(account.account_type)}
-                        </span>
-                      </td>
-                      <td className="p-3 font-medium">{normalBalanceLabel(account.normal_balance)}</td>
-                      <td className="p-3 font-mono text-muted-foreground">{account.currency_code || currencyCode}</td>
-                      <td className="p-3">
-                        <StatusBadge tone={account.is_active ? 'green' : 'neutral'}>
-                          {account.is_active ? 'نشط' : 'غير نشط'}
-                        </StatusBadge>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <EntityTable<ChartAccount>
+            aria-label="شجرة الحسابات الموحدة"
+            rows={accounts}
+            keyOf={(account) => account.id}
+            columns={accountColumns(currencyCode)}
+            emptyTitle="لا توجد حسابات مسجلة بعد"
+            emptyDescription="لا توجد حسابات مسجلة بعد في شجرة الحسابات."
+          />
         </CardContent>
       </Card>
 
@@ -163,34 +135,14 @@ export function GeneralLedgerCoreSection() {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          {periods.length === 0 ? (
-            <div className="p-6 text-center text-sm text-muted-foreground">لا توجد فترات محاسبية مسجلة.</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-start text-xs">
-                <thead className="border-b border-border/60 bg-muted/30 text-muted-foreground">
-                  <tr>
-                    <th className="p-3 text-start font-bold">اسم الفترة</th>
-                    <th className="p-3 text-start font-bold">من تاريخ</th>
-                    <th className="p-3 text-start font-bold">إلى تاريخ</th>
-                    <th className="p-3 text-start font-bold">حالة الإغلاق</th>
-                    <th className="p-3 text-start font-bold">تاريخ الإغلاق</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/40">
-                  {periods.map((period) => (
-                    <tr key={period.id} className="hover:bg-muted/15">
-                      <td className="p-3 font-bold">{period.name}</td>
-                      <td className="p-3 font-mono text-muted-foreground">{period.start_date}</td>
-                      <td className="p-3 font-mono text-muted-foreground">{period.end_date}</td>
-                      <td className="p-3">{periodStatusBadge(period.status)}</td>
-                      <td className="p-3 font-mono text-muted-foreground">{period.closed_at || '—'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <EntityTable<AccountingPeriod>
+            aria-label="الفترات المحاسبية"
+            rows={periods}
+            keyOf={(period) => period.id}
+            columns={periodColumns}
+            emptyTitle="لا توجد فترات محاسبية"
+            emptyDescription="لا توجد فترات محاسبية مسجلة."
+          />
         </CardContent>
       </Card>
 
@@ -213,36 +165,143 @@ export function GeneralLedgerCoreSection() {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          {batches.length === 0 ? (
-            <div className="p-6 text-center text-sm text-muted-foreground">لا توجد قيود يومية مسجلة بعد.</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-start text-xs">
-                <thead className="border-b border-border/60 bg-muted/30 text-muted-foreground">
-                  <tr>
-                    <th className="p-3 text-start font-bold">القيد</th>
-                    <th className="p-3 text-start font-bold">تاريخ الترحيل</th>
-                    <th className="p-3 text-start font-bold">المصدر</th>
-                    <th className="p-3 text-start font-bold">البيان</th>
-                    <th className="p-3 text-start font-bold">الحالة</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/40">
-                  {batches.map((batch) => (
-                    <tr key={batch.id} className="hover:bg-muted/15">
-                      <td className="p-3 font-mono font-bold">{batch.description || 'قيد يومية'}</td>
-                      <td className="p-3 font-mono text-muted-foreground">{batch.effective_date}</td>
-                      <td className="p-3 font-semibold">{batch.source_type || '—'}</td>
-                      <td className="p-3 font-mono text-xs text-muted-foreground">{batch.description || 'مصدر محاسبي مسجل'}</td>
-                      <td className="p-3">{batchStatusBadge(batch.status)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <EntityTable<JournalBatch>
+            aria-label="أحدث قيود اليومية"
+            rows={batches}
+            keyOf={(batch) => batch.id}
+            columns={batchColumns}
+            emptyTitle="لا توجد قيود يومية"
+            emptyDescription="لا توجد قيود يومية مسجلة بعد."
+          />
         </CardContent>
       </Card>
     </div>
   );
 }
+
+function accountColumns(currencyCode: string): ColumnDef<ChartAccount>[] {
+  return [
+    {
+      key: 'no',
+      header: 'رقم الحساب',
+      priority: 'identity',
+      className: 'font-mono font-bold text-foreground',
+      render: (account) => account.no || (account as Record<string, unknown>).account_no as string || '—',
+    },
+    {
+      key: 'name',
+      header: 'اسم الحساب',
+      priority: 'primary',
+      className: 'font-semibold',
+      render: (account) => account.name,
+    },
+    {
+      key: 'account_type',
+      header: 'التصنيف المحاسبي',
+      priority: 'secondary',
+      render: (account) => (
+        <span className="inline-flex rounded-md bg-muted px-2 py-0.5 text-[11px] font-medium">
+          {accountTypeLabel(account.account_type)}
+        </span>
+      ),
+    },
+    {
+      key: 'normal_balance',
+      header: 'الرصيد الطبيعي',
+      priority: 'secondary',
+      className: 'font-medium',
+      render: (account) => normalBalanceLabel(account.normal_balance),
+    },
+    {
+      key: 'currency_code',
+      header: 'العملة',
+      priority: 'detail',
+      className: 'font-mono text-muted-foreground',
+      render: (account) => account.currency_code || currencyCode,
+    },
+    {
+      key: 'is_active',
+      header: 'الحالة',
+      priority: 'detail',
+      render: (account) => (
+        <StatusBadge tone={account.is_active ? 'green' : 'neutral'}>
+          {account.is_active ? 'نشط' : 'غير نشط'}
+        </StatusBadge>
+      ),
+    },
+  ];
+}
+
+const periodColumns: ColumnDef<AccountingPeriod>[] = [
+  {
+    key: 'name',
+    header: 'اسم الفترة',
+    priority: 'identity',
+    className: 'font-bold',
+    render: (period) => period.name,
+  },
+  {
+    key: 'start_date',
+    header: 'من تاريخ',
+    priority: 'primary',
+    className: 'font-mono text-muted-foreground',
+    render: (period) => period.start_date,
+  },
+  {
+    key: 'end_date',
+    header: 'إلى تاريخ',
+    priority: 'secondary',
+    className: 'font-mono text-muted-foreground',
+    render: (period) => period.end_date,
+  },
+  {
+    key: 'status',
+    header: 'حالة الإغلاق',
+    priority: 'secondary',
+    render: (period) => periodStatusBadge(period.status),
+  },
+  {
+    key: 'closed_at',
+    header: 'تاريخ الإغلاق',
+    priority: 'detail',
+    className: 'font-mono text-muted-foreground',
+    render: (period) => period.closed_at || '—',
+  },
+];
+
+const batchColumns: ColumnDef<JournalBatch>[] = [
+  {
+    key: 'description',
+    header: 'القيد',
+    priority: 'identity',
+    className: 'font-mono font-bold',
+    render: (batch) => batch.description || 'قيد يومية',
+  },
+  {
+    key: 'effective_date',
+    header: 'تاريخ الترحيل',
+    priority: 'primary',
+    className: 'font-mono text-muted-foreground',
+    render: (batch) => batch.effective_date,
+  },
+  {
+    key: 'source_type',
+    header: 'المصدر',
+    priority: 'secondary',
+    className: 'font-semibold',
+    render: (batch) => batch.source_type || '—',
+  },
+  {
+    key: 'statement',
+    header: 'البيان',
+    priority: 'detail',
+    className: 'font-mono text-xs text-muted-foreground',
+    render: (batch) => batch.description || 'مصدر محاسبي مسجل',
+  },
+  {
+    key: 'status',
+    header: 'الحالة',
+    priority: 'secondary',
+    render: (batch) => batchStatusBadge(batch.status),
+  },
+];

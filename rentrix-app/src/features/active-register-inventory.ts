@@ -16,9 +16,6 @@
  * - `features/financials/reconciliation/bank-csv-import-workflow.tsx` — raw
  *   `<table>` used only as the CSV column-mapping preview inside the bank
  *   import wizard; it is a file-preview surface, not an operational register.
- * - `features/reports/components/GeneralLedgerCoreSection.tsx` — raw `<table>`
- *   for the General Ledger report output under `/reports`; it is a financial
- *   report renderer, not a CRUD register.
  * - `components/ui/design-system-showcase.tsx` + `components/ui/table.tsx`
  *   consumers in tests — DEV-only route / test fixtures, never shipped.
  * - `*.e2e-fixture.tsx` files — VITE_E2E-only browser-qa harnesses that reuse
@@ -57,4 +54,5 @@ export const ACTIVE_REGISTER_INVENTORY = [
   { component: 'features/reports/components/collections/daily-collections-panel.tsx', routes: ['/reports?section=collections'] },
   { component: 'features/reports/components/collections/rent-roll-panel.tsx', routes: ['/reports?section=collections'] },
   { component: 'features/reports/components/overdue/overdue-invoices-panel.tsx', routes: ['/reports?section=collections'] },
+  { component: 'features/reports/components/GeneralLedgerCoreSection.tsx', routes: ['/reports?section=accounting&view=general_ledger'] },
 ] as const;
