@@ -63,6 +63,22 @@ for (const table of tables) {
 }
 requireInvariant(!/DISABLE ROW LEVEL SECURITY;/i.test(baseline), "The canonical baseline must not disable RLS.");
 
+const views = [...baseline.matchAll(
+  /CREATE OR REPLACE VIEW\s+"public"\."([^"]+)"/g,
+)].map((match) => match[1]);
+const securityInvokerViews = new Set(
+  [...baseline.matchAll(
+    /CREATE OR REPLACE VIEW\s+"public"\."([^"]+)"\s+WITH \("security_invoker"='true'\)/g,
+  )].map((match) => match[1]),
+);
+requireInvariant(views.length > 0, "No public views were found in the baseline.");
+for (const viewName of views) {
+  requireInvariant(
+    securityInvokerViews.has(viewName),
+    "public." + viewName + " must use security_invoker so callers keep RLS protections.",
+  );
+}
+
 const functionBlocks = baseline
   .split(/\n\nALTER FUNCTION /)
   .map((block) => {
