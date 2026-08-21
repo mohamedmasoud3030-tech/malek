@@ -159,7 +159,7 @@ describe("communication preview database controls", () => {
         ('${ADMIN}','comm-admin@test.invalid','Communication Admin','ADMIN','ACTIVE',true),
         ('${MEMBER}','comm-member@test.invalid','Communication Member','USER','ACTIVE',true);
       insert into public.company_members(company_id,user_id,role) values
-        ('${COMPANY}','${ADMIN}','ADMIN'),('${COMPANY}','${MEMBER}','MEMBER');
+        ('${COMPANY}','${ADMIN}','ADMIN'),('${COMPANY}','${MEMBER}','USER');
     `);
   }, 420_000);
 

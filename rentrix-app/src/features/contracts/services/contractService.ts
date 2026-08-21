@@ -178,7 +178,7 @@ export async function updateContract(contractId: string, payload: ContractPayloa
   // Routed through update_contract_atomic (not a raw table update) so that
   // property/unit-overlap and owner-agreement-coverage invariants are
   // re-validated on edit, matching create_contract_atomic's checks. See
-  // supabase/migrations/20260708044657_contract_lifecycle_atomic_rpcs.sql.
+  // supabase/migrations/20260901000000_canonical_baseline.sql.
   await assertContractPropertyIsOperational(payload.property_id, payload.status);
   // R4: billing policy is DRAFT-only editable and lives behind its own
   // server command; run it BEFORE the general update so a rejected policy

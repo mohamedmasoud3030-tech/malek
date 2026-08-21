@@ -106,9 +106,8 @@ This does not erase repository reality. For example, S04/S06/S08 implementation 
 | `docs/execution/10_STAGE_AGENT_CHECKLIST_AR.md` | SUPPORTING | Agent evidence ledger | Agent-owned only |
 | `docs/execution/10_STAGE_REVIEW_LEDGER_AR.md` | SUPPORTING | Reviewer evidence ledger | Reviewer-owned only |
 | `docs/execution/10_STAGE_STATUS_AR.md` | SUPPORTING | Human-readable dual-view stage snapshot | Must distinguish repository reality from credit |
-| `.agents/skills/README.md` | SUPPORTING / CONTRIBUTOR ROUTING | Repository skill routing | Must point here, never to archived authority |
-| `docs/decisions/**` and `docs/adr/**` | SUPPORTING | Immutable decision history | Canonical pack references accepted decisions |
-| `docs/accounting/**`, `docs/security/**`, `docs/ui-ux/**`, `docs/audits/**` | SUPPORTING | Evidence and specialist detail | Cannot override pack |
+| `docs/decisions/**` | SUPPORTING | Immutable decision history | Canonical pack references accepted decisions |
+| `docs/security/**`, `docs/accounting/ACCOUNTING_DECISION_GATES_AR.md` | SUPPORTING | Evidence and specialist detail | Cannot override pack |
 | `docs/source-of-truth/archive/01_CANONICAL_REALITY_AND_STATUS.md` | SUPERSEDED | Documents 01, 07 and 08 | Historical only |
 | `docs/source-of-truth/archive/02_BUSINESS_CONSTITUTION_AND_ACCOUNTING.md` | SUPERSEDED | Documents 02 and 04 | Historical only |
 | `docs/source-of-truth/archive/03_TECHNICAL_ARCHITECTURE_AND_ROADMAP.md` | SUPERSEDED | Documents 05, 07 and 08 | Historical only |

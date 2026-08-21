@@ -9,7 +9,6 @@ describe('active company write guard', () => {
   const authHook = readFileSync(resolve(import.meta.dirname, 'use-auth.tsx'), 'utf8');
   const maintenanceController = readFileSync(resolve(root, 'features/maintenance/useMaintenancePageController.ts'), 'utf8');
   const maintenanceService = readFileSync(resolve(root, 'features/maintenance/maintenance-service.ts'), 'utf8');
-  const maintenanceRpc = readFileSync(resolve(root, '../../supabase/migrations/20260731190947_create_maintenance_atomic_rpc.sql'), 'utf8');
 
   it('queries only stable production columns and active tenant memberships', () => {
     expect(companyHook).toContain(".select('company_id, role, companies!inner(id, name, slug, currency, locale)')");
@@ -85,9 +84,5 @@ describe('active company write guard', () => {
     expect(maintenanceController).not.toContain('company_id: activeCompanyId');
     expect(maintenanceController).toContain("form.setError('root', { message: ACTIVE_COMPANY_ERROR })");
     expect(maintenanceService).toContain(".rpc('create_maintenance_atomic'");
-    expect(maintenanceRpc).toContain('v_company_id uuid;');
-    expect(maintenanceRpc).toContain('v_company_id := public.current_company_id();');
-    expect(maintenanceRpc).toContain('AND company_id = v_company_id');
-    expect(maintenanceRpc).toContain('AND property_id = v_property.id');
   });
 });

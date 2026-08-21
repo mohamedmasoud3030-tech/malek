@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // ============================================================================
-// Migration & Rollback Hygiene Guard (PR-D)
+// Migration Hygiene Guard (PR-D)
 // ============================================================================
 //
 // Enforces, for NEW or MODIFIED files only (compared against a base ref):
@@ -10,16 +10,8 @@
 //   2. No new file inside supabase/migrations/ whose content opens with an
 //      explicit rollback-style header (Manual rollback, Rollback for,
 //      Revert migration, Down migration).
-//   3. Every .sql file inside supabase/rollback/ must contain an explicit
-//      "Manual" rollback warning.
-//   4. Every .sql file inside supabase/rollback/ must reference its
-//      corresponding forward migration and follow the naming contract
-//      (<timestamp>_rollback_<slug>.sql).
-//   5. No modification, rename, or deletion of a historical file that
-//      already exists on the base ref inside supabase/migrations/ — only
-//      net-new additions are allowed there.
-//   6. No file from supabase/rollback/ may be referenced by the migration
-//      replay path (supabase/migrations/ + scripts/ci/*database-gate*).
+//   3. No modification, rename, or deletion of a migration file that already
+//      exists on the base ref — only net-new additions are allowed there.
 //
 // Historical (pre-existing on base) files that already look rollback-like
 // are never treated as violations — they are reported separately as
@@ -41,7 +33,6 @@ import { join } from 'node:path';
 
 const REPO_ROOT = execFileSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim();
 const MIGRATIONS_DIR = 'supabase/migrations';
-const ROLLBACK_DIR = 'supabase/rollback';
 
 const FILENAME_BAN_PATTERN = /(rollback|revert|undo|down)/i;
 const HEADER_BAN_PATTERNS = [
@@ -51,14 +42,8 @@ const HEADER_BAN_PATTERNS = [
   /--\s*down migration/i,
 ];
 
-const MANUAL_WARNING_PATTERN = /manual|emergency|not\s+auto-applied|not\s+applied\s+automatically/i;
-const ROLLBACK_FILENAME_CONTRACT = /^\d{8,14}_rollback_[a-z0-9_]+\.sql$/;
-// Accept either "Rollback for <file>.sql" or an explicit reference to a
-// 8-14 digit migration timestamp somewhere in the first 15 lines.
-const MIGRATION_REFERENCE_PATTERN = /\b\d{8,14}[a-z0-9_]*\.sql\b|\b\d{14}\b/i;
-
 function fail(messages) {
-  console.error('\nMigration & Rollback Hygiene Guard: FAILED\n');
+  console.error('\nMigration Hygiene Guard: FAILED\n');
   for (const m of messages) {
     console.error(`  file:   ${m.file}`);
     console.error(`  reason: ${m.reason}`);
@@ -102,7 +87,7 @@ function gitDiffNameStatus(baseRef) {
   // from unrelated history divergence).
   const out = execFileSync(
     'git',
-    ['diff', '--name-status', '--find-renames', `${baseRef}...HEAD`, '--', MIGRATIONS_DIR, ROLLBACK_DIR, 'supabase/migrations_history'],
+    ['diff', '--name-status', '--find-renames', `${baseRef}...HEAD`, '--', MIGRATIONS_DIR],
     { cwd: REPO_ROOT, encoding: 'utf8' },
   );
   return out
@@ -148,22 +133,17 @@ function main() {
   const violations = [];
   const legacyWarnings = [];
 
-  // --- Rule 5: historical migration files must not be modified, renamed, or deleted ---
+  // --- Rule 3: historical migration files must not be modified, renamed, or deleted ---
   for (const entry of diff) {
     if (entry.status === 'R') {
-      const archivedToHistory =
-        entry.oldPath.startsWith(`${MIGRATIONS_DIR}/`) &&
-        entry.newPath &&
-        entry.newPath.startsWith('supabase/migrations_history/');
       if (
         baseMigrationFiles.has(entry.oldPath) &&
-        entry.oldPath.startsWith(`${MIGRATIONS_DIR}/`) &&
-        !archivedToHistory
+        entry.oldPath.startsWith(`${MIGRATIONS_DIR}/`)
       ) {
         violations.push({
           file: `${entry.oldPath} -> ${entry.newPath}`,
           reason: 'A historical migration file present on the base ref was renamed.',
-          rule: 'Rule 5: existing migrations are immutable once merged (no rename).',
+          rule: 'Rule 3: existing migrations are immutable once merged (no rename).',
           fix: 'Revert the rename. If the migration content is wrong, add a new forward corrective migration instead.',
         });
       }
@@ -173,16 +153,10 @@ function main() {
     if (!entry.path.startsWith(`${MIGRATIONS_DIR}/`)) continue;
 
     if (entry.status === 'D' && baseMigrationFiles.has(entry.path)) {
-      const archivedName = entry.path.split('/').pop();
-      const archivedPath = join(REPO_ROOT, 'supabase/migrations_history', archivedName);
-      const baselinePath = join(REPO_ROOT, `${MIGRATIONS_DIR}/20260901000000_canonical_baseline.sql`);
-      if (existsSync(archivedPath) && existsSync(baselinePath)) {
-        continue;
-      }
       violations.push({
         file: entry.path,
         reason: 'A historical migration file present on the base ref was deleted.',
-        rule: 'Rule 5: existing migrations are immutable once merged (no delete).',
+        rule: 'Rule 3: existing migrations are immutable once merged (no delete).',
         fix: 'Restore the file. If the migration content is wrong, add a new forward corrective migration instead.',
       });
     }
@@ -191,7 +165,7 @@ function main() {
       violations.push({
         file: entry.path,
         reason: 'A historical migration file present on the base ref was modified.',
-        rule: 'Rule 5: existing migrations are immutable once merged (no content change, including timestamp).',
+        rule: 'Rule 3: existing migrations are immutable once merged (no content change, including timestamp).',
         fix: 'Revert the change. Fix forward with a new migration instead of editing history.',
       });
     }
@@ -215,7 +189,7 @@ function main() {
         file: path,
         reason: `New migration filename contains a banned rollback-style keyword: "${filename.match(FILENAME_BAN_PATTERN)[0]}".`,
         rule: 'Rule 1: supabase/migrations/ is forward-only; rollback/revert/undo/down are not allowed in new filenames.',
-        fix: `Move this file to ${ROLLBACK_DIR}/ if it is genuinely a manual rollback script, and give it a forward-migration name here instead if it is meant to run automatically.`,
+        fix: 'Give the file a forward-migration name; add a new forward corrective migration instead of a rollback script.',
       });
       continue; // don't double-report the same file
     }
@@ -230,68 +204,9 @@ function main() {
         file: path,
         reason: `New migration file opens with a rollback-style header (matches ${matchedHeader}).`,
         rule: 'Rule 2: supabase/migrations/ is forward-only; explicit rollback/revert/down headers are not allowed.',
-        fix: `Move this file to ${ROLLBACK_DIR}/ with a "Manual rollback for <migration>.sql" header, and keep supabase/migrations/ forward-only.`,
+        fix: 'Keep supabase/migrations/ forward-only; express the change as a forward corrective migration.',
       });
     }
-  }
-
-  // --- Rules 3 & 4: rollback directory files must carry a manual warning and reference ---
-  for (const entry of diff) {
-    const isNewOrModifiedRollback =
-      (entry.status === 'A' || entry.status === 'M') &&
-      entry.path &&
-      entry.path.startsWith(`${ROLLBACK_DIR}/`) &&
-      entry.path.endsWith('.sql');
-    const isRenamedIntoRollback =
-      entry.status === 'R' && entry.newPath && entry.newPath.startsWith(`${ROLLBACK_DIR}/`) && entry.newPath.endsWith('.sql');
-
-    if (!isNewOrModifiedRollback && !isRenamedIntoRollback) continue;
-
-    const path = isNewOrModifiedRollback ? entry.path : entry.newPath;
-    const filename = path.split('/').pop();
-    const content = readWorkingFile(path);
-    if (content === null) continue;
-
-    const head = headerLines(content, 20);
-
-    if (!MANUAL_WARNING_PATTERN.test(head)) {
-      violations.push({
-        file: path,
-        reason: 'Rollback script does not carry an explicit manual/emergency warning in its header.',
-        rule: 'Rule 3: every file in supabase/rollback/ must clearly state it is manual and not auto-applied.',
-        fix: 'Add a header comment such as "-- Manual rollback for <forward migration file>.sql — not auto-applied, run by hand only."',
-      });
-    }
-
-    if (!ROLLBACK_FILENAME_CONTRACT.test(filename)) {
-      violations.push({
-        file: path,
-        reason: `Filename "${filename}" does not follow the naming contract <timestamp>_rollback_<slug>.sql.`,
-        rule: 'Rule 4: rollback filenames must follow the naming contract.',
-        fix: 'Rename to <timestamp>_rollback_<slug>.sql, matching the forward migration it reverts.',
-      });
-    }
-
-    if (!MIGRATION_REFERENCE_PATTERN.test(head)) {
-      violations.push({
-        file: path,
-        reason: 'Rollback script does not reference its corresponding forward migration in the header.',
-        rule: 'Rule 4: every rollback file must point at the migration it reverts.',
-        fix: 'Add a header line such as "-- Rollback for: <exact forward migration filename>.sql".',
-      });
-    }
-  }
-
-  // --- Rule 6: nothing under supabase/rollback/ may be pulled into the replay path ---
-  const gateScriptPath = 'scripts/ci/run-supabase-database-gate.sh';
-  const gateScript = readWorkingFile(gateScriptPath);
-  if (gateScript && gateScript.includes(`${ROLLBACK_DIR}/`)) {
-    violations.push({
-      file: gateScriptPath,
-      reason: 'The migration replay gate script references supabase/rollback/.',
-      rule: 'Rule 6: supabase/rollback/ must never be part of Clean Replay / CI migration replay.',
-      fix: `Remove any reference to ${ROLLBACK_DIR}/ from the replay gate script. Only supabase/migrations/ may be replayed.`,
-    });
   }
 
   // --- Legacy report (informational only, never fails the guard) ---
@@ -308,10 +223,9 @@ function main() {
   }
 
   if (legacyWarnings.length > 0) {
-    console.log('\nMigration & Rollback Hygiene Guard: LEGACY WARNING (non-blocking)');
+    console.log('\nMigration Hygiene Guard: LEGACY WARNING (non-blocking)');
     console.log('The following historical files already existed on the base ref, look');
     console.log('rollback-like by filename, and were left untouched by this change. They');
-    console.log('are documented in docs/audits/MIGRATION_ROLLBACK_HYGIENE_AUDIT_AR.md and');
     console.log('are NOT a hygiene violation:\n');
     for (const f of legacyWarnings) console.log(`  - ${f}`);
     console.log('');
@@ -322,7 +236,7 @@ function main() {
     return;
   }
 
-  console.log(`Migration & Rollback Hygiene Guard: OK (base ref: ${baseRef})`);
+  console.log(`Migration Hygiene Guard: OK (base ref: ${baseRef})`);
 }
 
 main();

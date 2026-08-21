@@ -2,10 +2,9 @@
  * Storage attachment contract — single client-side source of truth for the
  * private `attachments` bucket policy. These values must mirror:
  *
- *   - supabase/migrations/20260721090000_harden_private_attachments_bucket.sql
- *   - supabase/tests/security_drift_checks.sql (pgTAP check #6)
+ *   - supabase/migrations/20260901000000_canonical_baseline.sql
  *
- * Any drift between these constants and the migration/pgTAP contract is a
+ * Any drift between these constants and the canonical bucket policy is a
  * release blocker, not a cosmetic bug: the bucket rejects what the client
  * allows (confusing UX) or the client allows what the bucket rejects.
  */

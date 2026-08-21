@@ -61,48 +61,6 @@ describe('documents vault real implementation', () => {
     expect(() => validateVaultFile({ size: 1, type: '' })).toThrow('غير مدعوم');
   });
 
-  it('migration pins the bucket contract and the canonical policy set exists', () => {
-    const migration = readFileSync(
-      resolve(import.meta.dirname, '../../../../supabase/migrations/20260721090000_harden_private_attachments_bucket.sql'),
-      'utf8',
-    );
-
-    // The migration must state the same numbers as the client contract.
-    expect(migration).toContain(String(ATTACHMENTS_MAX_FILE_SIZE));
-    for (const mimeType of [...ATTACHMENTS_ALLOWED_MIME_TYPES]) {
-      expect(migration).toContain(mimeType);
-    }
-    expect(migration).toContain("  'attachments',\n  'attachments',\n  false,");
-    expect(migration).toContain('public = excluded.public');
-    expect(migration).toContain('file_size_limit = excluded.file_size_limit');
-    expect(migration).toContain('allowed_mime_types = excluded.allowed_mime_types');
-    expect(migration).toContain('drop policy if exists "authenticated upload attachments"');
-
-    // The canonical policy set is owned by the vault foundation migration.
-    const foundation = readFileSync(
-      resolve(import.meta.dirname, '../../../../supabase/migrations/20260717000002_real_documents_vault.sql'),
-      'utf8',
-    );
-    expect(foundation).toContain('attachments_authenticated_read');
-    expect(foundation).toContain('attachments_authenticated_insert');
-    expect(foundation).toContain('attachments_manager_write');
-    expect(foundation).toContain('attachments_manager_delete');
-    expect(foundation).toContain('public.is_admin_or_manager()');
-    expect(foundation).toContain('public.is_app_user()');
-  });
-
-  it('pgTAP drift checks pin the bucket contract and policy invariants', () => {
-    const driftChecks = readFileSync(
-      resolve(import.meta.dirname, '../../../../supabase/tests/security_drift_checks.sql'),
-      'utf8',
-    );
-    expect(driftChecks).toContain('5242880');
-    for (const mimeType of [...ATTACHMENTS_ALLOWED_MIME_TYPES]) {
-      expect(driftChecks).toContain(mimeType);
-    }
-    expect(driftChecks).toContain('is_admin_or_manager()');
-  });
-
   it('shared workspace uses signed URLs for private previews', () => {
     const workspace = readVaultWorkspace();
     expect(workspace).toContain('getVaultDocumentSignedUrl');

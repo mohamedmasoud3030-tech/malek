@@ -54,7 +54,7 @@ beforeAll(async () => {
 
     insert into public.company_settings
       (id, singleton_key, company_name, currency, company_id)
-    values (gen_random_uuid(), false, 'Phase2 Co', 'OMR', '${COMPANY}');
+    values (gen_random_uuid(), true, 'Phase2 Co', 'OMR', '${COMPANY}');
 
     -- Explicit zero/non-taxable configuration replaces the historical implicit
     -- vat_enabled=false fallback in recurring invoice generation.

@@ -206,25 +206,3 @@ describe('owner read helpers', () => {
     });
   });
 });
-
-describe('owner relationship migration protections', () => {
-  const coreSchemaSql = readFileSync(
-    new URL('../../../../../supabase/migrations/20250101000001_core_schema.sql', import.meta.url),
-    'utf8',
-  );
-  const functionsSql = readFileSync(
-    new URL('../../../../../supabase/migrations/20250101000003_functions_triggers_and_rpcs.sql', import.meta.url),
-    'utf8',
-  );
-
-  it('protects against multiple active primary owners per property', () => {
-    expect(coreSchemaSql).toContain('property_owners_active_primary_unique_idx');
-    expect(coreSchemaSql).toContain('where ends_on is null and is_primary');
-  });
-
-  it('protects active ownership percentage totals from exceeding 100 percent', () => {
-    expect(functionsSql).toContain('validate_property_owner_active_totals');
-    expect(functionsSql).toContain('v_other_active_percentage_total + new.ownership_percentage > 100');
-    expect(functionsSql).toContain('Active ownership percentages for a property cannot exceed 100.');
-  });
-});

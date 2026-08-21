@@ -65,15 +65,6 @@ function makeRepo(baseFiles) {
   git(dir, ['add', '-A']);
   git(dir, ['commit', '-q', '-m', 'base']);
 
-  // The guard's Rule 6 check reads scripts/ci/run-supabase-database-gate.sh;
-  // give every scenario a clean stand-in so that check is inert unless a
-  // test explicitly wants to exercise it.
-  if (!('scripts/ci/run-supabase-database-gate.sh' in baseFiles)) {
-    writeFile(dir, 'scripts/ci/run-supabase-database-gate.sh', '#!/usr/bin/env bash\n# replays supabase/migrations only\n');
-    git(dir, ['add', '-A']);
-    git(dir, ['commit', '-q', '-m', 'gate script stand-in', '--allow-empty']);
-  }
-
   git(dir, ['checkout', '-q', '-b', 'pr-branch']);
   return dir;
 }
@@ -99,9 +90,6 @@ function test(name, fn) {
     console.log(`        ${err.message}`);
   }
 }
-
-const MANUAL_ROLLBACK_HEADER = (forwardFile) =>
-  `-- Manual rollback for ${forwardFile}\n-- Not auto-applied; run by hand only.\n\nbegin;\ndrop function if exists public.example();\ncommit;\n`;
 
 // ----------------------------------------------------------------------------
 // 1. Clean forward migration → PASS
@@ -164,46 +152,7 @@ test('a new migration with a manual-rollback header fails', () => {
 });
 
 // ----------------------------------------------------------------------------
-// 4. Correct rollback script inside supabase/rollback/ → PASS
-// ----------------------------------------------------------------------------
-test('a well-formed rollback script in supabase/rollback/ passes', () => {
-  const dir = makeRepo({
-    'supabase/migrations/20260801000000_initial.sql': 'create table public.example (id uuid primary key);\n',
-  });
-  writeFile(
-    dir,
-    'supabase/rollback/20260805000000_rollback_example.sql',
-    MANUAL_ROLLBACK_HEADER('20260801000000_initial.sql'),
-  );
-  commitChanges(dir, 'add rollback script');
-
-  const result = runGuard(dir, 'main');
-  assert(result.status === 0, `expected exit 0, got ${result.status}\n${result.stdout}\n${result.stderr}`);
-  cleanup(dir);
-});
-
-// ----------------------------------------------------------------------------
-// 5. Rollback script without a manual header → FAIL
-// ----------------------------------------------------------------------------
-test('a rollback script without a manual warning header fails', () => {
-  const dir = makeRepo({
-    'supabase/migrations/20260801000000_initial.sql': 'create table public.example (id uuid primary key);\n',
-  });
-  writeFile(
-    dir,
-    'supabase/rollback/20260805000000_rollback_example.sql',
-    '-- Reverts 20260801000000_initial.sql\nbegin;\ndrop table public.example;\ncommit;\n',
-  );
-  commitChanges(dir, 'add rollback script without manual header');
-
-  const result = runGuard(dir, 'main');
-  assert(result.status !== 0, 'expected non-zero exit');
-  assert(result.stderr.includes('Rule 3'), `expected Rule 3 violation, got:\n${result.stderr}`);
-  cleanup(dir);
-});
-
-// ----------------------------------------------------------------------------
-// 6. Legacy rollback-like migration in base, untouched → PASS with warning
+// 4. Legacy rollback-like migration in base, untouched → PASS with warning
 // ----------------------------------------------------------------------------
 test('an untouched legacy rollback-like migration on base passes with a warning', () => {
   const dir = makeRepo({
@@ -245,7 +194,7 @@ test('modifying a historical migration file fails', () => {
 
   const result = runGuard(dir, 'main');
   assert(result.status !== 0, 'expected non-zero exit');
-  assert(result.stderr.includes('Rule 5'), `expected Rule 5 violation, got:\n${result.stderr}`);
+  assert(result.stderr.includes('Rule 3'), `expected Rule 3 violation, got:\n${result.stderr}`);
   cleanup(dir);
 });
 
@@ -281,7 +230,7 @@ test('deleting a historical migration file fails', () => {
 
   const result = runGuard(dir, 'main');
   assert(result.status !== 0, 'expected non-zero exit');
-  assert(result.stderr.includes('Rule 5'), `expected Rule 5 violation, got:\n${result.stderr}`);
+  assert(result.stderr.includes('Rule 3'), `expected Rule 3 violation, got:\n${result.stderr}`);
   cleanup(dir);
 });
 
@@ -297,68 +246,7 @@ test('renaming a historical migration file fails', () => {
 
   const result = runGuard(dir, 'main');
   assert(result.status !== 0, 'expected non-zero exit');
-  assert(result.stderr.includes('Rule 5'), `expected Rule 5 violation, got:\n${result.stderr}`);
-  cleanup(dir);
-});
-
-// ----------------------------------------------------------------------------
-// Extra: rollback file missing the migration reference → FAIL
-// ----------------------------------------------------------------------------
-test('a rollback script missing a migration reference fails', () => {
-  const dir = makeRepo({
-    'supabase/migrations/20260801000000_initial.sql': 'create table public.example (id uuid primary key);\n',
-  });
-  writeFile(
-    dir,
-    'supabase/rollback/20260805000000_rollback_example.sql',
-    '-- Manual rollback, not auto-applied.\nbegin;\ndrop table public.example;\ncommit;\n',
-  );
-  commitChanges(dir, 'add rollback script without migration reference');
-
-  const result = runGuard(dir, 'main');
-  assert(result.status !== 0, 'expected non-zero exit');
-  assert(result.stderr.includes('Rule 4'), `expected Rule 4 violation, got:\n${result.stderr}`);
-  cleanup(dir);
-});
-
-// ----------------------------------------------------------------------------
-// Extra: rollback file breaking the naming contract → FAIL
-// ----------------------------------------------------------------------------
-test('a rollback script with a non-conforming filename fails', () => {
-  const dir = makeRepo({
-    'supabase/migrations/20260801000000_initial.sql': 'create table public.example (id uuid primary key);\n',
-  });
-  writeFile(
-    dir,
-    'supabase/rollback/example_manual_fix.sql',
-    MANUAL_ROLLBACK_HEADER('20260801000000_initial.sql'),
-  );
-  commitChanges(dir, 'add non-conforming rollback filename');
-
-  const result = runGuard(dir, 'main');
-  assert(result.status !== 0, 'expected non-zero exit');
-  assert(result.stderr.includes('Rule 4'), `expected Rule 4 violation, got:\n${result.stderr}`);
-  cleanup(dir);
-});
-
-// ----------------------------------------------------------------------------
-// Extra: replay gate script pulled in from supabase/rollback/ → FAIL
-// ----------------------------------------------------------------------------
-test('a replay gate script referencing supabase/rollback fails', () => {
-  const dir = makeRepo({
-    'supabase/migrations/20260801000000_initial.sql': 'create table public.example (id uuid primary key);\n',
-    'scripts/ci/run-supabase-database-gate.sh': '#!/usr/bin/env bash\n# replays supabase/migrations only\n',
-  });
-  writeFile(
-    dir,
-    'scripts/ci/run-supabase-database-gate.sh',
-    '#!/usr/bin/env bash\nfor f in supabase/migrations/*.sql supabase/rollback/*.sql; do :; done\n',
-  );
-  commitChanges(dir, 'wire rollback into replay gate');
-
-  const result = runGuard(dir, 'main');
-  assert(result.status !== 0, 'expected non-zero exit');
-  assert(result.stderr.includes('Rule 6'), `expected Rule 6 violation, got:\n${result.stderr}`);
+  assert(result.stderr.includes('Rule 3'), `expected Rule 3 violation, got:\n${result.stderr}`);
   cleanup(dir);
 });
 

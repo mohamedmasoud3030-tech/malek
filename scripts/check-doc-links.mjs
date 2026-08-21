@@ -6,17 +6,13 @@ import process from 'node:process';
 
 const root = process.cwd();
 const excludedDirectoryNames = new Set(['.git', 'node_modules', 'dist', 'coverage', '.vercel']);
-const excludedRepositoryPaths = new Set(['.agents/skills']);
 
 function toRepositoryPath(absolutePath) {
   return relative(root, absolutePath).split(sep).join('/');
 }
 
-function shouldSkipDirectory(name, absolutePath) {
-  return (
-    excludedDirectoryNames.has(name) ||
-    excludedRepositoryPaths.has(toRepositoryPath(absolutePath))
-  );
+function shouldSkipDirectory(name) {
+  return excludedDirectoryNames.has(name);
 }
 
 function collectMarkdownFiles(directory, files = []) {

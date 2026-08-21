@@ -12,7 +12,7 @@ const worker = readFileSync(
 const migration = readFileSync(
   resolve(
     import.meta.dirname,
-    "../../../../supabase/migrations/20260905000000_background_job_foundation.sql",
+    "../../../../supabase/migrations/20260901000006_background_job_foundation.sql",
   ),
   "utf8",
 );

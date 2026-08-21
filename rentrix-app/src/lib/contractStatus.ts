@@ -4,7 +4,7 @@
  * Why this exists: the contracts.status CHECK constraint historically allowed
  * both modern lowercase values ('draft' | 'active' | 'expired' | 'terminated')
  * and legacy uppercase ones ('ACTIVE' | 'ENDED') — see the contracts table in
- * supabase/migrations/20250101000001_core_schema.sql, whose own unit-overlap
+ * supabase/migrations/20260901000000_canonical_baseline.sql, whose own unit-overlap
  * guard deliberately compares lower(status). Live rows can therefore carry
  * either casing, so any exact-match equality, status-keyed lookup, or
  * server-side .eq('status', ...) filter silently misclassifies legacy rows.

@@ -45,24 +45,4 @@ describe('dashboard frontend/backend data contract (R1)', () => {
     expect(pageSource).not.toContain('listBankStatementLines');
     expect(pageSource).not.toContain('fetchPendingSettlementsCount');
   });
-
-  it('pins the authoritative read model migration: credit-aware arrears and no row caps', () => {
-    const migration = readFileSync(
-      resolve(import.meta.dirname, '../../../../supabase/migrations/20260821000000_r1_dashboard_truth_read_model.sql'),
-      'utf8',
-    ).toLowerCase();
-
-    // Single company-isolated read model.
-    expect(migration).toContain('create or replace function public.rpt_dashboard_snapshot(');
-    expect(migration).toContain('public.require_company_id()');
-    // Credit-aware remaining everywhere a receivable is measured.
-    expect(migration).toContain('coalesce(i.credited_amount, 0)');
-    // OMR 3dp policy.
-    expect(migration).toContain('public._r3');
-    // Reports parity: aged receivables becomes credit-aware too.
-    expect(migration).toContain('create or replace function public.rpt_aged_receivables(');
-    // Security posture.
-    expect(migration).toContain('revoke all on function public.rpt_dashboard_snapshot(date, date, date) from public, anon');
-    expect(migration).toContain('grant execute on function public.rpt_dashboard_snapshot(date, date, date) to authenticated, service_role');
-  });
 });

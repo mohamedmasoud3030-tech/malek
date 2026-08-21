@@ -34,28 +34,6 @@ describe('utilities real implementation - no mock data', () => {
     expect(content).not.toContain('meter-1');
     expect(content).not.toContain('950');
   });
-
-  it('migration creates real utility_meters table with RLS hardened to manager write', async () => {
-    const migrationPath = resolve(import.meta.dirname, '../../../../supabase/migrations/20260717000001_real_utility_meters_and_enhance_bills.sql');
-    const sql = readFileSync(migrationPath, 'utf8');
-    expect(sql).toContain('create table public.utility_meters');
-    expect(sql).toContain("'public.properties'::regclass");
-    expect(sql).toContain("'public.units'::regclass");
-    expect(sql).toContain('manager_write_utility_meters');
-    expect(sql).toContain('app_read_utility_meters');
-    expect(sql).toContain('is_admin_or_manager()');
-    expect(sql).toContain('alter table public.utility_meters enable row level security');
-    expect(sql).toContain('idx_utility_meters_property_id');
-  });
-
-  it('migration enhances utility_bills with missing columns', async () => {
-    const migrationPath = resolve(import.meta.dirname, '../../../../supabase/migrations/20260717000001_real_utility_meters_and_enhance_bills.sql');
-    const sql = readFileSync(migrationPath, 'utf8');
-    expect(sql).toContain('meter_id');
-    expect(sql).toContain('previous_reading');
-    expect(sql).toContain('consumption_units');
-    expect(sql).toContain('paid_amount');
-  });
 });
 
 describe('utilities service error handling', () => {

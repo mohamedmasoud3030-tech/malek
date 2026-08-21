@@ -113,7 +113,6 @@ export default defineConfig({
       registerType: "autoUpdate",
       manifest: false,
       // Keep MALEK's launch and offline identity available with the app shell.
-      // Legacy Rentrix/MALIK PNGs stay on disk as unreferenced assets pending deletion.
       // Do not also list offline/brand assets here: workbox.globPatterns already
       // precaches them. includeAssets + globPatterns would emit duplicate SW entries.
       includeAssets: [],
@@ -135,9 +134,6 @@ export default defineConfig({
           "malek-maskable-*.png",
           "malek-apple-touch-180.png",
         ],
-        // Legacy Rentrix/MALIK icons still sit in public/ for git history; keep
-        // them out of the precache so the MALEK build ships no legacy brand asset.
-        globIgnores: ["**/icon-rentrix-*.png", "**/icon-malik-*.png", "**/icon-maskable-*.png", "**/malik-mark.svg"],
         cleanupOutdatedCaches: true,
         navigateFallback: "/index.html",
         navigateFallbackDenylist: [/^\/api\//],
@@ -224,6 +220,5 @@ export default defineConfig({
   },
   test: {
     exclude: ["e2e/**", "node_modules/**", "dist/**"],
-    setupFiles: [path.resolve(import.meta.dirname, "src/test/remap-archived-migrations.cjs")],
   },
 });

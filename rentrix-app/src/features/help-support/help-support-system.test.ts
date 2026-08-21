@@ -95,7 +95,7 @@ describe("internal support request database boundary", () => {
         ('${USER}','support-user@test.invalid','Support User','USER','ACTIVE',true),
         ('${ADMIN}','support-admin@test.invalid','Support Admin','ADMIN','ACTIVE',true);
       insert into public.company_members(company_id,user_id,role) values
-        ('${COMPANY}','${USER}','MEMBER'),('${COMPANY}','${ADMIN}','ADMIN');
+        ('${COMPANY}','${USER}','USER'),('${COMPANY}','${ADMIN}','ADMIN');
     `);
   }, 420_000);
 
@@ -132,7 +132,7 @@ describe("internal support request database boundary", () => {
     expect(stored.rows[0]).toEqual({
       company_id: COMPANY,
       requester_id: USER,
-      requester_role: "MEMBER",
+      requester_role: "USER",
     });
 
     const listed = await db.query<{ result: Array<Record<string, unknown>> }>(

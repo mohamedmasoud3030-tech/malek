@@ -94,9 +94,6 @@ evidence pointers is not useful to a future agent — it's just an opinion.
 | 0009 | [MALEK canonical accounting model](./0009-malek-canonical-accounting-model.md) | 2026-08-01 | Accepted |
 | 0010 | [Stage 3 general ledger core](./0010-stage3-general-ledger-core.md) | 2026-08-01 | Accepted |
 | 0011 | [Final business, accounting, and operating policies](./0011-final-business-accounting-and-operating-policies.md) | 2026-08-04 | Accepted |
-| 0011 | [MALEK visible brand identity](./0011-malek-visible-brand-identity.md) | 2026-08-04 | Accepted |
-| 0012 | [MALEK design system refresh roadmap](./0012-malek-design-system-refresh-roadmap.md) | 2026-08-05 | Accepted |
 
-The index is oldest first. The duplicate historical `0003` and `0011`
-records and the unused `0007` slot are preserved as-is; do not renumber
-existing files. The next record takes `0013-`.
+The index is oldest first. The duplicate historical `0003` record and the
+unused `0007` slot are preserved as-is; do not renumber existing files.

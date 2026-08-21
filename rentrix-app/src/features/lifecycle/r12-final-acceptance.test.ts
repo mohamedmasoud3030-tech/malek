@@ -94,7 +94,7 @@ beforeAll(async () => {
       ('${COMPANY}', '${MAKER}', 'ADMIN'),
       ('${COMPANY}', '${CHECKER}', 'ADMIN');
     insert into public.company_settings (id, singleton_key, company_name, currency, vat_enabled, vat_rate, company_id)
-    values (gen_random_uuid(), false, 'R12 Co', 'OMR', false, 0, '${COMPANY}');
+    values (gen_random_uuid(), true, 'R12 Co', 'OMR', false, 0, '${COMPANY}');
     insert into public.company_tax_profiles
       (id, company_id, version_no, tax_code, tax_rate, effective_from, status, created_by, approved_by, approved_at)
     values ('ac120000-0000-4000-8000-000000000091', '${COMPANY}', 1, 'NON_TAXABLE', 0, date '2020-01-01', 'ACTIVE', '${MAKER}', '${CHECKER}', now());

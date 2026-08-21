@@ -71,7 +71,7 @@ beforeAll(async () => {
     insert into public.company_members (company_id, user_id, role) values
       ('${COMPANY}', '${ADMIN}', 'ADMIN');
     insert into public.company_settings (id, singleton_key, company_name, currency, company_id)
-    values (gen_random_uuid(), false, 'R8 Co', 'OMR', '${COMPANY}');
+    values (gen_random_uuid(), true, 'R8 Co', 'OMR', '${COMPANY}');
     insert into public.owners (id, full_name, name, company_id)
     values ('${OWNER}', 'R8 Owner', 'R8 Owner', '${COMPANY}');
     insert into public.properties (id, title, name, type, address, status, company_id)

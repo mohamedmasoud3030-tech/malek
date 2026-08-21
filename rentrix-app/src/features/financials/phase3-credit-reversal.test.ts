@@ -90,7 +90,7 @@ beforeAll(async () => {
     -- vat_rate 0 keeps the credit split exact (rent only).
     insert into public.company_settings
       (id, singleton_key, company_name, currency, default_vat_rate, vat_enabled, vat_rate, company_id)
-    values (gen_random_uuid(), false, 'Phase3 Co', 'OMR', 0, false, 0, '${COMPANY}');
+    values (gen_random_uuid(), true, 'Phase3 Co', 'OMR', 0, false, 0, '${COMPANY}');
     insert into public.company_tax_profiles
       (id, company_id, version_no, tax_code, tax_rate, effective_from, status, created_by, approved_by, approved_at)
     values

@@ -81,7 +81,7 @@ beforeAll(async () => {
     -- VAT enabled at 5% so fee VAT is a REAL number in this fixture, proving
     -- it flows through as fee VAT — never as a utilities bucket.
     insert into public.company_settings (id, singleton_key, company_name, currency, vat_enabled, vat_rate, company_id)
-    values (gen_random_uuid(), false, 'R2 Co', 'OMR', true, 5, '${COMPANY}');
+    values (gen_random_uuid(), true, 'R2 Co', 'OMR', true, 5, '${COMPANY}');
 
     insert into public.owners (id, full_name, name, company_id) values
       ('${OWNER}', 'R2 Owner', 'R2 Owner', '${COMPANY}'),

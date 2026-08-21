@@ -75,7 +75,7 @@ describe("admin/support authoritative database boundary", () => {
         ('${MANAGER}','manager.ops@test.invalid','Manager Ops','Manager Operations','MANAGER','ACTIVE',true),
         ('${USER}','normal.user@test.invalid','Normal User','Normal User','USER','ACTIVE',true);
       insert into public.company_members(company_id,user_id,role) values
-        ('${COMPANY}','${ADMIN}','ADMIN'),('${COMPANY}','${MANAGER}','MEMBER'),('${COMPANY}','${USER}','MEMBER');
+        ('${COMPANY}','${ADMIN}','ADMIN'),('${COMPANY}','${MANAGER}','MANAGER'),('${COMPANY}','${USER}','USER');
     `);
     await assumeIdentity(db, USER, COMPANY);
     const created = await db.query<{ result: { id: string } }>(`
