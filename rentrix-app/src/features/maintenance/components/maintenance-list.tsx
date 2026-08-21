@@ -1,6 +1,8 @@
 import { CheckCircle2, Edit, Eye } from "lucide-react";
+import { useState } from "react";
 import { ActionMenu } from "@/components/ui/action-menu";
 import { Button } from "@/components/ui/button";
+import { DataTableColumnsMenu } from "@/components/ui/data-table";
 import { EntityTable, type ColumnDef } from "@/components/ui/entity-table";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { Property, Unit } from "@/types/domain";
@@ -47,6 +49,17 @@ const priorityAccent = {
   urgent: "danger",
 } as const satisfies Record<string, "none" | "warning" | "danger">;
 
+const maintenanceColumnOptions = [
+  { key: "title", label: "العنوان", locked: true },
+  { key: "location", label: "الموقع" },
+  { key: "provider", label: "مزود الخدمة" },
+  { key: "status", label: "الحالة" },
+  { key: "priority", label: "الأولوية" },
+  { key: "action", label: "الإجراء", locked: true },
+] as const;
+
+const defaultMaintenanceColumns = maintenanceColumnOptions.map((column) => column.key);
+
 export type MaintenanceListProps = Readonly<{
   rows: Maintenance[];
   properties: Property[];
@@ -72,9 +85,10 @@ export function MaintenanceList(props: MaintenanceListProps) {
     onEdit,
     onStatusAction,
   } = props;
+  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultMaintenanceColumns]);
 
   // Mobile register: title (identity) + status (work queue datum) + actions.
-  // Priority/location stay desktop comparison fields.
+  // Priority/location stay optional wider comparison fields.
   const columns: ColumnDef<Maintenance>[] = [
     {
       key: "title",
@@ -184,6 +198,16 @@ export function MaintenanceList(props: MaintenanceListProps) {
         mobileVisibleSecondaryKey="status"
         rows={rows}
         columns={columns}
+        visibleColumnKeys={visibleColumnKeys}
+        toolbar={(
+          <div className="flex justify-end">
+            <DataTableColumnsMenu
+              columns={maintenanceColumnOptions}
+              visibleKeys={visibleColumnKeys}
+              onChange={setVisibleColumnKeys}
+            />
+          </div>
+        )}
         keyOf={(row) => row.id}
         emptyTitle="لا توجد طلبات صيانة"
         emptyDescription="لا توجد طلبات تطابق الفلاتر الحالية."
