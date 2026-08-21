@@ -9,12 +9,12 @@ function read(relativePath: string) {
 }
 
 describe('PWA safety contract', () => {
-  it('fails closed to the explicit offline page and never caches navigation HTML at runtime', () => {
+  it('keeps navigation network-only and never installs an offline fallback that masks a live outage', () => {
     const config = read('vite.config.ts');
 
     expect(config).toContain('registerType: "prompt"');
     expect(config).toContain('injectRegister: false');
-    expect(config).toContain('navigateFallback: "/offline.html"');
+    expect(config).not.toContain('navigateFallback:');
     expect(config).not.toContain('cacheName: "rentrix-pages"');
     expect(config).not.toContain('handler: "NetworkFirst"');
   });
