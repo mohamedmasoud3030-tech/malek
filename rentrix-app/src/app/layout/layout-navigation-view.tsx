@@ -1,7 +1,6 @@
 import { Link, useLocation } from '@tanstack/react-router';
-import { useEffect, useId, useState, type Ref } from 'react';
-import { Bot, ChevronDown, Lock, Menu, Search } from 'lucide-react';
-import { useCommandPaletteStore } from '@/features/command-palette/command-palette-store';
+import { useEffect, useId, useRef, useState, type Ref } from 'react';
+import { Bot, ChevronDown, FileText, HandCoins, Lock, Menu, Plus, ReceiptText, Wrench } from 'lucide-react';
 import { OPEN_AI_ASSISTANT_EVENT } from '@/features/ai-assistant/ai-assistant-global-action';
 import { canShowNavigationItem, canAccessRoute, type AuthorizationContext, type AppPermission } from '@/features/auth/permissions';
 import { PermissionRequestDialog } from '@/components/layout/permission-request-dialog';
@@ -92,7 +91,7 @@ export function NavigationLinks({
         <span
           className={cn(
             'grid size-8 shrink-0 place-items-center rounded-lg transition-colors',
-            "[[data-mobile-nav-sheet]_&]:bg-muted/55",
+            '[[data-mobile-nav-sheet]_&]:bg-muted/55',
             isActive && '[[data-mobile-nav-sheet]_&]:bg-primary/10 [[data-mobile-nav-sheet]_&]:text-primary',
           )}
         >
@@ -167,44 +166,121 @@ export function NavigationLinks({
   );
 }
 
+type MobileQuickAction = Readonly<{
+  id: string;
+  label: string;
+  to: string;
+  search?: Readonly<Record<string, string>>;
+  icon: typeof FileText;
+  permission?: AppPermission;
+}>;
+
+const mobileQuickActions: readonly MobileQuickAction[] = [
+  { id: 'contract', label: 'عقد جديد', to: '/contracts/new', icon: FileText, permission: 'contracts.write' },
+  { id: 'collect', label: 'تحصيل مبلغ', to: '/financials', search: { section: 'collections', view: 'invoices', quickAdd: 'collect' }, icon: HandCoins, permission: 'financial.payments.create' },
+  { id: 'maintenance', label: 'طلب صيانة', to: '/maintenance', search: { section: 'maintenance', quickAdd: 'maintenance' }, icon: Wrench, permission: 'maintenance.view' },
+  { id: 'utility-bill', label: 'فاتورة مرافق', to: '/maintenance', search: { section: 'utilities', quickAdd: 'utility-bill' }, icon: ReceiptText, permission: 'maintenance.view' },
+];
+
 /**
- * MALEK mobile command dock. Search remains the primary wide action; AI,
- * notifications and navigation are compact utilities. Help deliberately lives
- * in the quiet top bar instead of competing for dock space.
+ * Compact MALEK mobile dock inspired by data-console density: navigation is
+ * the primary wide action, while quick-create, AI and notifications stay small.
  */
 export function MobileFloatingControl({ onMenu, menuRef }: Readonly<{ onMenu: () => void; menuRef?: Ref<HTMLButtonElement> }>) {
-  const { open, isOpen } = useCommandPaletteStore();
   const { authorization } = useAuth();
   const appLanguage = getAppLanguageState();
   const sharedLabel = (key: string) => translateSharedLabel(key, appLanguage.language);
-  const utilityActionClass = 'grid size-11 shrink-0 place-items-center rounded-full border border-transparent text-muted-foreground outline-none transition-[background-color,color,border-color,box-shadow,transform] duration-150 hover:bg-muted hover:text-foreground active:scale-[0.97] focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none motion-reduce:transform-none';
+  const [quickOpen, setQuickOpen] = useState(false);
+  const quickRootRef = useRef<HTMLDivElement>(null);
+  const visibleQuickActions = mobileQuickActions.filter((item) => canShowNavigationItem(authorization, item.permission));
+  const utilityActionClass = 'grid size-10 shrink-0 place-items-center rounded-xl border border-transparent text-muted-foreground outline-none transition-[background-color,color,border-color,box-shadow,transform] duration-150 hover:bg-muted hover:text-foreground active:scale-[0.97] focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none motion-reduce:transform-none';
+
+  useEffect(() => {
+    if (!quickOpen) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (quickRootRef.current?.contains(event.target as Node)) return;
+      setQuickOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setQuickOpen(false);
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [quickOpen]);
 
   const openAiAssistant = () => {
+    setQuickOpen(false);
     window.dispatchEvent(new Event(OPEN_AI_ASSISTANT_EVENT));
   };
 
   return (
     <div
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] md:hidden"
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-3 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] md:hidden"
       data-mobile-floating-control
       data-mobile-control-center
       aria-label="مركز التحكم"
     >
-      <div className="pointer-events-auto flex w-full max-w-[22rem] items-center gap-1.5 rounded-[1.7rem] border border-border/80 bg-background/92 p-1.5 shadow-[0_20px_60px_-24px_hsl(var(--foreground)/0.5),0_2px_10px_hsl(var(--foreground)/0.08)] ring-1 ring-background/70 backdrop-blur-2xl supports-[backdrop-filter]:bg-background/82">
+      <div
+        ref={quickRootRef}
+        className="pointer-events-auto relative flex w-full max-w-[20rem] items-center gap-1 rounded-[1.35rem] border border-border/80 bg-background/94 p-1 shadow-[0_16px_44px_-24px_hsl(var(--foreground)/0.5),0_1px_6px_hsl(var(--foreground)/0.08)] ring-1 ring-background/70 backdrop-blur-xl supports-[backdrop-filter]:bg-background/86"
+      >
+        {quickOpen ? (
+          <div
+            role="menu"
+            aria-label="الإضافة السريعة"
+            data-mobile-quick-add-menu
+            className="absolute inset-x-0 bottom-[calc(100%+0.45rem)] grid grid-cols-2 gap-1 rounded-xl border border-border/85 bg-background/98 p-1.5 shadow-elevated backdrop-blur-xl"
+          >
+            {visibleQuickActions.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.id}
+                  to={item.to}
+                  search={item.search as Record<string, string> | undefined}
+                  role="menuitem"
+                  onClick={() => setQuickOpen(false)}
+                  className="flex min-h-10 items-center gap-2 rounded-lg px-2.5 text-xs font-bold text-foreground outline-none transition-colors hover:bg-muted focus-visible:ring-4 focus-visible:ring-primary/20"
+                >
+                  <Icon className="size-4 shrink-0 text-primary" aria-hidden="true" />
+                  <span className="truncate">{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        ) : null}
+
+        <button
+          ref={menuRef}
+          type="button"
+          onClick={() => {
+            setQuickOpen(false);
+            onMenu();
+          }}
+          aria-label="فتح القائمة"
+          aria-haspopup="dialog"
+          data-mobile-dock-menu
+          className="flex min-h-10 min-w-0 flex-1 items-center justify-start gap-2 rounded-xl border border-foreground bg-foreground px-3 text-start text-background outline-none transition-[background-color,box-shadow,transform] duration-150 hover:bg-foreground/92 active:scale-[0.99] focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none motion-reduce:transform-none"
+        >
+          <Menu className="size-4 shrink-0" aria-hidden="true" />
+          <span className="min-w-0 flex-1 truncate text-xs font-black">القائمة</span>
+        </button>
+
         <button
           type="button"
-          onClick={open}
-          aria-label="فتح البحث والأوامر"
-          aria-pressed={isOpen}
-          data-mobile-dock-search
-          className={cn(
-            'flex min-h-11 min-w-0 flex-1 items-center justify-start gap-2 rounded-[1.2rem] border border-border/80 bg-muted/55 px-3.5 text-start text-foreground outline-none transition-[background-color,color,border-color,box-shadow,transform] duration-150 hover:bg-muted active:scale-[0.99] focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none motion-reduce:transform-none',
-            isOpen && 'border-foreground bg-foreground text-background shadow-sm hover:bg-foreground',
-          )}
+          onClick={() => setQuickOpen((value) => !value)}
+          aria-label="فتح الإضافة السريعة"
+          aria-haspopup="menu"
+          aria-expanded={quickOpen}
+          title="إضافة سريعة"
+          data-mobile-dock-quick-add
+          className={cn(utilityActionClass, quickOpen && 'border-primary/20 bg-primary/10 text-primary')}
         >
-          <Search className="size-[1.05rem] shrink-0" aria-hidden="true" />
-          <span className="min-w-0 flex-1 truncate text-xs font-black">بحث وأوامر</span>
-          <span className={cn('size-1.5 shrink-0 rounded-full bg-primary', isOpen && 'bg-background')} aria-hidden="true" />
+          <Plus className="size-[1.05rem]" aria-hidden="true" />
         </button>
 
         <button
@@ -215,26 +291,15 @@ export function MobileFloatingControl({ onMenu, menuRef }: Readonly<{ onMenu: ()
           data-mobile-dock-ai
           className={cn(utilityActionClass, 'text-primary hover:bg-primary/10 hover:text-primary')}
         >
-          <Bot className="size-[1.1rem]" aria-hidden="true" />
+          <Bot className="size-4" aria-hidden="true" />
         </button>
 
         <div
-          className="relative [&>div>button]:rounded-full [&>div>button]:border-transparent [&>div>button]:text-muted-foreground [&>div>button]:shadow-none [&>div>button]:hover:bg-muted [&>div>button]:hover:text-foreground [&>div>button[aria-expanded='true']]:bg-foreground [&>div>button[aria-expanded='true']]:text-background [&>div>[role='dialog']]:!bottom-14 [&>div>[role='dialog']]:!top-auto"
+          className="relative [&>div>button]:!size-10 [&>div>button]:!rounded-xl [&>div>button]:!border-transparent [&>div>button]:!text-muted-foreground [&>div>button]:!shadow-none [&>div>button]:hover:!bg-muted [&>div>button]:hover:!text-foreground [&>div>button[aria-expanded='true']]:!bg-foreground [&>div>button[aria-expanded='true']]:!text-background [&>div>[role='dialog']]:!bottom-12 [&>div>[role='dialog']]:!top-auto"
           data-mobile-dock-notifications
         >
           <NotificationsMenu authorization={authorization} sharedLabel={sharedLabel} />
         </div>
-
-        <button
-          ref={menuRef}
-          type="button"
-          onClick={onMenu}
-          aria-label="فتح القائمة"
-          aria-haspopup="dialog"
-          className={cn(utilityActionClass, 'border-foreground bg-foreground text-background shadow-sm hover:bg-foreground hover:text-background')}
-        >
-          <Menu className="size-[1.1rem]" aria-hidden="true" />
-        </button>
       </div>
     </div>
   );
