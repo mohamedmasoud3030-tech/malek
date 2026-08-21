@@ -25,6 +25,10 @@ const authHookMigration = await readFile(
   resolve(migrationDirectory, "20260901000012_harden_custom_access_token_hook_identity.sql"),
   "utf8",
 );
+const internalHelperGrantMigration = await readFile(
+  resolve(migrationDirectory, "20260901000013_revoke_internal_security_definer_helpers.sql"),
+  "utf8",
+);
 const failures = [];
 
 function requireInvariant(condition, message) {
@@ -146,6 +150,24 @@ requireInvariant(
   /revoke all on function public\.custom_access_token_hook\(jsonb\) from public;[\s\S]*?revoke all on function public\.custom_access_token_hook\(jsonb\) from anon;[\s\S]*?revoke all on function public\.custom_access_token_hook\(jsonb\) from authenticated;[\s\S]*?grant execute on function public\.custom_access_token_hook\(jsonb\) to service_role;[\s\S]*?grant execute on function public\.custom_access_token_hook\(jsonb\) to supabase_auth_admin;/i.test(authHookMigration),
   "The token hook must be callable only by the Auth/server roles.",
 );
+for (const signature of [
+  "next_document_reference(uuid, text, text, integer)",
+  "assign_document_reference()",
+  "update_unit_status_from_activity()",
+  "wp05_provision_default_cashflow_classifications(uuid)",
+]) {
+  const functionRef = "function public." + signature;
+  const lowerGrantMigration = internalHelperGrantMigration.toLowerCase();
+  requireInvariant(
+    [
+      "revoke all on " + functionRef + " from public;",
+      "revoke all on " + functionRef + " from anon;",
+      "revoke all on " + functionRef + " from authenticated;",
+      "grant execute on " + functionRef + " to service_role;",
+    ].every((statement) => lowerGrantMigration.includes(statement)),
+    "Internal SECURITY DEFINER helper " + signature + " must be server-only.",
+  );
+}
 
 if (failures.length) {
   console.error("Auth/RLS static audit failed:");
