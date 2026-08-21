@@ -1,11 +1,11 @@
 import { Link, Outlet, useMatches, useRouter } from '@tanstack/react-router';
 import { useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type RefObject } from 'react';
-import { CircleHelp, LogOut, Plus, ShieldAlert, X } from 'lucide-react';
+import { CircleHelp, KeyRound, LogOut, Moon, Plus, Settings, ShieldAlert, Sun, UserRound, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { MalikBrand } from '@/components/brand/malik-brand';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import { canShowNavigationItem, getWriteAccessState, type AuthorizationContext } from '@/features/auth/permissions';
+import { canAccessRoute, canShowNavigationItem, getWriteAccessState, type AuthorizationContext } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
 import { APP_BRAND_NAME } from '@/lib/brand';
 import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
@@ -49,6 +49,129 @@ function HeaderDateTime() {
     >
       {date} · {time}
     </span>
+  );
+}
+
+function HeaderUserMenu({
+  email,
+  canOpenSettings,
+  supportFrom,
+  onLogout,
+}: Readonly<{
+  email?: string | null;
+  canOpenSettings: boolean;
+  supportFrom: string;
+  onLogout: () => void | Promise<void>;
+}>) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuId = useId();
+  const initial = email?.trim().charAt(0).toUpperCase() || 'M';
+
+  useEffect(() => {
+    if (!open) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (rootRef.current?.contains(event.target as Node)) return;
+      setOpen(false);
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      setOpen(false);
+      triggerRef.current?.focus();
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [open]);
+
+  const itemClass = 'flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-start text-sm font-semibold text-foreground outline-none transition-colors hover:bg-muted focus-visible:ring-4 focus-visible:ring-primary/20';
+
+  return (
+    <div ref={rootRef} className="relative" data-header-user-menu>
+      <button
+        ref={triggerRef}
+        type="button"
+        aria-label="فتح قائمة المستخدم"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-controls={open ? menuId : undefined}
+        onClick={() => setOpen((value) => !value)}
+        className={cn(
+          'grid size-10 shrink-0 place-items-center rounded-full border border-border/80 bg-card text-foreground outline-none transition-[background-color,border-color,box-shadow,transform]',
+          'hover:bg-muted active:scale-[0.97] focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transform-none',
+          open && 'border-foreground/25 bg-muted shadow-sm',
+        )}
+      >
+        <UserRound className="size-[1.05rem]" aria-hidden="true" />
+      </button>
+
+      {open ? (
+        <div
+          id={menuId}
+          role="menu"
+          aria-label="قائمة المستخدم"
+          className="absolute end-0 top-12 z-50 w-[min(18rem,calc(100vw-1rem))] overflow-hidden rounded-2xl border border-border/90 bg-card text-card-foreground shadow-elevated"
+        >
+          <div className="flex items-center gap-3 border-b border-border/70 bg-muted/25 px-3.5 py-3.5">
+            <span className="grid size-10 shrink-0 place-items-center rounded-full bg-primary text-sm font-black text-primary-foreground" aria-hidden="true">
+              {initial}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-bold text-muted-foreground">الحساب</p>
+              <p dir="ltr" className="mt-0.5 truncate text-start text-sm font-semibold text-foreground">
+                {email || 'مستخدم مالك'}
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-0.5 p-1.5">
+            {canOpenSettings ? (
+              <Link to="/settings" role="menuitem" className={itemClass} onClick={() => setOpen(false)}>
+                <Settings className="size-4.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <span>إعدادات المنشأة</span>
+              </Link>
+            ) : null}
+
+            <Link to="/change-password" role="menuitem" className={itemClass} onClick={() => setOpen(false)}>
+              <KeyRound className="size-4.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+              <span>تغيير كلمة المرور</span>
+            </Link>
+
+            <Link
+              to="/help"
+              search={{ from: supportFrom }}
+              role="menuitem"
+              className={itemClass}
+              onClick={() => setOpen(false)}
+            >
+              <CircleHelp className="size-4.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+              <span>المساعدة والدعم</span>
+            </Link>
+
+            <div className="my-1 h-px bg-border/70" aria-hidden="true" />
+
+            <button
+              type="button"
+              role="menuitem"
+              className={cn(itemClass, 'text-destructive hover:bg-destructive/8')}
+              onClick={() => {
+                setOpen(false);
+                void onLogout();
+              }}
+            >
+              <LogOut className="size-4.5 shrink-0" aria-hidden="true" />
+              <span>تسجيل الخروج</span>
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -161,16 +284,12 @@ function MobileNavigationDrawer({
   authorization,
   sharedLabel,
   onClose,
-  onLogout,
   triggerRef,
-  supportFrom,
 }: Readonly<{
   authorization: AuthorizationContext | null;
   sharedLabel: SharedLabel;
   onClose: () => void;
-  onLogout: () => void;
   triggerRef: RefObject<HTMLButtonElement | null>;
-  supportFrom: string;
 }>) {
   useEffect(() => {
     const prevBodyOverflow = document.body.style.overflow;
@@ -214,7 +333,7 @@ function MobileNavigationDrawer({
             <X className="size-5" />
           </Button>
         </div>
-        <nav className="sidebar-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
+        <nav className="sidebar-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
           {authorization === null && (
             <div className="mb-4 rounded-xl border border-[hsl(var(--color-warning-text)/0.25)] bg-[hsl(var(--color-warning-bg)/0.08)] px-3 py-2.5">
               <p className="text-xs font-semibold text-warning">الصلاحيات غير مكتملة</p>
@@ -225,22 +344,6 @@ function MobileNavigationDrawer({
           )}
           <NavigationLinks authorization={authorization} expanded sharedLabel={sharedLabel} onNavigate={onClose} />
         </nav>
-        <div className="shrink-0 space-y-1 border-t border-white/8 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
-          <Button asChild variant="ghost" className="min-h-11 w-full justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-white">
-            <Link to="/help" search={{ from: supportFrom }} onClick={onClose}>
-              <CircleHelp className="size-5" aria-hidden="true" />
-              <span>المساعدة والدعم</span>
-            </Link>
-          </Button>
-          <Button
-            variant="ghost"
-            className="min-h-11 w-full justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-white"
-            onClick={onLogout}
-          >
-            <LogOut className="size-5" />
-            <span>{sharedLabel('logout')}</span>
-          </Button>
-        </div>
       </DialogContent>
     </Dialog>
   );
@@ -249,14 +352,16 @@ function MobileNavigationDrawer({
 export function AppShell() {
   const router = useRouter();
   const matches = useMatches();
-  const { authorization, logout } = useAuth();
-  const { sidebarCollapsed, syncStatus, setSyncStatus } = useUiStore();
+  const { authorization, logout, user } = useAuth();
+  const { sidebarCollapsed, theme, setTheme, syncStatus, setSyncStatus } = useUiStore();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const mobileNavTriggerRef = useRef<HTMLButtonElement | null>(null);
   const appLanguage = getAppLanguageState();
   const isSidebarExpanded = sidebarCollapsed === false;
   const sharedLabel = (key: string) => translateSharedLabel(key, appLanguage.language);
   const writeAccessState = getWriteAccessState(authorization);
+  const supportFrom = sanitizeSupportRoute(router.state?.location?.pathname ?? '/dashboard');
+  const canOpenSettings = canAccessRoute(authorization, 'company.settings.manage');
   const writeAccessNotice =
     writeAccessState === 'read-only'
       ? {
@@ -315,9 +420,7 @@ export function AppShell() {
           authorization={authorization}
           sharedLabel={sharedLabel}
           onClose={() => setMobileNavOpen(false)}
-          onLogout={handleLogout}
           triggerRef={mobileNavTriggerRef}
-          supportFrom={sanitizeSupportRoute(router.state?.location?.pathname ?? '/dashboard')}
         />
       ) : null}
 
@@ -336,35 +439,9 @@ export function AppShell() {
         >
           <Brand expanded={isSidebarExpanded} />
         </div>
-        <nav className="sidebar-scroll flex-1 overflow-y-auto p-4">
+        <nav className="sidebar-scroll flex-1 overflow-y-auto p-4 pb-6">
           <NavigationLinks authorization={authorization} expanded={isSidebarExpanded} sharedLabel={sharedLabel} />
         </nav>
-        <div className="space-y-1 border-t border-white/8 p-3">
-          <Button
-            asChild
-            variant="ghost"
-            className={cn(
-              'w-full gap-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-white',
-              sidebarCollapsed ? 'justify-center px-0' : 'justify-start',
-            )}
-          >
-            <Link to="/help" search={{ from: sanitizeSupportRoute(router.state?.location?.pathname ?? '/dashboard') }} title="المساعدة والدعم">
-              <CircleHelp className="size-5" aria-hidden="true" />
-              {sidebarCollapsed ? null : <span>المساعدة والدعم</span>}
-            </Link>
-          </Button>
-          <Button
-            variant="ghost"
-            className={cn(
-              'w-full gap-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-white',
-              sidebarCollapsed ? 'justify-center px-0' : 'justify-start',
-            )}
-            onClick={handleLogout}
-          >
-            <LogOut className="size-5" />
-            {sidebarCollapsed ? null : <span>{sharedLabel('logout')}</span>}
-          </Button>
-        </div>
       </aside>
 
       <div className={cn('w-full transition-[padding] duration-200 motion-reduce:transition-none lg:pr-64', sidebarCollapsed && 'lg:pr-[4.5rem]')}>
@@ -375,17 +452,30 @@ export function AppShell() {
           <div className="mx-auto flex min-h-14 w-full max-w-[110rem] items-center px-3 py-1 sm:px-4">
             <MalikBrand className="min-w-0" />
 
-            <div className="ms-auto flex shrink-0 items-center gap-2 sm:gap-3" data-header-quiet-utilities>
+            <div className="ms-auto flex shrink-0 items-center gap-1.5 sm:gap-2" data-header-quiet-utilities>
               <HeaderDateTime />
-              <Link
-                to="/help"
-                search={{ from: sanitizeSupportRoute(router.state?.location?.pathname ?? '/dashboard') }}
-                aria-label="فتح المساعدة والدعم"
-                title="المساعدة والدعم"
-                className="inline-flex size-10 items-center justify-center rounded-xl text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-4 focus-visible:ring-primary/20"
+
+              <button
+                type="button"
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                aria-label={sharedLabel('toggleTheme')}
+                title={theme === 'dark' ? 'الوضع الفاتح' : 'الوضع الداكن'}
+                className="grid size-10 shrink-0 place-items-center rounded-xl text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-4 focus-visible:ring-primary/20"
+                data-header-theme-toggle
               >
-                <CircleHelp className="size-[1.05rem]" aria-hidden="true" />
-              </Link>
+                {theme === 'dark' ? (
+                  <Sun className="size-[1.05rem]" aria-hidden="true" />
+                ) : (
+                  <Moon className="size-[1.05rem]" aria-hidden="true" />
+                )}
+              </button>
+
+              <HeaderUserMenu
+                email={user?.email}
+                canOpenSettings={canOpenSettings}
+                supportFrom={supportFrom}
+                onLogout={handleLogout}
+              />
             </div>
           </div>
         </header>
