@@ -151,7 +151,6 @@ from pg_proc p
 join pg_namespace n on n.oid = p.pronamespace
 where n.nspname = 'public'
   and p.proname = 'custom_access_token_hook'
-  and pg_get_function_identity_arguments(p.oid) = 'event jsonb'
 union all
 select 'custom_access_token_hook_acl=missing'
 where not exists (
@@ -160,7 +159,6 @@ where not exists (
   join pg_namespace n on n.oid = p.pronamespace
   where n.nspname = 'public'
     and p.proname = 'custom_access_token_hook'
-    and pg_get_function_identity_arguments(p.oid) = 'event jsonb'
 );
 
 -- The Auth dashboard's Custom Access Token Hook toggle is configuration outside
