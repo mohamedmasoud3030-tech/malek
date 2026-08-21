@@ -103,7 +103,9 @@ Update it whenever a new `.from()` or `.rpc()` call is added to frontend source 
 | **09** | **`20260901000009_company_members_six_role_authority.sql`** | **Set canonical USER default and authorize membership management through effective `users.manage` permission** |
 | **10** | **`20260901000010_contracts_one_live_draft_per_unit_tenant.sql`** | **Prevent duplicate live drafts for the same company, unit and tenant** |
 | **11** | **`20260901000011_require_active_contract_before_invoice_posting.sql`** | **Require an active contract before an invoice can become `POSTED`** |
-| **12** | **`20260901000012_guardian_hardening.sql`** | **Database Guardian V1: revoke browser writes on protected financial tables, enforce document-number uniqueness, anchor `company_id` FKs, and add append-only DELETE guards** |
+| **12** | `20260901000012_harden_custom_access_token_hook_identity.sql` | **Supabase auth/RLS hardening (PR #1541)** |
+| **13** | `20260901000013_revoke_internal_security_definer_helpers.sql` | **Revoke internal SECURITY DEFINER helpers (PR #1541)** |
+| **14** | **`20260901000014_guardian_hardening.sql`** | **Database Guardian V1: revoke browser writes on protected financial tables, enforce document-number uniqueness, anchor `company_id` FKs, and add append-only DELETE guards on all 19 contract tables** |
 
 ## Database Guardian
 

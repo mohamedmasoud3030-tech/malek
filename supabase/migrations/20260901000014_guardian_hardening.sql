@@ -2,24 +2,26 @@
 --
 -- Closes real findings reported by `pnpm db:guardian` against the canonical
 -- schema. All changes are forward-only, additive, and safe to apply on top of
--- existing data:
+-- existing data. This migration is numbered 014 because PR #1541 (security
+-- hardening) occupies 012/013.
 --
 --   DG-FIN-002  revoke browser write access to protected financial subledger
---               tables (receipt_allocations, deposit_transactions,
---               bank_reconciliation_matches). Writes must go through the
---               governed SECURITY DEFINER RPCs.
+--               tables. Writes must go through governed SECURITY DEFINER RPCs.
 --   DG-FIN-003  add unique partial index on (company_id, no) for invoices and
 --               receipts to prevent duplicate document numbers.
---   DG-INT-001  explicitly anchor company_id on owner settlement link tables
---               (a transitively-enforced invariant made explicit).
+--   DG-INT-001  explicitly anchor company_id with a direct foreign key.
+--   DG-FIN-004  make every append-only table in the Guardian contract reject
+--               hard DELETE. The contract declares 19 tables; pre-existing
+--               immutable triggers already cover 9, this migration installs a
+--               shared guard on the remaining 10.
 --
--- The migration is idempotent and never edits merged history.
+-- The entire migration is one atomic transaction.
 
 begin;
 
 -- ---------------------------------------------------------------------------
 -- DG-FIN-002: protected subledger tables are not browser-writable.
--- The SECURITY DEFINER RPCs run with definer privileges and keep working.
+-- SECURITY DEFINER RPCs run with definer privileges and keep working.
 -- ---------------------------------------------------------------------------
 revoke insert, update, delete, truncate
   on table public.receipt_allocations
@@ -33,16 +35,10 @@ revoke insert, update, delete, truncate
   on table public.bank_reconciliation_matches
   from anon, authenticated;
 
--- The existing manager_write_* / app_user_* policies permissively authorize
--- browser DML. Drop them so RLS denies all direct writes; the restrictive
--- p0_tenant_isolation policy is not sufficient — it only scopes rows, it does
--- not block writes when a permissive policy allows them.
 drop policy if exists manager_write_receipt_allocations on public.receipt_allocations;
 drop policy if exists manager_write_deposit_transactions on public.deposit_transactions;
 drop policy if exists app_user_bank_reconciliation_matches on public.bank_reconciliation_matches;
 
--- Leave a read policy for app users (these tables back read-only screens and
--- are company-scoped by p0_tenant_isolation).
 do $$
 begin
   if not exists (
@@ -84,10 +80,7 @@ create unique index if not exists ux_receipts_company_no
   where no is not null and deleted_at is null;
 
 -- ---------------------------------------------------------------------------
--- DG-INT-001: explicit company_id anchors on settlement link tables and the
--- master lease schedule. company_id is already part of composite FKs for the
--- link tables (which transitively anchor it); add direct FKs so the invariant
--- is explicit and introspectable.
+-- DG-INT-001: explicit company_id anchors.
 -- ---------------------------------------------------------------------------
 do $$
 begin
@@ -120,14 +113,12 @@ begin
   end if;
 end $$;
 
-commit;
-
 -- ---------------------------------------------------------------------------
--- DG-FIN-004: append-only financial event tables must reject hard DELETE.
--- Installs a single shared BEFORE DELETE trigger that raises an exception.
--- Browser roles already lack DELETE privilege on most of these tables after
--- the DG-FIN-002 revokes, but the trigger is a defense-in-depth guarantee
--- that even service-role / direct SQL cannot hard-delete posted history.
+-- DG-FIN-004: every append-only table in the Guardian contract rejects hard
+-- DELETE. 9 tables already have their own immutable-lineage triggers; this
+-- migration installs the shared guard on the remaining 10. The guard is a
+-- defense-in-depth guarantee that even service-role / direct SQL cannot
+-- hard-delete posted history.
 -- ---------------------------------------------------------------------------
 create or replace function public.guard_append_only_row()
 returns trigger
@@ -143,12 +134,19 @@ end;
 $$;
 
 alter function public.guard_append_only_row() owner to postgres;
-revoke all on function public.guard_append_only_row() from public, anon;
+-- Internal helper: not executable from any browser/API role.
+revoke all on function public.guard_append_only_row() from public, anon, authenticated;
 
 do $$
 declare
   t text;
+  -- Tables in the Guardian append-only contract that do NOT already ship a
+  -- BEFORE DELETE immutability trigger in the canonical baseline.
+  -- journal_batches already has guard_journal_batch_lifecycle, but that
+  -- trigger allows hard DELETE of DRAFT batches; the append-only contract
+  -- forbids hard DELETE in any status, so the shared guard is added too.
   targets text[] := array[
+    'receipt_allocations',
     'deposit_application_claims',
     'deposit_refund_events',
     'status_history',
@@ -157,7 +155,8 @@ declare
     'owner_settlement_payment_links',
     'owner_settlement_expense_links',
     'bank_reconciliation_matches',
-    'financial_operation_idempotency'
+    'financial_operation_idempotency',
+    'journal_batches'
   ];
 begin
   foreach t in array targets loop
@@ -175,3 +174,5 @@ begin
     end if;
   end loop;
 end $$;
+
+commit;

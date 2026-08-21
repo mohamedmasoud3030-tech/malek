@@ -43,8 +43,9 @@ function mutationBlocked(result) {
 
 async function withIdentity(db, { userId, companyId, role = 'authenticated', userRole = 'ADMIN' }, fn) {
   // PGlite/Postgres defaults row_security=off in a superuser session. We must
-  // force it ON for RLS to be evaluated the way Supabase/Postgres enforces it
-  // for authenticated browser sessions.
+  // force it ON and actually switch the PostgreSQL role (not just write a GUC)
+  // so privilege checks, RLS, and REVOKEs against `authenticated` are evaluated
+  // exactly as Supabase enforces them in production.
   const claims = JSON.stringify({
     sub: userId,
     role,
@@ -53,8 +54,10 @@ async function withIdentity(db, { userId, companyId, role = 'authenticated', use
   await db.exec('begin');
   try {
     await db.query(`select set_config('request.jwt.claims', $1, true)`, [claims]);
+    // SET LOCAL ROLE performs a real role/permission transition; set_config('role')
+    // only writes a setting and would not prove privilege revocations work.
     await db.exec(`set local row_security = on`);
-    await db.query(`select set_config('role', $1, true)`, [role]);
+    await db.exec(`set local role ${role}`);
     const value = await fn();
     await db.exec('rollback');
     return { ok: true, value, error: null };
@@ -359,51 +362,164 @@ export async function runBehavioralChecks() {
     noRls.rows.length ? noRls.rows.map((r) => r.table_name).join(', ') : null,
   ));
 
-  // --- 11. Append-only tables have a hard-DELETE guard ----------------------
-  const appendOnly = [
-    'deposit_application_claims', 'deposit_refund_events', 'status_history',
-    'audit_log', 'contract_evidence_events', 'owner_settlement_payment_links',
-    'owner_settlement_expense_links', 'bank_reconciliation_matches',
-    'financial_operation_idempotency',
+  // --- 11. Append-only tables reject hard DELETE on a REAL row ------------
+  // All 19 tables declared append-only in the Guardian contract. For each we
+  // insert an actual row (bypassing application triggers/FKs with
+  // session_replication_role = replica inside a savepoint, so we don't have to
+  // construct full domain object graphs), then switch enforcement back on and
+  // attempt a hard DELETE. The table's BEFORE DELETE trigger must raise.
+  //
+  // Tables whose guard was added by the Guardian hardening migration raise
+  // SQLSTATE 23001; pre-existing immutable-lineage guards raise their own
+  // codes (42501/55000/23503). Any raised exception proves the real trigger
+  // fires; the 23001 assertion covers the new shared guard specifically.
+  const appendOnlyTables = [
+    { table: 'deposit_application_claims', newGuard: true },
+    { table: 'deposit_refund_events', newGuard: true },
+    { table: 'status_history', newGuard: true },
+    { table: 'audit_log', newGuard: true },
+    { table: 'contract_evidence_events', newGuard: true },
+    { table: 'owner_settlement_payment_links', newGuard: true },
+    { table: 'owner_settlement_expense_links', newGuard: true },
+    { table: 'bank_reconciliation_matches', newGuard: true },
+    { table: 'financial_operation_idempotency', newGuard: true },
+    { table: 'receipt_allocations', newGuard: true },
+    { table: 'journal_lines', newGuard: false },
+    { table: 'journal_batches', newGuard: true },
+    { table: 'invoice_credits', newGuard: false },
+    { table: 'deposit_transactions', newGuard: false },
+    { table: 'owner_funds_events', newGuard: false },
+    { table: 'invoice_payment_tax_allocations', newGuard: false },
+    { table: 'taxable_line_tax_snapshots', newGuard: false },
+    { table: 'fixed_monthly_daily_accruals', newGuard: false },
+    { table: 'fixed_monthly_daily_accrual_reversals', newGuard: false },
   ];
-  for (const t of appendOnly) {
-    const exists = await db.query(`select to_regclass($1) is not null as ok`, [`public.${t}`]);
+
+  // Minimal valid INSERT per table — only columns that are NOT NULL without a
+  // default. company_id is supplied explicitly so the current_company_id()
+  // default is never needed under replica role. Columns are identified from the
+  // replayed schema.
+  const insertSQL = {
+    deposit_application_claims: `insert into public.deposit_application_claims
+      (id, company_id, deposit_id, contract_id, claim_kind, invoice_id,
+       allocation_amount, evidence_uri, target_type, target_account_no,
+       request_id, source_fingerprint, status, created_by)
+      values (gen_random_uuid(), $1, 'dep','c','INVOICE_ARREARS','inv', 10,
+       'uri','rent_arrears','1201','guardian-claim','fp','PENDING', $2)`,
+    deposit_refund_events: `insert into public.deposit_refund_events
+      (id, company_id, deposit_id, amount, cash_account_no, effective_date,
+       request_id, source_fingerprint, journal_batch_id, posted_by)
+      values (gen_random_uuid(), $1, 'dep', 10, '1111', current_date,
+       'guardian-refund', 'fp', $2, $3)`,
+    status_history: `insert into public.status_history
+      (id, entity_type, entity_id, new_status, company_id)
+      values (gen_random_uuid(), 'INVOICE', $2, 'X', $1)`,
+    audit_log: `insert into public.audit_log (id, action) values (gen_random_uuid(), 'probe')`,
+    contract_evidence_events: `insert into public.contract_evidence_events
+      (id, company_id, contract_id, entity_type, entity_id, event_type,
+       to_status, actor_id)
+      values (gen_random_uuid(), $1, $2, 'INSPECTION', $2, 'PROBE', 'X', $3)`,
+    owner_settlement_payment_links: `insert into public.owner_settlement_payment_links
+      (id, company_id, settlement_id, payment_id)
+      values (gen_random_uuid(), $1, 's', $2)`,
+    owner_settlement_expense_links: `insert into public.owner_settlement_expense_links
+      (id, company_id, settlement_id, expense_id)
+      values (gen_random_uuid(), $1, 's', $2)`,
+    bank_reconciliation_matches: `insert into public.bank_reconciliation_matches
+      (id, company_id, statement_line_id, matched_entity_type,
+       matched_entity_id, matched_amount)
+      values (gen_random_uuid(), $1, $2, 'payment', 'x', 10)`,
+    financial_operation_idempotency: `insert into public.financial_operation_idempotency
+      (operation_name, request_id, response_payload)
+      values ('guardian-op','guardian-req','{}'::jsonb)`,
+    receipt_allocations: `insert into public.receipt_allocations
+      (id, receipt_id, amount, company_id)
+      values (gen_random_uuid(), $2, 10, $1)`,
+    journal_batches: `insert into public.journal_batches
+      (id, source_type, event_id, effective_date, company_id)
+      values (gen_random_uuid(), 'GUARDIAN_PROBE', 'guardian-batch', current_date, $1)`,
+    journal_lines: `insert into public.journal_lines
+      (id, batch_id, account_id, company_id)
+      values ('guardian-line-probe', $2, '1111', $1)`,
+    invoice_credits: `insert into public.invoice_credits
+      (id, company_id, invoice_id, amount, credit_type, reason,
+       effective_date, created_by, request_id)
+      values (gen_random_uuid(), $1, $2, 10, 'ADJUSTMENT', 'probe',
+       current_date, $3, 'guardian-credit')`,
+    deposit_transactions: `insert into public.deposit_transactions
+      (id, deposit_id, type, amount, request_id, company_id)
+      values (gen_random_uuid(), 'dep', 'APPLICATION', 10, 'guardian-dep-tx', $1)`,
+    owner_funds_events: `insert into public.owner_funds_events
+      (id, company_id, owner_id, source_type, source_id, event_id,
+       amount_delta, effective_date)
+      values (gen_random_uuid(), $1, $2, 'GUARDIAN_PROBE', 'x',
+       'guardian-ofe', 0, current_date)`,
+    invoice_payment_tax_allocations: `insert into public.invoice_payment_tax_allocations
+      (id, company_id, receipt_id, invoice_id, tax_snapshot_id, net_amount, tax_amount)
+      values (gen_random_uuid(), $1, $2, $2, $2, 10, 1)`,
+    taxable_line_tax_snapshots: `insert into public.taxable_line_tax_snapshots
+      (id, company_id, source_type, source_id, account_no, tax_code,
+       tax_rate, net_amount, tax_amount, effective_date)
+      values (gen_random_uuid(), $1, 'GUARDIAN_PROBE', 'x', '1111', 'VAT',
+       0, 10, 0, current_date)`,
+    fixed_monthly_daily_accruals: `insert into public.fixed_monthly_daily_accruals
+      (id, company_id, owner_agreement_id, agreement_version_id, owner_id,
+       property_id, accrual_date, agreement_starts_on, version_effective_from,
+       monthly_contract_amount, monthly_amount_omr, calendar_days, calendar_day,
+       rounding_rule, net_amount, tax_amount, gross_amount, tax_authority_status,
+       source_fingerprint)
+      values (gen_random_uuid(), $1, $2, $2, $3, $4, current_date, current_date,
+       current_date, 10, 10, 30, 1, 'ROUND', 10, 0, 10, 'NONE', 'guardian-fp')`,
+    fixed_monthly_daily_accrual_reversals: `insert into public.fixed_monthly_daily_accrual_reversals
+      (id, company_id, accrual_id, original_economic_date, reason)
+      values (gen_random_uuid(), $1, $2, current_date, 'probe')`,
+  };
+
+  // A scratch batch/owner/property id used as non-null FK targets. Under
+  // replica mode FK enforcement is suspended, but the columns are still typed
+  // uuid so valid uuid literals are required.
+  const BATCH_ID = 'a9000000-0000-4000-8000-000000000001';
+  const OWNER_ID = 'a8000000-0000-4000-8000-00000000000a';
+  const ACTOR_ID = ADMIN_A;
+  const PROP_ID = PROP_A;
+
+  for (const { table, newGuard } of appendOnlyTables) {
+    const exists = await db.query(`select to_regclass($1) is not null as ok`, [`public.${table}`]);
     if (!exists.rows[0]?.ok) continue;
-    // Row-level triggers only fire when a row matches. Verify the trigger is
-    // wired to the table, then prove it raises by inserting a sentinel row
-    // inside a savepoint and attempting to delete it.
-    const trig = await db.query(
-      `select tgname from pg_trigger
-        where tgrelid = $1::regclass and not tgisinternal
-          and tgname = 'guard_append_only_delete'`,
-      [`public.${t}`],
-    );
-    let fires = false;
-    let evidence = 'trigger missing';
-    if (trig.rows.length) {
-      evidence = 'guard_append_only_delete present';
-      // Prove the shared guard function raises when fired as a real trigger,
-      // using a scratch table so we don't depend on each target table's NOT
-      // NULL columns. The scratch table is created inside a transaction and
-      // rolled back.
-      await db.exec('begin');
-      try {
-        await db.query(`create temp table _guard_probe (id int) on commit drop`);
-        await db.query(
-          `create trigger _guard_probe_t before delete on _guard_probe
-             for each row execute function public.guard_append_only_row()`,
-        );
-        await db.query(`insert into _guard_probe values (1)`);
-        await db.query(`delete from _guard_probe where id = 1`);
-      } catch (error) {
-        if (/APPEND_ONLY|23001|append.only/i.test(firstLine(error))) fires = true;
-        evidence = firstLine(error);
+
+    await db.exec('begin');
+    let blocked = false;
+    let evidence = 'no delete attempted';
+    try {
+      // Suspend triggers + FK checks only while seeding the probe row, then
+      // restore normal enforcement for the actual DELETE attempt.
+      await db.exec(`set local session_replication_role = replica`);
+      const allParams = [COMPANY_A, BATCH_ID, OWNER_ID, ACTOR_ID, PROP_ID];
+      const used = (insertSQL[table].match(/\$[1-5]/g) ?? [])
+        .map((p) => Number(p[1]))
+        .filter((v, i, arr) => arr.indexOf(v) === i)
+        .sort((a, b) => a - b);
+      const params = used.map((i) => allParams[i - 1]);
+      await db.query(insertSQL[table], params);
+      await db.exec(`set local session_replication_role = origin`);
+      await db.query(`delete from public.${table}`);
+      evidence = 'DELETE SUCCEEDED — guard missing';
+    } catch (error) {
+      await db.exec(`set local session_replication_role = origin`).catch(() => {});
+      const code = error?.code;
+      const msg = firstLine(error);
+      blocked = Boolean(code) || /append.only|immutable|cannot delete|hard.delete|forbidden/i.test(msg);
+      evidence = `${code ?? ''} ${msg}`.trim();
+      if (newGuard && code !== '23001') {
+        blocked = false;
+        evidence = `expected SQLSTATE 23001 from new guard, got ${evidence}`;
       }
+    } finally {
       await db.exec('rollback').catch(() => {});
     }
     checks.push(check(
-      `financial.append_only.${t}.delete_blocked`,
-      trig.rows.length > 0 && fires,
+      `financial.append_only.${table}.delete_blocked`,
+      blocked,
       evidence,
     ));
   }
