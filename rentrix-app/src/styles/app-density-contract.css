@@ -1,0 +1,39 @@
+/*
+ * MALEK authenticated-app density contract.
+ *
+ * Repeated grids must not fan out into four, five, or six narrow columns.
+ * The normal rhythm is two columns on mobile and desktop. Screens that truly
+ * need three columns can keep an explicit `grid-cols-3` layout; wider legacy
+ * grid declarations collapse to two here until they are migrated to the
+ * shared ResponsiveCardGrid primitive.
+ *
+ * Scope is intentionally limited to the authenticated app shell so landing,
+ * document rendering, and specialist non-app surfaces keep their own layout.
+ */
+[data-app-shell] .grid:is(
+  [class*='grid-cols-4'],
+  [class*='grid-cols-5'],
+  [class*='grid-cols-6']
+) {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+/* Do not finish an overridden repeated-card grid with an empty half-row. */
+[data-app-shell] .grid:is(
+  [class*='grid-cols-4'],
+  [class*='grid-cols-5'],
+  [class*='grid-cols-6']
+) > :last-child:nth-child(odd) {
+  grid-column: span 2 / span 2;
+}
+
+/*
+ * Horizontal page real estate should be consumed by content, not artificial
+ * empty gutters. These shared surfaces stay fluid inside their page container.
+ */
+[data-app-shell] [data-responsive-card-grid],
+[data-app-shell] [data-detail-fields],
+[data-app-shell] [data-entity-table-wrapper] {
+  width: 100%;
+  max-width: none;
+}
