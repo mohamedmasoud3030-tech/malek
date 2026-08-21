@@ -76,7 +76,7 @@ export function AiAssistantGlobalAction({ showTrigger = true }: Readonly<{ showT
         <Button
           type="button"
           variant="ghost"
-          className="size-11 shrink-0 rounded-xl px-0 text-muted-foreground hover:bg-muted hover:text-foreground"
+          className="size-10 shrink-0 rounded-xl px-0 text-muted-foreground hover:bg-muted hover:text-foreground"
           aria-label="فتح مساعد الذكاء الاصطناعي"
           aria-expanded={open}
           aria-haspopup="dialog"
@@ -84,7 +84,7 @@ export function AiAssistantGlobalAction({ showTrigger = true }: Readonly<{ showT
           onClick={() => setOpen((value) => !value)}
           data-ai-assistant-trigger
         >
-          <Bot className="size-[1.1rem]" aria-hidden="true" />
+          <Bot className="size-4" aria-hidden="true" />
         </Button>
       ) : null}
 
@@ -96,29 +96,29 @@ export function AiAssistantGlobalAction({ showTrigger = true }: Readonly<{ showT
         inert={open ? undefined : true}
         className={cn(
           'fixed z-[90] flex flex-col overflow-hidden border border-border/80 bg-card shadow-elevated transition-[transform,opacity] duration-200 motion-reduce:transition-none',
-          'max-w-[26rem] w-[calc(100vw-2rem)] h-[34rem] max-h-[80dvh] rounded-2xl start-3 bottom-[calc(4.5rem+env(safe-area-inset-bottom,0px))]',
-          'md:start-4 md:bottom-4 md:max-h-[min(40rem,80dvh)]',
-          open ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-4 opacity-0',
+          'h-[28rem] max-h-[66dvh] w-[calc(100vw-3rem)] max-w-[21rem] rounded-xl start-3 bottom-[calc(3.85rem+env(safe-area-inset-bottom,0px))]',
+          'md:start-4 md:bottom-4 md:h-[30rem] md:max-h-[70dvh] md:max-w-[23rem]',
+          open ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-3 opacity-0',
         )}
         role="dialog"
         aria-label="مساعد الذكاء الاصطناعي"
       >
-        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border/70 px-4 py-2.5">
+        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border/70 px-3 py-2">
           <div className="flex min-w-0 items-center gap-2">
-            <Bot className="size-4 shrink-0 text-primary" aria-hidden="true" />
-            <span className="truncate text-sm font-bold">المساعد الذكي</span>
+            <Bot className="size-3.5 shrink-0 text-primary" aria-hidden="true" />
+            <span className="truncate text-xs font-bold">المساعد الذكي</span>
           </div>
           <Button
             type="button"
             variant="ghost"
-            className="size-9 shrink-0 px-0 text-muted-foreground hover:bg-muted hover:text-foreground"
+            className="size-8 shrink-0 px-0 text-muted-foreground hover:bg-muted hover:text-foreground"
             onClick={close}
             aria-label="إغلاق المساعد"
           >
-            <X className="size-4" />
+            <X className="size-3.5" />
           </Button>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 sm:p-4">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-2.5 sm:p-3">
           <Suspense fallback={<LoadingState label="جارٍ تحميل المساعد..." />}>
             <AiAssistantExperience embedded />
           </Suspense>
