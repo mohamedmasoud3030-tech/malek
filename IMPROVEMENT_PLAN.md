@@ -31,7 +31,7 @@ This is an execution ledger, not a replacement for the MALEK Canonical Pack. Can
 
 ## Next milestone
 
-M3 duplicate-draft handling is IMPLEMENTED BUT NOT VERIFIED after main@a87e664. Next: test the authenticated Admin contract journey against the live UI and plan a database-level duplicate-draft guard only after deliberate resolution of existing duplicate drafts.
+M3 duplicate-draft handling is VERIFIED COMPLETE in the live database after owner-approved archival of the unreferenced duplicate and creation of the database uniqueness guard. Next: exercise the authenticated Admin contract journey and investigate why a draft contract has an invoice.
 
 ## Existing work being tracked
 
@@ -49,7 +49,16 @@ M3 duplicate-draft handling is IMPLEMENTED BUT NOT VERIFIED after main@a87e664. 
 - **Implemented:** `main@a87e664` adds a duplicate-draft guard before create/update RPC calls; unit list/detail show `مسودة عقد قيد الإعداد`; actions route to the existing draft.
 - **Verified:** Vercel preview deployment `dpl_3RYHinXDqtikGipXzB1iXE7esYfs` reached `READY`; build completed in 20 seconds. Non-blocking chunk-size warning remains.
 - **Not verified:** focused Vitest execution and authenticated UI behavior; no production data, Supabase schema, or roles were changed.
-- **Residual risk:** a service-boundary guard cannot eliminate a concurrent direct-RPC race. A DB constraint/RPC guard requires a separate reviewed migration and deliberate handling of current duplicates.
+- **Historical residual risk:** service-only protection could not eliminate a concurrent direct-RPC race. The owner-approved database guard below removes that specific risk.
+
+
+## M3 live database completion (2026-08-21)
+
+- **VERIFIED COMPLETE:** owner-approved operation soft-archived only `CNT-2026-000002`, a two-day duplicate draft with zero invoice, payment, receipt, or attachment references. `CNT-2026-000001` was retained because it has an invoice reference.
+- **VERIFIED COMPLETE:** live database index `contracts_one_live_draft_per_unit_tenant_uidx` now enforces one non-deleted `draft` per `(company_id, unit_id, tenant_id)`.
+- **Verified result:** the affected unit/tenant now has exactly one live draft. No contract was activated and no financial record was rewritten.
+- **Repository source of truth:** `supabase/migrations/20260901000010_contracts_one_live_draft_per_unit_tenant.sql` records the forward schema guard. The historical data cleanup is intentionally not embedded in a bootstrap migration.
+- **Follow-up:** the retained draft has one invoice although it is not active; this is a distinct data-lifecycle finding and remains NOT STARTED pending focused inspection.
 
 ## Evidence policy
 
