@@ -2,7 +2,7 @@
 
 Status: ACTIVE  
 Baseline branch: `main`  
-Baseline SHA: `b1bb5a901b7adff1aa36b0483195465fe0d9deeca`  
+Baseline SHA: `b1bb5a901b7adff1aa36b0483195465fe0de9eca`  
 Updated: 2026-08-21
 
 This is an execution ledger, not a replacement for the MALEK Canonical Pack. Canonical business/security/UX rules remain in `docs/source-of-truth/`; governed stage credit remains in `governance/10-stage-master-plan.json`.
