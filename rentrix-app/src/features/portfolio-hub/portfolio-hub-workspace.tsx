@@ -53,7 +53,7 @@ export type PortfolioHubWorkspaceProps = Readonly<{
 export function PortfolioHubWorkspace({
   defaultSection = 'properties',
   title = 'المحفظة',
-  description = 'كل ما يديره المكتب: العقارات والوحدات والأراضي وعلاقات الملكية في سياق واحد.',
+  description,
   mode = 'standalone',
 }: PortfolioHubWorkspaceProps) {
   const { authorization } = useAuth();

@@ -68,7 +68,7 @@ export function KpiGrid({ snapshot, isLoading, settings }: KpiGridProps) {
   const ownerNetPayable = snapshot?.ownerFunds.netPayable;
   const settlementsDraft = snapshot?.ownerFunds.settlementsDraft;
 
-  const items: DashboardKpi[] = [
+  const allItems: DashboardKpi[] = [
     {
       label: 'صافي النقد',
       value: money(net),
@@ -113,12 +113,20 @@ export function KpiGrid({ snapshot, isLoading, settings }: KpiGridProps) {
     },
   ];
 
+  const visibleItems = allItems.filter((item) => {
+    if (item.label !== 'المصروفات') return true;
+    const numeric = Number(String(item.value).replace(/[^\d.-]/g, ''));
+    return Number.isNaN(numeric) || numeric !== 0;
+  });
+
+  if (visibleItems.length === 0) return null;
+
   return (
     <div data-dashboard-kpi-grid>
       {/* role="list" needs real <li> children: an <a role="listitem"> is invalid
           ARIA (axe aria-allowed-role). The <li> is the grid item; the link fills it. */}
       <ul className="dashboard-kpi-grid" role="list" aria-label="مؤشرات الأداء الأساسية">
-        {items.map((item) => (
+        {visibleItems.map((item) => (
           <li key={item.label} role="listitem" className="min-w-0">
             <Link
               to={item.to}

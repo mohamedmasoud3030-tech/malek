@@ -18,7 +18,9 @@ function isEmptyMetricValue(value: ReactNode): boolean {
   if (typeof value === 'number') return value === 0;
   if (typeof value === 'string') {
     const normalized = value.trim();
-    return normalized === '' || normalized === '0' || normalized === '0%' || /^0([.,]0+)?$/.test(normalized);
+    if (normalized === '' || normalized === '—' || normalized === '0' || normalized === '0%') return true;
+    const numeric = normalized.replace(/[^\d.,-]/g, '');
+    return /^0([.,]0+)?$/.test(numeric);
   }
   return false;
 }

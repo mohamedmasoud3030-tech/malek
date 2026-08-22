@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { CollectionSummaryReport, FinancialReportFilters } from '../reports/financialReportsService';
-import { formatDate, formatMoney, getErrorMessage } from './financials-formatters';
+import { formatCompactDate } from '../financials-date-utils';
+import { formatMoney, getErrorMessage } from './financials-formatters';
 import { RegisterMetricStrip } from '@/components/layout/register-summary';
 import {
   FinanceLoadingState,
@@ -29,8 +30,9 @@ export function FinancialReportsPreviewSection({
       <CardHeader className="pb-3">
         <CardTitle className="text-sm font-bold">التقارير المالية — ملخص الشهر</CardTitle>
         <p className="mt-1 text-xs text-muted-foreground" data-finance-period>
-          من <span dir="ltr" className="font-bold tabular-nums">{formatDate(reportFilters.dateFrom)}</span> إلى{' '}
-          <span dir="ltr" className="font-bold tabular-nums">{formatDate(reportFilters.dateTo)}</span>
+          من <span dir="ltr" className="font-bold tabular-nums">{formatCompactDate(reportFilters.dateFrom)}</span>
+          {' إلى '}
+          <span dir="ltr" className="font-bold tabular-nums">{formatCompactDate(reportFilters.dateTo)}</span>
         </p>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -58,7 +60,7 @@ export function FinancialReportsPreviewSection({
               aria-label="ملخص الشهر"
               items={[
                 { id: 'invoiced', label: 'الفواتير', value: formatMoney(collectionSummary.invoiced), hint: `${collectionSummary.invoicesCount} فاتورة`, icon: FileText, hideWhenEmpty: true },
-                { id: 'paid', label: 'المحصّل', value: formatMoney(collectionSummary.paid), icon: HandCoins, tone: 'success' },
+                { id: 'paid', label: 'المحصّل', value: formatMoney(collectionSummary.paid), icon: HandCoins, tone: 'success', hideWhenEmpty: true },
                 { id: 'outstanding', label: 'المتبقي', value: formatMoney(collectionSummary.outstanding), icon: TrendingDown, tone: collectionSummary.outstanding > 0 ? 'danger' : 'success', hideWhenEmpty: true },
                 { id: 'receipts', label: 'إيصالات', value: collectionSummary.receiptsCount, icon: Receipt, hideWhenEmpty: true },
                 { id: 'expenses', label: 'مصروفات', value: formatMoney(collectionSummary.expensesTotal), icon: Building2, hideWhenEmpty: true },

@@ -61,7 +61,7 @@ export type OperationsHubWorkspaceProps = Readonly<{
 export function OperationsHubWorkspace({
   defaultSection,
   title = 'الخدمات',
-  description = 'الصيانة ومزودو الخدمات والمرافق والمستندات التشغيلية في مساحة عمل واحدة.',
+  description,
   mode = 'standalone',
 }: OperationsHubWorkspaceProps) {
   const { authorization } = useAuth();

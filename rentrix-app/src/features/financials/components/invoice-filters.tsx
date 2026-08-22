@@ -117,12 +117,12 @@ export function InvoiceFilters({
     <div className="space-y-3" data-finance-filter-bar>
       {/* Primary status filters + search + generate — always visible */}
       <div className="flex flex-col gap-3">
-        <div className="flex flex-wrap gap-2" role="tablist" aria-label="حالات الفواتير">
+        <div className="flex gap-2 overflow-x-auto no-scrollbar" role="tablist" aria-label="حالات الفواتير">
           {invoiceStatusFilters.map((filter) => (
             <Button
               key={filter.value}
               variant={status === filter.value ? 'primary' : 'secondary'}
-              className="min-h-11 min-w-11 rounded-xl text-xs font-bold"
+              className="min-h-11 shrink-0 rounded-xl whitespace-nowrap text-xs font-bold"
               role="tab"
               aria-selected={status === filter.value}
               onClick={() => onStatusChange(filter.value)}
