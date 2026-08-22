@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "authorityModel": {
     "identity": "public.users must be ACTIVE, is_active=true, deleted_at IS NULL",
     "membershipSource": "public.company_members.role",
@@ -11,9 +11,6 @@
   },
   "canonicalRoles": ["ADMIN", "MANAGER", "ACCOUNTANT", "OPERATIONS", "USER", "VIEWER"],
   "adminManagerSensitiveFunctions": [
-    "preview_bank_statement_batch_atomic(jsonb)",
-    "import_bank_statement_batch_atomic(jsonb)",
-    "post_receipt_atomic(jsonb)",
     "execute_receipt_void_internal(jsonb)",
     "approve_receipt_void_atomic(jsonb)",
     "recalculate_all_balances()",
@@ -21,6 +18,9 @@
     "run_scheduled_automation_rules()"
   ],
   "permissionGovernedSensitiveRpcs": {
+    "preview_bank_statement_batch_atomic(jsonb)": "financial.bank_reconciliation.view",
+    "import_bank_statement_batch_atomic(jsonb)": "financial.bank_reconciliation.match",
+    "post_receipt_atomic(jsonb)": "financial.payments.create",
     "record_invoice_payment_atomic(jsonb)": "financial.payments.create",
     "process_bank_reconciliation_match_atomic(jsonb)": "financial.bank_reconciliation.match",
     "approve_owner_settlement_atomic(jsonb)": "financial.owner_settlements.approve",
