@@ -86,9 +86,9 @@ export function OverviewSection({
   return (
     <div className="grid gap-4 lg:grid-cols-12">
       <ReportPanel
-        title="حركة السيولة"
-        description="التحصيل مقابل المصروفات شهرًا بشهر داخل نطاق التقرير."
-        eyebrow="اتجاه مالي"
+        title="التحصيل والمصروفات المسجلة"
+        description="مقارنة تشغيلية بين التحصيلات والمصروفات المسجلة شهرًا بشهر. لا تمثل قائمة تدفق نقدي محاسبية ولا ربح المكتب؛ استخدم القوائم المحاسبية الرسمية لذلك."
+        eyebrow="حركة تشغيلية"
         icon={BarChart3}
         className="lg:col-span-7"
         action={canExportReports ? (
@@ -108,8 +108,8 @@ export function OverviewSection({
         {cashflowRows.length === 0 ? (
           <div className="p-4 sm:p-5">
             <ReportState
-              title="لا توجد حركة شهرية كافية"
-              message="وسّع الفترة أو أضف تحصيلات ومصروفات لعرض اتجاه السيولة."
+              title="لا توجد حركة تشغيلية شهرية كافية"
+              message="وسّع الفترة أو أضف تحصيلات ومصروفات لعرض المقارنة التشغيلية."
             />
           </div>
         ) : (
@@ -139,7 +139,7 @@ export function OverviewSection({
               <MiniSummary label="الفواتير" value={formatMoney(collectionSummary?.invoiced ?? report.invoiced)} />
               <MiniSummary label="المحصّل" value={formatMoney(collectionSummary?.paid ?? report.paid)} />
               <MiniSummary label="المصروفات" value={formatMoney(collectionSummary?.expensesTotal ?? report.expenses)} />
-              <MiniSummary label="صافي الحركة" value={formatMoney(report.netCash)} />
+              <MiniSummary label="فرق التحصيل والمصروفات" value={formatMoney(report.netCash)} />
             </div>
           </div>
         )}
@@ -169,8 +169,8 @@ export function OverviewSection({
               {collectionInsight?.tone === 'critical'
                 ? 'كفاءة التحصيل منخفضة وتحتاج مراجعة قائمة المتأخرات وأولوية التواصل.'
                 : expenseInsight?.tone === 'critical'
-                  ? 'المصروفات تستهلك نسبة مرتفعة من المتحصل وتحتاج مراجعة التصنيفات والعقارات الأعلى تكلفة.'
-                  : 'المؤشرات الأساسية مستقرة؛ تابع التحصيل والإشغال للحفاظ على الأداء.'}
+                  ? 'المصروفات المسجلة مرتفعة مقارنة بالتحصيلات في هذا العرض التشغيلي؛ راجع التصنيفات والعقارات الأعلى تكلفة قبل استنتاج الربحية.'
+                  : 'المؤشرات التشغيلية الأساسية مستقرة؛ تابع التحصيل والإشغال، وارجع للقوائم المحاسبية عند تقييم الربحية أو التدفق النقدي الرسمي.'}
             </ReportInsightNote>
           </div>
         </ReportPanel>
