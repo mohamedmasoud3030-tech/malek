@@ -3,9 +3,8 @@
 //
 // Replays the complete migration chain into disposable PGlite, then inspects
 // the effective SECURITY DEFINER definitions and deployed EXECUTE grants.
-// The scan is intentionally definition-based: old historical migration text
-// may contain retired users.role checks, but the effective pg_proc definitions
-// after all forward migrations must not use them for authorization.
+// Old historical migration text may contain retired users.role checks; only the
+// effective pg_proc definitions after all forward migrations are authoritative.
 
 import { createDatabase, replay, listMigrations } from '../db0/lib/replay.mjs';
 
@@ -47,6 +46,11 @@ function hasCanonicalManagerGate(definition) {
   return /\bis_admin_or_manager\s*\(\s*\)/i.test(definition);
 }
 
+function hasPermissionGate(definition, permission) {
+  return /\bcurrent_user_has_effective_app_permission\s*\(/i.test(definition)
+    && definition.includes(permission);
+}
+
 function hasRawUsersRoleAuthority(definition) {
   const compact = definition.replace(/\s+/g, ' ');
   const roleIn = /from public\.users (?:as )?([a-z_][a-z0-9_]*)\b.{0,1200}?\1\.role(?:::text)?\s+in\s*\(\s*'ADMIN'\s*,\s*'MANAGER'/i;
@@ -64,31 +68,44 @@ async function main() {
   }
   console.log(`SECURITY DEFINER governance audit: ${files.length} migrations replayed cleanly.\n`);
 
-  const canonicalGateTargets = [
-    ['SD-01', 'public.post_receipt_atomic(jsonb)'],
-    ['SD-02', 'public.execute_receipt_void_internal(jsonb)'],
-    ['SD-03', 'public.import_bank_statement_batch_atomic(jsonb)'],
-    ['SD-04', 'public.approve_receipt_void_atomic(jsonb)'],
-    ['SD-05', 'public.recalculate_all_balances()'],
-    ['SD-06', 'public.resolve_maintenance_with_expense(text,numeric,text)'],
-    ['SD-07', 'public.run_scheduled_automation_rules()'],
+  console.log('[permission-based sensitive RPC gates]');
+  const permissionTargets = [
+    ['SD-01', 'public.preview_bank_statement_batch_atomic(jsonb)', 'financial.bank_reconciliation.view'],
+    ['SD-02', 'public.import_bank_statement_batch_atomic(jsonb)', 'financial.bank_reconciliation.match'],
+    ['SD-03', 'public.post_receipt_atomic(jsonb)', 'financial.payments.create'],
   ];
-
-  console.log('[canonical manager gates]');
-  for (const [id, signature] of canonicalGateTargets) {
+  for (const [id, signature, permission] of permissionTargets) {
     const info = await functionInfo(db, signature);
     record(
       id,
-      `${signature} uses canonical manager gate and no users.role authority`,
+      `${signature} enforces ${permission} through the effective permission resolver`,
+      info.security_definer && hasPermissionGate(info.definition, permission) && !hasRawUsersRoleAuthority(info.definition),
+      info.definition.slice(0, 700),
+    );
+  }
+
+  console.log('\n[canonical membership role gates]');
+  const managerGateTargets = [
+    ['SD-04', 'public.execute_receipt_void_internal(jsonb)'],
+    ['SD-05', 'public.approve_receipt_void_atomic(jsonb)'],
+    ['SD-06', 'public.recalculate_all_balances()'],
+    ['SD-07', 'public.resolve_maintenance_with_expense(text,numeric,text)'],
+    ['SD-08', 'public.run_scheduled_automation_rules()'],
+  ];
+  for (const [id, signature] of managerGateTargets) {
+    const info = await functionInfo(db, signature);
+    record(
+      id,
+      `${signature} uses canonical membership manager gate and no users.role authority`,
       info.security_definer && hasCanonicalManagerGate(info.definition) && !hasRawUsersRoleAuthority(info.definition),
-      info.definition.slice(0, 500),
+      info.definition.slice(0, 600),
     );
   }
 
   console.log('\n[effective permission resolver]');
   const effectivePermission = await functionInfo(db, 'public.current_user_has_effective_app_permission(text)');
   record(
-    'SD-08',
+    'SD-09',
     'effective permission resolver validates active app identity before role or explicit grants',
     effectivePermission.security_definer &&
       /is_app_user\s*\(\s*\)/i.test(effectivePermission.definition) &&
@@ -96,7 +113,7 @@ async function main() {
     effectivePermission.definition,
   );
   record(
-    'SD-09',
+    'SD-10',
     'effective permission resolver rejects unknown permission identifiers before ADMIN shortcut',
     effectivePermission.definition.includes('app_permission_catalog') &&
       effectivePermission.definition.indexOf('app_permission_catalog') < effectivePermission.definition.indexOf('is_admin'),
@@ -106,13 +123,13 @@ async function main() {
   console.log('\n[request_permission boundary and routing]');
   const requestPermission = await functionInfo(db, 'public.request_permission(text,text,text)');
   record(
-    'SD-10',
+    'SD-11',
     'request_permission requires an active app identity before SECURITY DEFINER writes',
     /auth\.uid\s*\(\s*\)\s+is\s+null\s+or\s+not\s+coalesce\s*\(\s*public\.is_app_user\s*\(\s*\)/i.test(requestPermission.definition),
     requestPermission.definition.slice(0, 800),
   );
   record(
-    'SD-11',
+    'SD-12',
     'request_permission routes admin/manager notifications by company_members.role',
     !requestPermission.definition.includes('u.role::text') &&
       requestPermission.definition.includes('cm.role::text') &&
@@ -123,7 +140,7 @@ async function main() {
   console.log('\n[support capability resolver]');
   const supportCapability = await functionInfo(db, 'public.current_user_has_support_capability(text)');
   record(
-    'SD-12',
+    'SD-13',
     'support capability has no named role bypass and uses effective permission resolver',
     supportCapability.definition.includes('current_user_has_effective_app_permission') &&
       !/current_app_role\s*\(\s*\)\s*(?:=|in)/i.test(supportCapability.definition),
@@ -143,7 +160,7 @@ async function main() {
   `);
   const rawRoleOffenders = securityDefiners.rows.filter((row) => hasRawUsersRoleAuthority(row.definition));
   record(
-    'SD-13',
+    'SD-14',
     'no effective SECURITY DEFINER uses public.users.role as ADMIN/MANAGER authority',
     rawRoleOffenders.length === 0,
     rawRoleOffenders.map((row) => `${row.schema_name}.${row.function_name}(${row.args})`).join(', '),
@@ -151,15 +168,16 @@ async function main() {
 
   console.log('\n[deployed EXECUTE boundaries]');
   const grantCases = [
-    ['SD-14', 'authenticated', 'public.post_receipt_atomic(jsonb)', false],
-    ['SD-15', 'authenticated', 'public.execute_receipt_void_internal(jsonb)', false],
-    ['SD-16', 'authenticated', 'public.import_bank_statement_batch_atomic(jsonb)', true],
-    ['SD-17', 'authenticated', 'public.approve_receipt_void_atomic(jsonb)', true],
-    ['SD-18', 'authenticated', 'public.recalculate_all_balances()', true],
-    ['SD-19', 'authenticated', 'public.resolve_maintenance_with_expense(text,numeric,text)', true],
-    ['SD-20', 'authenticated', 'public.run_scheduled_automation_rules()', true],
-    ['SD-21', 'authenticated', 'public.request_permission(text,text,text)', true],
-    ['SD-22', 'authenticated', 'public.current_user_has_support_capability(text)', true],
+    ['SD-15', 'authenticated', 'public.post_receipt_atomic(jsonb)', false],
+    ['SD-16', 'authenticated', 'public.execute_receipt_void_internal(jsonb)', false],
+    ['SD-17', 'authenticated', 'public.preview_bank_statement_batch_atomic(jsonb)', true],
+    ['SD-18', 'authenticated', 'public.import_bank_statement_batch_atomic(jsonb)', true],
+    ['SD-19', 'authenticated', 'public.approve_receipt_void_atomic(jsonb)', true],
+    ['SD-20', 'authenticated', 'public.recalculate_all_balances()', true],
+    ['SD-21', 'authenticated', 'public.resolve_maintenance_with_expense(text,numeric,text)', true],
+    ['SD-22', 'authenticated', 'public.run_scheduled_automation_rules()', true],
+    ['SD-23', 'authenticated', 'public.request_permission(text,text,text)', true],
+    ['SD-24', 'authenticated', 'public.current_user_has_support_capability(text)', true],
   ];
   for (const [id, role, signature, expected] of grantCases) {
     const actual = await hasExecute(db, role, signature);
