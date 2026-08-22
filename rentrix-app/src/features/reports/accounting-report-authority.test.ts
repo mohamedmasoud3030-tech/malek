@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { ReconciliationRow } from '@/features/accounting/wp05Services';
-import { summarizeReconciliationReadiness } from './accounting-report-authority';
+import {
+  isAccountingStatementOutputReady,
+  summarizeReconciliationReadiness,
+} from './accounting-report-authority';
 
 function row(overrides: Partial<ReconciliationRow> = {}): ReconciliationRow {
   return {
@@ -62,5 +65,17 @@ describe('reports accounting authority readiness', () => {
       failed: 1,
       maxAbsVariance: 0.002,
     });
+  });
+
+  it('allows accounting statement output only after a successful completed reconciliation query', () => {
+    const pass = summarizeReconciliationReadiness([row()]);
+    const fail = summarizeReconciliationReadiness([row({ reconciliation_status: 'FAIL' })]);
+    const noEvidence = summarizeReconciliationReadiness([]);
+
+    expect(isAccountingStatementOutputReady(pass, { isLoading: false, isError: false })).toBe(true);
+    expect(isAccountingStatementOutputReady(pass, { isLoading: true, isError: false })).toBe(false);
+    expect(isAccountingStatementOutputReady(pass, { isLoading: false, isError: true })).toBe(false);
+    expect(isAccountingStatementOutputReady(fail, { isLoading: false, isError: false })).toBe(false);
+    expect(isAccountingStatementOutputReady(noEvidence, { isLoading: false, isError: false })).toBe(false);
   });
 });
