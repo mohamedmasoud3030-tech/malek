@@ -2,7 +2,9 @@ import { z } from 'zod';
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
 import { fetchAllRows } from '@/lib/paginatedRead';
+import type { SupportedTimezone } from '@/lib/companySettings';
 import type { Database } from '@/types/database';
+import { toCompanyDateKey } from './bank-reconciliation-date';
 import type {
   BankAccount,
   BankMatchCandidate,
@@ -274,7 +276,10 @@ function getTodayForImportName() {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
-export async function listSuggestedBankMatches(line: Pick<BankStatementLine, 'amount' | 'transaction_date'>): Promise<BankMatchCandidate[]> {
+export async function listSuggestedBankMatches(
+  line: Pick<BankStatementLine, 'amount' | 'transaction_date'>,
+  timeZone: SupportedTimezone,
+): Promise<BankMatchCandidate[]> {
   const signedAmount = Number(line.amount);
   const amount = Math.abs(signedAmount);
   if (!Number.isFinite(amount) || amount === 0) return [];
@@ -412,31 +417,34 @@ export async function listSuggestedBankMatches(line: Pick<BankStatementLine, 'am
         );
       }
 
+      // paid_at is a timestamp. Filter stable status/amount at the database
+      // boundary, paginate the complete result set, then apply the company's
+      // calendar date. UTC or runner-local midnight must never decide a bank day.
       const { rows: settlements } = await fetchAllRows<{ id: string; net_payable: number; paid_at: string | null }>(() =>
         supabase
           .from('owner_settlements')
           .select('id, net_payable, paid_at')
           .eq('status', 'PAID')
-          .gte('paid_at', `${line.transaction_date}T00:00:00`)
-          .lte('paid_at', `${line.transaction_date}T23:59:59.999999`)
           .eq('net_payable', amount)
           .order('id')
           .returns() as never,
       );
       for (const settlement of settlements) {
         if (!settlement.paid_at) continue;
+        const paidDate = toCompanyDateKey(settlement.paid_at, timeZone);
+        if (paidDate !== line.transaction_date) continue;
         candidates.push(
           toCandidate('owner_payout', {
             id: settlement.id,
             amount: -Math.abs(Number(settlement.net_payable)),
-            date: settlement.paid_at.slice(0, 10),
+            date: paidDate,
             label: `صرف تسوية مالك ${settlement.id.slice(0, 8)}`,
           }),
         );
       }
 
-      // paid_at is stored as epoch milliseconds, so amount/status are filtered
-      // server-side and the complete matching set is paginated before date filtering.
+      // paid_at is stored as epoch milliseconds. As with owner payouts, the
+      // company calendar date—not UTC—is authoritative for candidate matching.
       const { rows: commissions } = await fetchAllRows<{ id: string; amount: number; paid_at: number | null }>(() =>
         supabase
           .from('commissions')
@@ -448,7 +456,7 @@ export async function listSuggestedBankMatches(line: Pick<BankStatementLine, 'am
       );
       for (const commission of commissions) {
         if (!commission.paid_at) continue;
-        const paidDate = new Date(Number(commission.paid_at)).toISOString().slice(0, 10);
+        const paidDate = toCompanyDateKey(Number(commission.paid_at), timeZone);
         if (paidDate !== line.transaction_date) continue;
         candidates.push(
           toCandidate('commission_payment', {
