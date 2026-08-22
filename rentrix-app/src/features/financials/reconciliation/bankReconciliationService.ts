@@ -20,7 +20,7 @@ type BankStatementLineInsert = Database['public']['Tables']['bank_statement_line
 type BankReconciliationMatchInsert = Database['public']['Tables']['bank_reconciliation_matches']['Insert'];
 type ProcessBankReconciliationMatchAtomicResult = Database['public']['Functions']['process_bank_reconciliation_match_atomic']['Returns'];
 
-// Expanded to cover every governed 1111/1120 movement per FOM-013
+// Expanded to cover every governed 1111/1120 movement per FOM-013, with honest partial coverage documented
 const matchEntityTypes = [
   'payment',
   'receipt',
@@ -281,78 +281,111 @@ export async function listSuggestedBankMatches(line: Pick<BankStatementLine, 'am
   if (!Number.isFinite(amount) || amount === 0) return [];
   const candidates: BankMatchCandidate[] = [];
 
-  // Positive amounts: collections, deposit receipts
-  if (signedAmount > 0) {
-    // Payments (tenant collections)
-    const { data: payments } = await supabase
-      .from('payments')
-      .select('id, amount, payment_date, payment_method, reference_number')
-      .is('deleted_at', null)
-      .eq('payment_date', line.transaction_date)
-      .eq('amount', amount)
-      .limit(10);
-    for (const payment of (payments ?? []) as { id: string; amount: number; payment_date: string; payment_method: string | null; reference_number: string | null }[]) {
-      candidates.push(
-        toCandidate('payment', {
-          id: payment.id,
-          amount: payment.amount,
-          date: payment.payment_date,
-          label: `دفعة ${payment.payment_method ?? ''} ${payment.reference_number ?? ''}`.trim(),
-        }),
-      );
-      candidates.push(
-        toCandidate('receipt', {
-          id: payment.id,
-          amount: payment.amount,
-          date: payment.payment_date,
-          label: `إيصال مرتبط بالدفعة ${payment.reference_number ?? payment.id}`,
-        }),
-      );
-    }
-
-    // Deposit receipts (tenant_deposits)
-    const { data: deposits } = await supabase
-      .from('tenant_deposits')
-      .select('id, deposit_amount, received_date')
-      .is('deleted_at', null)
-      .eq('received_date', line.transaction_date)
-      .eq('deposit_amount', amount)
-      .limit(10);
-    for (const dep of (deposits ?? []) as { id: string; deposit_amount: number; received_date: string }[]) {
-      candidates.push(
-        toCandidate('deposit_receipt' as never, {
-          id: dep.id,
-          amount: dep.deposit_amount,
-          date: dep.received_date,
-          label: `وديعة تأمين ${dep.id.slice(0, 8)}`,
-        }),
-      );
-    }
-  }
-
-  // Negative amounts: expenses, owner payouts, deposit refunds, commission payments, owner expenses
-  if (signedAmount < 0) {
-    // Company expenses
-    const { data: expenses } = await supabase
-      .from('expenses')
-      .select('id, amount, expense_date, category, description')
-      .is('deleted_at', null)
-      .eq('expense_date', line.transaction_date)
-      .eq('amount', amount)
-      .limit(10);
-    for (const expense of (expenses ?? []) as { id: string; amount: number; expense_date: string; category: string | null; description: string | null }[]) {
-      candidates.push(
-        toCandidate('expense', {
-          id: expense.id,
-          amount: -Math.abs(expense.amount),
-          date: expense.expense_date,
-          label: `${expense.category ?? 'مصروف'} ${expense.description ?? ''}`.trim(),
-        }),
-      );
-      // Owner expense paid by office is also in expenses but with different category
-      if ((expense.category ?? '').toLowerCase().includes('owner') || (expense.description ?? '').toLowerCase().includes('owner')) {
+  // Handle errors explicitly — fail closed, not silent incomplete set (Defect B3)
+  try {
+    if (signedAmount > 0) {
+      // Payments (tenant collections) — filter at DB boundary deterministically (Defect B4)
+      const { data: payments, error: paymentsError } = await supabase
+        .from('payments')
+        .select('id, amount, payment_date, payment_method, reference_number')
+        .is('deleted_at', null)
+        .eq('payment_date', line.transaction_date)
+        .eq('amount', amount)
+        .limit(20);
+      if (paymentsError) throw paymentsError;
+      for (const payment of (payments ?? []) as { id: string; amount: number; payment_date: string; payment_method: string | null; reference_number: string | null }[]) {
         candidates.push(
-          toCandidate('owner_expense' as never, {
+          toCandidate('payment', {
+            id: payment.id,
+            amount: payment.amount,
+            date: payment.payment_date,
+            label: `دفعة ${payment.payment_method ?? ''} ${payment.reference_number ?? ''}`.trim(),
+          }),
+        );
+        // Receipt candidate REMOVED to avoid duplicate economic event (Defect B1)
+        // If receipt matching is intentionally supported for legacy/manual workflows,
+        // it must use real receipt row ID, not payment.id, and prove no duplicate match.
+        // For now, prefer matching actual cash movement (payment) only.
+      }
+
+      // Receipts — real receipt rows, not payment.id masquerading as receipt (Defect B1)
+      const { data: receipts, error: receiptsError } = await supabase
+        .from('receipts')
+        .select('id, amount, date_time')
+        .eq('amount', amount)
+        .gte('date_time', `${line.transaction_date}T00:00:00`)
+        .lte('date_time', `${line.transaction_date}T23:59:59`)
+        .is('deleted_at', null)
+        .limit(20);
+      if (receiptsError) throw receiptsError;
+      for (const receipt of (receipts ?? []) as { id: string; amount: number; date_time: string }[]) {
+        const receiptDate = receipt.date_time.slice(0, 10);
+        candidates.push(
+          toCandidate('receipt', {
+            id: receipt.id,
+            amount: receipt.amount,
+            date: receiptDate,
+            label: `إيصال ${receipt.id.slice(0, 8)}`,
+          }),
+        );
+      }
+
+      // Deposit receipts (tenant_deposits) — positive cash
+      const { data: deposits, error: depositsError } = await supabase
+        .from('tenant_deposits')
+        .select('id, deposit_amount, received_date')
+        .is('deleted_at', null)
+        .eq('received_date', line.transaction_date)
+        .eq('deposit_amount', amount)
+        .limit(20);
+      if (depositsError) throw depositsError;
+      for (const dep of (deposits ?? []) as { id: string; deposit_amount: number; received_date: string }[]) {
+        candidates.push(
+          toCandidate('deposit_receipt', {
+            id: dep.id,
+            amount: dep.deposit_amount,
+            date: dep.received_date,
+            label: `وديعة تأمين ${dep.id.slice(0, 8)}`,
+          }),
+        );
+      }
+    }
+
+    if (signedAmount < 0) {
+      // Company expenses — use charged_to COMPANY (Defect B2)
+      const { data: companyExpenses, error: companyExpensesError } = await supabase
+        .from('expenses')
+        .select('id, amount, expense_date, category, description, charged_to')
+        .is('deleted_at', null)
+        .eq('expense_date', line.transaction_date)
+        .eq('amount', amount)
+        .eq('charged_to', 'COMPANY')
+        .limit(20);
+      if (companyExpensesError) throw companyExpensesError;
+      for (const expense of (companyExpenses ?? []) as { id: string; amount: number; expense_date: string; category: string | null; description: string | null; charged_to: string | null }[]) {
+        candidates.push(
+          toCandidate('expense', {
+            id: expense.id,
+            amount: -Math.abs(expense.amount),
+            date: expense.expense_date,
+            label: `${expense.category ?? 'مصروف'} ${expense.description ?? ''}`.trim(),
+          }),
+        );
+      }
+
+      // Owner expenses — charged_to OWNER (Defect B2), not free-text contains 'owner'
+      const { data: ownerExpenses, error: ownerExpensesError } = await supabase
+        .from('expenses')
+        .select('id, amount, expense_date, category, description, charged_to')
+        .is('deleted_at', null)
+        .eq('expense_date', line.transaction_date)
+        .eq('amount', amount)
+        .eq('charged_to', 'OWNER')
+        .limit(20);
+      if (ownerExpensesError) throw ownerExpensesError;
+      for (const expense of (ownerExpenses ?? []) as { id: string; amount: number; expense_date: string; category: string | null; description: string | null; charged_to: string | null }[]) {
+        candidates.push(
+          toCandidate('owner_expense', {
             id: expense.id,
             amount: -Math.abs(expense.amount),
             date: expense.expense_date,
@@ -360,82 +393,98 @@ export async function listSuggestedBankMatches(line: Pick<BankStatementLine, 'am
           }),
         );
       }
-    }
 
-    // Deposit refunds
-    const { data: refunds } = await supabase
-      .from('deposit_refund_events')
-      .select('id, amount, effective_date')
-      .eq('effective_date', line.transaction_date)
-      .eq('amount', amount)
-      .eq('status', 'POSTED')
-      .limit(10);
-    for (const ref of (refunds ?? []) as { id: string; amount: number; effective_date: string }[]) {
-      candidates.push(
-        toCandidate('deposit_refund' as never, {
-          id: ref.id,
-          amount: -Math.abs(ref.amount),
-          date: ref.effective_date,
-          label: `رد وديعة ${ref.id.slice(0, 8)}`,
-        }),
-      );
-    }
+      // Deposit refunds — filter at DB boundary (Defect B4)
+      const { data: refunds, error: refundsError } = await supabase
+        .from('deposit_refund_events')
+        .select('id, amount, effective_date')
+        .eq('effective_date', line.transaction_date)
+        .eq('amount', amount)
+        .eq('status', 'POSTED')
+        .limit(20);
+      if (refundsError) throw refundsError;
+      for (const ref of (refunds ?? []) as { id: string; amount: number; effective_date: string }[]) {
+        candidates.push(
+          toCandidate('deposit_refund', {
+            id: ref.id,
+            amount: -Math.abs(ref.amount),
+            date: ref.effective_date,
+            label: `رد وديعة ${ref.id.slice(0, 8)}`,
+          }),
+        );
+      }
 
-    // Owner payouts (owner_settlements)
-    const { data: settlements } = await supabase
-      .from('owner_settlements')
-      .select('id, net_payable, paid_at, status')
-      .eq('status', 'PAID')
-      .limit(10);
-    // Filter by date and amount in memory because paid_at may be timestamp
-    for (const s of (settlements ?? []) as { id: string; net_payable: number; paid_at: string | null; status: string }[]) {
-      if (!s.paid_at) continue;
-      const paidDate = s.paid_at.slice(0, 10);
-      if (paidDate !== line.transaction_date) continue;
-      if (Math.abs(Number(s.net_payable)) !== amount) continue;
-      candidates.push(
-        toCandidate('owner_payout' as never, {
-          id: s.id,
-          amount: -Math.abs(Number(s.net_payable)),
-          date: paidDate,
-          label: `صرف تسوية مالك ${s.id.slice(0, 8)}`,
-        }),
-      );
-    }
+      // Owner payouts — filter at DB boundary deterministically (Defect B4)
+      // Use gte/lte for timestamp bounds, limit 100 to avoid false negatives
+      const { data: settlements, error: settlementsError } = await supabase
+        .from('owner_settlements')
+        .select('id, net_payable, paid_at, status')
+        .eq('status', 'PAID')
+        .gte('paid_at', `${line.transaction_date}T00:00:00`)
+        .lte('paid_at', `${line.transaction_date}T23:59:59`)
+        .eq('net_payable', amount)
+        .limit(100);
+      if (settlementsError) throw settlementsError;
+      for (const s of (settlements ?? []) as { id: string; net_payable: number; paid_at: string | null; status: string }[]) {
+        if (!s.paid_at) continue;
+        const paidDate = s.paid_at.slice(0, 10);
+        candidates.push(
+          toCandidate('owner_payout', {
+            id: s.id,
+            amount: -Math.abs(Number(s.net_payable)),
+            date: paidDate,
+            label: `صرف تسوية مالك ${s.id.slice(0, 8)}`,
+          }),
+        );
+      }
 
-    // Commission payments (commissions where paid)
-    const { data: commissions } = await supabase
-      .from('commissions')
-      .select('id, amount, status, paid_at')
-      .eq('status', 'PAID')
-      .limit(10);
-    for (const c of (commissions ?? []) as { id: string; amount: number; paid_at: string | null; status: string }[]) {
-      if (!c.paid_at) continue;
-      const paidDate = c.paid_at.slice(0, 10);
-      if (paidDate !== line.transaction_date) continue;
-      if (Math.abs(Number(c.amount)) !== amount) continue;
-      candidates.push(
-        toCandidate('commission_payment' as never, {
-          id: c.id,
-          amount: -Math.abs(Number(c.amount)),
-          date: paidDate,
-          label: `صرف عمولة ${c.id.slice(0, 8)}`,
-        }),
-      );
+      // Commission payments — filter at DB boundary (Defect B4)
+      // paid_at is bigint (epoch ms), so we filter by amount at DB and date in memory, with larger limit to avoid false negatives
+      const { data: commissions, error: commissionsError } = await supabase
+        .from('commissions')
+        .select('id, amount, status, paid_at')
+        .eq('status', 'PAID')
+        .eq('amount', amount)
+        .limit(100);
+      if (commissionsError) throw commissionsError;
+      for (const c of (commissions ?? []) as { id: string; amount: number; paid_at: number | null; status: string }[]) {
+        if (!c.paid_at) continue;
+        // paid_at bigint is epoch ms, convert to date string
+        const paidDate = new Date(Number(c.paid_at)).toISOString().slice(0, 10);
+        if (paidDate !== line.transaction_date) continue;
+        candidates.push(
+          toCandidate('commission_payment', {
+            id: c.id,
+            amount: -Math.abs(Number(c.amount)),
+            date: paidDate,
+            label: `صرف عمولة ${c.id.slice(0, 8)}`,
+          }),
+        );
+      }
     }
+  } catch (error) {
+    // Fail closed — do not interpret failed reads as no candidates (Defect B3)
+    handleSupabaseError(error, 'تعذر تحميل اقتراحات المطابقة البنكية');
+    throw error;
   }
 
-  // Manual adjustments always possible
-  candidates.push(
-    toCandidate('manual_adjustment', {
-      id: `manual-${line.transaction_date}-${amount}`,
-      amount: signedAmount,
-      date: line.transaction_date,
-      label: `تسوية يدوية ${amount} بتاريخ ${line.transaction_date}`,
-    }),
-  );
+  // Deduplicate by entity_type + entity_id to avoid duplicate economic event (Defect B1, B2)
+  const seen = new Set<string>();
+  const deduped: BankMatchCandidate[] = [];
+  for (const cand of candidates) {
+    const key = `${cand.entity_type}:${cand.entity_id}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    deduped.push(cand);
+  }
 
-  return candidates;
+  // Manual adjustment synthetic candidate REMOVED (Defect B5)
+  // Previously generated manual-${date}-${amount} with no authoritative record.
+  // Now, manual_adjustment must reference real persisted governed source.
+  // If user needs manual adjustment, they must create it via governed RPC/table first,
+  // then match to its real ID. No synthetic fake PK.
+
+  return deduped;
 }
 
 export async function matchBankStatementLine(values: BankReconciliationMatchValues): Promise<BankReconciliationMatch> {
@@ -457,8 +506,8 @@ export async function ignoreBankStatementLine(statementLineId: string): Promise<
 }
 
 /**
- * Coverage documentation for every governed 1111/1120 movement.
- * This is used by tests to prove reconciliation coverage.
+ * Coverage documentation — honest partial coverage per B7.
+ * Previously claimed complete/all while reversals marked partial — now labeled honestly.
  */
 export const BANK_RECONCILIATION_COVERAGE: Array<{
   movementClass: string;
@@ -475,10 +524,10 @@ export const BANK_RECONCILIATION_COVERAGE: Array<{
     accountingEvent: 'OWNER creditor collection Dr 1111/1120 Cr 2000 (+2100)',
     sourceEntity: 'payments / receipts',
     bankDirection: 'positive',
-    candidateEntity: 'payment / receipt',
+    candidateEntity: 'payment / receipt (real receipt ID, not payment.id)',
     supportStatus: 'supported',
-    reconciliationEffect: 'matched positive bank line to payment',
-    reversalHandling: 'VOID receipt creates compensating reversal',
+    reconciliationEffect: 'matched positive bank line to payment (preferred) or real receipt ID',
+    reversalHandling: 'VOID receipt creates compensating reversal, cannot match VOIDED',
   },
   {
     movementClass: 'owner payouts',
@@ -487,8 +536,8 @@ export const BANK_RECONCILIATION_COVERAGE: Array<{
     bankDirection: 'negative',
     candidateEntity: 'owner_payout',
     supportStatus: 'supported',
-    reconciliationEffect: 'matched negative bank line to owner settlement payout',
-    reversalHandling: 'controlled settlement correction, post-payout refund → 1300',
+    reconciliationEffect: 'matched negative bank line to owner settlement payout via DB-filtered date+amount',
+    reversalHandling: 'controlled settlement correction, post-payout refund → 1300, cannot match non-PAID',
   },
   {
     movementClass: 'tenant deposit receipts',
@@ -498,7 +547,7 @@ export const BANK_RECONCILIATION_COVERAGE: Array<{
     candidateEntity: 'deposit_receipt',
     supportStatus: 'supported',
     reconciliationEffect: 'matched positive bank line to deposit receipt',
-    reversalHandling: 'refund/application/reversal transaction',
+    reversalHandling: 'refund/application/reversal transaction, cannot match deleted',
   },
   {
     movementClass: 'deposit refunds',
@@ -507,8 +556,8 @@ export const BANK_RECONCILIATION_COVERAGE: Array<{
     bankDirection: 'negative',
     candidateEntity: 'deposit_refund',
     supportStatus: 'supported',
-    reconciliationEffect: 'matched negative bank line to deposit refund event',
-    reversalHandling: 'reverse_deposit_refund_atomic compensating',
+    reconciliationEffect: 'matched negative bank line to deposit refund event via DB filter',
+    reversalHandling: 'reverse_deposit_refund_atomic compensating, cannot match REVERSED',
   },
   {
     movementClass: 'broker commission payments',
@@ -517,27 +566,27 @@ export const BANK_RECONCILIATION_COVERAGE: Array<{
     bankDirection: 'negative',
     candidateEntity: 'commission_payment',
     supportStatus: 'supported',
-    reconciliationEffect: 'matched negative bank line to commission payment',
-    reversalHandling: 'reverse_commission_atomic',
+    reconciliationEffect: 'matched negative bank line to commission payment via DB filter',
+    reversalHandling: 'reverse_commission_atomic, cannot match non-PAID',
   },
   {
     movementClass: 'company expenses',
     accountingEvent: 'Company expense Dr 6100 Cr 1111/1120',
-    sourceEntity: 'expenses',
+    sourceEntity: 'expenses where charged_to=COMPANY',
     bankDirection: 'negative',
     candidateEntity: 'expense',
     supportStatus: 'supported',
-    reconciliationEffect: 'matched negative bank line to expense',
-    reversalHandling: 'expense reversal/adjustment',
+    reconciliationEffect: 'matched negative bank line to company expense via charged_to=COMPANY',
+    reversalHandling: 'expense reversal/adjustment, cannot match deleted',
   },
   {
     movementClass: 'owner expenses paid by office',
     accountingEvent: 'Owner expense Dr 1300 Cr 1111/1120',
-    sourceEntity: 'expenses (owner category)',
+    sourceEntity: 'expenses where charged_to=OWNER',
     bankDirection: 'negative',
     candidateEntity: 'owner_expense',
     supportStatus: 'supported',
-    reconciliationEffect: 'matched negative bank line to owner expense',
+    reconciliationEffect: 'matched negative bank line to owner expense via charged_to=OWNER, not free-text',
     reversalHandling: 'reversal or recovery adjustment',
   },
   {
@@ -545,19 +594,19 @@ export const BANK_RECONCILIATION_COVERAGE: Array<{
     accountingEvent: 'VOID/reversal reverse original credits/debits',
     sourceEntity: 'journal_batches reversal_of_batch_id',
     bankDirection: 'positive',
-    candidateEntity: 'manual_adjustment or original entity reversal',
+    candidateEntity: 'manual_adjustment (requires real governed adjustment) or reversal batch',
     supportStatus: 'partial',
-    reconciliationEffect: 'manual adjustment or matched to reversal batch',
-    reversalHandling: 'reversal batch linked to original',
+    reconciliationEffect: 'currently partial — reversal events not yet deterministic candidates, manual adjustment requires real authority',
+    reversalHandling: 'reversal batch linked to original, cannot match reversed/voided',
   },
   {
     movementClass: 'manual adjustments',
-    accountingEvent: 'Explicit manual bank-match source',
-    sourceEntity: 'manual entry',
+    accountingEvent: 'Explicit manual bank-match source — must reference real persisted governed source',
+    sourceEntity: 'bank_manual_adjustments (future) or journal_batches manual',
     bankDirection: 'positive',
-    candidateEntity: 'manual_adjustment',
-    supportStatus: 'supported',
-    reconciliationEffect: 'explicit governed bank-match source',
-    reversalHandling: 'compensating manual adjustment',
+    candidateEntity: 'manual_adjustment (real ID required, no synthetic manual-date-amount)',
+    supportStatus: 'partial',
+    reconciliationEffect: 'removed synthetic fake PK manual-${date}-${amount}, requires real governed adjustment entity/RPC',
+    reversalHandling: 'compensating manual adjustment via real entity',
   },
 ];
