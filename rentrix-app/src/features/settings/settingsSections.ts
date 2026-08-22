@@ -15,8 +15,8 @@ export const settingsSections = [
   },
   {
     id: 'documents',
-    label: 'العقود والفواتير',
-    description: 'بادئات المستندات وإعدادات VAT.',
+    label: 'المستندات والضريبة',
+    description: 'بادئات المستندات والبيانات الضريبية المرجعية؛ السياسة الضريبية الفعلية تُحسم من السلطات المعتمدة حسب التاريخ.',
     icon: FileSignature,
   },
   {
