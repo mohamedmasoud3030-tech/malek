@@ -32,6 +32,8 @@
     "db0:isolation": "node scripts/db0/check-isolation.mjs",
     "db0:contract": "node scripts/db0/check-contract.mjs",
     "db0:gate": "node scripts/db0/gate.mjs",
+    "db:guardian": "node scripts/guardian/run.mjs",
+    "db:guardian:governance": "node scripts/guardian/governance.mjs",
     "test:supabase": "node scripts/supabase-tests/run.mjs",
     "test:supabase:rls": "node scripts/supabase-tests/rls-matrix.mjs",
     "test:supabase:secrets": "node scripts/supabase-tests/privileged-key-scan.mjs",
