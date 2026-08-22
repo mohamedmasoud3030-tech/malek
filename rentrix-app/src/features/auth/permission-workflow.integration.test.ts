@@ -139,7 +139,9 @@ describe('P6.1 permission workflow — database behavior', () => {
     const ownDecision = await db.query<{ id: string; is_read: boolean }>(`select id,is_read from public.app_notifications where source_id=$1::uuid and notification_type='permission_decision'`, [landsRequestId]);
     expect(ownDecision.rows).toHaveLength(1);
     expect(ownDecision.rows[0].is_read).toBe(false);
-    await db.query(`update public.app_notifications set is_read=true where id=$1`, [ownDecision.rows[0].id]);
+    // Direct UPDATE on app_notifications is revoked for authenticated (ACL
+    // lockdown, migration 00001); read state goes through the governed RPC.
+    await db.query(`select public.mark_app_notification_read($1::text)`, [ownDecision.rows[0].id]);
     const readBack = await db.query<{ is_read: boolean }>(`select is_read from public.app_notifications where id=$1`, [ownDecision.rows[0].id]);
     expect(readBack.rows[0].is_read).toBe(true);
     await assume(MANAGER_A, COMPANY_A);
