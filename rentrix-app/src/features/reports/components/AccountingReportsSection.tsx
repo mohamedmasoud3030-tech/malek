@@ -13,6 +13,7 @@ import {
 } from '@/services/documents/documentPayloadAdapters';
 import { DocumentReadinessError, runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
 import {
+  isAccountingStatementOutputReady,
   summarizeReconciliationReadiness,
   useSubledgerGlReconciliation,
 } from '../accounting-report-authority';
@@ -70,10 +71,10 @@ export function AccountingReportsSection({
   const reconciliationQuery = useSubledgerGlReconciliation(asOf);
   const reconciliationRows = reconciliationQuery.data ?? [];
   const reconciliationReadiness = summarizeReconciliationReadiness(reconciliationRows);
-  const isAccountingOutputReady =
-    !reconciliationQuery.isLoading
-    && !reconciliationQuery.isError
-    && reconciliationReadiness.state === 'PASS';
+  const isAccountingOutputReady = isAccountingStatementOutputReady(reconciliationReadiness, {
+    isLoading: reconciliationQuery.isLoading,
+    isError: reconciliationQuery.isError,
+  });
 
   const buildTrialBalanceDocument = (): TrialBalanceDocumentData | null => {
     if (!trialBalance) return null;
