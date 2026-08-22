@@ -25,8 +25,28 @@ function compact(value) {
   return String(value ?? '').replace(/\s+/g, ' ').trim();
 }
 
+// pg_get_function_identity_arguments() includes argument names when functions
+// declare them, while governance-contract.json intentionally stores stable
+// type-only signatures. Use oidvectortypes() and normalize spacing so a harmless
+// parameter rename can never create a false missing-function finding.
+function normalizeSignature(value) {
+  return String(value ?? '')
+    .replace(/\s*,\s*/g, ',')
+    .replace(/\(\s*/g, '(')
+    .replace(/\s*\)/g, ')')
+    .trim();
+}
+
 function signature(row) {
-  return `${row.function_name}(${row.args})`;
+  return normalizeSignature(`${row.function_name}(${row.arg_types})`);
+}
+
+function normalizedSet(values) {
+  return new Set(values.map(normalizeSignature));
+}
+
+function normalizedEntries(object) {
+  return new Map(Object.entries(object).map(([key, value]) => [normalizeSignature(key), value]));
 }
 
 function hasEffectivePermissionResolver(definition) {
@@ -58,7 +78,7 @@ async function inspect(db) {
     select
       n.nspname as schema_name,
       p.proname as function_name,
-      pg_get_function_identity_arguments(p.oid) as args,
+      oidvectortypes(p.proargtypes) as arg_types,
       p.prosecdef as security_definer,
       pg_get_functiondef(p.oid) as definition,
       has_function_privilege('anon', p.oid, 'EXECUTE') as anon_execute,
@@ -69,7 +89,7 @@ async function inspect(db) {
     join pg_namespace n on n.oid=p.pronamespace
     where p.prosecdef
       and n.nspname in ('public','app_private')
-    order by n.nspname, p.proname, pg_get_function_identity_arguments(p.oid)
+    order by n.nspname, p.proname, oidvectortypes(p.proargtypes)
   `);
 }
 
@@ -88,9 +108,13 @@ async function main() {
 
     const rows = (await inspect(db)).rows;
     const bySignature = new Map(rows.map((row) => [signature(row), row]));
+    const serviceOrInternalOnly = normalizedSet(contract.serviceOrInternalOnlyFunctions);
+    const adminManagerSensitive = normalizedSet(contract.adminManagerSensitiveFunctions);
+    const permissionGoverned = normalizedEntries(contract.permissionGovernedSensitiveRpcs);
+    const allowedHelpers = normalizedSet(contract.allowedNonPermissionAuthenticatedSecurityDefiners);
 
     // DG-GOV-001 — canonical authority foundation itself.
-    const activeRole = rows.find((row) => row.function_name === 'active_company_role');
+    const activeRole = bySignature.get(normalizeSignature('active_company_role(uuid)'));
     if (!activeRole) {
       add('DG-GOV-001', 'CRITICAL', 'active_company_role(uuid) is missing');
     } else {
@@ -109,7 +133,7 @@ async function main() {
     // DG-GOV-002 — service/internal boundaries: no browser EXECUTE. Some are
     // owner-internal and intentionally have no service_role grant, so the rule
     // does not manufacture a service grant merely to satisfy the scanner.
-    for (const expectedSignature of contract.serviceOrInternalOnlyFunctions) {
+    for (const expectedSignature of serviceOrInternalOnly) {
       const row = bySignature.get(expectedSignature);
       if (!row) {
         add('DG-GOV-002', 'HIGH', `Service/internal SECURITY DEFINER missing: ${expectedSignature}`);
@@ -128,7 +152,7 @@ async function main() {
     // DG-GOV-003 — sensitive functions whose historical contract is active
     // ADMIN/MANAGER must use the canonical membership-backed helper and never
     // public.users.role. This preserves semantics while changing authority source.
-    for (const expectedSignature of contract.adminManagerSensitiveFunctions) {
+    for (const expectedSignature of adminManagerSensitive) {
       const row = bySignature.get(expectedSignature);
       if (!row) {
         add('DG-GOV-003', 'HIGH', `ADMIN/MANAGER sensitive function missing: ${expectedSignature}`);
@@ -144,7 +168,7 @@ async function main() {
 
     // DG-GOV-006 — explicitly permission-governed sensitive RPCs require both
     // the effective resolver and their exact permission token.
-    for (const [expectedSignature, permission] of Object.entries(contract.permissionGovernedSensitiveRpcs)) {
+    for (const [expectedSignature, permission] of permissionGoverned.entries()) {
       const row = bySignature.get(expectedSignature);
       if (!row) {
         add('DG-GOV-006', 'HIGH', `Governed permission RPC missing: ${expectedSignature}`);
@@ -172,8 +196,6 @@ async function main() {
         );
       }
     }
-
-    const allowedHelpers = new Set(contract.allowedNonPermissionAuthenticatedSecurityDefiners);
 
     // DG-GOV-008 — strict authority proof. Authentication, company scoping,
     // RAISE EXCEPTION and validation are deliberately absent from the accepted
@@ -207,9 +229,9 @@ async function main() {
       'post_receipt_atomic_internal',
     ];
     for (const target of [
-      'preview_bank_statement_batch_atomic(jsonb)',
-      'import_bank_statement_batch_atomic(jsonb)',
-      'post_receipt_atomic(jsonb)',
+      normalizeSignature('preview_bank_statement_batch_atomic(jsonb)'),
+      normalizeSignature('import_bank_statement_batch_atomic(jsonb)'),
+      normalizeSignature('post_receipt_atomic(jsonb)'),
     ]) {
       const row = bySignature.get(target);
       if (!row) continue;
