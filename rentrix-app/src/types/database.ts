@@ -8003,6 +8003,12 @@ export type Database = {
         };
         Returns: Json;
       };
+      active_company_role: {
+        Args: {
+          target_company_id: string | null;
+        };
+        Returns: string;
+      };
       apply_deposit_claim_atomic: {
         Args: {
           p_payload: Json | null;

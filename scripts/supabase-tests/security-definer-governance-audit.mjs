@@ -77,7 +77,6 @@ async function main() {
     ['SD-07', 'public.approve_receipt_void_atomic(jsonb)'],
     ['SD-08', 'public.recalculate_all_balances()'],
     ['SD-09', 'public.resolve_maintenance_with_expense(text,numeric,text)'],
-    ['SD-10', 'public.run_scheduled_automation_rules()'],
   ];
   for (const [id, signature] of managerGateTargets) {
     const info = await functionInfo(db, signature);
@@ -88,6 +87,23 @@ async function main() {
       info.definition.slice(0, 700),
     );
   }
+
+  console.log('\n[disabled automation stub stays locked down]');
+  const automationStub = await functionInfo(db, 'public.run_scheduled_automation_rules()');
+  const automationAuthenticatedExecute = await hasExecute(
+    db,
+    'authenticated',
+    'public.run_scheduled_automation_rules()',
+  );
+  record(
+    'SD-10',
+    'run_scheduled_automation_rules() is the disabled stub with no authenticated EXECUTE grant '
+      + '(no ADMIN/MANAGER gate to enforce because the authenticated call path is closed at the grant level)',
+    automationStub.security_definer &&
+      automationStub.definition.includes('BACKGROUND_SCHEDULE_ACTIVATION_REQUIRED') &&
+      !automationAuthenticatedExecute,
+    automationStub.definition,
+  );
 
   console.log('\n[effective permission resolver]');
   const effectivePermission = await functionInfo(db, 'public.current_user_has_effective_app_permission(text)');
@@ -164,7 +180,7 @@ async function main() {
     ['SD-23', 'authenticated', 'public.approve_receipt_void_atomic(jsonb)', true],
     ['SD-24', 'authenticated', 'public.recalculate_all_balances()', true],
     ['SD-25', 'authenticated', 'public.resolve_maintenance_with_expense(text,numeric,text)', true],
-    ['SD-26', 'authenticated', 'public.run_scheduled_automation_rules()', true],
+    ['SD-26', 'authenticated', 'public.run_scheduled_automation_rules()', false],
     ['SD-27', 'authenticated', 'public.request_permission(text,text,text)', true],
     ['SD-28', 'authenticated', 'public.current_user_has_support_capability(text)', true],
   ];

@@ -12,6 +12,9 @@
 --     permission before role or explicit-grant evaluation. Stale grants cannot
 --     resurrect an inactive/deleted/non-member user, and ADMIN cannot authorize
 --     an unknown permission identifier.
+--   * request_receipt_void_atomic (maker step; approve_receipt_void_atomic is
+--     the checker step already hardened below — both sides of the
+--     maker/checker pair must use the canonical resolver, not just one)
 --   * approve_receipt_void_atomic
 --   * recalculate_all_balances
 --   * resolve_maintenance_with_expense
@@ -74,6 +77,37 @@ begin
     );
 end;
 $function$;
+
+DO $phase5$
+DECLARE
+  v_sql text;
+  v_old text := $old$
+  if v_actor is null or not exists (
+    select 1
+    from public.users u
+    where u.id = v_actor
+      and u.status::text = 'ACTIVE'
+      and u.role::text in ('ADMIN', 'MANAGER')
+  ) then
+    raise exception 'ADMIN or MANAGER role is required to request receipt VOID.'
+      using errcode = '42501';
+  end if;$old$;
+  v_new text := $new$
+  if v_actor is null or not coalesce(public.is_admin_or_manager(), false) then
+    raise exception 'ADMIN or MANAGER role is required to request receipt VOID.'
+      using errcode = '42501';
+  end if;$new$;
+BEGIN
+  SELECT pg_get_functiondef('public.request_receipt_void_atomic(jsonb)'::regprocedure)
+    INTO v_sql;
+
+  IF position(v_old IN v_sql) > 0 THEN
+    EXECUTE replace(v_sql, v_old, v_new);
+  ELSIF position(v_new IN v_sql) = 0 THEN
+    RAISE EXCEPTION 'Phase 5 refused to patch request_receipt_void_atomic: expected authority block not found.';
+  END IF;
+END
+$phase5$;
 
 DO $phase5$
 DECLARE
@@ -250,5 +284,16 @@ AS $function$
 $function$;
 
 -- CREATE OR REPLACE preserves existing owners and EXECUTE grants.
+
+-- record_invoice_payment_atomic_engine is documented as an internal engine,
+-- "Not a browser RPC" (see its baseline comment), with only
+-- record_invoice_payment_atomic (the public wrapper) meant to be callable by
+-- authenticated. The baseline only revoked EXECUTE from PUBLIC on the engine
+-- function, never explicitly from authenticated -- so the schema-level
+-- `ALTER DEFAULT PRIVILEGES ... GRANT ALL ON FUNCTIONS TO authenticated`
+-- (applied once, near the end of the baseline dump) left it directly
+-- executable by any authenticated client, bypassing the wrapper's canonical
+-- ADMIN/MANAGER gate entirely. Close that leak explicitly.
+REVOKE ALL ON FUNCTION public.record_invoice_payment_atomic_engine(jsonb) FROM authenticated;
 
 commit;
