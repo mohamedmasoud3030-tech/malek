@@ -1,30 +1,44 @@
 {
-  "version": 2,
+  "version": 3,
   "authorityModel": {
     "identity": "public.users must be ACTIVE, is_active=true, deleted_at IS NULL",
     "membershipSource": "public.company_members.role",
     "activeRoleSource": "public.active_company_role(public.current_company_id())",
     "permissionResolver": "public.current_user_has_effective_app_permission(permission)",
-    "jwt": "Server-issued claims are cache/context only; they never override database authority.",
+    "profileRole": "public.users.role is non-authoritative profile metadata and is forbidden for operational authorization",
+    "jwt": "Server-issued claims are context/cache only; they never override database authority.",
     "failClosed": true
   },
-  "browserSensitiveRpcPermissions": {
-    "preview_bank_statement_batch_atomic(jsonb)": "financial.bank_reconciliation.view",
-    "import_bank_statement_batch_atomic(jsonb)": "financial.bank_reconciliation.match",
+  "canonicalRoles": ["ADMIN", "MANAGER", "ACCOUNTANT", "OPERATIONS", "USER", "VIEWER"],
+  "adminManagerSensitiveFunctions": [
+    "preview_bank_statement_batch_atomic(jsonb)",
+    "import_bank_statement_batch_atomic(jsonb)",
+    "post_receipt_atomic(jsonb)",
+    "execute_receipt_void_internal(jsonb)",
+    "approve_receipt_void_atomic(jsonb)",
+    "recalculate_all_balances()",
+    "resolve_maintenance_with_expense(text,numeric,text)",
+    "run_scheduled_automation_rules()"
+  ],
+  "permissionGovernedSensitiveRpcs": {
     "record_invoice_payment_atomic(jsonb)": "financial.payments.create",
-    "approve_receipt_void_atomic(jsonb)": "financial.receipts.void",
     "process_bank_reconciliation_match_atomic(jsonb)": "financial.bank_reconciliation.match",
     "approve_owner_settlement_atomic(jsonb)": "financial.owner_settlements.approve",
     "pay_owner_settlement_atomic(jsonb)": "financial.owner_settlements.pay",
     "execute_fixed_monthly_accruals_atomic(jsonb)": "financial.fixed_monthly_accruals.execute"
   },
-  "serviceOnlySecurityDefiners": [
+  "serviceOrInternalOnlyFunctions": [
     "post_receipt_atomic(jsonb)",
     "execute_receipt_void_internal(jsonb)",
     "next_document_reference(uuid,text,text,integer)",
     "assign_document_reference()",
     "update_unit_status_from_activity()",
     "recalculate_unit_statuses()"
+  ],
+  "internalSecurityDefiners": [
+    "next_document_reference(uuid,text,text,integer)",
+    "assign_document_reference()",
+    "update_unit_status_from_activity()"
   ],
   "allowedNonPermissionAuthenticatedSecurityDefiners": [
     "custom_access_token_hook(jsonb)",
@@ -39,5 +53,18 @@
     "current_user_has_effective_app_permission(text)",
     "role_has_app_permission(text,text)",
     "current_user_has_support_capability(text)"
-  ]
+  ],
+  "dgGov008": {
+    "description": "A browser-executable SECURITY DEFINER mutation RPC needs a canonical role/permission resolver call. Authentication, company scoping, input validation, or RAISE EXCEPTION alone are not authorization proof.",
+    "acceptedResolverCalls": [
+      "current_user_has_effective_app_permission(",
+      "active_company_role(",
+      "current_app_role(",
+      "is_admin(",
+      "is_admin_or_manager(",
+      "is_accountant(",
+      "is_operations(",
+      "is_app_user("
+    ]
+  }
 }
