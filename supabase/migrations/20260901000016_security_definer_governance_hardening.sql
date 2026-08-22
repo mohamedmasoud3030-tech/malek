@@ -16,7 +16,12 @@
 --   * recalculate_all_balances
 --   * resolve_maintenance_with_expense
 --   * run_scheduled_automation_rules (authenticated path only; service path
---     with auth.uid() IS NULL remains intentionally unchanged)
+--     with auth.uid() IS NULL remains intentionally unchanged). As of
+--     migration 00006 this function is a disabled stub
+--     (BACKGROUND_SCHEDULE_ACTIVATION_REQUIRED) with EXECUTE revoked from
+--     authenticated/anon and granted only to service_role, so there is no
+--     authenticated-role check left to hardened. That already-closed state
+--     is recognized as a valid secure terminal state below and skipped.
 --   * request_permission: active-app-user gate plus admin/manager notification
 --     routing by company_members.role rather than users.role
 --   * current_user_has_support_capability named MANAGER/ADMIN bypasses
@@ -167,13 +172,27 @@ DECLARE
     if not coalesce(public.is_admin_or_manager(), false) then
       raise exception 'غير مصرح: هذه العملية متاحة فقط للمدير أو المسؤول' using errcode = '42501';
     end if;$new$;
+  v_disabled_stub_marker text := 'BACKGROUND_SCHEDULE_ACTIVATION_REQUIRED';
+  v_has_authenticated_grant boolean;
 BEGIN
   SELECT pg_get_functiondef('public.run_scheduled_automation_rules()'::regprocedure)
     INTO v_sql;
 
+  SELECT has_function_privilege('authenticated', 'public.run_scheduled_automation_rules()', 'EXECUTE')
+    INTO v_has_authenticated_grant;
+
   IF position(v_old IN v_sql) > 0 THEN
     EXECUTE replace(v_sql, v_old, v_new);
-  ELSIF position(v_new IN v_sql) = 0 THEN
+  ELSIF position(v_new IN v_sql) > 0 THEN
+    -- Already hardened by a prior run of this migration. No-op.
+    NULL;
+  ELSIF position(v_disabled_stub_marker IN v_sql) > 0 AND NOT v_has_authenticated_grant THEN
+    -- Valid secure terminal state: migration 00006 already replaced this
+    -- function with a disabled stub and revoked EXECUTE from
+    -- authenticated/anon, granting it only to service_role. There is no
+    -- authenticated-role authority block left to harden.
+    NULL;
+  ELSE
     RAISE EXCEPTION 'Phase 5 refused to patch run_scheduled_automation_rules: expected authenticated authority block not found.';
   END IF;
 END
