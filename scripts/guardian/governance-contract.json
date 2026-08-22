@@ -1,0 +1,43 @@
+{
+  "version": 2,
+  "authorityModel": {
+    "identity": "public.users must be ACTIVE, is_active=true, deleted_at IS NULL",
+    "membershipSource": "public.company_members.role",
+    "activeRoleSource": "public.active_company_role(public.current_company_id())",
+    "permissionResolver": "public.current_user_has_effective_app_permission(permission)",
+    "jwt": "Server-issued claims are cache/context only; they never override database authority.",
+    "failClosed": true
+  },
+  "browserSensitiveRpcPermissions": {
+    "preview_bank_statement_batch_atomic(jsonb)": "financial.bank_reconciliation.view",
+    "import_bank_statement_batch_atomic(jsonb)": "financial.bank_reconciliation.match",
+    "record_invoice_payment_atomic(jsonb)": "financial.payments.create",
+    "approve_receipt_void_atomic(jsonb)": "financial.receipts.void",
+    "process_bank_reconciliation_match_atomic(jsonb)": "financial.bank_reconciliation.match",
+    "approve_owner_settlement_atomic(jsonb)": "financial.owner_settlements.approve",
+    "pay_owner_settlement_atomic(jsonb)": "financial.owner_settlements.pay",
+    "execute_fixed_monthly_accruals_atomic(jsonb)": "financial.fixed_monthly_accruals.execute"
+  },
+  "serviceOnlySecurityDefiners": [
+    "post_receipt_atomic(jsonb)",
+    "execute_receipt_void_internal(jsonb)",
+    "next_document_reference(uuid,text,text,integer)",
+    "assign_document_reference()",
+    "update_unit_status_from_activity()",
+    "recalculate_unit_statuses()"
+  ],
+  "allowedNonPermissionAuthenticatedSecurityDefiners": [
+    "custom_access_token_hook(jsonb)",
+    "active_company_role(uuid)",
+    "current_app_role()",
+    "is_admin()",
+    "is_admin_or_manager()",
+    "is_accountant()",
+    "is_operations()",
+    "is_viewer()",
+    "is_app_user()",
+    "current_user_has_effective_app_permission(text)",
+    "role_has_app_permission(text,text)",
+    "current_user_has_support_capability(text)"
+  ]
+}
