@@ -7,6 +7,7 @@ import { useInvoiceWorkspaceController } from '../invoices/useInvoiceWorkspaceCo
 import { InvoiceDetailSection } from './invoice-detail-section';
 import { InvoiceListSection } from './invoice-list-section';
 import { ReceiptsSection } from './receipts-section';
+import { BillingReadinessSection } from '../billing/billing-readiness-section';
 
 type GenerateInvoicesDialogProps = {
   open: boolean;
@@ -66,6 +67,7 @@ export function InvoiceWorkspaceSection() {
 
   return (
     <>
+      <BillingReadinessSection />
       {!ctrl.isDocumentSettingsReady && <DocumentReadinessNotice />}
       <InvoiceListSection
         summary={ctrl.summary}
