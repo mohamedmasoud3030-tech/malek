@@ -22,11 +22,14 @@ describe('cross-device design unification', () => {
   const reports = source('features/reports/reports-page.tsx');
   const assistant = source('features/ai-assistant/ai-assistant-page.tsx');
 
-  it('shows a header hamburger on phone and iPad, not only the floating control', () => {
-    expect(shell).toContain('data-mobile-menu-trigger');
-    expect(shell).toContain('inline-flex size-11 shrink-0 rounded-xl');
-    expect(shell).toContain('lg:hidden');
-    expect(shell).not.toMatch(/data-mobile-menu-trigger[\s\S]{0,80}className="hidden size-11/);
+  it('keeps the mobile menu trigger on the floating dock (md:hidden), never in the header', () => {
+    // Mobile architecture reset (#1545/#1547): the phone/iPad menu trigger is
+    // the dock button (data-mobile-dock-menu) inside the floating control;
+    // there is no header hamburger anymore.
+    expect(nav).toContain('data-mobile-dock-menu');
+    expect(nav).toContain('size-11');
+    expect(nav).toContain('md:hidden');
+    expect(shell).not.toContain('data-mobile-menu-trigger');
   });
 
   it('keeps the floating Menu + Search control on phones only', () => {
@@ -65,7 +68,9 @@ describe('cross-device design unification', () => {
 
   it('keeps remaining hubs on the same visual wave and hint surface', () => {
     expect(operationsHub).toContain('visualVariant="malek-pro"');
-    expect(financials).toContain('WorkspaceHint');
+    // Dense-register redesign (#1545): /financials navigates via WorkspaceNav,
+    // /reports keeps the WorkspaceHint surface.
+    expect(financials).toContain('WorkspaceNav');
     expect(reports).toContain('WorkspaceHint');
     expect(financials).not.toContain('💡');
     expect(reports).not.toContain('💡');

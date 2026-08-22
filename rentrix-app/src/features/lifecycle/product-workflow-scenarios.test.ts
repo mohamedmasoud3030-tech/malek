@@ -475,12 +475,16 @@ describe('MALIK Product Workflow Consolidation Database Integration Scenarios', 
     expect(Number(invoiceCount.rows[0].count)).toBe(0);
     expect(Number(receiptCount.rows[0].count)).toBe(0);
 
-    // 2. Assert cross-company mutations are rejected
+    // 2. Assert cross-company mutations are rejected. The ACL lockdown
+    // (migration 00001_restore_dump_acl_lock) removed UPDATE from
+    // authenticated on all tables, so a cross-company write now FAILS CLOSED
+    // with permission denied — stronger than the historical silent 0-row
+    // update under RLS alone.
     await expect(
       db.query(`
         update public.properties set title = 'مخترق' where company_id = '${COMPANY_A}' and id = 'ef000000-0000-4000-8000-000000000001';
       `),
-    ).resolves.toBeDefined(); // 0 rows updated under RLS
+    ).rejects.toThrow(/permission denied/i);
 
     const checkA = await db.query<{ title: string }>(`
       select title from public.properties where id = 'ef000000-0000-4000-8000-000000000001'

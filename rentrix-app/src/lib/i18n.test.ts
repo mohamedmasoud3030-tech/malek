@@ -142,12 +142,15 @@ describe('ADR-0008 — UX-clarity keys have real route consumers', () => {
   const { resolve } = require('node:path') as typeof import('node:path');
 
   const sourceRoot = resolve(__dirname, '..');
+  // Consumer mapping synced with the dense-register redesign (#1545): the
+  // /financials page now presents sections via SectionTabs without the
+  // description/hint block, so financialsPageDescription/financialsPageHint/
+  // financialsSectionSummary have no route consumer anymore (their translations
+  // stay valid and are still covered by the translation checks above). The
+  // /reports page kept its WorkspaceHint, so its keys remain pinned here.
   const uxClarityConsumerCases = [
-    ['financialsSectionSummary', 'features/financials/financials-page.tsx'],
     ['financialsSectionReports', 'features/reports/reports-page.tsx'],
-    ['financialsPageDescription', 'features/financials/financials-page.tsx'],
     ['reportsPageDescription', 'features/reports/reports-page.tsx'],
-    ['financialsPageHint', 'features/financials/financials-page.tsx'],
     ['reportsPageHint', 'features/reports/reports-page.tsx'],
   ] as const;
 

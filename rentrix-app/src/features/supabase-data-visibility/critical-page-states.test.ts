@@ -33,9 +33,11 @@ const criticalPages = [
   {
     id: 'tenants',
     file: 'features/tenants/TenantsPage.tsx',
-    error: "status={tenantsQuery.isLoading ? 'loading' : tenantsQuery.isError ? 'error'",
+    // Unified EntityTable props after the register redesign (#1545).
+    error: 'tenantsQuery.isError ? tenantsQuery.error : null',
     loading: 'isLoading',
-    empty: "'empty'",
+    // Unified EntityTable empty-state props after the register redesign (#1545).
+    empty: 'emptyTitle=',
   },
   {
     id: 'expenses',

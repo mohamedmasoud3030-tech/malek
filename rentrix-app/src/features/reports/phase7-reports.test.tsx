@@ -114,7 +114,7 @@ describe('Reports Workspace Render Regression (Point 3)', () => {
       />
     );
     expect(html).toContain('id="section-tab-accounting_reports"');
-    expect(html).toContain('border-primary bg-primary');
+    expect(html).toContain('bg-card text-foreground shadow-card');
   });
 
   it('renders AccountingReportsSection for unknown section fallback', () => {
@@ -135,7 +135,7 @@ describe('Reports Workspace Render Regression (Point 3)', () => {
       />
     );
     expect(html).toContain('id="section-tab-accounting_reports"');
-    expect(html).toContain('border-primary bg-primary');
+    expect(html).toContain('bg-card text-foreground shadow-card');
   });
 
   it('renders OverviewSection for analytics + invalid view', () => {
@@ -156,7 +156,7 @@ describe('Reports Workspace Render Regression (Point 3)', () => {
       />
     );
     expect(html).toContain('id="section-tab-overview"');
-    expect(html).toContain('border-primary bg-primary');
+    expect(html).toContain('bg-card text-foreground shadow-card');
   });
 
   it('renders AccountingReportsSection for accounting + invalid view', () => {
@@ -177,6 +177,6 @@ describe('Reports Workspace Render Regression (Point 3)', () => {
       />
     );
     expect(html).toContain('id="section-tab-accounting_reports"');
-    expect(html).toContain('border-primary bg-primary');
+    expect(html).toContain('bg-card text-foreground shadow-card');
   });
 });

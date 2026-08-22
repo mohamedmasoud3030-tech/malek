@@ -130,6 +130,10 @@ describe('ArrearsWorkflowSection', () => {
       <ArrearsSummaryCards overdueReport={undefined} agedReceivablesReport={reportWithoutBuckets} arrearsSummaryReport={undefined} />,
     );
 
-    expect(html).toContain('متأخرات 90+ يوم');
+    // Register metric strip (#1545): the outstanding card stays visible with
+    // the total; bucket-dependent cards hide when their data is missing.
+    expect(html).toContain('ملخص المتأخرات');
+    expect(html).toContain('المتبقي');
+    expect(html).toContain('50.000');
   });
 });

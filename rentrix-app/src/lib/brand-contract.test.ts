@@ -91,30 +91,12 @@ const DISPLAY_NAME_ALLOWLIST = new Map<string, string>([
     'src/features/contracts/actions/contractDetailActions.test.ts',
     'Fixture company name passed into the contract document model.',
   ],
-  [
-    'src/features/financials/financial-readiness-gates.test.ts',
-    'Reads source files by their repository path (rentrix-app/...), which is unchanged.',
-  ],
-  [
-    'src/release/single-office-launch-contract.test.ts',
-    'Reads source files by their repository path (rentrix-app/...), which is unchanged.',
-  ],
-  [
-    'src/p3/phase3a1b-inventory-catalog.test.ts',
-    'Walks the rentrix-app source directory by path.',
-  ],
+
   [
     'src/features/system/release-evidence-gates.test.ts',
     'Asserts the RENTRIX_STAGING_SEED_ID CI environment variable name.',
   ],
-  [
-    'src/features/automation/automation-service-real.test.ts',
-    'Asserts the rentrix-automation-hourly Supabase cron job name.',
-  ],
-  [
-    'src/features/contracts/unit-contract-write-migrations.test.ts',
-    'Asserts the rentrix-unit-status-hourly Supabase cron job name.',
-  ],
+
   [
     'src/features/reports/reports-workspace.e2e-fixture.tsx',
     'Fixture email address on the reserved @rentrix.test domain.',
@@ -171,6 +153,18 @@ const DISPLAY_NAME_ALLOWLIST = new Map<string, string>([
   [
     'src/features/landing/components/Showcase.tsx',
     'Static asset path /landing/rentrix-demo.mp4.',
+  ],
+  [
+    'src/features/ai-assistant/services/ai-assistant-edge-function.test.ts',
+    'Asserts the repository path rentrix-app/src/... when reading the frontend service file.',
+  ],
+  [
+    'src/features/automation/background-worker-contract.test.ts',
+    'Asserts the rentrix-automation-hourly Supabase cron job name in the migration.',
+  ],
+  [
+    'src/lib/pwa-safety-contract.test.ts',
+    'Negative assertion that the PWA config must not contain the legacy rentrix-pages cache name.',
   ],
 ]);
 
@@ -380,8 +374,10 @@ describe('MALEK brand contract — mark, wordmark, and tagline', () => {
 
     expect(indexHtml).not.toContain('icon-rentrix');
     expect(manifest).not.toContain('icon-rentrix');
-    // The only allowed mention in the build config is the precache exclusion.
-    expect(viteConfig).toMatch(/globIgnores:\s*\[[^\]]*icon-rentrix-\*\.png/);
+    // The legacy icon PNGs were fully removed from public/ (only malek-* remain),
+    // so the precache no longer needs a globIgnores exclusion. The stronger
+    // contract is that the build config never mentions the legacy icons at all.
+    expect(viteConfig).not.toMatch(/icon-rentrix/);
     expect(viteConfig).not.toMatch(/includeAssets:\s*\[[^\]]*icon-rentrix/);
 
     const stillReferencing = sourceFiles

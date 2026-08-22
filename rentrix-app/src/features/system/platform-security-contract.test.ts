@@ -22,19 +22,28 @@ describe('platform security and PWA boundaries', () => {
 
   it('keeps service-worker runtime caching limited to navigations and static assets', () => {
     const vite = readFileSync(resolve(root, 'rent' + 'rix-app/vite.config.ts'), 'utf8');
-    expect(vite).toContain('request.mode === "navigate"');
+    // PWA v1.3.0 (PWA_REVIEW.md): navigation HTML is never runtime-cached
+    // (fails closed to offline.html); runtime caching is limited to static
+    // asset destinations only.
     expect(vite).toContain('request.destination === "style"');
-    expect(vite).toContain('navigateFallbackDenylist: [/^\\/api\\//]');
+    expect(vite).toContain('request.destination === "script"');
+    expect(vite).toContain('request.destination === "font"');
+    expect(vite).toContain('navigateFallback: "/offline.html"');
+    expect(vite).toContain('navigateFallbackDenylist: [/^\\/api\\//');
+    expect(vite).not.toContain('request.mode === "navigate"');
     expect(vite).not.toMatch(/urlPattern:[^\n]*supabase/i);
   });
 
   it('precaches the install shell only — not every lazy JS chunk or landing PNG', () => {
     const vite = readFileSync(resolve(root, 'rent' + 'rix-app/vite.config.ts'), 'utf8');
-    expect(vite).toContain('"index.html"');
     expect(vite).toContain('"offline.html"');
+    expect(vite).toContain('"manifest.json"');
     expect(vite).toContain('"assets/*.css"');
     expect(vite).toContain('"fonts/**/*.{css,woff2}"');
     expect(vite).toContain('"malek-*.svg"');
+    // index.html is intentionally NOT precached: the online-first app serves
+    // the current shell and falls back to the explicit offline page.
+    expect(vite).not.toContain('"index.html"');
     expect(vite).not.toContain('**/*.{js,css,html,ico,png,svg,webp,woff2}');
     expect(vite).not.toMatch(/globPatterns:\s*\[[^\]]*js,/);
   });

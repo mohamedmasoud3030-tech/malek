@@ -91,7 +91,7 @@ describe('AppShell mobile bottom-sheet nav — scroll lock and focus restoration
     expect(sheet?.getAttribute('aria-modal')).toBe('true');
     // Bottom-sheet shape: anchored to the bottom, not full height.
     expect(sheet?.className).toContain('bottom-0');
-    expect(sheet?.className).toContain('rounded-t-3xl');
+    expect(sheet?.className).toContain('rounded-t-2xl');
     expect(document.body.style.overflow).toBe('hidden');
     expect(document.documentElement.style.overflow).toBe('hidden');
   });
