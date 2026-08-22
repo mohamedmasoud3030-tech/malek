@@ -106,14 +106,13 @@ describe('OwnersPage actual owner-model mobile workflow interactions', () => {
     await act(async () => root.render(<OwnersPage />));
 
     expect(container.textContent).toContain('عقار المالك');
-    const actionMenu = container.querySelector('button[aria-haspopup="listbox"]');
+    const actionMenu = container.querySelector('button[aria-haspopup="menu"]');
     expect(actionMenu).toBeTruthy();
     await act(async () => actionMenu?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
-    expect(document.body.textContent).toContain('التفاصيل');
-    expect(document.body.textContent).toContain('العلاقات');
-    expect(document.body.textContent).toContain('تعديل');
+    const menuItems = Array.from(document.body.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'));
+    expect(menuItems.map((item) => item.textContent)).toEqual(expect.arrayContaining(['التفاصيل', 'العلاقات', 'تعديل']));
 
-    const editButton = Array.from(document.body.querySelectorAll('button')).find((button) => button.textContent?.trim() === 'تعديل');
+    const editButton = menuItems.find((button) => button.textContent?.trim() === 'تعديل');
     expect(editButton).toBeTruthy();
     await act(async () => editButton?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
     expect(document.body.textContent).toContain('تعديل بيانات المالك');

@@ -123,11 +123,11 @@ describe('UnitsPage controller regression', () => {
     const desktopRows = container.querySelectorAll('tbody tr');
     expect(desktopRows.length).toBe(3);
 
-    // The shared EntityTable mobile register renders one card per record
-    // (max-md); it is the shared primitive, not a page-specific mobile layout.
-    expect(container.querySelectorAll('[role="listitem"]')).toHaveLength(3);
+    // The same semantic table remains present at narrow widths and scrolls horizontally.
     expect(container.querySelector('[data-entity-table-scroll]')).toBeTruthy();
     expect(container.querySelector('[data-compact-responsive-table]')).toBeTruthy();
+    expect(container.querySelector('table[data-entity-table]')).toBeTruthy();
+    expect(container.querySelector('[data-entity-table-mobile-list]')).toBeNull();
   });
 
   it('renders KPI cards with computed values', async () => {
