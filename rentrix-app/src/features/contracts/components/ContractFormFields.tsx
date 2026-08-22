@@ -49,7 +49,7 @@ const contractFormSteps = [
 
 const stepFieldGroups: readonly (readonly string[])[] = [
   ['property_id', 'unit_id', 'tenant_id', 'status'],
-  ['start_date', 'end_date', 'rent_amount', 'payment_cycle', 'payment_terms_id'],
+  ['start_date', 'end_date', 'rent_amount', 'payment_cycle', 'billing_day', 'grace_days', 'payment_terms_id'],
   ['cancellation_reason', 'notes', 'attachment_url'],
   [],
 ];
@@ -65,7 +65,15 @@ const stepFieldGroups: readonly (readonly string[])[] = [
  */
 const contractStepValidators = [
   contractSchema.innerType().pick({ property_id: true, unit_id: true, tenant_id: true, status: true }),
-  contractSchema.innerType().pick({ start_date: true, end_date: true, rent_amount: true, payment_cycle: true, payment_terms_id: true }),
+  contractSchema.innerType().pick({
+    start_date: true,
+    end_date: true,
+    rent_amount: true,
+    payment_cycle: true,
+    billing_day: true,
+    grace_days: true,
+    payment_terms_id: true,
+  }),
   contractSchema.innerType().pick({ cancellation_reason: true, notes: true, attachment_url: true }),
   null,
 ] as const;
