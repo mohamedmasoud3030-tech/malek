@@ -143,15 +143,15 @@ export function summarizeFinancialCashflowReport(params: {
   for (const payment of params.payments) {
     if (!payment.payment_date) continue;
     const month = payment.payment_date.slice(0, 7);
-    const row = rowsByMonth.get(month) ?? { month, revenue: 0, expenses: 0 };
-    row.revenue = toFinancialNumber(row.revenue) + toFinancialNumber(payment.amount);
+    const row = rowsByMonth.get(month) ?? { month, collections: 0, expenses: 0 };
+    row.collections = toFinancialNumber(row.collections) + toFinancialNumber(payment.amount);
     rowsByMonth.set(month, row);
   }
 
   for (const expense of params.expenses) {
     if (!expense.expense_date) continue;
     const month = expense.expense_date.slice(0, 7);
-    const row = rowsByMonth.get(month) ?? { month, revenue: 0, expenses: 0 };
+    const row = rowsByMonth.get(month) ?? { month, collections: 0, expenses: 0 };
     row.expenses = toFinancialNumber(row.expenses) + toFinancialNumber(expense.amount);
     rowsByMonth.set(month, row);
   }
@@ -159,7 +159,7 @@ export function summarizeFinancialCashflowReport(params: {
   const rows = Array.from(rowsByMonth.values()).sort((a, b) => a.month.localeCompare(b.month));
   return {
     rows,
-    totalRevenue: sumFinancialValues(rows.map((row) => row.revenue)),
+    totalCollections: sumFinancialValues(rows.map((row) => row.collections)),
     totalExpenses: sumFinancialValues(rows.map((row) => row.expenses)),
   };
 }
