@@ -7,7 +7,7 @@ describe('maintenance list display architecture', () => {
 
   it('uses shared EntityTable with status as the mobile work-queue datum', () => {
     expect(source).toContain('EntityTable');
-    expect(source).toContain('mobileVisibleSecondaryKey="status"');
+    expect(source).not.toContain('mobileVisibleSecondaryKey="status"');
     expect(source).toContain('priority: "identity"');
     expect(source).toContain('priority: "primary"');
     expect(source).toContain('priority: "actions"');

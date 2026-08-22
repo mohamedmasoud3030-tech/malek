@@ -7,7 +7,7 @@ describe('contract register display architecture', () => {
 
   it('uses EntityTable with explicit mobile hierarchy (tenant as primary datum)', () => {
     expect(table).toContain('EntityTable');
-    expect(table).toContain('mobileVisibleSecondaryKey="tenant"');
+    expect(table).not.toContain('mobileVisibleSecondaryKey="tenant"');
     expect(table).toContain("priority: \"identity\"");
     expect(table).toContain("priority: \"primary\"");
     expect(table).toContain("priority: \"actions\"");

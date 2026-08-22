@@ -161,7 +161,6 @@ export function OwnerDossierBody({
           <EntityTable
             aria-label="جدول عقارات المالك"
             rows={properties}
-            mobileVisibleSecondaryKey="status"
             columns={[
               // The register itself is the navigation affordance (row click on desktop,
               // the primary button on the mobile card). Rendering an inner <Link> here

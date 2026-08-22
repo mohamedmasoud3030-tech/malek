@@ -30,7 +30,7 @@ describe('unified detail preview contract', () => {
   it('keeps contract view actions inside the shared EntityTable register instead of a page-local mobile card', () => {
     expect(contractTable).toContain('onPreview(contract.id)');
     expect(contractTable).toContain('EntityTable');
-    expect(contractTable).toContain('mobileVisibleSecondaryKey="tenant"');
+    expect(contractTable).not.toContain('mobileVisibleSecondaryKey="tenant"');
     expect(contractTable).toContain("priority: \"identity\"");
     expect(contractTable).toContain("priority: \"primary\"");
     expect(contractTable).toContain("priority: \"actions\"");

@@ -148,7 +148,6 @@ export function InvoiceListSection({
               aria-label="جدول الفواتير"
               rows={invoices}
               keyOf={(invoice) => invoice.id}
-              mobileVisibleSecondaryKey="remaining"
               visibleColumnKeys={visibleColumnKeys}
               toolbar={(
                 <div className="flex justify-end">

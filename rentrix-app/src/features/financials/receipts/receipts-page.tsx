@@ -383,7 +383,6 @@ function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Rea
           columns={receiptColumns}
           visibleColumnKeys={visibleColumnKeys}
           keyOf={(receipt) => receipt.id}
-          mobileVisibleSecondaryKey="amount"
           isLoading={receiptsQuery.isLoading}
           error={receiptsQuery.error}
           onRetry={() => { void receiptsQuery.refetch(); }}

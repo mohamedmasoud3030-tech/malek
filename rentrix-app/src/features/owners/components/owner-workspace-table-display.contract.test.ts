@@ -22,7 +22,7 @@ describe('owner workspace table display architecture', () => {
     expect(source).toContain("priority: 'primary'");
     expect(source).toContain("priority: 'actions'");
     expect(source).toContain("priority: 'detail'");
-    expect(source).toContain("mobileVisibleSecondaryKey=\"contracts\"");
+    expect(source).not.toContain("mobileVisibleSecondaryKey=\"contracts\"");
   });
 
   it('keeps contextual owner actions without internal identifiers', () => {

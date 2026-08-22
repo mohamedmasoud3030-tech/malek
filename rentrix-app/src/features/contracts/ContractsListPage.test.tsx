@@ -89,17 +89,17 @@ describe('ContractsListPage load states', () => {
     expect(html).toContain('إنشاء عقد');
   });
 
-  it('renders the shared responsive register — desktop table and mobile card list', () => {
+  it('renders one semantic register table with horizontal scrolling at every viewport', () => {
     contractsMocks.contractsQuery.data = { rows: [contractFixture], count: 1 };
 
     const html = renderToStaticMarkup(<ContractsListPage />);
 
     expect(html).toContain('aria-label="جدول العقود"');
     expect(html).toContain('data-compact-responsive-table="true"');
-    // The shared mobile register (max-md) is a real list driven by EntityTable,
-    // not a page-specific layout.
-    expect(html).toContain('role="list" aria-label="جدول العقود"');
-    expect(html).toContain('data-entity-table-mobile-card="true"');
+    expect(html).toContain('data-entity-table-scroll');
+    expect(html).toContain('<table');
+    expect(html).not.toContain('data-entity-table-mobile-list');
+    expect(html).not.toContain('data-entity-table-mobile-card');
     expect(html).toContain('أحمد سالم');
     expect(html).toContain('A-101');
   });

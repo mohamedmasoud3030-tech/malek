@@ -7,7 +7,7 @@ describe('expenses section display architecture', () => {
 
   it('surfaces amount as the mobile primary money datum', () => {
     expect(source).toContain('EntityTable');
-    expect(source).toContain("mobileVisibleSecondaryKey=\"amount\"");
+    expect(source).not.toContain("mobileVisibleSecondaryKey=\"amount\"");
     expect(source).toContain("priority: 'identity'");
     expect(source).toContain("priority: 'primary'");
     expect(source).toContain("priority: 'actions'");

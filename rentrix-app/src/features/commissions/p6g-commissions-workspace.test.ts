@@ -37,6 +37,6 @@ describe('P6g — commissions workspace clarity (closeout)', () => {
   });
 
   it('keeps the mobile one-datum table mechanism on the commissions register', () => {
-    expect(view).toContain('mobileVisibleSecondaryKey="amount"');
+    expect(view).not.toContain('mobileVisibleSecondaryKey="amount"');
   });
 });

@@ -18,13 +18,13 @@ function sourceFiles(directory: string): string[] {
 }
 
 describe('P1 — shared responsive register contract', () => {
-  it('uses one EntityTable/DataTable foundation and does not render legacy mobile cards in registers', () => {
+  it('uses one EntityTable/DataTable foundation and does not render a parallel mobile representation in registers', () => {
     const productionSources = registerRoots.flatMap(sourceFiles).map((path) => readFileSync(path, 'utf8'));
     expect(productionSources.some((source) => source.includes('renderMobileCard'))).toBe(false);
     expect(productionSources.some((source) => source.includes('enableViewModeToggle'))).toBe(false);
     const sharedRegister = readFileSync(new URL('../components/ui/entity-table.tsx', import.meta.url), 'utf8');
     expect(sharedRegister).toContain('data-compact-responsive-table');
-    expect(sharedRegister).toContain('data-entity-table-mobile-list');
+    expect(sharedRegister).toContain('data-entity-table-scroll');
     expect(sharedRegister).toContain('data-entity-table-grid');
   });
 

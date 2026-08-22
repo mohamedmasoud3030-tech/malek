@@ -200,7 +200,6 @@ export function UnitsList({
           rows={unitsQuery.data ?? []}
           columns={columns}
           visibleColumnKeys={visibleColumnKeys}
-          mobileVisibleSecondaryKey="status"
           keyOf={(u) => u.id}
           isLoading={unitsQuery.isLoading}
           error={unitsQuery.isError ? unitsQuery.error : null}

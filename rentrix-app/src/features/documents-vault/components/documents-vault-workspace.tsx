@@ -198,12 +198,14 @@ export function DocumentsVaultWorkspace({ mode = 'standalone' }: DocumentsVaultW
 
   const body = (
     <>
-      <div className="flex justify-end">
-        <Button className="min-h-11" onClick={() => setUploadOpen(true)}>
-          <UploadCloud className="me-2 size-4" aria-hidden="true" />
-          رفع مستند
-        </Button>
-      </div>
+      {documents.length > 0 ? (
+        <div className="flex justify-end">
+          <Button className="min-h-11" onClick={() => setUploadOpen(true)}>
+            <UploadCloud className="me-2 size-4" aria-hidden="true" />
+            رفع مستند
+          </Button>
+        </div>
+      ) : null}
 
       <RegisterMetricStrip
         aria-label="ملخص المستندات"

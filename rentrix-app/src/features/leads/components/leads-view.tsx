@@ -467,7 +467,6 @@ function LeadRows({
       columns={columns}
       keyOf={(row) => row.id}
       aria-label="قائمة العملاء المحتملين"
-      mobileVisibleSecondaryKey="status"
     />
   );
 }

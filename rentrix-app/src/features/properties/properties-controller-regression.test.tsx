@@ -88,17 +88,17 @@ describe('PropertiesListPage controller regression', () => {
     expect(badge?.textContent).toBe('0');
   });
 
-  it('renders one dense desktop row per property plus the shared mobile card list', async () => {
+  it('renders one dense desktop row per property plus the shared horizontally scrollable table', async () => {
     await act(async () => { root.render(<PropertiesListPage />); });
 
     const desktopRows = container.querySelectorAll('tbody tr');
     expect(desktopRows.length).toBe(2);
 
-    // The shared EntityTable mobile register renders one card per record
-    // (max-md); it is the shared primitive, not a page-specific mobile layout.
-    expect(container.querySelectorAll('[role="listitem"]')).toHaveLength(2);
-    expect(container.querySelector('[data-entity-table-mobile-card]')).toBeTruthy();
+    // The same semantic table remains present at narrow widths and scrolls horizontally.
+    expect(container.querySelector('[data-entity-table-scroll]')).toBeTruthy();
     expect(container.querySelector('[data-compact-responsive-table]')).toBeTruthy();
+    expect(container.querySelector('table[data-entity-table]')).toBeTruthy();
+    expect(container.querySelector('[data-entity-table-mobile-list]')).toBeNull();
   });
 
   it('opens create modal and shows agreement fields', async () => {
@@ -133,7 +133,7 @@ describe('PropertiesListPage controller regression', () => {
     const menu = Array.from(container.querySelectorAll('button')).find((button) => button.textContent?.includes('إجراءات العقار')) as HTMLButtonElement | undefined;
     expect(menu).toBeTruthy();
     await act(async () => { menu?.click(); });
-    const editBtn = Array.from(document.body.querySelectorAll('[role="option"]')).find((button) => button.textContent?.includes('تعديل'));
+    const editBtn = Array.from(document.body.querySelectorAll('[role="menuitem"]')).find((button) => button.textContent?.includes('تعديل'));
     expect(editBtn).toBeTruthy();
     await act(async () => { (editBtn as HTMLButtonElement).click(); });
     expect(document.body.textContent).toContain('تعديل عقار');
@@ -143,7 +143,7 @@ describe('PropertiesListPage controller regression', () => {
     await act(async () => { root.render(<PropertiesListPage />); });
     const menu = Array.from(container.querySelectorAll('button')).find((button) => button.textContent?.includes('إجراءات العقار')) as HTMLButtonElement | undefined;
     await act(async () => { menu?.click(); });
-    const archiveBtn = Array.from(document.body.querySelectorAll('[role="option"]')).find((button) => button.textContent?.includes('أرشفة'));
+    const archiveBtn = Array.from(document.body.querySelectorAll('[role="menuitem"]')).find((button) => button.textContent?.includes('أرشفة'));
     expect(archiveBtn).toBeTruthy();
     await act(async () => { (archiveBtn as HTMLButtonElement).click(); });
     expect(document.body.textContent).toContain('أرشفة العقار');

@@ -195,7 +195,6 @@ export function MaintenanceList(props: MaintenanceListProps) {
     <div data-visual-wave="malek-pro" data-maintenance-list>
       <EntityTable
         aria-label="جدول طلبات الصيانة"
-        mobileVisibleSecondaryKey="status"
         rows={rows}
         columns={columns}
         visibleColumnKeys={visibleColumnKeys}
