@@ -85,21 +85,45 @@ async function main() {
     );
   }
 
-  console.log('\n[request_permission routing]');
-  const requestPermission = await functionInfo(db, 'public.request_permission(text,text,text)');
+  console.log('\n[effective permission resolver]');
+  const effectivePermission = await functionInfo(db, 'public.current_user_has_effective_app_permission(text)');
   record(
     'SD-08',
+    'effective permission resolver validates active app identity before role or explicit grants',
+    effectivePermission.security_definer &&
+      /is_app_user\s*\(\s*\)/i.test(effectivePermission.definition) &&
+      effectivePermission.definition.indexOf('is_app_user') < effectivePermission.definition.indexOf('user_permission_grants'),
+    effectivePermission.definition,
+  );
+  record(
+    'SD-09',
+    'effective permission resolver rejects unknown permission identifiers before ADMIN shortcut',
+    effectivePermission.definition.includes('app_permission_catalog') &&
+      effectivePermission.definition.indexOf('app_permission_catalog') < effectivePermission.definition.indexOf('is_admin'),
+    effectivePermission.definition,
+  );
+
+  console.log('\n[request_permission boundary and routing]');
+  const requestPermission = await functionInfo(db, 'public.request_permission(text,text,text)');
+  record(
+    'SD-10',
+    'request_permission requires an active app identity before SECURITY DEFINER writes',
+    /auth\.uid\s*\(\s*\)\s+is\s+null\s+or\s+not\s+coalesce\s*\(\s*public\.is_app_user\s*\(\s*\)/i.test(requestPermission.definition),
+    requestPermission.definition.slice(0, 800),
+  );
+  record(
+    'SD-11',
     'request_permission routes admin/manager notifications by company_members.role',
     !requestPermission.definition.includes('u.role::text') &&
       requestPermission.definition.includes('cm.role::text') &&
       /cm\.role::text\s+in\s*\(\s*'ADMIN'\s*,\s*'MANAGER'\s*\)/i.test(requestPermission.definition),
-    requestPermission.definition.slice(0, 700),
+    requestPermission.definition.slice(0, 900),
   );
 
   console.log('\n[support capability resolver]');
   const supportCapability = await functionInfo(db, 'public.current_user_has_support_capability(text)');
   record(
-    'SD-09',
+    'SD-12',
     'support capability has no named role bypass and uses effective permission resolver',
     supportCapability.definition.includes('current_user_has_effective_app_permission') &&
       !/current_app_role\s*\(\s*\)\s*(?:=|in)/i.test(supportCapability.definition),
@@ -119,7 +143,7 @@ async function main() {
   `);
   const rawRoleOffenders = securityDefiners.rows.filter((row) => hasRawUsersRoleAuthority(row.definition));
   record(
-    'SD-10',
+    'SD-13',
     'no effective SECURITY DEFINER uses public.users.role as ADMIN/MANAGER authority',
     rawRoleOffenders.length === 0,
     rawRoleOffenders.map((row) => `${row.schema_name}.${row.function_name}(${row.args})`).join(', '),
@@ -127,15 +151,15 @@ async function main() {
 
   console.log('\n[deployed EXECUTE boundaries]');
   const grantCases = [
-    ['SD-11', 'authenticated', 'public.post_receipt_atomic(jsonb)', false],
-    ['SD-12', 'authenticated', 'public.execute_receipt_void_internal(jsonb)', false],
-    ['SD-13', 'authenticated', 'public.import_bank_statement_batch_atomic(jsonb)', true],
-    ['SD-14', 'authenticated', 'public.approve_receipt_void_atomic(jsonb)', true],
-    ['SD-15', 'authenticated', 'public.recalculate_all_balances()', true],
-    ['SD-16', 'authenticated', 'public.resolve_maintenance_with_expense(text,numeric,text)', true],
-    ['SD-17', 'authenticated', 'public.run_scheduled_automation_rules()', true],
-    ['SD-18', 'authenticated', 'public.request_permission(text,text,text)', true],
-    ['SD-19', 'authenticated', 'public.current_user_has_support_capability(text)', true],
+    ['SD-14', 'authenticated', 'public.post_receipt_atomic(jsonb)', false],
+    ['SD-15', 'authenticated', 'public.execute_receipt_void_internal(jsonb)', false],
+    ['SD-16', 'authenticated', 'public.import_bank_statement_batch_atomic(jsonb)', true],
+    ['SD-17', 'authenticated', 'public.approve_receipt_void_atomic(jsonb)', true],
+    ['SD-18', 'authenticated', 'public.recalculate_all_balances()', true],
+    ['SD-19', 'authenticated', 'public.resolve_maintenance_with_expense(text,numeric,text)', true],
+    ['SD-20', 'authenticated', 'public.run_scheduled_automation_rules()', true],
+    ['SD-21', 'authenticated', 'public.request_permission(text,text,text)', true],
+    ['SD-22', 'authenticated', 'public.current_user_has_support_capability(text)', true],
   ];
   for (const [id, role, signature, expected] of grantCases) {
     const actual = await hasExecute(db, role, signature);
