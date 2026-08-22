@@ -290,7 +290,7 @@ function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Rea
               <Button
                 type="button"
                 variant="secondary"
-                className="min-h-10 rounded-lg px-3 text-xs"
+                className="min-h-11 rounded-lg px-3 text-xs"
                 onClick={() => {
                   setQuery('');
                   setMethod('all');
@@ -397,7 +397,7 @@ function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Rea
               {describeReceiptsViewport(receipts.length, hasMoreReceipts)}
             </p>
             {hasMoreReceipts ? (
-              <Button variant="outline" className="min-h-10 rounded-lg" onClick={loadMoreReceipts} disabled={receiptsQuery.isFetching}>
+              <Button variant="outline" className="min-h-11 rounded-lg" onClick={loadMoreReceipts} disabled={receiptsQuery.isFetching}>
                 {receiptsQuery.isFetching ? 'جارٍ التحميل...' : `عرض ${formatLatinNumber(RECEIPTS_PAGE_SIZE, 'ar')} إيصال أقدم`}
               </Button>
             ) : null}

@@ -133,16 +133,16 @@ export function PermissionRequestDialog({
 
         <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 sm:flex sm:justify-end">
           {existingRequest?.status === 'APPROVED' && existingRequest.grant_active ? (
-            <Button className="min-h-10" onClick={() => void refreshApprovedPermission()} disabled={pending}>
+            <Button className="min-h-11" onClick={() => void refreshApprovedPermission()} disabled={pending}>
               <RefreshCw className="me-1.5 size-3.5" aria-hidden="true" />تحديث الصلاحيات
             </Button>
           ) : (
-            <Button className="min-h-10" onClick={() => void submit()} disabled={pending || loadingExisting || existingRequest?.status === 'PENDING'}>
+            <Button className="min-h-11" onClick={() => void submit()} disabled={pending || loadingExisting || existingRequest?.status === 'PENDING'}>
               <Send className="me-1.5 size-3.5" aria-hidden="true" />
               {pending ? 'جارٍ الإرسال...' : existingRequest?.status === 'REJECTED' || existingRequest?.status === 'APPROVED' ? 'إعادة إرسال الطلب' : 'إرسال الطلب'}
             </Button>
           )}
-          <Button className="min-h-10" variant="secondary" onClick={() => onOpenChange(false)} disabled={pending}>إغلاق</Button>
+          <Button className="min-h-11" variant="secondary" onClick={() => onOpenChange(false)} disabled={pending}>إغلاق</Button>
         </div>
       </DialogContent>
     </Dialog>

@@ -56,7 +56,7 @@ export function LoginPage() {
       dir="rtl"
     >
       <section className="safe-top-app safe-bottom-overlay mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-[26rem] flex-col justify-center" data-login-main>
-        <div className="rounded-3xl border border-border/70 bg-card/90 p-6 shadow-card backdrop-blur-sm sm:p-8" data-login-card>
+        <div className="rounded-2xl border border-border/70 bg-card/90 p-6 shadow-card backdrop-blur-sm sm:p-8" data-login-card>
           <header className="mb-8 text-center" data-login-brand>
             <img src={APP_BRAND_LOCKUP_ASSET} alt={APP_BRAND_NAME} className="mx-auto size-16 object-contain sm:size-[4.5rem]" data-malek-canonical-lockup />
             <h1 className="mt-5 text-2xl font-extrabold text-foreground">مرحبًا بعودتك</h1>
