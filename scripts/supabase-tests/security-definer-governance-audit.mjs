@@ -183,6 +183,9 @@ async function main() {
     ['SD-26', 'authenticated', 'public.run_scheduled_automation_rules()', false],
     ['SD-27', 'authenticated', 'public.request_permission(text,text,text)', true],
     ['SD-28', 'authenticated', 'public.current_user_has_support_capability(text)', true],
+    ['SD-29', 'authenticated', 'public.recalculate_unit_statuses()', false],
+    ['SD-30', 'anon', 'public.recalculate_unit_statuses()', false],
+    ['SD-31', 'service_role', 'public.recalculate_unit_statuses()', true],
   ];
   for (const [id, role, signature, expected] of grantCases) {
     const actual = await hasExecute(db, role, signature);
