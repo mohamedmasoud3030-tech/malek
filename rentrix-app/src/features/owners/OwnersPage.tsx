@@ -2,7 +2,7 @@ import { Building2, LinkIcon, Plus, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { EntityForm } from '@/components/ui/entity-form';
-import { OperationalCommandPanel, OperationalMetricCard } from '@/components/ui/operational-summary';
+import { RegisterHeading, RegisterMetricStrip } from '@/components/layout/register-summary';
 import { AsyncContentState } from '@/components/async-content-state';
 import { OwnerFormDialog } from './components/owner-form-dialog';
 import { OwnerRelationshipsList, OwnershipLinkForm } from './components/owner-relationships';
@@ -56,7 +56,6 @@ export function OwnersWorkspace({ embedded = false }: OwnersWorkspaceProps) {
       size="wide"
       visualVariant="malek-pro"
       title="إدارة الملاك"
-      description="مساحة تشغيل موحدة لملفات الملاك وربط العقارات ونسب الملكية، بعيدًا عن التسويات المالية."
       count={formatCount(controller.summary.totalOwners)}
       primaryAction={(
         <Button className="min-h-11" onClick={controller.openCreateForm}>
@@ -65,38 +64,16 @@ export function OwnersWorkspace({ embedded = false }: OwnersWorkspaceProps) {
         </Button>
       )}
     >
-      <section
-        data-owner-summary
-        aria-label="ملخص الملاك والملكية"
-        className="grid gap-3 lg:grid-cols-[minmax(17rem,1.05fr)_minmax(0,2fr)]"
-      >
-        <OperationalCommandPanel
-          label="تغطية ربط العقارات"
-          value={`${formatCount(linkedCoverage)}%`}
-          icon={LinkIcon}
-          progress={linkedCoverage}
-          footer={(
-            <>
-              <span>{formatCount(controller.summary.linkedPropertiesCount)} مرتبطة</span>
-              <span>{formatCount(controller.summary.propertiesWithoutLinkedOwner)} بلا مالك</span>
-            </>
-          )}
+      <section data-owner-summary aria-label="ملخص الملاك والملكية">
+        <RegisterMetricStrip
+          aria-label="ملخص الملاك والملكية"
+          items={[
+            { id: 'total', label: 'الملاك', value: formatCount(controller.summary.totalOwners), icon: Users },
+            { id: 'active', label: 'نشطون', value: formatCount(controller.summary.activeOwners), icon: Users, tone: 'success' },
+            { id: 'coverage', label: 'تغطية الربط', value: `${formatCount(linkedCoverage)}%`, hint: `${formatCount(controller.summary.linkedPropertiesCount)} عقار`, icon: LinkIcon },
+            { id: 'unlinked', label: 'بلا مالك', value: formatCount(controller.summary.propertiesWithoutLinkedOwner), icon: Building2, tone: 'warning', hideWhenEmpty: true },
+          ]}
         />
-
-        <div className="grid gap-3 sm:grid-cols-2">
-          <OperationalMetricCard
-            label="إجمالي الملاك"
-            value={formatCount(controller.summary.totalOwners)}
-            hint="كل ملفات الملاك"
-            icon={Users}
-          />
-          <OperationalMetricCard
-            label="الملاك النشطون"
-            value={formatCount(controller.summary.activeOwners)}
-            hint="متاحون للتشغيل والربط"
-            icon={Users}
-          />
-        </div>
       </section>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.18fr)_minmax(22rem,0.82fr)]">
@@ -104,18 +81,8 @@ export function OwnersWorkspace({ embedded = false }: OwnersWorkspaceProps) {
           data-owner-register
           className="min-w-0 overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card"
         >
-          <header className="flex items-start justify-between gap-3 border-b border-border/70 bg-muted/35 px-4 py-4 sm:px-5">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="grid size-9 place-items-center rounded-xl bg-primary/9 text-primary">
-                  <Users className="size-4.5" aria-hidden="true" />
-                </span>
-                <h2 className="text-base font-black">سجل الملاك</h2>
-              </div>
-              <p className="mt-1.5 max-w-2xl text-xs font-medium leading-5 text-muted-foreground">
-                بيانات الملاك والعقارات المرتبطة فقط، دون أرصدة أو أرقام تسويات افتراضية.
-              </p>
-            </div>
+          <header className="border-b border-border/70 px-3 py-2.5 sm:px-4">
+            <RegisterHeading title="سجل الملاك" />
           </header>
           <div className="p-3 sm:p-4">
             <OwnerWorkspaceTable

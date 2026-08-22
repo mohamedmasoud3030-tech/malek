@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 type EntityCellProps = Readonly<{
-  icon: React.ComponentType<{ className?: string }>;
+  icon?: React.ComponentType<{ className?: string }>;
   title: ReactNode;
   subtitle?: ReactNode;
   /** Optional small caption rendered under the subtitle, e.g. a record id. */
@@ -27,9 +27,11 @@ const toneStyles: Record<NonNullable<EntityCellProps['tone']>, string> = {
 export function EntityCell({ icon: Icon, title, subtitle, meta, tone = 'primary' }: EntityCellProps) {
   return (
     <div className="flex items-center gap-2.5 min-w-0">
-      <div className={cn('grid size-9 shrink-0 place-items-center rounded-xl', toneStyles[tone])}>
-        <Icon className="size-4" />
-      </div>
+      {Icon ? (
+        <div className={cn('grid size-9 shrink-0 place-items-center rounded-xl', toneStyles[tone])}>
+          <Icon className="size-4" />
+        </div>
+      ) : null}
       <div className="min-w-0">
         <p className="font-semibold text-sm leading-snug truncate">{title}</p>
         {subtitle ? <p className="text-xs text-muted-foreground truncate mt-0.5">{subtitle}</p> : null}

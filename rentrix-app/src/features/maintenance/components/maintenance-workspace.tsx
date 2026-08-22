@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import { AsyncContentState } from '@/components/async-content-state';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
+import { RegisterAttention, RegisterHeading, RegisterMetricStrip } from '@/components/layout/register-summary';
 import { ActiveFilterBar, type ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { Button } from '@/components/ui/button';
 import { FilterBar } from '@/components/ui/filter-bar';
@@ -22,33 +23,6 @@ import { useMaintenancePageController } from '../useMaintenancePageController';
 
 function formatCount(value: number) {
   return new Intl.NumberFormat('en-US').format(value);
-}
-
-function MaintenanceMetric({
-  label,
-  value,
-  hint,
-  icon: Icon,
-}: Readonly<{
-  label: string;
-  value: number;
-  hint: string;
-  icon: typeof Wrench;
-}>) {
-  return (
-    <article className="group relative overflow-hidden rounded-2xl border border-border/75 bg-card p-4 shadow-card">
-      <div className="relative flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-bold text-muted-foreground">{label}</p>
-          <p className="mt-2 text-2xl font-black tabular-nums">{formatCount(value)}</p>
-          <p className="mt-1 text-[11px] font-medium text-muted-foreground">{hint}</p>
-        </div>
-        <span className="grid size-11 shrink-0 place-items-center rounded-xl border border-primary/15 bg-primary/8 text-primary">
-          <Icon className="size-5" aria-hidden="true" />
-        </span>
-      </div>
-    </article>
-  );
 }
 
 export type MaintenanceWorkspaceMode = 'standalone' | 'embedded';
@@ -181,42 +155,21 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
         <DocumentReadinessNotice />
       ) : null}
 
-      <section
-        data-maintenance-summary
-        aria-label="ملخص تشغيل الصيانة"
-        className="grid gap-3 lg:grid-cols-[minmax(17rem,1.05fr)_minmax(0,2fr)]"
-      >
-        <article className="relative overflow-hidden rounded-2xl border border-sidebar-border bg-sidebar p-5 text-sidebar-foreground shadow-elevated">
-          <div className="relative">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-bold text-sidebar-foreground/65">طلبات تحتاج انتباهًا فوريًا</p>
-                <p className="mt-2 text-4xl font-black tabular-nums">
-                  {controller.isLoading ? '—' : formatCount(controller.maintenanceSummary.urgent)}
-                </p>
-              </div>
-              <span className="grid size-12 place-items-center rounded-2xl border border-sidebar-border bg-sidebar-accent text-warning">
-                <Flame className="size-6" aria-hidden="true" />
-              </span>
-            </div>
-            <p className="mt-4 text-xs font-medium leading-5 text-sidebar-foreground/72">
-              أولوية عاجلة ضمن الفلاتر الحالية. افتح الطلب لتحديد المسؤول أو بدء التنفيذ.
-            </p>
-            <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs font-bold text-sidebar-foreground/72">
-              <span>{formatCount(controller.maintenanceSummary.open)} مفتوحة</span>
-              <span>{formatCount(controller.maintenanceSummary.inProgress)} قيد التنفيذ</span>
-            </div>
-          </div>
-        </article>
-
-        <div className="grid gap-3">
-          <MaintenanceMetric
-            label="إجمالي الطلبات"
-            value={controller.maintenanceSummary.total}
-            hint="ضمن الفلاتر الحالية"
-            icon={Wrench}
-          />
-        </div>
+      <section data-maintenance-summary aria-label="ملخص تشغيل الصيانة" className="space-y-2">
+        <RegisterAttention
+          count={controller.isLoading ? 0 : controller.maintenanceSummary.urgent}
+          label="طلبات تحتاج انتباهًا فوريًا"
+          description="أولوية عاجلة ضمن الفلاتر الحالية."
+        />
+        <RegisterMetricStrip
+          aria-label="ملخص تشغيل الصيانة"
+          items={[
+            { id: 'total', label: 'الطلبات', value: formatCount(controller.maintenanceSummary.total), icon: Wrench, hideWhenEmpty: true },
+            { id: 'open', label: 'مفتوحة', value: formatCount(controller.maintenanceSummary.open), hideWhenEmpty: true },
+            { id: 'progress', label: 'قيد التنفيذ', value: formatCount(controller.maintenanceSummary.inProgress), hideWhenEmpty: true },
+            { id: 'urgent', label: 'عاجلة', value: formatCount(controller.maintenanceSummary.urgent), icon: Flame, tone: 'danger', hideWhenEmpty: true },
+          ]}
+        />
       </section>
 
       <FilterBar
@@ -269,24 +222,11 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
         data-maintenance-register
         className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card"
       >
-        <header className="flex flex-col gap-3 border-b border-border/70 bg-muted/35 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="grid size-9 place-items-center rounded-xl bg-primary/9 text-primary">
-                <Wrench className="size-4.5" aria-hidden="true" />
-              </span>
-              <h2 className="text-base font-black">سجل طلبات الصيانة</h2>
-            </div>
-            <p className="mt-1.5 text-xs font-medium text-muted-foreground">
-              {formatCount(controller.filteredMaintenanceRows.length)} طلب ضمن العرض الحالي.
-            </p>
-          </div>
-          {controller.maintenanceSummary.urgent > 0 ? (
-            <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-destructive/20 bg-destructive/10 px-3 py-1.5 text-xs font-black text-destructive">
-              <Flame className="size-3.5" aria-hidden="true" />
-              {formatCount(controller.maintenanceSummary.urgent)} عاجلة
-            </span>
-          ) : null}
+        <header className="border-b border-border/70 px-3 py-2.5 sm:px-4">
+          <RegisterHeading
+            title="سجل طلبات الصيانة"
+            extra={<RegisterAttention count={controller.maintenanceSummary.urgent} label="عاجلة" />}
+          />
         </header>
 
         <div className="p-3 sm:p-4">
@@ -381,7 +321,6 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
     <PageLayout dir="rtl" size="wide" visualVariant="malek-pro">
       <PageHeader
         title="طلبات الصيانة"
-        description="غرفة متابعة للطلبات العاجلة والمفتوحة وقيد التنفيذ مع الإجراءات والطباعة من مكان واحد."
         count={controller.filteredMaintenanceRows.length}
         primaryAction={createAction}
         secondaryActions={printAction}

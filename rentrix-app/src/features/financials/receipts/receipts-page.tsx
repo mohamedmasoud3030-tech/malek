@@ -2,6 +2,7 @@ import { Link, useSearch } from '@tanstack/react-router';
 import { ArrowRight, Ban, CalendarDays, CheckCircle2, Clock3, Eye, Printer, ReceiptText, ShieldCheck, Wallet, WalletCards } from 'lucide-react';
 import { useDeferredValue, useMemo, useState } from 'react';
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
+import { RegisterHeading, RegisterMetricStrip } from '@/components/layout/register-summary';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { DataTableColumnsMenu } from '@/components/ui/data-table';
@@ -9,8 +10,6 @@ import { EntityForm } from '@/components/ui/entity-form';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { Input } from '@/components/ui/input';
-import { KpiCard } from '@/components/ui/kpi-card';
-import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { canAccess, financialOperationPermissions, type AuthorizationContext } from '@/features/auth/permissions';
@@ -247,18 +246,20 @@ function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Rea
       embedded={embedded}
       visualVariant="malek-pro"
       title="الإيصالات"
-      description="مراجعة إيصالات الدفعات المنشورة، فتح التفاصيل والطباعة، وإدارة الإلغاء وفق الصلاحيات."
+
       secondaryActions={<Button variant="secondary" className="min-h-11" asChild><Link to="/financials"><ArrowRight className="me-2 size-4" />المالية</Link></Button>}
       primaryAction={selectedReceiptId ? (
         <Button onClick={() => openReceiptPrintView(selectedReceiptId)}><Printer className="me-2 size-4" />طباعة المحدد</Button>
       ) : undefined}
     >
-      <ResponsiveCardGrid desktopColumns={4}>
-        <KpiCard label="الإيصالات المعروضة" value={filteredReceipts.length} sub="ضمن الفلاتر الحالية" icon={ReceiptText} accent="primary" />
-        <KpiCard label="إجمالي التحصيل" value={formatMoney(totalAmount)} sub="الإيصالات المنشورة فقط" icon={WalletCards} accent="emerald" />
-        <KpiCard label="أحدث النتائج" value={receipts.length} sub={hasMoreReceipts ? `ضمن أحدث ${formatLatinNumber(receiptsLimit, 'ar')} إيصال` : 'كل الإيصالات المتاحة'} icon={CalendarDays} accent="sky" />
-        <KpiCard label="تحصيل اليوم" value={formatMoney(todayCollectedAmount)} sub={`${formatLatinNumber(todayReceiptCount, 'ar')} إيصال منشور اليوم`} icon={Wallet} accent="emerald" />
-      </ResponsiveCardGrid>
+      <RegisterMetricStrip
+        aria-label="ملخص الإيصالات"
+        items={[
+          { id: 'shown', label: 'المعروضة', value: filteredReceipts.length, icon: ReceiptText, hideWhenEmpty: true },
+          { id: 'total', label: 'التحصيل', value: formatMoney(totalAmount), icon: WalletCards },
+          { id: 'today', label: 'تحصيل اليوم', value: formatMoney(todayCollectedAmount), hint: `${formatLatinNumber(todayReceiptCount, 'ar')} إيصال`, icon: Wallet, hideWhenEmpty: true },
+        ]}
+      />
 
       <FilterBar
         searchValue={query}
@@ -304,7 +305,7 @@ function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Rea
         )}
       />
 
-      {canVoidReceipt ? (
+      {canVoidReceipt && ((pendingVoidRequestsQuery.data ?? []).length > 0 || pendingVoidRequestsQuery.isLoading || pendingVoidRequestsQuery.isError) ? (
         <Card className="overflow-hidden">
           <CardHeader className="border-b border-border/60 bg-warning/5">
             <CardTitle className="flex items-center gap-2">

@@ -2,6 +2,7 @@ import { AlertTriangle, Building2, Edit, FileText, KeyRound, Mail, Phone, Plus, 
 import { useEffect, useMemo, useState } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
+import { RegisterHeading, RegisterMetricStrip } from '@/components/layout/register-summary';
 import { useDialogNavigate } from '@/app/router/background-location';
 import { Button } from '@/components/ui/button';
 import { DataTableColumnsMenu } from '@/components/ui/data-table';
@@ -9,7 +10,7 @@ import { EntityActions } from '@/components/ui/entity-actions';
 import { useLocation, useNavigate, useSearch } from '@tanstack/react-router';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { FilterBar } from '@/components/ui/filter-bar';
-import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
+
 import { PersonFormModal } from '@/features/people/person-form-modal';
 import type { TenantWorkspaceRow } from './tenantWorkspaceService';
 import { useTenantWorkspace } from './useTenantWorkspace';
@@ -92,22 +93,18 @@ function TenantSummary({ rows, total }: Readonly<{ rows: TenantWorkspaceRow[]; t
 
   return (
     <section data-tenant-summary aria-label="ملخص المستأجرين">
-      <ResponsiveCardGrid desktopColumns={2}>
-        {items.map(({ label, value, icon: Icon, hint }) => (
-          <article key={label} className="group relative min-w-0 overflow-hidden rounded-xl border border-border/75 bg-card p-3 shadow-card sm:p-3.5">
-            <div className="relative flex min-w-0 items-start justify-between gap-2.5">
-              <div className="min-w-0">
-                <p className="truncate text-[11px] font-bold text-muted-foreground sm:text-xs">{label}</p>
-                <p className="mt-1.5 text-xl font-black tabular-nums sm:text-2xl">{value}</p>
-                <p className="mt-0.5 line-clamp-2 text-[10px] font-medium leading-4 text-muted-foreground sm:text-[11px]">{hint}</p>
-              </div>
-              <span className="grid size-9 shrink-0 place-items-center rounded-lg border border-primary/15 bg-primary/8 text-primary sm:size-10">
-                <Icon className="size-4 sm:size-[1.05rem]" aria-hidden="true" />
-              </span>
-            </div>
-          </article>
-        ))}
-      </ResponsiveCardGrid>
+      <RegisterMetricStrip
+        aria-label="ملخص المستأجرين"
+        items={items.map((item) => ({
+          id: item.label,
+          label: item.label,
+          value: item.value,
+          hint: item.hint,
+          icon: item.icon,
+          hideWhenEmpty: item.label === 'بحاجة لمتابعة',
+          tone: item.label === 'بحاجة لمتابعة' ? 'warning' : 'default',
+        }))}
+      />
     </section>
   );
 }
@@ -225,17 +222,7 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
       />
 
       <section data-tenant-register className="min-w-0 space-y-2.5">
-        <header className="flex min-h-11 items-center justify-between gap-3 px-1">
-          <div className="flex min-w-0 items-center gap-2.5">
-            <span className="grid size-8 shrink-0 place-items-center rounded-lg border border-primary/10 bg-primary/[0.06] text-primary">
-              <Users className="size-4" aria-hidden="true" />
-            </span>
-            <div className="min-w-0">
-              <h2 className="truncate text-sm font-black">سجل المستأجرين</h2>
-              <p className="truncate text-[11px] font-medium text-muted-foreground">{rows.length} مستأجر في الصفحة الحالية</p>
-            </div>
-          </div>
-        </header>
+        <RegisterHeading title="سجل المستأجرين" />
 
         <EntityTable
           aria-label="جدول المستأجرين"
@@ -267,7 +254,6 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
     <PageLayout dir="rtl" size="wide" visualVariant="malek-pro">
       <PageHeader
         title="المستأجرون"
-        description="ملفات المستأجرين وعقودهم ووحداتهم وحالة المتابعة من مكان واحد."
         count={totalCount}
         action={createAction}
       />

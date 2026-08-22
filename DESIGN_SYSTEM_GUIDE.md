@@ -112,7 +112,7 @@ Use `TextField`/`FormField` for label, help, error, and required-state behavior.
 
 ### Data
 
-Use `EntityTable` for entity registers and `DataTable` for general tabular data. Use `TableEmpty`, `TableLoading`, and `TableError` instead of custom state rows. On narrow screens provide the existing mobile card/read-model path; do not force users to decode a desktop table.
+Use `EntityTable` for entity registers and `DataTable` for general tabular data. Use `TableEmpty`, `TableLoading`, and `TableError` instead of custom state rows. Every viewport renders the same table; on narrow screens the grid stays a real table and scrolls horizontally. Do not convert tabular registers into mobile cards.
 
 ### Overlays
 
@@ -126,7 +126,7 @@ Every data surface must account for loading, empty, error, permission denied, di
 
 - RTL is the default document direction; use logical properties and Tailwind `start/end`, `ms/me`, and `inset-inline`.
 - Do not hard-code left/right for navigation, borders, icons, or action order unless the content is intentionally LTR (dates, codes, URLs).
-- Mobile is a first-class operating mode: controls remain tappable, tables have a mobile representation, and fixed docks reserve content space.
+- Mobile is a first-class operating mode of the same system: controls remain tappable, tables stay tables with horizontal overflow, and fixed docks reserve content space.
 - At zoom 200%, content must remain readable without horizontal page overflow; local horizontal scrolling is acceptable for wide data tables.
 - Avoid fixed heights for text-bearing surfaces.
 - Preserve focus visibility on keyboard navigation and never remove outlines without a replacement.

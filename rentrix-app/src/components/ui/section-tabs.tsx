@@ -65,7 +65,7 @@ export function SectionTabs<TId extends string>({ items, activeId, onChange, ari
       <nav
         aria-label={ariaLabel}
         role="tablist"
-        className="flex min-w-0 gap-1 overflow-x-auto rounded-xl border border-border/70 bg-card/75 p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex min-w-0 gap-0.5 overflow-x-auto overscroll-x-contain rounded-lg border border-border/60 bg-muted/25 p-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {items.map((item, index) => {
           const isActive = activeId === item.id;
@@ -82,10 +82,10 @@ export function SectionTabs<TId extends string>({ items, activeId, onChange, ari
               aria-controls={panelId ?? `section-panel-${item.id}`}
               id={`section-tab-${item.id}`}
               className={cn(
-                'flex min-h-10 shrink-0 items-center gap-1.5 rounded-lg border border-transparent px-3 py-1.5 text-xs font-semibold outline-none transition-colors focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none',
+                'flex min-h-11 shrink-0 items-center gap-1.5 rounded-md border border-transparent px-2.5 py-1 text-[12px] font-semibold outline-none transition-colors focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none',
                 isActive
-                  ? 'border-primary/20 bg-primary/10 text-primary'
-                  : 'text-muted-foreground hover:bg-muted/65 hover:text-foreground',
+                  ? 'bg-card text-foreground shadow-[0_1px_2px_hsl(var(--foreground)/0.06)]'
+                  : 'text-muted-foreground hover:bg-background/70 hover:text-foreground',
               )}
             >
               <item.icon className="size-3.5" aria-hidden="true" />

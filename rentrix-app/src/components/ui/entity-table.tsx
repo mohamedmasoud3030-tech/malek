@@ -245,6 +245,7 @@ function TableSkeleton({ rows, cols, hasSelection }: { rows: number; cols: numbe
 
 function PaginationBar({ pagination }: { pagination: PaginationState }) {
   const totalPages = Math.max(1, Math.ceil(pagination.total / pagination.pageSize));
+  if (totalPages <= 1) return null;
   const { page, onPageChange } = pagination;
   return (
     <nav

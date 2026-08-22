@@ -13,9 +13,9 @@ type StateSurfaceProps = {
 export function OfflineState({ title, description, action, className }: StateSurfaceProps) {
   return (
     <Card data-offline-state role="status" aria-live="polite" className={className}>
-      <CardContent className="flex min-h-56 flex-col items-center justify-center gap-4 text-center">
-        <div className="grid size-14 place-items-center rounded-xl bg-warning-bg text-warning">
-          <CloudOff className="size-7" aria-hidden="true" />
+      <CardContent className="flex min-h-28 flex-col items-center justify-center gap-2.5 px-4 py-5 text-center">
+        <div className="grid size-9 place-items-center rounded-lg bg-warning-bg text-warning">
+          <CloudOff className="size-4" aria-hidden="true" />
         </div>
         <div>
           <h3 className="text-base font-semibold">{title}</h3>
@@ -31,9 +31,9 @@ export function OfflineState({ title, description, action, className }: StateSur
 export function NoPermissionState({ title, description, action, className }: StateSurfaceProps) {
   return (
     <Card data-no-permission-state role="status" className={className}>
-      <CardContent className="flex min-h-56 flex-col items-center justify-center gap-4 text-center">
-        <div className="grid size-14 place-items-center rounded-xl bg-danger-bg text-danger">
-          <LockKeyhole className="size-7" aria-hidden="true" />
+      <CardContent className="flex min-h-28 flex-col items-center justify-center gap-2.5 px-4 py-5 text-center">
+        <div className="grid size-9 place-items-center rounded-lg bg-danger-bg text-danger">
+          <LockKeyhole className="size-4" aria-hidden="true" />
         </div>
         <div>
           <h3 className="text-base font-semibold">{title}</h3>
