@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { canAccess, financialOperationPermissions } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
+import type { SupportedTimezone } from '@/lib/companySettings';
 import { getTodayLocalDateString } from '../financials-date-utils';
 import { summarizeReconciliation } from './bankReconciliationService';
 import type {
@@ -61,7 +62,7 @@ export const emptyImportDraft: BankStatementImportValues = {
   csv: '',
 };
 
-export function useBankReconciliationController() {
+export function useBankReconciliationController(timeZone: SupportedTimezone) {
   const [filters, setFilters] = useState<BankReconciliationFilters>({
     bankAccountId: '',
     status: 'all',
@@ -88,7 +89,7 @@ export function useBankReconciliationController() {
   const accounts = accountsQuery.data ?? [];
   const summary = useMemo(() => summarizeReconciliation(lines), [lines]);
   const selectedLine = lines.find((line) => line.id === matchDraft.statement_line_id);
-  const suggestionsQuery = useSuggestedBankMatches(selectedLine);
+  const suggestionsQuery = useSuggestedBankMatches(selectedLine, timeZone);
   const canManageReconciliation = canAccess(authorization, financialOperationPermissions.matchBankReconciliation);
   const writeError = createLine.error ?? importCsv.error ?? matchLine.error ?? ignoreLine.error;
   const pendingIgnoreLine = lines.find((line) => line.id === pendingIgnoreLineId) ?? null;
