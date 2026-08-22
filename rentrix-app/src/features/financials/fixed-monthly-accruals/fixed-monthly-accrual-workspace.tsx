@@ -3,10 +3,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { RegisterMetricStrip } from '@/components/layout/register-summary';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { useAuth } from '@/hooks/use-auth';
 import { canAccess } from '@/features/auth/permissions';
 import { formatCompactDate, getTodayLocalDateString } from '@/features/financials/financials-date-utils';
@@ -244,6 +244,9 @@ export function FixedMonthlyAccrualWorkspace() {
                 <Input
                   id="fixed-accrual-from"
                   type="date"
+                  dir="ltr"
+                  lang="en-GB"
+                  className="text-start tabular-nums"
                   value={dateFrom}
                   onChange={(event) => setDateFrom(event.target.value)}
                 />
@@ -254,6 +257,9 @@ export function FixedMonthlyAccrualWorkspace() {
                 <Input
                   id="fixed-accrual-to"
                   type="date"
+                  dir="ltr"
+                  lang="en-GB"
+                  className="text-start tabular-nums"
                   value={dateTo}
                   max={initialRange.to}
                   onChange={(event) => setDateTo(event.target.value)}
@@ -281,12 +287,9 @@ export function FixedMonthlyAccrualWorkspace() {
             </div>
           </div>
 
-          <div className="flex gap-2 rounded-xl border border-warning/30 bg-warning/5 p-3 text-xs leading-6 text-foreground">
+          <div className="flex gap-2 rounded-xl border border-warning/30 bg-warning/5 p-3 text-xs leading-5 text-foreground">
             <ShieldAlert className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden="true" />
-            <p>
-              الضريبة غير مطبقة في هذه المرحلة لعدم وجود إعداد ضريبي رسمي مُؤرّخ صالح لليوم الاقتصادي؛
-              لا يقبل الخادم نسبة أو مبلغ ضريبة من المتصفح ولا ينشئ حركة على الحساب 2100.
-            </p>
+            <p><strong>الضريبة غير مطبقة:</strong> لا يوجد إعداد ضريبي رسمي مؤرّخ صالح لليوم الاقتصادي؛ والخادم لا يقبل ضريبة من المتصفح ولا ينشئ حركة على الحساب 2100.</p>
           </div>
 
           {error ? (
@@ -303,12 +306,16 @@ export function FixedMonthlyAccrualWorkspace() {
       </Card>
 
       {data ? (
-        <ResponsiveCardGrid gap="sm">
-          <Card variant="statistic"><p className="text-xs text-muted-foreground">عدد الأيام</p><p className="mt-1 text-xl font-black">{data.totalCount}</p></Card>
-          <Card variant="statistic"><p className="text-xs text-muted-foreground">الصافي</p><p className="mt-1 text-xl font-black">{formatOmr(data.netAmount)}</p></Card>
-          <Card variant="statistic"><p className="text-xs text-muted-foreground">الضريبة</p><p className="mt-1 text-xl font-black">{formatOmr(data.taxAmount)}</p></Card>
-          <Card variant="statistic"><p className="text-xs text-muted-foreground">الإجمالي</p><p className="mt-1 text-xl font-black">{formatOmr(data.grossAmount)}</p></Card>
-        </ResponsiveCardGrid>
+        <RegisterMetricStrip
+          aria-label="ملخص الاستحقاقات"
+          items={[
+            { id: 'days', label: 'عدد الأيام', value: data.totalCount },
+            { id: 'net', label: 'الصافي', value: formatOmr(data.netAmount) },
+            // Tax remains visible at zero because it is material accounting information.
+            { id: 'tax', label: 'الضريبة', value: formatOmr(data.taxAmount) },
+            { id: 'gross', label: 'الإجمالي', value: formatOmr(data.grossAmount) },
+          ]}
+        />
       ) : null}
 
       {reversalAccrualId ? (
@@ -364,7 +371,6 @@ export function FixedMonthlyAccrualWorkspace() {
           onRetry={() => void load()}
           emptyTitle="لا توجد استحقاقات"
           emptyDescription="لا توجد استحقاقات في النطاق المحدد. غيّر نطاق التاريخ أو نفّذ الاستحقاق."
-          mobileVisibleSecondaryKey="gross"
           aria-label="سجل الاستحقاقات الشهرية الثابتة"
         />
       </section>

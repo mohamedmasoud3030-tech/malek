@@ -56,7 +56,6 @@ export function ReceiptsSection({
           <EntityTable
             aria-label="جدول الإيصالات"
             rows={receipts}
-            mobileVisibleSecondaryKey="amount"
             columns={[
               { key: 'receipt_number', priority: 'identity' as const, header: 'رقم الإيصال', render: (receipt) => <span className="font-bold">{`إيصال ${receipt.receipt_number}`}</span> },
               { key: 'payment_date', priority: 'secondary' as const, header: 'التاريخ والطريقة', render: (receipt) => <span>{formatDate(receipt.payment_date)} · {paymentMethodLabels[receipt.payment_method] ?? receipt.payment_method}</span> },

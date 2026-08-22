@@ -412,7 +412,6 @@ function BankStatementLinesTable({
       rows={lines}
       columns={columns}
       keyOf={(line) => line.id}
-      mobileVisibleSecondaryKey="amount"
       emptyTitle="لا توجد حركات كشف"
       emptyDescription="لا توجد حركات تطابق الفلاتر الحالية."
     />

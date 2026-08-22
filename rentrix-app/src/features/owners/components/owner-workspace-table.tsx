@@ -111,9 +111,7 @@ export function OwnerWorkspaceTable({
     onEditOwner(previewRow.owner);
   };
 
-  // Column priorities drive the shared EntityTable mobile register: identity +
-  // one operational datum (active contracts) + actions. Dense ownership and
-  // property columns remain optional comparison fields on wider viewports.
+  // Column priorities preserve identity/actions while the same table scrolls on narrow viewports.
   const columns: ColumnDef<OwnerWorkspaceRow>[] = [
     {
       key: 'name',
@@ -175,7 +173,6 @@ export function OwnerWorkspaceTable({
           aria-label="جدول الملاك"
           rows={rows}
           onRowClick={(row) => openPreview(row.owner.id)}
-          mobileVisibleSecondaryKey="contracts"
           columns={columns}
           visibleColumnKeys={visibleColumnKeys}
           keyOf={(row) => row.owner.id}

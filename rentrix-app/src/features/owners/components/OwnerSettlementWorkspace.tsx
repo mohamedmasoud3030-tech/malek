@@ -405,7 +405,6 @@ export function OwnerSettlementWorkspace({ ownerId }: Readonly<{ ownerId?: strin
             rows={settlements}
             columns={columns}
             keyOf={(settlement) => settlement.id}
-            mobileVisibleSecondaryKey="net"
           />
         </AsyncContentState>
       </section>

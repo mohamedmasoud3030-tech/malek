@@ -66,7 +66,6 @@ function ContractInvoicesTable({ snapshot }: Readonly<{ snapshot: ContractPaymen
       rows={snapshot.invoices}
       columns={columns}
       keyOf={(inv) => inv.id}
-      mobileVisibleSecondaryKey="remaining"
       emptyTitle="لا توجد فواتير مرتبطة"
       emptyDescription="لم يتم العثور على فواتير حالية لهذا العقد عبر مسار البيانات المعتمد."
     />
@@ -86,7 +85,6 @@ function ContractPaymentsTable({ snapshot }: Readonly<{ snapshot: ContractPaymen
   return (
     <EntityTable
       aria-label="جدول دفعات العقد"
-      mobileVisibleSecondaryKey="amount"
       rows={snapshot.payments}
       columns={columns}
       keyOf={(p) => p.id}

@@ -88,7 +88,7 @@ describe('PropertiesListPage controller regression', () => {
     expect(badge?.textContent).toBe('0');
   });
 
-  it('renders one dense desktop row per property plus the shared mobile card list', async () => {
+  it('renders one dense desktop row per property plus the shared horizontally scrollable table', async () => {
     await act(async () => { root.render(<PropertiesListPage />); });
 
     const desktopRows = container.querySelectorAll('tbody tr');
@@ -97,7 +97,7 @@ describe('PropertiesListPage controller regression', () => {
     // The shared EntityTable mobile register renders one card per record
     // (max-md); it is the shared primitive, not a page-specific mobile layout.
     expect(container.querySelectorAll('[role="listitem"]')).toHaveLength(2);
-    expect(container.querySelector('[data-entity-table-mobile-card]')).toBeTruthy();
+    expect(container.querySelector('[data-entity-table-scroll]')).toBeTruthy();
     expect(container.querySelector('[data-compact-responsive-table]')).toBeTruthy();
   });
 

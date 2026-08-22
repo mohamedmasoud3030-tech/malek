@@ -99,7 +99,7 @@ describe('ContractsListPage load states', () => {
     // The shared mobile register (max-md) is a real list driven by EntityTable,
     // not a page-specific layout.
     expect(html).toContain('role="list" aria-label="جدول العقود"');
-    expect(html).toContain('data-entity-table-mobile-card="true"');
+    expect(html).toContain('data-entity-table-scroll');
     expect(html).toContain('أحمد سالم');
     expect(html).toContain('A-101');
   });

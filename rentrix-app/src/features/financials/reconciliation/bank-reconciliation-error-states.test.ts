@@ -59,7 +59,7 @@ describe('bank reconciliation mobile register hierarchy', () => {
   );
 
   it('surfaces amount as the mobile primary datum for unmatched money work', () => {
-    expect(page).toContain('mobileVisibleSecondaryKey="amount"');
+    expect(page).not.toContain('mobileVisibleSecondaryKey="amount"');
     expect(page).toContain("priority: 'identity'");
     expect(page).toContain("priority: 'primary'");
     expect(page).toContain("priority: 'actions'");

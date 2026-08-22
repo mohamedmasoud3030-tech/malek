@@ -227,7 +227,6 @@ export function ExpensesSection({
           aria-label="جدول المصروفات"
           rows={expenses}
           keyOf={(expense) => expense.id}
-          mobileVisibleSecondaryKey="amount"
           emptyTitle={hasFilters ? 'لا توجد مصروفات مطابقة' : 'لا توجد مصروفات بعد'}
           emptyDescription={hasFilters ? 'غيّر الفلاتر أو امسحها لعرض نتائج أخرى.' : 'اضغط إضافة مصروف لتسجيل أول مصروف تشغيلي.'}
           isLoading={isLoading}

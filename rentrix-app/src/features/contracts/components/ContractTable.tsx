@@ -173,11 +173,6 @@ export function ContractTable({
         </div>
       )}
       visibleColumnKeys={visibleColumnKeys}
-      // The mobile register shows the identity column plus exactly one datum.
-      // A contract is identified in practice by its counterparty, so the tenant
-      // name is the datum that keeps the mobile row recognisable; the rent value
-      // stays available on the detail view and on wider viewports.
-      mobileVisibleSecondaryKey="tenant"
       isLoading={isLoading}
       error={error}
       errorTitle="تعذر تحميل العقود"

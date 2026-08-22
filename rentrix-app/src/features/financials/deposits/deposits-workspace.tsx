@@ -567,7 +567,6 @@ export function DepositsWorkspace() {
           rows={deposits}
           columns={columns}
           keyOf={(deposit) => deposit.id}
-          mobileVisibleSecondaryKey="remaining"
         />
       </AsyncContentState>
 
@@ -583,7 +582,6 @@ export function DepositsWorkspace() {
             rows={claims}
             columns={claimColumns}
             keyOf={(claim) => claim.id}
-            mobileVisibleSecondaryKey="status"
           />
         )}
       </section>
@@ -600,7 +598,6 @@ export function DepositsWorkspace() {
           rows={refundEvents}
           columns={refundColumns}
           keyOf={(event) => event.id}
-          mobileVisibleSecondaryKey="status"
         />
       </section>
       ) : null}

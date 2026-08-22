@@ -204,7 +204,6 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
             rows={controller.properties}
             keyOf={(property) => property.id}
             onRowClick={(property) => controller.navigateToProperty(property.id)}
-            mobileVisibleSecondaryKey="status"
             visibleColumnKeys={visibleColumnKeys}
             isLoading={controller.propertiesQuery.isLoading}
             error={controller.propertiesQuery.isError ? controller.propertiesQuery.error : null}

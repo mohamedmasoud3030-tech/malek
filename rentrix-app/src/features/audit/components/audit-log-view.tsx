@@ -54,7 +54,6 @@ export function AuditLogView({ state }: Readonly<{ state: AuditLogViewState }>) 
     <EntityTable
       aria-label="جدول سجل التدقيق"
       rows={[...records]}
-      mobileVisibleSecondaryKey="action"
       columns={columns}
       keyOf={(record) => record.id}
       emptyTitle="لا توجد أحداث تدقيق"

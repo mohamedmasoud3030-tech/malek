@@ -259,7 +259,6 @@ export function AutomationCenterView() {
           rows={filteredRules}
           columns={ruleColumns}
           keyOf={(rule) => rule.id}
-          mobileVisibleSecondaryKey="status"
         />
       </AsyncContentState>
 
@@ -273,7 +272,7 @@ export function AutomationCenterView() {
           emptyTitle="لا يوجد سجل تشغيل بعد"
           emptyDescription="شغّل قاعدة أتمتة لبدء تسجيل التشغيلات."
         >
-          <EntityTable aria-label="جدول تشغيلات الأتمتة" rows={runs} columns={runColumns} keyOf={(run) => run.id} mobileVisibleSecondaryKey="status" emptyTitle="لا يوجد سجل تشغيل" />
+          <EntityTable aria-label="جدول تشغيلات الأتمتة" rows={runs} columns={runColumns} keyOf={(run) => run.id} emptyTitle="لا يوجد سجل تشغيل" />
         </AsyncContentState>
       </section>
 
@@ -287,7 +286,7 @@ export function AutomationCenterView() {
           emptyTitle="لا توجد إشعارات"
           emptyDescription="ستظهر إشعارات القواعد هنا بعد تشغيلها."
         >
-          <EntityTable aria-label="جدول إشعارات الأتمتة" rows={notifications} columns={notificationColumns} keyOf={(notification) => notification.id} mobileVisibleSecondaryKey="status" emptyTitle="لا توجد إشعارات" />
+          <EntityTable aria-label="جدول إشعارات الأتمتة" rows={notifications} columns={notificationColumns} keyOf={(notification) => notification.id} emptyTitle="لا توجد إشعارات" />
         </AsyncContentState>
       </section>
 

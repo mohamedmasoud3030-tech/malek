@@ -401,7 +401,6 @@ function CommissionRows({
       aria-label="جدول العمولات"
       rows={rows}
       keyOf={(row) => row.id}
-      mobileVisibleSecondaryKey="amount"
       columns={[
         {
           key: "staff_name", priority: 'identity' as const,

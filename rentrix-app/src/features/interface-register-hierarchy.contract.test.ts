@@ -17,7 +17,7 @@ type RegisterCase = {
 /**
  * Cross-register mobile hierarchy lock (interface architecture).
  * Every high-traffic operational register must declare EntityTable/DataTable
- * column priorities so phone cards show the right operational datum.
+ * column priorities so the horizontally scrollable table keeps a consistent identity/action contract.
  */
 describe('interface register mobile hierarchy', () => {
   const cases: RegisterCase[] = [
@@ -51,9 +51,9 @@ describe('interface register mobile hierarchy', () => {
     { file: 'features/service-providers/service-provider-detail-page.tsx', datum: 'status', requireActions: false },
   ];
 
-  it.each(cases)('$file exposes $datum as mobile datum with identity/primary priorities', ({ file, datum, requireActions = true }) => {
+  it.each(cases)('$file keeps table priorities without a parallel mobile representation', ({ file, requireActions = true }) => {
     const source = read(file);
-    expect(source, file).toContain(`mobileVisibleSecondaryKey="${datum}"`);
+    expect(source, file).not.toContain('mobileVisibleSecondaryKey');
     expect(source, file).toMatch(/priority:\s*['"]identity['"]/);
     expect(source, file).toMatch(/priority:\s*['"]primary['"]/);
     if (requireActions) {

@@ -9,7 +9,6 @@ export function DailyCollectionsPanel({ rows, action, isLoading }: Readonly<{ ro
   return <ReportPanel title="التحصيل اليومي" description="إجمالي كل يوم موزعًا على طرق السداد المسجلة." icon={WalletCards} action={action} isLoading={isLoading}>
     {rows.length === 0 ? <div className="p-4"><ReportState message="لا توجد تحصيلات في الفترة المحددة." /></div> : <div className="p-4"><EntityTable
       aria-label="جدول التحصيل اليومي"
-      mobileVisibleSecondaryKey="total"
       rows={rows}
       columns={[
         { key: 'date', header: 'التاريخ', priority: 'identity', render: (row) => formatDate(row.paymentDate) },

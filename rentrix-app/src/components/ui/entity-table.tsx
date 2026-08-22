@@ -17,13 +17,11 @@ import {
   ChevronUp,
   ChevronsUpDown,
   ListRestart,
-  MoreHorizontal,
 } from 'lucide-react';
 import {
   Fragment,
   useId,
   useMemo,
-  useRef,
   useState,
   type KeyboardEvent,
   type MouseEvent,
@@ -52,7 +50,7 @@ export interface ColumnDef<T> {
   render: (row: T) => ReactNode;
   sortable?: boolean;
   className?: string;
-  /** Controls mobile ordering/datum selection and sticky behavior. */
+  /** Controls table ordering and sticky identity/actions behavior. */
   priority?: ColumnPriority;
   /** Identity/actions columns are sticky on the desktop table by default; set false for an exception. */
   sticky?: boolean;
@@ -102,19 +100,6 @@ export interface EntityTableProps<T> {
   rowSelection?: RowSelectionState;
   /** Optional visible column keys. Omit to show every configured column. */
   visibleColumnKeys?: readonly string[];
-  /**
-   * Designate ONE high-value secondary/detail column (e.g. amount, status,
-   * date, outstanding balance) as the datum shown on each mobile row. When
-   * unset the first primary column after identity is used, then the first
-   * secondary/detail column. Ignored for identity/primary/actions columns.
-   */
-  mobileVisibleSecondaryKey?: string;
-  /** @deprecated Registers always render the shared mobile register; page-supplied cards are not used. */
-  renderMobileCard?: (row: T) => ReactNode;
-  /** @deprecated View switching was removed from dense registers. */
-  enableViewModeToggle?: boolean;
-  /** @deprecated Kept only for source compatibility. */
-  viewModeStorageKey?: string;
   'aria-label': string;
   className?: string;
   skeletonRows?: number;
@@ -142,22 +127,6 @@ function priorityClass(priority: ColumnPriority, sticky = true) {
   return cn(
     sticky && priority === 'identity' && 'sticky start-0 z-[2] min-w-[9.5rem] max-w-[18rem] bg-inherit shadow-[1px_0_0_hsl(var(--border)/0.55)]',
     sticky && priority === 'actions' && 'sticky end-0 z-[2] min-w-[5.5rem] bg-inherit shadow-[-1px_0_0_hsl(var(--border)/0.55)]',
-  );
-}
-
-function selectMobileDatum<T>(
-  columns: ResolvedColumn<T>[],
-  identityColumn: ResolvedColumn<T> | undefined,
-  mobileVisibleSecondaryKey?: string,
-): ResolvedColumn<T> | undefined {
-  if (mobileVisibleSecondaryKey) {
-    const designated = columns.find((column) => column.key === mobileVisibleSecondaryKey);
-    if (designated && designated !== identityColumn) return designated;
-  }
-  return (
-    columns.find((column) => column.resolvedPriority === 'primary' && column !== identityColumn)
-    ?? columns.find((column) => (column.resolvedPriority === 'secondary' || column.resolvedPriority === 'detail') && column !== identityColumn)
-    ?? undefined
   );
 }
 
@@ -275,120 +244,6 @@ function PaginationRecovery({ pagination }: { pagination: PaginationState }) {
   );
 }
 
-function MobileRegisterListItem<T>({
-  row,
-  rowKey,
-  idPrefix,
-  ariaLabel,
-  identityColumn,
-  datumColumn,
-  actionsColumn,
-  onRowClick,
-  gridTemplateColumns,
-  isSelected,
-  onToggleSelected,
-}: Readonly<{
-  row: T;
-  rowKey: string;
-  idPrefix: string;
-  ariaLabel: string;
-  identityColumn: ResolvedColumn<T>;
-  datumColumn: ResolvedColumn<T> | undefined;
-  actionsColumn: ResolvedColumn<T> | undefined;
-  onRowClick?: (row: T) => void;
-  gridTemplateColumns: string;
-  isSelected: boolean;
-  onToggleSelected?: () => void;
-}>) {
-  const [actionsOpen, setActionsOpen] = useState(false);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const panelId = `${idPrefix}-actions-${rowKey}`;
-  const rowLabel = nodeToText(identityColumn.render(row)).trim();
-
-  return (
-    <li role="listitem" className="min-w-0">
-      <article
-        data-entity-table-mobile-card
-        data-selected={isSelected ? 'true' : undefined}
-        className="min-w-0 bg-card transition-colors data-[selected=true]:bg-primary/[0.045]"
-      >
-        <div className="grid min-h-14 items-stretch" style={{ gridTemplateColumns: gridTemplateColumns }}>
-          {onToggleSelected ? (
-            <div className="grid min-h-11 place-items-center border-e border-border/55">
-              <SelectionCheckbox
-                checked={isSelected}
-                label={rowLabel ? `تحديد ${rowLabel}` : `تحديد سجل من ${ariaLabel}`}
-                onChange={onToggleSelected}
-              />
-            </div>
-          ) : null}
-
-          <div className="min-w-0 px-3 py-2">
-            {onRowClick ? (
-              <button
-                type="button"
-                data-entity-table-mobile-primary
-                onClick={() => onRowClick(row)}
-                className="block min-h-11 w-full min-w-0 text-start text-sm font-semibold outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
-              >
-                <span className="block min-w-0 truncate">{identityColumn.render(row)}</span>
-              </button>
-            ) : (
-              <div className="flex min-h-11 min-w-0 items-center text-sm font-semibold">
-                <span className="min-w-0 truncate">{identityColumn.render(row)}</span>
-              </div>
-            )}
-          </div>
-
-          {datumColumn ? (
-            <dl className="flex min-w-0 items-center border-s border-border/55 px-3 py-2" data-entity-table-mobile-datum>
-              <div className="min-w-0">
-                <dt className="sr-only">{datumColumn.header}</dt>
-                <dd className="min-w-0 truncate text-xs font-semibold text-foreground/85">{datumColumn.render(row)}</dd>
-              </div>
-            </dl>
-          ) : null}
-
-          {actionsColumn ? (
-            <div className="grid min-h-11 place-items-center border-s border-border/55">
-              <button
-                ref={triggerRef}
-                type="button"
-                data-entity-table-mobile-actions
-                aria-label={rowLabel ? `إجراءات ${rowLabel}` : `إجراءات ${ariaLabel}`}
-                aria-expanded={actionsOpen}
-                aria-controls={actionsOpen ? panelId : undefined}
-                onClick={() => setActionsOpen((open) => !open)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Escape' && actionsOpen) {
-                    event.preventDefault();
-                    setActionsOpen(false);
-                    triggerRef.current?.focus();
-                  }
-                }}
-                className="grid size-11 min-h-11 min-w-11 place-items-center rounded-lg text-muted-foreground outline-none transition hover:bg-muted hover:text-foreground focus-visible:ring-4 focus-visible:ring-primary/20"
-              >
-                <MoreHorizontal className="size-4" aria-hidden="true" />
-                <span className="sr-only">إجراءات</span>
-              </button>
-            </div>
-          ) : null}
-        </div>
-
-        {actionsColumn && actionsOpen ? (
-          <div
-            id={panelId}
-            data-entity-table-mobile-actions-panel
-            className="min-w-0 border-t border-border/60 bg-muted/20 p-2.5 [&>div]:flex-wrap"
-          >
-            {actionsColumn.render(row)}
-          </div>
-        ) : null}
-      </article>
-    </li>
-  );
-}
-
 export function EntityTable<T>({
   rows,
   columns,
@@ -410,7 +265,6 @@ export function EntityTable<T>({
   toolbar,
   rowSelection,
   visibleColumnKeys,
-  mobileVisibleSecondaryKey,
   'aria-label': ariaLabel,
   className,
   skeletonRows = 5,
@@ -498,15 +352,7 @@ export function EntityTable<T>({
 
   const identityColumn = resolvedColumns.find((column) => column.resolvedPriority === 'identity') ?? resolvedColumns[0];
   if (!identityColumn) return null;
-  const datumColumn = selectMobileDatum(resolvedColumns, identityColumn, mobileVisibleSecondaryKey);
-  const actionsColumn = resolvedColumns.find((column) => column.resolvedPriority === 'actions');
   const colSpan = resolvedColumns.length + (hasExpansion ? 1 : 0) + (rowSelection ? 1 : 0);
-  const mobileGridTemplate = [
-    rowSelection ? '2.75rem' : null,
-    'minmax(0,1fr)',
-    datumColumn ? 'minmax(6.5rem,0.72fr)' : null,
-    actionsColumn ? '3rem' : null,
-  ].filter(Boolean).join(' ');
 
   return (
     <div className={cn('space-y-3', className)}>
@@ -518,53 +364,6 @@ export function EntityTable<T>({
           {toolbar}
         </div>
       ) : null}
-
-      <div className="hidden" data-entity-table-mobile aria-hidden="true">
-        <div className="overflow-hidden rounded-xl border border-border/70 bg-card shadow-card">
-          <div
-            data-entity-table-mobile-header
-            className="grid min-h-10 items-stretch border-b border-border/60 bg-muted/30 text-[10px] font-bold text-muted-foreground"
-            style={{ gridTemplateColumns: mobileGridTemplate }}
-            aria-hidden="true"
-          >
-            {rowSelection ? (
-              <div className="grid place-items-center border-e border-border/55 px-2">
-                <SelectionCheckbox
-                  checked={allCurrentSelected}
-                  mixed={someCurrentSelected}
-                  label={rowSelection.ariaLabel ?? `تحديد سجلات ${ariaLabel}`}
-                  onChange={toggleSelectCurrentPage}
-                />
-              </div>
-            ) : null}
-            <div className="flex items-center px-3">{identityColumn.header}</div>
-            {datumColumn ? <div className="flex items-center border-s border-border/55 px-3">{datumColumn.header}</div> : null}
-            {actionsColumn ? <div className="border-s border-border/55" /> : null}
-          </div>
-
-          <ul role="list" aria-label={ariaLabel} className="divide-y divide-border/65" data-entity-table-mobile-list>
-            {rows.map((row) => {
-              const rowKey = keyOf(row);
-              return (
-                <MobileRegisterListItem
-                  key={rowKey}
-                  row={row}
-                  rowKey={rowKey}
-                  idPrefix={disclosurePrefix}
-                  ariaLabel={ariaLabel}
-                  identityColumn={identityColumn}
-                  datumColumn={datumColumn}
-                  actionsColumn={actionsColumn}
-                  onRowClick={onRowClick}
-                  gridTemplateColumns={mobileGridTemplate}
-                  isSelected={selectedSet.has(rowKey)}
-                  onToggleSelected={rowSelection ? () => toggleSelected(rowKey) : undefined}
-                />
-              );
-            })}
-          </ul>
-        </div>
-      </div>
 
       <div className="block">
         <Card data-entity-table-wrapper data-compact-responsive-table data-entity-table-grid className="overflow-hidden rounded-xl border-border/70 bg-card shadow-card">

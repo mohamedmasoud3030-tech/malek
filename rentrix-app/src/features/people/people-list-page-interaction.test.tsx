@@ -82,7 +82,7 @@ describe('PeopleListPage mobile workflow interactions', () => {
     expect(document.body.textContent).toContain('الاسم الكامل مطلوب');
   });
 
-  it('opens a prefilled edit form from mobile card actions', async () => {
+  it('opens a prefilled edit form from table row actions', async () => {
     await act(async () => root.render(<PeopleListPage />));
 
     const editButton = Array.from(container.querySelectorAll('button')).find((button) => button.textContent?.includes('تعديل'));

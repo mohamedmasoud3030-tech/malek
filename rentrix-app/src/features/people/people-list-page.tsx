@@ -376,7 +376,6 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
           <EntityTable
             aria-label="جدول الأشخاص"
             rows={rows}
-            mobileVisibleSecondaryKey="type"
             columns={columns}
             visibleColumnKeys={visibleColumnKeys}
             keyOf={(person) => person.id}

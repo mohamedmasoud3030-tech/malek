@@ -263,7 +263,6 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
           columns={columns}
           visibleColumnKeys={visibleColumnKeys}
           onRowClick={ctrl.navigateToUnit}
-          mobileVisibleSecondaryKey="status"
           keyOf={(unit) => unit.id}
           isLoading={ctrl.unitsQuery.isLoading || ctrl.propertiesQuery.isLoading}
           error={ctrl.isError ? new Error("تعذر تحميل الوحدات") : null}
