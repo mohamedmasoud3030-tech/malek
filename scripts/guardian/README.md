@@ -19,7 +19,7 @@ It composes the repository's existing database proofs with the governance-stabil
 - migration/rollback hygiene
 - privileged-key exposure scan
 
-The machine-readable report is written to `.guardian/report.json`.
+The machine-readable report is written to `.guardian/report.json` and is gitignored.
 
 ## Canonical authority model
 
@@ -28,11 +28,13 @@ valid active identity
   -> active company membership
     -> active company
       -> company_members.role
-        -> current_user_has_effective_app_permission(permission)
+        -> canonical role/permission resolver
           -> RLS / RPC / server enforcement
 ```
 
 `users.role` is not an operational authorization source. JWT role claims are context/cache only and cannot override database authority.
+
+Some sensitive RPCs intentionally preserve an existing ADMIN/MANAGER boundary. Those functions authorize through the membership-backed `is_admin_or_manager()` helper rather than widening the historical boundary merely because a permission token is available. Other capability-governed RPCs use `current_user_has_effective_app_permission(...)` with their exact catalog permission.
 
 ## DG-GOV-008
 
@@ -47,9 +49,9 @@ valid active identity
 The RPC must either:
 
 1. be explicitly classified as an internal/service-only or canonical authority helper in `governance-contract.json`, or
-2. call `current_user_has_effective_app_permission(...)` for its governed capability.
+2. call a canonical database authorization resolver such as `current_user_has_effective_app_permission(...)`, `is_admin_or_manager()`, `is_admin()`, `is_accountant()`, `is_operations()`, or another resolver explicitly allowed by the contract.
 
-This closes the permissive gap in the earlier Guardian draft where identity/scoping/validation could be mistaken for authorization.
+The stricter rule closes the permissive gap in the earlier Guardian draft where identity/scoping/validation could be mistaken for authorization, while still preserving intentional existing role boundaries.
 
 ## Exit codes
 
