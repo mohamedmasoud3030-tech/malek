@@ -49,6 +49,10 @@ export async function listAppNotifications(): Promise<AppNotification[]> {
 
 export async function markAppNotificationRead(id: string) {
   if (!id.trim() || id.length > 200) throw new Error('معرف الإشعار غير صالح.');
-  const { error } = await (supabase as any).from('app_notifications').update({ is_read: true }).eq('id', id);
+  // Governed read-state mutation: the ACL lockdown (migration 00001) revoked
+  // direct UPDATE on app_notifications from authenticated, so read state goes
+  // through the narrow mark_app_notification_read RPC (migration 00023), which
+  // only ever sets is_read on the caller's own row.
+  const { error } = await (supabase as any).rpc('mark_app_notification_read', { p_notification_id: id });
   if (error) throw error;
 }

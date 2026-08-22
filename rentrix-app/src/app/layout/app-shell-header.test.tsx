@@ -36,7 +36,9 @@ vi.mock('@/store/ui-store', () => ({
 }));
 vi.mock('./layout-navigation-view', () => ({
   NavigationLinks: () => null,
-  MobileFloatingControl: () => null,
+  MobileFloatingControl: () => (
+    <button type="button" aria-label="فتح القائمة" aria-haspopup="dialog" data-mobile-dock-menu />
+  ),
 }));
 vi.mock('./notifications-menu', () => ({ NotificationsMenu: () => null }));
 vi.mock('@/features/command-palette/command-palette-trigger', () => ({ CommandPaletteTrigger: () => null }));
@@ -98,7 +100,7 @@ describe('AppShell — fixed global MALEK header', () => {
     expect(notice).not.toBeNull();
     expect(notice?.getAttribute('role')).toBe('status');
     expect(notice?.textContent).toContain('لا يوجد اتصال بالشبكة');
-    expect(notice?.textContent).toContain('الحفظ والتحديث قد يفشلان');
+    expect(notice?.textContent).toContain('قد يفشل الحفظ والتحديث حتى يعود الاتصال');
   });
 
   it('synchronizes the global connection state with browser online/offline events', () => {
@@ -115,15 +117,13 @@ describe('AppShell — fixed global MALEK header', () => {
     }
   });
 
-  it('keeps a header hamburger for phone and iPad (UX-001) plus the desktop collapse control', () => {
+  it('keeps the mobile navigation trigger on the floating dock (UX-001) for phone and iPad', () => {
     act(() => { root.render(<AppShell />); });
 
-    expect(host.querySelector('[data-mobile-menu-trigger]')).not.toBeNull();
-
-    // Desktop collapse toggle still reports the sidebar expansion state.
-    const collapseTrigger = Array.from(host.querySelectorAll<HTMLElement>('button[aria-expanded]')).find(
-      (button) => button.getAttribute('aria-expanded') === 'true',
-    );
-    expect(collapseTrigger).toBeDefined();
+    // Mobile architecture reset (#1545/#1547): the menu trigger lives on the
+    // floating dock (data-mobile-dock-menu) instead of a header hamburger, and
+    // the desktop collapse control was intentionally removed (ce8b15b8).
+    expect(host.querySelector('[data-mobile-dock-menu]')).not.toBeNull();
+    expect(host.querySelector('[data-mobile-menu-trigger]')).toBeNull();
   });
 });

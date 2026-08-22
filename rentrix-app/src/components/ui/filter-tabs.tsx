@@ -119,7 +119,7 @@ export function FilterTabs<T extends string>({
               aria-pressed={isActive}
               onClick={() => onChange(option.value)}
               className={cn(
-                'flex min-h-10 shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition-[background-color,border-color,color,box-shadow] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/15',
+                'flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition-[background-color,border-color,color,box-shadow] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/15',
                 isActive
                   ? activeClasses
                   : 'border-border/75 bg-background text-muted-foreground hover:border-foreground/15 hover:bg-muted/55 hover:text-foreground',

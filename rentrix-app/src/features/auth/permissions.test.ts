@@ -442,6 +442,10 @@ describe('canonical authorization permissions', () => {
     const source = readFileSync(sourcePath, 'utf8');
 
     expect(source).not.toContain('@/integrations/supabase');
-    expect(source).not.toMatch(/\.(from|insert|update|upsert|delete|rpc)\s*\(/);
+    // Supabase client calls: `.from(`, `.insert(`, `.update(`, `.upsert(`,
+    // `.delete(`, `.rpc(`. `Uint8Array.from(` is a typed-array constructor used
+    // by the JWT-decode helper, not a Supabase call — exclude it explicitly so
+    // the guard keeps scanning for real client usage.
+    expect(source).not.toMatch(/(?<!Uint8Array)\.from\s*\(|\.(insert|update|upsert|delete|rpc)\s*\(/);
   });
 });

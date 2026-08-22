@@ -108,6 +108,17 @@ export async function createFullReplayedDatabase(options?: {
     }
   }
 
+  // The canonical baseline opens with a pg_dump-style header that sets
+  // `SET row_security = off`. On real Supabase that GUC is per-connection and
+  // the migration runner's session ends before app queries begin, so RLS keeps
+  // silently filtering SELECTs there. The PGlite harness replays the whole
+  // chain in the SAME session the tests then query, so the dumped GUC leaks
+  // and every RLS-filtered SELECT would raise "query would be affected by
+  // row-level security policy" instead of returning zero rows. Restore the
+  // real Supabase session default (`row_security = on`) before handing the
+  // connection to tests.
+  await db.exec('SET row_security = on;');
+
   // `supabase db reset` applies the canonical reference seed after the migration
   // chain. Mirror that contract for full canonical PGlite replays so tests see
   // global/system reference rows (for example tax_code_catalog) without

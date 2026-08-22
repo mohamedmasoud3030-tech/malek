@@ -79,7 +79,9 @@ describe('permission visibility — task-centric IA must not widen access', () =
     expect(workspaceChildNavItems['/financials'].length).toBe(8);
     expect(workspaceChildNavItems['/maintenance'].length).toBe(4);
     expect(workspaceChildNavItems['/reports'].length).toBe(0);
-    expect(workspaceChildNavItems['/settings'].length).toBe(5);
+    // Settings gained the admin-support operations entry when the self-service
+    // support feature shipped (migration 00005).
+    expect(workspaceChildNavItems['/settings'].length).toBe(6);
     expect(workspaceChildNavItems['/people']).toBeUndefined();
     expect(workspaceChildNavItems['/lands']).toBeUndefined();
     expect(workspaceChildNavItems['/commissions']).toBeUndefined();

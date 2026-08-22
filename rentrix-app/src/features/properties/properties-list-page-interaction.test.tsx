@@ -91,7 +91,9 @@ describe('PropertiesListPage mobile workflow interactions', () => {
     await act(async () => row?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
     expect(mockNavigate).toHaveBeenCalledWith({ to: '/properties/$propertyId', params: { propertyId: 'property-1' } });
 
-    const actionMenu = container.querySelector('button[aria-haspopup="listbox"]');
+    // ActionMenu renders the trigger button inside a [data-action-menu] wrapper
+    // when more than one action exists (entity-table redesign).
+    const actionMenu = container.querySelector('[data-action-menu] button, button[data-action-menu]');
     expect(actionMenu).toBeTruthy();
     await act(async () => actionMenu?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
     const editButton = Array.from(document.body.querySelectorAll('button')).find((button) => button.textContent?.trim() === 'تعديل');

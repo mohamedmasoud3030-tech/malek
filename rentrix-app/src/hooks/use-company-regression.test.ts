@@ -41,7 +41,7 @@ describe('active company write guard', () => {
     expect(companyHook).toContain('verifiedClaim !== membershipDefault.id');
     expect(companyHook).toContain('verifiedClaim !== companyId');
     expect(companyHook).toContain('hasAuthenticatedSession && (loadError || !activeCompany)');
-    expect(companyHook).toContain('لم يتم فتح التطبيق لحماية البيانات ومنع إنشاء سجلات بدون شركة');
+    expect(companyHook).toContain('لم يتم فتح مساحة العمل لحماية البيانات ومنع إنشاء سجلات بدون شركة');
   });
 
   it('keeps TOKEN_REFRESHED session state authoritative for company switching', () => {

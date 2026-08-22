@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import type { UseQueryResult } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { createRoot } from 'react-dom/client';
 import { act } from 'react';
@@ -41,6 +42,12 @@ vi.mock('./use-units', () => ({
   }),
 }));
 
+// The duplicate-draft guard hook (added 2026-08-21) queries drafts via React
+// Query. Pin it to an empty result so the interaction tests stay hermetic.
+vi.mock('@/features/contracts/queries/useUnitContractDrafts', () => ({
+  useUnitContractDrafts: () => ({ data: [], isLoading: false, isError: false }),
+}));
+
 // Mock ConfirmDialog to capture confirmation flow and allow real rendered click
 vi.mock('@/components/ui/confirm-dialog', () => ({
   ConfirmDialog: (props: any) => {
@@ -67,6 +74,16 @@ function makeUnitsQuery(overrides: Partial<UseQueryResult<Unit[]>>): UseQueryRes
     refetch: vi.fn(),
     ...overrides,
   } as UseQueryResult<Unit[]>;
+}
+
+
+function renderUnitsList(unitsQuery: UseQueryResult<Unit[]>) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return (
+    <QueryClientProvider client={queryClient}>
+      <UnitsList propertyId="property-123" unitsQuery={unitsQuery} />
+    </QueryClientProvider>
+  );
 }
 
 describe('UnitsList Real Rendered User-Interaction Tests', () => {
@@ -96,7 +113,7 @@ describe('UnitsList Real Rendered User-Interaction Tests', () => {
     });
 
     await act(async () => {
-      root.render(<UnitsList propertyId="property-123" unitsQuery={unitsQuery} />);
+      root.render(renderUnitsList(unitsQuery));
     });
 
     // Locate the rendered desktop row in the DOM (under tbody)
@@ -121,7 +138,7 @@ describe('UnitsList Real Rendered User-Interaction Tests', () => {
     });
 
     await act(async () => {
-      root.render(<UnitsList propertyId="property-123" unitsQuery={unitsQuery} />);
+      root.render(renderUnitsList(unitsQuery));
     });
 
     const row = container?.querySelector('tbody tr') as HTMLElement;
@@ -144,7 +161,7 @@ describe('UnitsList Real Rendered User-Interaction Tests', () => {
     });
 
     await act(async () => {
-      root.render(<UnitsList propertyId="property-123" unitsQuery={unitsQuery} />);
+      root.render(renderUnitsList(unitsQuery));
     });
 
     const editButton = container?.querySelector<HTMLButtonElement>('button[aria-label="تعديل وحدة 101"]');
@@ -170,7 +187,7 @@ describe('UnitsList Real Rendered User-Interaction Tests', () => {
     });
 
     await act(async () => {
-      root.render(<UnitsList propertyId="property-123" unitsQuery={unitsQuery} />);
+      root.render(renderUnitsList(unitsQuery));
     });
 
     const archiveButton = container?.querySelector<HTMLButtonElement>('button[aria-label="أرشفة وحدة 101"]');

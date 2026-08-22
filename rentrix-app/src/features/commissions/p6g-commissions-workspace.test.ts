@@ -24,13 +24,18 @@ describe('P6g — commissions workspace clarity (closeout)', () => {
   });
 
   it('keeps operational commissions visually and conceptually separate from owner-agreement management fees', () => {
-    expect(view).toContain('توضيح المجال');
-    expect(view).toContain('أتعاب إدارة الملاك الواردة في اتفاقيات التشغيل مفهوم منفصل ولا تُدمج هنا مالياً أو محاسبياً');
+    // Dense-register redesign (#1545) moved the domain clarification into the
+    // empty-state description: tracking only, never a payment order.
+    expect(view).toContain('هذه الصفحة للتتبع فقط ولا تنشئ أمر صرف');
+    expect(view).toContain('أضف عمولة تشغيلية');
   });
 
   it('documents the lifecycle without changing GL semantics', () => {
-    expect(view).toContain('دورة الحالة');
-    expect(view).toContain('قيد المراجعة ← معتمدة ← مسجلة كمدفوعة');
+    // The lifecycle is documented through the per-state next-action labels
+    // (approve → pay → reverse), not a prose block.
+    expect(view).toContain('التالي: اعتماد');
+    expect(view).toContain('التالي: صرف مالي');
+    expect(view).toContain('التالي: عكس الصرف');
     // No hardcoded currency and no legacy journal wording in the workspace.
     expect(view).not.toContain('unit="OMR"');
     expect(view).not.toContain('دفتر أستاذ عام');

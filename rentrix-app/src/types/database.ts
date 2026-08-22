@@ -8903,6 +8903,12 @@ export type Database = {
         };
         Returns: { id: string | null; requester_user_id: string | null; requester_name: string | null; requester_email: string | null; permission: string | null; resource_route: string | null; reason: string | null; status: string | null; reviewer_user_id: string | null; decided_at: string | null; decision_reason: string | null; created_at: string | null; grant_active: boolean | null }[];
       };
+      mark_app_notification_read: {
+        Args: {
+          p_notification_id: string | null;
+        };
+        Returns: Json;
+      };
       mask_admin_support_email: {
         Args: {
           p_value: string | null;

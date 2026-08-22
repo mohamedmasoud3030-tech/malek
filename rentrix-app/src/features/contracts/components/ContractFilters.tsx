@@ -51,13 +51,13 @@ export function ContractFilters({
         <Button
           variant={expiringOnly ? 'primary' : 'secondary'}
           onClick={() => setExpiringOnly((value) => !value)}
-          className="min-h-10 shrink-0 rounded-lg px-3 text-xs"
+          className="min-h-11 shrink-0 rounded-lg px-3 text-xs"
         >
           <AlertTriangle className="me-1.5 size-3.5" />
           تنتهي خلال 30 يوم
         </Button>
         {hasActiveFilters ? (
-          <Button variant="ghost" className="min-h-10 shrink-0 rounded-lg px-3 text-xs" onClick={resetFilters}>
+          <Button variant="ghost" className="min-h-11 shrink-0 rounded-lg px-3 text-xs" onClick={resetFilters}>
             مسح الفلاتر
           </Button>
         ) : null}

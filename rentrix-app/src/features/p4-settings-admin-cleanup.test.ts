@@ -19,7 +19,10 @@ describe('P4 — settings and admin cleanup contract', () => {
     const action = read('../features/ai-assistant/ai-assistant-global-action.tsx');
     const governance = read('../features/governance-hub/governance-hub-sections.ts');
     expect(shell).toContain('AiAssistantGlobalAction');
-    expect(action).toContain('Dialog');
+    // The AI experience is a persistent floating panel (not a Dialog) opened
+    // from the header action or the mobile dock via the canonical window event.
+    expect(action).toContain('OPEN_AI_ASSISTANT_EVENT');
+    expect(action).not.toContain('<Dialog');
     expect(governance).toContain("id: 'automation'");
     expect(governance).toContain("permission: 'automation.view'");
   });

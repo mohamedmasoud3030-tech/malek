@@ -282,7 +282,7 @@ export function ContractFormFields({
         </div>
 
         {selectedUnitDrafts.length > 0 ? (
-          <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-foreground" role="status">
+          <div className="mt-4 rounded-xl border border-warning/30 bg-warning/10 p-3 text-xs text-foreground" role="status">
             <span className="font-bold">مسودة عقد قيد الإعداد لهذه الوحدة.</span>{' '}
             {selectedTenantHasDraft
               ? 'لهذا المستأجر مسودة موجودة بالفعل؛ افتحها وعدّلها بدلاً من حفظ مسودة مكررة.'

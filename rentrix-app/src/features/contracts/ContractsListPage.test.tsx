@@ -112,7 +112,8 @@ describe('ContractsListPage load states', () => {
     const html = renderToStaticMarkup(<ContractsListPage />);
 
     expect(html).toContain('عدد السجلات 342');
-    expect(html).toContain('إجمالي العقود');
+    // Register metric strip (#1542): the total KPI is labelled «العقود».
+    expect(html).toContain('العقود');
     expect(html).toContain('>342<');
   });
 

@@ -55,6 +55,8 @@ function createController(handleSubmit: (values: ContractFormValues) => Promise<
     unitsQuery: { data: units, isLoading: false, isError: false } as never,
     unitConflictsQuery: { data: [], isLoading: false, isError: false } as never,
     unitConflictsByUnitId: new Map() as never,
+    unitDraftsQuery: { data: [], isLoading: false, isError: false } as never,
+    unitDraftsByUnitId: new Map() as never,
     agreementCoverageQuery: { data: null, isLoading: false, isError: false, refetch: vi.fn() } as never,
     selectedProperty: properties[0],
     currentLinkedUnitId: null,
