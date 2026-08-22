@@ -40,9 +40,17 @@ async function errorOf(operation: () => Promise<unknown>) {
 }
 
 beforeAll(async () => {
-  const replay = await createFullReplayedDatabase({ throughMigration: '20260810113000' });
+  // Full canonical replay: `throughMigration: '20260810113000'` pointed at a
+  // pre-squash historical migration that no longer exists in supabase/migrations
+  // (the chain was replaced by the canonical baseline). Worse, any
+  // `throughMigration` option disables the canonical reference seed, so the
+  // app_permission_catalog stayed empty and every request_permission call
+  // raised 'Unknown permission'. Replay the canonical chain and let the harness
+  // apply seed.sql (permission catalog + tax codes), exactly like `supabase db
+  // reset` would.
+  const replay = await createFullReplayedDatabase();
   db = replay.db;
-  expect(replay.failed.filter((failure) => failure.file.includes('20260810113000')), JSON.stringify(replay.failed.slice(-5))).toEqual([]);
+  expect(replay.failed, JSON.stringify(replay.failed.slice(-5))).toEqual([]);
 
   await db.query(`insert into public.companies(id,name,slug) values
     ($1,'Permission A','permission-a'),($2,'Permission B','permission-b') on conflict(id) do nothing`, [COMPANY_A, COMPANY_B]);
@@ -59,10 +67,23 @@ beforeAll(async () => {
     await db.query(`insert into public.users(id,email,name,full_name,role,status,is_active) values($1,$2,$3,$3,$4,'ACTIVE',true)
       on conflict(id) do update set role=excluded.role,status='ACTIVE',is_active=true`, [id, email, name, role]);
   }
-  for (const id of [ADMIN_A, MANAGER_A, USER_A, USER_A2, REVIEWER_A]) {
-    await db.query(`insert into public.company_members(company_id,user_id,role) values($1,$2,'ADMIN') on conflict(company_id,user_id) do update set is_active=true`, [COMPANY_A, id]);
+  // company_members.role is the SOLE operational role authority (canonical
+  // governance, migrations 00009/00012): seeding everyone as ADMIN made every
+  // scenario actor resolve as ADMIN, so USER_A was already granted every
+  // permission and the whole request/decide workflow short-circuited. Mirror
+  // the intended users.role in company_members.role.
+  const memberships: Array<[string, string, string]> = [
+    [COMPANY_A, ADMIN_A, 'ADMIN'],
+    [COMPANY_A, MANAGER_A, 'MANAGER'],
+    [COMPANY_A, USER_A, 'USER'],
+    [COMPANY_A, USER_A2, 'USER'],
+    [COMPANY_A, REVIEWER_A, 'USER'],
+    [COMPANY_B, MANAGER_B, 'MANAGER'],
+  ];
+  for (const [companyId, userId, role] of memberships) {
+    await db.query(`insert into public.company_members(company_id,user_id,role) values($1,$2,$3)
+      on conflict(company_id,user_id) do update set role=excluded.role,is_active=true`, [companyId, userId, role]);
   }
-  await db.query(`insert into public.company_members(company_id,user_id,role) values($1,$2,'ADMIN') on conflict(company_id,user_id) do update set is_active=true`, [COMPANY_B, MANAGER_B]);
 });
 
 describe('P6.1 permission workflow — database behavior', () => {

@@ -1,4 +1,5 @@
 import type { UseQueryResult } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import type { Unit } from '@/types/domain';
@@ -12,6 +13,12 @@ vi.mock('./use-units', () => ({
   useSoftDeleteUnit: () => ({ isPending: false, mutate: vi.fn() }),
 }));
 
+// The duplicate-draft guard hook (added 2026-08-21) queries drafts via React
+// Query. Pin it to an empty result so these load-state tests stay hermetic.
+vi.mock('@/features/contracts/queries/useUnitContractDrafts', () => ({
+  useUnitContractDrafts: () => ({ data: [], isLoading: false, isError: false }),
+}));
+
 function makeUnitsQuery(overrides: Partial<UseQueryResult<Unit[]>>): UseQueryResult<Unit[]> {
   return {
     data: [],
@@ -21,6 +28,15 @@ function makeUnitsQuery(overrides: Partial<UseQueryResult<Unit[]>>): UseQueryRes
     refetch: vi.fn(),
     ...overrides,
   } as UseQueryResult<Unit[]>;
+}
+
+function renderUnitsList(unitsQuery: UseQueryResult<Unit[]>) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return renderToStaticMarkup(
+    <QueryClientProvider client={queryClient}>
+      <UnitsList propertyId="property-1" unitsQuery={unitsQuery} />
+    </QueryClientProvider>,
+  );
 }
 
 describe('UnitsList load states', () => {
@@ -33,7 +49,7 @@ describe('UnitsList load states', () => {
       isError: true,
     });
 
-    const html = renderToStaticMarkup(<UnitsList propertyId="property-1" unitsQuery={unitsQuery} />);
+    const html = renderUnitsList(unitsQuery);
 
     expect(html).toContain('تعذر تحميل وحدات العقار');
     // In test environment VITE_SUPABASE_URL is absent → getEnvDiagnostics() takes priority

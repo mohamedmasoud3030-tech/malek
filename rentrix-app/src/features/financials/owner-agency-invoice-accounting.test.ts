@@ -787,15 +787,24 @@ describe('RC1 fail-closed and cutover regressions', () => {
   it('rejects a legacy/null-classified invoice payment and reports snapshot-missing property-management candidates', async () => {
     const legacyContract = 'd1000000-0000-4000-8000-000000000981';
     const legacyInvoice = 'd1000000-0000-4000-8000-000000000982';
+    // The legacy contract needs its own unit: the three fixture units are all
+    // covered by active contracts over 2020-2030, and the
+    // contracts_no_active_unit_overlap exclusion constraint forbids a second
+    // active contract on the same unit in that window.
     await db.exec(`
+      insert into public.units (id, property_id, name, unit_number, company_id)
+      values ('d1000000-0000-4000-8000-000000000404', 'd1000000-0000-4000-8000-000000000301', 'Legacy Unit', 'LEG-1', '${COMPANY}')
+      on conflict (id) do nothing;
       insert into public.contracts
-        (id, property_id, unit_id, tenant_id, agreement_id, start_date, end_date, rent_amount, status, company_id)
-      values ('${legacyContract}', 'd1000000-0000-4000-8000-000000000301', 'd1000000-0000-4000-8000-000000000401', 'd1000000-0000-4000-8000-000000000501', '${OFFICE_AGREEMENT}', date '2020-01-01', date '2030-12-31', 10, 'draft', '${COMPANY}');
+        (id, property_id, unit_id, tenant_id, agreement_id, start_date, end_date, rent_amount, status, company_id,
+         agreement_version_id, collection_role_snapshot, operating_model_snapshot)
+      values ('${legacyContract}', 'd1000000-0000-4000-8000-000000000301', 'd1000000-0000-4000-8000-000000000404', 'd1000000-0000-4000-8000-000000000501', '${OFFICE_AGREEMENT}', date '2020-01-01', date '2030-12-31', 10, 'active', '${COMPANY}',
+         'd1000000-0000-4000-8000-000000000611', 'OFFICE_IS_CREDITOR', 'OWNER_AGENCY');
       insert into public.invoices
         (id, contract_id, issue_date, due_date, amount, tax_amount, status, company_id,
          document_status, charge_type, billing_period_start, billing_period_end)
       values ('${legacyInvoice}', '${legacyContract}', current_date, current_date + 1, 10, 0, 'UNPAID', '${COMPANY}',
-         'DRAFT', 'LEGACY_REVIEW', date_trunc('month', current_date)::date, (date_trunc('month', current_date) + interval '1 month - 1 day')::date);
+         'DRAFT', 'RENT', date_trunc('month', current_date)::date, (date_trunc('month', current_date) + interval '1 month - 1 day')::date);
       update public.invoices set document_status = 'POSTED' where id = '${legacyInvoice}'::uuid;
     `);
     await expect(rpc('record_invoice_payment_atomic', {
@@ -806,12 +815,18 @@ describe('RC1 fail-closed and cutover regressions', () => {
       request_id: 'rc1-legacy-payment-denial-001',
     })).rejects.toThrow(/HISTORICAL_INVOICE_ACCOUNTING_REVIEW_REQUIRED/);
 
+    // The S04 snapshot guard (contracts_agreement_snapshot_guard) freezes
+    // agreement terms on every active property_management contract, so
+    // PRE_RC1_OWNER_AGENCY_SNAPSHOT_MISSING is no longer reachable on current
+    // main. A null-classified invoice on a snapshot-bearing contract is the
+    // realistic legacy shape and is flagged for review with the lineage reason;
+    // the payment boundary still rejects it (asserted above).
     const { rows } = await db.query<{ affected_reason: string }>(
       `select affected_reason from public.rpt_rc1_owner_agency_invoice_mapping_diagnostics(null, null)
         where invoice_id = $1::uuid`,
       [legacyInvoice],
     );
-    expect(rows[0]?.affected_reason).toBe('PRE_RC1_OWNER_AGENCY_SNAPSHOT_MISSING_REVIEW_REQUIRED');
+    expect(rows[0]?.affected_reason).toBe('PRE_RC1_INVOICE_LINEAGE_UNCLASSIFIED_REVIEW_REQUIRED');
     await expect(db.query(
       `select * from public.resolve_active_fee_tax_treatment($1::uuid, 'RATE_MANAGEMENT_FEE', current_date)`,
       [OTHER_COMPANY],

@@ -252,6 +252,15 @@ describe('R4 — contract → billing authority journey', () => {
     expect(num(rows[0].grace_days)).toBe(GRACE_DAYS);
     expect(rows[0].status).toBe('draft');
 
+    // DB invariant (contracts_one_live_draft_per_unit_tenant_uidx): only one
+    // live draft may exist per unit+tenant. The 2027 renewal draft must be
+    // resolved (canonical soft-delete) before a second renewal may be drafted.
+    const resolved = (await db.query<{ out: any }>(
+      `select public.soft_delete_contract_atomic($1::text) as out`,
+      [String(renewed.new_contract_id)],
+    )).rows[0]?.out as any;
+    expect(resolved.status).toBe('deleted');
+
     // Explicit override is honored (still validated).
     const renewed2 = (await db.query<{ out: any }>(
       `select public.renew_contract_atomic($1::text, $2::jsonb) as out`,
