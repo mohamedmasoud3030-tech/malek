@@ -1,18 +1,14 @@
 #!/usr/bin/env node
-// Sensitive RPC authorization boundary matrix (Phase 4).
+// Sensitive RPC authorization boundary matrix (Phases 4 + 7).
 //
-// Proves two independent boundaries:
-//   1. The deployed EXECUTE grants remain exactly as intended.
-//   2. The inner authorization gates of post_receipt_atomic,
-//      execute_receipt_void_internal, and import_bank_statement_batch_atomic
-//      reject unauthorized/inactive/deleted/wrong-company callers using
-//      company_members.role (not users.role) before financial business logic.
+// Proves the deployed EXECUTE boundary and the effective role/company behavior
+// of the hardened financial RPCs. Permission-governed RPC expectations are
+// derived from role_has_app_permission, not from their old ADMIN/MANAGER guards.
 //
 // post_receipt_atomic and execute_receipt_void_internal are intentionally not
-// browser-executable. After asserting those deployed grants, this disposable
-// PGlite test grants authenticated EXECUTE on those two functions ONLY inside
-// the temporary test database so their defense-in-depth auth blocks can be
-// exercised directly. No hosted project is contacted or modified.
+// browser-executable. After asserting their deployed ACLs, this disposable
+// PGlite test grants authenticated EXECUTE only inside the temporary database so
+// their defense-in-depth authorization blocks can be exercised directly.
 
 import { createDatabase, replay, listMigrations } from '../db0/lib/replay.mjs';
 
@@ -23,11 +19,13 @@ const COMPANY_INACTIVE = 'd1000000-0000-4000-8000-00000000000b';
 const U_ADMIN = 'd2000000-0000-4000-8000-000000000001'; // users.role=VIEWER, membership=ADMIN
 const U_MANAGER = 'd2000000-0000-4000-8000-000000000002'; // users.role=VIEWER, membership=MANAGER
 const U_VIEWER_WITH_ADMIN_USERS_ROLE = 'd2000000-0000-4000-8000-000000000003'; // users.role=ADMIN, membership=VIEWER
-const U_ACCOUNTANT = 'd2000000-0000-4000-8000-000000000004'; // membership=ACCOUNTANT (not admin/manager)
-const U_INACTIVE_IDENTITY_ADMIN_MEMBER = 'd2000000-0000-4000-8000-000000000005'; // is_active=false, membership=ADMIN
-const U_DELETED_IDENTITY_ADMIN_MEMBER = 'd2000000-0000-4000-8000-000000000006'; // deleted_at set, membership=ADMIN
-const U_INACTIVE_COMPANY_ADMIN_MEMBER = 'd2000000-0000-4000-8000-000000000007'; // company inactive, membership=ADMIN
+const U_ACCOUNTANT = 'd2000000-0000-4000-8000-000000000004'; // users.role=VIEWER, membership=ACCOUNTANT
+const U_INACTIVE_IDENTITY_ADMIN_MEMBER = 'd2000000-0000-4000-8000-000000000005';
+const U_DELETED_IDENTITY_ADMIN_MEMBER = 'd2000000-0000-4000-8000-000000000006';
+const U_INACTIVE_COMPANY_ADMIN_MEMBER = 'd2000000-0000-4000-8000-000000000007';
 const U_NO_MEMBERSHIP = 'd2000000-0000-4000-8000-000000000008';
+const U_OPERATIONS = 'd2000000-0000-4000-8000-000000000009';
+const U_USER = 'd2000000-0000-4000-8000-00000000000a';
 
 const results = [];
 
@@ -39,11 +37,11 @@ function record(id, title, status, detail) {
 }
 
 function firstLine(error) {
-  return String(error?.message ?? error).split('\n')[0].slice(0, 240);
+  return String(error?.message ?? error).split('\n')[0].slice(0, 320);
 }
 
-function isAuthDenied(error) {
-  return /42501|غير مصرح|ADMIN or MANAGER role is required|Only managers can import/i.test(
+function isAuthorityDenied(error) {
+  return /Authenticated app user is required|financial\.[a-z0-9_.]+ is required|ADMIN or MANAGER role is required|غير مصرح: هذه العملية متاحة فقط للمدير أو المسؤول/i.test(
     String(error?.message ?? error),
   );
 }
@@ -62,11 +60,7 @@ async function asUser(db, userId, companyId, fn) {
     await db.exec('rollback');
     return { ok: true, value, error: null };
   } catch (error) {
-    try {
-      await db.exec('rollback');
-    } catch {
-      /* already aborted */
-    }
+    try { await db.exec('rollback'); } catch { /* already aborted */ }
     return { ok: false, value: null, error };
   }
 }
@@ -93,21 +87,25 @@ async function seed(db) {
       ('${U_INACTIVE_IDENTITY_ADMIN_MEMBER}', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'inactive-admin@rpcauth.test', 'x', now(), now(), now(), '{}'::jsonb, '{"company_id":"${COMPANY_A}"}'::jsonb),
       ('${U_DELETED_IDENTITY_ADMIN_MEMBER}', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'deleted-admin@rpcauth.test', 'x', now(), now(), now(), '{}'::jsonb, '{"company_id":"${COMPANY_A}"}'::jsonb),
       ('${U_INACTIVE_COMPANY_ADMIN_MEMBER}', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'inactive-company-admin@rpcauth.test', 'x', now(), now(), now(), '{}'::jsonb, '{"company_id":"${COMPANY_INACTIVE}"}'::jsonb),
-      ('${U_NO_MEMBERSHIP}', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'no-membership@rpcauth.test', 'x', now(), now(), now(), '{}'::jsonb, '{"company_id":"${COMPANY_A}"}'::jsonb)
+      ('${U_NO_MEMBERSHIP}', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'no-membership@rpcauth.test', 'x', now(), now(), now(), '{}'::jsonb, '{"company_id":"${COMPANY_A}"}'::jsonb),
+      ('${U_OPERATIONS}', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'operations@rpcauth.test', 'x', now(), now(), now(), '{}'::jsonb, '{"company_id":"${COMPANY_A}"}'::jsonb),
+      ('${U_USER}', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'user@rpcauth.test', 'x', now(), now(), now(), '{}'::jsonb, '{"company_id":"${COMPANY_A}"}'::jsonb)
     on conflict (id) do update set raw_user_meta_data = excluded.raw_user_meta_data, updated_at = now();
 
-    -- users.role deliberately set OPPOSITE/misleading to membership.role to
-    -- prove the RPCs no longer consult it.
+    -- users.role is deliberately misleading. Positive permission cases use
+    -- users.role=VIEWER; a negative VIEWER membership uses users.role=ADMIN.
     insert into public.users (id, email, name, role, status, is_active, deleted_at)
     values
       ('${U_ADMIN}', 'admin@rpcauth.test', 'Admin', 'VIEWER', 'ACTIVE', true, null),
       ('${U_MANAGER}', 'manager@rpcauth.test', 'Manager', 'VIEWER', 'ACTIVE', true, null),
       ('${U_VIEWER_WITH_ADMIN_USERS_ROLE}', 'viewer-conflict@rpcauth.test', 'Viewer Conflict', 'ADMIN', 'ACTIVE', true, null),
-      ('${U_ACCOUNTANT}', 'accountant@rpcauth.test', 'Accountant', 'ADMIN', 'ACTIVE', true, null),
+      ('${U_ACCOUNTANT}', 'accountant@rpcauth.test', 'Accountant', 'VIEWER', 'ACTIVE', true, null),
       ('${U_INACTIVE_IDENTITY_ADMIN_MEMBER}', 'inactive-admin@rpcauth.test', 'Inactive Admin', 'VIEWER', 'ACTIVE', false, null),
       ('${U_DELETED_IDENTITY_ADMIN_MEMBER}', 'deleted-admin@rpcauth.test', 'Deleted Admin', 'VIEWER', 'ACTIVE', true, now()),
       ('${U_INACTIVE_COMPANY_ADMIN_MEMBER}', 'inactive-company-admin@rpcauth.test', 'Inactive Company Admin', 'VIEWER', 'ACTIVE', true, null),
-      ('${U_NO_MEMBERSHIP}', 'no-membership@rpcauth.test', 'No Membership', 'ADMIN', 'ACTIVE', true, null)
+      ('${U_NO_MEMBERSHIP}', 'no-membership@rpcauth.test', 'No Membership', 'ADMIN', 'ACTIVE', true, null),
+      ('${U_OPERATIONS}', 'operations@rpcauth.test', 'Operations', 'ADMIN', 'ACTIVE', true, null),
+      ('${U_USER}', 'user@rpcauth.test', 'User', 'ADMIN', 'ACTIVE', true, null)
     on conflict (id) do update
       set role = excluded.role, status = excluded.status, is_active = excluded.is_active, deleted_at = excluded.deleted_at;
 
@@ -119,9 +117,10 @@ async function seed(db) {
       ('${COMPANY_A}', '${U_ACCOUNTANT}', 'ACCOUNTANT', true, now()),
       ('${COMPANY_A}', '${U_INACTIVE_IDENTITY_ADMIN_MEMBER}', 'ADMIN', true, now()),
       ('${COMPANY_A}', '${U_DELETED_IDENTITY_ADMIN_MEMBER}', 'ADMIN', true, now()),
-      ('${COMPANY_INACTIVE}', '${U_INACTIVE_COMPANY_ADMIN_MEMBER}', 'ADMIN', true, now())
-    on conflict (company_id, user_id) do update
-      set role = excluded.role, is_active = excluded.is_active;
+      ('${COMPANY_INACTIVE}', '${U_INACTIVE_COMPANY_ADMIN_MEMBER}', 'ADMIN', true, now()),
+      ('${COMPANY_A}', '${U_OPERATIONS}', 'OPERATIONS', true, now()),
+      ('${COMPANY_A}', '${U_USER}', 'USER', true, now())
+    on conflict (company_id, user_id) do update set role = excluded.role, is_active = excluded.is_active;
   `);
 }
 
@@ -131,10 +130,7 @@ async function callRpc(db, fnName, payload) {
 }
 
 async function hasExecutePrivilege(db, role, signature) {
-  const res = await db.query(
-    `select has_function_privilege($1, $2, 'EXECUTE') as allowed`,
-    [role, signature],
-  );
+  const res = await db.query(`select has_function_privilege($1, $2, 'EXECUTE') as allowed`, [role, signature]);
   return Boolean(res.rows[0].allowed);
 }
 
@@ -154,15 +150,15 @@ async function main() {
   const grantCases = [
     ['GRANT-1', 'authenticated cannot execute post_receipt_atomic', 'public.post_receipt_atomic(jsonb)', false],
     ['GRANT-2', 'authenticated cannot execute execute_receipt_void_internal', 'public.execute_receipt_void_internal(jsonb)', false],
-    ['GRANT-3', 'authenticated can execute import_bank_statement_batch_atomic', 'public.import_bank_statement_batch_atomic(jsonb)', true],
+    ['GRANT-3', 'authenticated can execute preview_bank_statement_batch_atomic', 'public.preview_bank_statement_batch_atomic(jsonb)', true],
+    ['GRANT-4', 'authenticated can execute import_bank_statement_batch_atomic', 'public.import_bank_statement_batch_atomic(jsonb)', true],
   ];
-  for (const [id, title, signature, expected] of grantCases) {
-    const actual = await hasExecutePrivilege(db, 'authenticated', signature);
+  for (const [id, title, rpcSignature, expected] of grantCases) {
+    const actual = await hasExecutePrivilege(db, 'authenticated', rpcSignature);
     record(id, title, actual === expected ? 'pass' : 'fail', `expected=${expected} actual=${actual}`);
   }
 
-  // Test-only opening of the two internal functions. This happens exclusively
-  // in disposable PGlite after their deployed deny grants were asserted above.
+  // Test-only opening of internal functions after proving their deployed ACLs.
   await db.exec(`
     grant execute on function public.post_receipt_atomic(jsonb) to authenticated;
     grant execute on function public.execute_receipt_void_internal(jsonb) to authenticated;
@@ -170,7 +166,7 @@ async function main() {
 
   const minimalReceiptPayload = { request_id: 'test-req-1', receipt: {}, allocations: [], journal_entries: [] };
   const minimalVoidPayload = { receipt_id: '00000000-0000-0000-0000-000000000000', reason: 'test', request_id: 'test-void-1' };
-  const minimalImportPayload = {
+  const minimalBankPayload = {
     bank_account_id: '00000000-0000-0000-0000-000000000000',
     file_name: 'test.csv',
     file_fingerprint: 'abc123',
@@ -178,63 +174,116 @@ async function main() {
     rows: [],
   };
 
-  const denyCases = [
-    [U_VIEWER_WITH_ADMIN_USERS_ROLE, COMPANY_A, 'users.role=ADMIN but membership.role=VIEWER'],
-    [U_ACCOUNTANT, COMPANY_A, 'membership.role=ACCOUNTANT (not admin/manager)'],
+  const invalidAuthorityCases = [
     [U_INACTIVE_IDENTITY_ADMIN_MEMBER, COMPANY_A, 'is_active=false despite ADMIN membership'],
     [U_DELETED_IDENTITY_ADMIN_MEMBER, COMPANY_A, 'deleted_at set despite ADMIN membership'],
-    [U_INACTIVE_COMPANY_ADMIN_MEMBER, COMPANY_INACTIVE, 'company inactive despite ADMIN membership'],
+    [U_INACTIVE_COMPANY_ADMIN_MEMBER, COMPANY_INACTIVE, 'inactive company despite ADMIN membership'],
     [U_NO_MEMBERSHIP, COMPANY_A, 'no company_members row'],
-    [U_ADMIN, COMPANY_B, 'ADMIN membership exists only in company A, JWT selects active company B'],
-  ];
-
-  const allowCases = [
-    [U_ADMIN, COMPANY_A, 'active ADMIN membership (users.role=VIEWER, ignored)'],
-    [U_MANAGER, COMPANY_A, 'active MANAGER membership (users.role=VIEWER, ignored)'],
+    [U_ADMIN, COMPANY_B, 'ADMIN membership exists only in company A while JWT selects company B'],
   ];
 
   let idCounter = 1;
-  async function testRpc(fnName, payload, label) {
-    for (const [userId, companyId, desc] of denyCases) {
-      const id = `RPC-${idCounter++}`;
-      const r = await asUser(db, userId, companyId, () => callRpc(db, fnName, payload));
-      const denied = !r.ok && isAuthDenied(r.error);
-      record(
-        id,
-        `${label}: denied for ${desc}`,
-        denied ? 'pass' : 'fail',
-        r.ok ? 'call unexpectedly succeeded' : firstLine(r.error),
-      );
+
+  async function expectDenied(fnName, payload, userId, companyId, description, label) {
+    const id = `RPC-${idCounter++}`;
+    const r = await asUser(db, userId, companyId, () => callRpc(db, fnName, payload));
+    const denied = !r.ok && isAuthorityDenied(r.error);
+    record(id, `${label}: denied for ${description}`, denied ? 'pass' : 'fail', r.ok ? 'call unexpectedly succeeded' : firstLine(r.error));
+  }
+
+  async function expectPassesAuthorityGate(fnName, payload, userId, companyId, description, label) {
+    const id = `RPC-${idCounter++}`;
+    const r = await asUser(db, userId, companyId, () => callRpc(db, fnName, payload));
+    const authorityRejected = !r.ok && isAuthorityDenied(r.error);
+    record(
+      id,
+      `${label}: passes authority gate for ${description}`,
+      authorityRejected ? 'fail' : 'pass',
+      authorityRejected ? firstLine(r.error) : r.ok ? 'call succeeded' : `later business/data error: ${firstLine(r.error)}`,
+    );
+  }
+
+  async function testPermissionRpc({ fnName, payload, label, allow, deny }) {
+    for (const [userId, description] of deny) {
+      await expectDenied(fnName, payload, userId, COMPANY_A, description, label);
     }
-    for (const [userId, companyId, desc] of allowCases) {
-      const id = `RPC-${idCounter++}`;
-      const r = await asUser(db, userId, companyId, () => callRpc(db, fnName, payload));
-      // Authorized callers must NOT be rejected at the authorization gate.
-      // They may still fail later for unrelated business-logic/data reasons
-      // (e.g. missing invoices) since this test uses minimal payloads; only
-      // an auth-shaped denial counts as a failure here.
-      const authRejected = !r.ok && isAuthDenied(r.error);
-      record(
-        id,
-        `${label}: NOT auth-denied for ${desc}`,
-        authRejected ? 'fail' : 'pass',
-        authRejected
-          ? firstLine(r.error)
-          : r.ok
-            ? 'passed auth gate, call succeeded'
-            : `passed auth gate, later error: ${firstLine(r.error)}`,
-      );
+    for (const [userId, companyId, description] of invalidAuthorityCases) {
+      await expectDenied(fnName, payload, userId, companyId, description, label);
+    }
+    for (const [userId, description] of allow) {
+      await expectPassesAuthorityGate(fnName, payload, userId, COMPANY_A, description, label);
     }
   }
 
-  console.log('\n[post_receipt_atomic inner auth]');
-  await testRpc('post_receipt_atomic', minimalReceiptPayload, 'post_receipt_atomic');
+  console.log('\n[bank preview — financial.bank_reconciliation.view]');
+  await testPermissionRpc({
+    fnName: 'preview_bank_statement_batch_atomic',
+    payload: minimalBankPayload,
+    label: 'preview bank statement',
+    allow: [
+      [U_ADMIN, 'ADMIN membership; users.role=VIEWER'],
+      [U_MANAGER, 'MANAGER membership; users.role=VIEWER'],
+      [U_ACCOUNTANT, 'ACCOUNTANT membership; users.role=VIEWER'],
+      [U_VIEWER_WITH_ADMIN_USERS_ROLE, 'VIEWER membership (read permission)'],
+    ],
+    deny: [
+      [U_OPERATIONS, 'OPERATIONS membership despite users.role=ADMIN'],
+      [U_USER, 'USER membership despite users.role=ADMIN'],
+    ],
+  });
 
-  console.log('\n[execute_receipt_void_internal inner auth]');
-  await testRpc('execute_receipt_void_internal', minimalVoidPayload, 'execute_receipt_void_internal');
+  console.log('\n[bank import — financial.bank_reconciliation.match]');
+  await testPermissionRpc({
+    fnName: 'import_bank_statement_batch_atomic',
+    payload: minimalBankPayload,
+    label: 'import bank statement',
+    allow: [
+      [U_ADMIN, 'ADMIN membership; users.role=VIEWER'],
+      [U_ACCOUNTANT, 'ACCOUNTANT membership; users.role=VIEWER'],
+    ],
+    deny: [
+      [U_MANAGER, 'MANAGER membership; view does not imply match'],
+      [U_VIEWER_WITH_ADMIN_USERS_ROLE, 'VIEWER membership despite users.role=ADMIN'],
+      [U_OPERATIONS, 'OPERATIONS membership despite users.role=ADMIN'],
+      [U_USER, 'USER membership despite users.role=ADMIN'],
+    ],
+  });
 
-  console.log('\n[import_bank_statement_batch_atomic inner auth]');
-  await testRpc('import_bank_statement_batch_atomic', minimalImportPayload, 'import_bank_statement_batch_atomic');
+  console.log('\n[receipt posting — financial.payments.create]');
+  await testPermissionRpc({
+    fnName: 'post_receipt_atomic',
+    payload: minimalReceiptPayload,
+    label: 'post receipt',
+    allow: [
+      [U_ADMIN, 'ADMIN membership; users.role=VIEWER'],
+      [U_ACCOUNTANT, 'ACCOUNTANT membership; users.role=VIEWER'],
+    ],
+    deny: [
+      [U_MANAGER, 'MANAGER membership does not have payments.create'],
+      [U_VIEWER_WITH_ADMIN_USERS_ROLE, 'VIEWER membership despite users.role=ADMIN'],
+      [U_OPERATIONS, 'OPERATIONS membership despite users.role=ADMIN'],
+      [U_USER, 'USER membership despite users.role=ADMIN'],
+    ],
+  });
+
+  console.log('\n[receipt void internal — preserved ADMIN/MANAGER membership boundary]');
+  for (const [userId, description] of [
+    [U_ACCOUNTANT, 'ACCOUNTANT membership'],
+    [U_VIEWER_WITH_ADMIN_USERS_ROLE, 'VIEWER membership despite users.role=ADMIN'],
+    [U_OPERATIONS, 'OPERATIONS membership despite users.role=ADMIN'],
+    [U_USER, 'USER membership despite users.role=ADMIN'],
+  ]) {
+    await expectDenied('execute_receipt_void_internal', minimalVoidPayload, userId, COMPANY_A, description, 'execute receipt void internal');
+  }
+  for (const [userId, companyId, description] of invalidAuthorityCases) {
+    await expectDenied('execute_receipt_void_internal', minimalVoidPayload, userId, companyId, description, 'execute receipt void internal');
+  }
+  for (const [userId, description] of [
+    [U_ADMIN, 'ADMIN membership; users.role=VIEWER'],
+    [U_MANAGER, 'MANAGER membership; users.role=VIEWER'],
+  ]) {
+    await expectPassesAuthorityGate('execute_receipt_void_internal', minimalVoidPayload, userId, COMPANY_A, description, 'execute receipt void internal');
+  }
 
   const failed = results.filter((r) => r.status === 'fail');
   console.log(`\n${results.length - failed.length}/${results.length} passed.`);
