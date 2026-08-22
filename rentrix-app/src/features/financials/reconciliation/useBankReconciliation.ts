@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import type { SupportedTimezone } from '@/lib/companySettings';
 import { createBankStatementImportFromCsv, createBankStatementLine, ignoreBankStatementLine, listBankAccounts, listBankStatementLines, listSuggestedBankMatches, matchBankStatementLine } from './bankReconciliationService';
 import type { BankReconciliationFilters, BankReconciliationMatchValues, BankStatementImportValues, BankStatementLine, BankStatementLineFormValues } from './types';
 
@@ -7,7 +8,7 @@ export const bankReconciliationKeys = {
   all: ['bank-reconciliation'] as const,
   accounts: () => [...bankReconciliationKeys.all, 'accounts'] as const,
   lines: (filters: BankReconciliationFilters) => [...bankReconciliationKeys.all, 'lines', filters] as const,
-  suggestions: (line?: Pick<BankStatementLine, 'id' | 'amount' | 'transaction_date'> | null) => [...bankReconciliationKeys.all, 'suggestions', line?.id ?? 'none', line?.amount ?? 0, line?.transaction_date ?? ''] as const,
+  suggestions: (line: Pick<BankStatementLine, 'id' | 'amount' | 'transaction_date'> | null | undefined, timeZone: SupportedTimezone) => [...bankReconciliationKeys.all, 'suggestions', line?.id ?? 'none', line?.amount ?? 0, line?.transaction_date ?? '', timeZone] as const,
 };
 
 export function useBankAccounts() {
@@ -18,8 +19,15 @@ export function useBankStatementLines(filters: BankReconciliationFilters) {
   return useQuery({ queryKey: bankReconciliationKeys.lines(filters), queryFn: () => listBankStatementLines(filters) });
 }
 
-export function useSuggestedBankMatches(line?: Pick<BankStatementLine, 'id' | 'amount' | 'transaction_date'> | null) {
-  return useQuery({ queryKey: bankReconciliationKeys.suggestions(line), queryFn: () => line ? listSuggestedBankMatches(line) : Promise.resolve([]), enabled: Boolean(line) });
+export function useSuggestedBankMatches(
+  line: Pick<BankStatementLine, 'id' | 'amount' | 'transaction_date'> | null | undefined,
+  timeZone: SupportedTimezone,
+) {
+  return useQuery({
+    queryKey: bankReconciliationKeys.suggestions(line, timeZone),
+    queryFn: () => line ? listSuggestedBankMatches(line, timeZone) : Promise.resolve([]),
+    enabled: Boolean(line),
+  });
 }
 
 export function useCreateBankStatementLine() {

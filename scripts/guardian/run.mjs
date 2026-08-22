@@ -42,6 +42,11 @@ const layers = [
     cmd: ['node', ['scripts/supabase-tests/security-definer-boundary-audit.mjs']],
   },
   {
+    id: 'function-default-acl',
+    title: 'Fail-closed default function EXECUTE audit',
+    cmd: ['node', ['scripts/supabase-tests/function-default-acl-audit.mjs']],
+  },
+  {
     id: 'strict-governance',
     title: 'Guardian strict authority scan (DG-GOV-008)',
     cmd: ['node', ['scripts/guardian/governance.mjs']],

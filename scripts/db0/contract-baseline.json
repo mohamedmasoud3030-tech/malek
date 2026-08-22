@@ -10,27 +10,23 @@
     "Lowering a number here is always safe. Raising one requires an explicit",
     "contract decision recorded in docs/database/WP_DB0_CONTRACT_FREEZE.md."
   ],
-  "generatedAt": "2026-08-13",
+  "generatedAt": "2026-08-22",
   "accepted": {
-    "DB0-07": 47,
+    "DB0-07": 46,
     "DB0-03": 1,
     "DB0-06N": 6
   },
   "rationale": {
     "DB0-07": {
       "title": "Financial columns not at 3 decimal places",
-      "rule": "PRD-004, FIN-013 — OMR authoritative precision is three decimals",
+      "rule": "OMR authoritative precision is three decimals",
       "gap": "GAP-009",
       "owner": "WP-02",
-      "why_deferred": [
-        "Widening numeric(14,2) to numeric(14,3) is a data conversion on posted",
-        "financial history, not a schema tidy-up. It must run with accounting",
-        "sign-off and a reconciliation plan, which is exactly the kind of change",
-        "the WP-DB0 freeze exists to keep out of an unrelated migration.",
-        "",
-        "The GL core (journal_batches / journal_lines) is ALREADY numeric(18,3),",
-        "so the authoritative ledger is compliant. The 47 columns below are",
-        "subledger and snapshot columns that GAP-009 must reconcile."
+      "status": "PARTIALLY_REMEDIATED_BY_20260901000029",
+      "closure": [
+        "The independently-proven bank_reconciliation_matches.matched_amount defect is corrected from numeric(14,2) to numeric(15,3).",
+        "The DB0 accepted drift count is reduced by exactly one; remaining historical columns stay governed rather than being mass-converted by a name regex.",
+        "Columns with scale above 3 or unconstrained numeric require individual semantic/accounting review before any rounding or constraint migration."
       ]
     }
   }

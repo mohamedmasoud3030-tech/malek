@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { canAccess, financialOperationPermissions } from '@/features/auth/permissions';
+import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
 import { useAuth } from '@/hooks/use-auth';
 import { getTodayLocalDateString } from '../financials-date-utils';
 import { summarizeReconciliation } from './bankReconciliationService';
@@ -62,6 +63,7 @@ export const emptyImportDraft: BankStatementImportValues = {
 };
 
 export function useBankReconciliationController() {
+  const companySettings = useCompanySettingsContract();
   const [filters, setFilters] = useState<BankReconciliationFilters>({
     bankAccountId: '',
     status: 'all',
@@ -88,7 +90,7 @@ export function useBankReconciliationController() {
   const accounts = accountsQuery.data ?? [];
   const summary = useMemo(() => summarizeReconciliation(lines), [lines]);
   const selectedLine = lines.find((line) => line.id === matchDraft.statement_line_id);
-  const suggestionsQuery = useSuggestedBankMatches(selectedLine);
+  const suggestionsQuery = useSuggestedBankMatches(selectedLine, companySettings.timezone);
   const canManageReconciliation = canAccess(authorization, financialOperationPermissions.matchBankReconciliation);
   const writeError = createLine.error ?? importCsv.error ?? matchLine.error ?? ignoreLine.error;
   const pendingIgnoreLine = lines.find((line) => line.id === pendingIgnoreLineId) ?? null;
