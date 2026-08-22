@@ -1068,7 +1068,7 @@ export type Database = {
         Row: {
           id: string;
           statement_line_id: string;
-          matched_entity_type: 'payment' | 'receipt' | 'expense' | 'manual_adjustment';
+          matched_entity_type: 'payment' | 'receipt' | 'expense' | 'manual_adjustment' | 'owner_payout' | 'deposit_receipt' | 'deposit_refund' | 'commission_payment' | 'owner_expense';
           matched_entity_id: string;
           matched_amount: number;
           notes: string | null;
@@ -1079,7 +1079,7 @@ export type Database = {
         Insert: {
           id?: string;
           statement_line_id: string;
-          matched_entity_type: 'payment' | 'receipt' | 'expense' | 'manual_adjustment';
+          matched_entity_type: 'payment' | 'receipt' | 'expense' | 'manual_adjustment' | 'owner_payout' | 'deposit_receipt' | 'deposit_refund' | 'commission_payment' | 'owner_expense';
           matched_entity_id: string;
           matched_amount: number;
           notes?: string | null;
@@ -1090,7 +1090,7 @@ export type Database = {
         Update: {
           id?: string;
           statement_line_id?: string;
-          matched_entity_type?: 'payment' | 'receipt' | 'expense' | 'manual_adjustment';
+          matched_entity_type?: 'payment' | 'receipt' | 'expense' | 'manual_adjustment' | 'owner_payout' | 'deposit_receipt' | 'deposit_refund' | 'commission_payment' | 'owner_expense';
           matched_entity_id?: string;
           matched_amount?: number;
           notes?: string | null;
