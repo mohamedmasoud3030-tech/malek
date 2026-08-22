@@ -38,14 +38,22 @@ describe('deposits real implementation - no false success', () => {
     expect(content).toContain('throw new Error');
   });
 
-  it('workspace does not use local useState mock deposits', () => {
+  it('workspace does not use local useState mock deposits and uses controller', () => {
     const workspacePath = resolve(import.meta.dirname, './deposits-workspace.tsx');
-    const content = readFileSync(workspacePath, 'utf8');
-    expect(content).not.toContain('dep-101');
-    expect(content).not.toContain('dep-102');
-    expect(content).not.toContain('useState<DepositRecord[]>(() => [');
-    expect(content).toContain('listTenantDeposits');
-    expect(content).toContain('useQuery');
-    expect(content).toContain('useMutation');
+    const workspace = readFileSync(workspacePath, 'utf8');
+    const controllerPath = resolve(import.meta.dirname, './use-deposit-workspace-controller.ts');
+    const controller = readFileSync(controllerPath, 'utf8');
+    const queriesPath = resolve(import.meta.dirname, './deposit-workspace-queries.ts');
+    const queries = readFileSync(queriesPath, 'utf8');
+
+    expect(workspace).not.toContain('dep-101');
+    expect(workspace).not.toContain('dep-102');
+    expect(workspace).not.toContain('useState<DepositRecord[]>(() => [');
+    // Workspace now uses controller, not direct queries
+    expect(workspace).toContain('useDepositWorkspaceController');
+    // Controller and queries should contain real data fetching
+    expect(queries).toContain('listTenantDeposits');
+    expect(controller).toContain('useQuery') || expect(queries).toContain('useQuery');
+    expect(controller).toContain('useMutation');
   });
 });
