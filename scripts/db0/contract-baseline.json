@@ -12,7 +12,7 @@
   ],
   "generatedAt": "2026-08-22",
   "accepted": {
-    "DB0-07": 0,
+    "DB0-07": 46,
     "DB0-03": 1,
     "DB0-06N": 6
   },
@@ -20,11 +20,13 @@
     "DB0-07": {
       "title": "Financial columns not at 3 decimal places",
       "rule": "OMR authoritative precision is three decimals",
-      "status": "CLOSED_BY_20260901000029",
+      "gap": "GAP-009",
+      "owner": "WP-02",
+      "status": "PARTIALLY_REMEDIATED_BY_20260901000029",
       "closure": [
-        "All public-table numeric columns classified as money by the executable DB0 detector are required to have scale 3.",
-        "The closure migration only widens scale below 3 and increases precision by the same delta, preserving integer capacity.",
-        "The migration fails instead of silently rounding any scale above 3 or unbounded numeric money column."
+        "The independently-proven bank_reconciliation_matches.matched_amount defect is corrected from numeric(14,2) to numeric(15,3).",
+        "The DB0 accepted drift count is reduced by exactly one; remaining historical columns stay governed rather than being mass-converted by a name regex.",
+        "Columns with scale above 3 or unconstrained numeric require individual semantic/accounting review before any rounding or constraint migration."
       ]
     }
   }
