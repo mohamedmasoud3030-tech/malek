@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle2, RefreshCcw, Scale } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
@@ -6,10 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { formatMoney } from '@/features/financials/components/financials-formatters';
 import type { ReconciliationRow } from '@/features/accounting/wp05Services';
-import {
-  summarizeReconciliationReadiness,
-  useSubledgerGlReconciliation,
-} from '../../accounting-report-authority';
+import type { ReconciliationReadiness } from '../../accounting-report-authority';
 
 const columns: ColumnDef<ReconciliationRow>[] = [
   {
@@ -57,16 +54,28 @@ const columns: ColumnDef<ReconciliationRow>[] = [
   },
 ];
 
-export function AccountingReconciliationReadiness({ asOf }: Readonly<{ asOf: string }>) {
-  const query = useSubledgerGlReconciliation(asOf);
-  const rows = query.data ?? [];
-  const readiness = summarizeReconciliationReadiness(rows);
+type Props = Readonly<{
+  asOf: string;
+  rows: readonly ReconciliationRow[];
+  readiness: ReconciliationReadiness;
+  isLoading: boolean;
+  isError: boolean;
+  onRefetch: () => void;
+}>;
 
-  if (query.isLoading) {
+export function AccountingReconciliationReadiness({
+  asOf,
+  rows,
+  readiness,
+  isLoading,
+  isError,
+  onRefetch,
+}: Props) {
+  if (isLoading) {
     return <Skeleton className="h-48 w-full rounded-2xl" />;
   }
 
-  if (query.isError) {
+  if (isError) {
     return (
       <Card className="border-destructive/30">
         <CardHeader>
@@ -79,7 +88,7 @@ export function AccountingReconciliationReadiness({ asOf }: Readonly<{ asOf: str
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Button type="button" variant="outline" size="sm" onClick={() => query.refetch()}>
+          <Button type="button" variant="outline" size="sm" onClick={onRefetch}>
             <RefreshCcw className="me-2 size-4" />
             إعادة التحقق
           </Button>
@@ -125,7 +134,7 @@ export function AccountingReconciliationReadiness({ asOf }: Readonly<{ asOf: str
       <CardContent className="p-0">
         <EntityTable<ReconciliationRow>
           aria-label="مطابقة الدفاتر المساعدة مع الأستاذ العام"
-          rows={rows}
+          rows={[...rows]}
           keyOf={(row) => `${row.reconciliation_class}:${row.account_no}`}
           columns={columns}
           emptyTitle="لا توجد أدلة مطابقة"
@@ -133,7 +142,7 @@ export function AccountingReconciliationReadiness({ asOf }: Readonly<{ asOf: str
         />
         <div className="flex items-center justify-between gap-3 border-t border-border/60 px-4 py-3 text-xs text-muted-foreground">
           <span>أقصى فرق مطلق: <strong dir="ltr">{formatMoney(readiness.maxAbsVariance)}</strong></span>
-          <Button type="button" variant="ghost" size="sm" onClick={() => query.refetch()}>
+          <Button type="button" variant="ghost" size="sm" onClick={onRefetch}>
             <RefreshCcw className="me-2 size-3.5" />
             تحديث المطابقة
           </Button>
