@@ -14,11 +14,12 @@ const admin: AuthorizationContext = { userId: 'u-admin', email: null, role: 'ADM
 const user: AuthorizationContext = { userId: 'u-user', email: null, role: 'USER' };
 
 describe('Money workspace route model', () => {
-  it('locks the five decision-oriented Money sections', () => {
+  it('locks the six decision-oriented Money sections (fees separated from funds)', () => {
     expect(FINANCE_SECTIONS.map((section) => [section.id, section.label])).toEqual([
       ['overview', 'وضع المال'],
       ['collections', 'المستحقات والتحصيل'],
       ['expenses', 'المصروفات والعمولات'],
+      ['fees', 'الأتعاب والاستحقاقات'],
       ['funds', 'التأمينات والملاك'],
       ['banking', 'البنوك والمطابقة'],
     ]);
@@ -40,6 +41,9 @@ describe('Money workspace route model', () => {
     expect(resolveFinanceLocation('deposits', '', admin)).toMatchObject({ resolvedSectionId: 'funds', resolvedViewId: 'deposits' });
     expect(resolveFinanceLocation('owner_settlements', '', admin)).toMatchObject({ resolvedSectionId: 'funds', resolvedViewId: 'owner_settlements' });
     expect(resolveFinanceLocation('bank_reconciliation', '', admin)).toMatchObject({ resolvedSectionId: 'banking', resolvedViewId: 'bank_reconciliation' });
+    expect(resolveFinanceLocation('fixed_monthly_accruals', '', admin)).toMatchObject({ resolvedSectionId: 'fees', resolvedViewId: 'fixed_monthly_accruals' });
+    // Legacy ?section=funds&view=fixed_monthly_accruals should resolve to fees
+    expect(resolveFinanceLocation('funds', 'fixed_monthly_accruals', admin)).toMatchObject({ resolvedSectionId: 'fees', resolvedViewId: 'fixed_monthly_accruals' });
     expect(resolveFinanceLocation('', '', admin)).toMatchObject({ resolvedSectionId: 'overview', resolvedViewId: 'overview' });
   });
 
@@ -53,7 +57,7 @@ describe('Money workspace route model', () => {
     expect(userViews).not.toContain('commissions');
     expect(userViews).not.toContain('arrears');
     expect(getPermittedSections(user).map((section) => section.id)).toEqual(['overview', 'collections']);
-    expect(getPermittedSections(admin).map((section) => section.id)).toEqual(['overview', 'collections', 'expenses', 'funds', 'banking']);
+    expect(getPermittedSections(admin).map((section) => section.id)).toEqual(['overview', 'collections', 'expenses', 'fees', 'funds', 'banking']);
   });
 
   it('keeps one navigation model shared by both the legacy renderer and Money route wrapper', () => {
