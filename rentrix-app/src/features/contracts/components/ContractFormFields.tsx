@@ -306,7 +306,7 @@ export function ContractFormFields({
 
       <EntityForm.Section
         title="المدد المالية ودورات السداد"
-        description="تحديد تاريخ سريان العقد ونهايته، قيمة الدفعة المالية المعتمدة وقالب السداد."
+        description="تحديد تاريخ سريان العقد ونهايته، قيمة الدفعة التعاقدية الواحدة، ودورة السداد وسياسة الفوترة."
         className={cn('md:col-span-2', stepVisibility(1))}
       >
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -318,7 +318,7 @@ export function ContractFormFields({
             <Input type="date" {...form.register('end_date')} />
           </EntityForm.Field>
 
-          <EntityForm.Field label="قيمة الإيجار" error={form.formState.errors.rent_amount?.message}>
+          <EntityForm.Field label="قيمة الدفعة التعاقدية" error={form.formState.errors.rent_amount?.message}>
             <Input
               type="number"
               step={MONEY_STEP}
@@ -326,7 +326,7 @@ export function ContractFormFields({
               min="0.01"
               {...form.register('rent_amount')}
             />
-            <p className="mt-1 text-xs text-muted-foreground">تُملأ تلقائياً من الإيجار الافتراضي للوحدة ويمكن تعديلها حسب الاتفاق.</p>
+            <p className="mt-1 text-xs text-muted-foreground">قيمة دفعة واحدة حسب دورة السداد المختارة؛ تُملأ من قيمة الوحدة ويمكن تعديلها حسب الاتفاق.</p>
           </EntityForm.Field>
 
           <EntityForm.Field label="يوم الفوترة (1–28)" error={form.formState.errors.billing_day?.message}>
@@ -349,7 +349,12 @@ export function ContractFormFields({
             </Select>
           </EntityForm.Field>
 
-          <EntityForm.Field label="شرط السداد" className="sm:col-span-2 lg:col-span-1" error={form.formState.errors.payment_terms_id?.message}>
+          <EntityForm.Field
+            label="مرجع شرط السداد"
+            description="مرجع وصفي للعقد حالياً؛ دورة السداد ويوم الفوترة وأيام السماح أعلاه هي التي تتحكم في الجدولة التشغيلية."
+            className="sm:col-span-2 lg:col-span-1"
+            error={form.formState.errors.payment_terms_id?.message}
+          >
             <Select {...form.register('payment_terms_id')}>
               <option value="">بدون قالب شروط</option>
               {(paymentTermsQuery.data ?? [])
@@ -414,8 +419,8 @@ export function ContractFormFields({
       </EntityForm.Section>
 
       <EntityForm.Section
-        title="مراجعة جدول الفواتير والدفعات المتوقعة"
-        description="خطوة المراجعة قبل تأكيد العقد: جدولة الفواتير والدفعات المالية المعتمدة."
+        title="مراجعة دورة السداد المتوقعة"
+        description="معاينة عدد دورات السداد وقيمة الدفعة التعاقدية قبل التأكيد؛ الخادم يحسم تواريخ إصدار واستحقاق الفواتير."
         className={cn('md:col-span-2', stepVisibility(3))}
       >
         <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm space-y-2">
@@ -425,12 +430,12 @@ export function ContractFormFields({
               <p className="font-semibold">{paymentCycleLabels[paymentCycle]}</p>
             </div>
             <div>
-              <span className="text-muted-foreground text-xs">قيمة الدفعة المقدرة:</span>
+              <span className="text-muted-foreground text-xs">قيمة الدفعة التعاقدية لكل دورة:</span>
               <p className="font-semibold">{formatDefaultCompanyMoney(schedulePreview.amountPerInstallment)}</p>
             </div>
             <div>
-              <span className="text-muted-foreground text-xs">عدد الدفعات المتوقع:</span>
-              <p className="font-semibold">{estimatedInstallments} فواتير</p>
+              <span className="text-muted-foreground text-xs">عدد دورات السداد المتوقع:</span>
+              <p className="font-semibold">{estimatedInstallments} دورة</p>
             </div>
             <div>
               <span className="text-muted-foreground text-xs">تاريخ سريان العقد:</span>
@@ -439,13 +444,13 @@ export function ContractFormFields({
           </div>
           {schedulePreview.sampleDates.length > 0 && (
             <div className="text-xs text-muted-foreground pt-1">
-              <span className="font-bold text-foreground">تواريخ استحقاق الدفعات المقدرة: </span>
+              <span className="font-bold text-foreground">بدايات دورات السداد المقدرة: </span>
               {schedulePreview.sampleDates.slice(0, 6).join(' • ')}
               {schedulePreview.sampleDates.length > 6 ? ` • وأخرى (${schedulePreview.sampleDates.length})` : ''}
             </div>
           )}
           <p className="text-xs text-muted-foreground pt-1 border-t border-primary/10">
-            يتم إنشاء الفواتير وجدولة دفعاتها آلياً على الخادم وفقاً للعقد المعتمد لحماية سلامة الأرصدة المحاسبية.
+            هذه معاينة للدورات فقط. إصدار الفاتورة وتاريخ استحقاقها الفعليان يحددهما الخادم وفق العقد المعتمد ويوم الفوترة وأيام السماح.
           </p>
         </div>
       </EntityForm.Section>
