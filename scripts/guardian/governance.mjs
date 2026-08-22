@@ -244,7 +244,8 @@ async function main() {
 
     printAndExit(files.length, rows.length);
   } finally {
-    await db.close();
+    // Do not db.close() before exiting. PGlite.close() calls
+    // Emscripten _emscripten_force_exit(0) and would hide a FAIL status.
   }
 }
 
@@ -253,15 +254,15 @@ function printAndExit(migrationCount, scanned = 0) {
   console.log(`Database Guardian governance: migrations=${migrationCount} security_definers=${scanned}`);
   if (!findings.length) {
     console.log('GUARDIAN GOVERNANCE: PASS — no findings.');
-    process.exitCode = 0;
-    return;
+    // process.exit — not process.exitCode. PGlite.close() force-exits 0.
+    process.exit(0);
   }
   for (const f of findings) {
     console.log(`\n[${f.severity}] ${f.id} ${f.title}`);
     if (f.evidence) console.log(String(f.evidence).slice(0, 1800));
   }
   console.log(`\nGUARDIAN GOVERNANCE: ${blocking.length ? 'FAIL' : 'PASS'} — ${blocking.length} blocking finding(s), ${findings.length} total.`);
-  process.exitCode = blocking.length ? 1 : 0;
+  process.exit(blocking.length ? 1 : 0);
 }
 
 main().catch((error) => {
