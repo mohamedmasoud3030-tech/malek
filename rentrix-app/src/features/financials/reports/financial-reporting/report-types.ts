@@ -62,17 +62,20 @@ export type FinancialPeriodSummaryReport = {
   expensesCount: number;
 };
 
+/**
+ * Operational comparison only. `collections` is gross payment activity for the
+ * month; it is deliberately not called revenue because accounting revenue is
+ * owned by the posted GL income statement.
+ */
 export type FinancialCashflowReportRow = {
   month: string;
-  /** @deprecated Legacy compatibility name. This value is gross collections from payments, not accounting revenue. */
-  revenue: number;
+  collections: number;
   expenses: number;
 };
 
 export type FinancialCashflowReport = {
   rows: FinancialCashflowReportRow[];
-  /** @deprecated Legacy compatibility name. This is total gross collections, not GL revenue. */
-  totalRevenue: number;
+  totalCollections: number;
   totalExpenses: number;
 };
 
@@ -103,4 +106,5 @@ export type ExpenseBreakdownReport = {
 // Foundation note: report loaders below intentionally use bounded, batched
 // current-app hydration. Base invoice/payment/expense queries are constrained by
 // required date filters first, then related invoices/contracts are fetched by
-// grouped id lists to avoid N+1 requests. This keeps PR #453 merge-safe while
+// grouped id lists to avoid N+1 requests. This keeps the browser read model
+// bounded while authoritative accounting statements remain server-owned RPCs.
