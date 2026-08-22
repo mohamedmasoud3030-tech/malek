@@ -39,7 +39,7 @@ type CompanyProfileSectionsProps = Readonly<{
 
 /**
  * The "بيانات المكتب" (office), "الهوية والطباعة" (identity), and
- * "العقود والفواتير" (documents) SectionCards. These three sections form the
+ * "المستندات والضريبة" (documents) SectionCards. These three sections form the
  * core company-profile form and are grouped together because they share the
  * same draft/validation contract and are always edited as one unit.
  */
@@ -123,13 +123,16 @@ export function CompanyProfileSections({
         </div>
       </SectionCard>
 
-      <SectionCard id="documents" activeId={activeSection} title="العقود والفواتير" subtitle="بادئات المستندات والضريبة الافتراضية المطبّقة على الفواتير والعقود الجديدة.">
+      <SectionCard id="documents" activeId={activeSection} title="المستندات والضريبة" subtitle="بادئات المستندات وبيانات VAT المرجعية المتوافقة مع السجلات القديمة؛ لا تحدد هذه القيم وحدها ضريبة الفواتير أو أتعاب الإدارة.">
+        <div className="rounded-xl border border-warning/30 bg-warning/10 p-3 text-xs font-semibold leading-6 text-foreground md:col-span-2">
+          <strong>مصدر الضريبة الفعلي:</strong> محرك المالية يستخدم سياسة ضريبة إيجار معتمدة ومؤرخة، وسياسة مستقلة لضريبة أتعاب الإدارة. تغيير نسب VAT المرجعية هنا لا يُنشئ أو يفعّل تلك السياسات ولا يغيّر الضريبة المحاسبية للفواتير المنشورة.
+        </div>
         <div className="grid gap-3 md:grid-cols-2">
           <FormField label="بادئة الفواتير" field="invoice_prefix" draft={draft} errors={errors} disabled={isSaving} onChange={onDraftChange} />
           <FormField label="بادئة العقود" field="contract_prefix" draft={draft} errors={errors} disabled={isSaving} onChange={onDraftChange} />
           <FormField label="بادئة الإيصالات" field="receipt_prefix" draft={draft} errors={errors} disabled={isSaving} onChange={onDraftChange} />
-          <FormField label="ضريبة القيمة المضافة الافتراضية %" field="default_vat_rate" draft={draft} errors={errors} disabled={isSaving} type="number" inputMode="decimal" onChange={onDraftChange} />
-          <FormField label="نسبة VAT التشغيلية %" field="vat_rate" draft={draft} errors={errors} disabled={isSaving} type="number" inputMode="decimal" onChange={onDraftChange} />
+          <FormField label="VAT مرجعية للتوافق %" field="default_vat_rate" draft={draft} errors={errors} disabled={isSaving} type="number" inputMode="decimal" onChange={onDraftChange} />
+          <FormField label="VAT تشغيلية قديمة للتوافق %" field="vat_rate" draft={draft} errors={errors} disabled={isSaving} type="number" inputMode="decimal" onChange={onDraftChange} />
           <FormField label="رقم تسجيل VAT" field="vat_registration_number" draft={draft} errors={errors} disabled={isSaving} onChange={onDraftChange} />
           <label className="flex items-center gap-2 rounded-xl border bg-background/70 p-3 text-sm font-medium md:col-span-2">
             <input
@@ -138,7 +141,7 @@ export function CompanyProfileSections({
               disabled={isSaving}
               onChange={(event) => onDraftChange('vat_enabled', String(event.target.checked))}
             />
-            <span>تفعيل VAT في إعدادات المكتب والتقارير</span>
+            <span>مؤشر VAT مرجعي للتوافق مع السجلات والتقارير القديمة</span>
           </label>
         </div>
       </SectionCard>

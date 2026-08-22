@@ -5,10 +5,10 @@ export type ReportCategoryId = 'accounting' | 'statements' | 'analytics';
 export const reportCategories = [
   {
     id: 'accounting',
-    label: 'المحاسبة',
-    shortLabel: 'المحاسبة',
+    label: 'المحاسبة والرقابة',
+    shortLabel: 'المحاسبة والرقابة',
     icon: Scale,
-    description: 'شجرة الحسابات، قيود اليومية، ميزان المراجعة، الفترات، الاستحقاق، والقوائم المالية.',
+    description: 'شجرة الحسابات، قيود اليومية، الفترات المحاسبية، ميزان المراجعة، والاستحقاق والقوائم المالية.',
   },
   {
     id: 'statements',
@@ -29,11 +29,11 @@ export const reportCategories = [
 export const reportSections = [
   {
     id: 'accounting',
-    label: 'المحاسبة',
+    label: 'المحاسبة والرقابة',
     icon: Scale,
-    group: 'العمليات المحاسبية',
+    group: 'الرقابة والمخرجات المحاسبية',
     category: 'accounting',
-    description: 'شجرة الحسابات (COA)، قيود اليومية، ميزان المراجعة، الفترات، وجداول الاستحقاق المعتمدة.',
+    description: 'ضوابط الأستاذ العام: شجرة الحسابات والفترات والقيود، مع ميزان المراجعة والقوائم المالية المبنية على القيود المرحّلة.',
   },
   {
     id: 'statements',

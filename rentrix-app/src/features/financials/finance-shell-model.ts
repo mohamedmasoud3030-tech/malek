@@ -19,7 +19,7 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { canAccess, type AppPermission, type AuthorizationContext } from '@/features/auth/permissions';
 
-export type FinanceSectionId = 'overview' | 'collections' | 'expenses' | 'funds' | 'banking';
+export type FinanceSectionId = 'overview' | 'collections' | 'expenses' | 'fees' | 'funds' | 'banking';
 
 export type FinanceViewId =
   | 'overview'
@@ -52,6 +52,7 @@ export const FINANCE_SECTIONS: readonly FinanceSectionDefinition[] = [
   { id: 'overview', label: 'وضع المال', icon: LayoutDashboard, defaultViewId: 'overview' },
   { id: 'collections', label: 'المستحقات والتحصيل', icon: ReceiptText, defaultViewId: 'invoices' },
   { id: 'expenses', label: 'المصروفات والعمولات', icon: WalletCards, defaultViewId: 'expenses' },
+  { id: 'fees', label: 'الأتعاب والاستحقاقات', icon: CalendarDays, defaultViewId: 'fixed_monthly_accruals' },
   { id: 'funds', label: 'التأمينات والملاك', icon: FileCheck, defaultViewId: 'deposits' },
   { id: 'banking', label: 'البنوك والمطابقة', icon: Landmark, defaultViewId: 'bank_reconciliation' },
 ];
@@ -63,9 +64,9 @@ export const FINANCE_VIEWS: readonly FinanceViewDefinition[] = [
   { id: 'arrears', sectionId: 'collections', label: 'المتأخرات', icon: ClipboardList, permission: 'arrears.view' },
   { id: 'expenses', sectionId: 'expenses', label: 'المصروفات', icon: WalletCards, permission: 'expenses.view' },
   { id: 'commissions', sectionId: 'expenses', label: 'العمولات', icon: BadgeDollarSign, permission: 'commissions.view' },
+  { id: 'fixed_monthly_accruals', sectionId: 'fees', label: 'استحقاق أتعاب الإدارة الشهرية', icon: CalendarDays, permission: 'financial.fixed_monthly_accruals.view' },
   { id: 'deposits', sectionId: 'funds', label: 'تأمينات المستأجرين', icon: FileCheck, permission: 'financial.deposits.view' },
   { id: 'owner_settlements', sectionId: 'funds', label: 'مستحقات وتسويات الملاك', icon: HandCoins, permission: 'financial.owner_settlements.view' },
-  { id: 'fixed_monthly_accruals', sectionId: 'funds', label: 'استحقاق العمولة الشهرية', icon: CalendarDays, permission: 'financial.fixed_monthly_accruals.view' },
   { id: 'bank_reconciliation', sectionId: 'banking', label: 'مطابقة كشف البنك', icon: Landmark, permission: 'financial.bank_reconciliation.view' },
 ];
 
@@ -128,7 +129,12 @@ export function resolveFinanceLocation(
   } else if (sec === 'commissions' || vi === 'commissions') {
     sId = 'expenses';
     vId = 'commissions';
-  } else if (['funds', 'deposits', 'owner_settlements', 'fixed_monthly_accruals'].includes(sec)) {
+  } else if (sec === 'fees' || sec === 'fixed_monthly_accruals' || vi === 'fixed_monthly_accruals') {
+    // Preserve old ?section=funds&view=fixed_monthly_accruals links while
+    // giving management-fee accrual its truthful revenue/receivable home.
+    sId = 'fees';
+    vId = 'fixed_monthly_accruals';
+  } else if (['funds', 'deposits', 'owner_settlements'].includes(sec)) {
     sId = 'funds';
     const defaultView = sec === 'funds' ? 'deposits' : sec;
     vId = (vi || defaultView) as FinanceViewId;

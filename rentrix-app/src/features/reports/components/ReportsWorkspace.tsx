@@ -185,12 +185,12 @@ export function ReportsWorkspace({
             unit={companySettings.defaultCurrency}
           />
           <FinanceKpiCard
-            label="صافي الحركة"
+            label="فرق التحصيل والمصروفات"
             value={money(summary?.netCash ?? 0)}
             icon={TrendingUp}
-            sub={(summary?.netCash ?? 0) >= 0 ? 'الحركة النقدية موجبة' : 'المصروفات أعلى من التحصيل'}
+            sub="فرق تشغيلي فقط — ليس ربح المكتب ولا قائمة تدفق نقدي كاملة"
             trend={(summary?.netCash ?? 0) >= 0 ? 'up' : 'down'}
-            trendValue={(summary?.netCash ?? 0) >= 0 ? 'موجب' : 'سالب'}
+            trendValue={(summary?.netCash ?? 0) >= 0 ? 'التحصيل أعلى' : 'المصروفات أعلى'}
             accent="primary"
             onDrill={() => onSectionViewChange('analytics', 'overview')}
             unit={companySettings.defaultCurrency}

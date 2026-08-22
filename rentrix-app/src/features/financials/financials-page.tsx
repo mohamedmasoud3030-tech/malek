@@ -288,8 +288,8 @@ export function FinancialsPage() {
                         <Building2 className="size-5" aria-hidden="true" />
                       </span>
                       <span className="min-w-0">
-                        <span className="block text-sm">المحاسبة والتقارير</span>
-                        <span className="mt-0.5 block text-xs font-medium text-muted-foreground">دفتر الأستاذ والكشوف والتحليلات والتقارير الرسمية.</span>
+                        <span className="block text-sm">المحاسبة والرقابة والتقارير</span>
+                        <span className="mt-0.5 block text-xs font-medium text-muted-foreground">دفتر الأستاذ والرقابة المحاسبية والكشوف والتحليلات والتقارير الرسمية.</span>
                       </span>
                     </Link>
                   </div>
@@ -328,6 +328,15 @@ export function FinancialsPage() {
                 </div>
               )}
 
+              {/* Management fees and earned/accrued consideration */}
+              {activeSection === 'fees' && activeView === 'fixed_monthly_accruals' && (
+                <div id="section-panel-fixed_monthly-accruals" role="tabpanel">
+                  <Suspense fallback={<SectionFallback />}>
+                    <FixedMonthlyAccrualWorkspace />
+                  </Suspense>
+                </div>
+              )}
+
               {/* Custody Funds & Owners */}
               {activeSection === 'funds' && activeView === 'deposits' && (
                 <div id="section-panel-deposits" role="tabpanel">
@@ -340,13 +349,6 @@ export function FinancialsPage() {
                 <div id="section-panel-owner_settlements" role="tabpanel">
                   <Suspense fallback={<SectionFallback />}>
                     <OwnerSettlementsWorkspace embedded={true} />
-                  </Suspense>
-                </div>
-              )}
-              {activeSection === 'funds' && activeView === 'fixed_monthly_accruals' && (
-                <div id="section-panel-fixed_monthly_accruals" role="tabpanel">
-                  <Suspense fallback={<SectionFallback />}>
-                    <FixedMonthlyAccrualWorkspace />
                   </Suspense>
                 </div>
               )}

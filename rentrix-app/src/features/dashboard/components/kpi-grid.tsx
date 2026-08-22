@@ -49,9 +49,9 @@ function DashboardKpiCard({ item }: { item: DashboardKpi }) {
 /**
  * Secondary decision KPIs — deliberately complements, never repeats, the
  * executive hero strip (which already surfaces تحصيل / متأخرات / إشغال /
- * عقود نشطة). These four add a different decision context: the bottom-line
- * cash position, collection efficiency, outflow, and the owner-money
- * liability the office owes.
+ * عقود نشطة). The first KPI is deliberately labelled as the narrow operational
+ * difference the snapshot actually computes: collections minus recorded
+ * expenses. It is not accounting profit and not a complete cash-flow balance.
  */
 export function KpiGrid({ snapshot, isLoading, settings }: KpiGridProps) {
   if (isLoading) {
@@ -70,12 +70,12 @@ export function KpiGrid({ snapshot, isLoading, settings }: KpiGridProps) {
 
   const allItems: DashboardKpi[] = [
     {
-      label: 'صافي النقد',
+      label: 'فرق التحصيل والمصروفات',
       value: money(net),
       icon: TrendingUp,
-      support: 'الموقف النقدي بعد خصم المصروفات ضمن الفترة الحالية',
+      support: 'التحصيلات ناقص المصروفات المسجلة فقط — ليس ربح المكتب ولا قائمة تدفق نقدي كاملة',
       stateTone: (net ?? 0) >= 0 ? 'success' : 'danger',
-      stateLabel: (net ?? 0) >= 0 ? 'موجب' : 'سالب',
+      stateLabel: (net ?? 0) >= 0 ? 'التحصيل أعلى' : 'المصروفات أعلى',
       to: '/reports',
       destinationLabel: 'التقارير المالية',
     },

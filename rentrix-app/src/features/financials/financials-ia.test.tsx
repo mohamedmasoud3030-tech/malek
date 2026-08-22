@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 import type { AuthorizationContext } from '@/features/auth/permissions';
 import { FINANCE_VIEWS, isViewPermitted } from './financials-page';
+import { resolveFinanceLocation } from './finance-shell-model';
 
 const readFinancialsPage = () => readFileSync(new URL('./financials-page.tsx', import.meta.url), 'utf8');
 const readMoneyPage = () => readFileSync(new URL('../finance-hub/money-page.tsx', import.meta.url), 'utf8');
@@ -47,10 +48,19 @@ describe('/financials Money workspace IA', () => {
     expect(source).toContain('SectionTabs');
   });
 
-  it('contains the five Money sections in the single finance model', () => {
+  it('contains six Money sections and separates management-fee accrual from custody funds', () => {
     const model = readFileSync(new URL('./finance-shell-model.ts', import.meta.url), 'utf8');
-    for (const id of ['overview', 'collections', 'expenses', 'funds', 'banking']) expect(model).toContain(`id: '${id}'`);
+    for (const id of ['overview', 'collections', 'expenses', 'fees', 'funds', 'banking']) expect(model).toContain(`id: '${id}'`);
     expect(model).toContain("id: 'commissions'");
+    expect(FINANCE_VIEWS.find((view) => view.id === 'fixed_monthly_accruals')?.sectionId).toBe('fees');
+  });
+
+  it('preserves legacy funds deep-links for fixed monthly accruals while resolving to the truthful fees section', () => {
+    const auth = mockAuth(['financial.fixed_monthly_accruals.view']);
+    expect(resolveFinanceLocation('funds', 'fixed_monthly_accruals', auth)).toMatchObject({
+      resolvedSectionId: 'fees',
+      resolvedViewId: 'fixed_monthly_accruals',
+    });
   });
 
   it('keeps a posted receipt confirmation inside the invoice collection journey without opening the receipt-register dialog', () => {
