@@ -65,7 +65,7 @@ export function SectionTabs<TId extends string>({ items, activeId, onChange, ari
       <nav
         aria-label={ariaLabel}
         role="tablist"
-        className="flex min-w-0 gap-0.5 overflow-x-auto overscroll-x-contain rounded-lg border border-border/60 bg-muted/25 p-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex min-w-0 gap-0.5 overflow-x-auto overscroll-x-contain rounded-lg border border-border/55 bg-muted/20 p-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {items.map((item, index) => {
           const isActive = activeId === item.id;
@@ -84,8 +84,8 @@ export function SectionTabs<TId extends string>({ items, activeId, onChange, ari
               className={cn(
                 'flex min-h-11 shrink-0 items-center gap-1.5 rounded-md border border-transparent px-2.5 py-1 text-[12px] font-semibold outline-none transition-colors focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none',
                 isActive
-                  ? 'bg-card text-foreground shadow-[0_1px_2px_hsl(var(--foreground)/0.06)]'
-                  : 'text-muted-foreground hover:bg-background/70 hover:text-foreground',
+                  ? 'bg-card text-foreground shadow-card'
+                  : 'text-muted-foreground hover:bg-background/80 hover:text-foreground',
               )}
             >
               <item.icon className="size-3.5" aria-hidden="true" />

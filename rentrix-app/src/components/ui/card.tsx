@@ -7,7 +7,7 @@ export const cardVariants = cva(
   {
     variants: {
       variant: {
-        default: 'border border-border/70 bg-card shadow-card',
+        default: 'border border-border/65 bg-card shadow-card',
         muted: 'border border-border/50 bg-muted/30 shadow-none',
         outlined: 'border-2 border-border bg-transparent shadow-none',
         elevated: 'border border-border bg-card shadow-elevated',

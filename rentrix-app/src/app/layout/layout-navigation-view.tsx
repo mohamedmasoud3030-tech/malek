@@ -83,7 +83,7 @@ export function NavigationLinks({
           '[[data-mobile-nav-sheet]_&]:min-h-11 [[data-mobile-nav-sheet]_&]:rounded-lg [[data-mobile-nav-sheet]_&]:px-2 [[data-mobile-nav-sheet]_&]:py-1 [[data-mobile-nav-sheet]_&]:text-sidebar-foreground/90 [[data-mobile-nav-sheet]_&]:hover:bg-white/[0.06] [[data-mobile-nav-sheet]_&]:hover:text-white [[data-mobile-nav-sheet]_&]:focus-visible:ring-primary/25',
           isChild && 'ms-3 min-h-11 border-s-2 border-s-sidebar-border/70 ps-3 [[data-mobile-nav-sheet]_&]:ms-2 [[data-mobile-nav-sheet]_&]:min-h-10 [[data-mobile-nav-sheet]_&]:border-s-white/10',
           isLocked && 'cursor-not-allowed opacity-70',
-          isActive && 'border-sidebar-accent/20 bg-sidebar-accent text-sidebar-accent-foreground shadow-[inset_3px_0_0_0_hsl(var(--sidebar-accent-foreground)),0_12px_28px_-20px_rgb(0_0_0_/_0.9)] rtl:shadow-[inset_-3px_0_0_0_hsl(var(--sidebar-accent-foreground)),0_12px_28px_-20px_rgb(0_0_0_/_0.9)] [[data-mobile-nav-sheet]_&]:border-white/10 [[data-mobile-nav-sheet]_&]:bg-white/[0.08] [[data-mobile-nav-sheet]_&]:text-white [[data-mobile-nav-sheet]_&]:shadow-none',
+          isActive && 'border-sidebar-accent/15 bg-sidebar-accent text-sidebar-accent-foreground shadow-[inset_3px_0_0_0_hsl(var(--sidebar-accent-foreground))] rtl:shadow-[inset_-3px_0_0_0_hsl(var(--sidebar-accent-foreground))] [[data-mobile-nav-sheet]_&]:border-white/10 [[data-mobile-nav-sheet]_&]:bg-white/[0.08] [[data-mobile-nav-sheet]_&]:text-white [[data-mobile-nav-sheet]_&]:shadow-none',
         )}
       >
         <span
@@ -227,14 +227,14 @@ export function MobileFloatingControl({ onMenu, menuRef }: Readonly<{ onMenu: ()
     >
       <div
         ref={quickRootRef}
-        className="pointer-events-auto relative flex w-auto items-center gap-0.5 rounded-2xl border border-border/80 bg-background/94 p-1 shadow-[0_16px_44px_-24px_hsl(var(--foreground)/0.5),0_1px_6px_hsl(var(--foreground)/0.08)] ring-1 ring-background/70 backdrop-blur-xl supports-[backdrop-filter]:bg-background/86"
+        className="pointer-events-auto relative flex w-auto items-center gap-0.5 rounded-2xl border border-border/70 bg-card p-1 shadow-[0_10px_28px_-18px_hsl(var(--foreground)/0.35),0_1px_3px_hsl(var(--foreground)/0.06)]"
       >
         {quickOpen && visibleQuickActions.length > 0 ? (
           <div
             role="menu"
             aria-label="الإضافة السريعة"
             data-mobile-quick-add-menu
-            className="absolute inset-x-0 bottom-[calc(100%+0.45rem)] grid grid-cols-2 gap-1 rounded-xl border border-border/85 bg-background/98 p-1.5 shadow-elevated backdrop-blur-xl"
+            className="absolute inset-x-0 bottom-[calc(100%+0.45rem)] grid grid-cols-2 gap-1 rounded-xl border border-border/75 bg-card p-1.5 shadow-elevated"
           >
             {visibleQuickActions.map((item) => {
               const Icon = item.icon;

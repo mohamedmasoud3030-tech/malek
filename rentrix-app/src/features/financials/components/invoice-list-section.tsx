@@ -119,7 +119,7 @@ export function InvoiceListSection({
         </FinanceSection>
 
         <FinanceSection ariaLabel="فلاتر الفواتير">
-          <FinanceFilterBar ariaLabel="فلاتر الفواتير" className="rounded-xl border-border/85 bg-background shadow-[0_1px_2px_hsl(var(--foreground)/0.025)]">
+          <FinanceFilterBar ariaLabel="فلاتر الفواتير" className="rounded-xl border border-border/70 bg-card p-2 shadow-card">
             <InvoiceFilters
               status={status}
               invoiceSearch={invoiceSearch}
@@ -244,18 +244,19 @@ export function InvoiceListSection({
                     if (!showCollect && !onPrintInvoice && !onExportInvoice) return null;
                     return (
                       <div
-                        className="flex gap-2"
+                        className="flex items-center justify-end gap-1"
                         onClick={(e) => e.stopPropagation()}
                         onKeyDown={(e) => e.stopPropagation()}
                       >
                         {showCollect ? (
                           <Button
-                            className="h-11 min-w-11 bg-primary text-primary-foreground hover:bg-primary/90"
+                            size="sm"
+                            className="h-11 min-w-11 px-2.5"
                             aria-label={`تحصيل ${invoice.reference ?? 'فاتورة مسجلة'}`}
                             onClick={() => onCollectInvoice(invoice.id)}
                             title="تسجيل دفعة على هذه الفاتورة مباشرة"
                           >
-                            <HandCoins className="me-1 size-4" />
+                            <HandCoins className="size-3.5" />
                             تحصيل
                           </Button>
                         ) : null}

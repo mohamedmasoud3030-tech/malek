@@ -33,7 +33,7 @@ export function FilterBar({
       data-filter-bar
       data-register-toolbar
       className={cn(
-        'grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-1.5 rounded-xl border border-border/85 bg-background p-1.5 shadow-[0_1px_2px_hsl(var(--foreground)/0.025)] sm:p-2 lg:flex lg:items-center lg:gap-2',
+        'grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-1.5 rounded-xl border border-border/70 bg-card p-1.5 shadow-card sm:p-2 lg:flex lg:items-center lg:gap-2',
         className,
       )}
       aria-label="البحث والتصفية"

@@ -53,7 +53,7 @@ export function RegisterMetricStrip({
       data-register-metric-strip
       aria-label={ariaLabel}
       className={cn(
-        'flex min-w-0 flex-wrap items-stretch divide-x-0 overflow-hidden rounded-xl border border-border/80 bg-card',
+        'flex min-w-0 flex-wrap items-stretch divide-x-0 overflow-hidden rounded-xl border border-border/70 bg-card shadow-card',
         className,
       )}
     >
@@ -64,7 +64,7 @@ export function RegisterMetricStrip({
             key={item.id}
             data-register-metric
             className={cn(
-              'flex min-w-[7.5rem] flex-1 items-center gap-2.5 px-3 py-2 sm:px-3.5',
+              'flex min-w-[6.75rem] flex-1 items-center gap-2 px-3 py-1.5 sm:px-3.5',
               index > 0 && 'border-s border-border/70',
             )}
           >

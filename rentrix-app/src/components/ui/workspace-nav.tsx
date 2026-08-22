@@ -63,7 +63,7 @@ export function WorkspaceNav<TId extends string>({
               onClick={() => onChange(item.id)}
               aria-current={isActive ? 'page' : undefined}
               className={cn(
-                'flex min-h-11 w-full items-center gap-2.5 rounded-xl px-3 text-start text-xs font-bold outline-none transition-colors focus-visible:ring-4 focus-visible:ring-primary/20',
+                'flex min-h-11 w-full items-center gap-2.5 rounded-lg px-3 text-start text-xs font-semibold outline-none transition-colors focus-visible:ring-4 focus-visible:ring-primary/20',
                 isActive
                   ? 'bg-primary text-primary-foreground'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground',
@@ -84,7 +84,7 @@ export function WorkspaceNav<TId extends string>({
           aria-expanded={open}
           aria-controls={open ? listId : undefined}
           onClick={() => setOpen((value) => !value)}
-          className="flex min-h-11 w-full items-center gap-2.5 rounded-xl border border-border/80 bg-card px-3 text-start outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
+          className="flex min-h-11 w-full items-center gap-2.5 rounded-xl border border-border/70 bg-card px-3 text-start shadow-card outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
         >
           {ActiveIcon ? (
             <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground">

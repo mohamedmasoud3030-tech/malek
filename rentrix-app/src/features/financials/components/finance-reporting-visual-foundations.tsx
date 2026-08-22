@@ -357,9 +357,9 @@ export function FinanceFilterBar({
     <div
       data-finance-filter-bar
       aria-label={ariaLabel}
-      className={cn('space-y-3', className)}
+      className={cn('space-y-2', className)}
     >
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-2">
         <div className="flex flex-wrap gap-2">{children}</div>
         {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
       </div>
@@ -437,7 +437,7 @@ export function FinanceAmount({
   className,
 }: Readonly<{ children: React.ReactNode; className?: string }>) {
   return (
-    <span data-finance-amount dir="ltr" className={cn('inline-block tabular-nums font-bold', className)}>
+    <span data-finance-amount dir="ltr" className={cn('inline-block tabular-nums text-[13px] font-bold tracking-tight', className)}>
       {children}
     </span>
   );
