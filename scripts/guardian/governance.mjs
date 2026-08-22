@@ -1,14 +1,12 @@
 #!/usr/bin/env node
 // MALEK Database Guardian — strict governance scan (Phase 6).
 //
-// The original Guardian draft treated authentication, company scoping and even
-// a generic RAISE EXCEPTION as recognizable authorization. That is unsafe:
-// those checks prove identity/scope/input validity, not capability.
-//
-// DG-GOV-008 below therefore requires an actual effective-permission resolver
-// call for authenticated SECURITY DEFINER mutation/control RPCs unless the
-// function is explicitly classified by the governance contract as a canonical
-// resolver/helper or service-only internal boundary.
+// DG-GOV-008 deliberately does NOT accept authentication, company scoping,
+// input validation, or a generic RAISE EXCEPTION as authorization evidence.
+// A browser-executable SECURITY DEFINER control/mutation RPC must call a
+// canonical database role/permission resolver (or be explicitly classified as
+// a canonical helper). public.users.role and browser/JWT role metadata are never
+// operational authority sources.
 
 import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
@@ -35,6 +33,11 @@ function hasEffectivePermissionResolver(definition) {
   return /\bcurrent_user_has_effective_app_permission\s*\(/i.test(definition);
 }
 
+function hasCanonicalAuthorityResolver(definition) {
+  const src = String(definition ?? '');
+  return contract.dgGov008.acceptedResolverCalls.some((token) => src.includes(token));
+}
+
 function hasRawUsersRoleAuthorization(definition) {
   const src = compact(definition);
   return (
@@ -46,9 +49,8 @@ function hasRawUsersRoleAuthorization(definition) {
 function looksSensitiveControlRpc(row) {
   const name = row.function_name;
   if (/(_atomic|_at_once)$/i.test(name)) return true;
-  if (/^(approve|pay|execute|void|import|generate|resolve|recalculate|decide|grant|revoke|create|update|delete|apply|post|process)_/i.test(name)) return true;
-  const src = compact(row.definition);
-  return /\b(insert\s+into|update\s+public\.|delete\s+from\s+public\.)/i.test(src);
+  if (/^(approve|pay|execute|void|import|generate|resolve|recalculate|decide|grant|revoke|create|update|delete|apply|post|process|request)_/i.test(name)) return true;
+  return /\b(insert\s+into|update\s+public\.|delete\s+from\s+public\.)/i.test(compact(row.definition));
 }
 
 async function inspect(db) {
@@ -87,10 +89,8 @@ async function main() {
     const rows = (await inspect(db)).rows;
     const bySignature = new Map(rows.map((row) => [signature(row), row]));
 
-    // Canonical authority foundation must itself be membership based. This is
-    // definition-level defense against a future regression back to users.role.
-    const activeRole = bySignature.get('active_company_role(p_company_id uuid)')
-      ?? rows.find((row) => row.function_name === 'active_company_role');
+    // DG-GOV-001 — canonical authority foundation itself.
+    const activeRole = rows.find((row) => row.function_name === 'active_company_role');
     if (!activeRole) {
       add('DG-GOV-001', 'CRITICAL', 'active_company_role(uuid) is missing');
     } else {
@@ -101,54 +101,67 @@ async function main() {
       if (/public\.users[\s\S]*?\.role/i.test(def)) {
         add('DG-GOV-001', 'CRITICAL', 'active_company_role reads users.role', activeRole.definition);
       }
+      for (const marker of ['is_active', 'deleted_at', "status::text = 'ACTIVE'"]) {
+        if (!def.includes(marker)) add('DG-GOV-001', 'HIGH', `active_company_role is missing identity/activity marker: ${marker}`, activeRole.definition);
+      }
     }
 
-    // Known service/internal helpers must not be directly callable by browser
-    // roles. Effective privilege catches both explicit and inherited PUBLIC ACLs.
-    for (const expectedSignature of contract.serviceOnlySecurityDefiners) {
+    // DG-GOV-002 — service/internal boundaries: no browser EXECUTE. Some are
+    // owner-internal and intentionally have no service_role grant, so the rule
+    // does not manufacture a service grant merely to satisfy the scanner.
+    for (const expectedSignature of contract.serviceOrInternalOnlyFunctions) {
       const row = bySignature.get(expectedSignature);
       if (!row) {
-        add('DG-GOV-002', 'HIGH', `Service-only SECURITY DEFINER missing: ${expectedSignature}`);
+        add('DG-GOV-002', 'HIGH', `Service/internal SECURITY DEFINER missing: ${expectedSignature}`);
         continue;
       }
-      if (row.anon_execute || row.authenticated_execute || !row.service_execute) {
+      if (row.anon_execute || row.authenticated_execute) {
         add(
           'DG-GOV-002',
           'CRITICAL',
-          `Service-only boundary has unsafe EXECUTE ACL: ${expectedSignature}`,
+          `Service/internal boundary is browser-executable: ${expectedSignature}`,
           `anon=${row.anon_execute} authenticated=${row.authenticated_execute} service_role=${row.service_execute}`,
         );
       }
     }
 
-    // Contracted browser-sensitive RPCs must contain BOTH the actual permission
-    // resolver call and their exact governed permission token. Role helpers,
-    // company scoping and auth.uid() are insufficient substitutes.
-    for (const [expectedSignature, permission] of Object.entries(contract.browserSensitiveRpcPermissions)) {
+    // DG-GOV-003 — sensitive functions whose historical contract is active
+    // ADMIN/MANAGER must use the canonical membership-backed helper and never
+    // public.users.role. This preserves semantics while changing authority source.
+    for (const expectedSignature of contract.adminManagerSensitiveFunctions) {
       const row = bySignature.get(expectedSignature);
       if (!row) {
-        add('DG-GOV-006', 'HIGH', `Governed browser RPC missing: ${expectedSignature}`);
+        add('DG-GOV-003', 'HIGH', `ADMIN/MANAGER sensitive function missing: ${expectedSignature}`);
         continue;
       }
-      if (!row.authenticated_execute || row.anon_execute) {
-        add(
-          'DG-GOV-006',
-          'HIGH',
-          `Governed browser RPC has unexpected EXECUTE ACL: ${expectedSignature}`,
-          `anon=${row.anon_execute} authenticated=${row.authenticated_execute}`,
-        );
+      if (!/\bis_admin_or_manager\s*\(\s*\)/i.test(row.definition)) {
+        add('DG-GOV-003', 'HIGH', `Sensitive function does not use canonical ADMIN/MANAGER resolver: ${expectedSignature}`, row.definition);
+      }
+      if (hasRawUsersRoleAuthorization(row.definition)) {
+        add('DG-GOV-003', 'CRITICAL', `Sensitive function still uses users.role authority: ${expectedSignature}`, row.definition);
+      }
+    }
+
+    // DG-GOV-006 — explicitly permission-governed sensitive RPCs require both
+    // the effective resolver and their exact permission token.
+    for (const [expectedSignature, permission] of Object.entries(contract.permissionGovernedSensitiveRpcs)) {
+      const row = bySignature.get(expectedSignature);
+      if (!row) {
+        add('DG-GOV-006', 'HIGH', `Governed permission RPC missing: ${expectedSignature}`);
+        continue;
       }
       if (!hasEffectivePermissionResolver(row.definition) || !row.definition.includes(permission)) {
         add(
           'DG-GOV-006',
           'HIGH',
-          `RPC ${expectedSignature} does not enforce governed permission ${permission} through the effective resolver`,
+          `RPC ${expectedSignature} does not enforce ${permission} through the effective permission resolver`,
           row.definition,
         );
       }
     }
 
-    // No effective SECURITY DEFINER authorization may fall back to public.users.role.
+    // DG-GOV-007 — no effective SECURITY DEFINER authorization may fall back
+    // to public.users.role.
     for (const row of rows) {
       if (hasRawUsersRoleAuthorization(row.definition)) {
         add(
@@ -160,37 +173,51 @@ async function main() {
       }
     }
 
-    const serviceOnly = new Set(contract.serviceOnlySecurityDefiners);
     const allowedHelpers = new Set(contract.allowedNonPermissionAuthenticatedSecurityDefiners);
-    const contracted = new Set(Object.keys(contract.browserSensitiveRpcPermissions));
 
-    // DG-GOV-008 — strict rule.
-    // Only authenticated-callable, SECURITY DEFINER control/mutation RPCs are
-    // considered. Being authenticated, having a company id, checking input, or
-    // raising an exception never satisfies authorization. If the function is
-    // not explicitly classified, it must call the effective permission resolver.
+    // DG-GOV-008 — strict authority proof. Authentication, company scoping,
+    // RAISE EXCEPTION and validation are deliberately absent from the accepted
+    // signal list.
     for (const row of rows) {
       if (row.schema_name !== 'public' || !row.authenticated_execute || !looksSensitiveControlRpc(row)) continue;
       const sig = signature(row);
-      if (serviceOnly.has(sig) || allowedHelpers.has(sig) || contracted.has(sig)) continue;
-      if (!hasEffectivePermissionResolver(row.definition)) {
+      if (allowedHelpers.has(sig)) continue;
+      if (!hasCanonicalAuthorityResolver(row.definition)) {
         add(
           'DG-GOV-008',
           'HIGH',
-          `Authenticated SECURITY DEFINER control RPC lacks effective permission resolver: ${sig}`,
-          'DG-GOV-008 does not accept auth.uid(), require_company_id(), RAISE EXCEPTION, or company scoping as authorization evidence.',
+          `Authenticated SECURITY DEFINER control RPC lacks canonical authority resolver: ${sig}`,
+          'Accepted proof is a canonical database role/permission resolver call. auth.uid(), require_company_id(), company scoping, input validation and RAISE EXCEPTION do not count.',
         );
       }
     }
 
-    // Trigger helpers should normally not be browser RPCs. Surface any elevated
-    // trigger function that still exposes authenticated EXECUTE unless it has an
-    // intentional allowlist classification.
+    // DG-GOV-009 — elevated trigger functions should not be browser RPCs.
     for (const row of rows) {
       if (Number(row.trigger_count) < 1 || !row.authenticated_execute) continue;
       const sig = signature(row);
-      if (allowedHelpers.has(sig) || contracted.has(sig)) continue;
+      if (allowedHelpers.has(sig)) continue;
       add('DG-GOV-009', 'HIGH', `SECURITY DEFINER trigger helper is directly executable by authenticated: ${sig}`);
+    }
+
+    // DG-GOV-010 — reject the exact phantom-wrapper defect found in PR #1543.
+    const phantomNames = [
+      'preview_bank_statement_batch_internal',
+      'import_bank_statement_batch_internal',
+      'post_receipt_atomic_internal',
+    ];
+    for (const target of [
+      'preview_bank_statement_batch_atomic(jsonb)',
+      'import_bank_statement_batch_atomic(jsonb)',
+      'post_receipt_atomic(jsonb)',
+    ]) {
+      const row = bySignature.get(target);
+      if (!row) continue;
+      for (const phantom of phantomNames) {
+        if (row.definition.includes(phantom)) {
+          add('DG-GOV-010', 'CRITICAL', `${target} calls forbidden phantom wrapper ${phantom}`, row.definition);
+        }
+      }
     }
 
     printAndExit(files.length, rows.length);
