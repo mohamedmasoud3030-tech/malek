@@ -28,6 +28,12 @@
 --   * request_permission: active-app-user gate plus admin/manager notification
 --     routing by company_members.role rather than users.role
 --   * current_user_has_support_capability named MANAGER/ADMIN bypasses
+--     (routes through current_user_has_effective_app_permission ->
+--     role_has_app_permission instead; role_has_app_permission's MANAGER
+--     whitelist is extended below to include support.operations.view and
+--     support.requests.triage so this routing change does not silently
+--     revoke access the 00005 foundation migration granted MANAGER.
+--     support.user_lookup.view remains ADMIN-only, matching 00005.)
 --
 -- Existing large function bodies are preserved mechanically with
 -- pg_get_functiondef() + exact fail-closed replacements. If an expected old
@@ -282,6 +288,65 @@ AS $function$
       else false
     end;
 $function$;
+
+-- role_has_app_permission's MANAGER whitelist predates the 00005 support
+-- foundation migration and was never extended to include the two support
+-- permissions 00005 explicitly grants MANAGER (support.operations.view,
+-- support.requests.triage). current_user_has_support_capability used to
+-- bypass the catalog whitelist entirely for MANAGER/ADMIN; now that it
+-- routes through the catalog (SD-15, above), the whitelist gap would
+-- silently regress MANAGER's support access. Add exactly the two
+-- permissions 00005 grants MANAGER; support.user_lookup.view stays
+-- ADMIN-only as 00005 intended.
+CREATE OR REPLACE FUNCTION public.role_has_app_permission(p_role text, p_permission text) RETURNS boolean
+    LANGUAGE sql STABLE
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  select case upper(coalesce(p_role, ''))
+    when 'ADMIN' then
+      exists(select 1 from public.app_permission_catalog c where c.permission = p_permission)
+    when 'MANAGER' then
+      p_permission = any(array[
+        'app.dashboard.view','maintenance.view','permission_requests.review','cost_centers.manage','documents.write',
+        'owners.hub.view','owners.detail.view','lands.view','leads.view','commissions.view','communication.view',
+        'automation.view','auth.password.change','properties.write','contracts.write','expenses.view','expenses.write',
+        'arrears.view','financial.deposits.view','financial.invoices.generate','financial.invoices.export',
+        'financial.payments.create','financial.receipts.void','financial.reports.export',
+        'financial.bank_reconciliation.view','financial.bank_reconciliation.match','financial.owner_settlements.view',
+        'service_providers.view','service_providers.write',
+        'financial.fixed_monthly_accruals.view','financial.fixed_monthly_accruals.execute',
+        'financial.fixed_monthly_accruals.reverse',
+        'support.operations.view','support.requests.triage'
+      ]::text[])
+    when 'ACCOUNTANT' then
+      p_permission = any(array[
+        'app.dashboard.view','audit.view','expenses.view','arrears.view',
+        'financial.deposits.view','financial.invoices.generate','financial.invoices.export',
+        'financial.reports.export','financial.bank_reconciliation.view','financial.bank_reconciliation.match',
+        'financial.owner_settlements.view','auth.password.change',
+        'financial.fixed_monthly_accruals.view','financial.fixed_monthly_accruals.execute',
+        'financial.fixed_monthly_accruals.reverse'
+      ]::text[])
+    when 'OPERATIONS' then
+      p_permission = any(array[
+        'app.dashboard.view','maintenance.view','service_providers.view','service_providers.write',
+        'cost_centers.manage','documents.write','owners.hub.view','owners.detail.view','lands.view',
+        'leads.view','communication.view','automation.view','auth.password.change','properties.write',
+        'contracts.write','expenses.view','expenses.write','arrears.view'
+      ]::text[])
+    when 'USER' then
+      p_permission = any(array['app.dashboard.view','auth.password.change']::text[])
+    when 'VIEWER' then
+      p_permission = any(array[
+        'app.dashboard.view','maintenance.view','service_providers.view',
+        'owners.hub.view','owners.detail.view','lands.view','leads.view','commissions.view',
+        'communication.view','automation.view','expenses.view','arrears.view',
+        'financial.deposits.view','financial.owner_settlements.view',
+        'financial.bank_reconciliation.view','auth.password.change'
+      ]::text[])
+    else false
+  end
+$$;
 
 -- CREATE OR REPLACE preserves existing owners and EXECUTE grants.
 
