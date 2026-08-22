@@ -60,7 +60,6 @@ jobs:
 
   heavy-validation:
     name: heavy-validation
-    if: ${{ github.event_name != 'pull_request' }}
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 35
