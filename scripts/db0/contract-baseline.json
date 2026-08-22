@@ -10,27 +10,21 @@
     "Lowering a number here is always safe. Raising one requires an explicit",
     "contract decision recorded in docs/database/WP_DB0_CONTRACT_FREEZE.md."
   ],
-  "generatedAt": "2026-08-13",
+  "generatedAt": "2026-08-22",
   "accepted": {
-    "DB0-07": 47,
+    "DB0-07": 0,
     "DB0-03": 1,
     "DB0-06N": 6
   },
   "rationale": {
     "DB0-07": {
       "title": "Financial columns not at 3 decimal places",
-      "rule": "PRD-004, FIN-013 — OMR authoritative precision is three decimals",
-      "gap": "GAP-009",
-      "owner": "WP-02",
-      "why_deferred": [
-        "Widening numeric(14,2) to numeric(14,3) is a data conversion on posted",
-        "financial history, not a schema tidy-up. It must run with accounting",
-        "sign-off and a reconciliation plan, which is exactly the kind of change",
-        "the WP-DB0 freeze exists to keep out of an unrelated migration.",
-        "",
-        "The GL core (journal_batches / journal_lines) is ALREADY numeric(18,3),",
-        "so the authoritative ledger is compliant. The 47 columns below are",
-        "subledger and snapshot columns that GAP-009 must reconcile."
+      "rule": "OMR authoritative precision is three decimals",
+      "status": "CLOSED_BY_20260901000029",
+      "closure": [
+        "All public-table numeric columns classified as money by the executable DB0 detector are required to have scale 3.",
+        "The closure migration only widens scale below 3 and increases precision by the same delta, preserving integer capacity.",
+        "The migration fails instead of silently rounding any scale above 3 or unbounded numeric money column."
       ]
     }
   }
