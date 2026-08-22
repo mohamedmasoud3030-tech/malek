@@ -1,0 +1,157 @@
+#!/usr/bin/env node
+// Governance stabilization Phase 4/5 executable audit.
+//
+// Replays the complete migration chain into disposable PGlite, then inspects
+// the effective SECURITY DEFINER definitions and deployed EXECUTE grants.
+// The scan is intentionally definition-based: old historical migration text
+// may contain retired users.role checks, but the effective pg_proc definitions
+// after all forward migrations must not use them for authorization.
+
+import { createDatabase, replay, listMigrations } from '../db0/lib/replay.mjs';
+
+const results = [];
+
+function record(id, title, pass, detail = '') {
+  results.push({ id, title, pass, detail });
+  console.log(`  ${pass ? 'PASS' : 'FAIL'} ${id}  ${title}`);
+  if (!pass && detail) console.log(`       ${detail}`);
+}
+
+async function functionInfo(db, signature) {
+  const res = await db.query(
+    `select
+       p.oid::text as oid,
+       n.nspname as schema_name,
+       p.proname as function_name,
+       p.prosecdef as security_definer,
+       pg_get_functiondef(p.oid) as definition,
+       coalesce(p.proconfig, array[]::text[]) as config
+     from pg_proc p
+     join pg_namespace n on n.oid = p.pronamespace
+     where p.oid = to_regprocedure($1)`,
+    [signature],
+  );
+  if (res.rows.length !== 1) throw new Error(`Function not found: ${signature}`);
+  return res.rows[0];
+}
+
+async function hasExecute(db, role, signature) {
+  const res = await db.query(
+    `select has_function_privilege($1, $2, 'EXECUTE') as allowed`,
+    [role, signature],
+  );
+  return Boolean(res.rows[0].allowed);
+}
+
+function hasCanonicalManagerGate(definition) {
+  return /\bis_admin_or_manager\s*\(\s*\)/i.test(definition);
+}
+
+function hasRawUsersRoleAuthority(definition) {
+  const compact = definition.replace(/\s+/g, ' ');
+  return (
+    /from public\.users (?:as )?[a-z_][a-z0-9_]* .*?\brole(?:::text)?\s+in\s*\(\s*'ADMIN'\s*,\s*'MANAGER'/i.test(compact) ||
+    /from public\.users (?:as )?[a-z_][a-z0-9_]* .*?upper\s*\(\s*coalesce\s*\(\s*[a-z_][a-z0-9_]*\.role(?:::text)?/i.test(compact)
+  );
+}
+
+async function main() {
+  const files = await listMigrations();
+  const db = await createDatabase();
+  const replayResult = await replay(db, { files, stopOnError: true });
+  if (replayResult.failures.length > 0) {
+    console.error('Migration replay failed before governance audit:', replayResult.failures);
+    process.exit(1);
+  }
+  console.log(`SECURITY DEFINER governance audit: ${files.length} migrations replayed cleanly.\n`);
+
+  const canonicalGateTargets = [
+    ['SD-01', 'public.post_receipt_atomic(jsonb)'],
+    ['SD-02', 'public.execute_receipt_void_internal(jsonb)'],
+    ['SD-03', 'public.import_bank_statement_batch_atomic(jsonb)'],
+    ['SD-04', 'public.approve_receipt_void_atomic(jsonb)'],
+    ['SD-05', 'public.recalculate_all_balances()'],
+    ['SD-06', 'public.resolve_maintenance_with_expense(text,numeric,text)'],
+    ['SD-07', 'public.run_scheduled_automation_rules()'],
+  ];
+
+  console.log('[canonical manager gates]');
+  for (const [id, signature] of canonicalGateTargets) {
+    const info = await functionInfo(db, signature);
+    record(
+      id,
+      `${signature} uses canonical manager gate and no users.role authority`,
+      info.security_definer && hasCanonicalManagerGate(info.definition) && !hasRawUsersRoleAuthority(info.definition),
+      info.definition.slice(0, 500),
+    );
+  }
+
+  console.log('\n[request_permission routing]');
+  const requestPermission = await functionInfo(db, 'public.request_permission(text,text,text)');
+  record(
+    'SD-08',
+    'request_permission routes admin/manager notifications by company_members.role',
+    !requestPermission.definition.includes('u.role::text') &&
+      requestPermission.definition.includes('cm.role::text') &&
+      /cm\.role::text\s+in\s*\(\s*'ADMIN'\s*,\s*'MANAGER'\s*\)/i.test(requestPermission.definition),
+    requestPermission.definition.slice(0, 700),
+  );
+
+  console.log('\n[support capability resolver]');
+  const supportCapability = await functionInfo(db, 'public.current_user_has_support_capability(text)');
+  record(
+    'SD-09',
+    'support capability has no named role bypass and uses effective permission resolver',
+    supportCapability.definition.includes('current_user_has_effective_app_permission') &&
+      !/current_app_role\s*\(\s*\)\s*(?:=|in)/i.test(supportCapability.definition),
+    supportCapability.definition,
+  );
+
+  console.log('\n[global effective SECURITY DEFINER scan]');
+  const securityDefiners = await db.query(`
+    select n.nspname as schema_name, p.proname as function_name,
+           pg_get_function_identity_arguments(p.oid) as args,
+           pg_get_functiondef(p.oid) as definition
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where p.prosecdef
+      and n.nspname in ('public','app_private')
+    order by n.nspname, p.proname, pg_get_function_identity_arguments(p.oid)
+  `);
+  const rawRoleOffenders = securityDefiners.rows.filter((row) => hasRawUsersRoleAuthority(row.definition));
+  record(
+    'SD-10',
+    'no effective SECURITY DEFINER uses public.users.role as ADMIN/MANAGER authority',
+    rawRoleOffenders.length === 0,
+    rawRoleOffenders.map((row) => `${row.schema_name}.${row.function_name}(${row.args})`).join(', '),
+  );
+
+  console.log('\n[deployed EXECUTE boundaries]');
+  const grantCases = [
+    ['SD-11', 'authenticated', 'public.post_receipt_atomic(jsonb)', false],
+    ['SD-12', 'authenticated', 'public.execute_receipt_void_internal(jsonb)', false],
+    ['SD-13', 'authenticated', 'public.import_bank_statement_batch_atomic(jsonb)', true],
+    ['SD-14', 'authenticated', 'public.approve_receipt_void_atomic(jsonb)', true],
+    ['SD-15', 'authenticated', 'public.recalculate_all_balances()', true],
+    ['SD-16', 'authenticated', 'public.resolve_maintenance_with_expense(text,numeric,text)', true],
+    ['SD-17', 'authenticated', 'public.run_scheduled_automation_rules()', true],
+    ['SD-18', 'authenticated', 'public.request_permission(text,text,text)', true],
+    ['SD-19', 'authenticated', 'public.current_user_has_support_capability(text)', true],
+  ];
+  for (const [id, role, signature, expected] of grantCases) {
+    const actual = await hasExecute(db, role, signature);
+    record(id, `${role} EXECUTE ${signature} = ${expected}`, actual === expected, `actual=${actual}`);
+  }
+
+  const failed = results.filter((result) => !result.pass);
+  console.log(`\n${results.length - failed.length}/${results.length} passed.`);
+  if (failed.length > 0) {
+    console.log(`FAILED: ${failed.map((result) => result.id).join(', ')}`);
+    process.exit(1);
+  }
+}
+
+main().catch((error) => {
+  console.error('SECURITY DEFINER governance audit crashed:', error);
+  process.exit(1);
+});
