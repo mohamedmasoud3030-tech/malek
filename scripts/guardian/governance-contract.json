@@ -1,5 +1,5 @@
 {
-  "version": 4,
+  "version": 5,
   "authorityModel": {
     "identity": "public.users must be ACTIVE, is_active=true, deleted_at IS NULL",
     "membershipSource": "public.company_members.role",
@@ -11,24 +11,21 @@
   },
   "canonicalRoles": ["ADMIN", "MANAGER", "ACCOUNTANT", "OPERATIONS", "USER", "VIEWER"],
   "adminManagerSensitiveFunctions": [
+    "preview_bank_statement_batch_atomic(jsonb)",
+    "import_bank_statement_batch_atomic(jsonb)",
+    "post_receipt_atomic(jsonb)",
+    "record_invoice_payment_atomic(jsonb)",
+    "record_invoice_payment_atomic_engine(jsonb)",
     "execute_receipt_void_internal(jsonb)",
     "approve_receipt_void_atomic(jsonb)",
     "recalculate_all_balances()",
     "resolve_maintenance_with_expense(text,numeric,text)",
     "run_scheduled_automation_rules()"
   ],
-  "permissionGovernedSensitiveRpcs": {
-    "preview_bank_statement_batch_atomic(jsonb)": "financial.bank_reconciliation.view",
-    "import_bank_statement_batch_atomic(jsonb)": "financial.bank_reconciliation.match",
-    "post_receipt_atomic(jsonb)": "financial.payments.create",
-    "record_invoice_payment_atomic(jsonb)": "financial.payments.create",
-    "process_bank_reconciliation_match_atomic(jsonb)": "financial.bank_reconciliation.match",
-    "approve_owner_settlement_atomic(jsonb)": "financial.owner_settlements.approve",
-    "pay_owner_settlement_atomic(jsonb)": "financial.owner_settlements.pay",
-    "execute_fixed_monthly_accruals_atomic(jsonb)": "financial.fixed_monthly_accruals.execute"
-  },
+  "permissionGovernedSensitiveRpcs": {},
   "serviceOrInternalOnlyFunctions": [
     "post_receipt_atomic(jsonb)",
+    "record_invoice_payment_atomic_engine(jsonb)",
     "execute_receipt_void_internal(jsonb)",
     "next_document_reference(uuid,text,text,integer)",
     "assign_document_reference()",
@@ -55,7 +52,7 @@
     "current_user_has_support_capability(text)"
   ],
   "dgGov008": {
-    "description": "A browser-executable SECURITY DEFINER mutation RPC needs a canonical role/permission resolver call. Authentication, company scoping, input validation, or RAISE EXCEPTION alone are not authorization proof.",
+    "description": "A browser-executable SECURITY DEFINER mutation/control RPC needs a canonical database role/permission resolver call. Authentication, company scoping, input validation, or RAISE EXCEPTION alone are not authorization proof. The rule does not redesign an RPC's established role semantics.",
     "acceptedResolverCalls": [
       "current_user_has_effective_app_permission(",
       "active_company_role(",
