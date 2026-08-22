@@ -92,7 +92,7 @@ async function seed(db) {
       ('${U_ACCOUNTANT}', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'accountant@rpcauth.test', 'x', now(), now(), now(), '{}'::jsonb, '{"company_id":"${COMPANY_A}"}'::jsonb),
       ('${U_INACTIVE_IDENTITY_ADMIN_MEMBER}', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'inactive-admin@rpcauth.test', 'x', now(), now(), now(), '{}'::jsonb, '{"company_id":"${COMPANY_A}"}'::jsonb),
       ('${U_DELETED_IDENTITY_ADMIN_MEMBER}', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'deleted-admin@rpcauth.test', 'x', now(), now(), now(), '{}'::jsonb, '{"company_id":"${COMPANY_A}"}'::jsonb),
-      ('${U_INACTIVE_COMPANY_ADMIN_MEMBER}', '00000000-0000-0000-8000-000000000000', 'authenticated', 'authenticated', 'inactive-company-admin@rpcauth.test', 'x', now(), now(), now(), '{}'::jsonb, '{"company_id":"${COMPANY_INACTIVE}"}'::jsonb),
+      ('${U_INACTIVE_COMPANY_ADMIN_MEMBER}', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'inactive-company-admin@rpcauth.test', 'x', now(), now(), now(), '{}'::jsonb, '{"company_id":"${COMPANY_INACTIVE}"}'::jsonb),
       ('${U_NO_MEMBERSHIP}', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'no-membership@rpcauth.test', 'x', now(), now(), now(), '{}'::jsonb, '{"company_id":"${COMPANY_A}"}'::jsonb)
     on conflict (id) do update set raw_user_meta_data = excluded.raw_user_meta_data, updated_at = now();
 
