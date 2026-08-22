@@ -12,6 +12,10 @@ import {
   type TrialBalanceDocumentData,
 } from '@/services/documents/documentPayloadAdapters';
 import { DocumentReadinessError, runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
+import {
+  summarizeReconciliationReadiness,
+  useSubledgerGlReconciliation,
+} from '../accounting-report-authority';
 import { AccountingReconciliationReadiness } from './accounting/accounting-reconciliation-readiness';
 import { BalanceSheetPanel } from './accounting/balance-sheet-panel';
 import { IncomeStatementPanel } from './accounting/income-statement-panel';
@@ -42,12 +46,10 @@ type AccountingDocumentActions<T> = Readonly<{
   disabled: boolean;
 }>;
 
-/**
- * An accounting report without its loaded RPC result has no authoritative
- * figures; output is refused instead of rendering an empty statement.
- */
 const MISSING_REPORT_DATA_MESSAGE =
   'تعذر إصدار التقرير: لا توجد بيانات محاسبية مُحمَّلة للفترة المحددة. يرجى عرض التقرير أولاً ثم إعادة المحاولة.';
+const RECONCILIATION_NOT_READY_MESSAGE =
+  'تعذر إصدار التقرير: مطابقة الدفاتر المساعدة مع الأستاذ العام غير ناجحة أو غير مكتملة. عالج فروقات المطابقة ثم أعد المحاولة.';
 
 export function AccountingReportsSection({
   asOf,
@@ -65,6 +67,13 @@ export function AccountingReportsSection({
   isLoading,
 }: AccountingReportsSectionProps) {
   const { companySettings: documentSettings, isReady: isDocumentSettingsReady } = useDocumentSettings();
+  const reconciliationQuery = useSubledgerGlReconciliation(asOf);
+  const reconciliationRows = reconciliationQuery.data ?? [];
+  const reconciliationReadiness = summarizeReconciliationReadiness(reconciliationRows);
+  const isAccountingOutputReady =
+    !reconciliationQuery.isLoading
+    && !reconciliationQuery.isError
+    && reconciliationReadiness.state === 'PASS';
 
   const buildTrialBalanceDocument = (): TrialBalanceDocumentData | null => {
     if (!trialBalance) return null;
@@ -104,10 +113,15 @@ export function AccountingReportsSection({
   };
 
   const documentActions = <T,>({ label, builder, print, pdf, disabled }: AccountingDocumentActions<T>) => {
+    const assertAccountingOutputReady = () => {
+      if (!isAccountingOutputReady) throw new DocumentReadinessError(RECONCILIATION_NOT_READY_MESSAGE);
+    };
+
     const runPrint = () => {
       void runGuardedDocumentAction({
         isReady: isDocumentSettingsReady,
         operation: async () => {
+          assertAccountingOutputReady();
           const data = builder();
           if (!data) throw new DocumentReadinessError(MISSING_REPORT_DATA_MESSAGE);
           await print(data);
@@ -119,6 +133,7 @@ export function AccountingReportsSection({
       void runGuardedDocumentAction({
         isReady: isDocumentSettingsReady,
         operation: async () => {
+          assertAccountingOutputReady();
           const data = builder();
           if (!data) throw new DocumentReadinessError(MISSING_REPORT_DATA_MESSAGE);
           await pdf(data);
@@ -127,13 +142,15 @@ export function AccountingReportsSection({
       });
     };
 
+    const outputDisabled = disabled || !isDocumentSettingsReady || !isAccountingOutputReady;
+
     return (
       <div className="flex flex-wrap gap-1.5">
-        <Button type="button" size="sm" variant="outline" onClick={runPrint} disabled={disabled || !isDocumentSettingsReady} className="min-h-11 gap-1.5 text-xs">
+        <Button type="button" size="sm" variant="outline" onClick={runPrint} disabled={outputDisabled} className="min-h-11 gap-1.5 text-xs">
           <Printer className="size-3.5" aria-hidden="true" />
           {label}
         </Button>
-        <Button type="button" size="sm" variant="outline" onClick={runPdf} disabled={disabled || !isDocumentSettingsReady} className="min-h-11 gap-1.5 text-xs">
+        <Button type="button" size="sm" variant="outline" onClick={runPdf} disabled={outputDisabled} className="min-h-11 gap-1.5 text-xs">
           <Download className="size-3.5" aria-hidden="true" />
           PDF
         </Button>
@@ -143,7 +160,14 @@ export function AccountingReportsSection({
 
   return (
     <div className="space-y-4">
-      <AccountingReconciliationReadiness asOf={asOf} />
+      <AccountingReconciliationReadiness
+        asOf={asOf}
+        rows={reconciliationRows}
+        readiness={reconciliationReadiness}
+        isLoading={reconciliationQuery.isLoading}
+        isError={reconciliationQuery.isError}
+        onRefetch={() => { void reconciliationQuery.refetch(); }}
+      />
 
       <TrialBalancePanel
         asOf={asOf}
