@@ -20,14 +20,11 @@ function getReceiptPrintHref(receiptId: string) {
 }
 
 export function ReceiptDetailCard({ selectedReceiptId, receiptDetail, isLoading, isError, error }: ReceiptDetailCardProps) {
+  if (selectedReceiptId.length === 0) return null;
+
   return (
     <div className="rounded-2xl border p-4">
       <h4 className="font-black">تفاصيل الإيصال</h4>
-      {selectedReceiptId.length === 0 ? (
-        <div className="mt-3">
-          <EmptyState title="اختر إيصالاً" description="اضغط على أي إيصال من القائمة لعرض تفاصيله وروابط الطباعة هنا." />
-        </div>
-      ) : null}
       {selectedReceiptId && isLoading ? (
         <div className="mt-3" role="status" aria-live="polite" aria-label="جارٍ تحميل تفاصيل الإيصال">
           <ResponsiveCardGrid gap="sm">

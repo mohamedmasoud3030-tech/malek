@@ -2,12 +2,11 @@ import { useMemo, useState, useEffect } from 'react';
 import { Eye, FileText, FolderKanban, Image as ImageIcon, Trash2, UploadCloud, Download } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
+import { RegisterMetricStrip } from '@/components/layout/register-summary';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { KpiCard } from '@/components/ui/kpi-card';
-import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
+import { FilePickerField } from '@/components/ui/file-picker-field';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { AsyncContentState } from '@/components/async-content-state';
@@ -106,6 +105,7 @@ export function DocumentsVaultWorkspace({ mode = 'standalone' }: DocumentsVaultW
   const [previewItem, setPreviewItem] = useState<VaultDocumentItem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<VaultDocumentItem | null>(null);
   const [previewSignedUrl, setPreviewSignedUrl] = useState<string | null>(null);
+  const [uploadOpen, setUploadOpen] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -127,6 +127,7 @@ export function DocumentsVaultWorkspace({ mode = 'standalone' }: DocumentsVaultW
       toast.success('تم رفع المستند بنجاح إلى التخزين الخاص');
       setUploadFile(null);
       setUploadTitle('');
+      setUploadOpen(false);
       queryClient.invalidateQueries({ queryKey: ['vault-documents'] });
     },
     onError: (error) => {
@@ -197,74 +198,21 @@ export function DocumentsVaultWorkspace({ mode = 'standalone' }: DocumentsVaultW
 
   const body = (
     <>
-      <ResponsiveCardGrid desktopColumns={4}>
-        <KpiCard label="إجمالي المستندات" value={formatLatinNumber(documents.length, 'ar')} icon={FolderKanban} accent="primary" sub="ملفات محفوظة في تخزين خاص" />
-        <KpiCard label="ملفات PDF" value={formatLatinNumber(totalPdfs, 'ar')} icon={FileText} accent="sky" sub="مستندات" />
-        <KpiCard label="صور مرفقة" value={formatLatinNumber(totalImages, 'ar')} icon={ImageIcon} accent="emerald" sub="معاينات متاحة" />
-        <KpiCard
-          label="التخزين الخاص"
-          value={documents.reduce((sum, document) => sum + (document.fileSize || 0), 0) > 0
-            ? `${(documents.reduce((sum, document) => sum + (document.fileSize || 0), 0) / 1024 / 1024).toFixed(2)} MB`
-            : '—'}
-          icon={UploadCloud}
-          accent="amber"
-          sub="مساحة آمنة"
-        />
-      </ResponsiveCardGrid>
+      <div className="flex justify-end">
+        <Button className="min-h-11" onClick={() => setUploadOpen(true)}>
+          <UploadCloud className="me-2 size-4" aria-hidden="true" />
+          رفع مستند
+        </Button>
+      </div>
 
-      <Card className="border-border/60">
-        <CardHeader className="border-b border-border/60">
-          <CardTitle className="text-sm font-black">رفع مستند جديد</CardTitle>
-          <CardDescription>
-            الحد الأقصى {vaultMaxFileSizeMb}MB. الأنواع المدعومة: PDF، JPEG، PNG، WebP. المعاينة والتنزيل مؤمنة.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4 p-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="grid gap-2">
-              <Label>عنوان المستند *</Label>
-              <Input
-                value={uploadTitle}
-                onChange={(event) => setUploadTitle(event.target.value)}
-                placeholder="مثال: عقد إيجار موثق - شقة 102"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label>التصنيف *</Label>
-              <Select value={uploadCategory} onChange={(event) => setUploadCategory(event.target.value as VaultCategory)}>
-                {Object.entries(vaultCategoryLabels).map(([category, label]) => (
-                  <option key={category} value={category}>
-                    {label}
-                  </option>
-                ))}
-              </Select>
-            </div>
-          </div>
-          <div className="grid gap-2">
-            <Label>اختر الملف *</Label>
-            <Input
-              type="file"
-              accept={vaultAccept}
-              onChange={(event) => setUploadFile(event.target.files?.[0] ?? null)}
-            />
-            {uploadFile ? (
-              <p className="text-xs text-muted-foreground">
-                الملف: {uploadFile.name} - {(uploadFile.size / 1024 / 1024).toFixed(2)} MB
-              </p>
-            ) : null}
-          </div>
-          {uploadMutation.isError ? (
-            <p className="text-sm text-destructive">{(uploadMutation.error as Error)?.message}</p>
-          ) : null}
-          <Button
-            onClick={() => uploadMutation.mutate()}
-            disabled={uploadMutation.isPending || !uploadFile || !uploadTitle.trim()}
-            className="min-h-11"
-          >
-            {uploadMutation.isPending ? 'جارٍ الرفع...' : 'رفع المستند إلى التخزين الخاص'}
-          </Button>
-        </CardContent>
-      </Card>
+      <RegisterMetricStrip
+        aria-label="ملخص المستندات"
+        items={[
+          { id: 'total', label: 'المستندات', value: formatLatinNumber(documents.length, 'ar'), icon: FolderKanban, hideWhenEmpty: true },
+          { id: 'pdf', label: 'PDF', value: formatLatinNumber(totalPdfs, 'ar'), icon: FileText, hideWhenEmpty: true },
+          { id: 'images', label: 'صور', value: formatLatinNumber(totalImages, 'ar'), icon: ImageIcon, hideWhenEmpty: true },
+        ]}
+      />
 
       <FilterBar
         searchValue={searchQuery}
@@ -302,6 +250,7 @@ export function DocumentsVaultWorkspace({ mode = 'standalone' }: DocumentsVaultW
         errorAction={<Button onClick={() => documentsQuery.refetch()}>إعادة المحاولة</Button>}
         emptyTitle="لا توجد مستندات"
         emptyDescription="ابدأ برفع أول مستند إلى التخزين الخاص."
+        emptyAction={<Button onClick={() => setUploadOpen(true)}>رفع مستند</Button>}
       >
         <ContextualDocumentsPanel
           entityLabel="السياق الحالي"
@@ -329,6 +278,59 @@ export function DocumentsVaultWorkspace({ mode = 'standalone' }: DocumentsVaultW
         />
       </AsyncContentState>
 
+      <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
+        <DialogContent className="max-w-lg" dir="rtl">
+          <DialogHeader>
+            <DialogTitle>رفع مستند</DialogTitle>
+            <DialogDescription>
+              العنوان والتصنيف والملف فقط. الحد الأقصى {vaultMaxFileSizeMb}MB — PDF أو JPEG أو PNG أو WebP.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="grid gap-1.5">
+              <Label htmlFor="vault-upload-title">العنوان *</Label>
+              <Input
+                id="vault-upload-title"
+                value={uploadTitle}
+                onChange={(event) => setUploadTitle(event.target.value)}
+                placeholder="مثال: عقد إيجار موثق"
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="vault-upload-category">التصنيف *</Label>
+              <Select
+                aria-label="التصنيف"
+                value={uploadCategory}
+                onChange={(event) => setUploadCategory(event.target.value as VaultCategory)}
+              >
+                {Object.entries(vaultCategoryLabels).map(([category, label]) => (
+                  <option key={category} value={category}>{label}</option>
+                ))}
+              </Select>
+            </div>
+            <FilePickerField
+              accept={vaultAccept}
+              file={uploadFile}
+              onChange={setUploadFile}
+              label="الملف"
+              required
+              hint={`الحد الأقصى ${vaultMaxFileSizeMb}MB`}
+            />
+            {uploadMutation.isError ? (
+              <p className="text-sm text-destructive">{(uploadMutation.error as Error)?.message}</p>
+            ) : null}
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" onClick={() => setUploadOpen(false)}>إلغاء</Button>
+              <Button
+                onClick={() => uploadMutation.mutate()}
+                disabled={uploadMutation.isPending || !uploadFile || !uploadTitle.trim()}
+              >
+                {uploadMutation.isPending ? 'جارٍ الرفع...' : 'رفع'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 

@@ -1,12 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { CollectionSummaryReport, FinancialReportFilters } from '../reports/financialReportsService';
 import { formatDate, formatMoney, getErrorMessage } from './financials-formatters';
+import { RegisterMetricStrip } from '@/components/layout/register-summary';
 import {
-  FinanceKpiGrid,
-  FinanceKpiCard,
   FinanceLoadingState,
   FinanceErrorState,
-  FinanceAmount,
   FinanceCluster,
 } from './finance-reporting-visual-foundations';
 import { FileText, WalletCards, Receipt, TrendingDown, HandCoins, Building2 } from 'lucide-react';
@@ -56,86 +54,16 @@ export function FinancialReportsPreviewSection({
         ) : null}
         {collectionSummary ? (
           <FinanceCluster>
-            <FinanceKpiGrid desktopColumns={6}>
-              <FinanceKpiCard
-                label="الفواتير"
-                value={formatMoney(collectionSummary.invoiced)}
-                sub={`${collectionSummary.invoicesCount} فاتورة`}
-                icon={FileText}
-                accent="primary"
-                drillTo="/finance/collections"
-                drillSearch={{ section: 'invoices', dateFrom: reportFilters.dateFrom, dateTo: reportFilters.dateTo }}
-                drillAriaLabel="الفواتير: عرض قائمة الفواتير ضمن نفس الفترة"
-              />
-              <FinanceKpiCard
-                label="المدفوع"
-                value={formatMoney(collectionSummary.paid)}
-                sub="من الإجمالي"
-                icon={HandCoins}
-                accent="primary"
-                trend="up"
-                trendValue="محصّل"
-                drillTo="/finance/collections"
-                drillSearch={{ section: 'receipts', dateFrom: reportFilters.dateFrom, dateTo: reportFilters.dateTo }}
-              />
-              <FinanceKpiCard
-                label="المتبقي"
-                value={formatMoney(collectionSummary.outstanding)}
-                sub="يحتاج متابعة"
-                icon={TrendingDown}
-                accent="primary"
-                trend="down"
-                trendValue="مستحق"
-                drillTo="/finance/expenses"
-                drillSearch={{ section: 'arrears' }}
-              />
-              <FinanceKpiCard
-                label="الإيصالات"
-                value={collectionSummary.receiptsCount}
-                sub="سندات قبض"
-                icon={Receipt}
-                accent="primary"
-                drillTo="/finance/collections"
-                drillSearch={{ section: 'receipts' }}
-              />
-              <FinanceKpiCard
-                label="عدد الفواتير"
-                value={collectionSummary.invoicesCount}
-                sub="ضمن الفترة"
-                icon={FileText}
-                accent="primary"
-                drillTo="/finance/collections"
-                drillSearch={{ section: 'invoices' }}
-              />
-              <FinanceKpiCard
-                label="المصروفات"
-                value={formatMoney(collectionSummary.expensesTotal)}
-                sub="تشغيلية"
-                icon={Building2}
-                accent="primary"
-                drillTo="/finance/expenses"
-                drillSearch={{ section: 'expenses', from: reportFilters.dateFrom, to: reportFilters.dateTo }}
-              />
-            </FinanceKpiGrid>
-
-            <div
-              data-finance-amounts
-              className="grid gap-2 rounded-xl border border-border/60 bg-muted/20 p-3 text-xs sm:grid-cols-3"
-              aria-label="تفاصيل المبالغ"
-            >
-              <div className="flex justify-between gap-2">
-                <span className="text-muted-foreground">إجمالي الفواتير:</span>
-                <FinanceAmount>{formatMoney(collectionSummary.invoiced)}</FinanceAmount>
-              </div>
-              <div className="flex justify-between gap-2">
-                <span className="text-muted-foreground">المحصّل:</span>
-                <FinanceAmount className="text-success">{formatMoney(collectionSummary.paid)}</FinanceAmount>
-              </div>
-              <div className="flex justify-between gap-2">
-                <span className="text-muted-foreground">المتبقي:</span>
-                <FinanceAmount className="text-destructive">{formatMoney(collectionSummary.outstanding)}</FinanceAmount>
-              </div>
-            </div>
+            <RegisterMetricStrip
+              aria-label="ملخص الشهر"
+              items={[
+                { id: 'invoiced', label: 'الفواتير', value: formatMoney(collectionSummary.invoiced), hint: `${collectionSummary.invoicesCount} فاتورة`, icon: FileText, hideWhenEmpty: true },
+                { id: 'paid', label: 'المحصّل', value: formatMoney(collectionSummary.paid), icon: HandCoins, tone: 'success' },
+                { id: 'outstanding', label: 'المتبقي', value: formatMoney(collectionSummary.outstanding), icon: TrendingDown, tone: collectionSummary.outstanding > 0 ? 'danger' : 'success', hideWhenEmpty: true },
+                { id: 'receipts', label: 'إيصالات', value: collectionSummary.receiptsCount, icon: Receipt, hideWhenEmpty: true },
+                { id: 'expenses', label: 'مصروفات', value: formatMoney(collectionSummary.expensesTotal), icon: Building2, hideWhenEmpty: true },
+              ]}
+            />
           </FinanceCluster>
         ) : null}
       </CardContent>

@@ -25,7 +25,7 @@ import { EntityForm } from "@/components/ui/entity-form";
 import { EntityTable } from "@/components/ui/entity-table";
 import { FilterBar } from "@/components/ui/filter-bar";
 import { Input } from "@/components/ui/input";
-import { FinanceKpiGrid, FinanceKpiCard } from "@/features/financials/components/finance-reporting-visual-foundations";
+import { RegisterMetricStrip } from "@/components/layout/register-summary";
 import { PageHeader } from "@/components/layout/page-header";
 import { Select } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -145,7 +145,6 @@ export function CommissionsView(props: Props) {
       <div data-finance-header>
         <PageHeader
           title="العمولات"
-          description="تتبع تشغيلي لعمولات المكتب والوسطاء حسب الحالة والمصدر — الفلاتر محفوظة أثناء التنقل."
           action={
             <Button onClick={onCreate} className="min-h-11 bg-primary text-primary-foreground">
               <Plus className="me-2 size-4" />
@@ -155,26 +154,16 @@ export function CommissionsView(props: Props) {
         />
       </div>
 
-      <div data-commission-domain-note className="rounded-2xl border border-border/70 bg-muted/25 px-4 py-3 text-xs leading-6 text-muted-foreground" role="note">
-        <p>
-          <span className="font-extrabold text-foreground">توضيح المجال: </span>
-          عمولات التشغيل هنا خاصة بالوسطاء والموظفين وترتبط بمصدر محدد (عقد، تحصيل، مالك، عميل محتمل، أرض) وتُصرف
-          عبر تدفق مالي مستقل. أتعاب إدارة الملاك الواردة في اتفاقيات التشغيل مفهوم منفصل ولا تُدمج هنا مالياً أو محاسبياً.
-        </p>
-        <p className="mt-1.5">
-          <span className="font-extrabold text-foreground">دورة الحالة: </span>
-          قيد المراجعة ← معتمدة ← مسجلة كمدفوعة؛ الإلغاء ينهي السجل، والعكس المحاسبي يعيد السجل إلى ملغاة مع إلغاء قيد
-          المصروف المرتبط.
-        </p>
-      </div>
-
       <section data-finance-section aria-label="ملخص العمولات">
-        <FinanceKpiGrid desktopColumns={4}>
-          <FinanceKpiCard label="إجمالي السجلات" value={rows.length} icon={BadgeDollarSign} accent="primary" onDrill={() => onFiltersChange({ ...filters, status: 'all' })} />
-          <FinanceKpiCard label="قيد المراجعة/التتبع" value={money(pendingTotal)} icon={Clock3} accent="primary" trend="neutral" trendValue="مراجعة" onDrill={() => onFiltersChange({ ...filters, status: 'pending' })} />
-          <FinanceKpiCard label="معتمدة للتتبع" value={approvedCount} icon={CheckCircle2} accent="primary" trend="neutral" trendValue="معتمدة" onDrill={() => onFiltersChange({ ...filters, status: 'approved' })} />
-          <FinanceKpiCard label="مسجلة كمدفوعة" value={money(paidTotal)} icon={BadgeDollarSign} accent="primary" trend="up" trendValue="مدفوعة" onDrill={() => onFiltersChange({ ...filters, status: 'paid' })} />
-        </FinanceKpiGrid>
+        <RegisterMetricStrip
+          aria-label="ملخص العمولات"
+          items={[
+            { id: 'total', label: 'السجلات', value: rows.length, icon: BadgeDollarSign, hideWhenEmpty: true },
+            { id: 'pending', label: 'قيد المراجعة', value: money(pendingTotal), icon: Clock3 },
+            { id: 'approved', label: 'معتمدة', value: approvedCount, icon: CheckCircle2, hideWhenEmpty: true },
+            { id: 'paid', label: 'مدفوعة', value: money(paidTotal), icon: BadgeDollarSign },
+          ]}
+        />
       </section>
 
       <section data-finance-section aria-label="فلاتر العمولات">
