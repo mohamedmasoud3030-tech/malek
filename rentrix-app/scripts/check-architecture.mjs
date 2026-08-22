@@ -46,14 +46,20 @@ const featureDependencyAllowList = new Map([
   // properties reads the shared company-settings seam (useCompanySettingsContract)
   // for canonical company-aware money/number/date formatting in the property
   // dossier — same reviewed seam already granted to owners/maintenance.
-  ['properties', new Set(['financials', 'owners', 'settings', 'units'])],
+  // properties reads useUnitContractDrafts to surface pending-draft state on
+  // unit cards (property-unit-detail-page). Reviewed integration seam: the
+  // hook is query-only and does not write through the contracts feature.
+  ['properties', new Set(['contracts', 'financials', 'owners', 'settings', 'units'])],
   // relationships-hub composes contracts/people/tenants/leads/communication.
   ['relationships-hub', new Set(['auth', 'communication', 'contracts', 'leads', 'people', 'tenants'])],
   ['reports', new Set(['accounting', 'auth', 'contracts', 'financials', 'maintenance', 'owners', 'properties', 'settings', 'units'])],
   ['settings', new Set(['properties'])],
   ['system', new Set(['auth', 'settings'])],
   ['tenants', new Set(['financials', 'people'])],
-  ['units', new Set(['properties'])],
+  // units reads useUnitContractDrafts to show pending-draft indicators in the
+  // unit list (units-list). Reviewed integration seam: query-only, no write
+  // coupling to the contracts feature.
+  ['units', new Set(['contracts', 'properties'])],
   // utilities reads the shared document-print readiness seam
   // (useDocumentSettings) so the utilities statement only prints with real
   // company identity — same reviewed seam already granted to financials.

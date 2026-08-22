@@ -80,7 +80,7 @@ export function Badge({ variant = 'default', className, children, dot = false, .
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold ring-1 ring-inset',
+        'inline-flex max-w-full items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ring-inset',
         variants[variant],
         className,
       )}

@@ -69,6 +69,7 @@ export function HeroBanner({ snapshot, isLoading, settings, today, isRefreshing 
       </div>
 
       <dl className="dashboard-ops-header__meta" aria-label="ملخص تنفيذي اليوم">
+        {typeof collectedAmount === 'number' && collectedAmount !== 0 ? (
         <div className="dashboard-ops-header__pill dashboard-ops-header__pill--money" aria-label="التحصيل الشهري">
           {isRefreshing ? (
             <RefreshCw className="size-4 shrink-0 animate-spin text-primary motion-reduce:animate-none" aria-hidden="true" />
@@ -82,16 +83,19 @@ export function HeroBanner({ snapshot, isLoading, settings, today, isRefreshing 
             </b>
           </dd>
         </div>
+        ) : null}
 
+        {typeof totalOverdue === 'number' && totalOverdue !== 0 ? (
         <div className={cn('dashboard-ops-header__pill dashboard-ops-header__pill--danger', isLoading && 'dashboard-ops-header__pill--loading')}>
           <AlertTriangle className="size-4 shrink-0" aria-hidden="true" />
           <dt>متأخرات</dt>
           <dd>
             <b dir="ltr" className="tabular-nums">
-              {typeof totalOverdue === 'number' ? formatCompanyMoney(settings, totalOverdue) : isLoading ? '…' : 'غير متاح'}
+              {formatCompanyMoney(settings, totalOverdue)}
             </b>
           </dd>
         </div>
+        ) : null}
 
         <div className={cn('dashboard-ops-header__pill', isLoading && 'dashboard-ops-header__pill--loading')}>
           <Building2 className="size-4 shrink-0 text-primary" aria-hidden="true" />

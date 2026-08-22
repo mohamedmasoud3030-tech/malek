@@ -7,8 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EntityCell } from '@/components/ui/entity-cell';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
-import { OperationalMetricCard } from '@/components/ui/operational-summary';
-import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
+import { RegisterHeading, RegisterMetricStrip } from '@/components/layout/register-summary';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { ListPage } from '@/components/layout/list-page';
@@ -125,41 +124,41 @@ export function ServiceProvidersWorkspace({ embedded = false }: Readonly<{ embed
         dir="rtl"
         visualVariant="malek-pro"
         title="مزودو الخدمات"
-        description="سجل الشركات وجهات التنفيذ، تخصصاتها، بيانات التواصل، وأعمال الصيانة المرتبطة."
         count={total || undefined}
         primaryAction={createAction}
         secondaryActions={categoriesAction}
         search={{ value: search, onChange: (value) => { setSearch(value); setPage(1); }, placeholder: 'بحث بالاسم أو الهاتف أو السجل' }}
         filters={(
-          <div className="space-y-3">
-            <div className="grid gap-2 sm:grid-cols-2">
-              <Select aria-label="تصفية مزودي الخدمات حسب الحالة" value={status} onChange={(event) => { setStatus(event.target.value as ServiceProviderStatusFilter); setPage(1); }}>
-                <option value="all">كل الحالات</option><option value="active">نشط</option><option value="inactive">غير نشط</option>
-              </Select>
-              <Select aria-label="تصفية حسب نوع الخدمة" value={categoryId} disabled={categoriesQuery.isLoading || categoriesQuery.isError} onChange={(event) => { setCategoryId(event.target.value); setPage(1); }}>
-                <option value="">كل أنواع الخدمات</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
-              </Select>
-            </div>
+          <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto no-scrollbar">
+            <Select aria-label="تصفية مزودي الخدمات حسب الحالة" value={status} onChange={(event) => { setStatus(event.target.value as ServiceProviderStatusFilter); setPage(1); }} className="h-10 w-32 shrink-0">
+              <option value="all">كل الحالات</option><option value="active">نشط</option><option value="inactive">غير نشط</option>
+            </Select>
+            <Select aria-label="تصفية حسب نوع الخدمة" value={categoryId} disabled={categoriesQuery.isLoading || categoriesQuery.isError} onChange={(event) => { setCategoryId(event.target.value); setPage(1); }} className="h-10 w-40 shrink-0">
+              <option value="">كل الأنواع</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+            </Select>
             <ActiveFilterBar filters={activeFilters} onClearAll={clearFilters} />
           </div>
         )}
       >
         {summaryQuery.data ? (
-          <ResponsiveCardGrid as="section" aria-label="ملخص مزودي الخدمات" desktopColumns={4} gap="sm">
-            <OperationalMetricCard label="إجمالي المزودين" value={formatCount(summaryQuery.data.total)} hint="سجلات غير مؤرشفة" icon={BriefcaseBusiness} />
-            <OperationalMetricCard label="مزودون نشطون" value={formatCount(summaryQuery.data.active)} hint="متاحون للتعيين الجديد" icon={BriefcaseBusiness} />
-            <OperationalMetricCard label="أنواع الخدمات" value={formatCount(summaryQuery.data.categories)} hint="أنواع نشطة قابلة للصيانة" icon={FolderCog} />
-            <OperationalMetricCard label="أعمال جارية" value={formatCount(summaryQuery.data.openJobs)} hint="مفتوحة أو قيد التنفيذ" icon={Wrench} />
-          </ResponsiveCardGrid>
+          <RegisterMetricStrip
+            aria-label="ملخص مزودي الخدمات"
+            items={[
+              { id: 'total', label: 'المزودون', value: formatCount(summaryQuery.data.total), icon: BriefcaseBusiness, hideWhenEmpty: true },
+              { id: 'active', label: 'نشطون', value: formatCount(summaryQuery.data.active), icon: BriefcaseBusiness, hideWhenEmpty: true },
+              { id: 'categories', label: 'أنواع الخدمات', value: formatCount(summaryQuery.data.categories), icon: FolderCog, hideWhenEmpty: true },
+              { id: 'jobs', label: 'أعمال جارية', value: formatCount(summaryQuery.data.openJobs), icon: Wrench, tone: 'warning', hideWhenEmpty: true },
+            ]}
+          />
         ) : summaryQuery.isError ? (
           <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
             <span>تعذر تحميل ملخص مزودي الخدمات.</span><Button type="button" variant="secondary" onClick={() => void summaryQuery.refetch()}>إعادة المحاولة</Button>
           </div>
         ) : null}
 
-        <section className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
-          <header className="border-b border-border/70 bg-muted/35 px-4 py-4 sm:px-5"><h2 className="text-base font-black">سجل مزودي الخدمات</h2><p className="mt-1 text-xs text-muted-foreground">{formatCount(rows.length)} سجل في الصفحة الحالية.</p></header>
-          <div className="p-3 sm:p-4">
+        <section className="min-w-0 space-y-2.5">
+          <RegisterHeading title="سجل مزودي الخدمات" />
+          <div>
             <EntityTable
               aria-label="جدول مزودي الخدمات"
               rows={rows}

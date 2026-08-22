@@ -6,7 +6,7 @@ import { EntityForm } from '@/components/ui/entity-form';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { ActionMenu } from '@/components/ui/action-menu';
 import { Input } from '@/components/ui/input';
-import { FinanceKpiGrid, FinanceKpiCard } from '../components/finance-reporting-visual-foundations';
+import { RegisterMetricStrip } from '@/components/layout/register-summary';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
@@ -533,12 +533,7 @@ export function DepositsWorkspace() {
     <div className="space-y-4">
       <section className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="max-w-3xl">
-          <h2 className="text-base font-bold tracking-tight">دفتر أمانات وتأمينات المستأجرين</h2>
-          <p className="mt-1 text-sm leading-6 text-muted-foreground">
-            مسار مالي حقيقي مع سجل غير قابل للتلاعب، منع تجاوز الرصيد، وقيود محاسبية. التخصيصات تتطلب طلباً
-            مدعوماً بإثبات واعتماد مدقق (maker-checker)، والاستردادات تُرحَّل عبر قيود معيارية قابلة للإلغاء التعويضي،
-            ولا يسمح النظام بكتابة محاسبية مباشرة من المتصفح.
-          </p>
+          <h2 className="text-base font-bold tracking-tight">تأمينات المستأجرين</h2>
         </div>
         <Button onClick={() => setActionType('create')} className="min-h-11 gap-2 sm:shrink-0">
           <Plus className="size-4" />
@@ -548,12 +543,15 @@ export function DepositsWorkspace() {
 
       {!documentSettings.isReady && !documentSettings.isLoading ? <DocumentReadinessNotice /> : null}
 
-      <FinanceKpiGrid desktopColumns={4} className="mb-2">
-        <FinanceKpiCard label="الأمانات المحتجزة" value={formatDepositMoney(totalHeld)} icon={Wallet} accent="primary" sub="واجب الرد" unit={currencyCode} />
-        <FinanceKpiCard label="الخصومات" value={formatDepositMoney(totalDeductions)} icon={MinusCircle} accent="primary" sub="أضرار وصيانة" unit={currencyCode} />
-        <FinanceKpiCard label="المسترد" value={formatDepositMoney(totalRefunded)} icon={CheckCircle2} accent="primary" sub="تم رده" unit={currencyCode} />
-        <FinanceKpiCard label="عدد الودائع" value={formatLatinNumber(deposits.length, 'ar')} icon={FileCheck} accent="primary" sub="سجلات" />
-      </FinanceKpiGrid>
+      <RegisterMetricStrip
+        aria-label="ملخص التأمينات"
+        items={[
+          { id: 'held', label: 'محتجزة', value: formatDepositMoney(totalHeld), icon: Wallet, hideWhenEmpty: true },
+          { id: 'deducted', label: 'خصومات', value: formatDepositMoney(totalDeductions), icon: MinusCircle, hideWhenEmpty: true },
+          { id: 'refunded', label: 'مسترد', value: formatDepositMoney(totalRefunded), icon: CheckCircle2, hideWhenEmpty: true },
+          { id: 'count', label: 'الودائع', value: formatLatinNumber(deposits.length, 'ar'), icon: FileCheck, hideWhenEmpty: true },
+        ]}
+      />
 
       <AsyncContentState
         status={contentStatus}
@@ -573,17 +571,13 @@ export function DepositsWorkspace() {
         />
       </AsyncContentState>
 
+      {claims.length > 0 ? (
       <section className="space-y-2">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-bold tracking-tight">طلبات تخصيص الودائع (إثبات + اعتماد مدقق)</h3>
+          <h3 className="text-sm font-bold tracking-tight">طلبات تخصيص الودائع</h3>
           <Button size="sm" variant="ghost" onClick={() => claimsQuery.refetch()}>تحديث</Button>
         </div>
-        {claims.length === 0 ? (
-          <p className="rounded-xl bg-muted/35 p-3 text-xs leading-5 text-muted-foreground">
-            لا توجد طلبات تخصيص. استخدم «طلب تخصيص (بإثبات)» من إجراءات الوديعة — يتطلب الطلب رابط إثبات، ثم اعتماد
-            من مدقق مختلف، ثم تطبيقاً يرحّل القيد ويحدّث الفاتورة والميزان.
-          </p>
-        ) : (
+        {(
           <EntityTable
             aria-label="جدول طلبات التخصيص"
             rows={claims}
@@ -593,26 +587,23 @@ export function DepositsWorkspace() {
           />
         )}
       </section>
+      ) : null}
 
+      {refundEvents.length > 0 ? (
       <section className="space-y-2">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-bold tracking-tight">أحداث رد الودائع (قابلة للإلغاء التعويضي)</h3>
+          <h3 className="text-sm font-bold tracking-tight">أحداث رد الودائع</h3>
           <Button size="sm" variant="ghost" onClick={() => refundEventsQuery.refetch()}>تحديث</Button>
         </div>
-        {refundEvents.length === 0 ? (
-          <p className="rounded-xl bg-muted/35 p-3 text-xs leading-5 text-muted-foreground">
-            لا توجد أحداث رد بعد. يتم رد المبالغ عبر RPC موثوق يحدد الحساب النقدي من الخادم ويربط القيد بالسجل.
-          </p>
-        ) : (
-          <EntityTable
-            aria-label="جدول أحداث الرد"
-            rows={refundEvents}
-            columns={refundColumns}
-            keyOf={(event) => event.id}
-            mobileVisibleSecondaryKey="status"
-          />
-        )}
+        <EntityTable
+          aria-label="جدول أحداث الرد"
+          rows={refundEvents}
+          columns={refundColumns}
+          keyOf={(event) => event.id}
+          mobileVisibleSecondaryKey="status"
+        />
       </section>
+      ) : null}
 
       <EntityForm.Overlay
         open={actionType === 'create'}

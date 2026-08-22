@@ -101,9 +101,10 @@ describe('shared mobile register — only identity + designated datum are render
     expect(mobile?.textContent).toContain('CON-SO-0001');
   });
 
-  it('the register exposes exactly one accessible list on mobile', () => {
+  it('the register exposes a named table and keeps the compact mobile list in the DOM', () => {
     renderRegister('rent_amount');
-    expect(screen.getAllByRole('list', { name: 'جدول العقود' }).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByRole('table', { name: 'جدول العقود' }).length).toBe(1);
+    expect(document.querySelectorAll('[data-entity-table-mobile-list][aria-label="جدول العقود"]').length).toBe(1);
   });
 
   it('ContractTable designates the tenant column, keeping the /contracts mobile journey satisfiable', () => {

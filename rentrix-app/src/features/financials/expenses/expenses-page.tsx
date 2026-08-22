@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from '@tanstack/react-router';
-import { ArrowLeft, Banknote, CalendarDays, ReceiptText, WalletCards } from 'lucide-react';
+import { ArrowLeft, ReceiptText } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -9,14 +9,13 @@ import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { Button } from '@/components/ui/button';
 import { useProperties } from '@/features/properties/use-properties';
 import { useCostCenters } from '@/features/settings/useCostCenters';
-import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
-import { formatCompanyMoney, formatCompanyNumber } from '@/lib/companyFormatters';
+
+
 import { ExpensesSection, type ExpenseFormValues } from '../components/expenses-section';
 import { getTodayLocalDateString } from '../financials-date-utils';
 import {
   EXPENSE_CHARGED_TO_VALUES,
   OPERATIONAL_EXPENSE_CATEGORIES,
-  summarizeOperationalExpenses,
   type OperationalExpenseFilterValues,
 } from './operational-expenses';
 import { useCreateExpenseAtomic, useExpenses, useUpdateExpense } from './useExpenses';
@@ -55,7 +54,6 @@ export function ExpensesWorkspace({ embedded = false }: ExpensesWorkspaceProps) 
     from: '',
     to: '',
   });
-  const companySettings = useCompanySettingsContract();
   const propertiesQuery = useProperties({ page: 1, pageSize: 500, search: '', status: 'all' });
   const costCentersQuery = useCostCenters();
   const expensesQuery = useExpenses(filters);
@@ -64,7 +62,6 @@ export function ExpensesWorkspace({ embedded = false }: ExpensesWorkspaceProps) 
   const updateExpense = useUpdateExpense();
   const propertyRows = propertiesQuery.data?.rows ?? [];
   const expenses = expensesQuery.data?.rows ?? [];
-  const summary = summarizeOperationalExpenses(expenses);
 
   const expenseForm = useForm<ExpenseFormValues>({
     resolver: zodResolver(expenseSchema),
@@ -130,7 +127,6 @@ export function ExpensesWorkspace({ embedded = false }: ExpensesWorkspaceProps) 
       embedded={embedded}
       size="default"
       title="المصروفات"
-      description="تسجيل ومراجعة مصروفات العقارات مع فلاتر للعقار والتصنيف والتاريخ."
       visualVariant="malek-pro"
       secondaryActions={
         <>
@@ -176,42 +172,6 @@ export function ExpensesWorkspace({ embedded = false }: ExpensesWorkspaceProps) 
               />
             </FinanceCluster>
           ) : null}
-        </FinanceSection>
-
-        <FinanceSection ariaLabel="ملخص المصروفات">
-          <FinanceKpiGrid desktopColumns={4}>
-            <FinanceKpiCard
-              label="عدد المصروفات"
-              value={formatCompanyNumber(companySettings, summary.visibleCount)}
-              sub="ضمن الفلاتر الحالية"
-              icon={ReceiptText}
-              accent="primary"
-            />
-            <FinanceKpiCard
-              label="إجمالي المبلغ"
-              value={formatCompanyMoney(companySettings, summary.visibleAmount)}
-              sub="للمصروفات المعروضة"
-              icon={Banknote}
-              accent="primary"
-              trend="neutral"
-              trendValue="إجمالي"
-              unit={companySettings.defaultCurrency}
-            />
-            <FinanceKpiCard
-              label="العقارات المتأثرة"
-              value={formatCompanyNumber(companySettings, summary.byPropertyCount)}
-              sub="عقارات لديها مصروفات"
-              icon={WalletCards}
-              accent="primary"
-            />
-            <FinanceKpiCard
-              label="التصنيفات"
-              value={formatCompanyNumber(companySettings, summary.byCategoryCount)}
-              sub="تصنيفات مستخدمة"
-              icon={CalendarDays}
-              accent="primary"
-            />
-          </FinanceKpiGrid>
         </FinanceSection>
 
         <FinanceSection ariaLabel="جدول المصروفات والفلاتر">

@@ -140,8 +140,8 @@ function resolveColumns<T>(columns: ColumnDef<T>[], visibleColumnKeys?: readonly
 
 function priorityClass(priority: ColumnPriority, sticky = true) {
   return cn(
-    sticky && priority === 'identity' && 'sticky start-0 z-[2] min-w-[10rem] bg-inherit shadow-[1px_0_0_hsl(var(--border)/0.72)]',
-    sticky && priority === 'actions' && 'sticky end-0 z-[2] min-w-[6.75rem] bg-inherit shadow-[-1px_0_0_hsl(var(--border)/0.72)]',
+    sticky && priority === 'identity' && 'sticky start-0 z-[2] min-w-[9.5rem] max-w-[18rem] bg-inherit shadow-[1px_0_0_hsl(var(--border)/0.55)]',
+    sticky && priority === 'actions' && 'sticky end-0 z-[2] min-w-[5.5rem] bg-inherit shadow-[-1px_0_0_hsl(var(--border)/0.55)]',
   );
 }
 
@@ -218,7 +218,7 @@ function SelectionCheckbox({
 function TableSkeleton({ rows, cols, hasSelection }: { rows: number; cols: number; hasSelection: boolean }) {
   const totalColumns = cols + (hasSelection ? 1 : 0);
   return (
-    <Card className="overflow-hidden rounded-2xl border-border/85 bg-card shadow-[0_12px_28px_-26px_hsl(var(--foreground)/0.45)]" data-entity-table-grid>
+    <Card className="overflow-hidden rounded-xl border-border/70 bg-card shadow-card" data-entity-table-grid data-entity-table-mobile-skeleton>
       <div className="mobile-scroll-x">
         <Table density="compact" className="text-xs [&_td+td]:border-s [&_td+td]:border-border/60 [&_th+th]:border-s [&_th+th]:border-border/70">
           <TableHeader>
@@ -245,10 +245,11 @@ function TableSkeleton({ rows, cols, hasSelection }: { rows: number; cols: numbe
 
 function PaginationBar({ pagination }: { pagination: PaginationState }) {
   const totalPages = Math.max(1, Math.ceil(pagination.total / pagination.pageSize));
+  if (totalPages <= 1) return null;
   const { page, onPageChange } = pagination;
   return (
     <nav
-      className="flex flex-col gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-xs font-medium text-muted-foreground sm:flex-row sm:items-center sm:justify-between"
+      className="flex flex-col gap-2 rounded-xl border border-border/70 bg-card px-3 py-2 text-xs font-medium text-muted-foreground sm:flex-row sm:items-center sm:justify-between"
       aria-label="ترقيم الصفحات"
     >
       <span>
@@ -365,7 +366,7 @@ function MobileRegisterListItem<T>({
                     triggerRef.current?.focus();
                   }
                 }}
-                className="grid size-11 place-items-center rounded-lg text-muted-foreground outline-none transition hover:bg-muted hover:text-foreground focus-visible:ring-4 focus-visible:ring-primary/20"
+                className="grid size-11 min-h-11 min-w-11 place-items-center rounded-lg text-muted-foreground outline-none transition hover:bg-muted hover:text-foreground focus-visible:ring-4 focus-visible:ring-primary/20"
               >
                 <MoreHorizontal className="size-4" aria-hidden="true" />
                 <span className="sr-only">إجراءات</span>
@@ -512,17 +513,17 @@ export function EntityTable<T>({
       {toolbar ? (
         <div
           data-entity-table-toolbar
-          className="rounded-2xl border border-border/85 bg-card p-2 shadow-[0_10px_22px_-22px_hsl(var(--foreground)/0.42)]"
+          className="rounded-xl border border-border/70 bg-card p-1.5 shadow-card"
         >
           {toolbar}
         </div>
       ) : null}
 
       <div className="hidden" data-entity-table-mobile aria-hidden="true">
-        <div className="overflow-hidden rounded-2xl border border-border/85 bg-card shadow-[0_10px_24px_-22px_hsl(var(--foreground)/0.45)]">
+        <div className="overflow-hidden rounded-xl border border-border/70 bg-card shadow-card">
           <div
             data-entity-table-mobile-header
-            className="grid min-h-10 items-stretch border-b border-border/70 bg-muted/35 text-[10px] font-black text-muted-foreground"
+            className="grid min-h-10 items-stretch border-b border-border/60 bg-muted/30 text-[10px] font-bold text-muted-foreground"
             style={{ gridTemplateColumns: mobileGridTemplate }}
             aria-hidden="true"
           >
@@ -566,7 +567,7 @@ export function EntityTable<T>({
       </div>
 
       <div className="block">
-        <Card data-entity-table-wrapper data-compact-responsive-table data-entity-table-grid className="overflow-hidden rounded-2xl border-border/85 bg-card shadow-[0_12px_28px_-26px_hsl(var(--foreground)/0.45)]">
+        <Card data-entity-table-wrapper data-compact-responsive-table data-entity-table-grid className="overflow-hidden rounded-xl border-border/70 bg-card shadow-card">
           <div
             data-entity-table-scroll
             tabIndex={0}
@@ -578,7 +579,7 @@ export function EntityTable<T>({
               data-entity-table
               density="compact"
               aria-label={ariaLabel}
-              className="min-w-max text-xs md:min-w-full md:text-[13px] [&_td+td]:border-s [&_td+td]:border-border/60 [&_th+th]:border-s [&_th+th]:border-border/70"
+              className="min-w-max text-xs md:min-w-full md:text-[13px] [&_td+td]:border-s [&_td+td]:border-border/40 [&_th+th]:border-s [&_th+th]:border-border/50"
             >
               <TableHeader className="bg-muted/35">
                 <TableRow className="hover:bg-transparent">
@@ -602,7 +603,7 @@ export function EntityTable<T>({
                         key={column.key}
                         data-column-priority={column.resolvedPriority}
                         className={cn(
-                          'h-10 bg-muted/50 px-3 text-[10px] font-black tracking-[0.01em] text-muted-foreground sm:px-3.5',
+                          'h-10 bg-muted/40 px-3 text-[11px] font-bold tracking-[0.01em] text-muted-foreground sm:px-3.5',
                           priorityClass(column.resolvedPriority, column.sticky !== false),
                           column.className,
                         )}

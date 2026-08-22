@@ -1,9 +1,9 @@
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { Building2 } from 'lucide-react';
-import { useEffect, useMemo, useRef, lazy, Suspense, useCallback } from 'react';
+import { useEffect, useMemo, lazy, Suspense, useCallback } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
-import { WorkspaceHint } from '@/components/layout/workspace-hint';
+
 import { useAuth } from '@/hooks/use-auth';
 import {
   FINANCE_SECTIONS,
@@ -20,6 +20,7 @@ import { getTodayLocalDateString } from './financials-date-utils';
 import { useCollectionSummaryReport } from './reports/useFinancialReports';
 import { cn } from '@/lib/utils';
 import { SectionTabs } from '@/components/ui/section-tabs';
+import { WorkspaceNav } from '@/components/ui/workspace-nav';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AccessDenied } from '@/components/layout/access-denied';
 import { translateSharedLabel } from '@/lib/i18n';
@@ -102,10 +103,6 @@ export function FinancialsPage() {
   const collectionReport = useCollectionSummaryReport(reportFilters);
 
   // Dynamic translated labels
-  const summaryLabel = translateSharedLabel('financialsSectionSummary');
-  const pageDescription = translateSharedLabel('financialsPageDescription');
-  const pageHint = translateSharedLabel('financialsPageHint');
-
   // Visible / permitted views & sections for the current user
   const permittedViews = useMemo(() => getPermittedViews(authorization), [authorization]);
   const permittedSections = useMemo(() => getPermittedSections(authorization), [authorization]);
@@ -196,8 +193,6 @@ export function FinancialsPage() {
     return permittedViews.filter(v => v.sectionId === activeSection);
   }, [activeSection, permittedViews]);
 
-  const activeSectionMeta = FINANCE_SECTIONS.find((s) => s.id === activeSection) ?? FINANCE_SECTIONS[0];
-
   if (isRequestedViewForbidden) {
     return (
       <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro">
@@ -217,16 +212,7 @@ export function FinancialsPage() {
   return (
     <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro">
       <div data-finance-root className="space-y-5">
-        <PageHeader
-          title="المالية"
-          description={pageDescription}
-        />
-
-        {pageHint ? (
-          <WorkspaceHint>
-            {pageHint} (سجل {summaryLabel})
-          </WorkspaceHint>
-        ) : null}
+        <PageHeader title="المال" />
 
         <div className="flex flex-col gap-6 md:flex-row-reverse md:items-start">
           {/* Sidebar / Navigation Column (Right on RTL) */}
@@ -254,26 +240,13 @@ export function FinancialsPage() {
               })}
             </nav>
 
-            {/* Mobile Select dropdown */}
-            <div className="md:hidden bg-card border border-border/70 rounded-2xl p-3 shadow-card" data-finance-mobile-nav>
-              <div className="flex items-center gap-2">
-                <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground">
-                  <activeSectionMeta.icon className="size-4" aria-hidden="true" />
-                </span>
-                <select
-                  aria-label="أقسام المالية"
-                  value={activeSection || 'overview'}
-                  onChange={(e) => handleSectionChange(e.target.value as FinanceSectionId)}
-                  className="min-h-11 flex-1 rounded-xl border border-border bg-card px-3 py-2 text-sm font-semibold focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
-                  dir="rtl"
-                >
-                  {permittedSections.map((section) => (
-                    <option key={section.id} value={section.id}>
-                      {section.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <div className="md:hidden rounded-2xl border border-border/70 bg-card p-2 shadow-card" data-finance-mobile-nav>
+              <WorkspaceNav
+                items={permittedSections}
+                activeId={activeSection}
+                onChange={handleSectionChange}
+                ariaLabel="أقسام المالية"
+              />
             </div>
           </aside>
 

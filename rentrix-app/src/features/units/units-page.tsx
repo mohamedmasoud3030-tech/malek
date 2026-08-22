@@ -14,6 +14,7 @@ import {
   getUnitPageStatus,
 } from "./use-units-list-controller";
 import { EmbeddableWorkspace } from "@/components/layout/embeddable-workspace";
+import { RegisterHeading, RegisterMetricStrip } from "@/components/layout/register-summary";
 import { LoadingState } from "@/components/ui/loading-state";
 import { Button } from "@/components/ui/button";
 import { DataTableColumnsMenu } from "@/components/ui/data-table";
@@ -43,33 +44,6 @@ const unitRegisterColumnOptions = [
 ] as const;
 
 const defaultUnitRegisterColumns = unitRegisterColumnOptions.map((column) => column.key);
-
-function UnitSummaryCard({
-  icon: Icon,
-  label,
-  value,
-  hint,
-}: Readonly<{
-  icon: typeof DoorOpen;
-  label: string;
-  value: string;
-  hint: string;
-}>) {
-  return (
-    <article className="group relative overflow-hidden rounded-2xl border border-border/75 bg-card p-4 shadow-card">
-      <div className="relative flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-xs font-bold text-muted-foreground">{label}</p>
-          <p className="mt-2 truncate text-2xl font-black tabular-nums">{value}</p>
-          <p className="mt-1 text-[11px] font-medium text-muted-foreground">{hint}</p>
-        </div>
-        <span className="grid size-11 shrink-0 place-items-center rounded-xl border border-primary/15 bg-primary/8 text-primary">
-          <Icon className="size-5" aria-hidden="true" />
-        </span>
-      </div>
-    </article>
-  );
-}
 
 export type UnitsWorkspaceProps = Readonly<{
   embedded?: boolean;
@@ -201,55 +175,20 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
       size="wide"
       visualVariant="malek-pro"
       title="الوحدات"
-      description="متابعة الإشغال والتأجير والصيانة لكل وحدة من مساحة تشغيل واحدة."
       count={formatNumber(totalUnits)}
       primaryAction={primaryAction}
     >
-      <section
-        data-unit-summary
-        aria-label="ملخص تشغيل الوحدات"
-        className="grid gap-3 lg:grid-cols-[minmax(17rem,1.1fr)_minmax(0,2fr)]"
-      >
-        <article className="relative overflow-hidden rounded-2xl border border-sidebar-border bg-sidebar p-5 text-sidebar-foreground shadow-elevated">
-          <div className="relative">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-bold text-sidebar-foreground/65">معدل الإشغال الحالي</p>
-                <p className="mt-2 text-4xl font-black tabular-nums">{formatNumber(occupancyRate)}%</p>
-              </div>
-              <span className="grid size-12 place-items-center rounded-2xl border border-sidebar-border bg-sidebar-accent text-sidebar-accent-foreground">
-                <CircleGauge className="size-6" aria-hidden="true" />
-              </span>
-            </div>
-            <div className="mt-5 h-2 overflow-hidden rounded-full bg-sidebar-accent">
-              <div
-                className="h-full rounded-full bg-primary transition-[width] duration-300 motion-reduce:transition-none"
-                style={{ width: `${Math.min(100, Math.max(0, occupancyRate))}%` }}
-                aria-hidden="true"
-              />
-            </div>
-            <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs font-bold text-sidebar-foreground/72">
-              <span>{formatNumber(ctrl.kpis.occupiedCount)} مشغولة</span>
-              <span>{formatNumber(ctrl.kpis.availableCount)} متاحة</span>
-              <span>{formatNumber(maintenanceCount)} صيانة</span>
-            </div>
-          </div>
-        </article>
-
-        <div className="grid gap-3 sm:grid-cols-2">
-          <UnitSummaryCard
-            label="إجمالي الوحدات"
-            value={formatNumber(totalUnits)}
-            hint="كل الوحدات النشطة"
-            icon={DoorOpen}
-          />
-          <UnitSummaryCard
-            label="الإيجار المتوقع"
-            value={formatMoney(ctrl.kpis.expectedRent)}
-            hint="من قيم الإيجار المسجلة"
-            icon={Building2}
-          />
-        </div>
+      <section data-unit-summary aria-label="ملخص تشغيل الوحدات">
+        <RegisterMetricStrip
+          aria-label="ملخص تشغيل الوحدات"
+          items={[
+            { id: 'total', label: 'الوحدات', value: formatNumber(totalUnits), icon: DoorOpen },
+            { id: 'occupancy', label: 'الإشغال', value: `${formatNumber(occupancyRate)}%`, hint: `${formatNumber(ctrl.kpis.occupiedCount)} مشغولة`, icon: CircleGauge },
+            { id: 'available', label: 'متاحة', value: formatNumber(ctrl.kpis.availableCount), icon: Home, tone: 'success', hideWhenEmpty: true },
+            { id: 'maintenance', label: 'صيانة', value: formatNumber(maintenanceCount), icon: Wrench, tone: 'warning', hideWhenEmpty: true },
+            { id: 'rent', label: 'الإيجار المتوقع', value: formatMoney(ctrl.kpis.expectedRent), icon: Building2 },
+          ]}
+        />
       </section>
 
       <FilterBar
@@ -313,29 +252,10 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
       />
 
       <section data-unit-register className="min-w-0 space-y-2.5">
-        <header className="flex min-h-11 flex-wrap items-center justify-between gap-3 px-1">
-          <div className="flex min-w-0 items-center gap-2.5">
-            <span className="grid size-8 shrink-0 place-items-center rounded-lg border border-primary/10 bg-primary/[0.06] text-primary">
-              <DoorOpen className="size-4" aria-hidden="true" />
-            </span>
-            <div className="min-w-0">
-              <h2 className="truncate text-sm font-black">سجل الوحدات</h2>
-              <p className="truncate text-[11px] font-medium text-muted-foreground">
-                {formatNumber(ctrl.filteredUnits.length)} وحدة ضمن الفلاتر الحالية
-              </p>
-            </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
-            <span className="inline-flex items-center gap-1.5 rounded-lg border border-success/20 bg-success-bg px-2.5 py-1 text-success">
-              <Home className="size-3.5" aria-hidden="true" />
-              {formatNumber(ctrl.kpis.availableCount)} متاحة
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded-lg border border-warning/20 bg-warning-bg px-2.5 py-1 text-warning">
-              <Wrench className="size-3.5" aria-hidden="true" />
-              {formatNumber(maintenanceCount)} صيانة
-            </span>
-          </div>
-        </header>
+        <RegisterHeading
+          title="سجل الوحدات"
+          meta={`${formatNumber(ctrl.filteredUnits.length)} وحدة ضمن الفلاتر الحالية`}
+        />
 
         <EntityTable
           aria-label="جدول الوحدات"

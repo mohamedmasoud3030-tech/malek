@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { useAuth } from '@/hooks/use-auth';
 import { canAccess } from '@/features/auth/permissions';
-import { getTodayLocalDateString } from '@/features/financials/financials-date-utils';
+import { formatCompactDate, getTodayLocalDateString } from '@/features/financials/financials-date-utils';
 import {
   executeFixedMonthlyAccruals,
   listFixedMonthlyAccruals,
@@ -141,7 +141,7 @@ export function FixedMonthlyAccrualWorkspace() {
       key: 'date',
       header: 'التاريخ الاقتصادي',
       priority: 'identity',
-      render: (row) => <span className="whitespace-nowrap font-bold" dir="ltr">{row.accrualDate}</span>,
+      render: (row) => <span className="whitespace-nowrap font-bold" dir="ltr">{formatCompactDate(row.accrualDate)}</span>,
     },
     {
       key: 'propertyOwner',
@@ -237,35 +237,30 @@ export function FixedMonthlyAccrualWorkspace() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="min-w-0 space-y-1.5">
-              <Label htmlFor="fixed-accrual-from">من تاريخ</Label>
-              <Input
-                id="fixed-accrual-from"
-                type="date"
-                value={dateFrom}
-                onChange={(event) => setDateFrom(event.target.value)}
-              />
+          <div className="space-y-3">
+            <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-2">
+              <div className="min-w-0 space-y-1.5">
+                <Label htmlFor="fixed-accrual-from">من</Label>
+                <Input
+                  id="fixed-accrual-from"
+                  type="date"
+                  value={dateFrom}
+                  onChange={(event) => setDateFrom(event.target.value)}
+                />
+              </div>
+              <span className="pb-2.5 text-xs font-bold text-muted-foreground" aria-hidden="true">—</span>
+              <div className="min-w-0 space-y-1.5">
+                <Label htmlFor="fixed-accrual-to">إلى</Label>
+                <Input
+                  id="fixed-accrual-to"
+                  type="date"
+                  value={dateTo}
+                  max={initialRange.to}
+                  onChange={(event) => setDateTo(event.target.value)}
+                />
+              </div>
             </div>
-            <div className="min-w-0 space-y-1.5">
-              <Label htmlFor="fixed-accrual-to">إلى تاريخ</Label>
-              <Input
-                id="fixed-accrual-to"
-                type="date"
-                value={dateTo}
-                max={initialRange.to}
-                onChange={(event) => setDateTo(event.target.value)}
-              />
-            </div>
-            <div className="col-span-2 flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                onClick={() => void load()}
-                loading={isLoading}
-                leftIcon={<RefreshCw className="size-4" />}
-              >
-                تحديث
-              </Button>
+            <div className="flex flex-wrap gap-2">
               {canExecute ? (
                 <Button
                   onClick={() => void handleExecute()}
@@ -275,6 +270,14 @@ export function FixedMonthlyAccrualWorkspace() {
                   تنفيذ الاستحقاق
                 </Button>
               ) : null}
+              <Button
+                variant="outline"
+                onClick={() => void load()}
+                loading={isLoading}
+                leftIcon={<RefreshCw className="size-4" />}
+              >
+                تحديث
+              </Button>
             </div>
           </div>
 
@@ -360,7 +363,7 @@ export function FixedMonthlyAccrualWorkspace() {
           error={error && !data ? error : undefined}
           onRetry={() => void load()}
           emptyTitle="لا توجد استحقاقات"
-          emptyDescription="لا توجد استحقاقات في النطاق المحدد."
+          emptyDescription="لا توجد استحقاقات في النطاق المحدد. غيّر نطاق التاريخ أو نفّذ الاستحقاق."
           mobileVisibleSecondaryKey="gross"
           aria-label="سجل الاستحقاقات الشهرية الثابتة"
         />

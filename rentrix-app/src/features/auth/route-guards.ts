@@ -4,7 +4,7 @@ import { canAccess, type AppPermission } from './permissions';
 import { getEffectiveAuthorizationContextFromSession } from './effective-permissions';
 
 export async function assertSessionPermission(
-  session: Pick<Session, 'user'> | null | undefined,
+  session: Pick<Session, 'user' | 'access_token'> | null | undefined,
   permission: AppPermission,
 ): Promise<void> {
   const authorization = await getEffectiveAuthorizationContextFromSession(session);

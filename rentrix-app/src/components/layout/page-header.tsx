@@ -38,7 +38,7 @@ export function PageHeader({
       data-page-header
       data-unified-surface="page-header"
       className={cn(
-        'rounded-xl border border-border/70 bg-card px-3 py-2.5 shadow-[0_1px_2px_hsl(var(--foreground)/0.035)] sm:px-4 sm:py-3',
+        'rounded-2xl border border-border/70 bg-card px-3 py-2 shadow-card sm:px-4 sm:py-2.5',
         className,
       )}
     >

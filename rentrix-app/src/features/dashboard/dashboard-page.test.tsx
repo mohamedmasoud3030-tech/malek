@@ -144,6 +144,7 @@ describe('Today workspace query boundary tests', () => {
     const sectionOrder = Array.from(container?.querySelectorAll('[data-dashboard-section]') ?? [])
       .map((section) => section.getAttribute('data-dashboard-section'));
     expect(sectionOrder).toEqual(['work-now', 'office-state', 'analytics']);
+    expect(container?.querySelector('[data-dashboard-section="actions"]')).toBeNull();
   });
 
   it('renders KPI surfaces as real destination links without duplicating the executive hero', async () => {
@@ -164,14 +165,12 @@ describe('Today workspace query boundary tests', () => {
     expect(container?.querySelector('[data-dashboard-section="actions"]')).toBeNull();
   });
 
-  it('shows permitted create shortcuts after existing work for a manager', async () => {
+  it('keeps create shortcuts out of Today because the dock already owns them', async () => {
     (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
     mockRole = 'MANAGER';
     await renderPage();
-    const text = container?.textContent ?? '';
-    expect(text).toContain('ابدأ إجراء');
-    expect(text).toContain('إنشاء عقد');
-    expect(container?.querySelectorAll('[data-dashboard-action-grid] > *')).toHaveLength(4);
+    expect(container?.querySelector('[data-dashboard-section="actions"]')).toBeNull();
+    expect(container?.querySelector('[data-dashboard-action-grid]')).toBeNull();
     const onboardingSlot = container?.querySelector('[data-dashboard-onboarding-slot]');
     const workNow = container?.querySelector('[data-dashboard-section="work-now"]');
     expect(onboardingSlot).not.toBeNull();
@@ -180,7 +179,7 @@ describe('Today workspace query boundary tests', () => {
     expect(onboardingSlot.compareDocumentPosition(workNow) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     const sectionOrder = Array.from(container?.querySelectorAll('[data-dashboard-section]') ?? [])
       .map((section) => section.getAttribute('data-dashboard-section'));
-    expect(sectionOrder).toEqual(['work-now', 'actions', 'office-state', 'analytics']);
+    expect(sectionOrder).toEqual(['work-now', 'office-state', 'analytics']);
   });
 
   it('handles query loading state without fabricating current work', async () => {

@@ -1,5 +1,5 @@
 import { Clock3, FileText, WalletCards } from 'lucide-react';
-import { OperationalMetricCard } from '@/components/ui/operational-summary';
+import { RegisterMetricStrip } from '@/components/layout/register-summary';
 import type { CompanySettingsContract } from '@/lib/companySettings';
 import { isContractStatus } from '@/lib/contractStatus';
 import { formatContractMoney } from '../contractDisplayFormatters';
@@ -40,34 +40,15 @@ export function ContractKpiGrid({
     : 0;
 
   return (
-    <section
-      data-contract-summary
-      aria-label="ملخص دورة العقود"
-      className="grid grid-cols-2 gap-2.5 sm:gap-3"
-    >
-      <OperationalMetricCard
-        label="نسبة العقود النشطة"
-        value={`${formatCount(activeRate)}%`}
-        hint={`${formatCount(listSummary.active)} نشطة في الصفحة`}
-        icon={WalletCards}
-      />
-      <OperationalMetricCard
-        label="إجمالي العقود"
-        value={formatCount(totalCount)}
-        hint="حسب فلتر الحالة الحالي"
-        icon={FileText}
-      />
-      <OperationalMetricCard
-        label="تنتهي قريبًا"
-        value={formatCount(listSummary.expiringSoon)}
-        hint="خلال نافذة المتابعة الحالية"
-        icon={Clock3}
-      />
-      <OperationalMetricCard
-        label="إيجار العقود الظاهرة"
-        value={formatContractMoney(companySettings, visibleSummary.rentTotal)}
-        hint="بعد البحث والفلاتر"
-        icon={WalletCards}
+    <section data-contract-summary aria-label="ملخص دورة العقود">
+      <RegisterMetricStrip
+        aria-label="ملخص دورة العقود"
+        items={[
+          { id: 'total', label: 'العقود', value: formatCount(totalCount), icon: FileText },
+          { id: 'active', label: 'نشطة', value: `${formatCount(activeRate)}%`, hint: `${formatCount(listSummary.active)} في الصفحة`, icon: WalletCards },
+          { id: 'expiring', label: 'تنتهي قريبًا', value: formatCount(listSummary.expiringSoon), icon: Clock3, tone: 'warning', hideWhenEmpty: true },
+          { id: 'rent', label: 'إيجار الظاهرة', value: formatContractMoney(companySettings, visibleSummary.rentTotal), icon: WalletCards },
+        ]}
       />
     </section>
   );

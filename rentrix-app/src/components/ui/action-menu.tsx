@@ -1,7 +1,6 @@
-import { createElement, isValidElement, useEffect, useRef, useState, type ComponentType, type ReactNode } from 'react';
-import { MoreVertical } from 'lucide-react';
+import { createElement, isValidElement, useEffect, useId, useRef, useState, type ComponentType, type ReactNode } from 'react';
+import { MoreHorizontal, MoreVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dropdown } from '@/components/ui/dropdown';
 import { cn } from '@/lib/utils';
 
 export interface ActionMenuItem {
@@ -41,7 +40,7 @@ function getIcon(item: ActionMenuEntry): ReactNode {
   if (!item.icon) return null;
   if (isValidElement(item.icon)) return item.icon;
   // lucide-react exports forwardRef components as objects rather than functions.
-  return createElement(item.icon as ComponentType<{ className?: string }>, { className: 'size-4' });
+  return createElement(item.icon as ComponentType<{ className?: string }>, { className: 'size-3.5' });
 }
 
 function selectItem(item: ActionMenuEntry): void {
@@ -49,8 +48,40 @@ function selectItem(item: ActionMenuEntry): void {
   else item.onClick();
 }
 
+function isDestructive(item: ActionMenuEntry): boolean {
+  if (isActionMenuItem(item)) return Boolean(item.destructive);
+  return item.variant === 'destructive' || Boolean(item.danger);
+}
+
 export function ActionMenu({ items, label = 'الإجراءات', className }: ActionMenuProps) {
   const visibleItems = items.filter((item) => !item.disabled);
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuId = useId();
+
+  useEffect(() => {
+    if (!open) return;
+
+    const onPointerDown = (event: PointerEvent) => {
+      if (rootRef.current?.contains(event.target as Node)) return;
+      setOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setOpen(false);
+        triggerRef.current?.focus();
+      }
+    };
+
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [open]);
+
   if (visibleItems.length === 0) return null;
 
   if (visibleItems.length === 1) {
@@ -58,35 +89,66 @@ export function ActionMenu({ items, label = 'الإجراءات', className }: A
     return (
       <Button
         variant="ghost"
-        size="sm"
+        size="icon"
         onClick={() => selectItem(item)}
-        className={cn('h-11 min-h-11 min-w-11 px-2', className)}
+        className={cn('size-11 text-muted-foreground hover:text-foreground', className)}
         aria-label={item.label}
         title={item.label}
+        data-action-menu
       >
         {getIcon(item) ?? <MoreVertical className="size-4" aria-hidden="true" />}
+        <span className="sr-only">{item.label}</span>
       </Button>
     );
   }
 
-  const options = visibleItems.map((item) => ({
-    id: item.id,
-    label: item.label,
-    icon: getIcon(item),
-    disabled: item.disabled,
-  }));
-
   return (
-    <div className={cn('w-32 min-w-0', className)}>
-      <Dropdown
-        options={options}
-        onChange={(id) => {
-          const item = visibleItems.find((candidate) => candidate.id === id);
-          if (item) selectItem(item);
-        }}
-        placeholder={label}
-        label=""
-      />
+    <div ref={rootRef} className={cn('relative', className)} data-action-menu>
+      <Button
+        ref={triggerRef}
+        type="button"
+        variant="ghost"
+        size="icon"
+        aria-label={label}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-controls={open ? menuId : undefined}
+        title={label}
+        className="size-11 text-muted-foreground hover:bg-muted hover:text-foreground"
+        onClick={() => setOpen((current) => !current)}
+      >
+        <MoreHorizontal className="size-4" aria-hidden="true" />
+        <span className="sr-only">{label}</span>
+      </Button>
+
+      {open ? (
+        <div
+          id={menuId}
+          role="menu"
+          className="absolute end-0 z-50 mt-1 min-w-44 overflow-hidden rounded-xl border border-border/80 bg-card p-1 shadow-elevated"
+        >
+          {visibleItems.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              role="option"
+              className={cn(
+                'flex min-h-11 w-full items-center gap-2 rounded-lg px-2.5 text-start text-sm font-semibold outline-none transition-colors',
+                'hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary/25',
+                isDestructive(item) ? 'text-destructive hover:bg-destructive/10' : 'text-foreground',
+              )}
+              onClick={() => {
+                selectItem(item);
+                setOpen(false);
+                triggerRef.current?.focus();
+              }}
+            >
+              {getIcon(item)}
+              <span className="min-w-0 truncate">{item.label}</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }

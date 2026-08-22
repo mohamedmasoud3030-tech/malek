@@ -148,18 +148,20 @@ export function InvoiceWorkspaceSection() {
         />
       </EntityPreviewDialog>
 
-      <ReceiptsSection
-        receipts={ctrl.receiptsQuery.data ?? []}
-        selectedReceiptId={ctrl.selectedReceiptId}
-        receiptDetail={ctrl.receiptQuery.data}
-        isReceiptsLoading={ctrl.receiptsQuery.isLoading}
-        isReceiptsError={ctrl.receiptsQuery.isError}
-        receiptsError={ctrl.receiptsQuery.error}
-        isReceiptDetailLoading={ctrl.receiptQuery.isLoading}
-        isReceiptDetailError={ctrl.receiptQuery.isError}
-        receiptDetailError={ctrl.receiptQuery.error}
-        onSelectReceipt={ctrl.setSelectedReceiptId}
-      />
+      {(ctrl.receiptsQuery.isLoading || ctrl.receiptsQuery.isError || (ctrl.receiptsQuery.data ?? []).length > 0) ? (
+        <ReceiptsSection
+          receipts={ctrl.receiptsQuery.data ?? []}
+          selectedReceiptId={ctrl.selectedReceiptId}
+          receiptDetail={ctrl.receiptQuery.data}
+          isReceiptsLoading={ctrl.receiptsQuery.isLoading}
+          isReceiptsError={ctrl.receiptsQuery.isError}
+          receiptsError={ctrl.receiptsQuery.error}
+          isReceiptDetailLoading={ctrl.receiptQuery.isLoading}
+          isReceiptDetailError={ctrl.receiptQuery.isError}
+          receiptDetailError={ctrl.receiptQuery.error}
+          onSelectReceipt={ctrl.setSelectedReceiptId}
+        />
+      ) : null}
     </>
   );
 }

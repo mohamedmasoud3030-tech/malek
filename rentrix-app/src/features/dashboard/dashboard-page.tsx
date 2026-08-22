@@ -13,7 +13,7 @@ import { getDashboardSnapshot } from './dashboard-snapshot';
 import { DashboardVisualScope } from './dashboard-visual-scope';
 import { HeroBanner } from './components/hero-banner';
 import { KpiGrid } from './components/kpi-grid';
-import { QuickActions, filterQuickActionsByPermission } from './components/quick-actions';
+
 import { ExpiringContractsSection } from './components/expiring-contracts-section';
 import { OverdueSection } from './components/overdue-section';
 import { ArrearsBreakdown } from './components/arrears-breakdown';
@@ -29,7 +29,7 @@ import { buildExpiringContracts, buildOverdueTenantRows, toDateInputValue } from
  * work requiring action first, current office position second, analysis last.
  */
 export function DashboardPage() {
-  const { authorization, canAccess } = useAuth();
+  const { authorization } = useAuth();
   const canManageSetup = authorization?.role === 'ADMIN' || authorization?.role === 'MANAGER';
   const now = useMemo(() => new Date(), []);
   const settings = useCompanyFormatters();
@@ -92,7 +92,6 @@ export function DashboardPage() {
   // into a reassuring fake zero on the user's action list.
   const integrityWarningsCount = integrityWarningsQuery.isError ? undefined : (integrityWarningsQuery.data ?? 0);
 
-  const hasQuickActions = filterQuickActionsByPermission(canAccess).length > 0;
   const showAnalytics = (snapshot?.arrears.totalOverdue ?? 0) > 0;
   const hasDashboardError = isError || isRefetchError;
   const snapshotUnavailable = hasDashboardError && !snapshot;
@@ -168,13 +167,6 @@ export function DashboardPage() {
                 />
               </div>
             </section>
-
-            {hasQuickActions ? (
-              <section className="dashboard-section" aria-label="ابدأ إجراء" data-dashboard-section="actions">
-                <SectionHeader title="ابدأ إجراء" description="اختصارات للأعمال الجديدة؛ المتابعات القائمة تظل في أعلى الصفحة." />
-                <QuickActions />
-              </section>
-            ) : null}
 
             <section className="dashboard-section" aria-label="وضع المكتب" data-dashboard-section="office-state">
               <SectionHeader

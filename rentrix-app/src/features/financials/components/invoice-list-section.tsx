@@ -1,6 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, HandCoins, Printer, ReceiptText } from 'lucide-react';
+import { Download, HandCoins, Printer } from 'lucide-react';
 import { useState } from 'react';
 import { DataTableColumnsMenu } from '@/components/ui/data-table';
 import { EntityTable } from '@/components/ui/entity-table';
@@ -110,21 +109,7 @@ export function InvoiceListSection({
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultInvoiceColumns]);
 
   return (
-    <Card className="overflow-hidden" data-component-card>
-      <CardHeader className="border-b border-border/60 bg-muted/20 pb-4" data-finance-header>
-        <div className="flex items-center gap-3">
-          <span className="grid size-11 place-items-center rounded-2xl bg-primary/10 text-primary">
-            <ReceiptText className="size-5" aria-hidden="true" />
-          </span>
-          <div>
-            <CardTitle className="text-sm font-bold">الفواتير</CardTitle>
-            <p className="mt-1 text-xs font-medium text-muted-foreground">
-              عرض واضح للمستحق والمدفوع والمتبقي — مع الحفاظ على الفترة والعقار والمستأجر.
-            </p>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-5 p-3 sm:p-5">
+    <div className="space-y-3" data-component-card>
         <FinanceSection ariaLabel="ملخص الفواتير">
           <InvoiceSummaryCards
             summary={summary}
@@ -134,7 +119,7 @@ export function InvoiceListSection({
         </FinanceSection>
 
         <FinanceSection ariaLabel="فلاتر الفواتير">
-          <FinanceFilterBar ariaLabel="فلاتر الفواتير" className="rounded-xl border-border/85 bg-background shadow-[0_1px_2px_hsl(var(--foreground)/0.025)]">
+          <FinanceFilterBar ariaLabel="فلاتر الفواتير" className="rounded-xl border border-border/70 bg-card p-2 shadow-card">
             <InvoiceFilters
               status={status}
               invoiceSearch={invoiceSearch}
@@ -259,18 +244,19 @@ export function InvoiceListSection({
                     if (!showCollect && !onPrintInvoice && !onExportInvoice) return null;
                     return (
                       <div
-                        className="flex gap-2"
+                        className="flex items-center justify-end gap-1"
                         onClick={(e) => e.stopPropagation()}
                         onKeyDown={(e) => e.stopPropagation()}
                       >
                         {showCollect ? (
                           <Button
-                            className="h-11 min-w-11 bg-primary text-primary-foreground hover:bg-primary/90"
+                            size="sm"
+                            className="h-11 min-w-11 px-2.5"
                             aria-label={`تحصيل ${invoice.reference ?? 'فاتورة مسجلة'}`}
                             onClick={() => onCollectInvoice(invoice.id)}
                             title="تسجيل دفعة على هذه الفاتورة مباشرة"
                           >
-                            <HandCoins className="me-1 size-4" />
+                            <HandCoins className="size-3.5" />
                             تحصيل
                           </Button>
                         ) : null}
@@ -295,7 +281,6 @@ export function InvoiceListSection({
             />
           </div>
         </FinanceSection>
-      </CardContent>
-    </Card>
+    </div>
   );
 }

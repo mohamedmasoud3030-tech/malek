@@ -31,7 +31,7 @@ export function SearchInput({
         placeholder={placeholder}
         aria-label={ariaLabel}
         className={cn(
-          'min-h-11 h-11 w-full rounded-lg border border-input/90 bg-background ps-9 pe-3 text-base font-semibold text-foreground shadow-[inset_0_1px_0_hsl(var(--background))] sm:text-sm',
+          'min-h-11 h-11 w-full rounded-lg border border-input/80 bg-background ps-9 pe-3 text-base font-medium text-foreground sm:text-sm',
           'outline-none transition-[border-color,box-shadow,background-color] hover:border-foreground/15 focus:border-primary/35 focus:bg-background focus:ring-4 focus:ring-primary/8',
           'placeholder:font-normal placeholder:text-muted-foreground/70',
           value && 'pe-11',

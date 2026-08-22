@@ -1,4 +1,5 @@
 import { AlertTriangle, Clock, FileWarning, TrendingDown, WalletCards } from 'lucide-react';
+import { RegisterMetricStrip } from '@/components/layout/register-summary';
 import { toFinancialNumber } from '../financialMath';
 import type {
   AgedReceivablesBucket,
@@ -10,7 +11,6 @@ import type {
 import { ARABIC_LOCALE, OVER_90_BUCKET_KEY } from './arrears-workflow-helpers';
 import { formatMoney } from './financials-formatters';
 import { formatLatinNumber } from '@/lib/formatters';
-import { FinanceKpiGrid, FinanceKpiCard } from './finance-reporting-visual-foundations';
 
 function getAgingBucket(report: AgedReceivablesReport | undefined, key: AgingBucketKey): AgedReceivablesBucket | undefined {
   return report?.buckets?.[key];
@@ -27,7 +27,6 @@ export function ArrearsSummaryCards({
   overdueReport,
   agedReceivablesReport,
   arrearsSummaryReport,
-  onDrill,
 }: ArrearsSummaryCardsProps) {
   const totalOverdue = arrearsSummaryReport?.totalOverdue ?? overdueReport?.totalOverdue ?? 0;
   const overdueInvoiceCount = arrearsSummaryReport?.overdueInvoiceCount ?? overdueReport?.invoiceCount ?? 0;
@@ -37,52 +36,15 @@ export function ArrearsSummaryCards({
   const totalOutstanding = agedReceivablesReport?.totalOutstanding ?? 0;
 
   return (
-    <FinanceKpiGrid desktopColumns={5} aria-label="ملخص المتأخرات">
-      <FinanceKpiCard
-        label="إجمالي المتأخرات"
-        value={formatMoney(totalOverdue)}
-        sub="مبالغ متأخرة"
-        icon={AlertTriangle}
-        accent="primary"
-        trend="down"
-        trendValue="متأخر"
-        onDrill={onDrill ? () => onDrill({ status: 'overdue' }) : undefined}
-        drillAriaLabel={`إجمالي المتأخرات ${totalOverdue} — عرض الفواتير المتأخرة`}
-      />
-      <FinanceKpiCard
-        label="فواتير متأخرة"
-        value={overdueInvoiceCount}
-        sub="عدد الفواتير"
-        icon={FileWarning}
-        accent="primary"
-        onDrill={onDrill ? () => onDrill({ status: 'overdue' }) : undefined}
-      />
-      <FinanceKpiCard
-        label="متوسط أيام التأخير"
-        value={`${formatLatinNumber(averageDaysOverdue, ARABIC_LOCALE, { maximumFractionDigits: 1 })} يوم`}
-        sub="متوسط التأخير"
-        icon={Clock}
-        accent="primary"
-      />
-      <FinanceKpiCard
-        label="متأخرات 90+ يوم"
-        value={formatMoney(over90Amount)}
-        sub="أعمار ديون طويلة"
-        icon={TrendingDown}
-        accent="primary"
-        trend="down"
-        trendValue="90+"
-        onDrill={onDrill ? () => onDrill({ aging: '90+' }) : undefined}
-      />
-      <FinanceKpiCard
-        label="إجمالي المتبقي الموجب"
-        value={formatMoney(totalOutstanding)}
-        sub="قابل للتحصيل"
-        icon={WalletCards}
-        accent="primary"
-        trend="neutral"
-        trendValue="متبقي"
-      />
-    </FinanceKpiGrid>
+    <RegisterMetricStrip
+      aria-label="ملخص المتأخرات"
+      items={[
+        { id: 'overdue', label: 'المتأخرات', value: formatMoney(totalOverdue), icon: AlertTriangle, tone: totalOverdue > 0 ? 'danger' : 'default', hideWhenEmpty: true },
+        { id: 'count', label: 'فواتير متأخرة', value: overdueInvoiceCount, icon: FileWarning, hideWhenEmpty: true },
+        { id: 'avg', label: 'متوسط التأخير', value: `${formatLatinNumber(averageDaysOverdue, ARABIC_LOCALE, { maximumFractionDigits: 1 })} يوم`, icon: Clock, hideWhenEmpty: averageDaysOverdue === 0 },
+        { id: 'over90', label: '90+ يوم', value: formatMoney(over90Amount), icon: TrendingDown, tone: 'danger', hideWhenEmpty: true },
+        { id: 'outstanding', label: 'المتبقي', value: formatMoney(totalOutstanding), icon: WalletCards, hideWhenEmpty: true },
+      ]}
+    />
   );
 }

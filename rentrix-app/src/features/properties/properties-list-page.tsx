@@ -4,7 +4,6 @@ import {
   Download,
   Edit,
   Handshake,
-  MapPin,
   Plus,
   Trash2,
   TriangleAlert,
@@ -17,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { DataTableColumnsMenu } from "@/components/ui/data-table";
 import { EntityCell } from "@/components/ui/entity-cell";
-import { OperationalCommandPanel, OperationalMetricCard } from "@/components/ui/operational-summary";
+import { RegisterAttention, RegisterHeading, RegisterMetricStrip } from "@/components/layout/register-summary";
 import { Select } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { ActiveFilterBar } from "@/components/ui/active-filter-bar";
@@ -121,7 +120,6 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
         dir="rtl"
         visualVariant="malek-pro"
         title="العقارات"
-        description="متابعة جاهزية العقار والمالك واتفاقية التشغيل والوحدات من مساحة واحدة."
         count={controller.totalCount}
         primaryAction={
           <Button onClick={controller.openCreateModal}>
@@ -184,61 +182,22 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
         }
       >
         {!controller.propertiesQuery.isLoading && !controller.propertiesQuery.isError ? (
-          <section
-            data-property-summary
+          <RegisterMetricStrip
             aria-label="ملخص جاهزية العقارات"
-            className="grid gap-3 lg:grid-cols-[minmax(17rem,1.05fr)_minmax(0,2fr)]"
-          >
-            <OperationalCommandPanel
-              label="جاهزية التشغيل"
-              value={`${formatCount(readinessRate)}%`}
-              icon={CircleCheck}
-              progress={readinessRate}
-              footer={(
-                <>
-                  <span>{formatCount(readyCount)} جاهزة</span>
-                  <span>{formatCount(attentionCount)} تحتاج متابعة</span>
-                </>
-              )}
-            />
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              <OperationalMetricCard
-                label="إجمالي العقارات"
-                value={formatCount(controller.totalCount)}
-                hint="كل النتائج المطابقة"
-                icon={Building2}
-              />
-              <OperationalMetricCard
-                label="مرتبطة بمالك"
-                value={formatCount(linkedOwnerCount)}
-                hint="ضمن الصفحة الحالية"
-                icon={Handshake}
-              />
-            </div>
-          </section>
+            items={[
+              { id: 'total', label: 'العقارات', value: formatCount(controller.totalCount), icon: Building2 },
+              { id: 'ready', label: 'جاهزة', value: `${formatCount(readinessRate)}%`, hint: `${formatCount(readyCount)} سجل`, icon: CircleCheck, tone: 'success' },
+              { id: 'linked', label: 'مرتبطة بمالك', value: formatCount(linkedOwnerCount), icon: Handshake },
+              { id: 'attention', label: 'تحتاج متابعة', value: formatCount(attentionCount), icon: TriangleAlert, tone: 'warning', hideWhenEmpty: true },
+            ]}
+          />
         ) : null}
 
         <section data-property-register className="min-w-0 space-y-2.5">
-          <header className="flex min-h-11 items-center justify-between gap-3 px-1">
-            <div className="flex min-w-0 items-center gap-2.5">
-              <span className="grid size-8 shrink-0 place-items-center rounded-lg border border-primary/10 bg-primary/[0.06] text-primary">
-                <Building2 className="size-4" aria-hidden="true" />
-              </span>
-              <div className="min-w-0">
-                <h2 className="truncate text-sm font-black">سجل العقارات</h2>
-                <p className="truncate text-[11px] font-medium text-muted-foreground">
-                  {formatCount(controller.properties.length)} عقار في الصفحة الحالية
-                </p>
-              </div>
-            </div>
-            {attentionCount > 0 ? (
-              <span className="inline-flex w-fit shrink-0 items-center gap-1.5 rounded-lg border border-warning/20 bg-warning-bg px-2.5 py-1.5 text-[11px] font-black text-warning">
-                <TriangleAlert className="size-3.5" aria-hidden="true" />
-                {formatCount(attentionCount)} تحتاج متابعة
-              </span>
-            ) : null}
-          </header>
+          <RegisterHeading
+            title="سجل العقارات"
+            extra={<RegisterAttention count={attentionCount} label="تحتاج متابعة" />}
+          />
 
           <EntityTable
             aria-label="جدول العقارات"

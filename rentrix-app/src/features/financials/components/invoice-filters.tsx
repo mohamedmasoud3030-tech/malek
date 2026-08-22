@@ -114,15 +114,15 @@ export function InvoiceFilters({
   );
 
   return (
-    <div className="space-y-3" data-finance-filter-bar>
+    <div className="space-y-2.5" data-finance-filter-bar>
       {/* Primary status filters + search + generate — always visible */}
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-wrap gap-2" role="tablist" aria-label="حالات الفواتير">
+      <div className="flex flex-col gap-2.5">
+        <div className="flex gap-1.5 overflow-x-auto no-scrollbar" role="tablist" aria-label="حالات الفواتير">
           {invoiceStatusFilters.map((filter) => (
             <Button
               key={filter.value}
               variant={status === filter.value ? 'primary' : 'secondary'}
-              className="min-h-11 min-w-11 rounded-xl text-xs font-bold"
+              className="min-h-11 shrink-0 rounded-lg whitespace-nowrap px-3 text-xs font-semibold"
               role="tab"
               aria-selected={status === filter.value}
               onClick={() => onStatusChange(filter.value)}
@@ -183,8 +183,8 @@ export function InvoiceFilters({
       </div>
 
       {/* Desktop: inline complex filters */}
-      <div className="hidden rounded-xl border border-border/60 bg-muted/20 p-3 md:block">
-        <p className="mb-2 text-xs font-bold text-muted-foreground">فلاتر متقدمة — محفوظة أثناء التنقل والتفصيل</p>
+      <div className="hidden rounded-xl border border-border/55 bg-muted/15 p-2.5 md:block">
+        <p className="sr-only">فلاتر متقدمة — محفوظة أثناء التنقل والتفصيل</p>
         {complexFiltersContent}
       </div>
 

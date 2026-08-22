@@ -6,6 +6,14 @@ import { createRoot } from 'react-dom/client';
 import type { AuthorizationContext } from '@/features/auth/permissions';
 
 vi.mock('@/components/layout/permission-request-dialog', () => ({ PermissionRequestDialog: () => null }));
+vi.mock('@/hooks/use-auth', () => ({
+  useAuth: () => ({
+    authorization: { userId: 'admin-1', email: 'admin@malek.test', role: 'ADMIN' },
+  }),
+}));
+vi.mock('./notifications-menu', () => ({
+  NotificationsMenu: () => <button type="button" aria-label="الإشعارات" className="min-h-11 min-w-11">تنبيهات</button>,
+}));
 
 vi.mock('@tanstack/react-router', () => ({
   Link: ({ children, to, className, ...props }: { children: React.ReactNode; to: string; className?: string } & Record<string, unknown>) => (
@@ -60,11 +68,13 @@ describe('WP-06 / GAP-020 Browser & UX Acceptance Hardening', () => {
       const html = renderToStaticMarkup(<MobileFloatingControl onMenu={() => undefined} />);
       const host = document.createElement('div');
       host.innerHTML = html;
-      const buttons = host.querySelectorAll('button');
-      expect(buttons.length).toBe(2);
-      // Each button must have accessible label and min touch target classes
-      for (const btn of Array.from(buttons)) {
-        expect(btn.getAttribute('aria-label')).toBeTruthy();
+      expect(host.querySelector('[data-mobile-dock-menu]')).not.toBeNull();
+      expect(host.querySelector('[data-mobile-dock-quick-add]')).not.toBeNull();
+      expect(host.querySelector('[data-mobile-dock-notifications]')).not.toBeNull();
+      expect(host.querySelector('[data-mobile-dock-ai]')).not.toBeNull();
+      const labeled = host.querySelectorAll('button[aria-label]');
+      expect(labeled.length).toBeGreaterThanOrEqual(3);
+      for (const btn of Array.from(labeled)) {
         expect(btn.className).toContain('min-h-11');
         expect(btn.className).toContain('min-w-11');
       }

@@ -1,4 +1,4 @@
-import { Eye, LinkIcon, Pencil, Users } from 'lucide-react';
+import { Eye, LinkIcon, Pencil } from 'lucide-react';
 import { useState } from 'react';
 import { ActionMenu } from '@/components/ui/action-menu';
 import { Button } from '@/components/ui/button';
@@ -121,12 +121,7 @@ export function OwnerWorkspaceTable({
       priority: 'identity',
       render: (row) => (
         <EntityCell
-          icon={Users}
-          title={(
-            <Button variant="link" className="min-h-11 px-0 text-start font-bold" onClick={() => openPreview(row.owner.id)}>
-              {getOwnerDisplayLabel(row.owner)}
-            </Button>
-          )}
+          title={<span className="font-bold">{getOwnerDisplayLabel(row.owner)}</span>}
           subtitle={row.owner.display_name ? row.owner.full_name : null}
         />
       ),

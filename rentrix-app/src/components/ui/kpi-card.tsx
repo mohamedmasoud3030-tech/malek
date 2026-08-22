@@ -36,7 +36,7 @@ export function KpiCard({
       data-kpi-card
       data-accent={accent}
       className={cn(
-        'min-w-0 rounded-xl border border-border/70 bg-card p-3.5 sm:p-4 shadow-card',
+        'min-w-0 rounded-xl border border-border/65 bg-card p-3 sm:p-3.5 shadow-card',
         'transition-shadow duration-200 hover:shadow-card-hover',
         className,
       )}

@@ -44,10 +44,13 @@ export function DataTableColumnsMenu({
 
   return (
     <details className={cn('group relative', className)} data-table-columns-menu>
-      <summary className="flex min-h-10 cursor-pointer list-none items-center gap-2 rounded-lg border border-border/85 bg-background px-3 text-xs font-bold text-muted-foreground outline-none transition hover:bg-muted/55 hover:text-foreground focus-visible:ring-4 focus-visible:ring-primary/15 [&::-webkit-details-marker]:hidden">
+      <summary
+        aria-label={`${label} ${visibleKeys.length} من ${columns.length}`}
+        className="flex min-h-10 cursor-pointer list-none items-center gap-2 rounded-lg border border-border/85 bg-background px-2.5 text-xs font-bold text-muted-foreground outline-none transition hover:bg-muted/55 hover:text-foreground focus-visible:ring-4 focus-visible:ring-primary/15 sm:px-3 [&::-webkit-details-marker]:hidden"
+      >
         <Columns3 className="size-4" aria-hidden="true" />
-        <span>{label}</span>
-        <span className="rounded-md bg-muted px-1.5 py-0.5 text-[9px] font-black tabular-nums text-foreground/75">
+        <span className="hidden sm:inline">{label}</span>
+        <span className="hidden rounded-md bg-muted px-1.5 py-0.5 text-[9px] font-black tabular-nums text-foreground/75 md:inline">
           {visibleKeys.length}/{columns.length}
         </span>
       </summary>

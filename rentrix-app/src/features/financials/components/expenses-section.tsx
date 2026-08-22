@@ -11,8 +11,7 @@ import { EntityForm } from '@/components/ui/entity-form';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { FileAttachmentField } from '@/components/ui/file-attachment-field';
 import { Input } from '@/components/ui/input';
-import { KpiCard } from '@/components/ui/kpi-card';
-import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
+import { RegisterMetricStrip } from '@/components/layout/register-summary';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
@@ -183,16 +182,15 @@ export function ExpensesSection({
       </CardHeader>
 
       <CardContent className="space-y-5 p-3 sm:p-5">
-        <p className="rounded-2xl border border-border/60 bg-muted/25 p-3 text-xs font-medium leading-5 text-muted-foreground">
-          تكلفة طلبات الصيانة في قسم الصيانة تقديرية ولا تتحول تلقائياً إلى مصروف.
-        </p>
-
-        <ResponsiveCardGrid gap="sm">
-          <KpiCard label="عدد المصروفات" value={summary.visibleCount} icon={ReceiptText} accent="primary" compact />
-          <KpiCard label="الإجمالي" value={formatMoney(summary.visibleAmount)} icon={WalletCards} accent="amber" compact />
-          <KpiCard label="العقارات" value={summary.byPropertyCount} icon={Building2} accent="sky" compact />
-          <KpiCard label="التصنيفات" value={summary.byCategoryCount} icon={Tags} accent="violet" compact />
-        </ResponsiveCardGrid>
+        <RegisterMetricStrip
+          aria-label="ملخص المصروفات"
+          items={[
+            { id: 'count', label: 'المصروفات', value: summary.visibleCount, icon: ReceiptText, hideWhenEmpty: true },
+            { id: 'total', label: 'الإجمالي', value: formatMoney(summary.visibleAmount), icon: WalletCards },
+            { id: 'properties', label: 'العقارات', value: summary.byPropertyCount, icon: Building2, hideWhenEmpty: true },
+            { id: 'categories', label: 'التصنيفات', value: summary.byCategoryCount, icon: Tags, hideWhenEmpty: true },
+          ]}
+        />
 
         <FilterBar
           filters={(
