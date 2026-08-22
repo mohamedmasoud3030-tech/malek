@@ -85,6 +85,20 @@ jobs:
       - name: Test typecheck
         run: pnpm --filter ./rentrix-app run typecheck:test
       - name: Full application tests
-        run: pnpm --filter ./rentrix-app test
+        id: full-tests
+        continue-on-error: true
+        run: pnpm --filter ./rentrix-app exec vitest run --config vite.config.ts --reporter=json --outputFile=full-test-results.json
+      - name: Upload full-test diagnostic artifact
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: pr1557-full-test-results-${{ github.run_id }}
+          path: rentrix-app/full-test-results.json
+          if-no-files-found: warn
+          retention-days: 3
       - name: Financial safety tests
         run: pnpm --filter ./rentrix-app run test:financials
+      - name: Preserve full-suite failure status
+        if: steps.full-tests.outcome == 'failure'
+        run: exit 1
