@@ -101,8 +101,8 @@ async function main() {
 
     // Negative control: Phase 5 must not become a blanket SECURITY DEFINER
     // lockdown. Bank preview is a governed, browser-facing RPC and should stay
-    // executable by authenticated; its Phase 4 permission gate decides whether
-    // the caller is actually authorized.
+    // executable by authenticated; its Phase 4 canonical role gate decides
+    // whether the caller is actually authorized.
     const preview = await inspectFunction(db, 'public.preview_bank_statement_batch_atomic(jsonb)');
     record('SD-05A', 'governed bank preview RPC exists', preview !== null, preview ? '' : 'function missing');
     if (preview) {
@@ -110,9 +110,9 @@ async function main() {
       record('SD-05C', 'governed bank preview remains callable by authenticated', preview.authenticated_execute === true, JSON.stringify(preview));
       record(
         'SD-05D',
-        'governed bank preview still contains canonical permission resolver',
-        preview.definition.includes("current_user_has_effective_app_permission('financial.bank_reconciliation.view')"),
-        'canonical permission marker missing',
+        'governed bank preview still contains canonical ADMIN/MANAGER resolver path',
+        preview.definition.includes('is_admin_or_manager()'),
+        'canonical role-helper marker missing',
       );
     }
 
