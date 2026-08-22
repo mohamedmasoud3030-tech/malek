@@ -101,9 +101,9 @@ describe('contract creation workflow order and agreement resolution contract', (
     expect(alertSource).toContain('فتح اتفاقيات العقار');
   });
 
-  it('6. Exposes an invoice payment schedule review preview section before confirming contract', () => {
-    expect(fieldsSource).toContain('title="مراجعة جدول الفواتير والدفعات المتوقعة"');
-    expect(fieldsSource).toContain('{estimatedInstallments} فواتير');
-    expect(fieldsSource).toContain('يتم إنشاء الفواتير وجدولة دفعاتها آلياً على الخادم وفقاً للعقد المعتمد');
+  it('6. Exposes the current payment-cycle review preview before confirming contract', () => {
+    expect(fieldsSource).toContain('title="مراجعة دورة السداد المتوقعة"');
+    expect(fieldsSource).toContain('{estimatedInstallments} دورة');
+    expect(fieldsSource).toContain('هذه معاينة للدورات فقط. إصدار الفاتورة وتاريخ استحقاقها الفعليان يحددهما الخادم');
   });
 });

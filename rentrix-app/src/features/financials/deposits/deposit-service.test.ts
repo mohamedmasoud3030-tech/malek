@@ -53,7 +53,7 @@ describe('deposits real implementation - no false success', () => {
     expect(workspace).toContain('useDepositWorkspaceController');
     // Controller and queries should contain real data fetching
     expect(queries).toContain('listTenantDeposits');
-    expect(controller).toContain('useQuery') || expect(queries).toContain('useQuery');
+    expect(controller.includes('useQuery') || queries.includes('useQuery')).toBe(true);
     expect(controller).toContain('useMutation');
   });
 });

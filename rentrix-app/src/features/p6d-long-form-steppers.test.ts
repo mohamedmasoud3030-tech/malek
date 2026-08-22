@@ -12,9 +12,9 @@ describe('P6d — long form mobile steppers (closeout)', () => {
     expect(source).toContain("{ id: 'period', label: 'المدة والمالية' }");
     expect(source).toContain("{ id: 'details', label: 'التفاصيل والاتفاقية' }");
     expect(source).toContain("{ id: 'review', label: 'المراجعة والتأكيد' }");
-    // Steps keep the real field grouping.
+    // Steps keep the real field grouping, including the authoritative billing policy.
     expect(source).toContain("['property_id', 'unit_id', 'tenant_id', 'status']");
-    expect(source).toContain("['start_date', 'end_date', 'rent_amount', 'payment_cycle', 'payment_terms_id']");
+    expect(source).toContain("['start_date', 'end_date', 'rent_amount', 'payment_cycle', 'billing_day', 'grace_days', 'payment_terms_id']");
   });
 
   it('preserves state on step changes: sections are hidden on mobile, never unmounted', () => {

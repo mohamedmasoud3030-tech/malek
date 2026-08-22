@@ -41,6 +41,7 @@ vi.mock('@/lib/env', () => ({
 type IntegritySnapshotInput = Parameters<typeof buildDataIntegritySnapshot>[0];
 
 const makeSession = (role: string) => ({
+  access_token: `test-token-${role}`,
   user: {
     id: `user-${role}`,
     email: `${role.toLowerCase()}@example.com`,

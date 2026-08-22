@@ -26,7 +26,7 @@ describe('interface register mobile hierarchy', () => {
     { file: 'features/tenants/TenantsPage.tsx', datum: 'arrears' },
     { file: 'features/financials/components/invoice-list-section.tsx', datum: 'remaining' },
     { file: 'features/financials/receipts/receipts-page.tsx', datum: 'amount' },
-    { file: 'features/financials/deposits/deposits-workspace.tsx', datum: 'remaining' },
+    { file: 'features/financials/deposits/deposit-table-columns.tsx', datum: 'remaining' },
     { file: 'features/service-providers/service-providers-page.tsx', datum: 'status' },
     { file: 'features/owners/components/owner-workspace-table.tsx', datum: 'contracts' },
     { file: 'features/contracts/components/ContractTable.tsx', datum: 'tenant' },
