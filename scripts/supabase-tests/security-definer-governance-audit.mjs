@@ -186,6 +186,12 @@ async function main() {
     ['SD-29', 'authenticated', 'public.recalculate_unit_statuses()', false],
     ['SD-30', 'anon', 'public.recalculate_unit_statuses()', false],
     ['SD-31', 'service_role', 'public.recalculate_unit_statuses()', true],
+    ['SD-32', 'authenticated', 'public.post_journal_event(jsonb)', false],
+    ['SD-33', 'authenticated', 'public.gl_create_journal_batch(jsonb)', false],
+    ['SD-34', 'authenticated', 'public.execute_automation_rule(text)', false],
+    ['SD-35', 'authenticated', 'public.set_owner_agreements_updated_at()', false],
+    ['SD-36', 'service_role', 'public.post_journal_event(jsonb)', true],
+    ['SD-37', 'authenticated', 'public.approve_owner_settlement_atomic(jsonb)', true],
   ];
   for (const [id, role, signature, expected] of grantCases) {
     const actual = await hasExecute(db, role, signature);

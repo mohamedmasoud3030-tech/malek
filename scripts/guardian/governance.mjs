@@ -158,7 +158,10 @@ async function main() {
         add('DG-GOV-003', 'HIGH', `ADMIN/MANAGER sensitive function missing: ${expectedSignature}`);
         continue;
       }
-      if (!/\bis_admin_or_manager\s*\(\s*\)/i.test(row.definition)) {
+      // Service-only stubs have no authenticated call path. Grant lockdown is
+      // the authorization boundary (see SD-10). An authenticated-callable
+      // equivalent must still use is_admin_or_manager().
+      if ((row.anon_execute || row.authenticated_execute) && !/\bis_admin_or_manager\s*\(\s*\)/i.test(row.definition)) {
         add('DG-GOV-003', 'HIGH', `Sensitive function does not use canonical ADMIN/MANAGER resolver: ${expectedSignature}`, row.definition);
       }
       if (hasRawUsersRoleAuthorization(row.definition)) {
@@ -187,7 +190,9 @@ async function main() {
     // DG-GOV-007 — no effective SECURITY DEFINER authorization may fall back
     // to public.users.role.
     for (const row of rows) {
-      if (hasRawUsersRoleAuthorization(row.definition)) {
+      // Target-profile reads of users.role are not operational authority when
+      // the actor is already gated by a canonical resolver.
+      if (hasRawUsersRoleAuthorization(row.definition) && !hasCanonicalAuthorityResolver(row.definition)) {
         add(
           'DG-GOV-007',
           'HIGH',

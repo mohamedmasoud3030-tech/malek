@@ -118,6 +118,18 @@ async function main() {
     );
   }
 
+  const triggerHelpers = [
+    'public.set_owner_agreements_updated_at()',
+    'public.guard_invoice_credit_immutability()',
+    'public.audit_service_provider_change()',
+  ];
+  for (const [index, signature] of triggerHelpers.entries()) {
+    const row = await inspectFunction(db, signature);
+    record(`TH-${index + 1}A`, `${signature} remains attached to a trigger`, Number(row?.trigger_count) >= 1, `trigger_count=${row?.trigger_count}`);
+    record(`TH-${index + 1}B`, `authenticated cannot EXECUTE ${signature}`, row?.authenticated_execute === false, JSON.stringify(row));
+    record(`TH-${index + 1}C`, `service_role can EXECUTE ${signature}`, row?.service_execute === true, JSON.stringify(row));
+  }
+
   const passed = results.filter((r) => r.pass).length;
   const failed = results.length - passed;
   console.log(`\nPhase 5 audit summary: ${passed} passed / ${failed} failed.`);
