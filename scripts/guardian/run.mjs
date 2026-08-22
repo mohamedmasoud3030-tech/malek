@@ -28,7 +28,7 @@ const layers = [
   },
   {
     id: 'sensitive-rpc-auth',
-    title: 'Sensitive RPC authorization matrix',
+    title: 'Sensitive RPC role/company authorization matrix',
     cmd: ['node', ['scripts/supabase-tests/sensitive-rpc-authorization-matrix.mjs']],
   },
   {
@@ -43,8 +43,13 @@ const layers = [
   },
   {
     id: 'strict-governance',
-    title: 'Guardian strict permission-resolver scan (DG-GOV-008)',
+    title: 'Guardian strict authority scan (DG-GOV-008)',
     cmd: ['node', ['scripts/guardian/governance.mjs']],
+  },
+  {
+    id: 'governance-migration-safety',
+    title: 'Clean + incremental governance migration safety',
+    cmd: ['node', ['scripts/supabase-tests/governance-migration-safety.mjs']],
   },
   {
     id: 'migration-hygiene',
@@ -91,7 +96,7 @@ for (const layer of layers) {
 
 const failed = results.filter((r) => !r.ok);
 const report = {
-  version: 2,
+  version: 3,
   generatedAt: new Date().toISOString(),
   environment: {
     hostedSupabaseTouched: false,
