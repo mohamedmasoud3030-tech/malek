@@ -33,7 +33,7 @@ export async function loadGrantedPermissions(userId: string): Promise<readonly A
 }
 
 export async function getEffectiveAuthorizationContextFromSession(
-  session: Pick<Session, 'user'> | null | undefined,
+  session: Pick<Session, 'user' | 'access_token'> | null | undefined,
 ): Promise<AuthorizationContext | null> {
   const base = getAuthorizationContextFromSession(session);
   if (!base) return null;
