@@ -30,6 +30,13 @@ export function summarizeReconciliationReadiness(rows: readonly ReconciliationRo
   };
 }
 
+export function isAccountingStatementOutputReady(
+  readiness: ReconciliationReadiness,
+  queryState: Readonly<{ isLoading: boolean; isError: boolean }>,
+): boolean {
+  return !queryState.isLoading && !queryState.isError && readiness.state === 'PASS';
+}
+
 export function useAuthoritativeGlCashFlow(
   from: string | undefined,
   to: string | undefined,
