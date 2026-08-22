@@ -1,22 +1,27 @@
 -- Security hardening: make public-schema function EXECUTE fail closed by default.
 --
--- SECURITY DEFINER changes current_user to the function owner, so caller authorization
+-- SECURITY DEFININER changes current_user to the function owner, so caller authorization
 -- must never depend on current_user being a browser/service identity. The effective
 -- boundary for internal elevated functions is the function ACL plus the governed
 -- browser-facing wrapper RPC that calls them.
 --
--- Supabase migrations are owned by postgres in the canonical deployment. Revoke the
--- inherited/default EXECUTE path for browser roles so every future browser-facing RPC
--- must opt in with an explicit GRANT EXECUTE.
+-- PostgreSQL's built-in default EXECUTE ON FUNCTIONS for PUBLIC is a GLOBAL default
+-- privilege. A schema-scoped REVOKE cannot remove that global default; both layers
+-- therefore have to be revoked. The schema-scoped revoke also removes the explicit
+-- anon/authenticated defaults inherited from the canonical dump/bootstrap.
 
 begin;
 
+-- Objects created by postgres (canonical Supabase migration owner).
+alter default privileges for role postgres
+  revoke execute on functions from public, anon, authenticated;
 alter default privileges for role postgres in schema public
   revoke execute on functions from public, anon, authenticated;
 
--- Also apply to the role executing this migration. In normal Supabase replay this is
--- postgres, but keeping both statements makes disposable/local replay fail closed even
--- when the migration runner role differs.
+-- Also apply to the role actually executing this migration. This keeps disposable/local
+-- replay fail closed when the migration runner role differs from postgres.
+alter default privileges
+  revoke execute on functions from public, anon, authenticated;
 alter default privileges in schema public
   revoke execute on functions from public, anon, authenticated;
 
@@ -35,7 +40,8 @@ grant execute on function public.reverse_journal_batch(uuid) to service_role;
 
 -- Behavioral proof of the new default. A function created after the ALTER DEFAULT
 -- PRIVILEGES statements must not become callable by browser roles merely because it
--- exists in public.
+-- exists in public. This catches both explicit role defaults and inheritance through
+-- PostgreSQL's global PUBLIC default.
 create function public.__default_function_acl_probe()
 returns boolean
 language sql
