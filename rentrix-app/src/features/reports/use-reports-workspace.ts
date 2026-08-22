@@ -6,7 +6,6 @@ import {
   useAgedReceivablesReport,
   useArrearsSummaryReport,
   useBalanceSheetReport,
-  useCashFlowStatementReport,
   useCollectionSummaryReport,
   useDailyCollectionReport,
   useExpenseBreakdownReport,
@@ -51,10 +50,7 @@ function isLoadingAny(...flags: ReadonlyArray<boolean | undefined>): boolean {
 
 /**
  * R6 — Reports Read Models: which report views need which data sources.
- *
- * The workspace previously fetched EVERY report dataset on mount
- * («Load everything → maybe user opens tab»). Now the active location decides
- * which queries are enabled («Open tab → fetch report»); switching a tab
+ * The active location decides which queries are enabled; switching a tab
  * enables its queries on demand and react-query caches previously opened
  * reports for the same filters.
  */
@@ -79,7 +75,6 @@ export function useReportsWorkspace(filters: FilterState, location: ReportLocati
   const isAnalytics = location.section === 'analytics';
   const isStatements = location.section === 'statements';
 
-  // ── Per-view activation map (Open tab → fetch report) ─────────────────────
   const needsOverview = isAnalytics && view === 'overview';
   const needsCollections = isAnalytics && view === 'collections';
   const needsOverdue = isAnalytics && view === 'overdue';
@@ -88,13 +83,10 @@ export function useReportsWorkspace(filters: FilterState, location: ReportLocati
   const needsMaintenance = isAnalytics && view === 'maintenance_analytics';
   const needsAccountingReports = isAccounting && view === 'accounting_reports';
   const needsDeferredRevenue = isAccounting && view === 'deferred_revenue';
-  // Statements: their own top-level section (?section=statements) AND the
-  // statement pickers inside the accounting reports view.
   const needsStatements = isStatements || needsAccountingReports;
 
-  // The hero summary and its collection-efficiency signal are always visible.
-  // The rate comes from the same server authority as Dashboard Truth; Reports
-  // must never derive period cash / period invoice issue in the browser.
+  // The hero summary is an operational read model only. The collection rate is
+  // server-authoritative; neither is a substitute for GL income or cash flow.
   const financialSummaryQuery = useFinancialPeriodSummaryReport(financialFilters);
   const collectionRateQuery = useAuthoritativeReportsCollectionRate({
     from: filters.from,
@@ -103,16 +95,14 @@ export function useReportsWorkspace(filters: FilterState, location: ReportLocati
 
   const collectionSummaryQuery = useCollectionSummaryReport(financialFilters, { enabled: needsOverview || needsCollections });
   const financialCashflowQuery = useFinancialCashflowReport(financialFilters, { enabled: needsOverview });
-  const cashFlowStatementQuery = useCashFlowStatementReport(financialFilters, { enabled: needsStatements });
+  // Authoritative GL cash flow is intentionally owned by StatementsSection via
+  // `useAuthoritativeGlCashFlow`; do not fetch legacy `rpt_cash_flow` here.
   const vatReturnQuery = useVatReturnReport(financialFilters, { enabled: needsStatements });
   const dailyCollectionQuery = useDailyCollectionReport(financialFilters, { enabled: needsCollections || needsStatements });
   const expenseBreakdownQuery = useExpenseBreakdownReport(financialFilters, { enabled: needsExpenses || needsStatements });
   const overdueInvoicesQuery = useOverdueInvoicesReport(arrearsFilters, { enabled: needsOverdue });
   const agedReceivablesQuery = useAgedReceivablesReport(arrearsFilters, { enabled: needsOverdue || needsStatements });
   const arrearsSummaryQuery = useArrearsSummaryReport(arrearsFilters, { enabled: needsOverdue });
-  // Full paged read — used by rent roll (collections view), occupancy/expiry
-  // and the deferred-revenue audit, plus the contract filter dropdown when the
-  // statements view is open.
   const contractsEnabled = needsCollections || needsOccupancy || needsDeferredRevenue || needsStatements;
   const contractsQuery = useAllContracts('all', { enabled: contractsEnabled });
   const ownersQuery = useOwners({ enabled: needsStatements });
@@ -176,7 +166,6 @@ export function useReportsWorkspace(filters: FilterState, location: ReportLocati
     collectionRateQuery.error,
     collectionSummaryQuery.error,
     financialCashflowQuery.error,
-    cashFlowStatementQuery.error,
     vatReturnQuery.error,
     dailyCollectionQuery.error,
     expenseBreakdownQuery.error,
@@ -285,7 +274,6 @@ export function useReportsWorkspace(filters: FilterState, location: ReportLocati
         financialSummary: financialSummaryQuery.data,
         expenseBreakdown: expenseBreakdownQuery.data,
         dailyRows: dailyCollectionQuery.data?.rows ?? [],
-        cashFlowStatement: cashFlowStatementQuery.data,
         vatReturn: vatReturnQuery.data,
         tenantStatement: tenantStatementQuery.data,
         ownerStatement: ownerStatementQuery.data,
@@ -301,7 +289,6 @@ export function useReportsWorkspace(filters: FilterState, location: ReportLocati
           financialSummaryQuery.isLoading,
           expenseBreakdownQuery.isLoading,
           dailyCollectionQuery.isLoading,
-          cashFlowStatementQuery.isLoading,
           vatReturnQuery.isLoading,
         ),
       },
