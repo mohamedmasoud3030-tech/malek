@@ -55,6 +55,7 @@ export type FinancialPeriodSummaryReport = {
   paid: number;
   outstanding: number;
   expenses: number;
+  /** Operational collections minus recorded expenses. Not accounting profit or a complete cash-flow balance. */
   netCash: number;
   invoicesCount: number;
   paymentsCount: number;
@@ -63,12 +64,14 @@ export type FinancialPeriodSummaryReport = {
 
 export type FinancialCashflowReportRow = {
   month: string;
+  /** @deprecated Legacy compatibility name. This value is gross collections from payments, not accounting revenue. */
   revenue: number;
   expenses: number;
 };
 
 export type FinancialCashflowReport = {
   rows: FinancialCashflowReportRow[];
+  /** @deprecated Legacy compatibility name. This is total gross collections, not GL revenue. */
   totalRevenue: number;
   totalExpenses: number;
 };
