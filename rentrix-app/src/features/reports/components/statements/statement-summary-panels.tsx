@@ -1,9 +1,10 @@
-import { CalendarRange, Landmark, ReceiptText, Scale, WalletCards } from 'lucide-react';
+import { AlertTriangle, CalendarRange, Landmark, ReceiptText, Scale, WalletCards } from 'lucide-react';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { formatMoney } from '@/features/financials/components/financials-formatters';
-import type { CashFlowStatementReport, VatReturnReport } from '@/features/financials/reports/financial-statements-service';
+import type { CashFlowReport } from '@/features/accounting/wp05Services';
+import type { VatReturnReport } from '@/features/financials/reports/financial-statements-service';
 import { ReportColumns, ReportPanel, ReportPanelSkeleton } from '../report-section-primitives';
 import { formatLatinNumber } from '@/lib/formatters';
 
@@ -61,7 +62,7 @@ export function OfficeSummaryPanel({
   return (
     <ReportPanel
       title="ملخص حركة المكتب"
-      description="الفواتير والتحصيلات والمصروفات والرصيد داخل الفترة."
+      description="الفواتير والتحصيلات والمصروفات والرصيد داخل الفترة؛ ملخص تشغيلي وليس قائمة دخل أو تدفق نقدي."
       icon={Landmark}
     >
       <ResponsiveCardGrid className="p-4" gap="sm">
@@ -76,34 +77,66 @@ export function OfficeSummaryPanel({
 
 export function RegulatorySummaryPanels({
   cashFlow,
+  cashFlowError,
+  isCashFlowLoading,
   vatReturn,
   isLoading,
 }: Readonly<{
-  cashFlow: CashFlowStatementReport | undefined;
+  cashFlow: CashFlowReport | undefined;
+  cashFlowError: unknown;
+  isCashFlowLoading: boolean;
   vatReturn: VatReturnReport | undefined;
   isLoading: boolean;
 }>) {
   return (
     <ReportColumns>
-      <ReportPanel title="التدفق النقدي" description="قراءة مباشرة من تقرير التدفق للفترة." icon={WalletCards}>
-        {isLoading ? (
+      <ReportPanel
+        title="التدفق النقدي من الأستاذ العام"
+        description="حركة النقدية والبنوك 1111/1120 من القيود المرحّلة، مع رصيد افتتاحي وختامي وفحص اتزان. هذا هو مسار Cash Flow المحاسبي؛ المقارنة التشغيلية بين التحصيل والمصروفات منفصلة."
+        icon={WalletCards}
+        action={cashFlow ? (
+          <StatusBadge tone={cashFlow.is_balanced ? 'success' : 'danger'}>
+            {cashFlow.is_balanced ? 'متوازن' : 'غير متوازن'}
+          </StatusBadge>
+        ) : undefined}
+      >
+        {isCashFlowLoading ? (
           <ReportPanelSkeleton />
+        ) : cashFlowError ? (
+          <div className="flex items-start gap-2 p-4 text-sm font-semibold text-destructive" role="alert">
+            <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+            تعذر تحميل التدفق النقدي من الأستاذ العام. لا يتم عرض تقدير بديل من التحصيلات والمصروفات.
+          </div>
+        ) : !cashFlow ? (
+          <div className="p-4 text-sm text-muted-foreground">
+            لا توجد نتيجة تدفق نقدي محاسبية للفترة المحددة. راجع الفترة والقيود المرحّلة ثم أعد المحاولة.
+          </div>
         ) : (
           <ResponsiveCardGrid className="p-4" gap="sm">
-            <KpiCard label="المقبوضات" value={formatMoney(cashFlow?.operating.receipts ?? 0)} icon={WalletCards} compact />
-            <KpiCard label="المصروفات" value={formatMoney(cashFlow?.operating.expenses ?? 0)} icon={WalletCards} compact />
-            <KpiCard label="صافي التشغيل" value={formatMoney(cashFlow?.operating.netOperating ?? 0)} icon={Scale} compact />
-            <KpiCard label="صافي التغير" value={formatMoney(cashFlow?.netChange ?? 0)} icon={CalendarRange} compact />
+            <KpiCard label="الرصيد الافتتاحي" value={formatMoney(cashFlow.opening_cash)} icon={WalletCards} compact />
+            <KpiCard label="التشغيل" value={formatMoney(cashFlow.operating)} icon={WalletCards} compact />
+            <KpiCard label="الاستثمار" value={formatMoney(cashFlow.investing)} icon={Scale} compact />
+            <KpiCard label="التمويل" value={formatMoney(cashFlow.financing)} icon={Scale} compact />
+            <KpiCard label="غير مصنف" value={formatMoney(cashFlow.unclassified)} icon={AlertTriangle} compact />
+            <KpiCard label="صافي التغير" value={formatMoney(cashFlow.total_change)} icon={CalendarRange} compact />
+            <KpiCard label="الرصيد الختامي" value={formatMoney(cashFlow.closing_cash)} icon={WalletCards} compact />
+            <KpiCard
+              label="فرق الاتزان"
+              value={formatMoney(cashFlow.variance)}
+              icon={Scale}
+              sub={cashFlow.is_balanced ? 'الافتتاحي + الحركة = الختامي' : 'يحتاج مراجعة قبل الاعتماد'}
+              compact
+            />
           </ResponsiveCardGrid>
         )}
       </ReportPanel>
 
-      <ReportPanel title="ملخص ضريبة القيمة المضافة" description="المبيعات والضريبة والفواتير من التقرير المعتمد." icon={Scale}>
+      <ReportPanel title="ملخص ضريبة القيمة المضافة" description="الوعاء الضريبي والضريبة والفواتير من التقرير الضريبي المعتمد؛ لا يُعاد تصنيف تحصيلات المالك كإيراد مكتب." icon={Scale}>
         {isLoading ? (
           <ReportPanelSkeleton />
         ) : (
           <ResponsiveCardGrid className="p-4" gap="sm">
-            <KpiCard label="المبيعات الخاضعة" value={formatMoney(vatReturn?.totalSalesAmount ?? 0)} icon={ReceiptText} compact />
+            <KpiCard label="الوعاء الخاضع للضريبة" value={formatMoney(vatReturn?.totalSalesAmount ?? 0)} icon={ReceiptText} compact />
             <KpiCard label="إجمالي الضريبة" value={formatMoney(vatReturn?.totalTaxAmount ?? 0)} icon={Scale} compact />
             <KpiCard label="عدد الفواتير" value={formatLatinNumber((vatReturn?.invoiceCount ?? 0), 'ar')} icon={ReceiptText} compact />
             <KpiCard label="الفترة" value={vatReturn?.period.from ? 'محددة' : '—'} icon={CalendarRange} sub={vatReturn?.period.from && vatReturn.period.to ? `${vatReturn.period.from} — ${vatReturn.period.to}` : 'لا توجد فترة'} compact />
