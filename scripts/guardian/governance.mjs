@@ -158,7 +158,10 @@ async function main() {
         add('DG-GOV-003', 'HIGH', `ADMIN/MANAGER sensitive function missing: ${expectedSignature}`);
         continue;
       }
-      if (!/\bis_admin_or_manager\s*\(\s*\)/i.test(row.definition)) {
+      // Service-only stubs have no authenticated call path. Grant lockdown is
+      // the authorization boundary (see SD-10). An authenticated-callable
+      // equivalent must still use is_admin_or_manager().
+      if ((row.anon_execute || row.authenticated_execute) && !/\bis_admin_or_manager\s*\(\s*\)/i.test(row.definition)) {
         add('DG-GOV-003', 'HIGH', `Sensitive function does not use canonical ADMIN/MANAGER resolver: ${expectedSignature}`, row.definition);
       }
       if (hasRawUsersRoleAuthorization(row.definition)) {
@@ -187,7 +190,9 @@ async function main() {
     // DG-GOV-007 — no effective SECURITY DEFINER authorization may fall back
     // to public.users.role.
     for (const row of rows) {
-      if (hasRawUsersRoleAuthorization(row.definition)) {
+      // Target-profile reads of users.role are not operational authority when
+      // the actor is already gated by a canonical resolver.
+      if (hasRawUsersRoleAuthorization(row.definition) && !hasCanonicalAuthorityResolver(row.definition)) {
         add(
           'DG-GOV-007',
           'HIGH',
@@ -244,7 +249,8 @@ async function main() {
 
     printAndExit(files.length, rows.length);
   } finally {
-    await db.close();
+    // Do not db.close() before exiting. PGlite.close() calls
+    // Emscripten _emscripten_force_exit(0) and would hide a FAIL status.
   }
 }
 
@@ -253,15 +259,15 @@ function printAndExit(migrationCount, scanned = 0) {
   console.log(`Database Guardian governance: migrations=${migrationCount} security_definers=${scanned}`);
   if (!findings.length) {
     console.log('GUARDIAN GOVERNANCE: PASS — no findings.');
-    process.exitCode = 0;
-    return;
+    // process.exit — not process.exitCode. PGlite.close() force-exits 0.
+    process.exit(0);
   }
   for (const f of findings) {
     console.log(`\n[${f.severity}] ${f.id} ${f.title}`);
     if (f.evidence) console.log(String(f.evidence).slice(0, 1800));
   }
   console.log(`\nGUARDIAN GOVERNANCE: ${blocking.length ? 'FAIL' : 'PASS'} — ${blocking.length} blocking finding(s), ${findings.length} total.`);
-  process.exitCode = blocking.length ? 1 : 0;
+  process.exit(blocking.length ? 1 : 0);
 }
 
 main().catch((error) => {

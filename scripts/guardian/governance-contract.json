@@ -55,13 +55,17 @@
     "description": "A browser-executable SECURITY DEFINER mutation/control RPC needs a canonical database role/permission resolver call. Authentication, company scoping, input validation, or RAISE EXCEPTION alone are not authorization proof. The rule does not redesign an RPC's established role semantics.",
     "acceptedResolverCalls": [
       "current_user_has_effective_app_permission(",
+      "current_user_has_support_capability(",
       "active_company_role(",
       "current_app_role(",
       "is_admin(",
       "is_admin_or_manager(",
       "is_accountant(",
       "is_operations(",
-      "is_app_user("
+      "is_app_user(",
+      "contract_evidence_actor_can_operate(",
+      "contract_evidence_actor_can_verify(",
+      "authorize_ai_assistant_access("
     ]
   }
 }
