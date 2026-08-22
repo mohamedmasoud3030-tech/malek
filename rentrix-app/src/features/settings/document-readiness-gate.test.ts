@@ -3,8 +3,11 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 // P0 regression guard: every print/PDF surface that used to ship a hardcoded
-// fake company identity must now print only with real company settings
-// through the shared `useDocumentSettings` readiness gate.
+// fake company identity must now print only with real company settings through
+// the shared document-readiness boundary. Some large workspaces intentionally
+// delegate settings/handler responsibilities to controller/helper modules, so
+// this test follows the actual call chain instead of requiring every guard
+// token to live in the JSX surface file.
 
 const root = resolve(import.meta.dirname, '..');
 const read = (relative: string) => readFileSync(resolve(root, relative), 'utf8');
@@ -20,9 +23,20 @@ const guardedSurfaces = [
   'utilities/components/utilities-workspace.tsx',
 ] as const;
 
+const readinessSources: Record<(typeof guardedSurfaces)[number], readonly string[]> = {
+  'financials/receipts/receipt-detail-page.tsx': ['financials/receipts/receipt-detail-page.tsx'],
+  'maintenance/components/maintenance-workspace.tsx': ['maintenance/components/maintenance-workspace.tsx'],
+  'financials/deposits/deposits-workspace.tsx': [
+    'financials/deposits/deposits-workspace.tsx',
+    'financials/deposits/use-deposit-workspace-controller.ts',
+    'financials/deposits/deposit-clearance-document.ts',
+  ],
+  'utilities/components/utilities-workspace.tsx': ['utilities/components/utilities-workspace.tsx'],
+};
+
 describe('document readiness gate replaces fake company identity', () => {
   it.each(guardedSurfaces)('%s no longer hardcodes a fake company identity', (surface) => {
-    const source = read(surface);
+    const source = readinessSources[surface].map(read).join('\n');
     expect(source, `fake company name in ${surface}`).not.toContain(FAKE_NAME);
     expect(source, `fake phone in ${surface}`).not.toContain(FAKE_PHONE);
     expect(source, `fake address in ${surface}`).not.toContain(FAKE_ADDRESS);
@@ -30,10 +44,11 @@ describe('document readiness gate replaces fake company identity', () => {
   });
 
   it.each(guardedSurfaces)('%s routes printing through the shared readiness gate', (surface) => {
-    const source = read(surface);
+    const source = readinessSources[surface].map(read).join('\n');
     expect(source, `useDocumentSettings in ${surface}`).toContain('useDocumentSettings');
     expect(source, `isReady gate in ${surface}`).toContain('documentSettings.isReady');
-    // WP-06: the visible gate is not enough — the handler must fail closed.
+    // The visible notice/button state is not enough: the handler chain itself
+    // must fail closed if a disabled control is bypassed programmatically.
     expect(source, `handler-level guard in ${surface}`).toContain('runGuardedDocumentAction');
   });
 
@@ -41,14 +56,9 @@ describe('document readiness gate replaces fake company identity', () => {
     const source = read('financials/receipts/receipt-detail-page.tsx');
     expect(source).toContain('disabled={isPrinting || !documentSettings.isReady}');
     expect(source).toContain('onClick={handleDownloadPdf} disabled={!documentSettings.isReady}');
-    // Handlers remain guarded even if a disabled button is bypassed. The
-    // guard now runs INSIDE the async boundary (WP-06): an unready handler
-    // fails closed with a visible Arabic reason instead of returning
-    // silently, and a missing receipt row blocks output too.
     expect(source).toContain('runGuardedDocumentAction');
     expect(source).toContain('isReady: documentSettings.isReady');
     expect(source).toContain('DocumentReadinessError(MISSING_RECEIPT_MESSAGE)');
-    // Real identity only — no inline fallback company object.
     expect(source).toContain('settings: documentSettings.companySettings');
   });
 
@@ -61,14 +71,24 @@ describe('document readiness gate replaces fake company identity', () => {
     expect(source).not.toContain("`${r.cost} ر.ع`");
   });
 
-  it('deposits clearance print/PDF and utilities report are guarded', () => {
-    const deposits = read('financials/deposits/deposits-workspace.tsx');
-    expect(deposits).toContain('runGuardedDocumentAction');
-    expect(deposits).toContain('isReady: documentSettings.isReady');
-    expect(deposits).toContain('handlePrint');
-    expect(deposits).toContain('handleDownloadPdf');
-    expect(deposits).toContain('documentSettings.isReady');
+  it('deposit clearance keeps visible, settings, and handler-level guards after decomposition', () => {
+    const workspace = read('financials/deposits/deposits-workspace.tsx');
+    const controller = read('financials/deposits/use-deposit-workspace-controller.ts');
+    const documentActions = read('financials/deposits/deposit-clearance-document.ts');
 
+    expect(controller).toContain('useDocumentSettings');
+    expect(workspace).toContain('DocumentReadinessNotice');
+    expect(workspace).toContain('isReady: documentSettings.isReady');
+    expect(workspace).toContain('isDocumentReady: documentSettings.isReady');
+    expect(workspace).toContain('handlePrint');
+    expect(workspace).toContain('handleDownloadPdf');
+    expect(documentActions).toContain('runGuardedDocumentAction');
+    expect(documentActions).toContain('isReady,');
+    expect(documentActions).toContain("documentService.printDocument('generic_report'");
+    expect(documentActions).toContain("documentService.downloadDocumentPdf('generic_report'");
+  });
+
+  it('utilities report remains guarded', () => {
     const utilities = read('utilities/components/utilities-workspace.tsx');
     expect(utilities).toContain('runGuardedDocumentAction');
     expect(utilities).toContain('isReady: documentSettings.isReady');
