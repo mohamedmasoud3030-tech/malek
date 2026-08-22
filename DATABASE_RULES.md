@@ -19,6 +19,11 @@ This file is the permanent operating contract for database work in MALEK.
 - All role authority resolves through `public.active_company_role(company_id)` (or `current_app_role()`, which calls it for the caller's current company context). No helper or RPC re-implements this lookup against `public.users.role` or `company_members` directly.
 - The resolver and every predicate built on it (`is_admin`, `is_admin_or_manager`, `is_accountant`, `is_operations`, `is_viewer`, `is_app_user`) return `NULL`/`false` when identity, membership, or company activity cannot be proven. There is no fallback to a default role.
 - `custom_access_token_hook()` derives the `app_metadata.user_role` JWT claim from `company_members.role` for a validated active membership in an active company, never from `users.role`. It validates user identity (`status='ACTIVE'`, `is_active`, `deleted_at IS NULL`) before any membership lookup, and strips both the role and company claims when authority cannot be proven.
+- `current_user_has_effective_app_permission()` must fail closed unless `is_app_user()` proves an active identity, active membership, and active company. An explicit `user_permission_grants` row is an authorization input only; it is never an identity or membership source and cannot resurrect a disabled/deleted/non-member user.
+- Permission identifiers must exist in `app_permission_catalog` before any role shortcut or explicit grant can authorize them. Unknown permission names always return false, including for `ADMIN`.
+- Support/admin capabilities must resolve through the governed effective-permission resolver. Do not grant a capability merely because a role label such as `MANAGER` is present in code.
+- SECURITY DEFINER functions that are browser-executable must enforce their own canonical authorization boundary; company scoping, authentication alone, or a transitive call to another RPC is not proof of authorization.
+- Internal/service-only SECURITY DEFINER functions keep minimum EXECUTE grants and still use canonical defense-in-depth authorization when they operate under a user auth context.
 - Frontend visibility is never an authorization boundary.
 - New SECURITY DEFINER functions must pin `search_path`, validate company context, and receive the minimum grants required.
 - Auth-hook/runtime configuration that cannot be expressed as SQL must have an automated hosted smoke check; documentation alone is not proof.
@@ -107,6 +112,9 @@ Update it whenever a new `.from()` or `.rpc()` call is added to frontend source 
 | **09** | **`20260901000009_company_members_six_role_authority.sql`** | **Set canonical USER default and authorize membership management through effective `users.manage` permission** |
 | **10** | **`20260901000010_contracts_one_live_draft_per_unit_tenant.sql`** | **Prevent duplicate live drafts for the same company, unit and tenant** |
 | **11** | **`20260901000011_require_active_contract_before_invoice_posting.sql`** | **Require an active contract before an invoice can become `POSTED`** |
+| **12** | **`20260901000012_canonical_authority_foundation.sql`** | **Canonical active membership role resolver, role helpers, and Auth Hook cutover** |
+| **13** | **`20260901000013_sensitive_rpc_authorization_hardening.sql`** | **Canonical direct authorization for sensitive receipt/bank RPC boundaries without replacing their business logic** |
+| **14** | **`20260901000014_security_definer_governance_hardening.sql`** | **Fail-closed effective permission resolution and remaining SECURITY DEFINER governance boundary hardening** |
 
 ## Remote environments
 
