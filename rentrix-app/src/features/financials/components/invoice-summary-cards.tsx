@@ -21,7 +21,7 @@ export function InvoiceSummaryCards({ summary }: InvoiceSummaryCardsProps) {
       items={[
         { id: 'count', label: 'الفواتير', value: summary.count, icon: FileText, hideWhenEmpty: true },
         { id: 'total', label: 'الإجمالي', value: formatMoney(summary.totalAmount), icon: WalletCards },
-        { id: 'paid', label: 'المدفوع', value: formatMoney(summary.totalPaid), icon: WalletCards, tone: 'success' },
+        { id: 'paid', label: 'المدفوع', value: formatMoney(summary.totalPaid), icon: WalletCards, tone: 'success', hideWhenEmpty: true },
         { id: 'remaining', label: 'المتبقي', value: formatMoney(summary.totalRemaining), icon: WalletCards, tone: summary.totalRemaining > 0 ? 'danger' : 'success', hideWhenEmpty: true },
       ]}
     />
