@@ -130,7 +130,7 @@ export function OverviewSection({
                     }}
                   />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Bar dataKey="revenue" name="المحصّل" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="collections" name="المحصّل" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
                   <Bar dataKey="expenses" name="المصروفات" fill="hsl(var(--destructive))" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
