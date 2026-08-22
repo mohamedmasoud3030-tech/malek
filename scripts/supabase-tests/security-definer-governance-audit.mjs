@@ -49,10 +49,9 @@ function hasCanonicalManagerGate(definition) {
 
 function hasRawUsersRoleAuthority(definition) {
   const compact = definition.replace(/\s+/g, ' ');
-  return (
-    /from public\.users (?:as )?[a-z_][a-z0-9_]* .*?\brole(?:::text)?\s+in\s*\(\s*'ADMIN'\s*,\s*'MANAGER'/i.test(compact) ||
-    /from public\.users (?:as )?[a-z_][a-z0-9_]* .*?upper\s*\(\s*coalesce\s*\(\s*[a-z_][a-z0-9_]*\.role(?:::text)?/i.test(compact)
-  );
+  const roleIn = /from public\.users (?:as )?([a-z_][a-z0-9_]*)\b.{0,1200}?\1\.role(?:::text)?\s+in\s*\(\s*'ADMIN'\s*,\s*'MANAGER'/i;
+  const roleCoalesce = /from public\.users (?:as )?([a-z_][a-z0-9_]*)\b.{0,1200}?upper\s*\(\s*coalesce\s*\(\s*\1\.role(?:::text)?/i;
+  return roleIn.test(compact) || roleCoalesce.test(compact);
 }
 
 async function main() {
