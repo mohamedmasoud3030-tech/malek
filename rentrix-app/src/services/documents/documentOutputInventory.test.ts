@@ -78,7 +78,7 @@ const APPROVED_DOCUMENT_CALL_SITES: ReadonlySet<string> = new Set([
   'features/financials/expenses/expense-actions.ts',
   'features/financials/components/expenses-section.tsx',
   'features/financials/receipts/receipt-detail-page.tsx',
-  'features/financials/deposits/use-deposit-workspace-controller.ts',
+  'features/financials/deposits/deposit-clearance-document.ts',
   // owners — owner settlement statement
   'features/owners/components/OwnerSettlementWorkspace.tsx',
   // operational reports
