@@ -111,7 +111,7 @@ export function GeneralLedgerCoreSection() {
             keyOf={(account) => account.id}
             columns={accountColumns(currencyCode)}
             emptyTitle="لا توجد حسابات مسجلة بعد"
-            emptyDescription="لا توجد حسابات مسجلة بعد في شجرة الحسابات."
+            emptyDescription="لا توجد حسابات مسجلة بعد في شجرة الحسابات. تواصل مع مسؤول النظام لإعداد شجرة الحسابات."
           />
         </CardContent>
       </Card>
@@ -141,7 +141,7 @@ export function GeneralLedgerCoreSection() {
             keyOf={(period) => period.id}
             columns={periodColumns}
             emptyTitle="لا توجد فترات محاسبية"
-            emptyDescription="لا توجد فترات محاسبية مسجلة."
+            emptyDescription="لا توجد فترات محاسبية مسجلة. راجع مسؤول النظام لفتح الفترات المحاسبية."
           />
         </CardContent>
       </Card>
@@ -171,7 +171,7 @@ export function GeneralLedgerCoreSection() {
             keyOf={(batch) => batch.id}
             columns={batchColumns}
             emptyTitle="لا توجد قيود يومية"
-            emptyDescription="لا توجد قيود يومية مسجلة بعد."
+            emptyDescription="لا توجد قيود يومية مسجلة بعد. ستظهر القيود تلقائياً عند تسجيل المعاملات المالية."
           />
         </CardContent>
       </Card>
