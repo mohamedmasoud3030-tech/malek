@@ -32,6 +32,11 @@ export const entityLabels = {
   receipt: 'إيصال',
   expense: 'مصروف',
   manual_adjustment: 'تسوية يدوية',
+  owner_payout: 'صرف تسوية مالك',
+  deposit_receipt: 'وديعة تأمين',
+  deposit_refund: 'رد وديعة',
+  commission_payment: 'صرف عمولة',
+  owner_expense: 'مصروف مالك',
 } as const;
 
 export const emptyLineDraft: BankStatementLineFormValues = {
