@@ -1,4 +1,4 @@
-import { Bell, Building2, CalendarClock, Cog, FileSignature, FolderTree } from 'lucide-react';
+import { Bell, Building2, CalendarClock, Cog, FileSignature, FolderTree, ShieldAlert } from 'lucide-react';
 
 export const settingsSections = [
   {
@@ -18,6 +18,12 @@ export const settingsSections = [
     label: 'المستندات والضريبة',
     description: 'بادئات المستندات والبيانات الضريبية المرجعية؛ السياسة الضريبية الفعلية تُحسم من السلطات المعتمدة حسب التاريخ.',
     icon: FileSignature,
+  },
+  {
+    id: 'finance-readiness',
+    label: 'جاهزية المالية والضريبة',
+    description: 'السلطة الضريبية المعتمدة حسب التاريخ (إيجار وأتعاب)، فترات محاسبية، ودليل الحسابات — فشل مغلق عند النقص.',
+    icon: ShieldAlert,
   },
   {
     id: 'cost-centers',
