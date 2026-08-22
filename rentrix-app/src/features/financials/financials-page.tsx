@@ -16,6 +16,7 @@ import {
   type FinancialsSearch,
 } from './finance-shell-model';
 import { FinancialReportsPreviewSection } from './components/financial-reports-preview-section';
+import { FinanceReadinessSection } from './tax-authority/finance-readiness-section';
 import { getTodayLocalDateString } from './financials-date-utils';
 import { useCollectionSummaryReport } from './reports/useFinancialReports';
 import { cn } from '@/lib/utils';
@@ -270,6 +271,10 @@ export function FinancialsPage() {
               {activeSection === 'overview' && (
                 <div id="section-panel-overview" role="tabpanel" aria-labelledby="section-tab-overview">
                   <div className="space-y-5">
+                    <section data-finance-section aria-label="جاهزية المالية" className="space-y-3">
+                      <FinanceReadinessSection />
+                    </section>
+
                     <section data-finance-section aria-label="ملخص التحصيل الشهري" className="space-y-3">
                       <FinancialReportsPreviewSection
                         reportFilters={reportFilters}

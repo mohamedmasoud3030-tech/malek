@@ -14,6 +14,8 @@ import { SectionCard } from './components/settings-section-card';
 import { SettingsWorkspaceNav } from './components/settings-workspace-nav';
 import { CostCentersSettingsSection } from './cost-centers-settings-section';
 import { PaymentTermsSettingsSection } from './payment-terms-settings-section';
+import { FinanceReadinessSection } from '@/features/financials/tax-authority/finance-readiness-section';
+import { TaxAuthorityWorkspace } from '@/features/financials/tax-authority/tax-profile-workspace';
 import { getCompanySettingsPreviewModel } from './settingsForm';
 import { buildSettingsSummaryTiles } from './settings-workspace-model';
 import { settingsSections } from './settingsSections';
@@ -145,6 +147,12 @@ export function SettingsWorkspace({ variant = 'standalone' }: SettingsWorkspaceP
           </SectionCard>
           <SectionCard id="payment-terms" activeId={activeSection} title="شروط السداد" subtitle="قوالب تشغيلية لاختيار جدول السداد في العقد بدون إنشاء دفتر أستاذ أو جدولة تلقائية موسعة.">
             <PaymentTermsSettingsSection />
+          </SectionCard>
+          <SectionCard id="finance-readiness" activeId={activeSection} title="جاهزية المالية والضريبة" subtitle="السلطة الضريبية المعتمدة حسب التاريخ (إيجار وأتعاب)، فترات محاسبية، ودليل الحسابات — فشل مغلق عند النقص.">
+            <div className="space-y-6">
+              <FinanceReadinessSection />
+              <TaxAuthorityWorkspace />
+            </div>
           </SectionCard>
 
           <SettingsOperationsSections

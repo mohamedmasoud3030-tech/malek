@@ -53,7 +53,9 @@ const featureDependencyAllowList = new Map([
   // relationships-hub composes contracts/people/tenants/leads/communication.
   ['relationships-hub', new Set(['auth', 'communication', 'contracts', 'leads', 'people', 'tenants'])],
   ['reports', new Set(['accounting', 'auth', 'contracts', 'financials', 'maintenance', 'owners', 'properties', 'settings', 'units'])],
-  ['settings', new Set(['properties'])],
+  // settings reads finance readiness/tax authority to surface authoritative tax config and fail-closed states
+  // in the finance-readiness settings section — governed RPCs only, no raw writes, per FOM-005.
+  ['settings', new Set(['properties', 'financials'])],
   ['system', new Set(['auth', 'settings'])],
   ['tenants', new Set(['financials', 'people'])],
   // units reads useUnitContractDrafts to show pending-draft indicators in the
