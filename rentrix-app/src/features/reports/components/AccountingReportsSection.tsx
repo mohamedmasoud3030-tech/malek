@@ -12,6 +12,7 @@ import {
   type TrialBalanceDocumentData,
 } from '@/services/documents/documentPayloadAdapters';
 import { DocumentReadinessError, runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
+import { AccountingReconciliationReadiness } from './accounting/accounting-reconciliation-readiness';
 import { BalanceSheetPanel } from './accounting/balance-sheet-panel';
 import { IncomeStatementPanel } from './accounting/income-statement-panel';
 import { TrialBalancePanel } from './accounting/trial-balance-panel';
@@ -103,8 +104,6 @@ export function AccountingReportsSection({
   };
 
   const documentActions = <T,>({ label, builder, print, pdf, disabled }: AccountingDocumentActions<T>) => {
-    // Both guards run INSIDE the async boundary: a reachable handler must
-    // fail closed with a visible Arabic reason instead of returning silently.
     const runPrint = () => {
       void runGuardedDocumentAction({
         isReady: isDocumentSettingsReady,
@@ -144,6 +143,8 @@ export function AccountingReportsSection({
 
   return (
     <div className="space-y-4">
+      <AccountingReconciliationReadiness asOf={asOf} />
+
       <TrialBalancePanel
         asOf={asOf}
         report={trialBalance}
