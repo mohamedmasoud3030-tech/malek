@@ -1,14 +1,14 @@
 import { useState } from 'react';
-import { AlertTriangle, CheckCircle2, Clock, FileCheck, CalendarDays, Wallet, ShieldAlert, RefreshCcw } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Clock, FileCheck, CalendarDays, ShieldAlert, RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { AsyncContentState } from '@/components/async-content-state';
+import { useActiveCompanyId } from '@/hooks/use-company';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { getBillingReadiness, generateInvoicesFromActiveContracts, type BillingObligation, type BillingStatus } from './billing-readiness-service';
-import { Link } from '@tanstack/react-router';
 
 function toneForStatus(status: BillingStatus): 'success' | 'warning' | 'danger' | 'info' | 'neutral' {
   switch (status) {
@@ -20,10 +20,8 @@ function toneForStatus(status: BillingStatus): 'success' | 'warning' | 'danger' 
       return 'danger';
     case 'NOT_DUE':
       return 'info';
-    case 'FAILED':
+    case 'CHECK_FAILED':
       return 'danger';
-    case 'RECOVERED':
-      return 'success';
     default:
       return 'neutral';
   }
@@ -32,29 +30,29 @@ function toneForStatus(status: BillingStatus): 'success' | 'warning' | 'danger' 
 function labelForStatus(status: BillingStatus): string {
   switch (status) {
     case 'NOT_DUE':
-      return 'غير مستحق بعد';
+      return 'غير مستحق بعد (قبل يوم الفوترة)';
     case 'DUE':
       return 'مستحق';
     case 'GENERATED':
       return 'تم إنشاؤه';
     case 'BLOCKED':
       return 'محظور';
-    case 'FAILED':
-      return 'فشل';
-    case 'RECOVERED':
-      return 'تم الاسترداد';
+    case 'CHECK_FAILED':
+      return 'فشل التحقق — مغلق';
     default:
       return status;
   }
 }
 
 export function BillingReadinessSection() {
+  const companyId = useActiveCompanyId();
   const queryClient = useQueryClient();
   const [showOnlyBlocked, setShowOnlyBlocked] = useState(false);
 
   const readinessQuery = useQuery({
-    queryKey: ['billing-readiness'],
-    queryFn: getBillingReadiness,
+    queryKey: ['billing-readiness', companyId],
+    enabled: Boolean(companyId),
+    queryFn: () => getBillingReadiness(companyId!),
   });
 
   const generateMut = useMutation({
@@ -63,18 +61,18 @@ export function BillingReadinessSection() {
       toast.success(`تم توليد ${count} فاتورة من العقود النشطة`);
       void queryClient.invalidateQueries({ queryKey: ['billing-readiness'] });
       void queryClient.invalidateQueries({ queryKey: ['invoices'] });
-      void queryClient.invalidateQueries({ queryKey: ['tenant-deposits'] });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : 'تعذر توليد الفواتير'),
   });
 
   const obligations = readinessQuery.data ?? [];
-  const filtered = showOnlyBlocked ? obligations.filter((o) => o.status === 'BLOCKED' || o.status === 'DUE' || o.status === 'FAILED') : obligations;
+  const filtered = showOnlyBlocked ? obligations.filter((o) => o.status === 'BLOCKED' || o.status === 'DUE' || o.status === 'CHECK_FAILED') : obligations;
 
   const totalDue = obligations.filter((o) => o.status === 'DUE').length;
   const totalGenerated = obligations.filter((o) => o.status === 'GENERATED').length;
   const totalBlocked = obligations.filter((o) => o.status === 'BLOCKED').length;
   const totalNotDue = obligations.filter((o) => o.status === 'NOT_DUE').length;
+  const totalCheckFailed = obligations.filter((o) => o.status === 'CHECK_FAILED').length;
 
   const columns: ColumnDef<BillingObligation>[] = [
     {
@@ -105,7 +103,7 @@ export function BillingReadinessSection() {
     },
     {
       key: 'amount',
-      header: 'قيمة الدفعة',
+      header: 'قيمة الدفعة التعاقدية',
       priority: 'detail',
       render: (o) => <span dir="ltr" className="font-bold tabular-nums">{o.rent_amount.toFixed(3)} OMR</span>,
     },
@@ -147,16 +145,16 @@ export function BillingReadinessSection() {
         <CardTitle className="flex items-center gap-2">
           <CalendarDays className="size-5" />
           جاهزية الفوترة والالتزامات
-          <StatusBadge tone={totalBlocked > 0 ? 'danger' : totalDue > 0 ? 'warning' : 'success'}>
-            {totalBlocked > 0 ? `محظور ${totalBlocked}` : totalDue > 0 ? `مستحق ${totalDue}` : 'جاهز'}
+          <StatusBadge tone={totalBlocked > 0 || totalCheckFailed > 0 ? 'danger' : totalDue > 0 ? 'warning' : 'success'}>
+            {totalBlocked > 0 ? `محظور ${totalBlocked}` : totalCheckFailed > 0 ? `فشل تحقق ${totalCheckFailed}` : totalDue > 0 ? `مستحق ${totalDue}` : 'جاهز'}
           </StatusBadge>
         </CardTitle>
         <CardDescription className="space-y-1">
           <p>
-            كل عقد نشط OWNER_AGENCY له سياسة فوترة صريحة: يوم الفوترة (1–28) يثبت تاريخ الإصدار داخل الفترة، وتاريخ الاستحقاق = نهاية الفترة + أيام السماح. payment_terms_id هو مرجع فقط، لا يحدد الجدولة حاليًا.
+            كل عقد نشط OWNER_AGENCY له سياسة فوترة صريحة: يوم الفوترة (1–28) يثبت تاريخ الإصدار داخل الفترة، وتاريخ الاستحقاق = نهاية الفترة + أيام السماح. payment_terms_id هو مرجع فقط، لا يحدد الجدولة حاليًا. الحالة تُحسب من تاريخ الإصدار: قبل يوم الفوترة → غير مستحق، يوم/بعد يوم الفوترة وبدون فاتورة → مستحق، فاتورة موجودة → تم إنشاؤه.
           </p>
           <p>
-            الفوترة تتم عبر RPC الذري <code>generate_invoices_from_active_contracts</code> وهو idempotent (نفس الفترة لا تُفوتر مرتين). المشغل يجب أن يرى حالة كل التزام: غير مستحق، مستحق، تم إنشاؤه، محظور، فشل، تم الاسترداد — لا يستنتج الصحة من ضغط زر التوليد فقط.
+            الفوترة تتم عبر RPC الذري <code>generate_invoices_from_active_contracts</code> وهو idempotent (نفس الفترة لا تُفوتر مرتين بفضل الفهرس الفريد ux_invoices_billing_obligation). المشغل يرى حالة كل التزام: غير مستحق، مستحق، تم إنشاؤه، محظور، فشل تحقق — لا يستنتج الصحة من زر التوليد فقط. حالات FAILED/RECOVERED أُزيلت لعدم وجود سجل تاريخي محكوم للفشل اليوم؛ تُوثق كتحسين مستقبلي.
           </p>
         </CardDescription>
       </CardHeader>
@@ -173,8 +171,9 @@ export function BillingReadinessSection() {
               <AlertTriangle className="size-3.5 text-destructive" /> محظور: {totalBlocked}
             </span>
             <span className="flex items-center gap-1">
-              <FileCheck className="size-3.5 text-info" /> غير مستحق: {totalNotDue}
+              <FileCheck className="size-3.5 text-info" /> غير مستحق (قبل يوم الفوترة): {totalNotDue}
             </span>
+            {totalCheckFailed > 0 ? <span className="flex items-center gap-1 text-destructive">فشل تحقق: {totalCheckFailed}</span> : null}
           </div>
           <div className="flex gap-2">
             <Button size="sm" variant={showOnlyBlocked ? 'default' : 'outline'} onClick={() => setShowOnlyBlocked((v) => !v)}>
@@ -201,14 +200,13 @@ export function BillingReadinessSection() {
         <div className="rounded-xl border border-warning/30 bg-warning/10 p-3 text-xs leading-5">
           <p className="font-bold flex items-center gap-1">
             <ShieldAlert className="size-4" />
-            كيف يعمل الاسترداد المتكرر؟
+            كيف يعمل الاسترداد المتكرر والتحقق الفاشل؟
           </p>
           <p>
-            نفس الفترة لا تُفوتر مرتين بفضل الفهرس الفريد <code>ux_invoices_billing_obligation</code> على (company_id, contract_id, charge_type, billing_period_start). إذا كان العقد محظورًا سابقًا بسبب TAX_PROFILE_MISSING أو AGREEMENT_MISSING، فإن إصلاح السبب ثم ضغط توليد يعيد نفس الدفعة وينشئ الفاتورة الناقصة فقط — لا تكرار.
+            نفس الفترة لا تُفوتر مرتين بفضل الفهرس الفريد <code>ux_invoices_billing_obligation</code> على (company_id, contract_id, charge_type, billing_period_start). إذا كان العقد محظورًا سابقًا بسبب TAX_PROFILE_MISSING أو AGREEMENT_MISSING، فإن إصلاح السبب ثم ضغط توليد يعيد نفس الدفعة وينشئ الفاتورة الناقصة فقط — لا تكرار. حالات FAILED/RECOVERED غير موجودة اليوم لعدم وجود سجل محاولات فوترة محكوم؛ تُوثق كتحسين مستقبلي.
           </p>
-          <p className="mt-1">
-            payment_terms_id حاليًا مرجع فقط. الجدولة الفعلية تُحسم من حقول العقد الصريحة payment_cycle, billing_day, grace_days. لا يتم إعادة كتابة مولد ذري صحيح لمجرد أسباب جمالية.
-          </p>
+          <p className="mt-1">فشل التحقق من السلطة الضريبية (شبكة/RLS/RPC) يظهر كـ CHECK_FAILED مغلق، لا كـ READY.</p>
+          <p className="mt-1">payment_terms_id حاليًا مرجع فقط. الجدولة الفعلية تُحسم من حقول العقد الصريحة payment_cycle, billing_day, grace_days عبر خوارزمية واحدة موحدة في billing-schedule.ts مطابقة للخادم.</p>
         </div>
       </CardContent>
     </Card>
