@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { cn } from '@/lib/utils';
 
 export type RegisterMetricItem = Readonly<{
@@ -33,8 +34,9 @@ const toneClass: Record<NonNullable<RegisterMetricItem['tone']>, string> = {
 };
 
 /**
- * Compact operational strip for register pages.
- * Replaces stacked KPI cards when the page only needs a scannable summary.
+ * Compact operational summary for register pages.
+ * Mobile follows the global Wave 4 two-column rhythm; desktop may widen to
+ * three columns while every metric remains compact and overflow-safe.
  */
 export function RegisterMetricStrip({
   items,
@@ -49,41 +51,38 @@ export function RegisterMetricStrip({
   if (visible.length === 0) return null;
 
   return (
-    <section
-      data-register-metric-strip
+    <ResponsiveCardGrid
+      as="section"
+      desktopColumns={3}
+      gap="sm"
+      data-register-metric-strip="true"
       aria-label={ariaLabel}
-      className={cn(
-        'flex min-w-0 flex-wrap items-stretch divide-x-0 overflow-hidden rounded-xl border border-border/70 bg-card shadow-card',
-        className,
-      )}
+      className={className}
     >
-      {visible.map((item, index) => {
+      {visible.map((item) => {
         const Icon = item.icon;
         return (
           <div
             key={item.id}
             data-register-metric
-            className={cn(
-              'flex min-w-[6.75rem] flex-1 items-center gap-2 px-3 py-1.5 sm:px-3.5',
-              index > 0 && 'border-s border-border/70',
-            )}
+            className="flex min-w-0 items-center gap-2 rounded-xl border border-border/70 bg-card px-3 py-2 shadow-card"
           >
             {Icon ? (
-              <span className="hidden size-7 shrink-0 place-items-center rounded-md bg-muted text-muted-foreground sm:grid">
-                <Icon className="size-3.5" aria-hidden="true" />
+              <span className="hidden size-8 shrink-0 place-items-center rounded-md bg-muted text-muted-foreground sm:grid">
+                <Icon className="size-4" aria-hidden="true" />
               </span>
             ) : null}
-            <div className="min-w-0">
-              <p className="truncate text-[10px] font-bold text-muted-foreground">{item.label}</p>
-              <p className={cn('truncate text-sm font-black tabular-nums leading-5', toneClass[item.tone ?? 'default'])}>
+            <div className="min-w-0 flex-1">
+              <p className="line-clamp-2 break-words text-[10px] font-bold leading-4 text-muted-foreground">{item.label}</p>
+              <p className={cn('break-words text-sm font-black tabular-nums leading-5 [overflow-wrap:anywhere]', toneClass[item.tone ?? 'default'])}>
                 {item.value}
               </p>
-              {item.hint ? <p className="truncate text-[10px] text-muted-foreground">{item.hint}</p> : null}
+              {item.hint ? <p className="line-clamp-2 break-words text-[10px] leading-4 text-muted-foreground">{item.hint}</p> : null}
             </div>
           </div>
         );
       })}
-    </section>
+    </ResponsiveCardGrid>
   );
 }
 
