@@ -9,12 +9,15 @@ function read(relativePath: string) {
 }
 
 describe('PWA safety contract', () => {
-  it('fails closed to the explicit offline page and never caches navigation HTML at runtime', () => {
+  it('uses network-only navigation with a precached offline fallback and never caches navigation HTML at runtime', () => {
     const config = read('vite.config.ts');
 
     expect(config).toContain('registerType: "prompt"');
     expect(config).toContain('injectRegister: false');
-    expect(config).toContain('navigateFallback: "/offline.html"');
+    expect(config).toContain('request.mode === "navigate"');
+    expect(config).toContain('handler: "NetworkOnly"');
+    expect(config).toContain('precacheFallback: { fallbackURL: "/offline.html" }');
+    expect(config).not.toContain('navigateFallback: "/offline.html"');
     expect(config).not.toContain('cacheName: "rentrix-pages"');
     expect(config).not.toContain('handler: "NetworkFirst"');
   });
@@ -34,6 +37,17 @@ describe('PWA safety contract', () => {
     expect(source).toContain('if (!import.meta.env.PROD || registrationStarted) return;');
     expect(source).toContain('onNeedRefresh()');
     expect(source).toContain('updateServiceWorker(true)');
+  });
+
+  it('contains a one-time recovery path for clients trapped behind the previous service worker', () => {
+    const config = read('vite.config.ts');
+    const recovery = read('public/sw-recovery.js');
+
+    expect(config).toContain('importScripts: ["/sw-recovery.js"]');
+    expect(recovery).toContain('self.registration.active');
+    expect(recovery).toContain('self.skipWaiting()');
+    expect(recovery).toContain('RECOVERY_MARKER');
+    expect(recovery).toContain('self.clients.claim()');
   });
 
   it('ships a rooted Arabic manifest with Apple and maskable icon support', () => {
