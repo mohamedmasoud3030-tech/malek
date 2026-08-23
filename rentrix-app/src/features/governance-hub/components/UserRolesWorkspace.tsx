@@ -5,6 +5,7 @@ import { RefreshCw, ShieldCheck, UserCog, UsersRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { AccessDenied } from '@/components/layout/access-denied';
 import { LoadingState } from '@/components/ui/loading-state';
+import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -154,10 +155,32 @@ export function UserRolesWorkspace() {
             <div className="flex gap-3"><span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><UserCog className="size-5" /></span><div><h2 className="font-black">المستخدمون والأدوار</h2><p className="mt-1 text-sm leading-6 text-muted-foreground">هذه الإدارة للمسؤول المخوّل فقط، وهي مستقلة عن مراجعة الطلبات.</p></div></div>
             <Button variant="secondary" onClick={() => void usersQuery.refetch()} disabled={usersQuery.isFetching}><RefreshCw className={usersQuery.isFetching ? 'size-4 animate-spin' : 'size-4'} />تحديث</Button>
           </div>
-          <div className="grid gap-3 md:grid-cols-3">{roleDescriptions.map(({ role, description }) => <div key={role} className="rounded-2xl border border-border bg-muted/20 p-4"><div className="flex items-center gap-2"><ShieldCheck className="size-4 text-primary" /><p className="font-black">{getRoleLabel(role)}</p></div><p className="mt-2 text-xs leading-5 text-muted-foreground">{description}</p></div>)}</div>
+          <ResponsiveCardGrid desktopColumns={3} gap="sm" aria-label="أوصاف الأدوار">
+            {roleDescriptions.map(({ role, description }) => (
+              <div key={role} className="rounded-2xl border border-border bg-muted/20 p-4">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="size-4 text-primary" />
+                  <p className="font-black">{getRoleLabel(role)}</p>
+                </div>
+                <p className="mt-2 text-xs leading-5 text-muted-foreground">{description}</p>
+              </div>
+            ))}
+          </ResponsiveCardGrid>
           {usersQuery.isPending ? <LoadingState variant="section" label="جارٍ تحميل المستخدمين والأدوار..." /> : null}
           {usersQuery.isError ? <p role="alert" className="rounded-2xl bg-destructive/10 p-5 text-sm text-destructive">تعذر تحميل المستخدمين.</p> : null}
-          {usersQuery.data ? <><div className="flex items-center gap-2 text-sm text-muted-foreground"><UsersRound className="size-4" />{usersQuery.data.length} مستخدمين</div><div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{usersQuery.data.map((governedUser) => <UserAccessCard key={governedUser.id} user={governedUser} currentUserId={user?.id} />)}</div></> : null}
+          {usersQuery.data ? (
+            <>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <UsersRound className="size-4" />
+                {usersQuery.data.length} مستخدمين
+              </div>
+              <ResponsiveCardGrid desktopColumns={3} gap="md" aria-label="بطاقات المستخدمين">
+                {usersQuery.data.map((governedUser) => (
+                  <UserAccessCard key={governedUser.id} user={governedUser} currentUserId={user?.id} />
+                ))}
+              </ResponsiveCardGrid>
+            </>
+          ) : null}
         </>
       ) : (
         <div className="rounded-2xl border border-border bg-muted/20 p-4 text-sm text-muted-foreground">يمكنك مراجعة طلبات الصلاحية، لكن إدارة أدوار المستخدمين وإعدادات الشركة تتطلب صلاحية مستقلة.</div>
