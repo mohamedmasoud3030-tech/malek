@@ -29,6 +29,11 @@ export type DeferredRevenueAudit = Readonly<{
   methodology: string;
 }>;
 
+type DeferredRevenueReceipt = Pick<
+  ReceiptRecord,
+  'status' | 'payment_date' | 'contract_id' | 'tenant_name' | 'property_title' | 'amount'
+>;
+
 function safeRatio(numerator: number, denominator: number) {
   if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator <= 0) return 0;
   return Math.max(0, Math.min(100, (numerator / denominator) * 100));
@@ -100,7 +105,7 @@ function isValidContractPeriod(contract: ContractListItem) {
 
 export function buildDeferredRevenueAudit(
   contracts: ContractListItem[],
-  receipts: ReceiptRecord[],
+  receipts: DeferredRevenueReceipt[],
   asOf: string,
 ): DeferredRevenueAudit {
   const contractsById = new Map(contracts.map((contract) => [contract.id, contract] as const));
