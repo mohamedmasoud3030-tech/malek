@@ -22,6 +22,7 @@ import { fetchCompleteReportRows } from './report-paginated-read';
 export type ArrearsReportFilters = {
   asOf: string;
   propertyId?: string;
+  unitId?: string;
   tenantId?: string;
   contractId?: string;
 };
@@ -43,6 +44,7 @@ export type OverdueInvoiceReportRow = {
   contractReference?: string | null;
   tenantId: string | null;
   tenantName: string | null;
+  tenantPhone: string | null;
   propertyId: string | null;
   propertyTitle: string | null;
   unitId: string | null;
@@ -59,6 +61,7 @@ export type AgedReceivablesGroupRow = {
   contractId: string;
   tenantId: string | null;
   tenantName: string | null;
+  tenantPhone: string | null;
   propertyId: string | null;
   propertyTitle: string | null;
   unitId: string | null;
@@ -174,7 +177,7 @@ type ArrearsContextMaps = {
 type ArrearsInvoiceRow = InvoiceReportRow & { contracts?: ContractContext | null };
 type ArrearsEntityContextFields = Pick<
   OverdueInvoiceReportRow,
-  'contractId' | 'contractReference' | 'tenantId' | 'tenantName' | 'propertyId' | 'propertyTitle' | 'unitId' | 'unitNumber'
+  'contractId' | 'contractReference' | 'tenantId' | 'tenantName' | 'tenantPhone' | 'propertyId' | 'propertyTitle' | 'unitId' | 'unitNumber'
 >;
 
 function getArrearsEntityContextFields(invoice: ArrearsInvoiceRow, contexts: ArrearsContextMaps = {}): ArrearsEntityContextFields {
@@ -188,6 +191,7 @@ function getArrearsEntityContextFields(invoice: ArrearsInvoiceRow, contexts: Arr
     contractReference: contract?.reference ?? null,
     tenantId: contract?.tenant_id ?? null,
     tenantName: tenant?.full_name ?? null,
+    tenantPhone: tenant?.phone ?? null,
     propertyId: contract?.property_id ?? null,
     propertyTitle: property?.title ?? null,
     unitId: contract?.unit_id ?? null,
