@@ -106,7 +106,7 @@ export function AccountingReconciliationReadiness({
             لا توجد أدلة مطابقة كافية
           </CardTitle>
           <CardDescription>
-            محرك المطابقة لم يُرجع صفوفًا حتى {asOf}. صفر صفوف لا يُعامل كنجاح؛ تحقق من تهيئة الحسابات والدفاتر المساعدة قبل الاعتماد على القوائم.
+            محرك المطابقة لم يُرجع صفوفًا حتى {asOf}. صفر صفوف لا يُعامل كنجاح؛ الحسابات الكنسية 1201 و1300 و2000 و2200 و2300 يجب أن تكون كلها ممثلة قبل الاعتماد على القوائم.
           </CardDescription>
         </CardHeader>
       </Card>
@@ -124,10 +124,15 @@ export function AccountingReconciliationReadiness({
             </CardTitle>
             <CardDescription className="mt-1">
               فحص محاسبي authoritative حتى {asOf}. القوائم أدناه مبنية على الأستاذ العام؛ هذه المطابقة تكشف أي فرق بين المصدر التشغيلي والـGL.
+              {readiness.missingAccountNos.length > 0 ? (
+                <span className="mt-1 block font-semibold text-destructive">
+                  حسابات مطابقة مفقودة من الاستجابة: {readiness.missingAccountNos.join('، ')}
+                </span>
+              ) : null}
             </CardDescription>
           </div>
           <StatusBadge tone={readiness.state === 'PASS' ? 'green' : 'danger'}>
-            {readiness.state === 'PASS' ? `مطابق — ${readiness.total} فحوص` : `${readiness.failed} من ${readiness.total} بها فروقات`}
+            {readiness.state === 'PASS' ? `مطابق — ${readiness.total} فحوص` : `${readiness.failed} من ${readiness.total} غير جاهز`}
           </StatusBadge>
         </div>
       </CardHeader>
