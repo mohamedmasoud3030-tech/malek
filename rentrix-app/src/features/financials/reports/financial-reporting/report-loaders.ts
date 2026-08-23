@@ -40,7 +40,7 @@ export async function loadInvoices(filters: FinancialReportFilters): Promise<Inv
 }
 
 type InvoiceContextRow = Pick<InvoiceReportRow, 'id' | 'contract_id' | 'deleted_at'>;
-type ContractContextRow = { id: string; property_id: string; tenant_id: string };
+type ContractContextRow = { id: string; property_id: string; tenant_id: string; unit_id: string | null };
 
 async function loadInvoiceContextsById(invoiceIds: string[]): Promise<InvoiceContextRow[]> {
   const rows: InvoiceContextRow[] = [];
@@ -66,7 +66,7 @@ async function loadContractContextsById(contractIds: string[]): Promise<Contract
   for (const batch of chunkReportIds(contractIds)) {
     const { data, error } = await supabase
       .from('contracts')
-      .select('id, property_id, tenant_id')
+      .select('id, property_id, tenant_id, unit_id')
       .in('id', batch)
       .is('deleted_at', null)
       .order('id', { ascending: true })
