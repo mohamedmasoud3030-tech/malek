@@ -39,12 +39,12 @@ describe('buildReportFilterSummary', () => {
       contract: 'عقد contract',
     })).toEqual({
       activeCount: 4,
-      label: 'الفترة: 2026-06-01 — 2026-06-30 · حتى: 2026-06-30 · مركز التكلفة: المكتب الرئيسي · المالك: محمد أحمد · العقد: عقد contract',
+      label: 'الفترة: 2026-06-01 — 2026-06-30 · حتى: 2026-06-30 · مركز التكلفة: المكتب الرئيسي · المالك/الكشف: محمد أحمد · العقد: عقد contract',
       chips: [
         { key: 'period', label: 'الفترة', value: '2026-06-01 — 2026-06-30', isActive: true },
         { key: 'asOf', label: 'حتى', value: '2026-06-30', isActive: true },
         { key: 'costCenter', label: 'مركز التكلفة', value: 'المكتب الرئيسي', isActive: true },
-        { key: 'owner', label: 'المالك', value: 'محمد أحمد', isActive: true },
+        { key: 'owner', label: 'المالك/الكشف', value: 'محمد أحمد', isActive: true },
         { key: 'contract', label: 'العقد', value: 'عقد contract', isActive: true },
       ],
     });

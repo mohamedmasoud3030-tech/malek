@@ -33,7 +33,7 @@ describe('R6 — reports workspace fetches only the open report', () => {
   });
 
   it('the workspace derives per-view activation from the ReportLocation', () => {
-    expect(workspaceSource).toContain('export function useReportsWorkspace(filters: FilterState, location: ReportLocation)');
+    expect(workspaceSource).toContain('export function useReportsWorkspace(filters: ReportsFilterState, location: ReportLocation)');
     // The activation map exists for every view family.
     for (const flag of [
       'needsOverview',
@@ -58,7 +58,7 @@ describe('R6 — reports workspace fetches only the open report', () => {
       'useFinancialCashflowReport(financialFilters, { enabled:',
       'useVatReturnReport(financialFilters, { enabled:',
       'useDailyCollectionReport(financialFilters, { enabled:',
-      'useExpenseBreakdownReport(financialFilters, { enabled:',
+      'useExpenseBreakdownReport(expenseFilters, { enabled:',
       'useOverdueInvoicesReport(arrearsFilters, { enabled:',
       'useAgedReceivablesReport(arrearsFilters, { enabled:',
       'useArrearsSummaryReport(arrearsFilters, { enabled:',
