@@ -2,7 +2,7 @@ import { AlertTriangle, CalendarClock, Download, FileSpreadsheet, Printer, Recei
 import { Button } from '@/components/ui/button';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
-import { formatMoney } from '@/features/financials/components/financials-formatters';
+import { formatInvoiceStatusLabel, formatMoney } from '@/features/financials/components/financials-formatters';
 import type { OverdueInvoiceReportRow } from '@/features/financials/reports/financialReportsService';
 import { useAgedReceivablesReport, useArrearsSummaryReport } from '@/features/financials/reports/useFinancialReports';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
@@ -12,7 +12,7 @@ import { toReportDocumentPayload, type ReportDocumentData } from '@/services/doc
 import { agingBucketKeys, buildAgingBucketChartRows, buildReportCsvFilename, downloadCsv, getTodayLocalDateString } from '../reports-page.helpers';
 import { ReportColumns, ReportInsightNote, ReportProgress } from './report-section-primitives';
 import { AgingBucketsPanel } from './overdue/aging-buckets-panel';
-import { OverdueInvoicesPanel } from './overdue/overdue-invoices-panel';
+import { getAgingLabel, OverdueInvoicesPanel } from './overdue/overdue-invoices-panel';
 import { formatLatinNumber } from '@/lib/formatters';
 
 export function OverdueSection({ rows, agedReport, summary, canExportReports, isLoading }: Readonly<{
@@ -30,6 +30,7 @@ export function OverdueSection({ rows, agedReport, summary, canExportReports, is
   const over90Amount = summary?.over90Amount ?? bucketRows[bucketRows.length - 1]?.total ?? 0;
   const over90Count = summary?.over90InvoiceCount ?? bucketRows[bucketRows.length - 1]?.invoiceCount ?? 0;
   const over90Share = totalOverdue > 0 ? (over90Amount / totalOverdue) * 100 : 0;
+  const reportAsOf = summary?.asOf ?? agedReport?.asOf ?? getTodayLocalDateString();
 
   const exposureByContract = new Map<string, { tenantName: string; total: number }>();
   for (const row of rows) {
@@ -47,35 +48,36 @@ export function OverdueSection({ rows, agedReport, summary, canExportReports, is
   const { companySettings: documentSettings, isReady: isDocumentSettingsReady } = useDocumentSettings();
   const currencySymbol = documentSettings.currencySymbol || documentSettings.currency;
 
-  const buildOverdueReportData = (): ReportDocumentData => {
-    const todayStr = getTodayLocalDateString();
-    return {
-      reportTitle: 'كشف المتأخرات والديون التفصيلي',
-      reportType: 'Overdue_Debts_Report',
-      periodFrom: todayStr,
-      periodTo: todayStr,
-      sections: [
-        {
-          title: 'جدول الفواتير والذمم المتأخرة السداد',
-          columns: ['رقم الفاتورة', 'المستأجر', 'تاريخ الاستحقاق', 'أيام التأخير', 'المبلغ المتبقي'],
-          rows: rows.map((row) => [
-            row.shortInvoiceId,
-            row.tenantName || 'غير محدد',
-            row.dueDate,
-            `${row.daysOverdue} يوم`,
-            `${row.remainingAmount} ${currencySymbol}`,
-          ]),
-          totals: ['إجمالي المتأخرات', '', '', '', `${formatLatinNumber(totalOverdue, 'ar-OM')} ${currencySymbol}`],
-        },
-      ],
-      totalSummary: `عدد الفواتير المتأخرة: ${rows.length} | متوسط التأخير: ${Math.round(averageDelay)} يوم | أكثر من 90 يوم: ${formatLatinNumber(over90Amount, 'ar-OM')} ${currencySymbol}`,
-    };
-  };
+  const buildOverdueReportData = (): ReportDocumentData => ({
+    reportTitle: 'كشف المتأخرات والديون التفصيلي',
+    reportType: 'Overdue_Debts_Report',
+    periodFrom: reportAsOf,
+    periodTo: reportAsOf,
+    sections: [
+      {
+        title: `الفواتير المتأخرة حتى ${reportAsOf}`,
+        columns: ['الفاتورة', 'المستأجر', 'الهاتف', 'العقار / الوحدة', 'العقد', 'الاستحقاق', 'أيام التأخير', 'الأصلي', 'المدفوع', 'المتبقي', 'التعتيق', 'الحالة'],
+        rows: rows.map((row) => [
+          row.invoiceReference ?? row.shortInvoiceId,
+          row.tenantName || 'غير محدد',
+          row.tenantPhone || '—',
+          [row.propertyTitle, row.unitNumber ? `وحدة ${row.unitNumber}` : null].filter(Boolean).join(' · ') || 'غير محدد',
+          row.contractReference || 'عقد بلا مرجع',
+          row.dueDate,
+          `${formatLatinNumber(row.daysOverdue, 'ar')} يوم`,
+          `${formatLatinNumber(row.amount, 'ar-OM')} ${currencySymbol}`,
+          `${formatLatinNumber(row.paidAmount, 'ar-OM')} ${currencySymbol}`,
+          `${formatLatinNumber(row.remainingAmount, 'ar-OM')} ${currencySymbol}`,
+          getAgingLabel(row.daysOverdue),
+          formatInvoiceStatusLabel(row.status),
+        ]),
+        totals: ['إجمالي المتأخرات', '', '', '', '', '', '', '', '', `${formatLatinNumber(totalOverdue, 'ar-OM')} ${currencySymbol}`, '', ''],
+      },
+    ],
+    totalSummary: `حتى ${reportAsOf} | عدد الفواتير المتأخرة: ${rows.length} | متوسط التأخير: ${Math.round(averageDelay)} يوم | أكثر من 90 يوم: ${formatLatinNumber(over90Amount, 'ar-OM')} ${currencySymbol}`,
+  });
 
   const handlePrintOverdueReport = async () => {
-    // Readiness is enforced HERE, not only via the button's disabled prop:
-    // the handler stays reachable (keyboard, stale closure, automation), so
-    // the guard must live inside the async boundary and fail closed.
     await runGuardedDocumentAction({
       isReady: isDocumentSettingsReady,
       operation: () => documentService.printDocument('generic_report', { settings: documentSettings, payload: toReportDocumentPayload(buildOverdueReportData()) }),
@@ -84,9 +86,6 @@ export function OverdueSection({ rows, agedReport, summary, canExportReports, is
   };
 
   const handleDownloadOverdueReport = async () => {
-    // Readiness is enforced HERE, not only via the button's disabled prop:
-    // the handler stays reachable (keyboard, stale closure, automation), so
-    // the guard must live inside the async boundary and fail closed.
     await runGuardedDocumentAction({
       isReady: isDocumentSettingsReady,
       operation: () => documentService.downloadDocumentPdf('generic_report', { settings: documentSettings, payload: toReportDocumentPayload(buildOverdueReportData()) }),
