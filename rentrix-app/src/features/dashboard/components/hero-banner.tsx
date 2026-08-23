@@ -1,7 +1,9 @@
-import { Activity, Building2, CalendarDays, RefreshCw, ShieldCheck, TrendingUp, AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Building2, CalendarDays, RefreshCw, ShieldCheck, TrendingUp } from 'lucide-react';
+import { PageHeader } from '@/components/layout/page-header';
+import { KpiCard } from '@/components/ui/kpi-card';
+import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { formatCompanyDate, formatCompanyMoney } from '@/lib/companyFormatters';
 import type { CompanySettingsContract } from '@/lib/companySettings';
-import { cn } from '@/lib/utils';
 import type { DashboardSnapshot } from '../dashboard-snapshot';
 
 interface HeroBannerProps {
@@ -46,81 +48,70 @@ export function HeroBanner({ snapshot, isLoading, settings, today, isRefreshing 
   const isSnapshotReady = Boolean(snapshot);
   const activeContracts = compactNumber(snapshot?.contracts.active, isLoading ? '…' : 'غير متاح');
   const occupancyRate = compactNumber(snapshot?.occupancy.occupancyRate, isLoading ? '…' : 'غير متاح');
-
-  // Executive metrics — the most decision-relevant numbers surface here so the
-  // owner reads the office's position before scrolling into any queue.
+  const occupancyValue = `${occupancyRate}${isSnapshotReady || isLoading ? '%' : ''}`;
   const collectedAmount = snapshot?.collections.collectedAmount;
   const totalOverdue = snapshot?.arrears.totalOverdue;
 
   return (
-    <header
-      className="dashboard-ops-header"
+    <div
+      className="space-y-3"
       data-dashboard-hero
       data-dashboard-context="today"
-      aria-labelledby="dashboard-title"
+      aria-label="ملخص اليوم"
     >
-      <div className="dashboard-ops-header__main">
-        <div className="dashboard-ops-header__eyebrow">
-          <Activity className="size-4" aria-hidden="true" />
-          <span>{getGreeting()} — ابدأ بما يحتاج قرارك</span>
-        </div>
-        <h1 id="dashboard-title" className="dashboard-ops-header__title">اليوم</h1>
-        <p className="dashboard-ops-header__support">ما يحتاج تنفيذًا الآن، ثم وضع المكتب، ثم التفاصيل عند الحاجة.</p>
-      </div>
+      <PageHeader
+        title="اليوم"
+        description={`${getGreeting()} — ابدأ بما يحتاج قرارك. ما يحتاج تنفيذًا الآن، ثم وضع المكتب، ثم التفاصيل عند الحاجة.`}
+        secondaryActions={(
+          <span className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border bg-background px-3 text-xs font-bold text-muted-foreground" aria-label="تاريخ تحديث بيانات اليوم">
+            {isRefreshing ? (
+              <RefreshCw className="size-4 shrink-0 animate-spin text-primary motion-reduce:animate-none" aria-hidden="true" />
+            ) : (
+              <CalendarDays className="size-4 shrink-0 text-primary" aria-hidden="true" />
+            )}
+            {freshnessLabel}
+          </span>
+        )}
+      />
 
-      <dl className="dashboard-ops-header__meta" aria-label="ملخص تنفيذي اليوم">
+      <ResponsiveCardGrid gap="sm" aria-label="ملخص تنفيذي اليوم">
         {typeof collectedAmount === 'number' && collectedAmount !== 0 ? (
-        <div className="dashboard-ops-header__pill dashboard-ops-header__pill--money" aria-label="التحصيل الشهري">
-          {isRefreshing ? (
-            <RefreshCw className="size-4 shrink-0 animate-spin text-primary motion-reduce:animate-none" aria-hidden="true" />
-          ) : (
-            <TrendingUp className="size-4 shrink-0 text-primary" aria-hidden="true" />
-          )}
-          <dt>التحصيل</dt>
-          <dd className={cn(isLoading && 'dashboard-ops-header__pill--loading')}>
-            <b dir="ltr" className="tabular-nums">
-              {typeof collectedAmount === 'number' ? formatCompanyMoney(settings, collectedAmount) : isLoading ? '…' : 'غير متاح'}
-            </b>
-          </dd>
-        </div>
+          <KpiCard
+            label="التحصيل"
+            value={formatCompanyMoney(settings, collectedAmount)}
+            sub="التحصيل الشهري"
+            icon={TrendingUp}
+            accent="emerald"
+            compact
+          />
         ) : null}
-
         {typeof totalOverdue === 'number' && totalOverdue !== 0 ? (
-        <div className={cn('dashboard-ops-header__pill dashboard-ops-header__pill--danger', isLoading && 'dashboard-ops-header__pill--loading')}>
-          <AlertTriangle className="size-4 shrink-0" aria-hidden="true" />
-          <dt>متأخرات</dt>
-          <dd>
-            <b dir="ltr" className="tabular-nums">
-              {formatCompanyMoney(settings, totalOverdue)}
-            </b>
-          </dd>
-        </div>
+          <KpiCard
+            label="متأخرات"
+            value={formatCompanyMoney(settings, totalOverdue)}
+            sub="تحتاج متابعة تحصيل"
+            icon={AlertTriangle}
+            accent="rose"
+            compact
+          />
         ) : null}
-
-        <div className={cn('dashboard-ops-header__pill', isLoading && 'dashboard-ops-header__pill--loading')}>
-          <Building2 className="size-4 shrink-0 text-primary" aria-hidden="true" />
-          <dt>الإشغال</dt>
-          <dd>
-            <b dir="ltr" className="tabular-nums">{occupancyRate}</b>{isSnapshotReady || isLoading ? '%' : ''}
-          </dd>
-        </div>
-
-        <div className={cn('dashboard-ops-header__pill dashboard-ops-header__pill--success', isLoading && 'dashboard-ops-header__pill--loading')}>
-          <ShieldCheck className="size-4 shrink-0" aria-hidden="true" />
-          <dt>عقود نشطة</dt>
-          <dd><b dir="ltr" className="tabular-nums">{activeContracts}</b></dd>
-        </div>
-
-        <div className="dashboard-ops-header__pill dashboard-ops-header__pill--freshness" aria-label="تاريخ تحديث بيانات اليوم">
-          {isRefreshing ? (
-            <RefreshCw className="size-4 shrink-0 animate-spin text-primary motion-reduce:animate-none" aria-hidden="true" />
-          ) : (
-            <CalendarDays className="size-4 shrink-0 text-primary" aria-hidden="true" />
-          )}
-          <dt className="sr-only">التحديث</dt>
-          <dd>{freshnessLabel}</dd>
-        </div>
-      </dl>
-    </header>
+        <KpiCard
+          label="الإشغال"
+          value={occupancyValue}
+          sub="نسبة الوحدات المشغولة"
+          icon={Building2}
+          accent="sky"
+          compact
+        />
+        <KpiCard
+          label="عقود نشطة"
+          value={activeContracts}
+          sub="العقود الحالية"
+          icon={ShieldCheck}
+          accent="emerald"
+          compact
+        />
+      </ResponsiveCardGrid>
+    </div>
   );
 }

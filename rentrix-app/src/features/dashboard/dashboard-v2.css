@@ -360,8 +360,8 @@
 
 [data-visual-contract='v2'] .dashboard-priority-row:hover,
 [data-visual-contract='v2'] .dashboard-priority-row:focus-visible,
-[data-visual-contract='v2'] .dashboard-kpi-link:hover .dashboard-kpi-card,
-[data-visual-contract='v2'] .dashboard-kpi-link:focus-visible .dashboard-kpi-card,
+[data-visual-contract='v2'] a[data-dashboard-kpi-link]:hover [data-kpi-card],
+[data-visual-contract='v2'] a[data-dashboard-kpi-link]:focus-visible [data-kpi-card],
 [data-visual-contract='v2'] .dashboard-action-card:hover,
 [data-visual-contract='v2'] .dashboard-action-card:focus-visible,
 [data-visual-contract='v2'] .dashboard-queue-row:hover,
@@ -375,7 +375,7 @@
 }
 
 [data-visual-contract='v2'] .dashboard-priority-row:active,
-[data-visual-contract='v2'] .dashboard-kpi-link:active .dashboard-kpi-card,
+[data-visual-contract='v2'] a[data-dashboard-kpi-link]:active [data-kpi-card],
 [data-visual-contract='v2'] .dashboard-action-card:active,
 [data-visual-contract='v2'] .dashboard-queue-row:active,
 [data-visual-contract='v2'] .dashboard-trend-card:active,
@@ -451,127 +451,13 @@
 }
 
 /* KPI Bento cluster. */
+/* Wave 4: KPI grid now rendered by canonical ResponsiveCardGrid + KpiCard.
+   This rule only preserves the link wrapper affordance. */
 [data-visual-contract='v2'] a[data-dashboard-kpi-link] {
   min-width: 0;
-  border-radius: var(--radius-card);
   color: inherit;
   text-decoration: none;
   touch-action: manipulation;
-}
-
-[data-visual-contract='v2'] .dashboard-kpi-grid {
-  display: grid;
-  min-width: 0;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--dashboard-cluster-gap);
-}
-
-/* The KPI grid is a real <ul role="list"> — each <li> is the grid item and
-   stretches so every card keeps equal height; the link fills the item. */
-[data-visual-contract='v2'] .dashboard-kpi-grid > li {
-  min-width: 0;
-  display: flex;
-}
-
-[data-visual-contract='v2'] .dashboard-kpi-grid > li > a[data-dashboard-kpi-link] {
-  width: 100%;
-  display: flex;
-}
-
-[data-visual-contract='v2'] .dashboard-kpi-card {
-  min-block-size: 138px;
-  height: 100%;
-  min-width: 0;
-  border: 1px solid hsl(var(--color-border) / 0.78);
-  border-radius: var(--radius-card);
-  background: hsl(var(--color-card) / 0.98);
-  box-shadow: var(--shadow-card);
-  padding: 0.72rem;
-  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
-}
-
-[data-visual-contract='v2'] .dashboard-kpi-card[data-tone='primary'] {
-  --kpi-tone: var(--color-primary);
-  --kpi-soft: var(--color-info-bg);
-}
-
-[data-visual-contract='v2'] .dashboard-kpi-card[data-tone='info'] {
-  --kpi-tone: var(--color-info-text);
-  --kpi-soft: var(--color-info-bg);
-}
-
-[data-visual-contract='v2'] .dashboard-kpi-card[data-tone='success'] {
-  --kpi-tone: var(--color-success-text);
-  --kpi-soft: var(--color-success-bg);
-}
-
-[data-visual-contract='v2'] .dashboard-kpi-card[data-tone='warning'] {
-  --kpi-tone: var(--color-warning-text);
-  --kpi-soft: var(--color-warning-bg);
-}
-
-[data-visual-contract='v2'] .dashboard-kpi-card[data-tone='danger'] {
-  --kpi-tone: var(--color-danger-text);
-  --kpi-soft: var(--color-danger-bg);
-}
-
-[data-visual-contract='v2'] .dashboard-kpi-card[data-tone='neutral'] {
-  --kpi-tone: var(--color-neutral-text);
-  --kpi-soft: var(--color-neutral-bg);
-}
-
-[data-visual-contract='v2'] .dashboard-kpi-card__head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.4rem;
-}
-
-[data-visual-contract='v2'] .dashboard-kpi-card__icon {
-  display: grid;
-  block-size: 2.25rem;
-  inline-size: 2.25rem;
-  place-items: center;
-  border-radius: 0.7rem;
-  background: hsl(var(--kpi-soft));
-  color: hsl(var(--kpi-tone));
-  box-shadow: inset 0 0 0 1px hsl(var(--kpi-tone) / 0.16);
-}
-
-[data-visual-contract='v2'] .dashboard-kpi-card__body {
-  margin-block-start: 0.72rem;
-  min-width: 0;
-}
-
-[data-visual-contract='v2'] .dashboard-kpi-card__label {
-  color: hsl(var(--color-text-secondary));
-  font-size: 0.75rem;
-  font-weight: 700;
-  line-height: 1.35;
-}
-
-[data-visual-contract='v2'] .dashboard-kpi-card__value {
-  margin-block-start: 0.15rem;
-  min-width: 0;
-  color: hsl(var(--color-text-primary));
-  font-size: clamp(1rem, 4.1vw, 1.45rem);
-  font-variant-numeric: tabular-nums;
-  font-weight: 850;
-  letter-spacing: -0.02em;
-  line-height: 1.2;
-  overflow-wrap: anywhere;
-}
-
-[data-visual-contract='v2'] .dashboard-kpi-card__support {
-  margin-block-start: 0.28rem;
-  color: hsl(var(--color-text-muted));
-  display: -webkit-box;
-  font-size: 0.6875rem;
-  font-weight: 600;
-  line-height: 1.45;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
 }
 
 /* Permission-aware quick actions. */
@@ -878,11 +764,6 @@
     padding: 1rem;
   }
 
-  [data-visual-contract='v2'] .dashboard-kpi-card {
-    min-block-size: 150px;
-    padding: 0.9rem;
-  }
-
   [data-visual-contract='v2'] .dashboard-action-card {
     min-block-size: 72px;
     padding: 0.75rem;
@@ -910,10 +791,6 @@
     --dashboard-section-gap: 2.25rem;
   }
 
-  [data-visual-contract='v2'] .dashboard-kpi-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
   [data-visual-contract='v2'] .dashboard-action-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
@@ -934,13 +811,9 @@
     border-radius: var(--radius-card);
   }
 
-  [data-visual-contract='v2'] .dashboard-kpi-card {
-    min-block-size: 132px;
+  /* Tighten canonical KpiCard at ≤414px so 2-col grid fits 320-430px without overflow */
+  [data-visual-contract='v2'] [data-dashboard-kpi-grid] [data-kpi-card] {
     padding: 0.65rem;
-  }
-
-  [data-visual-contract='v2'] .dashboard-kpi-card :where([data-status-badge]) {
-    padding-inline: 0.45rem;
   }
 
   [data-visual-contract='v2'] .dashboard-priority-row {
@@ -969,6 +842,24 @@
     align-items: center;
     justify-content: space-between;
     gap: 0.5rem;
+  }
+}
+
+/* 320px — tightest supported viewport. Reduce gap and padding further so the
+   2×2 KPI grid never forces horizontal scroll or clips value text. */
+@media (max-width: 359px) {
+  [data-visual-contract='v2'] {
+    --dashboard-cluster-gap: 0.5rem;
+    --dashboard-section-gap: 1rem;
+  }
+
+  [data-visual-contract='v2'] [data-dashboard-kpi-grid] [data-kpi-card] {
+    padding: 0.5rem;
+  }
+
+  [data-visual-contract='v2'] [data-dashboard-kpi-grid] [data-kpi-card] p:first-of-type {
+    /* value: clamp down font size one step more at 320px */
+    font-size: 1rem;
   }
 }
 

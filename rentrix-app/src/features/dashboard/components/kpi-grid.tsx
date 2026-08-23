@@ -2,10 +2,10 @@ import { Link } from '@tanstack/react-router';
 import { HandCoins, Percent, Receipt, TrendingUp } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { LoadingState } from '@/components/ui/loading-state';
-import { StatusBadge } from '@/components/ui/status-badge';
+import { KpiCard, type KpiAccent } from '@/components/ui/kpi-card';
+import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { formatCompanyMoney } from '@/lib/companyFormatters';
 import type { CompanySettingsContract } from '@/lib/companySettings';
-import { cn } from '@/lib/utils';
 import type { DashboardSnapshot } from '../dashboard-snapshot';
 
 interface KpiGridProps {
@@ -14,37 +14,17 @@ interface KpiGridProps {
   settings: CompanySettingsContract;
 }
 
-type KpiTone = 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'neutral';
-
 type DashboardKpi = Readonly<{
   label: string;
   value: string;
   icon: LucideIcon;
-  support: string;
-  stateLabel?: string;
-  stateTone: KpiTone;
+  sub: string;
+  accent: KpiAccent;
+  trend?: 'up' | 'down' | 'neutral';
+  trendValue?: string;
   to: string;
   destinationLabel: string;
 }>;
-
-function DashboardKpiCard({ item }: { item: DashboardKpi }) {
-  const Icon = item.icon;
-  return (
-    <article data-kpi-card data-tone={item.stateTone} className="dashboard-kpi-card">
-      <div className="dashboard-kpi-card__head">
-        <span className="dashboard-kpi-card__icon" aria-hidden="true">
-          <Icon className="size-4" />
-        </span>
-        {item.stateLabel ? <StatusBadge tone={item.stateTone === 'primary' ? 'info' : item.stateTone}>{item.stateLabel}</StatusBadge> : null}
-      </div>
-      <div className="dashboard-kpi-card__body">
-        <p className="dashboard-kpi-card__label">{item.label}</p>
-        <p className="dashboard-kpi-card__value" dir="ltr">{item.value}</p>
-        <p className="dashboard-kpi-card__support">{item.support}</p>
-      </div>
-    </article>
-  );
-}
 
 /**
  * Secondary decision KPIs — deliberately complements, never repeats, the
@@ -52,15 +32,19 @@ function DashboardKpiCard({ item }: { item: DashboardKpi }) {
  * عقود نشطة). The first KPI is deliberately labelled as the narrow operational
  * difference the snapshot actually computes: collections minus recorded
  * expenses. It is not accounting profit and not a complete cash-flow balance.
+ *
+ * Wave 4: migrated from bespoke dashboard-kpi-card CSS to canonical KpiCard +
+ * ResponsiveCardGrid (2-col mobile, 4-col desktop via desktopColumns=4→2 clamp).
+ * data-dashboard-kpi-grid and data-dashboard-kpi-link preserved for tests.
  */
 export function KpiGrid({ snapshot, isLoading, settings }: KpiGridProps) {
   if (isLoading) {
     return <LoadingState variant="cards" rows={4} label="جارٍ تحميل مؤشرات لوحة التحكم" />;
   }
 
-  const money = (value: number | null | undefined) => (
-    typeof value === 'number' && Number.isFinite(value) ? formatCompanyMoney(settings, value) : 'غير متاح'
-  );
+  const money = (value: number | null | undefined) =>
+    typeof value === 'number' && Number.isFinite(value) ? formatCompanyMoney(settings, value) : 'غير متاح';
+
   const net = snapshot?.netCash;
   const collectionRate = snapshot?.collections.collectionRate;
   const expensesTotal = snapshot?.expenses.totalAmount;
@@ -68,24 +52,34 @@ export function KpiGrid({ snapshot, isLoading, settings }: KpiGridProps) {
   const ownerNetPayable = snapshot?.ownerFunds.netPayable;
   const settlementsDraft = snapshot?.ownerFunds.settlementsDraft;
 
+  const collectionRateNum = collectionRate ?? 0;
+  const netNum = net ?? 0;
+  const ownerPayableNum = ownerNetPayable ?? 0;
+  const settlementsNum = settlementsDraft ?? 0;
+
   const allItems: DashboardKpi[] = [
     {
       label: 'فرق التحصيل والمصروفات',
       value: money(net),
       icon: TrendingUp,
-      support: 'التحصيلات ناقص المصروفات المسجلة فقط — ليس ربح المكتب ولا قائمة تدفق نقدي كاملة',
-      stateTone: (net ?? 0) >= 0 ? 'success' : 'danger',
-      stateLabel: (net ?? 0) >= 0 ? 'التحصيل أعلى' : 'المصروفات أعلى',
+      sub: 'التحصيلات ناقص المصروفات المسجلة فقط — ليس ربح المكتب ولا قائمة تدفق نقدي كاملة',
+      accent: netNum >= 0 ? 'emerald' : 'rose',
+      trend: netNum >= 0 ? 'up' : 'down',
+      trendValue: netNum >= 0 ? 'التحصيل أعلى' : 'المصروفات أعلى',
       to: '/reports',
       destinationLabel: 'التقارير المالية',
     },
     {
       label: 'نسبة التحصيل',
-      value: typeof collectionRate === 'number' && Number.isFinite(collectionRate) ? `${collectionRate}%` : 'غير متاح',
+      value:
+        typeof collectionRate === 'number' && Number.isFinite(collectionRate)
+          ? `${collectionRate}%`
+          : 'غير متاح',
       icon: Percent,
-      support: 'كفاءة تحصيل المستحقات ضمن الفترة',
-      stateTone: (collectionRate ?? 0) >= 80 ? 'success' : (collectionRate ?? 0) >= 50 ? 'warning' : 'danger',
-      stateLabel: (collectionRate ?? 0) >= 80 ? 'ممتاز' : (collectionRate ?? 0) >= 50 ? 'مراقبة' : 'منخفض',
+      sub: 'كفاءة تحصيل المستحقات ضمن الفترة',
+      accent: collectionRateNum >= 80 ? 'emerald' : collectionRateNum >= 50 ? 'amber' : 'rose',
+      trend: collectionRateNum >= 80 ? 'up' : collectionRateNum >= 50 ? 'neutral' : 'down',
+      trendValue: collectionRateNum >= 80 ? 'ممتاز' : collectionRateNum >= 50 ? 'مراقبة' : 'منخفض',
       to: '/financials',
       destinationLabel: 'المركز المالي',
     },
@@ -93,8 +87,8 @@ export function KpiGrid({ snapshot, isLoading, settings }: KpiGridProps) {
       label: 'المصروفات',
       value: money(expensesTotal),
       icon: Receipt,
-      support: `${expensesCount ?? 'غير متاح'} قيود مصروفات خلال الفترة`,
-      stateTone: 'neutral',
+      sub: `${expensesCount ?? 'غير متاح'} قيود مصروفات خلال الفترة`,
+      accent: 'slate',
       to: '/expenses',
       destinationLabel: 'سجل المصروفات',
     },
@@ -102,12 +96,16 @@ export function KpiGrid({ snapshot, isLoading, settings }: KpiGridProps) {
       label: 'مستحقات الملاك',
       value: money(ownerNetPayable),
       icon: HandCoins,
-      support: settlementsDraft !== undefined ? `${settlementsDraft} تسوية بانتظار الاعتماد` : 'التزامات الملاك ضمن الفترة',
+      sub:
+        settlementsNum > 0
+          ? `${settlementsNum} تسوية بانتظار الاعتماد`
+          : 'التزامات الملاك ضمن الفترة',
       // Tone follows the real decision state: pending approval is the only
       // actionable warning; an outstanding payable without pending approval
       // is informational; zero balance is neutral (never a false "success").
-      stateTone: (settlementsDraft ?? 0) > 0 ? 'warning' : (ownerNetPayable ?? 0) > 0 ? 'info' : 'neutral',
-      stateLabel: (settlementsDraft ?? 0) > 0 ? 'بانتظار الاعتماد' : (ownerNetPayable ?? 0) > 0 ? 'مستحق' : 'لا التزامات',
+      accent: settlementsNum > 0 ? 'amber' : ownerPayableNum > 0 ? 'sky' : 'slate',
+      trend: settlementsNum > 0 ? 'neutral' : undefined,
+      trendValue: settlementsNum > 0 ? 'بانتظار الاعتماد' : ownerPayableNum > 0 ? 'مستحق' : undefined,
       to: '/owner-settlements',
       destinationLabel: 'تسويات الملاك',
     },
@@ -123,22 +121,32 @@ export function KpiGrid({ snapshot, isLoading, settings }: KpiGridProps) {
 
   return (
     <div data-dashboard-kpi-grid>
-      {/* role="list" needs real <li> children: an <a role="listitem"> is invalid
-          ARIA (axe aria-allowed-role). The <li> is the grid item; the link fills it. */}
-      <ul className="dashboard-kpi-grid" role="list" aria-label="مؤشرات الأداء الأساسية">
+      <ResponsiveCardGrid
+        desktopColumns={2}
+        gap="md"
+        aria-label="مؤشرات الأداء الأساسية"
+      >
         {visibleItems.map((item) => (
-          <li key={item.label} role="listitem" className="min-w-0">
-            <Link
-              to={item.to}
-              data-dashboard-kpi-link
-              className={cn('dashboard-kpi-link')}
-              aria-label={`${item.label} — انتقل إلى ${item.destinationLabel}`}
-            >
-              <DashboardKpiCard item={item} />
-            </Link>
-          </li>
+          <Link
+            key={item.label}
+            to={item.to}
+            data-dashboard-kpi-link
+            className="block min-w-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            aria-label={`${item.label} — انتقل إلى ${item.destinationLabel}`}
+          >
+            <KpiCard
+              label={item.label}
+              value={item.value}
+              sub={item.sub}
+              icon={item.icon}
+              accent={item.accent}
+              trend={item.trend}
+              trendValue={item.trendValue}
+              className="h-full"
+            />
+          </Link>
         ))}
-      </ul>
+      </ResponsiveCardGrid>
     </div>
   );
 }
