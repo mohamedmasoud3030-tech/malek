@@ -20,7 +20,12 @@ import type {
 } from './types';
 
 type BankStatementLineInsert = Database['public']['Tables']['bank_statement_lines']['Insert'];
-type BankReconciliationMatchInsert = Database['public']['Tables']['bank_reconciliation_matches']['Insert'];
+type BankReconciliationMatchInsert = Omit<
+  Database['public']['Tables']['bank_reconciliation_matches']['Insert'],
+  'matched_entity_type'
+> & {
+  matched_entity_type: BankReconciliationMatchValues['matched_entity_type'];
+};
 type ProcessBankReconciliationMatchAtomicResult = Database['public']['Functions']['process_bank_reconciliation_match_atomic']['Returns'];
 
 const matchEntityTypes = [
