@@ -1,8 +1,10 @@
-import { CheckCircle2, TriangleAlert } from 'lucide-react';
+import { CheckCircle2, ListChecks, TriangleAlert } from 'lucide-react';
 import { DataErrorScreen } from '@/components/data-error-screen';
 import { EmptyState } from '@/components/empty-state';
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { KpiCard } from '@/components/ui/kpi-card';
 import { LoadingState } from '@/components/ui/loading-state';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
 import { formatCompanyDateTime } from '@/lib/companyFormatters';
 import type { DataIntegrityResult } from '../types';
@@ -34,44 +36,50 @@ export function DataIntegrityView({ state }: Readonly<{ state: DataIntegrityView
 
   return (
     <section className="space-y-4">
-      <Card>
-        <CardContent className="space-y-4 p-4 sm:p-5">
-          <h2 className="sr-only">تدقيق سلامة البيانات</h2>
-          <p className="text-sm leading-6 text-muted-foreground">آخر فحص: {checkedAt}</p>
-          <div className="grid gap-3 md:grid-cols-3">
-            <div className="rounded-2xl border border-border bg-background p-4">
-              <p className="text-xs font-bold text-muted-foreground">الفحوصات</p>
-              <p className="text-2xl font-black">{state.result.snapshot.checks.length}</p>
-            </div>
-            <div className="rounded-2xl border border-border bg-background p-4">
-              <p className="text-xs font-bold text-muted-foreground">الملاحظات</p>
-              <p className="text-2xl font-black">{issueCount}</p>
-            </div>
-            <div className="rounded-2xl border border-border bg-background p-4">
-              <p className="text-xs font-bold text-muted-foreground">الحالة</p>
-              <p className="text-2xl font-black">{issueCount === 0 ? 'سليم' : 'يحتاج مراجعة'}</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="space-y-2">
+        <h2 className="sr-only">تدقيق سلامة البيانات</h2>
+        <p className="text-sm leading-6 text-muted-foreground">آخر فحص: {checkedAt}</p>
+        <ResponsiveCardGrid desktopColumns={3} gap="md" aria-label="ملخص سلامة البيانات">
+          <KpiCard
+            label="الفحوصات"
+            value={state.result.snapshot.checks.length}
+            icon={ListChecks}
+            accent="sky"
+            compact
+          />
+          <KpiCard
+            label="الملاحظات"
+            value={issueCount}
+            icon={TriangleAlert}
+            accent={issueCount === 0 ? 'emerald' : 'amber'}
+            compact
+          />
+          <KpiCard
+            label="الحالة"
+            value={issueCount === 0 ? 'سليم' : 'يحتاج مراجعة'}
+            icon={issueCount === 0 ? CheckCircle2 : TriangleAlert}
+            accent={issueCount === 0 ? 'emerald' : 'amber'}
+            compact
+          />
+        </ResponsiveCardGrid>
+      </div>
 
-      <div className="grid gap-3 md:grid-cols-2">
+      <ResponsiveCardGrid desktopColumns={2} gap="md" aria-label="نتائج فحوصات سلامة البيانات">
         {state.result.snapshot.checks.map((check) => {
           const Icon = check.count > 0 ? TriangleAlert : CheckCircle2;
           return (
             <Card key={check.id} className={check.count > 0 ? 'border-warning/40 bg-warning/10' : undefined}>
               <CardHeader>
                 <CardTitle className="flex items-center justify-between gap-3 text-base">
-                  <span className="flex items-center gap-2"><Icon className={check.count > 0 ? 'size-5 text-warning' : 'size-5 text-success'} />{check.label}</span>
-                  <span className="rounded-full bg-background px-3 py-1 text-sm font-black">{check.count}</span>
+                  <span className="flex min-w-0 items-center gap-2"><Icon className={check.count > 0 ? 'size-5 shrink-0 text-warning' : 'size-5 shrink-0 text-success'} /><span className="break-words">{check.label}</span></span>
+                  <span className="rounded-full bg-background px-3 py-1 text-sm font-black tabular-nums">{check.count}</span>
                 </CardTitle>
                 <CardDescription>{check.description}</CardDescription>
               </CardHeader>
             </Card>
           );
         })}
-      </div>
+      </ResponsiveCardGrid>
     </section>
   );
 }
-

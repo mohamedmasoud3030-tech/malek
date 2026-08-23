@@ -1,10 +1,12 @@
-import { AlertTriangle, Bot, Loader2, Send, Sparkles } from 'lucide-react';
+import { AlertTriangle, Bot, Building2, CalendarClock, Loader2, Send, Sparkles } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { KpiCard } from '@/components/ui/kpi-card';
+import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Textarea } from '@/components/ui/textarea';
 import { formatMoney } from '@/features/financials/components/financials-formatters';
 import { APP_BRAND_NAME } from '@/lib/brand';
@@ -112,29 +114,32 @@ function ContextSnapshot({ context }: Readonly<{ context: AiAssistantContext | n
   if (!context) return <AssistantCapabilities />;
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3" aria-label="ملخص السياق المقروء">
-      <Card variant="muted">
-        <CardContent className="space-y-1 pt-6">
-          <p className="text-sm font-bold text-muted-foreground">المتأخرات</p>
-          <p className="text-2xl font-black" dir="ltr">{formatMoney(context.overdueInvoices.totalOutstanding)}</p>
-          <p className="text-xs text-muted-foreground">{toArabicCount(context.overdueInvoices.invoiceCount)} فواتير مفتوحة حتى {context.asOf}</p>
-        </CardContent>
-      </Card>
-      <Card variant="muted">
-        <CardContent className="space-y-1 pt-6">
-          <p className="text-sm font-bold text-muted-foreground">التجديدات القادمة</p>
-          <p className="text-2xl font-black">{toArabicCount(context.contractRenewals.contractCount)}</p>
-          <p className="text-xs text-muted-foreground">خلال {toArabicCount(context.contractRenewals.lookaheadDays)} يوماً</p>
-        </CardContent>
-      </Card>
-      <Card variant="muted">
-        <CardContent className="space-y-1 pt-6">
-          <p className="text-sm font-bold text-muted-foreground">الإشغال</p>
-          <p className="text-2xl font-black">{toArabicCount(context.propertyFinancialSnapshot.occupancyRate)}%</p>
-          <p className="text-xs text-muted-foreground">{toArabicCount(context.propertyFinancialSnapshot.occupiedUnitCount)} من {toArabicCount(context.propertyFinancialSnapshot.unitCount)} وحدة</p>
-        </CardContent>
-      </Card>
-    </div>
+    <ResponsiveCardGrid desktopColumns={3} gap="sm" aria-label="ملخص السياق المقروء">
+      <KpiCard
+        label="المتأخرات"
+        value={formatMoney(context.overdueInvoices.totalOutstanding)}
+        sub={`${toArabicCount(context.overdueInvoices.invoiceCount)} فواتير مفتوحة حتى ${context.asOf}`}
+        icon={AlertTriangle}
+        accent="amber"
+        compact
+      />
+      <KpiCard
+        label="التجديدات القادمة"
+        value={toArabicCount(context.contractRenewals.contractCount)}
+        sub={`خلال ${toArabicCount(context.contractRenewals.lookaheadDays)} يوماً`}
+        icon={CalendarClock}
+        accent="sky"
+        compact
+      />
+      <KpiCard
+        label="الإشغال"
+        value={`${toArabicCount(context.propertyFinancialSnapshot.occupancyRate)}%`}
+        sub={`${toArabicCount(context.propertyFinancialSnapshot.occupiedUnitCount)} من ${toArabicCount(context.propertyFinancialSnapshot.unitCount)} وحدة`}
+        icon={Building2}
+        accent="emerald"
+        compact
+      />
+    </ResponsiveCardGrid>
   );
 }
 

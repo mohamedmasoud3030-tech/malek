@@ -1,8 +1,8 @@
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { composeEventHandlers } from '@radix-ui/primitive';
 import { X } from 'lucide-react';
-import type { ComponentPropsWithoutRef, CSSProperties, ElementRef } from 'react';
-import { forwardRef, useCallback, useEffect, useRef, useState } from 'react';
+import { Children, forwardRef, isValidElement, useCallback, useEffect, useRef, useState } from 'react';
+import type { ComponentPropsWithoutRef, CSSProperties, ElementRef, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 export const Dialog = DialogPrimitive.Root;
@@ -28,6 +28,14 @@ type DialogContentElement = ElementRef<typeof DialogPrimitive.Content>;
 type DialogContentProps = ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean;
 };
+
+function containsDialogDescription(node: ReactNode): boolean {
+  return Children.toArray(node).some((child) => {
+    if (!isValidElement(child)) return false;
+    if (child.type === DialogDescription || child.type === DialogPrimitive.Description) return true;
+    return containsDialogDescription((child.props as { children?: ReactNode }).children);
+  });
+}
 
 function getDialogPlacementStyle(className?: string): CSSProperties {
   const classes = className ?? '';
@@ -75,6 +83,7 @@ export const DialogContent = forwardRef<DialogContentElement, DialogContentProps
   function DialogContent({ className, children, showCloseButton = true, style, ...props }, forwardedRef) {
     const [contentNode, setContentNode] = useState<DialogContentElement | null>(null);
     const [containsDataEntryControls, setContainsDataEntryControls] = useState(false);
+    const hasAccessibleDescription = containsDialogDescription(children);
     // Focus restoration (WCAG 2.4.3). This app opens every dialog from plain
     // buttons via state — there is no <DialogTrigger> anywhere — so Radix's
     // internal triggerRef is always null and its close-autofocus
@@ -122,11 +131,6 @@ export const DialogContent = forwardRef<DialogContentElement, DialogContentProps
     };
 
     useEffect(() => {
-      // Fallback for closes where onCloseAutoFocus is never dispatched — the
-      // whole tree unmounts (e.g. navigation away) while the dialog is open.
-      // Runs in cleanup so it fires on unmount, not at mount (when focus is
-      // already inside the dialog). Restores only when focus would otherwise
-      // land on <body>, the dialog is gone, and the origin still exists.
       return () => {
         const previous = lastOutsideFocusRef.current;
         if (!previous || !previous.isConnected) return;
@@ -159,12 +163,6 @@ export const DialogContent = forwardRef<DialogContentElement, DialogContentProps
         <DialogOverlay />
         <DialogPrimitive.Content
           ref={setContentRef}
-          // Radix renders role="dialog" and hides the rest of the tree with
-          // aria-hidden, but it never emits aria-modal. WAI-ARIA APG requires
-          // aria-modal="true" on a modal dialog so assistive tech announces the
-          // boundary; without it screen readers can still walk out of the
-          // drawer. Every Dialog in this app is modal (Radix default), and the
-          // value stays overridable through the props spread below.
           aria-modal="true"
           data-dialog-content
           data-dialog-form={containsDataEntryControls ? 'true' : undefined}
@@ -178,6 +176,11 @@ export const DialogContent = forwardRef<DialogContentElement, DialogContentProps
           {...props}
         >
           {children}
+          {!hasAccessibleDescription ? (
+            <DialogPrimitive.Description className="sr-only">
+              نافذة حوار تحتوي على معلومات أو إجراءات مرتبطة بالسياق الحالي.
+            </DialogPrimitive.Description>
+          ) : null}
           {showCloseButton ? (
             <DialogPrimitive.Close
               className="absolute end-3 top-[calc(0.75rem+env(safe-area-inset-top,0px))] grid size-11 place-items-center rounded-xl text-muted-foreground outline-none transition hover:bg-muted hover:text-foreground focus-visible:ring-4 focus-visible:ring-primary/20 sm:end-4 sm:top-[calc(1rem+env(safe-area-inset-top,0px))]"

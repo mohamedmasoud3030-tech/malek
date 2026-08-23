@@ -1,30 +1,35 @@
 import { useMemo, useState } from 'react';
-import { CalendarRange, Check, FileText, Landmark, RotateCcw, SlidersHorizontal, UserRound } from 'lucide-react';
+import { Building2, CalendarRange, Check, CircleDot, DoorOpen, FileText, Landmark, RotateCcw, SlidersHorizontal, UserRound, UsersRound } from 'lucide-react';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { Button } from '@/components/ui/button';
+import { invoiceStatusLabels } from '@/features/financials/components/invoice-status-labels';
 import type { ContractListItem } from '@/features/contracts/services/contractService';
 import type { Owner } from '@/features/owners/services/owner-service';
 import type { CostCenterRecord } from '@/features/settings/costCenterService';
 import { cn } from '@/lib/utils';
 import { buildReportFilterSummary, type ReportFilterChip } from '../reports-filter-summary';
-import { getCurrentMonthFilters, type FilterState } from '../reports-page.helpers';
+import { getInitialReportsFilters, type ReportsFilterState } from '../reports-workspace-filters';
 import { getSelectedFilterEntities } from '../reports-filters.shared';
 import { FiltersPanel } from './FiltersPanel';
 
 type ReportsFilterSurfaceProps = Readonly<{
-  filters: FilterState;
+  filters: ReportsFilterState;
   costCenterRows: CostCenterRecord[];
   ownerRows: Owner[];
   contractRows: ContractListItem[];
-  onChange: (filters: FilterState) => void;
+  onChange: (filters: ReportsFilterState) => void;
   onResetCurrentMonth: () => void;
 }>;
 
 const filterChipIcons = {
   period: CalendarRange,
   asOf: CalendarRange,
+  property: Building2,
+  unit: DoorOpen,
+  tenant: UserRound,
+  status: CircleDot,
   costCenter: Landmark,
-  owner: UserRound,
+  owner: UsersRound,
   contract: FileText,
 } satisfies Record<ReportFilterChip['key'], React.ComponentType<{ className?: string }>>;
 
@@ -37,14 +42,18 @@ export function ReportsFilterSurface({
   onResetCurrentMonth,
 }: ReportsFilterSurfaceProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const defaults = useMemo(() => getCurrentMonthFilters(), []);
-  const { selectedCostCenter, selectedOwner, selectedContract } = getSelectedFilterEntities(
+  const defaults = useMemo(() => getInitialReportsFilters(), []);
+  const { selectedCostCenter, selectedOwner, selectedContract, selectedProperty, selectedUnit, selectedTenant } = getSelectedFilterEntities(
     filters,
     costCenterRows,
     ownerRows,
     contractRows,
   );
   const summary = buildReportFilterSummary(filters, defaults, {
+    property: selectedProperty?.title,
+    unit: selectedUnit?.unit_number ? `وحدة ${selectedUnit.unit_number}` : undefined,
+    tenant: selectedTenant?.full_name,
+    status: filters.status && filters.status !== 'all' ? (invoiceStatusLabels[filters.status] ?? filters.status) : undefined,
     costCenter: selectedCostCenter,
     owner: selectedOwner?.display_name ?? selectedOwner?.full_name,
     contract: selectedContract ? selectedContract.reference || `${selectedContract.people?.full_name ?? 'مستأجر'} — ${selectedContract.properties?.title ?? 'عقار'}` : undefined,
@@ -52,12 +61,7 @@ export function ReportsFilterSurface({
 
   return (
     <>
-      {/* No aria-label here: the wrapping FinanceSection in ReportsWorkspace
-          already labels this cluster «نطاق التقرير». Repeating the label on
-          this nested <section> creates a duplicate landmark (axe landmark-unique). */}
-      <section
-        className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-card"
-      >
+      <section className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-card">
         <div className="flex min-w-0 flex-col gap-3 border-b border-border/60 p-3.5 sm:flex-row sm:items-center sm:justify-between sm:p-4">
           <div className="flex min-w-0 items-center gap-3">
             <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground shadow-sm">
@@ -76,7 +80,7 @@ export function ReportsFilterSurface({
                 </span>
               </div>
               <p className="mt-1 text-xs font-medium text-muted-foreground">
-                كل التقارير والكشوف أدناه تستخدم هذا النطاق نفسه.
+                الفترة والاحتساب والأبعاد التشغيلية المشتركة؛ يوضح النموذج أين ينطبق كل بُعد.
               </p>
             </div>
           </div>
@@ -87,7 +91,7 @@ export function ReportsFilterSurface({
               variant="outline"
               className="min-h-11"
               onClick={onResetCurrentMonth}
-              disabled={summary.activeCount === 0}
+              disabled={filters.from === defaults.from && filters.to === defaults.to && filters.asOf === defaults.asOf}
             >
               <RotateCcw className="me-2 size-4" aria-hidden="true" />
               الشهر الحالي

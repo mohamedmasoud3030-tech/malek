@@ -9,10 +9,10 @@ import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
 import { documentService } from '@/services/documents/DocumentService';
 import { runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
 import { toReportDocumentPayload, type ReportDocumentData } from '@/services/documents/documentPayloadAdapters';
-import { buildReportCsvFilename, downloadCsv, getTodayLocalDateString, toDailyCollectionCsv, type RentRollReportRow } from '../reports-page.helpers';
+import { buildReportCsvFilename, downloadCsv, toDailyCollectionCsv, type RentRollReportRow } from '../reports-page.helpers';
 import { ReportColumns, ReportInsightNote, ReportProgress } from './report-section-primitives';
 import { DailyCollectionsPanel } from './collections/daily-collections-panel';
-import { ReceiptLinksPanel } from './collections/receipt-links-panel';
+import { ReceiptLinksPanel, type CollectionReceiptRow } from './collections/receipt-links-panel';
 import { RentRollPanel } from './collections/rent-roll-panel';
 import { formatLatinNumber } from '@/lib/formatters';
 
@@ -24,21 +24,15 @@ const paymentMethodLabels = {
   other: 'أخرى',
 } as const;
 
-type ReceiptRow = Readonly<{
-  id: string;
-  receipt_number: string;
-  payment_date: string;
-  amount: number;
-  tenant_name: string | null;
-}>;
-
-export function CollectionsSection({ summary, rows, receiptRows, rentRollRows, canExportReports, isLoading }: Readonly<{
+export function CollectionsSection({ summary, rows, receiptRows, rentRollRows, canExportReports, isLoading, from, to }: Readonly<{
   summary: NonNullable<ReturnType<typeof useCollectionSummaryReport>['data']> | undefined;
   rows: DailyCollectionReportRow[];
-  receiptRows: ReceiptRow[];
+  receiptRows: CollectionReceiptRow[];
   rentRollRows: RentRollReportRow[];
   canExportReports: boolean;
   isLoading: boolean;
+  from: string;
+  to: string;
 }>) {
   const totalCollected = summary?.paid ?? rows.reduce((total, row) => total + row.totalPaid, 0);
   const paymentsCount = rows.reduce((total, row) => total + row.paymentsCount, 0);
@@ -56,35 +50,43 @@ export function CollectionsSection({ summary, rows, receiptRows, rentRollRows, c
   const { companySettings: documentSettings, isReady: isDocumentSettingsReady } = useDocumentSettings();
   const currencySymbol = documentSettings.currencySymbol || documentSettings.currency;
 
-  const buildCollectionsReportData = (): ReportDocumentData => {
-    return {
-      reportTitle: 'كشف حركة التحصيلات اليومية والتدفقات النقدية',
-      reportType: 'Daily_Collections_Report',
-      periodFrom: getTodayLocalDateString(),
-      periodTo: getTodayLocalDateString(),
-      sections: [
-        {
-          title: 'جدول المقبوضات حسب التاريخ وطرق السداد',
-          columns: ['التاريخ', 'عدد العمليات', 'نقداً', 'تحويل بنكي', 'شيكات', 'إجمالي التحصيل'],
-          rows: rows.map((row) => [
-            row.paymentDate,
-            row.paymentsCount,
-            `${formatLatinNumber(row.methodTotals.cash, 'ar-OM')}`,
-            `${formatLatinNumber(row.methodTotals.bank_transfer, 'ar-OM')}`,
-            `${formatLatinNumber(row.methodTotals.check, 'ar-OM')}`,
-            `${formatLatinNumber(row.totalPaid, 'ar-OM')} ${currencySymbol}`,
-          ]),
-          totals: ['الإجمالي العام', '', '', '', '', `${formatLatinNumber(totalCollected, 'ar-OM')} ${currencySymbol}`],
-        },
-      ],
-      totalSummary: `إجمالي المبلغ المحصل: ${formatLatinNumber(totalCollected, 'ar-OM')} ${currencySymbol} | كفاءة التحصيل: ${Math.round(collectionRate)}%`,
-    };
-  };
+  const buildCollectionsReportData = (): ReportDocumentData => ({
+    reportTitle: 'كشف حركة التحصيلات اليومية والتدفقات النقدية',
+    reportType: 'Daily_Collections_Report',
+    periodFrom: from,
+    periodTo: to,
+    sections: [
+      {
+        title: 'جدول المقبوضات حسب التاريخ وطرق السداد',
+        columns: ['التاريخ', 'عدد العمليات', 'نقداً', 'تحويل بنكي', 'شيكات', 'إجمالي التحصيل'],
+        rows: rows.map((row) => [
+          row.paymentDate,
+          row.paymentsCount,
+          `${formatLatinNumber(row.methodTotals.cash, 'ar-OM')}`,
+          `${formatLatinNumber(row.methodTotals.bank_transfer, 'ar-OM')}`,
+          `${formatLatinNumber(row.methodTotals.check, 'ar-OM')}`,
+          `${formatLatinNumber(row.totalPaid, 'ar-OM')} ${currencySymbol}`,
+        ]),
+        totals: ['الإجمالي العام', '', '', '', '', `${formatLatinNumber(totalCollected, 'ar-OM')} ${currencySymbol}`],
+      },
+      {
+        title: 'سياق الإيصالات والتحصيلات',
+        columns: ['الإيصال', 'المستأجر', 'العقار / الوحدة', 'الفاتورة', 'طريقة الدفع', 'المبلغ', 'الحالة'],
+        rows: receiptRows.map((receipt) => [
+          receipt.receipt_number,
+          receipt.tenant_name ?? 'غير محدد',
+          `${receipt.property_title ?? 'عقار غير محدد'} / ${receipt.unit_number ?? '—'}`,
+          receipt.invoice_reference ?? '—',
+          paymentMethodLabels[receipt.payment_method as keyof typeof paymentMethodLabels] ?? receipt.payment_method,
+          `${formatLatinNumber(receipt.amount, 'ar-OM')} ${currencySymbol}`,
+          receipt.status === 'posted' ? 'مرحّل' : 'ملغى',
+        ]),
+      },
+    ],
+    totalSummary: `إجمالي المبلغ المحصل: ${formatLatinNumber(totalCollected, 'ar-OM')} ${currencySymbol} | كفاءة التحصيل: ${Math.round(collectionRate)}%`,
+  });
 
   const handlePrintCollectionsReport = async () => {
-    // Readiness is enforced HERE, not only via the button's disabled prop:
-    // the handler stays reachable (keyboard, stale closure, automation), so
-    // the guard must live inside the async boundary and fail closed.
     await runGuardedDocumentAction({
       isReady: isDocumentSettingsReady,
       operation: () => documentService.printDocument('generic_report', { settings: documentSettings, payload: toReportDocumentPayload(buildCollectionsReportData()) }),
@@ -93,9 +95,6 @@ export function CollectionsSection({ summary, rows, receiptRows, rentRollRows, c
   };
 
   const handleDownloadCollectionsReport = async () => {
-    // Readiness is enforced HERE, not only via the button's disabled prop:
-    // the handler stays reachable (keyboard, stale closure, automation), so
-    // the guard must live inside the async boundary and fail closed.
     await runGuardedDocumentAction({
       isReady: isDocumentSettingsReady,
       operation: () => documentService.downloadDocumentPdf('generic_report', { settings: documentSettings, payload: toReportDocumentPayload(buildCollectionsReportData()) }),

@@ -61,6 +61,8 @@ const fixtureModel: ReportsWorkspaceModel = {
       isLoading: false,
     },
     collections: {
+      from: '2026-07-01',
+      to: fixtureDate,
       summary: {
         invoiced: 12800,
         paid: 10450,
@@ -93,7 +95,11 @@ const fixtureModel: ReportsWorkspaceModel = {
           property_title: 'برج الخوير',
           unit_number: 'A-12',
           contract_id: 'contract-1',
+          invoice_id: 'invoice-1',
+          invoice_reference: 'INV-0001',
+          invoice_status: 'paid',
           payment_method: 'bank_transfer',
+          reference_number: 'TRX-001',
           status: 'posted',
         },
         {
@@ -105,7 +111,11 @@ const fixtureModel: ReportsWorkspaceModel = {
           property_title: 'مجمع الموالح',
           unit_number: 'B-04',
           contract_id: 'contract-2',
+          invoice_id: 'invoice-2',
+          invoice_reference: 'INV-0002',
+          invoice_status: 'paid',
           payment_method: 'cash',
+          reference_number: null,
           status: 'posted',
         },
       ],
