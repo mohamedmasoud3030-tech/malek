@@ -33,8 +33,8 @@ import {
   isWithinDateRange,
   latestReceiptLimit,
   usePropertyTitles,
-  type FilterState,
 } from './reports-page.helpers';
+import type { ReportsFilterState } from './reports-workspace-filters';
 import type { ReportLocation, ReportViewId } from './reports-section-model';
 
 function firstErrorOf(...errors: ReadonlyArray<unknown>): unknown {
@@ -50,25 +50,44 @@ function isLoadingAny(...flags: ReadonlyArray<boolean | undefined>): boolean {
 
 /**
  * R6 — Reports Read Models: which report views need which data sources.
- * The active location decides which queries are enabled; switching a tab
- * enables its queries on demand and react-query caches previously opened
- * reports for the same filters.
+ * The active location decides which report queries are enabled; the lightweight
+ * contract/owner directories stay cached so the global report filter surface is
+ * truthful on every report instead of becoming empty when a different tab opens.
  */
 function viewNeeds(view: ReportViewId, location: ReportLocation) {
   const active = (views: ReportViewId[]) => views.includes(view) && views.includes(location.view);
   return active;
 }
 
-export function useReportsWorkspace(filters: FilterState, location: ReportLocation) {
+export function useReportsWorkspace(filters: ReportsFilterState, location: ReportLocation) {
   const financialFilters = useMemo(
     () => ({
       dateFrom: filters.from,
       dateTo: filters.to,
+      propertyId: filters.propertyId || undefined,
+      unitId: filters.unitId || undefined,
+      tenantId: filters.tenantId || undefined,
+      contractId: filters.contractId || undefined,
+      costCenterId: filters.costCenterId || undefined,
+      status: filters.status ?? 'all',
+    }),
+    [filters.contractId, filters.costCenterId, filters.from, filters.propertyId, filters.status, filters.tenantId, filters.to, filters.unitId],
+  );
+  const expenseFilters = useMemo(
+    () => ({
+      dateFrom: filters.from,
+      dateTo: filters.to,
+      propertyId: filters.propertyId || undefined,
       costCenterId: filters.costCenterId || undefined,
     }),
-    [filters.costCenterId, filters.from, filters.to],
+    [filters.costCenterId, filters.from, filters.propertyId, filters.to],
   );
-  const arrearsFilters = useMemo(() => ({ asOf: filters.asOf }), [filters.asOf]);
+  const arrearsFilters = useMemo(() => ({
+    asOf: filters.asOf,
+    propertyId: filters.propertyId || undefined,
+    tenantId: filters.tenantId || undefined,
+    contractId: filters.contractId || undefined,
+  }), [filters.asOf, filters.contractId, filters.propertyId, filters.tenantId]);
 
   const view = location.view;
   const isAccounting = location.section === 'accounting';
@@ -99,13 +118,14 @@ export function useReportsWorkspace(filters: FilterState, location: ReportLocati
   // `useAuthoritativeGlCashFlow`; do not fetch legacy `rpt_cash_flow` here.
   const vatReturnQuery = useVatReturnReport(financialFilters, { enabled: needsStatements });
   const dailyCollectionQuery = useDailyCollectionReport(financialFilters, { enabled: needsCollections || needsStatements });
-  const expenseBreakdownQuery = useExpenseBreakdownReport(financialFilters, { enabled: needsExpenses || needsStatements });
+  const expenseBreakdownQuery = useExpenseBreakdownReport(expenseFilters, { enabled: needsExpenses || needsStatements });
   const overdueInvoicesQuery = useOverdueInvoicesReport(arrearsFilters, { enabled: needsOverdue });
   const agedReceivablesQuery = useAgedReceivablesReport(arrearsFilters, { enabled: needsOverdue || needsStatements });
   const arrearsSummaryQuery = useArrearsSummaryReport(arrearsFilters, { enabled: needsOverdue });
-  const contractsEnabled = needsCollections || needsOccupancy || needsDeferredRevenue || needsStatements;
-  const contractsQuery = useAllContracts('all', { enabled: contractsEnabled });
-  const ownersQuery = useOwners({ enabled: needsStatements });
+  // Always available as filter directories; React Query caches the complete
+  // reads and report bodies still remain lazy by active view.
+  const contractsQuery = useAllContracts('all', { enabled: true });
+  const ownersQuery = useOwners({ enabled: true });
   const tenantStatementQuery = useTenantStatementReport(filters.contractId || undefined, { enabled: needsStatements });
   const ownerStatementQuery = useOwnerStatementReport(filters.ownerId || undefined, financialFilters, { enabled: needsStatements });
   const unitsQuery = useAllUnits({ enabled: needsOccupancy });
@@ -124,8 +144,9 @@ export function useReportsWorkspace(filters: FilterState, location: ReportLocati
     [propertyTitlesQuery.data],
   );
   const rentRollRows = useMemo(
-    () => buildRentRollRows(contracts, contractStatusLabels),
-    [contracts],
+    () => buildRentRollRows(contracts, contractStatusLabels)
+      .filter((row) => !filters.contractId || row.contractId === filters.contractId),
+    [contracts, filters.contractId],
   );
   const occupancyRows = useMemo(
     () => buildOccupancyRows(unitsQuery.data ?? [], propertyTitlesById),
@@ -142,6 +163,7 @@ export function useReportsWorkspace(filters: FilterState, location: ReportLocati
   const receiptRows = useMemo(
     () => allReceipts
       .filter((receipt) => isWithinDateRange(receipt.payment_date, filters))
+      .filter((receipt) => !filters.contractId || receipt.contract_id === filters.contractId)
       .map((receipt) => ({
         id: receipt.id,
         receipt_number: receipt.receipt_number,
