@@ -51,38 +51,33 @@ export function RegisterMetricStrip({
   if (visible.length === 0) return null;
 
   return (
-    <ResponsiveCardGrid
-      as="section"
-      desktopColumns={3}
-      gap="sm"
-      data-register-metric-strip="true"
-      aria-label={ariaLabel}
-      className={className}
-    >
-      {visible.map((item) => {
-        const Icon = item.icon;
-        return (
-          <div
-            key={item.id}
-            data-register-metric
-            className="flex min-w-0 items-center gap-2 rounded-xl border border-border/70 bg-card px-3 py-2 shadow-card"
-          >
-            {Icon ? (
-              <span className="hidden size-8 shrink-0 place-items-center rounded-md bg-muted text-muted-foreground sm:grid">
-                <Icon className="size-4" aria-hidden="true" />
-              </span>
-            ) : null}
-            <div className="min-w-0 flex-1">
-              <p className="line-clamp-2 break-words text-[10px] font-bold leading-4 text-muted-foreground">{item.label}</p>
-              <p className={cn('break-words text-sm font-black tabular-nums leading-5 [overflow-wrap:anywhere]', toneClass[item.tone ?? 'default'])}>
-                {item.value}
-              </p>
-              {item.hint ? <p className="line-clamp-2 break-words text-[10px] leading-4 text-muted-foreground">{item.hint}</p> : null}
+    <section data-register-metric-strip aria-label={ariaLabel} className={className}>
+      <ResponsiveCardGrid desktopColumns={3} gap="sm">
+        {visible.map((item) => {
+          const Icon = item.icon;
+          return (
+            <div
+              key={item.id}
+              data-register-metric
+              className="flex min-w-0 items-center gap-2 rounded-xl border border-border/70 bg-card px-3 py-2 shadow-card"
+            >
+              {Icon ? (
+                <span className="hidden size-8 shrink-0 place-items-center rounded-md bg-muted text-muted-foreground sm:grid">
+                  <Icon className="size-4" aria-hidden="true" />
+                </span>
+              ) : null}
+              <div className="min-w-0 flex-1">
+                <p className="line-clamp-2 break-words text-[10px] font-bold leading-4 text-muted-foreground">{item.label}</p>
+                <p className={cn('break-words text-sm font-black tabular-nums leading-5 [overflow-wrap:anywhere]', toneClass[item.tone ?? 'default'])}>
+                  {item.value}
+                </p>
+                {item.hint ? <p className="line-clamp-2 break-words text-[10px] leading-4 text-muted-foreground">{item.hint}</p> : null}
+              </div>
             </div>
-          </div>
-        );
-      })}
-    </ResponsiveCardGrid>
+          );
+        })}
+      </ResponsiveCardGrid>
+    </section>
   );
 }
 
