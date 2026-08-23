@@ -61,6 +61,8 @@ const fixtureModel: ReportsWorkspaceModel = {
       isLoading: false,
     },
     collections: {
+      from: '2026-07-01',
+      to: fixtureDate,
       summary: {
         invoiced: 12800,
         paid: 10450,
