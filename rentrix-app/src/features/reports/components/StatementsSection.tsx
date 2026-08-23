@@ -1,7 +1,6 @@
 import type { DailyCollectionReportRow, OwnerStatementReport, TenantStatementReport } from '@/features/financials/reports/financialReportsService';
 import {
   useAgedReceivablesReport,
-  useCashFlowStatementReport,
   useExpenseBreakdownReport,
   useFinancialPeriodSummaryReport,
   useVatReturnReport,
@@ -16,7 +15,10 @@ import {
   type OwnerStatementData,
   type TenantStatementData,
 } from '@/services/documents/documentPayloadAdapters';
+import { useAuthoritativeGlCashFlow } from '../accounting-report-authority';
 import { ReportColumns } from './report-section-primitives';
+import { OwnerStatementPanel, TenantStatementPanel } from './statements/statement-account-panels';
+import { OfficeSummaryPanel, RegulatorySummaryPanels, StatementSelectionStrip } from './statements/statement-summary-panels';
 
 /**
  * A statement is a legal/financial document: without its authoritative
@@ -25,8 +27,6 @@ import { ReportColumns } from './report-section-primitives';
  */
 const MISSING_STATEMENT_DATA_MESSAGE =
   'تعذر إصدار الكشف: لا توجد بيانات كشف حساب مُحمَّلة للفترة أو الطرف المحدد. يرجى تحديد النطاق وعرض النتائج أولاً.';
-import { OwnerStatementPanel, TenantStatementPanel } from './statements/statement-account-panels';
-import { OfficeSummaryPanel, RegulatorySummaryPanels, StatementSelectionStrip } from './statements/statement-summary-panels';
 
 type ReceiptRow = Readonly<{
   id: string;
@@ -41,7 +41,6 @@ export function StatementsSection({
   receiptRows,
   financialSummary,
   expenseBreakdown,
-  cashFlowStatement,
   vatReturn,
   dailyRows,
   tenantStatement,
@@ -59,7 +58,6 @@ export function StatementsSection({
   receiptRows: ReceiptRow[];
   financialSummary: NonNullable<ReturnType<typeof useFinancialPeriodSummaryReport>['data']> | undefined;
   expenseBreakdown: NonNullable<ReturnType<typeof useExpenseBreakdownReport>['data']> | undefined;
-  cashFlowStatement: NonNullable<ReturnType<typeof useCashFlowStatementReport>['data']> | undefined;
   vatReturn: NonNullable<ReturnType<typeof useVatReturnReport>['data']> | undefined;
   dailyRows: DailyCollectionReportRow[];
   tenantStatement: TenantStatementReport | undefined;
@@ -76,6 +74,7 @@ export function StatementsSection({
   const tenantRows = (agedReport?.rows ?? []).slice(0, 6);
   const ownerMovementRows = (expenseBreakdown?.byProperty ?? []).slice(0, 6);
   const totalCollections = dailyRows.reduce((total, row) => total + row.totalPaid, 0);
+  const glCashFlowQuery = useAuthoritativeGlCashFlow(filters?.from, filters?.to);
 
   const { companySettings: documentSettings, isReady: isDocumentSettingsReady } = useDocumentSettings();
 
@@ -103,9 +102,6 @@ export function StatementsSection({
   };
 
   const handlePrintTenantStatement = async () => {
-    // Company readiness AND a real statement snapshot are both required, and
-    // both are checked inside the handler so a reachable handler can never
-    // emit a statement without its authoritative source data.
     await runGuardedDocumentAction({
       isReady: isDocumentSettingsReady,
       operation: async () => {
@@ -118,9 +114,6 @@ export function StatementsSection({
   };
 
   const handleDownloadTenantStatement = async () => {
-    // Company readiness AND a real statement snapshot are both required, and
-    // both are checked inside the handler so a reachable handler can never
-    // emit a statement without its authoritative source data.
     await runGuardedDocumentAction({
       isReady: isDocumentSettingsReady,
       operation: async () => {
@@ -157,9 +150,6 @@ export function StatementsSection({
   };
 
   const handlePrintOwnerStatement = async () => {
-    // Company readiness AND a real statement snapshot are both required, and
-    // both are checked inside the handler so a reachable handler can never
-    // emit a statement without its authoritative source data.
     await runGuardedDocumentAction({
       isReady: isDocumentSettingsReady,
       operation: async () => {
@@ -172,9 +162,6 @@ export function StatementsSection({
   };
 
   const handleDownloadOwnerStatement = async () => {
-    // Company readiness AND a real statement snapshot are both required, and
-    // both are checked inside the handler so a reachable handler can never
-    // emit a statement without its authoritative source data.
     await runGuardedDocumentAction({
       isReady: isDocumentSettingsReady,
       operation: async () => {
@@ -231,7 +218,13 @@ export function StatementsSection({
         receiptsCount={receiptRows.length}
       />
 
-      <RegulatorySummaryPanels cashFlow={cashFlowStatement} vatReturn={vatReturn} isLoading={isLoading} />
+      <RegulatorySummaryPanels
+        cashFlow={glCashFlowQuery.data}
+        cashFlowError={glCashFlowQuery.error}
+        isCashFlowLoading={glCashFlowQuery.isLoading}
+        vatReturn={vatReturn}
+        isLoading={isLoading}
+      />
     </div>
   );
 }

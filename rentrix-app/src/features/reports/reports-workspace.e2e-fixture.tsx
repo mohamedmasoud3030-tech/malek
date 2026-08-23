@@ -250,7 +250,6 @@ const fixtureModel: ReportsWorkspaceModel = {
       financialSummary: undefined,
       expenseBreakdown: undefined,
       dailyRows: [],
-      cashFlowStatement: undefined,
       vatReturn: undefined,
       tenantStatement: undefined,
       ownerStatement: undefined,

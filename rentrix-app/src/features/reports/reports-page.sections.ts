@@ -1,4 +1,4 @@
-import { Scale, FileSpreadsheet, TrendingUp, Gauge } from 'lucide-react';
+import { Scale, FileSpreadsheet, TrendingUp } from 'lucide-react';
 
 export type ReportCategoryId = 'accounting' | 'statements' | 'analytics';
 
@@ -8,21 +8,21 @@ export const reportCategories = [
     label: 'المحاسبة والرقابة',
     shortLabel: 'المحاسبة والرقابة',
     icon: Scale,
-    description: 'شجرة الحسابات، قيود اليومية، الفترات المحاسبية، ميزان المراجعة، والاستحقاق والقوائم المالية.',
+    description: 'مطابقة الدفاتر المساعدة مع الأستاذ العام، شجرة الحسابات، القيود، الفترات، ميزان المراجعة والقوائم المالية.',
   },
   {
     id: 'statements',
     label: 'الكشوف',
     shortLabel: 'الكشوف',
     icon: FileSpreadsheet,
-    description: 'كشف حساب المستأجر والمالك، كشف حركة المكتب، التدفق النقدي، والضرائب.',
+    description: 'كشف المستأجر والمالك، حركة المكتب التشغيلية، التدفق النقدي المبني على الأستاذ العام، والضرائب.',
   },
   {
     id: 'analytics',
     label: 'التحليلات',
     shortLabel: 'التحليلات',
     icon: TrendingUp,
-    description: 'تحليلات الأداء والمصروفات والمتأخرات والإشغال والصيانة.',
+    description: 'تحليلات الأداء والمصروفات والمتأخرات والإشغال والصيانة؛ لا تُستخدم بدل القوائم المحاسبية.',
   },
 ] as const;
 
@@ -33,7 +33,7 @@ export const reportSections = [
     icon: Scale,
     group: 'الرقابة والمخرجات المحاسبية',
     category: 'accounting',
-    description: 'ضوابط الأستاذ العام: شجرة الحسابات والفترات والقيود، مع ميزان المراجعة والقوائم المالية المبنية على القيود المرحّلة.',
+    description: 'ضوابط الأستاذ العام ومطابقة Subledger↔GL، مع شجرة الحسابات والفترات والقيود وميزان المراجعة والقوائم المبنية على القيود المرحّلة.',
   },
   {
     id: 'statements',
@@ -41,7 +41,7 @@ export const reportSections = [
     icon: FileSpreadsheet,
     group: 'الكشوفات التفصيلية',
     category: 'statements',
-    description: 'كشف حساب المستأجر والمالك وحركة المكتب والتدفق النقدي وضريبة القيمة المضافة.',
+    description: 'كشف المستأجر والمالك وحركة المكتب التشغيلية، مع Cash Flow محاسبي من 1111/1120 وضريبة القيمة المضافة.',
   },
   {
     id: 'analytics',
@@ -49,7 +49,7 @@ export const reportSections = [
     icon: TrendingUp,
     group: 'تحليلات الأداء والتشغيل',
     category: 'analytics',
-    description: 'التحصيل، المتأخرات، كفاءة الإشغال، الصيانة والمصروفات التشغيلية عبر الفلاتر.',
+    description: 'التحصيل والمتأخرات والإشغال والصيانة والمصروفات التشغيلية عبر الفلاتر؛ مؤشرات تشغيلية وليست ربحًا أو تدفقًا نقديًا محاسبيًا.',
   },
 ] as const;
 
