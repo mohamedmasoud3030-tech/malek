@@ -77,9 +77,6 @@ export function useReportsWorkspace(filters: ReportsFilterState, location: Repor
     }),
     [filters.costCenterId, filters.from, filters.propertyId, filters.to],
   );
-  // unitId is an additive runtime dimension. Arrears helpers delegate context
-  // matching to FinancialReportFilters and therefore honor it without changing
-  // any database/RPC contract.
   const arrearsFilters = useMemo(() => ({
     asOf: filters.asOf,
     propertyId: filters.propertyId || undefined,
@@ -144,10 +141,7 @@ export function useReportsWorkspace(filters: ReportsFilterState, location: Repor
     () => new Map((propertyTitlesQuery.data ?? []).map((row) => [row.id, row.title] as const)),
     [propertyTitlesQuery.data],
   );
-  const rentRollRows = useMemo(
-    () => buildRentRollRows(scopedContracts, contractStatusLabels),
-    [scopedContracts],
-  );
+  const rentRollRows = useMemo(() => buildRentRollRows(scopedContracts, contractStatusLabels), [scopedContracts]);
   const occupancyRows = useMemo(
     () => buildOccupancyRows(
       (unitsQuery.data ?? []).filter((unit) => {
@@ -242,6 +236,8 @@ export function useReportsWorkspace(filters: ReportsFilterState, location: Repor
         isLoading: isLoadingAny(financialSummaryQuery.isLoading, collectionRateQuery.isLoading, collectionSummaryQuery.isLoading, financialCashflowQuery.isLoading),
       },
       collections: {
+        from: filters.from,
+        to: filters.to,
         summary: collectionSummaryQuery.data,
         rows: dailyCollectionQuery.data?.rows ?? [],
         receiptRows,
