@@ -4,7 +4,9 @@ import { handleSupabaseError } from '@/lib/supabase-error';
 import { fetchAllRows } from '@/lib/paginatedRead';
 import type { SupportedTimezone } from '@/lib/companySettings';
 import type { Database } from '@/types/database';
+import { computeFileFingerprint } from '@/lib/bankCsvParser';
 import { toCompanyDateKey } from './bank-reconciliation-date';
+import { importBankStatementBatch } from './bankCsvImportService';
 import type {
   BankAccount,
   BankMatchCandidate,
@@ -17,9 +19,13 @@ import type {
   ReconciliationSummary,
 } from './types';
 
-type BankStatementImportInsert = Database['public']['Tables']['bank_statement_imports']['Insert'];
 type BankStatementLineInsert = Database['public']['Tables']['bank_statement_lines']['Insert'];
-type BankReconciliationMatchInsert = Database['public']['Tables']['bank_reconciliation_matches']['Insert'];
+type BankReconciliationMatchInsert = Omit<
+  Database['public']['Tables']['bank_reconciliation_matches']['Insert'],
+  'matched_entity_type'
+> & {
+  matched_entity_type: BankReconciliationMatchValues['matched_entity_type'];
+};
 type ProcessBankReconciliationMatchAtomicResult = Database['public']['Functions']['process_bank_reconciliation_match_atomic']['Returns'];
 
 const matchEntityTypes = [
@@ -30,6 +36,8 @@ const matchEntityTypes = [
   'owner_payout',
   'deposit_receipt',
   'deposit_refund',
+  'receipt_void',
+  'deposit_refund_reversal',
   'commission_payment',
   'owner_expense',
 ] as const;
@@ -251,29 +259,33 @@ export async function createBankStatementLine(values: BankStatementLineFormValue
 export async function createBankStatementImportFromCsv(values: BankStatementImportValues): Promise<BankStatementLine[]> {
   const parsedImport = parseOrThrow(bankStatementImportSchema, values);
   const lines = parseBankStatementCsv(parsedImport.csv, parsedImport.bank_account_id);
-  const dates = lines.map((line) => line.transaction_date).sort((left, right) => left.localeCompare(right));
-  const importPayload: BankStatementImportInsert = {
-    bank_account_id: parsedImport.bank_account_id,
-    statement_name: parsedImport.statement_name || `استيراد ${getTodayForImportName()}`,
-    statement_from: dates[0] ?? null,
-    statement_to: dates[dates.length - 1] ?? null,
-  };
-  const { data: imported, error: importError } = await supabase
-    .from('bank_statement_imports')
-    .insert(importPayload)
-    .select('*')
-    .single()
-    .returns<Database['public']['Tables']['bank_statement_imports']['Row']>();
-  if (importError) handleSupabaseError(importError, 'تعذر إنشاء سجل استيراد كشف البنك');
-  const payload = lines.map((line) => ({ ...line, import_id: imported?.id ?? null }));
-  const { data, error } = await supabase.from('bank_statement_lines').insert(payload).select('*').returns<BankStatementLine[]>();
-  if (error) handleSupabaseError(error, 'تعذر استيراد حركات كشف البنك');
-  return data ?? [];
-}
+  const fileFingerprint = await computeFileFingerprint(parsedImport.csv);
+  const fileName = parsedImport.statement_name || 'bank-statement.csv';
+  const fileSize = new TextEncoder().encode(parsedImport.csv).byteLength;
 
-function getTodayForImportName() {
-  const date = new Date();
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  const imported = await importBankStatementBatch({
+    bank_account_id: parsedImport.bank_account_id,
+    file_name: fileName,
+    file_fingerprint: fileFingerprint,
+    file_size: fileSize,
+    rows: lines.map((line) => ({
+      transaction_date: line.transaction_date,
+      amount: Number(line.amount),
+      description: line.description ?? 'حركة مستوردة',
+      reference: line.reference ?? undefined,
+      currency: 'OMR',
+    })),
+  });
+
+  if (!imported.id) return [];
+  const { data, error } = await supabase
+    .from('bank_statement_lines')
+    .select('*')
+    .eq('import_id', imported.id)
+    .order('transaction_date', { ascending: true })
+    .returns<BankStatementLine[]>();
+  if (error) handleSupabaseError(error, 'تعذر تحميل حركات كشف البنك المستوردة');
+  return data ?? [];
 }
 
 export async function listSuggestedBankMatches(
@@ -338,9 +350,62 @@ export async function listSuggestedBankMatches(
           }),
         );
       }
+
+      const { rows: refundReversals } = await fetchAllRows<{
+        id: string;
+        amount: number;
+        reversed_at: string | null;
+        reversal_journal_batch_id: string | null;
+      }>(() =>
+        supabase
+          .from('deposit_refund_events')
+          .select('id, amount, reversed_at, reversal_journal_batch_id')
+          .eq('status', 'REVERSED')
+          .eq('amount', amount)
+          .not('reversal_journal_batch_id', 'is', null)
+          .order('id')
+          .returns() as never,
+      );
+      for (const refund of refundReversals) {
+        if (!refund.reversed_at) continue;
+        const reversalDate = toCompanyDateKey(refund.reversed_at, timeZone);
+        if (reversalDate !== line.transaction_date) continue;
+        candidates.push(
+          toCandidate('deposit_refund_reversal', {
+            id: refund.id,
+            amount: Math.abs(refund.amount),
+            date: reversalDate,
+            label: `عكس رد وديعة ${refund.id.slice(0, 8)}`,
+          }),
+        );
+      }
     }
 
     if (signedAmount < 0) {
+      const { rows: receiptVoids } = await fetchAllRows<{ id: string; amount: number; voided_at: number | null }>(() =>
+        supabase
+          .from('receipts')
+          .select('id, amount, voided_at')
+          .is('deleted_at', null)
+          .in('status', ['VOID', 'VOIDED', 'REVERSED'])
+          .eq('amount', amount)
+          .order('id')
+          .returns() as never,
+      );
+      for (const receipt of receiptVoids) {
+        if (!receipt.voided_at) continue;
+        const voidDate = toCompanyDateKey(Number(receipt.voided_at), timeZone);
+        if (voidDate !== line.transaction_date) continue;
+        candidates.push(
+          toCandidate('receipt_void', {
+            id: receipt.id,
+            amount: -Math.abs(Number(receipt.amount)),
+            date: voidDate,
+            label: `عكس/إلغاء إيصال ${receipt.id.slice(0, 8)}`,
+          }),
+        );
+      }
+
       const { rows: companyExpenses } = await fetchAllRows<{
         id: string;
         amount: number;
@@ -504,7 +569,7 @@ export const BANK_RECONCILIATION_COVERAGE: Array<{
   movementClass: string;
   accountingEvent: string;
   sourceEntity: string;
-  bankDirection: 'positive' | 'negative';
+  bankDirection: 'positive' | 'negative' | 'signed';
   candidateEntity: string;
   supportStatus: 'supported' | 'partial' | 'missing';
   reconciliationEffect: string;
@@ -583,12 +648,12 @@ export const BANK_RECONCILIATION_COVERAGE: Array<{
   {
     movementClass: 'reversals/refunds (receipt void, deposit reversal)',
     accountingEvent: 'VOID/reversal reverses original credits/debits',
-    sourceEntity: 'journal_batches reversal_of_batch_id',
-    bankDirection: 'positive',
-    candidateEntity: 'reversal batch (future governed candidate)',
-    supportStatus: 'partial',
-    reconciliationEffect: 'not auto-suggested until deterministic reversal candidate authority exists',
-    reversalHandling: 'reversal batch remains linked to original',
+    sourceEntity: 'voided receipts and REVERSED deposit_refund_events with journal reversal authority',
+    bankDirection: 'signed',
+    candidateEntity: 'receipt_void / deposit_refund_reversal',
+    supportStatus: 'supported',
+    reconciliationEffect: 'deterministic signed reversal matches are validated server-side and cannot reuse the original economic source',
+    reversalHandling: 'receipt void is negative; deposit refund reversal is positive; both require persisted reversal authority',
   },
   {
     movementClass: 'manual adjustments',

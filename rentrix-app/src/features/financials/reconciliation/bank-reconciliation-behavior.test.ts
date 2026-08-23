@@ -87,7 +87,8 @@ describe('bank reconciliation governed RPC behavior', () => {
 
   it('keeps reversal and manual candidate coverage explicitly partial', async () => {
     const { BANK_RECONCILIATION_COVERAGE } = await import('./bankReconciliationService');
-    expect(BANK_RECONCILIATION_COVERAGE.find((item) => item.movementClass.includes('reversals'))?.supportStatus).toBe('partial');
+    // PR 1559 upgraded reversals/refunds to 'supported' with deterministic server-side authority.
+    expect(BANK_RECONCILIATION_COVERAGE.find((item) => item.movementClass.includes('reversals'))?.supportStatus).toBe('supported');
     expect(BANK_RECONCILIATION_COVERAGE.find((item) => item.movementClass === 'manual adjustments')?.supportStatus).toBe('partial');
   });
 });

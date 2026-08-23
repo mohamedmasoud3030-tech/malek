@@ -36,6 +36,8 @@ export const entityLabels = {
   owner_payout: 'صرف تسوية مالك',
   deposit_receipt: 'وديعة تأمين',
   deposit_refund: 'رد وديعة',
+  receipt_void: 'عكس/إلغاء إيصال',
+  deposit_refund_reversal: 'عكس رد وديعة',
   commission_payment: 'صرف عمولة',
   owner_expense: 'مصروف مالك',
 } as const;
