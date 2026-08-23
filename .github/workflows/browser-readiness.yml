@@ -25,12 +25,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
-      - name: Defer expensive browser matrix
-        run: echo "Browser matrix stays deferred on pull requests; main pushes and workflow_dispatch run the full device matrix."
+      - name: Verification PR marker
+        run: echo "Wave 4 verification PR also runs the full desktop/tablet/mobile matrix below."
 
   browser-smoke-shard:
     name: browser-smoke-${{ matrix.project }}
-    if: ${{ github.event_name != 'pull_request' }}
+    if: ${{ github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
     strategy:
