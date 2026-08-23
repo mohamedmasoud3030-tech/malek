@@ -31,7 +31,7 @@ import { Select } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { formatMoney } from "@/hooks/useCompanyFormatters";
 import { CommissionSourceSelector } from "./CommissionSourceSelector";
-import { commissionStatusLabels, commissionTypeLabels, commissionStatusTone } from "../labels";
+import { commissionStatusLabels, commissionTypeLabels, commissionStatusTone, commissionSourceTypeOptions } from "../labels";
 import type {
   CommissionFilters,
   CommissionFormValues,
@@ -239,7 +239,7 @@ export function CommissionsView(props: Props) {
           </EntityForm.Field>
           <EntityForm.Field label="نوع المصدر">
             <Select value={draft.type} onChange={(event) => onDraftChange({ ...draft, type: event.target.value })}>
-              {Object.entries(commissionTypeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+              {commissionSourceTypeOptions.map((value) => <option key={value} value={value}>{commissionTypeLabels[value] ?? value}</option>)}
             </Select>
           </EntityForm.Field>
           <EntityForm.Field label="الحالة">
