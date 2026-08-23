@@ -138,11 +138,25 @@ export default defineConfig({
           "malek-apple-touch-180.png",
         ],
         cleanupOutdatedCaches: true,
-        // MALEK is online-first. A protected route must never fall back to a
-        // cached SPA document that may be stale or imply offline data access.
-        navigateFallback: "/offline.html",
-        navigateFallbackDenylist: [/^\/api\//, /^\/auth\//],
+        // One-time recovery helper for clients controlled by the previous SW,
+        // whose navigation fallback could prevent the React update prompt from
+        // ever mounting. The helper only auto-activates once, then records a
+        // marker so normal prompt-based updates remain in force afterwards.
+        importScripts: ["/sw-recovery.js"],
         runtimeCaching: [
+          {
+            // Navigation documents are never cached. Always ask the network
+            // (Vercel rewrites SPA routes to index.html) and use the precached
+            // offline page only if that network request actually fails.
+            urlPattern: ({ request, url }) =>
+              request.mode === "navigate" &&
+              !url.pathname.startsWith("/api/") &&
+              !url.pathname.startsWith("/auth/"),
+            handler: "NetworkOnly",
+            options: {
+              precacheFallback: { fallbackURL: "/offline.html" },
+            },
+          },
           {
             urlPattern: ({ request }) =>
               request.destination === "style" ||
