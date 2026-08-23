@@ -40,10 +40,12 @@ test.describe('Documents Vault route consolidation', () => {
     await expect(page).toHaveURL(/\/maintenance\?section=documents_vault(?:&|$)/);
 
     // 2. Documents Vault UI is rendered (embedded DocumentsVaultWorkspace),
-    //    not the maintenance fallback.
-    await expect(page.locator('[data-operations-section="documents_vault"]')).toBeVisible({ timeout: 10000 });
+    //    not the maintenance fallback. The shared Wave 4 workspace uses the
+    //    concise "رفع مستند" action in both populated and empty states.
+    const vaultSection = page.locator('[data-operations-section="documents_vault"]');
+    await expect(vaultSection).toBeVisible({ timeout: 10000 });
     await expect(page.getByRole('heading', { name: 'خزينة المستندات والمرفقات' })).toHaveCount(0); // embedded: no duplicate header
-    await expect(page.getByText('رفع مستند جديد')).toBeVisible();
+    await expect(vaultSection.getByRole('button', { name: 'رفع مستند', exact: true }).first()).toBeVisible();
 
     // 3. Maintenance is not the active section.
     await expect(page.getByRole('tab', { name: 'المستندات التشغيلية' })).toHaveAttribute('aria-selected', 'true');
