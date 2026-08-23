@@ -1,23 +1,24 @@
 import { Link, useSearch } from '@tanstack/react-router';
 import { ArrowRight, Printer, Share2, Copy, ExternalLink, Download } from 'lucide-react';
 import { useState, useCallback } from 'react';
+import { toast } from 'sonner';
+import { DataErrorScreen } from '@/components/data-error-screen';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
+import { LoadingState } from '@/components/ui/loading-state';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { DocumentReadinessNotice } from '@/features/settings/components/document-readiness-notice';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
-import { useReceipt } from './useReceipts';
-import { formatDate, formatMoney, getErrorMessage } from '../components/financials-formatters';
-import { toFinancialNumber } from '../financialMath';
-import { formatReceiptContext, paymentMethodLabels, receiptStatusLabels } from '../components/receipt-formatters';
-import { toast } from 'sonner';
 import { shareOrCopy } from '@/services/action-service';
 import { documentService } from '@/services/documents/DocumentService';
 import { toReceiptDocumentPayload } from '@/services/documents/documentPayloadAdapters';
 import { DocumentReadinessError, runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
+import { formatDate, formatMoney } from '../components/financials-formatters';
+import { formatReceiptContext, paymentMethodLabels, receiptStatusLabels } from '../components/receipt-formatters';
+import { toFinancialNumber } from '../financialMath';
+import { useReceipt } from './useReceipts';
 
 /** A receipt cannot be issued before its authoritative row is loaded. */
 const MISSING_RECEIPT_MESSAGE = 'تعذر إصدار الإيصال: لم يتم تحميل بيانات الإيصال بعد. يرجى الانتظار حتى اكتمال التحميل ثم إعادة المحاولة.';
@@ -26,6 +27,17 @@ function receiptDetailStatusTone(status: string): 'success' | 'danger' | 'warnin
   if (status === 'posted') return 'success';
   if (status === 'void') return 'danger';
   return 'warning';
+}
+
+function ReceiptPageHeader({ description = 'جارٍ تحميل بيانات الإيصال...' }: Readonly<{ description?: string }>) {
+  return (
+    <PageHeader
+      title="إيصال استلام نقدية"
+      description={description}
+      backTo="/receipts"
+      backLabel="الإيصالات"
+    />
+  );
 }
 
 export function ReceiptDetailPage() {
@@ -48,17 +60,11 @@ export function ReceiptDetailPage() {
         propertyName: receipt.property_title ?? '—',
         unitNumber: receipt.unit_number ?? '—',
         invoiceNumber: receipt.invoice_reference ?? 'فاتورة بلا مرجع',
-        // PostgREST delivers `numeric` columns as strings; the document
-        // engine only accepts finite numbers, so coerce at the boundary —
-        // exactly like the invoice and contract callers do.
         amount: toFinancialNumber(receipt.amount),
         paymentMethod: paymentMethodLabels[receipt.payment_method] ?? receipt.payment_method,
         reference: receipt.reference_number ?? undefined,
         notes: receipt.reference_number ? `مرجع السداد: ${receipt.reference_number}` : undefined,
       },
-      // Real company identity only — no hardcoded fallbacks. The readiness
-      // guard (`documentSettings.isReady`) blocks printing until a real
-      // company name and currency exist in company settings.
       settings: documentSettings.companySettings,
     };
   }, [receipt, documentSettings]);
@@ -66,9 +72,6 @@ export function ReceiptDetailPage() {
   const handlePrint = useCallback(async () => {
     setIsPrinting(true);
     try {
-      // Readiness AND a loaded receipt are enforced inside the async
-      // boundary: the handler must fail closed with a visible Arabic reason,
-      // never emit a receipt with placeholder identity.
       await runGuardedDocumentAction({
         isReady: documentSettings.isReady,
         operation: () => {
@@ -109,7 +112,7 @@ export function ReceiptDetailPage() {
     } finally {
       setIsSharing(false);
     }
-  }, [receipt]);
+  }, []);
 
   const handleCopyReceiptNumber = useCallback(() => {
     if (!receipt) return;
@@ -121,9 +124,8 @@ export function ReceiptDetailPage() {
   if (receiptQuery.isLoading) {
     return (
       <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro">
-        <Skeleton className="h-20 w-full" />
-        <Skeleton className="h-48 w-full" />
-        <Skeleton className="h-24 w-full" />
+        <ReceiptPageHeader />
+        <LoadingState variant="route" label="جارٍ تحميل بيانات الإيصال..." />
       </PageLayout>
     );
   }
@@ -131,25 +133,23 @@ export function ReceiptDetailPage() {
   if (receiptQuery.isError || !receipt) {
     return (
       <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro">
-        <Card role="alert" aria-live="assertive">
-          <CardContent className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center">
-            <div className="grid size-12 place-items-center rounded-2xl bg-destructive/10 text-destructive">
-              <Printer className="size-6" />
+        <ReceiptPageHeader description="تعذر تحميل بيانات الإيصال." />
+        <DataErrorScreen
+          title="تعذر تحميل الإيصال"
+          fallbackMessage="حدث خطأ أثناء تحميل بيانات الإيصال."
+          error={receiptQuery.error}
+          action={(
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={() => void receiptQuery.refetch()}>إعادة المحاولة</Button>
+              <Button asChild variant="secondary">
+                <Link to="/receipts">
+                  <ArrowRight className="me-2 size-4" />
+                  العودة لقائمة الإيصالات
+                </Link>
+              </Button>
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="font-bold text-destructive">تعذر تحميل الإيصال</p>
-              <p className="text-sm text-muted-foreground">
-                {getErrorMessage(receiptQuery.error, 'حدث خطأ أثناء تحميل بيانات الإيصال.')}
-              </p>
-            </div>
-            <Button asChild variant="secondary" className="min-h-11">
-              <Link to="/receipts">
-                <ArrowRight className="me-2 size-4" />
-                العودة لقائمة الإيصالات
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
+          )}
+        />
       </PageLayout>
     );
   }
@@ -172,22 +172,22 @@ export function ReceiptDetailPage() {
           backTo="/receipts"
           backLabel="الإيصالات"
           primaryAction={(
-            <Button variant="primary" onClick={handlePrint} disabled={isPrinting || !documentSettings.isReady} className="min-h-11">
+            <Button variant="primary" onClick={handlePrint} disabled={isPrinting || !documentSettings.isReady}>
               <Printer className="me-2 size-4" />
               {isPrinting ? 'جارٍ الطباعة...' : 'طباعة A4'}
             </Button>
           )}
           secondaryActions={(
             <>
-              <Button variant="secondary" onClick={handleDownloadPdf} disabled={!documentSettings.isReady} className="min-h-11">
+              <Button variant="secondary" onClick={handleDownloadPdf} disabled={!documentSettings.isReady}>
                 <Download className="me-2 size-4" />
                 تنزيل PDF
               </Button>
-              <Button variant="secondary" onClick={handleShare} disabled={isSharing} className="min-h-11">
+              <Button variant="secondary" onClick={handleShare} disabled={isSharing}>
                 <Share2 className="me-2 size-4" />
                 {isSharing ? 'جارٍ المشاركة...' : 'مشاركة'}
               </Button>
-              <Button variant="secondary" onClick={handleCopyReceiptNumber} className="min-h-11">
+              <Button variant="secondary" onClick={handleCopyReceiptNumber}>
                 <Copy className="me-2 size-4" />
                 نسخ الرقم
               </Button>
@@ -204,17 +204,20 @@ export function ReceiptDetailPage() {
 
       <Card className="print-document mx-auto max-w-4xl overflow-hidden border-border/80 bg-card shadow-card print:max-w-none print:border-0 print:shadow-none">
         <CardHeader className="flex flex-row items-start justify-between gap-4 border-b border-border/70 bg-muted/20 px-6 py-5 sm:px-8 sm:py-6 print:bg-transparent print:px-0">
-          <div>
-            <CardTitle className="text-2xl font-black">إيصال استلام نقدية</CardTitle>
-            <CardDescription className="mt-1">
-              رقم الإيصال:{' '}
-              <button
+          <div className="min-w-0">
+            <CardTitle className="break-words text-2xl font-black">إيصال استلام نقدية</CardTitle>
+            <CardDescription className="mt-1 flex min-w-0 flex-wrap items-center gap-1">
+              <span>رقم الإيصال:</span>
+              <Button
+                type="button"
+                variant="link"
+                size="sm"
                 onClick={handleCopyReceiptNumber}
-                className="font-bold text-primary hover:underline print:text-foreground"
+                className="min-w-0 max-w-full break-all px-1 font-bold print:min-h-0 print:min-w-0 print:p-0 print:text-foreground"
                 title="انقر للنسخ"
               >
                 {receipt.receipt_number}
-              </button>
+              </Button>
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
@@ -223,53 +226,47 @@ export function ReceiptDetailPage() {
         </CardHeader>
         <CardContent className="space-y-6 p-6 sm:p-8 print:p-0 print:pt-6">
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-2xl border border-border/70 bg-muted/20 p-4">
+            <div className="min-w-0 rounded-2xl border border-border/70 bg-muted/20 p-4">
               <p className="text-xs font-bold text-muted-foreground">المستأجر</p>
-              <p className="mt-1 text-lg font-black">{receipt.tenant_name ?? '—'}</p>
+              <p className="mt-1 break-words text-lg font-black">{receipt.tenant_name ?? '—'}</p>
               <p className="text-xs text-muted-foreground">استخدم المستند المعتمد للمشاركة بعد التحقق من المستلم والقناة.</p>
             </div>
-            <div className="rounded-2xl border border-border/70 bg-muted/20 p-4">
+            <div className="min-w-0 rounded-2xl border border-border/70 bg-muted/20 p-4">
               <p className="text-xs font-bold text-muted-foreground">العقار / الوحدة</p>
-              <p className="mt-1 text-lg font-black">{receipt.property_title ?? '—'}</p>
-              {receipt.unit_number && (
-                <p className="text-sm text-muted-foreground">وحدة {receipt.unit_number}</p>
-              )}
+              <p className="mt-1 break-words text-lg font-black">{receipt.property_title ?? '—'}</p>
+              {receipt.unit_number ? <p className="break-words text-sm text-muted-foreground">وحدة {receipt.unit_number}</p> : null}
             </div>
           </div>
 
-          <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5 sm:p-6">
+          <div className="min-w-0 rounded-2xl border border-primary/20 bg-primary/5 p-5 sm:p-6">
             <p className="text-xs font-bold text-muted-foreground">المبلغ المدفوع</p>
-            <p className="mt-1 text-3xl font-black text-success" dir="ltr">
+            <p className="mt-1 break-words text-3xl font-black text-success [overflow-wrap:anywhere]" dir="ltr">
               {formatMoney(receipt.amount)}
             </p>
             <div className="mt-4 grid gap-2 text-sm sm:grid-cols-2 sm:gap-x-6">
               <div className="flex justify-between gap-4">
                 <span className="text-muted-foreground">طريقة الدفع:</span>
-                <span className="font-bold">
-                  {paymentMethodLabels[receipt.payment_method] ?? receipt.payment_method}
-                </span>
+                <span className="font-bold">{paymentMethodLabels[receipt.payment_method] ?? receipt.payment_method}</span>
               </div>
               <div className="flex justify-between gap-4">
                 <span className="text-muted-foreground">تاريخ الدفع:</span>
                 <span className="font-bold">{formatDate(receipt.payment_date)}</span>
               </div>
-              {receipt.reference_number && (
+              {receipt.reference_number ? (
                 <div className="flex justify-between gap-4 sm:col-span-2">
                   <span className="text-muted-foreground">المرجع:</span>
-                  <span className="font-bold" dir="ltr">
-                    {receipt.reference_number}
-                  </span>
+                  <span className="break-all font-bold" dir="ltr">{receipt.reference_number}</span>
                 </div>
-              )}
+              ) : null}
             </div>
           </div>
 
-          {receipt.invoice_id && (
-            <div className="rounded-2xl border border-dashed border-border/80 bg-background p-4">
+          {receipt.invoice_id ? (
+            <div className="min-w-0 rounded-2xl border border-dashed border-border/80 bg-background p-4">
               <p className="text-xs font-bold text-muted-foreground">الفاتورة المرتبطة</p>
-              <div className="mt-2 flex items-center justify-between gap-4">
-                <span className="font-bold" dir="ltr">{receipt.invoice_reference ?? 'فاتورة بلا مرجع'}</span>
-                <Button variant="secondary" size="sm" className="min-h-11 print:hidden" asChild>
+              <div className="mt-2 flex min-w-0 flex-wrap items-center justify-between gap-4">
+                <span className="min-w-0 break-all font-bold" dir="ltr">{receipt.invoice_reference ?? 'فاتورة بلا مرجع'}</span>
+                <Button variant="secondary" size="sm" className="print:hidden" asChild>
                   <Link to="/invoices">
                     عرض الفاتورة
                     <ExternalLink className="me-1 size-3" />
@@ -277,23 +274,19 @@ export function ReceiptDetailPage() {
                 </Button>
               </div>
             </div>
-          )}
+          ) : null}
 
           {receipt.reference_number ? (
-            <div className="rounded-2xl border border-border/70 bg-muted/20 p-4">
+            <div className="min-w-0 rounded-2xl border border-border/70 bg-muted/20 p-4">
               <p className="text-xs font-bold text-muted-foreground">السياق</p>
-              <p className="mt-1">{formatReceiptContext(receipt)}</p>
+              <p className="mt-1 break-words [overflow-wrap:anywhere]">{formatReceiptContext(receipt)}</p>
             </div>
           ) : null}
         </CardContent>
       </Card>
 
       <div className="fixed bottom-20 left-4 right-4 print:hidden md:hidden">
-        <Button
-          className="min-h-14 w-full"
-          onClick={handlePrint}
-          disabled={!documentSettings.isReady}
-        >
+        <Button className="min-h-14 w-full" onClick={handlePrint} disabled={!documentSettings.isReady}>
           <Printer className="me-2 size-5" />
           طباعة الإيصال المعتمد A4
         </Button>

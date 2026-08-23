@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { EntityForm } from '@/components/ui/entity-form';
 import { Input } from '@/components/ui/input';
 import { SelectionCard } from '@/components/ui/selection-card';
 import type { Payment } from '@/types/domain';
@@ -59,76 +61,85 @@ export function QuickPaymentForm({ remainingAmount, amount, method, paymentDate,
   };
 
   return (
-    <div className="rounded-2xl border bg-card p-4 space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h4 className="font-black text-foreground">تسجيل دفعة سريعة</h4>
+    <Card className="overflow-hidden rounded-2xl">
+      <CardHeader className="gap-3 border-b border-border/60 bg-muted/20 sm:flex sm:flex-row sm:items-center sm:justify-between">
+        <CardTitle className="text-base">تسجيل دفعة سريعة</CardTitle>
         {typeof remainingAmount === 'number' && remainingAmount > 0 ? (
-          <div className="flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs font-bold text-foreground">
+          <div className="flex min-w-0 flex-wrap items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-3 py-2 text-xs font-bold text-foreground">
             <span>المبلغ المتبقي للتحصيل:</span>
-            <span className="text-primary tabular-nums font-extrabold">{formatMoney(remainingAmount)}</span>
-            <button
+            <span className="font-extrabold tabular-nums text-primary">{formatMoney(remainingAmount)}</span>
+            <Button
               type="button"
-              className="ms-2 rounded-md bg-primary/10 px-2 py-0.5 text-xs font-extrabold text-primary transition hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+              size="sm"
+              variant="soft"
               onClick={() => onAmountChange(String(toFinancialNumber(remainingAmount)))}
             >
               كامل المتبقي
-            </button>
+            </Button>
           </div>
         ) : null}
-      </div>
+      </CardHeader>
 
-      <form id={QUICK_PAYMENT_FORM_ID} className="space-y-4" onSubmit={onSubmit}>
-        <div className="space-y-2">
-          <label className="block text-xs font-bold text-muted-foreground">اختر طريقة الدفع</label>
-          <div className="grid gap-2 grid-cols-2">
-            {methods.map((item) => (
-              <SelectionCard
-                key={item}
-                selected={method === item}
-                title={methodDetails[item].label}
-                description={methodDetails[item].desc}
-                onClick={() => onMethodChange(item)}
-              />
-            ))}
-          </div>
-        </div>
+      <CardContent className="p-3 sm:p-4">
+        <EntityForm.Root id={QUICK_PAYMENT_FORM_ID} aria-busy={isPending} onSubmit={onSubmit}>
+          <EntityForm.Section title="طريقة الدفع">
+            <div className="grid grid-cols-2 gap-2">
+              {methods.map((item) => (
+                <SelectionCard
+                  key={item}
+                  selected={method === item}
+                  title={methodDetails[item].label}
+                  description={methodDetails[item].desc}
+                  onClick={() => onMethodChange(item)}
+                />
+              ))}
+            </div>
+          </EntityForm.Section>
 
-        <div className="grid gap-3 sm:grid-cols-3 items-start">
-          <div>
-            <label className="mb-1 block text-xs font-bold text-muted-foreground" htmlFor={QUICK_PAYMENT_AMOUNT_INPUT_ID}>
-              المبلغ المقبوض
-            </label>
-            <Input
-              id={QUICK_PAYMENT_AMOUNT_INPUT_ID}
-              ref={amountInputRef}
-              type="number"
-              min="0.001"
-              inputMode="decimal"
-              step="0.001"
-              placeholder="المبلغ"
-              value={amount}
-              onChange={(event) => onAmountChange(event.target.value)}
-            />
-            {amountValidationMessage ? <p className="mt-2 text-sm text-destructive">{amountValidationMessage}</p> : null}
-          </div>
+          <EntityForm.Section title="بيانات الدفعة">
+            <div className="grid items-start gap-3 sm:grid-cols-3">
+              <EntityForm.Field label="المبلغ المقبوض" error={amountValidationMessage || undefined}>
+                <Input
+                  id={QUICK_PAYMENT_AMOUNT_INPUT_ID}
+                  ref={amountInputRef}
+                  type="number"
+                  min="0.001"
+                  inputMode="decimal"
+                  step="0.001"
+                  placeholder="المبلغ"
+                  value={amount}
+                  aria-invalid={Boolean(amountValidationMessage)}
+                  onChange={(event) => onAmountChange(event.target.value)}
+                />
+              </EntityForm.Field>
 
-          <div>
-            <label className="mb-1 block text-xs font-bold text-muted-foreground" htmlFor="quick-payment-date">تاريخ الدفع</label>
-            <Input id="quick-payment-date" type="date" value={paymentDate} onChange={(event) => onPaymentDateChange(event.target.value)} />
-          </div>
+              <EntityForm.Field label="تاريخ الدفع">
+                <Input
+                  id="quick-payment-date"
+                  type="date"
+                  value={paymentDate}
+                  onChange={(event) => onPaymentDateChange(event.target.value)}
+                />
+              </EntityForm.Field>
 
-          <div>
-            <label className="mb-1 block text-xs font-bold text-muted-foreground" htmlFor="quick-payment-reference">المرجع (اختياري)</label>
-            <Input id="quick-payment-reference" placeholder="رقم التحويل أو الإيداع" value={reference} onChange={(event) => onReferenceChange(event.target.value)} />
-          </div>
-        </div>
+              <EntityForm.Field label="المرجع (اختياري)">
+                <Input
+                  id="quick-payment-reference"
+                  placeholder="رقم التحويل أو الإيداع"
+                  value={reference}
+                  onChange={(event) => onReferenceChange(event.target.value)}
+                />
+              </EntityForm.Field>
+            </div>
+          </EntityForm.Section>
 
-        <div className="flex justify-end pt-1">
-          <Button type="submit" size="lg" disabled={isPaymentDisabled}>
-            {isPending ? 'جارٍ التسجيل...' : 'تسجيل دفعة'}
-          </Button>
-        </div>
-      </form>
-    </div>
+          <EntityForm.Actions
+            submitLabel="تسجيل دفعة"
+            isSubmitting={isPending}
+            submitDisabled={isPaymentDisabled}
+          />
+        </EntityForm.Root>
+      </CardContent>
+    </Card>
   );
 }

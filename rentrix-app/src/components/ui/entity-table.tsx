@@ -1,15 +1,12 @@
 /**
- * EntityTable — the canonical MALEK data-register foundation (UX-001 / UX-008).
+ * EntityTable — the canonical MALEK responsive data-register foundation.
  *
- * The component owns the visual table contract for every entity register:
- * dense grid rhythm, sticky identity/actions, sortable headers, row expansion,
- * loading/error/empty states, pagination and optional row selection. Pages only
- * provide columns/data/actions; they do not build parallel table systems.
+ * Desktop/tablet (>= 768px): dense semantic EntityTable with sorting, sticky
+ * identity/actions, row expansion, selection and optional toolbar.
  *
- * Every viewport renders the same semantic data grid. On narrow screens the
- * grid is intentionally horizontally scrollable, so every configured column
- * stays available just like an operational database console; the identity and
- * actions columns remain sticky while the middle columns move.
+ * Mobile (< 768px): one canonical EntityCard per record. The card shows the
+ * identity plus one high-value datum, keeps row actions in an accessible
+ * disclosure, and never squeezes the desktop table into the viewport.
  */
 
 import {
@@ -17,20 +14,23 @@ import {
   ChevronUp,
   ChevronsUpDown,
   ListRestart,
+  MoreHorizontal,
 } from 'lucide-react';
 import {
   Fragment,
   useId,
   useMemo,
+  useRef,
   useState,
   type KeyboardEvent,
   type MouseEvent,
   type ReactNode,
 } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { DataErrorScreen } from '@/components/data-error-screen';
 import { EmptyState } from '@/components/empty-state';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { EntityCard, type EntityCardAction } from '@/components/ui/entity-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
@@ -50,7 +50,7 @@ export interface ColumnDef<T> {
   render: (row: T) => ReactNode;
   sortable?: boolean;
   className?: string;
-  /** Controls table ordering and sticky identity/actions behavior. */
+  /** Controls mobile datum selection and desktop sticky behavior. */
   priority?: ColumnPriority;
   /** Identity/actions columns are sticky on the desktop table by default; set false for an exception. */
   sticky?: boolean;
@@ -94,12 +94,20 @@ export interface EntityTableProps<T> {
   renderRowExpansion?: (row: T) => ReactNode;
   expandedRowId?: string | null;
   onExpandedRowChange?: (rowId: string | null) => void;
+  /** High-value field shown below identity on mobile cards. */
+  mobileVisibleSecondaryKey?: string;
   /** Optional shared toolbar content rendered inside the register chrome. */
   toolbar?: ReactNode;
-  /** Optional row-selection contract. Selection remains page-owned; presentation is shared here. */
+  /** Optional row-selection contract. Selection remains page-owned. */
   rowSelection?: RowSelectionState;
   /** Optional visible column keys. Omit to show every configured column. */
   visibleColumnKeys?: readonly string[];
+  /** @deprecated Page-local mobile renderers are ignored; EntityCard is shared here. */
+  renderMobileCard?: (row: T) => ReactNode;
+  /** @deprecated View switching was removed from dense registers. */
+  enableViewModeToggle?: boolean;
+  /** @deprecated Kept only for source compatibility. */
+  viewModeStorageKey?: string;
   'aria-label': string;
   className?: string;
   skeletonRows?: number;
@@ -130,7 +138,22 @@ function priorityClass(priority: ColumnPriority, sticky = true) {
   );
 }
 
-/** Best-effort visible text of a cell render, used for accessible per-row action labels. */
+function selectMobileDatum<T>(
+  columns: ResolvedColumn<T>[],
+  identityColumn: ResolvedColumn<T>,
+  mobileVisibleSecondaryKey?: string,
+): ResolvedColumn<T> | undefined {
+  if (mobileVisibleSecondaryKey) {
+    const designated = columns.find((column) => column.key === mobileVisibleSecondaryKey);
+    if (designated && designated !== identityColumn && designated.resolvedPriority !== 'actions') return designated;
+  }
+  return (
+    columns.find((column) => column.resolvedPriority === 'primary' && column !== identityColumn)
+    ?? columns.find((column) => (column.resolvedPriority === 'secondary' || column.resolvedPriority === 'detail') && column !== identityColumn)
+  );
+}
+
+/** Best-effort visible text of a cell render, used for accessible labels. */
 function nodeToText(node: ReactNode): string {
   if (node == null || typeof node === 'boolean') return '';
   if (typeof node === 'string' || typeof node === 'number') return String(node);
@@ -184,10 +207,10 @@ function SelectionCheckbox({
   );
 }
 
-function TableSkeleton({ rows, cols, hasSelection }: { rows: number; cols: number; hasSelection: boolean }) {
+function DesktopTableSkeleton({ rows, cols, hasSelection }: { rows: number; cols: number; hasSelection: boolean }) {
   const totalColumns = cols + (hasSelection ? 1 : 0);
   return (
-    <Card className="overflow-hidden rounded-xl border-border/70 bg-card shadow-card" data-entity-table-grid data-entity-table-mobile-skeleton>
+    <Card className="overflow-hidden rounded-xl border-border/70 bg-card shadow-card" data-entity-table-grid>
       <div className="mobile-scroll-x">
         <Table density="compact" className="text-xs [&_td+td]:border-s [&_td+td]:border-border/60 [&_th+th]:border-s [&_th+th]:border-border/70">
           <TableHeader>
@@ -209,6 +232,23 @@ function TableSkeleton({ rows, cols, hasSelection }: { rows: number; cols: numbe
         </Table>
       </div>
     </Card>
+  );
+}
+
+function MobileRegisterSkeleton({ rows }: { rows: number }) {
+  return (
+    <div className="grid gap-2.5" aria-hidden="true" data-entity-table-mobile-skeleton>
+      {Array.from({ length: rows }, (_, index) => (
+        <div key={index} className="rounded-xl border border-border/70 bg-card p-3 shadow-card">
+          <Skeleton className="h-5 w-2/3" />
+          <Skeleton className="mt-2 h-12 w-full rounded-xl" />
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <Skeleton className="h-11 rounded-xl" />
+            <Skeleton className="h-11 rounded-xl" />
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -244,6 +284,91 @@ function PaginationRecovery({ pagination }: { pagination: PaginationState }) {
   );
 }
 
+function MobileRegisterListItem<T>({
+  row,
+  rowKey,
+  ariaLabel,
+  identityColumn,
+  datumColumn,
+  actionsColumn,
+  selected,
+  onToggleSelected,
+  onRowClick,
+}: Readonly<{
+  row: T;
+  rowKey: string;
+  ariaLabel: string;
+  identityColumn: ResolvedColumn<T>;
+  datumColumn?: ResolvedColumn<T>;
+  actionsColumn?: ResolvedColumn<T>;
+  selected: boolean;
+  onToggleSelected?: () => void;
+  onRowClick?: (row: T) => void;
+}>) {
+  const [actionsOpen, setActionsOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const rowLabel = nodeToText(identityColumn.render(row)).trim() || 'السجل';
+
+  const cardActions: EntityCardAction[] = [];
+  if (onRowClick) {
+    cardActions.push({ label: 'فتح التفاصيل', variant: 'default', onClick: () => onRowClick(row), ariaLabel: `فتح ${rowLabel}` });
+  }
+  if (onToggleSelected) {
+    cardActions.push({ label: selected ? 'إلغاء التحديد' : 'تحديد السجل', variant: 'secondary', onClick: onToggleSelected, ariaLabel: `${selected ? 'إلغاء تحديد' : 'تحديد'} ${rowLabel}` });
+  }
+
+  return (
+    <li role="listitem" data-entity-table-mobile-card className="min-w-0">
+      <EntityCard
+        id={rowKey}
+        name={identityColumn.render(row)}
+        supportingText={datumColumn ? datumColumn.header : undefined}
+        stats={datumColumn ? <div data-entity-table-mobile-datum className="min-w-0 break-words font-bold [overflow-wrap:anywhere]">{datumColumn.render(row)}</div> : undefined}
+        badge={selected ? <span className="rounded-full bg-primary/10 px-2 py-1 text-[10px] font-bold text-primary">محدد</span> : undefined}
+        actions={cardActions.length > 0 ? cardActions : undefined}
+        className={selected ? 'border-primary/35 ring-2 ring-primary/10' : undefined}
+      />
+
+      {actionsColumn ? (
+        <div className="mt-2 rounded-xl border border-border/70 bg-card p-2 shadow-card">
+          <Button
+            ref={triggerRef}
+            type="button"
+            size="sm"
+            variant="secondary"
+            data-entity-table-mobile-actions
+            aria-label={`إجراءات ${rowLabel}`}
+            aria-expanded={actionsOpen}
+            aria-controls={actionsOpen ? `mobile-actions-${rowKey}` : undefined}
+            onClick={() => setActionsOpen((open) => !open)}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape' && actionsOpen) {
+                event.preventDefault();
+                setActionsOpen(false);
+                triggerRef.current?.focus();
+              }
+            }}
+            className="w-full"
+          >
+            <MoreHorizontal className="size-4" aria-hidden="true" />
+            إجراءات
+          </Button>
+          {actionsOpen ? (
+            <div
+              id={`mobile-actions-${rowKey}`}
+              data-entity-table-mobile-actions-panel
+              className="mt-2 min-w-0 rounded-lg bg-muted/25 p-2 [&>div]:flex-wrap"
+              aria-label={`إجراءات ${ariaLabel}`}
+            >
+              {actionsColumn.render(row)}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+    </li>
+  );
+}
+
 export function EntityTable<T>({
   rows,
   columns,
@@ -262,6 +387,7 @@ export function EntityTable<T>({
   renderRowExpansion,
   expandedRowId,
   onExpandedRowChange,
+  mobileVisibleSecondaryKey,
   toolbar,
   rowSelection,
   visibleColumnKeys,
@@ -321,8 +447,11 @@ export function EntityTable<T>({
   if (isLoading) {
     return (
       <div className={cn('space-y-2.5', className)} data-entity-table-register>
-        <div>
-          <TableSkeleton rows={skeletonRows} cols={resolvedColumns.length || columns.length} hasSelection={Boolean(rowSelection)} />
+        <div className="hidden md:block">
+          <DesktopTableSkeleton rows={skeletonRows} cols={resolvedColumns.length || columns.length} hasSelection={Boolean(rowSelection)} />
+        </div>
+        <div className="md:hidden">
+          <MobileRegisterSkeleton rows={skeletonRows} />
         </div>
       </div>
     );
@@ -352,20 +481,41 @@ export function EntityTable<T>({
 
   const identityColumn = resolvedColumns.find((column) => column.resolvedPriority === 'identity') ?? resolvedColumns[0];
   if (!identityColumn) return null;
+  const datumColumn = selectMobileDatum(resolvedColumns, identityColumn, mobileVisibleSecondaryKey);
+  const actionsColumn = resolvedColumns.find((column) => column.resolvedPriority === 'actions');
   const colSpan = resolvedColumns.length + (hasExpansion ? 1 : 0) + (rowSelection ? 1 : 0);
 
   return (
-    <div className={cn('space-y-3', className)}>
+    <div className={cn('space-y-3', className)} data-entity-table-register>
       {toolbar ? (
-        <div
-          data-entity-table-toolbar
-          className="rounded-xl border border-border/70 bg-card p-1.5 shadow-card"
-        >
+        <div data-entity-table-toolbar className="rounded-xl border border-border/70 bg-card p-1.5 shadow-card">
           {toolbar}
         </div>
       ) : null}
 
-      <div className="block">
+      <div className="md:hidden" data-entity-table-mobile>
+        <ul role="list" aria-label={ariaLabel} className="grid gap-2.5" data-entity-table-mobile-list>
+          {rows.map((row) => {
+            const rowKey = keyOf(row);
+            return (
+              <MobileRegisterListItem
+                key={rowKey}
+                row={row}
+                rowKey={rowKey}
+                ariaLabel={ariaLabel}
+                identityColumn={identityColumn}
+                datumColumn={datumColumn}
+                actionsColumn={actionsColumn}
+                selected={selectedSet.has(rowKey)}
+                onToggleSelected={rowSelection ? () => toggleSelected(rowKey) : undefined}
+                onRowClick={onRowClick}
+              />
+            );
+          })}
+        </ul>
+      </div>
+
+      <div className="hidden md:block">
         <Card data-entity-table-wrapper data-compact-responsive-table data-entity-table-grid className="overflow-hidden rounded-xl border-border/70 bg-card shadow-card">
           <div
             data-entity-table-scroll
@@ -378,7 +528,7 @@ export function EntityTable<T>({
               data-entity-table
               density="compact"
               aria-label={ariaLabel}
-              className="min-w-max text-xs md:min-w-full md:text-[13px] [&_td+td]:border-s [&_td+td]:border-border/40 [&_th+th]:border-s [&_th+th]:border-border/50"
+              className="min-w-full text-[13px] [&_td+td]:border-s [&_td+td]:border-border/40 [&_th+th]:border-s [&_th+th]:border-border/50"
             >
               <TableHeader className="bg-muted/35">
                 <TableRow className="hover:bg-transparent">
@@ -411,7 +561,7 @@ export function EntityTable<T>({
                         {column.sortable && onSort ? (
                           <button
                             type="button"
-                            className="inline-flex min-h-10 cursor-pointer items-center font-black text-muted-foreground outline-none transition hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/25"
+                            className="inline-flex min-h-11 cursor-pointer items-center font-black text-muted-foreground outline-none transition hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/25"
                             onClick={() => handleSort(column.key)}
                           >
                             {column.header}<SortIcon field={column.key} sort={sort} />
@@ -454,7 +604,7 @@ export function EntityTable<T>({
                           <TableCell className="w-11 px-2" data-row-action>
                             <button
                               type="button"
-                              className="grid size-10 place-items-center rounded-lg text-muted-foreground outline-none transition hover:bg-muted hover:text-foreground focus-visible:ring-4 focus-visible:ring-primary/20"
+                              className="grid size-11 place-items-center rounded-lg text-muted-foreground outline-none transition hover:bg-muted hover:text-foreground focus-visible:ring-4 focus-visible:ring-primary/20"
                               aria-label={isExpanded ? 'إخفاء تفاصيل الصف' : 'عرض كل تفاصيل الصف'}
                               aria-expanded={isExpanded}
                               aria-controls={detailId}

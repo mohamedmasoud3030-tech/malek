@@ -4,6 +4,7 @@ import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EntityFormVisualProvider } from '@/components/ui/entity-form';
+import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DirtyRouteNavigationGuard } from '@/hooks/use-unsaved-changes-guard';
 import { CompanyProfileSections } from './components/company-profile-sections';
@@ -106,7 +107,13 @@ export function SettingsWorkspace({ variant = 'standalone' }: SettingsWorkspaceP
         <SettingsHero companyName="…" hasUnsavedChanges={false} />
         <Card>
           <CardHeader><CardTitle>إعدادات الشركة</CardTitle><p className="text-sm text-muted-foreground">جارٍ تحميل الإعدادات المحفوظة...</p></CardHeader>
-          <CardContent><div className="grid gap-3 sm:grid-cols-3"><Skeleton className="h-20" /><Skeleton className="h-20" /><Skeleton className="h-20" /></div></CardContent>
+          <CardContent>
+            <ResponsiveCardGrid desktopColumns={3} gap="md" aria-label="جارٍ تحميل ملخص جاهزية الإعدادات">
+              <Skeleton className="h-20 rounded-xl" />
+              <Skeleton className="h-20 rounded-xl" />
+              <Skeleton className="h-20 rounded-xl" />
+            </ResponsiveCardGrid>
+          </CardContent>
         </Card>
       </SettingsVariantShell>
     );
