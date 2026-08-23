@@ -49,7 +49,7 @@ export function EntityDetailHeader({ title, subtitle, backTo, backLabel = 'ال�
           </div>
           {subtitle && <p className="mt-0.5 max-w-3xl break-words text-[0.8125rem] leading-5 text-muted-foreground [overflow-wrap:anywhere] sm:mt-1 sm:text-sm sm:leading-6">{subtitle}</p>}
         </div>
-        <div className="flex shrink-0 flex-wrap items-center gap-1.5 sm:gap-2">
+        <div className="flex w-full min-w-0 flex-wrap items-center gap-1.5 sm:w-auto sm:shrink-0 sm:gap-2">
           {backTo && (
             <Button variant="secondary" size="sm" className="min-h-11" asChild>
               <Link to={backTo}>
@@ -59,7 +59,7 @@ export function EntityDetailHeader({ title, subtitle, backTo, backLabel = 'ال�
               </Link>
             </Button>
           )}
-          <div className="flex min-w-0 flex-wrap items-center gap-1.5 sm:gap-2">{actions}</div>
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 sm:flex-none sm:gap-2">{actions}</div>
         </div>
       </div>
     </header>

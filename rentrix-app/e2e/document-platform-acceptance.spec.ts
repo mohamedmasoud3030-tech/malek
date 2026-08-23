@@ -196,7 +196,7 @@ function mobileInvoiceCard(page: Page): Locator {
 async function gotoInvoicesRegister(page: Page): Promise<Locator> {
   await page.goto('/invoices');
   await expect(page).toHaveURL(/\/financials\?section=collections&view=invoices(?:&|$)/);
-  await expect(page.getByRole('heading', { name: 'المالية', level: 1, exact: true })).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByRole('heading', { name: 'المال', level: 1, exact: true })).toBeVisible({ timeout: 20_000 });
   await expect(page.getByRole('heading', { name: 'الفواتير', level: 3, exact: true })).toBeVisible({ timeout: 20_000 });
 
   const register = visibleInvoiceRegister(page);
@@ -225,6 +225,15 @@ async function openInvoiceDocumentActions(page: Page): Promise<void> {
 
   await expect(page.getByRole('option', { name: 'طباعة', exact: true }).first()).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole('option', { name: 'PDF', exact: true }).first()).toBeVisible({ timeout: 15_000 });
+}
+
+async function openContractDocumentActions(page: Page): Promise<void> {
+  const trigger = page.getByRole('button', { name: 'إجراءات أخرى', exact: true });
+  await expect(trigger).toBeVisible({ timeout: 15_000 });
+  await expect(trigger).toBeInViewport();
+  await trigger.click();
+  await expect(page.getByRole('menuitem', { name: 'طباعة العقد', exact: true })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole('menuitem', { name: 'تصدير PDF', exact: true })).toBeVisible({ timeout: 15_000 });
 }
 
 async function expectInvoiceDocumentActionsWithheld(page: Page): Promise<void> {
@@ -363,7 +372,7 @@ test.describe('الإيصال — receipt acceptance', () => {
 
 test.describe('العقد — contract acceptance', () => {
   test('contract detail prints and exports through the real page actions', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== DESKTOP, 'desktop exercises the direct header actions');
+    test.skip(testInfo.project.name !== DESKTOP, 'desktop exercises the governed contract action menu');
     const consoleErrors = watchConsoleErrors(page);
     await installAcceptanceBrowser(page);
     await installFakeSupabaseBackend(page, 'complete');
@@ -371,8 +380,8 @@ test.describe('العقد — contract acceptance', () => {
     await page.goto(`/contracts/${IDS.contract}`);
     await expect(page.getByRole('heading', { name: 'تفاصيل العقد', exact: true })).toBeVisible({ timeout: 20_000 });
 
-    const printButton = page.getByRole('button', { name: 'طباعة', exact: true });
-    await expect(printButton).toBeVisible();
+    await openContractDocumentActions(page);
+    const printButton = page.getByRole('menuitem', { name: 'طباعة العقد', exact: true });
     const popup = await openPrintPopup(page, () => printButton.click());
     const bodyText = await assertPopupIdentity(popup, [TENANT_NAME, 'عقد إيجار ساري المفعول', '420']);
     expect(bodyText).not.toContain(IDS.contract.slice(0, 8));
@@ -381,7 +390,8 @@ test.describe('العقد — contract acceptance', () => {
     expect(isA4Portrait(printArtifact)).toBe(true);
     await popup.close();
 
-    const exportButton = page.getByRole('button', { name: 'تصدير PDF', exact: true });
+    await openContractDocumentActions(page);
+    const exportButton = page.getByRole('menuitem', { name: 'تصدير PDF', exact: true });
     const { download, buffer } = await downloadPdf(page, () => exportButton.click());
     const summary = assertRealPdf(buffer);
     expect(isA4Portrait(summary)).toBe(true);
@@ -646,9 +656,8 @@ test.describe('الجوال — mobile acceptance', () => {
     await page.goto(`/contracts/${IDS.contract}`);
     await expect(page.getByRole('heading', { name: 'تفاصيل العقد', exact: true })).toBeVisible({ timeout: 20_000 });
 
-    await page.getByRole('button', { name: 'إجراءات أخرى' }).click();
-    await expect(page.getByRole('option', { name: 'طباعة العقد' })).toBeVisible({ timeout: 15_000 });
-    const popup = await openPrintPopup(page, () => page.getByRole('option', { name: 'طباعة العقد' }).click());
+    await openContractDocumentActions(page);
+    const popup = await openPrintPopup(page, () => page.getByRole('menuitem', { name: 'طباعة العقد', exact: true }).click());
     await assertPopupIdentity(popup, [TENANT_NAME, 'عقد إيجار ساري المفعول']);
     await assertA4PrintContract(popup);
     await popup.close();

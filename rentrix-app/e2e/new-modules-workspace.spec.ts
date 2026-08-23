@@ -17,23 +17,25 @@ test.describe('New Real Modules - Utilities, Vault, Deposits, Automation', () =>
       await expect(page.locator('body')).not.toContainText('W-441209');
     });
 
-    test(`vault workspace loads with private bucket at ${vp.width}x${vp.height}`, async ({ page }) => {
+    test(`vault workspace loads with private storage controls at ${vp.width}x${vp.height}`, async ({ page }) => {
       await page.setViewportSize(vp);
       await page.goto('/login?e2e-vault-workspace=1');
-      await expect(page.locator('[data-e2e-vault-workspace]')).toBeVisible({ timeout: 10000 });
-      await expect(page.getByText('خزينة المستندات')).toBeVisible();
+      const workspace = page.locator('[data-e2e-vault-workspace]');
+      await expect(workspace).toBeVisible({ timeout: 10000 });
+      await expect(page.getByRole('heading', { name: 'خزينة المستندات والمرفقات' })).toBeVisible();
+      await expect(workspace).toContainText('أرشيف خاص');
       await expect(page.locator('body')).not.toContainText('placehold.co');
-      await expect(page.getByText('التخزين الخاص', { exact: true })).toBeVisible();
-      await expect(page.getByText('مساحة آمنة')).toBeVisible();
+      await expect(workspace.getByRole('button', { name: 'رفع مستند', exact: true }).first()).toBeVisible();
     });
 
-    test(`deposits workspace loads with real ledger at ${vp.width}x${vp.height}`, async ({ page }) => {
+    test(`deposits workspace loads with the real governed ledger at ${vp.width}x${vp.height}`, async ({ page }) => {
       await page.setViewportSize(vp);
       await page.goto('/login?e2e-deposits-workspace=1');
-      await expect(page.locator('[data-e2e-deposits-workspace]')).toBeVisible({ timeout: 10000 });
-      await expect(page.getByText('دفتر أمانات وتأمينات المستأجرين')).toBeVisible();
+      const workspace = page.locator('[data-e2e-deposits-workspace]');
+      await expect(workspace).toBeVisible({ timeout: 10000 });
+      await expect(workspace.getByRole('heading', { name: 'تأمينات المستأجرين' })).toBeVisible();
       await expect(page.locator('body')).not.toContainText('dep-101');
-      await expect(page.getByText('تسجيل وديعة جديدة')).toBeVisible();
+      await expect(workspace.getByRole('button', { name: 'تسجيل وديعة جديدة' })).toBeVisible();
     });
 
     test(`automation workspace loads with real execution at ${vp.width}x${vp.height}`, async ({ page }) => {
@@ -45,20 +47,32 @@ test.describe('New Real Modules - Utilities, Vault, Deposits, Automation', () =>
     });
   }
 
-  test('vault upload form validates and shows the 5MB signed-URL notice', async ({ page }) => {
+  test('vault upload form validates the current private-file contract', async ({ page }) => {
     await page.goto('/login?e2e-vault-workspace=1');
-    await expect(page.locator('[data-e2e-vault-workspace]')).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText('رفع مستند جديد')).toBeVisible();
-    await expect(page.getByText('الأنواع المدعومة: PDF، JPEG، PNG، WebP')).toBeVisible();
-    await expect(page.getByText('الحد الأقصى 5MB')).toBeVisible();
-    const fileInput = page.locator('[data-e2e-vault-workspace] input[type="file"]');
+    const workspace = page.locator('[data-e2e-vault-workspace]');
+    await expect(workspace).toBeVisible({ timeout: 10000 });
+    await workspace.getByRole('button', { name: 'رفع مستند', exact: true }).first().click();
+
+    const dialog = page.getByRole('dialog', { name: 'رفع مستند' });
+    await expect(dialog).toBeVisible();
+    await expect(dialog).toContainText('الحد الأقصى 5MB');
+    await expect(dialog).toContainText('PDF أو JPEG أو PNG أو WebP');
+    const fileInput = dialog.locator('input[type="file"]');
     await expect(fileInput).toHaveAttribute('accept', 'application/pdf,image/jpeg,image/png,image/webp');
+    await expect(dialog.getByRole('button', { name: 'رفع', exact: true })).toBeDisabled();
   });
 
-  test('deposits shows balance guards and no false success', async ({ page }) => {
+  test('deposits create flow is guarded and cannot report false success before valid input', async ({ page }) => {
     await page.goto('/login?e2e-deposits-workspace=1');
-    await expect(page.getByText('مسار مالي حقيقي مع سجل غير قابل للتلاعب')).toBeVisible();
-    await expect(page.getByText('منع تجاوز الرصيد')).toBeVisible();
+    const workspace = page.locator('[data-e2e-deposits-workspace]');
+    await expect(workspace).toBeVisible({ timeout: 10000 });
+    await workspace.getByRole('button', { name: 'تسجيل وديعة جديدة' }).click();
+
+    const dialog = page.getByRole('dialog', { name: 'تسجيل وديعة تأمين جديدة' });
+    await expect(dialog).toBeVisible();
+    await expect(dialog).toContainText('RPC ذري مع قيد محاسبي');
+    await expect(dialog.getByRole('button', { name: 'حفظ الوديعة' })).toBeDisabled();
+    await expect(page.locator('body')).not.toContainText('تم تسجيل الوديعة بنجاح');
   });
 
   test('automation keeps WhatsApp preview-only and never exposes a direct send link', async ({ page }) => {

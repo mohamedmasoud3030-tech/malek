@@ -34,7 +34,9 @@ export type PaymentReportRow = Pick<Payment, 'id' | 'invoice_id' | 'amount' | 'p
 export type ExpenseReportRow = Pick<Expense, 'id' | 'property_id' | 'category' | 'amount' | 'expense_date' | 'cost_center_id' | 'deleted_at'>;
 
 export type PropertyContext = Pick<Property, 'id' | 'title'>;
-export type PersonContext = Pick<Person, 'id' | 'full_name' | 'phone'>;
+// Phone is enrichment context: live loaders request it, but historic/unit-test
+// context maps and callers that only need identity remain valid without it.
+export type PersonContext = Pick<Person, 'id' | 'full_name'> & Partial<Pick<Person, 'phone'>>;
 export type UnitContext = Pick<Unit, 'id' | 'unit_number'>;
 
 export type PaymentWithInvoiceContext = PaymentReportRow & {

@@ -127,7 +127,9 @@ describe('UnitsPage controller regression', () => {
     expect(container.querySelector('[data-entity-table-scroll]')).toBeTruthy();
     expect(container.querySelector('[data-compact-responsive-table]')).toBeTruthy();
     expect(container.querySelector('table[data-entity-table]')).toBeTruthy();
-    expect(container.querySelector('[data-entity-table-mobile-list]')).toBeNull();
+    // Wave 4: EntityTable renders mobile cards in DOM (hidden via md:hidden CSS).
+    // The mobile list is always present; visibility is controlled by breakpoint.
+    expect(container.querySelector('[data-entity-table-mobile-list]')).toBeTruthy();
   });
 
   it('renders KPI cards with computed values', async () => {

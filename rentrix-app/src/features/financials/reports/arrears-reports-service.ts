@@ -44,7 +44,7 @@ export type OverdueInvoiceReportRow = {
   contractReference?: string | null;
   tenantId: string | null;
   tenantName: string | null;
-  tenantPhone: string | null;
+  tenantPhone?: string | null;
   propertyId: string | null;
   propertyTitle: string | null;
   unitId: string | null;
@@ -61,7 +61,7 @@ export type AgedReceivablesGroupRow = {
   contractId: string;
   tenantId: string | null;
   tenantName: string | null;
-  tenantPhone: string | null;
+  tenantPhone?: string | null;
   propertyId: string | null;
   propertyTitle: string | null;
   unitId: string | null;

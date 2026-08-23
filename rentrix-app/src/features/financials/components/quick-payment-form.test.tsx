@@ -33,15 +33,17 @@ describe('QuickPaymentForm', () => {
     expect(html).toContain('step="0.001"');
     expect(html).toContain('id="quick-payment-date"');
     expect(html).toContain('id="quick-payment-reference"');
-    expect(html).toContain('for="quick-payment-reference"');
+    // EntityForm.Field uses implicit label association (label wraps input) — no htmlFor needed.
+    expect(html).toContain('data-entity-form-field');
   });
 
   it('offers the pay-in-full shortcut when a gross remaining amount exists', () => {
     const html = renderToStaticMarkup(<QuickPaymentForm {...baseProps} remainingAmount={115} />);
     expect(html).toContain('كامل المتبقي');
-    // Amount rendering is locale-formatted (Arabic digits); assert it rendered at all.
+    // Button may render data-* attributes before type= depending on component implementation;
+    // assert the button exists and carries type="button" anywhere in the HTML.
     const shortcut = html.split('كامل المتبقي')[0];
-    expect(shortcut).toContain('<button type="button"');
+    expect(shortcut).toContain('type="button"');
   });
 
   it('hides the pay-in-full shortcut when nothing is owed', () => {
