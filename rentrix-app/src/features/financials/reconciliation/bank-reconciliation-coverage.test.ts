@@ -5,7 +5,7 @@ import { BANK_RECONCILIATION_COVERAGE } from './bankReconciliationService';
 
 const servicePath = resolve(import.meta.dirname, './bankReconciliationService.ts');
 const service = readFileSync(servicePath, 'utf8');
-const migrationPath = resolve(import.meta.dirname, '../../../../supabase/migrations/20260901000025_expand_bank_reconciliation_entity_types.sql');
+const migrationPath = resolve(import.meta.dirname, '../../../../supabase/migrations/20260901000031_rc1_bank_reconciliation_fail_closed.sql');
 let migration = '';
 try {
   migration = readFileSync(migrationPath, 'utf8');
@@ -72,6 +72,8 @@ describe('bank reconciliation coverage — FOM-013', () => {
     expect(service).toContain('owner_payout');
     expect(service).toContain('deposit_receipt');
     expect(service).toContain('deposit_refund');
+    expect(service).toContain('receipt_void');
+    expect(service).toContain('deposit_refund_reversal');
     expect(service).toContain('commission_payment');
     expect(service).toContain('owner_expense');
     expect(service).toContain('manual_adjustment');
@@ -91,6 +93,8 @@ describe('bank reconciliation coverage — FOM-013', () => {
     expect(migration).toContain('owner_payout');
     expect(migration).toContain('deposit_receipt');
     expect(migration).toContain('deposit_refund');
+    expect(migration).toContain('receipt_void');
+    expect(migration).toContain('deposit_refund_reversal');
     expect(migration).toContain('commission_payment');
     expect(migration).toContain('owner_expense');
   });
