@@ -20,11 +20,17 @@ export function StatementSelectionStrip({
   to?: string;
 }>) {
   return (
-    <section className="grid gap-2 rounded-xl border border-border/70 bg-muted/20 p-3 sm:grid-cols-3" aria-label="حالة اختيار الكشوف">
+    <ResponsiveCardGrid
+      as="section"
+      desktopColumns={3}
+      gap="sm"
+      className="rounded-xl border border-border/70 bg-muted/20 p-3"
+      aria-label="حالة اختيار الكشوف"
+    >
       <SelectionItem label="كشف المستأجر" value={selectedContractId ? 'عقد محدد' : 'اختر عقدًا'} ready={Boolean(selectedContractId)} />
       <SelectionItem label="كشف المالك" value={selectedOwnerId ? 'مالك محدد' : 'اختر مالكًا'} ready={Boolean(selectedOwnerId)} />
       <SelectionItem label="فترة الكشف" value={`${from || '—'} إلى ${to || '—'}`} ready />
-    </section>
+    </ResponsiveCardGrid>
   );
 }
 
