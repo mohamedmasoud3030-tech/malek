@@ -56,7 +56,6 @@ describe('R6 — reports workspace fetches only the open report', () => {
     const gatedCalls = [
       'useCollectionSummaryReport(financialFilters, { enabled:',
       'useFinancialCashflowReport(financialFilters, { enabled:',
-      'useCashFlowStatementReport(financialFilters, { enabled:',
       'useVatReturnReport(financialFilters, { enabled:',
       'useDailyCollectionReport(financialFilters, { enabled:',
       'useExpenseBreakdownReport(financialFilters, { enabled:',
@@ -77,6 +76,22 @@ describe('R6 — reports workspace fetches only the open report', () => {
     for (const call of gatedCalls) {
       expect(workspaceSource, `missing activation gate: ${call}`).toContain(call);
     }
+
+    // The accounting cash-flow authority moved out of the legacy reports hook
+    // and into StatementsSection. It must stay absent from the workspace and
+    // retain its own date gate inside the authoritative WP05 query wrapper.
+    const statementsSource = readFileSync(
+      resolve(import.meta.dirname, 'components/StatementsSection.tsx'),
+      'utf8',
+    );
+    const authoritySource = readFileSync(
+      resolve(import.meta.dirname, 'accounting-report-authority.ts'),
+      'utf8',
+    );
+    expect(workspaceSource).not.toContain('useCashFlowStatementReport(');
+    expect(statementsSource).toContain('useAuthoritativeGlCashFlow(filters?.from, filters?.to)');
+    expect(authoritySource).toContain('enabled: enabled && Boolean(from && to)');
+
     // «Load everything» must not return: the pre-R6 ungated calls are gone.
     expect(workspaceSource).not.toContain("useAllContracts('all');");
     expect(workspaceSource).not.toContain("useMaintenance('all', '');");
