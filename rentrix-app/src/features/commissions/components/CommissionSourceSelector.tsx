@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { Select } from '@/components/ui/select';
 import { fetchCommissionSources } from '../services/commission-source-service';
+import { commissionSourceTypeOptions, isCommissionSourceType } from '../labels';
 
 const typeLabels: Record<string, string> = {
   contract: 'عقد',
-  payment: 'تحصيل',
   owner: 'مالك',
   lead: 'عميل محتمل',
   land: 'أرض',
@@ -23,6 +23,10 @@ interface CommissionSourceSelectorProps {
  * Uses readable Arabic labels and never exposes raw UUIDs as primary labels.
  * Internal value remains the entity UUID for submission through the existing
  * protected RPC path.
+ *
+ * RC1 closeout (Rule 4): 'payment' is no longer a commission source type.
+ * Unsupported types (including any legacy 'payment' row opened for editing)
+ * fail closed with a disabled control instead of a fake source option.
  */
 export function CommissionSourceSelector({
   type,
@@ -33,7 +37,7 @@ export function CommissionSourceSelector({
   const sourceQuery = useQuery({
     queryKey: ['commission-source-selector', type],
     queryFn: () => fetchCommissionSources(type),
-    enabled: type !== 'payment',
+    enabled: isCommissionSourceType(type),
     staleTime: 30_000,
   });
 
@@ -41,16 +45,15 @@ export function CommissionSourceSelector({
   const isLoading = sourceQuery.isLoading;
   const hasError = sourceQuery.isError;
 
-  if (type === 'payment') {
+  if (!isCommissionSourceType(type)) {
     return (
       <Select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        disabled={disabled}
-        aria-label="المصدر (تحصيل)"
+        disabled
+        aria-label="المصدر غير المدعوم"
       >
-        <option value="">اختر التحصيل المرتبط</option>
-        {value && <option value={value}>المصدر الحالي المسجل</option>}
+        <option value="">نوع مصدر غير مدعوم — لا يمكن تعديل هذه العمولة بهذا النوع</option>
       </Select>
     );
   }
@@ -78,4 +81,4 @@ export function CommissionSourceSelector({
   );
 }
 
-export { typeLabels };
+export { typeLabels, commissionSourceTypeOptions };

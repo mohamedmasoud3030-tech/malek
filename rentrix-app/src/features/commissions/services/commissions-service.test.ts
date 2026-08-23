@@ -112,4 +112,23 @@ describe('commissions service validation and trusted writes', () => {
     await expect(createCommission({ ...baseValues, amount: '', deal_value: '1000', percentage: '101' })).rejects.toThrow('نسبة العمولة');
     expect(rpcMock).not.toHaveBeenCalled();
   });
+
+  it('rejects the removed payment source type on the client before any RPC call (RC1 Rule 4)', async () => {
+    await expect(createCommission({ ...baseValues, type: 'payment' })).rejects.toThrow('COMMISSION_TYPE_PAYMENT_REMOVED');
+    await expect(updateCommission('commission-1', { ...baseValues, type: 'payment' })).rejects.toThrow('COMMISSION_TYPE_PAYMENT_REMOVED');
+    // Case-insensitive: the RPC lower-cases the type, so the client must too.
+    await expect(createCommission({ ...baseValues, type: 'Payment' })).rejects.toThrow('COMMISSION_TYPE_PAYMENT_REMOVED');
+    expect(rpcMock).not.toHaveBeenCalled();
+  });
+
+  it('still routes canonical source types (contract/owner/lead/land) to the RPC', async () => {
+    for (const type of ['contract', 'owner', 'lead', 'land']) {
+      rpcMock.mockClear();
+      await createCommission({ ...baseValues, type });
+      expect(rpcMock).toHaveBeenCalledWith(
+        'create_commission_atomic',
+        expect.objectContaining({ p_payload: expect.objectContaining({ type }) }),
+      );
+    }
+  });
 });
