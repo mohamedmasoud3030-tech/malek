@@ -1,0 +1,44 @@
+name: Temporary Sync Bank Database Types
+
+on:
+  push:
+    branches: ['arena/01a02f0f-malek']
+    paths:
+      - '.github/workflows/tmp-sync-bank-db-types.yml'
+
+permissions:
+  contents: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  sync-generated-types:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          fetch-depth: 0
+          ref: arena/01a02f0f-malek
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - run: pnpm rebuild esbuild
+      - run: bash scripts/canonical-db/build-baseline.sh
+      - run: pnpm db0:gen-types
+      - name: Commit generated contract
+        run: |
+          git diff --exit-code -- supabase
+          git add rentrix-app/src/types/database.ts
+          if git diff --cached --quiet; then
+            echo 'No generated type change needed.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'fix(bank): sync generated reconciliation entity types'
+          git push origin HEAD:arena/01a02f0f-malek
