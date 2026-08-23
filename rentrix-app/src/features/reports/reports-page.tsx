@@ -10,6 +10,7 @@ import { canAccess, financialOperationPermissions } from '@/features/auth/permis
 import { useAuth } from '@/hooks/use-auth';
 import { ReportsWorkspace } from './components/ReportsWorkspace';
 import { getCurrentMonthFilters } from './reports-page.helpers';
+import { getInitialReportsFilters } from './reports-workspace-filters';
 import type { ReportSectionId } from './reports-page.sections';
 import {
   REPORTS_SECTION_SEARCH_KEY,
@@ -22,7 +23,7 @@ export { escapeCsvValue } from '@/lib/csvExport';
 export { buildReportCsvFilename, getTodayLocalDateString, toDateInputValue } from './reports-page.helpers';
 
 export function ReportsPage() {
-  const [filters, setFilters] = useState(() => getCurrentMonthFilters());
+  const [filters, setFilters] = useState(() => getInitialReportsFilters());
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as Record<string, unknown>;
   const { authorization } = useAuth();
@@ -111,7 +112,10 @@ export function ReportsPage() {
             onSectionChange={handleSectionChange}
             onSectionViewChange={handleSectionViewChange}
             onFiltersChange={setFilters}
-            onResetCurrentMonth={() => setFilters(getCurrentMonthFilters())}
+            onResetCurrentMonth={() => setFilters((current) => ({
+              ...current,
+              ...getCurrentMonthFilters(),
+            }))}
           />
         </section>
       </div>
