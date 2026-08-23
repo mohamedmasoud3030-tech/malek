@@ -12,13 +12,14 @@ export type FinancialReportFilters = {
   dateFrom: string;
   dateTo: string;
   propertyId?: string;
+  unitId?: string;
   tenantId?: string;
   contractId?: string;
   costCenterId?: string;
   status?: FinancialReportStatus;
 };
 
-export type ContractContext = Pick<Contract, 'id' | 'property_id' | 'tenant_id'> & { unit_id?: Contract['unit_id']; reference?: string | null };
+export type ContractContext = Pick<Contract, 'id' | 'property_id' | 'tenant_id' | 'unit_id'> & { reference?: string | null };
 
 export type InvoiceReportRow = Pick<Invoice, 'id' | 'contract_id' | 'issue_date' | 'due_date' | 'amount' | 'paid_amount' | 'status' | 'deleted_at'> & Partial<Pick<Invoice, 'tax_amount'>> & {
   reference?: string | null;
@@ -49,10 +50,11 @@ export function isWithinDateRange(value: string | null | undefined, filters: Pic
 
 export function matchesInvoiceContext(
   invoice: Pick<InvoiceReportRow, 'contract_id' | 'contracts'>,
-  filters: Pick<FinancialReportFilters, 'propertyId' | 'tenantId' | 'contractId'>,
+  filters: Pick<FinancialReportFilters, 'propertyId' | 'unitId' | 'tenantId' | 'contractId'>,
 ) {
   if (filters.contractId && invoice.contract_id !== filters.contractId) return false;
   if (filters.propertyId && invoice.contracts?.property_id !== filters.propertyId) return false;
+  if (filters.unitId && invoice.contracts?.unit_id !== filters.unitId) return false;
   if (filters.tenantId && invoice.contracts?.tenant_id !== filters.tenantId) return false;
   return true;
 }
@@ -60,6 +62,7 @@ export function matchesInvoiceContext(
 export function matchesPaymentContext(payment: PaymentWithInvoiceContext, filters: FinancialReportFilters) {
   if (filters.contractId && payment.invoice?.contract_id !== filters.contractId) return false;
   if (filters.propertyId && payment.contract?.property_id !== filters.propertyId) return false;
+  if (filters.unitId && payment.contract?.unit_id !== filters.unitId) return false;
   if (filters.tenantId && payment.contract?.tenant_id !== filters.tenantId) return false;
   return true;
 }
