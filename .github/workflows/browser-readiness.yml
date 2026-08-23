@@ -1,6 +1,8 @@
 name: Browser Readiness / E2E Smoke
 
 on:
+  push:
+    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -24,11 +26,11 @@ jobs:
     timeout-minutes: 2
     steps:
       - name: Defer expensive browser matrix
-        run: echo "Browser matrix is manual during active development; run workflow_dispatch for release/readiness validation."
+        run: echo "Browser matrix stays deferred on pull requests; main pushes and workflow_dispatch run the full device matrix."
 
   browser-smoke-shard:
     name: browser-smoke-${{ matrix.project }}
-    if: ${{ github.event_name == 'workflow_dispatch' }}
+    if: ${{ github.event_name != 'pull_request' }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
     strategy:
