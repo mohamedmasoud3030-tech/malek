@@ -28,6 +28,11 @@ describe('CommissionSourceSelector (UX-049)', () => {
     'utf8',
   );
 
+  const labelsSource = readFileSync(
+    resolve(import.meta.dirname, './labels.ts'),
+    'utf8',
+  );
+
   it('replaces free-text source_id input with typed CommissionSourceSelector', () => {
     // The view must import and use the selector component
     expect(viewSource).toContain('CommissionSourceSelector');
@@ -50,7 +55,11 @@ describe('CommissionSourceSelector (UX-049)', () => {
     expect(serviceSource).toContain("case 'owner'");
     expect(serviceSource).toContain("case 'lead'");
     expect(serviceSource).toContain("case 'land'");
-    expect(selectorSource).toContain("type === 'payment'");
+    // RC1 closeout (Rule 4): 'payment' is not a commission source type and is
+    // never offered by the selector; only the canonical options are.
+    expect(selectorSource).not.toContain("type === 'payment'");
+    expect(selectorSource).toContain('isCommissionSourceType');
+    expect(labelsSource).toContain("commissionSourceTypeOptions = ['contract', 'owner', 'lead', 'land']");
   });
 
   it('fails closed for unsupported source types', () => {
@@ -63,7 +72,11 @@ describe('CommissionSourceSelector (UX-049)', () => {
     expect(selectorSource).toContain("owner: 'مالك'");
     expect(selectorSource).toContain("lead: 'عميل محتمل'");
     expect(selectorSource).toContain("land: 'أرض'");
-    expect(selectorSource).toContain("payment: 'تحصيل'");
+    // RC1 closeout (Rule 4): payment is not a selectable source type. It may
+    // remain a display-only label in labels.ts for legacy read rows, but the
+    // selector itself must not offer or special-case it.
+    expect(selectorSource).not.toContain("payment: 'تحصيل'");
+    expect(labelsSource).toContain("payment: 'تحصيل'");
   });
 
   it('formats source labels without UUID fragments', () => {

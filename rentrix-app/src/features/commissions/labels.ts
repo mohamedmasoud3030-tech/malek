@@ -13,6 +13,21 @@ export const commissionStatusLabels: Record<string, string> = {
   cancelled: 'ملغاة',
 };
 
+/**
+ * Canonical commission source types (RC1 closeout, Rule 4).
+ *
+ * 'payment' is NOT a commission source type: commissions attach to a deal
+ * (contract, owner, lead or land). It was removed from the writable domain
+ * (client validator, RPCs and the DB CHECK commissions_type_check). The
+ * display label below is kept only so any legacy read-only row still renders
+ * a human-readable name; the option never appears in create/edit forms.
+ */
+export const commissionSourceTypeOptions = ['contract', 'owner', 'lead', 'land'] as const;
+
+export function isCommissionSourceType(type: string | null | undefined): type is (typeof commissionSourceTypeOptions)[number] {
+  return typeof type === 'string' && (commissionSourceTypeOptions as readonly string[]).includes(type);
+}
+
 export const commissionTypeLabels: Record<string, string> = {
   contract: 'عقد',
   payment: 'تحصيل',

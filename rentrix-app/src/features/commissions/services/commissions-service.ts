@@ -4,7 +4,12 @@ import { fetchAllRows } from '@/lib/paginatedRead';
 import type { CommissionFilters, CommissionFormValues, CommissionRecord } from '../types';
 import { roundMoney } from '@/lib/money';
 
-const commissionTypeValues = new Set(['contract', 'payment', 'owner', 'lead', 'land']);
+import { commissionSourceTypeOptions } from '../labels';
+
+// RC1 closeout (Rule 4): 'payment' is not a commission source type. The
+// canonical writable domain is contract/owner/lead/land, enforced here, in the
+// create/update RPCs and by the DB CHECK commissions_type_check.
+const commissionTypeValues = new Set<string>(commissionSourceTypeOptions);
 const commissionEditableStatusValues = new Set(['pending', 'approved']);
 
 function numberOrNull(value: string, label: string) {
@@ -63,6 +68,10 @@ export async function listCommissions(filters: CommissionFilters) {
 
 function validateCommission(values: CommissionFormValues, mode: 'create' | 'update') {
   if (!values.staff_name.trim()) throw new Error('اسم الموظف أو الوسيط مطلوب.');
+  // RC1 closeout (Rule 4): fail closed on the removed payment source type with
+  // a stable, greppable message before the RPC/DB reject it as well. The RPC
+  // lower-cases the type, so the client compares the trimmed lowercase value.
+  if (values.type.trim().toLowerCase() === 'payment') throw new Error('COMMISSION_TYPE_PAYMENT_REMOVED: payment is not a commission source type in RC1; commissions attach to a contract, owner, lead or land source.');
   if (!commissionTypeValues.has(values.type)) throw new Error('نوع مصدر العمولة غير صحيح.');
   if (mode === 'create' && values.status !== 'pending') {
     throw new Error('تُنشأ العمولة بحالة قيد المراجعة، ثم يمكن اعتمادها من الإجراء المخصص.');
