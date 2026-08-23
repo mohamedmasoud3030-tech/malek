@@ -32,7 +32,14 @@ export function OverdueInvoicesTable({ rows, selectedInvoiceId, onSelectInvoice,
         </Button>
       ),
     },
-    { key: 'tenant', priority: 'secondary' as const, header: 'المستأجر', render: (row) => row.tenantName ?? EMPTY_FIELD_VALUE },
+    {
+      key: 'tenant', priority: 'secondary' as const, header: 'المستأجر', render: (row) => (
+        <div className="min-w-0">
+          <p className="font-semibold">{row.tenantName ?? EMPTY_FIELD_VALUE}</p>
+          {row.tenantPhone ? <p className="mt-0.5 truncate text-xs text-muted-foreground" dir="ltr">{row.tenantPhone}</p> : null}
+        </div>
+      ),
+    },
     { key: 'context', priority: 'detail' as const, header: 'العقار / الوحدة', render: (row) => getContextLabel(row) },
     { key: 'contract_id', priority: 'detail' as const, header: 'العقد', render: (row) => row.contractReference ?? 'عقد بلا مرجع' },
     { key: 'due_date', priority: 'secondary' as const, header: 'الاستحقاق', render: (row) => formatDate(row.dueDate) },
@@ -101,6 +108,7 @@ export function SelectedOverdueInvoiceCard({ row, onShowInvoice, onCollectInvoic
       </div>
       <dl className="mt-4 grid grid-cols-2 gap-3">
         <div><dt className="text-xs text-muted-foreground">المستأجر</dt><dd className="font-bold">{row.tenantName ?? EMPTY_FIELD_VALUE}</dd></div>
+        <div><dt className="text-xs text-muted-foreground">الهاتف</dt><dd dir="ltr" className="font-bold">{row.tenantPhone ?? EMPTY_FIELD_VALUE}</dd></div>
         <div><dt className="text-xs text-muted-foreground">السياق</dt><dd className="font-bold">{getContextLabel(row)}</dd></div>
         <div><dt className="text-xs text-muted-foreground">تاريخ الاستحقاق</dt><dd className="font-bold">{formatDate(row.dueDate)}</dd></div>
         <div><dt className="text-xs text-muted-foreground">المتبقي</dt><dd dir="ltr" className="font-black text-destructive">{formatMoney(row.remainingAmount)}</dd></div>
