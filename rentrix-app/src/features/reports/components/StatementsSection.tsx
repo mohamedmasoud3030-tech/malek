@@ -28,6 +28,14 @@ import { OfficeSummaryPanel, RegulatorySummaryPanels, StatementSelectionStrip } 
 const MISSING_STATEMENT_DATA_MESSAGE =
   'تعذر إصدار الكشف: لا توجد بيانات كشف حساب مُحمَّلة للفترة أو الطرف المحدد. يرجى تحديد النطاق وعرض النتائج أولاً.';
 
+function deriveTenantOpeningBalance(statement: TenantStatementReport): number {
+  const firstLine = statement.lines[0];
+  if (!firstLine) return statement.finalBalance || 0;
+  // Each authoritative line exposes its post-movement running balance.
+  // Reverse the first movement to recover the opening balance; never hardcode 0.
+  return (firstLine.balance || 0) - (firstLine.debit || 0) + (firstLine.credit || 0);
+}
+
 type ReceiptRow = Readonly<{
   id: string;
   receipt_number: string;
@@ -86,7 +94,7 @@ export function StatementsSection({
       periodTo: filters?.to || tenantStatement.endDate || '—',
       propertyTitle: tenantStatement.propertyName || 'عقار غير محدد',
       unitNumber: tenantStatement.unitName || '—',
-      openingBalance: 0,
+      openingBalance: deriveTenantOpeningBalance(tenantStatement),
       totalInvoiced: tenantStatement.lines.reduce((total, line) => total + (line.debit || 0), 0),
       totalPaid: tenantStatement.lines.reduce((total, line) => total + (line.credit || 0), 0),
       closingBalance: tenantStatement.finalBalance || 0,
@@ -133,8 +141,8 @@ export function StatementsSection({
 
     return {
       ownerName: ownerStatement.ownerName || 'مالك غير محدد',
-      periodFrom: filters?.from || '—',
-      periodTo: filters?.to || '—',
+      periodFrom: filters?.from || ownerStatement.periodFrom || '—',
+      periodTo: filters?.to || ownerStatement.periodTo || '—',
       propertyTitle: 'كافة العقارات المدارة',
       totalRent,
       totalExpenses,
