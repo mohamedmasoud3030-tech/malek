@@ -5,6 +5,7 @@ import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Textarea } from '@/components/ui/textarea';
 import { formatMoney } from '@/features/financials/components/financials-formatters';
 import { APP_BRAND_NAME } from '@/lib/brand';
@@ -112,7 +113,7 @@ function ContextSnapshot({ context }: Readonly<{ context: AiAssistantContext | n
   if (!context) return <AssistantCapabilities />;
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3" aria-label="ملخص السياق المقروء">
+    <ResponsiveCardGrid desktopColumns={3} gap="sm" aria-label="ملخص السياق المقروء">
       <Card variant="muted">
         <CardContent className="space-y-1 pt-6">
           <p className="text-sm font-bold text-muted-foreground">المتأخرات</p>
@@ -134,7 +135,7 @@ function ContextSnapshot({ context }: Readonly<{ context: AiAssistantContext | n
           <p className="text-xs text-muted-foreground">{toArabicCount(context.propertyFinancialSnapshot.occupiedUnitCount)} من {toArabicCount(context.propertyFinancialSnapshot.unitCount)} وحدة</p>
         </CardContent>
       </Card>
-    </div>
+    </ResponsiveCardGrid>
   );
 }
 
