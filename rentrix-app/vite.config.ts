@@ -138,6 +138,10 @@ export default defineConfig({
           "malek-apple-touch-180.png",
         ],
         cleanupOutdatedCaches: true,
+        // vite-plugin-pwa defaults navigateFallback to index.html. Disable
+        // that generated NavigationRoute so the explicit NetworkOnly rule
+        // below is the sole handler for application navigations.
+        navigateFallback: null,
         // One-time recovery helper for clients controlled by the previous SW,
         // whose navigation fallback could prevent the React update prompt from
         // ever mounting. The helper only auto-activates once, then records a
