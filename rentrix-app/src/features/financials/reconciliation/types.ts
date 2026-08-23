@@ -4,7 +4,10 @@ export type BankAccount = Database['public']['Tables']['bank_accounts']['Row'];
 export type BankStatementLine = Database['public']['Tables']['bank_statement_lines']['Row'];
 export type BankReconciliationMatch = Database['public']['Tables']['bank_reconciliation_matches']['Row'];
 export type BankStatementLineStatus = BankStatementLine['status'];
-export type MatchEntityType = BankReconciliationMatch['matched_entity_type'];
+export type MatchEntityType =
+  | BankReconciliationMatch['matched_entity_type']
+  | 'receipt_void'
+  | 'deposit_refund_reversal';
 
 export type BankReconciliationFilters = Readonly<{
   bankAccountId: string;
