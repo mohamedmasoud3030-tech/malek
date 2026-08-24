@@ -22,4 +22,28 @@ describe('ReportDirectory', () => {
     expect(html).toContain('الرقابة والمطابقة');
     expect(html).toContain('مفتوح الآن');
   });
+
+  it('marks only the scoped statement family as active', () => {
+    const ownerHtml = renderToStaticMarkup(
+      <ReportDirectory
+        activeSection="statements"
+        activeView=""
+        scope={{ ownerId: 'owner-1' }}
+        onOpen={vi.fn()}
+      />,
+    );
+    expect(ownerHtml).toContain('data-report-group="owners" data-active="true"');
+    expect(ownerHtml).not.toContain('data-report-group="tenants" data-active="true"');
+
+    const tenantHtml = renderToStaticMarkup(
+      <ReportDirectory
+        activeSection="statements"
+        activeView=""
+        scope={{ tenantId: 'tenant-1', contractId: 'contract-1' }}
+        onOpen={vi.fn()}
+      />,
+    );
+    expect(tenantHtml).toContain('data-report-group="tenants" data-active="true"');
+    expect(tenantHtml).not.toContain('data-report-group="owners" data-active="true"');
+  });
 });
