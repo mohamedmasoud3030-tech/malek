@@ -28,33 +28,113 @@ export function TenantDossierContent({ tenantId }: Readonly<{ tenantId: string }
   if (!dossier) return null;
 
   const activeContracts = dossier.contracts.filter((contract) => contract.status === 'active');
-  const outstanding = dossier.invoices.reduce((sum, invoice) => sum + Math.max(0, Number(invoice.amount) - Number(invoice.paid_amount)), 0);
+  const statementContract = activeContracts[0] ?? dossier.contracts[0];
+  const outstanding = dossier.invoices.reduce(
+    (sum, invoice) => sum + Math.max(0, Number(invoice.amount) - Number(invoice.paid_amount)),
+    0,
+  );
+
   return (
     <div className="space-y-5">
       <Card>
         <CardHeader><CardTitle>{dossier.person.full_name}</CardTitle></CardHeader>
-        <CardContent><DetailFields columns={3} fields={[
-          { label: 'الهاتف', value: dossier.person.phone ? <span dir="ltr">{dossier.person.phone}</span> : 'غير موثق' },
-          { label: 'البريد', value: dossier.person.email ? <span dir="ltr">{dossier.person.email}</span> : 'غير موثق' },
-          { label: 'رقم الهوية', value: dossier.person.national_id ?? 'غير موثق' },
-          { label: 'العقود النشطة', value: activeContracts.length },
-          { label: 'إجمالي العقود', value: dossier.contracts.length },
-        ]} /></CardContent>
+        <CardContent>
+          <DetailFields columns={3} fields={[
+            { label: 'الهاتف', value: dossier.person.phone ? <span dir="ltr">{dossier.person.phone}</span> : 'غير موثق' },
+            { label: 'البريد', value: dossier.person.email ? <span dir="ltr">{dossier.person.email}</span> : 'غير موثق' },
+            { label: 'رقم الهوية', value: dossier.person.national_id ?? 'غير موثق' },
+            { label: 'العقود النشطة', value: activeContracts.length },
+            { label: 'إجمالي العقود', value: dossier.contracts.length },
+          ]} />
+        </CardContent>
       </Card>
 
       <Card>
-        <CardHeader><CardTitle className="flex items-center gap-2"><FileText className="size-5 text-primary" />العقود والعقارات والوحدات</CardTitle></CardHeader>
-        <CardContent>{dossier.contracts.length === 0 ? <p className="text-sm text-muted-foreground">لا توجد عقود مسجلة لهذا المستأجر.</p> : <ul className="space-y-2">{dossier.contracts.map((contract) => <li key={contract.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3"><div><p className="font-bold">{businessReferenceOrLabel(contract, 'عقد مسجل')}</p><p className="mt-1 text-xs text-muted-foreground">{contract.properties?.title ?? 'عقار غير محدد'} · {contract.units?.unit_number ? `وحدة ${contract.units.unit_number}` : 'بدون وحدة'} · {contract.start_date} — {contract.end_date}</p></div><div className="flex items-center gap-2"><StatusBadge tone={contract.status === 'active' ? 'success' : 'neutral'}>{contract.status}</StatusBadge><Button variant="secondary" onClick={() => dialogNavigate({ to: '/contracts/$contractId', params: { contractId: contract.id } })}>فتح العقد</Button></div></li>)}</ul>}</CardContent>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><FileText className="size-5 text-primary" />العقود والعقارات والوحدات</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {dossier.contracts.length === 0 ? (
+            <p className="text-sm text-muted-foreground">لا توجد عقود مسجلة لهذا المستأجر.</p>
+          ) : (
+            <ul className="space-y-2">
+              {dossier.contracts.map((contract) => (
+                <li key={contract.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3">
+                  <div>
+                    <p className="font-bold">{businessReferenceOrLabel(contract, 'عقد مسجل')}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {contract.properties?.title ?? 'عقار غير محدد'} · {contract.units?.unit_number ? `وحدة ${contract.units.unit_number}` : 'بدون وحدة'} · {contract.start_date} — {contract.end_date}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <StatusBadge tone={contract.status === 'active' ? 'success' : 'neutral'}>{contract.status}</StatusBadge>
+                    <Button variant="secondary" onClick={() => dialogNavigate({ to: '/contracts/$contractId', params: { contractId: contract.id } })}>فتح العقد</Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
       </Card>
 
       {canViewFinancial ? (
         <Card>
-          <CardHeader><CardTitle className="flex items-center gap-2"><ReceiptText className="size-5 text-primary" />الفواتير والمتأخرات</CardTitle></CardHeader>
-          <CardContent className="space-y-3"><div className="flex flex-wrap gap-2"><StatusBadge tone="info">{dossier.invoices.length} فواتير</StatusBadge><StatusBadge tone={outstanding > 0 ? 'warning' : 'success'}>الرصيد المفتوح {formatDefaultCompanyMoney(outstanding)}</StatusBadge></div>{dossier.invoices.map((invoice) => <div key={invoice.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3"><span className="font-bold">{businessReferenceOrLabel(invoice, 'فاتورة مسجلة')}</span><span className="text-sm">الاستحقاق {invoice.due_date} · المتبقي {formatDefaultCompanyMoney(Math.max(0, Number(invoice.amount) - Number(invoice.paid_amount)))}</span><Button asChild variant="secondary"><Link to="/invoices" search={{ invoiceId: invoice.id } as never}>فتح الفاتورة</Link></Button></div>)}<Button asChild variant="secondary"><Link to="/reports" search={{ section: 'analytics', view: 'overdue', tenantId } as never}>تقرير المتأخرات</Link></Button></CardContent>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><ReceiptText className="size-5 text-primary" />الفواتير والمتأخرات</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex flex-wrap gap-2">
+              <StatusBadge tone="info">{dossier.invoices.length} فواتير</StatusBadge>
+              <StatusBadge tone={outstanding > 0 ? 'warning' : 'success'}>الرصيد المفتوح {formatDefaultCompanyMoney(outstanding)}</StatusBadge>
+            </div>
+
+            {dossier.invoices.map((invoice) => (
+              <div key={invoice.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3">
+                <span className="font-bold">{businessReferenceOrLabel(invoice, 'فاتورة مسجلة')}</span>
+                <span className="text-sm">الاستحقاق {invoice.due_date} · المتبقي {formatDefaultCompanyMoney(Math.max(0, Number(invoice.amount) - Number(invoice.paid_amount)))}</span>
+                <Button asChild variant="secondary"><Link to="/invoices" search={{ invoiceId: invoice.id } as never}>فتح الفاتورة</Link></Button>
+              </div>
+            ))}
+
+            <div className="flex flex-wrap gap-2 border-t border-border/60 pt-3">
+              {statementContract ? (
+                <Button asChild variant="outline">
+                  <Link
+                    to="/reports"
+                    search={{ section: 'statements', tenantId, contractId: statementContract.id } as never}
+                  >
+                    كشف الحساب الكامل
+                  </Link>
+                </Button>
+              ) : null}
+              <Button asChild variant="secondary">
+                <Link to="/reports" search={{ section: 'analytics', view: 'overdue', tenantId } as never}>تقرير المتأخرات</Link>
+              </Button>
+            </div>
+          </CardContent>
         </Card>
       ) : null}
 
-      {canViewActivity ? <Card><CardHeader><CardTitle className="flex items-center gap-2"><Activity className="size-5 text-primary" />آخر النشاط</CardTitle></CardHeader><CardContent>{dossier.latestActivity.length === 0 ? <p className="text-sm text-muted-foreground">لا يوجد نشاط موثق.</p> : <ul className="space-y-2">{dossier.latestActivity.map((item) => <li key={item.id} className="rounded-xl border p-3"><p className="font-bold">{item.subject || 'تواصل مسجل'}</p><p className="mt-1 text-sm text-muted-foreground">{item.body}</p><p className="mt-1 text-xs text-muted-foreground">{new Date(item.created_at).toLocaleString('ar-OM-u-nu-latn')}</p></li>)}</ul>}</CardContent></Card> : null}
+      {canViewActivity ? (
+        <Card>
+          <CardHeader><CardTitle className="flex items-center gap-2"><Activity className="size-5 text-primary" />آخر النشاط</CardTitle></CardHeader>
+          <CardContent>
+            {dossier.latestActivity.length === 0 ? (
+              <p className="text-sm text-muted-foreground">لا يوجد نشاط موثق.</p>
+            ) : (
+              <ul className="space-y-2">
+                {dossier.latestActivity.map((item) => (
+                  <li key={item.id} className="rounded-xl border p-3">
+                    <p className="font-bold">{item.subject || 'تواصل مسجل'}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">{item.body}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{new Date(item.created_at).toLocaleString('ar-OM-u-nu-latn')}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+      ) : null}
       <ContextualDocumentsSection entityType="tenant" entityId={dossier.person.id} entityLabel="المستأجر" />
     </div>
   );
