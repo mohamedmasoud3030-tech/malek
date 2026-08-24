@@ -26,13 +26,13 @@ export function buildSettingsSummaryTiles({
   const identityReady = Boolean(draft.currency && draft.locale && draft.timezone && draft.date_format && draft.number_format);
   const documentsReady = Boolean(draft.invoice_prefix.trim() && draft.contract_prefix.trim() && draft.receipt_prefix.trim());
   const completedSetupSteps = [officeReady, identityReady, documentsReady].filter(Boolean).length;
-  const firstIncompleteSection: SettingsSectionId = !officeReady
+  const firstIncompleteSection: SettingsSectionId | undefined = !officeReady
     ? 'office'
     : !identityReady
       ? 'identity'
       : !documentsReady
         ? 'documents'
-        : 'office';
+        : undefined;
 
   return [
     {
@@ -40,7 +40,7 @@ export function buildSettingsSummaryTiles({
       value: completedSetupSteps === 3 ? 'مكتملة' : `${completedSetupSteps}/3`,
       helper: completedSetupSteps === 3 ? preview.companyName : 'أكمل الهوية والطباعة والمستندات',
       tone: completedSetupSteps === 3 ? 'success' : completedSetupSteps === 0 ? 'danger' : 'warning',
-      section: firstIncompleteSection,
+      ...(firstIncompleteSection ? { section: firstIncompleteSection } : {}),
     },
     {
       label: 'حالة التغييرات',
