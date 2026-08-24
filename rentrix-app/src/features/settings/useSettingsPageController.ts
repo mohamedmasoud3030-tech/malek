@@ -1,3 +1,4 @@
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import { formatCompanyDate, formatCompanyMoney } from '@/lib/companyFormatters';
@@ -7,7 +8,7 @@ import { useUiStore } from '@/store/ui-store';
 import { useAuth } from '@/hooks/use-auth';
 import { useBeforeUnloadGuard } from '@/hooks/use-unsaved-changes-guard';
 import { useCompanySettings, useUpdateCompanySettings } from './useCompanySettings';
-import type { SettingsSectionId } from './settingsSections';
+import { resolveSettingsSection, type SettingsSectionId } from './settingsSections';
 import {
   areCompanySettingsDraftsEqual,
   companySettingsDraftToLocalSettings,
@@ -27,7 +28,9 @@ import {
  * and language toggles, and section-nav state. settings-page.tsx composes
  * this hook with presentational sections and stays render-only.
  */
-export function useSettingsPageController() {
+export function useSettingsPageController({ syncUrl = false }: Readonly<{ syncUrl?: boolean }> = {}) {
+  const navigate = useNavigate();
+  const search = useSearch({ strict: false }) as Record<string, unknown>;
   const { theme, setTheme } = useUiStore();
   const { authorization, authorizationDiagnostics, user } = useAuth();
   const companySettingsQuery = useCompanySettings();
@@ -37,12 +40,17 @@ export function useSettingsPageController() {
   const baseDraftRef = useRef<CompanySettingsDraft | null>(null);
   const draftRef = useRef<CompanySettingsDraft | null>(null);
   const [errors, setErrors] = useState<CompanySettingsValidationErrors>({});
-  const [activeSection, setActiveSection] = useState<SettingsSectionId>('office');
+  const [activeSection, setActiveSection] = useState<SettingsSectionId>(() => syncUrl ? resolveSettingsSection(search.section) : 'office');
 
   const isDirty = !areCompanySettingsDraftsEqual(draft, baseDraft);
   const isSaving = updateCompanySettingsMutation.isPending;
 
   useBeforeUnloadGuard(isDirty);
+
+  useEffect(() => {
+    if (!syncUrl) return;
+    setActiveSection(resolveSettingsSection(search.section));
+  }, [search.section, syncUrl]);
 
   const discardDraft = () => {
     const currentBaseDraft = baseDraftRef.current;
@@ -156,6 +164,12 @@ export function useSettingsPageController() {
 
   const handleJumpToSection = (id: SettingsSectionId) => {
     setActiveSection(id);
+    if (!syncUrl) return;
+    void navigate({
+      to: '/settings',
+      search: (previous: Record<string, unknown>) => ({ ...previous, section: id }),
+      replace: true,
+    });
   };
 
   return {
