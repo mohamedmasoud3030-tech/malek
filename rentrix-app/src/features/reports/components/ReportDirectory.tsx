@@ -181,7 +181,7 @@ export function ReportDirectory({ activeSection, activeView, scope, onOpen }: Re
                         key={`${shortcut.section}:${shortcut.view}:${shortcut.label}`}
                         type="button"
                         className={cn(
-                          'min-h-9 rounded-lg border px-2.5 py-1 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
+                          'min-h-11 rounded-lg border px-3 py-2 text-[13px] font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
                           shortcutActive
                             ? 'border-primary/35 bg-primary/10 text-primary'
                             : 'border-border/70 bg-muted/35 text-muted-foreground hover:border-primary/25 hover:bg-primary/5 hover:text-foreground',
