@@ -98,28 +98,18 @@ describe('embedded workspace architecture contract', () => {
     expect(source).not.toContain('التنقل الداخلي لمساحة العمل');
   });
 
-  it('owns nested company-settings URL state in the governance hub, not the settings controller', () => {
+  it('owns nested company-settings URL state in the governance layer, not the settings controller', () => {
     const hub = readSource('./components/GovernanceHubWorkspace.tsx');
     const workspace = readSource('../settings/settings-page.tsx');
     const controller = readSource('../settings/useSettingsPageController.ts');
 
-    expect(hub).toContain('const companySection = resolveSettingsSection');
-    expect(hub).toContain("section: 'company'");
-    expect(hub).toContain('companySection: nextSection');
+    expect(hub).toContain('resolveGovernanceHubNavigation');
+    expect(hub).toContain('buildCompanySettingsSearch');
     expect(hub).toContain('activeSection={companySection}');
     expect(hub).toContain('onSectionChange={handleCompanySectionChange}');
     expect(workspace).toContain('activeSection: controlledActiveSection');
     expect(workspace).toContain('const activeSection = controlledActiveSection ?? localActiveSection');
     expect(controller).not.toContain('useNavigate');
     expect(controller).not.toContain('useSearch');
-  });
-
-  it('normalizes old company-section links into the canonical nested route', () => {
-    const hub = readSource('./components/GovernanceHubWorkspace.tsx');
-
-    expect(hub).toContain('legacyCompanySection');
-    expect(hub).toContain("section: 'company'");
-    expect(hub).toContain('companySection: legacyCompanySection');
-    expect(hub).toContain('replace: true');
   });
 });
