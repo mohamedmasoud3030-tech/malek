@@ -8,6 +8,7 @@ import { PageLayout } from '@/components/layout/page-layout';
 import { WorkspaceHint } from '@/components/layout/workspace-hint';
 import { canAccess, financialOperationPermissions } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
+import { ReportDirectory } from './components/ReportDirectory';
 import { ReportsWorkspace } from './components/ReportsWorkspace';
 import { getCurrentMonthFilters } from './reports-page.helpers';
 import { getInitialReportsFilters } from './reports-workspace-filters';
@@ -23,9 +24,9 @@ export { escapeCsvValue } from '@/lib/csvExport';
 export { buildReportCsvFilename, getTodayLocalDateString, toDateInputValue } from './reports-page.helpers';
 
 export function ReportsPage() {
-  const [filters, setFilters] = useState(() => getInitialReportsFilters());
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as Record<string, unknown>;
+  const [filters, setFilters] = useState(() => getInitialReportsFilters(search));
   const { authorization } = useAuth();
   // R5: view and export are separate capabilities — viewing a report never
   // implies the right to export it, and export never gates viewing.
@@ -101,6 +102,12 @@ export function ReportsPage() {
             action={{ to: '/financials', label: 'فتح المالية' }}
           />
         </div>
+
+        <ReportDirectory
+          activeSection={activeSection}
+          activeView={activeView}
+          onOpen={handleSectionViewChange}
+        />
 
         <section data-finance-section aria-label="مساحة المحاسبة والتقارير">
           <ReportsWorkspace
