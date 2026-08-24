@@ -40,7 +40,8 @@ export function OverviewRow({
   return (
     <ResponsiveCardGrid desktopColumns={3} gap="md" aria-label="ملخص جاهزية الإعدادات">
       {tiles.map((tile) => {
-        const isActionable = Boolean(tile.section && onOpenSection);
+        const targetSection = tile.section;
+        const isActionable = Boolean(targetSection && onOpenSection);
         const content = (
           <>
             <div className="flex min-w-0 items-center justify-between gap-2">
@@ -54,7 +55,7 @@ export function OverviewRow({
           </>
         );
 
-        if (isActionable && tile.section) {
+        if (targetSection && onOpenSection) {
           return (
             <button
               key={tile.label}
@@ -63,7 +64,7 @@ export function OverviewRow({
                 'min-h-20 min-w-0 rounded-2xl border border-border/60 bg-card p-3 text-start transition-[border-color,box-shadow,transform] sm:p-4',
                 'hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
               )}
-              onClick={() => onOpenSection?.(tile.section!)}
+              onClick={() => onOpenSection(targetSection)}
             >
               {content}
             </button>
