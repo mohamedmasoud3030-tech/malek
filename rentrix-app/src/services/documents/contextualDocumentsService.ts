@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase';
 import { ATTACHMENTS_ALLOWED_MIME_TYPES, ATTACHMENTS_MAX_FILE_SIZE } from '@/lib/attachments-contract';
 import { fetchAllRows } from '@/lib/paginatedRead';
 import { handleSupabaseError } from '@/lib/supabase-error';
+import { buildTenantVaultPath, requireActiveCompanyIdForStorage } from '@/lib/tenant-storage-path';
 
 export const documentEntityTypes = [
   'property', 'unit', 'land', 'person', 'tenant', 'owner', 'contract',
@@ -71,13 +72,11 @@ function documentTypeFromMime(mime: string) {
   return 'attachment';
 }
 
-function buildStoragePath(entityType: DocumentEntityType, entityId: string, file: Pick<File, 'name'>) {
-  return `vault/contextual/${entityType}/${entityId}/${crypto.randomUUID()}.${safeExtension(file.name)}`;
+function buildStoragePath(companyId: string, entityType: DocumentEntityType, entityId: string, file: Pick<File, 'name'>) {
+  return buildTenantVaultPath(companyId, `contextual/${entityType}/${entityId}/${crypto.randomUUID()}.${safeExtension(file.name)}`);
 }
 
 function typedMetadata(file: Pick<File, 'name' | 'size' | 'type'>, replacedAt?: string, existing: DocumentTypedMetadata | null = null): DocumentTypedMetadata {
-  // File replacement must not erase real business metadata attached to the
-  // document. File-system facts are refreshed; typed contextual facts survive.
   return { ...existing, originalFileName: file.name, contentType: file.type, sizeBytes: file.size, ...(replacedAt ? { replacedAt } : {}) };
 }
 
@@ -100,7 +99,8 @@ export async function uploadContextualDocument(params: {
   relatedEntityId: string;
 }) {
   validateContextualDocumentFile(params.file);
-  const storagePath = buildStoragePath(params.relatedEntityType, params.relatedEntityId, params.file);
+  const companyId = await requireActiveCompanyIdForStorage();
+  const storagePath = buildStoragePath(companyId, params.relatedEntityType, params.relatedEntityId, params.file);
   const { error: uploadError } = await supabase.storage.from('attachments').upload(storagePath, params.file, { upsert: false, contentType: params.file.type });
   if (uploadError) { handleSupabaseError(uploadError, 'تعذر رفع المستند'); throw uploadError; }
   try {
@@ -120,8 +120,6 @@ export async function uploadContextualDocument(params: {
     if (error) throw error;
     return data as ContextualDocumentRow;
   } catch (error) {
-    // Best-effort rollback of the orphaned storage object; a cleanup failure
-    // must never mask the original metadata error.
     await supabase.storage.from('attachments').remove([storagePath]).catch(() => undefined);
     throw error;
   }
@@ -138,8 +136,9 @@ export async function replaceContextualDocument(documentId: string, file: File) 
     metadata: unknown;
   } | null;
   if (!existingRow) throw new Error('المستند غير موجود.');
+  const companyId = await requireActiveCompanyIdForStorage();
   const entityType = existingRow.related_entity_type as DocumentEntityType;
-  const newStoragePath = buildStoragePath(entityType, existingRow.related_entity_id, file);
+  const newStoragePath = buildStoragePath(companyId, entityType, existingRow.related_entity_id, file);
   const { error: uploadError } = await supabase.storage.from('attachments').upload(newStoragePath, file, { upsert: false, contentType: file.type });
   if (uploadError) throw uploadError;
   const replacedAt = new Date().toISOString();
@@ -154,7 +153,6 @@ export async function replaceContextualDocument(documentId: string, file: File) 
     updated_at: replacedAt,
   }).eq('id', documentId).is('deleted_at', null).select('*').single();
   if (error) {
-    // Best-effort rollback; never mask the original update error.
     await supabase.storage.from('attachments').remove([newStoragePath]).catch(() => undefined);
     throw error;
   }
