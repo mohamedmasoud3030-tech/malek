@@ -1,4 +1,6 @@
 import { expect, test } from '@playwright/test';
+import { installAcceptanceBrowser } from './support/document-acceptance-session';
+import { installFakeSupabaseBackend } from './support/fake-supabase-backend';
 
 const viewports = [
   { width: 360, height: 800 },
@@ -19,6 +21,8 @@ test.describe('New Real Modules - Utilities, Vault, Deposits, Automation', () =>
 
     test(`vault workspace loads with private storage controls at ${vp.width}x${vp.height}`, async ({ page }) => {
       await page.setViewportSize(vp);
+      await installAcceptanceBrowser(page);
+      await installFakeSupabaseBackend(page, 'complete');
       await page.goto('/login?e2e-vault-workspace=1');
       const workspace = page.locator('[data-e2e-vault-workspace]');
       await expect(workspace).toBeVisible({ timeout: 10000 });
@@ -48,6 +52,8 @@ test.describe('New Real Modules - Utilities, Vault, Deposits, Automation', () =>
   }
 
   test('vault upload form validates the current private-file contract', async ({ page }) => {
+    await installAcceptanceBrowser(page);
+    await installFakeSupabaseBackend(page, 'complete');
     await page.goto('/login?e2e-vault-workspace=1');
     const workspace = page.locator('[data-e2e-vault-workspace]');
     await expect(workspace).toBeVisible({ timeout: 10000 });

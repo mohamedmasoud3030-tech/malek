@@ -127,9 +127,9 @@ describe('receipt detail print readiness (P0: no fake company identity)', () => 
 
     // Arabic guidance with a direct route to the settings page.
     expect(container!.textContent).toContain('أكمل بيانات الشركة الأساسية في الإعدادات قبل طباعة هذا المستند');
-    expect(container!.textContent).toContain('فتح إعدادات الشركة');
+    expect(container!.textContent).toContain('فتح إعدادات المستندات');
     const settingsLink = Array.from(container!.querySelectorAll('a'))
-      .find((anchor) => anchor.textContent?.includes('فتح إعدادات الشركة'));
+      .find((anchor) => anchor.textContent?.includes('فتح إعدادات المستندات'));
     expect(settingsLink?.getAttribute('href')).toBe('/settings');
 
     // Viewing the receipt itself is still allowed.

@@ -88,17 +88,18 @@ describe('PropertiesListPage controller regression', () => {
     expect(badge?.textContent).toBe('0');
   });
 
-  it('renders one dense desktop row per property plus the shared horizontally scrollable table', async () => {
+  it('renders desktop rows plus the shared mobile card register', async () => {
     await act(async () => { root.render(<PropertiesListPage />); });
 
     const desktopRows = container.querySelectorAll('tbody tr');
     expect(desktopRows.length).toBe(2);
 
-    // The same semantic table remains present at narrow widths and scrolls horizontally.
+    // The responsive register keeps both semantic presentations available;
+    // CSS selects the table or cards for the active viewport.
     expect(container.querySelector('[data-entity-table-scroll]')).toBeTruthy();
     expect(container.querySelector('[data-compact-responsive-table]')).toBeTruthy();
     expect(container.querySelector('table[data-entity-table]')).toBeTruthy();
-    expect(container.querySelector('[data-entity-table-mobile-list]')).toBeNull();
+    expect(container.querySelectorAll('[data-entity-table-mobile-card]').length).toBe(2);
   });
 
   it('opens create modal and shows agreement fields', async () => {

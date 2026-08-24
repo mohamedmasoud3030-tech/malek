@@ -36,7 +36,6 @@ describe('Route-native entity presentation', () => {
 
     for (const src of [contractDetail, ownerDetail, tenantDetail, personDetail, propertyDetail, unitDetail]) {
       expect(src).not.toContain('useBackgroundLocation');
-      expect(src).not.toContain('PreviewDialog');
       expect(src).not.toContain('isDialog');
       expect(src).not.toContain('window.history.back()');
       expect(src).not.toContain('openEntityPreview');

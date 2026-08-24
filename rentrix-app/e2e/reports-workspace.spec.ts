@@ -11,7 +11,7 @@ const viewportMatrix = [
 const themes = ['light', 'dark'] as const;
 
 const sections = [
-  { id: 'accounting', label: 'المحاسبة' },
+  { id: 'accounting', label: 'المحاسبة والرقابة' },
   { id: 'statements', label: 'الكشوف' },
   { id: 'analytics', label: 'التحليلات' },
 ] as const;

@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      run_staging:
+        description: Run the separate hosted-staging proof job
+        required: false
+        default: false
+        type: boolean
 
 concurrency:
   group: browser-readiness-${{ github.event.pull_request.number || github.ref }}
@@ -75,7 +81,7 @@ jobs:
           if-no-files-found: ignore
 
   seeded-staging-smoke:
-    if: ${{ github.event_name == 'workflow_dispatch' }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_staging }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
     env:

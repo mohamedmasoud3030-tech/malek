@@ -300,8 +300,8 @@ test('WP-06 mobile drawer — real AppShell interaction: open → lock scroll �
   // Should not be hidden before opening
   expect(initialOverflow.body).not.toBe('hidden');
 
-  // Find mobile menu trigger — visible only on mobile (< lg)
-  const trigger = page.locator('[data-mobile-menu-trigger]').first();
+  // Mobile architecture reset: the menu launcher lives in the floating dock.
+  const trigger = page.locator('[data-mobile-dock-menu]').first();
   await expect(trigger, 'mobile menu trigger must be visible on 375px').toBeVisible({ timeout: 15_000 });
   await expect(trigger).toHaveAttribute('aria-haspopup', 'dialog');
 

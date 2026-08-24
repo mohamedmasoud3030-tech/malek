@@ -892,6 +892,7 @@ describe('financialReportsService Supabase queries', () => {
         contractReference: null,
         tenantId: 'tenant_1',
         tenantName: 'Tenant One',
+        tenantPhone: null,
         propertyId: 'property_1',
         propertyTitle: 'Building A',
         unitId: 'unit_1',

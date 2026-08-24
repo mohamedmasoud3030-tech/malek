@@ -39,7 +39,7 @@ vi.mock('./useContracts', () => ({
 }));
 
 vi.mock('@/hooks/use-auth', () => ({
-  useAuth: () => ({ authorization: { role: 'MANAGER' } }),
+  useAuth: () => ({ authorization: { role: 'MANAGER' }, canAccess: () => true }),
   useOptionalAuth: () => ({ canAccess: () => true }),
 }));
 vi.mock('./evidence/use-contract-evidence', () => ({

@@ -316,7 +316,7 @@ export function ReportsWorkspaceE2EFixture() {
         <ReportsWorkspace
           model={fixtureModel}
           filters={filters}
-          canExportReports={false}
+          canExportReports
           activeSection={activeSection}
           activeView={activeView}
           onSectionChange={(sec) => {

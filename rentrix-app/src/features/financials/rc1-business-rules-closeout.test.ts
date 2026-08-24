@@ -302,13 +302,23 @@ describe('RC1 Rule 3 — fixed monthly rent posts in full, no daily proration', 
 
 describe('RC1 Rule 4 — commission source domain excludes payment', () => {
   it('rejects a payment-type commission at the DB level (CHECK constraint)', async () => {
+    const constraint = await db.query<{ definition: string }>(
+      `select pg_get_constraintdef(oid) as definition
+         from pg_constraint
+        where conrelid = 'public.commissions'::regclass
+          and conname = 'commissions_type_check'`,
+    );
+    expect(constraint.rows).toHaveLength(1);
+    expect(constraint.rows[0]?.definition).toContain("ARRAY['contract'::text, 'owner'::text, 'lead'::text, 'land'::text]");
+    expect(constraint.rows[0]?.definition).not.toContain("'payment'::text");
+
     await expect(
       db.query(
         `insert into public.commissions (id, staff_name, type, status, amount, company_id)
          values (gen_random_uuid()::text, 'Guard Agent', 'payment', 'pending', 100, $1::uuid)`,
         [COMPANY],
       ),
-    ).rejects.toThrow('commissions_type_check');
+    ).rejects.toThrow(/violates check constraint/);
 
     // Canonical source types remain writable.
     await db.query(

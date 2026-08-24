@@ -22,15 +22,18 @@ describe('platform security and PWA boundaries', () => {
 
   it('keeps service-worker runtime caching limited to navigations and static assets', () => {
     const vite = readFileSync(resolve(root, 'rent' + 'rix-app/vite.config.ts'), 'utf8');
-    // PWA v1.3.0 (PWA_REVIEW.md): navigation HTML is never runtime-cached
-    // (fails closed to offline.html); runtime caching is limited to static
-    // asset destinations only.
+    // Navigation HTML is NetworkOnly and falls back to the precached offline
+    // shell only when the network fails. Static assets are the only content
+    // allowed into the runtime cache.
     expect(vite).toContain('request.destination === "style"');
     expect(vite).toContain('request.destination === "script"');
     expect(vite).toContain('request.destination === "font"');
-    expect(vite).toContain('navigateFallback: "/offline.html"');
-    expect(vite).toContain('navigateFallbackDenylist: [/^\\/api\\//');
-    expect(vite).not.toContain('request.mode === "navigate"');
+    expect(vite).toContain('navigateFallback: null');
+    expect(vite).toContain('request.mode === "navigate"');
+    expect(vite).toContain('handler: "NetworkOnly"');
+    expect(vite).toContain('precacheFallback: { fallbackURL: "/offline.html" }');
+    expect(vite).toContain('!url.pathname.startsWith("/api/")');
+    expect(vite).toContain('!url.pathname.startsWith("/auth/")');
     expect(vite).not.toMatch(/urlPattern:[^\n]*supabase/i);
   });
 
