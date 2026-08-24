@@ -82,7 +82,7 @@ export function ContractDetailPage() {
               <Button asChild variant="outline" className="min-h-11">
                 <Link
                   to="/reports"
-                  search={{ section: 'statements', contractId: contract.id, tenantId: contract.tenant_id } as never}
+                  search={{ section: 'statements', contractId: contract.id, tenantId: contract.tenant_id ?? undefined } as never}
                 >
                   <BarChart3 className="me-2 size-4" aria-hidden="true" />
                   كشف وتقارير العقد
