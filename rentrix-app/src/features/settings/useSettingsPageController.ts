@@ -1,4 +1,3 @@
-import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import { formatCompanyDate, formatCompanyMoney } from '@/lib/companyFormatters';
@@ -8,7 +7,6 @@ import { useUiStore } from '@/store/ui-store';
 import { useAuth } from '@/hooks/use-auth';
 import { useBeforeUnloadGuard } from '@/hooks/use-unsaved-changes-guard';
 import { useCompanySettings, useUpdateCompanySettings } from './useCompanySettings';
-import { resolveSettingsSection, type SettingsSectionId } from './settingsSections';
 import {
   areCompanySettingsDraftsEqual,
   companySettingsDraftToLocalSettings,
@@ -22,17 +20,13 @@ import {
   type CompanySettingsValidationErrors,
 } from './settingsForm';
 
-type SettingsUrlMode = 'none' | 'standalone' | 'embedded-company';
-
 /**
- * Owns all settings-page state: the company-settings draft lifecycle (load,
- * dirty tracking, discard-on-navigate), validation, save, logo upload, theme
- * and language toggles, and section-nav state. settings-page.tsx composes
- * this hook with presentational sections and stays render-only.
+ * Owns company-settings business state only: draft lifecycle, validation,
+ * persistence, logo upload, theme/language controls, and dirty guards.
+ * Navigation/URL state is intentionally owned by the workspace shell so this
+ * controller stays reusable in standalone and embedded settings surfaces.
  */
-export function useSettingsPageController({ urlMode = 'none' }: Readonly<{ urlMode?: SettingsUrlMode }> = {}) {
-  const navigate = useNavigate();
-  const search = useSearch({ strict: false }) as Record<string, unknown>;
+export function useSettingsPageController() {
   const { theme, setTheme } = useUiStore();
   const { authorization, authorizationDiagnostics, user } = useAuth();
   const companySettingsQuery = useCompanySettings();
@@ -42,22 +36,11 @@ export function useSettingsPageController({ urlMode = 'none' }: Readonly<{ urlMo
   const baseDraftRef = useRef<CompanySettingsDraft | null>(null);
   const draftRef = useRef<CompanySettingsDraft | null>(null);
   const [errors, setErrors] = useState<CompanySettingsValidationErrors>({});
-  const requestedSection = urlMode === 'standalone'
-    ? search.section
-    : urlMode === 'embedded-company'
-      ? search.companySection
-      : undefined;
-  const [activeSection, setActiveSection] = useState<SettingsSectionId>(() => resolveSettingsSection(requestedSection));
 
   const isDirty = !areCompanySettingsDraftsEqual(draft, baseDraft);
   const isSaving = updateCompanySettingsMutation.isPending;
 
   useBeforeUnloadGuard(isDirty);
-
-  useEffect(() => {
-    if (urlMode === 'none') return;
-    setActiveSection(resolveSettingsSection(requestedSection));
-  }, [requestedSection, urlMode]);
 
   const discardDraft = () => {
     const currentBaseDraft = baseDraftRef.current;
@@ -169,24 +152,6 @@ export function useSettingsPageController({ urlMode = 'none' }: Readonly<{ urlMo
     }
   };
 
-  const handleJumpToSection = (id: SettingsSectionId) => {
-    setActiveSection(id);
-    if (urlMode === 'none') return;
-    if (urlMode === 'embedded-company') {
-      void navigate({
-        to: '/settings',
-        search: (previous: Record<string, unknown>) => ({ ...previous, section: 'company', companySection: id }),
-        replace: true,
-      });
-      return;
-    }
-    void navigate({
-      to: '/settings',
-      search: (previous: Record<string, unknown>) => ({ ...previous, section: id }),
-      replace: true,
-    });
-  };
-
   return {
     theme,
     authorization,
@@ -195,7 +160,6 @@ export function useSettingsPageController({ urlMode = 'none' }: Readonly<{ urlMo
     companySettingsQuery,
     draft,
     errors,
-    activeSection,
     isDirty,
     isSaving,
     pageLanguage,
@@ -208,6 +172,5 @@ export function useSettingsPageController({ urlMode = 'none' }: Readonly<{ urlMo
     handleDefaultLanguageChange,
     handleLogoFileChange,
     handleSubmit,
-    handleJumpToSection,
   };
 }
