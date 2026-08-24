@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { Activity, Building2, Edit, FileText, ReceiptText, UserRound } from 'lucide-react';
+import { Activity, Edit, FileText, ReceiptText, UserRound } from 'lucide-react';
 import { ContextualDocumentsSection } from '@/components/documents/contextual-documents-section';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
@@ -10,6 +10,7 @@ import { EntityPreviewDialog } from '@/components/ui/entity-preview-dialog';
 import { ErrorState } from '@/components/ui/error-state';
 import { LoadingState } from '@/components/ui/loading-state';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { financialOperationPermissions } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
 import { businessReferenceOrLabel } from '@/lib/business-reference';
 import { formatDefaultCompanyMoney } from '@/lib/companyFormatters';
@@ -21,6 +22,7 @@ export function PersonDossierContent({ personId }: Readonly<{ personId: string }
   const dialogNavigate = useDialogNavigate();
   const { canAccess } = useAuth();
   const canViewFinancial = canAccess('arrears.view');
+  const canViewReports = canAccess(financialOperationPermissions.viewReports);
   const canViewActivity = canAccess('communication.view');
   const dossierQuery = usePersonDossier(personId, canViewFinancial, canViewActivity);
   const dossier = dossierQuery.data;
@@ -31,6 +33,8 @@ export function PersonDossierContent({ personId }: Readonly<{ personId: string }
 
   const outstanding = dossier.invoices.reduce((sum, invoice) => sum + Math.max(0, Number(invoice.amount) - Number(invoice.paid_amount)), 0);
   const activeContracts = dossier.contracts.filter((contract) => contract.status === 'active');
+  const statementContract = activeContracts[0] ?? dossier.contracts[0];
+
   return (
     <div className="space-y-5">
       <Card>
@@ -71,7 +75,23 @@ export function PersonDossierContent({ personId }: Readonly<{ personId: string }
           <CardContent className="space-y-3">
             <div className="flex flex-wrap gap-2"><StatusBadge tone="info">{dossier.invoices.length} فواتير</StatusBadge><StatusBadge tone={outstanding > 0 ? 'warning' : 'success'}>الرصيد المفتوح: {formatDefaultCompanyMoney(outstanding)}</StatusBadge></div>
             {dossier.invoices.map((invoice) => <div key={invoice.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3 text-sm"><span className="font-bold">{businessReferenceOrLabel(invoice, 'فاتورة مسجلة')}</span><span className="flex flex-wrap items-center gap-2"><span>الاستحقاق {invoice.due_date} · المتبقي {formatDefaultCompanyMoney(Math.max(0, Number(invoice.amount) - Number(invoice.paid_amount)))}</span><Button asChild variant="secondary"><Link to="/invoices" search={{ invoiceId: invoice.id } as never}>فتح الفاتورة</Link></Button></span></div>)}
-            <Button asChild variant="secondary"><Link to="/reports" search={{ section: 'analytics', view: 'overdue', tenantId: dossier.person.id } as never}>فتح تقرير المتأخرات</Link></Button>
+            {canViewReports ? (
+              <div className="flex flex-wrap gap-2 border-t border-border/60 pt-3">
+                {statementContract ? (
+                  <Button asChild variant="outline">
+                    <Link
+                      to="/reports"
+                      search={{ section: 'statements', tenantId: dossier.person.id, contractId: statementContract.id } as never}
+                    >
+                      كشف الحساب الكامل
+                    </Link>
+                  </Button>
+                ) : null}
+                <Button asChild variant="secondary">
+                  <Link to="/reports" search={{ section: 'analytics', view: 'overdue', tenantId: dossier.person.id } as never}>تحليل المتأخرات</Link>
+                </Button>
+              </div>
+            ) : null}
           </CardContent>
         </Card>
       ) : null}
