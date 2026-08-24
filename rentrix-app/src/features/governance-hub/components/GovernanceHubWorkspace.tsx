@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingState } from '@/components/ui/loading-state';
 import { SectionTabPanel, SectionTabs } from '@/components/ui/section-tabs';
 import { CostCentersSettingsSection } from '@/features/settings/cost-centers-settings-section';
+import { isSettingsSectionId } from '@/features/settings/settingsSections';
 import { useAuth } from '@/hooks/use-auth';
 import { getVisibleGovernanceHubSections, type GovernanceHubSectionId } from '../governance-hub-sections';
 
@@ -38,9 +39,14 @@ export function GovernanceHubWorkspace() {
   const visibleSections = useMemo(() => getVisibleGovernanceHubSections(canAccess), [canAccess]);
   const requestedSection = typeof search.section === 'string' ? search.section : null;
   const fallbackSection = visibleSections[0]?.id ?? 'security';
-  const urlSection = visibleSections.some((section) => section.id === requestedSection)
+  const hasRequestedHubSection = visibleSections.some((section) => section.id === requestedSection);
+  const legacyCompanySection = !hasRequestedHubSection && isSettingsSectionId(requestedSection) ? requestedSection : null;
+  const canOpenCompany = visibleSections.some((section) => section.id === 'company');
+  const urlSection = hasRequestedHubSection
     ? requestedSection as GovernanceHubSectionId
-    : fallbackSection;
+    : legacyCompanySection && canOpenCompany
+      ? 'company'
+      : fallbackSection;
   const [activeTab, setActiveTab] = useState<GovernanceHubSectionId>(urlSection);
   const [mountedTabs, setMountedTabs] = useState<ReadonlySet<GovernanceHubSectionId>>(() => new Set([urlSection]));
 
@@ -48,6 +54,19 @@ export function GovernanceHubWorkspace() {
     setActiveTab(urlSection);
     setMountedTabs((current) => current.has(urlSection) ? current : new Set([...current, urlSection]));
   }, [urlSection]);
+
+  useEffect(() => {
+    if (!legacyCompanySection || !canOpenCompany) return;
+    void navigate({
+      to: '/settings',
+      search: (previous: Record<string, unknown>) => ({
+        ...previous,
+        section: 'company',
+        companySection: legacyCompanySection,
+      }),
+      replace: true,
+    });
+  }, [canOpenCompany, legacyCompanySection, navigate]);
 
   const handleTabChange = (nextTab: GovernanceHubSectionId) => {
     setMountedTabs((current) => current.has(nextTab) ? current : new Set([...current, nextTab]));
