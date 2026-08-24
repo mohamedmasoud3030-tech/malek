@@ -41,7 +41,7 @@ describe('buildSettingsSummaryTiles', () => {
 
     expect(tiles).toHaveLength(3);
     expect(tiles.map((tile) => tile.value)).toEqual(['مكتملة', 'محفوظة', 'صالحة']);
-    expect(tiles[0]?.section).toBe('office');
+    expect(tiles[0]?.section).toBeUndefined();
   });
 
   it('routes incomplete readiness to the first missing company-settings section', () => {
