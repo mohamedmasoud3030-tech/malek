@@ -1,35 +1,12 @@
-import { useNavigate, useParams } from '@tanstack/react-router';
-import { OwnerPreviewDialog } from '@/features/owners/components/OwnerPreviewDialog';
+import { useParams } from '@tanstack/react-router';
 import { OwnerDetailPage } from '@/features/owners/owner-detail-page';
-import { useBackgroundLocation } from '@/app/router/background-location';
-import { OwnersWorkspace } from '@/features/owners/OwnersPage';
 
+/** Owner dossiers are full workspaces; do not mask them inside a route dialog. */
 export function OwnerDetailRouteComponent() {
   const params = useParams({ strict: false }) as Record<string, string | undefined>;
   const ownerId = params.ownerId ?? '';
-  const navigate = useNavigate();
-  const background = useBackgroundLocation();
-  const isDialog = background !== null;
 
   if (!ownerId) return null;
-
-  if (isDialog) {
-    return (
-      <>
-        <OwnersWorkspace />
-        <OwnerPreviewDialog
-          ownerId={ownerId}
-          open
-          onOpenChange={(open) => {
-            if (!open) {
-              if (isDialog) window.history.back();
-              else void navigate({ to: '/owners' });
-            }
-          }}
-        />
-      </>
-    );
-  }
 
   return <OwnerDetailPage />;
 }
