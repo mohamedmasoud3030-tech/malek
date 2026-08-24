@@ -22,13 +22,15 @@ import {
   type CompanySettingsValidationErrors,
 } from './settingsForm';
 
+type SettingsUrlMode = 'none' | 'standalone' | 'embedded-company';
+
 /**
  * Owns all settings-page state: the company-settings draft lifecycle (load,
  * dirty tracking, discard-on-navigate), validation, save, logo upload, theme
  * and language toggles, and section-nav state. settings-page.tsx composes
  * this hook with presentational sections and stays render-only.
  */
-export function useSettingsPageController({ syncUrl = false }: Readonly<{ syncUrl?: boolean }> = {}) {
+export function useSettingsPageController({ urlMode = 'none' }: Readonly<{ urlMode?: SettingsUrlMode }> = {}) {
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as Record<string, unknown>;
   const { theme, setTheme } = useUiStore();
@@ -40,7 +42,12 @@ export function useSettingsPageController({ syncUrl = false }: Readonly<{ syncUr
   const baseDraftRef = useRef<CompanySettingsDraft | null>(null);
   const draftRef = useRef<CompanySettingsDraft | null>(null);
   const [errors, setErrors] = useState<CompanySettingsValidationErrors>({});
-  const [activeSection, setActiveSection] = useState<SettingsSectionId>(() => syncUrl ? resolveSettingsSection(search.section) : 'office');
+  const requestedSection = urlMode === 'standalone'
+    ? search.section
+    : urlMode === 'embedded-company'
+      ? search.companySection
+      : undefined;
+  const [activeSection, setActiveSection] = useState<SettingsSectionId>(() => resolveSettingsSection(requestedSection));
 
   const isDirty = !areCompanySettingsDraftsEqual(draft, baseDraft);
   const isSaving = updateCompanySettingsMutation.isPending;
@@ -48,9 +55,9 @@ export function useSettingsPageController({ syncUrl = false }: Readonly<{ syncUr
   useBeforeUnloadGuard(isDirty);
 
   useEffect(() => {
-    if (!syncUrl) return;
-    setActiveSection(resolveSettingsSection(search.section));
-  }, [search.section, syncUrl]);
+    if (urlMode === 'none') return;
+    setActiveSection(resolveSettingsSection(requestedSection));
+  }, [requestedSection, urlMode]);
 
   const discardDraft = () => {
     const currentBaseDraft = baseDraftRef.current;
@@ -164,7 +171,15 @@ export function useSettingsPageController({ syncUrl = false }: Readonly<{ syncUr
 
   const handleJumpToSection = (id: SettingsSectionId) => {
     setActiveSection(id);
-    if (!syncUrl) return;
+    if (urlMode === 'none') return;
+    if (urlMode === 'embedded-company') {
+      void navigate({
+        to: '/settings',
+        search: (previous: Record<string, unknown>) => ({ ...previous, section: 'company', companySection: id }),
+        replace: true,
+      });
+      return;
+    }
     void navigate({
       to: '/settings',
       search: (previous: Record<string, unknown>) => ({ ...previous, section: id }),
