@@ -12,7 +12,8 @@ describe('receipt detail MALEK Pro visual parity', () => {
   });
 
   it('keeps the document actions touch-safe and print chrome excluded', () => {
-    expect(source).toContain('min-h-11');
+    expect(source).toContain("from '@/components/ui/button'");
+    expect(source).toContain('min-h-14 w-full');
     expect(source).toContain('print:hidden md:hidden');
     expect(source).toContain('print:border-0 print:shadow-none');
   });

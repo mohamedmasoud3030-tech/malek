@@ -86,7 +86,9 @@ describe('bank CSV import authoritative transaction', () => {
     const first = await db.query(`select public.import_bank_statement_batch_atomic('${request}'::jsonb) as result`);
     expect(first.rows).toHaveLength(1);
 
-    const second = await db.query(`select public.import_bank_statement_batch_atomic('${request}'::jsonb) as result`);
+    const second = await db.query<{ result: { is_duplicate_file: boolean; write_attempted: boolean } }>(
+      `select public.import_bank_statement_batch_atomic('${request}'::jsonb) as result`,
+    );
     expect(second.rows[0]?.result).toMatchObject({ is_duplicate_file: true, write_attempted: false });
 
     const imports = await db.query(`select count(*)::int as count from public.bank_statement_imports where company_id='${COMPANY}' and file_fingerprint='duplicate-fp-1'`);

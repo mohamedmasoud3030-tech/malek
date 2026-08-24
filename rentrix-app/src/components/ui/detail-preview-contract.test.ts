@@ -75,29 +75,17 @@ describe('unified detail preview contract', () => {
     expect(protectedRoute).not.toContain('EntityPreviewHost');
   });
 
-  it('dedicated entity detail routes are route-native (Phase 3: dialog over background vs full page)', () => {
-    // Contract
-    expect(contractDetailRoute).toContain('useBackgroundLocation');
-    expect(contractDetailRoute).toContain('isDialog');
-    expect(contractDetailRoute).toContain('ContractPreviewDialog');
+  it('dedicated heavyweight entity routes render canonical full pages', () => {
     expect(contractDetailRoute).toContain('ContractDetailPage');
-    expect(contractDetailRoute).not.toContain("openEntityPreview");
-    // Owner
-    expect(ownerDetailRoute).toContain('useBackgroundLocation');
-    expect(ownerDetailRoute).toContain('OwnerPreviewDialog');
     expect(ownerDetailRoute).toContain('OwnerDetailPage');
-    expect(ownerDetailRoute).not.toContain("openEntityPreview");
-    // Property detail now handles dialog vs full page directly
     const propertyDetailFull = readFileSync(new URL('../../routes/_protected.properties.$propertyId.tsx', import.meta.url), 'utf8');
-    expect(propertyDetailFull).toContain('useBackgroundLocation');
-    expect(propertyDetailFull).toContain('PropertyPreviewDialog');
     expect(propertyDetailFull).toContain('PropertyDetailPage');
-    // Property overview is now real content, not adapter
     expect(propertyDetailRoute).toContain('PropertyOverview');
-    expect(propertyDetailRoute).not.toContain("openEntityPreview");
-    expect(unitDetailRoute).toContain('useBackgroundLocation');
     expect(unitDetailRoute).toContain('PropertyUnitDetailPage');
-    expect(unitDetailRoute).toContain('UnitPreviewDialog');
-    expect(unitDetailRoute).not.toContain("openEntityPreview");
+    for (const src of [contractDetailRoute, ownerDetailRoute, propertyDetailFull, unitDetailRoute]) {
+      expect(src).not.toContain('useBackgroundLocation');
+      expect(src).not.toContain('window.history.back()');
+      expect(src).not.toContain('openEntityPreview');
+    }
   });
 });

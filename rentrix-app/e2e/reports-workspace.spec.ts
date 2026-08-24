@@ -11,7 +11,7 @@ const viewportMatrix = [
 const themes = ['light', 'dark'] as const;
 
 const sections = [
-  { id: 'accounting', label: 'المحاسبة' },
+  { id: 'accounting', label: 'المحاسبة والرقابة' },
   { id: 'statements', label: 'الكشوف' },
   { id: 'analytics', label: 'التحليلات' },
 ] as const;
@@ -32,6 +32,20 @@ const accountingViews = [
   'تسوية الإيرادات',
 ] as const;
 
+const reconciliationRows = ['1201', '1300', '2000', '2200', '2300'].map((accountNo) => ({
+  reconciliation_class: `fixture-${accountNo}`,
+  account_no: accountNo,
+  account_name: `حساب ${accountNo}`,
+  subledger_balance: 100,
+  gl_balance: 100,
+  variance: 0,
+  abs_variance: 0,
+  currency: 'OMR',
+  reconciliation_status: 'PASS',
+  subledger_count: 1,
+  gl_count: 1,
+}));
+
 test.beforeEach(async ({}, testInfo) => {
   test.skip(
     testInfo.project.name !== 'chromium-desktop',
@@ -40,6 +54,16 @@ test.beforeEach(async ({}, testInfo) => {
 });
 
 async function openFixture(page: Page, theme: (typeof themes)[number]) {
+  // Accounting document actions are intentionally fail-closed until the
+  // authoritative WP05 reconciliation query returns PASS for every required
+  // account. Seed that server boundary explicitly for this isolated fixture.
+  await page.route('**/rest/v1/rpc/wp05_reconcile_all', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(reconciliationRows),
+    });
+  });
   await page.addInitScript((selectedTheme) => {
     document.documentElement.dataset.theme = selectedTheme;
     document.documentElement.dir = 'rtl';

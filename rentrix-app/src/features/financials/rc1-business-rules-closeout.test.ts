@@ -302,19 +302,29 @@ describe('RC1 Rule 3 — fixed monthly rent posts in full, no daily proration', 
 
 describe('RC1 Rule 4 — commission source domain excludes payment', () => {
   it('rejects a payment-type commission at the DB level (CHECK constraint)', async () => {
+    const constraint = await db.query<{ definition: string }>(
+      `select pg_get_constraintdef(oid) as definition
+         from pg_constraint
+        where conrelid = 'public.commissions'::regclass
+          and conname = 'commissions_type_check'`,
+    );
+    expect(constraint.rows).toHaveLength(1);
+    expect(constraint.rows[0]?.definition).toContain("ARRAY['contract'::text, 'owner'::text, 'lead'::text, 'land'::text]");
+    expect(constraint.rows[0]?.definition).not.toContain("'payment'::text");
+
     await expect(
       db.query(
         `insert into public.commissions (id, staff_name, type, status, amount, company_id)
          values (gen_random_uuid()::text, 'Guard Agent', 'payment', 'pending', 100, $1::uuid)`,
         [COMPANY],
       ),
-    ).rejects.toThrow('commissions_type_check');
+    ).rejects.toThrow(/violates check constraint/);
 
     // Canonical source types remain writable.
     await db.query(
-      `insert into public.commissions (id, staff_name, type, status, amount, company_id)
-       values ('e1000000-0000-4000-8000-000000000901', 'Guard Agent', 'contract', 'pending', 100, $1::uuid)`,
-      [COMPANY],
+      `insert into public.commissions (id, staff_name, type, source_id, status, amount, company_id)
+       values ('e1000000-0000-4000-8000-000000000901', 'Guard Agent', 'contract', $1::text, 'pending', 100, $2::uuid)`,
+      [CONTRACT, COMPANY],
     );
   });
 
@@ -328,12 +338,21 @@ describe('RC1 Rule 4 — commission source domain excludes payment', () => {
       }),
     ).rejects.toThrow('COMMISSION_TYPE_PAYMENT_REMOVED');
 
-    const seeded = await db.query<{ id: string }>(
-      `select id from public.commissions where id = 'e1000000-0000-4000-8000-000000000901'`,
-    );
+    const seeded = await rpc('create_commission_atomic', {
+      staff_name: 'Guard Agent Update',
+      type: 'contract',
+      source_id: CONTRACT,
+      deal_value: 1000,
+      percentage: 2.5,
+      request_id: 'rc1-comm-guard-update-seed',
+    });
+    const seededCommission = seeded.commission;
+    expect(seededCommission && typeof seededCommission === 'object' && !Array.isArray(seededCommission)).toBe(true);
+    const seededCommissionId = (seededCommission as Record<string, unknown>).id;
+    expect(typeof seededCommissionId).toBe('string');
     await expect(
       rpc('update_commission_atomic', {
-        commission_id: seeded.rows[0]?.id,
+        commission_id: seededCommissionId,
         staff_name: 'Guard Agent',
         type: 'payment',
         requested_status: 'approved',

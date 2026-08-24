@@ -19,11 +19,13 @@ describe("admin/support UI safety contract", () => {
 
   it("uses Arabic/RTL design primitives and explicit accessible states", () => {
     const page = read("features/admin-support/admin-support-page.tsx");
+    const loadingState = read("components/ui/loading-state.tsx");
     expect(page).toContain('dir="rtl"');
     expect(page).toContain('lang="ar"');
     expect(page).toContain("<PageLayout");
     expect(page).toContain("<AccessDenied");
-    expect(page).toContain('role="status"');
+    expect(page).toContain("<LoadingState");
+    expect(loadingState).toContain('role="status"');
     expect(page).toContain('aria-labelledby="support-queue-title"');
     expect(page).toContain("سبب داخلي إلزامي");
     expect(page).toContain("مقترح تغيير وصول — غير منفذ");

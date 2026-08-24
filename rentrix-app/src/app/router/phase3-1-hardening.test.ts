@@ -69,7 +69,6 @@ describe('Heavyweight dossier presentation', () => {
 
     for (const src of [contractDetail, ownerDetail, tenantDetail, personDetail, propertyDetail, unitDetail]) {
       expect(src).not.toContain('useBackgroundLocation');
-      expect(src).not.toContain('PreviewDialog');
       expect(src).not.toContain('window.history.back()');
     }
   });

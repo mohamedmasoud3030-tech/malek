@@ -89,7 +89,7 @@ describe('ContractsListPage load states', () => {
     expect(html).toContain('إنشاء عقد');
   });
 
-  it('renders one semantic register table with horizontal scrolling at every viewport', () => {
+  it('renders the shared desktop table and mobile card register', () => {
     contractsMocks.contractsQuery.data = { rows: [contractFixture], count: 1 };
 
     const html = renderToStaticMarkup(<ContractsListPage />);
@@ -98,8 +98,8 @@ describe('ContractsListPage load states', () => {
     expect(html).toContain('data-compact-responsive-table="true"');
     expect(html).toContain('data-entity-table-scroll');
     expect(html).toContain('<table');
-    expect(html).not.toContain('data-entity-table-mobile-list');
-    expect(html).not.toContain('data-entity-table-mobile-card');
+    expect(html).toContain('data-entity-table-mobile-list');
+    expect(html).toContain('data-entity-table-mobile-card');
     expect(html).toContain('أحمد سالم');
     expect(html).toContain('A-101');
   });

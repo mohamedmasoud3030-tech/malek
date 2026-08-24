@@ -46,7 +46,7 @@ export function DataTableColumnsMenu({
     <details className={cn('group relative', className)} data-table-columns-menu>
       <summary
         aria-label={`${label} ${visibleKeys.length} من ${columns.length}`}
-        className="flex min-h-10 cursor-pointer list-none items-center gap-2 rounded-lg border border-border/85 bg-background px-2.5 text-xs font-bold text-muted-foreground outline-none transition hover:bg-muted/55 hover:text-foreground focus-visible:ring-4 focus-visible:ring-primary/15 sm:px-3 [&::-webkit-details-marker]:hidden"
+        className="flex min-h-11 min-w-11 cursor-pointer list-none items-center justify-center gap-2 rounded-lg border border-border/85 bg-background px-2.5 text-xs font-bold text-muted-foreground outline-none transition hover:bg-muted/55 hover:text-foreground focus-visible:ring-4 focus-visible:ring-primary/15 sm:px-3 [&::-webkit-details-marker]:hidden"
       >
         <Columns3 className="size-4" aria-hidden="true" />
         <span>{label}</span>
@@ -61,7 +61,7 @@ export function DataTableColumnsMenu({
           <button
             type="button"
             onClick={() => onChange(allKeys)}
-            className="grid size-8 place-items-center rounded-lg text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-4 focus-visible:ring-primary/15"
+            className="grid size-11 place-items-center rounded-lg text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-4 focus-visible:ring-primary/15"
             aria-label="إظهار كل الأعمدة"
           >
             <RotateCcw className="size-3.5" aria-hidden="true" />
@@ -79,7 +79,7 @@ export function DataTableColumnsMenu({
                 disabled={column.locked}
                 aria-pressed={checked}
                 className={cn(
-                  'flex min-h-10 w-full items-center gap-2 rounded-lg px-2.5 text-start text-xs font-semibold outline-none transition hover:bg-muted focus-visible:ring-4 focus-visible:ring-primary/15',
+                  'flex min-h-11 w-full items-center gap-2 rounded-lg px-2.5 text-start text-xs font-semibold outline-none transition hover:bg-muted focus-visible:ring-4 focus-visible:ring-primary/15',
                   column.locked && 'cursor-default opacity-65',
                 )}
               >

@@ -149,14 +149,14 @@ export function BillingReadinessSection() {
             {totalBlocked > 0 ? `محظور ${totalBlocked}` : totalCheckFailed > 0 ? `فشل تحقق ${totalCheckFailed}` : totalDue > 0 ? `مستحق ${totalDue}` : 'جاهز'}
           </StatusBadge>
         </CardTitle>
-        <CardDescription className="space-y-1">
-          <p>
+        <div className="space-y-1">
+          <CardDescription>
             كل عقد نشط OWNER_AGENCY له سياسة فوترة صريحة: يوم الفوترة (1–28) يثبت تاريخ الإصدار داخل الفترة، وتاريخ الاستحقاق = نهاية الفترة + أيام السماح. payment_terms_id هو مرجع فقط، لا يحدد الجدولة حاليًا. الحالة تُحسب من تاريخ الإصدار: قبل يوم الفوترة → غير مستحق، يوم/بعد يوم الفوترة وبدون فاتورة → مستحق، فاتورة موجودة → تم إنشاؤه.
-          </p>
-          <p>
+          </CardDescription>
+          <CardDescription>
             الفوترة تتم عبر RPC الذري <code>generate_invoices_from_active_contracts</code> وهو idempotent (نفس الفترة لا تُفوتر مرتين بفضل الفهرس الفريد ux_invoices_billing_obligation). المشغل يرى حالة كل التزام: غير مستحق، مستحق، تم إنشاؤه، محظور، فشل تحقق — لا يستنتج الصحة من زر التوليد فقط. حالات FAILED/RECOVERED أُزيلت لعدم وجود سجل تاريخي محكوم للفشل اليوم؛ تُوثق كتحسين مستقبلي.
-          </p>
-        </CardDescription>
+          </CardDescription>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">

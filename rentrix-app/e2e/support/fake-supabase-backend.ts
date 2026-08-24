@@ -334,9 +334,27 @@ export function buildAcceptanceSeed(mode: CompanySettingsMode): AcceptanceSeed {
     owners: [
       { id: IDS.owner, full_name: OWNER_NAME, name: OWNER_NAME, display_name: OWNER_NAME, phone: '+968 9988 7766', email: 'salem.balushi@example.om', is_active: true, created_at: created, updated_at: created, deleted_at: null },
     ],
+    property_owners: [
+      {
+        id: '88888888-8888-4888-8888-888888888802',
+        property_id: IDS.property,
+        owner_id: IDS.owner,
+        ownership_percentage: 100,
+        is_primary: true,
+        starts_on: '2026-01-01',
+        ends_on: null,
+        created_at: created,
+        owner: { id: IDS.owner, full_name: OWNER_NAME, name: OWNER_NAME, display_name: OWNER_NAME },
+      },
+    ],
   };
 
   const rpcs: Record<string, (args: Record<string, unknown>) => unknown> = {
+    get_company_onboarding_state: () => ({
+      company_id: IDS.company,
+      completed: true,
+      requirements: [],
+    }),
     get_contract_evidence_state: () => ({
       registration_configuration_status: 'NOT_CONFIGURED',
       registration_profile: null,
@@ -389,6 +407,39 @@ export function buildAcceptanceSeed(mode: CompanySettingsMode): AcceptanceSeed {
       outflows: [{ label: 'مصروفات تشغيلية', amount: 920 }],
       closing_balance: 4580,
     }),
+    wp05_rpt_cash_flow_gl: (args) => ({
+      period: { from: args.p_from ?? '2026-01-01', to: args.p_to ?? '2026-12-31' },
+      opening_cash: 0,
+      operating: 0,
+      investing: 0,
+      financing: 0,
+      unclassified: 0,
+      total_change: 0,
+      closing_cash: 0,
+      variance: 0,
+      is_balanced: true,
+      currency: 'OMR',
+    }),
+    wp05_reconcile_all: () => ([
+      ['TENANT_RECEIVABLES', '1201', 'ذمم المستأجرين'],
+      ['DUE_FROM_OWNER', '1300', 'مستحق من المالك'],
+      ['OWNER_PAYABLES', '2000', 'ذمم الملاك'],
+      ['VAT_PAYABLE', '2100', 'ضريبة القيمة المضافة'],
+      ['SECURITY_DEPOSITS', '2200', 'تأمينات المستأجرين'],
+      ['COMMISSION', '2300', 'العمولات المستحقة'],
+    ].map(([reconciliation_class, account_no, account_name]) => ({
+        reconciliation_class,
+        account_no,
+        account_name,
+        subledger_balance: 0,
+        gl_balance: 0,
+        variance: 0,
+        abs_variance: 0,
+        currency: 'OMR',
+        reconciliation_status: 'PASS',
+        subledger_count: 0,
+        gl_count: 0,
+      }))),
     rpt_vat_return: () => ({
       period: { from: '2026-01-01', to: '2026-12-31' },
       output_tax: 252.4,

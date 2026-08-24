@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      run_staging:
+        description: Run the separate hosted-staging proof job
+        required: false
+        default: false
+        type: boolean
 
 concurrency:
   group: browser-readiness-${{ github.event.pull_request.number || github.ref }}
@@ -25,12 +31,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
-      - name: Defer expensive browser matrix
-        run: echo "Browser matrix stays deferred on pull requests; main pushes and workflow_dispatch run the full device matrix."
+      - name: Defer expensive browser matrix on ordinary PRs
+        run: echo "Ordinary PRs keep the browser matrix deferred; release/rc-closeout-* PRs, main pushes, and workflow_dispatch run the full device matrix."
 
   browser-smoke-shard:
     name: browser-smoke-${{ matrix.project }}
-    if: ${{ github.event_name != 'pull_request' }}
+    if: ${{ github.event_name != 'pull_request' || startsWith(github.head_ref, 'release/rc-closeout-') }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
     strategy:
@@ -75,7 +81,7 @@ jobs:
           if-no-files-found: ignore
 
   seeded-staging-smoke:
-    if: ${{ github.event_name == 'workflow_dispatch' }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_staging }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
     env:

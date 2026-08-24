@@ -94,7 +94,7 @@ describe('fixed monthly accrual Arabic workspace', () => {
     mocks.authorization = context('USER');
     render(<FixedMonthlyAccrualWorkspace />);
 
-    await screen.findByText('عقار الاختبار');
+    expect((await screen.findAllByText('عقار الاختبار')).length).toBeGreaterThan(0);
     expect(screen.queryByRole('button', { name: /تنفيذ الاستحقاق/ })).toBeNull();
     expect(screen.queryByRole('button', { name: /عكس/ })).toBeNull();
     expect(mocks.execute).not.toHaveBeenCalled();

@@ -36,9 +36,10 @@ describe('FilterTabs — ترميز الحالة وإتاحة الوصول', () 
     expect(activeButton).toContain('نشط');
   });
 
-  it('keeps touch-target height on every tab (min-h-11)', () => {
+  it('keeps 44px touch-target dimensions on every tab', () => {
     const html = renderToStaticMarkup(<FilterTabs options={options} value="all" onChange={() => undefined} />);
     expect(html.match(/min-h-11/g)?.length).toBeGreaterThanOrEqual(3);
+    expect(html.match(/min-w-11/g)?.length).toBeGreaterThanOrEqual(3);
   });
 });
 

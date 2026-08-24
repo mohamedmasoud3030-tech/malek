@@ -435,28 +435,23 @@ for (const viewport of viewportMatrix) {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
       await openDashboardRoute(page, theme);
 
-      const sectionNames = await page.locator('[data-dashboard-section]').evaluateAll((nodes) =>
+      const dashboardSections = page.locator('[data-dashboard-section]');
+      await expect(dashboardSections).toHaveCount(3);
+      const sectionNames = await dashboardSections.evaluateAll((nodes) =>
         nodes.map((node) => node.getAttribute('data-dashboard-section')),
       );
-      expect(sectionNames).toEqual(['work-now', 'actions', 'office-state', 'analytics']);
+      expect(sectionNames).toEqual(['work-now', 'office-state', 'analytics']);
 
-      await expect(page.locator('[data-dashboard-action-grid] > a')).toHaveCount(4);
       const kpiLinks = page.locator('[data-dashboard-kpi-grid] a[data-dashboard-kpi-link]');
       await expect(kpiLinks).toHaveCount(4);
       const kpiHrefs = await kpiLinks.evaluateAll((nodes) => nodes.map((node) => node.getAttribute('href')));
-      expect(kpiHrefs).toEqual(['/financials', '/arrears', '/reports', '/expenses']);
+      expect(kpiHrefs).toEqual(['/reports', '/financials', '/expenses', '/owner-settlements']);
 
-      const actionColumns = await page.locator('[data-dashboard-action-grid]').evaluate((node) =>
+      // ResponsiveCardGrid is the canonical two-column dashboard rhythm.
+      const kpiColumns = await page.locator('[data-dashboard-kpi-grid] [data-responsive-card-grid]').evaluate((node) =>
         getComputedStyle(node).gridTemplateColumns.split(' ').filter(Boolean).length,
       );
-      // The KPI grid is now a semantic <ul class="dashboard-kpi-grid"> (axe
-      // aria-allowed-role: role="listitem" is invalid on <a>), so the column
-      // count is read from the ul element, not the old div child.
-      const kpiColumns = await page.locator('[data-dashboard-kpi-grid] .dashboard-kpi-grid').evaluate((node) =>
-        getComputedStyle(node).gridTemplateColumns.split(' ').filter(Boolean).length,
-      );
-      expect(actionColumns).toBe(viewport.width >= 1024 ? 4 : 2);
-      expect(kpiColumns).toBe(viewport.width >= 1024 ? 4 : 2);
+      expect(kpiColumns).toBe(2);
 
       if (viewport.width === 375) {
         const firstScreen = await page.locator('[data-dashboard-section="work-now"]').evaluate((node) => {
@@ -467,8 +462,8 @@ for (const viewport of viewportMatrix) {
           };
         });
         // Today is action-first: urgent work must occupy the first screen.
-        // Office-state KPIs remain available immediately after the work and
-        // quick-action sections instead of displacing priority work above fold.
+        // Office-state KPIs remain available immediately after priority work
+        // instead of displacing it above the fold.
         expect(firstScreen.workNowVisible).toBe(true);
         expect(firstScreen.firstKpiTop).not.toBeNull();
         expect(firstScreen.firstKpiTop ?? 0).toBeGreaterThan(0);

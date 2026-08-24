@@ -33,6 +33,16 @@ describe('EntityTable — desktop table + mobile canonical EntityCard register',
     expect(html).toContain('أحمد الطويل جداً مبلغ');
   });
 
+  it('does not nest rich identity or supporting content inside paragraphs', () => {
+    const richColumns: ColumnDef<Row>[] = [
+      { key: 'name', header: 'الاسم', priority: 'identity', render: (row) => <div><p>{row.name}</p></div> },
+      { key: 'amount', header: <span>المبلغ</span>, priority: 'primary', render: (row) => `${row.name} مبلغ` },
+    ];
+    const html = renderToStaticMarkup(<EntityTable {...props({ columns: richColumns })} />);
+    expect(html).not.toMatch(/<p[^>]*>\s*<div/);
+    expect(html).not.toMatch(/<p[^>]*>\s*<span/);
+  });
+
   it('renders shared mobile loading cards and shared empty/error states', () => {
     const loading = renderToStaticMarkup(<EntityTable {...props({ isLoading: true })} />);
     expect(loading).toContain('data-entity-table-mobile-skeleton');

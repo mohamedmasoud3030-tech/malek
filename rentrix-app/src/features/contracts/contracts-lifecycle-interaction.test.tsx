@@ -25,6 +25,10 @@ vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => navigateMock,
   useParams: () => ({ contractId: 'contract-1' }),
 }));
+vi.mock('@/hooks/use-auth', () => ({
+  useAuth: () => ({ authorization: { role: 'MANAGER' }, canAccess: () => true }),
+  useOptionalAuth: () => ({ canAccess: () => true }),
+}));
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 vi.mock('./contract-form-modal', () => ({
   ContractFormModal: ({ contractId, onClose, open }: any) => open ? (

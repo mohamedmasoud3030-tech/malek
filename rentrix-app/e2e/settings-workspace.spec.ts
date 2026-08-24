@@ -27,7 +27,7 @@ async function openFixture(page: Page, theme: (typeof themes)[number]) {
   await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
   await expect(page.locator('main[data-e2e-settings-workspace]')).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Rentrix' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'إعدادات المكتب', exact: true })).toBeVisible();
 }
 
 async function assertNoHorizontalOverflow(page: Page) {
@@ -75,7 +75,7 @@ for (const viewport of viewportMatrix) {
 
       const companyName = page.getByLabel('اسم الشركة');
       await companyName.fill('Rentrix Updated');
-      await expect(page.getByText('تغييرات غير محفوظة').first()).toBeVisible();
+      await expect(saveSurface.getByText('تغييرات غير محفوظة')).toBeVisible();
       await expect(page.getByRole('button', { name: 'حفظ' })).toBeEnabled();
 
       await page.getByRole('button', { name: 'تراجع' }).click();

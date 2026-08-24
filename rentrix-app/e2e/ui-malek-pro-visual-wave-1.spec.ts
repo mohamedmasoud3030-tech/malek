@@ -91,7 +91,7 @@ test('mobile cards and desktop table expose the same property register without p
   const mobileRegister = page.locator('[data-entity-table-mobile]').filter({ has: page.locator('[data-entity-table-mobile-card]') }).first();
   await expect(mobileRegister).toBeVisible();
   await expect(page.locator('table[aria-label="جدول العقارات"]')).toBeHidden();
-  const firstMobileRecord = mobileRegister.locator('[data-entity-table-mobile-primary]').first();
+  const firstMobileRecord = mobileRegister.locator('[data-entity-table-mobile-card]').first();
   await expect(firstMobileRecord).toBeVisible();
   await expect(firstMobileRecord).toContainText('برج الواحة السكني');
   await expectNoApplicationOverflow(page, 'properties mobile card register');
