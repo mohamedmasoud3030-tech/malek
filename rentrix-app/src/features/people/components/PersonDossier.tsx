@@ -10,7 +10,6 @@ import { EntityPreviewDialog } from '@/components/ui/entity-preview-dialog';
 import { ErrorState } from '@/components/ui/error-state';
 import { LoadingState } from '@/components/ui/loading-state';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { financialOperationPermissions } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
 import { businessReferenceOrLabel } from '@/lib/business-reference';
 import { formatDefaultCompanyMoney } from '@/lib/companyFormatters';
@@ -22,7 +21,7 @@ export function PersonDossierContent({ personId }: Readonly<{ personId: string }
   const dialogNavigate = useDialogNavigate();
   const { canAccess } = useAuth();
   const canViewFinancial = canAccess('arrears.view');
-  const canViewReports = canAccess(financialOperationPermissions.viewReports);
+  const canViewReports = canAccess('financial.reports.view');
   const canViewActivity = canAccess('communication.view');
   const dossierQuery = usePersonDossier(personId, canViewFinancial, canViewActivity);
   const dossier = dossierQuery.data;
