@@ -1,6 +1,7 @@
 import { ATTACHMENTS_ALLOWED_MIME_TYPES, ATTACHMENTS_MAX_FILE_SIZE } from '@/lib/attachments-contract';
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
+import { buildTenantVaultPath, requireActiveCompanyIdForStorage } from '@/lib/tenant-storage-path';
 import type { DocumentEntityType } from '@/services/documents/contextualDocumentsService';
 import { fetchAllRows } from '@/lib/paginatedRead';
 
@@ -14,13 +15,12 @@ export type VaultDocumentItem = {
   relatedEntityId?: string | null;
   relatedEntityTitle?: string | null;
   fileName: string;
-  // fileUrl is deprecated for private bucket - holds storage_path for backward compat, use signed URL via getVaultDocumentSignedUrl
   fileUrl: string;
   storagePath: string;
   fileSize?: number | null;
   mimeType?: string | null;
   uploadedAt: string;
-  signedUrl?: string | null; // populated on demand via signed URL
+  signedUrl?: string | null;
 };
 
 export const vaultCategoryLabels: Record<VaultCategory, string> = {
@@ -121,9 +121,7 @@ export type UploadVaultDocumentParams = {
 };
 
 export function validateVaultFile(file: Pick<File, 'size' | 'type'>) {
-  if (file.size <= 0) {
-    throw new Error('الملف فارغ ولا يمكن رفعه.');
-  }
+  if (file.size <= 0) throw new Error('الملف فارغ ولا يمكن رفعه.');
   if (file.size > VAULT_MAX_FILE_SIZE) {
     throw new Error(`حجم الملف يتجاوز الحد المسموح (5MB). حجم الملف الحالي: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
   }
@@ -136,16 +134,15 @@ export async function uploadVaultDocument(params: UploadVaultDocumentParams): Pr
   validateVaultFile(params.file);
   if (!params.title.trim()) throw new Error('عنوان المستند مطلوب');
 
+  const companyId = await requireActiveCompanyIdForStorage();
   const fileExt = params.file.name.split('.').pop() || 'bin';
-  const storagePath = `${crypto.randomUUID()}.${fileExt}`;
-  const fullPath = `vault/${storagePath}`;
+  const fullPath = buildTenantVaultPath(companyId, `${crypto.randomUUID()}.${fileExt}`);
 
   const { error: uploadError } = await supabase.storage.from('attachments').upload(fullPath, params.file, {
     cacheControl: '3600',
     upsert: false,
     contentType: params.file.type,
   });
-
   if (uploadError) handleSupabaseError(uploadError as any, 'تعذر رفع الملف إلى التخزين');
 
   try {
@@ -204,10 +201,7 @@ export async function softDeleteVaultDocument(id: string): Promise<void> {
   if (error) handleSupabaseError(error, 'تعذر حذف المستند');
 }
 
-export async function getVaultDocumentSignedUrl(
-  storagePath: string,
-  expiresInSeconds = SIGNED_URL_EXPIRY_SECONDS,
-): Promise<string> {
+export async function getVaultDocumentSignedUrl(storagePath: string, expiresInSeconds = SIGNED_URL_EXPIRY_SECONDS): Promise<string> {
   if (!storagePath) throw new Error('مسار الملف مطلوب');
   const { data, error } = await supabase.storage.from('attachments').createSignedUrl(storagePath, expiresInSeconds);
   if (error) handleSupabaseError(error, 'تعذر إنشاء رابط التنزيل المؤقت');
@@ -219,10 +213,7 @@ export async function getVaultDocumentDownloadUrl(storagePath: string): Promise<
   return getVaultDocumentSignedUrl(storagePath, SIGNED_URL_EXPIRY_SECONDS);
 }
 
-export async function getVaultDocumentsWithSignedUrls(
-  documents: VaultDocumentItem[],
-  expiresInSeconds = SIGNED_URL_EXPIRY_SECONDS,
-): Promise<VaultDocumentItem[]> {
+export async function getVaultDocumentsWithSignedUrls(documents: VaultDocumentItem[], expiresInSeconds = SIGNED_URL_EXPIRY_SECONDS): Promise<VaultDocumentItem[]> {
   return Promise.all(
     documents.map(async (document) => {
       try {
