@@ -1,5 +1,5 @@
 import { Link, useParams } from '@tanstack/react-router';
-import { Edit, FilePlus2 } from 'lucide-react';
+import { BarChart3, Edit, FilePlus2 } from 'lucide-react';
 import { useState } from 'react';
 import { AsyncContentState } from '@/components/async-content-state';
 import { EntityDetailHeader } from '@/components/layout/entity-detail-header';
@@ -8,6 +8,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { UnitFormModal } from '@/features/units/unit-form-modal';
 import { useUnits } from '@/features/units/use-units';
 import { useUnitContractDrafts } from '@/features/contracts/queries/useUnitContractDrafts';
+import { useAuth } from '@/hooks/use-auth';
 import { formatMoney } from '@/hooks/useCompanyFormatters';
 import { PropertyInfoItem } from '../components/property-info-item';
 import { useProperty } from '../use-properties';
@@ -21,6 +22,8 @@ export function PropertyUnitDetailPage() {
   const unitId = typeof params.unitId === 'string' ? params.unitId : '';
   const propertyQuery = useProperty(propertyId);
   const unitsQuery = useUnits(propertyId);
+  const { canAccess } = useAuth();
+  const canViewReports = canAccess('financial.reports.view');
   const [editOpen, setEditOpen] = useState(false);
   const unitDraftsQuery = useUnitContractDrafts({ propertyId, unitIds: unitId ? [unitId] : [] });
 
@@ -52,6 +55,17 @@ export function PropertyUnitDetailPage() {
             }
             actions={
               <>
+                {canViewReports ? (
+                  <Button asChild variant="outline" className="min-h-11">
+                    <Link
+                      to="/reports"
+                      search={{ section: 'analytics', view: 'property_analytics', propertyId, unitId: unit.id } as never}
+                    >
+                      <BarChart3 className="me-1 size-4" aria-hidden="true" />
+                      تحليل الوحدة
+                    </Link>
+                  </Button>
+                ) : null}
                 {pendingDraft ? (
                   <Button asChild variant="secondary" className="min-h-11">
                     <Link to="/contracts/$contractId" params={{ contractId: pendingDraft.id }}>

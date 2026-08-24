@@ -1,5 +1,5 @@
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
-import { Edit, RefreshCw, ShieldAlert } from 'lucide-react';
+import { BarChart3, Edit, RefreshCw, ShieldAlert } from 'lucide-react';
 import { useState } from 'react';
 import { AsyncContentState } from '@/components/async-content-state';
 import { EntityDetailHeader } from '@/components/layout/entity-detail-header';
@@ -10,6 +10,7 @@ import { buildContractActions } from '@/components/ui/entity-action-presets';
 import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
 import { DocumentReadinessNotice } from '@/features/settings/components/document-readiness-notice';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
+import { useAuth } from '@/hooks/use-auth';
 import { exportContractPdf, printContractView, shareContractLink } from '../actions/contractDetailActions';
 import { ContractDocumentsShell } from '../contractDocumentsShell';
 import { ContractPaymentsTab } from '../contractPaymentsTab';
@@ -29,6 +30,8 @@ export function ContractDetailPage() {
   const contractQuery = useContract(contractId);
   const companySettings = useCompanySettingsContract();
   const documentSettings = useDocumentSettings();
+  const { canAccess } = useAuth();
+  const canViewReports = canAccess('financial.reports.view');
   const [renewOpen, setRenewOpen] = useState(false);
   const [terminateOpen, setTerminateOpen] = useState(false);
 
@@ -63,19 +66,45 @@ export function ContractDetailPage() {
     onPrint: documentSettings.isReady ? () => printContractView(contract, documentSettings.companySettings) : undefined,
     onPdf: documentSettings.isReady ? () => exportContractPdf(contract, documentSettings.companySettings) : undefined,
     onShare: handleShare,
-    // Renew/terminate are primary inline actions in the header, not menu items.
   });
 
-  return <PageLayout dir="rtl" size="wide" visualVariant="malek-pro">{!documentSettings.isReady && !documentSettings.isLoading ? <DocumentReadinessNotice /> : null}<EntityDetailHeader title="تفاصيل العقد" subtitle={`${contract.reference ?? 'عقد بلا مرجع تجاري'} — عرض كامل للعقد وسجل مراحله.`} backTo="/contracts" actions={<>{renewalAllowed && <Button variant="secondary" className="min-h-11" onClick={openRenewal}><RefreshCw className="me-2 size-4" />تجديد</Button>}{terminationAllowed && <Button variant="destructive" className="min-h-11" onClick={openTermination}><ShieldAlert className="me-2 size-4" />إنهاء العقد</Button>}<Button asChild className="min-h-11"><Link to="/contracts/$contractId/edit" params={{ contractId }}><Edit className="me-2 size-4" />تعديل</Link></Button><ActionMenu items={contractMenuActions} label="إجراءات أخرى" /></>} />
-    <ContractOverviewSection contract={contract} settings={companySettings} />
-    <ContractApprovalSection contract={contract} />
-    <ContractLifecycleSection contract={contract} settings={companySettings} renewalAllowed={renewalAllowed} onRenew={openRenewal} canTerminate={terminationAllowed} onTerminate={openTermination} />
-    <ContractPaymentsTab contractId={contract.id} />
-    <ContractFinancialTimelineSection contract={contract} settings={companySettings} />
-    <ContractTimelineSection contract={contract} settings={companySettings} />
-    <ContractEvidenceSection contractId={contract.id} />
-    <ContractDocumentsShell contractId={contract.id} />
-    <ContractRenewalDialog contract={contract} open={renewOpen} onOpenChange={setRenewOpen} onRenewed={async (result) => navigate({ to: '/contracts/$contractId', params: { contractId: result.new_contract_id } })} />
-    <ContractTerminationDialog contractId={contract.id} open={terminateOpen} onOpenChange={setTerminateOpen} />
-  </PageLayout>;
+  return (
+    <PageLayout dir="rtl" size="wide" visualVariant="malek-pro">
+      {!documentSettings.isReady && !documentSettings.isLoading ? <DocumentReadinessNotice /> : null}
+      <EntityDetailHeader
+        title="تفاصيل العقد"
+        subtitle={`${contract.reference ?? 'عقد بلا مرجع تجاري'} — عرض كامل للعقد وسجل مراحله.`}
+        backTo="/contracts"
+        actions={(
+          <>
+            {canViewReports ? (
+              <Button asChild variant="outline" className="min-h-11">
+                <Link
+                  to="/reports"
+                  search={{ section: 'statements', contractId: contract.id, tenantId: contract.tenant_id ?? undefined } as never}
+                >
+                  <BarChart3 className="me-2 size-4" aria-hidden="true" />
+                  كشف وتقارير العقد
+                </Link>
+              </Button>
+            ) : null}
+            {renewalAllowed ? <Button variant="secondary" className="min-h-11" onClick={openRenewal}><RefreshCw className="me-2 size-4" />تجديد</Button> : null}
+            {terminationAllowed ? <Button variant="destructive" className="min-h-11" onClick={openTermination}><ShieldAlert className="me-2 size-4" />إنهاء العقد</Button> : null}
+            <Button asChild className="min-h-11"><Link to="/contracts/$contractId/edit" params={{ contractId }}><Edit className="me-2 size-4" />تعديل</Link></Button>
+            <ActionMenu items={contractMenuActions} label="إجراءات أخرى" />
+          </>
+        )}
+      />
+      <ContractOverviewSection contract={contract} settings={companySettings} />
+      <ContractApprovalSection contract={contract} />
+      <ContractLifecycleSection contract={contract} settings={companySettings} renewalAllowed={renewalAllowed} onRenew={openRenewal} canTerminate={terminationAllowed} onTerminate={openTermination} />
+      <ContractPaymentsTab contractId={contract.id} />
+      <ContractFinancialTimelineSection contract={contract} settings={companySettings} />
+      <ContractTimelineSection contract={contract} settings={companySettings} />
+      <ContractEvidenceSection contractId={contract.id} />
+      <ContractDocumentsShell contractId={contract.id} />
+      <ContractRenewalDialog contract={contract} open={renewOpen} onOpenChange={setRenewOpen} onRenewed={async (result) => navigate({ to: '/contracts/$contractId', params: { contractId: result.new_contract_id } })} />
+      <ContractTerminationDialog contractId={contract.id} open={terminateOpen} onOpenChange={setTerminateOpen} />
+    </PageLayout>
+  );
 }

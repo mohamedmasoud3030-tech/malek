@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { ReportDirectory } from './ReportDirectory';
 
 describe('ReportDirectory', () => {
-  it('renders the six report families without duplicating full report bodies', () => {
+  it('renders the six report families and the direct report shortcuts without duplicating report bodies', () => {
     const html = renderToStaticMarkup(
       <ReportDirectory
         activeSection="analytics"
@@ -14,12 +14,18 @@ describe('ReportDirectory', () => {
     );
 
     expect(html.match(/data-report-group=/g)).toHaveLength(6);
+    expect(html).toContain('6 مجموعات · 16 مدخل تقرير');
     expect(html).toContain('المالية والتحصيل');
     expect(html).toContain('العقود والإيجارات');
     expect(html).toContain('الملاك');
     expect(html).toContain('المستأجرون');
     expect(html).toContain('العقارات والوحدات');
     expect(html).toContain('الرقابة والمطابقة');
+    expect(html).toContain('ملخص الأداء');
+    expect(html).toContain('الإشغال والشواغر');
+    expect(html).toContain('متأخرات المستأجرين');
+    expect(html).toContain('دفتر الأستاذ');
+    expect(html).toContain('تسوية الإيرادات');
     expect(html).toContain('مفتوح الآن');
   });
 

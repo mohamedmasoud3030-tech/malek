@@ -13,6 +13,12 @@ import { cn } from '@/lib/utils';
 import type { ReportSectionId } from '../reports-page.sections';
 import type { ReportViewId } from '../reports-section-model';
 
+type ReportShortcut = Readonly<{
+  label: string;
+  section: ReportSectionId;
+  view: ReportViewId;
+}>;
+
 type ReportGroup = Readonly<{
   id: 'finance' | 'leases' | 'owners' | 'tenants' | 'properties' | 'control';
   title: string;
@@ -21,7 +27,7 @@ type ReportGroup = Readonly<{
   section: ReportSectionId;
   view: ReportViewId;
   matches: readonly ReportViewId[];
-  items: readonly string[];
+  shortcuts: readonly ReportShortcut[];
 }>;
 
 const reportGroups: readonly ReportGroup[] = [
@@ -33,7 +39,12 @@ const reportGroups: readonly ReportGroup[] = [
     section: 'analytics',
     view: 'collections',
     matches: ['overview', 'collections', 'overdue', 'expenses'],
-    items: ['التحصيل', 'المتأخرات', 'المصروفات', 'ملخص الأداء'],
+    shortcuts: [
+      { label: 'ملخص الأداء', section: 'analytics', view: 'overview' },
+      { label: 'التحصيل', section: 'analytics', view: 'collections' },
+      { label: 'المتأخرات', section: 'analytics', view: 'overdue' },
+      { label: 'المصروفات', section: 'analytics', view: 'expenses' },
+    ],
   },
   {
     id: 'leases',
@@ -43,7 +54,10 @@ const reportGroups: readonly ReportGroup[] = [
     section: 'analytics',
     view: 'occupancy',
     matches: ['occupancy'],
-    items: ['الإشغال', 'العقود النشطة', 'قرب الانتهاء', 'الوحدات الشاغرة'],
+    shortcuts: [
+      { label: 'الإشغال والشواغر', section: 'analytics', view: 'occupancy' },
+      { label: 'العقود القريبة من الانتهاء', section: 'analytics', view: 'occupancy' },
+    ],
   },
   {
     id: 'owners',
@@ -53,7 +67,9 @@ const reportGroups: readonly ReportGroup[] = [
     section: 'statements',
     view: '',
     matches: [],
-    items: ['كشف المالك', 'الحركة', 'الاستقطاعات', 'صافي المستحق'],
+    shortcuts: [
+      { label: 'كشف المالك', section: 'statements', view: '' },
+    ],
   },
   {
     id: 'tenants',
@@ -63,17 +79,25 @@ const reportGroups: readonly ReportGroup[] = [
     section: 'statements',
     view: '',
     matches: [],
-    items: ['كشف المستأجر', 'الفواتير', 'الرصيد', 'الحركات'],
+    shortcuts: [
+      { label: 'كشف المستأجر', section: 'statements', view: '' },
+      { label: 'متأخرات المستأجرين', section: 'analytics', view: 'overdue' },
+    ],
   },
   {
     id: 'properties',
     title: 'العقارات والوحدات',
-    description: 'أداء العقار، الإشغال والمصروفات التشغيلية عبر النطاق المحدد.',
+    description: 'أداء العقار، الإشغال والمصروفات والصيانة عبر النطاق المحدد.',
     icon: Building2,
     section: 'analytics',
     view: 'property_analytics',
-    matches: ['property_analytics'],
-    items: ['أداء العقار', 'الإشغال', 'الوحدات', 'المصروفات'],
+    matches: ['property_analytics', 'maintenance_analytics'],
+    shortcuts: [
+      { label: 'أداء العقار', section: 'analytics', view: 'property_analytics' },
+      { label: 'الإشغال', section: 'analytics', view: 'occupancy' },
+      { label: 'الصيانة', section: 'analytics', view: 'maintenance_analytics' },
+      { label: 'المصروفات', section: 'analytics', view: 'expenses' },
+    ],
   },
   {
     id: 'control',
@@ -83,7 +107,11 @@ const reportGroups: readonly ReportGroup[] = [
     section: 'accounting',
     view: 'accounting_reports',
     matches: ['accounting_reports', 'general_ledger', 'deferred_revenue'],
-    items: ['ميزان المراجعة', 'الأستاذ العام', 'القوائم', 'التسويات'],
+    shortcuts: [
+      { label: 'القوائم المحاسبية', section: 'accounting', view: 'accounting_reports' },
+      { label: 'دفتر الأستاذ', section: 'accounting', view: 'general_ledger' },
+      { label: 'تسوية الإيرادات', section: 'accounting', view: 'deferred_revenue' },
+    ],
   },
 ];
 
@@ -105,10 +133,10 @@ export function ReportDirectory({ activeSection, activeView, scope, onOpen }: Re
         <div>
           <h2 id="report-directory-title" className="text-lg font-black sm:text-xl">مكتبة التقارير</h2>
           <p className="mt-1 text-sm leading-6 text-muted-foreground">
-            اختر نوع التقرير أولاً، ثم استخدم نطاق التقرير للتفاصيل. الملخصات تبقى خفيفة؛ البيانات الكاملة هنا.
+            اختر المجموعة أو افتح التقرير المطلوب مباشرة، ثم استخدم نطاق التقرير للتصفية الدقيقة.
           </p>
         </div>
-        <p className="text-sm font-semibold text-muted-foreground">6 مجموعات رئيسية</p>
+        <p className="text-sm font-semibold text-muted-foreground">6 مجموعات · 16 مدخل تقرير</p>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -123,7 +151,7 @@ export function ReportDirectory({ activeSection, activeView, scope, onOpen }: Re
             <article
               key={group.id}
               className={cn(
-                'flex min-h-[12rem] flex-col rounded-2xl border bg-card p-4 shadow-card transition-[border-color,box-shadow,transform] sm:p-5',
+                'flex min-h-[13rem] flex-col rounded-2xl border bg-card p-4 shadow-card transition-[border-color,box-shadow,transform] sm:p-5',
                 'hover:-translate-y-0.5 hover:shadow-md',
                 isActive ? 'border-primary/50 ring-1 ring-primary/15' : 'border-border/70',
               )}
@@ -145,12 +173,25 @@ export function ReportDirectory({ activeSection, activeView, scope, onOpen }: Re
               <div className="mt-4 flex-1">
                 <h3 className="text-base font-black">{group.title}</h3>
                 <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{group.description}</p>
-                <div className="mt-3 flex flex-wrap gap-1.5" aria-label={`محتويات ${group.title}`}>
-                  {group.items.map((item) => (
-                    <span key={item} className="rounded-lg border border-border/70 bg-muted/35 px-2.5 py-1 text-xs font-semibold text-muted-foreground">
-                      {item}
-                    </span>
-                  ))}
+                <div className="mt-3 flex flex-wrap gap-1.5" aria-label={`تقارير ${group.title}`}>
+                  {group.shortcuts.map((shortcut) => {
+                    const shortcutActive = shortcut.section === activeSection && shortcut.view === activeView;
+                    return (
+                      <button
+                        key={`${shortcut.section}:${shortcut.view}:${shortcut.label}`}
+                        type="button"
+                        className={cn(
+                          'min-h-11 rounded-lg border px-3 py-2 text-[13px] font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
+                          shortcutActive
+                            ? 'border-primary/35 bg-primary/10 text-primary'
+                            : 'border-border/70 bg-muted/35 text-muted-foreground hover:border-primary/25 hover:bg-primary/5 hover:text-foreground',
+                        )}
+                        onClick={() => onOpen(shortcut.section, shortcut.view)}
+                      >
+                        {shortcut.label}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -160,7 +201,7 @@ export function ReportDirectory({ activeSection, activeView, scope, onOpen }: Re
                 className="mt-4 min-h-11 w-full justify-between"
                 onClick={() => onOpen(group.section, group.view)}
               >
-                <span>{isActive ? 'التقرير مفتوح' : 'فتح المجموعة'}</span>
+                <span>{isActive ? 'المجموعة مفتوحة' : 'فتح المجموعة'}</span>
                 <ArrowLeft className="size-4" aria-hidden="true" />
               </Button>
             </article>

@@ -7,6 +7,7 @@ const legacyRedirect = readFileSync(new URL('./legacy-preview-redirect.tsx', imp
 const contractDetail = readFileSync(new URL('../../routes/_protected.contracts.$contractId.tsx', import.meta.url), 'utf8');
 const ownerDetail = readFileSync(new URL('../../routes/_protected.owners.$ownerId.tsx', import.meta.url), 'utf8');
 const tenantDetail = readFileSync(new URL('../../routes/_protected.tenants.$tenantId.tsx', import.meta.url), 'utf8');
+const personDetail = readFileSync(new URL('../../routes/_protected.people.$personId.tsx', import.meta.url), 'utf8');
 const propertyDetail = readFileSync(new URL('../../routes/_protected.properties.$propertyId.tsx', import.meta.url), 'utf8');
 const unitDetail = readFileSync(new URL('../../routes/_protected.properties.$propertyId.units.$unitId.tsx', import.meta.url), 'utf8');
 const peopleNew = readFileSync(new URL('../../routes/_protected.people.new.tsx', import.meta.url), 'utf8');
@@ -31,7 +32,7 @@ describe('BackgroundLocation hardening', () => {
 
 describe('Event bus removal', () => {
   it('no production consumer revives openEntityPreview', () => {
-    for (const src of [dashboard, ownerPreview, ownerWorkspace, tenants, contractDetail, ownerDetail, tenantDetail, propertyDetail, unitDetail]) {
+    for (const src of [dashboard, ownerPreview, ownerWorkspace, tenants, contractDetail, ownerDetail, tenantDetail, personDetail, propertyDetail, unitDetail]) {
       expect(src).not.toContain('openEntityPreview');
     }
   });
@@ -58,22 +59,19 @@ describe('Legacy preview query → canonical URL', () => {
 });
 
 describe('Heavyweight dossier presentation', () => {
-  it('owner, tenant and contract details are canonical full pages even if navigation supplied a background', () => {
+  it('owner, tenant, contract, person, property and unit details are canonical full pages', () => {
     expect(contractDetail).toContain('ContractDetailPage');
     expect(ownerDetail).toContain('OwnerDetailPage');
     expect(tenantDetail).toContain('TenantDetailPage');
-    for (const src of [contractDetail, ownerDetail, tenantDetail]) {
+    expect(personDetail).toContain('PersonDetailPage');
+    expect(propertyDetail).toContain('PropertyDetailPage');
+    expect(unitDetail).toContain('PropertyUnitDetailPage');
+
+    for (const src of [contractDetail, ownerDetail, tenantDetail, personDetail, propertyDetail, unitDetail]) {
       expect(src).not.toContain('useBackgroundLocation');
       expect(src).not.toContain('PreviewDialog');
       expect(src).not.toContain('window.history.back()');
     }
-  });
-
-  it('property and unit may still use lightweight route dialogs', () => {
-    expect(propertyDetail).toContain('PropertyPreviewDialog');
-    expect(propertyDetail).toContain('window.history.back()');
-    expect(unitDetail).toContain('UnitPreviewDialog');
-    expect(unitDetail).toContain('window.history.back()');
   });
 });
 
@@ -93,6 +91,8 @@ describe('Permissions + canonical routes', () => {
     expect(routeTree).toContain("path: '/contracts/$contractId'");
     expect(routeTree).toContain("path: '/owners/$ownerId'");
     expect(routeTree).toContain("path: '/tenants/$tenantId'");
+    expect(routeTree).toContain("path: '/people/$personId'");
+    expect(routeTree).toContain("path: '/properties/$propertyId'");
     expect(contractDetail).not.toContain('canAccess');
     expect(ownerDetail).not.toContain('canAccess');
   });
