@@ -106,6 +106,7 @@ export function ReportsPage() {
         <ReportDirectory
           activeSection={activeSection}
           activeView={activeView}
+          scope={{ ownerId: filters.ownerId, tenantId: filters.tenantId, contractId: filters.contractId }}
           onOpen={handleSectionViewChange}
         />
 
