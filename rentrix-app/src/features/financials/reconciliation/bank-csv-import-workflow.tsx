@@ -253,7 +253,7 @@ export function BankCsvImportWorkflow({ open, onOpenChange, defaultBankAccountId
               ) : null}
               <div>
                 <span className="text-xs text-muted-foreground">بصمة الملف</span>
-                <p className="font-mono text-[10px] truncate" title={preview.fileFingerprint}>{preview.fileFingerprint.slice(0, 16)}...</p>
+                <p className="font-mono text-xs truncate" title={preview.fileFingerprint}>{preview.fileFingerprint.slice(0, 16)}...</p>
               </div>
             </div>
 
@@ -339,7 +339,7 @@ export function BankCsvImportWorkflow({ open, onOpenChange, defaultBankAccountId
                     <tr key={i} className="border-t">
                       <td className="p-2">{r.rowNumber}</td>
                       <td className="p-2 text-destructive">{r.reason}</td>
-                      <td className="p-2 truncate max-w-[16rem] font-mono text-[11px]">{r.raw.join(' | ')}</td>
+                      <td className="p-2 truncate max-w-[16rem] font-mono text-xs">{r.raw.join(' | ')}</td>
                     </tr>
                   ))}
                 </tbody>

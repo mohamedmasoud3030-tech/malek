@@ -89,7 +89,7 @@ export function FilterTabs<T extends string>({
         ref={scrollRef}
         data-filter-tabs-scroll
         className={cn(
-          '-mx-2 flex scroll-px-2 gap-1 overflow-x-auto px-2 no-scrollbar sm:mx-0 sm:px-0',
+          'flex scroll-px-2 gap-1 overflow-x-auto px-0.5 no-scrollbar sm:px-0',
           className,
         )}
         role="group"
@@ -119,7 +119,7 @@ export function FilterTabs<T extends string>({
               aria-pressed={isActive}
               onClick={() => onChange(option.value)}
               className={cn(
-                'flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition-[background-color,border-color,color,box-shadow] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/15',
+                'flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-lg border px-3 py-1 text-xs font-semibold transition-[background-color,border-color,color,box-shadow] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/15',
                 isActive
                   ? activeClasses
                   : 'border-border/75 bg-background text-muted-foreground hover:border-foreground/15 hover:bg-muted/55 hover:text-foreground',
@@ -129,7 +129,7 @@ export function FilterTabs<T extends string>({
               {option.count !== undefined ? (
                 <span
                   className={cn(
-                    'rounded-md px-1.5 py-0.5 text-[9px] font-bold tabular-nums',
+                    'rounded-md px-1.5 py-0.5 text-xs font-bold leading-4 tabular-nums',
                     isActive ? activeCountClasses : 'bg-muted text-foreground/75',
                   )}
                 >

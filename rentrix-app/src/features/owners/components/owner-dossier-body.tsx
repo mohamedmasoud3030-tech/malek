@@ -370,7 +370,7 @@ export function OwnerDossierBody({
                       <span className="font-bold">{record.action}</span>
                       {record.description ? <span className="ms-2 text-xs text-muted-foreground">{record.description}</span> : null}
                     </span>
-                    <span className="whitespace-nowrap text-[11px] text-muted-foreground" dir="ltr">{record.occurredAt.slice(0, 10)}</span>
+                    <span className="whitespace-nowrap text-xs text-muted-foreground" dir="ltr">{record.occurredAt.slice(0, 10)}</span>
                   </li>
                 ))}
               </ul>

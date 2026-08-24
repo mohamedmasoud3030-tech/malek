@@ -74,7 +74,7 @@ export function SettingsOperationsSections({
             <span>تفعيل إشعارات الرسائل النصية</span>
           </label>
         </div>
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
           ملخص الإشعارات المعتمد: {preview.notificationSummary}.
         </p>
       </SectionCard>

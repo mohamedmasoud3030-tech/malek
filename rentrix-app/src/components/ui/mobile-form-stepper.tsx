@@ -51,7 +51,7 @@ export function MobileFormStepperHeader({
               <li key={item.id} className="flex min-w-0 flex-1 items-center gap-1">
                 <span
                   className={cn(
-                    'grid size-5 shrink-0 place-items-center rounded-full text-[10px] font-bold',
+                    'grid size-5 shrink-0 place-items-center rounded-full text-xs font-bold',
                     done && 'bg-success/15 text-success',
                     active && 'bg-primary text-primary-foreground',
                     !done && !active && 'bg-muted text-muted-foreground',

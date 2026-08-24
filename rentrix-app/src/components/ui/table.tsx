@@ -49,7 +49,7 @@ export function TableHead({ className, ...props }: ThHTMLAttributes<HTMLTableCel
   return (
     <th
       className={cn(
-        'h-10 whitespace-nowrap bg-muted/40 px-3 text-start align-middle text-[11px] font-bold text-muted-foreground sm:px-3.5',
+        'h-11 whitespace-nowrap bg-muted/40 px-3 text-start align-middle text-xs font-bold text-muted-foreground sm:px-3.5',
         className,
       )}
       {...props}
@@ -124,7 +124,7 @@ export function TableEmpty({
       <div className="flex flex-col items-center gap-2 text-center">
         <p className="text-sm font-semibold text-foreground">{title}</p>
         {description ? (
-          <p className="max-w-sm text-xs text-muted-foreground">{description}</p>
+          <p className="max-w-sm text-sm leading-6 text-muted-foreground">{description}</p>
         ) : null}
         {action}
       </div>

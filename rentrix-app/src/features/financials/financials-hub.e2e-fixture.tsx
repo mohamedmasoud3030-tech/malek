@@ -84,7 +84,7 @@ export function FinancialsHubE2EFixture() {
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-bold">{label}</span>
-                  <span className="block truncate text-[11px] font-medium text-muted-foreground">{description}</span>
+                  <span className="block truncate text-xs font-medium text-muted-foreground">{description}</span>
                 </span>
                 <ChevronLeft className="size-4 shrink-0 text-muted-foreground/50 transition-colors group-hover:text-primary" aria-hidden="true" />
               </div>

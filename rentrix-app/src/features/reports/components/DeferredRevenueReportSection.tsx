@@ -170,7 +170,7 @@ export function DeferredRevenueReportSection({
                   value={(
                     <div className="text-end">
                       <p dir="ltr">{formatMoney(row.deferredRevenueRemaining)}</p>
-                      <p className="mt-1 text-[10px] font-semibold text-muted-foreground" dir="ltr">
+                      <p className="mt-1 text-xs font-semibold text-muted-foreground" dir="ltr">
                         شهريًا {formatMoney(row.monthlyAmortizationAmount)}
                       </p>
                     </div>
@@ -218,9 +218,9 @@ export function DeferredRevenueReportSection({
 function SourceMetric({ label, value, amount }: Readonly<{ label: string; value: number; amount: number }>) {
   return (
     <div className="rounded-xl border border-border/60 bg-muted/20 p-3">
-      <p className="text-[10px] font-semibold text-muted-foreground">{label}</p>
+      <p className="text-xs font-semibold text-muted-foreground">{label}</p>
       <p className="mt-1 text-lg font-extrabold tabular-nums" dir="ltr">{formatLatinNumber(value, 'ar')}</p>
-      {amount > 0 ? <p className="mt-1 text-[10px] text-muted-foreground" dir="ltr">{formatMoney(amount)}</p> : null}
+      {amount > 0 ? <p className="mt-1 text-xs text-muted-foreground" dir="ltr">{formatMoney(amount)}</p> : null}
     </div>
   );
 }

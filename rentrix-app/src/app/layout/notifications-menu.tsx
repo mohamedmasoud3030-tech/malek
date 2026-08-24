@@ -184,7 +184,7 @@ export function NotificationsMenu({
         {totalCount > 0 ? (
           <span
             aria-hidden="true"
-            className="absolute -top-0.5 -end-0.5 grid min-w-4 place-items-center rounded-full bg-danger px-1 py-0.5 text-[9px] font-bold leading-none text-white ring-2 ring-background"
+            className="absolute -top-0.5 -end-0.5 grid min-w-4 place-items-center rounded-full bg-danger px-1 py-0.5 text-xs font-bold leading-none text-white ring-2 ring-background"
           >
             {totalCount > 99 ? '99+' : totalCount}
           </span>
@@ -210,7 +210,7 @@ export function NotificationsMenu({
           ) : hasBlockingError ? (
             <div role="alert" className="mt-3 rounded-xl border border-danger/20 bg-danger/5 p-3">
               <p className="text-xs font-bold text-danger">تعذر تحميل التنبيهات</p>
-              <p className="mt-1 text-[11px] leading-5 text-muted-foreground">تحقق من الاتصال ثم أعد المحاولة. لا نعرض حالة «لا توجد تنبيهات» عند فشل البيانات.</p>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">تحقق من الاتصال ثم أعد المحاولة. لا نعرض حالة «لا توجد تنبيهات» عند فشل البيانات.</p>
               <Button
                 type="button"
                 size="sm"
@@ -226,7 +226,7 @@ export function NotificationsMenu({
             <>
               {canReviewRequests && pendingPermissionRequests.length > 0 ? (
                 <div data-permission-requests-need-action className="mt-2 rounded-xl border border-warning/40 bg-warning/[0.08] p-2">
-                  <p className="flex items-center gap-1.5 px-1.5 pb-1.5 text-[11px] font-extrabold text-warning">
+                  <p className="flex items-center gap-1.5 px-1.5 pb-1.5 text-xs font-extrabold text-warning">
                     <ShieldAlert className="size-3.5 shrink-0" aria-hidden="true" />
                     طلبات تحتاج إجراء ({pendingPermissionRequests.length})
                   </p>
@@ -243,18 +243,18 @@ export function NotificationsMenu({
                             <span className="block truncate text-[12px] font-bold text-foreground">
                               طلب صلاحية جديد
                             </span>
-                            <span className="mt-0.5 block truncate text-[11px] font-semibold text-muted-foreground">
+                            <span className="mt-0.5 block truncate text-xs font-semibold text-muted-foreground">
                               {getPermissionLabel(request.permission)}
                             </span>
                           </span>
                           <StatusBadge tone="warning" dot>قيد المراجعة</StatusBadge>
-                          <span className="shrink-0 rounded-lg bg-warning/15 px-2 py-1 text-[10px] font-extrabold text-warning">مراجعة</span>
+                          <span className="shrink-0 rounded-lg bg-warning/15 px-2 py-1 text-xs font-extrabold text-warning">مراجعة</span>
                         </Link>
                       </li>
                     ))}
                   </ul>
                   {pendingPermissionRequests.length > 4 ? (
-                    <p className="px-1.5 pt-1 text-[10px] font-medium text-muted-foreground">
+                    <p className="px-1.5 pt-1 text-xs font-medium text-muted-foreground">
                       + {pendingPermissionRequests.length - 4} طلبات إضافية — افتح الشاشة للاستعراض الكامل.
                     </p>
                   ) : null}
@@ -263,8 +263,8 @@ export function NotificationsMenu({
 
               {visibleItems.length === 0 ? (
                 <>
-                  <p className="mt-1 text-[11px] font-medium text-muted-foreground">{sharedLabel('notificationsNone')}</p>
-                  <p className="mt-1 text-[11px] leading-5 text-muted-foreground">{sharedLabel('notificationsHint')}</p>
+                  <p className="mt-1 text-xs font-medium text-muted-foreground">{sharedLabel('notificationsNone')}</p>
+                  <p className="mt-1 text-xs leading-5 text-muted-foreground">{sharedLabel('notificationsHint')}</p>
                 </>
               ) : (
                 <ul className="mt-2 space-y-1" aria-label={sharedLabel('notifications')}>
@@ -285,10 +285,10 @@ export function NotificationsMenu({
                         <item.Icon className="size-4 shrink-0 text-warning" aria-hidden="true" />
                         <span className="min-w-0 flex-1">
                           <span className="block truncate">{item.title}</span>
-                          {item.message ? <span className="mt-0.5 block truncate text-[10px] font-medium text-muted-foreground">{item.message}</span> : null}
+                          {item.message ? <span className="mt-0.5 block truncate text-xs font-medium text-muted-foreground">{item.message}</span> : null}
                         </span>
                         {!item.isRead ? <span className="size-2 shrink-0 rounded-full bg-primary" aria-label="غير مقروء" /> : null}
-                        {item.count > 1 ? <span className="grid min-w-6 place-items-center rounded-full bg-danger/10 px-1.5 py-0.5 text-[10px] font-bold text-danger">{item.count}</span> : null}
+                        {item.count > 1 ? <span className="grid min-w-6 place-items-center rounded-full bg-danger/10 px-1.5 py-0.5 text-xs font-bold text-danger">{item.count}</span> : null}
                       </Link>
                     </li>
                   ))}

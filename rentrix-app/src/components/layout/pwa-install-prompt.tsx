@@ -71,7 +71,7 @@ export function PwaInstallPrompt() {
         <div className="min-w-0 flex-1">
           <p className="text-sm font-bold">{`ثبّت تطبيق ${APP_BRAND_NAME}`}</p>
           {iosManual ? (
-            <p className="mt-0.5 text-[11px] leading-5 text-muted-foreground">
+            <p className="mt-0.5 text-xs leading-5 text-muted-foreground">
               من متصفح Safari: اضغط{' '}
               <Share className="inline size-3.5 align-[-2px]" aria-hidden="true" />{' '}
               زر المشاركة ثم اختر{' '}
@@ -82,7 +82,7 @@ export function PwaInstallPrompt() {
               لفتح التطبيق كأيقونة مستقلة.
             </p>
           ) : (
-            <p className="mt-0.5 text-[11px] leading-5 text-muted-foreground">
+            <p className="mt-0.5 text-xs leading-5 text-muted-foreground">
               وصول أسرع من الشاشة الرئيسية وعمل دون اتصال — دون متجر تطبيقات.
             </p>
           )}

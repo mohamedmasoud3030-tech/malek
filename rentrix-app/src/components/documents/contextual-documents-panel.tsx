@@ -136,7 +136,7 @@ export function ContextualDocumentsPanel({
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2"><p className="truncate text-sm font-bold">{document.title}</p>{document.status ? <StatusBadge tone="neutral">{document.status}</StatusBadge> : null}</div>
                 <p className="mt-1 truncate text-xs text-muted-foreground">{document.fileName}{document.typeLabel ? ` · ${document.typeLabel}` : ''}{document.fileSize ? ` · ${document.fileSize}` : ''}</p>
-                <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+                <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
                   {document.reference ? <span>المرجع: {document.reference}</span> : null}{document.parties ? <span>الأطراف: {document.parties}</span> : null}{document.importantDate ? <span>التاريخ: {document.importantDate}</span> : null}{document.expiresAt ? <span>الانتهاء: {document.expiresAt}</span> : null}{document.amount ? <span>القيمة: {document.amount}</span> : null}{document.relatedEntity ? <span>مرتبط بـ: {document.relatedEntity}</span> : null}
                 </div>
                 {document.metadata ? <div className="mt-2 text-xs text-muted-foreground">{document.metadata}</div> : null}

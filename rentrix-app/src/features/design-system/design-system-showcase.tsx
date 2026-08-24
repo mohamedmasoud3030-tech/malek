@@ -50,7 +50,7 @@ function Swatch({ name, value }: { name: string; value: string }) {
       <div className="size-12 rounded-lg border border-border shadow-sm" style={{ background: value }} aria-hidden="true" />
       <div>
         <p className="text-xs font-bold">{name}</p>
-        <p className="font-mono text-[11px] text-muted-foreground">{value}</p>
+        <p className="font-mono text-xs text-muted-foreground">{value}</p>
       </div>
     </div>
   );

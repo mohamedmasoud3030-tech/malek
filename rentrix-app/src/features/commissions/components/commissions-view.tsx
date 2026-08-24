@@ -420,7 +420,7 @@ function CommissionRows({
           render: (row) => (
             <span className="flex flex-col items-start gap-1">
               <StatusBadge tone={commissionStatusTone[row.status ?? ""] ?? "neutral"}>{commissionStatusLabels[row.status ?? ""] ?? row.status ?? "—"}</StatusBadge>
-              {nextActionLabels[row.status ?? ""] ? <span className="text-[10px] font-semibold text-muted-foreground">{nextActionLabels[row.status ?? ""]}</span> : null}
+              {nextActionLabels[row.status ?? ""] ? <span className="text-xs font-semibold text-muted-foreground">{nextActionLabels[row.status ?? ""]}</span> : null}
             </span>
           ),
         },

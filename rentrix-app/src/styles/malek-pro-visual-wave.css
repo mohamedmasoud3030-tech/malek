@@ -10,74 +10,9 @@
  */
 
 [data-visual-wave='malek-pro'] {
-  --background: 210 33% 98%;
-  --foreground: 222 38% 13%;
-  --card: 0 0% 100%;
-  --card-foreground: 222 38% 13%;
-  /* WCAG AA guard: white text on the Malek Pro green needs ≥4.5:1; 31%
-     lightness measured 3.99:1 (axe), 27% measures ≈5.0:1. */
-  --primary: 217 71% 45%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 210 28% 95%;
-  --secondary-foreground: 222 28% 21%;
-  --muted: 210 25% 95%;
-  --muted-foreground: 215 13% 43%;
-  --accent: 213 74% 52%;
-  --accent-foreground: 0 0% 100%;
-  --border: 214 25% 89%;
-  --input: 214 25% 84%;
-  --destructive: 350 77% 46%;
-  --destructive-foreground: 0 0% 100%;
-
-  --color-success-text: 157 72% 25%;
-  --color-success-bg: 152 58% 94%;
-  --color-warning-text: 34 82% 31%;
-  --color-warning-bg: 43 94% 91%;
-  --color-danger-text: 350 76% 42%;
-  --color-danger-bg: 350 86% 96%;
-  --color-info-text: 211 72% 36%;
-  --color-info-bg: 207 88% 95%;
-  --color-neutral-text: 215 16% 40%;
-  --color-neutral-bg: 215 20% 93%;
-
-  --shadow-card: 0 1px 2px rgb(15 23 42 / 0.045), 0 8px 20px -16px rgb(15 23 42 / 0.2);
-  --shadow-card-hover: 0 2px 4px rgb(15 23 42 / 0.055), 0 16px 30px -20px rgb(15 23 42 / 0.26);
-  --shadow-elevated: 0 24px 55px -28px rgb(15 23 42 / 0.42), 0 8px 22px -16px rgb(15 23 42 / 0.28);
-  --focus-ring: 217 71% 50%;
-}
-
-[data-theme='dark'] [data-visual-wave='malek-pro'] {
-  --background: 222 37% 8%;
-  --foreground: 210 30% 94%;
-  --card: 222 30% 12%;
-  --card-foreground: 210 30% 94%;
-  --primary: 213 82% 64%;
-  --primary-foreground: 222 37% 8%;
-  --secondary: 218 25% 17%;
-  --secondary-foreground: 210 28% 90%;
-  --muted: 218 24% 16%;
-  --muted-foreground: 215 15% 66%;
-  --accent: 213 78% 68%;
-  --accent-foreground: 222 37% 8%;
-  --border: 218 22% 21%;
-  --input: 218 22% 28%;
-  --destructive: 350 77% 59%;
-
-  --color-success-text: 154 68% 63%;
-  --color-success-bg: 154 43% 15%;
-  --color-warning-text: 43 91% 66%;
-  --color-warning-bg: 38 58% 16%;
-  --color-danger-text: 350 83% 70%;
-  --color-danger-bg: 350 46% 18%;
-  --color-info-text: 207 86% 70%;
-  --color-info-bg: 208 48% 16%;
-  --color-neutral-text: 215 14% 66%;
-  --color-neutral-bg: 218 20% 19%;
-
-  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.22), 0 12px 28px -22px rgb(0 0 0 / 0.7);
-  --shadow-card-hover: 0 2px 5px rgb(0 0 0 / 0.26), 0 18px 34px -22px rgb(0 0 0 / 0.75);
-  --shadow-elevated: 0 28px 64px -26px rgb(0 0 0 / 0.78);
-  --focus-ring: 213 82% 70%;
+  /* Presentation scope only. Theme values inherit from tokens.css so every
+     route receives the same premium Light/Dark contract. */
+  color: hsl(var(--foreground));
 }
 
 /* Wave 1 baseline: intentionally quiet and safe for all approved surfaces. */
@@ -135,11 +70,11 @@
 
 /* App chrome remains independent from dashboard and feature-wave ownership. */
 [data-app-shell] {
-  background: hsl(210 33% 97.5%);
+  background: hsl(var(--background));
 }
 
 [data-theme='dark'] [data-app-shell] {
-  background: hsl(222 37% 8%);
+  background: hsl(var(--background));
 }
 
 [data-app-shell] [data-app-shell-header] {
@@ -151,15 +86,15 @@
 }
 
 [data-app-shell] main#main-content {
-  background: hsl(210 33% 97.5%);
+  background: hsl(var(--background));
 }
 
 [data-theme='dark'] [data-app-shell] main#main-content {
-  background: hsl(222 37% 8%);
+  background: hsl(var(--background));
 }
 
 [data-app-shell] [data-sidebar] {
-  background: linear-gradient(180deg, hsl(222 40% 11%) 0%, hsl(222 42% 8%) 100%);
+  background: hsl(var(--sidebar));
 }
 
 /* --------------------------------------------------------------------------
@@ -296,7 +231,7 @@
 }
 
 [data-entity-form-surface][data-entity-form-variant='operational'] [data-entity-form-scroll] {
-  background: radial-gradient(circle at 100% 0%, hsl(var(--primary) / 0.06), transparent 24rem), hsl(var(--background));
+  background: hsl(var(--background));
 }
 
 [data-entity-form-surface][data-entity-form-variant='operational'] [data-entity-form-field] > span:first-child {
@@ -324,8 +259,8 @@
 [data-entity-form-surface][data-entity-form-variant='operational'] [data-entity-form] section {
   border-color: hsl(var(--border) / 0.92);
   border-radius: 1.15rem;
-  background: linear-gradient(180deg, hsl(var(--card)) 0%, hsl(var(--muted) / 0.2) 100%);
-  box-shadow: 0 10px 28px -24px rgb(15 23 42 / 0.5);
+  background: hsl(var(--card));
+  box-shadow: var(--shadow-card);
 }
 
 [data-entity-form-surface][data-entity-form-variant='operational'] [data-entity-form-actions] {

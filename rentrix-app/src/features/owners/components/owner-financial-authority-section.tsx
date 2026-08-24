@@ -20,7 +20,7 @@ function FinancialValue({ label, value, hint }: Readonly<{ label: string; value:
     <div className="rounded-xl border border-border/70 bg-background p-3">
       <p className="text-xs font-bold text-muted-foreground">{label}</p>
       <p className="mt-1 text-lg font-black tabular-nums" dir="ltr">{value}</p>
-      {hint ? <p className="mt-1 text-[11px] font-medium text-muted-foreground">{hint}</p> : null}
+      {hint ? <p className="mt-1 text-xs font-medium text-muted-foreground">{hint}</p> : null}
     </div>
   );
 }

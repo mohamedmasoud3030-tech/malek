@@ -46,18 +46,18 @@ export function ContractFilters({
         className="w-full lg:max-w-xl lg:flex-1"
       />
 
-      <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto no-scrollbar">
+      <div className="flex min-w-0 flex-1 flex-col items-stretch gap-1.5 sm:flex-row sm:items-center sm:overflow-x-auto sm:no-scrollbar">
         <FilterTabs options={filterOptions} value={status} onChange={setStatus} tone="contracts" />
         <Button
           variant={expiringOnly ? 'primary' : 'secondary'}
           onClick={() => setExpiringOnly((value) => !value)}
-          className="min-h-11 shrink-0 rounded-lg px-3 text-xs"
+          className="min-h-11 w-full shrink-0 rounded-lg px-3 text-xs sm:w-auto"
         >
           <AlertTriangle className="me-1.5 size-3.5" />
           تنتهي خلال 30 يوم
         </Button>
         {hasActiveFilters ? (
-          <Button variant="ghost" className="min-h-11 shrink-0 rounded-lg px-3 text-xs" onClick={resetFilters}>
+          <Button variant="ghost" className="min-h-11 w-full shrink-0 rounded-lg px-3 text-xs sm:w-auto" onClick={resetFilters}>
             مسح الفلاتر
           </Button>
         ) : null}

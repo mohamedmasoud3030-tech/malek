@@ -41,7 +41,7 @@ export function ReceiptLinksPanel({ rows, isLoading }: Readonly<{ rows: Collecti
       render: (receipt) => (
         <div className="min-w-0">
           <p className="font-black" dir="ltr">{receipt.receipt_number}</p>
-          <p className="mt-0.5 truncate text-[11px] text-muted-foreground" dir="ltr">{receipt.reference_number || 'بدون مرجع دفع خارجي'}</p>
+          <p className="mt-0.5 truncate text-xs text-muted-foreground" dir="ltr">{receipt.reference_number || 'بدون مرجع دفع خارجي'}</p>
         </div>
       ),
     },
@@ -58,7 +58,7 @@ export function ReceiptLinksPanel({ rows, isLoading }: Readonly<{ rows: Collecti
       render: (receipt) => (
         <div className="min-w-0">
           <p className="font-semibold">{receipt.property_title ?? 'عقار غير محدد'}</p>
-          <p className="text-[11px] text-muted-foreground">{receipt.unit_number ? `وحدة ${receipt.unit_number}` : 'وحدة غير محددة'}</p>
+          <p className="text-xs text-muted-foreground">{receipt.unit_number ? `وحدة ${receipt.unit_number}` : 'وحدة غير محددة'}</p>
         </div>
       ),
     },
@@ -69,7 +69,7 @@ export function ReceiptLinksPanel({ rows, isLoading }: Readonly<{ rows: Collecti
       render: (receipt) => receipt.invoice_id ? (
         <div className="min-w-0">
           <p className="font-semibold" dir="ltr">{receipt.invoice_reference || 'فاتورة مرتبطة'}</p>
-          <p className="text-[11px] text-muted-foreground">{receipt.invoice_status ? formatInvoiceStatusLabel(receipt.invoice_status) : '—'}</p>
+          <p className="text-xs text-muted-foreground">{receipt.invoice_status ? formatInvoiceStatusLabel(receipt.invoice_status) : '—'}</p>
         </div>
       ) : 'غير مرتبطة بفواتير',
     },

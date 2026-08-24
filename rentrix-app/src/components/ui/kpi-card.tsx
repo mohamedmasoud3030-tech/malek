@@ -48,7 +48,7 @@ export function KpiCard({
         {trend && trendValue ? (
           <span
             className={cn(
-              'inline-flex min-h-6 items-center rounded-md px-2 py-0.5 text-[11px] font-semibold tabular-nums',
+              'inline-flex min-h-6 items-center rounded-md px-2 py-0.5 text-xs font-semibold tabular-nums',
               trend === 'up' && 'text-success bg-success/10',
               trend === 'down' && 'text-danger bg-danger/10',
               trend === 'neutral' && 'text-muted-foreground bg-muted',
@@ -66,7 +66,7 @@ export function KpiCard({
         <p className="mt-1 text-xs font-medium text-muted-foreground">{label}</p>
         {/* Full muted token: the /70 opacity blend measured 2.27:1 (axe). */}
         {sub ? (
-          <p className="mt-1 line-clamp-2 text-[11px] leading-4 text-muted-foreground">{sub}</p>
+          <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">{sub}</p>
         ) : null}
       </div>
     </article>

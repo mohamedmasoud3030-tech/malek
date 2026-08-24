@@ -150,7 +150,7 @@ function Metric({
         <div>
           <p className="text-xs font-bold text-muted-foreground">{label}</p>
           <p className="mt-2 text-2xl font-black tabular-nums">{value}</p>
-          <p className="mt-1 text-[11px] font-medium text-muted-foreground">{hint}</p>
+          <p className="mt-1 text-xs font-medium text-muted-foreground">{hint}</p>
         </div>
         <span className="grid size-11 shrink-0 place-items-center rounded-xl border border-primary/15 bg-primary/8 text-primary">
           <Icon className="size-5" aria-hidden="true" />

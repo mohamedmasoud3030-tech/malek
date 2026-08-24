@@ -90,7 +90,7 @@ export function MobileCard({
       {stats && <div className="mt-3 rounded-2xl border border-border/60 bg-background/55 p-3">{stats}</div>}
       {children}
       {footer && (
-        <div className="mt-3 text-[11px] font-bold leading-5 text-muted-foreground">{footer}</div>
+        <div className="mt-3 text-xs font-bold leading-5 text-muted-foreground">{footer}</div>
       )}
     </>
   );

@@ -119,7 +119,7 @@ export function CompanySwitcher() {
                 role="option"
                 aria-selected={isActive}
               >
-                <div className="grid size-6 shrink-0 place-items-center rounded text-[10px] font-bold bg-primary/10 text-primary">
+                <div className="grid size-6 shrink-0 place-items-center rounded text-xs font-bold bg-primary/10 text-primary">
                   {company.name.charAt(0)}
                 </div>
                 <span className="flex-1 truncate text-right">{company.name}</span>

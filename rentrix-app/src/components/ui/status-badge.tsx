@@ -82,7 +82,7 @@ export function StatusBadge({
       data-status-badge
       data-tone={resolved}
       className={cn(
-        'inline-flex max-w-full items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold leading-4 ring-1 ring-inset [overflow-wrap:anywhere]',
+        'inline-flex min-h-6 max-w-full items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold leading-5 ring-1 ring-inset [overflow-wrap:anywhere]',
         isProductTone ? 'ring-transparent' : semanticTones[resolved as SemanticTone],
         className,
       )}

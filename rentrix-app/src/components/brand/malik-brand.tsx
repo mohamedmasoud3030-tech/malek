@@ -51,7 +51,7 @@ export function MalikBrand({
         {showTagline ? (
           <p
             className={cn(
-              'mt-1 truncate text-[10px] font-semibold',
+              'mt-1 truncate text-xs font-semibold',
               inverse ? 'text-sidebar-foreground/60' : 'text-muted-foreground',
             )}
           >

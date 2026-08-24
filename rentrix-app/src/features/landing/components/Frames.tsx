@@ -36,7 +36,7 @@ export function BrowserFrame({
             <span className="size-3 rounded-full bg-warning" />
             <span className="size-3 rounded-full bg-success" />
           </div>
-          <div className="mx-auto flex w-full max-w-xs items-center justify-center gap-2 rounded-lg bg-muted/40 px-3 py-1 text-[11px] text-muted-foreground">
+          <div className="mx-auto flex w-full max-w-xs items-center justify-center gap-2 rounded-lg bg-muted/40 px-3 py-1 text-xs text-muted-foreground">
             <svg viewBox="0 0 24 24" className="size-3" fill="none" stroke="currentColor" strokeWidth="2">
               <rect x="4" y="10" width="16" height="10" rx="2" />
               <path d="M8 10V7a4 4 0 1 1 8 0v3" />

@@ -45,7 +45,7 @@ export function OverviewRow({
         const content = (
           <>
             <div className="flex min-w-0 items-center justify-between gap-2">
-              <p className="min-w-0 truncate text-[11px] font-bold text-muted-foreground">{tile.label}</p>
+              <p className="min-w-0 truncate text-xs font-bold text-muted-foreground">{tile.label}</p>
               <StatusBadge tone={tile.tone}>{tile.value}</StatusBadge>
             </div>
             <div className="mt-2 flex items-end justify-between gap-3">

@@ -67,11 +67,11 @@ export function RegisterMetricStrip({
                 </span>
               ) : null}
               <div className="min-w-0 flex-1">
-                <p className="line-clamp-2 break-words text-[10px] font-bold leading-4 text-muted-foreground">{item.label}</p>
+                <p className="line-clamp-2 break-words text-xs font-bold leading-5 text-muted-foreground">{item.label}</p>
                 <p className={cn('break-words text-sm font-black tabular-nums leading-5 [overflow-wrap:anywhere]', toneClass[item.tone ?? 'default'])}>
                   {item.value}
                 </p>
-                {item.hint ? <p className="line-clamp-2 break-words text-[10px] leading-4 text-muted-foreground">{item.hint}</p> : null}
+                {item.hint ? <p className="line-clamp-2 break-words text-xs leading-5 text-muted-foreground">{item.hint}</p> : null}
               </div>
             </div>
           );
@@ -101,7 +101,7 @@ export function RegisterAttention({
       <span className="mt-0.5 text-sm font-black tabular-nums">{count}</span>
       <div className="min-w-0">
         <p className="text-xs font-black">{label}</p>
-        {description ? <p className="mt-0.5 text-[11px] font-medium leading-4 text-warning/80">{description}</p> : null}
+        {description ? <p className="mt-0.5 text-xs font-medium leading-5 text-warning">{description}</p> : null}
       </div>
     </div>
   );
@@ -120,7 +120,7 @@ export function RegisterHeading({
     <header data-register-heading className="flex min-h-9 items-center justify-between gap-3 px-0.5">
       <div className="min-w-0">
         <h2 className="truncate text-sm font-black">{title}</h2>
-        {meta ? <p className="truncate text-[11px] font-medium text-muted-foreground">{meta}</p> : null}
+        {meta ? <p className="truncate text-xs font-medium leading-5 text-muted-foreground">{meta}</p> : null}
       </div>
       {extra}
     </header>

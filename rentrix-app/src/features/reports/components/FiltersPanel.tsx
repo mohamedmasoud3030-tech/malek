@@ -135,7 +135,7 @@ export function FiltersPanel({
         )}
       />
 
-      <div className="flex flex-wrap gap-2 rounded-2xl border border-border/60 bg-muted/30 px-3 py-2 text-[11px] font-bold text-muted-foreground" aria-live="polite">
+      <div className="flex flex-wrap gap-2 rounded-2xl border border-border/60 bg-muted/30 px-3 py-2 text-xs font-bold text-muted-foreground" aria-live="polite">
         <span>الفترة: {filters.from || '—'} إلى {filters.to || '—'}</span>
         <span aria-hidden="true">•</span>
         <span>الاحتساب: {filters.asOf || '—'}</span>
@@ -147,7 +147,7 @@ export function FiltersPanel({
         {selectedOwner ? <><span aria-hidden="true">•</span><span>المالك/الكشف: {selectedOwner.display_name ?? selectedOwner.full_name}</span></> : null}
         {selectedContract ? <><span aria-hidden="true">•</span><span>العقد: {selectedContract.reference || `${selectedContract.people?.full_name ?? 'مستأجر'} — ${selectedContract.properties?.title ?? 'عقار'}`}</span></> : null}
       </div>
-      <p className="text-[11px] leading-5 text-muted-foreground">
+      <p className="text-xs leading-5 text-muted-foreground">
         العقار والوحدة والمستأجر والعقد وحالة الفاتورة تُطبق على تقارير التحصيل والفواتير التي تدعم هذه الأبعاد؛ مركز التكلفة يطبق على المصادر المالية الداعمة، واختيار المالك يستخدم لكشف المالك فقط.
       </p>
     </div>

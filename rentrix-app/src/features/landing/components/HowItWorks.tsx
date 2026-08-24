@@ -41,7 +41,7 @@ export function HowItWorks() {
                       >
                         <Icon className="size-7" aria-hidden="true" />
                       </span>
-                      <span className="absolute -top-2 -end-2 grid size-7 place-items-center rounded-full bg-foreground text-[11px] font-extrabold text-primary-foreground">
+                      <span className="absolute -top-2 -end-2 grid size-7 place-items-center rounded-full bg-foreground text-xs font-extrabold text-primary-foreground">
                         {i + 1}
                       </span>
                     </div>

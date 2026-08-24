@@ -203,15 +203,15 @@ export function InvoiceDetailSection({
                 <div className="mt-3 rounded-xl border border-success/20 bg-background/75 p-3">
                   <ResponsiveCardGrid desktopColumns={3} gap="sm">
                     <div>
-                      <p className="text-[11px] font-bold text-muted-foreground">رقم الإيصال المعتمد</p>
+                      <p className="text-xs font-bold text-muted-foreground">رقم الإيصال المعتمد</p>
                       <p className="mt-1 font-black tabular-nums" dir="ltr">{collectionReceiptDetail.receipt_number}</p>
                     </div>
                     <div>
-                      <p className="text-[11px] font-bold text-muted-foreground">الفاتورة</p>
+                      <p className="text-xs font-bold text-muted-foreground">الفاتورة</p>
                       <p className="mt-1 font-black">{collectionReceiptDetail.invoice_reference ?? formatShortId(collectionReceiptDetail.invoice_id)}</p>
                     </div>
                     <div>
-                      <p className="text-[11px] font-bold text-muted-foreground">السياق</p>
+                      <p className="text-xs font-bold text-muted-foreground">السياق</p>
                       <p className="mt-1 font-black">{formatReceiptContext(collectionReceiptDetail)}</p>
                     </div>
                   </ResponsiveCardGrid>

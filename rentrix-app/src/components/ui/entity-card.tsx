@@ -133,17 +133,17 @@ export function EntityCard({
           <div className="min-w-0 flex-1 overflow-hidden">
             <div className="line-clamp-2 break-words text-sm font-bold leading-5 [overflow-wrap:anywhere] sm:leading-6">{name}</div>
             {subtitle ? (
-              <div className="mt-0.5 line-clamp-2 break-words text-[11px] font-medium leading-4.5 text-muted-foreground [overflow-wrap:anywhere] sm:leading-5">
+              <div className="mt-0.5 line-clamp-2 break-words text-xs font-medium leading-5 text-muted-foreground [overflow-wrap:anywhere]">
                 {subtitle}
               </div>
             ) : null}
             {supportingText ? (
-              <div className="mt-0.5 break-words text-[10px] font-bold leading-4 text-muted-foreground [overflow-wrap:anywhere] sm:mt-1">{supportingText}</div>
+              <div className="mt-1 break-words text-xs font-semibold leading-5 text-muted-foreground [overflow-wrap:anywhere]">{supportingText}</div>
             ) : null}
           </div>
         </div>
         {badge ?? (
-          <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold sm:px-2.5 sm:py-1 sm:text-[11px]', tone.bg, tone.text)}>
+          <span className={cn('inline-flex min-h-6 shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-bold', tone.bg, tone.text)}>
             {tone.label}
           </span>
         )}
@@ -189,7 +189,7 @@ export function EntityCard({
                 type="button"
                 aria-label={action.ariaLabel}
                 className={cn(
-                  'inline-flex min-h-11 min-w-0 items-center justify-center gap-1.5 rounded-xl border px-2.5 text-[11px] font-bold transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/15 sm:gap-2 sm:px-3 sm:text-xs',
+                  'inline-flex min-h-11 min-w-0 items-center justify-center gap-1.5 rounded-xl border px-2.5 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/15 sm:gap-2 sm:px-3',
                   getActionClassName(action.variant),
                 )}
                 onClick={action.onClick}
