@@ -59,7 +59,7 @@ function SettingsVariantShell({
 }
 
 export function SettingsWorkspace({ variant = 'standalone' }: SettingsWorkspaceProps = {}) {
-  const controller = useSettingsPageController();
+  const controller = useSettingsPageController({ syncUrl: variant === 'standalone' });
   const {
     theme,
     authorization,
@@ -131,7 +131,7 @@ export function SettingsWorkspace({ variant = 'standalone' }: SettingsWorkspaceP
   return (
     <SettingsVariantShell variant={variant} dir={pageLanguage.direction} lang={pageLanguage.locale} contentClassName="min-w-0 space-y-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
       <SettingsHero companyName={preview.companyName} hasUnsavedChanges={isDirty} />
-      <OverviewRow tiles={summaryTiles} />
+      <OverviewRow tiles={summaryTiles} onOpenSection={handleJumpToSection} />
       <SettingsSaveBar isDirty={isDirty} isSaving={isSaving} onDiscard={discardDraft} />
 
       <div className="grid min-w-0 gap-4 md:grid-cols-[minmax(230px,280px)_minmax(0,1fr)] md:items-start">
