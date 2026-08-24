@@ -59,7 +59,7 @@ function SettingsVariantShell({
 }
 
 export function SettingsWorkspace({ variant = 'standalone' }: SettingsWorkspaceProps = {}) {
-  const controller = useSettingsPageController({ syncUrl: variant === 'standalone' });
+  const controller = useSettingsPageController({ urlMode: variant === 'standalone' ? 'standalone' : 'embedded-company' });
   const {
     theme,
     authorization,
