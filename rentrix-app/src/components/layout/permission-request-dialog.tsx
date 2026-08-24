@@ -121,9 +121,9 @@ export function PermissionRequestDialog({
             className="min-h-24"
             disabled={pending || existingRequest?.status === 'PENDING' || (existingRequest?.status === 'APPROVED' && existingRequest.grant_active)}
           />
-          {loadingExisting ? <p role="status" className="text-[11px] text-muted-foreground">جارٍ التحقق من الطلبات السابقة...</p> : null}
+          {loadingExisting ? <p role="status" className="text-xs leading-5 text-muted-foreground">جارٍ التحقق من الطلبات السابقة...</p> : null}
           {statusText ? (
-            <p className="rounded-lg bg-muted/40 px-2.5 py-2 text-[11px] font-bold leading-5" role="status">
+            <p className="rounded-lg bg-muted/40 px-2.5 py-2 text-xs font-bold leading-5" role="status">
               {existingRequest?.status === 'APPROVED' && existingRequest.grant_active ? <CheckCircle2 className="me-1 inline size-3.5 text-success" aria-hidden="true" /> : null}
               {statusText}
             </p>

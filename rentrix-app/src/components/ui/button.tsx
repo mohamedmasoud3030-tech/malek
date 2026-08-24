@@ -32,8 +32,8 @@ export const buttonVariants = cva(
         soft: 'bg-primary/10 text-primary hover:bg-primary/15',
         danger: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
         destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
-        success: 'bg-success text-white shadow-sm hover:bg-success/90',
-        warning: 'bg-warning text-white shadow-sm hover:bg-warning/90',
+        success: 'border border-success/30 bg-success-bg text-success hover:bg-success/15',
+        warning: 'border border-warning/30 bg-warning-bg text-warning hover:bg-warning/15',
         link: 'rounded-none bg-transparent p-0 font-bold text-primary underline-offset-4 hover:underline shadow-none',
       },
       size: {

@@ -119,7 +119,7 @@ export function Dropdown({
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-bold">{option.label}</span>
                   {option.description ? (
-                    <span className="mt-0.5 block text-[11px] font-bold text-muted-foreground">
+                    <span className="mt-0.5 block text-xs font-bold text-muted-foreground">
                       {option.description}
                     </span>
                   ) : null}

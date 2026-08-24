@@ -63,19 +63,10 @@
   }
 }
 
-/* ============================================
-   Dark mode — restrained blue ambient glow
-   ============================================
-   A controlled, premium light-radiation effect on the app background and
-   elevated surfaces. Kept subtle (single radial + faint inner tint) — never
-   neon, never gaming-style. */
+/* Dark mode uses luminance, borders, and restrained elevation — not glow. */
 @layer base {
   [data-theme='dark'] body {
-    background:
-      radial-gradient(1100px 620px at 82% -8%, hsl(217 82% 54% / 0.13), transparent 60%),
-      radial-gradient(900px 560px at 8% 108%, hsl(224 70% 46% / 0.10), transparent 55%),
-      hsl(var(--background));
-    background-attachment: fixed;
+    background: hsl(var(--background));
   }
 
   [data-theme='dark'] [data-app-shell] {
@@ -83,11 +74,7 @@
   }
 
   [data-theme='dark'] [data-unified-surface='page-header'],
-  [data-theme='dark'] .dashboard-ops-header {
-    box-shadow:
-      var(--shadow-card),
-      inset 0 1px 0 0 hsl(217 70% 60% / 0.08);
-  }
+  [data-theme='dark'] .dashboard-ops-header { box-shadow: var(--shadow-card); }
 }
 
 /* Login ambient brand backdrop — radial gradients (no blur utilities, per the

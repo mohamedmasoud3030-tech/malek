@@ -16,8 +16,7 @@ export const cardVariants = cva(
         compact: 'border border-border/70 bg-card p-0 shadow-card [&_[data-card-header]]:p-3 [&_[data-card-content]]:px-3 [&_[data-card-footer]]:px-3',
         statistic:
           'border border-border/70 bg-card p-4 shadow-card',
-        financial:
-          'relative overflow-hidden border border-border/70 bg-card p-4 shadow-card before:absolute before:inset-inline-start-0 before:inset-block-0 before:w-1 before:bg-primary/60 before:content-[""]',
+        financial: 'border border-border/80 bg-card p-4 shadow-card ring-1 ring-primary/5',
       },
     },
     defaultVariants: { variant: 'default' },
@@ -55,7 +54,7 @@ export function CardTitle({ className, ...props }: HTMLAttributes<HTMLHeadingEle
 }
 
 export function CardDescription({ className, ...props }: HTMLAttributes<HTMLParagraphElement>) {
-  return <p className={cn('text-[0.8125rem] leading-5 text-muted-foreground', className)} {...props} />;
+  return <p className={cn('text-sm leading-6 text-muted-foreground', className)} {...props} />;
 }
 
 export function CardContent({ className, ...props }: HTMLAttributes<HTMLDivElement>) {

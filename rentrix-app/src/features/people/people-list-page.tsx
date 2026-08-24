@@ -60,9 +60,9 @@ function PeopleMetric({
     <article className="group relative min-w-0 overflow-hidden rounded-xl border border-border/75 bg-card p-3 shadow-card sm:p-3.5">
       <div className="relative flex min-w-0 items-start justify-between gap-2.5">
         <div className="min-w-0">
-          <p className="truncate text-[11px] font-bold text-muted-foreground sm:text-xs">{label}</p>
+          <p className="truncate text-xs font-bold text-muted-foreground sm:text-xs">{label}</p>
           <p className="mt-1.5 text-xl font-black tabular-nums sm:text-2xl">{formatCount(value)}</p>
-          <p className="mt-0.5 line-clamp-2 text-[10px] font-medium leading-4 text-muted-foreground sm:text-[11px]">{hint}</p>
+          <p className="mt-0.5 line-clamp-2 text-xs font-medium leading-4 text-muted-foreground sm:text-xs">{hint}</p>
         </div>
         <span className="grid size-9 shrink-0 place-items-center rounded-lg border border-primary/15 bg-primary/8 text-primary sm:size-10">
           <Icon className="size-4 sm:size-[1.05rem]" aria-hidden="true" />
@@ -207,7 +207,7 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
       render: (person) => (
         <span
           className={cn(
-            "inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-bold",
+            "inline-flex rounded-full px-2.5 py-0.5 text-xs font-bold",
             (entityCardTypeMap[person.type] ?? entityCardTypeMap.contact!).bg,
             (entityCardTypeMap[person.type] ?? entityCardTypeMap.contact!).text,
           )}
@@ -366,7 +366,7 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
               </span>
               <div className="min-w-0">
                 <h2 className="truncate text-sm font-black">سجل الأشخاص</h2>
-                <p className="truncate text-[11px] font-medium text-muted-foreground">
+                <p className="truncate text-xs font-medium text-muted-foreground">
                   {formatCount(rows.length)} سجل في الصفحة الحالية
                 </p>
               </div>

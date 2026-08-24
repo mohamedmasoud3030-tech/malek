@@ -256,7 +256,7 @@ export function OwnerStatementPanel({
             emptyTitle="لا توجد حركات في كشف المالك"
             emptyDescription="غيّر المالك أو فترة التقرير ثم أعد المحاولة."
           />
-          <p className="text-[11px] leading-5 text-muted-foreground">
+          <p className="text-xs leading-5 text-muted-foreground">
             «حركات التسوية/الصرف» تجمع الحركات المصنفة settlement في مصدر الكشف؛ لا تُعاد تسميتها «مدفوع للمالك» إلا إذا كان المصدر المحاسبي يثبت ذلك صراحةً.
           </p>
         </div>

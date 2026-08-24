@@ -186,7 +186,7 @@ export function OnboardingChecklist({
                       {step.label}
                     </span>
                     {step.optional ? (
-                      <span className="ms-auto rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
+                      <span className="ms-auto rounded-full bg-muted px-2 py-0.5 text-xs font-bold text-muted-foreground">
                         اختياري
                       </span>
                     ) : null}
@@ -200,7 +200,7 @@ export function OnboardingChecklist({
                         تخطٍّ بموافقة
                       </Button>
                     ) : (
-                      <span className="flex shrink-0 items-center gap-1 text-[10px] font-bold text-muted-foreground">
+                      <span className="flex shrink-0 items-center gap-1 text-xs font-bold text-muted-foreground">
                         <ShieldAlert className="size-3.5" aria-hidden="true" />
                         إلزامي
                       </span>

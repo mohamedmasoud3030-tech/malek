@@ -71,7 +71,7 @@ export function ReportsFilterSurface({
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-sm font-extrabold">نطاق التقرير</h2>
                 <span className={cn(
-                  'rounded-full px-2.5 py-1 text-[11px] font-bold',
+                  'rounded-full px-2.5 py-1 text-xs font-bold',
                   summary.activeCount > 0
                     ? 'bg-primary/10 text-info'
                     : 'bg-muted text-muted-foreground',

@@ -67,7 +67,7 @@ export function LoginPage() {
           <div className="grid gap-1.5">
             <label htmlFor="login-email" className="text-sm font-semibold text-foreground">البريد الإلكتروني</label>
             <div className="relative">
-              <Mail className="pointer-events-none absolute inset-y-0 right-3.5 my-auto size-4 text-muted-foreground" aria-hidden="true" />
+              <Mail className="pointer-events-none absolute inset-y-0 start-3.5 my-auto size-4 text-muted-foreground" aria-hidden="true" />
               <Input id="login-email" className="h-12 rounded-xl bg-card pe-10 text-base focus-visible:ring-2 focus-visible:ring-primary/20 md:text-sm" type="email" value={email} onChange={(event) => { setEmail(event.target.value); setFormError(null); }} required autoComplete="email" inputMode="email" dir="ltr" placeholder="name@malek.com" disabled={isSubmitting || Boolean(runtimeError)} aria-invalid={hasFieldError || undefined} />
             </div>
           </div>
@@ -75,9 +75,9 @@ export function LoginPage() {
           <div className="grid gap-1.5">
             <label htmlFor="login-password" className="text-sm font-semibold text-foreground">كلمة المرور</label>
             <div className="relative">
-              <LockKeyhole className="pointer-events-none absolute inset-y-0 right-3.5 my-auto size-4 text-muted-foreground" aria-hidden="true" />
+              <LockKeyhole className="pointer-events-none absolute inset-y-0 start-3.5 my-auto size-4 text-muted-foreground" aria-hidden="true" />
               <Input id="login-password" className="h-12 rounded-xl bg-card ps-11 pe-10 text-base focus-visible:ring-2 focus-visible:ring-primary/20 md:text-sm" type={isPasswordVisible ? 'text' : 'password'} value={password} onChange={(event) => { setPassword(event.target.value); setFormError(null); }} onKeyDown={handlePasswordKeyDown} onKeyUp={handleCapsLockDetect} required autoComplete="current-password" dir="ltr" placeholder="••••••••" disabled={isSubmitting || Boolean(runtimeError)} aria-invalid={hasFieldError || undefined} aria-describedby={isCapsLock ? 'caps-lock-warning' : undefined} />
-              <button type="button" className="absolute inset-y-0 left-1 my-auto grid size-11 min-h-11 min-w-11 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20" onClick={() => setIsPasswordVisible((visible) => !visible)} aria-label={isPasswordVisible ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'} disabled={isSubmitting || Boolean(runtimeError)}>
+              <button type="button" className="absolute inset-y-0 end-1 my-auto grid size-11 min-h-11 min-w-11 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20" onClick={() => setIsPasswordVisible((visible) => !visible)} aria-label={isPasswordVisible ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'} disabled={isSubmitting || Boolean(runtimeError)}>
                 {isPasswordVisible ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
               </button>
             </div>

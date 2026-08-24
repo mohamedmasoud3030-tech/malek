@@ -192,7 +192,7 @@ export function PropertyAnalyticsSection({ occupancyRows, expenseRows, isLoading
                   value={(
                     <div className="text-end">
                       <p dir="ltr">{rate}%</p>
-                      <p className="mt-1 text-[11px] font-medium text-muted-foreground" dir="ltr">{formatMoney(expense?.total ?? 0)}</p>
+                      <p className="mt-1 text-xs font-medium text-muted-foreground" dir="ltr">{formatMoney(expense?.total ?? 0)}</p>
                     </div>
                   )}
                 />

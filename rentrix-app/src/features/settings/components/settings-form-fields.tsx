@@ -80,7 +80,7 @@ type PreviewFieldProps = Readonly<{
 export function PreviewField({ label, value, muted = false }: PreviewFieldProps) {
   return (
     <div className="rounded-xl border bg-background/70 p-3">
-      <dt className="text-[11px] font-bold text-muted-foreground">{label}</dt>
+      <dt className="text-xs font-bold text-muted-foreground">{label}</dt>
       <dd className={muted ? 'mt-1 text-sm text-muted-foreground' : 'mt-1 text-sm font-semibold text-foreground'}>
         {value}
       </dd>

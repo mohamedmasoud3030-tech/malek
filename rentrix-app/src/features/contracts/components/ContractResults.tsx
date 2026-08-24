@@ -49,7 +49,7 @@ export function ContractResults({
           </span>
           <div className="min-w-0">
             <h2 className="truncate text-sm font-black">سجل العقود</h2>
-            <p className="truncate text-[11px] font-medium text-muted-foreground">
+            <p className="truncate text-xs font-medium text-muted-foreground">
               {formatCount(contracts.length)} عقد ضمن النتائج الحالية
             </p>
           </div>

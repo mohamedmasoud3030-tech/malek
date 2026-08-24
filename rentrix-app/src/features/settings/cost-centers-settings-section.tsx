@@ -104,7 +104,7 @@ export function CostCentersSettingsSection() {
       <div className="space-y-3 rounded-2xl border bg-background/70 p-4" onKeyDown={handleEditorKeyDown}>
         <div>
           <p className="text-sm font-black">{editingId ? 'تعديل مركز تكلفة' : 'مركز تكلفة جديد'}</p>
-          <p className="mt-1 text-[11px] text-muted-foreground">اربط المصروفات لاحقاً بعقار أو مركز تشغيلي بدون فتح دفتر أستاذ عام.</p>
+          <p className="mt-1 text-xs text-muted-foreground">اربط المصروفات لاحقاً بعقار أو مركز تشغيلي بدون فتح دفتر أستاذ عام.</p>
         </div>
 
         <label className="space-y-1 text-sm font-medium">
@@ -146,7 +146,7 @@ export function CostCentersSettingsSection() {
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-sm font-black">مراكز التكلفة الحالية</p>
-            <p className="mt-1 text-[11px] text-muted-foreground">{costCenters.length} مركز مسجل</p>
+            <p className="mt-1 text-xs text-muted-foreground">{costCenters.length} مركز مسجل</p>
           </div>
           <StatusBadge tone={costCenters.length > 0 ? 'success' : 'neutral'}>{costCenters.length > 0 ? 'مفعلة' : 'فارغة'}</StatusBadge>
         </div>
@@ -162,7 +162,7 @@ export function CostCentersSettingsSection() {
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <p className="font-black">{costCenter.name}</p>
-                    <p className="mt-1 text-[11px] text-muted-foreground">
+                    <p className="mt-1 text-xs text-muted-foreground">
                       {getPropertyTitle(properties, costCenter.property_id)} · {getParentName(costCenters, costCenter.parent_id)}
                     </p>
                   </div>

@@ -46,7 +46,7 @@ export function ReceiptDetailCard({ selectedReceiptId, receiptDetail, isLoading,
         <details className="group mt-3 overflow-hidden rounded-2xl border border-border/70 bg-card open:shadow-sm" open>
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-black transition-colors hover:bg-muted/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
             <span>اضغط لتوسيع تفاصيل الإيصال {receiptDetail.receipt_number}</span>
-            <span className="rounded-full bg-primary/10 px-2 py-1 text-[10px] text-primary transition-transform group-open:rotate-180">⌄</span>
+            <span className="rounded-full bg-primary/10 px-2 py-1 text-xs text-primary transition-transform group-open:rotate-180">⌄</span>
           </summary>
           <div className="space-y-3 border-t border-border/70 p-4">
             <div className="flex justify-end print:hidden">

@@ -43,7 +43,7 @@ function HeaderDateTime() {
     <span
       data-header-date-time
       dir="ltr"
-      className="inline-flex whitespace-nowrap text-[9px] font-semibold tabular-nums text-muted-foreground min-[380px]:text-[10px] sm:text-[11px]"
+      className="inline-flex whitespace-nowrap text-xs font-semibold tabular-nums text-muted-foreground min-[380px]:text-xs sm:text-xs"
       aria-label={`التاريخ ${date}، الوقت ${time}`}
     >
       {date} · {time}
@@ -230,8 +230,8 @@ function MobileNavigationDrawer({
         <nav className="sidebar-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain p-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))]">
           {authorization === null && (
             <div className="mb-2 rounded-lg border border-[hsl(var(--color-warning-text)/0.2)] bg-[hsl(var(--color-warning-bg)/0.07)] px-2.5 py-2">
-              <p className="text-[11px] font-semibold text-warning">الصلاحيات غير مكتملة</p>
-              <p className="mt-0.5 text-[10px] font-medium leading-4 text-warning/75">
+              <p className="text-xs font-semibold text-warning">الصلاحيات غير مكتملة</p>
+              <p className="mt-0.5 text-xs font-medium leading-4 text-warning/75">
                 راجع مسؤول النظام لاستكمال صلاحيات الحساب.
               </p>
             </div>
@@ -385,7 +385,7 @@ export function AppShell() {
               <ShieldAlert className="size-4 shrink-0" aria-hidden="true" />
               <div className="min-w-0 sm:flex sm:items-baseline sm:gap-2">
                 <p className="text-xs font-semibold">لا يوجد اتصال بالشبكة</p>
-                <p className="mt-0.5 text-[11px] leading-4 text-warning/80 sm:mt-0">قد يفشل الحفظ والتحديث حتى يعود الاتصال.</p>
+                <p className="mt-0.5 text-xs leading-4 text-warning/80 sm:mt-0">قد يفشل الحفظ والتحديث حتى يعود الاتصال.</p>
               </div>
             </div>
           ) : null}
@@ -398,7 +398,7 @@ export function AppShell() {
               <ShieldAlert className="size-4 shrink-0" aria-hidden="true" />
               <div className="min-w-0 sm:flex sm:items-baseline sm:gap-2">
                 <p className="text-xs font-semibold">{writeAccessNotice.title}</p>
-                <p className="mt-0.5 text-[11px] leading-4 text-warning/75 sm:mt-0">{writeAccessNotice.description}</p>
+                <p className="mt-0.5 text-xs leading-4 text-warning/75 sm:mt-0">{writeAccessNotice.description}</p>
               </div>
             </div>
           ) : null}

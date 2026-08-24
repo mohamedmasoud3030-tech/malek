@@ -321,10 +321,10 @@ function MobileRegisterListItem<T>({
     <li role="listitem" data-entity-table-mobile-card className="min-w-0">
       <EntityCard
         id={rowKey}
-        name={identityColumn.render(row)}
+        name={<span data-entity-table-mobile-primary>{identityColumn.render(row)}</span>}
         supportingText={datumColumn ? datumColumn.header : undefined}
         stats={datumColumn ? <div data-entity-table-mobile-datum className="min-w-0 break-words font-bold [overflow-wrap:anywhere]">{datumColumn.render(row)}</div> : undefined}
-        badge={selected ? <span className="rounded-full bg-primary/10 px-2 py-1 text-[10px] font-bold text-primary">محدد</span> : undefined}
+        badge={selected ? <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-bold text-primary">محدد</span> : undefined}
         actions={cardActions.length > 0 ? cardActions : undefined}
         className={selected ? 'border-primary/35 ring-2 ring-primary/10' : undefined}
       />
@@ -488,7 +488,7 @@ export function EntityTable<T>({
   return (
     <div className={cn('space-y-3', className)} data-entity-table-register>
       {toolbar ? (
-        <div data-entity-table-toolbar className="rounded-xl border border-border/70 bg-card p-1.5 shadow-card">
+        <div data-entity-table-toolbar className="flex min-h-11 flex-wrap items-center justify-end gap-2">
           {toolbar}
         </div>
       ) : null}
@@ -552,7 +552,7 @@ export function EntityTable<T>({
                         key={column.key}
                         data-column-priority={column.resolvedPriority}
                         className={cn(
-                          'h-10 bg-muted/40 px-3 text-[11px] font-bold tracking-[0.01em] text-muted-foreground sm:px-3.5',
+                          'h-10 bg-muted/40 px-3 text-xs font-bold tracking-[0.01em] text-muted-foreground sm:px-3.5',
                           priorityClass(column.resolvedPriority, column.sticky !== false),
                           column.className,
                         )}
