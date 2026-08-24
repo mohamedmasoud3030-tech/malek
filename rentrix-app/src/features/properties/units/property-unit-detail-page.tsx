@@ -5,7 +5,6 @@ import { AsyncContentState } from '@/components/async-content-state';
 import { EntityDetailHeader } from '@/components/layout/entity-detail-header';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { canAccess, financialOperationPermissions } from '@/features/auth/permissions';
 import { UnitFormModal } from '@/features/units/unit-form-modal';
 import { useUnits } from '@/features/units/use-units';
 import { useUnitContractDrafts } from '@/features/contracts/queries/useUnitContractDrafts';
@@ -23,8 +22,8 @@ export function PropertyUnitDetailPage() {
   const unitId = typeof params.unitId === 'string' ? params.unitId : '';
   const propertyQuery = useProperty(propertyId);
   const unitsQuery = useUnits(propertyId);
-  const { authorization } = useAuth();
-  const canViewReports = canAccess(authorization, financialOperationPermissions.viewReports);
+  const { canAccess } = useAuth();
+  const canViewReports = canAccess('financial.reports.view');
   const [editOpen, setEditOpen] = useState(false);
   const unitDraftsQuery = useUnitContractDrafts({ propertyId, unitIds: unitId ? [unitId] : [] });
 
