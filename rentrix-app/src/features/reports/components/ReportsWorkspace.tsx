@@ -143,10 +143,10 @@ export function ReportsWorkspace({
       <FinanceSection ariaLabel="المؤشرات التنفيذية">
         <div className="flex items-end justify-between gap-3">
           <div>
-            <p className="text-[10px] font-extrabold text-primary">لوحة القرار</p>
+            <p className="text-xs font-extrabold text-primary">لوحة القرار</p>
             <h2 className="mt-1 text-sm font-extrabold">المؤشرات الأهم في النطاق الحالي — قابلة للنقر للتنقل</h2>
           </div>
-          <span className="hidden text-[11px] font-semibold text-muted-foreground sm:block">مصادر مالية وتشغيلية موحّدة</span>
+          <span className="hidden text-xs font-semibold text-muted-foreground sm:block">مصادر مالية وتشغيلية موحّدة</span>
         </div>
         <FinanceKpiGrid desktopColumns={4}>
           <FinanceKpiCard

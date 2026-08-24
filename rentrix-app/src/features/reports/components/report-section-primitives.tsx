@@ -37,7 +37,7 @@ export function ReportPanel({
             </span>
           ) : null}
           <div className="min-w-0">
-            {eyebrow ? <p className="mb-1 text-[10px] font-extrabold text-primary">{eyebrow}</p> : null}
+            {eyebrow ? <p className="mb-1 text-xs font-extrabold text-primary">{eyebrow}</p> : null}
             <CardTitle className="text-sm font-extrabold sm:text-[15px]">{title}</CardTitle>
             {description ? <CardDescription className="mt-1 max-w-3xl leading-5">{description}</CardDescription> : null}
           </div>
@@ -158,7 +158,7 @@ export function ReportProgress({
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-bold">{label}</p>
-          {helper ? <p className="mt-1 text-[11px] leading-4 text-muted-foreground">{helper}</p> : null}
+          {helper ? <p className="mt-1 text-xs leading-4 text-muted-foreground">{helper}</p> : null}
         </div>
         <span className={cn(
           'rounded-lg px-2 py-1 text-xs font-extrabold tabular-nums',

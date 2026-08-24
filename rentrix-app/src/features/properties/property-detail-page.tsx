@@ -147,7 +147,7 @@ export function PropertyDetailPage() {
                   </option>
                 ))}
               </select>
-              <p className="mt-1.5 text-[11px] text-muted-foreground">
+              <p className="mt-1.5 text-xs text-muted-foreground">
                 {categoryLabels[propertyDetailSections.find((s) => s.id === activeSection)?.category ?? 'basic']}
               </p>
             </div>
@@ -158,12 +158,12 @@ export function PropertyDetailPage() {
             >
               <div className="border-b border-border/60 bg-muted/30 px-4 py-3">
                 <p className="text-xs font-bold text-muted-foreground">تفاصيل العقار</p>
-                <p className="mt-1 text-[11px] leading-4 text-muted-foreground">الأساسيات أولاً، ثم التشغيل والتوثيق</p>
+                <p className="mt-1 text-xs leading-4 text-muted-foreground">الأساسيات أولاً، ثم التشغيل والتوثيق</p>
               </div>
               <div className="space-y-4 p-2">
                 {(['basic', 'operations', 'ownership'] as const).map((category) => (
                   <div key={category}>
-                    <p className="px-2 pb-1.5 text-[10px] font-extrabold text-muted-foreground">
+                    <p className="px-2 pb-1.5 text-xs font-extrabold text-muted-foreground">
                       {categoryLabels[category]}
                     </p>
                     <div className="space-y-1">

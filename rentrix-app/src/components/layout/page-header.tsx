@@ -48,7 +48,7 @@ export function PageHeader({
             <h1 className="min-w-0 break-words text-balance text-lg font-black leading-7 [overflow-wrap:anywhere] sm:text-xl">{title}</h1>
             {count !== undefined ? (
               <span
-                className="inline-flex min-h-5 shrink-0 items-center rounded-md border border-border bg-muted/45 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-muted-foreground"
+                className="inline-flex min-h-6 shrink-0 items-center rounded-md border border-border bg-muted/45 px-2 py-0.5 text-xs font-bold tabular-nums text-muted-foreground"
                 aria-label={`عدد السجلات ${count}`}
               >
                 {count}

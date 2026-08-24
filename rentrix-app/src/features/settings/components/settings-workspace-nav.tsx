@@ -59,7 +59,7 @@ export function SettingsWorkspaceNav({
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-black">{section.label}</span>
                   <span className={cn(
-                    'mt-0.5 line-clamp-1 block text-[11px] font-bold',
+                    'mt-0.5 line-clamp-1 block text-xs font-bold',
                     selected ? 'text-primary-foreground/75' : 'text-muted-foreground',
                   )}>
                     {section.description}

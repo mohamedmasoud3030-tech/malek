@@ -104,7 +104,7 @@ function Field({ label, children, description, error, className }: EntityFormFie
   return (
     <label data-entity-form-field className={cn('grid min-w-0 gap-1.5 text-sm font-bold', className)}>
       <span>{label}</span>
-      {description ? <span className="text-[11px] font-medium leading-5 text-muted-foreground">{description}</span> : null}
+      {description ? <span className="text-xs font-medium leading-5 text-muted-foreground">{description}</span> : null}
       {children}
       {error ? (
         <span data-field-error className="text-xs font-bold leading-5 text-destructive" role="alert">
@@ -121,7 +121,7 @@ function Section({ title, description, children, className }: EntityFormSectionP
       {title || description ? (
         <div className="border-b border-border/50 pb-2.5">
           {title ? <h2 className="text-sm font-semibold leading-6">{title}</h2> : null}
-          {description ? <p className="mt-0.5 text-[11px] font-medium leading-5 text-muted-foreground">{description}</p> : null}
+          {description ? <p className="mt-0.5 text-xs font-medium leading-5 text-muted-foreground">{description}</p> : null}
         </div>
       ) : null}
       <div className="grid min-w-0 gap-3">{children}</div>

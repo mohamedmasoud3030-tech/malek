@@ -256,7 +256,7 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
                 aria-describedby={configurationMissing ? 'ai-assistant-disabled-hint' : 'ai-assistant-send-hint'}
               />
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <p id="ai-assistant-send-hint" className="text-[11px] font-medium text-muted-foreground">
+                <p id="ai-assistant-send-hint" className="text-xs font-medium text-muted-foreground">
                   Enter للإرسال · Shift+Enter لسطر جديد
                 </p>
                 <Button type="submit" disabled={pending || configurationMissing || !input.trim()}>

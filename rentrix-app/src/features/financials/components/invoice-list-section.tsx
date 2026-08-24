@@ -196,7 +196,7 @@ export function InvoiceListSection({
                       <span className="inline-flex flex-col">
                         <FinanceAmount>{formatMoney(grossAmount)}</FinanceAmount>
                         {invoice.tax_amount ? (
-                          <span className="text-[11px] text-muted-foreground">
+                          <span className="text-xs text-muted-foreground">
                             VAT <FinanceAmount>{formatMoney(invoice.tax_amount)}</FinanceAmount>
                           </span>
                         ) : null}

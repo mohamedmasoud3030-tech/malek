@@ -100,7 +100,7 @@ export function CompanyProfileSections({
             onChange={onLogoFileChange}
             aria-labelledby="settings-logo-upload-label"
           />
-          <span className="block text-[11px] text-muted-foreground">يُحفظ الشعار كقيمة مضمنة صغيرة للحفاظ على المعاينة والمستندات بدون إعداد Storage إضافي.</span>
+          <span className="block text-xs text-muted-foreground">يُحفظ الشعار كقيمة مضمنة صغيرة للحفاظ على المعاينة والمستندات بدون إعداد Storage إضافي.</span>
         </label>
         <div className="grid gap-3 rounded-2xl border bg-muted/20 p-3 md:grid-cols-3">
           <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed bg-background/70 p-4 text-center">
@@ -111,7 +111,7 @@ export function CompanyProfileSections({
                 <div className="mx-auto grid size-14 place-items-center rounded-2xl bg-primary/10 text-base font-black text-primary">
                   {preview.companyName.slice(0, 2)}
                 </div>
-                <p className="text-[11px] text-muted-foreground">{preview.logoFallbackLabel}</p>
+                <p className="text-xs text-muted-foreground">{preview.logoFallbackLabel}</p>
               </>
             )}
           </div>

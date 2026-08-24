@@ -372,7 +372,7 @@ function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Rea
             </span>
             <div className="min-w-0">
               <h2 className="truncate text-sm font-black">سجل الإيصالات</h2>
-              <p className="truncate text-[11px] font-medium text-muted-foreground">{filteredReceipts.length} إيصال ضمن النتائج الحالية</p>
+              <p className="truncate text-xs font-medium text-muted-foreground">{filteredReceipts.length} إيصال ضمن النتائج الحالية</p>
             </div>
           </div>
         </header>

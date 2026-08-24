@@ -49,15 +49,15 @@ export function DataTableColumnsMenu({
         className="flex min-h-10 cursor-pointer list-none items-center gap-2 rounded-lg border border-border/85 bg-background px-2.5 text-xs font-bold text-muted-foreground outline-none transition hover:bg-muted/55 hover:text-foreground focus-visible:ring-4 focus-visible:ring-primary/15 sm:px-3 [&::-webkit-details-marker]:hidden"
       >
         <Columns3 className="size-4" aria-hidden="true" />
-        <span className="hidden sm:inline">{label}</span>
-        <span className="hidden rounded-md bg-muted px-1.5 py-0.5 text-[9px] font-black tabular-nums text-foreground/75 md:inline">
+        <span>{label}</span>
+        <span className="hidden rounded-md bg-muted px-1.5 py-0.5 text-xs font-black tabular-nums text-foreground/75 md:inline">
           {visibleKeys.length}/{columns.length}
         </span>
       </summary>
 
       <div className="absolute end-0 top-[calc(100%+0.4rem)] z-50 w-56 overflow-hidden rounded-xl border border-border/90 bg-popover p-1.5 text-popover-foreground shadow-elevated">
         <div className="flex items-center justify-between border-b border-border/60 px-2 pb-1.5 pt-0.5">
-          <span className="text-[10px] font-black text-muted-foreground">إظهار الأعمدة</span>
+          <span className="text-xs font-black text-muted-foreground">إظهار الأعمدة</span>
           <button
             type="button"
             onClick={() => onChange(allKeys)}
@@ -90,7 +90,7 @@ export function DataTableColumnsMenu({
                   {checked ? <Check className="size-3" aria-hidden="true" /> : null}
                 </span>
                 <span className="min-w-0 flex-1 truncate">{column.label}</span>
-                {column.locked ? <span className="text-[9px] font-bold text-muted-foreground">ثابت</span> : null}
+                {column.locked ? <span className="text-xs font-bold text-muted-foreground">ثابت</span> : null}
               </button>
             );
           })}

@@ -57,12 +57,13 @@ describe('design tokens — single source of truth', () => {
     }
   });
 
-  it('contains the Malek-pro-inspired blue/slate operational theme in a scoped layer, not :root', () => {
+  it('keeps Malek Pro as a presentation scope without forking theme tokens', () => {
     expect(globals).toContain("@import './malek-pro-visual-wave.css';");
     expect(visualWave).toContain("[data-visual-wave='malek-pro']");
-    expect(visualWave).toContain('--primary: 217');
-    expect(visualWave).toContain('--background: 210');
-    expect(visualWave).toContain("[data-theme='dark'] [data-visual-wave='malek-pro']");
+    expect(visualWave).toContain('Theme values inherit from tokens.css');
+    for (const forked of ['--background:', '--primary:', '--color-success-text:', '--shadow-card:']) {
+      expect(visualWave, `visual wave must not fork ${forked}`).not.toContain(forked);
+    }
     expect(visualWave).not.toMatch(/(^|\n)\s*:root\s*\{/);
   });
 

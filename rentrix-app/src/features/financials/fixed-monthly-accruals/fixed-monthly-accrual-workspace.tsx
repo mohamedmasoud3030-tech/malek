@@ -150,7 +150,7 @@ export function FixedMonthlyAccrualWorkspace() {
       render: (row) => (
         <span className="min-w-0">
           <span className="block truncate font-bold">{row.propertyName}</span>
-          <span className="block truncate text-[11px] text-muted-foreground">{row.ownerName} · نسخة {row.versionNo}</span>
+          <span className="block truncate text-xs text-muted-foreground">{row.ownerName} · نسخة {row.versionNo}</span>
         </span>
       ),
     },
@@ -187,8 +187,8 @@ export function FixedMonthlyAccrualWorkspace() {
         return (
           <span className="block min-w-0">
             <Badge variant={status.variant}>{status.label}</Badge>
-            {row.latePosting ? <span className="mt-1 block text-[10px] text-warning">فترة لاحقة مفتوحة</span> : null}
-            {row.reversalReason ? <span className="mt-1 block max-w-48 truncate text-[10px] text-muted-foreground">{row.reversalReason}</span> : null}
+            {row.latePosting ? <span className="mt-1 block text-xs text-warning">فترة لاحقة مفتوحة</span> : null}
+            {row.reversalReason ? <span className="mt-1 block max-w-48 truncate text-xs text-muted-foreground">{row.reversalReason}</span> : null}
           </span>
         );
       },

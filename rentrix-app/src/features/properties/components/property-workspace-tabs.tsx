@@ -278,7 +278,7 @@ export function PropertyActivityTab({ propertyId }: PropertyTabProps) {
               <span className="font-bold text-foreground">{record.action}: </span>
               <span className="text-muted-foreground">{record.description ?? 'حركة موثقة'}</span>
             </div>
-            <span className="text-[11px] text-muted-foreground whitespace-nowrap">{record.occurredAt.slice(0, 10)}</span>
+            <span className="text-xs text-muted-foreground whitespace-nowrap">{record.occurredAt.slice(0, 10)}</span>
           </Card>
         ))}
       </div>

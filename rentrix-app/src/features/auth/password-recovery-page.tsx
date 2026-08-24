@@ -61,7 +61,7 @@ export function ForgotPasswordPage() {
         <form className="space-y-4" onSubmit={submit}>
           <label htmlFor="recovery-email" className="block text-sm font-semibold">البريد الإلكتروني</label>
           <div className="relative">
-            <Mail className="pointer-events-none absolute inset-y-0 right-3.5 my-auto size-4 text-muted-foreground" aria-hidden="true" />
+            <Mail className="pointer-events-none absolute inset-y-0 start-3.5 my-auto size-4 text-muted-foreground" aria-hidden="true" />
             <Input id="recovery-email" type="email" dir="ltr" inputMode="email" autoComplete="email" required autoFocus className="h-12 pe-10" value={email} onChange={(event) => { setEmail(event.target.value); setError(null); }} disabled={isSubmitting} />
           </div>
           {error ? <div role="alert" className="flex items-start gap-2 rounded-xl border border-danger/30 bg-danger/5 p-3 text-sm text-danger"><AlertTriangle className="mt-0.5 size-4 shrink-0" />{error}</div> : null}

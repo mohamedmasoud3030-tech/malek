@@ -19,7 +19,7 @@ export function CommandPaletteTrigger() {
         <Search className="size-3.5" />
         <span className="font-semibold">البحث السريع...</span>
       </div>
-      <kbd className="hidden h-5 select-none items-center gap-0.5 rounded border border-border bg-card px-1.5 font-mono text-[10px] font-bold opacity-80 lg:inline-flex" aria-hidden="true">
+      <kbd className="hidden h-5 select-none items-center gap-0.5 rounded border border-border bg-card px-1.5 font-mono text-xs font-bold opacity-80 lg:inline-flex" aria-hidden="true">
         {shortcutLabel}
       </kbd>
     </button>

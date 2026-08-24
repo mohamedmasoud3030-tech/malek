@@ -113,7 +113,7 @@ export function NavigationLinks({
             className="space-y-0.5 [[data-mobile-nav-sheet]_&]:space-y-0.5 [[data-mobile-nav-sheet]_&]:rounded-none [[data-mobile-nav-sheet]_&]:border-0 [[data-mobile-nav-sheet]_&]:bg-transparent [[data-mobile-nav-sheet]_&]:p-0"
           >
             {expanded
-              ? <div className="px-3 pb-1 pt-1.5"><p className="text-[10px] font-bold text-sidebar-foreground/50 [[data-mobile-nav-sheet]_&]:text-sidebar-foreground/50">{sectionTitle}</p></div>
+              ? <div className="px-3 pb-1 pt-1.5"><p className="text-xs font-bold text-sidebar-foreground/50 [[data-mobile-nav-sheet]_&]:text-sidebar-foreground/50">{sectionTitle}</p></div>
               : <div aria-hidden="true" className="mx-3 mb-1 h-px bg-white/10" />}
             {items.map((item) => {
               const [to] = item;

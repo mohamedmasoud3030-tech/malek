@@ -200,7 +200,7 @@ function accountColumns(currencyCode: string): ColumnDef<ChartAccount>[] {
       header: 'التصنيف المحاسبي',
       priority: 'secondary',
       render: (account) => (
-        <span className="inline-flex rounded-md bg-muted px-2 py-0.5 text-[11px] font-medium">
+        <span className="inline-flex rounded-md bg-muted px-2 py-0.5 text-xs font-medium">
           {accountTypeLabel(account.account_type)}
         </span>
       ),

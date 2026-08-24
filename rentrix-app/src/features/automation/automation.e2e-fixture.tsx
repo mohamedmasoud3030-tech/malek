@@ -81,7 +81,7 @@ export function AutomationE2EFixture() {
                     </StatusBadge>
                   </div>
                   <p className="mt-1.5 text-xs leading-6 text-muted-foreground">{description}</p>
-                  <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] font-bold text-muted-foreground/80">
+                  <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs font-bold text-muted-foreground/80">
                     <span>الجدولة: {schedule}</span>
                     <span>القناة: {channel}</span>
                   </div>

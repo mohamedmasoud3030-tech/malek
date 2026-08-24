@@ -49,14 +49,14 @@ export function FilePickerField({
           {file ? file.name : 'اختيار ملف'}
         </span>
         {file ? (
-          <span className="shrink-0 text-[11px] font-bold text-muted-foreground">
+          <span className="shrink-0 text-xs font-bold text-muted-foreground">
             {(file.size / 1024 / 1024).toFixed(2)} MB
           </span>
         ) : (
-          <span className="shrink-0 text-[11px] font-bold text-primary">استعراض</span>
+          <span className="shrink-0 text-xs font-bold text-primary">استعراض</span>
         )}
       </button>
-      {hint ? <p className="text-[11px] leading-4 text-muted-foreground">{hint}</p> : null}
+      {hint ? <p className="text-xs leading-4 text-muted-foreground">{hint}</p> : null}
     </div>
   );
 }

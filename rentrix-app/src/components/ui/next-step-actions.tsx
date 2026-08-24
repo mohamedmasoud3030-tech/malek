@@ -82,7 +82,7 @@ export function NextStepActions({
                   <div className="min-w-0">
                     <div className="truncate">{action.label}</div>
                     {action.description ? (
-                      <div className="truncate text-[11px] font-normal text-muted-foreground">
+                      <div className="truncate text-xs font-normal text-muted-foreground">
                         {action.description}
                       </div>
                     ) : null}

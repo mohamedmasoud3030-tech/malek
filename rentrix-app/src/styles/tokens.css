@@ -83,9 +83,9 @@
 /* ── Semantic Color Tokens (Light) ──────────── */
 :root {
   /* Core surfaces */
-  --color-bg: 210 20% 98%;
+  --color-bg: 214 32% 98%;
   --color-card: 0 0% 100%;
-  --color-card-muted: 210 20% 96%;
+  --color-card-muted: 214 28% 96%;
 
   /* Brand */
   --color-primary: 217 71% 45%;
@@ -98,8 +98,8 @@
   --color-text-muted: 215 14% 46%;
 
   /* Borders */
-  --color-border: 214 20% 88%;
-  --color-border-light: 214 20% 93%;
+  --color-border: 214 24% 87%;
+  --color-border-light: 214 24% 92%;
 
   /* Sidebar (dark — same in both modes) */
   --color-sidebar-bg: 215 28% 12%;
@@ -137,9 +137,9 @@
   --tone-slate-soft: 214 24% 93%;
 
   /* Shadows */
-  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.04);
-  --shadow-card-hover: 0 2px 8px 0 rgb(0 0 0 / 0.06);
-  --shadow-elevated: 0 8px 32px 0 rgb(0 0 0 / 0.12);
+  --shadow-card: 0 1px 2px rgb(15 23 42 / 0.045), 0 10px 24px -22px rgb(15 23 42 / 0.22);
+  --shadow-card-hover: 0 2px 4px rgb(15 23 42 / 0.055), 0 16px 32px -24px rgb(15 23 42 / 0.28);
+  --shadow-elevated: 0 24px 56px -30px rgb(15 23 42 / 0.38), 0 8px 20px -16px rgb(15 23 42 / 0.24);
   --shadow-sidebar: 0 0 40px -20px rgb(15 23 42 / 0.6);
 
   /* Radius */
@@ -223,9 +223,9 @@
 
 /* ── Dark Mode Overrides ───────────────────── */
 [data-theme='dark'] {
-  --color-bg: 215 28% 9%;
-  --color-card: 215 25% 13%;
-  --color-card-muted: 215 20% 11%;
+  --color-bg: 222 37% 8%;
+  --color-card: 220 29% 12%;
+  --color-card-muted: 220 25% 10%;
   --color-primary: 213 82% 64%;
   --color-primary-fg: 222 37% 8%;
   --color-text-primary: 210 20% 92%;
@@ -233,12 +233,12 @@
   /* WCAG AA guard: 50% measured 4.05:1 on dark cards (axe); 58% ≈ 4.8–5.0:1
      even on the lightest dark surface (--surface-elevated). */
   --color-text-muted: 210 10% 58%;
-  --color-border: 215 20% 22%;
-  --color-border-light: 215 16% 17%;
+  --color-border: 218 22% 22%;
+  --color-border-light: 218 18% 17%;
   --color-sidebar-bg: 215 30% 7%;
   --color-sidebar-text: 210 20% 80%;
   --color-sidebar-active-bg: 213 82% 64%;
-  --color-sidebar-active-text: 0 0% 100%;
+  --color-sidebar-active-text: 222 37% 8%;
   --color-sidebar-hover-bg: 215 28% 14%;
 
   --color-success-text: 152 58% 62%;
@@ -266,9 +266,9 @@
   --tone-slate: 214 18% 70%;
   --tone-slate-soft: 215 18% 18%;
 
-  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.2);
-  --shadow-card-hover: 0 2px 8px 0 rgb(0 0 0 / 0.3);
-  --shadow-elevated: 0 8px 32px 0 rgb(0 0 0 / 0.4);
+  --shadow-card: 0 1px 0 hsl(210 30% 96% / 0.035), 0 12px 28px -24px rgb(0 0 0 / 0.72);
+  --shadow-card-hover: 0 1px 0 hsl(210 30% 96% / 0.05), 0 18px 36px -24px rgb(0 0 0 / 0.78);
+  --shadow-elevated: 0 28px 64px -28px rgb(0 0 0 / 0.82), 0 0 0 1px hsl(210 20% 96% / 0.04);
 
   --background: var(--color-bg);
   --foreground: var(--color-text-primary);

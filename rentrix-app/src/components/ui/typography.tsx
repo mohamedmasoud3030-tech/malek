@@ -52,7 +52,7 @@ const variantClasses: Record<TypographyVariant, string> = {
   'body-sm': 'text-[0.8125rem] leading-5',
   caption: 'text-xs leading-5 text-muted-foreground',
   label: 'text-xs font-bold',
-  overline: 'text-[11px] font-bold text-muted-foreground',
+  overline: 'text-xs font-bold leading-5 text-muted-foreground',
   button: 'text-sm font-bold leading-none',
   mono: 'font-mono text-sm leading-6 tabular-nums',
 };
