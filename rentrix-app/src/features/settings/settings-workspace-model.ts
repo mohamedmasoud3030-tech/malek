@@ -1,10 +1,12 @@
 import type { CompanySettingsDraft, CompanySettingsPreviewModel } from './settingsForm';
+import type { SettingsSectionId } from './settingsSections';
 
 export type SettingsSummaryTile = Readonly<{
   label: string;
   value: string;
   helper: string;
   tone: 'success' | 'info' | 'warning' | 'danger' | 'neutral';
+  section?: SettingsSectionId;
 }>;
 
 export function buildSettingsSummaryTiles({
@@ -20,11 +22,17 @@ export function buildSettingsSummaryTiles({
   hasAuthorization: boolean;
   metadataMismatch: boolean;
 }>): readonly SettingsSummaryTile[] {
-  const completedSetupSteps = [
-    Boolean(draft.company_name.trim()),
-    Boolean(draft.currency && draft.locale && draft.timezone && draft.date_format && draft.number_format),
-    Boolean(draft.invoice_prefix.trim() && draft.contract_prefix.trim() && draft.receipt_prefix.trim()),
-  ].filter(Boolean).length;
+  const officeReady = Boolean(draft.company_name.trim());
+  const identityReady = Boolean(draft.currency && draft.locale && draft.timezone && draft.date_format && draft.number_format);
+  const documentsReady = Boolean(draft.invoice_prefix.trim() && draft.contract_prefix.trim() && draft.receipt_prefix.trim());
+  const completedSetupSteps = [officeReady, identityReady, documentsReady].filter(Boolean).length;
+  const firstIncompleteSection: SettingsSectionId = !officeReady
+    ? 'office'
+    : !identityReady
+      ? 'identity'
+      : !documentsReady
+        ? 'documents'
+        : 'office';
 
   return [
     {
@@ -32,6 +40,7 @@ export function buildSettingsSummaryTiles({
       value: completedSetupSteps === 3 ? 'مكتملة' : `${completedSetupSteps}/3`,
       helper: completedSetupSteps === 3 ? preview.companyName : 'أكمل الهوية والطباعة والمستندات',
       tone: completedSetupSteps === 3 ? 'success' : completedSetupSteps === 0 ? 'danger' : 'warning',
+      section: firstIncompleteSection,
     },
     {
       label: 'حالة التغييرات',
