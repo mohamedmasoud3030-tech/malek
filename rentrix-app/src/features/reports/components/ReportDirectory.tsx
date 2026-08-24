@@ -40,7 +40,7 @@ const reportGroups = [
     icon: UsersRound,
     section: 'statements',
     view: '',
-    matches: [''],
+    matches: [] as string[],
     items: ['كشف المالك', 'الحركة', 'الاستقطاعات', 'صافي المستحق'],
   },
   {
@@ -50,7 +50,7 @@ const reportGroups = [
     icon: UserRound,
     section: 'statements',
     view: '',
-    matches: [''],
+    matches: [] as string[],
     items: ['كشف المستأجر', 'الفواتير', 'الرصيد', 'الحركات'],
   },
   {
@@ -78,10 +78,15 @@ const reportGroups = [
 type ReportDirectoryProps = Readonly<{
   activeSection: ReportSectionId;
   activeView: ReportViewId;
+  scope?: Readonly<{
+    ownerId?: string;
+    tenantId?: string;
+    contractId?: string;
+  }>;
   onOpen: (section: ReportSectionId, view: ReportViewId) => void;
 }>;
 
-export function ReportDirectory({ activeSection, activeView, onOpen }: ReportDirectoryProps) {
+export function ReportDirectory({ activeSection, activeView, scope, onOpen }: ReportDirectoryProps) {
   return (
     <section aria-labelledby="report-directory-title" className="space-y-3" data-report-directory>
       <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
@@ -97,7 +102,11 @@ export function ReportDirectory({ activeSection, activeView, onOpen }: ReportDir
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {reportGroups.map((group) => {
           const Icon = group.icon;
-          const isActive = group.section === activeSection && group.matches.includes(activeView as never);
+          const isOwnerStatement = group.id === 'owners' && activeSection === 'statements' && Boolean(scope?.ownerId);
+          const isTenantStatement = group.id === 'tenants' && activeSection === 'statements' && !scope?.ownerId && Boolean(scope?.tenantId || scope?.contractId);
+          const isRegularActive = group.section === activeSection && group.matches.includes(activeView);
+          const isActive = isOwnerStatement || isTenantStatement || isRegularActive;
+
           return (
             <article
               key={group.id}
