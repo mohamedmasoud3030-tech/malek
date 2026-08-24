@@ -74,8 +74,8 @@ describe('pay_commission_atomic and reverse_commission_atomic live runtime finan
       values ('f5000000-0000-4000-8000-000000000001', 'عقار العمولات', 'عقار العمولات', 'residential', 'مسقط', '${COMPANY_A}', 'active')
       on conflict do nothing;
 
-      insert into public.commissions (id, staff_name, type, amount, status, company_id)
-      values ('${commId}', 'وسيط عقاري', 'contract', 500, 'approved', '${COMPANY_A}')
+      insert into public.commissions (id, staff_name, type, source_id, amount, status, company_id)
+      values ('${commId}', 'وسيط عقاري', 'contract', 'comm-fin-contract-001', 500, 'approved', '${COMPANY_A}')
       on conflict do nothing;
     `);
   });
