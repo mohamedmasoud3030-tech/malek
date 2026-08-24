@@ -1,3 +1,4 @@
+import type { ComponentType } from 'react';
 import {
   ArrowLeft,
   Building2,
@@ -16,7 +17,7 @@ type ReportGroup = Readonly<{
   id: 'finance' | 'leases' | 'owners' | 'tenants' | 'properties' | 'control';
   title: string;
   description: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: ComponentType<{ className?: string }>;
   section: ReportSectionId;
   view: ReportViewId;
   matches: readonly ReportViewId[];
