@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { RefreshCcw } from 'lucide-react';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
@@ -19,7 +19,7 @@ import { FinanceReadinessSection } from '@/features/financials/tax-authority/fin
 import { TaxAuthorityWorkspace } from '@/features/financials/tax-authority/tax-profile-workspace';
 import { getCompanySettingsPreviewModel } from './settingsForm';
 import { buildSettingsSummaryTiles } from './settings-workspace-model';
-import { settingsSections } from './settingsSections';
+import { settingsSections, type SettingsSectionId } from './settingsSections';
 import { useSettingsPageController } from './useSettingsPageController';
 
 export function preventSettingsUnload(event: BeforeUnloadEvent) {
@@ -29,7 +29,11 @@ export function preventSettingsUnload(event: BeforeUnloadEvent) {
 
 export { settingsSections };
 export type SettingsWorkspaceVariant = 'standalone' | 'embedded';
-type SettingsWorkspaceProps = Readonly<{ variant?: SettingsWorkspaceVariant }>;
+type SettingsWorkspaceProps = Readonly<{
+  variant?: SettingsWorkspaceVariant;
+  activeSection?: SettingsSectionId;
+  onSectionChange?: (section: SettingsSectionId) => void;
+}>;
 
 function SettingsVariantShell({
   variant,
@@ -58,8 +62,21 @@ function SettingsVariantShell({
   );
 }
 
-export function SettingsWorkspace({ variant = 'standalone' }: SettingsWorkspaceProps = {}) {
-  const controller = useSettingsPageController({ urlMode: variant === 'standalone' ? 'standalone' : 'embedded-company' });
+export function SettingsWorkspace({
+  variant = 'standalone',
+  activeSection: controlledActiveSection,
+  onSectionChange,
+}: SettingsWorkspaceProps = {}) {
+  const controller = useSettingsPageController();
+  const [localActiveSection, setLocalActiveSection] = useState<SettingsSectionId>('office');
+  const activeSection = controlledActiveSection ?? localActiveSection;
+  const handleJumpToSection = (section: SettingsSectionId) => {
+    if (onSectionChange) {
+      onSectionChange(section);
+      return;
+    }
+    setLocalActiveSection(section);
+  };
   const {
     theme,
     authorization,
@@ -68,7 +85,6 @@ export function SettingsWorkspace({ variant = 'standalone' }: SettingsWorkspaceP
     companySettingsQuery,
     draft,
     errors,
-    activeSection,
     isDirty,
     isSaving,
     pageLanguage,
@@ -81,7 +97,6 @@ export function SettingsWorkspace({ variant = 'standalone' }: SettingsWorkspaceP
     handleDefaultLanguageChange,
     handleLogoFileChange,
     handleSubmit,
-    handleJumpToSection,
   } = controller;
 
   if (companySettingsQuery.isError) {
