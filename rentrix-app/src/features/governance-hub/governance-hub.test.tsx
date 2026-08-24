@@ -93,11 +93,23 @@ describe('embedded workspace architecture contract', () => {
   it('renders a single navigation controller — SectionTabs, no duplicate WorkspaceSubNav', () => {
     const source = readSource('./components/GovernanceHubWorkspace.tsx');
 
-    // SectionTabs is the one section navigation surface for this workspace.
     expect(source).toContain('<SectionTabs');
-    // The duplicated WorkspaceSubNav row must not re-render the same section
-    // set, which previously stacked two horizontal navigation menus on mobile.
     expect(source).not.toContain('WorkspaceSubNav');
     expect(source).not.toContain('التنقل الداخلي لمساحة العمل');
+  });
+
+  it('owns nested company-settings URL state in the governance layer, not the settings controller', () => {
+    const hub = readSource('./components/GovernanceHubWorkspace.tsx');
+    const workspace = readSource('../settings/settings-page.tsx');
+    const controller = readSource('../settings/useSettingsPageController.ts');
+
+    expect(hub).toContain('resolveGovernanceHubNavigation');
+    expect(hub).toContain('buildCompanySettingsSearch');
+    expect(hub).toContain('activeSection={companySection}');
+    expect(hub).toContain('onSectionChange={handleCompanySectionChange}');
+    expect(workspace).toContain('activeSection: controlledActiveSection');
+    expect(workspace).toContain('const activeSection = controlledActiveSection ?? localActiveSection');
+    expect(controller).not.toContain('useNavigate');
+    expect(controller).not.toContain('useSearch');
   });
 });

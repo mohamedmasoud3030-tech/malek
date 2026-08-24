@@ -47,8 +47,6 @@ describe('document readiness gate replaces fake company identity', () => {
     const source = readinessSources[surface].map(read).join('\n');
     expect(source, `useDocumentSettings in ${surface}`).toContain('useDocumentSettings');
     expect(source, `isReady gate in ${surface}`).toContain('documentSettings.isReady');
-    // The visible notice/button state is not enough: the handler chain itself
-    // must fail closed if a disabled control is bypassed programmatically.
     expect(source, `handler-level guard in ${surface}`).toContain('runGuardedDocumentAction');
   });
 
@@ -97,11 +95,13 @@ describe('document readiness gate replaces fake company identity', () => {
     expect(utilities).not.toContain('ر.ع`');
   });
 
-  it('a shared notice with a settings link is shown when identity is incomplete', () => {
+  it('a shared notice deep-links to the nested document settings section', () => {
     const notice = read('settings/components/document-readiness-notice.tsx');
     expect(notice).toContain('أكمل بيانات الشركة الأساسية في الإعدادات قبل طباعة هذا المستند');
-    expect(notice).toContain('فتح إعدادات الشركة');
+    expect(notice).toContain('فتح إعدادات المستندات');
     expect(notice).toContain('to="/settings"');
+    expect(notice).toContain("section: 'company'");
+    expect(notice).toContain("companySection: 'documents'");
 
     for (const surface of guardedSurfaces) {
       expect(read(surface), `DocumentReadinessNotice in ${surface}`).toContain('DocumentReadinessNotice');

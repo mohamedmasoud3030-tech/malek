@@ -52,3 +52,13 @@ export const settingsSections = [
 ] as const;
 
 export type SettingsSectionId = (typeof settingsSections)[number]['id'];
+
+const settingsSectionIds = new Set<string>(settingsSections.map((section) => section.id));
+
+export function isSettingsSectionId(value: unknown): value is SettingsSectionId {
+  return typeof value === 'string' && settingsSectionIds.has(value);
+}
+
+export function resolveSettingsSection(value: unknown, fallback: SettingsSectionId = 'office'): SettingsSectionId {
+  return isSettingsSectionId(value) ? value : fallback;
+}

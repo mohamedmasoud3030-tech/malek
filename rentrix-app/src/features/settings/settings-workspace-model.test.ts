@@ -41,6 +41,25 @@ describe('buildSettingsSummaryTiles', () => {
 
     expect(tiles).toHaveLength(3);
     expect(tiles.map((tile) => tile.value)).toEqual(['مكتملة', 'محفوظة', 'صالحة']);
+    expect(tiles[0]?.section).toBeUndefined();
+  });
+
+  it('routes incomplete readiness to the first missing company-settings section', () => {
+    const officeMissing = { ...validDraft, company_name: '' };
+    const identityMissing = { ...validDraft, currency: '' };
+    const documentsMissing = { ...validDraft, invoice_prefix: '' };
+
+    const sectionFor = (draft: CompanySettingsDraft) => buildSettingsSummaryTiles({
+      draft,
+      preview: getCompanySettingsPreviewModel(draft),
+      isDirty: false,
+      hasAuthorization: true,
+      metadataMismatch: false,
+    })[0]?.section;
+
+    expect(sectionFor(officeMissing)).toBe('office');
+    expect(sectionFor(identityMissing)).toBe('identity');
+    expect(sectionFor(documentsMissing)).toBe('documents');
   });
 
   it('surfaces incomplete setup, unsaved changes, and metadata mismatch', () => {

@@ -6,7 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingState } from '@/components/ui/loading-state';
 import { SectionTabPanel, SectionTabs } from '@/components/ui/section-tabs';
 import { CostCentersSettingsSection } from '@/features/settings/cost-centers-settings-section';
+import type { SettingsSectionId } from '@/features/settings/settingsSections';
 import { useAuth } from '@/hooks/use-auth';
+import {
+  buildCompanySettingsSearch,
+  resolveGovernanceHubNavigation,
+} from '../governance-hub-navigation';
 import { getVisibleGovernanceHubSections, type GovernanceHubSectionId } from '../governance-hub-sections';
 
 const SettingsWorkspace = lazy(() => import('@/features/settings/settings-page').then((module) => ({ default: module.SettingsWorkspace })));
@@ -36,11 +41,13 @@ export function GovernanceHubWorkspace() {
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as Record<string, unknown>;
   const visibleSections = useMemo(() => getVisibleGovernanceHubSections(canAccess), [canAccess]);
-  const requestedSection = typeof search.section === 'string' ? search.section : null;
+  const navigation = resolveGovernanceHubNavigation({
+    requestedSection: search.section,
+    requestedCompanySection: search.companySection,
+    visibleSections,
+  });
+  const { hubSection: urlSection, companySection, legacyCompanySection, canOpenCompany } = navigation;
   const fallbackSection = visibleSections[0]?.id ?? 'security';
-  const urlSection = visibleSections.some((section) => section.id === requestedSection)
-    ? requestedSection as GovernanceHubSectionId
-    : fallbackSection;
   const [activeTab, setActiveTab] = useState<GovernanceHubSectionId>(urlSection);
   const [mountedTabs, setMountedTabs] = useState<ReadonlySet<GovernanceHubSectionId>>(() => new Set([urlSection]));
 
@@ -49,12 +56,29 @@ export function GovernanceHubWorkspace() {
     setMountedTabs((current) => current.has(urlSection) ? current : new Set([...current, urlSection]));
   }, [urlSection]);
 
+  useEffect(() => {
+    if (!legacyCompanySection || !canOpenCompany) return;
+    void navigate({
+      to: '/settings',
+      search: (previous: Record<string, unknown>) => buildCompanySettingsSearch(previous, legacyCompanySection),
+      replace: true,
+    });
+  }, [canOpenCompany, legacyCompanySection, navigate]);
+
   const handleTabChange = (nextTab: GovernanceHubSectionId) => {
     setMountedTabs((current) => current.has(nextTab) ? current : new Set([...current, nextTab]));
     setActiveTab(nextTab);
     void navigate({
       to: '/settings',
       search: (previous: Record<string, unknown>) => ({ ...previous, section: nextTab }),
+    });
+  };
+
+  const handleCompanySectionChange = (nextSection: SettingsSectionId) => {
+    void navigate({
+      to: '/settings',
+      search: (previous: Record<string, unknown>) => buildCompanySettingsSearch(previous, nextSection),
+      replace: true,
     });
   };
 
@@ -98,7 +122,15 @@ export function GovernanceHubWorkspace() {
 
           <div className="min-w-0">
             <Suspense fallback={<TabFallback />}>
-              {shouldRenderTab('company') ? <SectionTabPanel id="company" activeId={resolvedActiveTab}><SettingsWorkspace variant="embedded" /></SectionTabPanel> : null}
+              {shouldRenderTab('company') ? (
+                <SectionTabPanel id="company" activeId={resolvedActiveTab}>
+                  <SettingsWorkspace
+                    variant="embedded"
+                    activeSection={companySection}
+                    onSectionChange={handleCompanySectionChange}
+                  />
+                </SectionTabPanel>
+              ) : null}
               {shouldRenderTab('users-permissions') ? <SectionTabPanel id="users-permissions" activeId={resolvedActiveTab}><UserRolesWorkspace /></SectionTabPanel> : null}
               {shouldRenderTab('cost-centers') ? <SectionTabPanel id="cost-centers" activeId={resolvedActiveTab}><CostCentersWorkspace /></SectionTabPanel> : null}
               {shouldRenderTab('automation') ? <SectionTabPanel id="automation" activeId={resolvedActiveTab}><AutomationWorkspace mode="embedded" /></SectionTabPanel> : null}

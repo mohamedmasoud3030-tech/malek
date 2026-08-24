@@ -7,7 +7,6 @@ import { useUiStore } from '@/store/ui-store';
 import { useAuth } from '@/hooks/use-auth';
 import { useBeforeUnloadGuard } from '@/hooks/use-unsaved-changes-guard';
 import { useCompanySettings, useUpdateCompanySettings } from './useCompanySettings';
-import type { SettingsSectionId } from './settingsSections';
 import {
   areCompanySettingsDraftsEqual,
   companySettingsDraftToLocalSettings,
@@ -22,10 +21,10 @@ import {
 } from './settingsForm';
 
 /**
- * Owns all settings-page state: the company-settings draft lifecycle (load,
- * dirty tracking, discard-on-navigate), validation, save, logo upload, theme
- * and language toggles, and section-nav state. settings-page.tsx composes
- * this hook with presentational sections and stays render-only.
+ * Owns company-settings business state only: draft lifecycle, validation,
+ * persistence, logo upload, theme/language controls, and dirty guards.
+ * Navigation/URL state is intentionally owned by the workspace shell so this
+ * controller stays reusable in standalone and embedded settings surfaces.
  */
 export function useSettingsPageController() {
   const { theme, setTheme } = useUiStore();
@@ -37,7 +36,6 @@ export function useSettingsPageController() {
   const baseDraftRef = useRef<CompanySettingsDraft | null>(null);
   const draftRef = useRef<CompanySettingsDraft | null>(null);
   const [errors, setErrors] = useState<CompanySettingsValidationErrors>({});
-  const [activeSection, setActiveSection] = useState<SettingsSectionId>('office');
 
   const isDirty = !areCompanySettingsDraftsEqual(draft, baseDraft);
   const isSaving = updateCompanySettingsMutation.isPending;
@@ -154,10 +152,6 @@ export function useSettingsPageController() {
     }
   };
 
-  const handleJumpToSection = (id: SettingsSectionId) => {
-    setActiveSection(id);
-  };
-
   return {
     theme,
     authorization,
@@ -166,7 +160,6 @@ export function useSettingsPageController() {
     companySettingsQuery,
     draft,
     errors,
-    activeSection,
     isDirty,
     isSaving,
     pageLanguage,
@@ -179,6 +172,5 @@ export function useSettingsPageController() {
     handleDefaultLanguageChange,
     handleLogoFileChange,
     handleSubmit,
-    handleJumpToSection,
   };
 }
