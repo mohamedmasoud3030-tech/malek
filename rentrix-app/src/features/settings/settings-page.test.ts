@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { preventSettingsUnload } from './settings-page';
+import { isSettingsSectionId, resolveSettingsSection } from './settingsSections';
 
 vi.mock('./useCompanySettings', () => ({
   useCompanySettings: () => ({ isLoading: true }),
@@ -36,5 +37,14 @@ describe('SettingsPage workflow helpers', () => {
 
     expect(settingsSections.map((section) => section.id)).toContain('cost-centers');
     expect(settingsSections.map((section) => section.label)).toContain('مراكز التكلفة');
+  });
+
+  it('accepts only canonical company-settings section ids and fails safe to office', () => {
+    expect(isSettingsSectionId('documents')).toBe(true);
+    expect(isSettingsSectionId('finance-readiness')).toBe(true);
+    expect(isSettingsSectionId('users-permissions')).toBe(false);
+    expect(resolveSettingsSection('documents')).toBe('documents');
+    expect(resolveSettingsSection('not-a-section')).toBe('office');
+    expect(resolveSettingsSection(null)).toBe('office');
   });
 });
