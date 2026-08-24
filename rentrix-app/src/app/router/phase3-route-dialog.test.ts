@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 const routeTree = readFileSync(new URL('./route-tree.ts', import.meta.url), 'utf8');
 const contractDetail = readFileSync(new URL('../../routes/_protected.contracts.$contractId.tsx', import.meta.url), 'utf8');
 const ownerDetail = readFileSync(new URL('../../routes/_protected.owners.$ownerId.tsx', import.meta.url), 'utf8');
+const tenantDetail = readFileSync(new URL('../../routes/_protected.tenants.$tenantId.tsx', import.meta.url), 'utf8');
 const propertyDetail = readFileSync(new URL('../../routes/_protected.properties.$propertyId.tsx', import.meta.url), 'utf8');
 const propertyOverview = readFileSync(new URL('../../routes/_protected.properties.$propertyId.index.tsx', import.meta.url), 'utf8');
 const unitDetail = readFileSync(new URL('../../routes/_protected.properties.$propertyId.units.$unitId.tsx', import.meta.url), 'utf8');
@@ -14,131 +15,65 @@ const unitController = readFileSync(new URL('../../features/units/use-units-list
 const backgroundProvider = readFileSync(new URL('./background-location.tsx', import.meta.url), 'utf8');
 const protectedRoute = readFileSync(new URL('../../routes/_protected.tsx', import.meta.url), 'utf8');
 
-describe('Phase 3 — Route-native entity dialogs', () => {
-  it('People new/edit are reference implementation: canonical URLs with list+modal, no event bus', () => {
+describe('Route-native entity presentation', () => {
+  it('keeps people create/edit as route-native modal workflows', () => {
     expect(routeTree).toContain("path: '/people/new'");
     expect(routeTree).toContain("path: '/people/$personId/edit'");
     expect(peopleNew).toContain('PeopleListPage');
     expect(peopleNew).toContain('PersonFormModal');
-    expect(peopleNew).not.toContain('openEntityPreview');
     expect(peopleEdit).toContain('PeopleListPage');
     expect(peopleEdit).toContain('PersonFormModal');
-    expect(peopleEdit).not.toContain('openEntityPreview');
-    // Close navigates to /people (preserves URL until close)
-    expect(peopleNew).toContain("to: '/people'");
   });
 
-  it('Contract detail is route-native: dialog over background vs full page', () => {
-    expect(contractDetail).toContain('useBackgroundLocation');
-    expect(contractDetail).toContain('isDialog');
-    expect(contractDetail).toContain('ContractPreviewDialog');
+  it('opens heavyweight owner, tenant and contract dossiers as full pages only', () => {
     expect(contractDetail).toContain('ContractDetailPage');
-    expect(contractDetail).not.toContain('openEntityPreview');
-    expect(contractDetail).not.toContain("replace: true");
-    expect(contractDetail).toContain("navigate({ to: '/contracts'");
-  });
-
-  it('Owner detail is route-native', () => {
-    expect(ownerDetail).toContain('useBackgroundLocation');
-    expect(ownerDetail).toContain('OwnerPreviewDialog');
     expect(ownerDetail).toContain('OwnerDetailPage');
-    expect(ownerDetail).not.toContain('openEntityPreview');
+    expect(tenantDetail).toContain('TenantDetailPage');
+
+    for (const src of [contractDetail, ownerDetail, tenantDetail]) {
+      expect(src).not.toContain('useBackgroundLocation');
+      expect(src).not.toContain('PreviewDialog');
+      expect(src).not.toContain('isDialog');
+      expect(src).not.toContain('window.history.back()');
+      expect(src).not.toContain('openEntityPreview');
+    }
   });
 
-  it('Property detail is route-native: dialog over PortfolioHub vs full detail', () => {
+  it('keeps property and unit lightweight previews route-native', () => {
     expect(propertyDetail).toContain('useBackgroundLocation');
     expect(propertyDetail).toContain('PropertyPreviewDialog');
     expect(propertyDetail).toContain('PropertyDetailPage');
-    expect(propertyDetail).toContain('PortfolioHubPage');
-    expect(propertyDetail).not.toContain('openEntityPreview');
-    expect(propertyOverview).toContain('PropertyOverview');
-    expect(propertyOverview).not.toContain('openEntityPreview');
-  });
-
-  it('Unit detail is route-native', () => {
     expect(unitDetail).toContain('useBackgroundLocation');
     expect(unitDetail).toContain('UnitPreviewDialog');
     expect(unitDetail).toContain('PropertyUnitDetailPage');
-    expect(unitDetail).not.toContain('openEntityPreview');
+    expect(propertyOverview).toContain('PropertyOverview');
   });
 
-  it('List controllers use route navigation, not event bus (for migrated entities)', () => {
+  it('list controllers use canonical route navigation instead of the legacy event bus', () => {
     expect(propertyController).toContain("to: '/properties/$propertyId'");
-    expect(propertyController).not.toContain('openEntityPreview');
     expect(unitController).toContain("to: '/properties/$propertyId/units/$unitId'");
+    expect(propertyController).not.toContain('openEntityPreview');
     expect(unitController).not.toContain('openEntityPreview');
   });
 
-  it('Background location provider exists and is used at protected level', () => {
+  it('background-location infrastructure remains for the previews that still need it', () => {
     expect(backgroundProvider).toContain('BackgroundLocationProvider');
     expect(backgroundProvider).toContain('useBackgroundLocation');
     expect(backgroundProvider).toContain('useIsDialogRoute');
     expect(protectedRoute).toContain('BackgroundLocationProvider');
   });
 
-  it('Direct navigation preserves URL and does not redirect to parent', () => {
-    // Detail routes must not contain `replace: true` redirect to parent for direct case
-    // They should render full page when no background
-    expect(contractDetail).not.toContain("navigate({ to: '/contracts', replace: true })");
-    expect(ownerDetail).not.toContain("navigate({ to: '/owners', replace: true })");
-    expect(propertyDetail).not.toContain("replace: true");
-    // Instead, they check isDialog and render full page when not dialog
-    expect(contractDetail).toContain('if (!contractId) return null');
-    expect(contractDetail).toContain('if (isDialog)');
-    expect(contractDetail).toContain('return <ContractDetailPage');
-  });
-
-  it('Back/Forward: dialog close uses history back or navigate to background (not replace hide)', () => {
-    expect(contractDetail).toContain("to: '/contracts'");
-    expect(contractDetail).toContain('onOpenChange');
-    expect(ownerDetail).toContain("to: '/owners'");
-    expect(propertyDetail).toContain("to: '/properties'");
-    expect(contractDetail).not.toMatch(/replace: true.*preview/);
-  });
-
-  it('No blank state: every detail route has component for both dialog and full page', () => {
-    for (const src of [contractDetail, ownerDetail, propertyDetail, unitDetail]) {
-      expect(src).toContain('isDialog');
-      expect(src).toContain('return <');
-    }
-    // Contract and owner should handle missing id
-    expect(contractDetail).toContain('if (!contractId)');
-    expect(ownerDetail).toContain('if (!ownerId)');
-  });
-
-  it('Permissions: detail routes keep guards (no leak via masking)', () => {
-    // People, property, contract, owner routes should still be under protectedRoute (auth)
-    // and keep their permission guards where required (lands.view, commissions.view etc.)
-    // Detail routes themselves are auth-only; data fetching respects RLS
-    expect(routeTree).toContain("path: '/properties/$propertyId'");
+  it('canonical heavyweight detail URLs stay protected and directly addressable', () => {
     expect(routeTree).toContain("path: '/contracts/$contractId'");
     expect(routeTree).toContain("path: '/owners/$ownerId'");
-    // No new permission bypass
-    expect(contractDetail).not.toContain('canAccess');
+    expect(routeTree).toContain("path: '/tenants/$tenantId'");
+    expect(contractDetail).toContain('if (!contractId) return null');
+    expect(ownerDetail).toContain('if (!ownerId) return null');
+    expect(tenantDetail).toContain('if (!tenantId) return null');
   });
 
-  it('Legacy mappings still work (Phase 1+2 contracts)', () => {
-    // Old previewKind search param is handled via legacy-preview-redirect in Phase 3.1
-    // But new detail routes are canonical, not via search
-    expect(routeTree).toContain("path: '/people'");
-    expect(routeTree).toContain("path: '/lands'");
-    expect(routeTree).toContain("path: '/commissions'");
-  });
-
-  it('Mobile: dialog has accessible properties', () => {
-    // EntityPreviewDialog already tested for focus trap etc., but check that new detail dialogs use it
-    expect(contractDetail).toContain('ContractPreviewDialog');
-    expect(ownerDetail).toContain('OwnerPreviewDialog');
-    // Dialog should have open prop and onOpenChange
-    expect(contractDetail).toContain('open');
-    expect(contractDetail).toContain('onOpenChange');
-  });
-
-  it('Event bus not required for migrated entities (no openEntityPreview in their detail routes)', () => {
-    for (const src of [contractDetail, ownerDetail, propertyDetail, unitDetail, propertyOverview]) {
-      expect(src).not.toContain('openEntityPreview');
-    }
-    for (const src of [propertyController, unitController]) {
+  it('no migrated detail route revives the global preview event bus', () => {
+    for (const src of [contractDetail, ownerDetail, tenantDetail, propertyDetail, unitDetail, propertyOverview]) {
       expect(src).not.toContain('openEntityPreview');
     }
   });
