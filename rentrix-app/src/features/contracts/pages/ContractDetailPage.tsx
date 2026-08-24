@@ -7,7 +7,6 @@ import { PageLayout } from '@/components/layout/page-layout';
 import { ActionMenu } from '@/components/ui/action-menu';
 import { Button } from '@/components/ui/button';
 import { buildContractActions } from '@/components/ui/entity-action-presets';
-import { canAccess, financialOperationPermissions } from '@/features/auth/permissions';
 import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
 import { DocumentReadinessNotice } from '@/features/settings/components/document-readiness-notice';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
@@ -31,8 +30,8 @@ export function ContractDetailPage() {
   const contractQuery = useContract(contractId);
   const companySettings = useCompanySettingsContract();
   const documentSettings = useDocumentSettings();
-  const { authorization } = useAuth();
-  const canViewReports = canAccess(authorization, financialOperationPermissions.viewReports);
+  const { canAccess } = useAuth();
+  const canViewReports = canAccess('financial.reports.view');
   const [renewOpen, setRenewOpen] = useState(false);
   const [terminateOpen, setTerminateOpen] = useState(false);
 
