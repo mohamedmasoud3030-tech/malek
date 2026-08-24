@@ -75,7 +75,7 @@ for (const viewport of viewportMatrix) {
 
       const companyName = page.getByLabel('اسم الشركة');
       await companyName.fill('Rentrix Updated');
-      await expect(page.getByText('تغييرات غير محفوظة').first()).toBeVisible();
+      await expect(saveSurface.getByText('تغييرات غير محفوظة')).toBeVisible();
       await expect(page.getByRole('button', { name: 'حفظ' })).toBeEnabled();
 
       await page.getByRole('button', { name: 'تراجع' }).click();

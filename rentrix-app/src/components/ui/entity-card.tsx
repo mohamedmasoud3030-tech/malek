@@ -131,14 +131,14 @@ export function EntityCard({
             <AvatarIcon className={cn('size-4 sm:size-4.5', tone.text)} aria-hidden="true" />
           </div>
           <div className="min-w-0 flex-1 overflow-hidden">
-            <p className="line-clamp-2 break-words text-sm font-bold leading-5 [overflow-wrap:anywhere] sm:leading-6">{name}</p>
+            <div className="line-clamp-2 break-words text-sm font-bold leading-5 [overflow-wrap:anywhere] sm:leading-6">{name}</div>
             {subtitle ? (
-              <p className="mt-0.5 line-clamp-2 break-words text-[11px] font-medium leading-4.5 text-muted-foreground [overflow-wrap:anywhere] sm:leading-5">
+              <div className="mt-0.5 line-clamp-2 break-words text-[11px] font-medium leading-4.5 text-muted-foreground [overflow-wrap:anywhere] sm:leading-5">
                 {subtitle}
-              </p>
+              </div>
             ) : null}
             {supportingText ? (
-              <p className="mt-0.5 break-words text-[10px] font-bold leading-4 text-muted-foreground [overflow-wrap:anywhere] sm:mt-1">{supportingText}</p>
+              <div className="mt-0.5 break-words text-[10px] font-bold leading-4 text-muted-foreground [overflow-wrap:anywhere] sm:mt-1">{supportingText}</div>
             ) : null}
           </div>
         </div>

@@ -447,13 +447,11 @@ for (const viewport of viewportMatrix) {
       const kpiHrefs = await kpiLinks.evaluateAll((nodes) => nodes.map((node) => node.getAttribute('href')));
       expect(kpiHrefs).toEqual(['/reports', '/financials', '/expenses', '/owner-settlements']);
 
-      // The KPI grid is now a semantic <ul class="dashboard-kpi-grid"> (axe
-      // aria-allowed-role: role="listitem" is invalid on <a>), so the column
-      // count is read from the ul element, not the old div child.
-      const kpiColumns = await page.locator('[data-dashboard-kpi-grid] .dashboard-kpi-grid').evaluate((node) =>
+      // ResponsiveCardGrid is the canonical two-column dashboard rhythm.
+      const kpiColumns = await page.locator('[data-dashboard-kpi-grid] [data-responsive-card-grid]').evaluate((node) =>
         getComputedStyle(node).gridTemplateColumns.split(' ').filter(Boolean).length,
       );
-      expect(kpiColumns).toBe(viewport.width >= 1024 ? 4 : 2);
+      expect(kpiColumns).toBe(2);
 
       if (viewport.width === 375) {
         const firstScreen = await page.locator('[data-dashboard-section="work-now"]').evaluate((node) => {

@@ -26,4 +26,22 @@ describe('document acceptance backend accounting dependencies', () => {
       )),
     );
   });
+
+  it('seeds the authenticated shell ownership and completed onboarding contracts', () => {
+    const seed = buildAcceptanceSeed('complete');
+
+    expect(seed.tables.property_owners).toEqual([
+      expect.objectContaining({
+        property_id: '22222222-2222-4222-8222-222222222222',
+        owner_id: '88888888-8888-4888-8888-888888888801',
+        ownership_percentage: 100,
+        is_primary: true,
+      }),
+    ]);
+    expect(seed.rpcs.get_company_onboarding_state({})).toEqual({
+      company_id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      completed: true,
+      requirements: [],
+    });
+  });
 });

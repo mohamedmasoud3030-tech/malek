@@ -334,9 +334,27 @@ export function buildAcceptanceSeed(mode: CompanySettingsMode): AcceptanceSeed {
     owners: [
       { id: IDS.owner, full_name: OWNER_NAME, name: OWNER_NAME, display_name: OWNER_NAME, phone: '+968 9988 7766', email: 'salem.balushi@example.om', is_active: true, created_at: created, updated_at: created, deleted_at: null },
     ],
+    property_owners: [
+      {
+        id: '88888888-8888-4888-8888-888888888802',
+        property_id: IDS.property,
+        owner_id: IDS.owner,
+        ownership_percentage: 100,
+        is_primary: true,
+        starts_on: '2026-01-01',
+        ends_on: null,
+        created_at: created,
+        owner: { id: IDS.owner, full_name: OWNER_NAME, name: OWNER_NAME, display_name: OWNER_NAME },
+      },
+    ],
   };
 
   const rpcs: Record<string, (args: Record<string, unknown>) => unknown> = {
+    get_company_onboarding_state: () => ({
+      company_id: IDS.company,
+      completed: true,
+      requirements: [],
+    }),
     get_contract_evidence_state: () => ({
       registration_configuration_status: 'NOT_CONFIGURED',
       registration_profile: null,

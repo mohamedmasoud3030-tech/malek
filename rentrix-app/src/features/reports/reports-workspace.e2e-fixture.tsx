@@ -276,6 +276,7 @@ const fixtureModel: ReportsWorkspaceModel = {
 
 export function ReportsWorkspaceE2EFixture() {
   const queryClient = useQueryClient();
+  const [settingsSeeded, setSettingsSeeded] = useState(false);
   const [filters, setFilters] = useState<FilterState>(() => ({
     ...getCurrentMonthFilters(),
     from: '2026-07-01',
@@ -288,6 +289,7 @@ export function ReportsWorkspaceE2EFixture() {
   const [activeView, setActiveView] = useState<ReportViewId>('accounting_reports');
 
   useEffect(() => {
+    queryClient.setQueryDefaults(companySettingsKeys.detail(), { staleTime: Infinity });
     queryClient.setQueryData(companySettingsKeys.detail(), {
       company_name: 'رينتريكس لإدارة العقارات',
       currency: 'OMR',
@@ -300,7 +302,10 @@ export function ReportsWorkspaceE2EFixture() {
       contract_prefix: 'CON',
       receipt_prefix: 'REC',
     });
+    setSettingsSeeded(true);
   }, [queryClient]);
+
+  if (!settingsSeeded) return null;
 
   return (
     <main

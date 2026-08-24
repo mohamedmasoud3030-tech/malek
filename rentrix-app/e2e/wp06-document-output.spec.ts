@@ -358,8 +358,9 @@ test.describe('WP-06 — contract/legal document', () => {
     await page.goto(`/contracts/${IDS.contract}`);
     await expect(page.getByRole('heading', { name: 'تفاصيل العقد', exact: true })).toBeVisible({ timeout: 30_000 });
 
+    await page.getByRole('button', { name: 'إجراءات أخرى', exact: true }).click();
     const popup = await openPrintPopup(page, () =>
-      page.getByRole('button', { name: 'طباعة', exact: true }).first().click(),
+      page.getByRole('menuitem', { name: 'طباعة العقد', exact: true }).click(),
     );
     const bodyText = await assertScopedArabicA4Print(popup, [TENANT_NAME, 'عقد إيجار']);
     // The registry owns status wording; an active contract must say so.
