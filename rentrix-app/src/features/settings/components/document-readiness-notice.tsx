@@ -26,7 +26,7 @@ export function DocumentReadinessNotice({ className }: { className?: string }) {
         أكمل بيانات الشركة الأساسية في الإعدادات قبل طباعة هذا المستند.
       </p>
       <Button asChild variant="secondary" size="sm" className="min-h-11 shrink-0">
-        <Link to="/settings" search={{ section: 'documents' } as never}>
+        <Link to="/settings" search={{ section: 'company', companySection: 'documents' } as never}>
           <Settings2 className="me-2 size-4" aria-hidden="true" />
           فتح إعدادات المستندات
         </Link>
