@@ -12,7 +12,18 @@ import { cn } from '@/lib/utils';
 import type { ReportSectionId } from '../reports-page.sections';
 import type { ReportViewId } from '../reports-section-model';
 
-const reportGroups = [
+type ReportGroup = Readonly<{
+  id: 'finance' | 'leases' | 'owners' | 'tenants' | 'properties' | 'control';
+  title: string;
+  description: string;
+  icon: React.ComponentType<{ className?: string }>;
+  section: ReportSectionId;
+  view: ReportViewId;
+  matches: readonly ReportViewId[];
+  items: readonly string[];
+}>;
+
+const reportGroups: readonly ReportGroup[] = [
   {
     id: 'finance',
     title: 'المالية والتحصيل',
@@ -26,12 +37,12 @@ const reportGroups = [
   {
     id: 'leases',
     title: 'العقود والإيجارات',
-    description: 'الإشغال، العقود النشطة والقريبة من الانتهاء وسجل الإيجارات.',
+    description: 'الإشغال، العقود النشطة والقريبة من الانتهاء والوحدات الشاغرة.',
     icon: FileText,
     section: 'analytics',
     view: 'occupancy',
     matches: ['occupancy'],
-    items: ['الإشغال', 'العقود النشطة', 'قرب الانتهاء', 'Rent Roll'],
+    items: ['الإشغال', 'العقود النشطة', 'قرب الانتهاء', 'الوحدات الشاغرة'],
   },
   {
     id: 'owners',
@@ -40,7 +51,7 @@ const reportGroups = [
     icon: UsersRound,
     section: 'statements',
     view: '',
-    matches: [] as string[],
+    matches: [],
     items: ['كشف المالك', 'الحركة', 'الاستقطاعات', 'صافي المستحق'],
   },
   {
@@ -50,7 +61,7 @@ const reportGroups = [
     icon: UserRound,
     section: 'statements',
     view: '',
-    matches: [] as string[],
+    matches: [],
     items: ['كشف المستأجر', 'الفواتير', 'الرصيد', 'الحركات'],
   },
   {
@@ -73,7 +84,7 @@ const reportGroups = [
     matches: ['accounting_reports', 'general_ledger', 'deferred_revenue'],
     items: ['ميزان المراجعة', 'الأستاذ العام', 'القوائم', 'التسويات'],
   },
-] as const;
+];
 
 type ReportDirectoryProps = Readonly<{
   activeSection: ReportSectionId;
