@@ -330,7 +330,7 @@ function MobileRegisterListItem<T>({
       />
 
       {actionsColumn ? (
-        <div className="mt-2 rounded-xl border border-border/70 bg-card p-2 shadow-card">
+        <div className="mt-1.5 rounded-xl border border-border/70 bg-card p-1.5 shadow-sm">
           <Button
             ref={triggerRef}
             type="button"
@@ -350,14 +350,14 @@ function MobileRegisterListItem<T>({
             }}
             className="w-full"
           >
-            <MoreHorizontal className="size-4" aria-hidden="true" />
+            <MoreHorizontal className="size-3" aria-hidden="true" />
             إجراءات
           </Button>
           {actionsOpen ? (
             <div
               id={`mobile-actions-${rowKey}`}
               data-entity-table-mobile-actions-panel
-              className="mt-2 min-w-0 rounded-lg bg-muted/25 p-2 [&>div]:flex-wrap"
+              className="mt-1 min-w-0 rounded-lg bg-muted/20 p-1 [&>div]:flex-wrap"
               aria-label={`إجراءات ${ariaLabel}`}
             >
               {actionsColumn.render(row)}
