@@ -6,12 +6,22 @@
  */
 
 import { supabase } from '@/lib/supabase';
-import { roundMoney, normalizeOm3 } from '@/shared/monetary/monetaryContract';
+import { normalizeOm3 } from '@/shared/monetary/monetaryContract';
 import type { ReconciliationRow, ReconciliationRpcRow } from '@/features/accounting/reports/contracts';
 
-// ---------------------------------------------------------------------------
-// Reconciliation report logic
-// ---------------------------------------------------------------------------
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function asArray(value: unknown): unknown[] {
+  return Array.isArray(value) ? value : [];
+}
+
+function todayIsoDate(): string {
+  return new Date().toISOString().slice(0, 10);
+}
 
 /** Row-level reconciliation data from the wp05_reconcile_all RPC. */
 export type ReconciliationResult = ReconciliationRow;
@@ -20,19 +30,22 @@ export type ReconciliationResult = ReconciliationRow;
 export async function getReconciliationReport(
   asOf?: string
 ): Promise<ReconciliationRow[]> {
-  const p_as_of = asOf ?? new Date().toISOString().split('T')[0];
+  const p_as_of = asOf ?? todayIsoDate();
   const { data, error } = await supabase.rpc('wp05_reconcile_all', { p_as_of });
   if (error) throw error;
 
-  // data may be array directly (since function returns table)
-  const rows = Array.isArray(data) ? data : (data?.rows ?? []);
+  // The generated Supabase type may expose this RPC as a table result or Json.
+  // Normalize both shapes without reaching through a Json union directly.
+  const rows: unknown[] = Array.isArray(data)
+    ? data
+    : asArray(asRecord(data).rows ?? data);
 
   return rows.map((row: unknown) => {
     const r = row as ReconciliationRpcRow;
     return {
-      reconciliation_class: String(r.reconciliation_class ?? '').trim() || '',
-      account_no: String(r.account_no ?? '').trim() || '',
-      account_name: String(r.account_name ?? '').trim() || '',
+      reconciliation_class: String(r.reconciliation_class ?? '').trim(),
+      account_no: String(r.account_no ?? '').trim(),
+      account_name: String(r.account_name ?? '').trim(),
       subledger_balance: normalizeOm3(r.subledger_balance),
       gl_balance: normalizeOm3(r.gl_balance),
       variance: normalizeOm3(r.variance),
@@ -47,8 +60,13 @@ export async function getReconciliationReport(
 }
 
 /** Assert that reconciliation is PASS for all classes as-of a date. */
-export async function assertReconciliation(asOf?: string): Promise<{ success: boolean; details?: unknown }> {
-  const { data, error } = await supabase.rpc('wp05_assert_reconciliation', { p_as_of: asOf ?? undefined });
+export async function assertReconciliation(
+  asOf?: string
+): Promise<{ success: boolean; details?: unknown }> {
+  const p_as_of = asOf ?? todayIsoDate();
+  const { data, error } = await supabase.rpc('wp05_assert_reconciliation', { p_as_of });
   if (error) throw error;
-  return { success: Boolean(data?.success), details: data };
+
+  const result = asRecord(data);
+  return { success: Boolean(result.success), details: data };
 }
