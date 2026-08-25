@@ -95,9 +95,9 @@ function EntityCardShell({
       onClick={onClick}
       onKeyDown={(event) => handleCardKeyDown(event, onClick)}
       className={cn(
-        'relative w-full min-w-0 overflow-hidden rounded-xl border border-border/70 bg-card p-3 text-start shadow-card transition-[border-color,box-shadow] sm:p-4',
+        'relative w-full min-w-0 overflow-hidden rounded-lg border border-border/70 bg-card p-2.5 text-start shadow-sm transition-[border-color,box-shadow] sm:p-3',
         clickable &&
-          'cursor-pointer hover:border-primary/25 hover:shadow-card-hover focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/15',
+          'cursor-pointer hover:border-primary/25 hover:shadow-card-focus visible:focus-visible:ring-2 focus-visible:ring-primary/15',
         className,
       )}
     >
@@ -150,20 +150,20 @@ export function EntityCard({
       </div>
 
       {stats ? (
-        <div className="mt-2.5 rounded-2xl border border-primary/10 bg-primary/[0.045] p-2.5 text-xs text-foreground/80 sm:mt-3 sm:p-3">
+        <div className="mt-1.5 rounded-xl border border-border/50 bg-background/40 p-2 text-xs text-foreground/80 sm:mt-1.5 sm:p-2">
           {stats}
         </div>
       ) : null}
 
       {meta?.length ? (
-        <div className="mt-2.5 grid gap-1.5 rounded-2xl bg-muted/35 p-2.5 text-xs text-muted-foreground sm:mt-3 sm:gap-2 sm:p-3">
+        <div className="mt-1.5 grid gap-1 rounded-xl bg-muted/30 p-1.5 text-xs text-muted-foreground sm:mt-1.5 sm:gap-1 sm:p-1">
           {meta.map((item, index) => {
             const MetaIcon = item.icon;
             return (
-              <div key={index} className={cn('flex min-w-0 items-center gap-2 overflow-hidden', item.className)}>
-                {MetaIcon ? <MetaIcon className="size-3.5 shrink-0 text-muted-foreground/80" aria-hidden="true" /> : null}
-                {item.label ? <span className="shrink-0 font-bold text-foreground/80">{item.label}</span> : null}
-                <span dir={item.dir} className="min-w-0 flex-1 break-words [overflow-wrap:anywhere]">
+              <div key={index} className={cn('flex items-center gap-1.5', item.className)}>
+                {MetaIcon ? <MetaIcon className="size-2.5 shrink-0 text-muted-foreground/70" aria-hidden="true" /> : null}
+                {item.label ? <span className="font-bold text-foreground/80">{item.label}</span> : null}
+                <span dir={item.dir} className="min-w-0 flex-1 break-words [overflow-wrap:anywhere] text-muted-foreground/70">
                   {item.value}
                 </span>
               </div>
@@ -175,7 +175,7 @@ export function EntityCard({
       {actions?.length ? (
         <div
           className={cn(
-            'mt-3 grid gap-1.5 border-t border-border/60 pt-2.5 sm:mt-4 sm:gap-2 sm:pt-3',
+            'mt-2 grid gap-1 rounded border border-border/60 bg-background p-1.5 text-xs sm:mt-2 sm:p-1.5',
             actions.length === 1 ? 'grid-cols-1' : 'grid-cols-2',
           )}
           onClick={(event) => event.stopPropagation()}
@@ -189,12 +189,12 @@ export function EntityCard({
                 type="button"
                 aria-label={action.ariaLabel}
                 className={cn(
-                  'inline-flex min-h-11 min-w-0 items-center justify-center gap-1.5 rounded-xl border px-2.5 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/15 sm:gap-2 sm:px-3',
+                  'inline-flex min-h-11 min-w-0 items-center justify-center gap-1 rounded-xl px-1.5 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/15 sm:gap-1.5 sm:px-2',
                   getActionClassName(action.variant),
                 )}
                 onClick={action.onClick}
               >
-                {ActionIcon ? <ActionIcon className="size-3.5 shrink-0 sm:size-4" aria-hidden="true" /> : null}
+                {ActionIcon ? <ActionIcon className="size-2.5 shrink-0 sm:size-3" aria-hidden="true" /> : null}
                 <span className="truncate">{action.label}</span>
               </button>
             );

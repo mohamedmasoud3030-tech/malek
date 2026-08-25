@@ -74,11 +74,11 @@ export function MobileCard({
 
   const content = (
     <>
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-start justify-between gap-2.5">
         <div className="min-w-0 flex-1">
-          <div className="line-clamp-2 text-[15px] font-bold leading-6 text-foreground">{title}</div>
+          <div className="line-clamp-2 text-[15px] font-bold leading-5 text-foreground">{title}</div>
           {subtitle && (
-            <div className="mt-1 line-clamp-2 text-xs font-bold leading-5 text-muted-foreground">
+            <div className="mt-0.5 line-clamp-2 text-xs font-bold leading-4 text-muted-foreground">
               {subtitle}
             </div>
           )}
@@ -86,11 +86,11 @@ export function MobileCard({
         {badge && <div className="shrink-0 pt-0.5">{badge}</div>}
       </div>
 
-      {meta && <div className="mt-3 rounded-2xl bg-muted/45 p-3 text-xs leading-5 text-muted-foreground">{meta}</div>}
-      {stats && <div className="mt-3 rounded-2xl border border-border/60 bg-background/55 p-3">{stats}</div>}
+      {meta && <div className="mt-2 rounded-xl bg-muted/40 p-2.5 text-xs leading-4 text-muted-foreground">{meta}</div>}
+      {stats && <div className="mt-2 rounded-xl border border-border/50 bg-background/40 p-2.5">{stats}</div>}
       {children}
       {footer && (
-        <div className="mt-3 text-xs font-bold leading-5 text-muted-foreground">{footer}</div>
+        <div className="mt-2 text-xs font-bold leading-4 text-muted-foreground">{footer}</div>
       )}
     </>
   );

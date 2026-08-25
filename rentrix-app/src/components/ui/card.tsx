@@ -13,7 +13,7 @@ export const cardVariants = cva(
         elevated: 'border border-border bg-card shadow-elevated',
         interactive:
           'border border-border/70 bg-card shadow-card transition-colors hover:border-primary/40 hover:shadow-card-hover focus-within:border-primary/40 focus-within:shadow-card-hover cursor-pointer',
-        compact: 'border border-border/70 bg-card p-0 shadow-card [&_[data-card-header]]:p-3 [&_[data-card-content]]:px-3 [&_[data-card-footer]]:px-3',
+        compact: 'border border-border/70 bg-card p-0 shadow-card [&_[data-card-header]]:p-2 [&_[data-card-content]]:px-2 [&_[data-card-footer]]:px-2',
         statistic:
           'border border-border/70 bg-card p-4 shadow-card',
         financial: 'border border-border/80 bg-card p-4 shadow-card ring-1 ring-primary/5',
@@ -46,7 +46,7 @@ export function Card({
 }
 
 export function CardHeader({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div data-card-header className={cn('space-y-1 p-4 sm:p-5', className)} {...props} />;
+  return <div data-card-header className={cn('space-y-0.5 p-2 sm:p-3', className)} {...props} />;
 }
 
 export function CardTitle({ className, ...props }: HTMLAttributes<HTMLHeadingElement>) {
@@ -58,14 +58,14 @@ export function CardDescription({ className, ...props }: HTMLAttributes<HTMLPara
 }
 
 export function CardContent({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div data-card-content className={cn('px-4 pb-4 sm:px-5 sm:pb-5', className)} {...props} />;
+  return <div data-card-content className={cn('px-3 pb-3 sm:px-4 sm:pb-4', className)} {...props} />;
 }
 
 export function CardFooter({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       data-card-footer
-      className={cn('flex items-center gap-2 px-4 pb-4 sm:px-5 sm:pb-5', className)}
+      className={cn('flex items-center gap-2 px-3 pb-3 sm:px-4 sm:pb-4', className)}
       {...props}
     />
   );
