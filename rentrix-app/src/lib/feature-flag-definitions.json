@@ -81,5 +81,17 @@
     "defaultValue": false,
     "roles": ["ADMIN", "MANAGER"],
     "public": true
+  },
+  {
+    "key": "next-accounting",
+    "labelAr": "محاسبة MALEK القادمة",
+    "labelEn": "Next Accounting",
+    "owner": "platform",
+    "description": "Accounting domain hardening: canonical monetary layer, typed contracts, GL-backed reports under Accounting domain.",
+    "cleanupBy": "2026-11-01",
+    "phase": "alpha",
+    "defaultValue": false,
+    "roles": ["ADMIN"],
+    "public": true
   }
 ]
