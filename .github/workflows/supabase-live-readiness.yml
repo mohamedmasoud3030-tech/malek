@@ -2,6 +2,14 @@ name: Supabase Live Readiness / Read-only
 
 on:
   workflow_dispatch:
+  schedule:
+    # Daily health check. This is the minimum viable monitoring layer for a
+    # pre-production system with no dedicated alerting vendor (see
+    # docs/operations/MONITORING_AND_ALERTS.md). A failed run shows as a
+    # red check in the Actions tab; it does not page anyone. Upgrading to
+    # real alerting is a tracked pre-pilot requirement, not silently
+    # assumed to be equivalent to this.
+    - cron: '17 3 * * *'
 
 permissions:
   contents: read
@@ -18,3 +26,8 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
       - name: Run read-only live readiness checks
         run: bash scripts/verify-supabase-live-readiness.sh
+      - name: Compare live migration ledger against repository manifest
+        if: always()
+        run: bash scripts/verify-migration-ledger-parity.sh
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_READONLY_DB_URL }}
