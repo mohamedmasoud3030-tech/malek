@@ -68,11 +68,14 @@ describe('dashboard queue error honesty', () => {
   it('does not paint successful empty queues while snapshot load failed', () => {
     const overdue = read('features/dashboard/components/overdue-section.tsx');
     const expiring = read('features/dashboard/components/expiring-contracts-section.tsx');
+    const urgentMaintenance = read('features/dashboard/components/urgent-maintenance-section.tsx');
     const page = read('features/dashboard/dashboard-page.tsx');
     expect(overdue).toContain('isError');
     expect(expiring).toContain('isError');
+    expect(urgentMaintenance).toContain('isError');
     expect(overdue).toContain('تعذر تحميل المتأخرات');
-    expect(expiring).toContain('تعذر تحميل العقود المنتهية قريباً');
-    expect(page).toContain('isError={hasDashboardError}');
+    expect(expiring).toContain('تعذر تحميل العقود القريبة من الانتهاء');
+    expect(urgentMaintenance).toContain('تعذر تحميل الصيانة العاجلة');
+    expect(page.match(/isError=\{hasDashboardError\}/g)?.length).toBeGreaterThanOrEqual(3);
   });
 });
