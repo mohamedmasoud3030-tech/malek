@@ -9,7 +9,7 @@ import type { CostCenterRecord } from '@/features/settings/costCenterService';
 import { cn } from '@/lib/utils';
 import { buildReportFilterSummary, type ReportFilterChip } from '../reports-filter-summary';
 import { getInitialReportsFilters, type ReportsFilterState } from '../reports-workspace-filters';
-import { getSelectedFilterEntities } from '../reports-filters.shared';
+import { describeReportFilterSelections, getSelectedFilterEntities } from '../reports-filters.shared';
 import { FiltersPanel } from './FiltersPanel';
 
 type ReportsFilterSurfaceProps = Readonly<{
@@ -43,20 +43,12 @@ export function ReportsFilterSurface({
 }: ReportsFilterSurfaceProps) {
   const [isOpen, setIsOpen] = useState(false);
   const defaults = useMemo(() => getInitialReportsFilters(), []);
-  const { selectedCostCenter, selectedOwner, selectedContract, selectedProperty, selectedUnit, selectedTenant } = getSelectedFilterEntities(
-    filters,
-    costCenterRows,
-    ownerRows,
-    contractRows,
+  const labels = describeReportFilterSelections(
+    getSelectedFilterEntities(filters, costCenterRows, ownerRows, contractRows),
   );
   const summary = buildReportFilterSummary(filters, defaults, {
-    property: selectedProperty?.title,
-    unit: selectedUnit?.unit_number ? `وحدة ${selectedUnit.unit_number}` : undefined,
-    tenant: selectedTenant?.full_name,
+    ...labels,
     status: filters.status && filters.status !== 'all' ? (invoiceStatusLabels[filters.status] ?? filters.status) : undefined,
-    costCenter: selectedCostCenter,
-    owner: selectedOwner?.display_name ?? selectedOwner?.full_name,
-    contract: selectedContract ? selectedContract.reference || `${selectedContract.people?.full_name ?? 'مستأجر'} — ${selectedContract.properties?.title ?? 'عقار'}` : undefined,
   });
 
   return (

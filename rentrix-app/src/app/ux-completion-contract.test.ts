@@ -15,7 +15,7 @@ describe('UX completion contract', () => {
   });
 
   it('keeps finance UX free of hardcoded OMR presentation fallbacks', () => {
-    const reportWorkspace = source('features/reports/components/ReportsWorkspace.tsx');
+    const reportWorkspace = source('features/reports/workspace/ReportsShell.tsx');
     const deposits = source('features/financials/deposits/deposits-workspace.tsx');
     const expenses = source('features/financials/expenses/expenses-page.tsx');
     const banking = source('features/financials/reconciliation/bank-reconciliation-page.tsx');

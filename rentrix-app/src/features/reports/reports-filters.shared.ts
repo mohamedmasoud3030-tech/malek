@@ -45,3 +45,37 @@ export function getSelectedFilterEntities(
     selectedTenant,
   };
 }
+
+/** Human-readable label for each active filter dimension, or `undefined` when unset. */
+export type ReportFilterLabels = Readonly<{
+  property?: string;
+  unit?: string;
+  tenant?: string;
+  costCenter?: string;
+  owner?: string;
+  contract?: string;
+}>;
+
+/**
+ * WP-C — the single place report filter dimensions are turned into Arabic
+ * labels.
+ *
+ * The filter summary bar and the in-sheet filter panel previously formatted
+ * owner/contract/unit labels independently, so the same selection could read
+ * differently in the two surfaces. Both now consume these labels.
+ */
+export function describeReportFilterSelections(entities: SelectedFilterEntities): ReportFilterLabels {
+  const { selectedCostCenter, selectedOwner, selectedContract, selectedProperty, selectedUnit, selectedTenant } = entities;
+
+  return {
+    property: selectedProperty?.title,
+    unit: selectedUnit?.unit_number ? `وحدة ${selectedUnit.unit_number}` : undefined,
+    tenant: selectedTenant?.full_name,
+    costCenter: selectedCostCenter,
+    owner: selectedOwner?.display_name ?? selectedOwner?.full_name,
+    contract: selectedContract
+      ? selectedContract.reference
+        || `${selectedContract.people?.full_name ?? 'مستأجر'} — ${selectedContract.properties?.title ?? 'عقار'}`
+      : undefined,
+  };
+}

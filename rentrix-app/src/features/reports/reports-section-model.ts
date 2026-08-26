@@ -1,22 +1,21 @@
 import { reportSections, type ReportSectionId } from './reports-page.sections';
+import {
+  DEFAULT_ACCOUNTING_VIEW,
+  DEFAULT_ANALYTICS_VIEW,
+  REPORT_VIEW_SECTION_INDEX,
+  isAccountingReportViewId,
+  isAnalyticsReportViewId,
+  type AccountingReportViewId,
+  type AnalyticsReportViewId,
+  type ReportViewId,
+} from './report-view-registry';
+
+export type { AccountingReportViewId, AnalyticsReportViewId, ReportViewId };
 
 /** `?section=` is the deep-link contract for the reports workspace. */
 export const REPORTS_SECTION_SEARCH_KEY = 'section';
 
 export const DEFAULT_REPORT_SECTION: ReportSectionId = 'accounting';
-
-export type AccountingReportViewId = 'accounting_reports' | 'general_ledger' | 'deferred_revenue';
-
-export type AnalyticsReportViewId =
-  | 'overview'
-  | 'collections'
-  | 'overdue'
-  | 'expenses'
-  | 'property_analytics'
-  | 'occupancy'
-  | 'maintenance_analytics';
-
-export type ReportViewId = AccountingReportViewId | AnalyticsReportViewId | '';
 
 export interface ReportLocation {
   section: ReportSectionId;
@@ -26,38 +25,19 @@ export interface ReportLocation {
 /**
  * Resolve the active report section and view from unknown URL values.
  * Maps legacy section IDs and handles malformed fallbacks cleanly and atomically.
+ *
+ * The legacy `?section=<viewId>` aliases are derived from the report view
+ * registry, so a newly registered view is automatically bookmarkable under its
+ * own legacy name without touching this resolver.
  */
 export function resolveReportLocation(requestedSection: unknown, requestedView: unknown): ReportLocation {
   const sec = typeof requestedSection === 'string' ? requestedSection.toLowerCase().trim() : '';
   const vi = typeof requestedView === 'string' ? requestedView.toLowerCase().trim() : '';
 
   // 1. Direct legacy mapping: if section contains a legacy report name
-  if (sec === 'overview') {
-    return { section: 'analytics', view: 'overview' };
-  }
-  if (sec === 'collections') {
-    return { section: 'analytics', view: 'collections' };
-  }
-  if (sec === 'overdue') {
-    return { section: 'analytics', view: 'overdue' };
-  }
-  if (sec === 'expenses') {
-    return { section: 'analytics', view: 'expenses' };
-  }
-  if (sec === 'property_analytics') {
-    return { section: 'analytics', view: 'property_analytics' };
-  }
-  if (sec === 'occupancy') {
-    return { section: 'analytics', view: 'occupancy' };
-  }
-  if (sec === 'maintenance_analytics') {
-    return { section: 'analytics', view: 'maintenance_analytics' };
-  }
-  if (sec === 'general_ledger') {
-    return { section: 'accounting', view: 'general_ledger' };
-  }
-  if (sec === 'deferred_revenue') {
-    return { section: 'accounting', view: 'deferred_revenue' };
+  const legacySection = REPORT_VIEW_SECTION_INDEX[sec];
+  if (legacySection) {
+    return { section: legacySection, view: sec as AccountingReportViewId | AnalyticsReportViewId };
   }
   if (sec === 'statements') {
     return { section: 'statements', view: '' };
@@ -65,20 +45,14 @@ export function resolveReportLocation(requestedSection: unknown, requestedView: 
 
   // 2. Standard resolution under macro categories (when ?section is already analytics or accounting)
   if (sec === 'accounting') {
-    if (['accounting_reports', 'general_ledger', 'deferred_revenue'].includes(vi)) {
-      return { section: 'accounting', view: vi as AccountingReportViewId };
-    }
-    return { section: 'accounting', view: 'accounting_reports' };
+    return { section: 'accounting', view: isAccountingReportViewId(vi) ? vi : DEFAULT_ACCOUNTING_VIEW };
   }
   if (sec === 'analytics') {
-    if (['overview', 'collections', 'overdue', 'expenses', 'property_analytics', 'occupancy', 'maintenance_analytics'].includes(vi)) {
-      return { section: 'analytics', view: vi as AnalyticsReportViewId };
-    }
-    return { section: 'analytics', view: 'overview' };
+    return { section: 'analytics', view: isAnalyticsReportViewId(vi) ? vi : DEFAULT_ANALYTICS_VIEW };
   }
 
   // 3. Fallbacks for missing/unknown/garbage sections
-  return { section: 'accounting', view: 'accounting_reports' };
+  return { section: DEFAULT_REPORT_SECTION, view: DEFAULT_ACCOUNTING_VIEW };
 }
 
 /**
