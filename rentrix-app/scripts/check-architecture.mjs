@@ -33,11 +33,7 @@ const featureDependencyAllowList = new Map([
   // operational analytics report types — operational workflows only;
   // accounting statements stay authoritative under reports.
   ['finance', new Set(['auth', 'financials'])],
-  // finance-hub is the composition layer for the finance workspaces: it owns
-  // the shared page shell, tabs, URL sync, and per-tab permission checks, then
-  // lazily renders the section bodies that still live in their own features.
-  ['finance-hub', new Set(['auth', 'commissions', 'financials', 'owners'])],
-  ['financials', new Set(['auth', 'contracts', 'properties', 'reports', 'settings'])],
+  ['financials', new Set(['auth', 'contracts', 'properties', 'settings'])],
   // governance-hub composes settings/system/audit/auth workspaces under /settings.
   ['governance-hub', new Set(['auth', 'audit', 'settings', 'system'])],
   // maintenance reads the shared document-print readiness seam
@@ -76,29 +72,17 @@ const featureDependencyAllowList = new Map([
   ['utilities', new Set(['financials', 'properties', 'reports', 'settings'])],
 ]);
 
-// These are known presentation-to-service debts, frozen so the guard blocks
-// new exceptions while they are migrated to feature hooks in bounded PRs.
-const presentationServiceDebtAllowList = new Set([
-  'features/owners/components/owner-detail-view.tsx',
-  'features/reports/components/CollectionsSection.tsx',
-  'features/reports/components/ExpensesSection.tsx',
-  'features/reports/components/FiltersPanel.tsx',
-  'features/reports/components/MaintenanceReportSection.tsx',
-  'features/reports/components/OverdueSection.tsx',
-  'features/reports/components/ReportsFilterSurface.tsx',
-  'features/reports/components/StatementsSection.tsx',
-]);
+// Existing presentation/service debt has been migrated to hooks or feature-local
+// seams. Keep the reviewed-debt mechanism fail-closed: future temporary entries
+// are allowed only while the corresponding violation still exists.
+const presentationServiceDebtAllowList = new Set([]);
 
 // Presentation modules outside components/ are checked for direct data-plane
 // access (supabase.from / supabase.rpc) instead of the bare import, because
 // supabase.auth.* session wiring in page-level shells is an accepted pattern.
-// Known offenders are frozen here so the guard blocks new violations while
-// these are migrated to feature services in bounded PRs — same policy as
-// presentationServiceDebtAllowList.
-const presentationDataPlaneDebtAllowList = new Set([
-  'app/router/legacy-preview-redirect.tsx',
-  'features/financials/deposits/deposits-workspace.tsx',
-]);
+// The current reviewed debt is zero; any future bounded exception must remain
+// self-validating and disappear as soon as the direct access is removed.
+const presentationDataPlaneDebtAllowList = new Set([]);
 
 const allowedAppDirectories = new Set(['layout', 'navigation', 'providers', 'router']);
 const allowedAppFiles = new Set(['not-found-page.tsx']);
@@ -147,6 +131,9 @@ for (const file of sourceFiles) {
 
   graph.set(file, resolveImports(file, imports));
 }
+
+validateDebtAllowLists();
+validateFeatureDependencyAllowListFeatures();
 
 for (const cycle of findCycles(graph)) {
   violations.push(`${cycle.map((file) => relative(cwd, file)).join(' -> ')}: circular import`);
@@ -240,7 +227,52 @@ function isCrossFeatureServiceImport(file, specifier) {
   const sourceFeature = getFeatureNameFromPath(file);
   const targetFeature = getFeatureNameFromSpecifier(file, specifier);
   if (!sourceFeature || !targetFeature || sourceFeature === targetFeature) return false;
-  return /(?:^|\/)services?\//.test(specifier) || /Service(?:\.[cm]?[jt]sx?)?$/.test(specifier);
+  return /(?:^|\/)services?\//.test(specifier)
+    || /(?:[-.]service|Service)(?:\.[cm]?[jt]sx?)?$/.test(specifier);
+}
+
+function validateDebtAllowLists() {
+  for (const normalizedPath of presentationDataPlaneDebtAllowList) {
+    const file = resolve(sourceRoot, normalizedPath);
+    if (!sourceSet.has(file)) {
+      violations.push(`${normalizedPath}: stale presentation data-plane debt allowlist entry; file no longer exists`);
+      continue;
+    }
+    const content = readFileSync(file, 'utf8');
+    if (!isPresentationComponent(file) || !hasDirectSupabaseDataPlaneAccess(content)) {
+      violations.push(`${normalizedPath}: stale presentation data-plane debt allowlist entry; direct supabase.from()/supabase.rpc() access is gone`);
+    }
+  }
+
+  for (const normalizedPath of presentationServiceDebtAllowList) {
+    const file = resolve(sourceRoot, normalizedPath);
+    if (!sourceSet.has(file)) {
+      violations.push(`${normalizedPath}: stale presentation service debt allowlist entry; file no longer exists`);
+      continue;
+    }
+    const content = readFileSync(file, 'utf8');
+    const runtimeImports = getRuntimeImportSpecifiers(content);
+    if (
+      !isComponentsDirectoryModule(file)
+      || !runtimeImports.some((specifier) => isCrossFeatureServiceImport(file, specifier))
+    ) {
+      violations.push(`${normalizedPath}: stale presentation service debt allowlist entry; cross-feature runtime service import is gone`);
+    }
+  }
+}
+
+function validateFeatureDependencyAllowListFeatures() {
+  const featureNames = new Set(sourceFiles.map((file) => getFeatureNameFromPath(file)).filter(Boolean));
+  for (const [sourceFeature, targetFeatures] of featureDependencyAllowList) {
+    if (!featureNames.has(sourceFeature)) {
+      violations.push(`features/${sourceFeature}: stale feature dependency allowlist key; source feature no longer exists`);
+    }
+    for (const targetFeature of targetFeatures) {
+      if (!featureNames.has(targetFeature)) {
+        violations.push(`features/${sourceFeature}: stale feature dependency target ${targetFeature}; target feature no longer exists`);
+      }
+    }
+  }
 }
 
 function getFeatureDependencyViolation(file, specifier) {
