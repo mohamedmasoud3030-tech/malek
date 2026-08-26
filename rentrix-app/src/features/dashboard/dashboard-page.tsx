@@ -156,7 +156,7 @@ export function DashboardPage() {
 
             <section className="dashboard-section" aria-label="العمل المنتظر" data-dashboard-section="work-queues">
               <SectionHeader eyebrow="متابعة" title="العمل المنتظر" />
-              <div className="grid gap-3 lg:grid-cols-3" data-dashboard-work-queues>
+              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3" data-dashboard-work-queues>
                 <OverdueSection
                   rows={overdueRows}
                   totalCount={snapshot?.arrears.overdueCount}
