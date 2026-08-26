@@ -20,11 +20,8 @@ export type OfficeSectionProps = Readonly<{
 
 /**
  * WP-D D.2 — OfficeSection (بيانات المكتب).
- *
- * Owns the office slice of the company-settings draft: identity and contact
- * fields bound to the saved company-settings record. Draft access, error
- * surfacing, and writes are isolated to this section's owned fields through
- * `useSettingsSection` — no other section can touch them.
+ * Owns the office slice of the company-settings draft through
+ * `useSettingsSection`; no other section can mutate these fields.
  */
 export function OfficeSection({
   activeSection,
@@ -36,29 +33,35 @@ export function OfficeSection({
   const section = useSettingsSection('office', { draft, errors, isSaving, onDraftChange });
 
   return (
-    <SectionCard id="office" activeId={activeSection} title="بيانات المكتب" subtitle="الهوية الأساسية وبيانات التواصل المرتبطة بقوالب المستندات.">
-      <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs text-primary">
-        الإعدادات هنا مرتبطة بسجل إعدادات الشركة المحفوظ، وليست حالة محلية مؤقتة.
-      </div>
-      <div className="grid gap-3 md:grid-cols-2">
-        <FormField label="اسم الشركة" field="company_name" draft={section.draft} errors={section.errors} disabled={isSaving} placeholder={APP_BRAND_NAME} onChange={section.setField} />
-        <FormField label="الاسم القانوني" field="legal_name" draft={section.draft} errors={section.errors} disabled={isSaving} placeholder="الاسم القانوني للشركة" onChange={section.setField} />
+    <SectionCard id="office" activeId={activeSection} title="بيانات المكتب" subtitle="الهوية الأساسية وبيانات التواصل المستخدمة في المستندات.">
+      <div className="grid grid-cols-2 gap-x-2.5 gap-y-2.5 sm:gap-3">
+        <div className="col-span-2 sm:col-span-1">
+          <FormField label="اسم الشركة" field="company_name" draft={section.draft} errors={section.errors} disabled={isSaving} placeholder={APP_BRAND_NAME} onChange={section.setField} />
+        </div>
+        <div className="col-span-2 sm:col-span-1">
+          <FormField label="الاسم القانوني" field="legal_name" draft={section.draft} errors={section.errors} disabled={isSaving} placeholder="الاسم القانوني للشركة" onChange={section.setField} />
+        </div>
         <FormField label="الرقم الضريبي" field="tax_number" draft={section.draft} errors={section.errors} disabled={isSaving} onChange={section.setField} />
-        <FormField label="رقم السجل التجاري" field="registration_number" draft={section.draft} errors={section.errors} disabled={isSaving} onChange={section.setField} />
+        <FormField label="السجل التجاري" field="registration_number" draft={section.draft} errors={section.errors} disabled={isSaving} onChange={section.setField} />
         <FormField label="الهاتف" field="phone" draft={section.draft} errors={section.errors} disabled={isSaving} onChange={section.setField} />
-        <FormField label="البريد الإلكتروني" field="email" draft={section.draft} errors={section.errors} disabled={isSaving} type="email" placeholder="email@example.com" onChange={section.setField} />
         <FormField label="المدينة" field="city" draft={section.draft} errors={section.errors} disabled={isSaving} onChange={section.setField} />
-        <SelectField label="الدولة" field="country" draft={section.draft} errors={section.errors} disabled={isSaving} options={countryOptions} onChange={section.setField} />
+        <div className="col-span-2 sm:col-span-1">
+          <FormField label="البريد الإلكتروني" field="email" draft={section.draft} errors={section.errors} disabled={isSaving} type="email" placeholder="email@example.com" onChange={section.setField} />
+        </div>
+        <div className="col-span-2 sm:col-span-1">
+          <SelectField label="الدولة" field="country" draft={section.draft} errors={section.errors} disabled={isSaving} options={countryOptions} onChange={section.setField} />
+        </div>
       </div>
-      <label className="space-y-1 text-sm font-medium text-foreground">
-        <span>العنوان</span>
+      <label className="block space-y-1 text-xs font-bold text-foreground">
+        <span className="block px-0.5">العنوان</span>
         <Textarea
+          className="min-h-20 rounded-lg px-3 py-2 text-sm"
           value={section.draft.address}
           disabled={isSaving}
           aria-invalid={Boolean(section.errors.address)}
           onChange={(event: ChangeEvent<HTMLTextAreaElement>) => section.setField('address', event.target.value)}
         />
-        {section.errors.address ? <span className="block text-xs text-destructive">{section.errors.address}</span> : null}
+        {section.errors.address ? <span className="block px-0.5 text-[11px] text-destructive">{section.errors.address}</span> : null}
       </label>
     </SectionCard>
   );
