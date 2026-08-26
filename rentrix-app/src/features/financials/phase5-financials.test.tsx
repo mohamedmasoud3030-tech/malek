@@ -1,13 +1,13 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { MoneyPage } from '@/features/finance-hub/money-page';
+import { FinancePage } from '@/features/finance/FinancePage';
 import { FinancialsRouteComponent } from '@/routes/_protected.financials';
 
 const routeTreeSource = readFileSync(new URL('../../app/router/route-tree.ts', import.meta.url), 'utf8');
 
 describe('financials route wiring (IA 2026-08: hub-canonical, legacy redirects)', () => {
-  it('FinancialsRouteComponent → MoneyPage while the existing FinancialsPage remains the overview renderer', () => {
-    expect(FinancialsRouteComponent).toBe(MoneyPage);
+  it('FinancialsRouteComponent → unified FinancePage (WP-B finance hub unification)', () => {
+    expect(FinancialsRouteComponent).toBe(FinancePage);
   });
 
   it('legacy finance routes are REDIRECT-ONLY to canonical finance hubs (one implementation)', () => {

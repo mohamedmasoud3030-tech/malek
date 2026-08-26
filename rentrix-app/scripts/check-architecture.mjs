@@ -25,6 +25,14 @@ const featureDependencyAllowList = new Map([
   ['command-palette', new Set(['auth'])],
   ['contracts', new Set(['financials', 'owners', 'people', 'properties', 'settings', 'units'])],
   ['dashboard', new Set(['contracts', 'financials', 'maintenance', 'onboarding'])],
+  // finance is the unified WP-B finance domain: its shell model reads the
+  // shared auth permission seam (canAccess / AppPermission /
+  // AuthorizationContext) and FinancePage composes the financials
+  // workspaces (collections, expenses, fees, funds, banking) plus the
+  // finance-readiness section, financial date/report hooks, and the
+  // operational analytics report types — operational workflows only;
+  // accounting statements stay authoritative under reports.
+  ['finance', new Set(['auth', 'financials'])],
   // finance-hub is the composition layer for the finance workspaces: it owns
   // the shared page shell, tabs, URL sync, and per-tab permission checks, then
   // lazily renders the section bodies that still live in their own features.
