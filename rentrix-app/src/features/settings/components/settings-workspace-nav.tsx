@@ -1,19 +1,25 @@
 import { ChevronLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { settingsSections, type SettingsSectionId } from '../settingsSections';
+import {
+  settingsSections,
+  type SettingsSectionId,
+  type SettingsSectionListItem,
+} from '../settingsSections';
 
 export function SettingsWorkspaceNav({
   activeSection,
   onChange,
+  sections = settingsSections,
 }: Readonly<{
   activeSection: SettingsSectionId;
   onChange: (id: SettingsSectionId) => void;
+  sections?: readonly SettingsSectionListItem[];
 }>) {
   return (
     <>
       <nav className="no-scrollbar -mx-1 overflow-x-auto px-1 md:hidden" aria-label="أقسام إعدادات المكتب">
         <div className="flex min-w-max gap-1.5">
-          {settingsSections.map((section) => {
+          {sections.map((section) => {
             const Icon = section.icon;
             const selected = section.id === activeSection;
             return (
@@ -22,7 +28,7 @@ export function SettingsWorkspaceNav({
                 type="button"
                 aria-current={selected ? 'page' : undefined}
                 className={cn(
-                  'inline-flex min-h-11 items-center gap-1.5 rounded-full border px-3 text-xs font-black transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
+                  'inline-flex min-h-10 items-center gap-1.5 rounded-full border px-2.5 text-[11px] font-black transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
                   selected
                     ? 'border-primary bg-primary text-primary-foreground shadow-sm'
                     : 'border-border/70 bg-card text-muted-foreground hover:border-primary/25 hover:bg-primary/5 hover:text-foreground',
@@ -43,7 +49,7 @@ export function SettingsWorkspaceNav({
             <p className="text-xs font-black">أقسام إعدادات المكتب</p>
           </div>
           <div className="space-y-1 p-1.5">
-            {settingsSections.map((section) => {
+            {sections.map((section) => {
               const Icon = section.icon;
               const selected = section.id === activeSection;
               return (
