@@ -20,9 +20,24 @@ describe('architecture guard v2 contract', () => {
     expect(guard).toContain('featureDependencyAllowList.get(sourceFeature) ?? new Set()');
   });
 
-  it('freezes presentation service debt and blocks new cross-feature service imports', () => {
-    expect(guard).toContain('presentationServiceDebtAllowList');
+  it('keeps presentation debt at zero and makes future debt entries self-cleaning', () => {
+    expect(guard).toContain('const presentationServiceDebtAllowList = new Set([]);');
+    expect(guard).toContain('const presentationDataPlaneDebtAllowList = new Set([]);');
+    expect(guard).toContain('validateDebtAllowLists();');
+    expect(guard).toContain('stale presentation data-plane debt allowlist entry');
+    expect(guard).toContain('stale presentation service debt allowlist entry');
+    expect(guard).not.toContain('features/financials/deposits/deposits-workspace.tsx');
+    expect(guard).not.toContain('app/router/legacy-preview-redirect.tsx');
+  });
+
+  it('keeps financials independent from reports and removes the retired finance-hub edge', () => {
+    expect(guard).toContain("['financials', new Set(['auth', 'contracts', 'properties', 'settings'])]");
+    expect(guard).not.toContain("['finance-hub'");
+  });
+
+  it('blocks runtime cross-feature services including kebab-case service modules', () => {
     expect(guard).toContain('isCrossFeatureServiceImport');
+    expect(guard).toContain('(?:[-.]service|Service)');
     expect(guard).toContain('presentation components must use a feature hook');
   });
 
