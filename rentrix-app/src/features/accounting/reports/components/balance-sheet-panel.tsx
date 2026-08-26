@@ -1,7 +1,7 @@
 import { Landmark } from 'lucide-react';
-import { formatMoney, getErrorMessage } from '@/features/financials/components/financials-formatters';
+import { formatMoney, getErrorMessage } from '@/features/accounting/reports/report-formatters';
 import type { BalanceSheetReport } from '@/features/accounting/reports/contracts';
-import { ReportList, ReportListRow, ReportPanel, ReportState } from '@/features/reports/components/report-section-primitives';
+import { ReportList, ReportListRow, ReportPanel, ReportState } from '@/components/ui/report-section-primitives';
 
 export function BalanceSheetPanel({
   asOf,
