@@ -1,21 +1,13 @@
 /*
- * MALEK visual system.
- *
- * Wave 1 baseline remains available to every approved `malek-pro` surface.
- * The materially stronger operational redesign is additionally scoped by
- * `[data-operational-route='true']`, so Finance & Reporting can use their own
- * Wave 2 treatment without inheriting this branch's page hierarchy.
- * Operational forms are independently scoped by
- * `[data-entity-form-variant='operational']` because overlays may use portals.
+ * MALEK visual system — Premium Real Estate / Finance
+ * Deep Navy + Restrained Gold, Warm Off-White Light, Deep Ink Dark with glass
+ * Theme values inherit from tokens.css so every route receives the same premium Light/Dark contract.
  */
 
 [data-visual-wave='malek-pro'] {
-  /* Presentation scope only. Theme values inherit from tokens.css so every
-     route receives the same premium Light/Dark contract. */
   color: hsl(var(--foreground));
 }
 
-/* Wave 1 baseline: intentionally quiet and safe for all approved surfaces. */
 [data-visual-wave='malek-pro'] > div {
   max-width: min(100%, 90rem);
 }
@@ -32,8 +24,8 @@
 
 [data-visual-wave='malek-pro'] [data-list-controls],
 [data-visual-wave='malek-pro'] [data-filter-bar] {
-  border-color: hsl(var(--border) / 0.9);
-  background: hsl(var(--card) / 0.94);
+  border-color: hsl(var(--border) / 0.85);
+  background: hsl(var(--card) / 0.92);
   box-shadow: var(--shadow-card);
 }
 
@@ -42,12 +34,14 @@
 [data-visual-wave='malek-pro'] [data-mobile-card],
 [data-visual-wave='malek-pro'] [data-kpi-card],
 [data-visual-wave='malek-pro'] [data-entity-table-wrapper] {
-  border-color: hsl(var(--border) / 0.9);
+  border-color: hsl(var(--border) / 0.8);
+  background: hsl(var(--card));
   box-shadow: var(--shadow-card);
 }
 
 [data-visual-wave='malek-pro'] [data-entity-card]:hover,
 [data-visual-wave='malek-pro'] [data-mobile-card]:hover {
+  border-color: hsl(var(--border));
   box-shadow: var(--shadow-card-hover);
 }
 
@@ -56,19 +50,19 @@
 }
 
 [data-visual-wave='malek-pro'] [data-entity-table] tbody tr:hover {
-  background: hsl(var(--primary) / 0.045);
+  background: hsl(var(--primary) / 0.04);
 }
 
 [data-visual-wave='malek-pro'] [data-empty-state-icon] {
   color: hsl(var(--primary));
-  background: hsl(var(--primary) / 0.09);
+  background: hsl(var(--primary) / 0.08);
 }
 
 [data-visual-wave='malek-pro'] [data-error-state] {
-  border-color: hsl(var(--danger-text) / 0.28);
+  border-color: hsl(var(--danger-text) / 0.24);
 }
 
-/* App chrome remains independent from dashboard and feature-wave ownership. */
+/* App chrome — premium */
 [data-app-shell] {
   background: hsl(var(--background));
 }
@@ -78,11 +72,17 @@
 }
 
 [data-app-shell] [data-app-shell-header] {
-  box-shadow: 0 1px 0 hsl(214 25% 87% / 0.7), 0 10px 28px -24px rgb(15 23 42 / 0.18);
+  background: hsl(var(--card) / 0.92);
+  backdrop-filter: blur(12px);
+  border-color: hsl(var(--border) / 0.7);
+  box-shadow: 0 1px 0 hsl(var(--border) / 0.6), 0 8px 24px -20px hsl(222 40% 15% / 0.16);
 }
 
 [data-theme='dark'] [data-app-shell] [data-app-shell-header] {
-  box-shadow: 0 1px 0 hsl(218 22% 21% / 0.9), 0 8px 24px -24px rgb(0 0 0 / 0.75);
+  background: hsl(var(--card) / 0.85);
+  backdrop-filter: blur(16px);
+  border-color: hsl(var(--border) / 0.5);
+  box-shadow: 0 1px 0 hsl(var(--border) / 0.5), 0 8px 24px -20px hsl(0 0% 0% / 0.7), 0 0 0 1px hsl(0 0% 100% / 0.04), 0 0 20px -10px hsl(222 60% 62% / 0.12);
 }
 
 [data-app-shell] main#main-content {
@@ -95,12 +95,41 @@
 
 [data-app-shell] [data-sidebar] {
   background: hsl(var(--sidebar));
+  border-color: hsl(var(--sidebar-border));
 }
 
-/* --------------------------------------------------------------------------
-   Real operational redesign — protected-route scoped, never Finance/Reports.
-   -------------------------------------------------------------------------- */
+/* Dark glass for cards — subtle glass, reflection, soft glow, luminous edges */
+[data-theme='dark'] [data-visual-wave='malek-pro'] [data-component-card],
+[data-theme='dark'] [data-visual-wave='malek-pro'] [data-entity-card],
+[data-theme='dark'] [data-visual-wave='malek-pro'] [data-mobile-card],
+[data-theme='dark'] [data-visual-wave='malek-pro'] [data-kpi-card],
+[data-theme='dark'] [data-visual-wave='malek-pro'] [data-entity-table-wrapper],
+[data-theme='dark'] [data-list-controls],
+[data-theme='dark'] [data-filter-bar] {
+  background: hsl(var(--card) / 0.88);
+  backdrop-filter: blur(12px);
+  border-color: hsl(var(--border) / 0.5);
+  box-shadow: var(--shadow-card), 0 0 0 1px hsl(0 0% 100% / 0.03), 0 0 20px -12px hsl(var(--primary) / 0.18);
+}
 
+[data-theme='dark'] [data-visual-wave='malek-pro'] [data-entity-card]:hover,
+[data-theme='dark'] [data-visual-wave='malek-pro'] [data-mobile-card]:hover {
+  border-color: hsl(var(--border) / 0.7);
+  box-shadow: var(--shadow-card-hover), 0 0 0 1px hsl(0 0% 100% / 0.05), 0 0 24px -12px hsl(var(--primary) / 0.22);
+}
+
+/* Gold accent for active states — restrained */
+[data-visual-wave='malek-pro'] [data-active='true'] {
+  --active-glow: hsl(var(--accent) / 0.18);
+}
+
+[data-theme='dark'] [data-sidebar] [data-active='true'] {
+  background: hsl(var(--sidebar-active-bg));
+  color: hsl(var(--sidebar-active-text));
+  box-shadow: 0 0 0 1px hsl(var(--accent) / 0.15), 0 0 16px -8px hsl(var(--accent) / 0.3);
+}
+
+/* Operational redesign */
 [data-operational-route='true'] [data-visual-wave='malek-pro'] {
   position: relative;
   isolation: isolate;
@@ -113,18 +142,11 @@
   max-width: min(100%, 96rem);
 }
 
-/* --------------------------------------------------------------------------
-   Operational page headers — compact standard header (visual UX pass).
-   The previous dark-gradient hero card + decorative rings were removed:
-   page headers now use the standard compact PageHeader treatment
-   (title + one concise line + actions). Presentation only.
-   -------------------------------------------------------------------------- */
-
 [data-operational-route='true'] [data-visual-wave='malek-pro'] :is([data-list-controls], [data-filter-bar]) {
   position: relative;
   z-index: 2;
   padding: 0.5rem 0.625rem;
-  border: 1px solid hsl(var(--border) / 0.72);
+  border: 1px solid hsl(var(--border) / 0.7);
   border-radius: 0.75rem;
   background: hsl(var(--card));
   box-shadow: var(--shadow-card);
@@ -180,28 +202,28 @@
 }
 
 [data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-table] tbody tr:nth-child(even) {
-  background: hsl(var(--muted) / 0.14);
+  background: hsl(var(--muted) / 0.12);
 }
 
 [data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-table] tbody tr:hover {
-  background: hsl(var(--muted) / 0.45);
+  background: hsl(var(--muted) / 0.4);
 }
 
 [data-theme='dark'] [data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-table] thead {
-  background: hsl(var(--muted) / 0.35);
+  background: hsl(var(--muted) / 0.32);
   color: hsl(var(--foreground) / 0.92);
 }
 [data-theme='dark'] [data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-table] thead th {
   color: hsl(var(--foreground) / 0.8);
-  border-bottom-color: hsl(var(--border) / 0.55);
+  border-bottom-color: hsl(var(--border) / 0.5);
 }
 
 [data-operational-route='true'] [data-visual-wave='malek-pro'] [role='tablist'] {
   gap: 0.125rem;
   padding: 0.1875rem;
-  border: 1px solid hsl(var(--border) / 0.7);
+  border: 1px solid hsl(var(--border) / 0.65);
   border-radius: 0.625rem;
-  background: hsl(var(--muted) / 0.35);
+  background: hsl(var(--muted) / 0.32);
 }
 
 [data-operational-route='true'] [data-visual-wave='malek-pro'] [role='tab'] {
@@ -216,18 +238,22 @@
   box-shadow: 0 1px 2px hsl(var(--foreground) / 0.05);
 }
 
-/* --------------------------------------------------------------------------
-   Operational forms only. Finance/Reporting never receives this variant.
-   -------------------------------------------------------------------------- */
-
+/* Forms */
 [data-entity-form-surface][data-entity-form-variant='operational'] {
   --entity-form-action-offset: 0px;
 }
 
 [data-entity-form-surface='dialog'][data-entity-form-variant='operational'] {
   border: 1px solid hsl(var(--border));
-  border-radius: 1.45rem;
-  box-shadow: 0 34px 90px -36px rgb(15 23 42 / 0.75);
+  border-radius: 1.25rem;
+  box-shadow: var(--shadow-elevated);
+}
+
+[data-theme='dark'] [data-entity-form-surface='dialog'][data-entity-form-variant='operational'] {
+  background: hsl(var(--card) / 0.92);
+  backdrop-filter: blur(16px);
+  border-color: hsl(var(--border) / 0.5);
+  box-shadow: var(--shadow-elevated), 0 0 0 1px hsl(0 0% 100% / 0.05);
 }
 
 [data-entity-form-surface][data-entity-form-variant='operational'] [data-entity-form-scroll] {
@@ -242,29 +268,33 @@
 
 [data-entity-form-surface][data-entity-form-variant='operational'] :is(input, select, textarea) {
   min-height: 46px;
-  border-radius: 0.85rem;
+  border-radius: 0.75rem;
   background: hsl(var(--card));
+  border-color: hsl(var(--border) / 0.8);
   transition: border-color 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
 }
 
-[data-entity-form-surface][data-entity-form-variant='operational'] textarea {
-  min-height: 7rem;
+[data-entity-form-surface][data-entity-form-variant='operational'] :is(input, select, textarea):focus {
+  border-color: hsl(var(--primary) / 0.6);
+  box-shadow: 0 0 0 4px hsl(var(--primary) / 0.10);
 }
 
-[data-entity-form-surface][data-entity-form-variant='operational'] :is(input, select, textarea):focus {
-  border-color: hsl(var(--primary) / 0.72);
-  box-shadow: 0 0 0 4px hsl(var(--primary) / 0.11);
+[data-theme='dark'] [data-entity-form-surface][data-entity-form-variant='operational'] :is(input, select, textarea):focus {
+  border-color: hsl(var(--primary) / 0.5);
+  box-shadow: 0 0 0 4px hsl(var(--primary) / 0.12), 0 0 12px -4px hsl(var(--primary) / 0.2);
 }
 
 [data-entity-form-surface][data-entity-form-variant='operational'] [data-entity-form] section {
-  border-color: hsl(var(--border) / 0.92);
-  border-radius: 1.15rem;
+  border-color: hsl(var(--border) / 0.8);
+  border-radius: 1rem;
   background: hsl(var(--card));
   box-shadow: var(--shadow-card);
 }
 
 [data-entity-form-surface][data-entity-form-variant='operational'] [data-entity-form-actions] {
   border-radius: 1rem 1rem 0 0;
+  background: hsl(var(--card) / 0.95);
+  backdrop-filter: blur(8px);
 }
 
 @media (max-width: 767px) {
@@ -276,13 +306,13 @@
 
   [data-operational-route='true'] [data-visual-wave='malek-pro'] [data-page-header] {
     margin-inline: -0.25rem;
-    border-radius: 0 0 1.35rem 1.35rem;
+    border-radius: 0 0 1.25rem 1.25rem;
     padding: 1rem;
   }
 
   [data-operational-route='true'] [data-visual-wave='malek-pro'] :is([data-list-controls], [data-filter-bar]) {
-    padding: 0.65rem;
-    border-radius: 1rem;
+    padding: 0.625rem;
+    border-radius: 0.875rem;
   }
 }
 

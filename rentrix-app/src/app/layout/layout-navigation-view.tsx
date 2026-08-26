@@ -80,16 +80,16 @@ export function NavigationLinks({
         className={cn(
           'group relative flex min-h-11 items-center gap-2.5 rounded-xl border border-transparent px-3 py-1.5 text-sidebar-foreground outline-none transition-[background-color,border-color,color,box-shadow] duration-150',
           'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-4 focus-visible:ring-sidebar-accent/35 motion-reduce:transition-none',
-          '[[data-mobile-nav-sheet]_&]:min-h-11 [[data-mobile-nav-sheet]_&]:rounded-lg [[data-mobile-nav-sheet]_&]:px-2 [[data-mobile-nav-sheet]_&]:py-1 [[data-mobile-nav-sheet]_&]:text-sidebar-foreground/90 [[data-mobile-nav-sheet]_&]:hover:bg-white/[0.06] [[data-mobile-nav-sheet]_&]:hover:text-white [[data-mobile-nav-sheet]_&]:focus-visible:ring-primary/25',
-          isChild && 'ms-3 min-h-11 border-s-2 border-s-sidebar-border/70 ps-3 [[data-mobile-nav-sheet]_&]:ms-2 [[data-mobile-nav-sheet]_&]:min-h-10 [[data-mobile-nav-sheet]_&]:border-s-white/10',
+          '[[data-mobile-nav-sheet]_&]:min-h-11 [[data-mobile-nav-sheet]_&]:rounded-lg [[data-mobile-nav-sheet]_&]:px-2 [[data-mobile-nav-sheet]_&]:py-1 [[data-mobile-nav-sheet]_&]:text-sidebar-foreground/90 [[data-mobile-nav-sheet]_&]:hover:bg-sidebar-accent [[data-mobile-nav-sheet]_&]:hover:text-sidebar-accent-foreground [[data-mobile-nav-sheet]_&]:focus-visible:ring-primary/25',
+          isChild && 'ms-3 min-h-11 border-s-2 border-s-sidebar-border/70 ps-3 [[data-mobile-nav-sheet]_&]:ms-2 [[data-mobile-nav-sheet]_&]:min-h-10 [[data-mobile-nav-sheet]_&]:border-s-sidebar-border/50',
           isLocked && 'cursor-not-allowed opacity-70',
-          isActive && 'border-sidebar-accent/15 bg-sidebar-accent text-sidebar-accent-foreground shadow-[inset_3px_0_0_0_hsl(var(--sidebar-accent-foreground))] rtl:shadow-[inset_-3px_0_0_0_hsl(var(--sidebar-accent-foreground))] [[data-mobile-nav-sheet]_&]:border-white/10 [[data-mobile-nav-sheet]_&]:bg-white/[0.08] [[data-mobile-nav-sheet]_&]:text-white [[data-mobile-nav-sheet]_&]:shadow-none',
+          isActive && 'border-sidebar-accent/15 bg-sidebar-accent text-sidebar-accent-foreground shadow-[inset_3px_0_0_0_hsl(var(--sidebar-accent-foreground))] rtl:shadow-[inset_-3px_0_0_0_hsl(var(--sidebar-accent-foreground))] [[data-mobile-nav-sheet]_&]:border-sidebar-border [[data-mobile-nav-sheet]_&]:bg-sidebar-accent [[data-mobile-nav-sheet]_&]:text-sidebar-accent-foreground [[data-mobile-nav-sheet]_&]:shadow-none',
         )}
       >
         <span
           className={cn(
             'grid size-8 shrink-0 place-items-center rounded-lg transition-colors',
-            '[[data-mobile-nav-sheet]_&]:size-7 [[data-mobile-nav-sheet]_&]:bg-white/[0.04] [[data-mobile-nav-sheet]_&]:text-sidebar-foreground/75',
+            '[[data-mobile-nav-sheet]_&]:size-7 [[data-mobile-nav-sheet]_&]:bg-sidebar-foreground/5 [[data-mobile-nav-sheet]_&]:text-sidebar-foreground/75',
             isActive && '[[data-mobile-nav-sheet]_&]:bg-primary/15 [[data-mobile-nav-sheet]_&]:text-primary',
           )}
         >
@@ -114,7 +114,7 @@ export function NavigationLinks({
           >
             {expanded
               ? <div className="px-3 pb-1 pt-1.5"><p className="text-xs font-bold text-sidebar-foreground/50 [[data-mobile-nav-sheet]_&]:text-sidebar-foreground/50">{sectionTitle}</p></div>
-              : <div aria-hidden="true" className="mx-3 mb-1 h-px bg-white/10" />}
+              : <div aria-hidden="true" className="mx-3 mb-1 h-px bg-sidebar-foreground/10" />}
             {items.map((item) => {
               const [to] = item;
               const children = workspaceChildNavItems[to] ?? [];
@@ -127,7 +127,7 @@ export function NavigationLinks({
                     {expanded && children.length > 0 ? (
                       <button
                         type="button"
-                        className="me-1 grid size-11 shrink-0 place-items-center rounded-xl text-sidebar-foreground/65 outline-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-4 focus-visible:ring-sidebar-accent/35 [[data-mobile-nav-sheet]_&]:size-10 [[data-mobile-nav-sheet]_&]:rounded-lg [[data-mobile-nav-sheet]_&]:text-sidebar-foreground/55 [[data-mobile-nav-sheet]_&]:hover:bg-white/[0.06] [[data-mobile-nav-sheet]_&]:hover:text-white [[data-mobile-nav-sheet]_&]:focus-visible:ring-primary/25"
+                        className="me-1 grid size-11 shrink-0 place-items-center rounded-xl text-sidebar-foreground/65 outline-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-4 focus-visible:ring-sidebar-accent/35 [[data-mobile-nav-sheet]_&]:size-10 [[data-mobile-nav-sheet]_&]:rounded-lg [[data-mobile-nav-sheet]_&]:text-sidebar-foreground/55 [[data-mobile-nav-sheet]_&]:hover:bg-sidebar-accent [[data-mobile-nav-sheet]_&]:hover:text-sidebar-accent-foreground [[data-mobile-nav-sheet]_&]:focus-visible:ring-primary/25"
                         aria-label={`${isOpen ? 'طي' : 'توسيع'} ${navLabel(item[1], sharedLabel)}`}
                         aria-expanded={isOpen}
                         aria-controls={childrenId}

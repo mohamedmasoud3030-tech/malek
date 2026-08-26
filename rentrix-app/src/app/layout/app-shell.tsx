@@ -230,16 +230,16 @@ function MobileNavigationDrawer({
         }}
         data-mobile-drawer
         data-mobile-nav-sheet
-        className="fixed inset-x-0 bottom-0 top-auto z-[101] flex max-h-[64dvh] w-full max-w-none flex-col gap-0 overflow-hidden rounded-none rounded-t-2xl border-0 border-t border-white/10 bg-sidebar text-sidebar-foreground shadow-[0_-12px_32px_-16px_rgb(0_0_0_/_0.55)] sm:max-h-none lg:hidden"
+        className="fixed inset-x-0 bottom-0 top-auto z-[101] flex max-h-[64dvh] w-full max-w-none flex-col gap-0 overflow-hidden rounded-none rounded-t-2xl border-0 border-t border-sidebar-border bg-sidebar text-sidebar-foreground shadow-[0_-12px_32px_-16px_rgb(0_0_0_/_0.55)] sm:max-h-none lg:hidden"
       >
         <DialogTitle className="sr-only">القائمة الرئيسية</DialogTitle>
-        <div className="mx-auto mt-2 h-1 w-9 shrink-0 rounded-full bg-white/20" aria-hidden="true" />
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/8 px-3.5 py-2.5">
+        <div className="mx-auto mt-2 h-1 w-9 shrink-0 rounded-full bg-sidebar-foreground/20" aria-hidden="true" />
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-sidebar-border/50 px-3.5 py-2.5">
           <Brand expanded />
           <Button
             autoFocus
             variant="ghost"
-            className="size-9 shrink-0 px-0 text-sidebar-foreground hover:bg-sidebar-accent hover:text-white"
+            className="size-9 shrink-0 px-0 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
             onClick={onClose}
             aria-label="إغلاق القائمة"
           >
@@ -346,7 +346,7 @@ export function AppShell() {
       >
         <div
           className={cn(
-            'min-h-24 border-b border-white/8 py-5',
+            'min-h-24 border-b border-sidebar-border/50 py-5',
             isSidebarExpanded ? 'px-5' : 'px-1.5',
           )}
         >
