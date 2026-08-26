@@ -126,11 +126,7 @@ export function DashboardPage() {
         {snapshotUnavailable ? null : (
           <>
             <section className="dashboard-section" aria-label="مطلوب الآن" data-dashboard-section="work-now">
-              <SectionHeader
-                eyebrow="أولوية"
-                title="مطلوب الآن"
-                description="الحالات التي تحتاج قراراً أو متابعة مباشرة."
-              />
+              <SectionHeader eyebrow="أولوية" title="مطلوب الآن" />
 
               {isLoading ? (
                 <LoadingState variant="section" label="جارٍ تحميل الأعمال المطلوبة" />
@@ -154,20 +150,12 @@ export function DashboardPage() {
             ) : null}
 
             <section className="dashboard-section" aria-label="نبض المكتب" data-dashboard-section="office-pulse">
-              <SectionHeader
-                eyebrow="الآن"
-                title="نبض المكتب"
-                description="أربع إشارات ثابتة تكفي لفهم وضع اليوم بسرعة."
-              />
+              <SectionHeader eyebrow="الآن" title="نبض المكتب" />
               <OfficePulse snapshot={snapshot} isLoading={isLoading} settings={settings} />
             </section>
 
             <section className="dashboard-section" aria-label="العمل المنتظر" data-dashboard-section="work-queues">
-              <SectionHeader
-                eyebrow="متابعة"
-                title="العمل المنتظر"
-                description="أهم الحالات المفتوحة فقط؛ التفاصيل الكاملة داخل سجلاتها."
-              />
+              <SectionHeader eyebrow="متابعة" title="العمل المنتظر" />
               <div className="grid gap-3 lg:grid-cols-3" data-dashboard-work-queues>
                 <OverdueSection
                   rows={overdueRows}
@@ -193,30 +181,18 @@ export function DashboardPage() {
             </section>
 
             <section className="dashboard-section" aria-label="المال والالتزامات" data-dashboard-section="money-obligations">
-              <SectionHeader
-                eyebrow="مالي"
-                title="المال والالتزامات"
-                description="كفاءة التحصيل والمصروفات والتزامات الملاك بدون تحويل الصفحة إلى تقرير مالي."
-              />
+              <SectionHeader eyebrow="مالي" title="المال والالتزامات" />
               <KpiGrid snapshot={snapshot} isLoading={isLoading} settings={settings} />
             </section>
 
             <section className="dashboard-section" aria-label="حالة التحصيل والمحفظة" data-dashboard-section="operational-health">
-              <SectionHeader
-                eyebrow="صورة تشغيلية"
-                title="حالة التحصيل والمحفظة"
-                description="ملخص مرئي واحد للتحصيل والإشغال والشواغر."
-              />
+              <SectionHeader eyebrow="صورة تشغيلية" title="حالة التحصيل والمحفظة" />
               <DashboardCharts snapshot={snapshot} isLoading={isLoading} settings={settings} />
             </section>
 
             {showAnalytics ? (
               <section className="dashboard-section" aria-label="تحليل المتأخرات" data-dashboard-section="analytics">
-                <SectionHeader
-                  eyebrow="تحليل"
-                  title="تحليل المتأخرات"
-                  description="تفصيل أعمار الذمم يظهر فقط عندما توجد متأخرات فعلية."
-                />
+                <SectionHeader eyebrow="تحليل" title="تحليل المتأخرات" />
                 <ArrearsBreakdown snapshot={snapshot} settings={settings} />
               </section>
             ) : null}
