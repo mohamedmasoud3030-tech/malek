@@ -54,9 +54,6 @@ test.beforeEach(async ({}, testInfo) => {
 });
 
 async function openFixture(page: Page, theme: (typeof themes)[number]) {
-  // Accounting document actions are intentionally fail-closed until the
-  // authoritative WP05 reconciliation query returns PASS for every required
-  // account. Seed that server boundary explicitly for this isolated fixture.
   await page.route('**/rest/v1/rpc/wp05_reconcile_all', async (route) => {
     await route.fulfill({
       status: 200,
@@ -78,11 +75,8 @@ async function openFixture(page: Page, theme: (typeof themes)[number]) {
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
   await expect(page.locator('main[data-e2e-reports-workspace]')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'مركز التقارير والكشوف', exact: true })).toBeVisible();
-  await expect(page.getByText('لوحة القرار', { exact: true })).toBeVisible();
-  // The fixture's authoritative server-model rate is 82%. Assert through the
-  // KPI's accessible name so the proof survives the presentational trend glyph
-  // (`– كفاءة 82%`) while still verifying the user-facing financial semantic.
-  await expect(page.getByRole('button', { name: /كفاءة التحصيل 82%/ })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'المحاسبة والرقابة', exact: true }).first()).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByText(/المخرجات المحاسبية هنا تعتمد على القيود المرحّلة/)).toBeVisible();
 }
 
 async function assertNoHorizontalOverflow(page: Page) {
@@ -96,15 +90,7 @@ async function assertNoHorizontalOverflow(page: Page) {
   expect(overflow.bodyScrollWidth).toBeLessThanOrEqual(overflow.documentClientWidth + 1);
 }
 
-async function selectSection(page: Page, width: number, section: (typeof sections)[number]) {
-  if (width < 640) {
-    const select = page.locator('#reports-section-select');
-    await expect(select).toBeVisible();
-    await select.selectOption(section.id);
-    await expect(select).toHaveValue(section.id);
-    return;
-  }
-
+async function selectSection(page: Page, section: (typeof sections)[number]) {
   const tab = page.getByRole('tab', { name: section.label, exact: true }).first();
   await expect(tab).toBeVisible();
   await tab.click();
@@ -127,11 +113,13 @@ for (const viewport of viewportMatrix) {
       await expect(sheet).toBeHidden();
 
       for (const section of sections) {
-        await selectSection(page, viewport.width, section);
+        await selectSection(page, section);
         await assertNoHorizontalOverflow(page);
       }
 
-      await selectSection(page, viewport.width, sections[2]);
+      await selectSection(page, sections[2]);
+      await expect(page.getByText('لوحة القرار', { exact: true })).toBeVisible();
+      await expect(page.getByRole('button', { name: /كفاءة التحصيل 82%/ })).toBeVisible();
       for (const label of analyticsViews) {
         const tab = page.getByRole('tab', { name: label, exact: true });
         await expect(tab).toBeVisible();
@@ -140,7 +128,8 @@ for (const viewport of viewportMatrix) {
         await assertNoHorizontalOverflow(page);
       }
 
-      await selectSection(page, viewport.width, sections[0]);
+      await selectSection(page, sections[0]);
+      await expect(page.getByText('لوحة القرار', { exact: true })).toHaveCount(0);
       for (const label of accountingViews) {
         const tab = page.getByRole('tab', { name: label, exact: true });
         await expect(tab).toBeVisible();
@@ -157,19 +146,28 @@ for (const viewport of viewportMatrix) {
   }
 }
 
-test('reports accounting view exposes working scoped PDF actions', async ({ page }) => {
+// The focused accounting workspace intentionally renders one statement action
+// set at a time; every visible Print/PDF action must still remain fail-closed
+// behind the authoritative reconciliation and document-readiness guards.
+test('reports accounting view exposes focused guarded document actions', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await openFixture(page, 'light');
 
   const accountingTab = page.getByRole('tab', { name: 'ميزان المراجعة والقوائم', exact: true });
   await expect(accountingTab).toHaveAttribute('aria-selected', 'true');
   await expect(page.getByRole('heading', { name: 'ميزان المراجعة', exact: true })).toBeVisible();
-
   await expect(page.getByRole('button', { name: /طباعة الميزان/ })).toBeEnabled();
-  await expect(page.getByRole('button', { name: /طباعة الدخل/ })).toBeEnabled();
-  await expect(page.getByRole('button', { name: /طباعة المركز المالي/ })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'PDF' })).toHaveCount(1);
 
-  const pdfButtons = page.getByRole('button', { name: 'PDF' });
-  await expect(pdfButtons).toHaveCount(3);
-  await expect(pdfButtons.first()).toBeEnabled();
+  const incomeStatementTab = page.getByRole('tab', { name: 'الأرباح والخسائر', exact: true });
+  await incomeStatementTab.click();
+  await expect(incomeStatementTab).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('button', { name: /طباعة الدخل/ })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'PDF' })).toHaveCount(1);
+
+  const balanceSheetTab = page.getByRole('tab', { name: 'المركز المالي', exact: true });
+  await balanceSheetTab.click();
+  await expect(balanceSheetTab).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('button', { name: /طباعة المركز المالي/ })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'PDF' })).toHaveCount(1);
 });

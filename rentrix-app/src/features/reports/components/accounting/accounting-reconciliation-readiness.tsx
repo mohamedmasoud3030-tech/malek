@@ -72,24 +72,24 @@ export function AccountingReconciliationReadiness({
   onRefetch,
 }: Props) {
   if (isLoading) {
-    return <Skeleton className="h-48 w-full rounded-2xl" />;
+    return <Skeleton className="h-28 w-full rounded-2xl" />;
   }
 
   if (isError) {
     return (
       <Card className="border-destructive/30">
-        <CardHeader>
+        <CardHeader className="p-3 sm:p-4">
           <CardTitle className="flex items-center gap-2 text-base text-destructive">
-            <AlertTriangle className="size-5" />
+            <AlertTriangle className="size-5" aria-hidden="true" />
             تعذر التحقق من مطابقة الدفاتر
           </CardTitle>
           <CardDescription>
-            لم يتم إثبات مطابقة الدفاتر المساعدة مع الأستاذ العام حتى {asOf}. لا تعتبر القوائم «جاهزة» حتى ينجح هذا الفحص.
+            لم يتم إثبات مطابقة الدفاتر المساعدة مع الأستاذ العام حتى {asOf}. لا تعتبر القوائم جاهزة حتى ينجح هذا الفحص.
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <Button type="button" variant="outline" size="sm" onClick={onRefetch}>
-            <RefreshCcw className="me-2 size-4" />
+        <CardContent className="px-3 pb-3 pt-0 sm:px-4 sm:pb-4">
+          <Button type="button" variant="outline" size="sm" className="min-h-11" onClick={onRefetch}>
+            <RefreshCcw className="me-2 size-4" aria-hidden="true" />
             إعادة التحقق
           </Button>
         </CardContent>
@@ -100,58 +100,80 @@ export function AccountingReconciliationReadiness({
   if (readiness.state === 'NO_EVIDENCE') {
     return (
       <Card className="border-warning/30">
-        <CardHeader>
+        <CardHeader className="p-3 sm:p-4">
           <CardTitle className="flex items-center gap-2 text-base">
-            <AlertTriangle className="size-5 text-warning" />
+            <AlertTriangle className="size-5 text-warning" aria-hidden="true" />
             لا توجد أدلة مطابقة كافية
           </CardTitle>
           <CardDescription>
-            محرك المطابقة لم يُرجع صفوفًا حتى {asOf}. صفر صفوف لا يُعامل كنجاح؛ الحسابات الكنسية 1201 و1300 و2000 و2200 و2300 يجب أن تكون كلها ممثلة قبل الاعتماد على القوائم.
+            محرك المطابقة لم يُرجع صفوفًا حتى {asOf}. صفر صفوف لا يُعامل كنجاح، لذلك تظل المخرجات المحاسبية غير جاهزة للاعتماد.
           </CardDescription>
         </CardHeader>
       </Card>
     );
   }
 
+  const isPass = readiness.state === 'PASS';
+  const evidenceTable = (
+    <>
+      <EntityTable<ReconciliationRow>
+        aria-label="مطابقة الدفاتر المساعدة مع الأستاذ العام"
+        rows={[...rows]}
+        keyOf={(row) => `${row.reconciliation_class}:${row.account_no}`}
+        columns={columns}
+        emptyTitle="لا توجد أدلة مطابقة"
+        emptyDescription="تحقق من تهيئة الحسابات والدفاتر المساعدة ثم أعد الفحص."
+      />
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 px-3 py-2.5 text-xs text-muted-foreground sm:px-4">
+        <span>أقصى فرق مطلق: <strong dir="ltr">{formatMoney(readiness.maxAbsVariance)}</strong></span>
+        <Button type="button" variant="ghost" size="sm" className="min-h-11" onClick={onRefetch}>
+          <RefreshCcw className="me-2 size-3.5" aria-hidden="true" />
+          تحديث المطابقة
+        </Button>
+      </div>
+    </>
+  );
+
   return (
-    <Card className={readiness.state === 'PASS' ? 'border-success/30' : 'border-destructive/30'}>
-      <CardHeader className="border-b border-border/60">
+    <Card className={isPass ? 'border-success/30' : 'border-destructive/30'}>
+      <CardHeader className="p-3 sm:p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <CardTitle className="flex items-center gap-2 text-base">
-              {readiness.state === 'PASS' ? <CheckCircle2 className="size-5 text-success" /> : <AlertTriangle className="size-5 text-destructive" />}
+          <div className="min-w-0">
+            <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+              {isPass ? (
+                <CheckCircle2 className="size-5 shrink-0 text-success" aria-hidden="true" />
+              ) : (
+                <AlertTriangle className="size-5 shrink-0 text-destructive" aria-hidden="true" />
+              )}
               مطابقة الدفاتر المساعدة ↔ الأستاذ العام
             </CardTitle>
             <CardDescription className="mt-1">
-              فحص محاسبي authoritative حتى {asOf}. القوائم أدناه مبنية على الأستاذ العام؛ هذه المطابقة تكشف أي فرق بين المصدر التشغيلي والـGL.
+              فحص حتى {asOf}. القوائم مبنية على الأستاذ العام، والمطابقة تكشف أي فرق مع المصادر التشغيلية.
               {readiness.missingAccountNos.length > 0 ? (
                 <span className="mt-1 block font-semibold text-destructive">
-                  حسابات مطابقة مفقودة من الاستجابة: {readiness.missingAccountNos.join('، ')}
+                  حسابات مطابقة مفقودة: {readiness.missingAccountNos.join('، ')}
                 </span>
               ) : null}
             </CardDescription>
           </div>
-          <StatusBadge tone={readiness.state === 'PASS' ? 'green' : 'danger'}>
-            {readiness.state === 'PASS' ? `مطابق — ${readiness.total} فحوص` : `${readiness.failed} من ${readiness.total} غير جاهز`}
+          <StatusBadge tone={isPass ? 'green' : 'danger'}>
+            {isPass ? `مطابق — ${readiness.total} فحوص` : `${readiness.failed} من ${readiness.total} غير جاهز`}
           </StatusBadge>
         </div>
       </CardHeader>
-      <CardContent className="p-0">
-        <EntityTable<ReconciliationRow>
-          aria-label="مطابقة الدفاتر المساعدة مع الأستاذ العام"
-          rows={[...rows]}
-          keyOf={(row) => `${row.reconciliation_class}:${row.account_no}`}
-          columns={columns}
-          emptyTitle="لا توجد أدلة مطابقة"
-          emptyDescription="تحقق من تهيئة الحسابات والدفاتر المساعدة ثم أعد الفحص."
-        />
-        <div className="flex items-center justify-between gap-3 border-t border-border/60 px-4 py-3 text-xs text-muted-foreground">
-          <span>أقصى فرق مطلق: <strong dir="ltr">{formatMoney(readiness.maxAbsVariance)}</strong></span>
-          <Button type="button" variant="ghost" size="sm" onClick={onRefetch}>
-            <RefreshCcw className="me-2 size-3.5" />
-            تحديث المطابقة
-          </Button>
-        </div>
+
+      <CardContent className="border-t border-border/60 p-0">
+        {isPass ? (
+          <details>
+            <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 text-xs font-black text-foreground hover:bg-muted/20 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-primary/20 sm:px-4">
+              <span>تفاصيل أدلة المطابقة</span>
+              <span className="font-semibold text-muted-foreground">{readiness.total} فحوص ناجحة</span>
+            </summary>
+            <div className="border-t border-border/50">{evidenceTable}</div>
+          </details>
+        ) : (
+          evidenceTable
+        )}
       </CardContent>
     </Card>
   );

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { BookOpenCheck, CalendarClock, ListChecks, RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,6 +8,8 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
 import { useGeneralLedgerCore, type AccountType, type NormalBalance, type AccountingPeriodStatus, type JournalBatchStatus } from '../use-general-ledger-core';
 import type { ChartAccount, AccountingPeriod, JournalBatch } from '@/features/accounting/accountingDomain';
+
+type LedgerWorkspaceId = 'accounts' | 'periods' | 'batches';
 
 function accountTypeLabel(type: AccountType): string {
   switch (type) {
@@ -54,15 +57,18 @@ function batchStatusBadge(status: JournalBatchStatus) {
 }
 
 export function GeneralLedgerCoreSection() {
+  const [activeWorkspace, setActiveWorkspace] = useState<LedgerWorkspaceId>('accounts');
   const { accounts, periods, batches, isLoading, isError, refetchAll } = useGeneralLedgerCore();
   const companySettings = useCompanySettingsContract();
   const currencyCode = companySettings.defaultCurrency || 'OMR';
+  const openPeriods = periods.filter((period) => period.status === 'OPEN').length;
+  const postedBatches = batches.filter((batch) => batch.status === 'POSTED').length;
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-3">
+        <Skeleton className="h-14 w-full rounded-xl" />
         <Skeleton className="h-64 w-full rounded-2xl" />
-        <Skeleton className="h-48 w-full rounded-2xl" />
       </div>
     );
   }
@@ -75,8 +81,8 @@ export function GeneralLedgerCoreSection() {
           <CardDescription>حدث خطأ أثناء الاتصال بخدمات المحاسبة والشجرة المالية.</CardDescription>
         </CardHeader>
         <CardContent>
-          <Button variant="outline" size="sm" onClick={refetchAll}>
-            <RefreshCcw className="me-2 size-4" />
+          <Button variant="outline" size="sm" className="min-h-11" onClick={refetchAll}>
+            <RefreshCcw className="me-2 size-4" aria-hidden="true" />
             إعادة المحاولة
           </Button>
         </CardContent>
@@ -84,97 +90,153 @@ export function GeneralLedgerCoreSection() {
     );
   }
 
+  const workspaces = [
+    {
+      id: 'accounts' as const,
+      label: 'شجرة الحسابات',
+      sub: `${accounts.length} حساب`,
+      icon: BookOpenCheck,
+    },
+    {
+      id: 'periods' as const,
+      label: 'الفترات',
+      sub: `${openPeriods} مفتوحة`,
+      icon: CalendarClock,
+    },
+    {
+      id: 'batches' as const,
+      label: 'القيود',
+      sub: `${postedBatches} مرحّل`,
+      icon: ListChecks,
+    },
+  ];
+
   return (
-    <div className="space-y-6">
-      {/* Chart of Accounts Card */}
-      <Card className="overflow-hidden rounded-2xl border border-border/70 shadow-card">
-        <CardHeader className="border-b border-border/60 bg-muted/20 pb-4">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <span className="grid size-9 place-items-center rounded-xl bg-primary/10 text-primary">
-                <BookOpenCheck className="size-5" />
+    <div className="space-y-3 sm:space-y-4">
+      <div
+        className="grid grid-cols-3 gap-1 rounded-xl border border-border/60 bg-muted/20 p-1"
+        role="tablist"
+        aria-label="مساحات الأستاذ العام"
+      >
+        {workspaces.map((workspace) => {
+          const Icon = workspace.icon;
+          const isActive = activeWorkspace === workspace.id;
+          return (
+            <button
+              key={workspace.id}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              aria-controls={`ledger-workspace-${workspace.id}`}
+              onClick={() => setActiveWorkspace(workspace.id)}
+              className={`flex min-h-12 min-w-0 items-center justify-center gap-2 rounded-lg px-2 py-1.5 text-start transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 ${
+                isActive
+                  ? 'bg-card text-foreground shadow-card'
+                  : 'text-muted-foreground hover:bg-background/80 hover:text-foreground'
+              }`}
+            >
+              <Icon className="size-4 shrink-0" aria-hidden="true" />
+              <span className="min-w-0">
+                <span className="block truncate text-xs font-black">{workspace.label}</span>
+                <span className="block truncate text-[10px] font-bold text-muted-foreground">{workspace.sub}</span>
               </span>
-              <div>
-                <CardTitle className="text-base font-extrabold">شجرة الحسابات الموحدة (Chart of Accounts)</CardTitle>
-                <CardDescription className="text-xs">
-                  الحسابات المحاسبية الأساسية المؤمّنة في نظام الأستاذ العام بالعملة المعتمدة ({currencyCode}).
-                </CardDescription>
-              </div>
-            </div>
-            <StatusBadge tone="info">{accounts.length} حساب</StatusBadge>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          <EntityTable<ChartAccount>
-            aria-label="شجرة الحسابات الموحدة"
-            rows={accounts}
-            keyOf={(account) => account.id}
-            columns={accountColumns(currencyCode)}
-            emptyTitle="لا توجد حسابات مسجلة بعد"
-            emptyDescription="لا توجد حسابات مسجلة بعد في شجرة الحسابات. تواصل مع مسؤول النظام لإعداد شجرة الحسابات."
-          />
-        </CardContent>
-      </Card>
+            </button>
+          );
+        })}
+      </div>
 
-      {/* Accounting Periods Card */}
-      <Card className="overflow-hidden rounded-2xl border border-border/70 shadow-card">
-        <CardHeader className="border-b border-border/60 bg-muted/20 pb-4">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <span className="grid size-9 place-items-center rounded-xl bg-primary/10 text-primary">
-                <CalendarClock className="size-5" />
-              </span>
-              <div>
-                <CardTitle className="text-base font-extrabold">الفترات المحاسبية وإغلاق الأشهر (Accounting Periods)</CardTitle>
-                <CardDescription className="text-xs">
-                  حالة الفترات المحاسبية الشهرية: مفتوحة (OPEN)، إغلاق مرن (SOFT_CLOSED)، أو إغلاق نهائي (HARD_CLOSED).
-                </CardDescription>
+      {activeWorkspace === 'accounts' ? (
+        <Card id="ledger-workspace-accounts" role="tabpanel" className="overflow-hidden rounded-2xl border border-border/70 shadow-card">
+          <CardHeader className="border-b border-border/60 bg-muted/20 p-3 sm:p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+                  <BookOpenCheck className="size-4.5" aria-hidden="true" />
+                </span>
+                <div className="min-w-0">
+                  <CardTitle className="text-sm font-extrabold sm:text-base">شجرة الحسابات الموحدة</CardTitle>
+                  <CardDescription className="mt-0.5 line-clamp-2 text-xs">
+                    الحسابات الأساسية في الأستاذ العام بالعملة المعتمدة ({currencyCode}).
+                  </CardDescription>
+                </div>
               </div>
+              <StatusBadge tone="info">{accounts.length} حساب</StatusBadge>
             </div>
-            <StatusBadge tone="info">{periods.length} فترات</StatusBadge>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          <EntityTable<AccountingPeriod>
-            aria-label="الفترات المحاسبية"
-            rows={periods}
-            keyOf={(period) => period.id}
-            columns={periodColumns}
-            emptyTitle="لا توجد فترات محاسبية"
-            emptyDescription="لا توجد فترات محاسبية مسجلة. راجع مسؤول النظام لفتح الفترات المحاسبية."
-          />
-        </CardContent>
-      </Card>
+          </CardHeader>
+          <CardContent className="p-0">
+            <EntityTable<ChartAccount>
+              aria-label="شجرة الحسابات الموحدة"
+              rows={accounts}
+              keyOf={(account) => account.id}
+              columns={accountColumns(currencyCode)}
+              emptyTitle="لا توجد حسابات مسجلة بعد"
+              emptyDescription="لا توجد حسابات مسجلة بعد في شجرة الحسابات. تواصل مع مسؤول النظام لإعداد شجرة الحسابات."
+            />
+          </CardContent>
+        </Card>
+      ) : null}
 
-      {/* Journal Batches Card */}
-      <Card className="overflow-hidden rounded-2xl border border-border/70 shadow-card">
-        <CardHeader className="border-b border-border/60 bg-muted/20 pb-4">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <span className="grid size-9 place-items-center rounded-xl bg-primary/10 text-primary">
-                <ListChecks className="size-5" />
-              </span>
-              <div>
-                <CardTitle className="text-base font-extrabold">أحدث قيود اليومية (Journal Batches)</CardTitle>
-                <CardDescription className="text-xs">
-                  سجل الدفعات المحاسبية المرحّلة تلقائياً عبر محرك القيود المزدوجة في النظام.
-                </CardDescription>
+      {activeWorkspace === 'periods' ? (
+        <Card id="ledger-workspace-periods" role="tabpanel" className="overflow-hidden rounded-2xl border border-border/70 shadow-card">
+          <CardHeader className="border-b border-border/60 bg-muted/20 p-3 sm:p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+                  <CalendarClock className="size-4.5" aria-hidden="true" />
+                </span>
+                <div className="min-w-0">
+                  <CardTitle className="text-sm font-extrabold sm:text-base">الفترات المحاسبية</CardTitle>
+                  <CardDescription className="mt-0.5 line-clamp-2 text-xs">
+                    راقب الفترات المفتوحة والإغلاق المرن والإغلاق النهائي من مكان واحد.
+                  </CardDescription>
+                </div>
               </div>
+              <StatusBadge tone={openPeriods > 0 ? 'green' : 'neutral'}>{openPeriods} مفتوحة</StatusBadge>
             </div>
-            <StatusBadge tone="neutral">أحدث {batches.length} قيد</StatusBadge>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          <EntityTable<JournalBatch>
-            aria-label="أحدث قيود اليومية"
-            rows={batches}
-            keyOf={(batch) => batch.id}
-            columns={batchColumns}
-            emptyTitle="لا توجد قيود يومية"
-            emptyDescription="لا توجد قيود يومية مسجلة بعد. ستظهر القيود تلقائياً عند تسجيل المعاملات المالية."
-          />
-        </CardContent>
-      </Card>
+          </CardHeader>
+          <CardContent className="p-0">
+            <EntityTable<AccountingPeriod>
+              aria-label="الفترات المحاسبية"
+              rows={periods}
+              keyOf={(period) => period.id}
+              columns={periodColumns}
+              emptyTitle="لا توجد فترات محاسبية"
+              emptyDescription="لا توجد فترات محاسبية مسجلة. راجع مسؤول النظام لفتح الفترات المحاسبية."
+            />
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {activeWorkspace === 'batches' ? (
+        <Card id="ledger-workspace-batches" role="tabpanel" className="overflow-hidden rounded-2xl border border-border/70 shadow-card">
+          <CardHeader className="border-b border-border/60 bg-muted/20 p-3 sm:p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+                  <ListChecks className="size-4.5" aria-hidden="true" />
+                </span>
+                <div className="min-w-0">
+                  <CardTitle className="text-sm font-extrabold sm:text-base">أحدث قيود اليومية</CardTitle>
+                  <CardDescription className="mt-0.5 line-clamp-2 text-xs">
+                    راجع القيود المحاسبية المسجلة وحالة ترحيلها ومصدر كل قيد.
+                  </CardDescription>
+                </div>
+              </div>
+              <StatusBadge tone="neutral">{batches.length} قيد</StatusBadge>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <EntityTable<JournalBatch>
+              aria-label="أحدث قيود اليومية"
+              rows={batches}
+              keyOf={(batch) => batch.id}
+              columns={batchColumns}
+              emptyTitle="لا توجد قيود يومية"
+              emptyDescription="لا توجد قيود يومية مسجلة بعد. ستظهر القيود تلقائياً عند تسجيل المعاملات المالية."
+            />
+          </CardContent>
+        </Card>
+      ) : null}
     </div>
   );
 }
