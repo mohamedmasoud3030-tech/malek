@@ -23,9 +23,23 @@ afterEach(() => {
 });
 
 describe('feature flag definitions', () => {
-  it('lists all flags with required metadata', () => {
+  it('lists the reviewed flag registry with required metadata', () => {
     const flags = listAllFlags();
-    expect(flags.length).toBe(7);
+    const expectedKeys = [
+      'ai-assistant',
+      'reports-v2',
+      'financial-wave-2',
+      'owner-agreements-v2',
+      'dashboard-v2',
+      'malek-pro-visual',
+      'commission-lifecycle-v2',
+      'next-accounting',
+    ];
+    const actualKeys = flags.map((flag) => flag.key);
+
+    expect(new Set(actualKeys).size).toBe(actualKeys.length);
+    expect([...actualKeys].sort()).toEqual([...expectedKeys].sort());
+
     for (const flag of flags) {
       expect(flag.key).toBeTruthy();
       expect(flag.owner).toBeTruthy();
