@@ -25,6 +25,7 @@ type ReportsWorkspaceProps = Readonly<{
  * reads the active report. Keeping those three steps in that order prevents the
  * page from reading like a stack of unrelated dashboards — especially on
  * phones — while preserving the existing deep-link and authority contracts.
+ * The active report deliberately remains the final, dominant visual block.
  */
 export function ReportsWorkspace({
   model,
