@@ -1,8 +1,6 @@
-import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { RefreshCw, ShieldCheck, UserCog, UsersRound } from 'lucide-react';
-import { toast } from 'sonner';
 import { DataErrorScreen } from '@/components/data-error-screen';
 import { EmptyState } from '@/components/empty-state';
 import { AccessDenied } from '@/components/layout/access-denied';
@@ -15,15 +13,10 @@ import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Textarea } from '@/components/ui/textarea';
 import type { UserRole } from '@/domain/types';
 import { getPermissionLabel } from '@/features/auth/permissions';
-import {
-  decidePermissionRequest,
-  listPermissionRequestsForReview,
-  revokePermissionGrant,
-  type PermissionRequest,
-} from '@/features/auth/permission-request-service';
 import { useAuth } from '@/hooks/use-auth';
 import { canManageGovernedUser, getRoleLabel } from '../user-roles-model';
 import { fetchGovernedUsers, type GovernedUser } from '../user-roles-service';
+import { usePermissionRequestReview, type PermissionRequest } from '../use-permission-request-review';
 
 const roleDescriptions: ReadonlyArray<Readonly<{ role: UserRole; description: string }>> = [
   { role: 'ADMIN', description: 'حوكمة المكتب وعرض المستخدمين؛ تغييرات الوصول مقترحات غير منفذة حتى اعتماد المسار عالي التأثير.' },
@@ -85,27 +78,16 @@ function formatRequestTime(value: string) {
 }
 
 function PermissionRequestsQueue() {
-  const queryClient = useQueryClient();
-  const [rejecting, setRejecting] = useState<PermissionRequest | null>(null);
-  const [decisionReason, setDecisionReason] = useState('');
-  const requestsQuery = useQuery({ queryKey: ['permission-requests', 'review'], queryFn: () => listPermissionRequestsForReview() });
-  const refresh = async () => { await queryClient.invalidateQueries({ queryKey: ['permission-requests'] }); };
-  const decisionMutation = useMutation({
-    mutationFn: ({ request, decision, reason }: { request: PermissionRequest; decision: 'APPROVED' | 'REJECTED'; reason: string }) => decidePermissionRequest(request.id, decision, reason),
-    onSuccess: async (_result, variables) => {
-      await refresh();
-      setRejecting(null);
-      setDecisionReason('');
-      toast.success(variables.decision === 'APPROVED' ? 'تم اعتماد الصلاحية وتفعيلها.' : 'تم رفض الطلب وتسجيل السبب.');
-    },
-    onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر تسجيل القرار.'),
-  });
-  const revokeMutation = useMutation({
-    mutationFn: (request: PermissionRequest) => revokePermissionGrant(request.requester_user_id, request.permission, 'إلغاء المنحة من شاشة مراجعة الصلاحيات'),
-    onSuccess: async () => { await refresh(); toast.success('تم إلغاء المنحة وتحديث صلاحيات المستخدم.'); },
-    onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر إلغاء المنحة.'),
-  });
-  const requests = requestsQuery.data ?? [];
+  const {
+    requestsQuery,
+    requests,
+    decisionMutation,
+    revokeMutation,
+    rejecting,
+    setRejecting,
+    decisionReason,
+    setDecisionReason,
+  } = usePermissionRequestReview();
 
   return (
     <section id="permission-requests" className="space-y-3 rounded-2xl border border-border bg-card p-4" aria-labelledby="permission-requests-heading">
