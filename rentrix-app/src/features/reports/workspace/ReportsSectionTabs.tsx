@@ -1,7 +1,6 @@
 import { useCallback } from 'react';
 import { SectionTabs } from '@/components/ui/section-tabs';
-import { StatusBadge } from '@/components/ui/status-badge';
-import { getReportCategoryLabel, reportSections, type ReportSectionId } from '../reports-page.sections';
+import { reportSections, type ReportSectionId } from '../reports-page.sections';
 import { getReportSubViews, type ReportViewId } from '../report-view-registry';
 
 type ReportsSectionTabsProps = Readonly<{
@@ -12,17 +11,12 @@ type ReportsSectionTabsProps = Readonly<{
 }>;
 
 /**
- * WP-C — Reports navigation surface.
+ * Compact two-level report navigation.
  *
- * Owns the section header card, the mobile section `<select>`, the desktop
- * scrollable tab strip and the per-section view switcher. Sub-views come from
- * the report view registry, so navigation can never list a view that the panel
- * router does not render.
- *
- * The view switchers are view switchers over a single panel per section
- * (`section-panel-accounting` / `section-panel-analytics`), so `panelId` must
- * reference that real panel rather than a per-view id that does not exist
- * (axe aria-valid-attr-value).
+ * The previous surface repeated the active section as a header card, a mobile
+ * select and a desktop tab strip before rendering the sub-view tabs. This keeps
+ * the same registry-driven navigation in one compact control so the report
+ * itself reaches the viewport much earlier on mobile.
  */
 export function ReportsSectionTabs({
   activeSection,
@@ -43,82 +37,43 @@ export function ReportsSectionTabs({
   );
 
   return (
-    <>
-      <section
-        className="min-w-0 overflow-hidden rounded-2xl border border-border/70 bg-card shadow-card"
-        aria-label="أقسام التقارير"
-        data-finance-card
-      >
-        <div className="flex flex-col gap-3 border-b border-border/60 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
-          <div className="flex min-w-0 items-start gap-3">
-            <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-              <ActiveSectionIcon className="size-5" aria-hidden="true" />
-            </span>
-            <div className="min-w-0" aria-live="polite">
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-base font-extrabold sm:text-lg">{activeSectionMeta.label}</h2>
-                <StatusBadge tone="info">{getReportCategoryLabel(activeSectionMeta)}</StatusBadge>
-              </div>
-              <p className="mt-1 max-w-3xl text-xs leading-5 text-muted-foreground sm:text-sm">{activeSectionMeta.description}</p>
-            </div>
-          </div>
-        </div>
+    <section
+      className="min-w-0 rounded-2xl border border-border/70 bg-card p-2.5 shadow-card sm:p-3"
+      aria-label="التنقل بين المحاسبة والتقارير"
+      data-finance-card
+    >
+      <div className="grid min-w-0 gap-2.5 lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.2fr)] lg:items-center">
+        <SectionTabs
+          items={reportSections}
+          activeId={activeSection}
+          onChange={onSectionChange}
+          ariaLabel="أقسام التقارير"
+          compactMobile
+        />
 
-        {/* Mobile reports navigation */}
-        <div className="border-b border-border/60 bg-card/95 px-3 py-3 sm:hidden" data-reports-mobile-nav>
-          <label htmlFor="reports-section-select" className="sr-only">
-            أقسام التقارير
-          </label>
-          <div className="flex items-center gap-2">
-            <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground">
-              <ActiveSectionIcon className="size-4" aria-hidden="true" />
-            </span>
-            <select
-              id="reports-section-select"
-              aria-label="أقسام التقارير"
-              value={activeSection}
-              onChange={(event) => onSectionChange(event.target.value as ReportSectionId)}
-              className="min-h-11 flex-1 rounded-xl border border-border bg-card px-3 py-2.5 text-sm font-semibold focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
-              dir="rtl"
-            >
-              {reportSections.map((section) => (
-                <option key={section.id} value={section.id}>
-                  {section.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Desktop reports navigation */}
-        <div
-          className="no-scrollbar sticky top-0 z-20 hidden overflow-x-auto border-b border-border/60 bg-card/95 px-3 pt-3 backdrop-blur focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/35 sm:block sm:px-4"
-          tabIndex={0}
-          role="region"
-          aria-label="شريط أقسام التقارير القابل للتمرير أفقياً"
-        >
-          <div className="min-w-0 space-y-2">
-            <SectionTabs
-              items={reportSections}
-              activeId={activeSection}
-              onChange={onSectionChange}
-              ariaLabel="أقسام التقارير"
-            />
-          </div>
-        </div>
-      </section>
-
-      {subViews.length > 0 ? (
-        <div className="border-b border-border/50 pb-2">
+        {subViews.length > 0 ? (
           <SectionTabs
             items={subViews}
             activeId={activeView || subViews[0].id}
             onChange={handleViewChange}
-            ariaLabel={activeSection === 'accounting' ? 'أقسام فرعية للمحاسبة' : 'أقسام فرعية للتحليلات'}
+            ariaLabel={activeSection === 'accounting' ? 'مساحات المحاسبة' : 'مساحات التحليلات'}
             panelId={panelId}
+            compactMobile
           />
-        </div>
-      ) : null}
-    </>
+        ) : (
+          <div className="flex min-h-11 items-center gap-2 rounded-lg border border-border/55 bg-muted/20 px-3 text-xs font-bold text-muted-foreground">
+            <ActiveSectionIcon className="size-4 shrink-0 text-primary" aria-hidden="true" />
+            <span className="truncate">{activeSectionMeta.label}</span>
+          </div>
+        )}
+      </div>
+
+      <div className="mt-2 flex min-w-0 items-center gap-2 px-1">
+        <ActiveSectionIcon className="size-4 shrink-0 text-primary" aria-hidden="true" />
+        <p className="min-w-0 truncate text-[11px] font-semibold text-muted-foreground sm:text-xs">
+          {activeSectionMeta.description}
+        </p>
+      </div>
+    </section>
   );
 }
