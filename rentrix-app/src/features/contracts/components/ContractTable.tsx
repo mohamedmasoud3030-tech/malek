@@ -30,8 +30,7 @@ const contractColumnOptions = [
   { key: "contract_number", label: "رقم العقد", locked: true },
   { key: "tenant", label: "المستأجر" },
   { key: "unit", label: "الوحدة" },
-  { key: "start_date", label: "تاريخ البداية" },
-  { key: "end_date", label: "تاريخ النهاية" },
+  { key: "period", label: "الفترة" },
   { key: "rent_amount", label: "قيمة الإيجار" },
   { key: "status", label: "الحالة" },
   { key: "actions", label: "الإجراءات", locked: true },
@@ -101,16 +100,16 @@ export function ContractTable({
       render: (contract) => contract.units?.unit_number ?? contract.properties?.title ?? "—",
     },
     {
-      key: "start_date",
-      header: "تاريخ البداية",
-      priority: "detail",
-      render: (contract) => formatContractDate(companySettings, contract.start_date),
-    },
-    {
-      key: "end_date",
-      header: "تاريخ النهاية",
+      key: "period",
+      header: "الفترة",
       priority: "secondary",
-      render: (contract) => formatContractDate(companySettings, contract.end_date),
+      render: (contract) => (
+        <span className="whitespace-nowrap tabular-nums" dir="rtl">
+          {formatContractDate(companySettings, contract.start_date)}
+          {" ← "}
+          {formatContractDate(companySettings, contract.end_date)}
+        </span>
+      ),
     },
     {
       key: "rent_amount",
@@ -181,6 +180,30 @@ export function ContractTable({
       emptyDescription={emptyDescription}
       emptyAction={onCreate ? <Button onClick={onCreate}>إنشاء عقد</Button> : undefined}
       pagination={pagination}
+      mobileBadgeKey="status"
+      mobileSummaryKeys={["tenant", "unit", "period", "rent_amount"]}
+      mobileCardPrimaryAction={(contract) => ({
+        label: "فتح التفاصيل",
+        variant: "default",
+        ariaLabel: `فتح تفاصيل العقد ${getContractNumber(contract)}`,
+        onClick: () => onPreview(contract.id),
+      })}
+      mobileCardActions={(contract) => [
+        {
+          label: "تعديل",
+          icon: Edit,
+          variant: "secondary",
+          ariaLabel: `تعديل العقد ${getContractNumber(contract)}`,
+          onClick: () => onEdit(contract.id),
+        },
+        {
+          label: "أرشفة",
+          icon: Trash2,
+          variant: "danger",
+          ariaLabel: `أرشفة العقد ${getContractNumber(contract)}`,
+          onClick: () => onDelete(contract.id),
+        },
+      ]}
       onRowClick={(contract) => setExpandedId((current) => current === contract.id ? null : contract.id)}
       renderRowExpansion={(contract) => (
         <div className="grid grid-cols-2 gap-4 [&>*:last-child:nth-child(odd)]:col-span-2">

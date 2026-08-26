@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { PropertyFormModal } from "./property-form-modal";
+import { formatPropertyUnitSummary } from "./property-card-utils";
 import { usePropertyListController } from "./use-property-list-controller";
 import { ListPage } from "@/components/layout/list-page";
 import { Button } from "@/components/ui/button";
@@ -21,7 +22,6 @@ import { Select } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { ActiveFilterBar } from "@/components/ui/active-filter-bar";
 import { EntityTable } from "@/components/ui/entity-table";
-import { ActionMenu } from "@/components/ui/action-menu";
 import { getAppLanguageState, translateSharedLabel } from "@/lib/i18n";
 import { toast } from "sonner";
 import {
@@ -34,8 +34,11 @@ import type { PropertyListItem } from "./property-service";
 const propertyColumnOptions = [
   { key: "title", label: "العقار", locked: true },
   { key: "status", label: "الحالة" },
-  { key: "workflow", label: "المالك والتشغيل" },
+  { key: "type", label: "النوع" },
   { key: "address", label: "العنوان" },
+  { key: "owner", label: "المالك" },
+  { key: "units", label: "الوحدات" },
+  { key: "workflow", label: "المالك والتشغيل" },
   { key: "actions", label: "الإجراءات", locked: true },
 ] as const;
 
@@ -223,6 +226,24 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
               total: controller.totalCount,
               onPageChange: controller.setPage,
             }}
+            mobileBadgeKey="status"
+            mobileSummaryKeys={["type", "address", "owner", "units"]}
+            mobileCardActions={(property) => [
+              {
+                label: "تعديل",
+                icon: Edit,
+                variant: "secondary",
+                ariaLabel: `تعديل ${property.title ?? "العقار"}`,
+                onClick: () => controller.openEditModal(property.id),
+              },
+              {
+                label: "أرشفة",
+                icon: Trash2,
+                variant: "danger",
+                ariaLabel: `أرشفة ${property.title ?? "العقار"}`,
+                onClick: () => controller.requestArchive(property.id, property.title ?? "عقار"),
+              },
+            ]}
             columns={[
               {
                 key: "title",
@@ -251,10 +272,12 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
                 ),
               },
               {
-                key: "workflow",
-                header: "المالك والتشغيل",
-                priority: "secondary",
-                render: (property) => <PropertyWorkflowStatus property={property} />,
+                key: "type",
+                header: "النوع",
+                priority: "detail",
+                render: (property) => (
+                  <span className="text-sm text-muted-foreground">{property.type || "—"}</span>
+                ),
               },
               {
                 key: "address",
@@ -267,36 +290,64 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
                 ),
               },
               {
+                key: "owner",
+                header: "المالك",
+                priority: "detail",
+                render: (property) => (
+                  <span className="text-sm text-muted-foreground">
+                    {property.current_owner_name || property.owner_name || "—"}
+                  </span>
+                ),
+              },
+              {
+                key: "units",
+                header: "الوحدات",
+                priority: "detail",
+                render: (property) => {
+                  const units = property.units ?? [];
+                  const summary = formatPropertyUnitSummary(
+                    units.length,
+                    units.filter((unit) => unit.status === "occupied").length,
+                  );
+                  return (
+                    <span className="text-sm tabular-nums text-muted-foreground">{summary.text}</span>
+                  );
+                },
+              },
+              {
+                key: "workflow",
+                header: "المالك والتشغيل",
+                priority: "secondary",
+                render: (property) => <PropertyWorkflowStatus property={property} />,
+              },
+              {
                 key: "actions",
                 header: "إجراءات",
                 priority: "actions",
                 render: (property) => (
                   <div
-                    className="flex"
+                    className="flex flex-wrap items-center gap-2"
                     onClick={(event) => event.stopPropagation()}
                     onKeyDown={(event) => event.stopPropagation()}
                   >
-                    <ActionMenu
-                      label="إجراءات العقار"
-                      items={[
-                        {
-                          id: "edit",
-                          label: "تعديل",
-                          icon: Edit,
-                          onClick: () => controller.openEditModal(property.id),
-                        },
-                        {
-                          id: "archive",
-                          label: "أرشفة",
-                          icon: Trash2,
-                          variant: "destructive",
-                          onClick: () => controller.requestArchive(
-                            property.id,
-                            property.title ?? "عقار",
-                          ),
-                        },
-                      ]}
-                    />
+                    <Button
+                      variant="secondary"
+                      className="min-h-11 px-3"
+                      aria-label={`تعديل ${property.title ?? "العقار"}`}
+                      onClick={() => controller.openEditModal(property.id)}
+                    >
+                      <Edit className="me-1 size-4" aria-hidden="true" />
+                      تعديل
+                    </Button>
+                    <Button
+                      variant="danger"
+                      className="min-h-11 px-3"
+                      aria-label={`أرشفة ${property.title ?? "العقار"}`}
+                      onClick={() => controller.requestArchive(property.id, property.title ?? "عقار")}
+                    >
+                      <Trash2 className="me-1 size-4" aria-hidden="true" />
+                      أرشفة
+                    </Button>
                   </div>
                 ),
               },

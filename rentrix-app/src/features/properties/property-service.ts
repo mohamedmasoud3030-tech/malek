@@ -2,7 +2,7 @@ import { getCrudWriteErrorMessage } from '@/lib/data/crud-write-error';
 import { fetchAllRows } from '@/lib/paginatedRead';
 import { supabase } from '@/lib/supabase';
 import type { Database } from '@/types/database';
-import type { Contract, Property } from '@/types/domain';
+import type { Contract, Property, Unit } from '@/types/domain';
 import { propertySchema, type PropertyFormValues, type PropertyPayload } from './property-schema';
 
 export type PropertyStatusFilter = Property['status'] | 'all';
@@ -40,9 +40,20 @@ type PropertyWorkflowAgreement = Readonly<{
   ends_on: string | null;
 }>;
 
+/**
+ * Lightweight unit projection embedded in the property list read.
+ *
+ * The list query is a single PostgREST request (no N+1); only the fields the
+ * card summary needs are selected, under the same RLS that governs the units
+ * table. Counting rows in the client is presentation only — no financial or
+ * business calculation.
+ */
+type PropertyListUnit = Readonly<{ id: string; status: Unit['status'] }>;
+
 type PropertyWithWorkflowRelations = Property & Readonly<{
   property_owners?: PropertyWorkflowOwnerLink[] | null;
   owner_agreements?: PropertyWorkflowAgreement[] | null;
+  units?: PropertyListUnit[] | null;
 }>;
 
 export type PropertyWorkflowHealth =
@@ -159,7 +170,7 @@ export async function listProperties(params: PropertyListParams): Promise<Pagina
   const to = from + params.pageSize - 1;
   let query = supabase
     .from('properties')
-    .select('*, property_owners(owner_id,is_primary,starts_on,ends_on,owner:owners(display_name,full_name,name,deleted_at,is_active)), owner_agreements(starts_on,ends_on)', { count: 'exact' })
+    .select('*, property_owners(owner_id,is_primary,starts_on,ends_on,owner:owners(display_name,full_name,name,deleted_at,is_active)), owner_agreements(starts_on,ends_on), units(id,status)', { count: 'exact' })
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
     .order('id', { ascending: false })

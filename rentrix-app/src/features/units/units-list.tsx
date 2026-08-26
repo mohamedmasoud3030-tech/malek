@@ -214,6 +214,43 @@ export function UnitsList({
               params: { propertyId, unitId: unit.id },
             })
           }
+          mobileBadgeKey="status"
+          mobileSummaryKeys={["rent_amount", "notes"]}
+          mobileCardActions={(unit) => {
+            const actions: Array<{ label: string; icon: typeof Edit; variant: "secondary" | "danger"; ariaLabel: string; onClick: () => void }> = [];
+            if (unitDraftsByUnitId.has(unit.id)) {
+              actions.push({
+                label: "مراجعة المسودة",
+                icon: FilePlus2,
+                variant: "secondary",
+                ariaLabel: `مراجعة مسودة عقد وحدة ${unit.unit_number}`,
+                onClick: () => void navigate({ to: "/contracts/$contractId", params: { contractId: unitDraftsByUnitId.get(unit.id)! } }),
+              });
+            } else if (unit.status === "available") {
+              actions.push({
+                label: "تأجير",
+                icon: FilePlus2,
+                variant: "secondary",
+                ariaLabel: `بدء تأجير وحدة ${unit.unit_number}`,
+                onClick: () => startLeasing(unit),
+              });
+            }
+            actions.push({
+              label: "تعديل",
+              icon: Edit,
+              variant: "secondary",
+              ariaLabel: `تعديل وحدة ${unit.unit_number}`,
+              onClick: () => openForEdit(unit),
+            });
+            actions.push({
+              label: "أرشفة",
+              icon: Archive,
+              variant: "danger",
+              ariaLabel: `أرشفة وحدة ${unit.unit_number}`,
+              onClick: () => setArchiveCandidate(unit),
+            });
+            return actions;
+          }}
         />
       </div>
 

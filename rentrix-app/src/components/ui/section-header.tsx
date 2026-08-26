@@ -17,7 +17,7 @@ interface SectionHeaderProps {
  */
 export function SectionHeader({ title, description, eyebrow, action, className }: SectionHeaderProps) {
   return (
-    <div className={cn('mb-3 flex items-start justify-between gap-3', className)}>
+    <div data-section-header className={cn('mb-3 flex items-start justify-between gap-3', className)}>
       <div className="min-w-0">
         {eyebrow ? (
           <p className="mb-0.5 text-xs font-extrabold text-primary" data-section-eyebrow>

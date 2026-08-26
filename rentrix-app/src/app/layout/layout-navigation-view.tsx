@@ -183,6 +183,11 @@ const mobileQuickActions: readonly MobileQuickAction[] = [
 /**
  * Compact MALEK mobile dock inspired by data-console density: navigation is
  * the primary wide action, while quick-create, AI and notifications stay small.
+ *
+ * Quick Add opens a CLEAR VERTICAL STACK (one action per row) instead of an
+ * ambiguous 2×2 icon grid: each row pairs an icon with its full label on a
+ * comfortable 44px tap target, filtered by the same permission rules as the
+ * dashboard quick actions.
  */
 export function MobileFloatingControl({ onMenu, menuRef }: Readonly<{ onMenu: () => void; menuRef?: Ref<HTMLButtonElement> }>) {
   const { authorization } = useAuth();
@@ -190,7 +195,9 @@ export function MobileFloatingControl({ onMenu, menuRef }: Readonly<{ onMenu: ()
   const sharedLabel = (key: string) => translateSharedLabel(key, appLanguage.language);
   const [quickOpen, setQuickOpen] = useState(false);
   const quickRootRef = useRef<HTMLDivElement>(null);
-  const visibleQuickActions = mobileQuickActions;
+  const visibleQuickActions = mobileQuickActions.filter(
+    (item) => !item.permission || canAccessRoute(authorization, item.permission),
+  );
   const utilityActionClass =
     'grid size-10 min-h-11 min-w-11 shrink-0 place-items-center rounded-xl border border-transparent text-muted-foreground outline-none transition-[background-color,color,border-color,box-shadow,transform] duration-150 hover:bg-muted hover:text-foreground active:scale-[0.97] focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none motion-reduce:transform-none';
 
@@ -232,24 +239,32 @@ export function MobileFloatingControl({ onMenu, menuRef }: Readonly<{ onMenu: ()
             role="menu"
             aria-label="الإضافة السريعة"
             data-mobile-quick-add-menu
-            className="absolute inset-x-0 bottom-[calc(100%+0.5rem)] grid grid-cols-2 gap-1 rounded-xl border border-border/70 bg-card p-1.5 shadow-elevated"
+            className="absolute bottom-[calc(100%+0.5rem)] left-1/2 w-[min(16rem,calc(100vw-1.5rem))] -translate-x-1/2 overflow-hidden rounded-2xl border border-border/70 bg-card shadow-elevated"
           >
-            {visibleQuickActions.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.id}
-                  to={item.to}
-                  search={item.search as Record<string, string> | undefined}
-                  role="menuitem"
-                  onClick={() => setQuickOpen(false)}
-                  className="flex min-h-10 items-center gap-2 rounded-lg px-2.5 text-xs font-bold text-foreground outline-none transition-colors hover:bg-muted focus-visible:ring-4 focus-visible:ring-primary/20"
-                >
-                  <Icon className="size-4 shrink-0 text-primary" aria-hidden="true" />
-                  <span className="truncate">{item.label}</span>
-                </Link>
-              );
-            })}
+            <p className="px-3 pb-1 pt-2.5 text-[11px] font-bold tracking-wide text-muted-foreground" data-mobile-quick-add-title>
+              إضافة سريعة
+            </p>
+            <div className="flex flex-col gap-0.5 p-1.5" data-mobile-quick-add-list>
+              {visibleQuickActions.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.id}
+                    to={item.to}
+                    search={item.search as Record<string, string> | undefined}
+                    role="menuitem"
+                    data-mobile-quick-add-item
+                    onClick={() => setQuickOpen(false)}
+                    className="flex min-h-11 items-center gap-2.5 rounded-xl px-2.5 text-sm font-bold text-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:bg-muted focus-visible:ring-2 focus-visible:ring-primary/25"
+                  >
+                    <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary" aria-hidden="true">
+                      <Icon className="size-4" />
+                    </span>
+                    <span className="min-w-0 truncate">{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
           </div>
         ) : null}
 

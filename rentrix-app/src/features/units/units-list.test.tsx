@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import type { UseQueryResult } from '@tanstack/react-query';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -56,5 +57,48 @@ describe('UnitsList load states', () => {
     expect(html).toContain('إعداد الاتصال بقاعدة البيانات غير مكتمل.');
     expect(html).toContain('إعادة المحاولة');
     expect(html).not.toContain('لا توجد وحدات');
+  });
+});
+
+describe('UnitsList mobile card density', () => {
+  it('shows unit identity, status, rent and flat actions on the mobile card', () => {
+    const unitsQuery = makeUnitsQuery({
+      data: [
+        {
+          id: 'unit-1',
+          name: null,
+          property_id: 'property-1',
+          unit_number: 'A-101',
+          floor: 'الدور الثاني',
+          status: 'occupied',
+          rent_amount: 420,
+          notes: 'تسليم مفتاح تم',
+          created_at: '2026-01-01T00:00:00Z',
+          updated_at: '2026-01-01T00:00:00Z',
+          deleted_at: null,
+          company_id: 'company-1',
+        },
+      ],
+    });
+
+    const html = renderUnitsList(unitsQuery);
+    const host = document.createElement('div');
+    host.innerHTML = html;
+
+    const card = host.querySelector<HTMLElement>('[data-entity-table-mobile-card]');
+    expect(card).not.toBeNull();
+    // Identity + occupancy status.
+    expect(card?.textContent).toContain('وحدة A-101');
+    expect(card?.textContent).toContain('مشغولة');
+    // Quick facts: rent (authoritative in the list model) + notes.
+    const summary = card?.querySelector<HTMLElement>('[data-entity-table-mobile-summary]');
+    expect(summary).not.toBeNull();
+    expect(summary?.textContent).toContain('الإيجار');
+    expect(summary?.textContent).toContain('تسليم مفتاح تم');
+    // Flat actions: no «إجراءات» disclosure layer.
+    expect(host.querySelector('[data-entity-table-mobile-actions]')).toBeNull();
+    expect(card?.textContent).toContain('فتح التفاصيل');
+    expect(card?.textContent).toContain('تعديل');
+    expect(card?.textContent).toContain('أرشفة');
   });
 });

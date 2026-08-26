@@ -96,6 +96,29 @@ export interface EntityTableProps<T> {
   onExpandedRowChange?: (rowId: string | null) => void;
   /** High-value field shown below identity on mobile cards. */
   mobileVisibleSecondaryKey?: string;
+  /**
+   * Mobile card badge column (e.g. the status column). Rendered in the card
+   * badge slot instead of the generic entity-type chip.
+   */
+  mobileBadgeKey?: string;
+  /**
+   * Ordered mobile-card quick facts. Each key must reference a configured
+   * column; the column header becomes the fact label and its render the
+   * value. Prefer rendering data the list query already fetched.
+   */
+  mobileSummaryKeys?: readonly string[];
+  /**
+   * Structured secondary actions for the mobile card (edit, archive, ...).
+   * Rendered directly in the card action area — one flat level, no
+   * intermediate "إجراءات" disclosure. Destructive actions must keep their
+   * page-level confirmation dialogs.
+   */
+  mobileCardActions?: (row: T) => EntityCardAction[];
+  /**
+   * Override the mobile card primary action (e.g. navigate to the detail
+   * route instead of expanding the desktop row).
+   */
+  mobileCardPrimaryAction?: (row: T) => EntityCardAction | undefined;
   /** Optional shared toolbar content rendered inside the register chrome. */
   toolbar?: ReactNode;
   /** Optional row-selection contract. Selection remains page-owned. */
@@ -290,7 +313,11 @@ function MobileRegisterListItem<T>({
   ariaLabel,
   identityColumn,
   datumColumn,
+  badgeColumn,
+  summaryColumns,
   actionsColumn,
+  structuredActions,
+  primaryAction,
   selected,
   onToggleSelected,
   onRowClick,
@@ -300,7 +327,12 @@ function MobileRegisterListItem<T>({
   ariaLabel: string;
   identityColumn: ResolvedColumn<T>;
   datumColumn?: ResolvedColumn<T>;
+  badgeColumn?: ResolvedColumn<T>;
+  summaryColumns?: ResolvedColumn<T>[];
   actionsColumn?: ResolvedColumn<T>;
+  /** When provided, secondary actions render flat in the card (no disclosure). */
+  structuredActions?: EntityCardAction[];
+  primaryAction?: EntityCardAction;
   selected: boolean;
   onToggleSelected?: () => void;
   onRowClick?: (row: T) => void;
@@ -308,28 +340,56 @@ function MobileRegisterListItem<T>({
   const [actionsOpen, setActionsOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const rowLabel = nodeToText(identityColumn.render(row)).trim() || 'السجل';
+  const hasStructuredActions = structuredActions !== undefined;
 
   const cardActions: EntityCardAction[] = [];
-  if (onRowClick) {
-    cardActions.push({ label: 'فتح التفاصيل', variant: 'default', onClick: () => onRowClick(row), ariaLabel: `فتح ${rowLabel}` });
+  if (primaryAction ?? onRowClick) {
+    cardActions.push(primaryAction ?? { label: 'فتح التفاصيل', variant: 'default', onClick: () => onRowClick!(row), ariaLabel: `فتح ${rowLabel}` });
   }
   if (onToggleSelected) {
     cardActions.push({ label: selected ? 'إلغاء التحديد' : 'تحديد السجل', variant: 'secondary', onClick: onToggleSelected, ariaLabel: `${selected ? 'إلغاء تحديد' : 'تحديد'} ${rowLabel}` });
   }
+  if (hasStructuredActions) {
+    cardActions.push(...(structuredActions ?? []));
+  }
+
+  const hasSummaryGrid = Boolean(summaryColumns && summaryColumns.length > 0);
 
   return (
     <li role="listitem" data-entity-table-mobile-card className="min-w-0">
       <EntityCard
         id={rowKey}
         name={<span data-entity-table-mobile-primary>{identityColumn.render(row)}</span>}
-        supportingText={datumColumn ? datumColumn.header : undefined}
-        stats={datumColumn ? <div data-entity-table-mobile-datum className="min-w-0 break-words font-bold [overflow-wrap:anywhere]">{datumColumn.render(row)}</div> : undefined}
-        badge={selected ? <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-bold text-primary">محدد</span> : undefined}
+        supportingText={hasSummaryGrid || badgeColumn ? undefined : (datumColumn ? datumColumn.header : undefined)}
+        stats={
+          hasSummaryGrid
+            ? (
+              <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5" data-entity-table-mobile-summary>
+                {summaryColumns!.map((column) => (
+                  <div key={column.key} className="min-w-0">
+                    <dt className="truncate text-[10px] font-bold leading-4 text-muted-foreground">{column.header}</dt>
+                    <dd className="truncate text-xs font-semibold leading-4 text-foreground" data-entity-table-mobile-datum>
+                      {column.render(row)}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            )
+            : datumColumn
+              ? <div data-entity-table-mobile-datum className="min-w-0 break-words font-bold [overflow-wrap:anywhere]">{datumColumn.render(row)}</div>
+              : undefined
+        }
+        badge={badgeColumn ? badgeColumn.render(row) : selected ? <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-bold text-primary">محدد</span> : undefined}
         actions={cardActions.length > 0 ? cardActions : undefined}
         className={selected ? 'border-primary/35 ring-2 ring-primary/10' : undefined}
       />
 
-      {actionsColumn ? (
+      {/*
+        Legacy disclosure fallback: kept only for registers that have not
+        adopted structured mobile actions yet. Properties / Units / Contracts
+        render their secondary actions flat inside the card above.
+      */}
+      {!hasStructuredActions && actionsColumn ? (
         <div className="mt-1.5 rounded-xl border border-border/70 bg-card p-1.5 shadow-sm">
           <Button
             ref={triggerRef}
@@ -388,6 +448,10 @@ export function EntityTable<T>({
   expandedRowId,
   onExpandedRowChange,
   mobileVisibleSecondaryKey,
+  mobileBadgeKey,
+  mobileSummaryKeys,
+  mobileCardActions,
+  mobileCardPrimaryAction,
   toolbar,
   rowSelection,
   visibleColumnKeys,
@@ -483,6 +547,14 @@ export function EntityTable<T>({
   if (!identityColumn) return null;
   const datumColumn = selectMobileDatum(resolvedColumns, identityColumn, mobileVisibleSecondaryKey);
   const actionsColumn = resolvedColumns.find((column) => column.resolvedPriority === 'actions');
+  const badgeColumn = mobileBadgeKey
+    ? resolvedColumns.find((column) => column.key === mobileBadgeKey)
+    : undefined;
+  const summaryColumns = mobileSummaryKeys
+    ? mobileSummaryKeys
+        .map((key) => resolvedColumns.find((column) => column.key === key))
+        .filter((column): column is ResolvedColumn<T> => Boolean(column))
+    : undefined;
   const colSpan = resolvedColumns.length + (hasExpansion ? 1 : 0) + (rowSelection ? 1 : 0);
 
   return (
@@ -505,7 +577,11 @@ export function EntityTable<T>({
                 ariaLabel={ariaLabel}
                 identityColumn={identityColumn}
                 datumColumn={datumColumn}
+                badgeColumn={badgeColumn}
+                summaryColumns={summaryColumns}
                 actionsColumn={actionsColumn}
+                structuredActions={mobileCardActions ? mobileCardActions(row) : undefined}
+                primaryAction={mobileCardPrimaryAction ? mobileCardPrimaryAction(row) : undefined}
                 selected={selectedSet.has(rowKey)}
                 onToggleSelected={rowSelection ? () => toggleSelected(rowKey) : undefined}
                 onRowClick={onRowClick}

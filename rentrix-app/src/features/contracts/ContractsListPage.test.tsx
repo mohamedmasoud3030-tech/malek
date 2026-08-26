@@ -1,9 +1,16 @@
+// @vitest-environment happy-dom
 import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ContractsListPage } from './ContractsListPage';
+import { formatContractDate } from './contractDisplayFormatters';
 import { normalizeSearchText } from './hooks/useContractFilters';
 import type { ContractListItem } from './services/contractService';
 import { contractRowFixtureDefaults } from '@/test/contractRowFixture';
+import { testCompanySettingsContract } from '@/test/companySettingsContractMock';
+
+// Locale-exact period labels so the test does not depend on digit systems.
+const startDateLabel = formatContractDate(testCompanySettingsContract, '2026-01-01');
+const endDateLabel = formatContractDate(testCompanySettingsContract, '2026-12-31');
 
 vi.mock('../settings/useCompanySettings', async () => {
   const { testCompanySettingsContract } = await import('../../test/companySettingsContractMock');
@@ -102,6 +109,35 @@ describe('ContractsListPage load states', () => {
     expect(html).toContain('data-entity-table-mobile-card');
     expect(html).toContain('أحمد سالم');
     expect(html).toContain('A-101');
+  });
+
+  it('shows tenant, unit, period and rent on the contract mobile card with flat actions', () => {
+    contractsMocks.contractsQuery.data = { rows: [contractFixture], count: 1 };
+
+    const html = renderToStaticMarkup(<ContractsListPage />);
+    const host = document.createElement('div');
+    host.innerHTML = html;
+
+    const card = host.querySelector<HTMLElement>('[data-entity-table-mobile-card]');
+    expect(card).not.toBeNull();
+    // Primary status badge.
+    expect(card?.textContent).toContain('نشط');
+    // Quick facts: tenant, unit, full period (start ← end), rent.
+    const summary = card?.querySelector<HTMLElement>('[data-entity-table-mobile-summary]');
+    expect(summary).not.toBeNull();
+    expect(summary?.textContent).toContain('المستأجر');
+    expect(summary?.textContent).toContain('أحمد سالم');
+    expect(summary?.textContent).toContain('الوحدة');
+    expect(summary?.textContent).toContain('A-101');
+    expect(summary?.textContent).toContain('الفترة');
+    expect(summary?.textContent).toContain(startDateLabel);
+    expect(summary?.textContent).toContain(endDateLabel);
+    expect(summary?.textContent).toContain('قيمة الإيجار');
+    // Flat actions: details + edit + archive, no «إجراءات» disclosure layer.
+    expect(host.querySelector('[data-entity-table-mobile-actions]')).toBeNull();
+    expect(card?.textContent).toContain('فتح التفاصيل');
+    expect(card?.textContent).toContain('تعديل');
+    expect(card?.textContent).toContain('أرشفة');
   });
 
   it('shows the server-exact totals instead of the loaded page size', () => {

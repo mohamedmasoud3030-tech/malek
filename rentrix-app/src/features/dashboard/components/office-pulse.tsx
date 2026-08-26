@@ -32,7 +32,7 @@ export function OfficePulse({ snapshot, isLoading, settings }: OfficePulseProps)
         <KpiCard
           label="التحصيل هذا الشهر"
           value={formatCompanyMoney(settings, collected)}
-          sub="المبالغ المحصلة ضمن الفترة الحالية"
+          sub="ضمن الفترة الحالية"
           icon={HandCoins}
           accent="emerald"
           compact
@@ -40,7 +40,7 @@ export function OfficePulse({ snapshot, isLoading, settings }: OfficePulseProps)
         <KpiCard
           label="المتبقي للتحصيل"
           value={formatCompanyMoney(settings, outstanding)}
-          sub="المبالغ المستحقة غير المحصلة بعد"
+          sub="المستحقة غير المحصلة"
           icon={WalletCards}
           accent={outstanding > 0 ? 'amber' : 'slate'}
           compact
@@ -48,7 +48,7 @@ export function OfficePulse({ snapshot, isLoading, settings }: OfficePulseProps)
         <KpiCard
           label="نسبة الإشغال"
           value={`${occupancyRate}%`}
-          sub="الوحدات المشغولة من إجمالي المحفظة"
+          sub="مشغولة من إجمالي المحفظة"
           icon={Building2}
           accent={occupancyRate >= 90 ? 'emerald' : occupancyRate >= 70 ? 'sky' : 'amber'}
           compact
@@ -56,7 +56,7 @@ export function OfficePulse({ snapshot, isLoading, settings }: OfficePulseProps)
         <KpiCard
           label="العقود النشطة"
           value={activeContracts}
-          sub="العقود السارية حالياً"
+          sub="سارية الآن"
           icon={CalendarCheck2}
           accent="sky"
           compact
