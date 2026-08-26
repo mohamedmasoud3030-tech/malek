@@ -7,10 +7,18 @@ import type {
   CompanySettingsValidationErrors,
 } from '../settingsForm';
 
+/**
+ * Shared form primitives for the Settings workspace (WP-D `form/` machinery).
+ *
+ * `draft` is intentionally a partial view: section components pass the
+ * section-scoped slice produced by `useSettingsSection`, so these primitives
+ * never need the monolithic whole-record draft. Passing the full draft (as
+ * compatibility callers do) keeps working — `Partial` accepts it.
+ */
 type BaseFieldProps = Readonly<{
   label: string;
   field: CompanySettingsDraftField;
-  draft: CompanySettingsDraft;
+  draft: Readonly<Partial<CompanySettingsDraft>>;
   errors: CompanySettingsValidationErrors;
   disabled: boolean;
   onChange: (field: CompanySettingsDraftField, value: string) => void;
@@ -33,7 +41,7 @@ export function FormField({ label, field, draft, errors, disabled, placeholder, 
         id={inputId}
         type={type}
         inputMode={inputMode}
-        value={draft[field]}
+        value={draft[field] ?? ''}
         placeholder={placeholder}
         disabled={disabled}
         aria-invalid={isInvalid}
@@ -58,7 +66,7 @@ export function SelectField({ label, field, draft, errors, disabled, options, on
       <span>{label}</span>
       <Select
         id={selectId}
-        value={draft[field]}
+        value={draft[field] ?? ''}
         disabled={disabled}
         aria-invalid={isInvalid}
         aria-describedby={isInvalid ? errorId : undefined}

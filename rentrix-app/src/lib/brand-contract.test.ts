@@ -56,6 +56,10 @@ const DISPLAY_NAME_ALLOWLIST = new Map<string, string>([
     'Fixture tenant names assert trimming/validation behaviour, not product identity.',
   ],
   [
+    'src/features/settings/form/sectionDrafts.test.ts',
+    'Fixture tenant names in the WP-D section-draft decomposition tests assert validation/slice behaviour, not product identity.',
+  ],
+  [
     'src/features/settings/settings-workspace-model.test.ts',
     'Fixture company row for the settings view model.',
   ],
