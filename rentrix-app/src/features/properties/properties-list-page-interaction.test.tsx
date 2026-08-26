@@ -91,12 +91,10 @@ describe('PropertiesListPage mobile workflow interactions', () => {
     await act(async () => row?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
     expect(mockNavigate).toHaveBeenCalledWith({ to: '/properties/$propertyId', params: { propertyId: 'property-1' } });
 
-    // ActionMenu renders the trigger button inside a [data-action-menu] wrapper
-    // when more than one action exists (entity-table redesign).
-    const actionMenu = container.querySelector('[data-action-menu] button, button[data-action-menu]');
-    expect(actionMenu).toBeTruthy();
-    await act(async () => actionMenu?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
-    const editButton = Array.from(document.body.querySelectorAll('button')).find((button) => button.textContent?.trim() === 'تعديل');
+    // Secondary actions are flat now: no «إجراءات» layer to open first —
+    // edit is a direct row action on both the desktop row and the mobile card.
+    expect(container.querySelector('[data-action-menu]')).toBeNull();
+    const editButton = Array.from(container.querySelectorAll('button')).find((button) => button.textContent?.trim() === 'تعديل');
     expect(editButton).toBeTruthy();
     await act(async () => editButton?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
     expect(document.body.textContent).toContain('تعديل عقار');

@@ -129,24 +129,61 @@ describe('PropertiesListPage controller regression', () => {
     expect(mockNavigate).toHaveBeenCalledWith({ to: '/properties/$propertyId', params: { propertyId: 'p1' } });
   });
 
-  it('opens edit modal from the nested row action', async () => {
+  it('renders mobile property cards with scan-level summary fields and flat actions', async () => {
+    propertyRows = [{
+      id: 'p1', title: 'عمارة الندى', type: 'سكني', address: 'الرياض', status: 'active',
+      purchase_value: null, current_value: null, notes: null,
+      workflow_health: 'ready', current_owner_name: 'مالك تجريبي',
+      units: [
+        { id: 'u1', status: 'occupied' },
+        { id: 'u2', status: 'occupied' },
+        { id: 'u3', status: 'available' },
+      ],
+    }];
+
     await act(async () => { root.render(<PropertiesListPage />); });
-    const menu = Array.from(container.querySelectorAll('button')).find((button) => button.textContent?.includes('إجراءات العقار')) as HTMLButtonElement | undefined;
-    expect(menu).toBeTruthy();
-    await act(async () => { menu?.click(); });
-    const editBtn = Array.from(document.body.querySelectorAll('[role="menuitem"]')).find((button) => button.textContent?.includes('تعديل'));
+
+    const card = container.querySelector<HTMLElement>('[data-entity-table-mobile-card]');
+    expect(card).toBeTruthy();
+    // Identity + primary status badge.
+    expect(card?.textContent).toContain('عمارة الندى');
+    expect(card?.textContent).toContain('نشط');
+    // Quick facts: type, address, owner, units (counted from the embedded units).
+    const summary = card?.querySelector<HTMLElement>('[data-entity-table-mobile-summary]');
+    expect(summary).toBeTruthy();
+    expect(summary?.textContent).toContain('النوع');
+    expect(summary?.textContent).toContain('سكني');
+    expect(summary?.textContent).toContain('العنوان');
+    expect(summary?.textContent).toContain('الرياض');
+    expect(summary?.textContent).toContain('المالك');
+    expect(summary?.textContent).toContain('مالك تجريبي');
+    expect(summary?.textContent).toContain('الوحدات');
+    expect(summary?.textContent).toContain('2/3 وحدة');
+    // No intermediate «إجراءات» disclosure on the card.
+    expect(container.querySelector('[data-entity-table-mobile-actions]')).toBeNull();
+    // Primary + secondary actions live flat on the card.
+    expect(card?.textContent).toContain('فتح التفاصيل');
+    expect(card?.textContent).toContain('تعديل');
+    expect(card?.textContent).toContain('أرشفة');
+  });
+
+  it('opens edit modal from the flat row action (no three-dot menu layer)', async () => {
+    await act(async () => { root.render(<PropertiesListPage />); });
+    // The legacy «إجراءات العقار» disclosure must be gone: edit is a direct action.
+    const menu = Array.from(container.querySelectorAll('button')).find((button) => button.textContent?.includes('إجراءات العقار'));
+    expect(menu).toBeUndefined();
+    const editBtn = Array.from(container.querySelectorAll('button')).find((button) => button.textContent?.trim() === 'تعديل');
     expect(editBtn).toBeTruthy();
-    await act(async () => { (editBtn as HTMLButtonElement).click(); });
+    await act(async () => { editBtn?.click(); });
     expect(document.body.textContent).toContain('تعديل عقار');
   });
 
-  it('shows archive confirmation dialog', async () => {
+  it('shows archive confirmation dialog from the flat row action (no accidental one-tap archive)', async () => {
     await act(async () => { root.render(<PropertiesListPage />); });
-    const menu = Array.from(container.querySelectorAll('button')).find((button) => button.textContent?.includes('إجراءات العقار')) as HTMLButtonElement | undefined;
-    await act(async () => { menu?.click(); });
-    const archiveBtn = Array.from(document.body.querySelectorAll('[role="menuitem"]')).find((button) => button.textContent?.includes('أرشفة'));
+    const archiveBtn = Array.from(container.querySelectorAll('button')).find((button) => button.textContent?.trim() === 'أرشفة');
     expect(archiveBtn).toBeTruthy();
-    await act(async () => { (archiveBtn as HTMLButtonElement).click(); });
+    await act(async () => { archiveBtn?.click(); });
+    // Archive must open the confirmation dialog, never act immediately.
     expect(document.body.textContent).toContain('أرشفة العقار');
   });
 

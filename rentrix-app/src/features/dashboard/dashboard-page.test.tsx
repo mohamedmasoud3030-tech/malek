@@ -134,6 +134,23 @@ describe('Dashboard command center query boundary tests', () => {
     expect(text).toContain('حالة التحصيل');
   });
 
+  it('moves Day + Date into the compact Today context strip instead of the top header', async () => {
+    (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
+    await renderPage();
+
+    const todayContext = container?.querySelector<HTMLElement>('[data-dashboard-today-context]');
+    expect(todayContext).not.toBeNull();
+    // "اليوم" stays the page heading, now inside the context strip.
+    expect(todayContext?.querySelector('h1')?.textContent).toBe('اليوم');
+    // Localized weekday + localized date live in the strip (moved out of the header).
+    const weekday = todayContext?.querySelector<HTMLElement>('[data-dashboard-today-weekday]');
+    const dayDate = todayContext?.querySelector<HTMLElement>('[data-dashboard-today-day-date]');
+    expect(weekday?.textContent?.trim().length).toBeGreaterThan(0);
+    expect(dayDate?.textContent?.trim().length).toBeGreaterThan(0);
+    // The old centered header date block must not exist anywhere on the page.
+    expect(container?.querySelector('[data-header-date-center]')).toBeNull();
+  });
+
   it('scopes Visual Contract V2 on a real dashboard-owned wrapper', async () => {
     (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
     await renderPage();

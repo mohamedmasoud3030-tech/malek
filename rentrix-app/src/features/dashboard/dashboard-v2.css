@@ -41,7 +41,9 @@
 
   --app-page-gutter-inline: clamp(1rem, 4vw, 1.25rem);
   --app-page-gutter-block: clamp(1rem, 3vw, 1.5rem);
-  --dashboard-section-gap: 2rem;
+  /* Mobile density scale: sections stay close enough to scan as one command
+     center without stacking; tablet/desktop keep the comfortable 2.25rem. */
+  --dashboard-section-gap: 1.25rem;
   --dashboard-cluster-gap: 0.75rem;
 
   --background: var(--color-bg);
@@ -111,6 +113,52 @@
 
 [data-visual-contract='v2'] .dashboard-section {
   min-width: 0;
+}
+
+/* Density: headings sit closer to their cards on the command center. */
+[data-visual-contract='v2'] [data-section-header] {
+  margin-block-end: 0.625rem;
+}
+
+/* Office Pulse KPI cards — shorter, tighter, value stays dominant.
+   Scoped to the pulse cluster only; money-obligation KPI links keep the
+   canonical KpiCard sizing. */
+[data-visual-contract='v2'] [data-dashboard-office-pulse] [data-kpi-card] {
+  padding: 0.625rem;
+}
+
+[data-visual-contract='v2'] [data-dashboard-office-pulse] [data-kpi-card] .kpi-card__icon {
+  block-size: 2rem;
+  inline-size: 2rem;
+  border-radius: 0.5rem;
+}
+
+[data-visual-contract='v2'] [data-dashboard-office-pulse] [data-kpi-card] .kpi-card__icon svg {
+  block-size: 1rem;
+  inline-size: 1rem;
+}
+
+[data-visual-contract='v2'] [data-dashboard-office-pulse] [data-kpi-card] > div + div {
+  margin-top: 0.375rem;
+}
+
+@media (min-width: 640px) {
+  [data-visual-contract='v2'] [data-dashboard-office-pulse] [data-kpi-card] {
+    padding: 0.75rem;
+  }
+
+  [data-visual-contract='v2'] [data-dashboard-office-pulse] [data-kpi-card] > div:nth-child(2) p:first-of-type {
+    /* value: keep dominant, but fit the 2-column rhythm at tablet width */
+    font-size: 1.125rem;
+  }
+}
+
+[data-visual-contract='v2'] [data-dashboard-office-pulse] [data-kpi-card] p + p {
+  margin-top: 0.125rem;
+}
+
+[data-visual-contract='v2'] [data-dashboard-office-pulse] [data-kpi-card] p:last-of-type {
+  margin-top: 0.125rem;
 }
 
 [data-visual-contract='v2'] :where(a, button, input, select, textarea, [tabindex]):focus-visible {
@@ -798,8 +846,16 @@
 
 @media (max-width: 414px) {
   [data-visual-contract='v2'] {
-    --dashboard-section-gap: 1.2rem;
+    --dashboard-section-gap: 0.875rem;
     --dashboard-cluster-gap: 0.65rem;
+  }
+
+  [data-visual-contract='v2'] [data-section-header] {
+    margin-block-end: 0.5rem;
+  }
+
+  [data-visual-contract='v2'] [data-dashboard-office-pulse] [data-kpi-card] {
+    padding: 0.625rem;
   }
 
   [data-visual-contract='v2'] .dashboard-ops-header,
@@ -850,10 +906,11 @@
 @media (max-width: 359px) {
   [data-visual-contract='v2'] {
     --dashboard-cluster-gap: 0.5rem;
-    --dashboard-section-gap: 1rem;
+    --dashboard-section-gap: 0.75rem;
   }
 
-  [data-visual-contract='v2'] [data-dashboard-kpi-grid] [data-kpi-card] {
+  [data-visual-contract='v2'] [data-dashboard-kpi-grid] [data-kpi-card],
+  [data-visual-contract='v2'] [data-dashboard-office-pulse] [data-kpi-card] {
     padding: 0.5rem;
   }
 
