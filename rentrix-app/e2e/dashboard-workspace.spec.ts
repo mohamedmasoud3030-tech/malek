@@ -436,18 +436,25 @@ for (const viewport of viewportMatrix) {
       await openDashboardRoute(page, theme);
 
       const dashboardSections = page.locator('[data-dashboard-section]');
-      await expect(dashboardSections).toHaveCount(3);
+      await expect(dashboardSections).toHaveCount(6);
       const sectionNames = await dashboardSections.evaluateAll((nodes) =>
         nodes.map((node) => node.getAttribute('data-dashboard-section')),
       );
-      expect(sectionNames).toEqual(['work-now', 'office-state', 'analytics']);
+      expect(sectionNames).toEqual(['work-now', 'office-pulse', 'work-queues', 'money-obligations', 'operational-health', 'analytics']);
+
+      const officePulseCards = page.locator('[data-dashboard-office-pulse] [data-kpi-card]');
+      await expect(officePulseCards).toHaveCount(4);
+
+      const workQueues = page.locator('[data-dashboard-work-queues] > section');
+      await expect(workQueues).toHaveCount(3);
+      await expect(page.getByRole('heading', { name: 'الصيانة العاجلة', level: 3 })).toBeVisible();
 
       const kpiLinks = page.locator('[data-dashboard-kpi-grid] a[data-dashboard-kpi-link]');
       await expect(kpiLinks).toHaveCount(4);
       const kpiHrefs = await kpiLinks.evaluateAll((nodes) => nodes.map((node) => node.getAttribute('href')));
       expect(kpiHrefs).toEqual(['/reports', '/financials', '/expenses', '/owner-settlements']);
 
-      // ResponsiveCardGrid is the canonical two-column dashboard rhythm.
+      // Money/obligation cards keep the canonical two-column rhythm.
       const kpiColumns = await page.locator('[data-dashboard-kpi-grid] [data-responsive-card-grid]').evaluate((node) =>
         getComputedStyle(node).gridTemplateColumns.split(' ').filter(Boolean).length,
       );
@@ -456,17 +463,16 @@ for (const viewport of viewportMatrix) {
       if (viewport.width === 375) {
         const firstScreen = await page.locator('[data-dashboard-section="work-now"]').evaluate((node) => {
           const rect = node.getBoundingClientRect();
+          const pulse = document.querySelector('[data-dashboard-section="office-pulse"]')?.getBoundingClientRect();
           return {
             workNowVisible: rect.top < window.innerHeight && rect.bottom > 0,
-            firstKpiTop: document.querySelector('a[data-dashboard-kpi-link]')?.getBoundingClientRect().top ?? null,
+            pulseTop: pulse?.top ?? null,
+            workNowTop: rect.top,
           };
         });
-        // Today is action-first: urgent work must occupy the first screen.
-        // Office-state KPIs remain available immediately after priority work
-        // instead of displacing it above the fold.
         expect(firstScreen.workNowVisible).toBe(true);
-        expect(firstScreen.firstKpiTop).not.toBeNull();
-        expect(firstScreen.firstKpiTop ?? 0).toBeGreaterThan(0);
+        expect(firstScreen.pulseTop).not.toBeNull();
+        expect(firstScreen.pulseTop ?? 0).toBeGreaterThan(firstScreen.workNowTop);
       }
 
       await assertTouchTargets(page);
@@ -531,19 +537,24 @@ test('real dashboard route exposes loading, empty, error, partial and stale stat
   await openDashboardRoute(page, 'light', 'empty');
   await expect(page.getByText('لا توجد أعمال عاجلة')).toBeVisible();
   await expect(page.getByText('لا توجد فواتير متأخرة')).toBeVisible();
+  await expect(page.getByText('لا توجد صيانة عاجلة الآن')).toBeVisible();
+  await expect(page.locator('[data-dashboard-office-pulse] [data-kpi-card]')).toHaveCount(4);
 
   await page.context().clearCookies();
   await page.evaluate(() => window.localStorage.clear());
   await openDashboardRoute(page, 'light', 'snapshot-error');
   await expect(page.getByText('تعذر تحميل بيانات اليوم')).toBeVisible();
+  await expect(page.locator('[data-dashboard-office-pulse]')).toHaveCount(0);
   await expect(page.locator('[data-dashboard-kpi-grid]')).toHaveCount(0);
 
   await page.context().clearCookies();
   await page.evaluate(() => window.localStorage.clear());
   await openDashboardRoute(page, 'light', 'stale-refetch-error');
+  await expect(page.locator('[data-dashboard-office-pulse]')).toBeVisible();
   await expect(page.locator('[data-dashboard-kpi-grid]')).toBeVisible();
   await page.evaluate(() => window.dispatchEvent(new Event('malek-dashboard-e2e-refetch')));
   await expect(page.getByText('تعذر تحديث بيانات اليوم')).toBeVisible();
+  await expect(page.locator('[data-dashboard-office-pulse]')).toBeVisible();
   await expect(page.locator('[data-dashboard-kpi-grid]')).toBeVisible();
 
   await page.screenshot({ path: testInfo.outputPath('dashboard-real-states.png'), fullPage: true });

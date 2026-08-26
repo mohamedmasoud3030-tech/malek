@@ -12,21 +12,23 @@ import { fetchIntegrityWarningsCount } from '@/services/action-center-counts';
 import { getDashboardSnapshot } from './dashboard-snapshot';
 import { DashboardVisualScope } from './dashboard-visual-scope';
 import { HeroBanner } from './components/hero-banner';
+import { OfficePulse } from './components/office-pulse';
 import { KpiGrid } from './components/kpi-grid';
-
 import { ExpiringContractsSection } from './components/expiring-contracts-section';
 import { OverdueSection } from './components/overdue-section';
+import { UrgentMaintenanceSection } from './components/urgent-maintenance-section';
 import { ArrearsBreakdown } from './components/arrears-breakdown';
 import { DashboardCharts } from './components/dashboard-charts';
 import { AlertCenter } from './components/alert-center';
 import { buildExpiringContracts, buildOverdueTenantRows, toDateInputValue } from './dashboard-utils';
 
 /**
- * Today workspace.
+ * MALEK command center.
  *
  * Financial and operational truth remains server-authoritative through
- * rpt_dashboard_snapshot. This component only changes decision hierarchy:
- * work requiring action first, current office position second, analysis last.
+ * rpt_dashboard_snapshot. The page only changes presentation hierarchy:
+ * urgent decisions → stable office pulse → bounded work queues → money and
+ * obligations → operational health → deeper arrears analysis when needed.
  */
 export function DashboardPage() {
   const { authorization } = useAuth();
@@ -123,18 +125,8 @@ export function DashboardPage() {
 
         {snapshotUnavailable ? null : (
           <>
-            {canManageSetup ? (
-              <div data-dashboard-onboarding-slot className="dashboard-section">
-                <OnboardingChecklist progress={progress} canManageSetup />
-              </div>
-            ) : null}
-
-            <section className="dashboard-section" aria-label="مطلوب منك الآن" data-dashboard-section="work-now">
-              <SectionHeader
-                eyebrow="أولوية"
-                title="مطلوب منك الآن"
-                description="ابدأ بالحالات التي تحتاج قراراً أو متابعة؛ التفاصيل الأقل إلحاحاً تأتي بعدها."
-              />
+            <section className="dashboard-section" aria-label="مطلوب الآن" data-dashboard-section="work-now">
+              <SectionHeader eyebrow="أولوية" title="مطلوب الآن" />
 
               {isLoading ? (
                 <LoadingState variant="section" label="جارٍ تحميل الأعمال المطلوبة" />
@@ -149,15 +141,22 @@ export function DashboardPage() {
                   integrityWarningsCount={integrityWarningsCount}
                 />
               )}
+            </section>
 
-              <div className="dashboard-queues-grid" data-dashboard-work-queues>
-                <ExpiringContractsSection
-                  rows={expiringContracts}
-                  totalCount={snapshot?.contracts.expiring30}
-                  isLoading={isLoading}
-                  isError={hasDashboardError}
-                  settings={settings}
-                />
+            {canManageSetup ? (
+              <div data-dashboard-onboarding-slot className="dashboard-section">
+                <OnboardingChecklist progress={progress} canManageSetup />
+              </div>
+            ) : null}
+
+            <section className="dashboard-section" aria-label="نبض المكتب" data-dashboard-section="office-pulse">
+              <SectionHeader eyebrow="الآن" title="نبض المكتب" />
+              <OfficePulse snapshot={snapshot} isLoading={isLoading} settings={settings} />
+            </section>
+
+            <section className="dashboard-section" aria-label="العمل المنتظر" data-dashboard-section="work-queues">
+              <SectionHeader eyebrow="متابعة" title="العمل المنتظر" />
+              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3" data-dashboard-work-queues>
                 <OverdueSection
                   rows={overdueRows}
                   totalCount={snapshot?.arrears.overdueCount}
@@ -165,26 +164,35 @@ export function DashboardPage() {
                   isError={hasDashboardError}
                   settings={settings}
                 />
+                <ExpiringContractsSection
+                  rows={expiringContracts}
+                  totalCount={snapshot?.contracts.expiring30}
+                  isLoading={isLoading}
+                  isError={hasDashboardError}
+                  settings={settings}
+                />
+                <UrgentMaintenanceSection
+                  rows={snapshot?.queues.urgentMaintenance ?? []}
+                  totalCount={snapshot?.maintenance.urgentOpen}
+                  isLoading={isLoading}
+                  isError={hasDashboardError}
+                />
               </div>
             </section>
 
-            <section className="dashboard-section" aria-label="وضع المكتب" data-dashboard-section="office-state">
-              <SectionHeader
-                eyebrow="نظرة عامة"
-                title="وضع المكتب"
-                description="المؤشرات التي تكفي للحكم على التحصيل والالتزامات وحالة المحفظة بدون تحويل الصفحة إلى تقرير."
-              />
+            <section className="dashboard-section" aria-label="المال والالتزامات" data-dashboard-section="money-obligations">
+              <SectionHeader eyebrow="مالي" title="المال والالتزامات" />
               <KpiGrid snapshot={snapshot} isLoading={isLoading} settings={settings} />
+            </section>
+
+            <section className="dashboard-section" aria-label="حالة التحصيل والمحفظة" data-dashboard-section="operational-health">
+              <SectionHeader eyebrow="صورة تشغيلية" title="حالة التحصيل والمحفظة" />
               <DashboardCharts snapshot={snapshot} isLoading={isLoading} settings={settings} />
             </section>
 
             {showAnalytics ? (
-              <section className="dashboard-section" aria-label="تفاصيل عند الحاجة" data-dashboard-section="analytics">
-                <SectionHeader
-                  eyebrow="تحليل"
-                  title="تفاصيل عند الحاجة"
-                  description="تفصيل أعمار الذمم يظهر فقط عندما توجد متأخرات تستحق التحليل."
-                />
+              <section className="dashboard-section" aria-label="تحليل المتأخرات" data-dashboard-section="analytics">
+                <SectionHeader eyebrow="تحليل" title="تحليل المتأخرات" />
                 <ArrearsBreakdown snapshot={snapshot} settings={settings} />
               </section>
             ) : null}

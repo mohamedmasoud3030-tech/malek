@@ -8,8 +8,9 @@ import { DashboardCharts } from './components/dashboard-charts';
 import { ExpiringContractsSection } from './components/expiring-contracts-section';
 import { HeroBanner } from './components/hero-banner';
 import { KpiGrid } from './components/kpi-grid';
+import { OfficePulse } from './components/office-pulse';
 import { OverdueSection } from './components/overdue-section';
-import { QuickActions } from './components/quick-actions';
+import { UrgentMaintenanceSection } from './components/urgent-maintenance-section';
 import { DashboardVisualScope } from './dashboard-visual-scope';
 import type { DashboardSnapshot } from './dashboard-snapshot';
 import { addDays, buildExpiringContracts, buildOverdueTenantRows, toDateInputValue } from './dashboard-utils';
@@ -71,7 +72,7 @@ const overdueRows = buildOverdueTenantRows(fixtureSnapshot.queues.overdueInvoice
 /**
  * Static Dashboard proof fixture (Visual Contract V2, ADR 0012 phase 2).
  * Kept only as a low-cost layout showcase; the Dashboard Playwright contract
- * now targets the real /dashboard route with controlled authenticated data.
+ * targets the real /dashboard route with controlled authenticated data.
  */
 export function DashboardWorkspaceE2EFixture() {
   return (
@@ -81,7 +82,8 @@ export function DashboardWorkspaceE2EFixture() {
           <DashboardVisualScope>
             <HeroBanner snapshot={fixtureSnapshot} isLoading={false} settings={defaultCompanySettingsContract} today="2026-07-15" />
 
-            <section data-dashboard-section="priorities" aria-label="متابعة الأولويات">
+            <section className="dashboard-section" data-dashboard-section="work-now" aria-label="مطلوب الآن">
+              <SectionHeader eyebrow="أولوية" title="مطلوب الآن" />
               <AlertCenter
                 expiringContractsCount={fixtureSnapshot.contracts.expiring30}
                 overdueInvoicesCount={fixtureSnapshot.arrears.overdueCount}
@@ -93,30 +95,32 @@ export function DashboardWorkspaceE2EFixture() {
               />
             </section>
 
-            <section className="dashboard-section" aria-label="صورة الأداء" data-dashboard-section="kpis">
-              <SectionHeader title="صورة الأداء" description="أربع مؤشرات قرار مرتبطة بمصادرها التفصيلية" />
-              <KpiGrid snapshot={fixtureSnapshot} isLoading={false} settings={defaultCompanySettingsContract} />
+            <section className="dashboard-section" aria-label="نبض المكتب" data-dashboard-section="office-pulse">
+              <SectionHeader eyebrow="الآن" title="نبض المكتب" />
+              <OfficePulse snapshot={fixtureSnapshot} isLoading={false} settings={defaultCompanySettingsContract} />
             </section>
 
-            <div data-dashboard-section="actions">
-              <QuickActions canAccessOverride={() => true} />
-            </div>
-
-            <section className="dashboard-section" aria-label="قوائم العمل" data-dashboard-section="work-queues">
-              <SectionHeader title="قوائم العمل" description="متابعة مركزة للحالات الأعلى أولوية بعد قراءة المؤشرات" />
-              <div className="dashboard-queues-grid">
-                <ExpiringContractsSection rows={expiringRows} totalCount={fixtureSnapshot.contracts.expiring30} isLoading={false} settings={fixtureSettings} />
+            <section className="dashboard-section" aria-label="العمل المنتظر" data-dashboard-section="work-queues">
+              <SectionHeader eyebrow="متابعة" title="العمل المنتظر" />
+              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
                 <OverdueSection rows={overdueRows} totalCount={fixtureSnapshot.arrears.overdueCount} isLoading={false} settings={fixtureSettings} />
+                <ExpiringContractsSection rows={expiringRows} totalCount={fixtureSnapshot.contracts.expiring30} isLoading={false} settings={fixtureSettings} />
+                <UrgentMaintenanceSection rows={fixtureSnapshot.queues.urgentMaintenance} totalCount={fixtureSnapshot.maintenance.urgentOpen} isLoading={false} />
               </div>
             </section>
 
-            <section className="dashboard-section" aria-label="المحفظة والتحصيل" data-dashboard-section="trends">
-              <SectionHeader title="المحفظة والتحصيل" description="ملخصات ثانوية للانتقال إلى التفاصيل، وليست جدولاً محاسبياً كثيفاً" />
+            <section className="dashboard-section" aria-label="المال والالتزامات" data-dashboard-section="money-obligations">
+              <SectionHeader eyebrow="مالي" title="المال والالتزامات" />
+              <KpiGrid snapshot={fixtureSnapshot} isLoading={false} settings={defaultCompanySettingsContract} />
+            </section>
+
+            <section className="dashboard-section" aria-label="حالة التحصيل والمحفظة" data-dashboard-section="operational-health">
+              <SectionHeader eyebrow="صورة تشغيلية" title="حالة التحصيل والمحفظة" />
               <DashboardCharts snapshot={fixtureSnapshot} isLoading={false} settings={defaultCompanySettingsContract} />
             </section>
 
-            <section className="dashboard-section" aria-label="تحليلات مساندة" data-dashboard-section="analytics">
-              <SectionHeader title="تحليلات مساندة" description="تفاصيل أعمار الذمم بعد ترتيب الأعمال العاجلة" />
+            <section className="dashboard-section" aria-label="تحليل المتأخرات" data-dashboard-section="analytics">
+              <SectionHeader eyebrow="تحليل" title="تحليل المتأخرات" />
               <ArrearsBreakdown snapshot={fixtureSnapshot} settings={defaultCompanySettingsContract} />
             </section>
           </DashboardVisualScope>

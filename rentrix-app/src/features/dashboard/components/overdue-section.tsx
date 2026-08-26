@@ -9,8 +9,8 @@ interface OverdueSectionProps {
   rows: OverdueTenantRow[];
   /**
    * Server-authoritative overdue invoice count (arrears.overdue_count). The
-   * queue rows are a bounded top-5 slice, so rows.length must never be shown
-   * as the operational number.
+   * queue rows are a bounded presentation slice, so rows.length must never be
+   * shown as the operational number.
    */
   totalCount?: number;
   isLoading: boolean;
@@ -22,6 +22,7 @@ interface OverdueSectionProps {
 export function OverdueSection({ rows, totalCount, isLoading, isError = false, settings }: OverdueSectionProps) {
   const { date, money } = settings;
   const badgeCount = totalCount ?? rows.length;
+  const visibleRows = rows.slice(0, 3);
   return (
     <section className="dashboard-queue-card" aria-labelledby="overdue-title">
       <div className="dashboard-queue-card__header">
@@ -31,7 +32,7 @@ export function OverdueSection({ rows, totalCount, isLoading, isError = false, s
           </span>
           <div>
             <h3 id="overdue-title" className="dashboard-queue-card__title">أعلى المتأخرات</h3>
-            <p className="dashboard-queue-card__meta">مرتبة حسب أيام التأخير</p>
+            <p className="dashboard-queue-card__meta">الأكثر تأخراً أولاً</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -55,19 +56,16 @@ export function OverdueSection({ rows, totalCount, isLoading, isError = false, s
         </div>
       )}
 
-      {!isLoading && !isError && rows.length === 0 && (
+      {!isLoading && !isError && visibleRows.length === 0 && (
         <div className="dashboard-queue-empty" role="status">
           <p className="font-semibold">لا توجد فواتير متأخرة</p>
-          <p>ستظهر أعلى المتأخرات هنا عند وجود فواتير غير مسددة.</p>
+          <p>ستظهر هنا الحالات التي تحتاج متابعة تحصيل.</p>
         </div>
       )}
 
-      {!isLoading && !isError && rows.length > 0 && (
-        /* role="listitem" is invalid on <a> (axe aria-allowed-role): the list
-           is a real <ul> and each row is wrapped in the <li> that owns the
-           listitem semantics. */
+      {!isLoading && !isError && visibleRows.length > 0 && (
         <ul className="dashboard-queue-list" role="list">
-          {rows.map((row) => {
+          {visibleRows.map((row) => {
             const isHighRisk = row.daysOverdue > 90;
             return (
               <li key={row.invoiceId} role="listitem" className="min-w-0">

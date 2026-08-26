@@ -27,19 +27,13 @@ type DashboardKpi = Readonly<{
 }>;
 
 /**
- * Secondary decision KPIs — deliberately complements, never repeats, the
- * executive hero strip (which already surfaces تحصيل / متأخرات / إشغال /
- * عقود نشطة). The first KPI is deliberately labelled as the narrow operational
- * difference the snapshot actually computes: collections minus recorded
- * expenses. It is not accounting profit and not a complete cash-flow balance.
- *
- * Wave 4: migrated from bespoke dashboard-kpi-card CSS to canonical KpiCard +
- * ResponsiveCardGrid (2-col mobile, 4-col desktop via desktopColumns=4→2 clamp).
- * data-dashboard-kpi-grid and data-dashboard-kpi-link preserved for tests.
+ * Money and obligations KPIs. These intentionally complement the stable office
+ * pulse instead of repeating collection amount, outstanding amount, occupancy,
+ * or active-contract counts.
  */
 export function KpiGrid({ snapshot, isLoading, settings }: KpiGridProps) {
   if (isLoading) {
-    return <LoadingState variant="cards" rows={4} label="جارٍ تحميل مؤشرات لوحة التحكم" />;
+    return <LoadingState variant="cards" rows={4} label="جارٍ تحميل المال والالتزامات" />;
   }
 
   const money = (value: number | null | undefined) =>
@@ -62,7 +56,7 @@ export function KpiGrid({ snapshot, isLoading, settings }: KpiGridProps) {
       label: 'فرق التحصيل والمصروفات',
       value: money(net),
       icon: TrendingUp,
-      sub: 'التحصيلات ناقص المصروفات المسجلة فقط — ليس ربح المكتب ولا قائمة تدفق نقدي كاملة',
+      sub: 'التحصيل ناقص المصروفات المسجلة',
       accent: netNum >= 0 ? 'emerald' : 'rose',
       trend: netNum >= 0 ? 'up' : 'down',
       trendValue: netNum >= 0 ? 'التحصيل أعلى' : 'المصروفات أعلى',
@@ -76,7 +70,7 @@ export function KpiGrid({ snapshot, isLoading, settings }: KpiGridProps) {
           ? `${collectionRate}%`
           : 'غير متاح',
       icon: Percent,
-      sub: 'كفاءة تحصيل المستحقات ضمن الفترة',
+      sub: 'كفاءة تحصيل المستحقات الحالية',
       accent: collectionRateNum >= 80 ? 'emerald' : collectionRateNum >= 50 ? 'amber' : 'rose',
       trend: collectionRateNum >= 80 ? 'up' : collectionRateNum >= 50 ? 'neutral' : 'down',
       trendValue: collectionRateNum >= 80 ? 'ممتاز' : collectionRateNum >= 50 ? 'مراقبة' : 'منخفض',
@@ -87,7 +81,7 @@ export function KpiGrid({ snapshot, isLoading, settings }: KpiGridProps) {
       label: 'المصروفات',
       value: money(expensesTotal),
       icon: Receipt,
-      sub: `${expensesCount ?? 'غير متاح'} قيود مصروفات خلال الفترة`,
+      sub: `${expensesCount ?? 'غير متاح'} قيود خلال الفترة`,
       accent: 'slate',
       to: '/expenses',
       destinationLabel: 'سجل المصروفات',
@@ -96,13 +90,7 @@ export function KpiGrid({ snapshot, isLoading, settings }: KpiGridProps) {
       label: 'مستحقات الملاك',
       value: money(ownerNetPayable),
       icon: HandCoins,
-      sub:
-        settlementsNum > 0
-          ? `${settlementsNum} تسوية بانتظار الاعتماد`
-          : 'التزامات الملاك ضمن الفترة',
-      // Tone follows the real decision state: pending approval is the only
-      // actionable warning; an outstanding payable without pending approval
-      // is informational; zero balance is neutral (never a false "success").
+      sub: settlementsNum > 0 ? `${settlementsNum} تسوية بانتظار الاعتماد` : 'الالتزامات الحالية للملاك',
       accent: settlementsNum > 0 ? 'amber' : ownerPayableNum > 0 ? 'sky' : 'slate',
       trend: settlementsNum > 0 ? 'neutral' : undefined,
       trendValue: settlementsNum > 0 ? 'بانتظار الاعتماد' : ownerPayableNum > 0 ? 'مستحق' : undefined,
@@ -121,11 +109,7 @@ export function KpiGrid({ snapshot, isLoading, settings }: KpiGridProps) {
 
   return (
     <div data-dashboard-kpi-grid>
-      <ResponsiveCardGrid
-        desktopColumns={2}
-        gap="md"
-        aria-label="مؤشرات الأداء الأساسية"
-      >
+      <ResponsiveCardGrid desktopColumns={2} gap="md" aria-label="المال والالتزامات">
         {visibleItems.map((item) => (
           <Link
             key={item.label}

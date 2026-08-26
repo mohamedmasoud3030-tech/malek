@@ -29,9 +29,11 @@ describe('dashboard frontend/backend data contract (R1)', () => {
       read('dashboard-snapshot.ts'),
       read('dashboard-page.tsx'),
       read('components/alert-center.tsx'),
+      read('components/office-pulse.tsx'),
       read('components/kpi-grid.tsx'),
       read('components/hero-banner.tsx'),
       read('components/dashboard-charts.tsx'),
+      read('components/urgent-maintenance-section.tsx'),
     ].join('\n');
     // The forbidden client-derivation patterns from the pre-R1 dashboard.
     expect(sources).not.toContain('activeContracts.length');
