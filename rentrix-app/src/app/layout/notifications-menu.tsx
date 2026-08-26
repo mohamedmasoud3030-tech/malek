@@ -216,6 +216,7 @@ export function NotificationsMenu({
             ref={panelRef}
             id={menuId}
             role="dialog"
+            data-mobile-notifications-panel
             tabIndex={-1}
             aria-label={sharedLabel('notifications')}
             aria-busy={isInitialLoading || undefined}
