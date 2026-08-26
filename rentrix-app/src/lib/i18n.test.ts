@@ -147,11 +147,11 @@ describe('ADR-0008 — UX-clarity keys have real route consumers', () => {
   // description/hint block, so financialsPageDescription/financialsPageHint/
   // financialsSectionSummary have no route consumer anymore (their translations
   // stay valid and are still covered by the translation checks above). The
-  // /reports page kept its WorkspaceHint, so its keys remain pinned here.
+  // /reports now carries its description inside the reports cockpit. The
+  // retired WorkspaceHint no longer consumes reportsPageHint.
   const uxClarityConsumerCases = [
     ['financialsSectionReports', 'features/reports/reports-page.tsx'],
     ['reportsPageDescription', 'features/reports/reports-page.tsx'],
-    ['reportsPageHint', 'features/reports/reports-page.tsx'],
   ] as const;
 
   it.each(uxClarityConsumerCases)('"%s" is translated in %s', (key, relativePath) => {

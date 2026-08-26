@@ -49,13 +49,12 @@ for (const viewport of viewportMatrix) {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
       await openLogin(page, theme);
 
-      await expect(page.getByRole('heading', { name: 'مرحبًا بعودتك', exact: true })).toBeVisible();
-      await expect(page.getByText('سجّل الدخول إلى مساحة عملك في MALEK', { exact: true })).toBeVisible();
-      await expect(page.locator('[data-login-brand] img')).toHaveAttribute('src', '/malek-lockup.svg');
+      await expect(page.locator('[data-login-brand] [aria-label="MALEK"]')).toBeVisible();
+      await expect(page.getByText('كل أملاكك في مكان واحد', { exact: true })).toBeVisible();
+      await expect(page.locator('[data-login-brand] img')).toHaveAttribute('src', '/malek-mark.svg');
       await expect(page.getByRole('textbox', { name: 'البريد الإلكتروني', exact: true })).toBeVisible();
       await expect(page.getByPlaceholder('••••••••')).toBeVisible();
       await expect(page.getByRole('button', { name: /تسجيل الدخول/ })).toBeVisible();
-      await expect(page.getByRole('heading', { name: 'كل أملاكك في مكان واحد', exact: true })).toHaveCount(0);
       await expect(page.locator('aside')).toHaveCount(0);
       await expect(page.getByText('إدارة واضحة للأصول')).toHaveCount(0);
       await expect(page.locator('form')).toHaveCount(1);

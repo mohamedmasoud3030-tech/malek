@@ -14,7 +14,7 @@ export function SettingsSaveBar({
 
   return (
     <section
-      className="fixed inset-x-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))] z-40 mx-auto max-w-xl rounded-2xl border border-warning/30 bg-card/95 p-2 shadow-xl ring-1 ring-warning/10 backdrop-blur-xl md:sticky md:inset-x-auto md:bottom-auto md:top-4 md:mx-0 md:max-w-none md:p-3"
+      className="fixed inset-x-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))] z-40 mx-auto max-w-xl rounded-2xl border border-warning/30 bg-card/95 p-2 shadow-elevated ring-1 ring-warning/10 backdrop-blur-xl md:sticky md:inset-x-auto md:bottom-auto md:top-4 md:mx-0 md:max-w-none md:p-3"
       aria-label="تغييرات إعدادات غير محفوظة"
     >
       <div className="flex items-center gap-2 sm:gap-3">

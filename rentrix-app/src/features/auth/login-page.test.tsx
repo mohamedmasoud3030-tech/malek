@@ -20,10 +20,10 @@ describe('LoginPage — minimal SaaS contract', () => {
     const html = renderToStaticMarkup(<LoginPage />);
     expect(html).toContain('data-login-surface');
     expect(html).toContain('data-login-card');
-    expect(html).toContain('src="/malek-lockup.svg"');
-    expect(html).toContain('مرحبًا بعودتك');
-    expect(html).toContain('سجّل الدخول إلى مساحة عملك في MALEK');
-    expect(html).not.toContain('كل أملاكك في مكان واحد');
+    expect(html).toContain('src="/malek-mark.svg"');
+    expect(html).toContain('data-malek-brand-lockup');
+    expect(html).toContain('aria-label="MALEK"');
+    expect(html).toContain('كل أملاكك في مكان واحد');
     expect(html).not.toContain('data-command-center-panel');
   });
 
@@ -43,11 +43,12 @@ describe('LoginPage — minimal SaaS contract', () => {
 
   it('keeps support compact until requested', () => {
     render(<LoginPage />);
-    expect(screen.getByRole('button', { name: /تحتاج مساعدة؟ تواصل معنا/i })).toHaveAttribute('aria-expanded', 'false');
+    const supportButton = screen.getByRole('button', { name: /تحتاج مساعدة؟ تواصل معنا/i });
+    expect(supportButton).toHaveAttribute('aria-expanded', 'false');
     expect(screen.queryByText('+968 9192 8186')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /تحتاج مساعدة؟ تواصل معنا/i }));
+    fireEvent.click(supportButton);
     expect(screen.getByText('+968 9192 8186')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /تحتاج مساعدة؟ تواصل معنا/i })).toHaveAttribute('aria-expanded', 'true');
+    expect(supportButton).toHaveAttribute('aria-expanded', 'true');
   });
 });
 

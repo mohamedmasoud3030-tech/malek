@@ -115,7 +115,7 @@ export function LoginPage() {
               <div className="mt-5 space-y-5" data-support-panel>
                 <div className="space-y-3">
                   <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    <span className="grid size-6 place-items-center rounded-full bg-[#25D366]/10 text-[#25D366]">
+                    <span className="grid size-6 place-items-center rounded-full bg-success/10 text-success">
                       <WhatsAppIcon className="size-3.5" />
                     </span>
                     واتساب
@@ -127,9 +127,9 @@ export function LoginPage() {
                         href={contact.whatsappUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="group flex items-center gap-3 rounded-xl border border-border/60 bg-card p-3 text-start shadow-sm transition-all hover:border-[#25D366]/30 hover:bg-[#25D366]/5 hover:shadow"
+                        className="group flex items-center gap-3 rounded-xl border border-border/60 bg-card p-3 text-start shadow-sm transition-all hover:border-success/30 hover:bg-success/5 hover:shadow"
                       >
-                        <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#25D366]/10 text-[#25D366] transition-colors group-hover:bg-[#25D366] group-hover:text-white">
+                        <span className="grid size-10 shrink-0 place-items-center rounded-full bg-success/10 text-success transition-colors group-hover:bg-success group-hover:text-white">
                           <WhatsAppIcon className="size-5" />
                         </span>
                         <div className="min-w-0 flex-1">
@@ -138,7 +138,7 @@ export function LoginPage() {
                             {contact.number}
                           </p>
                         </div>
-                        <ArrowLeft className="size-4 shrink-0 text-muted-foreground/50 transition-transform group-hover:-translate-x-0.5 group-hover:text-[#25D366] rtl:rotate-180" />
+                        <ArrowLeft className="size-4 shrink-0 text-muted-foreground/50 transition-transform group-hover:-translate-x-0.5 group-hover:text-success rtl:rotate-180" />
                       </a>
                     ))}
                   </div>
