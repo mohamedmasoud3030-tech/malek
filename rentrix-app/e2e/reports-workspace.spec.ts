@@ -146,6 +146,9 @@ for (const viewport of viewportMatrix) {
   }
 }
 
+// The focused accounting workspace intentionally renders one statement action
+// set at a time; every visible Print/PDF action must still remain fail-closed
+// behind the authoritative reconciliation and document-readiness guards.
 test('reports accounting view exposes focused guarded document actions', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await openFixture(page, 'light');
