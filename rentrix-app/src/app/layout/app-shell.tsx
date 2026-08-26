@@ -1,6 +1,6 @@
 import { Link, Outlet, useMatches, useRouter } from '@tanstack/react-router';
 import { useEffect, useId, useRef, useState, type ButtonHTMLAttributes, type ReactNode, type Ref, type RefObject } from 'react';
-import { CircleHelp, KeyRound, LogOut, Menu, Moon, Settings, ShieldAlert, Sun, UserRound, X } from 'lucide-react';
+import { CircleHelp, KeyRound, LogOut, Moon, Settings, ShieldAlert, Sun, UserRound, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { MalikBrand } from '@/components/brand/malik-brand';
 import { MalikMark } from '@/components/brand/malik-mark';
@@ -22,22 +22,60 @@ function Brand({ expanded, showTagline }: Readonly<{ expanded: boolean; showTagl
 }
 
 /**
- * MALEK header lockup — [M mark] [MALEK] as one coherent group on the visual
- * left of the top toolbar. The date no longer lives in the header; it was
- * moved down into the Dashboard "اليوم / Today" context strip.
+ * MALEK monogram interactive brand button.
+ * Tapping the monogram opens the primary navigation drawer on mobile and
+ * acts as the branded header entry point for navigation.
  */
-function HeaderBrandLockup() {
+function HeaderBrandMonogramButton({
+  onClick,
+  buttonRef,
+}: Readonly<{
+  onClick: () => void;
+  buttonRef?: Ref<HTMLButtonElement>;
+}>) {
+  return (
+    <span className="relative grid size-11 shrink-0 place-items-center" data-header-monogram-hit>
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={onClick}
+        aria-label="القائمة الرئيسية - مالك"
+        aria-haspopup="dialog"
+        title="القائمة الرئيسية"
+        data-header-brand-monogram
+        data-header-brand-button
+        className="group grid size-8 place-items-center rounded-xl border border-primary/25 bg-primary/10 text-primary shadow-xs outline-none transition-[background-color,border-color,box-shadow,transform] duration-150 hover:border-primary/45 hover:bg-primary/20 active:scale-95 focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transform-none sm:size-9"
+      >
+        <MalikMark className="size-5 shrink-0 transition-transform group-hover:scale-105 sm:size-5.5" />
+      </button>
+    </span>
+  );
+}
+
+/**
+ * MALEK header lockup:
+ *   [ M ]  MALEK
+ * The [ M ] is an interactive brand monogram that opens primary navigation.
+ * Beside it is the canonical MALEK wordmark.
+ */
+function HeaderBrandLockup({
+  onOpenNav,
+  monogramRef,
+}: Readonly<{
+  onOpenNav: () => void;
+  monogramRef?: Ref<HTMLButtonElement>;
+}>) {
   return (
     <div className="flex min-w-0 shrink-0 items-center gap-1.5 sm:gap-2" data-header-brand-lockup>
-      <MalikMark className="size-7 shrink-0 sm:size-8" />
-      <p
+      <HeaderBrandMonogramButton onClick={onOpenNav} buttonRef={monogramRef} />
+      <span
         dir="ltr"
         data-header-wordmark
         className="malik-wordmark malek-wordmark shrink-0 select-none whitespace-nowrap text-[16px] font-extrabold uppercase leading-none tracking-[0.16em] text-foreground sm:text-[17px] lg:text-[18px]"
         aria-label={APP_BRAND_NAME}
       >
         {APP_BRAND_NAME}
-      </p>
+      </span>
     </div>
   );
 }
@@ -114,7 +152,8 @@ function HeaderUserMenu({
     };
   }, [open]);
 
-  const itemClass = 'flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-start text-sm font-semibold text-foreground outline-none transition-colors hover:bg-muted focus-visible:ring-4 focus-visible:ring-primary/20';
+  const itemClass =
+    'flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-start text-sm font-semibold text-foreground outline-none transition-colors hover:bg-muted focus-visible:ring-4 focus-visible:ring-primary/20';
 
   return (
     <div ref={rootRef} className="relative grid size-11 shrink-0 place-items-center" data-header-user-menu data-header-control-hit>
@@ -136,64 +175,72 @@ function HeaderUserMenu({
       </button>
 
       {open ? (
-        <div
-          id={menuId}
-          role="menu"
-          aria-label="قائمة المستخدم"
-          className="absolute end-0 top-11 z-50 w-[min(18rem,calc(100vw-1rem))] overflow-hidden rounded-2xl border border-border/90 bg-card text-card-foreground shadow-elevated"
-        >
-          <div className="flex items-center gap-3 border-b border-border/70 bg-muted/25 px-3.5 py-3.5">
-            <span className="grid size-10 shrink-0 place-items-center rounded-full bg-primary text-sm font-black text-primary-foreground" aria-hidden="true">
-              {initial}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-bold text-muted-foreground">الحساب</p>
-              <p dir="ltr" className="mt-0.5 truncate text-start text-sm font-semibold text-foreground">
-                {email || 'مستخدم مالك'}
-              </p>
+        <>
+          {/* Mobile backdrop for clean tap-outside dismiss */}
+          <div
+            className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[1px] md:hidden"
+            onClick={() => setOpen(false)}
+            aria-hidden="true"
+          />
+          <div
+            id={menuId}
+            role="menu"
+            aria-label="قائمة المستخدم"
+            className="absolute end-0 top-11 z-50 w-[min(17rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-border/90 bg-card text-card-foreground shadow-elevated"
+          >
+            <div className="flex items-center gap-3 border-b border-border/70 bg-muted/25 px-3.5 py-3">
+              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary text-xs font-black text-primary-foreground" aria-hidden="true">
+                {initial}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-bold text-muted-foreground">الحساب</p>
+                <p dir="ltr" className="mt-0.5 truncate text-start text-xs font-semibold text-foreground">
+                  {email || 'مستخدم مالك'}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-0.5 p-1.5">
+              {canOpenSettings ? (
+                <Link to="/settings" role="menuitem" className={itemClass} onClick={() => setOpen(false)}>
+                  <Settings className="size-[1.125rem] shrink-0 text-muted-foreground" aria-hidden="true" />
+                  <span>إعدادات المنشأة</span>
+                </Link>
+              ) : null}
+
+              <Link to="/change-password" role="menuitem" className={itemClass} onClick={() => setOpen(false)}>
+                <KeyRound className="size-[1.125rem] shrink-0 text-muted-foreground" aria-hidden="true" />
+                <span>تغيير كلمة المرور</span>
+              </Link>
+
+              <Link
+                to="/help"
+                search={{ from: supportFrom }}
+                role="menuitem"
+                className={itemClass}
+                onClick={() => setOpen(false)}
+              >
+                <CircleHelp className="size-[1.125rem] shrink-0 text-muted-foreground" aria-hidden="true" />
+                <span>المساعدة والدعم</span>
+              </Link>
+
+              <div className="my-1 h-px bg-border/70" aria-hidden="true" />
+
+              <button
+                type="button"
+                role="menuitem"
+                className={cn(itemClass, 'text-destructive hover:bg-destructive/8')}
+                onClick={() => {
+                  setOpen(false);
+                  void onLogout();
+                }}
+              >
+                <LogOut className="size-[1.125rem] shrink-0" aria-hidden="true" />
+                <span>تسجيل الخروج</span>
+              </button>
             </div>
           </div>
-
-          <div className="space-y-0.5 p-1.5">
-            {canOpenSettings ? (
-              <Link to="/settings" role="menuitem" className={itemClass} onClick={() => setOpen(false)}>
-                <Settings className="size-[1.125rem] shrink-0 text-muted-foreground" aria-hidden="true" />
-                <span>إعدادات المنشأة</span>
-              </Link>
-            ) : null}
-
-            <Link to="/change-password" role="menuitem" className={itemClass} onClick={() => setOpen(false)}>
-              <KeyRound className="size-[1.125rem] shrink-0 text-muted-foreground" aria-hidden="true" />
-              <span>تغيير كلمة المرور</span>
-            </Link>
-
-            <Link
-              to="/help"
-              search={{ from: supportFrom }}
-              role="menuitem"
-              className={itemClass}
-              onClick={() => setOpen(false)}
-            >
-              <CircleHelp className="size-[1.125rem] shrink-0 text-muted-foreground" aria-hidden="true" />
-              <span>المساعدة والدعم</span>
-            </Link>
-
-            <div className="my-1 h-px bg-border/70" aria-hidden="true" />
-
-            <button
-              type="button"
-              role="menuitem"
-              className={cn(itemClass, 'text-destructive hover:bg-destructive/8')}
-              onClick={() => {
-                setOpen(false);
-                void onLogout();
-              }}
-            >
-              <LogOut className="size-[1.125rem] shrink-0" aria-hidden="true" />
-              <span>تسجيل الخروج</span>
-            </button>
-          </div>
-        </div>
+        </>
       ) : null}
     </div>
   );
@@ -235,25 +282,19 @@ function MobileNavigationDrawer({
           trigger.focus();
         }}
         data-mobile-drawer
+        data-mobile-nav-drawer
         data-mobile-nav-sheet
-        className="fixed bottom-0 left-1/2 z-[101] flex max-h-[64dvh] w-[85vw] max-w-[20rem] -translate-x-1/2 flex-col gap-0 overflow-hidden rounded-t-2xl border border-b-0 border-sidebar-border bg-sidebar text-sidebar-foreground shadow-[0_-12px_32px_-16px_rgb(0_0_0_/_0.55)] sm:w-[22rem] sm:max-w-[22rem] lg:hidden"
+        className="fixed bottom-0 left-auto right-0 top-0 z-[101] flex h-dvh max-h-none w-[85vw] max-w-[20rem] flex-col gap-0 overflow-hidden rounded-none border-0 border-s border-sidebar-border bg-sidebar text-sidebar-foreground shadow-elevated sm:w-[22rem] sm:max-w-[22rem] lg:hidden"
       >
         <DialogTitle className="sr-only">القائمة الرئيسية</DialogTitle>
-        <div className="mx-auto mt-2.5 h-1 w-8 shrink-0 rounded-full bg-sidebar-foreground/20" aria-hidden="true" />
         {/*
-          Drawer brand header: the MALEK lockup is centered inside the drawer
-          and the close control is pinned to the side, so the brand can never
-          drift, overlap or clip at any viewport (320–430px) in RTL or LTR.
+          Drawer brand header: centered MALEK lockup with side-pinned close button.
+          Opens from the RIGHT in Arabic RTL.
         */}
         <div
-          className="relative flex h-14 shrink-0 items-center justify-center border-b border-sidebar-border/50 px-12"
+          className="relative flex h-14 shrink-0 items-center justify-center border-b border-sidebar-border/50 px-12 pt-[env(safe-area-inset-top,0px)]"
           data-drawer-brand-header
         >
-          {/*
-            The canonical <Brand/> lockup, centered. The close control is
-            pinned to the side, so the brand can never drift, overlap or clip
-            at any viewport (320–430px) in RTL or LTR.
-          */}
           <div className="flex min-w-0 items-center justify-center" data-drawer-brand>
             <Brand expanded showTagline={false} />
           </div>
@@ -267,7 +308,7 @@ function MobileNavigationDrawer({
             <X className="size-[1.05rem]" />
           </Button>
         </div>
-        <nav className="sidebar-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain p-2.5 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
+        <nav className="sidebar-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain p-2.5 pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
           {authorization === null && (
             <div className="mb-2 rounded-lg border border-[hsl(var(--color-warning-text)/0.2)] bg-[hsl(var(--color-warning-bg)/0.07)] px-2.5 py-2">
               <p className="text-xs font-semibold text-warning">الصلاحيات غير مكتملة</p>
@@ -289,7 +330,14 @@ export function AppShell() {
   const { authorization, logout, user } = useAuth();
   const { sidebarCollapsed, theme, setTheme, syncStatus, setSyncStatus } = useUiStore();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const mobileNavTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const activeTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const monogramTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const dockMenuTriggerRef = useRef<HTMLButtonElement | null>(null);
+
+  const handleOpenNav = (trigger?: HTMLButtonElement | null) => {
+    activeTriggerRef.current = trigger ?? (document.activeElement as HTMLButtonElement | null);
+    setMobileNavOpen(true);
+  };
   const appLanguage = getAppLanguageState();
   const isSidebarExpanded = sidebarCollapsed === false;
   const sharedLabel = (key: string) => translateSharedLabel(key, appLanguage.language);
@@ -354,7 +402,7 @@ export function AppShell() {
           authorization={authorization}
           sharedLabel={sharedLabel}
           onClose={() => setMobileNavOpen(false)}
-          triggerRef={mobileNavTriggerRef}
+          triggerRef={activeTriggerRef}
         />
       ) : null}
 
@@ -384,27 +432,13 @@ export function AppShell() {
           className="sticky top-0 z-20 border-b border-border/70 bg-card/95 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md supports-[backdrop-filter]:bg-card/85"
         >
           <div className="mx-auto flex min-h-12 w-full max-w-[110rem] items-center justify-between gap-2 px-2.5 py-1 sm:min-h-14 sm:px-4">
-            {/* Visual right (first in RTL) — Menu + User + Theme. Small visible
-                buttons on 44px hit wrappers; the date no longer lives here. */}
-            <div className="z-10 flex shrink-0 items-center gap-0.5 sm:gap-1" data-header-right-controls>
-              <HeaderControl
-                label="فتح القائمة"
-                ref={mobileNavTriggerRef}
-                onClick={() => setMobileNavOpen(true)}
-                aria-haspopup="dialog"
-                data-mobile-top-menu
-                className="lg:hidden"
-              >
-                <Menu className="size-[15px] sm:size-4" aria-hidden="true" />
-              </HeaderControl>
+            {/* Visual start (right in RTL) — Brand side: [ M ] monogram + MALEK wordmark */}
+            <div className="z-10 flex shrink-0 items-center" data-header-brand-side data-header-wordmark-side>
+              <HeaderBrandLockup onOpenNav={() => handleOpenNav(monogramTriggerRef.current)} monogramRef={monogramTriggerRef} />
+            </div>
 
-              <HeaderUserMenu
-                email={user?.email}
-                canOpenSettings={canOpenSettings}
-                supportFrom={supportFrom}
-                onLogout={handleLogout}
-              />
-
+            {/* Visual end (left in RTL) — Utility side: Theme toggle + User menu */}
+            <div className="z-10 flex shrink-0 items-center gap-0.5 sm:gap-1" data-header-utility-side data-header-right-controls>
               <HeaderControl
                 label={sharedLabel('toggleTheme')}
                 title={theme === 'dark' ? 'الوضع الفاتح' : 'الوضع الداكن'}
@@ -417,11 +451,13 @@ export function AppShell() {
                   <Moon className="size-[15px] sm:size-4" aria-hidden="true" />
                 )}
               </HeaderControl>
-            </div>
 
-            {/* Visual left (last in RTL) — MALEK [M mark] + wordmark lockup. */}
-            <div className="z-10 flex shrink-0 items-center" data-header-wordmark-side>
-              <HeaderBrandLockup />
+              <HeaderUserMenu
+                email={user?.email}
+                canOpenSettings={canOpenSettings}
+                supportFrom={supportFrom}
+                onLogout={handleLogout}
+              />
             </div>
           </div>
         </header>
@@ -458,7 +494,11 @@ export function AppShell() {
         </main>
       </div>
 
-      <MobileFloatingControl menuRef={mobileNavTriggerRef} onMenu={() => setMobileNavOpen(true)} />
+      <MobileFloatingControl
+        menuRef={dockMenuTriggerRef}
+        onMenu={() => handleOpenNav(dockMenuTriggerRef.current)}
+        drawerOpen={mobileNavOpen}
+      />
       <AiAssistantGlobalAction showTrigger={false} />
       <CommandPaletteDialog />
     </div>
