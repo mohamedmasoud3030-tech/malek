@@ -83,7 +83,7 @@ export function DashboardWorkspaceE2EFixture() {
             <HeroBanner snapshot={fixtureSnapshot} isLoading={false} settings={defaultCompanySettingsContract} today="2026-07-15" />
 
             <section className="dashboard-section" data-dashboard-section="work-now" aria-label="مطلوب الآن">
-              <SectionHeader title="مطلوب الآن" description="الحالات التي تحتاج قراراً أو متابعة مباشرة" />
+              <SectionHeader eyebrow="أولوية" title="مطلوب الآن" />
               <AlertCenter
                 expiringContractsCount={fixtureSnapshot.contracts.expiring30}
                 overdueInvoicesCount={fixtureSnapshot.arrears.overdueCount}
@@ -96,13 +96,13 @@ export function DashboardWorkspaceE2EFixture() {
             </section>
 
             <section className="dashboard-section" aria-label="نبض المكتب" data-dashboard-section="office-pulse">
-              <SectionHeader title="نبض المكتب" description="أربع إشارات ثابتة تكفي لفهم وضع اليوم بسرعة" />
+              <SectionHeader eyebrow="الآن" title="نبض المكتب" />
               <OfficePulse snapshot={fixtureSnapshot} isLoading={false} settings={defaultCompanySettingsContract} />
             </section>
 
             <section className="dashboard-section" aria-label="العمل المنتظر" data-dashboard-section="work-queues">
-              <SectionHeader title="العمل المنتظر" description="أهم الحالات المفتوحة فقط" />
-              <div className="grid gap-3 lg:grid-cols-3">
+              <SectionHeader eyebrow="متابعة" title="العمل المنتظر" />
+              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
                 <OverdueSection rows={overdueRows} totalCount={fixtureSnapshot.arrears.overdueCount} isLoading={false} settings={fixtureSettings} />
                 <ExpiringContractsSection rows={expiringRows} totalCount={fixtureSnapshot.contracts.expiring30} isLoading={false} settings={fixtureSettings} />
                 <UrgentMaintenanceSection rows={fixtureSnapshot.queues.urgentMaintenance} totalCount={fixtureSnapshot.maintenance.urgentOpen} isLoading={false} />
@@ -110,17 +110,17 @@ export function DashboardWorkspaceE2EFixture() {
             </section>
 
             <section className="dashboard-section" aria-label="المال والالتزامات" data-dashboard-section="money-obligations">
-              <SectionHeader title="المال والالتزامات" description="كفاءة التحصيل والمصروفات والتزامات الملاك" />
+              <SectionHeader eyebrow="مالي" title="المال والالتزامات" />
               <KpiGrid snapshot={fixtureSnapshot} isLoading={false} settings={defaultCompanySettingsContract} />
             </section>
 
             <section className="dashboard-section" aria-label="حالة التحصيل والمحفظة" data-dashboard-section="operational-health">
-              <SectionHeader title="حالة التحصيل والمحفظة" description="ملخص مرئي للتحصيل والإشغال والشواغر" />
+              <SectionHeader eyebrow="صورة تشغيلية" title="حالة التحصيل والمحفظة" />
               <DashboardCharts snapshot={fixtureSnapshot} isLoading={false} settings={defaultCompanySettingsContract} />
             </section>
 
             <section className="dashboard-section" aria-label="تحليل المتأخرات" data-dashboard-section="analytics">
-              <SectionHeader title="تحليل المتأخرات" description="تفاصيل أعمار الذمم عند وجود متأخرات" />
+              <SectionHeader eyebrow="تحليل" title="تحليل المتأخرات" />
               <ArrearsBreakdown snapshot={fixtureSnapshot} settings={defaultCompanySettingsContract} />
             </section>
           </DashboardVisualScope>
