@@ -53,7 +53,9 @@ jobs:
         run: pnpm lint
       - name: Architecture check
         run: pnpm --filter ./rentrix-app run check:architecture
-      - name: Frontend–Database contract gate
+      - name: Migration ↔ generated database type parity
+        run: pnpm db0:check-types
+      - name: Frontend ↔ Database contract gate
         run: pnpm --filter ./rentrix-app run check:frontend-db-contract
       - name: Build production bundle
         run: pnpm build
@@ -81,6 +83,8 @@ jobs:
         run: pnpm rebuild esbuild
       - name: Canonical database integrity
         run: pnpm db0:gate
+      - name: Six-role RLS compatibility matrix
+        run: pnpm test:supabase:rls
       - name: Documentation links
         run: pnpm check:docs
       - name: Test typecheck
