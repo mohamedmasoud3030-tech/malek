@@ -123,7 +123,7 @@ export function FinanceWorkspaceHero({
   return (
     <section
       aria-label="نبض المالية التشغيلي"
-      className="overflow-hidden rounded-3xl border border-border/70 bg-card shadow-card"
+      className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-card"
       data-finance-cockpit
       data-finance-state={isError ? 'error' : state.attentionTone}
     >
@@ -139,11 +139,11 @@ export function FinanceWorkspaceHero({
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <Button type="button" size="sm" onClick={onOpenCollections} className="min-h-10">
+          <Button type="button" size="sm" onClick={onOpenCollections} className="min-h-11">
             <ReceiptText className="me-1.5 size-4" aria-hidden="true" />
             التحصيل
           </Button>
-          <Button variant="outline" size="sm" asChild className="min-h-10">
+          <Button variant="outline" size="sm" asChild className="min-h-11">
             <Link to="/reports">
               <FileSpreadsheet className="me-1.5 size-4" aria-hidden="true" />
               التقارير
@@ -206,7 +206,7 @@ export function FinanceWorkspaceHero({
           type="button"
           variant="ghost"
           size="sm"
-          className="min-h-10 justify-between sm:justify-center"
+          className="min-h-11 justify-between sm:justify-center"
           onClick={attentionIsActionable ? onOpenArrears : onOpenCollections}
         >
           {attentionIsActionable ? state.nextActionLabel : state.nextAction === 'arrears' ? 'استكمل التحصيل' : state.nextActionLabel}

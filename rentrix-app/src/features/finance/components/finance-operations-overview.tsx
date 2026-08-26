@@ -68,7 +68,7 @@ function QueueCard({ title, value, description, actionLabel, tone, icon: Icon, o
         {isLoading ? <Skeleton className="h-7 w-28" /> : value}
       </div>
       <p className="mt-1 min-h-10 text-xs font-semibold leading-5 text-muted-foreground">{description}</p>
-      <Button type="button" variant="ghost" size="sm" className="mt-3 min-h-10 justify-between px-2" onClick={onAction}>
+      <Button type="button" variant="ghost" size="sm" className="mt-3 min-h-11 justify-between px-2" onClick={onAction}>
         {actionLabel}
         <ArrowLeft className="size-4" aria-hidden="true" />
       </Button>
@@ -102,7 +102,7 @@ export function FinanceOperationsOverview({
             <p className="text-[11px] font-black text-primary">قائمة العمل</p>
             <h3 id="finance-today-heading" className="mt-0.5 text-base font-black">ابدأ بالأكثر تأثيرًا اليوم</h3>
           </div>
-          <Button type="button" size="sm" onClick={nextActionIsArrears ? onOpenArrears : onOpenCollections} className="min-h-10">
+          <Button type="button" size="sm" onClick={nextActionIsArrears ? onOpenArrears : onOpenCollections} className="min-h-11">
             {nextActionIsArrears ? 'مراجعة المتأخرات' : 'فتح التحصيل'}
             <ArrowLeft className="ms-2 size-4" aria-hidden="true" />
           </Button>
@@ -180,11 +180,11 @@ export function FinanceOperationsOverview({
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button type="button" variant="outline" size="sm" className="min-h-10" onClick={onOpenReceipts}>
+          <Button type="button" variant="outline" size="sm" className="min-h-11" onClick={onOpenReceipts}>
             <ReceiptText className="me-1.5 size-4" aria-hidden="true" />
             تسجيل تحصيل
           </Button>
-          <Button variant="ghost" size="sm" asChild className="min-h-10">
+          <Button variant="ghost" size="sm" asChild className="min-h-11">
             <Link to="/reports">
               <FileSpreadsheet className="me-1.5 size-4" aria-hidden="true" />
               الرقابة والتقارير

@@ -287,7 +287,7 @@ export function FinancePage() {
           <aside className="min-w-0 space-y-3 lg:sticky lg:top-4">
             <nav
               aria-label="أقسام المالية"
-              className="hidden overflow-hidden rounded-3xl border border-border/70 bg-card p-2 shadow-card lg:block"
+              className="hidden overflow-hidden rounded-2xl border border-border/70 bg-card p-2 shadow-card lg:block"
             >
               <div className="px-3 pb-2 pt-1">
                 <p className="text-xs font-black text-muted-foreground">مساحات العمل</p>
@@ -351,7 +351,7 @@ export function FinancePage() {
           <main className="min-w-0">
             <section
               id="finance-workspace-panel"
-              className="min-w-0 rounded-3xl border border-border/70 bg-card shadow-card"
+              className="min-w-0 rounded-2xl border border-border/70 bg-card shadow-card"
               aria-label="مساحة العمل المالية الحالية"
             >
               <header className="border-b border-border/60 px-3 py-3 sm:px-4 sm:py-4">
@@ -380,7 +380,7 @@ export function FinancePage() {
                       const Icon = action.icon;
                       if (action.reports) {
                         return (
-                          <Button key={action.id} variant="outline" size="sm" asChild className="min-h-10">
+                          <Button key={action.id} variant="outline" size="sm" asChild className="min-h-11">
                             <Link to="/reports">
                               <Icon className="me-1.5 size-4" aria-hidden="true" />
                               {action.label}
@@ -394,7 +394,7 @@ export function FinancePage() {
                           type="button"
                           variant="outline"
                           size="sm"
-                          className="min-h-10"
+                          className="min-h-11"
                           onClick={() => action.sectionId && action.viewId && handleLocationChange(action.sectionId, action.viewId)}
                         >
                           <Icon className="me-1.5 size-4" aria-hidden="true" />
