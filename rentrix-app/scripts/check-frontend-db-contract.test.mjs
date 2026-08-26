@@ -29,6 +29,24 @@ export type Database = {
         };
         Relationships: [];
       };
+      payments: {
+        Row: {
+          id: string;
+          amount: number;
+          payment_date: string;
+        };
+        Insert: {
+          id?: string;
+          amount: number;
+          payment_date: string;
+        };
+        Update: {
+          id?: string;
+          amount?: number;
+          payment_date?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       invoice_summary: {
@@ -73,6 +91,20 @@ test('discovers literal tables, columns, mutations and RPC arguments', () => {
   assert.deepEqual([...usage.rpcs.get('record_invoice_payment_atomic').calls[0].argShape.keys], ['payload']);
   const result = validateFrontendUsage(usage, parseDatabaseTypes(types));
   assert.deepEqual(result.errors, []);
+});
+
+test('keeps consecutive Supabase query chains isolated', () => {
+  const usage = discoverFrontendUsageFromSources([{
+    path: 'chains.ts',
+    source: `
+      import { supabase } from '@/lib/supabase';
+      await supabase.from('invoices').select('id').eq('status', 'UNPAID');
+      await supabase.from('payments').select('amount, payment_date');
+    `,
+  }]);
+  assert.deepEqual([...usage.tables.get('invoices').columns].sort(), ['id', 'status']);
+  assert.deepEqual([...usage.tables.get('payments').columns].sort(), ['amount', 'payment_date']);
+  assert.deepEqual(validateFrontendUsage(usage, parseDatabaseTypes(types)).errors, []);
 });
 
 test('missing relation fails closed', () => {
