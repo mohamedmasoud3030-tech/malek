@@ -35,6 +35,48 @@ CREATE TABLE IF NOT EXISTS storage.objects (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
+-- Supabase Storage platform helpers used by tenant-scoped object policies.
+-- Keep these byte-for-behavior aligned with scripts/db0/bootstrap.sql so the
+-- legacy PGlite replay harness and the canonical DB0 harness model the same
+-- platform surface.
+CREATE OR REPLACE FUNCTION storage.foldername(name text)
+RETURNS text[]
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  _parts text[];
+BEGIN
+  SELECT string_to_array(name, '/') INTO _parts;
+  RETURN _parts[1:array_length(_parts, 1) - 1];
+END
+$$;
+
+CREATE OR REPLACE FUNCTION storage.filename(name text)
+RETURNS text
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  _parts text[];
+BEGIN
+  SELECT string_to_array(name, '/') INTO _parts;
+  RETURN _parts[array_length(_parts, 1)];
+END
+$$;
+
+CREATE OR REPLACE FUNCTION storage.extension(name text)
+RETURNS text
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  _parts text[];
+  _filename text;
+BEGIN
+  SELECT string_to_array(name, '/') INTO _parts;
+  SELECT _parts[array_length(_parts, 1)] INTO _filename;
+  RETURN reverse(split_part(reverse(_filename), '.', 1));
+END
+$$;
+
 CREATE OR REPLACE FUNCTION auth.jwt()
 RETURNS jsonb
 LANGUAGE sql

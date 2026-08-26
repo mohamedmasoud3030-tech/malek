@@ -57,6 +57,10 @@ jobs:
         run: pnpm db0:check-types
       - name: Frontend ↔ Database contract gate
         run: pnpm --filter ./rentrix-app run check:frontend-db-contract
+      - name: Frontend ↔ Backend runtime contract suite
+        run: pnpm --filter ./rentrix-app run test:frontend-backend-runtime-contract
+      - name: Six-role RLS compatibility matrix
+        run: pnpm test:supabase:rls
       - name: Build production bundle
         run: pnpm build
 

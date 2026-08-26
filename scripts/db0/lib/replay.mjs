@@ -79,6 +79,13 @@ export async function createDatabase() {
 
 /**
  * Replay the migration chain.
+ *
+ * Canonical/pg_dump-style migration material can temporarily set
+ * `row_security = off`. That setting is a replay/import concern only and must
+ * never leak into the behavioral session that follows. Restore normal runtime
+ * semantics before returning so RLS tests exercise the same fail-closed mode
+ * as Supabase request sessions.
+ *
  * @returns {Promise<{applied: string[], failures: Array<{file:string,error:string,detail?:string}>, shimmed: Array<{file:string,shims:string[]}>}>}
  */
 export async function replay(db, { files, stopOnError = true, onProgress } = {}) {
@@ -126,6 +133,11 @@ export async function replay(db, { files, stopOnError = true, onProgress } = {})
       if (stopOnError) break;
     }
   }
+
+  // Never leak pg_dump/canonical-baseline row_security=off into callers.
+  // `SET` is session-scoped, so restoring it here protects every DB0/RLS
+  // consumer of this shared replay engine.
+  await db.exec('set row_security = on;');
 
   return { applied, failures, shimmed };
 }

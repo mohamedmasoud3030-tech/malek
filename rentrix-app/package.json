@@ -17,7 +17,8 @@
     "e2e": "playwright test --config playwright.config.ts",
     "e2e:headed": "playwright test --config playwright.config.ts --headed",
     "test:frontend-db-contract": "node --test scripts/check-frontend-db-contract.test.mjs",
-    "check:frontend-db-contract": "node scripts/run-frontend-db-contract-tests.mjs"
+    "check:frontend-db-contract": "node scripts/run-frontend-db-contract-tests.mjs",
+    "test:frontend-backend-runtime-contract": "vitest run --config vite.config.ts src/test/db-contract/invoice-payment-safety-contract.test.ts src/features/financials/payments/paymentService.test.ts src/features/financials/collections-payments-period-close.pglite.test.ts src/features/financials/phase1-omr-precision-reconciliation.test.ts src/features/owners/services/owner-settlements-service.p1.test.ts src/features/lifecycle/core-operational-journey.test.ts src/features/lifecycle/product-workflow-scenarios.test.ts"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.12.1",

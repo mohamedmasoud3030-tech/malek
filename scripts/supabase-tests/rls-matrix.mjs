@@ -10,7 +10,9 @@
 // Nothing here talks to a hosted project. Cleanup is implicit: the database
 // lives only in memory.
 
-import { createDatabase, replay } from '../db0/lib/replay.mjs';
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import { createDatabase, replay, ROOT } from '../db0/lib/replay.mjs';
 import { findIsolationViolations } from '../db0/lib/isolation.mjs';
 import { introspect } from '../db0/lib/introspect.mjs';
 
@@ -114,7 +116,7 @@ async function seed(db) {
       ('${OPERATIONS_A}', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'operations.a@matrix.test', 'not-used', now(), now(), now(), '{}'::jsonb, '{"company_id":"${COMPANY_A}"}'::jsonb),
       ('${USER_A}', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'user.a@matrix.test', 'not-used', now(), now(), now(), '{}'::jsonb, '{"company_id":"${COMPANY_A}"}'::jsonb),
       ('${VIEWER_A}', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'viewer.a@matrix.test', 'not-used', now(), now(), now(), '{}'::jsonb, '{"company_id":"${COMPANY_A}"}'::jsonb),
-      ('${INACTIVE_A}', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'inactive.a@matrix.test', 'not-used', now(), now(), now(), '{}'::jsonb, '{"company_id":"${COMPANY_A}"}'::jsonb),
+      ('${INACTIVE_A}', '00000000-0000-0000-8000-000000000000', 'authenticated', 'authenticated', 'inactive.a@matrix.test', 'not-used', now(), now(), now(), '{}'::jsonb, '{"company_id":"${COMPANY_A}"}'::jsonb),
       ('${DELETED_A}', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'deleted.a@matrix.test', 'not-used', now(), now(), now(), '{}'::jsonb, '{"company_id":"${COMPANY_A}"}'::jsonb),
       ('${NOMEM_A}', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'nomem.a@matrix.test', 'not-used', now(), now(), now(), '{}'::jsonb, '{"company_id":"${COMPANY_B}"}'::jsonb),
       ('${ADMIN_B}', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin.b@matrix.test', 'not-used', now(), now(), now(), '{}'::jsonb, '{"company_id":"${COMPANY_B}"}'::jsonb)
@@ -196,10 +198,10 @@ async function seed(db) {
 
   try {
     await db.exec(`
-      insert into public.commissions (id, staff_name, type, status, amount, company_id, created_at, updated_at)
+      insert into public.commissions (id, staff_name, type, source_id, status, amount, company_id, created_at, updated_at)
       values
-        ('${COMM_A}', 'Broker A', 'contract', 'pending', 100, '${COMPANY_A}', now(), now()),
-        ('${COMM_B}', 'Broker B', 'contract', 'pending', 200, '${COMPANY_B}', now(), now())
+        ('${COMM_A}', 'Broker A', 'contract', '${PROP_A}', 'pending', 100, '${COMPANY_A}', now(), now()),
+        ('${COMM_B}', 'Broker B', 'contract', '${PROP_B}', 'pending', 200, '${COMPANY_B}', now(), now())
       on conflict (id) do nothing;
     `);
   } catch (error) {
@@ -848,7 +850,7 @@ async function runRpcs(db) {
 
     const createOwn = await withIdentity(db, ids.adminA, async () => {
       await db.query(
-        `select public.create_commission_atomic('{"staff_name":"Created by A","type":"contract","amount":125,"request_id":"matrix-create-a"}'::jsonb) as out`,
+        `select public.create_commission_atomic('{"staff_name":"Created by A","type":"contract","source_id":"${PROP_A}","amount":125,"request_id":"matrix-create-a"}'::jsonb) as out`,
       );
       const stamped = await db.query(
         `select company_id::text as company_id from public.commissions where staff_name = 'Created by A' limit 1`,
@@ -1035,6 +1037,15 @@ if (replayed.failures.length) {
   process.exit(2);
 }
 console.log(`Replayed ${replayed.applied.length} migrations.`);
+
+try {
+  const referenceSeed = await readFile(join(ROOT, 'supabase', 'seed.sql'), 'utf8');
+  await db.exec(referenceSeed);
+  console.log('Applied canonical reference seed.');
+} catch (error) {
+  console.error(`Reference seed failed: ${firstLine(error)}`);
+  process.exit(2);
+}
 
 try {
   await seed(db);
