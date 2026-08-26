@@ -43,6 +43,10 @@ Make the already-merged WP-A/WP-B/WP-C/WP-D refactor visibly useful to the end u
 - [ ] Repair only confirmed regressions.
 - [ ] Open PR with visual-adoption summary and verification evidence.
 
+## Final implementation checkpoint
+
+All code changes for the UX adoption wave are now committed. No additional product-scope edits should be added before the first end-of-pass gate run. If execution resumes after interruption, continue from verification; do not restart the implementation pass.
+
 ## Source-review notes
 
 - Finance still uses the merged WP-B route/deep-link/permission model; only presentation composition changed.
