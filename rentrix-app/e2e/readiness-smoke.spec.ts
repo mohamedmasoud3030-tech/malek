@@ -53,6 +53,7 @@ test.describe('release readiness browser smoke', () => {
 
     await page.goto('/login');
     await expect(page.locator('[data-login-brand] [aria-label="MALEK"]')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'تسجيل الدخول إلى MALEK', level: 1, exact: true })).toHaveCount(1);
     await expect(page.getByRole('textbox', { name: 'البريد الإلكتروني', exact: true })).toBeVisible();
     await expect(page.getByPlaceholder('••••••••')).toBeVisible();
     await expect(page.getByRole('button', { name: /تسجيل الدخول/ })).toBeVisible();

@@ -66,6 +66,7 @@ export function LoginPage() {
       <section className="safe-top-app safe-bottom-overlay mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-[26rem] flex-col justify-center" data-login-main>
         <div className="rounded-2xl border border-border/70 bg-card/90 p-6 shadow-card backdrop-blur-sm sm:p-8" data-login-card>
           <header className="mb-8 flex flex-col items-center justify-center text-center" data-login-brand>
+            <h1 className="sr-only">تسجيل الدخول إلى MALEK</h1>
             <MalikBrand layout="vertical" showTagline className="gap-4" markClassName="size-14 sm:size-16" />
           </header>
 
