@@ -137,7 +137,7 @@ export function SettingsWorkspace({
 
   if (companySettingsQuery.isError) {
     return (
-      <SettingsVariantShell variant={variant} dir={pageLanguage.direction} lang={pageLanguage.locale} contentClassName="space-y-4">
+      <SettingsVariantShell variant={variant} dir={pageLanguage.direction} lang={pageLanguage.locale} contentClassName="space-y-3">
         <SettingsHero companyName="—" hasUnsavedChanges={false} />
         <Card role="alert">
           <CardHeader>
@@ -154,7 +154,7 @@ export function SettingsWorkspace({
 
   if (companySettingsQuery.isLoading || !draft) {
     return (
-      <SettingsVariantShell variant={variant} dir={pageLanguage.direction} lang={pageLanguage.locale} contentClassName="space-y-4">
+      <SettingsVariantShell variant={variant} dir={pageLanguage.direction} lang={pageLanguage.locale} contentClassName="space-y-3">
         <SettingsHero companyName="…" hasUnsavedChanges={false} />
         <Card>
           <CardHeader><CardTitle>إعدادات الشركة</CardTitle><p className="text-sm text-muted-foreground">جارٍ تحميل الإعدادات المحفوظة...</p></CardHeader>
@@ -200,16 +200,18 @@ export function SettingsWorkspace({
       variant={variant}
       dir={pageLanguage.direction}
       lang={pageLanguage.locale}
-      contentClassName="min-w-0 space-y-4 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] md:pb-8"
+      contentClassName="min-w-0 space-y-2.5 pb-3 md:space-y-4 md:pb-8"
     >
       <SettingsHero companyName={preview.companyName} hasUnsavedChanges={isDirty} />
-      <OverviewRow tiles={summaryTiles} onOpenSection={handleJumpToSection} />
+      <div className="hidden md:block">
+        <OverviewRow tiles={summaryTiles} onOpenSection={handleJumpToSection} />
+      </div>
 
-      <div className="grid min-w-0 gap-4 md:grid-cols-[minmax(230px,285px)_minmax(0,1fr)] md:items-start">
+      <div className="grid min-w-0 gap-2.5 md:grid-cols-[minmax(210px,255px)_minmax(0,1fr)] md:items-start md:gap-4">
         <SettingsWorkspaceNav activeSection={activeSection} onChange={handleJumpToSection} />
-        <div className="min-w-0 space-y-3">
+        <div className="min-w-0 space-y-2.5 md:space-y-3">
           <SettingsSaveBar isDirty={isDirty} isSaving={isSaving} onDiscard={discardDraft} />
-          <form id="settings-company-form" className="min-w-0 space-y-4" onSubmit={handleSubmit}>
+          <form id="settings-company-form" className="min-w-0 space-y-3 md:space-y-4" onSubmit={handleSubmit}>
             {settingsSectionRegistry
               .filter((section) => mountedSections.has(section.id))
               .map((section) => (
