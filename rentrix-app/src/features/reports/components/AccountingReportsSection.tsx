@@ -1,4 +1,5 @@
-import { Download, Printer } from 'lucide-react';
+import { useState } from 'react';
+import { Download, Landmark, Printer, Scale, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { BalanceSheetReport, IncomeStatementReport, TrialBalanceReport } from '@/features/financials/reports/financialReportsService';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
@@ -47,6 +48,14 @@ type AccountingDocumentActions<T> = Readonly<{
   disabled: boolean;
 }>;
 
+type AccountingStatementId = 'trial_balance' | 'income_statement' | 'balance_sheet';
+
+const statementViews = [
+  { id: 'trial_balance', label: 'ميزان المراجعة', icon: Scale },
+  { id: 'income_statement', label: 'الأرباح والخسائر', icon: TrendingUp },
+  { id: 'balance_sheet', label: 'المركز المالي', icon: Landmark },
+] as const;
+
 const MISSING_REPORT_DATA_MESSAGE =
   'تعذر إصدار التقرير: لا توجد بيانات محاسبية مُحمَّلة للفترة المحددة. يرجى عرض التقرير أولاً ثم إعادة المحاولة.';
 const RECONCILIATION_NOT_READY_MESSAGE =
@@ -67,6 +76,7 @@ export function AccountingReportsSection({
   balanceSheetError,
   isLoading,
 }: AccountingReportsSectionProps) {
+  const [activeStatement, setActiveStatement] = useState<AccountingStatementId>('trial_balance');
   const { companySettings: documentSettings, isReady: isDocumentSettingsReady } = useDocumentSettings();
   const reconciliationQuery = useSubledgerGlReconciliation(asOf);
   const reconciliationRows = reconciliationQuery.data ?? [];
@@ -160,7 +170,7 @@ export function AccountingReportsSection({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       <AccountingReconciliationReadiness
         asOf={asOf}
         rows={reconciliationRows}
@@ -170,48 +180,89 @@ export function AccountingReportsSection({
         onRefetch={() => { void reconciliationQuery.refetch(); }}
       />
 
-      <TrialBalancePanel
-        asOf={asOf}
-        report={trialBalance}
-        error={trialBalanceError}
-        isLoading={isTrialBalanceLoading || isLoading}
-        action={documentActions({
-          label: 'طباعة الميزان',
-          builder: buildTrialBalanceDocument,
-          print: (data) => documentService.printDocument('trial_balance', { settings: documentSettings, payload: toTrialBalanceDocumentPayload(data) }),
-          pdf: (data) => documentService.downloadDocumentPdf('trial_balance', { settings: documentSettings, payload: toTrialBalanceDocumentPayload(data) }),
-          disabled: !trialBalance,
+      <div
+        className="grid grid-cols-3 gap-1 rounded-xl border border-border/60 bg-muted/20 p-1"
+        role="tablist"
+        aria-label="القوائم المحاسبية"
+      >
+        {statementViews.map((statement) => {
+          const Icon = statement.icon;
+          const isActive = activeStatement === statement.id;
+          return (
+            <button
+              key={statement.id}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              aria-controls={`accounting-statement-${statement.id}`}
+              onClick={() => setActiveStatement(statement.id)}
+              className={`flex min-h-11 min-w-0 items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-black transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 ${
+                isActive
+                  ? 'bg-card text-foreground shadow-card'
+                  : 'text-muted-foreground hover:bg-background/80 hover:text-foreground'
+              }`}
+            >
+              <Icon className="size-3.5 shrink-0" aria-hidden="true" />
+              <span className="truncate">{statement.label}</span>
+            </button>
+          );
         })}
-      />
+      </div>
 
-      <IncomeStatementPanel
-        from={from}
-        to={to}
-        report={incomeStatement}
-        error={incomeStatementError}
-        isLoading={isIncomeStatementLoading || isLoading}
-        action={documentActions({
-          label: 'طباعة الدخل',
-          builder: buildIncomeStatementDocument,
-          print: (data) => documentService.printDocument('income_statement', { settings: documentSettings, payload: toIncomeStatementDocumentPayload(data) }),
-          pdf: (data) => documentService.downloadDocumentPdf('income_statement', { settings: documentSettings, payload: toIncomeStatementDocumentPayload(data) }),
-          disabled: !incomeStatement,
-        })}
-      />
+      {activeStatement === 'trial_balance' ? (
+        <div id="accounting-statement-trial_balance" role="tabpanel">
+          <TrialBalancePanel
+            asOf={asOf}
+            report={trialBalance}
+            error={trialBalanceError}
+            isLoading={isTrialBalanceLoading || isLoading}
+            action={documentActions({
+              label: 'طباعة الميزان',
+              builder: buildTrialBalanceDocument,
+              print: (data) => documentService.printDocument('trial_balance', { settings: documentSettings, payload: toTrialBalanceDocumentPayload(data) }),
+              pdf: (data) => documentService.downloadDocumentPdf('trial_balance', { settings: documentSettings, payload: toTrialBalanceDocumentPayload(data) }),
+              disabled: !trialBalance,
+            })}
+          />
+        </div>
+      ) : null}
 
-      <BalanceSheetPanel
-        asOf={asOf}
-        report={balanceSheet}
-        error={balanceSheetError}
-        isLoading={isBalanceSheetLoading || isLoading}
-        action={documentActions({
-          label: 'طباعة المركز المالي',
-          builder: buildBalanceSheetDocument,
-          print: (data) => documentService.printDocument('balance_sheet', { settings: documentSettings, payload: toBalanceSheetDocumentPayload(data) }),
-          pdf: (data) => documentService.downloadDocumentPdf('balance_sheet', { settings: documentSettings, payload: toBalanceSheetDocumentPayload(data) }),
-          disabled: !balanceSheet,
-        })}
-      />
+      {activeStatement === 'income_statement' ? (
+        <div id="accounting-statement-income_statement" role="tabpanel">
+          <IncomeStatementPanel
+            from={from}
+            to={to}
+            report={incomeStatement}
+            error={incomeStatementError}
+            isLoading={isIncomeStatementLoading || isLoading}
+            action={documentActions({
+              label: 'طباعة الدخل',
+              builder: buildIncomeStatementDocument,
+              print: (data) => documentService.printDocument('income_statement', { settings: documentSettings, payload: toIncomeStatementDocumentPayload(data) }),
+              pdf: (data) => documentService.downloadDocumentPdf('income_statement', { settings: documentSettings, payload: toIncomeStatementDocumentPayload(data) }),
+              disabled: !incomeStatement,
+            })}
+          />
+        </div>
+      ) : null}
+
+      {activeStatement === 'balance_sheet' ? (
+        <div id="accounting-statement-balance_sheet" role="tabpanel">
+          <BalanceSheetPanel
+            asOf={asOf}
+            report={balanceSheet}
+            error={balanceSheetError}
+            isLoading={isBalanceSheetLoading || isLoading}
+            action={documentActions({
+              label: 'طباعة المركز المالي',
+              builder: buildBalanceSheetDocument,
+              print: (data) => documentService.printDocument('balance_sheet', { settings: documentSettings, payload: toBalanceSheetDocumentPayload(data) }),
+              pdf: (data) => documentService.downloadDocumentPdf('balance_sheet', { settings: documentSettings, payload: toBalanceSheetDocumentPayload(data) }),
+              disabled: !balanceSheet,
+            })}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }
