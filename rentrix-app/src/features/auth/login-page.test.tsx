@@ -29,6 +29,7 @@ describe('LoginPage — minimal SaaS contract', () => {
 
   it('keeps accessible field contracts and safe-area layout', () => {
     const html = renderToStaticMarkup(<LoginPage />);
+    expect(html).toContain('<h1 class="sr-only">تسجيل الدخول إلى MALEK</h1>');
     expect(html).toContain('for="login-email"');
     expect(html).toContain('id="login-email"');
     expect(html).toContain('for="login-password"');
