@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/use-auth';
 
 export const ACTIVE_COMPANY_ERROR = 'تعذر تحديد الشركة النشطة';
 export const ACTIVE_COMPANY_RESOLUTION_TIMEOUT_MS = 12_000;
+export const ACTIVE_COMPANY_BOOTSTRAP_FALLBACK_DELAY_MS = 300;
 
 /**
  * A company claim is a security boundary, but the UI must not remain in a
@@ -154,6 +155,7 @@ export function CompanyProvider({ children }: PropsWithChildren) {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [currentRole, setCurrentRole] = useState<CompanyMemberRole | null>(null);
   const [reloadVersion, setReloadVersion] = useState(0);
+  const [showBootstrapFallback, setShowBootstrapFallback] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -330,10 +332,47 @@ export function CompanyProvider({ children }: PropsWithChildren) {
   }), [companies, activeCompany, isLoading, switchCompany, currentRole]);
 
   const isCompanyContextTransition = authenticatedUserId !== resolvedUserId;
-  if (isLoading || isCompanyContextTransition) {
+  const shouldBlockForCompanyResolution = isCompanyContextTransition || (isLoading && !activeCompany);
+
+  useEffect(() => {
+    if (!shouldBlockForCompanyResolution) {
+      setShowBootstrapFallback(false);
+      return;
+    }
+
+    const timeout = globalThis.setTimeout(
+      () => setShowBootstrapFallback(true),
+      ACTIVE_COMPANY_BOOTSTRAP_FALLBACK_DELAY_MS,
+    );
+    return () => globalThis.clearTimeout(timeout);
+  }, [shouldBlockForCompanyResolution]);
+
+  if (shouldBlockForCompanyResolution) {
     return (
-      <main className="grid min-h-dvh place-items-center bg-background p-6" dir="rtl" aria-busy="true">
-        <p className="text-sm font-semibold text-muted-foreground">جارٍ تحديد الشركة النشطة…</p>
+      <main
+        className="min-h-dvh bg-background p-4 sm:p-6"
+        dir="rtl"
+        aria-busy="true"
+        aria-label="جاري تجهيز مساحة العمل"
+      >
+        {showBootstrapFallback ? (
+          <div
+            className="mx-auto flex min-h-[calc(100dvh-2rem)] w-full max-w-7xl flex-col gap-4 pt-[max(0.5rem,env(safe-area-inset-top))] sm:min-h-[calc(100dvh-3rem)]"
+            data-testid="company-bootstrap-skeleton"
+          >
+            <div className="h-14 w-full animate-pulse rounded-2xl bg-muted/55" />
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+              <div className="h-24 animate-pulse rounded-2xl bg-muted/45" />
+              <div className="h-24 animate-pulse rounded-2xl bg-muted/45" />
+              <div className="h-24 animate-pulse rounded-2xl bg-muted/45" />
+              <div className="h-24 animate-pulse rounded-2xl bg-muted/45" />
+            </div>
+            <div className="grid flex-1 gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)]">
+              <div className="min-h-72 animate-pulse rounded-2xl bg-muted/40" />
+              <div className="min-h-52 animate-pulse rounded-2xl bg-muted/35" />
+            </div>
+          </div>
+        ) : null}
       </main>
     );
   }
