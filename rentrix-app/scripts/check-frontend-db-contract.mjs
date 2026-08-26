@@ -1,213 +1,201 @@
 #!/usr/bin/env node
 /**
- * Frontend–Database Contract Gate
+ * Frontend ↔ Database Contract Gate v2
  *
- * Validates that every table, column, FK, RPC and enum value the frontend
- * actually uses is present in the generated TypeScript types (which are
- * produced by replaying migrations into PGlite).
+ * Fast PR-safe verification:
+ *   - discovers production Supabase .from()/.rpc() usage automatically
+ *   - verifies tables/views, referenced root columns and mutation keys against generated DB types
+ *   - verifies RPC existence + literal argument keys/required args
+ *   - keeps critical FK/enum/date/storage/membership invariants
+ *   - optional LIVE mode performs read-only comparison against hosted Supabase
  *
- * Two modes:
- *   1. DRY (no env vars) – types-file check only
- *   2. LIVE (SUPABASE_MGMT_TOKEN set) – also verifies against live Supabase
- *
- * Usage:
- *   node rentrix-app/scripts/check-frontend-db-contract.mjs
- *   SUPABASE_MGMT_TOKEN=sbp_... node rentrix-app/scripts/check-frontend-db-contract.mjs
+ * The generated database.ts must itself be checked against migrations in CI via
+ * `pnpm db0:check-types`; together these form migration → generated contract → frontend parity.
  */
 
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  discoverFrontendUsage,
+  parseDatabaseTypes,
+  validateFrontendUsage,
+} from './frontend-db-contract-lib.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
-const TYPES_PATH = join(ROOT, 'src', 'types', 'database.ts');
-
-// ---------------------------------------------------------------------------
-//  FRONTEND INVENTORY  –  kept in sync with actual .from()/.rpc() calls
-// ---------------------------------------------------------------------------
-
-const TABLES = [
-  'app_notifications','attachments','audit_log',
-  'automation_notifications','automation_rules','automation_runs',
-  'bank_accounts','bank_statement_imports','bank_statement_lines',
-  'commissions','communication_records','company_members','company_settings',
-  'contract_documents','contract_inspections','contracts','cost_centers',
-  'deposit_application_claims','deposit_refund_events','expenses','invoices',
-  'lands','leads','maintenance_records','owner_agreement_versions',
-  'owner_agreements','owner_settlements','owners','payment_terms_templates',
-  'payments','people','permission_requests','properties','property_owners',
-  'receipt_allocations','receipt_void_requests','receipts',
-  'service_provider_categories','service_provider_category_links',
-  'service_providers','tenant_deposits','units','user_permission_grants',
-  'users','utility_bills','utility_meters','vault_documents',
-];
-
-const RPCS = [
-  'complete_company_onboarding_atomic','ensure_company_chart_of_accounts',
-  'generate_invoices_from_active_contracts','get_company_onboarding_state',
-  'list_accounting_periods','list_chart_of_accounts',
-  'reset_company_onboarding_atomic',
-];
+const SOURCE_ROOT = join(ROOT, 'src');
+const TYPES_PATH = join(SOURCE_ROOT, 'types', 'database.ts');
+const CLIENT_PATH = join(SOURCE_ROOT, 'lib', 'supabase.ts');
 
 const FKS = [
-  'contracts_property_id_fkey','contracts_tenant_id_fkey','contracts_unit_id_fkey',
-  'invoices_contract_id_fkey','payments_receipt_id_fkey','receipts_payment_id_fkey',
+  'contracts_property_id_fkey', 'contracts_tenant_id_fkey', 'contracts_unit_id_fkey',
+  'invoices_contract_id_fkey', 'payments_receipt_id_fkey', 'receipts_payment_id_fkey',
 ];
 
-const SELECTED_COLS = {
-  contracts:       ['id','property_id','unit_id','tenant_id','start_date','end_date','deleted_at'],
-  invoices:        ['id','reference','contract_id','due_date','amount','paid_amount','status'],
-  payments:        ['id','amount','payment_date','status','deleted_at'],
-  expenses:        ['id','amount','expense_date','deleted_at'],
-  properties:      ['id','status','deleted_at'],
-  units:           ['id','property_id','status','deleted_at'],
-  people:          ['id','type','deleted_at'],
-  owners:          ['id','full_name','display_name','phone','email'],
-  property_owners: ['property_id','owner_id','is_primary','starts_on','ends_on'],
-  commissions:     ['id','amount','status','staff_name','type','source_id'],
-  communication_records: ['id'],
-  vault_documents: ['id','related_entity_type','related_entity_id','storage_path','metadata'],
-  owner_agreements: ['id','property_id','starts_on','ends_on'],
-  leads:           ['id'],
-};
-
 const ENUMS = {
-  user_role:       ['ADMIN','MANAGER','USER','ACCOUNTANT','OPERATIONS','VIEWER'],
-  entity_status:   ['ACTIVE','INACTIVE','BLACKLISTED'],
-  charged_to_type: ['OWNER','TENANT','COMPANY'],
-  utility_status:  ['UNPAID','PAID','OVERDUE'],
+  user_role: ['ADMIN', 'MANAGER', 'USER', 'ACCOUNTANT', 'OPERATIONS', 'VIEWER'],
+  entity_status: ['ACTIVE', 'INACTIVE', 'BLACKLISTED'],
+  charged_to_type: ['OWNER', 'TENANT', 'COMPANY'],
+  utility_status: ['UNPAID', 'PAID', 'OVERDUE'],
 };
 
 const STORAGE_BUCKETS = ['attachments'];
-
 const DATE_COLUMNS = [
-  ['contracts','start_date'], ['contracts','end_date'],
-  ['invoices','issue_date'],  ['invoices','due_date'],
+  ['contracts', 'start_date'], ['contracts', 'end_date'],
+  ['invoices', 'issue_date'], ['invoices', 'due_date'],
 ];
 
-// ---------------------------------------------------------------------------
-//  Runner
-// ---------------------------------------------------------------------------
-
 const types = readFileSync(TYPES_PATH, 'utf8');
+const clientSource = readFileSync(CLIENT_PATH, 'utf8');
+const database = parseDatabaseTypes(types);
+const usage = discoverFrontendUsage(SOURCE_ROOT);
+const validation = validateFrontendUsage(usage, database);
+
 const MGMT_TOKEN = process.env.SUPABASE_MGMT_TOKEN;
 const PROJECT_REF = process.env.SUPABASE_PROJECT_REF || 'nnggcnpcuomwfuupupwg';
-let passed = 0, failed = 0, skipped = 0;
+const STRICT_DYNAMIC = process.env.FRONTEND_DB_CONTRACT_STRICT_DYNAMIC === '1';
+let passed = 0;
+let failed = 0;
+let skipped = 0;
+let warned = 0;
 
-function ok(l) { passed++; console.log(`  ✅ ${l}`); }
-function fail(l, d) { failed++; console.log(`  ❌ ${l}: ${d || ''}`); }
-function skip(l, d) { skipped++; console.log(`  ⏭️  ${l}: ${d}`); }
-function check(l, c, d) { (c ? ok : fail)(l, d); }
-
-function tableBlock(table) {
-  const marker = `\n      ${table}: {`;
-  const start = types.indexOf(marker);
-  if (start < 0) return '';
-  const rest = types.slice(start + marker.length);
-  const nextTable = rest.search(/\n      [A-Za-z0-9_]+: \{/);
-  return nextTable < 0 ? rest : rest.slice(0, nextTable);
-}
+function ok(label) { passed++; console.log(`  ✅ ${label}`); }
+function fail(label, detail) { failed++; console.log(`  ❌ ${label}${detail ? `: ${detail}` : ''}`); }
+function skip(label, detail) { skipped++; console.log(`  ⏭️  ${label}: ${detail}`); }
+function warn(label) { warned++; console.log(`  ⚠️  ${label}`); }
+function check(label, condition, detail) { condition ? ok(label) : fail(label, detail); }
 
 function enumDeclaration(enumName) {
   const match = types.match(new RegExp(`\\n      ${enumName}: ([^\\n]+)`));
   return match?.[1] ?? '';
 }
 
-async function sql(q) {
-  const r = await fetch(
+async function sql(query) {
+  const response = await fetch(
     `https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query`,
-    { method: 'POST',
-      headers: { Authorization: `Bearer ${MGMT_TOKEN}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: q }) },
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${MGMT_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ query }),
+    },
   );
-  if (!r.ok) throw Error(await r.text());
-  return r.json();
+  if (!response.ok) throw Error(await response.text());
+  return response.json();
 }
 
-const hasLive = !!MGMT_TOKEN;
+const hasLive = Boolean(MGMT_TOKEN);
 
 async function main() {
-  console.log(`\n=== Frontend–Database Contract Gate ===`);
-  console.log(`Mode: ${hasLive ? 'LIVE' : 'DRY (types only)'}\n`);
+  console.log('\n=== MALEK Frontend ↔ Database Contract Gate v2 ===');
+  console.log(`Mode: ${hasLive ? 'LIVE + generated types' : 'DRY (generated types + source discovery)'}`);
 
-  // 1 – Types file integrity
-  console.log('── 1. Types file ──');
-  check('Plain TS source', !types.trim().startsWith('{"types"'));
-  check('Size > 100 KB', types.length > 100_000);
+  console.log('\n── 1. Generated contract + typed client ──');
+  check('Plain TypeScript database contract', !types.trim().startsWith('{"types"'));
+  check('Generated database contract has substantial schema', types.length > 100_000);
   check('Has Tables section', types.includes('Tables:'));
+  check('Has Views section', types.includes('Views:'));
   check('Has Functions section', types.includes('Functions:'));
   check('Has Enums section', types.includes('Enums:'));
+  check('Supabase client is bound to Database generic', /createClient\s*<\s*Database\s*>/.test(clientSource));
 
-  // 2 – Tables
-  console.log('\n── 2. Tables ──');
-  for (const t of TABLES) check(`Table ${t}`, types.includes(`\n      ${t}: {`));
+  console.log('\n── 2. Automatic frontend discovery ──');
+  check('Discovered database relations from production source', usage.tables.size > 0, 'scanner found zero .from() targets');
+  check('Discovered RPCs from production source', usage.rpcs.size > 0, 'scanner found zero .rpc() targets');
+  check(
+    'Payment facade RPC is automatically discovered',
+    usage.rpcs.has('record_invoice_payment_atomic'),
+    'record_invoice_payment_atomic would be invisible to the gate',
+  );
+  console.log(`  ℹ️  ${usage.tables.size} tables/views, ${usage.rpcs.size} RPCs discovered automatically`);
 
-  // 3 – RPCs
-  console.log('\n── 3. RPCs ──');
-  for (const rpc of RPCS) check(`RPC ${rpc}`, types.includes(`${rpc}: {`));
+  console.log('\n── 3. Frontend ↔ generated database contract ──');
+  if (validation.errors.length === 0) ok('No frontend/database mismatches');
+  else for (const error of validation.errors) fail('Contract mismatch', error);
 
-  // 4 – FKs
-  console.log('\n── 4. Foreign keys ──');
-  for (const fk of FKS) check(`FK ${fk}`, types.includes(fk));
+  for (const warning of validation.warnings) {
+    if (STRICT_DYNAMIC) fail('Unverified dynamic contract usage', warning);
+    else warn(warning);
+  }
 
-  // 5 – Selected columns
-  console.log('\n── 5. Explicit columns ──');
-  for (const [tbl, cols] of Object.entries(SELECTED_COLS)) {
-    const block = tableBlock(tbl);
-    for (const col of cols) {
-      const re = new RegExp(`\\n\\s{10}${col}\\??:`);
-      check(`Column ${tbl}.${col}`, re.test(block), 'missing from that table Row/Insert/Update contract');
+  console.log('\n── 4. Critical relational + enum invariants ──');
+  for (const fk of FKS) check(`FK ${fk}`, types.includes(fk), 'missing from generated schema contract');
+  for (const [enumName, values] of Object.entries(ENUMS)) {
+    const declaration = enumDeclaration(enumName);
+    for (const value of values) {
+      check(`Enum ${enumName} '${value}'`, declaration.includes(`'${value}'`), 'missing from generated enum declaration');
     }
   }
 
-  // 6 – Enums
-  console.log('\n── 6. Enums ──');
-  for (const [en, vals] of Object.entries(ENUMS)) {
-    const declaration = enumDeclaration(en);
-    for (const v of vals) check(`Enum ${en} '${v}'`, declaration.includes(`'${v}'`), 'missing from that enum declaration');
-  }
-
-  // Date SQL types and Storage configuration are not representable in the
-  // generated TypeScript file. The migration replay gate proves them locally;
-  // this focused gate verifies them directly only when live credentials exist.
-  console.log('\n── 7. Database-only contracts ──');
+  console.log('\n── 5. Database-only contracts ──');
   if (!hasLive) {
-    for (const [tbl, col] of DATE_COLUMNS) skip(`${tbl}.${col}`, 'covered by migration replay; live check unavailable');
-    for (const b of STORAGE_BUCKETS) skip(`Bucket ${b}`, 'covered by migration replay; live check unavailable');
+    for (const [table, column] of DATE_COLUMNS) skip(`${table}.${column} SQL type`, 'covered by migration replay; live check unavailable');
+    for (const bucket of STORAGE_BUCKETS) skip(`Bucket ${bucket}`, 'covered by migration replay; live check unavailable');
   }
 
-  // ── LIVE tests ──
   if (hasLive) {
-    const lt = await sql("SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE'");
-    const liveTables = new Set(lt.map(r => r.table_name));
-    console.log('\n── 9. Live tables ──');
-    for (const t of TABLES) check(`Live table ${t}`, liveTables.has(t));
+    console.log('\n── 6. Live relation parity (read-only) ──');
+    const liveRelationRows = await sql(`
+      SELECT table_name
+        FROM information_schema.tables
+       WHERE table_schema='public'
+      UNION
+      SELECT table_name
+        FROM information_schema.views
+       WHERE table_schema='public'
+    `);
+    const liveRelations = new Set(liveRelationRows.map((row) => row.table_name));
+    for (const relation of usage.tables.keys()) check(`Live relation ${relation}`, liveRelations.has(relation));
 
-    const lr = await sql("SELECT proname FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.prokind='f'");
-    const liveRpcs = new Set(lr.map(r => r.proname));
-    console.log('\n── 10. Live RPCs ──');
-    for (const rpc of RPCS) check(`Live RPC ${rpc}`, liveRpcs.has(rpc));
+    console.log('\n── 7. Live used-column parity (read-only) ──');
+    const liveColumnRows = await sql(
+      "SELECT table_name, column_name FROM information_schema.columns WHERE table_schema='public'",
+    );
+    const liveColumns = new Map();
+    for (const row of liveColumnRows) {
+      const set = liveColumns.get(row.table_name) ?? new Set();
+      set.add(row.column_name);
+      liveColumns.set(row.table_name, set);
+    }
+    for (const [relation, entry] of usage.tables) {
+      for (const column of entry.columns) {
+        check(`Live column ${relation}.${column}`, liveColumns.get(relation)?.has(column) === true);
+      }
+    }
 
-    const lf = await sql("SELECT conname FROM pg_constraint c JOIN pg_namespace n ON n.oid=c.connamespace WHERE n.nspname='public' AND c.contype='f'");
-    const liveFks = new Set(lf.map(r => r.conname));
-    console.log('\n── 11. Live FKs ──');
+    console.log('\n── 8. Live RPC parity (read-only) ──');
+    const liveRpcRows = await sql(
+      "SELECT proname FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.prokind='f'",
+    );
+    const liveRpcs = new Set(liveRpcRows.map((row) => row.proname));
+    for (const rpc of usage.rpcs.keys()) check(`Live RPC ${rpc}`, liveRpcs.has(rpc));
+
+    console.log('\n── 9. Live FK parity (read-only) ──');
+    const liveFkRows = await sql(
+      "SELECT conname FROM pg_constraint c JOIN pg_namespace n ON n.oid=c.connamespace WHERE n.nspname='public' AND c.contype='f'",
+    );
+    const liveFks = new Set(liveFkRows.map((row) => row.conname));
     for (const fk of FKS) check(`Live FK ${fk}`, liveFks.has(fk));
 
-    console.log('\n── 12. Live date types ──');
-    for (const [tbl, col] of DATE_COLUMNS) {
-      const r = await sql(`SELECT data_type FROM information_schema.columns WHERE table_schema='public' AND table_name='${tbl}' AND column_name='${col}'`);
-      check(`Live ${tbl}.${col} is date`, r?.[0]?.data_type === 'date');
+    console.log('\n── 10. Live date types (read-only) ──');
+    for (const [table, column] of DATE_COLUMNS) {
+      const rows = await sql(
+        `SELECT data_type FROM information_schema.columns WHERE table_schema='public' AND table_name='${table}' AND column_name='${column}'`,
+      );
+      check(`Live ${table}.${column} is date`, rows?.[0]?.data_type === 'date', rows?.[0]?.data_type);
     }
 
-    const buckets = await sql("SELECT id, name, public FROM storage.buckets");
-    console.log('\n── 13. Storage buckets ──');
-    for (const b of STORAGE_BUCKETS) {
-      check(`Bucket ${b} exists`, buckets.some(x => x.name === b));
-      check(`Bucket ${b} is private`, buckets.some(x => x.name === b && !x.public));
+    console.log('\n── 11. Storage buckets (read-only) ──');
+    const buckets = await sql('SELECT id, name, public FROM storage.buckets');
+    for (const bucket of STORAGE_BUCKETS) {
+      check(`Bucket ${bucket} exists`, buckets.some((row) => row.name === bucket));
+      check(`Bucket ${bucket} is private`, buckets.some((row) => row.name === bucket && !row.public));
     }
 
-    console.log('\n── 14. Six-role membership authority ──');
+    console.log('\n── 12. Six-role membership authority (read-only) ──');
     const membership = await sql(`
       select
         (select column_default from information_schema.columns
@@ -219,25 +207,32 @@ async function main() {
         (select count(*)::int from public.company_members where upper(role) in ('OWNER','MEMBER')) as legacy_rows
     `);
     const contract = membership[0] ?? {};
-    const sixRoles = ['ADMIN','MANAGER','ACCOUNTANT','OPERATIONS','USER','VIEWER'];
+    const sixRoles = ['ADMIN', 'MANAGER', 'ACCOUNTANT', 'OPERATIONS', 'USER', 'VIEWER'];
     check('company_members role default is USER', contract.role_default === "'USER'::text", contract.role_default);
-    check('company_members CHECK has six canonical roles',
-      sixRoles.every(role => contract.role_check?.includes(`'${role}'`))
+    check(
+      'company_members CHECK has six canonical roles',
+      sixRoles.every((role) => contract.role_check?.includes(`'${role}'`))
         && !contract.role_check?.includes("'OWNER'")
         && !contract.role_check?.includes("'MEMBER'"),
-      contract.role_check);
-    check('membership management uses effective users.manage permission',
+      contract.role_check,
+    );
+    check(
+      'membership management uses effective users.manage permission',
       contract.manager_function?.includes("current_user_has_effective_app_permission('users.manage')")
         && contract.manager_function?.includes('current_company_id()')
         && !contract.manager_function?.includes("'OWNER'")
-        && !contract.manager_function?.includes("'MEMBER'"));
+        && !contract.manager_function?.includes("'MEMBER'"),
+    );
     check('anon cannot execute membership authority helper', contract.anon_execute === false);
     check('no legacy membership rows remain', contract.legacy_rows === 0, String(contract.legacy_rows));
   }
 
   const total = passed + failed + skipped;
-  console.log(`\n=== ${passed}/${total} passed (${failed} failed, ${skipped} skipped) ===`);
+  console.log(`\n=== ${passed}/${total} checks passed (${failed} failed, ${skipped} skipped, ${warned} warnings) ===`);
   if (failed > 0) process.exit(1);
 }
 
-main().catch(e => { console.error(e.message); process.exit(1); });
+main().catch((error) => {
+  console.error(error?.stack ?? error?.message ?? String(error));
+  process.exit(1);
+});
