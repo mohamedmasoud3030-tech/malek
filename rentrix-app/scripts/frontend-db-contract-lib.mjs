@@ -149,9 +149,13 @@ function collectConstStrings(source) {
   const re = /\bconst\s+([A-Za-z_$][\w$]*)\s*(?::[^=;]+)?=\s*(["'`])/g;
   let match;
   while ((match = re.exec(source))) {
+    const name = match[1];
     const quoteIndex = re.lastIndex - 1;
     const parsed = readString(source, quoteIndex);
-    if (!parsed.dynamic) result.set(match[1], parsed.value);
+    if (!parsed.dynamic) {
+      if (result.has(name)) result.set(name, null);
+      else result.set(name, parsed.value);
+    }
     re.lastIndex = Math.max(re.lastIndex, parsed.end);
   }
   return result;
@@ -162,10 +166,12 @@ function collectConstObjects(source) {
   const re = /\bconst\s+([A-Za-z_$][\w$]*)\s*(?::[^=;]+)?=\s*\{/g;
   let match;
   while ((match = re.exec(source))) {
+    const name = match[1];
     const braceIndex = re.lastIndex - 1;
     const end = findMatchingDelimiter(source, braceIndex, '{', '}');
     if (end !== -1) {
-      result.set(match[1], source.slice(braceIndex, end + 1));
+      if (result.has(name)) result.set(name, null);
+      else result.set(name, source.slice(braceIndex, end + 1));
       re.lastIndex = end + 1;
     }
   }
@@ -253,9 +259,6 @@ function readContinuousChain(source, start) {
     const name = id[1];
     i += name.length;
     i = skipTrivia(source, i);
-
-    // Generic method syntax is deliberately treated as dynamic rather than
-    // scanning past it into an unrelated query.
     if (source[i] !== '(') break;
     const parsed = readCall(source, i);
     if (!parsed) break;
