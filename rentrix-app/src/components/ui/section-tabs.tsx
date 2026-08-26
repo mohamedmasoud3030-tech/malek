@@ -20,6 +20,8 @@ type SectionTabsProps<TId extends string> = Readonly<{
   panelId?: string;
   /** Keep the active label visible on phones while inactive tabs collapse to icons. */
   compactMobile?: boolean;
+  /** Unique prefix when more than one tab list can render on the same page. */
+  idPrefix?: string;
 }>;
 
 /**
@@ -34,6 +36,7 @@ export function SectionTabs<TId extends string>({
   ariaLabel,
   panelId,
   compactMobile = false,
+  idPrefix = 'section',
 }: SectionTabsProps<TId>) {
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
@@ -88,9 +91,9 @@ export function SectionTabs<TId extends string>({
               role="tab"
               tabIndex={isActive ? 0 : -1}
               aria-selected={isActive}
-              aria-controls={panelId ?? `section-panel-${item.id}`}
+              aria-controls={panelId ?? `${idPrefix}-panel-${item.id}`}
               aria-label={compactMobile ? item.label : undefined}
-              id={`section-tab-${item.id}`}
+              id={`${idPrefix}-tab-${item.id}`}
               className={cn(
                 'flex min-h-11 shrink-0 items-center gap-1.5 rounded-md border border-transparent px-2.5 py-1 text-[12px] font-semibold outline-none transition-colors focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none',
                 compactMobile && !isActive && 'max-sm:min-w-10 max-sm:justify-center max-sm:px-2',
