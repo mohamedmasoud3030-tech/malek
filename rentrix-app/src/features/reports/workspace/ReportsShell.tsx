@@ -61,72 +61,85 @@ export function ReportsShell({
   return (
     <>
       <FinanceSection ariaLabel="نطاق التقرير">
-        <ReportsFilterSurface
-          filters={filters}
-          costCenterRows={model.filters.costCenterRows}
-          ownerRows={model.filters.ownerRows}
-          contractRows={model.filters.contractRows}
-          onChange={onFiltersChange}
-          onResetCurrentMonth={onResetCurrentMonth}
-        />
+        <div className="rounded-2xl border border-border/60 bg-background/55 p-3 sm:p-4">
+          <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+            <div>
+              <p className="text-[11px] font-black text-primary">نطاق التحليل</p>
+              <h3 className="mt-0.5 text-sm font-black">حدد الفترة والكيان قبل قراءة الأرقام</h3>
+            </div>
+            <span className="text-[11px] font-bold text-muted-foreground">الفلاتر تُحفظ أثناء التنقل بين التقارير</span>
+          </div>
+          <ReportsFilterSurface
+            filters={filters}
+            costCenterRows={model.filters.costCenterRows}
+            ownerRows={model.filters.ownerRows}
+            contractRows={model.filters.contractRows}
+            onChange={onFiltersChange}
+            onResetCurrentMonth={onResetCurrentMonth}
+          />
+        </div>
       </FinanceSection>
 
       <FinanceSection ariaLabel="المؤشرات التنفيذية">
-        <div className="flex items-end justify-between gap-3">
-          <div>
-            <p className="text-xs font-extrabold text-primary">لوحة القرار</p>
-            <h2 className="mt-1 text-sm font-extrabold">المؤشرات الأهم في النطاق الحالي — قابلة للنقر للتنقل</h2>
+        <div className="rounded-2xl border border-primary/15 bg-gradient-to-l from-primary/[0.045] via-background to-background p-3 sm:p-4">
+          <div className="flex items-end justify-between gap-3">
+            <div>
+              <p className="text-[11px] font-black text-primary">لوحة القرار</p>
+              <h2 className="mt-1 text-sm font-black sm:text-base">أهم المؤشرات في النطاق الحالي — اضغط للوصول للتحليل</h2>
+            </div>
+            <span className="hidden rounded-full border border-border/60 bg-background/75 px-3 py-1 text-xs font-semibold text-muted-foreground sm:block">
+              مصادر مالية وتشغيلية موحّدة
+            </span>
           </div>
-          <span className="hidden text-xs font-semibold text-muted-foreground sm:block">مصادر مالية وتشغيلية موحّدة</span>
+          <FinanceKpiGrid desktopColumns={4} className="mt-3">
+            <FinanceKpiCard
+              label="المحصّل للفترة"
+              value={money(summary?.paid ?? 0)}
+              icon={Receipt}
+              sub={`${summary?.paymentsCount ?? 0} مدفوعات مسجلة`}
+              trend={collectionRate >= 85 ? 'up' : collectionRate >= 65 ? 'neutral' : 'down'}
+              trendValue={`كفاءة ${Math.round(collectionRate)}%`}
+              accent="primary"
+              onDrill={() => onSectionViewChange('analytics', 'collections')}
+              drillAriaLabel={`المحصّل للفترة ${money(summary?.paid ?? 0)} — كفاءة التحصيل ${Math.round(collectionRate)}% — عرض تقرير التحصيل`}
+              unit={companySettings.defaultCurrency}
+            />
+            <FinanceKpiCard
+              label="نسبة الإشغال"
+              value={`${occupancy.rate}%`}
+              icon={Building2}
+              sub={`${occupancy.occupied} من ${occupancy.total} وحدة`}
+              trend={occupancy.rate >= 90 ? 'up' : occupancy.rate >= 75 ? 'neutral' : 'down'}
+              trendValue={`${occupancy.vacant} شاغرة`}
+              accent="primary"
+              onDrill={() => onSectionViewChange('analytics', 'occupancy')}
+              drillAriaLabel={`نسبة الإشغال ${occupancy.rate}% — عرض تقرير الإشغال`}
+            />
+            <FinanceKpiCard
+              label="الرصيد المستحق"
+              value={money(summary?.outstanding ?? 0)}
+              icon={AlertTriangle}
+              sub="رصيد يحتاج متابعة التحصيل"
+              trend="neutral"
+              trendValue={`${summary?.invoicesCount ?? 0} فواتير`}
+              accent="primary"
+              onDrill={() => onSectionViewChange('analytics', 'overdue')}
+              drillAriaLabel={`الرصيد المستحق ${money(summary?.outstanding ?? 0)} — عرض تقرير المتأخرات`}
+              unit={companySettings.defaultCurrency}
+            />
+            <FinanceKpiCard
+              label="فرق التحصيل والمصروفات"
+              value={money(summary?.netCash ?? 0)}
+              icon={TrendingUp}
+              sub="فرق تشغيلي فقط — ليس ربح المكتب ولا قائمة تدفق نقدي كاملة"
+              trend={(summary?.netCash ?? 0) >= 0 ? 'up' : 'down'}
+              trendValue={(summary?.netCash ?? 0) >= 0 ? 'التحصيل أعلى' : 'المصروفات أعلى'}
+              accent="primary"
+              onDrill={() => onSectionViewChange('analytics', 'overview')}
+              unit={companySettings.defaultCurrency}
+            />
+          </FinanceKpiGrid>
         </div>
-        <FinanceKpiGrid desktopColumns={4}>
-          <FinanceKpiCard
-            label="المحصّل للفترة"
-            value={money(summary?.paid ?? 0)}
-            icon={Receipt}
-            sub={`${summary?.paymentsCount ?? 0} مدفوعات مسجلة`}
-            trend={collectionRate >= 85 ? 'up' : collectionRate >= 65 ? 'neutral' : 'down'}
-            trendValue={`كفاءة ${Math.round(collectionRate)}%`}
-            accent="primary"
-            onDrill={() => onSectionViewChange('analytics', 'collections')}
-            drillAriaLabel={`المحصّل للفترة ${money(summary?.paid ?? 0)} — كفاءة التحصيل ${Math.round(collectionRate)}% — عرض تقرير التحصيل`}
-            unit={companySettings.defaultCurrency}
-          />
-          <FinanceKpiCard
-            label="نسبة الإشغال"
-            value={`${occupancy.rate}%`}
-            icon={Building2}
-            sub={`${occupancy.occupied} من ${occupancy.total} وحدة`}
-            trend={occupancy.rate >= 90 ? 'up' : occupancy.rate >= 75 ? 'neutral' : 'down'}
-            trendValue={`${occupancy.vacant} شاغرة`}
-            accent="primary"
-            onDrill={() => onSectionViewChange('analytics', 'occupancy')}
-            drillAriaLabel={`نسبة الإشغال ${occupancy.rate}% — عرض تقرير الإشغال`}
-          />
-          <FinanceKpiCard
-            label="الرصيد المستحق"
-            value={money(summary?.outstanding ?? 0)}
-            icon={AlertTriangle}
-            sub="رصيد يحتاج متابعة التحصيل"
-            trend="neutral"
-            trendValue={`${summary?.invoicesCount ?? 0} فواتير`}
-            accent="primary"
-            onDrill={() => onSectionViewChange('analytics', 'overdue')}
-            drillAriaLabel={`الرصيد المستحق ${money(summary?.outstanding ?? 0)} — عرض تقرير المتأخرات`}
-            unit={companySettings.defaultCurrency}
-          />
-          <FinanceKpiCard
-            label="فرق التحصيل والمصروفات"
-            value={money(summary?.netCash ?? 0)}
-            icon={TrendingUp}
-            sub="فرق تشغيلي فقط — ليس ربح المكتب ولا قائمة تدفق نقدي كاملة"
-            trend={(summary?.netCash ?? 0) >= 0 ? 'up' : 'down'}
-            trendValue={(summary?.netCash ?? 0) >= 0 ? 'التحصيل أعلى' : 'المصروفات أعلى'}
-            accent="primary"
-            onDrill={() => onSectionViewChange('analytics', 'overview')}
-            unit={companySettings.defaultCurrency}
-          />
-        </FinanceKpiGrid>
       </FinanceSection>
 
       {model.firstError ? (

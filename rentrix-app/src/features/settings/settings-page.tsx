@@ -67,13 +67,6 @@ function SettingsSectionSkeleton() {
   );
 }
 
-/**
- * WP-D D.5 — renders one registry section inside a Suspense boundary.
- * Sections are lazy-loaded and stay mounted once visited so local CRUD state
- * (cost-center editor, payment-term draft) survives tab switches — same
- * guarantee as the previous always-mounted rendering, with the initial
- * payload split per section.
- */
 function SettingsSectionView({
   definition,
   renderProps,
@@ -203,20 +196,27 @@ export function SettingsWorkspace({
   };
 
   return (
-    <SettingsVariantShell variant={variant} dir={pageLanguage.direction} lang={pageLanguage.locale} contentClassName="min-w-0 space-y-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
+    <SettingsVariantShell
+      variant={variant}
+      dir={pageLanguage.direction}
+      lang={pageLanguage.locale}
+      contentClassName="min-w-0 space-y-4 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] md:pb-8"
+    >
       <SettingsHero companyName={preview.companyName} hasUnsavedChanges={isDirty} />
       <OverviewRow tiles={summaryTiles} onOpenSection={handleJumpToSection} />
-      <SettingsSaveBar isDirty={isDirty} isSaving={isSaving} onDiscard={discardDraft} />
 
-      <div className="grid min-w-0 gap-4 md:grid-cols-[minmax(230px,280px)_minmax(0,1fr)] md:items-start">
+      <div className="grid min-w-0 gap-4 md:grid-cols-[minmax(230px,285px)_minmax(0,1fr)] md:items-start">
         <SettingsWorkspaceNav activeSection={activeSection} onChange={handleJumpToSection} />
-        <form id="settings-company-form" className="min-w-0 space-y-4" onSubmit={handleSubmit}>
-          {settingsSectionRegistry
-            .filter((section) => mountedSections.has(section.id))
-            .map((section) => (
-              <SettingsSectionView key={section.id} definition={section} renderProps={sectionRenderProps} />
-            ))}
-        </form>
+        <div className="min-w-0 space-y-3">
+          <SettingsSaveBar isDirty={isDirty} isSaving={isSaving} onDiscard={discardDraft} />
+          <form id="settings-company-form" className="min-w-0 space-y-4" onSubmit={handleSubmit}>
+            {settingsSectionRegistry
+              .filter((section) => mountedSections.has(section.id))
+              .map((section) => (
+                <SettingsSectionView key={section.id} definition={section} renderProps={sectionRenderProps} />
+              ))}
+          </form>
+        </div>
       </div>
 
       <DirtyRouteNavigationGuard isDirty={isDirty} disabled={isSaving} onDiscard={discardDraft} />
