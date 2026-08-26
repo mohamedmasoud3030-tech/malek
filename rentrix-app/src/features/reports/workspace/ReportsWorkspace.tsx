@@ -19,15 +19,12 @@ type ReportsWorkspaceProps = Readonly<{
 }>;
 
 /**
- * WP-C — Reports workspace composition root (C.1).
+ * Reports workspace composition root.
  *
- * Three responsibilities, three components:
- *   - `ReportsShell`        scope/filter bar + decision board + error surface
- *   - `ReportsSectionTabs`  section + view navigation
- *   - `ReportsViewPanel`    lazy adapter routing for the active report
- *
- * This module deliberately owns no state, no fetch and no formatting: it only
- * wires the deep-link location to the shell and the panel.
+ * The user chooses the reporting context first, then narrows the scope, then
+ * reads the active report. Keeping those three steps in that order prevents the
+ * page from reading like a stack of unrelated dashboards — especially on
+ * phones — while preserving the existing deep-link and authority contracts.
  */
 export function ReportsWorkspace({
   model,
@@ -41,19 +38,20 @@ export function ReportsWorkspace({
   onResetCurrentMonth,
 }: ReportsWorkspaceProps) {
   return (
-    <div className="space-y-5">
-      <ReportsShell
-        model={model}
-        filters={filters}
-        onFiltersChange={onFiltersChange}
-        onResetCurrentMonth={onResetCurrentMonth}
-        onSectionViewChange={onSectionViewChange}
-      />
-
+    <div className="space-y-3 sm:space-y-4">
       <ReportsSectionTabs
         activeSection={activeSection}
         activeView={activeView}
         onSectionChange={onSectionChange}
+        onSectionViewChange={onSectionViewChange}
+      />
+
+      <ReportsShell
+        model={model}
+        filters={filters}
+        activeSection={activeSection}
+        onFiltersChange={onFiltersChange}
+        onResetCurrentMonth={onResetCurrentMonth}
         onSectionViewChange={onSectionViewChange}
       />
 
