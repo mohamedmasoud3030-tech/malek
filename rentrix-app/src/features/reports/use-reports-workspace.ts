@@ -1,21 +1,23 @@
 import { useMemo } from 'react';
+import {
+  useAccountingBalanceSheetReport,
+  useAccountingIncomeStatementReport,
+  useAccountingTrialBalanceReport,
+} from '@/features/accounting/reports/accountingReportsHooks';
 import { useAllContracts } from '@/features/contracts/useContracts';
 import { useOwners } from '@/features/owners/useOwners';
 import { useReceipts } from '@/features/financials/receipts/useReceipts';
 import {
   useAgedReceivablesReport,
   useArrearsSummaryReport,
-  useBalanceSheetReport,
   useCollectionSummaryReport,
   useDailyCollectionReport,
   useExpenseBreakdownReport,
   useFinancialCashflowReport,
   useFinancialPeriodSummaryReport,
-  useIncomeStatementReport,
   useOverdueInvoicesReport,
   useOwnerStatementReport,
   useTenantStatementReport,
-  useTrialBalanceReport,
   useVatReturnReport,
 } from '@/features/financials/reports/useFinancialReports';
 import { summarizeMaintenanceRequests } from '@/features/maintenance/maintenance-helpers';
@@ -117,9 +119,9 @@ export function useReportsWorkspace(filters: ReportsFilterState, location: Repor
   const ownerStatementQuery = useOwnerStatementReport(filters.ownerId || undefined, financialFilters, { enabled: needsStatements });
   const unitsQuery = useAllUnits({ enabled: needsOccupancy });
   const maintenanceQuery = useMaintenance('all', '', { enabled: needsMaintenance });
-  const trialBalanceQuery = useTrialBalanceReport(filters.asOf, { enabled: needsAccountingReports });
-  const incomeStatementQuery = useIncomeStatementReport(financialFilters, { enabled: needsAccountingReports });
-  const balanceSheetQuery = useBalanceSheetReport(filters.asOf, { enabled: needsAccountingReports });
+  const trialBalanceQuery = useAccountingTrialBalanceReport(filters.asOf, { enabled: needsAccountingReports });
+  const incomeStatementQuery = useAccountingIncomeStatementReport(financialFilters, { enabled: needsAccountingReports });
+  const balanceSheetQuery = useAccountingBalanceSheetReport(filters.asOf, { enabled: needsAccountingReports });
   const receiptsQuery = useReceipts({ limit: latestReceiptLimit }, { enabled: needsCollections || needsDeferredRevenue || needsStatements });
   const costCentersQuery = useCostCenters();
   const propertyTitlesQuery = usePropertyTitles({ enabled: needsOccupancy });

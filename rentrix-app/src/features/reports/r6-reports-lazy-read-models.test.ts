@@ -68,9 +68,9 @@ describe('R6 — reports workspace fetches only the open report', () => {
       'useOwnerStatementReport(filters.ownerId || undefined, financialFilters, { enabled:',
       'useAllUnits({ enabled:',
       "useMaintenance('all', '', { enabled:",
-      'useTrialBalanceReport(filters.asOf, { enabled:',
-      'useIncomeStatementReport(financialFilters, { enabled:',
-      'useBalanceSheetReport(filters.asOf, { enabled:',
+      'useAccountingTrialBalanceReport(filters.asOf, { enabled:',
+      'useAccountingIncomeStatementReport(financialFilters, { enabled:',
+      'useAccountingBalanceSheetReport(filters.asOf, { enabled:',
       'useReceipts({ limit: latestReceiptLimit }, { enabled:',
     ];
     for (const call of gatedCalls) {

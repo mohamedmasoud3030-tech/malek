@@ -96,7 +96,7 @@ export function SectionTabs<TId extends string>({
               id={`${idPrefix}-tab-${item.id}`}
               className={cn(
                 'flex min-h-11 shrink-0 items-center gap-1.5 rounded-md border border-transparent px-2.5 py-1 text-[12px] font-semibold outline-none transition-colors focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none',
-                compactMobile && !isActive && 'max-sm:min-w-10 max-sm:justify-center max-sm:px-2',
+                compactMobile && !isActive && 'max-sm:min-w-11 max-sm:justify-center max-sm:px-2',
                 isActive
                   ? 'bg-card text-foreground shadow-card'
                   : 'text-muted-foreground hover:bg-background/80 hover:text-foreground',

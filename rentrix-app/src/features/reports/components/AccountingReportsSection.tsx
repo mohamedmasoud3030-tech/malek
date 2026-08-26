@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Download, Landmark, Printer, Scale, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import type { BalanceSheetReport, IncomeStatementReport, TrialBalanceReport } from '@/features/financials/reports/financialReportsService';
+import type { BalanceSheetReport, IncomeStatementReport, TrialBalanceReport } from '@/features/accounting/reports/contracts';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
 import { documentService } from '@/services/documents/DocumentService';
 import {

@@ -1,7 +1,7 @@
 import { Scale } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { formatMoney, getErrorMessage } from '@/features/financials/components/financials-formatters';
-import type { TrialBalanceReport } from '@/features/financials/reports/financialReportsService';
+import type { TrialBalanceReport } from '@/features/accounting/reports/contracts';
 import { ReportList, ReportListRow, ReportPanel, ReportState } from '../report-section-primitives';
 
 export function TrialBalancePanel({
