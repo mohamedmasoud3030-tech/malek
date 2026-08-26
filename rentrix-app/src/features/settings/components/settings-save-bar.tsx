@@ -30,7 +30,7 @@ export function SettingsSaveBar({
             type="button"
             variant="secondary"
             size="sm"
-            className="min-h-10 min-w-10 px-2.5 md:min-h-11 md:px-3"
+            className="min-h-11 min-w-11 px-2.5 md:px-3"
             disabled={isSaving}
             onClick={onDiscard}
             aria-label="تراجع عن التغييرات"
@@ -42,7 +42,7 @@ export function SettingsSaveBar({
             type="submit"
             form="settings-company-form"
             size="sm"
-            className="min-h-10 px-3.5 md:min-h-11 md:px-4"
+            className="min-h-11 px-3.5 md:px-4"
             disabled={isSaving}
           >
             <Save className="size-4 sm:me-2" aria-hidden="true" />
