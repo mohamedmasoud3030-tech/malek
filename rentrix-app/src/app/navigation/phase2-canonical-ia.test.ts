@@ -8,7 +8,7 @@ import { navigationLabels } from './terminology-registry';
 const routeTreeSource = readFileSync(new URL('../router/route-tree.ts', import.meta.url), 'utf8');
 const portfolioHubSource = readFileSync(new URL('../../features/portfolio-hub/portfolio-hub-workspace.tsx', import.meta.url), 'utf8');
 const leasingHubSource = readFileSync(new URL('../../features/relationships-hub/leasing-hub-workspace.tsx', import.meta.url), 'utf8');
-const moneyRouteSource = readFileSync(new URL('../../features/finance-hub/money-page.tsx', import.meta.url), 'utf8');
+const financePageSource = readFileSync(new URL('../../features/finance/FinancePage.tsx', import.meta.url), 'utf8');
 const financeModelSource = readFileSync(new URL('../../features/financials/finance-shell-model.ts', import.meta.url), 'utf8');
 const servicesSource = readFileSync(new URL('../../features/operations-hub/operations-hub-workspace.tsx', import.meta.url), 'utf8');
 const servicesSectionsSource = readFileSync(new URL('../../features/operations-hub/operations-hub.sections.ts', import.meta.url), 'utf8');
@@ -47,7 +47,8 @@ describe('Task-centric canonical IA', () => {
       'invoices', 'receipts', 'arrears', 'expenses', 'deposits', 'owner_settlements', 'bank_reconciliation', 'commissions',
     ]);
     expect(financeModelSource).toContain("id: 'commissions'");
-    expect(moneyRouteSource).toContain('<CommissionsWorkspace embedded />');
+    expect(financePageSource).toContain('<CommissionsWorkspace embedded />');
+    expect(financePageSource).toContain('id="finance-view-panel-commissions"');
   });
 
   it('keeps Services in one operational workspace and removes duplicate Automation authority', () => {

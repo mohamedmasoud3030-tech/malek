@@ -60,12 +60,13 @@ describe('Money workspace route model', () => {
     expect(getPermittedSections(admin).map((section) => section.id)).toEqual(['overview', 'collections', 'expenses', 'fees', 'funds', 'banking']);
   });
 
-  it('keeps one navigation model shared by both the legacy renderer and Money route wrapper', () => {
+  it('keeps the legacy financials renderer and canonical FinancePage on shared shell vocabulary', () => {
     const financialsSource = readFileSync(resolve(import.meta.dirname, 'financials-page.tsx'), 'utf8');
-    const moneySource = readFileSync(resolve(import.meta.dirname, '../finance-hub/money-page.tsx'), 'utf8');
+    const financePageSource = readFileSync(resolve(import.meta.dirname, '../finance/FinancePage.tsx'), 'utf8');
     expect(financialsSource).toContain("from './finance-shell-model'");
-    expect(moneySource).toContain("from '@/features/financials/finance-shell-model'");
+    expect(financePageSource).toContain("from './shell/financeShellModel'");
     expect(financialsSource).not.toContain('export const FINANCE_SECTIONS: readonly FinanceSectionDefinition[]');
-    expect(moneySource).not.toContain('export const FINANCE_SECTIONS');
+    expect(financePageSource).not.toContain('export const FINANCE_SECTIONS');
+    expect(financePageSource).toContain('<CommissionsWorkspace embedded />');
   });
 });

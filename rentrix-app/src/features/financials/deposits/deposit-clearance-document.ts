@@ -3,7 +3,7 @@ import { formatMoney as formatCurrencyMoney, normalizeCurrency } from '@/lib/for
 import { documentService } from '@/services/documents/DocumentService';
 import { toReportDocumentPayload, type ReportDocumentData } from '@/services/documents/documentPayloadAdapters';
 import { runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
-import { getTodayLocalDateString } from '@/features/reports/reports-page.helpers';
+import { getTodayLocalDateString } from '@/features/financials/financials-date-utils';
 import { formatDepositContractReference } from './deposit-contract-options';
 import type { DepositRecord } from './deposit-service';
 

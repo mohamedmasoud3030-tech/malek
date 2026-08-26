@@ -88,6 +88,17 @@ export async function listUnitsByProperty(propertyId: string): Promise<Unit[]> {
   return rows.map(normalizeUnitRecord);
 }
 
+/** Lightweight route resolver used by compatibility redirects. */
+export async function resolveUnitPropertyId(unitId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('units')
+    .select('property_id')
+    .eq('id', unitId)
+    .maybeSingle();
+  if (error) throw new Error(error.message || 'تعذر تحديد العقار المرتبط بالوحدة.');
+  return data?.property_id ?? null;
+}
+
 export type UnitDetail = Unit & {
   property: { id: string; title: string | null; address: string | null } | null;
 };
