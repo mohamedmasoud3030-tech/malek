@@ -26,10 +26,11 @@ const mockAuth = (permissions: string[]): TestAuthorizationContext => ({
 });
 
 describe('/financials Money workspace IA', () => {
-  it('routes the primary financial entry through the Money wrapper', () => {
-    expect(routeSource).toContain('MoneyPage as FinancialsRouteComponent');
-    expect(readMoneyPage()).toContain('title="المال"');
-    expect(readMoneyPage()).toContain('<FinancialsPage />');
+  it('routes the primary financial entry through the unified FinancePage', () => {
+    // WP-B finance hub unification: /financials serves FinancePage from the
+    // unified finance feature (was the finance-hub MoneyPage wrapper).
+    expect(routeSource).toContain('FinancePage as FinancialsRouteComponent');
+    expect(routeSource).toContain('@/features/finance/FinancePage');
   });
 
   it('keeps commissions in the same Money route without duplicating its business logic', () => {
