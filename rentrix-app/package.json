@@ -16,7 +16,8 @@
     "test:financials": "vitest run --config vite.config.ts --dir src/features/financials",
     "e2e": "playwright test --config playwright.config.ts",
     "e2e:headed": "playwright test --config playwright.config.ts --headed",
-    "check:frontend-db-contract": "node scripts/check-frontend-db-contract.mjs"
+    "test:frontend-db-contract": "node --test scripts/check-frontend-db-contract.test.mjs",
+    "check:frontend-db-contract": "node scripts/run-frontend-db-contract-tests.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.12.1",
