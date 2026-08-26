@@ -84,7 +84,7 @@ export function PaymentTermsSettingsSection() {
           <p className="text-xs font-black">القوالب المحفوظة</p>
           <p className="text-[11px] font-bold text-muted-foreground">{formatLatinNumber(terms.length, 'ar')} قالب</p>
         </div>
-        <Button type="button" size="sm" className="min-h-10" onClick={openNewEditor} disabled={isEditorOpen && !editingId}>
+        <Button type="button" size="sm" onClick={openNewEditor} disabled={isEditorOpen && !editingId}>
           <Plus className="size-4 sm:me-1.5" aria-hidden="true" />
           إضافة شرط
         </Button>
@@ -94,7 +94,7 @@ export function PaymentTermsSettingsSection() {
         <div className="grid gap-2.5 rounded-xl border border-primary/20 bg-primary/[0.025] p-2.5 sm:grid-cols-2 sm:gap-3 sm:p-3" onKeyDown={handleEditorKeyDown}>
           <div className="flex items-center justify-between gap-2 sm:col-span-2">
             <p className="text-xs font-black">{editingId ? 'تعديل شرط السداد' : 'شرط سداد جديد'}</p>
-            <Button type="button" variant="ghost" size="icon" className="size-9" onClick={closeEditor} aria-label="إغلاق المحرر">
+            <Button type="button" variant="ghost" size="icon" onClick={closeEditor} aria-label="إغلاق المحرر">
               <X className="size-4" aria-hidden="true" />
             </Button>
           </div>
@@ -135,10 +135,10 @@ export function PaymentTermsSettingsSection() {
             <Textarea className="min-h-20 rounded-lg text-sm" value={draft.notes} onChange={(event) => setDraft({ ...draft, notes: event.target.value })} placeholder="ملاحظات داخلية اختيارية" />
           </label>
           <div className="flex gap-2 sm:col-span-2">
-            <Button type="button" size="sm" className="min-h-10" onClick={saveDraft} disabled={savePaymentTerms.isPending}>
+            <Button type="button" size="sm" onClick={saveDraft} disabled={savePaymentTerms.isPending}>
               {editingId ? 'حفظ التعديل' : 'إضافة القالب'}
             </Button>
-            <Button type="button" size="sm" className="min-h-10" variant="secondary" onClick={closeEditor}>إلغاء</Button>
+            <Button type="button" size="sm" variant="secondary" onClick={closeEditor}>إلغاء</Button>
           </div>
         </div>
       ) : null}
@@ -157,8 +157,8 @@ export function PaymentTermsSettingsSection() {
               {term.notes ? <p className="mt-1 line-clamp-1 text-[11px] text-muted-foreground">{term.notes}</p> : null}
             </div>
             <div className="flex shrink-0 gap-1.5">
-              <Button type="button" size="sm" variant="secondary" className="min-h-9 px-2.5" onClick={() => openEditEditor(term)}>تعديل</Button>
-              <Button type="button" size="sm" variant="ghost" className="min-h-9 px-2.5 text-muted-foreground" onClick={() => archivePaymentTerms.mutate(term.id)} disabled={archivePaymentTerms.isPending}>أرشفة</Button>
+              <Button type="button" size="sm" variant="secondary" className="px-2.5" onClick={() => openEditEditor(term)}>تعديل</Button>
+              <Button type="button" size="sm" variant="ghost" className="px-2.5 text-muted-foreground" onClick={() => archivePaymentTerms.mutate(term.id)} disabled={archivePaymentTerms.isPending}>أرشفة</Button>
             </div>
           </div>
         ))}
