@@ -83,39 +83,42 @@ export function SettingsWorkspaceE2EFixture() {
       data-visual-wave="malek-pro"
       data-submit-count={submitCount}
     >
-      <div className="mx-auto min-w-0 max-w-[1500px] space-y-4 px-3 py-4 sm:px-6 lg:px-8">
+      <div className="mx-auto min-w-0 max-w-[1500px] space-y-4 px-3 py-4 pb-24 sm:px-6 lg:px-8">
         <SettingsHero companyName={preview.companyName} hasUnsavedChanges={isDirty} />
         <OverviewRow tiles={summaryTiles} />
-        <SettingsSaveBar
-          isDirty={isDirty}
-          isSaving={false}
-          onDiscard={() => setDraft(baseDraft)}
-        />
 
-        <div className="grid min-w-0 gap-4 md:grid-cols-[minmax(230px,280px)_minmax(0,1fr)] md:items-start">
+        <div className="grid min-w-0 gap-4 md:grid-cols-[minmax(230px,285px)_minmax(0,1fr)] md:items-start">
           <SettingsWorkspaceNav activeSection={activeSection} onChange={setActiveSection} />
 
-          <form id="settings-company-form" className="min-w-0 space-y-4" onSubmit={handleSubmit}>
-            <CompanyProfileSections
-              activeSection={activeSection}
-              draft={draft}
-              errors={{}}
+          <div className="min-w-0 space-y-3">
+            <SettingsSaveBar
+              isDirty={isDirty}
               isSaving={false}
-              preview={preview}
-              formattedPreviewDate="15/07/2026"
-              formattedPreviewMoney="1,234.560 ر.ع."
-              onDraftChange={handleDraftChange}
-              onLogoFileChange={() => undefined}
+              onDiscard={() => setDraft(baseDraft)}
             />
-            <SettingsAppearanceSection
-              activeSection={activeSection}
-              preview={preview}
-              theme={theme}
-              pageLanguage={{ language: draft.locale.startsWith('ar') ? 'ar' : 'en' }}
-              onToggleTheme={() => setTheme((current) => current === 'dark' ? 'light' : 'dark')}
-              onDefaultLanguageChange={(language) => handleDraftChange('locale', language === 'ar' ? 'ar-OM' : 'en-OM')}
-            />
-          </form>
+
+            <form id="settings-company-form" className="min-w-0 space-y-4" onSubmit={handleSubmit}>
+              <CompanyProfileSections
+                activeSection={activeSection}
+                draft={draft}
+                errors={{}}
+                isSaving={false}
+                preview={preview}
+                formattedPreviewDate="15/07/2026"
+                formattedPreviewMoney="1,234.560 ر.ع."
+                onDraftChange={handleDraftChange}
+                onLogoFileChange={() => undefined}
+              />
+              <SettingsAppearanceSection
+                activeSection={activeSection}
+                preview={preview}
+                theme={theme}
+                pageLanguage={{ language: draft.locale.startsWith('ar') ? 'ar' : 'en' }}
+                onToggleTheme={() => setTheme((current) => current === 'dark' ? 'light' : 'dark')}
+                onDefaultLanguageChange={(language) => handleDraftChange('locale', language === 'ar' ? 'ar-OM' : 'en-OM')}
+              />
+            </form>
+          </div>
         </div>
       </div>
     </main>
