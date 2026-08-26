@@ -35,8 +35,8 @@ export function FormField({ label, field, draft, errors, disabled, placeholder, 
   const errorId = `${inputId}-error`;
   const isInvalid = Boolean(errors[field]);
   return (
-    <label htmlFor={inputId} className="space-y-1 text-sm font-medium text-foreground">
-      <span>{label}</span>
+    <label htmlFor={inputId} className="block min-w-0 space-y-1 text-xs font-bold text-foreground">
+      <span className="block px-0.5">{label}</span>
       <Input
         id={inputId}
         type={type}
@@ -46,9 +46,10 @@ export function FormField({ label, field, draft, errors, disabled, placeholder, 
         disabled={disabled}
         aria-invalid={isInvalid}
         aria-describedby={isInvalid ? errorId : undefined}
+        className="min-h-11 rounded-lg px-3 text-sm"
         onChange={(event: ChangeEvent<HTMLInputElement>) => onChange(field, event.target.value)}
       />
-      {isInvalid ? <span id={errorId} className="block text-xs text-destructive" role="alert">{errors[field]}</span> : null}
+      {isInvalid ? <span id={errorId} className="block px-0.5 text-[11px] text-destructive" role="alert">{errors[field]}</span> : null}
     </label>
   );
 }
@@ -62,19 +63,20 @@ export function SelectField({ label, field, draft, errors, disabled, options, on
   const errorId = `${selectId}-error`;
   const isInvalid = Boolean(errors[field]);
   return (
-    <label htmlFor={selectId} className="space-y-1 text-sm font-medium text-foreground">
-      <span>{label}</span>
+    <label htmlFor={selectId} className="block min-w-0 space-y-1 text-xs font-bold text-foreground">
+      <span className="block px-0.5">{label}</span>
       <Select
         id={selectId}
         value={draft[field] ?? ''}
         disabled={disabled}
         aria-invalid={isInvalid}
         aria-describedby={isInvalid ? errorId : undefined}
+        className="min-h-11 rounded-lg px-3 text-sm"
         onChange={(event: ChangeEvent<HTMLSelectElement>) => onChange(field, event.target.value)}
       >
         {options.map((option) => <option key={option} value={option}>{option}</option>)}
       </Select>
-      {isInvalid ? <span id={errorId} className="block text-xs text-destructive" role="alert">{errors[field]}</span> : null}
+      {isInvalid ? <span id={errorId} className="block px-0.5 text-[11px] text-destructive" role="alert">{errors[field]}</span> : null}
     </label>
   );
 }
@@ -87,9 +89,9 @@ type PreviewFieldProps = Readonly<{
 
 export function PreviewField({ label, value, muted = false }: PreviewFieldProps) {
   return (
-    <div className="rounded-xl border bg-background/70 p-3">
-      <dt className="text-xs font-bold text-muted-foreground">{label}</dt>
-      <dd className={muted ? 'mt-1 text-sm text-muted-foreground' : 'mt-1 text-sm font-semibold text-foreground'}>
+    <div className="rounded-lg border bg-background/70 p-2.5 sm:rounded-xl sm:p-3">
+      <dt className="text-[11px] font-bold text-muted-foreground sm:text-xs">{label}</dt>
+      <dd className={muted ? 'mt-0.5 text-sm text-muted-foreground' : 'mt-0.5 text-sm font-semibold text-foreground'}>
         {value}
       </dd>
     </div>
