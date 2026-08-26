@@ -18,23 +18,23 @@ export function SectionCard({ id, activeId, title, subtitle, children }: Section
       id={id}
       role="tabpanel"
       hidden={activeId !== id}
-      className="scroll-mt-24 overflow-hidden rounded-2xl border-border/70 shadow-sm"
+      className="scroll-mt-24 overflow-visible rounded-none border-0 bg-transparent shadow-none md:overflow-hidden md:rounded-2xl md:border md:border-border/70 md:bg-card md:shadow-sm"
       data-settings-section={id}
     >
-      <CardHeader className="border-b border-border/60 bg-muted/20 px-3 py-3 sm:px-5 sm:py-4">
-        <div className="flex min-w-0 items-start gap-2.5 sm:gap-3">
+      <CardHeader className="border-b border-border/55 bg-transparent px-0 py-2.5 md:bg-muted/20 md:px-5 md:py-4">
+        <div className="flex min-w-0 items-center gap-2.5 md:items-start md:gap-3">
           {Icon ? (
-            <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary sm:size-10 sm:rounded-2xl">
-              <Icon className="size-4 sm:size-5" aria-hidden="true" />
+            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary md:size-10 md:rounded-2xl">
+              <Icon className="size-4 md:size-5" aria-hidden="true" />
             </span>
           ) : null}
           <div className="min-w-0 flex-1">
-            <h2 className="text-sm font-black sm:text-base">{title}</h2>
-            <p className="mt-0.5 text-[11px] font-bold leading-5 text-muted-foreground sm:mt-1 sm:text-xs">{subtitle}</p>
+            <h2 className="truncate text-sm font-black md:text-base">{title}</h2>
+            <p className="mt-1 hidden text-xs font-bold leading-5 text-muted-foreground md:block">{subtitle}</p>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-3 p-3 sm:space-y-4 sm:p-5">{children}</CardContent>
+      <CardContent className="space-y-2.5 px-0 pb-0 pt-3 md:space-y-4 md:p-5">{children}</CardContent>
     </Card>
   );
 }
