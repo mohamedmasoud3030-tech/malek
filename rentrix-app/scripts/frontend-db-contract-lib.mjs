@@ -9,8 +9,7 @@ const FILTER_METHODS = new Set([
 ]);
 
 function extensionOf(path) {
-  const match = path.match(/(\.[^.\/]+)$/);
-  return match?.[1] ?? '';
+  return path.match(/(\.[^.\/]+)$/)?.[1] ?? '';
 }
 
 export function listProductionSourceFiles(root) {
@@ -21,8 +20,7 @@ export function listProductionSourceFiles(root) {
       const abs = join(dir, name);
       const st = statSync(abs);
       if (st.isDirectory()) {
-        if (name === '__tests__') continue;
-        visit(abs);
+        if (name !== '__tests__') visit(abs);
         continue;
       }
       if (!SOURCE_EXTENSIONS.has(extensionOf(name))) continue;
@@ -75,6 +73,23 @@ function skipComment(text, index) {
   return null;
 }
 
+function skipTrivia(text, index) {
+  let i = index;
+  while (i < text.length) {
+    if (/\s/.test(text[i])) {
+      i++;
+      continue;
+    }
+    const commentEnd = skipComment(text, i);
+    if (commentEnd != null) {
+      i = commentEnd;
+      continue;
+    }
+    break;
+  }
+  return i;
+}
+
 export function findMatchingDelimiter(text, start, open, close) {
   let depth = 0;
   for (let i = start; i < text.length; i++) {
@@ -89,10 +104,7 @@ export function findMatchingDelimiter(text, start, open, close) {
       continue;
     }
     if (ch === open) depth++;
-    else if (ch === close) {
-      depth--;
-      if (depth === 0) return i;
-    }
+    else if (ch === close && --depth === 0) return i;
   }
   return -1;
 }
@@ -164,8 +176,7 @@ function resolveStringExpression(expr, constStrings) {
   const literal = parseLiteral(expr);
   if (literal != null) return literal;
   const id = expr.trim();
-  if (/^[A-Za-z_$][\w$]*$/.test(id)) return constStrings.get(id) ?? null;
-  return null;
+  return /^[A-Za-z_$][\w$]*$/.test(id) ? (constStrings.get(id) ?? null) : null;
 }
 
 function parseObjectLiteralKeys(expr, constObjects, seen = new Set()) {
@@ -174,15 +185,13 @@ function parseObjectLiteralKeys(expr, constObjects, seen = new Set()) {
     if (seen.has(text)) return { known: false, keys: new Set() };
     const resolved = constObjects.get(text);
     if (!resolved) return { known: false, keys: new Set() };
-    seen.add(text);
-    return parseObjectLiteralKeys(resolved, constObjects, seen);
+    return parseObjectLiteralKeys(resolved, constObjects, new Set([...seen, text]));
   }
   if (text.startsWith('[')) {
     const end = findMatchingDelimiter(text, 0, '[', ']');
     if (end !== text.length - 1) return { known: false, keys: new Set() };
-    const items = splitTopLevel(text.slice(1, -1));
     const keys = new Set();
-    for (const item of items) {
+    for (const item of splitTopLevel(text.slice(1, -1))) {
       const parsed = parseObjectLiteralKeys(item, constObjects, seen);
       if (!parsed.known) return { known: false, keys };
       for (const key of parsed.keys) keys.add(key);
@@ -192,9 +201,8 @@ function parseObjectLiteralKeys(expr, constObjects, seen = new Set()) {
   if (!text.startsWith('{')) return { known: false, keys: new Set() };
   const end = findMatchingDelimiter(text, 0, '{', '}');
   if (end !== text.length - 1) return { known: false, keys: new Set() };
-  const body = text.slice(1, -1);
   const keys = new Set();
-  for (const part of splitTopLevel(body)) {
+  for (const part of splitTopLevel(text.slice(1, -1))) {
     const token = part.trim();
     if (!token) continue;
     if (token.startsWith('...') || token.startsWith('[')) return { known: false, keys };
@@ -227,42 +235,37 @@ function supabaseBindings(source) {
 
 function readCall(source, openParen) {
   const close = findMatchingDelimiter(source, openParen, '(', ')');
-  if (close === -1) return null;
-  return { close, args: splitTopLevel(source.slice(openParen + 1, close)) };
+  return close === -1 ? null : { close, args: splitTopLevel(source.slice(openParen + 1, close)) };
 }
 
-function readStatementTail(source, start) {
-  const stack = [];
-  const pairs = { '(': ')', '{': '}', '[': ']' };
-  for (let i = start; i < source.length; i++) {
-    const ch = source[i];
-    if (ch === '"' || ch === "'" || ch === '`') {
-      i = readString(source, i).end - 1;
-      continue;
-    }
-    const commentEnd = skipComment(source, i);
-    if (commentEnd != null) {
-      i = commentEnd - 1;
-      continue;
-    }
-    if (pairs[ch]) stack.push(pairs[ch]);
-    else if (stack.length && ch === stack[stack.length - 1]) stack.pop();
-    else if (ch === ';' && stack.length === 0) return source.slice(start, i + 1);
-  }
-  return source.slice(start, Math.min(source.length, start + 12000));
-}
-
-function chainedCalls(tail, constStrings, constObjects) {
+function readContinuousChain(source, start) {
   const calls = [];
-  const re = /\.\s*([A-Za-z_$][\w$]*)\s*\(/g;
-  let match;
-  while ((match = re.exec(tail))) {
-    const openParen = re.lastIndex - 1;
-    const parsed = readCall(tail, openParen);
-    if (!parsed) continue;
-    calls.push({ name: match[1], args: parsed.args, start: match.index, end: parsed.close + 1 });
-    re.lastIndex = parsed.close + 1;
+  let i = start;
+  while (i < source.length) {
+    i = skipTrivia(source, i);
+    if (source[i] === '?' && source[i + 1] === '.') i += 2;
+    else if (source[i] === '.') i += 1;
+    else break;
+
+    i = skipTrivia(source, i);
+    const id = source.slice(i).match(/^([A-Za-z_$][\w$]*)/);
+    if (!id) break;
+    const name = id[1];
+    i += name.length;
+    i = skipTrivia(source, i);
+
+    // Generic method syntax is deliberately treated as dynamic rather than
+    // scanning past it into an unrelated query.
+    if (source[i] !== '(') break;
+    const parsed = readCall(source, i);
+    if (!parsed) break;
+    calls.push({ name, args: parsed.args });
+    i = parsed.close + 1;
   }
+  return calls;
+}
+
+function analyzeChain(calls, constStrings, constObjects) {
   const columns = new Set();
   const mutations = [];
   for (const call of calls) {
@@ -289,8 +292,7 @@ export function parseSelectColumns(selection) {
   const columns = new Set();
   for (const raw of splitTopLevel(selection)) {
     const token = raw.trim();
-    if (!token || token === '*') continue;
-    if (token.includes('(')) continue;
+    if (!token || token === '*' || token.includes('(')) continue;
     const aliasParts = token.split(':').map((part) => part.trim()).filter(Boolean);
     const candidate = aliasParts.length > 1 ? aliasParts.at(-1) : aliasParts[0];
     const cleaned = candidate?.replace(/!\w+$/g, '').trim();
@@ -328,8 +330,7 @@ export function discoverFrontendUsageFromSources(sources) {
         }
 
         if (method === 'from') {
-          const tail = readStatementTail(source, parsed.close + 1);
-          const detail = chainedCalls(tail, constStrings, constObjects);
+          const detail = analyzeChain(readContinuousChain(source, parsed.close + 1), constStrings, constObjects);
           const entry = tables.get(name) ?? { name, calls: [], columns: new Set(), mutations: [] };
           entry.calls.push({ path, line });
           for (const col of detail.columns) entry.columns.add(col);
@@ -347,7 +348,6 @@ export function discoverFrontendUsageFromSources(sources) {
       }
     }
   }
-
   return { tables, rpcs, dynamic };
 }
 
@@ -383,11 +383,10 @@ function namedObjectBlocks(section) {
 }
 
 function nestedObjectBlock(block, name) {
-  const re = new RegExp(`\\n\\s+${name}: \\{`);
-  const match = re.exec(`\n${block}`);
+  const re = new RegExp(`(?:^|\\n)\\s+${name}: \\{`);
+  const match = re.exec(block);
   if (!match) return '';
-  const adjusted = match.index === 0 ? 0 : match.index - 1;
-  const brace = block.indexOf('{', Math.max(0, adjusted));
+  const brace = block.indexOf('{', match.index);
   const end = findMatchingDelimiter(block, brace, '{', '}');
   return end === -1 ? '' : block.slice(brace + 1, end);
 }
@@ -402,9 +401,9 @@ function objectTypeFields(block) {
 
 function parseRpcArgs(block) {
   if (/Args:\s*Record<PropertyKey, never>\s*;/.test(block)) return { known: true, fields: new Map() };
-  const marker = /\n\s+Args: \{/m.exec(`\n${block}`);
+  const marker = /(?:^|\n)\s+Args: \{/m.exec(block);
   if (!marker) return { known: false, fields: new Map() };
-  const brace = block.indexOf('{', Math.max(0, marker.index - 1));
+  const brace = block.indexOf('{', marker.index);
   const end = findMatchingDelimiter(block, brace, '{', '}');
   if (end === -1) return { known: false, fields: new Map() };
   return { known: true, fields: objectTypeFields(block.slice(brace + 1, end)) };
@@ -412,8 +411,7 @@ function parseRpcArgs(block) {
 
 export function parseDatabaseTypes(types) {
   const tables = new Map();
-  const tableBlocks = namedObjectBlocks(sectionBlock(types, 'Tables'));
-  for (const [name, block] of tableBlocks) {
+  for (const [name, block] of namedObjectBlocks(sectionBlock(types, 'Tables'))) {
     tables.set(name, {
       kind: 'table',
       row: objectTypeFields(nestedObjectBlock(block, 'Row')),
@@ -421,8 +419,7 @@ export function parseDatabaseTypes(types) {
       update: objectTypeFields(nestedObjectBlock(block, 'Update')),
     });
   }
-  const viewBlocks = namedObjectBlocks(sectionBlock(types, 'Views'));
-  for (const [name, block] of viewBlocks) {
+  for (const [name, block] of namedObjectBlocks(sectionBlock(types, 'Views'))) {
     tables.set(name, {
       kind: 'view',
       row: objectTypeFields(nestedObjectBlock(block, 'Row')),
@@ -431,8 +428,9 @@ export function parseDatabaseTypes(types) {
     });
   }
   const rpcs = new Map();
-  const functionBlocks = namedObjectBlocks(sectionBlock(types, 'Functions'));
-  for (const [name, block] of functionBlocks) rpcs.set(name, { args: parseRpcArgs(block) });
+  for (const [name, block] of namedObjectBlocks(sectionBlock(types, 'Functions'))) {
+    rpcs.set(name, { args: parseRpcArgs(block) });
+  }
   return { tables, rpcs };
 }
 
@@ -499,6 +497,5 @@ export function validateFrontendUsage(usage, database) {
   for (const item of usage.dynamic) {
     warnings.push(`Dynamic Supabase ${item.method} target at ${item.path}:${item.line}; name-level verification skipped`);
   }
-
   return { errors, warnings };
 }
