@@ -40,6 +40,13 @@ The six canonical roles are:
 
 The RLS matrix also proves cross-company denial boundaries.
 
+Canonical migration replay restores `row_security = on` before behavioral checks and applies the deterministic reference seed before scenario fixtures. This keeps the permission catalog and request-session RLS semantics aligned with the repository's fresh-bootstrap contract.
+
+Forward migration `20260901000036_frontend_backend_contract_acl_storage_fix.sql` closes two runtime contracts discovered by the matrix without mutating older migrations:
+
+- `public.properties` grants only `INSERT` and `UPDATE` to `authenticated`; existing RLS remains the actor and tenant authorization boundary.
+- the private `attachments` bucket is fixed at 5 MiB and PDF/JPEG/PNG/WEBP, while mutation policies preserve `vault/<company_id>/...` scoping and additionally require `ADMIN` or `MANAGER`.
+
 ## Release principle
 
-A frontend/backend compatibility change is acceptable only when the CI chain is green and reports no frontend/database mismatch and no unreviewed dynamic contract.
+A frontend/backend compatibility change is acceptable only when the CI chain is green and reports no frontend/database mismatch, no unreviewed dynamic contract, and no behavioral RLS failure.
