@@ -107,6 +107,26 @@ test('keeps consecutive Supabase query chains isolated', () => {
   assert.deepEqual(validateFrontendUsage(usage, parseDatabaseTypes(types)).errors, []);
 });
 
+test('shadowed payload variable names fail safe instead of borrowing another scope', () => {
+  const usage = discoverFrontendUsageFromSources([{
+    path: 'shadowed.ts',
+    source: `
+      import { supabase } from '@/lib/supabase';
+      async function saveInvoice() {
+        const updatePayload = { amount: 12 };
+        await supabase.from('invoices').update(updatePayload).eq('id', '1');
+      }
+      function unrelatedHelper() {
+        const updatePayload = { deleted_at: 'not-an-invoice-field' };
+        return updatePayload;
+      }
+    `,
+  }]);
+  const result = validateFrontendUsage(usage, parseDatabaseTypes(types));
+  assert.deepEqual(result.errors, []);
+  assert.match(result.warnings.join('\n'), /Dynamic update payload for 'invoices'/);
+});
+
 test('missing relation fails closed', () => {
   const usage = discoverFrontendUsageFromSources([{
     path: 'bad.ts',
