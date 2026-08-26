@@ -52,7 +52,7 @@ export function CommandCenterPanel() {
       <div className="relative z-10 flex h-full flex-col justify-between p-6 lg:p-8">
         {/* Header */}
         <header>
-          <MalikBrand showTagline className="scale-110 origin-right lg:scale-125" />
+          <MalikBrand showTagline className="origin-right scale-100 lg:scale-105" />
         </header>
 
         {/* Main illustration — Abstract cityscape */}

@@ -190,11 +190,9 @@ export function MobileFloatingControl({ onMenu, menuRef }: Readonly<{ onMenu: ()
   const sharedLabel = (key: string) => translateSharedLabel(key, appLanguage.language);
   const [quickOpen, setQuickOpen] = useState(false);
   const quickRootRef = useRef<HTMLDivElement>(null);
-  // Keep the quick-create affordance stable even while account permissions are
-  // still loading or incomplete. Route-level authorization remains authoritative
-  // if the user chooses an action they cannot perform.
   const visibleQuickActions = mobileQuickActions;
-  const utilityActionClass = 'grid size-11 min-h-11 min-w-11 shrink-0 place-items-center rounded-xl border border-transparent text-muted-foreground outline-none transition-[background-color,color,border-color,box-shadow,transform] duration-150 hover:bg-muted hover:text-foreground active:scale-[0.97] focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none motion-reduce:transform-none';
+  const utilityActionClass =
+    'grid size-9 min-h-11 min-w-11 shrink-0 place-items-center rounded-lg border border-transparent text-muted-foreground outline-none transition-[background-color,color,border-color,box-shadow,transform] duration-150 hover:bg-muted hover:text-foreground active:scale-[0.97] focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none motion-reduce:transform-none';
 
   useEffect(() => {
     if (!quickOpen) return;
@@ -220,21 +218,21 @@ export function MobileFloatingControl({ onMenu, menuRef }: Readonly<{ onMenu: ()
 
   return (
     <div
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] md:hidden"
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-3 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] md:hidden"
       data-mobile-floating-control
       data-mobile-control-center
       aria-label="مركز التحكم"
     >
       <div
         ref={quickRootRef}
-        className="pointer-events-auto relative flex w-auto items-center gap-0.5 rounded-2xl border border-border/70 bg-card p-1 shadow-[0_10px_28px_-18px_hsl(var(--foreground)/0.35),0_1px_3px_hsl(var(--foreground)/0.06)]"
+        className="pointer-events-auto relative flex w-auto items-center gap-0.5 rounded-xl border border-border/60 bg-card/95 px-1 py-0.5 shadow-[0_6px_20px_-14px_hsl(var(--foreground)/0.25),0_1px_2px_hsl(var(--foreground)/0.05)] backdrop-blur-sm"
       >
         {quickOpen && visibleQuickActions.length > 0 ? (
           <div
             role="menu"
             aria-label="الإضافة السريعة"
             data-mobile-quick-add-menu
-            className="absolute inset-x-0 bottom-[calc(100%+0.45rem)] grid grid-cols-2 gap-1 rounded-xl border border-border/75 bg-card p-1.5 shadow-elevated"
+            className="absolute inset-x-0 bottom-[calc(100%+0.5rem)] grid grid-cols-2 gap-1 rounded-xl border border-border/70 bg-card p-1.5 shadow-elevated"
           >
             {visibleQuickActions.map((item) => {
               const Icon = item.icon;
@@ -256,21 +254,6 @@ export function MobileFloatingControl({ onMenu, menuRef }: Readonly<{ onMenu: ()
         ) : null}
 
         <button
-          ref={menuRef}
-          type="button"
-          onClick={() => {
-            setQuickOpen(false);
-            onMenu();
-          }}
-          aria-label="فتح القائمة"
-          aria-haspopup="dialog"
-          data-mobile-dock-menu
-          className="grid size-11 min-h-11 min-w-11 shrink-0 place-items-center rounded-xl border border-transparent text-muted-foreground outline-none transition-[background-color,color,box-shadow,transform] duration-150 hover:bg-muted hover:text-foreground active:scale-[0.97] focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none motion-reduce:transform-none"
-        >
-          <Menu className="size-4" aria-hidden="true" />
-        </button>
-
-        <button
           type="button"
           onClick={() => setQuickOpen((value) => !value)}
           aria-label="فتح الإضافة السريعة"
@@ -280,11 +263,11 @@ export function MobileFloatingControl({ onMenu, menuRef }: Readonly<{ onMenu: ()
           data-mobile-dock-quick-add
           className={cn(utilityActionClass, quickOpen && 'border-primary/20 bg-primary/10 text-primary')}
         >
-          <Plus className="size-[1.05rem]" aria-hidden="true" />
+          <Plus className="size-[18px]" aria-hidden="true" />
         </button>
 
         <div
-          className="relative [&>div>button]:!size-11 [&>div>button]:!min-h-11 [&>div>button]:!min-w-11 [&>div>button]:!rounded-xl [&>div>button]:!border-transparent [&>div>button]:!text-muted-foreground [&>div>button]:!shadow-none [&>div>button]:hover:!bg-muted [&>div>button]:hover:!text-foreground [&>div>button[aria-expanded='true']]:!bg-foreground [&>div>button[aria-expanded='true']]:!text-background [&>div>[role='dialog']]:!bottom-14 [&>div>[role='dialog']]:!top-auto"
+          className="relative [&>div>button]:!size-9 [&>div>button]:!min-h-11 [&>div>button]:!min-w-11 [&>div>button]:!rounded-lg [&>div>button]:!border-transparent [&>div>button]:!text-muted-foreground [&>div>button]:!shadow-none [&>div>button]:hover:!bg-muted [&>div>button]:hover:!text-foreground [&>div>button[aria-expanded='true']]:!bg-foreground [&>div>button[aria-expanded='true']]:!text-background [&>div>[role='dialog']]:!bottom-[3rem] [&>div>[role='dialog']]:!top-auto"
           data-mobile-dock-notifications
         >
           <NotificationsMenu authorization={authorization} sharedLabel={sharedLabel} />
@@ -296,14 +279,12 @@ export function MobileFloatingControl({ onMenu, menuRef }: Readonly<{ onMenu: ()
           aria-label="فتح المساعد الذكي"
           title="المساعد الذكي"
           data-mobile-dock-ai
-          className={cn(
-            utilityActionClass,
-            '-translate-y-1.5 rounded-full border-primary/15 bg-primary text-primary-foreground shadow-[0_8px_18px_-10px_hsl(var(--primary)/0.9)] hover:bg-primary hover:text-primary-foreground',
-          )}
+          className={utilityActionClass}
         >
-          <Bot className="size-4" aria-hidden="true" />
+          <Bot className="size-[18px]" aria-hidden="true" />
         </button>
       </div>
     </div>
   );
 }
+
