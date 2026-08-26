@@ -8,7 +8,7 @@ import { invoiceStatusLabels } from '@/features/financials/components/invoice-st
 import type { ContractListItem } from '@/features/contracts/services/contractService';
 import type { Owner } from '@/features/owners/services/owner-service';
 import type { CostCenterRecord } from '@/features/settings/costCenterService';
-import { getSelectedFilterEntities } from '../reports-filters.shared';
+import { describeReportFilterSelections, getSelectedFilterEntities } from '../reports-filters.shared';
 import type { ReportsFilterState } from '../reports-workspace-filters';
 
 function uniqueById<T extends { id: string }>(values: Array<T | null | undefined>): T[] {
@@ -32,11 +32,8 @@ export function FiltersPanel({
   onChange: (filters: ReportsFilterState) => void;
   onResetCurrentMonth: () => void;
 }>) {
-  const { selectedCostCenter, selectedOwner, selectedContract, selectedProperty, selectedUnit, selectedTenant } = getSelectedFilterEntities(
-    filters,
-    costCenterRows,
-    ownerRows,
-    contractRows,
+  const labels = describeReportFilterSelections(
+    getSelectedFilterEntities(filters, costCenterRows, ownerRows, contractRows),
   );
 
   const propertyRows = useMemo(() => uniqueById(contractRows.map((contract) => contract.properties)), [contractRows]);
@@ -139,13 +136,13 @@ export function FiltersPanel({
         <span>الفترة: {filters.from || '—'} إلى {filters.to || '—'}</span>
         <span aria-hidden="true">•</span>
         <span>الاحتساب: {filters.asOf || '—'}</span>
-        {selectedProperty ? <><span aria-hidden="true">•</span><span>العقار: {selectedProperty.title}</span></> : null}
-        {selectedUnit ? <><span aria-hidden="true">•</span><span>الوحدة: {selectedUnit.unit_number}</span></> : null}
-        {selectedTenant ? <><span aria-hidden="true">•</span><span>المستأجر: {selectedTenant.full_name}</span></> : null}
+        {labels.property ? <><span aria-hidden="true">•</span><span>العقار: {labels.property}</span></> : null}
+        {labels.unit ? <><span aria-hidden="true">•</span><span>الوحدة: {labels.unit}</span></> : null}
+        {labels.tenant ? <><span aria-hidden="true">•</span><span>المستأجر: {labels.tenant}</span></> : null}
         {filters.status && filters.status !== 'all' ? <><span aria-hidden="true">•</span><span>الحالة: {invoiceStatusLabels[filters.status] ?? filters.status}</span></> : null}
-        {selectedCostCenter ? <><span aria-hidden="true">•</span><span>مركز التكلفة: {selectedCostCenter}</span></> : null}
-        {selectedOwner ? <><span aria-hidden="true">•</span><span>المالك/الكشف: {selectedOwner.display_name ?? selectedOwner.full_name}</span></> : null}
-        {selectedContract ? <><span aria-hidden="true">•</span><span>العقد: {selectedContract.reference || `${selectedContract.people?.full_name ?? 'مستأجر'} — ${selectedContract.properties?.title ?? 'عقار'}`}</span></> : null}
+        {labels.costCenter ? <><span aria-hidden="true">•</span><span>مركز التكلفة: {labels.costCenter}</span></> : null}
+        {labels.owner ? <><span aria-hidden="true">•</span><span>المالك/الكشف: {labels.owner}</span></> : null}
+        {labels.contract ? <><span aria-hidden="true">•</span><span>العقد: {labels.contract}</span></> : null}
       </div>
       <p className="text-xs leading-5 text-muted-foreground">
         العقار والوحدة والمستأجر والعقد وحالة الفاتورة تُطبق على تقارير التحصيل والفواتير التي تدعم هذه الأبعاد؛ مركز التكلفة يطبق على المصادر المالية الداعمة، واختيار المالك يستخدم لكشف المالك فقط.

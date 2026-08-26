@@ -7,7 +7,7 @@ const read = (path: string) => readFileSync(new URL(path, import.meta.url), 'utf
 
 describe('P5 — reports depth contract', () => {
   it('keeps Reports independent and makes arrears a row-level analytical report', () => {
-    const workspace = read('./components/ReportsWorkspace.tsx');
+    const workspace = read('./workspace/ReportsShell.tsx');
     const arrears = read('./components/overdue/overdue-invoices-panel.tsx');
     const globalItems = navGroups.flatMap(([, items]) => items);
     const reportsEntry = globalItems.find(([to]) => to === '/reports');

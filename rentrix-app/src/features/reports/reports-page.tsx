@@ -8,8 +8,7 @@ import { PageLayout } from '@/components/layout/page-layout';
 import { WorkspaceHint } from '@/components/layout/workspace-hint';
 import { canAccess, financialOperationPermissions } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
-import { ReportDirectory } from './components/ReportDirectory';
-import { ReportsWorkspace } from './components/ReportsWorkspace';
+import { ReportDirectory } from './directory/ReportDirectory';
 import { getCurrentMonthFilters } from './reports-page.helpers';
 import { getInitialReportsFilters } from './reports-workspace-filters';
 import type { ReportSectionId } from './reports-page.sections';
@@ -18,6 +17,7 @@ import {
   resolveReportLocation,
   type ReportViewId,
 } from './reports-section-model';
+import { ReportsWorkspace } from './workspace/ReportsWorkspace';
 import { useReportsWorkspace } from './use-reports-workspace';
 
 export { escapeCsvValue } from '@/lib/csvExport';

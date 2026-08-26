@@ -1,5 +1,4 @@
 import { BarChart3, FileSpreadsheet, Gauge, ReceiptText } from 'lucide-react';
-import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { formatDate, formatMoney } from '@/features/financials/components/financials-formatters';
 import {
@@ -9,6 +8,7 @@ import {
 } from '@/features/financials/reports/useFinancialReports';
 import { buildExecutiveHealthInsights } from '../reports-insights';
 import { buildReportCsvFilename, createReceiptPrintHref, downloadCsv, toFinancialSummaryCsv } from '../reports-page.helpers';
+import { ReportBarChart, type ReportBarSeries } from './charts/report-bar-chart';
 import {
   ReportInsightNote,
   ReportList,
@@ -17,6 +17,12 @@ import {
   ReportProgress,
   ReportState,
 } from './report-section-primitives';
+
+/** Operating cash comparison series — labels only, values come from the report. */
+const CASHFLOW_CHART_SERIES = [
+  { dataKey: 'revenue', name: 'المحصّل', tone: 'primary' },
+  { dataKey: 'expenses', name: 'المصروفات', tone: 'negative' },
+] as const satisfies readonly ReportBarSeries[];
 
 type ReceiptRow = Readonly<{
   id: string;
@@ -114,27 +120,12 @@ export function OverviewSection({
           </div>
         ) : (
           <div className="p-3 sm:p-5">
-            <div className="h-72 sm:h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={cashflowRows} margin={{ top: 12, right: 0, left: 0, bottom: 0 }} barGap={6}>
-                  <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="month" tickLine={false} axisLine={false} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
-                  <YAxis tickLine={false} axisLine={false} width={58} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
-                  <Tooltip
-                    cursor={{ fill: 'hsl(var(--muted) / 0.35)' }}
-                    contentStyle={{
-                      borderRadius: 12,
-                      border: '1px solid hsl(var(--border))',
-                      background: 'hsl(var(--card))',
-                      color: 'hsl(var(--foreground))',
-                    }}
-                  />
-                  <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Bar dataKey="revenue" name="المحصّل" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
-                  <Bar dataKey="expenses" name="المصروفات" fill="hsl(var(--destructive))" radius={[6, 6, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            <ReportBarChart
+              data={cashflowRows}
+              series={CASHFLOW_CHART_SERIES}
+              xKey="month"
+              ariaLabel="مقارنة المحصّل والمصروفات الشهرية"
+            />
             <div className="mt-3 grid grid-cols-2 gap-2 text-center">
               <MiniSummary label="الفواتير" value={formatMoney(collectionSummary?.invoiced ?? report.invoiced)} />
               <MiniSummary label="المحصّل" value={formatMoney(collectionSummary?.paid ?? report.paid)} />
