@@ -29,13 +29,6 @@ export type IdentitySectionProps = Readonly<{
   onLogoFileChange: (event: ChangeEvent<HTMLInputElement>) => void;
 }>;
 
-/**
- * WP-D D.2 — IdentitySection (الهوية والطباعة).
- *
- * Owns the identity slice of the company-settings draft: currency, locale,
- * timezone, display formats, and the logo — the branding contract used by
- * document templates and formatters. Includes the live date/money preview.
- */
 export function IdentitySection({
   activeSection,
   draft,
@@ -50,43 +43,49 @@ export function IdentitySection({
   const section = useSettingsSection('identity', { draft, errors, isSaving, onDraftChange });
 
   return (
-    <SectionCard id="identity" activeId={activeSection} title="الهوية والطباعة" subtitle="العملة، اللغة، الشعار، وصيغ الأرقام والتواريخ المعتمدة في المستندات.">
-      <div className="grid gap-3 md:grid-cols-2">
+    <SectionCard id="identity" activeId={activeSection} title="الهوية والطباعة" subtitle="الشعار والعملة واللغة وصيغ الأرقام والتواريخ المستخدمة في المستندات.">
+      <div className="grid grid-cols-2 gap-x-2.5 gap-y-2.5 sm:gap-3">
         <SelectField label="العملة" field="currency" draft={section.draft} errors={section.errors} disabled={isSaving} options={currencyOptions} onChange={section.setField} />
-        <SelectField label="المحلية" field="locale" draft={section.draft} errors={section.errors} disabled={isSaving} options={localeOptions} onChange={section.setField} />
-        <SelectField label="المنطقة الزمنية" field="timezone" draft={section.draft} errors={section.errors} disabled={isSaving} options={timezoneOptions} onChange={section.setField} />
+        <SelectField label="اللغة المحلية" field="locale" draft={section.draft} errors={section.errors} disabled={isSaving} options={localeOptions} onChange={section.setField} />
+        <div className="col-span-2">
+          <SelectField label="المنطقة الزمنية" field="timezone" draft={section.draft} errors={section.errors} disabled={isSaving} options={timezoneOptions} onChange={section.setField} />
+        </div>
         <SelectField label="صيغة التاريخ" field="date_format" draft={section.draft} errors={section.errors} disabled={isSaving} options={dateFormatOptions} onChange={section.setField} />
         <SelectField label="صيغة الأرقام" field="number_format" draft={section.draft} errors={section.errors} disabled={isSaving} options={numberFormatOptions} onChange={section.setField} />
-        <FormField label="رابط الشعار" field="logo_url" draft={section.draft} errors={section.errors} disabled={isSaving} type="url" placeholder="https://example.com/logo.png" onChange={section.setField} />
+        <div className="col-span-2">
+          <FormField label="رابط الشعار" field="logo_url" draft={section.draft} errors={section.errors} disabled={isSaving} type="url" placeholder="https://example.com/logo.png" onChange={section.setField} />
+        </div>
       </div>
-      <label className="space-y-2 text-sm font-medium text-foreground">
-        <span id="settings-logo-upload-label">رفع شعار الشركة</span>
+
+      <label className="block space-y-1 text-xs font-bold text-foreground">
+        <span className="block px-0.5" id="settings-logo-upload-label">أو ارفع شعار الشركة</span>
         <Input
           type="file"
           accept="image/png,image/jpeg,image/webp,image/svg+xml"
           disabled={isSaving}
           onChange={onLogoFileChange}
           aria-labelledby="settings-logo-upload-label"
+          className="min-h-11 rounded-lg px-2 text-sm"
         />
-        <span className="block text-xs text-muted-foreground">يُحفظ الشعار كقيمة مضمنة صغيرة للحفاظ على المعاينة والمستندات بدون إعداد Storage إضافي.</span>
+        <span className="block px-0.5 text-[11px] font-medium text-muted-foreground">PNG أو JPG أو WebP أو SVG.</span>
       </label>
-      <div className="grid gap-3 rounded-2xl border bg-muted/20 p-3 md:grid-cols-3">
-        <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed bg-background/70 p-4 text-center">
+
+      <div className="grid grid-cols-[5rem_minmax(0,1fr)] gap-2.5 rounded-xl border bg-muted/15 p-2.5 sm:grid-cols-[7rem_minmax(0,1fr)] sm:gap-3 sm:rounded-2xl sm:p-3">
+        <div className="flex min-h-20 items-center justify-center rounded-lg border border-dashed bg-background/70 p-2 text-center sm:rounded-xl sm:p-3">
           {preview.logoUrl ? (
-            <img src={preview.logoUrl} alt={`شعار ${preview.companyName}`} className="max-h-24 max-w-full rounded-lg object-contain" />
+            <img src={preview.logoUrl} alt={`شعار ${preview.companyName}`} className="max-h-20 max-w-full rounded object-contain" />
           ) : (
-            <>
-              <div className="mx-auto grid size-14 place-items-center rounded-2xl bg-primary/10 text-base font-black text-primary">
-                {preview.companyName.slice(0, 2)}
-              </div>
-              <p className="text-xs text-muted-foreground">{preview.logoFallbackLabel}</p>
-            </>
+            <div className="grid size-12 place-items-center rounded-xl bg-primary/10 text-sm font-black text-primary">
+              {preview.companyName.slice(0, 2)}
+            </div>
           )}
         </div>
-        <div className="grid gap-2 md:col-span-2">
-          <PreviewField label="معاينة التاريخ" value={formattedPreviewDate} />
-          <PreviewField label="معاينة المبلغ" value={formattedPreviewMoney} />
-          <PreviewField label="اللغة المعتمدة" value={`${preview.defaultLanguage} (${preview.locale})`} />
+        <div className="grid gap-1.5 sm:grid-cols-2 sm:gap-2">
+          <PreviewField label="التاريخ" value={formattedPreviewDate} />
+          <PreviewField label="المبلغ" value={formattedPreviewMoney} />
+          <div className="sm:col-span-2">
+            <PreviewField label="لغة المستندات" value={`${preview.defaultLanguage} (${preview.locale})`} />
+          </div>
         </div>
       </div>
     </SectionCard>

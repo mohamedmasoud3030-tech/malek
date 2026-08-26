@@ -15,13 +15,6 @@ export type SystemSectionProps = Readonly<{
   onDefaultLanguageChange: (language: 'ar' | 'en') => void;
 }>;
 
-/**
- * WP-D D.2 — SystemSection (المظهر والواجهة).
- *
- * Local-only UI preferences: theme and interface language are stored locally
- * and never touch the company-settings row, permissions, or documents.
- * Includes the live surface preview and the company-settings impact details.
- */
 export function SystemSection({
   activeSection,
   preview,
@@ -37,41 +30,42 @@ export function SystemSection({
       id="system"
       activeId={activeSection}
       title="المظهر والواجهة"
-      subtitle="السمة ولغة الواجهة تُحفظان محلياً ولا تغيّران إعدادات الشركة أو صلاحياتها."
+      subtitle="السمة ولغة الواجهة على هذا الجهاز."
     >
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(260px,0.7fr)]">
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <p className="text-sm font-black">السمة</p>
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(260px,0.7fr)]">
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <p className="text-xs font-black">السمة</p>
             <div className="grid grid-cols-2 gap-2">
               <Button
                 type="button"
                 variant={!isDark ? 'primary' : 'secondary'}
-                className="min-h-12 justify-start"
+                className="min-h-11 justify-start px-3"
                 onClick={() => { if (isDark) onToggleTheme(); }}
               >
-                <Sun className="me-2 size-4" aria-hidden="true" />
+                <Sun className="me-1.5 size-4" aria-hidden="true" />
                 فاتحة
                 {!isDark ? <Check className="ms-auto size-4" aria-hidden="true" /> : null}
               </Button>
               <Button
                 type="button"
                 variant={isDark ? 'primary' : 'secondary'}
-                className="min-h-12 justify-start"
+                className="min-h-11 justify-start px-3"
                 onClick={() => { if (!isDark) onToggleTheme(); }}
               >
-                <Moon className="me-2 size-4" aria-hidden="true" />
+                <Moon className="me-1.5 size-4" aria-hidden="true" />
                 داكنة
                 {isDark ? <Check className="ms-auto size-4" aria-hidden="true" /> : null}
               </Button>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <p className="text-sm font-black">لغة الواجهة</p>
+          <div className="space-y-1.5">
+            <p className="text-xs font-black">لغة الواجهة</p>
             <div className="grid grid-cols-2 gap-2">
               <Button
                 type="button"
+                className="min-h-11"
                 variant={pageLanguage.language === 'ar' ? 'primary' : 'secondary'}
                 onClick={() => onDefaultLanguageChange('ar')}
               >
@@ -79,6 +73,7 @@ export function SystemSection({
               </Button>
               <Button
                 type="button"
+                className="min-h-11"
                 variant={pageLanguage.language === 'en' ? 'primary' : 'secondary'}
                 onClick={() => onDefaultLanguageChange('en')}
               >
@@ -88,14 +83,14 @@ export function SystemSection({
           </div>
         </div>
 
-        <div className="rounded-2xl border border-border/70 bg-muted/20 p-3" aria-label="معاينة المظهر">
-          <p className="text-xs font-black text-muted-foreground">معاينة مباشرة</p>
-          <div className="mt-3 space-y-2 rounded-xl border bg-background p-3 shadow-sm">
+        <div className="hidden rounded-xl border border-border/70 bg-muted/15 p-2.5 sm:block" aria-label="معاينة المظهر">
+          <p className="text-[11px] font-black text-muted-foreground">معاينة مباشرة</p>
+          <div className="mt-2 space-y-2 rounded-lg border bg-background p-2.5 shadow-sm">
             <div className="flex items-center justify-between gap-2">
-              <p className="font-black">{preview.companyName}</p>
+              <p className="text-sm font-black">{preview.companyName}</p>
               <StatusBadge tone="success">نشط</StatusBadge>
             </div>
-            <p className="text-xs font-bold text-muted-foreground">
+            <p className="text-[11px] font-bold text-muted-foreground">
               {preview.defaultCurrency} · {preview.locale}
             </p>
             <div className="grid grid-cols-2 gap-2 pt-1">
@@ -106,9 +101,9 @@ export function SystemSection({
         </div>
       </div>
 
-      <details className="rounded-2xl border bg-muted/20 p-3 [&[open]>summary]:mb-2">
-        <summary className="cursor-pointer text-sm font-black">تفاصيل أثر إعدادات الشركة</summary>
-        <dl className="grid gap-3 pt-2 md:grid-cols-2">
+      <details className="rounded-xl border bg-muted/15 p-2.5 [&[open]>summary]:mb-2">
+        <summary className="cursor-pointer text-xs font-black">تفاصيل إعدادات الشركة</summary>
+        <dl className="grid gap-2 pt-2 sm:grid-cols-2">
           <PreviewField label="اسم الشركة" value={preview.companyName} />
           <PreviewField label="الاسم القانوني" value={preview.legalName} muted={preview.legalName === 'غير محدد'} />
           <PreviewField label="اللغة الافتراضية" value={`${preview.defaultLanguage} (${preview.locale})`} />

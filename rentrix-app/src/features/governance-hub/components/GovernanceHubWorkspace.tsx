@@ -85,8 +85,6 @@ export function GovernanceHubWorkspace() {
   const resolvedActiveTab = visibleSections.some((section) => section.id === activeTab) ? activeTab : fallbackSection;
   const shouldRenderTab = (tab: GovernanceHubSectionId) => visibleSections.some((section) => section.id === tab) && (mountedTabs.has(tab) || resolvedActiveTab === tab);
 
-  // Deep link from a permission-request notification (sub=permission-requests):
-  // after the users-permissions tab mounts, bring the review queue into view.
   const requestedSub = typeof search.sub === 'string' ? search.sub : null;
   useEffect(() => {
     if (resolvedActiveTab !== 'users-permissions' || requestedSub !== 'permission-requests') return;
@@ -107,14 +105,16 @@ export function GovernanceHubWorkspace() {
   }, [requestedSub, resolvedActiveTab]);
 
   return (
-    <PageLayout dir="rtl" lang="ar" contentClassName="min-w-0 space-y-4">
-      <PageHeader title="الإعدادات" description="الشركة، المستخدمون والصلاحيات، مراكز التكلفة، الأتمتة، إعدادات النظام والأمان." />
+    <PageLayout dir="rtl" lang="ar" contentClassName="min-w-0 space-y-2.5 md:space-y-4">
+      {resolvedActiveTab !== 'company' ? (
+        <PageHeader title="الإعدادات" description="الشركة، المستخدمون والصلاحيات، مراكز التكلفة، الأتمتة، إعدادات النظام والأمان." />
+      ) : null}
 
       {visibleSections.length === 0 ? (
         <div className="rounded-2xl border border-border bg-muted/20 px-6 py-10 text-center text-sm text-muted-foreground">لا توجد أقسام إعدادات متاحة لصلاحياتك الحالية.</div>
       ) : (
         <>
-          <div className="no-scrollbar sticky top-0 z-20 -mx-1 overflow-x-auto rounded-xl border border-border/60 bg-card/95 px-1 pt-2 backdrop-blur">
+          <div className="no-scrollbar sticky top-0 z-20 -mx-1 overflow-x-auto border-y border-border/60 bg-background/95 px-1 py-1.5 backdrop-blur md:rounded-xl md:border md:bg-card/95 md:py-2">
             <div className="min-w-max">
               <SectionTabs items={visibleSections} activeId={resolvedActiveTab} onChange={handleTabChange} ariaLabel="أقسام الإعدادات" />
             </div>
