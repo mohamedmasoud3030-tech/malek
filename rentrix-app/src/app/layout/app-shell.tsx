@@ -230,7 +230,7 @@ function MobileNavigationDrawer({
         }}
         data-mobile-drawer
         data-mobile-nav-sheet
-        className="fixed bottom-0 start-1/2 z-[101] flex max-h-[64dvh] w-[85vw] max-w-[20rem] -translate-x-1/2 flex-col gap-0 overflow-hidden rounded-t-2xl border border-b-0 border-sidebar-border bg-sidebar text-sidebar-foreground shadow-[0_-12px_32px_-16px_rgb(0_0_0_/_0.55)] sm:w-[22rem] sm:max-w-[22rem] lg:hidden"
+        className="fixed bottom-0 left-1/2 z-[101] flex max-h-[64dvh] w-[85vw] max-w-[20rem] -translate-x-1/2 flex-col gap-0 overflow-hidden rounded-t-2xl border border-b-0 border-sidebar-border bg-sidebar text-sidebar-foreground shadow-[0_-12px_32px_-16px_rgb(0_0_0_/_0.55)] sm:w-[22rem] sm:max-w-[22rem] lg:hidden"
       >
         <DialogTitle className="sr-only">القائمة الرئيسية</DialogTitle>
         <div className="mx-auto mt-2.5 h-1 w-8 shrink-0 rounded-full bg-sidebar-foreground/20" aria-hidden="true" />
