@@ -12,20 +12,11 @@ export type NotificationsSectionProps = Readonly<{
   onDraftChange: (field: CompanySettingsDraftField, value: string) => void;
 }>;
 
-/**
- * WP-D D.2 — NotificationsSection (الإشعارات والمتابعة).
- *
- * Owns the notifications slice of the company-settings draft: the two
- * recorded notification-channel toggles (email, SMS) persisted on the
- * company-settings row. Local-only preferences (theme, UI language) are not
- * part of this slice.
- */
 export function NotificationsSection({
   activeSection,
   draft,
   errors,
   isSaving,
-  preview,
   onDraftChange,
 }: NotificationsSectionProps) {
   const section = useSettingsSection('notifications', { draft, errors, isSaving, onDraftChange });
@@ -35,31 +26,28 @@ export function NotificationsSection({
       id="notifications"
       activeId={activeSection}
       title="الإشعارات والمتابعة"
-      subtitle="تفضيلات الإشعارات المسجلة حالياً في سجل إعدادات المكتب."
+      subtitle="اختر قنوات الإشعارات المستخدمة للمكتب."
     >
-      <div className="grid gap-3 md:grid-cols-2">
-        <label className="flex min-h-12 items-center gap-3 rounded-xl border bg-background/70 p-3 text-sm font-medium">
+      <div className="grid grid-cols-2 gap-2.5">
+        <label className="flex min-h-11 items-center justify-between gap-2 rounded-lg border bg-background/70 px-3 py-2 text-xs font-bold sm:rounded-xl sm:text-sm">
+          <span>البريد الإلكتروني</span>
           <input
             type="checkbox"
             checked={section.draft.notification_email_enabled === 'true'}
             disabled={isSaving}
             onChange={(event) => section.setField('notification_email_enabled', String(event.target.checked))}
           />
-          <span>تفعيل إشعارات البريد الإلكتروني</span>
         </label>
-        <label className="flex min-h-12 items-center gap-3 rounded-xl border bg-background/70 p-3 text-sm font-medium">
+        <label className="flex min-h-11 items-center justify-between gap-2 rounded-lg border bg-background/70 px-3 py-2 text-xs font-bold sm:rounded-xl sm:text-sm">
+          <span>الرسائل النصية</span>
           <input
             type="checkbox"
             checked={section.draft.notification_sms_enabled === 'true'}
             disabled={isSaving}
             onChange={(event) => section.setField('notification_sms_enabled', String(event.target.checked))}
           />
-          <span>تفعيل إشعارات الرسائل النصية</span>
         </label>
       </div>
-      <p className="text-xs text-muted-foreground">
-        ملخص الإشعارات المعتمد: {preview.notificationSummary}.
-      </p>
     </SectionCard>
   );
 }
