@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { formatMoney as formatCurrencyMoney, normalizeCurrency } from '@/lib/formatters';
-import { getTodayLocalDateString } from '@/features/reports/reports-page.helpers';
+import { getTodayLocalDateString } from '@/features/financials/financials-date-utils';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
 import { useAuth } from '@/hooks/use-auth';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
