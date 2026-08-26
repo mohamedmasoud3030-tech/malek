@@ -28,7 +28,7 @@ export function SettingsWorkspaceNav({
                 type="button"
                 aria-current={selected ? 'page' : undefined}
                 className={cn(
-                  'inline-flex min-h-10 items-center gap-1.5 rounded-full border px-2.5 text-[11px] font-black transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
+                  'inline-flex min-h-11 items-center gap-1.5 rounded-full border px-2.5 text-[11px] font-black transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
                   selected
                     ? 'border-primary bg-primary text-primary-foreground shadow-sm'
                     : 'border-border/70 bg-card text-muted-foreground hover:border-primary/25 hover:bg-primary/5 hover:text-foreground',
