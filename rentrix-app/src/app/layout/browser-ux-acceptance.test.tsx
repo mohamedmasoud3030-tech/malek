@@ -83,9 +83,9 @@ describe('WP-06 / GAP-020 Browser & UX Acceptance Hardening', () => {
 
     it('mobile floating control container has bottom safe-area padding and slimmer height', () => {
       const html = renderToStaticMarkup(<MobileFloatingControl onMenu={() => undefined} />);
-      expect(html).toContain('pb-[calc(0.5rem+env(safe-area-inset-bottom');
+      expect(html).toContain('pb-[calc(0.75rem+env(safe-area-inset-bottom');
       expect(html).toContain('data-mobile-floating-control');
-      expect(html).toContain('rounded-xl');
+      expect(html).toContain('rounded-2xl');
     });
   });
 

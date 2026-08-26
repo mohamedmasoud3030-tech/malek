@@ -230,11 +230,11 @@ function MobileNavigationDrawer({
         }}
         data-mobile-drawer
         data-mobile-nav-sheet
-        className="fixed inset-x-0 bottom-0 top-auto z-[101] flex max-h-[64dvh] w-full max-w-none flex-col gap-0 overflow-hidden rounded-none rounded-t-2xl border-0 border-t border-sidebar-border bg-sidebar text-sidebar-foreground shadow-[0_-12px_32px_-16px_rgb(0_0_0_/_0.55)] sm:max-h-none lg:hidden"
+        className="fixed bottom-0 start-1/2 z-[101] flex max-h-[64dvh] w-[85vw] max-w-[20rem] -translate-x-1/2 flex-col gap-0 overflow-hidden rounded-t-2xl border border-b-0 border-sidebar-border bg-sidebar text-sidebar-foreground shadow-[0_-12px_32px_-16px_rgb(0_0_0_/_0.55)] sm:w-[22rem] sm:max-w-[22rem] lg:hidden"
       >
         <DialogTitle className="sr-only">القائمة الرئيسية</DialogTitle>
-        <div className="mx-auto mt-2 h-1 w-9 shrink-0 rounded-full bg-sidebar-foreground/20" aria-hidden="true" />
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-sidebar-border/50 px-3.5 py-2.5">
+        <div className="mx-auto mt-2.5 h-1 w-8 shrink-0 rounded-full bg-sidebar-foreground/20" aria-hidden="true" />
+        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-sidebar-border/50 px-3 py-2.5">
           <Brand expanded />
           <Button
             autoFocus
@@ -246,7 +246,7 @@ function MobileNavigationDrawer({
             <X className="size-[1.125rem]" />
           </Button>
         </div>
-        <nav className="sidebar-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain p-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))]">
+        <nav className="sidebar-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain p-2.5 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
           {authorization === null && (
             <div className="mb-2 rounded-lg border border-[hsl(var(--color-warning-text)/0.2)] bg-[hsl(var(--color-warning-bg)/0.07)] px-2.5 py-2">
               <p className="text-xs font-semibold text-warning">الصلاحيات غير مكتملة</p>

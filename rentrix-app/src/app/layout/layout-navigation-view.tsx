@@ -192,7 +192,7 @@ export function MobileFloatingControl({ onMenu, menuRef }: Readonly<{ onMenu: ()
   const quickRootRef = useRef<HTMLDivElement>(null);
   const visibleQuickActions = mobileQuickActions;
   const utilityActionClass =
-    'grid size-9 min-h-11 min-w-11 shrink-0 place-items-center rounded-lg border border-transparent text-muted-foreground outline-none transition-[background-color,color,border-color,box-shadow,transform] duration-150 hover:bg-muted hover:text-foreground active:scale-[0.97] focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none motion-reduce:transform-none';
+    'grid size-10 min-h-11 min-w-11 shrink-0 place-items-center rounded-xl border border-transparent text-muted-foreground outline-none transition-[background-color,color,border-color,box-shadow,transform] duration-150 hover:bg-muted hover:text-foreground active:scale-[0.97] focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none motion-reduce:transform-none';
 
   useEffect(() => {
     if (!quickOpen) return;
@@ -218,14 +218,14 @@ export function MobileFloatingControl({ onMenu, menuRef }: Readonly<{ onMenu: ()
 
   return (
     <div
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-3 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] md:hidden"
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] md:hidden"
       data-mobile-floating-control
       data-mobile-control-center
       aria-label="مركز التحكم"
     >
       <div
         ref={quickRootRef}
-        className="pointer-events-auto relative flex w-auto items-center gap-0.5 rounded-xl border border-border/60 bg-card/95 px-1 py-0.5 shadow-[0_6px_20px_-14px_hsl(var(--foreground)/0.25),0_1px_2px_hsl(var(--foreground)/0.05)] backdrop-blur-sm"
+        className="pointer-events-auto relative flex w-auto items-center gap-1 rounded-2xl border border-border/70 bg-card/95 p-1 shadow-[0_8px_24px_-16px_hsl(var(--foreground)/0.25),0_1px_3px_hsl(var(--foreground)/0.06)] backdrop-blur-md"
       >
         {quickOpen && visibleQuickActions.length > 0 ? (
           <div
@@ -267,7 +267,7 @@ export function MobileFloatingControl({ onMenu, menuRef }: Readonly<{ onMenu: ()
         </button>
 
         <div
-          className="relative [&>div>button]:!size-9 [&>div>button]:!min-h-11 [&>div>button]:!min-w-11 [&>div>button]:!rounded-lg [&>div>button]:!border-transparent [&>div>button]:!text-muted-foreground [&>div>button]:!shadow-none [&>div>button]:hover:!bg-muted [&>div>button]:hover:!text-foreground [&>div>button[aria-expanded='true']]:!bg-foreground [&>div>button[aria-expanded='true']]:!text-background [&>div>[role='dialog']]:!bottom-[3rem] [&>div>[role='dialog']]:!top-auto"
+          className="relative [&>div>button]:!size-10 [&>div>button]:!min-h-11 [&>div>button]:!min-w-11 [&>div>button]:!rounded-xl [&>div>button]:!border-transparent [&>div>button]:!text-muted-foreground [&>div>button]:!shadow-none [&>div>button]:hover:!bg-muted [&>div>button]:hover:!text-foreground [&>div>button[aria-expanded='true']]:!bg-foreground [&>div>button[aria-expanded='true']]:!text-background [&>div>[role='dialog']]:!bottom-[3.5rem] [&>div>[role='dialog']]:!top-auto"
           data-mobile-dock-notifications
         >
           <NotificationsMenu authorization={authorization} sharedLabel={sharedLabel} />
