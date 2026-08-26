@@ -26,6 +26,7 @@ type ReportsWorkspaceProps = Readonly<{
  * page from reading like a stack of unrelated dashboards — especially on
  * phones — while preserving the existing deep-link and authority contracts.
  * The active report deliberately remains the final, dominant visual block.
+ * This composition intentionally remains independent from the Finance cockpit.
  */
 export function ReportsWorkspace({
   model,
