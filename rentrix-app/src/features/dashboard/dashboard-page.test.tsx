@@ -82,7 +82,7 @@ const mockSnapshot = {
   },
 };
 
-describe('Today workspace query boundary tests', () => {
+describe('Dashboard command center query boundary tests', () => {
   let container: HTMLDivElement | null = null;
   let root: any = null;
   let queryClient: QueryClient;
@@ -111,75 +111,86 @@ describe('Today workspace query boundary tests', () => {
     await act(async () => { await new Promise((resolve) => setTimeout(resolve, 50)); });
   }
 
-  it('renders Today as an action-first workspace from the authoritative snapshot', async () => {
+  it('renders an action-first command center from the authoritative snapshot', async () => {
     (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
     await renderPage();
     expect(getDashboardSnapshot).toHaveBeenCalled();
     const text = container?.textContent ?? '';
     expect(text).toContain('اليوم');
-    expect(text).toContain('مطلوب منك الآن');
-    expect(text).toContain('وضع المكتب');
+    expect(text).toContain('مطلوب الآن');
+    expect(text).toContain('نبض المكتب');
+    expect(text).toContain('العمل المنتظر');
+    expect(text).toContain('المال والالتزامات');
+    expect(text).toContain('حالة التحصيل والمحفظة');
+    expect(text).toContain('تحليل المتأخرات');
     expect(text).toContain('نسبة الإشغال');
-    expect(text).toContain('العقود المنتهية قريباً');
+    expect(text).toContain('عقود تنتهي قريباً');
     expect(text).toContain('سالم الكعبي');
     expect(text).toContain('أعلى المتأخرات');
     expect(text).toContain('أحمد الفارسي');
+    expect(text).toContain('الصيانة العاجلة');
+    expect(text).toContain('تسرب مياه');
     expect(text).toContain('الأولوية الآن');
     expect(text).toContain('حالة التحصيل');
   });
 
-  it('scopes Visual Contract V2 on a real Today-owned wrapper', async () => {
+  it('scopes Visual Contract V2 on a real dashboard-owned wrapper', async () => {
     (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
     await renderPage();
     const scope = container?.querySelector('[data-visual-contract="v2"]');
     expect(scope).not.toBeNull();
     expect(scope?.querySelector('[data-dashboard-hero]')).not.toBeNull();
-    expect(scope?.querySelectorAll('[data-dashboard-section]').length).toBeGreaterThanOrEqual(3);
+    expect(scope?.querySelectorAll('[data-dashboard-section]').length).toBeGreaterThanOrEqual(5);
     expect(container?.querySelector('[data-page-layout][data-visual-contract]')).toBeNull();
   });
 
-  it('orders work first, office state second, analysis last', async () => {
+  it('orders decisions, pulse, work queues, money, operational health, then analysis', async () => {
     (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
     await renderPage();
     const sectionOrder = Array.from(container?.querySelectorAll('[data-dashboard-section]') ?? [])
       .map((section) => section.getAttribute('data-dashboard-section'));
-    expect(sectionOrder).toEqual(['work-now', 'office-state', 'analytics']);
+    expect(sectionOrder).toEqual(['work-now', 'office-pulse', 'work-queues', 'money-obligations', 'operational-health', 'analytics']);
     expect(container?.querySelector('[data-dashboard-section="actions"]')).toBeNull();
   });
 
-  it('renders KPI surfaces as real destination links without duplicating the executive hero', async () => {
+  it('renders four stable office pulse slots without mixing them into money-obligation links', async () => {
     (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
     await renderPage();
+    const pulse = container?.querySelector('[data-dashboard-office-pulse]');
+    expect(pulse).not.toBeNull();
+    expect(pulse?.querySelectorAll('[data-kpi-card]')).toHaveLength(4);
+
     const kpiLinks = Array.from(container?.querySelectorAll('[data-dashboard-kpi-grid] a[data-dashboard-kpi-link]') ?? []);
     expect(kpiLinks).toHaveLength(4);
-    // Secondary decision KPIs: net cash, collection rate, expenses, owner
-    // payouts — none repeats the hero (تحصيل/متأخرات/إشغال/عقود).
     expect(kpiLinks.map((link) => link.getAttribute('href'))).toEqual(['/reports', '/financials', '/expenses', '/owner-settlements']);
   });
 
-  it('hides create shortcuts for roles with no actionable permission', async () => {
+  it('surfaces all three bounded operational queues', async () => {
     (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
-    mockRole = 'USER';
     await renderPage();
-    expect(container?.querySelectorAll('[data-dashboard-action-grid] > *')).toHaveLength(0);
-    expect(container?.querySelector('[data-dashboard-section="actions"]')).toBeNull();
+    const queueSection = container?.querySelector('[data-dashboard-section="work-queues"]');
+    expect(queueSection).not.toBeNull();
+    expect(queueSection?.textContent).toContain('أعلى المتأخرات');
+    expect(queueSection?.textContent).toContain('عقود تنتهي قريباً');
+    expect(queueSection?.textContent).toContain('الصيانة العاجلة');
   });
 
-  it('keeps create shortcuts out of Today because the dock already owns them', async () => {
+  it('keeps create shortcuts out of the dashboard because the global dock already owns them', async () => {
     (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
     mockRole = 'MANAGER';
     await renderPage();
     expect(container?.querySelector('[data-dashboard-section="actions"]')).toBeNull();
     expect(container?.querySelector('[data-dashboard-action-grid]')).toBeNull();
-    const onboardingSlot = container?.querySelector('[data-dashboard-onboarding-slot]');
+
     const workNow = container?.querySelector('[data-dashboard-section="work-now"]');
-    expect(onboardingSlot).not.toBeNull();
+    const onboardingSlot = container?.querySelector('[data-dashboard-onboarding-slot]');
+    const pulse = container?.querySelector('[data-dashboard-section="office-pulse"]');
     expect(workNow).not.toBeNull();
-    if (!onboardingSlot || !workNow) throw new Error('Dashboard setup/work slots are required');
-    expect(onboardingSlot.compareDocumentPosition(workNow) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    const sectionOrder = Array.from(container?.querySelectorAll('[data-dashboard-section]') ?? [])
-      .map((section) => section.getAttribute('data-dashboard-section'));
-    expect(sectionOrder).toEqual(['work-now', 'office-state', 'analytics']);
+    expect(onboardingSlot).not.toBeNull();
+    expect(pulse).not.toBeNull();
+    if (!workNow || !onboardingSlot || !pulse) throw new Error('Dashboard work/setup/pulse slots are required');
+    expect(workNow.compareDocumentPosition(onboardingSlot) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(onboardingSlot.compareDocumentPosition(pulse) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('handles query loading state without fabricating current work', async () => {
@@ -190,12 +201,13 @@ describe('Today workspace query boundary tests', () => {
     expect(container?.querySelectorAll('.skeleton-shimmer').length).toBeGreaterThan(0);
   });
 
-  it('stays honest on failure: no fake zero KPIs replace the failed snapshot', async () => {
+  it('stays honest on failure: no fake zero command-center surfaces replace the failed snapshot', async () => {
     (getDashboardSnapshot as any).mockRejectedValue(new Error('network down'));
     await renderPage();
     const text = container?.textContent ?? '';
     expect(text).toContain('تعذر تحميل بيانات اليوم');
+    expect(container?.querySelector('[data-dashboard-office-pulse]')).toBeNull();
     expect(container?.querySelector('[data-dashboard-kpi-grid]')).toBeNull();
-    expect(container?.querySelector('[data-dashboard-section="office-state"]')).toBeNull();
+    expect(container?.querySelector('[data-dashboard-section="work-queues"]')).toBeNull();
   });
 });
