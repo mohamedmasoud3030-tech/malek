@@ -1,11 +1,11 @@
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft, FileSpreadsheet, ReceiptText, WalletCards } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
+import { formatMoney } from '@/features/financials/components/financials-formatters';
 import type { CollectionSummaryReport } from '@/features/financials/reports/financialReportsService';
-import { formatCompanyMoney } from '@/lib/companyFormatters';
 import type { FinanceSectionDefinition, FinanceViewDefinition } from '../shell/financeShellModel';
 
 type FinanceWorkspaceHeroProps = Readonly<{
@@ -20,7 +20,7 @@ function Metric({
   label,
   value,
   helper,
-}: Readonly<{ label: string; value: React.ReactNode; helper: string }>) {
+}: Readonly<{ label: string; value: ReactNode; helper: string }>) {
   return (
     <div className="min-w-0 rounded-2xl border border-border/65 bg-background/80 p-3 shadow-sm backdrop-blur-sm sm:p-4">
       <p className="text-[11px] font-black tracking-wide text-muted-foreground">{label}</p>
@@ -37,9 +37,6 @@ export function FinanceWorkspaceHero({
   isLoading,
   onOpenCollections,
 }: FinanceWorkspaceHeroProps) {
-  const companySettings = useCompanySettingsContract();
-  const money = (value: number) => formatCompanyMoney(companySettings, value);
-
   return (
     <section
       aria-label="مركز قيادة المالية"
@@ -101,17 +98,17 @@ export function FinanceWorkspaceHero({
         <ResponsiveCardGrid desktopColumns={3} gap="sm" aria-label="ملخص مالي للشهر الحالي">
           <Metric
             label="المحصّل هذا الشهر"
-            value={isLoading ? <Skeleton className="h-6 w-28" /> : money(summary?.paid ?? 0)}
+            value={isLoading ? <Skeleton className="h-6 w-28" /> : formatMoney(summary?.paid ?? 0)}
             helper={`${summary?.receiptsCount ?? 0} إيصالات مسجلة`}
           />
           <Metric
             label="المتبقي للتحصيل"
-            value={isLoading ? <Skeleton className="h-6 w-28" /> : money(summary?.outstanding ?? 0)}
+            value={isLoading ? <Skeleton className="h-6 w-28" /> : formatMoney(summary?.outstanding ?? 0)}
             helper={`${summary?.invoicesCount ?? 0} فواتير في النطاق`}
           />
           <Metric
             label="قيمة الفواتير"
-            value={isLoading ? <Skeleton className="h-6 w-28" /> : money(summary?.invoiced ?? 0)}
+            value={isLoading ? <Skeleton className="h-6 w-28" /> : formatMoney(summary?.invoiced ?? 0)}
             helper="ملخص تشغيلي للشهر الحالي"
           />
         </ResponsiveCardGrid>
