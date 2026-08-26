@@ -7,6 +7,7 @@ import { EntityFormVisualProvider } from '@/components/ui/entity-form';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DirtyRouteNavigationGuard } from '@/hooks/use-unsaved-changes-guard';
+import { cn } from '@/lib/utils';
 import { OverviewRow, SettingsHero } from './components/settings-hero';
 import { SettingsSaveBar } from './components/settings-save-bar';
 import { SectionCard } from './components/settings-section-card';
@@ -95,8 +96,21 @@ export function SettingsWorkspace({
   onSectionChange,
 }: SettingsWorkspaceProps = {}) {
   const controller = useSettingsPageController();
-  const [localActiveSection, setLocalActiveSection] = useState<SettingsSectionId>('office');
-  const activeSection = controlledActiveSection ?? localActiveSection;
+  const workspaceDefinitions = variant === 'embedded'
+    ? settingsSectionRegistry.filter((section) => section.id !== 'cost-centers')
+    : settingsSectionRegistry;
+  const workspaceSections = workspaceDefinitions.map((section) => ({
+    id: section.id,
+    label: section.label,
+    description: section.description,
+    icon: section.icon,
+  }));
+  const fallbackWorkspaceSection = workspaceDefinitions[0]?.id ?? 'office';
+  const [localActiveSection, setLocalActiveSection] = useState<SettingsSectionId>(fallbackWorkspaceSection);
+  const requestedActiveSection = controlledActiveSection ?? localActiveSection;
+  const activeSection = workspaceDefinitions.some((section) => section.id === requestedActiveSection)
+    ? requestedActiveSection
+    : fallbackWorkspaceSection;
   const [mountedSections, setMountedSections] = useState<ReadonlySet<SettingsSectionId>>(() => new Set([activeSection]));
   const handleJumpToSection = (section: SettingsSectionId) => {
     if (onSectionChange) {
@@ -125,6 +139,11 @@ export function SettingsWorkspace({
     handleLogoFileChange,
     handleSubmit,
   } = controller;
+
+  useEffect(() => {
+    if (!controlledActiveSection || controlledActiveSection === activeSection || !onSectionChange) return;
+    onSectionChange(activeSection);
+  }, [activeSection, controlledActiveSection, onSectionChange]);
 
   useEffect(() => {
     setMountedSections((current) => {
@@ -200,24 +219,24 @@ export function SettingsWorkspace({
       variant={variant}
       dir={pageLanguage.direction}
       lang={pageLanguage.locale}
-      contentClassName="min-w-0 space-y-2.5 pb-3 md:space-y-4 md:pb-8"
+      contentClassName={cn('min-w-0 space-y-2 pb-2 md:space-y-4 md:pb-8', isDirty && 'pb-24 md:pb-8')}
     >
       <SettingsHero companyName={preview.companyName} hasUnsavedChanges={isDirty} />
       <div className="hidden md:block">
         <OverviewRow tiles={summaryTiles} onOpenSection={handleJumpToSection} />
       </div>
 
-      <div className="grid min-w-0 gap-2.5 md:grid-cols-[minmax(210px,255px)_minmax(0,1fr)] md:items-start md:gap-4">
-        <SettingsWorkspaceNav activeSection={activeSection} onChange={handleJumpToSection} />
-        <div className="min-w-0 space-y-2.5 md:space-y-3">
-          <SettingsSaveBar isDirty={isDirty} isSaving={isSaving} onDiscard={discardDraft} />
-          <form id="settings-company-form" className="min-w-0 space-y-3 md:space-y-4" onSubmit={handleSubmit}>
-            {settingsSectionRegistry
+      <div className="grid min-w-0 gap-2 md:grid-cols-[minmax(210px,255px)_minmax(0,1fr)] md:items-start md:gap-4">
+        <SettingsWorkspaceNav activeSection={activeSection} onChange={handleJumpToSection} sections={workspaceSections} />
+        <div className="min-w-0 space-y-2 md:space-y-3">
+          <form id="settings-company-form" className="min-w-0 space-y-2.5 md:space-y-4" onSubmit={handleSubmit}>
+            {workspaceDefinitions
               .filter((section) => mountedSections.has(section.id))
               .map((section) => (
                 <SettingsSectionView key={section.id} definition={section} renderProps={sectionRenderProps} />
               ))}
           </form>
+          <SettingsSaveBar isDirty={isDirty} isSaving={isSaving} onDiscard={discardDraft} />
         </div>
       </div>
 
