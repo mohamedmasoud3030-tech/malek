@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
+// Final Deep Refactor acceptance probe: behavior intentionally unchanged.
 const allowedConsoleErrorFragments = [
   'Supabase environment is incomplete. Runtime diagnostics will be shown in UI.',
   'Failed to load resource: net::ERR_CERT_AUTHORITY_INVALID',
