@@ -10,13 +10,13 @@ export function SettingsWorkspaceNav({
   onChange: (id: SettingsSectionId) => void;
 }>) {
   const active = settingsSections.find((section) => section.id === activeSection) ?? settingsSections[0];
+  const ActiveIcon = active.icon;
 
   return (
     <>
       <div className="space-y-2 md:hidden">
-        <div
+        <nav
           className="overflow-x-auto rounded-2xl border border-border/70 bg-card p-2 shadow-sm [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          role="navigation"
           aria-label="أقسام الإعدادات"
         >
           <div className="flex min-w-max gap-1.5">
@@ -47,9 +47,9 @@ export function SettingsWorkspaceNav({
               );
             })}
           </div>
-        </div>
+        </nav>
         <div className="flex min-h-11 items-start gap-2 rounded-xl border border-primary/15 bg-primary/[0.035] px-3 py-2">
-          <active.icon className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+          <ActiveIcon className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
           <p className="text-xs font-bold leading-5 text-muted-foreground" aria-live="polite">
             <span className="font-black text-foreground">{active.label}: </span>{active.description}
           </p>
