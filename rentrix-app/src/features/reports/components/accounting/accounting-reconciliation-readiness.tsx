@@ -147,7 +147,7 @@ export function AccountingReconciliationReadiness({
               )}
               مطابقة الدفاتر المساعدة ↔ الأستاذ العام
             </CardTitle>
-            <CardDescription className="mt-1 line-clamp-2">
+            <CardDescription className="mt-1">
               فحص حتى {asOf}. القوائم مبنية على الأستاذ العام، والمطابقة تكشف أي فرق مع المصادر التشغيلية.
               {readiness.missingAccountNos.length > 0 ? (
                 <span className="mt-1 block font-semibold text-destructive">
