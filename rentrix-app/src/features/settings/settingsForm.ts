@@ -1,119 +1,63 @@
+/**
+ * WP-D compatibility seam — company-settings form surface.
+ *
+ * The per-section draft types, field maps, and validators now live in
+ * `./form/sectionDrafts`; the per-section isolation hook lives in
+ * `./form/useSettingsSection`; the section persistence contract lives in
+ * `./form/sectionPersistence`. This module keeps the historical import path
+ * (`@/features/settings/settingsForm`) and every historical export working:
+ * it owns the whole-record adapter functions (record ↔ draft ↔ payload —
+ * inherently cross-section because a single Supabase row is saved as one
+ * update) and re-exports the decomposed validation contract.
+ */
 import { normalizeCompanySettingsContract, type CompanyLocalSettings } from '@/lib/companySettings';
 import { companySettingsRecordToContract } from './companySettingsContractAdapter';
 import type { CompanySettingsRecord, CompanySettingsUpdatePayload } from './companySettingsService';
+import {
+  companySettingsDraftFields,
+  hasCompanySettingsValidationErrors,
+  normalizeVatRate,
+  stringifyBoolean,
+  validateCompanySettingsDraft,
+  validateSettingsSectionDraft,
+  type CompanySettingsDraft,
+  type CompanySettingsDraftField,
+  type CompanySettingsDocumentsDraft,
+  type CompanySettingsIdentityDraft,
+  type CompanySettingsNotificationsDraft,
+  type CompanySettingsOfficeDraft,
+  type CompanySettingsSectionDraftId,
+  type CompanySettingsSectionDraftMap,
+  type CompanySettingsValidationErrors,
+} from './form/sectionDrafts';
 
-export type CompanySettingsDraft = {
-  company_name: string;
-  legal_name: string;
-  tax_number: string;
-  registration_number: string;
-  phone: string;
-  email: string;
-  address: string;
-  city: string;
-  country: string;
-  currency: string;
-  locale: string;
-  timezone: string;
-  date_format: string;
-  number_format: string;
-  logo_url: string;
-  invoice_prefix: string;
-  contract_prefix: string;
-  receipt_prefix: string;
-  default_vat_rate: string;
-  vat_enabled: string;
-  vat_rate: string;
-  vat_registration_number: string;
-  notification_email_enabled: string;
-  notification_sms_enabled: string;
+export type {
+  CompanySettingsDraft,
+  CompanySettingsDraftField,
+  CompanySettingsDocumentsDraft,
+  CompanySettingsIdentityDraft,
+  CompanySettingsNotificationsDraft,
+  CompanySettingsOfficeDraft,
+  CompanySettingsSectionDraftId,
+  CompanySettingsSectionDraftMap,
+  CompanySettingsValidationErrors,
 };
-
-export type CompanySettingsDraftField = keyof CompanySettingsDraft;
-export type CompanySettingsValidationErrors = Partial<Record<CompanySettingsDraftField, string>>;
-
-const draftFields = [
-  'company_name',
-  'legal_name',
-  'tax_number',
-  'registration_number',
-  'phone',
-  'email',
-  'address',
-  'city',
-  'country',
-  'currency',
-  'locale',
-  'timezone',
-  'date_format',
-  'number_format',
-  'logo_url',
-  'invoice_prefix',
-  'contract_prefix',
-  'receipt_prefix',
-  'default_vat_rate',
-  'vat_enabled',
-  'vat_rate',
-  'vat_registration_number',
-  'notification_email_enabled',
-  'notification_sms_enabled',
-] as const satisfies readonly CompanySettingsDraftField[];
-
-const requiredFields = [
-  'company_name',
-  'currency',
-  'locale',
-  'timezone',
-  'date_format',
-  'number_format',
-  'invoice_prefix',
-  'contract_prefix',
-  'receipt_prefix',
-] as const satisfies readonly CompanySettingsDraftField[];
-
-const requiredLabels: Record<(typeof requiredFields)[number], string> = {
-  company_name: 'اسم الشركة مطلوب',
-  currency: 'العملة مطلوبة',
-  locale: 'اللغة/المحلية مطلوبة',
-  timezone: 'المنطقة الزمنية مطلوبة',
-  date_format: 'صيغة التاريخ مطلوبة',
-  number_format: 'صيغة الأرقام مطلوبة',
-  invoice_prefix: 'بادئة الفواتير مطلوبة',
-  contract_prefix: 'بادئة العقود مطلوبة',
-  receipt_prefix: 'بادئة الإيصالات مطلوبة',
-};
-
-function normalizeVatRate(value: unknown): number {
-  const parsedValue = typeof value === 'number' ? value : Number.parseFloat(String(value ?? ''));
-  return Number.isFinite(parsedValue) && parsedValue >= 0 && parsedValue <= 100 ? Math.round(parsedValue * 1000) / 1000 : 0;
-}
-
-function stringifyBoolean(value: unknown): string {
-  return value === true || value === 'true' ? 'true' : 'false';
-}
-
-function hasWhitespace(value: string): boolean {
-  return Array.from(value).some((character) => character.trim() === '');
-}
-
-function isValidEmailAddress(value: string): boolean {
-  const email = value.trim();
-  const atIndex = email.indexOf('@');
-
-  if (atIndex <= 0 || atIndex !== email.lastIndexOf('@') || hasWhitespace(email)) return false;
-
-  const localPart = email.slice(0, atIndex);
-  const domainPart = email.slice(atIndex + 1);
-  const dotIndex = domainPart.indexOf('.');
-
-  return Boolean(
-    localPart
-      && domainPart
-      && dotIndex > 0
-      && dotIndex < domainPart.length - 1
-      && !domainPart.includes('..'),
-  );
-}
+export {
+  companySettingsDocumentsFields,
+  companySettingsDraftFields,
+  companySettingsIdentityFields,
+  companySettingsNotificationsFields,
+  companySettingsOfficeFields,
+  companySettingsSectionDraftFields,
+  companySettingsSectionDraftIds,
+  hasCompanySettingsValidationErrors,
+  validateCompanySettingsDraft,
+  validateDocumentsSectionDraft,
+  validateIdentitySectionDraft,
+  validateNotificationsSectionDraft,
+  validateOfficeSectionDraft,
+  validateSettingsSectionDraft,
+} from './form/sectionDrafts';
 
 export function companySettingsRecordToDraft(settings: CompanySettingsRecord): CompanySettingsDraft {
   const normalizedSettings = companySettingsRecordToContract(settings);
@@ -266,46 +210,5 @@ export function getCompanySettingsPreviewModel(draft: CompanySettingsDraft): Com
 
 export function areCompanySettingsDraftsEqual(left: CompanySettingsDraft | null, right: CompanySettingsDraft | null): boolean {
   if (!left || !right) return left === right;
-  return draftFields.every((field) => left[field] === right[field]);
-}
-
-export function validateCompanySettingsDraft(draft: CompanySettingsDraft): CompanySettingsValidationErrors {
-  const errors: CompanySettingsValidationErrors = {};
-
-  for (const field of requiredFields) {
-    if (!draft[field].trim()) errors[field] = requiredLabels[field];
-  }
-
-  if (draft.email.trim() && !isValidEmailAddress(draft.email)) {
-    errors.email = 'صيغة البريد الإلكتروني غير صحيحة';
-  }
-
-  if (draft.logo_url.trim()) {
-    try {
-      const url = new URL(draft.logo_url.trim());
-      const isSafeRemoteLogo = ['http:', 'https:'].includes(url.protocol);
-      const isSafeEmbeddedLogo = url.protocol === 'data:' && /^data:image\/(?:png|jpeg|webp|svg\+xml);base64,/i.test(draft.logo_url.trim());
-      if (!isSafeRemoteLogo && !isSafeEmbeddedLogo) {
-        errors.logo_url = 'رابط الشعار يجب أن يبدأ بـ http أو https';
-      }
-    } catch {
-      errors.logo_url = 'رابط الشعار غير صحيح';
-    }
-  }
-
-  const vatRate = Number.parseFloat(draft.default_vat_rate);
-  if (!Number.isFinite(vatRate) || vatRate < 0 || vatRate > 100) {
-    errors.default_vat_rate = 'نسبة ضريبة القيمة المضافة يجب أن تكون بين 0 و100';
-  }
-
-  const operationalVatRate = Number.parseFloat(draft.vat_rate);
-  if (!Number.isFinite(operationalVatRate) || operationalVatRate < 0 || operationalVatRate > 100) {
-    errors.vat_rate = 'نسبة VAT التشغيلية يجب أن تكون بين 0 و100';
-  }
-
-  return errors;
-}
-
-export function hasCompanySettingsValidationErrors(errors: CompanySettingsValidationErrors): boolean {
-  return Object.keys(errors).length > 0;
+  return companySettingsDraftFields.every((field) => left[field] === right[field]);
 }

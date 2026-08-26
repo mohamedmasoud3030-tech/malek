@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { Suspense, useEffect, useState, type ReactNode } from 'react';
 import { RefreshCcw } from 'lucide-react';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
@@ -7,19 +7,15 @@ import { EntityFormVisualProvider } from '@/components/ui/entity-form';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DirtyRouteNavigationGuard } from '@/hooks/use-unsaved-changes-guard';
-import { CompanyProfileSections } from './components/company-profile-sections';
 import { OverviewRow, SettingsHero } from './components/settings-hero';
-import { SettingsOperationsSections } from './components/settings-operations-sections';
 import { SettingsSaveBar } from './components/settings-save-bar';
 import { SectionCard } from './components/settings-section-card';
 import { SettingsWorkspaceNav } from './components/settings-workspace-nav';
-import { CostCentersSettingsSection } from './cost-centers-settings-section';
-import { PaymentTermsSettingsSection } from './payment-terms-settings-section';
-import { FinanceReadinessSection } from '@/features/financials/tax-authority/finance-readiness-section';
-import { TaxAuthorityWorkspace } from '@/features/financials/tax-authority/tax-profile-workspace';
 import { getCompanySettingsPreviewModel } from './settingsForm';
 import { buildSettingsSummaryTiles } from './settings-workspace-model';
+import { settingsSectionRegistry, type SettingsSectionDefinition } from './registry/sectionRegistry';
 import { settingsSections, type SettingsSectionId } from './settingsSections';
+import type { SettingsSectionRenderProps } from './registry/types';
 import { useSettingsPageController } from './useSettingsPageController';
 
 export function preventSettingsUnload(event: BeforeUnloadEvent) {
@@ -62,6 +58,44 @@ function SettingsVariantShell({
   );
 }
 
+function SettingsSectionSkeleton() {
+  return (
+    <ResponsiveCardGrid desktopColumns={2} gap="md" aria-label="جارٍ تحميل محتوى القسم">
+      <Skeleton className="h-20 rounded-xl" />
+      <Skeleton className="h-20 rounded-xl" />
+    </ResponsiveCardGrid>
+  );
+}
+
+/**
+ * WP-D D.5 — renders one registry section inside a Suspense boundary.
+ * Sections are lazy-loaded and stay mounted once visited so local CRUD state
+ * (cost-center editor, payment-term draft) survives tab switches — same
+ * guarantee as the previous always-mounted rendering, with the initial
+ * payload split per section.
+ */
+function SettingsSectionView({
+  definition,
+  renderProps,
+}: Readonly<{
+  definition: SettingsSectionDefinition;
+  renderProps: SettingsSectionRenderProps;
+}>) {
+  const SectionComponent = definition.component;
+
+  return (
+    <Suspense
+      fallback={(
+        <SectionCard id={definition.id} activeId={renderProps.activeSection} title={definition.label} subtitle={definition.description}>
+          <SettingsSectionSkeleton />
+        </SectionCard>
+      )}
+    >
+      <SectionComponent {...renderProps} />
+    </Suspense>
+  );
+}
+
 export function SettingsWorkspace({
   variant = 'standalone',
   activeSection: controlledActiveSection,
@@ -70,6 +104,7 @@ export function SettingsWorkspace({
   const controller = useSettingsPageController();
   const [localActiveSection, setLocalActiveSection] = useState<SettingsSectionId>('office');
   const activeSection = controlledActiveSection ?? localActiveSection;
+  const [mountedSections, setMountedSections] = useState<ReadonlySet<SettingsSectionId>>(() => new Set([activeSection]));
   const handleJumpToSection = (section: SettingsSectionId) => {
     if (onSectionChange) {
       onSectionChange(section);
@@ -81,7 +116,6 @@ export function SettingsWorkspace({
     theme,
     authorization,
     authorizationDiagnostics,
-    user,
     companySettingsQuery,
     draft,
     errors,
@@ -98,6 +132,15 @@ export function SettingsWorkspace({
     handleLogoFileChange,
     handleSubmit,
   } = controller;
+
+  useEffect(() => {
+    setMountedSections((current) => {
+      if (current.has(activeSection)) return current;
+      const next = new Set(current);
+      next.add(activeSection);
+      return next;
+    });
+  }, [activeSection]);
 
   if (companySettingsQuery.isError) {
     return (
@@ -143,6 +186,22 @@ export function SettingsWorkspace({
     metadataMismatch: authorizationDiagnostics.metadataMismatch,
   });
 
+  const sectionRenderProps: SettingsSectionRenderProps = {
+    activeSection,
+    draft,
+    errors,
+    isSaving,
+    preview,
+    formattedPreviewDate,
+    formattedPreviewMoney,
+    theme,
+    pageLanguage,
+    onDraftChange: handleDraftChange,
+    onLogoFileChange: handleLogoFileChange,
+    onToggleTheme: handleToggleTheme,
+    onDefaultLanguageChange: handleDefaultLanguageChange,
+  };
+
   return (
     <SettingsVariantShell variant={variant} dir={pageLanguage.direction} lang={pageLanguage.locale} contentClassName="min-w-0 space-y-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
       <SettingsHero companyName={preview.companyName} hasUnsavedChanges={isDirty} />
@@ -152,45 +211,11 @@ export function SettingsWorkspace({
       <div className="grid min-w-0 gap-4 md:grid-cols-[minmax(230px,280px)_minmax(0,1fr)] md:items-start">
         <SettingsWorkspaceNav activeSection={activeSection} onChange={handleJumpToSection} />
         <form id="settings-company-form" className="min-w-0 space-y-4" onSubmit={handleSubmit}>
-          <CompanyProfileSections
-            activeSection={activeSection}
-            draft={draft}
-            errors={errors}
-            isSaving={isSaving}
-            preview={preview}
-            formattedPreviewDate={formattedPreviewDate}
-            formattedPreviewMoney={formattedPreviewMoney}
-            onDraftChange={handleDraftChange}
-            onLogoFileChange={handleLogoFileChange}
-          />
-
-          <SectionCard id="cost-centers" activeId={activeSection} title="مراكز التكلفة" subtitle="تصنيف تشغيلي للمصروفات والتقارير حسب العقار أو النشاط بدون دفتر أستاذ عام.">
-            <CostCentersSettingsSection />
-          </SectionCard>
-          <SectionCard id="payment-terms" activeId={activeSection} title="شروط السداد" subtitle="قوالب تشغيلية لاختيار جدول السداد في العقد بدون إنشاء دفتر أستاذ أو جدولة تلقائية موسعة.">
-            <PaymentTermsSettingsSection />
-          </SectionCard>
-          <SectionCard id="finance-readiness" activeId={activeSection} title="جاهزية المالية والضريبة" subtitle="السلطة الضريبية المعتمدة حسب التاريخ (إيجار وأتعاب)، فترات محاسبية، ودليل الحسابات — فشل مغلق عند النقص.">
-            <div className="space-y-6">
-              <FinanceReadinessSection />
-              <TaxAuthorityWorkspace />
-            </div>
-          </SectionCard>
-
-          <SettingsOperationsSections
-            activeSection={activeSection}
-            draft={draft}
-            preview={preview}
-            isSaving={isSaving}
-            authorization={authorization}
-            authorizationDiagnostics={authorizationDiagnostics}
-            user={user}
-            theme={theme}
-            pageLanguage={pageLanguage}
-            onDraftChange={handleDraftChange}
-            onToggleTheme={handleToggleTheme}
-            onDefaultLanguageChange={handleDefaultLanguageChange}
-          />
+          {settingsSectionRegistry
+            .filter((section) => mountedSections.has(section.id))
+            .map((section) => (
+              <SettingsSectionView key={section.id} definition={section} renderProps={sectionRenderProps} />
+            ))}
         </form>
       </div>
 

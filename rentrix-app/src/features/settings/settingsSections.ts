@@ -1,64 +1,24 @@
-import { Bell, Building2, CalendarClock, Cog, FileSignature, FolderTree, ShieldAlert } from 'lucide-react';
-
-export const settingsSections = [
-  {
-    id: 'office',
-    label: 'بيانات المكتب',
-    description: 'هوية المكتب وبيانات التواصل والعنوان.',
-    icon: Building2,
-  },
-  {
-    id: 'identity',
-    label: 'الهوية والطباعة',
-    description: 'العملة واللغة والشعار وصيغ العرض.',
-    icon: FileSignature,
-  },
-  {
-    id: 'documents',
-    label: 'المستندات والضريبة',
-    description: 'بادئات المستندات والبيانات الضريبية المرجعية؛ السياسة الضريبية الفعلية تُحسم من السلطات المعتمدة حسب التاريخ.',
-    icon: FileSignature,
-  },
-  {
-    id: 'finance-readiness',
-    label: 'جاهزية المالية والضريبة',
-    description: 'السلطة الضريبية المعتمدة حسب التاريخ (إيجار وأتعاب)، فترات محاسبية، ودليل الحسابات — فشل مغلق عند النقص.',
-    icon: ShieldAlert,
-  },
-  {
-    id: 'cost-centers',
-    label: 'مراكز التكلفة',
-    description: 'تصنيف المصروفات والتقارير تشغيلياً.',
-    icon: FolderTree,
-  },
-  {
-    id: 'payment-terms',
-    label: 'شروط السداد',
-    description: 'قوالب جداول السداد المستخدمة في العقود.',
-    icon: CalendarClock,
-  },
-  {
-    id: 'notifications',
-    label: 'الإشعارات والتنبيهات',
-    description: 'قنوات المتابعة المسجلة للمكتب.',
-    icon: Bell,
-  },
-  {
-    id: 'system',
-    label: 'المظهر والواجهة',
-    description: 'السمة ولغة الواجهة ومعاينة الأسطح.',
-    icon: Cog,
-  },
-] as const;
-
-export type SettingsSectionId = (typeof settingsSections)[number]['id'];
-
-const settingsSectionIds = new Set<string>(settingsSections.map((section) => section.id));
-
-export function isSettingsSectionId(value: unknown): value is SettingsSectionId {
-  return typeof value === 'string' && settingsSectionIds.has(value);
-}
-
-export function resolveSettingsSection(value: unknown, fallback: SettingsSectionId = 'office'): SettingsSectionId {
-  return isSettingsSectionId(value) ? value : fallback;
-}
+/**
+ * WP-D compatibility seam.
+ *
+ * The declarative section definitions now live in
+ * `./registry/sectionRegistry`. This module keeps the historical import path
+ * (`@/features/settings/settingsSections`) working for navigation,
+ * governance deep links, summary tiles, and tests. All symbols re-export the
+ * canonical registry implementations — there is no second source of truth.
+ */
+export {
+  getCompanySettingsSectionFieldOwners,
+  getSettingsSection,
+  getSettingsSectionDraftFields,
+  isSettingsSectionId,
+  resolveSettingsSection,
+  settingsSectionRegistry,
+  settingsSections,
+} from './registry/sectionRegistry';
+export type {
+  SettingsSectionDefinition,
+  SettingsSectionListItem,
+  SettingsSectionRegistry,
+} from './registry/sectionRegistry';
+export type { SettingsSectionId } from './registry/types';

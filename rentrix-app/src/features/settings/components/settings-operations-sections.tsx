@@ -1,17 +1,11 @@
-import { Link } from '@tanstack/react-router';
-import { KeyRound, ListChecks, SearchCheck, ShieldAlert } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { StatusBadge } from '@/components/ui/status-badge';
 import { useAuth } from '@/hooks/use-auth';
 import type {
   CompanySettingsDraft,
   CompanySettingsDraftField,
   CompanySettingsPreviewModel,
 } from '../settingsForm';
-import { PreviewField } from './settings-form-fields';
-import { SectionCard } from './settings-section-card';
-import { SettingsAppearanceSection } from './settings-appearance-section';
-import { RoleSimulatorSection } from '../role-simulator-section';
+import { NotificationsSection } from '../sections/NotificationsSection';
+import { SystemSection } from '../sections/SystemSection';
 import type { SettingsSectionId } from '../settingsSections';
 
 type UseAuthResult = ReturnType<typeof useAuth>;
@@ -32,14 +26,17 @@ type SettingsOperationsSectionsProps = Readonly<{
   onDefaultLanguageChange: (language: 'ar' | 'en') => void;
 }>;
 
+/**
+ * Compatibility composition (WP-D seam): renders the operations sections
+ * (notifications, system/appearance). The Settings page itself now composes
+ * sections from the registry; this module is kept for legacy consumers so the
+ * import path and prop contract stay intact.
+ */
 export function SettingsOperationsSections({
   activeSection,
   draft,
   preview,
   isSaving,
-  authorization,
-  authorizationDiagnostics,
-  user,
   theme,
   pageLanguage,
   onDraftChange,
@@ -48,38 +45,15 @@ export function SettingsOperationsSections({
 }: SettingsOperationsSectionsProps) {
   return (
     <>
-      <SectionCard
-        id="notifications"
-        activeId={activeSection}
-        title="الإشعارات والمتابعة"
-        subtitle="تفضيلات الإشعارات المسجلة حالياً في سجل إعدادات المكتب."
-      >
-        <div className="grid gap-3 md:grid-cols-2">
-          <label className="flex min-h-12 items-center gap-3 rounded-xl border bg-background/70 p-3 text-sm font-medium">
-            <input
-              type="checkbox"
-              checked={draft.notification_email_enabled === 'true'}
-              disabled={isSaving}
-              onChange={(event) => onDraftChange('notification_email_enabled', String(event.target.checked))}
-            />
-            <span>تفعيل إشعارات البريد الإلكتروني</span>
-          </label>
-          <label className="flex min-h-12 items-center gap-3 rounded-xl border bg-background/70 p-3 text-sm font-medium">
-            <input
-              type="checkbox"
-              checked={draft.notification_sms_enabled === 'true'}
-              disabled={isSaving}
-              onChange={(event) => onDraftChange('notification_sms_enabled', String(event.target.checked))}
-            />
-            <span>تفعيل إشعارات الرسائل النصية</span>
-          </label>
-        </div>
-        <p className="text-xs text-muted-foreground">
-          ملخص الإشعارات المعتمد: {preview.notificationSummary}.
-        </p>
-      </SectionCard>
-
-      <SettingsAppearanceSection
+      <NotificationsSection
+        activeSection={activeSection}
+        draft={draft}
+        errors={{}}
+        isSaving={isSaving}
+        preview={preview}
+        onDraftChange={onDraftChange}
+      />
+      <SystemSection
         activeSection={activeSection}
         preview={preview}
         theme={theme}
