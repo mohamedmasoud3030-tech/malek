@@ -78,14 +78,15 @@ function getHeaderActions(
     ];
   }
   if (sectionId === 'collections') {
-    return [
+    const actions: FinanceHeaderAction[] = [
       viewId === 'receipts'
         ? { id: 'open-invoices', label: 'الفواتير', icon: FileSpreadsheet, sectionId: 'collections', viewId: 'invoices' }
         : { id: 'record-receipt', label: 'تسجيل تحصيل', icon: ReceiptText, sectionId: 'collections', viewId: 'receipts' },
-      ...(canViewArrears && viewId !== 'arrears'
-        ? [{ id: 'review-arrears', label: 'المتأخرات', icon: AlertTriangle, sectionId: 'collections' as const, viewId: 'arrears' }]
-        : []),
     ];
+    if (canViewArrears && viewId !== 'arrears') {
+      actions.push({ id: 'review-arrears', label: 'المتأخرات', icon: AlertTriangle, sectionId: 'collections', viewId: 'arrears' });
+    }
+    return actions;
   }
   if (sectionId === 'expenses') {
     if (viewId === 'expenses' && permittedViewIds.has('commissions')) {
