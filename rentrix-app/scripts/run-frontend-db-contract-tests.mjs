@@ -11,6 +11,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const selfTestPath = fileURLToPath(new URL('./check-frontend-db-contract.test.mjs', import.meta.url));
+const reviewedSelfTestPath = fileURLToPath(new URL('./check-frontend-db-reviewed-dynamics.test.mjs', import.meta.url));
 const checkerPath = fileURLToPath(new URL('./check-frontend-db-contract.mjs', import.meta.url));
 const reviewedDynamicsPath = fileURLToPath(new URL('./check-frontend-db-reviewed-dynamics.mjs', import.meta.url));
 
@@ -32,6 +33,6 @@ function run(label, args) {
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
 
-run('Contract gate self-tests', ['--test', selfTestPath]);
+run('Contract gate self-tests', ['--test', selfTestPath, reviewedSelfTestPath]);
 run('Repository frontend/database parity', [checkerPath]);
 run('Reviewed dynamic contract closure', [reviewedDynamicsPath]);
