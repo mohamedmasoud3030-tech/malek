@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { AlertTriangle, BookOpenCheck, Building2, Receipt, SlidersHorizontal, TrendingUp } from 'lucide-react';
+import { AlertTriangle, BookOpenCheck, Building2, Receipt, TrendingUp } from 'lucide-react';
 import { FinanceKpiCard, FinanceKpiGrid, FinanceSection } from '@/features/financials/components/finance-reporting-visual-foundations';
 import { getErrorMessage } from '@/features/financials/components/financials-formatters';
 import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
@@ -61,33 +61,14 @@ export function ReportsShell({
   return (
     <>
       <FinanceSection ariaLabel="نطاق التقرير">
-        <div className="rounded-2xl border border-border/65 bg-card p-2.5 shadow-sm sm:p-3">
-          <div className="mb-2 flex flex-wrap items-center justify-between gap-2 px-0.5">
-            <div className="flex items-center gap-2">
-              <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
-                <SlidersHorizontal className="size-4" aria-hidden="true" />
-              </span>
-              <div>
-                <p className="text-xs font-black">نطاق التقرير</p>
-                <p className="text-[11px] font-semibold text-muted-foreground">
-                  {filters.from} — {filters.to} · حتى {filters.asOf}
-                </p>
-              </div>
-            </div>
-            <span className="hidden text-[11px] font-bold text-muted-foreground sm:inline">
-              النطاق يبقى محفوظًا أثناء التنقل
-            </span>
-          </div>
-
-          <ReportsFilterSurface
-            filters={filters}
-            costCenterRows={model.filters.costCenterRows}
-            ownerRows={model.filters.ownerRows}
-            contractRows={model.filters.contractRows}
-            onChange={onFiltersChange}
-            onResetCurrentMonth={onResetCurrentMonth}
-          />
-        </div>
+        <ReportsFilterSurface
+          filters={filters}
+          costCenterRows={model.filters.costCenterRows}
+          ownerRows={model.filters.ownerRows}
+          contractRows={model.filters.contractRows}
+          onChange={onFiltersChange}
+          onResetCurrentMonth={onResetCurrentMonth}
+        />
       </FinanceSection>
 
       {activeSection === 'accounting' ? (
