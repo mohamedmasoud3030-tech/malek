@@ -10,7 +10,6 @@ function source(relativePath: string) {
  * Locks phone / iPad / desktop chrome so remaining pages stay on one surface.
  */
 describe('cross-device design unification', () => {
-  const shell = source('app/layout/app-shell.tsx');
   const nav = source('app/layout/layout-navigation-view.tsx');
   const palette = source('features/command-palette/command-palette-trigger.tsx');
   const pageHeader = source('components/layout/page-header.tsx');
@@ -22,14 +21,15 @@ describe('cross-device design unification', () => {
   const reports = source('features/reports/reports-page.tsx');
   const assistant = source('features/ai-assistant/ai-assistant-page.tsx');
 
-  it('keeps the mobile menu trigger on the floating dock (md:hidden), never in the header', () => {
-    // Mobile architecture reset (#1545/#1547): the phone/iPad menu trigger is
-    // the dock button (data-mobile-dock-menu) inside the floating control;
-    // there is no header hamburger anymore.
-    expect(nav).toContain('data-mobile-dock-menu');
-    expect(nav).toContain('size-11');
+  it('keeps navigation-menu ownership out of the floating utility dock', () => {
+    // Mobile Launch Polish (#1593) separated the navigation trigger from the
+    // utility dock. The dock retains quick actions only; AppShell owns opening
+    // the navigation surface so there is never a duplicate menu trigger.
+    expect(nav).not.toContain('data-mobile-dock-menu');
+    expect(nav).toContain('data-mobile-dock-quick-add');
+    expect(nav).toContain('data-mobile-dock-notifications');
+    expect(nav).toContain('data-mobile-dock-ai');
     expect(nav).toContain('md:hidden');
-    expect(shell).not.toContain('data-mobile-menu-trigger');
   });
 
   it('keeps the floating Menu + Search control on phones only', () => {
@@ -68,17 +68,19 @@ describe('cross-device design unification', () => {
 
   it('keeps remaining hubs on the same visual wave and hint surface', () => {
     expect(operationsHub).toContain('visualVariant="malek-pro"');
-    // Dense-register redesign (#1545): /financials navigates via WorkspaceNav,
-    // /reports keeps the WorkspaceHint surface.
+    // The current cockpit redesign keeps both routes on explicit, tokenized
+    // workspace surfaces without the retired hint component.
     expect(financials).toContain('WorkspaceNav');
-    expect(reports).toContain('WorkspaceHint');
+    expect(reports).toContain('data-reports-cockpit');
+    expect(reports).toContain("translateSharedLabel('reportsPageDescription')");
     expect(financials).not.toContain('💡');
     expect(reports).not.toContain('💡');
   });
 
-  it('shows AI capabilities before the first reply and documents send shortcuts', () => {
-    expect(assistant).toContain('data-ai-capabilities');
+  it('shows AI starter actions and documents send shortcuts', () => {
+    expect(assistant).toContain('const assistantActions = [');
+    expect(assistant).toContain('assistantActions.map');
     expect(assistant).toContain('Enter للإرسال');
-    expect(assistant).toContain('md:grid-cols-[minmax(0,1fr)_20rem]');
+    expect(assistant).toContain('Shift+Enter لسطر جديد');
   });
 });

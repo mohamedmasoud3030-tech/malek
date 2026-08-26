@@ -47,7 +47,7 @@ describe('payment terms settings error honesty', () => {
     expect(section).toContain('paymentTermsQuery.isError');
     expect(section).toContain('تعذر تحميل شروط السداد');
     expect(section).toContain(
-      '!paymentTermsQuery.isLoading && !paymentTermsQuery.isError && (paymentTermsQuery.data ?? []).length === 0',
+      '!paymentTermsQuery.isLoading && !paymentTermsQuery.isError && terms.length === 0',
     );
   });
 });

@@ -904,6 +904,11 @@ describe('RC1 fail-closed and cutover regressions', () => {
   });
 
   it('fails closed for a historical 2000 position until an S08-backed cutover exists', async () => {
+    const { rows: databaseDates } = await db.query<{ today: string; tomorrow: string }>(
+      `select current_date::text as today, (current_date + 1)::text as tomorrow`,
+    );
+    const databaseToday = databaseDates[0]?.today ?? firstDayOfCurrentMonth();
+    const databaseTomorrow = databaseDates[0]?.tomorrow ?? databaseToday;
     const cash = await db.query<{ id: string }>(`select id from public.accounts where company_id = $1::uuid and no = '1111'`, [COMPANY]);
     const ownerFunds = await db.query<{ id: string }>(`select id from public.accounts where company_id = $1::uuid and no = '2000'`, [COMPANY]);
     await db.query(
@@ -926,7 +931,7 @@ describe('RC1 fail-closed and cutover regressions', () => {
       [COMPANY],
     )).rejects.toThrow(/OWNER_FUNDS_CUTOVER_REVIEW_REQUIRED/);
     await expect(rpc('create_owner_funds_cutover_atomic', {
-      cutover_date: new Date().toISOString().slice(0, 10),
+      cutover_date: databaseToday,
       s08_review_id: 'd1000000-0000-4000-8000-000000000990',
       reason: 'missing S08 must fail closed',
       request_id: 'rc1-cutover-missing-s08',
@@ -948,7 +953,7 @@ describe('RC1 fail-closed and cutover regressions', () => {
     await db.query(`select public.s08_approve_frozen_review($1::uuid, 'Synthetic test approval only')`, [review.id]);
     await assumeIdentity(db, MAKER, COMPANY);
     const created = await rpc('create_owner_funds_cutover_atomic', {
-      cutover_date: new Date().toISOString().slice(0, 10),
+      cutover_date: databaseToday,
       s08_review_id: review.id,
       reason: 'Approved synthetic opening baseline',
       request_id: 'rc1-cutover-create-001',
@@ -957,11 +962,9 @@ describe('RC1 fail-closed and cutover regressions', () => {
     await assumeIdentity(db, CHECKER, COMPANY);
     const approved = await rpc('approve_owner_funds_cutover_atomic', { request_id: 'rc1-cutover-approve-001' });
     expect(approved.status).toBe('APPROVED');
-    const tomorrow = new Date();
-    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
     await expect(db.query(
       `select public.assert_owner_funds_event_cutover($1::uuid, $2::date, null)`,
-      [COMPANY, tomorrow.toISOString().slice(0, 10)],
+      [COMPANY, databaseTomorrow],
     )).resolves.toBeDefined();
     const { rows: cutoverBalance } = await db.query<{ subledger: string; gl: string }>(
       `select (select balance::text from public.wp05_subledger_owner_payables($1::uuid, current_date)) as subledger,

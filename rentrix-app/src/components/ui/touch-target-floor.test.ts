@@ -98,7 +98,10 @@ describe('44px touch-target floor', () => {
     expect(reports).not.toContain('min-h-10');
 
     const login = readFileSync(join(SRC_ROOT, 'features/auth/login-page.tsx'), 'utf8');
-    expect(login).toContain('size-11 min-h-11 min-w-11');
-    expect(login).not.toContain('size-10');
+    const passwordToggle = login.match(/<button type="button" className="([^"]+)"(?=[\s\S]*?aria-label=\{isPasswordVisible)/);
+    expect(passwordToggle?.[1]).toContain('size-11');
+    expect(passwordToggle?.[1]).toContain('min-h-11');
+    expect(passwordToggle?.[1]).toContain('min-w-11');
+    expect(passwordToggle?.[1]).not.toContain('size-10');
   });
 });

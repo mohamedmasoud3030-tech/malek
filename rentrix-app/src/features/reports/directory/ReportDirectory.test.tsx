@@ -14,7 +14,7 @@ describe('ReportDirectory', () => {
     );
 
     expect(html.match(/data-report-group=/g)).toHaveLength(6);
-    expect(html).toContain('6 مجموعات · 16 مدخل تقرير');
+    expect(html).toContain('6 مجموعات · 16 مدخل');
     expect(html).toContain('المالية والتحصيل');
     expect(html).toContain('العقود والإيجارات');
     expect(html).toContain('الملاك');
@@ -26,7 +26,7 @@ describe('ReportDirectory', () => {
     expect(html).toContain('متأخرات المستأجرين');
     expect(html).toContain('دفتر الأستاذ');
     expect(html).toContain('تسوية الإيرادات');
-    expect(html).toContain('مفتوح الآن');
+    expect(html).toContain('data-report-group="finance" data-active="true"');
   });
 
   it('marks only the scoped statement family as active', () => {

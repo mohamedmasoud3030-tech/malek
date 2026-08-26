@@ -29,7 +29,7 @@ export function ReportDirectory({ activeSection, activeView, scope, onOpen }: Re
   return (
     <section
       aria-labelledby="report-directory-title"
-      className="overflow-hidden rounded-3xl border border-border/70 bg-card shadow-card"
+      className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-card"
       data-report-directory
     >
       <div className="grid gap-3 border-b border-border/60 bg-muted/20 p-3 sm:p-4 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-end">

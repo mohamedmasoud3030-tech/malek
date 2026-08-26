@@ -108,7 +108,8 @@ describe('embedded workspace architecture contract', () => {
     expect(hub).toContain('activeSection={companySection}');
     expect(hub).toContain('onSectionChange={handleCompanySectionChange}');
     expect(workspace).toContain('activeSection: controlledActiveSection');
-    expect(workspace).toContain('const activeSection = controlledActiveSection ?? localActiveSection');
+    expect(workspace).toContain('const requestedActiveSection = controlledActiveSection ?? localActiveSection');
+    expect(workspace).toContain('const activeSection = workspaceDefinitions.some');
     expect(controller).not.toContain('useNavigate');
     expect(controller).not.toContain('useSearch');
   });

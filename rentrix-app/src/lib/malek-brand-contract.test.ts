@@ -23,9 +23,11 @@ describe('MALEK canonical brand contract', () => {
     expect(APP_BRAND_LOCKUP_ASSET).toBe('/malek-lockup.svg');
 
     const markComponent = read('src/components/brand/malik-mark.tsx');
+    const brandComponent = read('src/components/brand/malik-brand.tsx');
     const login = read('src/features/auth/login-page.tsx');
     expect(markComponent).toContain('APP_BRAND_MARK_ASSET');
-    expect(login).toContain('APP_BRAND_LOCKUP_ASSET');
+    expect(brandComponent).toContain('<MalikMark');
+    expect(login).toContain('<MalikBrand layout="vertical"');
     expect(login).not.toContain('/icon-malik-192.png');
   });
 

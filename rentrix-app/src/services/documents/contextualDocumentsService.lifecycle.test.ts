@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const upload = vi.fn();
 const remove = vi.fn();
 const createSignedUrl = vi.fn();
+const getSession = vi.fn();
 let row: any;
 let insertedPayload: any;
 let updatedPayloads: any[];
@@ -23,6 +24,7 @@ function resolvedChain(result: () => { data: any; error: any }) {
 
 vi.mock('@/lib/supabase', () => ({
   supabase: {
+    auth: { getSession },
     storage: {
       from: () => ({ upload, remove, createSignedUrl }),
     },
@@ -57,6 +59,11 @@ beforeEach(() => {
   upload.mockResolvedValue({ error: null });
   remove.mockResolvedValue({ error: null });
   createSignedUrl.mockResolvedValue({ data: { signedUrl: 'https://signed.test/document' }, error: null });
+  const claims = globalThis.btoa(JSON.stringify({ app_metadata: { company_id: 'company-1' } }))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+  getSession.mockResolvedValue({ data: { session: { access_token: `header.${claims}.signature` } }, error: null });
   let sequence = 0;
   Object.defineProperty(globalThis.crypto, 'randomUUID', { configurable: true, value: vi.fn(() => `aaaaaaaa-bbbb-4ccc-8ddd-${String(++sequence).padStart(12, '0')}`) });
 });
@@ -79,7 +86,7 @@ describe('contextual document lifecycle', () => {
       related_entity_id: 'contract-1',
       metadata: { originalFileName: 'lease.pdf', contentType: 'application/pdf', sizeBytes: original.size },
     });
-    expect(insertedPayload.storage_path).toMatch(/^vault\/contextual\/contract\/contract-1\//);
+    expect(insertedPayload.storage_path).toMatch(/^vault\/company-1\/contextual\/contract\/contract-1\//);
     await expect(getContextualDocumentSignedUrl(created.storage_path)).resolves.toBe('https://signed.test/document');
 
     const oldPath = created.storage_path;

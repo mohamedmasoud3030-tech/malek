@@ -74,7 +74,8 @@ describe('active company write guard', () => {
   it('fails closed and clears tenant cache across logout/login user changes', () => {
     expect(companyHook).toContain('const [resolvedUserId, setResolvedUserId]');
     expect(companyHook).toContain('const isCompanyContextTransition = authenticatedUserId !== resolvedUserId');
-    expect(companyHook).toContain('if (isLoading || isCompanyContextTransition)');
+    expect(companyHook).toContain('const shouldBlockForCompanyResolution = isCompanyContextTransition || (isLoading && !activeCompany)');
+    expect(companyHook).toContain('if (shouldBlockForCompanyResolution)');
     expect(companyHook).toContain('setResolvedUserId(sessionUser.id)');
     expect(companyHook).toContain('setResolvedUserId(null)');
   });

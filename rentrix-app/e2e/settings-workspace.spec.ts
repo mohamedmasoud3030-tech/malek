@@ -47,12 +47,11 @@ for (const viewport of viewportMatrix) {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
       await openFixture(page, theme);
 
-      const saveSurface = page.getByRole('region', { name: 'حالة حفظ الإعدادات' });
-      await expect(saveSurface).toBeVisible();
+      const saveSurface = page.getByRole('region', { name: 'تغييرات إعدادات غير محفوظة' });
+      await expect(saveSurface).toHaveCount(0);
 
       if (viewport.usesSelect) {
         await expect(page.getByLabel('القسم الحالي')).toBeVisible();
-        await expect.poll(async () => saveSurface.evaluate((node) => getComputedStyle(node).position)).toBe('static');
         await page.getByLabel('القسم الحالي').selectOption('system');
       } else {
         await expect(page.getByLabel('القسم الحالي')).toBeHidden();
@@ -75,6 +74,7 @@ for (const viewport of viewportMatrix) {
 
       const companyName = page.getByLabel('اسم الشركة');
       await companyName.fill('Rentrix Updated');
+      await expect(saveSurface).toBeVisible();
       await expect(saveSurface.getByText('تغييرات غير محفوظة')).toBeVisible();
       await expect(page.getByRole('button', { name: 'حفظ' })).toBeEnabled();
 

@@ -18,14 +18,14 @@ describe('UI mobile architecture reset — shared foundation', () => {
     expect(finance).not.toMatch(/<select[\s\S]*أقسام المالية/);
   });
 
-  it('places notifications where AI used to sit and raises AI to the far left of the dock', () => {
+  it('keeps notifications before AI in the compact utility dock', () => {
     const dock = read('../app/layout/layout-navigation-view.tsx');
     const notifications = dock.indexOf('data-mobile-dock-notifications');
     const ai = dock.indexOf('data-mobile-dock-ai');
     expect(notifications).toBeGreaterThan(0);
     expect(ai).toBeGreaterThan(notifications);
-    expect(dock).toContain('-translate-y-1.5');
     expect(dock).toContain('pb-[calc(0.75rem+env(safe-area-inset-bottom');
+    expect(dock).not.toContain('data-mobile-dock-menu');
   });
 
   it('keeps empty states compact and register summaries shared', () => {

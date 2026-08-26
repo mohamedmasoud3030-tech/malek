@@ -214,40 +214,32 @@ beforeAll(async () => {
   const cur = currentMonthIso();
   const nxt = nextMonthIso();
 
-  // Old period
-  const oldPeriod = await rpc('create_accounting_period', {
-    name: '2020-01',
-    start_date: '2020-01-01',
-    end_date: '2020-01-31',
-    status: 'OPEN',
-  });
-  periodOldId = String(oldPeriod.id);
-
-  // Current period (if not exists, create; if exists, use)
-  const { rows: existingCurrent } = await db.query<{ id: string }>(
-    `select id::text from public.accounting_periods where company_id = $1::uuid and start_date = $2::date`,
-    [COMPANY, cur.first],
-  );
-  if (existingCurrent.length > 0) {
-    periodCurrentId = existingCurrent[0].id;
-  } else {
-    const curPeriod = await rpc('create_accounting_period', {
-      name: cur.first.slice(0, 7),
-      start_date: cur.first,
-      end_date: cur.last,
+  const ensurePeriod = async (startDate: string, endDate: string) => {
+    const existing = await db.query<{ id: string }>(
+      `select id::text from public.accounting_periods
+        where company_id = $1::uuid and start_date = $2::date and end_date = $3::date`,
+      [COMPANY, startDate, endDate],
+    );
+    if (existing.rows[0]?.id) return existing.rows[0].id;
+    const created = await rpc('create_accounting_period', {
+      name: startDate.slice(0, 7),
+      start_date: startDate,
+      end_date: endDate,
       status: 'OPEN',
     });
-    periodCurrentId = String(curPeriod.id);
-  }
+    return String(created.id);
+  };
+
+  // Contract activation can bootstrap the first governed period. Reuse the
+  // exact period when present instead of treating valid bootstrap state as
+  // fixture-owned state.
+  periodOldId = await ensurePeriod('2020-01-01', '2020-01-31');
+
+  // Current period (if not exists, create; if exists, use)
+  periodCurrentId = await ensurePeriod(cur.first, cur.last);
 
   // Future period
-  const futPeriod = await rpc('create_accounting_period', {
-    name: nxt.first.slice(0, 7),
-    start_date: nxt.first,
-    end_date: nxt.last,
-    status: 'OPEN',
-  });
-  periodFutureId = String(futPeriod.id);
+  periodFutureId = await ensurePeriod(nxt.first, nxt.last);
 
   // Create S08 cutover to satisfy owner_funds_event guard for historical 2000
   // Use cutover date 2019-12-31 so all 2020+ events are after cutover

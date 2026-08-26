@@ -11,7 +11,7 @@
     "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
     "test": "vitest run --config vite.config.ts",
     "lint": "tsc -p tsconfig.json --noEmit",
-    "check:architecture": "node scripts/check-architecture.mjs",
+    "check:architecture": "node scripts/check-architecture.mjs && node scripts/check-active-register-inventory.mjs && node --test scripts/check-active-register-inventory.test.mjs",
     "check:enterprise-freeze": "node ../scripts/check-no-new-enterprise-usage.mjs",
     "test:financials": "vitest run --config vite.config.ts --dir src/features/financials",
     "e2e": "playwright test --config playwright.config.ts",

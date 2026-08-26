@@ -5,7 +5,7 @@ import { FINANCE_VIEWS, isViewPermitted } from './financials-page';
 import { resolveFinanceLocation } from './finance-shell-model';
 
 const readFinancialsPage = () => readFileSync(new URL('./financials-page.tsx', import.meta.url), 'utf8');
-const readMoneyPage = () => readFileSync(new URL('../finance-hub/money-page.tsx', import.meta.url), 'utf8');
+const readFinancePage = () => readFileSync(new URL('../finance/FinancePage.tsx', import.meta.url), 'utf8');
 const routeSource = readFileSync(new URL('../../routes/_protected.financials.tsx', import.meta.url), 'utf8');
 const routeTreeSource = readFileSync(new URL('../../app/router/route-tree.ts', import.meta.url), 'utf8');
 const invoiceControllerSource = readFileSync(new URL('./invoices/useInvoiceWorkspaceController.ts', import.meta.url), 'utf8');
@@ -34,11 +34,11 @@ describe('/financials Money workspace IA', () => {
   });
 
   it('keeps commissions in the same Money route without duplicating its business logic', () => {
-    const source = readMoneyPage();
+    const source = readFinancePage();
+    expect(source).toContain("import('@/features/commissions/commissions-page')");
     expect(source).toContain('<CommissionsWorkspace embedded />');
-    expect(source).toContain("to: '/financials'");
-    expect(source).toContain('data-money-view="commissions"');
-    expect(source).not.toContain("to: '/commissions'");
+    expect(source).toContain("activeView === 'commissions'");
+    expect(source).toContain('finance-view-panel-commissions');
   });
 
   it('keeps the existing operational Finance renderer and its lazy workspaces intact', () => {
