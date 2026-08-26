@@ -1,9 +1,9 @@
 import { TrendingUp } from 'lucide-react';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
-import { formatMoney, getErrorMessage } from '@/features/financials/components/financials-formatters';
+import { formatMoney, getErrorMessage } from '@/features/accounting/reports/report-formatters';
 import type { IncomeStatementReport } from '@/features/accounting/reports/contracts';
-import { ReportList, ReportListRow, ReportPanel, ReportState } from '@/features/reports/components/report-section-primitives';
+import { ReportList, ReportListRow, ReportPanel, ReportState } from '@/components/ui/report-section-primitives';
 
 export function IncomeStatementPanel({
   from,
