@@ -66,10 +66,10 @@ describe('AppShell mobile bottom-sheet nav — scroll lock and focus restoration
   });
 
   function getTrigger() {
-    // The menu launcher lives in the bottom control center (data-mobile-control-center).
-    const trigger = host.querySelector<HTMLButtonElement>('button[aria-label="فتح القائمة"]');
+    // Menu moved to top toolbar, bottom dock no longer has menu to avoid duplicate
+    const trigger = host.querySelector<HTMLButtonElement>('[data-mobile-top-menu]') as HTMLButtonElement;
     expect(trigger).not.toBeNull();
-    return trigger as HTMLButtonElement;
+    return trigger;
   }
 
   function getSheet() {

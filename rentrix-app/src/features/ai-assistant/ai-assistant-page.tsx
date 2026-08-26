@@ -1,61 +1,52 @@
-import { AlertTriangle, Bot, Building2, CalendarClock, Loader2, Send, Sparkles } from 'lucide-react';
-import { type FormEvent, useState } from 'react';
+import { AlertTriangle, Bot, Loader2, Send, Sparkles } from 'lucide-react';
+import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { KpiCard } from '@/components/ui/kpi-card';
-import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { formatMoney } from '@/features/financials/components/financials-formatters';
 import { APP_BRAND_NAME } from '@/lib/brand';
 import { env } from '@/lib/env';
-import { formatLatinNumber } from '@/lib/formatters';
 import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
-import type { AiAssistantAction, AiAssistantContext, AiAssistantMessage, AiAssistantResponse } from './types';
+import type { AiAssistantAction, AiAssistantMessage, AiAssistantResponse } from './types';
 import { useSmartAssistant } from './use-smart-assistant';
 import { isAiAssistantConfigurationError } from './services/ai-assistant-service';
 
 type AssistantAction = {
   action: AiAssistantAction;
   title: string;
-  description: string;
   prompt: string;
 };
 
 const assistantActions = [
   {
     action: 'summarize_overdue_invoices',
-    title: 'تلخيص الفواتير المتأخرة',
-    description: 'إجمالي المتأخرات، عدد الفواتير، وأقدم تواريخ الاستحقاق.',
-    prompt: 'لخص الفواتير المتأخرة واذكر الأولويات التشغيلية للتحصيل باللغة العربية.',
+    title: 'المتأخرات',
+    prompt: 'لخص الفواتير المتأخرة بإيجاز.',
   },
   {
     action: 'summarize_contract_renewals',
-    title: 'العقود القريبة من التجديد',
-    description: 'قراءة العقود النشطة التي تنتهي خلال 90 يوماً.',
-    prompt: 'لخص العقود القريبة من التجديد واقترح خطوات متابعة غير تنفيذية.',
+    title: 'التجديدات',
+    prompt: 'ما العقود القريبة من الانتهاء؟',
   },
   {
     action: 'draft_tenant_payment_reminder',
-    title: 'صياغة تذكير دفع للمستأجر',
-    description: 'مسودة عربية مهذبة مبنية على ملخص المتأخرات، بدون إرسال تلقائي.',
-    prompt: 'اكتب مسودة تذكير دفع عربية مهذبة لمستأجر لديه متأخرات، بدون تهديد أو تنفيذ إرسال.',
+    title: 'تذكير دفع',
+    prompt: 'اكتب تذكير دفع مهذب.',
   },
   {
     action: 'explain_property_financial_snapshot',
-    title: 'شرح لقطة مالية للعقارات',
-    description: 'إشغال، مبالغ قائمة، تحصيلات، ومصروفات حديثة.',
-    prompt: 'اشرح اللقطة المالية الحالية للعقارات وحدد المخاطر أو المؤشرات التي تحتاج متابعة.',
+    title: 'اللقطة المالية',
+    prompt: 'اشرح الوضع المالي الحالي.',
   },
 ] as const satisfies AssistantAction[];
 
 const initialMessage: AiAssistantMessage = {
   id: 'assistant-welcome',
   role: 'assistant',
-  content: 'أنا مساعد قراءة فقط. أستطيع تلخيص المتأخرات، التجديدات، والتنبيهات المالية اعتماداً على البيانات المسموح لحسابك بقراءتها فقط.',
+  content: `مرحباً! أنا مساعد ${APP_BRAND_NAME} الذكي.\nكيف أساعدك اليوم؟`,
   createdAt: new Date().toISOString(),
 };
 
@@ -63,7 +54,6 @@ function createMessageId(role: AiAssistantMessage['role']): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return `${role}-${crypto.randomUUID()}`;
   }
-
   return `${role}-${Date.now()}`;
 }
 
@@ -77,81 +67,28 @@ function createMessage(role: AiAssistantMessage['role'], content: string, action
   };
 }
 
-function toArabicCount(value: number): string {
-  return formatLatinNumber(value, 'ar');
-}
-
 function getErrorMessage(error: unknown): string | null {
   if (!error) return null;
-  return error instanceof Error ? error.message : 'تعذر تشغيل مساعد الذكاء الاصطناعي.';
+  return error instanceof Error ? error.message : 'تعذر تشغيل المساعد.';
 }
 
 function formatAssistantResponse(response: AiAssistantResponse): string {
-  const sourceLabel = response.source === 'model'
-    ? 'تمت الصياغة بالذكاء الاصطناعي'
-    : response.source === 'fallback'
-      ? 'رد احتياطي دون اعتماد على نتيجة المزود'
-      : 'ملخص حتمي محسوب دون استخدام نموذج';
-  const caveats = response.caveats.length > 0 ? `\n\nتنبيهات:\n${response.caveats.map((item) => `• ${item}`).join('\n')}` : '';
-  return `${response.reply}\n\n— ${sourceLabel}${caveats}`;
-}
-
-function AssistantCapabilities() {
-  return (
-    <div
-      data-ai-capabilities
-      className="rounded-2xl border border-border/70 bg-card px-4 py-3 shadow-card"
-    >
-      <p className="text-sm font-bold">ماذا يمكنني أن أفعل؟</p>
-      <p className="mt-1 text-xs font-medium leading-5 text-muted-foreground">
-        تلخيص المتأخرات، تجديد العقود، صياغة تذكير دفع، وشرح اللقطة المالية — قراءة فقط دون تنفيذ أي عملية.
-      </p>
-    </div>
-  );
-}
-
-function ContextSnapshot({ context }: Readonly<{ context: AiAssistantContext | null }>) {
-  if (!context) return <AssistantCapabilities />;
-
-  return (
-    <ResponsiveCardGrid desktopColumns={3} gap="sm" aria-label="ملخص السياق المقروء">
-      <KpiCard
-        label="المتأخرات"
-        value={formatMoney(context.overdueInvoices.totalOutstanding)}
-        sub={`${toArabicCount(context.overdueInvoices.invoiceCount)} فواتير مفتوحة حتى ${context.asOf}`}
-        icon={AlertTriangle}
-        accent="amber"
-        compact
-      />
-      <KpiCard
-        label="التجديدات القادمة"
-        value={toArabicCount(context.contractRenewals.contractCount)}
-        sub={`خلال ${toArabicCount(context.contractRenewals.lookaheadDays)} يوماً`}
-        icon={CalendarClock}
-        accent="sky"
-        compact
-      />
-      <KpiCard
-        label="الإشغال"
-        value={`${toArabicCount(context.propertyFinancialSnapshot.occupancyRate)}%`}
-        sub={`${toArabicCount(context.propertyFinancialSnapshot.occupiedUnitCount)} من ${toArabicCount(context.propertyFinancialSnapshot.unitCount)} وحدة`}
-        icon={Building2}
-        accent="emerald"
-        compact
-      />
-    </ResponsiveCardGrid>
-  );
+  return response.reply;
 }
 
 export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
   const [messages, setMessages] = useState<AiAssistantMessage[]>([initialMessage]);
   const [input, setInput] = useState('');
-  const [latestContext, setLatestContext] = useState<AiAssistantContext | null>(null);
   const [configurationMissing, setConfigurationMissing] = useState(!env.isConfigured);
   const assistant = useSmartAssistant();
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const pending = assistant.isPending;
   const errorMessage = configurationMissing ? null : getErrorMessage(assistant.error);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
+  }, [messages, pending]);
 
   function submitPrompt(rawPrompt: string, action?: AiAssistantAction) {
     const prompt = rawPrompt.trim();
@@ -166,7 +103,6 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
       { prompt, action, history },
       {
         onSuccess: (response) => {
-          setLatestContext(response.context);
           setMessages((current) => [...current, createMessage('assistant', formatAssistantResponse(response), action)]);
         },
         onError: (error) => {
@@ -181,120 +117,148 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
     submitPrompt(input);
   }
 
-  return (
-    <PageLayout size="wide" dir="rtl" lang="ar" visualVariant="malek-pro" className={embedded ? 'p-0' : undefined}>
-      {embedded ? null : (
-        <PageHeader
-          title="مساعد الذكاء الاصطناعي"
-          description={`مساعد تشغيلي قراءة فقط يستخدم ملخصات آمنة من بيانات ${APP_BRAND_NAME} المسموح لحسابك بقراءتها، ولا ينفذ أي تعديل أو SQL.`}
-        />
-      )}
-
-      {configurationMissing ? (
-        <Card role="alert" aria-live="assertive" variant="outlined" className="border-warning/50 bg-warning/10">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-warning-foreground"><AlertTriangle className="size-5" aria-hidden="true" />{translateSharedLabel('aiUnavailable', getAppLanguageState().language)}</CardTitle>
-            <CardDescription>
-              اضبط دالة Supabase Edge Function باسم <span dir="ltr">ai-assistant</span> ومتغيرات المزود المعتمدة في الخادم، ثم أعد تحميل الصفحة. لا يتم استخدام أي مفتاح مزود من الواجهة الأمامية، ولا ينبغي إدخال بيانات شخصية في السؤال.
-            </CardDescription>
-            <div className="pt-2">
-              <Button asChild variant="secondary" className="min-h-11">
-                <Link to="/settings">{translateSharedLabel('configureAiAssistant', getAppLanguageState().language)}</Link>
-              </Button>
+  const chatContent = (
+    <div className={cn('flex h-full flex-col', embedded ? 'min-h-0' : 'min-h-[70dvh]')}>
+      {/* Messages */}
+      <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain p-3 sm:p-4" aria-live="polite">
+        <div className="space-y-3">
+          {messages.map((message) => {
+            const isUser = message.role === 'user';
+            return (
+              <div key={message.id} className={cn('flex w-full', isUser ? 'justify-end' : 'justify-start')}>
+                <div className={cn('flex max-w-[85%] gap-2', isUser ? 'flex-row-reverse' : 'flex-row')}>
+                  <div
+                    className={cn(
+                      'grid size-7 shrink-0 place-items-center rounded-full text-xs font-bold',
+                      isUser ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground',
+                    )}
+                  >
+                    {isUser ? 'أنت' : <Bot className="size-4" />}
+                  </div>
+                  <div
+                    className={cn(
+                      'rounded-2xl px-3.5 py-2.5 text-[13px] leading-6 shadow-sm',
+                      isUser
+                        ? 'rounded-br-md bg-primary text-primary-foreground'
+                        : 'rounded-bl-md border border-border/60 bg-card text-foreground',
+                    )}
+                  >
+                    <p className="whitespace-pre-wrap break-words">{message.content}</p>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          {pending ? (
+            <div className="flex justify-start">
+              <div className="flex max-w-[85%] gap-2">
+                <div className="grid size-7 shrink-0 place-items-center rounded-full bg-muted text-muted-foreground">
+                  <Bot className="size-4" />
+                </div>
+                <div className="rounded-2xl rounded-bl-md border border-border/60 bg-card px-3.5 py-2.5 text-[13px] leading-6 shadow-sm">
+                  <span className="inline-flex items-center gap-2 text-muted-foreground">
+                    <Loader2 className="size-3.5 animate-spin" />
+                    يكتب...
+                  </span>
+                </div>
+              </div>
             </div>
-          </CardHeader>
-        </Card>
+          ) : null}
+        </div>
+      </div>
+
+      {/* Quick chips */}
+      <div className="shrink-0 border-t border-border/60 bg-muted/20 px-3 py-2">
+        <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
+          {assistantActions.map((item) => (
+            <button
+              key={item.action}
+              type="button"
+              onClick={() => submitPrompt(item.prompt, item.action)}
+              disabled={pending || configurationMissing}
+              className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted disabled:opacity-50"
+            >
+              <Sparkles className="size-3" />
+              {item.title}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {errorMessage ? (
+        <div role="alert" className="mx-3 mt-2 rounded-xl border border-destructive/20 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+          {errorMessage}
+        </div>
       ) : null}
 
-      <ContextSnapshot context={latestContext} />
+      {/* Input */}
+      <div className="shrink-0 border-t border-border/70 bg-card p-3">
+        <form onSubmit={handleSubmit} className="flex items-end gap-2">
+          <Textarea
+            value={input}
+            onChange={(event) => setInput(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                submitPrompt(input);
+              }
+            }}
+            placeholder="اكتب رسالتك..."
+            disabled={pending || configurationMissing}
+            aria-label="رسالة المساعد"
+            className="max-h-32 min-h-11 flex-1 resize-none rounded-xl border-border/70 bg-muted/30 px-3 py-2.5 text-sm leading-6 focus-visible:ring-2 focus-visible:ring-primary/20"
+            rows={1}
+          />
+          <Button
+            type="submit"
+            size="icon"
+            disabled={pending || configurationMissing || !input.trim()}
+            className="size-11 shrink-0 rounded-xl"
+            aria-label="إرسال"
+          >
+            <Send className="size-4" />
+          </Button>
+        </form>
+        <p className="mt-1.5 px-1 text-[11px] leading-4 text-muted-foreground">Enter للإرسال • Shift+Enter لسطر جديد</p>
+      </div>
+    </div>
+  );
 
-      <div className={cn('grid gap-4', embedded ? '' : 'md:grid-cols-[minmax(0,1fr)_20rem] lg:grid-cols-[minmax(0,1fr)_22rem]')}>
-        <Card className="min-w-0">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Bot className="size-5 text-primary" />المحادثة</CardTitle>
-            <CardDescription>اكتب سؤالاً تشغيلياً أو اختر إجراءً جاهزاً. الردود مساعدة فقط ولا تستبدل المراجعة البشرية.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="max-h-[32rem] space-y-3 overflow-y-auto rounded-2xl border bg-muted/20 p-3" aria-live="polite">
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={cn(
-                    'max-w-[90%] rounded-2xl px-4 py-3 text-sm leading-7 shadow-sm',
-                    message.role === 'user' ? 'ms-auto bg-primary text-primary-foreground' : 'me-auto border bg-card',
-                  )}
-                >
-                  <p className="whitespace-pre-wrap">{message.content}</p>
-                </div>
-              ))}
-              {pending ? (
-                <div className="me-auto flex max-w-[90%] items-center gap-2 rounded-2xl border bg-card px-4 py-3 text-sm text-muted-foreground shadow-sm">
-                  <Loader2 className="size-4" />جارٍ تجهيز الرد من السياق المسموح...
-                </div>
-              ) : null}
-            </div>
+  if (embedded) {
+    return chatContent;
+  }
 
-            {errorMessage ? (
-              <div role="alert" className="rounded-2xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
-                {errorMessage}
-              </div>
-            ) : null}
-
-            <form onSubmit={handleSubmit} className="space-y-3">
-              <Textarea
-                value={input}
-                onChange={(event) => setInput(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' && !event.shiftKey) {
-                    event.preventDefault();
-                    submitPrompt(input);
-                  }
-                }}
-                placeholder={configurationMissing ? translateSharedLabel('aiUnavailable', getAppLanguageState().language) : 'مثال: ما أهم المتأخرات التي تحتاج متابعة هذا الأسبوع؟'}
-                disabled={pending || configurationMissing}
-                aria-label="رسالة مساعد الذكاء الاصطناعي"
-                aria-describedby={configurationMissing ? 'ai-assistant-disabled-hint' : 'ai-assistant-send-hint'}
-              />
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p id="ai-assistant-send-hint" className="text-xs font-medium text-muted-foreground">
-                  Enter للإرسال · Shift+Enter لسطر جديد
-                </p>
-                <Button type="submit" disabled={pending || configurationMissing || !input.trim()}>
-                  <Send className="me-2 size-4" />إرسال
+  return (
+    <PageLayout size="wide" dir="rtl" lang="ar" visualVariant="malek-pro" className="p-0">
+      <div className="mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-border/70 bg-card shadow-card">
+        <div className="flex shrink-0 items-center gap-2 border-b border-border/70 bg-muted/20 px-4 py-3">
+          <div className="grid size-8 place-items-center rounded-full bg-primary text-primary-foreground">
+            <Bot className="size-4" />
+          </div>
+          <div>
+            <p className="text-sm font-bold">المساعد الذكي</p>
+            <p className="text-xs text-muted-foreground">مساعد {APP_BRAND_NAME} الذكي</p>
+          </div>
+        </div>
+        {configurationMissing ? (
+          <Card role="alert" className="m-3 border-warning/40 bg-warning/10">
+            <CardHeader className="p-3">
+              <CardTitle className="flex items-center gap-2 text-sm text-warning-foreground">
+                <AlertTriangle className="size-4" />
+                {translateSharedLabel('aiUnavailable', getAppLanguageState().language)}
+              </CardTitle>
+              <CardDescription className="text-xs leading-5">
+                اضبط دالة Supabase Edge Function باسم <span dir="ltr">ai-assistant</span> ثم أعد التحميل.
+              </CardDescription>
+              <div className="pt-2">
+                <Button asChild size="sm" variant="secondary">
+                  <Link to="/settings">{translateSharedLabel('configureAiAssistant', getAppLanguageState().language)}</Link>
                 </Button>
               </div>
-            </form>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Sparkles className="size-5 text-primary" />إجراءات جاهزة</CardTitle>
-            <CardDescription>كل إجراء يجمع ملخصاً آمناً ثم يطلب من الدالة الخلفية صياغة قراءة عربية.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {assistantActions.map((item) => (
-              <Button
-                key={item.action}
-                type="button"
-                variant="outline"
-                className={cn(
-                  'h-auto w-full justify-start whitespace-normal rounded-2xl p-3 text-start',
-                  configurationMissing && 'cursor-not-allowed opacity-50',
-                )}
-                disabled={pending || configurationMissing}
-                aria-disabled={pending || configurationMissing}
-                title={configurationMissing ? translateSharedLabel('aiUnavailable', getAppLanguageState().language) : undefined}
-                onClick={() => submitPrompt(item.prompt, item.action)}
-              >
-                <span className="space-y-1">
-                  <span className="block font-black">{item.title}</span>
-                  <span className="block text-xs font-medium leading-5 text-muted-foreground">{item.description}</span>
-                </span>
-              </Button>
-            ))}
-          </CardContent>
-        </Card>
+            </CardHeader>
+          </Card>
+        ) : null}
+        <div className="min-h-0 flex-1">{chatContent}</div>
       </div>
     </PageLayout>
   );

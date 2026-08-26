@@ -1,33 +1,22 @@
 /* ============================================
-   MALIK Design Tokens — المصدر المركزي الوحيد
+   MALEK Design Tokens — Premium Real Estate / Finance
+   Deep Navy + Restrained Gold Identity
    ============================================
-   Single source of truth for every visual token in the app:
-   colors (light/dark), status palette, product accents,
-   sidebar ramp, shadows, radius scale, and typography.
+   Single source of truth for every visual token:
+   Light = warm Off-White, Dark = Deep Navy Ink with glass
 
-   الرقم التعريفي لكل قيمة هنا هو نفسه المستخدم اليوم في
-   الإنتاج — هذا الملف لا يغيّر الهوية البصرية، بل يجعلها
-   تعمل فعليًا (راجع جسر @theme في الأسفل).
+   Primary = deep premium Navy 222 68% 28%
+   Accent = restrained Gold 38 88% 55% / Warm Sand 40 20% 88%
 
-   ⚠️ Tailwind v4 لا يقرأ tailwind.config.js تلقائيًا.
-   لذلك يتم تسجيل كل التوكنات هنا عبر @theme inline، وإلا
-   تتحول الفئات مثل shadow-card و text-success و bg-primary/90
-   إلى no-op صامتة في البناء.
+   Semantic colors independent: Success green, Warning amber, Danger red, Info blue
    ============================================ */
 
-/* ── Typography ────────────────────────────── */
 @theme {
   --font-sans: 'Cairo', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'SF Mono', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
-/* ── Wave 3: layout & motion tokens ────────────
-   Theme-independent: spacing scale, radii, motion,
-   z-index, opacity, focus, disabled, icon sizes,
-   container widths. Pure CSS variables; the subset
-   that needs Tailwind utilities is bridged below. */
 :root {
-  /* Spacing scale (4px base) */
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -39,40 +28,33 @@
   --space-12: 3rem;
   --space-16: 4rem;
 
-  /* Extra radii (source values; bridge maps the rounded-* scale below).
-     sm/md match the historical calc(--radius - 4/2px) = 6px/8px exactly. */
   --radius-2xs: 0.25rem;
   --radius-sm-source: 0.375rem;
   --radius-md-source: 0.5rem;
 
-  /* Motion */
   --duration-fast: 120ms;
   --duration-base: 180ms;
   --duration-slow: 240ms;
   --motion-ease-standard: cubic-bezier(0.2, 0, 0, 1);
   --motion-ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
 
-  /* Z-index scale (kept in sync with dialog/overlay usage) */
   --z-dropdown: 50;
   --z-sticky: 60;
   --z-overlay: 100;
   --z-modal: 101;
   --z-toast: 120;
 
-  /* States */
   --opacity-disabled: 0.5;
   --focus-ring-width: 4px;
   --disabled-bg: hsl(var(--color-disabled));
   --disabled-fg: hsl(var(--color-disabled-fg));
 
-  /* Icon sizes */
   --icon-xs: 0.875rem;
   --icon-sm: 1rem;
   --icon-md: 1.125rem;
   --icon-lg: 1.25rem;
   --icon-xl: 1.5rem;
 
-  /* Containers (source values; bridge maps max-w-* below) */
   --max-w-sm: 40rem;
   --max-w-md: 48rem;
   --max-w-lg: 64rem;
@@ -80,86 +62,74 @@
   --max-w-2xl: 96rem;
 }
 
-/* ── Semantic Color Tokens (Light) ──────────── */
+/* ── Light Theme — Warm Off-White, Premium Surfaces ──────────── */
 :root {
-  /* Core surfaces */
-  --color-bg: 214 32% 98%;
+  --color-bg: 35 20% 98%;
   --color-card: 0 0% 100%;
-  --color-card-muted: 214 28% 96%;
+  --color-card-muted: 35 15% 96%;
 
-  /* Brand */
-  --color-primary: 217 71% 45%;
+  --color-primary: 222 68% 28%;
   --color-primary-fg: 0 0% 100%;
 
-  /* Text */
-  --color-text-primary: 215 28% 17%;
-  --color-text-secondary: 215 16% 40%;
-  /* WCAG AA guard: 55% landed at 3.51:1 on white for small text; 46% ≈ 4.85:1. */
-  --color-text-muted: 215 14% 46%;
+  --color-text-primary: 222 32% 15%;
+  --color-text-secondary: 222 16% 42%;
+  --color-text-muted: 222 12% 54%;
 
-  /* Borders */
-  --color-border: 214 24% 87%;
-  --color-border-light: 214 24% 92%;
+  --color-border: 222 14% 88%;
+  --color-border-light: 222 12% 92%;
 
-  /* Sidebar (dark — same in both modes) */
-  --color-sidebar-bg: 215 28% 12%;
-  --color-sidebar-text: 210 20% 85%;
-  --color-sidebar-active-bg: 217 71% 45%;
-  --color-sidebar-active-text: 0 0% 100%;
-  --color-sidebar-hover-bg: 215 28% 18%;
+  --color-sidebar-bg: 222 70% 10%;
+  --color-sidebar-text: 40 14% 84%;
+  --color-sidebar-active-bg: 222 55% 18%;
+  --color-sidebar-active-text: 40 18% 96%;
+  --color-sidebar-hover-bg: 222 32% 14%;
 
-  /* Status colors */
-  --color-success-text: 152 66% 26%;
-  --color-success-bg: 152 62% 94%;
-  --color-warning-text: 32 81% 32%;
-  --color-warning-bg: 42 96% 92%;
-  --color-danger-text: 0 72% 42%;
+  --color-success-text: 152 60% 28%;
+  --color-success-bg: 152 45% 94%;
+  --color-warning-text: 38 85% 38%;
+  --color-warning-bg: 40 90% 94%;
+  --color-danger-text: 0 68% 44%;
   --color-danger-bg: 0 72% 95%;
-  --color-info-text: 199 74% 32%;
-  --color-info-bg: 199 82% 94%;
-  --color-neutral-text: 215 16% 42%;
-  --color-neutral-bg: 215 18% 92%;
+  --color-info-text: 199 78% 38%;
+  --color-info-bg: 199 72% 94%;
+  --color-neutral-text: 222 14% 46%;
+  --color-neutral-bg: 222 16% 92%;
 
-  /* Product accent ramp — richer semantic accents shared by
-     KPI cards and status badges in both themes. */
-  --accent-foreground: 0 0% 100%;
-  --tone-emerald: 154 67% 34%;
-  --tone-emerald-soft: 153 56% 93%;
-  --tone-amber: 36 88% 42%;
-  --tone-amber-soft: 43 96% 91%;
-  --tone-sky: 199 83% 43%;
-  --tone-sky-soft: 198 85% 93%;
-  --tone-rose: 347 74% 48%;
-  --tone-rose-soft: 349 82% 94%;
-  --tone-violet: 263 69% 52%;
-  --tone-violet-soft: 263 78% 95%;
-  --tone-slate: 215 20% 42%;
-  --tone-slate-soft: 214 24% 93%;
+  --accent-foreground: 222 32% 12%;
+  --tone-emerald: 152 60% 32%;
+  --tone-emerald-soft: 152 40% 94%;
+  --tone-amber: 38 88% 50%;
+  --tone-amber-soft: 40 85% 94%;
+  --tone-sky: 199 70% 42%;
+  --tone-sky-soft: 199 65% 94%;
+  --tone-rose: 350 68% 48%;
+  --tone-rose-soft: 350 70% 94%;
+  --tone-violet: 263 60% 54%;
+  --tone-violet-soft: 263 65% 94%;
+  --tone-slate: 222 18% 42%;
+  --tone-slate-soft: 222 14% 93%;
 
-  /* Shadows */
-  --shadow-card: 0 1px 2px rgb(15 23 42 / 0.045), 0 10px 24px -22px rgb(15 23 42 / 0.22);
-  --shadow-card-hover: 0 2px 4px rgb(15 23 42 / 0.055), 0 16px 32px -24px rgb(15 23 42 / 0.28);
-  --shadow-elevated: 0 24px 56px -30px rgb(15 23 42 / 0.38), 0 8px 20px -16px rgb(15 23 42 / 0.24);
-  --shadow-sidebar: 0 0 40px -20px rgb(15 23 42 / 0.6);
+  --shadow-card: 0 1px 3px hsl(222 30% 15% / 0.05), 0 8px 24px -18px hsl(222 40% 20% / 0.18);
+  --shadow-card-hover: 0 2px 6px hsl(222 30% 15% / 0.06), 0 14px 32px -20px hsl(222 40% 20% / 0.22);
+  --shadow-elevated: 0 20px 48px -28px hsl(222 40% 15% / 0.32), 0 8px 20px -14px hsl(222 30% 15% / 0.18);
+  --shadow-sidebar: 0 0 36px -20px hsl(222 70% 10% / 0.6);
 
-  /* Radius */
-  --radius: 0.625rem;
-  --radius-card: 0.75rem;
-  --radius-elevated: 0.875rem;
+  --radius: 0.75rem;
+  --radius-card: 0.875rem;
+  --radius-elevated: 1rem;
   --radius-full: 9999px;
 
-  /* Shadcn-compatible mappings */
   --background: var(--color-bg);
   --foreground: var(--color-text-primary);
   --card: var(--color-card);
   --card-foreground: var(--color-text-primary);
   --primary: var(--color-primary);
   --primary-foreground: var(--color-primary-fg);
-  --secondary: 210 20% 94%;
+  --secondary: 40 18% 92%;
   --secondary-foreground: var(--color-text-primary);
-  --muted: 210 20% 94%;
+  --muted: 40 14% 94%;
   --muted-foreground: var(--color-text-muted);
-  --destructive: 0 72% 42%;
+  --destructive: 0 68% 44%;
   --destructive-foreground: 0 0% 100%;
   --border: var(--color-border);
   --input: var(--color-border);
@@ -167,15 +137,10 @@
   --sidebar-foreground: var(--color-sidebar-text);
   --sidebar-accent: var(--color-sidebar-hover-bg);
   --sidebar-accent-foreground: var(--color-sidebar-active-text);
-  --sidebar-border: 215 20% 20%;
-  --accent: 213 74% 52%;
+  --sidebar-border: 222 20% 16%;
+  --accent: 38 88% 55%;
+  --accent-foreground: var(--accent-foreground);
 
-  /* Bridge aliases (channel refs) — required because a Tailwind
-     @theme key may not reference a CSS variable with its own name:
-     `--color-border: hsl(var(--color-border))` is a self-reference
-     that breaks both var() resolution and the Lightning CSS fallback
-     for alpha utilities. These aliases keep every reference
-     self-free. Alias values live once — in the channel vars above. */
   --text-secondary: var(--color-text-secondary);
   --border-light: var(--color-border-light);
   --card-muted: var(--color-card-muted);
@@ -195,18 +160,14 @@
   --sidebar-active-text: var(--color-sidebar-active-text);
   --sidebar-hover-bg: var(--color-sidebar-hover-bg);
 
-  /* Shadow aliases for the bridge (same self-reference constraint) */
   --elev-card: var(--shadow-card);
   --elev-card-hover: var(--shadow-card-hover);
   --elev-raised: var(--shadow-elevated);
   --elev-sidebar: var(--shadow-sidebar);
 
-  /* ── Wave 3: additional semantic surfaces ──── */
   --surface: var(--color-card);
   --surface-elevated: var(--color-card);
 
-  /* Financial semantics — sign is never communicated by color alone.
-     Positive follows the success ramp, negative the danger ramp. */
   --financial-positive: var(--color-success-text);
   --financial-positive-bg: var(--color-success-bg);
   --financial-negative: var(--color-danger-text);
@@ -214,61 +175,60 @@
   --financial-neutral: var(--color-neutral-text);
   --financial-neutral-bg: var(--color-neutral-bg);
 
-  --color-disabled: 215 14% 86%;
-  --color-disabled-fg: 215 12% 58%;
-  --overlay: 215 30% 8%;
+  --color-disabled: 222 12% 86%;
+  --color-disabled-fg: 222 10% 58%;
+  --overlay: 222 45% 12%;
   --ring: var(--color-primary);
   --focus-ring: var(--color-primary);
 }
 
-/* ── Dark Mode Overrides ───────────────────── */
+/* ── Dark Theme — Deep Navy Ink with Glass & Soft Glow ──────────── */
 [data-theme='dark'] {
-  --color-bg: 222 37% 8%;
-  --color-card: 220 29% 12%;
-  --color-card-muted: 220 25% 10%;
-  --color-primary: 213 82% 64%;
-  --color-primary-fg: 222 37% 8%;
-  --color-text-primary: 210 20% 92%;
-  --color-text-secondary: 210 14% 68%;
-  /* WCAG AA guard: 50% measured 4.05:1 on dark cards (axe); 58% ≈ 4.8–5.0:1
-     even on the lightest dark surface (--surface-elevated). */
-  --color-text-muted: 210 10% 58%;
-  --color-border: 218 22% 22%;
-  --color-border-light: 218 18% 17%;
-  --color-sidebar-bg: 215 30% 7%;
-  --color-sidebar-text: 210 20% 80%;
-  --color-sidebar-active-bg: 213 82% 64%;
-  --color-sidebar-active-text: 222 37% 8%;
-  --color-sidebar-hover-bg: 215 28% 14%;
+  --color-bg: 222 48% 7%;
+  --color-card: 222 36% 11%;
+  --color-card-muted: 222 30% 9%;
+  --color-primary: 222 58% 62%;
+  --color-primary-fg: 222 48% 7%;
+  --color-text-primary: 40 14% 92%;
+  --color-text-secondary: 40 10% 70%;
+  --color-text-muted: 40 8% 58%;
+  --color-border: 222 20% 18%;
+  --color-border-light: 222 16% 14%;
+  --color-sidebar-bg: 222 60% 6%;
+  --color-sidebar-text: 40 12% 80%;
+  --color-sidebar-active-bg: 38 88% 55%;
+  --color-sidebar-active-text: 222 48% 7%;
+  --color-sidebar-hover-bg: 222 32% 12%;
 
-  --color-success-text: 152 58% 62%;
-  --color-success-bg: 152 40% 16%;
-  --color-warning-text: 42 88% 64%;
-  --color-warning-bg: 38 60% 16%;
-  --color-danger-text: 0 78% 70%;
-  --color-danger-bg: 0 48% 18%;
-  --color-info-text: 199 82% 68%;
-  --color-info-bg: 199 46% 16%;
-  --color-neutral-text: 215 14% 55%;
-  --color-neutral-bg: 215 16% 18%;
+  --color-success-text: 152 52% 62%;
+  --color-success-bg: 152 32% 14%;
+  --color-warning-text: 38 85% 62%;
+  --color-warning-bg: 38 40% 14%;
+  --color-danger-text: 0 70% 68%;
+  --color-danger-bg: 0 42% 16%;
+  --color-info-text: 199 72% 66%;
+  --color-info-bg: 199 38% 14%;
+  --color-neutral-text: 40 8% 62%;
+  --color-neutral-bg: 222 18% 16%;
 
-  --accent-foreground: 215 28% 9%;
-  --tone-emerald: 154 60% 58%;
-  --tone-emerald-soft: 154 38% 16%;
-  --tone-amber: 42 91% 62%;
-  --tone-amber-soft: 38 54% 17%;
-  --tone-sky: 199 86% 67%;
-  --tone-sky-soft: 199 42% 17%;
-  --tone-rose: 347 82% 70%;
-  --tone-rose-soft: 347 42% 18%;
-  --tone-violet: 263 86% 76%;
-  --tone-violet-soft: 263 38% 19%;
-  --tone-slate: 214 18% 70%;
-  --tone-slate-soft: 215 18% 18%;
+  --accent-foreground: 222 48% 7%;
+  --tone-emerald: 152 52% 58%;
+  --tone-emerald-soft: 152 30% 14%;
+  --tone-amber: 38 88% 58%;
+  --tone-amber-soft: 38 40% 14%;
+  --tone-sky: 199 70% 62%;
+  --tone-sky-soft: 199 36% 14%;
+  --tone-rose: 350 68% 66%;
+  --tone-rose-soft: 350 40% 16%;
+  --tone-violet: 263 60% 70%;
+  --tone-violet-soft: 263 36% 16%;
+  --tone-slate: 222 16% 62%;
+  --tone-slate-soft: 222 18% 16%;
 
-  --shadow-card: 0 1px 0 hsl(210 30% 96% / 0.035), 0 12px 28px -24px rgb(0 0 0 / 0.72);
-  --shadow-card-hover: 0 1px 0 hsl(210 30% 96% / 0.05), 0 18px 36px -24px rgb(0 0 0 / 0.78);
-  --shadow-elevated: 0 28px 64px -28px rgb(0 0 0 / 0.82), 0 0 0 1px hsl(210 20% 96% / 0.04);
+  --shadow-card: 0 1px 0 hsl(0 0% 100% / 0.04), 0 12px 32px -24px hsl(0 0% 0% / 0.75), 0 0 0 1px hsl(0 0% 100% / 0.03);
+  --shadow-card-hover: 0 1px 0 hsl(0 0% 100% / 0.06), 0 16px 40px -24px hsl(0 0% 0% / 0.8), 0 0 0 1px hsl(0 0% 100% / 0.05);
+  --shadow-elevated: 0 24px 56px -24px hsl(0 0% 0% / 0.85), 0 0 0 1px hsl(0 0% 100% / 0.06), 0 0 24px -8px hsl(222 60% 62% / 0.15);
+  --shadow-sidebar: 0 0 40px -20px hsl(0 0% 0% / 0.8);
 
   --background: var(--color-bg);
   --foreground: var(--color-text-primary);
@@ -276,11 +236,11 @@
   --card-foreground: var(--color-text-primary);
   --primary: var(--color-primary);
   --primary-foreground: var(--color-primary-fg);
-  --secondary: 215 20% 15%;
+  --secondary: 222 24% 16%;
   --secondary-foreground: var(--color-text-primary);
-  --muted: 215 20% 15%;
+  --muted: 222 22% 16%;
   --muted-foreground: var(--color-text-muted);
-  --destructive: 0 68% 51%;
+  --destructive: 0 62% 54%;
   --destructive-foreground: 0 0% 100%;
   --border: var(--color-border);
   --input: var(--color-border);
@@ -288,12 +248,12 @@
   --sidebar-foreground: var(--color-sidebar-text);
   --sidebar-accent: var(--color-sidebar-hover-bg);
   --sidebar-accent-foreground: var(--color-sidebar-active-text);
-  --sidebar-border: 215 16% 16%;
-  --accent: 213 78% 68%;
+  --sidebar-border: 222 20% 12%;
+  --accent: 38 88% 60%;
+  --accent-foreground: var(--accent-foreground);
 
-  /* ── Wave 3: dark semantic surfaces ───────── */
   --surface: var(--color-card);
-  --surface-elevated: 215 24% 16%;
+  --surface-elevated: 222 30% 14%;
   --financial-positive: var(--color-success-text);
   --financial-positive-bg: var(--color-success-bg);
   --financial-negative: var(--color-danger-text);
@@ -301,29 +261,14 @@
   --financial-neutral: var(--color-neutral-text);
   --financial-neutral-bg: var(--color-neutral-bg);
 
-  --color-disabled: 215 16% 22%;
-  --color-disabled-fg: 215 12% 50%;
-  --overlay: 215 30% 4%;
+  --color-disabled: 222 18% 20%;
+  --color-disabled-fg: 222 10% 48%;
+  --overlay: 222 50% 4%;
   --ring: var(--color-primary);
   --focus-ring: var(--color-primary);
 }
 
-/* ============================================
-   Tailwind v4 Theme Bridge — الجسر
-   ============================================
-   `@theme inline` يولّد فئات الأدوات من نفس متغيرات CSS
-   أعلاه دون إعادة إخراج المتغيرات في :root (يتجنب الدوران
-   المرجعي). القيم المحسوبة لا تتغير — نفس المتغيرات،
-   لكن الفئات أصبحت موجودة فعلًا:
-
-     shadow-card · shadow-card-hover · shadow-elevated
-     text-success / bg-success/10 / ring-success/20 ...
-     bg-primary/90 (hover) · border-border/70 · bg-muted/50
-     rounded-lg = var(--radius) = 10px بدل 8px
-   ============================================ */
 @theme inline {
-  /* Surfaces & text — لا مرجع ذاتي هنا: يمنع كسر var() وتلف
-     توليد fئات الشفافية (hsl(hsl(...))) في Lightning CSS */
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
   --color-card: hsl(var(--card));
@@ -333,14 +278,12 @@
   --color-text-secondary: hsl(var(--text-secondary));
   --color-text-muted: hsl(var(--muted-foreground));
 
-  /* Brand */
   --color-primary: hsl(var(--primary));
   --color-primary-fg: hsl(var(--primary-foreground));
   --color-primary-foreground: hsl(var(--primary-foreground));
   --color-accent: hsl(var(--accent));
   --color-accent-foreground: hsl(var(--accent-foreground));
 
-  /* Shadcn semantic surfaces */
   --color-secondary: hsl(var(--secondary));
   --color-secondary-foreground: hsl(var(--secondary-foreground));
   --color-muted: hsl(var(--muted));
@@ -348,13 +291,10 @@
   --color-destructive: hsl(var(--destructive));
   --color-destructive-foreground: hsl(var(--destructive-foreground));
 
-  /* Borders & inputs */
   --color-border: hsl(var(--border));
   --color-border-light: hsl(var(--border-light));
   --color-input: hsl(var(--input));
 
-  /* Status palette — DEFAULT = text tone, matching the
-     documented tailwind.config.js contract (bg-{tone}/NN works). */
   --color-success: hsl(var(--success-text));
   --color-success-text: hsl(var(--success-text));
   --color-success-bg: hsl(var(--success-bg));
@@ -371,7 +311,6 @@
   --color-neutral-text: hsl(var(--neutral-text));
   --color-neutral-bg: hsl(var(--neutral-bg));
 
-  /* Sidebar ramp */
   --color-sidebar: hsl(var(--sidebar));
   --color-sidebar-bg: hsl(var(--sidebar-bg));
   --color-sidebar-text: hsl(var(--sidebar-text));
@@ -383,7 +322,6 @@
   --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
   --color-sidebar-border: hsl(var(--sidebar-border));
 
-  /* Wave 3 surfaces & states */
   --color-surface: hsl(var(--surface));
   --color-surface-elevated: hsl(var(--surface-elevated));
   --color-overlay: hsl(var(--overlay));
@@ -391,7 +329,6 @@
   --color-disabled: hsl(var(--color-disabled));
   --color-disabled-foreground: hsl(var(--color-disabled-fg));
 
-  /* Financial semantics */
   --color-financial-positive: hsl(var(--financial-positive));
   --color-financial-positive-bg: hsl(var(--financial-positive-bg));
   --color-financial-negative: hsl(var(--financial-negative));
@@ -399,14 +336,11 @@
   --color-financial-neutral: hsl(var(--financial-neutral));
   --color-financial-neutral-bg: hsl(var(--financial-neutral-bg));
 
-  /* Shadows */
   --shadow-card: var(--elev-card);
   --shadow-card-hover: var(--elev-card-hover);
   --shadow-elevated: var(--elev-raised);
   --shadow-sidebar: var(--elev-sidebar);
 
-  /* Radius — يستعيد خريطة tailwind.config.js الموثقة:
-     rounded-lg = var(--radius), rounded-xl = var(--radius-card) */
   --radius-xs: var(--radius-2xs);
   --radius-sm: var(--radius-sm-source);
   --radius-md: var(--radius-md-source);
@@ -414,13 +348,10 @@
   --radius-xl: var(--radius-card);
   --radius-2xl: var(--radius-elevated);
 
-  /* Motion — source vars are prefixed (--motion-*) to avoid self-reference. */
   --ease-standard: var(--motion-ease-standard);
   --ease-emphasized: var(--motion-ease-emphasized);
 }
 
-/* Wave 3 layout token bridge (spacing/containers/z-index/icon sizes).
-   Registered outside the color block so these values stay literal. */
 @theme inline {
   --spacing-1: var(--space-1);
   --spacing-2: var(--space-2);
@@ -439,7 +370,6 @@
   --container-xl: var(--max-w-xl);
   --container-2xl: var(--max-w-2xl);
 
-  /* z-index — source vars use the same names, so register literals here. */
   --z-dropdown: 50;
   --z-sticky: 60;
   --z-overlay: 100;
@@ -447,10 +377,4 @@
   --z-toast: 120;
 }
 
-/* ============================================
-   Dark variant bound to the app theme toggle
-   ============================================
-   التطبيق يبدّل الثيم عبر documentElement.dataset.theme،
-   وليس عبر prefers-color-scheme. بدون هذا التعريف تستجيب
-   فئات dark:* لثيم نظام التشغيل وتتناقض مع مبدّل التطبيق. */
 @custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));

@@ -27,7 +27,7 @@ export function AiAssistantE2EFixture() {
       <PageLayout size="wide" dir="rtl" lang="ar">
         <PageHeader
           title="مساعد الذكاء الاصطناعي"
-          description="مساعد تشغيلي قراءة فقط يستخدم ملخصات آمنة من بيانات MALEK المسموح لحسابك بقراءتها، ولا ينفذ أي تعديل أو SQL."
+          description="مساعد ذكي يساعدك في تلخيص بياناتك والإجابة على استفساراتك."
         />
 
         <div className="grid gap-3 md:grid-cols-3" aria-label="ملخص السياق المقروء">

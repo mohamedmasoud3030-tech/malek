@@ -266,10 +266,11 @@ describe('MALEK brand contract — no legacy name reaches a user', () => {
     expect(appShell.match(/<Brand\s/g)?.length ?? 0).toBeGreaterThanOrEqual(2);
 
     const loginPage = readApp('src/features/auth/login-page.tsx');
-    expect(loginPage).toContain('APP_BRAND_LOCKUP_ASSET');
-    expect(loginPage).toContain('مرحبًا بعودتك');
-    expect(loginPage).toContain('سجّل الدخول إلى مساحة عملك في {APP_BRAND_NAME}');
-    expect(loginPage).not.toContain('APP_BRAND_TAGLINE_AR');
+    expect(loginPage).toContain('MalikBrand');
+    expect(loginPage).toContain('layout="vertical"');
+    expect(loginPage).toContain('showTagline');
+    // Login now shows vertical M above MALEK with tagline centered, without welcome text
+    // Tagline itself lives in MalikBrand component, not hardcoded in login file
     expect(loginPage).not.toContain('Rentrix');
   });
 
@@ -349,7 +350,7 @@ describe('MALEK brand contract — mark, wordmark, and tagline', () => {
     expect(appShell).toMatch(/isSidebarExpanded \? 'px-5' : 'px-1\.5'/);
     expect(appShell).toContain('compact={!expanded}');
     expect(brandComponent).toMatch(/if \(compact\)/);
-    expect(brandComponent).toContain(`<MalikMark className={cn('size-9', markClassName)} />`);
+    expect(brandComponent).toContain(`<MalikMark className={cn('size-10', markClassName)} />`);
   });
 
   it('places the complete lockup only on the high-visibility brand surfaces', () => {
@@ -361,11 +362,10 @@ describe('MALEK brand contract — mark, wordmark, and tagline', () => {
     }
 
     const loginPage = readApp('src/features/auth/login-page.tsx');
-    expect(loginPage).toContain('APP_BRAND_LOCKUP_ASSET');
-    expect(loginPage).toContain('مرحبًا بعودتك');
-    expect(loginPage).not.toContain('APP_BRAND_TAGLINE_AR');
+    expect(loginPage).toContain('MalikBrand');
+    expect(loginPage).toContain('showTagline');
 
-    expect(readApp('src/features/landing/components/NavBar.tsx')).toContain('<MalikBrand />');
+    expect(readApp('src/features/landing/components/NavBar.tsx')).toContain('MalikBrand');
     expect(readApp('src/components/layout/pwa-install-prompt.tsx')).toContain('MalikMark');
   });
 

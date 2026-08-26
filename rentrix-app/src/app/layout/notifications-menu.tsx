@@ -178,9 +178,14 @@ export function NotificationsMenu({
         aria-haspopup="dialog"
         aria-expanded={isOpen}
         aria-controls={isOpen ? menuId : undefined}
-        className="pressable relative inline-flex size-11 shrink-0 items-center justify-center rounded-xl border border-border/80 text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-4 focus-visible:ring-primary/25 motion-reduce:transition-none"
+        className={cn(
+          'pressable relative inline-flex size-10 shrink-0 items-center justify-center rounded-lg border outline-none transition-colors focus-visible:ring-4 focus-visible:ring-primary/25 motion-reduce:transition-none',
+          totalCount > 0
+            ? 'border-danger/30 bg-danger/5 text-danger hover:bg-danger/10 hover:text-danger'
+            : 'border-border/80 text-muted-foreground hover:bg-muted hover:text-foreground',
+        )}
       >
-        <Bell className="size-[1rem]" aria-hidden="true" />
+        <Bell className={cn('size-[18px]', totalCount > 0 && 'text-danger')} aria-hidden="true" />
         {totalCount > 0 ? (
           <span
             aria-hidden="true"
@@ -199,7 +204,7 @@ export function NotificationsMenu({
           aria-label={sharedLabel('notifications')}
           aria-busy={isInitialLoading || undefined}
           onKeyDown={handlePanelKeyDown}
-          className="absolute end-0 top-12 z-50 w-72 max-w-[calc(100vw-1rem)] rounded-2xl border border-border bg-card p-3 text-start text-card-foreground shadow-elevated outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
+          className="absolute end-0 top-12 z-50 w-72 max-w-[calc(100vw-1rem)] rounded-2xl border border-border bg-card p-3 text-start text-card-foreground shadow-elevated outline-none focus-visible:ring-4 focus-visible:ring-primary/20 max-md:!fixed max-md:!bottom-[4.75rem] max-md:!top-auto max-md:!end-3 max-md:!start-auto max-md:!w-[min(22rem,85vw)] max-md:!max-w-[calc(100vw-1.5rem)]"
         >
           <p className="text-xs font-semibold">{sharedLabel('notifications')}</p>
           {isInitialLoading ? (

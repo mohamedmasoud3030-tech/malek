@@ -179,7 +179,7 @@ describe('Visual Wave 1 — app-shell notification states', () => {
     expect(markRead).toHaveBeenCalledWith('decision-1');
   });
 
-  it('keeps notification controls at the 44px touch-target contract', () => {
+  it('keeps notification controls at the compact touch-target contract', () => {
     queryState.data = {
       arrears: { overdueCount: 1 },
       maintenance: { urgentOpen: 0 },
@@ -190,8 +190,8 @@ describe('Visual Wave 1 — app-shell notification states', () => {
     });
 
     const trigger = host.querySelector<HTMLButtonElement>('button[aria-label="التنبيهات (1)"]');
-    expect(trigger?.className).toContain('size-11');
+    expect(trigger?.className).toMatch(/size-(10|11)/);
     open(host);
-    expect(host.querySelector<HTMLAnchorElement>('a[href="/arrears"]')?.className).toContain('min-h-11');
+    expect(host.querySelector<HTMLAnchorElement>('a[href="/arrears"]')?.className).toMatch(/min-h-(10|11)/);
   });
 });

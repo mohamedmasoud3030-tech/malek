@@ -1,6 +1,6 @@
 import { Link, Outlet, useMatches, useRouter } from '@tanstack/react-router';
 import { useEffect, useId, useRef, useState, type RefObject } from 'react';
-import { CircleHelp, KeyRound, LogOut, Moon, Settings, ShieldAlert, Sun, UserRound, X } from 'lucide-react';
+import { CircleHelp, KeyRound, LogOut, Menu, Moon, Settings, ShieldAlert, Sun, UserRound, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { MalikBrand } from '@/components/brand/malik-brand';
 import { Button } from '@/components/ui/button';
@@ -20,34 +20,53 @@ function Brand({ expanded }: Readonly<{ expanded: boolean }>) {
   return <MalikBrand compact={!expanded} inverse showTagline={expanded} />;
 }
 
-function HeaderDateTime() {
+function HeaderWordmark() {
+  return (
+    <p
+      dir="ltr"
+      data-header-wordmark
+      className="malik-wordmark malek-wordmark shrink-0 select-none truncate text-[16px] font-extrabold uppercase leading-none tracking-[0.16em] text-foreground sm:text-[17px] lg:text-[18px]"
+      aria-label={APP_BRAND_NAME}
+    >
+      {APP_BRAND_NAME}
+    </p>
+  );
+}
+
+function HeaderDateCenter({ language }: Readonly<{ language: string }>) {
   const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
-    const timer = window.setInterval(() => setNow(new Date()), 30_000);
+    const timer = window.setInterval(() => setNow(new Date()), 60_000);
     return () => window.clearInterval(timer);
   }, []);
 
-  const date = new Intl.DateTimeFormat('en-GB', {
+  const isArabic = language === 'ar';
+  const locale = isArabic ? 'ar-EG' : 'en-US';
+  const dayName = new Intl.DateTimeFormat(locale, { weekday: 'long' }).format(now);
+  const date = new Intl.DateTimeFormat(isArabic ? 'ar-EG' : 'en-GB', {
     day: '2-digit',
-    month: '2-digit',
+    month: 'short',
     year: 'numeric',
-  }).format(now);
-  const time = new Intl.DateTimeFormat('en-GB', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
   }).format(now);
 
   return (
-    <span
-      data-header-date-time
-      dir="ltr"
-      className="inline-flex whitespace-nowrap text-xs font-semibold tabular-nums text-muted-foreground min-[380px]:text-xs sm:text-xs"
-      aria-label={`التاريخ ${date}، الوقت ${time}`}
+    <div
+      data-header-date-center
+      data-lang={language}
+      className="pointer-events-none flex max-w-[32vw] flex-col items-center justify-center gap-0.5 leading-none sm:max-w-[40vw]"
+      aria-label={`${dayName}, ${date}`}
     >
-      {date} · {time}
-    </span>
+      <span className="max-w-full truncate whitespace-nowrap text-center text-[11px] font-semibold leading-none tracking-wide text-foreground sm:text-xs">
+        {dayName}
+      </span>
+      <span
+        dir={isArabic ? 'rtl' : 'ltr'}
+        className="max-w-full truncate whitespace-nowrap text-center text-[11px] font-medium leading-none tabular-nums text-muted-foreground sm:text-[11px]"
+      >
+        {date}
+      </span>
+    </div>
   );
 }
 
@@ -102,12 +121,12 @@ function HeaderUserMenu({
         aria-controls={open ? menuId : undefined}
         onClick={() => setOpen((value) => !value)}
         className={cn(
-          'grid size-10 shrink-0 place-items-center rounded-full border border-border/80 bg-card text-foreground outline-none transition-[background-color,border-color,box-shadow,transform]',
-          'hover:bg-muted active:scale-[0.97] focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transform-none',
-          open && 'border-foreground/25 bg-muted shadow-sm',
+          'grid size-9 shrink-0 place-items-center rounded-full border border-border/70 bg-card text-foreground outline-none transition-[background-color,border-color,box-shadow,transform]',
+          'hover:bg-muted active:scale-[0.97] focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transform-none sm:size-10',
+          open && 'border-foreground/20 bg-muted shadow-sm',
         )}
       >
-        <UserRound className="size-[1.05rem]" aria-hidden="true" />
+        <UserRound className="size-4 sm:size-[1.05rem]" aria-hidden="true" />
       </button>
 
       {open ? (
@@ -115,7 +134,7 @@ function HeaderUserMenu({
           id={menuId}
           role="menu"
           aria-label="قائمة المستخدم"
-          className="absolute end-0 top-12 z-50 w-[min(18rem,calc(100vw-1rem))] overflow-hidden rounded-2xl border border-border/90 bg-card text-card-foreground shadow-elevated"
+          className="absolute end-0 top-11 z-50 w-[min(18rem,calc(100vw-1rem))] overflow-hidden rounded-2xl border border-border/90 bg-card text-card-foreground shadow-elevated sm:top-12"
         >
           <div className="flex items-center gap-3 border-b border-border/70 bg-muted/25 px-3.5 py-3.5">
             <span className="grid size-10 shrink-0 place-items-center rounded-full bg-primary text-sm font-black text-primary-foreground" aria-hidden="true">
@@ -211,23 +230,23 @@ function MobileNavigationDrawer({
         }}
         data-mobile-drawer
         data-mobile-nav-sheet
-        className="fixed inset-x-0 bottom-0 top-auto z-[101] flex max-h-[64dvh] w-full max-w-none flex-col gap-0 overflow-hidden rounded-none rounded-t-2xl border-0 border-t border-white/10 bg-sidebar text-sidebar-foreground shadow-[0_-12px_32px_-16px_rgb(0_0_0_/_0.55)] sm:max-h-none lg:hidden"
+        className="fixed bottom-0 left-1/2 z-[101] flex max-h-[64dvh] w-[85vw] max-w-[20rem] -translate-x-1/2 flex-col gap-0 overflow-hidden rounded-t-2xl border border-b-0 border-sidebar-border bg-sidebar text-sidebar-foreground shadow-[0_-12px_32px_-16px_rgb(0_0_0_/_0.55)] sm:w-[22rem] sm:max-w-[22rem] lg:hidden"
       >
         <DialogTitle className="sr-only">القائمة الرئيسية</DialogTitle>
-        <div className="mx-auto mt-2 h-1 w-9 shrink-0 rounded-full bg-white/20" aria-hidden="true" />
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/8 px-3.5 py-2.5">
+        <div className="mx-auto mt-2.5 h-1 w-8 shrink-0 rounded-full bg-sidebar-foreground/20" aria-hidden="true" />
+        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-sidebar-border/50 px-3 py-2.5">
           <Brand expanded />
           <Button
             autoFocus
             variant="ghost"
-            className="size-9 shrink-0 px-0 text-sidebar-foreground hover:bg-sidebar-accent hover:text-white"
+            className="size-9 shrink-0 px-0 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
             onClick={onClose}
             aria-label="إغلاق القائمة"
           >
             <X className="size-[1.125rem]" />
           </Button>
         </div>
-        <nav className="sidebar-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain p-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))]">
+        <nav className="sidebar-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain p-2.5 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
           {authorization === null && (
             <div className="mb-2 rounded-lg border border-[hsl(var(--color-warning-text)/0.2)] bg-[hsl(var(--color-warning-bg)/0.07)] px-2.5 py-2">
               <p className="text-xs font-semibold text-warning">الصلاحيات غير مكتملة</p>
@@ -327,7 +346,7 @@ export function AppShell() {
       >
         <div
           className={cn(
-            'min-h-24 border-b border-white/8 py-5',
+            'min-h-24 border-b border-sidebar-border/50 py-5',
             isSidebarExpanded ? 'px-5' : 'px-1.5',
           )}
         >
@@ -343,25 +362,19 @@ export function AppShell() {
           data-app-shell-header
           className="sticky top-0 z-20 border-b border-border/70 bg-card/95 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md supports-[backdrop-filter]:bg-card/85"
         >
-          <div className="mx-auto flex min-h-14 w-full max-w-[110rem] items-center px-3 py-1 sm:px-4">
-            <MalikBrand className="min-w-0" />
-
-            <div className="ms-auto flex shrink-0 items-center gap-1.5 sm:gap-2" data-header-quiet-utilities>
-              <HeaderDateTime />
-
+          <div className="relative mx-auto flex min-h-14 w-full max-w-[110rem] items-center justify-between gap-2 px-3 py-1.5 sm:px-4">
+            {/* Right side visually (first in RTL) - Controls: Menu + User + Theme */}
+            <div className="flex shrink-0 items-center gap-1 sm:gap-1.5 z-10" data-header-right-controls>
               <button
+                ref={mobileNavTriggerRef}
                 type="button"
-                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                aria-label={sharedLabel('toggleTheme')}
-                title={theme === 'dark' ? 'الوضع الفاتح' : 'الوضع الداكن'}
-                className="grid size-10 shrink-0 place-items-center rounded-xl text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-4 focus-visible:ring-primary/20"
-                data-header-theme-toggle
+                onClick={() => setMobileNavOpen(true)}
+                aria-label="فتح القائمة"
+                aria-haspopup="dialog"
+                data-mobile-top-menu
+                className="grid size-9 shrink-0 place-items-center rounded-lg border border-border/60 bg-card text-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-4 focus-visible:ring-primary/20 active:scale-[0.97] motion-reduce:transform-none sm:size-10 lg:hidden"
               >
-                {theme === 'dark' ? (
-                  <Sun className="size-[1.05rem]" aria-hidden="true" />
-                ) : (
-                  <Moon className="size-[1.05rem]" aria-hidden="true" />
-                )}
+                <Menu className="size-4 sm:size-[18px]" aria-hidden="true" />
               </button>
 
               <HeaderUserMenu
@@ -370,6 +383,31 @@ export function AppShell() {
                 supportFrom={supportFrom}
                 onLogout={handleLogout}
               />
+
+              <button
+                type="button"
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                aria-label={sharedLabel('toggleTheme')}
+                title={theme === 'dark' ? 'الوضع الفاتح' : 'الوضع الداكن'}
+                className="grid size-9 shrink-0 place-items-center rounded-lg border border-border/60 bg-card text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-4 focus-visible:ring-primary/20 active:scale-[0.97] motion-reduce:transform-none sm:size-10"
+                data-header-theme-toggle
+              >
+                {theme === 'dark' ? (
+                  <Sun className="size-4 sm:size-[1.05rem]" aria-hidden="true" />
+                ) : (
+                  <Moon className="size-4 sm:size-[1.05rem]" aria-hidden="true" />
+                )}
+              </button>
+            </div>
+
+            {/* Center - Day + Date exactly centered, localized */}
+            <div className="pointer-events-none absolute left-1/2 top-1/2 z-0 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center">
+              <HeaderDateCenter language={appLanguage.language} />
+            </div>
+
+            {/* Left side visually (last in RTL) - MALEK text only, no M mark */}
+            <div className="flex shrink-0 items-center z-10" data-header-wordmark-side>
+              <HeaderWordmark />
             </div>
           </div>
         </header>

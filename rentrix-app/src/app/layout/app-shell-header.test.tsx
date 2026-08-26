@@ -37,7 +37,7 @@ vi.mock('@/store/ui-store', () => ({
 vi.mock('./layout-navigation-view', () => ({
   NavigationLinks: () => null,
   MobileFloatingControl: () => (
-    <button type="button" aria-label="فتح القائمة" aria-haspopup="dialog" data-mobile-dock-menu />
+    <div data-mobile-floating-control><button type="button" aria-label="الإضافة السريعة" data-mobile-dock-quick-add /><button type="button" aria-label="الإشعارات" data-mobile-dock-notifications /><button type="button" aria-label="فتح المساعد الذكي" data-mobile-dock-ai /></div>
   ),
 }));
 vi.mock('./notifications-menu', () => ({ NotificationsMenu: () => null }));
@@ -71,12 +71,23 @@ describe('AppShell — fixed global MALEK header', () => {
     const header = host.querySelector<HTMLElement>('[data-app-shell-header]');
     expect(header).not.toBeNull();
 
-    const brandLockup = header?.querySelector('[data-malek-brand-lockup]');
-    expect(brandLockup).not.toBeNull();
-    expect(brandLockup?.textContent).toContain('MALEK');
+    // Mobile top toolbar shows MALEK text only without M mark, per new design
+    const wordmark = header?.querySelector('[data-header-wordmark]');
+    expect(wordmark).not.toBeNull();
+    expect(wordmark?.textContent).toContain('MALEK');
 
     // The dynamic page name (route title) must not appear in the global header.
     expect(header?.textContent).not.toContain('العقارات');
+  });
+
+  it('shows centered date with day name and keeps theme toggle in same toolbar', () => {
+    act(() => { root.render(<AppShell />); });
+
+    const header = host.querySelector<HTMLElement>('[data-app-shell-header]');
+    expect(header?.querySelector('[data-header-date-center]')).not.toBeNull();
+    expect(header?.querySelector('[data-header-theme-toggle]')).not.toBeNull();
+    expect(header?.querySelector('[data-header-right-controls]')).not.toBeNull();
+    expect(header?.querySelector('[data-header-wordmark-side]')).not.toBeNull();
   });
 
   it('keeps the page title only for the document title and inside page content', () => {
@@ -86,10 +97,11 @@ describe('AppShell — fixed global MALEK header', () => {
     expect(document.title).toContain('MALEK');
   });
 
-  it('renders the brand lockup on both the desktop header and the sidebar', () => {
+  it('renders the brand lockup on sidebar and wordmark only in top toolbar', () => {
     act(() => { root.render(<AppShell />); });
-    // Sidebar + mobile drawer + global header all carry the fixed brand.
-    expect(host.querySelectorAll('[data-malek-brand-lockup]').length).toBeGreaterThanOrEqual(2);
+    // Sidebar carries full lockup, header now shows wordmark only without M mark
+    expect(host.querySelectorAll('[data-malek-brand-lockup]').length).toBeGreaterThanOrEqual(1);
+    expect(host.querySelectorAll('[data-header-wordmark]').length).toBeGreaterThanOrEqual(1);
   });
 
   it('renders an announced global warning when the browser is offline', () => {
@@ -117,13 +129,12 @@ describe('AppShell — fixed global MALEK header', () => {
     }
   });
 
-  it('keeps the mobile navigation trigger on the floating dock (UX-001) for phone and iPad', () => {
+  it('keeps the mobile navigation trigger in top toolbar and removes duplicate from bottom dock', () => {
     act(() => { root.render(<AppShell />); });
 
-    // Mobile architecture reset (#1545/#1547): the menu trigger lives on the
-    // floating dock (data-mobile-dock-menu) instead of a header hamburger, and
-    // the desktop collapse control was intentionally removed (ce8b15b8).
-    expect(host.querySelector('[data-mobile-dock-menu]')).not.toBeNull();
+    // Menu moved to top toolbar to avoid duplicate, bottom dock now has only quick-add, notifications, AI
+    expect(host.querySelector('[data-mobile-top-menu]')).not.toBeNull();
+    expect(host.querySelector('[data-mobile-dock-menu]')).toBeNull();
     expect(host.querySelector('[data-mobile-menu-trigger]')).toBeNull();
   });
 });

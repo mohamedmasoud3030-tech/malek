@@ -80,16 +80,16 @@ export function NavigationLinks({
         className={cn(
           'group relative flex min-h-11 items-center gap-2.5 rounded-xl border border-transparent px-3 py-1.5 text-sidebar-foreground outline-none transition-[background-color,border-color,color,box-shadow] duration-150',
           'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-4 focus-visible:ring-sidebar-accent/35 motion-reduce:transition-none',
-          '[[data-mobile-nav-sheet]_&]:min-h-11 [[data-mobile-nav-sheet]_&]:rounded-lg [[data-mobile-nav-sheet]_&]:px-2 [[data-mobile-nav-sheet]_&]:py-1 [[data-mobile-nav-sheet]_&]:text-sidebar-foreground/90 [[data-mobile-nav-sheet]_&]:hover:bg-white/[0.06] [[data-mobile-nav-sheet]_&]:hover:text-white [[data-mobile-nav-sheet]_&]:focus-visible:ring-primary/25',
-          isChild && 'ms-3 min-h-11 border-s-2 border-s-sidebar-border/70 ps-3 [[data-mobile-nav-sheet]_&]:ms-2 [[data-mobile-nav-sheet]_&]:min-h-10 [[data-mobile-nav-sheet]_&]:border-s-white/10',
+          '[[data-mobile-nav-sheet]_&]:min-h-11 [[data-mobile-nav-sheet]_&]:rounded-lg [[data-mobile-nav-sheet]_&]:px-2 [[data-mobile-nav-sheet]_&]:py-1 [[data-mobile-nav-sheet]_&]:text-sidebar-foreground/90 [[data-mobile-nav-sheet]_&]:hover:bg-sidebar-accent [[data-mobile-nav-sheet]_&]:hover:text-sidebar-accent-foreground [[data-mobile-nav-sheet]_&]:focus-visible:ring-primary/25',
+          isChild && 'ms-3 min-h-11 border-s-2 border-s-sidebar-border/70 ps-3 [[data-mobile-nav-sheet]_&]:ms-2 [[data-mobile-nav-sheet]_&]:min-h-10 [[data-mobile-nav-sheet]_&]:border-s-sidebar-border/50',
           isLocked && 'cursor-not-allowed opacity-70',
-          isActive && 'border-sidebar-accent/15 bg-sidebar-accent text-sidebar-accent-foreground shadow-[inset_3px_0_0_0_hsl(var(--sidebar-accent-foreground))] rtl:shadow-[inset_-3px_0_0_0_hsl(var(--sidebar-accent-foreground))] [[data-mobile-nav-sheet]_&]:border-white/10 [[data-mobile-nav-sheet]_&]:bg-white/[0.08] [[data-mobile-nav-sheet]_&]:text-white [[data-mobile-nav-sheet]_&]:shadow-none',
+          isActive && 'border-sidebar-accent/15 bg-sidebar-accent text-sidebar-accent-foreground shadow-[inset_3px_0_0_0_hsl(var(--sidebar-accent-foreground))] rtl:shadow-[inset_-3px_0_0_0_hsl(var(--sidebar-accent-foreground))] [[data-mobile-nav-sheet]_&]:border-sidebar-border [[data-mobile-nav-sheet]_&]:bg-sidebar-accent [[data-mobile-nav-sheet]_&]:text-sidebar-accent-foreground [[data-mobile-nav-sheet]_&]:shadow-none',
         )}
       >
         <span
           className={cn(
             'grid size-8 shrink-0 place-items-center rounded-lg transition-colors',
-            '[[data-mobile-nav-sheet]_&]:size-7 [[data-mobile-nav-sheet]_&]:bg-white/[0.04] [[data-mobile-nav-sheet]_&]:text-sidebar-foreground/75',
+            '[[data-mobile-nav-sheet]_&]:size-7 [[data-mobile-nav-sheet]_&]:bg-sidebar-foreground/5 [[data-mobile-nav-sheet]_&]:text-sidebar-foreground/75',
             isActive && '[[data-mobile-nav-sheet]_&]:bg-primary/15 [[data-mobile-nav-sheet]_&]:text-primary',
           )}
         >
@@ -114,7 +114,7 @@ export function NavigationLinks({
           >
             {expanded
               ? <div className="px-3 pb-1 pt-1.5"><p className="text-xs font-bold text-sidebar-foreground/50 [[data-mobile-nav-sheet]_&]:text-sidebar-foreground/50">{sectionTitle}</p></div>
-              : <div aria-hidden="true" className="mx-3 mb-1 h-px bg-white/10" />}
+              : <div aria-hidden="true" className="mx-3 mb-1 h-px bg-sidebar-foreground/10" />}
             {items.map((item) => {
               const [to] = item;
               const children = workspaceChildNavItems[to] ?? [];
@@ -127,7 +127,7 @@ export function NavigationLinks({
                     {expanded && children.length > 0 ? (
                       <button
                         type="button"
-                        className="me-1 grid size-11 shrink-0 place-items-center rounded-xl text-sidebar-foreground/65 outline-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-4 focus-visible:ring-sidebar-accent/35 [[data-mobile-nav-sheet]_&]:size-10 [[data-mobile-nav-sheet]_&]:rounded-lg [[data-mobile-nav-sheet]_&]:text-sidebar-foreground/55 [[data-mobile-nav-sheet]_&]:hover:bg-white/[0.06] [[data-mobile-nav-sheet]_&]:hover:text-white [[data-mobile-nav-sheet]_&]:focus-visible:ring-primary/25"
+                        className="me-1 grid size-11 shrink-0 place-items-center rounded-xl text-sidebar-foreground/65 outline-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-4 focus-visible:ring-sidebar-accent/35 [[data-mobile-nav-sheet]_&]:size-10 [[data-mobile-nav-sheet]_&]:rounded-lg [[data-mobile-nav-sheet]_&]:text-sidebar-foreground/55 [[data-mobile-nav-sheet]_&]:hover:bg-sidebar-accent [[data-mobile-nav-sheet]_&]:hover:text-sidebar-accent-foreground [[data-mobile-nav-sheet]_&]:focus-visible:ring-primary/25"
                         aria-label={`${isOpen ? 'طي' : 'توسيع'} ${navLabel(item[1], sharedLabel)}`}
                         aria-expanded={isOpen}
                         aria-controls={childrenId}
@@ -190,11 +190,9 @@ export function MobileFloatingControl({ onMenu, menuRef }: Readonly<{ onMenu: ()
   const sharedLabel = (key: string) => translateSharedLabel(key, appLanguage.language);
   const [quickOpen, setQuickOpen] = useState(false);
   const quickRootRef = useRef<HTMLDivElement>(null);
-  // Keep the quick-create affordance stable even while account permissions are
-  // still loading or incomplete. Route-level authorization remains authoritative
-  // if the user chooses an action they cannot perform.
   const visibleQuickActions = mobileQuickActions;
-  const utilityActionClass = 'grid size-11 min-h-11 min-w-11 shrink-0 place-items-center rounded-xl border border-transparent text-muted-foreground outline-none transition-[background-color,color,border-color,box-shadow,transform] duration-150 hover:bg-muted hover:text-foreground active:scale-[0.97] focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none motion-reduce:transform-none';
+  const utilityActionClass =
+    'grid size-10 min-h-11 min-w-11 shrink-0 place-items-center rounded-xl border border-transparent text-muted-foreground outline-none transition-[background-color,color,border-color,box-shadow,transform] duration-150 hover:bg-muted hover:text-foreground active:scale-[0.97] focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none motion-reduce:transform-none';
 
   useEffect(() => {
     if (!quickOpen) return;
@@ -227,14 +225,14 @@ export function MobileFloatingControl({ onMenu, menuRef }: Readonly<{ onMenu: ()
     >
       <div
         ref={quickRootRef}
-        className="pointer-events-auto relative flex w-auto items-center gap-0.5 rounded-2xl border border-border/70 bg-card p-1 shadow-[0_10px_28px_-18px_hsl(var(--foreground)/0.35),0_1px_3px_hsl(var(--foreground)/0.06)]"
+        className="pointer-events-auto relative flex w-auto items-center gap-1 rounded-2xl border border-border/70 bg-card/95 p-1 shadow-[0_8px_24px_-16px_hsl(var(--foreground)/0.25),0_1px_3px_hsl(var(--foreground)/0.06)] backdrop-blur-md"
       >
         {quickOpen && visibleQuickActions.length > 0 ? (
           <div
             role="menu"
             aria-label="الإضافة السريعة"
             data-mobile-quick-add-menu
-            className="absolute inset-x-0 bottom-[calc(100%+0.45rem)] grid grid-cols-2 gap-1 rounded-xl border border-border/75 bg-card p-1.5 shadow-elevated"
+            className="absolute inset-x-0 bottom-[calc(100%+0.5rem)] grid grid-cols-2 gap-1 rounded-xl border border-border/70 bg-card p-1.5 shadow-elevated"
           >
             {visibleQuickActions.map((item) => {
               const Icon = item.icon;
@@ -256,21 +254,6 @@ export function MobileFloatingControl({ onMenu, menuRef }: Readonly<{ onMenu: ()
         ) : null}
 
         <button
-          ref={menuRef}
-          type="button"
-          onClick={() => {
-            setQuickOpen(false);
-            onMenu();
-          }}
-          aria-label="فتح القائمة"
-          aria-haspopup="dialog"
-          data-mobile-dock-menu
-          className="grid size-11 min-h-11 min-w-11 shrink-0 place-items-center rounded-xl border border-transparent text-muted-foreground outline-none transition-[background-color,color,box-shadow,transform] duration-150 hover:bg-muted hover:text-foreground active:scale-[0.97] focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none motion-reduce:transform-none"
-        >
-          <Menu className="size-4" aria-hidden="true" />
-        </button>
-
-        <button
           type="button"
           onClick={() => setQuickOpen((value) => !value)}
           aria-label="فتح الإضافة السريعة"
@@ -280,11 +263,11 @@ export function MobileFloatingControl({ onMenu, menuRef }: Readonly<{ onMenu: ()
           data-mobile-dock-quick-add
           className={cn(utilityActionClass, quickOpen && 'border-primary/20 bg-primary/10 text-primary')}
         >
-          <Plus className="size-[1.05rem]" aria-hidden="true" />
+          <Plus className="size-[18px]" aria-hidden="true" />
         </button>
 
         <div
-          className="relative [&>div>button]:!size-11 [&>div>button]:!min-h-11 [&>div>button]:!min-w-11 [&>div>button]:!rounded-xl [&>div>button]:!border-transparent [&>div>button]:!text-muted-foreground [&>div>button]:!shadow-none [&>div>button]:hover:!bg-muted [&>div>button]:hover:!text-foreground [&>div>button[aria-expanded='true']]:!bg-foreground [&>div>button[aria-expanded='true']]:!text-background [&>div>[role='dialog']]:!bottom-14 [&>div>[role='dialog']]:!top-auto"
+          className="relative [&>div>button]:!size-10 [&>div>button]:!min-h-11 [&>div>button]:!min-w-11 [&>div>button]:!rounded-xl [&>div>button]:!border-transparent [&>div>button]:!text-muted-foreground [&>div>button]:!shadow-none [&>div>button]:hover:!bg-muted [&>div>button]:hover:!text-foreground [&>div>button[aria-expanded='true']]:!bg-foreground [&>div>button[aria-expanded='true']]:!text-background [&>div>[role='dialog']]:!bottom-[3.5rem] [&>div>[role='dialog']]:!top-auto"
           data-mobile-dock-notifications
         >
           <NotificationsMenu authorization={authorization} sharedLabel={sharedLabel} />
@@ -296,14 +279,12 @@ export function MobileFloatingControl({ onMenu, menuRef }: Readonly<{ onMenu: ()
           aria-label="فتح المساعد الذكي"
           title="المساعد الذكي"
           data-mobile-dock-ai
-          className={cn(
-            utilityActionClass,
-            '-translate-y-1.5 rounded-full border-primary/15 bg-primary text-primary-foreground shadow-[0_8px_18px_-10px_hsl(var(--primary)/0.9)] hover:bg-primary hover:text-primary-foreground',
-          )}
+          className={utilityActionClass}
         >
-          <Bot className="size-4" aria-hidden="true" />
+          <Bot className="size-[18px]" aria-hidden="true" />
         </button>
       </div>
     </div>
   );
 }
+

@@ -64,26 +64,28 @@ describe('WP-06 / GAP-020 Browser & UX Acceptance Hardening', () => {
       expect(html).toContain('border-s-sidebar-border');
     });
 
-    it('mobile floating control exposes accessible names and 44px touch targets', () => {
+    it('mobile floating control exposes accessible names and compact touch targets without duplicated menu', () => {
       const html = renderToStaticMarkup(<MobileFloatingControl onMenu={() => undefined} />);
       const host = document.createElement('div');
       host.innerHTML = html;
-      expect(host.querySelector('[data-mobile-dock-menu]')).not.toBeNull();
+      // Menu moved to top toolbar, bottom dock now has only 3 actions
+      expect(host.querySelector('[data-mobile-dock-menu]')).toBeNull();
       expect(host.querySelector('[data-mobile-dock-quick-add]')).not.toBeNull();
       expect(host.querySelector('[data-mobile-dock-notifications]')).not.toBeNull();
       expect(host.querySelector('[data-mobile-dock-ai]')).not.toBeNull();
       const labeled = host.querySelectorAll('button[aria-label]');
       expect(labeled.length).toBeGreaterThanOrEqual(3);
       for (const btn of Array.from(labeled)) {
-        expect(btn.className).toContain('min-h-11');
-        expect(btn.className).toContain('min-w-11');
+        expect(btn.className).toMatch(/min-h-(10|11)/);
+        expect(btn.className).toMatch(/min-w-(10|11)/);
       }
     });
 
-    it('mobile floating control container has bottom safe-area padding', () => {
+    it('mobile floating control container has bottom safe-area padding and comfortable rhythm', () => {
       const html = renderToStaticMarkup(<MobileFloatingControl onMenu={() => undefined} />);
       expect(html).toContain('pb-[calc(0.75rem+env(safe-area-inset-bottom');
       expect(html).toContain('data-mobile-floating-control');
+      expect(html).toContain('rounded-2xl');
     });
   });
 
@@ -147,7 +149,7 @@ describe('WP-06 / GAP-020 Browser & UX Acceptance Hardening', () => {
   });
 
   describe('Mobile drawer scroll lock', () => {
-    it('drawer component source includes overflow hidden lock and data attribute', async () => {
+    it('drawer component source includes overflow lock, physical centering, and data attribute', async () => {
       const fs = await import('node:fs/promises');
       const path = await import('node:path');
       const filePath = path.resolve(process.cwd(), 'src/app/layout/app-shell.tsx');
@@ -155,6 +157,9 @@ describe('WP-06 / GAP-020 Browser & UX Acceptance Hardening', () => {
       expect(content).toContain("document.body.style.overflow = 'hidden'");
       expect(content).toContain('document.documentElement.style.overflow = \'hidden\'');
       expect(content).toContain('data-mobile-drawer');
+      expect(content).toContain('bottom-0 left-1/2');
+      expect(content).toContain('-translate-x-1/2');
+      expect(content).not.toContain('bottom-0 start-1/2');
     });
   });
 });

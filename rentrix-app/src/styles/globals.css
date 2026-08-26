@@ -77,12 +77,19 @@
   [data-theme='dark'] .dashboard-ops-header { box-shadow: var(--shadow-card); }
 }
 
-/* Login ambient brand backdrop — radial gradients (no blur utilities, per the
-   design-system blur contract). */
+/* Login ambient brand backdrop — premium Navy + Gold, warm */
 [data-login-surface] {
   background:
-    radial-gradient(42rem 42rem at 112% -12%, hsl(217 71% 45% / 0.12), transparent 60%),
-    radial-gradient(40rem 40rem at -12% 112%, hsl(213 74% 52% / 0.09), transparent 58%),
+    radial-gradient(42rem 42rem at 112% -12%, hsl(222 68% 28% / 0.10), transparent 60%),
+    radial-gradient(36rem 36rem at -10% 110%, hsl(38 88% 55% / 0.08), transparent 58%),
+    radial-gradient(28rem 28rem at 50% -20%, hsl(40 20% 92% / 0.5), transparent 70%),
+    hsl(var(--background));
+}
+
+[data-theme='dark'] [data-login-surface] {
+  background:
+    radial-gradient(42rem 42rem at 112% -12%, hsl(222 60% 62% / 0.12), transparent 60%),
+    radial-gradient(36rem 36rem at -10% 110%, hsl(38 88% 60% / 0.10), transparent 58%),
     hsl(var(--background));
 }
 
@@ -241,27 +248,26 @@
 
 /* ============================================
    Landing site (public `/`, `/privacy`, `/terms`)
-   Self-contained theme tokens — prefixed/named to
-   avoid any collision with the app design system.
+   Premium Real Estate: Deep Navy Ink + Restrained Gold
    ============================================ */
 
 @theme {
-  /* Deep navy ramp */
-  --color-ink-950: #060d1a;
-  --color-ink-900: #0a1220;
-  --color-ink-850: #0e1930;
-  --color-ink-800: #12233f;
-  --color-ink-700: #1b3257;
+  /* Deep navy ink ramp - for dark landing sections with glass */
+  --color-ink-950: #080e1a;
+  --color-ink-900: #0d1526;
+  --color-ink-850: #121a2b;
+  --color-ink-800: #1a2335;
+  --color-ink-700: #222e42;
 
-  /* Landing brand blue ramp */
-  --color-brand-50: #eef4ff;
-  --color-brand-100: #dbe7ff;
-  --color-brand-200: #bfd5ff;
-  --color-brand-300: #93b8ff;
-  --color-brand-400: #6090fa;
-  --color-brand-500: #3b6ef6;
-  --color-brand-600: #2554eb;
-  --color-brand-700: #1d42d8;
+  /* Restrained Gold / Warm Sand ramp - for CTAs and accents */
+  --color-brand-50: #fdf6e8;
+  --color-brand-100: #fbe9c0;
+  --color-brand-200: #f7d48a;
+  --color-brand-300: #f0b95c;
+  --color-brand-400: #e6a23c;
+  --color-brand-500: #d48a2a;
+  --color-brand-600: #b5731f;
+  --color-brand-700: #8c5a18;
 
 }
 

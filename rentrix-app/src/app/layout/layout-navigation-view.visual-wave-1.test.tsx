@@ -73,7 +73,7 @@ describe('Visual Wave 1 — route-derived app navigation', () => {
     expect(anchor(html, '/contracts')?.getAttribute('aria-current')).toBeNull();
   });
 
-  it('renders the MALEK mobile dock with menu, quick add, notifications and a raised AI action', () => {
+  it('renders the MALEK mobile dock with quick add, notifications and AI (no duplicated menu)', () => {
     pathname = '/dashboard';
     const html = renderToStaticMarkup(<MobileFloatingControl onMenu={() => undefined} />);
     const host = document.createElement('div');
@@ -81,11 +81,11 @@ describe('Visual Wave 1 — route-derived app navigation', () => {
 
     const dock = host.querySelector('[data-mobile-floating-control]');
     expect(dock).not.toBeNull();
-    expect(host.querySelector('[data-mobile-dock-menu]')).not.toBeNull();
+    expect(host.querySelector('[data-mobile-dock-menu]')).toBeNull();
     expect(host.querySelector('[data-mobile-dock-quick-add]')).not.toBeNull();
     expect(host.querySelector('[data-mobile-dock-notifications]')).not.toBeNull();
     expect(host.querySelector('[data-mobile-dock-ai]')).not.toBeNull();
-    expect(host.querySelector('button[aria-label="فتح القائمة"]')).not.toBeNull();
+    expect(host.querySelector('button[aria-label="فتح القائمة"]')).toBeNull();
     expect(host.querySelector('button[aria-label="فتح المساعد الذكي"]')).not.toBeNull();
   });
 
