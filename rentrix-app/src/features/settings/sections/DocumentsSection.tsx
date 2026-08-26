@@ -54,7 +54,7 @@ export function DocumentsSection({
           </label>
         </div>
 
-        <div className="flex items-start gap-2 rounded-lg bg-warning/8 px-2.5 py-2 text-[10px] font-semibold leading-4 text-muted-foreground sm:text-[11px]">
+        <div className="flex items-start gap-2 rounded-lg bg-warning/[0.08] px-2.5 py-2 text-[10px] font-semibold leading-4 text-muted-foreground sm:text-[11px]">
           <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-warning" aria-hidden="true" />
           <p><strong className="text-foreground">مهم:</strong> هذه النسب للتوافق فقط؛ الضريبة المحاسبية الفعلية تأتي من سياسة المالية المعتمدة.</p>
         </div>
