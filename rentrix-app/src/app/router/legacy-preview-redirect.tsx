@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { supabase } from '@/lib/supabase';
+import { resolveUnitPropertyId } from '@/features/units/unit-service';
 
 /**
  * Legacy preview query → canonical URL redirect.
@@ -40,16 +40,11 @@ export function LegacyPreviewRedirect() {
       to = '/lands/$landId';
       params = { landId: id };
     } else if (kind === 'unit') {
-      // Unit preview: need propertyId to build canonical /properties/:propertyId/units/:unitId
-      // Resolve via Supabase lookup (read-only, RLS-protected)
+      // Unit preview needs propertyId to build canonical /properties/:propertyId/units/:unitId.
+      // Data access stays inside the units feature service; the router only composes navigation.
       void (async () => {
         try {
-          const { data } = await supabase
-            .from('units')
-            .select('property_id')
-            .eq('id', id)
-            .maybeSingle();
-          const propertyId = (data as { property_id?: string } | null)?.property_id;
+          const propertyId = await resolveUnitPropertyId(id);
           if (propertyId) {
             void (navigate as unknown as (opts: unknown) => void)({
               to: '/properties/$propertyId/units/$unitId',
@@ -63,7 +58,7 @@ export function LegacyPreviewRedirect() {
               },
             });
           } else {
-            // Fallback: unit not found or no property link → keep bookmark but clean query
+            // Fallback: unit not found or no property link → keep bookmark but clean query.
             void (navigate as unknown as (opts: unknown) => void)({
               to: '/properties',
               replace: true,
