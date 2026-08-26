@@ -4,9 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { formatMoney } from '@/features/financials/components/financials-formatters';
+import { formatMoney } from '@/features/accounting/reports/report-formatters';
 import type { ReconciliationRow } from '@/features/accounting/reports/contracts';
-import type { ReconciliationReadiness } from '@/features/reports/accounting-report-authority';
+import type { ReconciliationReadiness } from '@/features/accounting/reports/reconciliation/readiness';
 
 const columns: ColumnDef<ReconciliationRow>[] = [
   {
