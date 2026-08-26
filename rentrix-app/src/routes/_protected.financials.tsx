@@ -1,1 +1,1 @@
-export { MoneyPage as FinancialsRouteComponent } from '@/features/finance-hub/money-page';
+export { FinancePage as FinancialsRouteComponent } from '@/features/finance/FinancePage';

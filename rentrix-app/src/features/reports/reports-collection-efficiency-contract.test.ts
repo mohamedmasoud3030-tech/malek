@@ -16,7 +16,7 @@ describe('Reports collection-efficiency authority contract', () => {
   });
 
   it('does not reintroduce period-cash / period-invoice arithmetic in either reports surface', () => {
-    const hero = source('components/ReportsWorkspace.tsx');
+    const hero = source('workspace/ReportsShell.tsx');
     const insights = source('reports-insights.ts');
 
     expect(hero).toContain('const collectionRate = model.hero.collectionRate;');

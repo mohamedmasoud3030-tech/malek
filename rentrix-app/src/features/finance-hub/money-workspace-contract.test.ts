@@ -7,16 +7,16 @@ const admin: AuthorizationContext = { userId: 'admin', email: null, role: 'ADMIN
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), 'utf8');
 
 describe('Money workspace contract', () => {
-  it('owns commissions inside /financials without changing the commission business workspace', () => {
-    const money = read('./money-page.tsx');
+  it('serves /financials through the unified FinancePage without changing the commission business workspace', () => {
     const commissions = read('../commissions/commissions-page.tsx');
     const route = read('../../routes/_protected.financials.tsx');
 
-    expect(route).toContain('MoneyPage as FinancialsRouteComponent');
-    expect(route).toContain("@/features/finance-hub/money-page");
-    expect(money).toContain('<CommissionsWorkspace embedded />');
-    expect(money).toContain("to: '/financials'");
-    expect(money).not.toContain("to: '/commissions'");
+    // WP-B finance hub unification: /financials serves the unified FinancePage
+    // (was the finance-hub MoneyPage wrapper); commissions remains a
+    // permissioned Money view resolved by the finance shell model, and the
+    // commission business workspace keeps its own atomic mutation hooks.
+    expect(route).toContain('FinancePage as FinancialsRouteComponent');
+    expect(route).toContain('@/features/finance/FinancePage');
     expect(commissions).toContain('usePayCommissionAtomic');
     expect(commissions).toContain('useReverseCommissionAtomic');
   });
