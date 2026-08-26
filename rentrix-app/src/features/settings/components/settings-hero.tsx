@@ -10,26 +10,36 @@ export function SettingsHero({
   return (
     <section
       aria-labelledby="settings-page-title"
-      className="overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-bl from-primary/[0.07] via-card to-card shadow-sm"
+      className="border-b border-border/60 pb-2.5 md:overflow-hidden md:rounded-2xl md:border md:border-primary/20 md:bg-gradient-to-bl md:from-primary/[0.07] md:via-card md:to-card md:pb-0 md:shadow-sm"
       data-settings-cockpit
     >
-      <div className="p-3.5 sm:p-5">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex min-h-7 items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-2.5 text-[11px] font-black text-primary sm:px-3 sm:text-xs">
-            <Settings2 className="size-3.5" aria-hidden="true" />
-            مركز الإعدادات
-          </span>
-          <StatusBadge tone={hasUnsavedChanges ? 'warning' : 'success'}>
-            {hasUnsavedChanges ? 'تغييرات غير محفوظة' : 'الإعدادات محفوظة'}
-          </StatusBadge>
-        </div>
+      <div className="flex min-w-0 items-center gap-2.5 md:block md:p-5">
+        <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary md:hidden">
+          <Settings2 className="size-4" aria-hidden="true" />
+        </span>
 
-        <h1 id="settings-page-title" className="mt-2.5 text-xl font-black leading-8 sm:mt-3 sm:text-3xl sm:leading-10">
-          إعدادات المكتب
-        </h1>
-        <p className="mt-1 max-w-3xl text-xs font-semibold leading-5 text-muted-foreground sm:text-sm sm:leading-6">
-          {companyName} — عدّل بيانات المكتب والهوية والمستندات والتشغيل من أقسام واضحة ومستقلة.
-        </p>
+        <div className="min-w-0 flex-1">
+          <div className="hidden items-center gap-2 md:flex">
+            <span className="inline-flex min-h-7 items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-3 text-xs font-black text-primary">
+              <Settings2 className="size-3.5" aria-hidden="true" />
+              مركز الإعدادات
+            </span>
+            {hasUnsavedChanges ? <StatusBadge tone="warning">تغييرات غير محفوظة</StatusBadge> : null}
+          </div>
+
+          <div className="flex min-w-0 items-center justify-between gap-2 md:block">
+            <div className="min-w-0">
+              <h1 id="settings-page-title" className="truncate text-base font-black leading-6 md:mt-3 md:text-3xl md:leading-10">
+                إعدادات المكتب
+              </h1>
+              <p className="truncate text-[11px] font-bold leading-5 text-muted-foreground md:mt-1 md:max-w-3xl md:whitespace-normal md:text-sm md:font-semibold md:leading-6">
+                <span className="md:hidden">{companyName}</span>
+                <span className="hidden md:inline">{companyName} — عدّل بيانات المكتب والهوية والمستندات والتشغيل من أقسام واضحة ومستقلة.</span>
+              </p>
+            </div>
+            {hasUnsavedChanges ? <StatusBadge tone="warning" className="shrink-0 md:hidden">غير محفوظ</StatusBadge> : null}
+          </div>
+        </div>
       </div>
     </section>
   );

@@ -1,3 +1,4 @@
+import { ChevronDown } from 'lucide-react';
 import { FinanceReadinessSection as TaxAuthorityFinanceReadinessSection } from '@/features/financials/tax-authority/finance-readiness-section';
 import { TaxAuthorityWorkspace } from '@/features/financials/tax-authority/tax-profile-workspace';
 import { SectionCard } from '../components/settings-section-card';
@@ -10,16 +11,9 @@ export type SettingsFinanceReadinessSectionProps = Readonly<{
 /**
  * WP-D D.2 — FinanceReadinessSection (جاهزية المالية والضريبة).
  *
- * FAIL-CLOSED readiness gates: the dated tax authority (rent + management
- * fees), accounting periods, and the chart of accounts. These workspaces are
- * implemented in `features/financials/tax-authority/*` and are owned by
- * WP-B (Finance Hub Unification) — WP-D does NOT modify them, it only
- * composes them into the Settings platform through the registry.
- *
- * PARALLEL DEPENDENCY (documented): this section's bodies live under
- * `features/financials/`, which WP-B is actively migrating to `features/finance/`.
- * If WP-B moves these files, this import path must be updated to the new home;
- * until then the existing path is preserved and untouched by WP-D.
+ * FAIL-CLOSED readiness gates remain unchanged. The advanced authority editor
+ * is disclosure-based so the default Settings view stays focused on readiness
+ * rather than rendering two full administrative workspaces at once.
  */
 export function SettingsFinanceReadinessSection({ activeSection }: SettingsFinanceReadinessSectionProps) {
   return (
@@ -27,11 +21,20 @@ export function SettingsFinanceReadinessSection({ activeSection }: SettingsFinan
       id="finance-readiness"
       activeId={activeSection}
       title="جاهزية المالية والضريبة"
-      subtitle="السلطة الضريبية المعتمدة حسب التاريخ (إيجار وأتعاب)، فترات محاسبية، ودليل الحسابات — فشل مغلق عند النقص."
+      subtitle="تحقق من جاهزية الضريبة والفترات المحاسبية ودليل الحسابات قبل التشغيل المالي."
     >
-      <div className="space-y-6">
+      <div className="space-y-3 [&_[data-component-card]]:shadow-none">
         <TaxAuthorityFinanceReadinessSection />
-        <TaxAuthorityWorkspace />
+
+        <details className="group overflow-hidden rounded-xl border border-border/70 bg-card">
+          <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 px-3 py-2 text-xs font-black outline-none focus-visible:ring-2 focus-visible:ring-primary/25 [&::-webkit-details-marker]:hidden">
+            <span className="min-w-0 flex-1">إدارة السياسات الضريبية المتقدمة</span>
+            <ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" aria-hidden="true" />
+          </summary>
+          <div className="border-t border-border/60 p-2.5 sm:p-3 [&_[data-card-header]]:p-2.5 [&_[data-card-content]]:px-2.5 [&_[data-card-content]]:pb-2.5">
+            <TaxAuthorityWorkspace />
+          </div>
+        </details>
       </div>
     </SectionCard>
   );

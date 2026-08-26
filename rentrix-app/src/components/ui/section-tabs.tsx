@@ -18,6 +18,8 @@ type SectionTabsProps<TId extends string> = Readonly<{
    * switchers that share a single panel must pass the real panel id.
    */
   panelId?: string;
+  /** Keep the active label visible on phones while inactive tabs collapse to icons. */
+  compactMobile?: boolean;
 }>;
 
 /**
@@ -25,7 +27,14 @@ type SectionTabsProps<TId extends string> = Readonly<{
  * The previous gradient mask was intentionally removed because WebKit can
  * render mask-backed scroll strips inconsistently inside composited dialogs.
  */
-export function SectionTabs<TId extends string>({ items, activeId, onChange, ariaLabel, panelId }: SectionTabsProps<TId>) {
+export function SectionTabs<TId extends string>({
+  items,
+  activeId,
+  onChange,
+  ariaLabel,
+  panelId,
+  compactMobile = false,
+}: SectionTabsProps<TId>) {
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   const focusAndSelect = (index: number) => {
@@ -80,16 +89,18 @@ export function SectionTabs<TId extends string>({ items, activeId, onChange, ari
               tabIndex={isActive ? 0 : -1}
               aria-selected={isActive}
               aria-controls={panelId ?? `section-panel-${item.id}`}
+              aria-label={compactMobile ? item.label : undefined}
               id={`section-tab-${item.id}`}
               className={cn(
                 'flex min-h-11 shrink-0 items-center gap-1.5 rounded-md border border-transparent px-2.5 py-1 text-[12px] font-semibold outline-none transition-colors focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none',
+                compactMobile && !isActive && 'max-sm:min-w-10 max-sm:justify-center max-sm:px-2',
                 isActive
                   ? 'bg-card text-foreground shadow-card'
                   : 'text-muted-foreground hover:bg-background/80 hover:text-foreground',
               )}
             >
               <item.icon className="size-3.5" aria-hidden="true" />
-              <span className="whitespace-nowrap">{item.label}</span>
+              <span className={cn('whitespace-nowrap', compactMobile && !isActive && 'max-sm:hidden')}>{item.label}</span>
             </button>
           );
         })}

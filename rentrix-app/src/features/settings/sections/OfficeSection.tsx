@@ -34,35 +34,50 @@ export function OfficeSection({
 
   return (
     <SectionCard id="office" activeId={activeSection} title="بيانات المكتب" subtitle="الهوية الأساسية وبيانات التواصل المستخدمة في المستندات.">
-      <div className="grid grid-cols-2 gap-x-2.5 gap-y-2.5 sm:gap-3">
-        <div className="col-span-2 sm:col-span-1">
-          <FormField label="اسم الشركة" field="company_name" draft={section.draft} errors={section.errors} disabled={isSaving} placeholder={APP_BRAND_NAME} onChange={section.setField} />
+      <fieldset className="min-w-0 space-y-2.5">
+        <legend className="mb-2 text-[11px] font-black text-muted-foreground">الهوية القانونية</legend>
+        <div className="grid grid-cols-2 gap-x-2.5 gap-y-2.5 sm:gap-3">
+          <div className="col-span-2 sm:col-span-1">
+            <FormField label="اسم الشركة" field="company_name" draft={section.draft} errors={section.errors} disabled={isSaving} placeholder={APP_BRAND_NAME} onChange={section.setField} />
+          </div>
+          <div className="col-span-2 sm:col-span-1">
+            <FormField label="الاسم القانوني" field="legal_name" draft={section.draft} errors={section.errors} disabled={isSaving} placeholder="الاسم القانوني للشركة" onChange={section.setField} />
+          </div>
+          <FormField label="الرقم الضريبي" field="tax_number" draft={section.draft} errors={section.errors} disabled={isSaving} onChange={section.setField} />
+          <FormField label="السجل التجاري" field="registration_number" draft={section.draft} errors={section.errors} disabled={isSaving} onChange={section.setField} />
         </div>
-        <div className="col-span-2 sm:col-span-1">
-          <FormField label="الاسم القانوني" field="legal_name" draft={section.draft} errors={section.errors} disabled={isSaving} placeholder="الاسم القانوني للشركة" onChange={section.setField} />
+      </fieldset>
+
+      <fieldset className="min-w-0 space-y-2.5 border-t border-border/55 pt-3">
+        <legend className="mb-2 text-[11px] font-black text-muted-foreground">التواصل والموقع</legend>
+        <div className="grid grid-cols-2 gap-x-2.5 gap-y-2.5 sm:gap-3">
+          <FormField label="الهاتف" field="phone" draft={section.draft} errors={section.errors} disabled={isSaving} onChange={section.setField} />
+          <FormField label="المدينة" field="city" draft={section.draft} errors={section.errors} disabled={isSaving} onChange={section.setField} />
+          <div className="col-span-2 sm:col-span-1">
+            <FormField label="البريد الإلكتروني" field="email" draft={section.draft} errors={section.errors} disabled={isSaving} type="email" placeholder="email@example.com" onChange={section.setField} />
+          </div>
+          <div className="col-span-2 sm:col-span-1">
+            <SelectField label="الدولة" field="country" draft={section.draft} errors={section.errors} disabled={isSaving} options={countryOptions} onChange={section.setField} />
+          </div>
         </div>
-        <FormField label="الرقم الضريبي" field="tax_number" draft={section.draft} errors={section.errors} disabled={isSaving} onChange={section.setField} />
-        <FormField label="السجل التجاري" field="registration_number" draft={section.draft} errors={section.errors} disabled={isSaving} onChange={section.setField} />
-        <FormField label="الهاتف" field="phone" draft={section.draft} errors={section.errors} disabled={isSaving} onChange={section.setField} />
-        <FormField label="المدينة" field="city" draft={section.draft} errors={section.errors} disabled={isSaving} onChange={section.setField} />
-        <div className="col-span-2 sm:col-span-1">
-          <FormField label="البريد الإلكتروني" field="email" draft={section.draft} errors={section.errors} disabled={isSaving} type="email" placeholder="email@example.com" onChange={section.setField} />
-        </div>
-        <div className="col-span-2 sm:col-span-1">
-          <SelectField label="الدولة" field="country" draft={section.draft} errors={section.errors} disabled={isSaving} options={countryOptions} onChange={section.setField} />
-        </div>
-      </div>
-      <label className="block space-y-1 text-xs font-bold text-foreground">
-        <span className="block px-0.5">العنوان</span>
-        <Textarea
-          className="min-h-20 rounded-lg px-3 py-2 text-sm"
-          value={section.draft.address}
-          disabled={isSaving}
-          aria-invalid={Boolean(section.errors.address)}
-          onChange={(event: ChangeEvent<HTMLTextAreaElement>) => section.setField('address', event.target.value)}
-        />
-        {section.errors.address ? <span className="block px-0.5 text-[11px] text-destructive">{section.errors.address}</span> : null}
-      </label>
+      </fieldset>
+
+      <fieldset className="min-w-0 border-t border-border/55 pt-3">
+        <legend className="mb-2 text-[11px] font-black text-muted-foreground">العنوان</legend>
+        <label className="block space-y-1 text-xs font-bold text-foreground">
+          <span className="sr-only">العنوان الكامل</span>
+          <Textarea
+            className="min-h-20 rounded-lg px-3 py-2 text-sm"
+            value={section.draft.address}
+            disabled={isSaving}
+            aria-label="العنوان الكامل"
+            aria-invalid={Boolean(section.errors.address)}
+            placeholder="المنطقة، الشارع، المبنى"
+            onChange={(event: ChangeEvent<HTMLTextAreaElement>) => section.setField('address', event.target.value)}
+          />
+          {section.errors.address ? <span className="block px-0.5 text-[11px] text-destructive">{section.errors.address}</span> : null}
+        </label>
+      </fieldset>
     </SectionCard>
   );
 }
