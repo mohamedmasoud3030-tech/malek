@@ -9,8 +9,8 @@ interface ExpiringContractsSectionProps {
   rows: ExpiringContractRow[];
   /**
    * Server-authoritative 30-day expiring contract count (contracts.expiring_30).
-   * The queue rows are a bounded top-5 slice, so rows.length must never be
-   * shown as the operational number.
+   * The queue rows are a bounded presentation slice, so rows.length must never
+   * be shown as the operational number.
    */
   totalCount?: number;
   isLoading: boolean;
@@ -21,6 +21,7 @@ interface ExpiringContractsSectionProps {
 
 export function ExpiringContractsSection({ rows, totalCount, isLoading, isError = false, settings }: ExpiringContractsSectionProps) {
   const badgeCount = totalCount ?? rows.length;
+  const visibleRows = rows.slice(0, 3);
   const { date } = settings;
   const navigate = useNavigate();
   const location = useLocation();
@@ -32,8 +33,8 @@ export function ExpiringContractsSection({ rows, totalCount, isLoading, isError 
             <CalendarClock className="size-4" />
           </span>
           <div>
-            <h3 id="expiring-contracts-title" className="dashboard-queue-card__title">العقود المنتهية قريباً</h3>
-            <p className="dashboard-queue-card__meta">نافذة {DASHBOARD_WINDOW_DAYS} يوماً</p>
+            <h3 id="expiring-contracts-title" className="dashboard-queue-card__title">عقود تنتهي قريباً</h3>
+            <p className="dashboard-queue-card__meta">خلال {DASHBOARD_WINDOW_DAYS} يوماً</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -43,7 +44,7 @@ export function ExpiringContractsSection({ rows, totalCount, isLoading, isError 
       </div>
 
       {isLoading && (
-        <div className="dashboard-queue-list" aria-label="جارٍ تحميل العقود المنتهية قريباً">
+        <div className="dashboard-queue-list" aria-label="جارٍ تحميل العقود القريبة من الانتهاء">
           <Skeleton className="h-14 rounded-xl" />
           <Skeleton className="h-14 rounded-xl" />
           <Skeleton className="h-14 rounded-xl" />
@@ -52,24 +53,21 @@ export function ExpiringContractsSection({ rows, totalCount, isLoading, isError 
 
       {!isLoading && isError && (
         <div className="dashboard-queue-empty" role="alert">
-          <p className="font-semibold">تعذر تحميل العقود المنتهية قريباً</p>
+          <p className="font-semibold">تعذر تحميل العقود القريبة من الانتهاء</p>
           <p>راجع تنبيه أعلى الصفحة ثم أعد المحاولة. لن نعرض قائمة فارغة عند فشل التحميل.</p>
         </div>
       )}
 
-      {!isLoading && !isError && rows.length === 0 && (
+      {!isLoading && !isError && visibleRows.length === 0 && (
         <div className="dashboard-queue-empty" role="status">
           <p className="font-semibold">لا توجد عقود تنتهي قريباً</p>
-          <p>ستظهر هنا العقود القريبة من الانتهاء عند توفرها.</p>
+          <p>ستظهر هنا العقود التي تحتاج قرار تجديد أو إخلاء.</p>
         </div>
       )}
 
-      {!isLoading && !isError && rows.length > 0 && (
-        /* role="listitem" is invalid on <button>/<a> (axe aria-allowed-role):
-           the list is a real <ul> and each row is wrapped in the <li> that
-           owns the listitem semantics. */
+      {!isLoading && !isError && visibleRows.length > 0 && (
         <ul className="dashboard-queue-list" role="list">
-          {rows.map((row) => {
+          {visibleRows.map((row) => {
             const tone = row.daysRemaining <= 7 ? 'danger' : row.daysRemaining <= 14 ? 'warning' : 'success';
             return (
               <li key={row.id} role="listitem" className="min-w-0">
