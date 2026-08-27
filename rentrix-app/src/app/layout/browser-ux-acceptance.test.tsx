@@ -1,8 +1,6 @@
 // @vitest-environment happy-dom
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { act } from 'react';
-import { createRoot } from 'react-dom/client';
 import type { AuthorizationContext } from '@/features/auth/permissions';
 
 vi.mock('@/components/layout/permission-request-dialog', () => ({ PermissionRequestDialog: () => null }));
@@ -50,8 +48,6 @@ describe('WP-06 / GAP-020 Browser & UX Acceptance Hardening', () => {
       const html = renderToStaticMarkup(
         <NavigationLinks authorization={adminAuth} expanded sharedLabel={sharedLabel} />,
       );
-      // The active descriptor should contain both LTR and RTL shadow variants
-      // to ensure the indicator is on the logical start side in RTL.
       expect(html).toContain('shadow-[inset_3px_0_0_0');
       expect(html).toContain('rtl:shadow-[inset_-3px_0_0_0');
     });
@@ -68,7 +64,6 @@ describe('WP-06 / GAP-020 Browser & UX Acceptance Hardening', () => {
       const html = renderToStaticMarkup(<MobileFloatingControl onMenu={() => undefined} />);
       const host = document.createElement('div');
       host.innerHTML = html;
-      // Bottom dock contains: Menu, Search, Quick Add, Notifications, AI
       expect(host.querySelector('[data-mobile-dock-menu]')).not.toBeNull();
       expect(host.querySelector('[data-mobile-dock-search]')).not.toBeNull();
       expect(host.querySelector('[data-mobile-dock-quick-add]')).not.toBeNull();
@@ -111,14 +106,10 @@ describe('WP-06 / GAP-020 Browser & UX Acceptance Hardening', () => {
 
     it('EmptyState keeps overflow-safe markup and inherits the document direction', () => {
       const html = renderToStaticMarkup(<EmptyState title="لا توجد سجلات" description="لم يتم العثور على أي نتائج في هذا القسم" />);
-      // Overflow hardening (WP-06 / GAP-020) must survive untouched.
       expect(html).toContain('min-w-0');
       expect(html).toContain('overflow-hidden');
       expect(html).toContain('break-words');
       expect(html).toContain('data-empty-state');
-      // This surface is not portalled, so it must inherit the document
-      // direction rather than pinning it. A hard-coded dir="rtl" mirrored and
-      // right-aligned the shared empty state while the product ran in English.
       expect(html).not.toContain('dir="rtl"');
     });
   });
@@ -131,7 +122,6 @@ describe('WP-06 / GAP-020 Browser & UX Acceptance Hardening', () => {
           secondaryActions={<><button type="button">تصدير CSV</button><button type="button">طباعة</button></>}
         />,
       );
-      // Must clamp width on mobile
       expect(html).toContain('max-w-[min(62vw,18rem)]');
       expect(html).toContain('overflow-hidden');
       expect(html).toContain('data-page-actions');
@@ -153,18 +143,26 @@ describe('WP-06 / GAP-020 Browser & UX Acceptance Hardening', () => {
     });
   });
 
-  describe('Mobile drawer scroll lock', () => {
-    it('drawer component source includes overflow lock, right-side placement, and data attribute', async () => {
+  describe('Mobile navigation bottom-sheet contract', () => {
+    it('AppShell uses the shared BottomSheet primitive rather than a side-drawer implementation', async () => {
       const fs = await import('node:fs/promises');
       const path = await import('node:path');
-      const filePath = path.resolve(process.cwd(), 'src/app/layout/app-shell.tsx');
-      const content = await fs.readFile(filePath, 'utf8');
-      expect(content).toContain("document.body.style.overflow = 'hidden'");
-      expect(content).toContain('document.documentElement.style.overflow = \'hidden\'');
-      expect(content).toContain('data-mobile-drawer');
-      expect(content).toContain('right-0');
-      expect(content).toContain('left-auto');
-      expect(content).toContain('h-dvh');
+      const shellPath = path.resolve(process.cwd(), 'src/app/layout/app-shell.tsx');
+      const sheetPath = path.resolve(process.cwd(), 'src/components/ui/bottom-sheet.tsx');
+      const [shell, sheet] = await Promise.all([
+        fs.readFile(shellPath, 'utf8'),
+        fs.readFile(sheetPath, 'utf8'),
+      ]);
+
+      expect(shell).toContain("import { BottomSheet } from '@/components/ui/bottom-sheet'");
+      expect(shell).toContain('data-mobile-nav-bottom-sheet');
+      expect(shell).not.toContain('data-mobile-drawer');
+      expect(shell).not.toContain('w-[85vw]');
+      expect(sheet).toContain("document.body.style.overflow = 'hidden'");
+      expect(sheet).toContain("document.documentElement.style.overflow = 'hidden'");
+      expect(sheet).toContain('data-bottom-sheet');
+      expect(sheet).toContain('justify-end');
+      expect(sheet).toContain('rounded-t-3xl');
     });
   });
 });
