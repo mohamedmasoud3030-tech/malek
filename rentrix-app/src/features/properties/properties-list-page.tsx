@@ -30,6 +30,7 @@ import {
 } from "./property-list-export";
 import { propertyStatusTone } from "./components/property-status";
 import type { PropertyListItem } from "./property-service";
+import { formatCount } from '@/lib/formatters';
 
 const propertyColumnOptions = [
   { key: "title", label: "العقار", locked: true },
@@ -44,9 +45,6 @@ const propertyColumnOptions = [
 
 const defaultPropertyColumns = propertyColumnOptions.map((column) => column.key);
 
-function formatCount(value: number) {
-  return new Intl.NumberFormat("en-US").format(value);
-}
 
 function PropertyWorkflowStatus({ property }: Readonly<{ property: PropertyListItem }>) {
   const label = property.workflow_health === "ready"

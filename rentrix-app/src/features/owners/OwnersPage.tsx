@@ -9,10 +9,8 @@ import { OwnerRelationshipsList, OwnershipLinkForm } from './components/owner-re
 import { OwnerWorkspaceTable } from './components/owner-workspace-table';
 import { getOwnerDisplayLabel } from './utils/owner-ui-helpers';
 import { getOwnerPageErrorMessage, useOwnersPageController } from './useOwnersPageController';
+import { formatCount } from '@/lib/formatters';
 
-function formatCount(value: number) {
-  return new Intl.NumberFormat('en-US').format(value);
-}
 
 export type OwnersWorkspaceProps = Readonly<{
   embedded?: boolean;

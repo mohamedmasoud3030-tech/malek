@@ -45,8 +45,14 @@ export function Card({
   );
 }
 
+/**
+ * Card header. Padding matches CardContent's box (12px on phone, 16px from
+ * `sm`) so a card title sits on the same left/right edge as the body copy
+ * beneath it, with equal breathing room above the title and below the body.
+ * The `compact` variant overrides this through the [data-card-header] hook.
+ */
 export function CardHeader({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div data-card-header className={cn('space-y-0.5 p-2 sm:p-3', className)} {...props} />;
+  return <div data-card-header className={cn('space-y-0.5 p-3 sm:p-4', className)} {...props} />;
 }
 
 export function CardTitle({ className, ...props }: HTMLAttributes<HTMLHeadingElement>) {

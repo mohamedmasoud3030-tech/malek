@@ -21,12 +21,10 @@ import {
   useServiceProviderSummary,
 } from './use-service-providers';
 import { ServiceProviderCategoriesDialog } from './components/service-provider-categories-dialog';
+import { formatCount } from '@/lib/formatters';
 
 const PAGE_SIZE = 10;
 
-function formatCount(value: number) {
-  return new Intl.NumberFormat('en-US').format(value);
-}
 
 export function ServiceProvidersWorkspace({ embedded = false }: Readonly<{ embedded?: boolean }>) {
   const auth = useAuth();
