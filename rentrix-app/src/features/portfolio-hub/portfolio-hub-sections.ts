@@ -7,12 +7,12 @@ export type PortfolioHubSectionId = 'properties' | 'units' | 'lands' | 'owners';
 export type PortfolioHubSection = SectionTabItem<PortfolioHubSectionId> & Readonly<{
   description: string;
   permission: AppPermission | null;
+  showInPrimaryNavigation: boolean;
 }>;
 
 /**
- * Portfolio answers one question: what does the office manage and for whom?
- * Asset registers and ownership context stay in one workspace. Standalone
- * entity routes remain valid deep links, but they are not separate products.
+ * Portfolio keeps daily asset work on properties, units and owners. Lands remain
+ * a supported specialist register but do not occupy routine navigation space.
  */
 export const portfolioHubSections: readonly PortfolioHubSection[] = [
   {
@@ -21,6 +21,7 @@ export const portfolioHubSections: readonly PortfolioHubSection[] = [
     icon: Building2,
     description: 'العقارات والأصول المدارة وحالتها التشغيلية.',
     permission: null,
+    showInPrimaryNavigation: true,
   },
   {
     id: 'units',
@@ -28,6 +29,7 @@ export const portfolioHubSections: readonly PortfolioHubSection[] = [
     icon: DoorOpen,
     description: 'الوحدات وحالات الإشغال والجاهزية.',
     permission: null,
+    showInPrimaryNavigation: true,
   },
   {
     id: 'lands',
@@ -35,6 +37,7 @@ export const portfolioHubSections: readonly PortfolioHubSection[] = [
     icon: MapPinned,
     description: 'قطع الأراضي كأصول ضمن المحفظة المدارة.',
     permission: 'lands.view',
+    showInPrimaryNavigation: false,
   },
   {
     id: 'owners',
@@ -42,15 +45,22 @@ export const portfolioHubSections: readonly PortfolioHubSection[] = [
     icon: UserRoundCog,
     description: 'الملاك وعلاقات الملكية بالأصول المدارة.',
     permission: 'owners.hub.view',
+    showInPrimaryNavigation: true,
   },
 ] as const;
 
 export type PortfolioHubPermission = Exclude<PortfolioHubSection['permission'], null>;
 
-export function getVisiblePortfolioHubSections(
+export function getAccessiblePortfolioHubSections(
   canAccess: (permission: PortfolioHubPermission) => boolean,
 ) {
   return portfolioHubSections.filter(
     (section) => section.permission === null || canAccess(section.permission),
   );
+}
+
+export function getVisiblePortfolioHubSections(
+  canAccess: (permission: PortfolioHubPermission) => boolean,
+) {
+  return getAccessiblePortfolioHubSections(canAccess).filter((section) => section.showInPrimaryNavigation);
 }
