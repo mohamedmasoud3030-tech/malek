@@ -124,7 +124,7 @@ export function GovernanceHubWorkspace() {
               <div className="min-w-max">
                 <SectionTabs
                   items={visibleSections}
-                  activeId={visibleSections.some((section) => section.id === resolvedActiveTab) ? resolvedActiveTab : undefined}
+                  activeId={resolvedActiveTab}
                   onChange={handleTabChange}
                   ariaLabel="أقسام الإعدادات"
                   compactMobile
