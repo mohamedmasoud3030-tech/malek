@@ -1,30 +1,34 @@
 import type { ComponentType } from 'react';
 import {
+  BarChart3,
   Building2,
   FileText,
   Receipt,
   ShieldCheck,
-  UserRound,
   UsersRound,
+  Wrench,
 } from 'lucide-react';
 import type { ReportSectionId } from '../reports-page.sections';
 import type { ReportViewId } from '../report-view-registry';
 
-/**
- * WP-C — the report directory model, separated from its presentation.
- *
- * This is a navigation index only: each entry names a `(section, view)` pair
- * owned by the report view registry. It contains no data queries, no monetary
- * values and no report bodies — opening an entry navigates, it never fetches.
- */
 export type ReportShortcut = Readonly<{
   label: string;
+  description: string;
   section: ReportSectionId;
   view: ReportViewId;
 }>;
 
+export type ReportGroupId =
+  | 'finance'
+  | 'leases'
+  | 'maintenance'
+  | 'owners'
+  | 'properties'
+  | 'analytics'
+  | 'control';
+
 export type ReportGroup = Readonly<{
-  id: 'finance' | 'leases' | 'owners' | 'tenants' | 'properties' | 'control';
+  id: ReportGroupId;
   title: string;
   description: string;
   icon: ComponentType<{ className?: string }>;
@@ -38,98 +42,101 @@ export const reportGroups: readonly ReportGroup[] = [
   {
     id: 'finance',
     title: 'المالية والتحصيل',
-    description: 'التحصيل، المتأخرات، المصروفات وملخص الأداء المالي للفترة.',
+    description: 'التحصيل، المتأخرات، المصروفات والأرصدة والقوائم المالية.',
     icon: Receipt,
     section: 'analytics',
     view: 'collections',
-    matches: ['overview', 'collections', 'overdue', 'expenses'],
+    matches: ['collections', 'overdue', 'expenses'],
     shortcuts: [
-      { label: 'ملخص الأداء', section: 'analytics', view: 'overview' },
-      { label: 'التحصيل', section: 'analytics', view: 'collections' },
-      { label: 'المتأخرات', section: 'analytics', view: 'overdue' },
-      { label: 'المصروفات', section: 'analytics', view: 'expenses' },
+      { label: 'كشف التحصيل', description: 'الإيجارات المحصلة والمتبقية خلال الفترة.', section: 'analytics', view: 'collections' },
+      { label: 'المتأخرات والأرصدة', description: 'تعتيق الذمم والمبالغ المتأخرة والمدد.', section: 'analytics', view: 'overdue' },
+      { label: 'المصروفات', description: 'المصروفات حسب الفترة والتصنيف والنطاق.', section: 'analytics', view: 'expenses' },
+      { label: 'القوائم المحاسبية', description: 'ميزان المراجعة والقوائم من المصدر المحاسبي المعتمد.', section: 'accounting', view: 'accounting_reports' },
     ],
   },
   {
     id: 'leases',
-    title: 'العقود والإيجارات',
-    description: 'الإشغال، العقود النشطة والقريبة من الانتهاء والوحدات الشاغرة.',
+    title: 'التأجير والإشغال',
+    description: 'العقود النشطة والمنتهية قريبًا والشواغر ونسب الإشغال.',
     icon: FileText,
     section: 'analytics',
     view: 'occupancy',
     matches: ['occupancy'],
     shortcuts: [
-      { label: 'الإشغال والشواغر', section: 'analytics', view: 'occupancy' },
-      { label: 'العقود القريبة من الانتهاء', section: 'analytics', view: 'occupancy' },
+      { label: 'انتهاء العقود والتجديد', description: 'متابعة العقود ضمن نوافذ 30/60/90 يوم.', section: 'analytics', view: 'occupancy' },
+      { label: 'الشواغر والإشغال', description: 'الوحدات المشغولة والشاغرة ونسبة الإشغال.', section: 'analytics', view: 'occupancy' },
+    ],
+  },
+  {
+    id: 'maintenance',
+    title: 'الصيانة والمرافق',
+    description: 'حجم طلبات الصيانة وتكلفتها وأداء الإغلاق حسب العقار والوحدة.',
+    icon: Wrench,
+    section: 'analytics',
+    view: 'maintenance_analytics',
+    matches: ['maintenance_analytics'],
+    shortcuts: [
+      { label: 'تقرير الصيانة', description: 'الطلبات والحالات والأولويات والتكلفة حسب النطاق.', section: 'analytics', view: 'maintenance_analytics' },
     ],
   },
   {
     id: 'owners',
-    title: 'الملاك',
-    description: 'كشف المالك، الحركة، الاستقطاعات وصافي المستحق للفترة.',
+    title: 'تقارير الملاك',
+    description: 'كشف حساب المالك والحركة والاستقطاعات وصافي المستحق.',
     icon: UsersRound,
     section: 'statements',
     view: '',
     matches: [],
     shortcuts: [
-      { label: 'كشف المالك', section: 'statements', view: '' },
-    ],
-  },
-  {
-    id: 'tenants',
-    title: 'المستأجرون',
-    description: 'كشف المستأجر، الفواتير، الرصيد والحركات المرتبطة بالعقد.',
-    icon: UserRound,
-    section: 'statements',
-    view: '',
-    matches: [],
-    shortcuts: [
-      { label: 'كشف المستأجر', section: 'statements', view: '' },
-      { label: 'متأخرات المستأجرين', section: 'analytics', view: 'overdue' },
+      { label: 'كشف حساب المالك', description: 'حركة المالك للفترة مع المستحقات والاستقطاعات والرصيد.', section: 'statements', view: '' },
+      { label: 'كشف حساب المستأجر', description: 'الفواتير والمدفوعات والرصيد والحركة المرتبطة بالعقد.', section: 'statements', view: '' },
     ],
   },
   {
     id: 'properties',
     title: 'العقارات والوحدات',
-    description: 'أداء العقار، الإشغال والمصروفات والصيانة عبر النطاق المحدد.',
+    description: 'أداء كل عقار ووحداته والإشغال والتحصيل والمصروفات والصيانة.',
     icon: Building2,
     section: 'analytics',
     view: 'property_analytics',
-    matches: ['property_analytics', 'maintenance_analytics'],
+    matches: ['property_analytics'],
     shortcuts: [
-      { label: 'أداء العقار', section: 'analytics', view: 'property_analytics' },
-      { label: 'الإشغال', section: 'analytics', view: 'occupancy' },
-      { label: 'الصيانة', section: 'analytics', view: 'maintenance_analytics' },
-      { label: 'المصروفات', section: 'analytics', view: 'expenses' },
+      { label: 'تقرير أداء العقار', description: 'ملخص تشغيلي ومالي للعقار المحدد.', section: 'analytics', view: 'property_analytics' },
+      { label: 'الإشغال حسب العقار', description: 'نسب الإشغال والشواغر على مستوى العقار.', section: 'analytics', view: 'occupancy' },
+    ],
+  },
+  {
+    id: 'analytics',
+    title: 'التحليلات المتقدمة',
+    description: 'صورة أداء مجمعة واتجاهات التحصيل والإشغال والمصروفات.',
+    icon: BarChart3,
+    section: 'analytics',
+    view: 'overview',
+    matches: ['overview'],
+    shortcuts: [
+      { label: 'نظرة عامة على الأداء', description: 'أهم مؤشرات الأداء خلال الفترة المحددة.', section: 'analytics', view: 'overview' },
     ],
   },
   {
     id: 'control',
     title: 'الرقابة والمطابقة',
-    description: 'ميزان المراجعة، الأستاذ العام، التسويات والرقابة المحاسبية.',
+    description: 'دفتر الأستاذ، التسويات والرقابة على الأرصدة والحركة المحاسبية.',
     icon: ShieldCheck,
     section: 'accounting',
-    view: 'accounting_reports',
+    view: 'general_ledger',
     matches: ['accounting_reports', 'general_ledger', 'deferred_revenue'],
     shortcuts: [
-      { label: 'القوائم المحاسبية', section: 'accounting', view: 'accounting_reports' },
-      { label: 'دفتر الأستاذ', section: 'accounting', view: 'general_ledger' },
-      { label: 'تسوية الإيرادات', section: 'accounting', view: 'deferred_revenue' },
+      { label: 'دفتر الأستاذ', description: 'الحركة المحاسبية التفصيلية حسب الحساب والفترة.', section: 'accounting', view: 'general_ledger' },
+      { label: 'تسوية الإيرادات', description: 'مراجعة الإيرادات المؤجلة وتسويتها.', section: 'accounting', view: 'deferred_revenue' },
     ],
   },
 ];
 
-/** Total number of directly-openable report entries across all groups. */
 export const REPORT_DIRECTORY_ENTRY_COUNT = reportGroups.reduce(
   (total, group) => total + group.shortcuts.length,
   0,
 );
 
-/**
- * Arabic-tolerant directory search: matches a group title, its description or
- * any of its shortcut labels. Diacritics and tatweel are stripped so that a
- * partially-vocalised query still finds its report.
- */
 export function filterReportGroups(groups: readonly ReportGroup[], query: string): readonly ReportGroup[] {
   const normalized = normalizeArabicQuery(query);
   if (!normalized) return groups;
@@ -137,7 +144,9 @@ export function filterReportGroups(groups: readonly ReportGroup[], query: string
     (group) =>
       normalizeArabicQuery(group.title).includes(normalized)
       || normalizeArabicQuery(group.description).includes(normalized)
-      || group.shortcuts.some((shortcut) => normalizeArabicQuery(shortcut.label).includes(normalized)),
+      || group.shortcuts.some((shortcut) =>
+        normalizeArabicQuery(`${shortcut.label} ${shortcut.description}`).includes(normalized),
+      ),
   );
 }
 

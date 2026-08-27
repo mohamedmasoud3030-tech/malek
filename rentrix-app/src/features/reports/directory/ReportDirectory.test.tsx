@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { ReportDirectory } from './ReportDirectory';
 
 describe('ReportDirectory', () => {
-  it('renders the six report families and the direct report shortcuts without duplicating report bodies', () => {
+  it('renders the seven operational report families, pinned reports, search, and direct shortcuts', () => {
     const html = renderToStaticMarkup(
       <ReportDirectory
         activeSection="analytics"
@@ -13,23 +13,27 @@ describe('ReportDirectory', () => {
       />,
     );
 
-    expect(html.match(/data-report-group=/g)).toHaveLength(6);
-    expect(html).toContain('6 مجموعات · 16 مدخل');
+    expect(html.match(/data-report-group=/g)).toHaveLength(7);
+    expect(html).toContain('7 أقسام · 14 تقريرًا وكشفًا');
+    expect(html).toContain('المفضلة والتقارير المثبتة');
+    expect(html).toContain('بحث في مركز التقارير');
     expect(html).toContain('المالية والتحصيل');
-    expect(html).toContain('العقود والإيجارات');
-    expect(html).toContain('الملاك');
-    expect(html).toContain('المستأجرون');
+    expect(html).toContain('التأجير والإشغال');
+    expect(html).toContain('الصيانة والمرافق');
+    expect(html).toContain('تقارير الملاك');
     expect(html).toContain('العقارات والوحدات');
+    expect(html).toContain('التحليلات المتقدمة');
     expect(html).toContain('الرقابة والمطابقة');
-    expect(html).toContain('ملخص الأداء');
-    expect(html).toContain('الإشغال والشواغر');
-    expect(html).toContain('متأخرات المستأجرين');
+    expect(html).toContain('مسير التحصيل');
+    expect(html).toContain('المتأخرات والأرصدة');
+    expect(html).toContain('انتهاء العقود والتجديد');
+    expect(html).toContain('كشف حساب المالك');
+    expect(html).toContain('تقرير الصيانة');
     expect(html).toContain('دفتر الأستاذ');
-    expect(html).toContain('تسوية الإيرادات');
     expect(html).toContain('data-report-group="finance" data-active="true"');
   });
 
-  it('marks only the scoped statement family as active', () => {
+  it('marks the owner family active when an owner statement scope is open', () => {
     const ownerHtml = renderToStaticMarkup(
       <ReportDirectory
         activeSection="statements"
@@ -38,18 +42,7 @@ describe('ReportDirectory', () => {
         onOpen={vi.fn()}
       />,
     );
-    expect(ownerHtml).toContain('data-report-group="owners" data-active="true"');
-    expect(ownerHtml).not.toContain('data-report-group="tenants" data-active="true"');
 
-    const tenantHtml = renderToStaticMarkup(
-      <ReportDirectory
-        activeSection="statements"
-        activeView=""
-        scope={{ tenantId: 'tenant-1', contractId: 'contract-1' }}
-        onOpen={vi.fn()}
-      />,
-    );
-    expect(tenantHtml).toContain('data-report-group="tenants" data-active="true"');
-    expect(tenantHtml).not.toContain('data-report-group="owners" data-active="true"');
+    expect(ownerHtml).toContain('data-report-group="owners" data-active="true"');
   });
 });
