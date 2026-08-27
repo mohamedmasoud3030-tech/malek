@@ -1,13 +1,10 @@
 import {
   BadgeDollarSign,
   BarChart3,
-  BriefcaseBusiness,
   Building2,
   DoorOpen,
   FileText,
-  FolderKanban,
   LayoutDashboard,
-  MapPinned,
   PieChart,
   Settings,
   Settings2,
@@ -36,10 +33,10 @@ export type NavGroup = readonly [sectionTitle: string, items: readonly NavItem[]
 export const navGroups: readonly NavGroup[] = [
   ['العمل', [
     ['/dashboard', 'today', 'ما يحتاج انتباهك وتنفيذك الآن', LayoutDashboard],
-    ['/properties', 'portfolio', 'العقارات والوحدات والملاك والأصول المدارة', Building2],
+    ['/properties', 'portfolio', 'العقارات والوحدات والملاك', Building2],
     ['/contracts', 'leasing', 'العقود والمستأجرون من البداية حتى التجديد أو الإخلاء', FileText],
     ['/financials', 'money', 'المستحقات والتحصيل والمصروفات وما يحتاج متابعة', PieChart],
-    ['/maintenance', 'services', 'الصيانة والمرافق والخدمات التشغيلية', Wrench],
+    ['/maintenance', 'services', 'الصيانة والمرافق وما يحتاج متابعة', Wrench],
   ]],
   ['التحليل والإدارة', [
     ['/reports', 'reportsAndStatements', 'التقارير والتحليلات والكشوف', BarChart3, 'financial.reports.view'],
@@ -49,14 +46,12 @@ export const navGroups: readonly NavGroup[] = [
 
 /**
  * Workspace children preserve context instead of sending the user to another
- * feature module. Standalone entity URLs stay available for bookmarks/deep links.
- * Support, diagnostics, secondary relationship registers and specialist finance
- * tools stay out of routine navigation; guarded/contextual access remains.
+ * feature module. Specialist registers stay deep-link/contextual instead of
+ * competing with the user's daily navigation.
  */
 export const workspaceChildNavItems: Record<string, readonly NavItem[]> = {
   '/properties': [
     ['/properties', 'units', 'كل الوحدات وحالات الإشغال', DoorOpen, undefined, { section: 'units' }],
-    ['/properties', 'lands', 'الأراضي وقطع الأراضي', MapPinned, 'lands.view', { section: 'lands' }],
     ['/properties', 'owners', 'الملاك وعلاقات الملكية والإدارة', UserRoundCog, 'owners.hub.view', { section: 'owners' }],
   ],
   '/contracts': [
@@ -70,9 +65,7 @@ export const workspaceChildNavItems: Record<string, readonly NavItem[]> = {
   ],
   '/maintenance': [
     ['/maintenance', 'maintenance', 'طلبات الصيانة والمتابعة', Wrench, undefined, { section: 'maintenance' }],
-    ['/maintenance', 'serviceProviders', 'مزودو الخدمات وتخصصاتهم', BriefcaseBusiness, 'service_providers.view', { section: 'service_providers' }],
     ['/maintenance', 'utilities', 'المرافق والعدادات', Zap, undefined, { section: 'utilities' }],
-    ['/maintenance', 'documentsVault', 'المستندات التشغيلية المرتبطة بالعمل', FolderKanban, undefined, { section: 'documents_vault' }],
   ],
   '/reports': [],
   '/settings': [
