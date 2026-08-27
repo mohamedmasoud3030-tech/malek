@@ -113,4 +113,16 @@ describe('UX completion contract', () => {
     expect(system).not.toContain('بلا RPC');
     expect(system).not.toContain('DDL');
   });
+
+  it('keeps owner, people, and password surfaces from exposing provider errors or names', () => {
+    const ownerPreview = source('features/owners/components/OwnerPreviewDialog.tsx');
+    const personForm = source('features/people/person-form-modal.tsx');
+    const password = source('features/auth/change-password-page.tsx');
+
+    expect(ownerPreview).toContain('getActionableSupabaseErrorMessage');
+    expect(ownerPreview).not.toContain('detailQuery.error.message');
+    expect(personForm).toContain('getActionableSupabaseErrorMessage');
+    expect(personForm).not.toContain('error instanceof Error ? error.message');
+    expect(password).not.toContain('جلسة Supabase');
+  });
 });
