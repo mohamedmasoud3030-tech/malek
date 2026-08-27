@@ -156,11 +156,11 @@ describe('ContractDetailPage load and money states', () => {
     const html = renderContractDetailPage();
 
     expectMarkupToContain(html, [
-      'إجراءات التجديد والإنهاء',
-      'إنهاء العقد بسبب',
-      'لا يوجد عقد سابق مرتبط بهذا العقد',
-      'سبب الإلغاء',
-      'الخط الزمني المالي',
+      'نظرة عامة',
+      'المالية',
+      'المستندات والنشاط',
+      'إجراءات العقد',
+      'بيانات العقد',
       'دورة السداد',
       'شهري',
       'الحالة',
@@ -177,6 +177,22 @@ describe('ContractDetailPage load and money states', () => {
       'فحص الدخول',
       'فحص الإخلاء',
     ]);
+  });
+
+  it('uses the compact mobile summary and progressive detail workspace', () => {
+    const html = renderContractDetailPage();
+
+    expectMarkupToContain(html, [
+      'data-contract-mobile-summary',
+      'data-contract-detail-workspace',
+      'عقد الإيجار',
+      'قيمة الإيجار',
+      'ينتهي في',
+      'إجراءات العقد',
+    ]);
+    expect(html).not.toContain('إجراءات التجديد والإنهاء');
+    expect(html).not.toContain('إنهاء العقد بسبب');
+    expect(html).not.toContain('الخط الزمني المالي');
   });
 
   it('renders a retryable error state when contract detail loading fails', () => {
