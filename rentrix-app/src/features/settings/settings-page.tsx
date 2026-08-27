@@ -96,21 +96,24 @@ export function SettingsWorkspace({
   onSectionChange,
 }: SettingsWorkspaceProps = {}) {
   const controller = useSettingsPageController();
-  const workspaceDefinitions = variant === 'embedded'
+  const accessibleDefinitions = variant === 'embedded'
     ? settingsSectionRegistry.filter((section) => section.id !== 'cost-centers')
     : settingsSectionRegistry;
-  const workspaceSections = workspaceDefinitions.map((section) => ({
+  const routineDefinitions = accessibleDefinitions.filter((section) => section.showInPrimaryNavigation);
+  const workspaceSections = routineDefinitions.map((section) => ({
     id: section.id,
     label: section.label,
     description: section.description,
     icon: section.icon,
   }));
-  const fallbackWorkspaceSection = workspaceDefinitions[0]?.id ?? 'office';
+  const fallbackWorkspaceSection = routineDefinitions[0]?.id ?? accessibleDefinitions[0]?.id ?? 'office';
   const [localActiveSection, setLocalActiveSection] = useState<SettingsSectionId>(fallbackWorkspaceSection);
   const requestedActiveSection = controlledActiveSection ?? localActiveSection;
-  const activeSection = workspaceDefinitions.some((section) => section.id === requestedActiveSection)
+  const activeSection = accessibleDefinitions.some((section) => section.id === requestedActiveSection)
     ? requestedActiveSection
     : fallbackWorkspaceSection;
+  const activeDefinition = accessibleDefinitions.find((section) => section.id === activeSection) ?? null;
+  const isSpecialistSection = Boolean(activeDefinition && !activeDefinition.showInPrimaryNavigation);
   const [mountedSections, setMountedSections] = useState<ReadonlySet<SettingsSectionId>>(() => new Set([activeSection]));
   const handleJumpToSection = (section: SettingsSectionId) => {
     if (onSectionChange) {
@@ -229,8 +232,19 @@ export function SettingsWorkspace({
       <div className="grid min-w-0 gap-2 md:grid-cols-[minmax(210px,255px)_minmax(0,1fr)] md:items-start md:gap-4">
         <SettingsWorkspaceNav activeSection={activeSection} onChange={handleJumpToSection} sections={workspaceSections} />
         <div className="min-w-0 space-y-2 md:space-y-3">
+          {isSpecialistSection ? (
+            <div
+              data-settings-specialist-context
+              className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/70 bg-muted/20 px-3 py-2 text-xs text-muted-foreground"
+            >
+              <span>إعداد متخصص مفتوح من سياق مرتبط. لا يظهر ضمن إعدادات المكتب اليومية.</span>
+              <Button type="button" size="sm" variant="ghost" className="min-h-11" onClick={() => handleJumpToSection(fallbackWorkspaceSection)}>
+                العودة لإعدادات المكتب
+              </Button>
+            </div>
+          ) : null}
           <form id="settings-company-form" className="min-w-0 space-y-2.5 md:space-y-4" onSubmit={handleSubmit}>
-            {workspaceDefinitions
+            {accessibleDefinitions
               .filter((section) => mountedSections.has(section.id))
               .map((section) => (
                 <SettingsSectionView key={section.id} definition={section} renderProps={sectionRenderProps} />
