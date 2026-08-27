@@ -5,13 +5,6 @@ import {
   type OperationsHubSectionId,
 } from './operations-hub.sections';
 
-/**
- * Pure model behind the operations workspace.
- *
- * Kept free of React so permission filtering and URL resolution can be unit
- * tested directly, and so every entry route runs the exact same rules.
- */
-
 export function canViewOperationsSection(
   authorization: AuthorizationContext | null | undefined,
   section: OperationsHubSection,
@@ -20,10 +13,16 @@ export function canViewOperationsSection(
   return section.permission === null ? true : canAccess(authorization, section.permission);
 }
 
-export function getVisibleOperationsSections(
+export function getAccessibleOperationsSections(
   authorization: AuthorizationContext | null | undefined,
 ): readonly OperationsHubSection[] {
   return operationsHubSections.filter((section) => canViewOperationsSection(authorization, section));
+}
+
+export function getVisibleOperationsSections(
+  authorization: AuthorizationContext | null | undefined,
+): readonly OperationsHubSection[] {
+  return getAccessibleOperationsSections(authorization).filter((section) => section.showInPrimaryNavigation);
 }
 
 const sectionIds = new Set<string>(operationsHubSections.map((section) => section.id));
@@ -34,19 +33,13 @@ export function isOperationsHubSectionId(value: unknown): value is OperationsHub
 
 export type OperationsHubResolution = Readonly<{
   activeSection: OperationsHubSectionId | null;
+  accessibleSections: readonly OperationsHubSection[];
   visibleSections: readonly OperationsHubSection[];
   isRequestedSectionForbidden: boolean;
-  hasNoVisibleSections: boolean;
+  hasNoAccessibleSections: boolean;
 }>;
 
-/**
- * Resolves which section should be active from (url, default, permissions).
- *
- * Precedence:
- *   1. a valid, permitted `?section=` value  (deep link wins)
- *   2. the entry page's default section, when permitted
- *   3. the first permitted section           (never a forbidden fallback)
- */
+/** Resolve a permitted deep link while exposing only routine sections as tabs. */
 export function resolveOperationsHubState({
   requestedSection,
   defaultSection,
@@ -56,41 +49,50 @@ export function resolveOperationsHubState({
   defaultSection: OperationsHubSectionId;
   authorization: AuthorizationContext | null | undefined;
 }>): OperationsHubResolution {
-  const visibleSections = getVisibleOperationsSections(authorization);
-  const visibleIds = new Set(visibleSections.map((section) => section.id));
+  const accessibleSections = getAccessibleOperationsSections(authorization);
+  const visibleSections = accessibleSections.filter((section) => section.showInPrimaryNavigation);
+  const accessibleIds = new Set(accessibleSections.map((section) => section.id));
 
-  if (visibleSections.length === 0) {
+  if (accessibleSections.length === 0) {
     return {
       activeSection: null,
+      accessibleSections,
       visibleSections,
       isRequestedSectionForbidden: false,
-      hasNoVisibleSections: true,
+      hasNoAccessibleSections: true,
     };
   }
 
-  if (isOperationsHubSectionId(requestedSection) && !visibleIds.has(requestedSection)) {
+  if (isOperationsHubSectionId(requestedSection) && !accessibleIds.has(requestedSection)) {
     return {
       activeSection: null,
+      accessibleSections,
       visibleSections,
       isRequestedSectionForbidden: true,
-      hasNoVisibleSections: false,
+      hasNoAccessibleSections: false,
     };
   }
 
-  if (isOperationsHubSectionId(requestedSection) && visibleIds.has(requestedSection)) {
+  if (isOperationsHubSectionId(requestedSection) && accessibleIds.has(requestedSection)) {
     return {
       activeSection: requestedSection,
+      accessibleSections,
       visibleSections,
       isRequestedSectionForbidden: false,
-      hasNoVisibleSections: false,
+      hasNoAccessibleSections: false,
     };
   }
 
-  const activeSection = visibleIds.has(defaultSection) ? defaultSection : visibleSections[0].id;
+  const visibleIds = new Set(visibleSections.map((section) => section.id));
+  const activeSection = visibleIds.has(defaultSection)
+    ? defaultSection
+    : visibleSections[0]?.id ?? accessibleSections[0].id;
+
   return {
     activeSection,
+    accessibleSections,
     visibleSections,
     isRequestedSectionForbidden: false,
-    hasNoVisibleSections: false,
+    hasNoAccessibleSections: false,
   };
 }
