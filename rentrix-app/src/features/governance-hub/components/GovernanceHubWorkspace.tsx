@@ -112,7 +112,7 @@ export function GovernanceHubWorkspace() {
   return (
     <PageLayout dir="rtl" lang="ar" contentClassName="min-w-0 space-y-2 md:space-y-4">
       {resolvedActiveTab !== 'company' ? (
-        <PageHeader title="الإعدادات" description="الشركة، المستخدمون والصلاحيات، مراكز التكلفة والأتمتة." />
+        <PageHeader title="الإعدادات" description="الشركة، المستخدمون والصلاحيات، والأتمتة." />
       ) : null}
 
       {accessibleSections.length === 0 ? (
