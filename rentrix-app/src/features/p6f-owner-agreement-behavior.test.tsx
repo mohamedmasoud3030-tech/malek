@@ -12,6 +12,9 @@ type AgreementSubmitPayload = {
   property_id: string;
   starts_on: string;
   ends_on: string;
+  collection_role: 'OWNER_IS_CREDITOR' | 'OFFICE_IS_CREDITOR';
+  commission_type: 'RATE' | 'FIXED_MONTHLY';
+  commission_value: number;
 };
 
 const agreementMutation = vi.hoisted(() => {
@@ -22,8 +25,8 @@ const agreementMutation = vi.hoisted(() => {
   });
   return { state, spy };
 });
-const ownershipState = vi.hoisted(() => ({ data: [] as unknown[], isLoading: false }));
-const ownersState = vi.hoisted(() => ({ data: [] as unknown[], isLoading: false }));
+const ownershipState = vi.hoisted(() => ({ data: [] as unknown[], isLoading: false, isError: false }));
+const ownersState = vi.hoisted(() => ({ data: [] as unknown[], isLoading: false, isError: false }));
 
 vi.mock('@tanstack/react-query', () => ({
   useQuery: ({ queryKey }: { queryKey: unknown[] }) => {
@@ -35,8 +38,8 @@ vi.mock('@tanstack/react-query', () => ({
 }));
 
 vi.mock('@/features/owners/useOwnerAgreements', () => ({
-  useOwnerAgreements: () => ({ data: [], isLoading: false }),
-  useOwnerAgreementVersions: () => ({ data: [], isLoading: false }),
+  useOwnerAgreements: () => ({ data: [], isLoading: false, isError: false }),
+  useOwnerAgreementVersions: () => ({ data: [], isLoading: false, isError: false }),
   useCreateOwnerAgreement: () => ({ mutateAsync: agreementMutation.spy, isPending: false }),
   useCreateOwnerAgreementVersion: () => ({ mutateAsync: vi.fn(async () => ({})), isPending: false }),
 }));
@@ -71,7 +74,6 @@ function baseOwner() {
   };
 }
 
-/** Ownership covers only from 2026-06-01 — agreements starting earlier are ineligible. */
 function baseLink() {
   return {
     id: 'link-1',
@@ -88,30 +90,36 @@ function baseLink() {
 }
 
 async function flush() {
-  await act(async () => {
-    await Promise.resolve();
-  });
+  await act(async () => { await Promise.resolve(); });
 }
 
 async function clickButton(text: string) {
-  const button = Array.from(document.body.querySelectorAll('button')).find((b) => b.textContent?.includes(text));
+  const button = Array.from(document.body.querySelectorAll('button')).find((item) => item.textContent?.includes(text));
   if (!button) throw new Error(`button not found: ${text}`);
   fireEvent.click(button);
   await flush();
 }
 
 async function setSelect(label: string, value: string) {
-  const selects = Array.from(document.body.querySelectorAll<HTMLSelectElement>('select'));
-  const target = selects.find((select) => select.closest('label')?.textContent?.includes(label));
+  const target = Array.from(document.body.querySelectorAll<HTMLSelectElement>('select'))
+    .find((select) => select.closest('label')?.textContent?.includes(label));
   if (!target) throw new Error(`select not found: ${label}`);
   fireEvent.change(target, { target: { value } });
   await flush();
 }
 
 async function setDate(label: string, value: string) {
-  const inputs = Array.from(document.body.querySelectorAll<HTMLInputElement>('input[type="date"]'));
-  const target = inputs.find((input) => input.closest('label')?.textContent?.includes(label));
+  const target = Array.from(document.body.querySelectorAll<HTMLInputElement>('input[type="date"]'))
+    .find((input) => input.closest('label')?.textContent?.includes(label));
   if (!target) throw new Error(`date input not found: ${label}`);
+  fireEvent.change(target, { target: { value } });
+  await flush();
+}
+
+async function setNumber(label: string, value: string) {
+  const target = Array.from(document.body.querySelectorAll<HTMLInputElement>('input[type="number"]'))
+    .find((input) => input.closest('label')?.textContent?.includes(label));
+  if (!target) throw new Error(`number input not found: ${label}`);
   fireEvent.change(target, { target: { value } });
   await flush();
 }
@@ -142,69 +150,73 @@ describe('owner agreement mobile stepper — behavioral', () => {
   });
 
   const renderManager = async () => {
-    await act(async () => {
-      root.render(<OwnerAgreementsManager propertyId={PROPERTY_ID} />);
-    });
+    await act(async () => { root.render(<OwnerAgreementsManager propertyId={PROPERTY_ID} />); });
     await clickButton('إضافة اتفاقية');
   };
 
-  it('owner selection survives step transitions', async () => {
+  it('keeps owner and dates together and preserves them when moving back', async () => {
     await renderManager();
-    expect(stepLabel()).toContain('الخطوة 1 من 4');
+    expect(stepLabel()).toContain('الخطوة 1 من 3');
     await setSelect('المالك', OWNER_ID);
+    await setDate('تاريخ البداية', '2026-07-01');
+    await setDate('تاريخ النهاية', '2026-12-31');
     await clickButton('التالي');
-    expect(stepLabel()).toContain('الخطوة 2 من 4');
+    expect(stepLabel()).toContain('الخطوة 2 من 3');
     await clickButton('السابق');
-    expect(stepLabel()).toContain('الخطوة 1 من 4');
-    const ownerSelect = Array.from(document.body.querySelectorAll<HTMLSelectElement>('select')).find((s) => s.closest('label')?.textContent?.includes('المالك'));
+    expect(stepLabel()).toContain('الخطوة 1 من 3');
+    const ownerSelect = Array.from(document.body.querySelectorAll<HTMLSelectElement>('select')).find((select) => select.closest('label')?.textContent?.includes('المالك'));
     expect(ownerSelect?.value).toBe(OWNER_ID);
   });
 
-  it('an invalid date range blocks advancing from the period step', async () => {
+  it('blocks an invalid date range on the first step', async () => {
     await renderManager();
     await setSelect('المالك', OWNER_ID);
-    await clickButton('التالي');
-    await clickButton('التالي');
-    expect(stepLabel()).toContain('الخطوة 3 من 4');
     await setDate('تاريخ البداية', '2026-07-01');
     await setDate('تاريخ النهاية', '2025-12-31');
     await clickButton('التالي');
-    expect(stepLabel()).toContain('الخطوة 3 من 4');
+    expect(stepLabel()).toContain('الخطوة 1 من 3');
     expect(document.body.textContent).toContain('تاريخ نهاية الاتفاقية يجب ألا يسبق البداية');
   });
 
-  it('an owner whose ownership does not cover the chosen period blocks Review', async () => {
+  it('blocks an owner whose ownership does not cover the chosen period', async () => {
     await renderManager();
     await setSelect('المالك', OWNER_ID);
-    await clickButton('التالي');
-    await clickButton('التالي');
-    expect(stepLabel()).toContain('الخطوة 3 من 4');
-    // Ownership starts 2026-06-01; an agreement starting earlier is not covered.
     await setDate('تاريخ البداية', '2026-01-01');
     await setDate('تاريخ النهاية', '2026-12-31');
     await clickButton('التالي');
-    expect(stepLabel()).toContain('الخطوة 3 من 4');
+    expect(stepLabel()).toContain('الخطوة 1 من 3');
     expect(document.body.textContent).toContain('لا تغطي ملكيته الفترة المختارة كاملة');
   });
 
-  it('a valid flow reaches Review and submits through the existing mutation with the owner payload', async () => {
+  it('keeps collection and commission explicit and submits them through the existing mutation', async () => {
     await renderManager();
     await setSelect('المالك', OWNER_ID);
-    await clickButton('التالي');
-    await clickButton('التالي');
     await setDate('تاريخ البداية', '2026-07-01');
     await setDate('تاريخ النهاية', '2026-12-31');
     await clickButton('التالي');
-    expect(stepLabel()).toContain('الخطوة 4 من 4');
-    expect(document.body.textContent).toContain('مراجعة الاتفاقية قبل الحفظ');
+    expect(stepLabel()).toContain('الخطوة 2 من 3');
+
+    await setSelect('من يطالب المستأجر بالإيجار؟', 'OFFICE_IS_CREDITOR');
+    await setSelect('طريقة عمولة المكتب', 'FIXED_MONTHLY');
+    await setNumber('العمولة الشهرية', '25');
+    await clickButton('التالي');
+
+    expect(stepLabel()).toContain('الخطوة 3 من 3');
+    expect(document.body.textContent).toContain('راجع الاتفاقية');
+    expect(document.body.textContent).toContain('المكتب هو الدائن');
+    expect(document.body.textContent).toContain('مبلغ شهري ثابت');
 
     await clickButton('حفظ الاتفاقية');
     await flush();
     expect(agreementMutation.spy).toHaveBeenCalledTimes(1);
-    expect(agreementMutation.state.payload).not.toBeNull();
-    expect(agreementMutation.state.payload?.owner_id).toBe(OWNER_ID);
-    expect(agreementMutation.state.payload?.property_id).toBe(PROPERTY_ID);
-    expect(agreementMutation.state.payload?.starts_on).toBe('2026-07-01');
-    expect(agreementMutation.state.payload?.ends_on).toBe('2026-12-31');
+    expect(agreementMutation.state.payload).toMatchObject({
+      owner_id: OWNER_ID,
+      property_id: PROPERTY_ID,
+      starts_on: '2026-07-01',
+      ends_on: '2026-12-31',
+      collection_role: 'OFFICE_IS_CREDITOR',
+      commission_type: 'FIXED_MONTHLY',
+      commission_value: 25,
+    });
   });
 });
