@@ -102,7 +102,7 @@ export function KpiGrid({ snapshot, isLoading, settings }: KpiGridProps) {
 
   return (
     <div data-dashboard-kpi-grid>
-      <ResponsiveCardGrid desktopColumns={2} gap="md" aria-label="المال والالتزامات">
+      <ResponsiveCardGrid desktopColumns={4} gap="md" aria-label="المال والالتزامات">
         {items.map((item) => (
           <Link
             key={item.label}
