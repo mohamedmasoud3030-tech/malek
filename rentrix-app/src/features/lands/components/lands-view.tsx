@@ -19,6 +19,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { WriteErrorCard } from '@/components/page-state-card';
 import { useOwnerOptions } from '@/hooks/use-owner-options';
 import { formatMoney, formatNumber } from '@/hooks/useCompanyFormatters';
+import { getActionableSupabaseErrorMessage } from '@/lib/supabase-error';
 import type { LandFilters, LandRecord } from '../types';
 import type { LandFormValues } from '../land-schema';
 import { MONEY_STEP } from '@/lib/money';
@@ -90,7 +91,7 @@ export function LandsView({
       ? [{ key: 'query', label: 'بحث', value: filters.query.trim(), onRemove: () => onFiltersChange({ ...filters, query: '' }) }]
       : []),
     ...(filters.status !== 'all'
-      ? [{ key: 'status', label: 'الحالة', value: landStatusLabels[filters.status] ?? filters.status, onRemove: () => onFiltersChange({ ...filters, status: 'all' }) }]
+      ? [{ key: 'status', label: 'الحالة', value: landStatusLabels[filters.status] ?? 'حالة أخرى', onRemove: () => onFiltersChange({ ...filters, status: 'all' }) }]
       : []),
   ];
 
@@ -117,7 +118,7 @@ export function LandsView({
       render: (row) => (
         <div className="min-w-0">
           <p className="font-bold">{row.name || row.plot_no || 'بدون اسم'}</p>
-          <p className="text-xs text-muted-foreground">{landCategoryLabels[row.category ?? ''] ?? row.category ?? '—'}</p>
+          <p className="text-xs text-muted-foreground">{landCategoryLabels[row.category ?? ''] ?? 'غير مصنفة'}</p>
         </div>
       ),
     },
@@ -125,7 +126,7 @@ export function LandsView({
     { key: 'area', priority: 'detail' as const, header: 'المساحة', render: (row) => <span dir="ltr">{area(row.area)}</span> },
     { key: 'owner', priority: 'secondary' as const, header: 'المالك', render: (row) => ownerLabel(row.owner_id) },
     { key: 'value', priority: 'detail' as const, header: 'القيمة', render: (row) => <span dir="ltr">{money(row.owner_price ?? row.purchase_price)}</span> },
-    { key: 'status', priority: 'primary' as const, header: 'الحالة', render: (row) => <StatusBadge tone={landStatusTone[row.status ?? ""] ?? "neutral"}>{landStatusLabels[row.status ?? ''] ?? row.status ?? '—'}</StatusBadge> },
+    { key: 'status', priority: 'primary' as const, header: 'الحالة', render: (row) => <StatusBadge tone={landStatusTone[row.status ?? ""] ?? "neutral"}>{landStatusLabels[row.status ?? ''] ?? 'حالة أخرى'}</StatusBadge> },
     { key: 'actions', priority: 'actions' as const, header: 'إجراءات', render: rowActions },
   ];
 
@@ -136,7 +137,7 @@ export function LandsView({
       lang="ar"
       visualVariant="malek-pro"
       title="الأراضي"
-      description="إدارة قطع الأراضي وحالتها ومساحتها ومالكها وقيمتها دون إدخال معرفات تقنية يدوياً."
+      description="إدارة قطع الأراضي وحالتها ومساحتها ومالكها وقيمتها من سجل واحد."
       count={isLoading ? '...' : rows.length}
       secondaryActions={(
         <div className="hidden min-w-max items-center gap-2 rounded-xl border bg-background/70 px-3 py-2 text-xs font-bold text-muted-foreground sm:flex">
@@ -171,7 +172,7 @@ export function LandsView({
       />
       <ActiveFilterBar filters={activeFilters} onClearAll={clearFilters} />
 
-      {writeError ? <WriteErrorCard message={writeError instanceof Error ? writeError.message : 'تعذر حفظ التغيير على سجل الأرض.'} /> : null}
+      {writeError ? <WriteErrorCard message={getActionableSupabaseErrorMessage(writeError, 'تعذر حفظ التغيير على سجل الأرض.')} /> : null}
 
       <AsyncContentState
         status={isLoading ? 'loading' : error ? 'error' : rows.length === 0 ? 'empty' : 'ready'}
@@ -218,7 +219,7 @@ export function LandsView({
             </div>
           </EntityForm.Section>
 
-          <EntityForm.Section title="الملكية والقيمة" description="اختر المالك من السجل بدل إدخال UUID أو معرف داخلي.">
+          <EntityForm.Section title="الملكية والقيمة" description="اختر المالك من السجل بالاسم عند الحاجة.">
             <EntityForm.Field label="المالك">
               <Select value={draft.owner_id} disabled={ownersQuery.isLoading} onChange={(event) => onDraftChange({ ...draft, owner_id: event.target.value })}>
                 <option value="">بدون مالك محدد</option>
