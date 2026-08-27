@@ -10,25 +10,25 @@ import type { ReconciliationReadiness } from '../../accounting-report-authority'
 
 const columns: ColumnDef<ReconciliationRow>[] = [
   {
-    key: 'class',
-    header: 'المطابقة',
+    key: 'account',
+    header: 'الحساب',
     priority: 'identity',
     render: (row) => (
       <div>
-        <p className="font-bold">{row.reconciliation_class || 'مطابقة مالية'}</p>
-        <p className="text-xs text-muted-foreground">{row.account_no} — {row.account_name}</p>
+        <p className="font-bold">{row.account_name || 'حساب محاسبي'}</p>
+        <p className="text-xs text-muted-foreground">{row.account_no || '—'}</p>
       </div>
     ),
   },
   {
-    key: 'subledger',
-    header: 'الدفتر المساعد',
+    key: 'sourceBalance',
+    header: 'الرصيد التشغيلي',
     priority: 'primary',
     render: (row) => <span dir="ltr" className="tabular-nums">{formatMoney(row.subledger_balance)}</span>,
   },
   {
-    key: 'gl',
-    header: 'الأستاذ العام',
+    key: 'accountingBalance',
+    header: 'الرصيد المحاسبي',
     priority: 'secondary',
     render: (row) => <span dir="ltr" className="tabular-nums">{formatMoney(row.gl_balance)}</span>,
   },
@@ -81,16 +81,16 @@ export function AccountingReconciliationReadiness({
         <CardHeader className="p-3 sm:p-4">
           <CardTitle className="flex items-center gap-2 text-base text-destructive">
             <AlertTriangle className="size-5" aria-hidden="true" />
-            تعذر التحقق من مطابقة الدفاتر
+            تعذر فحص جاهزية القوائم
           </CardTitle>
           <CardDescription>
-            لم يتم إثبات مطابقة الدفاتر المساعدة مع الأستاذ العام حتى {asOf}. لا تعتبر القوائم جاهزة حتى ينجح هذا الفحص.
+            تعذر التأكد من اتساق الأرصدة حتى {asOf}. أعد المحاولة قبل اعتماد أو إصدار القوائم.
           </CardDescription>
         </CardHeader>
         <CardContent className="px-3 pb-3 pt-0 sm:px-4 sm:pb-4">
           <Button type="button" variant="outline" size="sm" className="min-h-11" onClick={onRefetch}>
             <RefreshCcw className="me-2 size-4" aria-hidden="true" />
-            إعادة التحقق
+            إعادة الفحص
           </Button>
         </CardContent>
       </Card>
@@ -103,10 +103,10 @@ export function AccountingReconciliationReadiness({
         <CardHeader className="p-3 sm:p-4">
           <CardTitle className="flex items-center gap-2 text-base">
             <AlertTriangle className="size-5 text-warning" aria-hidden="true" />
-            لا توجد أدلة مطابقة كافية
+            نتيجة المراجعة غير مكتملة
           </CardTitle>
           <CardDescription>
-            محرك المطابقة لم يُرجع صفوفًا حتى {asOf}. صفر صفوف لا يُعامل كنجاح، لذلك تظل المخرجات المحاسبية غير جاهزة للاعتماد.
+            لا توجد نتيجة كافية لمراجعة الأرصدة حتى {asOf}. تظل القوائم غير جاهزة للاعتماد حتى يكتمل الفحص.
           </CardDescription>
         </CardHeader>
       </Card>
@@ -117,18 +117,18 @@ export function AccountingReconciliationReadiness({
   const evidenceTable = (
     <>
       <EntityTable<ReconciliationRow>
-        aria-label="مطابقة الدفاتر المساعدة مع الأستاذ العام"
+        aria-label="تفاصيل مراجعة الأرصدة المحاسبية"
         rows={[...rows]}
         keyOf={(row) => `${row.reconciliation_class}:${row.account_no}`}
         columns={columns}
-        emptyTitle="لا توجد أدلة مطابقة"
-        emptyDescription="تحقق من تهيئة الحسابات والدفاتر المساعدة ثم أعد الفحص."
+        emptyTitle="لا توجد نتائج مراجعة"
+        emptyDescription="أعد الفحص بعد التأكد من اكتمال البيانات المالية للفترة."
       />
       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 px-3 py-2.5 text-xs text-muted-foreground sm:px-4">
-        <span>أقصى فرق مطلق: <strong dir="ltr">{formatMoney(readiness.maxAbsVariance)}</strong></span>
+        <span>أكبر فرق: <strong dir="ltr">{formatMoney(readiness.maxAbsVariance)}</strong></span>
         <Button type="button" variant="ghost" size="sm" className="min-h-11" onClick={onRefetch}>
           <RefreshCcw className="me-2 size-3.5" aria-hidden="true" />
-          تحديث المطابقة
+          تحديث المراجعة
         </Button>
       </div>
     </>
@@ -145,19 +145,19 @@ export function AccountingReconciliationReadiness({
               ) : (
                 <AlertTriangle className="size-5 shrink-0 text-destructive" aria-hidden="true" />
               )}
-              مطابقة الدفاتر المساعدة ↔ الأستاذ العام
+              جاهزية القوائم المحاسبية
             </CardTitle>
             <CardDescription className="mt-1">
-              فحص حتى {asOf}. القوائم مبنية على الأستاذ العام، والمطابقة تكشف أي فرق مع المصادر التشغيلية.
+              مراجعة اتساق الأرصدة حتى {asOf}. أي فرق يحتاج معالجة قبل اعتماد القوائم.
               {readiness.missingAccountNos.length > 0 ? (
                 <span className="mt-1 block font-semibold text-destructive">
-                  حسابات مطابقة مفقودة: {readiness.missingAccountNos.join('، ')}
+                  بعض الحسابات المطلوبة للمراجعة غير متاحة.
                 </span>
               ) : null}
             </CardDescription>
           </div>
           <StatusBadge tone={isPass ? 'green' : 'danger'}>
-            {isPass ? `مطابق — ${readiness.total} فحوص` : `${readiness.failed} من ${readiness.total} غير جاهز`}
+            {isPass ? `جاهز — ${readiness.total} فحوص` : `${readiness.failed} من ${readiness.total} تحتاج مراجعة`}
           </StatusBadge>
         </div>
       </CardHeader>
@@ -166,7 +166,7 @@ export function AccountingReconciliationReadiness({
         {isPass ? (
           <details>
             <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 text-xs font-black text-foreground hover:bg-muted/20 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-primary/20 sm:px-4">
-              <span>تفاصيل أدلة المطابقة</span>
+              <span>تفاصيل المراجعة</span>
               <span className="font-semibold text-muted-foreground">{readiness.total} فحوص ناجحة</span>
             </summary>
             <div className="border-t border-border/50">{evidenceTable}</div>

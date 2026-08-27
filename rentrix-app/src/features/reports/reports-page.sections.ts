@@ -5,51 +5,51 @@ export type ReportCategoryId = 'accounting' | 'statements' | 'analytics';
 export const reportCategories = [
   {
     id: 'accounting',
-    label: 'المحاسبة والرقابة',
-    shortLabel: 'المحاسبة والرقابة',
+    label: 'المحاسبة',
+    shortLabel: 'المحاسبة',
     icon: Scale,
-    description: 'مطابقة الدفاتر المساعدة مع الأستاذ العام، شجرة الحسابات، القيود، الفترات، ميزان المراجعة والقوائم المالية.',
+    description: 'ميزان المراجعة والقوائم ودفتر الأستاذ لمراجعة الأرصدة والحركة المحاسبية.',
   },
   {
     id: 'statements',
     label: 'الكشوف',
     shortLabel: 'الكشوف',
     icon: FileSpreadsheet,
-    description: 'كشف المستأجر والمالك، حركة المكتب التشغيلية، التدفق النقدي المبني على الأستاذ العام، والضرائب.',
+    description: 'كشوف المستأجرين والملاك وحركة المكتب والتدفق النقدي والضريبة.',
   },
   {
     id: 'analytics',
     label: 'التحليلات',
     shortLabel: 'التحليلات',
     icon: TrendingUp,
-    description: 'تحليلات الأداء والمصروفات والمتأخرات والإشغال والصيانة؛ لا تُستخدم بدل القوائم المحاسبية.',
+    description: 'مؤشرات التحصيل والمتأخرات والمصروفات والإشغال والصيانة لمتابعة الأداء.',
   },
 ] as const;
 
 export const reportSections = [
   {
     id: 'accounting',
-    label: 'المحاسبة والرقابة',
+    label: 'المحاسبة',
     icon: Scale,
-    group: 'الرقابة والمخرجات المحاسبية',
+    group: 'المخرجات المحاسبية',
     category: 'accounting',
-    description: 'ضوابط الأستاذ العام ومطابقة Subledger↔GL، مع شجرة الحسابات والفترات والقيود وميزان المراجعة والقوائم المبنية على القيود المرحّلة.',
+    description: 'راجع الأرصدة والقوائم ودفتر الأستاذ من مكان واحد.',
   },
   {
     id: 'statements',
     label: 'الكشوف',
     icon: FileSpreadsheet,
-    group: 'الكشوفات التفصيلية',
+    group: 'الكشوف التفصيلية',
     category: 'statements',
-    description: 'كشف المستأجر والمالك وحركة المكتب التشغيلية، مع Cash Flow محاسبي من 1111/1120 وضريبة القيمة المضافة.',
+    description: 'اعرض كشف المستأجر أو المالك وحركة المكتب والتدفق النقدي والضريبة.',
   },
   {
     id: 'analytics',
     label: 'التحليلات',
     icon: TrendingUp,
-    group: 'تحليلات الأداء والتشغيل',
+    group: 'تحليلات الأداء',
     category: 'analytics',
-    description: 'التحصيل والمتأخرات والإشغال والصيانة والمصروفات التشغيلية عبر الفلاتر؛ مؤشرات تشغيلية وليست ربحًا أو تدفقًا نقديًا محاسبيًا.',
+    description: 'تابع التحصيل والمتأخرات والمصروفات، وافتح التحليلات المتخصصة من مكتبة التقارير.',
   },
 ] as const;
 

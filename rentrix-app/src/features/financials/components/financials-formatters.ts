@@ -1,5 +1,6 @@
 import { formatCompanyDate, formatCompanyMoney } from '@/lib/companyFormatters';
 import { defaultCompanyLocalSettings } from '@/lib/companySettings';
+import { getActionableSupabaseErrorMessage } from '@/lib/supabase-error';
 import { toFinancialNumber } from '../financialMath';
 
 /**
@@ -16,8 +17,9 @@ export function formatDate(value: string | number | Date) {
   return formatCompanyDate(defaultCompanyLocalSettings, value);
 }
 
+/** Shared finance/report error boundary: never echo provider/database internals. */
 export function getErrorMessage(error: unknown, fallback: string) {
-  return error instanceof Error ? error.message : fallback;
+  return error ? getActionableSupabaseErrorMessage(error, fallback) : fallback;
 }
 
 /**
@@ -34,7 +36,6 @@ export function getErrorMessage(error: unknown, fallback: string) {
  */
 export function formatShortId(value: string | null | undefined) {
   if (!value) return '—';
-  // Show first 8 hex chars as a human-friendly reference fragment.
   return `#${value.slice(0, 8).toUpperCase()}`;
 }
 
