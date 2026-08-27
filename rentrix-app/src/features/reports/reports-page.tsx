@@ -6,6 +6,7 @@ import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
 import { canAccess, financialOperationPermissions } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
+import { translateSharedLabel } from '@/lib/i18n';
 import { ReportDirectory } from './directory/ReportDirectory';
 import { getCurrentMonthFilters } from './reports-page.helpers';
 import { getInitialReportsFilters } from './reports-workspace-filters';
@@ -36,6 +37,8 @@ export function ReportsPage() {
   );
   const workspace = useReportsWorkspace(filters, { section: activeSection, view: activeView });
 
+  const reportsTitle = translateSharedLabel('financialsSectionReports');
+  const pageDescription = translateSharedLabel('reportsPageDescription');
   const activeSectionMeta = reportSections.find((section) => section.id === activeSection) ?? reportSections[0];
   const activeViewLabel = getReportSubViewLabel(activeSection, activeView);
   const activeReportLabel = activeViewLabel ?? activeSectionMeta.label;
@@ -90,10 +93,10 @@ export function ReportsPage() {
               <div className="min-w-0">
                 <p className="text-[11px] font-black text-primary">مركز التقارير</p>
                 <h1 id="reports-center-title" className="mt-0.5 text-xl font-black sm:text-2xl lg:text-[1.7rem]">
-                  التقارير والكشوف
+                  {reportsTitle}
                 </h1>
                 <p className="mt-1 max-w-3xl text-xs font-semibold leading-5 text-muted-foreground sm:text-sm sm:leading-6">
-                  اختر تقريرًا حسب العمل، حدّد العقار أو المالك والفترة، ثم راجع الأرقام والجداول والتفاصيل من المصدر المعتمد.
+                  {pageDescription}
                 </p>
               </div>
             </div>
