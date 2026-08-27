@@ -1,11 +1,10 @@
 import { Link, Outlet, useMatches, useRouter } from '@tanstack/react-router';
-import { useEffect, useId, useRef, useState, type ButtonHTMLAttributes, type ReactNode, type Ref, type RefObject } from 'react';
-import { CircleHelp, KeyRound, LogOut, Moon, Settings, ShieldAlert, Sun, UserRound, X } from 'lucide-react';
+import { useEffect, useId, useRef, useState, type ButtonHTMLAttributes, type ReactNode, type Ref } from 'react';
+import { CircleHelp, KeyRound, LogOut, Moon, Settings, ShieldAlert, Sun, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { MalikBrand } from '@/components/brand/malik-brand';
 import { MalikMark } from '@/components/brand/malik-mark';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { canAccessRoute, getWriteAccessState, type AuthorizationContext } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
 import { APP_BRAND_NAME } from '@/lib/brand';
@@ -23,7 +22,7 @@ function Brand({ expanded, showTagline }: Readonly<{ expanded: boolean; showTagl
 
 /**
  * MALEK monogram interactive brand button.
- * Tapping the monogram opens the primary navigation drawer on mobile and
+ * Tapping the monogram opens the primary navigation bottom sheet on mobile and
  * acts as the branded header entry point for navigation.
  */
 function HeaderBrandMonogramButton({
@@ -176,7 +175,6 @@ function HeaderUserMenu({
 
       {open ? (
         <>
-          {/* Mobile backdrop for clean tap-outside dismiss */}
           <div
             className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[1px] md:hidden"
             onClick={() => setOpen(false)}
@@ -247,81 +245,36 @@ function HeaderUserMenu({
   );
 }
 
-function MobileNavigationDrawer({
+function MobileNavigationSheet({
   authorization,
   sharedLabel,
   onClose,
-  triggerRef,
 }: Readonly<{
   authorization: AuthorizationContext | null;
   sharedLabel: SharedLabel;
   onClose: () => void;
-  triggerRef: RefObject<HTMLButtonElement | null>;
 }>) {
-  useEffect(() => {
-    const prevBodyOverflow = document.body.style.overflow;
-    const prevHtmlOverflow = document.documentElement.style.overflow;
-    document.body.style.overflow = 'hidden';
-    document.documentElement.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = prevBodyOverflow;
-      document.documentElement.style.overflow = prevHtmlOverflow;
-      const trigger = triggerRef.current;
-      if (trigger && trigger.isConnected) trigger.focus();
-    };
-  }, [triggerRef]);
-
   return (
-    <Dialog open onOpenChange={(isOpen) => { if (!isOpen) onClose(); }}>
-      <DialogContent
-        showCloseButton={false}
-        aria-describedby={undefined}
-        onCloseAutoFocus={(event) => {
-          const trigger = triggerRef.current;
-          if (!trigger) return;
-          event.preventDefault();
-          trigger.focus();
-        }}
-        data-mobile-drawer
-        data-mobile-nav-drawer
-        data-mobile-nav-sheet
-        className="fixed bottom-0 left-auto right-0 top-0 z-[101] flex h-dvh max-h-none w-[85vw] max-w-[20rem] flex-col gap-0 overflow-hidden rounded-none border-0 border-s border-sidebar-border bg-sidebar text-sidebar-foreground shadow-elevated sm:w-[22rem] sm:max-w-[22rem] lg:hidden"
-      >
-        <DialogTitle className="sr-only">القائمة الرئيسية</DialogTitle>
-        {/*
-          Drawer brand header: centered MALEK lockup with side-pinned close button.
-          Opens from the RIGHT in Arabic RTL.
-        */}
-        <div
-          className="relative flex h-14 shrink-0 items-center justify-center border-b border-sidebar-border/50 px-12 pt-[env(safe-area-inset-top,0px)]"
-          data-drawer-brand-header
-        >
-          <div className="flex min-w-0 items-center justify-center" data-drawer-brand>
-            <Brand expanded showTagline={false} />
+    <BottomSheet
+      open
+      onClose={onClose}
+      title="القائمة الرئيسية"
+      className="max-h-[min(86dvh,52rem)] lg:hidden"
+    >
+      <div data-mobile-nav-sheet data-mobile-nav-bottom-sheet className="space-y-3">
+        {authorization === null ? (
+          <div className="rounded-xl border border-[hsl(var(--color-warning-text)/0.2)] bg-[hsl(var(--color-warning-bg)/0.07)] px-3 py-2.5">
+            <p className="text-xs font-semibold text-warning">الصلاحيات غير مكتملة</p>
+            <p className="mt-0.5 text-xs font-medium leading-4 text-warning/75">
+              راجع مسؤول النظام لاستكمال صلاحيات الحساب.
+            </p>
           </div>
-          <Button
-            autoFocus
-            variant="ghost"
-            className="absolute end-1.5 top-1/2 size-9 shrink-0 -translate-y-1/2 rounded-lg px-0 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-            onClick={onClose}
-            aria-label="إغلاق القائمة"
-          >
-            <X className="size-[1.05rem]" />
-          </Button>
-        </div>
-        <nav className="sidebar-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain p-2.5 pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
-          {authorization === null && (
-            <div className="mb-2 rounded-lg border border-[hsl(var(--color-warning-text)/0.2)] bg-[hsl(var(--color-warning-bg)/0.07)] px-2.5 py-2">
-              <p className="text-xs font-semibold text-warning">الصلاحيات غير مكتملة</p>
-              <p className="mt-0.5 text-xs font-medium leading-4 text-warning/75">
-                راجع مسؤول النظام لاستكمال صلاحيات الحساب.
-              </p>
-            </div>
-          )}
+        ) : null}
+        <nav className="min-h-0" aria-label="القائمة الرئيسية">
           <NavigationLinks authorization={authorization} expanded sharedLabel={sharedLabel} onNavigate={onClose} />
         </nav>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </BottomSheet>
   );
 }
 
@@ -331,14 +284,9 @@ export function AppShell() {
   const { authorization, logout, user } = useAuth();
   const { theme, setTheme, syncStatus, setSyncStatus } = useUiStore();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const activeTriggerRef = useRef<HTMLButtonElement | null>(null);
-  const monogramTriggerRef = useRef<HTMLButtonElement | null>(null);
   const dockMenuTriggerRef = useRef<HTMLButtonElement | null>(null);
 
-  const handleOpenNav = (trigger?: HTMLButtonElement | null) => {
-    activeTriggerRef.current = trigger ?? (document.activeElement as HTMLButtonElement | null);
-    setMobileNavOpen(true);
-  };
+  const handleOpenNav = () => setMobileNavOpen(true);
   const appLanguage = getAppLanguageState();
   const sharedLabel = (key: string) => translateSharedLabel(key, appLanguage.language);
   const writeAccessState = getWriteAccessState(authorization);
@@ -385,13 +333,6 @@ export function AppShell() {
   };
 
   return (
-    /* No `dir` here on purpose. `applyDocumentLanguageDirection` already sets
-       `documentElement.dir`, and that is the single direction authority. A
-       second React-controlled `dir` on the shell was a competing source of
-       truth: it re-asserted the same value on every render, so nothing outside
-       the i18n state could change direction and the shell could never be
-       direction-tested in isolation. The shell inherits the document
-       direction like every other non-portalled surface. */
     <div
       data-app-shell
       className="min-h-screen min-h-dvh overflow-x-hidden bg-background text-foreground"
@@ -404,11 +345,10 @@ export function AppShell() {
       </a>
 
       {mobileNavOpen ? (
-        <MobileNavigationDrawer
+        <MobileNavigationSheet
           authorization={authorization}
           sharedLabel={sharedLabel}
           onClose={() => setMobileNavOpen(false)}
-          triggerRef={activeTriggerRef}
         />
       ) : null}
 
@@ -416,9 +356,7 @@ export function AppShell() {
         data-sidebar
         className="fixed inset-y-0 right-0 z-30 hidden w-64 overflow-hidden border-l border-sidebar-border bg-sidebar text-sidebar-foreground shadow-sidebar lg:flex lg:flex-col"
       >
-        <div
-          className="min-h-24 border-b border-sidebar-border/50 px-5 py-5"
-        >
+        <div className="min-h-24 border-b border-sidebar-border/50 px-5 py-5">
           <Brand expanded />
         </div>
         <nav className="sidebar-scroll flex-1 overflow-y-auto p-4 pb-6">
@@ -432,12 +370,10 @@ export function AppShell() {
           className="sticky top-0 z-20 border-b border-border/70 bg-card/95 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md supports-[backdrop-filter]:bg-card/85"
         >
           <div className="mx-auto flex min-h-[var(--app-header-height)] w-full max-w-[110rem] items-center justify-between gap-2 px-2.5 py-1 sm:px-4">
-            {/* Visual start (right in RTL) — Brand side: [ M ] monogram + MALEK wordmark */}
             <div className="z-10 flex shrink-0 items-center" data-header-brand-side data-header-wordmark-side>
-              <HeaderBrandLockup onOpenNav={() => handleOpenNav(monogramTriggerRef.current)} monogramRef={monogramTriggerRef} />
+              <HeaderBrandLockup onOpenNav={handleOpenNav} />
             </div>
 
-            {/* Visual end (left in RTL) — Utility side: Theme toggle + User menu */}
             <div className="z-10 flex shrink-0 items-center gap-0.5 sm:gap-1" data-header-utility-side data-header-right-controls>
               <HeaderControl
                 label={sharedLabel('toggleTheme')}
@@ -496,7 +432,7 @@ export function AppShell() {
 
       <MobileFloatingControl
         menuRef={dockMenuTriggerRef}
-        onMenu={() => handleOpenNav(dockMenuTriggerRef.current)}
+        onMenu={handleOpenNav}
         drawerOpen={mobileNavOpen}
       />
       <AiAssistantGlobalAction showTrigger={false} />
