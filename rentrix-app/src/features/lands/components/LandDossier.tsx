@@ -13,8 +13,8 @@ import { LoadingState } from '@/components/ui/loading-state';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { SectionTabs } from '@/components/ui/section-tabs';
 import { useAuth } from '@/hooks/use-auth';
-import { formatCompanyDateTime, formatCompanyMoney } from '@/lib/companyFormatters';
-import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
+import { useCompanyFormatters } from '@/hooks/useCompanyFormatters';
+import { formatCompanyDateTime } from '@/lib/companyFormatters';
 import { useLandDossier } from '../use-lands';
 import { landStatusLabels, landCategoryLabels } from '../labels';
 
@@ -28,7 +28,7 @@ const landSections = [
 
 export function LandDossierContent({ landId, section }: Readonly<{ landId: string; section?: LandSection }>) {
   const { canAccess } = useAuth();
-  const companySettings = useCompanySettingsContract();
+  const companyFormatters = useCompanyFormatters();
   const query = useLandDossier(landId, canAccess('commissions.view'), canAccess('communication.view'));
   const dossier = query.data;
   if (query.isLoading) return <LoadingState label="جارٍ تحميل ملف الأرض" />;
@@ -44,13 +44,13 @@ export function LandDossierContent({ landId, section }: Readonly<{ landId: strin
         { label: 'الحالة', value: <StatusBadge tone={land.status === 'available' ? 'success' : land.status === 'reserved' ? 'warning' : 'neutral'}>{landStatusLabels[land.status ?? ''] ?? land.status ?? '—'}</StatusBadge> },
         { label: 'المساحة', value: land.area == null ? 'غير موثقة' : `${land.area} م²` },
         { label: 'المالك', value: dossier.owner ? <Link to="/owners/$ownerId" params={{ ownerId: dossier.owner.id }} className="text-primary underline-offset-4 hover:underline">{ownerName}</Link> : ownerName },
-        { label: 'سعر المالك', value: land.owner_price == null ? 'غير موثق' : formatCompanyMoney(companySettings, land.owner_price) },
-        { label: 'سعر الشراء', value: land.purchase_price == null ? 'غير موثق' : formatCompanyMoney(companySettings, land.purchase_price) },
+        { label: 'سعر المالك', value: land.owner_price == null ? 'غير موثق' : companyFormatters.money(land.owner_price) },
+        { label: 'سعر الشراء', value: land.purchase_price == null ? 'غير موثق' : companyFormatters.money(land.purchase_price) },
         { label: 'ملاحظات', value: land.notes ?? '—', wide: true },
       ]} /></CardContent></Card> : null}
 
-      {(!section || section === 'commissions') && canAccess('commissions.view') ? <Card><CardHeader><CardTitle className="flex items-center gap-2"><WalletCards className="size-5 text-primary" />العمولات المرتبطة</CardTitle></CardHeader><CardContent>{dossier.commissions.length === 0 ? <p className="text-sm text-muted-foreground">لا توجد عمولات مرتبطة بهذه الأرض.</p> : <ul className="space-y-2">{dossier.commissions.map((commission) => <li key={commission.id} className="flex items-center justify-between rounded-xl border p-3"><span>{commission.staff_name || 'وسيط مسجل'}</span><span dir="ltr" className="tabular-nums">{formatCompanyMoney(companySettings, commission.amount ?? 0)} · {commission.status}</span></li>)}</ul>}</CardContent></Card> : null}
-      {(!section || section === 'records') && canAccess('communication.view') ? <Card><CardHeader><CardTitle className="flex items-center gap-2"><Activity className="size-5 text-primary" />آخر النشاط</CardTitle></CardHeader><CardContent>{dossier.latestActivity.length === 0 ? <p className="text-sm text-muted-foreground">لا يوجد نشاط موثق مرتبط بهذه الأرض.</p> : <ul className="space-y-2">{dossier.latestActivity.map((item) => <li key={item.id} className="rounded-xl border p-3"><p className="font-bold">{item.subject || 'متابعة مسجلة'}</p><p className="mt-1 text-sm text-muted-foreground">{item.body}</p><p className="mt-1 text-xs text-muted-foreground">{formatCompanyDateTime(companySettings, item.created_at)}</p></li>)}</ul>}</CardContent></Card> : null}
+      {(!section || section === 'commissions') && canAccess('commissions.view') ? <Card><CardHeader><CardTitle className="flex items-center gap-2"><WalletCards className="size-5 text-primary" />العمولات المرتبطة</CardTitle></CardHeader><CardContent>{dossier.commissions.length === 0 ? <p className="text-sm text-muted-foreground">لا توجد عمولات مرتبطة بهذه الأرض.</p> : <ul className="space-y-2">{dossier.commissions.map((commission) => <li key={commission.id} className="flex items-center justify-between rounded-xl border p-3"><span>{commission.staff_name || 'وسيط مسجل'}</span><span dir="ltr" className="tabular-nums">{companyFormatters.money(commission.amount ?? 0)} · {commission.status}</span></li>)}</ul>}</CardContent></Card> : null}
+      {(!section || section === 'records') && canAccess('communication.view') ? <Card><CardHeader><CardTitle className="flex items-center gap-2"><Activity className="size-5 text-primary" />آخر النشاط</CardTitle></CardHeader><CardContent>{dossier.latestActivity.length === 0 ? <p className="text-sm text-muted-foreground">لا يوجد نشاط موثق مرتبط بهذه الأرض.</p> : <ul className="space-y-2">{dossier.latestActivity.map((item) => <li key={item.id} className="rounded-xl border p-3"><p className="font-bold">{item.subject || 'متابعة مسجلة'}</p><p className="mt-1 text-sm text-muted-foreground">{item.body}</p><p className="mt-1 text-xs text-muted-foreground">{formatCompanyDateTime(companyFormatters, item.created_at)}</p></li>)}</ul>}</CardContent></Card> : null}
       {(!section || section === 'records') ? <ContextualDocumentsSection entityType="land" entityId={land.id} entityLabel="الأرض" /> : null}
     </div>
   );
