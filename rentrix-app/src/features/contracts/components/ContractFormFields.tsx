@@ -101,8 +101,9 @@ export function ContractFormFields({
   const endDate = form.watch('end_date');
   const rentAmount = Number(form.watch('rent_amount') || 0);
   const paymentCycle = form.watch('payment_cycle');
-  const billingDay = form.watch('billing_day');
-  const graceDays = form.watch('grace_days');
+  // z.preprocess keeps the watched form input type `unknown`; coerce for the read-only summary label.
+  const billingDay = Number(form.watch('billing_day') ?? 1) || 1;
+  const graceDays = Number(form.watch('grace_days') ?? 0) || 0;
 
   const fieldErrorKeys = Object.keys(form.formState.errors);
   useEffect(() => {
