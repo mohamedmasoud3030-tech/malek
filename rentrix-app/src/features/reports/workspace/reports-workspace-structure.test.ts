@@ -6,6 +6,7 @@ import {
   ACCOUNTING_REPORT_VIEWS,
   ANALYTICS_REPORT_VIEWS,
   getReportSubViews,
+  getVisibleReportSubViews,
 } from '../report-view-registry';
 
 const workspaceDir = resolve(import.meta.dirname);
@@ -15,14 +16,12 @@ const lineCount = (path: string) => read(path).split('\n').length;
 
 const isSourceModule = (file: string) => /\.(ts|tsx)$/.test(file) && !/\.test\.tsx?$/.test(file);
 
-/** Workspace modules relative to the workspace directory. */
 function workspaceModules(extension?: '.ts' | '.tsx'): string[] {
   return readdirSync(workspaceDir).filter(
     (file) => isSourceModule(file) && (!extension || file.endsWith(extension)),
   );
 }
 
-/** Adapter modules relative to the workspace directory. */
 function adapterModules(): string[] {
   return readdirSync(resolve(workspaceDir, 'adapters'))
     .filter(isSourceModule)
@@ -40,18 +39,15 @@ describe('WP-C C.1 — workspace is split by responsibility', () => {
       expect(lineCount(file)).toBeLessThan(300);
     }
 
-    // Shell owns the scope bar + decision board + error surface, nothing else.
     const shellSource = read(shell);
     expect(shellSource).toContain('ReportsFilterSurface');
     expect(shellSource).toContain('FinanceKpiGrid');
     expect(shellSource).not.toContain('SectionTabs');
 
-    // Navigation owns section/view switching only — it renders no report body.
     const tabsSource = read(tabs);
-    expect(tabsSource).toContain('getReportSubViews');
+    expect(tabsSource).toContain('getVisibleReportSubViews');
     expect(tabsSource).not.toMatch(/from '\.\.\/components\//);
 
-    // The router owns lazy adapter selection only.
     const panelSource = read(panel);
     expect(panelSource).toContain('AccountingReportsAdapter');
     expect(panelSource).toContain('StatementsReportsAdapter');
@@ -85,21 +81,18 @@ describe('WP-C C.4 — every adapter chunk is lazy', () => {
       .map((file) => ({ file, source: read(resolve(workspaceDir, file)) }))
       .map(({ file, source }) => ({ file, count: (source.match(/lazy\(\(\) =>/g) ?? []).length }));
 
-    // 3 accounting bodies + 1 statements body + 7 analytics bodies.
     expect(lazyBodyImports.reduce((total, entry) => total + entry.count, 0)).toBe(11);
 
     for (const { file, source } of adapterModules()
       .filter((name) => name.endsWith('.tsx'))
       .map((name) => ({ file: name, source: read(resolve(workspaceDir, name)) }))) {
-      // No eager `import { XSection } from '../../components/...'` — that would
-      // collapse the per-report code split back into one adapter chunk.
       expect(source, file).not.toMatch(/^import \{[^}]*Section[^}]*\} from '\.\.\/\.\.\/components\//m);
     }
   });
 });
 
 describe('WP-C — the view registry is the only declaration of a report view', () => {
-  it('registers every sub-view exactly once per section', () => {
+  it('registers every supported sub-view exactly once per section', () => {
     expect(getReportSubViews('accounting').map((view) => view.id)).toEqual(
       ACCOUNTING_REPORT_VIEWS.map((view) => view.id),
     );
@@ -109,11 +102,27 @@ describe('WP-C — the view registry is the only declaration of a report view', 
     expect(getReportSubViews('statements')).toEqual([]);
   });
 
+  it('shows only routine reports as tabs while preserving specialist reports in the registry', () => {
+    expect(getVisibleReportSubViews('accounting').map((view) => view.id)).toEqual([
+      'accounting_reports',
+      'general_ledger',
+    ]);
+    expect(ACCOUNTING_REPORT_VIEWS.filter((view) => !view.showInPrimaryNavigation).map((view) => view.id))
+      .toEqual(['deferred_revenue']);
+
+    expect(getVisibleReportSubViews('analytics').map((view) => view.id)).toEqual([
+      'overview',
+      'collections',
+      'overdue',
+      'expenses',
+    ]);
+    expect(ANALYTICS_REPORT_VIEWS.filter((view) => !view.showInPrimaryNavigation).map((view) => view.id))
+      .toEqual(['property_analytics', 'occupancy', 'maintenance_analytics']);
+  });
+
   it('keeps every registered view reachable through both deep-link forms', () => {
     for (const view of ACCOUNTING_REPORT_VIEWS) {
-      // Legacy bookmark: ?section=<viewId>
       expect(resolveReportLocation(view.id, undefined)).toEqual({ section: 'accounting', view: view.id });
-      // Canonical deep link: ?section=accounting&view=<viewId>
       expect(resolveReportLocation('accounting', view.id)).toEqual({ section: 'accounting', view: view.id });
     }
 
@@ -144,7 +153,6 @@ describe('WP-C — reports stays a presentation layer, never a second source of 
   it('reads every headline figure from the authoritative workspace model', () => {
     const shell = read(resolve(workspaceDir, 'ReportsShell.tsx'));
     expect(shell).toContain('const collectionRate = model.hero.collectionRate;');
-    // No period-cash / period-invoice ratio arithmetic in the presentation shell.
     expect(shell).not.toMatch(/summary\?\.paid[\s\S]{0,120}summary\?\.invoiced/);
   });
 });
