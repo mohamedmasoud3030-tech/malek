@@ -1,4 +1,4 @@
-import { FileText, LockKeyhole, ReceiptText, WalletCards } from 'lucide-react';
+import { FileText, LockKeyhole, WalletCards } from 'lucide-react';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { EmptyState } from '@/components/empty-state';
@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { formatCompanyDate, formatDefaultCompanyMoney, formatCompanyNumber } from '@/lib/companyFormatters';
+import { formatCompanyDate, formatDefaultCompanyMoney } from '@/lib/companyFormatters';
 import { invoiceStatusLabels } from '@/features/financials/components/invoice-status-labels';
 import { paymentMethodLabels } from '@/features/financials/components/receipt-formatters';
 import type { ContractPaymentsSnapshot } from './services/contractPaymentService';
@@ -33,9 +33,7 @@ type Payment = ContractPaymentsSnapshot['payments'][number];
 
 function ContractPaymentsSummary({ snapshot }: Readonly<{ snapshot: ContractPaymentsSnapshot }>) {
   return (
-    <ResponsiveCardGrid desktopColumns={5}>
-      <KpiCard label="عدد الفواتير" value={formatCompanyNumber(null, snapshot.summary.invoiceCount)} icon={ReceiptText} accent="primary" compact />
-      <KpiCard label="عدد الدفعات" value={formatCompanyNumber(null, snapshot.summary.paymentCount)} icon={WalletCards} accent="sky" compact />
+    <ResponsiveCardGrid desktopColumns={3}>
       <KpiCard label="إجمالي الفواتير" value={formatDefaultCompanyMoney(snapshot.summary.totalInvoiced)} icon={WalletCards} accent="primary" compact />
       <KpiCard label="إجمالي المدفوع" value={formatDefaultCompanyMoney(snapshot.summary.totalPaid)} icon={WalletCards} accent="emerald" compact />
       <KpiCard label="المتبقي" value={formatDefaultCompanyMoney(snapshot.summary.totalRemaining)} icon={WalletCards} accent="amber" compact />

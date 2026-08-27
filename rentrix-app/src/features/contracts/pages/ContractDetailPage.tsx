@@ -1,22 +1,21 @@
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
-import { BarChart3, Edit, RefreshCw, ShieldAlert } from 'lucide-react';
+import { BarChart3, Edit } from 'lucide-react';
 import { useState } from 'react';
 import { AsyncContentState } from '@/components/async-content-state';
 import { EntityDetailHeader } from '@/components/layout/entity-detail-header';
 import { PageLayout } from '@/components/layout/page-layout';
-import { ActionMenu } from '@/components/ui/action-menu';
+import { ActionMenu, type ActionMenuItem } from '@/components/ui/action-menu';
 import { Button } from '@/components/ui/button';
 import { buildContractActions } from '@/components/ui/entity-action-presets';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
 import { DocumentReadinessNotice } from '@/features/settings/components/document-readiness-notice';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
 import { useAuth } from '@/hooks/use-auth';
+import { normalizeContractStatus } from '@/lib/contractStatus';
 import { exportContractPdf, printContractView, shareContractLink } from '../actions/contractDetailActions';
-import { ContractDocumentsShell } from '../contractDocumentsShell';
-import { ContractPaymentsTab } from '../contractPaymentsTab';
-import { ContractFinancialTimelineSection, ContractLifecycleSection, ContractOverviewSection, ContractTimelineSection } from '../components/ContractDetailSections';
-import { ContractEvidenceSection } from '../evidence/ContractEvidenceSection';
-import { ContractApprovalSection } from '../lifecycle/contract-approval-workflow';
+import { ContractDetailWorkspace } from '../components/ContractDetailWorkspace';
+import { contractStatusLabels, contractStatusTone } from '../contractSchema';
 import { ContractRenewalDialog } from '../lifecycle/ContractRenewalDialog';
 import { ContractTerminationDialog } from '../lifecycle/ContractTerminationDialog';
 import { canRenewContract, canTerminateContract } from '../lifecycle/contractLifecycleRules';
@@ -57,52 +56,57 @@ export function ContractDetailPage() {
   }
 
   const contract = contractQuery.data;
+  const contractStatus = normalizeContractStatus(contract.status);
   const renewalAllowed = canRenewContract(contract);
   const terminationAllowed = canTerminateContract(contract);
   const openRenewal = () => setRenewOpen(true);
   const openTermination = () => setTerminateOpen(true);
   const handleShare = () => shareContractLink(contract);
-  const contractMenuActions = buildContractActions({
-    onPrint: documentSettings.isReady ? () => printContractView(contract, documentSettings.companySettings) : undefined,
-    onPdf: documentSettings.isReady ? () => exportContractPdf(contract, documentSettings.companySettings) : undefined,
-    onShare: handleShare,
-  });
+  const contractMenuActions: ActionMenuItem[] = [
+    ...(canViewReports ? [{
+      id: 'reports',
+      label: 'كشف وتقارير العقد',
+      icon: <BarChart3 className="size-4" />,
+      onSelect: () => {
+        void navigate({
+          to: '/reports',
+          search: { section: 'statements', contractId: contract.id, tenantId: contract.tenant_id ?? undefined } as never,
+        });
+      },
+    }] : []),
+    ...buildContractActions({
+      onPrint: documentSettings.isReady ? () => printContractView(contract, documentSettings.companySettings) : undefined,
+      onPdf: documentSettings.isReady ? () => exportContractPdf(contract, documentSettings.companySettings) : undefined,
+      onShare: handleShare,
+      onRenew: renewalAllowed ? openRenewal : undefined,
+      onTerminate: terminationAllowed ? openTermination : undefined,
+    }),
+  ];
 
   return (
     <PageLayout dir="rtl" size="wide" visualVariant="malek-pro">
       {!documentSettings.isReady && !documentSettings.isLoading ? <DocumentReadinessNotice /> : null}
       <EntityDetailHeader
-        title="تفاصيل العقد"
-        subtitle={`${contract.reference ?? 'عقد بلا مرجع تجاري'} — عرض كامل للعقد وسجل مراحله.`}
+        title={contract.reference ?? 'عقد الإيجار'}
+        subtitle={`${contract.people?.full_name ?? 'مستأجر غير محدد'} · ${contract.properties?.title ?? 'عقار غير محدد'} · الوحدة ${contract.units?.unit_number ?? '—'}`}
+        status={<StatusBadge tone={contractStatusTone[contractStatus]}>{contractStatusLabels[contractStatus]}</StatusBadge>}
         backTo="/contracts"
         actions={(
           <>
-            {canViewReports ? (
-              <Button asChild variant="outline" className="min-h-11">
-                <Link
-                  to="/reports"
-                  search={{ section: 'statements', contractId: contract.id, tenantId: contract.tenant_id ?? undefined } as never}
-                >
-                  <BarChart3 className="me-2 size-4" aria-hidden="true" />
-                  كشف وتقارير العقد
-                </Link>
-              </Button>
-            ) : null}
-            {renewalAllowed ? <Button variant="secondary" className="min-h-11" onClick={openRenewal}><RefreshCw className="me-2 size-4" />تجديد</Button> : null}
-            {terminationAllowed ? <Button variant="destructive" className="min-h-11" onClick={openTermination}><ShieldAlert className="me-2 size-4" />إنهاء العقد</Button> : null}
-            <Button asChild className="min-h-11"><Link to="/contracts/$contractId/edit" params={{ contractId }}><Edit className="me-2 size-4" />تعديل</Link></Button>
-            <ActionMenu items={contractMenuActions} label="إجراءات أخرى" />
+            <Button asChild className="min-h-11">
+              <Link to="/contracts/$contractId/edit" params={{ contractId }}>
+                <Edit className="me-2 size-4" aria-hidden="true" />
+                تعديل
+              </Link>
+            </Button>
+            <ActionMenu items={contractMenuActions} label="إجراءات العقد" />
           </>
         )}
       />
-      <ContractOverviewSection contract={contract} settings={companySettings} />
-      <ContractApprovalSection contract={contract} />
-      <ContractLifecycleSection contract={contract} settings={companySettings} renewalAllowed={renewalAllowed} onRenew={openRenewal} canTerminate={terminationAllowed} onTerminate={openTermination} />
-      <ContractPaymentsTab contractId={contract.id} />
-      <ContractFinancialTimelineSection contract={contract} settings={companySettings} />
-      <ContractTimelineSection contract={contract} settings={companySettings} />
-      <ContractEvidenceSection contractId={contract.id} />
-      <ContractDocumentsShell contractId={contract.id} />
+      <ContractDetailWorkspace
+        contract={contract}
+        settings={companySettings}
+      />
       <ContractRenewalDialog contract={contract} open={renewOpen} onOpenChange={setRenewOpen} onRenewed={async (result) => navigate({ to: '/contracts/$contractId', params: { contractId: result.new_contract_id } })} />
       <ContractTerminationDialog contractId={contract.id} open={terminateOpen} onOpenChange={setTerminateOpen} />
     </PageLayout>
