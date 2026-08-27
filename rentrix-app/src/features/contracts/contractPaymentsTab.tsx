@@ -1,4 +1,4 @@
-import { FileText, LockKeyhole, WalletCards } from 'lucide-react';
+import { FileText, LockKeyhole, ReceiptText, WalletCards } from 'lucide-react';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { EmptyState } from '@/components/empty-state';
