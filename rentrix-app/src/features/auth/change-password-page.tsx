@@ -100,7 +100,7 @@ export function ChangePasswordWorkspace({ variant = 'standalone' }: ChangePasswo
 
   return (
     <PageLayout dir="rtl" lang="ar" contentClassName="max-w-3xl" visualVariant="malek-pro">
-      <PageHeader title="تغيير كلمة المرور" description="تحديث كلمة مرور حسابك الحالي فقط عبر جلسة Supabase النشطة، بدون أي تغيير على حسابات أخرى." />
+      <PageHeader title="تغيير كلمة المرور" description="حدّث كلمة مرور حسابك الحالي بأمان دون التأثير على أي حسابات أخرى." />
       {body}
     </PageLayout>
   );
