@@ -7,11 +7,12 @@ export type LeasingHubSectionId = 'contracts' | 'tenants' | 'people' | 'leads' |
 export type LeasingHubSection = SectionTabItem<LeasingHubSectionId> & Readonly<{
   description: string;
   permission: AppPermission | null;
+  showInPrimaryNavigation: boolean;
 }>;
 
 /**
- * Leasing is the operational journey around occupancy: contract lifecycle,
- * tenant relationship, parties, prospects and follow-up communication.
+ * Leasing keeps the daily journey focused on contracts and tenants. Supporting
+ * relationship registers remain permission-guarded and deep-link addressable.
  */
 export const leasingHubSections: readonly LeasingHubSection[] = [
   {
@@ -20,6 +21,7 @@ export const leasingHubSections: readonly LeasingHubSection[] = [
     icon: FileText,
     description: 'إنشاء العقود واعتمادها وتفعيلها وتجديدها وإنهاؤها.',
     permission: null,
+    showInPrimaryNavigation: true,
   },
   {
     id: 'tenants',
@@ -27,6 +29,7 @@ export const leasingHubSections: readonly LeasingHubSection[] = [
     icon: UserCheck,
     description: 'المستأجرون وعلاقتهم بالوحدات والعقود والمتأخرات.',
     permission: null,
+    showInPrimaryNavigation: true,
   },
   {
     id: 'people',
@@ -34,6 +37,7 @@ export const leasingHubSections: readonly LeasingHubSection[] = [
     icon: Users,
     description: 'دليل الأطراف التي تدخل في دورة التأجير والتعامل.',
     permission: null,
+    showInPrimaryNavigation: false,
   },
   {
     id: 'leads',
@@ -41,6 +45,7 @@ export const leasingHubSections: readonly LeasingHubSection[] = [
     icon: ContactRound,
     description: 'الفرص قبل التعاقد ومتابعة تحويلها إلى علاقة إيجارية.',
     permission: 'leads.view',
+    showInPrimaryNavigation: false,
   },
   {
     id: 'communication',
@@ -48,6 +53,7 @@ export const leasingHubSections: readonly LeasingHubSection[] = [
     icon: MessageSquareText,
     description: 'المتابعات والتواصل المرتبط بالأطراف ودورة التأجير.',
     permission: 'communication.view',
+    showInPrimaryNavigation: false,
   },
 ] as const;
 

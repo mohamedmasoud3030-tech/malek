@@ -53,9 +53,13 @@ export function LeasingHubWorkspace() {
   const search = useSearch({ strict: false }) as Record<string, unknown>;
   const requested = search[LEASING_HUB_SEARCH_KEY];
 
-  const visibleSections = useMemo(
+  const accessibleSections = useMemo(
     () => leasingHubSections.filter((section) => section.permission === null || canAccess(section.permission)),
     [canAccess],
+  );
+  const visibleSections = useMemo(
+    () => accessibleSections.filter((section) => section.showInPrimaryNavigation),
+    [accessibleSections],
   );
   const requestedSection = isLeasingHubSectionId(requested) ? requested : null;
   const requestedDefinition = requestedSection
@@ -65,6 +69,7 @@ export function LeasingHubWorkspace() {
     requestedDefinition?.permission && !canAccess(requestedDefinition.permission),
   );
   const activeSection: LeasingHubSectionId = requestedSection ?? 'contracts';
+  const isActiveSectionVisible = visibleSections.some((section) => section.id === activeSection);
 
   const mountedSections = useRef(new Set<LeasingHubSectionId>());
   if (!isRequestedForbidden) mountedSections.current.add(activeSection);
@@ -86,7 +91,7 @@ export function LeasingHubWorkspace() {
   return (
     <EmbeddableWorkspace
       title="التأجير"
-      description="من الفرصة والمستأجر إلى العقد والمتابعة والتجديد — دورة التأجير في سياق واحد."
+      description="العقود والمستأجرون في مساحة واحدة، مع الوصول إلى السجلات المساندة عند الحاجة."
       size="wide"
       visualVariant="malek-pro"
     >
@@ -94,15 +99,17 @@ export function LeasingHubWorkspace() {
         <AccessDenied message="ليس لديك صلاحية لعرض هذا القسم من التأجير." />
       ) : (
         <>
-          <SectionTabs
-            items={visibleSections}
-            activeId={activeSection}
-            onChange={handleSectionChange}
-            ariaLabel="أقسام التأجير"
-          />
+          {isActiveSectionVisible ? (
+            <SectionTabs
+              items={visibleSections}
+              activeId={activeSection}
+              onChange={handleSectionChange}
+              ariaLabel="أقسام التأجير"
+            />
+          ) : null}
 
           {leasingHubSections
-            .filter((section) => mountedSections.current.has(section.id) && visibleSections.some((visible) => visible.id === section.id))
+            .filter((section) => mountedSections.current.has(section.id) && accessibleSections.some((accessible) => accessible.id === section.id))
             .map((section) => {
               const SectionBody = sectionComponents[section.id];
               const isActive = section.id === activeSection;
@@ -111,7 +118,7 @@ export function LeasingHubWorkspace() {
                   key={section.id}
                   id={`leasing-panel-${section.id}`}
                   role="tabpanel"
-                  aria-labelledby={`section-tab-${section.id}`}
+                  aria-labelledby={section.showInPrimaryNavigation ? `section-tab-${section.id}` : undefined}
                   data-leasing-section={section.id}
                   hidden={!isActive}
                 >

@@ -1,28 +1,21 @@
 import type { AppPermission } from '@/features/auth/permissions';
 import {
-  BadgeDollarSign,
   BarChart3,
   BriefcaseBusiness,
   Building,
   Building2,
   ClipboardList,
-  ContactRound,
   DoorOpen,
-  FileCheck,
   FileSpreadsheet,
   FileText,
   FolderKanban,
-  HandCoins,
   KeyRound,
-  Landmark,
   LayoutDashboard,
-  MessageSquareText,
   PieChart,
   ReceiptText,
   Settings,
   Settings2,
   UserRoundCog,
-  Users,
   WalletCards,
   Wrench,
   Zap,
@@ -41,9 +34,9 @@ export interface StaticCommand {
 }
 
 /**
- * Global Command Center destinations follow the same task-centric IA as the
- * app shell. Entity search may still open a specific detail route directly,
- * but static navigation must never reintroduce module-hopping list pages.
+ * Global Command Center destinations follow the same routine task-centric IA as
+ * the shell. Entity search can still open a concrete record, while static
+ * commands must not re-advertise hidden specialist registers.
  */
 export const STATIC_COMMANDS: StaticCommand[] = [
   {
@@ -79,21 +72,6 @@ export const STATIC_COMMANDS: StaticCommand[] = [
     keywords: ['المستأجرون', 'المستأجر', 'tenants'], icon: KeyRound,
   },
   {
-    id: 'people', title: 'التأجير — جهات التعامل', category: 'navigation', canonicalRoute: '/contracts',
-    search: { workspace: 'people' }, permission: null,
-    keywords: ['الأشخاص', 'جهات التعامل', 'العملاء', 'people', 'contacts'], icon: Users,
-  },
-  {
-    id: 'leads', title: 'التأجير — العملاء المحتملون', category: 'navigation', canonicalRoute: '/contracts',
-    search: { workspace: 'leads' }, permission: 'leads.view',
-    keywords: ['العملاء المحتملون', 'ليدز', 'leads', 'prospects'], icon: ContactRound,
-  },
-  {
-    id: 'communication', title: 'التأجير — التواصل', category: 'navigation', canonicalRoute: '/contracts',
-    search: { workspace: 'communication' }, permission: 'communication.view',
-    keywords: ['التواصل', 'المتابعات', 'اتصال', 'communication'], icon: MessageSquareText,
-  },
-  {
     id: 'money', title: 'المال — وضع المال', category: 'financial', canonicalRoute: '/financials', permission: null,
     keywords: ['المال', 'المالية', 'الوضع المالي', 'money', 'finance'], icon: PieChart,
   },
@@ -116,26 +94,6 @@ export const STATIC_COMMANDS: StaticCommand[] = [
     id: 'financial-expenses', title: 'المال — المصروفات', category: 'financial', canonicalRoute: '/financials',
     search: { section: 'expenses', view: 'expenses' }, permission: 'expenses.view',
     keywords: ['المصروفات', 'المصاريف', 'التكاليف', 'expenses', 'payables'], icon: WalletCards,
-  },
-  {
-    id: 'commissions', title: 'المال — العمولات', category: 'financial', canonicalRoute: '/financials',
-    search: { section: 'expenses', view: 'commissions' }, permission: 'commissions.view',
-    keywords: ['العمولات', 'عمولة التسويق', 'عمولة التحصيل', 'commissions'], icon: BadgeDollarSign,
-  },
-  {
-    id: 'financial-deposits', title: 'المال — تأمينات المستأجرين', category: 'financial', canonicalRoute: '/financials',
-    search: { section: 'funds', view: 'deposits' }, permission: 'financial.deposits.view',
-    keywords: ['التأمينات', 'الأمانات', 'الودائع', 'deposits', 'custody'], icon: FileCheck,
-  },
-  {
-    id: 'financial-owner-settlements', title: 'المال — مستحقات وتسويات الملاك', category: 'financial', canonicalRoute: '/financials',
-    search: { section: 'funds', view: 'owner_settlements' }, permission: 'financial.owner_settlements.view',
-    keywords: ['تسويات الملاك', 'حساب الملاك', 'المستحقات', 'settlements'], icon: HandCoins,
-  },
-  {
-    id: 'financial-bank-reconciliation', title: 'المال — البنوك والمطابقة', category: 'financial', canonicalRoute: '/financials',
-    search: { section: 'banking', view: 'bank_reconciliation' }, permission: 'financial.bank_reconciliation.view',
-    keywords: ['البنوك', 'المطابقة البنكية', 'كشف الحساب', 'reconciliation', 'banking'], icon: Landmark,
   },
   {
     id: 'maintenance', title: 'الخدمات — الصيانة', category: 'operational', canonicalRoute: '/maintenance',

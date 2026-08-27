@@ -39,9 +39,12 @@ describe('task-centric app navigation', () => {
     ]);
   });
 
-  it('keeps Portfolio and Leasing child navigation inside their owning workspace', () => {
+  it('keeps Portfolio children contextual and Leasing focused on tenants', () => {
     expect(workspaceChildNavItems['/properties'].map(([to]) => to)).toEqual(['/properties', '/properties', '/properties']);
-    expect(workspaceChildNavItems['/contracts'].map(([to]) => to)).toEqual(['/contracts', '/contracts', '/contracts', '/contracts']);
+    expect(workspaceChildNavItems['/contracts'].map(([, labelKey]) => labelKey)).toEqual(['tenants']);
+    expect(workspaceChildNavItems['/contracts'][0]).toMatchObject([
+      '/contracts', 'tenants', 'المستأجرون وعلاقات الإيجار', expect.anything(), undefined, { workspace: 'tenants' },
+    ]);
   });
 
   it('shows only daily Money tasks in routine navigation', () => {
