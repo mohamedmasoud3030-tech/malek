@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { workspaceChildNavItems } from './navigation/app-nav-items';
 import { governanceHubSections } from '@/features/governance-hub/governance-hub-sections';
+import { FINANCE_SECTIONS } from '@/features/finance/shell/financeShellModel';
 
 function source(relativePath: string) {
   return readFileSync(new URL(relativePath, import.meta.url), 'utf8');
@@ -28,11 +29,29 @@ describe('production product simplification contract', () => {
     ]);
   });
 
+  it('keeps specialist Money tools available without advertising them as daily destinations', () => {
+    expect(workspaceChildNavItems['/financials'].map(([, labelKey]) => labelKey)).toEqual([
+      'invoices',
+      'receipts',
+      'arrears',
+      'expenses',
+    ]);
+
+    expect(FINANCE_SECTIONS.filter((section) => section.showInPrimaryNavigation).map((section) => section.id))
+      .toEqual(['overview', 'collections', 'expenses']);
+    expect(FINANCE_SECTIONS.filter((section) => !section.showInPrimaryNavigation).map((section) => section.id))
+      .toEqual(['fees', 'funds', 'banking']);
+  });
+
   it('keeps advanced routes available without advertising them as normal product destinations', () => {
     const nav = source('./navigation/app-nav-items.ts');
     expect(nav).not.toContain("['/admin-support', 'supportOperations'");
     expect(nav).not.toContain("['/settings', 'systemSettings'");
     expect(nav).not.toContain("['/settings', 'costCenters'");
+    expect(nav).not.toContain("['/financials', 'deposits'");
+    expect(nav).not.toContain("['/financials', 'ownerSettlements'");
+    expect(nav).not.toContain("['/financials', 'bankReconciliation'");
+    expect(nav).not.toContain("['/financials', 'commissions'");
   });
 
   it('keeps implementation diagnostics out of finance readiness copy', () => {
