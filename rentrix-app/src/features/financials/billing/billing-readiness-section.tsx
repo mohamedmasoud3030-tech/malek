@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { AlertTriangle, CalendarDays, CheckCircle2, Clock, FileCheck, RefreshCcw } from 'lucide-react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { AlertTriangle, CalendarDays, CheckCircle2, Clock, FileCheck } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { AsyncContentState } from '@/components/async-content-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,13 +8,11 @@ import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useActiveCompanyId } from '@/hooks/use-company';
 import {
-  generateInvoicesFromActiveContracts,
   getBillingReadiness,
   type BillingObligation,
   type BillingStatus,
 } from './billing-readiness-service';
 import {
-  billingActionErrorMessage,
   billingIssueMessage,
   billingStatusLabel,
   paymentCycleLabel,
@@ -39,23 +36,13 @@ function toneForStatus(status: BillingStatus): 'success' | 'warning' | 'danger' 
 
 export function BillingReadinessSection() {
   const companyId = useActiveCompanyId();
-  const queryClient = useQueryClient();
+  const [showDetails, setShowDetails] = useState(false);
   const [showOnlyActionable, setShowOnlyActionable] = useState(false);
 
   const readinessQuery = useQuery({
     queryKey: ['billing-readiness', companyId],
     enabled: Boolean(companyId),
     queryFn: () => getBillingReadiness(companyId!),
-  });
-
-  const generateMut = useMutation({
-    mutationFn: generateInvoicesFromActiveContracts,
-    onSuccess: (count) => {
-      toast.success(count > 0 ? `تم إصدار ${count} فاتورة جديدة` : 'لا توجد فواتير جديدة جاهزة للإصدار');
-      void queryClient.invalidateQueries({ queryKey: ['billing-readiness'] });
-      void queryClient.invalidateQueries({ queryKey: ['invoices'] });
-    },
-    onError: (error) => toast.error(billingActionErrorMessage(error)),
   });
 
   const obligations = readinessQuery.data ?? [];
@@ -131,8 +118,20 @@ export function BillingReadinessSection() {
         ? ('empty' as const)
         : ('ready' as const);
 
+  const openActionable = () => {
+    setShowOnlyActionable(true);
+    setShowDetails(true);
+  };
+
+  const toggleDetails = () => {
+    setShowDetails((current) => {
+      if (current) setShowOnlyActionable(false);
+      return !current;
+    });
+  };
+
   return (
-    <Card data-billing-readiness>
+    <Card data-billing-readiness data-billing-details={showDetails ? 'open' : 'closed'}>
       <CardHeader className="space-y-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <CardTitle className="flex items-center gap-2 text-base">
@@ -144,7 +143,7 @@ export function BillingReadinessSection() {
           </StatusBadge>
         </div>
         <p className="text-xs font-medium leading-5 text-muted-foreground">
-          راجع العقود الجاهزة لإصدار الفاتورة والعقود التي تحتاج إجراءً قبل الفوترة.
+          ملخص سريع للعقود قبل إصدار الفواتير. افتح التفاصيل فقط عند الحاجة للمراجعة.
         </p>
       </CardHeader>
 
@@ -168,39 +167,29 @@ export function BillingReadinessSection() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <Button
-            type="button"
-            size="sm"
-            variant={showOnlyActionable ? 'default' : 'outline'}
-            className="min-h-11"
-            onClick={() => setShowOnlyActionable((value) => !value)}
-            disabled={actionableCount === 0 && !showOnlyActionable}
-          >
-            {showOnlyActionable ? 'عرض الكل' : `تحتاج إجراءً (${actionableCount})`}
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" size="sm" variant="outline" className="min-h-11" onClick={toggleDetails}>
+            {showDetails ? 'إخفاء التفاصيل' : 'عرض التفاصيل'}
           </Button>
-          <Button
-            type="button"
-            size="sm"
-            onClick={() => generateMut.mutate()}
-            disabled={generateMut.isPending}
-            className="min-h-11 gap-1.5"
-          >
-            <RefreshCcw className="size-4" aria-hidden="true" />
-            {generateMut.isPending ? 'جارٍ الإصدار...' : 'توليد الفواتير الجاهزة'}
-          </Button>
+          {actionableCount > 0 ? (
+            <Button type="button" size="sm" variant={showOnlyActionable ? 'default' : 'outline'} className="min-h-11" onClick={openActionable}>
+              تحتاج إجراءً ({actionableCount})
+            </Button>
+          ) : null}
         </div>
 
-        <AsyncContentState
-          status={status}
-          error={readinessQuery.error as Error}
-          errorTitle="تعذر تحميل جاهزية الفوترة"
-          errorAction={<Button onClick={() => readinessQuery.refetch()}>إعادة المحاولة</Button>}
-          emptyTitle="لا توجد التزامات فوترة حاليًا"
-          emptyDescription="ستظهر هنا العقود النشطة عندما تصبح لها دفعات قابلة للمتابعة."
-        >
-          <EntityTable aria-label="التزامات الفوترة" rows={filtered} columns={columns} keyOf={(obligation) => obligation.contract_id} />
-        </AsyncContentState>
+        {(showDetails || status !== 'ready') ? (
+          <AsyncContentState
+            status={status}
+            error={readinessQuery.error as Error}
+            errorTitle="تعذر تحميل جاهزية الفوترة"
+            errorAction={<Button onClick={() => readinessQuery.refetch()}>إعادة المحاولة</Button>}
+            emptyTitle="لا توجد التزامات فوترة حاليًا"
+            emptyDescription="ستظهر هنا العقود النشطة عندما تصبح لها دفعات قابلة للمتابعة."
+          >
+            <EntityTable aria-label="التزامات الفوترة" rows={filtered} columns={columns} keyOf={(obligation) => obligation.contract_id} />
+          </AsyncContentState>
+        ) : null}
       </CardContent>
     </Card>
   );
