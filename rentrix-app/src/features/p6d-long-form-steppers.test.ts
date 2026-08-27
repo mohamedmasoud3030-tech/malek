@@ -27,20 +27,16 @@ describe('P6d — long form mobile steppers (closeout)', () => {
     expect(source).not.toContain('label="سبب الإلغاء"');
   });
 
-  it('preserves state on step changes: sections are hidden on mobile, never unmounted', () => {
+  it('preserves state on contract step changes and returns to hidden billing errors', () => {
     const source = read('./contracts/components/ContractFormFields.tsx');
     expect(source).toContain('max-md:hidden');
     expect(source).toContain('stepVisibility');
-  });
-
-  it('returns the user to the step owning a validation error after a failed submit', () => {
-    const source = read('./contracts/components/ContractFormFields.tsx');
     expect(source).toContain('stepFieldGroups.findIndex');
     expect(source).toContain('setStep(errorStep)');
     expect(source).toContain('setBillingOptionsOpen(true)');
   });
 
-  it('keeps contract submission semantics unchanged (same schema parse and mutation path)', () => {
+  it('keeps contract submission semantics unchanged', () => {
     const hook = read('./contracts/useContractForm.ts');
     expect(hook).toContain('contractSchema.parse(values)');
     expect(hook).toContain('createMutation.mutateAsync(finalPayload)');
@@ -48,15 +44,17 @@ describe('P6d — long form mobile steppers (closeout)', () => {
     expect(hook).toContain('const agreementId = agreementCoverageQuery.data?.id ?? null');
   });
 
-  it('gives the owner agreement overlay a mobile stepper over its real domain fields', () => {
+  it('keeps owner agreement creation to three operator decisions', () => {
     const source = read('./owners/OwnerAgreementsManager.tsx');
     expect(source).toContain('MobileFormStepperHeader');
     expect(source).toContain('MobileFormStepperFooter');
-    expect(source).toContain("{ id: 'owner', label: 'المالك والسياق' }");
-    expect(source).toContain("{ id: 'scope', label: 'النطاق والشروط المالية' }");
-    expect(source).toContain("{ id: 'period', label: 'المدة والملاحظات' }");
-    expect(source).toContain("{ id: 'review', label: 'المراجعة والتأكيد' }");
-    expect(source).toContain('choose the owner'.length > 0 ? 'اختر المالك الذي تغطي ملكيته الفترة' : 'اختر المالك');
+    expect(source).toContain("{ id: 'owner-period', label: 'المالك والفترة' }");
+    expect(source).toContain("{ id: 'commercial', label: 'التحصيل والعمولة' }");
+    expect(source).toContain("{ id: 'review', label: 'التأكيد' }");
+    expect(source).not.toContain("{ id: 'scope', label: 'النطاق والشروط المالية' }");
+    expect(source).not.toContain('label="نوع الاتفاقية"');
+    expect(source).toContain('label="من يطالب المستأجر بالإيجار؟"');
+    expect(source).toContain('طريقة عمولة المكتب');
     expect(source).toContain('assertAgreementOwnerHasOwnership(ownershipLinks, payload)');
     expect(source).toContain('createMutation.mutateAsync(payload)');
   });
