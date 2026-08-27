@@ -127,8 +127,6 @@ export function DashboardPage() {
         {snapshotUnavailable ? null : (
           <>
             <section className="dashboard-section" aria-label="مطلوب الآن" data-dashboard-section="work-now">
-              <SectionHeader eyebrow="أولوية" title="مطلوب الآن" />
-
               {isLoading ? (
                 <LoadingState variant="section" label="جارٍ تحميل الأعمال المطلوبة" />
               ) : (

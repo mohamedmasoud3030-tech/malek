@@ -99,7 +99,7 @@ export function AlertCenter({
 
   if (knownTotal === 0 && !hasUnavailable) {
     return (
-      <section className={cn('dashboard-priority-panel dashboard-priority-panel--clear', className)} aria-label="الأولوية الآن">
+      <section className={cn('dashboard-priority-panel dashboard-priority-panel--clear', className)} aria-label="مطلوب الآن">
         <div className="dashboard-priority-clear">
           <span className="dashboard-priority-clear__icon" aria-hidden="true">
             <CheckCircle2 className="size-5" />
@@ -214,14 +214,14 @@ export function AlertCenter({
   const deferredPriorities = extraPriorities.slice(visibleExtraPriorities.length);
 
   return (
-    <section className={cn('dashboard-priority-panel', className)} aria-label="الأولوية الآن" data-dashboard-priority-panel>
+    <section className={cn('dashboard-priority-panel', className)} aria-label="مطلوب الآن" data-dashboard-priority-panel>
       <div className="dashboard-priority-summary">
         <div className="dashboard-priority-summary__icon" aria-hidden="true">
           <Bell className="size-5" />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center gap-2">
-            <h2 className="dashboard-priority-summary__title">الأولوية الآن</h2>
+            <h2 className="dashboard-priority-summary__title">مطلوب الآن</h2>
             {knownTotal > 0 ? <StatusBadge tone="danger">{knownTotal} متابعة</StatusBadge> : null}
           </div>
           <p className="dashboard-priority-summary__copy">
