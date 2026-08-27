@@ -61,10 +61,11 @@ export function PortfolioHubWorkspace({
   const search = useSearch({ strict: false }) as Record<string, unknown>;
   const requestedSection = search[PORTFOLIO_HUB_SECTION_SEARCH_KEY];
 
-  const { activeSection, visibleSections, isRequestedSectionForbidden, hasNoVisibleSections } = useMemo(
+  const { activeSection, accessibleSections, visibleSections, isRequestedSectionForbidden, hasNoAccessibleSections } = useMemo(
     () => resolvePortfolioHubState({ requestedSection, defaultSection, authorization }),
     [requestedSection, defaultSection, authorization],
   );
+  const isActiveSectionVisible = Boolean(activeSection && visibleSections.some((section) => section.id === activeSection));
 
   const mountedSections = useRef(new Set<PortfolioHubSectionId>());
   if (activeSection) mountedSections.current.add(activeSection);
@@ -84,7 +85,7 @@ export function PortfolioHubWorkspace({
   );
 
   const content = useMemo(() => {
-    if (hasNoVisibleSections) {
+    if (hasNoAccessibleSections) {
       return <AccessDenied message="ليس لديك صلاحية لعرض أي من أقسام المحفظة." />;
     }
 
@@ -94,9 +95,11 @@ export function PortfolioHubWorkspace({
 
     return (
       <>
-        <SectionTabs items={visibleSections} activeId={activeSection} onChange={handleSectionChange} ariaLabel="أقسام المحفظة" />
+        {isActiveSectionVisible ? (
+          <SectionTabs items={visibleSections} activeId={activeSection} onChange={handleSectionChange} ariaLabel="أقسام المحفظة" />
+        ) : null}
         {portfolioHubSections
-          .filter((section) => mountedSections.current.has(section.id) && visibleSections.some((visible) => visible.id === section.id))
+          .filter((section) => mountedSections.current.has(section.id) && accessibleSections.some((accessible) => accessible.id === section.id))
           .map((section) => {
             const SectionBody = sectionComponents[section.id];
             const isActive = section.id === activeSection;
@@ -105,7 +108,7 @@ export function PortfolioHubWorkspace({
                 key={section.id}
                 id={`section-panel-${section.id}`}
                 role="tabpanel"
-                aria-labelledby={`section-tab-${section.id}`}
+                aria-labelledby={section.showInPrimaryNavigation ? `section-tab-${section.id}` : undefined}
                 data-portfolio-section={section.id}
                 hidden={!isActive}
               >
@@ -115,7 +118,7 @@ export function PortfolioHubWorkspace({
           })}
       </>
     );
-  }, [hasNoVisibleSections, isRequestedSectionForbidden, activeSection, visibleSections, handleSectionChange]);
+  }, [hasNoAccessibleSections, isRequestedSectionForbidden, activeSection, accessibleSections, visibleSections, isActiveSectionVisible, handleSectionChange]);
 
   return (
     <EmbeddableWorkspace

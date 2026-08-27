@@ -53,11 +53,6 @@ export type OperationsHubWorkspaceProps = Readonly<{
   mode?: 'standalone' | 'embedded';
 }>;
 
-/**
- * Services workspace: one operational context for maintenance, providers,
- * utilities and documents. Administrative automation intentionally lives in
- * Settings only, so there is one authority per user task.
- */
 export function OperationsHubWorkspace({
   defaultSection,
   title = 'الخدمات',
@@ -69,10 +64,11 @@ export function OperationsHubWorkspace({
   const search = useSearch({ strict: false }) as Record<string, unknown>;
   const requestedSection = search[OPERATIONS_HUB_SECTION_SEARCH_KEY];
 
-  const { activeSection, visibleSections, isRequestedSectionForbidden, hasNoVisibleSections } = useMemo(
+  const { activeSection, accessibleSections, visibleSections, isRequestedSectionForbidden, hasNoAccessibleSections } = useMemo(
     () => resolveOperationsHubState({ requestedSection, defaultSection, authorization }),
     [requestedSection, defaultSection, authorization],
   );
+  const isActiveSectionVisible = Boolean(activeSection && visibleSections.some((section) => section.id === activeSection));
 
   const mountedSections = useRef(new Set<OperationsHubSectionId>());
   if (activeSection) mountedSections.current.add(activeSection);
@@ -92,7 +88,7 @@ export function OperationsHubWorkspace({
   );
 
   const content = useMemo(() => {
-    if (hasNoVisibleSections) {
+    if (hasNoAccessibleSections) {
       return <AccessDenied message="ليس لديك صلاحية لعرض أي من أقسام الخدمات." />;
     }
 
@@ -102,18 +98,20 @@ export function OperationsHubWorkspace({
 
     return (
       <>
-        <SectionTabs
-          items={visibleSections}
-          activeId={activeSection}
-          onChange={handleSectionChange}
-          ariaLabel="أقسام الخدمات"
-        />
+        {isActiveSectionVisible ? (
+          <SectionTabs
+            items={visibleSections}
+            activeId={activeSection}
+            onChange={handleSectionChange}
+            ariaLabel="أقسام الخدمات"
+          />
+        ) : null}
 
         {operationsHubSections
           .filter(
             (section) =>
               mountedSections.current.has(section.id) &&
-              visibleSections.some((visible) => visible.id === section.id),
+              accessibleSections.some((accessible) => accessible.id === section.id),
           )
           .map((section) => {
             const SectionBody = sectionComponents[section.id];
@@ -123,7 +121,7 @@ export function OperationsHubWorkspace({
                 key={section.id}
                 id={`section-panel-${section.id}`}
                 role="tabpanel"
-                aria-labelledby={`section-tab-${section.id}`}
+                aria-labelledby={section.showInPrimaryNavigation ? `section-tab-${section.id}` : undefined}
                 data-operations-section={section.id}
                 hidden={!isActive}
               >
@@ -133,7 +131,7 @@ export function OperationsHubWorkspace({
           })}
       </>
     );
-  }, [hasNoVisibleSections, isRequestedSectionForbidden, activeSection, visibleSections, handleSectionChange]);
+  }, [hasNoAccessibleSections, isRequestedSectionForbidden, activeSection, accessibleSections, visibleSections, isActiveSectionVisible, handleSectionChange]);
 
   return (
     <EmbeddableWorkspace
