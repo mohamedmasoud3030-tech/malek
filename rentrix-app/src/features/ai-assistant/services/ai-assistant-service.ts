@@ -85,6 +85,7 @@ const closedInvoiceStatuses = [
   'canceled',
   'CANCELED',
 ];
+const closedInvoiceStatusFilter = `(${closedInvoiceStatuses.join(',')})`;
 
 async function fetchOpenInvoiceContextRows(asOf: string) {
   let data: InvoiceContextRow[];
@@ -94,7 +95,7 @@ async function fetchOpenInvoiceContextRows(asOf: string) {
       .select('id, contract_id, due_date, amount, paid_amount, status, deleted_at')
       .is('deleted_at', null)
       .lte('due_date', asOf)
-      .not('status', 'in', closedInvoiceStatuses)
+      .not('status', 'in', closedInvoiceStatusFilter)
       .order('due_date', { ascending: true }) as any));
   } catch (error) {
     handleSupabaseError(error, 'تعذر تجهيز ملخص الفواتير المتأخرة');
