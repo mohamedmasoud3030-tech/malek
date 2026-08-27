@@ -43,7 +43,7 @@ export function DataTableColumnsMenu({
   };
 
   return (
-    <details className={cn('group relative', className)} data-table-columns-menu>
+    <details className={cn('group relative hidden md:block', className)} data-table-columns-menu>
       <summary
         aria-label={`${label} ${visibleKeys.length} من ${columns.length}`}
         className="flex min-h-11 min-w-11 cursor-pointer list-none items-center justify-center gap-2 rounded-lg border border-border/85 bg-background px-2.5 text-xs font-bold text-muted-foreground outline-none transition hover:bg-muted/55 hover:text-foreground focus-visible:ring-4 focus-visible:ring-primary/15 sm:px-3 [&::-webkit-details-marker]:hidden"

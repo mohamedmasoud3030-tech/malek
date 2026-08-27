@@ -13,6 +13,7 @@ describe('DataTableColumnsMenu touch targets', () => {
       <DataTableColumnsMenu columns={columns} visibleKeys={['identity', 'tenant']} onChange={() => undefined} />,
     );
 
+    expect(html).toContain('hidden md:block');
     expect(html).toContain('min-h-11 min-w-11');
     expect(html).toContain('aria-label="إظهار كل الأعمدة"');
     expect(html).toContain('size-11');
