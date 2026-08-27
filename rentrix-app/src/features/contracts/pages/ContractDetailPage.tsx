@@ -106,10 +106,6 @@ export function ContractDetailPage() {
       <ContractDetailWorkspace
         contract={contract}
         settings={companySettings}
-        renewalAllowed={renewalAllowed}
-        onRenew={openRenewal}
-        canTerminate={terminationAllowed}
-        onTerminate={openTermination}
       />
       <ContractRenewalDialog contract={contract} open={renewOpen} onOpenChange={setRenewOpen} onRenewed={async (result) => navigate({ to: '/contracts/$contractId', params: { contractId: result.new_contract_id } })} />
       <ContractTerminationDialog contractId={contract.id} open={terminateOpen} onOpenChange={setTerminateOpen} />
