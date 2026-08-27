@@ -12,22 +12,9 @@ import {
 } from 'lucide-react';
 
 /**
- * WP-C — Single declarative registry of report views.
- *
- * Before WP-C the view identifiers were duplicated in four places: the URL
- * resolver (`reports-section-model.ts`), the sub-navigation tab lists
- * (`ReportsWorkspace.tsx`), the panel routing switch, and the deep-link
- * legacy aliases. Every list could drift independently, which is how a
- * bookmarkable view ends up rendering nothing.
- *
- * This module is now the only place a report view is declared. Navigation,
- * deep-link resolution and panel routing all derive from it, so a view that
- * is reachable by URL is always reachable by UI — and vice versa.
- *
- * Presentation-only: it declares labels, icons and routing keys. It never
- * touches money, GL, or any accounting calculation.
+ * Single registry for every report view. `showInPrimaryNavigation` separates
+ * daily report choices from specialist reports without deleting deep links.
  */
-
 export type AccountingReportViewId = 'accounting_reports' | 'general_ledger' | 'deferred_revenue';
 
 export type AnalyticsReportViewId =
@@ -46,22 +33,23 @@ export type ReportViewMeta = Readonly<{
   id: string;
   label: string;
   icon: ComponentType<{ className?: string }>;
+  showInPrimaryNavigation: boolean;
 }>;
 
 export const ACCOUNTING_REPORT_VIEWS = [
-  { id: 'accounting_reports', label: 'ميزان المراجعة والقوائم', icon: Scale },
-  { id: 'general_ledger', label: 'دفتر الأستاذ والشجرة', icon: BookOpenCheck },
-  { id: 'deferred_revenue', label: 'تسوية الإيرادات', icon: Layers },
+  { id: 'accounting_reports', label: 'ميزان المراجعة والقوائم', icon: Scale, showInPrimaryNavigation: true },
+  { id: 'general_ledger', label: 'دفتر الأستاذ والشجرة', icon: BookOpenCheck, showInPrimaryNavigation: true },
+  { id: 'deferred_revenue', label: 'تسوية الإيرادات', icon: Layers, showInPrimaryNavigation: false },
 ] as const satisfies readonly ReportViewMeta[];
 
 export const ANALYTICS_REPORT_VIEWS = [
-  { id: 'overview', label: 'نظرة عامة على الأداء', icon: LayoutDashboard },
-  { id: 'collections', label: 'تحليلات التحصيل', icon: Receipt },
-  { id: 'overdue', label: 'تعتيق المتأخرات', icon: AlertTriangle },
-  { id: 'expenses', label: 'تحليلات المصروفات', icon: ClipboardList },
-  { id: 'property_analytics', label: 'تحليلات العقارات', icon: Building2 },
-  { id: 'occupancy', label: 'تحليلات الإشغال', icon: Building2 },
-  { id: 'maintenance_analytics', label: 'تحليلات الصيانة', icon: Wrench },
+  { id: 'overview', label: 'نظرة عامة على الأداء', icon: LayoutDashboard, showInPrimaryNavigation: true },
+  { id: 'collections', label: 'تحليلات التحصيل', icon: Receipt, showInPrimaryNavigation: true },
+  { id: 'overdue', label: 'تعتيق المتأخرات', icon: AlertTriangle, showInPrimaryNavigation: true },
+  { id: 'expenses', label: 'تحليلات المصروفات', icon: ClipboardList, showInPrimaryNavigation: true },
+  { id: 'property_analytics', label: 'تحليلات العقارات', icon: Building2, showInPrimaryNavigation: false },
+  { id: 'occupancy', label: 'تحليلات الإشغال', icon: Building2, showInPrimaryNavigation: false },
+  { id: 'maintenance_analytics', label: 'تحليلات الصيانة', icon: Wrench, showInPrimaryNavigation: false },
 ] as const satisfies readonly ReportViewMeta[];
 
 const ACCOUNTING_VIEW_IDS: readonly string[] = ACCOUNTING_REPORT_VIEWS.map((view) => view.id);
@@ -78,21 +66,23 @@ export function isAnalyticsReportViewId(value: string): value is AnalyticsReport
   return ANALYTICS_VIEW_IDS.includes(value);
 }
 
-/** Sub-navigation items for a section. `statements` intentionally has none. */
+/** Every supported report view, including specialist/deep-link views. */
 export function getReportSubViews(section: 'accounting' | 'statements' | 'analytics'): readonly ReportViewMeta[] {
   if (section === 'accounting') return ACCOUNTING_REPORT_VIEWS;
   if (section === 'analytics') return ANALYTICS_REPORT_VIEWS;
   return [];
 }
 
+/** Daily report choices shown as routine tabs. */
+export function getVisibleReportSubViews(section: 'accounting' | 'statements' | 'analytics'): readonly ReportViewMeta[] {
+  return getReportSubViews(section).filter((view) => view.showInPrimaryNavigation);
+}
+
 export function getReportSubViewLabel(section: string, view: string): string | undefined {
   return getReportSubViews(section as 'accounting' | 'statements' | 'analytics').find((item) => item.id === view)?.label;
 }
 
-/**
- * Every view id owned by any section. Used by the deep-link resolver so that a
- * legacy `?section=<viewId>` bookmark keeps opening the same report.
- */
+/** Every supported id stays resolvable so old bookmarks and directory entries keep working. */
 export const REPORT_VIEW_SECTION_INDEX: Readonly<Record<string, 'accounting' | 'analytics'>> = Object.freeze({
   ...Object.fromEntries(ACCOUNTING_VIEW_IDS.map((id) => [id, 'accounting' as const])),
   ...Object.fromEntries(ANALYTICS_VIEW_IDS.map((id) => [id, 'analytics' as const])),
