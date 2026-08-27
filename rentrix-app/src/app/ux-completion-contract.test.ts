@@ -53,12 +53,13 @@ describe('UX completion contract', () => {
     }
   });
 
-  it('never asks users to type technical UUID references in lands or communication', () => {
+  it('never asks users to type technical references in lands or communication', () => {
     const lands = source('features/lands/components/lands-view.tsx');
     const communication = source('features/communication/components/communication-hub-view.tsx');
 
+    expect(lands).not.toContain('UUID');
     expect(lands).not.toContain('معرف المالك');
-    expect(lands).toContain('اختر المالك من السجل بدل إدخال UUID');
+    expect(lands).not.toContain('معرف داخلي');
     expect(communication).not.toContain('معرف الربط');
     expect(communication).not.toContain('معرف الكيان');
   });
@@ -114,15 +115,24 @@ describe('UX completion contract', () => {
     expect(system).not.toContain('DDL');
   });
 
-  it('keeps owner, people, and password surfaces from exposing provider errors or names', () => {
+  it('keeps owner, people, password, lands, and property surfaces on safe operator language', () => {
     const ownerPreview = source('features/owners/components/OwnerPreviewDialog.tsx');
     const personForm = source('features/people/person-form-modal.tsx');
     const password = source('features/auth/change-password-page.tsx');
+    const lands = source('features/lands/components/lands-view.tsx');
+    const propertyForm = source('features/properties/property-form-modal.tsx');
 
     expect(ownerPreview).toContain('getActionableSupabaseErrorMessage');
     expect(ownerPreview).not.toContain('detailQuery.error.message');
     expect(personForm).toContain('getActionableSupabaseErrorMessage');
     expect(personForm).not.toContain('error instanceof Error ? error.message');
     expect(password).not.toContain('جلسة Supabase');
+    expect(lands).toContain('getActionableSupabaseErrorMessage');
+    expect(lands).not.toContain('writeError instanceof Error ? writeError.message');
+    expect(lands).not.toContain('?? row.status');
+    expect(lands).not.toContain('?? row.category');
+    expect(propertyForm).toContain('getActionableSupabaseErrorMessage');
+    expect(propertyForm).not.toContain('error instanceof Error ? error.message');
+    expect(propertyForm).not.toContain('عملية ذرية');
   });
 });
