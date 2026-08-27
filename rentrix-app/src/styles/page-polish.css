@@ -436,3 +436,74 @@
     background: hsl(var(--card));
   }
 }
+
+
+/* ── Desktop workspace contract ─────────────────────────────────────
+   Desktop is a work surface, not a scaled-up phone screen. These rules use
+   existing semantic hooks only, retain mobile behavior, and deliberately keep
+   the visual material restrained so dense registers and financial data remain
+   the focus. */
+@media (min-width: 1024px) {
+  [data-page-layout] > div {
+    padding-inline: clamp(1.25rem, 2.2vw, 2.5rem);
+  }
+
+  [data-page-layout] [data-page-header] {
+    margin-bottom: 0.25rem;
+    padding-bottom: 1.1rem;
+  }
+
+  [data-page-layout] [data-section-header] {
+    margin-bottom: 1rem;
+  }
+
+  [data-page-layout] [data-filter-bar],
+  [data-page-layout] [data-list-controls] {
+    align-items: center;
+    border-color: hsl(var(--border) / 0.78);
+    background: hsl(var(--card) / 0.94);
+    box-shadow: 0 1px 2px hsl(var(--foreground) / 0.04);
+  }
+
+  [data-page-layout] [data-list-toolbar] {
+    gap: 0.75rem;
+  }
+
+  [data-page-layout] [data-entity-table-wrapper],
+  [data-page-layout] [data-entity-table-grid] {
+    border-color: hsl(var(--border) / 0.82);
+    box-shadow: 0 8px 22px -20px hsl(var(--foreground) / 0.28);
+  }
+
+  [data-page-layout] [data-entity-table] thead th {
+    height: 3rem;
+    padding-inline: 0.95rem;
+    font-size: 0.71rem;
+    letter-spacing: 0.01em;
+  }
+
+  [data-page-layout] [data-entity-table] tbody td {
+    min-height: 3.25rem;
+    padding-inline: 0.95rem;
+    padding-block: 0.7rem;
+  }
+
+  [data-page-layout] [data-entity-table] tbody tr {
+    transition: background-color 150ms ease;
+  }
+
+  [data-page-layout] [data-kpi-card] {
+    min-height: 8.25rem;
+    border-color: hsl(var(--border) / 0.78);
+    box-shadow: 0 10px 24px -23px hsl(var(--foreground) / 0.36);
+  }
+
+  [data-page-layout] [data-financial-amount] {
+    letter-spacing: -0.01em;
+  }
+
+  [data-page-layout] [data-finance-root],
+  [data-page-layout] [data-reports-cockpit] {
+    min-width: 0;
+  }
+}
