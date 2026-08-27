@@ -13,6 +13,13 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/hooks/use-auth', () => ({
   useAuth: () => ({ authorization: mocks.authorization }),
 }));
+// The workspace renders amounts through the company-aware money formatter, so
+// it reads the company settings contract. Mock it to the default contract to
+// keep this suite a pure component test with no QueryClient provider.
+vi.mock('@/features/settings/useCompanySettings', async () => {
+  const actual = await vi.importActual<typeof import('@/lib/companySettings')>('@/lib/companySettings');
+  return { useCompanySettingsContract: () => actual.defaultCompanySettingsContract };
+});
 vi.mock('./fixed-monthly-accrual-service', () => ({
   listFixedMonthlyAccruals: mocks.list,
   executeFixedMonthlyAccruals: mocks.execute,

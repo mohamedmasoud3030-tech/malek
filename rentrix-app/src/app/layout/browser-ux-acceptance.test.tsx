@@ -109,13 +109,17 @@ describe('WP-06 / GAP-020 Browser & UX Acceptance Hardening', () => {
       expect(html).toContain('min-w-0');
     });
 
-    it('EmptyState has rtl dir and overflow-safe markup', () => {
+    it('EmptyState keeps overflow-safe markup and inherits the document direction', () => {
       const html = renderToStaticMarkup(<EmptyState title="لا توجد سجلات" description="لم يتم العثور على أي نتائج في هذا القسم" />);
-      expect(html).toContain('dir="rtl"');
+      // Overflow hardening (WP-06 / GAP-020) must survive untouched.
       expect(html).toContain('min-w-0');
       expect(html).toContain('overflow-hidden');
       expect(html).toContain('break-words');
       expect(html).toContain('data-empty-state');
+      // This surface is not portalled, so it must inherit the document
+      // direction rather than pinning it. A hard-coded dir="rtl" mirrored and
+      // right-aligned the shared empty state while the product ran in English.
+      expect(html).not.toContain('dir="rtl"');
     });
   });
 

@@ -175,7 +175,7 @@ export function PropertyDetailPage() {
                             'aria-current': isActive ? ('page' as const) : undefined,
                             'data-active': isActive ? 'true' : undefined,
                           };
-                          const className = `flex min-h-11 w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-right text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 ${
+                          const className = `flex min-h-11 w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-start text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 ${
                             isActive
                               ? 'bg-primary text-primary-foreground shadow-sm'
                               : 'text-muted-foreground hover:bg-muted hover:text-foreground'

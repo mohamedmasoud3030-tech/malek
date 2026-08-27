@@ -8,7 +8,7 @@ type AccessDeniedProps = Readonly<{
 
 export function AccessDenied({ message }: AccessDeniedProps) {
   return (
-    <div className="px-3 py-6 sm:px-4 sm:py-8" dir="rtl">
+    <div className="px-3 py-6 sm:px-4 sm:py-8">
       <section className="mx-auto w-full max-w-xl overflow-hidden rounded-xl border border-destructive/20 bg-card shadow-card" role="alert">
         <div className="h-1 bg-destructive" aria-hidden="true" />
         <div className="flex items-start gap-3 p-4 sm:p-5">

@@ -130,7 +130,7 @@ export function NavigationLinks({
                     {expanded && children.length > 0 ? (
                       <button
                         type="button"
-                        className="me-1 grid size-11 shrink-0 place-items-center rounded-xl text-sidebar-foreground/65 outline-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-4 focus-visible:ring-sidebar-accent/35 [[data-mobile-nav-drawer]_&]:size-10 [[data-mobile-nav-drawer]_&]:rounded-lg [[data-mobile-nav-drawer]_&]:text-sidebar-foreground/55 [[data-mobile-nav-drawer]_&]:hover:bg-sidebar-accent [[data-mobile-nav-drawer]_&]:hover:text-sidebar-accent-foreground [[data-mobile-nav-drawer]_&]:focus-visible:ring-primary/25 [[data-mobile-nav-sheet]_&]:size-10 [[data-mobile-nav-sheet]_&]:rounded-lg [[data-mobile-nav-sheet]_&]:text-sidebar-foreground/55 [[data-mobile-nav-sheet]_&]:hover:bg-sidebar-accent [[data-mobile-nav-sheet]_&]:hover:text-sidebar-accent-foreground [[data-mobile-nav-sheet]_&]:focus-visible:ring-primary/25"
+                        className="me-1 grid size-11 shrink-0 place-items-center rounded-xl text-sidebar-foreground/65 outline-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-4 focus-visible:ring-sidebar-accent/35 [[data-mobile-nav-drawer]_&]:rounded-lg [[data-mobile-nav-drawer]_&]:text-sidebar-foreground/55 [[data-mobile-nav-drawer]_&]:hover:bg-sidebar-accent [[data-mobile-nav-drawer]_&]:hover:text-sidebar-accent-foreground [[data-mobile-nav-drawer]_&]:focus-visible:ring-primary/25 [[data-mobile-nav-sheet]_&]:rounded-lg [[data-mobile-nav-sheet]_&]:text-sidebar-foreground/55 [[data-mobile-nav-sheet]_&]:hover:bg-sidebar-accent [[data-mobile-nav-sheet]_&]:hover:text-sidebar-accent-foreground [[data-mobile-nav-sheet]_&]:focus-visible:ring-primary/25"
                         aria-label={`${isOpen ? 'طي' : 'توسيع'} ${navLabel(item[1], sharedLabel)}`}
                         aria-expanded={isOpen}
                         aria-controls={childrenId}
@@ -276,7 +276,7 @@ export function MobileFloatingControl({
               <button
                 type="button"
                 onClick={() => setQuickOpen(false)}
-                className="grid size-7 place-items-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+                className="grid size-11 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
                 aria-label="إغلاق الإضافة السريعة"
               >
                 <X className="size-3.5" />

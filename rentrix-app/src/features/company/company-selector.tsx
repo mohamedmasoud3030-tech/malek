@@ -44,7 +44,7 @@ export function CompanySelectorPage() {
                 key={company.id}
                 onClick={() => handleSelect(company)}
                 disabled={isSwitchingThis}
-                className={`flex w-full items-center gap-3 rounded-xl border p-4 text-right transition
+                className={`flex w-full items-center gap-3 rounded-xl border p-4 text-start transition
                   ${isActive
                     ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
                     : 'border-border hover:border-primary/30 hover:bg-muted/50'
@@ -96,7 +96,7 @@ export function CompanySwitcher() {
         <div className="grid size-7 shrink-0 place-items-center rounded-md bg-primary/10 text-xs font-bold text-primary">
           {activeCompany.name.charAt(0)}
         </div>
-        <span className="flex-1 truncate text-right font-medium">{activeCompany.name}</span>
+        <span className="flex-1 truncate text-start font-medium">{activeCompany.name}</span>
         <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
       </button>
 
@@ -122,7 +122,7 @@ export function CompanySwitcher() {
                 <div className="grid size-6 shrink-0 place-items-center rounded text-xs font-bold bg-primary/10 text-primary">
                   {company.name.charAt(0)}
                 </div>
-                <span className="flex-1 truncate text-right">{company.name}</span>
+                <span className="flex-1 truncate text-start">{company.name}</span>
                 {isActive && <Check className="size-3.5 text-primary" />}
               </button>
             );

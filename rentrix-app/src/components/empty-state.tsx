@@ -18,7 +18,10 @@ export function EmptyState({
   ariaLive = 'polite',
 }: EmptyStateProps) {
   return (
-    <Card data-empty-state className="min-w-0 overflow-hidden border-dashed border-border/70 shadow-none" role={role} aria-live={ariaLive} dir="rtl">
+    /* No dir attribute: this surface is not portalled, so it must inherit the
+       document direction. A hard-coded dir="rtl" rendered the shared empty
+       state right-aligned and mirrored when the product runs in English. */
+    <Card data-empty-state className="min-w-0 overflow-hidden border-dashed border-border/70 shadow-none" role={role} aria-live={ariaLive}>
       <CardContent className="flex min-h-28 flex-col items-center justify-center gap-2 px-4 py-4 text-center sm:min-h-28">
         <div data-empty-state-icon className="grid size-8 place-items-center rounded-md bg-muted/70 text-muted-foreground/45">
           <Inbox className="size-3.5" />

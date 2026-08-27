@@ -136,7 +136,7 @@ export function FileAttachmentField({
             <button
               type="button"
               onClick={handleRemove}
-              className="grid size-8 place-items-center rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+              className="grid size-11 shrink-0 place-items-center rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
               aria-label="إزالة المرفق"
             >
               <X className="size-4" />

@@ -303,7 +303,7 @@ export function FinancePage() {
                       onClick={() => handleSectionChange(section.id)}
                       aria-current={isActive ? 'page' : undefined}
                       className={cn(
-                        'group flex min-h-12 w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-right transition-[background-color,color,box-shadow,transform] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20',
+                        'group flex min-h-12 w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-start transition-[background-color,color,box-shadow,transform] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20',
                         isActive
                           ? 'bg-primary text-primary-foreground shadow-sm'
                           : 'text-foreground hover:-translate-y-px hover:bg-muted/60',
