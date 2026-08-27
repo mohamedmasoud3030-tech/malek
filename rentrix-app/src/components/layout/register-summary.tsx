@@ -52,7 +52,7 @@ export function RegisterMetricStrip({
 
   return (
     <section data-register-metric-strip aria-label={ariaLabel} className={className}>
-      <ResponsiveCardGrid desktopColumns={3} gap="sm">
+      <ResponsiveCardGrid desktopColumns={visible.length === 4 ? 4 : 3} gap="sm">
         {visible.map((item) => {
           const Icon = item.icon;
           return (
