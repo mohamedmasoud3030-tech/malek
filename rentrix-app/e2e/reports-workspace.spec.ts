@@ -11,7 +11,7 @@ const viewportMatrix = [
 const themes = ['light', 'dark'] as const;
 
 const sections = [
-  { id: 'accounting', label: 'المحاسبة والرقابة' },
+  { id: 'accounting', label: 'المحاسبة' },
   { id: 'statements', label: 'الكشوف' },
   { id: 'analytics', label: 'التحليلات' },
 ] as const;
@@ -21,15 +21,11 @@ const analyticsViews = [
   'تحليلات التحصيل',
   'تعتيق المتأخرات',
   'تحليلات المصروفات',
-  'تحليلات العقارات',
-  'تحليلات الإشغال',
-  'تحليلات الصيانة',
 ] as const;
 
 const accountingViews = [
   'ميزان المراجعة والقوائم',
   'دفتر الأستاذ والشجرة',
-  'تسوية الإيرادات',
 ] as const;
 
 const reconciliationRows = ['1201', '1300', '2000', '2200', '2300'].map((accountNo) => ({
@@ -75,8 +71,8 @@ async function openFixture(page: Page, theme: (typeof themes)[number]) {
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
   await expect(page.locator('main[data-e2e-reports-workspace]')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'مركز التقارير والكشوف', exact: true })).toBeVisible();
-  await expect(page.getByRole('tab', { name: 'المحاسبة والرقابة', exact: true }).first()).toHaveAttribute('aria-selected', 'true');
-  await expect(page.getByText(/المخرجات المحاسبية هنا تعتمد على القيود المرحّلة/)).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'المحاسبة', exact: true }).first()).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByText(/القوائم تعتمد على البيانات المحاسبية المعتمدة/)).toBeVisible();
 }
 
 async function assertNoHorizontalOverflow(page: Page) {
@@ -127,6 +123,9 @@ for (const viewport of viewportMatrix) {
         await expect(tab).toHaveAttribute('aria-selected', 'true');
         await assertNoHorizontalOverflow(page);
       }
+      for (const specialist of ['تحليلات العقارات', 'تحليلات الإشغال', 'تحليلات الصيانة']) {
+        await expect(page.getByRole('tab', { name: specialist, exact: true })).toHaveCount(0);
+      }
 
       await selectSection(page, sections[0]);
       await expect(page.getByText('لوحة القرار', { exact: true })).toHaveCount(0);
@@ -137,6 +136,7 @@ for (const viewport of viewportMatrix) {
         await expect(tab).toHaveAttribute('aria-selected', 'true');
         await assertNoHorizontalOverflow(page);
       }
+      await expect(page.getByRole('tab', { name: 'تسوية الإيرادات', exact: true })).toHaveCount(0);
 
       await page.screenshot({
         path: testInfo.outputPath(`reports-workspace-${viewport.name}-${theme}.png`),
@@ -146,9 +146,6 @@ for (const viewport of viewportMatrix) {
   }
 }
 
-// The focused accounting workspace intentionally renders one statement action
-// set at a time; every visible Print/PDF action must still remain fail-closed
-// behind the authoritative reconciliation and document-readiness guards.
 test('reports accounting view exposes focused guarded document actions', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await openFixture(page, 'light');
