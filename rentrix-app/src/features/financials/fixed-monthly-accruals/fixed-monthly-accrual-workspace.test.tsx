@@ -74,18 +74,22 @@ describe('fixed monthly accrual Arabic workspace', () => {
   });
 
   it.each(['ADMIN', 'MANAGER', 'ACCOUNTANT'] as const)(
-    'shows execution and explicit compensating reversal affordances to %s',
+    'shows execution and reversal actions to %s without implementation copy',
     async (role) => {
       mocks.authorization = context(role);
       render(<FixedMonthlyAccrualWorkspace />);
 
-      expect(await screen.findByRole('button', { name: /تنفيذ الاستحقاق/ })).toBeTruthy();
+      expect(await screen.findByRole('button', { name: /احتساب الاستحقاقات/ })).toBeTruthy();
       expect(await screen.findByRole('button', { name: /عكس/ })).toBeTruthy();
-      expect(screen.getByText('مرحّل')).toBeTruthy();
-      expect(screen.getByText(/الضريبة غير مطبقة/)).toBeTruthy();
+      expect(screen.getByText('مسجل')).toBeTruthy();
+      expect(screen.getByText(/الضريبة غير محتسبة حاليًا/)).toBeTruthy();
       expect(screen.getAllByText('الصافي').length).toBeGreaterThan(0);
       expect(screen.getAllByText('الضريبة').length).toBeGreaterThan(0);
       expect(screen.getAllByText('الإجمالي').length).toBeGreaterThan(0);
+      expect(document.body.textContent).not.toContain('FIXED_MONTHLY');
+      expect(document.body.textContent).not.toContain('DAILY_ACCRUAL');
+      expect(document.body.textContent).not.toContain('2100');
+      expect(document.body.textContent).not.toContain('نسخة 1');
       await waitFor(() => expect(mocks.list).toHaveBeenCalledTimes(1));
     },
   );
@@ -95,9 +99,20 @@ describe('fixed monthly accrual Arabic workspace', () => {
     render(<FixedMonthlyAccrualWorkspace />);
 
     expect((await screen.findAllByText('عقار الاختبار')).length).toBeGreaterThan(0);
-    expect(screen.queryByRole('button', { name: /تنفيذ الاستحقاق/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /احتساب الاستحقاقات/ })).toBeNull();
     expect(screen.queryByRole('button', { name: /عكس/ })).toBeNull();
     expect(mocks.execute).not.toHaveBeenCalled();
     expect(mocks.reverse).not.toHaveBeenCalled();
+  });
+
+  it('does not echo a backend failure to the operator', async () => {
+    mocks.authorization = context('ADMIN');
+    mocks.list.mockRejectedValueOnce(new Error('RPC_FAILED relation internal_schema.accruals permission denied'));
+    render(<FixedMonthlyAccrualWorkspace />);
+
+    expect(await screen.findByText('تعذر تحميل سجل الاستحقاقات. تحقق من الاتصال ثم أعد المحاولة.')).toBeTruthy();
+    expect(document.body.textContent).not.toContain('RPC_FAILED');
+    expect(document.body.textContent).not.toContain('internal_schema');
+    expect(document.body.textContent).not.toContain('permission denied');
   });
 });
