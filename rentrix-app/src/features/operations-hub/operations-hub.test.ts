@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
+  getAccessibleOperationsHubSections,
   getVisibleOperationsHubSections,
   operationsHubSections,
   type OperationsHubPermission,
 } from './operations-hub.sections';
 import {
+  getAccessibleOperationsSections,
   getVisibleOperationsSections,
   isOperationsHubSectionId,
   resolveOperationsHubState,
@@ -25,21 +27,29 @@ const admin: AuthorizationContext = { userId: 'admin', email: null, role: 'ADMIN
 const user: AuthorizationContext = { userId: 'user', email: null, role: 'USER' };
 
 describe('Services workspace contract', () => {
-  it('owns exactly four operational capabilities with no duplicate Automation authority', () => {
-    expect(operationsHubSections.map((section) => section.id)).toEqual([
-      'maintenance', 'service_providers', 'utilities', 'documents_vault',
+  it('owns four capabilities but advertises only maintenance and utilities', () => {
+    expect(operationsHubSections.map((section) => [section.id, section.showInPrimaryNavigation])).toEqual([
+      ['maintenance', true],
+      ['service_providers', false],
+      ['utilities', true],
+      ['documents_vault', false],
     ]);
     expect(new Set(operationsHubSections.map((section) => section.id)).size).toBe(4);
     expect(isOperationsHubSectionId('automation')).toBe(false);
   });
 
-  it('keeps authenticated-only sections while filtering permission-gated ones', () => {
-    expect(getVisibleOperationsHubSections(() => false).map((section) => section.id)).toEqual([
+  it('keeps hidden capabilities accessible while routine tabs stay focused', () => {
+    expect(getAccessibleOperationsHubSections(() => false).map((section) => section.id)).toEqual([
       'utilities', 'documents_vault',
     ]);
-    const granted = new Set<OperationsHubPermission>(['maintenance.view']);
+    expect(getVisibleOperationsHubSections(() => false).map((section) => section.id)).toEqual(['utilities']);
+
+    const granted = new Set<OperationsHubPermission>(['maintenance.view', 'service_providers.view']);
+    expect(getAccessibleOperationsHubSections((permission) => granted.has(permission)).map((section) => section.id)).toEqual([
+      'maintenance', 'service_providers', 'utilities', 'documents_vault',
+    ]);
     expect(getVisibleOperationsHubSections((permission) => granted.has(permission)).map((section) => section.id)).toEqual([
-      'maintenance', 'utilities', 'documents_vault',
+      'maintenance', 'utilities',
     ]);
   });
 
@@ -63,16 +73,22 @@ describe('Services workspace contract', () => {
 });
 
 describe('Services permission and deep-link model', () => {
-  it('returns all four Services sections for ADMIN', () => {
-    expect(getVisibleOperationsSections(admin).map((section) => section.id)).toEqual([
+  it('keeps all four Services capabilities accessible for ADMIN but only two visible as tabs', () => {
+    expect(getAccessibleOperationsSections(admin).map((section) => section.id)).toEqual([
       'maintenance', 'service_providers', 'utilities', 'documents_vault',
+    ]);
+    expect(getVisibleOperationsSections(admin).map((section) => section.id)).toEqual([
+      'maintenance', 'utilities',
     ]);
   });
 
-  it('opens valid deep links and rejects removed Automation as a Services section', () => {
-    expect(resolveOperationsHubState({
+  it('opens hidden valid deep links and rejects removed Automation as a Services section', () => {
+    const documents = resolveOperationsHubState({
       requestedSection: 'documents_vault', defaultSection: 'maintenance', authorization: admin,
-    }).activeSection).toBe('documents_vault');
+    });
+    expect(documents.activeSection).toBe('documents_vault');
+    expect(documents.visibleSections.map((section) => section.id)).toEqual(['maintenance', 'utilities']);
+
     expect(resolveOperationsHubState({
       requestedSection: 'automation', defaultSection: 'maintenance', authorization: admin,
     }).activeSection).toBe('maintenance');
@@ -86,7 +102,7 @@ describe('Services permission and deep-link model', () => {
     expect(state.isRequestedSectionForbidden).toBe(true);
   });
 
-  it('falls back to the first permitted service when the default is forbidden', () => {
+  it('falls back to the first visible service when the default is forbidden', () => {
     expect(resolveOperationsHubState({
       requestedSection: undefined, defaultSection: 'maintenance', authorization: user,
     }).activeSection).toBe('utilities');
