@@ -2,96 +2,54 @@
 
 ## Context
 
-The application exposes two top-level finance destinations that were easy to
-confuse because both concern financial data but serve different jobs:
+MALEK exposes two top-level destinations that concern money but serve different jobs:
 
-- `/financials` is the operational index for invoices, receipts, expenses,
-  arrears, deposits, owner settlements, and bank reconciliation. It also shows
-  a current-month `FinancialReportsPreviewSection` before the workspace cards.
-- `/reports` is the detailed analytics center for collection, cashflow,
-  arrears, accounting, statements, VAT, deferred revenue, filtering, and CSV
-  export.
+- `/financials` is the operational Money workspace for invoices, receipts, arrears, expenses, commissions, management-fee accruals, deposits, owner settlements, and bank reconciliation.
+- `/reports` is the canonical reporting/accounting workspace for analysis, statements, GL-backed accounting reports, reconciliation evidence, filtering, and exports.
 
-The pages share reporting services, while navigation and page-copy keys such as
-`financialOverview`, `reportsAndStatements`, `accounting`, and `statements`
-existed without a written contract describing which page owns which job. Their
-headers and descriptions were hardcoded Arabic strings, and the UI did not
-provide a direct way to move from the quick operational view to detailed
-reports or back.
-
-`rentrix-app/src/features/finance-hub/` is an internal reusable workspace shell,
-not a route. This decision concerns only `/financials` and `/reports`.
+The routes intentionally share lower-level reporting/data services where appropriate, but they do not share navigation ownership or page composition.
 
 ## Decision
 
-1. Keep `/financials` and `/reports` as separate routes. `/financials` remains
-   the operational directory with per-workspace permissions; `/reports`
-   retains its existing `financial.reports.export` access check and heavier
-   analytics workspace.
-2. Add six bilingual shared keys in `rentrix-app/src/lib/i18n.ts`:
-   `financialsPageDescription`, `financialsPageHint`,
-   `reportsPageDescription`, `reportsPageHint`,
-   `financialsSectionSummary`, and `financialsSectionReports`.
-3. Use `financialsSectionSummary` and `financialsSectionReports` as the two page
-   header titles. They are an intentional contrast pair inside the pages and
-   their cross-route actions. Existing sidebar labels remain unchanged.
-4. Render each hint as a low-emphasis, actionable cross-route banner:
-   `/financials` links to `/reports` only when the current user has the existing
-   reports permission, and `/reports` links back to `/financials`.
-5. Use both `language` and `direction` from `getAppLanguageState()` for page
-   copy and layout direction. No new language hook or state source is added.
-6. Keep all existing routes, sidebar entries, permission definitions, RPCs,
-   services, migrations, and financial calculations unchanged. Keep the
-   `FinancialReportsPreviewSection` inside `/financials`.
+1. Keep `/financials` and `/reports` as separate top-level routes.
+2. Keep operational mutations and day-to-day Money work under `/financials`.
+3. Keep detailed reports, accounting statements, and reporting permissions under `/reports`.
+4. Preserve compatibility deep links by resolving them into the canonical Money or Reports workspace rather than reviving retired page shells.
+5. Keep bilingual shared terminology in `rentrix-app/src/lib/i18n.ts`; do not create route-local language state.
+6. Do not change financial calculations, permissions, RPCs, RLS, or persistence merely to change the information architecture.
+
+## Current canonical implementation
+
+The implementation has evolved since this ADR was first written:
+
+- `/financials` now resolves directly to `rentrix-app/src/features/finance/FinancePage.tsx`.
+- Finance navigation/deep-link/permission resolution has one source of truth: `rentrix-app/src/features/finance/shell/financeShellModel.ts`.
+- The retired `features/finance-hub/` shell has been removed.
+- The retired duplicate `features/financials/financials-page.tsx` and `features/financials/finance-shell-model.ts` are not compatibility boundaries and must not be restored.
+- Live business workspaces under `features/financials/` remain authoritative for invoices, receipts, arrears, expenses, deposits, fee accruals, billing, and bank reconciliation; the canonical `FinancePage` embeds them.
+- `/reports` remains independent and routes accounting report reads through the canonical Accounting reports facade.
 
 ## Alternatives rejected
 
-- **Merge `/financials` and `/reports` into one tabbed hub.** Rejected because
-  the reports workspace has a stricter access boundary and a heavier analytics
-  bundle than the operational directory.
-- **Remove the current-month preview from `/financials`.** Rejected because the
-  preview gives the operational route a useful quick-summary payoff instead of
-  leaving it as a directory only.
-- **Keep explanatory text without navigation actions.** Rejected because a
-  banner that tells the user another page is relevant should provide the route
-  directly, while still respecting the destination permission.
-- **Use raw source scanning as the i18n consumer contract.** Rejected because a
-  comment, fixture, or unrelated string can create a false positive. The test
-  instead matches real `translateSharedLabel(...)` calls in the intended route
-  files.
+- **Merge `/financials` and `/reports` into one giant hub.** Rejected because operational Money work and reporting/accounting have different jobs, permissions, and interaction density.
+- **Keep duplicate Finance page shells for compatibility.** Rejected because route compatibility belongs in route/deep-link resolution; duplicate renderers create drift and buried work.
+- **Move operational financial mutations into Reports.** Rejected because Reports is an analysis/accounting destination, not the day-to-day mutation workspace.
 
 ## Consequences
 
-- The page headers now read "Quick summary" / "Detailed reports" in English
-  and "الملخص السريع" / "التقارير التفصيلية" in Arabic. This does not rename
-  the sidebar entries.
-- Both routes explain their purpose and provide a direct, keyboard-focusable
-  route to the complementary view. Restricted users do not receive the new
-  `/reports` action.
-- The two pages no longer force RTL when their language state is LTR.
-- Translation value tests protect the six keys in Arabic and English, while
-  consumer tests tie every key to an actual translation call in its intended
-  page source.
-- Copy changes remain centralized in `lib/i18n.ts`; route responsibilities and
-  access behavior remain unchanged.
-- Revisit this decision if the reports permission is removed, if the quick
-  preview leaves `/financials`, or if the operational workspaces are replaced
-  by one consolidated table that changes the route's purpose.
+- Users get one operational Money workspace and one reporting/accounting workspace.
+- Legacy URLs may remain as redirects/resolution aliases without creating additional product destinations.
+- Tests must target `FinancePage` and `financeShellModel` as the canonical UI/IA contract instead of source-scanning retired renderers.
+- Any future Finance shell replacement must migrate route ownership and executable IA tests before the previous shell is deleted.
 
 ## Evidence
 
-- `rentrix-app/src/features/financials/financials-page.tsx` — quick-summary
-  header, direction-aware layout, permission-gated link to `/reports`, preview,
-  and financial workspace cards.
-- `rentrix-app/src/features/reports/reports-page.tsx` — detailed-reports header,
-  existing reports access check, direction-aware layout, and link back to
-  `/financials`.
-- `rentrix-app/src/lib/i18n.ts` — owns the six ADR-0008 translation keys.
-- `rentrix-app/src/lib/i18n.test.ts` — bilingual value, contrast, and exact
-  consumer contracts.
-- `rentrix-app/src/app/navigation/app-nav-items.ts` — evidence that sidebar
-  labels and ordering remain unchanged.
-- `docs/ARCHITECTURE.md` — records the route split and the non-route role of
-  `features/finance-hub/`.
-- PR #1307 — established the finance workspace shell.
-- PR #1314 — established the financial reporting service facade.
+- `rentrix-app/src/routes/_protected.financials.tsx` — canonical `/financials` route export.
+- `rentrix-app/src/features/finance/FinancePage.tsx` — canonical operational Money renderer.
+- `rentrix-app/src/features/finance/shell/financeShellModel.ts` — canonical Finance sections, views, permissions, and deep-link resolution.
+- `rentrix-app/src/features/reports/reports-page.tsx` — canonical Reports workspace.
+- `rentrix-app/src/features/accounting/reports/accountingReportsFacade.ts` — canonical accounting-report read boundary.
+- `rentrix-app/src/app/navigation/app-nav-items.ts` — task-centric product navigation.
+- PR #1577 — Finance Hub unification.
+- PR #1592 — retired finance-hub removal and architecture debt harvest.
+- PR #1597 — Reports → Accounting canonical read-boundary consolidation.
