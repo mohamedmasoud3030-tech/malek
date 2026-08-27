@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { SectionTabs } from '@/components/ui/section-tabs';
 import { reportSections, type ReportSectionId } from '../reports-page.sections';
-import { getReportSubViews, type ReportViewId } from '../report-view-registry';
+import { getReportSubViewLabel, getVisibleReportSubViews, type ReportViewId } from '../report-view-registry';
 
 type ReportsSectionTabsProps = Readonly<{
   activeSection: ReportSectionId;
@@ -10,14 +10,7 @@ type ReportsSectionTabsProps = Readonly<{
   onSectionViewChange: (section: ReportSectionId, view: ReportViewId) => void;
 }>;
 
-/**
- * Compact two-level report navigation.
- *
- * The previous surface repeated the active section as a header card, a mobile
- * select and a desktop tab strip before rendering the sub-view tabs. This keeps
- * the same registry-driven navigation in one compact control so the report
- * itself reaches the viewport much earlier on mobile.
- */
+/** Compact routine navigation; specialist reports stay in the report library/deep links. */
 export function ReportsSectionTabs({
   activeSection,
   activeView,
@@ -26,7 +19,9 @@ export function ReportsSectionTabs({
 }: ReportsSectionTabsProps) {
   const activeSectionMeta = reportSections.find((section) => section.id === activeSection) ?? reportSections[0];
   const ActiveSectionIcon = activeSectionMeta.icon;
-  const subViews = getReportSubViews(activeSection);
+  const visibleSubViews = getVisibleReportSubViews(activeSection);
+  const activeViewIsRoutine = !activeView || visibleSubViews.some((view) => view.id === activeView);
+  const activeSpecialistLabel = activeViewIsRoutine ? null : getReportSubViewLabel(activeSection, activeView);
   const panelId = `section-panel-${activeSection}`;
 
   const handleViewChange = useCallback(
@@ -51,19 +46,21 @@ export function ReportsSectionTabs({
           compactMobile
         />
 
-        {subViews.length > 0 ? (
+        {visibleSubViews.length > 0 && activeViewIsRoutine ? (
           <SectionTabs
-            items={subViews}
-            activeId={activeView || subViews[0].id}
+            items={visibleSubViews}
+            activeId={activeView || visibleSubViews[0].id}
             onChange={handleViewChange}
-            ariaLabel={activeSection === 'accounting' ? 'مساحات المحاسبة' : 'مساحات التحليلات'}
+            ariaLabel={activeSection === 'accounting' ? 'تقارير المحاسبة' : 'تحليلات المتابعة'}
             panelId={panelId}
             compactMobile
           />
         ) : (
-          <div className="flex min-h-11 items-center gap-2 rounded-lg border border-border/55 bg-muted/20 px-3 text-xs font-bold text-muted-foreground">
+          <div className="flex min-h-11 min-w-0 items-center gap-2 rounded-lg border border-border/55 bg-muted/20 px-3 text-xs font-bold text-muted-foreground">
             <ActiveSectionIcon className="size-4 shrink-0 text-primary" aria-hidden="true" />
-            <span className="truncate">{activeSectionMeta.label}</span>
+            <span className="truncate">
+              {activeSpecialistLabel ? `تقرير من المكتبة · ${activeSpecialistLabel}` : activeSectionMeta.label}
+            </span>
           </div>
         )}
       </div>
