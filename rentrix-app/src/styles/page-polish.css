@@ -507,3 +507,36 @@
     min-width: 0;
   }
 }
+
+
+/* ── Desktop shell: fixed, named, and quiet ─────────────────────────
+   On large screens navigation is a permanent work tool. Do not collapse it
+   into unlabeled icons or turn the header into another decorative surface. */
+@media (min-width: 1024px) {
+  [data-app-shell] [data-sidebar] {
+    position: fixed;
+    inset-block: 0;
+    overflow: hidden;
+  }
+
+  [data-app-shell] [data-sidebar] > nav {
+    padding: 0.8rem;
+    scrollbar-gutter: stable;
+  }
+
+  [data-app-shell] [data-sidebar] [data-nav-item] {
+    min-height: 2.65rem;
+    border-radius: 0.7rem;
+  }
+
+  [data-app-shell] [data-app-shell-header] {
+    min-height: 3.5rem;
+    background: hsl(var(--background) / 0.97);
+    backdrop-filter: none;
+  }
+
+  [data-app-shell] [data-app-shell-header] > div {
+    max-width: 100rem;
+    padding-inline: clamp(1.25rem, 2vw, 2.5rem);
+  }
+}

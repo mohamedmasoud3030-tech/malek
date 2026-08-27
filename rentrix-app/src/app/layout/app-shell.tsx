@@ -329,7 +329,7 @@ export function AppShell() {
   const router = useRouter();
   const matches = useMatches();
   const { authorization, logout, user } = useAuth();
-  const { sidebarCollapsed, theme, setTheme, syncStatus, setSyncStatus } = useUiStore();
+  const { theme, setTheme, syncStatus, setSyncStatus } = useUiStore();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const activeTriggerRef = useRef<HTMLButtonElement | null>(null);
   const monogramTriggerRef = useRef<HTMLButtonElement | null>(null);
@@ -340,7 +340,6 @@ export function AppShell() {
     setMobileNavOpen(true);
   };
   const appLanguage = getAppLanguageState();
-  const isSidebarExpanded = sidebarCollapsed === false;
   const sharedLabel = (key: string) => translateSharedLabel(key, appLanguage.language);
   const writeAccessState = getWriteAccessState(authorization);
   const supportFrom = sanitizeSupportRoute(router.state?.location?.pathname ?? '/dashboard');
@@ -409,25 +408,19 @@ export function AppShell() {
 
       <aside
         data-sidebar
-        className={cn(
-          'fixed inset-y-0 right-0 z-30 hidden border-l border-sidebar-border bg-sidebar text-sidebar-foreground shadow-sidebar transition-[width] duration-200 motion-reduce:transition-none lg:flex lg:flex-col',
-          sidebarCollapsed ? 'w-[4.5rem] overflow-visible' : 'w-64 overflow-hidden',
-        )}
+        className="fixed inset-y-0 right-0 z-30 hidden w-64 overflow-hidden border-l border-sidebar-border bg-sidebar text-sidebar-foreground shadow-sidebar lg:flex lg:flex-col"
       >
         <div
-          className={cn(
-            'min-h-24 border-b border-sidebar-border/50 py-5',
-            isSidebarExpanded ? 'px-5' : 'px-1.5',
-          )}
+          className="min-h-24 border-b border-sidebar-border/50 px-5 py-5"
         >
-          <Brand expanded={isSidebarExpanded} />
+          <Brand expanded />
         </div>
         <nav className="sidebar-scroll flex-1 overflow-y-auto p-4 pb-6">
-          <NavigationLinks authorization={authorization} expanded={isSidebarExpanded} sharedLabel={sharedLabel} />
+          <NavigationLinks authorization={authorization} expanded sharedLabel={sharedLabel} />
         </nav>
       </aside>
 
-      <div className={cn('w-full transition-[padding] duration-200 motion-reduce:transition-none lg:pr-64', sidebarCollapsed && 'lg:pr-[4.5rem]')}>
+      <div className="w-full lg:pr-64">
         <header
           data-app-shell-header
           className="sticky top-0 z-20 border-b border-border/70 bg-card/95 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md supports-[backdrop-filter]:bg-card/85"
