@@ -1,12 +1,13 @@
 /**
  * EntityTable — the canonical MALEK responsive data-register foundation.
  *
- * Desktop/tablet (>= 768px): dense semantic EntityTable with sorting, sticky
- * identity/actions, row expansion, selection and optional toolbar.
+ * Desktop/tablet (>= 768px): dense semantic table by default, with an
+ * optional Cards view; sorting, sticky identity/actions, row expansion,
+ * selection and toolbar remain shared.
  *
- * Mobile (< 768px): one canonical EntityCard per record. The card shows the
- * identity plus one high-value datum, keeps row actions in an accessible
- * disclosure, and never squeezes the desktop table into the viewport.
+ * Mobile (< 768px): Cards are the default, with an optional Table view that
+ * scrolls only inside its container. The shared card shows identity plus one
+ * high-value datum and keeps row actions accessible.
  */
 
 import {
