@@ -34,12 +34,12 @@ describe('governance hub permissions', () => {
       .toEqual(['company']);
   });
 
-  it('keeps technical/support settings addressable but not discoverable as routine tabs', () => {
+  it('keeps duplicate/technical/support settings addressable but out of routine tabs', () => {
     const hidden = governanceHubSections
       .filter((section) => !section.showInPrimaryNavigation)
       .map((section) => section.id);
 
-    expect(hidden).toEqual(['system-settings', 'audit-log', 'data-integrity', 'security']);
+    expect(hidden).toEqual(['cost-centers', 'system-settings', 'audit-log', 'data-integrity', 'security']);
   });
 
   it('returns no tabs when the session has no matching permission', () => {
