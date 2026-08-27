@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react';
+import { CalendarDays } from 'lucide-react';
+import { getAppLanguageState } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
 interface PageLayoutProps {
@@ -17,6 +19,46 @@ const pageSizes: Record<NonNullable<PageLayoutProps['size']>, string> = {
   wide: 'mx-auto w-full max-w-[96rem] 2xl:max-w-[104rem]',
   full: 'w-full',
 };
+
+function TodayContextStrip() {
+  const { language } = getAppLanguageState();
+  const isArabic = language === 'ar';
+  const locale = isArabic ? 'ar-EG' : 'en-GB';
+  const now = new Date();
+  const weekday = new Intl.DateTimeFormat(locale, { weekday: 'long' }).format(now);
+  const date = new Intl.DateTimeFormat(locale, {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  }).format(now);
+
+  return (
+    <div
+      data-global-today-context
+      aria-label={isArabic ? 'اليوم والتاريخ' : 'Today and date'}
+      className="sticky top-[calc(3rem+env(safe-area-inset-top,0px))] z-10 mx-3 mt-2 flex min-h-14 items-center rounded-2xl border border-border/70 bg-card/96 px-3 shadow-sm backdrop-blur-sm sm:top-[calc(3.5rem+env(safe-area-inset-top,0px))] sm:mx-4 sm:min-h-16 sm:px-4 lg:mx-6"
+    >
+      <div className="flex min-w-0 items-center gap-3">
+        <span
+          className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary sm:size-11"
+          aria-hidden="true"
+        >
+          <CalendarDays className="size-5" />
+        </span>
+        <div className="min-w-0">
+          <p className="text-base font-black leading-tight text-foreground sm:text-lg">
+            {isArabic ? 'اليوم' : 'Today'}
+          </p>
+          <p className="mt-0.5 truncate text-xs font-semibold leading-5 text-muted-foreground sm:text-sm" data-global-today-date>
+            <span data-global-today-weekday>{weekday}</span>
+            <span aria-hidden="true"> · </span>
+            <span data-global-today-day-date>{date}</span>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function PageLayout({
   children,
@@ -42,6 +84,7 @@ export function PageLayout({
           contentClassName,
         )}
       >
+        <TodayContextStrip />
         {children}
       </div>
     </div>
