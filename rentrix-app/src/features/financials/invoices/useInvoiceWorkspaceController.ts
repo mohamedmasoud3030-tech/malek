@@ -13,7 +13,7 @@ import { useGenerateInvoices, useInvoice, useInvoicesPaginated } from '../invoic
 import { getOrCreatePaymentRequestId, resetPaymentRequestId } from '../payments/paymentService';
 import { usePostPayment } from '../payments/usePayments';
 import { openReceiptPrintTab } from '../receipts/receipt-print';
-import { useReceipt, useReceipts } from '../receipts/useReceipts';
+import { useReceipt } from '../receipts/useReceipts';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
 import { DocumentReadinessError, runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
 import type { InvoiceFilterOption } from '../components/invoice-filters';
@@ -59,7 +59,6 @@ export function useInvoiceWorkspaceController() {
   const [propertyId, setPropertyId] = useState('');
   const [page, setPage] = useState(1);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState('');
-  const [selectedReceiptId, setSelectedReceiptId] = useState('');
   const [amount, setAmount] = useState('');
   const [collectionSuccess, setCollectionSuccess] = useState<{
     receiptId: string;
@@ -88,11 +87,8 @@ export function useInvoiceWorkspaceController() {
   const invoiceQuery = useInvoice(selectedInvoiceId);
   const generate = useGenerateInvoices();
   const postPayment = usePostPayment();
-  const receiptsQuery = useReceipts({ limit: 10 });
-  const receiptQuery = useReceipt(selectedReceiptId);
-  // A freshly posted receipt is payment-backed in the UI. Keep its lookup
-  // separate from the receipt selected in the register so posting a payment
-  // never opens a second preview dialog on top of the invoice preview.
+  // A freshly posted receipt stays available inside the invoice collection
+  // confirmation without mounting a second receipt register below invoices.
   const collectionReceiptQuery = useReceipt(collectionSuccess?.receiptId ?? '');
   const contractsQuery = useContracts({ status: 'all', page: 1, pageSize: 1000 });
   const documentSettings = useDocumentSettings();
@@ -182,7 +178,6 @@ export function useInvoiceWorkspaceController() {
 
   useEffect(() => {
     if (!pendingDeepLinkCollectRef.current) return;
-    // Wait until the requested invoice detail actually resolves.
     if (!invoiceDetail || invoiceDetail.id !== deepLinkInvoiceId) return;
     pendingDeepLinkCollectRef.current = false;
     if (!canCreatePayment) return;
@@ -259,7 +254,6 @@ export function useInvoiceWorkspaceController() {
 
   const dismissCollectionSuccess = () => setCollectionSuccess(null);
 
-  // Plain row clicks keep their browsing role but close a stale success panel.
   const onSelectInvoiceRow = (invoiceId: string) => {
     setSelectedInvoiceId(invoiceId);
     setCollectionSuccess(null);
@@ -270,11 +264,6 @@ export function useInvoiceWorkspaceController() {
     return contract ? { settings: documentSettings.companySettings, ...contractContextForDocument(contract) } : null;
   };
 
-  // Document readiness AND the invoice's contract context are enforced inside
-  // the async boundary, so a reachable handler fails closed with a visible
-  // Arabic reason instead of silently producing nothing. Note that
-  // `canExportInvoiceDocuments` also folds in the export permission; the
-  // permission decision itself stays owned by the authorization layer.
   const exportInvoiceDocument = (invoice: any) => {
     void runGuardedDocumentAction({
       isReady: canExportInvoiceDocuments,
@@ -307,14 +296,12 @@ export function useInvoiceWorkspaceController() {
   const onPrintInvoice = (invoiceId: string) => {
     const invoice = invoices.find((candidate) => candidate.id === invoiceId);
     if (!invoice) return;
-
     printInvoiceDocument(invoice);
   };
 
   const onExportInvoiceList = (invoiceId: string) => {
     const invoice = invoices.find((candidate) => candidate.id === invoiceId);
     if (!invoice) return;
-
     exportInvoiceDocument(invoice);
   };
 
@@ -327,7 +314,6 @@ export function useInvoiceWorkspaceController() {
     propertyId,
     page,
     selectedInvoiceId,
-    selectedReceiptId,
     amount,
     paymentMethod,
     paymentDate,
@@ -337,8 +323,6 @@ export function useInvoiceWorkspaceController() {
     invoiceQuery,
     generate,
     postPayment,
-    receiptsQuery,
-    receiptQuery,
     collectionReceiptQuery,
     tenantOptions,
     propertyOptions,
@@ -364,7 +348,6 @@ export function useInvoiceWorkspaceController() {
     onSelectInvoiceRow,
     setGenerateDialogOpen,
     setSelectedInvoiceId,
-    setSelectedReceiptId,
     setAmount,
     setPaymentMethod,
     setPaymentDate,
