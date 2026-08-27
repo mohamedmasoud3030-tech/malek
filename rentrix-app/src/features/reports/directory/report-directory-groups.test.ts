@@ -33,7 +33,7 @@ describe('report directory search', () => {
 
   it('finds a group by a shortcut label', () => {
     const result = filterReportGroups(reportGroups, 'مصروفات');
-    expect(result.map((group) => group.id)).toEqual(['finance', 'properties']);
+    expect(result.map((group) => group.id)).toEqual(['finance', 'properties', 'analytics']);
   });
 
   it('normalises Arabic alef variants so a partially-vocalised query still matches', () => {
