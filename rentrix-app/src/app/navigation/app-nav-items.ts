@@ -87,7 +87,6 @@ export const workspaceChildNavItems: Record<string, readonly NavItem[]> = {
   '/settings': [
     ['/settings', 'companySettings', 'بيانات الشركة وإعداداتها', Building2, 'company.settings.manage', { section: 'company' }],
     ['/settings', 'usersPermissions', 'المستخدمون وطلبات الصلاحيات', ShieldCheck, 'permission_requests.review', { section: 'users-permissions' }],
-    ['/settings', 'costCenters', 'مراكز التكلفة', FolderKanban, 'cost_centers.manage', { section: 'cost-centers' }],
     ['/settings', 'automation', 'الأتمتة', Settings2, 'automation.view', { section: 'automation' }],
   ],
 };
