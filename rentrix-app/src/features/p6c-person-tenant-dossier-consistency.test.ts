@@ -7,8 +7,14 @@ describe('P6c — people and tenant dossier consistency (closeout)', () => {
   it('renders money with the shared company formatter, never raw toFixed decimals', () => {
     const person = read('./people/components/PersonDossier.tsx');
     const tenant = read('./tenants/components/TenantPreviewDialog.tsx');
-    for (const source of [person, tenant]) {
-      expect(source).toContain('formatDefaultCompanyMoney');
+    const land = read('./lands/components/LandDossier.tsx');
+    for (const source of [person, tenant, land]) {
+      // Canonical seam since the 2026-08-27 foundation wave (Architecture Lock
+      // #1639): dossiers format money through the shared company-aware
+      // `useCompanyFormatters` hook instead of feature-local Settings imports
+      // or the static default-company formatter.
+      expect(source).toContain('useCompanyFormatters');
+      expect(source).toContain('companyFormatters.money(');
       expect(source).not.toContain('.toFixed(');
     }
   });
