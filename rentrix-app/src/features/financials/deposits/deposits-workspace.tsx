@@ -102,7 +102,7 @@ export function DepositsWorkspace() {
         errorTitle="تعذر تحميل الودائع"
         errorAction={<Button onClick={() => depositsQuery.refetch()}>إعادة المحاولة</Button>}
         emptyTitle="لا توجد ودائع تأمين"
-        emptyDescription="ابدأ بتسجيل وديعة تأمين مرتبطة بعقد نشط. سيتم حفظها عبر RPC ذري مع قيد محاسبي."
+        emptyDescription="ابدأ بتسجيل وديعة تأمين مرتبطة بعقد نشط، وسيحافظ النظام على أثرها المالي تلقائيًا."
         emptyAction={<Button onClick={() => setActionType('create')}>تسجيل أول وديعة</Button>}
       >
         <EntityTable aria-label="جدول التأمينات" rows={deposits} columns={depositColumns} keyOf={(deposit) => deposit.id} />
@@ -123,12 +123,12 @@ export function DepositsWorkspace() {
       {refundEvents.length > 0 ? (
         <section className="space-y-2">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold tracking-tight">أحداث رد الودائع</h3>
+            <h3 className="text-sm font-bold tracking-tight">حركات رد الودائع</h3>
             <Button size="sm" variant="ghost" onClick={() => refundEventsQuery.refetch()}>
               تحديث
             </Button>
           </div>
-          <EntityTable aria-label="جدول أحداث الرد" rows={refundEvents} columns={refundColumns} keyOf={(event) => event.id} />
+          <EntityTable aria-label="جدول حركات الرد" rows={refundEvents} columns={refundColumns} keyOf={(event) => event.id} />
         </section>
       ) : null}
 
