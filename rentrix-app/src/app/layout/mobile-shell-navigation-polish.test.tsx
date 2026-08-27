@@ -97,9 +97,6 @@ describe('MALEK mobile shell & navigation polish pass (Section O verification ma
     });
   }
 
-  // --------------------------------------------------------------------------
-  // 1. Mobile Header
-  // --------------------------------------------------------------------------
   describe('1. Mobile Header', () => {
     it('presents the interactive M monogram brand icon with proper accessibility and canonical mark', () => {
       renderWithClient(<AppShell />);
@@ -111,59 +108,47 @@ describe('MALEK mobile shell & navigation polish pass (Section O verification ma
       expect(monogram).not.toBeNull();
       expect(monogram?.getAttribute('aria-label')).toContain('القائمة الرئيسية');
       expect(monogram?.getAttribute('aria-haspopup')).toBe('dialog');
-
-      // Canonical geometric mark inside
       expect(monogram?.querySelector('[data-malek-canonical-mark]')).not.toBeNull();
 
-      // Wordmark beside it
       const wordmark = header?.querySelector<HTMLElement>('[data-header-wordmark]');
       expect(wordmark).not.toBeNull();
       expect(wordmark?.textContent).toContain('MALEK');
     });
 
-    it('has NO hamburger menu icon in the header (completely removed)', () => {
+    it('has no hamburger menu icon in the header', () => {
       renderWithClient(<AppShell />);
-
       const header = host.querySelector<HTMLElement>('[data-app-shell-header]');
       expect(header).not.toBeNull();
-
-      // No header hamburger
       expect(header?.querySelector('[data-mobile-top-menu]')).toBeNull();
       expect(header?.querySelector('button[aria-label="فتح القائمة"]')).toBeNull();
       expect(header?.querySelector('svg.lucide-menu')).toBeNull();
     });
 
-    it('tapping M monogram opens the primary navigation drawer', () => {
+    it('tapping M monogram opens the shared primary-navigation bottom sheet', () => {
       renderWithClient(<AppShell />);
 
       const monogram = host.querySelector<HTMLButtonElement>('[data-header-brand-monogram]');
       expect(monogram).not.toBeNull();
-
       act(() => { monogram?.click(); });
 
-      const drawer = document.querySelector<HTMLElement>('[data-mobile-drawer]');
-      expect(drawer).not.toBeNull();
-      expect(drawer?.getAttribute('role')).toBe('dialog');
-      expect(drawer?.getAttribute('aria-modal')).toBe('true');
+      const sheet = document.querySelector<HTMLElement>('[data-bottom-sheet]');
+      expect(sheet).not.toBeNull();
+      expect(document.querySelector('[data-mobile-nav-bottom-sheet]')).not.toBeNull();
+      expect(sheet?.getAttribute('role')).toBe('dialog');
+      expect(sheet?.getAttribute('aria-modal')).toBe('true');
 
-      // Close to clean up
-      const close = drawer?.querySelector<HTMLButtonElement>('button[aria-label="إغلاق القائمة"]');
+      const close = sheet?.querySelector<HTMLButtonElement>('button[aria-label="إغلاق"]');
       act(() => { close?.click(); });
-      expect(document.querySelector('[data-mobile-drawer]')).toBeNull();
+      expect(document.querySelector('[data-bottom-sheet]')).toBeNull();
     });
   });
 
-  // --------------------------------------------------------------------------
-  // 2. Bottom Mobile Tools
-  // --------------------------------------------------------------------------
   describe('2. Bottom Mobile Tools', () => {
-    it('contains Search, AI, Menu/hamburger, Quick Add, and Notifications in the dock', () => {
+    it('contains Search, AI, Menu, Quick Add, and Notifications in the dock', () => {
       renderWithClient(<MobileFloatingControl onMenu={vi.fn()} />);
 
       const dock = host.querySelector<HTMLElement>('[data-mobile-floating-control]');
       expect(dock).not.toBeNull();
-
-      // All 5 tools present
       expect(dock?.querySelector('[data-mobile-dock-menu]')).not.toBeNull();
       expect(dock?.querySelector('[data-mobile-dock-search]')).not.toBeNull();
       expect(dock?.querySelector('[data-mobile-dock-quick-add]')).not.toBeNull();
@@ -171,30 +156,25 @@ describe('MALEK mobile shell & navigation polish pass (Section O verification ma
       expect(dock?.querySelector('[data-mobile-dock-ai]')).not.toBeNull();
     });
 
-    it('hamburger button in bottom tool bar opens primary navigation', () => {
+    it('menu button in bottom tool bar opens primary navigation', () => {
       const onMenuSpy = vi.fn();
       renderWithClient(<MobileFloatingControl onMenu={onMenuSpy} />);
-
       const dockMenu = host.querySelector<HTMLButtonElement>('[data-mobile-dock-menu]');
       expect(dockMenu).not.toBeNull();
-
       act(() => { dockMenu?.click(); });
       expect(onMenuSpy).toHaveBeenCalledOnce();
     });
 
     it('search button opens global command palette', () => {
       renderWithClient(<MobileFloatingControl onMenu={vi.fn()} />);
-
       const searchBtn = host.querySelector<HTMLButtonElement>('[data-mobile-dock-search]');
       expect(searchBtn).not.toBeNull();
-
       act(() => { searchBtn?.click(); });
       expect(mockOpenCommandPalette).toHaveBeenCalledOnce();
     });
 
     it('enforces 44px min touch-target size across all bottom dock controls', () => {
       renderWithClient(<MobileFloatingControl onMenu={vi.fn()} />);
-
       const buttons = host.querySelectorAll<HTMLElement>('[data-mobile-floating-control] button');
       expect(buttons.length).toBeGreaterThanOrEqual(4);
       for (const btn of Array.from(buttons)) {
@@ -204,58 +184,41 @@ describe('MALEK mobile shell & navigation polish pass (Section O verification ma
     });
   });
 
-  // --------------------------------------------------------------------------
-  // 3. Primary Navigation Drawer
-  // --------------------------------------------------------------------------
-  describe('3. Primary Navigation Drawer', () => {
-    it('opens from the RIGHT in RTL with full-height 85vw mobile width', () => {
+  describe('3. Primary Navigation Bottom Sheet', () => {
+    it('uses the shared bottom-sheet primitive instead of a side drawer', () => {
       renderWithClient(<AppShell />);
-
       const monogram = host.querySelector<HTMLButtonElement>('[data-header-brand-monogram]');
       act(() => { monogram?.click(); });
 
-      const drawer = document.querySelector<HTMLElement>('[data-mobile-drawer]');
-      expect(drawer).not.toBeNull();
+      const sheet = document.querySelector<HTMLElement>('[data-bottom-sheet]');
+      expect(sheet).not.toBeNull();
+      expect(document.querySelector('[data-mobile-nav-bottom-sheet]')).not.toBeNull();
+      expect(sheet?.className).toContain('w-full');
+      expect(sheet?.className).toContain('rounded-t-3xl');
+      expect(sheet?.className).not.toContain('right-0');
+      expect(sheet?.className).not.toContain('w-[85vw]');
 
-      // Right-side RTL placement
-      expect(drawer?.className).toContain('right-0');
-      expect(drawer?.className).toContain('left-auto');
-      expect(drawer?.className).toContain('h-dvh');
-      expect(drawer?.className).toContain('w-[85vw]');
-      expect(drawer?.className).toContain('max-w-[20rem]');
-
-      // Close to clean up
       act(() => {
-        drawer?.querySelector<HTMLButtonElement>('button[aria-label="إغلاق القائمة"]')?.click();
+        sheet?.querySelector<HTMLButtonElement>('button[aria-label="إغلاق"]')?.click();
       });
     });
 
-    it('hides the floating bottom bar completely while drawer is open', () => {
+    it('hides the floating bottom bar completely while the navigation sheet is open', () => {
       renderWithClient(<AppShell />);
-
       expect(host.querySelector('[data-mobile-floating-control]')).not.toBeNull();
 
-      // Open drawer
       const monogram = host.querySelector<HTMLButtonElement>('[data-header-brand-monogram]');
       act(() => { monogram?.click(); });
-
-      // Floating bar is completely absent while drawer is open
       expect(host.querySelector('[data-mobile-floating-control]')).toBeNull();
 
-      // Close drawer
-      const drawer = document.querySelector<HTMLElement>('[data-mobile-drawer]');
+      const sheet = document.querySelector<HTMLElement>('[data-bottom-sheet]');
       act(() => {
-        drawer?.querySelector<HTMLButtonElement>('button[aria-label="إغلاق القائمة"]')?.click();
+        sheet?.querySelector<HTMLButtonElement>('button[aria-label="إغلاق"]')?.click();
       });
-
-      // Floating bar reappears
       expect(host.querySelector('[data-mobile-floating-control]')).not.toBeNull();
     });
   });
 
-  // --------------------------------------------------------------------------
-  // 4. Quick Add Menu
-  // --------------------------------------------------------------------------
   describe('4. Quick Add Menu', () => {
     it('displays complete Arabic labels without truncation for core actions', () => {
       renderWithClient(<MobileFloatingControl onMenu={vi.fn()} />);
@@ -268,11 +231,9 @@ describe('MALEK mobile shell & navigation polish pass (Section O verification ma
 
       const items = menu?.querySelectorAll<HTMLElement>('[data-mobile-quick-add-item]') ?? [];
       expect(items.length).toBe(4);
-
       const labels = Array.from(items).map((item) => item.textContent?.trim());
       expect(labels).toEqual(['عقد جديد', 'تحصيل مبلغ', 'طلب صيانة', 'فاتورة مرافق']);
 
-      // No label has truncate class
       for (const item of Array.from(items)) {
         const labelSpan = item.querySelector('span:last-child');
         expect(labelSpan?.className).not.toContain('truncate');
@@ -282,83 +243,59 @@ describe('MALEK mobile shell & navigation polish pass (Section O verification ma
 
     it('includes a header with close control and click-outside handling', () => {
       renderWithClient(<MobileFloatingControl onMenu={vi.fn()} />);
-
       const quickAddBtn = host.querySelector<HTMLButtonElement>('[data-mobile-dock-quick-add]');
       act(() => { quickAddBtn?.click(); });
       expect(host.querySelector('[data-mobile-quick-add-menu]')).not.toBeNull();
 
       const closeBtn = host.querySelector<HTMLButtonElement>('button[aria-label="إغلاق الإضافة السريعة"]');
       expect(closeBtn).not.toBeNull();
-
       act(() => { closeBtn?.click(); });
       expect(host.querySelector('[data-mobile-quick-add-menu]')).toBeNull();
     });
   });
 
-  // --------------------------------------------------------------------------
-  // 5. Notifications
-  // --------------------------------------------------------------------------
   describe('5. Notifications Mobile Panel', () => {
     it('renders a mobile panel with safe-area spacing and backdrop dismiss', () => {
       renderWithClient(<MobileFloatingControl onMenu={vi.fn()} />);
-
       const bellBtn = host.querySelector<HTMLButtonElement>(
         'button[aria-label*="الإشعارات"], button[aria-label*="التنبيهات"]',
       );
       expect(bellBtn).not.toBeNull();
-
       act(() => { bellBtn?.click(); });
 
       const panel = host.querySelector<HTMLElement>('[role="dialog"]');
       expect(panel).not.toBeNull();
-
-      // Mobile safe area and bounds — anchored to the shared dock clearance
-      // token so the panel can never drift onto the floating control dock.
       expect(panel?.className).toContain('max-md:bottom-[var(--mobile-dock-clearance');
       expect(panel?.className).toContain('max-md:max-h-[min(70dvh,28rem)]');
 
-      // Close button exists for mobile
       const closeBtn = panel?.querySelector<HTMLButtonElement>('button[aria-label="إغلاق التنبيهات"]');
       expect(closeBtn).not.toBeNull();
-
       act(() => { closeBtn?.click(); });
       expect(host.querySelector('[role="dialog"]')).toBeNull();
     });
   });
 
-  // --------------------------------------------------------------------------
-  // 6. Account Menu
-  // --------------------------------------------------------------------------
   describe('6. Account Menu', () => {
     it('renders a compact anchored menu without oversized blank container', () => {
       renderWithClient(<AppShell />);
-
       const userBtn = host.querySelector<HTMLButtonElement>('button[aria-label="فتح قائمة المستخدم"]');
       expect(userBtn).not.toBeNull();
-
       act(() => { userBtn?.click(); });
 
       const userMenu = host.querySelector<HTMLElement>('[role="menu"][aria-label="قائمة المستخدم"]');
       expect(userMenu).not.toBeNull();
-
-      // Compact width, content-driven height
       expect(userMenu?.className).toContain('w-[min(17rem,calc(100vw-1.5rem))]');
       expect(userMenu?.textContent).toContain('admin@malek.test');
       expect(userMenu?.textContent).toContain('إعدادات المنشأة');
       expect(userMenu?.textContent).toContain('تسجيل الخروج');
 
-      // Backdrop exists on mobile to dismiss
       const backdrop = host.querySelector<HTMLElement>('.fixed.inset-0.z-40');
       expect(backdrop).not.toBeNull();
-
       act(() => { backdrop?.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
       expect(host.querySelector('[role="menu"][aria-label="قائمة المستخدم"]')).toBeNull();
     });
   });
 
-  // --------------------------------------------------------------------------
-  // 7. Layout Clearance
-  // --------------------------------------------------------------------------
   describe('7. Layout Bottom Clearance & Overflow', () => {
     it('reserves mobile clearance with safe-area support in ux-foundation.css', () => {
       const uxCss = readFileSync(resolve(process.cwd(), 'src/styles/ux-foundation.css'), 'utf8');
@@ -366,30 +303,23 @@ describe('MALEK mobile shell & navigation polish pass (Section O verification ma
       expect(uxCss).toContain('padding-block-end: calc(\n      var(--mobile-floating-control-height) + 1rem + env(safe-area-inset-bottom, 0px)\n    );');
     });
 
-    it('app shell wrapper prevents horizontal scroll and handles RTL direction', () => {
+    it('app shell prevents horizontal scroll and inherits the single document direction authority', () => {
       renderWithClient(<AppShell />);
-
       const shell = host.querySelector<HTMLElement>('[data-app-shell]');
       expect(shell).not.toBeNull();
-      expect(shell?.getAttribute('dir')).toBe('rtl');
+      expect(shell?.getAttribute('dir')).toBeNull();
       expect(shell?.className).toContain('overflow-x-hidden');
     });
   });
 
-  // --------------------------------------------------------------------------
-  // 8. Dashboard Density & Today Card
-  // --------------------------------------------------------------------------
   describe('8. Dashboard Density & Shared Today Context', () => {
     it('renders a compact Today context strip with localized weekday and date', () => {
       renderWithClient(<PageLayout>محتوى</PageLayout>);
-
       const today = host.querySelector<HTMLElement>('[data-global-today-context]');
       expect(today).not.toBeNull();
       expect(today?.textContent).toContain('اليوم');
       expect(today?.querySelector('[data-global-today-weekday]')?.textContent).not.toBe('');
       expect(today?.querySelector('[data-global-today-day-date]')?.textContent).not.toBe('');
-
-      // Compact shared strip styling (one context for every operational page).
       expect(today?.className).toContain('min-h-14');
       expect(today?.className).toContain('rounded-2xl');
     });
@@ -397,14 +327,10 @@ describe('MALEK mobile shell & navigation polish pass (Section O verification ma
     it('provides an accessible refresh control with a 44px tap target in the shared strip', () => {
       const onRefreshSpy = vi.fn();
       renderWithClient(<PageLayout onRefresh={onRefreshSpy}>محتوى</PageLayout>);
-
       const refresh = host.querySelector<HTMLButtonElement>('[data-global-refresh]');
       expect(refresh).not.toBeNull();
       expect(refresh?.getAttribute('aria-label')).toBe('تحديث');
-
-      // 44px hit target stays preserved.
       expect(refresh?.className).toContain('size-11');
-
       act(() => { refresh?.click(); });
       expect(onRefreshSpy).toHaveBeenCalledOnce();
     });
@@ -415,30 +341,19 @@ describe('MALEK mobile shell & navigation polish pass (Section O verification ma
     });
 
     it('defines compact mobile section gaps in dashboard-v2.css', () => {
-      const dashboardCss = readFileSync(
-        resolve(process.cwd(), 'src/features/dashboard/dashboard-v2.css'),
-        'utf8',
-      );
+      const dashboardCss = readFileSync(resolve(process.cwd(), 'src/features/dashboard/dashboard-v2.css'), 'utf8');
       expect(dashboardCss).toContain('--dashboard-section-gap: 0.75rem');
       expect(dashboardCss).toContain('--dashboard-cluster-gap: 0.5rem');
     });
   });
 
-  // --------------------------------------------------------------------------
-  // 9. Representative Non-Dashboard Pages
-  // --------------------------------------------------------------------------
   describe('9. Representative Operational Shell Compatibility', () => {
     it('preserves shell structure and responsive layout around child routes', () => {
       renderWithClient(<AppShell />);
-
-      // Outlet renders within main container
       const outlet = host.querySelector<HTMLElement>('[data-page-outlet]');
       expect(outlet).not.toBeNull();
       expect(outlet?.textContent).toBe('محتوى الصفحة');
-
-      // Header remains stable
       expect(host.querySelector('[data-app-shell-header]')).not.toBeNull();
-      // Floating bar remains reachable
       expect(host.querySelector('[data-mobile-floating-control]')).not.toBeNull();
     });
   });
