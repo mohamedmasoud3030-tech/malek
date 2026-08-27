@@ -8,7 +8,6 @@ import { formatContractDate, formatContractMoney } from '../contractDisplayForma
 import { ContractDocumentsShell } from '../contractDocumentsShell';
 import { ContractPaymentsTab } from '../contractPaymentsTab';
 import {
-  ContractLifecycleSection,
   ContractOverviewSection,
   ContractTimelineSection,
   getExpiryDescription,
@@ -68,17 +67,9 @@ function ContractMobileSummary({ contract, settings }: Readonly<{ contract: Cont
 export function ContractDetailWorkspace({
   contract,
   settings,
-  renewalAllowed,
-  onRenew,
-  canTerminate,
-  onTerminate,
 }: Readonly<{
   contract: ContractDetail;
   settings: CompanySettingsContract;
-  renewalAllowed: boolean;
-  onRenew: () => void;
-  canTerminate: boolean;
-  onTerminate: () => void;
 }>) {
   const [activeTab, setActiveTab] = useState<ContractDetailTab>('overview');
 
@@ -98,15 +89,6 @@ export function ContractDetailWorkspace({
         <div className="space-y-4">
           <ContractApprovalSection contract={contract} />
           <ContractOverviewSection contract={contract} settings={settings} />
-          <ContractLifecycleSection
-            contract={contract}
-            settings={settings}
-            renewalAllowed={renewalAllowed}
-            onRenew={onRenew}
-            canTerminate={canTerminate}
-            onTerminate={onTerminate}
-            showActions={false}
-          />
         </div>
       </SectionTabPanel>
 
