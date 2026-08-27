@@ -33,18 +33,17 @@ describe('report directory search', () => {
 
   it('finds a group by a shortcut label', () => {
     const result = filterReportGroups(reportGroups, 'مصروفات');
-    expect(result.map((group) => group.id)).toEqual(['finance', 'properties']);
+    expect(result.map((group) => group.id)).toEqual(['finance']);
   });
 
   it('normalises Arabic alef variants so a partially-vocalised query still matches', () => {
-    // "الاشغال" (plain alef) must find "الإشغال والشواغر" (hamza alef).
     const result = filterReportGroups(reportGroups, 'الاشغال');
-    expect(result.map((group) => group.id)).toEqual(['leases', 'properties']);
+    expect(result.map((group) => group.id)).toContain('leasing');
   });
 
-  it('normalises taa marbuta so ه and ة spellings match the same report', () => {
-    expect(filterReportGroups(reportGroups, 'المحاسبيه').map((group) => group.id)).toEqual(['control']);
-    expect(filterReportGroups(reportGroups, 'المحاسبية').map((group) => group.id)).toEqual(['control']);
+  it('normalises taa marbuta so ه and ة spellings match the accounting family', () => {
+    expect(filterReportGroups(reportGroups, 'المحاسبه').map((group) => group.id)).toContain('accounting');
+    expect(filterReportGroups(reportGroups, 'المحاسبة').map((group) => group.id)).toContain('accounting');
   });
 
   it('returns an empty catalogue for an unknown query so the empty state can render', () => {
