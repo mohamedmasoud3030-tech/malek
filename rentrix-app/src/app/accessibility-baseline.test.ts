@@ -4,20 +4,13 @@ import { describe, expect, it } from 'vitest';
 const shellSource = readFileSync(new URL('./layout/app-shell.tsx', import.meta.url), 'utf8');
 const navViewSource = readFileSync(new URL('./layout/layout-navigation-view.tsx', import.meta.url), 'utf8');
 const pageHeaderSource = readFileSync(new URL('../components/layout/page-header.tsx', import.meta.url), 'utf8');
-const financialsSource = readFileSync(new URL('../features/financials/financials-page.tsx', import.meta.url), 'utf8');
-
-/**
- * Accessibility baseline — Phase 1 gates (no redesign).
- * These pin the current foundation so Phase 2 cannot silently regress.
- */
+const financialsSource = readFileSync(new URL('../features/finance/FinancePage.tsx', import.meta.url), 'utf8');
 
 describe('accessibility baseline — landmarks & nav semantics', () => {
-  it('AppShell renders landmarks: header, aside, and navigation has accessible labels', () => {
+  it('AppShell renders landmarks and accessible navigation labels', () => {
     expect(shellSource).toContain('<header');
     expect(shellSource).toContain('<aside');
-    // Nav label lives in layout-navigation-view (MobileBottomNav + NavigationLinks context)
-    const combined = shellSource + navViewSource;
-    expect(combined).toMatch(/aria-label/);
+    expect(shellSource + navViewSource).toMatch(/aria-label/);
   });
 
   it('primary and mobile nav use aria-current="page" for active item', () => {
@@ -28,53 +21,42 @@ describe('accessibility baseline — landmarks & nav semantics', () => {
     expect(shellSource).toContain('<DialogTitle className="sr-only"');
   });
 
-  it('hub section tabs have aria-label (no unlabeled tabsets)', () => {
-    // Financials uses SectionTabs with ariaLabel prop + side nav with native aria-label
+  it('canonical Money tabs and navigation are labeled', () => {
     expect(financialsSource).toContain('SectionTabs');
     expect(financialsSource).toMatch(/ariaLabel=|aria-label=/);
-  });
-
-  it('financials side nav and mobile select both have aria-label', () => {
     expect(financialsSource).toContain('aria-label="أقسام المالية"');
   });
 
-  it('active finance panels use role="tabpanel", while inactive ones are unmounted from DOM completely', () => {
+  it('active finance panels use tabpanel roles while inactive ones are unmounted', () => {
     expect(financialsSource).toContain('role="tabpanel"');
     expect(financialsSource).not.toContain('hidden={activeSection !==');
   });
 
-  it('PageHeader always renders one h1 (heading hierarchy)', () => {
+  it('PageHeader always renders one h1', () => {
     expect(pageHeaderSource).toContain('<h1');
-    // Only one h1 per header instance
-    const h1Count = (pageHeaderSource.match(/<h1/g) ?? []).length;
-    expect(h1Count).toBe(1);
+    expect((pageHeaderSource.match(/<h1/g) ?? []).length).toBe(1);
   });
 
-  it('PageHeaderActions provides accessible overflow for secondary actions (no keyboard trap)', () => {
+  it('PageHeaderActions provides accessible overflow for secondary actions', () => {
     const actionsSource = readFileSync(new URL('../components/layout/page-header-actions.tsx', import.meta.url), 'utf8');
     expect(actionsSource.length).toBeGreaterThan(0);
-    // Indicates keyboard handling or menu semantics
     expect(actionsSource).toMatch(/menu|aria-|Overflow/i);
   });
 
-  it('quick-add and notifications menus expose aria-haspopup/controls', () => {
+  it('quick-add and account controls expose menu state', () => {
     expect(shellSource).toContain('aria-haspopup="menu"');
     expect(shellSource).toContain('aria-expanded');
   });
 });
 
-describe('accessibility baseline — text that carries meaning is not decorative-only', () => {
-  it('active-filter chips are not aria-hidden only (they convey state)', () => {
+describe('accessibility baseline — meaningful text remains readable', () => {
+  it('active-filter chips are not decorative-only', () => {
     const activeFilter = readFileSync(new URL('../components/ui/active-filter-bar.tsx', import.meta.url), 'utf8');
-    // Chips should be real buttons/text, not hidden decoration
     expect(activeFilter).not.toMatch(/aria-hidden="true"[^>]*>.*النشطة.*</);
   });
 
-  it('small-text metric hints exist but inventory notes the risk', () => {
-    // text-[11px] / text-xs appear in finance/filters/metrics — allowed for density
-    // but flagged for contrast review in FOUNDATION.md §6
+  it('dense finance metadata remains explicit text rather than decoration', () => {
     const occurrences = (financialsSource.match(/text-\[11px\]|text-xs/g) ?? []).length;
     expect(occurrences).toBeGreaterThan(0);
-    // Ensure we document, not forbid — baseline pinned
   });
 });
