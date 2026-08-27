@@ -349,7 +349,7 @@ describe('premium glass — #1595 mobile shell behaviour is untouched', () => {
 
     // Notifications keep the anchored mobile panel contract.
     expect(notifications).toContain('data-mobile-notifications-panel');
-    expect(notifications).toContain('max-md:bottom-[calc(var(--mobile-floating-control-height');
+    expect(notifications).toContain('max-md:bottom-[var(--mobile-dock-clearance');
     expect(notifications).toContain('max-md:max-h-[min(70dvh,28rem)]');
   });
 

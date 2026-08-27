@@ -182,9 +182,10 @@ describe('AppShell — redesigned MALEK header & navigation', () => {
     const controls = header?.querySelector<HTMLElement>('[data-header-utility-side]');
     expect(controls?.className).toContain('gap-0.5');
 
-    // Header row stays slim
+    // Header row stays slim, and its height comes from the shared token that
+    // every sticky element below it offsets by.
     const headerRow = controls?.parentElement;
-    expect(headerRow?.className).toContain('min-h-12');
+    expect(headerRow?.className).toContain('min-h-[var(--app-header-height)]');
   });
 
   it('centers the drawer brand lockup with a side-pinned close control and right-side RTL placement', () => {

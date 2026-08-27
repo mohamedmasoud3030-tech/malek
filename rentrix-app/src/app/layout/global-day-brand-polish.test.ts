@@ -7,11 +7,17 @@ const layoutDir = resolve(dirname(fileURLToPath(import.meta.url)));
 const pageLayout = readFileSync(resolve(layoutDir, '../../components/layout/page-layout.tsx'), 'utf8');
 const dashboardPage = readFileSync(resolve(layoutDir, '../../features/dashboard/dashboard-page.tsx'), 'utf8');
 const malikMark = readFileSync(resolve(layoutDir, '../../components/brand/malik-mark.tsx'), 'utf8');
+const appShell = readFileSync(resolve(layoutDir, '../../app/layout/app-shell.tsx'), 'utf8');
+const uxFoundation = readFileSync(resolve(layoutDir, '../../styles/ux-foundation.css'), 'utf8');
 
 describe('global day context and compact header brand contract', () => {
   it('keeps one shared sticky day/date context across page layouts', () => {
     expect(pageLayout).toContain('data-global-today-context');
-    expect(pageLayout).toContain('sticky top-[calc(3rem+env(safe-area-inset-top,0px))]');
+    // The strip must offset by the SAME token that sizes the sticky header, so
+    // the two can never drift apart and the strip can never slide under it.
+    expect(pageLayout).toContain('top-[calc(var(--app-header-height,3rem)+env(safe-area-inset-top,0px))]');
+    expect(appShell).toContain('min-h-[var(--app-header-height)]');
+    expect(uxFoundation).toContain('--app-header-height: 3rem');
     expect(pageLayout).toContain('data-global-today-weekday');
     expect(pageLayout).toContain('data-global-today-day-date');
   });

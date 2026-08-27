@@ -312,8 +312,9 @@ describe('MALEK mobile shell & navigation polish pass (Section O verification ma
       const panel = host.querySelector<HTMLElement>('[role="dialog"]');
       expect(panel).not.toBeNull();
 
-      // Mobile safe area and bounds
-      expect(panel?.className).toContain('max-md:bottom-[calc(var(--mobile-floating-control-height');
+      // Mobile safe area and bounds — anchored to the shared dock clearance
+      // token so the panel can never drift onto the floating control dock.
+      expect(panel?.className).toContain('max-md:bottom-[var(--mobile-dock-clearance');
       expect(panel?.className).toContain('max-md:max-h-[min(70dvh,28rem)]');
 
       // Close button exists for mobile

@@ -226,7 +226,7 @@ export function NotificationsMenu({
               // Desktop popover positioning:
               'md:absolute md:end-0 md:top-12 md:w-80 md:max-w-[calc(100vw-1rem)]',
               // Mobile panel positioning: anchored above bottom dock with safe area:
-              'max-md:fixed max-md:inset-x-3 max-md:bottom-[calc(var(--mobile-floating-control-height,4.5rem)+0.75rem+env(safe-area-inset-bottom,0px))] max-md:top-auto max-md:mx-auto max-md:w-auto max-md:max-w-md max-md:max-h-[min(70dvh,28rem)] max-md:overflow-y-auto max-md:pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]',
+              'max-md:fixed max-md:inset-x-3 max-md:bottom-[var(--mobile-dock-clearance,5.25rem)] max-md:top-auto max-md:mx-auto max-md:w-auto max-md:max-w-md max-md:max-h-[min(70dvh,28rem)] max-md:overflow-y-auto max-md:pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]',
             )}
           >
             <div className="flex items-center justify-between border-b border-border/60 pb-2 mb-2">

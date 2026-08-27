@@ -425,7 +425,7 @@ export function AppShell() {
           data-app-shell-header
           className="sticky top-0 z-20 border-b border-border/70 bg-card/95 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md supports-[backdrop-filter]:bg-card/85"
         >
-          <div className="mx-auto flex min-h-12 w-full max-w-[110rem] items-center justify-between gap-2 px-2.5 py-1 sm:min-h-14 sm:px-4">
+          <div className="mx-auto flex min-h-[var(--app-header-height)] w-full max-w-[110rem] items-center justify-between gap-2 px-2.5 py-1 sm:px-4">
             {/* Visual start (right in RTL) — Brand side: [ M ] monogram + MALEK wordmark */}
             <div className="z-10 flex shrink-0 items-center" data-header-brand-side data-header-wordmark-side>
               <HeaderBrandLockup onOpenNav={() => handleOpenNav(monogramTriggerRef.current)} monogramRef={monogramTriggerRef} />
