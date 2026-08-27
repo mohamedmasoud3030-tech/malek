@@ -1,5 +1,7 @@
+import { useMatches } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import { CalendarDays, RefreshCw } from 'lucide-react';
+import { APP_BRAND_NAME } from '@/lib/brand';
 import { getAppLanguageState } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
@@ -10,13 +12,14 @@ interface PageLayoutProps {
   dir?: 'rtl' | 'ltr';
   size?: 'default' | 'wide' | 'full';
   lang?: string;
+  /** Page name shown in the shared page/date context bar. */
+  title?: string;
   /** Scoped visual system for approved operational workspaces only. */
   visualVariant?: 'malek-pro';
   /**
-   * Explicit refresh affordance in the shared context strip. Operational
-   * pages whose data can go stale without a focus refetch (the dashboard
-   * snapshot, for example) wire this so freshness stays one honest,
-   * consistent tap away — never a per-page duplicate card.
+   * Explicit refresh affordance in the shared context bar. Operational pages
+   * whose data can go stale without a focus refetch (the dashboard snapshot,
+   * for example) wire this so freshness stays one honest, consistent tap away.
    */
   onRefresh?: () => void;
   refreshing?: boolean;
@@ -28,7 +31,11 @@ const pageSizes: Record<NonNullable<PageLayoutProps['size']>, string> = {
   full: 'w-full',
 };
 
-function TodayContextStrip({ onRefresh, refreshing }: Readonly<{ onRefresh?: () => void; refreshing?: boolean }>) {
+function PageContextStrip({
+  title,
+  onRefresh,
+  refreshing,
+}: Readonly<{ title: string; onRefresh?: () => void; refreshing?: boolean }>) {
   const { language } = getAppLanguageState();
   const isArabic = language === 'ar';
   const locale = isArabic ? 'ar-EG' : 'en-GB';
@@ -40,14 +47,12 @@ function TodayContextStrip({ onRefresh, refreshing }: Readonly<{ onRefresh?: () 
     year: 'numeric',
   }).format(now);
 
-  // z-20 keeps the strip level with the app-shell header. It must NOT use
-  // --z-sticky (60): that layer sits above the nav overlay (z-40) and the
-  // dropdowns (z-50), so the strip would paint over the open drawer scrim.
   return (
     <div
+      data-global-page-context
       data-global-today-context
-      aria-label={isArabic ? 'اليوم والتاريخ' : 'Today and date'}
-      className="sticky top-[calc(var(--app-header-height,3rem)+env(safe-area-inset-top,0px))] z-20 mx-3 mt-2 flex min-h-14 items-center rounded-2xl border border-border/70 bg-card/96 px-3 shadow-sm backdrop-blur-sm sm:mx-4 sm:min-h-16 sm:px-4 lg:mx-6"
+      aria-label={isArabic ? `${title} والتاريخ` : `${title} and date`}
+      className="mx-3 mt-2 flex min-h-14 items-center rounded-2xl border border-border/70 bg-card px-3 shadow-sm sm:mx-4 sm:min-h-16 sm:px-4 lg:mx-6"
     >
       <div className="flex min-w-0 items-center gap-3">
         <span
@@ -57,8 +62,8 @@ function TodayContextStrip({ onRefresh, refreshing }: Readonly<{ onRefresh?: () 
           <CalendarDays className="size-5" />
         </span>
         <div className="min-w-0">
-          <p className="text-base font-black leading-tight text-foreground sm:text-lg">
-            {isArabic ? 'اليوم' : 'Today'}
+          <p data-global-page-title className="truncate text-base font-black leading-tight text-foreground sm:text-lg">
+            {title}
           </p>
           <p className="mt-0.5 truncate text-xs font-semibold leading-5 text-muted-foreground sm:text-sm" data-global-today-date>
             <span data-global-today-weekday>{weekday}</span>
@@ -91,10 +96,19 @@ export function PageLayout({
   dir,
   lang,
   size = 'default',
+  title,
   visualVariant,
   onRefresh,
   refreshing,
 }: PageLayoutProps) {
+  const matches = useMatches();
+  const routeTitle =
+    ([...matches]
+      .reverse()
+      .find((match) => (match.staticData as { title?: string } | undefined)?.title)
+      ?.staticData as { title?: string } | undefined)?.title;
+  const resolvedTitle = title?.trim() || routeTitle || APP_BRAND_NAME;
+
   return (
     <div
       data-page-layout
@@ -110,7 +124,7 @@ export function PageLayout({
           contentClassName,
         )}
       >
-        <TodayContextStrip onRefresh={onRefresh} refreshing={refreshing} />
+        <PageContextStrip title={resolvedTitle} onRefresh={onRefresh} refreshing={refreshing} />
         {children}
       </div>
     </div>
