@@ -36,15 +36,11 @@ function currentMonthRange() {
 }
 
 function statusPresentation(row: FixedMonthlyAccrualRow) {
-  if (row.status === 'REVERSED') return { label: 'معكوس', variant: 'neutral' as const };
-  if (row.status === 'ZERO_AMOUNT') return { label: 'قيمة صفرية', variant: 'info' as const };
-  if (row.status === 'POSTED' && row.latePosting) return { label: 'مرحّل متأخرًا', variant: 'warning' as const };
-  if (row.status === 'POSTED') return { label: 'مرحّل', variant: 'success' as const };
+  if (row.status === 'REVERSED') return { label: 'تم العكس', variant: 'neutral' as const };
+  if (row.status === 'ZERO_AMOUNT') return { label: 'بدون مبلغ', variant: 'info' as const };
+  if (row.status === 'POSTED' && row.latePosting) return { label: 'سُجل لاحقًا', variant: 'warning' as const };
+  if (row.status === 'POSTED') return { label: 'مسجل', variant: 'success' as const };
   return { label: 'يحتاج مراجعة', variant: 'danger' as const };
-}
-
-function errorMessage(error: unknown, fallback: string) {
-  return error instanceof Error && error.message ? error.message : fallback;
 }
 
 export function FixedMonthlyAccrualWorkspace() {
@@ -69,8 +65,8 @@ export function FixedMonthlyAccrualWorkspace() {
     setError(null);
     try {
       setData(await listFixedMonthlyAccruals(dateFrom, dateTo));
-    } catch (loadError) {
-      setError(errorMessage(loadError, 'تعذر تحميل سجل الاستحقاقات.'));
+    } catch {
+      setError('تعذر تحميل سجل الاستحقاقات. تحقق من الاتصال ثم أعد المحاولة.');
     } finally {
       setIsLoading(false);
     }
@@ -84,7 +80,7 @@ export function FixedMonthlyAccrualWorkspace() {
     if (!dateFrom || !dateTo) return 'حدد تاريخ البداية والنهاية.';
     if (dateFrom > dateTo) return 'تاريخ البداية يجب ألا يتجاوز تاريخ النهاية.';
     const days = Math.floor((Date.parse(dateTo) - Date.parse(dateFrom)) / 86_400_000) + 1;
-    if (days > 92) return 'الحد الأقصى للتنفيذ المتراكم هو 92 يومًا في الطلب الواحد.';
+    if (days > 92) return 'اختر فترة لا تتجاوز 92 يومًا في المرة الواحدة.';
     return null;
   };
 
@@ -103,8 +99,8 @@ export function FixedMonthlyAccrualWorkspace() {
         `اكتمل التنفيذ: ${result.createdDays} يوم جديد، و${result.idempotentDays} يوم موجود مسبقًا، بإجمالي ${formatOmr(result.grossAmount)}.`,
       );
       await load();
-    } catch (executeError) {
-      setError(errorMessage(executeError, 'تعذر تنفيذ الاستحقاقات.'));
+    } catch {
+      setError('تعذر تنفيذ الاستحقاقات. راجع الإعدادات المطلوبة ثم أعد المحاولة.');
     } finally {
       setIsExecuting(false);
     }
@@ -125,12 +121,12 @@ export function FixedMonthlyAccrualWorkspace() {
         reversalReason.trim(),
         crypto.randomUUID(),
       );
-      setNotice('تم إنشاء قيد عكسي متوازن مع الحفاظ على سجل الاستحقاق الأصلي.');
+      setNotice('تم تسجيل العكس مع الاحتفاظ بالاستحقاق الأصلي للمراجعة.');
       setReversalAccrualId(null);
       setReversalReason('');
       await load();
-    } catch (reverseError) {
-      setError(errorMessage(reverseError, 'تعذر عكس الاستحقاق.'));
+    } catch {
+      setError('تعذر عكس الاستحقاق. أعد المحاولة، وإذا استمرت المشكلة تواصل مع مسؤول النظام.');
     } finally {
       setIsReversing(false);
     }
@@ -139,7 +135,7 @@ export function FixedMonthlyAccrualWorkspace() {
   const accrualColumns = useMemo<ColumnDef<FixedMonthlyAccrualRow>[]>(() => [
     {
       key: 'date',
-      header: 'التاريخ الاقتصادي',
+      header: 'تاريخ الاستحقاق',
       priority: 'identity',
       render: (row) => <span className="whitespace-nowrap font-bold" dir="ltr">{formatCompactDate(row.accrualDate)}</span>,
     },
@@ -150,7 +146,7 @@ export function FixedMonthlyAccrualWorkspace() {
       render: (row) => (
         <span className="min-w-0">
           <span className="block truncate font-bold">{row.propertyName}</span>
-          <span className="block truncate text-xs text-muted-foreground">{row.ownerName} · نسخة {row.versionNo}</span>
+          <span className="block truncate text-xs text-muted-foreground">{row.ownerName}</span>
         </span>
       ),
     },
@@ -180,14 +176,14 @@ export function FixedMonthlyAccrualWorkspace() {
     },
     {
       key: 'status',
-      header: 'حالة الترحيل',
+      header: 'الحالة',
       priority: 'secondary',
       render: (row) => {
         const status = statusPresentation(row);
         return (
           <span className="block min-w-0">
             <Badge variant={status.variant}>{status.label}</Badge>
-            {row.latePosting ? <span className="mt-1 block text-xs text-warning">فترة لاحقة مفتوحة</span> : null}
+            {row.latePosting ? <span className="mt-1 block text-xs text-warning">تم التسجيل في فترة لاحقة</span> : null}
             {row.reversalReason ? <span className="mt-1 block max-w-48 truncate text-xs text-muted-foreground">{row.reversalReason}</span> : null}
           </span>
         );
@@ -195,7 +191,7 @@ export function FixedMonthlyAccrualWorkspace() {
     },
     {
       key: 'postingDate',
-      header: 'تاريخ الترحيل',
+      header: 'تاريخ التسجيل',
       priority: 'detail',
       render: (row) => <span className="whitespace-nowrap" dir="ltr">{row.postingDate ?? '—'}</span>,
     },
@@ -220,21 +216,16 @@ export function FixedMonthlyAccrualWorkspace() {
   ], [canReverse]);
 
   return (
-    <section className="space-y-4" aria-label="استحقاقات العمولة الشهرية الثابتة">
+    <section className="space-y-4" aria-label="استحقاقات أتعاب الإدارة الشهرية">
       <Card>
         <CardHeader>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <CalendarRange className="size-5 text-primary" aria-hidden="true" />
-                الاستحقاق اليومي للعمولة الشهرية
-              </CardTitle>
-              <CardDescription>
-                تنفيذ آمن ومحدود لنسخ الاتفاقيات المجمدة من نوع FIXED_MONTHLY / DAILY_ACCRUAL.
-              </CardDescription>
-            </div>
-            <Badge variant="outline">OMR · دقة 3 منازل</Badge>
-          </div>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <CalendarRange className="size-5 text-primary" aria-hidden="true" />
+            استحقاقات أتعاب الإدارة الشهرية
+          </CardTitle>
+          <CardDescription>
+            احسب استحقاقات أتعاب الإدارة للفترة المحددة وفق الاتفاقيات السارية.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-3">
@@ -273,7 +264,7 @@ export function FixedMonthlyAccrualWorkspace() {
                   loading={isExecuting}
                   leftIcon={<Play className="size-4" />}
                 >
-                  تنفيذ الاستحقاق
+                  احتساب الاستحقاقات
                 </Button>
               ) : null}
               <Button
@@ -289,7 +280,7 @@ export function FixedMonthlyAccrualWorkspace() {
 
           <div className="flex gap-2 rounded-xl border border-warning/30 bg-warning/5 p-3 text-xs leading-5 text-foreground">
             <ShieldAlert className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden="true" />
-            <p><strong>الضريبة غير مطبقة:</strong> لا يوجد إعداد ضريبي رسمي مؤرّخ صالح لليوم الاقتصادي؛ والخادم لا يقبل ضريبة من المتصفح ولا ينشئ حركة على الحساب 2100.</p>
+            <p><strong>الضريبة غير محتسبة حاليًا:</strong> إعداد الضريبة المطلوب لهذا الاستحقاق غير مكتمل. راجع جاهزية المالية والضريبة قبل التنفيذ.</p>
           </div>
 
           {error ? (
@@ -311,7 +302,6 @@ export function FixedMonthlyAccrualWorkspace() {
           items={[
             { id: 'days', label: 'عدد الأيام', value: data.totalCount },
             { id: 'net', label: 'الصافي', value: formatOmr(data.netAmount) },
-            // Tax remains visible at zero because it is material accounting information.
             { id: 'tax', label: 'الضريبة', value: formatOmr(data.taxAmount) },
             { id: 'gross', label: 'الإجمالي', value: formatOmr(data.grossAmount) },
           ]}
@@ -321,8 +311,8 @@ export function FixedMonthlyAccrualWorkspace() {
       {reversalAccrualId ? (
         <Card variant="outlined">
           <CardHeader>
-            <CardTitle>سبب العكس المحاسبي</CardTitle>
-            <CardDescription>سيبقى الاستحقاق الأصلي دون تعديل ويُنشأ قيد تعويضي منفصل.</CardDescription>
+            <CardTitle>عكس الاستحقاق</CardTitle>
+            <CardDescription>اكتب سبب العكس. سيظل الاستحقاق الأصلي محفوظًا للمراجعة.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <Label htmlFor="fixed-accrual-reversal-reason">السبب</Label>
@@ -330,12 +320,12 @@ export function FixedMonthlyAccrualWorkspace() {
               id="fixed-accrual-reversal-reason"
               value={reversalReason}
               maxLength={1000}
-              placeholder="مثال: تصحيح تاريخ سريان نسخة الاتفاقية"
+              placeholder="مثال: تصحيح تاريخ سريان الاتفاقية"
               onChange={(event) => setReversalReason(event.target.value)}
             />
             <div className="flex flex-wrap gap-2">
               <Button variant="danger" loading={isReversing} onClick={() => void handleReverse()}>
-                تأكيد إنشاء القيد العكسي
+                تأكيد العكس
               </Button>
               <Button
                 variant="outline"
@@ -354,7 +344,7 @@ export function FixedMonthlyAccrualWorkspace() {
           <div>
             <h3 id="fixed-accrual-register-title" className="text-sm font-black">سجل الاستحقاقات</h3>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              التاريخ الاقتصادي والمبالغ والقيد الناتج وحالة الترحيل أو العكس في سجل موحد.
+              الاستحقاقات والمبالغ وحالتها خلال الفترة المحددة.
             </p>
           </div>
           {data?.truncated ? (
@@ -370,8 +360,8 @@ export function FixedMonthlyAccrualWorkspace() {
           error={error && !data ? error : undefined}
           onRetry={() => void load()}
           emptyTitle="لا توجد استحقاقات"
-          emptyDescription="لا توجد استحقاقات في النطاق المحدد. غيّر نطاق التاريخ أو نفّذ الاستحقاق."
-          aria-label="سجل الاستحقاقات الشهرية الثابتة"
+          emptyDescription="لا توجد استحقاقات في النطاق المحدد. غيّر نطاق التاريخ أو احتسب الاستحقاقات."
+          aria-label="سجل استحقاقات أتعاب الإدارة الشهرية"
         />
       </section>
     </section>

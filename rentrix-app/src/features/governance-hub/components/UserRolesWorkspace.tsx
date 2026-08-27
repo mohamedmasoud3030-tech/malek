@@ -1,6 +1,5 @@
-import { Link } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
-import { RefreshCw, ShieldCheck, UserCog, UsersRound } from 'lucide-react';
+import { RefreshCw, UserCog, UsersRound } from 'lucide-react';
 import { DataErrorScreen } from '@/components/data-error-screen';
 import { EmptyState } from '@/components/empty-state';
 import { AccessDenied } from '@/components/layout/access-denied';
@@ -11,21 +10,11 @@ import { EntityForm } from '@/components/ui/entity-form';
 import { LoadingState } from '@/components/ui/loading-state';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Textarea } from '@/components/ui/textarea';
-import type { UserRole } from '@/domain/types';
 import { getPermissionLabel } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
 import { canManageGovernedUser, getRoleLabel } from '../user-roles-model';
 import { fetchGovernedUsers, type GovernedUser } from '../user-roles-service';
 import { usePermissionRequestReview, type PermissionRequest } from '../use-permission-request-review';
-
-const roleDescriptions: ReadonlyArray<Readonly<{ role: UserRole; description: string }>> = [
-  { role: 'ADMIN', description: 'حوكمة المكتب وعرض المستخدمين؛ تغييرات الوصول مقترحات غير منفذة حتى اعتماد المسار عالي التأثير.' },
-  { role: 'MANAGER', description: 'تشغيل يومي ومراجعة طلبات الصلاحية فقط، دون إدارة الأدوار أو الشركة.' },
-  { role: 'ACCOUNTANT', description: 'عرض ومراجعة البيانات المالية وإعداد التقارير وعمليات المطابقة البنكية. لا يملك صلاحية الاعتماد أو الصرف.' },
-  { role: 'OPERATIONS', description: 'إدارة العقارات والعقود والصيانة ومراكز التكلفة. لا يملك صلاحيات مالية.' },
-  { role: 'USER', description: 'وصول أساسي مع صلاحيات إضافية معتمدة حسب الحاجة.' },
-  { role: 'VIEWER', description: 'عرض فقط لجميع الوحدات والبيانات الأساسية دون أي صلاحية تعديل أو إنشاء.' },
-];
 
 function UserAccessCard({ user, currentUserId }: Readonly<{
   user: GovernedUser;
@@ -53,12 +42,9 @@ function UserAccessCard({ user, currentUserId }: Readonly<{
           <span className="font-bold">الدور الحالي</span>
           <Badge variant="outline">{getRoleLabel(user.role ?? 'USER')}</Badge>
         </div>
-        <p className="text-xs leading-5 text-muted-foreground">التعديل المباشر متوقف. يمكن للمسؤول إنشاء مقترح غير منفذ من عمليات الدعم بعد بحث مقنّع.</p>
-        {!isCurrentUser ? (
-          <Button asChild variant="secondary" className="w-full">
-            <Link to="/admin-support">فتح عمليات الدعم</Link>
-          </Button>
-        ) : null}
+        <p className="text-xs leading-5 text-muted-foreground">
+          الدور معروض للمراجعة فقط. تغييرات الوصول تتم من خلال طلبات الصلاحية المعتمدة.
+        </p>
       </CardContent>
     </Card>
   );
@@ -66,8 +52,19 @@ function UserAccessCard({ user, currentUserId }: Readonly<{
 
 function requestStatusLabel(status: PermissionRequest['status'], grantActive?: boolean) {
   if (status === 'PENDING') return 'قيد المراجعة';
-  if (status === 'APPROVED') return grantActive === false ? 'موافق عليه سابقًا — المنحة ملغاة' : 'موافق عليه';
+  if (status === 'APPROVED') return grantActive === false ? 'موافق عليه سابقًا — تم إلغاؤه' : 'موافق عليه';
   return 'مرفوض';
+}
+
+function requestScopeLabel(resourceRoute: string | null | undefined) {
+  if (!resourceRoute) return 'عام';
+  if (resourceRoute.startsWith('/financials')) return 'المال';
+  if (resourceRoute.startsWith('/properties')) return 'المحفظة';
+  if (resourceRoute.startsWith('/contracts') || resourceRoute.startsWith('/tenants') || resourceRoute.startsWith('/people')) return 'التأجير';
+  if (resourceRoute.startsWith('/maintenance') || resourceRoute.startsWith('/utilities')) return 'الخدمات';
+  if (resourceRoute.startsWith('/reports') || resourceRoute.startsWith('/accounting')) return 'التقارير';
+  if (resourceRoute.startsWith('/settings')) return 'الإعدادات';
+  return 'قسم محدد';
 }
 
 function formatRequestTime(value: string) {
@@ -94,7 +91,7 @@ function PermissionRequestsQueue() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 id="permission-requests-heading" className="text-base font-black">طلبات الصلاحية</h2>
-          <p className="mt-1 text-xs leading-5 text-muted-foreground">الطالب، الصلاحية، المورد، السبب، الوقت والحالة بدون معرّفات تقنية.</p>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">راجع صاحب الطلب والصلاحية والسبب ثم وافق أو ارفض.</p>
         </div>
         <Button variant="secondary" onClick={() => void requestsQuery.refetch()} disabled={requestsQuery.isFetching}>
           <RefreshCw className={requestsQuery.isFetching ? 'size-4 animate-spin' : 'size-4'} />
@@ -112,7 +109,7 @@ function PermissionRequestsQueue() {
         />
       ) : null}
       {!requestsQuery.isPending && !requestsQuery.isError && requests.length === 0 ? (
-        <EmptyState title="لا توجد طلبات صلاحية" description="لا توجد طلبات معلقة أو سابقة ضمن نطاق المراجعة الحالي." />
+        <EmptyState title="لا توجد طلبات صلاحية" description="لا توجد طلبات تحتاج مراجعة الآن." />
       ) : null}
 
       {!requestsQuery.isPending && !requestsQuery.isError && requests.length > 0 ? (
@@ -131,7 +128,7 @@ function PermissionRequestsQueue() {
                   {request.requester_email && request.requester_name ? <span dir="ltr" className="ms-2 text-xs text-muted-foreground">{request.requester_email}</span> : null}
                 </p>
                 <p className="break-words text-xs text-muted-foreground">
-                  المورد: {request.resource_route || 'عام'} · السبب: {request.reason || 'لم يذكر سببًا'} · {formatRequestTime(request.created_at)}
+                  النطاق: {requestScopeLabel(request.resource_route)} · السبب: {request.reason || 'لم يذكر سببًا'} · {formatRequestTime(request.created_at)}
                 </p>
                 {request.decision_reason ? <p className="text-xs font-semibold text-muted-foreground">سبب القرار: {request.decision_reason}</p> : null}
               </div>
@@ -141,7 +138,7 @@ function PermissionRequestsQueue() {
                   <Button variant="danger" disabled={decisionMutation.isPending} onClick={() => { setRejecting(request); setDecisionReason(''); }}>رفض</Button>
                 </div>
               ) : request.status === 'APPROVED' && request.grant_active !== false ? (
-                <Button variant="secondary" disabled={revokeMutation.isPending} onClick={() => revokeMutation.mutate(request)}>إلغاء المنحة</Button>
+                <Button variant="secondary" disabled={revokeMutation.isPending} onClick={() => revokeMutation.mutate(request)}>إلغاء الصلاحية</Button>
               ) : null}
             </article>
           ))}
@@ -152,7 +149,7 @@ function PermissionRequestsQueue() {
         open={Boolean(rejecting)}
         onOpenChange={(open) => { if (!open && !decisionMutation.isPending) setRejecting(null); }}
         title="رفض طلب الصلاحية"
-        description="اكتب سببًا واضحًا ليظهر لصاحب الطلب ويمكنه معالجة السبب قبل إعادة الطلب."
+        description="اكتب سببًا واضحًا ليعرف صاحب الطلب ما الذي يحتاج تعديله قبل إعادة الطلب."
         className="max-w-lg"
         visualVariant="operational"
       >
@@ -207,8 +204,8 @@ export function UserRolesWorkspace() {
             <div className="flex gap-3">
               <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><UserCog className="size-5" /></span>
               <div>
-                <h2 className="font-black">المستخدمون والأدوار</h2>
-                <p className="mt-1 text-sm leading-6 text-muted-foreground">هذه الإدارة للمسؤول المخوّل فقط، وهي مستقلة عن مراجعة الطلبات.</p>
+                <h2 className="font-black">المستخدمون</h2>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">راجع الحسابات وأدوارها الحالية، ثم استخدم طلبات الصلاحية للتغييرات الإضافية.</p>
               </div>
             </div>
             <Button variant="secondary" onClick={() => void usersQuery.refetch()} disabled={usersQuery.isFetching}>
@@ -217,29 +214,17 @@ export function UserRolesWorkspace() {
             </Button>
           </div>
 
-          <ResponsiveCardGrid desktopColumns={3} gap="sm" aria-label="أوصاف الأدوار">
-            {roleDescriptions.map(({ role, description }) => (
-              <div key={role} className="min-w-0 rounded-2xl border border-border bg-muted/20 p-4">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="size-4 shrink-0 text-primary" />
-                  <p className="font-black">{getRoleLabel(role)}</p>
-                </div>
-                <p className="mt-2 break-words text-xs leading-5 text-muted-foreground">{description}</p>
-              </div>
-            ))}
-          </ResponsiveCardGrid>
-
-          {usersQuery.isPending ? <LoadingState variant="section" label="جارٍ تحميل المستخدمين والأدوار..." /> : null}
+          {usersQuery.isPending ? <LoadingState variant="section" label="جارٍ تحميل المستخدمين..." /> : null}
           {usersQuery.isError ? (
             <DataErrorScreen
               title="تعذر تحميل المستخدمين"
-              fallbackMessage="تحقق من الاتصال والصلاحيات ثم أعد المحاولة."
+              fallbackMessage="تحقق من الاتصال ثم أعد المحاولة."
               error={usersQuery.error}
               action={<Button variant="secondary" onClick={() => void usersQuery.refetch()}>إعادة المحاولة</Button>}
             />
           ) : null}
           {usersQuery.data && usersQuery.data.length === 0 ? (
-            <EmptyState title="لا يوجد مستخدمون" description="لا توجد حسابات متاحة ضمن نطاق إدارة المستخدمين الحالي." />
+            <EmptyState title="لا يوجد مستخدمون" description="لا توجد حسابات متاحة الآن." />
           ) : null}
           {usersQuery.data && usersQuery.data.length > 0 ? (
             <>
@@ -257,7 +242,7 @@ export function UserRolesWorkspace() {
         </>
       ) : (
         <div className="rounded-2xl border border-border bg-muted/20 p-4 text-sm text-muted-foreground">
-          يمكنك مراجعة طلبات الصلاحية، لكن إدارة أدوار المستخدمين وإعدادات الشركة تتطلب صلاحية مستقلة.
+          يمكنك مراجعة طلبات الصلاحية المتاحة لحسابك.
         </div>
       )}
       {canReviewRequests ? <PermissionRequestsQueue /> : null}
