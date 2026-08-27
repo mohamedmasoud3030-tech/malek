@@ -1,7 +1,8 @@
 # MALEK Canonical Pack — Document 6: UX, IA, and Design Contract
 
 > **Status:** CANONICAL  
-> **Baseline:** `main@da9a98a38e61e9547df1e328ad91084e79b78410` (sequential financial hardening and WP-07 closeout)
+> **Baseline:** `main@da9a98a38e61e9547df1e328ad91084e79b78410` (sequential financial hardening and WP-07 closeout)  
+> **Repository-reality synchronization:** shell/Finance presentation facts in this document are updated through `main@4a17a33ade05ce7eac7bee44f3cb8d16f212a565`; this does not grant new governed-stage credit or hosted/runtime acceptance.
 
 ## UX contract
 
@@ -85,6 +86,10 @@ Canonical section routes bind into the Financials hub:
 
 Compatibility routes such as `/invoices`, `/receipts`, `/expenses`, `/arrears`, `/deposits`, `/owner-settlements` and `/bank-reconciliation` bind to hub sections/views. Documentation must not invent non-existent routes such as `/financials/receipts` when the route contract uses a hub/view binding instead.
 
+The operational Money renderer is `rentrix-app/src/features/finance/FinancePage.tsx` with one navigation/deep-link authority in `rentrix-app/src/features/finance/shell/financeShellModel.ts`. The retired duplicate `features/financials/financials-page.tsx` and `features/financials/finance-shell-model.ts` no longer exist and must not be restored as parallel page authorities.
+
+Invoice work prioritizes the invoice task. Billing readiness is a compact secondary summary by default and expands obligation rows only on explicit user request. The invoice workspace does not append a second receipts register; the dedicated Receipts view remains the canonical receipts register, while a receipt created by an invoice collection may still be shown contextually as proof of that just-completed action.
+
 ### Reports and AI
 
 `/reports` is independent. The approved target keeps `/ai-assistant` independent from Dashboard and from accounting authority. The implementation exposes a true separate `/ai-assistant` route page (unblocking `GAP-023`).
@@ -102,8 +107,9 @@ Permission requests that require action must be visibly actionable, with enough 
 ## Mobile/desktop behavior
 
 - Desktop (≥ 1024px) uses a right-side collapsible sidebar generated from `navGroups`/workspace children.
-- Tablet / iPad (768–1023px) is a first-class class: header hamburger + header search, no floating bottom control, dense registers, and two-column composition. It must not be treated as a stretched phone.
-- Phone (< 768px) has no legacy five-item bottom navigation. `mobileNavItems` is empty. The header hamburger and `MobileFloatingControl` (Menu + Search) both open the full permitted drawer. Documentation must not claim a maintenance-priority bottom tab at this baseline.
+- Tablet / iPad (768–1023px) is a first-class class: header search remains available, the phone-only floating dock is absent, dense registers remain usable, and composition may use two columns. It must not be treated as a stretched phone.
+- Phone (< 768px) has no legacy destination-style bottom navigation (`mobileNavItems` remains empty). The header uses the branded `[M] MALEK` lockup; tapping the monogram opens the full permitted navigation drawer. A single phone-only floating utility dock provides **Menu, Search, Quick Add, Notifications and AI Assistant**. Menu and the brand monogram are two triggers for the same navigation authority, not competing destination systems.
+- The phone dock is hidden while the navigation drawer is open, respects safe-area bottom clearance, and keeps minimum 44px action targets. Quick Add exposes only permission-allowed actions and Search opens the global command palette.
 - Avoid oversized single-column card stacks where a compact 2-column mobile grid is clearer. Metric groups stay 2 columns below 1024px and may open to 4 columns on desktop.
 - Long contract/agreement forms may use mobile steppers while desktop retains an efficient single-scroll workflow.
 - Shared entity registers render a dense semantic table on desktop/tablet (≥ 768px) and, below 768px, a true mobile register presentation: each record shows identity, one meaningful primary/secondary datum (status/amount/date), and a compact accessible «إجراءات» menu containing only the record's existing actions. Mobile registers never use horizontal scrolling, clipped labels, overlapping RTL text, disclosure/expansion rows, sticky action columns, or bulk expand-all controls.
@@ -120,6 +126,8 @@ Evidence includes `rentrix-app/src/index.css`, `rentrix-app/src/components/ui/**
 
 Every protected/loaded surface must have intentional loading, empty, error and permission-denied states. A route must not render a blank screen merely because a query failed or data is absent. The global shell reflects browser network loss on phone and desktop with an announced, honest warning; it must not describe `navigator.onLine` as successful backend synchronization or promise that a write was queued. Authentication recovery uses a neutral request result (no account enumeration), a public limited-life reset callback, explicit invalid/expired-link recovery and new-password autocomplete semantics; deployed email delivery and redirect allowlists still require hosted proof.
 
+Production-facing UI must not expose raw RPC names, database index names, internal schema identifiers, stack traces, raw permission-denied strings, or implementation-state codes as the default explanation for an operator. When backend detail is needed for support, map it to an actionable user message first and keep any diagnostic detail outside the primary operational surface.
+
 ## Printing and documents
 
 Print/PDF controls require real company/document readiness. Guard the action handler as well as the visible button; hiding/disabling a button is not sufficient if the handler can still run through another path. Signed versions and generated financial/legal documents must preserve the correct company, party, currency and data snapshot. Contract detail keeps operational status separate from official-registration status, shows `NOT_CONFIGURED` rather than inventing a legal rule, and exposes move-in/out evidence as draft → signed completion → distinct review. A damage-deposit request must select reviewed move-out evidence rather than rely on an unstructured note alone.
@@ -134,9 +142,21 @@ Text contrast, focus order, keyboard interaction, dialog labeling, touch targets
 
 - `rentrix-app/src/app/navigation/route-contract.ts`
 - `rentrix-app/src/app/router/route-tree.ts`
+- `rentrix-app/src/app/layout/app-shell.tsx`
+- `rentrix-app/src/app/layout/layout-navigation-view.tsx`
+- `rentrix-app/src/app/cross-device-design-contract.test.ts`
 - `rentrix-app/src/app/navigation/app-nav-items.test.ts`
 - `rentrix-app/src/app/navigation/legacy-compatibility.test.ts`
 - `rentrix-app/src/features/auth/permissions.ts`
-- visual/IA decisions in `docs/decisions/` and `docs/ui-ux/`
+- `rentrix-app/src/features/finance/FinancePage.tsx`
+- `rentrix-app/src/features/finance/shell/financeShellModel.ts`
+- `rentrix-app/src/features/financials/billing/billing-readiness-section.tsx`
+- `rentrix-app/src/features/financials/billing/billing-readiness-presentation.test.ts`
+- `rentrix-app/src/features/financials/invoices/invoice-workspace-focus.test.ts`
+- PR #1595 — mobile shell/navigation polish
+- PR #1600 — duplicate Finance shell/model removal and contract migration
+- PR #1601 — billing-readiness operator-facing presentation cleanup
+- PR #1602 — invoice workspace focus and duplicate receipts-register removal
+- visual/IA decisions in `docs/decisions/`
 
 Actual implementation/verification gaps are owned by Document 7 rather than hidden inside this design contract.
