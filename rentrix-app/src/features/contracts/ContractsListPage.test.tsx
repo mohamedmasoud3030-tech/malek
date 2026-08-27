@@ -135,6 +135,9 @@ describe('ContractsListPage load states', () => {
     expect(summary?.textContent).toContain('قيمة الإيجار');
     // Flat actions: details + edit + archive, no «إجراءات» disclosure layer.
     expect(host.querySelector('[data-entity-table-mobile-actions]')).toBeNull();
+    const columnsControl = host.querySelector<HTMLElement>('[data-contract-columns-control]');
+    expect(columnsControl?.className).toContain('hidden');
+    expect(columnsControl?.className).toContain('md:flex');
     expect(card?.textContent).toContain('فتح التفاصيل');
     expect(card?.textContent).toContain('تعديل');
     expect(card?.textContent).toContain('أرشفة');
