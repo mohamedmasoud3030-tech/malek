@@ -4,6 +4,8 @@ import { workspaceChildNavItems } from './navigation/app-nav-items';
 import { governanceHubSections } from '@/features/governance-hub/governance-hub-sections';
 import { FINANCE_SECTIONS } from '@/features/finance/shell/financeShellModel';
 import { leasingHubSections } from '@/features/relationships-hub/leasing-hub-sections';
+import { portfolioHubSections } from '@/features/portfolio-hub/portfolio-hub-sections';
+import { operationsHubSections } from '@/features/operations-hub/operations-hub.sections';
 
 function source(relativePath: string) {
   return readFileSync(new URL(relativePath, import.meta.url), 'utf8');
@@ -30,6 +32,14 @@ describe('production product simplification contract', () => {
     ]);
   });
 
+  it('keeps Portfolio routine navigation focused on properties, units and owners', () => {
+    expect(portfolioHubSections.filter((section) => section.showInPrimaryNavigation).map((section) => section.id))
+      .toEqual(['properties', 'units', 'owners']);
+    expect(portfolioHubSections.filter((section) => !section.showInPrimaryNavigation).map((section) => section.id))
+      .toEqual(['lands']);
+    expect(workspaceChildNavItems['/properties'].map(([, labelKey]) => labelKey)).toEqual(['units', 'owners']);
+  });
+
   it('keeps Leasing routine navigation focused on contracts and tenants', () => {
     expect(leasingHubSections.filter((section) => section.showInPrimaryNavigation).map((section) => section.id))
       .toEqual(['contracts', 'tenants']);
@@ -52,18 +62,31 @@ describe('production product simplification contract', () => {
       .toEqual(['fees', 'funds', 'banking']);
   });
 
+  it('keeps Services routine navigation focused on maintenance and utilities', () => {
+    expect(operationsHubSections.filter((section) => section.showInPrimaryNavigation).map((section) => section.id))
+      .toEqual(['maintenance', 'utilities']);
+    expect(operationsHubSections.filter((section) => !section.showInPrimaryNavigation).map((section) => section.id))
+      .toEqual(['service_providers', 'documents_vault']);
+    expect(workspaceChildNavItems['/maintenance'].map(([, labelKey]) => labelKey)).toEqual(['maintenance', 'utilities']);
+  });
+
   it('keeps advanced routes available without advertising them as normal product destinations', () => {
     const nav = source('./navigation/app-nav-items.ts');
-    expect(nav).not.toContain("['/admin-support', 'supportOperations'");
-    expect(nav).not.toContain("['/settings', 'systemSettings'");
-    expect(nav).not.toContain("['/settings', 'costCenters'");
-    expect(nav).not.toContain("['/contracts', 'peopleDirectory'");
-    expect(nav).not.toContain("['/contracts', 'leads'");
-    expect(nav).not.toContain("['/contracts', 'communication'");
-    expect(nav).not.toContain("['/financials', 'deposits'");
-    expect(nav).not.toContain("['/financials', 'ownerSettlements'");
-    expect(nav).not.toContain("['/financials', 'bankReconciliation'");
-    expect(nav).not.toContain("['/financials', 'commissions'");
+    for (const forbidden of [
+      "['/admin-support', 'supportOperations'",
+      "['/settings', 'systemSettings'",
+      "['/settings', 'costCenters'",
+      "['/properties', 'lands'",
+      "['/contracts', 'peopleDirectory'",
+      "['/contracts', 'leads'",
+      "['/contracts', 'communication'",
+      "['/financials', 'deposits'",
+      "['/financials', 'ownerSettlements'",
+      "['/financials', 'bankReconciliation'",
+      "['/financials', 'commissions'",
+      "['/maintenance', 'serviceProviders'",
+      "['/maintenance', 'documentsVault'",
+    ]) expect(nav).not.toContain(forbidden);
   });
 
   it('never renders raw backend errors through shared product error surfaces', () => {
