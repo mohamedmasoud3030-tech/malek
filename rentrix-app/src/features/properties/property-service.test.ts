@@ -64,7 +64,7 @@ describe('property service write workflow', () => {
       current_value: null,
       status: 'active',
       notes: '',
-    })).rejects.toThrow('لا تملك صلاحية الكتابة على العقارات');
+    })).rejects.toThrow('تعذر تحديث العقارات: لا تملك صلاحية تنفيذ هذا الإجراء. تواصل مع المسؤول إذا كنت تحتاج هذه الصلاحية.');
     expect(chain.update).toHaveBeenCalledWith(expect.objectContaining({ name: 'عمارة الندى', title: 'عمارة الندى' }));
     expect(chain.eq).toHaveBeenCalledWith('id', 'property-1');
   });

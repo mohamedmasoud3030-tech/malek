@@ -63,11 +63,17 @@ describe('buildAiAssistantContext cost', () => {
     expect(expenseFromCalls).toHaveLength(1);
 
     const invoicesQuery = mocks.builders.get('invoices');
+    // The paginated read path passes the closed-status set as a PostgREST
+    // composite literal so the filter survives range paging.
     expect(invoicesQuery?.not).toHaveBeenCalledWith(
       'status',
       'in',
-      expect.arrayContaining(['paid', 'PAID', 'void', 'VOID', 'draft', 'DRAFT']),
+      expect.stringContaining('paid'),
     );
+    const excluded = String(invoicesQuery?.not.mock.calls[0]?.[2]);
+    for (const closed of ['paid', 'PAID', 'void', 'VOID', 'draft', 'DRAFT', 'cancelled', 'CANCELLED']) {
+      expect(excluded).toContain(closed);
+    }
 
     expect(context.overdueInvoices.invoiceCount).toBe(2);
     expect(context.overdueInvoices.totalOutstanding).toBe(140);

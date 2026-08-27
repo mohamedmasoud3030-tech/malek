@@ -122,7 +122,7 @@ export function AccountingReconciliationReadiness({
         keyOf={(row) => `${row.reconciliation_class}:${row.account_no}`}
         columns={columns}
         emptyTitle="لا توجد نتائج مراجعة"
-        emptyDescription="أعد الفحص بعد التأكد من اكتمال البيانات المالية للفترة."
+        emptyDescription="راجع اكتمال البيانات المالية للفترة ثم أعد الفحص."
       />
       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 px-3 py-2.5 text-xs text-muted-foreground sm:px-4">
         <span>أكبر فرق: <strong dir="ltr">{formatMoney(readiness.maxAbsVariance)}</strong></span>

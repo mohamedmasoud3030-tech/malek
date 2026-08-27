@@ -324,7 +324,7 @@ export function OwnerDossierBody({
             <CardDescription>أحدث التسويات المعدة لهذا المالك عبر كل عقاراته.</CardDescription>
             {canOpenOwnerSettlements ? (
               <Button variant="secondary" className="min-h-11" asChild>
-                <Link to="/owner-settlements">فتح مساحة التسويات</Link>
+                <Link to="/financials" search={{ section: 'funds', view: 'owner_settlements', ownerId: snapshot.owner.id } as never}>فتح مساحة التسويات</Link>
               </Button>
             ) : null}
           </CardHeader>

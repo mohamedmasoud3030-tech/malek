@@ -39,7 +39,7 @@ describe('governance hub permissions', () => {
       .filter((section) => !section.showInPrimaryNavigation)
       .map((section) => section.id);
 
-    expect(hidden).toEqual(['cost-centers', 'system-settings', 'audit-log', 'data-integrity', 'security']);
+    expect(hidden).toEqual(['cost-centers', 'automation', 'system-settings', 'audit-log', 'data-integrity', 'security']);
   });
 
   it('returns no tabs when the session has no matching permission', () => {
@@ -124,7 +124,7 @@ describe('embedded workspace architecture contract', () => {
     expect(hub).toContain('onSectionChange={handleCompanySectionChange}');
     expect(workspace).toContain('activeSection: controlledActiveSection');
     expect(workspace).toContain('const requestedActiveSection = controlledActiveSection ?? localActiveSection');
-    expect(workspace).toContain('const activeSection = workspaceDefinitions.some');
+    expect(workspace).toContain('const activeSection = accessibleDefinitions.some');
     expect(controller).not.toContain('useNavigate');
     expect(controller).not.toContain('useSearch');
   });

@@ -110,7 +110,8 @@ describe('deposits workspace orchestration boundaries (post-refactor)', () => {
   it('reverse claim path requires reason and uses compensating journal', () => {
     expect(allOrchestration).toContain('reverseDepositClaim');
     expect(allOrchestration).toContain('reverseClaimMut.mutate');
-    expect(allOrchestration).toContain('الإلغاء لا يحذف السجل؛ يرحّل قيداً تعويضياً');
+    // Operator copy for the compensating-journal guarantee (never a destructive delete).
+    expect(allOrchestration).toContain('الإلغاء يحافظ على سجل الحركة ويعيد أثرها المالي تلقائيًا دون حذف العملية الأصلية.');
     expect(allOrchestration).toContain("actionType === 'reverseClaim'");
   });
 

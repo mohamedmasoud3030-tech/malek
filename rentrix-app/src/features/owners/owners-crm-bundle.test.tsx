@@ -57,14 +57,19 @@ describe('Owners and CRM route authorization', () => {
 });
 
 describe('Owners and CRM navigation visibility', () => {
-  it('exposes approved CRM and operations modules to managers while hiding them from regular users', () => {
+  it('exposes the owners workspace to managers while routine navigation stays reduced', () => {
     const manager = getAuthorizationContextFromUser(userWithRole('MANAGER'));
     const user = getAuthorizationContextFromUser(userWithRole('USER'));
     const allNavItems: NavItem[] = Array.from(getAllNavItems());
+    // Routine navigation keeps only the daily owners entry; lands, leads and
+    // communication stay deep-linkable surfaces, not routine nav items.
     const crmNavItems = allNavItems.filter(([, labelKey]) => ['owners', 'ownersHub', 'lands', 'leads', 'communication'].includes(labelKey));
     const crmNavKeys = crmNavItems.map(([, labelKey]) => labelKey);
 
-    expect(crmNavKeys).toEqual(expect.arrayContaining(['owners', 'lands', 'leads', 'communication']));
+    expect(crmNavKeys).toEqual(expect.arrayContaining(['owners']));
+    expect(crmNavKeys).not.toContain('lands');
+    expect(crmNavKeys).not.toContain('leads');
+    expect(crmNavKeys).not.toContain('communication');
     expect(crmNavItems.every(([, , , , permission]) => canShowNavigationItem(manager, permission))).toBe(true);
     expect(crmNavItems.every(([, , , , permission]) => !canShowNavigationItem(user, permission))).toBe(true);
   });

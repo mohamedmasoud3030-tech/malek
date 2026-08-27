@@ -8,6 +8,8 @@ const schedulePath = resolve(import.meta.dirname, './billing-schedule.ts');
 const schedule = readFileSync(schedulePath, 'utf8');
 const sectionPath = resolve(import.meta.dirname, './billing-readiness-section.tsx');
 const section = readFileSync(sectionPath, 'utf8');
+const presentationPath = resolve(import.meta.dirname, './billing-readiness-presentation.ts');
+const presentation = readFileSync(presentationPath, 'utf8');
 const workspacePath = resolve(import.meta.dirname, '../components/invoice-workspace-section.tsx');
 const workspace = readFileSync(workspacePath, 'utf8');
 
@@ -41,7 +43,11 @@ describe('billing readiness service — FOM-007 remediation', () => {
     expect(schedule).toContain('DUE');
     expect(schedule).toContain('GENERATED');
     expect(schedule).toContain('BLOCKED');
-    expect(section).toContain('غير مستحق بعد (قبل يوم الفوترة)');
+    // The operator-facing label lives in the presentation module, not as
+    // inline technical copy in the section component.
+    expect(presentation).toContain("'NOT_DUE'");
+    expect(presentation).toContain('غير مستحق بعد');
+    expect(section).toContain('billingStatusLabel');
     // Old buggy logic period.start > today should not exist
     expect(service).not.toContain('period.start > today');
   });
@@ -51,8 +57,11 @@ describe('billing readiness service — FOM-007 remediation', () => {
     expect(service).toContain('charge_type');
     expect(service).toContain('RENT');
     expect(service).toContain('invoice_exists');
-    expect(section).toContain('ux_invoices_billing_obligation');
-    expect(section).toContain('نفس الفترة لا تُفوتر مرتين');
+    // Raw table/RPC identifiers stay out of the operator surface; the section
+    // proves an existing invoice per obligation instead.
+    expect(section).not.toContain('ux_invoices_billing_obligation');
+    expect(section).toContain('obligation.invoice_exists');
+    expect(section).toContain('obligation.invoice_id');
   });
 
   it('detects blocked billing via agreement, model snapshot, tax missing', () => {
@@ -68,8 +77,11 @@ describe('billing readiness service — FOM-007 remediation', () => {
     expect(service).toContain('TAX_CHECK_FAILED');
     expect(schedule).toContain('CHECK_FAILED');
     expect(schedule).toContain('taxCheckFailed');
-    expect(section).toContain('CHECK_FAILED');
-    expect(section).toContain('فشل التحقق');
+    // Status stays machine-readable on the row; the human label comes from
+    // the presentation module so wording stays actionable, not technical.
+    expect(section).toContain('data-billing-status={obligation.status}');
+    expect(presentation).toContain("'CHECK_FAILED'");
+    expect(presentation).toContain('تعذر التحقق');
   });
 
   it('company identity uses canonical authority, not arbitrary company_settings limit 1 (Defect A4)', () => {
@@ -88,23 +100,31 @@ describe('billing readiness service — FOM-007 remediation', () => {
     expect(schedule).toContain("export type BillingStatus = 'NOT_DUE' | 'DUE' | 'GENERATED' | 'BLOCKED' | 'CHECK_FAILED'");
     expect(schedule).not.toContain("| 'FAILED'");
     expect(schedule).not.toContain('| \"FAILED\"');
-    expect(section).toContain('FAILED/RECOVERED أُزيلت');
-    expect(section).toContain('سجل تاريخي محكوم للفشل');
+    // Neither the section nor the operator labels may reintroduce the
+    // retired FAILED/RECOVERED states.
+    expect(section).not.toContain("'FAILED'");
+    expect(section).not.toContain("'RECOVERED'");
+    expect(presentation).not.toContain("'FAILED'");
+    expect(presentation).not.toContain("'RECOVERED'");
   });
 
   it('payment_terms_id is reference only, not scheduling authority', () => {
+    // Reference-only by construction: scheduling derives from the explicit
+    // contract fields, and the UI surfaces those fields (billing day/grace),
+    // never payment_terms as an authority.
     expect(service).toContain('payment_terms_id');
-    expect(section).toContain('payment_terms_id');
-    expect(section).toContain('مرجع فقط');
-    expect(section).toContain('الجدولة الفعلية تُحسم من حقول العقد الصريحة');
+    expect(schedule).not.toContain('payment_terms_id');
+    expect(section).toContain('obligation.billing_day');
+    expect(section).toContain('obligation.grace_days');
   });
 
   it('provides recovery via generate_invoices_from_active_contracts idempotent', () => {
     expect(service).toContain('generate_invoices_from_active_contracts');
-    expect(section).toContain('generate_invoices_from_active_contracts');
-    expect(section).toContain('توليد فواتير العقود النشطة');
-    expect(section).toContain('استرداد');
+    // The bulk-generate/recovery action lives in the invoice workspace
+    // (dialog) so the readiness section stays a compact secondary summary.
     expect(workspace).toContain('BillingReadinessSection');
+    expect(workspace).toContain('توليد فواتير العقود النشطة');
+    expect(workspace).toContain('onConfirm');
   });
 
   it('shows due, generated, blocked, not due, check_failed counts and filters', () => {
@@ -113,6 +133,7 @@ describe('billing readiness service — FOM-007 remediation', () => {
     expect(section).toContain('totalBlocked');
     expect(section).toContain('totalNotDue');
     expect(section).toContain('totalCheckFailed');
-    expect(section).toContain('showOnlyBlocked');
+    // The actionable filter covers blocked + check-failed + due.
+    expect(section).toContain('showOnlyActionable');
   });
 });
