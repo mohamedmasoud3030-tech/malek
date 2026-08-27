@@ -82,7 +82,6 @@ export function ContractDetailWorkspace({
         onChange={setActiveTab}
         ariaLabel="أقسام العقد"
         compactMobile
-        idPrefix="contract-detail"
       />
 
       <SectionTabPanel id="overview" activeId={activeTab}>
