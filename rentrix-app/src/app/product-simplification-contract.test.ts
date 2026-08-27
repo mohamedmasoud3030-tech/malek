@@ -6,6 +6,7 @@ import { FINANCE_SECTIONS } from '@/features/finance/shell/financeShellModel';
 import { leasingHubSections } from '@/features/relationships-hub/leasing-hub-sections';
 import { portfolioHubSections } from '@/features/portfolio-hub/portfolio-hub-sections';
 import { operationsHubSections } from '@/features/operations-hub/operations-hub.sections';
+import { ACCOUNTING_REPORT_VIEWS, ANALYTICS_REPORT_VIEWS } from '@/features/reports/report-view-registry';
 
 function source(relativePath: string) {
   return readFileSync(new URL(relativePath, import.meta.url), 'utf8');
@@ -70,6 +71,21 @@ describe('production product simplification contract', () => {
     expect(workspaceChildNavItems['/maintenance'].map(([, labelKey]) => labelKey)).toEqual(['maintenance', 'utilities']);
   });
 
+  it('keeps Reports routine tabs focused while specialist reports remain supported', () => {
+    expect(ACCOUNTING_REPORT_VIEWS.filter((view) => view.showInPrimaryNavigation).map((view) => view.id))
+      .toEqual(['accounting_reports', 'general_ledger']);
+    expect(ACCOUNTING_REPORT_VIEWS.filter((view) => !view.showInPrimaryNavigation).map((view) => view.id))
+      .toEqual(['deferred_revenue']);
+    expect(ANALYTICS_REPORT_VIEWS.filter((view) => view.showInPrimaryNavigation).map((view) => view.id))
+      .toEqual(['overview', 'collections', 'overdue', 'expenses']);
+    expect(ANALYTICS_REPORT_VIEWS.filter((view) => !view.showInPrimaryNavigation).map((view) => view.id))
+      .toEqual(['property_analytics', 'occupancy', 'maintenance_analytics']);
+
+    const tabs = source('../features/reports/workspace/ReportsSectionTabs.tsx');
+    expect(tabs).toContain('getVisibleReportSubViews');
+    expect(tabs).toContain('تقرير من المكتبة');
+  });
+
   it('keeps advanced routes available without advertising them as normal product destinations', () => {
     const nav = source('./navigation/app-nav-items.ts');
     for (const forbidden of [
@@ -92,6 +108,7 @@ describe('production product simplification contract', () => {
   it('never renders raw backend errors through shared product error surfaces', () => {
     const errorState = source('../components/ui/error-state.tsx');
     const crudWriteError = source('../lib/data/crud-write-error.ts');
+    const financialFormatters = source('../features/financials/components/financials-formatters.ts');
 
     expect(errorState).toContain('resolveSafeErrorMessage');
     expect(errorState).toContain('parseSupabaseDiagnostics');
@@ -100,6 +117,9 @@ describe('production product simplification contract', () => {
 
     expect(crudWriteError).not.toContain('return message ?');
     expect(crudWriteError).toContain('أعد المحاولة، وإذا استمرت المشكلة تواصل مع مسؤول النظام');
+
+    expect(financialFormatters).toContain('getActionableSupabaseErrorMessage');
+    expect(financialFormatters).not.toContain('error instanceof Error ? error.message');
   });
 
   it('keeps users and permission reviews free of hidden support mechanics and raw routes', () => {
@@ -118,6 +138,22 @@ describe('production product simplification contract', () => {
     }
     expect(accrual).toContain('احتساب الاستحقاقات');
     expect(accrual).toContain('راجع جاهزية المالية والضريبة قبل التنفيذ');
+  });
+
+  it('keeps report navigation and readiness copy free of implementation mechanics', () => {
+    const reportSections = source('../features/reports/reports-page.sections.ts');
+    const accountingReadiness = source('../features/reports/components/accounting/accounting-reconciliation-readiness.tsx');
+    const accountingReports = source('../features/reports/components/AccountingReportsSection.tsx');
+    const reportsShell = source('../features/reports/workspace/ReportsShell.tsx');
+
+    for (const forbidden of ['Subledger↔GL', 'Cash Flow', '1111/1120']) {
+      expect(reportSections).not.toContain(forbidden);
+    }
+    for (const forbidden of ['reconciliation_class ||', 'محرك المطابقة', 'missingAccountNos.join', 'مطابقة الدفاتر المساعدة ↔ الأستاذ العام']) {
+      expect(accountingReadiness).not.toContain(forbidden);
+    }
+    expect(accountingReports).not.toContain('مطابقة الدفاتر المساعدة مع الأستاذ العام غير ناجحة');
+    expect(reportsShell).not.toContain('المخرجات المحاسبية هنا تعتمد على القيود المرحّلة');
   });
 
   it('keeps implementation diagnostics out of finance readiness copy', () => {
