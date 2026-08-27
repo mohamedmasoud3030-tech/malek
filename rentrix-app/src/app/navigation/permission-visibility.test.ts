@@ -74,14 +74,12 @@ describe('permission visibility — task-centric IA must not widen access', () =
   });
 
   it('pins progressive-disclosure workspace membership', () => {
-    expect(workspaceChildNavItems['/properties'].length).toBe(3);
-    expect(workspaceChildNavItems['/contracts'].length).toBe(4);
-    expect(workspaceChildNavItems['/financials'].length).toBe(8);
-    expect(workspaceChildNavItems['/maintenance'].length).toBe(4);
+    expect(workspaceChildNavItems['/properties'].length).toBe(2);
+    expect(workspaceChildNavItems['/contracts'].length).toBe(1);
+    expect(workspaceChildNavItems['/financials'].length).toBe(4);
+    expect(workspaceChildNavItems['/maintenance'].length).toBe(2);
     expect(workspaceChildNavItems['/reports'].length).toBe(0);
-    // Settings gained the admin-support operations entry when the self-service
-    // support feature shipped (migration 00005).
-    expect(workspaceChildNavItems['/settings'].length).toBe(6);
+    expect(workspaceChildNavItems['/settings'].length).toBe(2);
     expect(workspaceChildNavItems['/people']).toBeUndefined();
     expect(workspaceChildNavItems['/lands']).toBeUndefined();
     expect(workspaceChildNavItems['/commissions']).toBeUndefined();
