@@ -58,6 +58,32 @@ function readContent(value: JsonObject): string {
     : "";
 }
 
+function readSafeProviderError(value: unknown): {
+  code?: string;
+  status?: string;
+  message?: string;
+} {
+  if (!isRecord(value)) return {};
+  const nested = isRecord(value.error) ? value.error : value;
+  const rawCode = nested.code;
+  const rawStatus = nested.status;
+  const rawMessage = nested.message;
+  return {
+    code:
+      typeof rawCode === "string" || typeof rawCode === "number"
+        ? String(rawCode).slice(0, 80)
+        : undefined,
+    status:
+      typeof rawStatus === "string" || typeof rawStatus === "number"
+        ? String(rawStatus).slice(0, 80)
+        : undefined,
+    message:
+      typeof rawMessage === "string"
+        ? rawMessage.replace(/AIza[0-9A-Za-z_-]{20,}/g, "[REDACTED]").slice(0, 500)
+        : undefined,
+  };
+}
+
 export class OpenAiCompatibleAdapter implements AiProviderAdapter {
   readonly provider = "openai-compatible";
 
@@ -116,12 +142,21 @@ export class OpenAiCompatibleAdapter implements AiProviderAdapter {
     }
 
     const body = (await response.json().catch(() => null)) as unknown;
-    if (!response.ok)
+    if (!response.ok) {
+      const diagnostic = readSafeProviderError(body);
+      console.error("AI provider HTTP response", {
+        status: response.status,
+        providerHost: new URL(this.url).hostname,
+        providerCode: diagnostic.code,
+        providerStatus: diagnostic.status,
+        providerMessage: diagnostic.message,
+      });
       throw new ProviderAdapterError(
         "HTTP",
         "AI provider returned an unsuccessful response.",
         response.status,
       );
+    }
     if (!isRecord(body))
       throw new ProviderAdapterError(
         "MALFORMED_OUTPUT",
