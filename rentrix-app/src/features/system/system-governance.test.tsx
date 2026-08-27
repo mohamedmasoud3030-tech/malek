@@ -92,7 +92,9 @@ describe('system and governance route authorization', () => {
     const adminContext = { userId: 'user-1', email: 'admin@example.com', role: 'ADMIN' as const };
     const systemRoutes = settingsAndGovernanceItems.map(([to]) => to);
 
-    expect(systemRoutes).toHaveLength(6);
+    // Routine reduction (#1615): the settings root plus its two children
+    // (company settings, users & permissions) are the only nav surfaces.
+    expect(systemRoutes).toHaveLength(3);
     expect(systemRoutes.every((route) => route === '/settings')).toBe(true);
     expect(systemRoutes).not.toContain('/system');
     expect(systemRoutes).not.toContain('/audit-log');

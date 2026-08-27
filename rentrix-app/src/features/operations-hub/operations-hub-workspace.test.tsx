@@ -72,14 +72,18 @@ beforeEach(() => { currentRole = 'ADMIN'; });
 afterEach(() => { cleanup(); vi.clearAllMocks(); });
 
 describe('Services workspace', () => {
-  it('renders one shell titled الخدمات with four operational tabs', async () => {
+  it('renders one shell titled الخدمات with two routine operational tabs', async () => {
     const { container } = renderServices();
     await screen.findByTestId('maintenance-body');
     expect(container.querySelectorAll('[data-page-layout]')).toHaveLength(1);
     expect(container.querySelectorAll('[data-page-header]')).toHaveLength(1);
     expect(screen.getByText('الخدمات')).toBeTruthy();
-    expect(screen.getAllByRole('tab')).toHaveLength(4);
+    // Routine tabs stay reduced to daily work; the specialist surfaces remain
+    // reachable in place through section deep links.
+    expect(screen.getAllByRole('tab')).toHaveLength(2);
     expect(screen.queryByRole('tab', { name: /الأتمتة/ })).toBeNull();
+    expect(screen.queryByRole('tab', { name: /مزودو الخدمات/ })).toBeNull();
+    expect(screen.queryByRole('tab', { name: /المستندات/ })).toBeNull();
   });
 
   it('keeps every service capability in /maintenance with section state', async () => {
@@ -87,15 +91,21 @@ describe('Services workspace', () => {
     const { router } = renderServices();
     await screen.findByTestId('maintenance-body');
 
-    for (const [label, section, probe] of [
-      [/مزودو الخدمات/, 'service_providers', 'service-providers'],
-      [/المرافق والعدادات/, 'utilities', 'utilities'],
-      [/المستندات التشغيلية/, 'documents_vault', 'documents-vault'],
+    // Utilities is a routine tab.
+    await user.click(screen.getByRole('tab', { name: /المرافق والعدادات/ }));
+    await waitFor(() => expect(router.state.location.pathname).toBe('/maintenance'));
+    await waitFor(() => expect(router.state.location.search).toMatchObject({ section: 'utilities' }));
+    expect((await screen.findByTestId('utilities-embedded')).textContent).toBe('yes');
+
+    // Specialist sections stay in-place reachable through section deep links.
+    for (const [section, probe] of [
+      ['service_providers', 'service-providers'],
+      ['documents_vault', 'documents-vault'],
     ] as const) {
-      await user.click(screen.getByRole('tab', { name: label }));
-      await waitFor(() => expect(router.state.location.pathname).toBe('/maintenance'));
-      await waitFor(() => expect(router.state.location.search).toMatchObject({ section }));
+      const specialist = renderServices({ initialUrl: `/maintenance?section=${section}` });
+      await waitFor(() => expect(specialist.router.state.location.search).toMatchObject({ section }));
       expect((await screen.findByTestId(`${probe}-embedded`)).textContent).toBe('yes');
+      specialist.unmount();
     }
   });
 
@@ -126,9 +136,9 @@ describe('Services workspace', () => {
     await screen.findByTestId('utilities-body');
     const names = screen.getAllByRole('tab').map((tab) => tab.textContent ?? '').join(' ');
     expect(names).toContain('المرافق');
-    expect(names).toContain('المستندات');
     expect(names).not.toContain('الصيانة');
     expect(names).not.toContain('مزودو الخدمات');
+    expect(names).not.toContain('المستندات');
   });
 
   it('fails closed for a forbidden real Services deep link', async () => {
@@ -146,7 +156,7 @@ describe('Services workspace', () => {
     const user = userEvent.setup();
     const standalone = renderServices();
     await screen.findByTestId('maintenance-body');
-    for (const label of [/مزودو الخدمات/, /المرافق والعدادات/, /الصيانة/]) {
+    for (const label of [/المرافق والعدادات/, /الصيانة/]) {
       await user.click(screen.getByRole('tab', { name: label }));
       await waitFor(() => {
         expect(standalone.container.querySelectorAll('[data-page-layout]')).toHaveLength(1);

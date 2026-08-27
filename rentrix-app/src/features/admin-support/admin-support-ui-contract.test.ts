@@ -54,7 +54,10 @@ describe("admin/support UI safety contract", () => {
     );
     expect(service).not.toContain(".from('users').update");
     expect(service).not.toContain("updateGovernedUserAccess");
-    expect(workspace).toContain("التعديل المباشر متوقف");
+    // Roles display read-only; access changes flow through governed
+    // permission requests, never direct browser edits.
+    expect(workspace).toContain("الدور معروض للمراجعة فقط");
+    expect(workspace).toContain("طلبات الصلاحية المعتمدة");
     expect(workspace).not.toContain("updateGovernedUserAccess");
   });
 });

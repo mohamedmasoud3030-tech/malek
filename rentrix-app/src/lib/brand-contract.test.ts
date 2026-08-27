@@ -343,12 +343,16 @@ describe('MALEK brand contract — mark, wordmark, and tagline', () => {
     expect(brandComponent).toContain('APP_BRAND_TAGLINE_AR');
   });
 
-  it('uses the mark alone in the collapsed sidebar rail', () => {
+  it('keeps the desktop sidebar brand stable, named, and never mark-only', () => {
     const appShell = readApp('src/app/layout/app-shell.tsx');
     const brandComponent = readApp('src/components/brand/malik-brand.tsx');
 
-    expect(appShell).toMatch(/isSidebarExpanded \? 'px-5' : 'px-1\.5'/);
-    expect(appShell).toContain('compact={!expanded}');
+    // The desktop sidebar is a fixed, named workspace rail; it no longer
+    // collapses into a mark-only strip. The compact mark stays reserved for
+    // the header monogram and other tight brand surfaces.
+    expect(appShell).toContain('data-sidebar');
+    expect(appShell).toContain('<Brand expanded />');
+    expect(appShell).not.toMatch(/isSidebarExpanded/);
     expect(brandComponent).toMatch(/if \(compact\)/);
     expect(brandComponent).toContain(`<MalikMark className={cn('size-10', markClassName)} />`);
   });

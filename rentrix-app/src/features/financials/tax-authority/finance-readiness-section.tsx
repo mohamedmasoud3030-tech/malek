@@ -61,6 +61,16 @@ function TaxReadinessCard({
         </p>
         {state === 'READY' && rate !== null ? <p><span className="font-bold">النسبة الحالية:</span> {rate}%</p> : null}
         {state === 'READY' && effectiveFrom ? <p className="text-muted-foreground">سارية من {effectiveFrom}</p> : null}
+        {/* Every non-ready tax setting links straight to its corrective surface. */}
+        {state !== 'READY' ? (
+          <Link
+            to="/settings"
+            search={{ section: 'company', companySection: 'finance-readiness' } as never}
+            className="inline-flex min-h-8 items-center gap-1 font-semibold text-primary hover:underline"
+          >
+            فتح إعدادات الضريبة
+          </Link>
+        ) : null}
       </CardContent>
     </Card>
   );

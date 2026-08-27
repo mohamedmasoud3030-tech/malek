@@ -34,11 +34,11 @@ describe('tax authority service — governed boundaries', () => {
     expect(service).not.toContain('vat_rate');
     expect(service).not.toContain('default_vat_rate');
     expect(readiness).not.toMatch(/from\(['\"]company_settings['\"]\)/);
-    // UI may mention legacy field explicitly to say it is NOT used — that's allowed and desired
-    expect(workspace).toContain('company_settings.vat_rate');
-    expect(workspace).toContain('لا تُحسم');
-    expect(readinessSection).toContain('company_settings.vat_rate');
-    expect(readinessSection).toContain('لا يُستخدم');
+    // The operator surfaces no longer reference the retired legacy field at
+    // all — the tax authority model is the only visible source.
+    expect(workspace).not.toContain('company_settings.vat_rate');
+    expect(readinessSection).not.toContain('company_settings.vat_rate');
+    expect(readinessSection).not.toContain('vat_rate');
   });
 
   it('distinguishes rent tax from fee tax clearly', () => {
@@ -47,9 +47,11 @@ describe('tax authority service — governed boundaries', () => {
     expect(service).toContain('RATE_MANAGEMENT_FEE');
     expect(service).toContain('FIXED_MONTHLY');
     expect(workspace).toContain('ضريبة الإيجار');
-    expect(workspace).toContain('معالجات ضريبة أتعاب الإدارة');
+    expect(workspace).toContain('ضريبة أتعاب الإدارة');
     expect(readinessSection).toContain('ضريبة الإيجار');
     expect(readinessSection).toContain('ضريبة أتعاب الإدارة');
+    // Rate vs fixed monthly fee treatments stay distinguishable.
+    expect(workspace).toContain('RATE_MANAGEMENT_FEE');
   });
 
   it('preserves versioning, approval, and maker-checker', () => {
@@ -58,7 +60,9 @@ describe('tax authority service — governed boundaries', () => {
     expect(service).toContain('created_by');
     expect(service).toContain('approved_by');
     expect(workspace).toContain('created_by !== currentUserId');
-    expect(workspace).toContain('بانتظار مدقق مختلف');
+    // Maker-checker copy is operator-phrased: a draft waits for another
+    // authorized user's approval instead of exposing checker terminology.
+    expect(workspace).toContain('ينتظر اعتماد مستخدم آخر');
     expect(workspace).toContain('DRAFT');
     expect(workspace).toContain('ACTIVE');
   });
@@ -68,26 +72,36 @@ describe('tax authority service — governed boundaries', () => {
     expect(readiness).toContain('MISSING');
     expect(readiness).toContain('BLOCKED');
     expect(readiness).toContain('DRAFT_NEEDS_APPROVAL');
-    expect(readinessSection).toContain('READY');
-    expect(readinessSection).toContain('MISSING');
-    expect(readinessSection).toContain('BLOCKED');
-    expect(readinessSection).toContain('DRAFT_NEEDS_APPROVAL');
-    expect(readinessSection).toContain('TAX_PROFILE_MISSING');
-    expect(readinessSection).toContain('FEE_TAX_TREATMENT_MISSING');
+    // Every state maps to tone + operator label + corrective message.
+    expect(readinessSection).toContain("if (state === 'READY') return 'success'");
+    expect(readinessSection).toContain("if (state === 'MISSING') return 'danger'");
+    expect(readinessSection).toContain("if (state === 'DRAFT_NEEDS_APPROVAL') return 'warning'");
+    expect(readinessSection).toContain('labelForState(state)');
+    expect(readinessSection).toContain('readinessMessage(state, missingMessage)');
+    // Domain-specific corrective copy stays per-card, not raw reason codes.
+    expect(readinessSection).toContain('أكمل إعداد ضريبة الإيجار قبل إصدار الفواتير.');
+    expect(readinessSection).toContain('أكمل إعداد ضريبة أتعاب الإدارة قبل تسجيل التحصيل المرتبط بها.');
   });
 
   it('fail-closed behavior for invoicing and accrual', () => {
     expect(readiness).toContain('TAX_PROFILE_MISSING');
     expect(readiness).toContain('FEE_TAX_TREATMENT_MISSING');
-    expect(readinessSection).toContain('الفوترة ستفشل مغلقًا');
-    expect(readinessSection).toContain('الاستحقاق الشهري سيفشل مغلقًا');
+    // Fail-closed semantics in operator copy: invoicing/collection cannot run
+    // until the corresponding tax setup completes.
+    expect(readinessSection).toContain('أكمل إعداد ضريبة الإيجار قبل إصدار الفواتير.');
+    expect(readinessSection).toContain('أكمل إعداد ضريبة الأتعاب الشهرية قبل تسجيل الاستحقاق.');
+    // The readiness service still blocks, not guesses, when checks fail.
+    expect(readiness).toContain("'BLOCKED'");
   });
 
   it('links user to exact corrective action', () => {
-    expect(readinessSection).toContain('إنشاء ملف ضريبي');
-    expect(readinessSection).toContain('إنشاء معالجة');
-    expect(readinessSection).toContain('/settings');
-    expect(readinessSection).toContain('finance-readiness');
+    // Non-ready tax cards deep-link to the canonical settings surface where
+    // the tax profiles/treatments workspace lives.
+    expect(readinessSection).toContain("to=\"/settings\"");
+    expect(readinessSection).toContain("companySection: 'finance-readiness'");
+    expect(readinessSection).toContain('فتح إعدادات الضريبة');
+    // Accounting readiness keeps its canonical Reports deep link.
+    expect(readinessSection).toContain("search={{ section: 'accounting' } as never}");
   });
 
   it('uses company-scoped, governed, audited boundaries', () => {

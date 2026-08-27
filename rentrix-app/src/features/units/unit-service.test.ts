@@ -102,7 +102,7 @@ describe('unit service write workflow', () => {
       status: 'available',
       rent_amount: null,
       notes: null,
-    })).rejects.toThrow('لا تملك صلاحية الكتابة على الوحدات');
+    })).rejects.toThrow('تعذر تحديث الوحدات: لا تملك صلاحية تنفيذ هذا الإجراء. تواصل مع المسؤول إذا كنت تحتاج هذه الصلاحية.');
   });
 
   it('archives units with deleted_at instead of hard deleting', async () => {

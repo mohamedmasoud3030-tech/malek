@@ -18,7 +18,6 @@ describe('production product simplification contract', () => {
     expect(workspaceChildNavItems['/settings'].map(([, labelKey]) => labelKey)).toEqual([
       'companySettings',
       'usersPermissions',
-      'automation',
     ]);
 
     const hiddenSections = governanceHubSections
@@ -27,6 +26,7 @@ describe('production product simplification contract', () => {
 
     expect(hiddenSections).toEqual([
       'cost-centers',
+      'automation',
       'system-settings',
       'audit-log',
       'data-integrity',
