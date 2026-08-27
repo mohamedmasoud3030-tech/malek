@@ -368,7 +368,7 @@ function MobileRegisterListItem<T>({
                 {summaryColumns!.map((column) => (
                   <div key={column.key} className="min-w-0">
                     <dt className="truncate text-[10px] font-bold leading-4 text-muted-foreground">{column.header}</dt>
-                    <dd className="truncate text-xs font-semibold leading-4 text-foreground" data-entity-table-mobile-datum>
+                    <dd className="line-clamp-2 break-words text-xs font-semibold leading-4 text-foreground [overflow-wrap:anywhere]" data-entity-table-mobile-datum>
                       {column.render(row)}
                     </dd>
                   </div>
@@ -550,11 +550,16 @@ export function EntityTable<T>({
   const badgeColumn = mobileBadgeKey
     ? resolvedColumns.find((column) => column.key === mobileBadgeKey)
     : undefined;
+  // A mobile card must show enough context to be actionable before opening
+  // the record. Callers can choose exact fields; otherwise expose the first
+  // two useful columns already loaded for the register.
   const summaryColumns = mobileSummaryKeys
     ? mobileSummaryKeys
         .map((key) => resolvedColumns.find((column) => column.key === key))
         .filter((column): column is ResolvedColumn<T> => Boolean(column))
-    : undefined;
+    : resolvedColumns
+        .filter((column) => column !== identityColumn && column !== badgeColumn && column.resolvedPriority !== 'actions')
+        .slice(0, 2);
   const colSpan = resolvedColumns.length + (hasExpansion ? 1 : 0) + (rowSelection ? 1 : 0);
 
   return (
