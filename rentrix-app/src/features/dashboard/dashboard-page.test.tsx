@@ -130,7 +130,8 @@ describe('Dashboard command center query boundary tests', () => {
     expect(text).toContain('أحمد الفارسي');
     expect(text).toContain('الصيانة العاجلة');
     expect(text).toContain('تسرب مياه');
-    expect(text).toContain('الأولوية الآن');
+    expect(text).not.toContain('الأولوية الآن');
+    expect(container?.querySelector('[data-dashboard-priority-panel] h2')?.textContent).toBe('مطلوب الآن');
     expect(text).toContain('حالة التحصيل');
   });
 
@@ -180,6 +181,20 @@ describe('Dashboard command center query boundary tests', () => {
     const kpiLinks = Array.from(container?.querySelectorAll('[data-dashboard-kpi-grid] a[data-dashboard-kpi-link]') ?? []);
     expect(kpiLinks).toHaveLength(4);
     expect(kpiLinks.map((link) => link.getAttribute('href'))).toEqual(['/reports', '/financials', '/expenses', '/owner-settlements']);
+  });
+
+  it('keeps all four money-and-obligation slots visible when expenses are zero', async () => {
+    (getDashboardSnapshot as any).mockResolvedValue({
+      ...mockSnapshot,
+      expenses: { totalAmount: 0, count: 0 },
+      netCash: mockSnapshot.collections.collectedAmount,
+    });
+    await renderPage();
+
+    const moneyGrid = container?.querySelector('[data-dashboard-kpi-grid]');
+    expect(moneyGrid).not.toBeNull();
+    expect(moneyGrid?.querySelectorAll('a[data-dashboard-kpi-link]')).toHaveLength(4);
+    expect(moneyGrid?.textContent).toContain('المصروفات');
   });
 
   it('surfaces all three bounded operational queues', async () => {
