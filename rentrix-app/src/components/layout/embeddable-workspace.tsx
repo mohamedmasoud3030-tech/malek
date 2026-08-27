@@ -67,6 +67,7 @@ export function EmbeddableWorkspace({
       dir={dir}
       lang={lang}
       size={size}
+      title={title}
       className={className}
       contentClassName={contentClassName}
       visualVariant={visualVariant}
