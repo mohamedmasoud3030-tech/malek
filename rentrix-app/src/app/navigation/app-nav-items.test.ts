@@ -59,7 +59,7 @@ describe('task-centric app navigation', () => {
     ]);
   });
 
-  it('keeps Services inside /maintenance and Settings limited to routine office administration', () => {
+  it('keeps Services inside /maintenance and Settings limited to three routine entry points', () => {
     const services = workspaceChildNavItems['/maintenance'];
     expect(services.map(([to]) => to)).toEqual(Array(4).fill('/maintenance'));
     expect(services.map(([, labelKey, , , permission, search]) => ({ labelKey, permission, search }))).toEqual([
@@ -71,10 +71,11 @@ describe('task-centric app navigation', () => {
 
     const settings = workspaceChildNavItems['/settings'];
     expect(settings.map(([, labelKey]) => labelKey)).toEqual([
-      'companySettings', 'usersPermissions', 'costCenters', 'automation',
+      'companySettings', 'usersPermissions', 'automation',
     ]);
     expect(settings.some(([to]) => to === '/admin-support')).toBe(false);
     expect(settings.some(([, labelKey]) => labelKey === 'systemSettings')).toBe(false);
+    expect(settings.some(([, labelKey]) => labelKey === 'costCenters')).toBe(false);
   });
 
   it('does not leak feature registers or support/diagnostic tools back into global navigation', () => {
