@@ -385,10 +385,16 @@ export function AppShell() {
   };
 
   return (
+    /* No `dir` here on purpose. `applyDocumentLanguageDirection` already sets
+       `documentElement.dir`, and that is the single direction authority. A
+       second React-controlled `dir` on the shell was a competing source of
+       truth: it re-asserted the same value on every render, so nothing outside
+       the i18n state could change direction and the shell could never be
+       direction-tested in isolation. The shell inherits the document
+       direction like every other non-portalled surface. */
     <div
       data-app-shell
       className="min-h-screen min-h-dvh overflow-x-hidden bg-background text-foreground"
-      dir={appLanguage.direction}
     >
       <a
         href="#main-content"

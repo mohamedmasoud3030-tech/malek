@@ -276,6 +276,33 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
               إضافة وحدة
             </Button>
           }
+          /* Without an explicit choice the shared fallback shows the first two
+             non-identity columns — property and floor — which hides the two
+             facts an operator scans for. The property-scoped units register
+             (units-list.tsx) already declares these; the global register must
+             not present the same entity differently on a phone. */
+          mobileBadgeKey="status"
+          mobileSummaryKeys={["rent", "property"]}
+          /* Structured mobile actions, matching the desktop action column and
+             the property-scoped units register. Without these the shared
+             legacy «إجراءات» disclosure fallback renders instead, which the
+             mobile register contract does not allow. */
+          mobileCardActions={(unit) => [
+            {
+              label: "تعديل",
+              icon: Edit,
+              variant: "secondary" as const,
+              ariaLabel: `تعديل وحدة ${unit.unit_number}`,
+              onClick: () => ctrl.openEdit(unit),
+            },
+            {
+              label: "فتح التفاصيل",
+              icon: DoorOpen,
+              variant: "secondary" as const,
+              ariaLabel: `فتح تفاصيل وحدة ${unit.unit_number}`,
+              onClick: () => ctrl.navigateToUnit(unit),
+            },
+          ]}
         />
       </section>
 
