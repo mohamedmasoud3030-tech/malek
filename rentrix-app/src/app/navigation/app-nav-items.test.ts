@@ -39,12 +39,20 @@ describe('task-centric app navigation', () => {
     ]);
   });
 
-  it('keeps Portfolio children contextual and Leasing focused on tenants', () => {
-    expect(workspaceChildNavItems['/properties'].map(([to]) => to)).toEqual(['/properties', '/properties', '/properties']);
-    expect(workspaceChildNavItems['/contracts'].map(([, labelKey]) => labelKey)).toEqual(['tenants']);
-    expect(workspaceChildNavItems['/contracts'][0]).toMatchObject([
-      '/contracts', 'tenants', 'المستأجرون وعلاقات الإيجار', expect.anything(), undefined, { workspace: 'tenants' },
+  it('keeps Portfolio routine navigation to units and owners while Lands stays out of the drawer', () => {
+    const portfolio = workspaceChildNavItems['/properties'];
+    expect(portfolio.map(([, labelKey]) => labelKey)).toEqual(['units', 'owners']);
+    expect(portfolio.map(([, labelKey, , , permission, search]) => ({ labelKey, permission, search }))).toEqual([
+      { labelKey: 'units', permission: undefined, search: { section: 'units' } },
+      { labelKey: 'owners', permission: 'owners.hub.view', search: { section: 'owners' } },
     ]);
+    expect(portfolio.some(([, labelKey]) => labelKey === 'lands')).toBe(false);
+  });
+
+  it('keeps Leasing routine navigation focused on tenants', () => {
+    const leasing = workspaceChildNavItems['/contracts'];
+    expect(leasing.map(([, labelKey]) => labelKey)).toEqual(['tenants']);
+    expect(leasing[0]?.[5]).toEqual({ workspace: 'tenants' });
   });
 
   it('shows only daily Money tasks in routine navigation', () => {
@@ -61,16 +69,18 @@ describe('task-centric app navigation', () => {
     }
   });
 
-  it('keeps Services inside /maintenance and Settings limited to three routine entry points', () => {
+  it('keeps Services routine navigation to maintenance and utilities only', () => {
     const services = workspaceChildNavItems['/maintenance'];
-    expect(services.map(([to]) => to)).toEqual(Array(4).fill('/maintenance'));
+    expect(services.map(([, labelKey]) => labelKey)).toEqual(['maintenance', 'utilities']);
     expect(services.map(([, labelKey, , , permission, search]) => ({ labelKey, permission, search }))).toEqual([
       { labelKey: 'maintenance', permission: undefined, search: { section: 'maintenance' } },
-      { labelKey: 'serviceProviders', permission: 'service_providers.view', search: { section: 'service_providers' } },
       { labelKey: 'utilities', permission: undefined, search: { section: 'utilities' } },
-      { labelKey: 'documentsVault', permission: undefined, search: { section: 'documents_vault' } },
     ]);
+    expect(services.some(([, labelKey]) => labelKey === 'serviceProviders')).toBe(false);
+    expect(services.some(([, labelKey]) => labelKey === 'documentsVault')).toBe(false);
+  });
 
+  it('keeps Settings limited to three routine entry points', () => {
     const settings = workspaceChildNavItems['/settings'];
     expect(settings.map(([, labelKey]) => labelKey)).toEqual([
       'companySettings', 'usersPermissions', 'automation',
