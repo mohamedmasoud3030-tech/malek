@@ -79,14 +79,23 @@ describe('Portfolio workspace', () => {
     expect(screen.getByText('المحفظة')).toBeTruthy();
   });
 
-  it('embeds every managed-asset capability instead of navigating to another product', async () => {
+  it('shows properties, units and owners as routine Portfolio tabs', async () => {
+    renderHub();
+    await screen.findByTestId('properties-body');
+    const names = screen.getAllByRole('tab').map((tab) => tab.textContent ?? '').join(' ');
+    expect(names).toContain('العقارات');
+    expect(names).toContain('الوحدات');
+    expect(names).toContain('الملاك');
+    expect(names).not.toContain('الأراضي');
+  });
+
+  it('switches routine units and owners in place', async () => {
     const user = userEvent.setup();
     const { router } = renderHub();
     await screen.findByTestId('properties-body');
 
     for (const [tabName, section, probe] of [
       [/الوحدات/, 'units', 'units'],
-      [/الأراضي/, 'lands', 'lands'],
       [/الملاك/, 'owners', 'owners'],
     ] as const) {
       await user.click(screen.getByRole('tab', { name: tabName }));
@@ -96,11 +105,12 @@ describe('Portfolio workspace', () => {
     }
   });
 
-  it('opens deep-linked Portfolio sections in place', async () => {
-    const { router } = renderHub({ initialUrl: '/properties?section=owners' });
-    expect((await screen.findByTestId('owners-embedded')).textContent).toBe('yes');
+  it('keeps the land register available by explicit deep link without advertising a routine tab', async () => {
+    const { router } = renderHub({ initialUrl: '/properties?section=lands' });
+    expect((await screen.findByTestId('lands-embedded')).textContent).toBe('yes');
     expect(router.state.location.pathname).toBe('/properties');
-    expect(router.state.location.search).toMatchObject({ section: 'owners' });
+    expect(router.state.location.search).toMatchObject({ section: 'lands' });
+    expect(screen.queryAllByRole('tab')).toHaveLength(0);
   });
 
   it('keeps permissioned asset sections hidden from USER', async () => {
@@ -119,7 +129,7 @@ describe('Portfolio workspace', () => {
     expect(screen.queryByTestId('owners-body')).toBeNull();
   });
 
-  it('preserves state across Portfolio tab switches', async () => {
+  it('preserves state across routine Portfolio tab switches', async () => {
     const user = userEvent.setup();
     renderHub();
     await screen.findByTestId('properties-body');
@@ -139,11 +149,11 @@ describe('Portfolio workspace', () => {
     expect(container.querySelectorAll('[data-page-header]')).toHaveLength(0);
   });
 
-  it('never duplicates the shell after moving across all Portfolio sections', async () => {
+  it('never duplicates the shell across routine Portfolio sections', async () => {
     const user = userEvent.setup();
     const { container } = renderHub();
     await screen.findByTestId('properties-body');
-    for (const name of [/الوحدات/, /الأراضي/, /الملاك/, /العقارات/]) {
+    for (const name of [/الوحدات/, /الملاك/, /العقارات/]) {
       await user.click(screen.getByRole('tab', { name }));
       await waitFor(() => {
         expect(container.querySelectorAll('[data-page-layout]')).toHaveLength(1);
