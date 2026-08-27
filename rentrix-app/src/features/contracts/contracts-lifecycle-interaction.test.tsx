@@ -144,13 +144,21 @@ describe('Contracts lifecycle mobile interactions', () => {
   it('opens renew and terminate lifecycle dialogs from mobile-safe detail actions and invokes services', async () => {
     await act(async () => root.render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><ContractDetailPage /></QueryClientProvider>));
 
-    const renewButton = Array.from(container.querySelectorAll('button')).find((button) => button.textContent?.includes('تجديد العقد'));
+    // Lifecycle actions live inside the single contract action menu.
+    const actionsTrigger = Array.from(container.querySelectorAll('button')).find((button) => button.getAttribute('aria-label') === 'إجراءات العقد');
+    expect(actionsTrigger).toBeTruthy();
+    await act(async () => actionsTrigger?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+
+    const renewButton = Array.from(document.body.querySelectorAll('[role="menu"] button')).find((button) => button.textContent?.includes('تجديد'));
     expect(renewButton).toBeTruthy();
     await act(async () => renewButton?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
     expect(document.body.textContent).toContain('سيتم إنشاء عقد جديد');
     expect(document.body.textContent).toContain('اتفاقية المالك المغطية');
 
-    const terminateButton = Array.from(container.querySelectorAll('button')).find((button) => button.textContent?.includes('إنهاء العقد بسبب'));
+    // Selecting an action closes the menu; reopen it for the terminate flow.
+    const reopenTrigger = Array.from(container.querySelectorAll('button')).find((button) => button.getAttribute('aria-label') === 'إجراءات العقد');
+    await act(async () => reopenTrigger?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+    const terminateButton = Array.from(document.body.querySelectorAll('[role="menu"] button')).find((button) => button.textContent?.includes('إنهاء العقد'));
     expect(terminateButton).toBeTruthy();
     await act(async () => terminateButton?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
     expect(document.body.textContent).toContain('سبب الإنهاء');

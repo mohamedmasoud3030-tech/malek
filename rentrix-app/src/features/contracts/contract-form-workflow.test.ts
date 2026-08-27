@@ -23,8 +23,8 @@ describe('contract creation workflow order and agreement resolution contract', (
     'utf8',
   );
 
-  const detailPageSource = readFileSync(
-    resolve(import.meta.dirname, './pages/ContractDetailPage.tsx'),
+  const detailWorkspaceSource = readFileSync(
+    resolve(import.meta.dirname, './components/ContractDetailWorkspace.tsx'),
     'utf8',
   );
 
@@ -83,7 +83,8 @@ describe('contract creation workflow order and agreement resolution contract', (
     expect(formPageSource).toContain('onCreated={(contract) =>');
     expect(formPageSource).toContain("to: '/contracts/$contractId'");
     expect(formPageSource).toContain('contractId: contract.id');
-    expect(detailPageSource).toContain('<ContractApprovalSection contract={contract} />');
+    // The unified detail workspace renders the approval/lifecycle section.
+    expect(detailWorkspaceSource).toContain('<ContractApprovalSection contract={contract} />');
   });
 
   it('4. Automatically resolves active owner-management agreement when unambiguous', () => {
@@ -102,8 +103,9 @@ describe('contract creation workflow order and agreement resolution contract', (
   });
 
   it('6. Exposes the current payment-cycle review preview before confirming contract', () => {
-    expect(fieldsSource).toContain('title="مراجعة دورة السداد المتوقعة"');
-    expect(fieldsSource).toContain('{estimatedInstallments} دورة');
-    expect(fieldsSource).toContain('هذه معاينة للدورات فقط. إصدار الفاتورة وتاريخ استحقاقها الفعليان يحددهما الخادم');
+    // The three-step form surfaces the schedule preview inside its review step.
+    expect(fieldsSource).toContain('جدول السداد المتوقع');
+    expect(fieldsSource).toContain('{schedulePreview.installmentCount} دفعة');
+    expect(fieldsSource).toContain('سيتم إصدار الفواتير وفق إعدادات العقد بعد اعتماده.');
   });
 });
