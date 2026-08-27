@@ -59,39 +59,35 @@ describe('Leasing workspace', () => {
     expect(container.querySelectorAll('[data-page-header]')).toHaveLength(1);
   });
 
-  it('switches tenant, people, lead and communication capabilities in place', async () => {
-    const user = userEvent.setup();
-    const { router } = renderHub();
-    await screen.findByTestId('contracts-body');
-    for (const [name, workspace, probe] of [
-      [/المستأجرون/, 'tenants', 'tenants'],
-      [/جهات التعامل/, 'people', 'people'],
-      [/العملاء المحتملون/, 'leads', 'leads'],
-      [/التواصل/, 'communication', 'communication'],
-    ] as const) {
-      await user.click(screen.getByRole('tab', { name }));
-      await waitFor(() => expect(router.state.location.pathname).toBe('/contracts'));
-      await waitFor(() => expect(router.state.location.search).toMatchObject({ workspace }));
-      expect((await screen.findByTestId(`${probe}-embedded`)).textContent).toBe('yes');
-    }
-  });
-
-  it('opens a Leasing deep link without leaving /contracts', async () => {
-    const { router } = renderHub({ initialUrl: '/contracts?workspace=people' });
-    expect((await screen.findByTestId('people-embedded')).textContent).toBe('yes');
-    expect(router.state.location.pathname).toBe('/contracts');
-    expect(router.state.location.search).toMatchObject({ workspace: 'people' });
-  });
-
-  it('hides permissioned lead and communication sections when access is absent', async () => {
-    renderHub({ permissions: [] });
+  it('shows only contracts and tenants as routine Leasing tabs', async () => {
+    renderHub();
     await screen.findByTestId('contracts-body');
     const labels = screen.getAllByRole('tab').map((tab) => tab.textContent ?? '').join(' ');
     expect(labels).toContain('العقود');
     expect(labels).toContain('المستأجرون');
-    expect(labels).toContain('جهات التعامل');
+    expect(labels).not.toContain('جهات التعامل');
     expect(labels).not.toContain('العملاء المحتملون');
     expect(labels).not.toContain('التواصل');
+  });
+
+  it('switches the routine tenant capability in place', async () => {
+    const user = userEvent.setup();
+    const { router } = renderHub();
+    await screen.findByTestId('contracts-body');
+    await user.click(screen.getByRole('tab', { name: /المستأجرون/ }));
+    await waitFor(() => expect(router.state.location.pathname).toBe('/contracts'));
+    await waitFor(() => expect(router.state.location.search).toMatchObject({ workspace: 'tenants' }));
+    expect((await screen.findByTestId('tenants-embedded')).textContent).toBe('yes');
+  });
+
+  it.each([
+    ['people', 'people'],
+    ['leads', 'leads'],
+    ['communication', 'communication'],
+  ] as const)('keeps %s available by deep link without advertising a routine tab', async (workspace, probe) => {
+    renderHub({ initialUrl: `/contracts?workspace=${workspace}` });
+    expect((await screen.findByTestId(`${probe}-embedded`)).textContent).toBe('yes');
+    expect(screen.queryAllByRole('tab')).toHaveLength(0);
   });
 
   it('fails closed on a forbidden permissioned deep link', async () => {
@@ -100,7 +96,7 @@ describe('Leasing workspace', () => {
     expect(screen.queryByTestId('leads-body')).toBeNull();
   });
 
-  it('preserves local section state across workspace switches', async () => {
+  it('preserves local section state across routine workspace switches', async () => {
     const user = userEvent.setup();
     renderHub();
     await screen.findByTestId('contracts-body');
