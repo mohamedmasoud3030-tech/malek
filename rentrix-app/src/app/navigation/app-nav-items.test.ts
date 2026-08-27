@@ -80,11 +80,12 @@ describe('task-centric app navigation', () => {
     expect(services.some(([, labelKey]) => labelKey === 'documentsVault')).toBe(false);
   });
 
-  it('keeps Settings limited to three routine entry points', () => {
+  it('keeps Settings limited to routine company and permission administration', () => {
     const settings = workspaceChildNavItems['/settings'];
     expect(settings.map(([, labelKey]) => labelKey)).toEqual([
-      'companySettings', 'usersPermissions', 'automation',
+      'companySettings', 'usersPermissions',
     ]);
+    expect(settings.some(([, labelKey]) => labelKey === 'automation')).toBe(false);
     expect(settings.some(([to]) => to === '/admin-support')).toBe(false);
     expect(settings.some(([, labelKey]) => labelKey === 'systemSettings')).toBe(false);
     expect(settings.some(([, labelKey]) => labelKey === 'costCenters')).toBe(false);
@@ -92,7 +93,7 @@ describe('task-centric app navigation', () => {
 
   it('does not leak feature registers or support/diagnostic tools back into global navigation', () => {
     const primaryPaths = navGroups.flatMap(([, items]) => items.map(([to]) => to));
-    for (const secondary of ['/people', '/owners', '/tenants', '/lands', '/units', '/commissions', '/invoices', '/receipts', '/expenses', '/arrears', '/utilities', '/service-providers', '/admin-support', '/audit-log', '/data-integrity', '/system']) {
+    for (const secondary of ['/people', '/owners', '/tenants', '/lands', '/units', '/commissions', '/invoices', '/receipts', '/expenses', '/arrears', '/utilities', '/service-providers', '/automation', '/admin-support', '/audit-log', '/data-integrity', '/system']) {
       expect(primaryPaths).not.toContain(secondary);
     }
   });
