@@ -109,6 +109,10 @@
   --tone-slate: 222 18% 42%;
   --tone-slate-soft: 222 14% 93%;
 
+  /* Support channel brand (WhatsApp) — tokenised so the login surface stays
+     on the design system instead of hard-coding a hex literal. */
+  --support-brand: 142 71% 49%;
+
   --shadow-card: 0 1px 3px hsl(222 30% 15% / 0.05), 0 8px 24px -18px hsl(222 40% 20% / 0.18);
   --shadow-card-hover: 0 2px 6px hsl(222 30% 15% / 0.06), 0 14px 32px -20px hsl(222 40% 20% / 0.22);
   --shadow-elevated: 0 20px 48px -28px hsl(222 40% 15% / 0.32), 0 8px 20px -14px hsl(222 30% 15% / 0.18);
@@ -182,6 +186,171 @@
   --focus-ring: var(--color-primary);
 }
 
+/* ── Premium surface system — Light: Soft Luminous Frosted White ────────
+   Every value below is a resolved literal (no nested var()) so the glass
+   primitives cannot be silently re-resolved by a scoped theme block such as
+   the dashboard's [data-visual-contract='v2'] surface.
+
+   Hierarchy (see styles/premium-glass.css for the primitives that consume
+   these): base surface → glass → elevated glass → interactive glass.      */
+:root {
+  /* Blur budget: cards stay blur-free; only chrome/overlays pay for blur. */
+  --glass-blur: 10px;
+  --glass-blur-elevated: 18px;
+  --glass-blur-strong: 26px;
+
+  /* Frosted white, translucent so the cool ambient page shows through. */
+  --glass-surface: hsl(0 0% 100% / 0.82);
+  --glass-surface-elevated: hsl(0 0% 100% / 0.9);
+  --glass-surface-strong: hsl(0 0% 100% / 0.96);
+  --glass-surface-base: hsl(214 40% 98% / 0.72);
+
+  /* Vertical body gradient: light falls from the top edge. */
+  --glass-surface-gradient: linear-gradient(
+    168deg,
+    hsl(0 0% 100% / 0.94) 0%,
+    hsl(214 42% 99% / 0.86) 52%,
+    hsl(216 40% 97% / 0.8) 100%
+  );
+  --glass-surface-gradient-elevated: linear-gradient(
+    166deg,
+    hsl(0 0% 100% / 0.99) 0%,
+    hsl(214 44% 99% / 0.94) 48%,
+    hsl(216 38% 97% / 0.9) 100%
+  );
+
+  /* Thin translucent borders + the specular line on the top edge. */
+  --glass-border: hsl(222 34% 44% / 0.14);
+  --glass-border-strong: hsl(222 34% 40% / 0.22);
+  --glass-rim: hsl(222 40% 30% / 0.1);
+  --glass-highlight: hsl(0 0% 100% / 0.95);
+  --glass-edge-light: inset 0 1px 0 hsl(0 0% 100% / 0.95), inset 0 -1px 0 hsl(222 40% 60% / 0.1);
+  --glass-edge-light-elevated:
+    inset 0 1px 0 hsl(0 0% 100% / 1),
+    inset 1px 0 0 hsl(0 0% 100% / 0.55),
+    inset -1px 0 0 hsl(0 0% 100% / 0.55),
+    inset 0 -1px 0 hsl(222 40% 60% / 0.12);
+
+  /* Restrained diagonal surface sheen — never an animated streak. */
+  --glass-sheen: linear-gradient(
+    118deg,
+    hsl(0 0% 100% / 0.62) 0%,
+    hsl(0 0% 100% / 0.14) 30%,
+    hsl(0 0% 100% / 0) 54%
+  );
+  --glass-sheen-soft: linear-gradient(
+    118deg,
+    hsl(0 0% 100% / 0.34) 0%,
+    hsl(0 0% 100% / 0.06) 28%,
+    hsl(0 0% 100% / 0) 50%
+  );
+
+  /* Ambient elevation — cool, wide and soft, never a hard drop shadow. */
+  --glass-shadow: 0 1px 2px hsl(222 46% 26% / 0.05), 0 10px 26px -18px hsl(222 48% 26% / 0.26);
+  --glass-shadow-elevated:
+    0 2px 4px hsl(222 46% 26% / 0.06),
+    0 18px 40px -22px hsl(222 48% 24% / 0.3),
+    0 2px 10px -6px hsl(222 48% 26% / 0.1);
+  --glass-shadow-overlay:
+    0 4px 10px hsl(222 46% 26% / 0.07),
+    0 28px 60px -26px hsl(222 50% 22% / 0.36);
+
+  /* Premium daytime page environment: cool white + faint luminous pools. */
+  --premium-page-base: hsl(214 42% 98.5%);
+  --premium-page-ambient:
+    radial-gradient(76rem 44rem at 88% -14%, hsl(199 92% 60% / 0.14), transparent 62%),
+    radial-gradient(62rem 38rem at 2% 0%, hsl(222 78% 62% / 0.1), transparent 58%),
+    radial-gradient(56rem 36rem at 50% 110%, hsl(210 62% 68% / 0.11), transparent 62%),
+    linear-gradient(178deg, hsl(210 46% 99.6%) 0%, hsl(214 42% 98%) 40%, hsl(217 38% 96.4%) 100%),
+    radial-gradient(140% 105% at 50% 0%, transparent 60%, hsl(222 42% 58% / 0.08) 100%);
+
+  /* Entry surface: the same cool white, with brighter trust-building pools
+     of navy and restrained gold behind the login card. */
+  --premium-login-ambient:
+    radial-gradient(46rem 40rem at 108% -14%, hsl(222 72% 42% / 0.14), transparent 62%),
+    radial-gradient(38rem 34rem at -12% 108%, hsl(38 88% 55% / 0.12), transparent 60%),
+    radial-gradient(30rem 26rem at 50% -18%, hsl(0 0% 100% / 0.85), transparent 72%);
+}
+
+/* ── Premium surface system — Dark: Deep Navy Glass ────────────────────
+   Translucent navy panels, cool ambient light, thin luminous rims.       */
+[data-theme='dark'] {
+  --glass-blur: 14px;
+  --glass-blur-elevated: 22px;
+  --glass-blur-strong: 30px;
+
+  --glass-surface: hsl(222 46% 16% / 0.62);
+  --glass-surface-elevated: hsl(222 44% 19% / 0.72);
+  --glass-surface-strong: hsl(223 46% 13% / 0.9);
+  --glass-surface-base: hsl(223 44% 12% / 0.5);
+
+  --glass-surface-gradient: linear-gradient(
+    168deg,
+    hsl(219 46% 24% / 0.66) 0%,
+    hsl(222 48% 15% / 0.66) 50%,
+    hsl(224 54% 11% / 0.72) 100%
+  );
+  --glass-surface-gradient-elevated: linear-gradient(
+    166deg,
+    hsl(218 48% 28% / 0.74) 0%,
+    hsl(222 46% 18% / 0.72) 46%,
+    hsl(225 54% 12% / 0.8) 100%
+  );
+
+  --glass-border: hsl(210 72% 78% / 0.12);
+  --glass-border-strong: hsl(210 72% 80% / 0.2);
+  --glass-rim: hsl(210 90% 82% / 0.16);
+  --glass-highlight: hsl(205 100% 94% / 0.16);
+  --glass-edge-light:
+    inset 0 1px 0 hsl(205 100% 92% / 0.12),
+    inset 0 -1px 0 hsl(226 70% 4% / 0.6);
+  --glass-edge-light-elevated:
+    inset 0 1px 0 hsl(205 100% 94% / 0.2),
+    inset 1px 0 0 hsl(210 90% 86% / 0.08),
+    inset -1px 0 0 hsl(210 90% 86% / 0.08),
+    inset 0 -1px 0 hsl(226 70% 4% / 0.65),
+    inset 0 18px 34px -26px hsl(205 100% 88% / 0.5);
+
+  --glass-sheen: linear-gradient(
+    118deg,
+    hsl(205 100% 90% / 0.11) 0%,
+    hsl(205 100% 90% / 0.03) 30%,
+    hsl(205 100% 90% / 0) 54%
+  );
+  --glass-sheen-soft: linear-gradient(
+    118deg,
+    hsl(205 100% 90% / 0.06) 0%,
+    hsl(205 100% 90% / 0.015) 28%,
+    hsl(205 100% 90% / 0) 50%
+  );
+
+  --glass-shadow:
+    0 1px 0 hsl(226 70% 2% / 0.4),
+    0 14px 30px -20px hsl(226 72% 2% / 0.8);
+  --glass-shadow-elevated:
+    0 2px 0 hsl(226 70% 2% / 0.45),
+    0 26px 52px -26px hsl(226 74% 2% / 0.88),
+    0 4px 14px -8px hsl(226 70% 2% / 0.5);
+  --glass-shadow-overlay:
+    0 4px 12px hsl(226 70% 2% / 0.5),
+    0 34px 70px -28px hsl(226 76% 2% / 0.92);
+
+  /* Deep navy foundation with restrained cool/cyan ambient pools. */
+  --premium-page-base: hsl(225 58% 5%);
+  --premium-page-ambient:
+    radial-gradient(78rem 46rem at 84% -16%, hsl(203 92% 58% / 0.17), transparent 60%),
+    radial-gradient(64rem 40rem at 4% 0%, hsl(222 84% 64% / 0.14), transparent 58%),
+    radial-gradient(58rem 40rem at 50% 114%, hsl(199 80% 46% / 0.1), transparent 62%),
+    linear-gradient(178deg, hsl(221 50% 11.5%) 0%, hsl(224 56% 7.5%) 42%, hsl(227 62% 4.5%) 100%),
+    radial-gradient(140% 108% at 50% 0%, transparent 52%, hsl(227 72% 2% / 0.62) 100%);
+
+  /* Entry surface at night: deep, luminous, with a cool halo behind the card. */
+  --premium-login-ambient:
+    radial-gradient(46rem 40rem at 110% -14%, hsl(203 92% 60% / 0.2), transparent 62%),
+    radial-gradient(38rem 34rem at -12% 108%, hsl(38 88% 60% / 0.12), transparent 60%),
+    radial-gradient(34rem 30rem at 50% 34%, hsl(210 90% 62% / 0.14), transparent 68%);
+}
+
 /* ── Dark Theme — Deep Navy Ink with Glass & Soft Glow ──────────── */
 [data-theme='dark'] {
   --color-bg: 222 48% 7%;
@@ -224,6 +393,7 @@
   --tone-violet-soft: 263 36% 16%;
   --tone-slate: 222 16% 62%;
   --tone-slate-soft: 222 18% 16%;
+  --support-brand: 142 62% 56%;
 
   --shadow-card: 0 1px 0 hsl(0 0% 100% / 0.04), 0 12px 32px -24px hsl(0 0% 0% / 0.75), 0 0 0 1px hsl(0 0% 100% / 0.03);
   --shadow-card-hover: 0 1px 0 hsl(0 0% 100% / 0.06), 0 16px 40px -24px hsl(0 0% 0% / 0.8), 0 0 0 1px hsl(0 0% 100% / 0.05);
@@ -307,6 +477,7 @@
   --color-info: hsl(var(--info-text));
   --color-info-text: hsl(var(--info-text));
   --color-info-bg: hsl(var(--info-bg));
+  --color-support-brand: hsl(var(--support-brand));
   --color-neutral: hsl(var(--neutral-text));
   --color-neutral-text: hsl(var(--neutral-text));
   --color-neutral-bg: hsl(var(--neutral-bg));

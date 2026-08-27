@@ -1,0 +1,759 @@
+/* ============================================================================
+   MALEK Premium Glass — shared surface / lighting / reflection system.
+
+   This is NOT a second theme. Every colour, radius, shadow and motion token
+   still comes from styles/tokens.css. This file only expresses the *material*
+   layer: how a surface catches light, how deep it sits, and how the page
+   environment behind it is lit.
+
+   Material hierarchy (deliberately not uniform — flat glass everywhere reads
+   cheaper than a considered mix):
+
+     L0  premium page environment   body ambient gradient (no card yet)
+     L1  surface-glass-base         dense/inner surfaces, near-opaque, no blur
+     L2  surface-glass              the default card: translucent, top specular
+     L3  surface-glass-elevated     chrome + overlays: blurred, sheen, rim
+     L4  surface-glass-strong       text-bearing overlays: max opacity for AA
+     A   active-glow                restrained illumination on active controls
+
+   Performance contract (mobile-first):
+     - backdrop-filter is paid for ONLY by chrome and overlays (header, dock,
+       drawer, panels, dialogs, login card). In-flow cards stay blur-free; their
+       glass reading comes from translucency over the fixed ambient page layer,
+       which costs one composited layer for the whole document.
+     - Highlights, sheens and rims are extra box-shadows / background-image
+       layers on the element itself — no per-card pseudo-element trees.
+     - Nothing here animates a filter or a transform, so reduced-motion and
+       mid-range Android compositing are unaffected.
+   ========================================================================== */
+
+/* ── L0 — Premium page environment ─────────────────────────────────────── */
+/* A single fixed layer behind the whole app. The page already has depth
+   before the first card is painted. */
+body {
+  background-color: var(--premium-page-base);
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: var(--premium-page-ambient);
+  background-repeat: no-repeat;
+}
+
+/* Chrome containers must be see-through or the ambient layer is invisible. */
+[data-app-shell],
+[data-app-shell] main#main-content,
+[data-visual-wave='malek-pro'],
+[data-operational-route='true'] [data-visual-wave='malek-pro'],
+[data-operational-route='true'] [data-visual-wave='malek-pro'] [data-page-header] {
+  background-color: transparent;
+}
+
+/* ── Reusable material primitives ──────────────────────────────────────── */
+/* Shared by the semantic hooks below and available to any feature that needs
+   an explicit surface instead of inventing a one-off class. */
+.surface-glass-base,
+.surface-glass,
+.surface-glass-elevated,
+.surface-glass-strong {
+  background-repeat: no-repeat;
+}
+
+/* L1 — base surface: quiet, readable, for dense/inner content. */
+.surface-glass-base,
+[data-glass-level='base'] {
+  background-image: var(--glass-surface-gradient);
+  background-color: var(--glass-surface-base);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-edge-light), var(--glass-shadow);
+}
+
+/* L2 — glass card. */
+.surface-glass,
+[data-glass-level='card'] {
+  background-image: var(--glass-sheen-soft), var(--glass-surface-gradient);
+  background-color: var(--glass-surface);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-edge-light), var(--glass-shadow);
+}
+
+/* L3 — elevated glass: blurred, sheened, with a thin reflective rim. */
+.surface-glass-elevated,
+[data-glass-level='elevated'] {
+  background-image: var(--glass-sheen), var(--glass-surface-gradient-elevated);
+  background-color: var(--glass-surface-elevated);
+  border: 1px solid var(--glass-border-strong);
+  box-shadow: var(--glass-edge-light-elevated), var(--glass-shadow-elevated);
+  -webkit-backdrop-filter: blur(var(--glass-blur-elevated)) saturate(140%);
+  backdrop-filter: blur(var(--glass-blur-elevated)) saturate(140%);
+}
+
+/* L4 — strong glass: text-bearing overlays where translucency must not
+   erode contrast. Blur is stronger, opacity is higher. */
+.surface-glass-strong,
+[data-glass-level='strong'] {
+  background-image: var(--glass-sheen), var(--glass-surface-gradient-elevated);
+  background-color: var(--glass-surface-strong);
+  border: 1px solid var(--glass-border-strong);
+  box-shadow: var(--glass-edge-light-elevated), var(--glass-shadow-overlay);
+  -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(145%);
+  backdrop-filter: blur(var(--glass-blur-strong)) saturate(145%);
+}
+
+/* Reflective rim — a hairline of light around an element. */
+.glass-rim,
+[data-glass-rim='true'] {
+  box-shadow: 0 0 0 1px var(--glass-rim), var(--glass-shadow-elevated);
+}
+
+/* Ambient shadow only, for elements that supply their own surface. */
+.ambient-shadow,
+[data-ambient-shadow='true'] {
+  box-shadow: var(--glass-shadow-elevated);
+}
+
+/* Controlled active illumination — never a neon outline. */
+.active-glow,
+[data-active-glow='true'] {
+  box-shadow:
+    inset 0 1px 0 hsl(0 0% 100% / 0.25),
+    0 0 0 1px hsl(var(--primary) / 0.32),
+    0 0 20px -10px hsl(var(--primary) / 0.55);
+}
+
+/* ── Cards: the app-wide surface family ────────────────────────────────── */
+/* Applied by marker attribute rather than by class so every existing card
+   variant inherits one coherent material instead of drifting. */
+[data-component-card],
+[data-entity-card],
+[data-mobile-card],
+[data-kpi-card] {
+  background-image: var(--glass-sheen-soft), var(--glass-surface-gradient);
+  background-color: var(--glass-surface);
+  border-color: var(--glass-border);
+  box-shadow: var(--glass-edge-light), var(--glass-shadow);
+}
+
+/* Interactive cards get a brighter rim and a lifted ambient shadow. */
+[data-entity-card]:hover,
+[data-mobile-card]:hover,
+[data-entity-card]:focus-within,
+[data-mobile-card]:focus-within {
+  border-color: var(--glass-border-strong);
+  box-shadow:
+    var(--glass-edge-light-elevated),
+    var(--glass-shadow-elevated),
+    0 0 0 1px hsl(var(--primary) / 0.12);
+}
+
+/* Selected state reads as illumination from within, not a colour swap. */
+[data-entity-card][aria-selected='true'],
+[data-mobile-card][aria-selected='true'],
+[data-entity-card][data-selected='true'],
+[data-mobile-card][data-selected='true'] {
+  border-color: hsl(var(--primary) / 0.34);
+  box-shadow:
+    var(--glass-edge-light-elevated),
+    var(--glass-shadow-elevated),
+    inset 0 0 0 1px hsl(var(--primary) / 0.16),
+    0 0 24px -14px hsl(var(--primary) / 0.5);
+}
+
+/* Touch tap states. styles/ux-foundation.css loads after this file and resets
+   the post-tap "ghost hover" shadow to the flat card token, so these rules
+   carry one extra attribute of specificity to keep the glass material intact
+   and to add a real pressed feel. */
+@media (hover: none) and (pointer: coarse) {
+  [data-app-shell] [data-entity-card]:hover:not(:active),
+  [data-app-shell] [data-mobile-card]:hover:not(:active) {
+    border-color: var(--glass-border);
+    box-shadow: var(--glass-edge-light), var(--glass-shadow);
+  }
+
+  [data-app-shell] [data-entity-card]:active,
+  [data-app-shell] [data-mobile-card]:active {
+    border-color: var(--glass-border-strong);
+    box-shadow:
+      inset 0 1px 0 hsl(0 0% 100% / 0.2),
+      inset 0 3px 8px -4px hsl(var(--foreground) / 0.2),
+      var(--glass-shadow);
+  }
+}
+
+/* L1 — dense registers stay quieter so long tables remain scannable. */
+[data-entity-table-wrapper],
+[data-list-results] {
+  background-image: var(--glass-surface-gradient);
+  background-color: var(--glass-surface-base);
+  border-color: var(--glass-border);
+  box-shadow: var(--glass-edge-light), var(--glass-shadow);
+}
+
+/* Toolbars float slightly above the register they control. */
+[data-list-controls],
+[data-filter-bar],
+[data-list-toolbar] {
+  background-image: var(--glass-sheen-soft), var(--glass-surface-gradient-elevated);
+  background-color: var(--glass-surface-elevated);
+  border-color: var(--glass-border-strong);
+  box-shadow: var(--glass-edge-light), var(--glass-shadow);
+}
+
+/* Page headers are the topmost surface on a route: elevated glass. */
+[data-unified-surface='page-header'],
+.dashboard-ops-header {
+  background-image: var(--glass-sheen), var(--glass-surface-gradient-elevated);
+  background-color: var(--glass-surface-elevated);
+  border-color: var(--glass-border-strong);
+  box-shadow: var(--glass-edge-light-elevated), var(--glass-shadow-elevated);
+}
+
+/* Financial figures sit on a slightly denser patch so tabular numbers keep
+   their edge against the translucent body of the card. */
+[data-financial-amount] {
+  text-shadow: 0 1px 0 hsl(0 0% 100% / 0.28);
+}
+
+[data-theme='dark'] [data-financial-amount] {
+  text-shadow: 0 1px 1px hsl(226 70% 3% / 0.55);
+}
+
+/* ── App header ────────────────────────────────────────────────────────── */
+[data-app-shell] [data-app-shell-header] {
+  background-image: linear-gradient(180deg, hsl(0 0% 100% / 0.94), hsl(214 40% 98% / 0.8));
+  background-color: hsl(0 0% 100% / 0.72);
+  border-bottom-color: var(--glass-border);
+  box-shadow:
+    inset 0 1px 0 hsl(0 0% 100% / 0.9),
+    inset 0 -1px 0 hsl(222 40% 44% / 0.09),
+    0 12px 30px -26px hsl(222 48% 24% / 0.4);
+  -webkit-backdrop-filter: blur(var(--glass-blur-elevated)) saturate(150%);
+  backdrop-filter: blur(var(--glass-blur-elevated)) saturate(150%);
+}
+
+[data-theme='dark'] [data-app-shell] [data-app-shell-header] {
+  background-image: linear-gradient(180deg, hsl(219 48% 20% / 0.9), hsl(224 54% 10% / 0.82));
+  background-color: hsl(224 54% 9% / 0.7);
+  border-bottom-color: var(--glass-border);
+  box-shadow:
+    inset 0 1px 0 hsl(205 100% 92% / 0.14),
+    inset 0 -1px 0 hsl(205 90% 80% / 0.07),
+    0 14px 34px -26px hsl(226 72% 2% / 0.9);
+}
+
+/* The M monogram: a signature MALEK control, not a generic button. */
+[data-header-brand-monogram] {
+  background-image: linear-gradient(
+    162deg,
+    hsl(var(--primary) / 0.26) 0%,
+    hsl(var(--primary) / 0.1) 62%,
+    hsl(var(--primary) / 0.06) 100%
+  );
+  background-color: hsl(var(--primary) / 0.06);
+  border-color: hsl(var(--primary) / 0.3);
+  box-shadow:
+    inset 0 1px 0 hsl(0 0% 100% / 0.5),
+    inset 0 -1px 0 hsl(var(--primary) / 0.14),
+    0 2px 8px -4px hsl(var(--primary) / 0.45);
+}
+
+[data-theme='dark'] [data-header-brand-monogram] {
+  background-image: linear-gradient(
+    162deg,
+    hsl(var(--primary) / 0.34) 0%,
+    hsl(var(--primary) / 0.14) 60%,
+    hsl(224 54% 12% / 0.6) 100%
+  );
+  background-color: hsl(224 54% 12% / 0.55);
+  border-color: hsl(var(--primary) / 0.38);
+  box-shadow:
+    inset 0 1px 0 hsl(205 100% 94% / 0.22),
+    inset 0 -1px 0 hsl(226 70% 3% / 0.5),
+    0 3px 12px -6px hsl(var(--primary) / 0.6);
+}
+
+[data-header-brand-monogram]:hover {
+  border-color: hsl(var(--primary) / 0.5);
+  box-shadow:
+    inset 0 1px 0 hsl(0 0% 100% / 0.6),
+    0 3px 12px -5px hsl(var(--primary) / 0.55),
+    0 0 0 1px hsl(var(--primary) / 0.14);
+}
+
+[data-header-brand-monogram]:active {
+  box-shadow:
+    inset 0 2px 5px -1px hsl(var(--primary) / 0.3),
+    inset 0 1px 0 hsl(0 0% 100% / 0.25);
+}
+
+/* Header icon controls: a machined key, not a flat square. */
+[data-app-shell-header] [data-header-control-hit] > button,
+[data-app-shell-header] [data-header-user-menu] > button {
+  background-image: linear-gradient(168deg, hsl(0 0% 100% / 0.95), hsl(214 38% 97% / 0.82));
+  background-color: hsl(0 0% 100% / 0.7);
+  border-color: var(--glass-border-strong);
+  box-shadow:
+    inset 0 1px 0 hsl(0 0% 100% / 0.95),
+    0 1px 3px -1px hsl(222 46% 26% / 0.18);
+}
+
+[data-theme='dark'] [data-app-shell-header] [data-header-control-hit] > button,
+[data-theme='dark'] [data-app-shell-header] [data-header-user-menu] > button {
+  background-image: linear-gradient(168deg, hsl(219 44% 24% / 0.9), hsl(224 52% 13% / 0.8));
+  background-color: hsl(224 52% 14% / 0.6);
+  border-color: var(--glass-border-strong);
+  box-shadow:
+    inset 0 1px 0 hsl(205 100% 92% / 0.16),
+    0 2px 6px -3px hsl(226 72% 2% / 0.7);
+}
+
+[data-app-shell-header] [data-header-control-hit] > button:hover,
+[data-app-shell-header] [data-header-user-menu] > button:hover {
+  border-color: hsl(var(--primary) / 0.4);
+  box-shadow:
+    inset 0 1px 0 hsl(0 0% 100% / 1),
+    0 2px 8px -3px hsl(222 46% 26% / 0.22),
+    0 0 0 1px hsl(var(--primary) / 0.12);
+}
+
+[data-theme='dark'] [data-app-shell-header] [data-header-control-hit] > button:hover,
+[data-theme='dark'] [data-app-shell-header] [data-header-user-menu] > button:hover {
+  box-shadow:
+    inset 0 1px 0 hsl(205 100% 94% / 0.22),
+    0 3px 10px -4px hsl(226 72% 2% / 0.8),
+    0 0 0 1px hsl(var(--primary) / 0.22);
+}
+
+[data-app-shell-header] [data-header-control-hit] > button:active,
+[data-app-shell-header] [data-header-user-menu] > button:active,
+[data-header-brand-monogram]:active {
+  transform: translateY(0.5px);
+}
+
+/* ── Floating mobile dock: a premium glass capsule ─────────────────────── */
+[data-mobile-dock-surface] {
+  background-image: var(--glass-sheen), linear-gradient(178deg, hsl(0 0% 100% / 0.97), hsl(214 36% 97% / 0.88));
+  background-color: hsl(0 0% 100% / 0.78);
+  border-color: var(--glass-border-strong);
+  box-shadow:
+    inset 0 1px 0 hsl(0 0% 100% / 1),
+    inset 0 -1px 0 hsl(222 40% 60% / 0.14),
+    0 2px 6px -2px hsl(222 46% 26% / 0.12),
+    0 18px 40px -20px hsl(222 50% 24% / 0.36);
+  -webkit-backdrop-filter: blur(var(--glass-blur-elevated)) saturate(160%);
+  backdrop-filter: blur(var(--glass-blur-elevated)) saturate(160%);
+}
+
+[data-theme='dark'] [data-mobile-dock-surface] {
+  background-image: var(--glass-sheen), linear-gradient(178deg, hsl(219 46% 26% / 0.86), hsl(225 56% 12% / 0.86));
+  background-color: hsl(225 56% 11% / 0.72);
+  border-color: var(--glass-border-strong);
+  box-shadow:
+    inset 0 1px 0 hsl(205 100% 94% / 0.22),
+    inset 0 -1px 0 hsl(226 70% 3% / 0.6),
+    0 2px 8px -3px hsl(226 72% 2% / 0.6),
+    0 22px 48px -22px hsl(226 76% 2% / 0.92);
+}
+
+/* Light environmental reflection along the dock's lower edge. */
+[data-mobile-dock-surface]::after {
+  content: '';
+  position: absolute;
+  inset-inline: 12%;
+  bottom: -1px;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, var(--glass-rim), transparent);
+}
+
+/* Dock actions: subtle depth so the capsule reads as holding real keys. */
+[data-mobile-floating-control] [data-mobile-dock-menu],
+[data-mobile-floating-control] [data-mobile-dock-search],
+[data-mobile-floating-control] [data-mobile-dock-quick-add],
+[data-mobile-floating-control] [data-mobile-dock-ai],
+[data-mobile-dock-notifications] > div > button {
+  background-image: linear-gradient(168deg, hsl(0 0% 100% / 0.72), hsl(214 34% 96% / 0.4));
+  box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.85), 0 1px 2px -1px hsl(222 46% 26% / 0.16);
+}
+
+[data-theme='dark'] [data-mobile-floating-control] [data-mobile-dock-menu],
+[data-theme='dark'] [data-mobile-floating-control] [data-mobile-dock-search],
+[data-theme='dark'] [data-mobile-floating-control] [data-mobile-dock-quick-add],
+[data-theme='dark'] [data-mobile-floating-control] [data-mobile-dock-ai],
+[data-theme='dark'] [data-mobile-dock-notifications] > div > button {
+  background-image: linear-gradient(168deg, hsl(219 44% 26% / 0.7), hsl(225 54% 14% / 0.5));
+  box-shadow: inset 0 1px 0 hsl(205 100% 92% / 0.14), 0 1px 3px -1px hsl(226 72% 2% / 0.6);
+}
+
+[data-mobile-floating-control] [data-mobile-dock-quick-add][aria-expanded='true'] {
+  background-image: linear-gradient(168deg, hsl(var(--primary) / 0.24), hsl(var(--primary) / 0.1));
+  box-shadow:
+    inset 0 1px 0 hsl(0 0% 100% / 0.4),
+    0 0 0 1px hsl(var(--primary) / 0.24),
+    0 0 18px -8px hsl(var(--primary) / 0.6);
+}
+
+/* ── Overlays: drawer, sheets, panels, menus ───────────────────────────── */
+/* Overlays must stay readable: strong opacity + heavy blur, and never a
+   translucent surface nested inside another translucent surface. */
+[data-mobile-drawer],
+[data-mobile-notifications-panel],
+[data-mobile-quick-add-menu],
+[data-account-menu-panel],
+[data-dialog-content],
+[data-bottom-sheet],
+[data-entity-form-surface='dialog'] {
+  background-image: var(--glass-sheen), var(--glass-surface-gradient-elevated);
+  background-color: var(--glass-surface-strong);
+  border-color: var(--glass-border-strong);
+  box-shadow: var(--glass-edge-light-elevated), var(--glass-shadow-overlay);
+  -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(150%);
+  backdrop-filter: blur(var(--glass-blur-strong)) saturate(150%);
+}
+
+/* Overlay inner blocks stay opaque so nested glass never stacks. */
+[data-mobile-drawer] [data-mobile-notifications-panel],
+[data-mobile-quick-add-menu] :is(button, a),
+[data-account-menu-panel] :is(button, a),
+[data-mobile-notifications-panel] :is(button, a) {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+/* The navigation drawer is a large dark instrument panel in both themes:
+   the sidebar token ramp keeps brand identity while the material stays glass. */
+[data-mobile-drawer] {
+  background-image: linear-gradient(196deg, hsl(222 58% 14% / 0.98), hsl(224 64% 7% / 0.99));
+  background-color: hsl(224 62% 8% / 0.97);
+  border-color: hsl(210 70% 78% / 0.12);
+  box-shadow:
+    inset 1px 0 0 hsl(205 100% 92% / 0.14),
+    -24px 0 60px -30px hsl(226 76% 2% / 0.9);
+}
+
+[data-mobile-drawer] [data-drawer-brand-header] {
+  background-image: linear-gradient(180deg, hsl(205 100% 90% / 0.07), transparent);
+  border-bottom-color: hsl(210 70% 78% / 0.1);
+  box-shadow: inset 0 -1px 0 hsl(205 100% 92% / 0.06);
+}
+
+/* Drawer navigation rows: a lit rail for the active destination. */
+[data-mobile-drawer] [data-active='true'] {
+  background-image: linear-gradient(96deg, hsl(var(--accent) / 0.22), hsl(var(--accent) / 0.07));
+  box-shadow:
+    inset 0 1px 0 hsl(0 0% 100% / 0.14),
+    inset 0 0 0 1px hsl(var(--accent) / 0.24),
+    0 0 20px -12px hsl(var(--accent) / 0.7);
+}
+
+/* Desktop rail: the sidebar is always a dark instrument, so the active row is
+   lit from within rather than filled with a flat block. */
+[data-sidebar] [data-nav-item][data-active='true'] {
+  background-image: linear-gradient(96deg, hsl(var(--sidebar-active-bg) / 0.95), hsl(var(--sidebar-active-bg) / 0.6));
+  box-shadow:
+    inset 0 1px 0 hsl(0 0% 100% / 0.12),
+    inset 0 0 0 1px hsl(var(--sidebar-active-text) / 0.16),
+    0 0 18px -10px hsl(var(--sidebar-active-bg) / 0.75);
+}
+
+/* Nested surfaces must not stack translucency: a card inside an overlay gets
+   an opaque body so the text always sits on one predictable surface. */
+[data-dialog-content] [data-component-card],
+[data-bottom-sheet] [data-component-card],
+[data-mobile-drawer] [data-component-card],
+[data-mobile-quick-add-menu] [data-component-card],
+[data-mobile-notifications-panel] [data-component-card],
+[data-account-menu-panel] [data-component-card],
+[data-login-card] [data-component-card] {
+  background-image: var(--glass-surface-gradient-elevated);
+  background-color: hsl(var(--card));
+  border-color: var(--glass-border);
+  box-shadow: var(--glass-edge-light), var(--glass-shadow);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+/* ── Buttons and icon controls ─────────────────────────────────────────── */
+/* Depth without weight: a top specular, a soft base shadow, and a real
+   pressed state. Semantic colours are untouched. */
+[data-ui-button][data-variant='primary'],
+[data-ui-button][data-variant='default'] {
+  background-image: linear-gradient(178deg, hsl(0 0% 100% / 0.2), hsl(0 0% 100% / 0) 58%);
+  box-shadow:
+    inset 0 1px 0 hsl(0 0% 100% / 0.28),
+    inset 0 -1px 0 hsl(222 60% 10% / 0.18),
+    0 2px 6px -2px hsl(var(--primary) / 0.45);
+}
+
+[data-ui-button][data-variant='primary']:hover,
+[data-ui-button][data-variant='default']:hover {
+  box-shadow:
+    inset 0 1px 0 hsl(0 0% 100% / 0.34),
+    inset 0 -1px 0 hsl(222 60% 10% / 0.2),
+    0 4px 14px -4px hsl(var(--primary) / 0.55);
+}
+
+[data-ui-button][data-variant='primary']:active,
+[data-ui-button][data-variant='default']:active {
+  background-image: linear-gradient(178deg, hsl(222 60% 8% / 0.14), hsl(0 0% 100% / 0) 62%);
+  box-shadow: inset 0 2px 6px -2px hsl(222 60% 8% / 0.45);
+}
+
+[data-ui-button][data-variant='danger'],
+[data-ui-button][data-variant='destructive'] {
+  background-image: linear-gradient(178deg, hsl(0 0% 100% / 0.2), hsl(0 0% 100% / 0) 58%);
+  box-shadow:
+    inset 0 1px 0 hsl(0 0% 100% / 0.26),
+    inset 0 -1px 0 hsl(0 60% 12% / 0.2),
+    0 2px 6px -2px hsl(var(--destructive) / 0.45);
+}
+
+[data-ui-button][data-variant='secondary'],
+[data-ui-button][data-variant='outline'],
+[data-ui-button][data-variant='soft'] {
+  background-image: linear-gradient(168deg, hsl(0 0% 100% / 0.5), hsl(214 30% 96% / 0.2));
+}
+
+[data-theme='dark'] [data-ui-button][data-variant='secondary'],
+[data-theme='dark'] [data-ui-button][data-variant='outline'],
+[data-theme='dark'] [data-ui-button][data-variant='soft'] {
+  background-image: linear-gradient(168deg, hsl(219 42% 28% / 0.5), hsl(225 52% 14% / 0.25));
+}
+
+[data-ui-button][data-variant='secondary'],
+[data-ui-button][data-variant='outline'],
+[data-ui-button][data-variant='soft'] {
+  box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.7), 0 1px 3px -1px hsl(222 46% 26% / 0.16);
+}
+
+[data-theme='dark'] [data-ui-button][data-variant='secondary'],
+[data-theme='dark'] [data-ui-button][data-variant='outline'],
+[data-theme='dark'] [data-ui-button][data-variant='soft'] {
+  box-shadow: inset 0 1px 0 hsl(205 100% 92% / 0.12), 0 1px 3px -1px hsl(226 72% 2% / 0.6);
+}
+
+/* Tactile press for every button, keyboard focus kept loud. */
+[data-ui-button]:active:not(:disabled) {
+  transform: translateY(0.5px);
+}
+
+[data-ui-button]:focus-visible {
+  box-shadow:
+    inset 0 1px 0 hsl(0 0% 100% / 0.25),
+    0 0 0 4px hsl(var(--primary) / 0.24);
+}
+
+/* Readable disabled state: keep the label legible, drop the light. */
+[data-ui-button]:disabled {
+  background-image: none;
+  box-shadow: none;
+  opacity: var(--opacity-disabled);
+}
+
+/* ── Inputs: a recessed well that lights up on focus ───────────────────── */
+:where(input, select, textarea):not([type='checkbox']):not([type='radio']) {
+  background-image: linear-gradient(180deg, hsl(222 40% 60% / 0.05), hsl(0 0% 100% / 0) 30%);
+}
+
+[data-theme='dark'] :where(input, select, textarea):not([type='checkbox']):not([type='radio']) {
+  background-image: linear-gradient(180deg, hsl(226 70% 3% / 0.35), hsl(0 0% 100% / 0) 34%);
+}
+
+:where(input, select, textarea):not([type='checkbox']):not([type='radio']):focus {
+  background-image: none;
+}
+
+/* ── Login: the premium MALEK entry surface ────────────────────────────── */
+[data-login-card] {
+  background-image: var(--glass-sheen), var(--glass-surface-gradient-elevated);
+  background-color: var(--glass-surface-strong);
+  border-color: var(--glass-border-strong);
+  box-shadow:
+    var(--glass-edge-light-elevated),
+    0 2px 6px hsl(222 46% 26% / 0.05),
+    0 30px 70px -30px hsl(222 52% 22% / 0.4);
+  -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(150%);
+  backdrop-filter: blur(var(--glass-blur-strong)) saturate(150%);
+}
+
+[data-theme='dark'] [data-login-card] {
+  box-shadow:
+    var(--glass-edge-light-elevated),
+    0 2px 8px hsl(226 70% 2% / 0.4),
+    0 34px 80px -30px hsl(226 78% 2% / 0.92),
+    0 0 60px -30px hsl(203 90% 60% / 0.4);
+}
+
+/* Login fields: recessed wells on the frosted card. */
+[data-login-card] :where(input) {
+  background-image: linear-gradient(180deg, hsl(222 40% 60% / 0.07), hsl(0 0% 100% / 0) 34%);
+  background-color: hsl(214 40% 98% / 0.85);
+  border-color: var(--glass-border-strong);
+  box-shadow: inset 0 1px 2px hsl(222 46% 26% / 0.08), inset 0 -1px 0 hsl(0 0% 100% / 0.9);
+}
+
+[data-theme='dark'] [data-login-card] :where(input) {
+  background-image: linear-gradient(180deg, hsl(226 70% 3% / 0.45), hsl(0 0% 100% / 0) 38%);
+  background-color: hsl(224 54% 10% / 0.8);
+  border-color: hsl(210 70% 78% / 0.16);
+  box-shadow: inset 0 1px 3px hsl(226 72% 2% / 0.6), inset 0 -1px 0 hsl(205 100% 92% / 0.06);
+}
+
+[data-login-card] :where(input):focus {
+  background-image: none;
+  border-color: hsl(var(--primary) / 0.55);
+  box-shadow:
+    0 0 0 4px hsl(var(--primary) / 0.14),
+    inset 0 1px 2px hsl(222 46% 26% / 0.06);
+}
+
+[data-theme='dark'] [data-login-card] :where(input):focus {
+  box-shadow:
+    0 0 0 4px hsl(var(--primary) / 0.18),
+    0 0 22px -10px hsl(var(--primary) / 0.7),
+    inset 0 1px 3px hsl(226 72% 2% / 0.5);
+}
+
+/* The brand mark gets a lit plinth so the M reads as the product signature. */
+[data-login-brand] [data-malek-canonical-mark] {
+  filter: drop-shadow(0 6px 14px hsl(var(--primary) / 0.28));
+}
+
+[data-theme='dark'] [data-login-brand] [data-malek-canonical-mark] {
+  filter: drop-shadow(0 6px 18px hsl(203 90% 60% / 0.4));
+}
+
+/* Support/contact tiles on the login card stay solid — no nested glass. */
+[data-login-card] [data-contact-footer] a {
+  background-image: var(--glass-surface-gradient);
+  background-color: var(--glass-surface-elevated);
+  box-shadow: var(--glass-edge-light), var(--glass-shadow);
+}
+
+/* ── Sidebar (desktop rail) keeps its identity but gains a lit edge ────── */
+[data-app-shell] [data-sidebar] {
+  background-image: linear-gradient(196deg, hsl(222 58% 13% / 1), hsl(224 64% 6% / 1));
+  box-shadow:
+    inset 1px 0 0 hsl(205 100% 92% / 0.1),
+    var(--elev-sidebar);
+}
+
+/* ── Dashboard: the same material inside the v2 visual scope ─────────────
+   dashboard-v2.css is a lazily loaded stylesheet, so these rules carry one
+   extra attribute of specificity to stay authoritative without touching the
+   density contract (section/cluster gaps are left exactly as they are).    */
+[data-app-shell] [data-visual-contract='v2'] :is(
+  .dashboard-priority-panel,
+  .dashboard-action-panel,
+  .dashboard-queue-card,
+  .dashboard-trend-card,
+  .dashboard-aging-card
+) {
+  background-image: var(--glass-sheen-soft), var(--glass-surface-gradient);
+  background-color: var(--glass-surface);
+  border-color: var(--glass-border);
+  box-shadow: var(--glass-edge-light), var(--glass-shadow);
+}
+
+[data-app-shell] [data-visual-contract='v2'] :is(
+  .dashboard-queue-card,
+  .dashboard-trend-card,
+  .dashboard-aging-card,
+  .dashboard-action-card
+):is(:hover, :focus-visible) {
+  border-color: hsl(var(--primary) / 0.34);
+  box-shadow:
+    var(--glass-edge-light-elevated),
+    var(--glass-shadow-elevated),
+    0 0 0 1px hsl(var(--primary) / 0.1);
+}
+
+/* Semantic status tints stay on top of the glass so meaning never fades. */
+[data-app-shell] [data-visual-contract='v2'] .dashboard-priority-panel--clear {
+  background-image: var(--glass-sheen-soft);
+  background-color: hsl(var(--color-success-bg) / 0.72);
+}
+
+/* ── Safety valves ─────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .surface-glass-base,
+  .surface-glass,
+  .surface-glass-elevated,
+  .surface-glass-strong,
+  [data-component-card],
+  [data-entity-card],
+  [data-mobile-card],
+  [data-kpi-card],
+  [data-ui-button] {
+    transition-duration: 0.01ms !important;
+  }
+
+  /* The tactile press nudge is motion, so it is removed as well. */
+  [data-ui-button]:active:not(:disabled),
+  [data-header-brand-monogram]:active,
+  [data-app-shell-header] [data-header-control-hit] > button:active,
+  [data-app-shell-header] [data-header-user-menu] > button:active {
+    transform: none;
+  }
+}
+
+/* High-contrast / forced-colour environments must not rely on translucency. */
+@media (forced-colors: active) {
+  .surface-glass-base,
+  .surface-glass,
+  .surface-glass-elevated,
+  .surface-glass-strong,
+  [data-component-card],
+  [data-entity-card],
+  [data-mobile-card],
+  [data-kpi-card],
+  [data-mobile-dock-surface],
+  [data-mobile-drawer],
+  [data-app-shell] [data-visual-contract='v2'] :is(
+    .dashboard-priority-panel,
+    .dashboard-action-panel,
+    .dashboard-queue-card,
+    .dashboard-trend-card,
+    .dashboard-aging-card
+  ),
+  [data-app-shell] [data-app-shell-header] {
+    background-image: none;
+    background-color: Canvas;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    forced-color-adjust: none;
+  }
+}
+
+/* Print: the ambient page layer and every glass effect must disappear. */
+@media print {
+  body::before {
+    display: none;
+  }
+
+  .surface-glass-base,
+  .surface-glass,
+  .surface-glass-elevated,
+  .surface-glass-strong,
+  [data-component-card],
+  [data-entity-card],
+  [data-mobile-card],
+  [data-kpi-card],
+  [data-app-shell] [data-visual-contract='v2'] :is(
+    .dashboard-priority-panel,
+    .dashboard-action-panel,
+    .dashboard-queue-card,
+    .dashboard-trend-card,
+    .dashboard-aging-card
+  ),
+  [data-app-shell] [data-app-shell-header] {
+    background-image: none;
+    background-color: #ffffff;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
