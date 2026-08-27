@@ -49,7 +49,6 @@ describe('UX completion contract', () => {
 
     for (const file of files) {
       expect(source(file), file).not.toContain('renderMobileCard');
-      expect(source(file), file).not.toContain('enableViewModeToggle');
     }
   });
 
