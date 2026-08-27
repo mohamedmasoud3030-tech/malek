@@ -11,21 +11,27 @@ describe('UI mobile architecture reset — shared foundation', () => {
     expect(table).toContain('if (totalPages <= 1) return null');
   });
 
-  it('hides native finance <select> and uses product navigation', () => {
-    const finance = read('./financials/financials-page.tsx');
-    expect(finance).toContain('WorkspaceNav');
+  it('uses direct product navigation for the canonical FinancePage', () => {
+    const finance = read('./finance/FinancePage.tsx');
+    expect(finance).toContain('SectionTabs');
     expect(finance).toContain('data-finance-mobile-nav');
+    expect(finance).toContain('data-finance-mobile-nav-mode="direct-tabs"');
     expect(finance).not.toMatch(/<select[\s\S]*أقسام المالية/);
   });
 
-  it('keeps notifications before AI in the compact utility dock', () => {
+  it('keeps Menu, Search and utilities in the current compact dock order', () => {
     const dock = read('../app/layout/layout-navigation-view.tsx');
+    const menu = dock.indexOf('data-mobile-dock-menu');
+    const search = dock.indexOf('data-mobile-dock-search');
+    const quickAdd = dock.indexOf('data-mobile-dock-quick-add');
     const notifications = dock.indexOf('data-mobile-dock-notifications');
     const ai = dock.indexOf('data-mobile-dock-ai');
-    expect(notifications).toBeGreaterThan(0);
+    expect(menu).toBeGreaterThan(0);
+    expect(search).toBeGreaterThan(menu);
+    expect(quickAdd).toBeGreaterThan(search);
+    expect(notifications).toBeGreaterThan(quickAdd);
     expect(ai).toBeGreaterThan(notifications);
     expect(dock).toContain('pb-[calc(0.75rem+env(safe-area-inset-bottom');
-    expect(dock).not.toContain('data-mobile-dock-menu');
   });
 
   it('keeps empty states compact and register summaries shared', () => {
