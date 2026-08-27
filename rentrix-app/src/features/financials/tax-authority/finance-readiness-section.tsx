@@ -8,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useActiveCompanyId } from '@/hooks/use-company';
-import { buildCompanySettingsSearch } from '@/features/governance-hub/governance-hub-navigation';
 import { getFinanceReadiness, type FinanceReadiness, type ReadinessState } from './finance-readiness-service';
 
 function toneForState(state: ReadinessState): 'success' | 'warning' | 'danger' | 'info' {
@@ -66,7 +65,7 @@ function TaxReadinessCard({
         {state !== 'READY' ? (
           <Link
             to="/settings"
-            search={buildCompanySettingsSearch({}, 'finance-readiness') as never}
+            search={{ section: 'company', companySection: 'finance-readiness' } as never}
             className="inline-flex min-h-8 items-center gap-1 font-semibold text-primary hover:underline"
           >
             فتح إعدادات الضريبة

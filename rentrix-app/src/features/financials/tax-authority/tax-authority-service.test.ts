@@ -98,7 +98,7 @@ describe('tax authority service — governed boundaries', () => {
     // Non-ready tax cards deep-link to the canonical settings surface where
     // the tax profiles/treatments workspace lives.
     expect(readinessSection).toContain("to=\"/settings\"");
-    expect(readinessSection).toContain("buildCompanySettingsSearch({}, 'finance-readiness')");
+    expect(readinessSection).toContain("companySection: 'finance-readiness'");
     expect(readinessSection).toContain('فتح إعدادات الضريبة');
     // Accounting readiness keeps its canonical Reports deep link.
     expect(readinessSection).toContain("search={{ section: 'accounting' } as never}");
