@@ -76,21 +76,20 @@ describe('Global Command Center — task-centric static navigation', () => {
 
   it('uses only routine owning-workspace destinations', () => {
     expect(command('dashboard')).toMatchObject({ title: 'اليوم', canonicalRoute: '/dashboard' });
-    expect(command('lands')).toMatchObject({ canonicalRoute: '/properties', search: { section: 'lands' }, permission: 'lands.view' });
+    expect(command('properties')).toMatchObject({ canonicalRoute: '/properties' });
     expect(command('owners')).toMatchObject({ canonicalRoute: '/properties', search: { section: 'owners' }, permission: 'owners.hub.view' });
     expect(command('tenants')).toMatchObject({ canonicalRoute: '/contracts', search: { workspace: 'tenants' } });
     expect(command('financial-expenses')).toMatchObject({ canonicalRoute: '/financials', search: { section: 'expenses', view: 'expenses' }, permission: 'expenses.view' });
-    expect(command('service-providers')).toMatchObject({ canonicalRoute: '/maintenance', search: { section: 'service_providers' }, permission: 'service_providers.view' });
     expect(command('utilities')).toMatchObject({ canonicalRoute: '/maintenance', search: { section: 'utilities' } });
-    expect(command('documents')).toMatchObject({ canonicalRoute: '/maintenance', search: { section: 'documents_vault' } });
-    expect(command('automation')).toMatchObject({ canonicalRoute: '/settings', search: { section: 'automation' }, permission: 'automation.view' });
+    expect(command('reports')).toMatchObject({ canonicalRoute: '/reports', permission: 'financial.reports.view' });
   });
 
-  it('does not re-advertise hidden relationship or specialist finance registers', () => {
+  it('does not re-advertise hidden relationship, specialist, or admin registers', () => {
     const ids = STATIC_COMMANDS.map((candidate) => candidate.id);
     for (const hidden of [
       'people', 'leads', 'communication', 'commissions', 'financial-deposits',
       'financial-owner-settlements', 'financial-bank-reconciliation',
+      'lands', 'service-providers', 'documents', 'automation',
     ]) expect(ids).not.toContain(hidden);
   });
 
@@ -102,10 +101,11 @@ describe('Global Command Center — task-centric static navigation', () => {
   });
 
   it('filters protected commands with the existing permission seam', () => {
-    mockCanAccess.mockImplementation((permission) => permission !== 'lands.view' && permission !== 'expenses.view');
+    mockCanAccess.mockImplementation((permission) => permission !== 'expenses.view' && permission !== 'arrears.view');
     const { result } = renderHook(() => useCommandSearch(''));
-    expect(result.current.staticCommands.some((candidate) => candidate.id === 'lands')).toBe(false);
     expect(result.current.staticCommands.some((candidate) => candidate.id === 'financial-expenses')).toBe(false);
+    expect(result.current.staticCommands.some((candidate) => candidate.id === 'financial-arrears')).toBe(false);
+    expect(result.current.staticCommands.some((candidate) => candidate.id === 'financial-invoices')).toBe(true);
     expect(result.current.staticCommands.some((candidate) => candidate.id === 'settings')).toBe(true);
   });
 
