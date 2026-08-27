@@ -1,4 +1,4 @@
-import { FileText, LockKeyhole, ReceiptText, WalletCards } from 'lucide-react';
+import { FileText, LockKeyhole, WalletCards } from 'lucide-react';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { EmptyState } from '@/components/empty-state';
@@ -33,9 +33,7 @@ type Payment = ContractPaymentsSnapshot['payments'][number];
 
 function ContractPaymentsSummary({ snapshot }: Readonly<{ snapshot: ContractPaymentsSnapshot }>) {
   return (
-    <ResponsiveCardGrid desktopColumns={5}>
-      <KpiCard label="عدد الفواتير" value={formatCompanyNumber(null, snapshot.summary.invoiceCount)} icon={ReceiptText} accent="primary" compact />
-      <KpiCard label="عدد الدفعات" value={formatCompanyNumber(null, snapshot.summary.paymentCount)} icon={WalletCards} accent="sky" compact />
+    <ResponsiveCardGrid desktopColumns={3}>
       <KpiCard label="إجمالي الفواتير" value={formatDefaultCompanyMoney(snapshot.summary.totalInvoiced)} icon={WalletCards} accent="primary" compact />
       <KpiCard label="إجمالي المدفوع" value={formatDefaultCompanyMoney(snapshot.summary.totalPaid)} icon={WalletCards} accent="emerald" compact />
       <KpiCard label="المتبقي" value={formatDefaultCompanyMoney(snapshot.summary.totalRemaining)} icon={WalletCards} accent="amber" compact />
