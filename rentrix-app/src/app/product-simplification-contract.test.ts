@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { workspaceChildNavItems } from './navigation/app-nav-items';
 import { governanceHubSections } from '@/features/governance-hub/governance-hub-sections';
 import { FINANCE_SECTIONS } from '@/features/finance/shell/financeShellModel';
+import { leasingHubSections } from '@/features/relationships-hub/leasing-hub-sections';
 
 function source(relativePath: string) {
   return readFileSync(new URL(relativePath, import.meta.url), 'utf8');
@@ -29,6 +30,14 @@ describe('production product simplification contract', () => {
     ]);
   });
 
+  it('keeps Leasing routine navigation focused on contracts and tenants', () => {
+    expect(leasingHubSections.filter((section) => section.showInPrimaryNavigation).map((section) => section.id))
+      .toEqual(['contracts', 'tenants']);
+    expect(leasingHubSections.filter((section) => !section.showInPrimaryNavigation).map((section) => section.id))
+      .toEqual(['people', 'leads', 'communication']);
+    expect(workspaceChildNavItems['/contracts'].map(([, labelKey]) => labelKey)).toEqual(['tenants']);
+  });
+
   it('keeps specialist Money tools available without advertising them as daily destinations', () => {
     expect(workspaceChildNavItems['/financials'].map(([, labelKey]) => labelKey)).toEqual([
       'invoices',
@@ -48,6 +57,9 @@ describe('production product simplification contract', () => {
     expect(nav).not.toContain("['/admin-support', 'supportOperations'");
     expect(nav).not.toContain("['/settings', 'systemSettings'");
     expect(nav).not.toContain("['/settings', 'costCenters'");
+    expect(nav).not.toContain("['/contracts', 'peopleDirectory'");
+    expect(nav).not.toContain("['/contracts', 'leads'");
+    expect(nav).not.toContain("['/contracts', 'communication'");
     expect(nav).not.toContain("['/financials', 'deposits'");
     expect(nav).not.toContain("['/financials', 'ownerSettlements'");
     expect(nav).not.toContain("['/financials', 'bankReconciliation'");
