@@ -107,7 +107,6 @@ export class OpenAiCompatibleAdapter implements AiProviderAdapter {
           body: JSON.stringify({
             model: request.model,
             messages: request.messages,
-            temperature: 0.1,
             max_tokens: request.maxOutputTokens,
             response_format: {
               type: "json_schema",
