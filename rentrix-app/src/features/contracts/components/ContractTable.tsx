@@ -163,7 +163,7 @@ export function ContractTable({
       columns={columns}
       keyOf={(c) => c.id}
       toolbar={(
-        <div className="flex min-w-0 items-center justify-end gap-2">
+        <div className="hidden min-w-0 items-center justify-end gap-2 md:flex" data-contract-columns-control>
           <DataTableColumnsMenu
             columns={contractColumnOptions}
             visibleKeys={visibleColumnKeys}
