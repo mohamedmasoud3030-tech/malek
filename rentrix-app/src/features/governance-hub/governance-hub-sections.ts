@@ -28,7 +28,7 @@ export const governanceHubSections = [
     description: 'إدارة تصنيفات مراكز التكلفة التشغيلية.',
     icon: FolderTree,
     permission: 'cost_centers.manage',
-    showInPrimaryNavigation: true,
+    showInPrimaryNavigation: false,
   },
   {
     id: 'automation',
