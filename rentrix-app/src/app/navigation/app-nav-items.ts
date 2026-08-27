@@ -3,13 +3,11 @@ import {
   BarChart3,
   BriefcaseBusiness,
   Building2,
-  ContactRound,
   DoorOpen,
   FileText,
   FolderKanban,
   LayoutDashboard,
   MapPinned,
-  MessageSquareText,
   PieChart,
   Settings,
   Settings2,
@@ -17,7 +15,6 @@ import {
   UserCheck,
   UserPlus,
   UserRoundCog,
-  Users,
   Wrench,
   Zap,
 } from 'lucide-react';
@@ -40,7 +37,7 @@ export const navGroups: readonly NavGroup[] = [
   ['العمل', [
     ['/dashboard', 'today', 'ما يحتاج انتباهك وتنفيذك الآن', LayoutDashboard],
     ['/properties', 'portfolio', 'العقارات والوحدات والملاك والأصول المدارة', Building2],
-    ['/contracts', 'leasing', 'دورة التأجير من الجاهزية حتى التجديد أو الإخلاء', FileText],
+    ['/contracts', 'leasing', 'العقود والمستأجرون من البداية حتى التجديد أو الإخلاء', FileText],
     ['/financials', 'money', 'المستحقات والتحصيل والمصروفات وما يحتاج متابعة', PieChart],
     ['/maintenance', 'services', 'الصيانة والمرافق والخدمات التشغيلية', Wrench],
   ]],
@@ -53,8 +50,8 @@ export const navGroups: readonly NavGroup[] = [
 /**
  * Workspace children preserve context instead of sending the user to another
  * feature module. Standalone entity URLs stay available for bookmarks/deep links.
- * Support, diagnostics and specialist finance tools intentionally stay out of
- * routine navigation; guarded deep links and contextual actions remain available.
+ * Support, diagnostics, secondary relationship registers and specialist finance
+ * tools stay out of routine navigation; guarded/contextual access remains.
  */
 export const workspaceChildNavItems: Record<string, readonly NavItem[]> = {
   '/properties': [
@@ -64,9 +61,6 @@ export const workspaceChildNavItems: Record<string, readonly NavItem[]> = {
   ],
   '/contracts': [
     ['/contracts', 'tenants', 'المستأجرون وعلاقات الإيجار', UserCheck, undefined, { workspace: 'tenants' }],
-    ['/contracts', 'peopleDirectory', 'دليل الأشخاص وجهات التعامل', Users, undefined, { workspace: 'people' }],
-    ['/contracts', 'leads', 'العملاء المحتملون والتحويلات', ContactRound, 'leads.view', { workspace: 'leads' }],
-    ['/contracts', 'communication', 'التواصل والمتابعات التشغيلية', MessageSquareText, 'communication.view', { workspace: 'communication' }],
   ],
   '/financials': [
     ['/financials', 'invoices', 'المستحقات والفواتير', FileText, undefined, { section: 'collections', view: 'invoices' }],
