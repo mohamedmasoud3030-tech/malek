@@ -11,15 +11,30 @@ describe('GAP-004 owner-agreement version authority', () => {
     expect(service).toContain("rpc('create_property_with_versioned_agreement_atomic'");
   });
 
-  it('exposes version history and future amendments instead of retroactive commercial edits', () => {
-    expect(manager).toContain('سجل النسخ');
-    expect(manager).toContain('تعديل مستقبلي');
+  it('keeps amendment history without exposing internal version numbering', () => {
+    expect(manager).toContain('سجل التعديلات');
+    expect(manager).toContain('تعديل الشروط');
+    expect(manager).not.toContain('version.version_no');
     expect(manager).toContain('useCreateOwnerAgreementVersion');
     expect(service).toContain("rpc('create_future_owner_agreement_version_atomic'");
   });
 
-  it('keeps deferred MASTER_LEASE unavailable in RC1 creation screens and boundaries', () => {
+  it('keeps specialist settlement and deposit choices available without crowding the default amendment form', () => {
+    expect(manager).toContain('خيارات التسوية والتأمين');
+    expect(manager).toContain('versionForm.offset_allowed');
+    expect(manager).toContain('versionForm.reserve_amount');
+    expect(manager).toContain('versionForm.deposit_beneficiary');
+    expect(manager).toContain('versionForm.deposit_custodian');
+  });
+
+  it('routes save failures through the user-facing Arabic error mapper', () => {
+    expect(manager).toContain('getActionableSupabaseErrorMessage');
+    expect(manager).not.toContain("error instanceof Error ? error.message : 'تعذر حفظ اتفاقية المالك.'");
+  });
+
+  it('keeps deferred MASTER_LEASE unavailable without showing a disabled technical choice', () => {
     expect(manager).not.toContain('<option value="master_lease">');
+    expect(manager).not.toContain('label="نوع الاتفاقية"');
     expect(propertyForm).not.toContain('<option value="master_lease">');
     expect(service).toContain('الاستئجار الرئيسي غير متاح في الإصدار الحالي');
   });
