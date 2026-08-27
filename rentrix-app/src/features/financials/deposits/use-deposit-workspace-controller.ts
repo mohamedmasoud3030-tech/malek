@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { formatMoney as formatCurrencyMoney, normalizeCurrency } from '@/lib/formatters';
+import { getActionableSupabaseErrorMessage } from '@/lib/supabase-error';
 import { getTodayLocalDateString } from '@/features/financials/financials-date-utils';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
 import { useAuth } from '@/hooks/use-auth';
@@ -34,6 +35,10 @@ function getContentStatus(isLoading: boolean, isError: boolean, isEmpty: boolean
   if (isError) return 'error' as const;
   if (isEmpty) return 'empty' as const;
   return 'ready' as const;
+}
+
+function depositMutationError(error: unknown, fallback: string) {
+  return getActionableSupabaseErrorMessage(error, fallback);
 }
 
 export type DepositActionType = 'claim' | 'refund' | 'rejectClaim' | 'reverseClaim' | 'reverseRefund' | 'create' | null;
@@ -100,7 +105,7 @@ export function useDepositWorkspaceController() {
       setCreateForm({ contract_id: '', amount: 0, received_date: getTodayLocalDateString(), notes: '' });
       invalidateFinancial();
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر إنشاء الوديعة'),
+    onError: (error) => toast.error(depositMutationError(error, 'تعذر إنشاء الوديعة')),
   });
 
   const claimMut = useMutation({
@@ -118,7 +123,7 @@ export function useDepositWorkspaceController() {
       });
     },
     onSuccess: () => {
-      toast.success('تم إنشاء طلب التخصيص — بانتظار اعتماد مدقق آخر');
+      toast.success('تم إنشاء طلب التخصيص — بانتظار اعتماد مستخدم مخوّل آخر');
       setSelectedDeposit(null);
       setActionType(null);
       setAmountInput(0);
@@ -128,7 +133,7 @@ export function useDepositWorkspaceController() {
       setInvoiceInput('');
       void queryClient.invalidateQueries({ queryKey: ['deposit-claims'] });
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر إنشاء الطلب'),
+    onError: (error) => toast.error(depositMutationError(error, 'تعذر إنشاء الطلب')),
   });
 
   const approveMut = useMutation({
@@ -137,7 +142,7 @@ export function useDepositWorkspaceController() {
       toast.success('تم اعتماد الطلب');
       invalidateFinancial();
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر الاعتماد'),
+    onError: (error) => toast.error(depositMutationError(error, 'تعذر الاعتماد')),
   });
 
   const applyMut = useMutation({
@@ -146,7 +151,7 @@ export function useDepositWorkspaceController() {
       toast.success('تم تطبيق التخصيص على الحسابات والفواتير');
       invalidateFinancial();
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر تطبيق التخصيص'),
+    onError: (error) => toast.error(depositMutationError(error, 'تعذر تطبيق التخصيص')),
   });
 
   const rejectMut = useMutation({
@@ -161,7 +166,7 @@ export function useDepositWorkspaceController() {
       setReasonInput('');
       invalidateFinancial();
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر رفض الطلب'),
+    onError: (error) => toast.error(depositMutationError(error, 'تعذر رفض الطلب')),
   });
 
   const reverseClaimMut = useMutation({
@@ -170,13 +175,13 @@ export function useDepositWorkspaceController() {
       return reverseDepositClaim(selectedClaim.id, reasonInput);
     },
     onSuccess: () => {
-      toast.success('تم إلغاء التخصيص بقيد تعويضي');
+      toast.success('تم إلغاء التخصيص وإعادة أثره المالي');
       setSelectedClaim(null);
       setActionType(null);
       setReasonInput('');
       invalidateFinancial();
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر إلغاء التخصيص'),
+    onError: (error) => toast.error(depositMutationError(error, 'تعذر إلغاء التخصيص')),
   });
 
   const refundMut = useMutation({
@@ -199,7 +204,7 @@ export function useDepositWorkspaceController() {
       setClaimNoteInput('');
       invalidateFinancial();
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر الاسترداد - تحقق من الرصيد'),
+    onError: (error) => toast.error(depositMutationError(error, 'تعذر الاسترداد - تحقق من الرصيد')),
   });
 
   const reverseRefundMut = useMutation({
@@ -208,13 +213,13 @@ export function useDepositWorkspaceController() {
       return reverseDepositRefund(selectedRefundEvent.id, reasonInput);
     },
     onSuccess: () => {
-      toast.success('تم إلغاء الاسترداد بقيد تعويضي');
+      toast.success('تم إلغاء الاسترداد وإعادة أثره المالي');
       setSelectedRefundEvent(null);
       setActionType(null);
       setReasonInput('');
       invalidateFinancial();
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر إلغاء الاسترداد'),
+    onError: (error) => toast.error(depositMutationError(error, 'تعذر إلغاء الاسترداد')),
   });
 
   const totalHeld = useMemo(() => deposits.reduce((sum, d) => sum + d.remaining_amount, 0), [deposits]);
