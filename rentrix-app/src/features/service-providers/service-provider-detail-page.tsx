@@ -1,4 +1,5 @@
 import { useNavigate, useParams } from '@tanstack/react-router';
+import { useState } from 'react';
 import { BriefcaseBusiness, Edit, FolderCog, Mail, MapPin, Phone, Wrench } from 'lucide-react';
 import { AsyncContentState } from '@/components/async-content-state';
 import { ContextualDocumentsSection } from '@/components/documents/contextual-documents-section';
@@ -10,6 +11,7 @@ import { DetailFields } from '@/components/ui/detail-fields';
 import { EntityTable } from '@/components/ui/entity-table';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
+import { SectionTabPanel, SectionTabs } from '@/components/ui/section-tabs';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useDialogNavigate } from '@/app/router/background-location';
 import { useAuth } from '@/hooks/use-auth';
@@ -29,6 +31,14 @@ function formatCount(value: number) {
   return new Intl.NumberFormat('en-US').format(value);
 }
 
+type ProviderSection = 'overview' | 'operations' | 'documents';
+
+const providerSections = [
+  { id: 'overview', label: 'نظرة عامة', icon: BriefcaseBusiness },
+  { id: 'operations', label: 'التشغيل', icon: Wrench },
+  { id: 'documents', label: 'المستندات', icon: FolderCog },
+] as const;
+
 export function ServiceProviderDetailPage() {
   const params = useParams({ strict: false }) as { providerId?: string };
   const providerId = params.providerId ?? '';
@@ -37,6 +47,7 @@ export function ServiceProviderDetailPage() {
   const navigate = useNavigate();
   const dialogNavigate = useDialogNavigate();
   const canWrite = auth.canAccess('service_providers.write');
+  const [activeSection, setActiveSection] = useState<ProviderSection>('overview');
 
   if (!providerId) {
     return <AsyncContentState status="empty" emptyTitle="ملف مزود الخدمة غير متاح" emptyDescription="معرف مزود الخدمة غير موجود في الرابط.">{null}</AsyncContentState>;
@@ -69,6 +80,16 @@ export function ServiceProviderDetailPage() {
         actions={canWrite ? <Button className="min-h-11" onClick={() => dialogNavigate({ to: '/service-providers/$providerId/edit', params: { providerId: provider.id } })}><Edit className="me-2 size-4" aria-hidden="true" />تعديل</Button> : undefined}
       />
 
+      <SectionTabs
+        items={providerSections}
+        activeId={activeSection}
+        onChange={setActiveSection}
+        ariaLabel="أقسام ملف مزود الخدمة"
+        compactMobile
+      />
+
+      <SectionTabPanel id="overview" activeId={activeSection}>
+      <div className="space-y-5" data-provider-detail-overview>
       <Card>
         <CardHeader className="gap-3">
           <div className="flex flex-wrap items-start justify-between gap-3">
@@ -97,6 +118,11 @@ export function ServiceProviderDetailPage() {
         <KpiCard label="أعمال مكتملة" value={formatCount(resolvedJobs)} icon={Wrench} accent="emerald" />
       </ResponsiveCardGrid>
 
+      </div>
+      </SectionTabPanel>
+
+      <SectionTabPanel id="operations" activeId={activeSection}>
+      <div className="space-y-5" data-provider-detail-operations>
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader><CardTitle>التواصل</CardTitle><CardDescription>قنوات التنسيق المسجلة لفريق التشغيل.</CardDescription></CardHeader>
@@ -149,10 +175,15 @@ export function ServiceProviderDetailPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      </div>
+      </SectionTabPanel>
+
+      <SectionTabPanel id="documents" activeId={activeSection}>
+      <Card data-provider-detail-documents>
         <CardHeader><CardTitle>المستندات والمرفقات</CardTitle><CardDescription>المستندات محفوظة في منصة المستندات المشتركة ومربوطة بملف المزود.</CardDescription></CardHeader>
         <CardContent><ContextualDocumentsSection entityType="service_provider" entityId={provider.id} entityLabel="مزود الخدمة" /></CardContent>
       </Card>
+      </SectionTabPanel>
     </PageLayout>
   );
 }
