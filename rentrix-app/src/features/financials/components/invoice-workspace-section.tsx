@@ -6,7 +6,6 @@ import { DocumentReadinessNotice } from '@/features/settings/components/document
 import { useInvoiceWorkspaceController } from '../invoices/useInvoiceWorkspaceController';
 import { InvoiceDetailSection } from './invoice-detail-section';
 import { InvoiceListSection } from './invoice-list-section';
-import { ReceiptsSection } from './receipts-section';
 import { BillingReadinessSection } from '../billing/billing-readiness-section';
 
 type GenerateInvoicesDialogProps = {
@@ -149,21 +148,6 @@ export function InvoiceWorkspaceSection() {
           onExportPdf={ctrl.canExportInvoiceDocument ? ctrl.onExportInvoicePdf : undefined}
         />
       </EntityPreviewDialog>
-
-      {(ctrl.receiptsQuery.isLoading || ctrl.receiptsQuery.isError || (ctrl.receiptsQuery.data ?? []).length > 0) ? (
-        <ReceiptsSection
-          receipts={ctrl.receiptsQuery.data ?? []}
-          selectedReceiptId={ctrl.selectedReceiptId}
-          receiptDetail={ctrl.receiptQuery.data}
-          isReceiptsLoading={ctrl.receiptsQuery.isLoading}
-          isReceiptsError={ctrl.receiptsQuery.isError}
-          receiptsError={ctrl.receiptsQuery.error}
-          isReceiptDetailLoading={ctrl.receiptQuery.isLoading}
-          isReceiptDetailError={ctrl.receiptQuery.isError}
-          receiptDetailError={ctrl.receiptQuery.error}
-          onSelectReceipt={ctrl.setSelectedReceiptId}
-        />
-      ) : null}
     </>
   );
 }
