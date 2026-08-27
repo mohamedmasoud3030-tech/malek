@@ -17,16 +17,16 @@ interface SectionHeaderProps {
  */
 export function SectionHeader({ title, description, eyebrow, action, className }: SectionHeaderProps) {
   return (
-    <div data-section-header className={cn('mb-3 flex items-start justify-between gap-3', className)}>
+    <div data-section-header className={cn('mb-3 flex items-start justify-between gap-3 lg:mb-4 lg:gap-4', className)}>
       <div className="min-w-0">
         {eyebrow ? (
           <p className="mb-0.5 text-xs font-extrabold text-primary" data-section-eyebrow>
             {eyebrow}
           </p>
         ) : null}
-        <h2 className="text-[0.9375rem] font-semibold leading-6">{title}</h2>
+        <h2 className="text-[0.9375rem] font-semibold leading-6 lg:text-base lg:leading-7">{title}</h2>
         {description ? (
-          <p className="mt-0.5 text-[0.8125rem] leading-5 text-muted-foreground">{description}</p>
+          <p className="mt-0.5 text-[0.8125rem] leading-5 text-muted-foreground lg:text-sm">{description}</p>
         ) : null}
       </div>
       {action ? <div className="shrink-0">{action}</div> : null}
