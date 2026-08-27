@@ -11,7 +11,6 @@ import {
   PieChart,
   ReceiptText,
   Settings,
-  Settings2,
   UserRoundCog,
   WalletCards,
   Wrench,
@@ -105,10 +104,5 @@ export const STATIC_COMMANDS: StaticCommand[] = [
   {
     id: 'settings', title: 'الإعدادات', category: 'system', canonicalRoute: '/settings', permission: null,
     keywords: ['الإعدادات', 'إعدادات النظام', 'settings', 'configuration'], icon: Settings,
-  },
-  {
-    id: 'automation', title: 'الإعدادات — الأتمتة', category: 'system', canonicalRoute: '/settings',
-    search: { section: 'automation' }, permission: 'automation.view',
-    keywords: ['الأتمتة', 'التنبيهات', 'automation', 'rules'], icon: Settings2,
   },
 ];
