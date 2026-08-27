@@ -23,20 +23,21 @@ type ReportDirectoryProps = Readonly<{
   onOpen: (section: ReportSectionId, view: ReportViewId) => void;
 }>;
 
-type DirectoryTab = 'all' | 'finance' | 'leases' | 'maintenance' | 'owners' | 'analytics';
+type DirectoryTab = 'all' | 'finance' | 'leases' | 'maintenance' | 'owners' | 'properties' | 'analytics';
 
 const directoryTabs: readonly { id: DirectoryTab; label: string; groups?: readonly ReportGroupId[] }[] = [
   { id: 'all', label: 'الكل' },
   { id: 'finance', label: 'المالية والتحصيل', groups: ['finance', 'control'] },
-  { id: 'leases', label: 'التأجير والإشغال', groups: ['leases', 'properties'] },
+  { id: 'leases', label: 'التأجير والإشغال', groups: ['leases'] },
   { id: 'maintenance', label: 'الصيانة', groups: ['maintenance'] },
   { id: 'owners', label: 'الملاك والكشوف', groups: ['owners'] },
+  { id: 'properties', label: 'العقارات والوحدات', groups: ['properties'] },
   { id: 'analytics', label: 'التحليلات', groups: ['analytics'] },
 ];
 
 const pinnedReports = [
   { label: 'تقرير المتأخرات', section: 'analytics' as const, view: 'overdue' as const },
-  { label: 'كشف التحصيل', section: 'analytics' as const, view: 'collections' as const },
+  { label: 'مسير التحصيل', section: 'analytics' as const, view: 'collections' as const },
   { label: 'انتهاء العقود', section: 'analytics' as const, view: 'occupancy' as const },
   { label: 'كشف حساب المالك', section: 'statements' as const, view: '' as const },
 ] as const;
@@ -57,7 +58,7 @@ export function ReportDirectory({ activeSection, activeView, scope, onOpen }: Re
       <div className="rounded-2xl border border-border/70 bg-card p-3 shadow-card sm:p-4" data-report-global-search>
         <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <div className="relative min-w-0">
-            <label htmlFor="report-directory-search" className="sr-only">ابحث بالتقرير</label>
+            <label htmlFor="report-directory-search" className="sr-only">بحث في مركز التقارير</label>
             <Search className="pointer-events-none absolute inset-y-0 start-3 my-auto size-4 text-muted-foreground" aria-hidden="true" />
             <Input
               id="report-directory-search"
@@ -65,7 +66,7 @@ export function ReportDirectory({ activeSection, activeView, scope, onOpen }: Re
               inputMode="search"
               autoComplete="off"
               dir="rtl"
-              placeholder="بحث بالتقرير: تحصيل، عقار، صيانة، مالك…"
+              placeholder="بحث في مركز التقارير: تحصيل، عقار، صيانة، مالك…"
               className="min-h-11 bg-background ps-9 pe-10"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
@@ -91,8 +92,8 @@ export function ReportDirectory({ activeSection, activeView, scope, onOpen }: Re
         <div className="mb-3 flex items-center gap-2">
           <Star className="size-4 text-primary" aria-hidden="true" />
           <div>
-            <h2 id="pinned-reports-title" className="text-sm font-black sm:text-base">التقارير الأساسية</h2>
-            <p className="text-xs font-semibold text-muted-foreground">وصول سريع لأكثر التقارير استخدامًا بدون أرقام تجريبية أو بيانات غير محملة.</p>
+            <h2 id="pinned-reports-title" className="text-sm font-black sm:text-base">المفضلة والتقارير المثبتة</h2>
+            <p className="text-xs font-semibold text-muted-foreground">وصول سريع لأهم التقارير اليومية؛ الأرقام والتصدير تظهر من التقرير الفعلي بعد فتحه.</p>
           </div>
         </div>
         <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
@@ -159,7 +160,7 @@ export function ReportDirectory({ activeSection, activeView, scope, onOpen }: Re
             const isActive = isOwnerStatement || isRegularActive;
 
             return (
-              <section key={group.id} className="space-y-2" data-report-group={group.id}>
+              <section key={group.id} className="space-y-2" data-report-group={group.id} data-active={isActive ? 'true' : undefined}>
                 <div className="flex items-center gap-2">
                   <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
                     <Icon className="size-4" aria-hidden="true" />
@@ -178,7 +179,7 @@ export function ReportDirectory({ activeSection, activeView, scope, onOpen }: Re
                         key={`${shortcut.section}:${shortcut.view}:${shortcut.label}`}
                         className={cn(
                           'rounded-2xl border bg-card p-3 shadow-card transition-[border-color,transform,box-shadow] sm:p-4',
-                          shortcutActive || isActive
+                          shortcutActive
                             ? 'border-primary/30 ring-1 ring-primary/10'
                             : 'border-border/65 hover:-translate-y-px hover:border-primary/25 hover:shadow-sm',
                         )}
