@@ -25,16 +25,17 @@ describe('reports center IA contract', () => {
     expect(directory).toContain('التأجير والإشغال');
     expect(directory).toContain('الصيانة');
     expect(directory).toContain('الملاك');
+    expect(directory).toContain('العقارات والوحدات');
     expect(directory).toContain('التحليلات');
   });
 
-  it('exposes the real operational report families without inventing frontend balances', () => {
-    expect(catalogue).toContain('مسير التحصيل');
-    expect(catalogue).toContain('المتأخرات وأعمار الديون');
+  it('exposes real operational report families while keeping figures source-authoritative', () => {
+    expect(directory).toContain('مسير التحصيل');
+    expect(catalogue).toContain('المتأخرات والأرصدة');
     expect(catalogue).toContain('انتهاء العقود والتجديد');
     expect(catalogue).toContain('كشف حساب المالك');
-    expect(catalogue).toContain('تحليل الصيانة');
-    expect(catalogue).toContain('أداء العقارات');
-    expect(directory).toContain('المصادر المعتمدة');
+    expect(catalogue).toContain('تقرير الصيانة');
+    expect(catalogue).toContain('تقرير أداء العقار');
+    expect(reportsPage).toContain('المصدر المعتمد');
   });
 });
