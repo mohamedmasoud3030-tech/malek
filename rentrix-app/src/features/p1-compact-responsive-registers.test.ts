@@ -18,14 +18,15 @@ function sourceFiles(directory: string): string[] {
 }
 
 describe('P1 — shared responsive register contract', () => {
-  it('uses one EntityTable/DataTable foundation and does not render a parallel mobile representation in registers', () => {
+  it('uses one EntityTable/DataTable foundation with the shared Cards ⇄ Table choice', () => {
     const productionSources = registerRoots.flatMap(sourceFiles).map((path) => readFileSync(path, 'utf8'));
     expect(productionSources.some((source) => source.includes('renderMobileCard'))).toBe(false);
-    expect(productionSources.some((source) => source.includes('enableViewModeToggle'))).toBe(false);
     const sharedRegister = readFileSync(new URL('../components/ui/entity-table.tsx', import.meta.url), 'utf8');
     expect(sharedRegister).toContain('data-compact-responsive-table');
     expect(sharedRegister).toContain('data-entity-table-scroll');
     expect(sharedRegister).toContain('data-entity-table-grid');
+    expect(sharedRegister).toContain("useState<'cards' | 'table' | null>");
+    expect(sharedRegister).toContain('طريقة عرض ${ariaLabel}');
   });
 
   it('regression guard — every active register still routes through the shared responsive foundation', () => {
