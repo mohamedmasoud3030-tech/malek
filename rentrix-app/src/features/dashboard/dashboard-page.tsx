@@ -108,6 +108,7 @@ export function DashboardPage() {
           lastUpdatedAt={dataUpdatedAt || undefined}
           settings={settings}
           today={today}
+          onRefresh={retryDashboard}
         />
 
         {hasDashboardError ? (

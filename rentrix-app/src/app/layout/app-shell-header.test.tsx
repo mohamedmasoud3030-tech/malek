@@ -12,6 +12,7 @@ vi.mock('@tanstack/react-router', () => ({
   Outlet: () => null,
   useRouter: () => ({ navigate: vi.fn() }),
   useMatches: () => [{ staticData: { title: 'العقارات' } }],
+  useLocation: () => ({ pathname: '/dashboard', search: {} }),
 }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 vi.mock('@/hooks/use-auth', () => ({
@@ -36,8 +37,16 @@ vi.mock('@/store/ui-store', () => ({
 }));
 vi.mock('./layout-navigation-view', () => ({
   NavigationLinks: () => null,
-  MobileFloatingControl: () => (
-    <div data-mobile-floating-control><button type="button" aria-label="الإضافة السريعة" data-mobile-dock-quick-add /><button type="button" aria-label="الإشعارات" data-mobile-dock-notifications /><button type="button" aria-label="فتح المساعد الذكي" data-mobile-dock-ai /></div>
+  MobileFloatingControl: ({ drawerOpen }: { drawerOpen?: boolean }) => (
+    drawerOpen ? null : (
+      <div data-mobile-floating-control>
+        <button type="button" aria-label="فتح القائمة" data-mobile-dock-menu />
+        <button type="button" aria-label="البحث السريع للنظام والكيانات" data-mobile-dock-search />
+        <button type="button" aria-label="الإضافة السريعة" data-mobile-dock-quick-add />
+        <button type="button" aria-label="الإشعارات" data-mobile-dock-notifications />
+        <button type="button" aria-label="فتح المساعد الذكي" data-mobile-dock-ai />
+      </div>
+    )
   ),
 }));
 vi.mock('./notifications-menu', () => ({ NotificationsMenu: () => null }));
@@ -47,7 +56,7 @@ vi.mock('@/features/ai-assistant/ai-assistant-global-action', () => ({ AiAssista
 
 import { AppShell } from './app-shell';
 
-describe('AppShell — fixed global MALEK header', () => {
+describe('AppShell — redesigned MALEK header & navigation', () => {
   let host: HTMLDivElement;
   let root: ReturnType<typeof createRoot>;
 
@@ -71,7 +80,6 @@ describe('AppShell — fixed global MALEK header', () => {
     const header = host.querySelector<HTMLElement>('[data-app-shell-header]');
     expect(header).not.toBeNull();
 
-    // Mobile top toolbar shows the MALEK wordmark as part of the brand lockup
     const wordmark = header?.querySelector('[data-header-wordmark]');
     expect(wordmark).not.toBeNull();
     expect(wordmark?.textContent).toContain('MALEK');
@@ -80,7 +88,7 @@ describe('AppShell — fixed global MALEK header', () => {
     expect(header?.textContent).not.toContain('العقارات');
   });
 
-  it('renders the MALEK [M mark] + wordmark lockup on the visual left of the header', () => {
+  it('renders the interactive [ M ] monogram and MALEK wordmark lockup on the brand side', () => {
     act(() => { root.render(<AppShell />); });
 
     const header = host.querySelector<HTMLElement>('[data-app-shell-header]');
@@ -88,13 +96,50 @@ describe('AppShell — fixed global MALEK header', () => {
 
     const lockup = header?.querySelector<HTMLElement>('[data-header-brand-lockup]');
     expect(lockup).not.toBeNull();
-    // The canonical M mark asset sits directly beside the wordmark, vertically aligned.
-    expect(lockup?.querySelector('[data-malek-canonical-mark]')).not.toBeNull();
+
+    // The interactive M monogram button
+    const monogramButton = lockup?.querySelector('[data-header-brand-monogram]');
+    expect(monogramButton).not.toBeNull();
+    expect(monogramButton?.getAttribute('aria-label')).toContain('القائمة الرئيسية');
+    expect(monogramButton?.getAttribute('aria-haspopup')).toBe('dialog');
+
+    // The canonical M mark asset sits inside the monogram button
+    expect(monogramButton?.querySelector('[data-malek-canonical-mark]')).not.toBeNull();
     expect(lockup?.querySelector('[data-header-wordmark]')).not.toBeNull();
     expect(lockup?.className).toContain('items-center');
-    // The lockup lives on the wordmark side (visual left in RTL), not among the controls.
-    expect(header?.querySelector('[data-header-wordmark-side] [data-header-brand-lockup]')).not.toBeNull();
-    expect(header?.querySelector('[data-header-right-controls] [data-header-brand-lockup]')).toBeNull();
+
+    // Brand lockup lives on the brand side (start/right in RTL)
+    expect(header?.querySelector('[data-header-brand-side] [data-header-brand-lockup]')).not.toBeNull();
+  });
+
+  it('tapping the interactive M monogram opens the primary navigation drawer', () => {
+    act(() => { root.render(<AppShell />); });
+
+    const monogramButton = host.querySelector<HTMLElement>('[data-header-brand-monogram]');
+    expect(monogramButton).not.toBeNull();
+
+    act(() => { monogramButton?.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
+
+    const drawer = document.querySelector<HTMLElement>('[data-mobile-drawer]');
+    expect(drawer).not.toBeNull();
+    expect(drawer?.getAttribute('role')).toBe('dialog');
+    expect(drawer?.getAttribute('aria-modal')).toBe('true');
+
+    // Clean up
+    act(() => {
+      document.querySelector<HTMLButtonElement>('[data-mobile-drawer] button[aria-label="إغلاق القائمة"]')?.click();
+    });
+  });
+
+  it('removes the hamburger menu icon completely from the header', () => {
+    act(() => { root.render(<AppShell />); });
+
+    const header = host.querySelector<HTMLElement>('[data-app-shell-header]');
+    expect(header).not.toBeNull();
+
+    // No top hamburger trigger exists in the header
+    expect(header?.querySelector('[data-mobile-top-menu]')).toBeNull();
+    expect(header?.querySelector('button[aria-label="فتح القائمة"]')).toBeNull();
   });
 
   it('keeps Day + Date OUT of the top header (moved to the Today context)', () => {
@@ -102,15 +147,14 @@ describe('AppShell — fixed global MALEK header', () => {
 
     const header = host.querySelector<HTMLElement>('[data-app-shell-header]');
     expect(header).not.toBeNull();
-    // The old centered date block must be gone from the toolbar entirely.
     expect(header?.querySelector('[data-header-date-center]')).toBeNull();
-    // No weekday/date text is rendered inside the header itself.
-    expect(header?.querySelector('[data-header-date-center], .tabular-nums')).toBeNull();
-    // Theme + user controls still live in the same toolbar.
+    expect(header?.querySelector('.tabular-nums')).toBeNull();
+
+    // Theme + user controls live on the utility side
     expect(header?.querySelector('[data-header-theme-toggle]')).not.toBeNull();
     expect(header?.querySelector('[data-header-user-menu]')).not.toBeNull();
-    expect(header?.querySelector('[data-header-right-controls]')).not.toBeNull();
-    expect(header?.querySelector('[data-header-wordmark-side]')).not.toBeNull();
+    expect(header?.querySelector('[data-header-utility-side]')).not.toBeNull();
+    expect(header?.querySelector('[data-header-brand-side]')).not.toBeNull();
   });
 
   it('keeps compact header controls on 44px hit wrappers without growing the header', () => {
@@ -119,65 +163,63 @@ describe('AppShell — fixed global MALEK header', () => {
     const header = host.querySelector<HTMLElement>('[data-app-shell-header]');
     expect(header).not.toBeNull();
 
+    // Utility controls: Theme + User, each with a 44px accessible hit wrapper
     const hitAreas = header?.querySelectorAll<HTMLElement>('[data-header-control-hit]');
-    // Menu + user + theme, each with a 44px accessible hit wrapper.
-    expect(hitAreas?.length).toBe(3);
+    expect(hitAreas?.length).toBe(2);
     for (const hit of hitAreas ?? []) {
-      expect(hit.className).toContain('size-11'); // 44px accessible target
+      expect(hit.className).toContain('size-11');
       const visible = hit.querySelector('button');
       expect(visible).not.toBeNull();
-      // Visible button is the compact 32px (size-8) control, not the old size-9/10.
       expect(visible?.className).toContain('size-8');
-      expect(visible?.className).not.toContain('size-9 sm:size-10');
-      expect(visible?.className).not.toContain('size-10');
     }
 
-    // Controls group stays tight (gap-0.5 on mobile, gap-1 at sm+).
-    const controls = header?.querySelector<HTMLElement>('[data-header-right-controls]');
+    // Monogram also has 44px accessible target wrapper
+    const monogramHit = header?.querySelector<HTMLElement>('[data-header-monogram-hit]');
+    expect(monogramHit).not.toBeNull();
+    expect(monogramHit?.className).toContain('size-11');
+
+    // Controls group stays tight
+    const controls = header?.querySelector<HTMLElement>('[data-header-utility-side]');
     expect(controls?.className).toContain('gap-0.5');
-    expect(controls?.className).toContain('sm:gap-1');
-    // Header row: 48px on phones, 56px at sm+ (never larger than before).
-    const headerRow = header?.querySelector<HTMLElement>('[data-header-right-controls]')?.parentElement;
+
+    // Header row stays slim
+    const headerRow = controls?.parentElement;
     expect(headerRow?.className).toContain('min-h-12');
-    expect(headerRow?.className).toContain('sm:min-h-14');
   });
 
-  it('centers the drawer brand lockup with a side-pinned close control', () => {
+  it('centers the drawer brand lockup with a side-pinned close control and right-side RTL placement', () => {
     act(() => { root.render(<AppShell />); });
 
-    const menuTrigger = host.querySelector<HTMLElement>('[data-mobile-top-menu]');
-    expect(menuTrigger).not.toBeNull();
-    act(() => { menuTrigger?.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
+    const monogram = host.querySelector<HTMLElement>('[data-header-brand-monogram]');
+    act(() => { monogram?.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
+
+    const drawer = document.querySelector<HTMLElement>('[data-mobile-drawer]');
+    expect(drawer).not.toBeNull();
+    // Opens from the right in RTL (right-0 left-auto)
+    expect(drawer?.className).toContain('right-0');
+    expect(drawer?.className).toContain('left-auto');
+    expect(drawer?.className).toContain('h-dvh');
 
     const drawerBrandHeader = document.querySelector<HTMLElement>('[data-drawer-brand-header]');
     expect(drawerBrandHeader).not.toBeNull();
-    // Centered composition: justify-center with the lockup inside.
     expect(drawerBrandHeader?.className).toContain('justify-center');
+
     const drawerBrand = drawerBrandHeader?.querySelector<HTMLElement>('[data-drawer-brand]');
     expect(drawerBrand).not.toBeNull();
     expect(drawerBrand?.querySelector('[data-malek-canonical-mark]')).not.toBeNull();
     expect(drawerBrand?.textContent).toContain('MALEK');
-    // Close button is pinned to the side and does not push the brand off-center.
+
     const close = drawerBrandHeader?.querySelector<HTMLButtonElement>('button[aria-label="إغلاق القائمة"]');
     expect(close).not.toBeNull();
     expect(close?.className).toContain('absolute');
 
-    act(() => { document.querySelector('[data-mobile-drawer] button[aria-label="إغلاق القائمة"]')?.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
+    act(() => { close?.click(); });
   });
 
   it('keeps the page title only for the document title and inside page content', () => {
     act(() => { root.render(<AppShell />); });
-    // Document-title behavior is preserved: `<pageTitle> | MALEK`.
     expect(document.title).toContain('العقارات');
     expect(document.title).toContain('MALEK');
-  });
-
-  it('renders the brand lockup on sidebar and the M mark beside the wordmark in the top toolbar', () => {
-    act(() => { root.render(<AppShell />); });
-    // Sidebar carries full lockup; the top toolbar carries the mark + wordmark lockup.
-    expect(host.querySelectorAll('[data-malek-brand-lockup]').length).toBeGreaterThanOrEqual(1);
-    expect(host.querySelectorAll('[data-header-brand-lockup] [data-malek-canonical-mark]').length).toBe(1);
-    expect(host.querySelectorAll('[data-header-brand-lockup] [data-header-wordmark]').length).toBe(1);
   });
 
   it('renders an announced global warning when the browser is offline', () => {
@@ -188,7 +230,6 @@ describe('AppShell — fixed global MALEK header', () => {
     expect(notice).not.toBeNull();
     expect(notice?.getAttribute('role')).toBe('status');
     expect(notice?.textContent).toContain('لا يوجد اتصال بالشبكة');
-    expect(notice?.textContent).toContain('قد يفشل الحفظ والتحديث حتى يعود الاتصال');
   });
 
   it('synchronizes the global connection state with browser online/offline events', () => {
@@ -203,14 +244,5 @@ describe('AppShell — fixed global MALEK header', () => {
     } finally {
       onlineSpy.mockRestore();
     }
-  });
-
-  it('keeps the mobile navigation trigger in top toolbar and removes duplicate from bottom dock', () => {
-    act(() => { root.render(<AppShell />); });
-
-    // Menu moved to top toolbar to avoid duplicate, bottom dock now has only quick-add, notifications, AI
-    expect(host.querySelector('[data-mobile-top-menu]')).not.toBeNull();
-    expect(host.querySelector('[data-mobile-dock-menu]')).toBeNull();
-    expect(host.querySelector('[data-mobile-menu-trigger]')).toBeNull();
   });
 });

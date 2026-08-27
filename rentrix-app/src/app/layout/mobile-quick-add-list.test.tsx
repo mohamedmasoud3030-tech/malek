@@ -83,12 +83,13 @@ describe('Mobile dock Quick Add — clear vertical action list', () => {
     }
   });
 
-  it('keeps the dock unchanged: quick add, notifications, AI only', () => {
+  it('exposes the full mobile dock tools with hamburger menu', () => {
     act(() => root.render(<MobileFloatingControl onMenu={() => undefined} />));
+    expect(host.querySelector('[data-mobile-dock-menu]')).not.toBeNull();
+    expect(host.querySelector('[data-mobile-dock-search]')).not.toBeNull();
     expect(host.querySelector('[data-mobile-dock-quick-add]')).not.toBeNull();
     expect(host.querySelector('[data-mobile-dock-notifications]')).not.toBeNull();
     expect(host.querySelector('[data-mobile-dock-ai]')).not.toBeNull();
-    expect(host.querySelector('[data-mobile-dock-menu]')).toBeNull();
   });
 
   it('hides quick actions the role cannot complete (permission rules)', () => {

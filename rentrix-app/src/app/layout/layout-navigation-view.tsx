@@ -1,7 +1,8 @@
 import { Link, useLocation } from '@tanstack/react-router';
 import { useEffect, useId, useRef, useState, type Ref } from 'react';
-import { Bot, ChevronDown, FileText, HandCoins, Lock, Menu, Plus, ReceiptText, Wrench } from 'lucide-react';
+import { Bot, ChevronDown, FileText, HandCoins, Lock, Menu, Plus, ReceiptText, Search, Wrench, X } from 'lucide-react';
 import { OPEN_AI_ASSISTANT_EVENT } from '@/features/ai-assistant/ai-assistant-global-action';
+import { useCommandPaletteStore } from '@/features/command-palette/command-palette-store';
 import { canShowNavigationItem, canAccessRoute, type AuthorizationContext, type AppPermission } from '@/features/auth/permissions';
 import { PermissionRequestDialog } from '@/components/layout/permission-request-dialog';
 import { getNavRoot } from '@/app/navigation/route-nav-map';
@@ -80,40 +81,42 @@ export function NavigationLinks({
         className={cn(
           'group relative flex min-h-11 items-center gap-2.5 rounded-xl border border-transparent px-3 py-1.5 text-sidebar-foreground outline-none transition-[background-color,border-color,color,box-shadow] duration-150',
           'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-4 focus-visible:ring-sidebar-accent/35 motion-reduce:transition-none',
-          '[[data-mobile-nav-sheet]_&]:min-h-11 [[data-mobile-nav-sheet]_&]:rounded-lg [[data-mobile-nav-sheet]_&]:px-2 [[data-mobile-nav-sheet]_&]:py-1 [[data-mobile-nav-sheet]_&]:text-sidebar-foreground/90 [[data-mobile-nav-sheet]_&]:hover:bg-sidebar-accent [[data-mobile-nav-sheet]_&]:hover:text-sidebar-accent-foreground [[data-mobile-nav-sheet]_&]:focus-visible:ring-primary/25',
-          isChild && 'ms-3 min-h-11 border-s-2 border-s-sidebar-border/70 ps-3 [[data-mobile-nav-sheet]_&]:ms-2 [[data-mobile-nav-sheet]_&]:min-h-10 [[data-mobile-nav-sheet]_&]:border-s-sidebar-border/50',
+          '[[data-mobile-nav-drawer]_&]:min-h-11 [[data-mobile-nav-drawer]_&]:rounded-lg [[data-mobile-nav-drawer]_&]:px-2.5 [[data-mobile-nav-drawer]_&]:py-1 [[data-mobile-nav-drawer]_&]:text-sidebar-foreground/90 [[data-mobile-nav-drawer]_&]:hover:bg-sidebar-accent [[data-mobile-nav-drawer]_&]:hover:text-sidebar-accent-foreground [[data-mobile-nav-drawer]_&]:focus-visible:ring-primary/25',
+          '[[data-mobile-nav-sheet]_&]:min-h-11 [[data-mobile-nav-sheet]_&]:rounded-lg [[data-mobile-nav-sheet]_&]:px-2.5 [[data-mobile-nav-sheet]_&]:py-1 [[data-mobile-nav-sheet]_&]:text-sidebar-foreground/90 [[data-mobile-nav-sheet]_&]:hover:bg-sidebar-accent [[data-mobile-nav-sheet]_&]:hover:text-sidebar-accent-foreground [[data-mobile-nav-sheet]_&]:focus-visible:ring-primary/25',
+          isChild && 'ms-3 min-h-11 border-s-2 border-s-sidebar-border/70 ps-3 [[data-mobile-nav-drawer]_&]:ms-2 [[data-mobile-nav-drawer]_&]:min-h-10 [[data-mobile-nav-drawer]_&]:border-s-sidebar-border/50 [[data-mobile-nav-sheet]_&]:ms-2 [[data-mobile-nav-sheet]_&]:min-h-10 [[data-mobile-nav-sheet]_&]:border-s-sidebar-border/50',
           isLocked && 'cursor-not-allowed opacity-70',
-          isActive && 'border-sidebar-accent/15 bg-sidebar-accent text-sidebar-accent-foreground shadow-[inset_3px_0_0_0_hsl(var(--sidebar-accent-foreground))] rtl:shadow-[inset_-3px_0_0_0_hsl(var(--sidebar-accent-foreground))] [[data-mobile-nav-sheet]_&]:border-sidebar-border [[data-mobile-nav-sheet]_&]:bg-sidebar-accent [[data-mobile-nav-sheet]_&]:text-sidebar-accent-foreground [[data-mobile-nav-sheet]_&]:shadow-none',
+          isActive && 'border-sidebar-accent/15 bg-sidebar-accent text-sidebar-accent-foreground shadow-[inset_3px_0_0_0_hsl(var(--sidebar-accent-foreground))] rtl:shadow-[inset_-3px_0_0_0_hsl(var(--sidebar-accent-foreground))] [[data-mobile-nav-drawer]_&]:border-sidebar-border [[data-mobile-nav-drawer]_&]:bg-sidebar-accent [[data-mobile-nav-drawer]_&]:text-sidebar-accent-foreground [[data-mobile-nav-sheet]_&]:border-sidebar-border [[data-mobile-nav-sheet]_&]:bg-sidebar-accent [[data-mobile-nav-sheet]_&]:text-sidebar-accent-foreground [[data-mobile-nav-sheet]_&]:shadow-none',
         )}
       >
         <span
           className={cn(
             'grid size-8 shrink-0 place-items-center rounded-lg transition-colors',
+            '[[data-mobile-nav-drawer]_&]:size-7 [[data-mobile-nav-drawer]_&]:bg-sidebar-foreground/5 [[data-mobile-nav-drawer]_&]:text-sidebar-foreground/75',
             '[[data-mobile-nav-sheet]_&]:size-7 [[data-mobile-nav-sheet]_&]:bg-sidebar-foreground/5 [[data-mobile-nav-sheet]_&]:text-sidebar-foreground/75',
-            isActive && '[[data-mobile-nav-sheet]_&]:bg-primary/15 [[data-mobile-nav-sheet]_&]:text-primary',
+            isActive && '[[data-mobile-nav-drawer]_&]:bg-primary/15 [[data-mobile-nav-drawer]_&]:text-primary [[data-mobile-nav-sheet]_&]:bg-primary/15 [[data-mobile-nav-sheet]_&]:text-primary',
           )}
         >
-          <Icon className={cn(isChild ? 'size-4' : 'size-[1.05rem]', 'shrink-0 [[data-mobile-nav-sheet]_&]:size-4')} aria-hidden="true" />
+          <Icon className={cn(isChild ? 'size-4' : 'size-[1.05rem]', 'shrink-0 [[data-mobile-nav-drawer]_&]:size-4 [[data-mobile-nav-sheet]_&]:size-4')} aria-hidden="true" />
         </span>
         {expanded ? <span className="min-w-0 flex-1 truncate text-[13px] font-semibold">{label}</span> : null}
         {isLocked ? <Lock className="ms-auto size-3.5 text-warning" aria-hidden="true" /> : null}
-        {isActive ? <span className="size-1.5 shrink-0 rounded-full bg-sidebar-accent-foreground [[data-mobile-nav-sheet]_&]:bg-primary" aria-hidden="true" /> : null}
+        {isActive ? <span className="size-1.5 shrink-0 rounded-full bg-sidebar-accent-foreground [[data-mobile-nav-drawer]_&]:bg-primary [[data-mobile-nav-sheet]_&]:bg-primary" aria-hidden="true" /> : null}
       </Link>
     );
   };
 
   return (
-    <div className="space-y-3 [[data-mobile-nav-sheet]_&]:space-y-1">
+    <div className="space-y-3 [[data-mobile-nav-drawer]_&]:space-y-1 [[data-mobile-nav-sheet]_&]:space-y-1">
       {navGroups.map(([sectionTitle, items, adminOnly]) => {
         if (adminOnly && !items.some(([, , , , permission]) => canShowNavigationItem(authorization, permission))) return null;
         if (items.length === 0) return null;
         return (
           <section
             key={sectionTitle}
-            className="space-y-0.5 [[data-mobile-nav-sheet]_&]:space-y-0.5 [[data-mobile-nav-sheet]_&]:rounded-none [[data-mobile-nav-sheet]_&]:border-0 [[data-mobile-nav-sheet]_&]:bg-transparent [[data-mobile-nav-sheet]_&]:p-0"
+            className="space-y-0.5 [[data-mobile-nav-drawer]_&]:space-y-0.5 [[data-mobile-nav-drawer]_&]:rounded-none [[data-mobile-nav-drawer]_&]:border-0 [[data-mobile-nav-drawer]_&]:bg-transparent [[data-mobile-nav-drawer]_&]:p-0 [[data-mobile-nav-sheet]_&]:space-y-0.5 [[data-mobile-nav-sheet]_&]:rounded-none [[data-mobile-nav-sheet]_&]:border-0 [[data-mobile-nav-sheet]_&]:bg-transparent [[data-mobile-nav-sheet]_&]:p-0"
           >
             {expanded
-              ? <div className="px-3 pb-1 pt-1.5"><p className="text-xs font-bold text-sidebar-foreground/50 [[data-mobile-nav-sheet]_&]:text-sidebar-foreground/50">{sectionTitle}</p></div>
+              ? <div className="px-3 pb-1 pt-1.5"><p className="text-xs font-bold text-sidebar-foreground/50 [[data-mobile-nav-drawer]_&]:text-sidebar-foreground/50 [[data-mobile-nav-sheet]_&]:text-sidebar-foreground/50">{sectionTitle}</p></div>
               : <div aria-hidden="true" className="mx-3 mb-1 h-px bg-sidebar-foreground/10" />}
             {items.map((item) => {
               const [to] = item;
@@ -127,7 +130,7 @@ export function NavigationLinks({
                     {expanded && children.length > 0 ? (
                       <button
                         type="button"
-                        className="me-1 grid size-11 shrink-0 place-items-center rounded-xl text-sidebar-foreground/65 outline-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-4 focus-visible:ring-sidebar-accent/35 [[data-mobile-nav-sheet]_&]:size-10 [[data-mobile-nav-sheet]_&]:rounded-lg [[data-mobile-nav-sheet]_&]:text-sidebar-foreground/55 [[data-mobile-nav-sheet]_&]:hover:bg-sidebar-accent [[data-mobile-nav-sheet]_&]:hover:text-sidebar-accent-foreground [[data-mobile-nav-sheet]_&]:focus-visible:ring-primary/25"
+                        className="me-1 grid size-11 shrink-0 place-items-center rounded-xl text-sidebar-foreground/65 outline-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-4 focus-visible:ring-sidebar-accent/35 [[data-mobile-nav-drawer]_&]:size-10 [[data-mobile-nav-drawer]_&]:rounded-lg [[data-mobile-nav-drawer]_&]:text-sidebar-foreground/55 [[data-mobile-nav-drawer]_&]:hover:bg-sidebar-accent [[data-mobile-nav-drawer]_&]:hover:text-sidebar-accent-foreground [[data-mobile-nav-drawer]_&]:focus-visible:ring-primary/25 [[data-mobile-nav-sheet]_&]:size-10 [[data-mobile-nav-sheet]_&]:rounded-lg [[data-mobile-nav-sheet]_&]:text-sidebar-foreground/55 [[data-mobile-nav-sheet]_&]:hover:bg-sidebar-accent [[data-mobile-nav-sheet]_&]:hover:text-sidebar-accent-foreground [[data-mobile-nav-sheet]_&]:focus-visible:ring-primary/25"
                         aria-label={`${isOpen ? 'طي' : 'توسيع'} ${navLabel(item[1], sharedLabel)}`}
                         aria-expanded={isOpen}
                         aria-controls={childrenId}
@@ -181,25 +184,39 @@ const mobileQuickActions: readonly MobileQuickAction[] = [
 ];
 
 /**
- * Compact MALEK mobile dock inspired by data-console density: navigation is
- * the primary wide action, while quick-create, AI and notifications stay small.
+ * Balanced MALEK mobile tool bar / dock.
  *
- * Quick Add opens a CLEAR VERTICAL STACK (one action per row) instead of an
- * ambiguous 2×2 icon grid: each row pairs an icon with its full label on a
- * comfortable 44px tap target, filtered by the same permission rules as the
- * dashboard quick actions.
+ * Tools included:
+ *   - Search (quick entity & navigation search)
+ *   - AI (intelligent assistant)
+ *   - Quick Add (+)
+ *   - Notifications (alerts & updates)
+ *   - Menu / Hamburger (primary navigation entry point)
+ *
+ * Sizing & Targets:
+ *   Every control uses a comfortable 44px hit-target (size-11 min-h-11 min-w-11)
+ *   with consistent 18px icons, safe-area clearance, and intentional alignment.
+ *
+ * When the navigation drawer is open, this floating bar is completely hidden.
  */
-export function MobileFloatingControl({ onMenu, menuRef }: Readonly<{ onMenu: () => void; menuRef?: Ref<HTMLButtonElement> }>) {
+export function MobileFloatingControl({
+  onMenu,
+  menuRef,
+  drawerOpen = false,
+}: Readonly<{
+  onMenu: () => void;
+  menuRef?: Ref<HTMLButtonElement>;
+  drawerOpen?: boolean;
+}>) {
   const { authorization } = useAuth();
-  const appLanguage = getAppLanguageState();
-  const sharedLabel = (key: string) => translateSharedLabel(key, appLanguage.language);
   const [quickOpen, setQuickOpen] = useState(false);
   const quickRootRef = useRef<HTMLDivElement>(null);
   const visibleQuickActions = mobileQuickActions.filter(
     (item) => !item.permission || canAccessRoute(authorization, item.permission),
   );
+
   const utilityActionClass =
-    'grid size-10 min-h-11 min-w-11 shrink-0 place-items-center rounded-xl border border-transparent text-muted-foreground outline-none transition-[background-color,color,border-color,box-shadow,transform] duration-150 hover:bg-muted hover:text-foreground active:scale-[0.97] focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none motion-reduce:transform-none';
+    'grid size-11 min-h-11 min-w-11 shrink-0 place-items-center rounded-xl border border-transparent text-muted-foreground outline-none transition-[background-color,color,border-color,box-shadow,transform] duration-150 hover:bg-muted hover:text-foreground active:scale-[0.97] focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none motion-reduce:transform-none';
 
   useEffect(() => {
     if (!quickOpen) return;
@@ -223,6 +240,16 @@ export function MobileFloatingControl({ onMenu, menuRef }: Readonly<{ onMenu: ()
     window.dispatchEvent(new Event(OPEN_AI_ASSISTANT_EVENT));
   };
 
+  const openSearch = () => {
+    setQuickOpen(false);
+    useCommandPaletteStore.getState().open();
+  };
+
+  // Completely hidden when the main navigation drawer is open
+  if (drawerOpen) {
+    return null;
+  }
+
   return (
     <div
       className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] md:hidden"
@@ -239,11 +266,21 @@ export function MobileFloatingControl({ onMenu, menuRef }: Readonly<{ onMenu: ()
             role="menu"
             aria-label="الإضافة السريعة"
             data-mobile-quick-add-menu
-            className="absolute bottom-[calc(100%+0.5rem)] left-1/2 w-[min(16rem,calc(100vw-1.5rem))] -translate-x-1/2 overflow-hidden rounded-2xl border border-border/70 bg-card shadow-elevated"
+            className="absolute bottom-[calc(100%+0.5rem)] left-1/2 w-[min(18.5rem,calc(100vw-1.5rem))] -translate-x-1/2 overflow-hidden rounded-2xl border border-border/70 bg-card shadow-elevated"
           >
-            <p className="px-3 pb-1 pt-2.5 text-[11px] font-bold tracking-wide text-muted-foreground" data-mobile-quick-add-title>
-              إضافة سريعة
-            </p>
+            <div className="flex items-center justify-between border-b border-border/60 px-3 py-2">
+              <p className="text-[11px] font-bold tracking-wide text-muted-foreground" data-mobile-quick-add-title>
+                إضافة سريعة
+              </p>
+              <button
+                type="button"
+                onClick={() => setQuickOpen(false)}
+                className="grid size-7 place-items-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+                aria-label="إغلاق الإضافة السريعة"
+              >
+                <X className="size-3.5" />
+              </button>
+            </div>
             <div className="flex flex-col gap-0.5 p-1.5" data-mobile-quick-add-list>
               {visibleQuickActions.map((item) => {
                 const Icon = item.icon;
@@ -255,12 +292,12 @@ export function MobileFloatingControl({ onMenu, menuRef }: Readonly<{ onMenu: ()
                     role="menuitem"
                     data-mobile-quick-add-item
                     onClick={() => setQuickOpen(false)}
-                    className="flex min-h-11 items-center gap-2.5 rounded-xl px-2.5 text-sm font-bold text-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:bg-muted focus-visible:ring-2 focus-visible:ring-primary/25"
+                    className="flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-bold text-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:bg-muted focus-visible:ring-2 focus-visible:ring-primary/25"
                   >
                     <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary" aria-hidden="true">
                       <Icon className="size-4" />
                     </span>
-                    <span className="min-w-0 truncate">{item.label}</span>
+                    <span className="min-w-0 whitespace-nowrap font-bold text-foreground">{item.label}</span>
                   </Link>
                 );
               })}
@@ -268,6 +305,32 @@ export function MobileFloatingControl({ onMenu, menuRef }: Readonly<{ onMenu: ()
           </div>
         ) : null}
 
+        {/* 1. Menu / Hamburger — opens primary navigation drawer */}
+        <button
+          ref={menuRef}
+          type="button"
+          onClick={onMenu}
+          aria-label="فتح القائمة"
+          title="القائمة الرئيسية"
+          data-mobile-dock-menu
+          className={utilityActionClass}
+        >
+          <Menu className="size-[18px]" aria-hidden="true" />
+        </button>
+
+        {/* 2. Search — opens global command palette */}
+        <button
+          type="button"
+          onClick={openSearch}
+          aria-label="البحث السريع للنظام والكيانات"
+          title="البحث السريع"
+          data-mobile-dock-search
+          className={utilityActionClass}
+        >
+          <Search className="size-[18px]" aria-hidden="true" />
+        </button>
+
+        {/* 3. Quick Add (+) — opens vertical action menu */}
         <button
           type="button"
           onClick={() => setQuickOpen((value) => !value)}
@@ -281,13 +344,15 @@ export function MobileFloatingControl({ onMenu, menuRef }: Readonly<{ onMenu: ()
           <Plus className="size-[18px]" aria-hidden="true" />
         </button>
 
+        {/* 4. Notifications — opens notifications panel */}
         <div
-          className="relative [&>div>button]:!size-10 [&>div>button]:!min-h-11 [&>div>button]:!min-w-11 [&>div>button]:!rounded-xl [&>div>button]:!border-transparent [&>div>button]:!text-muted-foreground [&>div>button]:!shadow-none [&>div>button]:hover:!bg-muted [&>div>button]:hover:!text-foreground [&>div>button[aria-expanded='true']]:!bg-foreground [&>div>button[aria-expanded='true']]:!text-background [&>div>[role='dialog']]:!bottom-[3.5rem] [&>div>[role='dialog']]:!top-auto"
+          className="relative [&>div>button]:!size-11 [&>div>button]:!min-h-11 [&>div>button]:!min-w-11 [&>div>button]:!rounded-xl [&>div>button]:!border-transparent [&>div>button]:!text-muted-foreground [&>div>button]:!shadow-none [&>div>button]:hover:!bg-muted [&>div>button]:hover:!text-foreground [&>div>button[aria-expanded='true']]:!bg-foreground [&>div>button[aria-expanded='true']]:!text-background"
           data-mobile-dock-notifications
         >
-          <NotificationsMenu authorization={authorization} sharedLabel={sharedLabel} />
+          <NotificationsMenu authorization={authorization} />
         </div>
 
+        {/* 5. AI Assistant */}
         <button
           type="button"
           onClick={openAiAssistant}
@@ -302,4 +367,3 @@ export function MobileFloatingControl({ onMenu, menuRef }: Readonly<{ onMenu: ()
     </div>
   );
 }
-
