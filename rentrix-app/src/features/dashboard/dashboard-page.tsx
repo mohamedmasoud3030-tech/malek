@@ -99,7 +99,7 @@ export function DashboardPage() {
   const snapshotUnavailable = hasDashboardError && !snapshot;
 
   return (
-    <PageLayout className="dashboard-page-shell pb-8" visualVariant="malek-pro">
+    <PageLayout size="wide" className="dashboard-page-shell pb-8" visualVariant="malek-pro">
       <DashboardVisualScope>
         <HeroBanner
           snapshot={snapshot}
