@@ -51,14 +51,3 @@ export function billingIssueMessage(reason: string | null, status: BillingStatus
 
   return 'يحتاج العقد إلى مراجعة قبل إصدار الفاتورة.';
 }
-
-export function billingActionErrorMessage(error: unknown): string {
-  const raw = error instanceof Error ? error.message.toUpperCase() : String(error ?? '').toUpperCase();
-  if (raw.includes('TAX_PROFILE_MISSING')) {
-    return 'تعذر إصدار بعض الفواتير لعدم اكتمال الملف الضريبي.';
-  }
-  if (raw.includes('PERMISSION DENIED') || raw.includes('TAX_CHECK_FAILED')) {
-    return 'تعذر التحقق من إعدادات الفوترة. راجع الصلاحيات أو أعد المحاولة.';
-  }
-  return 'تعذر توليد الفواتير. أعد المحاولة بعد التحقق من العقود التي تحتاج إجراءً.';
-}
