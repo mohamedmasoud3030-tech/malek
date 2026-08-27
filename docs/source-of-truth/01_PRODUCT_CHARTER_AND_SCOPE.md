@@ -1,19 +1,29 @@
 # MALEK Canonical Pack — Document 1: Product Charter and Scope
 
 > **Status:** CANONICAL  
-> **Baseline:** `main@da9a98a38e61e9547df1e328ad91084e79b78410` (sequential financial hardening and WP-07 closeout)
+> **Target Architecture Lock:** 2026-08-27  
+> **Repository reality baseline for this lock:** `main@9e5c32e83082cac8227640cf260c51af01e54dc3`  
+> **Governance note:** this target lock does not grant governed-stage credit or hosted/runtime acceptance.
 
 ## Product definition
 
-MALEK is an Arabic-first, multi-company property-operations system for real-estate offices. It manages the operational and financial lifecycle of properties, units, owners, tenants, contracts, collections, expenses, deposits, owner settlements, maintenance, banking and reporting.
+MALEK is an Arabic-first property-operations and financial-management system for property offices. It is designed first for a small or medium office managing owner property, tenants, contracts, collections, maintenance and owner obligations, while preserving architecture that can scale without exposing enterprise complexity in daily work.
 
-The release is optimized for an operating property office, not for a generic ERP, investment platform, CRM suite, construction system, or marketplace. Adjacent legacy modules may remain for compatibility, but they do not silently expand release scope.
+MALEK is not a generic ERP, broad CRM, marketplace, construction suite or hotel system. Its core value is that the office can answer three questions quickly and correctly:
+
+1. What needs action now?
+2. Whose money is this?
+3. What is the current state of each property/unit/contract without reconstructing it from several places?
+
+The product is **simple by default, powerful on demand**. Strong accounting, security and specialist capabilities remain underneath the product even when they are hidden from routine navigation.
 
 ## Customer, users and value
 
-The primary buyer/operator is a small or medium property office that needs one controlled record of occupancy, money held for others, office earnings, owner obligations and operational follow-up. The main product users are office administrators, managers, accountants, operations staff and read-only users. Owner and tenant portals are not release scope merely because party data exists.
+The primary buyer/operator is a property office. The routine staff experience exposes two simple personas: **Office Owner** and **Employee**. Underneath, MALEK keeps its effective-permission and six-role authorization engine for compatibility and specialist control.
 
-The product value is operational control with accounting traceability: the office should know what is due, what was collected, whose money it is, what may be paid or offset, and which evidence supports the result. Convenience dashboards are useful, but they do not replace the applicable operational subledger or posted GL.
+A separate **Tenant Portal** is target scope as a constrained read-only surface. It is not part of the office navigation and must never expose another tenant's or another company's data. A general owner portal is not required by this target lock.
+
+The product value is operational control with accounting traceability: what is due, what was collected, whose money it is, what the office earned, what the owner is owed, what expenses exist, what is vacant, and what needs follow-up.
 
 ## Canonical product rules
 
@@ -21,41 +31,78 @@ The product value is operational control with accounting traceability: the offic
 |---|---|
 | `PRD-001` | MALEK is Arabic-first, RTL-capable and company-scoped; every operating company must be isolated from every other company. |
 | `PRD-002` | The primary customer is a property office managing its own or third-party rental operations, owners, tenants, contracts and money flows. |
-| `PRD-003` | The supported accounting/operating models are owner-agency/property-management and a separate master-lease/principal model; office-owned assets may use the same operational shell only where explicitly implemented. |
+| `PRD-003` | OWNER_AGENCY/property-management is the primary product model. MASTER_LEASE remains a separate specialist/principal model and is not part of routine target UX until deliberately promoted. |
 | `PRD-004` | Oman is the current jurisdictional/currency baseline; OMR is represented to three decimal places. Jurisdiction-specific legal/tax claims require explicit external approval. |
-| `PRD-005` | Generic ERP, investment management, construction management, marketplace/e-commerce and unconstrained CRM expansion are outside the current release unless a later canonical decision adds them. |
-| `PRD-006` | Core release surfaces are Properties/Units, People/Owners/Tenants, Contracts, Financials, Maintenance/Services, Reports/Accounting, Documents, Settings and governed administration. |
-| `PRD-007` | Reports/Accounting is a distinct top-level workspace; financial operations may feed it but do not absorb it into the Financials hub. |
-| `PRD-008` | AI Assistant is a separate route/capability and is not part of the accounting authority or financial source of truth. |
+| `PRD-005` | Generic ERP, investment management, construction management, marketplace/e-commerce, hotel operations and unconstrained CRM expansion are outside the current target unless a later canonical decision adds them. |
+| `PRD-006` | The visible target IA has seven operational roots: Today, Portfolio, Leasing, Money, Services, Reports and Settings. Entity dossiers and specialist tools remain contextual/deep-link surfaces rather than competing top-level products. |
+| `PRD-007` | Reports is a distinct top-level workspace. It explains operational and financial results in business language while specialist accounting remains available without becoming the daily UX. |
+| `PRD-008` | AI Assistant is a global decision-support capability with a compact entry point and optional expanded workspace. It may read, explain, suggest, navigate and prepare drafts, but it is never accounting authority and cannot silently approve, post, pay, void or close sensitive actions. |
 | `PRD-009` | “Production ready” requires evidence through the applicable chain `UI → Service/RPC → Database → RLS/Permissions → Audit → Tests → QA/Runtime`; merged PRs or isolated component tests are insufficient. |
-| `PRD-010` | Release proceeds through a controlled one-office pilot and reconciled operating/accounting cycle before broader production rollout. |
+| `PRD-010` | Release proceeds through a controlled one-office pilot and reconciled operating/accounting cycle before broader production rollout; target reconstruction is executed in gated priority groups, not by a parallel clean-room rewrite. |
 
-## Product boundaries
+## Target product surfaces
 
-### In current product scope
+### Today
+A current-office command surface, not a decorative KPI deck. Priority order:
 
-- Company/authentication and active-company selection.
-- Property, unit and land operational records where routes/domains exist.
-- People, owners, tenants and service providers.
-- Owner agreements and tenant contracts.
-- Invoices, collections/payments, receipts, arrears, expenses and deposits.
-- Owner settlements and bank reconciliation.
-- Maintenance/service workflows and documents.
-- General ledger foundations, accounting periods, reporting and reconciliation work.
-- Permission requests/effective grants and audit/data-integrity surfaces.
+1. office performance;
+2. vacant units;
+3. money to collect;
+4. maintenance/problems;
+5. contracts nearing expiry;
+6. owner obligations;
+7. actions requiring follow-up.
 
-### Not automatically release-critical
+Notifications represent events/information; Today represents items requiring attention or decision. They must not become duplicate feeds.
 
-Legacy leads, communication, commissions, automation and lands remain real repository surfaces, but their existence does not make them independent product pillars or authorize new scope. They are retained where they support property operations or compatibility.
+### Portfolio
+Properties, units and owners are the main asset relationship surfaces. Property/unit dossiers hold operational context, documents, meters, maintenance and current relationship state. Heavy financial analysis belongs in Money/Reports rather than being duplicated in dossiers.
 
-The AI Assistant is read-only decision support. It cannot post, approve, reinterpret accounting policy, or become a report source. The product exposes it as a true separate, standalone `/ai-assistant` route (unblocking `GAP-023` in this Release Candidate).
+### Leasing
+Contracts and tenants are the routine relationship surfaces. The generic `people` identity foundation remains canonical in the data model but is not a routine navigation destination. Long-term and short-stay rental use the same controlled contract concept; short stay is not a hotel module.
 
-### Explicit non-goals for this closeout
+### Money
+Collections, receipts, arrears, expenses, management consideration, owner obligations/settlements and light bank verification. The daily UX is business-language first; GL/journals and specialist accounting stay behind advanced/specialist access.
+
+### Services
+Maintenance, service providers and utilities/meters. Documents are contextual-first: contract documents live with the contract, maintenance evidence with maintenance, utility proof with the bill/period, owner documents with the owner. A global document index/search may exist, but Documents Vault is not a daily product pillar.
+
+### Reports
+Office performance, collections/arrears, property/unit performance, occupancy/vacancy, owner statements/settlements, tenant statements, maintenance/expenses, services and contracts/renewals. Advanced accounting remains available as specialist reporting.
+
+### Settings
+Company, employees/permissions, document/print preferences, approved configuration and governed administration. Audit, data integrity, system/support, automation and other specialist capabilities must not compete with daily operations.
+
+## Target capability disposition
+
+- **KEEP / strengthen:** auth/company isolation, RLS/RPC boundaries, GL/accounting engine, owner funds, contract/collection/expense/settlement lifecycles, PWA, print/export foundations, architecture guards and tests.
+- **REBUILD UX:** Today, properties/units/owners/tenants/contracts, Money, maintenance/utilities, Reports, permissions UX and AI presentation.
+- **HIDE from routine UX:** deposits, Automation, Data Integrity, Audit/System, advanced GL/journal surfaces and MASTER_LEASE specialist UI unless explicitly needed.
+- **MERGE/contextualize:** generic People, Documents Vault, Communication, standalone receipts/legacy finance routes and other duplicate authorities.
+- **LATER:** broad Leads/CRM expansion, visible branch-management enterprise UX, marketplace features and hotel-style short-stay operations.
+
+## Tenant Portal target
+
+Tenant Portal v1 is read-only and isolated. It may expose only the authenticated tenant's:
+
+- identity/account summary;
+- unit and active contract;
+- due schedule;
+- paid/remaining/overdue position;
+- services/utilities relevant to that tenant;
+- receipts/evidence;
+- documents;
+- maintenance records relevant to that tenant.
+
+Electronic payment and core record editing are not part of v1.
+
+## Explicit non-goals
 
 - Rebuilding MALEK as a generic ERP.
-- Historical financial backfill before the read-only analysis and approval gates.
+- Creating a second frontend application merely to obtain visual cleanliness while duplicating the current tested core.
+- Historical financial backfill before approved analysis/correction gates.
 - Claiming full IFRS, legal, tax, production or security certification from repository code alone.
-- Adding a new feature merely to make documentation look complete.
+- Exposing internal accounting/security/technical vocabulary to routine users when a business-language presentation is sufficient.
 
 ## Jurisdiction and external review
 
@@ -63,24 +110,13 @@ The canonical accounting model is a product control model. Final Omani tax rates
 
 ## Evidence anchors
 
-- Route/product reality: `rentrix-app/src/app/navigation/route-contract.ts`.
-- Currency/accounting domain: `rentrix-app/src/features/accounting/accountingDomain.ts`.
-- Locked business decisions: `governance/final-decision-register.json`.
-- Governed stage credit: `governance/10-stage-master-plan.json`.
-- Actual implementation status and gaps: Document 7.
-
-## Scope states at the baseline
-
-| Capability | Repository state | Release interpretation |
-|---|---|---|
-| Core property/people/contracts/financial operations | Broad UI/service/schema presence | Partial lifecycles must be closed rule by rule; presence is not readiness |
-| Canonical GL core | Implemented and tested in repository/CI | Live deployment and control reconciliations remain required |
-| Owner-agency GL kernels | Implemented at database/test layer | User-event wiring and complete fee/deposit/refund lifecycle remain open |
-| MASTER_LEASE kernels | Implemented in migrations/TypeScript tests | Full product/reporting integration is not proven and must not be called IFRS-complete |
-| Reports/reconciliation kernels | Multiple report RPCs and S07 TypeScript kernels exist | Full control-account reconciliation and hosted acceptance remain open |
-| Live tenant isolation | Repository controls/tests exist | Exact deployed Auth Hook/RLS/schema still requires live proof |
-| Pilot/release | CI foundations exist | No completed real one-office accounting-period pilot is evidenced |
+- `rentrix-app/src/app/navigation/route-contract.ts`
+- `rentrix-app/src/features/auth/permissions.ts`
+- `rentrix-app/src/features/finance/shell/financeShellModel.ts`
+- `rentrix-app/src/features/active-register-inventory.ts`
+- `DATABASE_RULES.md`
+- Documents 2, 4, 5, 6 and 7 of this pack.
 
 ## Release interpretation
 
-This charter describes what the product is and what the release must prove. It does not grant stage completion. Repository surfaces that exist but are not yet governed/verified remain visible in Document 7 rather than being hidden or promoted to “done.”
+This charter locks the target product and the reconstruction direction. It does not mark every target surface implemented. Repository reality and remaining gaps continue to be reported separately in Document 7, and governed stage credit remains owned by the governance ledgers.
