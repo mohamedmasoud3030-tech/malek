@@ -85,7 +85,10 @@ export function ContractDetailWorkspace({
       />
 
       <SectionTabPanel id="overview" activeId={activeTab}>
-        <div className="space-y-4">
+        <div
+          className="grid min-w-0 gap-4 xl:grid-cols-[minmax(18rem,0.72fr)_minmax(0,1.28fr)] xl:items-start"
+          data-contract-overview-composition
+        >
           <ContractApprovalSection contract={contract} />
           <ContractOverviewSection contract={contract} settings={settings} />
         </div>
@@ -96,10 +99,12 @@ export function ContractDetailWorkspace({
       </SectionTabPanel>
 
       <SectionTabPanel id="documents" activeId={activeTab}>
-        <div className="space-y-4">
+        <div className="grid min-w-0 gap-4 xl:grid-cols-2" data-contract-documents-composition>
           <ContractEvidenceSection contractId={contract.id} />
           <ContractDocumentsShell contractId={contract.id} />
-          <ContractTimelineSection contract={contract} settings={settings} />
+          <div className="xl:col-span-2">
+            <ContractTimelineSection contract={contract} settings={settings} />
+          </div>
         </div>
       </SectionTabPanel>
     </section>
