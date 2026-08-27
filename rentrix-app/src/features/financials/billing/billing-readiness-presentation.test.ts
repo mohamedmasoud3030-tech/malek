@@ -1,7 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
-  billingActionErrorMessage,
   billingIssueMessage,
   billingStatusLabel,
   paymentCycleLabel,
@@ -25,18 +24,20 @@ describe('billing readiness presentation', () => {
     expect(paymentCycleLabel('annual')).toBe('سنوي');
   });
 
-  it('does not surface raw mutation errors', () => {
-    expect(billingActionErrorMessage(new Error('permission denied for function resolve_active_tax_profile'))).toBe('تعذر التحقق من إعدادات الفوترة. راجع الصلاحيات أو أعد المحاولة.');
-    expect(billingActionErrorMessage(new Error('internal network stack trace'))).not.toContain('stack');
-  });
-
   it('keeps implementation documentation out of the production readiness card', () => {
     expect(sectionSource).not.toContain('<code>');
     expect(sectionSource).not.toContain('ux_invoices_billing_obligation');
     expect(sectionSource).not.toContain('كيف يعمل الاسترداد المتكرر والتحقق الفاشل؟');
     expect(sectionSource).not.toContain('{o.blocked_reason}');
     expect(sectionSource).not.toContain('(استرداد)');
-    expect(sectionSource).toContain('توليد الفواتير الجاهزة');
     expect(sectionSource).toContain('data-billing-readiness');
+  });
+
+  it('keeps the obligation register collapsed until the operator asks for it', () => {
+    expect(sectionSource).toContain("const [showDetails, setShowDetails] = useState(false)");
+    expect(sectionSource).toContain("data-billing-details={showDetails ? 'open' : 'closed'}");
+    expect(sectionSource).toContain("{showDetails ? 'إخفاء التفاصيل' : 'عرض التفاصيل'}");
+    expect(sectionSource).toContain("(showDetails || status !== 'ready')");
+    expect(sectionSource).not.toContain('generateInvoicesFromActiveContracts');
   });
 });
