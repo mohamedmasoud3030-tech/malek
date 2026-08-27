@@ -2,11 +2,16 @@ import { EntityForm } from '@/components/ui/entity-form';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { getActionableSupabaseErrorMessage } from '@/lib/supabase-error';
 import { describeSelectedContract, formatContractOptionLabel } from './deposit-contract-options';
 import { depositClaimKindLabels, type DepositClaimCreatePayload, type DepositRefundPayload } from './deposit-service';
 import type { useDepositWorkspaceController } from './use-deposit-workspace-controller';
 
 type Controller = ReturnType<typeof useDepositWorkspaceController>;
+
+function depositErrorMessage(error: unknown, fallback: string) {
+  return error ? getActionableSupabaseErrorMessage(error, fallback) : undefined;
+}
 
 export function DepositCreateForm({ controller }: { controller: Controller }) {
   const {
@@ -27,7 +32,7 @@ export function DepositCreateForm({ controller }: { controller: Controller }) {
         if (!open && !createMut.isPending) setActionType(null);
       }}
       title="تسجيل وديعة تأمين جديدة"
-      description="يتم حفظ الوديعة عبر RPC ذري مع قيد محاسبي: مدين نقدية / دائن التزامات ودائع."
+      description="سيتم تسجيل الوديعة وربطها بالعقد، ويتولى النظام تحديث أثرها المالي تلقائيًا."
       visualVariant="operational"
     >
       <EntityForm.Root
@@ -38,7 +43,7 @@ export function DepositCreateForm({ controller }: { controller: Controller }) {
           createMut.mutate();
         }}
       >
-        <EntityForm.ErrorSummary message={createMut.isError ? (createMut.error as Error).message : undefined} />
+        <EntityForm.ErrorSummary message={createMut.isError ? depositErrorMessage(createMut.error, 'تعذر حفظ وديعة التأمين.') : undefined} />
         <EntityForm.Section title="بيانات الوديعة">
           <EntityForm.Field label="العقد النشط *">
             <Select
@@ -137,7 +142,7 @@ export function DepositClaimForm({ controller }: { controller: Controller }) {
       title="طلب تخصيص من وديعة التأمين (بإثبات)"
       description={
         selectedDeposit
-          ? `المتبقي: ${formatDepositMoney(selectedDeposit.remaining_amount)} — يُشتق الحساب الوجهة من العقد، ويحتاج الطلب اعتماد مدقق مختلف قبل التطبيق`
+          ? `المتبقي: ${formatDepositMoney(selectedDeposit.remaining_amount)} — يحتاج الطلب اعتماد مستخدم مخوّل آخر قبل التطبيق`
           : undefined
       }
       visualVariant="operational"
@@ -153,7 +158,7 @@ export function DepositClaimForm({ controller }: { controller: Controller }) {
           claimMut.mutate();
         }}
       >
-        <EntityForm.ErrorSummary message={claimMut.isError ? (claimMut.error as Error).message : undefined} />
+        <EntityForm.ErrorSummary message={claimMut.isError ? depositErrorMessage(claimMut.error, 'تعذر إنشاء طلب التخصيص.') : undefined} />
         <EntityForm.Section title="بيانات الطلب">
           <EntityForm.Field label={`المبلغ (${currencyCode}) *`}>
             <Input
@@ -212,7 +217,7 @@ export function DepositClaimForm({ controller }: { controller: Controller }) {
                   ?.filter((invoice) => invoice.amount + (invoice.paid_amount ?? 0) > 0)
                   .map((invoice) => (
                     <option key={invoice.id} value={invoice.id}>
-                      {invoice.no || invoice.id.slice(0, 8)} — {formatDepositMoney(invoice.amount)} (متبقي{' '}
+                      {invoice.no || 'فاتورة بدون رقم'} — {formatDepositMoney(invoice.amount)} (متبقي{' '}
                       {formatDepositMoney(invoice.amount - (invoice.paid_amount ?? 0))})
                     </option>
                   ))}
@@ -227,7 +232,7 @@ export function DepositClaimForm({ controller }: { controller: Controller }) {
               required
               value={evidenceInput}
               onChange={(event) => setEvidenceInput(event.target.value)}
-              placeholder="evidence://… أو رابط مستند الإثبات"
+              placeholder="ألصق رابط المستند أو اكتب مرجعًا واضحًا للإثبات"
               dir="ltr"
             />
           </EntityForm.Field>
@@ -300,7 +305,7 @@ export function DepositRefundForm({ controller }: { controller: Controller }) {
           refundMut.mutate();
         }}
       >
-        <EntityForm.ErrorSummary message={refundMut.isError ? (refundMut.error as Error).message : undefined} />
+        <EntityForm.ErrorSummary message={refundMut.isError ? depositErrorMessage(refundMut.error, 'تعذر رد وديعة التأمين.') : undefined} />
         <EntityForm.Section title="بيانات الاسترداد">
           <EntityForm.Field label={`المبلغ (${currencyCode}) *`}>
             <Input
@@ -366,8 +371,9 @@ export function DepositReasonForm({ controller }: { controller: Controller }) {
     actionType === 'rejectClaim'
       ? 'رفض طلب التخصيص'
       : actionType === 'reverseClaim'
-        ? 'إلغاء التخصيص (قيد تعويضي)'
-        : 'إلغاء الاسترداد (قيد تعويضي)';
+        ? 'إلغاء التخصيص'
+        : 'إلغاء الاسترداد';
+  const mutationError = rejectMut.error || reverseClaimMut.error || reverseRefundMut.error;
 
   return (
     <EntityForm.Overlay
@@ -380,7 +386,7 @@ export function DepositReasonForm({ controller }: { controller: Controller }) {
         }
       }}
       title={title}
-      description="الإلغاء لا يحذف السجل؛ يرحّل قيداً تعويضياً معاكساً ويستعيد الميزان والفاتورة تلقائياً."
+      description="الإلغاء يحافظ على سجل الحركة ويعيد أثرها المالي تلقائيًا دون حذف العملية الأصلية."
       visualVariant="operational"
     >
       <EntityForm.Root
@@ -393,13 +399,7 @@ export function DepositReasonForm({ controller }: { controller: Controller }) {
           else reverseRefundMut.mutate();
         }}
       >
-        <EntityForm.ErrorSummary
-          message={
-            (rejectMut.error as Error)?.message ||
-            (reverseClaimMut.error as Error)?.message ||
-            (reverseRefundMut.error as Error)?.message
-          }
-        />
+        <EntityForm.ErrorSummary message={depositErrorMessage(mutationError, 'تعذر تنفيذ الإجراء المطلوب.')} />
         <EntityForm.Section title="السبب">
           <EntityForm.Field
             label="السبب *"
