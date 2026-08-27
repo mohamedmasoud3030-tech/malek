@@ -36,7 +36,7 @@ export const governanceHubSections = [
     description: 'قواعد الأتمتة والتنبيهات وسجل التشغيل.',
     icon: Settings2,
     permission: 'automation.view',
-    showInPrimaryNavigation: true,
+    showInPrimaryNavigation: false,
   },
   {
     id: 'system-settings',

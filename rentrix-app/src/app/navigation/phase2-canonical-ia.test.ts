@@ -7,11 +7,14 @@ import { navigationLabels } from './terminology-registry';
 
 const routeTreeSource = readFileSync(new URL('../router/route-tree.ts', import.meta.url), 'utf8');
 const portfolioHubSource = readFileSync(new URL('../../features/portfolio-hub/portfolio-hub-workspace.tsx', import.meta.url), 'utf8');
+const portfolioSectionsSource = readFileSync(new URL('../../features/portfolio-hub/portfolio-hub-sections.ts', import.meta.url), 'utf8');
 const leasingHubSource = readFileSync(new URL('../../features/relationships-hub/leasing-hub-workspace.tsx', import.meta.url), 'utf8');
+const leasingSectionsSource = readFileSync(new URL('../../features/relationships-hub/leasing-hub-sections.ts', import.meta.url), 'utf8');
 const financePageSource = readFileSync(new URL('../../features/finance/FinancePage.tsx', import.meta.url), 'utf8');
 const financeModelSource = readFileSync(new URL('../../features/finance/shell/financeShellModel.ts', import.meta.url), 'utf8');
 const servicesSource = readFileSync(new URL('../../features/operations-hub/operations-hub-workspace.tsx', import.meta.url), 'utf8');
 const servicesSectionsSource = readFileSync(new URL('../../features/operations-hub/operations-hub.sections.ts', import.meta.url), 'utf8');
+const governanceSectionsSource = readFileSync(new URL('../../features/governance-hub/governance-hub-sections.ts', import.meta.url), 'utf8');
 
 function hasRoute(path: string): boolean {
   return routeTreeSource.includes(`path: '${path}'`);
@@ -24,47 +27,64 @@ describe('Task-centric canonical IA', () => {
     for (const path of ['/people', '/lands', '/commissions', '/owners', '/tenants']) expect(hasRoute(path)).toBe(true);
   });
 
-  it('keeps Portfolio as one managed-assets and ownership workspace', () => {
+  it('keeps Portfolio routine navigation focused while retaining specialist Lands capability', () => {
     for (const path of ['/properties', '/units', '/lands', '/owners']) expect(getNavRoot(path)).toBe('/properties');
-    expect(workspaceChildNavItems['/properties'].map(([to]) => to)).toEqual(['/properties', '/properties', '/properties']);
+    expect(workspaceChildNavItems['/properties'].map(([to]) => to)).toEqual(['/properties', '/properties']);
+    expect(workspaceChildNavItems['/properties'].map(([, labelKey]) => labelKey)).toEqual(['units', 'owners']);
     expect(portfolioHubSource).toContain('LandsWorkspace');
     expect(portfolioHubSource).toContain('OwnersWorkspace');
+    expect(portfolioSectionsSource).toMatch(/id: 'lands'[\s\S]*?showInPrimaryNavigation: false/);
   });
 
-  it('keeps Leasing as one contract-and-relationship journey', () => {
+  it('keeps Leasing focused on contracts and tenants while supporting relationship deep links', () => {
     for (const path of ['/contracts', '/tenants', '/people', '/leads', '/communication']) expect(getNavRoot(path)).toBe('/contracts');
-    expect(workspaceChildNavItems['/contracts'].map(([to]) => to)).toEqual(['/contracts', '/contracts', '/contracts', '/contracts']);
+    expect(workspaceChildNavItems['/contracts'].map(([to]) => to)).toEqual(['/contracts']);
+    expect(workspaceChildNavItems['/contracts'].map(([, labelKey]) => labelKey)).toEqual(['tenants']);
     for (const workspace of ['ContractsWorkspace', 'TenantsWorkspace', 'PeopleListPage', 'LeadsWorkspace', 'CommunicationWorkspace']) {
       expect(leasingHubSource).toContain(workspace);
     }
+    for (const specialist of ['people', 'leads', 'communication']) {
+      expect(leasingSectionsSource).toMatch(new RegExp(`id: '${specialist}'[\\s\\S]*?showInPrimaryNavigation: false`));
+    }
   });
 
-  it('keeps Money capabilities inside /financials instead of module-hopping', () => {
+  it('keeps Money daily navigation to collections and expenses while specialist finance stays addressable', () => {
     const children = workspaceChildNavItems['/financials'];
-    expect(children).toHaveLength(8);
+    expect(children).toHaveLength(4);
     expect(children.every(([to]) => to === '/financials')).toBe(true);
     expect(children.map(([, , , , , search]) => search?.view)).toEqual([
-      'invoices', 'receipts', 'arrears', 'expenses', 'deposits', 'owner_settlements', 'bank_reconciliation', 'commissions',
+      'invoices', 'receipts', 'arrears', 'expenses',
     ]);
+    for (const specialistSection of ['fees', 'funds', 'banking']) {
+      expect(financeModelSource).toMatch(new RegExp(`id: '${specialistSection}'[\\s\\S]*?showInPrimaryNavigation: false`));
+    }
     expect(financeModelSource).toContain("id: 'commissions'");
     expect(financePageSource).toContain('<CommissionsWorkspace embedded />');
     expect(financePageSource).toContain('id="finance-view-panel-commissions"');
   });
 
-  it('keeps Services in one operational workspace and removes duplicate Automation authority', () => {
+  it('keeps Services routine navigation to maintenance and utilities only', () => {
     const children = workspaceChildNavItems['/maintenance'];
-    expect(children).toHaveLength(4);
+    expect(children).toHaveLength(2);
     expect(children.every(([to]) => to === '/maintenance')).toBe(true);
     expect(children.map(([, , , , , search]) => search?.section)).toEqual([
-      'maintenance', 'service_providers', 'utilities', 'documents_vault',
+      'maintenance', 'utilities',
     ]);
-    expect(servicesSectionsSource).toContain("'service_providers'");
-    expect(servicesSectionsSource).toContain("'documents_vault'");
+    expect(servicesSectionsSource).toMatch(/id: 'service_providers'[\s\S]*?showInPrimaryNavigation: false/);
+    expect(servicesSectionsSource).toMatch(/id: 'documents_vault'[\s\S]*?showInPrimaryNavigation: false/);
     expect(servicesSectionsSource).not.toContain("| 'automation'");
     expect(servicesSource).not.toContain('AutomationWorkspace');
     expect(servicesSource).toContain("title = 'الخدمات'");
     expect(routeTreeSource).toContain("path: '/automation'");
     expect(routeTreeSource).toContain("to: '/settings'");
+  });
+
+  it('treats Automation as a guarded settings deep link, not routine navigation', () => {
+    expect(workspaceChildNavItems['/settings'].map(([, labelKey]) => labelKey)).toEqual(['companySettings', 'usersPermissions']);
+    expect(governanceSectionsSource).toMatch(/id: 'automation'[\s\S]*?showInPrimaryNavigation: false/);
+    expect(routeTreeSource).toContain("path: '/automation'");
+    expect(routeTreeSource).toContain("requirePermission('automation.view')");
+    expect(routeTreeSource).toContain("section: 'automation'");
   });
 
   it('keeps standalone compatibility routes without treating them as global products', () => {
