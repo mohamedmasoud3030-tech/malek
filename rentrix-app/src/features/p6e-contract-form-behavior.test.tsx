@@ -137,7 +137,7 @@ async function fillRequiredPartiesAndFinancials(host: HTMLElement) {
   await clickButton(host, 'التالي');
   await setDate(host, 'تاريخ البداية', '2026-01-01');
   await setDate(host, 'تاريخ النهاية', '2026-12-31');
-  await setNumber(host, 'قيمة الدفعة التعاقدية', '120');
+  await setNumber(host, 'الإيجار لكل دفعة', '120');
   await setNumber(host, 'يوم الفوترة', '5');
   await setNumber(host, 'أيام السماح', '3');
 }
@@ -169,40 +169,38 @@ describe('contract form mobile stepper — behavioral', () => {
 
   it('Next validates the current step and an invalid step cannot advance', async () => {
     await renderForm();
-    expect(stepLabel(host)).toContain('الخطوة 1 من 4');
+    expect(stepLabel(host)).toContain('الخطوة 1 من 3');
     await clickButton(host, 'التالي');
-    expect(stepLabel(host)).toContain('الخطوة 1 من 4');
+    expect(stepLabel(host)).toContain('الخطوة 1 من 3');
     expect(host.textContent).toContain('اختر العقار');
   });
 
-  it('valid steps advance and Back preserves entered state', async () => {
+  it('valid steps advance and Back preserves optional entered state', async () => {
     await renderForm();
     await fillRequiredPartiesAndFinancials(host);
     await clickButton(host, 'التالي');
-    expect(stepLabel(host)).toContain('الخطوة 3 من 4');
+    expect(stepLabel(host)).toContain('الخطوة 3 من 3');
 
     await setTextarea(host, 'ملاحظات العقد', 'ملاحظة محفوظة');
     await clickButton(host, 'السابق');
-    expect(stepLabel(host)).toContain('الخطوة 2 من 4');
+    expect(stepLabel(host)).toContain('الخطوة 2 من 3');
     await clickButton(host, 'التالي');
-    expect(stepLabel(host)).toContain('الخطوة 3 من 4');
+    expect(stepLabel(host)).toContain('الخطوة 3 من 3');
 
     const noteArea = Array.from(host.querySelectorAll<HTMLTextAreaElement>('textarea'))
       .find((area) => area.closest('label')?.textContent?.includes('ملاحظات العقد'));
     expect(noteArea?.value).toBe('ملاحظة محفوظة');
   });
 
-  it('shows the schedule review and submits the current billing semantics', async () => {
+  it('shows a compact review and submits the current billing semantics', async () => {
     await renderForm();
     await fillRequiredPartiesAndFinancials(host);
     await clickButton(host, 'التالي');
-    await clickButton(host, 'التالي');
 
-    expect(stepLabel(host)).toContain('الخطوة 4 من 4');
-    expect(host.textContent).toContain('مراجعة دورة السداد المتوقعة');
-    expect(host.textContent).toContain('قيمة الدفعة التعاقدية لكل دورة');
-    expect(host.textContent).toContain('عدد دورات السداد المتوقع');
-    expect(host.textContent).toContain('الخادم');
+    expect(stepLabel(host)).toContain('الخطوة 3 من 3');
+    expect(host.textContent).toContain('راجع واحفظ');
+    expect(host.textContent).toContain('جدول السداد المتوقع');
+    expect(host.textContent).toContain('سيتم إصدار الفواتير وفق إعدادات العقد بعد اعتماده');
 
     await clickButton(host, 'حفظ العقد');
     expect(submitted).not.toBeNull();
@@ -210,20 +208,20 @@ describe('contract form mobile stepper — behavioral', () => {
     expect(submitted?.billing_day).toBe(5);
     expect(submitted?.grace_days).toBe(3);
     expect(submitted?.end_date).toBe('2026-12-31');
+    expect(submitted?.status).toBe('draft');
   });
 
   it('a failed payment amount returns the user to the financial step', async () => {
     await renderForm();
     await fillRequiredPartiesAndFinancials(host);
     await clickButton(host, 'التالي');
-    await clickButton(host, 'التالي');
-    expect(stepLabel(host)).toContain('الخطوة 4 من 4');
+    expect(stepLabel(host)).toContain('الخطوة 3 من 3');
 
-    await setNumber(host, 'قيمة الدفعة التعاقدية', '');
+    await setNumber(host, 'الإيجار لكل دفعة', '');
     await clickButton(host, 'حفظ العقد');
     await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
 
-    expect(stepLabel(host)).toContain('الخطوة 2 من 4');
+    expect(stepLabel(host)).toContain('الخطوة 2 من 3');
     expect(host.textContent).toContain('قيمة الدفعة التعاقدية مطلوبة');
   });
 
@@ -231,14 +229,13 @@ describe('contract form mobile stepper — behavioral', () => {
     await renderForm();
     await fillRequiredPartiesAndFinancials(host);
     await clickButton(host, 'التالي');
-    await clickButton(host, 'التالي');
-    expect(stepLabel(host)).toContain('الخطوة 4 من 4');
+    expect(stepLabel(host)).toContain('الخطوة 3 من 3');
 
     await setNumber(host, 'يوم الفوترة', '29');
     await clickButton(host, 'حفظ العقد');
     await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
 
-    expect(stepLabel(host)).toContain('الخطوة 2 من 4');
+    expect(stepLabel(host)).toContain('الخطوة 2 من 3');
     expect(host.textContent).toContain('يوم الفوترة يجب أن يكون بين 1 و28');
   });
 });
