@@ -135,4 +135,45 @@ describe('UX completion contract', () => {
     expect(propertyForm).not.toContain('error instanceof Error ? error.message');
     expect(propertyForm).not.toContain('عملية ذرية');
   });
+
+  it('keeps specialist work out of routine navigation while preserving deep links', () => {
+    const appNav = source('app/navigation/app-nav-items.ts');
+    const commands = source('features/command-palette/command-registry.ts');
+    const governance = source('features/governance-hub/governance-hub-sections.ts');
+    const finance = source('features/finance/shell/financeShellModel.ts');
+    const portfolio = source('features/portfolio-hub/portfolio-hub-sections.ts');
+    const leasing = source('features/relationships-hub/leasing-hub-sections.ts');
+    const operations = source('features/operations-hub/operations-hub.sections.ts');
+    const reports = source('features/reports/report-view-registry.ts');
+    const settings = source('features/settings/registry/sectionRegistry.ts');
+    const routes = source('app/router/route-tree.ts');
+
+    expect(appNav).not.toContain("['/settings', 'automation'");
+    expect(commands).not.toContain("id: 'automation'");
+    expect(governance).toContain("id: 'automation'");
+    expect(governance).toMatch(/id: 'automation'[\s\S]*?showInPrimaryNavigation: false/);
+
+    expect(finance).toMatch(/id: 'fees'[\s\S]*?showInPrimaryNavigation: false/);
+    expect(finance).toMatch(/id: 'funds'[\s\S]*?showInPrimaryNavigation: false/);
+    expect(finance).toMatch(/id: 'banking'[\s\S]*?showInPrimaryNavigation: false/);
+    expect(portfolio).toMatch(/id: 'lands'[\s\S]*?showInPrimaryNavigation: false/);
+    expect(leasing).toMatch(/id: 'people'[\s\S]*?showInPrimaryNavigation: false/);
+    expect(leasing).toMatch(/id: 'leads'[\s\S]*?showInPrimaryNavigation: false/);
+    expect(leasing).toMatch(/id: 'communication'[\s\S]*?showInPrimaryNavigation: false/);
+    expect(operations).toMatch(/id: 'service_providers'[\s\S]*?showInPrimaryNavigation: false/);
+    expect(operations).toMatch(/id: 'documents_vault'[\s\S]*?showInPrimaryNavigation: false/);
+    expect(reports).toMatch(/id: 'deferred_revenue'[\s\S]*?showInPrimaryNavigation: false/);
+    expect(reports).toMatch(/id: 'property_analytics'[\s\S]*?showInPrimaryNavigation: false/);
+    expect(reports).toMatch(/id: 'occupancy'[\s\S]*?showInPrimaryNavigation: false/);
+    expect(reports).toMatch(/id: 'maintenance_analytics'[\s\S]*?showInPrimaryNavigation: false/);
+    expect(settings).toMatch(/id: 'finance-readiness'[\s\S]*?showInPrimaryNavigation: false/);
+    expect(settings).toMatch(/id: 'cost-centers'[\s\S]*?showInPrimaryNavigation: false/);
+    expect(settings).toMatch(/id: 'payment-terms'[\s\S]*?showInPrimaryNavigation: false/);
+
+    expect(routes).toContain("path: '/automation'");
+    expect(routes).toContain("section: 'automation'");
+    expect(routes).toContain("path: '/lands'");
+    expect(routes).toContain("path: '/service-providers'");
+    expect(routes).toContain("path: '/documents-vault'");
+  });
 });
