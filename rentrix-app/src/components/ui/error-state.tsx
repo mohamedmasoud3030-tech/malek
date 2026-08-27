@@ -1,5 +1,6 @@
 import { AlertTriangle, RotateCcw } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { getEnvDiagnostics, parseSupabaseDiagnostics } from '@/lib/runtime-diagnostics';
 import { Button } from './button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './card';
 
@@ -13,24 +14,25 @@ type ErrorStateProps = {
   variant?: 'default' | 'write';
 };
 
-function resolveErrorMessage(error: unknown): string | null {
+const SAFE_ERROR_DETAIL = 'تعذر إكمال الطلب الآن. أعد المحاولة، وإذا استمرت المشكلة تواصل مع مسؤول النظام.';
+
+function resolveSafeErrorMessage(error: unknown): string | null {
   if (!error) return null;
-  if (error instanceof Error && error.message.trim()) return error.message;
-  if (typeof error === 'string' && error.trim()) return error;
-  return null;
+  const diagnostics = [...getEnvDiagnostics(), ...parseSupabaseDiagnostics(error)];
+  return diagnostics[0]?.messageAr ?? SAFE_ERROR_DETAIL;
 }
 
 /** Shared recoverable error surface for list/detail pages. */
 export function ErrorState({
   title = 'تعذر تحميل البيانات',
-  description = 'تحقق من الاتصال واكتمال إعداد صلاحيات حسابك، ثم أعد المحاولة.',
+  description = 'تحقق من الاتصال ثم أعد المحاولة.',
   error,
   onRetry,
   action,
   compact = false,
   variant = 'default',
 }: ErrorStateProps) {
-  const detail = resolveErrorMessage(error);
+  const detail = resolveSafeErrorMessage(error);
 
   if (variant === 'write') {
     return (

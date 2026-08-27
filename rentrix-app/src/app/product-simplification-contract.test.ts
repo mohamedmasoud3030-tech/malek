@@ -54,6 +54,19 @@ describe('production product simplification contract', () => {
     expect(nav).not.toContain("['/financials', 'commissions'");
   });
 
+  it('never renders raw backend errors through shared product error surfaces', () => {
+    const errorState = source('../components/ui/error-state.tsx');
+    const crudWriteError = source('../lib/data/crud-write-error.ts');
+
+    expect(errorState).toContain('resolveSafeErrorMessage');
+    expect(errorState).toContain('parseSupabaseDiagnostics');
+    expect(errorState).not.toContain('return error.message');
+    expect(errorState).not.toContain("typeof error === 'string' && error.trim() ? error");
+
+    expect(crudWriteError).not.toContain('return message ?');
+    expect(crudWriteError).toContain('أعد المحاولة، وإذا استمرت المشكلة تواصل مع مسؤول النظام');
+  });
+
   it('keeps implementation diagnostics out of finance readiness copy', () => {
     const readiness = source('../features/financials/tax-authority/finance-readiness-section.tsx');
     for (const forbidden of [
