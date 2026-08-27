@@ -111,7 +111,10 @@ export function getAgreementActiveOn(agreements: readonly OwnerAgreement[], asOf
   return agreements.find((agreement) => agreement.starts_on <= asOf && (!agreement.ends_on || agreement.ends_on >= asOf)) ?? null;
 }
 
-export function groupAgreementsByTemporalStatus(agreements: readonly OwnerAgreement[], asOf = getTodayLocalDateString()) {
+export function groupAgreementsByTemporalStatus<T extends Pick<OwnerAgreement, 'starts_on' | 'ends_on'>>(
+  agreements: readonly T[],
+  asOf = getTodayLocalDateString(),
+) {
   return {
     current: agreements.filter((agreement) => agreement.starts_on <= asOf && (!agreement.ends_on || agreement.ends_on >= asOf)),
     scheduled: agreements.filter((agreement) => agreement.starts_on > asOf),
@@ -121,6 +124,25 @@ export function groupAgreementsByTemporalStatus(agreements: readonly OwnerAgreem
 
 export async function listOwnerAgreementsForProperty(propertyId: string): Promise<OwnerAgreement[]> {
   const { data, error } = await supabase.from('owner_agreements').select('*').eq('property_id', propertyId).order('starts_on', { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export type OwnerAgreementWithProperty = OwnerAgreement & Readonly<{
+  property: { id: string; title: string | null } | null;
+}>;
+
+/**
+ * Agreements for one owner across their properties (read context for the
+ * owner dossier). The property workspace remains the single management
+ * authority for agreements and versions.
+ */
+export async function listOwnerAgreementsForOwner(ownerId: string): Promise<OwnerAgreementWithProperty[]> {
+  const { data, error } = await supabase
+    .from('owner_agreements')
+    .select('*, property:properties(id, title)')
+    .eq('owner_id', ownerId)
+    .order('starts_on', { ascending: false });
   if (error) throw error;
   return data ?? [];
 }

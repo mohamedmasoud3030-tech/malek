@@ -29,6 +29,7 @@ import {
 } from '../services/owner-settlements-service';
 import type { OwnerActivityRecord } from '@/services/owner-workspace-service';
 import type { OwnerDetailSnapshot } from '../services/owner-service';
+import { OwnerAgreementsSection } from './owner-agreements-section';
 
 export type OwnerDossierSection = 'overview' | 'portfolio' | 'financials' | 'records';
 
@@ -159,6 +160,10 @@ export function OwnerDossierBody({
       </div> : null}
 
       {(!section || section === 'portfolio') ? <div className="space-y-5" data-owner-detail-portfolio>
+      {/* Management agreements across this owner's properties (read view; the
+          property workspace owns agreement/version management) */}
+      <OwnerAgreementsSection ownerId={owner.id} />
+
       {/* Related properties */}
       <Card>
         <CardHeader>
