@@ -25,7 +25,7 @@ export function BalanceSheetPanel({
       isLoading={isLoading}
     >
       {error ? (
-        <div className="p-4"><ReportState kind="error" message={getErrorMessage(error, 'تعذر تحميل قائمة المركز المالي من RPC.')} /></div>
+        <div className="p-4"><ReportState kind="error" message={getErrorMessage(error, 'تعذر تحميل قائمة المركز المالي الآن.')} /></div>
       ) : !report ? (
         <div className="p-4"><ReportState message="تعذر تحميل قائمة المركز المالي لهذا التاريخ." /></div>
       ) : (

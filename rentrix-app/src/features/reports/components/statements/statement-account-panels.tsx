@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
-import { formatMoney, formatShortId, getErrorMessage } from '@/features/financials/components/financials-formatters';
+import { formatMoney, getErrorMessage } from '@/features/financials/components/financials-formatters';
 import type { OwnerStatementReport, TenantStatementReport } from '@/features/financials/reports/financialReportsService';
 import { createReceiptPrintHref } from '../../reports-page.helpers';
 import { ReportList, ReportListRow, ReportPanel, ReportPanelSkeleton, ReportState } from '../report-section-primitives';
@@ -44,14 +44,20 @@ function tenantLineType(type: string | null) {
   if (type === 'invoice') return 'فاتورة / استحقاق';
   if (type === 'receipt') return 'دفعة / إيصال';
   if (type === 'credit') return 'دائن / عكس';
-  return type || 'حركة';
+  return 'حركة حساب';
 }
 
 function ownerLineType(type: string | null) {
   if (type === 'receipt') return 'تحصيل';
   if (type === 'expense') return 'مصروف';
   if (type === 'settlement') return 'تسوية / صرف';
-  return type || 'حركة';
+  return 'حركة مالية';
+}
+
+function ownerCommissionSummary(type: string | null, value: number) {
+  if (type === 'RATE') return `نسبة ${formatLatinNumber(value, 'ar')}٪`;
+  if (type === 'FIXED_MONTHLY') return `مبلغ شهري ${formatMoney(value)}`;
+  return 'غير محددة';
 }
 
 export function TenantStatementPanel({
@@ -112,9 +118,9 @@ export function TenantStatementPanel({
       {isLoading ? (
         <ReportPanelSkeleton />
       ) : error ? (
-        <div className="p-4"><ReportState kind="error" message={getErrorMessage(error, 'تعذر تحميل كشف المستأجر من RPC.')} /></div>
+        <div className="p-4"><ReportState kind="error" message={getErrorMessage(error, 'تعذر تحميل كشف المستأجر.')} /></div>
       ) : selectedContractId && statement?.error ? (
-        <div className="p-4"><ReportState message={statement.error} /></div>
+        <div className="p-4"><ReportState kind="error" message={getErrorMessage(statement.error, 'تعذر تحميل كشف المستأجر.')} /></div>
       ) : selectedContractId && statement && ledgerRows.length > 0 ? (
         <div className="space-y-4 p-3 sm:p-4">
           <div className="rounded-xl border border-border/70 bg-muted/20 p-3 text-sm">
@@ -147,7 +153,7 @@ export function TenantStatementPanel({
             <ReportListRow
               key={row.contractId}
               title={row.tenantName ?? 'مستأجر غير محدد'}
-              subtitle={`${formatLatinNumber(row.invoiceCount, 'ar')} فواتير · عقد ${formatShortId(row.contractId)}`}
+              subtitle={`${formatLatinNumber(row.invoiceCount, 'ar')} فواتير`}
               meta={`متأخر ${formatMoney(row.totalOverdue)}`}
               value={<span dir="ltr">{formatMoney(row.totalOutstanding)}</span>}
             />
@@ -228,15 +234,15 @@ export function OwnerStatementPanel({
       {isLoading ? (
         <ReportPanelSkeleton />
       ) : error ? (
-        <div className="p-4"><ReportState kind="error" message={getErrorMessage(error, 'تعذر تحميل كشف المالك من RPC.')} /></div>
+        <div className="p-4"><ReportState kind="error" message={getErrorMessage(error, 'تعذر تحميل كشف المالك.')} /></div>
       ) : selectedOwnerId && statement?.error ? (
-        <div className="p-4"><ReportState message={statement.error} /></div>
+        <div className="p-4"><ReportState kind="error" message={getErrorMessage(statement.error, 'تعذر تحميل كشف المالك.')} /></div>
       ) : selectedOwnerId && statement && ledgerRows.length > 0 ? (
         <div className="space-y-4 p-3 sm:p-4">
           <div className="rounded-xl border border-border/70 bg-muted/20 p-3 text-sm">
             <p className="font-black">{statement.ownerName ?? 'مالك غير محدد'}</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              الفترة: {statement.periodFrom ?? '—'} إلى {statement.periodTo ?? '—'} · نموذج الإدارة: {statement.commissionType ?? 'غير محدد'} {statement.commissionValue ? `· ${statement.commissionValue}` : ''}
+              الفترة: {statement.periodFrom ?? '—'} إلى {statement.periodTo ?? '—'} · العمولة: {ownerCommissionSummary(statement.commissionType, statement.commissionValue)}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
               العقارات في الحركة: {properties.length ? properties.join('، ') : 'غير محددة في مصدر الكشف'}
@@ -257,7 +263,7 @@ export function OwnerStatementPanel({
             emptyDescription="غيّر المالك أو فترة التقرير ثم أعد المحاولة."
           />
           <p className="text-xs leading-5 text-muted-foreground">
-            «حركات التسوية/الصرف» تجمع الحركات المصنفة settlement في مصدر الكشف؛ لا تُعاد تسميتها «مدفوع للمالك» إلا إذا كان المصدر المحاسبي يثبت ذلك صراحةً.
+            «حركات التسوية/الصرف» تجمع الحركات المصنفة كتسوية في الكشف، ولا تعني بالضرورة أنها مبالغ مدفوعة للمالك إلا إذا كان السجل المالي يثبت ذلك.
           </p>
         </div>
       ) : selectedOwnerId ? (
@@ -267,7 +273,7 @@ export function OwnerStatementPanel({
           {fallbackRows.map((row) => (
             <ReportListRow
               key={row.propertyId}
-              title={row.propertyTitle ?? formatShortId(row.propertyId)}
+              title={row.propertyTitle ?? 'عقار غير محدد'}
               subtitle={`${formatLatinNumber(row.count, 'ar')} حركة مصروفات`}
               value={<span dir="ltr">{formatMoney(row.total)}</span>}
             />

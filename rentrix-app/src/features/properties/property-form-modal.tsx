@@ -13,6 +13,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { useCreatePropertyWithAgreement } from '@/features/owners/useOwnerAgreements';
 import { useOperationalOwners } from '@/features/owners/useOwners';
 import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
+import { getActionableSupabaseErrorMessage } from '@/lib/supabase-error';
 import { propertyStatusLabels, propertyStatusValues } from './property-schema';
 import { applyPropertyOwnershipSplit } from './property-service';
 import { useProperty, useUpdateProperty } from './use-properties';
@@ -199,7 +200,7 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
       }
       onClose();
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : 'تعذر حفظ العقار واتفاقية التشغيل. حاول مرة أخرى.');
+      setSubmitError(getActionableSupabaseErrorMessage(error, 'تعذر حفظ العقار واتفاقية التشغيل. حاول مرة أخرى.'));
     }
   });
 
@@ -282,7 +283,7 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
             <EntityForm.Section
               className="md:col-span-2"
               title="2. المالك"
-              description="لا يمكن إنشاء عقار تشغيلي بلا مالك نشط. الملكية واتفاقية المكتب تُحفظان مع العقار في عملية ذرية واحدة."
+              description="لا يمكن إنشاء عقار تشغيلي بلا مالك نشط. تُحفظ الملكية واتفاقية المكتب مع العقار معًا لضمان اتساق البيانات."
             >
               {ownersQuery.isError ? (
                 <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-3" role="alert">
@@ -544,7 +545,7 @@ function PropertyEditModal({
       await updateMutation.mutateAsync(values as Parameters<typeof updateMutation.mutateAsync>[0]);
       onClose();
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : 'تعذر تحديث العقار. حاول مرة أخرى.');
+      setSubmitError(getActionableSupabaseErrorMessage(error, 'تعذر تحديث العقار. حاول مرة أخرى.'));
     }
   });
 

@@ -7,6 +7,7 @@ import { EntityForm } from '@/components/ui/entity-form';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useBeforeUnloadGuard, useSubmitGuard } from '@/hooks/use-unsaved-changes-guard';
 import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
+import { getActionableSupabaseErrorMessage } from '@/lib/supabase-error';
 import type { Person } from '@/types/domain';
 import { PersonFormFields } from './components/PersonFormFields';
 import { personSchema, type PersonFormValues } from './person-schema';
@@ -79,7 +80,7 @@ export function PersonFormModal({ open, onClose, personId, defaultType = 'tenant
         form.reset(undefined, { keepValues: true });
         onClose();
       } catch (error) {
-        setSubmitError(error instanceof Error ? error.message : 'تعذر حفظ بيانات الشخص. تحقق من الصلاحيات وحاول مرة أخرى.');
+        setSubmitError(getActionableSupabaseErrorMessage(error, 'تعذر حفظ بيانات الشخص. تحقق من الصلاحيات وحاول مرة أخرى.'));
       }
     });
   });

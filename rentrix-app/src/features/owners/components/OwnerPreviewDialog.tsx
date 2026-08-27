@@ -7,6 +7,7 @@ import { LoadingState } from '@/components/ui/loading-state';
 import { canAccess } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
 import { useDialogNavigate } from '@/app/router/background-location';
+import { getActionableSupabaseErrorMessage } from '@/lib/supabase-error';
 import { fetchOwnerActivity } from '@/services/owner-workspace-service';
 import { listOwnerSettlements } from '../services/owner-settlements-service';
 import { useOwnerDetailSnapshot } from '../useOwners';
@@ -57,7 +58,7 @@ export function OwnerPreviewDialog({
       {detailQuery.isError ? (
         <ErrorState
           title="تعذر تحميل ملف المالك"
-          description={detailQuery.error instanceof Error ? detailQuery.error.message : 'حدث خطأ أثناء تحميل بيانات المالك.'}
+          description={getActionableSupabaseErrorMessage(detailQuery.error, 'حدث خطأ أثناء تحميل بيانات المالك.')}
           onRetry={() => { void detailQuery.refetch(); }}
         />
       ) : null}

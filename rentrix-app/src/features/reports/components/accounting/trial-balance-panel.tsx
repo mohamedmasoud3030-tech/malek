@@ -26,7 +26,7 @@ export function TrialBalancePanel({
       isLoading={isLoading}
     >
       {error ? (
-        <div className="p-4"><ReportState kind="error" message={getErrorMessage(error, 'تعذر تحميل ميزان المراجعة من RPC.')} /></div>
+        <div className="p-4"><ReportState kind="error" message={getErrorMessage(error, 'تعذر تحميل ميزان المراجعة الآن.')} /></div>
       ) : !report || report.accounts.length === 0 ? (
         <div className="p-4"><ReportState message="لا توجد حسابات لعرض ميزان المراجعة لهذا التاريخ." /></div>
       ) : (
