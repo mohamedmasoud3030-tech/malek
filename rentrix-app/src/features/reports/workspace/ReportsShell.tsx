@@ -19,14 +19,7 @@ type ReportsShellProps = Readonly<{
   onSectionViewChange: (section: ReportSectionId, view: ReportViewId) => void;
 }>;
 
-/**
- * Reports scope + context shell.
- *
- * Operational KPIs belong to Analytics only. Accounting and statements no
- * longer start with collection/occupancy cards that compete with the ledger or
- * the financial statements. The numbers are still read directly from the
- * authoritative workspace model; this module performs no monetary arithmetic.
- */
+/** Reports scope + context shell. The workspace model remains the data authority. */
 export function ReportsShell({
   model,
   filters,
@@ -55,7 +48,6 @@ export function ReportsShell({
     };
   }, [model.sections.occupancy.occupancyRows]);
 
-  // Same server-derived, credit-aware invoice-cohort metric as Dashboard Truth.
   const collectionRate = model.hero.collectionRate;
 
   return (
@@ -75,7 +67,7 @@ export function ReportsShell({
         <div className="flex items-start gap-2.5 rounded-xl border border-primary/15 bg-primary/[0.035] px-3 py-2.5 text-xs font-semibold leading-5 text-muted-foreground">
           <BookOpenCheck className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
           <p>
-            المخرجات المحاسبية هنا تعتمد على القيود المرحّلة والمطابقة مع الأستاذ العام؛ الطباعة وPDF يظلان محجوبين إذا كانت المطابقة غير جاهزة.
+            القوائم تعتمد على البيانات المحاسبية المعتمدة، وتتاح الطباعة والإصدار بعد اكتمال مراجعة الأرصدة.
           </p>
         </div>
       ) : null}
@@ -132,7 +124,7 @@ export function ReportsShell({
                 label="فرق التحصيل والمصروفات"
                 value={money(summary?.netCash ?? 0)}
                 icon={TrendingUp}
-                sub="فرق تشغيلي فقط — ليس ربح المكتب ولا قائمة تدفق نقدي كاملة"
+                sub="مؤشر متابعة تشغيلي للفترة، وليس صافي الربح."
                 trend={(summary?.netCash ?? 0) >= 0 ? 'up' : 'down'}
                 trendValue={(summary?.netCash ?? 0) >= 0 ? 'التحصيل أعلى' : 'المصروفات أعلى'}
                 accent="primary"
@@ -152,7 +144,7 @@ export function ReportsShell({
         >
           {getErrorMessage(
             model.firstError,
-            'تعذر تحميل بعض التقارير. يمكنك تحديث الصفحة أو إعادة المحاولة بأمان دون تعديل أي بيانات — الخطأ مميز عن حالة فارغة.',
+            'تعذر تحميل بعض التقارير. أعد المحاولة، وإذا استمرت المشكلة تواصل مع مسؤول النظام.',
           )}
         </div>
       ) : null}
