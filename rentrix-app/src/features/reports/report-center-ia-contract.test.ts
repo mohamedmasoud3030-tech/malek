@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 const reportsDir = resolve(dirname(fileURLToPath(import.meta.url)));
 const reportsPage = readFileSync(resolve(reportsDir, 'reports-page.tsx'), 'utf8');
+const i18nResources = readFileSync(resolve(reportsDir, '../../lib/i18n.ts'), 'utf8');
 const directory = readFileSync(resolve(reportsDir, 'directory/ReportDirectory.tsx'), 'utf8');
 const catalogue = readFileSync(resolve(reportsDir, 'directory/report-directory-groups.ts'), 'utf8');
 
@@ -36,6 +37,9 @@ describe('reports center IA contract', () => {
     expect(catalogue).toContain('كشف حساب المالك');
     expect(catalogue).toContain('تقرير الصيانة');
     expect(catalogue).toContain('تقرير أداء العقار');
-    expect(reportsPage).toContain('المصدر المعتمد');
+    // The header copy flows through the bilingual layer (ADR-0008); the
+    // source-authoritative promise stays in the reports description resource.
+    expect(reportsPage).toContain("translateSharedLabel('reportsPageDescription')");
+    expect(i18nResources).toContain('من المصدر المعتمد');
   });
 });
