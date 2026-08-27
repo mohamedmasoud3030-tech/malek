@@ -1,14 +1,11 @@
 import type { AppPermission } from '@/features/auth/permissions';
 import {
   BarChart3,
-  BriefcaseBusiness,
-  Building,
   Building2,
   ClipboardList,
   DoorOpen,
   FileSpreadsheet,
   FileText,
-  FolderKanban,
   KeyRound,
   LayoutDashboard,
   PieChart,
@@ -34,9 +31,9 @@ export interface StaticCommand {
 }
 
 /**
- * Global Command Center destinations follow the same routine task-centric IA as
- * the shell. Entity search can still open a concrete record, while static
- * commands must not re-advertise hidden specialist registers.
+ * Static commands follow the routine task-centric IA. Concrete entity search
+ * can still open a record directly; specialist registers are contextual/deep-link
+ * capabilities rather than global navigation destinations.
  */
 export const STATIC_COMMANDS: StaticCommand[] = [
   {
@@ -51,11 +48,6 @@ export const STATIC_COMMANDS: StaticCommand[] = [
     id: 'units', title: 'المحفظة — الوحدات', category: 'navigation', canonicalRoute: '/properties',
     search: { section: 'units' }, permission: null,
     keywords: ['الوحدات', 'وحدة', 'الشقق', 'الإشغال', 'units'], icon: DoorOpen,
-  },
-  {
-    id: 'lands', title: 'المحفظة — الأراضي', category: 'navigation', canonicalRoute: '/properties',
-    search: { section: 'lands' }, permission: 'lands.view',
-    keywords: ['الأراضي', 'أرض', 'قطع الأراضي', 'lands', 'plots'], icon: Building,
   },
   {
     id: 'owners', title: 'المحفظة — الملاك', category: 'navigation', canonicalRoute: '/properties',
@@ -101,19 +93,9 @@ export const STATIC_COMMANDS: StaticCommand[] = [
     keywords: ['الخدمات', 'الصيانة', 'الأعطال', 'طلبات الصيانة', 'maintenance', 'services'], icon: Wrench,
   },
   {
-    id: 'service-providers', title: 'الخدمات — مزودو الخدمات', category: 'operational', canonicalRoute: '/maintenance',
-    search: { section: 'service_providers' }, permission: 'service_providers.view',
-    keywords: ['مزودو الخدمات', 'المزودين', 'الفنيين', 'service providers', 'vendors'], icon: BriefcaseBusiness,
-  },
-  {
     id: 'utilities', title: 'الخدمات — المرافق والعدادات', category: 'operational', canonicalRoute: '/maintenance',
     search: { section: 'utilities' }, permission: null,
     keywords: ['المرافق', 'العدادات', 'الكهرباء', 'المياه', 'utilities', 'meters'], icon: Zap,
-  },
-  {
-    id: 'documents', title: 'الخدمات — المستندات التشغيلية', category: 'operational', canonicalRoute: '/maintenance',
-    search: { section: 'documents_vault' }, permission: null,
-    keywords: ['المستندات', 'الوثائق', 'المرفقات', 'documents', 'vault'], icon: FolderKanban,
   },
   {
     id: 'reports', title: 'التقارير والكشوف', category: 'navigation', canonicalRoute: '/reports',
