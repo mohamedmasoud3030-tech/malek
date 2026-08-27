@@ -13,10 +13,16 @@ export function canViewPortfolioSection(
   return section.permission === null ? true : canAccess(authorization, section.permission);
 }
 
-export function getVisiblePortfolioSections(
+export function getAccessiblePortfolioSections(
   authorization: AuthorizationContext | null | undefined,
 ): readonly PortfolioHubSection[] {
   return portfolioHubSections.filter((section) => canViewPortfolioSection(authorization, section));
+}
+
+export function getVisiblePortfolioSections(
+  authorization: AuthorizationContext | null | undefined,
+): readonly PortfolioHubSection[] {
+  return getAccessiblePortfolioSections(authorization).filter((section) => section.showInPrimaryNavigation);
 }
 
 const sectionIds = new Set<string>(portfolioHubSections.map((section) => section.id));
@@ -27,9 +33,10 @@ export function isPortfolioHubSectionId(value: unknown): value is PortfolioHubSe
 
 export type PortfolioHubResolution = Readonly<{
   activeSection: PortfolioHubSectionId | null;
+  accessibleSections: readonly PortfolioHubSection[];
   visibleSections: readonly PortfolioHubSection[];
   isRequestedSectionForbidden: boolean;
-  hasNoVisibleSections: boolean;
+  hasNoAccessibleSections: boolean;
 }>;
 
 export function resolvePortfolioHubState({
@@ -41,41 +48,50 @@ export function resolvePortfolioHubState({
   defaultSection: PortfolioHubSectionId;
   authorization: AuthorizationContext | null | undefined;
 }>): PortfolioHubResolution {
-  const visibleSections = getVisiblePortfolioSections(authorization);
-  const visibleIds = new Set(visibleSections.map((section) => section.id));
+  const accessibleSections = getAccessiblePortfolioSections(authorization);
+  const visibleSections = accessibleSections.filter((section) => section.showInPrimaryNavigation);
+  const accessibleIds = new Set(accessibleSections.map((section) => section.id));
 
-  if (visibleSections.length === 0) {
+  if (accessibleSections.length === 0) {
     return {
       activeSection: null,
+      accessibleSections,
       visibleSections,
       isRequestedSectionForbidden: false,
-      hasNoVisibleSections: true,
+      hasNoAccessibleSections: true,
     };
   }
 
-  if (isPortfolioHubSectionId(requestedSection) && !visibleIds.has(requestedSection)) {
+  if (isPortfolioHubSectionId(requestedSection) && !accessibleIds.has(requestedSection)) {
     return {
       activeSection: null,
+      accessibleSections,
       visibleSections,
       isRequestedSectionForbidden: true,
-      hasNoVisibleSections: false,
+      hasNoAccessibleSections: false,
     };
   }
 
-  if (isPortfolioHubSectionId(requestedSection) && visibleIds.has(requestedSection)) {
+  if (isPortfolioHubSectionId(requestedSection) && accessibleIds.has(requestedSection)) {
     return {
       activeSection: requestedSection,
+      accessibleSections,
       visibleSections,
       isRequestedSectionForbidden: false,
-      hasNoVisibleSections: false,
+      hasNoAccessibleSections: false,
     };
   }
 
-  const activeSection = visibleIds.has(defaultSection) ? defaultSection : visibleSections[0].id;
+  const visibleIds = new Set(visibleSections.map((section) => section.id));
+  const activeSection = visibleIds.has(defaultSection)
+    ? defaultSection
+    : visibleSections[0]?.id ?? accessibleSections[0].id;
+
   return {
     activeSection,
+    accessibleSections,
     visibleSections,
     isRequestedSectionForbidden: false,
-    hasNoVisibleSections: false,
+    hasNoAccessibleSections: false,
   };
 }
