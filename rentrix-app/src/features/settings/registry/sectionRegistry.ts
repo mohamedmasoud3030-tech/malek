@@ -64,7 +64,7 @@ export const settingsSectionRegistry: readonly SettingsSectionDefinition[] = [
   {
     id: 'documents',
     label: 'المستندات والضريبة',
-    description: 'بادئات المستندات والبيانات الضريبية المرجعية؛ السياسة الضريبية الفعلية تُحسم من السلطات المعتمدة حسب التاريخ.',
+    description: 'بادئات المستندات وبيانات الضريبة المستخدمة في المستندات.',
     icon: FileSignature,
     kind: 'form',
     fields: draftFieldsFor('documents'),
@@ -73,7 +73,7 @@ export const settingsSectionRegistry: readonly SettingsSectionDefinition[] = [
   {
     id: 'finance-readiness',
     label: 'جاهزية المالية والضريبة',
-    description: 'السلطة الضريبية المعتمدة حسب التاريخ (إيجار وأتعاب)، فترات محاسبية، ودليل الحسابات — فشل مغلق عند النقص.',
+    description: 'راجع ضريبة الإيجار والأتعاب والفترات المحاسبية ودليل الحسابات قبل التشغيل المالي.',
     icon: ShieldAlert,
     kind: 'operations',
     fields: [],

@@ -4,6 +4,7 @@ import { getAllNavItems, mobileNavItems, navGroups, quickCreateItems, workspaceC
 import { navigationLabels } from './terminology-registry';
 
 const routeTreeSource = readFileSync(new URL('../router/route-tree.ts', import.meta.url), 'utf8');
+const mobileNavigationSource = readFileSync(new URL('../layout/layout-navigation-view.tsx', import.meta.url), 'utf8');
 const routePaths = new Set(Array.from(routeTreeSource.matchAll(/path: '([^']+)'/g), (match) => match[1]));
 const routePathList = Array.from(routePaths);
 const navItems: NavItem[] = Array.from(getAllNavItems());
@@ -58,7 +59,7 @@ describe('task-centric app navigation', () => {
     ]);
   });
 
-  it('keeps every Services child inside /maintenance and leaves Automation only in Settings', () => {
+  it('keeps Services inside /maintenance and Settings limited to three routine entry points', () => {
     const services = workspaceChildNavItems['/maintenance'];
     expect(services.map(([to]) => to)).toEqual(Array(4).fill('/maintenance'));
     expect(services.map(([, labelKey, , , permission, search]) => ({ labelKey, permission, search }))).toEqual([
@@ -67,14 +68,19 @@ describe('task-centric app navigation', () => {
       { labelKey: 'utilities', permission: undefined, search: { section: 'utilities' } },
       { labelKey: 'documentsVault', permission: undefined, search: { section: 'documents_vault' } },
     ]);
-    expect(services.some(([, labelKey]) => labelKey === 'automation')).toBe(false);
-    expect(workspaceChildNavItems['/settings'].some(([, labelKey, , , permission, search]) =>
-      labelKey === 'automation' && permission === 'automation.view' && search?.section === 'automation')).toBe(true);
+
+    const settings = workspaceChildNavItems['/settings'];
+    expect(settings.map(([, labelKey]) => labelKey)).toEqual([
+      'companySettings', 'usersPermissions', 'automation',
+    ]);
+    expect(settings.some(([to]) => to === '/admin-support')).toBe(false);
+    expect(settings.some(([, labelKey]) => labelKey === 'systemSettings')).toBe(false);
+    expect(settings.some(([, labelKey]) => labelKey === 'costCenters')).toBe(false);
   });
 
-  it('does not leak feature registers back into global navigation', () => {
+  it('does not leak feature registers or support/diagnostic tools back into global navigation', () => {
     const primaryPaths = navGroups.flatMap(([, items]) => items.map(([to]) => to));
-    for (const secondary of ['/people', '/owners', '/tenants', '/lands', '/units', '/commissions', '/invoices', '/receipts', '/expenses', '/arrears', '/utilities', '/service-providers']) {
+    for (const secondary of ['/people', '/owners', '/tenants', '/lands', '/units', '/commissions', '/invoices', '/receipts', '/expenses', '/arrears', '/utilities', '/service-providers', '/admin-support', '/audit-log', '/data-integrity', '/system']) {
       expect(primaryPaths).not.toContain(secondary);
     }
   });
@@ -94,7 +100,14 @@ describe('task-centric app navigation', () => {
     expect(getRouteDefinition('/automation')).toContain("to: '/settings'");
   });
 
-  it('keeps mobile navigation to Menu + Search only', () => {
+  it('keeps destination-style mobile nav empty and exposes one five-tool utility dock', () => {
     expect(mobileNavItems).toHaveLength(0);
+    for (const hook of [
+      'data-mobile-dock-menu',
+      'data-mobile-dock-search',
+      'data-mobile-dock-quick-add',
+      'data-mobile-dock-notifications',
+      'data-mobile-dock-ai',
+    ]) expect(mobileNavigationSource).toContain(hook);
   });
 });

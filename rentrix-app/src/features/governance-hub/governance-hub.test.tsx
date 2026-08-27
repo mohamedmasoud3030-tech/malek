@@ -12,6 +12,7 @@ import { SettingsRouteComponent } from '@/routes/_protected.settings';
 import { SystemRouteComponent } from '@/routes/_protected.system';
 import { GovernanceHubPage } from './governance-hub-page';
 import {
+  getAccessibleGovernanceHubSections,
   getVisibleGovernanceHubSections,
   governanceHubSections,
   type GovernanceHubPermission,
@@ -20,22 +21,33 @@ import {
 const readSource = (path: string) => readFileSync(new URL(path, import.meta.url), 'utf8');
 
 describe('governance hub permissions', () => {
-  it('keeps only sections accepted by the shared permission seam', () => {
+  it('shows only routine settings in primary navigation', () => {
     const allowed = new Set<GovernanceHubPermission>([
       'company.settings.manage',
       'audit.view',
       'auth.password.change',
     ]);
 
-    expect(getVisibleGovernanceHubSections((permission) => allowed.has(permission)).map((section) => section.id))
+    expect(getAccessibleGovernanceHubSections((permission) => allowed.has(permission)).map((section) => section.id))
       .toEqual(['company', 'audit-log', 'security']);
+    expect(getVisibleGovernanceHubSections((permission) => allowed.has(permission)).map((section) => section.id))
+      .toEqual(['company']);
+  });
+
+  it('keeps duplicate/technical/support settings addressable but out of routine tabs', () => {
+    const hidden = governanceHubSections
+      .filter((section) => !section.showInPrimaryNavigation)
+      .map((section) => section.id);
+
+    expect(hidden).toEqual(['cost-centers', 'system-settings', 'audit-log', 'data-integrity', 'security']);
   });
 
   it('returns no tabs when the session has no matching permission', () => {
     expect(getVisibleGovernanceHubSections(() => false)).toEqual([]);
+    expect(getAccessibleGovernanceHubSections(() => false)).toEqual([]);
   });
 
-  it('maps every governance tab to a unique permission', () => {
+  it('maps every governance surface to a unique permission', () => {
     const permissions = governanceHubSections.map((section) => section.permission);
     expect(new Set(permissions).size).toBe(permissions.length);
   });
@@ -46,7 +58,7 @@ describe('governance and legacy route wiring', () => {
     expect(SettingsRouteComponent).toBe(GovernanceHubPage);
   });
 
-  it('keeps legacy standalone routes wired to their original page entries', () => {
+  it('keeps advanced standalone routes wired to their original page entries', () => {
     expect(SystemRouteComponent).toBe(SystemPage);
     expect(AuditLogRouteComponent).toBe(AuditLogPage);
     expect(DataIntegrityRouteComponent).toBe(DataIntegrityPage);
@@ -82,7 +94,7 @@ describe('embedded workspace architecture contract', () => {
     expect(source).toMatch(standaloneWrapper);
   });
 
-  it('keeps visited tab workspaces mounted so unsaved drafts survive tab switches', () => {
+  it('keeps visited workspace content mounted so unsaved drafts survive switches', () => {
     const source = readSource('./components/GovernanceHubWorkspace.tsx');
 
     expect(source).toContain('const [mountedTabs, setMountedTabs]');
@@ -90,9 +102,12 @@ describe('embedded workspace architecture contract', () => {
     expect(source).not.toContain('key={resolvedActiveTab}');
   });
 
-  it('renders a single navigation controller — SectionTabs, no duplicate WorkspaceSubNav', () => {
+  it('renders a single visible settings tab controller', () => {
     const source = readSource('./components/GovernanceHubWorkspace.tsx');
 
+    expect(source).toContain('getAccessibleGovernanceHubSections');
+    expect(source).toContain('getVisibleGovernanceHubSections');
+    expect(source).toContain('items={visibleSections}');
     expect(source).toContain('<SectionTabs');
     expect(source).not.toContain('WorkspaceSubNav');
     expect(source).not.toContain('التنقل الداخلي لمساحة العمل');
