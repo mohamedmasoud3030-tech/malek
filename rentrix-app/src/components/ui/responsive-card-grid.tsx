@@ -34,9 +34,9 @@ const gapClasses = {
  * Canonical repeated-card layout.
  *
  * - Mobile: fixed 2×N rhythm.
- * - Desktop: remains 2 columns by default; an explicit `desktopColumns={3}`
- *   is the only supported wider rhythm.
- * - Legacy requests for 4+ columns intentionally collapse to 2 so dense
+ * - Desktop: remains 2 columns by default; operational metrics may opt into
+ *   3 columns, while a bounded set of four short KPIs may use 4 columns.
+ * - Legacy requests for 5+ columns intentionally collapse to 2 so dense
  *   dashboards do not become sparse strips of tiny cards.
  * - Odd final cards fill the remaining mobile row; two-column desktop grids
  *   keep that full-row treatment so pages do not end with a large empty gap.
@@ -51,20 +51,22 @@ export function ResponsiveCardGrid({
   'aria-labelledby': ariaLabelledBy,
   'data-finance-kpi-grid': financeKpiGridMarker,
 }: ResponsiveCardGridProps) {
-  const allowThreeColumns = desktopColumns === 3;
+  const desktopGrid = desktopColumns === 4 ? '4' : desktopColumns === 3 ? '3' : '2';
 
   return (
     <Component
       data-responsive-card-grid
       data-finance-kpi-grid={financeKpiGridMarker}
-      data-desktop-columns={allowThreeColumns ? '3' : '2'}
+      data-desktop-columns={desktopGrid}
       aria-label={ariaLabel}
       aria-labelledby={ariaLabelledBy}
       className={cn(
         'grid min-w-0 grid-cols-2',
-        allowThreeColumns
-          ? '[&>*:last-child:nth-child(odd)]:col-span-2 lg:grid-cols-3 lg:[&>*:last-child:nth-child(odd)]:col-span-1'
-          : '[&>*:last-child:nth-child(odd)]:col-span-2',
+        desktopGrid === '4'
+          ? '[&>*:last-child:nth-child(odd)]:col-span-2 lg:grid-cols-4 lg:[&>*:last-child:nth-child(odd)]:col-span-1'
+          : desktopGrid === '3'
+            ? '[&>*:last-child:nth-child(odd)]:col-span-2 lg:grid-cols-3 lg:[&>*:last-child:nth-child(odd)]:col-span-1'
+            : '[&>*:last-child:nth-child(odd)]:col-span-2',
         gapClasses[gap],
         '[&>*]:min-w-0',
         className,
