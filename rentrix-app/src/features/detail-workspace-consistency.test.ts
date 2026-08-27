@@ -9,6 +9,8 @@ describe('detail workspace consistency', () => {
     const ownerBody = read('./owners/components/owner-dossier-body.tsx');
     const tenant = read('./tenants/components/TenantPreviewDialog.tsx');
     const provider = read('./service-providers/service-provider-detail-page.tsx');
+    const person = read('./people/components/PersonDossier.tsx');
+    const land = read('./lands/components/LandDossier.tsx');
 
     expect(ownerView).toContain('ariaLabel="أقسام ملف المالك"');
     expect(ownerBody).toContain("data-owner-detail-financials");
@@ -16,5 +18,9 @@ describe('detail workspace consistency', () => {
     expect(tenant).toContain('section={activeSection}');
     expect(provider).toContain('ariaLabel="أقسام ملف مزود الخدمة"');
     expect(provider).toContain('data-provider-detail-operations');
+    expect(person).toContain('ariaLabel="أقسام ملف الشخص"');
+    expect(person).toContain('section={activeSection}');
+    expect(land).toContain('ariaLabel="أقسام ملف الأرض"');
+    expect(land).toContain('section={activeSection}');
   });
 });
