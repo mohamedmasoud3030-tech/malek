@@ -3,6 +3,7 @@
 @import './malek-pro-visual-wave.css';
 @import './app-density-contract.css';
 @import './design-system-foundation.css';
+@import './premium-glass.css';
 
 /* ============================================
    MALIK Visual Contract v2.0
@@ -77,20 +78,13 @@
   [data-theme='dark'] .dashboard-ops-header { box-shadow: var(--shadow-card); }
 }
 
-/* Login ambient brand backdrop — premium Navy + Gold, warm */
+/* Login ambient brand backdrop — premium Navy + Gold, luminous.
+   The base environment is painted once by premium-glass.css (body::before);
+   this layer only adds the brighter pools that belong to the entry surface. */
 [data-login-surface] {
-  background:
-    radial-gradient(42rem 42rem at 112% -12%, hsl(222 68% 28% / 0.10), transparent 60%),
-    radial-gradient(36rem 36rem at -10% 110%, hsl(38 88% 55% / 0.08), transparent 58%),
-    radial-gradient(28rem 28rem at 50% -20%, hsl(40 20% 92% / 0.5), transparent 70%),
-    hsl(var(--background));
-}
-
-[data-theme='dark'] [data-login-surface] {
-  background:
-    radial-gradient(42rem 42rem at 112% -12%, hsl(222 60% 62% / 0.12), transparent 60%),
-    radial-gradient(36rem 36rem at -10% 110%, hsl(38 88% 60% / 0.10), transparent 58%),
-    hsl(var(--background));
+  background-color: transparent;
+  background-image: var(--premium-login-ambient);
+  background-repeat: no-repeat;
 }
 
 /* ============================================

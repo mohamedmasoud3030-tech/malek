@@ -186,6 +186,7 @@ function HeaderUserMenu({
             id={menuId}
             role="menu"
             aria-label="قائمة المستخدم"
+            data-account-menu-panel
             className="absolute end-0 top-11 z-50 w-[min(17rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-border/90 bg-card text-card-foreground shadow-elevated"
           >
             <div className="flex items-center gap-3 border-b border-border/70 bg-muted/25 px-3.5 py-3">
