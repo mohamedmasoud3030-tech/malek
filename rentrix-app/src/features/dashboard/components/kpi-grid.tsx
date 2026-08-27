@@ -29,7 +29,8 @@ type DashboardKpi = Readonly<{
 /**
  * Money and obligations KPIs. These intentionally complement the stable office
  * pulse instead of repeating collection amount, outstanding amount, occupancy,
- * or active-contract counts.
+ * or active-contract counts. All four slots stay mounted even when a value is
+ * zero so the dashboard density does not jump between periods.
  */
 export function KpiGrid({ snapshot, isLoading, settings }: KpiGridProps) {
   if (isLoading) {
@@ -51,7 +52,7 @@ export function KpiGrid({ snapshot, isLoading, settings }: KpiGridProps) {
   const ownerPayableNum = ownerNetPayable ?? 0;
   const settlementsNum = settlementsDraft ?? 0;
 
-  const allItems: DashboardKpi[] = [
+  const items: DashboardKpi[] = [
     {
       label: 'فرق التحصيل والمصروفات',
       value: money(net),
@@ -99,18 +100,10 @@ export function KpiGrid({ snapshot, isLoading, settings }: KpiGridProps) {
     },
   ];
 
-  const visibleItems = allItems.filter((item) => {
-    if (item.label !== 'المصروفات') return true;
-    const numeric = Number(String(item.value).replace(/[^\d.-]/g, ''));
-    return Number.isNaN(numeric) || numeric !== 0;
-  });
-
-  if (visibleItems.length === 0) return null;
-
   return (
     <div data-dashboard-kpi-grid>
       <ResponsiveCardGrid desktopColumns={2} gap="md" aria-label="المال والالتزامات">
-        {visibleItems.map((item) => (
+        {items.map((item) => (
           <Link
             key={item.label}
             to={item.to}
