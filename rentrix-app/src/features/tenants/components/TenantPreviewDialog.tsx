@@ -13,9 +13,9 @@ import { LoadingState } from '@/components/ui/loading-state';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { SectionTabs } from '@/components/ui/section-tabs';
 import { useAuth } from '@/hooks/use-auth';
+import { useCompanyFormatters } from '@/hooks/useCompanyFormatters';
 import { businessReferenceOrLabel } from '@/lib/business-reference';
-import { formatCompanyDateTime, formatDefaultCompanyMoney } from '@/lib/companyFormatters';
-import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
+import { formatCompanyDateTime } from '@/lib/companyFormatters';
 import { useTenantDossier } from '../useTenantWorkspace';
 import { useDialogNavigate } from '@/app/router/background-location';
 
@@ -31,7 +31,7 @@ const tenantSections = [
 export function TenantDossierContent({ tenantId, section }: Readonly<{ tenantId: string; section?: TenantSection }>) {
   const dialogNavigate = useDialogNavigate();
   const { canAccess } = useAuth();
-  const companySettings = useCompanySettingsContract();
+  const companyFormatters = useCompanyFormatters();
   const canViewFinancial = canAccess('arrears.view');
   const canViewActivity = canAccess('communication.view');
   const query = useTenantDossier(tenantId, canViewFinancial, canViewActivity);
@@ -102,13 +102,13 @@ export function TenantDossierContent({ tenantId, section }: Readonly<{ tenantId:
           <CardContent className="space-y-3">
             <div className="flex flex-wrap gap-2">
               <StatusBadge tone="info">{dossier.invoices.length} فواتير</StatusBadge>
-              <StatusBadge tone={outstanding > 0 ? 'warning' : 'success'}>الرصيد المفتوح {formatDefaultCompanyMoney(outstanding)}</StatusBadge>
+              <StatusBadge tone={outstanding > 0 ? 'warning' : 'success'}>الرصيد المفتوح {companyFormatters.money(outstanding)}</StatusBadge>
             </div>
 
             {dossier.invoices.map((invoice) => (
               <div key={invoice.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3">
                 <span className="font-bold">{businessReferenceOrLabel(invoice, 'فاتورة مسجلة')}</span>
-                <span className="text-sm">الاستحقاق {invoice.due_date} · المتبقي {formatDefaultCompanyMoney(Math.max(0, Number(invoice.amount) - Number(invoice.paid_amount)))}</span>
+                <span className="text-sm">الاستحقاق {invoice.due_date} · المتبقي {companyFormatters.money(Math.max(0, Number(invoice.amount) - Number(invoice.paid_amount)))}</span>
                 <Button asChild variant="secondary"><Link to="/invoices" search={{ invoiceId: invoice.id } as never}>فتح الفاتورة</Link></Button>
               </div>
             ))}
@@ -144,7 +144,7 @@ export function TenantDossierContent({ tenantId, section }: Readonly<{ tenantId:
                   <li key={item.id} className="rounded-xl border p-3">
                     <p className="font-bold">{item.subject || 'تواصل مسجل'}</p>
                     <p className="mt-1 text-sm text-muted-foreground">{item.body}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">{formatCompanyDateTime(companySettings, item.created_at)}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{formatCompanyDateTime(companyFormatters, item.created_at)}</p>
                   </li>
                 ))}
               </ul>
