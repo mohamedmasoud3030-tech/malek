@@ -83,6 +83,7 @@ export function OwnerDossierBody({
   settlements,
   canOpenOwnerSettlements = false,
   activity,
+  section,
 }: Readonly<{
   snapshot: OwnerDetailSnapshot;
   settlements?: readonly OwnerSettlementRecord[];
