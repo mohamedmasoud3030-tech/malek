@@ -1,14 +1,25 @@
 import { useState } from 'react';
-import { AlertTriangle, CheckCircle2, Clock, FileCheck, CalendarDays, ShieldAlert, RefreshCcw } from 'lucide-react';
+import { AlertTriangle, CalendarDays, CheckCircle2, Clock, FileCheck, RefreshCcw } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { AsyncContentState } from '@/components/async-content-state';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { AsyncContentState } from '@/components/async-content-state';
 import { useActiveCompanyId } from '@/hooks/use-company';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
-import { getBillingReadiness, generateInvoicesFromActiveContracts, type BillingObligation, type BillingStatus } from './billing-readiness-service';
+import {
+  generateInvoicesFromActiveContracts,
+  getBillingReadiness,
+  type BillingObligation,
+  type BillingStatus,
+} from './billing-readiness-service';
+import {
+  billingActionErrorMessage,
+  billingIssueMessage,
+  billingStatusLabel,
+  paymentCycleLabel,
+} from './billing-readiness-presentation';
 
 function toneForStatus(status: BillingStatus): 'success' | 'warning' | 'danger' | 'info' | 'neutral' {
   switch (status) {
@@ -17,37 +28,19 @@ function toneForStatus(status: BillingStatus): 'success' | 'warning' | 'danger' 
     case 'DUE':
       return 'warning';
     case 'BLOCKED':
+    case 'CHECK_FAILED':
       return 'danger';
     case 'NOT_DUE':
       return 'info';
-    case 'CHECK_FAILED':
-      return 'danger';
     default:
       return 'neutral';
-  }
-}
-
-function labelForStatus(status: BillingStatus): string {
-  switch (status) {
-    case 'NOT_DUE':
-      return 'غير مستحق بعد (قبل يوم الفوترة)';
-    case 'DUE':
-      return 'مستحق';
-    case 'GENERATED':
-      return 'تم إنشاؤه';
-    case 'BLOCKED':
-      return 'محظور';
-    case 'CHECK_FAILED':
-      return 'فشل التحقق — مغلق';
-    default:
-      return status;
   }
 }
 
 export function BillingReadinessSection() {
   const companyId = useActiveCompanyId();
   const queryClient = useQueryClient();
-  const [showOnlyBlocked, setShowOnlyBlocked] = useState(false);
+  const [showOnlyActionable, setShowOnlyActionable] = useState(false);
 
   const readinessQuery = useQuery({
     queryKey: ['billing-readiness', companyId],
@@ -58,132 +51,144 @@ export function BillingReadinessSection() {
   const generateMut = useMutation({
     mutationFn: generateInvoicesFromActiveContracts,
     onSuccess: (count) => {
-      toast.success(`تم توليد ${count} فاتورة من العقود النشطة`);
+      toast.success(count > 0 ? `تم إصدار ${count} فاتورة جديدة` : 'لا توجد فواتير جديدة جاهزة للإصدار');
       void queryClient.invalidateQueries({ queryKey: ['billing-readiness'] });
       void queryClient.invalidateQueries({ queryKey: ['invoices'] });
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : 'تعذر توليد الفواتير'),
+    onError: (error) => toast.error(billingActionErrorMessage(error)),
   });
 
   const obligations = readinessQuery.data ?? [];
-  const filtered = showOnlyBlocked ? obligations.filter((o) => o.status === 'BLOCKED' || o.status === 'DUE' || o.status === 'CHECK_FAILED') : obligations;
+  const filtered = showOnlyActionable
+    ? obligations.filter((obligation) => ['BLOCKED', 'DUE', 'CHECK_FAILED'].includes(obligation.status))
+    : obligations;
 
-  const totalDue = obligations.filter((o) => o.status === 'DUE').length;
-  const totalGenerated = obligations.filter((o) => o.status === 'GENERATED').length;
-  const totalBlocked = obligations.filter((o) => o.status === 'BLOCKED').length;
-  const totalNotDue = obligations.filter((o) => o.status === 'NOT_DUE').length;
-  const totalCheckFailed = obligations.filter((o) => o.status === 'CHECK_FAILED').length;
+  const totalDue = obligations.filter((obligation) => obligation.status === 'DUE').length;
+  const totalGenerated = obligations.filter((obligation) => obligation.status === 'GENERATED').length;
+  const totalBlocked = obligations.filter((obligation) => obligation.status === 'BLOCKED').length;
+  const totalNotDue = obligations.filter((obligation) => obligation.status === 'NOT_DUE').length;
+  const totalCheckFailed = obligations.filter((obligation) => obligation.status === 'CHECK_FAILED').length;
+  const needsAttention = totalBlocked + totalCheckFailed;
+  const actionableCount = needsAttention + totalDue;
 
   const columns: ColumnDef<BillingObligation>[] = [
     {
       key: 'contract',
       header: 'العقد',
       priority: 'identity',
-      render: (o) => (
+      render: (obligation) => (
         <div className="min-w-0">
-          <p className="font-bold tabular-nums">{o.contract_id.slice(0, 8)}</p>
-          <p className="text-xs text-muted-foreground">{o.payment_cycle} — يوم {o.billing_day} + سماح {o.grace_days}</p>
-        </div>
-      ),
-    },
-    {
-      key: 'period',
-      header: 'فترة الاستحقاق',
-      priority: 'detail',
-      render: (o) => (
-        <div className="min-w-0">
-          <p dir="ltr" className="tabular-nums text-xs">
-            {o.period_start} → {o.period_end}
-          </p>
-          <p dir="ltr" className="tabular-nums text-xs text-muted-foreground">
-            إصدار: {o.issue_date} — استحقاق: {o.due_date}
+          <p className="font-bold tabular-nums">{obligation.contract_id.slice(0, 8)}</p>
+          <p className="text-xs text-muted-foreground">
+            {paymentCycleLabel(obligation.payment_cycle)} · يوم {obligation.billing_day} · سماح {obligation.grace_days} يوم
           </p>
         </div>
       ),
     },
     {
       key: 'amount',
-      header: 'قيمة الدفعة التعاقدية',
+      header: 'القيمة',
+      priority: 'primary',
+      render: (obligation) => (
+        <span dir="ltr" className="font-bold tabular-nums">{obligation.rent_amount.toFixed(3)} OMR</span>
+      ),
+    },
+    {
+      key: 'period',
+      header: 'الموعد',
       priority: 'detail',
-      render: (o) => <span dir="ltr" className="font-bold tabular-nums">{o.rent_amount.toFixed(3)} OMR</span>,
+      render: (obligation) => (
+        <div className="min-w-0 text-xs">
+          <p dir="ltr" className="tabular-nums">{obligation.period_start} → {obligation.period_end}</p>
+          <p className="text-muted-foreground">إصدار {obligation.issue_date} · استحقاق {obligation.due_date}</p>
+        </div>
+      ),
     },
     {
       key: 'status',
       header: 'الحالة',
       priority: 'primary',
-      render: (o) => (
-        <div className="space-y-1">
-          <StatusBadge tone={toneForStatus(o.status)}>{labelForStatus(o.status)}</StatusBadge>
-          {o.blocked_reason ? <p className="text-xs text-destructive">{o.blocked_reason}</p> : null}
-          {o.invoice_exists ? <p className="text-xs text-success">فاتورة: {o.invoice_id?.slice(0, 8)}</p> : null}
-        </div>
-      ),
-    },
-    {
-      key: 'meta',
-      header: 'المرجع',
-      priority: 'secondary',
-      render: (o) => (
-        <div className="text-xs">
-          <p>اتفاقية: {o.agreement_id ? o.agreement_id.slice(0, 8) : '—'}</p>
-          <p>دور: {o.collection_role ?? '—'}</p>
-          <p>شرط سداد: {o.payment_terms_id ? o.payment_terms_id.slice(0, 8) + ' (مرجع فقط)' : '—'}</p>
-        </div>
-      ),
+      render: (obligation) => {
+        const issue = billingIssueMessage(obligation.blocked_reason, obligation.status);
+        return (
+          <div className="space-y-1.5" data-billing-status={obligation.status}>
+            <StatusBadge tone={toneForStatus(obligation.status)}>{billingStatusLabel(obligation.status)}</StatusBadge>
+            {issue ? <p className="max-w-md text-xs leading-5 text-destructive">{issue}</p> : null}
+            {obligation.invoice_exists ? (
+              <p className="text-xs text-success">فاتورة {obligation.invoice_id?.slice(0, 8)}</p>
+            ) : null}
+          </div>
+        );
+      },
     },
   ];
 
-  const isLoading = readinessQuery.isLoading;
-  const isError = readinessQuery.isError;
-  const isEmpty = obligations.length === 0;
-
-  const status = isLoading ? ('loading' as const) : isError ? ('error' as const) : isEmpty ? ('empty' as const) : ('ready' as const);
+  const status = readinessQuery.isLoading
+    ? ('loading' as const)
+    : readinessQuery.isError
+      ? ('error' as const)
+      : obligations.length === 0
+        ? ('empty' as const)
+        : ('ready' as const);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <CalendarDays className="size-5" />
-          جاهزية الفوترة والالتزامات
-          <StatusBadge tone={totalBlocked > 0 || totalCheckFailed > 0 ? 'danger' : totalDue > 0 ? 'warning' : 'success'}>
-            {totalBlocked > 0 ? `محظور ${totalBlocked}` : totalCheckFailed > 0 ? `فشل تحقق ${totalCheckFailed}` : totalDue > 0 ? `مستحق ${totalDue}` : 'جاهز'}
-          </StatusBadge>
-        </CardTitle>
-        <div className="space-y-1">
-          <CardDescription>
-            كل عقد نشط OWNER_AGENCY له سياسة فوترة صريحة: يوم الفوترة (1–28) يثبت تاريخ الإصدار داخل الفترة، وتاريخ الاستحقاق = نهاية الفترة + أيام السماح. payment_terms_id هو مرجع فقط، لا يحدد الجدولة حاليًا. الحالة تُحسب من تاريخ الإصدار: قبل يوم الفوترة → غير مستحق، يوم/بعد يوم الفوترة وبدون فاتورة → مستحق، فاتورة موجودة → تم إنشاؤه.
-          </CardDescription>
-          <CardDescription>
-            الفوترة تتم عبر RPC الذري <code>generate_invoices_from_active_contracts</code> وهو idempotent (نفس الفترة لا تُفوتر مرتين بفضل الفهرس الفريد ux_invoices_billing_obligation). المشغل يرى حالة كل التزام: غير مستحق، مستحق، تم إنشاؤه، محظور، فشل تحقق — لا يستنتج الصحة من زر التوليد فقط. حالات FAILED/RECOVERED أُزيلت لعدم وجود سجل تاريخي محكوم للفشل اليوم؛ تُوثق كتحسين مستقبلي.
-          </CardDescription>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <Card data-billing-readiness>
+      <CardHeader className="space-y-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex flex-wrap gap-2 text-xs">
-            <span className="flex items-center gap-1">
-              <Clock className="size-3.5" /> مستحق: {totalDue}
-            </span>
-            <span className="flex items-center gap-1">
-              <CheckCircle2 className="size-3.5 text-success" /> تم إنشاؤه: {totalGenerated}
-            </span>
-            <span className="flex items-center gap-1">
-              <AlertTriangle className="size-3.5 text-destructive" /> محظور: {totalBlocked}
-            </span>
-            <span className="flex items-center gap-1">
-              <FileCheck className="size-3.5 text-info" /> غير مستحق (قبل يوم الفوترة): {totalNotDue}
-            </span>
-            {totalCheckFailed > 0 ? <span className="flex items-center gap-1 text-destructive">فشل تحقق: {totalCheckFailed}</span> : null}
+          <CardTitle className="flex items-center gap-2 text-base">
+            <CalendarDays className="size-5" aria-hidden="true" />
+            جاهزية الفوترة
+          </CardTitle>
+          <StatusBadge tone={needsAttention > 0 ? 'danger' : totalDue > 0 ? 'warning' : 'success'}>
+            {needsAttention > 0 ? `${needsAttention} يحتاج إجراءً` : totalDue > 0 ? `${totalDue} جاهز للفوترة` : 'مستقر'}
+          </StatusBadge>
+        </div>
+        <p className="text-xs font-medium leading-5 text-muted-foreground">
+          راجع العقود الجاهزة لإصدار الفاتورة والعقود التي تحتاج إجراءً قبل الفوترة.
+        </p>
+      </CardHeader>
+
+      <CardContent className="space-y-3">
+        <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4" aria-label="ملخص جاهزية الفوترة">
+          <div className="flex items-center gap-2 rounded-xl border border-border/60 bg-muted/20 px-2.5 py-2">
+            <Clock className="size-3.5 text-warning" aria-hidden="true" />
+            <span>جاهز <strong>{totalDue}</strong></span>
           </div>
-          <div className="flex gap-2">
-            <Button size="sm" variant={showOnlyBlocked ? 'default' : 'outline'} onClick={() => setShowOnlyBlocked((v) => !v)}>
-              {showOnlyBlocked ? 'عرض الكل' : 'عرض المحظور/المستحق فقط'}
-            </Button>
-            <Button size="sm" variant="default" onClick={() => generateMut.mutate()} disabled={generateMut.isPending} className="gap-1">
-              <RefreshCcw className="size-4" />
-              {generateMut.isPending ? 'جارٍ التوليد...' : 'توليد فواتير العقود النشطة (استرداد)'}
-            </Button>
+          <div className="flex items-center gap-2 rounded-xl border border-border/60 bg-muted/20 px-2.5 py-2">
+            <AlertTriangle className="size-3.5 text-destructive" aria-hidden="true" />
+            <span>يحتاج إجراءً <strong>{needsAttention}</strong></span>
           </div>
+          <div className="flex items-center gap-2 rounded-xl border border-border/60 bg-muted/20 px-2.5 py-2">
+            <CheckCircle2 className="size-3.5 text-success" aria-hidden="true" />
+            <span>تم الإصدار <strong>{totalGenerated}</strong></span>
+          </div>
+          <div className="flex items-center gap-2 rounded-xl border border-border/60 bg-muted/20 px-2.5 py-2">
+            <FileCheck className="size-3.5 text-info" aria-hidden="true" />
+            <span>لاحقًا <strong>{totalNotDue}</strong></span>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <Button
+            type="button"
+            size="sm"
+            variant={showOnlyActionable ? 'default' : 'outline'}
+            className="min-h-11"
+            onClick={() => setShowOnlyActionable((value) => !value)}
+            disabled={actionableCount === 0 && !showOnlyActionable}
+          >
+            {showOnlyActionable ? 'عرض الكل' : `تحتاج إجراءً (${actionableCount})`}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => generateMut.mutate()}
+            disabled={generateMut.isPending}
+            className="min-h-11 gap-1.5"
+          >
+            <RefreshCcw className="size-4" aria-hidden="true" />
+            {generateMut.isPending ? 'جارٍ الإصدار...' : 'توليد الفواتير الجاهزة'}
+          </Button>
         </div>
 
         <AsyncContentState
@@ -191,23 +196,11 @@ export function BillingReadinessSection() {
           error={readinessQuery.error as Error}
           errorTitle="تعذر تحميل جاهزية الفوترة"
           errorAction={<Button onClick={() => readinessQuery.refetch()}>إعادة المحاولة</Button>}
-          emptyTitle="لا توجد عقود نشطة"
-          emptyDescription="لا توجد عقود بحالة active مع سياسة فوترة. أنشئ عقدًا نشطًا أولاً."
+          emptyTitle="لا توجد التزامات فوترة حاليًا"
+          emptyDescription="ستظهر هنا العقود النشطة عندما تصبح لها دفعات قابلة للمتابعة."
         >
-          <EntityTable aria-label="التزامات الفوترة" rows={filtered} columns={columns} keyOf={(o) => o.contract_id} />
+          <EntityTable aria-label="التزامات الفوترة" rows={filtered} columns={columns} keyOf={(obligation) => obligation.contract_id} />
         </AsyncContentState>
-
-        <div className="rounded-xl border border-warning/30 bg-warning/10 p-3 text-xs leading-5">
-          <p className="font-bold flex items-center gap-1">
-            <ShieldAlert className="size-4" />
-            كيف يعمل الاسترداد المتكرر والتحقق الفاشل؟
-          </p>
-          <p>
-            نفس الفترة لا تُفوتر مرتين بفضل الفهرس الفريد <code>ux_invoices_billing_obligation</code> على (company_id, contract_id, charge_type, billing_period_start). إذا كان العقد محظورًا سابقًا بسبب TAX_PROFILE_MISSING أو AGREEMENT_MISSING، فإن إصلاح السبب ثم ضغط توليد يعيد نفس الدفعة وينشئ الفاتورة الناقصة فقط — لا تكرار. حالات FAILED/RECOVERED غير موجودة اليوم لعدم وجود سجل محاولات فوترة محكوم؛ تُوثق كتحسين مستقبلي.
-          </p>
-          <p className="mt-1">فشل التحقق من السلطة الضريبية (شبكة/RLS/RPC) يظهر كـ CHECK_FAILED مغلق، لا كـ READY.</p>
-          <p className="mt-1">payment_terms_id حاليًا مرجع فقط. الجدولة الفعلية تُحسم من حقول العقد الصريحة payment_cycle, billing_day, grace_days عبر خوارزمية واحدة موحدة في billing-schedule.ts مطابقة للخادم.</p>
-        </div>
       </CardContent>
     </Card>
   );
