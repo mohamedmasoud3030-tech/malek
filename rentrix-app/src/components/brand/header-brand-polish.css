@@ -1,0 +1,38 @@
+[data-header-brand-lockup] {
+  gap: 0.375rem;
+}
+
+[data-header-brand-monogram] {
+  border-color: hsl(var(--primary) / 0.18);
+  border-radius: 0.7rem;
+  background: hsl(var(--primary) / 0.07);
+  box-shadow: none;
+}
+
+[data-header-brand-monogram] [data-malek-canonical-mark] {
+  width: 1.7rem;
+  height: 1.7rem;
+}
+
+[data-header-wordmark] {
+  font-size: 1.0625rem;
+  font-weight: 800;
+  letter-spacing: 0.055em;
+  line-height: 1;
+}
+
+@media (min-width: 640px) {
+  [data-header-brand-lockup] {
+    gap: 0.5rem;
+  }
+
+  [data-header-brand-monogram] [data-malek-canonical-mark] {
+    width: 1.85rem;
+    height: 1.85rem;
+  }
+
+  [data-header-wordmark] {
+    font-size: 1.125rem;
+    letter-spacing: 0.06em;
+  }
+}
