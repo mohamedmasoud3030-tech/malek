@@ -8,18 +8,9 @@ import {
 import type { SettingsSectionId, SettingsSectionKind, SettingsSectionRenderProps } from './types';
 
 /**
- * WP-D D.1 — declarative settings section registry.
- *
- * Replaces the old static `settingsSections.ts` array as the single source of
- * truth for the Settings workspace: section identity (id/label/description/
- * icon), ownership kind, owned draft fields, and the lazily-loaded section
- * component. `settings-page.tsx` composes the workspace by iterating this
- * registry (D.5); navigation, deep links, and summary tiles consume the
- * compatibility `settingsSections` export below.
- *
- * Each entry supports the plan's extensibility seams without enabling them
- * today: `featureFlag` (gate a section behind a flag) and `migration`
- * (translate a legacy whole-record draft into a section slice).
+ * Declarative Settings registry. All sections remain supported; the primary
+ * navigation flag keeps specialist setup out of the routine office-settings UI
+ * without deleting deep links or the underlying capability.
  */
 export type SettingsSectionDefinition = Readonly<{
   id: SettingsSectionId;
@@ -27,9 +18,9 @@ export type SettingsSectionDefinition = Readonly<{
   description: string;
   icon: LucideIcon;
   kind: SettingsSectionKind;
-  /** Company-settings draft fields owned by this section (empty for non-form sections). */
   fields: readonly CompanySettingsDraftField[];
   component: LazyExoticComponent<ComponentType<SettingsSectionRenderProps>>;
+  showInPrimaryNavigation: boolean;
   featureFlag?: string;
   migration?: (legacyDraft: unknown) => unknown;
 }>;
@@ -50,6 +41,7 @@ export const settingsSectionRegistry: readonly SettingsSectionDefinition[] = [
     icon: Building2,
     kind: 'form',
     fields: draftFieldsFor('office'),
+    showInPrimaryNavigation: true,
     component: lazy(() => import('../sections/OfficeSection').then((module) => ({ default: module.OfficeSection }))),
   },
   {
@@ -59,6 +51,7 @@ export const settingsSectionRegistry: readonly SettingsSectionDefinition[] = [
     icon: FileSignature,
     kind: 'form',
     fields: draftFieldsFor('identity'),
+    showInPrimaryNavigation: true,
     component: lazy(() => import('../sections/IdentitySection').then((module) => ({ default: module.IdentitySection }))),
   },
   {
@@ -68,15 +61,17 @@ export const settingsSectionRegistry: readonly SettingsSectionDefinition[] = [
     icon: FileSignature,
     kind: 'form',
     fields: draftFieldsFor('documents'),
+    showInPrimaryNavigation: true,
     component: lazy(() => import('../sections/DocumentsSection').then((module) => ({ default: module.DocumentsSection }))),
   },
   {
     id: 'finance-readiness',
     label: 'جاهزية المالية والضريبة',
-    description: 'راجع ضريبة الإيجار والأتعاب والفترات المحاسبية ودليل الحسابات قبل التشغيل المالي.',
+    description: 'مراجعة متخصصة لإعدادات التشغيل المالي والضريبي.',
     icon: ShieldAlert,
     kind: 'operations',
     fields: [],
+    showInPrimaryNavigation: false,
     component: lazy(() => import('../sections/FinanceReadinessSection').then((module) => ({ default: module.SettingsFinanceReadinessSection }))),
   },
   {
@@ -86,6 +81,7 @@ export const settingsSectionRegistry: readonly SettingsSectionDefinition[] = [
     icon: FolderTree,
     kind: 'operations',
     fields: [],
+    showInPrimaryNavigation: false,
     component: lazy(() => import('../sections/CostCentersSection').then((module) => ({ default: module.CostCentersSection }))),
   },
   {
@@ -95,6 +91,7 @@ export const settingsSectionRegistry: readonly SettingsSectionDefinition[] = [
     icon: CalendarClock,
     kind: 'operations',
     fields: [],
+    showInPrimaryNavigation: false,
     component: lazy(() => import('../sections/PaymentTermsSection').then((module) => ({ default: module.PaymentTermsSection }))),
   },
   {
@@ -104,6 +101,7 @@ export const settingsSectionRegistry: readonly SettingsSectionDefinition[] = [
     icon: Bell,
     kind: 'form',
     fields: draftFieldsFor('notifications'),
+    showInPrimaryNavigation: true,
     component: lazy(() => import('../sections/NotificationsSection').then((module) => ({ default: module.NotificationsSection }))),
   },
   {
@@ -113,6 +111,7 @@ export const settingsSectionRegistry: readonly SettingsSectionDefinition[] = [
     icon: Cog,
     kind: 'system',
     fields: [],
+    showInPrimaryNavigation: true,
     component: lazy(() => import('../sections/SystemSection').then((module) => ({ default: module.SystemSection }))),
   },
 ] as const;
@@ -123,15 +122,14 @@ export function getSettingsSection(id: SettingsSectionId): SettingsSectionDefini
   return settingsSectionRegistry.find((section) => section.id === id);
 }
 
+export function getVisibleSettingsSections(): readonly SettingsSectionDefinition[] {
+  return settingsSectionRegistry.filter((section) => section.showInPrimaryNavigation);
+}
+
 export function getSettingsSectionDraftFields(id: SettingsSectionId): readonly CompanySettingsDraftField[] {
   return getSettingsSection(id)?.fields ?? [];
 }
 
-/**
- * Field ownership contract: every persisted company-settings field maps to the
- * section that owns it. Consumers (validation, dirty tracking, section
- * persistence) derive ownership from this instead of duplicating field lists.
- */
 export function getCompanySettingsSectionFieldOwners(): Readonly<Record<CompanySettingsDraftField, SettingsSectionId>> {
   const owners = {} as Record<CompanySettingsDraftField, SettingsSectionId>;
 
@@ -144,13 +142,9 @@ export function getCompanySettingsSectionFieldOwners(): Readonly<Record<CompanyS
   return owners;
 }
 
-/* ------------------------------------------------------------------ */
-/* Compatibility surface (previously `settingsSections.ts`)           */
-/* ------------------------------------------------------------------ */
-
 export type SettingsSectionListItem = Pick<SettingsSectionDefinition, 'id' | 'label' | 'description' | 'icon'>;
 
-/** Navigation/label shape — identical to the historical `settingsSections`. */
+/** Full compatibility surface; callers choose whether to show routine-only sections. */
 export const settingsSections: readonly SettingsSectionListItem[] = settingsSectionRegistry.map((section) => ({
   id: section.id,
   label: section.label,
