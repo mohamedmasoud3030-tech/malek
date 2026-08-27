@@ -86,4 +86,31 @@ describe('UX completion contract', () => {
     expect(dataError).toContain('SAFE_DATA_ERROR_FALLBACK');
     expect(settings).not.toContain('companySettingsQuery.error.message');
   });
+
+  it('keeps statements and deposits free of technical implementation copy and raw identifiers', () => {
+    const depositWorkspace = source('features/financials/deposits/deposits-workspace.tsx');
+    const depositForms = source('features/financials/deposits/deposit-action-forms.tsx');
+    const depositController = source('features/financials/deposits/use-deposit-workspace-controller.ts');
+    const statements = source('features/reports/components/statements/statement-account-panels.tsx');
+    const system = source('features/system/system-page.tsx');
+
+    expect(depositWorkspace).not.toContain('RPC ذري');
+    expect(depositForms).not.toContain('RPC ذري');
+    expect(depositForms).not.toContain('evidence://');
+    expect(depositForms).not.toContain('.id.slice(0, 8)');
+    expect(depositForms).toContain('getActionableSupabaseErrorMessage');
+    expect(depositController).toContain('getActionableSupabaseErrorMessage');
+    expect(depositController).not.toContain('error instanceof Error ? error.message');
+
+    expect(statements).not.toContain('من RPC');
+    expect(statements).not.toContain('formatShortId(');
+    expect(statements).not.toContain('statement.commissionType ??');
+    expect(statements).not.toContain('settlement في مصدر الكشف');
+    expect(statements).toContain("if (type === 'RATE') return `نسبة");
+    expect(statements).toContain("if (type === 'FIXED_MONTHLY') return `مبلغ شهري");
+
+    expect(system).not.toContain('SQL مباشرة');
+    expect(system).not.toContain('بلا RPC');
+    expect(system).not.toContain('DDL');
+  });
 });
