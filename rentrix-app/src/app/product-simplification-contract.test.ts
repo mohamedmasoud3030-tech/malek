@@ -79,6 +79,24 @@ describe('production product simplification contract', () => {
     expect(crudWriteError).toContain('أعد المحاولة، وإذا استمرت المشكلة تواصل مع مسؤول النظام');
   });
 
+  it('keeps users and permission reviews free of hidden support mechanics and raw routes', () => {
+    const users = source('../features/governance-hub/components/UserRolesWorkspace.tsx');
+    expect(users).not.toContain("to=\"/admin-support\"");
+    expect(users).not.toContain('بحث مقنّع');
+    expect(users).not.toContain('مقترح غير منفذ');
+    expect(users).not.toContain('المورد: {request.resource_route');
+    expect(users).toContain('requestScopeLabel(request.resource_route)');
+  });
+
+  it('keeps fixed monthly accrual UI operator-facing', () => {
+    const accrual = source('../features/financials/fixed-monthly-accruals/fixed-monthly-accrual-workspace.tsx');
+    for (const forbidden of ['FIXED_MONTHLY', 'DAILY_ACCRUAL', 'الحساب 2100', 'error.message', 'نسخة {row.versionNo}']) {
+      expect(accrual).not.toContain(forbidden);
+    }
+    expect(accrual).toContain('احتساب الاستحقاقات');
+    expect(accrual).toContain('راجع جاهزية المالية والضريبة قبل التنفيذ');
+  });
+
   it('keeps implementation diagnostics out of finance readiness copy', () => {
     const readiness = source('../features/financials/tax-authority/finance-readiness-section.tsx');
     for (const forbidden of [
