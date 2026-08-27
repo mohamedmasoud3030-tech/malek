@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useActiveCompanyId } from '@/hooks/use-company';
+import { buildCompanySettingsSearch } from '@/features/governance-hub/governance-hub-navigation';
 import { getFinanceReadiness, type FinanceReadiness, type ReadinessState } from './finance-readiness-service';
 
 function toneForState(state: ReadinessState): 'success' | 'warning' | 'danger' | 'info' {
@@ -61,6 +62,16 @@ function TaxReadinessCard({
         </p>
         {state === 'READY' && rate !== null ? <p><span className="font-bold">النسبة الحالية:</span> {rate}%</p> : null}
         {state === 'READY' && effectiveFrom ? <p className="text-muted-foreground">سارية من {effectiveFrom}</p> : null}
+        {/* Every non-ready tax setting links straight to its corrective surface. */}
+        {state !== 'READY' ? (
+          <Link
+            to="/settings"
+            search={buildCompanySettingsSearch({}, 'finance-readiness') as never}
+            className="inline-flex min-h-8 items-center gap-1 font-semibold text-primary hover:underline"
+          >
+            فتح إعدادات الضريبة
+          </Link>
+        ) : null}
       </CardContent>
     </Card>
   );
