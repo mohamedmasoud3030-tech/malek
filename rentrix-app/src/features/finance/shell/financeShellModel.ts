@@ -1,9 +1,9 @@
 /**
  * Finance Hub Unified Shell — Navigation, Permissions, Deep-Link Resolution.
  *
- * Single source of truth for finance navigation. Merges finance-hub/ and financials/
- * navigation models. All financial operational views (collections, expenses, fees,
- * funds, banking) resolve through this shell. Accounting views remain in accounting/.
+ * Single source of truth for finance navigation. Daily operator navigation stays
+ * focused on overview, collections and expenses; specialist finance work remains
+ * permission-guarded and addressable through deep links/contextual actions.
  */
 import {
   BadgeDollarSign,
@@ -53,15 +53,16 @@ export interface FinanceSectionDefinition {
   label: string;
   icon: LucideIcon;
   defaultViewId: FinanceViewId | null;
+  showInPrimaryNavigation: boolean;
 }
 
 export const FINANCE_SECTIONS: readonly FinanceSectionDefinition[] = [
-  { id: 'overview', label: 'وضع المال', icon: LayoutDashboard, defaultViewId: 'overview' },
-  { id: 'collections', label: 'المستحقات والتحصيل', icon: ReceiptText, defaultViewId: 'invoices' },
-  { id: 'expenses', label: 'المصروفات والعمولات', icon: WalletCards, defaultViewId: 'expenses' },
-  { id: 'fees', label: 'الأتعاب والاستحقاقات', icon: CalendarDays, defaultViewId: 'fixed_monthly_accruals' },
-  { id: 'funds', label: 'التأمينات والملاك', icon: FileCheck, defaultViewId: 'deposits' },
-  { id: 'banking', label: 'البنوك والمطابقة', icon: Landmark, defaultViewId: 'bank_reconciliation' },
+  { id: 'overview', label: 'وضع المال', icon: LayoutDashboard, defaultViewId: 'overview', showInPrimaryNavigation: true },
+  { id: 'collections', label: 'المستحقات والتحصيل', icon: ReceiptText, defaultViewId: 'invoices', showInPrimaryNavigation: true },
+  { id: 'expenses', label: 'المصروفات', icon: WalletCards, defaultViewId: 'expenses', showInPrimaryNavigation: true },
+  { id: 'fees', label: 'الأتعاب والاستحقاقات', icon: CalendarDays, defaultViewId: 'fixed_monthly_accruals', showInPrimaryNavigation: false },
+  { id: 'funds', label: 'التأمينات والملاك', icon: FileCheck, defaultViewId: 'deposits', showInPrimaryNavigation: false },
+  { id: 'banking', label: 'البنوك والمطابقة', icon: Landmark, defaultViewId: 'bank_reconciliation', showInPrimaryNavigation: false },
 ];
 
 export const FINANCE_VIEWS: readonly FinanceViewDefinition[] = [
@@ -91,12 +92,18 @@ export function getPermittedViews(
   return FINANCE_VIEWS.filter((view) => isViewPermitted(authorization, view));
 }
 
+/**
+ * Sections rendered by the routine Finance shell navigation. Specialist sections
+ * remain reachable when an explicitly requested permitted view resolves to them.
+ */
 export function getPermittedSections(
   authorization: AuthorizationContext | null | undefined,
 ): FinanceSectionDefinition[] {
   const permittedViews = getPermittedViews(authorization);
   const permittedSectionIds = new Set(permittedViews.map((view) => view.sectionId));
-  return FINANCE_SECTIONS.filter((section) => permittedSectionIds.has(section.id));
+  return FINANCE_SECTIONS.filter(
+    (section) => section.showInPrimaryNavigation && permittedSectionIds.has(section.id),
+  );
 }
 
 export interface FinancialsSearch {
@@ -137,8 +144,6 @@ export function resolveFinanceLocation(
     sId = 'expenses';
     vId = 'commissions';
   } else if (sec === 'fees' || sec === 'fixed_monthly_accruals' || vi === 'fixed_monthly_accruals') {
-    // Preserve old ?section=funds&view=fixed_monthly_accruals links while
-    // giving management-fee accrual its truthful revenue/receivable home.
     sId = 'fees';
     vId = 'fixed_monthly_accruals';
   } else if (['funds', 'deposits', 'owner_settlements'].includes(sec)) {

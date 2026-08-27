@@ -44,19 +44,18 @@ describe('task-centric app navigation', () => {
     expect(workspaceChildNavItems['/contracts'].map(([to]) => to)).toEqual(['/contracts', '/contracts', '/contracts', '/contracts']);
   });
 
-  it('keeps every Money child inside /financials with explicit section/view state', () => {
+  it('shows only daily Money tasks in routine navigation', () => {
     const children = workspaceChildNavItems['/financials'];
-    expect(children.map(([to]) => to)).toEqual(Array(8).fill('/financials'));
+    expect(children.map(([to]) => to)).toEqual(Array(4).fill('/financials'));
     expect(children.map(([, labelKey, , , permission, search]) => ({ labelKey, permission, search }))).toEqual([
       { labelKey: 'invoices', permission: undefined, search: { section: 'collections', view: 'invoices' } },
       { labelKey: 'receipts', permission: undefined, search: { section: 'collections', view: 'receipts' } },
       { labelKey: 'arrears', permission: 'arrears.view', search: { section: 'collections', view: 'arrears' } },
       { labelKey: 'expenses', permission: 'expenses.view', search: { section: 'expenses', view: 'expenses' } },
-      { labelKey: 'deposits', permission: 'financial.deposits.view', search: { section: 'funds', view: 'deposits' } },
-      { labelKey: 'ownerSettlements', permission: 'financial.owner_settlements.view', search: { section: 'funds', view: 'owner_settlements' } },
-      { labelKey: 'bankReconciliation', permission: 'financial.bank_reconciliation.view', search: { section: 'banking', view: 'bank_reconciliation' } },
-      { labelKey: 'commissions', permission: 'commissions.view', search: { section: 'expenses', view: 'commissions' } },
     ]);
+    for (const specialist of ['deposits', 'ownerSettlements', 'bankReconciliation', 'commissions']) {
+      expect(children.some(([, labelKey]) => labelKey === specialist)).toBe(false);
+    }
   });
 
   it('keeps Services inside /maintenance and Settings limited to three routine entry points', () => {
