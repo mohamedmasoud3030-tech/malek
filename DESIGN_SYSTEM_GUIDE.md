@@ -7,10 +7,11 @@ Backend/database: out of scope
 
 > **Precedence.** This guide holds the *durable* design principles: tokens,
 > semantic colour, typography, spacing, RTL, accessibility and the approved
-> primitive set. **Current `main` is the source of truth for shipped product
-> behaviour and composition.** Where this guide describes an older
-> implementation-specific pattern that a later merged UX decision replaced, the
-> shipped behaviour wins and this guide is updated to match — never the reverse.
+> primitive set. The canonical UX/IA contract governs target product behaviour
+> and composition; current `main` records repository reality. Where this guide
+> describes an older implementation-specific pattern that a later canonical UX
+> decision replaced, the canonical decision wins and this guide is updated to
+> match — never the reverse.
 >
 > The canonical UX/IA contract is
 > `docs/source-of-truth/06_UX_IA_AND_DESIGN_CONTRACT.md`. When a rule here and a
@@ -50,7 +51,7 @@ This guide consolidates the existing direction; it is not a wholesale redesign.
 | Cards | `src/components/ui/card.tsx` |
 | Inputs and text fields | `src/components/ui/input.tsx`, `text-field.tsx` |
 | Tables | `src/components/ui/table.tsx`, `entity-table.tsx`, `data-table.tsx` |
-| Dialogs and drawers | `src/components/ui/dialog.tsx`, `modal.tsx`, `drawer.tsx` |
+| Dialogs and sheets | `src/components/ui/dialog.tsx`, `modal.tsx`, `drawer.tsx` (shared `BottomSheet`) |
 | Page/list scaffolds | `src/components/layout/page-layout.tsx`, `list-page.tsx`, `embeddable-workspace.tsx` |
 | Fonts and language direction | `public/fonts/fonts.css`, `src/lib/product-fonts.ts`, `src/lib/i18n.ts` |
 
@@ -153,26 +154,33 @@ Use `TextField`/`FormField` for label, help, error, and required-state behavior.
 
 Use `EntityTable` for entity registers and `DataTable` for general tabular data. Use the shared empty/loading/error surfaces instead of custom state rows.
 
-Register presentation is breakpoint-driven, per the canonical UX contract:
+Relevant operational registers use one shared foundation with a Cards ⇄ Table
+view choice, per the canonical UX contract:
 
-- **≥ 768px** — a dense semantic table. Every viewport at this width renders the
-  same table; it scrolls horizontally rather than degrading into cards.
-- **< 768px** — a true mobile register presentation: each record shows identity,
-  one meaningful primary/secondary datum (status/amount/date), and a compact
+- **Phone (< 768px)** — Cards are the default: each record shows identity, one
+  meaningful primary/secondary datum (status/amount/date), and a compact
   accessible «إجراءات» menu containing only that record's existing actions.
+  A user may choose Table mode when the register benefits from it.
+- **Tablet and desktop (≥ 768px)** — use a dense semantic table by default;
+  Cards remain an available view when they serve the task better.
 
-Mobile registers never use horizontal scrolling, clipped labels, overlapping RTL
-text, disclosure/expansion rows, sticky action columns, or bulk expand-all
-controls. Registers without an explicit mobile summary fall back to their first
-two useful loaded fields.
+Card mode never uses clipped labels, overlapping RTL text, disclosure/expansion
+rows, sticky action columns, or bulk expand-all controls. Table mode may scroll
+horizontally **inside its own container only**; the page itself must never gain
+horizontal overflow. Registers without an explicit mobile summary fall back to
+their first two useful loaded fields.
 
-> **Supersedes** the earlier "every viewport renders the same table; do not
-> convert tabular registers into mobile cards" rule, which the shipped mobile
-> shell replaced. See §10.
+> **Supersedes** the earlier card-only/no-table mobile rule and the earlier
+> "every viewport renders the same table" rule. See §10.
 
 ### Overlays
 
-Use `Dialog` for modal workflows and `Drawer`/bottom sheet for contextual mobile workflows. Keep focus restoration, `aria-modal`, Escape behavior, and safe-area padding intact. Do not introduce a second overlay implementation.
+Use `Dialog` for modal workflows. Phone primary navigation opens through the
+shared `BottomSheet` implementation (provided by `drawer.tsx`); contextual
+mobile workflows use that same bottom-sheet primitive where appropriate. Keep
+focus restoration, `aria-modal`, Escape behavior, and safe-area padding intact.
+Do not introduce a second overlay implementation or a side-drawer navigation
+pattern on phone.
 
 ### States
 
@@ -211,10 +219,12 @@ same product:
   icon rail. Tablet (768–1023px) is a first-class band, not a stretched phone.
 - Phone (< 768px) has no destination-style bottom navigation. One floating
   utility dock provides Menu, Search, Quick Add, Notifications and AI; it hides
-  while the drawer is open, respects safe-area insets, and keeps 44px targets.
+  while the bottom sheet is open, respects safe-area insets, and keeps 44px
+  targets. Menu opens the shared bottom-sheet primary navigation.
 - Mobile is a first-class operating mode of the same system: controls remain
-  tappable, registers use the mobile card presentation below 768px (see §4), and
-  fixed docks reserve content space through `--mobile-dock-clearance`.
+  tappable, registers default to Cards below 768px while retaining the shared
+  Table choice (see §4), and fixed docks reserve content space through
+  `--mobile-dock-clearance`.
 - At zoom 200%, content must remain readable without horizontal page overflow; local horizontal scrolling is acceptable for wide data tables.
 - Avoid fixed heights for text-bearing surfaces.
 - Preserve focus visibility on keyboard navigation and never remove outlines without a replacement.
@@ -285,14 +295,14 @@ Before merging a visual change:
 ## 10. Superseded by shipped product decisions
 
 Recorded so these are not re-applied from an older reading of this guide. In
-every case the shipped implementation on `main` is authoritative.
+every case the canonical UX/IA decision is authoritative; `main` records the
+implementation that must be reconciled to it.
 
 | Earlier guidance here | Shipped decision that replaced it | Evidence |
 | --- | --- | --- |
-| "Every viewport renders the same table; do not convert tabular registers into mobile cards." | Registers render a dense table at ≥ 768px and a true mobile card presentation below 768px, with a compact «إجراءات» menu per record. | `06_UX_IA_AND_DESIGN_CONTRACT.md`; `components/ui/mobile-card.tsx`; `entity-table-mobile-summary.test.ts` |
+| "Every viewport renders the same table" and the later card-only/no-table mobile rule. | Relevant registers use one Cards ⇄ Table foundation. Phone defaults to Cards; users may choose Table, which scrolls only inside its own container. | `06_UX_IA_AND_DESIGN_CONTRACT.md`; `components/ui/mobile-card.tsx`; `entity-table-mobile-summary.test.ts` |
 | "Royal blue as the single primary action color." | Deep navy primary with a restrained gold accent. | `styles/tokens.css` (`--color-primary: 222 68% 28%`, `--accent: 38 88% 55%`) |
 | "No decorative gradients, glass effects … in operational screens." | The `premium-glass` surface system is the approved chrome, with a blur budget that keeps cards blur-free. | `styles/premium-glass.css`; `premium-glass-design-contract.test.ts` |
 | "Desktop uses a right-side collapsible sidebar." | The desktop sidebar is fixed, always visible and named; it never becomes an unnamed icon rail. | `app/layout/app-shell.tsx` (`fixed … w-64 … lg:flex`, `lg:pr-64`); `desktop-shell-contract.test.ts` |
 | Card header inset 8px against 12px body inset. | Header and content share one box (12px phone / 16px `sm`) so titles align with body copy. | `components/ui/card.tsx` |
 | Per-register `new Intl.NumberFormat('en-US')` count helpers. | One canonical `formatCount` in `lib/formatters.ts`. | `lib/formatters.test.ts` |
-
