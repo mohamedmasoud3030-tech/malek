@@ -74,17 +74,24 @@ beforeEach(() => {
 describe('Global Command Center — task-centric static navigation', () => {
   const command = (id: string) => STATIC_COMMANDS.find((candidate) => candidate.id === id)!;
 
-  it('uses the owning workspace for every secondary capability', () => {
+  it('uses only routine owning-workspace destinations', () => {
     expect(command('dashboard')).toMatchObject({ title: 'اليوم', canonicalRoute: '/dashboard' });
     expect(command('lands')).toMatchObject({ canonicalRoute: '/properties', search: { section: 'lands' }, permission: 'lands.view' });
     expect(command('owners')).toMatchObject({ canonicalRoute: '/properties', search: { section: 'owners' }, permission: 'owners.hub.view' });
     expect(command('tenants')).toMatchObject({ canonicalRoute: '/contracts', search: { workspace: 'tenants' } });
-    expect(command('people')).toMatchObject({ canonicalRoute: '/contracts', search: { workspace: 'people' } });
-    expect(command('commissions')).toMatchObject({ canonicalRoute: '/financials', search: { section: 'expenses', view: 'commissions' }, permission: 'commissions.view' });
+    expect(command('financial-expenses')).toMatchObject({ canonicalRoute: '/financials', search: { section: 'expenses', view: 'expenses' }, permission: 'expenses.view' });
     expect(command('service-providers')).toMatchObject({ canonicalRoute: '/maintenance', search: { section: 'service_providers' }, permission: 'service_providers.view' });
     expect(command('utilities')).toMatchObject({ canonicalRoute: '/maintenance', search: { section: 'utilities' } });
     expect(command('documents')).toMatchObject({ canonicalRoute: '/maintenance', search: { section: 'documents_vault' } });
     expect(command('automation')).toMatchObject({ canonicalRoute: '/settings', search: { section: 'automation' }, permission: 'automation.view' });
+  });
+
+  it('does not re-advertise hidden relationship or specialist finance registers', () => {
+    const ids = STATIC_COMMANDS.map((candidate) => candidate.id);
+    for (const hidden of [
+      'people', 'leads', 'communication', 'commissions', 'financial-deposits',
+      'financial-owner-settlements', 'financial-bank-reconciliation',
+    ]) expect(ids).not.toContain(hidden);
   });
 
   it('does not expose old list-module routes as static command destinations', () => {
@@ -95,10 +102,10 @@ describe('Global Command Center — task-centric static navigation', () => {
   });
 
   it('filters protected commands with the existing permission seam', () => {
-    mockCanAccess.mockImplementation((permission) => permission !== 'lands.view' && permission !== 'commissions.view');
+    mockCanAccess.mockImplementation((permission) => permission !== 'lands.view' && permission !== 'expenses.view');
     const { result } = renderHook(() => useCommandSearch(''));
     expect(result.current.staticCommands.some((candidate) => candidate.id === 'lands')).toBe(false);
-    expect(result.current.staticCommands.some((candidate) => candidate.id === 'commissions')).toBe(false);
+    expect(result.current.staticCommands.some((candidate) => candidate.id === 'financial-expenses')).toBe(false);
     expect(result.current.staticCommands.some((candidate) => candidate.id === 'settings')).toBe(true);
   });
 
