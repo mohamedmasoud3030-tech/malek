@@ -18,18 +18,18 @@ type GovernanceLink = Readonly<{
 }>;
 
 const governanceLinks: readonly GovernanceLink[] = [
-  { to: '/admin-support', title: 'عمليات الدعم والتحقيق', description: 'طلبات الدعم وبحث مقنّع وسجل أحداث محدود حسب الدور.', permission: 'support.operations.view', icon: ShieldCheck },
-  { to: '/settings', search: { section: 'audit-log' }, title: 'سجل التدقيق', description: 'عرض أحداث الحوكمة قراءة فقط — لا يُعدَّل أي سجل.', permission: 'audit.view', icon: ListChecks },
-  { to: '/settings', search: { section: 'data-integrity' }, title: 'سلامة البيانات', description: 'تشغيل فحوصات قراءة فقط على العلاقات الأساسية في المخطط.', permission: 'integrity.view', icon: SearchCheck },
-  { to: '/settings', search: { section: 'security' }, title: 'تغيير كلمة المرور', description: 'تحديث كلمة مرور حسابك الحالي بأمان.', permission: 'auth.password.change', icon: KeyRound },
-  { to: '/settings', search: { section: 'company' }, title: 'إعدادات الشركة', description: 'إدارة إعدادات العملة واللغة والمعلومات التجارية.', permission: 'company.settings.manage', icon: Settings },
+  { to: '/admin-support', title: 'عمليات الدعم والتحقيق', description: 'طلبات الدعم ومراجعة الحالات حسب صلاحياتك.', permission: 'support.operations.view', icon: ShieldCheck },
+  { to: '/settings', search: { section: 'audit-log' }, title: 'سجل التدقيق', description: 'راجع الأحداث المسجلة دون تعديلها.', permission: 'audit.view', icon: ListChecks },
+  { to: '/settings', search: { section: 'data-integrity' }, title: 'سلامة البيانات', description: 'افحص ترابط البيانات الأساسية دون تغييرها.', permission: 'integrity.view', icon: SearchCheck },
+  { to: '/settings', search: { section: 'security' }, title: 'تغيير كلمة المرور', description: 'حدّث كلمة مرور حسابك الحالي.', permission: 'auth.password.change', icon: KeyRound },
+  { to: '/settings', search: { section: 'company' }, title: 'إعدادات الشركة', description: 'إدارة العملة واللغة والمعلومات التجارية.', permission: 'company.settings.manage', icon: Settings },
 ];
 
 const governancePrinciples = [
-  { label: 'نموذج الصلاحيات', value: 'يفشل مغلقاً', description: 'الوصول محجوب افتراضياً' },
-  { label: 'التدقيق', value: 'قراءة فقط', description: 'لا كتابة عبر الواجهة' },
-  { label: 'سلامة البيانات', value: 'بلا RPC', description: 'استعلامات SQL مباشرة' },
-  { label: 'المخطط', value: 'بلا تغيير', description: 'لا DDL من الواجهة' },
+  { label: 'الصلاحيات', value: 'محمي افتراضياً', description: 'تظهر فقط الوظائف المسموح لك بها' },
+  { label: 'سجل التدقيق', value: 'للمراجعة فقط', description: 'لا يمكن تغيير الأحداث المسجلة' },
+  { label: 'سلامة البيانات', value: 'فحوصات آمنة', description: 'تتحقق من الترابط دون تعديل البيانات' },
+  { label: 'إعدادات النظام', value: 'محمية', description: 'التغييرات الحساسة محدودة بالصلاحيات' },
 ] as const;
 
 export type SystemWorkspaceVariant = 'standalone' | 'embedded';
@@ -102,7 +102,7 @@ export function SystemWorkspace({ variant = 'standalone' }: SystemWorkspaceProps
     <PageLayout dir="rtl" lang="ar" visualVariant="malek-pro">
       <PageHeader
         title="النظام والحوكمة"
-        description="مركز وصول آمن للوظائف النظامية. جميع العمليات هنا قراءة فقط أو محدودة الصلاحية."
+        description="مركز وصول للوظائف الإدارية والحساسة حسب صلاحياتك."
       />
       {body}
     </PageLayout>
