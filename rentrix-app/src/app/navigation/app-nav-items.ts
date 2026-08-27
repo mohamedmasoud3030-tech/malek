@@ -41,7 +41,7 @@ export const navGroups: readonly NavGroup[] = [
     ['/dashboard', 'today', 'ما يحتاج انتباهك وتنفيذك الآن', LayoutDashboard],
     ['/properties', 'portfolio', 'العقارات والوحدات والملاك والأصول المدارة', Building2],
     ['/contracts', 'leasing', 'دورة التأجير من الجاهزية حتى التجديد أو الإخلاء', FileText],
-    ['/financials', 'money', 'المستحقات والتحصيل والمصروفات وأموال الملاك والبنوك', PieChart],
+    ['/financials', 'money', 'المستحقات والتحصيل والمصروفات وما يحتاج متابعة', PieChart],
     ['/maintenance', 'services', 'الصيانة والمرافق والخدمات التشغيلية', Wrench],
   ]],
   ['التحليل والإدارة', [
@@ -53,7 +53,8 @@ export const navGroups: readonly NavGroup[] = [
 /**
  * Workspace children preserve context instead of sending the user to another
  * feature module. Standalone entity URLs stay available for bookmarks/deep links.
- * Support/diagnostic/system tools intentionally stay out of primary navigation.
+ * Support, diagnostics and specialist finance tools intentionally stay out of
+ * routine navigation; guarded deep links and contextual actions remain available.
  */
 export const workspaceChildNavItems: Record<string, readonly NavItem[]> = {
   '/properties': [
@@ -72,10 +73,6 @@ export const workspaceChildNavItems: Record<string, readonly NavItem[]> = {
     ['/financials', 'receipts', 'التحصيل والإيصالات', BadgeDollarSign, undefined, { section: 'collections', view: 'receipts' }],
     ['/financials', 'arrears', 'المتأخرات التي تحتاج متابعة', BarChart3, 'arrears.view', { section: 'collections', view: 'arrears' }],
     ['/financials', 'expenses', 'المصروفات', PieChart, 'expenses.view', { section: 'expenses', view: 'expenses' }],
-    ['/financials', 'deposits', 'التأمينات والودائع', FolderKanban, 'financial.deposits.view', { section: 'funds', view: 'deposits' }],
-    ['/financials', 'ownerSettlements', 'مستحقات وتسويات الملاك', UserRoundCog, 'financial.owner_settlements.view', { section: 'funds', view: 'owner_settlements' }],
-    ['/financials', 'bankReconciliation', 'البنوك والمطابقة البنكية', BarChart3, 'financial.bank_reconciliation.view', { section: 'banking', view: 'bank_reconciliation' }],
-    ['/financials', 'commissions', 'العمولات المرتبطة بالمصادر المالية', BadgeDollarSign, 'commissions.view', { section: 'expenses', view: 'commissions' }],
   ],
   '/maintenance': [
     ['/maintenance', 'maintenance', 'طلبات الصيانة والمتابعة', Wrench, undefined, { section: 'maintenance' }],
