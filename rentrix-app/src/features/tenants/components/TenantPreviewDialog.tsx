@@ -1,8 +1,9 @@
 import { Link } from '@tanstack/react-router';
-import { Activity, Edit, FileText, ReceiptText } from 'lucide-react';
+import { Activity, Edit, FileText, ReceiptText, UserRound } from 'lucide-react';
+import { useState } from 'react';
 import { EntityPreviewDialog } from '@/components/ui/entity-preview-dialog';
 import { ContextualDocumentsSection } from '@/components/documents/contextual-documents-section';
-import { PageHeader } from '@/components/layout/page-header';
+import { EntityDetailHeader } from '@/components/layout/entity-detail-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,13 +11,23 @@ import { DetailFields } from '@/components/ui/detail-fields';
 import { ErrorState } from '@/components/ui/error-state';
 import { LoadingState } from '@/components/ui/loading-state';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { SectionTabs } from '@/components/ui/section-tabs';
 import { useAuth } from '@/hooks/use-auth';
 import { businessReferenceOrLabel } from '@/lib/business-reference';
 import { formatDefaultCompanyMoney } from '@/lib/companyFormatters';
 import { useTenantDossier } from '../useTenantWorkspace';
 import { useDialogNavigate } from '@/app/router/background-location';
 
-export function TenantDossierContent({ tenantId }: Readonly<{ tenantId: string }>) {
+type TenantSection = 'overview' | 'contracts' | 'financials' | 'records';
+
+const tenantSections = [
+  { id: 'overview', label: 'نظرة عامة', icon: UserRound },
+  { id: 'contracts', label: 'العقود', icon: FileText },
+  { id: 'financials', label: 'المالية', icon: ReceiptText },
+  { id: 'records', label: 'السجل', icon: Activity },
+] as const;
+
+export function TenantDossierContent({ tenantId, section }: Readonly<{ tenantId: string; section?: TenantSection }>) {
   const dialogNavigate = useDialogNavigate();
   const { canAccess } = useAuth();
   const canViewFinancial = canAccess('arrears.view');
@@ -36,6 +47,7 @@ export function TenantDossierContent({ tenantId }: Readonly<{ tenantId: string }
 
   return (
     <div className="space-y-5">
+      {(!section || section === 'overview') ? (
       <Card>
         <CardHeader><CardTitle>{dossier.person.full_name}</CardTitle></CardHeader>
         <CardContent>
@@ -48,7 +60,9 @@ export function TenantDossierContent({ tenantId }: Readonly<{ tenantId: string }
           ]} />
         </CardContent>
       </Card>
+      ) : null}
 
+      {(!section || section === 'contracts') ? (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><FileText className="size-5 text-primary" />العقود والعقارات والوحدات</CardTitle>
@@ -76,8 +90,9 @@ export function TenantDossierContent({ tenantId }: Readonly<{ tenantId: string }
           )}
         </CardContent>
       </Card>
+      ) : null}
 
-      {canViewFinancial ? (
+      {(!section || section === 'financials') && canViewFinancial ? (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><ReceiptText className="size-5 text-primary" />الفواتير والمتأخرات</CardTitle>
@@ -115,7 +130,7 @@ export function TenantDossierContent({ tenantId }: Readonly<{ tenantId: string }
         </Card>
       ) : null}
 
-      {canViewActivity ? (
+      {(!section || section === 'records') && canViewActivity ? (
         <Card>
           <CardHeader><CardTitle className="flex items-center gap-2"><Activity className="size-5 text-primary" />آخر النشاط</CardTitle></CardHeader>
           <CardContent>
@@ -135,7 +150,7 @@ export function TenantDossierContent({ tenantId }: Readonly<{ tenantId: string }
           </CardContent>
         </Card>
       ) : null}
-      <ContextualDocumentsSection entityType="tenant" entityId={dossier.person.id} entityLabel="المستأجر" />
+      {(!section || section === 'records') ? <ContextualDocumentsSection entityType="tenant" entityId={dossier.person.id} entityLabel="المستأجر" /> : null}
     </div>
   );
 }
@@ -149,5 +164,29 @@ export function TenantPreviewDialog({ tenantId, open, onOpenChange, onEdit }: Re
 }
 
 export function TenantDetailPage({ tenantId }: Readonly<{ tenantId: string }>) {
-  return <PageLayout dir="rtl" size="wide" visualVariant="malek-pro"><PageHeader title="ملف المستأجر" description="ملف قابل للمشاركة لعلاقات المستأجر وعقوده وسياقه المالي." action={<Button asChild><Link to="/people/$personId/edit" params={{ personId: tenantId }}><Edit className="me-2 size-4" />تعديل</Link></Button>} /><TenantDossierContent tenantId={tenantId} /></PageLayout>;
+  const [activeSection, setActiveSection] = useState<TenantSection>('overview');
+
+  return (
+    <PageLayout dir="rtl" size="wide" visualVariant="malek-pro">
+      <EntityDetailHeader
+        title="ملف المستأجر"
+        subtitle="علاقات المستأجر وعقوده وسياقه المالي."
+        backTo="/tenants"
+        backLabel="المستأجرون"
+        actions={<Button asChild><Link to="/people/$personId/edit" params={{ personId: tenantId }}><Edit className="me-2 size-4" />تعديل</Link></Button>}
+      />
+      <SectionTabs
+        items={tenantSections}
+        activeId={activeSection}
+        onChange={setActiveSection}
+        ariaLabel="أقسام ملف المستأجر"
+        panelId="tenant-detail-panel"
+        idPrefix="tenant-detail"
+        compactMobile
+      />
+      <div id="tenant-detail-panel" role="tabpanel" aria-labelledby={`tenant-detail-tab-${activeSection}`}>
+        <TenantDossierContent tenantId={tenantId} section={activeSection} />
+      </div>
+    </PageLayout>
+  );
 }

@@ -30,6 +30,8 @@ import {
 import type { OwnerActivityRecord } from '@/services/owner-workspace-service';
 import type { OwnerDetailSnapshot } from '../services/owner-service';
 
+export type OwnerDossierSection = 'overview' | 'portfolio' | 'financials' | 'records';
+
 function settlementBadgeTone(status: SettlementStatus) {
   if (status === 'paid') return 'success' as const;
   if (status === 'approved') return 'info' as const;
@@ -81,11 +83,13 @@ export function OwnerDossierBody({
   settlements,
   canOpenOwnerSettlements = false,
   activity,
+  section,
 }: Readonly<{
   snapshot: OwnerDetailSnapshot;
   settlements?: readonly OwnerSettlementRecord[];
   canOpenOwnerSettlements?: boolean;
   activity?: readonly OwnerActivityRecord[];
+  section?: OwnerDossierSection;
 }>) {
   const companySettings = useCompanySettingsContract();
   const dialogNavigate = useDialogNavigate();
@@ -108,6 +112,7 @@ export function OwnerDossierBody({
 
   return (
     <div className="space-y-5">
+      {(!section || section === 'overview') ? <div className="space-y-5" data-owner-detail-overview>
       {/* Identity + contact */}
       <Card>
         <CardHeader className="gap-3">
@@ -151,6 +156,9 @@ export function OwnerDossierBody({
         <KpiCard label="مستحقات المستأجرين" value={formatCompanyMoney(companySettings, financialSummary.outstandingBalance)} sub={`${formatCompanyNumber(companySettings, financialSummary.outstandingInvoicesCount)} فواتير مفتوحة`} icon={WalletCards} accent="amber" />
       </ResponsiveCardGrid>
 
+      </div> : null}
+
+      {(!section || section === 'portfolio') ? <div className="space-y-5" data-owner-detail-portfolio>
       {/* Related properties */}
       <Card>
         <CardHeader>
@@ -273,6 +281,9 @@ export function OwnerDossierBody({
         </CardContent>
       </Card>
 
+      </div> : null}
+
+      {(!section || section === 'financials') ? <div className="space-y-5" data-owner-detail-financials>
       {/* Financial context — tenant receivables, never presented as owner balance */}
       <Card>
         <CardHeader>
@@ -352,6 +363,9 @@ export function OwnerDossierBody({
         </Card>
       ) : null}
 
+      </div> : null}
+
+      {(!section || section === 'records') ? <div className="space-y-5" data-owner-detail-records>
       {/* Activity (real audit source) */}
       {activity !== undefined ? (
         <Card>
@@ -381,6 +395,7 @@ export function OwnerDossierBody({
 
       {/* Documents */}
       <ContextualDocumentsSection entityType="owner" entityId={owner.id} entityLabel="المالك" />
+      </div> : null}
     </div>
   );
 }
