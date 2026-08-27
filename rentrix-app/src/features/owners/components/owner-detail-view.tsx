@@ -1,6 +1,8 @@
 import { Link } from '@tanstack/react-router';
-import { Edit, FileChartColumn } from 'lucide-react';
+import { useState } from 'react';
+import { Building2, Edit, FileChartColumn, FileText, UserRoundCog, WalletCards } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { SectionTabPanel, SectionTabs } from '@/components/ui/section-tabs';
 import { AsyncContentState } from '@/components/async-content-state';
 import { EntityDetailHeader } from '@/components/layout/entity-detail-header';
 import { PageLayout } from '@/components/layout/page-layout';
@@ -11,7 +13,7 @@ import type { OwnerSettlementRecord } from '../services/owner-settlements-servic
 import { getOwnerDisplayName } from '../services/owner-service';
 import type { OwnerActivityRecord } from '@/services/owner-workspace-service';
 import type { OwnerDetailState } from '../types';
-import { OwnerDossierBody } from './owner-dossier-body';
+import { OwnerDossierBody, type OwnerDossierSection } from './owner-dossier-body';
 import { OwnerFinancialAuthoritySection } from './owner-financial-authority-section';
 
 export function OwnerDetailView({
@@ -60,6 +62,13 @@ export function OwnerDetailView({
   // effective grant (or ADMIN/MANAGER role) determines edit availability.
   const canEditOwner = canAccess(authorization, 'owners.hub.view');
   const canViewReports = canAccess(authorization, financialOperationPermissions.viewReports);
+  const [activeSection, setActiveSection] = useState<OwnerDossierSection>('overview');
+  const sections = [
+    { id: 'overview', label: 'نظرة عامة', icon: UserRoundCog },
+    { id: 'portfolio', label: 'العقارات والعقود', icon: Building2 },
+    { id: 'financials', label: 'المالية', icon: WalletCards },
+    { id: 'records', label: 'السجل والمستندات', icon: FileText },
+  ] as const;
 
   const actions = canEditOwner || canViewReports ? (
     <div className="flex flex-wrap gap-2">
@@ -91,6 +100,14 @@ export function OwnerDetailView({
         backLabel="الملاك"
         actions={actions}
       />
+      <SectionTabs
+        items={sections}
+        activeId={activeSection}
+        onChange={setActiveSection}
+        ariaLabel="أقسام ملف المالك"
+        compactMobile
+      />
+      <SectionTabPanel id="overview" activeId={activeSection}>
       <OwnerFinancialAuthoritySection
         ownerId={owner.id}
         ownerName={getOwnerDisplayName(owner)}
@@ -101,7 +118,18 @@ export function OwnerDetailView({
         settlements={settlements}
         canOpenOwnerSettlements={false}
         activity={activity}
+        section="overview"
       />
+      </SectionTabPanel>
+      <SectionTabPanel id="portfolio" activeId={activeSection}>
+      <OwnerDossierBody snapshot={state.snapshot} section="portfolio" />
+      </SectionTabPanel>
+      <SectionTabPanel id="financials" activeId={activeSection}>
+      <OwnerDossierBody snapshot={state.snapshot} settlements={settlements} canOpenOwnerSettlements={canOpenOwnerSettlements} section="financials" />
+      </SectionTabPanel>
+      <SectionTabPanel id="records" activeId={activeSection}>
+      <OwnerDossierBody snapshot={state.snapshot} activity={activity} section="records" />
+      </SectionTabPanel>
     </PageLayout>
   );
 }
