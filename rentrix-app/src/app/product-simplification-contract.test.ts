@@ -7,6 +7,7 @@ import { leasingHubSections } from '@/features/relationships-hub/leasing-hub-sec
 import { portfolioHubSections } from '@/features/portfolio-hub/portfolio-hub-sections';
 import { operationsHubSections } from '@/features/operations-hub/operations-hub.sections';
 import { ACCOUNTING_REPORT_VIEWS, ANALYTICS_REPORT_VIEWS } from '@/features/reports/report-view-registry';
+import { settingsSectionRegistry } from '@/features/settings/registry/sectionRegistry';
 
 function source(relativePath: string) {
   return readFileSync(new URL(relativePath, import.meta.url), 'utf8');
@@ -31,6 +32,18 @@ describe('production product simplification contract', () => {
       'data-integrity',
       'security',
     ]);
+  });
+
+  it('keeps company Settings routine navigation focused while specialist setup stays deep-linkable', () => {
+    expect(settingsSectionRegistry.filter((section) => section.showInPrimaryNavigation).map((section) => section.id))
+      .toEqual(['office', 'identity', 'documents', 'notifications', 'system']);
+    expect(settingsSectionRegistry.filter((section) => !section.showInPrimaryNavigation).map((section) => section.id))
+      .toEqual(['finance-readiness', 'cost-centers', 'payment-terms']);
+
+    const settingsPage = source('../features/settings/settings-page.tsx');
+    expect(settingsPage).toContain('routineDefinitions');
+    expect(settingsPage).toContain('accessibleDefinitions');
+    expect(settingsPage).toContain('data-settings-specialist-context');
   });
 
   it('keeps Portfolio routine navigation focused on properties, units and owners', () => {

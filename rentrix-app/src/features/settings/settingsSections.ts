@@ -1,16 +1,12 @@
 /**
- * WP-D compatibility seam.
- *
- * The declarative section definitions now live in
- * `./registry/sectionRegistry`. This module keeps the historical import path
- * (`@/features/settings/settingsSections`) working for navigation,
- * governance deep links, summary tiles, and tests. All symbols re-export the
- * canonical registry implementations — there is no second source of truth.
+ * Settings registry compatibility seam. All symbols re-export the canonical
+ * registry implementations; there is no second source of truth.
  */
 export {
   getCompanySettingsSectionFieldOwners,
   getSettingsSection,
   getSettingsSectionDraftFields,
+  getVisibleSettingsSections,
   isSettingsSectionId,
   resolveSettingsSection,
   settingsSectionRegistry,

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   getCompanySettingsSectionFieldOwners,
   getSettingsSection,
+  getVisibleSettingsSections,
   isSettingsSectionId,
   resolveSettingsSection,
   settingsSectionRegistry,
@@ -25,10 +26,21 @@ const canonicalSectionIds = [
   'system',
 ] as const;
 
+const routineSectionIds = ['office', 'identity', 'documents', 'notifications', 'system'] as const;
+
 describe('settings section registry', () => {
-  it('registers exactly the eight canonical settings sections in navigation order', () => {
+  it('registers exactly the eight supported settings sections in stable order', () => {
     expect(settingsSectionRegistry.map((section) => section.id)).toEqual([...canonicalSectionIds]);
     expect(settingsSections.map((section) => section.id)).toEqual([...canonicalSectionIds]);
+  });
+
+  it('keeps routine navigation focused while specialist setup remains registered', () => {
+    expect(getVisibleSettingsSections().map((section) => section.id)).toEqual([...routineSectionIds]);
+    expect(settingsSectionRegistry.filter((section) => !section.showInPrimaryNavigation).map((section) => section.id))
+      .toEqual(['finance-readiness', 'cost-centers', 'payment-terms']);
+    for (const id of ['finance-readiness', 'cost-centers', 'payment-terms'] as const) {
+      expect(getSettingsSection(id)).toBeDefined();
+    }
   });
 
   it('keeps stable Arabic labels, descriptions, and icons on the compatibility surface', () => {
@@ -52,6 +64,8 @@ describe('settings section registry', () => {
     expect(isSettingsSectionId('documents')).toBe(true);
     expect(isSettingsSectionId('users-permissions')).toBe(false);
     expect(resolveSettingsSection('documents')).toBe('documents');
+    expect(resolveSettingsSection('finance-readiness')).toBe('finance-readiness');
+    expect(resolveSettingsSection('payment-terms')).toBe('payment-terms');
     expect(resolveSettingsSection('not-a-section')).toBe('office');
     expect(resolveSettingsSection(null)).toBe('office');
   });
