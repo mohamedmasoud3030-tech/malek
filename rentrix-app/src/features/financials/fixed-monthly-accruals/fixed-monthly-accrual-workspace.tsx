@@ -10,6 +10,8 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/use-auth';
 import { canAccess } from '@/features/auth/permissions';
 import { formatCompactDate, getTodayLocalDateString } from '@/features/financials/financials-date-utils';
+import { formatCompanyMoney } from '@/lib/companyFormatters';
+import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
 import {
   executeFixedMonthlyAccruals,
   listFixedMonthlyAccruals,
@@ -17,15 +19,6 @@ import {
   type FixedMonthlyAccrualList,
   type FixedMonthlyAccrualRow,
 } from './fixed-monthly-accrual-service';
-
-const omrFormatter = new Intl.NumberFormat('ar-OM', {
-  minimumFractionDigits: 3,
-  maximumFractionDigits: 3,
-});
-
-function formatOmr(value: number) {
-  return `${omrFormatter.format(value)} ر.ع`;
-}
 
 function currentMonthRange() {
   const now = new Date();
@@ -45,6 +38,9 @@ function statusPresentation(row: FixedMonthlyAccrualRow) {
 
 export function FixedMonthlyAccrualWorkspace() {
   const { authorization } = useAuth();
+  const companySettings = useCompanySettingsContract();
+  /** Canonical company-aware money rendering — never a hand-rolled currency string. */
+  const formatOmr = useCallback((value: number) => formatCompanyMoney(companySettings, value), [companySettings]);
   const initialRange = useMemo(currentMonthRange, []);
   const [dateFrom, setDateFrom] = useState(initialRange.from);
   const [dateTo, setDateTo] = useState(initialRange.to);
@@ -213,7 +209,7 @@ export function FixedMonthlyAccrualWorkspace() {
         </Button>
       ) : <span className="text-muted-foreground">—</span>,
     },
-  ], [canReverse]);
+  ], [canReverse, formatOmr]);
 
   return (
     <section className="space-y-4" aria-label="استحقاقات أتعاب الإدارة الشهرية">

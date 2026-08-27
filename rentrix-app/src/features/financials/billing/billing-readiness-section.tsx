@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useActiveCompanyId } from '@/hooks/use-company';
+import { formatCompanyMoney } from '@/lib/companyFormatters';
+import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
 import {
   getBillingReadiness,
   type BillingObligation,
@@ -36,6 +38,7 @@ function toneForStatus(status: BillingStatus): 'success' | 'warning' | 'danger' 
 
 export function BillingReadinessSection() {
   const companyId = useActiveCompanyId();
+  const companySettings = useCompanySettingsContract();
   const [showDetails, setShowDetails] = useState(false);
   const [showOnlyActionable, setShowOnlyActionable] = useState(false);
 
@@ -77,7 +80,9 @@ export function BillingReadinessSection() {
       header: 'القيمة',
       priority: 'primary',
       render: (obligation) => (
-        <span dir="ltr" className="font-bold tabular-nums">{obligation.rent_amount.toFixed(3)} OMR</span>
+        <span dir="ltr" className="font-bold tabular-nums">
+          {formatCompanyMoney(companySettings, obligation.rent_amount)}
+        </span>
       ),
     },
     {

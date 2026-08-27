@@ -14,7 +14,8 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { SectionTabs } from '@/components/ui/section-tabs';
 import { useAuth } from '@/hooks/use-auth';
 import { businessReferenceOrLabel } from '@/lib/business-reference';
-import { formatDefaultCompanyMoney } from '@/lib/companyFormatters';
+import { formatCompanyDateTime, formatDefaultCompanyMoney } from '@/lib/companyFormatters';
+import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
 import { useTenantDossier } from '../useTenantWorkspace';
 import { useDialogNavigate } from '@/app/router/background-location';
 
@@ -30,6 +31,7 @@ const tenantSections = [
 export function TenantDossierContent({ tenantId, section }: Readonly<{ tenantId: string; section?: TenantSection }>) {
   const dialogNavigate = useDialogNavigate();
   const { canAccess } = useAuth();
+  const companySettings = useCompanySettingsContract();
   const canViewFinancial = canAccess('arrears.view');
   const canViewActivity = canAccess('communication.view');
   const query = useTenantDossier(tenantId, canViewFinancial, canViewActivity);
@@ -142,7 +144,7 @@ export function TenantDossierContent({ tenantId, section }: Readonly<{ tenantId:
                   <li key={item.id} className="rounded-xl border p-3">
                     <p className="font-bold">{item.subject || 'تواصل مسجل'}</p>
                     <p className="mt-1 text-sm text-muted-foreground">{item.body}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">{new Date(item.created_at).toLocaleString('ar-OM-u-nu-latn')}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{formatCompanyDateTime(companySettings, item.created_at)}</p>
                   </li>
                 ))}
               </ul>

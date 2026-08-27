@@ -12,6 +12,11 @@
  *      file sizes in MB, occupancy percentage).
  *   3. Math.round(x * 100) / 100 in monetary code (allowed only for
  *      percentage values).
+ *   4. toFixed(3) inside a .tsx render surface — money must be displayed
+ *      through the company formatter, not hand-rounded.
+ *   5. hand-written currency words/symbols ("OMR", "ر.ع", "ريال") inside a
+ *      component file — the ONE money presentation is the canonical
+ *      "<number> <CODE>" string produced by formatCompanyMoney/formatMoney.
  *
  * Adding a new entry to an allowlist requires reviewing that the value is
  * genuinely NOT money. Money uses `@/lib/money` (MONEY_STEP / roundMoney).
@@ -43,6 +48,21 @@ const TO_FIXED_2_ALLOWLIST: ReadonlyArray<{ file: string; reason: string }> = [
 /** Files allowed to use Math.round(x*100)/100 — every use is a percentage. */
 const ROUND_100_ALLOWLIST: ReadonlyArray<{ file: string; reason: string }> = [
   { file: 'features/owners/services/owner-service.ts', reason: 'ownership percentage share' },
+];
+
+/**
+ * UI files allowed to mention a currency word/symbol in source.
+ *
+ * Money VALUES must always render through `formatCompanyMoney` /
+ * `formatMoney`, which emits the canonical `<number> <CODE>` presentation
+ * (e.g. "1,234.500 OMR") at the currency's real minor unit. The entries below
+ * are prose or developer-demo surfaces, not rendered monetary values.
+ */
+const CURRENCY_LITERAL_ALLOWLIST: ReadonlyArray<{ file: string; reason: string }> = [
+  { file: 'features/design-system/design-system-showcase.tsx', reason: 'DEV-only design-system demo with hand-typed sample strings' },
+  { file: 'features/landing/i18n/messages.ts', reason: 'marketing FAQ prose naming supported currencies' },
+  { file: 'features/properties/property-form-modal.tsx', reason: 'commission unit words inside field labels, not a formatted amount' },
+  { file: 'features/reports/components/GeneralLedgerCoreSection.tsx', reason: 'resolves the company currency CODE for a data request' },
 ];
 
 function collectSourceFiles(dir: string, files: string[] = []): string[] {
@@ -108,12 +128,47 @@ describe('R3 money contract guard (OMR = 3 decimals)', () => {
     expect(violations, `monetary rounding must use roundMoney (3dp) — found 2dp rounding in:\n${violations.join('\n')}`).toEqual([]);
   });
 
+  it('no .tsx render surface hand-rounds money with toFixed(3)', () => {
+    const violations: string[] = [];
+    for (const file of sourceFiles) {
+      if (!file.endsWith('.tsx')) continue;
+      const source = readFileSync(file, 'utf8');
+      if (!source.includes('toFixed(3)')) continue;
+      violations.push(rel(file));
+    }
+    expect(
+      violations,
+      `monetary display must flow through formatCompanyMoney — found toFixed(3) in component files:\n${violations.join('\n')}`,
+    ).toEqual([]);
+  });
+
+  it('no component file hand-writes a currency string instead of using the money formatter', () => {
+    // Dots are required in the Arabic abbreviations so ordinary words that
+    // merely contain the letters ر/ع (وسرعة, إدارة) are not false positives.
+    const pattern = /OMR|ر\.ع\.?|ريال/;
+    const violations: string[] = [];
+    for (const file of sourceFiles) {
+      // Presentation surfaces only. Service/domain modules legitimately carry
+      // the currency CODE as data (defaults, CSV parsing, document payloads).
+      if (!file.endsWith('.tsx')) continue;
+      const relPath = rel(file);
+      if (CURRENCY_LITERAL_ALLOWLIST.some((entry) => entry.file === relPath)) continue;
+      const source = readFileSync(file, 'utf8');
+      const match = source.match(pattern);
+      if (match) violations.push(`${relPath} → "${match[0]}"`);
+    }
+    expect(
+      violations,
+      `use formatCompanyMoney/formatMoney for every monetary value — found hand-written currency text in:\n${violations.join('\n')}`,
+    ).toEqual([]);
+  });
+
   it('the allowlists only reference files that still exist and still match', () => {
     for (const entry of STEP_001_ALLOWLIST) {
       const source = readFileSync(join(SRC_ROOT, entry.file), 'utf8');
       expect(source, `${entry.file} no longer contains "${entry.mustContain}" — prune the allowlist`).toContain(entry.mustContain);
     }
-    for (const entry of [...TO_FIXED_2_ALLOWLIST, ...ROUND_100_ALLOWLIST]) {
+    for (const entry of [...TO_FIXED_2_ALLOWLIST, ...ROUND_100_ALLOWLIST, ...CURRENCY_LITERAL_ALLOWLIST]) {
       expect(() => statSync(join(SRC_ROOT, entry.file)), `${entry.file} missing — prune the allowlist`).not.toThrow();
     }
   });

@@ -14,7 +14,8 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { SectionTabs } from '@/components/ui/section-tabs';
 import { useAuth } from '@/hooks/use-auth';
 import { businessReferenceOrLabel } from '@/lib/business-reference';
-import { formatDefaultCompanyMoney } from '@/lib/companyFormatters';
+import { formatCompanyDateTime, formatDefaultCompanyMoney } from '@/lib/companyFormatters';
+import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
 import { personTypeLabels } from '../person-schema';
 import { usePersonDossier } from '../use-people';
 import { useDialogNavigate } from '@/app/router/background-location';
@@ -31,6 +32,7 @@ const personSections = [
 export function PersonDossierContent({ personId, section }: Readonly<{ personId: string; section?: PersonSection }>) {
   const dialogNavigate = useDialogNavigate();
   const { canAccess } = useAuth();
+  const companySettings = useCompanySettingsContract();
   const canViewFinancial = canAccess('arrears.view');
   const canViewReports = canAccess('financial.reports.view');
   const canViewActivity = canAccess('communication.view');
@@ -113,7 +115,7 @@ export function PersonDossierContent({ personId, section }: Readonly<{ personId:
       {(!section || section === 'records') && canViewActivity ? (
         <Card>
           <CardHeader><CardTitle className="flex items-center gap-2"><Activity className="size-5 text-primary" />آخر النشاط</CardTitle></CardHeader>
-          <CardContent>{dossier.latestActivity.length === 0 ? <p className="text-sm text-muted-foreground">لا يوجد نشاط موثّق مرتبط بهذا الشخص.</p> : <ul className="space-y-2">{dossier.latestActivity.map((item) => <li key={item.id} className="rounded-xl border p-3"><p className="font-bold">{item.subject || 'تواصل مسجل'}</p><p className="mt-1 text-sm text-muted-foreground">{item.body}</p><p className="mt-1 text-xs text-muted-foreground">{new Date(item.created_at).toLocaleString('ar-OM-u-nu-latn')}</p></li>)}</ul>}</CardContent>
+          <CardContent>{dossier.latestActivity.length === 0 ? <p className="text-sm text-muted-foreground">لا يوجد نشاط موثّق مرتبط بهذا الشخص.</p> : <ul className="space-y-2">{dossier.latestActivity.map((item) => <li key={item.id} className="rounded-xl border p-3"><p className="font-bold">{item.subject || 'تواصل مسجل'}</p><p className="mt-1 text-sm text-muted-foreground">{item.body}</p><p className="mt-1 text-xs text-muted-foreground">{formatCompanyDateTime(companySettings, item.created_at)}</p></li>)}</ul>}</CardContent>
         </Card>
       ) : null}
 
