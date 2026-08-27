@@ -12,7 +12,11 @@ import {
   buildCompanySettingsSearch,
   resolveGovernanceHubNavigation,
 } from '../governance-hub-navigation';
-import { getVisibleGovernanceHubSections, type GovernanceHubSectionId } from '../governance-hub-sections';
+import {
+  getAccessibleGovernanceHubSections,
+  getVisibleGovernanceHubSections,
+  type GovernanceHubSectionId,
+} from '../governance-hub-sections';
 
 const SettingsWorkspace = lazy(() => import('@/features/settings/settings-page').then((module) => ({ default: module.SettingsWorkspace })));
 const UserRolesWorkspace = lazy(() => import('./UserRolesWorkspace').then((module) => ({ default: module.UserRolesWorkspace })));
@@ -40,14 +44,15 @@ export function GovernanceHubWorkspace() {
   const { canAccess } = useAuth();
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as Record<string, unknown>;
+  const accessibleSections = useMemo(() => getAccessibleGovernanceHubSections(canAccess), [canAccess]);
   const visibleSections = useMemo(() => getVisibleGovernanceHubSections(canAccess), [canAccess]);
   const navigation = resolveGovernanceHubNavigation({
     requestedSection: search.section,
     requestedCompanySection: search.companySection,
-    visibleSections,
+    visibleSections: accessibleSections,
   });
   const { hubSection: urlSection, companySection, legacyCompanySection, canOpenCompany } = navigation;
-  const fallbackSection = visibleSections[0]?.id ?? 'security';
+  const fallbackSection = visibleSections[0]?.id ?? accessibleSections[0]?.id ?? 'security';
   const [activeTab, setActiveTab] = useState<GovernanceHubSectionId>(urlSection);
   const [mountedTabs, setMountedTabs] = useState<ReadonlySet<GovernanceHubSectionId>>(() => new Set([urlSection]));
 
@@ -82,8 +87,8 @@ export function GovernanceHubWorkspace() {
     });
   };
 
-  const resolvedActiveTab = visibleSections.some((section) => section.id === activeTab) ? activeTab : fallbackSection;
-  const shouldRenderTab = (tab: GovernanceHubSectionId) => visibleSections.some((section) => section.id === tab) && (mountedTabs.has(tab) || resolvedActiveTab === tab);
+  const resolvedActiveTab = accessibleSections.some((section) => section.id === activeTab) ? activeTab : fallbackSection;
+  const shouldRenderTab = (tab: GovernanceHubSectionId) => accessibleSections.some((section) => section.id === tab) && (mountedTabs.has(tab) || resolvedActiveTab === tab);
 
   const requestedSub = typeof search.sub === 'string' ? search.sub : null;
   useEffect(() => {
@@ -107,24 +112,26 @@ export function GovernanceHubWorkspace() {
   return (
     <PageLayout dir="rtl" lang="ar" contentClassName="min-w-0 space-y-2 md:space-y-4">
       {resolvedActiveTab !== 'company' ? (
-        <PageHeader title="الإعدادات" description="الشركة، المستخدمون والصلاحيات، مراكز التكلفة، الأتمتة، إعدادات النظام والأمان." />
+        <PageHeader title="الإعدادات" description="الشركة، المستخدمون والصلاحيات، مراكز التكلفة والأتمتة." />
       ) : null}
 
-      {visibleSections.length === 0 ? (
+      {accessibleSections.length === 0 ? (
         <div className="rounded-2xl border border-border bg-muted/20 px-6 py-10 text-center text-sm text-muted-foreground">لا توجد أقسام إعدادات متاحة لصلاحياتك الحالية.</div>
       ) : (
         <>
-          <div className="no-scrollbar sticky top-0 z-20 -mx-1 overflow-x-auto border-b border-border/55 bg-background/95 px-1 py-1 backdrop-blur md:rounded-xl md:border md:bg-card/95 md:py-2">
-            <div className="min-w-max">
-              <SectionTabs
-                items={visibleSections}
-                activeId={resolvedActiveTab}
-                onChange={handleTabChange}
-                ariaLabel="أقسام الإعدادات"
-                compactMobile
-              />
+          {visibleSections.length > 0 ? (
+            <div className="no-scrollbar sticky top-0 z-20 -mx-1 overflow-x-auto border-b border-border/55 bg-background/95 px-1 py-1 backdrop-blur md:rounded-xl md:border md:bg-card/95 md:py-2">
+              <div className="min-w-max">
+                <SectionTabs
+                  items={visibleSections}
+                  activeId={visibleSections.some((section) => section.id === resolvedActiveTab) ? resolvedActiveTab : undefined}
+                  onChange={handleTabChange}
+                  ariaLabel="أقسام الإعدادات"
+                  compactMobile
+                />
+              </div>
             </div>
-          </div>
+          ) : null}
 
           <div className="min-w-0">
             <Suspense fallback={<TabFallback />}>
