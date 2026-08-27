@@ -13,20 +13,20 @@ const admin: AuthorizationContext = { userId: 'u-admin', email: null, role: 'ADM
 const user: AuthorizationContext = { userId: 'u-user', email: null, role: 'USER' };
 
 describe('canonical Money workspace route model', () => {
-  it('locks the six decision-oriented Money sections', () => {
-    expect(FINANCE_SECTIONS.map((section) => [section.id, section.label])).toEqual([
-      ['overview', 'وضع المال'],
-      ['collections', 'المستحقات والتحصيل'],
-      ['expenses', 'المصروفات والعمولات'],
-      ['fees', 'الأتعاب والاستحقاقات'],
-      ['funds', 'التأمينات والملاك'],
-      ['banking', 'البنوك والمطابقة'],
+  it('keeps six finance capabilities but exposes only three routine sections', () => {
+    expect(FINANCE_SECTIONS.map((section) => [section.id, section.label, section.showInPrimaryNavigation])).toEqual([
+      ['overview', 'وضع المال', true],
+      ['collections', 'المستحقات والتحصيل', true],
+      ['expenses', 'المصروفات', true],
+      ['fees', 'الأتعاب والاستحقاقات', false],
+      ['funds', 'التأمينات والملاك', false],
+      ['banking', 'البنوك والمطابقة', false],
     ]);
     const sectionIds = new Set(FINANCE_SECTIONS.map((section) => section.id));
     for (const view of FINANCE_VIEWS) expect(sectionIds.has(view.sectionId)).toBe(true);
   });
 
-  it('keeps commissions a first-class Money view under expenses', () => {
+  it('keeps commissions a first-class Money view under expenses without making it a routine drawer destination', () => {
     expect(FINANCE_VIEWS.find((view) => view.id === 'commissions')).toMatchObject({
       sectionId: 'expenses', permission: 'commissions.view', label: 'العمولات',
     });
@@ -35,7 +35,7 @@ describe('canonical Money workspace route model', () => {
     });
   });
 
-  it('preserves legacy finance spellings inside the canonical Money route', () => {
+  it('preserves specialist and legacy finance deep links inside the canonical Money route', () => {
     expect(resolveFinanceLocation('invoices', '', admin)).toMatchObject({ resolvedSectionId: 'collections', resolvedViewId: 'invoices' });
     expect(resolveFinanceLocation('receipts', '', admin)).toMatchObject({ resolvedSectionId: 'collections', resolvedViewId: 'receipts' });
     expect(resolveFinanceLocation('arrears', '', admin)).toMatchObject({ resolvedSectionId: 'collections', resolvedViewId: 'arrears' });
@@ -51,13 +51,16 @@ describe('canonical Money workspace route model', () => {
     });
   });
 
-  it('does not widen protected Money views', () => {
+  it('does not widen protected Money views and keeps routine navigation focused', () => {
     const userViews = getPermittedViews(user).map((view) => view.id);
     expect(userViews).toEqual(expect.arrayContaining(['overview', 'invoices', 'receipts']));
     expect(userViews).not.toContain('commissions');
     expect(userViews).not.toContain('arrears');
     expect(getPermittedSections(user).map((section) => section.id)).toEqual(['overview', 'collections']);
-    expect(getPermittedSections(admin).map((section) => section.id)).toEqual(['overview', 'collections', 'expenses', 'fees', 'funds', 'banking']);
+    expect(getPermittedSections(admin).map((section) => section.id)).toEqual(['overview', 'collections', 'expenses']);
+    expect(getPermittedViews(admin).map((view) => view.id)).toEqual(expect.arrayContaining([
+      'commissions', 'deposits', 'owner_settlements', 'fixed_monthly_accruals', 'bank_reconciliation',
+    ]));
   });
 
   it('keeps FinancePage as the sole renderer over this model', () => {
