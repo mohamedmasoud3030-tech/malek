@@ -4,9 +4,9 @@ import { getReportSectionsByCategory, reportCategories, reportSections } from '.
 describe('report sections grouping contract', () => {
   it('groups every report into clear understandable categories', () => {
     const validGroups = new Set([
-      'الرقابة والمخرجات المحاسبية',
-      'الكشوفات التفصيلية',
-      'تحليلات الأداء والتشغيل',
+      'المخرجات المحاسبية',
+      'الكشوف التفصيلية',
+      'تحليلات الأداء',
     ]);
 
     for (const section of reportSections) {

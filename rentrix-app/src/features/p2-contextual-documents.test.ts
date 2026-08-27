@@ -12,10 +12,12 @@ describe('P2 — contextual documents contract', () => {
     const servicesChildren = workspaceChildNavItems['/maintenance'];
 
     expect(globalPaths).not.toContain('/documents-vault');
-    expect(servicesChildren.some(([to, , , , , search]) => to === '/maintenance' && search?.section === 'documents_vault')).toBe(true);
+    // Routine Services children stay reduced to daily work; the vault stays a
+    // real Services section reachable in place via its section deep link.
+    expect(servicesChildren.some(([to, , , , , search]) => to === '/maintenance' && search?.section === 'documents_vault')).toBe(false);
     // documents_vault remains a real Services section (aggregate authority),
     // while the standalone route is only a compatibility deep link.
-    expect(operations).toContain('documents_vault');
+    expect(operations).toContain("id: 'documents_vault'");
     expect(routeTree).toContain("path: '/documents-vault'");
     expect(routeTree).toContain("to: '/maintenance'");
     expect(routeTree).toContain("section: 'documents_vault'");
