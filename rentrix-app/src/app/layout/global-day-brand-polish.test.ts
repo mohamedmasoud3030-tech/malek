@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 const layoutDir = resolve(dirname(fileURLToPath(import.meta.url)));
 const pageLayout = readFileSync(resolve(layoutDir, '../../components/layout/page-layout.tsx'), 'utf8');
-const heroBanner = readFileSync(resolve(layoutDir, '../../features/dashboard/components/hero-banner.tsx'), 'utf8');
+const dashboardPage = readFileSync(resolve(layoutDir, '../../features/dashboard/dashboard-page.tsx'), 'utf8');
 const malikMark = readFileSync(resolve(layoutDir, '../../components/brand/malik-mark.tsx'), 'utf8');
 
 describe('global day context and compact header brand contract', () => {
@@ -16,11 +16,14 @@ describe('global day context and compact header brand contract', () => {
     expect(pageLayout).toContain('data-global-today-day-date');
   });
 
-  it('removes the dashboard-only freshness and overflow card', () => {
-    expect(heroBanner).toContain('return null');
-    expect(heroBanner).not.toContain('MoreVertical');
-    expect(heroBanner).not.toContain('آخر تحديث');
-    expect(heroBanner).not.toContain('خيارات اليوم');
+  it('keeps the dashboard-only freshness and overflow card removed', () => {
+    // The compatibility stub completed its phase-out: the dashboard no longer
+    // renders any hero/freshness card, and day context stays in the shared strip.
+    expect(dashboardPage).not.toContain('HeroBanner');
+    expect(pageLayout).toContain('data-global-refresh');
+    expect(dashboardPage).toContain('onRefresh={retryDashboard}');
+    expect(dashboardPage).not.toContain('آخر تحديث');
+    expect(dashboardPage).not.toContain('data-dashboard-today-context');
   });
 
   it('lets the M mark fill the compact header button instead of looking undersized', () => {

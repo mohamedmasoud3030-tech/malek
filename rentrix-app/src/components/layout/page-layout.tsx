@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { CalendarDays } from 'lucide-react';
+import { CalendarDays, RefreshCw } from 'lucide-react';
 import { getAppLanguageState } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
@@ -12,6 +12,14 @@ interface PageLayoutProps {
   lang?: string;
   /** Scoped visual system for approved operational workspaces only. */
   visualVariant?: 'malek-pro';
+  /**
+   * Explicit refresh affordance in the shared context strip. Operational
+   * pages whose data can go stale without a focus refetch (the dashboard
+   * snapshot, for example) wire this so freshness stays one honest,
+   * consistent tap away — never a per-page duplicate card.
+   */
+  onRefresh?: () => void;
+  refreshing?: boolean;
 }
 
 const pageSizes: Record<NonNullable<PageLayoutProps['size']>, string> = {
@@ -20,7 +28,7 @@ const pageSizes: Record<NonNullable<PageLayoutProps['size']>, string> = {
   full: 'w-full',
 };
 
-function TodayContextStrip() {
+function TodayContextStrip({ onRefresh, refreshing }: Readonly<{ onRefresh?: () => void; refreshing?: boolean }>) {
   const { language } = getAppLanguageState();
   const isArabic = language === 'ar';
   const locale = isArabic ? 'ar-EG' : 'en-GB';
@@ -56,6 +64,19 @@ function TodayContextStrip() {
           </p>
         </div>
       </div>
+      {onRefresh ? (
+        <button
+          type="button"
+          data-global-refresh
+          aria-label={isArabic ? 'تحديث' : 'Refresh'}
+          title={isArabic ? 'تحديث' : 'Refresh'}
+          onClick={onRefresh}
+          disabled={refreshing}
+          className="ms-auto grid size-11 shrink-0 place-items-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-primary disabled:opacity-60"
+        >
+          <RefreshCw className={cn('size-4.5', refreshing && 'animate-spin')} aria-hidden="true" />
+        </button>
+      ) : null}
     </div>
   );
 }
@@ -68,6 +89,8 @@ export function PageLayout({
   lang,
   size = 'default',
   visualVariant,
+  onRefresh,
+  refreshing,
 }: PageLayoutProps) {
   return (
     <div
@@ -84,7 +107,7 @@ export function PageLayout({
           contentClassName,
         )}
       >
-        <TodayContextStrip />
+        <TodayContextStrip onRefresh={onRefresh} refreshing={refreshing} />
         {children}
       </div>
     </div>

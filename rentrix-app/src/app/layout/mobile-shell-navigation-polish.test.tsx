@@ -63,8 +63,7 @@ vi.mock('@/store/ui-store', () => ({
 
 import { AppShell } from './app-shell';
 import { MobileFloatingControl } from './layout-navigation-view';
-import { HeroBanner } from '@/features/dashboard/components/hero-banner';
-import { defaultCompanySettingsContract } from '@/lib/companySettings';
+import { PageLayout } from '@/components/layout/page-layout';
 
 describe('MALEK mobile shell & navigation polish pass (Section O verification matrix)', () => {
   let host: HTMLDivElement;
@@ -379,59 +378,39 @@ describe('MALEK mobile shell & navigation polish pass (Section O verification ma
   // --------------------------------------------------------------------------
   // 8. Dashboard Density & Today Card
   // --------------------------------------------------------------------------
-  describe('8. Dashboard Density & Today Card', () => {
-    it('renders a compact Today card with localized weekday and date', () => {
-      renderWithClient(
-        <HeroBanner
-          snapshot={undefined}
-          isLoading={false}
-          settings={defaultCompanySettingsContract}
-          today="2026-08-26"
-        />,
-      );
+  describe('8. Dashboard Density & Shared Today Context', () => {
+    it('renders a compact Today context strip with localized weekday and date', () => {
+      renderWithClient(<PageLayout>محتوى</PageLayout>);
 
-      const today = host.querySelector<HTMLElement>('[data-dashboard-today-context]');
+      const today = host.querySelector<HTMLElement>('[data-global-today-context]');
       expect(today).not.toBeNull();
-      expect(today?.querySelector('h1')?.textContent).toBe('اليوم');
-      expect(today?.querySelector('[data-dashboard-today-weekday]')?.textContent).not.toBe('');
-      expect(today?.querySelector('[data-dashboard-today-day-date]')?.textContent).not.toBe('');
+      expect(today?.textContent).toContain('اليوم');
+      expect(today?.querySelector('[data-global-today-weekday]')?.textContent).not.toBe('');
+      expect(today?.querySelector('[data-global-today-day-date]')?.textContent).not.toBe('');
 
-      // Compact styling
-      expect(today?.className).toContain('min-h-10');
-      expect(today?.className).toContain('py-1.5');
+      // Compact shared strip styling (one context for every operational page).
+      expect(today?.className).toContain('min-h-14');
+      expect(today?.className).toContain('rounded-2xl');
     });
 
-    it('provides an accessible ⋮ action control with 44px tap target and refresh action', () => {
+    it('provides an accessible refresh control with a 44px tap target in the shared strip', () => {
       const onRefreshSpy = vi.fn();
-      renderWithClient(
-        <HeroBanner
-          snapshot={undefined}
-          isLoading={false}
-          settings={defaultCompanySettingsContract}
-          today="2026-08-26"
-          onRefresh={onRefreshSpy}
-        />,
-      );
+      renderWithClient(<PageLayout onRefresh={onRefreshSpy}>محتوى</PageLayout>);
 
-      const actionTrigger = host.querySelector<HTMLButtonElement>('[data-dashboard-today-action]');
-      expect(actionTrigger).not.toBeNull();
-      expect(actionTrigger?.getAttribute('aria-label')).toBe('خيارات اليوم');
+      const refresh = host.querySelector<HTMLButtonElement>('[data-global-refresh]');
+      expect(refresh).not.toBeNull();
+      expect(refresh?.getAttribute('aria-label')).toBe('تحديث');
 
-      // 44px hit-target wrapper
-      const actionHit = host.querySelector<HTMLElement>('[data-dashboard-today-action-hit]');
-      expect(actionHit?.className).toContain('size-11');
+      // 44px hit target stays preserved.
+      expect(refresh?.className).toContain('size-11');
 
-      // Open menu
-      act(() => { actionTrigger?.click(); });
-
-      const menu = host.querySelector<HTMLElement>('[role="menu"][aria-label="خيارات اليوم"]');
-      expect(menu).not.toBeNull();
-
-      const refreshItem = menu?.querySelector<HTMLButtonElement>('button[role="menuitem"]');
-      expect(refreshItem?.textContent).toContain('تحديث البيانات');
-
-      act(() => { refreshItem?.click(); });
+      act(() => { refresh?.click(); });
       expect(onRefreshSpy).toHaveBeenCalledOnce();
+    });
+
+    it('omits the refresh control when a page wires no refresh handler', () => {
+      renderWithClient(<PageLayout>محتوى</PageLayout>);
+      expect(host.querySelector('[data-global-refresh]')).toBeNull();
     });
 
     it('defines compact mobile section gaps in dashboard-v2.css', () => {

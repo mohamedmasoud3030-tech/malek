@@ -11,7 +11,6 @@ import type { OnboardingProgress } from '@/features/onboarding/useOnboarding';
 import { fetchIntegrityWarningsCount } from '@/services/action-center-counts';
 import { getDashboardSnapshot } from './dashboard-snapshot';
 import { DashboardVisualScope } from './dashboard-visual-scope';
-import { HeroBanner } from './components/hero-banner';
 import { OfficePulse } from './components/office-pulse';
 import { KpiGrid } from './components/kpi-grid';
 import { ExpiringContractsSection } from './components/expiring-contracts-section';
@@ -45,7 +44,6 @@ export function DashboardPage() {
     refetch,
     isFetching,
     isRefetchError,
-    dataUpdatedAt,
   } = useQuery({
     queryKey: ['dashboard-snapshot', now.getMonth() + 1, now.getFullYear(), today],
     queryFn: () => getDashboardSnapshot(now),
@@ -99,18 +97,9 @@ export function DashboardPage() {
   const snapshotUnavailable = hasDashboardError && !snapshot;
 
   return (
-    <PageLayout size="wide" className="dashboard-page-shell pb-8" visualVariant="malek-pro">
+    <PageLayout size="wide" className="dashboard-page-shell pb-8" visualVariant="malek-pro" onRefresh={retryDashboard} refreshing={isFetching && !isLoading}>
       <DashboardVisualScope>
-        <HeroBanner
-          snapshot={snapshot}
-          isLoading={isLoading}
-          isRefreshing={isFetching && !isLoading}
-          lastUpdatedAt={dataUpdatedAt || undefined}
-          settings={settings}
-          today={today}
-          onRefresh={retryDashboard}
-        />
-
+        <h1 className="sr-only">اليوم</h1>
         {hasDashboardError ? (
           <ErrorState
             title={snapshotUnavailable ? 'تعذر تحميل بيانات اليوم' : 'تعذر تحديث بيانات اليوم'}

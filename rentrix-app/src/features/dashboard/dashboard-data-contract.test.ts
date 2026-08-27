@@ -31,7 +31,6 @@ describe('dashboard frontend/backend data contract (R1)', () => {
       read('components/alert-center.tsx'),
       read('components/office-pulse.tsx'),
       read('components/kpi-grid.tsx'),
-      read('components/hero-banner.tsx'),
       read('components/dashboard-charts.tsx'),
       read('components/urgent-maintenance-section.tsx'),
     ].join('\n');

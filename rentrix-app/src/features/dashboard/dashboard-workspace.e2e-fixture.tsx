@@ -6,7 +6,6 @@ import { AlertCenter } from './components/alert-center';
 import { ArrearsBreakdown } from './components/arrears-breakdown';
 import { DashboardCharts } from './components/dashboard-charts';
 import { ExpiringContractsSection } from './components/expiring-contracts-section';
-import { HeroBanner } from './components/hero-banner';
 import { KpiGrid } from './components/kpi-grid';
 import { OfficePulse } from './components/office-pulse';
 import { OverdueSection } from './components/overdue-section';
@@ -80,8 +79,6 @@ export function DashboardWorkspaceE2EFixture() {
       <div className="px-3 py-4 sm:px-6 lg:px-8">
         <PageLayout className="dashboard-page-shell">
           <DashboardVisualScope>
-            <HeroBanner snapshot={fixtureSnapshot} isLoading={false} settings={defaultCompanySettingsContract} today="2026-07-15" />
-
             <section className="dashboard-section" data-dashboard-section="work-now" aria-label="مطلوب الآن">
               <SectionHeader eyebrow="أولوية" title="مطلوب الآن" />
               <AlertCenter
