@@ -1,7 +1,8 @@
 import { Link } from '@tanstack/react-router';
 import { Activity, Edit, FileText, ReceiptText, UserRound } from 'lucide-react';
+import { useState } from 'react';
 import { ContextualDocumentsSection } from '@/components/documents/contextual-documents-section';
-import { PageHeader } from '@/components/layout/page-header';
+import { EntityDetailHeader } from '@/components/layout/entity-detail-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +11,7 @@ import { EntityPreviewDialog } from '@/components/ui/entity-preview-dialog';
 import { ErrorState } from '@/components/ui/error-state';
 import { LoadingState } from '@/components/ui/loading-state';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { SectionTabs } from '@/components/ui/section-tabs';
 import { useAuth } from '@/hooks/use-auth';
 import { businessReferenceOrLabel } from '@/lib/business-reference';
 import { formatDefaultCompanyMoney } from '@/lib/companyFormatters';
@@ -17,7 +19,16 @@ import { personTypeLabels } from '../person-schema';
 import { usePersonDossier } from '../use-people';
 import { useDialogNavigate } from '@/app/router/background-location';
 
-export function PersonDossierContent({ personId }: Readonly<{ personId: string }>) {
+type PersonSection = 'overview' | 'contracts' | 'financials' | 'records';
+
+const personSections = [
+  { id: 'overview', label: 'نظرة عامة', icon: UserRound },
+  { id: 'contracts', label: 'العقود', icon: FileText },
+  { id: 'financials', label: 'المالية', icon: ReceiptText },
+  { id: 'records', label: 'السجل', icon: Activity },
+] as const;
+
+export function PersonDossierContent({ personId, section }: Readonly<{ personId: string; section?: PersonSection }>) {
   const dialogNavigate = useDialogNavigate();
   const { canAccess } = useAuth();
   const canViewFinancial = canAccess('arrears.view');
@@ -36,6 +47,7 @@ export function PersonDossierContent({ personId }: Readonly<{ personId: string }
 
   return (
     <div className="space-y-5">
+      {(!section || section === 'overview') ? (
       <Card>
         <CardHeader><div className="flex items-center gap-3"><span className="grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary"><UserRound className="size-6" /></span><CardTitle>{dossier.person.full_name}</CardTitle></div></CardHeader>
         <CardContent>
@@ -51,7 +63,9 @@ export function PersonDossierContent({ personId }: Readonly<{ personId: string }
           ]} />
         </CardContent>
       </Card>
+      ) : null}
 
+      {(!section || section === 'contracts') ? (
       <Card>
         <CardHeader><CardTitle className="flex items-center gap-2"><FileText className="size-5 text-primary" />العقود والعقارات والوحدات</CardTitle></CardHeader>
         <CardContent>
@@ -67,8 +81,9 @@ export function PersonDossierContent({ personId }: Readonly<{ personId: string }
           )}
         </CardContent>
       </Card>
+      ) : null}
 
-      {canViewFinancial ? (
+      {(!section || section === 'financials') && canViewFinancial ? (
         <Card>
           <CardHeader><CardTitle className="flex items-center gap-2"><ReceiptText className="size-5 text-primary" />السياق المالي</CardTitle></CardHeader>
           <CardContent className="space-y-3">
@@ -95,14 +110,14 @@ export function PersonDossierContent({ personId }: Readonly<{ personId: string }
         </Card>
       ) : null}
 
-      {canViewActivity ? (
+      {(!section || section === 'records') && canViewActivity ? (
         <Card>
           <CardHeader><CardTitle className="flex items-center gap-2"><Activity className="size-5 text-primary" />آخر النشاط</CardTitle></CardHeader>
           <CardContent>{dossier.latestActivity.length === 0 ? <p className="text-sm text-muted-foreground">لا يوجد نشاط موثّق مرتبط بهذا الشخص.</p> : <ul className="space-y-2">{dossier.latestActivity.map((item) => <li key={item.id} className="rounded-xl border p-3"><p className="font-bold">{item.subject || 'تواصل مسجل'}</p><p className="mt-1 text-sm text-muted-foreground">{item.body}</p><p className="mt-1 text-xs text-muted-foreground">{new Date(item.created_at).toLocaleString('ar-OM-u-nu-latn')}</p></li>)}</ul>}</CardContent>
         </Card>
       ) : null}
 
-      <ContextualDocumentsSection entityType="person" entityId={dossier.person.id} entityLabel="الشخص" />
+      {(!section || section === 'records') ? <ContextualDocumentsSection entityType="person" entityId={dossier.person.id} entityLabel="الشخص" /> : null}
     </div>
   );
 }
@@ -122,10 +137,21 @@ export function PersonPreviewDialog({ personId, open, onOpenChange }: Readonly<{
 }
 
 export function PersonDetailPage({ personId }: Readonly<{ personId: string }>) {
+  const [activeSection, setActiveSection] = useState<PersonSection>('overview');
+
   return (
     <PageLayout dir="rtl" size="wide" visualVariant="malek-pro">
-      <PageHeader title="ملف الشخص" description="ملف قابل للمشاركة يضم البيانات والعلاقات والمستندات والنشاط الموثق." action={<Button asChild><Link to="/people/$personId/edit" params={{ personId }}><Edit className="me-2 size-4" />تعديل</Link></Button>} />
-      <PersonDossierContent personId={personId} />
+      <EntityDetailHeader
+        title="ملف الشخص"
+        subtitle="البيانات والعلاقات والمستندات والنشاط الموثق."
+        backTo="/people"
+        backLabel="الأشخاص"
+        actions={<Button asChild><Link to="/people/$personId/edit" params={{ personId }}><Edit className="me-2 size-4" />تعديل</Link></Button>}
+      />
+      <SectionTabs items={personSections} activeId={activeSection} onChange={setActiveSection} ariaLabel="أقسام ملف الشخص" panelId="person-detail-panel" idPrefix="person-detail" compactMobile />
+      <div id="person-detail-panel" role="tabpanel" aria-labelledby={`person-detail-tab-${activeSection}`}>
+        <PersonDossierContent personId={personId} section={activeSection} />
+      </div>
     </PageLayout>
   );
 }
