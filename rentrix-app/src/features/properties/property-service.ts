@@ -50,10 +50,18 @@ type PropertyWorkflowAgreement = Readonly<{
  */
 type PropertyListUnit = Readonly<{ id: string; status: Unit['status'] }>;
 
-type PropertyWithWorkflowRelations = Property & Readonly<{
-  property_owners?: PropertyWorkflowOwnerLink[] | null;
-  owner_agreements?: PropertyWorkflowAgreement[] | null;
-  units?: PropertyListUnit[] | null;
+type PropertyWithWorkflowRelations = Property & PropertyWorkflowRelations;
+
+/**
+ * Workflow relations used to derive property onboarding readiness. Kept as a
+ * standalone exported shape so the list read and the detail workspace derive
+ * the same readiness state from one pure authority
+ * (`derivePropertyWorkflowHealth`).
+ */
+export type PropertyWorkflowRelations = Readonly<{
+  property_owners?: readonly PropertyWorkflowOwnerLink[] | null;
+  owner_agreements?: readonly PropertyWorkflowAgreement[] | null;
+  units?: readonly PropertyListUnit[] | null;
 }>;
 
 export type PropertyWorkflowHealth =
@@ -79,7 +87,7 @@ function coversDate(startsOn: string | null, endsOn: string | null, asOf: string
 }
 
 export function derivePropertyWorkflowHealth(
-  property: PropertyWithWorkflowRelations,
+  property: PropertyWorkflowRelations,
   asOf = getTodayLocalDateString(),
 ): Pick<PropertyListItem, 'workflow_health' | 'current_owner_name'> {
   const currentOwnerLinks = (property.property_owners ?? [])
