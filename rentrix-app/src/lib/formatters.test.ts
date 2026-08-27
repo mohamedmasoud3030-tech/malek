@@ -9,6 +9,7 @@ import {
   formatLatinNumber,
   formatLatinTime,
   formatMoney,
+  formatCount,
   formatNumber,
   getCurrencyMetadata,
   getCurrencyMinorUnit,
@@ -194,6 +195,32 @@ describe('backwards-compatible aliases', () => {
     const d = new Date('2026-07-01T12:00:00Z');
     const result = toLatinLocaleTimeString(d, 'ar');
     expect(result).not.toMatch(/[\u0660-\u0669]/);
+  });
+});
+
+describe('formatCount — one canonical count formatter for every register', () => {
+  // Eight registers used to declare a private `new Intl.NumberFormat('en-US')`
+  // helper. These assertions lock the dedup to the SAME rendered output so the
+  // consolidation is provably behaviour-neutral.
+  it('matches the per-register en-US helper it replaced', () => {
+    for (const value of [0, 1, 7, 42, 1000, 12345, 1234567]) {
+      expect(formatCount(value, 'en-US')).toBe(new Intl.NumberFormat('en-US').format(value));
+    }
+  });
+
+  it('groups thousands and never shows fraction digits', () => {
+    expect(formatCount(1234567, 'en-US')).toBe('1,234,567');
+    expect(formatCount(0, 'en-US')).toBe('0');
+  });
+
+  it('keeps Latin numerals for the default Arabic locale, like money does', () => {
+    expect(formatCount(12345)).toBe('12,345');
+    expect(formatCount(12345)).not.toMatch(/[٠-٩]/);
+  });
+
+  it('treats null and undefined as zero instead of rendering NaN', () => {
+    expect(formatCount(null, 'en-US')).toBe('0');
+    expect(formatCount(undefined, 'en-US')).toBe('0');
   });
 });
 

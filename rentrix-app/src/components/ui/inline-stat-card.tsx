@@ -12,7 +12,7 @@ interface InlineStatCardProps {
  *
  * @example
  * <InlineStatCard label="إجمالي العملاء" value={12} />
- * <InlineStatCard label="قيمة العقارات" value="450,000 ر.ع." />
+ * <InlineStatCard label="قيمة العقارات" value={formatCompanyMoney(settings, 450000)} />
  */
 export function InlineStatCard({ label, value, className }: InlineStatCardProps) {
   return (

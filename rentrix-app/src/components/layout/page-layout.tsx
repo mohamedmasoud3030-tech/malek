@@ -40,11 +40,14 @@ function TodayContextStrip({ onRefresh, refreshing }: Readonly<{ onRefresh?: () 
     year: 'numeric',
   }).format(now);
 
+  // z-20 keeps the strip level with the app-shell header. It must NOT use
+  // --z-sticky (60): that layer sits above the nav overlay (z-40) and the
+  // dropdowns (z-50), so the strip would paint over the open drawer scrim.
   return (
     <div
       data-global-today-context
       aria-label={isArabic ? 'اليوم والتاريخ' : 'Today and date'}
-      className="sticky top-[calc(3rem+env(safe-area-inset-top,0px))] z-10 mx-3 mt-2 flex min-h-14 items-center rounded-2xl border border-border/70 bg-card/96 px-3 shadow-sm backdrop-blur-sm sm:top-[calc(3.5rem+env(safe-area-inset-top,0px))] sm:mx-4 sm:min-h-16 sm:px-4 lg:mx-6"
+      className="sticky top-[calc(var(--app-header-height,3rem)+env(safe-area-inset-top,0px))] z-20 mx-3 mt-2 flex min-h-14 items-center rounded-2xl border border-border/70 bg-card/96 px-3 shadow-sm backdrop-blur-sm sm:mx-4 sm:min-h-16 sm:px-4 lg:mx-6"
     >
       <div className="flex min-w-0 items-center gap-3">
         <span
@@ -103,7 +106,7 @@ export function PageLayout({
       <div
         className={cn(
           pageSizes[size],
-          'min-w-0 space-y-2.5 pb-[calc(5.75rem+env(safe-area-inset-bottom,0px))] sm:space-y-3 md:space-y-3.5 md:pb-6 lg:space-y-5 lg:pb-10',
+          'min-w-0 space-y-2.5 pb-[var(--mobile-dock-clearance,5.25rem)] sm:space-y-3 md:space-y-3.5 md:pb-6 lg:space-y-5 lg:pb-10',
           contentClassName,
         )}
       >

@@ -5,19 +5,18 @@ import { expect, test, type Page, type Route } from '@playwright/test';
  * in BOTH Arabic RTL and English LTR rendering.
  *
  * Covers the launch-polish contract that unit tests can only approximate:
- *  - Top header: [M mark] [MALEK] lockup on one end, compact Menu/User/Theme
+ *  - Top header: [M mark] [MALEK] lockup on one end, compact User/Theme
  *    controls on the other end, NO day+date in the header.
- *  - Today context strip: "اليوم" + localized weekday + date + freshness.
+ *  - Today context strip: "اليوم" + localized weekday + date.
  *  - Quick Add: clear VERTICAL action stack (one action per row).
- *  - Bottom dock: quick add / notifications / AI, never covering content.
- *  - Mobile drawer: centered brand lockup, fully inside the viewport.
+ *  - Bottom dock: Menu / Search / Quick Add / Notifications / AI, never covering content.
+ *  - Primary navigation: shared bottom sheet, fully inside the viewport.
  *  - Entity cards (properties/units/contracts): scan-level summary fields
  *    and flat secondary actions (no «إجراءات» disclosure layer).
  *
- * RTL is the app's canonical direction. The LTR leg forces the app shell
- * root to dir="ltr" at runtime to prove the new composition is
- * direction-agnostic: opposite-end grouping, no overlap, no clipping, no
- * horizontal overflow — without changing any product behavior.
+ * RTL is the app's canonical direction. The LTR leg changes the document's
+ * single direction authority to prove the composition is direction-safe without
+ * introducing a competing shell-local `dir` source.
  *
  * The Supabase HTTP boundary is stubbed per browser context (hermetic CI).
  */
@@ -91,7 +90,6 @@ const properties = [
     created_at: NOW_ISO,
     updated_at: NOW_ISO,
     deleted_at: null,
-    // Embedded projection consumed by the property card summary (single request).
     units: [
       { id: 'unit-1', status: 'occupied' },
       { id: 'unit-2', status: 'occupied' },
@@ -260,10 +258,10 @@ async function openAuthenticatedDashboard(page: Page) {
   await expect(page.locator('[data-app-shell-header]')).toBeVisible();
 }
 
-/** Force the app shell root into LTR to prove the new composition is direction-agnostic. */
+/** Change the single document direction authority for the LTR/RTL acceptance leg. */
 async function forceShellDirection(page: Page, direction: 'rtl' | 'ltr') {
   await page.evaluate((dir) => {
-    document.querySelector('[data-app-shell]')?.setAttribute('dir', dir);
+    document.documentElement.setAttribute('dir', dir);
   }, direction);
 }
 
@@ -291,17 +289,12 @@ test.beforeEach(async ({}, testInfo) => {
 
 for (const viewport of MOBILE_VIEWPORTS) {
   for (const direction of ['rtl', 'ltr'] as const) {
-    test(`mobile launch polish ${viewport.name}px ${direction.toUpperCase()} — header, Today, quick add, dock, drawer`, async ({ page }) => {
+    test(`mobile launch polish ${viewport.name}px ${direction.toUpperCase()} — header, Today, quick add, dock, bottom sheet`, async ({ page }) => {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
       await openAuthenticatedDashboard(page);
       await forceShellDirection(page, direction);
       const label = `dashboard@${viewport.name}@${direction}`;
-      const isRtl = direction === 'rtl';
 
-      // ------------------------------------------------------------------
-      // 1. Header: [M] [MALEK] lockup on one end, compact controls on the
-      //    other end, no day+date in the toolbar.
-      // ------------------------------------------------------------------
       const header = page.locator('[data-app-shell-header]');
       await expect(header).toBeVisible();
       const lockup = page.locator('[data-header-brand-lockup]');
@@ -316,72 +309,54 @@ for (const viewport of MOBILE_VIEWPORTS) {
       expect(lockupBox, `${label}: brand lockup box`).not.toBeNull();
       expect(controlsBox, `${label}: controls box`).not.toBeNull();
 
-      // Directional grouping: in RTL the brand sits on the visual left and
-      // the controls on the visual right; in LTR it is mirrored.
-      if (isRtl) {
-        expect(lockupBox!.x + lockupBox!.width / 2, `${label}: brand must sit on the visual left (RTL)`).toBeLessThan(viewport.width * 0.35);
-        expect(controlsBox!.x + controlsBox!.width / 2, `${label}: controls must sit on the visual right (RTL)`).toBeGreaterThan(viewport.width * 0.65);
-      } else {
-        expect(lockupBox!.x + lockupBox!.width / 2, `${label}: brand must sit on the visual right (LTR)`).toBeGreaterThan(viewport.width * 0.65);
-        expect(controlsBox!.x + controlsBox!.width / 2, `${label}: controls must sit on the visual left (LTR)`).toBeLessThan(viewport.width * 0.35);
-      }
-      // No overlap between the two header groups.
-      const gapOk = isRtl
-        ? lockupBox!.x + lockupBox!.width <= controlsBox!.x + 1
-        : controlsBox!.x + controlsBox!.width <= lockupBox!.x + 1;
-      expect(gapOk, `${label}: header groups must not overlap`).toBeTruthy();
+      expect(lockupBox!.x + lockupBox!.width / 2, `${label}: brand must sit on the physical left`).toBeLessThan(viewport.width * 0.35);
+      expect(controlsBox!.x + controlsBox!.width / 2, `${label}: controls must sit on the physical right`).toBeGreaterThan(viewport.width * 0.65);
+      expect(
+        lockupBox!.x + lockupBox!.width <= controlsBox!.x + 1,
+        `${label}: header groups must not overlap`,
+      ).toBeTruthy();
 
-      // Day + Date must NOT live in the header (any direction).
       await expect(page.locator('[data-header-date-center]')).toHaveCount(0);
 
-      // Compact controls: three 44px hit wrappers with a 32px visible button.
       const hitAreas = page.locator('[data-header-control-hit]');
-      await expect(hitAreas).toHaveCount(3);
+      await expect(hitAreas).toHaveCount(2);
       const firstButton = hitAreas.first().locator('button');
       const buttonBox = await firstButton.boundingBox();
       expect(buttonBox, `${label}: visible control box`).not.toBeNull();
       expect(buttonBox!.height, `${label}: visible control must be compact (<=36px)`).toBeLessThanOrEqual(36);
       expect(buttonBox!.width, `${label}: visible control must be compact (<=36px)`).toBeLessThanOrEqual(36);
 
-      // Header row stays slim (48px on phones, border included).
       const headerBox = await header.boundingBox();
       expect(headerBox, `${label}: header box`).not.toBeNull();
       expect(headerBox!.height, `${label}: header must not grow (<=60px)`).toBeLessThanOrEqual(60);
 
-      // ------------------------------------------------------------------
-      // 2. Today context strip: اليوم + localized weekday + date + freshness.
-      // ------------------------------------------------------------------
-      const today = page.locator('[data-dashboard-today-context]');
+      const today = page.locator('[data-global-today-context]');
       await expect(today).toBeVisible();
-      await expect(today.locator('h1')).toHaveText('اليوم');
-      const weekday = today.locator('[data-dashboard-today-weekday]');
-      const dayDate = today.locator('[data-dashboard-today-day-date]');
+      await expect(today).toContainText('اليوم');
+      const weekday = today.locator('[data-global-today-weekday]');
+      const dayDate = today.locator('[data-global-today-day-date]');
       expect((await weekday.textContent())?.trim(), `${label}: weekday must be populated`).not.toBe('');
       expect((await dayDate.textContent())?.trim(), `${label}: date must be populated`).not.toBe('');
 
-      // ------------------------------------------------------------------
-      // 3. Bottom dock: exactly 3 global buttons, content not covered.
-      // ------------------------------------------------------------------
+      await expect(page.locator('[data-mobile-dock-menu]')).toBeVisible();
+      await expect(page.locator('[data-mobile-dock-search]')).toBeVisible();
       await expect(page.locator('[data-mobile-dock-quick-add]')).toBeVisible();
       await expect(page.locator('[data-mobile-dock-notifications]')).toBeVisible();
       await expect(page.locator('[data-mobile-dock-ai]')).toBeVisible();
-      await expect(page.locator('[data-mobile-dock-menu]')).toHaveCount(0);
 
       const dockBox = await page.locator('[data-mobile-floating-control]').boundingBox();
       expect(dockBox, `${label}: dock box`).not.toBeNull();
       await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
       await page.waitForTimeout(200);
-      const lastSection = page.locator('[data-visual-contract="v2"] > *').last();
-      const lastBox = await lastSection.boundingBox();
-      expect(lastBox, `${label}: last dashboard section box`).not.toBeNull();
+      const clearance = await page.evaluate(() => {
+        const content = document.querySelector('[data-page-layout] > *');
+        return Number.parseFloat(getComputedStyle(content as Element).paddingBlockEnd);
+      });
       expect(
-        lastBox!.y + lastBox!.height,
-        `${label}: last section must not be covered by the dock`,
-      ).toBeLessThanOrEqual(dockBox!.y + 1);
+        clearance,
+        `${label}: page content must reserve the dock clearance`,
+      ).toBeGreaterThanOrEqual(dockBox!.height - 1);
 
-      // ------------------------------------------------------------------
-      // 4. Quick Add: clear vertical stack, one action per row.
-      // ------------------------------------------------------------------
       await page.locator('[data-mobile-dock-quick-add]').click();
       const quickList = page.locator('[data-mobile-quick-add-list]');
       await expect(quickList).toBeVisible();
@@ -401,39 +376,25 @@ for (const viewport of MOBILE_VIEWPORTS) {
       await page.keyboard.press('Escape');
       await expect(page.locator('[data-mobile-quick-add-menu]')).toHaveCount(0);
 
-      // ------------------------------------------------------------------
-      // 5. Mobile drawer: centered brand lockup, fully inside the viewport.
-      // ------------------------------------------------------------------
-      await page.locator('[data-mobile-top-menu]').click();
-      const drawer = page.locator('[data-mobile-drawer]');
-      await expect(drawer).toBeVisible();
-      const drawerBox = await drawer.boundingBox();
-      expect(drawerBox, `${label}: drawer box`).not.toBeNull();
-      expect(drawerBox!.x, `${label}: drawer must stay inside the viewport`).toBeGreaterThanOrEqual(-1);
-      expect(drawerBox!.x + drawerBox!.width, `${label}: drawer must stay inside the viewport`).toBeLessThanOrEqual(viewport.width + 1);
+      // Primary navigation is the shared bottom sheet, opened by the dock Menu.
+      await page.locator('[data-mobile-dock-menu]').click();
+      const sheet = page.locator('[data-bottom-sheet]');
+      await expect(sheet).toBeVisible();
+      await expect(page.locator('[data-mobile-nav-bottom-sheet]')).toBeVisible();
+      await expect(sheet).toHaveAttribute('role', 'dialog');
+      await expect(sheet).toHaveAttribute('aria-modal', 'true');
 
-      const drawerBrandHeader = page.locator('[data-drawer-brand-header]');
-      const drawerBrand = page.locator('[data-drawer-brand]');
-      await expect(drawerBrand).toBeVisible();
-      await expect(drawerBrand.locator('[data-malek-canonical-mark]')).toBeVisible();
-      await expect(drawerBrand).toContainText('MALEK');
-      const brandBox = await drawerBrand.boundingBox();
-      expect(brandBox, `${label}: drawer brand box`).not.toBeNull();
-      const brandHeaderBox = await drawerBrandHeader.boundingBox();
-      expect(brandHeaderBox, `${label}: drawer brand header box`).not.toBeNull();
-      // No clipping: brand sits strictly inside the drawer in both directions.
-      expect(brandBox!.x, `${label}: brand must not clip on the start side`).toBeGreaterThanOrEqual(drawerBox!.x - 1);
-      expect(brandBox!.x + brandBox!.width, `${label}: brand must not clip on the end side`).toBeLessThanOrEqual(drawerBox!.x + drawerBox!.width + 1);
-      // Centered inside the drawer (either direction): symmetric margins.
-      const startMargin = brandBox!.x - drawerBox!.x;
-      const endMargin = drawerBox!.x + drawerBox!.width - (brandBox!.x + brandBox!.width);
-      expect(
-        Math.abs(startMargin - endMargin),
-        `${label}: drawer brand must be centered (start=${startMargin.toFixed(1)} end=${endMargin.toFixed(1)})`,
-      ).toBeLessThanOrEqual(2);
+      const sheetBox = await sheet.boundingBox();
+      expect(sheetBox, `${label}: navigation sheet box`).not.toBeNull();
+      expect(sheetBox!.x, `${label}: sheet starts inside viewport`).toBeGreaterThanOrEqual(-1);
+      expect(sheetBox!.x + sheetBox!.width, `${label}: sheet stays inside viewport`).toBeLessThanOrEqual(viewport.width + 1);
+      expect(sheetBox!.width, `${label}: sheet uses the phone width`).toBeGreaterThanOrEqual(viewport.width - 2);
+      expect(sheetBox!.y + sheetBox!.height, `${label}: sheet is bottom anchored`).toBeGreaterThanOrEqual(viewport.height - 2);
 
+      await expect(page.locator('[data-mobile-floating-control]')).toHaveCount(0);
       await page.keyboard.press('Escape');
-      await expect(drawer).toHaveCount(0);
+      await expect(sheet).toHaveCount(0);
+      await expect(page.locator('[data-mobile-floating-control]')).toBeVisible();
 
       await expectNoHorizontalOverflow(page, label);
     });
@@ -447,9 +408,6 @@ for (const viewport of MOBILE_VIEWPORTS) {
       await openAuthenticatedDashboard(page);
       const label = `cards@${viewport.name}@${direction}`;
 
-      // ------------------------------------------------------------------
-      // Properties: scan-level facts + flat actions, no «إجراءات» layer.
-      // ------------------------------------------------------------------
       await page.goto('/properties', { waitUntil: 'domcontentloaded' });
       await expect(page).toHaveURL(/\/properties$/);
       await forceShellDirection(page, direction);
@@ -464,7 +422,6 @@ for (const viewport of MOBILE_VIEWPORTS) {
       await expect(propertySummary).toContainText('مسقط');
       await expect(propertySummary).toContainText('مالك برج الخليج');
       await expect(propertySummary).toContainText('2/3 وحدة');
-      // Flat secondary actions, one level deep (no intermediate «إجراءات»).
       await expect(page.locator('[data-entity-table-mobile-actions]')).toHaveCount(0);
       await expect(propertyCard).toContainText('فتح التفاصيل');
       await expect(propertyCard).toContainText('تعديل');
@@ -477,9 +434,6 @@ for (const viewport of MOBILE_VIEWPORTS) {
       ).toBeLessThanOrEqual(viewport.width + 1);
       await expectNoHorizontalOverflow(page, `${label}-properties`);
 
-      // ------------------------------------------------------------------
-      // Units: identity + status + rent, flat actions.
-      // ------------------------------------------------------------------
       await page.goto('/properties?section=units', { waitUntil: 'domcontentloaded' });
       await expect(page.locator('[data-portfolio-section="units"]')).toBeVisible();
       const unitCards = page.locator('[data-portfolio-section="units"] [data-entity-table-mobile-card]');
@@ -493,9 +447,6 @@ for (const viewport of MOBILE_VIEWPORTS) {
       await expect(unitCard).toContainText('فتح التفاصيل');
       await expectNoHorizontalOverflow(page, `${label}-units`);
 
-      // ------------------------------------------------------------------
-      // Contracts: tenant + unit + period + rent, flat actions.
-      // ------------------------------------------------------------------
       await page.goto('/contracts', { waitUntil: 'domcontentloaded' });
       await expect(page).toHaveURL(/\/contracts$/);
       const contractCards = page.locator('[data-entity-table-mobile-card]');

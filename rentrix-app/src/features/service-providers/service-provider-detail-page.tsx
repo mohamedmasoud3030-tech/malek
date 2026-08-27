@@ -16,6 +16,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { useDialogNavigate } from '@/app/router/background-location';
 import { useAuth } from '@/hooks/use-auth';
 import { useServiceProviderDossier } from './use-service-providers';
+import { formatCount } from '@/lib/formatters';
 
 const maintenanceStatusLabels: Record<string, string> = { open: 'مفتوح', in_progress: 'قيد التنفيذ', resolved: 'تم الحل', closed: 'مغلق' };
 const maintenancePriorityLabels: Record<string, string> = { low: 'منخفضة', medium: 'متوسطة', high: 'عالية', urgent: 'عاجلة' };
@@ -27,9 +28,6 @@ function statusTone(status: string | null): 'info' | 'warning' | 'success' | 'ne
   return 'neutral';
 }
 
-function formatCount(value: number) {
-  return new Intl.NumberFormat('en-US').format(value);
-}
 
 type ProviderSection = 'overview' | 'operations' | 'documents';
 

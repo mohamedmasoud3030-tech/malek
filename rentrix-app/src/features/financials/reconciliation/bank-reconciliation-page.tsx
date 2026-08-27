@@ -441,7 +441,7 @@ function SuggestedMatches({
         <button
           key={`${candidate.entity_type}:${candidate.entity_id}`}
           type="button"
-          className="min-h-11 rounded-xl border border-border bg-card p-3 text-right text-sm transition hover:border-primary/35 hover:bg-primary/5 disabled:opacity-50"
+          className="min-h-11 rounded-xl border border-border bg-card p-3 text-start text-sm transition hover:border-primary/35 hover:bg-primary/5 disabled:opacity-50"
           disabled={!isInteractive}
           onClick={() => onUse(candidate)}
         >

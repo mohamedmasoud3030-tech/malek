@@ -20,10 +20,8 @@ import { maintenancePriorityLabels, maintenanceStatusLabels } from './maintenanc
 import { MaintenanceRequestForm } from './maintenance-request-form';
 import type { MaintenancePriorityFilter, MaintenanceStatusFilter } from '../maintenance-helpers';
 import { useMaintenancePageController } from '../useMaintenancePageController';
+import { formatCount } from '@/lib/formatters';
 
-function formatCount(value: number) {
-  return new Intl.NumberFormat('en-US').format(value);
-}
 
 export type MaintenanceWorkspaceMode = 'standalone' | 'embedded';
 

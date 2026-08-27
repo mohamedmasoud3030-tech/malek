@@ -5,14 +5,8 @@ import { describe, expect, it } from 'vitest';
  * MALEK premium glass — material & lighting design contract.
  *
  * The premium surface system (styles/premium-glass.css + the glass token block
- * in styles/tokens.css) is a *material* layer: it decides how a surface catches
- * light and how deep it sits. It must stay a single shared system, must not
- * become a second competing theme, and must stay cheap enough for phones.
- *
- * These assertions are file-level on purpose: they lock the contract that no
- * component test can see (token presence per theme, blur budget, overlay
- * opacity, reduced-motion / forced-colour / print fallbacks) without asserting
- * a single Tailwind class on a live component.
+ * in styles/tokens.css) is a material layer. It must stay a single shared
+ * system, must not become a second theme, and must stay cheap enough for phones.
  */
 function source(relativePath: string) {
   return readFileSync(new URL(`../${relativePath}`, import.meta.url), 'utf8');
@@ -23,10 +17,10 @@ const glass = source('styles/premium-glass.css');
 const globals = source('styles/globals.css');
 const shell = source('app/layout/app-shell.tsx');
 const nav = source('app/layout/layout-navigation-view.tsx');
+const bottomSheet = source('components/ui/bottom-sheet.tsx');
 const notifications = source('app/layout/notifications-menu.tsx');
 const login = source('features/auth/login-page.tsx');
 
-/** Every glass token that a primitive consumes, for both themes. */
 const REQUIRED_TOKENS = [
   '--glass-blur',
   '--glass-blur-elevated',
@@ -53,11 +47,6 @@ const REQUIRED_TOKENS = [
   '--premium-login-ambient',
 ] as const;
 
-/**
- * Collect every declaration block opened by `selector`.
- * tokens.css legitimately repeats `:root` (spacing, light palette, glass), so a
- * single-match lookup would read the wrong block.
- */
 function block(css: string, selector: string): string {
   const needle = `${selector} {`;
   const chunks: string[] = [];
@@ -80,7 +69,6 @@ function block(css: string, selector: string): string {
   return chunks.join('\n');
 }
 
-/** Collect the property names declared inside one CSS rule body. */
 function declarations(rule: string): string[] {
   const body = rule.slice(rule.indexOf('{') + 1, rule.lastIndexOf('}'));
   return body
@@ -89,7 +77,6 @@ function declarations(rule: string): string[] {
     .filter((name) => name.length > 0 && !name.startsWith('--'));
 }
 
-/** All rule bodies whose selector list mentions the given fragment. */
 function rulesFor(css: string, fragment: string): string[] {
   const out: string[] = [];
   const pattern = new RegExp(`([^{}]*${fragment}[^{}]*)\\{([^{}]*)\\}`, 'g');
@@ -101,8 +88,6 @@ describe('premium glass — one shared material system', () => {
   it('is wired into the canonical stylesheet entry point', () => {
     expect(globals).toContain("@import './tokens.css';");
     expect(globals).toContain("@import './premium-glass.css';");
-    // The material layer must sit after the earlier visual layers so it wins
-    // the cascade without needing !important.
     expect(globals.indexOf("@import './tokens.css';")).toBeLessThan(
       globals.indexOf("@import './premium-glass.css';"),
     );
@@ -114,7 +99,6 @@ describe('premium glass — one shared material system', () => {
   it('declares every glass token for BOTH the light and the deep-navy dark theme', () => {
     const light = block(tokens, ':root');
     const dark = block(tokens, "[data-theme='dark']");
-
     for (const token of REQUIRED_TOKENS) {
       expect(light, `light theme is missing ${token}`).toContain(`${token}:`);
       expect(dark, `dark theme is missing ${token}`).toContain(`${token}:`);
@@ -126,7 +110,6 @@ describe('premium glass — one shared material system', () => {
     const base = /--premium-page-base:\s*hsl\(([\d.]+)\s/.exec(dark);
     expect(base).not.toBeNull();
     const hue = Number(base?.[1]);
-    // 210–235° is the MALEK navy band; a neutral grey/black would be ~0 or absent.
     expect(hue).toBeGreaterThanOrEqual(210);
     expect(hue).toBeLessThanOrEqual(235);
     expect(dark).toMatch(/--premium-page-ambient:[\s\S]*radial-gradient/);
@@ -154,16 +137,12 @@ describe('premium glass — one shared material system', () => {
     ]) {
       expect(glass, `missing primitive ${primitive}`).toContain(primitive);
     }
-    // Attribute opt-in mirrors the class API so features can pick a level
-    // without importing a competing utility set.
     for (const level of ['base', 'card', 'elevated', 'strong']) {
       expect(glass).toContain(`[data-glass-level='${level}']`);
     }
   });
 
   it('does not introduce a second theme system', () => {
-    // No re-declaration of the canonical colour/shadow/radius tokens: the
-    // material layer may only consume them.
     for (const forbidden of [
       '--color-bg:',
       '--color-card:',
@@ -180,7 +159,6 @@ describe('premium glass — one shared material system', () => {
     expect(glass).toContain('body::before');
     expect(glass).toContain('background-image: var(--premium-page-ambient)');
     expect(glass).toContain('position: fixed');
-    // Chrome must be see-through or the ambient layer is invisible.
     expect(glass).toContain('[data-app-shell] main#main-content');
   });
 });
@@ -192,7 +170,6 @@ describe('premium glass — reflection and hierarchy', () => {
       expect(rule, `no rule for glass level ${level}`).toBeTruthy();
       expect(declarations(rule)).toContain('box-shadow');
     }
-    // The highlight itself is an inset light line, not a bright outline.
     const light = block(tokens, ':root');
     expect(light).toMatch(/--glass-edge-light:\s*[\s\S]*inset 0 1px 0/);
   });
@@ -205,22 +182,17 @@ describe('premium glass — reflection and hierarchy', () => {
   });
 
   it('does not treat every surface identically', () => {
-    // Dense registers sit on the quiet base material…
     const dense = rulesFor(glass, '\\[data-entity-table-wrapper\\]')[0];
     expect(dense).toContain('var(--glass-surface-base)');
     expect(dense).not.toContain('backdrop-filter');
-    // …while page headers and overlays are the elevated, blurred material.
     expect(rulesFor(glass, '\\[data-unified-surface=')[0]).toContain('var(--glass-surface-elevated)');
     expect(rulesFor(glass, '\\[data-mobile-dock-surface\\]')[0]).toContain('backdrop-filter');
   });
 
   it('gives interactive cards hover, pressed and selected states', () => {
-    const states = glass;
-    expect(states).toContain('[data-entity-card]:hover');
-    expect(states).toContain('[data-entity-card][aria-selected=\'true\']');
-    expect(states).toContain('@media (hover: none) and (pointer: coarse)');
-    // The pressed state must survive the later-loaded ux-foundation reset, so
-    // it is qualified by the shell.
+    expect(glass).toContain('[data-entity-card]:hover');
+    expect(glass).toContain('[data-entity-card][aria-selected=\'true\']');
+    expect(glass).toContain('@media (hover: none) and (pointer: coarse)');
     const pressed = rulesFor(glass, '\\[data-app-shell\\] \\[data-entity-card\\]:active')[0];
     expect(pressed, 'touch pressed state must stay on the glass material').toContain('inset');
   });
@@ -228,14 +200,12 @@ describe('premium glass — reflection and hierarchy', () => {
 
 describe('premium glass — performance budget', () => {
   it('pays for backdrop-filter only on chrome and overlays, never on in-flow cards', () => {
-    // Only real blur costs count; `backdrop-filter: none` is a fallback.
     const blurredSelectors = [...glass.matchAll(/([^{}]+)\{[^{}]*backdrop-filter:\s*blur\([^{}]*\}/g)].map(
       (match) => match[1],
     );
     expect(blurredSelectors.length).toBeGreaterThan(0);
 
     for (const selector of blurredSelectors) {
-      // In-flow card markers must never appear in a blurred selector list.
       expect(selector, `card marker blurred: ${selector}`).not.toMatch(
         /\[data-(component-card|entity-card|mobile-card|kpi-card)\]/,
       );
@@ -260,8 +230,6 @@ describe('premium glass — performance budget', () => {
   it('does not animate filters or add per-card pseudo-element trees', () => {
     expect(glass).not.toMatch(/transition:[^;]*(filter|backdrop-filter)/);
     expect(glass).not.toMatch(/animation:[^;]*filter/);
-    // Pseudo-elements that actually paint: the fixed page environment plus one
-    // deliberate reflection line on the dock. Nothing per-card.
     const paintedPseudo = [...glass.matchAll(/::(?:before|after)\s*\{([^{}]*)\}/g)].filter((match) =>
       match[1].includes('content:'),
     );
@@ -274,7 +242,7 @@ describe('premium glass — accessibility', () => {
     const overlay = rulesFor(glass, '\\[data-mobile-notifications-panel\\]')[0];
     expect(overlay).toContain('var(--glass-surface-strong)');
     expect(overlay).toContain('backdrop-filter');
-    for (const surface of ['[data-mobile-drawer]', '[data-mobile-quick-add-menu]', '[data-account-menu-panel]']) {
+    for (const surface of ['[data-bottom-sheet]', '[data-mobile-quick-add-menu]', '[data-account-menu-panel]']) {
       expect(rulesFor(glass, surface.replace(/[[\]]/g, '\\$&'))[0]).toContain('var(--glass-surface-strong)');
     }
   });
@@ -309,17 +277,14 @@ describe('premium glass — accessibility', () => {
   });
 
   it('does not lean on contrast-destroying translucency for the ambient page', () => {
-    // The ambient layer is decorative only: it must never intercept pointer
-    // events or sit above content.
     const ambient = rulesFor(glass, 'body::before')[0];
     expect(ambient).toContain('pointer-events: none');
     expect(ambient).toContain('z-index: -1');
   });
 });
 
-describe('premium glass — #1595 mobile shell behaviour is untouched', () => {
-  it('adds visual hooks without moving any behavioural hook', () => {
-    // Dock: the new material hook sits beside the existing control hooks.
+describe('premium glass — target mobile shell behaviour', () => {
+  it('keeps the shared utility dock and moves primary navigation to the shared bottom sheet', () => {
     expect(nav).toContain('data-mobile-dock-surface');
     for (const hook of [
       'data-mobile-floating-control',
@@ -329,33 +294,34 @@ describe('premium glass — #1595 mobile shell behaviour is untouched', () => {
       'data-mobile-dock-notifications',
       'data-mobile-dock-ai',
     ]) {
-      expect(nav, `lost #1595 hook ${hook}`).toContain(hook);
+      expect(nav, `lost utility hook ${hook}`).toContain(hook);
     }
-    // The dock still disappears entirely while the drawer is open.
     expect(nav).toContain('if (drawerOpen) {');
-    // Safe-area clearance and the 44px grid are untouched.
     expect(nav).toContain('pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]');
     expect(nav).toContain('size-11 min-h-11 min-w-11');
 
-    // Header: still [ M ] MALEK, still no hamburger.
     expect(shell).toContain('data-header-brand-monogram');
     expect(shell).toContain('data-header-wordmark');
     expect(shell).not.toContain('data-mobile-menu-trigger');
     expect(shell).toContain('data-account-menu-panel');
+    expect(shell).toContain("import { BottomSheet } from '@/components/ui/bottom-sheet'");
+    expect(shell).toContain('data-mobile-nav-bottom-sheet');
+    expect(shell).not.toContain('data-mobile-drawer');
+    expect(shell).not.toContain('w-[85vw]');
 
-    // Drawer still opens from the right in RTL at the #1595 size.
-    expect(shell).toContain('left-auto right-0');
-    expect(shell).toContain('w-[85vw] max-w-[20rem]');
+    expect(bottomSheet).toContain('data-bottom-sheet');
+    expect(bottomSheet).toContain('justify-end');
+    expect(bottomSheet).toContain('w-full');
+    expect(bottomSheet).toContain('rounded-t-3xl');
+    expect(bottomSheet).toContain("document.body.style.overflow = 'hidden'");
 
-    // Notifications keep the anchored mobile panel contract.
     expect(notifications).toContain('data-mobile-notifications-panel');
-    expect(notifications).toContain('max-md:bottom-[calc(var(--mobile-floating-control-height');
+    expect(notifications).toContain('max-md:bottom-[var(--mobile-dock-clearance');
     expect(notifications).toContain('max-md:max-h-[min(70dvh,28rem)]');
   });
 
   it('adds no new hardcoded z-index and no authentication change', () => {
     expect((glass.match(/z-index/g) ?? []).length).toBeLessThanOrEqual(1);
-    // The login route still submits through the same handler; only classes moved.
     expect(login).toContain('await login(email, password)');
     expect(login).toContain('data-login-card');
     expect(login).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);

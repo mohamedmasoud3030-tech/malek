@@ -2,10 +2,8 @@ import { FileText } from 'lucide-react';
 import { ContractTable } from './ContractTable';
 import type { CompanySettingsContract } from '@/lib/companySettings';
 import type { ContractListItem } from '../services/contractService';
+import { formatCount } from '@/lib/formatters';
 
-function formatCount(value: number) {
-  return new Intl.NumberFormat('en-US').format(value);
-}
 
 export function ContractResults({
   companySettings,

@@ -5,10 +5,8 @@ import { isContractStatus } from '@/lib/contractStatus';
 import { formatContractMoney } from '../contractDisplayFormatters';
 import type { ContractListItem } from '../services/contractService';
 import { isExpiringSoon } from '../hooks/useContractFilters';
+import { formatCount } from '@/lib/formatters';
 
-function formatCount(value: number) {
-  return new Intl.NumberFormat('en-US').format(value);
-}
 
 export function summarizeContracts(contracts: ContractListItem[]) {
   return contracts.reduce(

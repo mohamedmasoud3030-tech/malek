@@ -72,6 +72,9 @@ describe('AppShell — redesigned MALEK header & navigation', () => {
   afterEach(() => {
     act(() => root.unmount());
     host.remove();
+    document.body.innerHTML = '';
+    document.body.style.overflow = '';
+    document.documentElement.style.overflow = '';
   });
 
   it('shows the fixed MALEK brand in the global header instead of the dynamic page name', () => {
@@ -79,12 +82,9 @@ describe('AppShell — redesigned MALEK header & navigation', () => {
 
     const header = host.querySelector<HTMLElement>('[data-app-shell-header]');
     expect(header).not.toBeNull();
-
     const wordmark = header?.querySelector('[data-header-wordmark]');
     expect(wordmark).not.toBeNull();
     expect(wordmark?.textContent).toContain('MALEK');
-
-    // The dynamic page name (route title) must not appear in the global header.
     expect(header?.textContent).not.toContain('العقارات');
   });
 
@@ -93,41 +93,33 @@ describe('AppShell — redesigned MALEK header & navigation', () => {
 
     const header = host.querySelector<HTMLElement>('[data-app-shell-header]');
     expect(header).not.toBeNull();
-
     const lockup = header?.querySelector<HTMLElement>('[data-header-brand-lockup]');
     expect(lockup).not.toBeNull();
-
-    // The interactive M monogram button
     const monogramButton = lockup?.querySelector('[data-header-brand-monogram]');
     expect(monogramButton).not.toBeNull();
     expect(monogramButton?.getAttribute('aria-label')).toContain('القائمة الرئيسية');
     expect(monogramButton?.getAttribute('aria-haspopup')).toBe('dialog');
-
-    // The canonical M mark asset sits inside the monogram button
     expect(monogramButton?.querySelector('[data-malek-canonical-mark]')).not.toBeNull();
     expect(lockup?.querySelector('[data-header-wordmark]')).not.toBeNull();
     expect(lockup?.className).toContain('items-center');
-
-    // Brand lockup lives on the brand side (start/right in RTL)
     expect(header?.querySelector('[data-header-brand-side] [data-header-brand-lockup]')).not.toBeNull();
   });
 
-  it('tapping the interactive M monogram opens the primary navigation drawer', () => {
+  it('tapping the interactive M monogram opens the primary navigation bottom sheet', () => {
     act(() => { root.render(<AppShell />); });
 
     const monogramButton = host.querySelector<HTMLElement>('[data-header-brand-monogram]');
     expect(monogramButton).not.toBeNull();
-
     act(() => { monogramButton?.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
 
-    const drawer = document.querySelector<HTMLElement>('[data-mobile-drawer]');
-    expect(drawer).not.toBeNull();
-    expect(drawer?.getAttribute('role')).toBe('dialog');
-    expect(drawer?.getAttribute('aria-modal')).toBe('true');
+    const sheet = document.querySelector<HTMLElement>('[data-bottom-sheet]');
+    expect(sheet).not.toBeNull();
+    expect(document.querySelector('[data-mobile-nav-bottom-sheet]')).not.toBeNull();
+    expect(sheet?.getAttribute('role')).toBe('dialog');
+    expect(sheet?.getAttribute('aria-modal')).toBe('true');
 
-    // Clean up
     act(() => {
-      document.querySelector<HTMLButtonElement>('[data-mobile-drawer] button[aria-label="إغلاق القائمة"]')?.click();
+      sheet?.querySelector<HTMLButtonElement>('button[aria-label="إغلاق"]')?.click();
     });
   });
 
@@ -136,8 +128,6 @@ describe('AppShell — redesigned MALEK header & navigation', () => {
 
     const header = host.querySelector<HTMLElement>('[data-app-shell-header]');
     expect(header).not.toBeNull();
-
-    // No top hamburger trigger exists in the header
     expect(header?.querySelector('[data-mobile-top-menu]')).toBeNull();
     expect(header?.querySelector('button[aria-label="فتح القائمة"]')).toBeNull();
   });
@@ -149,8 +139,6 @@ describe('AppShell — redesigned MALEK header & navigation', () => {
     expect(header).not.toBeNull();
     expect(header?.querySelector('[data-header-date-center]')).toBeNull();
     expect(header?.querySelector('.tabular-nums')).toBeNull();
-
-    // Theme + user controls live on the utility side
     expect(header?.querySelector('[data-header-theme-toggle]')).not.toBeNull();
     expect(header?.querySelector('[data-header-user-menu]')).not.toBeNull();
     expect(header?.querySelector('[data-header-utility-side]')).not.toBeNull();
@@ -162,8 +150,6 @@ describe('AppShell — redesigned MALEK header & navigation', () => {
 
     const header = host.querySelector<HTMLElement>('[data-app-shell-header]');
     expect(header).not.toBeNull();
-
-    // Utility controls: Theme + User, each with a 44px accessible hit wrapper
     const hitAreas = header?.querySelectorAll<HTMLElement>('[data-header-control-hit]');
     expect(hitAreas?.length).toBe(2);
     for (const hit of hitAreas ?? []) {
@@ -173,46 +159,31 @@ describe('AppShell — redesigned MALEK header & navigation', () => {
       expect(visible?.className).toContain('size-8');
     }
 
-    // Monogram also has 44px accessible target wrapper
     const monogramHit = header?.querySelector<HTMLElement>('[data-header-monogram-hit]');
     expect(monogramHit).not.toBeNull();
     expect(monogramHit?.className).toContain('size-11');
-
-    // Controls group stays tight
     const controls = header?.querySelector<HTMLElement>('[data-header-utility-side]');
     expect(controls?.className).toContain('gap-0.5');
-
-    // Header row stays slim
     const headerRow = controls?.parentElement;
-    expect(headerRow?.className).toContain('min-h-12');
+    expect(headerRow?.className).toContain('min-h-[var(--app-header-height)]');
   });
 
-  it('centers the drawer brand lockup with a side-pinned close control and right-side RTL placement', () => {
+  it('uses the shared full-width bottom-sheet navigation instead of a right-side drawer', () => {
     act(() => { root.render(<AppShell />); });
 
     const monogram = host.querySelector<HTMLElement>('[data-header-brand-monogram]');
     act(() => { monogram?.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
 
-    const drawer = document.querySelector<HTMLElement>('[data-mobile-drawer]');
-    expect(drawer).not.toBeNull();
-    // Opens from the right in RTL (right-0 left-auto)
-    expect(drawer?.className).toContain('right-0');
-    expect(drawer?.className).toContain('left-auto');
-    expect(drawer?.className).toContain('h-dvh');
+    const sheet = document.querySelector<HTMLElement>('[data-bottom-sheet]');
+    expect(sheet).not.toBeNull();
+    expect(document.querySelector('[data-mobile-nav-bottom-sheet]')).not.toBeNull();
+    expect(sheet?.className).toContain('w-full');
+    expect(sheet?.className).toContain('rounded-t-3xl');
+    expect(sheet?.className).not.toContain('right-0');
+    expect(sheet?.className).not.toContain('w-[85vw]');
 
-    const drawerBrandHeader = document.querySelector<HTMLElement>('[data-drawer-brand-header]');
-    expect(drawerBrandHeader).not.toBeNull();
-    expect(drawerBrandHeader?.className).toContain('justify-center');
-
-    const drawerBrand = drawerBrandHeader?.querySelector<HTMLElement>('[data-drawer-brand]');
-    expect(drawerBrand).not.toBeNull();
-    expect(drawerBrand?.querySelector('[data-malek-canonical-mark]')).not.toBeNull();
-    expect(drawerBrand?.textContent).toContain('MALEK');
-
-    const close = drawerBrandHeader?.querySelector<HTMLButtonElement>('button[aria-label="إغلاق القائمة"]');
+    const close = sheet?.querySelector<HTMLButtonElement>('button[aria-label="إغلاق"]');
     expect(close).not.toBeNull();
-    expect(close?.className).toContain('absolute');
-
     act(() => { close?.click(); });
   });
 

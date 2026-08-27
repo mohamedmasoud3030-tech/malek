@@ -104,7 +104,7 @@ export function Dropdown({
                 aria-selected={isSelected}
                 disabled={option.disabled}
                 className={cn(
-                  'flex min-h-11 w-full items-start gap-2 rounded-xl px-3 py-2 text-right transition',
+                  'flex min-h-11 w-full items-start gap-2 rounded-xl px-3 py-2 text-start transition',
                   'hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
                   'disabled:pointer-events-none disabled:opacity-50',
                   isSelected && 'bg-primary/10 text-primary',

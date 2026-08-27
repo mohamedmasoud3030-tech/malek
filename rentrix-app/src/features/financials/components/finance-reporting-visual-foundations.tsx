@@ -258,7 +258,7 @@ export function FinanceKpiCard({
         aria-label={drillAriaLabel ?? `${label}: ${value}${unit ? ` ${unit}` : ''} — عرض التفاصيل`}
         data-finance-kpi-drill
         data-drillable={isDrillable ? 'true' : 'false'}
-        className="block w-full rounded-xl text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+        className="block w-full rounded-xl text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
       >
         <div data-finance-kpi-card data-drillable={isDrillable ? 'true' : 'false'} className="h-full">
           {cardContent}

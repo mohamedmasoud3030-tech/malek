@@ -109,6 +109,20 @@ export function formatNumber({
   }).format(safeValue);
 }
 
+/**
+ * Canonical formatting for COUNTS (records, units, contracts, days).
+ *
+ * Every register used to declare its own private `new Intl.NumberFormat('en-US')`
+ * helper. Counts are not money and take no currency, but they still have to
+ * share one locale/numeral policy with the rest of the product, so they route
+ * through formatNumber. For the default Arabic locale that resolves to
+ * `ar-u-nu-latn` — Latin numerals with the same grouping the money formatter
+ * produces — so this is identical in Arabic and correct in English.
+ */
+export function formatCount(value: number | null | undefined, locale?: string): string {
+  return formatNumber({ value, locale, maximumFractionDigits: 0, minimumFractionDigits: 0 });
+}
+
 export type DateFormatOptions = {
   value: string | number | Date | null | undefined;
   locale?: string | string[];

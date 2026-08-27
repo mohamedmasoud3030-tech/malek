@@ -5,6 +5,8 @@ import { EntityForm } from '@/components/ui/entity-form';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { formatCompanyMoney } from '@/lib/companyFormatters';
+import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
 import { useBankAccounts } from './useBankReconciliation';
 import { previewBankCsvFile, previewBankStatementBatch, importBankStatementBatch, toImportPayloadRows, type BankImportPreview, type BankImportResult } from './bankCsvImportService';
 import type { BankCsvParseResult } from '@/lib/bankCsvParser';
@@ -21,6 +23,7 @@ interface Props {
 }
 
 export function BankCsvImportWorkflow({ open, onOpenChange, defaultBankAccountId, onCompleted, canManage }: Props) {
+  const companySettings = useCompanySettingsContract();
   const [step, setStep] = useState<Step>('select');
   const [file, setFile] = useState<File | null>(null);
   const [bankAccountId, setBankAccountId] = useState(defaultBankAccountId ?? '');
@@ -294,18 +297,18 @@ export function BankCsvImportWorkflow({ open, onOpenChange, defaultBankAccountId
             <table className="min-w-full text-xs">
               <thead className="bg-muted/50">
                 <tr>
-                  <th className="p-2 text-right">التاريخ</th>
-                  <th className="p-2 text-right">المبلغ</th>
-                  <th className="p-2 text-right">الوصف</th>
-                  <th className="p-2 text-right">المرجع</th>
+                  <th className="p-2 text-start">التاريخ</th>
+                  <th className="p-2 text-start">المبلغ</th>
+                  <th className="p-2 text-start">الوصف</th>
+                  <th className="p-2 text-start">المرجع</th>
                 </tr>
               </thead>
               <tbody>
                 {preview.previewRows.map((row, idx) => (
                   <tr key={idx} className="border-t">
                     <td className="p-2">{row.transaction_date}</td>
-                    <td className="p-2 font-mono tabular-nums" dir="ltr">
-                      {row.amount?.toFixed(3)}
+                    <td className="p-2 tabular-nums" dir="ltr">
+                      {row.amount == null ? '—' : formatCompanyMoney(companySettings, row.amount)}
                     </td>
                     <td className="p-2 truncate max-w-[12rem]">{row.description}</td>
                     <td className="p-2">{row.reference ?? '—'}</td>
@@ -329,9 +332,9 @@ export function BankCsvImportWorkflow({ open, onOpenChange, defaultBankAccountId
               <table className="min-w-full text-xs">
                 <thead className="bg-muted/50 sticky top-0">
                   <tr>
-                    <th className="p-2 text-right">رقم السطر</th>
-                    <th className="p-2 text-right">السبب</th>
-                    <th className="p-2 text-right">البيانات الخام</th>
+                    <th className="p-2 text-start">رقم السطر</th>
+                    <th className="p-2 text-start">السبب</th>
+                    <th className="p-2 text-start">البيانات الخام</th>
                   </tr>
                 </thead>
                 <tbody>

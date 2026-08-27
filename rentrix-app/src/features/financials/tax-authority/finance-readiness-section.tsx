@@ -66,7 +66,7 @@ function TaxReadinessCard({
           <Link
             to="/settings"
             search={{ section: 'company', companySection: 'finance-readiness' } as never}
-            className="inline-flex min-h-8 items-center gap-1 font-semibold text-primary hover:underline"
+            className="inline-flex min-h-11 items-center gap-1 font-semibold text-primary hover:underline"
           >
             فتح إعدادات الضريبة
           </Link>

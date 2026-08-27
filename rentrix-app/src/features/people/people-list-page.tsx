@@ -27,6 +27,7 @@ import { personTypeLabels, personTypeValues } from "./person-schema";
 import type { Person } from "@/types/domain";
 import type { PersonTypeFilter } from "./people-service";
 import { usePeople, useSoftDeletePerson } from "./use-people";
+import { formatCount } from '@/lib/formatters';
 
 const pageSize = 10;
 
@@ -41,9 +42,6 @@ const peopleColumnOptions = [
 
 const defaultPeopleColumns = peopleColumnOptions.map((column) => column.key);
 
-function formatCount(value: number) {
-  return new Intl.NumberFormat("en-US").format(value);
-}
 
 function PeopleMetric({
   label,

@@ -34,6 +34,34 @@ const SUB_44_MIN_WIDTH = String.raw`min-w-(?:0\.5|1|1\.5|2|2\.5|3|3\.5|4|5|6|7|8
 
 const SUB_44 = new RegExp(String.raw`\b(?:${SUB_44_MIN_HEIGHT}|${SUB_44_FIXED_HEIGHT}|${SUB_44_MIN_WIDTH})\b`);
 
+// Sub-44px SQUARE utilities (size-8 = 32px etc.). SUB_44 above deliberately
+// does not cover `size-*`: the shared <Button> sizes express their floor with
+// min-h/min-w, so including size-* there would not change its verdict. Raw
+// icon buttons, however, are sized with `size-*` alone, so they need it.
+const SUB_44_SQUARE = String.raw`size-(?:px|0\.5|1|1\.5|2|2\.5|3|3\.5|4|5|6|7|8|9|10|\[(?:[0-9]|[1-3][0-9]|4[0-3])px\])`;
+const SUB_44_RAW_CONTROL = new RegExp(String.raw`\b(?:${SUB_44_MIN_HEIGHT}|${SUB_44_FIXED_HEIGHT}|${SUB_44_MIN_WIDTH}|${SUB_44_SQUARE})\b`);
+
+/**
+ * Raw `<button>` elements allowed to stay visually smaller than 44px because
+ * they are centred inside an explicit 44px hit wrapper. The wrapper (not the
+ * button) is the element a finger lands on, so the touch floor is met while
+ * the visible control keeps its compact header chrome.
+ *
+ * Every entry must name the wrapper attribute so the exception is auditable.
+ */
+const RAW_BUTTON_WRAPPER_ALLOWLIST: ReadonlyArray<{ file: string; wrapper: string; reason: string }> = [
+  {
+    file: 'app/layout/app-shell.tsx',
+    wrapper: 'data-header-control-hit',
+    reason: 'header utility buttons are centred in a size-11 (44px) hit span',
+  },
+  {
+    file: 'app/layout/app-shell.tsx',
+    wrapper: 'data-header-monogram-hit',
+    reason: 'brand monogram button is centred in a size-11 (44px) hit span',
+  },
+];
+
 function collectComponentFiles(dir: string, found: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
     const full = join(dir, entry);
@@ -88,6 +116,53 @@ describe('44px touch-target floor', () => {
 
     expect(sizeBlock).toContain('min-h-11');
     expect(SUB_44.test(sizeBlock)).toBe(false);
+  });
+
+  it('has no raw <button> below the 44px floor without a documented 44px hit wrapper', () => {
+    const offenders: string[] = [];
+    for (const file of files) {
+      const relPath = relative(SRC_ROOT, file);
+      const source = readFileSync(file, 'utf8');
+      const tag = /<button\b[\s\S]{0,900}?>/g;
+      let match: RegExpExecArray | null;
+      while ((match = tag.exec(source)) !== null) {
+        const opening = match[0];
+        if (!opening.includes('className')) continue;
+        const hit = SUB_44_RAW_CONTROL.exec(opening);
+        if (!hit) continue;
+        const exempt = RAW_BUTTON_WRAPPER_ALLOWLIST.find((entry) => entry.file === relPath);
+        if (exempt && source.includes(exempt.wrapper)) continue;
+        const line = source.slice(0, match.index).split('\n').length;
+        offenders.push(`${relPath}:${line} (${hit[0]})`);
+      }
+    }
+    expect(
+      offenders,
+      `raw <button> elements must keep a 44px hit area, or be listed with their 44px wrapper:\n${offenders.join('\n')}`,
+    ).toEqual([]);
+  });
+
+  it('has no raw <Link>/<a> action shrunk below the 44px floor', () => {
+    // min-h-10 stacked list rows are exempt: WCAG 2.5.5's spacing exception
+    // covers targets that fill their row with no adjacent same-target sibling.
+    const pattern = /<(?:Link|a)\b[\s\S]{0,900}?>/g;
+    const offenders: string[] = [];
+    for (const file of files) {
+      const source = readFileSync(file, 'utf8');
+      let match: RegExpExecArray | null;
+      while ((match = pattern.exec(source)) !== null) {
+        const opening = match[0];
+        if (!opening.includes('className')) continue;
+        const hit = /\bmin-h-(?:[1-8]|\[(?:[0-9]|[1-3][0-9])px\])\b/.exec(opening);
+        if (!hit) continue;
+        const line = source.slice(0, match.index).split('\n').length;
+        offenders.push(`${relative(SRC_ROOT, file)}:${line} (${hit[0]})`);
+      }
+    }
+    expect(
+      offenders,
+      `link-style actions must keep a 44px hit area:\n${offenders.join('\n')}`,
+    ).toEqual([]);
   });
 
   it('keeps the reports document actions and login password toggle at 44px', () => {

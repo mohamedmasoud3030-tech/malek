@@ -40,7 +40,7 @@ vi.mock('@/features/ai-assistant/ai-assistant-global-action', () => ({ AiAssista
 
 import { AppShell } from './app-shell';
 
-describe('AppShell mobile navigation drawer — scroll lock, RTL placement, and focus restoration', () => {
+describe('AppShell mobile navigation bottom sheet — scroll lock and focus restoration', () => {
   let host: HTMLDivElement;
   let root: ReturnType<typeof createRoot>;
 
@@ -58,22 +58,26 @@ describe('AppShell mobile navigation drawer — scroll lock, RTL placement, and 
   });
 
   function getMonogramTrigger() {
-    const trigger = host.querySelector<HTMLButtonElement>('[data-header-brand-monogram]') as HTMLButtonElement;
+    const trigger = host.querySelector<HTMLButtonElement>('[data-header-brand-monogram]');
     expect(trigger).not.toBeNull();
-    return trigger;
+    return trigger as HTMLButtonElement;
   }
 
   function getDockMenuTrigger() {
-    const trigger = host.querySelector<HTMLButtonElement>('[data-mobile-dock-menu]') as HTMLButtonElement;
+    const trigger = host.querySelector<HTMLButtonElement>('[data-mobile-dock-menu]');
     expect(trigger).not.toBeNull();
-    return trigger;
+    return trigger as HTMLButtonElement;
   }
 
-  function getDrawer() {
-    return document.querySelector<HTMLElement>('[data-mobile-drawer]');
+  function getSheet() {
+    return document.querySelector<HTMLElement>('[data-bottom-sheet]');
   }
 
-  it('opens a full-height right-side RTL drawer from the M monogram, locks scroll, and exposes aria-modal', () => {
+  function getNavigationSurface() {
+    return document.querySelector<HTMLElement>('[data-mobile-nav-bottom-sheet]');
+  }
+
+  it('opens the shared bottom-sheet navigation from the M monogram, locks scroll, and exposes modal semantics', () => {
     act(() => { root.render(<AppShell />); });
 
     expect(document.body.style.overflow).not.toBe('hidden');
@@ -82,45 +86,39 @@ describe('AppShell mobile navigation drawer — scroll lock, RTL placement, and 
 
     act(() => { trigger.click(); });
 
-    const drawer = getDrawer();
-    expect(drawer).not.toBeNull();
-    expect(drawer?.getAttribute('role')).toBe('dialog');
-    expect(drawer?.getAttribute('aria-modal')).toBe('true');
-
-    // Right-side RTL drawer shape: anchored right, full viewport height
-    expect(drawer?.className).toContain('right-0');
-    expect(drawer?.className).toContain('left-auto');
-    expect(drawer?.className).toContain('h-dvh');
-    expect(drawer?.className).toContain('w-[85vw]');
+    const sheet = getSheet();
+    expect(sheet).not.toBeNull();
+    expect(getNavigationSurface()).not.toBeNull();
+    expect(sheet?.getAttribute('role')).toBe('dialog');
+    expect(sheet?.getAttribute('aria-modal')).toBe('true');
+    expect(sheet?.className).toContain('w-full');
+    expect(sheet?.className).toContain('rounded-t-3xl');
 
     expect(document.body.style.overflow).toBe('hidden');
     expect(document.documentElement.style.overflow).toBe('hidden');
   });
 
-  it('opens the same primary navigation drawer from the bottom dock hamburger', () => {
+  it('opens the same primary navigation bottom sheet from the bottom dock menu control', () => {
     act(() => { root.render(<AppShell />); });
 
     const dockTrigger = getDockMenuTrigger();
-    expect(dockTrigger).not.toBeNull();
-
     act(() => { dockTrigger.click(); });
 
-    const drawer = getDrawer();
-    expect(drawer).not.toBeNull();
+    expect(getSheet()).not.toBeNull();
+    expect(getNavigationSurface()).not.toBeNull();
 
-    // Floating bar is hidden while drawer is open
-    const floatingBar = host.querySelector('[data-mobile-floating-control]');
-    expect(floatingBar).toBeNull();
+    // The utility dock is one authority trigger, not a competing layer over the open sheet.
+    expect(host.querySelector('[data-mobile-floating-control]')).toBeNull();
 
-    const closeButton = drawer?.querySelector<HTMLButtonElement>('button[aria-label="إغلاق القائمة"]');
+    const closeButton = getSheet()?.querySelector<HTMLButtonElement>('button[aria-label="إغلاق"]');
+    expect(closeButton).not.toBeNull();
     act(() => { closeButton?.click(); });
 
-    expect(getDrawer()).toBeNull();
-    // Floating bar reappears after close
+    expect(getSheet()).toBeNull();
     expect(host.querySelector('[data-mobile-floating-control]')).not.toBeNull();
   });
 
-  it('restores focus to the opener and unlocks scroll when the drawer closes', () => {
+  it('restores focus to the opener and unlocks scroll when the bottom sheet closes', () => {
     act(() => { root.render(<AppShell />); });
 
     const trigger = getMonogramTrigger();
@@ -128,16 +126,27 @@ describe('AppShell mobile navigation drawer — scroll lock, RTL placement, and 
     expect(document.activeElement).toBe(trigger);
 
     act(() => { trigger.click(); });
-    expect(getDrawer()).not.toBeNull();
+    expect(getSheet()).not.toBeNull();
 
-    const closeButton = getDrawer()?.querySelector<HTMLButtonElement>('button[aria-label="إغلاق القائمة"]');
+    const closeButton = getSheet()?.querySelector<HTMLButtonElement>('button[aria-label="إغلاق"]');
     expect(closeButton).not.toBeNull();
-
     act(() => { closeButton?.click(); });
 
-    expect(getDrawer()).toBeNull();
+    expect(getSheet()).toBeNull();
     expect(document.activeElement).toBe(trigger);
     expect(document.body.style.overflow).not.toBe('hidden');
     expect(document.documentElement.style.overflow).not.toBe('hidden');
+  });
+
+  it('closes on Escape through the shared BottomSheet keyboard contract', () => {
+    act(() => { root.render(<AppShell />); });
+    const trigger = getMonogramTrigger();
+    act(() => { trigger.focus(); trigger.click(); });
+    expect(getSheet()).not.toBeNull();
+
+    act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); });
+
+    expect(getSheet()).toBeNull();
+    expect(document.activeElement).toBe(trigger);
   });
 });
