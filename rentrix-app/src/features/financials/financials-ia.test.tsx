@@ -1,10 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 import type { AuthorizationContext } from '@/features/auth/permissions';
-import { FINANCE_VIEWS, isViewPermitted } from './financials-page';
-import { resolveFinanceLocation } from './finance-shell-model';
+import {
+  FINANCE_VIEWS,
+  isViewPermitted,
+  resolveFinanceLocation,
+} from '@/features/finance/shell/financeShellModel';
 
-const readFinancialsPage = () => readFileSync(new URL('./financials-page.tsx', import.meta.url), 'utf8');
 const readFinancePage = () => readFileSync(new URL('../finance/FinancePage.tsx', import.meta.url), 'utf8');
 const routeSource = readFileSync(new URL('../../routes/_protected.financials.tsx', import.meta.url), 'utf8');
 const routeTreeSource = readFileSync(new URL('../../app/router/route-tree.ts', import.meta.url), 'utf8');
@@ -27,8 +29,6 @@ const mockAuth = (permissions: string[]): TestAuthorizationContext => ({
 
 describe('/financials Money workspace IA', () => {
   it('routes the primary financial entry through the unified FinancePage', () => {
-    // WP-B finance hub unification: /financials serves FinancePage from the
-    // unified finance feature (was the finance-hub MoneyPage wrapper).
     expect(routeSource).toContain('FinancePage as FinancialsRouteComponent');
     expect(routeSource).toContain('@/features/finance/FinancePage');
   });
@@ -41,8 +41,8 @@ describe('/financials Money workspace IA', () => {
     expect(source).toContain('finance-view-panel-commissions');
   });
 
-  it('keeps the existing operational Finance renderer and its lazy workspaces intact', () => {
-    const source = readFinancialsPage();
+  it('keeps the operational workspaces lazy-loaded by the canonical FinancePage', () => {
+    const source = readFinancePage();
     expect(source).toContain('InvoicesWorkspace = lazy(');
     expect(source).toContain('ReceiptsWorkspace = lazy(');
     expect(source).toContain('ExpensesWorkspace = lazy(');
@@ -50,7 +50,7 @@ describe('/financials Money workspace IA', () => {
   });
 
   it('contains six Money sections and separates management-fee accrual from custody funds', () => {
-    const model = readFileSync(new URL('./finance-shell-model.ts', import.meta.url), 'utf8');
+    const model = readFileSync(new URL('../finance/shell/financeShellModel.ts', import.meta.url), 'utf8');
     for (const id of ['overview', 'collections', 'expenses', 'fees', 'funds', 'banking']) expect(model).toContain(`id: '${id}'`);
     expect(model).toContain("id: 'commissions'");
     expect(FINANCE_VIEWS.find((view) => view.id === 'fixed_monthly_accruals')?.sectionId).toBe('fees');
