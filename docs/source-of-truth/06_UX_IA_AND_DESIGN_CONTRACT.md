@@ -1,142 +1,288 @@
 # MALEK Canonical Pack — Document 6: UX, IA, and Design Contract
 
 > **Status:** CANONICAL  
-> **Baseline:** `main@da9a98a38e61e9547df1e328ad91084e79b78410` (sequential financial hardening and WP-07 closeout)  
-> **Repository-reality synchronization:** shell/Finance presentation facts in this document are updated through `main@4a17a33ade05ce7eac7bee44f3cb8d16f212a565`; this does not grant new governed-stage credit or hosted/runtime acceptance.
+> **Target Architecture Lock:** 2026-08-27  
+> **Repository reality baseline for this lock:** `main@9e5c32e83082cac8227640cf260c51af01e54dc3`  
+> **Precedence:** this target contract supersedes older design-guide statements and older implementation contracts where they conflict; repository reality remains separately classified in Document 7.
 
 ## UX contract
 
-MALEK is Arabic-first, RTL and mobile-conscious, but desktop remains a first-class operational surface. IA is defined by the implemented route/navigation contract, not by stale screenshots or legacy page names.
+MALEK is Arabic-first, RTL-first, dark-first and desktop/mobile first-class. The product should feel premium, Gulf-native and globally modern: data-rich but understandable, medium-density rather than empty or cramped, with no developer language and no endless vertical card trains.
+
+The target principle is **simple by default, powerful on demand**. Strong backend/accounting capabilities may remain hidden or contextual rather than being exposed as routine navigation.
 
 ## Canonical UX/IA rules
 
 | Rule ID | Canonical rule |
 |---|---|
-| `UX-001` | The interface is Arabic-first/RTL, responsive and mobile-conscious; dense operational screens must remain usable on both phone and desktop. |
-| `UX-002` | Canonical navigation/routes follow `route-contract.ts` and `route-tree.ts`; aliases/views preserve compatibility instead of inventing duplicate page authorities. |
-| `UX-003` | Financial operations use the `/financials` hub plus canonical `/finance/*` section routes/view bindings; legacy `/invoices`, `/receipts`, `/expenses`, `/deposits`, etc. are compatibility surfaces, not separate information architectures. |
-| `UX-004` | `/reports` (Accounting & Reports) remains a distinct top-level workspace and must not be visually or conceptually collapsed into Financials. |
-| `UX-005` | Party identities remain one coherent domain, while navigation follows the owning task: tenants/people/leads/communication are Leasing children and owners/ownership are Portfolio children; standalone dossiers remain first-class deep links. |
-| `UX-006` | Maintenance/Services is an operational root; Service Providers is a company-scoped subordinate workflow with its own list/detail/create/edit routes and permissions. |
-| `UX-007` | AI Assistant is a separate `/ai-assistant` route; it is not embedded as accounting authority or a Reports tab. |
-| `UX-008` | Shared design tokens/components, company-aware money/date formatting, accessible states, printing/document guards and consistent loading/empty/error/permission states form one design contract; parallel token systems and hidden unsafe handlers are not allowed. |
+| `UX-001` | The interface is Arabic-first/RTL, responsive, dark-first with equally complete Light theme, and must remain operationally usable on phone, tablet and desktop without page-level horizontal overflow. |
+| `UX-002` | Canonical navigation/routes follow one route contract and one page authority. Compatibility aliases preserve deep links; they never create competing information architectures. |
+| `UX-003` | Money is the operational financial workspace. Daily UX exposes obligations, collections, receipts, arrears, expenses, management consideration, owner obligations/settlements and light bank verification; specialist accounting remains advanced rather than becoming the daily shell. |
+| `UX-004` | Reports is a distinct top-level workspace and presents business-language summaries, useful visuals and detailed tables from authoritative read models; specialist GL/accounting reports remain available without dominating routine use. |
+| `UX-005` | Party identity may remain unified underneath, but routine UX uses task-specific Owners and Tenants. Generic People is not a primary navigation destination; dossiers emphasize relationship/operations and defer heavy financial analysis to Money/Reports. |
+| `UX-006` | Services owns maintenance, service providers and utilities/meters. Documents are contextual-first; an aggregate document search/index may exist, but Documents Vault is not a routine product pillar or a second document authority. |
+| `UX-007` | AI Assistant is a global optional assistant with a compact entry point and optional expanded workspace. It may read/explain/suggest/navigate/prepare drafts, but cannot silently authorize sensitive financial/operational actions. |
+| `UX-008` | Shared semantic tokens, shared components/register primitives, company-aware money/date formatting, accessible states, print/document guards and consistent interaction patterns form one design contract; parallel token systems, raw technical copy and page-specific replacement primitives are prohibited. |
 
-## Current canonical route reality
+## Target top-level IA
 
-Evidence: `rentrix-app/src/app/navigation/route-contract.ts`.
+The visible global IA is intentionally limited to seven roots:
 
-### Top-level operational roots
+1. **Today** — `/dashboard`
+2. **Portfolio** — `/properties`
+3. **Leasing** — `/contracts`
+4. **Money** — `/financials`
+5. **Services** — `/maintenance`
+6. **Reports** — `/reports`
+7. **Settings** — `/settings`
 
-The global IA is task-centric and intentionally limited to seven visible roots:
+Entity dossiers, specialist/admin tools and compatibility routes remain deep-linkable/permission-aware without becoming extra primary roots.
 
-1. Today — `/dashboard`
-2. Portfolio — `/properties`
-3. Leasing — `/contracts`
-4. Money — `/financials`
-5. Services — `/maintenance`
-6. Reports — `/reports`
-7. Settings — `/settings`
+## Workspace contract
 
-Entity registers and specialist tools remain deep-linkable canonical routes, but are exposed as permission-aware children of the workspace that owns the user's task. Presence in the route contract proves an implemented surface, not completion of its business lifecycle.
+### Today
+Today answers “what is the office state now?” in this priority order:
 
-### Route disposition matrix
+1. office performance;
+2. vacancy;
+3. money to collect;
+4. maintenance/problems;
+5. contracts nearing expiry;
+6. owner obligations;
+7. actionable follow-up.
 
-| Surface | URL/behavior at baseline | Visible navigation owner | Disposition |
-|---|---|---|---|
-| Dashboard | `/dashboard` renders | Dashboard | CANONICAL |
-| People | `/people`; owner/tenant/leads/communication first-class child routes | Leasing | CANONICAL CHILD + deep links |
-| Properties/Units | `/properties`; units, lands and owners are permission-aware Portfolio children; compatibility URLs preserve deep links | Portfolio | CANONICAL WORKSPACE + COMPATIBILITY routes |
-| Lands | `/lands` and detail route | Portfolio child | CANONICAL but not automatically pilot-critical |
-| Contracts | `/contracts` and create/detail/edit; tenants/people/leads/communication are Leasing children | Leasing | CANONICAL; approval/activation chain is wired and repository-tested |
-| Financials | `/financials`; finance operations are Money children; `/finance/*` and legacy finance URLs bind to section/view search | Money | CANONICAL WORKSPACE + COMPATIBILITY routes |
-| Reports | `/reports`; `/accounting` redirects to Reports accounting view | Reports | CANONICAL + COMPATIBILITY redirect |
-| Services | `/maintenance`; maintenance/providers/utilities/documents are Services children | Services | CANONICAL WORKSPACE + COMPATIBILITY routes |
-| Settings/admin | `/settings`; company/users/cost-centers/automation/system are permission-aware Settings children | Settings | CANONICAL WORKSPACE + COMPATIBILITY routes |
-| AI Assistant | `/ai-assistant` is a standalone separate route reached through the global action/search | no primary nav root | VERIFIED_IMPLEMENTED (`GAP-023` unblocked) |
-| Documents Vault | `/documents-vault` redirects to `/maintenance?section=documents_vault`; `documents_vault` is a real Services child (embedded DocumentsVaultWorkspace) acting as the aggregate documents authority, while contextual entity-level panels remain complementary | Services child | CANONICAL WORKSPACE + COMPATIBILITY redirect |
-| Dev design system | `/dev/design-system`, DEV-only | none | HIDDEN development surface, not product IA |
+Today is a signal/decision surface, not a substitute for detailed Reports. Notifications show events/information; Today shows items requiring attention. Do not duplicate the same feed twice.
 
-### Parties and relationships
+### Portfolio
+Primary routine surfaces:
 
-- `/people`, `/tenants`, `/leads` and `/communication` are discoverable Leasing children because their primary job is the rental relationship.
-- `/owners`, owner dossiers and ownership management are discoverable Portfolio children because their primary job is authority over managed assets.
-- The standalone URLs remain canonical deep links; this IA placement does not merge owner, tenant or generic person identities in the data model.
+- Properties;
+- Units;
+- Owners.
 
-### Properties and assets
+Lands may remain contextual/later where implemented. Property/unit/owner dossiers show operational relationship context, documents, meters, maintenance, current contracts and concise financial context only. Detailed owner/property financial analysis belongs in Reports/Money.
 
-- `/properties`, create/detail/edit are owned by Portfolio.
-- units, lands and owners are expandable Portfolio children with route/search context preserved.
-- `/units`, `/lands` and owner URLs remain deep-linkable compatibility/entity surfaces.
+### Leasing
+Primary routine surfaces:
+
+- Contracts;
+- Tenants;
+- Short Stay as a controlled contract mode where implemented.
+
+Generic People, Leads and Communication are not routine roots. Shared identity remains an internal/domain concern.
+
+### Money
+Primary routine surfaces:
+
+- Money overview;
+- obligations/invoices;
+- collections/receipts;
+- arrears;
+- expenses;
+- management consideration;
+- owner obligations/settlements;
+- cash/transfer/bank verification.
+
+Deposits remain a governed backend capability but are hidden from routine target UX until deliberately promoted. Advanced GL/accounting stays specialist.
 
 ### Services
+Primary routine surfaces:
 
-- `/maintenance`
-- `/service-providers`, create/detail/edit
-- `/utilities` as an operational section/view
-- `documents_vault` is an Operations Hub section (embedded `DocumentsVaultWorkspace`); `/documents-vault` redirects to `/maintenance?section=documents_vault`
+- Maintenance;
+- Service Providers;
+- Utilities/Meters.
 
-### Financials
+Documents attach to their business context. Global document search/index is secondary and must not encourage orphan documents.
 
-Canonical section routes bind into the Financials hub:
+### Reports
+Target report families:
 
-- `/finance/collections`
-- `/finance/expenses`
-- `/finance/deposits`
-- `/finance/banking`
+- Office Performance;
+- Collections & Arrears;
+- Property Performance;
+- Unit Performance;
+- Occupancy & Vacancy;
+- Owner Statements & Settlements;
+- Tenant Statements;
+- Maintenance & Expenses;
+- Services/Meters;
+- Contracts & Renewals;
+- Advanced Accounting (specialist).
 
-Compatibility routes such as `/invoices`, `/receipts`, `/expenses`, `/arrears`, `/deposits`, `/owner-settlements` and `/bank-reconciliation` bind to hub sections/views. Documentation must not invent non-existent routes such as `/financials/receipts` when the route contract uses a hub/view binding instead.
+Each important report follows the presentation sequence **summary → useful visual insight → detailed table** and states its authoritative basis.
 
-The operational Money renderer is `rentrix-app/src/features/finance/FinancePage.tsx` with one navigation/deep-link authority in `rentrix-app/src/features/finance/shell/financeShellModel.ts`. The retired duplicate `features/financials/financials-page.tsx` and `features/financials/finance-shell-model.ts` no longer exist and must not be restored as parallel page authorities.
+### Settings
+Company, employees/effective permissions, document/print preferences and approved configuration. Audit, Data Integrity, System/Support, Automation and other specialist tools are hidden from routine navigation unless the task/permission requires them.
 
-Invoice work prioritizes the invoice task. Billing readiness is a compact secondary summary by default and expands obligation rows only on explicit user request. The invoice workspace does not append a second receipts register; the dedicated Receipts view remains the canonical receipts register, while a receipt created by an invoice collection may still be shown contextually as proof of that just-completed action.
+## Route/surface disposition
 
-### Reports and AI
-
-`/reports` is independent. The approved target keeps `/ai-assistant` independent from Dashboard and from accounting authority. The implementation exposes a true separate `/ai-assistant` route page (unblocking `GAP-023`).
+| Surface | Target disposition |
+|---|---|
+| `/dashboard` | CANONICAL Today |
+| `/properties` + unit/owner deep links | CANONICAL Portfolio |
+| `/contracts` + tenant deep links | CANONICAL Leasing |
+| `/people` | COMPATIBILITY / contextual identity surface; not routine nav |
+| `/financials` | CANONICAL Money |
+| legacy finance URLs | COMPATIBILITY bindings into Money; no second authority |
+| `/maintenance` | CANONICAL Services |
+| `/reports` | CANONICAL Reports |
+| `/settings` | CANONICAL Settings |
+| `/ai-assistant` | optional expanded assistant workspace/deep link; global assistant entry is primary UX |
+| Documents Vault aggregate route/workspace | HIDDEN/secondary index; contextual documents are the normal workflow |
+| Deposits | HIDDEN specialist capability |
+| Automation / Data Integrity / Audit / System | HIDDEN specialist/admin surfaces |
+| MASTER_LEASE visible workflow | LATER/specialist until deliberately promoted |
+| Dev design-system routes | HIDDEN development-only |
 
 ## Dossier contract
 
-Owner, tenant, person and property detail surfaces present operational context, related contracts/documents/activity and carefully labeled financial context. They do not relabel tenant receivables as owner balances or display unscoped activity from another entity/company.
+**Entity dossier = relationship and operations. Financial analysis = Money/Reports.**
+
+### Owner dossier
+
+- identity/contact;
+- properties;
+- management agreements and versions;
+- core documents;
+- operational relationship context;
+- links to statement/settlement/performance reports.
+
+Do not create a separate owner-balance calculation inside the dossier when a canonical financial source already exists.
+
+### Tenant dossier
+
+- current unit;
+- current/previous contract periods;
+- due schedule/timeline;
+- due/paid/remaining/overdue;
+- services/utilities;
+- receipts/evidence;
+- documents;
+- claims/damages;
+- maintenance relevant to the tenant.
+
+### Property/unit dossiers
+
+Use wide workspaces, tables/grids and purposeful sections. Avoid stacking a long sequence of unrelated cards. Unit state is operational (`vacant`, `rented`, `reserved`, `maintenance` or equivalent canonical mapping); reference rent/daily price is informational while contract price governs.
+
+## Contract UX
+
+Long-term routine flow:
+
+1. unit + tenant;
+2. duration;
+3. agreed value/rent;
+4. contractual due cadence and advance/arrears arrangement where applicable;
+5. responsibilities/services;
+6. review/approval.
+
+Payment behavior never rewrites contractual due cadence. Renewal creates a linked new period/version; it does not overwrite historical terms.
+
+Short Stay is a small contract for the same unit: from/to date, optional reference daily rate, negotiated actual rate/total and controlled extension/end. It is not a hotel/housekeeping module.
+
+## Maintenance UX
+
+Routine lifecycle:
+
+`report → in progress → work completed → closed`
+
+“Work completed” means the technical work is done. “Closed” requires the operational/financial resolution that applies: actual cost, responsible party, supporting evidence where required and authorized confirmation. AI may suggest responsibility; a human confirms it.
+
+## Utilities UX
+
+Track the operational obligation rather than becoming a utility-billing platform:
+
+- meter/account reference;
+- period;
+- amount due;
+- paid;
+- remaining;
+- responsible party;
+- actual payer;
+- evidence.
+
+A tenant may pay outside MALEK and submit evidence without MALEK pretending the office collected that cash.
 
 ## Permission UX
 
-Navigation visibility and button state must reflect effective permission, but the backend remains authoritative. A user with a granted write capability should not see a global “read-only” message that contradicts their effective grant; unrelated actions remain individually gated.
+Routine UI presents **Office Owner** and **Employee**. Employee access is configured by effective capabilities grouped by workspace, with simple controls for view/add/edit and sensitive approve/cancel behavior. The backend six-role/effective-permission model remains authoritative.
 
-Permission requests that require action must be visibly actionable, with enough requester/permission/state/reason context to review them without guesswork.
+Sensitive controls should use operator language such as “يحتاج اعتماد” rather than exposing governance jargon where unnecessary.
 
-## Mobile/desktop behavior
+## Desktop contract
 
-- Desktop (≥ 1024px) uses a right-side collapsible sidebar generated from `navGroups`/workspace children.
-- Tablet / iPad (768–1023px) is a first-class class: header search remains available, the phone-only floating dock is absent, dense registers remain usable, and composition may use two columns. It must not be treated as a stretched phone.
-- Phone (< 768px) has no legacy destination-style bottom navigation (`mobileNavItems` remains empty). The header uses the branded `[M] MALEK` lockup; tapping the monogram opens the full permitted navigation drawer. A single phone-only floating utility dock provides **Menu, Search, Quick Add, Notifications and AI Assistant**. Menu and the brand monogram are two triggers for the same navigation authority, not competing destination systems.
-- The phone dock is hidden while the navigation drawer is open, respects safe-area bottom clearance, and keeps minimum 44px action targets. Quick Add exposes only permission-allowed actions and Search opens the global command palette.
-- Avoid oversized single-column card stacks where a compact 2-column mobile grid is clearer. Metric groups stay 2 columns below 1024px and may open to 4 columns on desktop.
-- Long contract/agreement forms may use mobile steppers while desktop retains an efficient single-scroll workflow.
-- Shared entity registers render a dense semantic table on desktop/tablet (≥ 768px) and, below 768px, a true mobile register presentation: each record shows identity, one meaningful primary/secondary datum (status/amount/date), and a compact accessible «إجراءات» menu containing only the record's existing actions. Mobile registers never use horizontal scrolling, clipped labels, overlapping RTL text, disclosure/expansion rows, sticky action columns, or bulk expand-all controls.
-- Safe-area/sticky actions must not hide validation or prevent access to submit/cancel.
-- Page headers, dossier headers, register cards and list controls share one elevated surface (`rounded-2xl` / token radius) so remaining workspaces do not invent a second chrome.
+- Desktop sidebar is **fixed, named and expanded**; do not reintroduce an icon-only/collapsed daily rail.
+- Desktop uses width intentionally: tables, grids and multi-column workspaces rather than stretched phone layouts.
+- Header stays quiet and compact; brand, theme and user/notification controls are proportionate.
+- Avoid dead space and avoid dense unbroken walls of cards.
 
-## Design system
+## Tablet contract
 
-Use the repository’s canonical design tokens/shared enterprise components. Do not create a second token layer for one feature. Money uses company-aware formatting and the canonical OMR precision contract; hard-coded currency/decimal presentation is not authoritative.
+Tablet is first-class, not stretched phone. Use appropriate two-column compositions and dense registers while keeping touch accessibility. Phone-only floating controls do not automatically define tablet layout.
 
-Evidence includes `rentrix-app/src/index.css`, `rentrix-app/src/components/ui/**`, `rentrix-app/src/components/enterprise/**`, shared layout components and company formatters. The `enterprise/*` component name is historical; it does not authorize a second design system. New features must reuse the active tokens/components and respect the repository enterprise-freeze guard.
+## Phone contract
 
-## State contract
+- Primary navigation opens as a **bottom sheet**, not a right/left side drawer.
+- The bottom navigation/control surface must not become a second competing destination architecture.
+- Safe-area bottom clearance is mandatory.
+- Minimum practical action targets are 44px.
+- Mobile default register presentation may be Cards, but users may switch to Table where the register benefits from it.
 
-Every protected/loaded surface must have intentional loading, empty, error and permission-denied states. A route must not render a blank screen merely because a query failed or data is absent. The global shell reflects browser network loss on phone and desktop with an announced, honest warning; it must not describe `navigator.onLine` as successful backend synchronization or promise that a write was queued. Authentication recovery uses a neutral request result (no account enumeration), a public limited-life reset callback, explicit invalid/expired-link recovery and new-password autocomplete semantics; deployed email delivery and redirect allowlists still require hosted proof.
+## Register contract — Cards ⇄ Table
 
-Production-facing UI must not expose raw RPC names, database index names, internal schema identifiers, stack traces, raw permission-denied strings, or implementation-state codes as the default explanation for an operator. When backend detail is needed for support, map it to an actionable user message first and keep any diagnostic detail outside the primary operational surface.
+Relevant operational registers support both views through one shared register foundation.
 
-## Printing and documents
+### Default
 
-Print/PDF controls require real company/document readiness. Guard the action handler as well as the visible button; hiding/disabling a button is not sufficient if the handler can still run through another path. Signed versions and generated financial/legal documents must preserve the correct company, party, currency and data snapshot. Contract detail keeps operational status separate from official-registration status, shows `NOT_CONFIGURED` rather than inventing a legal rule, and exposes move-in/out evidence as draft → signed completion → distinct review. A damage-deposit request must select reviewed move-out evidence rather than rely on an unstructured note alone.
+- Desktop/tablet: Table is normally default.
+- Phone: Cards are normally default.
+- Preference may be remembered per user/register where appropriate.
 
-Repository evidence includes `pdfService.ts`, report/document generators and targeted tests. It does not prove Arabic font rendering, pagination, signatures, totals or legal layout in the deployed browser; the cancelled Browser Readiness run leaves this under `GAP-020`.
+### Card view
 
-## Accessibility
+Concise identity + key status/amount/date + existing record actions. Do not hide the business fact the operator most needs to scan.
 
-Text contrast, focus order, keyboard interaction, dialog labeling, touch targets and semantic tables/forms must remain compatible with WCAG-oriented enterprise use. Small helper text must not become unreadable simply to reduce density.
+### Table view
+
+- real useful columns ordered by business importance, not database schema;
+- sticky header on long tables;
+- search/filter/sort where useful;
+- internal horizontal scrolling when additional columns require it;
+- optional sticky leading identity columns where they materially help;
+- **never** allow the whole page to horizontally scroll.
+
+Phone Table mode may horizontally scroll **inside the table container only**. The previous card-only/no-table mobile rule is superseded by this target contract.
+
+## Theme and visual system
+
+- **Dark-first** is the primary design direction.
+- Light theme is mandatory and equal quality.
+- Use semantic tokens; do not create page-specific raw palettes when a semantic token exists.
+- Medium density: no oversized empty surfaces, no cramped spreadsheet wall, no endless stacked cards.
+- Charts/visual indicators must help a decision (trend, comparison, collection, occupancy, performance); decoration-only charts are rejected.
+- Premium motion is short and functional, with reduced-motion support.
+
+## Copy contract
+
+Routine user-facing copy must not expose raw RPC names, DB/index/schema identifiers, UUIDs, implementation enum codes, stack traces or developer/status language. Use short business Arabic/English labels as appropriate. Do not add marketing slogans inside operational workspaces.
+
+## Money/date contract
+
+Use company-aware canonical formatters. OMR displays three decimals. Hand-built currency strings or competing local money formatters are prohibited when the shared formatter covers the case.
+
+## State and accessibility contract
+
+Every protected/loaded surface has intentional loading, empty, error and permission-denied behavior. Focus order, keyboard interaction, dialog labeling, semantic tables/forms, readable helper text and touch targets remain part of the Definition of Done.
+
+## Printing, sharing and WhatsApp
+
+Core reports/statements/contracts support professional PDF/print where applicable; Excel/export is used where structured data benefits from it. Print actions require actual document/company readiness.
+
+WhatsApp integration initially prepares text/reference/link and opens WhatsApp/WhatsApp Web for the user to send manually. No automated messaging CRM is implied.
+
+## Tenant Portal UX
+
+Tenant Portal is a separate, constrained shell. v1 is read-only and shows only the authenticated tenant's unit, contract, due schedule, paid/remaining position, services, receipts/evidence, documents and relevant maintenance. It does not expose office navigation or core-edit controls.
 
 ## Evidence anchors
 
@@ -144,19 +290,11 @@ Text contrast, focus order, keyboard interaction, dialog labeling, touch targets
 - `rentrix-app/src/app/router/route-tree.ts`
 - `rentrix-app/src/app/layout/app-shell.tsx`
 - `rentrix-app/src/app/layout/layout-navigation-view.tsx`
-- `rentrix-app/src/app/cross-device-design-contract.test.ts`
-- `rentrix-app/src/app/navigation/app-nav-items.test.ts`
-- `rentrix-app/src/app/navigation/legacy-compatibility.test.ts`
-- `rentrix-app/src/features/auth/permissions.ts`
-- `rentrix-app/src/features/finance/FinancePage.tsx`
+- `rentrix-app/src/features/active-register-inventory.ts`
 - `rentrix-app/src/features/finance/shell/financeShellModel.ts`
-- `rentrix-app/src/features/financials/billing/billing-readiness-section.tsx`
-- `rentrix-app/src/features/financials/billing/billing-readiness-presentation.test.ts`
-- `rentrix-app/src/features/financials/invoices/invoice-workspace-focus.test.ts`
-- PR #1595 — mobile shell/navigation polish
-- PR #1600 — duplicate Finance shell/model removal and contract migration
-- PR #1601 — billing-readiness operator-facing presentation cleanup
-- PR #1602 — invoice workspace focus and duplicate receipts-register removal
-- visual/IA decisions in `docs/decisions/`
+- `rentrix-app/src/features/auth/permissions.ts`
+- shared layout/register/components and company formatters.
 
-Actual implementation/verification gaps are owned by Document 7 rather than hidden inside this design contract.
+## Release interpretation
+
+This document locks the target UX/IA. Existing implementation that conflicts with it is reconstruction work, not a reason to silently redefine this contract. Document 7 remains the authority for what is already implemented versus partial/conflicting/unverified.
