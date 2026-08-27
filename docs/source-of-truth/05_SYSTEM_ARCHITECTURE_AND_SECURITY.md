@@ -1,13 +1,51 @@
 # MALEK Canonical Pack — Document 5: System Architecture and Security
 
 > **Status:** CANONICAL  
-> **Baseline:** `main@da9a98a38e61e9547df1e328ad91084e79b78410` (sequential financial hardening and WP-07 closeout)
+> **Target Architecture Lock:** 2026-08-27  
+> **Repository reality baseline for this lock:** `main@9e5c32e83082cac8227640cf260c51af01e54dc3`
 
 ## Architecture summary
 
-MALEK is a React/Vite TypeScript application backed by Supabase Auth/Postgres/Storage. TanStack routing/navigation contracts and feature services compose the client; RLS, SECURITY DEFINER RPCs, database constraints/triggers and server-owned accounting functions are the authoritative mutation/security boundaries.
+MALEK is a React/Vite TypeScript application backed by Supabase Auth/Postgres/Storage. TanStack Router, TanStack Query, feature services/hooks and shared presentation foundations compose the client; RLS, SECURITY DEFINER RPCs, constraints/triggers and server-owned accounting functions remain the authoritative mutation/security boundaries.
 
 The frontend is not a trusted security boundary. Hiding an action or route never substitutes for backend authorization.
+
+## Target reconstruction decision
+
+The approved target is **reconstruction/refactor of the current `rentrix-app`**, not a clean-room `malek-app` rewrite.
+
+This decision is evidence-based:
+
+- the current application already owns the tested route contract, PWA/build setup, shared register foundation, permission engine and thousands of regression tests;
+- financial and security boundaries are already integrated with the current frontend/service layer;
+- a second frontend package would create duplicated integration, migration and divergence risk without changing the authoritative backend/business rules;
+- target UX freedom does not require a new application package.
+
+Therefore:
+
+1. keep `rentrix-app` as the implementation package during reconstruction;
+2. rebuild IA/presentation progressively against the canonical target contract;
+3. preserve strong services/RPCs/domain rules/tests instead of copying them into a parallel application;
+4. keep compatibility routes only where they protect existing deep links/workflows;
+5. perform any final technical rename of `rentrix-app` only after parity/release gates, as a mechanical migration rather than a rewrite.
+
+## Target client dependency direction
+
+Preferred dependency direction:
+
+```text
+UI / Presentation
+      ↓
+Application workflows / hooks
+      ↓
+Domain rules / read models
+      ↓
+Data access / governed services
+      ↓
+Supabase RPC / RLS / Postgres
+```
+
+Presentation components must not become data-plane or financial authorities. Cross-feature dependencies remain explicit and reviewed.
 
 ## Canonical architecture/security rules
 
@@ -16,9 +54,9 @@ The frontend is not a trusted security boundary. Hiding an action or route never
 | `SEC-001` | Every authenticated operational request resolves an active company context; cross-company access is denied by default. |
 | `SEC-002` | Company-owned tables use RLS/constraints that prevent cross-company SELECT/INSERT/UPDATE/DELETE; repository tests do not substitute for live-policy verification. |
 | `SEC-003` | SECURITY DEFINER and sensitive RPCs must re-derive/validate company ownership, constrain affected rows, use safe search paths and fail closed on scope mismatch. |
-| `SEC-004` | The approved target role model is six product roles: `ADMIN`, `MANAGER`, `ACCOUNTANT`, `OPERATIONS`, `USER`, `VIEWER`; current three-role deployments require explicit migration. |
+| `SEC-004` | The authoritative backend role model remains `ADMIN`, `MANAGER`, `ACCOUNTANT`, `OPERATIONS`, `USER`, `VIEWER`. Routine staff UX may present the simpler Office Owner/Employee personas, but it must map to effective permissions rather than create a second authorization system. |
 | `SEC-005` | Authorization is capability/effective-permission based for actions; role names alone do not grant an operation, and server/RLS/RPC enforcement remains authoritative. |
-| `SEC-006` | Shell write posture uses effective grants: a USER with an approved write permission is not mislabeled read-only; each affordance still checks its exact permission. |
+| `SEC-006` | Shell write posture uses effective grants: a user with an approved write permission is not mislabeled read-only; each affordance still checks its exact permission. |
 | `SEC-007` | Permission requests support approve/reject/revoke and re-request lifecycle; a historical APPROVED request is not proof that a revoked permission remains effective. |
 | `SEC-008` | Maker-Checker identity separation is enforced for designated sensitive approvals at the authoritative backend boundary, with audited exceptional override only where explicitly approved. |
 | `SEC-009` | Sensitive financial mutations and arbitrary journal-line creation are server/RPC owned; browser code cannot author free-form accounting entries or bypass immutable-posted controls. |
@@ -27,111 +65,104 @@ The frontend is not a trusted security boundary. Hiding an action or route never
 ## Frontend boundaries
 
 - `rentrix-app/src/app/router/route-tree.ts` owns route registration/guards.
-- `rentrix-app/src/app/navigation/route-contract.ts` describes canonical routes, aliases, view bindings and permissions.
-- Feature services/hooks call Supabase/RPC boundaries; React components do not become accounting/security authorities.
+- `rentrix-app/src/app/navigation/route-contract.ts` owns canonical routes, aliases, view bindings and permissions.
+- Feature services/hooks own Supabase/RPC calls; presentation does not.
 - React Query/Zustand/client state may cache/display data but cannot define financial truth.
+- New page-specific data authorities are prohibited when an existing domain service/read model owns the same concept.
+- New parallel design-token or register systems are prohibited; extend the shared foundation instead.
+- New browser `.from(...).insert/update/delete` against sensitive tables is an explicit architecture violation/review target.
 
-The route layer is TanStack Router, the query/cache layer is TanStack Query, and direct Supabase SDK calls are distributed across feature services/hooks. This is not a conventional server application: security and financial correctness therefore depend on RLS, restrictive grants, database constraints and narrow business RPCs. Any browser `.from(...).insert/update/delete` against a sensitive table is an explicit review target, even if the UI also checks permissions.
+## AI trust boundary
 
-## Evidence classification at the baseline
+AI Assistant may consume permission-filtered context/read models and may prepare navigation or drafts. It must not:
 
-| Area | Verified in repository | Claimed/supporting only | Requires live verification | Missing/conflicting control |
-|---|---|---|---|---|
-| React/Vite build | PR #1430 CI typecheck/lint/architecture/build/tests passed | — | actual client/browser behavior | Browser Readiness run was cancelled |
-| Routing/IA | route contract/tree and navigation tests | screenshots/old IA docs | hosted redirects and protected states | `/ai-assistant` standalone separate route implemented and verified (`GAP-023`) |
-| Active company | Auth Hook SQL, CompanyProvider claim validation, membership tests | migration comments | hook enabled for deployed project; issued-token claim; membership drift | live gate `GAP-003/021` |
-| RLS/company isolation | hardening migrations, pgTAP/PGlite/ephemeral release database gate | blanket “all tables isolated” claims | deployed policies/grants/schema | generated types do not enumerate all newer tables |
-| Roles/permissions | six roles, typed capabilities, effective grants and request lifecycle tests | six-role model implemented and verified | migrated live role data and JWT semantics | *Reconciled:* `GAP-001` fully closed and verified |
-| Maker-Checker | contract maker/checker RPCs, constraint and pgTAP; permission-review self-approval denial | coverage of every sensitive approval | deployed behavior and audited exceptions | VOID/settlement/other designated actions not proven uniformly (`GAP-002`) |
-| GL write boundary | canonical batches/lines, lifecycle triggers, write-boundary guard/tests | “all financial paths use GL engine” | deployed grants/functions | legacy deposit/report and remaining sensitive-write inventory (`GAP-009/018`) |
-| Storage/documents | private bucket policy migrations, file validation, signed URLs, ephemeral Storage release job | legal sufficiency of templates | deployed bucket/policies/object isolation | legal/template approval external (`GAP-019/021`) |
-| Audit/idempotency | business RPC audit/source/request patterns and unique keys | universal coverage | deployed logs, retention and alerting | final sensitive-operation inventory remains open |
-| Operations/observability | QA scripts, workflow artifacts, error-state components | production monitoring/SLO/incident readiness | logs/alerts/backups/restore | release operations remain `GAP-021/022` |
+- approve/pay/cancel/void a sensitive financial action;
+- create arbitrary journal entries;
+- reinterpret accounting policy as authority;
+- bypass route/action permissions;
+- access another company or tenant scope;
+- claim an unverified number as financial truth when the authoritative read model failed.
+
+Any future AI-executed action requires a separate canonical decision and an explicit human authorization boundary.
+
+## Tenant Portal trust boundary
+
+Tenant Portal is a separate constrained surface. It reuses the canonical backend/domain sources but requires tenant-specific authorization in addition to company isolation. Office-shell permissions and mere knowledge of a record ID are never sufficient tenant-portal authorization.
+
+Portal v1 is read-only; no core office record mutation is authorized by the target lock.
 
 ## Current authorization reality
 
-`rentrix-app/src/features/auth/permissions.ts` implements the complete six-role model:
+`rentrix-app/src/features/auth/permissions.ts` implements:
 
-- roles: `ADMIN`, `MANAGER`, `ACCOUNTANT`, `OPERATIONS`, `USER`, `VIEWER` (unblocking `GAP-001`);
-- a typed `AppPermission` catalog;
-- role-derived permissions plus `grantedPermissions` effective grants;
+- six backend roles;
+- typed `AppPermission` capabilities;
+- role-derived permissions plus effective grants;
 - action-specific financial permissions.
 
-The six roles are fully storable, representable, and verified by `permissions.test.ts` and the `db0:gate` role-model check.
+The visible Office Owner/Employee model is a UX simplification over this authority, not a replacement for it.
 
 ## Multi-company isolation
 
-### Required layers
+Required layers remain:
 
-1. Auth identity.
-2. Active-company claim/selection.
-3. Query/service company scoping.
-4. RLS/constraints.
-5. RPC revalidation for SECURITY DEFINER/sensitive paths.
-6. Cross-company behavioral tests.
-7. Live/deployed verification before production claim.
-
-Repository evidence includes hardening migrations and tests such as:
-
-- `supabase/migrations/20260722000002_multi_tenant_rpc_company_isolation.sql`
-- `supabase/migrations/20260723000000_harden_remaining_rpcs_company_isolation.sql`
-- `supabase/migrations/20260804000000_fix_owner_agreement_company_isolation.sql`
-- `supabase/tests/owner_agreement_company_isolation.sql`
-- service-provider company isolation in `20260810170000_service_providers_production_grade.sql`, `20260810171000_service_provider_atomic_writes.sql` and `supabase/tests/service_providers_company_isolation.sql`.
-
-Focused repository tests passed during the brownfield audit. This supports `VERIFIED_IMPLEMENTED` for specific repository contracts, not a blanket statement that the deployed Supabase environment is identical.
-
-## Permission-request lifecycle
-
-Effective permission is determined from the user’s current role plus current granted permissions. A request record is workflow evidence; it is not itself the ongoing grant after revocation. Revoke → re-request must remain possible and must not resurrect historical approval implicitly.
+1. Auth identity;
+2. active-company claim/selection;
+3. query/service company scoping;
+4. RLS/constraints;
+5. RPC revalidation for sensitive/SECURITY DEFINER paths;
+6. cross-company behavioral tests;
+7. live/deployed verification before production claims.
 
 ## Maker-Checker
 
-Approved policy requires creator/requester separation for material contracts, VOID and designated financial approvals. Contract enforcement is real repository implementation: `20260808010000_s04_contract_lifecycle_maker_checker_v2.sql` stores maker/checker identities/signatures, rejects self-approval and gates activation, with pgTAP coverage in `supabase/tests/s04_contract_lifecycle_maker_checker_v2.sql`. Permission-request review also rejects self-review in `20260810113000_p61_permission_reviewer_authority_closeout.sql`. `GAP-002` is the remaining coverage gap across VOID, owner-settlement and every other designated sensitive approval, plus the absent complete React workflow—not a claim that Maker-Checker is wholly absent.
+Material contracts, VOID and designated sensitive financial approvals preserve creator/requester separation at the authoritative boundary. UI language may say “needs owner/authorized approval” instead of exposing governance jargon, but the control itself remains unchanged.
 
 ## Financial write boundary
 
-GL posting/reversal functions are service/server-oriented. Browser code must call predefined business-event RPCs; it must not send arbitrary account/debit/credit lines to an exposed generic mutation endpoint. Posted financial records require reversal/adjustment lifecycles.
+Posted financial history is server-owned and append-only. Browser code calls predefined business-event boundaries; it does not submit arbitrary debit/credit lines or silently rewrite posted history. Corrections use governed reversal/adjustment lifecycles.
 
 ## Audit and idempotency
 
-Sensitive operations must preserve actor, company, source/event identity, timestamps/reasons and resulting business/GL references. Retried business events must be idempotent where double posting or double reservation is financially material.
-
-Concrete patterns include the GL unique key `(company_id, source_type, source_id, event_id)`, financial operation request ids, advisory locks for selected workflows, immutable settlement reservation links and reversal references. These patterns are not yet one universal platform contract: each sensitive RPC must be inventoried for company validation, safe `search_path`, grants, request identity, audit event and retry-conflict behavior.
+Sensitive operations preserve actor, company, source/event identity, timestamps/reasons and resulting business/GL references. Retried financially material events use stable idempotency identities and must not double-post/reserve.
 
 ## Storage and documents
 
-Document access follows company/entity scope and action permissions. Signed legal artifacts are immutable historical evidence; replacement/amendment produces a new version rather than overwriting what was signed.
+Document security remains company/entity/action scoped. Signed or generated historical evidence is immutable/versioned. The target UX is contextual-first, but presentation location never weakens storage authorization.
 
 ## Runtime truth boundary
 
-The repository cannot prove by itself:
+The repository cannot prove by itself which migrations/functions/hooks/configuration are deployed, live RLS drift, hosted browser behavior, monitoring, backup/restore readiness or real-pilot acceptance. Those remain runtime/external gates.
 
-- which migrations are deployed;
-- which Auth Hook is enabled;
-- production secret values;
-- live RLS drift;
-- deployed Edge Function/version state;
-- hosted browser behavior;
-- backup/restore readiness.
+## Architecture guards required by target reconstruction
 
-`supabase/config.toml` is intentionally a deterministic local/CI database configuration and contains no Auth Hook section. The presence of `public.custom_access_token_hook` in migrations therefore cannot prove that hosted Supabase invokes it.
+The implementation path must maintain or add automated guards for:
 
-These remain external/runtime gates and are recorded as gaps where release-relevant.
+- no presentation direct Supabase data-plane access;
+- explicit cross-feature dependencies;
+- no raw/hand-built money formatting;
+- no unsafe direct financial writes;
+- no duplicate route/page authority;
+- no routine navigation leakage of intentionally hidden specialist surfaces;
+- shared register foundation use;
+- no page-level horizontal overflow;
+- local-only table overflow when optional mobile Table view is used;
+- no raw technical/RPC/schema copy in routine UX;
+- 44px mobile target floor where applicable;
+- AI sensitive-action prohibition;
+- tenant-portal tenant/company isolation.
 
 ## Evidence anchors
 
 - `rentrix-app/src/features/auth/permissions.ts`
 - `rentrix-app/src/app/navigation/route-contract.ts`
-- `docs/decisions/0015-owner-decisions-roles-void-due-from-owner-contract-governance.md`
+- `rentrix-app/scripts/check-architecture.mjs`
+- `rentrix-app/src/features/active-register-inventory.ts`
+- `DATABASE_RULES.md`
 - `supabase/migrations/**`
 - `supabase/tests/**`
-- Document 7 for rule-by-rule implementation status.
+- Document 7 for implementation status and runtime gaps.
 
-## Error handling and operational risk
+## Release interpretation
 
-- Auth/session failures clear unusable local session state and fail protected access closed in `rentrix-app/src/services/auth-service.ts`.
-- Active-company resolution clears cached queries and refuses to expose company data unless a server-issued token claim matches an active membership in `rentrix-app/src/hooks/use-company.tsx`.
-- User-facing services translate many Supabase errors, but consistent typed domain-error mapping is not universal; raw backend text must not leak sensitive schema/config detail.
-- CI artifacts and QA scripts provide diagnostics, but they are not production observability. No current repository evidence proves alert routing, retention, SLOs, incident response, backup restoration or production audit review.
-- The PR #1430 Vercel preview was Ready, while the complete Browser Readiness run was cancelled and authenticated staging was skipped. Availability must not be recorded as journey acceptance.
+This document locks the target architecture and refactor-vs-rewrite decision. It does not claim the target presentation or Tenant Portal is already implemented, and it does not change governed stage credit.
