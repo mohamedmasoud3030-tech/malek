@@ -457,6 +457,11 @@
     margin-bottom: 1rem;
   }
 
+  /* Space between dashboard date strip and first section eyebrow */
+  [data-dashboard-section]:first-child [data-section-header] {
+    margin-top: 1rem;
+  }
+
   [data-page-layout] [data-filter-bar],
   [data-page-layout] [data-list-controls] {
     align-items: center;
