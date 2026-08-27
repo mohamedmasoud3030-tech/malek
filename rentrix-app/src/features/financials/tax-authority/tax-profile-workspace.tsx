@@ -24,6 +24,26 @@ import {
 } from './tax-authority-service';
 import { getTodayLocalDateString } from '@/features/financials/financials-date-utils';
 
+function statusLabel(status: string) {
+  if (status === 'ACTIVE') return 'ساري';
+  if (status === 'DRAFT') return 'مسودة';
+  if (status === 'SUPERSEDED') return 'سابق';
+  return 'غير نشط';
+}
+
+function statusTone(status: string): 'success' | 'warning' | 'info' | 'neutral' {
+  if (status === 'ACTIVE') return 'success';
+  if (status === 'DRAFT') return 'warning';
+  if (status === 'SUPERSEDED') return 'info';
+  return 'neutral';
+}
+
+function friendlyTaxError(action: 'create' | 'approve') {
+  return action === 'approve'
+    ? 'تعذر الاعتماد. تأكد أن مستخدمًا مخوّلًا مختلفًا هو من يعتمد المسودة.'
+    : 'تعذر حفظ الإعداد الضريبي. راجع البيانات وحاول مرة أخرى.';
+}
+
 export function TaxAuthorityWorkspace() {
   const companyId = useActiveCompanyId();
   const { user } = useAuth();
@@ -49,21 +69,21 @@ export function TaxAuthorityWorkspace() {
         request_id: crypto.randomUUID(),
       }),
     onSuccess: () => {
-      toast.success('تم إنشاء ملف ضريبي مسودة — بانتظار اعتماد مدقق مختلف');
+      toast.success('تم حفظ إعداد ضريبة الإيجار كمسودة بانتظار الاعتماد');
       setActionType(null);
       setTaxForm({ tax_code: 'VAT', tax_rate: 5, effective_from: getTodayLocalDateString(), effective_to: '', description: '' });
       void queryClient.invalidateQueries({ queryKey: ['company-tax-profiles'] });
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : 'تعذر إنشاء الملف الضريبي'),
+    onError: () => toast.error(friendlyTaxError('create')),
   });
 
   const approveTaxMut = useMutation({
     mutationFn: (profile: TaxProfileRecord) => approveTaxProfile({ profile_id: profile.id }),
     onSuccess: () => {
-      toast.success('تم اعتماد الملف الضريبي وتفعيله');
+      toast.success('تم اعتماد إعداد ضريبة الإيجار');
       void queryClient.invalidateQueries({ queryKey: ['company-tax-profiles'] });
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : 'تعذر الاعتماد — يجب أن يعتمد مستخدم مختلف'),
+    onError: () => toast.error(friendlyTaxError('approve')),
   });
 
   const createFeeMut = useMutation({
@@ -80,194 +100,137 @@ export function TaxAuthorityWorkspace() {
       });
     },
     onSuccess: () => {
-      toast.success('تم إنشاء معالجة ضريبة أتعاب مسودة — بانتظار الاعتماد');
+      toast.success('تم حفظ إعداد ضريبة الأتعاب كمسودة بانتظار الاعتماد');
       setActionType(null);
       setFeeForm({ fee_kind: 'RATE_MANAGEMENT_FEE', tax_code: 'VAT', tax_rate: 5, effective_from: getTodayLocalDateString(), effective_to: '', description: '' });
       void queryClient.invalidateQueries({ queryKey: ['company-fee-tax-treatments'] });
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : 'تعذر إنشاء معالجة الأتعاب'),
+    onError: () => toast.error(friendlyTaxError('create')),
   });
 
   const approveFeeMut = useMutation({
     mutationFn: (treatment: FeeTaxTreatmentRecord) => approveFeeTaxTreatment({ treatment_id: treatment.id }),
     onSuccess: () => {
-      toast.success('تم اعتماد معالجة ضريبة الأتعاب');
+      toast.success('تم اعتماد إعداد ضريبة الأتعاب');
       void queryClient.invalidateQueries({ queryKey: ['company-fee-tax-treatments'] });
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : 'تعذر الاعتماد'),
+    onError: () => toast.error(friendlyTaxError('approve')),
   });
 
   const taxColumns: ColumnDef<TaxProfileRecord>[] = [
-    { key: 'version', header: 'الإصدار', render: (r) => <span className="tabular-nums">{r.version_no}</span> },
-    { key: 'code', header: 'الكود والنسبة', render: (r) => <span>{r.tax_code} — {r.tax_rate}%</span> },
-    { key: 'effective', header: 'سارٍ من', render: (r) => <span dir="ltr">{r.effective_from}{r.effective_to ? ` → ${r.effective_to}` : ''}</span> },
-    { key: 'status', header: 'الحالة', render: (r) => <StatusBadge tone={r.status === 'ACTIVE' ? 'success' : r.status === 'DRAFT' ? 'warning' : 'info'}>{r.status}</StatusBadge> },
+    { key: 'version', header: 'الإصدار', render: (row) => <span className="tabular-nums">{row.version_no}</span> },
+    { key: 'code', header: 'الضريبة', render: (row) => <span>{row.tax_code} — {row.tax_rate}%</span> },
+    { key: 'effective', header: 'الفترة', render: (row) => <span dir="ltr">{row.effective_from}{row.effective_to ? ` → ${row.effective_to}` : ''}</span> },
+    { key: 'status', header: 'الحالة', render: (row) => <StatusBadge tone={statusTone(row.status)}>{statusLabel(row.status)}</StatusBadge> },
     {
       key: 'actions',
-      header: 'إجراءات',
-      render: (r) =>
-        r.status === 'DRAFT' && r.created_by !== currentUserId ? (
-          <Button size="sm" variant="default" onClick={() => approveTaxMut.mutate(r)}>
-            اعتماد
-          </Button>
-        ) : r.status === 'DRAFT' ? (
-          <span className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Clock className="size-3.5" /> بانتظار مدقق مختلف
-          </span>
-        ) : r.status === 'ACTIVE' ? (
-          <span className="flex items-center gap-1 text-xs text-success">
-            <CheckCircle2 className="size-3.5" /> نافذ
-          </span>
+      header: 'الإجراء',
+      render: (row) =>
+        row.status === 'DRAFT' && row.created_by !== currentUserId ? (
+          <Button size="sm" className="min-h-11" onClick={() => approveTaxMut.mutate(row)}>اعتماد</Button>
+        ) : row.status === 'DRAFT' ? (
+          <span className="flex items-center gap-1 text-xs text-muted-foreground"><Clock className="size-3.5" aria-hidden="true" /> ينتظر اعتماد مستخدم آخر</span>
+        ) : row.status === 'ACTIVE' ? (
+          <span className="flex items-center gap-1 text-xs text-success"><CheckCircle2 className="size-3.5" aria-hidden="true" /> مستخدم حاليًا</span>
         ) : null,
     },
   ];
 
   const feeColumns: ColumnDef<FeeTaxTreatmentRecord>[] = [
-    { key: 'kind', header: 'النوع', render: (r) => <span>{r.fee_kind === 'RATE_MANAGEMENT_FEE' ? 'نسبي عند التحصيل' : 'شهري ثابت'}</span> },
-    { key: 'version', header: 'الإصدار', render: (r) => <span className="tabular-nums">{r.version_no}</span> },
-    { key: 'code', header: 'الكود والنسبة', render: (r) => <span>{r.tax_code} — {r.tax_rate}%</span> },
-    { key: 'effective', header: 'سارٍ من', render: (r) => <span dir="ltr">{r.effective_from}</span> },
-    { key: 'status', header: 'الحالة', render: (r) => <StatusBadge tone={r.status === 'ACTIVE' ? 'success' : r.status === 'DRAFT' ? 'warning' : 'info'}>{r.status}</StatusBadge> },
+    { key: 'kind', header: 'النوع', render: (row) => <span>{row.fee_kind === 'RATE_MANAGEMENT_FEE' ? 'أتعاب نسبية عند التحصيل' : 'أتعاب شهرية ثابتة'}</span> },
+    { key: 'version', header: 'الإصدار', render: (row) => <span className="tabular-nums">{row.version_no}</span> },
+    { key: 'code', header: 'الضريبة', render: (row) => <span>{row.tax_code} — {row.tax_rate}%</span> },
+    { key: 'effective', header: 'سارٍ من', render: (row) => <span dir="ltr">{row.effective_from}</span> },
+    { key: 'status', header: 'الحالة', render: (row) => <StatusBadge tone={statusTone(row.status)}>{statusLabel(row.status)}</StatusBadge> },
     {
       key: 'actions',
-      header: 'إجراءات',
-      render: (r) =>
-        r.status === 'DRAFT' && r.created_by !== currentUserId ? (
-          <Button size="sm" variant="default" onClick={() => approveFeeMut.mutate(r)}>
-            اعتماد
-          </Button>
-        ) : r.status === 'DRAFT' ? (
-          <span className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Clock className="size-3.5" /> بانتظار مدقق مختلف
-          </span>
+      header: 'الإجراء',
+      render: (row) =>
+        row.status === 'DRAFT' && row.created_by !== currentUserId ? (
+          <Button size="sm" className="min-h-11" onClick={() => approveFeeMut.mutate(row)}>اعتماد</Button>
+        ) : row.status === 'DRAFT' ? (
+          <span className="flex items-center gap-1 text-xs text-muted-foreground"><Clock className="size-3.5" aria-hidden="true" /> ينتظر اعتماد مستخدم آخر</span>
         ) : null,
     },
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4" data-tax-settings-workspace>
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <ShieldAlert className="size-5" />
-            ملفات ضريبة الإيجار — سلطة معتمدة حسب التاريخ
-          </CardTitle>
-          <CardDescription>
-            الضريبة لا تُحسم من company_settings.vat_rate. كل فاتورة تحفظ Snapshot للكود والنسبة والأساس. المسودات تحتاج اعتماد مدقق مختلف (Maker-Checker). التفعيل يرحّل الإصدار السابق إلى SUPERSEDED ويغلق النافذة السابقة.
-          </CardDescription>
+          <CardTitle className="flex items-center gap-2"><ShieldAlert className="size-5" aria-hidden="true" /> ضريبة الإيجار</CardTitle>
+          <CardDescription>حدد الضريبة والنسبة وفترة السريان. أي تعديل جديد يُحفظ كمسودة ويحتاج اعتماد مستخدم مخوّل مختلف قبل أن يصبح ساريًا.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex justify-end">
-            <Button onClick={() => setActionType('createTax')} size="sm" className="gap-1">
-              <Plus className="size-4" /> إنشاء ملف ضريبي
-            </Button>
+            <Button onClick={() => setActionType('createTax')} size="sm" className="min-h-11 gap-1"><Plus className="size-4" aria-hidden="true" /> إعداد جديد</Button>
           </div>
-          <EntityTable aria-label="ملفات ضريبة الإيجار" rows={taxProfilesQuery.data ?? []} columns={taxColumns} keyOf={(r) => r.id} />
+          <EntityTable aria-label="إعدادات ضريبة الإيجار" rows={taxProfilesQuery.data ?? []} columns={taxColumns} keyOf={(row) => row.id} />
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>معالجات ضريبة أتعاب الإدارة — سلطة مستقلة</CardTitle>
-          <CardDescription>
-            أتعاب الإدارة النسبية (RATE) والشهرية الثابتة (FIXED_MONTHLY) لها معالجات ضريبية مستقلة عن ضريبة الإيجار. تفشل مغلقًا FEE_TAX_TREATMENT_MISSING عند النقص. لا يُفترض أن ضريبة الأتعاب صفر.
-          </CardDescription>
+          <CardTitle>ضريبة أتعاب الإدارة</CardTitle>
+          <CardDescription>يمكن أن تختلف ضريبة الأتعاب النسبية عن الأتعاب الشهرية. أكمل الإعداد المناسب قبل تسجيل العمليات المرتبطة به.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="flex justify-end gap-2">
-            <Button onClick={() => setActionType('createFeeRate')} size="sm" variant="outline" className="gap-1">
-              <Plus className="size-4" /> معالجة نسبية
-            </Button>
-            <Button onClick={() => setActionType('createFeeFixed')} size="sm" variant="outline" className="gap-1">
-              <Plus className="size-4" /> معالجة شهرية ثابتة
-            </Button>
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button onClick={() => setActionType('createFeeRate')} size="sm" variant="outline" className="min-h-11 gap-1"><Plus className="size-4" aria-hidden="true" /> أتعاب نسبية</Button>
+            <Button onClick={() => setActionType('createFeeFixed')} size="sm" variant="outline" className="min-h-11 gap-1"><Plus className="size-4" aria-hidden="true" /> أتعاب شهرية</Button>
           </div>
-          <EntityTable aria-label="معالجات ضريبة الأتعاب" rows={feeTreatmentsQuery.data ?? []} columns={feeColumns} keyOf={(r) => r.id} />
+          <EntityTable aria-label="إعدادات ضريبة أتعاب الإدارة" rows={feeTreatmentsQuery.data ?? []} columns={feeColumns} keyOf={(row) => row.id} />
         </CardContent>
       </Card>
 
       <EntityForm.Overlay
         open={actionType === 'createTax'}
         onOpenChange={(open) => !open && setActionType(null)}
-        title="إنشاء ملف ضريبة إيجار"
-        description="يُنشئ مسودة versioned مع نافذة فعالية. يحتاج اعتماد مدقق مختلف ليصبح ACTIVE. الكتابة عبر RPC محكوم فقط."
+        title="إعداد ضريبة الإيجار"
+        description="احفظ الإعداد كمسودة، ثم اعتمده من مستخدم مخوّل مختلف ليصبح ساريًا."
         visualVariant="operational"
       >
-        <EntityForm.Root
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (!taxForm.tax_code || !taxForm.effective_from) return;
-            createTaxMut.mutate();
-          }}
-        >
-          <EntityForm.Section title="بيانات الملف الضريبي">
-            <EntityForm.Field label="كود الضريبة *">
-              <Select required value={taxForm.tax_code} onChange={(e) => setTaxForm((f) => ({ ...f, tax_code: e.target.value }))}>
-                {taxCodesQuery.data?.map((c) => (
-                  <option key={c.code} value={c.code}>
-                    {c.code} — {c.name_ar} ({c.name_en})
-                  </option>
-                ))}
+        <EntityForm.Root onSubmit={(event) => { event.preventDefault(); if (!taxForm.tax_code || !taxForm.effective_from) return; createTaxMut.mutate(); }}>
+          <EntityForm.Section title="بيانات الضريبة">
+            <EntityForm.Field label="نوع الضريبة *">
+              <Select required value={taxForm.tax_code} onChange={(event) => setTaxForm((current) => ({ ...current, tax_code: event.target.value }))}>
+                {taxCodesQuery.data?.map((code) => <option key={code.code} value={code.code}>{code.name_ar} — {code.code}</option>)}
               </Select>
             </EntityForm.Field>
             <div className="grid gap-4 sm:grid-cols-2">
-              <EntityForm.Field label="النسبة % *">
-                <Input required type="number" min="0" max="100" step="0.001" value={taxForm.tax_rate} onChange={(e) => setTaxForm((f) => ({ ...f, tax_rate: Number(e.target.value) || 0 }))} />
-              </EntityForm.Field>
-              <EntityForm.Field label="سارٍ من *">
-                <Input required type="date" value={taxForm.effective_from} onChange={(e) => setTaxForm((f) => ({ ...f, effective_from: e.target.value }))} />
-              </EntityForm.Field>
+              <EntityForm.Field label="النسبة % *"><Input required type="number" min="0" max="100" step="0.001" value={taxForm.tax_rate} onChange={(event) => setTaxForm((current) => ({ ...current, tax_rate: Number(event.target.value) || 0 }))} /></EntityForm.Field>
+              <EntityForm.Field label="سارٍ من *"><Input required type="date" value={taxForm.effective_from} onChange={(event) => setTaxForm((current) => ({ ...current, effective_from: event.target.value }))} /></EntityForm.Field>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <EntityForm.Field label="سارٍ إلى (اختياري)">
-                <Input type="date" value={taxForm.effective_to} onChange={(e) => setTaxForm((f) => ({ ...f, effective_to: e.target.value }))} />
-              </EntityForm.Field>
-              <EntityForm.Field label="وصف">
-                <Input value={taxForm.description} onChange={(e) => setTaxForm((f) => ({ ...f, description: e.target.value }))} placeholder="وصف اختياري..." />
-              </EntityForm.Field>
+              <EntityForm.Field label="سارٍ إلى (اختياري)"><Input type="date" value={taxForm.effective_to} onChange={(event) => setTaxForm((current) => ({ ...current, effective_to: event.target.value }))} /></EntityForm.Field>
+              <EntityForm.Field label="ملاحظة"><Input value={taxForm.description} onChange={(event) => setTaxForm((current) => ({ ...current, description: event.target.value }))} placeholder="ملاحظة اختيارية" /></EntityForm.Field>
             </div>
           </EntityForm.Section>
-          <EntityForm.Actions submitLabel={createTaxMut.isPending ? 'جارٍ الإنشاء...' : 'إنشاء مسودة'} onCancel={() => setActionType(null)} isSubmitting={createTaxMut.isPending} />
+          <EntityForm.Actions submitLabel={createTaxMut.isPending ? 'جارٍ الحفظ...' : 'حفظ كمسودة'} onCancel={() => setActionType(null)} isSubmitting={createTaxMut.isPending} />
         </EntityForm.Root>
       </EntityForm.Overlay>
 
       <EntityForm.Overlay
         open={actionType === 'createFeeRate' || actionType === 'createFeeFixed'}
         onOpenChange={(open) => !open && setActionType(null)}
-        title={actionType === 'createFeeRate' ? 'إنشاء معالجة ضريبة أتعاب نسبية' : 'إنشاء معالجة ضريبة أتعاب شهرية ثابتة'}
-        description="معالجة مستقلة عن ضريبة الإيجار، versioned، تحتاج اعتماد مدقق مختلف."
+        title={actionType === 'createFeeRate' ? 'إعداد ضريبة الأتعاب النسبية' : 'إعداد ضريبة الأتعاب الشهرية'}
+        description="احفظ الإعداد كمسودة، ثم اعتمده من مستخدم مخوّل مختلف ليصبح ساريًا."
         visualVariant="operational"
       >
-        <EntityForm.Root
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (!feeForm.tax_code || !feeForm.effective_from) return;
-            createFeeMut.mutate();
-          }}
-        >
-          <EntityForm.Section title="بيانات المعالجة">
-            <EntityForm.Field label="كود الضريبة *">
-              <Select required value={feeForm.tax_code} onChange={(e) => setFeeForm((f) => ({ ...f, tax_code: e.target.value }))}>
-                {taxCodesQuery.data?.map((c) => (
-                  <option key={c.code} value={c.code}>
-                    {c.code} — {c.name_ar}
-                  </option>
-                ))}
+        <EntityForm.Root onSubmit={(event) => { event.preventDefault(); if (!feeForm.tax_code || !feeForm.effective_from) return; createFeeMut.mutate(); }}>
+          <EntityForm.Section title="بيانات الضريبة">
+            <EntityForm.Field label="نوع الضريبة *">
+              <Select required value={feeForm.tax_code} onChange={(event) => setFeeForm((current) => ({ ...current, tax_code: event.target.value }))}>
+                {taxCodesQuery.data?.map((code) => <option key={code.code} value={code.code}>{code.name_ar} — {code.code}</option>)}
               </Select>
             </EntityForm.Field>
             <div className="grid gap-4 sm:grid-cols-2">
-              <EntityForm.Field label="النسبة % *">
-                <Input required type="number" min="0" max="100" step="0.001" value={feeForm.tax_rate} onChange={(e) => setFeeForm((f) => ({ ...f, tax_rate: Number(e.target.value) || 0 }))} />
-              </EntityForm.Field>
-              <EntityForm.Field label="سارٍ من *">
-                <Input required type="date" value={feeForm.effective_from} onChange={(e) => setFeeForm((f) => ({ ...f, effective_from: e.target.value }))} />
-              </EntityForm.Field>
+              <EntityForm.Field label="النسبة % *"><Input required type="number" min="0" max="100" step="0.001" value={feeForm.tax_rate} onChange={(event) => setFeeForm((current) => ({ ...current, tax_rate: Number(event.target.value) || 0 }))} /></EntityForm.Field>
+              <EntityForm.Field label="سارٍ من *"><Input required type="date" value={feeForm.effective_from} onChange={(event) => setFeeForm((current) => ({ ...current, effective_from: event.target.value }))} /></EntityForm.Field>
             </div>
-            <EntityForm.Field label="وصف">
-              <Input value={feeForm.description} onChange={(e) => setFeeForm((f) => ({ ...f, description: e.target.value }))} placeholder="وصف..." />
-            </EntityForm.Field>
+            <EntityForm.Field label="ملاحظة"><Input value={feeForm.description} onChange={(event) => setFeeForm((current) => ({ ...current, description: event.target.value }))} placeholder="ملاحظة اختيارية" /></EntityForm.Field>
           </EntityForm.Section>
-          <EntityForm.Actions submitLabel={createFeeMut.isPending ? 'جارٍ الإنشاء...' : 'إنشاء مسودة'} onCancel={() => setActionType(null)} isSubmitting={createFeeMut.isPending} />
+          <EntityForm.Actions submitLabel={createFeeMut.isPending ? 'جارٍ الحفظ...' : 'حفظ كمسودة'} onCancel={() => setActionType(null)} isSubmitting={createFeeMut.isPending} />
         </EntityForm.Root>
       </EntityForm.Overlay>
     </div>
