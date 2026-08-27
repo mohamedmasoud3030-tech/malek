@@ -29,7 +29,7 @@ export function IncomeStatementPanel({
       isLoading={isLoading}
     >
       {error ? (
-        <div className="p-4"><ReportState kind="error" message={getErrorMessage(error, 'تعذر تحميل تقرير الدخل من RPC.')} /></div>
+        <div className="p-4"><ReportState kind="error" message={getErrorMessage(error, 'تعذر تحميل تقرير الدخل الآن.')} /></div>
       ) : !report ? (
         <div className="p-4"><ReportState message="تعذر تحميل تقرير الدخل للفترة المحددة." /></div>
       ) : (
