@@ -97,7 +97,7 @@ export const reportGroups: readonly ReportGroup[] = [
   {
     id: 'owners',
     title: 'الملاك والمستأجرون',
-    description: 'كشوف واضحة للحركة والرصيد والاستقطاعات والمدفوعات لكل طرف.',
+    description: 'كشوف واضحة للحركة والرصيد والاستقطاعات والمدفوعات والتسويات لكل طرف.',
     icon: UsersRound,
     section: 'statements',
     view: '',
@@ -105,6 +105,7 @@ export const reportGroups: readonly ReportGroup[] = [
     shortcuts: [
       { label: 'كشف المالك', description: 'حركة المالك للفترة مع المستحقات والاستقطاعات والرصيد.', section: 'statements', view: '' },
       { label: 'كشف المستأجر', description: 'الفواتير والمدفوعات والرصيد والحركة المرتبطة بالعقد.', section: 'statements', view: '' },
+      { label: 'التسويات', description: 'راجع تسويات الأطراف ضمن نفس الكشف بدل فتح دفتر محاسبي منفصل.', section: 'statements', view: '' },
     ],
   },
   {
@@ -117,6 +118,7 @@ export const reportGroups: readonly ReportGroup[] = [
     matches: ['property_analytics'],
     shortcuts: [
       { label: 'أداء العقار', description: 'ملخص تشغيلي ومالي للعقار المحدد.', section: 'analytics', view: 'property_analytics' },
+      { label: 'أداء الوحدة', description: 'الوحدات داخل العقار ومؤشرات الإشغال والتحصيل المرتبطة بها من نفس مصدر التقرير.', section: 'analytics', view: 'property_analytics' },
       { label: 'الإشغال حسب العقار', description: 'نسب الإشغال والشواغر على مستوى العقار ووحداته.', section: 'analytics', view: 'occupancy' },
     ],
   },
