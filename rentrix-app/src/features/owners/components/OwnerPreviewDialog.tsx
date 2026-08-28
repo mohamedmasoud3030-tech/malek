@@ -9,7 +9,6 @@ import { useAuth } from '@/hooks/use-auth';
 import { useDialogNavigate } from '@/app/router/background-location';
 import { getActionableSupabaseErrorMessage } from '@/lib/supabase-error';
 import { fetchOwnerActivity } from '@/services/owner-workspace-service';
-import { listOwnerSettlements } from '../services/owner-settlements-service';
 import { useOwnerDetailSnapshot } from '../useOwners';
 import { OwnerDossierBody } from './owner-dossier-body';
 
@@ -23,13 +22,7 @@ export function OwnerPreviewDialog({
   onOpenChange: (open: boolean) => void;
 }>) {
   const { authorization } = useAuth();
-  const canViewSettlements = canAccess(authorization, 'financial.owner_settlements.view');
   const detailQuery = useOwnerDetailSnapshot(ownerId ?? '');
-  const settlementsQuery = useQuery({
-    queryKey: ['owner-settlements', 'preview', ownerId],
-    queryFn: listOwnerSettlements,
-    enabled: Boolean(ownerId) && canViewSettlements,
-  });
   const activityQuery = useQuery({
     queryKey: ['owner-activity', 'preview', ownerId],
     queryFn: () => fetchOwnerActivity(ownerId ?? ''),
@@ -47,7 +40,7 @@ export function OwnerPreviewDialog({
       open={open}
       onOpenChange={onOpenChange}
       title="ملف المالك"
-      description="بيانات المالك والعقارات والوحدات والعقود والسياق المالي والتسويات والمستندات من المكوّن الموحد."
+      description="بيانات المالك والعقارات والوحدات والعقود والمستندات من المكوّن الموحد. التفاصيل المالية تُفتح من مساحة المال والتقارير."
       actions={owner && canEditOwner ? (
         <Button className="min-h-11" onClick={() => dialogNavigate({ to: '/owners/$ownerId/edit', params: { ownerId: owner.id } })}>
           <Edit className="me-2 size-4" />تعديل
@@ -65,10 +58,6 @@ export function OwnerPreviewDialog({
       {snapshot && owner ? (
         <OwnerDossierBody
           snapshot={snapshot}
-          settlements={canViewSettlements && settlementsQuery.data
-            ? settlementsQuery.data.filter((item) => item.owner_id === owner.id).slice(0, 5)
-            : undefined}
-          canOpenOwnerSettlements={canViewSettlements}
           activity={activityQuery.data}
         />
       ) : null}
