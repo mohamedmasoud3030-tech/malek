@@ -1,13 +1,15 @@
 -- Harden the public Owner Portal RPC without changing its client contract.
--- The v44 implementation is retained as an internal legacy projection only; external
--- callers keep the canonical function name and receive corrected finance/document data.
+-- The v44 implementation is retained in app_private as an internal projection only;
+-- external callers keep the canonical public function name and receive corrected data.
 
 begin;
 
 alter function public.get_owner_portal_snapshot(uuid)
+  set schema app_private;
+alter function app_private.get_owner_portal_snapshot(uuid)
   rename to get_owner_portal_snapshot_legacy;
 
-revoke all on function public.get_owner_portal_snapshot_legacy(uuid)
+revoke all on function app_private.get_owner_portal_snapshot_legacy(uuid)
   from public, anon, authenticated;
 
 create function public.get_owner_portal_snapshot(p_token uuid)
@@ -24,9 +26,9 @@ declare
   v_net_payable numeric := 0;
   v_documents jsonb := '[]'::jsonb;
 begin
-  -- Reuse the already-hardened token validation and owner/property projection, then
-  -- replace the two fields whose canonical semantics changed.
-  v_base := public.get_owner_portal_snapshot_legacy(p_token);
+  -- Reuse the hardened token validation and owner/property projection privately,
+  -- then replace the fields whose canonical semantics changed.
+  v_base := app_private.get_owner_portal_snapshot_legacy(p_token);
   if v_base is null or v_base ->> 'status' <> 'ready' then
     return coalesce(v_base, jsonb_build_object('status', 'invalid'));
   end if;
