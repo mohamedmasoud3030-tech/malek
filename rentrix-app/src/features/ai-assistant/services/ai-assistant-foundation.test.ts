@@ -29,6 +29,7 @@ const context = {
     activePropertyCount: 2,
     unitCount: 4,
     occupiedUnitCount: 3,
+    vacantUnitCount: 1,
     occupancyRate: 75,
     outstandingInvoiceAmount: 12.345,
     expensesLast90Days: 4.5,
@@ -81,6 +82,40 @@ describe("AI assistant evaluation set", () => {
       }
     },
   );
+
+  it("answers vacancy from an explicit context fact", () => {
+    const result = validateAssistantRequest({
+      requestId,
+      prompt: "عندي كام وحدة فاضية؟",
+      action: "summarize_vacancy",
+      context,
+      history: [],
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const output = deterministicResponse(result.value);
+      expect(output?.grounded).toBe(true);
+      expect(output?.answer).toContain("1 وحدة شاغرة");
+      expect(output?.answer).toContain("75.00٪");
+    }
+  });
+
+  it("builds the month summary only from allowed 30-day facts", () => {
+    const result = validateAssistantRequest({
+      requestId,
+      prompt: "اعمل لي ملخص الشهر ده",
+      action: "summarize_month",
+      context,
+      history: [],
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const output = deterministicResponse(result.value);
+      expect(output?.grounded).toBe(true);
+      expect(output?.answer).toContain("آخر 30 يوماً");
+      expect(output?.answer).toContain("5.000 ر.ع.");
+    }
+  });
 
   it.each(evaluationCases.filter((entry) => entry.expect === "refusal"))(
     "$id refuses before provider use",
