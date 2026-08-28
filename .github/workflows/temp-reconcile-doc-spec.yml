@@ -1,0 +1,26 @@
+name: TEMP Reconcile Document Spec
+on:
+  push:
+    branches:
+      - arena/01a045fd-malek
+permissions:
+  contents: write
+jobs:
+  reconcile:
+    if: github.event.head_commit.message == 'chore: reconcile document spec branch with latest main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: arena/01a045fd-malek
+          fetch-depth: 0
+      - name: Merge latest main and remove helper
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git merge --no-edit origin/main
+          git rm .github/workflows/temp-reconcile-doc-spec.yml
+          git commit -m "chore: finish document spec reconciliation"
+          git push origin HEAD:arena/01a045fd-malek
