@@ -152,10 +152,10 @@ export function MaintenanceResolveOverlay({ target, form, isSubmitting, firstErr
                 return (
                   <SelectionCard
                     key={key}
-                    selected={chargedTo === (key === 'landlord' ? 'OWNER' : key === 'tenant' ? 'TENANT' : 'OFFICE')}
+                    selected={chargedTo === (key === 'landlord' ? 'OWNER' : key === 'tenant' ? 'TENANT' : 'COMPANY')}
                     title={info.title}
                     description={info.desc}
-                    onClick={() => form.setValue('chargedTo', key === 'landlord' ? 'OWNER' : key === 'tenant' ? 'TENANT' : 'OFFICE', { shouldDirty: true, shouldValidate: true })}
+                    onClick={() => form.setValue('chargedTo', key === 'landlord' ? 'OWNER' : key === 'tenant' ? 'TENANT' : 'COMPANY', { shouldDirty: true, shouldValidate: true })}
                   />
                 );
               })}

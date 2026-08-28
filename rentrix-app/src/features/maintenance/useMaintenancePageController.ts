@@ -50,7 +50,7 @@ export type MaintenanceFormValues = z.infer<typeof maintenanceRequestSchema>;
 
 export const maintenanceResolveSchema = z.object({
   cost: z.coerce.number({ invalid_type_error: 'أدخل تكلفة صحيحة' }).min(0, 'التكلفة لا يمكن أن تكون سالبة'),
-  chargedTo: z.enum(['OWNER', 'TENANT', 'OFFICE']),
+  chargedTo: z.enum(['OWNER', 'TENANT', 'COMPANY']),
   evidenceUrl: z.string().url('رابط الإثبات غير صحيح').nullable().optional().or(z.literal('')),
   confirmed: z.boolean().refine((value) => value, 'أكد تنفيذ العمل فعليًا قبل الإغلاق'),
   notes: z.string().nullable().optional(),

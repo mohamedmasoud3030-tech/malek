@@ -141,7 +141,7 @@ export async function updateMaintenanceStatus(
 export type CloseMaintenanceInput = {
   requestId: string;
   cost: number;
-  chargedTo: 'OWNER' | 'TENANT' | 'OFFICE';
+  chargedTo: 'OWNER' | 'TENANT' | 'COMPANY';
   notes: string | null;
   evidenceUrl: string | null;
   confirmed: boolean;
@@ -156,5 +156,5 @@ export async function closeMaintenanceWithExpense(input: CloseMaintenanceInput):
     })
     .single();
   if (error) handleSupabaseError(error, 'تعذر إغلاق طلب الصيانة وتسجيل التكلفة');
-  return data as unknown as ResolveMaintenanceResult;
+  return data as unknown as CloseMaintenanceResult;
 }

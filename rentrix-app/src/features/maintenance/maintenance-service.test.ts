@@ -151,6 +151,6 @@ describe('maintenance service failure and mutation boundaries', () => {
     supabaseMock.rpc.mockReturnValue({ single: vi.fn(() => Promise.resolve({ data: null, error: new Error('duplicate resolve') })) });
     const { closeMaintenanceWithExpense } = await import('./maintenance-service');
 
-    await expect(closeMaintenanceWithExpense({ requestId: 'maintenance-1', cost: 100, chargedTo: 'OFFICE', notes: null, evidenceUrl: null, confirmed: true })).rejects.toThrow('تعذر إغلاق طلب الصيانة وتسجيل التكلفة');
+    await expect(closeMaintenanceWithExpense({ requestId: 'maintenance-1', cost: 100, chargedTo: 'COMPANY', notes: null, evidenceUrl: null, confirmed: true })).rejects.toThrow('تعذر إغلاق طلب الصيانة وتسجيل التكلفة');
   });
 });
