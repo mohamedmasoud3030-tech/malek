@@ -28,15 +28,7 @@ export {
 export { Textarea } from "./textarea";
 export { Typography, type TypographyVariant } from "./typography";
 export { Dialog, DialogClose, DialogContent, DialogDescription, DialogPortal, DialogTitle, DialogTrigger } from "./dialog";
-export {
-  Modal,
-  ModalClose,
-  ModalContent,
-  ModalDescription,
-  ModalPortal,
-  ModalTitle,
-  ModalTrigger,
-} from "./modal";
+export { BottomSheet } from "./bottom-sheet";
 
 // Shared product surfaces
 export { SearchInput } from "./search-input";
@@ -48,13 +40,11 @@ export { FilterBar } from "./filter-bar";
 export { WorkspaceNav, type WorkspaceNavItem } from "./workspace-nav";
 export { FilePickerField } from "./file-picker-field";
 export { KpiCard } from "./kpi-card";
-export { InlineStatCard } from "./inline-stat-card";
 export { ResponsiveCardGrid } from "./responsive-card-grid";
 export { ViewModeToggle, type ViewMode, type ViewModeToggleProps } from "./view-mode-toggle";
 export { MobileCard } from "./mobile-card";
 export { SelectionCard, type SelectionCardProps } from "./selection-card";
 export { DatePicker } from "./date-picker";
-export { Drawer } from "./drawer";
 export { FormField } from "./form-field";
 export { ActionMenu, type ActionMenuItem } from "./action-menu";
 export {

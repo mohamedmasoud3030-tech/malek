@@ -15,8 +15,8 @@ describe('shared design system barrel', () => {
       'SearchInput',
       'FilterBar',
       'DatePicker',
-      'Modal',
-      'Drawer',
+      'Dialog',
+      'BottomSheet',
       'ConfirmDialog',
       'EmptyState',
       'LoadingState',
@@ -31,5 +31,11 @@ describe('shared design system barrel', () => {
     for (const name of required) {
       expect(ui[name], `${name} should be exported from components/ui`).toBeTypeOf('function');
     }
+  });
+
+  it('does not expose superseded duplicate primitives', () => {
+    expect('Modal' in ui).toBe(false);
+    expect('Drawer' in ui).toBe(false);
+    expect('InlineStatCard' in ui).toBe(false);
   });
 });
