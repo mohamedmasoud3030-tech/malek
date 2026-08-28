@@ -36,9 +36,13 @@ export type ReportViewMeta = Readonly<{
   showInPrimaryNavigation: boolean;
 }>;
 
+/**
+ * Raw accounting output remains available to specialists and existing deep
+ * links, but none of it competes with the owner-facing report directory.
+ */
 export const ACCOUNTING_REPORT_VIEWS = [
-  { id: 'accounting_reports', label: 'ميزان المراجعة والقوائم', icon: Scale, showInPrimaryNavigation: true },
-  { id: 'general_ledger', label: 'دفتر الأستاذ والشجرة', icon: BookOpenCheck, showInPrimaryNavigation: true },
+  { id: 'accounting_reports', label: 'ميزان المراجعة والقوائم', icon: Scale, showInPrimaryNavigation: false },
+  { id: 'general_ledger', label: 'دفتر الأستاذ والشجرة', icon: BookOpenCheck, showInPrimaryNavigation: false },
   { id: 'deferred_revenue', label: 'تسوية الإيرادات', icon: Layers, showInPrimaryNavigation: false },
 ] as const satisfies readonly ReportViewMeta[];
 
