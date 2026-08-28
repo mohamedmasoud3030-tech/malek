@@ -30,7 +30,7 @@ import {
   type ReactNode,
 } from 'react';
 import { DataErrorScreen } from '@/components/data-error-screen';
-import { EmptyState } from '@/components/empty-state';
+import { EmptyState } from '@/components/ui/state-surfaces';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { EntityCard, type EntityCardAction } from '@/components/ui/entity-card';
@@ -128,8 +128,6 @@ export interface EntityTableProps<T> {
   rowSelection?: RowSelectionState;
   /** Optional visible column keys. Omit to show every configured column. */
   visibleColumnKeys?: readonly string[];
-  /** @deprecated Page-local mobile renderers are ignored; EntityCard is shared here. */
-  renderMobileCard?: (row: T) => ReactNode;
   /** Enables the shared Cards ⇄ Table choice. Defaults to true. */
   enableViewModeToggle?: boolean;
   /** Optional stable identifier for a future persisted preference. */
@@ -748,5 +746,3 @@ export function EntityTable<T>({
     </div>
   );
 }
-
-export const CompactResponsiveTable = EntityTable;
