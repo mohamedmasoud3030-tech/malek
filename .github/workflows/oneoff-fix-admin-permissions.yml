@@ -1,0 +1,85 @@
+name: One-off admin permission regression fix
+
+on:
+  push:
+    branches:
+      - integration/final-consolidation-20260828
+    paths:
+      - '.github/workflows/oneoff-fix-admin-permissions.yml'
+
+permissions:
+  contents: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          ref: integration/final-consolidation-20260828
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Apply focused authorization fix and regression test
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          permissions = Path('rentrix-app/src/features/auth/permissions.ts')
+          text = permissions.read_text()
+          old = """export function canAccess(context: AuthorizationContext | null | undefined, permission: AppPermission): boolean {\n  if (!context) return false;\n  const effective = Boolean(context.grantedPermissions?.includes(permission));\n  if (context.effectivePermissionsResolved) return effective;\n  return effective || (rolePermissions[context.role]?.has(permission) ?? false);\n}\n"""
+          new = """export function canAccess(context: AuthorizationContext | null | undefined, permission: AppPermission): boolean {\n  if (!context) return false;\n  // ADMIN is the Office Owner compatibility role. Server-side permission\n  // resolution never allows employee overrides to deny ADMIN, so the client\n  // must preserve that invariant even when the effective-permission RPC is\n  // temporarily unavailable or returns an empty set.\n  if (context.role === 'ADMIN') return rolePermissions.ADMIN.has(permission);\n  const effective = Boolean(context.grantedPermissions?.includes(permission));\n  if (context.effectivePermissionsResolved) return effective;\n  return effective || (rolePermissions[context.role]?.has(permission) ?? false);\n}\n"""
+          if old not in text:
+              raise SystemExit('permissions.ts authorization anchor not found')
+          permissions.write_text(text.replace(old, new, 1))
+
+          effective = Path('rentrix-app/src/features/auth/effective-permissions.ts')
+          text = effective.read_text()
+          old = """  const base = getAuthorizationContextFromSession(session);\n  if (!base) return null;\n  const grantedPermissions = await loadGrantedPermissions(base.userId);\n  return { ...base, grantedPermissions, effectivePermissionsResolved: true };\n"""
+          new = """  const base = getAuthorizationContextFromSession(session);\n  if (!base) return null;\n  // ADMIN cannot be narrowed by employee overrides on the server. Avoid\n  // making owner route access depend on the projection RPC being available.\n  if (base.role === 'ADMIN') {\n    return { ...base, grantedPermissions: appPermissions, effectivePermissionsResolved: true };\n  }\n  const grantedPermissions = await loadGrantedPermissions(base.userId);\n  return { ...base, grantedPermissions, effectivePermissionsResolved: true };\n"""
+          if old not in text:
+              raise SystemExit('effective-permissions.ts anchor not found')
+          effective.write_text(text.replace(old, new, 1))
+
+          tests = Path('rentrix-app/src/features/auth/permissions.test.ts')
+          text = tests.read_text()
+          anchor = """  it('keeps ADMIN as the full-access compatibility role for the Office Owner', () => {\n    const owner = getAuthorizationContextFromUser(userWithRole('ADMIN'));\n    for (const permission of appPermissions) {\n      expect(canAccess(owner, permission), permission).toBe(true);\n    }\n  });\n\n"""
+          addition = anchor + """  it('keeps ADMIN full access when the resolved server capability set is empty', () => {\n    const owner = resolved('ADMIN', []);\n    for (const permission of appPermissions) {\n      expect(canAccess(owner, permission), permission).toBe(true);\n    }\n    expect(getWriteAccessState(owner)).toBe('full');\n  });\n\n"""
+          if anchor not in text:
+              raise SystemExit('permissions.test.ts admin anchor not found')
+          tests.write_text(text.replace(anchor, addition, 1))
+          PY
+
+      - name: Run focused authorization tests
+        run: pnpm --filter ./rentrix-app exec vitest run src/features/auth/permissions.test.ts src/features/auth/effective-route-guard.test.ts
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Commit fix and remove one-off workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/oneoff-fix-admin-permissions.yml
+          git add rentrix-app/src/features/auth/permissions.ts \
+                  rentrix-app/src/features/auth/effective-permissions.ts \
+                  rentrix-app/src/features/auth/permissions.test.ts \
+                  .github/workflows/oneoff-fix-admin-permissions.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'fix(auth): preserve admin full access'
+          git push origin HEAD:integration/final-consolidation-20260828
