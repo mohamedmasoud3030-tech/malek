@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { defineEntityKeys } from '@/lib/query-keys';
 import type { ContractPayload, RenewalPayload } from './contractSchema';
 import { activateContract, approveContract, createContract, getContract, listAllContracts, listContracts, rejectContract, renewContract, softDeleteContract, submitContractForApproval, terminateContract, updateContract, type ContractListParams, type ContractStatusFilter } from './services/contractService';
+import { extendShortStayContract, reconcileDueShortStaysBeforeRead, type ShortStayExtensionInput } from './services/shortStayLifecycleService';
 
 const contractBase = defineEntityKeys('contracts');
 
@@ -11,10 +12,15 @@ export const contractKeys = {
   allPages: (status: ContractStatusFilter) => [...contractBase.lists(), 'all-pages', status] as const,
 } as const;
 
+async function withShortStayReconciliation<T>(read: () => Promise<T>): Promise<T> {
+  await reconcileDueShortStaysBeforeRead();
+  return read();
+}
+
 export function useAllContracts(status: ContractStatusFilter = 'all', options?: Readonly<{ enabled?: boolean }>) {
   return useQuery({
     queryKey: contractKeys.allPages(status),
-    queryFn: () => listAllContracts(status),
+    queryFn: () => withShortStayReconciliation(() => listAllContracts(status)),
     retry: 2,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
     enabled: options?.enabled ?? true,
@@ -24,14 +30,18 @@ export function useAllContracts(status: ContractStatusFilter = 'all', options?: 
 export function useContracts(params: ContractListParams) {
   return useQuery({
     queryKey: contractKeys.list(params),
-    queryFn: () => listContracts(params),
+    queryFn: () => withShortStayReconciliation(() => listContracts(params)),
     retry: 2,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 }
 
 export function useContract(contractId: string) {
-  return useQuery({ queryKey: contractKeys.detail(contractId), queryFn: () => getContract(contractId), enabled: Boolean(contractId) });
+  return useQuery({
+    queryKey: contractKeys.detail(contractId),
+    queryFn: () => withShortStayReconciliation(() => getContract(contractId)),
+    enabled: Boolean(contractId),
+  });
 }
 
 export function useCreateContract() {
@@ -85,6 +95,22 @@ export function useRenewContract(contractId: string) {
       toast.success('تم تجديد العقد وإنشاء عقد جديد');
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر تجديد العقد'),
+  });
+}
+
+export function useExtendShortStayContract(contractId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: ShortStayExtensionInput) => extendShortStayContract(contractId, input),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: contractKeys.all }),
+        queryClient.invalidateQueries({ queryKey: ['units'] }),
+        queryClient.invalidateQueries({ queryKey: ['invoices'] }),
+      ]);
+      toast.success('تم تمديد الإقامة وإصدار استحقاق التمديد');
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر تمديد الإقامة القصيرة'),
   });
 }
 

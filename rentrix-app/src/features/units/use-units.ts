@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import type { Unit } from '@/types/domain';
 import type { UnitPayload } from './unit-schema';
 import { createUnit, getUnitDetail, listUnits, listUnitsByProperty, softDeleteUnit, updateUnit } from './unit-service';
+import { reconcileDueShortStaysBeforeRead } from '@/features/contracts/services/shortStayLifecycleService';
 
 export const unitKeys = {
   all: ['units'] as const,
@@ -13,10 +14,15 @@ export const unitKeys = {
 
 const contractQueries = ['contracts'] as const;
 
+async function withShortStayReconciliation<T>(read: () => Promise<T>): Promise<T> {
+  await reconcileDueShortStaysBeforeRead();
+  return read();
+}
+
 export function useAllUnits(options?: Readonly<{ enabled?: boolean }>) {
   return useQuery({
     queryKey: unitKeys.list(),
-    queryFn: listUnits,
+    queryFn: () => withShortStayReconciliation(listUnits),
     enabled: options?.enabled ?? true,
   });
 }
@@ -24,7 +30,7 @@ export function useAllUnits(options?: Readonly<{ enabled?: boolean }>) {
 export function useUnitDetail(unitId: string) {
   return useQuery({
     queryKey: unitKeys.detail(unitId),
-    queryFn: () => getUnitDetail(unitId),
+    queryFn: () => withShortStayReconciliation(() => getUnitDetail(unitId)),
     enabled: Boolean(unitId),
   });
 }
@@ -32,7 +38,7 @@ export function useUnitDetail(unitId: string) {
 export function useUnits(propertyId: string) {
   return useQuery({
     queryKey: unitKeys.property(propertyId),
-    queryFn: () => listUnitsByProperty(propertyId),
+    queryFn: () => withShortStayReconciliation(() => listUnitsByProperty(propertyId)),
     enabled: Boolean(propertyId),
   });
 }

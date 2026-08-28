@@ -5,6 +5,15 @@ const optionalRent = z.preprocess(
   z.number({ invalid_type_error: 'أدخل رقماً صحيحاً' }).min(0, 'الإيجار لا يمكن أن يكون سالباً').nullable(),
 );
 
+const optionalDailyReferenceRate = z.preprocess(
+  (value) => (value === '' || value === null || value === undefined ? null : Number(value)),
+  z
+    .number({ invalid_type_error: 'أدخل سعراً يومياً صحيحاً' })
+    .min(0, 'السعر اليومي المرجعي لا يمكن أن يكون سالباً')
+    .refine((value) => Math.round(value * 1000) === value * 1000, 'السعر اليومي المرجعي يقبل حتى 3 خانات عشرية')
+    .nullable(),
+);
+
 export const unitStatusValues = ['available', 'occupied', 'maintenance', 'reserved'] as const;
 export const unitManualStatusValues = ['available', 'reserved'] as const;
 export type UnitStatus = (typeof unitStatusValues)[number];
@@ -39,6 +48,7 @@ export const unitSchema = z.object({
   floor: z.string().trim().optional().transform((value) => value || null),
   status: z.enum(unitStatusValues, { required_error: 'الحالة مطلوبة' }),
   rent_amount: optionalRent,
+  daily_reference_rate: optionalDailyReferenceRate,
   notes: z.string().trim().optional().transform((value) => value || null),
 });
 

@@ -22,6 +22,26 @@ function date(value: string | null | undefined) {
   return new Intl.DateTimeFormat('ar-OM-u-nu-latn', { dateStyle: 'medium' }).format(parsed);
 }
 
+function financialStatusLabel(status: 'paid' | 'open' | 'overdue') {
+  if (status === 'paid') return 'مدفوع';
+  if (status === 'overdue') return 'متأخر';
+  return 'مفتوح';
+}
+
+function documentTypeLabel(type: string) {
+  const labels: Record<string, string> = {
+    contracts: 'عقد',
+    identity: 'هوية',
+    receipts: 'إيصال',
+    maintenance: 'صيانة',
+    expenses: 'مصروف',
+    utilities: 'خدمات',
+    other: 'مستند',
+    all: 'مستند',
+  };
+  return labels[type] ?? 'مستند';
+}
+
 /**
  * Tenant Portal v1 — a leaf outside the office shell. The URL contains only a
  * revocable bearer token; the server derives tenant/company scope from it.
@@ -54,7 +74,7 @@ export function TenantPortalPage() {
             <p className="text-[11px] font-black text-primary">بوابة المستأجر · قراءة فقط</p>
             <h1 className="mt-0.5 text-xl font-black sm:text-2xl">حسابي في {APP_BRAND_NAME}</h1>
             <p className="mt-1 max-w-3xl text-xs font-semibold leading-5 text-muted-foreground sm:text-sm">
-              هذا رابط خاص بحسابك. يعرض بيانات عقدك واستحقاقاتك وإيصالاتك فقط ولا يفتح أي جزء من نظام المكتب.
+              هذا رابط خاص بحسابك. يعرض وحدتك وعقدك واستحقاقاتك وخدماتك وإيصالاتك والمستندات والصيانة المرتبطة بعقدك فقط، ولا يفتح أي جزء من نظام المكتب.
             </p>
           </div>
         </header>
@@ -123,7 +143,7 @@ export function TenantPortalPage() {
                 <div className="mt-3 divide-y divide-border/70">
                   {snapshot.dueSchedule.map((item, index) => (
                     <div key={`${item.dueDate}-${index}`} className="grid grid-cols-[1fr_auto] gap-3 py-3 text-sm">
-                      <div><p className="font-bold">{item.label}</p><p className="mt-1 text-xs text-muted-foreground">{date(item.dueDate)} · {item.status === 'paid' ? 'مدفوع' : item.status === 'overdue' ? 'متأخر' : 'مفتوح'}</p></div>
+                      <div><p className="font-bold">{item.label}</p><p className="mt-1 text-xs text-muted-foreground">{date(item.dueDate)} · {financialStatusLabel(item.status)}</p></div>
                       <p className="font-black">{money(item.amount, item.currency)}</p>
                     </div>
                   ))}
@@ -132,8 +152,31 @@ export function TenantPortalPage() {
             </section>
 
             <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
+              <div className="flex items-center gap-2"><Home className="size-4 text-primary" /><h2 className="font-black">الخدمات والمرافق</h2></div>
+              {snapshot.services.length === 0 ? <p className="mt-3 text-sm text-muted-foreground">لا توجد خدمات مرتبطة بهذا العقد.</p> : (
+                <div className="mt-3 divide-y divide-border/70">
+                  {snapshot.services.map((service, index) => (
+                    <div key={`${service.label}-${service.dueDate}-${index}`} className="grid gap-2 py-3 text-sm sm:grid-cols-[1fr_auto] sm:items-center">
+                      <div>
+                        <p className="font-bold">{service.label}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {service.periodStart || service.periodEnd ? `${date(service.periodStart)} — ${date(service.periodEnd)}` : `الاستحقاق ${date(service.dueDate)}`}
+                          {' · '}{financialStatusLabel(service.status)}
+                        </p>
+                      </div>
+                      <div className="text-start sm:text-end">
+                        <p className="font-black">{money(service.amount, service.currency)}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">المتبقي {money(service.remaining, service.currency)}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
               <div className="flex items-center gap-2"><ReceiptText className="size-4 text-primary" /><h2 className="font-black">الإيصالات</h2></div>
-              {snapshot.receipts.length === 0 ? <p className="mt-3 text-sm text-muted-foreground">لا توجد إيصالات مسجلة.</p> : (
+              {snapshot.receipts.length === 0 ? <p className="mt-3 text-sm text-muted-foreground">لا توجد إيصالات مرتبطة بهذا العقد.</p> : (
                 <div className="mt-3 divide-y divide-border/70">
                   {snapshot.receipts.map((receipt) => (
                     <div key={`${receipt.reference}-${receipt.date}`} className="grid grid-cols-[1fr_auto] gap-3 py-3 text-sm">
@@ -145,10 +188,34 @@ export function TenantPortalPage() {
               )}
             </section>
 
-            <section className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl border border-border bg-card p-4"><FileText className="size-4 text-primary" /><p className="mt-2 text-sm font-black">المستندات</p><p className="mt-1 text-xs text-muted-foreground">{snapshot.documents.length ? `${snapshot.documents.length} مستند` : 'لا توجد مستندات مرتبطة بالمستأجر بأمان حتى الآن'}</p></div>
-              <div className="rounded-2xl border border-border bg-card p-4"><Wrench className="size-4 text-primary" /><p className="mt-2 text-sm font-black">الصيانة</p><p className="mt-1 text-xs text-muted-foreground">{snapshot.maintenance.length ? `${snapshot.maintenance.length} طلب` : 'لا توجد طلبات مرتبطة بالمستأجر بأمان حتى الآن'}</p></div>
-              <div className="rounded-2xl border border-border bg-card p-4"><Home className="size-4 text-primary" /><p className="mt-2 text-sm font-black">الخدمات</p><p className="mt-1 text-xs text-muted-foreground">{snapshot.services.length ? `${snapshot.services.length} خدمة` : 'لا توجد خدمات مرتبطة بالمستأجر بأمان حتى الآن'}</p></div>
+            <section className="grid gap-3 lg:grid-cols-2">
+              <div className="rounded-2xl border border-border bg-card p-4 sm:p-5">
+                <div className="flex items-center gap-2"><FileText className="size-4 text-primary" /><h2 className="font-black">المستندات</h2></div>
+                {snapshot.documents.length === 0 ? <p className="mt-3 text-sm text-muted-foreground">لا توجد مستندات مرتبطة بعقدك أو ملفك.</p> : (
+                  <div className="mt-3 divide-y divide-border/70">
+                    {snapshot.documents.map((document, index) => (
+                      <div key={`${document.title}-${document.createdAt}-${index}`} className="py-3 text-sm">
+                        <p className="font-bold">{document.title}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">{documentTypeLabel(document.type)} · {date(document.createdAt)}{document.reference ? ` · ${document.reference}` : ''}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="rounded-2xl border border-border bg-card p-4 sm:p-5">
+                <div className="flex items-center gap-2"><Wrench className="size-4 text-primary" /><h2 className="font-black">الصيانة المرتبطة بك</h2></div>
+                {snapshot.maintenance.length === 0 ? <p className="mt-3 text-sm text-muted-foreground">لا توجد طلبات صيانة محملة عليك خلال مدة العقد.</p> : (
+                  <div className="mt-3 divide-y divide-border/70">
+                    {snapshot.maintenance.map((record, index) => (
+                      <div key={`${record.label}-${record.createdAt}-${index}`} className="py-3 text-sm">
+                        <p className="font-bold">{record.label}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">{date(record.createdAt)} · {record.status}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </section>
           </main>
         ) : null}

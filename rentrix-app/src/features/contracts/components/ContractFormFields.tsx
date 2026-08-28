@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { formatDefaultCompanyMoney } from '@/lib/companyFormatters';
 import { calculateContractSchedulePreview } from '../contract-schedule-preview';
-import { getContractUnitDefaultRent } from '../contract-unit-options';
+import { getContractUnitDailyReferenceRate, getContractUnitDefaultRent } from '../contract-unit-options';
 import { ContractAgreementMissingAlert } from './ContractAgreementMissingAlert';
 import {
   buildContractUnitOptionLabel,
@@ -106,6 +106,10 @@ export function ContractFormFields({
   const rentAmount = Number(form.watch('rent_amount') || 0);
   const paymentCycle = form.watch('payment_cycle');
   const leaseMode = form.watch('lease_mode');
+  const dailyReferenceRateValue = form.watch('daily_reference_rate');
+  const dailyReferenceRate = dailyReferenceRateValue === null || dailyReferenceRateValue === undefined || dailyReferenceRateValue === ''
+    ? null
+    : Number(dailyReferenceRateValue);
   const isShortStay = leaseMode === 'short_stay';
   const stayNights = useMemo(() => {
     if (!startDate || !endDate) return null;
@@ -114,6 +118,9 @@ export function ContractFormFields({
     const nights = Math.round((to.getTime() - from.getTime()) / 86_400_000);
     return Number.isFinite(nights) && nights > 0 ? nights : null;
   }, [startDate, endDate]);
+  const referenceStayTotal = isShortStay && dailyReferenceRate !== null && stayNights !== null
+    ? dailyReferenceRate * stayNights
+    : null;
   // z.preprocess keeps the watched form input type `unknown`; coerce for the read-only summary label.
   const billingDay = Number(form.watch('billing_day') ?? 1) || 1;
   const graceDays = Number(form.watch('grace_days') ?? 0) || 0;
@@ -190,6 +197,7 @@ export function ContractFormFields({
 
       <input type="hidden" {...form.register('status')} />
       <input type="hidden" {...form.register('cancellation_reason')} />
+      <input type="hidden" {...form.register('daily_reference_rate')} />
 
       <div className="md:col-span-2">
         <MobileFormStepperHeader steps={contractFormSteps} current={step} />
@@ -207,6 +215,7 @@ export function ContractFormFields({
                 onChange: () => {
                   form.setValue('unit_id', '', { shouldDirty: true, shouldValidate: false });
                   form.setValue('rent_amount', 0, { shouldDirty: true, shouldValidate: false });
+                  form.setValue('daily_reference_rate', null, { shouldDirty: true, shouldValidate: false });
                   form.clearErrors('unit_id');
                 },
               })}
@@ -224,11 +233,21 @@ export function ContractFormFields({
               {...form.register('unit_id', {
                 onChange: (event) => {
                   const nextUnitId = String(event.target.value ?? '');
-                  form.setValue(
-                    'rent_amount',
-                    getContractUnitDefaultRent(unitsQuery.data ?? [], nextUnitId),
-                    { shouldDirty: true, shouldValidate: true },
-                  );
+                  if (isShortStay) {
+                    form.setValue(
+                      'daily_reference_rate',
+                      getContractUnitDailyReferenceRate(unitsQuery.data ?? [], nextUnitId),
+                      { shouldDirty: true, shouldValidate: true },
+                    );
+                    form.setValue('rent_amount', 0, { shouldDirty: true, shouldValidate: false });
+                  } else {
+                    form.setValue(
+                      'rent_amount',
+                      getContractUnitDefaultRent(unitsQuery.data ?? [], nextUnitId),
+                      { shouldDirty: true, shouldValidate: true },
+                    );
+                    form.setValue('daily_reference_rate', null, { shouldDirty: true, shouldValidate: false });
+                  }
                 },
               })}
               disabled={!propertyId || unitsQuery.isLoading}
@@ -277,7 +296,29 @@ export function ContractFormFields({
       >
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <EntityForm.Field label="نوع التعاقد" error={form.formState.errors.lease_mode?.message}>
-            <Select {...form.register('lease_mode')} data-lease-mode-select>
+            <Select
+              {...form.register('lease_mode', {
+                onChange: (event) => {
+                  const nextMode = String(event.target.value ?? 'long_term');
+                  if (nextMode === 'short_stay') {
+                    form.setValue(
+                      'daily_reference_rate',
+                      getContractUnitDailyReferenceRate(unitsQuery.data ?? [], unitId),
+                      { shouldDirty: true, shouldValidate: true },
+                    );
+                    form.setValue('rent_amount', 0, { shouldDirty: true, shouldValidate: false });
+                  } else {
+                    form.setValue('daily_reference_rate', null, { shouldDirty: true, shouldValidate: false });
+                    form.setValue(
+                      'rent_amount',
+                      getContractUnitDefaultRent(unitsQuery.data ?? [], unitId),
+                      { shouldDirty: true, shouldValidate: true },
+                    );
+                  }
+                },
+              })}
+              data-lease-mode-select
+            >
               {leaseModeValues.map((mode) => (
                 <option key={mode} value={mode}>{leaseModeLabels[mode]}</option>
               ))}
@@ -306,17 +347,16 @@ export function ContractFormFields({
           )}
 
           {isShortStay ? (
-            <EntityForm.Field
-              label="سعر اليوم المرجعي (اختياري)"
-              error={form.formState.errors.daily_reference_rate?.message}
-            >
-              <Input
-                type="number"
-                step={MONEY_STEP}
-                inputMode="decimal"
-                min="0"
-                {...form.register('daily_reference_rate')}
-              />
+            <EntityForm.Field label="سعر اليوم المرجعي للوحدة">
+              <div className="min-h-11 rounded-lg border border-border bg-muted/25 px-3 py-2 text-sm">
+                <p className="font-bold">
+                  {dailyReferenceRate === null ? 'غير محدد' : formatDefaultCompanyMoney(dailyReferenceRate)}
+                </p>
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                  اقتراح من الوحدة فقط، وليس قيدًا على السعر المتفق عليه.
+                  {referenceStayTotal !== null ? ` مرجع المدة الحالية: ${formatDefaultCompanyMoney(referenceStayTotal)}.` : ''}
+                </p>
+              </div>
             </EntityForm.Field>
           ) : (
             <EntityForm.Field label="دورة السداد" error={form.formState.errors.payment_cycle?.message}>
