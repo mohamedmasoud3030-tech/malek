@@ -18,11 +18,10 @@ function unit(overrides: Partial<Unit> & { id: string }): Unit {
 }
 
 function contract(overrides: Partial<ContractListItem> & { id: string; unit_id: string }): ContractListItem {
+  const { id, unit_id: unitId, ...rest } = overrides;
   return {
     ...contractRowFixtureDefaults,
-    id: overrides.id,
     property_id: 'property-1',
-    unit_id: overrides.unit_id,
     tenant_id: 'tenant-1',
     start_date: '2026-01-01',
     end_date: '2026-08-01',
@@ -32,10 +31,12 @@ function contract(overrides: Partial<ContractListItem> & { id: string; unit_id: 
     created_at: '2026-01-01T00:00:00.000Z',
     updated_at: '2026-08-01T00:00:00.000Z',
     properties: { id: 'property-1', title: 'برج الخليج', address: null },
-    units: { id: overrides.unit_id, unit_number: overrides.unit_id, floor: null, status: 'available', rent_amount: 250 },
+    units: { id: unitId, unit_number: unitId, floor: null, status: 'available', rent_amount: 250 },
     people: { id: 'tenant-1', full_name: 'سالم', phone: null, email: null, national_id: null },
-    ...overrides,
-    agreement_id: overrides.agreement_id ?? null,
+    ...rest,
+    id,
+    unit_id: unitId,
+    agreement_id: rest.agreement_id ?? null,
   } as ContractListItem;
 }
 

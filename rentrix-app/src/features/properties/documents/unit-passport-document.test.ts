@@ -20,11 +20,12 @@ const validSettings = {
   taxNumber: 'OM12345678',
   currency: 'OMR',
   city: 'مسقط',
+  documentPrefixes: {},
 };
 
 const mockUnit: Pick<Unit, 'unit_number' | 'status'> & { unit_type?: string | null; notes?: string | null } = {
   unit_number: '501',
-  status: 'vacant',
+  status: 'available',
   unit_type: 'شقة سكنية - غرفتين',
   notes: 'مجددة بالكامل في يناير 2026',
 };
@@ -46,7 +47,7 @@ describe('unit-passport-document adapter', () => {
 
     expect(payload.unitNumber).toBe('501');
     expect(payload.propertyTitle).toBe('برج الشروق');
-    expect(payload.currentStatus).toBe('vacant');
+    expect(payload.currentStatus).toBe('available');
     expect(payload.unitType).toBe('شقة سكنية - غرفتين');
     expect(payload.leaseHistory).toHaveLength(1);
     expect(payload.maintenanceHistory).toHaveLength(1);
