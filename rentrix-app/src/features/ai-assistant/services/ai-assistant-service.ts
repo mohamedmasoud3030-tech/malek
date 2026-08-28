@@ -158,8 +158,8 @@ export async function buildAiAssistantContext(): Promise<AiAssistantContext> {
     .map((invoice) => Number(invoice.amount ?? 0));
   const expenses30 = snapshot.expenses90.filter((expense) => expense.expense_date >= thirtyDaysAgo);
   const occupiedUnitCount = snapshot.units.filter((unit) => ['occupied', 'rented'].includes(String(unit.status ?? '').trim().toLowerCase())).length;
+  const vacantUnitCount = snapshot.units.filter((unit) => String(unit.status ?? '').trim().toLowerCase() === 'available').length;
   const unitCount = snapshot.units.length;
-  const vacantUnitCount = Math.max(0, unitCount - occupiedUnitCount);
 
   return {
     asOf,
