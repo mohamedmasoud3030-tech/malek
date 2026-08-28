@@ -1,11 +1,11 @@
 import { expect, test, type Page } from '@playwright/test';
 
 const viewportMatrix = [
-  { name: 'mobile-360', width: 360, height: 800, usesSelect: true },
-  { name: 'mobile-390', width: 390, height: 844, usesSelect: true },
-  { name: 'mobile-430', width: 430, height: 932, usesSelect: true },
-  { name: 'tablet-768', width: 768, height: 1024, usesSelect: false },
-  { name: 'desktop-1440', width: 1440, height: 1000, usesSelect: false },
+  { name: 'mobile-360', width: 360, height: 800 },
+  { name: 'mobile-390', width: 390, height: 844 },
+  { name: 'mobile-430', width: 430, height: 932 },
+  { name: 'tablet-768', width: 768, height: 1024 },
+  { name: 'desktop-1440', width: 1440, height: 1000 },
 ] as const;
 
 const themes = ['light', 'dark'] as const;
@@ -50,14 +50,7 @@ for (const viewport of viewportMatrix) {
       const saveSurface = page.getByRole('region', { name: 'تغييرات إعدادات غير محفوظة' });
       await expect(saveSurface).toHaveCount(0);
 
-      if (viewport.usesSelect) {
-        await expect(page.getByLabel('القسم الحالي')).toBeVisible();
-        await page.getByLabel('القسم الحالي').selectOption('system');
-      } else {
-        await expect(page.getByLabel('القسم الحالي')).toBeHidden();
-        await page.getByRole('button', { name: /المظهر والواجهة/ }).click();
-      }
-
+      await page.getByRole('button', { name: /المظهر والواجهة/ }).click();
       await expect(page.getByRole('heading', { name: 'المظهر والواجهة' })).toBeVisible();
       await expect(page.getByLabel('معاينة المظهر')).toBeVisible();
 
@@ -66,21 +59,17 @@ for (const viewport of viewportMatrix) {
       await expect(page.locator('main[data-e2e-settings-workspace]')).toHaveAttribute('data-submit-count', '0');
       await expect(page.locator('html')).toHaveAttribute('data-theme', theme === 'dark' ? 'light' : 'dark');
 
-      if (viewport.usesSelect) {
-        await page.getByLabel('القسم الحالي').selectOption('office');
-      } else {
-        await page.getByRole('button', { name: /بيانات المكتب/ }).click();
-      }
+      await page.getByRole('button', { name: /بيانات المكتب/ }).click();
 
       const companyName = page.getByLabel('اسم الشركة');
       await companyName.fill('Rentrix Updated');
       await expect(saveSurface).toBeVisible();
       await expect(saveSurface.getByText('تغييرات غير محفوظة')).toBeVisible();
-      await expect(page.getByRole('button', { name: 'حفظ' })).toBeEnabled();
+      await expect(saveSurface.getByRole('button', { name: 'حفظ' })).toBeEnabled();
 
-      await page.getByRole('button', { name: 'تراجع' }).click();
+      await saveSurface.getByRole('button', { name: 'تراجع عن التغييرات' }).click();
       await expect(companyName).toHaveValue('Rentrix');
-      await expect(page.getByRole('button', { name: 'حفظ' })).toBeDisabled();
+      await expect(saveSurface).toHaveCount(0);
 
       await assertNoHorizontalOverflow(page);
       await page.screenshot({
