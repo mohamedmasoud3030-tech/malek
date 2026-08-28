@@ -5,6 +5,7 @@ import { loadOwnerPortalSnapshot, OWNER_PORTAL_ALLOWED_PROJECTION_SOURCES } from
 import { OWNER_PORTAL_SECTIONS } from './owner-portal-read-model';
 
 const featureDir = resolve(import.meta.dirname);
+const portalMigration = resolve(featureDir, '../../../../supabase/migrations/20260901000044_external_portal_read_links.sql');
 
 function featureFiles(): string[] {
   return readdirSync(featureDir).filter((file) => file.endsWith('.ts') || file.endsWith('.tsx'));
@@ -31,9 +32,22 @@ describe('Owner Portal read-only boundary', () => {
       'contracts',
       'owner_settlements',
       'maintenance_records',
-      'attachments',
+      'vault_documents',
     ]);
     expect(OWNER_PORTAL_SECTIONS).toEqual(['summary', 'portfolio', 'settlements', 'maintenance', 'documents']);
+  });
+
+  it('uses canonical vault metadata without exposing private storage coordinates', () => {
+    const source = readFileSync(portalMigration, 'utf8');
+    expect(source).toContain('from public.vault_documents vd');
+    expect(source).not.toContain('from public.attachments a');
+    expect(source).not.toMatch(/jsonb_build_object\([\s\S]*?['"]storage(Path|_path|Url|_url)['"]/i);
+  });
+
+  it('does not count paid settlements as currently payable', () => {
+    const source = readFileSync(portalMigration, 'utf8');
+    expect(source).toContain("in ('DRAFT','APPROVED') then s.net_payable");
+    expect(source).not.toContain("in ('APPROVED','PAID') then s.net_payable");
   });
 
   it('contains no office-core browser mutation in the portal feature source', () => {
