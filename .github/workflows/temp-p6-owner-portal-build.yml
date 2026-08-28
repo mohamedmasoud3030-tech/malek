@@ -1,1 +1,132 @@
-PLACEHOLDER
+name: TEMP P6 Owner Portal Read Link Build
+
+on:
+  push:
+    branches:
+      - fix/p6-owner-employee-permissions-20260828
+    paths:
+      - '.github/workflows/temp-p6-owner-portal-build.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          fetch-depth: 0
+          ref: fix/p6-owner-employee-permissions-20260828
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - run: pnpm rebuild esbuild
+      - name: Wire owner portal into office and router
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          permissions_path = Path('rentrix-app/src/features/auth/permissions.ts')
+          permissions = permissions_path.read_text()
+          if "'owner.portal.link'," not in permissions:
+              permissions = permissions.replace(
+                  "  'maintenance.write',\n",
+                  "  'maintenance.write',\n  'owner.portal.link',\n  'tenant.portal.link',\n",
+                  1,
+              )
+          if "'owner.portal.link': 'تصدير رابط عرض بوابة المالك'" not in permissions:
+              permissions = permissions.replace(
+                  "  'maintenance.write': 'إنشاء ومتابعة وتنفيذ الصيانة',\n",
+                  "  'maintenance.write': 'إنشاء ومتابعة وتنفيذ الصيانة',\n"
+                  "  'owner.portal.link': 'تصدير رابط عرض بوابة المالك',\n"
+                  "  'tenant.portal.link': 'تصدير رابط عرض بوابة المستأجر',\n",
+                  1,
+              )
+          permissions_path.write_text(permissions)
+
+          tenant_action_path = Path('rentrix-app/src/features/tenants/components/TenantPortalLinkAction.tsx')
+          tenant_action = tenant_action_path.read_text()
+          tenant_action = tenant_action.replace(
+              "// users.manage is owner-only in the canonical catalog. The RPC repeats the\n"
+              "  // owner check server-side; this gate is presentation only.\n"
+              "  if (!canAccess('users.manage')) return null;",
+              "// Link export is an explicit delegable capability. The RPC repeats the\n"
+              "  // effective-permission check server-side; this gate is presentation only.\n"
+              "  if (!canAccess('tenant.portal.link')) return null;",
+          )
+          tenant_action_path.write_text(tenant_action)
+
+          owner_detail_path = Path('rentrix-app/src/features/owners/components/owner-detail-view.tsx')
+          owner_detail = owner_detail_path.read_text()
+          if "OwnerPortalLinkAction" not in owner_detail:
+              owner_detail = owner_detail.replace(
+                  "import { OwnerDossierBody, type OwnerDossierSection } from './owner-dossier-body';\n",
+                  "import { OwnerDossierBody, type OwnerDossierSection } from './owner-dossier-body';\n"
+                  "import { OwnerPortalLinkAction } from './OwnerPortalLinkAction';\n",
+                  1,
+              )
+          if "const canExportOwnerPortal" not in owner_detail:
+              owner_detail = owner_detail.replace(
+                  "  const canViewReports = canAccess(authorization, financialOperationPermissions.viewReports);\n",
+                  "  const canViewReports = canAccess(authorization, financialOperationPermissions.viewReports);\n"
+                  "  const canExportOwnerPortal = canAccess(authorization, 'owner.portal.link');\n",
+                  1,
+              )
+          owner_detail = owner_detail.replace(
+              "  const actions = canEditOwner || canViewReports ? (\n",
+              "  const actions = canEditOwner || canViewReports || canExportOwnerPortal ? (\n",
+              1,
+          )
+          if "<OwnerPortalLinkAction ownerId={owner.id} />" not in owner_detail:
+              owner_detail = owner_detail.replace(
+                  "    <div className=\"flex flex-wrap gap-2\">\n",
+                  "    <div className=\"flex flex-wrap gap-2\">\n"
+                  "      {canExportOwnerPortal ? <OwnerPortalLinkAction ownerId={owner.id} /> : null}\n",
+                  1,
+              )
+          owner_detail_path.write_text(owner_detail)
+
+          route_path = Path('rentrix-app/src/app/router/route-tree.ts')
+          route = route_path.read_text()
+          if "const ownerPortalRoute = createRoute" not in route:
+              start = route.index("const tenantPortalRoute = createRoute({")
+              end = route.index("\n});", start) + len("\n});")
+              owner_block = (
+                  "\n\n// Owner Portal: exported bearer-link, read-only, and fully outside the office shell.\n"
+                  "const ownerPortalRoute = createRoute({\n"
+                  "  getParentRoute: () => rootRoute,\n"
+                  "  path: '/owner-portal',\n"
+                  "  component: lazyRouteComponent(() => import('@/routes/owner-portal'), 'OwnerPortalRouteComponent'),\n"
+                  "  staticData: { title: 'بوابة مالك العقار' },\n"
+                  "});"
+              )
+              route = route[:end] + owner_block + route[end:]
+          if "  ownerPortalRoute,\n" not in route:
+              route = route.replace("  tenantPortalRoute,\n", "  tenantPortalRoute,\n  ownerPortalRoute,\n", 1)
+          route_path.write_text(route)
+          PY
+      - name: Build canonical database and generate exact contract
+        run: |
+          bash scripts/canonical-db/build-baseline.sh
+          pnpm db0:gen-types
+      - name: Validate portal boundaries and TypeScript
+        run: |
+          pnpm --dir rentrix-app test -- src/features/owner-portal/owner-portal-boundary.test.ts src/features/tenant-portal/tenant-portal-boundary.test.ts
+          pnpm --dir rentrix-app typecheck
+          pnpm --dir rentrix-app check:architecture
+      - name: Commit verified implementation and remove helper
+        shell: bash
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add rentrix-app/src supabase/migrations/20260901000044_external_portal_read_links.sql
+          git rm .github/workflows/temp-p6-owner-portal-build.yml
+          git diff --cached --quiet && exit 0
+          git commit -m "feat(portals): add isolated read-only owner portal links"
+          git push origin HEAD:fix/p6-owner-employee-permissions-20260828
