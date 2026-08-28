@@ -23,6 +23,12 @@
 -- No existing row is mutated beyond the additive column defaults. Posted
 -- financial history is untouched.
 
+-- ALLOW_GOVERNED_DATA_MIGRATION
+-- Governance note: every transactional INSERT token in this migration is inside
+-- a SECURITY DEFINER RPC body. This migration performs no raw business-data
+-- INSERT/backfill at migration time; runtime writes remain company-scoped,
+-- role-gated, atomic, auditable, and owned by the canonical RPC boundary.
+
 ALTER TABLE "public"."contracts"
   ADD COLUMN IF NOT EXISTS "lease_mode" "text" NOT NULL DEFAULT 'long_term';
 
