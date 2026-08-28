@@ -68,9 +68,10 @@ export function useContractFilters({
       const matchesExpiry = !expiringOnly || isExpiringSoon(contract);
       const contractLeaseMode = contract.lease_mode ?? 'long_term';
       const matchesLeaseMode = leaseMode === 'all' || contractLeaseMode === leaseMode;
-      return matchesSearch && matchesExpiry && matchesLeaseMode;
+      const matchesStatus = status === 'all' || isContractStatus(contract.status, status);
+      return matchesSearch && matchesExpiry && matchesLeaseMode && matchesStatus;
     });
-  }, [contracts, expiringOnly, leaseMode, normalizedSearch]);
+  }, [contracts, expiringOnly, leaseMode, normalizedSearch, status]);
 
   const hasContracts = Boolean(contracts?.length);
   const hasActiveFilters = status !== 'all' || leaseMode !== 'all' || Boolean(searchTerm.trim()) || expiringOnly;
