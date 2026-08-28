@@ -44,9 +44,9 @@ export function UnitsList({
   unitsQuery,
 }: Readonly<{ propertyId: string; unitsQuery: UseQueryResult<Unit[]> }>) {
   const { canAccess } = useAuth();
-  const canCreateUnit = canAccess("units.create");
-  const canEditUnit = canAccess("units.edit");
-  const canArchiveUnit = canAccess("units.archive");
+  const canCreateUnit = canAccess("properties.create");
+  const canEditUnit = canAccess("properties.edit");
+  const canArchiveUnit = canAccess("properties.archive");
   const canCreateContract = canAccess("contracts.create");
   const deleteMutation = useSoftDeleteUnit(propertyId);
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
