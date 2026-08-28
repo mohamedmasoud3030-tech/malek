@@ -407,6 +407,7 @@ async function assertTouchTargets(page: Page) {
       'a[data-dashboard-priority-link]',
       'a[data-dashboard-queue-link]',
       'a[data-dashboard-analytics-link]',
+      'a[data-dashboard-owner-obligations-link]',
     ];
     return selectors.flatMap((selector) =>
       Array.from(document.querySelectorAll(selector)).map((el) => {
@@ -440,39 +441,31 @@ for (const viewport of viewportMatrix) {
       const sectionNames = await dashboardSections.evaluateAll((nodes) =>
         nodes.map((node) => node.getAttribute('data-dashboard-section')),
       );
-      expect(sectionNames).toEqual(['work-now', 'office-pulse', 'work-queues', 'money-obligations', 'operational-health', 'analytics']);
+      expect(sectionNames).toEqual(['office-performance', 'vacant-units', 'collections', 'maintenance-problems', 'expiring-contracts', 'owner-obligations']);
 
       const officePulseCards = page.locator('[data-dashboard-office-pulse] [data-kpi-card]');
       await expect(officePulseCards).toHaveCount(4);
 
-      const workQueues = page.locator('[data-dashboard-work-queues] > section');
-      await expect(workQueues).toHaveCount(3);
+      await expect(page.locator('[data-dashboard-section="collections"]')).toContainText('أعلى المتأخرات');
+      await expect(page.locator('[data-dashboard-section="expiring-contracts"]')).toContainText('عقود تنتهي قريباً');
+      await expect(page.locator('[data-dashboard-maintenance-problems] > section')).toHaveCount(3);
       await expect(page.getByRole('heading', { name: 'الصيانة العاجلة', level: 3 })).toBeVisible();
 
-      const kpiLinks = page.locator('[data-dashboard-kpi-grid] a[data-dashboard-kpi-link]');
-      await expect(kpiLinks).toHaveCount(4);
-      const kpiHrefs = await kpiLinks.evaluateAll((nodes) => nodes.map((node) => node.getAttribute('href')));
-      expect(kpiHrefs).toEqual(['/reports', '/financials', '/expenses', '/owner-settlements']);
-
-      // Money/obligation cards keep the canonical two-column rhythm.
-      const kpiColumns = await page.locator('[data-dashboard-kpi-grid] [data-responsive-card-grid]').evaluate((node) =>
-        getComputedStyle(node).gridTemplateColumns.split(' ').filter(Boolean).length,
-      );
-      expect(kpiColumns).toBe(2);
+      await expect(page.locator('[data-dashboard-owner-obligations-link]')).toHaveAttribute('href', '/owner-settlements');
 
       if (viewport.width === 375) {
-        const firstScreen = await page.locator('[data-dashboard-section="work-now"]').evaluate((node) => {
+        const firstScreen = await page.locator('[data-dashboard-section="office-performance"]').evaluate((node) => {
           const rect = node.getBoundingClientRect();
-          const pulse = document.querySelector('[data-dashboard-section="office-pulse"]')?.getBoundingClientRect();
+          const vacancy = document.querySelector('[data-dashboard-section="vacant-units"]')?.getBoundingClientRect();
           return {
-            workNowVisible: rect.top < window.innerHeight && rect.bottom > 0,
-            pulseTop: pulse?.top ?? null,
-            workNowTop: rect.top,
+            performanceVisible: rect.top < window.innerHeight && rect.bottom > 0,
+            vacancyTop: vacancy?.top ?? null,
+            performanceTop: rect.top,
           };
         });
-        expect(firstScreen.workNowVisible).toBe(true);
-        expect(firstScreen.pulseTop).not.toBeNull();
-        expect(firstScreen.pulseTop ?? 0).toBeGreaterThan(firstScreen.workNowTop);
+        expect(firstScreen.performanceVisible).toBe(true);
+        expect(firstScreen.vacancyTop).not.toBeNull();
+        expect(firstScreen.vacancyTop ?? 0).toBeGreaterThan(firstScreen.performanceTop);
       }
 
       await assertTouchTargets(page);
@@ -522,20 +515,14 @@ test('real dashboard visual contract v2 reduced motion collapses animation insid
   }
 });
 
-test('real dashboard route exposes loading, empty, error, partial and stale states honestly', async ({ page }, testInfo) => {
+test('real dashboard route exposes loading, empty, error and stale states honestly', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'chromium-desktop', 'State proof runs once in Chromium.');
 
   await page.setViewportSize({ width: 375, height: 812 });
 
-  await openDashboardRoute(page, 'light', 'partial-integrity-error');
-  await expect(page.locator('[data-status-badge]', { hasText: 'غير متاح' }).first()).toBeVisible();
-  await expect(page.getByText('تعذر تحميل العدد الآن')).toBeVisible();
-  await expect(page.getByText('لا توجد أعمال عاجلة')).toHaveCount(0);
-
   await page.context().clearCookies();
   await page.evaluate(() => window.localStorage.clear());
   await openDashboardRoute(page, 'light', 'empty');
-  await expect(page.getByText('لا توجد أعمال عاجلة')).toBeVisible();
   await expect(page.getByText('لا توجد فواتير متأخرة')).toBeVisible();
   await expect(page.getByText('لا توجد صيانة عاجلة الآن')).toBeVisible();
   await expect(page.locator('[data-dashboard-office-pulse] [data-kpi-card]')).toHaveCount(4);
@@ -545,17 +532,17 @@ test('real dashboard route exposes loading, empty, error, partial and stale stat
   await openDashboardRoute(page, 'light', 'snapshot-error');
   await expect(page.getByText('تعذر تحميل بيانات اليوم')).toBeVisible();
   await expect(page.locator('[data-dashboard-office-pulse]')).toHaveCount(0);
-  await expect(page.locator('[data-dashboard-kpi-grid]')).toHaveCount(0);
+  await expect(page.locator('[data-dashboard-owner-obligations-link]')).toHaveCount(0);
 
   await page.context().clearCookies();
   await page.evaluate(() => window.localStorage.clear());
   await openDashboardRoute(page, 'light', 'stale-refetch-error');
   await expect(page.locator('[data-dashboard-office-pulse]')).toBeVisible();
-  await expect(page.locator('[data-dashboard-kpi-grid]')).toBeVisible();
+  await expect(page.locator('[data-dashboard-owner-obligations-link]')).toBeVisible();
   await page.evaluate(() => window.dispatchEvent(new Event('malek-dashboard-e2e-refetch')));
   await expect(page.getByText('تعذر تحديث بيانات اليوم')).toBeVisible();
   await expect(page.locator('[data-dashboard-office-pulse]')).toBeVisible();
-  await expect(page.locator('[data-dashboard-kpi-grid]')).toBeVisible();
+  await expect(page.locator('[data-dashboard-owner-obligations-link]')).toBeVisible();
 
   await page.screenshot({ path: testInfo.outputPath('dashboard-real-states.png'), fullPage: true });
 });

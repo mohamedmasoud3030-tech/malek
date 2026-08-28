@@ -51,7 +51,6 @@ A current-office command surface, not a decorative KPI deck. Priority order:
 4. maintenance/problems;
 5. contracts nearing expiry;
 6. owner obligations;
-7. actions requiring follow-up.
 
 Notifications represent events/information; Today represents items requiring attention or decision. They must not become duplicate feeds.
 

@@ -1,4 +1,4 @@
-import { Building2, CalendarCheck2, HandCoins, WalletCards } from 'lucide-react';
+import { HandCoins, Percent, Receipt, TrendingUp } from 'lucide-react';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { LoadingState } from '@/components/ui/loading-state';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
@@ -13,8 +13,10 @@ interface OfficePulseProps {
 }
 
 /**
- * Four stable executive slots. Values stay visible even when they are zero so
- * the dashboard does not visually jump between periods or offices.
+ * Four stable, office-owned performance signals. Tenant/owner money is never
+ * presented here as office revenue: collections are cash collected on behalf
+ * of the operating model, while the net cash signal stays explicitly labelled
+ * as collections less recorded expenses.
  */
 export function OfficePulse({ snapshot, isLoading, settings }: OfficePulseProps) {
   if (isLoading) {
@@ -22,9 +24,9 @@ export function OfficePulse({ snapshot, isLoading, settings }: OfficePulseProps)
   }
 
   const collected = snapshot?.collections.collectedAmount ?? 0;
-  const outstanding = snapshot?.collections.outstandingAmount ?? 0;
-  const occupancyRate = snapshot?.occupancy.occupancyRate ?? 0;
-  const activeContracts = snapshot?.contracts.active ?? 0;
+  const expenses = snapshot?.expenses.totalAmount ?? 0;
+  const netCash = snapshot?.netCash ?? 0;
+  const collectionRate = snapshot?.collections.collectionRate ?? 0;
 
   return (
     <div data-dashboard-office-pulse>
@@ -38,27 +40,27 @@ export function OfficePulse({ snapshot, isLoading, settings }: OfficePulseProps)
           compact
         />
         <KpiCard
-          label="المتبقي للتحصيل"
-          value={formatCompanyMoney(settings, outstanding)}
-          sub="المستحقة غير المحصلة"
-          icon={WalletCards}
-          accent={outstanding > 0 ? 'amber' : 'slate'}
+          label="المصروفات المسجلة"
+          value={formatCompanyMoney(settings, expenses)}
+          sub="ضمن الفترة الحالية"
+          icon={Receipt}
+          accent="slate"
           compact
         />
         <KpiCard
-          label="نسبة الإشغال"
-          value={`${occupancyRate}%`}
-          sub="مشغولة من إجمالي المحفظة"
-          icon={Building2}
-          accent={occupancyRate >= 90 ? 'emerald' : occupancyRate >= 70 ? 'sky' : 'amber'}
+          label="صافي السيولة التشغيلية"
+          value={formatCompanyMoney(settings, netCash)}
+          sub="التحصيل ناقص المصروفات المسجلة"
+          icon={TrendingUp}
+          accent={netCash >= 0 ? 'emerald' : 'rose'}
           compact
         />
         <KpiCard
-          label="العقود النشطة"
-          value={activeContracts}
-          sub="سارية الآن"
-          icon={CalendarCheck2}
-          accent="sky"
+          label="نسبة التحصيل"
+          value={`${collectionRate}%`}
+          sub="من استحقاقات الفترة الحالية"
+          icon={Percent}
+          accent={collectionRate >= 80 ? 'emerald' : collectionRate >= 50 ? 'amber' : 'rose'}
           compact
         />
       </ResponsiveCardGrid>
