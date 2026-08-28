@@ -1,0 +1,27 @@
+name: TEMP Branch Cleanup Trigger
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  cleanup:
+    if: github.event.head_commit.message == 'chore: trigger final branch cleanup'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete reviewed obsolete branches
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          repo="${{ github.repository }}"
+          for branch in \
+            "release/final-browser-contract-20260828" \
+            "release/final-main-gates-20260828"; do
+            encoded=$(python3 - <<'PY' "$branch"
+import sys, urllib.parse
+print(urllib.parse.quote(sys.argv[1], safe=''))
+PY
+)
+            gh api -X DELETE "repos/$repo/git/refs/heads/$encoded" || true
+          done
