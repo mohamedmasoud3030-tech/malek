@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const boundaryMigration = readFileSync(
-  resolve(import.meta.dirname, '../../../../supabase/migrations/20260901000053_granular_write_boundary_alignment.sql'),
+  resolve(import.meta.dirname, '../../../../supabase/migrations/20260901000054_granular_write_boundary_alignment.sql'),
   'utf8',
 );
 const propertyService = readFileSync(
