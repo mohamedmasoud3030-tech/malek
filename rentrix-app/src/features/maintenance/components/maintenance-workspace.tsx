@@ -36,7 +36,7 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
   const { canAccess } = useAuth();
   const canCreateMaintenance = canAccess('maintenance.create');
   const canEditMaintenance = canAccess('maintenance.edit');
-  const canResolveMaintenance = canAccess('maintenance.resolve');
+  const canApproveMaintenance = canAccess('maintenance.approve');
 
   const activeFilters = useMemo<readonly ActiveFilterItem[]>(() => {
     const items: ActiveFilterItem[] = [];
@@ -321,7 +321,7 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
         }}
       />
 
-      {canResolveMaintenance ? (
+      {canApproveMaintenance ? (
         <MaintenanceResolveOverlay
           target={controller.resolveTarget}
           form={controller.resolveForm}
