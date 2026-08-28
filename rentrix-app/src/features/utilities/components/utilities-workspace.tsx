@@ -92,7 +92,6 @@ const emptyMeterForm = (): UtilityMeterFormValues => ({
   account_number: '',
   provider_name: '',
   responsible_party: 'tenant',
-  actual_payer: null,
   is_active: true,
   notes: '',
 });
@@ -108,6 +107,7 @@ const emptyBillForm = (): UtilityBillFormValues => ({
   consumption_units: null,
   due_date: getTodayLocalDateString(),
   responsible_party: 'tenant',
+  actual_payer: null,
   billing_period_start: null,
   billing_period_end: null,
   bill_number: null,
