@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { Download, Plus } from 'lucide-react';
+import { Download, FileSpreadsheet, Plus } from 'lucide-react';
 import { ContractFilters } from './components/ContractFilters';
 import { ContractKpiGrid } from './components/ContractKpiGrid';
 import { ContractResults } from './components/ContractResults';
@@ -9,7 +9,12 @@ import { ListControlSurface } from '@/components/layout/list-controls';
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { buildContractsCsvBlob, buildContractsCsvFilename } from './contractListExport';
+import {
+  buildContractsCsvBlob,
+  buildContractsCsvFilename,
+  buildContractsXlsxBlob,
+  buildContractsXlsxFilename,
+} from './contractListExport';
 import { useCompanySettingsContract } from '../settings/useCompanySettings';
 import { useContractFilters } from './hooks/useContractFilters';
 import { useContracts, useSoftDeleteContract } from './useContracts';
@@ -17,17 +22,31 @@ import { useAuth } from '@/hooks/use-auth';
 import { toast } from 'sonner';
 import type { ContractListItem, ContractStatusFilter } from './services/contractService';
 
+function downloadContractsFile(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 100);
+}
+
 function exportContractsCsv(contracts: ContractListItem[]) {
   try {
-    const url = URL.createObjectURL(buildContractsCsvBlob(contracts));
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = buildContractsCsvFilename(new Date());
-    link.click();
-    setTimeout(() => URL.revokeObjectURL(url), 100);
+    downloadContractsFile(buildContractsCsvBlob(contracts), buildContractsCsvFilename(new Date()));
   } catch (error) {
     console.error('Failed to export contracts CSV:', error);
-    toast.error('تعذر تصدير الملف');
+    toast.error('تعذر تصدير ملف CSV');
+  }
+}
+
+function exportContractsXlsx(contracts: ContractListItem[]) {
+  try {
+    downloadContractsFile(buildContractsXlsxBlob(contracts), buildContractsXlsxFilename(new Date()));
+    toast.success('تم تجهيز ملف Excel');
+  } catch (error) {
+    console.error('Failed to export contracts XLSX:', error);
+    toast.error('تعذر تصدير ملف Excel');
   }
 }
 
@@ -39,6 +58,7 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
   const canCreate = canAccess('contracts.create');
   const canEdit = canAccess('contracts.edit');
   const canCancel = canAccess('contracts.cancel');
+  const canExport = canAccess('financial.reports.export');
   const [status, setStatus] = useState<ContractStatusFilter>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [expiringOnly, setExpiringOnly] = useState(false);
@@ -92,6 +112,27 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
     }
   };
 
+  const exportActions = canExport ? (
+    <div className="flex items-center gap-2">
+      <Button
+        variant="secondary"
+        onClick={() => exportContractsXlsx(filteredContracts)}
+        disabled={!filteredContracts.length}
+        aria-label="تصدير العقود كملف Excel"
+      >
+        <FileSpreadsheet className="me-2 size-4" />Excel
+      </Button>
+      <Button
+        variant="ghost"
+        onClick={() => exportContractsCsv(filteredContracts)}
+        disabled={!filteredContracts.length}
+        aria-label="تصدير العقود كملف CSV"
+      >
+        <Download className="me-2 size-4" />CSV
+      </Button>
+    </div>
+  ) : undefined;
+
   return (
     <>
       <EmbeddableWorkspace
@@ -106,11 +147,7 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
             <Plus className="me-2 size-4" />إنشاء عقد
           </Button>
         ) : undefined}
-        secondaryActions={
-          <Button variant="secondary" onClick={() => exportContractsCsv(filteredContracts)} disabled={!filteredContracts.length} aria-label="تصدير العقود كملف CSV">
-            <Download className="me-2 size-4" />تصدير CSV
-          </Button>
-        }
+        secondaryActions={exportActions}
       >
         <ContractKpiGrid companySettings={companySettings} contracts={contracts} filteredContracts={filteredContracts} totalCount={contractsQuery.data?.count ?? contracts.length} />
 
