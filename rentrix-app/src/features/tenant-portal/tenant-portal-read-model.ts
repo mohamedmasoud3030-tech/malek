@@ -44,8 +44,14 @@ export type TenantPortalPaidPosition = Readonly<{
 
 export type TenantPortalServiceItem = Readonly<{
   label: string;
-  period?: string | null;
-  status: string;
+  periodStart?: string | null;
+  periodEnd?: string | null;
+  dueDate: string;
+  amount: number;
+  paid: number;
+  remaining: number;
+  currency: string;
+  status: 'paid' | 'open' | 'overdue';
 }>;
 
 export type TenantPortalReceipt = Readonly<{
