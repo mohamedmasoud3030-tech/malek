@@ -95,7 +95,7 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
   const canCreate = canAccess('properties.create');
   const canEdit = canAccess('properties.edit');
   const canArchive = canAccess('properties.archive');
-  const canExport = canAccess('financial.reports.export');
+  const canExport = canAccess('properties.view');
   const hasRowActions = canEdit || canArchive;
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultPropertyColumns]);
   const readyCount = controller.properties.filter(
