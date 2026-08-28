@@ -10,6 +10,11 @@ const addYear = (date: Date) => { const nextDate = new Date(date); nextDate.setF
 // their renew/terminate actions instead of silently locking the lifecycle UI.
 export const canRenewContract = (contract: ContractDetail) => isContractStatus(contract.status, 'active') || isContractStatus(contract.status, 'expired');
 export const canTerminateContract = (contract: ContractDetail) => isContractStatus(contract.status, 'active') || isContractStatus(contract.status, 'draft');
+export const canExtendShortStayContract = (contract: ContractDetail, today = new Date()) => (
+  contract.lease_mode === 'short_stay'
+  && isContractStatus(contract.status, 'active')
+  && contract.end_date > toDateInputValue(today)
+);
 export const getRenewalDefaults = (contract: ContractDetail): RenewalPayload => {
   const nextStart = addDays(contract.end_date, 1);
   return { new_start: toDateInputValue(nextStart), new_end: toDateInputValue(addYear(nextStart)), new_amount: contract.rent_amount, agreement_id: contract.agreement_id };
