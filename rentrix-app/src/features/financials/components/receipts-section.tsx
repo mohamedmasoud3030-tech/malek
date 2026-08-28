@@ -80,6 +80,24 @@ export function ReceiptsSection({
             emptyTitle="لا توجد إيصالات حتى الآن"
             emptyDescription="ستظهر هنا الإيصالات والتحصيلات المرتبطة بالفواتير."
             onRowClick={(receipt) => onSelectReceipt(receipt.id)}
+            mobileBadgeKey="status"
+            mobileSummaryKeys={['payment_date', 'invoice', 'amount']}
+            mobileCardActions={(receipt) => [
+              ...(onPrintReceipt ? [{
+                label: 'طباعة',
+                icon: Printer,
+                variant: 'secondary' as const,
+                ariaLabel: `طباعة الإيصال ${receipt.receipt_number}`,
+                onClick: () => onPrintReceipt(receipt.id),
+              }] : []),
+              ...(onExportReceipt ? [{
+                label: 'PDF',
+                icon: Download,
+                variant: 'secondary' as const,
+                ariaLabel: `تنزيل الإيصال ${receipt.receipt_number} بصيغة PDF`,
+                onClick: () => onExportReceipt(receipt.id),
+              }] : []),
+            ]}
           />
         </CardContent>
       </Card>
