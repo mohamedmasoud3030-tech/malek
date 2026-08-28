@@ -24,7 +24,7 @@ const employeeCapabilityGroups: readonly Readonly<{
   { title: 'العقارات والوحدات', permissions: ['properties.view', 'properties.create', 'properties.edit', 'properties.archive'] },
   { title: 'العقود والمستأجرون', permissions: ['contracts.view', 'contracts.create', 'contracts.edit', 'contracts.approve', 'contracts.cancel'] },
   { title: 'الصيانة والخدمات', permissions: ['maintenance.view', 'maintenance.create', 'maintenance.edit', 'maintenance.approve', 'maintenance.cancel'] },
-  { title: 'التحصيل والمالية', permissions: ['financial.workspace.view', 'financial.payments.create', 'financial.receipts.void'] },
+  { title: 'التحصيل والمالية', permissions: ['financial.workspace.view', 'financial.payments.create'] },
   { title: 'المصروفات', permissions: ['expenses.view', 'expenses.write'] },
   { title: 'التقارير', permissions: ['financial.reports.view', 'financial.reports.export'] },
 ] as const;
