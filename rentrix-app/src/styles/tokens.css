@@ -52,7 +52,6 @@
   --max-w-xl: 80rem;
   --max-w-2xl: 96rem;
 
-  /* Light — warm off-white, deep navy, restrained gold. */
   --color-bg: 35 20% 98%;
   --color-card: 0 0% 100%;
   --color-card-muted: 35 15% 96%;
@@ -101,7 +100,6 @@
   --shadow-elevated: 0 24px 54px -30px hsl(222 44% 14% / 0.32), 0 8px 20px -16px hsl(222 30% 15% / 0.16);
   --shadow-sidebar: 0 0 34px -22px hsl(222 70% 10% / 0.62);
 
-  /* Restrained premium material — not frosted-glass everywhere. */
   --material-page: hsl(35 20% 98%);
   --material-panel: hsl(0 0% 100% / 0.985);
   --material-chrome: hsl(35 22% 98% / 0.9);
@@ -166,10 +164,10 @@
   --financial-neutral: var(--color-neutral-text);
   --financial-neutral-bg: var(--color-neutral-bg);
 
-  --color-disabled: 222 12% 86%;
-  --color-disabled-fg: 222 10% 58%;
-  --disabled-bg: hsl(var(--color-disabled));
-  --disabled-fg: hsl(var(--color-disabled-fg));
+  --disabled-color-source: 222 12% 86%;
+  --disabled-fg-source: 222 10% 58%;
+  --disabled-bg: hsl(var(--disabled-color-source));
+  --disabled-fg: hsl(var(--disabled-fg-source));
   --overlay: 222 45% 12%;
   --ring: var(--color-primary);
   --focus-ring: var(--color-primary);
@@ -257,8 +255,8 @@
 
   --surface: var(--color-card);
   --surface-elevated: 222 30% 14%;
-  --color-disabled: 222 18% 20%;
-  --color-disabled-fg: 222 10% 48%;
+  --disabled-color-source: 222 18% 20%;
+  --disabled-fg-source: 222 10% 48%;
   --overlay: 224 52% 3%;
   --ring: var(--color-primary);
   --focus-ring: var(--color-primary);
@@ -317,8 +315,8 @@
   --color-surface-elevated: hsl(var(--surface-elevated));
   --color-overlay: hsl(var(--overlay));
   --color-ring: hsl(var(--ring));
-  --color-disabled: hsl(var(--color-disabled));
-  --color-disabled-foreground: hsl(var(--color-disabled-fg));
+  --color-disabled: hsl(var(--disabled-color-source));
+  --color-disabled-foreground: hsl(var(--disabled-fg-source));
   --color-financial-positive: hsl(var(--financial-positive));
   --color-financial-positive-bg: hsl(var(--financial-positive-bg));
   --color-financial-negative: hsl(var(--financial-negative));
