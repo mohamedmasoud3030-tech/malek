@@ -27,19 +27,19 @@ type DirectoryTab = 'all' | 'finance' | 'leases' | 'maintenance' | 'owners' | 'p
 
 const directoryTabs: readonly { id: DirectoryTab; label: string; groups?: readonly ReportGroupId[] }[] = [
   { id: 'all', label: 'الكل' },
-  { id: 'finance', label: 'المالية والتحصيل', groups: ['finance', 'control'] },
-  { id: 'leases', label: 'التأجير والإشغال', groups: ['leases'] },
-  { id: 'maintenance', label: 'الصيانة', groups: ['maintenance'] },
-  { id: 'owners', label: 'الملاك والكشوف', groups: ['owners'] },
+  { id: 'analytics', label: 'أداء المكتب', groups: ['analytics'] },
+  { id: 'finance', label: 'التحصيل والمتأخرات', groups: ['finance'] },
+  { id: 'leases', label: 'العقود والإشغال', groups: ['leases'] },
+  { id: 'maintenance', label: 'الصيانة والخدمات', groups: ['maintenance'] },
+  { id: 'owners', label: 'الملاك والمستأجرون', groups: ['owners'] },
   { id: 'properties', label: 'العقارات والوحدات', groups: ['properties'] },
-  { id: 'analytics', label: 'التحليلات', groups: ['analytics'] },
 ];
 
 const pinnedReports = [
-  { label: 'تقرير المتأخرات', section: 'analytics' as const, view: 'overdue' as const },
-  { label: 'مسير التحصيل', section: 'analytics' as const, view: 'collections' as const },
-  { label: 'انتهاء العقود', section: 'analytics' as const, view: 'occupancy' as const },
-  { label: 'كشف حساب المالك', section: 'statements' as const, view: '' as const },
+  { label: 'أداء المكتب', section: 'analytics' as const, view: 'overview' as const },
+  { label: 'التحصيل والمتأخرات', section: 'analytics' as const, view: 'collections' as const },
+  { label: 'الإشغال والشغور', section: 'analytics' as const, view: 'occupancy' as const },
+  { label: 'كشف المالك', section: 'statements' as const, view: '' as const },
 ] as const;
 
 export function ReportDirectory({ activeSection, activeView, scope, onOpen }: ReportDirectoryProps) {
@@ -92,8 +92,8 @@ export function ReportDirectory({ activeSection, activeView, scope, onOpen }: Re
         <div className="mb-3 flex items-center gap-2">
           <Star className="size-4 text-primary" aria-hidden="true" />
           <div>
-            <h2 id="pinned-reports-title" className="text-sm font-black sm:text-base">المفضلة والتقارير المثبتة</h2>
-            <p className="text-xs font-semibold text-muted-foreground">وصول سريع لأهم التقارير اليومية؛ الأرقام والتصدير تظهر من التقرير الفعلي بعد فتحه.</p>
+            <h2 id="pinned-reports-title" className="text-sm font-black sm:text-base">أهم التقارير</h2>
+            <p className="text-xs font-semibold text-muted-foreground">ابدأ بالخلاصة المفهومة، ثم افتح الجدول التفصيلي للبحث والتصفية والتصدير.</p>
           </div>
         </div>
         <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
@@ -113,7 +113,7 @@ export function ReportDirectory({ activeSection, activeView, scope, onOpen }: Re
               >
                 <span className="min-w-0">
                   <span className="block text-sm font-black">{report.label}</span>
-                  <span className="mt-1 block text-xs font-semibold text-muted-foreground">فتح التقرير ومعاينة التفاصيل</span>
+                  <span className="mt-1 block text-xs font-semibold text-muted-foreground">فتح الخلاصة والتفاصيل</span>
                 </span>
                 <ArrowLeft className="size-4 shrink-0 text-primary" aria-hidden="true" />
               </button>
