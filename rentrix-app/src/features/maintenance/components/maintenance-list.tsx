@@ -24,6 +24,7 @@ export const maintenanceStatusLabels = {
   in_progress: "قيد التنفيذ",
   resolved: "تم التنفيذ",
   closed: "مغلق",
+  cancelled: "ملغى",
 } as const;
 
 export const maintenanceStatusTone = {
@@ -31,6 +32,7 @@ export const maintenanceStatusTone = {
   in_progress: "warning",
   resolved: "success",
   closed: "neutral",
+  cancelled: "neutral",
 } as const;
 
 export const maintenancePriorityLabels = {
