@@ -10,16 +10,20 @@ type ReportsSectionTabsProps = Readonly<{
   onSectionViewChange: (section: ReportSectionId, view: ReportViewId) => void;
 }>;
 
-/** Compact routine navigation; specialist reports stay in the report library/deep links. */
+/**
+ * Compact owner-facing navigation. Raw accounting remains available to
+ * authorized/internal deep links, but it is intentionally not a primary tab.
+ */
 export function ReportsSectionTabs({
   activeSection,
   activeView,
   onSectionChange,
   onSectionViewChange,
 }: ReportsSectionTabsProps) {
+  const ownerFacingSections = reportSections.filter((section) => section.id !== 'accounting');
   const activeSectionMeta = reportSections.find((section) => section.id === activeSection) ?? reportSections[0];
   const ActiveSectionIcon = activeSectionMeta.icon;
-  const visibleSubViews = getVisibleReportSubViews(activeSection);
+  const visibleSubViews = activeSection === 'accounting' ? [] : getVisibleReportSubViews(activeSection);
   const activeViewIsRoutine = !activeView || visibleSubViews.some((view) => view.id === activeView);
   const activeSpecialistLabel = activeViewIsRoutine ? null : getReportSubViewLabel(activeSection, activeView);
   const panelId = `section-panel-${activeSection}`;
@@ -34,15 +38,15 @@ export function ReportsSectionTabs({
   return (
     <section
       className="min-w-0 rounded-2xl border border-border/70 bg-card p-2.5 shadow-card sm:p-3"
-      aria-label="التنقل بين المحاسبة والتقارير"
+      aria-label="التنقل بين تقارير الأداء والكشوف"
       data-finance-card
     >
       <div className="grid min-w-0 gap-2.5 lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.2fr)] lg:items-center">
         <SectionTabs
-          items={reportSections}
+          items={ownerFacingSections}
           activeId={activeSection}
           onChange={onSectionChange}
-          ariaLabel="أقسام التقارير"
+          ariaLabel="أقسام مركز التقارير"
           compactMobile
         />
 
@@ -51,7 +55,7 @@ export function ReportsSectionTabs({
             items={visibleSubViews}
             activeId={activeView || visibleSubViews[0].id}
             onChange={handleViewChange}
-            ariaLabel={activeSection === 'accounting' ? 'تقارير المحاسبة' : 'تحليلات المتابعة'}
+            ariaLabel="تقارير المتابعة"
             panelId={panelId}
             compactMobile
           />
@@ -74,3 +78,5 @@ export function ReportsSectionTabs({
     </section>
   );
 }
+
+export type { ReportsSectionTabsProps };
