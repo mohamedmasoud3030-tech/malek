@@ -1,7 +1,8 @@
 /*
- * MALEK visual system — Premium Real Estate / Finance
- * Deep Navy + Restrained Gold, Warm Off-White Light, Deep Ink Dark with glass
- * Theme values inherit from tokens.css so every route receives the same premium Light/Dark contract.
+ * MALEK visual system — Premium Real Estate / Finance.
+ * Theme values inherit from tokens.css; this layer owns layout/surface usage,
+ * never a second palette. Surfaces are intentionally opaque and calm: no
+ * competing glass stacks, no decorative glow.
  */
 
 [data-visual-wave='malek-pro'] {
@@ -13,7 +14,7 @@
 }
 
 [data-visual-wave='malek-pro'] [data-page-header] {
-  border-color: hsl(var(--border) / 0.8);
+  border-color: hsl(var(--border) / 0.9);
   padding-block-end: 0.875rem;
 }
 
@@ -24,8 +25,8 @@
 
 [data-visual-wave='malek-pro'] [data-list-controls],
 [data-visual-wave='malek-pro'] [data-filter-bar] {
-  border-color: hsl(var(--border) / 0.85);
-  background: hsl(var(--card) / 0.92);
+  border-color: hsl(var(--border));
+  background: hsl(var(--card));
   box-shadow: var(--shadow-card);
 }
 
@@ -34,14 +35,14 @@
 [data-visual-wave='malek-pro'] [data-mobile-card],
 [data-visual-wave='malek-pro'] [data-kpi-card],
 [data-visual-wave='malek-pro'] [data-entity-table-wrapper] {
-  border-color: hsl(var(--border) / 0.8);
+  border-color: hsl(var(--border));
   background: hsl(var(--card));
   box-shadow: var(--shadow-card);
 }
 
 [data-visual-wave='malek-pro'] [data-entity-card]:hover,
 [data-visual-wave='malek-pro'] [data-mobile-card]:hover {
-  border-color: hsl(var(--border));
+  border-color: hsl(var(--primary) / 0.28);
   box-shadow: var(--shadow-card-hover);
 }
 
@@ -50,47 +51,35 @@
 }
 
 [data-visual-wave='malek-pro'] [data-entity-table] tbody tr:hover {
-  background: hsl(var(--primary) / 0.04);
+  background: hsl(var(--primary) / 0.045);
 }
 
 [data-visual-wave='malek-pro'] [data-empty-state-icon] {
   color: hsl(var(--primary));
-  background: hsl(var(--primary) / 0.08);
+  background: hsl(var(--primary) / 0.09);
 }
 
 [data-visual-wave='malek-pro'] [data-error-state] {
   border-color: hsl(var(--danger-text) / 0.24);
 }
 
-/* App chrome — premium */
-[data-app-shell] {
-  background: hsl(var(--background));
-}
-
-[data-theme='dark'] [data-app-shell] {
-  background: hsl(var(--background));
-}
-
-[data-app-shell] [data-app-shell-header] {
-  background: hsl(var(--card) / 0.92);
-  backdrop-filter: blur(12px);
-  border-color: hsl(var(--border) / 0.7);
-  box-shadow: 0 1px 0 hsl(var(--border) / 0.6), 0 8px 24px -20px hsl(222 40% 15% / 0.16);
-}
-
-[data-theme='dark'] [data-app-shell] [data-app-shell-header] {
-  background: hsl(var(--card) / 0.85);
-  backdrop-filter: blur(16px);
-  border-color: hsl(var(--border) / 0.5);
-  box-shadow: 0 1px 0 hsl(var(--border) / 0.5), 0 8px 24px -20px hsl(0 0% 0% / 0.7), 0 0 0 1px hsl(0 0% 100% / 0.04), 0 0 20px -10px hsl(222 60% 62% / 0.12);
-}
-
+/* App chrome */
+[data-app-shell],
 [data-app-shell] main#main-content {
   background: hsl(var(--background));
 }
 
-[data-theme='dark'] [data-app-shell] main#main-content {
-  background: hsl(var(--background));
+[data-app-shell] [data-app-shell-header] {
+  background: hsl(var(--card) / 0.98);
+  border-color: hsl(var(--border));
+  box-shadow: 0 1px 0 hsl(var(--border) / 0.72), 0 8px 20px -20px hsl(var(--overlay) / 0.2);
+  backdrop-filter: blur(6px);
+}
+
+[data-theme='dark'] [data-app-shell] [data-app-shell-header] {
+  background: hsl(var(--card) / 0.98);
+  border-color: hsl(var(--border));
+  box-shadow: 0 1px 0 hsl(var(--border) / 0.72), 0 8px 20px -20px hsl(var(--overlay) / 0.5);
 }
 
 [data-app-shell] [data-sidebar] {
@@ -98,7 +87,7 @@
   border-color: hsl(var(--sidebar-border));
 }
 
-/* Dark glass for cards — subtle glass, reflection, soft glow, luminous edges */
+/* Dark mode uses the same surface hierarchy, only remapped tokens. */
 [data-theme='dark'] [data-visual-wave='malek-pro'] [data-component-card],
 [data-theme='dark'] [data-visual-wave='malek-pro'] [data-entity-card],
 [data-theme='dark'] [data-visual-wave='malek-pro'] [data-mobile-card],
@@ -106,30 +95,29 @@
 [data-theme='dark'] [data-visual-wave='malek-pro'] [data-entity-table-wrapper],
 [data-theme='dark'] [data-list-controls],
 [data-theme='dark'] [data-filter-bar] {
-  background: hsl(var(--card) / 0.88);
-  backdrop-filter: blur(12px);
-  border-color: hsl(var(--border) / 0.5);
-  box-shadow: var(--shadow-card), 0 0 0 1px hsl(0 0% 100% / 0.03), 0 0 20px -12px hsl(var(--primary) / 0.18);
+  background: hsl(var(--card));
+  border-color: hsl(var(--border));
+  box-shadow: var(--shadow-card);
+  backdrop-filter: none;
 }
 
 [data-theme='dark'] [data-visual-wave='malek-pro'] [data-entity-card]:hover,
 [data-theme='dark'] [data-visual-wave='malek-pro'] [data-mobile-card]:hover {
-  border-color: hsl(var(--border) / 0.7);
-  box-shadow: var(--shadow-card-hover), 0 0 0 1px hsl(0 0% 100% / 0.05), 0 0 24px -12px hsl(var(--primary) / 0.22);
+  border-color: hsl(var(--primary) / 0.32);
+  box-shadow: var(--shadow-card-hover);
 }
 
-/* Gold accent for active states — restrained */
 [data-visual-wave='malek-pro'] [data-active='true'] {
-  --active-glow: hsl(var(--accent) / 0.18);
+  --active-glow: transparent;
 }
 
 [data-theme='dark'] [data-sidebar] [data-active='true'] {
   background: hsl(var(--sidebar-active-bg));
   color: hsl(var(--sidebar-active-text));
-  box-shadow: 0 0 0 1px hsl(var(--accent) / 0.15), 0 0 16px -8px hsl(var(--accent) / 0.3);
+  box-shadow: none;
 }
 
-/* Operational redesign */
+/* Operational workspace contract */
 [data-operational-route='true'] [data-visual-wave='malek-pro'] {
   position: relative;
   isolation: isolate;
@@ -146,7 +134,7 @@
   position: relative;
   z-index: 2;
   padding: 0.5rem 0.625rem;
-  border: 1px solid hsl(var(--border) / 0.7);
+  border: 1px solid hsl(var(--border));
   border-radius: 0.75rem;
   background: hsl(var(--card));
   box-shadow: var(--shadow-card);
@@ -167,7 +155,7 @@
 }
 
 [data-operational-route='true'] [data-visual-wave='malek-pro'] :is([data-entity-card], [data-mobile-card]):hover {
-  border-color: hsl(var(--border));
+  border-color: hsl(var(--primary) / 0.28);
   box-shadow: var(--shadow-card-hover);
 }
 
@@ -182,15 +170,15 @@
   top: 0;
   z-index: 1;
   background: hsl(var(--muted) / 0.88);
-  color: hsl(var(--foreground) / 0.85);
+  color: hsl(var(--foreground) / 0.9);
 }
 
 [data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-table] thead th {
   height: 2.5rem;
   background: transparent;
-  color: hsl(var(--foreground) / 0.72);
-  border-color: hsl(var(--border) / 0.45);
-  border-bottom-color: hsl(var(--border) / 0.65);
+  color: hsl(var(--muted-foreground));
+  border-color: hsl(var(--border) / 0.7);
+  border-bottom-color: hsl(var(--border));
   font-size: 0.6875rem;
   font-weight: 700;
   letter-spacing: 0.01em;
@@ -202,28 +190,29 @@
 }
 
 [data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-table] tbody tr:nth-child(even) {
-  background: hsl(var(--muted) / 0.12);
+  background: hsl(var(--muted) / 0.16);
 }
 
 [data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-table] tbody tr:hover {
-  background: hsl(var(--muted) / 0.4);
+  background: hsl(var(--muted) / 0.5);
 }
 
 [data-theme='dark'] [data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-table] thead {
-  background: hsl(var(--muted) / 0.32);
-  color: hsl(var(--foreground) / 0.92);
+  background: hsl(var(--muted) / 0.72);
+  color: hsl(var(--foreground));
 }
+
 [data-theme='dark'] [data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-table] thead th {
-  color: hsl(var(--foreground) / 0.8);
-  border-bottom-color: hsl(var(--border) / 0.5);
+  color: hsl(var(--muted-foreground));
+  border-bottom-color: hsl(var(--border));
 }
 
 [data-operational-route='true'] [data-visual-wave='malek-pro'] [role='tablist'] {
   gap: 0.125rem;
   padding: 0.1875rem;
-  border: 1px solid hsl(var(--border) / 0.65);
+  border: 1px solid hsl(var(--border));
   border-radius: 0.625rem;
-  background: hsl(var(--muted) / 0.32);
+  background: hsl(var(--muted) / 0.55);
 }
 
 [data-operational-route='true'] [data-visual-wave='malek-pro'] [role='tab'] {
@@ -235,7 +224,7 @@
 [data-operational-route='true'] [data-visual-wave='malek-pro'] [role='tab'][aria-selected='true'] {
   background: hsl(var(--card));
   color: hsl(var(--foreground));
-  box-shadow: 0 1px 2px hsl(var(--foreground) / 0.05);
+  box-shadow: 0 1px 2px hsl(var(--foreground) / 0.07);
 }
 
 /* Forms */
@@ -246,14 +235,15 @@
 [data-entity-form-surface='dialog'][data-entity-form-variant='operational'] {
   border: 1px solid hsl(var(--border));
   border-radius: 1.25rem;
+  background: hsl(var(--card));
   box-shadow: var(--shadow-elevated);
 }
 
 [data-theme='dark'] [data-entity-form-surface='dialog'][data-entity-form-variant='operational'] {
-  background: hsl(var(--card) / 0.92);
-  backdrop-filter: blur(16px);
-  border-color: hsl(var(--border) / 0.5);
-  box-shadow: var(--shadow-elevated), 0 0 0 1px hsl(0 0% 100% / 0.05);
+  background: hsl(var(--card));
+  border-color: hsl(var(--border));
+  box-shadow: var(--shadow-elevated);
+  backdrop-filter: none;
 }
 
 [data-entity-form-surface][data-entity-form-variant='operational'] [data-entity-form-scroll] {
@@ -270,7 +260,7 @@
   min-height: 46px;
   border-radius: 0.75rem;
   background: hsl(var(--card));
-  border-color: hsl(var(--border) / 0.8);
+  border-color: hsl(var(--border));
   transition: border-color 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
 }
 
@@ -280,12 +270,12 @@
 }
 
 [data-theme='dark'] [data-entity-form-surface][data-entity-form-variant='operational'] :is(input, select, textarea):focus {
-  border-color: hsl(var(--primary) / 0.5);
-  box-shadow: 0 0 0 4px hsl(var(--primary) / 0.12), 0 0 12px -4px hsl(var(--primary) / 0.2);
+  border-color: hsl(var(--primary) / 0.62);
+  box-shadow: 0 0 0 4px hsl(var(--primary) / 0.12);
 }
 
 [data-entity-form-surface][data-entity-form-variant='operational'] [data-entity-form] section {
-  border-color: hsl(var(--border) / 0.8);
+  border-color: hsl(var(--border));
   border-radius: 1rem;
   background: hsl(var(--card));
   box-shadow: var(--shadow-card);
@@ -293,8 +283,8 @@
 
 [data-entity-form-surface][data-entity-form-variant='operational'] [data-entity-form-actions] {
   border-radius: 1rem 1rem 0 0;
-  background: hsl(var(--card) / 0.95);
-  backdrop-filter: blur(8px);
+  background: hsl(var(--card) / 0.98);
+  backdrop-filter: blur(4px);
 }
 
 @media (max-width: 767px) {
@@ -306,8 +296,8 @@
 
   [data-operational-route='true'] [data-visual-wave='malek-pro'] [data-page-header] {
     margin-inline: -0.25rem;
-    border-radius: 0 0 1.25rem 1.25rem;
-    padding: 1rem;
+    border-radius: 0 0 1rem 1rem;
+    padding: 0.875rem;
   }
 
   [data-operational-route='true'] [data-visual-wave='malek-pro'] :is([data-list-controls], [data-filter-bar]) {

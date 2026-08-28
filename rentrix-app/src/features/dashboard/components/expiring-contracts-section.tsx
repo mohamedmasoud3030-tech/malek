@@ -1,20 +1,24 @@
 import { Link, useLocation, useNavigate } from '@tanstack/react-router';
 import { CalendarClock, Clock } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { cn } from '@/lib/utils';
 import { DASHBOARD_WINDOW_DAYS, type ExpiringContractRow } from '../dashboard-utils';
+import {
+  DashboardSignalEmpty,
+  DashboardSignalHeader,
+  DashboardSignalList,
+  DashboardSignalLoading,
+  DashboardSignalMain,
+  DashboardSignalPanel,
+  DashboardSignalSide,
+  dashboardSectionActionClass,
+  dashboardSignalRowClass,
+} from './dashboard-signal-primitives';
 
 interface ExpiringContractsSectionProps {
   rows: ExpiringContractRow[];
-  /**
-   * Server-authoritative 30-day expiring contract count (contracts.expiring_30).
-   * The queue rows are a bounded presentation slice, so rows.length must never
-   * be shown as the operational number.
-   */
+  /** Server-authoritative 30-day expiring contract count. */
   totalCount?: number;
   isLoading: boolean;
-  /** When true, do not paint a successful empty queue (error is shown at page level). */
   isError?: boolean;
   settings: ReturnType<typeof import('@/hooks/useCompanyFormatters').useCompanyFormatters>;
 }
@@ -25,48 +29,39 @@ export function ExpiringContractsSection({ rows, totalCount, isLoading, isError 
   const { date } = settings;
   const navigate = useNavigate();
   const location = useLocation();
+
   return (
-    <section className="dashboard-queue-card" aria-labelledby="expiring-contracts-title">
-      <div className="dashboard-queue-card__header">
-        <div className="dashboard-queue-card__title-group">
-          <span className="dashboard-queue-card__icon" aria-hidden="true">
-            <CalendarClock className="size-4" />
-          </span>
-          <div>
-            <h3 id="expiring-contracts-title" className="dashboard-queue-card__title">عقود تنتهي قريباً</h3>
-            <p className="dashboard-queue-card__meta">خلال {DASHBOARD_WINDOW_DAYS} يوماً</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {!isLoading && !isError ? <StatusBadge tone={badgeCount > 0 ? 'warning' : 'success'}>{badgeCount}</StatusBadge> : null}
-          <Link to="/contracts" data-dashboard-section-action className="dashboard-section-link">عرض الكل</Link>
-        </div>
-      </div>
+    <DashboardSignalPanel labelledBy="expiring-contracts-title">
+      <DashboardSignalHeader
+        id="expiring-contracts-title"
+        title="عقود تنتهي قريباً"
+        meta={`خلال ${DASHBOARD_WINDOW_DAYS} يوماً`}
+        icon={CalendarClock}
+        tone={badgeCount > 0 ? 'warning' : 'success'}
+        trailing={(
+          <>
+            {!isLoading && !isError ? <StatusBadge tone={badgeCount > 0 ? 'warning' : 'success'}>{badgeCount}</StatusBadge> : null}
+            <Link to="/contracts" data-dashboard-section-action className={dashboardSectionActionClass}>عرض الكل</Link>
+          </>
+        )}
+      />
 
-      {isLoading && (
-        <div className="dashboard-queue-list" aria-label="جارٍ تحميل العقود القريبة من الانتهاء">
-          <Skeleton className="h-14 rounded-xl" />
-          <Skeleton className="h-14 rounded-xl" />
-          <Skeleton className="h-14 rounded-xl" />
-        </div>
-      )}
+      {isLoading ? <DashboardSignalLoading label="جارٍ تحميل العقود القريبة من الانتهاء" /> : null}
 
-      {!isLoading && isError && (
-        <div className="dashboard-queue-empty" role="alert">
-          <p className="font-semibold">تعذر تحميل العقود القريبة من الانتهاء</p>
-          <p>راجع تنبيه أعلى الصفحة ثم أعد المحاولة. لن نعرض قائمة فارغة عند فشل التحميل.</p>
-        </div>
-      )}
+      {!isLoading && isError ? (
+        <DashboardSignalEmpty
+          role="alert"
+          title="تعذر تحميل العقود القريبة من الانتهاء"
+          description="راجع تنبيه أعلى الصفحة ثم أعد المحاولة. لن نعرض قائمة فارغة عند فشل التحميل."
+        />
+      ) : null}
 
-      {!isLoading && !isError && visibleRows.length === 0 && (
-        <div className="dashboard-queue-empty" role="status">
-          <p className="font-semibold">لا توجد عقود تنتهي قريباً</p>
-          <p>ستظهر هنا العقود التي تحتاج قرار تجديد أو إخلاء.</p>
-        </div>
-      )}
+      {!isLoading && !isError && visibleRows.length === 0 ? (
+        <DashboardSignalEmpty title="لا توجد عقود تنتهي قريباً" description="ستظهر هنا العقود التي تحتاج قرار تجديد أو إخلاء." />
+      ) : null}
 
-      {!isLoading && !isError && visibleRows.length > 0 && (
-        <ul className="dashboard-queue-list" role="list">
+      {!isLoading && !isError && visibleRows.length > 0 ? (
+        <DashboardSignalList label="العقود القريبة من الانتهاء">
           {visibleRows.map((row) => {
             const tone = row.daysRemaining <= 7 ? 'danger' : row.daysRemaining <= 14 ? 'warning' : 'success';
             return (
@@ -80,26 +75,23 @@ export function ExpiringContractsSection({ rows, totalCount, isLoading, isError 
                       state: { backgroundLocation: location } as unknown as Record<string, unknown>,
                     })
                   }
-                  className={cn('dashboard-queue-row w-full text-start', row.daysRemaining <= 7 && 'dashboard-queue-row--danger', row.daysRemaining > 7 && row.daysRemaining <= 14 && 'dashboard-queue-row--warning')}
+                  className={dashboardSignalRowClass(tone)}
                   data-dashboard-queue-link
                 >
-                  <span className="dashboard-queue-row__main">
-                    <span className="dashboard-queue-row__title">{row.tenantName}</span>
-                    <span className="dashboard-queue-row__meta">{row.location}</span>
-                  </span>
-                  <span className="dashboard-queue-row__side">
+                  <DashboardSignalMain title={row.tenantName} meta={row.location} />
+                  <DashboardSignalSide>
                     <StatusBadge tone={tone}>
                       <Clock className="size-3" aria-hidden="true" />
                       {row.daysRemaining} يوم
                     </StatusBadge>
-                    <span className="dashboard-queue-row__date">ينتهي: {date(row.endDate)}</span>
-                  </span>
+                    <span className="hidden sm:inline">ينتهي: {date(row.endDate)}</span>
+                  </DashboardSignalSide>
                 </button>
               </li>
             );
           })}
-        </ul>
-      )}
-    </section>
+        </DashboardSignalList>
+      ) : null}
+    </DashboardSignalPanel>
   );
 }

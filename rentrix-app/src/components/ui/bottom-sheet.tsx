@@ -97,7 +97,7 @@ export function BottomSheet({ open, onClose, title, children, className }: Botto
     >
       <button
         type="button"
-        className="absolute inset-0 cursor-default touch-none bg-black/45 backdrop-blur-sm"
+        className="absolute inset-0 cursor-default touch-none bg-[hsl(var(--overlay)/0.48)]"
         aria-label="إغلاق اللوحة"
         onClick={onClose}
       />
@@ -111,10 +111,9 @@ export function BottomSheet({ open, onClose, title, children, className }: Botto
         aria-label={title ? undefined : 'لوحة إجراء'}
         data-bottom-sheet
         className={cn(
-          'relative z-10 flex w-full max-w-full min-w-0 flex-col overflow-hidden rounded-t-3xl border border-b-0 border-border/50 bg-card outline-none',
-          'shadow-[0_-8px_48px_-8px_rgba(0,0,0,0.18),0_-1px_0_0_hsl(var(--border)/0.5)]',
-          '',
-          'max-h-[calc(var(--visual-viewport-height,100dvh)-0.5rem)]',
+          'relative z-10 flex w-full max-w-full min-w-0 flex-col overflow-hidden rounded-t-[1.35rem] border border-b-0 border-border bg-card outline-none',
+          'shadow-[0_-18px_44px_-28px_hsl(var(--overlay)/0.55),0_-1px_0_0_hsl(var(--border)/0.7)]',
+          'max-h-[calc(var(--visual-viewport-height,100dvh)-0.75rem)]',
           'ps-[env(safe-area-inset-left,0px)] pe-[env(safe-area-inset-right,0px)]',
           className,
         )}
@@ -123,22 +122,22 @@ export function BottomSheet({ open, onClose, title, children, className }: Botto
           type="button"
           onClick={onClose}
           data-bottom-sheet-handle
-          className="flex min-h-11 shrink-0 cursor-grab items-center justify-center pb-1.5 pt-3.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/35 active:cursor-grabbing"
+          className="flex min-h-8 shrink-0 cursor-grab items-center justify-center pb-1 pt-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/35 active:cursor-grabbing"
           aria-label="مقبض اللوحة — اضغط للإغلاق"
         >
-          <div className="h-1 w-10 rounded-full bg-muted-foreground/25 transition-colors hover:bg-muted-foreground/40 motion-reduce:transition-none" />
+          <div className="h-1 w-9 rounded-full bg-muted-foreground/30 transition-colors hover:bg-muted-foreground/45 motion-reduce:transition-none" />
         </button>
 
         {title ? (
-          <div className="flex min-h-14 shrink-0 items-center justify-between gap-3 border-b border-border/60 bg-background/96 px-4 py-3 backdrop-blur sm:px-5">
-            <h2 id={titleId} className="min-w-0 text-[0.9375rem] font-bold leading-7">{title}</h2>
+          <div className="flex min-h-12 shrink-0 items-center justify-between gap-3 border-b border-border/70 px-3.5 py-2 sm:px-4">
+            <h2 id={titleId} className="min-w-0 text-base font-extrabold leading-6 text-foreground">{title}</h2>
             <button
               type="button"
               onClick={onClose}
-              className="grid size-11 shrink-0 place-items-center rounded-xl bg-muted/60 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none"
+              className="grid size-11 shrink-0 place-items-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none"
               aria-label="إغلاق"
             >
-              <X className="size-[0.9rem]" aria-hidden="true" />
+              <X className="size-4" aria-hidden="true" />
             </button>
           </div>
         ) : null}
@@ -146,7 +145,7 @@ export function BottomSheet({ open, onClose, title, children, className }: Botto
         <div
           ref={scrollRef}
           data-bottom-sheet-scroll
-          className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] pt-4 sm:px-5 sm:[scrollbar-gutter:stable]"
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] pt-2.5 sm:px-4 sm:[scrollbar-gutter:stable]"
         >
           {children}
         </div>

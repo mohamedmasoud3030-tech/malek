@@ -1,9 +1,18 @@
 import { Link } from '@tanstack/react-router';
 import { CreditCard } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { cn } from '@/lib/utils';
 import type { OverdueTenantRow } from '../dashboard-utils';
+import {
+  DashboardSignalEmpty,
+  DashboardSignalHeader,
+  DashboardSignalList,
+  DashboardSignalLoading,
+  DashboardSignalMain,
+  DashboardSignalPanel,
+  DashboardSignalSide,
+  dashboardSectionActionClass,
+  dashboardSignalRowClass,
+} from './dashboard-signal-primitives';
 
 interface OverdueSectionProps {
   rows: OverdueTenantRow[];
@@ -23,73 +32,61 @@ export function OverdueSection({ rows, totalCount, isLoading, isError = false, s
   const { date, money } = settings;
   const badgeCount = totalCount ?? rows.length;
   const visibleRows = rows.slice(0, 3);
+
   return (
-    <section className="dashboard-queue-card" aria-labelledby="overdue-title">
-      <div className="dashboard-queue-card__header">
-        <div className="dashboard-queue-card__title-group">
-          <span className="dashboard-queue-card__icon dashboard-queue-card__icon--danger" aria-hidden="true">
-            <CreditCard className="size-4" />
-          </span>
-          <div>
-            <h3 id="overdue-title" className="dashboard-queue-card__title">أعلى المتأخرات</h3>
-            <p className="dashboard-queue-card__meta">الأكثر تأخراً أولاً</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {!isLoading && !isError ? <StatusBadge tone={badgeCount > 0 ? 'danger' : 'success'}>{badgeCount}</StatusBadge> : null}
-          <Link to="/arrears" data-dashboard-section-action className="dashboard-section-link">عرض الكل</Link>
-        </div>
-      </div>
+    <DashboardSignalPanel labelledBy="overdue-title">
+      <DashboardSignalHeader
+        id="overdue-title"
+        title="أعلى المتأخرات"
+        meta="الأكثر تأخراً أولاً"
+        icon={CreditCard}
+        tone={badgeCount > 0 ? 'danger' : 'success'}
+        trailing={(
+          <>
+            {!isLoading && !isError ? <StatusBadge tone={badgeCount > 0 ? 'danger' : 'success'}>{badgeCount}</StatusBadge> : null}
+            <Link to="/arrears" data-dashboard-section-action className={dashboardSectionActionClass}>عرض الكل</Link>
+          </>
+        )}
+      />
 
-      {isLoading && (
-        <div className="dashboard-queue-list" aria-label="جارٍ تحميل المتأخرات">
-          <Skeleton className="h-14 rounded-xl" />
-          <Skeleton className="h-14 rounded-xl" />
-          <Skeleton className="h-14 rounded-xl" />
-        </div>
-      )}
+      {isLoading ? <DashboardSignalLoading label="جارٍ تحميل المتأخرات" /> : null}
 
-      {!isLoading && isError && (
-        <div className="dashboard-queue-empty" role="alert">
-          <p className="font-semibold">تعذر تحميل المتأخرات</p>
-          <p>راجع تنبيه أعلى الصفحة ثم أعد المحاولة. لن نعرض قائمة فارغة عند فشل التحميل.</p>
-        </div>
-      )}
+      {!isLoading && isError ? (
+        <DashboardSignalEmpty
+          role="alert"
+          title="تعذر تحميل المتأخرات"
+          description="راجع تنبيه أعلى الصفحة ثم أعد المحاولة. لن نعرض قائمة فارغة عند فشل التحميل."
+        />
+      ) : null}
 
-      {!isLoading && !isError && visibleRows.length === 0 && (
-        <div className="dashboard-queue-empty" role="status">
-          <p className="font-semibold">لا توجد فواتير متأخرة</p>
-          <p>ستظهر هنا الحالات التي تحتاج متابعة تحصيل.</p>
-        </div>
-      )}
+      {!isLoading && !isError && visibleRows.length === 0 ? (
+        <DashboardSignalEmpty title="لا توجد فواتير متأخرة" description="ستظهر هنا الحالات التي تحتاج متابعة تحصيل." />
+      ) : null}
 
-      {!isLoading && !isError && visibleRows.length > 0 && (
-        <ul className="dashboard-queue-list" role="list">
+      {!isLoading && !isError && visibleRows.length > 0 ? (
+        <DashboardSignalList label="أعلى المتأخرات">
           {visibleRows.map((row) => {
             const isHighRisk = row.daysOverdue > 90;
             return (
               <li key={row.invoiceId} role="listitem" className="min-w-0">
                 <Link
                   to="/arrears"
-                  className={cn('dashboard-queue-row', isHighRisk ? 'dashboard-queue-row--danger' : 'dashboard-queue-row--warning')}
+                  className={dashboardSignalRowClass(isHighRisk ? 'danger' : 'warning')}
                   data-dashboard-queue-link
                   aria-label={`${row.tenantName} — ${row.daysOverdue} يوم تأخير — ${money(row.remainingAmount)}`}
                 >
-                  <span className="dashboard-queue-row__main">
-                    <span className="dashboard-queue-row__title">{row.tenantName}</span>
-                    <span className="dashboard-queue-row__meta">{row.location}</span>
-                  </span>
-                  <span className="dashboard-queue-row__side">
+                  <DashboardSignalMain title={row.tenantName} meta={row.location} />
+                  <DashboardSignalSide>
                     <StatusBadge tone={isHighRisk ? 'danger' : 'warning'}>{row.daysOverdue} يوم</StatusBadge>
-                    <span className="dashboard-queue-row__amount" dir="ltr">{money(row.remainingAmount)}</span>
-                    <span className="dashboard-queue-row__date">استحقاق: {date(row.dueDate)}</span>
-                  </span>
+                    <span dir="ltr" className="font-extrabold text-foreground">{money(row.remainingAmount)}</span>
+                    <span className="hidden sm:inline">استحقاق: {date(row.dueDate)}</span>
+                  </DashboardSignalSide>
                 </Link>
               </li>
             );
           })}
-        </ul>
-      )}
-    </section>
+        </DashboardSignalList>
+      ) : null}
+    </DashboardSignalPanel>
   );
 }

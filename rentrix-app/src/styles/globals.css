@@ -6,7 +6,7 @@
 
 /* MALEK global entrypoint.
    Theme tokens live only in tokens.css. This file owns document base behavior,
-   utilities, print rules and public-site helpers. */
+   cross-component shell constraints, utilities, print rules and public helpers. */
 
 @keyframes shimmer {
   100% { transform: translateX(-100%); }
@@ -58,6 +58,29 @@
 
 [data-login-surface] {
   background-color: hsl(var(--background));
+}
+
+/* Only shell constraints that cannot live inside one component stay global. */
+@layer components {
+  [data-bottom-sheet]:has([data-mobile-nav-bottom-sheet]) {
+    max-height: min(78dvh, 42rem) !important;
+  }
+
+  [data-account-menu-panel] {
+    width: min(15.5rem, calc(100vw - 1rem));
+    border-color: hsl(var(--border));
+    background: hsl(var(--card));
+    box-shadow: var(--shadow-elevated);
+  }
+
+  [data-account-menu-panel] > div:first-child {
+    padding-block: 0.625rem;
+    background: hsl(var(--muted) / 0.45);
+  }
+
+  [data-account-menu-panel] > div:last-child {
+    padding: 0.25rem;
+  }
 }
 
 @layer utilities {

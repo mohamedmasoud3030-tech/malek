@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { RefreshCw } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
@@ -32,14 +32,32 @@ import { buildUtilityObligationsSignal, EMPTY_UTILITY_OBLIGATIONS_SIGNAL } from 
 import { buildExpiringContracts, buildOverdueTenantRows, toDateInputValue } from './dashboard-utils';
 import { OwnerObligationsSection } from './components/owner-obligations-section';
 
+function DashboardGroup({
+  eyebrow,
+  title,
+  ariaLabel,
+  sectionId,
+  children,
+}: Readonly<{
+  eyebrow: string;
+  title: string;
+  ariaLabel: string;
+  sectionId: string;
+  children: ReactNode;
+}>) {
+  return (
+    <section className="min-w-0 space-y-2.5" aria-label={ariaLabel} data-dashboard-section={sectionId}>
+      <SectionHeader eyebrow={eyebrow} title={title} className="mb-0 px-0.5" />
+      {children}
+    </section>
+  );
+}
+
 /**
  * MALEK command center.
- *
  * Financial and operational truth remains server-authoritative through
- * rpt_dashboard_snapshot. Presentation follows the locked daily office order:
- * performance → vacancy → collection → problems → renewals → owner dues.
- * True vacancy is derived from the canonical unit register (`available`) rather
- * than the snapshot's historical all-non-occupied aggregate.
+ * rpt_dashboard_snapshot. The presentation is deliberately bounded and compact:
+ * performance → vacancy/collection → problems → renewals/owner obligations.
  */
 export function DashboardPage() {
   const { authorization } = useAuth();
@@ -138,7 +156,7 @@ export function DashboardPage() {
   const snapshotUnavailable = hasDashboardError && !snapshot;
 
   return (
-    <PageLayout size="wide" className="dashboard-page-shell pb-8" visualVariant="malek-pro">
+    <PageLayout size="wide" className="pb-8" visualVariant="malek-pro">
       <PageHeader
         title="لوحة التحكم"
         primaryAction={(
@@ -156,7 +174,7 @@ export function DashboardPage() {
         )}
       />
 
-      <div>
+      <div className="space-y-5 lg:space-y-6">
         {hasDashboardError ? (
           <ErrorState
             title={snapshotUnavailable ? 'تعذر تحميل بيانات اليوم' : 'تعذر تحديث بيانات اليوم'}
@@ -173,41 +191,39 @@ export function DashboardPage() {
         {snapshotUnavailable ? null : (
           <>
             {canManageSetup ? (
-              <div data-dashboard-onboarding-slot className="dashboard-section">
+              <div data-dashboard-onboarding-slot>
                 <OnboardingChecklist progress={progress} canManageSetup />
               </div>
             ) : null}
 
-            <section className="dashboard-section" aria-label="أداء المكتب" data-dashboard-section="office-performance">
-              <SectionHeader eyebrow="1 · الآن" title="أداء المكتب" />
+            <DashboardGroup eyebrow="الآن" title="أداء المكتب" ariaLabel="أداء المكتب" sectionId="office-performance">
               <OfficePulse snapshot={snapshot} isLoading={isLoading} settings={settings} />
-            </section>
+            </DashboardGroup>
 
-            <section className="dashboard-section" aria-label="الوحدات الفارغة" data-dashboard-section="vacant-units">
-              <SectionHeader eyebrow="2 · المحفظة" title="الوحدات الفارغة" />
-              <VacantUnitsSection
-                analytics={vacancyAnalytics}
-                isLoading={unitsQuery.isLoading || (hasVacantUnit && contractsQuery.isLoading)}
-                isError={unitsQuery.isError}
-                detailsUnavailable={vacancyDetailsUnavailable}
-                settings={settings}
-              />
-            </section>
+            <div className="grid min-w-0 gap-3 xl:grid-cols-12 xl:items-start">
+              <section className="min-w-0 xl:col-span-7" aria-label="الوحدات الفارغة" data-dashboard-section="vacant-units">
+                <VacantUnitsSection
+                  analytics={vacancyAnalytics}
+                  isLoading={unitsQuery.isLoading || (hasVacantUnit && contractsQuery.isLoading)}
+                  isError={unitsQuery.isError}
+                  detailsUnavailable={vacancyDetailsUnavailable}
+                  settings={settings}
+                />
+              </section>
 
-            <section className="dashboard-section" aria-label="الفلوس المطلوب تحصيلها" data-dashboard-section="collections">
-              <SectionHeader eyebrow="3 · تحصيل" title="الفلوس المطلوب تحصيلها" />
-              <OverdueSection
-                rows={overdueRows}
-                totalCount={snapshot?.arrears.overdueCount}
-                isLoading={isLoading}
-                isError={hasDashboardError}
-                settings={settings}
-              />
-            </section>
+              <section className="min-w-0 xl:col-span-5" aria-label="الفلوس المطلوب تحصيلها" data-dashboard-section="collections">
+                <OverdueSection
+                  rows={overdueRows}
+                  totalCount={snapshot?.arrears.overdueCount}
+                  isLoading={isLoading}
+                  isError={hasDashboardError}
+                  settings={settings}
+                />
+              </section>
+            </div>
 
-            <section className="dashboard-section" aria-label="المشاكل والصيانة" data-dashboard-section="maintenance-problems">
-              <SectionHeader eyebrow="4 · خدمات" title="المشاكل والصيانة" />
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3" data-dashboard-maintenance-problems>
+            <DashboardGroup eyebrow="خدمات" title="المشاكل والصيانة" ariaLabel="المشاكل والصيانة" sectionId="maintenance-problems">
+              <div className="grid min-w-0 gap-3 md:grid-cols-2 xl:grid-cols-3" data-dashboard-maintenance-problems>
                 <UrgentMaintenanceSection
                   rows={snapshot?.queues.urgentMaintenance ?? []}
                   totalCount={snapshot?.maintenance.urgentOpen}
@@ -226,23 +242,23 @@ export function DashboardPage() {
                   settings={settings}
                 />
               </div>
-            </section>
+            </DashboardGroup>
 
-            <section className="dashboard-section" aria-label="العقود القريبة من الانتهاء" data-dashboard-section="expiring-contracts">
-              <SectionHeader eyebrow="5 · عقود" title="العقود القريبة من الانتهاء" />
-              <ExpiringContractsSection
-                rows={expiringContracts}
-                totalCount={snapshot?.contracts.expiring30}
-                isLoading={isLoading}
-                isError={hasDashboardError}
-                settings={settings}
-              />
-            </section>
+            <div className="grid min-w-0 gap-3 xl:grid-cols-2 xl:items-start">
+              <section className="min-w-0" aria-label="العقود القريبة من الانتهاء" data-dashboard-section="expiring-contracts">
+                <ExpiringContractsSection
+                  rows={expiringContracts}
+                  totalCount={snapshot?.contracts.expiring30}
+                  isLoading={isLoading}
+                  isError={hasDashboardError}
+                  settings={settings}
+                />
+              </section>
 
-            <section className="dashboard-section" aria-label="مستحقات الملاك" data-dashboard-section="owner-obligations">
-              <SectionHeader eyebrow="6 · ملاك" title="مستحقات الملاك" />
-              <OwnerObligationsSection snapshot={snapshot} isLoading={isLoading} settings={settings} />
-            </section>
+              <section className="min-w-0" aria-label="مستحقات الملاك" data-dashboard-section="owner-obligations">
+                <OwnerObligationsSection snapshot={snapshot} isLoading={isLoading} settings={settings} />
+              </section>
+            </div>
           </>
         )}
       </div>
