@@ -6,10 +6,11 @@ import {
   responsiblePartyLabels,
   utilityBillStatusLabels,
   utilityTypeLabels,
+  useUtilityBills,
+  useUtilityMeters,
   type ResponsibleParty,
   type UtilityBill,
-} from '@/features/utilities/utilities-service';
-import { useUtilityBills, useUtilityMeters } from '@/features/utilities/use-utilities';
+} from '@/features/utilities/use-utilities';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
 import type { CsvRow } from '@/lib/csvExport';
 import { documentService } from '@/services/documents/DocumentService';
