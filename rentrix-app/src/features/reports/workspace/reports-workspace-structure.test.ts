@@ -6,7 +6,6 @@ import {
   ACCOUNTING_REPORT_VIEWS,
   ANALYTICS_REPORT_VIEWS,
   getReportSubViews,
-  getVisibleReportSubViews,
 } from '../report-view-registry';
 
 const workspaceDir = resolve(import.meta.dirname);
@@ -29,24 +28,24 @@ function adapterModules(): string[] {
 }
 
 describe('WP-C C.1 — workspace is split by responsibility', () => {
-  it('keeps the shell, the navigation and the panel router each small and single-purpose', () => {
+  it('keeps the shell and panel router small while owner navigation stays task-first', () => {
     const shell = resolve(workspaceDir, 'ReportsShell.tsx');
-    const tabs = resolve(workspaceDir, 'ReportsSectionTabs.tsx');
     const panel = resolve(workspaceDir, 'ReportsViewPanel.tsx');
     const root = resolve(workspaceDir, 'ReportsWorkspace.tsx');
 
-    for (const file of [shell, tabs, panel, root]) {
+    for (const file of [shell, panel, root]) {
       expect(lineCount(file)).toBeLessThan(300);
     }
 
     const shellSource = read(shell);
     expect(shellSource).toContain('ReportsFilterSurface');
     expect(shellSource).toContain('FinanceKpiGrid');
+    expect(shellSource).toContain('data-report-summary-layer');
     expect(shellSource).not.toContain('SectionTabs');
 
-    const tabsSource = read(tabs);
-    expect(tabsSource).toContain('getVisibleReportSubViews');
-    expect(tabsSource).not.toMatch(/from '\.\.\/components\//);
+    const rootSource = read(root);
+    expect(rootSource).not.toContain('ReportsSectionTabs');
+    expect(rootSource).not.toContain('SectionTabs');
 
     const panelSource = read(panel);
     expect(panelSource).toContain('AccountingReportsAdapter');
@@ -64,7 +63,7 @@ describe('WP-C C.1 — workspace is split by responsibility', () => {
 });
 
 describe('WP-C C.4 — every adapter chunk is lazy', () => {
-  it('lazy-imports all three section adapters so an inactive section is never downloaded', () => {
+  it('lazy-imports all three internal adapters so an inactive section is never downloaded', () => {
     const panel = read(resolve(workspaceDir, 'ReportsViewPanel.tsx'));
     const lazyImports = panel.match(/lazy\(\(\) =>/g) ?? [];
 
@@ -91,8 +90,8 @@ describe('WP-C C.4 — every adapter chunk is lazy', () => {
   });
 });
 
-describe('WP-C — the view registry is the only declaration of a report view', () => {
-  it('registers every supported sub-view exactly once per section', () => {
+describe('WP-C — the view registry is the only declaration of an internal report view', () => {
+  it('registers every supported sub-view exactly once per internal adapter section', () => {
     expect(getReportSubViews('accounting').map((view) => view.id)).toEqual(
       ACCOUNTING_REPORT_VIEWS.map((view) => view.id),
     );
@@ -102,22 +101,22 @@ describe('WP-C — the view registry is the only declaration of a report view', 
     expect(getReportSubViews('statements')).toEqual([]);
   });
 
-  it('shows only routine reports as tabs while preserving specialist reports in the registry', () => {
-    expect(getVisibleReportSubViews('accounting').map((view) => view.id)).toEqual([
+  it('preserves specialist deep links without exposing implementation categories in the workspace', () => {
+    expect(ACCOUNTING_REPORT_VIEWS.map((view) => view.id)).toEqual([
       'accounting_reports',
       'general_ledger',
+      'deferred_revenue',
     ]);
-    expect(ACCOUNTING_REPORT_VIEWS.filter((view) => !view.showInPrimaryNavigation).map((view) => view.id))
-      .toEqual(['deferred_revenue']);
-
-    expect(getVisibleReportSubViews('analytics').map((view) => view.id)).toEqual([
+    expect(ANALYTICS_REPORT_VIEWS.map((view) => view.id)).toEqual([
       'overview',
       'collections',
       'overdue',
       'expenses',
+      'property_analytics',
+      'occupancy',
+      'maintenance_analytics',
     ]);
-    expect(ANALYTICS_REPORT_VIEWS.filter((view) => !view.showInPrimaryNavigation).map((view) => view.id))
-      .toEqual(['property_analytics', 'occupancy', 'maintenance_analytics']);
+    expect(read(resolve(workspaceDir, 'ReportsWorkspace.tsx'))).not.toContain('SectionTabs');
   });
 
   it('keeps every registered view reachable through both deep-link forms', () => {
