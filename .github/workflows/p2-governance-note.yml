@@ -42,10 +42,14 @@ jobs:
           PY
           rm -f .github/workflows/p2-governance-note.yml
           git add -A
-          changed="$(git diff --cached --name-only | sort)"
-          expected="supabase/migrations/20260901000037_short_stay_lease_mode.sql"
-          if [ "$changed" != "$expected" ]; then
-            echo "Unexpected final source diff: $changed" >&2
+          git diff --cached --name-only | sort > /tmp/actual.txt
+          cat > /tmp/expected.txt <<'EOF'
+          .github/workflows/p2-governance-note.yml
+          supabase/migrations/20260901000037_short_stay_lease_mode.sql
+          EOF
+          sed -i 's/^          //' /tmp/expected.txt
+          if ! diff -u /tmp/expected.txt /tmp/actual.txt; then
+            echo 'Unexpected final source diff' >&2
             exit 1
           fi
           git config user.name 'MALEK Recovery Bot'
