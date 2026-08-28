@@ -1,13 +1,9 @@
 /**
  * EntityTable — the canonical MALEK responsive data-register foundation.
  *
- * Desktop/tablet (>= 768px): dense semantic table by default, with an
- * optional Cards view; sorting, sticky identity/actions, row expansion,
- * selection and toolbar remain shared.
- *
- * Mobile (< 768px): cards are the only register presentation. Desktop data
- * tables never leak into phone layouts; the shared card shows identity plus
- * high-value context and keeps row actions accessible.
+ * Every viewport keeps the same explicit Cards ⇄ Table choice. The selected
+ * presentation is persisted so the register does not silently change the
+ * user's choice between pages or reloads.
  */
 
 import {
@@ -21,6 +17,7 @@ import {
 } from 'lucide-react';
 import {
   Fragment,
+  useEffect,
   useId,
   useMemo,
   useRef,
@@ -130,9 +127,9 @@ export interface EntityTableProps<T> {
   rowSelection?: RowSelectionState;
   /** Optional visible column keys. Omit to show every configured column. */
   visibleColumnKeys?: readonly string[];
-  /** Enables the shared Cards ⇄ Table choice on tablet/desktop. Defaults to true. */
+  /** Enables the shared Cards ⇄ Table choice on every viewport. Defaults to true. */
   enableViewModeToggle?: boolean;
-  /** Optional stable identifier for a future persisted preference. */
+  /** Optional stable storage key. Omit to use the shared MALEK register preference. */
   viewModeStorageKey?: string;
   'aria-label': string;
   className?: string;
@@ -140,6 +137,20 @@ export interface EntityTableProps<T> {
 }
 
 type ResolvedColumn<T> = ColumnDef<T> & { resolvedPriority: ColumnPriority };
+type ViewMode = 'cards' | 'table';
+
+const DEFAULT_VIEW_MODE_STORAGE_KEY = 'malek:entity-register:view-mode';
+
+function getInitialViewMode(storageKey: string): ViewMode {
+  if (typeof window === 'undefined') return 'table';
+  try {
+    const stored = window.localStorage.getItem(storageKey);
+    if (stored === 'cards' || stored === 'table') return stored;
+  } catch {
+    // Storage may be unavailable in hardened/private browser contexts.
+  }
+  return window.matchMedia('(max-width: 767px)').matches ? 'cards' : 'table';
+}
 
 function resolveColumns<T>(columns: ColumnDef<T>[], visibleColumnKeys?: readonly string[]): ResolvedColumn<T>[] {
   const visible = visibleColumnKeys ? new Set(visibleColumnKeys) : null;
@@ -463,12 +474,14 @@ export function EntityTable<T>({
   rowSelection,
   visibleColumnKeys,
   enableViewModeToggle = true,
+  viewModeStorageKey,
   'aria-label': ariaLabel,
   className,
   skeletonRows = 5,
 }: EntityTableProps<T>) {
   const disclosurePrefix = useId();
-  const [viewMode, setViewMode] = useState<'cards' | 'table' | null>(null);
+  const storageKey = viewModeStorageKey ?? DEFAULT_VIEW_MODE_STORAGE_KEY;
+  const [viewMode, setViewMode] = useState<ViewMode>(() => getInitialViewMode(storageKey));
   const [internalExpandedRows, setInternalExpandedRows] = useState<Set<string>>(() => new Set());
   const isControlledSingle = expandedRowId !== undefined;
   const resolvedColumns = useMemo(
@@ -478,6 +491,19 @@ export function EntityTable<T>({
   const hasExpansion = renderRowExpansion !== undefined;
   const resolvedExpandedRowId = expandedRowId === undefined ? null : expandedRowId;
   const selectedSet = useMemo(() => new Set(rowSelection?.selectedIds ?? []), [rowSelection?.selectedIds]);
+
+  useEffect(() => {
+    setViewMode(getInitialViewMode(storageKey));
+  }, [storageKey]);
+
+  const chooseViewMode = (nextMode: ViewMode) => {
+    setViewMode(nextMode);
+    try {
+      window.localStorage.setItem(storageKey, nextMode);
+    } catch {
+      // Keep the in-memory choice even when storage is unavailable.
+    }
+  };
 
   const isRowExpanded = (rowKey: string) =>
     isControlledSingle ? resolvedExpandedRowId === rowKey : internalExpandedRows.has(rowKey);
@@ -520,12 +546,25 @@ export function EntityTable<T>({
   if (isLoading) {
     return (
       <div className={cn('space-y-2.5', className)} data-entity-table-register>
-        <div className="hidden md:block">
-          <DesktopTableSkeleton rows={skeletonRows} cols={resolvedColumns.length || columns.length} hasSelection={Boolean(rowSelection)} />
-        </div>
-        <div className="md:hidden">
+        {enableViewModeToggle ? (
+          <div data-entity-table-toolbar className="flex min-h-11 items-center justify-end">
+            <div className="inline-flex min-h-11 items-center rounded-xl border border-border/70 bg-muted/35 p-1" role="group" aria-label={`طريقة عرض ${ariaLabel}`}>
+              <Button type="button" variant={viewMode === 'cards' ? 'secondary' : 'ghost'} size="sm" aria-pressed={viewMode === 'cards'} onClick={() => chooseViewMode('cards')}>
+                <LayoutGrid className="size-4" aria-hidden="true" />
+                <span className="ms-1.5">بطاقات</span>
+              </Button>
+              <Button type="button" variant={viewMode === 'table' ? 'secondary' : 'ghost'} size="sm" aria-pressed={viewMode === 'table'} onClick={() => chooseViewMode('table')}>
+                <TableProperties className="size-4" aria-hidden="true" />
+                <span className="ms-1.5">جدول</span>
+              </Button>
+            </div>
+          </div>
+        ) : null}
+        {viewMode === 'cards' ? (
           <MobileRegisterSkeleton rows={skeletonRows} />
-        </div>
+        ) : (
+          <DesktopTableSkeleton rows={skeletonRows} cols={resolvedColumns.length || columns.length} hasSelection={Boolean(rowSelection)} />
+        )}
       </div>
     );
   }
@@ -573,12 +612,12 @@ export function EntityTable<T>({
       {toolbar || enableViewModeToggle ? (
         <div data-entity-table-toolbar className="flex min-h-11 flex-wrap items-center justify-end gap-2">
           {enableViewModeToggle ? (
-            <div className="hidden min-h-11 items-center rounded-xl border border-border/70 bg-muted/35 p-1 md:inline-flex" role="group" aria-label={`طريقة عرض ${ariaLabel}`}>
-              <Button type="button" variant={viewMode === 'cards' ? 'secondary' : 'ghost'} size="sm" aria-pressed={viewMode === 'cards'} onClick={() => setViewMode('cards')}>
+            <div className="inline-flex min-h-11 items-center rounded-xl border border-border/70 bg-muted/35 p-1" role="group" aria-label={`طريقة عرض ${ariaLabel}`}>
+              <Button type="button" variant={viewMode === 'cards' ? 'secondary' : 'ghost'} size="sm" aria-pressed={viewMode === 'cards'} onClick={() => chooseViewMode('cards')}>
                 <LayoutGrid className="size-4" aria-hidden="true" />
                 <span className="ms-1.5">بطاقات</span>
               </Button>
-              <Button type="button" variant={viewMode === 'table' ? 'secondary' : 'ghost'} size="sm" aria-pressed={viewMode === 'table'} onClick={() => setViewMode('table')}>
+              <Button type="button" variant={viewMode === 'table' ? 'secondary' : 'ghost'} size="sm" aria-pressed={viewMode === 'table'} onClick={() => chooseViewMode('table')}>
                 <TableProperties className="size-4" aria-hidden="true" />
                 <span className="ms-1.5">جدول</span>
               </Button>
@@ -588,162 +627,164 @@ export function EntityTable<T>({
         </div>
       ) : null}
 
-      <div className={cn('block', viewMode === 'cards' ? 'md:block' : 'md:hidden')} data-entity-table-mobile>
-        <ul role="list" aria-label={ariaLabel} className="grid gap-2.5" data-entity-table-mobile-list>
-          {rows.map((row) => {
-            const rowKey = keyOf(row);
-            const cardType = typeof mobileCardType === 'function' ? mobileCardType(row) : mobileCardType;
-            return (
-              <MobileRegisterListItem
-                key={rowKey}
-                row={row}
-                rowKey={rowKey}
-                ariaLabel={ariaLabel}
-                identityColumn={identityColumn}
-                datumColumn={datumColumn}
-                cardType={cardType}
-                badgeColumn={badgeColumn}
-                summaryColumns={summaryColumns}
-                actionsColumn={actionsColumn}
-                structuredActions={mobileCardActions ? mobileCardActions(row) : undefined}
-                primaryAction={mobileCardPrimaryAction ? mobileCardPrimaryAction(row) : undefined}
-                selected={selectedSet.has(rowKey)}
-                onToggleSelected={rowSelection ? () => toggleSelected(rowKey) : undefined}
-                onRowClick={onRowClick}
-              />
-            );
-          })}
-        </ul>
-      </div>
-
-      <div className={viewMode === 'cards' ? 'hidden' : 'hidden md:block'}>
-        <Card data-entity-table-wrapper data-compact-responsive-table data-entity-table-grid className="overflow-hidden rounded-xl border-border/70 bg-card shadow-card">
-          <div
-            data-entity-table-scroll
-            tabIndex={0}
-            role="region"
-            aria-label={`${ariaLabel} — منطقة جدول قابلة للتمرير أفقياً عند الحاجة`}
-            className="mobile-scroll-x overscroll-x-contain touch-pan-x focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
-          >
-            <Table
-              data-entity-table
-              density="compact"
-              aria-label={ariaLabel}
-              className="min-w-full text-[13px] [&_td+td]:border-s [&_td+td]:border-border/40 [&_th+th]:border-s [&_th+th]:border-border/50"
+      {viewMode === 'cards' ? (
+        <div data-entity-table-mobile>
+          <ul role="list" aria-label={ariaLabel} className="grid gap-2.5" data-entity-table-mobile-list>
+            {rows.map((row) => {
+              const rowKey = keyOf(row);
+              const cardType = typeof mobileCardType === 'function' ? mobileCardType(row) : mobileCardType;
+              return (
+                <MobileRegisterListItem
+                  key={rowKey}
+                  row={row}
+                  rowKey={rowKey}
+                  ariaLabel={ariaLabel}
+                  identityColumn={identityColumn}
+                  datumColumn={datumColumn}
+                  cardType={cardType}
+                  badgeColumn={badgeColumn}
+                  summaryColumns={summaryColumns}
+                  actionsColumn={actionsColumn}
+                  structuredActions={mobileCardActions ? mobileCardActions(row) : undefined}
+                  primaryAction={mobileCardPrimaryAction ? mobileCardPrimaryAction(row) : undefined}
+                  selected={selectedSet.has(rowKey)}
+                  onToggleSelected={rowSelection ? () => toggleSelected(rowKey) : undefined}
+                  onRowClick={onRowClick}
+                />
+              );
+            })}
+          </ul>
+        </div>
+      ) : (
+        <div>
+          <Card data-entity-table-wrapper data-compact-responsive-table data-entity-table-grid className="overflow-hidden rounded-xl border-border/70 bg-card shadow-card">
+            <div
+              data-entity-table-scroll
+              tabIndex={0}
+              role="region"
+              aria-label={`${ariaLabel} — منطقة جدول قابلة للتمرير أفقياً عند الحاجة`}
+              className="mobile-scroll-x overscroll-x-contain touch-pan-x focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
             >
-              <TableHeader className="bg-muted/35">
-                <TableRow className="hover:bg-transparent">
-                  {rowSelection ? (
-                    <TableHead className="w-11 bg-muted/35 px-3 text-center">
-                      <SelectionCheckbox
-                        checked={allCurrentSelected}
-                        mixed={someCurrentSelected}
-                        label={rowSelection.ariaLabel ?? `تحديد سجلات ${ariaLabel}`}
-                        onChange={toggleSelectCurrentPage}
-                      />
-                    </TableHead>
-                  ) : null}
-                  {hasExpansion ? <TableHead className="w-11 bg-muted/35 px-2"><span className="sr-only">تفاصيل الصف</span></TableHead> : null}
-                  {resolvedColumns.map((column) => {
-                    const sortDirection = column.sortable && sort?.field === column.key
-                      ? (sort.direction === 'asc' ? 'ascending' : 'descending')
-                      : undefined;
-                    return (
-                      <TableHead
-                        key={column.key}
-                        data-column-priority={column.resolvedPriority}
-                        className={cn(
-                          'h-10 bg-muted/40 px-3 text-xs font-bold tracking-[0.01em] text-muted-foreground sm:px-3.5',
-                          priorityClass(column.resolvedPriority, column.sticky !== false),
-                          column.className,
-                        )}
-                        aria-sort={sortDirection}
-                      >
-                        {column.sortable && onSort ? (
-                          <button
-                            type="button"
-                            className="inline-flex min-h-11 cursor-pointer items-center font-black text-muted-foreground outline-none transition hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/25"
-                            onClick={() => handleSort(column.key)}
-                          >
-                            {column.header}<SortIcon field={column.key} sort={sort} />
-                          </button>
-                        ) : column.header}
+              <Table
+                data-entity-table
+                density="compact"
+                aria-label={ariaLabel}
+                className="min-w-full text-[13px] [&_td+td]:border-s [&_td+td]:border-border/40 [&_th+th]:border-s [&_th+th]:border-border/50"
+              >
+                <TableHeader className="bg-muted/35">
+                  <TableRow className="hover:bg-transparent">
+                    {rowSelection ? (
+                      <TableHead className="w-11 bg-muted/35 px-3 text-center">
+                        <SelectionCheckbox
+                          checked={allCurrentSelected}
+                          mixed={someCurrentSelected}
+                          label={rowSelection.ariaLabel ?? `تحديد سجلات ${ariaLabel}`}
+                          onChange={toggleSelectCurrentPage}
+                        />
                       </TableHead>
-                    );
-                  })}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((row) => {
-                  const rowKey = keyOf(row);
-                  const isExpanded = isRowExpanded(rowKey);
-                  const isSelected = selectedSet.has(rowKey);
-                  const detailId = `${disclosurePrefix}-${rowKey}`;
-                  return (
-                    <Fragment key={rowKey}>
-                      <TableRow
-                        selected={isSelected}
-                        onClick={onRowClick ? (event) => activateRow(row, event) : undefined}
-                        onKeyDown={onRowClick ? (event) => activateRow(row, event) : undefined}
-                        className={cn(
-                          'min-h-11 bg-card hover:bg-muted/45',
-                          onRowClick && 'cursor-pointer focus-visible:bg-primary/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/35',
-                        )}
-                        tabIndex={onRowClick ? 0 : undefined}
-                        aria-expanded={hasExpansion ? isExpanded : undefined}
-                      >
-                        {rowSelection ? (
-                          <TableCell className="w-11 px-3 text-center" data-row-action>
-                            <SelectionCheckbox
-                              checked={isSelected}
-                              label={`تحديد ${nodeToText(identityColumn.render(row)).trim() || 'السجل'}`}
-                              onChange={() => toggleSelected(rowKey)}
-                            />
-                          </TableCell>
-                        ) : null}
-                        {hasExpansion ? (
-                          <TableCell className="w-11 px-2" data-row-action>
+                    ) : null}
+                    {hasExpansion ? <TableHead className="w-11 bg-muted/35 px-2"><span className="sr-only">تفاصيل الصف</span></TableHead> : null}
+                    {resolvedColumns.map((column) => {
+                      const sortDirection = column.sortable && sort?.field === column.key
+                        ? (sort.direction === 'asc' ? 'ascending' : 'descending')
+                        : undefined;
+                      return (
+                        <TableHead
+                          key={column.key}
+                          data-column-priority={column.resolvedPriority}
+                          className={cn(
+                            'h-10 bg-muted/40 px-3 text-xs font-bold tracking-[0.01em] text-muted-foreground sm:px-3.5',
+                            priorityClass(column.resolvedPriority, column.sticky !== false),
+                            column.className,
+                          )}
+                          aria-sort={sortDirection}
+                        >
+                          {column.sortable && onSort ? (
                             <button
                               type="button"
-                              className="grid size-11 place-items-center rounded-lg text-muted-foreground outline-none transition hover:bg-muted hover:text-foreground focus-visible:ring-4 focus-visible:ring-primary/20"
-                              aria-label={isExpanded ? 'إخفاء تفاصيل الصف' : 'عرض كل تفاصيل الصف'}
-                              aria-expanded={isExpanded}
-                              aria-controls={detailId}
-                              onClick={() => toggleRow(rowKey)}
+                              className="inline-flex min-h-11 cursor-pointer items-center font-black text-muted-foreground outline-none transition hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/25"
+                              onClick={() => handleSort(column.key)}
                             >
-                              {isExpanded ? <ChevronUp className="size-4" aria-hidden="true" /> : <ChevronDown className="size-4" aria-hidden="true" />}
+                              {column.header}<SortIcon field={column.key} sort={sort} />
                             </button>
-                          </TableCell>
-                        ) : null}
-                        {resolvedColumns.map((column) => (
-                          <TableCell
-                            key={column.key}
-                            data-column-priority={column.resolvedPriority}
-                            className={cn(
-                              'h-11 px-3 py-2 align-middle sm:px-3.5',
-                              priorityClass(column.resolvedPriority, column.sticky !== false),
-                              column.className,
-                            )}
-                          >
-                            {column.render(row)}
-                          </TableCell>
-                        ))}
-                      </TableRow>
-                      {hasExpansion && isExpanded ? (
-                        <TableRow id={detailId} data-row-disclosure className="hover:bg-transparent">
-                          <TableCell colSpan={colSpan} className="border-s-0 bg-muted/20 p-4">
-                            {renderRowExpansion!(row)}
-                          </TableCell>
+                          ) : column.header}
+                        </TableHead>
+                      );
+                    })}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {rows.map((row) => {
+                    const rowKey = keyOf(row);
+                    const isExpanded = isRowExpanded(rowKey);
+                    const isSelected = selectedSet.has(rowKey);
+                    const detailId = `${disclosurePrefix}-${rowKey}`;
+                    return (
+                      <Fragment key={rowKey}>
+                        <TableRow
+                          selected={isSelected}
+                          onClick={onRowClick ? (event) => activateRow(row, event) : undefined}
+                          onKeyDown={onRowClick ? (event) => activateRow(row, event) : undefined}
+                          className={cn(
+                            'min-h-11 bg-card hover:bg-muted/45',
+                            onRowClick && 'cursor-pointer focus-visible:bg-primary/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/35',
+                          )}
+                          tabIndex={onRowClick ? 0 : undefined}
+                          aria-expanded={hasExpansion ? isExpanded : undefined}
+                        >
+                          {rowSelection ? (
+                            <TableCell className="w-11 px-3 text-center" data-row-action>
+                              <SelectionCheckbox
+                                checked={isSelected}
+                                label={`تحديد ${nodeToText(identityColumn.render(row)).trim() || 'السجل'}`}
+                                onChange={() => toggleSelected(rowKey)}
+                              />
+                            </TableCell>
+                          ) : null}
+                          {hasExpansion ? (
+                            <TableCell className="w-11 px-2" data-row-action>
+                              <button
+                                type="button"
+                                className="grid size-11 place-items-center rounded-lg text-muted-foreground outline-none transition hover:bg-muted hover:text-foreground focus-visible:ring-4 focus-visible:ring-primary/20"
+                                aria-label={isExpanded ? 'إخفاء تفاصيل الصف' : 'عرض كل تفاصيل الصف'}
+                                aria-expanded={isExpanded}
+                                aria-controls={detailId}
+                                onClick={() => toggleRow(rowKey)}
+                              >
+                                {isExpanded ? <ChevronUp className="size-4" aria-hidden="true" /> : <ChevronDown className="size-4" aria-hidden="true" />}
+                              </button>
+                            </TableCell>
+                          ) : null}
+                          {resolvedColumns.map((column) => (
+                            <TableCell
+                              key={column.key}
+                              data-column-priority={column.resolvedPriority}
+                              className={cn(
+                                'h-11 px-3 py-2 align-middle sm:px-3.5',
+                                priorityClass(column.resolvedPriority, column.sticky !== false),
+                                column.className,
+                              )}
+                            >
+                              {column.render(row)}
+                            </TableCell>
+                          ))}
                         </TableRow>
-                      ) : null}
-                    </Fragment>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
-        </Card>
-      </div>
+                        {hasExpansion && isExpanded ? (
+                          <TableRow id={detailId} data-row-disclosure className="hover:bg-transparent">
+                            <TableCell colSpan={colSpan} className="border-s-0 bg-muted/20 p-4">
+                              {renderRowExpansion!(row)}
+                            </TableCell>
+                          </TableRow>
+                        ) : null}
+                      </Fragment>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </Card>
+        </div>
+      )}
 
       {pagination ? <PaginationBar pagination={pagination} /> : null}
     </div>
