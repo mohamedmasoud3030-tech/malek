@@ -28,24 +28,27 @@ describe('tenant portal v1 boundary', () => {
     expect(isTenantPortalSectionId('office_settings')).toBe(false);
   });
 
-  it('loads through the deferred boundary while the upstream read model is unavailable', async () => {
-    expect(await loadTenantPortalSnapshot()).toEqual({
-      status: 'deferred',
-      reason: 'TENANT_PORTAL_READ_MODEL_UNAVAILABLE',
+  it('fails closed before any RPC call when the secure link token is absent', async () => {
+    expect(await loadTenantPortalSnapshot(undefined)).toEqual({
+      status: 'invalid',
+      reason: 'TENANT_PORTAL_LINK_REQUIRED',
+    });
+    expect(await loadTenantPortalSnapshot('not-a-token')).toEqual({
+      status: 'invalid',
+      reason: 'TENANT_PORTAL_LINK_INVALID_OR_EXPIRED',
     });
   });
 
-  it('contains no office-core mutation call in the feature source', () => {
+  it('contains no office-core browser mutation in the portal feature source', () => {
     for (const file of featureFiles()) {
       const source = readFileSync(resolve(featureDir, file), 'utf8');
-      expect(
-        source,
-        `${file} must not write through the browser client`,
-      ).not.toMatch(/\.from\s*\(\s*['"][^'"]+['"]\s*\)\s*\.(insert|update|delete|upsert)\s*\(/);
+      expect(source, `${file} must not write through the browser client`).not.toMatch(
+        /\.from\s*\(\s*['"][^'"]+['"]\s*\)\s*\.(insert|update|delete|upsert)\s*\(/,
+      );
     }
   });
 
-  it('stays a leaf: no office shell/navigation import and no finance RPC import', () => {
+  it('stays a leaf: no office shell/navigation or office finance module import', () => {
     for (const file of featureFiles()) {
       const source = readFileSync(resolve(featureDir, file), 'utf8');
       expect(source, `${file} must not import office shell`).not.toMatch(
@@ -54,7 +57,14 @@ describe('tenant portal v1 boundary', () => {
     }
   });
 
-  it('keeps the page self-contained (no oversized feature modules)', () => {
+  it('never accepts tenantId or companyId from the portal browser service', () => {
+    const source = readFileSync(resolve(featureDir, 'tenant-portal-service.ts'), 'utf8');
+    expect(source).not.toMatch(/p_tenant_id|p_company_id|companyId\s*:/);
+    expect(source).toContain("rpc('get_tenant_portal_snapshot'");
+    expect(source).toContain('p_token');
+  });
+
+  it('keeps the page self-contained', () => {
     for (const file of featureFiles()) {
       const size = statSync(resolve(featureDir, file)).size;
       expect(size, `${file} must stay small (bundle pressure)`).toBeLessThan(20_000);
