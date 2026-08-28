@@ -31,7 +31,6 @@ import { VacantUnitsSection } from './components/vacant-units-section';
 import { buildUtilityObligationsSignal, EMPTY_UTILITY_OBLIGATIONS_SIGNAL } from './utility-obligations-signal';
 import { buildExpiringContracts, buildOverdueTenantRows, toDateInputValue } from './dashboard-utils';
 import { OwnerObligationsSection } from './components/owner-obligations-section';
-import './dashboard-layout.css';
 
 /**
  * MALEK command center.
@@ -157,7 +156,7 @@ export function DashboardPage() {
         )}
       />
 
-      <div data-visual-contract="v2">
+      <div>
         {hasDashboardError ? (
           <ErrorState
             title={snapshotUnavailable ? 'تعذر تحميل بيانات اليوم' : 'تعذر تحديث بيانات اليوم'}
