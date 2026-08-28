@@ -44,5 +44,5 @@ export const OWNER_PORTAL_ALLOWED_PROJECTION_SOURCES = [
   'contracts',
   'owner_settlements',
   'maintenance_records',
-  'attachments',
+  'vault_documents',
 ] as const;
