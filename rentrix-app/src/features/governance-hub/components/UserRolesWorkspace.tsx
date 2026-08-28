@@ -1,6 +1,5 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { RefreshCw, ShieldCheck, UserCog, UsersRound } from 'lucide-react';
-import { toast } from 'sonner';
 import { DataErrorScreen } from '@/components/data-error-screen';
 import { EmptyState } from '@/components/empty-state';
 import { AccessDenied } from '@/components/layout/access-denied';
@@ -12,14 +11,10 @@ import { LoadingState } from '@/components/ui/loading-state';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Textarea } from '@/components/ui/textarea';
 import { getPermissionLabel, type AppPermission } from '@/features/auth/permissions';
-import {
-  listEmployeeEffectivePermissions,
-  setEmployeePermission,
-  type EmployeeEffectivePermission,
-} from '@/features/auth/permission-request-service';
 import { useAuth } from '@/hooks/use-auth';
 import { canManageGovernedUser, getOfficePersona, getRoleLabel } from '../user-roles-model';
 import { fetchGovernedUsers, type GovernedUser } from '../user-roles-service';
+import { useEmployeePermissionManagement, type EmployeePermissionEntry } from '../use-employee-permission-management';
 import { usePermissionRequestReview, type PermissionRequest } from '../use-permission-request-review';
 
 const employeeCapabilityGroups: readonly Readonly<{
@@ -43,7 +38,7 @@ function UserAccessCard({
 }: Readonly<{
   user: GovernedUser;
   currentUserId: string | null | undefined;
-  permissions: readonly EmployeeEffectivePermission[];
+  permissions: readonly EmployeePermissionEntry[];
   onTogglePermission: (userId: string, permission: AppPermission, allowed: boolean) => void;
   pendingPermission: string | null;
 }>) {
@@ -262,20 +257,7 @@ export function UserRolesWorkspace() {
   const canManageUsers = canAccess('users.manage');
   const canReviewRequests = canAccess('permission_requests.review');
   const usersQuery = useQuery({ queryKey: ['governance-users'], queryFn: fetchGovernedUsers, enabled: canManageUsers });
-  const permissionsQuery = useQuery({
-    queryKey: ['governance-employee-effective-permissions'],
-    queryFn: listEmployeeEffectivePermissions,
-    enabled: canManageUsers,
-  });
-  const permissionMutation = useMutation({
-    mutationFn: ({ userId, permission, allowed }: { userId: string; permission: AppPermission; allowed: boolean }) =>
-      setEmployeePermission(userId, permission, allowed),
-    onSuccess: async () => {
-      await permissionsQuery.refetch();
-      toast.success('تم تحديث صلاحيات الموظف');
-    },
-    onError: () => toast.error('تعذر تحديث صلاحية الموظف'),
-  });
+  const { permissionsQuery, permissionMutation } = useEmployeePermissionManagement(canManageUsers);
 
   if (!canManageUsers && !canReviewRequests) {
     return <AccessDenied message="لا تملك صلاحية إدارة الموظفين أو مراجعة طلبات الصلاحية." />;
