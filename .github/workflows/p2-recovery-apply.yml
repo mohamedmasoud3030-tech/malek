@@ -1,0 +1,94 @@
+name: P2 Recovery Apply
+
+on:
+  push:
+    branches:
+      - recovery/p2-complete-20260828
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply-recovered-p2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout recovery branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: recovery/p2-complete-20260828
+
+      - name: Reconstruct and verify filtered patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat \
+            .recovery/p2.parts/part00 \
+            .recovery/p2.parts/part01 \
+            .recovery/p2.parts/part02 \
+            .recovery/p2.parts/part03 \
+            .recovery/p2.parts/part04 > /tmp/p2.patch.gz.b64
+          base64 --decode /tmp/p2.patch.gz.b64 > /tmp/p2.patch.gz
+          echo 'b1ed1e535d9749ae68c1e58893c2efa5234cace4814f0940aab49847545cd131  /tmp/p2.patch.gz' | sha256sum --check
+          gzip -dc /tmp/p2.patch.gz > /tmp/p2.patch
+          echo '4a79ba671c80c1b9cbd3145d5766153c7fb35582401943213e630be7ee5c6869  /tmp/p2.patch' | sha256sum --check
+
+      - name: Apply P2 recovery with scope guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          git apply --check --3way /tmp/p2.patch
+          git apply --3way --index /tmp/p2.patch
+
+          cat > /tmp/p2-allowed.txt <<'EOF'
+          rentrix-app/src/features/contracts/components/ContractDetailSections.tsx
+          rentrix-app/src/features/contracts/components/ContractFormFields.tsx
+          rentrix-app/src/features/contracts/components/ContractTable.tsx
+          rentrix-app/src/features/contracts/contractSchema.test.ts
+          rentrix-app/src/features/contracts/contractSchema.ts
+          rentrix-app/src/features/contracts/contracts-list.e2e-fixture.tsx
+          rentrix-app/src/features/contracts/services/contractService.test.ts
+          rentrix-app/src/features/contracts/services/contractService.ts
+          rentrix-app/src/features/contracts/short-stay-lease-mode.pglite.test.ts
+          rentrix-app/src/features/contracts/useContractForm.ts
+          rentrix-app/src/features/finance/FinancePage.tsx
+          rentrix-app/src/features/finance/components/finance-operations-overview.tsx
+          rentrix-app/src/features/finance/finance-cockpit-remediation.test.ts
+          rentrix-app/src/features/lifecycle/p2-owner-reconciliation-journey.pglite.test.ts
+          rentrix-app/src/features/owners/components/owner-agreements-section.test.tsx
+          rentrix-app/src/features/owners/components/owner-agreements-section.tsx
+          rentrix-app/src/features/owners/components/owner-dossier-body.tsx
+          rentrix-app/src/features/owners/ownerAgreementService.ts
+          rentrix-app/src/features/owners/useOwnerAgreements.ts
+          rentrix-app/src/test/contractRowFixture.ts
+          rentrix-app/src/types/database.ts
+          supabase/migrations/20260901000037_short_stay_lease_mode.sql
+          EOF
+          sed -i 's/^          //' /tmp/p2-allowed.txt
+          sort -u /tmp/p2-allowed.txt -o /tmp/p2-allowed.txt
+          git diff --cached --name-only | sort -u > /tmp/p2-actual.txt
+          unexpected="$(comm -23 /tmp/p2-actual.txt /tmp/p2-allowed.txt || true)"
+          if [ -n "$unexpected" ]; then
+            echo 'Recovery patch touched files outside the approved P2 scope:' >&2
+            echo "$unexpected" >&2
+            exit 1
+          fi
+          missing="$(comm -13 /tmp/p2-actual.txt /tmp/p2-allowed.txt || true)"
+          if [ -n "$missing" ]; then
+            echo 'Note: approved files not changed after three-way reconciliation:'
+            echo "$missing"
+          fi
+
+      - name: Commit only recovered product changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .recovery
+          rm -f .github/workflows/p2-recovery-apply.yml
+          git add -A
+          git config user.name 'MALEK Recovery Bot'
+          git config user.email '250202280+mohamedmasoud3030-tech@users.noreply.github.com'
+          git commit -m 'feat(p2): recover leasing and money integration'
+          git push origin HEAD:recovery/p2-complete-20260828
