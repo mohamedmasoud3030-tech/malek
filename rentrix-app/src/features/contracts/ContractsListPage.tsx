@@ -13,6 +13,7 @@ import { buildContractsCsvBlob, buildContractsCsvFilename } from './contractList
 import { useCompanySettingsContract } from '../settings/useCompanySettings';
 import { useContractFilters } from './hooks/useContractFilters';
 import { useContracts, useSoftDeleteContract } from './useContracts';
+import { useAuth } from '@/hooks/use-auth';
 import { toast } from 'sonner';
 import type { ContractListItem, ContractStatusFilter } from './services/contractService';
 
@@ -34,6 +35,10 @@ export type ContractsListPageProps = Readonly<{ embedded?: boolean }>;
 
 export function ContractsListPage({ embedded = false }: ContractsListPageProps) {
   const navigate = useNavigate();
+  const { canAccess } = useAuth();
+  const canCreate = canAccess('contracts.create');
+  const canEdit = canAccess('contracts.edit');
+  const canCancel = canAccess('contracts.cancel');
   const [status, setStatus] = useState<ContractStatusFilter>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [expiringOnly, setExpiringOnly] = useState(false);
@@ -66,8 +71,9 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
     if (!contractsQuery.isError) errorToastShownRef.current = false;
   }, [contractsQuery.isError]);
 
-  const openCreate = () => { setEditContractId(undefined); setModalOpen(true); };
+  const openCreate = () => { if (canCreate) { setEditContractId(undefined); setModalOpen(true); } };
   const openEdit = (id: string) => {
+    if (!canEdit) return;
     setEditContractId(id);
     setModalOpen(true);
   };
@@ -77,7 +83,7 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
   };
   const resetFilters = () => { setStatus('all'); setSearchTerm(''); setExpiringOnly(false); setPage(1); };
   const confirmDelete = async () => {
-    if (!deleteId || deleteMutation.isPending) return;
+    if (!canCancel || !deleteId || deleteMutation.isPending) return;
     try {
       await deleteMutation.mutateAsync(deleteId);
       setDeleteId(null);
@@ -95,11 +101,11 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
         visualVariant="malek-pro"
         title="العقود"
         count={hasClientFilter ? filteredContracts.length : (contractsQuery.data?.count ?? filteredContracts.length)}
-        primaryAction={
+        primaryAction={canCreate ? (
           <Button onClick={openCreate}>
             <Plus className="me-2 size-4" />إنشاء عقد
           </Button>
-        }
+        ) : undefined}
         secondaryActions={
           <Button variant="secondary" onClick={() => exportContractsCsv(filteredContracts)} disabled={!filteredContracts.length} aria-label="تصدير العقود كملف CSV">
             <Download className="me-2 size-4" />تصدير CSV
@@ -130,9 +136,9 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
           error={contractsQuery.error}
           isError={contractsQuery.isError}
           isLoading={contractsQuery.isLoading}
-          onCreate={hasActiveFilters ? undefined : openCreate}
-          onDelete={setDeleteId}
-          onEdit={openEdit}
+          onCreate={!hasActiveFilters && canCreate ? openCreate : undefined}
+          onDelete={canCancel ? setDeleteId : undefined}
+          onEdit={canEdit ? openEdit : undefined}
           onPreview={handlePreview}
           onRetry={() => contractsQuery.refetch()}
           pagination={!hasClientFilter && totalPages > 1 ? { page, pageSize, total: contractsQuery.data?.count ?? 0, onPageChange: setPage } : undefined}
@@ -140,17 +146,19 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
         />
       </EmbeddableWorkspace>
 
-      <ContractFormModal open={modalOpen} onClose={closeModal} contractId={editContractId} />
+      {canCreate || canEdit ? <ContractFormModal open={modalOpen} onClose={closeModal} contractId={editContractId} /> : null}
 
-      <ConfirmDialog
-        open={Boolean(deleteId)}
-        onOpenChange={(open) => { if (!open) setDeleteId(null); }}
-        title="أرشفة العقد؟"
-        description="سيتم أرشفة العقد وإخفاؤه من القائمة النشطة مع الاحتفاظ بسجله المحاسبي وتاريخه بالكامل، ولا يتم حذفه بشكل نهائي. المرجع التجاري سيبقى محفوظاً للتدقيق."
-        confirmLabel="تأكيد الأرشفة"
-        isLoading={deleteMutation.isPending}
-        onConfirm={confirmDelete}
-      />
+      {canCancel ? (
+        <ConfirmDialog
+          open={Boolean(deleteId)}
+          onOpenChange={(open) => { if (!open) setDeleteId(null); }}
+          title="أرشفة العقد؟"
+          description="سيتم أرشفة العقد وإخفاؤه من القائمة النشطة مع الاحتفاظ بسجله المحاسبي وتاريخه بالكامل، ولا يتم حذفه بشكل نهائي. المرجع التجاري سيبقى محفوظاً للتدقيق."
+          confirmLabel="تأكيد الأرشفة"
+          isLoading={deleteMutation.isPending}
+          onConfirm={confirmDelete}
+        />
+      ) : null}
     </>
   );
 }
