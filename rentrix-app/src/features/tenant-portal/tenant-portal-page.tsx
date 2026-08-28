@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { CalendarClock, FileText, Home, ReceiptText, ShieldCheck, Wrench } from 'lucide-react';
 import { PageLayout } from '@/components/layout/page-layout';
 import { LoadingState } from '@/components/ui/loading-state';
+import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { APP_BRAND_NAME } from '@/lib/brand';
 import { loadTenantPortalSnapshot } from './tenant-portal-service';
 import type { TenantPortalLoadResult } from './tenant-portal-read-model';
@@ -67,7 +68,7 @@ export function TenantPortalPage() {
   const snapshot = result?.status === 'ready' ? result.snapshot : null;
 
   return (
-    <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro" className="pb-8" contentClassName="space-y-4">
+    <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro" className="pb-8" contentClassName="space-y-4 pb-8 md:pb-8">
       <div data-tenant-portal className="space-y-4">
         <header className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-card" data-tenant-portal-header>
           <div className="p-4 sm:p-5">
@@ -99,7 +100,7 @@ export function TenantPortalPage() {
 
         {snapshot ? (
           <main className="space-y-4" data-tenant-portal-auth-state="authorized">
-            <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <ResponsiveCardGrid desktopColumns={4} gap="sm">
               <article className="rounded-2xl border border-border bg-card p-4">
                 <div className="flex items-center gap-2 text-primary"><ShieldCheck className="size-4" /><h2 className="text-sm font-black">الحساب</h2></div>
                 <p className="mt-3 font-black">{snapshot.identity.fullName}</p>
@@ -123,17 +124,17 @@ export function TenantPortalPage() {
                 <p className="mt-3 font-black">{snapshot.paidPosition ? money(snapshot.paidPosition.remaining, snapshot.paidPosition.currency) : '—'}</p>
                 <p className="mt-1 text-xs text-muted-foreground">متأخر: {snapshot.paidPosition ? money(snapshot.paidPosition.overdue, snapshot.paidPosition.currency) : '—'}</p>
               </article>
-            </section>
+            </ResponsiveCardGrid>
 
             {snapshot.paidPosition ? (
               <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
                 <h2 className="font-black">الموقف المالي</h2>
-                <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <ResponsiveCardGrid desktopColumns={4} gap="sm" className="mt-3">
                   <div><p className="text-xs text-muted-foreground">المستحق</p><p className="mt-1 font-black">{money(snapshot.paidPosition.invoiced)}</p></div>
                   <div><p className="text-xs text-muted-foreground">المدفوع</p><p className="mt-1 font-black">{money(snapshot.paidPosition.paid)}</p></div>
                   <div><p className="text-xs text-muted-foreground">المتبقي</p><p className="mt-1 font-black">{money(snapshot.paidPosition.remaining)}</p></div>
                   <div><p className="text-xs text-muted-foreground">المتأخر</p><p className="mt-1 font-black">{money(snapshot.paidPosition.overdue)}</p></div>
-                </div>
+                </ResponsiveCardGrid>
               </section>
             ) : null}
 
