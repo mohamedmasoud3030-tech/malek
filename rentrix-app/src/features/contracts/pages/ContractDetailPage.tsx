@@ -1,5 +1,5 @@
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
-import { BarChart3, Edit } from 'lucide-react';
+import { BarChart3, CalendarPlus, Edit } from 'lucide-react';
 import { useState } from 'react';
 import { AsyncContentState } from '@/components/async-content-state';
 import { EntityDetailHeader } from '@/components/layout/entity-detail-header';
@@ -17,8 +17,9 @@ import { exportContractPdf, printContractView, shareContractLink } from '../acti
 import { ContractDetailWorkspace } from '../components/ContractDetailWorkspace';
 import { contractStatusLabels, contractStatusTone } from '../contractSchema';
 import { ContractRenewalDialog } from '../lifecycle/ContractRenewalDialog';
+import { ContractShortStayExtensionDialog } from '../lifecycle/ContractShortStayExtensionDialog';
 import { ContractTerminationDialog } from '../lifecycle/ContractTerminationDialog';
-import { canRenewContract, canTerminateContract } from '../lifecycle/contractLifecycleRules';
+import { canExtendShortStayContract, canRenewContract, canTerminateContract } from '../lifecycle/contractLifecycleRules';
 import { useContract } from '../useContracts';
 
 const getContractDetailErrorMessage = (error: unknown) => error instanceof Error ? error.message : 'حدث خطأ غير متوقع أثناء تحميل العقد.';
@@ -32,6 +33,7 @@ export function ContractDetailPage() {
   const { canAccess } = useAuth();
   const canViewReports = canAccess('financial.reports.view');
   const [renewOpen, setRenewOpen] = useState(false);
+  const [extendOpen, setExtendOpen] = useState(false);
   const [terminateOpen, setTerminateOpen] = useState(false);
 
   if (contractQuery.isLoading || contractQuery.isError || !contractQuery.data) {
@@ -59,10 +61,20 @@ export function ContractDetailPage() {
   const contractStatus = normalizeContractStatus(contract.status);
   const renewalAllowed = canRenewContract(contract);
   const terminationAllowed = canTerminateContract(contract);
+  const extensionAllowed = canExtendShortStayContract(contract)
+    && canAccess('contracts.write')
+    && canAccess('financial.invoices.generate');
   const openRenewal = () => setRenewOpen(true);
+  const openExtension = () => setExtendOpen(true);
   const openTermination = () => setTerminateOpen(true);
   const handleShare = () => shareContractLink(contract);
   const contractMenuActions: ActionMenuItem[] = [
+    ...(extensionAllowed ? [{
+      id: 'extend-short-stay',
+      label: 'تمديد الإقامة',
+      icon: <CalendarPlus className="size-4" />,
+      onSelect: openExtension,
+    }] : []),
     ...(canViewReports ? [{
       id: 'reports',
       label: 'كشف وتقارير العقد',
@@ -108,6 +120,7 @@ export function ContractDetailPage() {
         settings={companySettings}
       />
       <ContractRenewalDialog contract={contract} open={renewOpen} onOpenChange={setRenewOpen} onRenewed={async (result) => navigate({ to: '/contracts/$contractId', params: { contractId: result.new_contract_id } })} />
+      <ContractShortStayExtensionDialog contract={contract} open={extendOpen} onOpenChange={setExtendOpen} />
       <ContractTerminationDialog contractId={contract.id} open={terminateOpen} onOpenChange={setTerminateOpen} />
     </PageLayout>
   );
