@@ -9,10 +9,12 @@ const dashboardPage = readFileSync(resolve(layoutDir, '../../features/dashboard/
 const routeTree = readFileSync(resolve(layoutDir, '../../app/router/route-tree.ts'), 'utf8');
 const malikMark = readFileSync(resolve(layoutDir, '../../components/brand/malik-mark.tsx'), 'utf8');
 
-describe('shared page/date context and compact header brand contract', () => {
-  it('keeps the date bar in normal document flow and changes only the page name', () => {
+describe('shared day context and compact header brand contract', () => {
+  it('keeps one quiet day/date strip without duplicating the visible page title', () => {
     expect(pageLayout).toContain('data-global-page-context');
-    expect(pageLayout).toContain('data-global-page-title');
+    expect(pageLayout).toContain('data-global-day-label');
+    expect(pageLayout).not.toContain('data-global-page-title');
+    expect(pageLayout).toContain("const todayLabel = isArabic ? 'اليوم' : 'Today';");
     expect(pageLayout).toContain('const matches = useMatches()');
     expect(pageLayout).toContain('title?.trim() || routeTitle || APP_BRAND_NAME');
     expect(pageLayout).not.toContain('className="sticky');
