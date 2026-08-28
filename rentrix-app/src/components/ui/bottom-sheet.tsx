@@ -122,7 +122,7 @@ export function BottomSheet({ open, onClose, title, children, className }: Botto
           type="button"
           onClick={onClose}
           data-bottom-sheet-handle
-          className="flex min-h-8 shrink-0 cursor-grab items-center justify-center pb-1 pt-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/35 active:cursor-grabbing"
+          className="flex min-h-11 shrink-0 cursor-grab items-center justify-center pb-1 pt-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/35 active:cursor-grabbing"
           aria-label="مقبض اللوحة — اضغط للإغلاق"
         >
           <div className="h-1 w-9 rounded-full bg-muted-foreground/30 transition-colors hover:bg-muted-foreground/45 motion-reduce:transition-none" />

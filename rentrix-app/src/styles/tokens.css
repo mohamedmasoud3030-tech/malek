@@ -1,5 +1,8 @@
 /* MALEK design tokens — the only application theme source.
-   One palette, one light theme, one dark theme, one semantic bridge. */
+   One palette, one light theme, one dark theme, one semantic bridge.
+   Final direction: professional royal/deep blue family, clean light surfaces,
+   deep navy dark, strong controlled blue accents, high readability, premium contrast.
+   No teal, no purple, no gold, no excessive gradients, no washed-out gray. */
 
 @theme {
   --font-sans: 'Cairo', ui-sans-serif, system-ui, sans-serif;
@@ -39,7 +42,7 @@
   --z-toast: 120;
 
   --opacity-disabled: 0.72;
-  --focus-ring-width: 4px;
+  --focus-ring-width: 3px;
   --icon-xs: 0.875rem;
   --icon-sm: 1rem;
   --icon-md: 1.125rem;
@@ -52,63 +55,65 @@
   --max-w-xl: 80rem;
   --max-w-2xl: 96rem;
 
-  /* Light: cool neutral canvas, crisp white surfaces, navy action color. */
-  --color-bg: 218 28% 97%;
+  /* Light: clean white / very subtle cool off-white, professional royal blue primary,
+     clear neutral borders, dark readable text. */
+  --color-bg: 220 18% 98%;
   --color-card: 0 0% 100%;
-  --color-card-muted: 218 24% 95%;
-  --color-primary: 219 64% 32%;
+  --color-card-muted: 220 14% 96%;
+  --color-primary: 221 71% 36%;
   --color-primary-fg: 0 0% 100%;
-  --color-accent-fg: 222 38% 13%;
-  --color-text-primary: 222 38% 13%;
-  --color-text-secondary: 220 18% 34%;
-  --color-text-muted: 220 12% 45%;
-  --color-border: 218 20% 84%;
-  --color-border-light: 218 22% 90%;
+  --color-accent-fg: 222 36% 12%;
+  --color-text-primary: 222 36% 12%;
+  --color-text-secondary: 220 14% 32%;
+  --color-text-muted: 220 10% 42%;
+  --color-border: 220 13% 82%;
+  --color-border-light: 220 12% 88%;
 
-  --color-sidebar-bg: 222 45% 14%;
-  --color-sidebar-text: 218 22% 84%;
-  --color-sidebar-active-bg: 219 48% 24%;
+  --color-sidebar-bg: 222 47% 11%;
+  --color-sidebar-text: 216 16% 84%;
+  --color-sidebar-active-bg: 221 44% 20%;
   --color-sidebar-active-text: 0 0% 100%;
-  --color-sidebar-hover-bg: 222 34% 19%;
+  --color-sidebar-hover-bg: 222 34% 16%;
 
   --color-success-text: 156 62% 27%;
   --color-success-bg: 154 44% 93%;
-  --color-warning-text: 36 76% 35%;
-  --color-warning-bg: 39 76% 92%;
+  --color-warning-text: 32 80% 32%;
+  --color-warning-bg: 38 76% 92%;
   --color-danger-text: 0 64% 42%;
   --color-danger-bg: 0 68% 94%;
-  --color-info-text: 204 72% 36%;
-  --color-info-bg: 203 70% 93%;
-  --color-neutral-text: 220 14% 38%;
-  --color-neutral-bg: 218 20% 92%;
+  --color-info-text: 214 72% 38%;
+  --color-info-bg: 214 70% 93%;
+  --color-neutral-text: 220 12% 36%;
+  --color-neutral-bg: 220 14% 92%;
 
   --tone-emerald: 156 58% 30%;
   --tone-emerald-soft: 154 42% 93%;
-  --tone-amber: 36 78% 43%;
-  --tone-amber-soft: 39 76% 92%;
-  --tone-sky: 204 70% 39%;
-  --tone-sky-soft: 203 68% 93%;
+  --tone-amber: 32 80% 40%;
+  --tone-amber-soft: 38 76% 92%;
+  --tone-sky: 214 70% 40%;
+  --tone-sky-soft: 214 68% 93%;
   --tone-rose: 350 62% 45%;
   --tone-rose-soft: 350 65% 94%;
-  --tone-violet: 260 56% 50%;
-  --tone-violet-soft: 260 58% 94%;
-  --tone-slate: 220 18% 38%;
-  --tone-slate-soft: 218 18% 92%;
+  --tone-violet: 221 58% 48%;
+  --tone-violet-soft: 221 56% 94%;
+  --tone-slate: 220 14% 38%;
+  --tone-slate-soft: 220 14% 92%;
   --support-brand: 142 62% 42%;
 
-  --shadow-card: 0 1px 2px hsl(222 34% 14% / 0.05), 0 10px 24px -20px hsl(222 34% 14% / 0.18);
-  --shadow-card-hover: 0 2px 6px hsl(222 34% 14% / 0.06), 0 16px 30px -20px hsl(222 34% 14% / 0.22);
-  --shadow-elevated: 0 24px 48px -28px hsl(222 38% 12% / 0.28), 0 8px 18px -14px hsl(222 30% 15% / 0.14);
-  --shadow-sidebar: 0 0 28px -22px hsl(222 45% 14% / 0.5);
+  /* Reduced shadows: rely on borders + spacing for separation, not floating blobs. */
+  --shadow-card: 0 1px 2px hsl(222 20% 14% / 0.04), 0 4px 12px -10px hsl(222 20% 14% / 0.06);
+  --shadow-card-hover: 0 2px 6px hsl(222 20% 14% / 0.05), 0 10px 20px -12px hsl(222 20% 14% / 0.09);
+  --shadow-elevated: 0 12px 28px -18px hsl(222 24% 12% / 0.14), 0 4px 10px -8px hsl(222 20% 14% / 0.06);
+  --shadow-sidebar: 0 0 0 1px hsl(222 28% 18% / 0.9), 0 0 20px -16px hsl(222 47% 11% / 0.35);
 
-  --material-page: hsl(218 28% 97%);
-  --material-panel: hsl(0 0% 100% / 0.995);
-  --material-chrome: hsl(0 0% 100% / 0.96);
+  --material-page: hsl(220 18% 98%);
+  --material-panel: hsl(0 0% 100% / 0.998);
+  --material-chrome: hsl(0 0% 100% / 0.98);
   --material-overlay: hsl(0 0% 100% / 0.99);
-  --material-border: hsl(218 20% 74% / 0.28);
-  --material-highlight: inset 0 1px 0 hsl(0 0% 100% / 0.86);
-  --material-shadow: 0 18px 38px -30px hsl(222 40% 16% / 0.3), 0 1px 2px hsl(222 30% 18% / 0.05);
-  --material-blur: 6px;
+  --material-border: hsl(220 13% 82% / 0.9);
+  --material-highlight: inset 0 1px 0 hsl(0 0% 100% / 0.92);
+  --material-shadow: 0 1px 0 hsl(220 13% 82% / 0.9), 0 4px 12px -10px hsl(222 20% 14% / 0.06);
+  --material-blur: 0px;
 
   --background: var(--color-bg);
   --foreground: var(--color-text-primary);
@@ -116,9 +121,9 @@
   --card-foreground: var(--color-text-primary);
   --primary: var(--color-primary);
   --primary-foreground: var(--color-primary-fg);
-  --secondary: 218 22% 92%;
+  --secondary: 220 14% 92%;
   --secondary-foreground: var(--color-text-primary);
-  --muted: 218 20% 94%;
+  --muted: 220 14% 94%;
   --muted-foreground: var(--color-text-muted);
   --destructive: 0 64% 42%;
   --destructive-foreground: 0 0% 100%;
@@ -128,8 +133,8 @@
   --sidebar-foreground: var(--color-sidebar-text);
   --sidebar-accent: var(--color-sidebar-hover-bg);
   --sidebar-accent-foreground: var(--color-sidebar-active-text);
-  --sidebar-border: 222 28% 23%;
-  --accent: 38 60% 48%;
+  --sidebar-border: 222 28% 18%;
+  --accent: 220 14% 92%;
   --accent-foreground: var(--color-accent-fg);
 
   --text-secondary: var(--color-text-secondary);
@@ -165,8 +170,8 @@
   --financial-neutral: var(--color-neutral-text);
   --financial-neutral-bg: var(--color-neutral-bg);
 
-  --disabled-color-source: 218 18% 90%;
-  --disabled-fg-source: 220 12% 44%;
+  --disabled-color-source: 220 14% 92%;
+  --disabled-fg-source: 220 10% 42%;
   --disabled-bg: hsl(var(--disabled-color-source));
   --disabled-fg: hsl(var(--disabled-fg-source));
   --overlay: 222 40% 10%;
@@ -175,63 +180,65 @@
 }
 
 [data-theme='dark'] {
-  /* Dark: ink-navy rather than black, with readable slate hierarchy. */
-  --color-bg: 222 42% 9%;
-  --color-card: 222 34% 13%;
-  --color-card-muted: 221 30% 16%;
-  --color-primary: 216 78% 70%;
+  /* Dark: deep navy / near-black blue bg, slightly lighter elevated surfaces,
+     strong readable text, blue accent clearly visible, borders visible,
+     avoid muddy gray-on-gray. */
+  --color-bg: 222 44% 8%;
+  --color-card: 222 32% 13%;
+  --color-card-muted: 222 26% 16%;
+  --color-primary: 217 80% 70%;
   --color-primary-fg: 222 44% 10%;
-  --color-accent-fg: 222 44% 10%;
-  --color-text-primary: 214 32% 96%;
-  --color-text-secondary: 216 20% 78%;
-  --color-text-muted: 216 14% 66%;
-  --color-border: 219 22% 25%;
-  --color-border-light: 221 22% 19%;
+  --color-accent-fg: 214 28% 96%;
+  --color-text-primary: 214 28% 96%;
+  --color-text-secondary: 216 16% 78%;
+  --color-text-muted: 216 10% 64%;
+  --color-border: 222 18% 22%;
+  --color-border-light: 222 14% 18%;
 
-  --color-sidebar-bg: 223 46% 8%;
-  --color-sidebar-text: 216 20% 82%;
-  --color-sidebar-active-bg: 218 44% 20%;
-  --color-sidebar-active-text: 214 80% 88%;
-  --color-sidebar-hover-bg: 222 32% 14%;
+  --color-sidebar-bg: 223 48% 7%;
+  --color-sidebar-text: 216 14% 82%;
+  --color-sidebar-active-bg: 221 40% 18%;
+  --color-sidebar-active-text: 214 80% 90%;
+  --color-sidebar-hover-bg: 222 30% 12%;
 
   --color-success-text: 154 54% 66%;
   --color-success-bg: 154 28% 17%;
-  --color-warning-text: 39 82% 68%;
+  --color-warning-text: 38 82% 68%;
   --color-warning-bg: 38 32% 18%;
   --color-danger-text: 0 70% 72%;
   --color-danger-bg: 0 34% 19%;
-  --color-info-text: 202 76% 70%;
-  --color-info-bg: 202 30% 18%;
-  --color-neutral-text: 216 14% 68%;
-  --color-neutral-bg: 221 20% 18%;
+  --color-info-text: 214 76% 70%;
+  --color-info-bg: 214 30% 18%;
+  --color-neutral-text: 216 12% 68%;
+  --color-neutral-bg: 222 20% 18%;
 
   --tone-emerald: 154 52% 64%;
   --tone-emerald-soft: 154 28% 17%;
-  --tone-amber: 39 82% 66%;
+  --tone-amber: 38 82% 66%;
   --tone-amber-soft: 38 32% 18%;
-  --tone-sky: 202 72% 68%;
-  --tone-sky-soft: 202 30% 18%;
+  --tone-sky: 214 72% 68%;
+  --tone-sky-soft: 214 30% 18%;
   --tone-rose: 350 68% 72%;
   --tone-rose-soft: 350 32% 19%;
-  --tone-violet: 260 64% 76%;
-  --tone-violet-soft: 260 30% 20%;
-  --tone-slate: 216 16% 68%;
-  --tone-slate-soft: 221 20% 18%;
+  --tone-violet: 221 64% 74%;
+  --tone-violet-soft: 221 30% 20%;
+  --tone-slate: 216 14% 68%;
+  --tone-slate-soft: 222 20% 18%;
   --support-brand: 142 58% 58%;
 
-  --shadow-card: 0 1px 0 hsl(214 40% 96% / 0.035), 0 14px 28px -22px hsl(225 70% 3% / 0.72);
-  --shadow-card-hover: 0 1px 0 hsl(214 40% 96% / 0.05), 0 18px 36px -22px hsl(225 70% 3% / 0.78);
-  --shadow-elevated: 0 28px 52px -26px hsl(225 76% 3% / 0.82), 0 0 0 1px hsl(214 40% 96% / 0.045);
-  --shadow-sidebar: 0 0 32px -22px hsl(225 80% 3% / 0.8);
+  --shadow-card: 0 1px 0 hsl(214 20% 96% / 0.03), 0 8px 16px -12px hsl(225 60% 3% / 0.5);
+  --shadow-card-hover: 0 1px 0 hsl(214 20% 96% / 0.04), 0 12px 24px -12px hsl(225 60% 3% / 0.6);
+  --shadow-elevated: 0 20px 36px -18px hsl(225 70% 3% / 0.7), 0 0 0 1px hsl(214 20% 96% / 0.04);
+  --shadow-sidebar: 0 0 0 1px hsl(222 20% 16% / 0.9), 0 0 24px -16px hsl(225 70% 3% / 0.65);
 
-  --material-page: hsl(222 42% 9%);
-  --material-panel: hsl(222 34% 13% / 0.99);
-  --material-chrome: hsl(222 38% 11% / 0.96);
+  --material-page: hsl(222 44% 8%);
+  --material-panel: hsl(222 32% 13% / 0.99);
+  --material-chrome: hsl(222 32% 13% / 0.98);
   --material-overlay: hsl(222 32% 13% / 0.99);
-  --material-border: hsl(216 36% 66% / 0.16);
-  --material-highlight: inset 0 1px 0 hsl(214 60% 94% / 0.055);
-  --material-shadow: 0 22px 46px -30px hsl(225 80% 3% / 0.82), 0 1px 0 hsl(214 60% 96% / 0.03);
-  --material-blur: 6px;
+  --material-border: hsl(222 18% 22% / 0.9);
+  --material-highlight: inset 0 1px 0 hsl(214 20% 96% / 0.04);
+  --material-shadow: 0 1px 0 hsl(222 18% 22% / 0.9), 0 8px 16px -12px hsl(225 60% 3% / 0.5);
+  --material-blur: 0px;
 
   --background: var(--color-bg);
   --foreground: var(--color-text-primary);
@@ -239,9 +246,9 @@
   --card-foreground: var(--color-text-primary);
   --primary: var(--color-primary);
   --primary-foreground: var(--color-primary-fg);
-  --secondary: 221 26% 18%;
+  --secondary: 222 24% 18%;
   --secondary-foreground: var(--color-text-primary);
-  --muted: 221 24% 17%;
+  --muted: 222 24% 17%;
   --muted-foreground: var(--color-text-muted);
   --destructive: 0 62% 58%;
   --destructive-foreground: 0 0% 100%;
@@ -251,14 +258,14 @@
   --sidebar-foreground: var(--color-sidebar-text);
   --sidebar-accent: var(--color-sidebar-hover-bg);
   --sidebar-accent-foreground: var(--color-sidebar-active-text);
-  --sidebar-border: 221 24% 16%;
-  --accent: 39 72% 62%;
+  --sidebar-border: 222 20% 16%;
+  --accent: 222 24% 18%;
   --accent-foreground: var(--color-accent-fg);
 
   --surface: var(--color-card);
-  --surface-elevated: 221 28% 17%;
-  --disabled-color-source: 221 20% 19%;
-  --disabled-fg-source: 216 14% 62%;
+  --surface-elevated: 222 26% 16%;
+  --disabled-color-source: 222 20% 18%;
+  --disabled-fg-source: 216 10% 60%;
   --overlay: 224 50% 4%;
   --ring: var(--color-primary);
   --focus-ring: var(--color-primary);

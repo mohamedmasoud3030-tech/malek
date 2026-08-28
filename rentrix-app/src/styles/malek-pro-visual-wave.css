@@ -1,8 +1,9 @@
 /*
- * MALEK visual system — Premium Real Estate / Finance.
- * Theme values inherit from tokens.css; this layer owns layout/surface usage,
- * never a second palette. Surfaces are intentionally opaque and calm: no
- * competing glass stacks, no decorative glow.
+ * MALEK visual system — Final unified layer.
+ * Professional royal/deep blue, clean light surfaces, deep navy dark,
+ * strong controlled blue accents, high readability, premium operational.
+ * No teal/purple/gold, no excessive gradients, no glass-heavy, no second palette.
+ * Tokens come from tokens.css only; this file owns layout/surface usage.
  */
 
 [data-visual-wave='malek-pro'] {
@@ -14,8 +15,8 @@
 }
 
 [data-visual-wave='malek-pro'] [data-page-header] {
-  border-color: hsl(var(--border) / 0.9);
-  padding-block-end: 0.875rem;
+  border-color: hsl(var(--border));
+  padding-block-end: 1rem;
 }
 
 [data-visual-wave='malek-pro'] [data-ui-button] {
@@ -23,11 +24,12 @@
   min-block-size: 44px;
 }
 
+/* Cards, entity cards, mobile cards, KPI, table wrappers — visible borders, not floating blobs. */
 [data-visual-wave='malek-pro'] [data-list-controls],
 [data-visual-wave='malek-pro'] [data-filter-bar] {
-  border-color: hsl(var(--border));
+  border: 1px solid hsl(var(--border));
   background: hsl(var(--card));
-  box-shadow: var(--shadow-card);
+  box-shadow: none;
 }
 
 [data-visual-wave='malek-pro'] [data-component-card],
@@ -35,23 +37,23 @@
 [data-visual-wave='malek-pro'] [data-mobile-card],
 [data-visual-wave='malek-pro'] [data-kpi-card],
 [data-visual-wave='malek-pro'] [data-entity-table-wrapper] {
-  border-color: hsl(var(--border));
+  border: 1px solid hsl(var(--border));
   background: hsl(var(--card));
-  box-shadow: var(--shadow-card);
+  box-shadow: none;
 }
 
 [data-visual-wave='malek-pro'] [data-entity-card]:hover,
 [data-visual-wave='malek-pro'] [data-mobile-card]:hover {
   border-color: hsl(var(--primary) / 0.28);
-  box-shadow: var(--shadow-card-hover);
+  box-shadow: none;
 }
 
 [data-visual-wave='malek-pro'] [data-entity-table] thead {
-  background: hsl(var(--muted) / 0.72);
+  background: hsl(var(--muted) / 0.9);
 }
 
 [data-visual-wave='malek-pro'] [data-entity-table] tbody tr:hover {
-  background: hsl(var(--primary) / 0.045);
+  background: hsl(var(--muted) / 0.7);
 }
 
 [data-visual-wave='malek-pro'] [data-empty-state-icon] {
@@ -63,31 +65,53 @@
   border-color: hsl(var(--danger-text) / 0.24);
 }
 
-/* App chrome */
+/* App chrome — clean, opaque, border-based, no glass stack */
 [data-app-shell],
 [data-app-shell] main#main-content {
   background: hsl(var(--background));
 }
 
 [data-app-shell] [data-app-shell-header] {
-  background: hsl(var(--card) / 0.98);
+  background: hsl(var(--card));
   border-color: hsl(var(--border));
-  box-shadow: 0 1px 0 hsl(var(--border) / 0.72), 0 8px 20px -20px hsl(var(--overlay) / 0.2);
-  backdrop-filter: blur(6px);
+  border-bottom-width: 1px;
+  box-shadow: none;
+  backdrop-filter: none;
 }
 
 [data-theme='dark'] [data-app-shell] [data-app-shell-header] {
-  background: hsl(var(--card) / 0.98);
+  background: hsl(var(--card));
   border-color: hsl(var(--border));
-  box-shadow: 0 1px 0 hsl(var(--border) / 0.72), 0 8px 20px -20px hsl(var(--overlay) / 0.5);
+  box-shadow: none;
+  backdrop-filter: none;
 }
 
 [data-app-shell] [data-sidebar] {
   background: hsl(var(--sidebar));
   border-color: hsl(var(--sidebar-border));
+  box-shadow: none;
 }
 
-/* Dark mode uses the same surface hierarchy, only remapped tokens. */
+/* Navigation — professional, readable, strong active state */
+[data-sidebar] [data-nav-item] {
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+[data-sidebar] [data-nav-item][data-active='true'] {
+  background: hsl(var(--sidebar-active-bg));
+  color: hsl(var(--sidebar-active-text));
+  border-color: hsl(var(--sidebar-active-bg));
+  box-shadow: none;
+}
+
+[data-sidebar] [data-nav-item][data-active='true'] span:first-child {
+  background: hsl(var(--sidebar-active-text) / 0.12);
+  color: hsl(var(--sidebar-active-text));
+}
+
+/* Dark mode surfaces — same hierarchy, only remapped tokens, no second palette */
 [data-theme='dark'] [data-visual-wave='malek-pro'] [data-component-card],
 [data-theme='dark'] [data-visual-wave='malek-pro'] [data-entity-card],
 [data-theme='dark'] [data-visual-wave='malek-pro'] [data-mobile-card],
@@ -97,24 +121,18 @@
 [data-theme='dark'] [data-filter-bar] {
   background: hsl(var(--card));
   border-color: hsl(var(--border));
-  box-shadow: var(--shadow-card);
+  box-shadow: none;
   backdrop-filter: none;
 }
 
 [data-theme='dark'] [data-visual-wave='malek-pro'] [data-entity-card]:hover,
 [data-theme='dark'] [data-visual-wave='malek-pro'] [data-mobile-card]:hover {
   border-color: hsl(var(--primary) / 0.32);
-  box-shadow: var(--shadow-card-hover);
+  box-shadow: none;
 }
 
 [data-visual-wave='malek-pro'] [data-active='true'] {
   --active-glow: transparent;
-}
-
-[data-theme='dark'] [data-sidebar] [data-active='true'] {
-  background: hsl(var(--sidebar-active-bg));
-  color: hsl(var(--sidebar-active-text));
-  box-shadow: none;
 }
 
 /* Operational workspace contract */
@@ -133,17 +151,19 @@
 [data-operational-route='true'] [data-visual-wave='malek-pro'] :is([data-list-controls], [data-filter-bar]) {
   position: relative;
   z-index: 2;
-  padding: 0.5rem 0.625rem;
+  padding: 0.625rem 0.75rem;
   border: 1px solid hsl(var(--border));
   border-radius: 0.75rem;
   background: hsl(var(--card));
-  box-shadow: var(--shadow-card);
+  box-shadow: none;
 }
 
 [data-operational-route='true'] [data-visual-wave='malek-pro'] :is([data-list-controls], [data-filter-bar]) :is(input, select) {
   min-height: 44px;
   border-radius: 0.625rem;
   background: hsl(var(--background));
+  border-color: hsl(var(--border));
+  font-size: 0.9375rem;
 }
 
 [data-operational-route='true'] [data-visual-wave='malek-pro'] :is([data-entity-card], [data-mobile-card]) {
@@ -151,38 +171,45 @@
   overflow: hidden;
   border-radius: 0.75rem;
   background: hsl(var(--card));
-  transition: box-shadow 180ms ease, border-color 180ms ease;
+  border: 1px solid hsl(var(--border));
+  transition: border-color 150ms ease;
 }
 
 [data-operational-route='true'] [data-visual-wave='malek-pro'] :is([data-entity-card], [data-mobile-card]):hover {
-  border-color: hsl(var(--primary) / 0.28);
-  box-shadow: var(--shadow-card-hover);
+  border-color: hsl(var(--primary) / 0.24);
+  box-shadow: none;
 }
 
 [data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-table-wrapper] {
   overflow: hidden;
   border-radius: 0.75rem;
   background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
 }
 
 [data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-table] thead {
   position: sticky;
   top: 0;
   z-index: 1;
-  background: hsl(var(--muted) / 0.88);
-  color: hsl(var(--foreground) / 0.9);
+  background: hsl(var(--muted) / 0.92);
+  color: hsl(var(--foreground) / 0.92);
 }
 
 [data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-table] thead th {
-  height: 2.5rem;
+  height: 2.75rem;
   background: transparent;
   color: hsl(var(--muted-foreground));
-  border-color: hsl(var(--border) / 0.7);
+  border-color: hsl(var(--border));
   border-bottom-color: hsl(var(--border));
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   font-weight: 700;
   letter-spacing: 0.01em;
   text-transform: none;
+}
+
+[data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-table] tbody td {
+  font-size: 0.875rem;
+  line-height: 1.5;
 }
 
 [data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-table] tbody tr {
@@ -190,15 +217,15 @@
 }
 
 [data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-table] tbody tr:nth-child(even) {
-  background: hsl(var(--muted) / 0.16);
+  background: hsl(var(--muted) / 0.22);
 }
 
 [data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-table] tbody tr:hover {
-  background: hsl(var(--muted) / 0.5);
+  background: hsl(var(--muted) / 0.65);
 }
 
 [data-theme='dark'] [data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-table] thead {
-  background: hsl(var(--muted) / 0.72);
+  background: hsl(var(--muted) / 0.8);
   color: hsl(var(--foreground));
 }
 
@@ -209,32 +236,34 @@
 
 [data-operational-route='true'] [data-visual-wave='malek-pro'] [role='tablist'] {
   gap: 0.125rem;
-  padding: 0.1875rem;
+  padding: 0.2rem;
   border: 1px solid hsl(var(--border));
   border-radius: 0.625rem;
-  background: hsl(var(--muted) / 0.55);
+  background: hsl(var(--muted) / 0.6);
 }
 
 [data-operational-route='true'] [data-visual-wave='malek-pro'] [role='tab'] {
   min-height: 44px;
   border-radius: 0.5rem;
-  transition: background-color 140ms ease, color 140ms ease, box-shadow 140ms ease;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: background-color 140ms ease, color 140ms ease;
 }
 
 [data-operational-route='true'] [data-visual-wave='malek-pro'] [role='tab'][aria-selected='true'] {
   background: hsl(var(--card));
   color: hsl(var(--foreground));
-  box-shadow: 0 1px 2px hsl(var(--foreground) / 0.07);
+  box-shadow: 0 1px 2px hsl(var(--foreground) / 0.06);
 }
 
-/* Forms */
+/* Forms — readable labels, clear inputs, visible borders */
 [data-entity-form-surface][data-entity-form-variant='operational'] {
   --entity-form-action-offset: 0px;
 }
 
 [data-entity-form-surface='dialog'][data-entity-form-variant='operational'] {
   border: 1px solid hsl(var(--border));
-  border-radius: 1.25rem;
+  border-radius: 1rem;
   background: hsl(var(--card));
   box-shadow: var(--shadow-elevated);
 }
@@ -251,42 +280,46 @@
 }
 
 [data-entity-form-surface][data-entity-form-variant='operational'] [data-entity-form-field] > span:first-child {
-  font-size: 0.78rem;
-  font-weight: 800;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.4;
   color: hsl(var(--foreground));
 }
 
 [data-entity-form-surface][data-entity-form-variant='operational'] :is(input, select, textarea) {
   min-height: 46px;
-  border-radius: 0.75rem;
+  border-radius: 0.625rem;
   background: hsl(var(--card));
-  border-color: hsl(var(--border));
-  transition: border-color 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
+  border: 1px solid hsl(var(--border));
+  font-size: 0.9375rem;
+  transition: border-color 140ms ease, box-shadow 140ms ease;
 }
 
 [data-entity-form-surface][data-entity-form-variant='operational'] :is(input, select, textarea):focus {
-  border-color: hsl(var(--primary) / 0.6);
-  box-shadow: 0 0 0 4px hsl(var(--primary) / 0.10);
+  border-color: hsl(var(--primary) / 0.55);
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.12);
 }
 
 [data-theme='dark'] [data-entity-form-surface][data-entity-form-variant='operational'] :is(input, select, textarea):focus {
-  border-color: hsl(var(--primary) / 0.62);
-  box-shadow: 0 0 0 4px hsl(var(--primary) / 0.12);
+  border-color: hsl(var(--primary) / 0.6);
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.14);
 }
 
 [data-entity-form-surface][data-entity-form-variant='operational'] [data-entity-form] section {
-  border-color: hsl(var(--border));
-  border-radius: 1rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.875rem;
   background: hsl(var(--card));
-  box-shadow: var(--shadow-card);
+  box-shadow: none;
 }
 
 [data-entity-form-surface][data-entity-form-variant='operational'] [data-entity-form-actions] {
-  border-radius: 1rem 1rem 0 0;
-  background: hsl(var(--card) / 0.98);
-  backdrop-filter: blur(4px);
+  border-radius: 0.875rem 0.875rem 0 0;
+  background: hsl(var(--card));
+  border-top: 1px solid hsl(var(--border));
+  backdrop-filter: none;
 }
 
+/* Mobile: keep density via spacing, not tiny fonts */
 @media (max-width: 767px) {
   [data-operational-route='true'] [data-visual-wave='malek-pro'] {
     padding: 0;
@@ -297,12 +330,18 @@
   [data-operational-route='true'] [data-visual-wave='malek-pro'] [data-page-header] {
     margin-inline: -0.25rem;
     border-radius: 0 0 1rem 1rem;
-    padding: 0.875rem;
+    padding: 1rem;
+    border: 1px solid hsl(var(--border));
+    background: hsl(var(--card));
   }
 
   [data-operational-route='true'] [data-visual-wave='malek-pro'] :is([data-list-controls], [data-filter-bar]) {
-    padding: 0.625rem;
+    padding: 0.75rem;
     border-radius: 0.875rem;
+  }
+
+  [data-entity-table] tbody td {
+    font-size: 0.875rem;
   }
 }
 
