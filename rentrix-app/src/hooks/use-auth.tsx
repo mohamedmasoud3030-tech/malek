@@ -112,10 +112,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
           setSession(null);
           hadSessionRef.current = false;
           if (wasUnexpected) {
-            // Session dropped without an explicit logout call - most likely
-            // a corrupted/expired refresh token. Clear the stale storage
-            // entry so it can't keep failing on reload, and tell the user
-            // plainly instead of redirecting them silently mid-edit.
             clearStaleSessionStorage();
             toast.error('انتهت جلستك، الرجاء تسجيل الدخول مجددًا للمتابعة.');
           }
@@ -128,10 +124,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
         case 'SIGNED_IN':
         case 'USER_UPDATED':
         case 'TOKEN_REFRESHED':
-          // TOKEN_REFRESHED is security-significant for multi-company mode:
-          // app_metadata.company_id is issued by the access-token hook. Keep
-          // the central session synchronized so every consumer sees the same
-          // company claim that PostgreSQL RLS/RPCs see.
           setSession(nextSession);
           hadSessionRef.current = Boolean(nextSession);
           break;
@@ -164,17 +156,21 @@ export function AuthProvider({ children }: PropsWithChildren) {
     window.addEventListener('focus', handleRefresh);
     document.addEventListener('visibilitychange', handleVisibility);
 
-    // Realtime provides immediate approval/revoke propagation where enabled;
-    // focus/visibility refresh above remains the deterministic fallback. Each
-    // effect owns a distinct topic because supabase-js reuses matching topics;
-    // a rapid cleanup/remount could otherwise receive an already-subscribed
-    // channel and throw while registering the postgres_changes callback.
+    // Listen to both additive grants and owner-authored overrides. Focus and
+    // visibility refresh remain the deterministic fallback if Realtime is not
+    // enabled for either authorization table.
     const channel = (supabase as any)
       .channel(nextEffectivePermissionsChannelTopic(userId))
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'user_permission_grants',
+        filter: `user_id=eq.${userId}`,
+      }, handleRefresh)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'user_permission_overrides',
         filter: `user_id=eq.${userId}`,
       }, handleRefresh)
       .subscribe();
@@ -189,7 +185,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   const authorization = useMemo(() => {
     const base = getAuthorizationContextFromSession(session);
-    return base ? { ...base, grantedPermissions } : null;
+    return base ? { ...base, grantedPermissions, effectivePermissionsResolved: true } : null;
   }, [grantedPermissions, session]);
   const authorizationDiagnostics = useMemo(() => getAuthorizationDiagnosticsFromSession(session), [session]);
 
@@ -223,9 +219,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
         try {
           await signOut();
         } finally {
-          // This must happen even if both remote and local Supabase calls fail:
-          // a shared browser must never continue to show the previous
-          // operator's session or protected screen.
           setGrantedPermissions([]);
           setSession(null);
           hadSessionRef.current = false;
