@@ -6,7 +6,7 @@
 
 /* MALEK global entrypoint.
    Theme tokens live only in tokens.css. This file owns document base behavior,
-   utilities, print rules and public-site helpers. */
+   shell contracts, utilities, print rules and public-site helpers. */
 
 @keyframes shimmer {
   100% { transform: translateX(-100%); }
@@ -58,6 +58,86 @@
 
 [data-login-surface] {
   background-color: hsl(var(--background));
+}
+
+/* Mobile shell uses app-surface tokens, never desktop-sidebar colors. */
+@layer components {
+  [data-bottom-sheet]:has([data-mobile-nav-bottom-sheet]) {
+    max-height: min(78dvh, 42rem) !important;
+  }
+
+  [data-mobile-nav-sheet] {
+    color: hsl(var(--foreground));
+  }
+
+  [data-mobile-nav-sheet] [data-nav-item] {
+    min-height: 42px;
+    border-color: transparent;
+    border-radius: 0.75rem;
+    color: hsl(var(--foreground));
+    opacity: 1;
+  }
+
+  [data-mobile-nav-sheet] [data-nav-item]:hover,
+  [data-mobile-nav-sheet] [data-nav-item]:focus-visible {
+    background: hsl(var(--muted) / 0.8);
+    color: hsl(var(--foreground));
+  }
+
+  [data-mobile-nav-sheet] [data-nav-item][data-active='true'] {
+    border-color: hsl(var(--primary) / 0.18);
+    background: hsl(var(--primary) / 0.09);
+    color: hsl(var(--foreground));
+    box-shadow: none;
+  }
+
+  [data-mobile-nav-sheet] [data-nav-item][data-active='true'] > span:first-child {
+    background: hsl(var(--primary) / 0.12);
+    color: hsl(var(--primary));
+  }
+
+  [data-mobile-nav-sheet] [data-nav-item][aria-disabled='true'] {
+    cursor: not-allowed;
+    color: hsl(var(--muted-foreground));
+    opacity: 0.82;
+  }
+
+  [data-mobile-nav-sheet] [data-nav-item][aria-disabled='true'] > span:first-child {
+    background: hsl(var(--muted));
+    color: hsl(var(--muted-foreground));
+  }
+
+  [data-mobile-nav-sheet] section > div:first-child p {
+    color: hsl(var(--muted-foreground));
+    opacity: 1;
+  }
+
+  [data-account-menu-panel] {
+    width: min(15.5rem, calc(100vw - 1rem));
+    border-color: hsl(var(--border));
+    background: hsl(var(--card));
+    box-shadow: var(--shadow-elevated);
+  }
+
+  [data-account-menu-panel] > div:first-child {
+    padding-block: 0.625rem;
+    background: hsl(var(--muted) / 0.45);
+  }
+
+  [data-account-menu-panel] > div:last-child {
+    padding: 0.25rem;
+  }
+
+  [data-mobile-dock-surface] {
+    border-color: hsl(var(--border));
+    background: hsl(var(--card) / 0.98);
+    box-shadow: 0 12px 30px -22px hsl(var(--overlay) / 0.52), 0 1px 2px hsl(var(--foreground) / 0.06);
+    backdrop-filter: blur(6px);
+  }
+
+  [data-theme='dark'] [data-mobile-dock-surface] {
+    background: hsl(var(--surface-elevated) / 0.98);
+  }
 }
 
 @layer utilities {
