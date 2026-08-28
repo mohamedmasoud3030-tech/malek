@@ -34,7 +34,7 @@ export function DashboardSignalPanel({
       aria-labelledby={labelledBy}
       data-dashboard-signal-panel
       className={cn(
-        'overflow-hidden border-y border-border/80 bg-card/70 sm:rounded-2xl sm:border sm:bg-card sm:shadow-card',
+        'overflow-hidden border-y border-border/80 bg-card sm:rounded-2xl sm:border sm:shadow-card',
         className,
       )}
     >
@@ -84,7 +84,7 @@ export function DashboardSignalList({ children, label }: Readonly<{ children: Re
 
 export function dashboardSignalRowClass(tone: DashboardSignalTone = 'neutral', className?: string) {
   return cn(
-    'grid min-h-13 w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-s-2 px-3 py-2 text-start outline-none transition-colors',
+    'grid min-h-[3.25rem] w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-s-2 px-3 py-2 text-start outline-none transition-colors',
     'hover:bg-muted/55 focus-visible:bg-muted/55 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/25 sm:px-4',
     rowToneClasses[tone],
     className,
@@ -139,4 +139,4 @@ export function DashboardSignalLoading({ label }: Readonly<{ label: string }>) {
 }
 
 export const dashboardSectionActionClass =
-  'rounded-lg px-2 py-1 text-[11px] font-bold text-primary outline-none transition-colors hover:bg-primary/8 focus-visible:ring-2 focus-visible:ring-primary/25';
+  'rounded-lg px-2 py-1 text-[11px] font-bold text-primary outline-none transition-colors hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-primary/25';
