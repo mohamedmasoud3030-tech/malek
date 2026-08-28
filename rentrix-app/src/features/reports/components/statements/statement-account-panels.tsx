@@ -1,4 +1,4 @@
-import { Download, Landmark, Printer, ReceiptText, Scale, UserRound, UsersRound, WalletCards } from 'lucide-react';
+import { Download, FileSpreadsheet, Landmark, Printer, ReceiptText, Scale, UserRound, UsersRound, WalletCards } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { KpiCard } from '@/components/ui/kpi-card';
@@ -69,6 +69,7 @@ export function TenantStatementPanel({
   receipts,
   onPrint,
   onDownloadPdf,
+  onDownloadExcel,
   actionsDisabled = false,
 }: Readonly<{
   selectedContractId: string;
@@ -79,6 +80,7 @@ export function TenantStatementPanel({
   receipts: ReceiptRow[];
   onPrint: () => void;
   onDownloadPdf: () => void;
+  onDownloadExcel: () => void;
   actionsDisabled?: boolean;
 }>) {
   const ledgerRows: TenantLedgerRow[] = (statement?.lines ?? []).map((line, index) => ({
@@ -111,6 +113,10 @@ export function TenantStatementPanel({
           <Button type="button" size="sm" variant="outline" onClick={onDownloadPdf} disabled={actionsDisabled} className="min-h-11 gap-1.5 text-xs">
             <Download className="size-3.5" aria-hidden="true" />
             تنزيل PDF
+          </Button>
+          <Button type="button" size="sm" variant="outline" onClick={onDownloadExcel} className="min-h-11 gap-1.5 text-xs">
+            <FileSpreadsheet className="size-3.5" aria-hidden="true" />
+            تنزيل Excel
           </Button>
         </div>
       ) : undefined}
@@ -182,6 +188,7 @@ export function OwnerStatementPanel({
   fallbackRows,
   onPrint,
   onDownloadPdf,
+  onDownloadExcel,
   actionsDisabled = false,
 }: Readonly<{
   selectedOwnerId: string;
@@ -191,6 +198,7 @@ export function OwnerStatementPanel({
   fallbackRows: OwnerFallbackRow[];
   onPrint: () => void;
   onDownloadPdf: () => void;
+  onDownloadExcel: () => void;
   actionsDisabled?: boolean;
 }>) {
   let runningBalance = 0;
@@ -227,6 +235,10 @@ export function OwnerStatementPanel({
           <Button type="button" size="sm" variant="outline" onClick={onDownloadPdf} disabled={actionsDisabled} className="min-h-11 gap-1.5 text-xs">
             <Download className="size-3.5" aria-hidden="true" />
             تنزيل PDF
+          </Button>
+          <Button type="button" size="sm" variant="outline" onClick={onDownloadExcel} className="min-h-11 gap-1.5 text-xs">
+            <FileSpreadsheet className="size-3.5" aria-hidden="true" />
+            تنزيل Excel
           </Button>
         </div>
       ) : undefined}
