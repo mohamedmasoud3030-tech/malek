@@ -73,7 +73,7 @@ export function ReportsPage() {
   );
 
   if (!canViewReports) {
-    return <AccessDenied message="عرض المحاسبة والتقارير متاح فقط للصلاحيات المالية المخولة." />;
+    return <AccessDenied message="عرض التقارير متاح فقط للصلاحيات المخولة." />;
   }
 
   return (
@@ -128,7 +128,7 @@ export function ReportsPage() {
               <p className="text-[11px] font-black text-primary">التقرير المفتوح</p>
               <h2 id="active-report-title" className="mt-0.5 text-lg font-black sm:text-xl">{activeReportLabel}</h2>
             </div>
-            <p className="hidden text-xs font-semibold text-muted-foreground sm:block">الفلاتر والجداول والتصدير أدناه</p>
+            <p className="hidden text-xs font-semibold text-muted-foreground sm:block">الخلاصة أولًا، ثم الجدول والفلاتر والتصدير</p>
           </div>
 
           <ReportsWorkspace
