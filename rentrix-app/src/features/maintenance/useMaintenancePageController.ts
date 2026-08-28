@@ -11,7 +11,7 @@ import type { ServiceProviderOption } from '@/features/service-providers/service
 import {
   useCreateMaintenance,
   useMaintenance,
-  useResolveMaintenanceWithExpense,
+  useCloseMaintenanceWithExpense,
   useUpdateMaintenance,
   useUpdateMaintenanceStatus,
 } from './use-maintenance';
@@ -50,6 +50,9 @@ export type MaintenanceFormValues = z.infer<typeof maintenanceRequestSchema>;
 
 export const maintenanceResolveSchema = z.object({
   cost: z.coerce.number({ invalid_type_error: 'أدخل تكلفة صحيحة' }).min(0, 'التكلفة لا يمكن أن تكون سالبة'),
+  chargedTo: z.enum(['OWNER', 'TENANT', 'COMPANY']),
+  evidenceUrl: z.string().url('رابط الإثبات غير صحيح').nullable().optional().or(z.literal('')),
+  confirmed: z.boolean().refine((value) => value, 'أكد تنفيذ العمل فعليًا قبل الإغلاق'),
   notes: z.string().nullable().optional(),
 });
 
@@ -82,8 +85,8 @@ export function getMaintenanceStatusActions(status: 'open' | 'in_progress' | 're
   // R8 legal matrix. Cancelled ≠ Closed: cancellation is available while work
   // is not yet resolved and is terminal afterwards.
   if (status === 'open') return [{ label: 'بدء التنفيذ', status: 'in_progress' }, { label: 'إلغاء الطلب', status: 'cancelled' }];
-  if (status === 'in_progress') return [{ label: 'تم الحل', status: 'resolved' }, { label: 'إلغاء الطلب', status: 'cancelled' }];
-  if (status === 'resolved') return [{ label: 'إغلاق', status: 'closed' }];
+  if (status === 'in_progress') return [{ label: 'تم التنفيذ', status: 'resolved' }, { label: 'إلغاء الطلب', status: 'cancelled' }];
+  if (status === 'resolved') return [{ label: 'إغلاق بعد التحقق', status: 'closed' }];
   return [];
 }
 
@@ -115,10 +118,10 @@ export function useMaintenancePageController() {
   const createMutation = useCreateMaintenance();
   const updateRequestMutation = useUpdateMaintenance();
   const updateStatusMutation = useUpdateMaintenanceStatus();
-  const resolveMutation = useResolveMaintenanceWithExpense();
+  const resolveMutation = useCloseMaintenanceWithExpense();
   const resolveForm = useForm<MaintenanceResolveFormValues>({
     resolver: zodResolver(maintenanceResolveSchema),
-    defaultValues: { cost: 0, notes: '' },
+    defaultValues: { cost: 0, chargedTo: 'OWNER', evidenceUrl: '', confirmed: false, notes: '' },
   });
 
   const form = useForm<MaintenanceFormValues>({
@@ -270,8 +273,8 @@ export function useMaintenancePageController() {
   };
 
   const handleStatusAction = (row: Maintenance, status: Exclude<MaintenanceStatusFilter, 'all'>) => {
-    if (status === 'resolved') {
-      resolveForm.reset({ cost: 0, notes: '' });
+    if (status === 'closed') {
+      resolveForm.reset({ cost: 0, chargedTo: 'OWNER', evidenceUrl: '', confirmed: false, notes: '' });
       setResolveTarget(row);
       return;
     }
@@ -292,7 +295,10 @@ export function useMaintenancePageController() {
       {
         requestId: resolveTarget.id,
         cost: values.cost,
+        chargedTo: values.chargedTo,
         notes: values.notes?.trim() ? values.notes.trim() : null,
+        evidenceUrl: values.evidenceUrl?.trim() || null,
+        confirmed: values.confirmed,
       },
       { onSuccess: () => setResolveTarget(null) },
     );

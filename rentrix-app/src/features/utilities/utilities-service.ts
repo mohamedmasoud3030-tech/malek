@@ -48,6 +48,7 @@ export type UtilityBill = {
   due_date: string;
   status: UtilityBillStatus;
   responsible_party: ResponsibleParty;
+  actual_payer?: ResponsibleParty | null;
   attachment_url?: string | null;
   notes?: string | null;
   created_at: string;
@@ -143,6 +144,7 @@ function mapBill(row: any): UtilityBill {
     due_date: row.due_date,
     status: mapStatusToBillStatus(row.status, paidAmount, amount),
     responsible_party: mapChargedToToResponsible(row.charged_to),
+    actual_payer: row.actual_payer as ResponsibleParty | null ?? null,
     attachment_url: row.attachment_url ?? null,
     notes: row.notes ?? null,
     created_at: row.created_at,
@@ -201,6 +203,7 @@ function toBillPayload(values: UtilityBillFormValues) {
     paid_amount: form.paid_amount ?? 0,
     due_date: form.due_date,
     responsible_party: form.responsible_party,
+    actual_payer: form.actual_payer ?? null,
     attachment_url: form.attachment_url || null,
     notes: form.notes?.trim() || null,
   });
@@ -325,6 +328,7 @@ export async function createUtilityBill(values: UtilityBillFormValues): Promise<
       billing_period_end: payload.billing_period_end,
       due_date: payload.due_date,
       charged_to: mapResponsibleToChargedTo(payload.responsible_party),
+      actual_payer: payload.actual_payer,
       status: mapBillStatusToDb(status),
       reference_no: payload.bill_number,
       notes: payload.notes,
@@ -382,6 +386,7 @@ export async function updateUtilityBill(id: string, values: Partial<UtilityBillF
   if (values.paid_amount !== undefined) payload.paid_amount = values.paid_amount;
   if (values.due_date !== undefined) payload.due_date = values.due_date;
   if (values.responsible_party !== undefined) payload.charged_to = mapResponsibleToChargedTo(values.responsible_party);
+  if (values.actual_payer !== undefined) payload.actual_payer = values.actual_payer;
   if (values.attachment_url !== undefined) payload.attachment_url = values.attachment_url || null;
   if (values.notes !== undefined) payload.notes = values.notes?.trim() || null;
 

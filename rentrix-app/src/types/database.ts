@@ -7455,6 +7455,7 @@ export type Database = {
           deleted_at: string | null;
           company_id: string;
           reference: string | null;
+          actual_payer: string | null;
         };
         Insert: {
           id?: string;
@@ -7484,6 +7485,7 @@ export type Database = {
           deleted_at?: string | null;
           company_id?: string;
           reference?: string | null;
+          actual_payer?: string | null;
         };
         Update: {
           id?: string;
@@ -7513,6 +7515,7 @@ export type Database = {
           deleted_at?: string | null;
           company_id?: string;
           reference?: string | null;
+          actual_payer?: string | null;
         };
         Relationships: [
           {
@@ -8159,6 +8162,17 @@ export type Database = {
       close_journal_batch: {
         Args: {
           p_batch_id: string | null;
+        };
+        Returns: Json;
+      };
+      close_maintenance_with_expense: {
+        Args: {
+          p_request_id: string | null;
+          p_cost: number | null;
+          p_charged_to: string | null;
+          p_notes?: string | null;
+          p_evidence_url?: string | null;
+          p_confirmed?: boolean | null;
         };
         Returns: Json;
       };

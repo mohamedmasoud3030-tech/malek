@@ -163,6 +163,7 @@ export const utilityBillFormSchema = z
     paid_amount: nonNegativeNumber,
     due_date: isoDate,
     responsible_party: z.enum(RESPONSIBLE_PARTY_VALUES, { required_error: 'الجهة المسؤولة مطلوبة' }),
+    actual_payer: z.enum(RESPONSIBLE_PARTY_VALUES).nullable().optional(),
     attachment_url: z.string().max(500).nullable().optional(),
     notes: z.string().trim().max(2000).nullable().optional(),
   })
@@ -187,6 +188,7 @@ export const utilityBillPayloadSchema = z
     paid_amount: z.number().nonnegative().nullable(),
     due_date: isoDate,
     responsible_party: z.enum(RESPONSIBLE_PARTY_VALUES),
+    actual_payer: z.enum(RESPONSIBLE_PARTY_VALUES).nullable(),
     attachment_url: z.string().max(500).nullable(),
     notes: z.string().max(2000).nullable(),
   })
