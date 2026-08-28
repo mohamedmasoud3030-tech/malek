@@ -1,60 +1,24 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Bell, CalendarClock, CreditCard, RefreshCcw, ShieldAlert, ShieldCheck, Wrench, X, type LucideIcon } from 'lucide-react';
-import { getDashboardSnapshot } from '@/features/dashboard/dashboard-snapshot';
-import { toDateInputValue } from '@/features/dashboard/dashboard-utils';
-import { canAccess, canShowNavigationItem, getPermissionLabel, type AppPermission, type AuthorizationContext } from '@/features/auth/permissions';
-import { listPermissionRequestsForReview, type PermissionRequest } from '@/features/auth/permission-request-service';
+import { Bell, RefreshCcw, ShieldCheck, X } from 'lucide-react';
+import type { AuthorizationContext } from '@/features/auth/permissions';
 import { Button } from '@/components/ui/button';
-import { StatusBadge } from '@/components/ui/status-badge';
 import { cn } from '@/lib/utils';
 import { getAppLanguageState, translateSharedLabel, type SharedLabel } from '@/lib/i18n';
-import { listAppNotifications, markAppNotificationRead } from './app-notifications-service';
+import {
+  listAppNotifications,
+  markAppNotificationRead,
+  type AppNotification,
+} from './app-notifications-service';
 
 /**
- * R1 — Dashboard Truth: notification counts come from the authoritative
- * server snapshot KPIs (arrears.overdueCount, contracts.expiring30,
- * maintenance.urgentOpen). The feed never counts row datasets in the browser.
+ * The bell is an event feed, not an action queue. Pending permission requests
+ * are deliberately excluded because they belong to the workflow that needs a
+ * decision; completed permission decisions remain valid events.
  */
-export type NotificationSnapshotInput = {
-  arrears?: { overdueCount?: number } | null;
-  contracts?: { expiring30?: number } | null;
-  maintenance?: { urgentOpen?: number } | null;
-} | null | undefined;
-
-export type NotificationFeedItem = Readonly<{
-  to: string;
-  labelKey: string;
-  count: number;
-  Icon: LucideIcon;
-  permission?: AppPermission;
-}>;
-
-/**
- * Builds the notification feed from the shared dashboard snapshot.
- * Pure: no hooks, no providers — easy to assert in unit tests.
- */
-export function buildNotificationItems(snapshot: NotificationSnapshotInput): NotificationFeedItem[] {
-  const overdueCount = snapshot?.arrears?.overdueCount ?? 0;
-  const expiringCount = snapshot?.contracts?.expiring30 ?? 0;
-  const urgentMaintenanceCount = snapshot?.maintenance?.urgentOpen ?? 0;
-
-  const items: NotificationFeedItem[] = [
-    { to: '/arrears', labelKey: 'notifOverdueInvoices', count: overdueCount, Icon: CreditCard, permission: 'arrears.view' },
-    { to: '/contracts', labelKey: 'notifExpiringContracts', count: expiringCount, Icon: CalendarClock },
-    { to: '/maintenance', labelKey: 'notifUrgentMaintenance', count: urgentMaintenanceCount, Icon: Wrench, permission: 'maintenance.view' },
-  ];
-  return items.filter((item) => item.count > 0);
-}
-
-function useDashboardSnapshotForNotifications(today: Date) {
-  return useQuery({
-    queryKey: ['dashboard-snapshot', today.getMonth() + 1, today.getFullYear(), toDateInputValue(today)],
-    queryFn: () => getDashboardSnapshot(today),
-    retry: false,
-    staleTime: 5 * 60_000,
-  });
+export function isBellEventNotification(notification: Pick<AppNotification, 'type'>): boolean {
+  return notification.type !== 'permission_request';
 }
 
 export function NotificationsMenu({
@@ -67,13 +31,11 @@ export function NotificationsMenu({
   const rootRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<Array<HTMLAnchorElement | null>>([]);
-  const [today] = useState(() => new Date());
   const queryClient = useQueryClient();
 
   const sharedLabel = sharedLabelProp ?? ((key: string) => translateSharedLabel(key, getAppLanguageState().language));
 
-  const snapshotQuery = useDashboardSnapshotForNotifications(today);
-  const persistedQuery = useQuery({
+  const notificationsQuery = useQuery({
     queryKey: ['app-notifications', authorization?.userId],
     queryFn: listAppNotifications,
     enabled: Boolean(authorization?.userId),
@@ -81,60 +43,16 @@ export function NotificationsMenu({
     staleTime: 30_000,
   });
 
-  const canReviewRequests = canAccess(authorization, 'permission_requests.review');
-  const permissionRequestsQuery = useQuery({
-    queryKey: ['permission-requests', 'review', 'notifications'],
-    queryFn: () => listPermissionRequestsForReview(),
-    enabled: Boolean(authorization?.userId) && canReviewRequests,
-    retry: false,
-    staleTime: 30_000,
-  });
-
-  const pendingPermissionRequests: readonly PermissionRequest[] = (permissionRequestsQuery.data ?? []).filter(
-    (request) => request.status === 'PENDING',
-  );
-
   const markReadMutation = useMutation({
     mutationFn: markAppNotificationRead,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['app-notifications'] }),
     onError: () => queryClient.invalidateQueries({ queryKey: ['app-notifications'] }),
   });
 
-  const isInitialLoading =
-    (snapshotQuery.isLoading && snapshotQuery.data === undefined) ||
-    (persistedQuery.isLoading && persistedQuery.data === undefined);
-  const hasBlockingError =
-    (snapshotQuery.isError && snapshotQuery.data === undefined) ||
-    (persistedQuery.isError && persistedQuery.data === undefined);
-
-  const operationalItems = buildNotificationItems(snapshotQuery.data)
-    .filter((item) => canShowNavigationItem(authorization, item.permission))
-    .map((item) => ({
-      ...item,
-      id: `operational:${item.to}`,
-      title: sharedLabel(item.labelKey),
-      message: '',
-      isRead: false,
-    }));
-
-  const persistedItems = (persistedQuery.data ?? [])
-    .filter((item) => item.type !== 'permission_request')
-    .map((item) => ({
-      id: item.id,
-      to: item.link,
-      labelKey: '',
-      title: item.title,
-      message: item.message,
-      count: 1,
-      Icon: item.type === 'permission_decision' ? ShieldCheck : Bell,
-      isRead: item.isRead,
-    }));
-
-  const visibleItems = [...persistedItems, ...operationalItems];
-  const totalCount =
-    operationalItems.reduce((sum, item) => sum + item.count, 0) +
-    persistedItems.filter((item) => !item.isRead).length +
-    pendingPermissionRequests.length;
+  const visibleItems = (notificationsQuery.data ?? []).filter(isBellEventNotification);
+  const totalCount = visibleItems.filter((item) => !item.isRead).length;
+  const isInitialLoading = notificationsQuery.isLoading && notificationsQuery.data === undefined;
+  const hasBlockingError = notificationsQuery.isError && notificationsQuery.data === undefined;
 
   const closeAndRestoreFocus = () => {
     setIsOpen(false);
@@ -174,7 +92,7 @@ export function NotificationsMenu({
       document.removeEventListener('pointerdown', handlePointerDown);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [hasBlockingError, isInitialLoading, isOpen, visibleItems.length]);
+  }, [isOpen, visibleItems.length]);
 
   return (
     <div ref={rootRef} className="relative">
@@ -206,7 +124,6 @@ export function NotificationsMenu({
 
       {isOpen ? (
         <>
-          {/* Mobile backdrop for dismiss on outside tap */}
           <div
             className="fixed inset-0 z-40 bg-black/35 backdrop-blur-xs md:hidden"
             onClick={() => setIsOpen(false)}
@@ -223,18 +140,21 @@ export function NotificationsMenu({
             onKeyDown={handlePanelKeyDown}
             className={cn(
               'z-50 rounded-2xl border border-border bg-card p-3 text-start text-card-foreground shadow-elevated outline-none focus-visible:ring-4 focus-visible:ring-primary/20',
-              // Desktop popover positioning:
               'md:absolute md:end-0 md:top-12 md:w-80 md:max-w-[calc(100vw-1rem)]',
-              // Mobile panel positioning: anchored above bottom dock with safe area:
               'max-md:fixed max-md:inset-x-3 max-md:bottom-[var(--mobile-dock-clearance,5.25rem)] max-md:top-auto max-md:mx-auto max-md:w-auto max-md:max-w-md max-md:max-h-[min(70dvh,28rem)] max-md:overflow-y-auto max-md:pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]',
             )}
           >
-            <div className="flex items-center justify-between border-b border-border/60 pb-2 mb-2">
-              <p className="text-xs font-bold text-foreground">{sharedLabel('notifications')}</p>
+            <div className="flex items-start justify-between gap-3 border-b border-border/60 pb-2 mb-2">
+              <div>
+                <p className="text-xs font-bold text-foreground">{sharedLabel('notifications')}</p>
+                <p className="mt-1 text-[11px] font-semibold leading-4 text-muted-foreground">
+                  أحداث حصلت بالفعل. الأشياء التي تحتاج إجراء موجودة في «اليوم».
+                </p>
+              </div>
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className="grid size-7 place-items-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground md:hidden"
+                className="grid size-7 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground md:hidden"
                 aria-label="إغلاق التنبيهات"
               >
                 <X className="size-3.5" />
@@ -254,111 +174,59 @@ export function NotificationsMenu({
               <div role="alert" className="mt-2 rounded-xl border border-danger/20 bg-danger/5 p-3">
                 <p className="text-xs font-bold text-danger">تعذر تحميل التنبيهات</p>
                 <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                  تحقق من الاتصال ثم أعد المحاولة. لا نعرض حالة «لا توجد تنبيهات» عند فشل البيانات.
+                  تحقق من الاتصال ثم أعد المحاولة. لا نعرض حالة فارغة عند فشل البيانات.
                 </p>
                 <Button
                   type="button"
                   size="sm"
                   variant="secondary"
                   className="mt-3 w-full"
-                  onClick={() => {
-                    void Promise.all([snapshotQuery.refetch(), persistedQuery.refetch()]);
-                  }}
+                  onClick={() => void notificationsQuery.refetch()}
                 >
                   <RefreshCcw className="me-1.5 size-4" aria-hidden="true" />
                   إعادة المحاولة
                 </Button>
               </div>
+            ) : visibleItems.length === 0 ? (
+              <div className="py-3 text-center">
+                <p className="text-xs font-semibold text-muted-foreground">لا توجد أحداث جديدة حالياً</p>
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">ستظهر هنا الدفعات المسجلة وتحديثات العقود والصيانة والقرارات المكتملة.</p>
+              </div>
             ) : (
-              <>
-                {canReviewRequests && pendingPermissionRequests.length > 0 ? (
-                  <div
-                    data-permission-requests-need-action
-                    className="mt-2 rounded-xl border border-warning/40 bg-warning/[0.08] p-2"
-                  >
-                    <p className="flex items-center gap-1.5 px-1.5 pb-1.5 text-xs font-extrabold text-warning">
-                      <ShieldAlert className="size-3.5 shrink-0" aria-hidden="true" />
-                      طلبات تحتاج إجراء ({pendingPermissionRequests.length})
-                    </p>
-                    <ul className="space-y-1" aria-label="طلبات الصلاحية التي تحتاج مراجعة">
-                      {pendingPermissionRequests.slice(0, 4).map((request) => (
-                        <li key={request.id}>
-                          <Link
-                            to="/settings"
-                            search={{ section: 'users-permissions', sub: 'permission-requests' } as never}
-                            onClick={() => setIsOpen(false)}
-                            className="flex min-h-11 items-center gap-2 rounded-xl px-2.5 py-2 text-start transition-colors hover:bg-warning/10 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none"
-                          >
-                            <span className="min-w-0 flex-1">
-                              <span className="block truncate text-[12px] font-bold text-foreground">
-                                طلب صلاحية جديد
-                              </span>
-                              <span className="mt-0.5 block truncate text-xs font-semibold text-muted-foreground">
-                                {getPermissionLabel(request.permission)}
-                              </span>
-                            </span>
-                            <StatusBadge tone="warning" dot>قيد المراجعة</StatusBadge>
-                            <span className="shrink-0 rounded-lg bg-warning/15 px-2 py-1 text-xs font-extrabold text-warning">
-                              مراجعة
-                            </span>
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                    {pendingPermissionRequests.length > 4 ? (
-                      <p className="px-1.5 pt-1 text-xs font-medium text-muted-foreground">
-                        + {pendingPermissionRequests.length - 4} طلبات إضافية — افتح الشاشة للاستعراض الكامل.
-                      </p>
-                    ) : null}
-                  </div>
-                ) : null}
-
-                {visibleItems.length === 0 ? (
-                  <div className="py-2 text-center">
-                    <p className="text-xs font-semibold text-muted-foreground">{sharedLabel('notificationsNone')}</p>
-                    <p className="mt-1 text-xs leading-5 text-muted-foreground">{sharedLabel('notificationsHint')}</p>
-                  </div>
-                ) : (
-                  <ul className="mt-1 space-y-1" aria-label={sharedLabel('notifications')}>
-                    {visibleItems.map((item, index) => (
-                      <li key={item.id}>
-                        <Link
-                          ref={(node) => {
-                            itemRefs.current[index] = node;
-                          }}
-                          to={item.to}
-                          onClick={() => {
-                            if (!item.id.startsWith('operational:') && !item.isRead) markReadMutation.mutate(item.id);
-                            setIsOpen(false);
-                          }}
-                          className={cn(
-                            'flex min-h-11 items-center gap-2.5 rounded-xl px-2.5 py-1.5 text-[12px] font-semibold text-foreground/90 transition-colors hover:bg-muted',
-                            'focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none',
-                          )}
-                        >
-                          <item.Icon className="size-4 shrink-0 text-warning" aria-hidden="true" />
-                          <span className="min-w-0 flex-1">
-                            <span className="block font-bold leading-tight text-foreground">{item.title}</span>
-                            {item.message ? (
-                              <span className="mt-0.5 block text-xs font-medium leading-4 text-muted-foreground">
-                                {item.message}
-                              </span>
-                            ) : null}
-                          </span>
-                          {!item.isRead ? (
-                            <span className="size-2 shrink-0 rounded-full bg-primary" aria-label="غير مقروء" />
+              <ul className="mt-1 space-y-1" aria-label={sharedLabel('notifications')}>
+                {visibleItems.map((item, index) => {
+                  const Icon = item.type === 'permission_decision' ? ShieldCheck : Bell;
+                  return (
+                    <li key={item.id}>
+                      <Link
+                        ref={(node) => {
+                          itemRefs.current[index] = node;
+                        }}
+                        to={item.link}
+                        onClick={() => {
+                          if (!item.isRead) markReadMutation.mutate(item.id);
+                          setIsOpen(false);
+                        }}
+                        className={cn(
+                          'flex min-h-11 items-start gap-2.5 rounded-xl px-2.5 py-2 text-[12px] font-semibold text-foreground/90 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none',
+                          !item.isRead && 'bg-primary/[0.045]',
+                        )}
+                      >
+                        <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground">
+                          <Icon className="size-3.5" aria-hidden="true" />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate font-bold text-foreground">{item.title}</span>
+                          {item.message ? (
+                            <span className="mt-0.5 block line-clamp-2 text-[11px] font-medium leading-4 text-muted-foreground">{item.message}</span>
                           ) : null}
-                          {item.count > 1 ? (
-                            <span className="grid min-w-6 place-items-center rounded-full bg-danger/10 px-1.5 py-0.5 text-xs font-bold text-danger">
-                              {item.count}
-                            </span>
-                          ) : null}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </>
+                        </span>
+                        {!item.isRead ? <span className="mt-2 size-2 shrink-0 rounded-full bg-primary" aria-label="غير مقروء" /> : null}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
             )}
           </div>
         </>
