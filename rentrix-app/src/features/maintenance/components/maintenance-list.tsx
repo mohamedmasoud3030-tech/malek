@@ -88,13 +88,13 @@ export function MaintenanceList(props: MaintenanceListProps) {
   } = props;
   const { canAccess } = useAuth();
   const canEdit = canAccess("maintenance.edit");
-  const canResolve = canAccess("maintenance.resolve");
+  const canApprove = canAccess("maintenance.approve");
   const canCancel = canAccess("maintenance.cancel");
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultMaintenanceColumns]);
 
   const canRunStatusAction = (status: Exclude<MaintenanceStatusFilter, "all">) => {
     if (status === "cancelled") return canCancel;
-    if (status === "resolved" || status === "closed") return canResolve;
+    if (status === "resolved" || status === "closed") return canApprove;
     return canEdit;
   };
 
