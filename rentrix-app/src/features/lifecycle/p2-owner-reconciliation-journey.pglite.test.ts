@@ -3,7 +3,7 @@
  * Expense → Settlement reconciles with the existing financial engine.
  *
  * Runs the real callable chain on the fully replayed schema:
- *   create_contract_atomic → submit/approve → activate (agreement snapshot)
+ *   create_contract_atomic_v2 → submit/approve → activate (agreement snapshot)
  *   → generate_invoices_from_active_contracts (due schedule)
  *   → record_invoice_payment_atomic (collection + receipt)
  *   → create_expense_with_journal_atomic (OWNER vs COMPANY responsibility)
@@ -130,7 +130,7 @@ beforeAll(async () => {
   // The contract covers the current month so every generated obligation,
   // collection, expense and settlement lands in one verifiable period.
   const created = (await db.query<{ out: Record<string, unknown> }>(
-    `select public.create_contract_atomic(
+    `select public.create_contract_atomic_v2(
        $1::text, $2::uuid, $3::uuid, $4::uuid,
        date '${from}', date '2030-12-31',
        ${RENT}, 'monthly', null, 'draft', null, null, null, 1, 0) as out`,

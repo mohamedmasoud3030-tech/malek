@@ -181,7 +181,7 @@ async function assertNoDuplicateDraftForUnitTenant({
 export async function createContract(payload: ContractPayload): Promise<Contract> {
   await assertContractPropertyIsOperational(payload.property_id);
   if (payload.status === 'draft') await assertNoDuplicateDraftForUnitTenant({ unitId: payload.unit_id, tenantId: payload.tenant_id });
-  const { data, error } = await supabase.rpc('create_contract_atomic', {
+  const { data, error } = await supabase.rpc('create_contract_atomic_v2', {
     p_property_id: payload.property_id,
     p_unit_id: payload.unit_id ?? null,
     p_tenant_id: payload.tenant_id,
@@ -222,7 +222,7 @@ export async function updateContract(contractId: string, payload: ContractPayloa
     });
     if (policyError) throw policyError;
   }
-  const { data, error } = await supabase.rpc('update_contract_atomic', {
+  const { data, error } = await supabase.rpc('update_contract_atomic_v2', {
     p_contract_id: contractId,
     p_property_id: payload.property_id,
     p_unit_id: payload.unit_id ?? null,

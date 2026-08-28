@@ -2,11 +2,11 @@
  * Short Stay lease mode (P2) — authoritative PGlite integration proof.
  *
  * Exercises the real callable chain on the fully replayed schema:
- *   create_contract_atomic (mode + reference rate validation)
+ *   create_contract_atomic_v2 (mode + reference rate validation)
  *   → approval/activation
  *   → generate_invoices_from_active_contracts (one invoice per stay)
  *   → idempotent regeneration
- *   → update_contract_atomic (draft edit + active term freeze)
+ *   → update_contract_atomic_v2 (draft edit + active term freeze)
  *
  * Long-term contracts on the same run keep the recurring calendar behavior.
  */
@@ -116,7 +116,7 @@ beforeAll(async () => {
 
   // Long-term draft on one unit.
   const longCreated = (await db.query<{ out: Record<string, unknown> }>(
-    `select public.create_contract_atomic(
+    `select public.create_contract_atomic_v2(
        $1::text, $2::uuid, $3::uuid, $4::uuid,
        date '2020-01-01', date '2030-12-31',
        ${LONG_RENT}, 'monthly', null, 'draft', null, null, null, 1, 0) as out`,
@@ -126,7 +126,7 @@ beforeAll(async () => {
 
   // Short-stay draft on another unit of the same property, inside the current month.
   const stayCreated = (await db.query<{ out: Record<string, unknown> }>(
-    `select public.create_contract_atomic(
+    `select public.create_contract_atomic_v2(
        $1::text, $2::uuid, $3::uuid, $4::uuid,
        date '${from}', date '${to}',
        ${STAY_TOTAL}, 'monthly', null, 'draft', null, null, null, 1, 2,
@@ -160,7 +160,7 @@ describe('short stay lease mode — RPC validation', () => {
     await assumeIdentity(db, MAKER, COMPANY);
     const { from, to } = currentMonthRange();
     const error = await firstError(() => db.query(
-      `select public.create_contract_atomic(
+      `select public.create_contract_atomic_v2(
          $1::text, $2::uuid, $3::uuid, $4::uuid,
          date '${from}', date '${to}',
          100, 'monthly', null, 'draft', null, null, null, 1, 0, 'hotel')`,
@@ -173,7 +173,7 @@ describe('short stay lease mode — RPC validation', () => {
     await assumeIdentity(db, MAKER, COMPANY);
     const { from, to } = currentMonthRange();
     const error = await firstError(() => db.query(
-      `select public.create_contract_atomic(
+      `select public.create_contract_atomic_v2(
          $1::text, $2::uuid, $3::uuid, $4::uuid,
          date '${from}', date '${to}',
          100, 'monthly', null, 'draft', null, null, null, 1, 0,
@@ -187,7 +187,7 @@ describe('short stay lease mode — RPC validation', () => {
     await assumeIdentity(db, MAKER, COMPANY);
     const { from, to } = currentMonthRange();
     const error = await firstError(() => db.query(
-      `select public.create_contract_atomic(
+      `select public.create_contract_atomic_v2(
          $1::text, $2::uuid, $3::uuid, $4::uuid,
          date '${from}', date '${to}',
          100, 'monthly', null, 'draft', null, null, null, 1, 0,
@@ -309,7 +309,7 @@ describe('short stay lease mode — edit authority', () => {
     await assumeIdentity(db, MAKER, COMPANY);
     const { from, to } = currentMonthRange();
     const error = await firstError(() => db.query(
-      `select public.update_contract_atomic(
+      `select public.update_contract_atomic_v2(
          $1::text, $2::text, $3::uuid, $4::uuid, $5::uuid,
          date '${from}', date '${to}',
          ${STAY_TOTAL}, 'monthly', null, 'active', null, null, null,

@@ -96,7 +96,7 @@ describe('draft duplicate guard', () => {
     const { createContract } = await import('./contractService');
 
     await expect(createContract(payload)).resolves.toMatchObject({ id: 'contract-1' });
-    expect(supabaseMock.rpc).toHaveBeenCalledWith('create_contract_atomic', expect.objectContaining({ p_unit_id: 'unit-1', p_tenant_id: 'tenant-1' }));
+    expect(supabaseMock.rpc).toHaveBeenCalledWith('create_contract_atomic_v2', expect.objectContaining({ p_unit_id: 'unit-1', p_tenant_id: 'tenant-1' }));
   });
 });
 
@@ -200,13 +200,13 @@ describe('updateContract', () => {
     attachment_url: null,
   } as const;
 
-  it('calls update_contract_atomic instead of a raw table update', async () => {
+  it('calls update_contract_atomic_v2 instead of a raw table update', async () => {
     supabaseMock.rpc.mockResolvedValue({ data: { id: 'contract-1', ...payload }, error: null });
     const { updateContract } = await import('./contractService');
 
     await updateContract('contract-1', payload);
 
-    expect(supabaseMock.rpc).toHaveBeenCalledWith('update_contract_atomic', expect.objectContaining({
+    expect(supabaseMock.rpc).toHaveBeenCalledWith('update_contract_atomic_v2', expect.objectContaining({
       p_contract_id: 'contract-1',
       p_property_id: 'prop-1',
       p_unit_id: 'unit-1',
@@ -405,12 +405,12 @@ describe('short stay lease mode RPC wiring', () => {
     return chain;
   }
 
-  it('sends the short stay mode and reference rate through create_contract_atomic', async () => {
+  it('sends the short stay mode and reference rate through create_contract_atomic_v2', async () => {
     supabaseMock.rpc.mockResolvedValue({ data: { id: 'contract-1' }, error: null });
     supabaseMock.from.mockReturnValueOnce(propertyQueryMock()).mockReturnValueOnce(draftQueryMock());
     const { createContract } = await import('./contractService');
     await createContract(basePayload);
-    expect(supabaseMock.rpc).toHaveBeenCalledWith('create_contract_atomic', expect.objectContaining({
+    expect(supabaseMock.rpc).toHaveBeenCalledWith('create_contract_atomic_v2', expect.objectContaining({
       p_lease_mode: 'short_stay',
       p_daily_reference_rate: 100,
     }));
@@ -421,18 +421,18 @@ describe('short stay lease mode RPC wiring', () => {
     supabaseMock.from.mockReturnValueOnce(propertyQueryMock()).mockReturnValueOnce(draftQueryMock());
     const { createContract } = await import('./contractService');
     await createContract({ ...basePayload, lease_mode: 'long_term', daily_reference_rate: null });
-    expect(supabaseMock.rpc).toHaveBeenCalledWith('create_contract_atomic', expect.objectContaining({
+    expect(supabaseMock.rpc).toHaveBeenCalledWith('create_contract_atomic_v2', expect.objectContaining({
       p_lease_mode: 'long_term',
       p_daily_reference_rate: null,
     }));
   });
 
-  it('carries the mode through update_contract_atomic', async () => {
+  it('carries the mode through update_contract_atomic_v2', async () => {
     supabaseMock.rpc.mockResolvedValue({ data: { id: 'contract-1' }, error: null });
     supabaseMock.from.mockReturnValueOnce(propertyQueryMock()).mockReturnValueOnce(draftQueryMock());
     const { updateContract } = await import('./contractService');
     await updateContract('contract-1', { ...basePayload, status: 'draft' });
-    const updateCall = supabaseMock.rpc.mock.calls.find((call) => call[0] === 'update_contract_atomic');
+    const updateCall = supabaseMock.rpc.mock.calls.find((call) => call[0] === 'update_contract_atomic_v2');
     expect(updateCall?.[1]).toMatchObject({
       p_lease_mode: 'short_stay',
       p_daily_reference_rate: 100,

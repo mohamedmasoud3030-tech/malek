@@ -8261,6 +8261,26 @@ export type Database = {
           p_attachment_url: string | null;
           p_billing_day?: number | null;
           p_grace_days?: number | null;
+        };
+        Returns: Json;
+      };
+      create_contract_atomic_v2: {
+        Args: {
+          p_property_id: string | null;
+          p_unit_id: string | null;
+          p_tenant_id: string | null;
+          p_agreement_id: string | null;
+          p_start_date: string | null;
+          p_end_date: string | null;
+          p_rent_amount: number | null;
+          p_payment_cycle: string | null;
+          p_payment_terms_id: string | null;
+          p_status: string | null;
+          p_cancellation_reason: string | null;
+          p_notes: string | null;
+          p_attachment_url: string | null;
+          p_billing_day?: number | null;
+          p_grace_days?: number | null;
           p_lease_mode?: string | null;
           p_daily_reference_rate?: number | null;
         };
@@ -9655,6 +9675,25 @@ export type Database = {
         Returns: Json;
       };
       update_contract_atomic: {
+        Args: {
+          p_contract_id: string | null;
+          p_property_id: string | null;
+          p_unit_id: string | null;
+          p_tenant_id: string | null;
+          p_agreement_id: string | null;
+          p_start_date: string | null;
+          p_end_date: string | null;
+          p_rent_amount: number | null;
+          p_payment_cycle: string | null;
+          p_payment_terms_id: string | null;
+          p_status: string | null;
+          p_cancellation_reason: string | null;
+          p_notes: string | null;
+          p_attachment_url: string | null;
+        };
+        Returns: Json;
+      };
+      update_contract_atomic_v2: {
         Args: {
           p_contract_id: string | null;
           p_property_id: string | null;

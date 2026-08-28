@@ -50,13 +50,10 @@ ALTER TABLE "public"."contracts"
 -- ---------------------------------------------------------------------------
 -- create_contract_atomic: accept and validate the short-stay fields.
 -- Existing callers are unaffected (both new parameters carry defaults).
--- The old signature is dropped explicitly so the catalog keeps exactly one
--- function instead of an ambiguous overload pair.
+-- The canonical legacy signature remains intact. Short Stay uses an explicit
+-- v2 command so PostgREST never has an overloaded-RPC ambiguity.
 -- ---------------------------------------------------------------------------
-DROP FUNCTION IF EXISTS public.create_contract_atomic(
-  text, uuid, uuid, uuid, date, date, numeric, text, uuid, text, text, text, text, integer, integer
-);
-CREATE OR REPLACE FUNCTION "public"."create_contract_atomic"(
+CREATE OR REPLACE FUNCTION "public"."create_contract_atomic_v2"(
   "p_property_id" "text",
   "p_unit_id" "uuid",
   "p_tenant_id" "uuid",
@@ -228,13 +225,10 @@ $_$;
 -- update_contract_atomic: carry the short-stay fields through the same
 -- guarded generic editor. The mode and reference rate are treated as signed
 -- commercial terms: frozen once the contract is active or APPROVED.
--- The old signature is dropped explicitly so the catalog keeps exactly one
--- function instead of an ambiguous overload pair.
+-- The canonical legacy signature remains intact. Short Stay uses an explicit
+-- v2 command so PostgREST never has an overloaded-RPC ambiguity.
 -- ---------------------------------------------------------------------------
-DROP FUNCTION IF EXISTS public.update_contract_atomic(
-  text, text, uuid, uuid, uuid, date, date, numeric, text, uuid, text, text, text, text
-);
-CREATE OR REPLACE FUNCTION "public"."update_contract_atomic"(
+CREATE OR REPLACE FUNCTION "public"."update_contract_atomic_v2"(
   "p_contract_id" "text",
   "p_property_id" "text",
   "p_unit_id" "uuid",
@@ -835,22 +829,22 @@ $$;
 -- canonical browser-RPC contract stays: revoked from PUBLIC, executable by
 -- authenticated and service_role, with the RPC's own role gate as authority.
 -- ---------------------------------------------------------------------------
-REVOKE ALL ON FUNCTION public.create_contract_atomic(
+REVOKE ALL ON FUNCTION public.create_contract_atomic_v2(
   text, uuid, uuid, uuid, date, date, numeric, text, uuid, text, text, text, text, integer, integer, text, numeric
 ) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.create_contract_atomic(
+GRANT ALL ON FUNCTION public.create_contract_atomic_v2(
   text, uuid, uuid, uuid, date, date, numeric, text, uuid, text, text, text, text, integer, integer, text, numeric
 ) TO authenticated;
-GRANT ALL ON FUNCTION public.create_contract_atomic(
+GRANT ALL ON FUNCTION public.create_contract_atomic_v2(
   text, uuid, uuid, uuid, date, date, numeric, text, uuid, text, text, text, text, integer, integer, text, numeric
 ) TO service_role;
 
-REVOKE ALL ON FUNCTION public.update_contract_atomic(
+REVOKE ALL ON FUNCTION public.update_contract_atomic_v2(
   text, text, uuid, uuid, uuid, date, date, numeric, text, uuid, text, text, text, text, text, numeric
 ) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.update_contract_atomic(
+GRANT ALL ON FUNCTION public.update_contract_atomic_v2(
   text, text, uuid, uuid, uuid, date, date, numeric, text, uuid, text, text, text, text, text, numeric
 ) TO authenticated;
-GRANT ALL ON FUNCTION public.update_contract_atomic(
+GRANT ALL ON FUNCTION public.update_contract_atomic_v2(
   text, text, uuid, uuid, uuid, date, date, numeric, text, uuid, text, text, text, text, text, numeric
 ) TO service_role;
