@@ -3,7 +3,9 @@ import { formatDefaultCompanyMoney } from '@/lib/companyFormatters';
 import { unitStatusLabels } from '@/features/units/unit-schema';
 import { getUnitSelectionIssueForContractPeriod, isUnitSelectableForContractPeriod, type UnitAvailabilityConflictMap } from './domain/unitAvailability';
 
-export type ContractUnitOptionUnit = Pick<Unit, 'id' | 'property_id' | 'unit_number' | 'status' | 'rent_amount'>;
+export type ContractUnitOptionUnit = Pick<Unit, 'id' | 'property_id' | 'unit_number' | 'status' | 'rent_amount'> & {
+  daily_reference_rate?: number | null;
+};
 export type ContractUnitOptionProperty = Pick<Property, 'title' | 'address'> | null | undefined;
 
 type ContractUnitOptionLabelParams = Readonly<{
@@ -38,6 +40,14 @@ export function buildContractUnitOptionLabel({ unit, property, formatRent = form
 
 export function getContractUnitDefaultRent(units: readonly ContractUnitOptionUnit[], unitId: string): number {
   return units.find((unit) => unit.id === unitId)?.rent_amount ?? 0;
+}
+
+export function getContractUnitDailyReferenceRate(
+  units: readonly ContractUnitOptionUnit[],
+  unitId: string,
+): number | null {
+  const value = units.find((unit) => unit.id === unitId)?.daily_reference_rate;
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
 export function isUnitSelectableForContract({ unit, currentLinkedUnitId, conflictsByUnitId }: ContractUnitSelectableParams): boolean {
