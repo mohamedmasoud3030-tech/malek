@@ -7,6 +7,7 @@ import type { Database } from '@/types/database';
 export type Maintenance = Database['public']['Tables']['maintenance_records']['Row'];
 export type MaintenanceStatus = Maintenance['status'] | 'all';
 export type MaintenancePayload = Database['public']['Tables']['maintenance_records']['Insert'];
+export type MaintenanceChargeTarget = 'OWNER' | 'TENANT' | 'COMPANY';
 export type MaintenanceUpdate = Pick<Database['public']['Tables']['maintenance_records']['Update'],
   | 'property_id'
   | 'unit_id'
@@ -141,12 +142,39 @@ export async function updateMaintenanceStatus(
   return data as Maintenance;
 }
 
-export type ResolveMaintenanceResult = { maintenance: Maintenance; expense_id: string | null };
+export type ResolveMaintenanceResult = {
+  maintenance: Maintenance;
+  expense_id: string | null;
+  charged_to?: MaintenanceChargeTarget;
+};
 
-export async function resolveMaintenanceWithExpense(requestId: string, cost: number, notes: string | null): Promise<ResolveMaintenanceResult> {
+/**
+ * Persist the human-confirmed responsibility on the operational record first,
+ * then let the canonical server RPC post the financial effect in one DB
+ * transaction. If posting fails, no financial record is created; the selected
+ * responsibility remains visible on the open request and can be corrected or
+ * retried deliberately.
+ */
+export async function resolveMaintenanceWithExpense(
+  requestId: string,
+  cost: number,
+  chargedTo: MaintenanceChargeTarget,
+  notes: string | null,
+): Promise<ResolveMaintenanceResult> {
+  const { data: responsibilityRow, error: responsibilityError } = await supabase
+    .from('maintenance_records')
+    .update({ charged_to: chargedTo })
+    .eq('id', requestId)
+    .is('deleted_at', null)
+    .in('status', ['open', 'in_progress'])
+    .select('id, charged_to')
+    .maybeSingle();
+  if (responsibilityError) handleSupabaseError(responsibilityError, 'تعذر حفظ جهة تحمل تكلفة الصيانة');
+  if (!responsibilityRow) throw new Error('طلب الصيانة لم يعد متاحاً للحل أو تم إغلاقه بالفعل');
+
   const { data, error } = await supabase
     .rpc('resolve_maintenance_with_expense', { p_request_id: requestId, p_cost: cost, p_notes: notes })
     .single();
-  if (error) handleSupabaseError(error, 'تعذر إغلاق طلب الصيانة وتسجيل التكلفة');
+  if (error) handleSupabaseError(error, 'تعذر إغلاق طلب الصيانة وتوجيه التكلفة');
   return data as unknown as ResolveMaintenanceResult;
 }
