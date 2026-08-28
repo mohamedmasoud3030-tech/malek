@@ -1,114 +1,136 @@
 import { Link } from '@tanstack/react-router';
-import { Building2 } from 'lucide-react';
+import { Building2, CalendarClock } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { cn } from '@/lib/utils';
-import type { VacantUnitsSignal } from '../vacant-units-signal';
+import type { VacancyAnalytics } from '@/features/units/vacancy-analytics';
 
 interface VacantUnitsSectionProps {
-  signal: VacantUnitsSignal;
-  /**
-   * Server-authoritative vacant unit count (`occupancy.vacant_units`). The
-   * queue rows are a bounded presentation slice, so the badge must not fall
-   * back to rows.length when the server number is available.
-   */
+  analytics: VacancyAnalytics;
+  /** Server-authoritative vacant unit count from rpt_dashboard_snapshot. */
   serverVacantCount?: number;
   isLoading: boolean;
   isError?: boolean;
+  /** Contract history can fail/truncate independently from the unit register. */
+  detailsUnavailable?: boolean;
   settings: ReturnType<typeof import('@/hooks/useCompanyFormatters').useCompanyFormatters>;
 }
 
 /**
- * P3 — Today: vacant and out-of-service units.
- *
- * Answers "which units are not earning right now?" on Today itself: units
- * withdrawn for maintenance first (a problem), then vacant units (a re-letting
- * opportunity), then held reservations.
+ * Dashboard vacancy signal: two headline facts only, then bounded detail.
+ * Deeper portfolio ratios and trend analysis live in Reports.
  */
-export function VacantUnitsSection({ signal, serverVacantCount, isLoading, isError = false, settings }: VacantUnitsSectionProps) {
-  const { money } = settings;
-  const badgeCount = serverVacantCount ?? signal.availableCount;
-  const problemCount = signal.outOfServiceCount;
-
-  const meta = problemCount > 0
-    ? `${problemCount} وحدة متوقفة للصيانة`
-    : signal.reservedCount > 0
-      ? `${signal.reservedCount} وحدة محجوزة بانتظار الإتمام`
-      : 'فرص إعادة تأجير';
+export function VacantUnitsSection({
+  analytics,
+  serverVacantCount,
+  isLoading,
+  isError = false,
+  detailsUnavailable = false,
+  settings,
+}: VacantUnitsSectionProps) {
+  const { money, date, number } = settings;
+  const vacantCount = serverVacantCount ?? analytics.availableUnits;
+  const countMismatch = serverVacantCount !== undefined && serverVacantCount !== analytics.availableUnits;
+  const canTrustHistory = !detailsUnavailable && !countMismatch;
+  const rows = analytics.vacantRows.slice(0, 5);
 
   return (
-    <section className="dashboard-queue-card" aria-labelledby="vacant-units-title">
+    <section className="dashboard-queue-card" aria-labelledby="vacant-units-title" data-dashboard-vacancy-card>
       <div className="dashboard-queue-card__header">
         <div className="dashboard-queue-card__title-group">
-          <span
-            className={cn('dashboard-queue-card__icon', problemCount > 0 ? 'dashboard-queue-card__icon--warning' : undefined)}
-            aria-hidden="true"
-          >
+          <span className="dashboard-queue-card__icon" aria-hidden="true">
             <Building2 className="size-4" />
           </span>
           <div>
-            <h3 id="vacant-units-title" className="dashboard-queue-card__title">وحدات بلا دخل</h3>
-            <p className="dashboard-queue-card__meta">{meta}</p>
+            <h3 id="vacant-units-title" className="dashboard-queue-card__title">الوحدات الشاغرة</h3>
+            <p className="dashboard-queue-card__meta">إشارة سريعة لإعادة التأجير، والتحليل الكامل في التقارير.</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          {!isLoading && !isError ? (
-            <StatusBadge tone={badgeCount > 0 || problemCount > 0 ? 'warning' : 'success'}>{badgeCount}</StatusBadge>
-          ) : null}
-          <Link to="/units" data-dashboard-section-action className="dashboard-section-link">عرض الكل</Link>
-        </div>
+        <Link to="/reports" data-dashboard-section-action className="dashboard-section-link">التقرير الكامل</Link>
       </div>
 
       {isLoading ? (
-        <div className="dashboard-queue-list" aria-label="جارٍ تحميل الوحدات بلا دخل">
-          <Skeleton className="h-14 rounded-xl" />
+        <div className="space-y-3" aria-label="جارٍ تحميل مؤشر الشغور">
+          <Skeleton className="h-16 rounded-xl" />
           <Skeleton className="h-14 rounded-xl" />
           <Skeleton className="h-14 rounded-xl" />
         </div>
-      ) : null}
+      ) : (
+        <>
+          <div className="flex flex-col gap-3 border-b border-border/60 pb-3 sm:flex-row sm:items-end sm:justify-between" data-dashboard-vacancy-summary>
+            <div>
+              <p className="text-xs font-bold text-muted-foreground">الشاغر الآن</p>
+              <p className="mt-1 text-2xl font-black tracking-tight">
+                {number(vacantCount)} <span className="text-sm font-bold text-muted-foreground">وحدة شاغرة</span>
+              </p>
+            </div>
+            <div className="sm:text-end">
+              <p className="text-xs font-bold text-muted-foreground">متوسط الشغور</p>
+              <p className="mt-1 text-lg font-black" data-dashboard-average-vacancy>
+                {canTrustHistory ? `${number(analytics.averageVacancyDays)} يوم` : '—'}
+              </p>
+            </div>
+          </div>
 
-      {!isLoading && isError ? (
-        <div className="dashboard-queue-empty" role="alert">
-          <p className="font-semibold">تعذر تحميل حالة الوحدات</p>
-          <p>افتح صفحة الوحدات للتحقق. لن نعرض قائمة فارغة عند فشل التحميل.</p>
-        </div>
-      ) : null}
+          {isError ? (
+            <div className="dashboard-queue-empty" role="alert">
+              <p className="font-semibold">تعذر تحميل تفاصيل الوحدات الشاغرة</p>
+              <p>عدد الشواغر أعلاه من لقطة الخادم، لكن قائمة الوحدات لم تُحمّل.</p>
+            </div>
+          ) : null}
 
-      {!isLoading && !isError && signal.rows.length === 0 ? (
-        <div className="dashboard-queue-empty" role="status">
-          <p className="font-semibold">كل الوحدات مؤجرة حالياً</p>
-          <p>ستظهر هنا الوحدات الشاغرة أو المتوقفة عن التأجير.</p>
-        </div>
-      ) : null}
+          {!isError && (detailsUnavailable || countMismatch) && vacantCount > 0 ? (
+            <div className="dashboard-queue-empty" role="status">
+              <p className="font-semibold">تفاصيل مدة الشغور غير مكتملة</p>
+              <p>{countMismatch ? 'العدد في سجل الوحدات لا يطابق لقطة الخادم بعد؛ لن نعرض متوسطًا مضللًا.' : 'تعذر قراءة تاريخ العقود كاملًا؛ العدد محفوظ لكن متوسط الأيام متوقف حتى تكتمل البيانات.'}</p>
+            </div>
+          ) : null}
 
-      {!isLoading && !isError && signal.rows.length > 0 ? (
-        <ul className="dashboard-queue-list" role="list">
-          {signal.rows.map((row) => {
-            const isProblem = row.status === 'maintenance';
-            return (
-              <li key={row.unitId} role="listitem" className="min-w-0">
-                <Link
-                  to="/units"
-                  className={cn('dashboard-queue-row', isProblem ? 'dashboard-queue-row--warning' : undefined)}
-                  data-dashboard-queue-link
-                  aria-label={`${row.title} — ${row.location} — ${row.statusLabel}`}
-                >
-                  <span className="dashboard-queue-row__main">
-                    <span className="dashboard-queue-row__title">{row.title}</span>
-                    <span className="dashboard-queue-row__meta">{row.location}</span>
-                  </span>
-                  <span className="dashboard-queue-row__side">
-                    <StatusBadge tone={isProblem ? 'warning' : 'info'}>{row.statusLabel}</StatusBadge>
-                    {row.referenceRent !== null ? (
-                      <span className="dashboard-queue-row__date">إيجار مرجعي: {money(row.referenceRent)}</span>
-                    ) : null}
-                  </span>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      ) : null}
+          {!isError && vacantCount === 0 ? (
+            <div className="dashboard-queue-empty" role="status">
+              <p className="font-semibold">لا توجد وحدات شاغرة حاليًا</p>
+              <p>الوحدات المحجوزة أو المتوقفة للصيانة لا تُحسب كشاغرة.</p>
+            </div>
+          ) : null}
+
+          {!isError && rows.length > 0 ? (
+            <ul className="dashboard-queue-list" role="list" aria-label="تفاصيل الوحدات الشاغرة">
+              {rows.map((row) => (
+                <li key={row.unitId} role="listitem" className="min-w-0">
+                  <Link
+                    to="/units"
+                    className="dashboard-queue-row"
+                    data-dashboard-queue-link
+                    aria-label={`وحدة ${row.unitNumber} — ${row.propertyTitle} — شاغرة منذ ${number(row.daysVacant)} يوم`}
+                  >
+                    <span className="dashboard-queue-row__main">
+                      <span className="dashboard-queue-row__title">وحدة {row.unitNumber}</span>
+                      <span className="dashboard-queue-row__meta">{row.propertyTitle}</span>
+                      <span className="dashboard-queue-row__date">
+                        {row.referenceRent !== null ? `إيجار مرجعي: ${money(row.referenceRent)}` : 'الإيجار المرجعي غير مسجل'}
+                      </span>
+                    </span>
+                    <span className="dashboard-queue-row__side">
+                      <StatusBadge tone={row.daysVacant >= 60 ? 'danger' : row.daysVacant >= 30 ? 'warning' : 'info'}>
+                        {number(row.daysVacant)} يوم
+                      </StatusBadge>
+                      <span className="dashboard-queue-row__date">
+                        {row.lastContractEndDate ? `آخر عقد انتهى ${date(row.lastContractEndDate)}` : 'لم يسبق تأجيرها في السجل'}
+                      </span>
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+
+          {!isError && rows.length > 0 && canTrustHistory ? (
+            <div className="mt-3 flex items-center gap-2 text-xs font-bold text-muted-foreground" data-dashboard-longest-vacancy>
+              <CalendarClock className="size-4" aria-hidden="true" />
+              الأطول شغورًا: وحدة {rows[0].unitNumber} · {number(rows[0].daysVacant)} يوم
+            </div>
+          ) : null}
+        </>
+      )}
     </section>
   );
 }
