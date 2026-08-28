@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { PageHeader } from './page-header';
 import { PageHeaderActions } from './page-header-actions';
 import { PageLayout } from './page-layout';
 
@@ -66,17 +67,19 @@ export function EmbeddableWorkspace({
       dir={dir}
       lang={lang}
       size={size}
-      title={title}
-      description={description}
-      count={count}
-      backTo={backTo}
-      backLabel={backLabel}
-      primaryAction={primaryAction}
-      secondaryActions={secondaryActions}
       className={className}
       contentClassName={contentClassName}
       visualVariant={visualVariant}
     >
+      <PageHeader
+        title={title}
+        description={description}
+        count={count}
+        backTo={backTo}
+        backLabel={backLabel}
+        primaryAction={primaryAction}
+        secondaryActions={secondaryActions}
+      />
       {children}
     </PageLayout>
   );
