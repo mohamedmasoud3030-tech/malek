@@ -77,6 +77,21 @@ export function OverdueInvoicesTable({ rows, selectedInvoiceId, onSelectInvoice,
       keyOf={(row) => row.invoiceId}
       emptyTitle="لا توجد فواتير متأخرة"
       emptyDescription="لا توجد فواتير متأخرة حتى تاريخ التقرير الحالي."
+      mobileBadgeKey="status"
+      mobileSummaryKeys={['tenant', 'context', 'due_date', 'days_overdue', 'remaining', 'bucket']}
+      mobileCardPrimaryAction={(row) => ({
+        label: 'عرض الفاتورة',
+        variant: 'default',
+        ariaLabel: `عرض ${row.invoiceReference ?? 'الفاتورة'}`,
+        onClick: () => onSelectInvoice(row.invoiceId),
+      })}
+      mobileCardActions={(row) => onCollectInvoice ? [{
+        label: 'تحصيل',
+        icon: HandCoins,
+        variant: 'secondary' as const,
+        ariaLabel: `تحصيل ${row.invoiceReference ?? 'الفاتورة'}`,
+        onClick: () => onCollectInvoice(row.invoiceId),
+      }] : []}
     />
   );
 }
