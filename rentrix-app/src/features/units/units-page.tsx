@@ -53,8 +53,8 @@ export type UnitsWorkspaceProps = Readonly<{
 export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
   const ctrl = useUnitsListController();
   const { canAccess } = useAuth();
-  const canCreateUnit = canAccess("units.create");
-  const canEditUnit = canAccess("units.edit");
+  const canCreateUnit = canAccess("properties.create");
+  const canEditUnit = canAccess("properties.edit");
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultUnitRegisterColumns]);
   if (ctrl.isLoading) return <LoadingState variant="route" />;
 
