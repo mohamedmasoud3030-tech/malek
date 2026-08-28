@@ -1,6 +1,6 @@
 /*
  * MALEK visual system — Premium Real Estate / Finance.
- * Theme values come only from tokens.css. This layer owns layout/surface usage,
+ * Theme values inherit from tokens.css; this layer owns layout/surface usage,
  * never a second palette. Surfaces are intentionally opaque and calm: no
  * competing glass stacks, no decorative glow.
  */
