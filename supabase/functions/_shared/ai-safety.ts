@@ -56,6 +56,7 @@ const contextKeyContract: Readonly<Record<string, readonly string[]>> = {
     "activePropertyCount",
     "unitCount",
     "occupiedUnitCount",
+    "vacantUnitCount",
     "occupancyRate",
     "outstandingInvoiceAmount",
     "expensesLast90Days",
@@ -270,6 +271,28 @@ export function deterministicResponse(
       caveats: ["لا يُعد هذا اعتماداً أو تجديداً للعقود."],
     };
   }
+  if (action === "summarize_vacancy") {
+    const vacant = numberAt(context, "propertyFinancialSnapshot", "vacantUnitCount");
+    const units = numberAt(context, "propertyFinancialSnapshot", "unitCount");
+    const occupancy = numberAt(context, "propertyFinancialSnapshot", "occupancyRate");
+    return {
+      answer: `لديك ${vacant} وحدة شاغرة من إجمالي ${units} وحدة، ونسبة الإشغال الحالية ${occupancy.toFixed(2)}٪. افتح تقرير الإشغال لمعرفة توزيع الشواغر على العقارات والوحدات.`,
+      grounded: true,
+      caveats: ["العدد قراءة فقط ومبني على حالة الوحدات المسجلة وقت الطلب."],
+    };
+  }
+  if (action === "summarize_month") {
+    const payments = numberAt(context, "reportSummary", "paymentAmountLast30Days");
+    const paymentCount = numberAt(context, "reportSummary", "paymentsLast30Days");
+    const expenses = numberAt(context, "reportSummary", "expenseAmountLast30Days");
+    const expenseCount = numberAt(context, "reportSummary", "expensesLast30Days");
+    const outstanding = numberAt(context, "overdueInvoices", "totalOutstanding");
+    return {
+      answer: `خلال آخر 30 يوماً تم تسجيل ${paymentCount} دفعة بإجمالي ${formatOmr(payments)}، و${expenseCount} مصروفاً بإجمالي ${formatOmr(expenses)}. الرصيد المتأخر الحالي ${formatOmr(outstanding)}. هذا ملخص تشغيلي سريع وليس إقفالاً أو تقريراً محاسبياً معتمداً.`,
+      grounded: true,
+      caveats: ["الملخص يستخدم آخر 30 يوماً حتى تاريخ الطلب، وليس فترة محاسبية مغلقة."],
+    };
+  }
   if (action === "explain_property_financial_snapshot") {
     const properties = numberAt(
       context,
@@ -295,7 +318,7 @@ export function deterministicResponse(
     return {
       answer: `تغطي اللقطة ${properties} عقاراً و${units} وحدة، ونسبة الإشغال ${occupancy.toFixed(2)}٪. المتبقي على الفواتير ${formatOmr(outstanding)}، والمصروفات خلال 90 يوماً ${formatOmr(expenses)}. هذه مؤشرات تشغيلية وليست ميزاناً أو تقريراً محاسبياً معتمداً.`,
       grounded: true,
-      caveats: ["استخدم التقارير المحاسبية المعتمدة للتحقق المالي النهائي."],
+      caveats: ["استخدم التقارير المعتمدة للتحقق المالي النهائي."],
     };
   }
   return null;

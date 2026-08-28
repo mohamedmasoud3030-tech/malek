@@ -1,6 +1,8 @@
 export type AiAssistantAction =
   | 'summarize_overdue_invoices'
   | 'summarize_contract_renewals'
+  | 'summarize_vacancy'
+  | 'summarize_month'
   | 'draft_tenant_payment_reminder'
   | 'explain_property_financial_snapshot';
 
@@ -53,6 +55,7 @@ export type AiAssistantContext = {
     activePropertyCount: number;
     unitCount: number;
     occupiedUnitCount: number;
+    vacantUnitCount: number;
     occupancyRate: number;
     outstandingInvoiceAmount: number;
     expensesLast90Days: number;

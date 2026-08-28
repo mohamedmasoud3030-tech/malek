@@ -9,6 +9,8 @@ export const AI_ACTIONS = [
   "freeform",
   "summarize_overdue_invoices",
   "summarize_contract_renewals",
+  "summarize_vacancy",
+  "summarize_month",
   "draft_tenant_payment_reminder",
   "explain_property_financial_snapshot",
 ] as const;

@@ -23,23 +23,23 @@ type ReportDirectoryProps = Readonly<{
   onOpen: (section: ReportSectionId, view: ReportViewId) => void;
 }>;
 
-type DirectoryTab = 'all' | 'finance' | 'leases' | 'maintenance' | 'owners' | 'properties' | 'analytics';
+type DirectoryTab = 'all' | 'office' | 'collections' | 'leases' | 'maintenance' | 'owners' | 'properties';
 
 const directoryTabs: readonly { id: DirectoryTab; label: string; groups?: readonly ReportGroupId[] }[] = [
   { id: 'all', label: 'الكل' },
-  { id: 'finance', label: 'المالية والتحصيل', groups: ['finance', 'control'] },
-  { id: 'leases', label: 'التأجير والإشغال', groups: ['leases'] },
-  { id: 'maintenance', label: 'الصيانة', groups: ['maintenance'] },
-  { id: 'owners', label: 'الملاك والكشوف', groups: ['owners'] },
+  { id: 'office', label: 'أداء المكتب', groups: ['office'] },
+  { id: 'collections', label: 'التحصيل والمتأخرات', groups: ['collections'] },
+  { id: 'leases', label: 'العقود والإشغال', groups: ['leases'] },
+  { id: 'maintenance', label: 'المصروفات والصيانة', groups: ['maintenance'] },
+  { id: 'owners', label: 'الملاك والمستأجرون', groups: ['owners'] },
   { id: 'properties', label: 'العقارات والوحدات', groups: ['properties'] },
-  { id: 'analytics', label: 'التحليلات', groups: ['analytics'] },
 ];
 
 const pinnedReports = [
-  { label: 'تقرير المتأخرات', section: 'analytics' as const, view: 'overdue' as const },
-  { label: 'مسير التحصيل', section: 'analytics' as const, view: 'collections' as const },
-  { label: 'انتهاء العقود', section: 'analytics' as const, view: 'occupancy' as const },
-  { label: 'كشف حساب المالك', section: 'statements' as const, view: '' as const },
+  { label: 'المتأخرات', section: 'analytics' as const, view: 'overdue' as const },
+  { label: 'التحصيل', section: 'analytics' as const, view: 'collections' as const },
+  { label: 'العقود والتجديدات', section: 'analytics' as const, view: 'occupancy' as const },
+  { label: 'كشف المالك', section: 'statements' as const, view: '' as const },
 ] as const;
 
 export function ReportDirectory({ activeSection, activeView, scope, onOpen }: ReportDirectoryProps) {
@@ -66,7 +66,7 @@ export function ReportDirectory({ activeSection, activeView, scope, onOpen }: Re
               inputMode="search"
               autoComplete="off"
               dir="rtl"
-              placeholder="بحث في مركز التقارير: تحصيل، عقار، صيانة، مالك…"
+              placeholder="ابحث: تحصيل، شغور، عقار، صيانة، مالك…"
               className="min-h-11 bg-background ps-9 pe-10"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
@@ -83,7 +83,7 @@ export function ReportDirectory({ activeSection, activeView, scope, onOpen }: Re
             ) : null}
           </div>
           <div className="text-xs font-bold text-muted-foreground">
-            {reportGroups.length} أقسام · {REPORT_DIRECTORY_ENTRY_COUNT} تقريرًا وكشفًا
+            {reportGroups.length} مجالات عمل · {REPORT_DIRECTORY_ENTRY_COUNT} تقريرًا وكشفًا
           </div>
         </div>
       </div>
@@ -92,8 +92,8 @@ export function ReportDirectory({ activeSection, activeView, scope, onOpen }: Re
         <div className="mb-3 flex items-center gap-2">
           <Star className="size-4 text-primary" aria-hidden="true" />
           <div>
-            <h2 id="pinned-reports-title" className="text-sm font-black sm:text-base">المفضلة والتقارير المثبتة</h2>
-            <p className="text-xs font-semibold text-muted-foreground">وصول سريع لأهم التقارير اليومية؛ الأرقام والتصدير تظهر من التقرير الفعلي بعد فتحه.</p>
+            <h2 id="pinned-reports-title" className="text-sm font-black sm:text-base">الأكثر استخدامًا</h2>
+            <p className="text-xs font-semibold text-muted-foreground">افتح التقرير ثم اقرأ الخلاصة أولًا، وبعدها التفاصيل القابلة للبحث والتصفية والتصدير.</p>
           </div>
         </div>
         <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
@@ -113,7 +113,7 @@ export function ReportDirectory({ activeSection, activeView, scope, onOpen }: Re
               >
                 <span className="min-w-0">
                   <span className="block text-sm font-black">{report.label}</span>
-                  <span className="mt-1 block text-xs font-semibold text-muted-foreground">فتح التقرير ومعاينة التفاصيل</span>
+                  <span className="mt-1 block text-xs font-semibold text-muted-foreground">فتح التقرير</span>
                 </span>
                 <ArrowLeft className="size-4 shrink-0 text-primary" aria-hidden="true" />
               </button>
@@ -123,7 +123,7 @@ export function ReportDirectory({ activeSection, activeView, scope, onOpen }: Re
       </section>
 
       <div className="overflow-x-auto rounded-2xl border border-border/70 bg-card p-2 shadow-card" data-report-category-tabs>
-        <div className="flex min-w-max gap-1" role="tablist" aria-label="أقسام مركز التقارير">
+        <div className="flex min-w-max gap-1" role="tablist" aria-label="مجالات التقارير">
           {directoryTabs.map((item) => (
             <button
               key={item.id}
@@ -146,12 +146,12 @@ export function ReportDirectory({ activeSection, activeView, scope, onOpen }: Re
         <div className="flex items-end justify-between gap-3">
           <div>
             <p className="text-[11px] font-black text-primary">مركز التقارير</p>
-            <h2 id="report-directory-title" className="mt-0.5 text-lg font-black sm:text-xl">التقارير والكشوف حسب العمل</h2>
+            <h2 id="report-directory-title" className="mt-0.5 text-lg font-black sm:text-xl">اختر التقرير حسب ما تريد معرفته</h2>
           </div>
         </div>
 
         {visibleGroups.length === 0 ? (
-          <ReportState title="لا يوجد تقرير مطابق" message="جرّب كلمة بحث أخرى أو اعرض قسمًا مختلفًا." />
+          <ReportState title="لا يوجد تقرير مطابق" message="جرّب كلمة بحث أخرى أو اعرض مجالًا مختلفًا." />
         ) : (
           visibleGroups.map((group) => {
             const Icon = group.icon;

@@ -1,8 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { reportSections } from './reports-page.sections';
 import {
-  DEFAULT_REPORT_SECTION,
   mergeReportSectionIntoSearch,
   REPORTS_SECTION_SEARCH_KEY,
   resolveReportLocation,
@@ -13,18 +11,18 @@ describe('reports section URL model', () => {
     expect(REPORTS_SECTION_SEARCH_KEY).toBe('section');
   });
 
-  it('fails safely to the default when no section is requested', () => {
-    expect(resolveReportLocation(undefined, undefined)).toEqual({ section: 'accounting', view: 'accounting_reports' });
-    expect(resolveReportLocation(null, null)).toEqual({ section: 'accounting', view: 'accounting_reports' });
-    expect(resolveReportLocation('', '')).toEqual({ section: 'accounting', view: 'accounting_reports' });
+  it('lands safely on understandable performance reporting when no section is requested', () => {
+    expect(resolveReportLocation(undefined, undefined)).toEqual({ section: 'analytics', view: 'overview' });
+    expect(resolveReportLocation(null, null)).toEqual({ section: 'analytics', view: 'overview' });
+    expect(resolveReportLocation('', '')).toEqual({ section: 'analytics', view: 'overview' });
   });
 
-  it('fails safely to default accounting_reports for unknown/malformed section values', () => {
-    expect(resolveReportLocation('not-a-section', 'anything')).toEqual({ section: 'accounting', view: 'accounting_reports' });
-    expect(resolveReportLocation(12345, {})).toEqual({ section: 'accounting', view: 'accounting_reports' });
+  it('fails safely to performance reporting for unknown/malformed section values', () => {
+    expect(resolveReportLocation('not-a-section', 'anything')).toEqual({ section: 'analytics', view: 'overview' });
+    expect(resolveReportLocation(12345, {})).toEqual({ section: 'analytics', view: 'overview' });
   });
 
-  it('maps legacy/old sections directly to their correct nested view equivalents authoritatively', () => {
+  it('preserves legacy/deep links to their correct nested report views', () => {
     expect(resolveReportLocation('overview', undefined)).toEqual({ section: 'analytics', view: 'overview' });
     expect(resolveReportLocation('collections', undefined)).toEqual({ section: 'analytics', view: 'collections' });
     expect(resolveReportLocation('overdue', undefined)).toEqual({ section: 'analytics', view: 'overdue' });
@@ -38,19 +36,19 @@ describe('reports section URL model', () => {
     expect(resolveReportLocation('statements', undefined)).toEqual({ section: 'statements', view: '' });
   });
 
-  it('safely handles malformed and garbage views with clean default fallbacks (fail-safe)', () => {
+  it('safely handles malformed views while preserving explicit specialist sections', () => {
     expect(resolveReportLocation('accounting', 'garbage')).toEqual({ section: 'accounting', view: 'accounting_reports' });
     expect(resolveReportLocation('analytics', 'garbage')).toEqual({ section: 'analytics', view: 'overview' });
   });
 });
 
-describe('reports section URL sync and KPI drill-downs (Point 1, 2)', () => {
+describe('reports section URL sync and KPI drill-downs', () => {
   it('merges the section into the search while preserving unrelated params', () => {
     const previous = { e2e: '1', costCenterId: 'cc-1' };
-    expect(mergeReportSectionIntoSearch(previous, 'accounting')).toEqual({
+    expect(mergeReportSectionIntoSearch(previous, 'analytics')).toEqual({
       e2e: '1',
       costCenterId: 'cc-1',
-      section: 'accounting',
+      section: 'analytics',
     });
   });
 
@@ -60,22 +58,15 @@ describe('reports section URL sync and KPI drill-downs (Point 1, 2)', () => {
     });
   });
 
-  it('asserts that Report KPI drills correctly update both section and view parameters', () => {
-    // Proves that when resolving the Collections KPI destination, both macro-section and view are resolved correctly
+  it('keeps KPI drill-down section and view parameters authoritative', () => {
     expect(resolveReportLocation('analytics', 'collections')).toEqual({ section: 'analytics', view: 'collections' });
-
-    // Occupancy KPI
     expect(resolveReportLocation('analytics', 'occupancy')).toEqual({ section: 'analytics', view: 'occupancy' });
-
-    // Outstanding KPI
     expect(resolveReportLocation('analytics', 'overdue')).toEqual({ section: 'analytics', view: 'overdue' });
-
-    // Net Cash KPI
     expect(resolveReportLocation('analytics', 'overview')).toEqual({ section: 'analytics', view: 'overview' });
   });
 });
 
-describe('/accounting legacy bookmark semantics (Point 8)', () => {
+describe('/accounting legacy bookmark semantics', () => {
   const routeTreeSource = readFileSync(new URL('../../app/router/route-tree.ts', import.meta.url), 'utf8');
 
   it('preserves /accounting redirecting to accounting section and general_ledger view exactly', () => {
