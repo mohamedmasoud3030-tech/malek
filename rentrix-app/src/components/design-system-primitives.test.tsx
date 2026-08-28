@@ -21,9 +21,20 @@ describe('DetailFields', () => {
     expect(dashCount).toBe(2);
   });
 
-  it('spans wide fields across the full row (all breakpoints)', () => {
+  it('spans wide fields across the full row from tablet width upward', () => {
     const html = renderToStaticMarkup(<DetailFields fields={[{ label: 'ملاحظات', value: 'نص طويل', wide: true }]} />);
-    expect(html).toContain('col-span-2');
+    expect(html).toContain('sm:col-span-2');
+  });
+
+  it('uses one phone column and flat separators instead of nested field cards', () => {
+    const html = renderToStaticMarkup(
+      <DetailFields fields={[{ label: 'العقار', value: 'برج النخيل' }, { label: 'الوحدة', value: 'A-101' }]} />,
+    );
+    expect(html).toContain('grid-cols-1');
+    expect(html).toContain('sm:grid-cols-2');
+    expect(html).toContain('border-b');
+    expect(html).not.toContain('rounded-xl');
+    expect(html).not.toContain('bg-muted/[0.16]');
   });
 });
 
