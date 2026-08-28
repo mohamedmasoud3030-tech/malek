@@ -229,8 +229,8 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
           rows={rows}
           columns={columns}
           visibleColumnKeys={visibleColumnKeys}
+          mobileCardType="tenant"
           mobileSummaryKeys={['property', 'contracts']}
-          mobileBadgeKey="arrears"
           mobileCardActions={(tenant) => [
             {
               label: 'تعديل',
