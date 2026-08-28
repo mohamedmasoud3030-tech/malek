@@ -10,7 +10,7 @@ on:
       - 'rentrix-app/src/types/database.ts'
 
 permissions:
-  contents: read
+  contents: write
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -21,6 +21,8 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          ref: ${{ github.head_ref }}
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
@@ -34,6 +36,18 @@ jobs:
         run: pnpm db0:gen-types
       - name: Verify generated contract differs only as expected
         run: git diff --check -- rentrix-app/src/types/database.ts
+      - name: Commit generated database contract
+        shell: bash
+        run: |
+          if git diff --quiet -- rentrix-app/src/types/database.ts; then
+            echo 'database.ts already matches the migration chain'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add rentrix-app/src/types/database.ts
+          git commit -m 'fix(db): regenerate canonical database types'
+          git push origin HEAD:${GITHUB_HEAD_REF}
       - name: Upload generated database contract
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
