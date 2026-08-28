@@ -70,4 +70,22 @@ describe('Finance cockpit UI remediation', () => {
     expect(pageSource).toContain('<FinanceOperationsOverview');
     expect(pageSource).not.toContain('<FinancialReportsPreviewSection');
   });
+
+  it('surfaces management fees and owner settlements as routine Money overview entries without widening access', () => {
+    const overviewSource = readFileSync(join(financeRoot, 'components/finance-operations-overview.tsx'), 'utf8');
+
+    // The overview owns the entries, gated by the same permissions as the underlying views.
+    expect(overviewSource).toContain('canViewManagementFees');
+    expect(overviewSource).toContain('canViewOwnerSettlements');
+    expect(overviewSource).toContain('استحقاق أتعاب الإدارة الشهرية');
+    expect(overviewSource).toContain('مستحقات وتسويات الملاك');
+    expect(overviewSource).toContain('{canViewManagementFees || canViewOwnerSettlements ? (');
+
+    // FinancePage derives the gates from permitted view ids (never hardcodes roles) and
+    // routes into the canonical Money locations.
+    expect(pageSource).toContain("canViewManagementFees={permittedViewIds.has('fixed_monthly_accruals')}");
+    expect(pageSource).toContain("canViewOwnerSettlements={permittedViewIds.has('owner_settlements')}");
+    expect(pageSource).toContain("handleLocationChange('fees', 'fixed_monthly_accruals')");
+    expect(pageSource).toContain("handleLocationChange('funds', 'owner_settlements')");
+  });
 });

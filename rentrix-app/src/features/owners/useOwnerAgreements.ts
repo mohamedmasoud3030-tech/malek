@@ -4,6 +4,7 @@ import {
   createOwnerAgreementVersion,
   createPropertyWithAgreement,
   getAgreementCoveringRange,
+  listOwnerAgreementsForOwner,
   listOwnerAgreementsForProperty,
   listOwnerAgreementVersions,
   type CreatePropertyWithAgreementPayload,
@@ -13,6 +14,10 @@ import {
 
 export function useOwnerAgreements(propertyId: string) {
   return useQuery({ queryKey: ['owner_agreements', propertyId], queryFn: () => listOwnerAgreementsForProperty(propertyId), enabled: Boolean(propertyId) });
+}
+
+export function useOwnerAgreementsForOwner(ownerId: string) {
+  return useQuery({ queryKey: ['owner_agreements', 'owner', ownerId], queryFn: () => listOwnerAgreementsForOwner(ownerId), enabled: Boolean(ownerId) });
 }
 
 export function useAgreementCoverage(propertyId: string, startDate: string, endDate: string) {

@@ -9,6 +9,10 @@ export const contractRowFixtureDefaults = {
   // Deterministic billing policy fields (Phase 2 financial hardening).
   billing_day: 1,
   grace_days: 0,
+  // Short Stay lease mode (2026-08-27 lock): routine contracts stay
+  // long-term unless explicitly created as a short stay.
+  lease_mode: 'long_term',
+  daily_reference_rate: null,
   agreement_version_id: null,
   collection_role_snapshot: null,
   operating_model_snapshot: null,
@@ -29,6 +33,8 @@ export const contractRowFixtureDefaults = {
   | 'reference'
   | 'billing_day'
   | 'grace_days'
+  | 'lease_mode'
+  | 'daily_reference_rate'
   | 'agreement_version_id'
   | 'collection_role_snapshot'
   | 'operating_model_snapshot'

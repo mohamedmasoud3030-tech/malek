@@ -26,6 +26,8 @@ const fixtureContractDefaults = {
   reference: null,
   billing_day: 1,
   grace_days: 0,
+  lease_mode: 'long_term',
+  daily_reference_rate: null,
   agreement_version_id: null,
   collection_role_snapshot: null,
   operating_model_snapshot: null,

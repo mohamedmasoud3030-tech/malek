@@ -14,8 +14,10 @@ import { getContractUnitDefaultRent } from '../contract-unit-options';
 import { ContractAgreementMissingAlert } from './ContractAgreementMissingAlert';
 import {
   buildContractUnitOptionLabel,
-  contractSchema,
+  contractSchemaBase,
   isUnitSelectableForContract,
+  leaseModeLabels,
+  leaseModeValues,
   paymentCycleLabels,
   paymentCycleValues,
   useContractForm,
@@ -47,13 +49,13 @@ const contractFormSteps = [
 
 const stepFieldGroups: readonly (readonly string[])[] = [
   ['property_id', 'unit_id', 'tenant_id'],
-  ['start_date', 'end_date', 'rent_amount', 'payment_cycle', 'billing_day', 'grace_days', 'payment_terms_id'],
+  ['start_date', 'end_date', 'rent_amount', 'payment_cycle', 'billing_day', 'grace_days', 'payment_terms_id', 'lease_mode', 'daily_reference_rate'],
   [],
 ];
 
 const contractStepValidators = [
-  contractSchema.innerType().pick({ property_id: true, unit_id: true, tenant_id: true }),
-  contractSchema.innerType().pick({
+  contractSchemaBase.pick({ property_id: true, unit_id: true, tenant_id: true }),
+  contractSchemaBase.pick({
     start_date: true,
     end_date: true,
     rent_amount: true,
@@ -61,6 +63,8 @@ const contractStepValidators = [
     billing_day: true,
     grace_days: true,
     payment_terms_id: true,
+    lease_mode: true,
+    daily_reference_rate: true,
   }),
   null,
 ] as const;
@@ -101,6 +105,15 @@ export function ContractFormFields({
   const endDate = form.watch('end_date');
   const rentAmount = Number(form.watch('rent_amount') || 0);
   const paymentCycle = form.watch('payment_cycle');
+  const leaseMode = form.watch('lease_mode');
+  const isShortStay = leaseMode === 'short_stay';
+  const stayNights = useMemo(() => {
+    if (!startDate || !endDate) return null;
+    const from = new Date(`${startDate}T00:00:00`);
+    const to = new Date(`${endDate}T00:00:00`);
+    const nights = Math.round((to.getTime() - from.getTime()) / 86_400_000);
+    return Number.isFinite(nights) && nights > 0 ? nights : null;
+  }, [startDate, endDate]);
   // z.preprocess keeps the watched form input type `unknown`; coerce for the read-only summary label.
   const billingDay = Number(form.watch('billing_day') ?? 1) || 1;
   const graceDays = Number(form.watch('grace_days') ?? 0) || 0;
@@ -263,6 +276,14 @@ export function ContractFormFields({
         className={cn('md:col-span-2', stepVisibility(1))}
       >
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <EntityForm.Field label="نوع التعاقد" error={form.formState.errors.lease_mode?.message}>
+            <Select {...form.register('lease_mode')} data-lease-mode-select>
+              {leaseModeValues.map((mode) => (
+                <option key={mode} value={mode}>{leaseModeLabels[mode]}</option>
+              ))}
+            </Select>
+          </EntityForm.Field>
+
           <EntityForm.Field label="تاريخ البداية" error={form.formState.errors.start_date?.message}>
             <Input type="date" {...form.register('start_date')} />
           </EntityForm.Field>
@@ -271,18 +292,50 @@ export function ContractFormFields({
             <Input type="date" {...form.register('end_date')} />
           </EntityForm.Field>
 
-          <EntityForm.Field label="الإيجار لكل دفعة" error={form.formState.errors.rent_amount?.message}>
-            <Input type="number" step={MONEY_STEP} inputMode="decimal" min="0.01" {...form.register('rent_amount')} />
-          </EntityForm.Field>
+          {isShortStay ? (
+            <EntityForm.Field
+              label="إجمالي الإقامة المتفق عليه"
+              error={form.formState.errors.rent_amount?.message}
+            >
+              <Input type="number" step={MONEY_STEP} inputMode="decimal" min="0.01" {...form.register('rent_amount')} />
+            </EntityForm.Field>
+          ) : (
+            <EntityForm.Field label="الإيجار لكل دفعة" error={form.formState.errors.rent_amount?.message}>
+              <Input type="number" step={MONEY_STEP} inputMode="decimal" min="0.01" {...form.register('rent_amount')} />
+            </EntityForm.Field>
+          )}
 
-          <EntityForm.Field label="دورة السداد" error={form.formState.errors.payment_cycle?.message}>
-            <Select {...form.register('payment_cycle')}>
-              {paymentCycleValues.map((cycle) => (
-                <option key={cycle} value={cycle}>{paymentCycleLabels[cycle]}</option>
-              ))}
-            </Select>
-          </EntityForm.Field>
+          {isShortStay ? (
+            <EntityForm.Field
+              label="سعر اليوم المرجعي (اختياري)"
+              error={form.formState.errors.daily_reference_rate?.message}
+            >
+              <Input
+                type="number"
+                step={MONEY_STEP}
+                inputMode="decimal"
+                min="0"
+                {...form.register('daily_reference_rate')}
+              />
+            </EntityForm.Field>
+          ) : (
+            <EntityForm.Field label="دورة السداد" error={form.formState.errors.payment_cycle?.message}>
+              <Select {...form.register('payment_cycle')}>
+                {paymentCycleValues.map((cycle) => (
+                  <option key={cycle} value={cycle}>{paymentCycleLabels[cycle]}</option>
+                ))}
+              </Select>
+            </EntityForm.Field>
+          )}
         </div>
+
+        {isShortStay ? (
+          <p className="mt-4 rounded-xl border border-info/30 bg-info/10 p-3 text-sm" role="status">
+            عقد إقامة قصيرة على الوحدة نفسها: تُصدر فاتورة واحدة بإجمالي الإقامة عند تاريخ الوصول،
+            وسعر اليوم المرجعي للعلم فقط — الإجمالي المتفق عليه هو المعتمد.
+            {stayNights !== null ? ` (${stayNights} ليلة)` : ''}
+          </p>
+        ) : null}
 
         <details
           className="mt-4 rounded-xl border border-border/70 bg-muted/15"
@@ -290,30 +343,34 @@ export function ContractFormFields({
           onToggle={(event) => setBillingOptionsOpen(event.currentTarget.open)}
         >
           <summary className="min-h-11 cursor-pointer list-none px-4 py-3 text-sm font-semibold text-foreground">
-            خيارات الفوترة
+            {isShortStay ? 'خيارات التحصيل' : 'خيارات الفوترة'}
             <span className="ms-2 text-xs font-normal text-muted-foreground">
-              يوم {billingDay} • سماح {graceDays} يوم
+              سماح {graceDays} يوم
             </span>
           </summary>
           <div className="grid gap-4 border-t border-border/60 p-4 sm:grid-cols-3">
-            <EntityForm.Field label="يوم الفوترة" error={form.formState.errors.billing_day?.message}>
-              <Input type="number" min="1" max="28" step="1" inputMode="numeric" {...form.register('billing_day')} />
-            </EntityForm.Field>
+            {isShortStay ? null : (
+              <EntityForm.Field label="يوم الفوترة" error={form.formState.errors.billing_day?.message}>
+                <Input type="number" min="1" max="28" step="1" inputMode="numeric" {...form.register('billing_day')} />
+              </EntityForm.Field>
+            )}
 
             <EntityForm.Field label="أيام السماح" error={form.formState.errors.grace_days?.message}>
               <Input type="number" min="0" max="90" step="1" inputMode="numeric" {...form.register('grace_days')} />
             </EntityForm.Field>
 
-            <EntityForm.Field label="قالب شروط السداد" error={form.formState.errors.payment_terms_id?.message}>
-              <Select {...form.register('payment_terms_id')}>
-                <option value="">بدون قالب</option>
-                {(paymentTermsQuery.data ?? [])
-                  .filter((term) => term.is_active !== false)
-                  .map((term) => (
-                    <option key={term.id} value={term.id}>{term.name}</option>
-                  ))}
-              </Select>
-            </EntityForm.Field>
+            {isShortStay ? null : (
+              <EntityForm.Field label="قالب شروط السداد" error={form.formState.errors.payment_terms_id?.message}>
+                <Select {...form.register('payment_terms_id')}>
+                  <option value="">بدون قالب</option>
+                  {(paymentTermsQuery.data ?? [])
+                    .filter((term) => term.is_active !== false)
+                    .map((term) => (
+                      <option key={term.id} value={term.id}>{term.name}</option>
+                    ))}
+                </Select>
+              </EntityForm.Field>
+            )}
           </div>
         </details>
       </EntityForm.Section>
@@ -336,12 +393,22 @@ export function ContractFormFields({
             <span className="text-xs text-muted-foreground">المدة</span>
             <p className="font-semibold">{startDate || '—'} إلى {endDate || '—'}</p>
           </div>
-          <div>
-            <span className="text-xs text-muted-foreground">السداد</span>
-            <p className="font-semibold">
-              {formatDefaultCompanyMoney(schedulePreview.amountPerInstallment)} • {paymentCycleLabels[paymentCycle]}
-            </p>
-          </div>
+          {isShortStay ? (
+            <div>
+              <span className="text-xs text-muted-foreground">السداد</span>
+              <p className="font-semibold">
+                فاتورة واحدة عند الوصول
+                {stayNights !== null ? ` • ${stayNights} ليلة` : ''}
+              </p>
+            </div>
+          ) : (
+            <div>
+              <span className="text-xs text-muted-foreground">السداد</span>
+              <p className="font-semibold">
+                {formatDefaultCompanyMoney(schedulePreview.amountPerInstallment)} • {paymentCycleLabels[paymentCycle]}
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="mt-4">
@@ -357,18 +424,33 @@ export function ContractFormFields({
           />
         </div>
 
-        <div className="mt-4 rounded-xl border border-border/70 p-4 text-sm">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="font-semibold">جدول السداد المتوقع</span>
-            <span className="text-muted-foreground">{schedulePreview.installmentCount} دفعة</span>
-          </div>
-          {schedulePreview.sampleDates.length > 0 ? (
-            <p className="mt-2 text-xs text-muted-foreground">
-              تبدأ الدفعات تقريبًا في: {schedulePreview.sampleDates.slice(0, 4).join(' • ')}
-              {schedulePreview.sampleDates.length > 4 ? ' • …' : ''}
-            </p>
-          ) : null}
-          <p className="mt-2 text-xs text-muted-foreground">سيتم إصدار الفواتير وفق إعدادات العقد بعد اعتماده.</p>
+        <div className="mt-4">
+          {isShortStay ? (
+            <div className="rounded-xl border border-border/70 p-4 text-sm">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="font-semibold">فاتورة الإقامة</span>
+                <span className="text-muted-foreground">{formatDefaultCompanyMoney(rentAmount)}</span>
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">
+                تُصدر فاتورة واحدة بإجمالي الإقامة عند تاريخ الوصول وتُستحق بعد أيام السماح، وتُحمّل على نفس
+                دورة التحصيل والتحاسب المعتمدة في العقد.
+              </p>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-border/70 p-4 text-sm">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="font-semibold">جدول السداد المتوقع</span>
+                <span className="text-muted-foreground">{schedulePreview.installmentCount} دفعة</span>
+              </div>
+              {schedulePreview.sampleDates.length > 0 ? (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  تبدأ الدفعات تقريبًا في: {schedulePreview.sampleDates.slice(0, 4).join(' • ')}
+                  {schedulePreview.sampleDates.length > 4 ? ' • …' : ''}
+                </p>
+              ) : null}
+              <p className="mt-2 text-xs text-muted-foreground">سيتم إصدار الفواتير وفق إعدادات العقد بعد اعتماده.</p>
+            </div>
+          )}
         </div>
 
         <details

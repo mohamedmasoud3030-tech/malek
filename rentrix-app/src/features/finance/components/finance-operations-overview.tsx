@@ -3,8 +3,10 @@ import type { ComponentType } from 'react';
 import {
   AlertTriangle,
   ArrowLeft,
+  BadgeDollarSign,
   CheckCircle2,
   FileSpreadsheet,
+  HandCoins,
   ReceiptText,
   TrendingDown,
   WalletCards,
@@ -24,10 +26,14 @@ type FinanceOperationsOverviewProps = Readonly<{
   isError: boolean;
   canViewArrears: boolean;
   canViewExpenses: boolean;
+  canViewManagementFees: boolean;
+  canViewOwnerSettlements: boolean;
   onOpenCollections: () => void;
   onOpenReceipts: () => void;
   onOpenArrears: () => void;
   onOpenExpenses: () => void;
+  onOpenManagementFees: () => void;
+  onOpenOwnerSettlements: () => void;
 }>;
 
 type QueueCardProps = Readonly<{
@@ -83,10 +89,14 @@ export function FinanceOperationsOverview({
   isError,
   canViewArrears,
   canViewExpenses,
+  canViewManagementFees,
+  canViewOwnerSettlements,
   onOpenCollections,
   onOpenReceipts,
   onOpenArrears,
   onOpenExpenses,
+  onOpenManagementFees,
+  onOpenOwnerSettlements,
 }: FinanceOperationsOverviewProps) {
   const state = getFinanceCockpitState(summary, arrears);
   const overdue = arrears?.totalOverdue ?? 0;
@@ -192,6 +202,56 @@ export function FinanceOperationsOverview({
           </Button>
         </div>
       </section>
+
+      {canViewManagementFees || canViewOwnerSettlements ? (
+        <section className="rounded-2xl border border-border/65 bg-muted/[0.10] px-4 py-3.5" aria-labelledby="finance-admin-considerations-heading">
+          <div>
+            <p className="text-[11px] font-black text-primary">اعتبارات التشغيل</p>
+            <h3 id="finance-admin-considerations-heading" className="mt-0.5 text-base font-black">أتعاب الإدارة ومستحقات الملاك</h3>
+            <p className="mt-1 text-xs font-semibold text-muted-foreground">
+              مهام دورية يحرص عليها المكتب شهريًا: احتساب أتعاب الإدارة وفق الاتفاقيات، وتجهيز تسويات الملاك للصرف.
+            </p>
+          </div>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            {canViewManagementFees ? (
+              <button
+                type="button"
+                onClick={onOpenManagementFees}
+                className="group flex min-h-16 items-center justify-between gap-3 rounded-xl border border-border/65 bg-background px-3.5 py-3 text-start transition-colors hover:border-primary/45"
+              >
+                <span className="flex min-w-0 items-center gap-3">
+                  <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+                    <BadgeDollarSign className="size-4" aria-hidden="true" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-black">استحقاق أتعاب الإدارة الشهرية</span>
+                    <span className="block truncate text-xs font-semibold text-muted-foreground">احتساب الاستحقاقات للفترة وفق الاتفاقيات السارية، مع سجل معتمد قابل للعكس.</span>
+                  </span>
+                </span>
+                <ArrowLeft className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:-translate-x-0.5" aria-hidden="true" />
+              </button>
+            ) : null}
+            {canViewOwnerSettlements ? (
+              <button
+                type="button"
+                onClick={onOpenOwnerSettlements}
+                className="group flex min-h-16 items-center justify-between gap-3 rounded-xl border border-border/65 bg-background px-3.5 py-3 text-start transition-colors hover:border-primary/45"
+              >
+                <span className="flex min-w-0 items-center gap-3">
+                  <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-success/10 text-success">
+                    <HandCoins className="size-4" aria-hidden="true" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-black">مستحقات وتسويات الملاك</span>
+                    <span className="block truncate text-xs font-semibold text-muted-foreground">صافي مستحق كل مالك بعد أتعاب الإدارة والمصروفات، وتسويات الصرف المعتمدة.</span>
+                  </span>
+                </span>
+                <ArrowLeft className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:-translate-x-0.5" aria-hidden="true" />
+              </button>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
 
       <section aria-labelledby="finance-readiness-heading" className="space-y-3">
         <div className="px-1">

@@ -12,7 +12,7 @@ import {
   formatContractDate,
   formatContractMoney,
 } from "../contractDisplayFormatters";
-import { contractStatusLabels, contractStatusTone, paymentCycleLabels } from "../contractSchema";
+import { contractStatusLabels, contractStatusTone, leaseModeLabels, paymentCycleLabels } from "../contractSchema";
 import { normalizeContractStatus } from "@/lib/contractStatus";
 import type { ContractListItem } from "../services/contractService";
 import { getDaysUntilEnd, isExpiringSoon } from "../hooks/useContractFilters";
@@ -24,6 +24,11 @@ function DetailBox({ label, children }: { label: string; children: ReactNode }) 
       <div className="space-y-1 text-sm leading-6">{children}</div>
     </div>
   );
+}
+
+/** Rows predating the Short Stay column default to long-term leasing. */
+function isShortStayContract(contract: Pick<ContractListItem, "lease_mode">) {
+  return contract.lease_mode === "short_stay";
 }
 
 const contractColumnOptions = [
@@ -115,16 +120,26 @@ export function ContractTable({
       key: "rent_amount",
       header: "قيمة الإيجار",
       priority: "detail",
-      render: (contract) => formatContractMoney(companySettings, contract.rent_amount),
+      render: (contract) => (
+        <span className="whitespace-nowrap">
+          {formatContractMoney(companySettings, contract.rent_amount)}
+          {isShortStayContract(contract) ? <span className="ms-1.5 text-xs text-muted-foreground">/ إجمالي الإقامة</span> : null}
+        </span>
+      ),
     },
     {
       key: "status",
       header: "الحالة",
       priority: "secondary",
       render: (contract) => (
-        <StatusBadge tone={contractStatusTone[normalizeContractStatus(contract.status)]}>
-          {contractStatusLabels[normalizeContractStatus(contract.status)]}
-        </StatusBadge>
+        <span className="flex flex-wrap items-center gap-1.5">
+          <StatusBadge tone={contractStatusTone[normalizeContractStatus(contract.status)]}>
+            {contractStatusLabels[normalizeContractStatus(contract.status)]}
+          </StatusBadge>
+          {isShortStayContract(contract) ? (
+            <StatusBadge tone="info">{leaseModeLabels.short_stay}</StatusBadge>
+          ) : null}
+        </span>
       ),
     },
     {
@@ -218,9 +233,18 @@ export function ContractTable({
             <p className="text-muted-foreground">الدور: {contract.units?.floor ?? "—"}</p>
             <p className="text-muted-foreground">العنوان: {contract.properties?.address ?? "—"}</p>
           </DetailBox>
-          <DetailBox label="قيمة الإيجار">
+          <DetailBox label={isShortStayContract(contract) ? "إجمالي الإقامة" : "قيمة الإيجار"}>
             <p className="text-lg font-bold tabular-nums" dir="ltr">{formatContractMoney(companySettings, contract.rent_amount)}</p>
-            <p className="text-muted-foreground">دورة السداد: {paymentCycleLabels[contract.payment_cycle]}</p>
+            {isShortStayContract(contract) ? (
+              <>
+                <p className="text-muted-foreground">فاتورة واحدة عند تاريخ الوصول</p>
+                {contract.daily_reference_rate != null ? (
+                  <p className="text-muted-foreground">سعر اليوم المرجعي: {formatContractMoney(companySettings, contract.daily_reference_rate)}</p>
+                ) : null}
+              </>
+            ) : (
+              <p className="text-muted-foreground">دورة السداد: {paymentCycleLabels[contract.payment_cycle]}</p>
+            )}
           </DetailBox>
           <DetailBox label="فترة العقد">
             <p>{formatContractDate(companySettings, contract.start_date)} ← {formatContractDate(companySettings, contract.end_date)}</p>

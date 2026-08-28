@@ -428,10 +428,14 @@ export function FinancePage() {
                       isError={cockpitIsError}
                       canViewArrears={canViewArrears}
                       canViewExpenses={permittedViewIds.has('expenses')}
+                      canViewManagementFees={permittedViewIds.has('fixed_monthly_accruals')}
+                      canViewOwnerSettlements={permittedViewIds.has('owner_settlements')}
                       onOpenCollections={() => handleLocationChange('collections', 'invoices')}
                       onOpenReceipts={() => handleLocationChange('collections', 'receipts')}
                       onOpenArrears={() => handleLocationChange('collections', 'arrears')}
                       onOpenExpenses={() => handleLocationChange('expenses', 'expenses')}
+                      onOpenManagementFees={() => handleLocationChange('fees', 'fixed_monthly_accruals')}
+                      onOpenOwnerSettlements={() => handleLocationChange('funds', 'owner_settlements')}
                     />
                   </div>
                 ) : null}

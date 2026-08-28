@@ -26,6 +26,12 @@ const isoDate = z
 
 export const contractStatusValues = ['draft', 'active', 'expired', 'terminated'] as const;
 export const paymentCycleValues = ['monthly', 'quarterly', 'semi_annual', 'annual'] as const;
+export const leaseModeValues = ['long_term', 'short_stay'] as const;
+
+export const leaseModeLabels: Record<(typeof leaseModeValues)[number], string> = {
+  long_term: 'إيجار طويل المدى',
+  short_stay: 'إقامة قصيرة',
+};
 
 export const contractStatusLabels: Record<(typeof contractStatusValues)[number], string> = {
   draft: 'مسودة',
@@ -66,7 +72,21 @@ const graceDays = z.preprocess(
     .max(90, 'أيام السماح يجب ألا تتجاوز 90 يوماً'),
 );
 
-export const contractSchema = z.object({
+// Short Stay (Architecture Lock 2026-08-27): the optional reference daily
+// price is informational; the negotiated stay total (rent_amount) governs the
+// obligation. OMR money precision, non-negative, at most 3 decimals.
+const dailyReferenceRate = z.preprocess(
+  (value) => (value === '' || value === null || value === undefined ? null : Number(value)),
+  z
+    .number({ invalid_type_error: 'سعر اليوم المرجعي يجب أن يكون رقماً' })
+    .min(0, 'سعر اليوم المرجعي لا يمكن أن يكون سالباً')
+    .refine((value) => Number.isInteger(Math.round(value * 1000)) && Math.abs(value - Math.round(value * 1000) / 1000) < 1e-9, {
+      message: 'سعر اليوم المرجعي يقبل ثلاث خانات عشرية كحد أقصى',
+    })
+    .nullable(),
+);
+
+export const contractSchemaBase = z.object({
   // Live properties use text ids; validate selection without narrowing the id format to UUID.
   property_id: z.string().trim().min(1, 'اختر العقار'),
   unit_id: z.string().uuid('اختر الوحدة'),
@@ -81,12 +101,24 @@ export const contractSchema = z.object({
   // each period; due date = period end + grace_days (server declaration).
   billing_day: billingDay,
   grace_days: graceDays,
+  // Short Stay mode: a small contract on the same unit (from/to, optional
+  // reference daily rate, negotiated total). Long-term contracts must not
+  // carry a reference daily rate — the server rejects it too.
+  lease_mode: z.enum(leaseModeValues).default('long_term'),
+  daily_reference_rate: dailyReferenceRate.default(null),
   payment_terms_id: z.string().uuid('اختر شرط سداد صحيح').or(z.literal('')).optional().transform((value) => value || null),
   status: z.enum(contractStatusValues, { required_error: 'الحالة مطلوبة' }),
   cancellation_reason: z.string().trim().optional().transform((value) => value || null),
   notes: z.string().trim().optional().transform((value) => value || null),
   attachment_url: z.string().nullable().optional(),
-}).refine((value) => value.end_date > value.start_date, { path: ['end_date'], message: 'تاريخ النهاية يجب أن يكون بعد تاريخ البداية' });
+});
+
+export const contractSchema = contractSchemaBase
+  .refine((value) => value.end_date > value.start_date, { path: ['end_date'], message: 'تاريخ النهاية يجب أن يكون بعد تاريخ البداية' })
+  .refine((value) => value.lease_mode !== 'long_term' || value.daily_reference_rate == null, {
+    path: ['daily_reference_rate'],
+    message: 'سعر اليوم المرجعي خاص بعقود الإقامة القصيرة',
+  });
 
 export const renewalSchema = z.object({
   new_start: isoDate,
