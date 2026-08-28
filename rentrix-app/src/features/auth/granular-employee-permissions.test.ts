@@ -57,9 +57,9 @@ describe('granular Employee action permissions', () => {
     expect(migration).toContain("('close_maintenance_with_expense','maintenance.approve')");
     expect(migration).toContain('current_user_can_transition_maintenance');
     expect(maintenanceTransitionMigration).toContain("when 'cancelled' then public.current_user_has_effective_app_permission('maintenance.cancel')");
-    expect(maintenanceTransitionMigration).toContain("when 'resolved' then public.current_user_has_effective_app_permission('maintenance.approve')");
     expect(maintenanceTransitionMigration).toContain("when 'closed' then public.current_user_has_effective_app_permission('maintenance.approve')");
     expect(maintenanceTransitionMigration).toContain("else public.current_user_has_effective_app_permission('maintenance.edit')");
+    expect(maintenanceTransitionMigration).not.toContain("when 'resolved' then public.current_user_has_effective_app_permission('maintenance.approve')");
   });
 
   it('keeps action/workspace dependencies fail-closed', () => {
