@@ -15,6 +15,8 @@ const LATIN_SIGNATURE_LABEL: Record<SignatureRole, string> = {
   tenant: 'Tenant',
   accountant: 'Accountant',
   general_manager: 'General Manager',
+  inspector: 'Inspector',
+  vendor: 'Vendor',
 };
 
 const PAGE_MARGIN_X = 14;

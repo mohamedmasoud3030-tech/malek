@@ -44,17 +44,28 @@ import type {
   BalanceSheetReportPayload,
   CanonicalDocumentPayloadMap,
   ContractDocumentPayload,
+  DebtReschedulingPayload,
+  DepositVoucherPayload,
   DocumentBuildInput,
   DocumentTypeId,
   ExpenseVoucherPayload,
   GenericReportPayload,
   IncomeStatementReportPayload,
   InvoiceDocumentPayload,
+  LeaseNoticePayload,
+  LegalDossierPayload,
+  MaintenanceCompletionPayload,
+  MaintenanceWorkOrderPayload,
+  ManagementExitPayload,
   MoneyRow,
+  OwnerSettlementPayload,
   OwnerStatementPayload,
   ReceiptDocumentPayload,
+  TenantClearancePayload,
   TenantStatementPayload,
   TrialBalanceReportPayload,
+  UnitInspectionPayload,
+  UnitPassportPayload,
 } from './documentPayloads';
 import {
   legacyBalanceSheetToCanonical,
@@ -108,11 +119,15 @@ export class DocumentDataError extends Error {
   }
 }
 
-const REQUIRED_ARRAY_FIELDS = new Set(['transactions', 'lines', 'sections', 'revenues', 'expenses', 'assets', 'liabilities', 'equity']);
+const REQUIRED_ARRAY_FIELDS = new Set([
+  'transactions', 'lines', 'sections', 'revenues', 'expenses', 'assets', 'liabilities', 'equity',
+  'conditionRows', 'installments', 'supportingRows', 'leaseHistory', 'maintenanceHistory', 'timelineEvents',
+]);
 const REQUIRED_NUMBER_FIELDS = new Set([
   'amount', 'rentAmount', 'paidAmount', 'totalRent', 'totalExpenses', 'totalCommission', 'netAmount',
   'openingBalance', 'totalInvoiced', 'totalPaid', 'closingBalance', 'totalDebit', 'totalCredit',
   'totalRevenue', 'totalExpense', 'netIncome', 'totalAssets', 'totalLiabilities', 'totalEquity',
+  'debtAmount', 'collectedOwnerFunds', 'managementFee', 'ownerExpenses', 'netDue',
 ]);
 
 const validateRequiredField = (field: string, value: unknown): void => {
@@ -624,6 +639,556 @@ function buildGenericReportModel(entry: DocumentTemplateEntry, settings: Documen
   };
 }
 
+function buildUnitInspectionModel(entry: DocumentTemplateEntry, settings: DocumentCompanySettings, payload: UnitInspectionPayload): UnifiedDocumentModel {
+  const ctx = formatContextOf(settings);
+  const title = truthfulStatusLabel(entry, payload.inspectionMode) ?? 'محضر فحص ومعاينة وحدة عقارية';
+  const tables: DocumentTable[] = [
+    TableGenerator.build(
+      ['البند / المنطقة', 'الحالة الفنية', 'ملاحظات المعاينة'],
+      payload.conditionRows.map((row) => [row.areaOrItem, row.condition, row.note?.trim() || '—']),
+    ),
+  ];
+
+  if (payload.meterReadings && payload.meterReadings.length > 0) {
+    tables.push(
+      TableGenerator.build(
+        ['العداد / المرفق', 'القراءة المسجلة', 'الوحدة'],
+        payload.meterReadings.map((m) => [m.meter, m.reading, m.unit || '—']),
+      ),
+    );
+  }
+
+  if (payload.keyHandover && payload.keyHandover.length > 0) {
+    tables.push(
+      TableGenerator.build(
+        ['البند المسلم', 'العدد', 'ملاحظات'],
+        payload.keyHandover.map((k) => [k.item, String(k.quantity), k.note?.trim() || '—']),
+      ),
+    );
+  }
+
+  return {
+    type: entry.type,
+    header: buildHeader(settings, entry, {
+      title,
+      reference: payload.reference,
+      dateLabel: 'تاريخ الفحص',
+      dateValue: formatDate(payload.inspectionDate),
+      ctx,
+    }),
+    kpis: [
+      kpi('نوع المعاينة', title),
+      kpi('المستأجر', payload.tenantName),
+      kpi('العقار والوحدة', joinPropertyUnit(payload.propertyTitle, payload.unitNumber)),
+      kpi('الفاحص / المفتش', payload.inspectorName),
+      kpi('عدد بنود الفحص', String(payload.conditionRows.length)),
+    ],
+    tables,
+    footer: buildFooter(entry, payload.reference ? `محضر رقم: ${payload.reference}` : title),
+    fileName: buildDocumentFileName(entry, { reference: payload.reference, inspectionDate: payload.inspectionDate }),
+  };
+}
+
+function buildLeaseNoticeModel(entry: DocumentTemplateEntry, settings: DocumentCompanySettings, payload: LeaseNoticePayload): UnifiedDocumentModel {
+  const ctx = formatContextOf(settings);
+  const title = truthfulStatusLabel(entry, payload.noticeKind) ?? 'إشعار عقاري رسمي';
+  return {
+    type: entry.type,
+    header: buildHeader(settings, entry, {
+      title,
+      reference: payload.reference,
+      dateLabel: 'تاريخ الإشعار',
+      dateValue: formatDate(payload.noticeDate),
+      ctx,
+    }),
+    kpis: [
+      kpi('نوع الإشعار', title),
+      kpi('المستأجر', payload.tenantName),
+      kpi('العقار والوحدة', joinPropertyUnit(payload.propertyTitle, payload.unitNumber)),
+      kpi('تاريخ نهاية العقد الحالي', formatDate(payload.currentEndDate)),
+      kpi('تاريخ النفاذ / الإخلاء', formatDate(payload.effectiveDate)),
+    ],
+    tables: [
+      TableGenerator.build(
+        ['البند', 'البيان'],
+        [
+          ['نوع الإشعار الرسمي', title],
+          ['نص القرار المعتمد', payload.approvedMessage?.trim() || 'إشعار رسمي صادر بموجب شروط العقد والأنظمة المتبعة.'],
+          ['ملاحظات إضافية', payload.notes?.trim() || '—'],
+        ],
+      ),
+    ],
+    footer: buildFooter(entry, payload.reference ? `إشعار عقد رقم: ${payload.reference}` : title),
+    fileName: buildDocumentFileName(entry, { reference: payload.reference, noticeDate: payload.noticeDate }),
+  };
+}
+
+function buildDepositVoucherModel(entry: DocumentTemplateEntry, settings: DocumentCompanySettings, payload: DepositVoucherPayload): UnifiedDocumentModel {
+  const ctx = formatContextOf(settings);
+  const title = truthfulStatusLabel(entry, payload.transactionKind) ?? 'سند تأمين عقاري';
+  const rows: string[][] = [
+    ['نوع حركة التأمين', title],
+    ['المبلغ المسجل', money(payload.amount, ctx)],
+    ['المبلغ تفقيطاً', words(payload.amount, ctx)],
+    ['سبب الحركة / الغرض', payload.reason?.trim() || '—'],
+    ['ملاحظات', payload.notes?.trim() || '—'],
+  ];
+  if (payload.depositBalance != null) {
+    rows.push(['رصيد التأمين المتبقي بعد العملية', money(payload.depositBalance, ctx)]);
+  }
+
+  return {
+    type: entry.type,
+    header: buildHeader(settings, entry, {
+      title,
+      reference: payload.reference,
+      dateLabel: 'تاريخ السند',
+      dateValue: formatDate(payload.transactionDate),
+      ctx,
+    }),
+    kpis: [
+      kpi('نوع السند', title),
+      kpi('المستأجر', payload.tenantName),
+      kpi('العقار والوحدة', joinPropertyUnit(payload.propertyTitle, payload.unitNumber)),
+      kpi('مبلغ السند', money(payload.amount, ctx)),
+      kpi('المبلغ تفقيطاً', words(payload.amount, ctx)),
+      ...(payload.depositBalance != null ? [kpi('رصيد التأمين بعد الحركة', money(payload.depositBalance, ctx))] : []),
+    ],
+    tables: [
+      TableGenerator.build(['البيان المالي للحركة', 'التفاصيل'], rows),
+    ],
+    footer: buildFooter(entry, payload.reference ? `سند رقم: ${payload.reference}` : title),
+    fileName: buildDocumentFileName(entry, { reference: payload.reference, transactionDate: payload.transactionDate }),
+  };
+}
+
+function buildDebtReschedulingModel(entry: DocumentTemplateEntry, settings: DocumentCompanySettings, payload: DebtReschedulingPayload): UnifiedDocumentModel {
+  const ctx = formatContextOf(settings);
+  const title = truthfulStatusLabel(entry, payload.status ?? '') ?? 'اتفاقية إعادة جدولة مديونية';
+  const installmentRows: string[][] = payload.installments.map((inst, index) => [
+    `القسط ${index + 1}`,
+    formatDate(inst.dueDate),
+    money(inst.amount, ctx),
+    inst.description?.trim() || '—',
+  ]);
+
+  const tables: DocumentTable[] = [
+    TableGenerator.build(
+      ['الدفعة / القسط', 'تاريخ الاستحقاق', 'المبلغ المجدول', 'البيان'],
+      installmentRows,
+      ['إجمالي المديونية المجدولة', '', money(payload.debtAmount, ctx), ''],
+    ),
+  ];
+
+  if (payload.terms?.trim()) {
+    tables.push(
+      TableGenerator.build(
+        ['شروط وأحكام الاتفاقية'],
+        [[payload.terms.trim()]],
+      ),
+    );
+  }
+
+  return {
+    type: entry.type,
+    header: buildHeader(settings, entry, {
+      title,
+      reference: payload.reference,
+      dateLabel: 'تاريخ الاتفاقية',
+      dateValue: formatDate(payload.agreementDate),
+      ctx,
+    }),
+    kpis: [
+      kpi('المدين / المستأجر', payload.tenantName),
+      kpi('رقم العقد المرجعي', payload.contractReference),
+      kpi('العقار والوحدة', joinPropertyUnit(payload.propertyTitle, payload.unitNumber)),
+      kpi('إجمالي المديونية المعتمدة', money(payload.debtAmount, ctx)),
+      kpi('تاريخ بدء السريان', formatDate(payload.effectiveDate)),
+      kpi('عدد الأقساط المجدولة', String(payload.installments.length)),
+    ],
+    tables,
+    footer: buildFooter(entry, payload.reference ? `اتفاقية جدولة رقم: ${payload.reference}` : title),
+    fileName: buildDocumentFileName(entry, { reference: payload.reference, agreementDate: payload.agreementDate }),
+  };
+}
+
+function buildTenantClearanceModel(entry: DocumentTemplateEntry, settings: DocumentCompanySettings, payload: TenantClearancePayload): UnifiedDocumentModel {
+  const ctx = formatContextOf(settings);
+  const statusLabel = truthfulStatusLabel(entry, payload.clearanceStatus);
+  const title = payload.clearanceStatus === 'cleared' ? 'شهادة براءة ذمة ومخالصة نهائية' : 'تقرير تسوية ومخالصة مستأجر';
+
+  const rows: string[][] = [
+    ['الحالة المالية والقانونية العامة', statusLabel ?? '—'],
+    ['التصرف في مبلغ التأمين', payload.depositDisposition?.trim() || '—'],
+    ['حالة تسليم الوحدة والصيانة', payload.maintenanceNotes?.trim() || 'تمت المعاينة والتحقق من حالة الوحدة'],
+    ['مستحقات الخدمات والمرافق', payload.utilityNotes?.trim() || 'لا توجد التزامات معلقة'],
+    ['ملاحظات المخالصة', payload.notes?.trim() || '—'],
+  ];
+
+  if (payload.outstandingAmount != null && payload.outstandingAmount > 0) {
+    rows.unshift(['المبالغ المعلقة واجبة السداد', money(payload.outstandingAmount, ctx)]);
+  }
+
+  return {
+    type: entry.type,
+    header: buildHeader(settings, entry, {
+      title,
+      reference: payload.reference,
+      dateLabel: 'تاريخ المخالصة',
+      dateValue: formatDate(payload.clearanceDate),
+      ctx,
+    }),
+    kpis: [
+      kpi('المستأجر', payload.tenantName),
+      kpi('العقار والوحدة', joinPropertyUnit(payload.propertyTitle, payload.unitNumber)),
+      kpi('حالة براءة الذمة', statusLabel),
+      ...(payload.depositAmount != null ? [kpi('مبلغ التأمين المسجل', money(payload.depositAmount, ctx))] : []),
+      ...(payload.outstandingAmount != null && payload.outstandingAmount > 0 ? [kpi('المبالغ المعلقة', money(payload.outstandingAmount, ctx))] : []),
+    ],
+    tables: [
+      TableGenerator.build(['بند المخالصة والتسوية', 'البيان المعتمد'], rows),
+    ],
+    footer: buildFooter(entry, payload.reference ? `مخالصة رقم: ${payload.reference}` : title),
+    fileName: buildDocumentFileName(entry, { reference: payload.reference, clearanceDate: payload.clearanceDate }),
+  };
+}
+
+function buildOwnerSettlementModel(entry: DocumentTemplateEntry, settings: DocumentCompanySettings, payload: OwnerSettlementPayload): UnifiedDocumentModel {
+  const ctx = formatContextOf(settings);
+  const statusLabel = truthfulStatusLabel(entry, payload.status);
+  const title = 'كشف تسوية مستحقات المالك';
+
+  const periodLabel = payload.periodFrom || payload.periodTo
+    ? `${formatDate(payload.periodFrom)} إلى ${formatDate(payload.periodTo)}`
+    : '—';
+
+  const summaryRows: string[][] = [
+    ['إجمالي إيجارات المالك المحصلة (+)', money(payload.collectedOwnerFunds, ctx)],
+    ['أتعاب إدارة الأملاك المعتمدة (-)', money(payload.managementFee, ctx)],
+    ['مصروفات العقار المخصومة (-)', money(payload.ownerExpenses, ctx)],
+  ];
+
+  const tables: DocumentTable[] = [
+    TableGenerator.build(
+      ['البيان المالي للتسوية', 'المبلغ'],
+      summaryRows,
+      ['صافي المستحق للمالك', money(payload.netDue, ctx)],
+    ),
+  ];
+
+  if (payload.supportingRows && payload.supportingRows.length > 0) {
+    tables.push(
+      TableGenerator.build(
+        ['البيان التفصيلي', 'النوع', 'المبلغ'],
+        payload.supportingRows.map((r) => [
+          r.description,
+          r.type === 'credit' ? 'تحصيل (+)' : 'خصم (-)',
+          money(r.amount, ctx),
+        ]),
+      ),
+    );
+  }
+
+  return {
+    type: entry.type,
+    header: buildHeader(settings, entry, {
+      title,
+      reference: payload.reference,
+      dateLabel: 'فترة التسوية',
+      dateValue: periodLabel,
+      ctx,
+    }),
+    kpis: [
+      kpi('المالك', payload.ownerName),
+      kpi('العقار', payload.propertyTitle),
+      kpi('حالة التسوية', statusLabel),
+      kpi('إجمالي التحصيلات', money(payload.collectedOwnerFunds, ctx)),
+      kpi('رسوم الإدارة', money(payload.managementFee, ctx)),
+      kpi('مصروفات العقار', money(payload.ownerExpenses, ctx)),
+      kpi('صافي المستحق للمالك', money(payload.netDue, ctx)),
+      kpi('الصافي تفقيطاً', words(payload.netDue, ctx)),
+      ...(payload.payoutReference ? [kpi('مرجع التحويل / الصرف', payload.payoutReference)] : []),
+      ...(payload.payoutDate ? [kpi('تاريخ الصرف', formatDate(payload.payoutDate))] : []),
+    ],
+    tables,
+    footer: buildFooter(entry, payload.reference ? `تسوية رقم: ${payload.reference}` : title),
+    fileName: buildDocumentFileName(entry, { reference: payload.reference, periodTo: payload.periodTo ?? payload.periodFrom }),
+  };
+}
+
+function buildManagementExitModel(entry: DocumentTemplateEntry, settings: DocumentCompanySettings, payload: ManagementExitPayload): UnifiedDocumentModel {
+  const ctx = formatContextOf(settings);
+  const title = 'محضر إنهاء إدارة وتسليم عقار';
+
+  const tables: DocumentTable[] = [];
+
+  if (payload.keysHandover && payload.keysHandover.length > 0) {
+    tables.push(
+      TableGenerator.build(
+        ['بيان المفاتيح المسلمة', 'العدد', 'ملاحظات'],
+        payload.keysHandover.map((k) => [k.item, k.quantity != null ? String(k.quantity) : '—', k.note?.trim() || '—']),
+      ),
+    );
+  }
+
+  if (payload.documentsHandover && payload.documentsHandover.length > 0) {
+    tables.push(
+      TableGenerator.build(
+        ['الوثائق والمستندات المسلمة للمالك', 'العدد', 'ملاحظات'],
+        payload.documentsHandover.map((d) => [d.item, d.quantity != null ? String(d.quantity) : '—', d.note?.trim() || '—']),
+      ),
+    );
+  }
+
+  tables.push(
+    TableGenerator.build(
+      ['بيان التسليم والإنهاء', 'التفاصيل المعتمدة'],
+      [
+        ['حالة الاتفاقية المنتهية', payload.status || 'منتهية'],
+        ['تاريخ نهاية اتفاقية الإدارة', formatDate(payload.agreementEndDate)],
+        ['موقف التسوية المالية للمالك', payload.outstandingSettlementNote?.trim() || 'لا توجد معلقات مسجلة'],
+        ['ملاحظات التسليم النهائي', payload.notes?.trim() || 'تم تسليم العقار وملحقاته للمالك وفق المحضر المعتمد'],
+      ],
+    ),
+  );
+
+  return {
+    type: entry.type,
+    header: buildHeader(settings, entry, {
+      title,
+      reference: payload.reference,
+      dateLabel: 'تاريخ إنهاء الإدارة والتسليم',
+      dateValue: formatDate(payload.exitDate),
+      ctx,
+    }),
+    kpis: [
+      kpi('العقار المسلم', payload.propertyTitle),
+      kpi('المالك المستلم', payload.ownerName),
+      kpi('تاريخ انتهاء الاتفاقية', formatDate(payload.agreementEndDate)),
+      kpi('حالة الاتفاقية', payload.status || 'منتهية'),
+    ],
+    tables,
+    footer: buildFooter(entry, payload.reference ? `محضر إنهاء إدارة رقم: ${payload.reference}` : title),
+    fileName: buildDocumentFileName(entry, { reference: payload.reference, exitDate: payload.exitDate }),
+  };
+}
+
+function buildUnitPassportModel(entry: DocumentTemplateEntry, settings: DocumentCompanySettings, payload: UnitPassportPayload): UnifiedDocumentModel {
+  const ctx = formatContextOf(settings);
+  const title = 'جواز الوحدة العقارية وسجل دورة الحياة';
+
+  const leaseRows: string[][] = payload.leaseHistory.length > 0
+    ? payload.leaseHistory.map((lease) => [
+        lease.tenantName,
+        formatDate(lease.startDate),
+        formatDate(lease.endDate),
+        lease.rentAmount != null ? money(lease.rentAmount, ctx) : '—',
+        lease.status,
+      ])
+    : [['لا توجد عقود إيجار مسجلة', '—', '—', '—', '—']];
+
+  const maintenanceRows: string[][] = payload.maintenanceHistory.length > 0
+    ? payload.maintenanceHistory.map((m) => [
+        formatDate(m.date),
+        m.title,
+        m.status,
+        m.cost != null ? money(m.cost, ctx) : '—',
+      ])
+    : [['لا توجد طلبات صيانة سابقة', '—', '—', '—']];
+
+  const tables: DocumentTable[] = [
+    TableGenerator.build(
+      ['المستأجر', 'بداية العقد', 'نهاية العقد', 'قيمة الإيجار', 'حالة العقد'],
+      leaseRows,
+    ),
+    TableGenerator.build(
+      ['تاريخ الصيانة', 'بيان العمل المطلوب', 'الحالة', 'التكلفة المعتمدة'],
+      maintenanceRows,
+    ),
+  ];
+
+  if (payload.utilitySummary?.trim() || payload.financialSummaryNote?.trim() || payload.notes?.trim()) {
+    const infoRows: string[][] = [];
+    if (payload.utilitySummary?.trim()) infoRows.push(['بيانات المرافق والعدادات', payload.utilitySummary.trim()]);
+    if (payload.financialSummaryNote?.trim()) infoRows.push(['الملخص المالي التراكمي', payload.financialSummaryNote.trim()]);
+    if (payload.notes?.trim()) infoRows.push(['ملاحظات تشغيلية عامة', payload.notes.trim()]);
+    tables.push(TableGenerator.build(['البيان', 'التفاصيل'], infoRows));
+  }
+
+  return {
+    type: entry.type,
+    header: buildHeader(settings, entry, {
+      title,
+      reference: payload.unitNumber,
+      dateLabel: 'تاريخ إصدار الجواز',
+      dateValue: formatDate(new Date().toISOString().split('T')[0]),
+      ctx,
+    }),
+    kpis: [
+      kpi('العقار', payload.propertyTitle),
+      kpi('رقم الوحدة', payload.unitNumber),
+      kpi('نوع الوحدة', payload.unitType),
+      kpi('الحالة التشغيلية الحالية', payload.currentStatus),
+      kpi('عدد العقود التاريخية', String(payload.leaseHistory.length)),
+      kpi('عدد سجلات الصيانة', String(payload.maintenanceHistory.length)),
+    ],
+    tables,
+    footer: buildFooter(entry, joinPropertyUnit(payload.propertyTitle, payload.unitNumber) ?? title),
+    fileName: buildDocumentFileName(entry, { unitNumber: payload.unitNumber, currentStatus: payload.currentStatus }),
+  };
+}
+
+function buildMaintenanceWorkOrderModel(entry: DocumentTemplateEntry, settings: DocumentCompanySettings, payload: MaintenanceWorkOrderPayload): UnifiedDocumentModel {
+  const ctx = formatContextOf(settings);
+  const statusLabel = truthfulStatusLabel(entry, payload.status);
+  const title = 'أمر عمل صيانة';
+
+  const rows: string[][] = [
+    ['عنوان طلب الصيانة', payload.title],
+    ['تصنيف الصيانة', payload.category || 'عام'],
+    ['درجة الأولوية', payload.priority || 'عادية'],
+    ['وصف الأعمال المطلوبة', payload.description?.trim() || '—'],
+    ['تعليمات وإرشادات التنفيذ', payload.instructions?.trim() || '—'],
+    ['الطرف المسؤول عن التكلفة', payload.responsibleParty || '—'],
+    ['ملاحظات إضافية', payload.notes?.trim() || '—'],
+  ];
+
+  if (payload.approvedEstimate != null) {
+    rows.push(['التقدير المالي المعتمد للعمل', money(payload.approvedEstimate, ctx)]);
+  }
+
+  return {
+    type: entry.type,
+    header: buildHeader(settings, entry, {
+      title,
+      reference: payload.reference,
+      dateLabel: 'تاريخ أمر العمل',
+      dateValue: formatDate(payload.issueDate),
+      ctx,
+    }),
+    kpis: [
+      kpi('العقار والوحدة', joinPropertyUnit(payload.propertyTitle, payload.unitNumber)),
+      kpi('حالة أمر العمل', statusLabel),
+      kpi('درجة الأولوية', payload.priority),
+      kpi('مزود الخدمة المعتمد', payload.assignedProvider ?? payload.technicianName),
+      kpi('تاريخ التنفيذ المجدول', formatDate(payload.scheduledDate)),
+      ...(payload.approvedEstimate != null ? [kpi('التقدير المالي المعتمد', money(payload.approvedEstimate, ctx))] : []),
+    ],
+    tables: [
+      TableGenerator.build(['بند أمر العمل', 'البيان المعتمد'], rows),
+    ],
+    footer: buildFooter(entry, payload.reference ? `أمر عمل رقم: ${payload.reference}` : title),
+    fileName: buildDocumentFileName(entry, { reference: payload.reference, issueDate: payload.issueDate }),
+  };
+}
+
+function buildMaintenanceCompletionModel(entry: DocumentTemplateEntry, settings: DocumentCompanySettings, payload: MaintenanceCompletionPayload): UnifiedDocumentModel {
+  const ctx = formatContextOf(settings);
+  const statusLabel = truthfulStatusLabel(entry, payload.status);
+  const title = payload.status === 'completed' ? 'شهادة إنجاز واستلام أعمال صيانة' : 'تقرير متابعة أعمال صيانة';
+
+  const rows: string[][] = [
+    ['موضوع الصيانة', payload.title],
+    ['الأعمال المنفذة بالتفصيل', payload.workPerformed?.trim() || '—'],
+    ['مزود الخدمة / المنفذ', payload.providerName || '—'],
+    ['حالة الإنجاز المعتمدة', statusLabel ?? '—'],
+    ['إقرار استلام وقبول المستأجر', payload.tenantAccepted ? 'تم الاستلام والقبول بنجاح' : '—'],
+    ['اعتماد مدير التشغيل', payload.managerAccepted ? 'تم الفحص والاعتماد الفني' : '—'],
+    ['ملاحظات ختامية', payload.notes?.trim() || '—'],
+  ];
+
+  if (payload.approvedFinalCost != null) {
+    rows.push(['التكلفة النهائية المعتمدة', money(payload.approvedFinalCost, ctx)]);
+  }
+
+  return {
+    type: entry.type,
+    header: buildHeader(settings, entry, {
+      title,
+      reference: payload.reference,
+      dateLabel: 'تاريخ إنجاز الأعمال',
+      dateValue: formatDate(payload.completionDate),
+      ctx,
+    }),
+    kpis: [
+      kpi('العقار والوحدة', joinPropertyUnit(payload.propertyTitle, payload.unitNumber)),
+      kpi('موضوع الصيانة', payload.title),
+      kpi('مزود الخدمة', payload.providerName),
+      kpi('حالة الإنجاز', statusLabel),
+      ...(payload.approvedFinalCost != null ? [kpi('التكلفة المعتمدة', money(payload.approvedFinalCost, ctx))] : []),
+    ],
+    tables: [
+      TableGenerator.build(['بيان إنجاز الصيانة', 'التفاصيل المعتمدة'], rows),
+    ],
+    footer: buildFooter(entry, payload.reference ? `شهادة إنجاز رقم: ${payload.reference}` : title),
+    fileName: buildDocumentFileName(entry, { reference: payload.reference, completionDate: payload.completionDate }),
+  };
+}
+
+function buildLegalDossierModel(entry: DocumentTemplateEntry, settings: DocumentCompanySettings, payload: LegalDossierPayload): UnifiedDocumentModel {
+  const ctx = formatContextOf(settings);
+  const title = 'ملف الأدلة والمستندات القانونية';
+
+  const timelineRows: string[][] = payload.timelineEvents.map((event) => [
+    formatDate(event.date),
+    event.eventType,
+    event.description,
+    event.source?.trim() || 'السجل التشغيلي',
+  ]);
+
+  const tables: DocumentTable[] = [
+    TableGenerator.build(
+      ['التاريخ', 'نوع الحدث', 'البيان والوقائع', 'المصدر الموثق'],
+      timelineRows,
+    ),
+  ];
+
+  if (payload.unpaidInvoiceRefs && payload.unpaidInvoiceRefs.length > 0) {
+    tables.push(
+      TableGenerator.build(
+        ['رقم المطالبة', 'تاريخ الاستحقاق', 'المبلغ المستحق'],
+        payload.unpaidInvoiceRefs.map((inv) => [
+          inv.reference,
+          formatDate(inv.dueDate),
+          money(inv.amount, ctx),
+        ]),
+        payload.totalArrearsAmount != null ? ['إجمالي المطالبات المتأخرة المسجلة', '', money(payload.totalArrearsAmount, ctx)] : undefined,
+      ),
+    );
+  }
+
+  if (payload.noticeRefs && payload.noticeRefs.length > 0) {
+    tables.push(
+      TableGenerator.build(
+        ['الإشعارات والمكاتبات المسجلة'],
+        payload.noticeRefs.map((n) => [n]),
+      ),
+    );
+  }
+
+  return {
+    type: entry.type,
+    header: buildHeader(settings, entry, {
+      title,
+      reference: payload.reference,
+      dateLabel: 'تاريخ إعداد الملف',
+      dateValue: formatDate(new Date().toISOString().split('T')[0]),
+      ctx,
+    }),
+    kpis: [
+      kpi('المدين / المستأجر', payload.tenantName),
+      kpi('رقم العقد المرجعي', payload.contractReference),
+      kpi('العقار والوحدة', joinPropertyUnit(payload.propertyTitle, payload.unitNumber)),
+      kpi('حالة الملف الداخلي', payload.caseStatus || 'قيد المتابعة القانونية'),
+      ...(payload.totalArrearsAmount != null ? [kpi('إجمالي المتأخرات المسجلة', money(payload.totalArrearsAmount, ctx))] : []),
+      kpi('عدد الوقائع الموثقة', String(payload.timelineEvents.length)),
+    ],
+    tables,
+    footer: buildFooter(entry, payload.reference ? `ملف نزاع رقم: ${payload.reference}` : title),
+    fileName: buildDocumentFileName(entry, { reference: payload.reference }),
+  };
+}
+
 const builders: { [T in DocumentTypeId]: (entry: DocumentTemplateEntry, settings: DocumentCompanySettings, payload: CanonicalDocumentPayloadMap[T]) => UnifiedDocumentModel } = {
   contract: buildContractModel,
   invoice: buildInvoiceModel,
@@ -636,6 +1201,17 @@ const builders: { [T in DocumentTypeId]: (entry: DocumentTemplateEntry, settings
   income_statement: buildIncomeStatementModel,
   balance_sheet: buildBalanceSheetModel,
   generic_report: buildGenericReportModel,
+  unit_inspection: buildUnitInspectionModel,
+  lease_notice: buildLeaseNoticeModel,
+  deposit_voucher: buildDepositVoucherModel,
+  debt_rescheduling: buildDebtReschedulingModel,
+  tenant_clearance: buildTenantClearanceModel,
+  owner_settlement: buildOwnerSettlementModel,
+  management_exit: buildManagementExitModel,
+  unit_passport: buildUnitPassportModel,
+  maintenance_work_order: buildMaintenanceWorkOrderModel,
+  maintenance_completion: buildMaintenanceCompletionModel,
+  legal_dossier: buildLegalDossierModel,
 };
 
 /* ------------------------------------------------------------------ */
