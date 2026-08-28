@@ -15,6 +15,13 @@ import {
   type UtilityMeterFormValues,
 } from './utilities-service';
 
+export {
+  responsiblePartyLabels,
+  utilityBillStatusLabels,
+  utilityTypeLabels,
+} from './utilities-service';
+export type { ResponsibleParty, UtilityBill } from './utilities-service';
+
 export function useUtilityMeters(propertyId?: string) {
   return useQuery({
     queryKey: ['utility-meters', propertyId ?? 'all'],
