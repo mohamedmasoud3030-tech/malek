@@ -67,8 +67,8 @@ export function ContractTable({
   emptyDescription: string;
   emptyTitle: string;
   onCreate?: () => void;
-  onDelete: (id: string) => void;
-  onEdit: (id: string) => void;
+  onDelete?: (id: string) => void;
+  onEdit?: (id: string) => void;
   onPreview: (id: string) => void;
   onRetry: () => void;
   pagination?: { page: number; pageSize: number; total: number; onPageChange: (page: number) => void };
@@ -158,14 +158,18 @@ export function ContractTable({
             <Eye className="size-4" aria-hidden="true" />
             عرض
           </Button>
-          <Button variant="secondary" className="min-h-11 px-3" onClick={() => onEdit(contract.id)}>
-            <Edit className="size-4" aria-hidden="true" />
-            تعديل
-          </Button>
-          <Button variant="danger" className="min-h-11 px-3" aria-label={`أرشفة العقد ${getContractNumber(contract)}`} onClick={() => onDelete(contract.id)}>
-            <Trash2 className="size-4" aria-hidden="true" />
-            أرشفة
-          </Button>
+          {onEdit ? (
+            <Button variant="secondary" className="min-h-11 px-3" onClick={() => onEdit(contract.id)}>
+              <Edit className="size-4" aria-hidden="true" />
+              تعديل
+            </Button>
+          ) : null}
+          {onDelete ? (
+            <Button variant="danger" className="min-h-11 px-3" aria-label={`أرشفة العقد ${getContractNumber(contract)}`} onClick={() => onDelete(contract.id)}>
+              <Trash2 className="size-4" aria-hidden="true" />
+              أرشفة
+            </Button>
+          ) : null}
         </div>
       ),
     },
@@ -204,20 +208,20 @@ export function ContractTable({
         onClick: () => onPreview(contract.id),
       })}
       mobileCardActions={(contract) => [
-        {
+        ...(onEdit ? [{
           label: "تعديل",
           icon: Edit,
-          variant: "secondary",
+          variant: "secondary" as const,
           ariaLabel: `تعديل العقد ${getContractNumber(contract)}`,
           onClick: () => onEdit(contract.id),
-        },
-        {
+        }] : []),
+        ...(onDelete ? [{
           label: "أرشفة",
           icon: Trash2,
-          variant: "danger",
+          variant: "danger" as const,
           ariaLabel: `أرشفة العقد ${getContractNumber(contract)}`,
           onClick: () => onDelete(contract.id),
-        },
+        }] : []),
       ]}
       onRowClick={(contract) => setExpandedId((current) => current === contract.id ? null : contract.id)}
       renderRowExpansion={(contract) => (
