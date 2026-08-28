@@ -77,7 +77,20 @@ export function ContractFinancialTimelineSection({ contract, settings }: Readonl
 }
 
 export function ContractTimelineSection({ contract, settings }: Readonly<{ contract: ContractDetail; settings: CompanySettingsContract }>) {
-  return <Card><CardHeader><CardTitle className="flex items-center gap-2"><CalendarDays className="size-5 text-primary" />الخط الزمني</CardTitle></CardHeader><CardContent className="space-y-3">{getTimeline(settings, contract).map((item) => <TimelineRow item={item} key={item.title} />)}</CardContent></Card>;
+  return <Card><CardHeader><CardTitle className="flex items-center gap-2"><CalendarDays className="size-5 text-primary" />الخط الزمني</CardTitle></CardHeader><CardContent className="divide-y divide-border/60">{getTimeline(settings, contract).map((item) => <TimelineRow item={item} key={item.title} />)}</CardContent></Card>;
 }
 
-function TimelineRow({ item }: Readonly<{ item: TimelineItem }>) { return <div className="flex items-start gap-3 rounded-xl border border-border/70 bg-card p-4 shadow-card"><span className="mt-1 size-3 rounded-full bg-primary" /><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center justify-between gap-2"><p className="font-semibold">{item.title}</p><StatusBadge tone={item.tone}>{item.value}</StatusBadge></div><p className="mt-2 text-sm leading-6 text-muted-foreground">{item.description}</p></div></div>; }
+function TimelineRow({ item }: Readonly<{ item: TimelineItem }>) {
+  return (
+    <div className="flex items-start gap-3 py-3.5 first:pt-0 last:pb-0">
+      <span className="mt-1.5 size-2.5 shrink-0 rounded-full bg-primary" aria-hidden="true" />
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="font-semibold">{item.title}</p>
+          <StatusBadge tone={item.tone}>{item.value}</StatusBadge>
+        </div>
+        <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{item.description}</p>
+      </div>
+    </div>
+  );
+}
