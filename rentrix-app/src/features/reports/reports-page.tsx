@@ -62,16 +62,6 @@ export function ReportsPage() {
     [navigate],
   );
 
-  const handleSectionChange = useCallback(
-    (nextSection: ReportSectionId) => {
-      let defaultView: ReportViewId = '';
-      if (nextSection === 'accounting') defaultView = 'accounting_reports';
-      else if (nextSection === 'analytics') defaultView = 'overview';
-      handleSectionViewChange(nextSection, defaultView);
-    },
-    [handleSectionViewChange],
-  );
-
   if (!canViewReports) {
     return <AccessDenied message="عرض التقارير متاح فقط للصلاحيات المخولة." />;
   }
@@ -137,7 +127,6 @@ export function ReportsPage() {
             canExportReports={canExportReports}
             activeSection={activeSection}
             activeView={activeView}
-            onSectionChange={handleSectionChange}
             onSectionViewChange={handleSectionViewChange}
             onFiltersChange={setFilters}
             onResetCurrentMonth={() => setFilters((current) => ({
