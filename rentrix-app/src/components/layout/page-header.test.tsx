@@ -44,12 +44,9 @@ describe('PageHeader — العنوان الموحد للصفحات', () => {
         secondaryActions={<button type="button">تصدير CSV</button>}
       />,
     );
-    // Primary remains visible
     expect(html).toContain('إنشاء عقد');
-    // Secondary moves to overflow on mobile — trigger accessible
     expect(html).toContain('إجراءات إضافية');
     expect(html).toContain('data-secondary-overflow-trigger');
-    // Ensure no horizontal overflow rail that breaks 320px
     expect(html).not.toContain('max-w-[58vw]');
     expect(html).not.toContain('overflow-x-auto');
   });
@@ -63,12 +60,11 @@ describe('PageHeader — العنوان الموحد للصفحات', () => {
     expect(html).not.toContain('class="contents"');
   });
 
-  it('keeps the deprecated action prop working while primaryAction takes precedence', () => {
+  it('renders the canonical primary action without a compatibility fallback', () => {
     const html = renderToStaticMarkup(
-      <PageHeader title="x" action={<b>قديم</b>} primaryAction={<i>جديد</i>} />,
+      <PageHeader title="x" primaryAction={<i>جديد</i>} />,
     );
     expect(html).toContain('جديد');
-    expect(html).not.toContain('قديم');
   });
 
   it('renders a back link whose arrow flips in RTL', () => {
