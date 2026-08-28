@@ -5,7 +5,6 @@
  */
 export {
   EntityTable as DataTable,
-  CompactResponsiveTable,
   type ColumnDef,
   type ColumnPriority,
   type SortState,

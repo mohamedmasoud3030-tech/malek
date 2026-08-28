@@ -5415,6 +5415,64 @@ export type Database = {
           },
         ];
       };
+      owner_portal_links: {
+        Row: {
+          id: string;
+          company_id: string;
+          owner_id: string;
+          token: string;
+          issued_by: string;
+          issued_at: string;
+          expires_at: string;
+          revoked_at: string | null;
+          last_used_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          company_id: string;
+          owner_id: string;
+          token?: string;
+          issued_by: string;
+          issued_at?: string;
+          expires_at?: string;
+          revoked_at?: string | null;
+          last_used_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          company_id?: string;
+          owner_id?: string;
+          token?: string;
+          issued_by?: string;
+          issued_at?: string;
+          expires_at?: string;
+          revoked_at?: string | null;
+          last_used_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'owner_portal_links_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'companies';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'owner_portal_links_issued_by_fkey';
+            columns: ['issued_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'owner_portal_links_owner_id_fkey';
+            columns: ['owner_id'];
+            isOneToOne: false;
+            referencedRelation: 'owners';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       owner_settlement_expense_links: {
         Row: {
           id: string;
@@ -7333,6 +7391,7 @@ export type Database = {
           updated_at: string;
           deleted_at: string | null;
           company_id: string;
+          daily_reference_rate: number | null;
         };
         Insert: {
           id?: string;
@@ -7347,6 +7406,7 @@ export type Database = {
           updated_at?: string;
           deleted_at?: string | null;
           company_id?: string;
+          daily_reference_rate?: number | null;
         };
         Update: {
           id?: string;
@@ -7361,6 +7421,7 @@ export type Database = {
           updated_at?: string;
           deleted_at?: string | null;
           company_id?: string;
+          daily_reference_rate?: number | null;
         };
         Relationships: [
           {
@@ -8508,6 +8569,12 @@ export type Database = {
         };
         Returns: Json;
       };
+      create_owner_portal_link: {
+        Args: {
+          p_owner_id: string | null;
+        };
+        Returns: Json;
+      };
       create_owner_receivable_atomic: {
         Args: {
           p_payload: Json | null;
@@ -8709,6 +8776,15 @@ export type Database = {
         };
         Returns: Json;
       };
+      extend_short_stay_contract_atomic: {
+        Args: {
+          p_contract_id: string | null;
+          p_new_end_date: string | null;
+          p_extension_amount: number | null;
+          p_request_id: string | null;
+        };
+        Returns: Json;
+      };
       find_payment_account_id: {
         Args: {
           account_role: string | null;
@@ -8755,6 +8831,12 @@ export type Database = {
       get_contract_evidence_state: {
         Args: {
           p_contract_id: string | null;
+        };
+        Returns: Json;
+      };
+      get_owner_portal_snapshot: {
+        Args: {
+          p_token: string | null;
         };
         Returns: Json;
       };
@@ -9267,6 +9349,10 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: number;
       };
+      reconcile_due_short_stays_atomic: {
+        Args: Record<PropertyKey, never>;
+        Returns: Json;
+      };
       record_invoice_payment_atomic: {
         Args: {
           payload: Json | null;
@@ -9467,6 +9553,12 @@ export type Database = {
       revoke_onboarding_waiver_atomic: {
         Args: {
           p_code: string | null;
+        };
+        Returns: Json;
+      };
+      revoke_owner_portal_link: {
+        Args: {
+          p_owner_id: string | null;
         };
         Returns: Json;
       };
