@@ -14,6 +14,7 @@ import {
   contractSchema,
   contractStatusLabels,
   contractStatusValues,
+  leaseModeValues,
   paymentCycleLabels,
   paymentCycleValues,
   type ContractFormValues,
@@ -90,6 +91,10 @@ export function useContractForm({
       // (no hidden server default decides them anymore).
       billing_day: 1,
       grace_days: 0,
+      // Short Stay mode defaults to long-term leasing; the negotiated stay
+      // total is the rent_amount and the reference daily price is optional.
+      lease_mode: 'long_term',
+      daily_reference_rate: '' as string | number | null,
       payment_terms_id: '',
       status: 'draft',
       cancellation_reason: '',
@@ -149,6 +154,10 @@ export function useContractForm({
       payment_cycle: contractQuery.data.payment_cycle,
       billing_day: contractQuery.data.billing_day ?? 1,
       grace_days: contractQuery.data.grace_days ?? 0,
+      lease_mode: leaseModeValues.includes(contractQuery.data.lease_mode as (typeof leaseModeValues)[number])
+        ? (contractQuery.data.lease_mode as (typeof leaseModeValues)[number])
+        : 'long_term',
+      daily_reference_rate: contractQuery.data.daily_reference_rate ?? '',
       payment_terms_id: contractQuery.data.payment_terms_id ?? '',
       // Stored rows may carry the legacy 'ACTIVE'/'ENDED' spellings the
       // contracts CHECK still permits; the form works in canonical values.
@@ -238,8 +247,11 @@ export function useContractForm({
 // Re-export types and constants for consumers
 export {
   contractSchema,
+  contractSchemaBase,
   contractStatusLabels,
   contractStatusValues,
+  leaseModeLabels,
+  leaseModeValues,
   paymentCycleLabels,
   paymentCycleValues,
   type ContractFormValues,

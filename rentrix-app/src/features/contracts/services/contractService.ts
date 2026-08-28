@@ -197,6 +197,8 @@ export async function createContract(payload: ContractPayload): Promise<Contract
     p_attachment_url: payload.attachment_url ?? null,
     p_billing_day: payload.billing_day,
     p_grace_days: payload.grace_days,
+    p_lease_mode: payload.lease_mode ?? 'long_term',
+    p_daily_reference_rate: payload.lease_mode === 'short_stay' ? payload.daily_reference_rate ?? null : null,
   });
   if (error) throw error;
   return data as Contract;
@@ -235,6 +237,8 @@ export async function updateContract(contractId: string, payload: ContractPayloa
     p_cancellation_reason: payload.cancellation_reason ?? null,
     p_notes: payload.notes ?? null,
     p_attachment_url: payload.attachment_url ?? null,
+    p_lease_mode: payload.lease_mode ?? 'long_term',
+    p_daily_reference_rate: payload.lease_mode === 'short_stay' ? payload.daily_reference_rate ?? null : null,
   });
   if (error) throw error;
   return data as Contract;

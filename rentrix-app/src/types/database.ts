@@ -2598,6 +2598,8 @@ export type Database = {
           billing_day: number;
           grace_days: number;
           is_sole_admin_exception: boolean;
+          lease_mode: string;
+          daily_reference_rate: number | null;
         };
         Insert: {
           id?: string;
@@ -2636,6 +2638,8 @@ export type Database = {
           billing_day?: number;
           grace_days?: number;
           is_sole_admin_exception?: boolean;
+          lease_mode?: string;
+          daily_reference_rate?: number | null;
         };
         Update: {
           id?: string;
@@ -2674,6 +2678,8 @@ export type Database = {
           billing_day?: number;
           grace_days?: number;
           is_sole_admin_exception?: boolean;
+          lease_mode?: string;
+          daily_reference_rate?: number | null;
         };
         Relationships: [
           {
@@ -8255,6 +8261,8 @@ export type Database = {
           p_attachment_url: string | null;
           p_billing_day?: number | null;
           p_grace_days?: number | null;
+          p_lease_mode?: string | null;
+          p_daily_reference_rate?: number | null;
         };
         Returns: Json;
       };
@@ -9662,6 +9670,8 @@ export type Database = {
           p_cancellation_reason: string | null;
           p_notes: string | null;
           p_attachment_url: string | null;
+          p_lease_mode?: string | null;
+          p_daily_reference_rate?: number | null;
         };
         Returns: Json;
       };

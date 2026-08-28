@@ -35,3 +35,42 @@ describe('contract date validation', () => {
     expect(renewalSchema.safeParse({ new_start: '2028-07-01', new_end: '2028-06-30', new_amount: 13000 }).success).toBe(false);
   });
 });
+
+describe('short stay lease mode validation', () => {
+  it('defaults to long-term leasing without a lease mode input', () => {
+    const parsed = contractSchema.parse(validContract);
+    expect(parsed.lease_mode).toBe('long_term');
+    expect(parsed.daily_reference_rate).toBeNull();
+  });
+
+  it('accepts a short stay with a negotiated total and an optional reference daily rate', () => {
+    const parsed = contractSchema.parse({
+      ...validContract,
+      lease_mode: 'short_stay',
+      daily_reference_rate: 85.5,
+    });
+    expect(parsed.lease_mode).toBe('short_stay');
+    expect(parsed.daily_reference_rate).toBe(85.5);
+  });
+
+  it('rejects a reference daily rate on a long-term contract', () => {
+    const result = contractSchema.safeParse({
+      ...validContract,
+      lease_mode: 'long_term',
+      daily_reference_rate: 85.5,
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0]?.path).toContain('daily_reference_rate');
+    }
+  });
+
+  it('rejects negative or over-precise reference daily rates', () => {
+    expect(contractSchema.safeParse({ ...validContract, lease_mode: 'short_stay', daily_reference_rate: -5 }).success).toBe(false);
+    expect(contractSchema.safeParse({ ...validContract, lease_mode: 'short_stay', daily_reference_rate: 85.0004 }).success).toBe(false);
+  });
+
+  it('rejects an unknown lease mode', () => {
+    expect(contractSchema.safeParse({ ...validContract, lease_mode: 'hotel' as never }).success).toBe(false);
+  });
+});

@@ -6,7 +6,7 @@ import { DetailFields } from '@/components/ui/detail-fields';
 import { StatusBadge } from '@/components/ui/status-badge';
 import type { CompanySettingsContract } from '@/lib/companySettings';
 import { formatContractDate, formatContractDateTime, formatContractDayCount, formatContractMoney, getContractInclusiveDays, getContractRemainingDays } from '../contractDisplayFormatters';
-import { contractStatusLabels, contractStatusTone, paymentCycleLabels } from '../contractSchema';
+import { contractStatusLabels, contractStatusTone, leaseModeLabels, paymentCycleLabels } from '../contractSchema';
 import { isContractStatus, normalizeContractStatus } from '@/lib/contractStatus';
 import type { ContractDetail } from '../services/contractService';
 
@@ -36,14 +36,21 @@ function getTimeline(settings: CompanySettingsContract, contract: ContractDetail
 
 export function ContractOverviewSection({ contract, settings }: Readonly<{ contract: ContractDetail; settings: CompanySettingsContract }>) {
   const status = normalizeContractStatus(contract.status);
+  const isShortStay = contract.lease_mode === 'short_stay';
   const fields = [
     { label: 'المستأجر', value: contract.people?.full_name },
     { label: 'الوحدة', value: contract.units?.unit_number },
     { label: 'العقار', value: contract.properties?.title },
+    { label: 'نوع التعاقد', value: isShortStay ? leaseModeLabels.short_stay : leaseModeLabels.long_term },
     { label: 'تاريخ البداية', value: formatContractDate(settings, contract.start_date) },
     { label: 'تاريخ النهاية', value: formatContractDate(settings, contract.end_date) },
-    { label: 'قيمة الإيجار', value: formatContractMoney(settings, contract.rent_amount) },
-    { label: 'دورة السداد', value: paymentCycleLabels[contract.payment_cycle] },
+    { label: isShortStay ? 'إجمالي الإقامة المتفق عليه' : 'قيمة الإيجار', value: formatContractMoney(settings, contract.rent_amount) },
+    ...(isShortStay
+      ? [
+          { label: 'سعر اليوم المرجعي', value: contract.daily_reference_rate != null ? formatContractMoney(settings, contract.daily_reference_rate) : '—' },
+          { label: 'السداد', value: 'فاتورة واحدة عند تاريخ الوصول (+ أيام السماح)' },
+        ]
+      : [{ label: 'دورة السداد', value: paymentCycleLabels[contract.payment_cycle] }]),
     { label: 'الحالة', value: <StatusBadge tone={contractStatusTone[status]}>{contractStatusLabels[status]}</StatusBadge> },
     ...(contract.agreement_id ? [{ label: 'اتفاقية الإدارة', value: 'اتفاقية إدارة مرتبطة' }] : []),
     ...(isContractStatus(contract.status, 'terminated') ? [{ label: 'سبب الإنهاء', value: contract.cancellation_reason?.trim() || '—' }] : []),

@@ -64,6 +64,7 @@ describe('draft duplicate guard', () => {
     property_id: 'prop-1', unit_id: 'unit-1', tenant_id: 'tenant-1', agreement_id: null,
     start_date: '2026-09-01', end_date: '2027-08-31', rent_amount: 100,
     payment_cycle: 'monthly', billing_day: 1, grace_days: 0, payment_terms_id: null,
+    lease_mode: 'long_term', daily_reference_rate: null,
     status: 'draft', cancellation_reason: null, notes: null, attachment_url: null,
   } as const;
 
@@ -190,6 +191,8 @@ describe('updateContract', () => {
     payment_cycle: 'monthly',
     billing_day: 1,
     grace_days: 0,
+    lease_mode: 'long_term',
+    daily_reference_rate: null,
     payment_terms_id: null,
     status: 'active',
     cancellation_reason: null,
@@ -359,5 +362,80 @@ describe('contract approval/activation chain (S04-T03)', () => {
     const { activateContract } = await import('./contractService');
 
     await expect(activateContract('contract-1')).rejects.toThrow('ناقصة الحقول');
+  });
+});
+
+describe('short stay lease mode RPC wiring', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const basePayload = {
+    property_id: 'prop-1',
+    unit_id: 'unit-1',
+    tenant_id: 'tenant-1',
+    agreement_id: null,
+    start_date: '2026-09-01',
+    end_date: '2026-09-05',
+    rent_amount: 300,
+    payment_cycle: 'monthly' as const,
+    billing_day: 1,
+    grace_days: 0,
+    lease_mode: 'short_stay' as const,
+    daily_reference_rate: 100,
+    payment_terms_id: null,
+    status: 'draft' as const,
+    cancellation_reason: null,
+    notes: null,
+    attachment_url: null,
+  };
+
+  function propertyQueryMock() {
+    const chain = { select: vi.fn(), eq: vi.fn(), is: vi.fn(), maybeSingle: vi.fn() };
+    chain.select.mockReturnValue(chain); chain.eq.mockReturnValue(chain); chain.is.mockReturnValue(chain);
+    chain.maybeSingle.mockResolvedValue({ data: { id: 'prop-1', status: 'active' }, error: null });
+    return chain;
+  }
+
+  function draftQueryMock() {
+    const chain = { select: vi.fn(), eq: vi.fn(), is: vi.fn(), in: vi.fn(), neq: vi.fn(), limit: vi.fn() };
+    chain.select.mockReturnValue(chain); chain.eq.mockReturnValue(chain); chain.is.mockReturnValue(chain);
+    chain.in.mockReturnValue(chain); chain.neq.mockReturnValue(chain);
+    chain.limit.mockResolvedValue({ data: [], error: null });
+    return chain;
+  }
+
+  it('sends the short stay mode and reference rate through create_contract_atomic', async () => {
+    supabaseMock.rpc.mockResolvedValue({ data: { id: 'contract-1' }, error: null });
+    supabaseMock.from.mockReturnValueOnce(propertyQueryMock()).mockReturnValueOnce(draftQueryMock());
+    const { createContract } = await import('./contractService');
+    await createContract(basePayload);
+    expect(supabaseMock.rpc).toHaveBeenCalledWith('create_contract_atomic', expect.objectContaining({
+      p_lease_mode: 'short_stay',
+      p_daily_reference_rate: 100,
+    }));
+  });
+
+  it('never sends a reference daily rate for a long-term contract', async () => {
+    supabaseMock.rpc.mockResolvedValue({ data: { id: 'contract-1' }, error: null });
+    supabaseMock.from.mockReturnValueOnce(propertyQueryMock()).mockReturnValueOnce(draftQueryMock());
+    const { createContract } = await import('./contractService');
+    await createContract({ ...basePayload, lease_mode: 'long_term', daily_reference_rate: null });
+    expect(supabaseMock.rpc).toHaveBeenCalledWith('create_contract_atomic', expect.objectContaining({
+      p_lease_mode: 'long_term',
+      p_daily_reference_rate: null,
+    }));
+  });
+
+  it('carries the mode through update_contract_atomic', async () => {
+    supabaseMock.rpc.mockResolvedValue({ data: { id: 'contract-1' }, error: null });
+    supabaseMock.from.mockReturnValueOnce(propertyQueryMock()).mockReturnValueOnce(draftQueryMock());
+    const { updateContract } = await import('./contractService');
+    await updateContract('contract-1', { ...basePayload, status: 'draft' });
+    const updateCall = supabaseMock.rpc.mock.calls.find((call) => call[0] === 'update_contract_atomic');
+    expect(updateCall?.[1]).toMatchObject({
+      p_lease_mode: 'short_stay',
+      p_daily_reference_rate: 100,
+    });
   });
 });
