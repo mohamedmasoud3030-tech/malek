@@ -6,7 +6,6 @@ import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
 import { canAccess, financialOperationPermissions } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
-import { translateSharedLabel } from '@/lib/i18n';
 import { ReportDirectory } from './directory/ReportDirectory';
 import { getCurrentMonthFilters } from './reports-page.helpers';
 import { getInitialReportsFilters } from './reports-workspace-filters';
@@ -37,8 +36,8 @@ export function ReportsPage() {
   );
   const workspace = useReportsWorkspace(filters, { section: activeSection, view: activeView });
 
-  const reportsTitle = translateSharedLabel('financialsSectionReports');
-  const pageDescription = translateSharedLabel('reportsPageDescription');
+  const reportsTitle = 'التقارير';
+  const pageDescription = 'خلاصة مفهومة أولًا، ثم تفاصيل قابلة للبحث والتصفية والترتيب والتصدير عند الحاجة.';
   const activeSectionMeta = reportSections.find((section) => section.id === activeSection) ?? reportSections[0];
   const activeViewLabel = getReportSubViewLabel(activeSection, activeView);
   const activeReportLabel = activeViewLabel ?? activeSectionMeta.label;
@@ -73,7 +72,7 @@ export function ReportsPage() {
   );
 
   if (!canViewReports) {
-    return <AccessDenied message="عرض المحاسبة والتقارير متاح فقط للصلاحيات المالية المخولة." />;
+    return <AccessDenied message="عرض مركز التقارير متاح فقط للصلاحيات المخولة." />;
   }
 
   return (
@@ -128,7 +127,7 @@ export function ReportsPage() {
               <p className="text-[11px] font-black text-primary">التقرير المفتوح</p>
               <h2 id="active-report-title" className="mt-0.5 text-lg font-black sm:text-xl">{activeReportLabel}</h2>
             </div>
-            <p className="hidden text-xs font-semibold text-muted-foreground sm:block">الفلاتر والجداول والتصدير أدناه</p>
+            <p className="hidden text-xs font-semibold text-muted-foreground sm:block">الخلاصة أولًا · التفاصيل والفلاتر والتصدير أدناه</p>
           </div>
 
           <ReportsWorkspace
