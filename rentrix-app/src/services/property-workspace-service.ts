@@ -50,7 +50,7 @@ export async function fetchPropertyActivity(propertyId: string): Promise<Propert
 
 export function checkPropertyTabPermissions(authorization: AuthorizationContext | null | undefined) {
   return {
-    canWriteContract: canAccess(authorization, 'contracts.write'),
-    canWriteMaintenance: canAccess(authorization, 'maintenance.view'),
+    canWriteContract: canAccess(authorization, 'contracts.create'),
+    canWriteMaintenance: canAccess(authorization, 'maintenance.create'),
   };
 }

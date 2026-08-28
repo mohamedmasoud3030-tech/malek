@@ -7,7 +7,7 @@ import { expect, test, type Page, type Route } from '@playwright/test';
  * Covers the launch-polish contract that unit tests can only approximate:
  *  - Top header: [M mark] [MALEK] lockup on one end, compact User/Theme
  *    controls on the other end, NO day+date in the header.
- *  - Today context strip: "اليوم" + localized weekday + date.
+ *  - Page/date context strip: current page name + localized weekday + date.
  *  - Quick Add: clear VERTICAL action stack (one action per row).
  *  - Bottom dock: Menu / Search / Quick Add / Notifications / AI, never covering content.
  *  - Primary navigation: shared bottom sheet, fully inside the viewport.
@@ -289,7 +289,7 @@ test.beforeEach(async ({}, testInfo) => {
 
 for (const viewport of MOBILE_VIEWPORTS) {
   for (const direction of ['rtl', 'ltr'] as const) {
-    test(`mobile launch polish ${viewport.name}px ${direction.toUpperCase()} — header, Today, quick add, dock, bottom sheet`, async ({ page }) => {
+    test(`mobile launch polish ${viewport.name}px ${direction.toUpperCase()} — header, page/date context, quick add, dock, bottom sheet`, async ({ page }) => {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
       await openAuthenticatedDashboard(page);
       await forceShellDirection(page, direction);
@@ -332,7 +332,7 @@ for (const viewport of MOBILE_VIEWPORTS) {
 
       const today = page.locator('[data-global-today-context]');
       await expect(today).toBeVisible();
-      await expect(today).toContainText('اليوم');
+      await expect(today).toContainText('لوحة التحكم');
       const weekday = today.locator('[data-global-today-weekday]');
       const dayDate = today.locator('[data-global-today-day-date]');
       expect((await weekday.textContent())?.trim(), `${label}: weekday must be populated`).not.toBe('');

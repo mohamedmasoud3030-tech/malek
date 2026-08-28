@@ -21,11 +21,11 @@ const employeeCapabilityGroups: readonly Readonly<{
   title: string;
   permissions: readonly AppPermission[];
 }>[] = [
-  { title: 'العقارات', permissions: ['properties.view', 'properties.write'] },
-  { title: 'العقود والمستأجرون', permissions: ['contracts.view', 'contracts.write'] },
+  { title: 'العقارات والوحدات', permissions: ['properties.view', 'properties.create', 'properties.edit', 'properties.archive'] },
+  { title: 'العقود والمستأجرون', permissions: ['contracts.view', 'contracts.create', 'contracts.edit', 'contracts.approve', 'contracts.cancel'] },
+  { title: 'الصيانة والخدمات', permissions: ['maintenance.view', 'maintenance.create', 'maintenance.edit', 'maintenance.approve', 'maintenance.cancel'] },
   { title: 'التحصيل والمالية', permissions: ['financial.workspace.view', 'financial.payments.create'] },
   { title: 'المصروفات', permissions: ['expenses.view', 'expenses.write'] },
-  { title: 'الصيانة والخدمات', permissions: ['maintenance.view', 'maintenance.write'] },
   { title: 'التقارير', permissions: ['financial.reports.view', 'financial.reports.export'] },
 ] as const;
 
@@ -79,7 +79,7 @@ function UserAccessCard({
               صلاحيات الموظف
             </div>
             <p className="text-xs leading-5 text-muted-foreground">
-              فعّل فقط ما يحتاجه هذا الموظف. القرار هنا يسبق أي دور تقني قديم محفوظ للتوافق.
+              فعّل ما يحتاجه الموظف فقط. «عرض» يفتح القسم، وباقي الأزرار تتحكم في الإجراء نفسه على السيرفر.
             </p>
             <div className="space-y-3">
               {employeeCapabilityGroups.map((group) => (
@@ -276,7 +276,7 @@ export function UserRolesWorkspace() {
               <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><UserCog className="size-5" /></span>
               <div>
                 <h2 className="font-black">الموظفون والصلاحيات</h2>
-                <p className="mt-1 text-sm leading-6 text-muted-foreground">صاحب المكتب يملك كل شيء. لكل موظف فعّل فقط الأقسام والإجراءات التي يحتاجها.</p>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">صاحب المكتب يملك كل شيء. لكل موظف فعّل فقط القسم والإجراءات التي يحتاجها.</p>
               </div>
             </div>
             <Button

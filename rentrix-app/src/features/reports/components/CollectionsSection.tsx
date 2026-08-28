@@ -1,4 +1,4 @@
-import { Building2, CalendarDays, FileSpreadsheet, ReceiptText, WalletCards } from 'lucide-react';
+import { Building2, CalendarDays, FileSpreadsheet, FileText, ReceiptText, WalletCards } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
@@ -15,6 +15,7 @@ import { DailyCollectionsPanel } from './collections/daily-collections-panel';
 import { ReceiptLinksPanel, type CollectionReceiptRow } from './collections/receipt-links-panel';
 import { RentRollPanel } from './collections/rent-roll-panel';
 import { formatLatinNumber } from '@/lib/formatters';
+import { csvRowsToXlsxBlob, downloadBlob, xlsxFilenameFromCsv } from '@/lib/tabular-export';
 import { ReportShareActions } from './ReportShareActions';
 
 const paymentMethodLabels = {
@@ -128,11 +129,30 @@ export function CollectionsSection({ summary, rows, receiptRows, rentRollRows, c
     />
   ) : undefined;
 
+  const rentRollCsvFilename = buildReportCsvFilename('rent-roll');
   const rentRollAction = canExportReports ? (
-    <Button variant="secondary" size="sm" onClick={() => downloadCsv(buildReportCsvFilename('rent-roll'), rentRollRows)} className="min-h-11 gap-1.5 text-xs">
-      <FileSpreadsheet className="size-3.5" aria-hidden="true" />
-      CSV
-    </Button>
+    <div className="flex flex-wrap gap-2">
+      <Button
+        variant="secondary"
+        size="sm"
+        onClick={() => downloadBlob(csvRowsToXlsxBlob(rentRollRows, 'سجل الإيجارات'), xlsxFilenameFromCsv(rentRollCsvFilename))}
+        className="min-h-11 gap-1.5 text-xs"
+        disabled={rentRollRows.length === 0}
+      >
+        <FileSpreadsheet className="size-3.5" aria-hidden="true" />
+        Excel
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => downloadCsv(rentRollCsvFilename, rentRollRows)}
+        className="min-h-11 gap-1.5 text-xs"
+        disabled={rentRollRows.length === 0}
+      >
+        <FileText className="size-3.5" aria-hidden="true" />
+        CSV
+      </Button>
+    </div>
   ) : undefined;
 
   return (

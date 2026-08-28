@@ -1,7 +1,8 @@
-import { Download, FileSpreadsheet, MessageCircle, Printer, Share2 } from 'lucide-react';
+import { Download, FileSpreadsheet, FileText, MessageCircle, Printer, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import type { CsvRow } from '@/lib/csvExport';
+import { csvRowsToXlsxBlob, downloadBlob, xlsxFilenameFromCsv } from '@/lib/tabular-export';
 import { openWhatsAppComposer } from '@/lib/whatsapp-share';
 import { buildReportSharePayload, type ReportShareTarget } from '../report-share';
 import { downloadCsv } from '../reports-page.helpers';
@@ -28,7 +29,7 @@ type ReportShareActionsProps = Readonly<{
  *     user chooses the recipient and presses send manually (no Business API).
  *   - Share: uses the OS share sheet when available, otherwise copies the
  *     canonical report link to the clipboard.
- *   - Print / PDF / CSV: existing canonical document and export boundaries.
+ *   - Print / PDF / Excel / CSV: canonical document/export boundaries.
  *
  * All actions require `canExportReports` at the call site; this component
  * never mutates financial data and never sends anything automatically.
@@ -101,6 +102,20 @@ export function ReportShareActions({
     toast.error('المشاركة غير مدعومة هنا. انسخ الرابط من شريط العنوان.');
   };
 
+  const handleExcel = () => {
+    if (!csv || csv.rows.length === 0) return;
+    try {
+      downloadBlob(
+        csvRowsToXlsxBlob(csv.rows, reportLabel),
+        xlsxFilenameFromCsv(csv.filename),
+      );
+      toast.success('تم تجهيز ملف Excel');
+    } catch (error) {
+      console.error('Failed to export report XLSX:', error);
+      toast.error('تعذر تصدير ملف Excel');
+    }
+  };
+
   return (
     <div className={className} data-report-share-actions>
       <Button
@@ -148,16 +163,30 @@ export function ReportShareActions({
         </Button>
       ) : null}
       {csv ? (
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          className="min-h-11 gap-1.5 text-xs"
-          onClick={() => downloadCsv(csv.filename, csv.rows)}
-        >
-          <FileSpreadsheet className="size-3.5" aria-hidden="true" />
-          CSV
-        </Button>
+        <>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            className="min-h-11 gap-1.5 text-xs"
+            onClick={handleExcel}
+            disabled={csv.rows.length === 0}
+          >
+            <FileSpreadsheet className="size-3.5" aria-hidden="true" />
+            Excel
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="min-h-11 gap-1.5 text-xs"
+            onClick={() => downloadCsv(csv.filename, csv.rows)}
+            disabled={csv.rows.length === 0}
+          >
+            <FileText className="size-3.5" aria-hidden="true" />
+            CSV
+          </Button>
+        </>
       ) : null}
     </div>
   );

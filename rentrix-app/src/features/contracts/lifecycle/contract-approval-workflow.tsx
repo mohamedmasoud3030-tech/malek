@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EntityForm } from '@/components/ui/entity-form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { useAuth } from '@/hooks/use-auth';
 import { isContractStatus } from '@/lib/contractStatus';
 import type { ContractDetail } from '../services/contractService';
 import {
@@ -43,21 +44,22 @@ function formatTimestamp(value: string | null | undefined): string {
 
 const trimSignature = (value: string | null | undefined) => (value ?? '').trim();
 
-/**
- * Canonical contract approval/activation workflow (S04-T03 / DOM-005 / D11).
- *
- * Draft contracts move through a maker→checker approval sub-state; activation
- * is the only path that freezes the authoritative owner-agreement snapshot onto
- * the contract (collection role, operating model, version). The browser never
- * flips a contract to 'active' by itself.
- */
+/** Canonical maker→checker approval workflow. Server commands remain the authority. */
 export function ContractApprovalSection({ contract }: Readonly<{ contract: ContractDetail }>) {
+  const { canAccess } = useAuth();
+  const canEdit = canAccess('contracts.edit');
+  const canApproveLifecycle = canAccess('contracts.approve');
   const [dialogMode, setDialogMode] = useState<ContractApprovalMode | null>(null);
   const isDraft = isContractStatus(contract.status, 'draft');
   const isActive = isContractStatus(contract.status, 'active');
   const approvalStatus = normalizeApprovalStatus(contract.approval_status);
 
   if (!isDraft && !isActive) return null;
+
+  const submitAllowed = canEdit && canSubmitContractForApproval(contract);
+  const approveAllowed = canApproveLifecycle && canApproveContract(contract);
+  const rejectAllowed = canApproveLifecycle && canRejectContract(contract);
+  const activateAllowed = canApproveLifecycle && canActivateContract(contract);
 
   return (
     <>
@@ -96,9 +98,7 @@ export function ContractApprovalSection({ contract }: Readonly<{ contract: Contr
               {(isContractApprovalPending(contract) || isContractApproved(contract) || isContractRejected(contract)) && (
                 <div className="space-y-1.5 rounded-xl border border-border/60 bg-background px-3 py-2.5 text-xs">
                   {trimSignature(contract.maker_signature) && (
-                    <p>
-                      المُرسِل: <span className="font-bold">{contract.maker_signature}</span> — {formatTimestamp(contract.submitted_at)}
-                    </p>
+                    <p>المُرسِل: <span className="font-bold">{contract.maker_signature}</span> — {formatTimestamp(contract.submitted_at)}</p>
                   )}
                   {trimSignature(contract.checker_signature) && (
                     <p>
@@ -114,44 +114,38 @@ export function ContractApprovalSection({ contract }: Readonly<{ contract: Contr
               )}
 
               <div className="flex flex-wrap gap-2">
-                {canSubmitContractForApproval(contract) && (
+                {submitAllowed ? (
                   <Button variant="secondary" className="min-h-11" onClick={() => setDialogMode('submit')}>
-                    <Send className="me-2 size-4" />
-                    إرسال للاعتماد
+                    <Send className="me-2 size-4" />إرسال للاعتماد
                   </Button>
-                )}
-                {canApproveContract(contract) && (
+                ) : null}
+                {approveAllowed ? (
                   <Button className="min-h-11" onClick={() => setDialogMode('approve')}>
-                    <CheckCircle2 className="me-2 size-4" />
-                    اعتماد
+                    <CheckCircle2 className="me-2 size-4" />اعتماد
                   </Button>
-                )}
-                {canRejectContract(contract) && (
+                ) : null}
+                {rejectAllowed ? (
                   <Button variant="outline" className="min-h-11" onClick={() => setDialogMode('reject')}>
-                    <XCircle className="me-2 size-4" />
-                    رفض
+                    <XCircle className="me-2 size-4" />رفض
                   </Button>
-                )}
-                {canActivateContract(contract) && (
+                ) : null}
+                {activateAllowed ? (
                   <Button className="min-h-11" onClick={() => setDialogMode('activate')}>
-                    <PlayCircle className="me-2 size-4" />
-                    تفعيل العقد
+                    <PlayCircle className="me-2 size-4" />تفعيل العقد
                   </Button>
-                )}
-                {isDraft && !canSubmitContractForApproval(contract) && !canApproveContract(contract) && !canRejectContract(contract) && !canActivateContract(contract) && (
-                  <p className="text-xs text-muted-foreground">لا توجد إجراءات اعتماد متاحة في الحالة الحالية.</p>
-                )}
+                ) : null}
+                {isDraft && !submitAllowed && !approveAllowed && !rejectAllowed && !activateAllowed ? (
+                  <p className="text-xs text-muted-foreground">لا توجد إجراءات اعتماد متاحة لحسابك في الحالة الحالية.</p>
+                ) : null}
               </div>
             </>
           )}
         </CardContent>
       </Card>
 
-      <ContractApprovalDialog
-        contract={contract}
-        mode={dialogMode}
-        onClose={() => setDialogMode(null)}
-      />
+      {(canEdit || canApproveLifecycle) ? (
+        <ContractApprovalDialog contract={contract} mode={dialogMode} onClose={() => setDialogMode(null)} />
+      ) : null}
     </>
   );
 }
@@ -169,11 +163,7 @@ function ContractApprovalDialog({
   const activateMutation = useActivateContract(contract.id);
 
   const isPending = submitMutation.isPending || approveMutation.isPending || rejectMutation.isPending || activateMutation.isPending;
-
-  const reset = () => {
-    setSignature('');
-    setReason('');
-  };
+  const reset = () => { setSignature(''); setReason(''); };
 
   const submit = async () => {
     try {
@@ -189,73 +179,42 @@ function ContractApprovalDialog({
   };
 
   const open = mode !== null;
-  const title =
-    mode === 'submit'
-      ? 'إرسال العقد للاعتماد'
-      : mode === 'approve'
-        ? 'اعتماد العقد'
-        : mode === 'reject'
-          ? 'رفض العقد'
-          : mode === 'activate'
-            ? 'تفعيل العقد'
-            : '';
-
-  const description =
-    mode === 'submit'
-      ? 'سجّل توقيعك كمنشئ الطلب. لا يمكنك اعتماد الطلب الذي أرسلته بنفسك.'
-      : mode === 'approve'
-        ? 'سجّل توقيعك كمُعتمِد. يجب أن تكون شخصاً مختلفاً عن من أرسل الطلب.'
-        : mode === 'reject'
-          ? 'سجّل توقيعك واذكر سبب الرفض. يجب أن تكون شخصاً مختلفاً عن من أرسل الطلب.'
-          : mode === 'activate'
-            ? 'سيتم تفعيل العقد وتجميد لقطة اتفاقية المالك المعتمدة (دور التحصيل ونموذج التشغيل والنسخة).'
-            : '';
+  const title = mode === 'submit' ? 'إرسال العقد للاعتماد' : mode === 'approve' ? 'اعتماد العقد' : mode === 'reject' ? 'رفض العقد' : mode === 'activate' ? 'تفعيل العقد' : '';
+  const description = mode === 'submit'
+    ? 'سجّل توقيعك كمنشئ الطلب. لا يمكنك اعتماد الطلب الذي أرسلته بنفسك.'
+    : mode === 'approve'
+      ? 'سجّل توقيعك كمُعتمِد. يجب أن تكون شخصاً مختلفاً عن من أرسل الطلب.'
+      : mode === 'reject'
+        ? 'سجّل توقيعك واذكر سبب الرفض. يجب أن تكون شخصاً مختلفاً عن من أرسل الطلب.'
+        : mode === 'activate'
+          ? 'سيتم تفعيل العقد وتجميد لقطة اتفاقية المالك المعتمدة (دور التحصيل ونموذج التشغيل والنسخة).'
+          : '';
 
   const submitDisabled =
     isPending ||
-    (mode === 'submit' || mode === 'approve' || mode === 'reject') && signature.trim() === '' ||
+    ((mode === 'submit' || mode === 'approve' || mode === 'reject') && signature.trim() === '') ||
     (mode === 'reject' && reason.trim() === '');
 
   return (
     <EntityForm.Overlay open={open} onOpenChange={(next) => { if (!next) { onClose(); reset(); } }} title={title} description={description} className="max-w-xl">
-      <EntityForm.Root
-        onSubmit={(event) => {
-          event.preventDefault();
-          void submit();
-        }}
-        aria-busy={isPending}
-      >
+      <EntityForm.Root onSubmit={(event) => { event.preventDefault(); void submit(); }} aria-busy={isPending}>
         {(mode === 'submit' || mode === 'approve' || mode === 'reject') && (
           <EntityForm.Field
             label={mode === 'submit' ? 'توقيع المنشئ (إلزامي)' : 'توقيع المُعتمِد (إلزامي)'}
             description={mode === 'approve' ? 'سيُرفض الاعتماد تلقائياً إذا كان المُعتمِد هو نفسه من أرسل الطلب.' : undefined}
           >
-            <Input
-              value={signature}
-              onChange={(event) => setSignature(event.target.value)}
-              placeholder="اكتب اسمك الكامل كتوقيع..."
-              required
-              autoComplete="off"
-            />
+            <Input value={signature} onChange={(event) => setSignature(event.target.value)} placeholder="اكتب اسمك الكامل كتوقيع..." required autoComplete="off" />
           </EntityForm.Field>
         )}
         {mode === 'reject' && (
           <EntityForm.Field label="سبب الرفض (إلزامي)">
-            <Textarea
-              value={reason}
-              onChange={(event) => setReason(event.target.value)}
-              placeholder="اذكر سبب رفض العقد..."
-              required
-            />
+            <Textarea value={reason} onChange={(event) => setReason(event.target.value)} placeholder="اذكر سبب رفض العقد..." required />
           </EntityForm.Field>
         )}
         {mode === 'activate' && (
           <div className="flex items-start gap-3 rounded-xl border border-warning/30 bg-warning-bg/40 px-3 py-2.5 text-sm">
             <ClipboardSignature className="mt-0.5 size-5 shrink-0 text-warning" aria-hidden="true" />
-            <p>
-              التفعيل إجراء نهائي لمرحلة الاعتماد: لا يمكن تعديل البنود التجارية الموقّعة بعد التفعيل؛ أي تغيير لاحق يكون
-              عبر تجديد أو تعديل يخضع لنفس سلسلة الاعتماد.
-            </p>
+            <p>التفعيل إجراء نهائي لمرحلة الاعتماد: لا يمكن تعديل البنود التجارية الموقّعة بعد التفعيل؛ أي تغيير لاحق يكون عبر تجديد أو تعديل يخضع لنفس سلسلة الاعتماد.</p>
           </div>
         )}
         <EntityForm.Actions
@@ -263,9 +222,7 @@ function ContractApprovalDialog({
           isSubmitting={isPending}
           submitDisabled={submitDisabled}
           submitVariant={mode === 'reject' ? 'destructive' : mode === 'activate' ? 'primary' : 'default'}
-          submitLabel={
-            mode === 'submit' ? 'إرسال للاعتماد' : mode === 'approve' ? 'تأكيد الاعتماد' : mode === 'reject' ? 'تأكيد الرفض' : 'تفعيل العقد'
-          }
+          submitLabel={mode === 'submit' ? 'إرسال للاعتماد' : mode === 'approve' ? 'تأكيد الاعتماد' : mode === 'reject' ? 'تأكيد الرفض' : 'تفعيل العقد'}
         />
       </EntityForm.Root>
     </EntityForm.Overlay>

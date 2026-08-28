@@ -1,4 +1,4 @@
-import { BarChart3, FileSpreadsheet, Gauge, ReceiptText } from 'lucide-react';
+import { BarChart3, FileSpreadsheet, FileText, Gauge, ReceiptText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatDate, formatMoney } from '@/features/financials/components/financials-formatters';
 import {
@@ -6,6 +6,7 @@ import {
   useFinancialCashflowReport,
   useFinancialPeriodSummaryReport,
 } from '@/features/financials/reports/useFinancialReports';
+import { csvRowsToXlsxBlob, downloadBlob, xlsxFilenameFromCsv } from '@/lib/tabular-export';
 import { buildExecutiveHealthInsights } from '../reports-insights';
 import { buildReportCsvFilename, createReceiptPrintHref, downloadCsv, toFinancialSummaryCsv } from '../reports-page.helpers';
 import { ReportBarChart, type ReportBarSeries } from './charts/report-bar-chart';
@@ -88,6 +89,8 @@ export function OverviewSection({
   });
   const collectionInsight = insights[0];
   const expenseInsight = insights[1];
+  const financialSummaryRows = toFinancialSummaryCsv(report);
+  const financialSummaryCsvFilename = buildReportCsvFilename('financial-summary');
 
   return (
     <div className="grid gap-4 lg:grid-cols-12">
@@ -98,16 +101,28 @@ export function OverviewSection({
         icon={BarChart3}
         className="lg:col-span-7"
         action={canExportReports ? (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="min-h-11 shrink-0 gap-2 text-xs"
-            onClick={() => downloadCsv(buildReportCsvFilename('financial-summary'), toFinancialSummaryCsv(report))}
-          >
-            <FileSpreadsheet className="size-4" aria-hidden="true" />
-            CSV
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              className="min-h-11 shrink-0 gap-2 text-xs"
+              onClick={() => downloadBlob(csvRowsToXlsxBlob(financialSummaryRows, 'الملخص المالي'), xlsxFilenameFromCsv(financialSummaryCsvFilename))}
+            >
+              <FileSpreadsheet className="size-4" aria-hidden="true" />
+              Excel
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="min-h-11 shrink-0 gap-2 text-xs"
+              onClick={() => downloadCsv(financialSummaryCsvFilename, financialSummaryRows)}
+            >
+              <FileText className="size-4" aria-hidden="true" />
+              CSV
+            </Button>
+          </div>
         ) : undefined}
         isLoading={isLoading}
       >

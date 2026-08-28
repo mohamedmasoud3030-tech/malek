@@ -15,6 +15,7 @@ import { EntityCell } from "@/components/ui/entity-cell";
 import { EntityTable, type ColumnDef } from "@/components/ui/entity-table";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { formatMoney } from "@/hooks/useCompanyFormatters";
+import { useAuth } from "@/hooks/use-auth";
 import type { Unit } from "@/types/domain";
 import { unitStatusLabels } from "./unit-schema";
 import { UnitFormModal } from "./unit-form-modal";
@@ -42,34 +43,46 @@ export function UnitsList({
   propertyId,
   unitsQuery,
 }: Readonly<{ propertyId: string; unitsQuery: UseQueryResult<Unit[]> }>) {
+  const { canAccess } = useAuth();
+  const canCreateUnit = canAccess("properties.create");
+  const canEditUnit = canAccess("properties.edit");
+  const canArchiveUnit = canAccess("properties.archive");
+  const canViewContracts = canAccess("contracts.view");
+  const canCreateContract = canAccess("contracts.create");
   const deleteMutation = useSoftDeleteUnit(propertyId);
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
   const [archiveCandidate, setArchiveCandidate] = useState<Unit | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultUnitColumns]);
   const navigate = useNavigate();
-  const unitDraftsQuery = useUnitContractDrafts({ propertyId, unitIds: unitsQuery.data?.map((unit) => unit.id) ?? [] });
+  const unitDraftsQuery = useUnitContractDrafts({
+    propertyId,
+    unitIds: canViewContracts ? unitsQuery.data?.map((unit) => unit.id) ?? [] : [],
+  });
   const unitDraftsByUnitId = new Map<string, string>();
   for (const draft of unitDraftsQuery.data ?? []) {
     if (draft.unit_id && !unitDraftsByUnitId.has(draft.unit_id)) unitDraftsByUnitId.set(draft.unit_id, draft.id);
   }
 
   const openForCreate = () => {
+    if (!canCreateUnit) return;
     setEditingUnit(null);
     setModalOpen(true);
   };
   const openForEdit = (unit: Unit) => {
+    if (!canEditUnit) return;
     setEditingUnit(unit);
     setModalOpen(true);
   };
   const startLeasing = (unit: Unit) => {
+    if (!canCreateContract) return;
     void navigate({
       to: "/contracts/new",
       search: { propertyId, unitId: unit.id },
     });
   };
   const confirmArchive = async () => {
-    if (!archiveCandidate || deleteMutation.isPending) return;
+    if (!canArchiveUnit || !archiveCandidate || deleteMutation.isPending) return;
     try {
       await deleteMutation.mutateAsync(archiveCandidate.id);
       setArchiveCandidate(null);
@@ -100,7 +113,7 @@ export function UnitsList({
           <StatusBadge tone={unitStatusTone[unit.status]}>
             {unitStatusLabels[unit.status]}
           </StatusBadge>
-          {unitDraftsByUnitId.has(unit.id) ? <StatusBadge tone="warning">مسودة عقد قيد الإعداد</StatusBadge> : null}
+          {canViewContracts && unitDraftsByUnitId.has(unit.id) ? <StatusBadge tone="warning">مسودة عقد قيد الإعداد</StatusBadge> : null}
         </span>
       ),
     },
@@ -130,7 +143,7 @@ export function UnitsList({
           onClick={(e) => e.stopPropagation()}
           onKeyDown={(e) => e.stopPropagation()}
         >
-          {unitDraftsByUnitId.has(unit.id) ? (
+          {canViewContracts && unitDraftsByUnitId.has(unit.id) ? (
             <Button
               variant="secondary"
               className="min-h-11 px-3"
@@ -140,7 +153,7 @@ export function UnitsList({
               <FilePlus2 className="me-1 size-4" aria-hidden="true" />
               مراجعة المسودة
             </Button>
-          ) : unit.status === "available" ? (
+          ) : unit.status === "available" && canCreateContract ? (
             <Button
               className="min-h-11 px-3"
               aria-label={`بدء تأجير وحدة ${unit.unit_number}`}
@@ -150,23 +163,27 @@ export function UnitsList({
               تأجير
             </Button>
           ) : null}
-          <Button
-            variant="secondary"
-            className="min-h-11 px-3"
-            aria-label={`تعديل وحدة ${unit.unit_number}`}
-            onClick={() => openForEdit(unit)}
-          >
-            <Edit className="size-4" />
-          </Button>
-          <Button
-            variant="danger"
-            className="min-h-11 px-3"
-            aria-label={`أرشفة وحدة ${unit.unit_number}`}
-            onClick={() => setArchiveCandidate(unit)}
-            disabled={deleteMutation.isPending}
-          >
-            <Archive className="size-4" />
-          </Button>
+          {canEditUnit ? (
+            <Button
+              variant="secondary"
+              className="min-h-11 px-3"
+              aria-label={`تعديل وحدة ${unit.unit_number}`}
+              onClick={() => openForEdit(unit)}
+            >
+              <Edit className="size-4" />
+            </Button>
+          ) : null}
+          {canArchiveUnit ? (
+            <Button
+              variant="danger"
+              className="min-h-11 px-3"
+              aria-label={`أرشفة وحدة ${unit.unit_number}`}
+              onClick={() => setArchiveCandidate(unit)}
+              disabled={deleteMutation.isPending}
+            >
+              <Archive className="size-4" />
+            </Button>
+          ) : null}
         </div>
       ),
     },
@@ -185,7 +202,7 @@ export function UnitsList({
             visibleKeys={visibleColumnKeys}
             onChange={setVisibleColumnKeys}
           />
-          {!unitsQuery.isError ? (
+          {!unitsQuery.isError && canCreateUnit ? (
             <Button onClick={openForCreate}>
               <Plus className="me-2 size-4" />
               إضافة وحدة
@@ -206,8 +223,8 @@ export function UnitsList({
           errorTitle="تعذر تحميل وحدات العقار"
           onRetry={() => unitsQuery.refetch()}
           emptyTitle="لا توجد وحدات"
-          emptyDescription="أضف الوحدات التابعة لهذا العقار من هنا."
-          emptyAction={<Button onClick={openForCreate}>إضافة وحدة</Button>}
+          emptyDescription="لا توجد وحدات تابعة لهذا العقار حتى الآن."
+          emptyAction={canCreateUnit ? <Button onClick={openForCreate}>إضافة وحدة</Button> : undefined}
           onRowClick={(unit) =>
             navigate({
               to: "/properties/$propertyId/units/$unitId",
@@ -218,7 +235,7 @@ export function UnitsList({
           mobileSummaryKeys={["rent_amount", "notes"]}
           mobileCardActions={(unit) => {
             const actions: Array<{ label: string; icon: typeof Edit; variant: "secondary" | "danger"; ariaLabel: string; onClick: () => void }> = [];
-            if (unitDraftsByUnitId.has(unit.id)) {
+            if (canViewContracts && unitDraftsByUnitId.has(unit.id)) {
               actions.push({
                 label: "مراجعة المسودة",
                 icon: FilePlus2,
@@ -226,7 +243,7 @@ export function UnitsList({
                 ariaLabel: `مراجعة مسودة عقد وحدة ${unit.unit_number}`,
                 onClick: () => void navigate({ to: "/contracts/$contractId", params: { contractId: unitDraftsByUnitId.get(unit.id)! } }),
               });
-            } else if (unit.status === "available") {
+            } else if (unit.status === "available" && canCreateContract) {
               actions.push({
                 label: "تأجير",
                 icon: FilePlus2,
@@ -235,47 +252,55 @@ export function UnitsList({
                 onClick: () => startLeasing(unit),
               });
             }
-            actions.push({
-              label: "تعديل",
-              icon: Edit,
-              variant: "secondary",
-              ariaLabel: `تعديل وحدة ${unit.unit_number}`,
-              onClick: () => openForEdit(unit),
-            });
-            actions.push({
-              label: "أرشفة",
-              icon: Archive,
-              variant: "danger",
-              ariaLabel: `أرشفة وحدة ${unit.unit_number}`,
-              onClick: () => setArchiveCandidate(unit),
-            });
+            if (canEditUnit) {
+              actions.push({
+                label: "تعديل",
+                icon: Edit,
+                variant: "secondary",
+                ariaLabel: `تعديل وحدة ${unit.unit_number}`,
+                onClick: () => openForEdit(unit),
+              });
+            }
+            if (canArchiveUnit) {
+              actions.push({
+                label: "أرشفة",
+                icon: Archive,
+                variant: "danger",
+                ariaLabel: `أرشفة وحدة ${unit.unit_number}`,
+                onClick: () => setArchiveCandidate(unit),
+              });
+            }
             return actions;
           }}
         />
       </div>
 
-      <UnitFormModal
-        propertyId={propertyId}
-        unit={editingUnit}
-        open={modalOpen}
-        onOpenChange={setModalOpen}
-      />
-      <ConfirmDialog
-        open={Boolean(archiveCandidate)}
-        onOpenChange={(open) => {
-          if (!open && !deleteMutation.isPending) setArchiveCandidate(null);
-        }}
-        title={`أرشفة الوحدة ${archiveCandidate?.unit_number ?? ""}؟`}
-        description={`سيتم أرشفة الوحدة "${archiveCandidate?.unit_number ?? ''}" — ستبقى البيانات محفوظة كسجل أرشيفي ولن تظهر ضمن الوحدات النشطة.`}
-        confirmLabel="تأكيد الأرشفة"
-        isLoading={deleteMutation.isPending}
-        onConfirm={confirmArchive}
-      >
-        <ul className="mt-3 space-y-1.5 border-t border-border/50 pt-3 text-xs leading-5 text-muted-foreground">
-          <li className="flex gap-1.5"><span className="mt-1.5 size-1 shrink-0 rounded-full bg-muted-foreground/40" aria-hidden="true" />لا يمكن أرشفة وحدة مرتبطة بعقد محفوظ؛ يجب الحفاظ على الوحدة للسجل والتقارير.</li>
-          <li className="flex gap-1.5"><span className="mt-1.5 size-1 shrink-0 rounded-full bg-muted-foreground/40" aria-hidden="true" />لا يمكن الأرشفة مع طلب صيانة مفتوح أو قيد التنفيذ.</li>
-        </ul>
-      </ConfirmDialog>
+      {canCreateUnit || canEditUnit ? (
+        <UnitFormModal
+          propertyId={propertyId}
+          unit={editingUnit}
+          open={modalOpen}
+          onOpenChange={setModalOpen}
+        />
+      ) : null}
+      {canArchiveUnit ? (
+        <ConfirmDialog
+          open={Boolean(archiveCandidate)}
+          onOpenChange={(open) => {
+            if (!open && !deleteMutation.isPending) setArchiveCandidate(null);
+          }}
+          title={`أرشفة الوحدة ${archiveCandidate?.unit_number ?? ""}؟`}
+          description={`سيتم أرشفة الوحدة "${archiveCandidate?.unit_number ?? ''}" — ستبقى البيانات محفوظة كسجل أرشيفي ولن تظهر ضمن الوحدات النشطة.`}
+          confirmLabel="تأكيد الأرشفة"
+          isLoading={deleteMutation.isPending}
+          onConfirm={confirmArchive}
+        >
+          <ul className="mt-3 space-y-1.5 border-t border-border/50 pt-3 text-xs leading-5 text-muted-foreground">
+            <li className="flex gap-1.5"><span className="mt-1.5 size-1 shrink-0 rounded-full bg-muted-foreground/40" aria-hidden="true" />لا يمكن أرشفة وحدة مرتبطة بعقد محفوظ؛ يجب الحفاظ على الوحدة للسجل والتقارير.</li>
+            <li className="flex gap-1.5"><span className="mt-1.5 size-1 shrink-0 rounded-full bg-muted-foreground/40" aria-hidden="true" />لا يمكن الأرشفة مع طلب صيانة مفتوح أو قيد التنفيذ.</li>
+          </ul>
+        </ConfirmDialog>
+      ) : null}
     </Card>
   );
 }
