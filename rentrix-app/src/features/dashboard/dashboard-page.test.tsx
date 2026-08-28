@@ -155,16 +155,12 @@ describe('Dashboard command center query boundary tests', () => {
     expect(container?.querySelectorAll('[data-dashboard-section]').length).toBeGreaterThanOrEqual(5);
   });
 
-  it('keeps an explicit refresh action wired through the canonical PageHeader', async () => {
+  it('keeps routine refresh chrome out of the dashboard header', async () => {
     (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
     await renderPage();
 
-    const refresh = container?.querySelector<HTMLButtonElement>('[data-page-primary-action] button');
-    expect(refresh).not.toBeNull();
-    expect(refresh?.textContent).toContain('تحديث');
-    expect(refresh?.className).toContain('min-h-11');
-    await act(async () => refresh?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
-    expect((getDashboardSnapshot as any).mock.calls.length).toBeGreaterThanOrEqual(2);
+    expect(container?.querySelector('[data-page-primary-action]')).toBeNull();
+    expect(container?.textContent).not.toContain('تحديث');
   });
 
   it('keeps the product-locked six-section priority order', async () => {
