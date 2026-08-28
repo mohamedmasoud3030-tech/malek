@@ -44,6 +44,7 @@ describe('granular Employee server write boundaries', () => {
     expect(boundaryMigration).toContain('UNIT_ARCHIVE_CONTRACT_HISTORY');
     expect(boundaryMigration).toContain('UNIT_ARCHIVE_OPEN_MAINTENANCE');
     expect(boundaryMigration).toContain('create or replace function app_private.guard_property_unit_granular_update()');
+    expect(boundaryMigration).not.toContain('create or replace function public.guard_property_unit_granular_update()');
     expect(boundaryMigration).toContain('security definer');
   });
 
