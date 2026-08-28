@@ -6,13 +6,6 @@
 -- Authority remains explicit: contract edit + invoice generation are both
 -- required because extending the stay changes a signed commercial term and
 -- creates a financial obligation.
---
--- ALLOW_GOVERNED_DATA_MIGRATION
--- Governance note: every transactional INSERT token in this migration is inside
--- the SECURITY DEFINER extend_short_stay_contract_atomic RPC body. The migration
--- performs no raw business-data INSERT/backfill at migration time. Runtime writes
--- remain company-scoped, permission-gated, idempotent, period-checked, journaled,
--- and auditable through this atomic command boundary.
 
 begin;
 
