@@ -2,10 +2,9 @@
 -- and make private permission/portal tables explicitly deny browser access.
 --
 -- Fixes:
--- * OPERATIONS historically included properties.write/contracts.write/expenses.write/documents.write
---   which made RLS allow property/contract creation while frontend denied it.
---   Remove those broad writes so OPERATIONS matches the frontend's
---   view-only portfolio/leasing posture and only retains maintenance authority.
+-- * Preserve the P6/P51 compatibility contract for OPERATIONS: historical
+--   properties.write/contracts.write remain fallback inputs until the office owner
+--   makes an explicit granular decision. Exact granular owner overrides still win.
 -- * MANAGER and OPERATIONS now explicitly include granular create/edit/archive/approve/cancel
 --   so role_has_app_permission itself supports granular checks, not only via
 --   parent fallback in current_user_has_effective_app_permission().
@@ -19,10 +18,9 @@
 begin;
 
 -- ---------------------------------------------------------------------------
--- Six-role matrix alignment: OPERATIONS must not retain portfolio/leasing
--- broad writes that frontend denies. MANAGER and OPERATIONS gain explicit
--- granular action permissions so UI/RPC/RLS match without relying solely on
--- parent fallback.
+-- Six-role matrix alignment: keep historical OPERATIONS portfolio/leasing
+-- broad writes as compatibility parents. Granular owner decisions remain the
+-- authoritative way to refine those defaults action by action.
 -- ---------------------------------------------------------------------------
 create or replace function public.role_has_app_permission(p_role text, p_permission text)
 returns boolean
@@ -62,8 +60,8 @@ as $function$
     when 'OPERATIONS' then
       p_permission = any(array[
         'app.dashboard.view',
-        'properties.view',
-        'contracts.view',
+        'properties.view','properties.write',
+        'contracts.view','contracts.write',
         'maintenance.view','maintenance.create','maintenance.edit','maintenance.approve','maintenance.cancel','maintenance.write',
         'financial.workspace.view',
         'service_providers.view','service_providers.write',
