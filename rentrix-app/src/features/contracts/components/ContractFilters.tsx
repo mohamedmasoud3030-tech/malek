@@ -14,7 +14,7 @@ const filterLabels: Record<ContractStatusFilter, string> = {
   terminated: 'ملغي',
 };
 
-const leaseModeOptions: ReadonlyArray<{ value: LeaseModeFilter; label: string }> = [
+const leaseModeOptions: { value: LeaseModeFilter; label: string }[] = [
   { value: 'all', label: 'كل الإيجارات' },
   { value: 'long_term', label: 'طويل' },
   { value: 'short_stay', label: 'إقامة قصيرة' },
