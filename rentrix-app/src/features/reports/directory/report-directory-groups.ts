@@ -4,7 +4,6 @@ import {
   Building2,
   FileText,
   Receipt,
-  ShieldCheck,
   UsersRound,
   Wrench,
 } from 'lucide-react';
@@ -19,13 +18,12 @@ export type ReportShortcut = Readonly<{
 }>;
 
 export type ReportGroupId =
-  | 'finance'
+  | 'office'
+  | 'collections'
   | 'leases'
   | 'maintenance'
   | 'owners'
-  | 'properties'
-  | 'analytics'
-  | 'control';
+  | 'properties';
 
 export type ReportGroup = Readonly<{
   id: ReportGroupId;
@@ -38,96 +36,88 @@ export type ReportGroup = Readonly<{
   shortcuts: readonly ReportShortcut[];
 }>;
 
+/**
+ * Owner-facing report library. It is deliberately organised by the decision
+ * the office wants to make, not by the accounting/analytics adapter that
+ * serves the report underneath.
+ */
 export const reportGroups: readonly ReportGroup[] = [
   {
-    id: 'finance',
-    title: 'المالية والتحصيل',
-    description: 'التحصيل، المتأخرات، المصروفات والأرصدة والقوائم المالية.',
-    icon: Receipt,
-    section: 'analytics',
-    view: 'collections',
-    matches: ['collections', 'overdue', 'expenses'],
-    shortcuts: [
-      { label: 'كشف التحصيل', description: 'الإيجارات المحصلة والمتبقية خلال الفترة.', section: 'analytics', view: 'collections' },
-      { label: 'المتأخرات والأرصدة', description: 'تعتيق الذمم والمبالغ المتأخرة والمدد.', section: 'analytics', view: 'overdue' },
-      { label: 'المصروفات', description: 'المصروفات حسب الفترة والتصنيف والنطاق.', section: 'analytics', view: 'expenses' },
-      { label: 'القوائم المحاسبية', description: 'ميزان المراجعة والقوائم من المصدر المحاسبي المعتمد.', section: 'accounting', view: 'accounting_reports' },
-    ],
-  },
-  {
-    id: 'leases',
-    title: 'التأجير والإشغال',
-    description: 'العقود النشطة والمنتهية قريبًا والشواغر ونسب الإشغال.',
-    icon: FileText,
-    section: 'analytics',
-    view: 'occupancy',
-    matches: ['occupancy'],
-    shortcuts: [
-      { label: 'انتهاء العقود والتجديد', description: 'متابعة العقود ضمن نوافذ 30/60/90 يوم.', section: 'analytics', view: 'occupancy' },
-      { label: 'الشواغر والإشغال', description: 'الوحدات المشغولة والشاغرة ونسبة الإشغال.', section: 'analytics', view: 'occupancy' },
-    ],
-  },
-  {
-    id: 'maintenance',
-    title: 'الصيانة والمرافق',
-    description: 'حجم طلبات الصيانة وتكلفتها وأداء الإغلاق حسب العقار والوحدة.',
-    icon: Wrench,
-    section: 'analytics',
-    view: 'maintenance_analytics',
-    matches: ['maintenance_analytics'],
-    shortcuts: [
-      { label: 'تقرير الصيانة', description: 'الطلبات والحالات والأولويات والتكلفة حسب النطاق.', section: 'analytics', view: 'maintenance_analytics' },
-    ],
-  },
-  {
-    id: 'owners',
-    title: 'تقارير الملاك',
-    description: 'كشف حساب المالك والحركة والاستقطاعات وصافي المستحق.',
-    icon: UsersRound,
-    section: 'statements',
-    view: '',
-    matches: [],
-    shortcuts: [
-      { label: 'كشف حساب المالك', description: 'حركة المالك للفترة مع المستحقات والاستقطاعات والرصيد.', section: 'statements', view: '' },
-      { label: 'كشف حساب المستأجر', description: 'الفواتير والمدفوعات والرصيد والحركة المرتبطة بالعقد.', section: 'statements', view: '' },
-    ],
-  },
-  {
-    id: 'properties',
-    title: 'العقارات والوحدات',
-    description: 'أداء كل عقار ووحداته والإشغال والتحصيل والمصروفات والصيانة.',
-    icon: Building2,
-    section: 'analytics',
-    view: 'property_analytics',
-    matches: ['property_analytics'],
-    shortcuts: [
-      { label: 'تقرير أداء العقار', description: 'ملخص تشغيلي ومالي للعقار المحدد.', section: 'analytics', view: 'property_analytics' },
-      { label: 'الإشغال حسب العقار', description: 'نسب الإشغال والشواغر على مستوى العقار.', section: 'analytics', view: 'occupancy' },
-    ],
-  },
-  {
-    id: 'analytics',
-    title: 'التحليلات المتقدمة',
-    description: 'صورة أداء مجمعة واتجاهات التحصيل والإشغال والمصروفات.',
+    id: 'office',
+    title: 'أداء المكتب',
+    description: 'خلاصة مفهومة لأهم ما تغيّر في التحصيل والإشغال والمصروفات خلال الفترة.',
     icon: BarChart3,
     section: 'analytics',
     view: 'overview',
     matches: ['overview'],
     shortcuts: [
-      { label: 'نظرة عامة على الأداء', description: 'أهم مؤشرات الأداء خلال الفترة المحددة.', section: 'analytics', view: 'overview' },
+      { label: 'أداء المكتب', description: 'أهم مؤشرات الفترة واتجاهاتها بدون دفاتر أو قيود خام.', section: 'analytics', view: 'overview' },
     ],
   },
   {
-    id: 'control',
-    title: 'الرقابة والمطابقة',
-    description: 'دفتر الأستاذ، التسويات والرقابة على الأرصدة والحركة المحاسبية.',
-    icon: ShieldCheck,
-    section: 'accounting',
-    view: 'general_ledger',
-    matches: ['accounting_reports', 'general_ledger', 'deferred_revenue'],
+    id: 'collections',
+    title: 'التحصيل والمتأخرات',
+    description: 'ما تم تحصيله، وما بقي مستحقًا، وأين تتركز المتأخرات.',
+    icon: Receipt,
+    section: 'analytics',
+    view: 'collections',
+    matches: ['collections', 'overdue', 'expenses'],
     shortcuts: [
-      { label: 'دفتر الأستاذ', description: 'الحركة المحاسبية التفصيلية حسب الحساب والفترة.', section: 'accounting', view: 'general_ledger' },
-      { label: 'تسوية الإيرادات', description: 'مراجعة الإيرادات المؤجلة وتسويتها.', section: 'accounting', view: 'deferred_revenue' },
+      { label: 'التحصيل', description: 'الإيجارات المحصلة والمتبقية خلال الفترة.', section: 'analytics', view: 'collections' },
+      { label: 'المتأخرات', description: 'المبالغ المتأخرة ومدد التأخير والحالات التي تحتاج متابعة.', section: 'analytics', view: 'overdue' },
+      { label: 'المصروفات', description: 'المصروفات حسب الفترة والتصنيف والنطاق.', section: 'analytics', view: 'expenses' },
+    ],
+  },
+  {
+    id: 'leases',
+    title: 'العقود والإشغال والشغور',
+    description: 'العقود القريبة من الانتهاء والوحدات المشغولة والشاغرة ونسب الإشغال.',
+    icon: FileText,
+    section: 'analytics',
+    view: 'occupancy',
+    matches: ['occupancy'],
+    shortcuts: [
+      { label: 'العقود والتجديدات', description: 'العقود التي تقترب من الانتهاء وتحتاج قرار تجديد.', section: 'analytics', view: 'occupancy' },
+      { label: 'الإشغال والشغور', description: 'الوحدات المشغولة والشاغرة ونسبة الإشغال.', section: 'analytics', view: 'occupancy' },
+    ],
+  },
+  {
+    id: 'maintenance',
+    title: 'المصروفات والصيانة',
+    description: 'طلبات الصيانة وحالاتها وتكلفتها وأداء الإغلاق حسب العقار والوحدة.',
+    icon: Wrench,
+    section: 'analytics',
+    view: 'maintenance_analytics',
+    matches: ['maintenance_analytics'],
+    shortcuts: [
+      { label: 'الصيانة', description: 'الطلبات والحالات والأولويات والتكلفة حسب النطاق.', section: 'analytics', view: 'maintenance_analytics' },
+      { label: 'مصروفات التشغيل', description: 'المصروفات المرتبطة بالتشغيل خلال الفترة.', section: 'analytics', view: 'expenses' },
+    ],
+  },
+  {
+    id: 'owners',
+    title: 'الملاك والمستأجرون',
+    description: 'كشوف واضحة للحركة والرصيد والاستقطاعات والمدفوعات لكل طرف.',
+    icon: UsersRound,
+    section: 'statements',
+    view: '',
+    matches: [],
+    shortcuts: [
+      { label: 'كشف المالك', description: 'حركة المالك للفترة مع المستحقات والاستقطاعات والرصيد.', section: 'statements', view: '' },
+      { label: 'كشف المستأجر', description: 'الفواتير والمدفوعات والرصيد والحركة المرتبطة بالعقد.', section: 'statements', view: '' },
+    ],
+  },
+  {
+    id: 'properties',
+    title: 'العقارات والوحدات',
+    description: 'أداء العقار والوحدات من ناحية الإشغال والتحصيل والمصروفات والصيانة.',
+    icon: Building2,
+    section: 'analytics',
+    view: 'property_analytics',
+    matches: ['property_analytics'],
+    shortcuts: [
+      { label: 'أداء العقار', description: 'ملخص تشغيلي ومالي للعقار المحدد.', section: 'analytics', view: 'property_analytics' },
+      { label: 'الإشغال حسب العقار', description: 'نسب الإشغال والشواغر على مستوى العقار ووحداته.', section: 'analytics', view: 'occupancy' },
     ],
   },
 ];
