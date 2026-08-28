@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { DataTableColumnsMenu } from "@/components/ui/data-table";
 import { EntityTable, type ColumnDef } from "@/components/ui/entity-table";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { useAuth } from "@/hooks/use-auth";
 import type { Property, Unit } from "@/types/domain";
 import type { ServiceProviderOption } from "@/features/service-providers/service-provider-service";
 import type { Maintenance } from "../maintenance-service";
@@ -46,13 +47,6 @@ export const maintenancePriorityTone = {
   urgent: "danger",
 } as const;
 
-const priorityAccent = {
-  low: "none",
-  medium: "none",
-  high: "warning",
-  urgent: "danger",
-} as const satisfies Record<string, "none" | "warning" | "danger">;
-
 const maintenanceColumnOptions = [
   { key: "title", label: "العنوان", locked: true },
   { key: "location", label: "الموقع" },
@@ -77,7 +71,6 @@ export type MaintenanceListProps = Readonly<{
     row: Maintenance,
     status: Exclude<MaintenanceStatusFilter, "all">,
   ) => void;
-  /** Operational attention derived by the page controller, keyed by request id. */
   attentionByRequestId?: ReadonlyMap<string, MaintenanceAttention>;
 }>;
 
@@ -93,10 +86,18 @@ export function MaintenanceList(props: MaintenanceListProps) {
     onStatusAction,
     attentionByRequestId,
   } = props;
+  const { canAccess } = useAuth();
+  const canEdit = canAccess("maintenance.edit");
+  const canResolve = canAccess("maintenance.resolve");
+  const canCancel = canAccess("maintenance.cancel");
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultMaintenanceColumns]);
 
-  // Mobile register: title (identity) + status (work queue datum) + actions.
-  // Priority/location stay optional wider comparison fields.
+  const canRunStatusAction = (status: Exclude<MaintenanceStatusFilter, "all">) => {
+    if (status === "cancelled") return canCancel;
+    if (status === "resolved" || status === "closed") return canResolve;
+    return canEdit;
+  };
+
   const columns: ColumnDef<Maintenance>[] = [
     {
       key: "title",
@@ -124,9 +125,7 @@ export function MaintenanceList(props: MaintenanceListProps) {
       priority: "primary",
       render: (row) => (
         <StatusBadge
-          tone={
-            maintenanceStatusTone[row.status as keyof typeof maintenanceStatusTone] ?? "neutral"
-          }
+          tone={maintenanceStatusTone[row.status as keyof typeof maintenanceStatusTone] ?? "neutral"}
         >
           {maintenanceStatusLabels[row.status as keyof typeof maintenanceStatusLabels]
             ?? row.status
@@ -140,7 +139,6 @@ export function MaintenanceList(props: MaintenanceListProps) {
       priority: "secondary",
       render: (row) => {
         const attention = attentionByRequestId?.get(row.id);
-        // A request reported today with nothing to chase adds no noise here.
         const showAge = attention !== undefined && attention.ageDays !== null && attention.ageDays > 0;
         if (!attention || (attention.flags.length === 0 && !showAge)) {
           return <span className="text-xs text-muted-foreground">—</span>;
@@ -165,10 +163,7 @@ export function MaintenanceList(props: MaintenanceListProps) {
       priority: "secondary",
       render: (row) => (
         <StatusBadge
-          tone={
-            maintenancePriorityTone[row.priority as keyof typeof maintenancePriorityTone]
-            ?? "neutral"
-          }
+          tone={maintenancePriorityTone[row.priority as keyof typeof maintenancePriorityTone] ?? "neutral"}
         >
           {maintenancePriorityLabels[row.priority as keyof typeof maintenancePriorityLabels]
             ?? row.priority
@@ -181,43 +176,56 @@ export function MaintenanceList(props: MaintenanceListProps) {
       header: "الإجراء",
       priority: "actions",
       render: (row) => {
-        const actions = getMaintenanceStatusActions(
+        const availableStatusActions = getMaintenanceStatusActions(
           (row.status ?? "") as keyof typeof maintenanceStatusLabels,
         );
-        return actions.length === 0 ? (
-          <span className="flex items-center gap-1 text-xs text-muted-foreground">
-            <CheckCircle2 className="size-3.5" aria-hidden="true" />
-            مكتمل
-          </span>
-        ) : (
+        const allowedStatusActions = availableStatusActions.filter((action) => canRunStatusAction(action.status));
+        const menuItems = [
+          {
+            id: "details",
+            label: "التفاصيل",
+            icon: Eye,
+            onClick: () => onViewDetails(row),
+          },
+          ...(canEdit ? [{
+            id: "edit",
+            label: "تعديل",
+            icon: Edit,
+            onClick: () => onEdit(row),
+          }] : []),
+          ...allowedStatusActions.map((action) => ({
+            id: String(action.status),
+            label: action.label,
+            onClick: () => onStatusAction(row, action.status),
+            disabled: actionsPending,
+          })),
+        ];
+
+        if (menuItems.length === 1 && availableStatusActions.length === 0 && !canEdit) {
+          return (
+            <Button type="button" variant="ghost" size="sm" onClick={() => onViewDetails(row)}>
+              <Eye className="me-1 size-4" />
+              التفاصيل
+            </Button>
+          );
+        }
+
+        if (availableStatusActions.length === 0 && !canEdit) {
+          return (
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+              <CheckCircle2 className="size-3.5" aria-hidden="true" />
+              مكتمل
+            </span>
+          );
+        }
+
+        return (
           <div
             className="flex"
             onClick={(event) => event.stopPropagation()}
             onKeyDown={(event) => event.stopPropagation()}
           >
-            <ActionMenu
-              label="تحديث الطلب"
-              items={[
-                {
-                  id: "details",
-                  label: "التفاصيل",
-                  icon: Eye,
-                  onClick: () => onViewDetails(row),
-                },
-                {
-                  id: "edit",
-                  label: "تعديل",
-                  icon: Edit,
-                  onClick: () => onEdit(row),
-                },
-                ...actions.map((action) => ({
-                  id: String(action.status),
-                  label: action.label,
-                  onClick: () => onStatusAction(row, action.status),
-                  disabled: actionsPending,
-                })),
-              ]}
-            />
+            <ActionMenu label="إجراءات الطلب" items={menuItems} />
           </div>
         );
       },
