@@ -45,6 +45,18 @@ describe('shared entity form composition', () => {
     expect(html).toContain('رقم العقد مطلوب');
   });
 
+  it('groups form sections with separators instead of stacked mini-cards', () => {
+    const html = renderToStaticMarkup(createElement(
+      EntityForm.Section,
+      { title: 'بيانات العقد', children: createElement('span', null, 'المحتوى') },
+    ));
+
+    expect(html).toContain('data-entity-form-section');
+    expect(html).toContain('border-b');
+    expect(html).not.toContain('rounded-xl');
+    expect(html).not.toContain('bg-muted/10');
+  });
+
   it('keeps the primary save action inside a compact sticky mobile action bar', () => {
     const html = renderToStaticMarkup(createElement(EntityForm.Actions, {
       submitLabel: 'حفظ الوحدة',
