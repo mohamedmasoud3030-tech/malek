@@ -37,11 +37,12 @@ describe('Owner Portal read-only boundary', () => {
     expect(OWNER_PORTAL_SECTIONS).toEqual(['summary', 'portfolio', 'settlements', 'maintenance', 'documents']);
   });
 
-  it('uses canonical vault metadata without exposing private storage coordinates', () => {
+  it('uses canonical vault metadata and keeps the legacy projection private', () => {
     const source = readFileSync(portalProjectionMigration, 'utf8');
     expect(source).toContain('from public.vault_documents vd');
     expect(source).not.toMatch(/jsonb_build_object\([\s\S]*?['"]storage(Path|_path|Url|_url)['"]/i);
-    expect(source).toContain('revoke all on function public.get_owner_portal_snapshot_legacy(uuid)');
+    expect(source).toContain('set schema app_private');
+    expect(source).toContain('revoke all on function app_private.get_owner_portal_snapshot_legacy(uuid)');
   });
 
   it('does not count paid settlements as currently payable', () => {
