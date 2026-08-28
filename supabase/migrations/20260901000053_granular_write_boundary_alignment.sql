@@ -45,7 +45,7 @@ begin
       v_name, v_table
     );
 
-    v_name := 'p53_' || v_table || '_no_hard_delete';
+    v_name := v_table || '_no_hard_delete';
     execute format('drop policy if exists %I on public.%I', v_name, v_table);
     execute format(
       'create policy %I on public.%I as restrictive for delete to authenticated using (false)',
@@ -169,7 +169,7 @@ $property_unit_triggers$;
 
 -- ---------------------------------------------------------------------------
 -- Contracts: the application contract already requires every write to use an
--- atomic SECURITY DEFININER command. A restrictive false policy makes that true
+-- atomic SECURITY DEFINER command. A restrictive false policy makes that true
 -- at the database boundary as well; table-owner SECURITY DEFINER commands
 -- bypass RLS, ordinary authenticated PostgREST writes do not.
 -- ---------------------------------------------------------------------------
@@ -181,7 +181,7 @@ declare
 begin
   if to_regclass('public.contracts') is not null then
     foreach v_action in array array['insert','update','delete'] loop
-      v_name := 'p53_contracts_rpc_only_' || v_action;
+      v_name := 'contracts_rpc_only_' || v_action;
       execute format('drop policy if exists %I on public.contracts', v_name);
       if v_action = 'insert' then
         execute format(
@@ -216,14 +216,14 @@ declare
   v_name text;
 begin
   if to_regclass('public.maintenance_records') is not null then
-    v_name := 'p53_maintenance_rpc_only_insert';
+    v_name := 'maintenance_rpc_only_insert';
     execute format('drop policy if exists %I on public.maintenance_records', v_name);
     execute format(
       'create policy %I on public.maintenance_records as restrictive for insert to authenticated with check (false)',
       v_name
     );
 
-    v_name := 'p53_maintenance_no_hard_delete';
+    v_name := 'maintenance_no_hard_delete';
     execute format('drop policy if exists %I on public.maintenance_records', v_name);
     execute format(
       'create policy %I on public.maintenance_records as restrictive for delete to authenticated using (false)',
