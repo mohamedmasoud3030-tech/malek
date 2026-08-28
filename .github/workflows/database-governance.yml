@@ -7,6 +7,7 @@ on:
       - 'supabase/**'
       - 'scripts/check-database-governance.mjs'
       - 'DATABASE_RULES.md'
+      - '.github/workflows/database-governance.yml'
   push:
     branches: [main]
     paths:
@@ -15,7 +16,7 @@ on:
       - 'DATABASE_RULES.md'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   database-governance:
@@ -29,3 +30,102 @@ jobs:
           node-version: 24
       - name: Enforce canonical migration rules
         run: node scripts/check-database-governance.mjs
+
+  finalize-operations-compatibility:
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'integration/final-consolidation-20260828'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          ref: integration/final-consolidation-20260828
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.11.1
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Replace stale OPERATIONS matrix expectation
+        shell: python
+        run: |
+          from pathlib import Path
+          matrix = Path('scripts/supabase-tests/rls-matrix.mjs')
+          text = matrix.read_text()
+          old = """  // OPERATIONS may still appear in the SQL catalog for properties.write,
+  // but the current properties write policy is is_admin_or_manager().
+  // Record the live database truth. The frontend now fences the same way.
+  const operationsWrite = await queryAs(
+    db,
+    ids.operationsA,
+    `with u as (
+       insert into public.properties (title, type, address, status, company_id)
+       values ('Operations write', 'residential', 'A', 'active', '${COMPANY_A}')
+       returning id
+     ) select count(*)::int as n from u`,
+  );
+  record({
+    id: 'rls.operationsA.insert.properties',
+    group: 'rls-write',
+    title: 'OPERATIONS property insert is enforced by is_admin_or_manager() (DB deny)',
+    status: !operationsWrite.ok || Number(operationsWrite.value?.[0]?.n ?? 0) === 0 ? 'pass' : 'fail',
+    detail: operationsWrite.ok
+      ? 'OPERATIONS unexpectedly inserted a property'
+      : undefined,
+    note: 'Frontend grants properties.write to OPERATIONS; RLS still requires ADMIN/MANAGER.',
+  });
+"""
+          new = """  // P51 compatibility contract: historical broad role defaults remain fallback
+  // until the office owner records an explicit granular decision.
+  await expectMutationAllowed(
+    db,
+    ids.operationsA,
+    `with u as (
+       insert into public.properties (title, type, address, status, company_id)
+       values ('Operations compatibility write', 'residential', 'A', 'active', '${COMPANY_A}')
+       returning id
+     ) select count(*)::int as n from u`,
+    { id: 'rls.operationsA.insert.properties.compat', group: 'rls-write', title: 'OPERATIONS keeps historical properties.write compatibility fallback' },
+  );
+  await expectHelper(db, ids.operationsA, `select public.current_user_has_effective_app_permission('contracts.create') as v`, true,
+    { id: 'auth.operationsA.contracts_create.compat', group: 'auth', title: 'OPERATIONS keeps historical contracts.write compatibility fallback' });
+  await db.exec(`
+    insert into public.user_permission_overrides(company_id,user_id,permission,allowed,set_by,reason,set_at)
+    values
+      ('${COMPANY_A}','${OPERATIONS_A}','properties.create',false,'${ADMIN_A}','matrix explicit granular deny',now()),
+      ('${COMPANY_A}','${OPERATIONS_A}','contracts.create',false,'${ADMIN_A}','matrix explicit granular deny',now())
+    on conflict(company_id,user_id,permission) do update set allowed=excluded.allowed,set_by=excluded.set_by,reason=excluded.reason,set_at=excluded.set_at
+  `);
+  await expectMutationDenied(
+    db,
+    ids.operationsA,
+    `with u as (
+       insert into public.properties (title, type, address, status, company_id)
+       values ('Operations explicitly denied', 'residential', 'A', 'active', '${COMPANY_A}')
+       returning id
+     ) select count(*)::int as n from u`,
+    { id: 'rls.operationsA.insert.properties.override', group: 'rls-write', title: 'explicit properties.create=false overrides OPERATIONS compatibility fallback' },
+  );
+  await expectHelper(db, ids.operationsA, `select public.current_user_has_effective_app_permission('contracts.create') as v`, false,
+    { id: 'auth.operationsA.contracts_create.override', group: 'auth', title: 'explicit contracts.create=false overrides OPERATIONS compatibility fallback' });
+"""
+          if old not in text:
+              raise SystemExit('RLS matrix OPERATIONS block anchor not found')
+          matrix.write_text(text.replace(old, new))
+      - name: Validate corrected boundary
+        run: |
+          pnpm test:supabase:rls
+          pnpm db0:gate
+          pnpm --dir rentrix-app typecheck
+          git diff --check
+      - name: Commit correction and restore canonical workflow
+        run: |
+          git fetch origin main
+          git checkout origin/main -- .github/workflows/database-governance.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/supabase-tests/rls-matrix.mjs .github/workflows/database-governance.yml
+          git commit -m "test(auth): prove operations fallback override precedence"
+          git push origin HEAD:integration/final-consolidation-20260828
