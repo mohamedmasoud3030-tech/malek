@@ -6,8 +6,6 @@ import type { VacancyAnalytics } from '@/features/units/vacancy-analytics';
 
 interface VacantUnitsSectionProps {
   analytics: VacancyAnalytics;
-  /** Server-authoritative vacant unit count from rpt_dashboard_snapshot. */
-  serverVacantCount?: number;
   isLoading: boolean;
   isError?: boolean;
   /** Contract history can fail/truncate independently from the unit register. */
@@ -17,20 +15,22 @@ interface VacantUnitsSectionProps {
 
 /**
  * Dashboard vacancy signal: two headline facts only, then bounded detail.
- * Deeper portfolio ratios and trend analysis live in Reports.
+ *
+ * `available` in the canonical unit register is the vacancy authority. The
+ * dashboard snapshot historically groups every non-occupied unit together, so
+ * using its `vacantUnits` field would incorrectly count maintenance/reserved as
+ * true vacancy. Deeper portfolio ratios and trend analysis live in Reports.
  */
 export function VacantUnitsSection({
   analytics,
-  serverVacantCount,
   isLoading,
   isError = false,
   detailsUnavailable = false,
   settings,
 }: VacantUnitsSectionProps) {
   const { money, date, number } = settings;
-  const vacantCount = serverVacantCount ?? analytics.availableUnits;
-  const countMismatch = serverVacantCount !== undefined && serverVacantCount !== analytics.availableUnits;
-  const canTrustHistory = !detailsUnavailable && !countMismatch;
+  const vacantCount = analytics.availableUnits;
+  const canTrustHistory = !detailsUnavailable;
   const rows = analytics.vacantRows.slice(0, 5);
 
   return (
@@ -60,28 +60,28 @@ export function VacantUnitsSection({
             <div>
               <p className="text-xs font-bold text-muted-foreground">الشاغر الآن</p>
               <p className="mt-1 text-2xl font-black tracking-tight">
-                {number(vacantCount)} <span className="text-sm font-bold text-muted-foreground">وحدة شاغرة</span>
+                {isError ? '—' : number(vacantCount)} <span className="text-sm font-bold text-muted-foreground">وحدة شاغرة</span>
               </p>
             </div>
             <div className="sm:text-end">
               <p className="text-xs font-bold text-muted-foreground">متوسط الشغور</p>
               <p className="mt-1 text-lg font-black" data-dashboard-average-vacancy>
-                {canTrustHistory ? `${number(analytics.averageVacancyDays)} يوم` : '—'}
+                {!isError && canTrustHistory ? `${number(analytics.averageVacancyDays)} يوم` : '—'}
               </p>
             </div>
           </div>
 
           {isError ? (
             <div className="dashboard-queue-empty" role="alert">
-              <p className="font-semibold">تعذر تحميل تفاصيل الوحدات الشاغرة</p>
-              <p>عدد الشواغر أعلاه من لقطة الخادم، لكن قائمة الوحدات لم تُحمّل.</p>
+              <p className="font-semibold">تعذر تحميل سجل الوحدات الشاغرة</p>
+              <p>لن نحول رقم «غير المشغولة» القديم إلى شغور، لأن الصيانة والحجز ليسا وحدات متاحة للتأجير.</p>
             </div>
           ) : null}
 
-          {!isError && (detailsUnavailable || countMismatch) && vacantCount > 0 ? (
+          {!isError && detailsUnavailable && vacantCount > 0 ? (
             <div className="dashboard-queue-empty" role="status">
               <p className="font-semibold">تفاصيل مدة الشغور غير مكتملة</p>
-              <p>{countMismatch ? 'العدد في سجل الوحدات لا يطابق لقطة الخادم بعد؛ لن نعرض متوسطًا مضللًا.' : 'تعذر قراءة تاريخ العقود كاملًا؛ العدد محفوظ لكن متوسط الأيام متوقف حتى تكتمل البيانات.'}</p>
+              <p>تعذر قراءة تاريخ العقود كاملًا؛ عدد الوحدات الشاغرة صحيح من سجل الوحدات، لكن متوسط الأيام متوقف حتى تكتمل البيانات.</p>
             </div>
           ) : null}
 
