@@ -3,6 +3,7 @@ import {
   CircleCheck,
   Download,
   Edit,
+  FileSpreadsheet,
   Handshake,
   Plus,
   Trash2,
@@ -27,6 +28,8 @@ import { toast } from "sonner";
 import {
   buildPropertiesCsvBlob,
   buildPropertiesCsvFilename,
+  buildPropertiesXlsxBlob,
+  buildPropertiesXlsxFilename,
 } from "./property-list-export";
 import { propertyStatusTone } from "./components/property-status";
 import type { PropertyListItem } from "./property-service";
@@ -73,6 +76,15 @@ function PropertyWorkflowStatus({ property }: Readonly<{ property: PropertyListI
   );
 }
 
+function downloadPropertyFile(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 100);
+}
+
 export type PropertiesListPageProps = Readonly<{
   embedded?: boolean;
 }>;
@@ -83,6 +95,7 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
   const canCreate = canAccess('properties.create');
   const canEdit = canAccess('properties.edit');
   const canArchive = canAccess('properties.archive');
+  const canExport = canAccess('financial.reports.export');
   const hasRowActions = canEdit || canArchive;
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultPropertyColumns]);
   const readyCount = controller.properties.filter(
@@ -98,24 +111,29 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
 
   const handleExportCsv = () => {
     if (controller.properties.length === 0) {
-      toast.error(
-        translateSharedLabel("noResultsHint", getAppLanguageState().language),
-      );
+      toast.error(translateSharedLabel("noResultsHint", getAppLanguageState().language));
       return;
     }
     try {
-      const url = URL.createObjectURL(buildPropertiesCsvBlob(controller.properties));
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = buildPropertiesCsvFilename(new Date());
-      link.click();
-      setTimeout(() => URL.revokeObjectURL(url), 100);
-      toast.success(
-        translateSharedLabel("exportCsv", getAppLanguageState().language),
-      );
+      downloadPropertyFile(buildPropertiesCsvBlob(controller.properties), buildPropertiesCsvFilename(new Date()));
+      toast.success(translateSharedLabel("exportCsv", getAppLanguageState().language));
     } catch (error) {
       console.error("Failed to export properties CSV:", error);
-      toast.error("تعذر تصدير الملف");
+      toast.error("تعذر تصدير ملف CSV");
+    }
+  };
+
+  const handleExportXlsx = () => {
+    if (controller.properties.length === 0) {
+      toast.error(translateSharedLabel("noResultsHint", getAppLanguageState().language));
+      return;
+    }
+    try {
+      downloadPropertyFile(buildPropertiesXlsxBlob(controller.properties), buildPropertiesXlsxFilename(new Date()));
+      toast.success("تم تجهيز ملف Excel");
+    } catch (error) {
+      console.error("Failed to export properties XLSX:", error);
+      toast.error("تعذر تصدير ملف Excel");
     }
   };
 
@@ -133,20 +151,30 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
             إضافة عقار
           </Button>
         ) : undefined}
-        secondaryActions={
+        secondaryActions={canExport ? (
           <div className="flex items-center gap-2">
             <Button
               type="button"
               variant="secondary"
+              onClick={handleExportXlsx}
+              disabled={controller.properties.length === 0}
+              aria-label="تصدير العقارات كملف Excel"
+            >
+              <FileSpreadsheet className="me-2 size-4" />
+              Excel
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
               onClick={handleExportCsv}
               disabled={controller.properties.length === 0}
               aria-label="تصدير العقارات كملف CSV"
             >
               <Download className="me-2 size-4" />
-              تصدير CSV
+              CSV
             </Button>
           </div>
-        }
+        ) : undefined}
         search={{
           value: controller.search,
           onChange: (value) => {
@@ -216,7 +244,7 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
             errorTitle="تعذر تحميل قائمة العقارات"
             onRetry={() => controller.propertiesQuery.refetch()}
             emptyTitle={controller.hasFilterValues ? "لا توجد نتائج مطابقة للبحث" : "لم تُضف عقارات بعد"}
-            emptyDescription={controller.hasFilterValues ? "جرّب تغيير عوامل البحث أو إزالة الفلتر." : "ابدأ بإضافة أول عقار لك."}
+            emptyDescription={controller.hasFilterValues ? "جرّب تغيير عوامل البحث أو إزالة الفلتر." : canCreate ? "ابدأ بإضافة أول عقار لك." : "لا توجد عقارات مسجلة الآن."}
             emptyAction={!controller.hasFilterValues && canCreate ? (
               <Button onClick={controller.openCreateModal}>
                 <Building2 className="me-2 size-4" />
