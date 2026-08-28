@@ -7,6 +7,10 @@ const migration = readFileSync(
   resolve(import.meta.dirname, '../../../../supabase/migrations/20260901000050_granular_employee_action_permissions.sql'),
   'utf8',
 );
+const maintenanceTransitionMigration = readFileSync(
+  resolve(import.meta.dirname, '../../../../supabase/migrations/20260901000052_maintenance_transition_permission_alignment.sql'),
+  'utf8',
+);
 
 describe('granular Employee action permissions', () => {
   it('exposes only real domain actions instead of another role taxonomy', () => {
@@ -35,7 +39,7 @@ describe('granular Employee action permissions', () => {
   });
 
   it('makes broad writes compatibility-only and replaces both permissive and restrictive RLS gates', () => {
-    expect(migration).toContain("requestable = false");
+    expect(migration).toContain('requestable = false');
     expect(migration).toContain("'properties.write', 'contracts.write', 'maintenance.write'");
     expect(migration).toContain("('properties','properties.create','properties.edit','properties.archive')");
     expect(migration).toContain("('contracts','contracts.create','contracts.edit','contracts.cancel')");
@@ -52,7 +56,10 @@ describe('granular Employee action permissions', () => {
     expect(migration).toContain("('extend_short_stay_contract_atomic','contracts.edit')");
     expect(migration).toContain("('close_maintenance_with_expense','maintenance.approve')");
     expect(migration).toContain('current_user_can_transition_maintenance');
-    expect(migration).toContain("when 'cancelled' then public.current_user_has_effective_app_permission('maintenance.cancel')");
+    expect(maintenanceTransitionMigration).toContain("when 'cancelled' then public.current_user_has_effective_app_permission('maintenance.cancel')");
+    expect(maintenanceTransitionMigration).toContain("when 'resolved' then public.current_user_has_effective_app_permission('maintenance.approve')");
+    expect(maintenanceTransitionMigration).toContain("when 'closed' then public.current_user_has_effective_app_permission('maintenance.approve')");
+    expect(maintenanceTransitionMigration).toContain("else public.current_user_has_effective_app_permission('maintenance.edit')");
   });
 
   it('keeps action/workspace dependencies fail-closed', () => {
