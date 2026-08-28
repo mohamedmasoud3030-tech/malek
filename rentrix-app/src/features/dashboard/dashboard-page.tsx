@@ -36,6 +36,8 @@ import { OwnerObligationsSection } from './components/owner-obligations-section'
  * Financial and operational truth remains server-authoritative through
  * rpt_dashboard_snapshot. Presentation follows the locked daily office order:
  * performance → vacancy → collection → problems → renewals → owner dues.
+ * True vacancy is derived from the canonical unit register (`available`) rather
+ * than the snapshot's historical all-non-occupied aggregate.
  */
 export function DashboardPage() {
   const { authorization } = useAuth();
@@ -99,9 +101,9 @@ export function DashboardPage() {
     [utilityBillsQuery.data, utilityBillsQuery.isError, today],
   );
 
-  // Vacancy intelligence keeps the server snapshot as the count authority and
-  // uses complete unit + contract reads only for the operational detail behind
-  // that number: days vacant, reference rent and last effective lease end.
+  // Vacancy intelligence reads the canonical unit register for the true vacant
+  // count (`available`) and complete contract history only for the age/context
+  // behind those units. Maintenance/reserved stay outside vacancy.
   const unitsQuery = useAllUnits();
   const hasVacantUnit = useMemo(
     () => (unitsQuery.data ?? []).some((unit) => String(unit.status).trim().toLowerCase() === 'available'),
@@ -122,7 +124,7 @@ export function DashboardPage() {
     [contractsQuery.data?.rows, propertyTitleMap, today, unitsQuery.data],
   );
   const vacancyDetailsUnavailable = hasVacantUnit
-    && (contractsQuery.isError || Boolean(contractsQuery.data?.truncated) || propertyTitlesQuery.isError);
+    && (contractsQuery.isError || Boolean(contractsQuery.data?.truncated));
 
   // P3 — maintenance that stopped moving. Urgency is how a request was
   // reported; this reads what happened to it afterwards, through the same
@@ -176,7 +178,6 @@ export function DashboardPage() {
               <SectionHeader eyebrow="2 · المحفظة" title="الوحدات الفارغة" />
               <VacantUnitsSection
                 analytics={vacancyAnalytics}
-                serverVacantCount={snapshot?.occupancy.vacantUnits}
                 isLoading={unitsQuery.isLoading || (hasVacantUnit && contractsQuery.isLoading)}
                 isError={unitsQuery.isError}
                 detailsUnavailable={vacancyDetailsUnavailable}
