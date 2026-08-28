@@ -2,11 +2,11 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { ArrearsSummaryReport, CollectionSummaryReport } from '@/features/financials/reports/financialReportsService';
-import { getFinanceCockpitState } from './components/finance-workspace-hero';
+import { getFinanceCockpitState } from './finance-cockpit-state';
 
 const financeRoot = join(process.cwd(), 'src/features/finance');
 const pageSource = readFileSync(join(financeRoot, 'FinancePage.tsx'), 'utf8');
-const cockpitSource = readFileSync(join(financeRoot, 'components/finance-workspace-hero.tsx'), 'utf8');
+const cockpitStateSource = readFileSync(join(financeRoot, 'finance-cockpit-state.ts'), 'utf8');
 
 function collection(overrides: Partial<CollectionSummaryReport> = {}): CollectionSummaryReport {
   return {
@@ -58,11 +58,12 @@ describe('Finance cockpit UI remediation', () => {
     });
   });
 
-  it('keeps the remediation operational, directly navigable, and structurally stable', () => {
-    expect(cockpitSource).toContain('data-finance-cockpit');
-    expect(cockpitSource).toContain('الوضع المالي اليوم');
-    expect(cockpitSource).not.toContain('كل حركة المال في مساحة تشغيل واحدة');
-
+  it('uses the app-wide page and section chrome instead of a finance-specific hero', () => {
+    expect(cockpitStateSource).not.toContain('className=');
+    expect(pageSource).toContain("import { PageHeader } from '@/components/layout/page-header';");
+    expect(pageSource).toContain('<PageHeader');
+    expect(pageSource).toContain('<SectionHeader');
+    expect(pageSource).not.toContain('FinanceWorkspaceHero');
     expect(pageSource).toContain('data-finance-mobile-nav-mode="direct-tabs"');
     expect(pageSource).not.toContain('<WorkspaceNav');
     expect(pageSource).toContain('data-finance-subview-strip');
@@ -74,15 +75,12 @@ describe('Finance cockpit UI remediation', () => {
   it('surfaces management fees and owner settlements as routine Money overview entries without widening access', () => {
     const overviewSource = readFileSync(join(financeRoot, 'components/finance-operations-overview.tsx'), 'utf8');
 
-    // The overview owns the entries, gated by the same permissions as the underlying views.
     expect(overviewSource).toContain('canViewManagementFees');
     expect(overviewSource).toContain('canViewOwnerSettlements');
     expect(overviewSource).toContain('استحقاق أتعاب الإدارة الشهرية');
     expect(overviewSource).toContain('مستحقات وتسويات الملاك');
     expect(overviewSource).toContain('{canViewManagementFees || canViewOwnerSettlements ? (');
 
-    // FinancePage derives the gates from permitted view ids (never hardcodes roles) and
-    // routes into the canonical Money locations.
     expect(pageSource).toContain("canViewManagementFees={permittedViewIds.has('fixed_monthly_accruals')}");
     expect(pageSource).toContain("canViewOwnerSettlements={permittedViewIds.has('owner_settlements')}");
     expect(pageSource).toContain("handleLocationChange('fees', 'fixed_monthly_accruals')");
