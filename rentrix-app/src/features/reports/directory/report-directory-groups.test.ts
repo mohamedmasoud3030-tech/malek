@@ -6,34 +6,45 @@ import {
 } from './report-directory-groups';
 
 describe('report directory model', () => {
-  it('keeps the published catalogue counts derived from the model, not hardcoded', () => {
-    expect(reportGroups).toHaveLength(7);
-    expect(REPORT_DIRECTORY_ENTRY_COUNT).toBe(14);
+  it('keeps the published catalogue counts derived from the model, not hardcoded in UI', () => {
+    expect(reportGroups).toHaveLength(6);
+    expect(REPORT_DIRECTORY_ENTRY_COUNT).toBe(12);
     expect(reportGroups.reduce((total, group) => total + group.shortcuts.length, 0)).toBe(
       REPORT_DIRECTORY_ENTRY_COUNT,
     );
   });
 
-  it('points every entry at a navigable section/view pair', () => {
+  it('keeps accounting implementation views out of the owner-facing directory', () => {
     for (const group of reportGroups) {
-      expect(['accounting', 'statements', 'analytics']).toContain(group.section);
+      expect(group.section).not.toBe('accounting');
       for (const shortcut of group.shortcuts) {
-        expect(['accounting', 'statements', 'analytics']).toContain(shortcut.section);
+        expect(shortcut.section).not.toBe('accounting');
         expect(typeof shortcut.view).toBe('string');
       }
     }
+  });
+
+  it('covers the main office decisions rather than implementation categories', () => {
+    expect(reportGroups.map((group) => group.id)).toEqual([
+      'office',
+      'collections',
+      'leases',
+      'maintenance',
+      'owners',
+      'properties',
+    ]);
   });
 });
 
 describe('report directory search', () => {
   it('returns the whole catalogue for an empty or whitespace query', () => {
-    expect(filterReportGroups(reportGroups, '')).toHaveLength(7);
-    expect(filterReportGroups(reportGroups, '   ')).toHaveLength(7);
+    expect(filterReportGroups(reportGroups, '')).toHaveLength(6);
+    expect(filterReportGroups(reportGroups, '   ')).toHaveLength(6);
   });
 
-  it('finds a group by a shortcut label', () => {
+  it('finds relevant work areas by shortcut and description text', () => {
     const result = filterReportGroups(reportGroups, 'مصروفات');
-    expect(result.map((group) => group.id)).toEqual(['finance', 'properties', 'analytics']);
+    expect(result.map((group) => group.id)).toEqual(expect.arrayContaining(['collections', 'maintenance', 'properties']));
   });
 
   it('normalises Arabic alef variants so a partially-vocalised query still matches', () => {
@@ -41,9 +52,9 @@ describe('report directory search', () => {
     expect(result.map((group) => group.id)).toContain('leases');
   });
 
-  it('normalises taa marbuta so ه and ة spellings match the accounting/control family', () => {
-    expect(filterReportGroups(reportGroups, 'المحاسبيه').map((group) => group.id)).toContain('control');
-    expect(filterReportGroups(reportGroups, 'المحاسبية').map((group) => group.id)).toContain('control');
+  it('finds owner and tenant statements without exposing accounting terminology', () => {
+    expect(filterReportGroups(reportGroups, 'المالك').map((group) => group.id)).toContain('owners');
+    expect(filterReportGroups(reportGroups, 'المستاجر').map((group) => group.id)).toContain('owners');
   });
 
   it('returns an empty catalogue for an unknown query so the empty state can render', () => {
