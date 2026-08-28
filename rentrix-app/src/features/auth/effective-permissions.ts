@@ -34,6 +34,11 @@ export async function getEffectiveAuthorizationContextFromSession(
 ): Promise<AuthorizationContext | null> {
   const base = getAuthorizationContextFromSession(session);
   if (!base) return null;
+  // ADMIN cannot be narrowed by employee overrides on the server. Avoid
+  // making owner route access depend on the projection RPC being available.
+  if (base.role === 'ADMIN') {
+    return { ...base, grantedPermissions: appPermissions, effectivePermissionsResolved: true };
+  }
   const grantedPermissions = await loadGrantedPermissions(base.userId);
   return { ...base, grantedPermissions, effectivePermissionsResolved: true };
 }

@@ -345,6 +345,11 @@ export function hasRole(context: AuthorizationContext | null | undefined, role: 
 
 export function canAccess(context: AuthorizationContext | null | undefined, permission: AppPermission): boolean {
   if (!context) return false;
+  // ADMIN is the Office Owner compatibility role. Server-side permission
+  // resolution never allows employee overrides to deny ADMIN, so the client
+  // must preserve that invariant even when the effective-permission RPC is
+  // temporarily unavailable or returns an empty set.
+  if (context.role === 'ADMIN') return rolePermissions.ADMIN.has(permission);
   const effective = Boolean(context.grantedPermissions?.includes(permission));
   if (context.effectivePermissionsResolved) return effective;
   return effective || (rolePermissions[context.role]?.has(permission) ?? false);
