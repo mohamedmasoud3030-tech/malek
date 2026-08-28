@@ -33,7 +33,7 @@ import { DataErrorScreen } from '@/components/data-error-screen';
 import { EmptyState } from '@/components/ui/state-surfaces';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { EntityCard, type EntityCardAction } from '@/components/ui/entity-card';
+import { EntityCard, type EntityCardAction, type EntityCardType } from '@/components/ui/entity-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
@@ -99,6 +99,8 @@ export interface EntityTableProps<T> {
   onExpandedRowChange?: (rowId: string | null) => void;
   /** High-value field shown below identity on mobile cards. */
   mobileVisibleSecondaryKey?: string;
+  /** Canonical entity label/tone used by the mobile card when no badge overrides it. */
+  mobileCardType?: EntityCardType | ((row: T) => EntityCardType);
   /**
    * Mobile card badge column (e.g. the status column). Rendered in the card
    * badge slot instead of the generic entity-type chip.
@@ -314,6 +316,7 @@ function MobileRegisterListItem<T>({
   ariaLabel,
   identityColumn,
   datumColumn,
+  cardType,
   badgeColumn,
   summaryColumns,
   actionsColumn,
@@ -328,6 +331,7 @@ function MobileRegisterListItem<T>({
   ariaLabel: string;
   identityColumn: ResolvedColumn<T>;
   datumColumn?: ResolvedColumn<T>;
+  cardType?: EntityCardType;
   badgeColumn?: ResolvedColumn<T>;
   summaryColumns?: ResolvedColumn<T>[];
   actionsColumn?: ResolvedColumn<T>;
@@ -361,6 +365,7 @@ function MobileRegisterListItem<T>({
       <EntityCard
         id={rowKey}
         name={<span data-entity-table-mobile-primary>{identityColumn.render(row)}</span>}
+        type={cardType}
         supportingText={hasSummaryGrid || badgeColumn ? undefined : (datumColumn ? datumColumn.header : undefined)}
         stats={
           hasSummaryGrid
@@ -449,6 +454,7 @@ export function EntityTable<T>({
   expandedRowId,
   onExpandedRowChange,
   mobileVisibleSecondaryKey,
+  mobileCardType,
   mobileBadgeKey,
   mobileSummaryKeys,
   mobileCardActions,
@@ -553,9 +559,6 @@ export function EntityTable<T>({
   const badgeColumn = mobileBadgeKey
     ? resolvedColumns.find((column) => column.key === mobileBadgeKey)
     : undefined;
-  // A mobile card must show enough context to be actionable before opening
-  // the record. Callers can choose exact fields; otherwise expose the first
-  // two useful columns already loaded for the register.
   const summaryColumns = mobileSummaryKeys
     ? mobileSummaryKeys
         .map((key) => resolvedColumns.find((column) => column.key === key))
@@ -589,6 +592,7 @@ export function EntityTable<T>({
         <ul role="list" aria-label={ariaLabel} className="grid gap-2.5" data-entity-table-mobile-list>
           {rows.map((row) => {
             const rowKey = keyOf(row);
+            const cardType = typeof mobileCardType === 'function' ? mobileCardType(row) : mobileCardType;
             return (
               <MobileRegisterListItem
                 key={rowKey}
@@ -597,6 +601,7 @@ export function EntityTable<T>({
                 ariaLabel={ariaLabel}
                 identityColumn={identityColumn}
                 datumColumn={datumColumn}
+                cardType={cardType}
                 badgeColumn={badgeColumn}
                 summaryColumns={summaryColumns}
                 actionsColumn={actionsColumn}
