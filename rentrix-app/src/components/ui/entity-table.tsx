@@ -5,9 +5,9 @@
  * optional Cards view; sorting, sticky identity/actions, row expansion,
  * selection and toolbar remain shared.
  *
- * Mobile (< 768px): Cards are the default, with an optional Table view that
- * scrolls only inside its container. The shared card shows identity plus one
- * high-value datum and keeps row actions accessible.
+ * Mobile (< 768px): cards are the only register presentation. Desktop data
+ * tables never leak into phone layouts; the shared card shows identity plus
+ * high-value context and keeps row actions accessible.
  */
 
 import {
@@ -128,7 +128,7 @@ export interface EntityTableProps<T> {
   rowSelection?: RowSelectionState;
   /** Optional visible column keys. Omit to show every configured column. */
   visibleColumnKeys?: readonly string[];
-  /** Enables the shared Cards ⇄ Table choice. Defaults to true. */
+  /** Enables the shared Cards ⇄ Table choice on tablet/desktop. Defaults to true. */
   enableViewModeToggle?: boolean;
   /** Optional stable identifier for a future persisted preference. */
   viewModeStorageKey?: string;
@@ -564,22 +564,20 @@ export function EntityTable<T>({
         .filter((column) => column !== identityColumn && column !== badgeColumn && column.resolvedPriority !== 'actions')
         .slice(0, 2);
   const colSpan = resolvedColumns.length + (hasExpansion ? 1 : 0) + (rowSelection ? 1 : 0);
-  const showCards = viewMode !== 'table';
-  const showTable = viewMode !== 'cards';
 
   return (
     <div className={cn('space-y-3', className)} data-entity-table-register>
       {toolbar || enableViewModeToggle ? (
         <div data-entity-table-toolbar className="flex min-h-11 flex-wrap items-center justify-end gap-2">
           {enableViewModeToggle ? (
-            <div className="inline-flex min-h-11 items-center rounded-xl border border-border/70 bg-muted/35 p-1" role="group" aria-label={`طريقة عرض ${ariaLabel}`}>
+            <div className="hidden min-h-11 items-center rounded-xl border border-border/70 bg-muted/35 p-1 md:inline-flex" role="group" aria-label={`طريقة عرض ${ariaLabel}`}>
               <Button type="button" variant={viewMode === 'cards' ? 'secondary' : 'ghost'} size="sm" aria-pressed={viewMode === 'cards'} onClick={() => setViewMode('cards')}>
                 <LayoutGrid className="size-4" aria-hidden="true" />
-                <span className="sr-only sm:not-sr-only sm:ms-1.5">بطاقات</span>
+                <span className="ms-1.5">بطاقات</span>
               </Button>
               <Button type="button" variant={viewMode === 'table' ? 'secondary' : 'ghost'} size="sm" aria-pressed={viewMode === 'table'} onClick={() => setViewMode('table')}>
                 <TableProperties className="size-4" aria-hidden="true" />
-                <span className="sr-only sm:not-sr-only sm:ms-1.5">جدول</span>
+                <span className="ms-1.5">جدول</span>
               </Button>
             </div>
           ) : null}
@@ -587,7 +585,7 @@ export function EntityTable<T>({
         </div>
       ) : null}
 
-      <div className={cn(showCards ? (viewMode === 'cards' ? 'block' : 'md:hidden') : 'hidden')} data-entity-table-mobile>
+      <div className={cn('block', viewMode === 'cards' ? 'md:block' : 'md:hidden')} data-entity-table-mobile>
         <ul role="list" aria-label={ariaLabel} className="grid gap-2.5" data-entity-table-mobile-list>
           {rows.map((row) => {
             const rowKey = keyOf(row);
@@ -613,7 +611,7 @@ export function EntityTable<T>({
         </ul>
       </div>
 
-      <div className={cn(showTable ? (viewMode === 'table' ? 'block' : 'hidden md:block') : 'hidden')}>
+      <div className={viewMode === 'cards' ? 'hidden' : 'hidden md:block'}>
         <Card data-entity-table-wrapper data-compact-responsive-table data-entity-table-grid className="overflow-hidden rounded-xl border-border/70 bg-card shadow-card">
           <div
             data-entity-table-scroll
