@@ -56,13 +56,8 @@
 
 [data-entity-table] tbody tr:hover { background: hsl(var(--muted) / 0.42); }
 
-[data-entity-table] [data-column-priority='identity'] {
-  font-weight: 700;
-}
-
-[data-entity-table] [data-column-priority='actions'] {
-  white-space: nowrap;
-}
+[data-entity-table] [data-column-priority='identity'] { font-weight: 700; }
+[data-entity-table] [data-column-priority='actions'] { white-space: nowrap; }
 
 [data-financial-amount] {
   direction: ltr;
@@ -122,38 +117,21 @@
 }
 [data-status-badge] [data-status-dot] { background: currentColor; }
 
-/* ── Premium material: chrome and overlays only ──────────────────── */
+/* ── App chrome only ────────────────────────────────────────────────
+   Dialogs and bottom sheets own their own surfaces; this contract must not
+   restyle them from a second cascade layer. */
 [data-app-shell-header],
-[data-account-menu-panel],
-[data-bottom-sheet],
 [data-ai-assistant-panel] {
   border-color: var(--material-border);
   background: var(--material-chrome);
   box-shadow: var(--material-highlight), var(--material-shadow);
-  -webkit-backdrop-filter: blur(var(--material-blur));
-  backdrop-filter: blur(var(--material-blur));
 }
 
-[data-account-menu-panel],
-[data-bottom-sheet],
-[data-ai-assistant-panel] {
-  background: var(--material-overlay);
-}
-
-[data-bottom-sheet] {
-  border-start-start-radius: 1.35rem;
-  border-start-end-radius: 1.35rem;
-}
-
-[data-bottom-sheet-handle] > div {
-  background: hsl(var(--muted-foreground) / 0.28);
-}
+[data-ai-assistant-panel] { background: var(--material-overlay); }
 
 [data-header-brand-lockup],
 [data-header-utility-side],
-[data-app-shell-header] > div {
-  direction: ltr;
-}
+[data-app-shell-header] > div { direction: ltr; }
 
 /* Entity form dialogs are the only intentional full-screen mobile surface. */
 @media (max-width: 639px) {
@@ -181,24 +159,10 @@
   }
 }
 
-/* Dashboard date context stays compact and readable. */
-[data-dashboard-today-context] {
-  min-height: 4rem;
-  border-color: hsl(var(--border) / 0.72);
-  border-radius: 1rem;
-  box-shadow: var(--shadow-card);
-}
-[data-dashboard-today-date] {
-  font-variant-numeric: tabular-nums;
-  color: hsl(var(--muted-foreground));
-}
-
 /* ── Desktop workspace contract ─────────────────────────────────────
    Desktop is a work surface, not a scaled-up phone screen. */
 @media (min-width: 1024px) {
-  [data-page-layout] > div {
-    padding-inline: clamp(1.25rem, 2.2vw, 2.5rem);
-  }
+  [data-page-layout] > div { padding-inline: clamp(1.25rem, 2.2vw, 2.5rem); }
 
   [data-page-layout] [data-page-header] {
     margin-bottom: 0.25rem;
@@ -255,9 +219,7 @@
     overflow: hidden;
   }
 
-  [data-app-shell] [data-sidebar] + div {
-    padding-inline-end: 14rem;
-  }
+  [data-app-shell] [data-sidebar] + div { padding-inline-end: 14rem; }
 
   [data-app-shell] [data-sidebar] > nav {
     padding: 0.65rem 0.7rem 1rem;
@@ -269,9 +231,7 @@
     border-radius: 0.65rem;
   }
 
-  [data-app-shell] [data-app-shell-header] {
-    min-height: 3.5rem;
-  }
+  [data-app-shell] [data-app-shell-header] { min-height: 3.5rem; }
 
   [data-app-shell] [data-app-shell-header] > div {
     max-width: none;
