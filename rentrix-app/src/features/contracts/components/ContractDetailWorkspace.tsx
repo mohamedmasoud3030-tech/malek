@@ -41,16 +41,16 @@ function ContractMobileSummary({ contract, settings }: Readonly<{ contract: Cont
           </div>
           <StatusBadge tone={contractStatusTone[status]}>{contractStatusLabels[status]}</StatusBadge>
         </div>
-        <div className="grid grid-cols-2 gap-2">
-          <div className="rounded-xl border border-border/65 bg-muted/20 px-3 py-2.5">
-            <p className="text-[11px] font-semibold text-muted-foreground">قيمة الإيجار</p>
-            <p className="mt-1 text-sm font-bold tabular-nums">{formatContractMoney(settings, contract.rent_amount)}</p>
+        <dl className="grid grid-cols-2 gap-x-4 border-y border-border/60 py-2.5">
+          <div className="min-w-0">
+            <dt className="text-[11px] font-semibold text-muted-foreground">قيمة الإيجار</dt>
+            <dd className="mt-1 truncate text-sm font-bold tabular-nums">{formatContractMoney(settings, contract.rent_amount)}</dd>
           </div>
-          <div className="rounded-xl border border-border/65 bg-muted/20 px-3 py-2.5">
-            <p className="text-[11px] font-semibold text-muted-foreground">ينتهي في</p>
-            <p className="mt-1 text-sm font-bold tabular-nums">{formatContractDate(settings, contract.end_date)}</p>
+          <div className="min-w-0 border-s border-border/60 ps-4">
+            <dt className="text-[11px] font-semibold text-muted-foreground">ينتهي في</dt>
+            <dd className="mt-1 truncate text-sm font-bold tabular-nums">{formatContractDate(settings, contract.end_date)}</dd>
           </div>
-        </div>
+        </dl>
         <p className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
           <CalendarClock className="size-3.5 shrink-0" aria-hidden="true" />
           {getExpiryDescription(settings, contract)}
