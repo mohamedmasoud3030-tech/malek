@@ -11,7 +11,7 @@ export { Select } from "./select";
 export { Skeleton } from "./skeleton";
 export { Spinner, type SpinnerProps } from "./spinner";
 export { Alert, AlertTitle, AlertDescription, alertVariants } from "./alert";
-export { OfflineState, NoPermissionState } from "./state-surfaces";
+export { EmptyState, OfflineState, NoPermissionState } from "./state-surfaces";
 export { StatusBadge } from "./status-badge";
 export {
   Table,
@@ -57,9 +57,7 @@ export {
 export { Dropdown, type DropdownOption } from "./dropdown";
 export { LoadingState } from "./loading-state";
 export { ErrorState } from "./error-state";
-export { EmptyState } from "./empty-state";
-// Spinner, Alert, OfflineState and NoPermissionState are exported above with
-// the core primitives.
+// Spinner and Alert are exported above with the core primitives.
 
 // ADR-008 Phase A — unified entity table
 export {
