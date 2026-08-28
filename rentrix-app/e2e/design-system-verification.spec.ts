@@ -129,9 +129,12 @@ test('theme dark follows the app toggle (data-theme), not prefers-color-scheme',
     }, { timeout: 5_000 })
     .not.toBe(lightState.backgroundToken);
 
+  // Premium Glass owns the actual page environment. `--background` still
+  // governs normal surfaces, while body intentionally paints the tokenized
+  // `--premium-page-base` behind the shared ambient layer.
   const expectedDarkBackground = await page.evaluate(() => {
     const probe = document.createElement('div');
-    probe.style.backgroundColor = 'hsl(var(--background))';
+    probe.style.backgroundColor = 'var(--premium-page-base)';
     document.body.appendChild(probe);
     const background = getComputedStyle(probe).backgroundColor;
     probe.remove();
