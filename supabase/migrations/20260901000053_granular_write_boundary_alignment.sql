@@ -55,7 +55,8 @@ begin
 end
 $property_unit_update_policies$;
 
-create or replace function public.guard_property_unit_granular_update()
+-- Internal trigger helper: keep it out of the public RPC/type contract.
+create or replace function app_private.guard_property_unit_granular_update()
 returns trigger
 language plpgsql
 security definer
@@ -145,9 +146,7 @@ begin
 end;
 $function$;
 
-revoke all on function public.guard_property_unit_granular_update() from public, anon, authenticated;
-grant execute on function public.guard_property_unit_granular_update() to service_role;
-
+revoke all on function app_private.guard_property_unit_granular_update() from public, anon, authenticated;
 
 do $property_unit_triggers$
 declare
@@ -161,7 +160,7 @@ begin
     v_trigger := 'trg_' || v_table || '_granular_update_guard';
     execute format('drop trigger if exists %I on public.%I', v_trigger, v_table);
     execute format(
-      'create trigger %I before update on public.%I for each row execute function public.guard_property_unit_granular_update()',
+      'create trigger %I before update on public.%I for each row execute function app_private.guard_property_unit_granular_update()',
       v_trigger, v_table
     );
   end loop;
@@ -170,7 +169,7 @@ $property_unit_triggers$;
 
 -- ---------------------------------------------------------------------------
 -- Contracts: the application contract already requires every write to use an
--- atomic SECURITY DEFINER command. A restrictive false policy makes that true
+-- atomic SECURITY DEFININER command. A restrictive false policy makes that true
 -- at the database boundary as well; table-owner SECURITY DEFINER commands
 -- bypass RLS, ordinary authenticated PostgREST writes do not.
 -- ---------------------------------------------------------------------------
