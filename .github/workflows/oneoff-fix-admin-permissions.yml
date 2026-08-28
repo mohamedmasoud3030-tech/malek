@@ -33,7 +33,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --ignore-scripts
 
-      - name: Apply focused authorization fix and regression test
+      - name: Apply focused authorization fix and regression tests
         shell: bash
         run: |
           python3 - <<'PY'
@@ -61,11 +61,25 @@ jobs:
           addition = anchor + """  it('keeps ADMIN full access when the resolved server capability set is empty', () => {\n    const owner = resolved('ADMIN', []);\n    for (const permission of appPermissions) {\n      expect(canAccess(owner, permission), permission).toBe(true);\n    }\n    expect(getWriteAccessState(owner)).toBe('full');\n  });\n\n"""
           if anchor not in text:
               raise SystemExit('permissions.test.ts admin anchor not found')
-          tests.write_text(text.replace(anchor, addition, 1))
+          text = text.replace(anchor, addition, 1)
+          text = text.replace(
+              "expect(getWriteAccessState(resolved('USER', ['app.dashboard.view', 'properties.write']))).toBe('full');",
+              "expect(getWriteAccessState(resolved('USER', ['app.dashboard.view', 'properties.edit']))).toBe('full');",
+              1,
+          )
+          text = text.replace(
+              "expect(getWriteAccessState(resolved('VIEWER', ['maintenance.write']))).toBe('full');",
+              "expect(getWriteAccessState(resolved('VIEWER', ['maintenance.edit']))).toBe('full');",
+              1,
+          )
+          tests.write_text(text)
+
+          admin_test = Path('rentrix-app/src/features/auth/effective-permissions-admin.test.ts')
+          admin_test.write_text("""import { describe, expect, it, vi } from 'vitest';\nimport { appPermissions } from './permissions';\n\nconst { rpc } = vi.hoisted(() => ({ rpc: vi.fn() }));\nvi.mock('@/lib/supabase', () => ({ supabase: { rpc } }));\n\nconst { getEffectiveAuthorizationContextFromSession } = await import('./effective-permissions');\n\nconst accessTokenWithRole = (role: string) => [\n  'header',\n  Buffer.from(JSON.stringify({ app_metadata: { user_role: role } })).toString('base64url'),\n  'signature',\n].join('.');\n\ndescribe('ADMIN effective permissions', () => {\n  it('uses the signed ADMIN role without depending on the effective-permission RPC', async () => {\n    rpc.mockRejectedValueOnce(new Error('projection unavailable'));\n    const context = await getEffectiveAuthorizationContextFromSession({\n      user: { id: 'admin-1', email: 'admin@example.com', app_metadata: {} },\n      access_token: accessTokenWithRole('ADMIN'),\n    } as never);\n\n    expect(rpc).not.toHaveBeenCalled();\n    expect(context?.role).toBe('ADMIN');\n    expect(context?.effectivePermissionsResolved).toBe(true);\n    expect(context?.grantedPermissions).toEqual(appPermissions);\n  });\n});\n""")
           PY
 
       - name: Run focused authorization tests
-        run: pnpm --filter ./rentrix-app exec vitest run src/features/auth/permissions.test.ts src/features/auth/effective-route-guard.test.ts
+        run: pnpm --filter ./rentrix-app exec vitest run src/features/auth/permissions.test.ts src/features/auth/effective-route-guard.test.ts src/features/auth/effective-permissions-admin.test.ts
 
       - name: Typecheck
         run: pnpm typecheck
@@ -78,6 +92,7 @@ jobs:
           git add rentrix-app/src/features/auth/permissions.ts \
                   rentrix-app/src/features/auth/effective-permissions.ts \
                   rentrix-app/src/features/auth/permissions.test.ts \
+                  rentrix-app/src/features/auth/effective-permissions-admin.test.ts \
                   .github/workflows/oneoff-fix-admin-permissions.yml
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
