@@ -6,7 +6,6 @@ import { ContextualDocumentsSection } from '@/components/documents/contextual-do
 import { EntityDetailHeader } from '@/components/layout/entity-detail-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DetailFields } from '@/components/ui/detail-fields';
 import { ErrorState } from '@/components/ui/error-state';
 import { LoadingState } from '@/components/ui/loading-state';
@@ -51,9 +50,11 @@ export function TenantDossierContent({ tenantId, section }: Readonly<{ tenantId:
   return (
     <div className="space-y-5">
       {(!section || section === 'overview') ? (
-      <Card>
-        <CardHeader><CardTitle>{dossier.person.full_name}</CardTitle></CardHeader>
-        <CardContent>
+        <section aria-labelledby="tenant-overview-heading">
+          <header className="border-b border-border/60 pb-2.5">
+            <h3 id="tenant-overview-heading" className="text-base font-black">{dossier.person.full_name}</h3>
+            <p className="mt-1 text-xs text-muted-foreground">بيانات المستأجر الأساسية وحجم علاقته التعاقدية بالمكتب.</p>
+          </header>
           <DetailFields columns={3} fields={[
             { label: 'الهاتف', value: dossier.person.phone ? <span dir="ltr">{dossier.person.phone}</span> : 'غير موثق' },
             { label: 'البريد', value: dossier.person.email ? <span dir="ltr">{dossier.person.email}</span> : 'غير موثق' },
@@ -61,115 +62,113 @@ export function TenantDossierContent({ tenantId, section }: Readonly<{ tenantId:
             { label: 'العقود النشطة', value: activeContracts.length },
             { label: 'إجمالي العقود', value: dossier.contracts.length },
           ]} />
-        </CardContent>
-      </Card>
+        </section>
       ) : null}
 
       {(!section || section === 'contracts') ? (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2"><FileText className="size-5 text-primary" />العقود والعقارات والوحدات</CardTitle>
-        </CardHeader>
-        <CardContent>
+        <section aria-labelledby="tenant-contracts-heading" className={section ? undefined : 'border-t border-border/60 pt-4'}>
+          <header className="border-b border-border/60 pb-2.5">
+            <h3 id="tenant-contracts-heading" className="flex items-center gap-2 text-base font-black"><FileText className="size-5 text-primary" />العقود والعقارات والوحدات</h3>
+          </header>
           {dossier.contracts.length === 0 ? (
-            <p className="text-sm text-muted-foreground">لا توجد عقود مسجلة لهذا المستأجر.</p>
+            <p className="py-4 text-sm text-muted-foreground">لا توجد عقود مسجلة لهذا المستأجر.</p>
           ) : (
-            <ul className="space-y-2">
+            <ul className="divide-y divide-border/60">
               {dossier.contracts.map((contract) => (
-                <li key={contract.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3">
-                  <div>
-                    <p className="font-bold">{businessReferenceOrLabel(contract, 'عقد مسجل')}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">
+                <li key={contract.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-bold">{businessReferenceOrLabel(contract, 'عقد مسجل')}</p>
+                    <p className="mt-1 break-words text-xs leading-5 text-muted-foreground">
                       {contract.properties?.title ?? 'عقار غير محدد'} · {contract.units?.unit_number ? `وحدة ${contract.units.unit_number}` : 'بدون وحدة'} · {contract.start_date} — {contract.end_date}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex shrink-0 items-center gap-2">
                     <StatusBadge tone={contract.status === 'active' ? 'success' : 'neutral'}>{contract.status}</StatusBadge>
-                    <Button variant="secondary" onClick={() => dialogNavigate({ to: '/contracts/$contractId', params: { contractId: contract.id } })}>فتح العقد</Button>
+                    <Button variant="secondary" className="min-h-11" onClick={() => dialogNavigate({ to: '/contracts/$contractId', params: { contractId: contract.id } })}>فتح العقد</Button>
                   </div>
                 </li>
               ))}
             </ul>
           )}
-        </CardContent>
-      </Card>
+        </section>
       ) : null}
 
       {(!section || section === 'ledger') && canViewFinancial ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><ReceiptText className="size-5 text-primary" />سجل الاستحقاقات والمدفوعات</CardTitle>
-            <p className="text-sm text-muted-foreground">جدول الاستحقاقات التعاقدي وما سُدد فعليًا والمتبقي والمتأخر؛ لا يغيّر الدفع تاريخ الاستحقاق الأصلي.</p>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex flex-wrap gap-2">
-              <StatusBadge tone="info">{dossier.invoices.length} فواتير</StatusBadge>
-              <StatusBadge tone={outstanding > 0 ? 'warning' : 'success'}>الرصيد المفتوح {companyFormatters.money(outstanding)}</StatusBadge>
-            </div>
+        <section aria-labelledby="tenant-ledger-heading" className={section ? undefined : 'border-t border-border/60 pt-4'}>
+          <header className="border-b border-border/60 pb-2.5">
+            <h3 id="tenant-ledger-heading" className="flex items-center gap-2 text-base font-black"><ReceiptText className="size-5 text-primary" />سجل الاستحقاقات والمدفوعات</h3>
+            <p className="mt-1 text-sm leading-6 text-muted-foreground">جدول الاستحقاقات التعاقدي وما سُدد فعليًا والمتبقي والمتأخر؛ لا يغيّر الدفع تاريخ الاستحقاق الأصلي.</p>
+          </header>
 
+          <div className="flex flex-wrap gap-2 py-3">
+            <StatusBadge tone="info">{dossier.invoices.length} فواتير</StatusBadge>
+            <StatusBadge tone={outstanding > 0 ? 'warning' : 'success'}>الرصيد المفتوح {companyFormatters.money(outstanding)}</StatusBadge>
+          </div>
+
+          <div className="divide-y divide-border/60" aria-label="استحقاقات المستأجر">
             {dossier.invoices.slice().sort((a, b) => (a.due_date ?? '').localeCompare(b.due_date ?? '')).map((invoice) => (
-              <div key={invoice.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3">
-                <span className="font-bold">{businessReferenceOrLabel(invoice, 'فاتورة مسجلة')}</span>
+              <div key={invoice.id} className="flex flex-wrap items-center justify-between gap-2 py-3">
+                <span className="min-w-0 flex-1 truncate font-bold">{businessReferenceOrLabel(invoice, 'فاتورة مسجلة')}</span>
                 <span className="text-sm">الاستحقاق {invoice.due_date} · المتبقي {companyFormatters.money(Math.max(0, Number(invoice.amount) - Number(invoice.paid_amount)))}</span>
-                <Button asChild variant="secondary"><Link to="/invoices" search={{ invoiceId: invoice.id } as never}>فتح الفاتورة</Link></Button>
+                <Button asChild variant="secondary" className="min-h-11"><Link to="/invoices" search={{ invoiceId: invoice.id } as never}>فتح الفاتورة</Link></Button>
               </div>
             ))}
+          </div>
 
-            <div className="border-t border-border/60 pt-4">
-              <p className="text-sm font-bold">الدفعات وإثباتاتها</p>
-              {dossier.receipts.length === 0 ? (
-                <p className="mt-2 text-sm text-muted-foreground">لا توجد دفعات أو إثباتات دفع مسجلة لهذا المستأجر.</p>
-              ) : (
-                <ul className="mt-2 space-y-2" aria-label="دفعات المستأجر وإثباتاتها">
-                  {dossier.receipts.map((receipt) => (
-                    <li key={receipt.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3 text-sm">
-                      <span className="font-bold">{receipt.reference ?? receipt.no ?? 'دفعة مسجلة'}</span>
-                      <span className="text-muted-foreground">{receipt.date_time.slice(0, 10)}{receipt.channel ? ` · ${receipt.channel}` : ''}</span>
-                      <span className="font-bold tabular-nums" dir="ltr">{companyFormatters.money(Number(receipt.amount))}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-
-            <div className="flex flex-wrap gap-2 border-t border-border/60 pt-3">
-              {statementContract ? (
-                <Button asChild variant="outline">
-                  <Link
-                    to="/reports"
-                    search={{ section: 'statements', tenantId, contractId: statementContract.id } as never}
-                  >
-                    كشف الحساب الكامل
-                  </Link>
-                </Button>
-              ) : null}
-              <Button asChild variant="secondary">
-                <Link to="/reports" search={{ section: 'analytics', view: 'overdue', tenantId } as never}>تقرير المتأخرات</Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ) : null}
-
-      {(!section || section === 'records') && canViewActivity ? (
-        <Card>
-          <CardHeader><CardTitle className="flex items-center gap-2"><Activity className="size-5 text-primary" />آخر النشاط</CardTitle></CardHeader>
-          <CardContent>
-            {dossier.latestActivity.length === 0 ? (
-              <p className="text-sm text-muted-foreground">لا يوجد نشاط موثق.</p>
+          <div className="border-t border-border/60 pt-4">
+            <p className="text-sm font-bold">الدفعات وإثباتاتها</p>
+            {dossier.receipts.length === 0 ? (
+              <p className="mt-2 text-sm text-muted-foreground">لا توجد دفعات أو إثباتات دفع مسجلة لهذا المستأجر.</p>
             ) : (
-              <ul className="space-y-2">
-                {dossier.latestActivity.map((item) => (
-                  <li key={item.id} className="rounded-xl border p-3">
-                    <p className="font-bold">{item.subject || 'تواصل مسجل'}</p>
-                    <p className="mt-1 text-sm text-muted-foreground">{item.body}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">{formatCompanyDateTime(companyFormatters, item.created_at)}</p>
+              <ul className="mt-2 divide-y divide-border/60" aria-label="دفعات المستأجر وإثباتاتها">
+                {dossier.receipts.map((receipt) => (
+                  <li key={receipt.id} className="grid grid-cols-1 gap-1.5 py-3 text-sm sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center sm:gap-3">
+                    <span className="truncate font-bold">{receipt.reference ?? receipt.no ?? 'دفعة مسجلة'}</span>
+                    <span className="text-muted-foreground">{receipt.date_time.slice(0, 10)}{receipt.channel ? ` · ${receipt.channel}` : ''}</span>
+                    <span className="font-bold tabular-nums" dir="ltr">{companyFormatters.money(Number(receipt.amount))}</span>
                   </li>
                 ))}
               </ul>
             )}
-          </CardContent>
-        </Card>
+          </div>
+
+          <div className="flex flex-wrap gap-2 border-t border-border/60 pt-3">
+            {statementContract ? (
+              <Button asChild variant="outline" className="min-h-11">
+                <Link
+                  to="/reports"
+                  search={{ section: 'statements', tenantId, contractId: statementContract.id } as never}
+                >
+                  كشف الحساب الكامل
+                </Link>
+              </Button>
+            ) : null}
+            <Button asChild variant="secondary" className="min-h-11">
+              <Link to="/reports" search={{ section: 'analytics', view: 'overdue', tenantId } as never}>تقرير المتأخرات</Link>
+            </Button>
+          </div>
+        </section>
+      ) : null}
+
+      {(!section || section === 'records') && canViewActivity ? (
+        <section aria-labelledby="tenant-activity-heading" className={section ? undefined : 'border-t border-border/60 pt-4'}>
+          <header className="border-b border-border/60 pb-2.5">
+            <h3 id="tenant-activity-heading" className="flex items-center gap-2 text-base font-black"><Activity className="size-5 text-primary" />آخر النشاط</h3>
+          </header>
+          {dossier.latestActivity.length === 0 ? (
+            <p className="py-4 text-sm text-muted-foreground">لا يوجد نشاط موثق.</p>
+          ) : (
+            <ul className="divide-y divide-border/60">
+              {dossier.latestActivity.map((item) => (
+                <li key={item.id} className="py-3">
+                  <p className="font-bold">{item.subject || 'تواصل مسجل'}</p>
+                  <p className="mt-1 text-sm leading-6 text-muted-foreground">{item.body}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{formatCompanyDateTime(companyFormatters, item.created_at)}</p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       ) : null}
       {(!section || section === 'records') ? <ContextualDocumentsSection entityType="tenant" entityId={dossier.person.id} entityLabel="المستأجر" /> : null}
     </div>

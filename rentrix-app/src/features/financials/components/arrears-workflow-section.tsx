@@ -7,7 +7,7 @@ import { ArrearsFilters } from './arrears-filters';
 import { ArrearsSummaryCards } from './arrears-summary-cards';
 import { filterOverdueInvoiceRows, type ArrearsBucketFilter } from './arrears-workflow-helpers';
 import { formatDate, getErrorMessage } from './financials-formatters';
-import { OverdueInvoicesTable, SelectedOverdueInvoiceCard } from './overdue-invoices-table';
+import { OverdueInvoicesTable } from './overdue-invoices-table';
 
 type ArrearsWorkflowSectionProps = Readonly<{
   asOf: string;
@@ -16,7 +16,6 @@ type ArrearsWorkflowSectionProps = Readonly<{
   overdueReport: OverdueInvoicesReport | undefined;
   agedReceivablesReport: AgedReceivablesReport | undefined;
   arrearsSummaryReport: ArrearsSummaryReport | undefined;
-  selectedInvoiceId: string;
   isLoading: boolean;
   isError: boolean;
   error: unknown;
@@ -34,7 +33,6 @@ export function ArrearsWorkflowSection({
   overdueReport,
   agedReceivablesReport,
   arrearsSummaryReport,
-  selectedInvoiceId,
   isLoading,
   isError,
   error,
@@ -46,8 +44,6 @@ export function ArrearsWorkflowSection({
 }: ArrearsWorkflowSectionProps) {
   const overdueRows = overdueReport?.rows ?? [];
   const filteredRows = filterOverdueInvoiceRows(overdueRows, search, bucketFilter);
-  const selectedOverdueRow = overdueRows.find((row) => row.invoiceId === selectedInvoiceId);
-  const hasFilters = search.trim().length > 0 || bucketFilter !== 'all';
   const canShowReportContent = !isError;
   const canShowRows = !isLoading && !isError;
   const hasOverdueRows = overdueRows.length > 0;
@@ -98,11 +94,7 @@ export function ArrearsWorkflowSection({
         ) : null}
 
         {canShowRows && hasFilteredRows ? (
-          <OverdueInvoicesTable rows={filteredRows} selectedInvoiceId={selectedInvoiceId} onSelectInvoice={onSelectInvoice} onCollectInvoice={onCollectInvoice} />
-        ) : null}
-
-        {canShowRows && (hasOverdueRows || hasFilters) ? (
-          <SelectedOverdueInvoiceCard row={selectedOverdueRow} onShowInvoice={onSelectInvoice} onCollectInvoice={onCollectInvoice} />
+          <OverdueInvoicesTable rows={filteredRows} onSelectInvoice={onSelectInvoice} onCollectInvoice={onCollectInvoice} />
         ) : null}
       </CardContent>
     </Card>

@@ -16,10 +16,12 @@ export function ArrearsWorkspaceSection() {
     if (!canCollectPayments) return;
     void router.navigate({ href: createInvoiceCollectHref(invoiceId) });
   };
+  const onViewInvoice = (invoiceId: string) => {
+    void router.navigate({ href: `/invoices?invoiceId=${encodeURIComponent(invoiceId)}` });
+  };
   const [arrearsAsOf, setArrearsAsOf] = useState(() => getTodayLocalDateString());
   const [arrearsSearch, setArrearsSearch] = useState('');
   const [arrearsBucketFilter, setArrearsBucketFilter] = useState<ArrearsBucketFilter>('all');
-  const [selectedInvoiceId, setSelectedInvoiceId] = useState('');
   const arrearsReportFilters = useMemo(() => ({ asOf: arrearsAsOf }), [arrearsAsOf]);
   const overdueInvoicesReport = useOverdueInvoicesReport(arrearsReportFilters);
   const agedReceivablesReport = useAgedReceivablesReport(arrearsReportFilters);
@@ -37,14 +39,13 @@ export function ArrearsWorkspaceSection() {
       overdueReport={overdueInvoicesReport.data}
       agedReceivablesReport={agedReceivablesReport.data}
       arrearsSummaryReport={arrearsSummaryReport.data}
-      selectedInvoiceId={selectedInvoiceId}
       isLoading={isLoading}
       isError={isError}
       error={error}
       onAsOfChange={setArrearsAsOf}
       onSearchChange={setArrearsSearch}
       onBucketFilterChange={setArrearsBucketFilter}
-      onSelectInvoice={setSelectedInvoiceId}
+      onSelectInvoice={onViewInvoice}
       onCollectInvoice={canCollectPayments ? onCollectInvoice : undefined}
     />
   );

@@ -47,15 +47,15 @@ export function OwnerSettlementsWorkspace({ embedded = false }: OwnerSettlements
         <div
           role="status"
           data-owner-settlement-scope={ownerId}
-          className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/20 bg-primary/5 p-3"
+          className="mb-4 flex flex-wrap items-center justify-between gap-3 border-y border-primary/25 py-3"
         >
-          <div>
+          <div className="min-w-0">
             <p className="text-sm font-black">تسويات المالك المحدد</p>
-            <p className="mt-1 text-xs font-medium text-muted-foreground">
+            <p className="mt-1 text-xs font-medium leading-5 text-muted-foreground">
               السجل وخيارات إنشاء التسوية مقيدة بالمالك القادم من ملفه؛ لا تظهر تسويات ملاك آخرين داخل هذه الرحلة.
             </p>
           </div>
-          <Button type="button" variant="secondary" className="min-h-11" onClick={clearOwnerScope}>
+          <Button type="button" variant="secondary" className="min-h-11 shrink-0" onClick={clearOwnerScope}>
             عرض كل الملاك
           </Button>
         </div>

@@ -75,8 +75,6 @@ export function ContextualDocumentsPanel({
 
   const pickFile = (file: File | undefined, handler?: (file: File) => void | Promise<void>) => {
     if (!file || !handler) return;
-    // The handler owns user-facing error reporting (mutation onError toast);
-    // catching here only prevents an unhandled promise rejection.
     void Promise.resolve(handler(file)).catch(() => undefined);
   };
 
@@ -109,7 +107,7 @@ export function ContextualDocumentsPanel({
 
   return (
     <section className={cn('space-y-4', className)} data-contextual-documents>
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border/60 pb-3">
         <div>
           <h3 className="text-base font-black">مستندات {entityLabel}</h3>
           <p className="mt-1 text-xs leading-5 text-muted-foreground">المستندات والبيانات الوصفية والإجراءات داخل سياق الكيان، بدون مغادرة الصفحة.</p>
@@ -124,15 +122,15 @@ export function ContextualDocumentsPanel({
         ) : null}
       </div>
 
-      {isLoading ? <div role="status" className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">جارٍ تحميل المستندات...</div> : null}
-      {isError ? <div role="alert" className="flex items-center justify-between gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive"><span>{errorMessage}</span>{onRetry ? <Button variant="secondary" onClick={onRetry}><RefreshCw className="me-2 size-4" aria-hidden="true" />إعادة المحاولة</Button> : null}</div> : null}
-      {!isLoading && !isError && documents.length === 0 ? <div className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">{emptyMessage}</div> : null}
+      {isLoading ? <div role="status" className="border-y border-dashed py-6 text-center text-sm text-muted-foreground">جارٍ تحميل المستندات...</div> : null}
+      {isError ? <div role="alert" className="flex flex-wrap items-center justify-between gap-3 border-y border-destructive/30 py-4 text-sm text-destructive"><span>{errorMessage}</span>{onRetry ? <Button variant="secondary" onClick={onRetry}><RefreshCw className="me-2 size-4" aria-hidden="true" />إعادة المحاولة</Button> : null}</div> : null}
+      {!isLoading && !isError && documents.length === 0 ? <div className="border-y border-dashed py-6 text-center text-sm text-muted-foreground">{emptyMessage}</div> : null}
 
       {documents.length > 0 ? (
-        <ul className="grid gap-2" aria-label={`مستندات ${entityLabel}`}>
+        <ul className="divide-y divide-border/60 border-y border-border/60" aria-label={`مستندات ${entityLabel}`}>
           {documents.map((document) => (
-            <li key={document.id} className="grid gap-3 rounded-xl border border-border/70 bg-card p-3 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center">
-              <div className="grid size-11 place-items-center rounded-lg border border-border bg-muted/40 text-primary" aria-hidden="true"><FileText className="size-5" /></div>
+            <li key={document.id} className="grid gap-3 py-3 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center">
+              <div className="grid size-10 place-items-center rounded-lg bg-muted/45 text-primary" aria-hidden="true"><FileText className="size-5" /></div>
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2"><p className="truncate text-sm font-bold">{document.title}</p>{document.status ? <StatusBadge tone="neutral">{document.status}</StatusBadge> : null}</div>
                 <p className="mt-1 truncate text-xs text-muted-foreground">{document.fileName}{document.typeLabel ? ` · ${document.typeLabel}` : ''}{document.fileSize ? ` · ${document.fileSize}` : ''}</p>
@@ -153,7 +151,7 @@ export function ContextualDocumentsPanel({
       ) : null}
 
       <EntityPreviewDialog open={Boolean(preview)} onOpenChange={(open) => { if (!open) setPreview(null); }} title={preview?.document.title ?? `معاينة مستند ${entityLabel}`} description={preview?.document.reference ? `المرجع: ${preview.document.reference}` : undefined}>
-        {preview ? <div className="space-y-4">{preview.url && isImage(preview.document) ? <img src={preview.url} alt={preview.document.title} className="max-h-[60dvh] w-full rounded-xl object-contain" /> : preview.url ? <iframe title={preview.document.title} src={preview.url} className="h-[60dvh] w-full rounded-xl border" /> : <p className="rounded-xl bg-muted p-5 text-sm">تم تحميل بيانات المستند. رابط المعاينة غير متاح حاليًا.</p>}</div> : null}
+        {preview ? <div className="space-y-4">{preview.url && isImage(preview.document) ? <img src={preview.url} alt={preview.document.title} className="max-h-[60dvh] w-full rounded-xl object-contain" /> : preview.url ? <iframe title={preview.document.title} src={preview.url} className="h-[60dvh] w-full rounded-xl border" /> : <p className="border-y border-border/60 py-5 text-sm">تم تحميل بيانات المستند. رابط المعاينة غير متاح حاليًا.</p>}</div> : null}
       </EntityPreviewDialog>
 
       <input id="contextual-document-replace" type="file" className="hidden" tabIndex={-1} accept={accept} aria-hidden="true" onChange={(event) => { if (replaceTarget) pickFile(event.target.files?.[0], (file) => onReplace?.(replaceTarget, file)); event.target.value = ''; setReplaceTarget(null); }} />

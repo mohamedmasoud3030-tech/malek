@@ -3,12 +3,6 @@ import { useState } from "react";
 import type { UseQueryResult } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { DataTableColumnsMenu } from "@/components/ui/data-table";
 import { EntityCell } from "@/components/ui/entity-cell";
@@ -190,28 +184,28 @@ export function UnitsList({
   ];
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-start justify-between gap-3">
-        <div>
-          <CardTitle>الوحدات</CardTitle>
-          <CardDescription>إدارة وحدات العقار الحالي فقط.</CardDescription>
+    <section aria-labelledby="property-units-register-heading">
+      <header className="flex flex-col gap-3 border-b border-border/60 pb-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h2 id="property-units-register-heading" className="text-base font-black">الوحدات</h2>
+          <p className="mt-1 text-sm text-muted-foreground">إدارة وحدات العقار الحالي فقط.</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:shrink-0">
           <DataTableColumnsMenu
             columns={unitColumnOptions}
             visibleKeys={visibleColumnKeys}
             onChange={setVisibleColumnKeys}
           />
           {!unitsQuery.isError && canCreateUnit ? (
-            <Button onClick={openForCreate}>
+            <Button className="min-h-11" onClick={openForCreate}>
               <Plus className="me-2 size-4" />
               إضافة وحدة
             </Button>
           ) : null}
         </div>
-      </CardHeader>
+      </header>
 
-      <div className="px-3 pb-4 sm:px-6 sm:pb-6">
+      <div className="pt-3">
         <EntityTable
           aria-label="جدول وحدات العقار"
           rows={unitsQuery.data ?? []}
@@ -301,6 +295,6 @@ export function UnitsList({
           </ul>
         </ConfirmDialog>
       ) : null}
-    </Card>
+    </section>
   );
 }

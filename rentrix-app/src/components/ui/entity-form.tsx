@@ -115,11 +115,16 @@ function Field({ label, children, description, error, className }: EntityFormFie
   );
 }
 
+/**
+ * Canonical form section: visual grouping without another card layer.
+ * The dialog/page surface already owns the container; sections use rhythm and
+ * separators so several form groups do not become stacked cards on phones.
+ */
 function Section({ title, description, children, className }: EntityFormSectionProps) {
   return (
-    <section className={cn('min-w-0 space-y-3 rounded-xl border border-border/60 bg-muted/10 p-3 sm:p-3.5', className)}>
+    <section data-entity-form-section className={cn('min-w-0 space-y-3 border-b border-border/60 pb-4 last:border-b-0 last:pb-0', className)}>
       {title || description ? (
-        <div className="border-b border-border/50 pb-2.5">
+        <div className="pb-1">
           {title ? <h2 className="text-sm font-semibold leading-6">{title}</h2> : null}
           {description ? <p className="mt-0.5 text-xs font-medium leading-5 text-muted-foreground">{description}</p> : null}
         </div>

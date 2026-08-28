@@ -7,7 +7,6 @@ import {
 } from 'lucide-react';
 import { ContextualDocumentsSection } from '@/components/documents/contextual-documents-section';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { DetailFields } from '@/components/ui/detail-fields';
 import { EntityTable } from '@/components/ui/entity-table';
 import { KpiCard } from '@/components/ui/kpi-card';
@@ -54,7 +53,6 @@ export function OwnerDossierBody({
   const activeContracts = contracts.filter((contract) => contract.status === 'active');
   const propertyTitleById = new Map(properties.map((property) => [property.id, property.title ?? 'عقار غير محدد']));
   const unitNumberById = new Map(units.map((unit) => [unit.id, unit.unit_number]));
-  const unitPropertyIdById = new Map(units.map((unit) => [unit.id, unit.property_id]));
 
   const ownerUnitCount = units.length;
   const occupiedUnits = units.filter((unit) => unit.status === 'occupied').length;
@@ -63,212 +61,192 @@ export function OwnerDossierBody({
   const reservedUnits = units.filter((unit) => unit.status === 'reserved').length;
 
   return (
-    <div className="space-y-5">
-      {(!section || section === 'overview') ? <div className="space-y-5" data-owner-detail-overview>
-      {/* Identity + contact */}
-      <Card>
-        <CardHeader className="gap-3">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                <UserRoundCog className="size-6" aria-hidden="true" />
+    <div className="space-y-6">
+      {(!section || section === 'overview') ? (
+        <div className="space-y-5" data-owner-detail-overview>
+          <section aria-labelledby="owner-identity-heading">
+            <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+                  <UserRoundCog className="size-5" aria-hidden="true" />
+                </span>
+                <div className="min-w-0">
+                  <h2 id="owner-identity-heading" className="truncate text-lg font-semibold leading-6 sm:text-xl">{getOwnerDisplayName(owner)}</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">بيانات التواصل والهوية الأساسية للمالك.</p>
+                </div>
               </div>
-              <div className="min-w-0">
-                {/* h2: the owner's name is the page-level identity, directly under
-                    the page h1 (CardTitle is h3 and would skip a level — axe heading-order). */}
-                <h2 className="text-lg font-semibold leading-6 sm:text-xl">{getOwnerDisplayName(owner)}</h2>
-                <CardDescription className="mt-1">بيانات التواصل والهوية الأساسية للمالك.</CardDescription>
-              </div>
-            </div>
-            <StatusBadge tone={owner.is_active ? 'success' : 'neutral'} dot>
-              {owner.is_active ? 'نشط' : 'غير نشط'}
-            </StatusBadge>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <DetailFields
-            columns={3}
-            fields={[
-              { label: 'الهاتف', value: owner.phone ? <span dir="ltr">{owner.phone}</span> : 'غير موثق' },
-              { label: 'البريد الإلكتروني', value: owner.email ? <span dir="ltr">{owner.email}</span> : 'غير موثق' },
-              { label: 'رقم الهوية', value: owner.national_id ? <span dir="ltr">{owner.national_id}</span> : 'غير موثق' },
-              { label: 'الرقم الضريبي', value: owner.tax_number ? <span dir="ltr">{owner.tax_number}</span> : 'غير موثق' },
-              { label: 'العنوان', value: owner.address ?? 'غير موثق', wide: true },
-              { label: 'ملاحظات', value: owner.notes ?? '—', wide: true },
-            ]}
-          />
-        </CardContent>
-      </Card>
+              <StatusBadge tone={owner.is_active ? 'success' : 'neutral'} dot>
+                {owner.is_active ? 'نشط' : 'غير نشط'}
+              </StatusBadge>
+            </header>
+            <DetailFields
+              columns={3}
+              fields={[
+                { label: 'الهاتف', value: owner.phone ? <span dir="ltr">{owner.phone}</span> : 'غير موثق' },
+                { label: 'البريد الإلكتروني', value: owner.email ? <span dir="ltr">{owner.email}</span> : 'غير موثق' },
+                { label: 'رقم الهوية', value: owner.national_id ? <span dir="ltr">{owner.national_id}</span> : 'غير موثق' },
+                { label: 'الرقم الضريبي', value: owner.tax_number ? <span dir="ltr">{owner.tax_number}</span> : 'غير موثق' },
+                { label: 'العنوان', value: owner.address ?? 'غير موثق', wide: true },
+                { label: 'ملاحظات', value: owner.notes ?? '—', wide: true },
+              ]}
+            />
+          </section>
 
-      {/* KPIs */}
-      <ResponsiveCardGrid>
-        <KpiCard label="العقارات" value={formatCompanyNumber(companySettings, properties.length)} icon={Building2} accent="primary" />
-        <KpiCard label="الوحدات" value={formatCompanyNumber(companySettings, ownerUnitCount)} icon={DoorOpen} accent="sky" />
-        <KpiCard label="العقود النشطة" value={formatCompanyNumber(companySettings, activeContracts.length)} sub={`من أصل ${formatCompanyNumber(companySettings, contracts.length)} عقود`} icon={FileText} accent="emerald" />
-      </ResponsiveCardGrid>
-
-      </div> : null}
-
-      {(!section || section === 'portfolio') ? <div className="space-y-5" data-owner-detail-portfolio>
-      {/* Management agreements across this owner's properties (read view; the
-          property workspace owns agreement/version management) */}
-      <OwnerAgreementsSection ownerId={owner.id} />
-
-      {/* Related properties */}
-      <Card>
-        <CardHeader>
-          <CardTitle>العقارات المرتبطة</CardTitle>
-          <CardDescription>العلاقات النشطة فقط، مع عدد الوحدات والعقود لكل عقار.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <EntityTable
-            aria-label="جدول عقارات المالك"
-            rows={properties}
-            columns={[
-              // The register itself is the navigation affordance (row click on desktop,
-              // the primary button on the mobile card). Rendering an inner navigation link here
-              // would nest interactive controls inside the mobile card's button
-              // (invalid HTML, duplicate focus stops) and shrink the target below the
-              // 44px floor, so the identity cell is plain text like every other register.
-              { key: 'title', header: 'العقار', render: (property) => <span className="font-semibold text-primary">{property.title}</span> },
-              { key: 'address', header: 'العنوان', render: (property) => property.address ?? '—' },
-              { key: 'ownership', header: 'نسبة الملكية', render: (property) => {
-                const pct = property.property_owners.find((link) => link.owner_id === owner.id && !link.ends_on)?.ownership_percentage ?? 100;
-                return `${formatCompanyNumber(companySettings, pct)}%`;
-              }},
-              { key: 'units', header: 'الوحدات', render: (property) => formatCompanyNumber(companySettings, units.filter((unit) => unit.property_id === property.id).length) },
-              { key: 'active_contracts', header: 'العقود النشطة', render: (property) => formatCompanyNumber(companySettings, contracts.filter((contract) => contract.property_id === property.id && contract.status === 'active').length) },
-              { key: 'status', header: 'الحالة', render: (property) => property.status },
-            ]}
-            keyOf={(property) => property.id}
-            emptyTitle="لا توجد عقارات مرتبطة"
-            emptyDescription="لا توجد علاقة ملكية نشطة موثقة لهذا المالك. يمكنك ربط المالك بعقار من صفحة العقارات."
-            onRowClick={(property) => dialogNavigate({ to: '/properties/$propertyId', params: { propertyId: property.id } })}
-          />
-        </CardContent>
-      </Card>
-
-      {/* Related units */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2"><DoorOpen className="size-5 text-primary" aria-hidden="true" />الوحدات المرتبطة</CardTitle>
-          <CardDescription>ملخص الوحدات عبر عقارات المالك، مع قائمة الوحدات المسجلة.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {ownerUnitCount === 0 ? (
-            <p className="text-sm font-semibold text-muted-foreground">لا توجد وحدات مسجلة عبر عقارات هذا المالك.</p>
-          ) : (
-            <>
-              <div className="flex flex-wrap gap-2">
-                <StatusBadge tone="info">{formatCompanyNumber(companySettings, occupiedUnits)} مشغولة</StatusBadge>
-                <StatusBadge tone="info">{formatCompanyNumber(companySettings, availableUnits)} متاحة</StatusBadge>
-                {maintenanceUnits > 0 ? <StatusBadge tone="warning">{formatCompanyNumber(companySettings, maintenanceUnits)} صيانة</StatusBadge> : null}
-                {reservedUnits > 0 ? <StatusBadge tone="warning">{formatCompanyNumber(companySettings, reservedUnits)} محجوزة</StatusBadge> : null}
-              </div>
-              <ul className="space-y-2" aria-label="قائمة وحدات المالك">
-                {units.slice(0, 12).map((unit) => (
-                  <li key={unit.id}>
-                    <button
-                      type="button"
-                      onClick={() => dialogNavigate({
-                        to: '/properties/$propertyId/units/$unitId',
-                        params: { propertyId: unit.property_id, unitId: unit.id },
-                      })}
-                      className="flex min-h-11 w-full flex-wrap items-center gap-2 rounded-xl border border-border/60 bg-muted/20 px-3 py-2.5 text-start text-sm transition hover:border-primary/30 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
-                    >
-                      <span className="font-bold">وحدة {unit.unit_number}</span>
-                      <span className="text-xs text-muted-foreground">{propertyTitleById.get(unit.property_id) ?? 'عقار غير محدد'}{unit.floor ? ` · الدور ${unit.floor}` : ''}</span>
-                      <span className="ms-auto flex items-center gap-2">
-                        <StatusBadge tone={unitStatusTone(unit.status)}>{unitStatusLabels[unit.status] ?? unit.status}</StatusBadge>
-                        <span className="text-xs font-semibold tabular-nums" dir="ltr">{formatCompanyMoney(companySettings, unit.rent_amount)}</span>
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-              {units.length > 12 ? (
-                <p className="text-xs text-muted-foreground">تُعرض أول 12 وحدة — افتح العقار لاستعراض باقي الوحدات.</p>
-              ) : null}
-            </>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Contracts */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2"><FileText className="size-5 text-primary" aria-hidden="true" />العقود المرتبطة</CardTitle>
-          <CardDescription>عقود الإيجار عبر عقارات المالك مع الحالة والفترة.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {contracts.length === 0 ? (
-            <p className="text-sm font-semibold text-muted-foreground">لا توجد عقود مسجلة عبر عقارات هذا المالك.</p>
-          ) : (
-            <ul className="space-y-2" aria-label="قائمة عقود المالك">
-              {contracts.slice(0, 10).map((contract) => {
-                const unitId = contract.unit_id ?? '';
-                const unitPropertyId = unitPropertyIdById.get(unitId) ?? contract.property_id;
-                return (
-                  <li key={contract.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/70 px-3 py-2.5">
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-bold">{businessReferenceOrLabel(contract, 'عقد مسجل')}</span>
-                        <StatusBadge tone={contract.status === 'active' ? 'success' : 'neutral'}>{contract.status === 'active' ? 'نشط' : contract.status}</StatusBadge>
-                      </div>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {propertyTitleById.get(contract.property_id) ?? 'عقار غير محدد'}
-                        {unitNumberById.has(unitId) ? ` · وحدة ${unitNumberById.get(unitId)}` : ''}
-                        {' · '}
-                        <span dir="ltr">{formatCompanyDate(companySettings, contract.start_date)} → {formatCompanyDate(companySettings, contract.end_date)}</span>
-                      </p>
-                    </div>
-                    <Button variant="secondary" className="min-h-11" onClick={() => dialogNavigate({ to: '/contracts/$contractId', params: { contractId: contract.id } })}>
-                      فتح العقد
-                    </Button>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-          {contracts.length > 10 ? (
-            <p className="mt-2 text-xs text-muted-foreground">تُعرض أحدث 10 عقود — افتح العقار لاستعراض السجل الكامل.</p>
-          ) : null}
-        </CardContent>
-      </Card>
-
-      </div> : null}
-
-      {(!section || section === 'records') ? <div className="space-y-5" data-owner-detail-records>
-      {/* Activity (real audit source) */}
-      {activity !== undefined ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Activity className="size-5 text-primary" aria-hidden="true" />آخر النشاط</CardTitle>
-            <CardDescription>أحداث الحوكمة الموثقة المرتبطة بملف المالك.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {activity.length === 0 ? (
-              <p className="text-sm font-semibold text-muted-foreground">لا يوجد نشاط موثق مرتبط بهذا المالك بعد.</p>
-            ) : (
-              <ul className="space-y-2" aria-label="سجل نشاط المالك">
-                {activity.slice(0, 8).map((record) => (
-                  <li key={record.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/60 px-3 py-2.5 text-sm">
-                    <span className="min-w-0">
-                      <span className="font-bold">{record.action}</span>
-                      {record.description ? <span className="ms-2 text-xs text-muted-foreground">{record.description}</span> : null}
-                    </span>
-                    <span className="whitespace-nowrap text-xs text-muted-foreground" dir="ltr">{record.occurredAt.slice(0, 10)}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
+          <ResponsiveCardGrid>
+            <KpiCard label="العقارات" value={formatCompanyNumber(companySettings, properties.length)} icon={Building2} accent="primary" />
+            <KpiCard label="الوحدات" value={formatCompanyNumber(companySettings, ownerUnitCount)} icon={DoorOpen} accent="sky" />
+            <KpiCard label="العقود النشطة" value={formatCompanyNumber(companySettings, activeContracts.length)} sub={`من أصل ${formatCompanyNumber(companySettings, contracts.length)} عقود`} icon={FileText} accent="emerald" />
+          </ResponsiveCardGrid>
+        </div>
       ) : null}
 
-      {/* Documents */}
-      <ContextualDocumentsSection entityType="owner" entityId={owner.id} entityLabel="المالك" />
-      </div> : null}
+      {(!section || section === 'portfolio') ? (
+        <div className="space-y-6" data-owner-detail-portfolio>
+          <OwnerAgreementsSection ownerId={owner.id} />
+
+          <section aria-labelledby="owner-properties-heading">
+            <header className="border-b border-border/60 pb-2.5">
+              <h3 id="owner-properties-heading" className="text-base font-black">العقارات المرتبطة</h3>
+              <p className="mt-1 text-sm text-muted-foreground">العلاقات النشطة فقط، مع عدد الوحدات والعقود لكل عقار.</p>
+            </header>
+            <div className="pt-3">
+              <EntityTable
+                aria-label="جدول عقارات المالك"
+                rows={properties}
+                columns={[
+                  { key: 'title', header: 'العقار', priority: 'identity', render: (property) => <span className="font-semibold text-primary">{property.title}</span> },
+                  { key: 'address', header: 'العنوان', priority: 'secondary', render: (property) => property.address ?? '—' },
+                  { key: 'ownership', header: 'نسبة الملكية', priority: 'secondary', render: (property) => {
+                    const pct = property.property_owners.find((link) => link.owner_id === owner.id && !link.ends_on)?.ownership_percentage ?? 100;
+                    return `${formatCompanyNumber(companySettings, pct)}%`;
+                  }},
+                  { key: 'units', header: 'الوحدات', priority: 'detail', render: (property) => formatCompanyNumber(companySettings, units.filter((unit) => unit.property_id === property.id).length) },
+                  { key: 'active_contracts', header: 'العقود النشطة', priority: 'detail', render: (property) => formatCompanyNumber(companySettings, contracts.filter((contract) => contract.property_id === property.id && contract.status === 'active').length) },
+                  { key: 'status', header: 'الحالة', priority: 'secondary', render: (property) => property.status },
+                ]}
+                keyOf={(property) => property.id}
+                emptyTitle="لا توجد عقارات مرتبطة"
+                emptyDescription="لا توجد علاقة ملكية نشطة موثقة لهذا المالك. يمكنك ربط المالك بعقار من صفحة العقارات."
+                onRowClick={(property) => dialogNavigate({ to: '/properties/$propertyId', params: { propertyId: property.id } })}
+                mobileSummaryKeys={['address', 'ownership', 'units', 'active_contracts']}
+              />
+            </div>
+          </section>
+
+          <section className="border-t border-border/60 pt-4" aria-labelledby="owner-units-heading">
+            <header className="border-b border-border/60 pb-2.5">
+              <h3 id="owner-units-heading" className="flex items-center gap-2 text-base font-black"><DoorOpen className="size-5 text-primary" aria-hidden="true" />الوحدات المرتبطة</h3>
+              <p className="mt-1 text-sm text-muted-foreground">ملخص الوحدات عبر عقارات المالك، مع قائمة الوحدات المسجلة.</p>
+            </header>
+            {ownerUnitCount === 0 ? (
+              <p className="py-4 text-sm font-semibold text-muted-foreground">لا توجد وحدات مسجلة عبر عقارات هذا المالك.</p>
+            ) : (
+              <>
+                <div className="flex flex-wrap gap-2 py-3">
+                  <StatusBadge tone="info">{formatCompanyNumber(companySettings, occupiedUnits)} مشغولة</StatusBadge>
+                  <StatusBadge tone="info">{formatCompanyNumber(companySettings, availableUnits)} متاحة</StatusBadge>
+                  {maintenanceUnits > 0 ? <StatusBadge tone="warning">{formatCompanyNumber(companySettings, maintenanceUnits)} صيانة</StatusBadge> : null}
+                  {reservedUnits > 0 ? <StatusBadge tone="warning">{formatCompanyNumber(companySettings, reservedUnits)} محجوزة</StatusBadge> : null}
+                </div>
+                <ul className="divide-y divide-border/60" aria-label="قائمة وحدات المالك">
+                  {units.slice(0, 12).map((unit) => (
+                    <li key={unit.id}>
+                      <button
+                        type="button"
+                        onClick={() => dialogNavigate({
+                          to: '/properties/$propertyId/units/$unitId',
+                          params: { propertyId: unit.property_id, unitId: unit.id },
+                        })}
+                        className="flex min-h-11 w-full flex-wrap items-center gap-2 py-3 text-start text-sm transition hover:text-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
+                      >
+                        <span className="font-bold">وحدة {unit.unit_number}</span>
+                        <span className="text-xs text-muted-foreground">{propertyTitleById.get(unit.property_id) ?? 'عقار غير محدد'}{unit.floor ? ` · الدور ${unit.floor}` : ''}</span>
+                        <span className="ms-auto flex items-center gap-2">
+                          <StatusBadge tone={unitStatusTone(unit.status)}>{unitStatusLabels[unit.status] ?? unit.status}</StatusBadge>
+                          <span className="text-xs font-semibold tabular-nums" dir="ltr">{formatCompanyMoney(companySettings, unit.rent_amount)}</span>
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+                {units.length > 12 ? (
+                  <p className="mt-2 text-xs text-muted-foreground">تُعرض أول 12 وحدة — افتح العقار لاستعراض باقي الوحدات.</p>
+                ) : null}
+              </>
+            )}
+          </section>
+
+          <section className="border-t border-border/60 pt-4" aria-labelledby="owner-contracts-heading">
+            <header className="border-b border-border/60 pb-2.5">
+              <h3 id="owner-contracts-heading" className="flex items-center gap-2 text-base font-black"><FileText className="size-5 text-primary" aria-hidden="true" />العقود المرتبطة</h3>
+              <p className="mt-1 text-sm text-muted-foreground">عقود الإيجار عبر عقارات المالك مع الحالة والفترة.</p>
+            </header>
+            {contracts.length === 0 ? (
+              <p className="py-4 text-sm font-semibold text-muted-foreground">لا توجد عقود مسجلة عبر عقارات هذا المالك.</p>
+            ) : (
+              <ul className="divide-y divide-border/60" aria-label="قائمة عقود المالك">
+                {contracts.slice(0, 10).map((contract) => {
+                  const unitId = contract.unit_id ?? '';
+                  return (
+                    <li key={contract.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-bold">{businessReferenceOrLabel(contract, 'عقد مسجل')}</span>
+                          <StatusBadge tone={contract.status === 'active' ? 'success' : 'neutral'}>{contract.status === 'active' ? 'نشط' : contract.status}</StatusBadge>
+                        </div>
+                        <p className="mt-1 break-words text-xs leading-5 text-muted-foreground">
+                          {propertyTitleById.get(contract.property_id) ?? 'عقار غير محدد'}
+                          {unitNumberById.has(unitId) ? ` · وحدة ${unitNumberById.get(unitId)}` : ''}
+                          {' · '}
+                          <span dir="ltr">{formatCompanyDate(companySettings, contract.start_date)} → {formatCompanyDate(companySettings, contract.end_date)}</span>
+                        </p>
+                      </div>
+                      <Button variant="secondary" className="min-h-11 shrink-0" onClick={() => dialogNavigate({ to: '/contracts/$contractId', params: { contractId: contract.id } })}>
+                        فتح العقد
+                      </Button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            {contracts.length > 10 ? (
+              <p className="mt-2 text-xs text-muted-foreground">تُعرض أحدث 10 عقود — افتح العقار لاستعراض السجل الكامل.</p>
+            ) : null}
+          </section>
+        </div>
+      ) : null}
+
+      {(!section || section === 'records') ? (
+        <div className="space-y-5" data-owner-detail-records>
+          {activity !== undefined ? (
+            <section aria-labelledby="owner-activity-heading">
+              <header className="border-b border-border/60 pb-2.5">
+                <h3 id="owner-activity-heading" className="flex items-center gap-2 text-base font-black"><Activity className="size-5 text-primary" aria-hidden="true" />آخر النشاط</h3>
+                <p className="mt-1 text-sm text-muted-foreground">أحداث الحوكمة الموثقة المرتبطة بملف المالك.</p>
+              </header>
+              {activity.length === 0 ? (
+                <p className="py-4 text-sm font-semibold text-muted-foreground">لا يوجد نشاط موثق مرتبط بهذا المالك بعد.</p>
+              ) : (
+                <ul className="divide-y divide-border/60" aria-label="سجل نشاط المالك">
+                  {activity.slice(0, 8).map((record) => (
+                    <li key={record.id} className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm">
+                      <span className="min-w-0">
+                        <span className="font-bold">{record.action}</span>
+                        {record.description ? <span className="ms-2 text-xs text-muted-foreground">{record.description}</span> : null}
+                      </span>
+                      <span className="whitespace-nowrap text-xs text-muted-foreground" dir="ltr">{record.occurredAt.slice(0, 10)}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          ) : null}
+
+          <div className="border-t border-border/60 pt-4">
+            <ContextualDocumentsSection entityType="owner" entityId={owner.id} entityLabel="المالك" />
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

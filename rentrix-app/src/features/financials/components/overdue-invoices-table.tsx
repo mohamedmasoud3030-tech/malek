@@ -9,7 +9,6 @@ import { formatLatinNumber } from '@/lib/formatters';
 
 type OverdueInvoicesTableProps = Readonly<{
   rows: OverdueInvoiceReportRow[];
-  selectedInvoiceId: string;
   onSelectInvoice: (invoiceId: string) => void;
   onCollectInvoice?: (invoiceId: string) => void;
 }>;
@@ -21,7 +20,7 @@ function getContextLabel(row: OverdueInvoiceReportRow) {
   return parts.length > 0 ? parts.join(' · ') : EMPTY_FIELD_VALUE;
 }
 
-export function OverdueInvoicesTable({ rows, selectedInvoiceId, onSelectInvoice, onCollectInvoice }: OverdueInvoicesTableProps) {
+export function OverdueInvoicesTable({ rows, onSelectInvoice, onCollectInvoice }: OverdueInvoicesTableProps) {
   const columns: ColumnDef<OverdueInvoiceReportRow>[] = [
     {
       key: 'invoice_id', priority: 'identity' as const,
@@ -93,50 +92,5 @@ export function OverdueInvoicesTable({ rows, selectedInvoiceId, onSelectInvoice,
         onClick: () => onCollectInvoice(row.invoiceId),
       }] : []}
     />
-  );
-}
-
-type SelectedOverdueInvoiceCardProps = Readonly<{
-  row: OverdueInvoiceReportRow | undefined;
-  onShowInvoice: (invoiceId: string) => void;
-  onCollectInvoice?: (invoiceId: string) => void;
-}>;
-
-export function SelectedOverdueInvoiceCard({ row, onShowInvoice, onCollectInvoice }: SelectedOverdueInvoiceCardProps) {
-  if (!row) {
-    return (
-      <div className="rounded-2xl border border-dashed bg-muted/20 p-5 text-sm text-muted-foreground">
-        اختر فاتورة متأخرة من القائمة لعرض تفاصيل التحصيل.
-      </div>
-    );
-  }
-
-  const bucket = getOverdueRowBucketKey(row);
-  return (
-    <div className="rounded-2xl border bg-background p-5 shadow-sm">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-bold text-muted-foreground">تفاصيل التحصيل</p>
-          <h3 className="mt-1 text-lg font-black">فاتورة {row.invoiceReference ?? 'فاتورة بلا مرجع'}</h3>
-        </div>
-        <StatusBadge tone="danger">{getArrearsBucketLabel(bucket)}</StatusBadge>
-      </div>
-      <dl className="mt-4 grid grid-cols-2 gap-3">
-        <div><dt className="text-xs text-muted-foreground">المستأجر</dt><dd className="font-bold">{row.tenantName ?? EMPTY_FIELD_VALUE}</dd></div>
-        <div><dt className="text-xs text-muted-foreground">الهاتف</dt><dd dir="ltr" className="font-bold">{row.tenantPhone ?? EMPTY_FIELD_VALUE}</dd></div>
-        <div><dt className="text-xs text-muted-foreground">السياق</dt><dd className="font-bold">{getContextLabel(row)}</dd></div>
-        <div><dt className="text-xs text-muted-foreground">تاريخ الاستحقاق</dt><dd className="font-bold">{formatDate(row.dueDate)}</dd></div>
-        <div><dt className="text-xs text-muted-foreground">المتبقي</dt><dd dir="ltr" className="font-black text-destructive">{formatMoney(row.remainingAmount)}</dd></div>
-      </dl>
-      <div className="mt-4 flex flex-wrap items-center gap-2">
-        {onCollectInvoice ? (
-          <Button className="min-h-11" onClick={() => onCollectInvoice(row.invoiceId)}>
-            <HandCoins className="me-2 size-4" />بدء التحصيل الآن
-          </Button>
-        ) : null}
-        <Button className="min-h-11" variant="secondary" onClick={() => onShowInvoice(row.invoiceId)}>عرض الفاتورة في قسم الفواتير</Button>
-        {!onCollectInvoice ? <p className="text-xs text-muted-foreground">حسابك لا يملك صلاحية تسجيل دفعات من هذا القسم.</p> : null}
-      </div>
-    </div>
   );
 }
