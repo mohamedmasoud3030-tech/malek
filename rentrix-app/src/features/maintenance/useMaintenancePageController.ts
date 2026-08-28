@@ -15,7 +15,7 @@ import {
   useUpdateMaintenance,
   useUpdateMaintenanceStatus,
 } from './use-maintenance';
-import type { Maintenance } from './maintenance-service';
+import type { Maintenance, MaintenanceChargeTarget } from './maintenance-service';
 import {
   filterMaintenanceRequests,
   summarizeMaintenanceRequests,
@@ -50,6 +50,7 @@ export type MaintenanceFormValues = z.infer<typeof maintenanceRequestSchema>;
 
 export const maintenanceResolveSchema = z.object({
   cost: z.coerce.number({ invalid_type_error: 'أدخل تكلفة صحيحة' }).min(0, 'التكلفة لا يمكن أن تكون سالبة'),
+  chargedTo: z.enum(['OWNER', 'TENANT', 'COMPANY'], { required_error: 'حدد من يتحمل التكلفة' }),
   notes: z.string().nullable().optional(),
 });
 
@@ -118,7 +119,7 @@ export function useMaintenancePageController() {
   const resolveMutation = useResolveMaintenanceWithExpense();
   const resolveForm = useForm<MaintenanceResolveFormValues>({
     resolver: zodResolver(maintenanceResolveSchema),
-    defaultValues: { cost: 0, notes: '' },
+    defaultValues: { cost: 0, chargedTo: 'OWNER', notes: '' },
   });
 
   const form = useForm<MaintenanceFormValues>({
@@ -271,7 +272,9 @@ export function useMaintenancePageController() {
 
   const handleStatusAction = (row: Maintenance, status: Exclude<MaintenanceStatusFilter, 'all'>) => {
     if (status === 'resolved') {
-      resolveForm.reset({ cost: 0, notes: '' });
+      const existingTarget = row.charged_to?.trim().toUpperCase();
+      const chargedTo: MaintenanceChargeTarget = existingTarget === 'TENANT' || existingTarget === 'COMPANY' ? existingTarget : 'OWNER';
+      resolveForm.reset({ cost: 0, chargedTo, notes: '' });
       setResolveTarget(row);
       return;
     }
@@ -292,6 +295,7 @@ export function useMaintenancePageController() {
       {
         requestId: resolveTarget.id,
         cost: values.cost,
+        chargedTo: values.chargedTo,
         notes: values.notes?.trim() ? values.notes.trim() : null,
       },
       { onSuccess: () => setResolveTarget(null) },
