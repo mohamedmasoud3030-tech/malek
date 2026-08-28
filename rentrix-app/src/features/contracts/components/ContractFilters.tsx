@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { FilterTabs } from '@/components/ui/filter-tabs';
 import { contractStatusValues } from '../contractSchema';
+import type { LeaseModeFilter } from '../hooks/useContractFilters';
 import type { ContractStatusFilter } from '../services/contractService';
 
 const filterLabels: Record<ContractStatusFilter, string> = {
@@ -13,21 +14,31 @@ const filterLabels: Record<ContractStatusFilter, string> = {
   terminated: 'ملغي',
 };
 
+const leaseModeOptions: ReadonlyArray<{ value: LeaseModeFilter; label: string }> = [
+  { value: 'all', label: 'كل الإيجارات' },
+  { value: 'long_term', label: 'طويل' },
+  { value: 'short_stay', label: 'إقامة قصيرة' },
+];
+
 export function ContractFilters({
   expiringOnly,
   hasActiveFilters,
+  leaseMode,
   resetFilters,
   searchTerm,
   setExpiringOnly,
+  setLeaseMode,
   setSearchTerm,
   setStatus,
   status,
 }: {
   expiringOnly: boolean;
   hasActiveFilters: boolean;
+  leaseMode: LeaseModeFilter;
   resetFilters: () => void;
   searchTerm: string;
   setExpiringOnly: (updater: (value: boolean) => boolean) => void;
+  setLeaseMode: (value: LeaseModeFilter) => void;
   setSearchTerm: (value: string) => void;
   setStatus: (value: ContractStatusFilter) => void;
   status: ContractStatusFilter;
@@ -45,6 +56,7 @@ export function ContractFilters({
       searchAriaLabel="بحث في العقود"
       filters={(
         <>
+          <FilterTabs options={leaseModeOptions} value={leaseMode} onChange={setLeaseMode} tone="contracts" />
           <FilterTabs options={filterOptions} value={status} onChange={setStatus} tone="contracts" />
           <Button
             variant={expiringOnly ? 'primary' : 'secondary'}
