@@ -19,6 +19,8 @@ import {
 import { useCreateUnit, useUpdateUnit } from './use-units';
 import { MONEY_STEP } from '@/lib/money';
 
+type UnitWithDailyReferenceRate = Unit & { daily_reference_rate?: number | null };
+
 type UnitFormModalProps = {
   propertyId: string;
   unit: Unit | null;
@@ -34,6 +36,7 @@ export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitForm
   const updateMutation = useUpdateUnit(effectivePropertyId);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const managedStatus = unit ? isUnitOperationallyManagedStatus(unit.status) : false;
+  const unitWithDailyRate = unit as UnitWithDailyReferenceRate | null;
   const form = useForm<UnitFormValues>({
     resolver: zodResolver(unitSchema, undefined, { raw: true }),
     defaultValues: {
@@ -41,6 +44,7 @@ export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitForm
       floor: '',
       status: 'available',
       rent_amount: null,
+      daily_reference_rate: null,
       notes: '',
     },
   });
@@ -54,10 +58,11 @@ export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitForm
         floor: unit?.floor ?? '',
         status: unit?.status ?? 'available',
         rent_amount: unit?.rent_amount ?? null,
+        daily_reference_rate: unitWithDailyRate?.daily_reference_rate ?? null,
         notes: unit?.notes ?? '',
       });
     }
-  }, [form, open, propertyId, unit]);
+  }, [form, open, propertyId, unit, unitWithDailyRate?.daily_reference_rate]);
 
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
   let propertyError: string | undefined;
@@ -170,6 +175,23 @@ export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitForm
             min="0"
             {...form.register('rent_amount')}
           />
+        </EntityForm.Field>
+
+        <EntityForm.Field
+          label="سعر اليوم المرجعي للإقامة القصيرة"
+          error={form.formState.errors.daily_reference_rate?.message}
+        >
+          <Input
+            type="number"
+            step={MONEY_STEP}
+            inputMode="decimal"
+            min="0"
+            placeholder="اختياري"
+            {...form.register('daily_reference_rate')}
+          />
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">
+            اقتراح فقط عند إنشاء إقامة قصيرة؛ السعر المتفق عليه في العقد لا يتقيد به.
+          </p>
         </EntityForm.Field>
 
         <EntityForm.Field label="ملاحظات" className="md:col-span-2">
