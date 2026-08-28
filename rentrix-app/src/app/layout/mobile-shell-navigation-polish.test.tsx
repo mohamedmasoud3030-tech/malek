@@ -63,6 +63,7 @@ vi.mock('@/store/ui-store', () => ({
 
 import { AppShell } from './app-shell';
 import { MobileFloatingControl } from './layout-navigation-view';
+import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 
 describe('MALEK mobile shell & navigation polish pass (Section O verification matrix)', () => {
@@ -313,8 +314,8 @@ describe('MALEK mobile shell & navigation polish pass (Section O verification ma
   });
 
   describe('8. Dashboard Density & Shared Today Context', () => {
-    it('renders a compact Today context strip with localized weekday and date', () => {
-      renderWithClient(<PageLayout>محتوى</PageLayout>);
+    it('renders a compact Today context strip with localized weekday and date from the canonical PageHeader', () => {
+      renderWithClient(<PageHeader title="لوحة التحكم" />);
       const today = host.querySelector<HTMLElement>('[data-global-today-context]');
       expect(today).not.toBeNull();
       expect(today?.textContent).toContain('اليوم');
@@ -324,18 +325,7 @@ describe('MALEK mobile shell & navigation polish pass (Section O verification ma
       expect(today?.className).toContain('rounded-2xl');
     });
 
-    it('provides an accessible refresh control with a 44px tap target in the shared strip', () => {
-      const onRefreshSpy = vi.fn();
-      renderWithClient(<PageLayout onRefresh={onRefreshSpy}>محتوى</PageLayout>);
-      const refresh = host.querySelector<HTMLButtonElement>('[data-global-refresh]');
-      expect(refresh).not.toBeNull();
-      expect(refresh?.getAttribute('aria-label')).toBe('تحديث');
-      expect(refresh?.className).toContain('size-11');
-      act(() => { refresh?.click(); });
-      expect(onRefreshSpy).toHaveBeenCalledOnce();
-    });
-
-    it('omits the refresh control when a page wires no refresh handler', () => {
+    it('keeps PageLayout structural and does not duplicate global refresh chrome', () => {
       renderWithClient(<PageLayout>محتوى</PageLayout>);
       expect(host.querySelector('[data-global-refresh]')).toBeNull();
     });

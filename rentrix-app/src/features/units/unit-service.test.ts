@@ -42,6 +42,7 @@ describe('unit service write workflow', () => {
       floor: null,
       status: 'available',
       rent_amount: 500,
+      daily_reference_rate: null,
       notes: null,
     })).toEqual({
       property_id: 'property-1',
@@ -49,6 +50,7 @@ describe('unit service write workflow', () => {
       floor: null,
       status: 'available',
       rent_amount: 500,
+      daily_reference_rate: null,
       notes: null,
     });
   });
@@ -101,6 +103,7 @@ describe('unit service write workflow', () => {
       floor: null,
       status: 'available',
       rent_amount: null,
+      daily_reference_rate: null,
       notes: null,
     })).rejects.toThrow('تعذر تحديث الوحدات: لا تملك صلاحية تنفيذ هذا الإجراء. تواصل مع المسؤول إذا كنت تحتاج هذه الصلاحية.');
   });

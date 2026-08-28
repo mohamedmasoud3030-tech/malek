@@ -38,9 +38,9 @@ vi.mock('@/components/layout/page-header', () => ({
 }));
 
 const unitsData: Unit[] = [
-  { id: 'u1', property_id: 'p1', unit_number: '101', status: 'available', rent_amount: 1200, floor: '1', notes: null, name: null, created_at: '', updated_at: '', deleted_at: null, company_id: 'company-1' },
-  { id: 'u2', property_id: 'p1', unit_number: '102', status: 'occupied', rent_amount: 1500, floor: '1', notes: 'بلكون', name: null, created_at: '', updated_at: '', deleted_at: null, company_id: 'company-1' },
-  { id: 'u3', property_id: 'p2', unit_number: '201', status: 'maintenance', rent_amount: 1800, floor: '2', notes: null, name: null, created_at: '', updated_at: '', deleted_at: null, company_id: 'company-1' },
+  { id: 'u1', property_id: 'p1', unit_number: '101', status: 'available', rent_amount: 1200, daily_reference_rate: null, floor: '1', notes: null, name: null, created_at: '', updated_at: '', deleted_at: null, company_id: 'company-1' },
+  { id: 'u2', property_id: 'p1', unit_number: '102', status: 'occupied', rent_amount: 1500, daily_reference_rate: null, floor: '1', notes: 'بلكون', name: null, created_at: '', updated_at: '', deleted_at: null, company_id: 'company-1' },
+  { id: 'u3', property_id: 'p2', unit_number: '201', status: 'maintenance', rent_amount: 1800, daily_reference_rate: null, floor: '2', notes: null, name: null, created_at: '', updated_at: '', deleted_at: null, company_id: 'company-1' },
 ];
 
 vi.mock('./use-units', () => ({

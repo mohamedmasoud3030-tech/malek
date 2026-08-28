@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { DataErrorScreen } from './data-error-screen';
-import { EmptyState } from './empty-state';
+import { EmptyState } from './ui/state-surfaces';
 import { RouteErrorFallback } from './error-boundary';
 import { LoadingState } from './ui/loading-state';
 

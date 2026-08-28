@@ -72,6 +72,7 @@ describe('UnitsList mobile card density', () => {
           floor: 'الدور الثاني',
           status: 'occupied',
           rent_amount: 420,
+          daily_reference_rate: null,
           notes: 'تسليم مفتاح تم',
           created_at: '2026-01-01T00:00:00Z',
           updated_at: '2026-01-01T00:00:00Z',
