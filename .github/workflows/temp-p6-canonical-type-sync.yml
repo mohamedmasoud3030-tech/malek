@@ -1,0 +1,45 @@
+name: TEMP P6 Canonical Type Sync
+
+on:
+  push:
+    branches:
+      - fix/p6-owner-employee-permissions-20260828
+    paths:
+      - '.github/workflows/temp-p6-canonical-type-sync.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          fetch-depth: 0
+          ref: refs/pull/1659/merge
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - run: pnpm rebuild esbuild
+      - name: Build canonical merge database
+        run: bash scripts/canonical-db/build-baseline.sh
+      - name: Generate exact database contract
+        run: pnpm db0:gen-types
+      - name: Commit generated contract back to P6 head and remove helper
+        shell: bash
+        run: |
+          cp rentrix-app/src/types/database.ts /tmp/p6-database.ts
+          git checkout fix/p6-owner-employee-permissions-20260828
+          cp /tmp/p6-database.ts rentrix-app/src/types/database.ts
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add rentrix-app/src/types/database.ts
+          git rm .github/workflows/temp-p6-canonical-type-sync.yml
+          git diff --cached --quiet && exit 0
+          git commit -m "fix(p6): sync generated database contract"
+          git push origin HEAD:fix/p6-owner-employee-permissions-20260828
