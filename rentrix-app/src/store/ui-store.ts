@@ -18,8 +18,8 @@ type UiState = {
 };
 
 const getInitialTheme = (): Theme => {
-  if (typeof window === 'undefined') return 'light';
-  return (localStorage.getItem('rentrix-theme') as Theme | null) ?? 'light';
+  if (typeof window === 'undefined') return 'dark';
+  return (localStorage.getItem('rentrix-theme') as Theme | null) ?? 'dark';
 };
 
 export const useUiStore = create<UiState>((set) => ({

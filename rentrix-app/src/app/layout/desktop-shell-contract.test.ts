@@ -9,16 +9,19 @@ const pagePolish = readFileSync(resolve(appLayoutDir, '../../styles/page-polish.
 
 describe('desktop shell declutter contract', () => {
   it('keeps the desktop navigation fixed and expanded with visible labels', () => {
-    expect(shell).toContain('hidden w-64 overflow-hidden');
     expect(shell).toContain('<Brand expanded />');
     expect(shell).toContain('<NavigationLinks authorization={authorization} expanded sharedLabel={sharedLabel} />');
     expect(shell).not.toContain("sidebarCollapsed ? 'w-[4.5rem] overflow-visible'");
+    expect(pagePolish).toContain('width: 14rem;');
+    expect(pagePolish).toContain('padding-inline-end: 14rem;');
   });
 
-  it('uses a quiet desktop header and a scrollable permanent navigation', () => {
+  it('uses restrained premium chrome instead of the legacy flat/glass split', () => {
     expect(pagePolish).toContain('/* ── Desktop shell: fixed, named, and quiet');
     expect(pagePolish).toContain('[data-app-shell] [data-sidebar] > nav');
     expect(pagePolish).toContain('[data-app-shell] [data-app-shell-header]');
-    expect(pagePolish).toContain('backdrop-filter: none');
+    expect(pagePolish).toContain('background: var(--material-chrome);');
+    expect(pagePolish).toContain('backdrop-filter: blur(var(--material-blur));');
+    expect(pagePolish).not.toContain('backdrop-filter: none');
   });
 });
