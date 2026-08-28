@@ -2,7 +2,6 @@ import type { ReportsWorkspaceModel } from '../use-reports-workspace';
 import type { ReportsFilterState } from '../reports-workspace-filters';
 import type { ReportViewId } from '../report-view-registry';
 import type { ReportSectionId } from '../reports-page.sections';
-import { ReportsSectionTabs } from './ReportsSectionTabs';
 import { ReportsShell } from './ReportsShell';
 import { ReportsViewPanel } from './ReportsViewPanel';
 
@@ -21,12 +20,10 @@ type ReportsWorkspaceProps = Readonly<{
 /**
  * Reports workspace composition root.
  *
- * The user chooses the reporting context first, then narrows the scope, then
- * reads the active report. Keeping those three steps in that order prevents the
- * page from reading like a stack of unrelated dashboards — especially on
- * phones — while preserving the existing deep-link and authority contracts.
- * The active report deliberately remains the final, dominant visual block.
- * This composition intentionally remains independent from the Finance cockpit.
+ * Owner-facing navigation is intentionally task/report-first. The legacy
+ * accounting/statements/analytics section ids remain internal routing
+ * contracts only, so deep links and authoritative report adapters keep
+ * working without exposing implementation-oriented categories to the user.
  */
 export function ReportsWorkspace({
   model,
@@ -34,20 +31,12 @@ export function ReportsWorkspace({
   canExportReports,
   activeSection,
   activeView,
-  onSectionChange,
   onSectionViewChange,
   onFiltersChange,
   onResetCurrentMonth,
 }: ReportsWorkspaceProps) {
   return (
     <div className="space-y-3 sm:space-y-4">
-      <ReportsSectionTabs
-        activeSection={activeSection}
-        activeView={activeView}
-        onSectionChange={onSectionChange}
-        onSectionViewChange={onSectionViewChange}
-      />
-
       <ReportsShell
         model={model}
         filters={filters}
