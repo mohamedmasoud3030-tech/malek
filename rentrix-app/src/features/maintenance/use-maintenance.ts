@@ -9,6 +9,7 @@ import {
   updateMaintenance,
   updateMaintenanceStatus,
   type CreateMaintenanceInput,
+  type MaintenanceChargeTarget,
   type MaintenanceStatus,
   type MaintenanceUpdate,
 } from './maintenance-service';
@@ -33,14 +34,15 @@ export function useUpdateMaintenanceStatus() { const qc = useQueryClient(); retu
 export function useResolveMaintenanceWithExpense() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ requestId, cost, notes }: { requestId: string; cost: number; notes: string | null }) => resolveMaintenanceWithExpense(requestId, cost, notes),
-    onSuccess: async () => {
+    mutationFn: ({ requestId, cost, chargedTo, notes }: { requestId: string; cost: number; chargedTo: MaintenanceChargeTarget; notes: string | null }) => resolveMaintenanceWithExpense(requestId, cost, chargedTo, notes),
+    onSuccess: async (_result, variables) => {
       await Promise.all([
         qc.invalidateQueries({ queryKey: maintenanceKeys.all }),
         qc.invalidateQueries({ queryKey: expenseKeys.all }),
         qc.invalidateQueries({ queryKey: financialReportKeys.all }),
       ]);
-      toast.success('تم إغلاق طلب الصيانة وتسجيل التكلفة كمصروف');
+      const partyLabel = variables.chargedTo === 'OWNER' ? 'المالك' : variables.chargedTo === 'TENANT' ? 'المستأجر' : 'المكتب';
+      toast.success(`تم تنفيذ الصيانة وتوجيه التكلفة على ${partyLabel}`);
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر إغلاق طلب الصيانة'),
   });
