@@ -1,15 +1,9 @@
 /**
  * AI Assistant navigation contract — P4 Intelligence.
  *
- * PRD-008 allows the assistant to **navigate**: it may open the canonical
- * workspace that answers the operator's question, but it is never accounting
- * authority and never mutates anything.
- *
- * Navigation targets are derived deterministically from the *requested action*
- * (a closed union), never from model output. This keeps model replies
- * ungrounded text: if the model hallucinates a destination, no deep link is
- * produced. Every target is an in-app route already gated by its own route
- * permission; no raw URL, no query injection, no mutation route.
+ * The assistant may navigate to the canonical workspace that answers the
+ * operator's question, but it is never accounting authority and never mutates
+ * anything. Navigation targets are deterministic and action-based only.
  */
 
 import type { AiAssistantAction } from './types';
@@ -28,7 +22,7 @@ export type AiNavigationContext = Readonly<{
 const NAVIGATION_BY_ACTION: Readonly<Record<AiAssistantAction, readonly AiNavigationTarget[]>> = {
   summarize_overdue_invoices: [
     {
-      label: 'فتح تعتيق المتأخرات',
+      label: 'فتح المتأخرات',
       to: '/reports',
       search: { section: 'analytics', view: 'overdue' },
     },
@@ -39,6 +33,20 @@ const NAVIGATION_BY_ACTION: Readonly<Record<AiAssistantAction, readonly AiNaviga
       to: '/contracts',
     },
   ],
+  summarize_vacancy: [
+    {
+      label: 'فتح الإشغال والشغور',
+      to: '/reports',
+      search: { section: 'analytics', view: 'occupancy' },
+    },
+  ],
+  summarize_month: [
+    {
+      label: 'فتح أداء المكتب',
+      to: '/reports',
+      search: { section: 'analytics', view: 'overview' },
+    },
+  ],
   draft_tenant_payment_reminder: [
     {
       label: 'فتح مركز التواصل',
@@ -47,7 +55,7 @@ const NAVIGATION_BY_ACTION: Readonly<Record<AiAssistantAction, readonly AiNaviga
   ],
   explain_property_financial_snapshot: [
     {
-      label: 'فتح نظرة الأداء',
+      label: 'فتح أداء المكتب',
       to: '/reports',
       search: { section: 'analytics', view: 'overview' },
     },
@@ -59,11 +67,6 @@ const FREEFORM_NAVIGATION_TARGETS: readonly AiNavigationTarget[] = [
   { label: 'فتح العمليات المالية', to: '/financials' },
 ];
 
-/**
- * Allowed route destinations — the only values that may ever be navigated to
- * from assistant output. Kept as an explicit allowlist so a future action or
- * a regression cannot introduce an arbitrary route.
- */
 const ALLOWED_NAVIGATION_ROUTES: ReadonlySet<string> = new Set([
   '/reports',
   '/contracts',
@@ -75,8 +78,6 @@ export function buildAiNavigationTargets(
   action: AiAssistantAction | undefined,
   context?: AiNavigationContext,
 ): readonly AiNavigationTarget[] {
-  // Index only after an explicit membership test so an unknown/future action
-  // value can never produce `undefined` or arbitrary navigation.
   const targets =
     action && action in NAVIGATION_BY_ACTION
       ? NAVIGATION_BY_ACTION[action]
@@ -86,7 +87,6 @@ export function buildAiNavigationTargets(
   return targets.filter((target) => ALLOWED_NAVIGATION_ROUTES.has(target.to));
 }
 
-/** Forbidden destination shapes (mutation / raw URLs) — checked by tests. */
 export const FORBIDDEN_NAVIGATION_PATTERNS = [
   /^https?:/i,
   /\.(insert|update|delete|upsert)\(/i,

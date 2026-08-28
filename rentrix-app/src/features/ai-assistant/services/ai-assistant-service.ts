@@ -109,7 +109,7 @@ async function fetchContractRenewals(asOf: string, until: string) {
     .from('contracts')
     .select('id, property_id, tenant_id, unit_id, end_date, rent_amount, status, deleted_at')
     .is('deleted_at', null)
-    .in('status', getContractStatusVariants('active') as Contract['status'][]) // legacy rows may be stored as 'ACTIVE'
+    .in('status', getContractStatusVariants('active') as Contract['status'][])
     .gte('end_date', asOf)
     .lte('end_date', until)
     .order('end_date', { ascending: true })
@@ -121,10 +121,6 @@ async function fetchContractRenewals(asOf: string, until: string) {
 }
 
 async function fetchSnapshotRows(asOf: string, thirtyDaysAgo: string, ninetyDaysAgo: string) {
-  // Context totals are sent to the assistant as facts. Sampling them at 500
-  // silently changed portfolio-level answers once a tenant grew beyond that.
-  // Invoices are loaded once by fetchOpenInvoiceContextRows (open statuses only).
-  // Expenses for 30 days are a subset of the 90-day window — one query is enough.
   const results = await Promise.all([
     fetchAllRows<PropertySnapshotRow>(() => supabase.from('properties').select('id, status, deleted_at').is('deleted_at', null) as any),
     fetchAllRows<UnitSnapshotRow>(() => supabase.from('units').select('id, status, deleted_at').is('deleted_at', null) as any),
@@ -162,6 +158,7 @@ export async function buildAiAssistantContext(): Promise<AiAssistantContext> {
     .map((invoice) => Number(invoice.amount ?? 0));
   const expenses30 = snapshot.expenses90.filter((expense) => expense.expense_date >= thirtyDaysAgo);
   const occupiedUnitCount = snapshot.units.filter((unit) => ['occupied', 'rented'].includes(String(unit.status ?? '').trim().toLowerCase())).length;
+  const vacantUnitCount = snapshot.units.filter((unit) => String(unit.status ?? '').trim().toLowerCase() === 'available').length;
   const unitCount = snapshot.units.length;
 
   return {
@@ -197,6 +194,7 @@ export async function buildAiAssistantContext(): Promise<AiAssistantContext> {
       activePropertyCount: snapshot.properties.filter((property) => String(property.status ?? '').trim().toLowerCase() === 'active').length,
       unitCount,
       occupiedUnitCount,
+      vacantUnitCount,
       occupancyRate: unitCount > 0 ? Number(((occupiedUnitCount / unitCount) * 100).toFixed(2)) : 0,
       outstandingInvoiceAmount: sum(overdueInvoices.map(remainingAmount)),
       expensesLast90Days: sum(snapshot.expenses90.map((expense) => Number(expense.amount ?? 0))),

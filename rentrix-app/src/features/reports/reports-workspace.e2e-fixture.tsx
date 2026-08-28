@@ -354,11 +354,6 @@ export function ReportsWorkspaceE2EFixture() {
           canExportReports
           activeSection={activeSection}
           activeView={activeView}
-          onSectionChange={(sec) => {
-            setActiveSection(sec);
-            if (sec === 'accounting') setActiveView('accounting_reports');
-            else if (sec === 'analytics') setActiveView('overview');
-          }}
           onSectionViewChange={(sec, vi) => {
             setActiveSection(sec);
             setActiveView(vi);

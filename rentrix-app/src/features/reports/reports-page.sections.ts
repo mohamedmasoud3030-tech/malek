@@ -2,38 +2,43 @@ import { Scale, FileSpreadsheet, TrendingUp } from 'lucide-react';
 
 export type ReportCategoryId = 'accounting' | 'statements' | 'analytics';
 
+/**
+ * Internal report-routing metadata. These ids preserve deep links and adapter
+ * contracts; owner-facing navigation is provided by the report directory and
+ * must not expose implementation categories such as accounting/analytics.
+ */
 export const reportCategories = [
   {
     id: 'accounting',
-    label: 'المحاسبة',
-    shortLabel: 'المحاسبة',
+    label: 'المراجعة المالية',
+    shortLabel: 'مراجعة مالية',
     icon: Scale,
-    description: 'ميزان المراجعة والقوائم ودفتر الأستاذ لمراجعة الأرصدة والحركة المحاسبية.',
+    description: 'مخرجات رقابية متقدمة من المصدر المالي المعتمد.',
   },
   {
     id: 'statements',
     label: 'الكشوف',
     shortLabel: 'الكشوف',
     icon: FileSpreadsheet,
-    description: 'كشوف المستأجرين والملاك وحركة المكتب والتدفق النقدي والضريبة.',
+    description: 'كشوف الملاك والمستأجرين والحركة المرتبطة بهم.',
   },
   {
     id: 'analytics',
-    label: 'التحليلات',
-    shortLabel: 'التحليلات',
+    label: 'الأداء والتشغيل',
+    shortLabel: 'الأداء',
     icon: TrendingUp,
-    description: 'مؤشرات التحصيل والمتأخرات والمصروفات والإشغال والصيانة لمتابعة الأداء.',
+    description: 'مؤشرات التحصيل والإشغال والمصروفات والصيانة لمتابعة الأداء.',
   },
 ] as const;
 
 export const reportSections = [
   {
     id: 'accounting',
-    label: 'المحاسبة',
+    label: 'المراجعة المالية',
     icon: Scale,
-    group: 'المخرجات المحاسبية',
+    group: 'مخرجات رقابية متقدمة',
     category: 'accounting',
-    description: 'راجع الأرصدة والقوائم ودفتر الأستاذ من مكان واحد.',
+    description: 'مخرجات مالية رقابية متقدمة من المصدر المعتمد، وليست نقطة البداية في تجربة صاحب المكتب.',
   },
   {
     id: 'statements',
@@ -41,15 +46,15 @@ export const reportSections = [
     icon: FileSpreadsheet,
     group: 'الكشوف التفصيلية',
     category: 'statements',
-    description: 'اعرض كشف المستأجر أو المالك وحركة المكتب والتدفق النقدي والضريبة.',
+    description: 'اعرض كشف المالك أو المستأجر والحركة المرتبطة بهما.',
   },
   {
     id: 'analytics',
-    label: 'التحليلات',
+    label: 'الأداء والتشغيل',
     icon: TrendingUp,
-    group: 'تحليلات الأداء',
+    group: 'تقارير الأداء',
     category: 'analytics',
-    description: 'تابع التحصيل والمتأخرات والمصروفات، وافتح التحليلات المتخصصة من مكتبة التقارير.',
+    description: 'تابع التحصيل والمتأخرات والمصروفات والإشغال والصيانة حسب العمل.',
   },
 ] as const;
 

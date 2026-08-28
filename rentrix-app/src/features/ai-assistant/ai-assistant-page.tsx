@@ -1,7 +1,6 @@
 import { AlertTriangle, ArrowUpRight, Bot, Loader2, Send, Sparkles } from 'lucide-react';
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,30 +23,30 @@ type AssistantAction = {
 const assistantActions = [
   {
     action: 'summarize_overdue_invoices',
-    title: 'المتأخرات',
-    prompt: 'لخص الفواتير المتأخرة بإيجاز.',
+    title: 'مين متأخر؟',
+    prompt: 'مين متأخر عليا وإجمالي المتأخرات كام؟',
   },
   {
     action: 'summarize_contract_renewals',
-    title: 'التجديدات',
-    prompt: 'ما العقود القريبة من الانتهاء؟',
+    title: 'عقود هتخلص',
+    prompt: 'إيه العقود اللي هتخلص قريب؟',
   },
   {
-    action: 'draft_tenant_payment_reminder',
-    title: 'تذكير دفع',
-    prompt: 'اكتب تذكير دفع مهذب.',
+    action: 'summarize_vacancy',
+    title: 'الوحدات الفاضية',
+    prompt: 'عندي كام وحدة فاضية ونسبة الإشغال كام؟',
   },
   {
-    action: 'explain_property_financial_snapshot',
-    title: 'اللقطة المالية',
-    prompt: 'اشرح الوضع المالي الحالي.',
+    action: 'summarize_month',
+    title: 'ملخص الشهر',
+    prompt: 'اعمل لي ملخص الشهر ده.',
   },
 ] as const satisfies AssistantAction[];
 
 const initialMessage: AiAssistantMessage = {
   id: 'assistant-welcome',
   role: 'assistant',
-  content: `مرحباً! أنا مساعد ${APP_BRAND_NAME} الذكي.\nكيف أساعدك اليوم؟`,
+  content: `مرحباً! أنا مساعد ${APP_BRAND_NAME} الذكي.\nاسألني بالعربي العادي عن التحصيل، الشغور، العقود أو ملخص الفترة.`,
   createdAt: new Date().toISOString(),
 };
 
@@ -120,7 +119,6 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
 
   const chatContent = (
     <div className={cn('flex h-full flex-col', embedded ? 'min-h-0' : 'min-h-[70dvh]')}>
-      {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain p-3 sm:p-4" aria-live="polite">
         <div className="space-y-3">
           {messages.map((message) => {
@@ -186,7 +184,6 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
         </div>
       </div>
 
-      {/* Quick chips */}
       <div className="shrink-0 border-t border-border/60 bg-muted/20 px-3 py-2">
         <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
           {assistantActions.map((item) => (
@@ -210,7 +207,6 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
         </div>
       ) : null}
 
-      {/* Input */}
       <div className="shrink-0 border-t border-border/70 bg-card p-3">
         <form onSubmit={handleSubmit} className="flex items-end gap-2">
           <Textarea
@@ -222,7 +218,7 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
                 submitPrompt(input);
               }
             }}
-            placeholder="اكتب رسالتك..."
+            placeholder="اسأل مثلاً: مين متأخر؟ عندي كام وحدة فاضية؟"
             disabled={pending || configurationMissing}
             aria-label="رسالة المساعد"
             className="max-h-32 min-h-11 flex-1 resize-none rounded-xl border-border/70 bg-muted/30 px-3 py-2.5 text-sm leading-6 focus-visible:ring-2 focus-visible:ring-primary/20"
@@ -238,7 +234,9 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
             <Send className="size-4" />
           </Button>
         </form>
-        <p className="mt-1.5 px-1 text-[11px] leading-4 text-muted-foreground">Enter للإرسال • Shift+Enter لسطر جديد</p>
+        <p className="mt-1.5 px-1 text-[11px] leading-4 text-muted-foreground">
+          قراءة وتحليل فقط — أي اعتماد أو تسجيل نهائي يظل بيد المستخدم المخول.
+        </p>
       </div>
     </div>
   );
@@ -256,7 +254,7 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
           </div>
           <div>
             <p className="text-sm font-bold">المساعد الذكي</p>
-            <p className="text-xs text-muted-foreground">مساعد {APP_BRAND_NAME} الذكي</p>
+            <p className="text-xs text-muted-foreground">مساعد {APP_BRAND_NAME} للقراءة والتحليل</p>
           </div>
         </div>
         {configurationMissing ? (

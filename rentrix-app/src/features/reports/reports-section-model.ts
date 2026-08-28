@@ -15,7 +15,12 @@ export type { AccountingReportViewId, AnalyticsReportViewId, ReportViewId };
 /** `?section=` is the deep-link contract for the reports workspace. */
 export const REPORTS_SECTION_SEARCH_KEY = 'section';
 
-export const DEFAULT_REPORT_SECTION: ReportSectionId = 'accounting';
+/**
+ * The office-owner landing experience starts from understandable performance
+ * outcomes. Accounting remains addressable through legacy/deep links but is no
+ * longer the default face of the reports center.
+ */
+export const DEFAULT_REPORT_SECTION: ReportSectionId = 'analytics';
 
 export interface ReportLocation {
   section: ReportSectionId;
@@ -25,16 +30,11 @@ export interface ReportLocation {
 /**
  * Resolve the active report section and view from unknown URL values.
  * Maps legacy section IDs and handles malformed fallbacks cleanly and atomically.
- *
- * The legacy `?section=<viewId>` aliases are derived from the report view
- * registry, so a newly registered view is automatically bookmarkable under its
- * own legacy name without touching this resolver.
  */
 export function resolveReportLocation(requestedSection: unknown, requestedView: unknown): ReportLocation {
   const sec = typeof requestedSection === 'string' ? requestedSection.toLowerCase().trim() : '';
   const vi = typeof requestedView === 'string' ? requestedView.toLowerCase().trim() : '';
 
-  // 1. Direct legacy mapping: if section contains a legacy report name
   const legacySection = REPORT_VIEW_SECTION_INDEX[sec];
   if (legacySection) {
     return { section: legacySection, view: sec as AccountingReportViewId | AnalyticsReportViewId };
@@ -43,7 +43,6 @@ export function resolveReportLocation(requestedSection: unknown, requestedView: 
     return { section: 'statements', view: '' };
   }
 
-  // 2. Standard resolution under macro categories (when ?section is already analytics or accounting)
   if (sec === 'accounting') {
     return { section: 'accounting', view: isAccountingReportViewId(vi) ? vi : DEFAULT_ACCOUNTING_VIEW };
   }
@@ -51,8 +50,7 @@ export function resolveReportLocation(requestedSection: unknown, requestedView: 
     return { section: 'analytics', view: isAnalyticsReportViewId(vi) ? vi : DEFAULT_ANALYTICS_VIEW };
   }
 
-  // 3. Fallbacks for missing/unknown/garbage sections
-  return { section: DEFAULT_REPORT_SECTION, view: DEFAULT_ACCOUNTING_VIEW };
+  return { section: DEFAULT_REPORT_SECTION, view: DEFAULT_ANALYTICS_VIEW };
 }
 
 /**

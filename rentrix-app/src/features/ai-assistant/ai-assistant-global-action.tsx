@@ -1,6 +1,6 @@
-import { Bot, X } from 'lucide-react';
+import { Bot, Maximize2, X } from 'lucide-react';
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
-import { useNavigate, useSearch } from '@tanstack/react-router';
+import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import { LoadingState } from '@/components/ui/loading-state';
 import { cn } from '@/lib/utils';
@@ -13,8 +13,8 @@ const AiAssistantExperience = lazy(async () => {
 export const OPEN_AI_ASSISTANT_EVENT = 'malek:open-ai-assistant';
 
 /**
- * The one canonical AI experience as a compact, persistent floating panel.
- * Clean bot interface without long intro.
+ * Canonical AI entry point: compact floating conversation on the current page,
+ * with an explicit expansion path to the full assistant workspace.
  */
 export function AiAssistantGlobalAction({ showTrigger = true }: Readonly<{ showTrigger?: boolean }>) {
   const search = useSearch({ strict: false }) as Record<string, unknown>;
@@ -109,18 +109,35 @@ export function AiAssistantGlobalAction({ showTrigger = true }: Readonly<{ showT
             </div>
             <div className="min-w-0">
               <p className="truncate text-[13px] font-bold leading-none">المساعد الذكي</p>
-              <p className="mt-0.5 truncate text-[11px] leading-none text-muted-foreground">متصل الآن</p>
+              <p className="mt-0.5 truncate text-[11px] leading-none text-muted-foreground">قراءة وتحليل — القرار النهائي لك</p>
             </div>
           </div>
-          <Button
-            type="button"
-            variant="ghost"
-            className="size-8 shrink-0 rounded-full px-0 text-muted-foreground hover:bg-muted hover:text-foreground"
-            onClick={close}
-            aria-label="إغلاق المساعد"
-          >
-            <X className="size-4" />
-          </Button>
+          <div className="flex shrink-0 items-center gap-1">
+            <Button
+              asChild
+              type="button"
+              variant="ghost"
+              className="size-8 rounded-full px-0 text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              <Link
+                to="/ai-assistant"
+                onClick={() => setOpen(false)}
+                aria-label="تكبير المساعد إلى مساحة عمل كاملة"
+                title="فتح مساحة العمل الكاملة"
+              >
+                <Maximize2 className="size-4" />
+              </Link>
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              className="size-8 rounded-full px-0 text-muted-foreground hover:bg-muted hover:text-foreground"
+              onClick={close}
+              aria-label="إغلاق المساعد"
+            >
+              <X className="size-4" />
+            </Button>
+          </div>
         </div>
         <div className="min-h-0 flex-1 overflow-hidden">
           <Suspense fallback={<LoadingState label="جارٍ تحميل المساعد..." />}>

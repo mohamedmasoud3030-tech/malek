@@ -73,7 +73,7 @@ const sharedTranslationEntries = [
   ['notifOverdueInvoices', 'فواتير متأخرة', 'Overdue invoices'],
   ['notifExpiringContracts', 'عقود تنتهي خلال 30 يومًا', 'Contracts expiring within 30 days'],
   ['notifUrgentMaintenance', 'طلبات صيانة عاجلة', 'Urgent maintenance requests'],
-  ['notificationsHint', 'ستظهر هنا تنبيهات العقود القريبة من الانتهاء والفواتير المتأخرة.', 'Contract expiry and overdue invoice alerts will appear here.'],
+  ['notificationsHint', 'ستظهر هنا الأحداث المسجلة مثل الدفعات وتحديثات العقود والصيانة.', 'Recorded events such as payments, contract updates, and maintenance updates will appear here.'],
   ['configureAiAssistant', 'ضبط إعدادات الذكاء الاصطناعي', 'Configure AI assistant'],
   ['unsavedChanges', 'تغييرات غير محفوظة', 'Unsaved changes'],
   ['newContract', 'عقد جديد', 'New contract'],
@@ -103,8 +103,8 @@ const sharedTranslationEntries = [
   // between "financials", "financialOverview", and "reports" labels.
   ['financialsPageDescription', 'فهرس العمليات المالية اليومية: الفواتير، التحصيل، المصروفات، التسويات، والمطابقة.', 'Day-to-day financial operations: invoices, collections, expenses, settlements, and reconciliation.'],
   ['financialsPageHint', 'كل عملية لها صفحتها المستقلة بصلاحياتها الخاصة.', 'Each workflow has its own page with its own permissions.'],
-  ['reportsPageDescription', 'اختر تقريرًا حسب العمل، حدّد العقار أو المالك والفترة، ثم راجع الأرقام والجداول والتفاصيل من المصدر المعتمد.', 'Pick a report by task, scope it by property, owner or period, then review the figures, tables and details from the approved source.'],
-  ['reportsPageHint', 'هنا تحصل على التحليل العميق — للملخص السريع استخدم صفحة المالية.', 'For deep analysis. For a quick overview, use the Financials page.'],
+  ['reportsPageDescription', 'اختر تقريرًا حسب العمل، حدّد العقار أو المالك والفترة، ثم راجع الخلاصة أولًا وبعدها الجدول والتفاصيل من المصدر المعتمد.', 'Pick a report by task, scope it by property, owner or period, then read the summary first and the detailed table from the approved source.'],
+  ['reportsPageHint', 'ابدأ بالخلاصة، ثم استخدم الجدول والفلاتر والتصدير عندما تحتاج التفاصيل.', 'Start with the summary, then use the table, filters, and export when you need detail.'],
   ['financialsSectionSummary', 'الملخص السريع', 'Quick summary'],
   ['financialsSectionReports', 'التقارير والكشوف', 'Reports & statements'],
 ] as const satisfies ReadonlyArray<SharedTranslationEntry>;
