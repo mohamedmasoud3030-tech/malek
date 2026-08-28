@@ -7,6 +7,8 @@ import {
 } from '@/features/financials/reports/useFinancialReports';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
 import { DocumentReadinessNotice } from '@/features/settings/components/document-readiness-notice';
+import { downloadBlob } from '@/lib/tabular-export';
+import { buildXlsxBlob } from '@/lib/xlsx-export';
 import { documentService } from '@/services/documents/DocumentService';
 import { DocumentReadinessError, runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
 import {
@@ -133,6 +135,26 @@ export function StatementsSection({
     });
   };
 
+  const handleDownloadTenantExcel = () => {
+    if (!tenantStatement) return;
+    const rows = tenantStatement.lines.map((line) => [
+      line.date || '—',
+      line.type === 'invoice' ? 'فاتورة / استحقاق' : line.type === 'receipt' ? 'دفعة / إيصال' : line.type === 'credit' ? 'دائن / عكس' : 'حركة حساب',
+      line.description || 'حركة حساب',
+      line.debit || 0,
+      line.credit || 0,
+      line.balance || 0,
+    ] as const);
+    downloadBlob(
+      buildXlsxBlob({
+        name: 'كشف المستأجر',
+        headers: ['التاريخ', 'نوع الحركة', 'البيان / المرجع', 'مدين', 'دائن', 'الرصيد الجاري'],
+        rows,
+      }),
+      `tenant-statement-${selectedContractId || 'statement'}.xlsx`,
+    );
+  };
+
   const buildOwnerStatementData = (): OwnerStatementData | null => {
     if (!ownerStatement) return null;
     const totalRent = ownerStatement.transactions.filter((t) => t.type === 'receipt').reduce((sum, t) => sum + (t.gross || 0), 0);
@@ -181,6 +203,32 @@ export function StatementsSection({
     });
   };
 
+  const handleDownloadOwnerExcel = () => {
+    if (!ownerStatement) return;
+    let runningBalance = 0;
+    const rows = ownerStatement.transactions.map((transaction) => {
+      runningBalance += transaction.net || 0;
+      return [
+        transaction.date || '—',
+        transaction.type === 'receipt' ? 'تحصيل' : transaction.type === 'expense' ? 'مصروف' : transaction.type === 'settlement' ? 'تسوية / صرف' : 'حركة مالية',
+        transaction.propertyName || 'غير محدد',
+        transaction.details || 'حركة مالية',
+        transaction.gross || 0,
+        transaction.deduction || 0,
+        transaction.net || 0,
+        runningBalance,
+      ] as const;
+    });
+    downloadBlob(
+      buildXlsxBlob({
+        name: 'كشف المالك',
+        headers: ['التاريخ', 'نوع الحركة', 'العقار', 'البيان', 'الإجمالي', 'الاستقطاع', 'صافي الحركة', 'الرصيد الجاري'],
+        rows,
+      }),
+      `owner-statement-${selectedOwnerId || 'statement'}.xlsx`,
+    );
+  };
+
   return (
     <div className="space-y-4">
       {!isDocumentSettingsReady && <DocumentReadinessNotice />}
@@ -201,6 +249,7 @@ export function StatementsSection({
           receipts={receiptRows}
           onPrint={handlePrintTenantStatement}
           onDownloadPdf={handleDownloadTenantStatement}
+          onDownloadExcel={handleDownloadTenantExcel}
           actionsDisabled={!isDocumentSettingsReady}
         />
         <OwnerStatementPanel
@@ -211,6 +260,7 @@ export function StatementsSection({
           fallbackRows={ownerMovementRows}
           onPrint={handlePrintOwnerStatement}
           onDownloadPdf={handleDownloadOwnerStatement}
+          onDownloadExcel={handleDownloadOwnerExcel}
           actionsDisabled={!isDocumentSettingsReady}
         />
       </ReportColumns>
