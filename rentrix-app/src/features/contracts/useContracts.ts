@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import { defineEntityKeys } from '@/lib/query-keys';
 import type { ContractPayload, RenewalPayload } from './contractSchema';
 import { activateContract, approveContract, createContract, getContract, listAllContracts, listContracts, rejectContract, renewContract, softDeleteContract, submitContractForApproval, terminateContract, updateContract, type ContractListParams, type ContractStatusFilter } from './services/contractService';
-import { reconcileDueShortStaysBeforeRead } from './services/shortStayLifecycleService';
+import { extendShortStayContract, reconcileDueShortStaysBeforeRead, type ShortStayExtensionInput } from './services/shortStayLifecycleService';
 
 const contractBase = defineEntityKeys('contracts');
 
@@ -95,6 +95,22 @@ export function useRenewContract(contractId: string) {
       toast.success('تم تجديد العقد وإنشاء عقد جديد');
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر تجديد العقد'),
+  });
+}
+
+export function useExtendShortStayContract(contractId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: ShortStayExtensionInput) => extendShortStayContract(contractId, input),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: contractKeys.all }),
+        queryClient.invalidateQueries({ queryKey: ['units'] }),
+        queryClient.invalidateQueries({ queryKey: ['invoices'] }),
+      ]);
+      toast.success('تم تمديد الإقامة وإصدار استحقاق التمديد');
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر تمديد الإقامة القصيرة'),
   });
 }
 
