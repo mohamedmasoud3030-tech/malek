@@ -11,7 +11,6 @@ type ReportsWorkspaceProps = Readonly<{
   canExportReports: boolean;
   activeSection: ReportSectionId;
   activeView: ReportViewId;
-  onSectionChange: (section: ReportSectionId) => void;
   onSectionViewChange: (section: ReportSectionId, view: ReportViewId) => void;
   onFiltersChange: (filters: ReportsFilterState) => void;
   onResetCurrentMonth: () => void;
