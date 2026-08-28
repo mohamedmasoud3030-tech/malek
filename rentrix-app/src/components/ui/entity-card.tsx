@@ -95,7 +95,7 @@ function EntityCardShell({
       onClick={onClick}
       onKeyDown={(event) => handleCardKeyDown(event, onClick)}
       className={cn(
-        'relative w-full min-w-0 overflow-hidden rounded-lg border border-border/70 bg-card p-2.5 text-start shadow-sm transition-[border-color,box-shadow] sm:p-3',
+        'relative w-full min-w-0 overflow-hidden rounded-xl border border-border/80 bg-card p-3 text-start shadow-sm transition-[border-color,box-shadow] sm:p-3.5',
         clickable &&
           'cursor-pointer hover:border-primary/25 hover:shadow-card-focus visible:focus-visible:ring-2 focus-visible:ring-primary/15',
         className,
@@ -125,13 +125,13 @@ export function EntityCard({
 
   return (
     <EntityCardShell id={id} clickable={Boolean(onClick)} onClick={onClick} className={className}>
-      <div className="flex min-w-0 items-start justify-between gap-2.5 sm:gap-3">
+      <div className="flex min-w-0 items-start justify-between gap-3">
         <div className="flex min-w-0 flex-1 items-start gap-2.5 sm:gap-3">
-          <div className={cn('grid size-9 shrink-0 place-items-center rounded-xl shadow-sm sm:size-10 sm:rounded-2xl', tone.bg)}>
+          <div className={cn('grid size-9 shrink-0 place-items-center rounded-xl shadow-sm sm:size-10', tone.bg)}>
             <AvatarIcon className={cn('size-4 sm:size-4.5', tone.text)} aria-hidden="true" />
           </div>
           <div className="min-w-0 flex-1 overflow-hidden">
-            <div className="line-clamp-2 break-words text-sm font-bold leading-5 [overflow-wrap:anywhere] sm:leading-6">{name}</div>
+            <div className="line-clamp-2 break-words text-sm font-bold leading-5 [overflow-wrap:anywhere] sm:text-[15px] sm:leading-6">{name}</div>
             {subtitle ? (
               <div className="mt-0.5 line-clamp-2 break-words text-xs font-medium leading-5 text-muted-foreground [overflow-wrap:anywhere]">
                 {subtitle}
@@ -150,20 +150,20 @@ export function EntityCard({
       </div>
 
       {stats ? (
-        <div className="mt-1.5 rounded-xl border border-border/50 bg-background/40 p-2 text-xs text-foreground/80 sm:mt-1.5 sm:p-2">
+        <div className="mt-2 border-t border-border/55 pt-2 text-xs text-foreground/80">
           {stats}
         </div>
       ) : null}
 
       {meta?.length ? (
-        <div className="mt-1.5 grid gap-1 rounded-xl bg-muted/30 p-1.5 text-xs text-muted-foreground sm:mt-1.5 sm:gap-1 sm:p-1">
+        <div className="mt-2 grid gap-1.5 border-t border-border/55 pt-2 text-xs text-muted-foreground">
           {meta.map((item, index) => {
             const MetaIcon = item.icon;
             return (
               <div key={index} className={cn('flex items-center gap-1.5', item.className)}>
-                {MetaIcon ? <MetaIcon className="size-2.5 shrink-0 text-muted-foreground/70" aria-hidden="true" /> : null}
+                {MetaIcon ? <MetaIcon className="size-3 shrink-0 text-muted-foreground/70" aria-hidden="true" /> : null}
                 {item.label ? <span className="font-bold text-foreground/80">{item.label}</span> : null}
-                <span dir={item.dir} className="min-w-0 flex-1 break-words [overflow-wrap:anywhere] text-muted-foreground/70">
+                <span dir={item.dir} className="min-w-0 flex-1 break-words [overflow-wrap:anywhere] text-muted-foreground/80">
                   {item.value}
                 </span>
               </div>
@@ -175,7 +175,7 @@ export function EntityCard({
       {actions?.length ? (
         <div
           className={cn(
-            'mt-2 grid gap-1 rounded border border-border/60 bg-background p-1.5 text-xs sm:mt-2 sm:p-1.5',
+            'mt-2 grid gap-1.5 border-t border-border/55 pt-2',
             actions.length === 1 ? 'grid-cols-1' : 'grid-cols-2',
           )}
           onClick={(event) => event.stopPropagation()}
@@ -189,12 +189,12 @@ export function EntityCard({
                 type="button"
                 aria-label={action.ariaLabel}
                 className={cn(
-                  'inline-flex min-h-11 min-w-0 items-center justify-center gap-1 rounded-xl px-1.5 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/15 sm:gap-1.5 sm:px-2',
+                  'inline-flex min-h-11 min-w-0 items-center justify-center gap-1.5 rounded-lg border px-2 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/15',
                   getActionClassName(action.variant),
                 )}
                 onClick={action.onClick}
               >
-                {ActionIcon ? <ActionIcon className="size-2.5 shrink-0 sm:size-3" aria-hidden="true" /> : null}
+                {ActionIcon ? <ActionIcon className="size-3.5 shrink-0" aria-hidden="true" /> : null}
                 <span className="truncate">{action.label}</span>
               </button>
             );
