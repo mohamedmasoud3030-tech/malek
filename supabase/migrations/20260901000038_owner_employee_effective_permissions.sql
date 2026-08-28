@@ -33,9 +33,6 @@ revoke all on table public.user_permission_overrides from public, anon, authenti
 comment on table public.user_permission_overrides is
   'Owner-authored employee permission decisions. These are part of the canonical effective-permission engine and take precedence over legacy role defaults.';
 
--- Preserve the six-role compatibility engine, including the newly explicit
--- workspace capabilities that used to be implicitly visible because routes
--- were auth-only.
 create or replace function public.role_has_app_permission(p_role text, p_permission text)
 returns boolean
 language sql
@@ -88,8 +85,6 @@ as $$
   end
 $$;
 
--- Owner decision precedes role compatibility and additive grants. ADMIN is the
--- office owner persona and always retains full catalog access.
 create or replace function public.current_user_has_effective_app_permission(p_permission text)
 returns boolean
 language plpgsql
@@ -104,11 +99,9 @@ begin
   if not coalesce(public.is_app_user(), false) then
     return false;
   end if;
-
   if not exists (select 1 from public.app_permission_catalog c where c.permission = p_permission) then
     return false;
   end if;
-
   if public.is_admin() then
     return true;
   end if;
@@ -118,7 +111,6 @@ begin
   where o.company_id = v_company
     and o.user_id = auth.uid()
     and o.permission = p_permission;
-
   if found then
     return v_override;
   end if;
@@ -214,11 +206,9 @@ begin
   if v_actor is null or not coalesce(public.is_admin(), false) then
     raise exception 'OFFICE_OWNER_REQUIRED' using errcode = '42501';
   end if;
-
   if p_user_id is null or p_allowed is null then
     raise exception 'INVALID_EMPLOYEE_PERMISSION_INPUT' using errcode = '22023';
   end if;
-
   if not exists (
     select 1
     from public.company_members cm
@@ -232,7 +222,6 @@ begin
   ) then
     raise exception 'EMPLOYEE_NOT_FOUND' using errcode = 'P0002';
   end if;
-
   if not exists (
     select 1 from public.app_permission_catalog c
     where c.permission = p_permission
@@ -252,11 +241,7 @@ begin
     reason = excluded.reason,
     set_at = excluded.set_at;
 
-  return jsonb_build_object(
-    'user_id', p_user_id,
-    'permission', p_permission,
-    'allowed', p_allowed
-  );
+  return jsonb_build_object('user_id', p_user_id, 'permission', p_permission, 'allowed', p_allowed);
 end;
 $function$;
 
@@ -267,9 +252,6 @@ grant execute on function public.list_my_effective_app_permissions() to authenti
 grant execute on function public.list_employee_effective_permissions() to authenticated;
 grant execute on function public.set_employee_permission(uuid,text,boolean,text) to authenticated;
 
--- Capability policies are additive so existing company-isolation predicates and
--- business-rule policies remain in force. These policies allow an Employee with
--- an owner-approved capability to mutate without requiring a MANAGER role.
 do $policies$
 declare
   r record;
@@ -314,17 +296,18 @@ begin
 end
 $policies$;
 
--- Maintenance server commands must honor the same capability. Patch only the
--- named maintenance commands, and fail closed if an unexpected authority form
--- is encountered instead of silently weakening unrelated functions.
+-- Maintenance commands use several historical authority shapes. Replace only
+-- the known canonical guards and require the final function definition to
+-- contain maintenance.write; otherwise migration replay aborts fail closed.
 do $maintenance$
 declare
   r record;
   v_sql text;
   v_changed boolean;
+  v_target text := $$public.current_user_has_effective_app_permission('maintenance.write')$$;
 begin
   for r in
-    select p.oid
+    select p.oid, p.proname
     from pg_proc p
     join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'public'
@@ -335,30 +318,32 @@ begin
       )
   loop
     v_sql := pg_get_functiondef(r.oid);
+    if position('maintenance.write' in v_sql) > 0 then
+      continue;
+    end if;
     v_changed := false;
 
     if position('public.is_admin_or_manager()' in v_sql) > 0 then
-      v_sql := replace(
-        v_sql,
-        'public.is_admin_or_manager()',
-        $$public.current_user_has_effective_app_permission('maintenance.write')$$
-      );
+      v_sql := replace(v_sql, 'public.is_admin_or_manager()', v_target);
+      v_changed := true;
+    elsif position('is_admin_or_manager()' in v_sql) > 0 then
+      v_sql := replace(v_sql, 'is_admin_or_manager()', $$current_user_has_effective_app_permission('maintenance.write')$$);
+      v_changed := true;
+    elsif position('public.is_app_user()' in v_sql) > 0 then
+      v_sql := replace(v_sql, 'public.is_app_user()', v_target);
+      v_changed := true;
+    elsif position('is_app_user()' in v_sql) > 0 then
+      v_sql := replace(v_sql, 'is_app_user()', $$current_user_has_effective_app_permission('maintenance.write')$$);
       v_changed := true;
     end if;
 
-    if position('is_admin_or_manager()' in v_sql) > 0 then
-      v_sql := replace(
-        v_sql,
-        'is_admin_or_manager()',
-        $$current_user_has_effective_app_permission('maintenance.write')$$
-      );
-      v_changed := true;
+    if not v_changed then
+      raise exception 'P6 refused to patch maintenance command %: authority anchor not found', r.proname;
     end if;
 
-    if v_changed then
-      execute v_sql;
-    elsif position('maintenance.write' in v_sql) = 0 then
-      raise exception 'P6 refused to patch maintenance command oid %: authority anchor not found', r.oid;
+    execute v_sql;
+    if position('maintenance.write' in pg_get_functiondef(r.oid)) = 0 then
+      raise exception 'P6 failed to install maintenance.write authority in %', r.proname;
     end if;
   end loop;
 end
