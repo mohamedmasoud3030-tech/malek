@@ -29,6 +29,9 @@ const OccupancySection = lazy(() =>
 const MaintenanceReportSection = lazy(() =>
   import('../../components/MaintenanceReportSection').then((m) => ({ default: m.MaintenanceReportSection })),
 );
+const ServicesReportSection = lazy(() =>
+  import('../../components/ServicesReportSection').then((m) => ({ default: m.ServicesReportSection })),
+);
 
 const DEFAULT_ANALYTICS_BODY: AnalyticsReportViewId = 'overview';
 
@@ -48,7 +51,7 @@ export function resolveAnalyticsReportView(view: string): AnalyticsReportViewId 
  * forwards Finance/operational read models and never computes a profit, a
  * balance, or a GL-backed figure of its own.
  */
-export function AnalyticsReportsAdapter({ view, model, canExportReports }: ReportAdapterProps) {
+export function AnalyticsReportsAdapter({ view, model, filters, canExportReports }: ReportAdapterProps) {
   switch (resolveAnalyticsReportView(view)) {
     case 'collections':
       return <CollectionsSection {...model.sections.collections} canExportReports={canExportReports} />;
@@ -68,6 +71,8 @@ export function AnalyticsReportsAdapter({ view, model, canExportReports }: Repor
       return <OccupancySection {...model.sections.occupancy} canExportReports={canExportReports} />;
     case 'maintenance_analytics':
       return <MaintenanceReportSection {...model.sections.maintenance} canExportReports={canExportReports} />;
+    case 'services':
+      return <ServicesReportSection filters={filters} canExportReports={canExportReports} />;
     case 'overview':
     default:
       return (
