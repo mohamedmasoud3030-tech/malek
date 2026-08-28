@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const migration = readFileSync(
-  resolve(import.meta.dirname, '../../../../supabase/migrations/20260901000051_granular_employee_permission_projection.sql'),
+  resolve(import.meta.dirname, '../../../../supabase/migrations/20260901000052_granular_employee_permission_projection.sql'),
   'utf8',
 );
 
