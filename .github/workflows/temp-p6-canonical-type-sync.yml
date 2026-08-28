@@ -34,7 +34,8 @@ jobs:
         shell: bash
         run: |
           cp rentrix-app/src/types/database.ts /tmp/p6-database.ts
-          git checkout fix/p6-owner-employee-permissions-20260828
+          git reset --hard
+          git checkout -B fix/p6-owner-employee-permissions-20260828 origin/fix/p6-owner-employee-permissions-20260828
           cp /tmp/p6-database.ts rentrix-app/src/types/database.ts
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
