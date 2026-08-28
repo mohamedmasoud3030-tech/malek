@@ -1,5 +1,4 @@
 import { MONEY_STEP } from '@/lib/money';
-import { useState } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import { EntityForm } from '@/components/ui/entity-form';
 import { ContextualDocumentsSection } from '@/components/documents/contextual-documents-section';
@@ -10,7 +9,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
 import { formatDefaultCompanyMoney } from '@/lib/companyFormatters';
 import type { ServiceProviderCategory, ServiceProviderOption } from '@/features/service-providers/service-provider-service';
-import type { Maintenance } from '../maintenance-service';
+import type { Maintenance, MaintenanceChargeTarget } from '../maintenance-service';
 import type { MaintenanceResolveFormValues } from '../useMaintenancePageController';
 import {
   maintenancePriorityLabels,
@@ -19,20 +18,18 @@ import {
   maintenanceStatusTone,
 } from './maintenance-list';
 
-export type ChargeTarget = 'landlord' | 'tenant' | 'office' | 'split_landlord_tenant';
+export type ChargeTarget = MaintenanceChargeTarget;
 
 export const chargeTargetLabels: Record<ChargeTarget, string> = {
-  landlord: 'خصم استقطاع من حساب المالك (مالك العقار)',
-  tenant: 'إصدار فاتورة مطالبة على المستأجر (سوء استخدام)',
-  office: 'مصروف تشغيلي عام على شركة الإدارة',
-  split_landlord_tenant: 'مناصفة بين المالك والمستأجر (50% / 50%)',
+  OWNER: 'المالك',
+  TENANT: 'المستأجر',
+  COMPANY: 'المكتب',
 };
 
 export const chargeTargetShortLabels: Record<ChargeTarget, { title: string; desc: string }> = {
-  landlord: { title: 'المالك (استقطاع)', desc: 'تحميل المالك تكلفة الصيانة من حسابه' },
-  tenant: { title: 'المستأجر (مطالبة)', desc: 'إصدار فاتورة مطالبة بسبب سوء الاستخدام' },
-  office: { title: 'شركة الإدارة (تشغيلي)', desc: 'مصروف تشغيلي عام على المكتب' },
-  split_landlord_tenant: { title: 'مناصفة (50% / 50%)', desc: 'تقسيم بالتساوي بين المالك والمستأجر' },
+  OWNER: { title: 'المالك', desc: 'تحميل التكلفة على المالك عبر مسار مصروفات المالك المعتمد' },
+  TENANT: { title: 'المستأجر', desc: 'تحميل التكلفة على المستأجر عبر المسار المالي المعتمد' },
+  COMPANY: { title: 'المكتب', desc: 'اعتبارها مصروفاً تشغيلياً على شركة الإدارة' },
 };
 
 export type MaintenanceDetailsOverlayProps = Readonly<{
@@ -46,6 +43,7 @@ export type MaintenanceDetailsOverlayProps = Readonly<{
 export function MaintenanceDetailsOverlay({ request, providerOptions, providerCategories, onOpenChange }: MaintenanceDetailsOverlayProps) {
   const providerName = providerOptions.find((provider) => provider.id === request?.service_provider_id)?.name;
   const categoryName = providerCategories.find((category) => category.id === request?.service_provider_category_id)?.name;
+  const chargedTo = request?.charged_to?.toUpperCase() as ChargeTarget | undefined;
   return (
     <EntityPreviewDialog
       open={request != null}
@@ -98,6 +96,11 @@ export function MaintenanceDetailsOverlay({ request, providerOptions, providerCa
               <span className="text-xs font-medium text-muted-foreground">التكلفة الفعلية</span>
               <p className="mt-1 font-semibold text-primary">{request.cost != null ? formatDefaultCompanyMoney(request.cost) : '—'}</p>
             </div>
+
+            <div>
+              <span className="text-xs font-medium text-muted-foreground">يتحمل التكلفة</span>
+              <p className="mt-1 font-semibold">{chargedTo && chargeTargetLabels[chargedTo] ? chargeTargetLabels[chargedTo] : 'لم تُحدد بعد'}</p>
+            </div>
           </div>
 
           <div className="rounded-2xl border border-border/60 bg-muted/15 p-4">
@@ -131,14 +134,14 @@ export type MaintenanceResolveOverlayProps = Readonly<{
 
 /** Overlay for entering actual cost and assigning charge target upon maintenance resolution. */
 export function MaintenanceResolveOverlay({ target, form, isSubmitting, firstError, onOpenChange, onSubmit }: MaintenanceResolveOverlayProps) {
-  const [chargeTarget, setChargeTarget] = useState<ChargeTarget>('landlord');
+  const chargeTarget = form.watch('chargedTo');
 
   return (
     <EntityForm.Overlay
       open={target != null}
       onOpenChange={(open) => { if (!open && !isSubmitting) onOpenChange(false); }}
-      title="إغلاق وتوجيه تكلفة الصيانة"
-      description="أدخل التكلفة الفعلية وحدد الجهة المسؤولة عن السداد لتوجيه القيد المالي آلياً."
+      title="تم التنفيذ — مراجعة التكلفة والمسؤولية"
+      description="بعد انتهاء العمل، سجّل التكلفة الفعلية وحدد من يتحملها. الإغلاق النهائي يظل خطوة مستقلة بعد المراجعة."
     >
       <EntityForm.Root aria-busy={isSubmitting} onSubmit={form.handleSubmit(onSubmit)}>
         <EntityForm.ErrorSummary message={firstError} />
@@ -148,8 +151,8 @@ export function MaintenanceResolveOverlay({ target, form, isSubmitting, firstErr
           </EntityForm.Field>
 
           <div className="space-y-2">
-            <label className="block text-xs font-bold text-muted-foreground">توجيه التكلفة والجهة المسؤولة عن السداد</label>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block text-xs font-bold text-muted-foreground">من يتحمل التكلفة؟</label>
+            <div className="grid gap-3 sm:grid-cols-3">
               {(Object.keys(chargeTargetShortLabels) as ChargeTarget[]).map((key) => {
                 const info = chargeTargetShortLabels[key];
                 return (
@@ -158,11 +161,14 @@ export function MaintenanceResolveOverlay({ target, form, isSubmitting, firstErr
                     selected={chargeTarget === key}
                     title={info.title}
                     description={info.desc}
-                    onClick={() => setChargeTarget(key)}
+                    onClick={() => form.setValue('chargedTo', key, { shouldDirty: true, shouldValidate: true })}
                   />
                 );
               })}
             </div>
+            {form.formState.errors.chargedTo?.message ? (
+              <p className="text-xs font-semibold text-destructive">{form.formState.errors.chargedTo.message}</p>
+            ) : null}
           </div>
 
           <EntityForm.Field label="ملاحظات وتوجيهات التسوية (اختياري)">
@@ -170,7 +176,7 @@ export function MaintenanceResolveOverlay({ target, form, isSubmitting, firstErr
           </EntityForm.Field>
         </EntityForm.Section>
         <EntityForm.Actions
-          submitLabel={isSubmitting ? 'جارٍ الحفظ والتوجيه...' : 'تأكيد الإغلاق وتوجيه التكلفة'}
+          submitLabel={isSubmitting ? 'جارٍ حفظ التنفيذ...' : 'تأكيد تم التنفيذ وتوجيه التكلفة'}
           onCancel={() => onOpenChange(false)}
           isSubmitting={isSubmitting}
         />
