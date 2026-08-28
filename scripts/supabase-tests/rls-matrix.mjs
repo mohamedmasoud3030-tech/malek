@@ -780,28 +780,39 @@ async function runMutations(db) {
     { id: 'rls.managerA.update.propertyA', group: 'rls-write', title: 'MANAGER A can update own-company property' },
   );
 
-  // OPERATIONS may still appear in the SQL catalog for properties.write,
-  // but the current properties write policy is is_admin_or_manager().
-  // Record the live database truth. The frontend now fences the same way.
-  const operationsWrite = await queryAs(
+  // P51 compatibility contract: historical broad role defaults remain fallback
+  // until the office owner records an explicit granular decision.
+  await expectMutationAllowed(
     db,
     ids.operationsA,
     `with u as (
        insert into public.properties (title, type, address, status, company_id)
-       values ('Operations write', 'residential', 'A', 'active', '${COMPANY_A}')
+       values ('Operations compatibility write', 'residential', 'A', 'active', '${COMPANY_A}')
        returning id
      ) select count(*)::int as n from u`,
+    { id: 'rls.operationsA.insert.properties.compat', group: 'rls-write', title: 'OPERATIONS keeps historical properties.write compatibility fallback' },
   );
-  record({
-    id: 'rls.operationsA.insert.properties',
-    group: 'rls-write',
-    title: 'OPERATIONS property insert is enforced by is_admin_or_manager() (DB deny)',
-    status: !operationsWrite.ok || Number(operationsWrite.value?.[0]?.n ?? 0) === 0 ? 'pass' : 'fail',
-    detail: operationsWrite.ok
-      ? 'OPERATIONS unexpectedly inserted a property'
-      : undefined,
-    note: 'Frontend grants properties.write to OPERATIONS; RLS still requires ADMIN/MANAGER.',
-  });
+  await expectHelper(db, ids.operationsA, `select public.current_user_has_effective_app_permission('contracts.create') as v`, true,
+    { id: 'auth.operationsA.contracts_create.compat', group: 'auth', title: 'OPERATIONS keeps historical contracts.write compatibility fallback' });
+  await db.exec(`
+    insert into public.user_permission_overrides(company_id,user_id,permission,allowed,set_by,reason,set_at)
+    values
+      ('${COMPANY_A}','${OPERATIONS_A}','properties.create',false,'${ADMIN_A}','matrix explicit granular deny',now()),
+      ('${COMPANY_A}','${OPERATIONS_A}','contracts.create',false,'${ADMIN_A}','matrix explicit granular deny',now())
+    on conflict(company_id,user_id,permission) do update set allowed=excluded.allowed,set_by=excluded.set_by,reason=excluded.reason,set_at=excluded.set_at
+  `);
+  await expectMutationDenied(
+    db,
+    ids.operationsA,
+    `with u as (
+       insert into public.properties (title, type, address, status, company_id)
+       values ('Operations explicitly denied', 'residential', 'A', 'active', '${COMPANY_A}')
+       returning id
+     ) select count(*)::int as n from u`,
+    { id: 'rls.operationsA.insert.properties.override', group: 'rls-write', title: 'explicit properties.create=false overrides OPERATIONS compatibility fallback' },
+  );
+  await expectHelper(db, ids.operationsA, `select public.current_user_has_effective_app_permission('contracts.create') as v`, false,
+    { id: 'auth.operationsA.contracts_create.override', group: 'auth', title: 'explicit contracts.create=false overrides OPERATIONS compatibility fallback' });
 
   await expectMutationDenied(
     db,
