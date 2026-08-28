@@ -4,7 +4,7 @@ import { ActionMenu } from '@/components/ui/action-menu';
 import { Button } from '@/components/ui/button';
 import { DataTableColumnsMenu } from '@/components/ui/data-table';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
-import { EmptyState } from '@/components/empty-state';
+import { EmptyState } from '@/components/ui/state-surfaces';
 import { EntityCell } from '@/components/ui/entity-cell';
 import { EntityPreviewDialog } from '@/components/ui/entity-preview-dialog';
 import { useLocation, useNavigate } from '@tanstack/react-router';
