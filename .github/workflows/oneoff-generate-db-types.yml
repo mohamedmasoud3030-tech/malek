@@ -1,0 +1,55 @@
+name: One-off canonical database type regeneration
+
+on:
+  push:
+    branches:
+      - integration/final-consolidation-20260828
+    paths:
+      - '.github/workflows/oneoff-generate-db-types.yml'
+
+permissions:
+  contents: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          ref: integration/final-consolidation-20260828
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install deterministic dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Regenerate canonical database TypeScript contract
+        run: pnpm db0:gen-types
+
+      - name: Verify generated contract
+        run: pnpm db0:check-types
+
+      - name: Commit generated contract and remove one-off workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/oneoff-generate-db-types.yml
+          git add rentrix-app/src/types/database.ts .github/workflows/oneoff-generate-db-types.yml
+          if git diff --cached --quiet; then
+            echo 'Nothing to commit.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'fix(db): sync generated database types'
+          git push origin HEAD:integration/final-consolidation-20260828
