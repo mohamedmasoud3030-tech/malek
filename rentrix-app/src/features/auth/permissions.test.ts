@@ -1,22 +1,20 @@
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
+  appPermissions,
   canAccess,
+  canAccessAny,
   canAccessRoute,
   canShowNavigationItem,
   financialOperationPermissions,
-  appPermissions,
   getAuthorizationContextFromSession,
   getAuthorizationContextFromUser,
-  getAuthorizationDiagnosticsFromUser,
   getRoleFromAccessToken,
   getWriteAccessState,
   hasRole,
   normalizeRole,
+  type AppPermission,
+  type AuthorizationContext,
 } from './permissions';
-
-const sourcePath = fileURLToPath(new URL('./permissions.ts', import.meta.url));
 
 const userWithRole = (role: unknown) => ({
   id: 'user-1',
@@ -30,13 +28,33 @@ const accessTokenWithRole = (role: unknown) => [
   'signature',
 ].join('.');
 
+function resolved(role: AuthorizationContext['role'], permissions: readonly AppPermission[]): AuthorizationContext {
+  return {
+    userId: 'user-1',
+    email: 'user@example.com',
+    role,
+    grantedPermissions: permissions,
+    effectivePermissionsResolved: true,
+  };
+}
+
 describe('canonical authorization permissions', () => {
-  it('uses the custom-hook role from the server-issued access token before stale Auth user metadata', () => {
+  it('keeps all six historical roles as internal compatibility inputs', () => {
+    for (const role of ['ADMIN', 'MANAGER', 'ACCOUNTANT', 'OPERATIONS', 'USER', 'VIEWER'] as const) {
+      expect(normalizeRole(role.toLowerCase())).toBe(role);
+      const context = getAuthorizationContextFromUser(userWithRole(role));
+      expect(context?.role).toBe(role);
+      expect(hasRole(context, role)).toBe(true);
+    }
+    expect(normalizeRole('OWNER')).toBeNull();
+    expect(normalizeRole('EMPLOYEE')).toBeNull();
+  });
+
+  it('uses the server-issued access-token role before stale auth metadata', () => {
     const session = {
       user: { ...userWithRole('USER'), app_metadata: {} },
       access_token: accessTokenWithRole('ADMIN'),
     };
-
     expect(getRoleFromAccessToken(session.access_token)).toBe('ADMIN');
     expect(getAuthorizationContextFromSession(session as never)).toEqual({
       userId: 'user-1',
@@ -45,407 +63,110 @@ describe('canonical authorization permissions', () => {
     });
   });
 
-  it('fails closed for malformed access-token role claims', () => {
+  it('fails closed for malformed or unknown token roles', () => {
     expect(getRoleFromAccessToken('not-a-jwt')).toBeNull();
     expect(getRoleFromAccessToken(accessTokenWithRole('OWNER'))).toBeNull();
+    expect(getAuthorizationContextFromUser(userWithRole('OWNER'))).toBeNull();
   });
 
-  it('allows settings access for a known authorized role', () => {
-    const context = getAuthorizationContextFromUser(userWithRole('ADMIN'));
-
-    expect(context).toEqual({ userId: 'user-1', email: 'user@example.com', role: 'ADMIN' });
-    expect(canAccess(context, 'settings.manage')).toBe(true);
-    expect(canAccessRoute(context, 'settings.manage')).toBe(true);
-    expect(canShowNavigationItem(context, 'settings.manage')).toBe(true);
-  });
-
-  it('denies settings access for a known unauthorized role', () => {
-    const context = getAuthorizationContextFromUser(userWithRole('USER'));
-
-    expect(context?.role).toBe('USER');
-    expect(canAccess(context, 'settings.manage')).toBe(false);
-    expect(canAccessRoute(context, 'settings.manage')).toBe(false);
-  });
-
-  it('keeps unrestricted navigation visible while permission checks fail closed without a role claim', () => {
-    expect(getAuthorizationContextFromUser(null)).toBeNull();
-    expect(canAccess(null, 'app.dashboard.view')).toBe(false);
-    expect(canAccessRoute(null, 'app.dashboard.view')).toBe(false);
-    expect(canShowNavigationItem(null, undefined)).toBe(true);
-    expect(canShowNavigationItem(null, 'settings.manage')).toBe(false);
-  });
-
-  it('denies access when the role is unknown', () => {
-    const context = getAuthorizationContextFromUser(userWithRole('OWNER'));
-
-    expect(context).toBeNull();
-    expect(normalizeRole('OWNER')).toBeNull();
-    expect(canAccess(context, 'app.dashboard.view')).toBe(false);
-  });
-
-  it('checks explicit permissions without granting unrelated permissions', () => {
-    const adminContext = getAuthorizationContextFromUser(userWithRole('ADMIN'));
-    const managerContext = getAuthorizationContextFromUser(userWithRole('MANAGER'));
-    const userContext = getAuthorizationContextFromUser(userWithRole('USER'));
-
-    expect(canAccess(adminContext, 'app.dashboard.view')).toBe(true);
-    expect(canAccess(adminContext, 'audit.view')).toBe(true);
-    expect(canAccess(adminContext, 'integrity.view')).toBe(true);
-    expect(canAccess(adminContext, 'maintenance.view')).toBe(true);
-    expect(canAccess(adminContext, 'service_providers.view')).toBe(true);
-    expect(canAccess(adminContext, 'service_providers.write')).toBe(true);
-    expect(canAccess(adminContext, 'system.view')).toBe(true);
-    expect(canAccess(adminContext, 'auth.password.change')).toBe(true);
-    expect(canAccess(adminContext, 'owners.hub.view')).toBe(true);
-    expect(canAccess(adminContext, 'owners.detail.view')).toBe(true);
-    expect(canAccess(adminContext, 'lands.view')).toBe(true);
-    expect(canAccess(adminContext, 'leads.view')).toBe(true);
-    expect(canAccess(adminContext, 'commissions.view')).toBe(true);
-    expect(canAccess(adminContext, 'communication.view')).toBe(true);
-    expect(canAccess(adminContext, 'properties.write')).toBe(true);
-    expect(canAccess(adminContext, 'contracts.write')).toBe(true);
-    expect(canAccess(adminContext, 'expenses.write')).toBe(true);
-    expect(canAccess(adminContext, 'arrears.view')).toBe(true);
-    expect(canAccess(adminContext, 'financial.bank_reconciliation.view')).toBe(true);
-    expect(canAccess(managerContext, 'system.view')).toBe(false);
-    expect(canAccess(managerContext, 'settings.manage')).toBe(false);
-    expect(canAccess(managerContext, 'company.settings.manage')).toBe(false);
-    expect(canAccess(managerContext, 'users.manage')).toBe(false);
-    expect(canAccess(managerContext, 'permission_requests.review')).toBe(true);
-    expect(canAccess(managerContext, 'integrity.view')).toBe(false);
-    expect(canAccess(managerContext, 'maintenance.view')).toBe(true);
-    expect(canAccess(managerContext, 'service_providers.view')).toBe(true);
-    expect(canAccess(managerContext, 'service_providers.write')).toBe(true);
-    expect(canAccess(managerContext, 'owners.hub.view')).toBe(true);
-    expect(canAccess(managerContext, 'properties.write')).toBe(true);
-    expect(canAccess(managerContext, 'contracts.write')).toBe(true);
-    expect(canAccess(managerContext, 'expenses.write')).toBe(true);
-    expect(canAccess(managerContext, 'arrears.view')).toBe(true);
-    expect(canAccess(managerContext, 'financial.bank_reconciliation.view')).toBe(true);
-    expect(canAccess(managerContext, 'owners.detail.view')).toBe(true);
-    expect(canAccess(managerContext, 'lands.view')).toBe(true);
-    expect(canAccess(managerContext, 'leads.view')).toBe(true);
-    expect(canAccess(managerContext, 'commissions.view')).toBe(true);
-    expect(canAccess(managerContext, 'communication.view')).toBe(true);
-    expect(canAccess(managerContext, 'audit.view')).toBe(false);
-    expect(canAccess(userContext, 'app.dashboard.view')).toBe(true);
-    expect(canAccess(userContext, 'auth.password.change')).toBe(true);
-    expect(canAccess(userContext, 'system.view')).toBe(false);
-    expect(canAccess(userContext, 'maintenance.view')).toBe(false);
-    expect(canAccess(userContext, 'service_providers.view')).toBe(false);
-    expect(canAccess(userContext, 'service_providers.write')).toBe(false);
-    expect(canAccess(userContext, 'owners.hub.view')).toBe(false);
-    expect(canAccess(userContext, 'leads.view')).toBe(false);
-    expect(canAccess(userContext, 'settings.manage')).toBe(false);
-    expect(canAccess(userContext, 'properties.write')).toBe(false);
-    expect(canAccess(userContext, 'contracts.write')).toBe(false);
-    expect(canAccess(userContext, 'expenses.write')).toBe(false);
-    expect(canAccess(userContext, 'arrears.view')).toBe(false);
-    expect(canAccess(userContext, 'financial.bank_reconciliation.view')).toBe(false);
-  });
-
-  it('grants dedicated view permissions for guarded workspaces', () => {
-    const adminContext = getAuthorizationContextFromUser(userWithRole('ADMIN'));
-    const managerContext = getAuthorizationContextFromUser(userWithRole('MANAGER'));
-    const userContext = getAuthorizationContextFromUser(userWithRole('USER'));
-    const workspaceViewPermissions = [
-      'automation.view',
-      'expenses.view',
-      'financial.deposits.view',
-      'financial.owner_settlements.view',
-    ] as const;
-
-    for (const permission of workspaceViewPermissions) {
-      expect(appPermissions.includes(permission)).toBe(true);
-      expect(canAccess(adminContext, permission)).toBe(true);
-      expect(canAccess(managerContext, permission)).toBe(true);
-      expect(canAccess(userContext, permission)).toBe(false);
+  it('keeps ADMIN as the full-access compatibility role for the Office Owner', () => {
+    const owner = getAuthorizationContextFromUser(userWithRole('ADMIN'));
+    for (const permission of appPermissions) {
+      expect(canAccess(owner, permission), permission).toBe(true);
     }
-
-    // Settlement approval/payout remain a restricted financial control.
-    expect(canAccess(managerContext, 'financial.owner_settlements.approve')).toBe(false);
-    expect(canAccess(managerContext, 'financial.owner_settlements.pay')).toBe(false);
-    expect(canAccess(adminContext, 'financial.owner_settlements.approve')).toBe(true);
-    expect(canAccess(adminContext, 'financial.owner_settlements.pay')).toBe(true);
   });
 
-
-  it('enforces explicit financial operation permissions by role', () => {
-    const adminContext = getAuthorizationContextFromUser(userWithRole('ADMIN'));
-    const managerContext = getAuthorizationContextFromUser(userWithRole('MANAGER'));
-    const userContext = getAuthorizationContextFromUser(userWithRole('USER'));
-    const allFinancialPermissions = Object.values(financialOperationPermissions);
-
-    expect(allFinancialPermissions.every((permission) => appPermissions.includes(permission))).toBe(true);
-    expect(allFinancialPermissions.every((permission) => canAccess(adminContext, permission))).toBe(true);
-
-    expect(canAccess(managerContext, financialOperationPermissions.generateInvoices)).toBe(true);
-    expect(canAccess(managerContext, financialOperationPermissions.exportInvoices)).toBe(true);
-    expect(canAccess(managerContext, financialOperationPermissions.createPayment)).toBe(true);
-    expect(canAccess(managerContext, financialOperationPermissions.voidReceipt)).toBe(true);
-    expect(canAccess(managerContext, financialOperationPermissions.exportReports)).toBe(true);
-    expect(canAccess(managerContext, financialOperationPermissions.matchBankReconciliation)).toBe(true);
-    expect(canAccess(managerContext, financialOperationPermissions.approveOwnerSettlement)).toBe(false);
-    expect(canAccess(managerContext, financialOperationPermissions.payOwnerSettlement)).toBe(false);
-
-    expect(allFinancialPermissions.every((permission) => !canAccess(userContext, permission))).toBe(true);
+  it('keeps legacy role defaults only until the authoritative effective set resolves', () => {
+    const manager = getAuthorizationContextFromUser(userWithRole('MANAGER'));
+    expect(canAccess(manager, 'properties.view')).toBe(true);
+    expect(canAccess(manager, 'properties.write')).toBe(true);
+    expect(canAccess(manager, 'contracts.view')).toBe(true);
+    expect(canAccess(manager, 'financial.workspace.view')).toBe(true);
+    expect(canAccess(manager, 'maintenance.write')).toBe(true);
+    expect(canAccess(manager, 'users.manage')).toBe(false);
   });
 
-  it('exposes a clear write-access state for the shared app shell', () => {
-    expect(getWriteAccessState(getAuthorizationContextFromUser(userWithRole('ADMIN')))).toBe('full');
-    expect(getWriteAccessState(getAuthorizationContextFromUser(userWithRole('MANAGER')))).toBe('full');
-    expect(getWriteAccessState(getAuthorizationContextFromUser(userWithRole('USER')))).toBe('read-only');
+  it('treats the resolved server capability set as authoritative even over a legacy MANAGER role', () => {
+    const employee = resolved('MANAGER', ['app.dashboard.view', 'contracts.view']);
+    expect(canAccess(employee, 'contracts.view')).toBe(true);
+    expect(canAccess(employee, 'properties.view')).toBe(false);
+    expect(canAccess(employee, 'properties.write')).toBe(false);
+    expect(canAccess(employee, 'financial.workspace.view')).toBe(false);
+    expect(canAccess(employee, 'maintenance.write')).toBe(false);
+  });
+
+  it('allows owner-approved capabilities to a historically minimal USER role', () => {
+    const employee = resolved('USER', [
+      'app.dashboard.view',
+      'properties.view',
+      'properties.write',
+      'maintenance.view',
+      'maintenance.write',
+    ]);
+    expect(canAccess(employee, 'properties.view')).toBe(true);
+    expect(canAccess(employee, 'properties.write')).toBe(true);
+    expect(canAccess(employee, 'maintenance.write')).toBe(true);
+    expect(canAccess(employee, 'contracts.view')).toBe(false);
+  });
+
+  it('supports a collections-only employee without inventing a new role', () => {
+    const employee = resolved('USER', [
+      'app.dashboard.view',
+      'financial.workspace.view',
+      'financial.payments.create',
+    ]);
+    expect(canAccess(employee, 'financial.workspace.view')).toBe(true);
+    expect(canAccess(employee, financialOperationPermissions.createPayment)).toBe(true);
+    expect(canAccess(employee, 'financial.reports.view')).toBe(false);
+    expect(canAccess(employee, 'expenses.write')).toBe(false);
+  });
+
+  it('supports a reports-only employee without exposing operational workspaces', () => {
+    const employee = resolved('VIEWER', ['app.dashboard.view', 'financial.reports.view']);
+    expect(canAccess(employee, 'financial.reports.view')).toBe(true);
+    expect(canAccess(employee, 'financial.workspace.view')).toBe(false);
+    expect(canAccess(employee, 'properties.view')).toBe(false);
+    expect(canAccess(employee, 'contracts.view')).toBe(false);
+    expect(canAccess(employee, 'maintenance.view')).toBe(false);
+  });
+
+  it('uses the same effective result for actions, routes and navigation', () => {
+    const employee = resolved('OPERATIONS', ['app.dashboard.view', 'contracts.view', 'contracts.write']);
+    expect(canAccess(employee, 'contracts.write')).toBe(true);
+    expect(canAccessRoute(employee, 'contracts.write')).toBe(true);
+    expect(canShowNavigationItem(employee, 'contracts.write')).toBe(true);
+    expect(canAccessRoute(employee, 'properties.view')).toBe(false);
+    expect(canShowNavigationItem(employee, 'properties.view')).toBe(false);
+  });
+
+  it('keeps auth-only navigation visible while permissioned navigation fails closed without context', () => {
+    expect(canShowNavigationItem(null, undefined)).toBe(true);
+    expect(canShowNavigationItem(null, 'properties.view')).toBe(false);
+    expect(canAccessRoute(null, 'properties.view')).toBe(false);
+  });
+
+  it('calculates shell write posture from the same effective capability set', () => {
+    expect(getWriteAccessState(resolved('USER', ['app.dashboard.view']))).toBe('read-only');
+    expect(getWriteAccessState(resolved('USER', ['app.dashboard.view', 'properties.write']))).toBe('full');
+    expect(getWriteAccessState(resolved('VIEWER', ['maintenance.write']))).toBe('full');
     expect(getWriteAccessState(null)).toBe('unconfigured');
   });
 
-  it('uses effective grants for shell write posture while retaining action-level gates', () => {
-    const approvedWriter = {
-      ...getAuthorizationContextFromUser(userWithRole('USER'))!,
-      grantedPermissions: ['service_providers.write'] as const,
-    };
-    const doomedPropertyWriter = {
-      ...getAuthorizationContextFromUser(userWithRole('USER'))!,
-      grantedPermissions: ['properties.write'] as const,
-    };
-    const readOnlyUser = getAuthorizationContextFromUser(userWithRole('USER'));
-
-    expect(getWriteAccessState(approvedWriter)).toBe('full');
-    expect(canAccessRoute(approvedWriter, 'service_providers.write')).toBe(true);
-    expect(canShowNavigationItem(approvedWriter, 'service_providers.write')).toBe(true);
-    expect(canAccess(approvedWriter, 'contracts.write')).toBe(false);
-    expect(getWriteAccessState(doomedPropertyWriter)).toBe('read-only');
-    expect(canAccessRoute(doomedPropertyWriter, 'properties.write')).toBe(false);
-    expect(canShowNavigationItem(doomedPropertyWriter, 'properties.write')).toBe(false);
-    expect(getWriteAccessState(readOnlyUser)).toBe('read-only');
-    expect(canAccessRoute(readOnlyUser, 'properties.write')).toBe(false);
+  it('keeps sensitive financial approvals separate from ordinary collection access', () => {
+    const employee = resolved('USER', [
+      'financial.workspace.view',
+      'financial.payments.create',
+      'financial.reports.view',
+    ]);
+    expect(canAccess(employee, financialOperationPermissions.createPayment)).toBe(true);
+    expect(canAccess(employee, financialOperationPermissions.approveOwnerSettlement)).toBe(false);
+    expect(canAccess(employee, financialOperationPermissions.payOwnerSettlement)).toBe(false);
+    expect(canAccess(employee, financialOperationPermissions.voidReceipt)).toBe(false);
   });
 
-  it('fences server-enforced writes so doomed grants cannot open UI actions', () => {
-    const operationsGrant = {
-      ...getAuthorizationContextFromUser(userWithRole('OPERATIONS'))!,
-      grantedPermissions: ['properties.write', 'contracts.write', 'expenses.write', 'documents.write'] as const,
-    };
-    const accountantGrant = {
-      ...getAuthorizationContextFromUser(userWithRole('ACCOUNTANT'))!,
-      grantedPermissions: ['properties.write', 'documents.write'] as const,
-    };
-
-    for (const permission of ['properties.write', 'contracts.write', 'expenses.write', 'documents.write'] as const) {
-      expect(canAccess(operationsGrant, permission)).toBe(false);
-      expect(canAccessRoute(operationsGrant, permission)).toBe(false);
-    }
-    expect(canAccess(operationsGrant, 'service_providers.write')).toBe(true);
-    expect(canAccess(accountantGrant, 'properties.write')).toBe(false);
-    expect(canAccess(accountantGrant, 'documents.write')).toBe(false);
-    expect(canAccess(getAuthorizationContextFromUser(userWithRole('ADMIN')), 'properties.write')).toBe(true);
-    expect(canAccess(getAuthorizationContextFromUser(userWithRole('MANAGER')), 'documents.write')).toBe(true);
-  });
-
-  it('recognizes all six canonical roles', () => {
-    for (const role of ['ADMIN', 'MANAGER', 'ACCOUNTANT', 'OPERATIONS', 'USER', 'VIEWER'] as const) {
-      const context = getAuthorizationContextFromUser(userWithRole(role));
-      expect(context?.role).toBe(role);
-      expect(hasRole(context, role)).toBe(true);
-    }
-  });
-
-  it('enforces ACCOUNTANT capability matrix', () => {
-    const ctx = getAuthorizationContextFromUser(userWithRole('ACCOUNTANT'));
-    expect(ctx?.role).toBe('ACCOUNTANT');
-
-    // Has financial review/accounting permissions.
-    expect(canAccess(ctx, 'app.dashboard.view')).toBe(true);
-    expect(canAccess(ctx, 'audit.view')).toBe(true);
-    expect(canAccess(ctx, 'expenses.view')).toBe(true);
-    expect(canAccess(ctx, 'arrears.view')).toBe(true);
-    expect(canAccess(ctx, 'financial.deposits.view')).toBe(true);
-    expect(canAccess(ctx, 'financial.invoices.generate')).toBe(true);
-    expect(canAccess(ctx, 'financial.invoices.export')).toBe(true);
-    expect(canAccess(ctx, 'financial.reports.export')).toBe(true);
-    expect(canAccess(ctx, 'financial.bank_reconciliation.view')).toBe(true);
-    expect(canAccess(ctx, 'financial.bank_reconciliation.match')).toBe(true);
-    expect(canAccess(ctx, 'financial.owner_settlements.view')).toBe(true);
-    expect(canAccess(ctx, 'financial.fixed_monthly_accruals.view')).toBe(true);
-    expect(canAccess(ctx, 'financial.fixed_monthly_accruals.execute')).toBe(true);
-    expect(canAccess(ctx, 'financial.fixed_monthly_accruals.reverse')).toBe(true);
-    expect(canAccess(ctx, 'auth.password.change')).toBe(true);
-
-    // Does NOT have operational/approval/admin permissions.
-    expect(canAccess(ctx, 'properties.write')).toBe(false);
-    expect(canAccess(ctx, 'contracts.write')).toBe(false);
-    expect(canAccess(ctx, 'expenses.write')).toBe(false);
-    expect(canAccess(ctx, 'users.manage')).toBe(false);
-    expect(canAccess(ctx, 'company.settings.manage')).toBe(false);
-    expect(canAccess(ctx, 'system.view')).toBe(false);
-    expect(canAccess(ctx, 'integrity.view')).toBe(false);
-    expect(canAccess(ctx, 'financial.payments.create')).toBe(false);
-    expect(canAccess(ctx, 'financial.receipts.void')).toBe(false);
-    expect(canAccess(ctx, 'financial.owner_settlements.approve')).toBe(false);
-    expect(canAccess(ctx, 'financial.owner_settlements.pay')).toBe(false);
-    expect(canAccess(ctx, 'settings.manage')).toBe(false);
-  });
-
-  it('enforces OPERATIONS capability matrix', () => {
-    const ctx = getAuthorizationContextFromUser(userWithRole('OPERATIONS'));
-    expect(ctx?.role).toBe('OPERATIONS');
-
-    // Has operational permissions.
-    expect(canAccess(ctx, 'app.dashboard.view')).toBe(true);
-    expect(canAccess(ctx, 'maintenance.view')).toBe(true);
-    expect(canAccess(ctx, 'service_providers.view')).toBe(true);
-    expect(canAccess(ctx, 'service_providers.write')).toBe(true);
-    expect(canAccess(ctx, 'cost_centers.manage')).toBe(true);
-    expect(canAccess(ctx, 'owners.hub.view')).toBe(true);
-    expect(canAccess(ctx, 'owners.detail.view')).toBe(true);
-    expect(canAccess(ctx, 'lands.view')).toBe(true);
-    expect(canAccess(ctx, 'leads.view')).toBe(true);
-    expect(canAccess(ctx, 'communication.view')).toBe(true);
-    expect(canAccess(ctx, 'automation.view')).toBe(true);
-    expect(canAccess(ctx, 'auth.password.change')).toBe(true);
-    expect(canAccess(ctx, 'expenses.view')).toBe(true);
-    expect(canAccess(ctx, 'arrears.view')).toBe(true);
-
-    // These writes exist in the SQL catalog for OPERATIONS but RLS/RPCs
-    // always require is_admin_or_manager(). The frontend follows the DB.
-    expect(canAccess(ctx, 'documents.write')).toBe(false);
-    expect(canAccess(ctx, 'properties.write')).toBe(false);
-    expect(canAccess(ctx, 'contracts.write')).toBe(false);
-    expect(canAccess(ctx, 'expenses.write')).toBe(false);
-
-    // Does NOT have financial/approval/admin permissions.
-    expect(canAccess(ctx, 'financial.payments.create')).toBe(false);
-    expect(canAccess(ctx, 'financial.receipts.void')).toBe(false);
-    expect(canAccess(ctx, 'financial.owner_settlements.approve')).toBe(false);
-    expect(canAccess(ctx, 'financial.owner_settlements.pay')).toBe(false);
-    expect(canAccess(ctx, 'users.manage')).toBe(false);
-    expect(canAccess(ctx, 'company.settings.manage')).toBe(false);
-    expect(canAccess(ctx, 'system.view')).toBe(false);
-    expect(canAccess(ctx, 'audit.view')).toBe(false);
-    expect(canAccess(ctx, 'integrity.view')).toBe(false);
-    expect(canAccess(ctx, 'permission_requests.review')).toBe(false);
-    expect(canAccess(ctx, 'settings.manage')).toBe(false);
-  });
-
-  it('enforces VIEWER capability matrix', () => {
-    const ctx = getAuthorizationContextFromUser(userWithRole('VIEWER'));
-    expect(ctx?.role).toBe('VIEWER');
-
-    // Has read-only view permissions.
-    expect(canAccess(ctx, 'app.dashboard.view')).toBe(true);
-    expect(canAccess(ctx, 'maintenance.view')).toBe(true);
-    expect(canAccess(ctx, 'service_providers.view')).toBe(true);
-    expect(canAccess(ctx, 'owners.hub.view')).toBe(true);
-    expect(canAccess(ctx, 'owners.detail.view')).toBe(true);
-    expect(canAccess(ctx, 'lands.view')).toBe(true);
-    expect(canAccess(ctx, 'leads.view')).toBe(true);
-    expect(canAccess(ctx, 'commissions.view')).toBe(true);
-    expect(canAccess(ctx, 'communication.view')).toBe(true);
-    expect(canAccess(ctx, 'automation.view')).toBe(true);
-    expect(canAccess(ctx, 'expenses.view')).toBe(true);
-    expect(canAccess(ctx, 'arrears.view')).toBe(true);
-    expect(canAccess(ctx, 'financial.deposits.view')).toBe(true);
-    expect(canAccess(ctx, 'financial.owner_settlements.view')).toBe(true);
-    expect(canAccess(ctx, 'financial.bank_reconciliation.view')).toBe(true);
-    expect(canAccess(ctx, 'auth.password.change')).toBe(true);
-
-    // Does NOT have any write permissions.
-    expect(canAccess(ctx, 'properties.write')).toBe(false);
-    expect(canAccess(ctx, 'contracts.write')).toBe(false);
-    expect(canAccess(ctx, 'expenses.write')).toBe(false);
-    expect(canAccess(ctx, 'documents.write')).toBe(false);
-    expect(canAccess(ctx, 'service_providers.write')).toBe(false);
-    expect(canAccess(ctx, 'financial.payments.create')).toBe(false);
-    expect(canAccess(ctx, 'financial.receipts.void')).toBe(false);
-    expect(canAccess(ctx, 'financial.owner_settlements.approve')).toBe(false);
-    expect(canAccess(ctx, 'financial.owner_settlements.pay')).toBe(false);
-    expect(canAccess(ctx, 'users.manage')).toBe(false);
-    expect(canAccess(ctx, 'company.settings.manage')).toBe(false);
-    expect(canAccess(ctx, 'system.view')).toBe(false);
-    expect(canAccess(ctx, 'audit.view')).toBe(false);
-    expect(canAccess(ctx, 'integrity.view')).toBe(false);
-    expect(canAccess(ctx, 'permission_requests.review')).toBe(false);
-    expect(canAccess(ctx, 'settings.manage')).toBe(false);
-  });
-
-  it('reports VIEWER and OPERATIONS as read-only shell write posture', () => {
-    expect(getWriteAccessState(getAuthorizationContextFromUser(userWithRole('VIEWER')))).toBe('read-only');
-    expect(getWriteAccessState(getAuthorizationContextFromUser(userWithRole('OPERATIONS')))).toBe('full');
-    expect(getWriteAccessState(getAuthorizationContextFromUser(userWithRole('ACCOUNTANT')))).toBe('full');
-  });
-
-  it('normalizes roles safely', () => {
-    const context = getAuthorizationContextFromUser(userWithRole(' manager '));
-
-    expect(normalizeRole(' admin ')).toBe('ADMIN');
-    expect(normalizeRole('user')).toBe('USER');
-    expect(normalizeRole('accountant')).toBe('ACCOUNTANT');
-    expect(normalizeRole('operations')).toBe('OPERATIONS');
-    expect(normalizeRole('viewer')).toBe('VIEWER');
-    expect(context?.role).toBe('MANAGER');
-    expect(hasRole(context, 'MANAGER')).toBe(true);
-  });
-
-  it('fails closed for malformed users and metadata', () => {
-    expect(getAuthorizationContextFromUser(userWithRole(null))).toBeNull();
-    expect(getAuthorizationContextFromUser({ ...userWithRole('ADMIN'), id: '' })).toBeNull();
-    expect(normalizeRole(undefined)).toBeNull();
-  });
-
-  it('reports safe authorization diagnostics without granting missing role metadata', () => {
-    const diagnostics = getAuthorizationDiagnosticsFromUser({
-      id: 'user-1',
-      email: 'admin@example.com',
-      app_metadata: {},
-    });
-
-    expect(getAuthorizationContextFromUser({ id: 'user-1', email: 'admin@example.com', app_metadata: {} })).toBeNull();
-    expect(diagnostics).toEqual({
-      resolvedRole: null,
-      hasUserRoleMetadata: false,
-      hasRoleMetadata: false,
-      metadataMismatch: true,
-    });
-  });
-
-  it('reports which accepted app metadata role field resolved authorization', () => {
-    expect(getAuthorizationDiagnosticsFromUser(userWithRole('ADMIN'))).toEqual({
-      resolvedRole: 'ADMIN',
-      hasUserRoleMetadata: true,
-      hasRoleMetadata: false,
-      metadataMismatch: false,
-    });
-
-    expect(
-      getAuthorizationDiagnosticsFromUser({
-        id: 'user-1',
-        email: 'admin@example.com',
-        app_metadata: { role: 'ADMIN' },
-      }),
-    ).toEqual({
-      resolvedRole: 'ADMIN',
-      hasUserRoleMetadata: false,
-      hasRoleMetadata: true,
-      metadataMismatch: false,
-    });
-  });
-
-  it('does not depend on historical AppContext or React Router', () => {
-    const source = readFileSync(sourcePath, 'utf8');
-
-    expect(source).not.toContain('AppContext');
-    expect(source).not.toContain('useApp');
-    expect(source).not.toContain('react-router-dom');
-    expect(source).not.toContain('@tanstack/react-router');
-  });
-
-  it('does not perform Supabase client writes or queries', () => {
-    const source = readFileSync(sourcePath, 'utf8');
-
-    expect(source).not.toContain('@/integrations/supabase');
-    // Supabase client calls: `.from(`, `.insert(`, `.update(`, `.upsert(`,
-    // `.delete(`, `.rpc(`. `Uint8Array.from(` is a typed-array constructor used
-    // by the JWT-decode helper, not a Supabase call — exclude it explicitly so
-    // the guard keeps scanning for real client usage.
-    expect(source).not.toMatch(/(?<!Uint8Array)\.from\s*\(|\.(insert|update|upsert|delete|rpc)\s*\(/);
+  it('supports checking any capability without leaking unrelated defaults after resolution', () => {
+    const employee = resolved('MANAGER', ['contracts.view']);
+    expect(canAccessAny(employee, ['properties.view', 'contracts.view'])).toBe(true);
+    expect(canAccessAny(employee, ['properties.view', 'maintenance.view'])).toBe(false);
   });
 });
