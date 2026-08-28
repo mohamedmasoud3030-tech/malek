@@ -1,4 +1,4 @@
-import { ArrowUpLeft, FileDown, FileSpreadsheet, Printer } from 'lucide-react';
+import { ArrowUpLeft, FileDown, FileText, Printer } from 'lucide-react';
 import { ActionMenu } from '@/components/ui/action-menu';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -58,7 +58,6 @@ export function ReportCard({
   onExportPdf,
 }: ReportCardProps) {
   const menuItems = buildReportActions({
-    onExcel: onExportCsv,
     onPrint,
     onPdf: onExportPdf,
   });
@@ -67,8 +66,8 @@ export function ReportCard({
     <div className="flex flex-wrap items-center gap-2" data-print-actions>
       {onExportCsv ? (
         <Button variant="secondary" onClick={onExportCsv}>
-          <FileSpreadsheet className="me-2 size-4" />
-          Excel / CSV
+          <FileText className="me-2 size-4" />
+          CSV
         </Button>
       ) : null}
       {onExportPdf ? (
