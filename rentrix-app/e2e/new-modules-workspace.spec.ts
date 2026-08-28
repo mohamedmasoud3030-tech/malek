@@ -77,7 +77,9 @@ test.describe('New Real Modules - Utilities, Vault, Deposits, Automation', () =>
 
     const dialog = page.getByRole('dialog', { name: 'تسجيل وديعة تأمين جديدة' });
     await expect(dialog).toBeVisible();
-    await expect(dialog).toContainText('RPC ذري مع قيد محاسبي');
+    await expect(dialog).toContainText('سيتم تسجيل الوديعة وربطها بالعقد، ويتولى النظام تحديث أثرها المالي تلقائيًا.');
+    await expect(dialog).not.toContainText('RPC');
+    await expect(dialog).not.toContainText('قيد محاسبي');
     await expect(dialog.getByRole('button', { name: 'حفظ الوديعة' })).toBeDisabled();
     await expect(page.locator('body')).not.toContainText('تم تسجيل الوديعة بنجاح');
   });

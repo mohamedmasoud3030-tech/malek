@@ -8,7 +8,6 @@ import {
 
 function unit(overrides: Partial<Unit> & { id: string }): Unit {
   return {
-    id: overrides.id,
     property_id: 'property-1',
     unit_number: '1',
     floor: null,
