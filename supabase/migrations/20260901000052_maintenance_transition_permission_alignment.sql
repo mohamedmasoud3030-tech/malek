@@ -1,7 +1,7 @@
 -- Align maintenance lifecycle transitions with the granular Employee action
--- model introduced in 00050. Starting/progressing work is an edit; declaring
--- the work resolved or closing it is an approval action; cancellation remains
--- independently delegated.
+-- model introduced in 00050. Starting/progressing work and declaring technical
+-- completion are operational edits; verified final closure is an approval
+-- action; cancellation remains independently delegated.
 
 begin;
 
@@ -14,7 +14,6 @@ set search_path to 'public','pg_temp'
 as $function$
   select case lower(btrim(coalesce(p_next_status,'')))
     when 'cancelled' then public.current_user_has_effective_app_permission('maintenance.cancel')
-    when 'resolved' then public.current_user_has_effective_app_permission('maintenance.approve')
     when 'closed' then public.current_user_has_effective_app_permission('maintenance.approve')
     else public.current_user_has_effective_app_permission('maintenance.edit')
   end;
