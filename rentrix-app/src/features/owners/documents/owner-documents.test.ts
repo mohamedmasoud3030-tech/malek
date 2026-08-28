@@ -23,6 +23,7 @@ const validSettings = {
   taxNumber: 'OM12345678',
   currency: 'OMR',
   city: 'مسقط',
+  documentPrefixes: {},
 };
 
 const mockSettlement: OwnerSettlementRecord = {
