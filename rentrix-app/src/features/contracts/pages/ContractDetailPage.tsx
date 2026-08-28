@@ -13,7 +13,12 @@ import { DocumentReadinessNotice } from '@/features/settings/components/document
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
 import { useAuth } from '@/hooks/use-auth';
 import { normalizeContractStatus } from '@/lib/contractStatus';
-import { exportContractPdf, printContractView, shareContractLink } from '../actions/contractDetailActions';
+import {
+  exportContractPdf,
+  printContractView,
+  shareContractLink,
+  shareContractViaWhatsApp,
+} from '../actions/contractDetailActions';
 import { ContractDetailWorkspace } from '../components/ContractDetailWorkspace';
 import { contractStatusLabels, contractStatusTone } from '../contractSchema';
 import { ContractRenewalDialog } from '../lifecycle/ContractRenewalDialog';
@@ -90,6 +95,7 @@ export function ContractDetailPage() {
     ...buildContractActions({
       onPrint: documentSettings.isReady ? () => printContractView(contract, documentSettings.companySettings) : undefined,
       onPdf: documentSettings.isReady ? () => exportContractPdf(contract, documentSettings.companySettings) : undefined,
+      onWhatsApp: contract.people?.phone ? () => shareContractViaWhatsApp(contract) : undefined,
       onShare: handleShare,
       onRenew: renewalAllowed ? openRenewal : undefined,
       onTerminate: terminationAllowed ? openTermination : undefined,
