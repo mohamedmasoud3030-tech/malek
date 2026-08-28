@@ -19,8 +19,8 @@ import { getDaysUntilEnd, isExpiringSoon } from "../hooks/useContractFilters";
 
 function DetailBox({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="rounded-xl border border-border/70 bg-card p-4 shadow-card">
-      <p className="mb-2 text-xs font-medium text-muted-foreground">{label}</p>
+    <div className="min-w-0 border-t border-border/60 pt-3 first:border-t-0">
+      <p className="mb-1.5 text-xs font-bold text-muted-foreground">{label}</p>
       <div className="space-y-1 text-sm leading-6">{children}</div>
     </div>
   );
@@ -225,7 +225,7 @@ export function ContractTable({
       ]}
       onRowClick={(contract) => setExpandedId((current) => current === contract.id ? null : contract.id)}
       renderRowExpansion={(contract) => (
-        <div className="grid grid-cols-2 gap-4 [&>*:last-child:nth-child(odd)]:col-span-2">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-x-5">
           <DetailBox label="بيانات المستأجر">
             <p className="font-bold">{contract.people?.full_name ?? "—"}</p>
             <p className="text-muted-foreground">هاتف: {contract.people?.phone ?? "—"}</p>
