@@ -7,7 +7,6 @@ describe('shared design system barrel', () => {
       'Button',
       'IconButton',
       'Card',
-      'StatCard',
       'Badge',
       'StatusBadge',
       'DataTable',
@@ -34,8 +33,8 @@ describe('shared design system barrel', () => {
   });
 
   it('does not expose superseded duplicate primitives', () => {
-    expect('Modal' in ui).toBe(false);
-    expect('Drawer' in ui).toBe(false);
-    expect('InlineStatCard' in ui).toBe(false);
+    for (const name of ['Modal', 'Drawer', 'InlineStatCard', 'StatCard']) {
+      expect(name in ui, `${name} should not be part of the public UI surface`).toBe(false);
+    }
   });
 });

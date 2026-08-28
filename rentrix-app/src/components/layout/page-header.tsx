@@ -18,7 +18,7 @@ interface PageHeaderProps {
   className?: string;
 }
 
-/** Compact shared page heading. Operational density stays high on mobile. */
+/** Compact shared page heading for operational workspaces. */
 export function PageHeader({
   title,
   description,
@@ -38,14 +38,16 @@ export function PageHeader({
       data-page-header
       data-unified-surface="page-header"
       className={cn(
-        'rounded-2xl border border-border/70 bg-card px-3 py-2 shadow-card sm:px-4 sm:py-2.5',
+        'rounded-2xl border border-border/70 bg-card px-3 py-2.5 shadow-card sm:px-4 sm:py-3',
         className,
       )}
     >
-      <div className="flex min-w-0 items-start justify-between gap-2.5 sm:gap-4">
+      <div className="flex min-w-0 items-start justify-between gap-3 sm:gap-4">
         <div className="min-w-0 flex-1 overflow-hidden">
           <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-            <h1 className="min-w-0 break-words text-balance text-lg font-black leading-7 [overflow-wrap:anywhere] sm:text-xl">{title}</h1>
+            <h1 className="min-w-0 break-words text-balance text-xl font-black leading-7 [overflow-wrap:anywhere] sm:text-[1.375rem] sm:leading-8">
+              {title}
+            </h1>
             {count !== undefined ? (
               <span
                 className="inline-flex min-h-6 shrink-0 items-center rounded-md border border-border bg-muted/45 px-2 py-0.5 text-xs font-bold tabular-nums text-muted-foreground"
@@ -56,18 +58,18 @@ export function PageHeader({
             ) : null}
           </div>
           {description ? (
-            <p className="mt-0.5 max-w-3xl break-words text-xs leading-5 text-muted-foreground [overflow-wrap:anywhere] sm:text-[13px]">
+            <p className="mt-0.5 max-w-3xl break-words text-[0.8125rem] leading-5 text-muted-foreground [overflow-wrap:anywhere]">
               {description}
             </p>
           ) : null}
         </div>
 
         {hasActions ? (
-          <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
             {backTo ? (
               <Button variant="secondary" size="sm" asChild className="min-h-11">
                 <Link to={backTo}>
-                  <ArrowLeft className="me-1 size-3.5 rtl:rotate-180" />
+                  <ArrowLeft className="me-1 size-3.5 rtl:rotate-180" aria-hidden="true" />
                   <span className="hidden sm:inline">{backLabel}</span>
                   <span className="sm:hidden">رجوع</span>
                 </Link>

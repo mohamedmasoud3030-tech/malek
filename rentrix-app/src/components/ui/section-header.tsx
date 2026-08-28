@@ -4,29 +4,27 @@ import { cn } from '@/lib/utils';
 interface SectionHeaderProps {
   title: ReactNode;
   description?: ReactNode;
-  /** Small colored kicker above the title — establishes visual hierarchy. */
+  /** Small semantic kicker above the title — establishes hierarchy without decoration. */
   eyebrow?: string;
   action?: ReactNode;
   className?: string;
 }
 
-/**
- * Section header used inside cards and page sections.
- * Consistent typography with an optional eyebrow kicker: 11px colored label,
- * 15px semibold title, 13px description.
- */
+/** Section-level heading: one stable type/spacing rhythm across all workspaces. */
 export function SectionHeader({ title, description, eyebrow, action, className }: SectionHeaderProps) {
   return (
-    <div data-section-header className={cn('mb-3 flex items-start justify-between gap-3 lg:mb-4 lg:gap-4', className)}>
-      <div className="min-w-0">
+    <div data-section-header className={cn('mb-3 flex min-w-0 items-start justify-between gap-3 lg:mb-4 lg:gap-4', className)}>
+      <div className="min-w-0 flex-1">
         {eyebrow ? (
-          <p className="mb-0.5 text-xs font-extrabold text-primary" data-section-eyebrow>
+          <p className="mb-0.5 text-[0.6875rem] font-extrabold leading-4 text-primary" data-section-eyebrow>
             {eyebrow}
           </p>
         ) : null}
-        <h2 className="text-[0.9375rem] font-semibold leading-6 lg:text-base lg:leading-7">{title}</h2>
+        <h2 className="break-words text-base font-bold leading-6 [overflow-wrap:anywhere]">{title}</h2>
         {description ? (
-          <p className="mt-0.5 text-[0.8125rem] leading-5 text-muted-foreground lg:text-sm">{description}</p>
+          <p className="mt-0.5 break-words text-[0.8125rem] leading-5 text-muted-foreground [overflow-wrap:anywhere]">
+            {description}
+          </p>
         ) : null}
       </div>
       {action ? <div className="shrink-0">{action}</div> : null}

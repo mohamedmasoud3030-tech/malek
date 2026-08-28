@@ -34,7 +34,6 @@ export { BottomSheet } from "./bottom-sheet";
 export { SearchInput } from "./search-input";
 export { SectionHeader } from "./section-header";
 export { ConfirmDialog } from "./confirm-dialog";
-export { StatCard } from "./stat-card";
 export { FilterTabs } from "./filter-tabs";
 export { FilterBar } from "./filter-bar";
 export { WorkspaceNav, type WorkspaceNavItem } from "./workspace-nav";
