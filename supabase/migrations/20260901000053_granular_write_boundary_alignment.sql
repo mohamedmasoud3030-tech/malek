@@ -10,6 +10,7 @@
 --     ordinary non-status maintenance edits remain table updates; the existing
 --     maintenance status trigger continues to protect lifecycle transitions.
 --
+-- Canonical anchors: SEC-001, SEC-002, SEC-003, SEC-005, SEC-006, SEC-008.
 -- This migration does not change business outcomes. It makes RLS/trigger
 -- enforcement match the action permissions already exposed by the product.
 
