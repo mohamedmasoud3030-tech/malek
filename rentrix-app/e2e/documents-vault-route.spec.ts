@@ -3,15 +3,12 @@ import { installFakeSupabaseBackend } from './support/fake-supabase-backend';
 import { installAcceptanceBrowser } from './support/document-acceptance-session';
 
 /**
- * Browser acceptance for the WP-06A Documents Vault route consolidation.
+ * Browser acceptance for the contextual Documents Vault route.
  *
- * Proves that /documents-vault redirects once to the real Operations Hub
- * documents_vault section and that the section renders (not the default
- * maintenance fallback), with URL and active tab staying synchronized across
- * desktop and mobile. The production route tree, hub workspace and
- * DocumentsVaultWorkspace run unchanged; only the Supabase HTTP boundary is
- * replaced by the strict, fail-closed seeded backend shared with the document
- * acceptance suite.
+ * `/documents-vault` remains a supported deep link into the real Services
+ * workspace, but documents are intentionally not a routine primary tab. This
+ * matches the canonical contextual-documents contract: deep links stay valid
+ * without promoting a global vault beside daily Maintenance / Utilities.
  */
 
 function watchConsoleErrors(page: Page): string[] {
@@ -29,52 +26,58 @@ function isExpectedHermeticNoise(text: string): boolean {
 }
 
 test.describe('Documents Vault route consolidation', () => {
-  test('/documents-vault redirects to the real documents_vault section', async ({ page }) => {
+  test('/documents-vault redirects to the real contextual documents section', async ({ page }) => {
     const consoleErrors = watchConsoleErrors(page);
     await installAcceptanceBrowser(page);
     await installFakeSupabaseBackend(page, 'complete');
 
     await page.goto('/documents-vault', { waitUntil: 'domcontentloaded' });
 
-    // 1. Final URL is the single authority.
+    // 1. Final URL is the single Services authority.
     await expect(page).toHaveURL(/\/maintenance\?section=documents_vault(?:&|$)/);
 
     // 2. Documents Vault UI is rendered (embedded DocumentsVaultWorkspace),
-    //    not the maintenance fallback. The shared Wave 4 workspace uses the
-    //    concise "رفع مستند" action in both populated and empty states.
+    //    not the maintenance fallback. The shared workspace uses the concise
+    //    "رفع مستند" action in both populated and empty states.
     const vaultSection = page.locator('[data-operations-section="documents_vault"]');
     await expect(vaultSection).toBeVisible({ timeout: 10000 });
     await expect(page.getByRole('heading', { name: 'خزينة المستندات والمرفقات' })).toHaveCount(0); // embedded: no duplicate header
     await expect(vaultSection.getByRole('button', { name: 'رفع مستند', exact: true }).first()).toBeVisible();
 
-    // 3. Maintenance is not the active section.
-    await expect(page.getByRole('tab', { name: 'المستندات التشغيلية' })).toHaveAttribute('aria-selected', 'true');
-    await expect(page.getByRole('tab', { name: 'الصيانة' })).toHaveAttribute('aria-selected', 'false');
+    // 3. Contextual/deep-link sections intentionally do not render the daily
+    //    Services tab strip. They stay reachable without competing with the
+    //    routine Maintenance / Utilities navigation.
+    await expect(page.getByRole('tab', { name: 'المستندات التشغيلية' })).toHaveCount(0);
+    await expect(page.getByRole('tab', { name: 'الصيانة' })).toHaveCount(0);
     await expect(page.locator('[data-operations-section="maintenance"]')).toHaveCount(0);
 
-    // 7. No unexpected console errors or failed requests.
+    // 4. No unexpected console errors or failed requests.
     const unexpected = consoleErrors.filter((text) => !isExpectedHermeticNoise(text));
     expect(unexpected).toEqual([]);
   });
 
-  test('URL and active tab stay synchronized across Documents Vault and Maintenance', async ({ page }) => {
+  test('route authority switches cleanly between contextual documents and routine Maintenance', async ({ page }) => {
     await installAcceptanceBrowser(page);
     await installFakeSupabaseBackend(page, 'complete');
 
     await page.goto('/documents-vault', { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL(/\/maintenance\?section=documents_vault(?:&|$)/);
     await expect(page.locator('[data-operations-section="documents_vault"]')).toBeVisible();
+    await expect(page.getByRole('tab', { name: 'الصيانة' })).toHaveCount(0);
 
-    // Switch to Maintenance.
-    await page.getByRole('tab', { name: 'الصيانة' }).click();
+    // Explicitly enter the routine Services workspace. Its primary tab strip
+    // is restored and follows the URL authority.
+    await page.goto('/maintenance?section=maintenance', { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL(/\/maintenance\?section=maintenance(?:&|$)/);
     await expect(page.locator('[data-operations-section="maintenance"]')).toBeVisible();
     await expect(page.getByRole('tab', { name: 'الصيانة' })).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByRole('tab', { name: 'المرافق والعدادات' })).toBeVisible();
 
-    // Switch back to operational documents.
-    await page.getByRole('tab', { name: 'المستندات التشغيلية' }).click();
+    // The supported deep link still resolves back to the contextual section,
+    // again without surfacing a specialist documents tab in routine nav.
+    await page.goto('/documents-vault', { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL(/\/maintenance\?section=documents_vault(?:&|$)/);
     await expect(page.locator('[data-operations-section="documents_vault"]')).toBeVisible();
-    await expect(page.getByRole('tab', { name: 'المستندات التشغيلية' })).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByRole('tab', { name: 'المستندات التشغيلية' })).toHaveCount(0);
   });
 });
