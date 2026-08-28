@@ -1,6 +1,5 @@
 import { APP_BRAND_MARK_ASSET } from '@/lib/brand';
 import { cn } from '@/lib/utils';
-import './header-brand-polish.css';
 
 type MalikMarkProps = Readonly<{
   className?: string;

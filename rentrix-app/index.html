@@ -7,9 +7,8 @@
     <meta name="description" content="MALEK منصة عربية متكاملة لإدارة العقارات والوحدات والعقود والتحصيلات والصيانة والتقارير." />
     <meta name="robots" content="index, follow" />
 
-    <!-- PWA -->
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#0f172a" />
+    <meta name="theme-color" content="#080b14" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -18,7 +17,6 @@
     <link rel="icon" href="/malek-icon-192.png" type="image/png" sizes="192x192" />
     <link rel="apple-touch-icon" href="/malek-apple-touch-180.png" sizes="180x180" />
 
-    <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="MALEK" />
     <meta property="og:title" content="MALEK | كل أملاكك في مكان واحد" />
@@ -29,13 +27,11 @@
     <meta property="og:url" content="https://malek-plus.vercel.app/" />
     <link rel="canonical" href="https://malek-plus.vercel.app/" />
 
-    <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="MALEK | كل أملاكك في مكان واحد" />
     <meta name="twitter:description" content="عقارات، عقود، فواتير، تحصيلات، صيانة وتقارير — في مساحة عمل عربية واحدة." />
     <meta name="twitter:image" content="https://malek-plus.vercel.app/opengraph.jpg" />
 
-    <!-- Structured data -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -49,51 +45,22 @@
       }
     </script>
 
-    <!-- Product fonts (Cairo + Sora) are self-hosted in /public/fonts (OD-12);
-         the app entry injects the local stylesheet deferred, so no external
-         font host is needed and offline PWA keeps full typography. -->
-
+    <!-- Minimal first-paint guard only. Theme values themselves live in tokens.css. -->
     <style nonce="rentrix-static">
-      :root {
-        --color-bg: 35 20% 98%;
-        --color-card: 0 0% 100%;
-        --color-border: 222 14% 88%;
-        --color-text-primary: 222 32% 15%;
-        --color-text-muted: 222 12% 54%;
-        --color-primary: 222 68% 28%;
-        --color-primary-fg: 0 0% 100%;
-        --color-accent: 38 88% 55%;
-        --color-sidebar-bg: 222 70% 10%;
-        --color-sidebar-text: 40 14% 84%;
-        --color-sidebar-active-bg: 222 55% 18%;
-        --color-sidebar-active-text: 40 18% 96%;
-        --color-sidebar-hover-bg: 222 32% 14%;
-        --radius: 0.75rem;
-        --shadow-card: 0 1px 3px hsl(222 30% 15% / 0.05), 0 8px 24px -18px hsl(222 40% 20% / 0.18);
-        --shadow-card-hover: 0 2px 6px hsl(222 30% 15% / 0.06), 0 14px 32px -20px hsl(222 40% 20% / 0.22);
-        --shadow-sidebar: 0 0 36px -20px hsl(222 70% 10% / 0.6);
+      html {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        scroll-behavior: smooth;
+        background: #f8f7f4;
       }
-
-      [data-theme="dark"] {
-        --color-bg: 222 48% 7%;
-        --color-card: 222 36% 11%;
-        --color-border: 222 20% 18%;
-        --color-text-primary: 40 14% 92%;
-        --color-text-muted: 40 8% 58%;
-        --color-primary: 222 58% 62%;
-        --color-primary-fg: 222 48% 7%;
-        --color-accent: 38 88% 60%;
-        --color-sidebar-bg: 222 60% 6%;
-        --color-sidebar-text: 40 12% 80%;
-        --color-sidebar-active-bg: 38 88% 55%;
-        --color-sidebar-active-text: 222 48% 7%;
-        --color-sidebar-hover-bg: 222 32% 12%;
+      html[data-theme='dark'] { background: #080b14; color-scheme: dark; }
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        font-family: 'Cairo', 'Noto Sans Arabic', 'Tajawal', sans-serif;
+        background: inherit;
       }
-
-      html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; scroll-behavior: smooth; }
-      body { font-family: 'Cairo', 'Noto Sans Arabic', 'Tajawal', sans-serif; background-color: hsl(var(--color-bg)); color: hsl(var(--color-text-primary)); line-height: 1.6; }
       .malik-wordmark { font-family: 'Sora', ui-sans-serif, system-ui, sans-serif; }
-      * { transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease; }
       *, *::before, *::after { box-sizing: border-box; }
       .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
       button, a, nav { -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; }
@@ -103,10 +70,10 @@
       .active\:scale-95:active { transform: scale(0.95); }
     </style>
 
-    <!-- Theme init (before render to avoid flash) -->
     <script>
       (function() {
-        const theme = localStorage.getItem('rentrix-theme') || 'light';
+        const stored = localStorage.getItem('rentrix-theme');
+        const theme = stored === 'light' || stored === 'dark' ? stored : 'dark';
         document.documentElement.dataset.theme = theme;
       })();
     </script>

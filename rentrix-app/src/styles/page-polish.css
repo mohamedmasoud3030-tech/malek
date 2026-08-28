@@ -1,143 +1,112 @@
-/* MALIK Page Polish v2.0
-   Shared page-level visual refinements.
-   Feature-specific polish belongs in feature directories. */
+/* MALEK shared presentation contract.
+   Tokens come from tokens.css; feature CSS owns only feature layout. */
 
-/* ── Consistent table styling ─────────────── */
+/* ── Registers and tables ─────────────────────────────────────────── */
+[data-entity-table-wrapper],
+[data-entity-table-grid] {
+  min-width: 0;
+  max-width: 100%;
+}
+
+[data-entity-table-scroll] {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
+}
+
 [data-entity-table] {
   width: 100%;
-  border-collapse: collapse;
+  min-width: max(100%, 52rem);
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: auto;
 }
 
 [data-entity-table] thead th {
-  font-size: 0.6875rem;
-  font-weight: 700;
-  color: hsl(var(--color-text-muted));
-  background: hsl(var(--muted) / 0.42);
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  height: 2.75rem;
   padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid hsl(var(--border) / 0.82);
+  background: hsl(var(--card));
+  color: hsl(var(--muted-foreground));
+  font-size: 0.6875rem;
+  font-weight: 800;
   text-align: start;
-  border-bottom: 1px solid hsl(var(--border) / 0.75);
   white-space: nowrap;
+  box-shadow: 0 1px 0 hsl(var(--border) / 0.45);
 }
 
 [data-entity-table] tbody td {
-  font-size: 0.8125rem;
-  padding: 0.5rem 0.75rem;
-  border-bottom: 1px solid hsl(var(--color-border-light));
-  color: hsl(var(--color-text-primary));
   min-height: 44px;
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid hsl(var(--border-light));
+  color: hsl(var(--foreground));
+  font-size: 0.8125rem;
+  vertical-align: middle;
 }
 
-[data-entity-table] tbody tr:hover {
-  background: hsl(var(--muted) / 0.35);
+[data-entity-table] tbody tr {
+  background: hsl(var(--card));
+  transition: background-color var(--duration-fast) var(--motion-ease-standard);
 }
 
-/* ── Financial amount emphasis ────────────── */
+[data-entity-table] tbody tr:hover { background: hsl(var(--muted) / 0.42); }
+
+[data-entity-table] [data-column-priority='identity'] {
+  font-weight: 700;
+}
+
+[data-entity-table] [data-column-priority='actions'] {
+  white-space: nowrap;
+}
+
 [data-financial-amount] {
-  font-feature-settings: "tnum";
-  font-variant-numeric: tabular-nums;
   direction: ltr;
+  font-feature-settings: 'tnum';
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
 }
+[data-financial-amount][data-positive] { color: hsl(var(--success-text)); }
+[data-financial-amount][data-negative],
+[data-financial-amount][data-overdue] { color: hsl(var(--danger-text)); }
+[data-financial-amount][data-overdue] { font-weight: 800; }
+[data-financial-amount][data-void] { color: hsl(var(--muted-foreground)); text-decoration: line-through; }
 
-[data-financial-amount][data-positive] { color: hsl(var(--color-success-text)); }
-[data-financial-amount][data-negative] { color: hsl(var(--color-danger-text)); }
-[data-financial-amount][data-overdue]  { color: hsl(var(--color-danger-text)); font-weight: 700; }
-[data-financial-amount][data-void]    { color: hsl(var(--color-text-muted)); text-decoration: line-through; }
+[data-status-row='paid'] { border-inline-start: 3px solid hsl(var(--success-text)); }
+[data-status-row='partial'] { border-inline-start: 3px solid hsl(var(--warning-text)); }
+[data-status-row='overdue'] { border-inline-start: 3px solid hsl(var(--danger-text)); }
+[data-status-row='void'] { opacity: 0.65; }
 
-/* ── Status row indicators ────────────────── */
-[data-status-row='paid']     { border-inline-start: 3px solid hsl(var(--color-success-text)); }
-[data-status-row='partial']  { border-inline-start: 3px solid hsl(var(--color-warning-text)); }
-[data-status-row='overdue']  { border-inline-start: 3px solid hsl(var(--color-danger-text)); }
-[data-status-row='void']     { opacity: 0.65; }
-
-/* ── Contextual primary actions ────────────────
-   Page CTAs inherit their module token. A screen that needs a navy structural
-   action opts in locally; this avoids forcing one colour onto every module. */
-
-/* Entity-form overlays follow the same navy-header / white-body composition.
-   These selectors intentionally affect only presentation; forms retain their
-   existing fields, validation, handlers, and responsive surface decisions. */
-[data-entity-form-surface='dialog'] > button[aria-label='إغلاق'] {
-  color: white;
-}
-
-[data-entity-form-surface='dialog'] > button[aria-label='إغلاق']:hover {
-  background: hsl(0 0% 100% / 0.1);
-  color: white;
-}
-
-[data-entity-form-surface='full-page'] header p {
-  color: hsl(0 0% 100% / 0.75);
-}
-/* MALIK product palette — richer semantic accents for both themes.
-   Token values (--tone-*, --accent-foreground) live in ./tokens.css —
-   the single source of truth; this file only contains component styles
-   that consume those tokens. */
-
-/* KPI cards already declare semantic accents across the product. This layer
-   activates those intents instead of flattening every metric into brand blue. */
+/* ── Semantic KPI accents ─────────────────────────────────────────── */
 [data-kpi-card] {
   --kpi-tone: var(--primary);
-  --kpi-soft: var(--color-card-muted);
+  --kpi-soft: var(--card-muted);
   position: relative;
   overflow: hidden;
 }
-
 [data-kpi-card]::before {
   position: absolute;
   inset-inline: 0;
   inset-block-start: 0;
   height: 2px;
   content: '';
-  background: hsl(var(--kpi-tone) / 0.78);
+  background: hsl(var(--kpi-tone) / 0.72);
 }
-
-[data-kpi-card][data-accent='emerald'] {
-  --kpi-tone: var(--tone-emerald);
-  --kpi-soft: var(--tone-emerald-soft);
-}
-
-[data-kpi-card][data-accent='amber'] {
-  --kpi-tone: var(--tone-amber);
-  --kpi-soft: var(--tone-amber-soft);
-}
-
-[data-kpi-card][data-accent='sky'] {
-  --kpi-tone: var(--tone-sky);
-  --kpi-soft: var(--tone-sky-soft);
-}
-
-[data-kpi-card][data-accent='rose'] {
-  --kpi-tone: var(--tone-rose);
-  --kpi-soft: var(--tone-rose-soft);
-}
-
-[data-kpi-card][data-accent='violet'] {
-  --kpi-tone: var(--tone-violet);
-  --kpi-soft: var(--tone-violet-soft);
-}
-
-[data-kpi-card][data-accent='slate'] {
-  --kpi-tone: var(--tone-slate);
-  --kpi-soft: var(--tone-slate-soft);
-}
-
+[data-kpi-card][data-accent='emerald'] { --kpi-tone: var(--tone-emerald); --kpi-soft: var(--tone-emerald-soft); }
+[data-kpi-card][data-accent='amber'] { --kpi-tone: var(--tone-amber); --kpi-soft: var(--tone-amber-soft); }
+[data-kpi-card][data-accent='sky'] { --kpi-tone: var(--tone-sky); --kpi-soft: var(--tone-sky-soft); }
+[data-kpi-card][data-accent='rose'] { --kpi-tone: var(--tone-rose); --kpi-soft: var(--tone-rose-soft); }
+[data-kpi-card][data-accent='violet'] { --kpi-tone: var(--tone-violet); --kpi-soft: var(--tone-violet-soft); }
+[data-kpi-card][data-accent='slate'] { --kpi-tone: var(--tone-slate); --kpi-soft: var(--tone-slate-soft); }
 .kpi-card__icon {
   color: hsl(var(--kpi-tone));
   background: hsl(var(--kpi-soft));
-  box-shadow: inset 0 0 0 1px hsl(var(--kpi-tone) / 0.18);
-}
-
-/* Status badges use the same palette, so old color labels and new product
-   tones remain legible and consistent in both themes. */
-[data-status-badge][data-tone='emerald'],
-[data-status-badge][data-tone='amber'],
-[data-status-badge][data-tone='sky'],
-[data-status-badge][data-tone='rose'],
-[data-status-badge][data-tone='violet'],
-[data-status-badge][data-tone='slate'] {
-  color: hsl(var(--status-tone));
-  background: hsl(var(--status-soft));
-  --tw-ring-color: hsl(var(--status-tone) / 0.22);
+  box-shadow: inset 0 0 0 1px hsl(var(--kpi-tone) / 0.16);
 }
 
 [data-status-badge][data-tone='emerald'] { --status-tone: var(--tone-emerald); --status-soft: var(--tone-emerald-soft); }
@@ -146,16 +115,49 @@
 [data-status-badge][data-tone='rose'] { --status-tone: var(--tone-rose); --status-soft: var(--tone-rose-soft); }
 [data-status-badge][data-tone='violet'] { --status-tone: var(--tone-violet); --status-soft: var(--tone-violet-soft); }
 [data-status-badge][data-tone='slate'] { --status-tone: var(--tone-slate); --status-soft: var(--tone-slate-soft); }
+[data-status-badge][data-tone] {
+  color: hsl(var(--status-tone));
+  background: hsl(var(--status-soft));
+  --tw-ring-color: hsl(var(--status-tone) / 0.2);
+}
 [data-status-badge] [data-status-dot] { background: currentColor; }
 
-/* Only long EntityForm workflows use the full-height mobile surface. Short
-   dialogs such as permission requests must remain compact: expanding every
-   dialog that happens to contain a textarea strands the decision and action
-   at opposite ends of the screen. Physical edges avoid RTL ambiguity. */
+/* ── Premium material: chrome and overlays only ──────────────────── */
+[data-app-shell-header],
+[data-account-menu-panel],
+[data-bottom-sheet],
+[data-ai-assistant-panel] {
+  border-color: var(--material-border);
+  background: var(--material-chrome);
+  box-shadow: var(--material-highlight), var(--material-shadow);
+  -webkit-backdrop-filter: blur(var(--material-blur));
+  backdrop-filter: blur(var(--material-blur));
+}
+
+[data-account-menu-panel],
+[data-bottom-sheet],
+[data-ai-assistant-panel] {
+  background: var(--material-overlay);
+}
+
+[data-bottom-sheet] {
+  border-start-start-radius: 1.35rem;
+  border-start-end-radius: 1.35rem;
+}
+
+[data-bottom-sheet-handle] > div {
+  background: hsl(var(--muted-foreground) / 0.28);
+}
+
+[data-header-brand-lockup],
+[data-header-utility-side],
+[data-app-shell-header] > div {
+  direction: ltr;
+}
+
+/* Entity form dialogs are the only intentional full-screen mobile surface. */
 @media (max-width: 639px) {
-  html {
-    scrollbar-gutter: auto;
-  }
+  html { scrollbar-gutter: auto; }
 
   [data-dialog-content][data-entity-form-surface='dialog'][data-dialog-form='true'] {
     left: 0 !important;
@@ -179,270 +181,20 @@
   }
 }
 
-/* ── Mobile shell refresh: 2026-08-27 ───────────────────────────────
-   Presentation-only overrides for the canonical shell. Keep navigation,
-   permissions and action wiring unchanged while making the phone experience
-   calmer, more spatially consistent and bottom-sheet first. */
-
-/* Header: physical left = brand, physical right = utilities regardless of RTL. */
-[data-app-shell-header] > div {
-  direction: ltr;
-}
-
-[data-header-brand-lockup],
-[data-header-utility-side] {
-  direction: ltr;
-}
-
-[data-header-brand-lockup] {
-  gap: 0.55rem !important;
-}
-
-[data-header-monogram-hit] {
-  width: 2.75rem !important;
-  height: 2.75rem !important;
-}
-
-[data-header-brand-monogram] {
-  position: relative;
-  width: 2.35rem !important;
-  height: 2.35rem !important;
-  border-radius: 0.8rem !important;
-  overflow: hidden;
-}
-
-[data-header-brand-monogram] > svg {
-  opacity: 0 !important;
-}
-
-[data-header-brand-monogram]::after {
-  content: 'M';
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  font-size: 1.45rem;
-  line-height: 1;
-  font-weight: 900;
-  letter-spacing: -0.08em;
-  color: currentColor;
-}
-
-[data-header-wordmark] {
-  position: relative;
-  width: 3.65rem;
-  overflow: hidden;
-  color: transparent !important;
-  font-size: 1rem !important;
-  letter-spacing: 0 !important;
-  text-transform: none !important;
-}
-
-[data-header-wordmark]::after {
-  content: 'Malek';
-  position: absolute;
-  inset: 50% auto auto 0;
-  translate: 0 -50%;
-  color: hsl(var(--foreground));
-  font-size: 1.02rem;
-  font-weight: 850;
-  letter-spacing: -0.025em;
-}
-
-[data-header-control-hit],
-[data-header-user-menu] {
-  width: 2.65rem !important;
-  height: 2.65rem !important;
-}
-
-[data-header-theme-toggle],
-[data-header-user-menu] > button {
-  width: 2.15rem !important;
-  height: 2.15rem !important;
-  border-radius: 0.72rem !important;
-}
-
-[data-header-user-menu] > button {
-  border-radius: 999px !important;
-}
-
-/* Dashboard date strip: stronger hierarchy, quieter freshness badge. */
+/* Dashboard date context stays compact and readable. */
 [data-dashboard-today-context] {
-  min-height: 4.25rem !important;
-  border-radius: 1.15rem !important;
-  padding: 0.65rem 0.75rem !important;
-  box-shadow: 0 10px 30px -24px hsl(var(--foreground) / 0.3), 0 1px 2px hsl(var(--foreground) / 0.05) !important;
+  min-height: 4rem;
+  border-color: hsl(var(--border) / 0.72);
+  border-radius: 1rem;
+  box-shadow: var(--shadow-card);
 }
-
-[data-dashboard-today-context] > div:first-child {
-  gap: 0.7rem !important;
-}
-
-[data-dashboard-today-context] > div:first-child > span {
-  width: 2.5rem !important;
-  height: 2.5rem !important;
-  border-radius: 0.85rem !important;
-}
-
-[data-dashboard-today-context] h1 {
-  font-size: 1rem !important;
-  letter-spacing: -0.02em;
-}
-
 [data-dashboard-today-date] {
-  margin-top: 0.18rem;
-  font-size: 0.72rem !important;
-  opacity: 0.88;
+  font-variant-numeric: tabular-nums;
+  color: hsl(var(--muted-foreground));
 }
-
-[data-dashboard-today-context] [aria-label='حالة تحديث بيانات لوحة التحكم'] {
-  min-height: 1.85rem !important;
-  border: 1px solid hsl(var(--border) / 0.55);
-  background: hsl(var(--muted) / 0.38) !important;
-  padding-inline: 0.55rem !important;
-  font-size: 0.66rem !important;
-}
-
-[data-dashboard-today-action-hit] {
-  width: 2.6rem !important;
-  height: 2.6rem !important;
-}
-
-[data-dashboard-today-action] {
-  width: 2.1rem !important;
-  height: 2.1rem !important;
-  border-radius: 0.7rem !important;
-}
-
-/* AI assistant: modern floating workspace with clearer hierarchy. */
-[data-ai-assistant-panel] {
-  border-color: hsl(var(--border) / 0.72) !important;
-  background: hsl(var(--card) / 0.985) !important;
-  box-shadow: 0 26px 80px -36px hsl(var(--foreground) / 0.45), 0 10px 28px -18px hsl(var(--foreground) / 0.22) !important;
-  backdrop-filter: blur(18px);
-}
-
-[data-ai-assistant-panel] > div:first-child {
-  min-height: 3.75rem;
-  padding: 0.75rem 0.9rem !important;
-  background: linear-gradient(180deg, hsl(var(--muted) / 0.42), hsl(var(--card) / 0.96)) !important;
-}
-
-[data-ai-assistant-panel] > div:first-child > div:first-child > div:first-child {
-  width: 2.25rem !important;
-  height: 2.25rem !important;
-  border-radius: 0.85rem !important;
-  box-shadow: inset 0 0 0 1px hsl(var(--primary-foreground) / 0.12);
-}
-
-[data-ai-assistant-panel] textarea {
-  min-height: 3rem !important;
-  border-radius: 1rem !important;
-  background: hsl(var(--muted) / 0.28) !important;
-  box-shadow: inset 0 0 0 1px hsl(var(--border) / 0.18);
-}
-
-[data-ai-assistant-panel] form button[type='submit'] {
-  width: 3rem !important;
-  height: 3rem !important;
-  border-radius: 1rem !important;
-}
-
-[data-ai-assistant-panel] [role='alert'] {
-  border-radius: 0.9rem !important;
-  margin-inline: 0.75rem !important;
-}
-
-@media (max-width: 1023px) {
-  /* Primary navigation is now a true bottom sheet, never a side drawer. */
-  [data-mobile-nav-drawer] {
-    left: 0 !important;
-    right: 0 !important;
-    top: auto !important;
-    bottom: 0 !important;
-    width: 100% !important;
-    max-width: none !important;
-    height: min(82dvh, 44rem) !important;
-    max-height: min(82dvh, 44rem) !important;
-    border: 1px solid hsl(var(--sidebar-border) / 0.85) !important;
-    border-bottom: 0 !important;
-    border-radius: 1.5rem 1.5rem 0 0 !important;
-    box-shadow: 0 -24px 70px -30px hsl(var(--foreground) / 0.45) !important;
-  }
-
-  [data-drawer-brand-header] {
-    min-height: 4rem !important;
-    height: 4rem !important;
-    padding-top: 0.55rem !important;
-  }
-
-  [data-drawer-brand-header]::before {
-    content: '';
-    position: absolute;
-    top: 0.45rem;
-    left: 50%;
-    width: 2.75rem;
-    height: 0.28rem;
-    translate: -50% 0;
-    border-radius: 999px;
-    background: hsl(var(--sidebar-foreground) / 0.18);
-  }
-
-  [data-mobile-nav-drawer] nav {
-    padding: 0.7rem 0.8rem calc(1.25rem + env(safe-area-inset-bottom, 0px)) !important;
-  }
-}
-
-@media (max-width: 639px) {
-  [data-app-shell-header] > div {
-    min-height: 3.6rem !important;
-    padding-inline: 0.7rem !important;
-  }
-
-  [data-header-brand-monogram] {
-    width: 2.25rem !important;
-    height: 2.25rem !important;
-  }
-
-  [data-header-brand-monogram]::after {
-    font-size: 1.38rem;
-  }
-
-  [data-header-wordmark]::after {
-    font-size: 0.98rem;
-  }
-
-  [data-dashboard-today-context] {
-    min-height: 4rem !important;
-    padding: 0.6rem 0.65rem !important;
-  }
-
-  [data-dashboard-today-context] [aria-label='حالة تحديث بيانات لوحة التحكم'] {
-    max-width: 7.4rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  [data-ai-assistant-panel] {
-    left: 0.65rem !important;
-    right: 0.65rem !important;
-    bottom: calc(4.9rem + env(safe-area-inset-bottom, 0px)) !important;
-    height: min(38rem, 76dvh) !important;
-    border-radius: 1.4rem !important;
-  }
-
-  [data-ai-assistant-panel] > div:last-child {
-    background: hsl(var(--card));
-  }
-}
-
 
 /* ── Desktop workspace contract ─────────────────────────────────────
-   Desktop is a work surface, not a scaled-up phone screen. These rules use
-   existing semantic hooks only, retain mobile behavior, and deliberately keep
-   the visual material restrained so dense registers and financial data remain
-   the focus. */
+   Desktop is a work surface, not a scaled-up phone screen. */
 @media (min-width: 1024px) {
   [data-page-layout] > div {
     padding-inline: clamp(1.25rem, 2.2vw, 2.5rem);
@@ -453,31 +205,24 @@
     padding-bottom: 1.1rem;
   }
 
-  [data-page-layout] [data-section-header] {
-    margin-bottom: 1rem;
-  }
-
-  /* Space between dashboard date strip and first section eyebrow */
-  [data-dashboard-section]:first-child [data-section-header] {
-    margin-top: 1rem;
-  }
+  [data-page-layout] [data-section-header] { margin-bottom: 1rem; }
 
   [data-page-layout] [data-filter-bar],
   [data-page-layout] [data-list-controls] {
     align-items: center;
     border-color: hsl(var(--border) / 0.78);
-    background: hsl(var(--card) / 0.94);
-    box-shadow: 0 1px 2px hsl(var(--foreground) / 0.04);
+    background: hsl(var(--card));
+    box-shadow: var(--shadow-card);
   }
 
-  [data-page-layout] [data-list-toolbar] {
-    gap: 0.75rem;
-  }
+  [data-page-layout] [data-list-toolbar] { gap: 0.75rem; }
 
   [data-page-layout] [data-entity-table-wrapper],
   [data-page-layout] [data-entity-table-grid] {
+    width: 100%;
+    max-width: none;
     border-color: hsl(var(--border) / 0.82);
-    box-shadow: 0 8px 22px -20px hsl(var(--foreground) / 0.28);
+    box-shadow: var(--shadow-card);
   }
 
   [data-page-layout] [data-entity-table] thead th {
@@ -488,60 +233,48 @@
   }
 
   [data-page-layout] [data-entity-table] tbody td {
-    min-height: 3.25rem;
+    min-height: 3.2rem;
     padding-inline: 0.95rem;
-    padding-block: 0.7rem;
-  }
-
-  [data-page-layout] [data-entity-table] tbody tr {
-    transition: background-color 150ms ease;
+    padding-block: 0.65rem;
   }
 
   [data-page-layout] [data-kpi-card] {
-    min-height: 8.25rem;
+    min-height: 8rem;
     border-color: hsl(var(--border) / 0.78);
-    box-shadow: 0 10px 24px -23px hsl(var(--foreground) / 0.36);
-  }
-
-  [data-page-layout] [data-financial-amount] {
-    letter-spacing: -0.01em;
-  }
-
-  [data-page-layout] [data-finance-root],
-  [data-page-layout] [data-reports-cockpit] {
-    min-width: 0;
+    box-shadow: var(--shadow-card);
   }
 }
 
-
 /* ── Desktop shell: fixed, named, and quiet ─────────────────────────
-   On large screens navigation is a permanent work tool. Do not collapse it
-   into unlabeled icons or turn the header into another decorative surface. */
+   Permanent labeled navigation, narrower than the legacy 16rem rail. */
 @media (min-width: 1024px) {
   [data-app-shell] [data-sidebar] {
     position: fixed;
     inset-block: 0;
+    width: 14rem;
     overflow: hidden;
   }
 
+  [data-app-shell] [data-sidebar] + div {
+    padding-inline-end: 14rem;
+  }
+
   [data-app-shell] [data-sidebar] > nav {
-    padding: 0.8rem;
+    padding: 0.65rem 0.7rem 1rem;
     scrollbar-gutter: stable;
   }
 
   [data-app-shell] [data-sidebar] [data-nav-item] {
-    min-height: 2.65rem;
-    border-radius: 0.7rem;
+    min-height: 2.55rem;
+    border-radius: 0.65rem;
   }
 
   [data-app-shell] [data-app-shell-header] {
     min-height: 3.5rem;
-    background: hsl(var(--background) / 0.97);
-    backdrop-filter: none;
   }
 
   [data-app-shell] [data-app-shell-header] > div {
-    max-width: 100rem;
-    padding-inline: clamp(1.25rem, 2vw, 2.5rem);
+    max-width: none;
+    padding-inline: clamp(1.1rem, 1.8vw, 2rem);
   }
 }

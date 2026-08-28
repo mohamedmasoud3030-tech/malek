@@ -1,15 +1,5 @@
-/* ============================================
-   MALEK Design Tokens — Premium Real Estate / Finance
-   Deep Navy + Restrained Gold Identity
-   ============================================
-   Single source of truth for every visual token:
-   Light = warm Off-White, Dark = Deep Navy Ink with glass
-
-   Primary = deep premium Navy 222 68% 28%
-   Accent = restrained Gold 38 88% 55% / Warm Sand 40 20% 88%
-
-   Semantic colors independent: Success green, Warning amber, Danger red, Info blue
-   ============================================ */
+/* MALEK design tokens — the only application theme source.
+   One palette, one light theme, one dark theme, one semantic bridge. */
 
 @theme {
   --font-sans: 'Cairo', ui-sans-serif, system-ui, sans-serif;
@@ -31,6 +21,10 @@
   --radius-2xs: 0.25rem;
   --radius-sm-source: 0.375rem;
   --radius-md-source: 0.5rem;
+  --radius: 0.75rem;
+  --radius-card: 0.875rem;
+  --radius-elevated: 1rem;
+  --radius-full: 9999px;
 
   --duration-fast: 120ms;
   --duration-base: 180ms;
@@ -46,9 +40,6 @@
 
   --opacity-disabled: 0.5;
   --focus-ring-width: 4px;
-  --disabled-bg: hsl(var(--color-disabled));
-  --disabled-fg: hsl(var(--color-disabled-fg));
-
   --icon-xs: 0.875rem;
   --icon-sm: 1rem;
   --icon-md: 1.125rem;
@@ -60,21 +51,16 @@
   --max-w-lg: 64rem;
   --max-w-xl: 80rem;
   --max-w-2xl: 96rem;
-}
 
-/* ── Light Theme — Warm Off-White, Premium Surfaces ──────────── */
-:root {
   --color-bg: 35 20% 98%;
   --color-card: 0 0% 100%;
   --color-card-muted: 35 15% 96%;
-
   --color-primary: 222 68% 28%;
   --color-primary-fg: 0 0% 100%;
-
+  --color-accent-fg: 222 32% 12%;
   --color-text-primary: 222 32% 15%;
   --color-text-secondary: 222 16% 42%;
   --color-text-muted: 222 12% 54%;
-
   --color-border: 222 14% 88%;
   --color-border-light: 222 12% 92%;
 
@@ -95,7 +81,6 @@
   --color-neutral-text: 222 14% 46%;
   --color-neutral-bg: 222 16% 92%;
 
-  --accent-foreground: 222 32% 12%;
   --tone-emerald: 152 60% 32%;
   --tone-emerald-soft: 152 40% 94%;
   --tone-amber: 38 88% 50%;
@@ -108,20 +93,21 @@
   --tone-violet-soft: 263 65% 94%;
   --tone-slate: 222 18% 42%;
   --tone-slate-soft: 222 14% 93%;
-
-  /* Support channel brand (WhatsApp) — tokenised so the login surface stays
-     on the design system instead of hard-coding a hex literal. */
   --support-brand: 142 71% 49%;
 
-  --shadow-card: 0 1px 3px hsl(222 30% 15% / 0.05), 0 8px 24px -18px hsl(222 40% 20% / 0.18);
-  --shadow-card-hover: 0 2px 6px hsl(222 30% 15% / 0.06), 0 14px 32px -20px hsl(222 40% 20% / 0.22);
-  --shadow-elevated: 0 20px 48px -28px hsl(222 40% 15% / 0.32), 0 8px 20px -14px hsl(222 30% 15% / 0.18);
-  --shadow-sidebar: 0 0 36px -20px hsl(222 70% 10% / 0.6);
+  --shadow-card: 0 1px 2px hsl(222 30% 15% / 0.04), 0 10px 28px -24px hsl(222 40% 20% / 0.2);
+  --shadow-card-hover: 0 2px 6px hsl(222 30% 15% / 0.05), 0 16px 34px -24px hsl(222 40% 20% / 0.24);
+  --shadow-elevated: 0 24px 54px -30px hsl(222 44% 14% / 0.32), 0 8px 20px -16px hsl(222 30% 15% / 0.16);
+  --shadow-sidebar: 0 0 34px -22px hsl(222 70% 10% / 0.62);
 
-  --radius: 0.75rem;
-  --radius-card: 0.875rem;
-  --radius-elevated: 1rem;
-  --radius-full: 9999px;
+  --material-page: hsl(35 20% 98%);
+  --material-panel: hsl(0 0% 100% / 0.985);
+  --material-chrome: hsl(35 22% 98% / 0.9);
+  --material-overlay: hsl(0 0% 100% / 0.94);
+  --material-border: hsl(222 18% 72% / 0.22);
+  --material-highlight: inset 0 1px 0 hsl(0 0% 100% / 0.82);
+  --material-shadow: 0 18px 44px -34px hsl(222 48% 18% / 0.34), 0 1px 2px hsl(222 30% 18% / 0.05);
+  --material-blur: 10px;
 
   --background: var(--color-bg);
   --foreground: var(--color-text-primary);
@@ -143,7 +129,7 @@
   --sidebar-accent-foreground: var(--color-sidebar-active-text);
   --sidebar-border: 222 20% 16%;
   --accent: 38 88% 55%;
-  --accent-foreground: var(--accent-foreground);
+  --accent-foreground: var(--color-accent-fg);
 
   --text-secondary: var(--color-text-secondary);
   --border-light: var(--color-border-light);
@@ -168,7 +154,6 @@
   --elev-card-hover: var(--shadow-card-hover);
   --elev-raised: var(--shadow-elevated);
   --elev-sidebar: var(--shadow-sidebar);
-
   --surface: var(--color-card);
   --surface-elevated: var(--color-card);
 
@@ -179,226 +164,72 @@
   --financial-neutral: var(--color-neutral-text);
   --financial-neutral-bg: var(--color-neutral-bg);
 
-  --color-disabled: 222 12% 86%;
-  --color-disabled-fg: 222 10% 58%;
+  --disabled-color-source: 222 12% 86%;
+  --disabled-fg-source: 222 10% 58%;
+  --disabled-bg: hsl(var(--disabled-color-source));
+  --disabled-fg: hsl(var(--disabled-fg-source));
   --overlay: 222 45% 12%;
   --ring: var(--color-primary);
   --focus-ring: var(--color-primary);
 }
 
-/* ── Premium surface system — Light: Soft Luminous Frosted White ────────
-   Every value below is a resolved literal (no nested var()) so the glass
-   primitives cannot be silently re-resolved by a scoped theme block such as
-   the dashboard's [data-visual-contract='v2'] surface.
-
-   Hierarchy (see styles/premium-glass.css for the primitives that consume
-   these): base surface → glass → elevated glass → interactive glass.      */
-:root {
-  /* Blur budget: cards stay blur-free; only chrome/overlays pay for blur. */
-  --glass-blur: 10px;
-  --glass-blur-elevated: 18px;
-  --glass-blur-strong: 26px;
-
-  /* Frosted white, translucent so the cool ambient page shows through. */
-  --glass-surface: hsl(0 0% 100% / 0.82);
-  --glass-surface-elevated: hsl(0 0% 100% / 0.9);
-  --glass-surface-strong: hsl(0 0% 100% / 0.96);
-  --glass-surface-base: hsl(214 40% 98% / 0.72);
-
-  /* Vertical body gradient: light falls from the top edge. */
-  --glass-surface-gradient: linear-gradient(
-    168deg,
-    hsl(0 0% 100% / 0.94) 0%,
-    hsl(214 42% 99% / 0.86) 52%,
-    hsl(216 40% 97% / 0.8) 100%
-  );
-  --glass-surface-gradient-elevated: linear-gradient(
-    166deg,
-    hsl(0 0% 100% / 0.99) 0%,
-    hsl(214 44% 99% / 0.94) 48%,
-    hsl(216 38% 97% / 0.9) 100%
-  );
-
-  /* Thin translucent borders + the specular line on the top edge. */
-  --glass-border: hsl(222 34% 44% / 0.14);
-  --glass-border-strong: hsl(222 34% 40% / 0.22);
-  --glass-rim: hsl(222 40% 30% / 0.1);
-  --glass-highlight: hsl(0 0% 100% / 0.95);
-  --glass-edge-light: inset 0 1px 0 hsl(0 0% 100% / 0.95), inset 0 -1px 0 hsl(222 40% 60% / 0.1);
-  --glass-edge-light-elevated:
-    inset 0 1px 0 hsl(0 0% 100% / 1),
-    inset 1px 0 0 hsl(0 0% 100% / 0.55),
-    inset -1px 0 0 hsl(0 0% 100% / 0.55),
-    inset 0 -1px 0 hsl(222 40% 60% / 0.12);
-
-  /* Restrained diagonal surface sheen — never an animated streak. */
-  --glass-sheen: linear-gradient(
-    118deg,
-    hsl(0 0% 100% / 0.62) 0%,
-    hsl(0 0% 100% / 0.14) 30%,
-    hsl(0 0% 100% / 0) 54%
-  );
-  --glass-sheen-soft: linear-gradient(
-    118deg,
-    hsl(0 0% 100% / 0.34) 0%,
-    hsl(0 0% 100% / 0.06) 28%,
-    hsl(0 0% 100% / 0) 50%
-  );
-
-  /* Ambient elevation — cool, wide and soft, never a hard drop shadow. */
-  --glass-shadow: 0 1px 2px hsl(222 46% 26% / 0.05), 0 10px 26px -18px hsl(222 48% 26% / 0.26);
-  --glass-shadow-elevated:
-    0 2px 4px hsl(222 46% 26% / 0.06),
-    0 18px 40px -22px hsl(222 48% 24% / 0.3),
-    0 2px 10px -6px hsl(222 48% 26% / 0.1);
-  --glass-shadow-overlay:
-    0 4px 10px hsl(222 46% 26% / 0.07),
-    0 28px 60px -26px hsl(222 50% 22% / 0.36);
-
-  /* Premium daytime page environment: cool white + faint luminous pools. */
-  --premium-page-base: hsl(214 42% 98.5%);
-  --premium-page-ambient:
-    radial-gradient(76rem 44rem at 88% -14%, hsl(199 92% 60% / 0.14), transparent 62%),
-    radial-gradient(62rem 38rem at 2% 0%, hsl(222 78% 62% / 0.1), transparent 58%),
-    radial-gradient(56rem 36rem at 50% 110%, hsl(210 62% 68% / 0.11), transparent 62%),
-    linear-gradient(178deg, hsl(210 46% 99.6%) 0%, hsl(214 42% 98%) 40%, hsl(217 38% 96.4%) 100%),
-    radial-gradient(140% 105% at 50% 0%, transparent 60%, hsl(222 42% 58% / 0.08) 100%);
-
-  /* Entry surface: the same cool white, with brighter trust-building pools
-     of navy and restrained gold behind the login card. */
-  --premium-login-ambient:
-    radial-gradient(46rem 40rem at 108% -14%, hsl(222 72% 42% / 0.14), transparent 62%),
-    radial-gradient(38rem 34rem at -12% 108%, hsl(38 88% 55% / 0.12), transparent 60%),
-    radial-gradient(30rem 26rem at 50% -18%, hsl(0 0% 100% / 0.85), transparent 72%);
-}
-
-/* ── Premium surface system — Dark: Deep Navy Glass ────────────────────
-   Translucent navy panels, cool ambient light, thin luminous rims.       */
 [data-theme='dark'] {
-  --glass-blur: 14px;
-  --glass-blur-elevated: 22px;
-  --glass-blur-strong: 30px;
+  --color-bg: 224 46% 6%;
+  --color-card: 222 34% 10%;
+  --color-card-muted: 222 28% 12%;
+  --color-primary: 218 64% 66%;
+  --color-primary-fg: 224 46% 6%;
+  --color-accent-fg: 224 46% 6%;
+  --color-text-primary: 40 14% 94%;
+  --color-text-secondary: 40 10% 72%;
+  --color-text-muted: 40 8% 60%;
+  --color-border: 222 19% 20%;
+  --color-border-light: 222 16% 15%;
 
-  --glass-surface: hsl(222 46% 16% / 0.62);
-  --glass-surface-elevated: hsl(222 44% 19% / 0.72);
-  --glass-surface-strong: hsl(223 46% 13% / 0.9);
-  --glass-surface-base: hsl(223 44% 12% / 0.5);
+  --color-sidebar-bg: 224 52% 5%;
+  --color-sidebar-text: 40 12% 82%;
+  --color-sidebar-active-bg: 38 78% 55%;
+  --color-sidebar-active-text: 224 46% 6%;
+  --color-sidebar-hover-bg: 222 30% 12%;
 
-  --glass-surface-gradient: linear-gradient(
-    168deg,
-    hsl(219 46% 24% / 0.66) 0%,
-    hsl(222 48% 15% / 0.66) 50%,
-    hsl(224 54% 11% / 0.72) 100%
-  );
-  --glass-surface-gradient-elevated: linear-gradient(
-    166deg,
-    hsl(218 48% 28% / 0.74) 0%,
-    hsl(222 46% 18% / 0.72) 46%,
-    hsl(225 54% 12% / 0.8) 100%
-  );
-
-  --glass-border: hsl(210 72% 78% / 0.12);
-  --glass-border-strong: hsl(210 72% 80% / 0.2);
-  --glass-rim: hsl(210 90% 82% / 0.16);
-  --glass-highlight: hsl(205 100% 94% / 0.16);
-  --glass-edge-light:
-    inset 0 1px 0 hsl(205 100% 92% / 0.12),
-    inset 0 -1px 0 hsl(226 70% 4% / 0.6);
-  --glass-edge-light-elevated:
-    inset 0 1px 0 hsl(205 100% 94% / 0.2),
-    inset 1px 0 0 hsl(210 90% 86% / 0.08),
-    inset -1px 0 0 hsl(210 90% 86% / 0.08),
-    inset 0 -1px 0 hsl(226 70% 4% / 0.65),
-    inset 0 18px 34px -26px hsl(205 100% 88% / 0.5);
-
-  --glass-sheen: linear-gradient(
-    118deg,
-    hsl(205 100% 90% / 0.11) 0%,
-    hsl(205 100% 90% / 0.03) 30%,
-    hsl(205 100% 90% / 0) 54%
-  );
-  --glass-sheen-soft: linear-gradient(
-    118deg,
-    hsl(205 100% 90% / 0.06) 0%,
-    hsl(205 100% 90% / 0.015) 28%,
-    hsl(205 100% 90% / 0) 50%
-  );
-
-  --glass-shadow:
-    0 1px 0 hsl(226 70% 2% / 0.4),
-    0 14px 30px -20px hsl(226 72% 2% / 0.8);
-  --glass-shadow-elevated:
-    0 2px 0 hsl(226 70% 2% / 0.45),
-    0 26px 52px -26px hsl(226 74% 2% / 0.88),
-    0 4px 14px -8px hsl(226 70% 2% / 0.5);
-  --glass-shadow-overlay:
-    0 4px 12px hsl(226 70% 2% / 0.5),
-    0 34px 70px -28px hsl(226 76% 2% / 0.92);
-
-  /* Deep navy foundation with restrained cool/cyan ambient pools. */
-  --premium-page-base: hsl(225 58% 5%);
-  --premium-page-ambient:
-    radial-gradient(78rem 46rem at 84% -16%, hsl(203 92% 58% / 0.17), transparent 60%),
-    radial-gradient(64rem 40rem at 4% 0%, hsl(222 84% 64% / 0.14), transparent 58%),
-    radial-gradient(58rem 40rem at 50% 114%, hsl(199 80% 46% / 0.1), transparent 62%),
-    linear-gradient(178deg, hsl(221 50% 11.5%) 0%, hsl(224 56% 7.5%) 42%, hsl(227 62% 4.5%) 100%),
-    radial-gradient(140% 108% at 50% 0%, transparent 52%, hsl(227 72% 2% / 0.62) 100%);
-
-  /* Entry surface at night: deep, luminous, with a cool halo behind the card. */
-  --premium-login-ambient:
-    radial-gradient(46rem 40rem at 110% -14%, hsl(203 92% 60% / 0.2), transparent 62%),
-    radial-gradient(38rem 34rem at -12% 108%, hsl(38 88% 60% / 0.12), transparent 60%),
-    radial-gradient(34rem 30rem at 50% 34%, hsl(210 90% 62% / 0.14), transparent 68%);
-}
-
-/* ── Dark Theme — Deep Navy Ink with Glass & Soft Glow ──────────── */
-[data-theme='dark'] {
-  --color-bg: 222 48% 7%;
-  --color-card: 222 36% 11%;
-  --color-card-muted: 222 30% 9%;
-  --color-primary: 222 58% 62%;
-  --color-primary-fg: 222 48% 7%;
-  --color-text-primary: 40 14% 92%;
-  --color-text-secondary: 40 10% 70%;
-  --color-text-muted: 40 8% 58%;
-  --color-border: 222 20% 18%;
-  --color-border-light: 222 16% 14%;
-  --color-sidebar-bg: 222 60% 6%;
-  --color-sidebar-text: 40 12% 80%;
-  --color-sidebar-active-bg: 38 88% 55%;
-  --color-sidebar-active-text: 222 48% 7%;
-  --color-sidebar-hover-bg: 222 32% 12%;
-
-  --color-success-text: 152 52% 62%;
-  --color-success-bg: 152 32% 14%;
-  --color-warning-text: 38 85% 62%;
-  --color-warning-bg: 38 40% 14%;
-  --color-danger-text: 0 70% 68%;
-  --color-danger-bg: 0 42% 16%;
-  --color-info-text: 199 72% 66%;
-  --color-info-bg: 199 38% 14%;
-  --color-neutral-text: 40 8% 62%;
+  --color-success-text: 152 52% 64%;
+  --color-success-bg: 152 30% 14%;
+  --color-warning-text: 38 82% 64%;
+  --color-warning-bg: 38 38% 14%;
+  --color-danger-text: 0 68% 70%;
+  --color-danger-bg: 0 40% 16%;
+  --color-info-text: 199 70% 68%;
+  --color-info-bg: 199 36% 14%;
+  --color-neutral-text: 40 8% 64%;
   --color-neutral-bg: 222 18% 16%;
 
-  --accent-foreground: 222 48% 7%;
-  --tone-emerald: 152 52% 58%;
-  --tone-emerald-soft: 152 30% 14%;
-  --tone-amber: 38 88% 58%;
-  --tone-amber-soft: 38 40% 14%;
-  --tone-sky: 199 70% 62%;
-  --tone-sky-soft: 199 36% 14%;
-  --tone-rose: 350 68% 66%;
-  --tone-rose-soft: 350 40% 16%;
-  --tone-violet: 263 60% 70%;
-  --tone-violet-soft: 263 36% 16%;
-  --tone-slate: 222 16% 62%;
+  --tone-emerald: 152 52% 60%;
+  --tone-emerald-soft: 152 28% 14%;
+  --tone-amber: 38 84% 60%;
+  --tone-amber-soft: 38 38% 14%;
+  --tone-sky: 199 68% 64%;
+  --tone-sky-soft: 199 34% 14%;
+  --tone-rose: 350 66% 68%;
+  --tone-rose-soft: 350 38% 16%;
+  --tone-violet: 263 58% 72%;
+  --tone-violet-soft: 263 34% 16%;
+  --tone-slate: 222 16% 64%;
   --tone-slate-soft: 222 18% 16%;
   --support-brand: 142 62% 56%;
 
-  --shadow-card: 0 1px 0 hsl(0 0% 100% / 0.04), 0 12px 32px -24px hsl(0 0% 0% / 0.75), 0 0 0 1px hsl(0 0% 100% / 0.03);
-  --shadow-card-hover: 0 1px 0 hsl(0 0% 100% / 0.06), 0 16px 40px -24px hsl(0 0% 0% / 0.8), 0 0 0 1px hsl(0 0% 100% / 0.05);
-  --shadow-elevated: 0 24px 56px -24px hsl(0 0% 0% / 0.85), 0 0 0 1px hsl(0 0% 100% / 0.06), 0 0 24px -8px hsl(222 60% 62% / 0.15);
-  --shadow-sidebar: 0 0 40px -20px hsl(0 0% 0% / 0.8);
+  --shadow-card: 0 1px 0 hsl(0 0% 100% / 0.025), 0 14px 32px -26px hsl(0 0% 0% / 0.82);
+  --shadow-card-hover: 0 1px 0 hsl(0 0% 100% / 0.04), 0 18px 42px -26px hsl(0 0% 0% / 0.86);
+  --shadow-elevated: 0 28px 60px -28px hsl(0 0% 0% / 0.9), 0 0 0 1px hsl(0 0% 100% / 0.035);
+  --shadow-sidebar: 0 0 38px -22px hsl(0 0% 0% / 0.88);
+
+  --material-page: hsl(224 46% 6%);
+  --material-panel: hsl(222 34% 10% / 0.985);
+  --material-chrome: hsl(223 38% 8% / 0.88);
+  --material-overlay: hsl(222 32% 11% / 0.94);
+  --material-border: hsl(210 45% 78% / 0.1);
+  --material-highlight: inset 0 1px 0 hsl(210 70% 92% / 0.055);
+  --material-shadow: 0 22px 52px -34px hsl(228 80% 2% / 0.92), 0 1px 0 hsl(210 80% 96% / 0.025);
+  --material-blur: 12px;
 
   --background: var(--color-bg);
   --foreground: var(--color-text-primary);
@@ -419,21 +250,14 @@
   --sidebar-accent: var(--color-sidebar-hover-bg);
   --sidebar-accent-foreground: var(--color-sidebar-active-text);
   --sidebar-border: 222 20% 12%;
-  --accent: 38 88% 60%;
-  --accent-foreground: var(--accent-foreground);
+  --accent: 38 84% 60%;
+  --accent-foreground: var(--color-accent-fg);
 
   --surface: var(--color-card);
   --surface-elevated: 222 30% 14%;
-  --financial-positive: var(--color-success-text);
-  --financial-positive-bg: var(--color-success-bg);
-  --financial-negative: var(--color-danger-text);
-  --financial-negative-bg: var(--color-danger-bg);
-  --financial-neutral: var(--color-neutral-text);
-  --financial-neutral-bg: var(--color-neutral-bg);
-
-  --color-disabled: 222 18% 20%;
-  --color-disabled-fg: 222 10% 48%;
-  --overlay: 222 50% 4%;
+  --disabled-color-source: 222 18% 20%;
+  --disabled-fg-source: 222 10% 48%;
+  --overlay: 224 52% 3%;
   --ring: var(--color-primary);
   --focus-ring: var(--color-primary);
 }
@@ -447,24 +271,20 @@
   --color-text: hsl(var(--color-text-primary));
   --color-text-secondary: hsl(var(--text-secondary));
   --color-text-muted: hsl(var(--muted-foreground));
-
   --color-primary: hsl(var(--primary));
   --color-primary-fg: hsl(var(--primary-foreground));
   --color-primary-foreground: hsl(var(--primary-foreground));
   --color-accent: hsl(var(--accent));
   --color-accent-foreground: hsl(var(--accent-foreground));
-
   --color-secondary: hsl(var(--secondary));
   --color-secondary-foreground: hsl(var(--secondary-foreground));
   --color-muted: hsl(var(--muted));
   --color-muted-foreground: hsl(var(--muted-foreground));
   --color-destructive: hsl(var(--destructive));
   --color-destructive-foreground: hsl(var(--destructive-foreground));
-
   --color-border: hsl(var(--border));
   --color-border-light: hsl(var(--border-light));
   --color-input: hsl(var(--input));
-
   --color-success: hsl(var(--success-text));
   --color-success-text: hsl(var(--success-text));
   --color-success-bg: hsl(var(--success-bg));
@@ -481,7 +301,6 @@
   --color-neutral: hsl(var(--neutral-text));
   --color-neutral-text: hsl(var(--neutral-text));
   --color-neutral-bg: hsl(var(--neutral-bg));
-
   --color-sidebar: hsl(var(--sidebar));
   --color-sidebar-bg: hsl(var(--sidebar-bg));
   --color-sidebar-text: hsl(var(--sidebar-text));
@@ -492,33 +311,28 @@
   --color-sidebar-accent: hsl(var(--sidebar-accent));
   --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
   --color-sidebar-border: hsl(var(--sidebar-border));
-
   --color-surface: hsl(var(--surface));
   --color-surface-elevated: hsl(var(--surface-elevated));
   --color-overlay: hsl(var(--overlay));
   --color-ring: hsl(var(--ring));
-  --color-disabled: hsl(var(--color-disabled));
-  --color-disabled-foreground: hsl(var(--color-disabled-fg));
-
+  --color-disabled: hsl(var(--disabled-color-source));
+  --color-disabled-foreground: hsl(var(--disabled-fg-source));
   --color-financial-positive: hsl(var(--financial-positive));
   --color-financial-positive-bg: hsl(var(--financial-positive-bg));
   --color-financial-negative: hsl(var(--financial-negative));
   --color-financial-negative-bg: hsl(var(--financial-negative-bg));
   --color-financial-neutral: hsl(var(--financial-neutral));
   --color-financial-neutral-bg: hsl(var(--financial-neutral-bg));
-
   --shadow-card: var(--elev-card);
   --shadow-card-hover: var(--elev-card-hover);
   --shadow-elevated: var(--elev-raised);
   --shadow-sidebar: var(--elev-sidebar);
-
   --radius-xs: var(--radius-2xs);
   --radius-sm: var(--radius-sm-source);
   --radius-md: var(--radius-md-source);
   --radius-lg: var(--radius);
   --radius-xl: var(--radius-card);
   --radius-2xl: var(--radius-elevated);
-
   --ease-standard: var(--motion-ease-standard);
   --ease-emphasized: var(--motion-ease-emphasized);
 }
@@ -534,13 +348,11 @@
   --spacing-10: var(--space-10);
   --spacing-12: var(--space-12);
   --spacing-16: var(--space-16);
-
   --container-sm: var(--max-w-sm);
   --container-md: var(--max-w-md);
   --container-lg: var(--max-w-lg);
   --container-xl: var(--max-w-xl);
   --container-2xl: var(--max-w-2xl);
-
   --z-dropdown: 50;
   --z-sticky: 60;
   --z-overlay: 100;
