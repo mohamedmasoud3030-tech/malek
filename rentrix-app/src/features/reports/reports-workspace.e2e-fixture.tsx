@@ -169,6 +169,36 @@ const fixtureModel: ReportsWorkspaceModel = {
         { property: 'مجمع الموالح', propertyId: 'property-2', shortPropertyId: 'property', hasTitle: true, occupied: 11, vacant: 1 },
       ],
       expiringRows: [],
+      vacancyAnalytics: {
+        totalUnits: 32,
+        occupiedUnits: 29,
+        availableUnits: 2,
+        nonRentableUnits: 1,
+        occupancyRate: (29 / 32) * 100,
+        vacancyRate: (2 / 32) * 100,
+        averageVacancyDays: 21,
+        referenceVacantRent: 1150,
+        previousMonthOccupancyRate: 87.5,
+        occupancyChangePoints: ((29 / 32) * 100) - 87.5,
+        previousMonthEnd: '2026-06-30',
+        vacantRows: [
+          {
+            unitId: 'unit-a14', propertyId: 'property-1', unitNumber: 'A-14', propertyTitle: 'برج الخوير',
+            referenceRent: 600, lastContractEndDate: '2026-06-10', vacancySince: '2026-06-10', vacancySinceSource: 'contract_end', daysVacant: 35,
+          },
+          {
+            unitId: 'unit-b06', propertyId: 'property-2', unitNumber: 'B-06', propertyTitle: 'مجمع الموالح',
+            referenceRent: 550, lastContractEndDate: '2026-07-08', vacancySince: '2026-07-08', vacancySinceSource: 'contract_end', daysVacant: 7,
+          },
+        ],
+        vacancyRiskRows: [
+          {
+            contractId: 'contract-risk-1', unitId: 'unit-c02', tenantName: 'سالم الكعبي', propertyTitle: 'برج الخوير', unitNumber: 'C-02',
+            endDate: '2026-08-01', daysRemaining: 17,
+          },
+        ],
+      },
+      historyComplete: true,
       isLoading: false,
     },
     maintenance: {

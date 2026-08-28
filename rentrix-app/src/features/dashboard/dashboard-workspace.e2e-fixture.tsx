@@ -14,7 +14,7 @@ import { DashboardVisualScope } from './dashboard-visual-scope';
 import type { DashboardSnapshot } from './dashboard-snapshot';
 import { addDays, buildExpiringContracts, buildOverdueTenantRows, toDateInputValue } from './dashboard-utils';
 import type { UtilityObligationsSignal } from './utility-obligations-signal';
-import type { VacantUnitsSignal } from './vacant-units-signal';
+import type { VacancyAnalytics } from '@/features/units/vacancy-analytics';
 import type { MaintenanceFollowUpSignal } from './maintenance-follow-up-signal';
 
 const soonDate = toDateInputValue(addDays(new Date(), 9));
@@ -29,6 +29,9 @@ const fixtureSettings = {
 const fixtureSnapshot: DashboardSnapshot = {
   period: { dateFrom: '2026-07-01', dateTo: '2026-07-15', asOf: '2026-07-15', month: 7, year: 2026 },
   portfolio: { properties: 4, units: 15 },
+  // Legacy snapshot field groups every non-occupied unit together: 2 available
+  // + 1 maintenance. The vacancy card intentionally does NOT use this as the
+  // true vacant count.
   occupancy: { occupiedUnits: 12, vacantUnits: 3, occupancyRate: 80 },
   contracts: { active: 8, expiring30: 2, expiring60: 3, expiring90: 4 },
   billing: { invoicedAmount: 15_000, invoicesCount: 10, invoicesTotalCount: 60 },
@@ -85,16 +88,29 @@ const fixtureUtilityObligations: UtilityObligationsSignal = {
   actionableCount: 2,
 };
 
-const fixtureVacantUnits: VacantUnitsSignal = {
-  availableCount: 2,
-  outOfServiceCount: 1,
-  reservedCount: 0,
-  attentionCount: 3,
-  rows: [
-    { unitId: 'unit-3', propertyId: 'property-1', title: 'وحدة 3', location: 'برج الخليج', status: 'maintenance', statusLabel: 'متوقفة للصيانة', referenceRent: 320 },
-    { unitId: 'unit-7', propertyId: 'property-2', title: 'وحدة 7', location: 'واحة مسقط', status: 'available', statusLabel: 'شاغرة', referenceRent: 280 },
-    { unitId: 'unit-9', propertyId: 'property-2', title: 'وحدة 9', location: 'واحة مسقط', status: 'available', statusLabel: 'شاغرة', referenceRent: null },
+const fixtureVacancyAnalytics: VacancyAnalytics = {
+  totalUnits: 15,
+  occupiedUnits: 12,
+  availableUnits: 2,
+  nonRentableUnits: 1,
+  occupancyRate: 80,
+  vacancyRate: (2 / 15) * 100,
+  averageVacancyDays: 20,
+  referenceVacantRent: 280,
+  previousMonthOccupancyRate: 80,
+  occupancyChangePoints: 0,
+  previousMonthEnd: '2026-06-30',
+  vacantRows: [
+    {
+      unitId: 'unit-7', propertyId: 'property-2', unitNumber: '7', propertyTitle: 'واحة مسقط',
+      referenceRent: 280, lastContractEndDate: '2026-06-20', vacancySince: '2026-06-20', vacancySinceSource: 'contract_end', daysVacant: 25,
+    },
+    {
+      unitId: 'unit-9', propertyId: 'property-2', unitNumber: '9', propertyTitle: 'واحة مسقط',
+      referenceRent: null, lastContractEndDate: null, vacancySince: '2026-07-01', vacancySinceSource: 'unit_created', daysVacant: 14,
+    },
   ],
+  vacancyRiskRows: [],
 };
 
 const fixtureMaintenanceFollowUp: MaintenanceFollowUpSignal = {
@@ -131,7 +147,7 @@ export function DashboardWorkspaceE2EFixture() {
 
             <section className="dashboard-section" aria-label="الوحدات الفارغة" data-dashboard-section="vacant-units">
               <SectionHeader eyebrow="2 · المحفظة" title="الوحدات الفارغة" />
-              <VacantUnitsSection signal={fixtureVacantUnits} serverVacantCount={fixtureSnapshot.occupancy.vacantUnits} isLoading={false} settings={fixtureSettings} />
+              <VacantUnitsSection analytics={fixtureVacancyAnalytics} isLoading={false} settings={fixtureSettings} />
             </section>
 
             <section className="dashboard-section" aria-label="الفلوس المطلوب تحصيلها" data-dashboard-section="collections">

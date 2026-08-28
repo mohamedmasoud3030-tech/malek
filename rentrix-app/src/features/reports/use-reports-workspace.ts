@@ -24,6 +24,7 @@ import { summarizeMaintenanceRequests } from '@/features/maintenance/maintenance
 import { useMaintenance } from '@/features/maintenance/use-maintenance';
 import { useCostCenters } from '@/features/settings/useCostCenters';
 import { useAllUnits } from '@/features/units/use-units';
+import { buildVacancyAnalytics } from '@/features/units/vacancy-analytics';
 import { useAuthoritativeReportsCollectionRate } from './reports-collection-efficiency';
 import { buildDeferredRevenueAudit } from './reports-insights';
 import {
@@ -144,16 +145,26 @@ export function useReportsWorkspace(filters: ReportsFilterState, location: Repor
     [propertyTitlesQuery.data],
   );
   const rentRollRows = useMemo(() => buildRentRollRows(scopedContracts, contractStatusLabels), [scopedContracts]);
+  const occupancyUnits = useMemo(
+    () => (unitsQuery.data ?? []).filter((unit) => {
+      if (filters.propertyId && unit.property_id !== filters.propertyId) return false;
+      if (filters.unitId && unit.id !== filters.unitId) return false;
+      return true;
+    }),
+    [filters.propertyId, filters.unitId, unitsQuery.data],
+  );
   const occupancyRows = useMemo(
-    () => buildOccupancyRows(
-      (unitsQuery.data ?? []).filter((unit) => {
-        if (filters.propertyId && unit.property_id !== filters.propertyId) return false;
-        if (filters.unitId && unit.id !== filters.unitId) return false;
-        return true;
-      }),
-      propertyTitlesById,
-    ),
-    [filters.propertyId, filters.unitId, propertyTitlesById, unitsQuery.data],
+    () => buildOccupancyRows(occupancyUnits, propertyTitlesById),
+    [occupancyUnits, propertyTitlesById],
+  );
+  const occupancyUnitIds = useMemo(() => new Set(occupancyUnits.map((unit) => unit.id)), [occupancyUnits]);
+  const occupancyContracts = useMemo(
+    () => contracts.filter((contract) => Boolean(contract.unit_id) && occupancyUnitIds.has(contract.unit_id!)),
+    [contracts, occupancyUnitIds],
+  );
+  const vacancyAnalytics = useMemo(
+    () => buildVacancyAnalytics(occupancyUnits, occupancyContracts, propertyTitlesById, filters.asOf),
+    [filters.asOf, occupancyContracts, occupancyUnits, propertyTitlesById],
   );
   const expiringRows = useMemo(() => buildExpiringContractsRows(scopedContracts, new Date()), [scopedContracts]);
   const maintenanceSummary = useMemo(() => summarizeMaintenanceRequests(maintenanceQuery.data ?? []), [maintenanceQuery.data]);
@@ -253,7 +264,13 @@ export function useReportsWorkspace(filters: ReportsFilterState, location: Repor
         isLoading: isLoadingAny(overdueInvoicesQuery.isLoading, agedReceivablesQuery.isLoading, arrearsSummaryQuery.isLoading),
       },
       expenses: { report: expenseBreakdownQuery.data, isLoading: expenseBreakdownQuery.isLoading },
-      occupancy: { occupancyRows, expiringRows, isLoading: isLoadingAny(unitsQuery.isLoading, contractsQuery.isLoading) },
+      occupancy: {
+        occupancyRows,
+        expiringRows,
+        vacancyAnalytics,
+        historyComplete: !contractsQuery.isError && !contractsQuery.data?.truncated,
+        isLoading: isLoadingAny(unitsQuery.isLoading, contractsQuery.isLoading, propertyTitlesQuery.isLoading),
+      },
       maintenance: { rows: maintenanceQuery.data ?? [], summary: maintenanceSummary, isLoading: maintenanceQuery.isLoading },
       deferredRevenue: { audit: deferredRevenueAudit, asOf: filters.asOf, isLoading: isLoadingAny(receiptsQuery.isLoading, contractsQuery.isLoading) },
       accounting: {
