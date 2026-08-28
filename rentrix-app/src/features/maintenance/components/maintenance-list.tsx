@@ -1,4 +1,4 @@
-import { CheckCircle2, Edit, Eye } from "lucide-react";
+import { Edit, Eye } from "lucide-react";
 import { useState } from "react";
 import { ActionMenu } from "@/components/ui/action-menu";
 import { Button } from "@/components/ui/button";
@@ -207,15 +207,6 @@ export function MaintenanceList(props: MaintenanceListProps) {
               <Eye className="me-1 size-4" />
               التفاصيل
             </Button>
-          );
-        }
-
-        if (availableStatusActions.length === 0 && !canEdit) {
-          return (
-            <span className="flex items-center gap-1 text-xs text-muted-foreground">
-              <CheckCircle2 className="size-3.5" aria-hidden="true" />
-              مكتمل
-            </span>
           );
         }
 
