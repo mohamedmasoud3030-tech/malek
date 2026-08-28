@@ -446,7 +446,7 @@ for (const viewport of viewportMatrix) {
       await expect(officePulseCards).toHaveCount(4);
 
       const workQueues = page.locator('[data-dashboard-work-queues] > section');
-      await expect(workQueues).toHaveCount(3);
+      await expect(workQueues).toHaveCount(6);
       await expect(page.getByRole('heading', { name: 'الصيانة العاجلة', level: 3 })).toBeVisible();
 
       const kpiLinks = page.locator('[data-dashboard-kpi-grid] a[data-dashboard-kpi-link]');
