@@ -1,9 +1,18 @@
 import { Link } from '@tanstack/react-router';
 import { History } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { cn } from '@/lib/utils';
 import type { MaintenanceFollowUpSignal } from '../maintenance-follow-up-signal';
+import {
+  DashboardSignalEmpty,
+  DashboardSignalHeader,
+  DashboardSignalList,
+  DashboardSignalLoading,
+  DashboardSignalMain,
+  DashboardSignalPanel,
+  DashboardSignalSide,
+  dashboardSectionActionClass,
+  dashboardSignalRowClass,
+} from './dashboard-signal-primitives';
 
 interface MaintenanceFollowUpSectionProps {
   signal: MaintenanceFollowUpSignal;
@@ -13,10 +22,9 @@ interface MaintenanceFollowUpSectionProps {
 
 /**
  * P3 — Today: maintenance that stopped moving.
- *
- * Complements the urgent-maintenance queue. Urgency is how a request was
- * *reported*; this card is about what actually happened to it afterwards —
- * work stalled, a visit missed, or a finished job nobody closed.
+ * Urgency is how a request was reported; this signal is about what actually
+ * happened afterwards — work stalled, a visit missed, or a finished job that
+ * still needs closure.
  */
 export function MaintenanceFollowUpSection({ signal, isLoading, isError = false }: MaintenanceFollowUpSectionProps) {
   const meta = signal.stalledCount > 0
@@ -26,75 +34,63 @@ export function MaintenanceFollowUpSection({ signal, isLoading, isError = false 
       : 'الطلبات تتحرك ضمن المدة المعتادة';
 
   return (
-    <section className="dashboard-queue-card" aria-labelledby="maintenance-follow-up-title">
-      <div className="dashboard-queue-card__header">
-        <div className="dashboard-queue-card__title-group">
-          <span
-            className={cn('dashboard-queue-card__icon', signal.actionableCount > 0 ? 'dashboard-queue-card__icon--warning' : undefined)}
-            aria-hidden="true"
-          >
-            <History className="size-4" />
-          </span>
-          <div>
-            <h3 id="maintenance-follow-up-title" className="dashboard-queue-card__title">متابعة الصيانة</h3>
-            <p className="dashboard-queue-card__meta">{meta}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {!isLoading && !isError ? (
-            <StatusBadge tone={signal.actionableCount > 0 ? 'warning' : 'success'}>{signal.actionableCount}</StatusBadge>
-          ) : null}
-          <Link to="/maintenance" data-dashboard-section-action className="dashboard-section-link">عرض الكل</Link>
-        </div>
-      </div>
+    <DashboardSignalPanel labelledBy="maintenance-follow-up-title">
+      <DashboardSignalHeader
+        id="maintenance-follow-up-title"
+        title="متابعة الصيانة"
+        meta={meta}
+        icon={History}
+        tone={signal.actionableCount > 0 ? 'warning' : 'success'}
+        trailing={(
+          <>
+            {!isLoading && !isError ? (
+              <StatusBadge tone={signal.actionableCount > 0 ? 'warning' : 'success'}>{signal.actionableCount}</StatusBadge>
+            ) : null}
+            <Link to="/maintenance" data-dashboard-section-action className={dashboardSectionActionClass}>عرض الكل</Link>
+          </>
+        )}
+      />
 
-      {isLoading ? (
-        <div className="dashboard-queue-list" aria-label="جارٍ تحميل متابعة الصيانة">
-          <Skeleton className="h-14 rounded-xl" />
-          <Skeleton className="h-14 rounded-xl" />
-          <Skeleton className="h-14 rounded-xl" />
-        </div>
-      ) : null}
+      {isLoading ? <DashboardSignalLoading label="جارٍ تحميل متابعة الصيانة" /> : null}
 
       {!isLoading && isError ? (
-        <div className="dashboard-queue-empty" role="alert">
-          <p className="font-semibold">تعذر تحميل متابعة الصيانة</p>
-          <p>افتح سجل الصيانة للتحقق. لن نعرض قائمة فارغة عند فشل التحميل.</p>
-        </div>
+        <DashboardSignalEmpty
+          role="alert"
+          title="تعذر تحميل متابعة الصيانة"
+          description="افتح سجل الصيانة للتحقق. لن نعرض قائمة فارغة عند فشل التحميل."
+        />
       ) : null}
 
       {!isLoading && !isError && signal.rows.length === 0 ? (
-        <div className="dashboard-queue-empty" role="status">
-          <p className="font-semibold">لا توجد طلبات متعثرة</p>
-          <p>ستظهر هنا الطلبات التي توقفت عن التقدم أو انتهى العمل فيها بلا إغلاق.</p>
-        </div>
+        <DashboardSignalEmpty
+          title="لا توجد طلبات متعثرة"
+          description="ستظهر هنا الطلبات التي توقفت عن التقدم أو انتهى العمل فيها بلا إغلاق."
+        />
       ) : null}
 
       {!isLoading && !isError && signal.rows.length > 0 ? (
-        <ul className="dashboard-queue-list" role="list">
-          {signal.rows.map((row) => (
-            <li key={row.requestId} role="listitem" className="min-w-0">
-              <Link
-                to="/maintenance"
-                className={cn('dashboard-queue-row', row.flag === 'awaiting_closure' ? undefined : 'dashboard-queue-row--warning')}
-                data-dashboard-queue-link
-                aria-label={`${row.title} — ${row.location} — ${row.flagLabel}`}
-              >
-                <span className="dashboard-queue-row__main">
-                  <span className="dashboard-queue-row__title">{row.title}</span>
-                  <span className="dashboard-queue-row__meta">{row.location}</span>
-                </span>
-                <span className="dashboard-queue-row__side">
-                  <StatusBadge tone={row.flag === 'awaiting_closure' ? 'info' : 'warning'}>{row.flagLabel}</StatusBadge>
-                  {row.ageDays !== null ? (
-                    <span className="dashboard-queue-row__date">منذ {row.ageDays} يوم</span>
-                  ) : null}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <DashboardSignalList label="متابعة الصيانة">
+          {signal.rows.map((row) => {
+            const tone = row.flag === 'awaiting_closure' ? 'info' : 'warning';
+            return (
+              <li key={row.requestId} role="listitem" className="min-w-0">
+                <Link
+                  to="/maintenance"
+                  className={dashboardSignalRowClass(tone)}
+                  data-dashboard-queue-link
+                  aria-label={`${row.title} — ${row.location} — ${row.flagLabel}`}
+                >
+                  <DashboardSignalMain title={row.title} meta={row.location} />
+                  <DashboardSignalSide>
+                    <StatusBadge tone={tone}>{row.flagLabel}</StatusBadge>
+                    {row.ageDays !== null ? <span className="hidden sm:inline">منذ {row.ageDays} يوم</span> : null}
+                  </DashboardSignalSide>
+                </Link>
+              </li>
+            );
+          })}
+        </DashboardSignalList>
       ) : null}
-    </section>
+    </DashboardSignalPanel>
   );
 }
