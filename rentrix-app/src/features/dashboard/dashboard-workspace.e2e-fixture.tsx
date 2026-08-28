@@ -2,12 +2,9 @@ import { PageLayout } from '@/components/layout/page-layout';
 import { SectionHeader } from '@/components/ui/section-header';
 import { formatCompanyDate, formatCompanyMoney, formatCompanyNumber } from '@/lib/companyFormatters';
 import { defaultCompanySettingsContract } from '@/lib/companySettings';
-import { AlertCenter } from './components/alert-center';
-import { ArrearsBreakdown } from './components/arrears-breakdown';
-import { DashboardCharts } from './components/dashboard-charts';
 import { ExpiringContractsSection } from './components/expiring-contracts-section';
-import { KpiGrid } from './components/kpi-grid';
 import { OfficePulse } from './components/office-pulse';
+import { OwnerObligationsSection } from './components/owner-obligations-section';
 import { OverdueSection } from './components/overdue-section';
 import { UrgentMaintenanceSection } from './components/urgent-maintenance-section';
 import { UtilityObligationsSection } from './components/utility-obligations-section';
@@ -127,50 +124,38 @@ export function DashboardWorkspaceE2EFixture() {
       <div className="px-3 py-4 sm:px-6 lg:px-8">
         <PageLayout className="dashboard-page-shell">
           <DashboardVisualScope>
-            <section className="dashboard-section" data-dashboard-section="work-now" aria-label="مطلوب الآن">
-              <SectionHeader eyebrow="أولوية" title="مطلوب الآن" />
-              <AlertCenter
-                expiringContractsCount={fixtureSnapshot.contracts.expiring30}
-                overdueInvoicesCount={fixtureSnapshot.arrears.overdueCount}
-                urgentMaintenanceCount={fixtureSnapshot.maintenance.urgentOpen}
-                utilityObligationsCount={fixtureUtilityObligations.actionableCount}
-                vacantUnitsCount={fixtureSnapshot.occupancy.vacantUnits}
-                unmatchedBankTxCount={fixtureSnapshot.exceptions.unmatchedBankLines}
-                pendingSettlementsCount={fixtureSnapshot.exceptions.pendingSettlements}
-                integrityWarningsCount={0}
-              />
-            </section>
-
-            <section className="dashboard-section" aria-label="نبض المكتب" data-dashboard-section="office-pulse">
-              <SectionHeader eyebrow="الآن" title="نبض المكتب" />
+            <section className="dashboard-section" aria-label="أداء المكتب" data-dashboard-section="office-performance">
+              <SectionHeader eyebrow="1 · الآن" title="أداء المكتب" />
               <OfficePulse snapshot={fixtureSnapshot} isLoading={false} settings={defaultCompanySettingsContract} />
             </section>
 
-            <section className="dashboard-section" aria-label="العمل المنتظر" data-dashboard-section="work-queues">
-              <SectionHeader eyebrow="متابعة" title="العمل المنتظر" />
-              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                <OverdueSection rows={overdueRows} totalCount={fixtureSnapshot.arrears.overdueCount} isLoading={false} settings={fixtureSettings} />
-                <ExpiringContractsSection rows={expiringRows} totalCount={fixtureSnapshot.contracts.expiring30} isLoading={false} settings={fixtureSettings} />
+            <section className="dashboard-section" aria-label="الوحدات الفارغة" data-dashboard-section="vacant-units">
+              <SectionHeader eyebrow="2 · المحفظة" title="الوحدات الفارغة" />
+              <VacantUnitsSection signal={fixtureVacantUnits} serverVacantCount={fixtureSnapshot.occupancy.vacantUnits} isLoading={false} settings={fixtureSettings} />
+            </section>
+
+            <section className="dashboard-section" aria-label="الفلوس المطلوب تحصيلها" data-dashboard-section="collections">
+              <SectionHeader eyebrow="3 · تحصيل" title="الفلوس المطلوب تحصيلها" />
+              <OverdueSection rows={overdueRows} totalCount={fixtureSnapshot.arrears.overdueCount} isLoading={false} settings={fixtureSettings} />
+            </section>
+
+            <section className="dashboard-section" aria-label="المشاكل والصيانة" data-dashboard-section="maintenance-problems">
+              <SectionHeader eyebrow="4 · خدمات" title="المشاكل والصيانة" />
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                 <UrgentMaintenanceSection rows={fixtureSnapshot.queues.urgentMaintenance} totalCount={fixtureSnapshot.maintenance.urgentOpen} isLoading={false} />
                 <MaintenanceFollowUpSection signal={fixtureMaintenanceFollowUp} isLoading={false} />
                 <UtilityObligationsSection signal={fixtureUtilityObligations} isLoading={false} settings={fixtureSettings} />
-                <VacantUnitsSection signal={fixtureVacantUnits} serverVacantCount={fixtureSnapshot.occupancy.vacantUnits} isLoading={false} settings={fixtureSettings} />
               </div>
             </section>
 
-            <section className="dashboard-section" aria-label="المال والالتزامات" data-dashboard-section="money-obligations">
-              <SectionHeader eyebrow="مالي" title="المال والالتزامات" />
-              <KpiGrid snapshot={fixtureSnapshot} isLoading={false} settings={defaultCompanySettingsContract} />
+            <section className="dashboard-section" aria-label="العقود القريبة من الانتهاء" data-dashboard-section="expiring-contracts">
+              <SectionHeader eyebrow="5 · عقود" title="العقود القريبة من الانتهاء" />
+              <ExpiringContractsSection rows={expiringRows} totalCount={fixtureSnapshot.contracts.expiring30} isLoading={false} settings={fixtureSettings} />
             </section>
 
-            <section className="dashboard-section" aria-label="حالة التحصيل والمحفظة" data-dashboard-section="operational-health">
-              <SectionHeader eyebrow="صورة تشغيلية" title="حالة التحصيل والمحفظة" />
-              <DashboardCharts snapshot={fixtureSnapshot} isLoading={false} settings={defaultCompanySettingsContract} />
-            </section>
-
-            <section className="dashboard-section" aria-label="تحليل المتأخرات" data-dashboard-section="analytics">
-              <SectionHeader eyebrow="تحليل" title="تحليل المتأخرات" />
-              <ArrearsBreakdown snapshot={fixtureSnapshot} settings={defaultCompanySettingsContract} />
+            <section className="dashboard-section" aria-label="مستحقات الملاك" data-dashboard-section="owner-obligations">
+              <SectionHeader eyebrow="6 · ملاك" title="مستحقات الملاك" />
+              <OwnerObligationsSection snapshot={fixtureSnapshot} isLoading={false} settings={defaultCompanySettingsContract} />
             </section>
           </DashboardVisualScope>
         </PageLayout>

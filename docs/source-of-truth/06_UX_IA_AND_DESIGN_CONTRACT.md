@@ -49,7 +49,6 @@ Today answers “what is the office state now?” in this priority order:
 4. maintenance/problems;
 5. contracts nearing expiry;
 6. owner obligations;
-7. actionable follow-up.
 
 Today is a signal/decision surface, not a substitute for detailed Reports. Notifications show events/information; Today shows items requiring attention. Do not duplicate the same feed twice.
 
