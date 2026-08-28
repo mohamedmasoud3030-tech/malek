@@ -22,6 +22,14 @@ import {
   type MaintenancePriorityFilter,
   type MaintenanceStatusFilter,
 } from './maintenance-helpers';
+import {
+  deriveMaintenanceAttention,
+  matchesMaintenanceAttentionFilter,
+  summarizeMaintenanceAttention,
+  type MaintenanceAttention,
+  type MaintenanceAttentionFilter,
+} from './maintenance-attention';
+import { getTodayLocalDateString } from '@/features/reports/reports-page.helpers';
 
 export const maintenanceRequestSchema = z.object({
   // Historical production properties use text identifiers; the relationship
@@ -94,6 +102,7 @@ export function useMaintenancePageController() {
   const [statusFilter, setStatusFilter] = useState<MaintenanceStatusFilter>('all');
   const [priorityFilter, setPriorityFilter] = useState<MaintenancePriorityFilter>('all');
   const [propertyFilterId, setPropertyFilterId] = useState('');
+  const [attentionFilter, setAttentionFilter] = useState<MaintenanceAttentionFilter>('all');
   const [showForm, setShowForm] = useState(false);
   const [editingRequest, setEditingRequest] = useState<Maintenance | null>(null);
   const [detailsRequest, setDetailsRequest] = useState<Maintenance | null>(null);
@@ -190,6 +199,27 @@ export function useMaintenancePageController() {
     }),
     [maintenanceRows, priorityFilter, propertyFilterId, statusFilter],
   );
+  // Operational attention (stalled work, requests awaiting closure, missed
+  // scheduled visits) is derived from the same rows the register already
+  // loaded. It adds no lifecycle rule and performs no write.
+  const operatingDate = getTodayLocalDateString();
+  const attentionByRequestId = useMemo(
+    () => new Map<string, MaintenanceAttention>(
+      filteredMaintenanceRows.map((row) => [row.id, deriveMaintenanceAttention(row, operatingDate)]),
+    ),
+    [filteredMaintenanceRows, operatingDate],
+  );
+  const attentionSummary = useMemo(
+    () => summarizeMaintenanceAttention(filteredMaintenanceRows, operatingDate),
+    [filteredMaintenanceRows, operatingDate],
+  );
+  const visibleMaintenanceRows = useMemo(() => {
+    if (attentionFilter === 'all') return filteredMaintenanceRows;
+    return filteredMaintenanceRows.filter((row) => {
+      const attention = attentionByRequestId.get(row.id);
+      return attention ? matchesMaintenanceAttentionFilter(attention, attentionFilter) : false;
+    });
+  }, [attentionByRequestId, attentionFilter, filteredMaintenanceRows]);
   const maintenanceSummary = useMemo(
     () => summarizeMaintenanceRequests(filteredMaintenanceRows),
     [filteredMaintenanceRows],
@@ -197,7 +227,7 @@ export function useMaintenancePageController() {
   const loadError = maintenanceQuery.error ?? propertiesQuery.error ?? providerCategoriesQuery.error ?? providerOptionsQuery.error;
   const hasLoadError = maintenanceQuery.isError || propertiesQuery.isError || providerCategoriesQuery.isError || providerOptionsQuery.isError;
   const isLoading = maintenanceQuery.isLoading || propertiesQuery.isLoading || providerCategoriesQuery.isLoading || providerOptionsQuery.isLoading;
-  const hasFilters = statusFilter !== 'all' || priorityFilter !== 'all' || propertyFilterId.length > 0;
+  const hasFilters = statusFilter !== 'all' || priorityFilter !== 'all' || propertyFilterId.length > 0 || attentionFilter !== 'all';
   const isEditingResolvedRequest = editingRequest?.status === 'resolved' || editingRequest?.status === 'closed';
 
   const firstCreateError = Object.values(form.formState.errors)
@@ -335,6 +365,11 @@ export function useMaintenancePageController() {
     filteredProviderOptions,
     selectedProviderCategoryId,
     filteredMaintenanceRows,
+    visibleMaintenanceRows,
+    attentionFilter,
+    setAttentionFilter,
+    attentionByRequestId,
+    attentionSummary,
     maintenanceSummary,
     loadError,
     hasLoadError,

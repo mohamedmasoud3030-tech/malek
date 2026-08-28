@@ -1,4 +1,4 @@
-import { Bell, Building2, CalendarClock, CheckCircle2, CreditCard, HandCoins, Landmark, ShieldAlert, Wrench } from 'lucide-react';
+import { Bell, Building2, CalendarClock, CheckCircle2, CreditCard, Gauge, HandCoins, Landmark, ShieldAlert, Wrench } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -16,6 +16,12 @@ export interface AlertCenterProps {
   expiringContractsCount?: number;
   overdueInvoicesCount?: number;
   urgentMaintenanceCount?: number;
+  /**
+   * Utility claims that are late or due inside the near operating window.
+   * Derived by the shared utilities derivation over a complete paged read,
+   * never from a capped row prefix.
+   */
+  utilityObligationsCount?: number;
   vacantUnitsCount?: number;
   unmatchedBankTxCount?: number;
   pendingSettlementsCount?: number;
@@ -72,6 +78,7 @@ export function AlertCenter({
   expiringContractsCount,
   overdueInvoicesCount,
   urgentMaintenanceCount,
+  utilityObligationsCount,
   vacantUnitsCount,
   unmatchedBankTxCount,
   pendingSettlementsCount,
@@ -82,6 +89,7 @@ export function AlertCenter({
     (expiringContractsCount ?? 0) +
     (overdueInvoicesCount ?? 0) +
     (urgentMaintenanceCount ?? 0) +
+    (utilityObligationsCount ?? 0) +
     (vacantUnitsCount ?? 0) +
     (unmatchedBankTxCount ?? 0) +
     (pendingSettlementsCount ?? 0) +
@@ -91,6 +99,7 @@ export function AlertCenter({
   if (overdueInvoicesCount === undefined) unavailableSources.push({ label: 'فواتير متأخرة', to: '/arrears' });
   if (expiringContractsCount === undefined) unavailableSources.push({ label: 'عقود تنتهي قريباً', to: '/contracts' });
   if (urgentMaintenanceCount === undefined) unavailableSources.push({ label: 'صيانة عاجلة', to: '/maintenance' });
+  if (utilityObligationsCount === undefined) unavailableSources.push({ label: 'التزامات مرافق', to: '/utilities' });
   if (unmatchedBankTxCount === undefined) unavailableSources.push({ label: 'حركات بنكية معلقة', to: '/bank-reconciliation' });
   if (pendingSettlementsCount === undefined) unavailableSources.push({ label: 'تسويات ملاك جاهزة', to: '/owner-settlements' });
   if (integrityWarningsCount === undefined) unavailableSources.push({ label: 'تنبيهات سلامة البيانات', to: '/data-integrity' });
@@ -163,6 +172,18 @@ export function AlertCenter({
       rank: 4,
     },
     {
+      label: 'التزامات مرافق',
+      description: 'مطالبات مرافق متأخرة أو تستحق قريباً',
+      actionHint: 'راجع المطالبة والمسؤول عن السداد',
+      count: utilityObligationsCount ?? 0,
+      unavailable: utilityObligationsCount === undefined,
+      to: '/utilities',
+      icon: Gauge,
+      tone: 'warning',
+      critical: false,
+      rank: 5,
+    },
+    {
       label: 'تسويات ملاك جاهزة',
       description: 'اعتماد أو صرف منتظر',
       actionHint: 'أكمل الاعتماد أو الصرف',
@@ -172,7 +193,7 @@ export function AlertCenter({
       icon: HandCoins,
       tone: 'warning',
       critical: false,
-      rank: 5,
+      rank: 6,
     },
     {
       label: 'حركات بنكية معلقة',
@@ -184,7 +205,7 @@ export function AlertCenter({
       icon: Landmark,
       tone: 'warning',
       critical: false,
-      rank: 6,
+      rank: 7,
     },
     {
       label: 'وحدات شاغرة',
@@ -196,7 +217,7 @@ export function AlertCenter({
       icon: Building2,
       tone: 'info',
       critical: false,
-      rank: 7,
+      rank: 8,
     },
   ];
 

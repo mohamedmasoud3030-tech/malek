@@ -390,6 +390,16 @@ const landingRoute = createRoute({
   component: lazyRouteComponent(() => import('@/routes/landing'), 'LandingRouteComponent'),
   staticData: { title: `${APP_BRAND_NAME} — ${APP_BRAND_TAGLINE_AR}` },
 });
+
+// Tenant Portal: a separate constrained read-only surface. It intentionally
+// lives OUTSIDE the office protected shell (no office navigation, no office
+// permissions) and authorizes only through tenant-specific claims.
+const tenantPortalRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/tenant-portal',
+  component: lazyRouteComponent(() => import('@/routes/tenant-portal'), 'TenantPortalRouteComponent'),
+  staticData: { title: 'بوابة المستأجر' },
+});
 const privacyRoute = createRoute({ getParentRoute: () => rootRoute, path: '/privacy', component: lazyRouteComponent(() => import('@/routes/privacy'), 'PrivacyRouteComponent'), staticData: { title: 'سياسة الخصوصية' } });
 const termsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/terms', component: lazyRouteComponent(() => import('@/routes/terms'), 'TermsRouteComponent'), staticData: { title: 'شروط الاستخدام' } });
 const landingCompatRoute = createRoute({ getParentRoute: () => rootRoute, path: '/landing', beforeLoad: () => { throw redirect({ to: '/' }); } });
@@ -407,6 +417,7 @@ export const routeTree = rootRoute.addChildren([
   authRoute.addChildren([loginRoute, forgotPasswordRoute]),
   resetPasswordRoute,
   landingRoute,
+  tenantPortalRoute,
   landingCompatRoute,
   privacyRoute,
   termsRoute,

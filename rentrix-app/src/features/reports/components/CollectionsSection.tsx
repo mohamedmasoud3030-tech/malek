@@ -1,4 +1,4 @@
-import { Building2, CalendarDays, Download, FileSpreadsheet, Printer, ReceiptText, WalletCards } from 'lucide-react';
+import { Building2, CalendarDays, FileSpreadsheet, ReceiptText, WalletCards } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
@@ -15,6 +15,7 @@ import { DailyCollectionsPanel } from './collections/daily-collections-panel';
 import { ReceiptLinksPanel, type CollectionReceiptRow } from './collections/receipt-links-panel';
 import { RentRollPanel } from './collections/rent-roll-panel';
 import { formatLatinNumber } from '@/lib/formatters';
+import { ReportShareActions } from './ReportShareActions';
 
 const paymentMethodLabels = {
   cash: 'نقدًا',
@@ -103,20 +104,28 @@ export function CollectionsSection({ summary, rows, receiptRows, rentRollRows, c
   };
 
   const dailyActions = canExportReports ? (
-    <div className="flex flex-wrap gap-2">
-      <Button variant="outline" size="sm" onClick={handlePrintCollectionsReport} disabled={!isDocumentSettingsReady} className="min-h-11 gap-1.5 text-xs">
-        <Printer className="size-3.5" aria-hidden="true" />
-        طباعة A4
-      </Button>
-      <Button variant="outline" size="sm" onClick={handleDownloadCollectionsReport} disabled={!isDocumentSettingsReady} className="min-h-11 gap-1.5 text-xs">
-        <Download className="size-3.5" aria-hidden="true" />
-        تنزيل PDF
-      </Button>
-      <Button variant="secondary" size="sm" onClick={() => downloadCsv(buildReportCsvFilename('daily-collection'), toDailyCollectionCsv(rows))} className="min-h-11 gap-1.5 text-xs">
-        <FileSpreadsheet className="size-3.5" aria-hidden="true" />
-        CSV
-      </Button>
-    </div>
+    <ReportShareActions
+      className="flex flex-wrap gap-2"
+      reportLabel="كشف حركة التحصيلات اليومية والتدفقات النقدية"
+      target={{
+        section: 'analytics',
+        view: 'collections',
+        filters: {
+          from,
+          to,
+          asOf: to,
+          propertyId: '',
+          unitId: '',
+          tenantId: '',
+          ownerId: '',
+          contractId: '',
+        },
+      }}
+      summaryText={`إجمالي المبلغ المحصل: ${formatMoney(totalCollected)} | كفاءة التحصيل: ${Math.round(collectionRate)}%`}
+      onPrint={handlePrintCollectionsReport}
+      onDownloadPdf={handleDownloadCollectionsReport}
+      csv={{ filename: buildReportCsvFilename('daily-collection'), rows: toDailyCollectionCsv(rows) }}
+    />
   ) : undefined;
 
   const rentRollAction = canExportReports ? (
@@ -128,7 +137,7 @@ export function CollectionsSection({ summary, rows, receiptRows, rentRollRows, c
 
   return (
     <div className="space-y-4">
-      <ResponsiveCardGrid>
+      <ResponsiveCardGrid data-report-summary="collections">
         <KpiCard label="إجمالي التحصيل" value={formatMoney(totalCollected)} icon={WalletCards} sub={`${formatLatinNumber(paymentsCount, 'ar')} مدفوعات`} />
         <KpiCard label="كفاءة التحصيل" value={`${formatLatinNumber(Math.round(collectionRate), 'ar')}%`} icon={CalendarDays} sub={`${formatMoney(summary?.outstanding ?? 0)} مستحق`} />
         <KpiCard label="متوسط الدفعة" value={formatMoney(averagePayment)} icon={ReceiptText} sub={`${formatLatinNumber(receiptRows.length, 'ar')} إيصالات متاحة`} />

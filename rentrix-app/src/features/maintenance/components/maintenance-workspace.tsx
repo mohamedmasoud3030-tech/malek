@@ -1,4 +1,4 @@
-import { Flame, PlusCircle, Printer, Wrench } from 'lucide-react';
+import { Clock3, Flame, PlusCircle, Printer, Wrench } from 'lucide-react';
 import { useMemo } from 'react';
 import { AsyncContentState } from '@/components/async-content-state';
 import { PageHeader } from '@/components/layout/page-header';
@@ -19,6 +19,7 @@ import { MaintenanceList } from './maintenance-list';
 import { maintenancePriorityLabels, maintenanceStatusLabels } from './maintenance-list';
 import { MaintenanceRequestForm } from './maintenance-request-form';
 import type { MaintenancePriorityFilter, MaintenanceStatusFilter } from '../maintenance-helpers';
+import { maintenanceAttentionLabels, type MaintenanceAttentionFilter } from '../maintenance-attention';
 import { useMaintenancePageController } from '../useMaintenancePageController';
 import { formatCount } from '@/lib/formatters';
 
@@ -51,6 +52,14 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
         onRemove: () => controller.setPriorityFilter('all'),
       });
     }
+    if (controller.attentionFilter !== 'all') {
+      items.push({
+        key: 'attention',
+        label: 'المتابعة',
+        value: maintenanceAttentionLabels[controller.attentionFilter],
+        onRemove: () => controller.setAttentionFilter('all'),
+      });
+    }
     if (controller.propertyFilterId) {
       const propertyLabel = controller.properties.find(
         (property) => property.id === controller.propertyFilterId,
@@ -69,6 +78,7 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
     controller.setStatusFilter('all');
     controller.setPriorityFilter('all');
     controller.setPropertyFilterId('');
+    controller.setAttentionFilter('all');
   };
 
   const currencyLabel =
@@ -90,13 +100,13 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
           sections: [
             {
               title: 'جدول طلبات الصيانة والتكلفة والأولوية',
-              rows: controller.filteredMaintenanceRows.map((row) => ({
+              rows: controller.visibleMaintenanceRows.map((row) => ({
                 label: `${row.title} - (${maintenancePriorityLabels[row.priority as keyof typeof maintenancePriorityLabels] ?? row.priority})`,
                 value: `الحالة: ${maintenanceStatusLabels[row.status as keyof typeof maintenanceStatusLabels] ?? row.status} | المسؤول: ${row.assigned_to || row.technician_name || 'غير محدد'} | التكلفة: ${row.cost ? `${row.cost} ${currencyLabel}` : '—'}`,
               })),
             },
           ],
-          totalSummary: `عدد الطلبات المدرجة: ${controller.filteredMaintenanceRows.length} طلب صيانة`,
+          totalSummary: `عدد الطلبات المدرجة: ${controller.visibleMaintenanceRows.length} طلب صيانة`,
         } satisfies ReportDocumentData;
         return documentService.printDocument('generic_report', {
           settings: documentSettings.companySettings,
@@ -166,6 +176,9 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
             { id: 'open', label: 'مفتوحة', value: formatCount(controller.maintenanceSummary.open), hideWhenEmpty: true },
             { id: 'progress', label: 'قيد التنفيذ', value: formatCount(controller.maintenanceSummary.inProgress), hideWhenEmpty: true },
             { id: 'urgent', label: 'عاجلة', value: formatCount(controller.maintenanceSummary.urgent), icon: Flame, tone: 'danger', hideWhenEmpty: true },
+            { id: 'awaiting-closure', label: 'بانتظار الإغلاق', value: formatCount(controller.attentionSummary.awaitingClosure), tone: 'warning', hideWhenEmpty: true },
+            { id: 'stalled', label: 'متوقفة عن التقدم', value: formatCount(controller.attentionSummary.stalled), icon: Clock3, tone: 'warning', hideWhenEmpty: true },
+            { id: 'schedule-missed', label: 'تجاوزت الموعد', value: formatCount(controller.attentionSummary.scheduleMissed), tone: 'warning', hideWhenEmpty: true },
           ]}
         />
       </section>
@@ -194,6 +207,16 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
               <option value="medium">متوسطة</option>
               <option value="high">عالية</option>
               <option value="urgent">عاجلة</option>
+            </Select>
+            <Select
+              aria-label="تصفية حسب المتابعة التشغيلية"
+              value={controller.attentionFilter}
+              onChange={(event) => controller.setAttentionFilter(event.target.value as MaintenanceAttentionFilter)}
+            >
+              <option value="all">كل الطلبات</option>
+              <option value="awaiting_closure">بانتظار الإغلاق</option>
+              <option value="stalled">متوقفة عن التقدم</option>
+              <option value="schedule_missed">تجاوزت موعد الزيارة</option>
             </Select>
             <Select
               aria-label="تصفية حسب العقار"
@@ -249,7 +272,8 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
               : 'أضف طلب صيانة جديد للبدء.'}
           >
             <MaintenanceList
-              rows={controller.filteredMaintenanceRows}
+              rows={controller.visibleMaintenanceRows}
+              attentionByRequestId={controller.attentionByRequestId}
               properties={controller.properties}
               allUnits={controller.allUnits}
               providerOptions={controller.providerOptions}
@@ -319,7 +343,7 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
     <PageLayout dir="rtl" size="wide" visualVariant="malek-pro">
       <PageHeader
         title="طلبات الصيانة"
-        count={controller.filteredMaintenanceRows.length}
+        count={controller.visibleMaintenanceRows.length}
         primaryAction={createAction}
         secondaryActions={printAction}
       />

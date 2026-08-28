@@ -1,4 +1,4 @@
-import { AlertTriangle, Bot, Loader2, Send, Sparkles } from 'lucide-react';
+import { AlertTriangle, ArrowUpRight, Bot, Loader2, Send, Sparkles } from 'lucide-react';
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { PageHeader } from '@/components/layout/page-header';
@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import type { AiAssistantAction, AiAssistantMessage, AiAssistantResponse } from './types';
 import { useSmartAssistant } from './use-smart-assistant';
 import { isAiAssistantConfigurationError } from './services/ai-assistant-service';
+import { buildAiNavigationTargets } from './ai-assistant-navigation';
 
 type AssistantAction = {
   action: AiAssistantAction;
@@ -124,6 +125,9 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
         <div className="space-y-3">
           {messages.map((message) => {
             const isUser = message.role === 'user';
+            const navigationTargets = isUser
+              ? []
+              : buildAiNavigationTargets(message.action, { freeform: true });
             return (
               <div key={message.id} className={cn('flex w-full', isUser ? 'justify-end' : 'justify-start')}>
                 <div className={cn('flex max-w-[85%] gap-2', isUser ? 'flex-row-reverse' : 'flex-row')}>
@@ -144,6 +148,21 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
                     )}
                   >
                     <p className="whitespace-pre-wrap break-words">{message.content}</p>
+                    {navigationTargets.length > 0 ? (
+                      <div className="mt-2 flex flex-wrap gap-1.5" data-ai-navigation>
+                        {navigationTargets.map((target) => (
+                          <Link
+                            key={`${target.to}-${target.label}`}
+                            to={target.to}
+                            search={target.search}
+                            className="inline-flex items-center gap-1 rounded-full border border-primary/25 bg-primary/5 px-2.5 py-1 text-[11px] font-bold text-primary transition hover:bg-primary/10"
+                          >
+                            <ArrowUpRight className="size-3" aria-hidden="true" />
+                            {target.label}
+                          </Link>
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               </div>
