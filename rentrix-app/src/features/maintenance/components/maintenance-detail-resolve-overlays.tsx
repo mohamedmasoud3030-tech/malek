@@ -52,63 +52,61 @@ export function MaintenanceDetailsOverlay({ request, providerOptions, providerCa
     >
       {request ? (
         <div className="space-y-4 text-sm">
-          <div className="grid gap-3 rounded-2xl border border-border/60 bg-muted/15 p-4 sm:grid-cols-2">
-            <div>
-              <span className="text-xs font-medium text-muted-foreground">الحالة</span>
-              <div className="mt-1">
+          <dl className="grid grid-cols-1 gap-x-5 sm:grid-cols-2" data-maintenance-detail-fields>
+            <div className="border-b border-border/60 py-3">
+              <dt className="text-xs font-medium text-muted-foreground">الحالة</dt>
+              <dd className="mt-1">
                 <StatusBadge tone={maintenanceStatusTone[request.status as keyof typeof maintenanceStatusTone] ?? 'neutral'}>
                   {maintenanceStatusLabels[request.status as keyof typeof maintenanceStatusLabels] ?? request.status ?? '—'}
                 </StatusBadge>
-              </div>
+              </dd>
             </div>
 
-            <div>
-              <span className="text-xs font-medium text-muted-foreground">الأولوية</span>
-              <div className="mt-1">
+            <div className="border-b border-border/60 py-3">
+              <dt className="text-xs font-medium text-muted-foreground">الأولوية</dt>
+              <dd className="mt-1">
                 <StatusBadge tone={maintenancePriorityTone[request.priority as keyof typeof maintenancePriorityTone] ?? 'neutral'}>
                   {maintenancePriorityLabels[request.priority as keyof typeof maintenancePriorityLabels] ?? request.priority ?? '—'}
                 </StatusBadge>
-              </div>
+              </dd>
             </div>
 
-            <div>
-              <span className="text-xs font-medium text-muted-foreground">الفني / المسؤول</span>
-              <p className="mt-1 font-medium">{request.assigned_to || request.technician_name || '—'}</p>
+            <div className="border-b border-border/60 py-3">
+              <dt className="text-xs font-medium text-muted-foreground">الفني / المسؤول</dt>
+              <dd className="mt-1 font-medium">{request.assigned_to || request.technician_name || '—'}</dd>
             </div>
 
-            <div>
-              <span className="text-xs font-medium text-muted-foreground">نوع الخدمة</span>
-              <p className="mt-1 font-medium">{categoryName || (request.service_provider_category_id ? 'نوع مؤرشف أو غير متاح' : '—')}</p>
+            <div className="border-b border-border/60 py-3">
+              <dt className="text-xs font-medium text-muted-foreground">نوع الخدمة</dt>
+              <dd className="mt-1 font-medium">{categoryName || (request.service_provider_category_id ? 'نوع مؤرشف أو غير متاح' : '—')}</dd>
             </div>
 
-            <div>
-              <span className="text-xs font-medium text-muted-foreground">مزود الخدمة</span>
-              <p className="mt-1 font-medium">{providerName || (request.service_provider_id ? 'مزود مؤرشف أو غير متاح' : '—')}</p>
+            <div className="border-b border-border/60 py-3">
+              <dt className="text-xs font-medium text-muted-foreground">مزود الخدمة</dt>
+              <dd className="mt-1 font-medium">{providerName || (request.service_provider_id ? 'مزود مؤرشف أو غير متاح' : '—')}</dd>
             </div>
 
-            <div>
-              <span className="text-xs font-medium text-muted-foreground">تاريخ الجدولة</span>
-              <p className="mt-1 font-medium">{request.scheduled_date || '—'}</p>
+            <div className="border-b border-border/60 py-3">
+              <dt className="text-xs font-medium text-muted-foreground">تاريخ الجدولة</dt>
+              <dd className="mt-1 font-medium">{request.scheduled_date || '—'}</dd>
             </div>
 
-            <div>
-              <span className="text-xs font-medium text-muted-foreground">التكلفة الفعلية</span>
-              <p className="mt-1 font-semibold text-primary">{request.cost != null ? formatDefaultCompanyMoney(request.cost) : '—'}</p>
+            <div className="border-b border-border/60 py-3 sm:col-span-2">
+              <dt className="text-xs font-medium text-muted-foreground">التكلفة الفعلية</dt>
+              <dd className="mt-1 font-semibold text-primary">{request.cost != null ? formatDefaultCompanyMoney(request.cost) : '—'}</dd>
             </div>
-          </div>
+          </dl>
 
-          <div className="rounded-2xl border border-border/60 bg-muted/15 p-4">
-            <span className="text-xs font-medium text-muted-foreground">الوصف</span>
+          <section className="border-b border-border/60 pb-4" aria-label="وصف طلب الصيانة">
+            <p className="text-xs font-medium text-muted-foreground">الوصف</p>
             <p className="mt-1 whitespace-pre-wrap text-sm font-normal leading-relaxed">{request.description || 'لا يوجد وصف متاح.'}</p>
-          </div>
+          </section>
 
           {request.attachment_url ? (
-            <div className="rounded-2xl border border-border/60 bg-muted/15 p-4">
-              <span className="text-xs font-medium text-muted-foreground">المرفق</span>
-              <div className="mt-2 overflow-hidden rounded-xl border border-border/50">
-                <img src={request.attachment_url} alt="مرفق طلب الصيانة" className="max-h-60 w-full object-cover" />
-              </div>
-            </div>
+            <section className="border-b border-border/60 pb-4" aria-label="مرفق طلب الصيانة">
+              <p className="text-xs font-medium text-muted-foreground">المرفق</p>
+              <img src={request.attachment_url} alt="مرفق طلب الصيانة" className="mt-2 max-h-60 w-full rounded-xl object-cover" />
+            </section>
           ) : null}
           <ContextualDocumentsSection entityType="maintenance" entityId={request.id} entityLabel="طلب الصيانة" />
         </div>
