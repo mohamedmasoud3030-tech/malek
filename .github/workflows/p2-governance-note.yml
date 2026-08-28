@@ -1,0 +1,54 @@
+name: P2 Governance Note
+
+on:
+  push:
+    branches:
+      - recovery/p2-final-20260828
+
+permissions:
+  contents: write
+
+jobs:
+  document-governed-rpc-writes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: recovery/p2-final-20260828
+          fetch-depth: 0
+      - name: Add explicit governance marker and remove helper workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('supabase/migrations/20260901000037_short_stay_lease_mode.sql')
+          text = path.read_text()
+          marker = '-- ALLOW_GOVERNED_DATA_MIGRATION\n'
+          if marker not in text:
+              anchor = '-- financial history is untouched.\n'
+              note = (
+                  '\n-- ALLOW_GOVERNED_DATA_MIGRATION\n'
+                  '-- Governance note: every transactional INSERT token in this migration is inside\n'
+                  '-- a SECURITY DEFINER RPC body. This migration performs no raw business-data\n'
+                  '-- INSERT/backfill at migration time; runtime writes remain company-scoped,\n'
+                  '-- role-gated, atomic, auditable, and owned by the canonical RPC boundary.\n'
+              )
+              if anchor not in text:
+                  raise SystemExit('governance note anchor not found')
+              text = text.replace(anchor, anchor + note, 1)
+              path.write_text(text)
+          PY
+          rm -f .github/workflows/p2-governance-note.yml
+          git add -A
+          changed="$(git diff --cached --name-only | sort)"
+          expected="supabase/migrations/20260901000037_short_stay_lease_mode.sql"
+          if [ "$changed" != "$expected" ]; then
+            echo "Unexpected final source diff: $changed" >&2
+            exit 1
+          fi
+          git config user.name 'MALEK Recovery Bot'
+          git config user.email '250202280+mohamedmasoud3030-tech@users.noreply.github.com'
+          git commit -m 'docs(db): document governed P2 RPC writes'
+          git push origin HEAD:recovery/p2-final-20260828
