@@ -195,15 +195,28 @@ begin
       select coalesce(jsonb_agg(jsonb_build_object(
         'label', coalesce(nullif(m.title, ''), nullif(m.no, ''), 'طلب صيانة'),
         'status', coalesce(m.status::text, 'unknown'),
-        'createdAt', coalesce(m.request_date::text, m.created_at::text)
-      ) order by coalesce(m.request_date::date, m.created_at::date) desc nulls last, m.id desc), '[]'::jsonb)
+        'createdAt', case
+          when btrim(coalesce(m.request_date::text, '')) ~ '^\d{4}-\d{2}-\d{2}$' then btrim(m.request_date::text)
+          else m.created_at::text
+        end
+      ) order by (
+        case
+          when btrim(coalesce(m.request_date::text, '')) ~ '^\d{4}-\d{2}-\d{2}$' then btrim(m.request_date::text)::date
+          else m.created_at::date
+        end
+      ) desc nulls last, m.id desc), '[]'::jsonb)
         into v_maintenance
       from public.maintenance_records m
       where m.company_id = v_company
         and m.unit_id = v_unit_id
         and m.deleted_at is null
         and upper(coalesce(m.charged_to::text, '')) = 'TENANT'
-        and coalesce(m.request_date::date, m.created_at::date) between v_contract_start and v_contract_end;
+        and (
+          case
+            when btrim(coalesce(m.request_date::text, '')) ~ '^\d{4}-\d{2}-\d{2}$' then btrim(m.request_date::text)::date
+            else m.created_at::date
+          end
+        ) between v_contract_start and v_contract_end;
     end if;
   end if;
 
