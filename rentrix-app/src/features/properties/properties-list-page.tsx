@@ -31,6 +31,7 @@ import {
 import { propertyStatusTone } from "./components/property-status";
 import type { PropertyListItem } from "./property-service";
 import { formatCount } from '@/lib/formatters';
+import { useAuth } from '@/hooks/use-auth';
 
 const propertyColumnOptions = [
   { key: "title", label: "العقار", locked: true },
@@ -44,7 +45,6 @@ const propertyColumnOptions = [
 ] as const;
 
 const defaultPropertyColumns = propertyColumnOptions.map((column) => column.key);
-
 
 function PropertyWorkflowStatus({ property }: Readonly<{ property: PropertyListItem }>) {
   const label = property.workflow_health === "ready"
@@ -79,6 +79,11 @@ export type PropertiesListPageProps = Readonly<{
 
 export function PropertiesListPage({ embedded = false }: PropertiesListPageProps) {
   const controller = usePropertyListController();
+  const { canAccess } = useAuth();
+  const canCreate = canAccess('properties.create');
+  const canEdit = canAccess('properties.edit');
+  const canArchive = canAccess('properties.archive');
+  const hasRowActions = canEdit || canArchive;
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultPropertyColumns]);
   const readyCount = controller.properties.filter(
     (property) => property.workflow_health === "ready",
@@ -122,12 +127,12 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
         visualVariant="malek-pro"
         title="العقارات"
         count={controller.totalCount}
-        primaryAction={
+        primaryAction={canCreate ? (
           <Button onClick={controller.openCreateModal}>
             <Plus className="me-2 size-4" />
             إضافة عقار
           </Button>
-        }
+        ) : undefined}
         secondaryActions={
           <div className="flex items-center gap-2">
             <Button
@@ -205,14 +210,14 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
             rows={controller.properties}
             keyOf={(property) => property.id}
             onRowClick={(property) => controller.navigateToProperty(property.id)}
-            visibleColumnKeys={visibleColumnKeys}
+            visibleColumnKeys={hasRowActions ? visibleColumnKeys : visibleColumnKeys.filter((key) => key !== 'actions')}
             isLoading={controller.propertiesQuery.isLoading}
             error={controller.propertiesQuery.isError ? controller.propertiesQuery.error : null}
             errorTitle="تعذر تحميل قائمة العقارات"
             onRetry={() => controller.propertiesQuery.refetch()}
             emptyTitle={controller.hasFilterValues ? "لا توجد نتائج مطابقة للبحث" : "لم تُضف عقارات بعد"}
             emptyDescription={controller.hasFilterValues ? "جرّب تغيير عوامل البحث أو إزالة الفلتر." : "ابدأ بإضافة أول عقار لك."}
-            emptyAction={!controller.hasFilterValues ? (
+            emptyAction={!controller.hasFilterValues && canCreate ? (
               <Button onClick={controller.openCreateModal}>
                 <Building2 className="me-2 size-4" />
                 إضافة أول عقار
@@ -227,20 +232,20 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
             mobileBadgeKey="status"
             mobileSummaryKeys={["type", "address", "owner", "units"]}
             mobileCardActions={(property) => [
-              {
+              ...(canEdit ? [{
                 label: "تعديل",
                 icon: Edit,
-                variant: "secondary",
+                variant: "secondary" as const,
                 ariaLabel: `تعديل ${property.title ?? "العقار"}`,
                 onClick: () => controller.openEditModal(property.id),
-              },
-              {
+              }] : []),
+              ...(canArchive ? [{
                 label: "أرشفة",
                 icon: Trash2,
-                variant: "danger",
+                variant: "danger" as const,
                 ariaLabel: `أرشفة ${property.title ?? "العقار"}`,
                 onClick: () => controller.requestArchive(property.id, property.title ?? "عقار"),
-              },
+              }] : []),
             ]}
             columns={[
               {
@@ -322,63 +327,71 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
                 key: "actions",
                 header: "إجراءات",
                 priority: "actions",
-                render: (property) => (
+                render: (property) => hasRowActions ? (
                   <div
                     className="flex flex-wrap items-center gap-2"
                     onClick={(event) => event.stopPropagation()}
                     onKeyDown={(event) => event.stopPropagation()}
                   >
-                    <Button
-                      variant="secondary"
-                      className="min-h-11 px-3"
-                      aria-label={`تعديل ${property.title ?? "العقار"}`}
-                      onClick={() => controller.openEditModal(property.id)}
-                    >
-                      <Edit className="me-1 size-4" aria-hidden="true" />
-                      تعديل
-                    </Button>
-                    <Button
-                      variant="danger"
-                      className="min-h-11 px-3"
-                      aria-label={`أرشفة ${property.title ?? "العقار"}`}
-                      onClick={() => controller.requestArchive(property.id, property.title ?? "عقار")}
-                    >
-                      <Trash2 className="me-1 size-4" aria-hidden="true" />
-                      أرشفة
-                    </Button>
+                    {canEdit ? (
+                      <Button
+                        variant="secondary"
+                        className="min-h-11 px-3"
+                        aria-label={`تعديل ${property.title ?? "العقار"}`}
+                        onClick={() => controller.openEditModal(property.id)}
+                      >
+                        <Edit className="me-1 size-4" aria-hidden="true" />
+                        تعديل
+                      </Button>
+                    ) : null}
+                    {canArchive ? (
+                      <Button
+                        variant="danger"
+                        className="min-h-11 px-3"
+                        aria-label={`أرشفة ${property.title ?? "العقار"}`}
+                        onClick={() => controller.requestArchive(property.id, property.title ?? "عقار")}
+                      >
+                        <Trash2 className="me-1 size-4" aria-hidden="true" />
+                        أرشفة
+                      </Button>
+                    ) : null}
                   </div>
-                ),
+                ) : null,
               },
             ]}
           />
         </section>
       </ListPage>
 
-      <PropertyFormModal
-        open={controller.modalOpen}
-        onClose={controller.closeModal}
-        propertyId={controller.editPropertyId}
-      />
+      {canCreate || canEdit ? (
+        <PropertyFormModal
+          open={controller.modalOpen}
+          onClose={controller.closeModal}
+          propertyId={controller.editPropertyId}
+        />
+      ) : null}
 
-      <ConfirmDialog
-        open={Boolean(controller.archiveTarget)}
-        onOpenChange={(open) => {
-          if (!open) controller.cancelArchive();
-        }}
-        title={`أرشفة العقار "${controller.archiveTarget?.title ?? ""}"؟`}
-        description="سيتم إخفاء العقار من القوائم النشطة. يمكن التراجع عن هذا لاحقاً من سجل الأرشيف."
-        confirmLabel="أرشفة"
-        children={(
-          <ul className="mt-1 space-y-1.5 text-xs leading-5 text-muted-foreground">
-            <li className="flex gap-1.5"><span className="mt-1.5 size-1 shrink-0 rounded-full bg-muted-foreground/40" aria-hidden="true" />لا يمكن أرشفة عقار يحتوي وحدات غير مؤرشفة — أرشِف الوحدات أولاً.</li>
-            <li className="flex gap-1.5"><span className="mt-1.5 size-1 shrink-0 rounded-full bg-muted-foreground/40" aria-hidden="true" />العقار المرتبط باتفاقية مالك محفوظة لا يُؤرشف؛ استخدم حالة «غير نشط» أو «مباع» للحفاظ على السجل.</li>
-            <li className="flex gap-1.5"><span className="mt-1.5 size-1 shrink-0 rounded-full bg-muted-foreground/40" aria-hidden="true" />لا يمكن الأرشفة مع طلب صيانة مفتوح أو قيد التنفيذ.</li>
-            <li className="flex gap-1.5"><span className="mt-1.5 size-1 shrink-0 rounded-full bg-muted-foreground/40" aria-hidden="true" />لا يمكن أرشفة عقار عليه عقود نشطة.</li>
-          </ul>
-        )}
-        isLoading={controller.isArchiving}
-        onConfirm={controller.confirmArchive}
-      />
+      {canArchive ? (
+        <ConfirmDialog
+          open={Boolean(controller.archiveTarget)}
+          onOpenChange={(open) => {
+            if (!open) controller.cancelArchive();
+          }}
+          title={`أرشفة العقار "${controller.archiveTarget?.title ?? ""}"؟`}
+          description="سيتم إخفاء العقار من القوائم النشطة. يمكن التراجع عن هذا لاحقاً من سجل الأرشيف."
+          confirmLabel="أرشفة"
+          children={(
+            <ul className="mt-1 space-y-1.5 text-xs leading-5 text-muted-foreground">
+              <li className="flex gap-1.5"><span className="mt-1.5 size-1 shrink-0 rounded-full bg-muted-foreground/40" aria-hidden="true" />لا يمكن أرشفة عقار يحتوي وحدات غير مؤرشفة — أرشِف الوحدات أولاً.</li>
+              <li className="flex gap-1.5"><span className="mt-1.5 size-1 shrink-0 rounded-full bg-muted-foreground/40" aria-hidden="true" />العقار المرتبط باتفاقية مالك محفوظة لا يُؤرشف؛ استخدم حالة «غير نشط» أو «مباع» للحفاظ على السجل.</li>
+              <li className="flex gap-1.5"><span className="mt-1.5 size-1 shrink-0 rounded-full bg-muted-foreground/40" aria-hidden="true" />لا يمكن الأرشفة مع طلب صيانة مفتوح أو قيد التنفيذ.</li>
+              <li className="flex gap-1.5"><span className="mt-1.5 size-1 shrink-0 rounded-full bg-muted-foreground/40" aria-hidden="true" />لا يمكن أرشفة عقار عليه عقود نشطة.</li>
+            </ul>
+          )}
+          isLoading={controller.isArchiving}
+          onConfirm={controller.confirmArchive}
+        />
+      ) : null}
     </>
   );
 }
