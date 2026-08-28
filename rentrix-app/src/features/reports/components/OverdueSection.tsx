@@ -1,4 +1,4 @@
-import { AlertTriangle, CalendarClock, Download, FileSpreadsheet, Printer, ReceiptText, WalletCards } from 'lucide-react';
+import { AlertTriangle, CalendarClock, FileSpreadsheet, ReceiptText, WalletCards } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
@@ -14,6 +14,7 @@ import { ReportColumns, ReportInsightNote, ReportProgress } from './report-secti
 import { AgingBucketsPanel } from './overdue/aging-buckets-panel';
 import { getAgingLabel, OverdueInvoicesPanel } from './overdue/overdue-invoices-panel';
 import { formatLatinNumber } from '@/lib/formatters';
+import { ReportShareActions } from './ReportShareActions';
 
 export function OverdueSection({ rows, agedReport, summary, canExportReports, isLoading }: Readonly<{
   rows: OverdueInvoiceReportRow[];
@@ -94,20 +95,28 @@ export function OverdueSection({ rows, agedReport, summary, canExportReports, is
   };
 
   const invoiceActions = canExportReports ? (
-    <div className="flex flex-wrap gap-2">
-      <Button variant="outline" size="sm" onClick={handlePrintOverdueReport} disabled={!isDocumentSettingsReady} className="min-h-11 gap-1.5 text-xs">
-        <Printer className="size-3.5" aria-hidden="true" />
-        طباعة A4
-      </Button>
-      <Button variant="outline" size="sm" onClick={handleDownloadOverdueReport} disabled={!isDocumentSettingsReady} className="min-h-11 gap-1.5 text-xs">
-        <Download className="size-3.5" aria-hidden="true" />
-        تنزيل PDF
-      </Button>
-      <Button variant="secondary" size="sm" onClick={() => downloadCsv(buildReportCsvFilename('overdue-invoices'), rows)} className="min-h-11 gap-1.5 text-xs">
-        <FileSpreadsheet className="size-3.5" aria-hidden="true" />
-        CSV
-      </Button>
-    </div>
+    <ReportShareActions
+      className="flex flex-wrap gap-2"
+      reportLabel="كشف المتأخرات والديون التفصيلي"
+      target={{
+        section: 'analytics',
+        view: 'overdue',
+        filters: {
+          from: reportAsOf,
+          to: reportAsOf,
+          asOf: reportAsOf,
+          propertyId: '',
+          unitId: '',
+          tenantId: '',
+          ownerId: '',
+          contractId: '',
+        },
+      }}
+      summaryText={`إجمالي المتأخرات: ${formatMoney(totalOverdue)} | فواتير متأخرة: ${formatLatinNumber(rows.length, 'ar')}`}
+      onPrint={handlePrintOverdueReport}
+      onDownloadPdf={handleDownloadOverdueReport}
+      csv={{ filename: buildReportCsvFilename('overdue-invoices'), rows }}
+    />
   ) : undefined;
 
   const agingAction = canExportReports ? (
@@ -124,7 +133,7 @@ export function OverdueSection({ rows, agedReport, summary, canExportReports, is
 
   return (
     <div className="space-y-4">
-      <ResponsiveCardGrid>
+      <ResponsiveCardGrid data-report-summary="overdue">
         <KpiCard label="إجمالي المتأخر" value={formatMoney(totalOverdue)} icon={WalletCards} sub="رصيد يحتاج تحصيل" />
         <KpiCard label="الفواتير المتأخرة" value={formatLatinNumber((summary?.overdueInvoiceCount ?? rows.length), 'ar')} icon={ReceiptText} sub="فواتير مفتوحة" />
         <KpiCard label="متوسط التأخير" value={`${formatLatinNumber(Math.round(averageDelay), 'ar')} يوم`} icon={CalendarClock} sub="متوسط عمر الفواتير المتأخرة" />

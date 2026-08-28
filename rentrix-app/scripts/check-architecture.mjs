@@ -24,7 +24,18 @@ const featureDependencyAllowList = new Map([
   // Phase 6 command palette.
   ['command-palette', new Set(['auth'])],
   ['contracts', new Set(['financials', 'owners', 'people', 'properties', 'settings', 'units'])],
-  ['dashboard', new Set(['contracts', 'financials', 'maintenance', 'onboarding'])],
+  // dashboard (Today) reads the canonical utilities seam (useUtilityBills hook,
+  // the shared obligation derivation and its Arabic labels) to place utility
+  // obligations in the Today action hierarchy. Reviewed integration seam:
+  // query-only, no writes and no second utilities authority — P3 Today must
+  // answer "what needs action now?" without opening the Services workspace.
+  // dashboard (Today) also reads the canonical units register seam (useAllUnits
+  // + the shared UnitStatus type) and the properties title seam
+  // (listPropertyTitles, complete paged read) to name the vacant and
+  // maintenance-parked units behind the server vacancy KPI. Reviewed
+  // integration seam: query-only, and the server snapshot stays the authority
+  // for the vacancy number itself.
+  ['dashboard', new Set(['contracts', 'financials', 'maintenance', 'onboarding', 'properties', 'units', 'utilities'])],
   // finance is the unified WP-B finance domain: its shell model reads the
   // shared auth permission seam (canAccess / AppPermission /
   // AuthorizationContext) and FinancePage composes the financials

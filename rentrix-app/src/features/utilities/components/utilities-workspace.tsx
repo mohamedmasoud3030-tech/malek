@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Activity, AlertCircle, CheckCircle2, Download, Droplets, Flame, Plus, Printer, ShieldCheck, Trash2, Wifi, Zap } from 'lucide-react';
+import { Activity, AlertCircle, CheckCircle2, Download, Droplets, FileText, Flame, Plus, Printer, ShieldCheck, Trash2, Wifi, Zap } from 'lucide-react';
 import { AsyncContentState } from '@/components/async-content-state';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
@@ -35,6 +35,16 @@ import {
   useDeleteUtilityBill,
 } from '../use-utilities';
 import { MONEY_MIN_POSITIVE, MONEY_STEP } from '@/lib/money';
+import { UtilityBillDetailOverlay } from './utility-bill-detail-overlay';
+import {
+  deriveMeterBillingCoverage,
+  matchesMeterBillingFilter,
+  meterBillingStateLabels,
+  meterBillingStateTone,
+  summarizeMeterBillingCoverage,
+  type MeterBillingCoverage,
+  type MeterBillingFilter,
+} from '../meter-billing-coverage';
 import {
   responsiblePartyLabels,
   utilityBillStatusLabels,
@@ -47,6 +57,15 @@ import {
   type UtilityType,
   type ResponsibleParty,
 } from '../utilities-service';
+import {
+  compareUtilityObligationUrgency,
+  deriveUtilityObligations,
+  summarizeUtilityObligations,
+  utilityObligationUrgencyLabels,
+  utilityObligationUrgencyTone,
+  type UtilityObligation,
+  type UtilityObligationUrgency,
+} from '../utility-obligations';
 
 const utilityIcons: Record<UtilityType, typeof Zap> = {
   electricity: Zap,
@@ -98,7 +117,9 @@ const emptyBillForm = (): UtilityBillFormValues => ({
 export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspaceProps) {
   const [utilityFilter, setUtilityFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<UtilityBillStatus | 'all'>('all');
+  const [urgencyFilter, setUrgencyFilter] = useState<UtilityObligationUrgency | 'all'>('all');
   const [propertyFilter, setPropertyFilter] = useState<string>('all');
+  const [meterBillingFilter, setMeterBillingFilter] = useState<MeterBillingFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showMeterForm, setShowMeterForm] = useState(false);
   const [showBillForm, setShowBillForm] = useState(false);
@@ -106,6 +127,7 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
   const [billForm, setBillForm] = useState<UtilityBillFormValues>(emptyBillForm);
   const [meterToArchive, setMeterToArchive] = useState<UtilityMeter | null>(null);
   const [billToArchive, setBillToArchive] = useState<UtilityBill | null>(null);
+  const [billToPreview, setBillToPreview] = useState<UtilityBill | null>(null);
 
   const propertiesQuery = useProperties({ page: 1, pageSize: 100, search: '', status: 'all' });
   const metersQuery = useUtilityMeters(propertyFilter !== 'all' ? propertyFilter : undefined);
@@ -113,6 +135,13 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
     propertyId: propertyFilter !== 'all' ? propertyFilter : undefined,
     status: statusFilter !== 'all' ? statusFilter : undefined,
     meterId: utilityFilter !== 'all' && utilityFilter.startsWith('meter:') ? utilityFilter.replace('meter:', '') : undefined,
+  });
+  // Billing coverage must be read from every bill of the property, not from the
+  // presentation-filtered list — a status or meter filter would otherwise make a
+  // billed meter look unbilled. React Query dedupes this against the register
+  // query whenever no extra filter is active.
+  const coverageBillsQuery = useUtilityBills({
+    propertyId: propertyFilter !== 'all' ? propertyFilter : undefined,
   });
   const createMeterMut = useCreateUtilityMeter();
   const createBillMut = useCreateUtilityBill();
@@ -139,6 +168,39 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
     return list;
   }, [bills, meters, utilityFilter, searchQuery]);
 
+  // Operational reading of the same canonical rows: what is still owed, what is
+  // already late, and what becomes due inside the near operating window.
+  // The derivation is shared with the Today workspace so both surfaces agree.
+  const operatingDate = getTodayLocalDateString();
+  const obligations = useMemo(
+    () => deriveUtilityObligations(filteredBills, operatingDate).sort(compareUtilityObligationUrgency),
+    [filteredBills, operatingDate],
+  );
+  const obligationByBillId = useMemo(
+    () => new Map<string, UtilityObligation>(obligations.map((obligation) => [obligation.billId, obligation])),
+    [obligations],
+  );
+  const obligationsSummary = useMemo(() => summarizeUtilityObligations(obligations), [obligations]);
+  const visibleBills = useMemo(() => {
+    if (urgencyFilter === 'all') return filteredBills;
+    return filteredBills.filter((bill) => obligationByBillId.get(bill.id)?.urgency === urgencyFilter);
+  }, [filteredBills, obligationByBillId, urgencyFilter]);
+
+  const meterCoverageById = useMemo(() => {
+    const coverageBills = coverageBillsQuery.data ?? [];
+    return new Map<string, MeterBillingCoverage>(
+      meters.map((meter) => [meter.id, deriveMeterBillingCoverage(meter, coverageBills, operatingDate)]),
+    );
+  }, [meters, coverageBillsQuery.data, operatingDate]);
+  const meterCoverageSummary = useMemo(
+    () => summarizeMeterBillingCoverage([...meterCoverageById.values()]),
+    [meterCoverageById],
+  );
+  const visibleMeters = useMemo(
+    () => meters.filter((meter) => matchesMeterBillingFilter(meterCoverageById.get(meter.id), meterBillingFilter)),
+    [meters, meterCoverageById, meterBillingFilter],
+  );
+
   const totalBilled = useMemo(() => filteredBills.reduce((total, bill) => total + bill.amount, 0), [filteredBills]);
   const totalPaid = useMemo(() => filteredBills.reduce((total, bill) => total + bill.paid_amount, 0), [filteredBills]);
   const totalUnpaid = totalBilled - totalPaid;
@@ -158,16 +220,29 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
     if (statusFilter !== 'all') {
       items.push({ key: 'status', label: 'الحالة', value: utilityBillStatusLabels[statusFilter], onRemove: () => setStatusFilter('all') });
     }
+    if (meterBillingFilter !== 'all') {
+      items.push({
+        key: 'meter-billing',
+        label: 'تغطية الفوترة',
+        value: meterBillingStateLabels[meterBillingFilter],
+        onRemove: () => setMeterBillingFilter('all'),
+      });
+    }
+    if (urgencyFilter !== 'all') {
+      items.push({ key: 'urgency', label: 'الاستحقاق', value: utilityObligationUrgencyLabels[urgencyFilter], onRemove: () => setUrgencyFilter('all') });
+    }
     if (searchQuery.trim()) {
       items.push({ key: 'search', label: 'بحث', value: searchQuery.trim(), onRemove: () => setSearchQuery('') });
     }
     return items;
-  }, [propertyFilter, utilityFilter, statusFilter, searchQuery, meters, properties]);
+  }, [propertyFilter, utilityFilter, statusFilter, urgencyFilter, meterBillingFilter, searchQuery, meters, properties]);
 
   const clearFilters = () => {
     setPropertyFilter('all');
     setUtilityFilter('all');
     setStatusFilter('all');
+    setUrgencyFilter('all');
+    setMeterBillingFilter('all');
     setSearchQuery('');
   };
 
@@ -225,9 +300,9 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
       periodTo: today,
       sections: [{
         title: 'جدول فواتير المرافق',
-        rows: filteredBills.map((bill) => ({
+        rows: visibleBills.map((bill) => ({
           label: `فاتورة ${bill.bill_number || 'فاتورة مرافق بلا مرجع'}`,
-          value: `المبلغ: ${bill.amount} ${currencyLabel} | المسدد: ${bill.paid_amount} | المسؤول: ${responsiblePartyLabels[bill.responsible_party]} | الاستحقاق: ${bill.due_date}`,
+          value: `المبلغ: ${bill.amount} ${currencyLabel} | المسدد: ${bill.paid_amount} | المتبقي: ${obligationByBillId.get(bill.id)?.remainingAmount ?? 0} | المسؤول: ${responsiblePartyLabels[bill.responsible_party]} | الاستحقاق: ${bill.due_date}`,
         })),
         totals: ['إجمالي المطالبات', `${totalBilled} ${currencyLabel}`],
       }],
@@ -284,6 +359,32 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
     { key: 'responsible', priority: 'detail' as const, header: 'المسؤول', render: (meter) => responsiblePartyLabels[meter.responsible_party] },
     { key: 'status', priority: 'secondary' as const, header: 'الحالة', render: (meter) => <StatusBadge tone={meter.is_active ? 'success' : 'neutral'}>{meter.is_active ? 'نشط' : 'غير نشط'}</StatusBadge> },
     {
+      key: 'billing',
+      priority: 'primary' as const,
+      header: 'تغطية الفوترة',
+      render: (meter) => {
+        const coverage = meterCoverageById.get(meter.id);
+        if (!coverage) return <span className="text-xs text-muted-foreground">—</span>;
+        return (
+          <div className="min-w-0">
+            <StatusBadge tone={meterBillingStateTone[coverage.state]}>
+              {meterBillingStateLabels[coverage.state]}
+            </StatusBadge>
+            {coverage.lastBilledDate ? (
+              <p className="mt-1 text-xs text-muted-foreground">
+                <span dir="ltr" className="tabular-nums">{coverage.lastBilledDate}</span>
+                {coverage.daysSinceLastBill !== null && coverage.state === 'stale'
+                  ? ` · منذ ${formatLatinNumber(coverage.daysSinceLastBill, 'ar')} يوم`
+                  : null}
+              </p>
+            ) : (
+              <p className="mt-1 text-xs text-muted-foreground">لم تُسجَّل أي فاتورة لهذا العداد</p>
+            )}
+          </div>
+        );
+      },
+    },
+    {
       key: 'actions', priority: 'actions' as const,
       header: 'إجراء',
       render: (meter) => (
@@ -299,16 +400,72 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
     { key: 'property', priority: 'secondary' as const, header: 'العقار', render: (bill) => propertyName(bill.property_id) },
     { key: 'amount', priority: 'primary' as const, header: 'المبلغ', render: (bill) => <strong dir="ltr">{money(bill.amount)}</strong> },
     { key: 'paid', priority: 'detail' as const, header: 'المسدد', render: (bill) => <strong dir="ltr" className="text-success">{money(bill.paid_amount)}</strong> },
-    { key: 'due', priority: 'secondary' as const, header: 'الاستحقاق', render: (bill) => <span dir="ltr">{bill.due_date}</span> },
+    {
+      key: 'remaining',
+      priority: 'primary' as const,
+      header: 'المتبقي',
+      render: (bill) => {
+        const remaining = obligationByBillId.get(bill.id)?.remainingAmount ?? 0;
+        return (
+          <strong dir="ltr" className={remaining > 0 ? 'text-danger' : 'text-muted-foreground'}>
+            {money(remaining)}
+          </strong>
+        );
+      },
+    },
+    {
+      key: 'due',
+      priority: 'secondary' as const,
+      header: 'الاستحقاق',
+      render: (bill) => {
+        const obligation = obligationByBillId.get(bill.id);
+        return (
+          <div className="min-w-0">
+            <span dir="ltr" className="tabular-nums">{bill.due_date || '—'}</span>
+            {obligation && obligation.urgency === 'overdue' ? (
+              <p className="text-xs text-danger">متأخرة {formatLatinNumber(obligation.daysOverdue, 'ar')} يوم</p>
+            ) : null}
+            {obligation && obligation.urgency === 'due_soon' && obligation.daysUntilDue > 0 ? (
+              <p className="text-xs text-warning">خلال {formatLatinNumber(obligation.daysUntilDue, 'ar')} يوم</p>
+            ) : null}
+          </div>
+        );
+      },
+    },
     { key: 'responsible', priority: 'detail' as const, header: 'المسؤول', render: (bill) => responsiblePartyLabels[bill.responsible_party] },
-    { key: 'status', priority: 'secondary' as const, header: 'الحالة', render: (bill) => <StatusBadge tone={utilityBillStatusTone(bill.status)}>{utilityBillStatusLabels[bill.status]}</StatusBadge> },
+    {
+      key: 'status',
+      priority: 'secondary' as const,
+      header: 'الحالة',
+      render: (bill) => {
+        const urgency = obligationByBillId.get(bill.id)?.urgency;
+        return (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <StatusBadge tone={utilityBillStatusTone(bill.status)}>{utilityBillStatusLabels[bill.status]}</StatusBadge>
+            {urgency && urgency !== 'settled' && urgency !== 'scheduled' ? (
+              <StatusBadge tone={utilityObligationUrgencyTone[urgency]}>{utilityObligationUrgencyLabels[urgency]}</StatusBadge>
+            ) : null}
+          </div>
+        );
+      },
+    },
     {
       key: 'actions', priority: 'actions' as const,
       header: 'إجراء',
       render: (bill) => (
-        <Button variant="danger" size="sm" aria-label={`أرشفة فاتورة المرافق ${bill.bill_number ?? 'فاتورة مرافق بلا مرجع'}`} onClick={() => setBillToArchive(bill)}>
-          <Trash2 className="size-4" />أرشفة
-        </Button>
+        <div className="flex flex-wrap gap-2" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+          <Button
+            variant="secondary"
+            size="sm"
+            aria-label={`تفاصيل فاتورة المرافق ${bill.bill_number ?? 'فاتورة مرافق بلا مرجع'}`}
+            onClick={() => setBillToPreview(bill)}
+          >
+            <FileText className="size-4" />التفاصيل
+          </Button>
+          <Button variant="danger" size="sm" aria-label={`أرشفة فاتورة المرافق ${bill.bill_number ?? 'فاتورة مرافق بلا مرجع'}`} onClick={() => setBillToArchive(bill)}>
+            <Trash2 className="size-4" />أرشفة
+          </Button>
+        </div>
       ),
     },
   ];
@@ -326,10 +483,36 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
       {!documentSettings.isReady && !documentSettings.isLoading ? <DocumentReadinessNotice /> : null}
 
       <ResponsiveCardGrid desktopColumns={4}>
-        <KpiCard label="العدادات المسجلة" value={formatLatinNumber(meters.length, 'ar')} icon={Zap} accent="primary" sub="عدادات مرتبطة بالعقارات" />
-        <KpiCard label="إجمالي الفواتير" value={money(totalBilled)} icon={Activity} accent="sky" sub="مطالبات مسجلة" />
-        <KpiCard label="المسدد" value={money(totalPaid)} icon={CheckCircle2} accent="emerald" sub="مدفوعات" />
-        <KpiCard label="المتبقي" value={money(totalUnpaid)} icon={AlertCircle} accent="rose" sub="مستحق" />
+        <KpiCard
+          label="العدادات المسجلة"
+          value={formatLatinNumber(meters.length, 'ar')}
+          icon={Zap}
+          accent="primary"
+          sub={
+            meterCoverageSummary.needingAttention > 0
+              ? `${formatLatinNumber(meterCoverageSummary.needingAttention, 'ar')} عداد بلا فوترة محدثة`
+              : 'كل العدادات مغطاة بفواتير حديثة'
+          }
+        />
+        <KpiCard label="إجمالي الفواتير" value={money(totalBilled)} icon={Activity} accent="sky" sub={`المسدد ${money(totalPaid)}`} />
+        <KpiCard
+          label="المتبقي"
+          value={money(obligationsSummary.outstandingAmount)}
+          icon={CheckCircle2}
+          accent="emerald"
+          sub={`${formatLatinNumber(obligationsSummary.outstandingCount, 'ar')} مطالبة غير مسددة`}
+        />
+        <KpiCard
+          label="مطالبات متأخرة"
+          value={money(obligationsSummary.overdueAmount)}
+          icon={AlertCircle}
+          accent="rose"
+          sub={
+            obligationsSummary.overdueCount > 0
+              ? `${formatLatinNumber(obligationsSummary.overdueCount, 'ar')} فاتورة تجاوزت الاستحقاق`
+              : `لا توجد متأخرات — ${formatLatinNumber(obligationsSummary.dueSoonCount, 'ar')} تستحق خلال أسبوع`
+          }
+        />
       </ResponsiveCardGrid>
 
       <FilterBar
@@ -354,6 +537,29 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
               <option value="all">كل الحالات</option>
               {Object.entries(utilityBillStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </Select>
+            <Select
+              aria-label="تغطية فوترة العدادات"
+              value={meterBillingFilter}
+              onChange={(event) => setMeterBillingFilter(event.target.value as MeterBillingFilter)}
+              className="w-full sm:w-44"
+            >
+              <option value="all">كل العدادات</option>
+              <option value="never_billed">بلا فواتير</option>
+              <option value="stale">متأخرة عن الفوترة</option>
+              <option value="current">محدثة</option>
+            </Select>
+            <Select
+              aria-label="الاستحقاق التشغيلي"
+              value={urgencyFilter}
+              onChange={(event) => setUrgencyFilter(event.target.value as UtilityObligationUrgency | 'all')}
+              className="w-full sm:w-40"
+            >
+              <option value="all">كل الاستحقاقات</option>
+              <option value="overdue">متأخرة</option>
+              <option value="due_soon">تستحق قريباً</option>
+              <option value="scheduled">ضمن الجدول</option>
+              <option value="settled">مسددة</option>
+            </Select>
           </>
         )}
         actions={(
@@ -376,26 +582,53 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
       >
         <div className="space-y-5">
           <section className="space-y-3" aria-label="العدادات المسجلة">
-            <div><h2 className="text-sm font-black">العدادات المسجلة</h2><p className="text-xs text-muted-foreground">جدول مدمج يحفظ التفاصيل على كل المقاسات.</p></div>
+            <div>
+              <h2 className="text-sm font-black">العدادات المسجلة</h2>
+              <p className="text-xs text-muted-foreground">
+                {meterCoverageSummary.needingAttention > 0
+                  ? `${formatLatinNumber(meterCoverageSummary.neverBilled, 'ar')} عداد بلا أي فاتورة و${formatLatinNumber(meterCoverageSummary.stale, 'ar')} عداد تأخرت فوترته.`
+                  : 'جدول مدمج يحفظ التفاصيل على كل المقاسات.'}
+              </p>
+            </div>
             <EntityTable
               aria-label="جدول عدادات المرافق"
-              rows={meters}
+              rows={visibleMeters}
               columns={meterColumns}
               keyOf={(meter) => meter.id}
-              emptyTitle="لا توجد عدادات"
-              emptyDescription="أضف عدادًا جديدًا لبدء تسجيل الاستهلاك والفواتير."
+              mobileBadgeKey="status"
+              mobileSummaryKeys={['billing', 'property', 'account', 'responsible']}
+              emptyTitle={meterBillingFilter === 'all' ? 'لا توجد عدادات' : `لا توجد عدادات ${meterBillingStateLabels[meterBillingFilter]}`}
+              emptyDescription={
+                meterBillingFilter === 'all'
+                  ? 'أضف عدادًا جديدًا لبدء تسجيل الاستهلاك والفواتير.'
+                  : 'لا يوجد عداد بهذه التغطية ضمن الفلاتر الحالية.'
+              }
             />
           </section>
 
           <section className="space-y-3" aria-label="فواتير المرافق">
-            <div><h2 className="text-sm font-black">فواتير المرافق</h2><p className="text-xs text-muted-foreground">الاستهلاك والمبالغ وحالة السداد.</p></div>
+            <div>
+              <h2 className="text-sm font-black">فواتير المرافق</h2>
+              <p className="text-xs text-muted-foreground">
+                {obligationsSummary.overdueCount > 0
+                  ? `${formatLatinNumber(obligationsSummary.overdueCount, 'ar')} مطالبة متأخرة بقيمة ${money(obligationsSummary.overdueAmount)} تحتاج متابعة.`
+                  : 'الاستهلاك والمبالغ والمتبقي ومسؤولية السداد.'}
+              </p>
+            </div>
             <EntityTable
               aria-label="جدول فواتير المرافق"
-              rows={filteredBills}
+              rows={visibleBills}
               columns={billColumns}
               keyOf={(bill) => bill.id}
-              emptyTitle="لا توجد فواتير مطابقة"
-              emptyDescription="غيّر الفلاتر أو أضف فاتورة مرافق جديدة."
+              onRowClick={(bill) => setBillToPreview(bill)}
+              mobileBadgeKey="status"
+              mobileSummaryKeys={['due', 'remaining', 'responsible', 'property']}
+              emptyTitle={urgencyFilter === 'all' ? 'لا توجد فواتير مطابقة' : `لا توجد فواتير ${utilityObligationUrgencyLabels[urgencyFilter]}`}
+              emptyDescription={
+                urgencyFilter === 'all'
+                  ? 'غيّر الفلاتر أو أضف فاتورة مرافق جديدة.'
+                  : 'لا توجد مطالبات بهذا الاستحقاق ضمن الفلاتر الحالية.'
+              }
             />
           </section>
         </div>
@@ -439,6 +672,15 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
           <EntityForm.Actions submitLabel={createBillMut.isPending ? 'جارٍ الحفظ...' : 'حفظ الفاتورة'} onCancel={() => setShowBillForm(false)} isSubmitting={createBillMut.isPending} submitDisabled={!billForm.property_id || billForm.amount <= 0 || !billForm.due_date} />
         </EntityForm.Root>
       </EntityForm.Overlay>
+
+      <UtilityBillDetailOverlay
+        bill={billToPreview}
+        meter={billToPreview ? meters.find((meter) => meter.id === billToPreview.meter_id) ?? null : null}
+        propertyTitle={billToPreview ? propertyName(billToPreview.property_id) : ''}
+        obligation={billToPreview ? obligationByBillId.get(billToPreview.id) : undefined}
+        money={money}
+        onOpenChange={(open) => { if (!open) setBillToPreview(null); }}
+      />
 
       <ConfirmDialog open={Boolean(meterToArchive)} onOpenChange={(open) => { if (!open && !deleteMeterMut.isPending) setMeterToArchive(null); }} title="أرشفة عداد المرافق؟" description={meterToArchive ? `سيتم أرشفة العداد ${meterToArchive.meter_number} المرتبط بـ ${propertyName(meterToArchive.property_id)} وإخفاؤه من القوائم النشطة.` : undefined} confirmLabel="تأكيد الأرشفة" variant="danger" isLoading={deleteMeterMut.isPending} onConfirm={handleConfirmArchiveMeter} />
       <ConfirmDialog

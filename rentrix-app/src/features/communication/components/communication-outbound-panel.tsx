@@ -1,4 +1,4 @@
-import { Eye, Mail, MessageCircle, Send, ShieldCheck } from "lucide-react";
+import { Eye, ExternalLink, Mail, MessageCircle, Send, ShieldCheck } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +21,7 @@ import {
   type OutboundChannel,
   type OutboundMessageResult,
 } from "../services/outbound-communication-service";
+import { openWhatsAppComposer } from "../services/whatsapp-share-service";
 
 export function CommunicationOutboundPanel() {
   const [channel, setChannel] = useState<OutboundChannel>("whatsapp");
@@ -78,6 +79,34 @@ export function CommunicationOutboundPanel() {
     }
   };
 
+  /**
+   * Explicit human action: after a local preview is accepted, the operator
+   * chooses to open WhatsApp with the prepared text and lets the recipient be
+   * confirmed manually. Nothing is sent by MALEK; no Business API is used.
+   */
+  const handleOpenWhatsApp = () => {
+    if (!preview) return;
+    const outcome = openWhatsAppComposer({
+      phone: to || undefined,
+      text: [preview.subject, preview.body].filter(Boolean).join("\n"),
+    });
+    if (!outcome.result.ok) {
+      toast.error(
+        outcome.result.reason === "PHONE_INVALID"
+          ? "رقم واتساب غير صالح."
+          : "تعذر تجهيز رابط واتساب.",
+      );
+      return;
+    }
+    if (!outcome.opened) {
+      toast.error(
+        "تعذر فتح واتساب. سُمح للمتصفح بفتح نافذة جديدة ثم أعد المحاولة.",
+      );
+      return;
+    }
+    toast.success("تم فتح واتساب لإرسال الرسالة يدويًا.");
+  };
+
   return (
     <Card className="border-border/70">
       <CardHeader>
@@ -86,8 +115,9 @@ export function CommunicationOutboundPanel() {
           معاينة الاتصالات الخارجية
         </CardTitle>
         <CardDescription>
-          معاينة محلية لقوالب آمنة. لا يتم فتح واتساب أو البريد، ولا يُوضع
-          المستلم أو النص في رابط، ولا توجد قناة إرسال حية.
+          معاينة محلية لقوالب آمنة: لا يُوضع المستلم أو النص في رابط قبل خطوة
+          المستخدم الصريحة. بعد المعاينة يمكن فتح واتساب لإرسال يدوي، ولا
+          توجد قناة إرسال حية أو Business API.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -238,7 +268,7 @@ export function CommunicationOutboundPanel() {
           </div>
         ) : null}
 
-        <div className="flex justify-end">
+        <div className="flex flex-wrap justify-end gap-2">
           <Button
             onClick={() => void handlePrepare()}
             disabled={isPreparing || !selectedTemplate}
@@ -250,6 +280,17 @@ export function CommunicationOutboundPanel() {
             )}
             {isPreparing ? "جارٍ التحقق..." : "تجهيز معاينة محلية"}
           </Button>
+          {channel === "whatsapp" && preview ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleOpenWhatsApp}
+              data-whatsapp-open-action
+            >
+              <ExternalLink className="me-2 size-4" />
+              فتح واتساب لإرسال يدوي
+            </Button>
+          ) : null}
         </div>
 
         <div className="flex items-start gap-2 rounded-xl border border-warning/30 bg-warning/10 p-3 text-xs leading-5 text-warning">

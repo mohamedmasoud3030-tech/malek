@@ -10,9 +10,15 @@ import { KpiGrid } from './components/kpi-grid';
 import { OfficePulse } from './components/office-pulse';
 import { OverdueSection } from './components/overdue-section';
 import { UrgentMaintenanceSection } from './components/urgent-maintenance-section';
+import { UtilityObligationsSection } from './components/utility-obligations-section';
+import { VacantUnitsSection } from './components/vacant-units-section';
+import { MaintenanceFollowUpSection } from './components/maintenance-follow-up-section';
 import { DashboardVisualScope } from './dashboard-visual-scope';
 import type { DashboardSnapshot } from './dashboard-snapshot';
 import { addDays, buildExpiringContracts, buildOverdueTenantRows, toDateInputValue } from './dashboard-utils';
+import type { UtilityObligationsSignal } from './utility-obligations-signal';
+import type { VacantUnitsSignal } from './vacant-units-signal';
+import type { MaintenanceFollowUpSignal } from './maintenance-follow-up-signal';
 
 const soonDate = toDateInputValue(addDays(new Date(), 9));
 const laterDate = toDateInputValue(addDays(new Date(), 18));
@@ -65,6 +71,48 @@ const fixtureSnapshot: DashboardSnapshot = {
   },
 };
 
+const fixtureUtilityObligations: UtilityObligationsSignal = {
+  summary: {
+    overdueCount: 1,
+    overdueAmount: 42.5,
+    dueSoonCount: 1,
+    dueSoonAmount: 18,
+    outstandingCount: 2,
+    outstandingAmount: 60.5,
+    remainingByResponsibleParty: { tenant: 42.5, landlord: 18, company: 0 },
+  },
+  rows: [
+    { billId: 'utility-1', title: 'فاتورة UB-1001', meta: 'متأخرة 12 يوم · المستأجر', remainingAmount: 42.5, urgency: 'overdue', daysOverdue: 12, daysUntilDue: -12 },
+    { billId: 'utility-2', title: 'فاتورة UB-1002', meta: 'تستحق خلال 4 يوم · المالك', remainingAmount: 18, urgency: 'due_soon', daysOverdue: 0, daysUntilDue: 4 },
+  ],
+  actionableCount: 2,
+};
+
+const fixtureVacantUnits: VacantUnitsSignal = {
+  availableCount: 2,
+  outOfServiceCount: 1,
+  reservedCount: 0,
+  attentionCount: 3,
+  rows: [
+    { unitId: 'unit-3', propertyId: 'property-1', title: 'وحدة 3', location: 'برج الخليج', status: 'maintenance', statusLabel: 'متوقفة للصيانة', referenceRent: 320 },
+    { unitId: 'unit-7', propertyId: 'property-2', title: 'وحدة 7', location: 'واحة مسقط', status: 'available', statusLabel: 'شاغرة', referenceRent: 280 },
+    { unitId: 'unit-9', propertyId: 'property-2', title: 'وحدة 9', location: 'واحة مسقط', status: 'available', statusLabel: 'شاغرة', referenceRent: null },
+  ],
+};
+
+const fixtureMaintenanceFollowUp: MaintenanceFollowUpSignal = {
+  stalledCount: 2,
+  awaitingClosureCount: 1,
+  scheduleMissedCount: 1,
+  actionableCount: 3,
+  oldestOpenAgeDays: 34,
+  rows: [
+    { requestId: 'mnt-1', title: 'تسرب في مواسير الحمام', location: 'برج الخليج · الوحدة 3', flag: 'stalled', flagLabel: 'متوقفة عن التقدم', ageDays: 34 },
+    { requestId: 'mnt-2', title: 'عطل مصعد الطابق الأرضي', location: 'واحة مسقط', flag: 'schedule_missed', flagLabel: 'تجاوزت موعد الزيارة', ageDays: 12 },
+    { requestId: 'mnt-3', title: 'استبدال وحدة تكييف', location: 'برج الخليج · الوحدة 7', flag: 'awaiting_closure', flagLabel: 'بانتظار الإغلاق', ageDays: 6 },
+  ],
+};
+
 const expiringRows = buildExpiringContracts(fixtureSnapshot.queues.expiringContracts);
 const overdueRows = buildOverdueTenantRows(fixtureSnapshot.queues.overdueInvoices);
 
@@ -85,6 +133,7 @@ export function DashboardWorkspaceE2EFixture() {
                 expiringContractsCount={fixtureSnapshot.contracts.expiring30}
                 overdueInvoicesCount={fixtureSnapshot.arrears.overdueCount}
                 urgentMaintenanceCount={fixtureSnapshot.maintenance.urgentOpen}
+                utilityObligationsCount={fixtureUtilityObligations.actionableCount}
                 vacantUnitsCount={fixtureSnapshot.occupancy.vacantUnits}
                 unmatchedBankTxCount={fixtureSnapshot.exceptions.unmatchedBankLines}
                 pendingSettlementsCount={fixtureSnapshot.exceptions.pendingSettlements}
@@ -103,6 +152,9 @@ export function DashboardWorkspaceE2EFixture() {
                 <OverdueSection rows={overdueRows} totalCount={fixtureSnapshot.arrears.overdueCount} isLoading={false} settings={fixtureSettings} />
                 <ExpiringContractsSection rows={expiringRows} totalCount={fixtureSnapshot.contracts.expiring30} isLoading={false} settings={fixtureSettings} />
                 <UrgentMaintenanceSection rows={fixtureSnapshot.queues.urgentMaintenance} totalCount={fixtureSnapshot.maintenance.urgentOpen} isLoading={false} />
+                <MaintenanceFollowUpSection signal={fixtureMaintenanceFollowUp} isLoading={false} />
+                <UtilityObligationsSection signal={fixtureUtilityObligations} isLoading={false} settings={fixtureSettings} />
+                <VacantUnitsSection signal={fixtureVacantUnits} serverVacantCount={fixtureSnapshot.occupancy.vacantUnits} isLoading={false} settings={fixtureSettings} />
               </div>
             </section>
 

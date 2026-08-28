@@ -9,6 +9,9 @@ import { useAuth } from '@/hooks/use-auth';
 import { OnboardingChecklist } from '@/features/onboarding/OnboardingChecklist';
 import type { OnboardingProgress } from '@/features/onboarding/useOnboarding';
 import { fetchIntegrityWarningsCount } from '@/services/action-center-counts';
+import { useUtilityBills } from '@/features/utilities/use-utilities';
+import { useAllUnits } from '@/features/units/use-units';
+import { listPropertyTitles } from '@/features/properties/property-service';
 import { getDashboardSnapshot } from './dashboard-snapshot';
 import { DashboardVisualScope } from './dashboard-visual-scope';
 import { OfficePulse } from './components/office-pulse';
@@ -16,9 +19,19 @@ import { KpiGrid } from './components/kpi-grid';
 import { ExpiringContractsSection } from './components/expiring-contracts-section';
 import { OverdueSection } from './components/overdue-section';
 import { UrgentMaintenanceSection } from './components/urgent-maintenance-section';
+import { MaintenanceFollowUpSection } from './components/maintenance-follow-up-section';
+import {
+  buildMaintenanceFollowUpSignal,
+  EMPTY_MAINTENANCE_FOLLOW_UP_SIGNAL,
+} from './maintenance-follow-up-signal';
+import { useMaintenance } from '@/features/maintenance/use-maintenance';
 import { ArrearsBreakdown } from './components/arrears-breakdown';
 import { DashboardCharts } from './components/dashboard-charts';
 import { AlertCenter } from './components/alert-center';
+import { UtilityObligationsSection } from './components/utility-obligations-section';
+import { VacantUnitsSection } from './components/vacant-units-section';
+import { buildUtilityObligationsSignal, EMPTY_UTILITY_OBLIGATIONS_SIGNAL } from './utility-obligations-signal';
+import { buildVacantUnitsSignal, EMPTY_VACANT_UNITS_SIGNAL } from './vacant-units-signal';
 import { buildExpiringContracts, buildOverdueTenantRows, toDateInputValue } from './dashboard-utils';
 
 /**
@@ -82,6 +95,50 @@ export function DashboardPage() {
     [snapshot?.queues.overdueInvoices],
   );
 
+  // P3 — operational obligations. Today consumes the canonical utilities
+  // service (complete paged read) and the shared obligation derivation instead
+  // of inventing a second utilities authority.
+  const utilityBillsQuery = useUtilityBills();
+  const utilityObligations = useMemo(
+    () => (utilityBillsQuery.isError ? EMPTY_UTILITY_OBLIGATIONS_SIGNAL : buildUtilityObligationsSignal(utilityBillsQuery.data, today)),
+    [utilityBillsQuery.data, utilityBillsQuery.isError, today],
+  );
+  // A failed utilities read stays unknown rather than becoming a fake zero.
+  const utilityObligationsCount = utilityBillsQuery.isError ? undefined : utilityObligations.actionableCount;
+
+  // P3 — vacancy and out-of-service units. The vacant KPI stays the server
+  // snapshot number; these reads only name the units behind it and surface the
+  // maintenance-parked units the snapshot has no field for.
+  const unitsQuery = useAllUnits();
+  const propertyTitlesQuery = useQuery({
+    queryKey: ['dashboard', 'property-titles'],
+    queryFn: listPropertyTitles,
+    retry: false,
+  });
+  const propertyTitleMap = useMemo(
+    () => new Map((propertyTitlesQuery.data ?? []).map((row) => [row.id, row.title])),
+    [propertyTitlesQuery.data],
+  );
+  const vacantUnits = useMemo(
+    () => (unitsQuery.isError ? EMPTY_VACANT_UNITS_SIGNAL : buildVacantUnitsSignal(unitsQuery.data, propertyTitleMap)),
+    [unitsQuery.data, unitsQuery.isError, propertyTitleMap],
+  );
+
+  // P3 — maintenance that stopped moving. Urgency is how a request was
+  // reported; this reads what happened to it afterwards, through the same
+  // derivation the Services register uses.
+  const maintenanceQuery = useMaintenance('all', '');
+  const unitNumberMap = useMemo(
+    () => new Map((unitsQuery.data ?? []).map((unit) => [unit.id, unit.unit_number ?? ''])),
+    [unitsQuery.data],
+  );
+  const maintenanceFollowUp = useMemo(
+    () => (maintenanceQuery.isError
+      ? EMPTY_MAINTENANCE_FOLLOW_UP_SIGNAL
+      : buildMaintenanceFollowUpSignal(maintenanceQuery.data, today, propertyTitleMap, unitNumberMap)),
+    [maintenanceQuery.data, maintenanceQuery.isError, today, propertyTitleMap, unitNumberMap],
+  );
+
   const integrityWarningsQuery = useQuery({
     queryKey: ['data-integrity', 'audit-count'],
     queryFn: () => fetchIntegrityWarningsCount(),
@@ -123,6 +180,7 @@ export function DashboardPage() {
                   expiringContractsCount={snapshot?.contracts.expiring30}
                   overdueInvoicesCount={snapshot?.arrears.overdueCount}
                   urgentMaintenanceCount={snapshot?.maintenance.urgentOpen}
+                  utilityObligationsCount={utilityObligationsCount}
                   vacantUnitsCount={snapshot?.occupancy.vacantUnits}
                   unmatchedBankTxCount={snapshot?.exceptions.unmatchedBankLines}
                   pendingSettlementsCount={snapshot?.exceptions.pendingSettlements}
@@ -164,6 +222,24 @@ export function DashboardPage() {
                   totalCount={snapshot?.maintenance.urgentOpen}
                   isLoading={isLoading}
                   isError={hasDashboardError}
+                />
+                <MaintenanceFollowUpSection
+                  signal={maintenanceFollowUp}
+                  isLoading={maintenanceQuery.isLoading}
+                  isError={maintenanceQuery.isError}
+                />
+                <UtilityObligationsSection
+                  signal={utilityObligations}
+                  isLoading={utilityBillsQuery.isLoading}
+                  isError={utilityBillsQuery.isError}
+                  settings={settings}
+                />
+                <VacantUnitsSection
+                  signal={vacantUnits}
+                  serverVacantCount={snapshot?.occupancy.vacantUnits}
+                  isLoading={unitsQuery.isLoading}
+                  isError={unitsQuery.isError}
+                  settings={settings}
                 />
               </div>
             </section>

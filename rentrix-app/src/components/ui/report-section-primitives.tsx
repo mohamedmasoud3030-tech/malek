@@ -18,7 +18,7 @@ export type ReportPanelProps = Readonly<{
 
 export function ReportPanel({ title, description, icon: Icon, action, children, isLoading = false, className, contentClassName, eyebrow }: ReportPanelProps) {
   return (
-    <Card className={cn('min-w-0 overflow-hidden rounded-2xl border-border/60 shadow-card', className)}>
+    <Card data-report-panel className={cn('min-w-0 overflow-hidden rounded-2xl border-border/60 shadow-card', className)}>
       <CardHeader className="flex flex-col gap-3 border-b border-border/60 px-4 py-3.5 sm:flex-row sm:items-start sm:justify-between sm:px-5 sm:py-4">
         <div className="flex min-w-0 items-start gap-3">
           {Icon ? <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-primary/15 bg-primary/10 text-primary shadow-sm"><Icon className="size-[1.125rem]" aria-hidden="true" /></span> : null}
@@ -58,9 +58,9 @@ export function ReportColumns({ children, className }: Readonly<{ children: Reac
 
 export function ReportProgress({ label, value, helper, tone = 'neutral' }: Readonly<{ label: string; value: number; helper?: string; tone?: 'good' | 'warning' | 'critical' | 'neutral' }>) {
   const boundedValue = Math.max(0, Math.min(100, value));
-  return <div className="rounded-xl border border-border/60 bg-background p-3.5 shadow-sm"><div className="flex items-start justify-between gap-3"><div><p className="text-xs font-bold">{label}</p>{helper ? <p className="mt-1 text-xs leading-4 text-muted-foreground">{helper}</p> : null}</div><span className={cn('rounded-lg px-2 py-1 text-xs font-extrabold tabular-nums', tone === 'good' && 'bg-success/10 text-success', tone === 'warning' && 'bg-warning/10 text-warning', tone === 'critical' && 'bg-danger/10 text-danger', tone === 'neutral' && 'bg-muted text-muted-foreground')} dir="ltr">{Math.round(boundedValue)}%</span></div><div className="mt-3 h-2 overflow-hidden rounded-full bg-muted"><div className={cn('h-full rounded-full transition-[width] duration-500', tone === 'good' && 'bg-success', tone === 'warning' && 'bg-warning', tone === 'critical' && 'bg-danger', tone === 'neutral' && 'bg-primary')} style={{ width: `${boundedValue}%` }} /></div></div>;
+  return <div data-report-visual className="rounded-xl border border-border/60 bg-background p-3.5 shadow-sm"><div className="flex items-start justify-between gap-3"><div><p className="text-xs font-bold">{label}</p>{helper ? <p className="mt-1 text-xs leading-4 text-muted-foreground">{helper}</p> : null}</div><span className={cn('rounded-lg px-2 py-1 text-xs font-extrabold tabular-nums', tone === 'good' && 'bg-success/10 text-success', tone === 'warning' && 'bg-warning/10 text-warning', tone === 'critical' && 'bg-danger/10 text-danger', tone === 'neutral' && 'bg-muted text-muted-foreground')} dir="ltr">{Math.round(boundedValue)}%</span></div><div className="mt-3 h-2 overflow-hidden rounded-full bg-muted"><div className={cn('h-full rounded-full transition-[width] duration-500', tone === 'good' && 'bg-success', tone === 'warning' && 'bg-warning', tone === 'critical' && 'bg-danger', tone === 'neutral' && 'bg-primary')} style={{ width: `${boundedValue}%` }} /></div></div>;
 }
 
 export function ReportInsightNote({ title, children, className }: Readonly<{ title: string; children: React.ReactNode; className?: string }>) {
-  return <div className={cn('rounded-2xl border border-primary/15 bg-primary/[0.045] p-4 text-sm leading-6', className)}><div className="flex items-center gap-2 text-primary"><Sparkles className="size-4" aria-hidden="true" /><p className="font-extrabold">{title}</p></div><div className="mt-2 text-muted-foreground">{children}</div></div>;
+  return <div data-report-insight className={cn('rounded-2xl border border-primary/15 bg-primary/[0.045] p-4 text-sm leading-6', className)}><div className="flex items-center gap-2 text-primary"><Sparkles className="size-4" aria-hidden="true" /><p className="font-extrabold">{title}</p></div><div className="mt-2 text-muted-foreground">{children}</div></div>;
 }

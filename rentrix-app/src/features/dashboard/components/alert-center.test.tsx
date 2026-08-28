@@ -20,6 +20,7 @@ const baseProps = {
   expiringContractsCount: 0,
   overdueInvoicesCount: 0,
   urgentMaintenanceCount: 0,
+  utilityObligationsCount: 0,
   vacantUnitsCount: 0,
 };
 
@@ -105,6 +106,38 @@ describe('AlertCenter honest partial-data states (R1 server counts)', () => {
 
     const text = container?.textContent ?? '';
     expect(text).toContain('لا توجد أعمال عاجلة');
+  });
+
+  it('places utility obligations in the action hierarchy with their own destination', async () => {
+    await render({
+      unmatchedBankTxCount: 0,
+      pendingSettlementsCount: 0,
+      integrityWarningsCount: 0,
+      utilityObligationsCount: 3,
+    });
+
+    const text = container?.textContent ?? '';
+    expect(text).toContain('التزامات مرافق');
+    expect(text).toContain('3 حالة تحتاج قراراً أو متابعة');
+
+    const hrefs = Array.from(container?.querySelectorAll('a[data-dashboard-priority-link]') ?? []).map((link) =>
+      link.getAttribute('href'),
+    );
+    expect(hrefs).toContain('/utilities');
+  });
+
+  it('reports an unavailable utilities read as غير متاح instead of a silent zero', async () => {
+    await render({
+      unmatchedBankTxCount: 0,
+      pendingSettlementsCount: 0,
+      integrityWarningsCount: 0,
+      utilityObligationsCount: undefined,
+    });
+
+    const text = container?.textContent ?? '';
+    expect(text).not.toContain('لا توجد أعمال عاجلة');
+    expect(text).toContain('التزامات مرافق');
+    expect(text).toContain('غير متاح');
   });
 
   it('does not claim the all-clear when a source is unavailable', async () => {

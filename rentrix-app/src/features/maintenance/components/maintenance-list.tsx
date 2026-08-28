@@ -13,6 +13,10 @@ import {
   type MaintenanceStatusFilter,
 } from "../maintenance-helpers";
 import { getMaintenanceStatusActions } from "../useMaintenancePageController";
+import {
+  maintenanceAttentionLabels,
+  type MaintenanceAttention,
+} from "../maintenance-attention";
 
 export const maintenanceStatusLabels = {
   open: "مفتوح",
@@ -54,6 +58,7 @@ const maintenanceColumnOptions = [
   { key: "location", label: "الموقع" },
   { key: "provider", label: "مزود الخدمة" },
   { key: "status", label: "الحالة" },
+  { key: "attention", label: "المتابعة" },
   { key: "priority", label: "الأولوية" },
   { key: "action", label: "الإجراء", locked: true },
 ] as const;
@@ -72,6 +77,8 @@ export type MaintenanceListProps = Readonly<{
     row: Maintenance,
     status: Exclude<MaintenanceStatusFilter, "all">,
   ) => void;
+  /** Operational attention derived by the page controller, keyed by request id. */
+  attentionByRequestId?: ReadonlyMap<string, MaintenanceAttention>;
 }>;
 
 export function MaintenanceList(props: MaintenanceListProps) {
@@ -84,6 +91,7 @@ export function MaintenanceList(props: MaintenanceListProps) {
     onViewDetails,
     onEdit,
     onStatusAction,
+    attentionByRequestId,
   } = props;
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultMaintenanceColumns]);
 
@@ -125,6 +133,31 @@ export function MaintenanceList(props: MaintenanceListProps) {
             ?? "—"}
         </StatusBadge>
       ),
+    },
+    {
+      key: "attention",
+      header: "المتابعة",
+      priority: "secondary",
+      render: (row) => {
+        const attention = attentionByRequestId?.get(row.id);
+        // A request reported today with nothing to chase adds no noise here.
+        const showAge = attention !== undefined && attention.ageDays !== null && attention.ageDays > 0;
+        if (!attention || (attention.flags.length === 0 && !showAge)) {
+          return <span className="text-xs text-muted-foreground">—</span>;
+        }
+        return (
+          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+            {attention.flags.map((flag) => (
+              <StatusBadge key={flag} tone={flag === "awaiting_closure" ? "info" : "warning"}>
+                {maintenanceAttentionLabels[flag]}
+              </StatusBadge>
+            ))}
+            {showAge ? (
+              <span className="text-xs text-muted-foreground">منذ {attention.ageDays} يوم</span>
+            ) : null}
+          </div>
+        );
+      },
     },
     {
       key: "priority",
@@ -208,6 +241,8 @@ export function MaintenanceList(props: MaintenanceListProps) {
           </div>
         )}
         keyOf={(row) => row.id}
+        mobileBadgeKey="status"
+        mobileSummaryKeys={["attention", "priority", "location", "provider"]}
         emptyTitle="لا توجد طلبات صيانة"
         emptyDescription="لا توجد طلبات تطابق الفلاتر الحالية."
       />

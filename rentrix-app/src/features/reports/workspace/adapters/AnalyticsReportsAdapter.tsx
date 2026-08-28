@@ -65,9 +65,9 @@ export function AnalyticsReportsAdapter({ view, model, canExportReports }: Repor
         />
       );
     case 'occupancy':
-      return <OccupancySection {...model.sections.occupancy} />;
+      return <OccupancySection {...model.sections.occupancy} canExportReports={canExportReports} />;
     case 'maintenance_analytics':
-      return <MaintenanceReportSection {...model.sections.maintenance} />;
+      return <MaintenanceReportSection {...model.sections.maintenance} canExportReports={canExportReports} />;
     case 'overview':
     default:
       return (

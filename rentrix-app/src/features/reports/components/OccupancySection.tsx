@@ -1,5 +1,4 @@
-import { Building2, CalendarClock, Download, DoorOpen, Printer, TrendingUp } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Building2, CalendarClock, DoorOpen, TrendingUp } from 'lucide-react';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -22,10 +21,12 @@ import {
   ReportState,
 } from './report-section-primitives';
 import { formatLatinNumber } from '@/lib/formatters';
+import { ReportShareActions } from './ReportShareActions';
 
-export function OccupancySection({ occupancyRows, expiringRows, isLoading }: Readonly<{
+export function OccupancySection({ occupancyRows, expiringRows, canExportReports, isLoading }: Readonly<{
   occupancyRows: ReturnType<typeof buildOccupancyRows>;
   expiringRows: ReturnType<typeof buildExpiringContractsRows>;
+  canExportReports: boolean;
   isLoading: boolean;
 }>) {
   const totalUnits = occupancyRows.reduce((total, row) => total + row.occupied + row.vacant, 0);
@@ -104,7 +105,7 @@ export function OccupancySection({ occupancyRows, expiringRows, isLoading }: Rea
 
   return (
     <div className="space-y-4">
-      <ResponsiveCardGrid>
+      <ResponsiveCardGrid data-report-summary="occupancy">
         <KpiCard label="إجمالي الوحدات" value={formatCompanyNumber(defaultCompanyLocalSettings, totalUnits)} icon={Building2} sub={`${formatLatinNumber(occupancyRows.length, 'ar')} عقارات`} />
         <KpiCard label="نسبة الإشغال" value={`${occupancyRate}%`} icon={TrendingUp} sub={`${formatLatinNumber(totalOccupied, 'ar')} وحدة مشغولة`} />
         <KpiCard label="الوحدات الشاغرة" value={formatCompanyNumber(defaultCompanyLocalSettings, totalVacant)} icon={DoorOpen} sub={`${formatLatinNumber(Math.round(vacancyRate), 'ar')}% من المحفظة`} />
@@ -142,18 +143,29 @@ export function OccupancySection({ occupancyRows, expiringRows, isLoading }: Rea
           description="نسبة الاستغلال والوحدات المشغولة والشاغرة لكل عقار."
           eyebrow="استغلال المحفظة"
           icon={Building2}
-          action={(
-            <div className="flex items-center gap-1.5">
-              <Button variant="outline" size="sm" onClick={handlePrintOccupancyReport} disabled={!isDocumentSettingsReady} className="min-h-11 gap-1.5 text-xs">
-                <Printer className="size-3.5" aria-hidden="true" />
-                طباعة A4
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleDownloadOccupancyReport} disabled={!isDocumentSettingsReady} className="min-h-11 gap-1.5 text-xs">
-                <Download className="size-3.5" aria-hidden="true" />
-                تنزيل PDF
-              </Button>
-            </div>
-          )}
+          action={canExportReports ? (
+            <ReportShareActions
+              className="flex flex-wrap gap-2"
+              reportLabel="تقرير نسب الإشغال والشواغر العقارية"
+              target={{
+                section: 'analytics',
+                view: 'occupancy',
+                filters: {
+                  from: getTodayLocalDateString(),
+                  to: getTodayLocalDateString(),
+                  asOf: getTodayLocalDateString(),
+                  propertyId: '',
+                  unitId: '',
+                  tenantId: '',
+                  ownerId: '',
+                  contractId: '',
+                },
+              }}
+              summaryText={`معدل الإشغال: ${occupancyRate}% | شواغر: ${formatLatinNumber(totalVacant, 'ar')}`}
+              onPrint={handlePrintOccupancyReport}
+              onDownloadPdf={handleDownloadOccupancyReport}
+            />
+          ) : undefined}
           isLoading={isLoading}
         >
           {occupancyRows.length === 0 ? (

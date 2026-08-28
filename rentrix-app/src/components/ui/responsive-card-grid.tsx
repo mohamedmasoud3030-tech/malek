@@ -22,6 +22,12 @@ type ResponsiveCardGridProps = Readonly<{
    * still sharing this single column-count enforcement point.
    */
   'data-finance-kpi-grid'?: string;
+  /**
+   * Canonical report pattern marker (Summary → Visual Insight → Detailed
+   * Table). Report sections set this on their summary KPI grid so the
+   * pattern contract stays observable without per-page wrappers.
+   */
+  'data-report-summary'?: string;
 }>;
 
 const gapClasses = {
@@ -50,6 +56,7 @@ export function ResponsiveCardGrid({
   'aria-label': ariaLabel,
   'aria-labelledby': ariaLabelledBy,
   'data-finance-kpi-grid': financeKpiGridMarker,
+  'data-report-summary': reportSummaryMarker,
 }: ResponsiveCardGridProps) {
   const desktopGrid = desktopColumns === 4 ? '4' : desktopColumns === 3 ? '3' : '2';
 
@@ -57,6 +64,7 @@ export function ResponsiveCardGrid({
     <Component
       data-responsive-card-grid
       data-finance-kpi-grid={financeKpiGridMarker}
+      data-report-summary={reportSummaryMarker}
       data-desktop-columns={desktopGrid}
       aria-label={ariaLabel}
       aria-labelledby={ariaLabelledBy}

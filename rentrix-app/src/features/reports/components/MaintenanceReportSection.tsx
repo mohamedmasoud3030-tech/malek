@@ -1,5 +1,4 @@
-import { AlertCircle, Clock, Download, Flame, Printer, Wrench } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { AlertCircle, Clock, Flame, Wrench } from 'lucide-react';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -25,6 +24,7 @@ import {
   ReportState,
 } from './report-section-primitives';
 import { formatLatinNumber } from '@/lib/formatters';
+import { ReportShareActions } from './ReportShareActions';
 
 
 const reportMaintenanceStatusTone = {
@@ -44,10 +44,11 @@ const reportMaintenancePriorityTone = {
 export type MaintenanceReportProps = Readonly<{
   rows: Maintenance[];
   summary: MaintenanceSummary;
+  canExportReports: boolean;
   isLoading: boolean;
 }>;
 
-export function MaintenanceReportSection({ rows, summary, isLoading }: MaintenanceReportProps) {
+export function MaintenanceReportSection({ rows, summary, canExportReports, isLoading }: MaintenanceReportProps) {
   const activeRows = rows.filter((row) => row.status === 'open' || row.status === 'in_progress');
   const visibleActiveRows = activeRows.slice(0, 12);
   const completedCount = rows.filter((row) => row.status === 'resolved' || row.status === 'closed').length;
@@ -121,7 +122,7 @@ export function MaintenanceReportSection({ rows, summary, isLoading }: Maintenan
 
   return (
     <div className="space-y-4">
-      <ResponsiveCardGrid>
+      <ResponsiveCardGrid data-report-summary="maintenance">
         <KpiCard label="إجمالي البلاغات" value={formatLatinNumber(summary.total, 'ar')} icon={Wrench} sub={`${formatLatinNumber(completedCount, 'ar')} طلبات مكتملة`} />
         <KpiCard label="طلبات مفتوحة" value={formatLatinNumber(summary.open, 'ar')} icon={AlertCircle} sub="تحتاج بدء المتابعة" />
         <KpiCard label="قيد التنفيذ" value={formatLatinNumber(summary.inProgress, 'ar')} icon={Clock} sub={`${formatLatinNumber(assignedCount, 'ar')} طلبات مسندة`} />
@@ -155,18 +156,29 @@ export function MaintenanceReportSection({ rows, summary, isLoading }: Maintenan
           description="الطلبات المفتوحة وقيد التنفيذ مرتبة من السجل الحقيقي، مع المسؤول والموعد والأولوية."
           eyebrow="قائمة العمل"
           icon={Wrench}
-          action={(
-            <div className="flex items-center gap-1.5">
-              <Button variant="outline" size="sm" onClick={handlePrintMaintenanceReport} disabled={!isDocumentSettingsReady} className="min-h-11 gap-1.5 text-xs">
-                <Printer className="size-3.5" aria-hidden="true" />
-                طباعة A4
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleDownloadMaintenanceReport} disabled={!isDocumentSettingsReady} className="min-h-11 gap-1.5 text-xs">
-                <Download className="size-3.5" aria-hidden="true" />
-                تنزيل PDF
-              </Button>
-            </div>
-          )}
+          action={canExportReports ? (
+            <ReportShareActions
+              className="flex flex-wrap gap-2"
+              reportLabel="تحليلات الصيانة التشغيلية"
+              target={{
+                section: 'analytics',
+                view: 'maintenance_analytics',
+                filters: {
+                  from: getTodayLocalDateString(),
+                  to: getTodayLocalDateString(),
+                  asOf: getTodayLocalDateString(),
+                  propertyId: '',
+                  unitId: '',
+                  tenantId: '',
+                  ownerId: '',
+                  contractId: '',
+                },
+              }}
+              summaryText={`إجمالي البلاغات: ${formatLatinNumber(summary.total, 'ar')} | فعالة: ${formatLatinNumber(activeRows.length, 'ar')}`}
+              onPrint={handlePrintMaintenanceReport}
+              onDownloadPdf={handleDownloadMaintenanceReport}
+            />
+          ) : undefined}
           isLoading={isLoading}
         >
           {visibleActiveRows.length === 0 ? (

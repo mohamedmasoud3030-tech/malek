@@ -1,5 +1,4 @@
-import { Building2, ClipboardList, Download, FileSpreadsheet, Printer, ReceiptText, WalletCards } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Building2, ClipboardList, ReceiptText, WalletCards } from 'lucide-react';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { formatMoney, formatShortId } from '@/features/financials/components/financials-formatters';
@@ -8,7 +7,7 @@ import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
 import { documentService } from '@/services/documents/DocumentService';
 import { runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
 import { toReportDocumentPayload, type ReportDocumentData } from '@/services/documents/documentPayloadAdapters';
-import { buildReportCsvFilename, downloadCsv, getTodayLocalDateString } from '../reports-page.helpers';
+import { buildReportCsvFilename, getTodayLocalDateString } from '../reports-page.helpers';
 import {
   ReportColumns,
   ReportInsightNote,
@@ -19,6 +18,7 @@ import {
   ReportState,
 } from './report-section-primitives';
 import { formatLatinNumber } from '@/lib/formatters';
+import { ReportShareActions } from './ReportShareActions';
 
 export function ExpensesSection({ report, canExportReports, isLoading }: Readonly<{
   report: NonNullable<ReturnType<typeof useExpenseBreakdownReport>['data']> | undefined;
@@ -92,31 +92,35 @@ export function ExpensesSection({ report, canExportReports, isLoading }: Readonl
     });
   };
 
+  const todayStr = getTodayLocalDateString();
   const actions = canExportReports ? (
-    <div className="flex flex-wrap gap-2">
-      <Button variant="outline" size="sm" onClick={handlePrintExpensesReport} disabled={!isDocumentSettingsReady} className="min-h-11 gap-1.5 text-xs">
-        <Printer className="size-3.5" aria-hidden="true" />
-        طباعة A4
-      </Button>
-      <Button variant="outline" size="sm" onClick={handleDownloadExpensesReport} disabled={!isDocumentSettingsReady} className="min-h-11 gap-1.5 text-xs">
-        <Download className="size-3.5" aria-hidden="true" />
-        تنزيل PDF
-      </Button>
-      <Button
-        variant="secondary"
-        size="sm"
-        onClick={() => downloadCsv(buildReportCsvFilename('expense-breakdown'), [...categoryRows, ...propertyRows])}
-        className="min-h-11 gap-1.5 text-xs"
-      >
-        <FileSpreadsheet className="size-3.5" aria-hidden="true" />
-        CSV
-      </Button>
-    </div>
+    <ReportShareActions
+      className="flex flex-wrap gap-2"
+      reportLabel="تقرير وتوزيع المصروفات التشغيلية"
+      target={{
+        section: 'analytics',
+        view: 'expenses',
+        filters: {
+          from: todayStr,
+          to: todayStr,
+          asOf: todayStr,
+          propertyId: '',
+          unitId: '',
+          tenantId: '',
+          ownerId: '',
+          contractId: '',
+        },
+      }}
+      summaryText={`إجمالي المصروفات: ${formatMoney(totalExpenses)} | حركات مسجلة: ${formatLatinNumber(expensesCount, 'ar')}`}
+      onPrint={handlePrintExpensesReport}
+      onDownloadPdf={handleDownloadExpensesReport}
+      csv={{ filename: buildReportCsvFilename('expense-breakdown'), rows: [...categoryRows, ...propertyRows] }}
+    />
   ) : undefined;
 
   return (
     <div className="space-y-4">
-      <ResponsiveCardGrid>
+      <ResponsiveCardGrid data-report-summary="expenses">
         <KpiCard label="إجمالي المصروفات" value={formatMoney(totalExpenses)} icon={WalletCards} sub={`${expensesCount} مصروفات`} />
         <KpiCard label="متوسط المصروف" value={formatMoney(averageExpense)} icon={ReceiptText} sub="لكل حركة مسجلة" />
         <KpiCard label="التصنيفات" value={formatLatinNumber(categoryRows.length, 'ar')} icon={ClipboardList} sub={topCategory ? `الأعلى: ${topCategory.category}` : 'لا توجد تصنيفات'} />
