@@ -184,69 +184,12 @@
    permissions and action wiring unchanged while making the phone experience
    calmer, more spatially consistent and bottom-sheet first. */
 
-/* Header: physical left = brand, physical right = utilities regardless of RTL. */
-[data-app-shell-header] > div {
-  direction: ltr;
-}
-
+/* Header identity is owned by the canonical AppShell/brand components.
+   Do not recreate logos or wordmarks with pseudo-elements here. */
+[data-app-shell-header] > div,
 [data-header-brand-lockup],
 [data-header-utility-side] {
   direction: ltr;
-}
-
-[data-header-brand-lockup] {
-  gap: 0.55rem !important;
-}
-
-[data-header-monogram-hit] {
-  width: 2.75rem !important;
-  height: 2.75rem !important;
-}
-
-[data-header-brand-monogram] {
-  position: relative;
-  width: 2.35rem !important;
-  height: 2.35rem !important;
-  border-radius: 0.8rem !important;
-  overflow: hidden;
-}
-
-[data-header-brand-monogram] > svg {
-  opacity: 0 !important;
-}
-
-[data-header-brand-monogram]::after {
-  content: 'M';
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  font-size: 1.45rem;
-  line-height: 1;
-  font-weight: 900;
-  letter-spacing: -0.08em;
-  color: currentColor;
-}
-
-[data-header-wordmark] {
-  position: relative;
-  width: 3.65rem;
-  overflow: hidden;
-  color: transparent !important;
-  font-size: 1rem !important;
-  letter-spacing: 0 !important;
-  text-transform: none !important;
-}
-
-[data-header-wordmark]::after {
-  content: 'Malek';
-  position: absolute;
-  inset: 50% auto auto 0;
-  translate: 0 -50%;
-  color: hsl(var(--foreground));
-  font-size: 1.02rem;
-  font-weight: 850;
-  letter-spacing: -0.025em;
 }
 
 [data-header-control-hit],
@@ -399,19 +342,6 @@
     padding-inline: 0.7rem !important;
   }
 
-  [data-header-brand-monogram] {
-    width: 2.25rem !important;
-    height: 2.25rem !important;
-  }
-
-  [data-header-brand-monogram]::after {
-    font-size: 1.38rem;
-  }
-
-  [data-header-wordmark]::after {
-    font-size: 0.98rem;
-  }
-
   [data-dashboard-today-context] {
     min-height: 4rem !important;
     padding: 0.6rem 0.65rem !important;
@@ -436,7 +366,6 @@
     background: hsl(var(--card));
   }
 }
-
 
 /* ── Desktop workspace contract ─────────────────────────────────────
    Desktop is a work surface, not a scaled-up phone screen. These rules use
@@ -512,7 +441,6 @@
     min-width: 0;
   }
 }
-
 
 /* ── Desktop shell: fixed, named, and quiet ─────────────────────────
    On large screens navigation is a permanent work tool. Do not collapse it
