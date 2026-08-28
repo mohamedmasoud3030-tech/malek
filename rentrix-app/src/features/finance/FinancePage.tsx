@@ -2,8 +2,10 @@ import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { AlertTriangle, BadgeDollarSign, FileCheck, FileSpreadsheet, HandCoins, ReceiptText, WalletCards } from 'lucide-react';
 import { lazy, Suspense, useCallback, useMemo } from 'react';
 import { AccessDenied } from '@/components/layout/access-denied';
+import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
+import { SectionHeader } from '@/components/ui/section-header';
 import { SectionTabs } from '@/components/ui/section-tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getTodayLocalDateString } from '@/features/financials/financials-date-utils';
@@ -11,7 +13,6 @@ import { useArrearsSummaryReport, useCollectionSummaryReport } from '@/features/
 import { useAuth } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
 import { FinanceOperationsOverview } from './components/finance-operations-overview';
-import { FinanceWorkspaceHero } from './components/finance-workspace-hero';
 import {
   FINANCE_SECTIONS,
   FINANCE_VIEWS,
@@ -253,10 +254,41 @@ export function FinancePage() {
   const cockpitIsLoading = collectionReport.isLoading || (canViewArrears && arrearsReport.isLoading);
   const cockpitIsError = collectionReport.isError || (canViewArrears && arrearsReport.isError);
   const headerActions = getHeaderActions(activeSection, activeView, permittedViewIds);
+  const primaryHeaderAction = headerActions[0] ?? null;
+  const secondaryHeaderActions = headerActions.slice(1);
+
+  const renderHeaderAction = (action: FinanceHeaderAction, variant: 'default' | 'outline') => {
+    const Icon = action.icon;
+    if (action.reports) {
+      return (
+        <Button key={action.id} variant={variant} size="sm" asChild className="min-h-11">
+          <Link to="/reports">
+            <Icon className="me-1.5 size-4" aria-hidden="true" />
+            {action.label}
+          </Link>
+        </Button>
+      );
+    }
+
+    return (
+      <Button
+        key={action.id}
+        type="button"
+        variant={variant}
+        size="sm"
+        className="min-h-11"
+        onClick={() => action.sectionId && action.viewId && handleLocationChange(action.sectionId, action.viewId)}
+      >
+        <Icon className="me-1.5 size-4" aria-hidden="true" />
+        {action.label}
+      </Button>
+    );
+  };
 
   if (isRequestedViewForbidden) {
     return (
       <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro">
+        <PageHeader title="المالية" />
         <AccessDenied message="ليس لديك صلاحية لعرض هذا القسم المالي." />
       </PageLayout>
     );
@@ -265,6 +297,7 @@ export function FinancePage() {
   if (permittedSections.length === 0) {
     return (
       <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro">
+        <PageHeader title="المالية" />
         <AccessDenied message="ليس لديك صلاحية لعرض أي من أقسام المالية." />
       </PageLayout>
     );
@@ -272,17 +305,16 @@ export function FinancePage() {
 
   return (
     <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro" className="pb-8">
-      <div data-finance-root className="min-w-0 space-y-4 sm:space-y-5">
-        <FinanceWorkspaceHero
-          summary={collectionReport.data}
-          arrears={arrearsReport.data}
-          isLoading={cockpitIsLoading}
-          isError={cockpitIsError}
-          canViewArrears={canViewArrears}
-          onOpenCollections={() => handleSectionChange('collections')}
-          onOpenArrears={() => handleLocationChange('collections', 'arrears')}
-        />
+      <PageHeader
+        title="المالية"
+        description={activeSectionDefinition ? FINANCE_SECTION_HELP[activeSectionDefinition.id] : undefined}
+        primaryAction={primaryHeaderAction ? renderHeaderAction(primaryHeaderAction, 'default') : undefined}
+        secondaryActions={secondaryHeaderActions.length > 0
+          ? <>{secondaryHeaderActions.map((action) => renderHeaderAction(action, 'outline'))}</>
+          : undefined}
+      />
 
+      <div data-finance-root className="min-w-0 space-y-4 sm:space-y-5">
         <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(15rem,18rem)_minmax(0,1fr)] lg:items-start">
           <aside className="min-w-0 space-y-3 lg:sticky lg:top-4">
             <nav
@@ -354,56 +386,13 @@ export function FinancePage() {
               className="min-w-0 rounded-2xl border border-border/70 bg-card shadow-card"
               aria-label="مساحة العمل المالية الحالية"
             >
-              <header className="border-b border-border/60 px-3 py-3 sm:px-4 sm:py-4">
-                <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="flex min-w-0 items-start gap-3">
-                    {activeSectionDefinition ? (
-                      <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
-                        <activeSectionDefinition.icon className="size-5" aria-hidden="true" />
-                      </span>
-                    ) : null}
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[11px] font-black text-primary">{activeSectionDefinition?.label ?? 'المالية'}</p>
-                      <h2 className="mt-0.5 text-base font-black sm:text-lg">
-                        {activeViewDefinition?.label ?? activeSectionDefinition?.label ?? 'المالية'}
-                      </h2>
-                      {activeSectionDefinition ? (
-                        <p className="mt-0.5 text-xs font-semibold leading-5 text-muted-foreground">
-                          {FINANCE_SECTION_HELP[activeSectionDefinition.id]}
-                        </p>
-                      ) : null}
-                    </div>
-                  </div>
-
-                  <div className="flex shrink-0 flex-wrap gap-2" aria-label="إجراءات القسم الحالي">
-                    {headerActions.map((action) => {
-                      const Icon = action.icon;
-                      if (action.reports) {
-                        return (
-                          <Button key={action.id} variant="outline" size="sm" asChild className="min-h-11">
-                            <Link to="/reports">
-                              <Icon className="me-1.5 size-4" aria-hidden="true" />
-                              {action.label}
-                            </Link>
-                          </Button>
-                        );
-                      }
-                      return (
-                        <Button
-                          key={action.id}
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="min-h-11"
-                          onClick={() => action.sectionId && action.viewId && handleLocationChange(action.sectionId, action.viewId)}
-                        >
-                          <Icon className="me-1.5 size-4" aria-hidden="true" />
-                          {action.label}
-                        </Button>
-                      );
-                    })}
-                  </div>
-                </div>
+              <div className="border-b border-border/60 px-3 py-3 sm:px-4 sm:py-4">
+                <SectionHeader
+                  eyebrow={activeSectionDefinition?.label ?? 'المالية'}
+                  title={activeViewDefinition?.label ?? activeSectionDefinition?.label ?? 'المالية'}
+                  description={activeSectionDefinition ? FINANCE_SECTION_HELP[activeSectionDefinition.id] : undefined}
+                  className="mb-0"
+                />
 
                 <div className="mt-3 min-h-12 border-t border-border/50 pt-3" data-finance-subview-strip>
                   {subViews.length > 0 ? (
@@ -416,7 +405,7 @@ export function FinancePage() {
                     />
                   ) : null}
                 </div>
-              </header>
+              </div>
 
               <div className="relative min-w-0 p-3 sm:p-4">
                 {activeSection === 'overview' ? (
