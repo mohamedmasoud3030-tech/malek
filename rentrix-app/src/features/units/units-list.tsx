@@ -47,6 +47,7 @@ export function UnitsList({
   const canCreateUnit = canAccess("properties.create");
   const canEditUnit = canAccess("properties.edit");
   const canArchiveUnit = canAccess("properties.archive");
+  const canViewContracts = canAccess("contracts.view");
   const canCreateContract = canAccess("contracts.create");
   const deleteMutation = useSoftDeleteUnit(propertyId);
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
@@ -54,7 +55,10 @@ export function UnitsList({
   const [modalOpen, setModalOpen] = useState(false);
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultUnitColumns]);
   const navigate = useNavigate();
-  const unitDraftsQuery = useUnitContractDrafts({ propertyId, unitIds: unitsQuery.data?.map((unit) => unit.id) ?? [] });
+  const unitDraftsQuery = useUnitContractDrafts({
+    propertyId,
+    unitIds: canViewContracts ? unitsQuery.data?.map((unit) => unit.id) ?? [] : [],
+  });
   const unitDraftsByUnitId = new Map<string, string>();
   for (const draft of unitDraftsQuery.data ?? []) {
     if (draft.unit_id && !unitDraftsByUnitId.has(draft.unit_id)) unitDraftsByUnitId.set(draft.unit_id, draft.id);
@@ -109,7 +113,7 @@ export function UnitsList({
           <StatusBadge tone={unitStatusTone[unit.status]}>
             {unitStatusLabels[unit.status]}
           </StatusBadge>
-          {unitDraftsByUnitId.has(unit.id) ? <StatusBadge tone="warning">مسودة عقد قيد الإعداد</StatusBadge> : null}
+          {canViewContracts && unitDraftsByUnitId.has(unit.id) ? <StatusBadge tone="warning">مسودة عقد قيد الإعداد</StatusBadge> : null}
         </span>
       ),
     },
@@ -139,7 +143,7 @@ export function UnitsList({
           onClick={(e) => e.stopPropagation()}
           onKeyDown={(e) => e.stopPropagation()}
         >
-          {unitDraftsByUnitId.has(unit.id) ? (
+          {canViewContracts && unitDraftsByUnitId.has(unit.id) ? (
             <Button
               variant="secondary"
               className="min-h-11 px-3"
@@ -231,7 +235,7 @@ export function UnitsList({
           mobileSummaryKeys={["rent_amount", "notes"]}
           mobileCardActions={(unit) => {
             const actions: Array<{ label: string; icon: typeof Edit; variant: "secondary" | "danger"; ariaLabel: string; onClick: () => void }> = [];
-            if (unitDraftsByUnitId.has(unit.id)) {
+            if (canViewContracts && unitDraftsByUnitId.has(unit.id)) {
               actions.push({
                 label: "مراجعة المسودة",
                 icon: FilePlus2,
