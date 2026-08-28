@@ -4,7 +4,6 @@ import type { CompanySettingsContract } from '@/lib/companySettings';
 import type { ContractListItem } from '../services/contractService';
 import { formatCount } from '@/lib/formatters';
 
-
 export function ContractResults({
   companySettings,
   contracts,
@@ -31,8 +30,8 @@ export function ContractResults({
   isError: boolean;
   isLoading: boolean;
   onCreate?: () => void;
-  onDelete: (id: string) => void;
-  onEdit: (id: string) => void;
+  onDelete?: (id: string) => void;
+  onEdit?: (id: string) => void;
   onPreview: (id: string) => void;
   onRetry: () => void;
   pagination?: { page: number; pageSize: number; total: number; onPageChange: (page: number) => void };

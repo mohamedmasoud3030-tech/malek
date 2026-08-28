@@ -16,8 +16,8 @@ const fixtureProperties: Property[] = [
 ];
 
 const fixtureUnits: Unit[] = [
-  { id: 'u-302', name: null, property_id: 'p-000001', unit_number: '302', floor: '3', status: 'occupied', rent_amount: 420, notes: null, created_at: '2026-01-04T08:00:00Z', updated_at: '2026-07-10T08:00:00Z', deleted_at: null, company_id: '00000000-0000-4000-8000-000000000001' },
-  { id: 'u-g04', name: null, property_id: 'p-000003', unit_number: 'G-04', floor: 'G', status: 'occupied', rent_amount: 600, notes: null, created_at: '2026-03-02T08:00:00Z', updated_at: '2026-07-12T08:00:00Z', deleted_at: null, company_id: '00000000-0000-4000-8000-000000000001' },
+  { id: 'u-302', name: null, property_id: 'p-000001', unit_number: '302', floor: '3', status: 'occupied', rent_amount: 420, daily_reference_rate: null, notes: null, created_at: '2026-01-04T08:00:00Z', updated_at: '2026-07-10T08:00:00Z', deleted_at: null, company_id: '00000000-0000-4000-8000-000000000001' },
+  { id: 'u-g04', name: null, property_id: 'p-000003', unit_number: 'G-04', floor: 'G', status: 'occupied', rent_amount: 600, daily_reference_rate: null, notes: null, created_at: '2026-03-02T08:00:00Z', updated_at: '2026-07-12T08:00:00Z', deleted_at: null, company_id: '00000000-0000-4000-8000-000000000001' },
 ];
 
 const base = {

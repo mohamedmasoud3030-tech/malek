@@ -79,58 +79,65 @@ export function NavigationLinks({
         data-nav-child={isChild ? 'true' : undefined}
         data-active={isActive ? 'true' : undefined}
         className={cn(
-          'group relative flex min-h-11 items-center gap-2.5 rounded-xl border border-transparent px-3 py-1.5 text-sidebar-foreground outline-none transition-[background-color,border-color,color,box-shadow] duration-150',
-          'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-4 focus-visible:ring-sidebar-accent/35 motion-reduce:transition-none',
-          '[[data-mobile-nav-drawer]_&]:min-h-11 [[data-mobile-nav-drawer]_&]:rounded-lg [[data-mobile-nav-drawer]_&]:px-2.5 [[data-mobile-nav-drawer]_&]:py-1 [[data-mobile-nav-drawer]_&]:text-sidebar-foreground/90 [[data-mobile-nav-drawer]_&]:hover:bg-sidebar-accent [[data-mobile-nav-drawer]_&]:hover:text-sidebar-accent-foreground [[data-mobile-nav-drawer]_&]:focus-visible:ring-primary/25',
-          '[[data-mobile-nav-sheet]_&]:min-h-11 [[data-mobile-nav-sheet]_&]:rounded-lg [[data-mobile-nav-sheet]_&]:px-2.5 [[data-mobile-nav-sheet]_&]:py-1 [[data-mobile-nav-sheet]_&]:text-sidebar-foreground/90 [[data-mobile-nav-sheet]_&]:hover:bg-sidebar-accent [[data-mobile-nav-sheet]_&]:hover:text-sidebar-accent-foreground [[data-mobile-nav-sheet]_&]:focus-visible:ring-primary/25',
-          isChild && 'ms-3 min-h-11 border-s-2 border-s-sidebar-border/70 ps-3 [[data-mobile-nav-drawer]_&]:ms-2 [[data-mobile-nav-drawer]_&]:min-h-10 [[data-mobile-nav-drawer]_&]:border-s-sidebar-border/50 [[data-mobile-nav-sheet]_&]:ms-2 [[data-mobile-nav-sheet]_&]:min-h-10 [[data-mobile-nav-sheet]_&]:border-s-sidebar-border/50',
-          isLocked && 'cursor-not-allowed opacity-70',
-          isActive && 'border-sidebar-accent/15 bg-sidebar-accent text-sidebar-accent-foreground shadow-[inset_3px_0_0_0_hsl(var(--sidebar-accent-foreground))] rtl:shadow-[inset_-3px_0_0_0_hsl(var(--sidebar-accent-foreground))] [[data-mobile-nav-drawer]_&]:border-sidebar-border [[data-mobile-nav-drawer]_&]:bg-sidebar-accent [[data-mobile-nav-drawer]_&]:text-sidebar-accent-foreground [[data-mobile-nav-sheet]_&]:border-sidebar-border [[data-mobile-nav-sheet]_&]:bg-sidebar-accent [[data-mobile-nav-sheet]_&]:text-sidebar-accent-foreground [[data-mobile-nav-sheet]_&]:shadow-none',
+          // Base: professional, readable, strong icon visibility, consistent spacing
+          'group relative flex min-h-11 items-center gap-2.5 rounded-lg border border-transparent px-3 py-2 text-[14px] font-semibold leading-5 text-sidebar-foreground outline-none transition-[background-color,border-color,color] duration-150',
+          'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-primary/20',
+          // Desktop drawer (legacy) — keep quiet
+          '[[data-mobile-nav-drawer]_&]:min-h-11 [[data-mobile-nav-drawer]_&]:rounded-lg [[data-mobile-nav-drawer]_&]:px-2.5 [[data-mobile-nav-drawer]_&]:text-sidebar-foreground/90 [[data-mobile-nav-drawer]_&]:hover:bg-sidebar-accent',
+          // Mobile sheet: final theme — readable labels, strong icons, no washed-out inactive
+          '[[data-mobile-nav-sheet]_&]:min-h-12 [[data-mobile-nav-sheet]_&]:rounded-xl [[data-mobile-nav-sheet]_&]:px-3 [[data-mobile-nav-sheet]_&]:py-2.5 [[data-mobile-nav-sheet]_&]:text-[15px] [[data-mobile-nav-sheet]_&]:font-bold [[data-mobile-nav-sheet]_&]:text-foreground [[data-mobile-nav-sheet]_&]:hover:bg-muted [[data-mobile-nav-sheet]_&]:hover:text-foreground',
+          isChild && 'ms-3 min-h-11 border-s-2 border-s-sidebar-border/60 ps-3 [[data-mobile-nav-drawer]_&]:ms-2 [[data-mobile-nav-sheet]_&]:ms-2 [[data-mobile-nav-sheet]_&]:border-s-border [[data-mobile-nav-sheet]_&]:ps-3',
+          isLocked && 'cursor-not-allowed opacity-70 [[data-mobile-nav-sheet]_&]:opacity-80 [[data-mobile-nav-sheet]_&]:text-muted-foreground',
+          // Active: strong clean active state, same blue/navy system
+          isActive && 'border-sidebar-accent/20 bg-sidebar-accent text-sidebar-accent-foreground shadow-none [[data-mobile-nav-drawer]_&]:border-sidebar-border [[data-mobile-nav-drawer]_&]:bg-sidebar-accent [[data-mobile-nav-sheet]_&]:border-primary/20 [[data-mobile-nav-sheet]_&]:bg-primary/10 [[data-mobile-nav-sheet]_&]:text-foreground',
         )}
       >
         <span
           className={cn(
             'grid size-8 shrink-0 place-items-center rounded-lg transition-colors',
-            '[[data-mobile-nav-drawer]_&]:size-7 [[data-mobile-nav-drawer]_&]:bg-sidebar-foreground/5 [[data-mobile-nav-drawer]_&]:text-sidebar-foreground/75',
-            '[[data-mobile-nav-sheet]_&]:size-7 [[data-mobile-nav-sheet]_&]:bg-sidebar-foreground/5 [[data-mobile-nav-sheet]_&]:text-sidebar-foreground/75',
-            isActive && '[[data-mobile-nav-drawer]_&]:bg-primary/15 [[data-mobile-nav-drawer]_&]:text-primary [[data-mobile-nav-sheet]_&]:bg-primary/15 [[data-mobile-nav-sheet]_&]:text-primary',
+            // Sidebar: subtle bg, strong icon
+            'bg-sidebar-foreground/8 text-sidebar-foreground/80 group-hover:bg-sidebar-foreground/12 group-hover:text-sidebar-foreground',
+            '[[data-mobile-nav-drawer]_&]:size-7 [[data-mobile-nav-drawer]_&]:bg-sidebar-foreground/8 [[data-mobile-nav-drawer]_&]:text-sidebar-foreground/75',
+            // Mobile sheet: clear icon visibility, not washed
+            '[[data-mobile-nav-sheet]_&]:size-8 [[data-mobile-nav-sheet]_&]:bg-muted [[data-mobile-nav-sheet]_&]:text-foreground',
+            isActive && 'bg-sidebar-accent-foreground/15 text-sidebar-accent-foreground [[data-mobile-nav-drawer]_&]:bg-primary/15 [[data-mobile-nav-drawer]_&]:text-primary [[data-mobile-nav-sheet]_&]:bg-primary/15 [[data-mobile-nav-sheet]_&]:text-primary',
           )}
         >
-          <Icon className={cn(isChild ? 'size-4' : 'size-[1.05rem]', 'shrink-0 [[data-mobile-nav-drawer]_&]:size-4 [[data-mobile-nav-sheet]_&]:size-4')} aria-hidden="true" />
+          <Icon className={cn(isChild ? 'size-[18px]' : 'size-[18px]', 'shrink-0')} aria-hidden="true" />
         </span>
-        {expanded ? <span className="min-w-0 flex-1 truncate text-[13px] font-semibold">{label}</span> : null}
+        {expanded ? <span className="min-w-0 flex-1 truncate">{label}</span> : null}
         {isLocked ? <Lock className="ms-auto size-3.5 text-warning" aria-hidden="true" /> : null}
-        {isActive ? <span className="size-1.5 shrink-0 rounded-full bg-sidebar-accent-foreground [[data-mobile-nav-drawer]_&]:bg-primary [[data-mobile-nav-sheet]_&]:bg-primary" aria-hidden="true" /> : null}
+        {isActive ? <span className="ms-auto size-1.5 shrink-0 rounded-full bg-sidebar-accent-foreground [[data-mobile-nav-drawer]_&]:bg-primary [[data-mobile-nav-sheet]_&]:bg-primary" aria-hidden="true" /> : null}
       </Link>
     );
   };
 
   return (
-    <div className="space-y-3 [[data-mobile-nav-drawer]_&]:space-y-1 [[data-mobile-nav-sheet]_&]:space-y-1">
+    <div className="space-y-4 [[data-mobile-nav-drawer]_&]:space-y-2 [[data-mobile-nav-sheet]_&]:space-y-3">
       {navGroups.map(([sectionTitle, items, adminOnly]) => {
         if (adminOnly && !items.some(([, , , , permission]) => canShowNavigationItem(authorization, permission))) return null;
         if (items.length === 0) return null;
         return (
           <section
             key={sectionTitle}
-            className="space-y-0.5 [[data-mobile-nav-drawer]_&]:space-y-0.5 [[data-mobile-nav-drawer]_&]:rounded-none [[data-mobile-nav-drawer]_&]:border-0 [[data-mobile-nav-drawer]_&]:bg-transparent [[data-mobile-nav-drawer]_&]:p-0 [[data-mobile-nav-sheet]_&]:space-y-0.5 [[data-mobile-nav-sheet]_&]:rounded-none [[data-mobile-nav-sheet]_&]:border-0 [[data-mobile-nav-sheet]_&]:bg-transparent [[data-mobile-nav-sheet]_&]:p-0"
+            className="space-y-1"
           >
             {expanded
-              ? <div className="px-3 pb-1 pt-1.5"><p className="text-xs font-bold text-sidebar-foreground/50 [[data-mobile-nav-drawer]_&]:text-sidebar-foreground/50 [[data-mobile-nav-sheet]_&]:text-sidebar-foreground/50">{sectionTitle}</p></div>
-              : <div aria-hidden="true" className="mx-3 mb-1 h-px bg-sidebar-foreground/10" />}
+              ? <div className="px-3 pb-1 pt-2"><p className="text-[11px] font-bold uppercase tracking-wide text-sidebar-foreground/45 [[data-mobile-nav-sheet]_&]:text-[11px] [[data-mobile-nav-sheet]_&]:font-extrabold [[data-mobile-nav-sheet]_&]:tracking-widest [[data-mobile-nav-sheet]_&]:text-muted-foreground">{sectionTitle}</p></div>
+              : <div aria-hidden="true" className="mx-3 mb-2 h-px bg-sidebar-foreground/10" />}
             {items.map((item) => {
               const [to] = item;
               const children = workspaceChildNavItems[to] ?? [];
               const isOpen = expandedRoots.has(to);
               const childrenId = `${navigationId}-${to.replace(/[^a-z]/gi, '') || 'root'}`;
               return (
-                <div key={to} className="space-y-0.5">
+                <div key={to} className="space-y-1">
                   <div className="flex items-center gap-1">
                     <div className="min-w-0 flex-1">{renderItem(item)}</div>
                     {expanded && children.length > 0 ? (
                       <button
                         type="button"
-                        className="me-1 grid size-11 shrink-0 place-items-center rounded-xl text-sidebar-foreground/65 outline-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-4 focus-visible:ring-sidebar-accent/35 [[data-mobile-nav-drawer]_&]:rounded-lg [[data-mobile-nav-drawer]_&]:text-sidebar-foreground/55 [[data-mobile-nav-drawer]_&]:hover:bg-sidebar-accent [[data-mobile-nav-drawer]_&]:hover:text-sidebar-accent-foreground [[data-mobile-nav-drawer]_&]:focus-visible:ring-primary/25 [[data-mobile-nav-sheet]_&]:rounded-lg [[data-mobile-nav-sheet]_&]:text-sidebar-foreground/55 [[data-mobile-nav-sheet]_&]:hover:bg-sidebar-accent [[data-mobile-nav-sheet]_&]:hover:text-sidebar-accent-foreground [[data-mobile-nav-sheet]_&]:focus-visible:ring-primary/25"
+                        className="me-1 grid size-11 shrink-0 place-items-center rounded-lg text-sidebar-foreground/60 outline-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-primary/20 [[data-mobile-nav-sheet]_&]:text-muted-foreground [[data-mobile-nav-sheet]_&]:hover:bg-muted [[data-mobile-nav-sheet]_&]:hover:text-foreground"
                         aria-label={`${isOpen ? 'طي' : 'توسيع'} ${navLabel(item[1], sharedLabel)}`}
                         aria-expanded={isOpen}
                         aria-controls={childrenId}
@@ -140,12 +147,12 @@ export function NavigationLinks({
                           return next;
                         })}
                       >
-                        <ChevronDown className={cn('size-4 transition-transform motion-reduce:transition-none', !isOpen && '-rotate-90')} aria-hidden="true" />
+                        <ChevronDown className={cn('size-4 transition-transform', !isOpen && '-rotate-90')} aria-hidden="true" />
                       </button>
                     ) : null}
                   </div>
                   {expanded && children.length > 0 ? (
-                    <div id={childrenId} hidden={!isOpen} className="space-y-0.5">
+                    <div id={childrenId} hidden={!isOpen} className="space-y-1 ps-1">
                       {children.map((child) => renderItem(child, true))}
                     </div>
                   ) : null}
@@ -177,28 +184,13 @@ type MobileQuickAction = Readonly<{
 }>;
 
 const mobileQuickActions: readonly MobileQuickAction[] = [
-  { id: 'contract', label: 'عقد جديد', to: '/contracts/new', icon: FileText, permission: 'contracts.write' },
+  { id: 'contract', label: 'عقد جديد', to: '/contracts/new', icon: FileText, permission: 'contracts.create' },
   { id: 'collect', label: 'تحصيل مبلغ', to: '/financials', search: { section: 'collections', view: 'invoices', quickAdd: 'collect' }, icon: HandCoins, permission: 'financial.payments.create' },
-  { id: 'maintenance', label: 'طلب صيانة', to: '/maintenance', search: { section: 'maintenance', quickAdd: 'maintenance' }, icon: Wrench, permission: 'maintenance.view' },
-  { id: 'utility-bill', label: 'فاتورة مرافق', to: '/maintenance', search: { section: 'utilities', quickAdd: 'utility-bill' }, icon: ReceiptText, permission: 'maintenance.view' },
+  { id: 'maintenance', label: 'طلب صيانة', to: '/maintenance', search: { section: 'maintenance', quickAdd: 'maintenance' }, icon: Wrench, permission: 'maintenance.create' },
+  { id: 'utility-bill', label: 'فاتورة مرافق', to: '/maintenance', search: { section: 'utilities', quickAdd: 'utility-bill' }, icon: ReceiptText, permission: 'maintenance.create' },
 ];
 
-/**
- * Balanced MALEK mobile tool bar / dock.
- *
- * Tools included:
- *   - Search (quick entity & navigation search)
- *   - AI (intelligent assistant)
- *   - Quick Add (+)
- *   - Notifications (alerts & updates)
- *   - Menu / Hamburger (primary navigation entry point)
- *
- * Sizing & Targets:
- *   Every control uses a comfortable 44px hit-target (size-11 min-h-11 min-w-11)
- *   with consistent 18px icons, safe-area clearance, and intentional alignment.
- *
- * When the navigation drawer is open, this floating bar is completely hidden.
- */
+/** Final MALEK mobile dock — clean, no glass-heavy, professional. */
 export function MobileFloatingControl({
   onMenu,
   menuRef,
@@ -216,7 +208,7 @@ export function MobileFloatingControl({
   );
 
   const utilityActionClass =
-    'grid size-11 min-h-11 min-w-11 shrink-0 place-items-center rounded-xl border border-transparent text-muted-foreground outline-none transition-[background-color,color,border-color,box-shadow,transform] duration-150 hover:bg-muted hover:text-foreground active:scale-[0.97] focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none motion-reduce:transform-none';
+    'grid size-11 min-h-11 min-w-11 shrink-0 place-items-center rounded-xl border-0 bg-transparent text-foreground outline-none transition-colors duration-150 hover:bg-muted hover:text-foreground active:bg-muted/80 focus-visible:ring-2 focus-visible:ring-primary/20';
 
   useEffect(() => {
     if (!quickOpen) return;
@@ -245,10 +237,7 @@ export function MobileFloatingControl({
     useCommandPaletteStore.getState().open();
   };
 
-  // Completely hidden when the main navigation drawer is open
-  if (drawerOpen) {
-    return null;
-  }
+  if (drawerOpen) return null;
 
   return (
     <div
@@ -260,17 +249,17 @@ export function MobileFloatingControl({
       <div
         ref={quickRootRef}
         data-mobile-dock-surface
-        className="pointer-events-auto relative flex w-auto items-center gap-1 rounded-2xl border border-border/70 bg-card/95 p-1 shadow-[0_8px_24px_-16px_hsl(var(--foreground)/0.25),0_1px_3px_hsl(var(--foreground)/0.06)] backdrop-blur-md"
+        className="pointer-events-auto relative flex w-auto items-center gap-1 rounded-[1rem] border border-border bg-card p-1.5 shadow-none"
       >
         {quickOpen && visibleQuickActions.length > 0 ? (
           <div
             role="menu"
             aria-label="الإضافة السريعة"
             data-mobile-quick-add-menu
-            className="absolute bottom-[calc(100%+0.5rem)] left-1/2 w-[min(18.5rem,calc(100vw-1.5rem))] -translate-x-1/2 overflow-hidden rounded-2xl border border-border/70 bg-card shadow-elevated"
+            className="absolute bottom-[calc(100%+0.75rem)] left-1/2 w-[min(18.5rem,calc(100vw-1.5rem))] -translate-x-1/2 overflow-hidden rounded-2xl border border-border bg-card shadow-elevated"
           >
-            <div className="flex items-center justify-between border-b border-border/60 px-3 py-2">
-              <p className="text-[11px] font-bold tracking-wide text-muted-foreground" data-mobile-quick-add-title>
+            <div className="flex items-center justify-between border-b border-border px-3 py-2.5">
+              <p className="text-xs font-bold tracking-wide text-muted-foreground" data-mobile-quick-add-title>
                 إضافة سريعة
               </p>
               <button
@@ -279,7 +268,7 @@ export function MobileFloatingControl({
                 className="grid size-11 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
                 aria-label="إغلاق الإضافة السريعة"
               >
-                <X className="size-3.5" />
+                <X className="size-4" />
               </button>
             </div>
             <div className="flex flex-col gap-0.5 p-1.5" data-mobile-quick-add-list>
@@ -293,7 +282,7 @@ export function MobileFloatingControl({
                     role="menuitem"
                     data-mobile-quick-add-item
                     onClick={() => setQuickOpen(false)}
-                    className="flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-bold text-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:bg-muted focus-visible:ring-2 focus-visible:ring-primary/25"
+                    className="flex min-h-12 items-center gap-3 rounded-xl px-3 text-[14px] font-bold text-foreground outline-none transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:ring-2 focus-visible:ring-primary/20"
                   >
                     <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary" aria-hidden="true">
                       <Icon className="size-4" />
@@ -306,7 +295,6 @@ export function MobileFloatingControl({
           </div>
         ) : null}
 
-        {/* 1. Menu / Hamburger — opens primary navigation drawer */}
         <button
           ref={menuRef}
           type="button"
@@ -316,10 +304,9 @@ export function MobileFloatingControl({
           data-mobile-dock-menu
           className={utilityActionClass}
         >
-          <Menu className="size-[18px]" aria-hidden="true" />
+          <Menu className="size-5" aria-hidden="true" />
         </button>
 
-        {/* 2. Search — opens global command palette */}
         <button
           type="button"
           onClick={openSearch}
@@ -328,10 +315,9 @@ export function MobileFloatingControl({
           data-mobile-dock-search
           className={utilityActionClass}
         >
-          <Search className="size-[18px]" aria-hidden="true" />
+          <Search className="size-5" aria-hidden="true" />
         </button>
 
-        {/* 3. Quick Add (+) — opens vertical action menu */}
         <button
           type="button"
           onClick={() => setQuickOpen((value) => !value)}
@@ -340,20 +326,18 @@ export function MobileFloatingControl({
           aria-expanded={quickOpen}
           title="إضافة سريعة"
           data-mobile-dock-quick-add
-          className={cn(utilityActionClass, quickOpen && 'border-primary/20 bg-primary/10 text-primary')}
+          className={cn(utilityActionClass, quickOpen && 'bg-primary/10 text-primary')}
         >
-          <Plus className="size-[18px]" aria-hidden="true" />
+          <Plus className="size-5" aria-hidden="true" />
         </button>
 
-        {/* 4. Notifications — opens notifications panel */}
         <div
-          className="relative [&>div>button]:!size-11 [&>div>button]:!min-h-11 [&>div>button]:!min-w-11 [&>div>button]:!rounded-xl [&>div>button]:!border-transparent [&>div>button]:!text-muted-foreground [&>div>button]:!shadow-none [&>div>button]:hover:!bg-muted [&>div>button]:hover:!text-foreground [&>div>button[aria-expanded='true']]:!bg-foreground [&>div>button[aria-expanded='true']]:!text-background"
+          className="relative [&>div>button]:!size-11 [&>div>button]:!min-h-11 [&>div>button]:!min-w-11 [&>div>button]:!rounded-xl [&>div>button]:!border-0 [&>div>button]:!bg-transparent [&>div>button]:!text-foreground [&>div>button]:hover:!bg-muted [&>div>button]:hover:!text-foreground [&>div>button[aria-expanded='true']]:!bg-primary/10 [&>div>button[aria-expanded='true']]:!text-primary"
           data-mobile-dock-notifications
         >
           <NotificationsMenu authorization={authorization} />
         </div>
 
-        {/* 5. AI Assistant */}
         <button
           type="button"
           onClick={openAiAssistant}
@@ -362,7 +346,7 @@ export function MobileFloatingControl({
           data-mobile-dock-ai
           className={utilityActionClass}
         >
-          <Bot className="size-[18px]" aria-hidden="true" />
+          <Bot className="size-5" aria-hidden="true" />
         </button>
       </div>
     </div>

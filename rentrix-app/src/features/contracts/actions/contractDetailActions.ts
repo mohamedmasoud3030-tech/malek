@@ -4,6 +4,7 @@ import { documentService } from '@/services/documents/DocumentService';
 import { toContractDocumentPayload, type ContractDocumentData } from '@/services/documents/documentPayloadAdapters';
 import { hasCompleteCompanyIdentity, type DocumentCompanySettings } from '@/services/documents/companyIdentity';
 import { runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
+import { openWhatsAppComposer } from '@/lib/whatsapp-share';
 import type { ContractDetail } from '../services/contractService';
 
 function toContractStatus(status: ContractDetail['status']): ContractDocumentData['contractStatus'] {
@@ -76,4 +77,33 @@ export async function shareContractLink(_contract: ContractDetail) {
   } catch {
     toast.error('تعذر تجهيز المشاركة');
   }
+}
+
+export function shareContractViaWhatsApp(contract: ContractDetail) {
+  const tenantName = contract.people?.full_name?.trim() || 'المستأجر';
+  const reference = contract.reference?.trim() || 'العقد الحالي';
+  const property = contract.properties?.title?.trim() || 'العقار';
+  const unit = contract.units?.unit_number?.trim();
+  const location = unit ? `${property} · الوحدة ${unit}` : property;
+  const text = `مرحبًا ${tenantName}، هذه متابعة بخصوص ${reference} — ${location}. يرجى التواصل مع المكتب إذا احتجت أي توضيح.`;
+  const outcome = openWhatsAppComposer({
+    phone: contract.people?.phone ?? undefined,
+    text,
+    webComposer: false,
+  });
+
+  if (!outcome.result.ok) {
+    const message = outcome.result.reason === 'PHONE_INVALID'
+      ? 'رقم واتساب المسجل غير صالح. حدّث رقم المستأجر أو افتح المشاركة العامة.'
+      : outcome.result.reason === 'TEXT_TOO_LONG'
+        ? 'رسالة واتساب أطول من الحد المسموح.'
+        : 'تعذر تجهيز رسالة واتساب.';
+    toast.error(message);
+    return;
+  }
+  if (!outcome.opened) {
+    toast.error('تعذر فتح واتساب. اسمح للمتصفح بفتح نافذة جديدة ثم أعد المحاولة.');
+    return;
+  }
+  toast.success('تم فتح واتساب. الإرسال يتم يدويًا بعد مراجعة الرسالة.');
 }

@@ -23,6 +23,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { EntityTable, type ColumnDef } from "@/components/ui/entity-table";
 import { FilterBar } from "@/components/ui/filter-bar";
 import { formatMoney, formatNumber } from "@/hooks/useCompanyFormatters";
+import { useAuth } from "@/hooks/use-auth";
 import { UnitFormModal } from "./unit-form-modal";
 import type { Unit } from "@/types/domain";
 
@@ -51,6 +52,9 @@ export type UnitsWorkspaceProps = Readonly<{
 
 export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
   const ctrl = useUnitsListController();
+  const { canAccess } = useAuth();
+  const canCreateUnit = canAccess("properties.create");
+  const canEditUnit = canAccess("properties.edit");
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultUnitRegisterColumns]);
   if (ctrl.isLoading) return <LoadingState variant="route" />;
 
@@ -64,10 +68,12 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
 
   const primaryAction = (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-      <Button onClick={ctrl.openCreate}>
-        <Plus className="me-2 size-4" />
-        إضافة وحدة
-      </Button>
+      {canCreateUnit ? (
+        <Button onClick={ctrl.openCreate}>
+          <Plus className="me-2 size-4" />
+          إضافة وحدة
+        </Button>
+      ) : null}
       {!embedded ? (
         <Button asChild variant="secondary" className="min-h-11">
           <Link to="/properties">
@@ -151,10 +157,12 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
           onClick={(event) => event.stopPropagation()}
           onKeyDown={(event) => event.stopPropagation()}
         >
-          <Button variant="secondary" onClick={() => ctrl.openEdit(unit)}>
-            <Edit className="me-1 size-4" aria-hidden="true" />
-            تعديل
-          </Button>
+          {canEditUnit ? (
+            <Button variant="secondary" onClick={() => ctrl.openEdit(unit)}>
+              <Edit className="me-1 size-4" aria-hidden="true" />
+              تعديل
+            </Button>
+          ) : null}
           <Button variant="ghost" asChild>
             <Link
               to="/properties/$propertyId/units/$unitId"
@@ -269,32 +277,23 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
           errorTitle="تعذر تحميل الوحدات"
           onRetry={ctrl.refetchAll}
           emptyTitle="لا توجد وحدات مطابقة"
-          emptyDescription="غيّر البحث أو الفلاتر لعرض وحدات أخرى، أو أضف وحدة مرتبطة بعقار قائم."
-          emptyAction={
+          emptyDescription={canCreateUnit ? "غيّر البحث أو الفلاتر لعرض وحدات أخرى، أو أضف وحدة مرتبطة بعقار قائم." : "غيّر البحث أو الفلاتر لعرض وحدات أخرى."}
+          emptyAction={canCreateUnit ? (
             <Button onClick={ctrl.openCreate}>
               <Plus className="me-2 size-4" />
               إضافة وحدة
             </Button>
-          }
-          /* Without an explicit choice the shared fallback shows the first two
-             non-identity columns — property and floor — which hides the two
-             facts an operator scans for. The property-scoped units register
-             (units-list.tsx) already declares these; the global register must
-             not present the same entity differently on a phone. */
+          ) : undefined}
           mobileBadgeKey="status"
           mobileSummaryKeys={["rent", "property"]}
-          /* Structured mobile actions, matching the desktop action column and
-             the property-scoped units register. Without these the shared
-             legacy «إجراءات» disclosure fallback renders instead, which the
-             mobile register contract does not allow. */
           mobileCardActions={(unit) => [
-            {
+            ...(canEditUnit ? [{
               label: "تعديل",
               icon: Edit,
               variant: "secondary" as const,
               ariaLabel: `تعديل وحدة ${unit.unit_number}`,
               onClick: () => ctrl.openEdit(unit),
-            },
+            }] : []),
             {
               label: "فتح التفاصيل",
               icon: DoorOpen,
@@ -306,23 +305,27 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
         />
       </section>
 
-      <UnitFormModal
-        propertyId=""
-        unit={null}
-        open={ctrl.isCreateOpen}
-        onOpenChange={(open) => {
-          if (!open) ctrl.closeCreate();
-        }}
-      />
+      {canCreateUnit ? (
+        <UnitFormModal
+          propertyId=""
+          unit={null}
+          open={ctrl.isCreateOpen}
+          onOpenChange={(open) => {
+            if (!open) ctrl.closeCreate();
+          }}
+        />
+      ) : null}
 
-      <UnitFormModal
-        propertyId={ctrl.editingUnit?.property_id ?? ""}
-        unit={ctrl.editingUnit}
-        open={ctrl.editingUnit !== null}
-        onOpenChange={(open) => {
-          if (!open) ctrl.closeEdit();
-        }}
-      />
+      {canEditUnit ? (
+        <UnitFormModal
+          propertyId={ctrl.editingUnit?.property_id ?? ""}
+          unit={ctrl.editingUnit}
+          open={ctrl.editingUnit !== null}
+          onOpenChange={(open) => {
+            if (!open) ctrl.closeEdit();
+          }}
+        />
+      ) : null}
     </EmbeddableWorkspace>
   );
 }

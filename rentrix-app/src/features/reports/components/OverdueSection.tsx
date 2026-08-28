@@ -1,4 +1,4 @@
-import { AlertTriangle, CalendarClock, FileSpreadsheet, ReceiptText, WalletCards } from 'lucide-react';
+import { AlertTriangle, CalendarClock, FileSpreadsheet, FileText, ReceiptText, WalletCards } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
@@ -14,6 +14,7 @@ import { ReportColumns, ReportInsightNote, ReportProgress } from './report-secti
 import { AgingBucketsPanel } from './overdue/aging-buckets-panel';
 import { getAgingLabel, OverdueInvoicesPanel } from './overdue/overdue-invoices-panel';
 import { formatLatinNumber } from '@/lib/formatters';
+import { csvRowsToXlsxBlob, downloadBlob, xlsxFilenameFromCsv } from '@/lib/tabular-export';
 import { ReportShareActions } from './ReportShareActions';
 
 export function OverdueSection({ rows, agedReport, summary, canExportReports, isLoading }: Readonly<{
@@ -119,16 +120,31 @@ export function OverdueSection({ rows, agedReport, summary, canExportReports, is
     />
   ) : undefined;
 
+  const agingCsvRows = bucketRows.map((row) => ({ bucket: row.bucket, total: row.total, invoiceCount: row.invoiceCount }));
+  const agingCsvFilename = buildReportCsvFilename('aged-receivables');
   const agingAction = canExportReports ? (
-    <Button
-      variant="secondary"
-      size="sm"
-      onClick={() => downloadCsv(buildReportCsvFilename('aged-receivables'), bucketRows.map((row) => ({ bucket: row.bucket, total: row.total, invoiceCount: row.invoiceCount })))}
-      className="min-h-11 gap-1.5 text-xs"
-    >
-      <FileSpreadsheet className="size-3.5" aria-hidden="true" />
-      CSV
-    </Button>
+    <div className="flex flex-wrap gap-2">
+      <Button
+        variant="secondary"
+        size="sm"
+        onClick={() => downloadBlob(csvRowsToXlsxBlob(agingCsvRows, 'تعتيق المتأخرات'), xlsxFilenameFromCsv(agingCsvFilename))}
+        className="min-h-11 gap-1.5 text-xs"
+        disabled={agingCsvRows.length === 0}
+      >
+        <FileSpreadsheet className="size-3.5" aria-hidden="true" />
+        Excel
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => downloadCsv(agingCsvFilename, agingCsvRows)}
+        className="min-h-11 gap-1.5 text-xs"
+        disabled={agingCsvRows.length === 0}
+      >
+        <FileText className="size-3.5" aria-hidden="true" />
+        CSV
+      </Button>
+    </div>
   ) : undefined;
 
   return (

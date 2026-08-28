@@ -20,13 +20,6 @@ const globals = readFileSync(resolve(stylesDir, 'globals.css'), 'utf8');
 const pagePolish = readFileSync(resolve(stylesDir, 'page-polish.css'), 'utf8');
 const visualWave = readFileSync(resolve(stylesDir, 'malek-pro-visual-wave.css'), 'utf8');
 
-function block(source: string, opener: string): string {
-  const start = source.indexOf(opener);
-  if (start < 0) return '';
-  const end = source.indexOf('}', start);
-  return source.slice(start, end);
-}
-
 const themeBridge = (() => {
   const start = tokens.indexOf('@theme inline {');
   const end = tokens.indexOf('\n}', start);
@@ -38,13 +31,11 @@ describe('design tokens — single source of truth', () => {
     const lightRoot = tokens.slice(tokens.indexOf(':root {'), tokens.indexOf("[data-theme='dark']"));
     const darkRoot = tokens.slice(tokens.indexOf("[data-theme='dark']"));
 
-    // Palette/shadow tokens are theme-dependent and must exist in both scopes.
     for (const name of ['--color-bg', '--color-card', '--color-primary', '--color-success-text', '--shadow-card', '--tone-emerald']) {
       expect(lightRoot, `light token ${name}`).toContain(`${name}:`);
       expect(darkRoot, `dark token ${name}`).toContain(`${name}:`);
     }
 
-    // Radius + typography are shared across themes and defined once in light scope.
     expect(lightRoot).toContain('--radius:');
     expect(lightRoot).toContain('--radius-card:');
     expect(tokens).toContain("--font-sans: 'Cairo'");
@@ -71,6 +62,11 @@ describe('design tokens — single source of truth', () => {
     expect(pagePolish).not.toContain('--tone-emerald:');
     expect(pagePolish).not.toContain('--accent-foreground:');
     expect(pagePolish).toContain('var(--tone-');
+  });
+
+  it('does not restyle overlay primitives from the page-polish layer', () => {
+    expect(pagePolish).not.toContain('[data-bottom-sheet]');
+    expect(pagePolish).not.toContain('[data-account-menu-panel]');
   });
 
   it('no dead tailwind.config.js remains to masquerade as the token source', () => {

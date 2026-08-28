@@ -76,6 +76,14 @@ describe('canonical authorization permissions', () => {
     }
   });
 
+  it('keeps ADMIN full access when the resolved server capability set is empty', () => {
+    const owner = resolved('ADMIN', []);
+    for (const permission of appPermissions) {
+      expect(canAccess(owner, permission), permission).toBe(true);
+    }
+    expect(getWriteAccessState(owner)).toBe('full');
+  });
+
   it('keeps legacy role defaults only until the authoritative effective set resolves', () => {
     const manager = getAuthorizationContextFromUser(userWithRole('MANAGER'));
     expect(canAccess(manager, 'properties.view')).toBe(true);
@@ -147,8 +155,8 @@ describe('canonical authorization permissions', () => {
 
   it('calculates shell write posture from the same effective capability set', () => {
     expect(getWriteAccessState(resolved('USER', ['app.dashboard.view']))).toBe('read-only');
-    expect(getWriteAccessState(resolved('USER', ['app.dashboard.view', 'properties.write']))).toBe('full');
-    expect(getWriteAccessState(resolved('VIEWER', ['maintenance.write']))).toBe('full');
+    expect(getWriteAccessState(resolved('USER', ['app.dashboard.view', 'properties.edit']))).toBe('full');
+    expect(getWriteAccessState(resolved('VIEWER', ['maintenance.edit']))).toBe('full');
     expect(getWriteAccessState(null)).toBe('unconfigured');
   });
 

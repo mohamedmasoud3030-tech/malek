@@ -3,10 +3,12 @@
 @import './malek-pro-visual-wave.css';
 @import './app-density-contract.css';
 @import './design-system-foundation.css';
+@import './page-polish.css';
 
-/* MALEK global entrypoint.
+/* MALEK global entrypoint — Final unified theme.
    Theme tokens live only in tokens.css. This file owns document base behavior,
-   utilities, print rules and public-site helpers. */
+   cross-component shell constraints, utilities, print rules and public helpers.
+   No second theme system, no competing token layers. */
 
 @keyframes shimmer {
   100% { transform: translateX(-100%); }
@@ -18,9 +20,11 @@
   html {
     direction: rtl;
     font-family: var(--font-sans);
+    font-size: 16px;
     overflow-x: hidden;
     scrollbar-gutter: stable;
     -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
   }
 
   body {
@@ -30,8 +34,18 @@
     overflow-x: hidden;
     background: hsl(var(--background));
     color: hsl(var(--foreground));
+    font-size: 15px;
+    line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* iPhone comfortable reading — prevent tiny text, ensure 16px for inputs */
+  @media (max-width: 767px) {
+    body {
+      font-size: 15px;
+      line-height: 1.65;
+    }
   }
 
   #root {
@@ -46,13 +60,48 @@
   img, video, canvas, svg { max-width: 100%; }
 
   ::selection {
-    background: hsl(var(--primary) / 0.15);
+    background: hsl(var(--primary) / 0.14);
     color: hsl(var(--foreground));
+  }
+
+  /* Page headers — clear hierarchy, not tiny */
+  h1 {
+    font-size: clamp(1.25rem, 4vw, 1.5rem);
+    line-height: 1.25;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+  h2 {
+    font-size: clamp(1.05rem, 3.2vw, 1.25rem);
+    line-height: 1.32;
+    font-weight: 700;
+  }
+  h3 {
+    font-size: 1rem;
+    line-height: 1.4;
+    font-weight: 700;
+  }
+
+  /* Labels/metadata — not tiny, readable */
+  label, [data-form-label] {
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  /* Inputs must be at least 16px on mobile to avoid iOS zoom */
+  input, select, textarea {
+    font-size: max(0.9375rem, 16px);
+  }
+  @media (min-width: 768px) {
+    input, select, textarea {
+      font-size: 0.9375rem;
+    }
   }
 
   [data-theme='dark'] [data-unified-surface='page-header'],
   [data-theme='dark'] .dashboard-ops-header {
-    box-shadow: var(--shadow-card);
+    box-shadow: none;
   }
 }
 
@@ -60,11 +109,42 @@
   background-color: hsl(var(--background));
 }
 
+/* Only shell constraints that cannot live inside one component stay global. */
+@layer components {
+  [data-bottom-sheet]:has([data-mobile-nav-bottom-sheet]) {
+    max-height: min(78dvh, 42rem) !important;
+  }
+
+  [data-account-menu-panel] {
+    width: min(15.5rem, calc(100vw - 1rem));
+    border: 1px solid hsl(var(--border));
+    background: hsl(var(--card));
+    box-shadow: var(--shadow-elevated);
+  }
+
+  [data-account-menu-panel] > div:first-child {
+    padding-block: 0.7rem;
+    background: hsl(var(--muted) / 0.6);
+    border-bottom: 1px solid hsl(var(--border));
+  }
+
+  [data-account-menu-panel] > div:last-child {
+    padding: 0.25rem;
+  }
+
+  /* Card base — ensure visible border, not floating blob */
+  [data-component-card] {
+    border: 1px solid hsl(var(--border));
+    background: hsl(var(--card));
+    box-shadow: none;
+  }
+}
+
 @layer utilities {
   .pressable {
     transition: background-color 0.15s ease, opacity 0.15s ease;
   }
-  .pressable:active { opacity: 0.85; }
+  .pressable:active { opacity: 0.88; }
 
   .skeleton-shimmer {
     position: relative;
@@ -75,7 +155,7 @@
     position: absolute;
     inset: 0;
     transform: translateX(100%);
-    background: linear-gradient(90deg, transparent, hsl(var(--foreground) / 0.06), transparent);
+    background: linear-gradient(90deg, transparent, hsl(var(--foreground) / 0.05), transparent);
     animation: shimmer 1.4s infinite;
   }
 
@@ -199,15 +279,15 @@
 /* Public-site helpers consume the same canonical tokens as the app. */
 .bg-grid-dark {
   background-image:
-    linear-gradient(to right, hsl(var(--foreground) / 0.07) 1px, transparent 1px),
-    linear-gradient(to bottom, hsl(var(--foreground) / 0.07) 1px, transparent 1px);
+    linear-gradient(to right, hsl(var(--foreground) / 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, hsl(var(--foreground) / 0.05) 1px, transparent 1px);
   background-size: 44px 44px;
 }
 
 .bg-grid-light {
   background-image:
-    linear-gradient(to right, hsl(var(--foreground) / 0.045) 1px, transparent 1px),
-    linear-gradient(to bottom, hsl(var(--foreground) / 0.045) 1px, transparent 1px);
+    linear-gradient(to right, hsl(var(--foreground) / 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, hsl(var(--foreground) / 0.035) 1px, transparent 1px);
   background-size: 44px 44px;
 }
 
@@ -216,14 +296,17 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  opacity: 0.4;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+  opacity: 0.25;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
 }
 
+/* Final: no glass-heavy cards, rely on border + subtle surface */
 .glass-card,
 .light-card {
-  @apply border border-border/70 bg-card shadow-card;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--card));
+  box-shadow: none;
 }
 
-.text-gradient { @apply text-primary; }
-.section-light { @apply bg-background text-foreground; }
+.text-gradient { color: hsl(var(--primary)); }
+.section-light { background: hsl(var(--background)); color: hsl(var(--foreground)); }

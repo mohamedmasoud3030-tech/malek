@@ -383,20 +383,35 @@ async function runStructural(db, schema) {
     detail: storageMutation ? `${storageMutation} overly-permissive storage policies` : undefined,
   });
 
-  const anonDefiner = (await db.query(`
-    select count(*)::int as n
+  const anonDefiners = (await db.query(`
+    select p.proname as name,
+           pg_get_function_identity_arguments(p.oid) as args
       from pg_proc p
       join pg_namespace n on n.oid = p.pronamespace
      where n.nspname = 'public'
        and p.prosecdef
        and has_function_privilege('anon', p.oid, 'EXECUTE')
-  `)).rows[0]?.n;
+     order by p.proname, pg_get_function_identity_arguments(p.oid)
+  `)).rows;
+  const allowedAnonDefiners = new Set([
+    'get_owner_portal_snapshot(p_token uuid)',
+    'get_tenant_portal_snapshot(p_token uuid)',
+    'get_owner_portal_snapshot(uuid)',
+    'get_tenant_portal_snapshot(uuid)',
+  ]);
+  const anonDefinerNames = anonDefiners.map((row) => `${row.name}(${row.args})`);
+  const unexpectedAnonDefiners = anonDefinerNames.filter((sig) => !allowedAnonDefiners.has(sig));
+  const missingAllowed = [...allowedAnonDefiners].filter((sig) => !anonDefinerNames.includes(sig));
   record({
     id: 'struct.no_anon_definer',
     group: 'structural',
-    title: 'no SECURITY DEFINER function is executable by anon',
-    status: Number(anonDefiner) === 0 ? 'pass' : 'fail',
-    detail: anonDefiner ? `${anonDefiner} anon-executable definers` : undefined,
+    title: 'only audited portal snapshot RPCs are anon-executable SECURITY DEFINER (get_owner_portal_snapshot, get_tenant_portal_snapshot)',
+    status: unexpectedAnonDefiners.length === 0 && anonDefinerNames.length === 2 ? 'pass' : 'fail',
+    detail: unexpectedAnonDefiners.length
+      ? `unexpected anon definers: ${unexpectedAnonDefiners.join(', ')}; allowed: ${[...allowedAnonDefiners].join(', ')}; found: ${anonDefinerNames.join(', ')}`
+      : anonDefinerNames.length !== 2
+        ? `expected exactly 2 audited anon definers, found ${anonDefinerNames.length}: ${anonDefinerNames.join(', ')}`
+        : `${anonDefinerNames.length} anon-executable definers: ${anonDefinerNames.join(', ')}`,
   });
 
   const hookGrants = (await db.query(`
@@ -765,28 +780,39 @@ async function runMutations(db) {
     { id: 'rls.managerA.update.propertyA', group: 'rls-write', title: 'MANAGER A can update own-company property' },
   );
 
-  // OPERATIONS may still appear in the SQL catalog for properties.write,
-  // but the current properties write policy is is_admin_or_manager().
-  // Record the live database truth. The frontend now fences the same way.
-  const operationsWrite = await queryAs(
+  // P51 compatibility contract: historical broad role defaults remain fallback
+  // until the office owner records an explicit granular decision.
+  await expectMutationAllowed(
     db,
     ids.operationsA,
     `with u as (
        insert into public.properties (title, type, address, status, company_id)
-       values ('Operations write', 'residential', 'A', 'active', '${COMPANY_A}')
+       values ('Operations compatibility write', 'residential', 'A', 'active', '${COMPANY_A}')
        returning id
      ) select count(*)::int as n from u`,
+    { id: 'rls.operationsA.insert.properties.compat', group: 'rls-write', title: 'OPERATIONS keeps historical properties.write compatibility fallback' },
   );
-  record({
-    id: 'rls.operationsA.insert.properties',
-    group: 'rls-write',
-    title: 'OPERATIONS property insert is enforced by is_admin_or_manager() (DB deny)',
-    status: !operationsWrite.ok || Number(operationsWrite.value?.[0]?.n ?? 0) === 0 ? 'pass' : 'fail',
-    detail: operationsWrite.ok
-      ? 'OPERATIONS unexpectedly inserted a property'
-      : undefined,
-    note: 'Frontend grants properties.write to OPERATIONS; RLS still requires ADMIN/MANAGER.',
-  });
+  await expectHelper(db, ids.operationsA, `select public.current_user_has_effective_app_permission('contracts.create') as v`, true,
+    { id: 'auth.operationsA.contracts_create.compat', group: 'auth', title: 'OPERATIONS keeps historical contracts.write compatibility fallback' });
+  await db.exec(`
+    insert into public.user_permission_overrides(company_id,user_id,permission,allowed,set_by,reason,set_at)
+    values
+      ('${COMPANY_A}','${OPERATIONS_A}','properties.create',false,'${ADMIN_A}','matrix explicit granular deny',now()),
+      ('${COMPANY_A}','${OPERATIONS_A}','contracts.create',false,'${ADMIN_A}','matrix explicit granular deny',now())
+    on conflict(company_id,user_id,permission) do update set allowed=excluded.allowed,set_by=excluded.set_by,reason=excluded.reason,set_at=excluded.set_at
+  `);
+  await expectMutationDenied(
+    db,
+    ids.operationsA,
+    `with u as (
+       insert into public.properties (title, type, address, status, company_id)
+       values ('Operations explicitly denied', 'residential', 'A', 'active', '${COMPANY_A}')
+       returning id
+     ) select count(*)::int as n from u`,
+    { id: 'rls.operationsA.insert.properties.override', group: 'rls-write', title: 'explicit properties.create=false overrides OPERATIONS compatibility fallback' },
+  );
+  await expectHelper(db, ids.operationsA, `select public.current_user_has_effective_app_permission('contracts.create') as v`, false,
+    { id: 'auth.operationsA.contracts_create.override', group: 'auth', title: 'explicit contracts.create=false overrides OPERATIONS compatibility fallback' });
 
   await expectMutationDenied(
     db,

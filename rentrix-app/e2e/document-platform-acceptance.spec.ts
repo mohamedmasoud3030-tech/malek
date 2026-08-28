@@ -378,7 +378,7 @@ test.describe('العقد — contract acceptance', () => {
     await installFakeSupabaseBackend(page, 'complete');
 
     await page.goto(`/contracts/${IDS.contract}`);
-    await expect(page.getByRole('heading', { name: 'تفاصيل العقد', exact: true })).toBeVisible({ timeout: 20_000 });
+    await expect(page.locator('[data-contract-detail-workspace]')).toBeVisible({ timeout: 20_000 });
 
     await openContractDocumentActions(page);
     const printButton = page.getByRole('menuitem', { name: 'طباعة العقد', exact: true });
@@ -430,7 +430,9 @@ test.describe('كشوف الحسابات — statements acceptance', () => {
     await page.getByLabel('العقد لكشف المستأجر').selectOption(IDS.contract);
     await applyReportFilters(page);
     const tenantPanel = reportPanel(page, 'كشف حساب المستأجر');
-    await expect(tenantPanel.getByText('مطالبة إيجار شهر 01/2026 — الوحدة 301').first()).toBeVisible({ timeout: 30_000 });
+    await expect(
+      tenantPanel.getByText('مطالبة إيجار شهر 01/2026 — الوحدة 301').filter({ visible: true }).first(),
+    ).toBeVisible({ timeout: 30_000 });
 
     const popup = await openPrintPopup(page, () => tenantPanel.getByRole('button', { name: 'طباعة الكشف' }).click());
     await assertPopupIdentity(popup, [TENANT_NAME, 'كشف']);
@@ -654,7 +656,7 @@ test.describe('الجوال — mobile acceptance', () => {
     await installFakeSupabaseBackend(page, 'complete');
 
     await page.goto(`/contracts/${IDS.contract}`);
-    await expect(page.getByRole('heading', { name: 'تفاصيل العقد', exact: true })).toBeVisible({ timeout: 20_000 });
+    await expect(page.locator('[data-contract-detail-workspace]')).toBeVisible({ timeout: 20_000 });
 
     await openContractDocumentActions(page);
     const popup = await openPrintPopup(page, () => page.getByRole('menuitem', { name: 'طباعة العقد', exact: true }).click());

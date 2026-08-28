@@ -2,12 +2,11 @@ import { Link, Outlet, useMatches, useRouter } from '@tanstack/react-router';
 import { useEffect, useId, useRef, useState, type ButtonHTMLAttributes, type ReactNode, type Ref } from 'react';
 import { CircleHelp, KeyRound, LogOut, Moon, Settings, ShieldAlert, Sun, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
-import { MalikBrand } from '@/components/brand/malik-brand';
-import { MalikMark } from '@/components/brand/malik-mark';
+import { MalekBrandWordmark } from '@/components/brand/malek-wordmark';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { canAccessRoute, getWriteAccessState, type AuthorizationContext } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
-import { APP_BRAND_NAME } from '@/lib/brand';
+import { APP_BRAND_NAME, APP_BRAND_TAGLINE_AR } from '@/lib/brand';
 import { getAppLanguageState, translateSharedLabel, type SharedLabel } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { useUiStore } from '@/store/ui-store';
@@ -17,15 +16,22 @@ import { AiAssistantGlobalAction } from '@/features/ai-assistant/ai-assistant-gl
 import { sanitizeSupportRoute } from '@/features/help-support/help-context';
 
 function Brand({ expanded, showTagline }: Readonly<{ expanded: boolean; showTagline?: boolean }>) {
-  return <MalikBrand compact={!expanded} inverse showTagline={showTagline ?? expanded} />;
+  return (
+    <div className="flex min-w-0 flex-col gap-2" data-malek-brand-lockup data-layout="horizontal" data-sidebar-brand>
+      <MalekBrandWordmark size="sidebar" />
+      {showTagline && expanded ? (
+        <p className="text-xs font-medium leading-tight text-sidebar-foreground/60">{APP_BRAND_TAGLINE_AR}</p>
+      ) : null}
+    </div>
+  );
 }
 
 /**
- * MALEK monogram interactive brand button.
- * Tapping the monogram opens the primary navigation bottom sheet on mobile and
- * acts as the branded header entry point for navigation.
+ * MALEK final header brand — M Malek wordmark, M larger than Malek, no icon container.
+ * Tapping opens primary navigation on mobile. No surrounding shape/background tile.
+ * Theme-aware colors via [data-malek-brand-wordmark] CSS.
  */
-function HeaderBrandMonogramButton({
+function HeaderBrandWordmarkButton({
   onClick,
   buttonRef,
 }: Readonly<{
@@ -33,30 +39,23 @@ function HeaderBrandMonogramButton({
   buttonRef?: Ref<HTMLButtonElement>;
 }>) {
   return (
-    <span className="relative grid size-11 shrink-0 place-items-center" data-header-monogram-hit>
-      <button
-        ref={buttonRef}
-        type="button"
-        onClick={onClick}
-        aria-label="القائمة الرئيسية - مالك"
-        aria-haspopup="dialog"
-        title="القائمة الرئيسية"
-        data-header-brand-monogram
-        data-header-brand-button
-        className="group grid size-8 place-items-center rounded-xl border border-primary/25 bg-primary/10 text-primary shadow-xs outline-none transition-[background-color,border-color,box-shadow,transform] duration-150 hover:border-primary/45 hover:bg-primary/20 active:scale-95 focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transform-none sm:size-9"
-      >
-        <MalikMark className="size-5 shrink-0 transition-transform group-hover:scale-105 sm:size-5.5" />
-      </button>
-    </span>
+    <button
+      ref={buttonRef}
+      type="button"
+      onClick={onClick}
+      aria-label="القائمة الرئيسية - مالك"
+      aria-haspopup="dialog"
+      title="القائمة الرئيسية"
+      data-header-brand-button
+      data-header-brand-monogram
+      data-header-brand-wordmark-button
+      className="inline-flex min-h-11 items-center justify-center rounded-lg p-1.5 -ms-1.5 outline-none transition-[background-color,opacity] duration-150 hover:bg-muted/70 active:opacity-85 focus-visible:ring-2 focus-visible:ring-primary/20"
+    >
+      <MalekBrandWordmark size="header" />
+    </button>
   );
 }
 
-/**
- * MALEK header lockup:
- *   [ M ]  MALEK
- * The [ M ] is an interactive brand monogram that opens primary navigation.
- * Beside it is the canonical MALEK wordmark.
- */
 function HeaderBrandLockup({
   onOpenNav,
   monogramRef,
@@ -65,24 +64,15 @@ function HeaderBrandLockup({
   monogramRef?: Ref<HTMLButtonElement>;
 }>) {
   return (
-    <div className="flex min-w-0 shrink-0 items-center gap-1.5 sm:gap-2" data-header-brand-lockup>
-      <HeaderBrandMonogramButton onClick={onOpenNav} buttonRef={monogramRef} />
-      <span
-        dir="ltr"
-        data-header-wordmark
-        className="malik-wordmark malek-wordmark shrink-0 select-none whitespace-nowrap text-[16px] font-extrabold uppercase leading-none tracking-[0.16em] text-foreground sm:text-[17px] lg:text-[18px]"
-        aria-label={APP_BRAND_NAME}
-      >
-        {APP_BRAND_NAME}
-      </span>
+    <div className="flex min-w-0 shrink-0 items-center" data-header-brand-lockup data-header-wordmark-side>
+      <HeaderBrandWordmarkButton onClick={onOpenNav} buttonRef={monogramRef} />
     </div>
   );
 }
 
 /**
- * Compact header control wrapper. The visible button stays small (32px) so the
- * icons support the header instead of dominating it, while the 44px wrapper
- * preserves an accessible touch target (WCAG 2.5.5).
+ * Header control — standalone icon, no visible box, 44px touch target via padding.
+ * Clearly visible, aligned, consistent size, not dominating.
  */
 function HeaderControl({
   label,
@@ -96,20 +86,20 @@ function HeaderControl({
 } & Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children' | 'aria-label'>>) {
   const { className, ...rest } = props;
   return (
-    <span className="relative grid size-11 shrink-0 place-items-center" data-header-control-hit>
-      <button
-        ref={ref}
-        type="button"
-        aria-label={label}
-        className={cn(
-          'grid size-8 place-items-center rounded-lg border border-border/60 bg-card text-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-4 focus-visible:ring-primary/20 active:scale-[0.97] motion-reduce:transform-none sm:size-9',
-          className,
-        )}
-        {...rest}
-      >
-        {children}
-      </button>
-    </span>
+    <button
+      ref={ref}
+      type="button"
+      aria-label={label}
+      data-header-control-standalone
+      data-header-control-hit
+      className={cn(
+        'grid place-items-center min-h-11 min-w-11 rounded-lg border-0 bg-transparent p-2.5 text-foreground outline-none transition-colors hover:bg-muted hover:text-foreground active:bg-muted/80 focus-visible:ring-2 focus-visible:ring-primary/20',
+        className,
+      )}
+      {...rest}
+    >
+      {children}
+    </button>
   );
 }
 
@@ -152,10 +142,10 @@ function HeaderUserMenu({
   }, [open]);
 
   const itemClass =
-    'flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-start text-sm font-semibold text-foreground outline-none transition-colors hover:bg-muted focus-visible:ring-4 focus-visible:ring-primary/20';
+    'flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-start text-sm font-semibold text-foreground outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary/20';
 
   return (
-    <div ref={rootRef} className="relative grid size-11 shrink-0 place-items-center" data-header-user-menu data-header-control-hit>
+    <div ref={rootRef} className="relative flex shrink-0 items-center" data-header-user-menu data-header-control-hit>
       <button
         ref={triggerRef}
         type="button"
@@ -164,19 +154,19 @@ function HeaderUserMenu({
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
         onClick={() => setOpen((value) => !value)}
+        data-header-control-standalone
         className={cn(
-          'grid size-8 place-items-center rounded-full border border-border/70 bg-card text-foreground outline-none transition-[background-color,border-color,box-shadow,transform]',
-          'hover:bg-muted active:scale-[0.97] focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transform-none sm:size-9',
-          open && 'border-foreground/20 bg-muted shadow-sm',
+          'grid place-items-center min-h-11 min-w-11 rounded-lg border-0 bg-transparent p-2.5 text-foreground outline-none transition-colors hover:bg-muted hover:text-foreground active:bg-muted/80 focus-visible:ring-2 focus-visible:ring-primary/20',
+          open && 'bg-muted text-foreground',
         )}
       >
-        <UserRound className="size-[15px] sm:size-4" aria-hidden="true" />
+        <UserRound className="size-[18px]" aria-hidden="true" />
       </button>
 
       {open ? (
         <>
           <div
-            className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[1px] md:hidden"
+            className="fixed inset-0 z-40 bg-black/15 backdrop-blur-[1px] md:hidden"
             onClick={() => setOpen(false)}
             aria-hidden="true"
           />
@@ -185,15 +175,15 @@ function HeaderUserMenu({
             role="menu"
             aria-label="قائمة المستخدم"
             data-account-menu-panel
-            className="absolute end-0 top-11 z-50 w-[min(17rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-border/90 bg-card text-card-foreground shadow-elevated"
+            className="absolute end-0 top-[calc(100%+0.5rem)] z-50 w-[min(17rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-elevated"
           >
-            <div className="flex items-center gap-3 border-b border-border/70 bg-muted/25 px-3.5 py-3">
+            <div className="flex items-center gap-3 border-b border-border bg-muted/60 px-3.5 py-3">
               <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary text-xs font-black text-primary-foreground" aria-hidden="true">
                 {initial}
               </span>
               <div className="min-w-0 flex-1">
-                <p className="text-[11px] font-bold text-muted-foreground">الحساب</p>
-                <p dir="ltr" className="mt-0.5 truncate text-start text-xs font-semibold text-foreground">
+                <p className="text-xs font-bold text-muted-foreground">الحساب</p>
+                <p dir="ltr" className="mt-0.5 truncate text-start text-[13px] font-semibold text-foreground">
                   {email || 'مستخدم مالك'}
                 </p>
               </div>
@@ -223,7 +213,7 @@ function HeaderUserMenu({
                 <span>المساعدة والدعم</span>
               </Link>
 
-              <div className="my-1 h-px bg-border/70" aria-hidden="true" />
+              <div className="my-1 h-px bg-border" aria-hidden="true" />
 
               <button
                 type="button"
@@ -354,27 +344,27 @@ export function AppShell() {
 
       <aside
         data-sidebar
-        className="fixed inset-y-0 right-0 z-30 hidden w-64 overflow-hidden border-l border-sidebar-border bg-sidebar text-sidebar-foreground shadow-sidebar lg:flex lg:flex-col"
+        className="fixed inset-y-0 right-0 z-30 hidden w-[14rem] overflow-hidden border-l border-sidebar-border bg-sidebar text-sidebar-foreground lg:flex lg:flex-col"
       >
-        <div className="min-h-24 border-b border-sidebar-border/50 px-5 py-5">
+        <div className="flex min-h-[4.5rem] items-center border-b border-sidebar-border/60 px-5 py-4">
           <Brand expanded />
         </div>
-        <nav className="sidebar-scroll flex-1 overflow-y-auto p-4 pb-6">
+        <nav className="sidebar-scroll flex-1 overflow-y-auto p-3 pb-6">
           <NavigationLinks authorization={authorization} expanded sharedLabel={sharedLabel} />
         </nav>
       </aside>
 
-      <div className="w-full lg:pr-64">
+      <div className="w-full lg:pr-[14rem]">
         <header
           data-app-shell-header
-          className="sticky top-0 z-20 border-b border-border/70 bg-card/95 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md supports-[backdrop-filter]:bg-card/85"
+          className="sticky top-0 z-20 border-b border-border bg-card pt-[env(safe-area-inset-top,0px)]"
         >
-          <div className="mx-auto flex min-h-[var(--app-header-height)] w-full max-w-[110rem] items-center justify-between gap-2 px-2.5 py-1 sm:px-4">
+          <div className="mx-auto flex min-h-[var(--app-header-height)] w-full max-w-[110rem] items-center justify-between gap-2 px-3 py-1 sm:px-4">
             <div className="z-10 flex shrink-0 items-center" data-header-brand-side data-header-wordmark-side>
               <HeaderBrandLockup onOpenNav={handleOpenNav} />
             </div>
 
-            <div className="z-10 flex shrink-0 items-center gap-0.5 sm:gap-1" data-header-utility-side data-header-right-controls>
+            <div className="z-10 flex shrink-0 items-center gap-0.5" data-header-utility-side data-header-right-controls>
               <HeaderControl
                 label={sharedLabel('toggleTheme')}
                 title={theme === 'dark' ? 'الوضع الفاتح' : 'الوضع الداكن'}
@@ -382,9 +372,9 @@ export function AppShell() {
                 data-header-theme-toggle
               >
                 {theme === 'dark' ? (
-                  <Sun className="size-[15px] sm:size-4" aria-hidden="true" />
+                  <Sun className="size-[18px]" aria-hidden="true" />
                 ) : (
-                  <Moon className="size-[15px] sm:size-4" aria-hidden="true" />
+                  <Moon className="size-[18px]" aria-hidden="true" />
                 )}
               </HeaderControl>
 
@@ -404,12 +394,12 @@ export function AppShell() {
               data-global-offline-notice
               role="status"
               aria-live="polite"
-              className="mx-3 mt-2 flex items-center gap-2 rounded-lg border border-[hsl(var(--color-warning-text)/0.25)] bg-[hsl(var(--color-warning-bg)/0.09)] px-3 py-2 text-warning sm:mx-4"
+              className="mx-3 mt-3 flex items-center gap-2 rounded-xl border border-[hsl(var(--color-warning-text)/0.22)] bg-[hsl(var(--color-warning-bg)/0.09)] px-3.5 py-2.5 text-warning sm:mx-4"
             >
               <ShieldAlert className="size-4 shrink-0" aria-hidden="true" />
               <div className="min-w-0 sm:flex sm:items-baseline sm:gap-2">
-                <p className="text-xs font-semibold">لا يوجد اتصال بالشبكة</p>
-                <p className="mt-0.5 text-xs leading-4 text-warning/80 sm:mt-0">قد يفشل الحفظ والتحديث حتى يعود الاتصال.</p>
+                <p className="text-[13px] font-bold">لا يوجد اتصال بالشبكة</p>
+                <p className="mt-0.5 text-[12px] leading-4 text-warning/80 sm:mt-0">قد يفشل الحفظ والتحديث حتى يعود الاتصال.</p>
               </div>
             </div>
           ) : null}
@@ -417,12 +407,12 @@ export function AppShell() {
             <div
               data-write-access-notice
               role="status"
-              className="mx-3 mb-2 mt-2 flex items-center gap-2 rounded-lg border border-[hsl(var(--color-warning-text)/0.2)] bg-[hsl(var(--color-warning-bg)/0.07)] px-3 py-2 text-warning sm:mx-4"
+              className="mx-3 mb-2 mt-3 flex items-center gap-2 rounded-xl border border-[hsl(var(--color-warning-text)/0.18)] bg-[hsl(var(--color-warning-bg)/0.07)] px-3.5 py-2.5 text-warning sm:mx-4"
             >
               <ShieldAlert className="size-4 shrink-0" aria-hidden="true" />
               <div className="min-w-0 sm:flex sm:items-baseline sm:gap-2">
-                <p className="text-xs font-semibold">{writeAccessNotice.title}</p>
-                <p className="mt-0.5 text-xs leading-4 text-warning/75 sm:mt-0">{writeAccessNotice.description}</p>
+                <p className="text-[13px] font-bold">{writeAccessNotice.title}</p>
+                <p className="mt-0.5 text-[12px] leading-4 text-warning/75 sm:mt-0">{writeAccessNotice.description}</p>
               </div>
             </div>
           ) : null}
