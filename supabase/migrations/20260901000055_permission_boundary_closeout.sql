@@ -1,6 +1,6 @@
 -- Permission boundary closeout: align six-role matrix with granular frontend
 -- and make private permission/portal tables explicitly deny browser access.
--- Compatibility semantics here intentionally preserve migration 51 precedence.
+-- Compatibility semantics intentionally preserve migration 51 precedence.
 --
 -- Fixes:
 -- * Preserve the P6/P51 compatibility contract for OPERATIONS: historical
