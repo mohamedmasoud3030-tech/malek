@@ -1,46 +1,46 @@
+import { supabase } from '@/lib/supabase';
+import { resolveTenantPortalAuthorization } from './tenant-portal-authority';
+import type { TenantPortalLoadResult, TenantPortalSnapshot } from './tenant-portal-read-model';
+
+type TenantPortalRpcPayload =
+  | { status: 'ready'; snapshot: TenantPortalSnapshot }
+  | { status: 'invalid' };
+
 /**
- * Tenant Portal v1 service boundary.
- *
- * The portal reads only through this boundary. Today the canonical
- * tenant-specific authorization read model (portal claim + company/tenant
- * scoped snapshot) is not yet available upstream, so every call returns the
- * explicit deferred result — the portal UI never guesses, never fabricates
- * data, and never falls back to office queries.
- *
- * Integration point for the upstream lane:
- *   - authorize via `resolveTenantPortalAuthorization` (claim source
- *     `tenant_portal_authorization`);
- *   - load the snapshot via the canonical read RPC for the claimed
- *     (company_id, tenant_id) only;
- *   - keep this module the only place the portal touches Supabase.
+ * Sole browser data seam for the isolated Tenant Portal. The browser sends
+ * only the bearer token. Company and tenant scope are resolved server-side
+ * from the private link table; no office session, role or record id is trusted.
  */
+export async function loadTenantPortalSnapshot(token: string | null | undefined): Promise<TenantPortalLoadResult> {
+  const authorization = resolveTenantPortalAuthorization(token);
+  if (!authorization.authorized) {
+    return {
+      status: 'invalid',
+      reason: authorization.reason === 'TENANT_LINK_MISSING'
+        ? 'TENANT_PORTAL_LINK_REQUIRED'
+        : 'TENANT_PORTAL_LINK_INVALID_OR_EXPIRED',
+    };
+  }
 
-import type { TenantPortalLoadResult } from './tenant-portal-read-model';
+  const { data, error } = await (supabase as any).rpc('get_tenant_portal_snapshot', {
+    p_token: authorization.token,
+  });
+  if (error) throw error;
 
-export const TENANT_PORTAL_READ_MODEL_UNAVAILABLE =
-  'TENANT_PORTAL_READ_MODEL_UNAVAILABLE' as const;
+  const payload = data as TenantPortalRpcPayload | null;
+  if (!payload || payload.status !== 'ready' || !payload.snapshot) {
+    return { status: 'invalid', reason: 'TENANT_PORTAL_LINK_INVALID_OR_EXPIRED' };
+  }
 
-export async function loadTenantPortalSnapshot(): Promise<TenantPortalLoadResult> {
-  return {
-    status: 'deferred',
-    reason: TENANT_PORTAL_READ_MODEL_UNAVAILABLE,
-  };
+  return { status: 'ready', snapshot: payload.snapshot };
 }
 
-/**
- * Canonical sources the portal read model is allowed to project (documentation
- * of the v1 contract). The portal must never expose office-core records or
- * write to any of them; the upstream read RPC enforces the same scoping.
- */
+/** Canonical source tables the server projection may read. */
 export const TENANT_PORTAL_ALLOWED_PROJECTION_SOURCES = [
   'people',
   'units',
   'properties',
   'contracts',
   'invoices',
-  'payments',
   'receipts',
-  'receipt_allocations',
-  'utility_bills',
-  'maintenance_requests',
 ] as const;
