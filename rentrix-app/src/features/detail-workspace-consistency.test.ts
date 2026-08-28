@@ -13,7 +13,8 @@ describe('detail workspace consistency', () => {
     const land = read('./lands/components/LandDossier.tsx');
 
     expect(ownerView).toContain('ariaLabel="أقسام ملف المالك"');
-    expect(ownerBody).toContain("data-owner-detail-financials");
+    expect(ownerBody).not.toContain("data-owner-detail-financials");
+    expect(ownerView).toContain('المالية التفصيلية في مساحة المال والتقارير');
     expect(tenant).toContain('ariaLabel="أقسام ملف المستأجر"');
     expect(tenant).toContain('section={activeSection}');
     expect(provider).toContain('ariaLabel="أقسام ملف مزود الخدمة"');

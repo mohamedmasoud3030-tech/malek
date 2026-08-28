@@ -1,13 +1,9 @@
-import { Link } from '@tanstack/react-router';
 import {
   Activity,
   Building2,
   DoorOpen,
   FileText,
-  HandCoins,
-  ReceiptText,
   UserRoundCog,
-  WalletCards,
 } from 'lucide-react';
 import { ContextualDocumentsSection } from '@/components/documents/contextual-documents-section';
 import { Button } from '@/components/ui/button';
@@ -22,23 +18,11 @@ import { useDialogNavigate } from '@/app/router/background-location';
 import { formatCompanyMoney, formatCompanyNumber, formatCompanyDate } from '@/lib/companyFormatters';
 import { businessReferenceOrLabel } from '@/lib/business-reference';
 import { getOwnerDisplayName } from '../services/owner-service';
-import {
-  settlementStatusLabels,
-  type OwnerSettlementRecord,
-  type SettlementStatus,
-} from '../services/owner-settlements-service';
 import type { OwnerActivityRecord } from '@/services/owner-workspace-service';
 import type { OwnerDetailSnapshot } from '../services/owner-service';
 import { OwnerAgreementsSection } from './owner-agreements-section';
 
-export type OwnerDossierSection = 'overview' | 'portfolio' | 'financials' | 'records';
-
-function settlementBadgeTone(status: SettlementStatus) {
-  if (status === 'paid') return 'success' as const;
-  if (status === 'approved') return 'info' as const;
-  if (status === 'cancelled') return 'danger' as const;
-  return 'warning' as const;
-}
+export type OwnerDossierSection = 'overview' | 'portfolio' | 'records';
 
 const unitStatusLabels: Record<string, string> = {
   occupied: 'مشغولة',
@@ -54,53 +38,20 @@ function unitStatusTone(status: string): 'success' | 'info' | 'warning' | 'neutr
   return 'neutral';
 }
 
-const invoiceStatusLabels: Record<string, string> = {
-  PAID: 'مدفوعة',
-  paid: 'مدفوعة',
-  PARTIALLY_PAID: 'مدفوعة جزئياً',
-  partial: 'مدفوعة جزئياً',
-  UNPAID: 'غير مدفوعة',
-  unpaid: 'غير مدفوعة',
-  OVERDUE: 'متأخرة',
-  overdue: 'متأخرة',
-  VOID: 'ملغاة',
-  void: 'ملغاة',
-};
-
-function invoiceStatusTone(status: string): 'success' | 'warning' | 'danger' | 'neutral' {
-  const normalized = status.toUpperCase();
-  if (normalized === 'PAID') return 'success';
-  if (normalized === 'OVERDUE') return 'danger';
-  if (normalized === 'VOID') return 'neutral';
-  return 'warning';
-}
-
-function getInvoiceRemaining(invoice: { amount: number; paid_amount: number }): number {
-  return Math.max(0, Number(invoice.amount) - Number(invoice.paid_amount));
-}
-
 export function OwnerDossierBody({
   snapshot,
-  settlements,
-  canOpenOwnerSettlements = false,
   activity,
   section,
 }: Readonly<{
   snapshot: OwnerDetailSnapshot;
-  settlements?: readonly OwnerSettlementRecord[];
-  canOpenOwnerSettlements?: boolean;
   activity?: readonly OwnerActivityRecord[];
   section?: OwnerDossierSection;
 }>) {
   const companySettings = useCompanySettingsContract();
   const dialogNavigate = useDialogNavigate();
-  const { owner, properties, units, contracts, invoices, financialSummary } = snapshot;
+  const { owner, properties, units, contracts } = snapshot;
 
   const activeContracts = contracts.filter((contract) => contract.status === 'active');
-  const openInvoices = invoices
-    .filter((invoice) => !invoice.deleted_at && getInvoiceRemaining(invoice) > 0)
-    .sort((left, right) => (left.due_date ?? left.created_at ?? '').localeCompare(right.due_date ?? right.created_at ?? ''));
-
   const propertyTitleById = new Map(properties.map((property) => [property.id, property.title ?? 'عقار غير محدد']));
   const unitNumberById = new Map(units.map((unit) => [unit.id, unit.unit_number]));
   const unitPropertyIdById = new Map(units.map((unit) => [unit.id, unit.property_id]));
@@ -154,7 +105,6 @@ export function OwnerDossierBody({
         <KpiCard label="العقارات" value={formatCompanyNumber(companySettings, properties.length)} icon={Building2} accent="primary" />
         <KpiCard label="الوحدات" value={formatCompanyNumber(companySettings, ownerUnitCount)} icon={DoorOpen} accent="sky" />
         <KpiCard label="العقود النشطة" value={formatCompanyNumber(companySettings, activeContracts.length)} sub={`من أصل ${formatCompanyNumber(companySettings, contracts.length)} عقود`} icon={FileText} accent="emerald" />
-        <KpiCard label="مستحقات المستأجرين" value={formatCompanyMoney(companySettings, financialSummary.outstandingBalance)} sub={`${formatCompanyNumber(companySettings, financialSummary.outstandingInvoicesCount)} فواتير مفتوحة`} icon={WalletCards} accent="amber" />
       </ResponsiveCardGrid>
 
       </div> : null}
@@ -176,7 +126,7 @@ export function OwnerDossierBody({
             rows={properties}
             columns={[
               // The register itself is the navigation affordance (row click on desktop,
-              // the primary button on the mobile card). Rendering an inner <Link> here
+              // the primary button on the mobile card). Rendering an inner navigation link here
               // would nest interactive controls inside the mobile card's button
               // (invalid HTML, duplicate focus stops) and shrink the target below the
               // 44px floor, so the identity cell is plain text like every other register.
@@ -285,88 +235,6 @@ export function OwnerDossierBody({
           ) : null}
         </CardContent>
       </Card>
-
-      </div> : null}
-
-      {(!section || section === 'financials') ? <div className="space-y-5" data-owner-detail-financials>
-      {/* Financial context — tenant receivables, never presented as owner balance */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2"><ReceiptText className="size-5 text-primary" aria-hidden="true" />فواتير المستأجرين على العقارات</CardTitle>
-          <CardDescription>المبالغ المتبقية على فواتير مستأجرين عبر عقارات المالك — لا تمثل رصيداً مستحقاً للمالك؛ صافي التسوية المستحق للمالك يُعرض في قسم تسويات المالك.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex flex-wrap gap-2">
-            <StatusBadge tone="info">{formatCompanyNumber(companySettings, openInvoices.length)} فواتير مفتوحة</StatusBadge>
-            <StatusBadge tone={financialSummary.outstandingBalance > 0 ? 'warning' : 'success'}>
-              إجمالي المتبقي على المستأجرين: {formatCompanyMoney(companySettings, financialSummary.outstandingBalance)}
-            </StatusBadge>
-          </div>
-          {openInvoices.length === 0 ? (
-            <p className="text-sm font-semibold text-muted-foreground">لا توجد فواتير مفتوحة على هذا المالك.</p>
-          ) : (
-            <ul className="space-y-2" aria-label="فواتير المالك المفتوحة">
-              {openInvoices.slice(0, 8).map((invoice) => (
-                <li key={invoice.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/60 bg-muted/20 px-3 py-2.5 text-sm">
-                  <span className="min-w-0 font-bold">{businessReferenceOrLabel(invoice, 'فاتورة مسجلة')}</span>
-                  <span className="flex flex-wrap items-center gap-2">
-                    <StatusBadge tone={invoiceStatusTone(invoice.status)}>{invoiceStatusLabels[invoice.status] ?? invoice.status}</StatusBadge>
-                    <span className="font-semibold tabular-nums" dir="ltr">{formatCompanyMoney(companySettings, getInvoiceRemaining(invoice))}</span>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Settlements */}
-      {settlements !== undefined ? (
-        <Card>
-          <CardHeader className="gap-3">
-            <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary"><HandCoins className="size-6" aria-hidden="true" /></div>
-            <CardTitle className="text-base">تسويات المالك</CardTitle>
-            <CardDescription>أحدث التسويات المعدة لهذا المالك عبر كل عقاراته.</CardDescription>
-            {canOpenOwnerSettlements ? (
-              <Button variant="secondary" className="min-h-11" asChild>
-                <Link to="/financials" search={{ section: 'funds', view: 'owner_settlements', ownerId: snapshot.owner.id } as never}>فتح مساحة التسويات</Link>
-              </Button>
-            ) : null}
-          </CardHeader>
-          <CardContent>
-            {settlements.length === 0 ? (
-              <p className="text-sm font-semibold text-muted-foreground">لا توجد تسويات مسجلة لهذا المالك حتى الآن.</p>
-            ) : (
-              <ul className="space-y-2" aria-label="قائمة تسويات المالك">
-                {settlements.slice(0, 5).map((settlement) => (
-                  <li
-                    key={settlement.id}
-                    className="flex flex-wrap items-center gap-2 rounded-xl border border-border/60 bg-background px-3 py-2.5 text-sm"
-                  >
-                    <span className="font-semibold">{settlement.property_title}</span>
-                    <span className="text-xs text-muted-foreground" dir="ltr">
-                      {settlement.period_start} → {settlement.period_end}
-                    </span>
-                    <span className="ms-auto flex items-center gap-2">
-                      <StatusBadge tone={settlementBadgeTone(settlement.status)} dot>
-                        {settlementStatusLabels[settlement.status]}
-                      </StatusBadge>
-                      <span className="font-bold tabular-nums" title="الصافي المستحق للمالك" dir="ltr">
-                        {formatCompanyMoney(companySettings, settlement.net_payable_amount)}
-                      </span>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-            {settlements.length > 5 && canOpenOwnerSettlements ? (
-              <p className="mt-2 text-xs text-muted-foreground">
-                تُعرض أحدث 5 تسويات — افتح مساحة التسويات لاستعراض السجل الكامل.
-              </p>
-            ) : null}
-          </CardContent>
-        </Card>
-      ) : null}
 
       </div> : null}
 

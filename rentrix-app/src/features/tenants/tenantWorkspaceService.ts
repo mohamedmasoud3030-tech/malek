@@ -140,6 +140,7 @@ export type TenantDossier = Readonly<{
   person: TenantPerson;
   contracts: Array<TenantContract & { reference?: string | null }>;
   invoices: Array<TenantInvoice & { id: string; reference?: string | null }>;
+  receipts: Array<{ id: string; reference: string | null; no: string | null; amount: number; date_time: string; channel: string | null; status: string }>;
   latestActivity: Array<{ id: string; subject: string | null; body: string; status: string | null; created_at: string }>;
 }>;
 
@@ -168,17 +169,21 @@ export async function getTenantDossier(tenantId: string, options: { includeFinan
   const contracts = (contractsData ?? []) as TenantDossier['contracts'];
   const contractIds = contracts.map((contract) => contract.id);
 
-  const [invoiceResult, activityResult] = await Promise.all([
+  const [invoiceResult, receiptResult, activityResult] = await Promise.all([
     options.includeFinancial && contractIds.length > 0
       ? (supabase as any).from('invoices').select('id,reference,contract_id,status,amount,paid_amount,due_date').in('contract_id', contractIds).is('deleted_at', null).order('due_date', { ascending: false })
+      : Promise.resolve({ data: [], error: null }),
+    options.includeFinancial
+      ? (supabase as any).from('receipts').select('id,reference,no,amount,date_time,channel,status').eq('tenant_id', tenantId).is('deleted_at', null).order('date_time', { ascending: false }).limit(20)
       : Promise.resolve({ data: [], error: null }),
     options.includeActivity
       ? (supabase as any).from('communication_records').select('id,subject,body,status,created_at').in('related_entity_type', ['tenant', 'person']).eq('related_entity_id', tenantId).is('deleted_at', null).order('created_at', { ascending: false }).limit(10)
       : Promise.resolve({ data: [], error: null }),
   ]);
   if (invoiceResult.error) throw invoiceResult.error;
+  if (receiptResult.error) throw receiptResult.error;
   if (activityResult.error) throw activityResult.error;
-  return { person: personRow, contracts, invoices: invoiceResult.data ?? [], latestActivity: activityResult.data ?? [] } as TenantDossier;
+  return { person: personRow, contracts, invoices: invoiceResult.data ?? [], receipts: receiptResult.data ?? [], latestActivity: activityResult.data ?? [] } as TenantDossier;
 }
 
 function getInvoicesByTenant(contractsByTenant: Record<string, TenantContract[]>, invoicesByContract: Record<string, TenantInvoice[]>) {

@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
-import { Building2, Edit, FileChartColumn, FileText, UserRoundCog, WalletCards } from 'lucide-react';
+import { Building2, Edit, FileChartColumn, FileText, UserRoundCog } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SectionTabPanel, SectionTabs } from '@/components/ui/section-tabs';
 import { AsyncContentState } from '@/components/async-content-state';
@@ -9,22 +9,15 @@ import { PageLayout } from '@/components/layout/page-layout';
 import { canAccess, financialOperationPermissions } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
 import { useDialogNavigate } from '@/app/router/background-location';
-import type { OwnerSettlementRecord } from '../services/owner-settlements-service';
-import { getOwnerDisplayName } from '../services/owner-service';
 import type { OwnerActivityRecord } from '@/services/owner-workspace-service';
 import type { OwnerDetailState } from '../types';
 import { OwnerDossierBody, type OwnerDossierSection } from './owner-dossier-body';
-import { OwnerFinancialAuthoritySection } from './owner-financial-authority-section';
 
 export function OwnerDetailView({
   state,
-  settlements,
-  canOpenOwnerSettlements = false,
   activity,
 }: Readonly<{
   state: OwnerDetailState;
-  settlements?: readonly OwnerSettlementRecord[];
-  canOpenOwnerSettlements?: boolean;
   activity?: readonly OwnerActivityRecord[];
 }>) {
   if (state.status === 'loading') {
@@ -66,7 +59,6 @@ export function OwnerDetailView({
   const sections = [
     { id: 'overview', label: 'نظرة عامة', icon: UserRoundCog },
     { id: 'portfolio', label: 'العقارات والعقود', icon: Building2 },
-    { id: 'financials', label: 'المالية', icon: WalletCards },
     { id: 'records', label: 'السجل والمستندات', icon: FileText },
   ] as const;
 
@@ -95,7 +87,7 @@ export function OwnerDetailView({
     <PageLayout dir="rtl" size="wide" visualVariant="malek-pro">
       <EntityDetailHeader
         title="ملف المالك"
-        subtitle="ملف المالك وبياناته والعقارات والوحدات والعقود والسياق المالي والتسويات والمستندات."
+        subtitle="بيانات المالك واتفاقيات الإدارة والعقارات المرتبطة والمستندات الأساسية. المالية التفصيلية في مساحة المال والتقارير."
         backTo="/owners"
         backLabel="الملاك"
         actions={actions}
@@ -108,24 +100,10 @@ export function OwnerDetailView({
         compactMobile
       />
       <SectionTabPanel id="overview" activeId={activeSection}>
-      <OwnerFinancialAuthoritySection
-        ownerId={owner.id}
-        ownerName={getOwnerDisplayName(owner)}
-        canOpenOwnerSettlements={canOpenOwnerSettlements}
-      />
-      <OwnerDossierBody
-        snapshot={state.snapshot}
-        settlements={settlements}
-        canOpenOwnerSettlements={false}
-        activity={activity}
-        section="overview"
-      />
+      <OwnerDossierBody snapshot={state.snapshot} activity={activity} section="overview" />
       </SectionTabPanel>
       <SectionTabPanel id="portfolio" activeId={activeSection}>
       <OwnerDossierBody snapshot={state.snapshot} section="portfolio" />
-      </SectionTabPanel>
-      <SectionTabPanel id="financials" activeId={activeSection}>
-      <OwnerDossierBody snapshot={state.snapshot} settlements={settlements} canOpenOwnerSettlements={canOpenOwnerSettlements} section="financials" />
       </SectionTabPanel>
       <SectionTabPanel id="records" activeId={activeSection}>
       <OwnerDossierBody snapshot={state.snapshot} activity={activity} section="records" />
