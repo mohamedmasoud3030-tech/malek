@@ -383,20 +383,35 @@ async function runStructural(db, schema) {
     detail: storageMutation ? `${storageMutation} overly-permissive storage policies` : undefined,
   });
 
-  const anonDefiner = (await db.query(`
-    select count(*)::int as n
+  const anonDefiners = (await db.query(`
+    select p.proname as name,
+           pg_get_function_identity_arguments(p.oid) as args
       from pg_proc p
       join pg_namespace n on n.oid = p.pronamespace
      where n.nspname = 'public'
        and p.prosecdef
        and has_function_privilege('anon', p.oid, 'EXECUTE')
-  `)).rows[0]?.n;
+     order by p.proname, pg_get_function_identity_arguments(p.oid)
+  `)).rows;
+  const allowedAnonDefiners = new Set([
+    'get_owner_portal_snapshot(p_token uuid)',
+    'get_tenant_portal_snapshot(p_token uuid)',
+    'get_owner_portal_snapshot(uuid)',
+    'get_tenant_portal_snapshot(uuid)',
+  ]);
+  const anonDefinerNames = anonDefiners.map((row) => `${row.name}(${row.args})`);
+  const unexpectedAnonDefiners = anonDefinerNames.filter((sig) => !allowedAnonDefiners.has(sig));
+  const missingAllowed = [...allowedAnonDefiners].filter((sig) => !anonDefinerNames.includes(sig));
   record({
     id: 'struct.no_anon_definer',
     group: 'structural',
-    title: 'no SECURITY DEFINER function is executable by anon',
-    status: Number(anonDefiner) === 0 ? 'pass' : 'fail',
-    detail: anonDefiner ? `${anonDefiner} anon-executable definers` : undefined,
+    title: 'only audited portal snapshot RPCs are anon-executable SECURITY DEFINER (get_owner_portal_snapshot, get_tenant_portal_snapshot)',
+    status: unexpectedAnonDefiners.length === 0 && anonDefinerNames.length === 2 ? 'pass' : 'fail',
+    detail: unexpectedAnonDefiners.length
+      ? `unexpected anon definers: ${unexpectedAnonDefiners.join(', ')}; allowed: ${[...allowedAnonDefiners].join(', ')}; found: ${anonDefinerNames.join(', ')}`
+      : anonDefinerNames.length !== 2
+        ? `expected exactly 2 audited anon definers, found ${anonDefinerNames.length}: ${anonDefinerNames.join(', ')}`
+        : `${anonDefinerNames.length} anon-executable definers: ${anonDefinerNames.join(', ')}`,
   });
 
   const hookGrants = (await db.query(`

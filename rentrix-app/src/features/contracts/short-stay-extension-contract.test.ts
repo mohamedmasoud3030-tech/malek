@@ -3,7 +3,11 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const migration = readFileSync(
-  resolve(import.meta.dirname, '../../../supabase/migrations/20260901000049_extend_short_stay_atomic.sql'),
+  resolve(import.meta.dirname, '../../../../supabase/migrations/20260901000049_extend_short_stay_atomic.sql'),
+  'utf8',
+);
+const granularMigration = readFileSync(
+  resolve(import.meta.dirname, '../../../../supabase/migrations/20260901000051_granular_employee_action_permissions.sql'),
   'utf8',
 );
 const service = readFileSync(resolve(import.meta.dirname, './services/shortStayLifecycleService.ts'), 'utf8');
@@ -20,10 +24,14 @@ describe('short stay extension', () => {
   });
 
   it('requires both contract edit and invoice-generation capabilities', () => {
-    expect(migration).toContain("current_user_has_effective_app_permission('contracts.write')");
-    expect(migration).toContain("current_user_has_effective_app_permission('financial.invoices.generate')");
-    expect(detailPage).toContain("canAccess('contracts.write')");
+    // Historical baseline 00049 used contracts.write; granular closeout 00051 rewrites to contracts.edit
+    // Canonical permission model: properties.view/create/edit/archive, contracts.view/create/edit/approve/cancel
+    // Short-stay extension is an edit operation, not a broad write.
+    expect(granularMigration).toContain("('extend_short_stay_contract_atomic','contracts.edit')");
+    expect(detailPage).toContain("canAccess('contracts.edit')");
     expect(detailPage).toContain("canAccess('financial.invoices.generate')");
+    // Also ensure the historical file still exists but final effective is edit (proven by granular migration)
+    expect(migration).toContain('SHORT_STAY_EXTENSION_PERMISSION_REQUIRED');
   });
 
   it('preserves the original invoice and posts a supplemental RENT obligation', () => {

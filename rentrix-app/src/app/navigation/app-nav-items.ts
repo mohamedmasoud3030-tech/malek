@@ -80,7 +80,7 @@ export function getAllNavItems(): readonly NavItem[] {
 export const mobileNavItems: readonly MobileNavItem[] = [];
 
 export const quickCreateItems: readonly MobileNavItem[] = [
-  ['/contracts/new', 'newContract', FileText, 'contracts.write'],
-  ['/properties/new', 'newProperty', Building2, 'properties.write'],
-  ['/people/new', 'newPerson', UserPlus, 'contracts.write'],
+  ['/contracts/new', 'newContract', FileText, 'contracts.create'],
+  ['/properties/new', 'newProperty', Building2, 'properties.create'],
+  ['/people/new', 'newPerson', UserPlus, 'contracts.create'],
 ];

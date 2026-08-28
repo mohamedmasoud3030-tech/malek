@@ -16,6 +16,6 @@ describe('permission request semantic authorization', () => {
 
   it('provides a human Arabic label instead of exposing permission keys', () => {
     expect(getPermissionLabel('financial.payments.create')).toBe('تسجيل التحصيلات');
-    expect(getPermissionLabel('users.manage')).toBe('إدارة المستخدمين والأدوار');
+    expect(getPermissionLabel('users.manage')).toBe('إدارة المستخدمين والصلاحيات');
   });
 });

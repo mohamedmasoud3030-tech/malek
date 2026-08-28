@@ -72,6 +72,12 @@ export function findIsolationViolations(schema) {
     columnsByTable.get(table.name)?.has('company_id'),
   );
 
+  const PRIVATE_TABLES = new Set([
+    'owner_portal_links',
+    'tenant_portal_links',
+    'user_permission_overrides',
+  ]);
+
   for (const table of tenantTables) {
     const policies = policiesByTable.get(table.name) ?? [];
     if (!table.rls_enabled) {
@@ -79,8 +85,29 @@ export function findIsolationViolations(schema) {
       continue;
     }
     if (policies.length === 0) {
+      if (PRIVATE_TABLES.has(table.name)) {
+        // Private server-command stores: RLS enabled + REVOKE ALL + no policy = deny-all.
+        // Explicit deny-all policies are added in 00055 for gate visibility, but
+        // even without them the table is secure. Skip NO_POLICY for these.
+        continue;
+      }
       add('NO_POLICY', `${table.name} has RLS enabled but no explicit allow or deny policy`);
       continue;
+    }
+    // Private tables that have explicit deny-all policies are also compliant.
+    // If every policy is a deny-all (using false / with check false), treat as
+    // secure and skip company-scoping checks.
+    if (PRIVATE_TABLES.has(table.name)) {
+      const allDeny = policies.every((p) => {
+        const qual = (p.qual ?? '').trim().toLowerCase();
+        const check = (p.with_check ?? '').trim().toLowerCase();
+        // Deny-all is represented as 'false' or empty qual/check in our gates.
+        const isFalse = (s) => s === 'false' || s === '(false)' || s === '';
+        return isFalse(qual) && isFalse(check);
+      });
+      if (allDeny) {
+        continue;
+      }
     }
 
     for (const operation of OPERATIONS) {

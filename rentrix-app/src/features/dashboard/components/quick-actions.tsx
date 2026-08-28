@@ -14,7 +14,7 @@ const QUICK_ACTIONS = [
     description: 'إنشاء عقد إيجار',
     to: '/contracts/new',
     icon: FileText,
-    permission: 'contracts.write',
+    permission: 'contracts.create',
   },
   {
     label: 'قبض دفعة',
@@ -28,7 +28,7 @@ const QUICK_ACTIONS = [
     description: 'تسجيل أصل جديد',
     to: '/properties/new',
     icon: Building2,
-    permission: 'properties.write',
+    permission: 'properties.create',
   },
   {
     label: 'طلب صيانة',
