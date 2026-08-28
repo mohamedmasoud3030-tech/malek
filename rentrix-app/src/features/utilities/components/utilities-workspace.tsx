@@ -92,6 +92,7 @@ const emptyMeterForm = (): UtilityMeterFormValues => ({
   account_number: '',
   provider_name: '',
   responsible_party: 'tenant',
+  actual_payer: null,
   is_active: true,
   notes: '',
 });
@@ -302,7 +303,7 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
         title: 'جدول فواتير المرافق',
         rows: visibleBills.map((bill) => ({
           label: `فاتورة ${bill.bill_number || 'فاتورة مرافق بلا مرجع'}`,
-          value: `المبلغ: ${bill.amount} ${currencyLabel} | المسدد: ${bill.paid_amount} | المتبقي: ${obligationByBillId.get(bill.id)?.remainingAmount ?? 0} | المسؤول: ${responsiblePartyLabels[bill.responsible_party]} | الاستحقاق: ${bill.due_date}`,
+          value: `المبلغ: ${bill.amount} ${currencyLabel} | المسدد: ${bill.paid_amount} | المتبقي: ${obligationByBillId.get(bill.id)?.remainingAmount ?? 0} | المسؤول: ${responsiblePartyLabels[bill.responsible_party]} | الدافع فعليًا: ${bill.actual_payer ? responsiblePartyLabels[bill.actual_payer] : 'غير مسجل'} | الاستحقاق: ${bill.due_date}`,
         })),
         totals: ['إجمالي المطالبات', `${totalBilled} ${currencyLabel}`],
       }],
@@ -665,6 +666,7 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
               <EntityForm.Field label="القراءة الحالية"><Input type="number" inputMode="decimal" value={billForm.current_reading ?? ''} onChange={(event) => setBillForm((form) => ({ ...form, current_reading: event.target.value ? Number(event.target.value) : null }))} /></EntityForm.Field>
               <EntityForm.Field label="الاستهلاك"><Input type="number" inputMode="decimal" value={billForm.consumption_units ?? ''} onChange={(event) => setBillForm((form) => ({ ...form, consumption_units: event.target.value ? Number(event.target.value) : null }))} /></EntityForm.Field>
               <EntityForm.Field label="المسؤول"><Select value={billForm.responsible_party} onChange={(event) => setBillForm((form) => ({ ...form, responsible_party: event.target.value as ResponsibleParty }))}>{Object.entries(responsiblePartyLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></EntityForm.Field>
+              <EntityForm.Field label="من دفع فعليًا"><Select value={billForm.actual_payer || ''} onChange={(event) => setBillForm((form) => ({ ...form, actual_payer: event.target.value ? event.target.value as ResponsibleParty : null }))}><option value="">غير مسجل بعد</option>{Object.entries(responsiblePartyLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></EntityForm.Field>
               <EntityForm.Field label="رقم الفاتورة"><Input value={billForm.bill_number || ''} onChange={(event) => setBillForm((form) => ({ ...form, bill_number: event.target.value }))} /></EntityForm.Field>
             </div>
             <EntityForm.Field label="ملاحظات"><Textarea value={billForm.notes || ''} onChange={(event) => setBillForm((form) => ({ ...form, notes: event.target.value }))} /></EntityForm.Field>

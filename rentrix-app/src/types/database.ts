@@ -7451,6 +7451,7 @@ export type Database = {
           current_reading: number | null;
           consumption_units: number | null;
           paid_amount: number;
+          actual_payer: 'tenant' | 'landlord' | 'company' | null;
           attachment_url: string | null;
           deleted_at: string | null;
           company_id: string;
@@ -7480,6 +7481,7 @@ export type Database = {
           current_reading?: number | null;
           consumption_units?: number | null;
           paid_amount?: number;
+          actual_payer?: 'tenant' | 'landlord' | 'company' | null;
           attachment_url?: string | null;
           deleted_at?: string | null;
           company_id?: string;
@@ -7509,6 +7511,7 @@ export type Database = {
           current_reading?: number | null;
           consumption_units?: number | null;
           paid_amount?: number;
+          actual_payer?: 'tenant' | 'landlord' | 'company' | null;
           attachment_url?: string | null;
           deleted_at?: string | null;
           company_id?: string;
@@ -9237,6 +9240,17 @@ export type Database = {
           p_request_id: string | null;
           p_cost: number | null;
           p_notes?: string | null;
+        };
+        Returns: Json;
+      };
+      close_maintenance_with_expense: {
+        Args: {
+          p_request_id: string | null;
+          p_cost: number | null;
+          p_charged_to: string | null;
+          p_notes?: string | null;
+          p_evidence_url?: string | null;
+          p_confirmed?: boolean | null;
         };
         Returns: Json;
       };

@@ -21,7 +21,7 @@ import {
 export const maintenanceStatusLabels = {
   open: "مفتوح",
   in_progress: "قيد التنفيذ",
-  resolved: "تم الحل",
+  resolved: "تم التنفيذ",
   closed: "مغلق",
 } as const;
 

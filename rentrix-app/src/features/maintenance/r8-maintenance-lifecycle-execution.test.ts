@@ -3,16 +3,14 @@
  *
  * Proves against a FULL migration replay:
  *   1. transition_maintenance_status_atomic enforces the legal matrix
- *      (open→in_progress/cancelled, in_progress→open/cancelled,
+ *      (open→in_progress/cancelled, in_progress→open/resolved/cancelled,
  *       resolved→closed, terminal states immutable),
  *   2. cancellation requires a reason and lands in cancelled (NOT closed),
  *      with cancelled_at/cancellation_reason + audit trail,
  *   3. raw status updates fail closed (MAINTENANCE_STATUS_VIA_COMMAND),
  *   4. the FULL journey works end-to-end:
- *      request → assignment (in_progress) → work → cost → expense (via
- *      resolve_maintenance_with_expense) → close,
- *   5. resolution stays financially coupled: the transition command refuses
- *      'resolved' and points at the expense-coupled RPC.
+ *      request → assignment (in_progress) → work completed → verified close,
+ *   5. technical completion stays separate from financial/operational closure.
  */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
@@ -145,16 +143,17 @@ describe('R8 — maintenance lifecycle authority', () => {
     expect(Number(rows[0].n)).toBe(1);
   });
 
-  it('enforces the legal transition matrix and refuses resolved via transition', async () => {
+  it('enforces the legal transition matrix and allows technical completion only after work begins', async () => {
     const id = await createRequest('طلب مصفوفة الانتقالات');
 
     // open → closed is illegal (work never happened).
     await expect(transition(id, 'closed')).rejects.toThrow(/MAINTENANCE_TRANSITION_ILLEGAL/);
-    // resolution must go through the expense-coupled RPC.
-    await expect(transition(id, 'resolved')).rejects.toThrow(/MAINTENANCE_RESOLVE_VIA_RPC/);
+    // completion before work starts is illegal.
+    await expect(transition(id, 'resolved')).rejects.toThrow(/MAINTENANCE_TRANSITION_ILLEGAL/);
 
     // open → in_progress → open → in_progress is legal (work rescheduling).
     expect((await transition(id, 'in_progress')).status).toBe('in_progress');
+    expect((await transition(id, 'resolved')).status).toBe('resolved');
     expect((await transition(id, 'open')).status).toBe('open');
     expect((await transition(id, 'in_progress')).status).toBe('in_progress');
   });
@@ -173,7 +172,7 @@ describe('R8 — maintenance lifecycle authority', () => {
     expect(rows[0].notes).toBe('ملاحظة تشغيلية');
   });
 
-  it('runs the FULL journey: request → assignment → work → cost → expense → close', async () => {
+  it('runs the FULL journey: request → assignment → work → completed → verified close', async () => {
     const id = await createRequest('تسريب مياه رئيسي');
 
     // Assignment: permitted operational data updates freely (non-status).
@@ -192,29 +191,22 @@ describe('R8 — maintenance lifecycle authority', () => {
     // Work starts.
     expect((await transition(id, 'in_progress')).status).toBe('in_progress');
 
-    // Work done with a cost → resolve couples the expense atomically.
+    const completed = await transition(id, 'resolved');
+    expect(completed.status).toBe('resolved');
+    expect(completed.completed_at).toBeTruthy();
+
+    await expect(db.query(
+      `select public.close_maintenance_with_expense($1::text, 42.5, 'OWNER', 'استبدال محبس رئيسي', null, false)`, [id],
+    )).rejects.toThrow(/MAINTENANCE_CONFIRMATION_REQUIRED/);
+
     const { rows } = await db.query<{ out: any }>(
-      `select public.resolve_maintenance_with_expense(
-         p_request_id := $1::text, p_cost := 42.5, p_notes := 'استبدال محبس رئيسي'
-       ) as out`,
-      [id],
+      `select public.close_maintenance_with_expense($1::text, 42.5, 'OWNER', 'استبدال محبس رئيسي', 'https://example.test/invoice', true) as out`, [id],
     );
-    const resolved = rows[0]?.out as any;
-    expect(resolved.maintenance.status).toBe('resolved');
-    expect(resolved.expense_id).toBeTruthy();
-
-    // The expense exists, is owner-agnostic here, and carries the cost.
-    const { rows: expense } = await db.query<{ amount: string; deleted_at: string | null }>(
-      `select amount::text, deleted_at from public.expenses where id::text = $1`,
-      [String(resolved.expense_id)],
-    );
-    expect(Number(expense[0].amount)).toBe(42.5);
-    expect(expense[0].deleted_at).toBeNull();
-
-    // Close through the sanctioned command.
-    const closed = await transition(id, 'closed');
-    expect(closed.status).toBe('closed');
-    expect(closed.resolved_at).toBeTruthy();
+    const closed = rows[0]?.out as any;
+    expect(closed.maintenance.status).toBe('closed');
+    expect(closed.maintenance.cost).toBe(42.5);
+    expect(closed.maintenance.charged_to).toBe('OWNER');
+    expect(closed.maintenance.attachment_url).toBe('https://example.test/invoice');
 
     // Terminal.
     await expect(transition(id, 'open')).rejects.toThrow(/MAINTENANCE_LIFECYCLE_TERMINAL/);

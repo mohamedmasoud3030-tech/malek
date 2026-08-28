@@ -51,7 +51,7 @@ vi.mock('./use-maintenance', () => ({
   useMaintenance: () => maintenanceMocks.maintenanceQuery,
   useUpdateMaintenance: () => maintenanceMocks.updateRequestMutation,
   useUpdateMaintenanceStatus: () => maintenanceMocks.updateStatusMutation,
-  useResolveMaintenanceWithExpense: () => maintenanceMocks.resolveMutation,
+  useCloseMaintenanceWithExpense: () => maintenanceMocks.resolveMutation,
 }));
 
 vi.mock('@/features/settings/useDocumentSettings', () => ({

@@ -121,7 +121,7 @@ export async function updateMaintenance(requestId: string, payload: MaintenanceU
  * R8: every status transition is a SERVER COMMAND
  * (transition_maintenance_status_atomic) — never a raw table update. The
  * server enforces the legal matrix (open→in_progress/cancelled,
- * in_progress→open/cancelled, resolved→closed, terminal states immutable),
+ * in_progress→open/resolved/cancelled, resolved→closed, terminal states immutable),
  * requires a cancellation reason, and audits the transition.
  */
 export async function updateMaintenanceStatus(
@@ -129,9 +129,6 @@ export async function updateMaintenanceStatus(
   status: Exclude<MaintenanceStatus, 'all'>,
   reason?: string,
 ) {
-  if (status === 'resolved') {
-    throw new Error('استخدم resolveMaintenanceWithExpense لإغلاق طلب الصيانة مع تسجيل التكلفة');
-  }
   const { data, error } = await supabase.rpc('transition_maintenance_status_atomic', {
     p_request_id: requestId,
     p_next_status: status,
@@ -141,11 +138,22 @@ export async function updateMaintenanceStatus(
   return data as Maintenance;
 }
 
-export type ResolveMaintenanceResult = { maintenance: Maintenance; expense_id: string | null };
+export type CloseMaintenanceInput = {
+  requestId: string;
+  cost: number;
+  chargedTo: 'OWNER' | 'TENANT' | 'OFFICE';
+  notes: string | null;
+  evidenceUrl: string | null;
+  confirmed: boolean;
+};
+export type CloseMaintenanceResult = { maintenance: Maintenance; expense_id: string | null };
 
-export async function resolveMaintenanceWithExpense(requestId: string, cost: number, notes: string | null): Promise<ResolveMaintenanceResult> {
+export async function closeMaintenanceWithExpense(input: CloseMaintenanceInput): Promise<CloseMaintenanceResult> {
   const { data, error } = await supabase
-    .rpc('resolve_maintenance_with_expense', { p_request_id: requestId, p_cost: cost, p_notes: notes })
+    .rpc('close_maintenance_with_expense', {
+      p_request_id: input.requestId, p_cost: input.cost, p_charged_to: input.chargedTo,
+      p_notes: input.notes, p_evidence_url: input.evidenceUrl, p_confirmed: input.confirmed,
+    })
     .single();
   if (error) handleSupabaseError(error, 'تعذر إغلاق طلب الصيانة وتسجيل التكلفة');
   return data as unknown as ResolveMaintenanceResult;

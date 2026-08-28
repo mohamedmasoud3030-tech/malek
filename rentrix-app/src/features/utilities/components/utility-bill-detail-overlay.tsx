@@ -90,6 +90,7 @@ export function UtilityBillDetailOverlay({
             </Fact>
             <Fact label="تاريخ الاستحقاق"><span dir="ltr" className="tabular-nums">{bill.due_date || '—'}</span></Fact>
             <Fact label="المسؤول عن السداد">{responsiblePartyLabels[bill.responsible_party]}</Fact>
+            <Fact label="من دفع فعليًا">{bill.actual_payer ? responsiblePartyLabels[bill.actual_payer] : 'غير مسجل'}</Fact>
             <Fact label="العداد">
               {meter ? <span dir="ltr" className="tabular-nums">{meter.meter_number}</span> : 'بدون عداد محدد'}
             </Fact>

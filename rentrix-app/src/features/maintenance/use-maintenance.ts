@@ -5,7 +5,8 @@ import { financialReportKeys } from '../financials/reports/useFinancialReports';
 import {
   createMaintenance,
   listMaintenance,
-  resolveMaintenanceWithExpense,
+  closeMaintenanceWithExpense,
+  type CloseMaintenanceInput,
   updateMaintenance,
   updateMaintenanceStatus,
   type CreateMaintenanceInput,
@@ -30,17 +31,17 @@ export function useUpdateMaintenance() { const qc = useQueryClient(); return use
 
 export function useUpdateMaintenanceStatus() { const qc = useQueryClient(); return useMutation({ mutationFn: ({ requestId, status, reason }: { requestId: string; status: Exclude<MaintenanceStatus, 'all'>; reason?: string }) => updateMaintenanceStatus(requestId, status, reason), onSuccess: async () => { await qc.invalidateQueries({ queryKey: maintenanceKeys.all }); toast.success('تم تحديث حالة طلب الصيانة'); }, onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر تحديث حالة طلب الصيانة') }); }
 
-export function useResolveMaintenanceWithExpense() {
+export function useCloseMaintenanceWithExpense() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ requestId, cost, notes }: { requestId: string; cost: number; notes: string | null }) => resolveMaintenanceWithExpense(requestId, cost, notes),
+    mutationFn: (input: CloseMaintenanceInput) => closeMaintenanceWithExpense(input),
     onSuccess: async () => {
       await Promise.all([
         qc.invalidateQueries({ queryKey: maintenanceKeys.all }),
         qc.invalidateQueries({ queryKey: expenseKeys.all }),
         qc.invalidateQueries({ queryKey: financialReportKeys.all }),
       ]);
-      toast.success('تم إغلاق طلب الصيانة وتسجيل التكلفة كمصروف');
+      toast.success('تم إغلاق طلب الصيانة بعد التحقق وتسجيل التكلفة');
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر إغلاق طلب الصيانة'),
   });

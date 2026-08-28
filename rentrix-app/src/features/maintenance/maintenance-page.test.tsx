@@ -41,7 +41,7 @@ vi.mock('./use-maintenance', () => ({
   useMaintenance: () => maintenanceMocks.maintenanceQuery,
   useUpdateMaintenance: () => maintenanceMocks.updateRequestMutation,
   useUpdateMaintenanceStatus: () => maintenanceMocks.updateStatusMutation,
-  useResolveMaintenanceWithExpense: () => maintenanceMocks.resolveMutation,
+  useCloseMaintenanceWithExpense: () => maintenanceMocks.resolveMutation,
 }));
 
 // The A4 print gate reads company settings through React Query; supply the
@@ -101,7 +101,7 @@ describe('MaintenancePage recovery states', () => {
     expect(html).toContain('برج النخيل / A-12');
     expect(html).toContain('قيد التنفيذ');
     expect(html).toContain('عاجلة');
-    expect(html).toContain('تم الحل');
+    expect(html).toContain('تم التنفيذ');
     expect(html).toContain('شركة التبريد');
   });
 

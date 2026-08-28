@@ -32,7 +32,7 @@ export function MaintenanceWorkspaceE2EFixture() {
                   <option value="all">كل الحالات</option>
                   <option value="open">مفتوح</option>
                   <option value="in_progress">قيد التنفيذ</option>
-                  <option value="resolved">تم الحل</option>
+                  <option value="resolved">تم التنفيذ</option>
                   <option value="closed">مغلق</option>
                 </Select>
                 <Select aria-label="تصفية حسب الأولوية" value="all" onChange={() => {}}>

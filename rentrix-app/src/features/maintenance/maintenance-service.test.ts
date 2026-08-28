@@ -104,9 +104,13 @@ describe('maintenance service failure and mutation boundaries', () => {
     });
   });
 
-  it('rejects direct status updates to resolved — must go through resolveMaintenanceWithExpense', async () => {
+  it('routes technical completion through the server transition command', async () => {
+    supabaseMock.rpc.mockResolvedValue({ data: { id: 'maintenance-1', status: 'resolved' }, error: null });
     const { updateMaintenanceStatus } = await import('./maintenance-service');
-    await expect(updateMaintenanceStatus('maintenance-1', 'resolved')).rejects.toThrow('resolveMaintenanceWithExpense');
+    await expect(updateMaintenanceStatus('maintenance-1', 'resolved')).resolves.toMatchObject({ status: 'resolved' });
+    expect(supabaseMock.rpc).toHaveBeenCalledWith('transition_maintenance_status_atomic', {
+      p_request_id: 'maintenance-1', p_next_status: 'resolved', p_reason: null,
+    });
   });
 
   it('routes every status transition through the R8 server command (no raw updates)', async () => {
@@ -130,24 +134,23 @@ describe('maintenance service failure and mutation boundaries', () => {
     expect(supabaseMock.from).not.toHaveBeenCalledWith('maintenance_records');
   });
 
-  it('resolves a maintenance request and records the linked expense via the atomic RPC', async () => {
-    const result = { maintenance: { id: 'maintenance-1', status: 'resolved', cost: 250 }, expense_id: 'expense-9' };
+  it('closes a completed request only through the verified closure RPC', async () => {
+    const result = { maintenance: { id: 'maintenance-1', status: 'closed', cost: 250 }, expense_id: null };
     supabaseMock.rpc.mockReturnValue({ single: vi.fn(() => Promise.resolve({ data: result, error: null })) });
-    const { resolveMaintenanceWithExpense } = await import('./maintenance-service');
+    const { closeMaintenanceWithExpense } = await import('./maintenance-service');
 
-    const outcome = await resolveMaintenanceWithExpense('maintenance-1', 250, 'تم استبدال المضخة');
-    expect(supabaseMock.rpc).toHaveBeenCalledWith('resolve_maintenance_with_expense', {
-      p_request_id: 'maintenance-1',
-      p_cost: 250,
-      p_notes: 'تم استبدال المضخة',
+    const outcome = await closeMaintenanceWithExpense({ requestId: 'maintenance-1', cost: 250, chargedTo: 'OWNER', notes: 'تم استبدال المضخة', evidenceUrl: 'https://example.test/invoice', confirmed: true });
+    expect(supabaseMock.rpc).toHaveBeenCalledWith('close_maintenance_with_expense', {
+      p_request_id: 'maintenance-1', p_cost: 250, p_charged_to: 'OWNER', p_notes: 'تم استبدال المضخة',
+      p_evidence_url: 'https://example.test/invoice', p_confirmed: true,
     });
     expect(outcome).toEqual(result);
   });
 
-  it('throws when the resolve RPC returns an error instead of silently succeeding', async () => {
+  it('throws when the closure RPC returns an error instead of silently succeeding', async () => {
     supabaseMock.rpc.mockReturnValue({ single: vi.fn(() => Promise.resolve({ data: null, error: new Error('duplicate resolve') })) });
-    const { resolveMaintenanceWithExpense } = await import('./maintenance-service');
+    const { closeMaintenanceWithExpense } = await import('./maintenance-service');
 
-    await expect(resolveMaintenanceWithExpense('maintenance-1', 100, null)).rejects.toThrow('تعذر إغلاق طلب الصيانة وتسجيل التكلفة');
+    await expect(closeMaintenanceWithExpense({ requestId: 'maintenance-1', cost: 100, chargedTo: 'OFFICE', notes: null, evidenceUrl: null, confirmed: true })).rejects.toThrow('تعذر إغلاق طلب الصيانة وتسجيل التكلفة');
   });
 });
