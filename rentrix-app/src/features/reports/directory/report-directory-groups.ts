@@ -84,13 +84,14 @@ export const reportGroups: readonly ReportGroup[] = [
   {
     id: 'maintenance',
     title: 'المصروفات والصيانة',
-    description: 'طلبات الصيانة وحالاتها وتكلفتها وأداء الإغلاق حسب العقار والوحدة.',
+    description: 'طلبات الصيانة وحالاتها وتكلفتها وأداء الإغلاق والخدمات المرتبطة بالتشغيل.',
     icon: Wrench,
     section: 'analytics',
     view: 'maintenance_analytics',
-    matches: ['maintenance_analytics'],
+    matches: ['maintenance_analytics', 'services'],
     shortcuts: [
       { label: 'الصيانة', description: 'الطلبات والحالات والأولويات والتكلفة حسب النطاق.', section: 'analytics', view: 'maintenance_analytics' },
+      { label: 'الخدمات والمرافق', description: 'فواتير الخدمات، جهة التحمل، المدفوع والمتبقي وإثباتات الدفع.', section: 'analytics', view: 'services' },
       { label: 'مصروفات التشغيل', description: 'المصروفات المرتبطة بالتشغيل خلال الفترة.', section: 'analytics', view: 'expenses' },
     ],
   },
