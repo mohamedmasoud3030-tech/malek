@@ -26,14 +26,9 @@ declare
   v_company_id uuid;
   v_charged_to text;
 begin
-  if auth.uid() is null then
-    raise exception 'غير مصرح: يجب تسجيل الدخول' using errcode = '42501';
-  end if;
-
-  if not exists (
-    select 1 from public.users u
-    where u.id = auth.uid() and u.role in ('ADMIN', 'MANAGER')
-  ) then
+  -- Preserve Phase-5 governance authority: membership/role is resolved by the
+  -- canonical helper, never from the legacy public.users.role column.
+  if not coalesce(public.is_admin_or_manager(), false) then
     raise exception 'غير مصرح: هذه العملية متاحة فقط للمدير أو المسؤول' using errcode = '42501';
   end if;
 
