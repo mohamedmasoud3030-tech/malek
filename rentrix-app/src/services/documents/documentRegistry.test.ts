@@ -56,6 +56,59 @@ const minimalPayloads: CanonicalDocumentPayloadMap = {
   income_statement: { revenues: [], expenses: [], totalRevenue: 0, totalExpense: 0, netIncome: 0 },
   balance_sheet: { assets: [], liabilities: [], equity: [], totalAssets: 0, totalLiabilities: 0, totalEquity: 0 },
   generic_report: { reportTitle: 'تقرير', sections: [{ title: 'قسم', rows: [] }] },
+  unit_inspection: {
+    inspectionDate: '2026-08-01',
+    inspectionMode: 'move_in',
+    conditionRows: [{ areaOrItem: 'المطبخ', condition: 'جيد' }],
+  },
+  lease_notice: {
+    noticeDate: '2026-08-01',
+    noticeKind: 'renewal',
+  },
+  deposit_voucher: {
+    transactionDate: '2026-08-01',
+    transactionKind: 'received',
+    amount: 300,
+  },
+  debt_rescheduling: {
+    agreementDate: '2026-08-01',
+    debtAmount: 600,
+    installments: [{ dueDate: '2026-09-01', amount: 300 }, { dueDate: '2026-10-01', amount: 300 }],
+  },
+  tenant_clearance: {
+    clearanceDate: '2026-08-01',
+    clearanceStatus: 'cleared',
+  },
+  owner_settlement: {
+    ownerName: 'مالك العقار',
+    status: 'approved',
+    collectedOwnerFunds: 1000,
+    managementFee: 50,
+    ownerExpenses: 50,
+    netDue: 900,
+    supportingRows: [],
+  },
+  management_exit: {
+    exitDate: '2026-08-01',
+  },
+  unit_passport: {
+    currentStatus: 'شاغرة',
+    leaseHistory: [],
+    maintenanceHistory: [],
+  },
+  maintenance_work_order: {
+    issueDate: '2026-08-01',
+    status: 'pending',
+    title: 'إصلاح تكييف',
+  },
+  maintenance_completion: {
+    completionDate: '2026-08-01',
+    status: 'completed',
+    title: 'إصلاح تكييف',
+  },
+  legal_dossier: {
+    timelineEvents: [{ date: '2026-08-01', eventType: 'إشعار', description: 'إشعار تأخر السداد' }],
+  },
 };
 
 describe('document template registry completeness', () => {
@@ -73,12 +126,23 @@ describe('document template registry completeness', () => {
       'income_statement',
       'balance_sheet',
       'generic_report',
+      'unit_inspection',
+      'lease_notice',
+      'deposit_voucher',
+      'debt_rescheduling',
+      'tenant_clearance',
+      'owner_settlement',
+      'management_exit',
+      'unit_passport',
+      'maintenance_work_order',
+      'maintenance_completion',
+      'legal_dossier',
     ]);
     expect(new Set(types).size).toBe(types.length);
   });
 
   it('every entry declares a complete output contract', () => {
-    const validSignatureRoles = new Set(['owner', 'tenant', 'accountant', 'general_manager']);
+    const validSignatureRoles = new Set(['owner', 'tenant', 'accountant', 'general_manager', 'inspector', 'vendor']);
     for (const entry of documentTemplateRegistry) {
       expect(entry.templateId.trim().length, `${entry.type} templateId`).toBeGreaterThan(0);
       expect(entry.templateVersion, `${entry.type} version`).toBe(1);
@@ -101,7 +165,7 @@ describe('document template registry completeness', () => {
       expect(entry.fileName.prefix.trim().length).toBeGreaterThan(0);
       expect(entry.fileName.maxLength).toBeGreaterThan(10);
       // A header document number is only allowed for real business numbers.
-      if (['owner_statement', 'tenant_statement', 'trial_balance', 'income_statement', 'balance_sheet', 'generic_report'].includes(entry.type)) {
+      if (['owner_statement', 'tenant_statement', 'trial_balance', 'income_statement', 'balance_sheet', 'generic_report', 'unit_passport'].includes(entry.type)) {
         expect(entry.businessReference.displayAsDocumentNo, `${entry.type} must not show a pseudo document number`).toBe(false);
       }
     }

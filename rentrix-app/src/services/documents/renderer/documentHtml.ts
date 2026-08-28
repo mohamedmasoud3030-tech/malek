@@ -21,13 +21,22 @@ import { formatLatinDateTime } from '@/lib/formatters';
 import { MAX_ROWS_PER_TABLE_CHUNK } from '../documentRegistry';
 
 const ARABIC_REGEX = /[\u0600-\u06FF]/;
-const DEFAULT_SIGNATURE_LABELS = new Set(['توقيع المالك', 'توقيع المستأجر', 'توقيع المحاسب', 'توقيع المدير العام']);
+const DEFAULT_SIGNATURE_LABELS = new Set([
+  'توقيع المالك',
+  'توقيع المستأجر',
+  'توقيع المحاسب',
+  'اعتماد المدير العام',
+  'توقيع الفاحص / المفتش',
+  'توقيع المقاول / الفني',
+]);
 
 export const signatureLabel: Record<SignatureRole, string> = {
   owner: 'توقيع المالك',
   tenant: 'توقيع المستأجر',
   accountant: 'توقيع المحاسب',
   general_manager: 'اعتماد المدير العام',
+  inspector: 'توقيع الفاحص / المفتش',
+  vendor: 'توقيع المقاول / الفني',
 };
 
 export const escapeDocumentHtml = (value: string | null | undefined): string =>

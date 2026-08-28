@@ -22,7 +22,19 @@ export type DocumentTypeId =
   | 'trial_balance'
   | 'income_statement'
   | 'balance_sheet'
-  | 'generic_report';
+  | 'generic_report'
+  // --- dedicated types added for the 24 MALEK business documents ---
+  | 'unit_inspection'
+  | 'lease_notice'
+  | 'deposit_voucher'
+  | 'debt_rescheduling'
+  | 'tenant_clearance'
+  | 'owner_settlement'
+  | 'management_exit'
+  | 'unit_passport'
+  | 'maintenance_work_order'
+  | 'maintenance_completion'
+  | 'legal_dossier';
 
 export type ContractDocumentPayload = {
   /** Real business reference when one exists. Never a UUID fragment. */
@@ -204,6 +216,316 @@ export type GenericReportPayload = {
   totalSummary?: string | null;
 };
 
+// ═══════════════════════════════════════════════════════════════════
+// 11 dedicated payload types for MALEK business documents
+// Each payload is a strict pass-through of caller-supplied data.
+// NO financial calculations are performed in any of these types.
+// ═══════════════════════════════════════════════════════════════════
+
+/** D2 — #2 Move-In / Move-Out Snagging (unit_inspection) */
+export type InspectionConditionRow = {
+  areaOrItem: string;
+  condition: string;
+  note?: string | null;
+};
+
+export type UnitInspectionPayload = {
+  /** Real work-order / inspection reference when one exists. Never a UUID fragment. */
+  reference?: string | null;
+  inspectionDate: string;
+  /** move_in | move_out | inspection */
+  inspectionMode: 'move_in' | 'move_out' | 'inspection';
+  propertyTitle?: string | null;
+  unitNumber?: string | null;
+  tenantName?: string | null;
+  conditionRows: InspectionConditionRow[];
+  /** Meter readings supplied by the canonical data source when available. */
+  meterReadings?: Array<{ meter: string; reading: string; unit?: string | null }> | null;
+  /** Key/asset handover list supplied by canonical data source. */
+  keyHandover?: Array<{ item: string; quantity: number; note?: string | null }> | null;
+  /** Evidence/attachment references only — no binary data. */
+  evidenceRefs?: string[] | null;
+  notes?: string | null;
+  /** Inspector name when supplied by canonical source — never invented. */
+  inspectorName?: string | null;
+};
+
+/** D3 — #3 Lease Renewal / Vacate Notice (lease_notice) */
+export type LeaseNoticePayload = {
+  /** Real contract reference when one exists. */
+  reference?: string | null;
+  tenantName?: string | null;
+  propertyTitle?: string | null;
+  unitNumber?: string | null;
+  currentEndDate?: string | null;
+  noticeDate: string;
+  /** renewal | vacate | non_renewal */
+  noticeKind: 'renewal' | 'vacate' | 'non_renewal';
+  effectiveDate?: string | null;
+  /** Approved message / terms supplied by caller — never auto-generated. */
+  approvedMessage?: string | null;
+  notes?: string | null;
+};
+
+/** D6 — #6 Security Deposit Voucher (deposit_voucher) */
+export type DepositVoucherPayload = {
+  /** Transaction reference from the canonical deposit authority. */
+  reference?: string | null;
+  transactionDate: string;
+  /** received | returned | deducted — only kinds the canonical domain supports. */
+  transactionKind: 'received' | 'returned' | 'deducted';
+  tenantName?: string | null;
+  propertyTitle?: string | null;
+  unitNumber?: string | null;
+  /** Amount as supplied by the deposit authority. Never recalculated. */
+  amount: number;
+  /**
+   * Canonical deposit balance/result only when supplied by the deposit
+   * authority. The engine never derives it.
+   */
+  depositBalance?: number | null;
+  reason?: string | null;
+  notes?: string | null;
+};
+
+/** D8 — #8 Debt Rescheduling Agreement (debt_rescheduling) — DATA_AUTHORITY_MISSING; payload defined for type safety */
+export type ReschedulingInstallmentRow = {
+  dueDate: string;
+  amount: number;
+  description?: string | null;
+};
+
+export type DebtReschedulingPayload = {
+  /** Agreement reference from canonical domain. */
+  reference?: string | null;
+  agreementDate: string;
+  tenantName?: string | null;
+  contractReference?: string | null;
+  propertyTitle?: string | null;
+  unitNumber?: string | null;
+  /** Authoritative total debt amount AT the time of agreement. Never re-derived. */
+  debtAmount: number;
+  /** Approved installment schedule from the domain — never generated here. */
+  installments: ReschedulingInstallmentRow[];
+  effectiveDate?: string | null;
+  status?: string | null;
+  terms?: string | null;
+  notes?: string | null;
+};
+
+/** D10 — #10 Tenant Final Clearance (tenant_clearance) */
+export type TenantClearancePayload = {
+  /** Contract reference. */
+  reference?: string | null;
+  clearanceDate: string;
+  tenantName?: string | null;
+  propertyTitle?: string | null;
+  unitNumber?: string | null;
+  /**
+   * Canonical financial-clearance state from the domain.
+   * The document refuses to say "براءة ذمة" unless this field proves it.
+   */
+  clearanceStatus: 'cleared' | 'outstanding' | 'pending';
+  /**
+   * Outstanding amount only when supplied by canonical authority.
+   * The engine never calculates it.
+   */
+  outstandingAmount?: number | null;
+  /**
+   * Deposit disposition only when supplied by canonical deposit authority.
+   */
+  depositDisposition?: string | null;
+  depositAmount?: number | null;
+  maintenanceNotes?: string | null;
+  utilityNotes?: string | null;
+  notes?: string | null;
+};
+
+/** D11 — #11 Owner Settlement Statement (owner_settlement) */
+export type OwnerSettlementLineRow = {
+  description: string;
+  amount: number;
+  type: 'credit' | 'debit';
+};
+
+export type OwnerSettlementPayload = {
+  /** Settlement reference from the owner-settlement lifecycle authority. */
+  reference?: string | null;
+  status: string;
+  periodFrom?: string | null;
+  periodTo?: string | null;
+  ownerName: string;
+  propertyTitle?: string | null;
+  /**
+   * All amounts come DIRECTLY from the owner-settlement read authority.
+   * The adapter MUST NOT compute net-due, management fee, or revenue.
+   * Managed owner rent is NOT office revenue.
+   */
+  collectedOwnerFunds: number;
+  managementFee: number;
+  ownerExpenses: number;
+  /**
+   * Net due / payout as supplied by the settlement authority.
+   * Never recalculated in the adapter or engine.
+   */
+  netDue: number;
+  payoutReference?: string | null;
+  payoutDate?: string | null;
+  supportingRows: OwnerSettlementLineRow[];
+  notes?: string | null;
+};
+
+/** D13 — #13 Management Exit Clearance (management_exit) */
+export type ManagementExitHandoverItem = {
+  item: string;
+  quantity?: number | null;
+  note?: string | null;
+};
+
+export type ManagementExitPayload = {
+  /** Property / owner agreement reference. */
+  reference?: string | null;
+  propertyTitle?: string | null;
+  ownerName?: string | null;
+  agreementEndDate?: string | null;
+  status?: string | null;
+  exitDate: string;
+  keysHandover?: ManagementExitHandoverItem[] | null;
+  documentsHandover?: ManagementExitHandoverItem[] | null;
+  /**
+   * Outstanding owner settlement state only when canonical data supplies it.
+   * Never derived by the adapter.
+   */
+  outstandingSettlementNote?: string | null;
+  notes?: string | null;
+};
+
+/** D15 — #15 Unit Lifecycle Passport (unit_passport) */
+export type UnitPassportLeaseRow = {
+  tenantName: string;
+  startDate: string;
+  endDate?: string | null;
+  status: string;
+  rentAmount?: number | null;
+};
+
+export type UnitPassportMaintenanceRow = {
+  date: string;
+  title: string;
+  status: string;
+  cost?: number | null;
+};
+
+export type UnitPassportPayload = {
+  propertyTitle?: string | null;
+  unitNumber?: string | null;
+  unitType?: string | null;
+  /** Canonical operational status — never invented. */
+  currentStatus: string;
+  /** Lease history from canonical read model. */
+  leaseHistory: UnitPassportLeaseRow[];
+  /** Maintenance history from canonical maintenance records. */
+  maintenanceHistory: UnitPassportMaintenanceRow[];
+  /** Utility / meter summary when canonical authority supplies it. */
+  utilitySummary?: string | null;
+  /**
+   * Financial summary from existing read models only.
+   * This payload is a read-only dossier, not a balance authority.
+   */
+  financialSummaryNote?: string | null;
+  notes?: string | null;
+};
+
+/** D19 — #19 Maintenance Work Order (maintenance_work_order) */
+export type MaintenanceWorkOrderPayload = {
+  /** Real work-order reference from canonical maintenance record. */
+  reference?: string | null;
+  status: string;
+  issueDate: string;
+  scheduledDate?: string | null;
+  propertyTitle?: string | null;
+  unitNumber?: string | null;
+  title: string;
+  description?: string | null;
+  category?: string | null;
+  priority?: string | null;
+  /** Assigned provider / technician name when canonical data supplies it. */
+  assignedProvider?: string | null;
+  technicianName?: string | null;
+  /** Responsibility party when canonical domain supplies it. */
+  responsibleParty?: string | null;
+  /**
+   * Approved cost estimate / limit when canonical data supplies it.
+   * The document adapter must NEVER invent or compute this.
+   */
+  approvedEstimate?: number | null;
+  instructions?: string | null;
+  notes?: string | null;
+};
+
+/** D20 — #20 Maintenance Completion Certificate (maintenance_completion) */
+export type MaintenanceCompletionPayload = {
+  /** Work order / maintenance reference. */
+  reference?: string | null;
+  completionDate: string;
+  status: string;
+  propertyTitle?: string | null;
+  unitNumber?: string | null;
+  title: string;
+  workPerformed?: string | null;
+  providerName?: string | null;
+  /**
+   * Approved FINAL cost from canonical resolve_maintenance_with_expense record.
+   * Never computed in the adapter.
+   */
+  approvedFinalCost?: number | null;
+  /** Evidence reference IDs/URLs — no binary data. */
+  evidenceRefs?: string[] | null;
+  /** Tenant acceptance fact when actually recorded. */
+  tenantAccepted?: boolean | null;
+  /** Manager acceptance fact when actually recorded. */
+  managerAccepted?: boolean | null;
+  notes?: string | null;
+};
+
+/** D24 — #24 Eviction / Rental Dispute Legal Dossier (legal_dossier) */
+export type LegalDossierTimelineEvent = {
+  date: string;
+  eventType: string;
+  description: string;
+  source?: string | null;
+};
+
+export type LegalDossierPayload = {
+  /** Case / dispute internal reference when one exists. */
+  reference?: string | null;
+  contractReference?: string | null;
+  tenantName?: string | null;
+  propertyTitle?: string | null;
+  unitNumber?: string | null;
+  /**
+   * Timeline events supplied by domain/audit sources.
+   * The document does not generate or infer events.
+   */
+  timelineEvents: LegalDossierTimelineEvent[];
+  /**
+   * Unpaid invoices/arrears evidence supplied by canonical invoice/arrears service.
+   * Amounts are presented verbatim — never recalculated.
+   */
+  unpaidInvoiceRefs?: Array<{ reference: string; amount: number; dueDate?: string | null }> | null;
+  totalArrearsAmount?: number | null;
+  /**
+   * Notice / document references already in the domain.
+   */
+  noticeRefs?: string[] | null;
+  /**
+   * Current case / internal status when the domain exposes one.
+   * The document must not make legal determinations or invent an eviction order.
+   */
+  caseStatus?: string | null;
+  notes?: string | null;
+};
+
 export type CanonicalDocumentPayloadMap = {
   contract: ContractDocumentPayload;
   invoice: InvoiceDocumentPayload;
@@ -216,6 +538,18 @@ export type CanonicalDocumentPayloadMap = {
   income_statement: IncomeStatementReportPayload;
   balance_sheet: BalanceSheetReportPayload;
   generic_report: GenericReportPayload;
+  // --- 11 dedicated types ---
+  unit_inspection: UnitInspectionPayload;
+  lease_notice: LeaseNoticePayload;
+  deposit_voucher: DepositVoucherPayload;
+  debt_rescheduling: DebtReschedulingPayload;
+  tenant_clearance: TenantClearancePayload;
+  owner_settlement: OwnerSettlementPayload;
+  management_exit: ManagementExitPayload;
+  unit_passport: UnitPassportPayload;
+  maintenance_work_order: MaintenanceWorkOrderPayload;
+  maintenance_completion: MaintenanceCompletionPayload;
+  legal_dossier: LegalDossierPayload;
 };
 
 export type DocumentBuildInput<T extends DocumentTypeId> = {

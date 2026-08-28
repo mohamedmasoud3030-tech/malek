@@ -1,4 +1,4 @@
-export type SignatureRole = 'owner' | 'tenant' | 'accountant' | 'general_manager';
+export type SignatureRole = 'owner' | 'tenant' | 'accountant' | 'general_manager' | 'inspector' | 'vendor';
 
 export type DocumentHeader = {
   companyName: string;
