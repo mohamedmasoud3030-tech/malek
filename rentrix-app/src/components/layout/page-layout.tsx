@@ -1,22 +1,29 @@
-import { useMatches } from '@tanstack/react-router';
+import { Link, useMatches } from '@tanstack/react-router';
+import { ArrowLeft, CalendarDays, RefreshCw } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { CalendarDays, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { APP_BRAND_NAME } from '@/lib/brand';
 import { getAppLanguageState } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
+import { PageHeaderActions } from './page-header-actions';
 
-interface PageLayoutProps {
+export interface PageLayoutProps {
   children: ReactNode;
   className?: string;
   contentClassName?: string;
   dir?: 'rtl' | 'ltr';
   size?: 'default' | 'wide' | 'full';
   lang?: string;
-  /** Page name used only for accessible context; visible naming belongs to PageHeader. */
   title?: string;
-  /** Scoped visual system for approved operational workspaces only. */
+  description?: ReactNode;
+  count?: number | string;
+  primaryAction?: ReactNode;
+  secondaryActions?: ReactNode;
+  backTo?: string;
+  backLabel?: string;
+  /** Kept for source compatibility while all pages use one visual system. */
   visualVariant?: 'malek-pro';
-  /** Explicit refresh affordance for operational pages whose data can go stale. */
+  /** Optional page-level refresh. It becomes the primary action only when no explicit primaryAction exists. */
   onRefresh?: () => void;
   refreshing?: boolean;
 }
@@ -27,63 +34,22 @@ const pageSizes: Record<NonNullable<PageLayoutProps['size']>, string> = {
   full: 'w-full',
 };
 
-function DayContextStrip({
-  contextTitle,
-  onRefresh,
-  refreshing,
-}: Readonly<{ contextTitle: string; onRefresh?: () => void; refreshing?: boolean }>) {
+function getTodayContext() {
   const { language } = getAppLanguageState();
   const isArabic = language === 'ar';
   const locale = isArabic ? 'ar-EG' : 'en-GB';
   const now = new Date();
-  const weekday = new Intl.DateTimeFormat(locale, { weekday: 'long' }).format(now);
-  const date = new Intl.DateTimeFormat(locale, {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-  }).format(now);
-  const todayLabel = isArabic ? 'اليوم' : 'Today';
 
-  return (
-    <div
-      data-global-page-context
-      data-global-today-context
-      aria-label={isArabic ? `${contextTitle} — ${todayLabel} ${weekday} ${date}` : `${contextTitle} — ${todayLabel}, ${weekday} ${date}`}
-      className="mx-3 mt-2 flex min-h-14 min-w-0 items-center rounded-2xl border border-border/60 bg-card px-3 sm:mx-4 sm:px-4 lg:mx-6"
-    >
-      <div className="flex min-w-0 flex-1 items-center gap-2.5">
-        <span
-          className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary"
-          aria-hidden="true"
-        >
-          <CalendarDays className="size-4" />
-        </span>
-        <p data-global-day-label className="shrink-0 text-xs font-black leading-5 text-foreground">
-          {todayLabel}
-        </p>
-        <span className="h-4 w-px shrink-0 bg-border" aria-hidden="true" />
-        <p className="min-w-0 truncate text-[0.8125rem] font-medium leading-5 text-muted-foreground" data-global-today-date>
-          <span data-global-today-weekday>{weekday}</span>
-          <span aria-hidden="true"> · </span>
-          <span data-global-today-day-date>{date}</span>
-        </p>
-      </div>
-
-      {onRefresh ? (
-        <button
-          type="button"
-          data-global-refresh
-          aria-label={isArabic ? 'تحديث' : 'Refresh'}
-          title={isArabic ? 'تحديث' : 'Refresh'}
-          onClick={onRefresh}
-          disabled={refreshing}
-          className="ms-2 grid size-11 shrink-0 place-items-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-primary disabled:opacity-60"
-        >
-          <RefreshCw className={cn('size-4.5', refreshing && 'animate-spin')} aria-hidden="true" />
-        </button>
-      ) : null}
-    </div>
-  );
+  return {
+    isArabic,
+    todayLabel: isArabic ? 'اليوم' : 'Today',
+    weekday: new Intl.DateTimeFormat(locale, { weekday: 'long' }).format(now),
+    date: new Intl.DateTimeFormat(locale, {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+    }).format(now),
+  };
 }
 
 export function PageLayout({
@@ -94,6 +60,12 @@ export function PageLayout({
   lang,
   size = 'default',
   title,
+  description,
+  count,
+  primaryAction,
+  secondaryActions,
+  backTo,
+  backLabel = 'العودة',
   visualVariant,
   onRefresh,
   refreshing,
@@ -104,7 +76,24 @@ export function PageLayout({
       .reverse()
       .find((match) => (match.staticData as { title?: string } | undefined)?.title)
       ?.staticData as { title?: string } | undefined)?.title;
-  const contextTitle = title?.trim() || routeTitle || APP_BRAND_NAME;
+  const resolvedTitle = title?.trim() || routeTitle || APP_BRAND_NAME;
+  const { isArabic, todayLabel, weekday, date } = getTodayContext();
+  const refreshAction = onRefresh ? (
+    <Button
+      type="button"
+      variant="secondary"
+      size="sm"
+      className="min-h-11"
+      onClick={onRefresh}
+      disabled={refreshing}
+      aria-label={isArabic ? 'تحديث' : 'Refresh'}
+    >
+      <RefreshCw className={cn('me-1.5 size-4', refreshing && 'animate-spin')} aria-hidden="true" />
+      {isArabic ? 'تحديث' : 'Refresh'}
+    </Button>
+  ) : null;
+  const resolvedPrimaryAction = primaryAction ?? refreshAction;
+  const hasSupportingTools = Boolean(backTo || secondaryActions);
 
   return (
     <div
@@ -121,7 +110,86 @@ export function PageLayout({
           contentClassName,
         )}
       >
-        <DayContextStrip contextTitle={contextTitle} onRefresh={onRefresh} refreshing={refreshing} />
+        <header
+          data-global-page-context
+          data-global-today-context
+          data-page-header
+          className="mx-3 mt-2 flex min-h-14 min-w-0 items-center gap-3 rounded-2xl border border-border/70 bg-card px-3 py-2.5 shadow-card sm:mx-4 sm:px-4 sm:py-3 lg:mx-6"
+          aria-label={
+            isArabic
+              ? `${resolvedTitle} — ${todayLabel} ${weekday} ${date}`
+              : `${resolvedTitle} — ${todayLabel}, ${weekday} ${date}`
+          }
+        >
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            <div className="flex min-w-0 items-center gap-1.5">
+              <h1
+                data-global-page-title
+                className="min-w-0 truncate text-xl font-black leading-7 sm:text-[1.375rem] sm:leading-8"
+              >
+                {resolvedTitle}
+              </h1>
+              {count !== undefined ? (
+                <span
+                  className="inline-flex min-h-6 shrink-0 items-center rounded-md border border-border bg-muted/45 px-2 py-0.5 text-xs font-bold tabular-nums text-muted-foreground"
+                  aria-label={`${isArabic ? 'عدد السجلات' : 'Records'} ${count}`}
+                >
+                  {count}
+                </span>
+              ) : null}
+            </div>
+
+            <span className="hidden h-5 w-px shrink-0 bg-border sm:block" aria-hidden="true" />
+
+            <div className="flex min-w-0 items-center gap-2 text-muted-foreground">
+              <span
+                className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary"
+                aria-hidden="true"
+              >
+                <CalendarDays className="size-4" />
+              </span>
+              <span data-global-day-label className="hidden shrink-0 text-xs font-black text-foreground sm:inline">
+                {todayLabel}
+              </span>
+              <p className="min-w-0 truncate text-[0.8125rem] font-medium leading-5" data-global-today-date>
+                <span data-global-today-weekday>{weekday}</span>
+                <span aria-hidden="true"> · </span>
+                <span data-global-today-day-date>{date}</span>
+              </p>
+            </div>
+          </div>
+
+          {resolvedPrimaryAction ? (
+            <div data-page-primary-action className="shrink-0">
+              {resolvedPrimaryAction}
+            </div>
+          ) : null}
+        </header>
+
+        {description ? (
+          <p className="mx-3 max-w-3xl text-[0.8125rem] leading-5 text-muted-foreground [overflow-wrap:anywhere] sm:mx-4 lg:mx-6">
+            {description}
+          </p>
+        ) : null}
+
+        {hasSupportingTools ? (
+          <div
+            data-page-supporting-tools
+            className="mx-3 flex min-w-0 flex-wrap items-center justify-end gap-1.5 sm:mx-4 sm:gap-2 lg:mx-6"
+          >
+            {backTo ? (
+              <Button variant="secondary" size="sm" asChild className="min-h-11">
+                <Link to={backTo}>
+                  <ArrowLeft className="me-1 size-3.5 rtl:rotate-180" aria-hidden="true" />
+                  <span className="hidden sm:inline">{backLabel}</span>
+                  <span className="sm:hidden">رجوع</span>
+                </Link>
+              </Button>
+            ) : null}
+            <PageHeaderActions title={resolvedTitle} secondaryActions={secondaryActions} />
+          </div>
+        ) : null}
+
         {children}
       </div>
     </div>
