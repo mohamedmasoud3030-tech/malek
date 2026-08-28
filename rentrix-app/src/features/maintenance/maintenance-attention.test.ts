@@ -11,7 +11,6 @@ const TODAY = '2026-08-27';
 
 function request(overrides: Partial<Maintenance> & { id: string }): Maintenance {
   return {
-    id: overrides.id,
     company_id: 'company-1',
     property_id: 'property-1',
     unit_id: null,
