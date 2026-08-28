@@ -27,6 +27,7 @@ describe('P1 — shared responsive register contract', () => {
     expect(sharedRegister).toContain('data-entity-table-grid');
     expect(sharedRegister).toContain("useState<'cards' | 'table' | null>");
     expect(sharedRegister).toContain('طريقة عرض ${ariaLabel}');
+    expect(sharedRegister).toContain('mobileCardType?: EntityCardType');
     expect(sharedRegister).toContain('md:inline-flex');
     expect(sharedRegister).toContain("viewMode === 'cards' ? 'hidden' : 'hidden md:block'");
     expect(sharedRegister).toContain("cn('block', viewMode === 'cards' ? 'md:block' : 'md:hidden')");
