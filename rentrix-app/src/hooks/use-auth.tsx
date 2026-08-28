@@ -41,17 +41,12 @@ function nextEffectivePermissionsChannelTopic(userId: string): string {
   return `effective-permissions:${userId}:${effectivePermissionsChannelSequence}`;
 }
 
-/**
- * Clears the local session storage entry so a corrupted/stale refresh token
- * (e.g. left over from another Vercel preview deployment sharing the same
- * origin/storage key) cannot keep failing silently on the next load.
- */
 function clearStaleSessionStorage(): void {
   if (typeof window === 'undefined') return;
   try {
     window.localStorage.removeItem(AUTH_STORAGE_KEY);
   } catch {
-    // Storage may be unavailable (privacy mode, etc.) - safe to ignore.
+    // Storage may be unavailable in privacy mode. Safe to ignore.
   }
 }
 
@@ -59,12 +54,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const appRouter = useRouter();
   const [session, setSession] = useState<Session | null>(null);
   const [grantedPermissions, setGrantedPermissions] = useState<readonly AppPermission[]>([]);
+  const [effectivePermissionsResolved, setEffectivePermissionsResolved] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  // Tracks whether we last observed an authenticated session, so a SIGNED_OUT
-  // event can be told apart from an explicit user-initiated logout (which
-  // already clears storage itself via signOut()) vs. an unexpected session
-  // drop (e.g. corrupted/expired refresh token) that needs cleanup + a
-  // user-facing explanation instead of a silent redirect.
   const hadSessionRef = useRef(false);
   const explicitLogoutRef = useRef(false);
 
@@ -72,14 +63,18 @@ export function AuthProvider({ children }: PropsWithChildren) {
     const userId = session?.user.id;
     if (!userId) {
       setGrantedPermissions([]);
+      setEffectivePermissionsResolved(false);
       return;
     }
+    setEffectivePermissionsResolved(false);
     try {
       setGrantedPermissions(await loadGrantedPermissions(userId));
     } catch {
-      // Authorization data is security-sensitive: a failed refresh must never
-      // retain a stale approved grant in the browser.
+      // Authorization data is security-sensitive: failure resolves to an empty
+      // authoritative set instead of retaining stale access.
       setGrantedPermissions([]);
+    } finally {
+      setEffectivePermissionsResolved(true);
     }
   }, [session?.user.id]);
 
@@ -87,9 +82,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     let mounted = true;
 
     const stopLoadingIfMounted = () => {
-      if (mounted) {
-        setIsLoading(false);
-      }
+      if (mounted) setIsLoading(false);
     };
 
     getCurrentSession()
@@ -102,14 +95,14 @@ export function AuthProvider({ children }: PropsWithChildren) {
       .finally(stopLoadingIfMounted);
 
     const { data } = supabase.auth.onAuthStateChange((event, nextSession) => {
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
 
       switch (event) {
         case 'SIGNED_OUT': {
           const wasUnexpected = hadSessionRef.current && !explicitLogoutRef.current;
           setSession(null);
+          setGrantedPermissions([]);
+          setEffectivePermissionsResolved(false);
           hadSessionRef.current = false;
           if (wasUnexpected) {
             clearStaleSessionStorage();
@@ -124,6 +117,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         case 'SIGNED_IN':
         case 'USER_UPDATED':
         case 'TOKEN_REFRESHED':
+          setEffectivePermissionsResolved(false);
           setSession(nextSession);
           hadSessionRef.current = Boolean(nextSession);
           break;
@@ -144,6 +138,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     const userId = session?.user.id;
     if (!userId) {
       setGrantedPermissions([]);
+      setEffectivePermissionsResolved(false);
       return undefined;
     }
 
@@ -156,22 +151,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
     window.addEventListener('focus', handleRefresh);
     document.addEventListener('visibilitychange', handleVisibility);
 
-    // Listen to both additive grants and owner-authored overrides. Focus and
-    // visibility refresh remain the deterministic fallback if Realtime is not
-    // enabled for either authorization table.
     const channel = (supabase as any)
       .channel(nextEffectivePermissionsChannelTopic(userId))
       .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'user_permission_grants',
-        filter: `user_id=eq.${userId}`,
+        event: '*', schema: 'public', table: 'user_permission_grants', filter: `user_id=eq.${userId}`,
       }, handleRefresh)
       .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'user_permission_overrides',
-        filter: `user_id=eq.${userId}`,
+        event: '*', schema: 'public', table: 'user_permission_overrides', filter: `user_id=eq.${userId}`,
       }, handleRefresh)
       .subscribe();
 
@@ -185,13 +171,14 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   const authorization = useMemo(() => {
     const base = getAuthorizationContextFromSession(session);
-    return base ? { ...base, grantedPermissions, effectivePermissionsResolved: true } : null;
-  }, [grantedPermissions, session]);
+    return base
+      ? { ...base, grantedPermissions, effectivePermissionsResolved }
+      : null;
+  }, [effectivePermissionsResolved, grantedPermissions, session]);
   const authorizationDiagnostics = useMemo(() => getAuthorizationDiagnosticsFromSession(session), [session]);
 
   useEffect(() => {
     if (!import.meta.env.DEV || !authorizationDiagnostics.metadataMismatch) return;
-
     console.warn('MALIK authorization role metadata is missing or unrecognized.', {
       resolvedRole: authorizationDiagnostics.resolvedRole,
       hasAppMetadataUserRole: authorizationDiagnostics.hasUserRoleMetadata,
@@ -220,6 +207,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
           await signOut();
         } finally {
           setGrantedPermissions([]);
+          setEffectivePermissionsResolved(false);
           setSession(null);
           hadSessionRef.current = false;
           if (appRouter.state.location.pathname !== LOGIN_PATH) {
