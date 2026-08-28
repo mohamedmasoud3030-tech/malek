@@ -9,7 +9,6 @@ import { useCompanyFormatters } from '@/hooks/useCompanyFormatters';
 import { useUnitDetail } from '../use-units';
 import { normalizeUnitStatus, unitStatusLabels } from '../unit-schema';
 
-
 export function UnitPreviewDialog({
   unitId,
   open,
@@ -44,13 +43,18 @@ export function UnitPreviewDialog({
       ) : null}
       {unit ? (
         <div className="space-y-5">
-          <div className="rounded-2xl border border-border/70 bg-card p-5 sm:p-6">
-            <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
-              <div className="flex items-start gap-3">
-                <span className="grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary"><DoorOpen className="size-6" /></span>
-                <div>
-                  <h3 className="text-xl font-black">وحدة {unit.unit_number}</h3>
-                  <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground"><Building2 className="size-4" />{property?.title ?? 'العقار غير محدد'}</p>
+          <section aria-label="بيانات الوحدة">
+            <div className="mb-3 flex flex-wrap items-start justify-between gap-4 border-b border-border/60 pb-3">
+              <div className="flex min-w-0 items-start gap-3">
+                <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+                  <DoorOpen className="size-5" aria-hidden="true" />
+                </span>
+                <div className="min-w-0">
+                  <h3 className="truncate text-lg font-black">وحدة {unit.unit_number}</h3>
+                  <p className="mt-1 flex min-w-0 items-center gap-1.5 text-sm text-muted-foreground">
+                    <Building2 className="size-4 shrink-0" aria-hidden="true" />
+                    <span className="truncate">{property?.title ?? 'العقار غير محدد'}</span>
+                  </p>
                 </div>
               </div>
               {status ? <StatusBadge tone={status === 'occupied' ? 'success' : status === 'available' ? 'info' : 'warning'}>{unitStatusLabels[status]}</StatusBadge> : null}
@@ -60,13 +64,16 @@ export function UnitPreviewDialog({
               fields={[
                 { label: 'رقم الوحدة', value: unit.unit_number },
                 { label: 'الدور', value: unit.floor ?? '—' },
-                { label: 'الإيجار', value: <span dir="ltr">{companyFormatters.money(unit.rent_amount ?? 0)}</span> },
+                { label: 'الإيجار المرجعي', value: <span dir="ltr">{companyFormatters.money(unit.rent_amount ?? 0)}</span> },
+                ...(unit.daily_reference_rate != null
+                  ? [{ label: 'سعر اليوم المرجعي للإقامة القصيرة', value: <span dir="ltr">{companyFormatters.money(unit.daily_reference_rate)}</span> }]
+                  : []),
                 { label: 'العقار', value: property?.title ?? '—' },
                 { label: 'الحالة', value: status ? unitStatusLabels[status] : '—' },
                 { label: 'ملاحظات', value: unit.notes ?? '—', wide: true },
               ]}
             />
-          </div>
+          </section>
           <ContextualDocumentsSection entityType="unit" entityId={unit.id} entityLabel="الوحدة" />
         </div>
       ) : null}
