@@ -14,16 +14,13 @@ function isAppPermission(value: unknown): value is AppPermission {
 }
 
 /**
- * One data seam for navigation, AuthProvider and route guards. RLS scopes the
- * read to the active company and current user; malformed/unknown grant keys are
- * ignored fail-closed.
+ * Loads the server-computed effective set. This is deliberately not a direct
+ * user_permission_grants read: owner overrides may deny a legacy role-derived
+ * capability or allow a capability to a routine Employee, and both decisions
+ * must be reflected identically in navigation, route guards and server RPCs.
  */
-export async function loadGrantedPermissions(userId: string): Promise<readonly AppPermission[]> {
-  const { data, error } = await (supabase as any)
-    .from('user_permission_grants')
-    .select('permission')
-    .eq('user_id', userId)
-    .is('revoked_at', null);
+export async function loadGrantedPermissions(_userId: string): Promise<readonly AppPermission[]> {
+  const { data, error } = await (supabase as any).rpc('list_my_effective_app_permissions');
   if (error) throw error;
   return Array.from(new Set(
     ((data ?? []) as Array<{ permission?: unknown }>)
@@ -38,7 +35,7 @@ export async function getEffectiveAuthorizationContextFromSession(
   const base = getAuthorizationContextFromSession(session);
   if (!base) return null;
   const grantedPermissions = await loadGrantedPermissions(base.userId);
-  return { ...base, grantedPermissions };
+  return { ...base, grantedPermissions, effectivePermissionsResolved: true };
 }
 
 export function announceEffectivePermissionsChanged() {

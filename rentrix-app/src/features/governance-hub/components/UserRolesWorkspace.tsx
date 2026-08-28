@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { RefreshCw, UserCog, UsersRound } from 'lucide-react';
+import { RefreshCw, ShieldCheck, UserCog, UsersRound } from 'lucide-react';
 import { DataErrorScreen } from '@/components/data-error-screen';
 import { EmptyState } from '@/components/empty-state';
 import { AccessDenied } from '@/components/layout/access-denied';
@@ -10,18 +10,43 @@ import { EntityForm } from '@/components/ui/entity-form';
 import { LoadingState } from '@/components/ui/loading-state';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Textarea } from '@/components/ui/textarea';
-import { getPermissionLabel } from '@/features/auth/permissions';
+import { getPermissionLabel, type AppPermission } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
-import { canManageGovernedUser, getRoleLabel } from '../user-roles-model';
+import { canManageGovernedUser, getOfficePersona, getRoleLabel } from '../user-roles-model';
 import { fetchGovernedUsers, type GovernedUser } from '../user-roles-service';
+import { useEmployeePermissionManagement, type EmployeePermissionEntry } from '../use-employee-permission-management';
 import { usePermissionRequestReview, type PermissionRequest } from '../use-permission-request-review';
 
-function UserAccessCard({ user, currentUserId }: Readonly<{
+const employeeCapabilityGroups: readonly Readonly<{
+  title: string;
+  permissions: readonly AppPermission[];
+}>[] = [
+  { title: 'العقارات', permissions: ['properties.view', 'properties.write'] },
+  { title: 'العقود والمستأجرون', permissions: ['contracts.view', 'contracts.write'] },
+  { title: 'التحصيل والمالية', permissions: ['financial.workspace.view', 'financial.payments.create'] },
+  { title: 'المصروفات', permissions: ['expenses.view', 'expenses.write'] },
+  { title: 'الصيانة والخدمات', permissions: ['maintenance.view', 'maintenance.write'] },
+  { title: 'التقارير', permissions: ['financial.reports.view', 'financial.reports.export'] },
+] as const;
+
+function UserAccessCard({
+  user,
+  currentUserId,
+  permissions,
+  onTogglePermission,
+  pendingPermission,
+}: Readonly<{
   user: GovernedUser;
   currentUserId: string | null | undefined;
+  permissions: readonly EmployeePermissionEntry[];
+  onTogglePermission: (userId: string, permission: AppPermission, allowed: boolean) => void;
+  pendingPermission: string | null;
 }>) {
   const isCurrentUser = !canManageGovernedUser(currentUserId, user.id);
+  const isOwner = getOfficePersona(user.role ?? null) === 'OWNER';
   const displayName = user.fullName?.trim() || user.name || user.email;
+  const permissionByKey = new Map(permissions.map((entry) => [entry.permission, entry]));
+
   return (
     <Card className="rounded-2xl">
       <CardHeader className="gap-2 pb-3">
@@ -37,14 +62,55 @@ function UserAccessCard({ user, currentUserId }: Readonly<{
           )}
         </div>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-4">
         <div className="flex items-center justify-between gap-3 rounded-xl border border-border px-3 py-2 text-sm">
-          <span className="font-bold">الدور الحالي</span>
+          <span className="font-bold">نوع الحساب</span>
           <Badge variant="outline">{getRoleLabel(user.role ?? 'USER')}</Badge>
         </div>
-        <p className="text-xs leading-5 text-muted-foreground">
-          الدور معروض للمراجعة فقط. تغييرات الوصول تتم من خلال طلبات الصلاحية المعتمدة.
-        </p>
+
+        {isOwner ? (
+          <div className="rounded-xl bg-primary/5 p-3 text-sm leading-6 text-muted-foreground">
+            صاحب المكتب لديه كل الصلاحيات تلقائيًا ولا يحتاج إعدادًا يدويًا.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-sm font-black">
+              <ShieldCheck className="size-4 text-primary" />
+              صلاحيات الموظف
+            </div>
+            <p className="text-xs leading-5 text-muted-foreground">
+              فعّل فقط ما يحتاجه هذا الموظف. القرار هنا يسبق أي دور تقني قديم محفوظ للتوافق.
+            </p>
+            <div className="space-y-3">
+              {employeeCapabilityGroups.map((group) => (
+                <div key={group.title} className="space-y-2 rounded-xl border border-border/70 p-3">
+                  <p className="text-xs font-black text-muted-foreground">{group.title}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {group.permissions.map((permission) => {
+                      const entry = permissionByKey.get(permission);
+                      const allowed = entry?.allowed ?? false;
+                      const operationKey = `${user.id}:${permission}`;
+                      return (
+                        <Button
+                          key={permission}
+                          type="button"
+                          size="sm"
+                          variant={allowed ? 'default' : 'secondary'}
+                          disabled={!user.isActive || pendingPermission === operationKey}
+                          aria-pressed={allowed}
+                          onClick={() => onTogglePermission(user.id, permission, !allowed)}
+                        >
+                          {pendingPermission === operationKey ? <RefreshCw className="size-3.5 animate-spin" /> : null}
+                          {getPermissionLabel(permission)}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -91,7 +157,7 @@ function PermissionRequestsQueue() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 id="permission-requests-heading" className="text-base font-black">طلبات الصلاحية</h2>
-          <p className="mt-1 text-xs leading-5 text-muted-foreground">راجع صاحب الطلب والصلاحية والسبب ثم وافق أو ارفض.</p>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">طلبات إضافية من الموظفين؛ إعداد صاحب المكتب المباشر يظل هو القرار الأعلى.</p>
         </div>
         <Button variant="secondary" onClick={() => void requestsQuery.refetch()} disabled={requestsQuery.isFetching}>
           <RefreshCw className={requestsQuery.isFetching ? 'size-4 animate-spin' : 'size-4'} />
@@ -191,50 +257,66 @@ export function UserRolesWorkspace() {
   const canManageUsers = canAccess('users.manage');
   const canReviewRequests = canAccess('permission_requests.review');
   const usersQuery = useQuery({ queryKey: ['governance-users'], queryFn: fetchGovernedUsers, enabled: canManageUsers });
+  const { permissionsQuery, permissionMutation } = useEmployeePermissionManagement(canManageUsers);
 
   if (!canManageUsers && !canReviewRequests) {
-    return <AccessDenied message="لا تملك صلاحية إدارة المستخدمين أو مراجعة طلبات الصلاحية." />;
+    return <AccessDenied message="لا تملك صلاحية إدارة الموظفين أو مراجعة طلبات الصلاحية." />;
   }
 
+  const pendingPermission = permissionMutation.variables
+    ? `${permissionMutation.variables.userId}:${permissionMutation.variables.permission}`
+    : null;
+
   return (
-    <section className="space-y-5" aria-label="المستخدمون والصلاحيات">
+    <section className="space-y-5" aria-label="الموظفون والصلاحيات">
       {canManageUsers ? (
         <>
           <div className="flex flex-wrap items-start justify-between gap-3 rounded-2xl border border-border bg-card p-4">
             <div className="flex gap-3">
               <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><UserCog className="size-5" /></span>
               <div>
-                <h2 className="font-black">المستخدمون</h2>
-                <p className="mt-1 text-sm leading-6 text-muted-foreground">راجع الحسابات وأدوارها الحالية، ثم استخدم طلبات الصلاحية للتغييرات الإضافية.</p>
+                <h2 className="font-black">الموظفون والصلاحيات</h2>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">صاحب المكتب يملك كل شيء. لكل موظف فعّل فقط الأقسام والإجراءات التي يحتاجها.</p>
               </div>
             </div>
-            <Button variant="secondary" onClick={() => void usersQuery.refetch()} disabled={usersQuery.isFetching}>
-              <RefreshCw className={usersQuery.isFetching ? 'size-4 animate-spin' : 'size-4'} />
+            <Button
+              variant="secondary"
+              onClick={() => { void usersQuery.refetch(); void permissionsQuery.refetch(); }}
+              disabled={usersQuery.isFetching || permissionsQuery.isFetching}
+            >
+              <RefreshCw className={usersQuery.isFetching || permissionsQuery.isFetching ? 'size-4 animate-spin' : 'size-4'} />
               تحديث
             </Button>
           </div>
 
-          {usersQuery.isPending ? <LoadingState variant="section" label="جارٍ تحميل المستخدمين..." /> : null}
-          {usersQuery.isError ? (
+          {usersQuery.isPending || permissionsQuery.isPending ? <LoadingState variant="section" label="جارٍ تحميل الموظفين والصلاحيات..." /> : null}
+          {usersQuery.isError || permissionsQuery.isError ? (
             <DataErrorScreen
-              title="تعذر تحميل المستخدمين"
+              title="تعذر تحميل الموظفين والصلاحيات"
               fallbackMessage="تحقق من الاتصال ثم أعد المحاولة."
-              error={usersQuery.error}
-              action={<Button variant="secondary" onClick={() => void usersQuery.refetch()}>إعادة المحاولة</Button>}
+              error={usersQuery.error ?? permissionsQuery.error}
+              action={<Button variant="secondary" onClick={() => { void usersQuery.refetch(); void permissionsQuery.refetch(); }}>إعادة المحاولة</Button>}
             />
           ) : null}
           {usersQuery.data && usersQuery.data.length === 0 ? (
-            <EmptyState title="لا يوجد مستخدمون" description="لا توجد حسابات متاحة الآن." />
+            <EmptyState title="لا يوجد موظفون" description="لا توجد حسابات متاحة الآن." />
           ) : null}
-          {usersQuery.data && usersQuery.data.length > 0 ? (
+          {usersQuery.data && usersQuery.data.length > 0 && permissionsQuery.data ? (
             <>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <UsersRound className="size-4" />
-                {usersQuery.data.length} مستخدمين
+                {usersQuery.data.length} حسابات
               </div>
-              <ResponsiveCardGrid desktopColumns={3} gap="md" aria-label="بطاقات المستخدمين">
+              <ResponsiveCardGrid desktopColumns={2} gap="md" aria-label="بطاقات الموظفين">
                 {usersQuery.data.map((governedUser) => (
-                  <UserAccessCard key={governedUser.id} user={governedUser} currentUserId={user?.id} />
+                  <UserAccessCard
+                    key={governedUser.id}
+                    user={governedUser}
+                    currentUserId={user?.id}
+                    permissions={permissionsQuery.data.filter((entry) => entry.user_id === governedUser.id)}
+                    pendingPermission={permissionMutation.isPending ? pendingPermission : null}
+                    onTogglePermission={(userId, permission, allowed) => permissionMutation.mutate({ userId, permission, allowed })}
+                  />
                 ))}
               </ResponsiveCardGrid>
             </>

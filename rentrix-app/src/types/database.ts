@@ -7204,6 +7204,64 @@ export type Database = {
           },
         ];
       };
+      tenant_portal_links: {
+        Row: {
+          id: string;
+          company_id: string;
+          tenant_id: string;
+          token: string;
+          issued_by: string;
+          issued_at: string;
+          expires_at: string;
+          revoked_at: string | null;
+          last_used_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          company_id: string;
+          tenant_id: string;
+          token?: string;
+          issued_by: string;
+          issued_at?: string;
+          expires_at?: string;
+          revoked_at?: string | null;
+          last_used_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          company_id?: string;
+          tenant_id?: string;
+          token?: string;
+          issued_by?: string;
+          issued_at?: string;
+          expires_at?: string;
+          revoked_at?: string | null;
+          last_used_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'tenant_portal_links_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'companies';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'tenant_portal_links_issued_by_fkey';
+            columns: ['issued_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'tenant_portal_links_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'people';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       tenant_profiles: {
         Row: {
           tenant_id: string;
@@ -7366,6 +7424,65 @@ export type Database = {
           },
           {
             foreignKeyName: 'user_permission_grants_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      user_permission_overrides: {
+        Row: {
+          company_id: string;
+          user_id: string;
+          permission: string;
+          allowed: boolean;
+          set_by: string;
+          reason: string | null;
+          set_at: string;
+        };
+        Insert: {
+          company_id: string;
+          user_id: string;
+          permission: string;
+          allowed: boolean;
+          set_by: string;
+          reason?: string | null;
+          set_at?: string;
+        };
+        Update: {
+          company_id?: string;
+          user_id?: string;
+          permission?: string;
+          allowed?: boolean;
+          set_by?: string;
+          reason?: string | null;
+          set_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'user_permission_overrides_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'companies';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_permission_overrides_permission_fkey';
+            columns: ['permission'];
+            isOneToOne: false;
+            referencedRelation: 'app_permission_catalog';
+            referencedColumns: ['permission'];
+          },
+          {
+            foreignKeyName: 'user_permission_overrides_set_by_fkey';
+            columns: ['set_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_permission_overrides_user_id_fkey';
             columns: ['user_id'];
             isOneToOne: false;
             referencedRelation: 'users';
@@ -8460,6 +8577,12 @@ export type Database = {
         };
         Returns: Json;
       };
+      create_tenant_portal_link: {
+        Args: {
+          p_tenant_id: string | null;
+        };
+        Returns: Json;
+      };
       current_app_role: {
         Args: Record<PropertyKey, never>;
         Returns: string;
@@ -8632,6 +8755,12 @@ export type Database = {
       get_contract_evidence_state: {
         Args: {
           p_contract_id: string | null;
+        };
+        Returns: Json;
+      };
+      get_tenant_portal_snapshot: {
+        Args: {
+          p_token: string | null;
         };
         Returns: Json;
       };
@@ -8917,6 +9046,10 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: Json;
       };
+      list_employee_effective_permissions: {
+        Args: Record<PropertyKey, never>;
+        Returns: { user_id: string | null; permission: string | null; allowed: boolean | null; explicitly_set: boolean | null }[];
+      };
       list_fixed_monthly_accruals: {
         Args: {
           p_payload?: Json | null;
@@ -8934,6 +9067,10 @@ export type Database = {
           p_batch_id: string | null;
         };
         Returns: Json;
+      };
+      list_my_effective_app_permissions: {
+        Args: Record<PropertyKey, never>;
+        Returns: { permission: string | null }[];
       };
       list_my_support_requests: {
         Args: Record<PropertyKey, never>;
@@ -9341,6 +9478,12 @@ export type Database = {
         };
         Returns: Json;
       };
+      revoke_tenant_portal_link: {
+        Args: {
+          p_tenant_id: string | null;
+        };
+        Returns: Json;
+      };
       role_has_app_permission: {
         Args: {
           p_role: string | null;
@@ -9606,6 +9749,15 @@ export type Database = {
           p_provider_id: string | null;
           p_payload: Json | null;
           p_category_ids?: (string)[] | null;
+        };
+        Returns: Json;
+      };
+      set_employee_permission: {
+        Args: {
+          p_user_id: string | null;
+          p_permission: string | null;
+          p_allowed: boolean | null;
+          p_reason?: string | null;
         };
         Returns: Json;
       };

@@ -18,6 +18,7 @@ import { businessReferenceOrLabel } from '@/lib/business-reference';
 import { formatCompanyDateTime } from '@/lib/companyFormatters';
 import { useTenantDossier } from '../useTenantWorkspace';
 import { useDialogNavigate } from '@/app/router/background-location';
+import { TenantPortalLinkAction } from './TenantPortalLinkAction';
 
 type TenantSection = 'overview' | 'contracts' | 'ledger' | 'records';
 
@@ -193,7 +194,12 @@ export function TenantDetailPage({ tenantId }: Readonly<{ tenantId: string }>) {
         subtitle="علاقات المستأجر وعقوده وسياقه المالي."
         backTo="/tenants"
         backLabel="المستأجرون"
-        actions={<Button asChild><Link to="/people/$personId/edit" params={{ personId: tenantId }}><Edit className="me-2 size-4" />تعديل</Link></Button>}
+        actions={(
+          <div className="flex flex-wrap gap-2">
+            <TenantPortalLinkAction tenantId={tenantId} />
+            <Button asChild><Link to="/people/$personId/edit" params={{ personId: tenantId }}><Edit className="me-2 size-4" />تعديل</Link></Button>
+          </div>
+        )}
       />
       <SectionTabs
         items={tenantSections}

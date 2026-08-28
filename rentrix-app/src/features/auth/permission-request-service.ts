@@ -20,6 +20,13 @@ export type PermissionRequest = Readonly<{
   grant_active?: boolean;
 }>;
 
+export type EmployeeEffectivePermission = Readonly<{
+  user_id: string;
+  permission: AppPermission;
+  allowed: boolean;
+  explicitly_set: boolean;
+}>;
+
 export async function requestPermission(permission: AppPermission, resourceRoute: string | null, reason: string) {
   const { data, error } = await (supabase as any).rpc('request_permission', {
     p_permission: permission,
@@ -60,6 +67,35 @@ export async function listPermissionRequestsForReview(status?: PermissionRequest
   });
   if (error) throw error;
   return (data ?? []) as PermissionRequest[];
+}
+
+/** Owner-only projection of the effective employee capability matrix. */
+export async function listEmployeeEffectivePermissions(): Promise<EmployeeEffectivePermission[]> {
+  const { data, error } = await (supabase as any).rpc('list_employee_effective_permissions');
+  if (error) throw error;
+  return (data ?? []) as EmployeeEffectivePermission[];
+}
+
+/**
+ * Owner-authored ALLOW/DENY. This is an authoritative override, not merely an
+ * additive grant, so it can also switch off access inherited from a legacy
+ * MANAGER/ACCOUNTANT/OPERATIONS/VIEWER role.
+ */
+export async function setEmployeePermission(
+  userId: string,
+  permission: AppPermission,
+  allowed: boolean,
+  reason = 'تحديد صلاحيات الموظف بواسطة صاحب المكتب',
+) {
+  const { data, error } = await (supabase as any).rpc('set_employee_permission', {
+    p_user_id: userId,
+    p_permission: permission,
+    p_allowed: allowed,
+    p_reason: reason,
+  });
+  if (error) throw error;
+  announceEffectivePermissionsChanged();
+  return data as { user_id: string; permission: AppPermission; allowed: boolean };
 }
 
 /** @deprecated Use the audience-specific list function. */
