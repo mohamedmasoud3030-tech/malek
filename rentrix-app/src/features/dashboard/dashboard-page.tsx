@@ -8,7 +8,9 @@ import { useAuth } from '@/hooks/use-auth';
 import { OnboardingChecklist } from '@/features/onboarding/OnboardingChecklist';
 import type { OnboardingProgress } from '@/features/onboarding/useOnboarding';
 import { useUtilityBills } from '@/features/utilities/use-utilities';
+import { useAllContracts } from '@/features/contracts/useContracts';
 import { useAllUnits } from '@/features/units/use-units';
+import { buildVacancyAnalytics } from '@/features/units/vacancy-analytics';
 import { listPropertyTitles } from '@/features/properties/property-service';
 import { getDashboardSnapshot } from './dashboard-snapshot';
 import { DashboardVisualScope } from './dashboard-visual-scope';
@@ -25,7 +27,6 @@ import { useMaintenance } from '@/features/maintenance/use-maintenance';
 import { UtilityObligationsSection } from './components/utility-obligations-section';
 import { VacantUnitsSection } from './components/vacant-units-section';
 import { buildUtilityObligationsSignal, EMPTY_UTILITY_OBLIGATIONS_SIGNAL } from './utility-obligations-signal';
-import { buildVacantUnitsSignal, EMPTY_VACANT_UNITS_SIGNAL } from './vacant-units-signal';
 import { buildExpiringContracts, buildOverdueTenantRows, toDateInputValue } from './dashboard-utils';
 import { OwnerObligationsSection } from './components/owner-obligations-section';
 
@@ -97,10 +98,16 @@ export function DashboardPage() {
     () => (utilityBillsQuery.isError ? EMPTY_UTILITY_OBLIGATIONS_SIGNAL : buildUtilityObligationsSignal(utilityBillsQuery.data, today)),
     [utilityBillsQuery.data, utilityBillsQuery.isError, today],
   );
-  // P3 — vacancy and out-of-service units. The vacant KPI stays the server
-  // snapshot number; these reads only name the units behind it and surface the
-  // maintenance-parked units the snapshot has no field for.
+
+  // Vacancy intelligence keeps the server snapshot as the count authority and
+  // uses complete unit + contract reads only for the operational detail behind
+  // that number: days vacant, reference rent and last effective lease end.
   const unitsQuery = useAllUnits();
+  const hasVacantUnit = useMemo(
+    () => (unitsQuery.data ?? []).some((unit) => String(unit.status).trim().toLowerCase() === 'available'),
+    [unitsQuery.data],
+  );
+  const contractsQuery = useAllContracts('all', { enabled: hasVacantUnit });
   const propertyTitlesQuery = useQuery({
     queryKey: ['dashboard', 'property-titles'],
     queryFn: listPropertyTitles,
@@ -110,10 +117,12 @@ export function DashboardPage() {
     () => new Map((propertyTitlesQuery.data ?? []).map((row) => [row.id, row.title])),
     [propertyTitlesQuery.data],
   );
-  const vacantUnits = useMemo(
-    () => (unitsQuery.isError ? EMPTY_VACANT_UNITS_SIGNAL : buildVacantUnitsSignal(unitsQuery.data, propertyTitleMap)),
-    [unitsQuery.data, unitsQuery.isError, propertyTitleMap],
+  const vacancyAnalytics = useMemo(
+    () => buildVacancyAnalytics(unitsQuery.data, contractsQuery.data?.rows, propertyTitleMap, today),
+    [contractsQuery.data?.rows, propertyTitleMap, today, unitsQuery.data],
   );
+  const vacancyDetailsUnavailable = hasVacantUnit
+    && (contractsQuery.isError || Boolean(contractsQuery.data?.truncated) || propertyTitlesQuery.isError);
 
   // P3 — maintenance that stopped moving. Urgency is how a request was
   // reported; this reads what happened to it afterwards, through the same
@@ -166,10 +175,11 @@ export function DashboardPage() {
             <section className="dashboard-section" aria-label="الوحدات الفارغة" data-dashboard-section="vacant-units">
               <SectionHeader eyebrow="2 · المحفظة" title="الوحدات الفارغة" />
               <VacantUnitsSection
-                signal={vacantUnits}
+                analytics={vacancyAnalytics}
                 serverVacantCount={snapshot?.occupancy.vacantUnits}
-                isLoading={unitsQuery.isLoading}
+                isLoading={unitsQuery.isLoading || (hasVacantUnit && contractsQuery.isLoading)}
                 isError={unitsQuery.isError}
+                detailsUnavailable={vacancyDetailsUnavailable}
                 settings={settings}
               />
             </section>
