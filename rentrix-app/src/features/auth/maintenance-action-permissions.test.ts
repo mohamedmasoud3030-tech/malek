@@ -7,7 +7,7 @@ const maintenanceList = readFileSync(
   'utf8',
 );
 const maintenanceTransitionMigration = readFileSync(
-  resolve(import.meta.dirname, '../../../../supabase/migrations/20260901000052_maintenance_transition_permission_alignment.sql'),
+  resolve(import.meta.dirname, '../../../../supabase/migrations/20260901000053_maintenance_transition_permission_alignment.sql'),
   'utf8',
 );
 
