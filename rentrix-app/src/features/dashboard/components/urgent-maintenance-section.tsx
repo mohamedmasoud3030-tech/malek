@@ -1,8 +1,18 @@
 import { Link } from '@tanstack/react-router';
 import { AlertTriangle, Wrench } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import type { DashboardQueueMaintenanceRow } from '../dashboard-snapshot';
+import {
+  DashboardSignalEmpty,
+  DashboardSignalHeader,
+  DashboardSignalList,
+  DashboardSignalLoading,
+  DashboardSignalMain,
+  DashboardSignalPanel,
+  DashboardSignalSide,
+  dashboardSectionActionClass,
+  dashboardSignalRowClass,
+} from './dashboard-signal-primitives';
 
 interface UrgentMaintenanceSectionProps {
   rows: DashboardQueueMaintenanceRow[];
@@ -20,70 +30,53 @@ export function UrgentMaintenanceSection({ rows, totalCount, isLoading, isError 
   const visibleRows = rows.slice(0, 3);
 
   return (
-    <section className="dashboard-queue-card" aria-labelledby="urgent-maintenance-title">
-      <div className="dashboard-queue-card__header">
-        <div className="dashboard-queue-card__title-group">
-          <span className="dashboard-queue-card__icon dashboard-queue-card__icon--danger" aria-hidden="true">
-            <Wrench className="size-4" />
-          </span>
-          <div>
-            <h3 id="urgent-maintenance-title" className="dashboard-queue-card__title">الصيانة العاجلة</h3>
-            <p className="dashboard-queue-card__meta">طلبات تحتاج تدخلاً قريباً</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {!isLoading && !isError ? <StatusBadge tone={badgeCount > 0 ? 'danger' : 'success'}>{badgeCount}</StatusBadge> : null}
-          <Link to="/maintenance" data-dashboard-section-action className="dashboard-section-link">عرض الكل</Link>
-        </div>
-      </div>
+    <DashboardSignalPanel labelledBy="urgent-maintenance-title">
+      <DashboardSignalHeader
+        id="urgent-maintenance-title"
+        title="الصيانة العاجلة"
+        meta="طلبات تحتاج تدخلاً قريباً"
+        icon={Wrench}
+        tone={badgeCount > 0 ? 'danger' : 'success'}
+        trailing={(
+          <>
+            {!isLoading && !isError ? <StatusBadge tone={badgeCount > 0 ? 'danger' : 'success'}>{badgeCount}</StatusBadge> : null}
+            <Link to="/maintenance" data-dashboard-section-action className={dashboardSectionActionClass}>عرض الكل</Link>
+          </>
+        )}
+      />
 
-      {isLoading ? (
-        <div className="dashboard-queue-list" aria-label="جارٍ تحميل الصيانة العاجلة">
-          <Skeleton className="h-14 rounded-xl" />
-          <Skeleton className="h-14 rounded-xl" />
-          <Skeleton className="h-14 rounded-xl" />
-        </div>
-      ) : null}
+      {isLoading ? <DashboardSignalLoading label="جارٍ تحميل الصيانة العاجلة" /> : null}
 
       {!isLoading && isError ? (
-        <div className="dashboard-queue-empty" role="alert">
-          <p className="font-semibold">تعذر تحميل الصيانة العاجلة</p>
-          <p>راجع تنبيه أعلى الصفحة ثم أعد المحاولة.</p>
-        </div>
+        <DashboardSignalEmpty role="alert" title="تعذر تحميل الصيانة العاجلة" description="راجع تنبيه أعلى الصفحة ثم أعد المحاولة." />
       ) : null}
 
       {!isLoading && !isError && visibleRows.length === 0 ? (
-        <div className="dashboard-queue-empty" role="status">
-          <p className="font-semibold">لا توجد صيانة عاجلة الآن</p>
-          <p>ستظهر هنا الطلبات العاجلة عندما تحتاج متابعة.</p>
-        </div>
+        <DashboardSignalEmpty title="لا توجد صيانة عاجلة الآن" description="ستظهر هنا الطلبات العاجلة عندما تحتاج متابعة." />
       ) : null}
 
       {!isLoading && !isError && visibleRows.length > 0 ? (
-        <ul className="dashboard-queue-list" role="list">
+        <DashboardSignalList label="الصيانة العاجلة">
           {visibleRows.map((row) => (
             <li key={row.id} role="listitem" className="min-w-0">
               <Link
                 to="/maintenance"
-                className="dashboard-queue-row dashboard-queue-row--danger"
+                className={dashboardSignalRowClass('danger')}
                 data-dashboard-queue-link
                 aria-label={`${row.title || 'طلب صيانة عاجل'} — ${maintenanceLocation(row)}`}
               >
-                <span className="dashboard-queue-row__main">
-                  <span className="dashboard-queue-row__title">{row.title || 'طلب صيانة عاجل'}</span>
-                  <span className="dashboard-queue-row__meta">{maintenanceLocation(row)}</span>
-                </span>
-                <span className="dashboard-queue-row__side">
+                <DashboardSignalMain title={row.title || 'طلب صيانة عاجل'} meta={maintenanceLocation(row)} />
+                <DashboardSignalSide>
                   <StatusBadge tone="danger">
                     <AlertTriangle className="size-3" aria-hidden="true" />
                     عاجل
                   </StatusBadge>
-                </span>
+                </DashboardSignalSide>
               </Link>
             </li>
           ))}
-        </ul>
+        </DashboardSignalList>
       ) : null}
-    </section>
+    </DashboardSignalPanel>
   );
 }
