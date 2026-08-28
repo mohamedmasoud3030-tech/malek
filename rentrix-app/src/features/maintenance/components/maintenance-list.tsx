@@ -94,7 +94,7 @@ export function MaintenanceList(props: MaintenanceListProps) {
 
   const canRunStatusAction = (status: Exclude<MaintenanceStatusFilter, "all">) => {
     if (status === "cancelled") return canCancel;
-    if (status === "resolved" || status === "closed") return canApprove;
+    if (status === "closed") return canApprove;
     return canEdit;
   };
 
