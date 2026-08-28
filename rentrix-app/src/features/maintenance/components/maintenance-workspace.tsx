@@ -14,6 +14,7 @@ import { runGuardedDocumentAction } from '@/services/documents/runDocumentAction
 import { getTodayLocalDateString } from '@/features/reports/reports-page.helpers';
 import { DocumentReadinessNotice } from '@/features/settings/components/document-readiness-notice';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
+import { useAuth } from '@/hooks/use-auth';
 import { MaintenanceDetailsOverlay, MaintenanceResolveOverlay } from './maintenance-detail-resolve-overlays';
 import { MaintenanceList } from './maintenance-list';
 import { maintenancePriorityLabels, maintenanceStatusLabels } from './maintenance-list';
@@ -22,7 +23,6 @@ import type { MaintenancePriorityFilter, MaintenanceStatusFilter } from '../main
 import { maintenanceAttentionLabels, type MaintenanceAttentionFilter } from '../maintenance-attention';
 import { useMaintenancePageController } from '../useMaintenancePageController';
 import { formatCount } from '@/lib/formatters';
-
 
 export type MaintenanceWorkspaceMode = 'standalone' | 'embedded';
 
@@ -33,6 +33,10 @@ export type MaintenanceWorkspaceProps = Readonly<{
 export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspaceProps) {
   const controller = useMaintenancePageController();
   const documentSettings = useDocumentSettings();
+  const { canAccess } = useAuth();
+  const canCreateMaintenance = canAccess('maintenance.create');
+  const canEditMaintenance = canAccess('maintenance.edit');
+  const canResolveMaintenance = canAccess('maintenance.resolve');
 
   const activeFilters = useMemo<readonly ActiveFilterItem[]>(() => {
     const items: ActiveFilterItem[] = [];
@@ -128,7 +132,7 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
     </Button>
   );
 
-  const createAction = (
+  const createAction = canCreateMaintenance ? (
     <Button
       type="button"
       onClick={controller.openCreateForm}
@@ -137,7 +141,7 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
       <PlusCircle className="me-2 size-4" aria-hidden="true" />
       طلب صيانة جديد
     </Button>
-  );
+  ) : null;
 
   const actions = (
     <div className="flex flex-col gap-2 sm:flex-row">
@@ -264,7 +268,9 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
             emptyTitle="لا توجد طلبات صيانة"
             emptyDescription={controller.hasFilters
               ? 'لا توجد طلبات تطابق الفلاتر الحالية.'
-              : 'أضف طلب صيانة جديد للبدء.'}
+              : canCreateMaintenance
+                ? 'أضف طلب صيانة جديد للبدء.'
+                : 'لا توجد طلبات صيانة مسجلة الآن.'}
           >
             <MaintenanceList
               rows={controller.visibleMaintenanceRows}
@@ -284,25 +290,27 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
         </div>
       </section>
 
-      <MaintenanceRequestForm
-        open={controller.showForm}
-        isEditing={Boolean(controller.editingRequest)}
-        isEditingResolvedRequest={controller.isEditingResolvedRequest}
-        isSubmitting={
-          controller.createMutation.isPending ||
-          controller.updateRequestMutation.isPending
-        }
-        isLoadingUnits={controller.unitsQuery.isLoading}
-        form={controller.form}
-        formPropertyId={controller.formPropertyId}
-        properties={controller.properties}
-        units={controller.units}
-        providerCategories={controller.providerCategories}
-        providerOptions={controller.filteredProviderOptions}
-        firstError={controller.firstCreateError}
-        onOpenChange={controller.setShowForm}
-        onSubmit={controller.onSubmit}
-      />
+      {((controller.editingRequest && canEditMaintenance) || (!controller.editingRequest && canCreateMaintenance)) ? (
+        <MaintenanceRequestForm
+          open={controller.showForm}
+          isEditing={Boolean(controller.editingRequest)}
+          isEditingResolvedRequest={controller.isEditingResolvedRequest}
+          isSubmitting={
+            controller.createMutation.isPending ||
+            controller.updateRequestMutation.isPending
+          }
+          isLoadingUnits={controller.unitsQuery.isLoading}
+          form={controller.form}
+          formPropertyId={controller.formPropertyId}
+          properties={controller.properties}
+          units={controller.units}
+          providerCategories={controller.providerCategories}
+          providerOptions={controller.filteredProviderOptions}
+          firstError={controller.firstCreateError}
+          onOpenChange={controller.setShowForm}
+          onSubmit={controller.onSubmit}
+        />
+      ) : null}
 
       <MaintenanceDetailsOverlay
         request={controller.detailsRequest}
@@ -313,16 +321,18 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
         }}
       />
 
-      <MaintenanceResolveOverlay
-        target={controller.resolveTarget}
-        form={controller.resolveForm}
-        isSubmitting={controller.resolveMutation.isPending}
-        firstError={controller.firstResolveError}
-        onOpenChange={(open) => {
-          if (!open) controller.setResolveTarget(null);
-        }}
-        onSubmit={controller.submitResolve}
-      />
+      {canResolveMaintenance ? (
+        <MaintenanceResolveOverlay
+          target={controller.resolveTarget}
+          form={controller.resolveForm}
+          isSubmitting={controller.resolveMutation.isPending}
+          firstError={controller.firstResolveError}
+          onOpenChange={(open) => {
+            if (!open) controller.setResolveTarget(null);
+          }}
+          onSubmit={controller.submitResolve}
+        />
+      ) : null}
     </>
   );
 
@@ -339,7 +349,7 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
       <PageHeader
         title="طلبات الصيانة"
         count={controller.visibleMaintenanceRows.length}
-        primaryAction={createAction}
+        primaryAction={createAction ?? undefined}
         secondaryActions={printAction}
       />
       {body}
