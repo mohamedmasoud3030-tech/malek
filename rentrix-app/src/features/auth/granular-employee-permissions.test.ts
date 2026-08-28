@@ -4,11 +4,11 @@ import { describe, expect, it } from 'vitest';
 import { appPermissions, employeeActionPermissions, getPermissionLabel } from './permissions';
 
 const migration = readFileSync(
-  resolve(import.meta.dirname, '../../../../supabase/migrations/20260901000050_granular_employee_action_permissions.sql'),
+  resolve(import.meta.dirname, '../../../../supabase/migrations/20260901000051_granular_employee_action_permissions.sql'),
   'utf8',
 );
 const maintenanceTransitionMigration = readFileSync(
-  resolve(import.meta.dirname, '../../../../supabase/migrations/20260901000052_maintenance_transition_permission_alignment.sql'),
+  resolve(import.meta.dirname, '../../../../supabase/migrations/20260901000053_maintenance_transition_permission_alignment.sql'),
   'utf8',
 );
 
