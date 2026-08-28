@@ -18,7 +18,7 @@ function sourceFiles(directory: string): string[] {
 }
 
 describe('P1 — shared responsive register contract', () => {
-  it('uses one EntityTable/DataTable foundation with the shared Cards ⇄ Table choice', () => {
+  it('uses one EntityTable/DataTable foundation with cards-only phone registers and a desktop view choice', () => {
     const productionSources = registerRoots.flatMap(sourceFiles).map((path) => readFileSync(path, 'utf8'));
     expect(productionSources.some((source) => source.includes('renderMobileCard'))).toBe(false);
     const sharedRegister = readFileSync(new URL('../components/ui/entity-table.tsx', import.meta.url), 'utf8');
@@ -27,6 +27,9 @@ describe('P1 — shared responsive register contract', () => {
     expect(sharedRegister).toContain('data-entity-table-grid');
     expect(sharedRegister).toContain("useState<'cards' | 'table' | null>");
     expect(sharedRegister).toContain('طريقة عرض ${ariaLabel}');
+    expect(sharedRegister).toContain('md:inline-flex');
+    expect(sharedRegister).toContain("viewMode === 'cards' ? 'hidden' : 'hidden md:block'");
+    expect(sharedRegister).toContain("cn('block', viewMode === 'cards' ? 'md:block' : 'md:hidden')");
   });
 
   it('regression guard — every active register still routes through the shared responsive foundation', () => {
