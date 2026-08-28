@@ -3,26 +3,14 @@
 @import './malek-pro-visual-wave.css';
 @import './app-density-contract.css';
 @import './design-system-foundation.css';
-@import './premium-glass.css';
 
-/* ============================================
-   MALIK Visual Contract v2.0
-   Enterprise Minimalism + Swiss Clarity
-
-   Design tokens (colors / shadows / radius / typography)
-   live in ./tokens.css — المصدر المركزي الوحيد.
-   Tailwind v4 لا يقرأ tailwind.config.js؛ الجسر في
-   tokens.css (@theme inline) هو ما يولّد فئات النظام.
-   ============================================ */
+/* MALEK global entrypoint.
+   Theme tokens live only in tokens.css. This file owns document base behavior,
+   utilities, print rules and public-site helpers. */
 
 @keyframes shimmer {
   100% { transform: translateX(-100%); }
 }
-
-
-/* ============================================
-   Base layer
-   ============================================ */
 
 @layer base {
   * { border-color: hsl(var(--border)); }
@@ -57,41 +45,20 @@
   button, input, textarea, select { font: inherit; }
   img, video, canvas, svg { max-width: 100%; }
 
-
   ::selection {
     background: hsl(var(--primary) / 0.15);
     color: hsl(var(--foreground));
   }
-}
-
-/* Dark mode uses luminance, borders, and restrained elevation — not glow. */
-@layer base {
-  [data-theme='dark'] body {
-    background: hsl(var(--background));
-  }
-
-  [data-theme='dark'] [data-app-shell] {
-    background: transparent;
-  }
 
   [data-theme='dark'] [data-unified-surface='page-header'],
-  [data-theme='dark'] .dashboard-ops-header { box-shadow: var(--shadow-card); }
+  [data-theme='dark'] .dashboard-ops-header {
+    box-shadow: var(--shadow-card);
+  }
 }
 
-/* Login ambient brand backdrop — premium Navy + Gold, luminous.
-   The base environment is painted once by premium-glass.css (body::before);
-   this layer only adds the brighter pools that belong to the entry surface. */
 [data-login-surface] {
-  background-color: transparent;
-  background-image: var(--premium-login-ambient);
-  background-repeat: no-repeat;
+  background-color: hsl(var(--background));
 }
-
-/* ============================================
-   Utility classes
-   (Color/shadow/radius utilities تولّد من @theme
-   في tokens.css — لا تعرّف هنا يدويًا)
-   ============================================ */
 
 @layer utilities {
   .pressable {
@@ -116,13 +83,15 @@
     scrollbar-width: thin;
     scrollbar-color: hsl(var(--sidebar-foreground) / 0.18) transparent;
   }
-  .sidebar-scroll::-webkit-scrollbar          { width: 5px; }
-  .sidebar-scroll::-webkit-scrollbar-track    { background: transparent; }
-  .sidebar-scroll::-webkit-scrollbar-thumb    { border-radius: 999px; background: hsl(var(--sidebar-foreground) / 0.18); }
+  .sidebar-scroll::-webkit-scrollbar { width: 5px; }
+  .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
+  .sidebar-scroll::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: hsl(var(--sidebar-foreground) / 0.18);
+  }
 
-  .safe-top-app     { padding-top: env(safe-area-inset-top, 0px); }
+  .safe-top-app { padding-top: env(safe-area-inset-top, 0px); }
   .safe-bottom-overlay { padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px)); }
-
   .touch-target { min-height: 44px; min-width: 44px; }
 
   .no-scrollbar { scrollbar-width: none; }
@@ -146,10 +115,6 @@
   }
 }
 
-/* ============================================
-   Enterprise Print Engine Standards (A4 Color)
-   ============================================ */
-
 @media print {
   @page {
     size: A4 portrait;
@@ -161,22 +126,16 @@
     print-color-adjust: exact !important;
   }
 
-  body > *:not(#root) {
-    display: none !important;
-  }
+  body > *:not(#root) { display: none !important; }
 
   [data-print-hide],
   [data-sidebar],
   nav,
   header,
   aside,
-  .print\:hidden {
-    display: none !important;
-  }
+  .print\:hidden { display: none !important; }
 
-  .print\:block {
-    display: block !important;
-  }
+  .print\:block { display: block !important; }
 
   html,
   body,
@@ -206,7 +165,7 @@
   }
 
   .print-document .card,
-  .print-document [class*="rounded"] {
+  .print-document [class*='rounded'] {
     box-shadow: none !important;
     border-color: #cbd5e1 !important;
   }
@@ -226,12 +185,9 @@
   }
 
   button,
-  [role="button"],
-  [data-print-actions] {
-    display: none !important;
-  }
+  [role='button'],
+  [data-print-actions] { display: none !important; }
 
-  /* SVG Charts & Recharts Color Print Stability */
   .recharts-responsive-container,
   svg.recharts-surface {
     overflow: visible !important;
@@ -240,49 +196,23 @@
   }
 }
 
-/* ============================================
-   Landing site (public `/`, `/privacy`, `/terms`)
-   Premium Real Estate: Deep Navy Ink + Restrained Gold
-   ============================================ */
-
-@theme {
-  /* Deep navy ink ramp - for dark landing sections with glass */
-  --color-ink-950: #080e1a;
-  --color-ink-900: #0d1526;
-  --color-ink-850: #121a2b;
-  --color-ink-800: #1a2335;
-  --color-ink-700: #222e42;
-
-  /* Restrained Gold / Warm Sand ramp - for CTAs and accents */
-  --color-brand-50: #fdf6e8;
-  --color-brand-100: #fbe9c0;
-  --color-brand-200: #f7d48a;
-  --color-brand-300: #f0b95c;
-  --color-brand-400: #e6a23c;
-  --color-brand-500: #d48a2a;
-  --color-brand-600: #b5731f;
-  --color-brand-700: #8c5a18;
-
-}
-
-/* Subtle blueprint grid used on dark landing sections */
+/* Public-site helpers consume the same canonical tokens as the app. */
 .bg-grid-dark {
   background-image:
-    linear-gradient(to right, rgba(148, 163, 184, 0.07) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(148, 163, 184, 0.07) 1px, transparent 1px);
+    linear-gradient(to right, hsl(var(--foreground) / 0.07) 1px, transparent 1px),
+    linear-gradient(to bottom, hsl(var(--foreground) / 0.07) 1px, transparent 1px);
   background-size: 44px 44px;
 }
 
 .bg-grid-light {
   background-image:
-    linear-gradient(to right, rgba(15, 23, 42, 0.045) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(15, 23, 42, 0.045) 1px, transparent 1px);
+    linear-gradient(to right, hsl(var(--foreground) / 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, hsl(var(--foreground) / 0.045) 1px, transparent 1px);
   background-size: 44px 44px;
 }
 
-/* Soft film noise to kill flat dark areas (requires a positioned parent) */
 .bg-noise::after {
-  content: "";
+  content: '';
   position: absolute;
   inset: 0;
   pointer-events: none;
@@ -290,21 +220,10 @@
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
 }
 
-/* Glassy card borders on dark */
-.glass-card {
-  @apply border border-border/70 bg-card shadow-card;
-}
-
+.glass-card,
 .light-card {
   @apply border border-border/70 bg-card shadow-card;
 }
 
-/* Landing headline text follows the app token system. */
-.text-gradient {
-  @apply text-primary;
-}
-
-/* Light landing sections share the app surface baseline. */
-.section-light {
-  @apply bg-background text-foreground;
-}
+.text-gradient { @apply text-primary; }
+.section-light { @apply bg-background text-foreground; }
