@@ -4,6 +4,8 @@ import { getContractNumber } from '../contractListExport';
 import { getContractRemainingDays, parseContractDisplayDate } from '../contractDisplayFormatters';
 import type { ContractListItem, ContractStatusFilter } from '../services/contractService';
 
+export type LeaseModeFilter = 'all' | 'long_term' | 'short_stay';
+
 /**
  * Normalize Arabic text **for search/comparison only** — never use for display.
  *
@@ -47,11 +49,13 @@ function getSearchText(contract: ContractListItem) {
 export function useContractFilters({
   contracts,
   expiringOnly,
+  leaseMode,
   searchTerm,
   status,
 }: {
   contracts: ContractListItem[] | undefined;
   expiringOnly: boolean;
+  leaseMode: LeaseModeFilter;
   searchTerm: string;
   status: ContractStatusFilter;
 }) {
@@ -62,12 +66,14 @@ export function useContractFilters({
     return contractList.filter((contract) => {
       const matchesSearch = !normalizedSearch || getSearchText(contract).includes(normalizedSearch);
       const matchesExpiry = !expiringOnly || isExpiringSoon(contract);
-      return matchesSearch && matchesExpiry;
+      const contractLeaseMode = contract.lease_mode ?? 'long_term';
+      const matchesLeaseMode = leaseMode === 'all' || contractLeaseMode === leaseMode;
+      return matchesSearch && matchesExpiry && matchesLeaseMode;
     });
-  }, [contracts, expiringOnly, normalizedSearch]);
+  }, [contracts, expiringOnly, leaseMode, normalizedSearch]);
 
   const hasContracts = Boolean(contracts?.length);
-  const hasActiveFilters = status !== 'all' || Boolean(searchTerm.trim()) || expiringOnly;
+  const hasActiveFilters = status !== 'all' || leaseMode !== 'all' || Boolean(searchTerm.trim()) || expiringOnly;
 
   return { filteredContracts, hasActiveFilters, hasContracts };
 }
