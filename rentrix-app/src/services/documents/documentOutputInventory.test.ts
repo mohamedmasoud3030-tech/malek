@@ -70,21 +70,29 @@ const rel = (file: string) => relative(srcDir, file).split('\\').join('/');
  * `docs/source-of-truth/06_UX_IA_AND_DESIGN_CONTRACT.md`.
  */
 const APPROVED_DOCUMENT_CALL_SITES: ReadonlySet<string> = new Set([
-  // contracts — contract/legal document
+  // contracts — contract/legal document & domain adapters
   'features/contracts/actions/contractDetailActions.ts',
-  // financials — invoice, receipt, expense voucher, deposit clearance
+  'features/contracts/documents/contract-documents.ts',
+  // financials — invoice, receipt, expense voucher, deposit clearance, deposit voucher
   'features/financials/invoices/invoice-actions.ts',
   'features/financials/invoices/useInvoiceWorkspaceController.ts',
   'features/financials/expenses/expense-actions.ts',
   'features/financials/components/expenses-section.tsx',
   'features/financials/receipts/receipt-detail-page.tsx',
   'features/financials/deposits/deposit-clearance-document.ts',
-  // owners — owner settlement statement
+  'features/financials/deposits/deposit-voucher-document.ts',
+  // owners — owner settlement statement & domain adapters
   'features/owners/components/OwnerSettlementWorkspace.tsx',
-  // operational reports
+  'features/owners/documents/owner-documents.ts',
+  // properties — unit lifecycle passport
+  'features/properties/documents/unit-passport-document.ts',
+  // maintenance — work order and completion certificate
   'features/maintenance/components/maintenance-workspace.tsx',
+  'features/maintenance/documents/maintenance-documents.ts',
+  // utilities — utility CAM split sheet
   'features/utilities/components/utilities-workspace.tsx',
-  // accounting/reports workspace
+  'features/utilities/documents/utility-split-document.ts',
+  // accounting/reports workspace & domain adapters
   'features/reports/components/AccountingReportsSection.tsx',
   'features/reports/components/CollectionsSection.tsx',
   'features/reports/components/DeferredRevenueReportSection.tsx',
@@ -94,6 +102,7 @@ const APPROVED_DOCUMENT_CALL_SITES: ReadonlySet<string> = new Set([
   'features/reports/components/OverdueSection.tsx',
   'features/reports/components/PropertyAnalyticsSection.tsx',
   'features/reports/components/StatementsSection.tsx',
+  'features/reports/documents/report-documents.ts',
 ]);
 
 describe('Print/PDF call-site inventory', () => {
