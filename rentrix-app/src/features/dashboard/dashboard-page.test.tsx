@@ -65,7 +65,7 @@ const mockSnapshot = {
       days_90_plus: { total: 0, count: 0 },
     },
   },
-  ownerFunds: { netPayable: 0, settlementsDraft: 0, settlementsApproved: 0 },
+  ownerFunds: { netPayable: 0, settlementsDraft: 1, settlementsApproved: 1 },
   maintenance: { open: 2, inProgress: 1, urgentOpen: 1 },
   exceptions: { unmatchedBankLines: 0, pendingSettlements: 0 },
   queues: {
@@ -82,7 +82,7 @@ const mockSnapshot = {
   },
 };
 
-describe('Dashboard command center query boundary tests', () => {
+describe('Today action workspace', () => {
   let container: HTMLDivElement | null = null;
   let root: any = null;
   let queryClient: QueryClient;
@@ -111,56 +111,72 @@ describe('Dashboard command center query boundary tests', () => {
     await act(async () => { await new Promise((resolve) => setTimeout(resolve, 50)); });
   }
 
-  it('renders the locked six-part Today order from the authoritative snapshot', async () => {
+  it('renders only queues that need an office action', async () => {
     (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
     await renderPage();
-    expect(getDashboardSnapshot).toHaveBeenCalled();
+
     const text = container?.textContent ?? '';
-    expect(text).toContain('اليوم');
-    expect(text).toContain('أداء المكتب');
-    expect(text).toContain('الوحدات الفارغة');
-    expect(text).toContain('الفلوس المطلوب تحصيلها');
-    expect(text).toContain('المشاكل والصيانة');
-    expect(text).toContain('العقود القريبة من الانتهاء');
-    expect(text).toContain('مستحقات الملاك');
-    expect(text).toContain('عقود تنتهي قريباً');
-    expect(text).toContain('سالم الكعبي');
-    expect(text).toContain('أعلى المتأخرات');
+    expect(text).toContain('ما يحتاج إجراء');
+    expect(text).toContain('تحصيلات تحتاج متابعة');
+    expect(text).toContain('صيانة ومرافق تحتاج قرار');
+    expect(text).toContain('عقود تحتاج قرار تجديد');
+    expect(text).toContain('تسويات ملاك تحتاج مراجعة');
     expect(text).toContain('أحمد الفارسي');
-    expect(text).toContain('الصيانة العاجلة');
+    expect(text).toContain('سالم الكعبي');
     expect(text).toContain('تسرب مياه');
-    expect(container?.querySelector('[data-dashboard-priority-panel]')).toBeNull();
+
+    expect(container?.querySelector('[data-dashboard-office-pulse]')).toBeNull();
+    expect(container?.querySelector('[data-dashboard-section="vacant-units"]')).toBeNull();
   });
 
-  it('moves Day + Date into the shared compact Today context strip instead of a dashboard-owned card', async () => {
+  it('locks the action-only section order', async () => {
+    (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
+    await renderPage();
+
+    const sectionOrder = Array.from(container?.querySelectorAll('[data-dashboard-section]') ?? [])
+      .map((section) => section.getAttribute('data-dashboard-section'));
+    expect(sectionOrder).toEqual([
+      'today-intro',
+      'collections',
+      'maintenance-problems',
+      'expiring-contracts',
+      'owner-obligations',
+    ]);
+  });
+
+  it('keeps each operational queue under its owning decision section', async () => {
+    (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
+    await renderPage();
+    expect(container?.querySelector('[data-dashboard-section="collections"]')?.textContent).toContain('أعلى المتأخرات');
+    expect(container?.querySelector('[data-dashboard-section="expiring-contracts"]')?.textContent).toContain('عقود تنتهي قريباً');
+    expect(container?.querySelector('[data-dashboard-section="maintenance-problems"]')?.textContent).toContain('الصيانة العاجلة');
+    expect(container?.querySelector('[data-dashboard-owner-obligations-link]')?.textContent).toContain('تسوية بانتظار');
+  });
+
+  it('keeps setup onboarding before the action queues for office managers', async () => {
+    (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
+    mockRole = 'MANAGER';
+    await renderPage();
+
+    const onboardingSlot = container?.querySelector('[data-dashboard-onboarding-slot]');
+    const collections = container?.querySelector('[data-dashboard-section="collections"]');
+    expect(onboardingSlot).not.toBeNull();
+    expect(collections).not.toBeNull();
+    if (!onboardingSlot || !collections) throw new Error('Today setup/action slots are required');
+    expect(onboardingSlot.compareDocumentPosition(collections) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('keeps Day + Date in the shared compact Today context strip', async () => {
     (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
     await renderPage();
 
     const todayContext = container?.querySelector<HTMLElement>('[data-global-today-context]');
     expect(todayContext).not.toBeNull();
-    // "اليوم" remains the page heading (visually hidden) while the shared
-    // strip carries the same compact day context for every operational page.
     expect(container?.querySelector('h1')?.textContent).toBe('اليوم');
-    // Localized weekday + localized date live in the strip.
-    const weekday = todayContext?.querySelector<HTMLElement>('[data-global-today-weekday]');
-    const dayDate = todayContext?.querySelector<HTMLElement>('[data-global-today-day-date]');
-    expect(weekday?.textContent?.trim().length).toBeGreaterThan(0);
-    expect(dayDate?.textContent?.trim().length).toBeGreaterThan(0);
-    // The old centered header date block must not exist anywhere on the page.
+    expect(todayContext?.querySelector<HTMLElement>('[data-global-today-weekday]')?.textContent?.trim().length).toBeGreaterThan(0);
+    expect(todayContext?.querySelector<HTMLElement>('[data-global-today-day-date]')?.textContent?.trim().length).toBeGreaterThan(0);
     expect(container?.querySelector('[data-header-date-center]')).toBeNull();
-    // No duplicate dashboard-owned Today card may come back.
     expect(container?.querySelector('[data-dashboard-today-context]')).toBeNull();
-  });
-
-  it('scopes Visual Contract V2 on a real dashboard-owned wrapper', async () => {
-    (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
-    await renderPage();
-    const scope = container?.querySelector('[data-visual-contract="v2"]');
-    expect(scope).not.toBeNull();
-    // The decorative hero card was removed; the strip + sections own the page.
-    expect(scope?.querySelector('[data-dashboard-hero]')).toBeNull();
-    expect(scope?.querySelectorAll('[data-dashboard-section]').length).toBeGreaterThanOrEqual(5);
-    expect(container?.querySelector('[data-page-layout][data-visual-contract]')).toBeNull();
   });
 
   it('keeps an explicit refresh action wired to the snapshot query', async () => {
@@ -170,56 +186,12 @@ describe('Dashboard command center query boundary tests', () => {
     const refresh = container?.querySelector<HTMLButtonElement>('[data-global-refresh]');
     expect(refresh).not.toBeNull();
     expect(refresh?.getAttribute('aria-label')).toBe('تحديث');
-    // 44px hit target stays preserved inside the shared strip.
     expect(refresh?.className).toContain('size-11');
     await act(async () => refresh?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
     expect((getDashboardSnapshot as any).mock.calls.length).toBeGreaterThanOrEqual(2);
   });
 
-  it('keeps the product-locked six-section priority order', async () => {
-    (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
-    await renderPage();
-    const sectionOrder = Array.from(container?.querySelectorAll('[data-dashboard-section]') ?? [])
-      .map((section) => section.getAttribute('data-dashboard-section'));
-    expect(sectionOrder).toEqual(['office-performance', 'vacant-units', 'collections', 'maintenance-problems', 'expiring-contracts', 'owner-obligations']);
-    expect(container?.querySelector('[data-dashboard-section="actions"]')).toBeNull();
-  });
-
-  it('renders four stable office-performance signals and keeps owner funds separate', async () => {
-    (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
-    await renderPage();
-    const pulse = container?.querySelector('[data-dashboard-office-pulse]');
-    expect(pulse).not.toBeNull();
-    expect(pulse?.querySelectorAll('[data-kpi-card]')).toHaveLength(4);
-
-    const ownerLink = container?.querySelector<HTMLAnchorElement>('[data-dashboard-owner-obligations-link]');
-    expect(ownerLink?.getAttribute('href')).toBe('/owner-settlements');
-  });
-
-  it('keeps each operational queue under its owning decision section', async () => {
-    (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
-    await renderPage();
-    expect(container?.querySelector('[data-dashboard-section="collections"]')?.textContent).toContain('أعلى المتأخرات');
-    expect(container?.querySelector('[data-dashboard-section="expiring-contracts"]')?.textContent).toContain('عقود تنتهي قريباً');
-    expect(container?.querySelector('[data-dashboard-section="maintenance-problems"]')?.textContent).toContain('الصيانة العاجلة');
-  });
-
-  it('keeps create shortcuts out of the dashboard because the global dock already owns them', async () => {
-    (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
-    mockRole = 'MANAGER';
-    await renderPage();
-    expect(container?.querySelector('[data-dashboard-section="actions"]')).toBeNull();
-    expect(container?.querySelector('[data-dashboard-action-grid]')).toBeNull();
-
-    const onboardingSlot = container?.querySelector('[data-dashboard-onboarding-slot]');
-    const performance = container?.querySelector('[data-dashboard-section="office-performance"]');
-    expect(onboardingSlot).not.toBeNull();
-    expect(performance).not.toBeNull();
-    if (!onboardingSlot || !performance) throw new Error('Dashboard setup/performance slots are required');
-    expect(onboardingSlot.compareDocumentPosition(performance) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-  });
-
-  it('handles query loading state without fabricating current work', async () => {
+  it('handles loading without fabricating current work', async () => {
     (getDashboardSnapshot as any).mockReturnValue(new Promise(() => {}));
     await act(async () => {
       root.render(<QueryClientProvider client={queryClient}><DashboardPage /></QueryClientProvider>);
@@ -227,12 +199,11 @@ describe('Dashboard command center query boundary tests', () => {
     expect(container?.querySelectorAll('.skeleton-shimmer').length).toBeGreaterThan(0);
   });
 
-  it('stays honest on failure: no fake zero command-center surfaces replace the failed snapshot', async () => {
+  it('stays honest on snapshot failure', async () => {
     (getDashboardSnapshot as any).mockRejectedValue(new Error('network down'));
     await renderPage();
     const text = container?.textContent ?? '';
     expect(text).toContain('تعذر تحميل بيانات اليوم');
-    expect(container?.querySelector('[data-dashboard-office-pulse]')).toBeNull();
     expect(container?.querySelector('[data-dashboard-owner-obligations-link]')).toBeNull();
     expect(container?.querySelector('[data-dashboard-section="collections"]')).toBeNull();
   });
