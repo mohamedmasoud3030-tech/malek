@@ -27,7 +27,6 @@ export type UtilityMeter = {
   account_number: string;
   provider_name?: string | null;
   responsible_party: ResponsibleParty;
-  actual_payer?: ResponsibleParty | null;
   is_active: boolean;
   notes?: string | null;
   created_at: string;
@@ -49,6 +48,7 @@ export type UtilityBill = {
   due_date: string;
   status: UtilityBillStatus;
   responsible_party: ResponsibleParty;
+  actual_payer?: ResponsibleParty | null;
   attachment_url?: string | null;
   notes?: string | null;
   created_at: string;
