@@ -11,6 +11,7 @@ function makeUnit(overrides: Partial<Unit> = {}): Unit {
     floor: null,
     status: 'available',
     rent_amount: 100,
+    daily_reference_rate: null,
     notes: null,
     created_at: '2026-06-03T00:00:00.000Z',
     updated_at: '2026-06-03T00:00:00.000Z',
