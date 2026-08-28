@@ -16,7 +16,7 @@ import {
   buildContractsXlsxFilename,
 } from './contractListExport';
 import { useCompanySettingsContract } from '../settings/useCompanySettings';
-import { useContractFilters } from './hooks/useContractFilters';
+import { useContractFilters, type LeaseModeFilter } from './hooks/useContractFilters';
 import { useContracts, useSoftDeleteContract } from './useContracts';
 import { useAuth } from '@/hooks/use-auth';
 import { toast } from 'sonner';
@@ -60,6 +60,7 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
   const canCancel = canAccess('contracts.cancel');
   const canExport = canAccess('contracts.view');
   const [status, setStatus] = useState<ContractStatusFilter>('all');
+  const [leaseMode, setLeaseMode] = useState<LeaseModeFilter>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [expiringOnly, setExpiringOnly] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -69,7 +70,7 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
-  const hasClientFilter = Boolean(searchTerm.trim()) || expiringOnly;
+  const hasClientFilter = Boolean(searchTerm.trim()) || expiringOnly || leaseMode !== 'all';
   const params = useMemo(
     () => ({ status, page: hasClientFilter ? 1 : page, pageSize: hasClientFilter ? 5000 : pageSize }),
     [status, page, hasClientFilter],
@@ -80,7 +81,7 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
   const contracts = contractsQuery.data?.rows ?? [];
   const totalPages = hasClientFilter ? 1 : Math.max(1, Math.ceil((contractsQuery.data?.count ?? 0) / pageSize));
 
-  const { filteredContracts, hasActiveFilters } = useContractFilters({ contracts, expiringOnly, searchTerm, status });
+  const { filteredContracts, hasActiveFilters } = useContractFilters({ contracts, expiringOnly, leaseMode, searchTerm, status });
 
   const errorToastShownRef = useRef(false);
   useEffect(() => {
@@ -101,7 +102,7 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
   const handlePreview = (id: string) => {
     void navigate({ to: '/contracts/$contractId', params: { contractId: id } });
   };
-  const resetFilters = () => { setStatus('all'); setSearchTerm(''); setExpiringOnly(false); setPage(1); };
+  const resetFilters = () => { setStatus('all'); setLeaseMode('all'); setSearchTerm(''); setExpiringOnly(false); setPage(1); };
   const confirmDelete = async () => {
     if (!canCancel || !deleteId || deleteMutation.isPending) return;
     try {
@@ -155,9 +156,11 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
           <ContractFilters
             expiringOnly={expiringOnly}
             hasActiveFilters={hasActiveFilters}
+            leaseMode={leaseMode}
             resetFilters={resetFilters}
             searchTerm={searchTerm}
             setExpiringOnly={(updater) => { setExpiringOnly(updater); setPage(1); }}
+            setLeaseMode={(value) => { setLeaseMode(value); setPage(1); }}
             setSearchTerm={(value) => { setSearchTerm(value); setPage(1); }}
             setStatus={(value) => { setStatus(value); setPage(1); }}
             status={status}
@@ -168,7 +171,7 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
           companySettings={companySettings}
           contracts={filteredContracts}
           expandedId={expandedId}
-          emptyDescription={hasActiveFilters ? 'جرّب تغيير عبارة البحث أو فلتر الحالة لعرض عقود أخرى.' : 'ابدأ بإنشاء أول عقد وربطه بالعقار والوحدة والمستأجر.'}
+          emptyDescription={hasActiveFilters ? 'جرّب تغيير عبارة البحث أو نوع الإيجار أو فلتر الحالة لعرض عقود أخرى.' : 'ابدأ بإنشاء أول عقد وربطه بالعقار والوحدة والمستأجر.'}
           emptyTitle={hasActiveFilters ? 'لا توجد عقود مطابقة' : 'لا توجد عقود'}
           error={contractsQuery.error}
           isError={contractsQuery.isError}

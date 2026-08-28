@@ -1,4 +1,5 @@
 import { ChevronLeft } from 'lucide-react';
+import { Select } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import {
   settingsSections,
@@ -17,30 +18,17 @@ export function SettingsWorkspaceNav({
 }>) {
   return (
     <>
-      <nav className="no-scrollbar -mx-1 overflow-x-auto px-1 md:hidden" aria-label="أقسام إعدادات المكتب">
-        <div className="flex min-w-max gap-1.5">
-          {sections.map((section) => {
-            const Icon = section.icon;
-            const selected = section.id === activeSection;
-            return (
-              <button
-                key={section.id}
-                type="button"
-                aria-current={selected ? 'page' : undefined}
-                className={cn(
-                  'inline-flex min-h-11 items-center gap-1.5 rounded-full border px-2.5 text-[11px] font-black transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
-                  selected
-                    ? 'border-primary bg-primary text-primary-foreground shadow-sm'
-                    : 'border-border/70 bg-card text-muted-foreground hover:border-primary/25 hover:bg-primary/5 hover:text-foreground',
-                )}
-                onClick={() => onChange(section.id)}
-              >
-                <Icon className="size-3.5 shrink-0" aria-hidden="true" />
-                <span>{section.label}</span>
-              </button>
-            );
-          })}
-        </div>
+      <nav className="md:hidden" aria-label="أقسام إعدادات المكتب">
+        <Select
+          aria-label="قسم الإعدادات"
+          value={activeSection}
+          onChange={(event) => onChange(event.target.value as SettingsSectionId)}
+          className="min-h-11 w-full rounded-xl"
+        >
+          {sections.map((section) => (
+            <option key={section.id} value={section.id}>{section.label}</option>
+          ))}
+        </Select>
       </nav>
 
       <nav className="hidden md:block" aria-label="أقسام الإعدادات">

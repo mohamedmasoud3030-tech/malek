@@ -169,6 +169,34 @@ export function InvoiceListSection({
               }
               onRowClick={(invoice) => onSelectInvoice(invoice.id)}
               pagination={{ page, pageSize, total, onPageChange }}
+              mobileBadgeKey="status"
+              mobileSummaryKeys={['due_date', 'gross', 'paid_amount', 'remaining']}
+              mobileCardActions={(invoice) => {
+                const showCollect = Boolean(canCollectPayments && onCollectInvoice && isInvoiceCollectible(invoice));
+                return [
+                  ...(showCollect ? [{
+                    label: 'تحصيل',
+                    icon: HandCoins,
+                    variant: 'secondary' as const,
+                    ariaLabel: `تحصيل ${invoice.reference ?? 'فاتورة مسجلة'}`,
+                    onClick: () => onCollectInvoice!(invoice.id),
+                  }] : []),
+                  ...(onPrintInvoice ? [{
+                    label: 'طباعة',
+                    icon: Printer,
+                    variant: 'secondary' as const,
+                    ariaLabel: `طباعة ${invoice.reference ?? 'الفاتورة'}`,
+                    onClick: () => onPrintInvoice(invoice.id),
+                  }] : []),
+                  ...(onExportInvoice ? [{
+                    label: 'PDF',
+                    icon: Download,
+                    variant: 'secondary' as const,
+                    ariaLabel: `تنزيل ${invoice.reference ?? 'الفاتورة'} بصيغة PDF`,
+                    onClick: () => onExportInvoice(invoice.id),
+                  }] : []),
+                ];
+              }}
               columns={[
                 {
                   key: 'id',

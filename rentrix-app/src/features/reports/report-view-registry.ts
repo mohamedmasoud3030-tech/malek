@@ -9,6 +9,7 @@ import {
   Receipt,
   Scale,
   Wrench,
+  Zap,
 } from 'lucide-react';
 
 /**
@@ -24,7 +25,8 @@ export type AnalyticsReportViewId =
   | 'expenses'
   | 'property_analytics'
   | 'occupancy'
-  | 'maintenance_analytics';
+  | 'maintenance_analytics'
+  | 'services';
 
 /** `''` is the statements section, which has no sub-views. */
 export type ReportViewId = AccountingReportViewId | AnalyticsReportViewId | '';
@@ -36,9 +38,13 @@ export type ReportViewMeta = Readonly<{
   showInPrimaryNavigation: boolean;
 }>;
 
+/**
+ * Raw accounting output remains available to specialists and existing deep
+ * links, but none of it competes with the owner-facing report directory.
+ */
 export const ACCOUNTING_REPORT_VIEWS = [
-  { id: 'accounting_reports', label: 'ميزان المراجعة والقوائم', icon: Scale, showInPrimaryNavigation: true },
-  { id: 'general_ledger', label: 'دفتر الأستاذ والشجرة', icon: BookOpenCheck, showInPrimaryNavigation: true },
+  { id: 'accounting_reports', label: 'ميزان المراجعة والقوائم', icon: Scale, showInPrimaryNavigation: false },
+  { id: 'general_ledger', label: 'دفتر الأستاذ والشجرة', icon: BookOpenCheck, showInPrimaryNavigation: false },
   { id: 'deferred_revenue', label: 'تسوية الإيرادات', icon: Layers, showInPrimaryNavigation: false },
 ] as const satisfies readonly ReportViewMeta[];
 
@@ -50,6 +56,7 @@ export const ANALYTICS_REPORT_VIEWS = [
   { id: 'property_analytics', label: 'تحليلات العقارات', icon: Building2, showInPrimaryNavigation: false },
   { id: 'occupancy', label: 'تحليلات الإشغال', icon: Building2, showInPrimaryNavigation: false },
   { id: 'maintenance_analytics', label: 'تحليلات الصيانة', icon: Wrench, showInPrimaryNavigation: false },
+  { id: 'services', label: 'الخدمات والمرافق', icon: Zap, showInPrimaryNavigation: false },
 ] as const satisfies readonly ReportViewMeta[];
 
 const ACCOUNTING_VIEW_IDS: readonly string[] = ACCOUNTING_REPORT_VIEWS.map((view) => view.id);

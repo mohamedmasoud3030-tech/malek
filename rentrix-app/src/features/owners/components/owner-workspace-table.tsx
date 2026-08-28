@@ -111,7 +111,6 @@ export function OwnerWorkspaceTable({
     onEditOwner(previewRow.owner);
   };
 
-  // Column priorities preserve identity/actions while the same table scrolls on narrow viewports.
   const columns: ColumnDef<OwnerWorkspaceRow>[] = [
     {
       key: 'name',
@@ -175,6 +174,24 @@ export function OwnerWorkspaceTable({
           onRowClick={(row) => openPreview(row.owner.id)}
           columns={columns}
           visibleColumnKeys={visibleColumnKeys}
+          mobileCardType="owner"
+          mobileSummaryKeys={['contact', 'property_count']}
+          mobileCardActions={(row) => [
+            {
+              label: 'العلاقات',
+              icon: LinkIcon,
+              variant: 'secondary',
+              onClick: () => onSelectOwner(row.owner.id),
+              ariaLabel: `علاقات ${getOwnerDisplayLabel(row.owner)}`,
+            },
+            {
+              label: 'تعديل',
+              icon: Pencil,
+              variant: 'secondary',
+              onClick: () => onEditOwner(row.owner),
+              ariaLabel: `تعديل ${getOwnerDisplayLabel(row.owner)}`,
+            },
+          ]}
           keyOf={(row) => row.owner.id}
           emptyTitle="لا يوجد ملاك"
           emptyDescription="أضف أول مالك لبدء ربطه بالعقارات."

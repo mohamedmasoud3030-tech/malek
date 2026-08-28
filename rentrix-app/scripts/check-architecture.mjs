@@ -67,7 +67,10 @@ const featureDependencyAllowList = new Map([
   ['properties', new Set(['contracts', 'financials', 'owners', 'settings', 'units'])],
   // relationships-hub composes contracts/people/tenants/leads/communication.
   ['relationships-hub', new Set(['auth', 'communication', 'contracts', 'leads', 'people', 'tenants'])],
-  ['reports', new Set(['accounting', 'auth', 'contracts', 'financials', 'maintenance', 'owners', 'properties', 'settings', 'units'])],
+  // reports reads canonical utilities query hooks and shared labels for the
+  // services report. This seam is query-only and preserves utilities as the
+  // single source of truth; reports does not write utility data.
+  ['reports', new Set(['accounting', 'auth', 'contracts', 'financials', 'maintenance', 'owners', 'properties', 'settings', 'units', 'utilities'])],
   // settings reads finance readiness/tax authority to surface authoritative tax config and fail-closed states
   // in the finance-readiness settings section — governed RPCs only, no raw writes, per FOM-005.
   ['settings', new Set(['properties', 'financials'])],

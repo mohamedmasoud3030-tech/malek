@@ -244,6 +244,33 @@ export function MaintenanceList(props: MaintenanceListProps) {
         keyOf={(row) => row.id}
         mobileBadgeKey="status"
         mobileSummaryKeys={["attention", "priority", "location", "provider"]}
+        mobileCardPrimaryAction={(row) => ({
+          label: "التفاصيل",
+          icon: Eye,
+          variant: "default",
+          ariaLabel: `عرض تفاصيل ${row.title}`,
+          onClick: () => onViewDetails(row),
+        })}
+        mobileCardActions={(row) => {
+          const allowedStatusActions = getMaintenanceStatusActions(
+            (row.status ?? "") as keyof typeof maintenanceStatusLabels,
+          ).filter((action) => canRunStatusAction(action.status));
+          return [
+            ...(canEdit ? [{
+              label: "تعديل",
+              icon: Edit,
+              variant: "secondary" as const,
+              ariaLabel: `تعديل ${row.title}`,
+              onClick: () => onEdit(row),
+            }] : []),
+            ...(!actionsPending ? allowedStatusActions.map((action) => ({
+              label: action.label,
+              variant: action.status === "cancelled" ? "danger" as const : "secondary" as const,
+              ariaLabel: `${action.label} — ${row.title}`,
+              onClick: () => onStatusAction(row, action.status),
+            })) : []),
+          ];
+        }}
         emptyTitle="لا توجد طلبات صيانة"
         emptyDescription="لا توجد طلبات تطابق الفلاتر الحالية."
       />

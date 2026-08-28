@@ -8,7 +8,7 @@ import { defaultCompanySettingsContract } from '@/lib/companySettings';
 import { ContractFilters } from './components/ContractFilters';
 import { ContractKpiGrid } from './components/ContractKpiGrid';
 import { ContractResults } from './components/ContractResults';
-import { useContractFilters } from './hooks/useContractFilters';
+import { useContractFilters, type LeaseModeFilter } from './hooks/useContractFilters';
 import type { ContractListItem, ContractStatusFilter } from './services/contractService';
 
 /**
@@ -130,6 +130,7 @@ const fixtureContracts: ContractListItem[] = [
 
 export function ContractsListE2EFixture() {
   const [status, setStatus] = useState<ContractStatusFilter>('all');
+  const [leaseMode, setLeaseMode] = useState<LeaseModeFilter>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [expiringOnly, setExpiringOnly] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -137,6 +138,7 @@ export function ContractsListE2EFixture() {
   const { filteredContracts, hasActiveFilters } = useContractFilters({
     contracts: fixtureContracts,
     expiringOnly,
+    leaseMode,
     searchTerm,
     status,
   });
@@ -169,9 +171,11 @@ export function ContractsListE2EFixture() {
           <ContractFilters
             expiringOnly={expiringOnly}
             hasActiveFilters={hasActiveFilters}
-            resetFilters={() => { setStatus('all'); setSearchTerm(''); setExpiringOnly(false); }}
+            leaseMode={leaseMode}
+            resetFilters={() => { setStatus('all'); setLeaseMode('all'); setSearchTerm(''); setExpiringOnly(false); }}
             searchTerm={searchTerm}
             setExpiringOnly={(updater) => setExpiringOnly(updater)}
+            setLeaseMode={setLeaseMode}
             setSearchTerm={setSearchTerm}
             setStatus={setStatus}
             status={status}

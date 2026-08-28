@@ -229,6 +229,26 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
           rows={rows}
           columns={columns}
           visibleColumnKeys={visibleColumnKeys}
+          mobileCardType="tenant"
+          mobileSummaryKeys={['property', 'contracts']}
+          mobileCardActions={(tenant) => [
+            {
+              label: 'تعديل',
+              icon: Edit,
+              variant: 'secondary',
+              onClick: () => openEdit(tenant.person.id),
+              ariaLabel: `تعديل ${tenant.person.full_name}`,
+            },
+            ...(tenant.primaryContractId !== null
+              ? [{
+                  label: 'العقد',
+                  icon: FileText,
+                  variant: 'secondary' as const,
+                  onClick: () => (navigate as unknown as (opts: unknown) => void)({ to: '/contracts/$contractId', params: { contractId: tenant.primaryContractId! }, state: { backgroundLocation: dialogLocation } as unknown as Record<string, unknown> }),
+                  ariaLabel: `فتح عقد ${tenant.person.full_name}`,
+                }]
+              : []),
+          ]}
           keyOf={(tenant) => tenant.person.id}
           isLoading={tenantsQuery.isLoading}
           error={tenantsQuery.isError ? tenantsQuery.error : null}

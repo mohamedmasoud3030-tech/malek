@@ -1,4 +1,5 @@
 import { ChevronLeft, Settings2 } from 'lucide-react';
+import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { cn } from '@/lib/utils';
 import type { SettingsSectionId } from '../settingsSections';
@@ -61,9 +62,11 @@ export function OverviewRow({
   onOpenSection?: (section: SettingsSectionId) => void;
 }>) {
   return (
-    <div
-      className="no-scrollbar flex min-w-0 gap-2 overflow-x-auto pb-0.5 md:grid md:grid-cols-3 md:overflow-visible md:pb-0"
+    <ResponsiveCardGrid
+      desktopColumns={3}
+      gap="sm"
       aria-label="ملخص جاهزية الإعدادات"
+      className="items-stretch"
     >
       {tiles.map((tile) => {
         const targetSection = tile.section;
@@ -71,7 +74,7 @@ export function OverviewRow({
         const content = (
           <>
             <div className="flex min-w-0 items-center justify-between gap-2">
-              <p className="min-w-0 truncate text-[11px] font-bold text-muted-foreground sm:text-xs">{tile.label}</p>
+              <p className="min-w-0 line-clamp-2 text-[11px] font-bold leading-4 text-muted-foreground sm:text-xs">{tile.label}</p>
               <StatusBadge tone={tile.tone}>{tile.value}</StatusBadge>
             </div>
             <div className="mt-1.5 flex items-end justify-between gap-2">
@@ -87,7 +90,7 @@ export function OverviewRow({
               key={tile.label}
               type="button"
               className={cn(
-                'min-h-16 w-[12.5rem] shrink-0 rounded-xl border border-border/60 bg-card p-2.5 text-start transition-[border-color,box-shadow,transform,background-color] md:w-auto md:min-w-0 md:rounded-2xl md:p-3 lg:p-4',
+                'min-h-16 min-w-0 rounded-xl border border-border/60 bg-card p-2.5 text-start transition-[border-color,box-shadow,transform,background-color] md:rounded-2xl md:p-3 lg:p-4',
                 'hover:-translate-y-0.5 hover:border-primary/35 hover:bg-primary/[0.025] hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
               )}
               onClick={() => onOpenSection(targetSection)}
@@ -98,11 +101,11 @@ export function OverviewRow({
         }
 
         return (
-          <div key={tile.label} className="min-h-16 w-[12.5rem] shrink-0 rounded-xl border border-border/60 bg-card p-2.5 md:w-auto md:min-w-0 md:rounded-2xl md:p-3 lg:p-4">
+          <div key={tile.label} className="min-h-16 min-w-0 rounded-xl border border-border/60 bg-card p-2.5 md:rounded-2xl md:p-3 lg:p-4">
             {content}
           </div>
         );
       })}
-    </div>
+    </ResponsiveCardGrid>
   );
 }

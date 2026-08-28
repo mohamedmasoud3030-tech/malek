@@ -8,7 +8,7 @@ import {
 describe('report directory model', () => {
   it('keeps the published catalogue counts derived from the model, not hardcoded in UI', () => {
     expect(reportGroups).toHaveLength(6);
-    expect(REPORT_DIRECTORY_ENTRY_COUNT).toBe(12);
+    expect(REPORT_DIRECTORY_ENTRY_COUNT).toBe(15);
     expect(reportGroups.reduce((total, group) => total + group.shortcuts.length, 0)).toBe(
       REPORT_DIRECTORY_ENTRY_COUNT,
     );
@@ -34,6 +34,16 @@ describe('report directory model', () => {
       'properties',
     ]);
   });
+
+  it('keeps unit performance, services and settlements visible without creating duplicate data sources', () => {
+    const shortcuts = reportGroups.flatMap((group) => group.shortcuts);
+    const unitPerformance = shortcuts.find((shortcut) => shortcut.label === 'أداء الوحدة');
+    const services = shortcuts.find((shortcut) => shortcut.label === 'الخدمات والمرافق');
+    const settlements = shortcuts.find((shortcut) => shortcut.label === 'التسويات');
+    expect(unitPerformance).toMatchObject({ section: 'analytics', view: 'property_analytics' });
+    expect(services).toMatchObject({ section: 'analytics', view: 'services' });
+    expect(settlements).toMatchObject({ section: 'statements', view: '' });
+  });
 });
 
 describe('report directory search', () => {
@@ -55,6 +65,12 @@ describe('report directory search', () => {
   it('finds owner and tenant statements without exposing accounting terminology', () => {
     expect(filterReportGroups(reportGroups, 'المالك').map((group) => group.id)).toContain('owners');
     expect(filterReportGroups(reportGroups, 'المستاجر').map((group) => group.id)).toContain('owners');
+  });
+
+  it('finds the blueprint additions by their business names', () => {
+    expect(filterReportGroups(reportGroups, 'التسويات').map((group) => group.id)).toContain('owners');
+    expect(filterReportGroups(reportGroups, 'أداء الوحدة').map((group) => group.id)).toContain('properties');
+    expect(filterReportGroups(reportGroups, 'الخدمات').map((group) => group.id)).toContain('maintenance');
   });
 
   it('returns an empty catalogue for an unknown query so the empty state can render', () => {

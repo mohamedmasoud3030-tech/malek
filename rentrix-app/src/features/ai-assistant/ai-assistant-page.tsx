@@ -69,7 +69,11 @@ function createMessage(role: AiAssistantMessage['role'], content: string, action
 
 function getErrorMessage(error: unknown): string | null {
   if (!error) return null;
-  return error instanceof Error ? error.message : 'تعذر تشغيل المساعد.';
+  const message = error instanceof Error ? error.message : 'تعذر تشغيل المساعد.';
+  if (message.includes('تعذر التحقق من ملخص البيانات المسموح')) {
+    return 'تعذر تجهيز بيانات المساعد الآن. أعد المحاولة بعد قليل.';
+  }
+  return message;
 }
 
 function formatAssistantResponse(response: AiAssistantResponse): string {

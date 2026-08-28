@@ -50,6 +50,9 @@ vi.mock('../../components/OccupancySection', () => ({
 vi.mock('../../components/MaintenanceReportSection', () => ({
   MaintenanceReportSection: () => <div data-testid="report-body-maintenance_analytics" />,
 }));
+vi.mock('../../components/ServicesReportSection', () => ({
+  ServicesReportSection: () => <div data-testid="report-body-services" />,
+}));
 
 const model = {
   sections: {

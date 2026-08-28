@@ -171,6 +171,24 @@ export function ServiceProvidersWorkspace({ embedded = false }: Readonly<{ embed
               emptyAction={hasFilters ? <Button variant="secondary" onClick={clearFilters}>مسح الفلاتر</Button> : createAction}
               pagination={{ page, pageSize: PAGE_SIZE, total, onPageChange: setPage }}
               onRowClick={(provider) => void navigate({ to: '/service-providers/$providerId', params: { providerId: provider.id } })}
+              mobileBadgeKey="status"
+              mobileSummaryKeys={["categories", "contact", "jobs"]}
+              mobileCardActions={(provider) => canWrite ? [
+                {
+                  label: 'تعديل',
+                  icon: Edit,
+                  variant: 'secondary' as const,
+                  ariaLabel: `تعديل ${provider.name}`,
+                  onClick: () => dialogNavigate({ to: '/service-providers/$providerId/edit', params: { providerId: provider.id } }),
+                },
+                {
+                  label: 'أرشفة',
+                  icon: Trash2,
+                  variant: 'danger' as const,
+                  ariaLabel: `أرشفة ${provider.name}`,
+                  onClick: () => setArchiveTarget(provider),
+                },
+              ] : []}
             />
           </div>
         </section>
