@@ -174,6 +174,7 @@ export function OwnerWorkspaceTable({
           onRowClick={(row) => openPreview(row.owner.id)}
           columns={columns}
           visibleColumnKeys={visibleColumnKeys}
+          mobileCardType="owner"
           mobileSummaryKeys={['contact', 'property_count']}
           mobileCardActions={(row) => [
             {
