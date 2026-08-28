@@ -1,10 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Building2, FileText, Landmark, ShieldCheck, Wrench } from 'lucide-react';
 import { PageLayout } from '@/components/layout/page-layout';
+import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { LoadingState } from '@/components/ui/loading-state';
+import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { APP_BRAND_NAME } from '@/lib/brand';
 import { loadOwnerPortalSnapshot } from './owner-portal-service';
-import type { OwnerPortalLoadResult } from './owner-portal-read-model';
+import type {
+  OwnerPortalLoadResult,
+  OwnerPortalProperty,
+  OwnerPortalSettlement,
+  OwnerPortalUnit,
+} from './owner-portal-read-model';
 
 function money(value: number, currency = 'OMR') {
   return new Intl.NumberFormat('ar-OM-u-nu-latn', {
@@ -25,6 +32,62 @@ function date(value: string | null | undefined) {
 function percentage(value: number) {
   return new Intl.NumberFormat('ar-OM-u-nu-latn', { maximumFractionDigits: 1 }).format(Number(value) || 0);
 }
+
+const propertyColumns: ColumnDef<OwnerPortalProperty>[] = [
+  {
+    key: 'property',
+    header: 'العقار',
+    priority: 'identity',
+    render: (property) => (
+      <div className="min-w-0">
+        <p className="font-bold">{property.title}</p>
+        <p className="line-clamp-2 text-xs text-muted-foreground">{property.address || '—'}</p>
+      </div>
+    ),
+  },
+  {
+    key: 'ownership',
+    header: 'الملكية',
+    priority: 'primary',
+    render: (property) => `${percentage(property.ownershipPercentage)}%`,
+  },
+  { key: 'units', header: 'الوحدات', priority: 'secondary', render: (property) => property.units },
+  { key: 'occupied', header: 'مشغولة', priority: 'secondary', render: (property) => property.occupiedUnits },
+  { key: 'vacant', header: 'شاغرة', priority: 'secondary', render: (property) => property.vacantUnits },
+];
+
+const unitColumns: ColumnDef<OwnerPortalUnit>[] = [
+  { key: 'unit', header: 'الوحدة', priority: 'identity', render: (unit) => <span className="font-bold">{unit.unitNumber}</span> },
+  { key: 'property', header: 'العقار', priority: 'secondary', render: (unit) => unit.propertyTitle },
+  { key: 'status', header: 'الحالة', priority: 'primary', render: (unit) => unit.occupied ? 'مشغولة' : 'شاغرة' },
+  { key: 'rent', header: 'الإيجار المرجعي', priority: 'secondary', render: (unit) => money(unit.referenceRent, unit.currency) },
+  { key: 'contractEnd', header: 'نهاية العقد الحالي', priority: 'detail', render: (unit) => date(unit.contractEnd) },
+];
+
+const settlementColumns: ColumnDef<OwnerPortalSettlement>[] = [
+  {
+    key: 'settlement',
+    header: 'الكشف',
+    priority: 'identity',
+    render: (settlement) => (
+      <div className="min-w-0">
+        <p className="font-bold">{settlement.number}</p>
+        <p className="line-clamp-2 text-xs text-muted-foreground">{settlement.propertyTitle || date(settlement.date)}</p>
+      </div>
+    ),
+  },
+  {
+    key: 'period',
+    header: 'الفترة',
+    priority: 'secondary',
+    render: (settlement) => `${date(settlement.periodStart)} — ${date(settlement.periodEnd)}`,
+  },
+  { key: 'status', header: 'الحالة', priority: 'primary', render: (settlement) => settlement.status },
+  { key: 'gross', header: 'التحصيل', priority: 'detail', render: (settlement) => money(settlement.grossCollected, settlement.currency) },
+  { key: 'fee', header: 'أتعاب المكتب', priority: 'detail', render: (settlement) => money(settlement.officeFee, settlement.currency) },
+  { key: 'expenses', header: 'مصروفات المالك', priority: 'detail', render: (settlement) => money(settlement.ownerExpenses, settlement.currency) },
+  { key: 'net', header: 'الصافي', priority: 'secondary', render: (settlement) => <span className="font-black">{money(settlement.netPayable, settlement.currency)}</span> },
+];
 
 /**
  * Owner Portal — isolated read-only surface outside the office shell.
@@ -50,7 +113,7 @@ export function OwnerPortalPage() {
   const snapshot = result?.status === 'ready' ? result.snapshot : null;
 
   return (
-    <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro" className="pb-8" contentClassName="space-y-4">
+    <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro" className="pb-8" contentClassName="space-y-4 pb-8 md:pb-8">
       <div data-owner-portal data-owner-portal-mode="read-only" className="space-y-4">
         <header className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-card">
           <div className="p-4 sm:p-5">
@@ -96,12 +159,12 @@ export function OwnerPortalPage() {
                 </div>
                 <p className="text-xs text-muted-foreground">آخر تحديث: {date(snapshot.asOf)}</p>
               </div>
-              <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+              <ResponsiveCardGrid desktopColumns={4} gap="sm" className="mt-4">
                 <div><p className="text-xs text-muted-foreground">العقارات</p><p className="mt-1 text-xl font-black">{snapshot.summary.properties}</p></div>
                 <div><p className="text-xs text-muted-foreground">الوحدات</p><p className="mt-1 text-xl font-black">{snapshot.summary.units}</p></div>
                 <div><p className="text-xs text-muted-foreground">الإشغال</p><p className="mt-1 text-xl font-black">{percentage(snapshot.summary.occupancyRate)}%</p><p className="text-[11px] text-muted-foreground">{snapshot.summary.occupiedUnits} مشغولة · {snapshot.summary.vacantUnits} شاغرة</p></div>
                 <div><p className="text-xs text-muted-foreground">صافي المستحق</p><p className="mt-1 text-xl font-black">{money(snapshot.summary.netPayable, snapshot.summary.currency)}</p></div>
-              </div>
+              </ResponsiveCardGrid>
             </section>
 
             <section className="overflow-hidden rounded-2xl border border-border bg-card">
@@ -109,26 +172,29 @@ export function OwnerPortalPage() {
                 <Building2 className="size-4 text-primary" />
                 <div><h2 className="font-black">العقارات والوحدات</h2><p className="text-xs text-muted-foreground">التشغيل فقط — بدون بيانات ملاك أو مستأجرين آخرين.</p></div>
               </div>
-              {snapshot.properties.length === 0 ? <p className="p-4 text-sm text-muted-foreground">لا توجد عقارات مرتبطة بهذا المالك.</p> : (
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[720px] text-sm">
-                    <thead className="bg-muted/40 text-xs text-muted-foreground"><tr><th className="px-4 py-3 text-start">العقار</th><th className="px-4 py-3 text-start">الملكية</th><th className="px-4 py-3 text-start">الوحدات</th><th className="px-4 py-3 text-start">مشغولة</th><th className="px-4 py-3 text-start">شاغرة</th></tr></thead>
-                    <tbody className="divide-y divide-border/70">
-                      {snapshot.properties.map((property) => <tr key={property.id}><td className="px-4 py-3"><p className="font-bold">{property.title}</p><p className="text-xs text-muted-foreground">{property.address || '—'}</p></td><td className="px-4 py-3">{percentage(property.ownershipPercentage)}%</td><td className="px-4 py-3">{property.units}</td><td className="px-4 py-3">{property.occupiedUnits}</td><td className="px-4 py-3">{property.vacantUnits}</td></tr>)}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-              {snapshot.units.length ? (
-                <div className="border-t border-border/70 overflow-x-auto">
-                  <table className="w-full min-w-[820px] text-sm">
-                    <thead className="bg-muted/20 text-xs text-muted-foreground"><tr><th className="px-4 py-3 text-start">الوحدة</th><th className="px-4 py-3 text-start">العقار</th><th className="px-4 py-3 text-start">الحالة</th><th className="px-4 py-3 text-start">الإيجار المرجعي</th><th className="px-4 py-3 text-start">نهاية العقد الحالي</th></tr></thead>
-                    <tbody className="divide-y divide-border/70">
-                      {snapshot.units.map((unit) => <tr key={unit.id}><td className="px-4 py-3 font-bold">{unit.unitNumber}</td><td className="px-4 py-3">{unit.propertyTitle}</td><td className="px-4 py-3">{unit.occupied ? 'مشغولة' : 'شاغرة'}</td><td className="px-4 py-3">{money(unit.referenceRent, unit.currency)}</td><td className="px-4 py-3">{date(unit.contractEnd)}</td></tr>)}
-                    </tbody>
-                  </table>
-                </div>
-              ) : null}
+              <div className="space-y-4 p-3 sm:p-4">
+                <EntityTable
+                  aria-label="عقارات المالك"
+                  rows={[...snapshot.properties]}
+                  columns={propertyColumns}
+                  keyOf={(property) => property.id}
+                  enableViewModeToggle={false}
+                  mobileSummaryKeys={['ownership', 'units']}
+                  emptyTitle="لا توجد عقارات مرتبطة بهذا المالك"
+                  emptyDescription="سيظهر هنا أي عقار مرتبط بهذا الرابط عند توفره."
+                />
+                {snapshot.units.length ? (
+                  <EntityTable
+                    aria-label="وحدات المالك"
+                    rows={[...snapshot.units]}
+                    columns={unitColumns}
+                    keyOf={(unit) => unit.id}
+                    enableViewModeToggle={false}
+                    mobileBadgeKey="status"
+                    mobileSummaryKeys={['property', 'rent']}
+                  />
+                ) : null}
+              </div>
             </section>
 
             <section className="overflow-hidden rounded-2xl border border-border bg-card">
@@ -136,21 +202,24 @@ export function OwnerPortalPage() {
                 <Landmark className="size-4 text-primary" />
                 <div><h2 className="font-black">التحصيل والتسويات</h2><p className="text-xs text-muted-foreground">أرقام المالك المثبتة في تسوياته فقط.</p></div>
               </div>
-              <div className="grid grid-cols-3 gap-3 border-b border-border/70 p-4">
+              <ResponsiveCardGrid desktopColumns={3} gap="sm" className="border-b border-border/70 p-4">
                 <div><p className="text-xs text-muted-foreground">التحصيل المرتبط</p><p className="mt-1 font-black">{money(snapshot.summary.grossCollected)}</p></div>
                 <div><p className="text-xs text-muted-foreground">مصروفات على المالك</p><p className="mt-1 font-black">{money(snapshot.summary.ownerExpenses)}</p></div>
                 <div><p className="text-xs text-muted-foreground">صافي المستحق</p><p className="mt-1 font-black">{money(snapshot.summary.netPayable)}</p></div>
+              </ResponsiveCardGrid>
+              <div className="p-3 sm:p-4">
+                <EntityTable
+                  aria-label="تسويات المالك"
+                  rows={[...snapshot.settlements]}
+                  columns={settlementColumns}
+                  keyOf={(settlement) => settlement.id}
+                  enableViewModeToggle={false}
+                  mobileBadgeKey="status"
+                  mobileSummaryKeys={['period', 'net']}
+                  emptyTitle="لا توجد تسويات مسجلة"
+                  emptyDescription="ستظهر التسويات الخاصة بهذا المالك هنا عند تسجيلها."
+                />
               </div>
-              {snapshot.settlements.length === 0 ? <p className="p-4 text-sm text-muted-foreground">لا توجد تسويات مسجلة.</p> : (
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[980px] text-sm">
-                    <thead className="bg-muted/40 text-xs text-muted-foreground"><tr><th className="px-4 py-3 text-start">الكشف</th><th className="px-4 py-3 text-start">الفترة</th><th className="px-4 py-3 text-start">الحالة</th><th className="px-4 py-3 text-start">التحصيل</th><th className="px-4 py-3 text-start">أتعاب المكتب</th><th className="px-4 py-3 text-start">مصروفات المالك</th><th className="px-4 py-3 text-start">الصافي</th></tr></thead>
-                    <tbody className="divide-y divide-border/70">
-                      {snapshot.settlements.map((settlement) => <tr key={settlement.id}><td className="px-4 py-3"><p className="font-bold">{settlement.number}</p><p className="text-xs text-muted-foreground">{settlement.propertyTitle || date(settlement.date)}</p></td><td className="px-4 py-3">{date(settlement.periodStart)} — {date(settlement.periodEnd)}</td><td className="px-4 py-3">{settlement.status}</td><td className="px-4 py-3">{money(settlement.grossCollected)}</td><td className="px-4 py-3">{money(settlement.officeFee)}</td><td className="px-4 py-3">{money(settlement.ownerExpenses)}</td><td className="px-4 py-3 font-black">{money(settlement.netPayable)}</td></tr>)}
-                    </tbody>
-                  </table>
-                </div>
-              )}
             </section>
 
             <section className="grid gap-4 lg:grid-cols-2">
