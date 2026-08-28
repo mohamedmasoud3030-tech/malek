@@ -1,7 +1,6 @@
 import { Edit, IdCard, Plus, Trash2, UserCheck, UserRound, Users } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { toast } from "sonner";
 import { PersonFormModal } from "./person-form-modal";
 import { useDialogNavigate } from "@/app/router/background-location";
 import { Button } from "@/components/ui/button";
@@ -13,11 +12,7 @@ import {
   type ActiveFilterItem,
 } from "@/components/ui/active-filter-bar";
 import { EntityTable, type ColumnDef } from "@/components/ui/entity-table";
-import {
-  EntityCard,
-  entityCardContactMeta,
-  entityCardTypeMap,
-} from "@/components/ui/entity-card";
+import { entityCardTypeMap } from "@/components/ui/entity-card";
 import { Select } from "@/components/ui/select";
 import { ListPage } from "@/components/layout/list-page";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -41,7 +36,6 @@ const peopleColumnOptions = [
 ] as const;
 
 const defaultPeopleColumns = peopleColumnOptions.map((column) => column.key);
-
 
 function PeopleMetric({
   label,
@@ -109,17 +103,6 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
   const completeContactsOnPage = rows.filter(
     (person) => Boolean(person.phone || person.email),
   ).length;
-
-  const errorToastShownRef = useRef(false);
-  useEffect(() => {
-    if (peopleQuery.isError && !errorToastShownRef.current) {
-      errorToastShownRef.current = true;
-      toast.error("تعذر تحميل الأشخاص");
-    }
-    if (!peopleQuery.isError) {
-      errorToastShownRef.current = false;
-    }
-  }, [peopleQuery.isError]);
 
   const openEdit = (id: string) => {
     setEditPersonId(id);
@@ -376,6 +359,24 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
             rows={rows}
             columns={columns}
             visibleColumnKeys={visibleColumnKeys}
+            mobileCardType={(person) => person.type}
+            mobileSummaryKeys={["phone", "email"]}
+            mobileCardActions={(person) => [
+              {
+                label: "تعديل",
+                icon: Edit,
+                variant: "secondary",
+                ariaLabel: `تعديل ${person.full_name}`,
+                onClick: () => openEdit(person.id),
+              },
+              {
+                label: "أرشفة",
+                icon: Trash2,
+                variant: "danger",
+                ariaLabel: `أرشفة ${person.full_name}`,
+                onClick: () => setDeleteId(person.id),
+              },
+            ]}
             keyOf={(person) => person.id}
             isLoading={peopleQuery.isLoading}
             error={peopleQuery.isError ? peopleQuery.error : null}
