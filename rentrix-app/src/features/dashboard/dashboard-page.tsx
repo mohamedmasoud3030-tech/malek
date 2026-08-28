@@ -164,7 +164,7 @@ export function DashboardPage() {
             type="button"
             variant="secondary"
             size="sm"
-            className="min-h-10"
+            className="min-h-11"
             onClick={retryDashboard}
             disabled={isFetching && !isLoading}
           >
