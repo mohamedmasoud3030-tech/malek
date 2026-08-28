@@ -106,7 +106,7 @@ export function BankCsvImportWorkflow({ open, onOpenChange, defaultBankAccountId
       return;
     }
     if (preview.mappingAmbiguous || preview.rejectedRows.length > 0 || preview.validRows.length === 0) {
-      toast.error('الاستيراد fail-closed: صحح كل الصفوف المرفوضة أو التعيين الغامض قبل الحفظ');
+      toast.error('تم إيقاف الاستيراد: صحح الصفوف المرفوضة أو تعيين الأعمدة قبل الحفظ');
       return;
     }
 
@@ -292,43 +292,85 @@ export function BankCsvImportWorkflow({ open, onOpenChange, defaultBankAccountId
           </div>
         </EntityForm.Section>
 
-        <EntityForm.Section title="معاينة الصفوف المطبيعة (أول 10)" description="تأكد من التاريخ والمبلغ والوصف قبل الاستيراد.">
-          <div className="overflow-x-auto rounded-xl border">
-            <table className="min-w-full text-xs">
-              <thead className="bg-muted/50">
-                <tr>
-                  <th className="p-2 text-start">التاريخ</th>
-                  <th className="p-2 text-start">المبلغ</th>
-                  <th className="p-2 text-start">الوصف</th>
-                  <th className="p-2 text-start">المرجع</th>
-                </tr>
-              </thead>
-              <tbody>
+        <EntityForm.Section title="معاينة الحركات (أول 10)" description="تأكد من التاريخ والمبلغ والوصف قبل الاستيراد.">
+          {preview.previewRows.length > 0 ? (
+            <>
+              <div className="grid gap-2 md:hidden">
                 {preview.previewRows.map((row, idx) => (
-                  <tr key={idx} className="border-t">
-                    <td className="p-2">{row.transaction_date}</td>
-                    <td className="p-2 tabular-nums" dir="ltr">
-                      {row.amount == null ? '—' : formatCompanyMoney(companySettings, row.amount)}
-                    </td>
-                    <td className="p-2 truncate max-w-[12rem]">{row.description}</td>
-                    <td className="p-2">{row.reference ?? '—'}</td>
-                  </tr>
+                  <div key={idx} className="min-w-0 rounded-xl border border-border/75 bg-card p-3 text-xs shadow-sm">
+                    <div className="flex items-start justify-between gap-3 border-b border-border/55 pb-2">
+                      <div className="min-w-0">
+                        <p className="text-[11px] font-bold text-muted-foreground">التاريخ</p>
+                        <p className="mt-0.5 font-bold">{row.transaction_date}</p>
+                      </div>
+                      <div className="shrink-0 text-end">
+                        <p className="text-[11px] font-bold text-muted-foreground">المبلغ</p>
+                        <p className="mt-0.5 font-black tabular-nums" dir="ltr">
+                          {row.amount == null ? '—' : formatCompanyMoney(companySettings, row.amount)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-2 grid gap-2">
+                      <div className="min-w-0">
+                        <p className="text-[11px] font-bold text-muted-foreground">الوصف</p>
+                        <p className="mt-0.5 break-words leading-5 [overflow-wrap:anywhere]">{row.description || '—'}</p>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[11px] font-bold text-muted-foreground">المرجع</p>
+                        <p className="mt-0.5 break-all font-mono">{row.reference ?? '—'}</p>
+                      </div>
+                    </div>
+                  </div>
                 ))}
-                {preview.previewRows.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="p-4 text-center text-muted-foreground">
-                      لا توجد صفوف صالحة للمعاينة
-                    </td>
-                  </tr>
-                ) : null}
-              </tbody>
-            </table>
-          </div>
+              </div>
+              <div className="hidden overflow-x-auto rounded-xl border md:block">
+                <table className="min-w-full text-xs">
+                  <thead className="bg-muted/50">
+                    <tr>
+                      <th className="p-2 text-start">التاريخ</th>
+                      <th className="p-2 text-start">المبلغ</th>
+                      <th className="p-2 text-start">الوصف</th>
+                      <th className="p-2 text-start">المرجع</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {preview.previewRows.map((row, idx) => (
+                      <tr key={idx} className="border-t">
+                        <td className="p-2">{row.transaction_date}</td>
+                        <td className="p-2 tabular-nums" dir="ltr">
+                          {row.amount == null ? '—' : formatCompanyMoney(companySettings, row.amount)}
+                        </td>
+                        <td className="p-2 truncate max-w-[12rem]">{row.description}</td>
+                        <td className="p-2">{row.reference ?? '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          ) : (
+            <div className="rounded-xl border border-dashed p-4 text-center text-xs text-muted-foreground">
+              لا توجد صفوف صالحة للمعاينة
+            </div>
+          )}
         </EntityForm.Section>
 
         {preview.rejectedRows.length > 0 ? (
-          <EntityForm.Section title={`الصفوف المرفوضة (${preview.rejectedRows.length})`} description="تحتاج تصحيح قبل الاستيراد. النظام يرفض الدفعة كاملة إذا وجدت صفوف غير صالحة (fail-closed).">
-            <div className="max-h-64 overflow-auto rounded-xl border">
+          <EntityForm.Section title={`الصفوف المرفوضة (${preview.rejectedRows.length})`} description="صحح الصفوف المرفوضة قبل الاستيراد؛ لن يتم حفظ الدفعة مع وجود بيانات غير صالحة.">
+            <div className="grid max-h-64 gap-2 overflow-y-auto md:hidden">
+              {preview.rejectedRows.slice(0, 50).map((r, i) => (
+                <div key={i} className="min-w-0 rounded-xl border border-destructive/20 bg-destructive/5 p-3 text-xs">
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="rounded-lg bg-background px-2 py-1 font-black">السطر {r.rowNumber}</span>
+                    <p className="min-w-0 flex-1 text-destructive">{r.reason}</p>
+                  </div>
+                  <p className="mt-2 break-all border-t border-destructive/15 pt-2 font-mono text-[11px] leading-5 text-muted-foreground">
+                    {r.raw.join(' | ')}
+                  </p>
+                </div>
+              ))}
+            </div>
+            <div className="hidden max-h-64 overflow-auto rounded-xl border md:block">
               <table className="min-w-full text-xs">
                 <thead className="bg-muted/50 sticky top-0">
                   <tr>
@@ -387,7 +429,7 @@ export function BankCsvImportWorkflow({ open, onOpenChange, defaultBankAccountId
 
           <p className="text-xs text-muted-foreground">
             يدعم النظام الرؤوس العربية: التاريخ، المبلغ، الوصف، المرجع، الرصيد، العملة، مدين، دائن. تأكد من وجود تاريخ ومبلغ أو عمودي مدين/دائن.
-            لا يتم التخمين الصامت للتعيين الغامض.
+            عند وجود تعيين غامض لن يختار النظام عمودًا تلقائيًا قبل المراجعة.
           </p>
         </div>
       </EntityForm.Section>
