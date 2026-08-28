@@ -32,27 +32,21 @@ import { buildUtilityObligationsSignal, EMPTY_UTILITY_OBLIGATIONS_SIGNAL } from 
 import { buildExpiringContracts, buildOverdueTenantRows, toDateInputValue } from './dashboard-utils';
 import { OwnerObligationsSection } from './components/owner-obligations-section';
 
-function DashboardSection({
+function DashboardGroup({
   eyebrow,
   title,
   ariaLabel,
   sectionId,
-  className,
   children,
 }: Readonly<{
   eyebrow: string;
   title: string;
   ariaLabel: string;
   sectionId: string;
-  className?: string;
   children: ReactNode;
 }>) {
   return (
-    <section
-      className={`min-w-0 space-y-2.5 ${className ?? ''}`}
-      aria-label={ariaLabel}
-      data-dashboard-section={sectionId}
-    >
+    <section className="min-w-0 space-y-2.5" aria-label={ariaLabel} data-dashboard-section={sectionId}>
       <SectionHeader eyebrow={eyebrow} title={title} className="mb-0 px-0.5" />
       {children}
     </section>
@@ -202,18 +196,12 @@ export function DashboardPage() {
               </div>
             ) : null}
 
-            <DashboardSection eyebrow="1 · الآن" title="أداء المكتب" ariaLabel="أداء المكتب" sectionId="office-performance">
+            <DashboardGroup eyebrow="الآن" title="أداء المكتب" ariaLabel="أداء المكتب" sectionId="office-performance">
               <OfficePulse snapshot={snapshot} isLoading={isLoading} settings={settings} />
-            </DashboardSection>
+            </DashboardGroup>
 
-            <div className="grid min-w-0 gap-5 xl:grid-cols-12 xl:items-start">
-              <DashboardSection
-                eyebrow="2 · المحفظة"
-                title="الوحدات الفارغة"
-                ariaLabel="الوحدات الفارغة"
-                sectionId="vacant-units"
-                className="xl:col-span-7"
-              >
+            <div className="grid min-w-0 gap-3 xl:grid-cols-12 xl:items-start">
+              <section className="min-w-0 xl:col-span-7" aria-label="الوحدات الفارغة" data-dashboard-section="vacant-units">
                 <VacantUnitsSection
                   analytics={vacancyAnalytics}
                   isLoading={unitsQuery.isLoading || (hasVacantUnit && contractsQuery.isLoading)}
@@ -221,15 +209,9 @@ export function DashboardPage() {
                   detailsUnavailable={vacancyDetailsUnavailable}
                   settings={settings}
                 />
-              </DashboardSection>
+              </section>
 
-              <DashboardSection
-                eyebrow="3 · تحصيل"
-                title="الفلوس المطلوب تحصيلها"
-                ariaLabel="الفلوس المطلوب تحصيلها"
-                sectionId="collections"
-                className="xl:col-span-5"
-              >
+              <section className="min-w-0 xl:col-span-5" aria-label="الفلوس المطلوب تحصيلها" data-dashboard-section="collections">
                 <OverdueSection
                   rows={overdueRows}
                   totalCount={snapshot?.arrears.overdueCount}
@@ -237,10 +219,10 @@ export function DashboardPage() {
                   isError={hasDashboardError}
                   settings={settings}
                 />
-              </DashboardSection>
+              </section>
             </div>
 
-            <DashboardSection eyebrow="4 · خدمات" title="المشاكل والصيانة" ariaLabel="المشاكل والصيانة" sectionId="maintenance-problems">
+            <DashboardGroup eyebrow="خدمات" title="المشاكل والصيانة" ariaLabel="المشاكل والصيانة" sectionId="maintenance-problems">
               <div className="grid min-w-0 gap-3 md:grid-cols-2 xl:grid-cols-3" data-dashboard-maintenance-problems>
                 <UrgentMaintenanceSection
                   rows={snapshot?.queues.urgentMaintenance ?? []}
@@ -260,15 +242,10 @@ export function DashboardPage() {
                   settings={settings}
                 />
               </div>
-            </DashboardSection>
+            </DashboardGroup>
 
-            <div className="grid min-w-0 gap-5 xl:grid-cols-2 xl:items-start">
-              <DashboardSection
-                eyebrow="5 · عقود"
-                title="العقود القريبة من الانتهاء"
-                ariaLabel="العقود القريبة من الانتهاء"
-                sectionId="expiring-contracts"
-              >
+            <div className="grid min-w-0 gap-3 xl:grid-cols-2 xl:items-start">
+              <section className="min-w-0" aria-label="العقود القريبة من الانتهاء" data-dashboard-section="expiring-contracts">
                 <ExpiringContractsSection
                   rows={expiringContracts}
                   totalCount={snapshot?.contracts.expiring30}
@@ -276,11 +253,11 @@ export function DashboardPage() {
                   isError={hasDashboardError}
                   settings={settings}
                 />
-              </DashboardSection>
+              </section>
 
-              <DashboardSection eyebrow="6 · ملاك" title="مستحقات الملاك" ariaLabel="مستحقات الملاك" sectionId="owner-obligations">
+              <section className="min-w-0" aria-label="مستحقات الملاك" data-dashboard-section="owner-obligations">
                 <OwnerObligationsSection snapshot={snapshot} isLoading={isLoading} settings={settings} />
-              </DashboardSection>
+              </section>
             </div>
           </>
         )}
