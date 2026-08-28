@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import { PageHeader } from './page-header';
 import { PageHeaderActions } from './page-header-actions';
 import { PageLayout } from './page-layout';
 
@@ -17,7 +16,7 @@ export type EmbeddableWorkspaceProps = Readonly<{
   backLabel?: string;
   primaryAction?: ReactNode;
   secondaryActions?: ReactNode;
-  /** Scoped visual system for approved operational workspaces only. */
+  /** Kept for source compatibility while the app uses one shared visual system. */
   visualVariant?: 'malek-pro';
   children: ReactNode;
 }>;
@@ -68,19 +67,16 @@ export function EmbeddableWorkspace({
       lang={lang}
       size={size}
       title={title}
+      description={description}
+      count={count}
+      backTo={backTo}
+      backLabel={backLabel}
+      primaryAction={primaryAction}
+      secondaryActions={secondaryActions}
       className={className}
       contentClassName={contentClassName}
       visualVariant={visualVariant}
     >
-      <PageHeader
-        title={title}
-        description={description}
-        count={count}
-        backTo={backTo}
-        backLabel={backLabel}
-        primaryAction={primaryAction}
-        secondaryActions={secondaryActions}
-      />
       {children}
     </PageLayout>
   );
