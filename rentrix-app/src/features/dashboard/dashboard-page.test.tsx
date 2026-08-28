@@ -132,46 +132,37 @@ describe('Dashboard command center query boundary tests', () => {
     expect(container?.querySelector('[data-dashboard-priority-panel]')).toBeNull();
   });
 
-  it('moves Day + Date into the shared compact Today context strip instead of a dashboard-owned card', async () => {
+  it('keeps page identity plus day and date in the canonical PageHeader', async () => {
     (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
     await renderPage();
 
     const todayContext = container?.querySelector<HTMLElement>('[data-global-today-context]');
     expect(todayContext).not.toBeNull();
-    // "اليوم" remains the page heading (visually hidden) while the shared
-    // strip carries the same compact day context for every operational page.
-    expect(container?.querySelector('h1')?.textContent).toBe('اليوم');
-    // Localized weekday + localized date live in the strip.
+    expect(container?.querySelector('h1')?.textContent).toBe('لوحة التحكم');
     const weekday = todayContext?.querySelector<HTMLElement>('[data-global-today-weekday]');
     const dayDate = todayContext?.querySelector<HTMLElement>('[data-global-today-day-date]');
     expect(weekday?.textContent?.trim().length).toBeGreaterThan(0);
     expect(dayDate?.textContent?.trim().length).toBeGreaterThan(0);
-    // The old centered header date block must not exist anywhere on the page.
     expect(container?.querySelector('[data-header-date-center]')).toBeNull();
-    // No duplicate dashboard-owned Today card may come back.
     expect(container?.querySelector('[data-dashboard-today-context]')).toBeNull();
   });
 
-  it('scopes Visual Contract V2 on a real dashboard-owned wrapper', async () => {
+  it('has no dashboard V2 visual contract and keeps the six owned decision sections', async () => {
     (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
     await renderPage();
-    const scope = container?.querySelector('[data-visual-contract="v2"]');
-    expect(scope).not.toBeNull();
-    // The decorative hero card was removed; the strip + sections own the page.
-    expect(scope?.querySelector('[data-dashboard-hero]')).toBeNull();
-    expect(scope?.querySelectorAll('[data-dashboard-section]').length).toBeGreaterThanOrEqual(5);
-    expect(container?.querySelector('[data-page-layout][data-visual-contract]')).toBeNull();
+    expect(container?.querySelector('[data-visual-contract="v2"]')).toBeNull();
+    expect(container?.querySelector('[data-dashboard-hero]')).toBeNull();
+    expect(container?.querySelectorAll('[data-dashboard-section]').length).toBeGreaterThanOrEqual(5);
   });
 
-  it('keeps an explicit refresh action wired to the snapshot query', async () => {
+  it('keeps an explicit refresh action wired through the canonical PageHeader', async () => {
     (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
     await renderPage();
 
-    const refresh = container?.querySelector<HTMLButtonElement>('[data-global-refresh]');
+    const refresh = container?.querySelector<HTMLButtonElement>('[data-page-primary-action] button');
     expect(refresh).not.toBeNull();
-    expect(refresh?.getAttribute('aria-label')).toBe('تحديث');
-    // 44px hit target stays preserved inside the shared strip.
-    expect(refresh?.className).toContain('size-11');
+    expect(refresh?.textContent).toContain('تحديث');
+    expect(refresh?.className).toContain('min-h-11');
     await act(async () => refresh?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
     expect((getDashboardSnapshot as any).mock.calls.length).toBeGreaterThanOrEqual(2);
   });

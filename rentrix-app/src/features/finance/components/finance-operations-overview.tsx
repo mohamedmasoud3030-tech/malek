@@ -17,7 +17,7 @@ import { FinanceReadinessSection } from '@/features/financials/tax-authority/fin
 import { formatMoney } from '@/features/financials/components/financials-formatters';
 import type { ArrearsSummaryReport, CollectionSummaryReport } from '@/features/financials/reports/financialReportsService';
 import { cn } from '@/lib/utils';
-import { getFinanceCockpitState } from './finance-workspace-hero';
+import { getFinanceCockpitState } from '../finance-cockpit-state';
 
 type FinanceOperationsOverviewProps = Readonly<{
   summary: CollectionSummaryReport | undefined;

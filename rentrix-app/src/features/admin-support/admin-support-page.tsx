@@ -3,7 +3,7 @@ import { AlertTriangle, Search, ShieldCheck } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 import { toast } from 'sonner';
 import { DataErrorScreen } from '@/components/data-error-screen';
-import { EmptyState } from '@/components/empty-state';
+import { EmptyState } from '@/components/ui/state-surfaces';
 import { AccessDenied } from '@/components/layout/access-denied';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
@@ -111,7 +111,7 @@ export function AdminSupportOperationsPage() {
 
   if (snapshotQuery.isPending) {
     return (
-      <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro">
+      <PageLayout dir="rtl" lang="ar" size="wide">
         <SupportPageHeader />
         <LoadingState variant="route" label="جارٍ تحميل أدوات عمليات الدعم الآمنة..." />
       </PageLayout>
@@ -120,7 +120,7 @@ export function AdminSupportOperationsPage() {
 
   if (snapshotQuery.isError) {
     return (
-      <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro">
+      <PageLayout dir="rtl" lang="ar" size="wide">
         <SupportPageHeader />
         <DataErrorScreen
           title="تعذر تحميل عمليات الدعم"
@@ -138,7 +138,7 @@ export function AdminSupportOperationsPage() {
   }
 
   return (
-    <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro">
+    <PageLayout dir="rtl" lang="ar" size="wide">
       <SupportPageHeader />
 
       <ResponsiveCardGrid gap="sm" aria-label="ملخص عمليات الدعم">
@@ -395,7 +395,6 @@ export function AdminSupportOperationsPage() {
         title="تأكيد تغيير حالة الدعم"
         description={triageTarget ? `${triageTarget.request.reference} ← ${statusLabels[triageTarget.status]}` : ''}
         className="max-w-lg"
-        visualVariant="operational"
       >
         <EntityForm.Root
           aria-busy={triageMutation.isPending}
@@ -449,7 +448,6 @@ export function AdminSupportOperationsPage() {
         title="مقترح تغيير وصول — غير منفذ"
         description="هذه الخطوة لا تغيّر الدور أو حالة الحساب. التنفيذ عالي التأثير غير موجود حتى اعتماد المالك وضوابط إعادة التحقق والمراجع الثاني."
         className="max-w-lg"
-        visualVariant="operational"
       >
         <EntityForm.Root
           aria-busy={proposalMutation.isPending}

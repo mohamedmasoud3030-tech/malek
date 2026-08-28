@@ -2,7 +2,7 @@ import { AlertTriangle, RotateCcw } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { getEnvDiagnostics, parseSupabaseDiagnostics } from '@/lib/runtime-diagnostics';
 import { Button } from './button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './card';
+import { StateSurface } from './state-surfaces';
 
 type ErrorStateProps = {
   title?: string;
@@ -36,43 +36,48 @@ export function ErrorState({
 
   if (variant === 'write') {
     return (
-      <Card data-error-state role="alert" className="border-destructive/40 bg-destructive/5">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <AlertTriangle className="size-5 text-danger" />
-            {title}
-          </CardTitle>
-          <CardDescription>{description}</CardDescription>
-        </CardHeader>
-      </Card>
+      <StateSurface
+        kind="error"
+        tone="danger"
+        icon={<AlertTriangle className="size-5" aria-hidden="true" />}
+        title={title}
+        description={description}
+        role="alert"
+        compact
+        className="border-destructive/40 bg-destructive/5"
+      />
     );
   }
 
+  const controls = onRetry || action ? (
+    <div className="flex flex-wrap justify-center gap-2">
+      {onRetry ? (
+        <Button variant="secondary" size="sm" onClick={onRetry}>
+          <RotateCcw className="me-1.5 size-4" aria-hidden="true" />
+          إعادة المحاولة
+        </Button>
+      ) : null}
+      {action}
+    </div>
+  ) : undefined;
+
   return (
-    <Card data-error-state role="alert" className={compact ? 'border-danger/20' : 'border-danger/25'}>
-      <CardHeader className={compact ? 'p-4 pb-2' : undefined}>
-        <CardTitle className="flex items-center gap-2 text-base">
-          <AlertTriangle className="size-5 text-danger" />
-          {title}
-        </CardTitle>
-        <CardDescription>{description}</CardDescription>
-      </CardHeader>
-      <CardContent className={compact ? 'space-y-3 p-4 pt-0' : 'space-y-3'}>
-        {detail ? (
+    <StateSurface
+      kind="error"
+      tone="danger"
+      icon={<AlertTriangle className="size-5" aria-hidden="true" />}
+      title={title}
+      description={description}
+      role="alert"
+      compact={compact}
+      detail={
+        detail ? (
           <p className="rounded-lg bg-danger/5 px-3 py-2 text-xs font-medium text-danger/90">
             {detail}
           </p>
-        ) : null}
-        <div className="flex flex-wrap gap-2">
-          {onRetry ? (
-            <Button variant="secondary" size="sm" onClick={onRetry}>
-              <RotateCcw className="me-1.5 size-4" />
-              إعادة المحاولة
-            </Button>
-          ) : null}
-          {action}
-        </div>
-      </CardContent>
-    </Card>
+        ) : undefined
+      }
+      action={controls}
+    />
   );
 }

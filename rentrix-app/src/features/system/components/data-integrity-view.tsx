@@ -1,6 +1,6 @@
 import { CheckCircle2, ListChecks, TriangleAlert } from 'lucide-react';
 import { DataErrorScreen } from '@/components/data-error-screen';
-import { EmptyState } from '@/components/empty-state';
+import { EmptyState } from '@/components/ui/state-surfaces';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { LoadingState } from '@/components/ui/loading-state';

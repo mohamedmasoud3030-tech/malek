@@ -3,14 +3,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 /**
- * Design-system verification — يثبت في متصفح حقيقي أن جسر التوكنات يعمل:
- *
- * 1. ظلال البطاقات المبنية على التوكنات وtext-success/bg-primary تُحل إلى computed styles فعلية.
- * 2. الثيم الداكن يتبع [data-theme='dark'] (مبدّل التطبيق) وليس نظام التشغيل.
- * 3. لا فيض أفقي (overflow-x) على عروض الهاتف والتابلت والديسكتوب.
- * 4. مناطق اللمس للأزرار الرئيسية ≥ 44px على الهاتف (pointer: coarse مسموح 40).
- *
- * يعمل على ثلاثة مشاريع (desktop/tablet/mobile) كما هو معرّف في playwright.config.
+ * Design-system verification — proves in a real browser that the canonical
+ * token bridge works across the shared MALEK surfaces without legacy visual
+ * scopes or Premium Glass variables.
  */
 
 const targetDir = process.env.EVIDENCE_DIR || '/tmp/ds-evidence';
@@ -50,7 +45,7 @@ async function expectNoHorizontalOverflow(page: Page, label: string) {
 async function expectTokenUtilitiesReal(page: Page) {
   const result = await page.evaluate(() => {
     const shadowCandidates = Array.from(document.querySelectorAll<HTMLElement>(
-      '.shadow-card, [data-visual-contract="v2"] .dashboard-ops-header, [data-visual-contract="v2"] .dashboard-kpi-card, [data-visual-contract="v2"] .dashboard-priority-panel',
+      '.shadow-card, [data-component-card], [data-kpi-card], [data-entity-table-wrapper]',
     ));
     const shadow = shadowCandidates
       .map((element) => getComputedStyle(element).boxShadow)
@@ -73,7 +68,6 @@ for (const target of pages) {
   test(`${target.name}: renders without horizontal overflow and with real token utilities`, async ({ page }, testInfo) => {
     await page.goto(target.url);
     await expect(page.locator(target.ready).first()).toBeVisible({ timeout: 15_000 });
-    // Synchronize on an observable condition (content rendered) — not a fixed wait.
     await expect(page.locator(target.content).first()).toBeVisible();
 
     await expectNoHorizontalOverflow(page, `${target.name} @${testInfo.project.name}`);
@@ -95,9 +89,17 @@ test('contracts: unified PageHeader renders h1 with record count badge', async (
   await expect(page.locator('[data-list-controls]')).toBeVisible();
 });
 
-test('theme dark follows the app toggle (data-theme), not prefers-color-scheme', async ({ page }) => {
+test('theme dark follows the app data-theme switch and canonical background token', async ({ page }) => {
   await page.goto('/login?e2e-dashboard-workspace=1');
   await expect(page.locator('main[data-e2e-dashboard-workspace]')).toBeVisible({ timeout: 15_000 });
+
+  await page.evaluate(() => {
+    document.documentElement.dataset.theme = 'light';
+  });
+  await expect.poll(
+    async () => page.evaluate(() => document.documentElement.dataset.theme),
+    { timeout: 5_000 },
+  ).toBe('light');
 
   const lightState = await page.evaluate(() => ({
     backgroundToken: getComputedStyle(document.documentElement)
@@ -110,45 +112,36 @@ test('theme dark follows the app toggle (data-theme), not prefers-color-scheme',
     document.documentElement.dataset.theme = 'dark';
   });
 
-  await expect
-    .poll(
-      async () => page.evaluate(() => document.documentElement.dataset.theme),
-      { timeout: 5_000 },
-    )
-    .toBe('dark');
+  await expect.poll(
+    async () => page.evaluate(() => document.documentElement.dataset.theme),
+    { timeout: 5_000 },
+  ).toBe('dark');
 
   let darkToken = lightState.backgroundToken;
-  await expect
-    .poll(async () => {
-      darkToken = await page.evaluate(() =>
-        getComputedStyle(document.documentElement)
-          .getPropertyValue('--background')
-          .trim(),
-      );
-      return darkToken;
-    }, { timeout: 5_000 })
-    .not.toBe(lightState.backgroundToken);
+  await expect.poll(async () => {
+    darkToken = await page.evaluate(() =>
+      getComputedStyle(document.documentElement)
+        .getPropertyValue('--background')
+        .trim(),
+    );
+    return darkToken;
+  }, { timeout: 5_000 }).not.toBe(lightState.backgroundToken);
 
-  // Premium Glass owns the actual page environment. `--background` still
-  // governs normal surfaces, while body intentionally paints the tokenized
-  // `--premium-page-base` behind the shared ambient layer.
   const expectedDarkBackground = await page.evaluate(() => {
     const probe = document.createElement('div');
-    probe.style.backgroundColor = 'var(--premium-page-base)';
+    probe.style.backgroundColor = 'hsl(var(--background))';
     document.body.appendChild(probe);
     const background = getComputedStyle(probe).backgroundColor;
     probe.remove();
     return background;
   });
 
-  let darkBackground = lightState.bodyBackground;
-  await expect
-    .poll(async () => {
-      darkBackground = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
-      return darkBackground;
-    }, { timeout: 5_000 })
-    .toBe(expectedDarkBackground);
+  await expect.poll(
+    async () => page.evaluate(() => getComputedStyle(document.body).backgroundColor),
+    { timeout: 5_000 },
+  ).toBe(expectedDarkBackground);
 
+  const darkBackground = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
   expect(darkBackground).not.toBe(lightState.bodyBackground);
   expect(darkToken).not.toBe(lightState.backgroundToken);
 
@@ -165,7 +158,7 @@ test('key actions keep ≥44px touch targets on every viewport', async ({ page }
     const offenders: string[] = [];
     for (const el of Array.from(document.querySelectorAll<HTMLElement>('button, a[href]'))) {
       const rect = el.getBoundingClientRect();
-      if (rect.width === 0 || rect.height === 0) continue; // hidden (e.g. desktop-only or mobile-only variants)
+      if (rect.width === 0 || rect.height === 0) continue;
       if (rect.height < 40) offenders.push(`${el.tagName}:${(el.textContent ?? '').trim().slice(0, 20)}:${rect.height}`);
     }
     return offenders;

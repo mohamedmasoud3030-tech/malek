@@ -1,9 +1,9 @@
-import { Link, useNavigate, useSearch } from '@tanstack/react-router';
-import { BarChart3, WalletCards } from 'lucide-react';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useCallback, useState } from 'react';
 import { AccessDenied } from '@/components/layout/access-denied';
+import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
-import { Button } from '@/components/ui/button';
+import { SectionHeader } from '@/components/ui/section-header';
 import { canAccess, financialOperationPermissions } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
 import { translateSharedLabel } from '@/lib/i18n';
@@ -68,43 +68,9 @@ export function ReportsPage() {
 
   return (
     <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro" className="pb-8">
+      <PageHeader title={reportsTitle} description={pageDescription} />
+
       <div data-finance-root className="min-w-0 space-y-3 sm:space-y-4">
-        <section
-          aria-labelledby="reports-center-title"
-          className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-card"
-          data-reports-cockpit
-          data-reports-center-header
-        >
-          <div className="flex flex-col gap-4 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex min-w-0 items-start gap-3.5">
-              <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground shadow-sm sm:size-12">
-                <BarChart3 className="size-5 sm:size-5.5" aria-hidden="true" />
-              </span>
-              <div className="min-w-0">
-                <p className="text-[11px] font-black text-primary">مركز التقارير</p>
-                <h1 id="reports-center-title" className="mt-0.5 text-xl font-black sm:text-2xl lg:text-[1.7rem]">
-                  {reportsTitle}
-                </h1>
-                <p className="mt-1 max-w-3xl text-xs font-semibold leading-5 text-muted-foreground sm:text-sm sm:leading-6">
-                  {pageDescription}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-              <div className="rounded-xl border border-border/65 bg-muted/30 px-3 py-2 text-xs font-bold text-muted-foreground">
-                المفتوح الآن: <span className="text-foreground">{activeReportLabel}</span>
-              </div>
-              <Button variant="outline" asChild className="min-h-10">
-                <Link to="/financials">
-                  <WalletCards className="me-2 size-4" aria-hidden="true" />
-                  العمليات المالية
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </section>
-
         <ReportDirectory
           activeSection={activeSection}
           activeView={activeView}
@@ -112,14 +78,12 @@ export function ReportsPage() {
           onOpen={handleSectionViewChange}
         />
 
-        <section className="space-y-2" aria-labelledby="active-report-title" data-active-report-workspace>
-          <div className="flex items-end justify-between gap-3 px-1">
-            <div>
-              <p className="text-[11px] font-black text-primary">التقرير المفتوح</p>
-              <h2 id="active-report-title" className="mt-0.5 text-lg font-black sm:text-xl">{activeReportLabel}</h2>
-            </div>
-            <p className="hidden text-xs font-semibold text-muted-foreground sm:block">الخلاصة أولًا، ثم الجدول والفلاتر والتصدير</p>
-          </div>
+        <section className="space-y-2" aria-label={activeReportLabel} data-active-report-workspace>
+          <SectionHeader
+            eyebrow="التقرير المفتوح"
+            title={activeReportLabel}
+            description="الخلاصة أولًا، ثم الجدول والفلاتر والتصدير"
+          />
 
           <ReportsWorkspace
             model={workspace}

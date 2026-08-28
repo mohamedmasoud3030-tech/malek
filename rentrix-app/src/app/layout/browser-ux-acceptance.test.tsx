@@ -21,7 +21,7 @@ vi.mock('@tanstack/react-router', () => ({
 }));
 
 import { NavigationLinks, MobileFloatingControl } from './layout-navigation-view';
-import { EmptyState } from '@/components/empty-state';
+import { EmptyState } from '@/components/ui/state-surfaces';
 import { DetailFields } from '@/components/ui/detail-fields';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageHeaderActions } from '@/components/layout/page-header-actions';

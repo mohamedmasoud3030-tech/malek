@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { RefreshCw, ShieldCheck, UserCog, UsersRound } from 'lucide-react';
 import { DataErrorScreen } from '@/components/data-error-screen';
-import { EmptyState } from '@/components/empty-state';
+import { EmptyState } from '@/components/ui/state-surfaces';
 import { AccessDenied } from '@/components/layout/access-denied';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';

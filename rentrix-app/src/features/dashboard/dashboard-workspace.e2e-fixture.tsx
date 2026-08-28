@@ -1,3 +1,4 @@
+import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { SectionHeader } from '@/components/ui/section-header';
 import { formatCompanyDate, formatCompanyMoney, formatCompanyNumber } from '@/lib/companyFormatters';
@@ -10,7 +11,6 @@ import { UrgentMaintenanceSection } from './components/urgent-maintenance-sectio
 import { UtilityObligationsSection } from './components/utility-obligations-section';
 import { VacantUnitsSection } from './components/vacant-units-section';
 import { MaintenanceFollowUpSection } from './components/maintenance-follow-up-section';
-import { DashboardVisualScope } from './dashboard-visual-scope';
 import type { DashboardSnapshot } from './dashboard-snapshot';
 import { addDays, buildExpiringContracts, buildOverdueTenantRows, toDateInputValue } from './dashboard-utils';
 import type { UtilityObligationsSignal } from './utility-obligations-signal';
@@ -29,9 +29,6 @@ const fixtureSettings = {
 const fixtureSnapshot: DashboardSnapshot = {
   period: { dateFrom: '2026-07-01', dateTo: '2026-07-15', asOf: '2026-07-15', month: 7, year: 2026 },
   portfolio: { properties: 4, units: 15 },
-  // Legacy snapshot field groups every non-occupied unit together: 2 available
-  // + 1 maintenance. The vacancy card intentionally does NOT use this as the
-  // true vacant count.
   occupancy: { occupiedUnits: 12, vacantUnits: 3, occupancyRate: 80 },
   contracts: { active: 8, expiring30: 2, expiring60: 3, expiring90: 4 },
   billing: { invoicedAmount: 15_000, invoicesCount: 10, invoicesTotalCount: 60 },
@@ -129,33 +126,29 @@ const fixtureMaintenanceFollowUp: MaintenanceFollowUpSignal = {
 const expiringRows = buildExpiringContracts(fixtureSnapshot.queues.expiringContracts);
 const overdueRows = buildOverdueTenantRows(fixtureSnapshot.queues.overdueInvoices);
 
-/**
- * Static Dashboard proof fixture (Visual Contract V2, ADR 0012 phase 2).
- * Kept only as a low-cost layout showcase; the Dashboard Playwright contract
- * targets the real /dashboard route with controlled authenticated data.
- */
 export function DashboardWorkspaceE2EFixture() {
   return (
     <main className="fixed inset-0 z-[200] overflow-y-auto bg-background text-foreground outline-none" dir="rtl" tabIndex={-1} data-e2e-dashboard-workspace>
       <div className="px-3 py-4 sm:px-6 lg:px-8">
-        <PageLayout className="dashboard-page-shell">
-          <DashboardVisualScope>
-            <section className="dashboard-section" aria-label="أداء المكتب" data-dashboard-section="office-performance">
+        <PageLayout>
+          <PageHeader title="لوحة التحكم" />
+          <div className="grid min-w-0 gap-5">
+            <section aria-label="أداء المكتب" data-dashboard-section="office-performance">
               <SectionHeader eyebrow="1 · الآن" title="أداء المكتب" />
               <OfficePulse snapshot={fixtureSnapshot} isLoading={false} settings={defaultCompanySettingsContract} />
             </section>
 
-            <section className="dashboard-section" aria-label="الوحدات الفارغة" data-dashboard-section="vacant-units">
+            <section aria-label="الوحدات الفارغة" data-dashboard-section="vacant-units">
               <SectionHeader eyebrow="2 · المحفظة" title="الوحدات الفارغة" />
               <VacantUnitsSection analytics={fixtureVacancyAnalytics} isLoading={false} settings={fixtureSettings} />
             </section>
 
-            <section className="dashboard-section" aria-label="الفلوس المطلوب تحصيلها" data-dashboard-section="collections">
+            <section aria-label="الفلوس المطلوب تحصيلها" data-dashboard-section="collections">
               <SectionHeader eyebrow="3 · تحصيل" title="الفلوس المطلوب تحصيلها" />
               <OverdueSection rows={overdueRows} totalCount={fixtureSnapshot.arrears.overdueCount} isLoading={false} settings={fixtureSettings} />
             </section>
 
-            <section className="dashboard-section" aria-label="المشاكل والصيانة" data-dashboard-section="maintenance-problems">
+            <section aria-label="المشاكل والصيانة" data-dashboard-section="maintenance-problems">
               <SectionHeader eyebrow="4 · خدمات" title="المشاكل والصيانة" />
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                 <UrgentMaintenanceSection rows={fixtureSnapshot.queues.urgentMaintenance} totalCount={fixtureSnapshot.maintenance.urgentOpen} isLoading={false} />
@@ -164,16 +157,16 @@ export function DashboardWorkspaceE2EFixture() {
               </div>
             </section>
 
-            <section className="dashboard-section" aria-label="العقود القريبة من الانتهاء" data-dashboard-section="expiring-contracts">
+            <section aria-label="العقود القريبة من الانتهاء" data-dashboard-section="expiring-contracts">
               <SectionHeader eyebrow="5 · عقود" title="العقود القريبة من الانتهاء" />
               <ExpiringContractsSection rows={expiringRows} totalCount={fixtureSnapshot.contracts.expiring30} isLoading={false} settings={fixtureSettings} />
             </section>
 
-            <section className="dashboard-section" aria-label="مستحقات الملاك" data-dashboard-section="owner-obligations">
+            <section aria-label="مستحقات الملاك" data-dashboard-section="owner-obligations">
               <SectionHeader eyebrow="6 · ملاك" title="مستحقات الملاك" />
               <OwnerObligationsSection snapshot={fixtureSnapshot} isLoading={false} settings={defaultCompanySettingsContract} />
             </section>
-          </DashboardVisualScope>
+          </div>
         </PageLayout>
       </div>
     </main>

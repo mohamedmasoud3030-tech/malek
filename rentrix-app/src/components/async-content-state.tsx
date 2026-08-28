@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { LoadingState } from '@/components/ui/loading-state';
 import { DataErrorScreen } from '@/components/data-error-screen';
-import { EmptyState } from '@/components/empty-state';
+import { EmptyState } from '@/components/ui/state-surfaces';
 
 interface AsyncContentStateProps {
   status: 'loading' | 'error' | 'empty' | 'ready';

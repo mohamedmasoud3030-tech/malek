@@ -7,7 +7,6 @@ describe('shared design system barrel', () => {
       'Button',
       'IconButton',
       'Card',
-      'StatCard',
       'Badge',
       'StatusBadge',
       'DataTable',
@@ -15,8 +14,8 @@ describe('shared design system barrel', () => {
       'SearchInput',
       'FilterBar',
       'DatePicker',
-      'Modal',
-      'Drawer',
+      'Dialog',
+      'BottomSheet',
       'ConfirmDialog',
       'EmptyState',
       'LoadingState',
@@ -30,6 +29,12 @@ describe('shared design system barrel', () => {
 
     for (const name of required) {
       expect(ui[name], `${name} should be exported from components/ui`).toBeTypeOf('function');
+    }
+  });
+
+  it('does not expose superseded duplicate primitives', () => {
+    for (const name of ['Modal', 'Drawer', 'InlineStatCard', 'StatCard']) {
+      expect(name in ui, `${name} should not be part of the public UI surface`).toBe(false);
     }
   });
 });

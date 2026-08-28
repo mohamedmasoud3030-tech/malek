@@ -16,9 +16,6 @@ import type { ContractListItem, ContractStatusFilter } from './services/contract
  * same header, KPI grid, filters and results components as production,
  * fed with showcase rows. Rendered only behind VITE_E2E.
  */
-// WP-DB0: the fixture rows below must satisfy the frozen `contracts` row
-// contract. Columns that every showcase row shares (tenant key, lifecycle and
-// maker-checker fields) live here so each row states only what differs.
 const FIXTURE_COMPANY_ID = '00000000-0000-4000-8000-0000000000c1';
 
 const fixtureContractDefaults = {
@@ -146,7 +143,7 @@ export function ContractsListE2EFixture() {
 
   return (
     <main className="fixed inset-0 z-[200] overflow-y-auto bg-background text-foreground outline-none" dir="rtl" tabIndex={-1} data-e2e-contracts-workspace>
-      <PageLayout dir="rtl" size="wide" visualVariant="malek-pro">
+      <PageLayout dir="rtl" size="wide">
         <PageHeader
           title="العقود"
           description="إدارة دورة العقد من مسودة إلى نشط ثم منتهي أو ملغي."

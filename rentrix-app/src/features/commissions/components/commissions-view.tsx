@@ -145,7 +145,7 @@ export function CommissionsView(props: Props) {
       <div data-finance-header>
         <PageHeader
           title="العمولات"
-          action={
+          primaryAction={
             <Button onClick={onCreate} className="min-h-11 bg-primary text-primary-foreground">
               <Plus className="me-2 size-4" />
               إضافة عمولة
@@ -224,7 +224,6 @@ export function CommissionsView(props: Props) {
         title={editingCommission ? "تعديل عمولة" : "إضافة عمولة"}
         description="يمكن إدخال مبلغ مباشر أو تركه ليُحسب من قيمة الصفقة ونسبة العمولة للتتبع التشغيلي فقط."
         className="max-w-2xl"
-        visualVariant="operational"
       >
         <EntityForm.Root
           className="md:grid-cols-2"

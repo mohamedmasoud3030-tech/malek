@@ -17,7 +17,7 @@ export type EmbeddableWorkspaceProps = Readonly<{
   backLabel?: string;
   primaryAction?: ReactNode;
   secondaryActions?: ReactNode;
-  /** Scoped visual system for approved operational workspaces only. */
+  /** Kept for source compatibility while the app uses one shared visual system. */
   visualVariant?: 'malek-pro';
   children: ReactNode;
 }>;
@@ -67,7 +67,6 @@ export function EmbeddableWorkspace({
       dir={dir}
       lang={lang}
       size={size}
-      title={title}
       className={className}
       contentClassName={contentClassName}
       visualVariant={visualVariant}

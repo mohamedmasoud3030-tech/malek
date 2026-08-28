@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ErrorState } from '@/components/ui/error-state';
+import { RefreshCw } from 'lucide-react';
+import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
+import { Button } from '@/components/ui/button';
+import { ErrorState } from '@/components/ui/error-state';
 import { SectionHeader } from '@/components/ui/section-header';
 import { useCompanyFormatters } from '@/hooks/useCompanyFormatters';
 import { useAuth } from '@/hooks/use-auth';
@@ -13,7 +16,6 @@ import { useAllUnits } from '@/features/units/use-units';
 import { buildVacancyAnalytics } from '@/features/units/vacancy-analytics';
 import { listPropertyTitles } from '@/features/properties/property-service';
 import { getDashboardSnapshot } from './dashboard-snapshot';
-import { DashboardVisualScope } from './dashboard-visual-scope';
 import { OfficePulse } from './components/office-pulse';
 import { ExpiringContractsSection } from './components/expiring-contracts-section';
 import { OverdueSection } from './components/overdue-section';
@@ -92,18 +94,12 @@ export function DashboardPage() {
     [snapshot?.queues.overdueInvoices],
   );
 
-  // P3 — operational obligations. Today consumes the canonical utilities
-  // service (complete paged read) and the shared obligation derivation instead
-  // of inventing a second utilities authority.
   const utilityBillsQuery = useUtilityBills();
   const utilityObligations = useMemo(
     () => (utilityBillsQuery.isError ? EMPTY_UTILITY_OBLIGATIONS_SIGNAL : buildUtilityObligationsSignal(utilityBillsQuery.data, today)),
     [utilityBillsQuery.data, utilityBillsQuery.isError, today],
   );
 
-  // Vacancy intelligence reads the canonical unit register for the true vacant
-  // count (`available`) and complete contract history only for the age/context
-  // behind those units. Maintenance/reserved stay outside vacancy.
   const unitsQuery = useAllUnits();
   const hasVacantUnit = useMemo(
     () => (unitsQuery.data ?? []).some((unit) => String(unit.status).trim().toLowerCase() === 'available'),
@@ -126,9 +122,6 @@ export function DashboardPage() {
   const vacancyDetailsUnavailable = hasVacantUnit
     && (contractsQuery.isError || Boolean(contractsQuery.data?.truncated));
 
-  // P3 — maintenance that stopped moving. Urgency is how a request was
-  // reported; this reads what happened to it afterwards, through the same
-  // derivation the Services register uses.
   const maintenanceQuery = useMaintenance('all', '');
   const unitNumberMap = useMemo(
     () => new Map((unitsQuery.data ?? []).map((unit) => [unit.id, unit.unit_number ?? ''])),
@@ -145,9 +138,25 @@ export function DashboardPage() {
   const snapshotUnavailable = hasDashboardError && !snapshot;
 
   return (
-    <PageLayout size="wide" className="dashboard-page-shell pb-8" visualVariant="malek-pro" onRefresh={retryDashboard} refreshing={isFetching && !isLoading}>
-      <DashboardVisualScope>
-        <h1 className="sr-only">اليوم</h1>
+    <PageLayout size="wide" className="dashboard-page-shell pb-8" visualVariant="malek-pro">
+      <PageHeader
+        title="لوحة التحكم"
+        primaryAction={(
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            className="min-h-11"
+            onClick={retryDashboard}
+            disabled={isFetching && !isLoading}
+          >
+            <RefreshCw className={`me-1.5 size-4 ${isFetching && !isLoading ? 'animate-spin' : ''}`} aria-hidden="true" />
+            تحديث
+          </Button>
+        )}
+      />
+
+      <div>
         {hasDashboardError ? (
           <ErrorState
             title={snapshotUnavailable ? 'تعذر تحميل بيانات اليوم' : 'تعذر تحديث بيانات اليوم'}
@@ -236,7 +245,7 @@ export function DashboardPage() {
             </section>
           </>
         )}
-      </DashboardVisualScope>
+      </div>
     </PageLayout>
   );
 }

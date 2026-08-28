@@ -11,7 +11,7 @@ export { Select } from "./select";
 export { Skeleton } from "./skeleton";
 export { Spinner, type SpinnerProps } from "./spinner";
 export { Alert, AlertTitle, AlertDescription, alertVariants } from "./alert";
-export { OfflineState, NoPermissionState } from "./state-surfaces";
+export { EmptyState, OfflineState, NoPermissionState } from "./state-surfaces";
 export { StatusBadge } from "./status-badge";
 export {
   Table,
@@ -28,33 +28,22 @@ export {
 export { Textarea } from "./textarea";
 export { Typography, type TypographyVariant } from "./typography";
 export { Dialog, DialogClose, DialogContent, DialogDescription, DialogPortal, DialogTitle, DialogTrigger } from "./dialog";
-export {
-  Modal,
-  ModalClose,
-  ModalContent,
-  ModalDescription,
-  ModalPortal,
-  ModalTitle,
-  ModalTrigger,
-} from "./modal";
+export { BottomSheet } from "./bottom-sheet";
 
 // Shared product surfaces
 export { SearchInput } from "./search-input";
 export { SectionHeader } from "./section-header";
 export { ConfirmDialog } from "./confirm-dialog";
-export { StatCard } from "./stat-card";
 export { FilterTabs } from "./filter-tabs";
 export { FilterBar } from "./filter-bar";
 export { WorkspaceNav, type WorkspaceNavItem } from "./workspace-nav";
 export { FilePickerField } from "./file-picker-field";
 export { KpiCard } from "./kpi-card";
-export { InlineStatCard } from "./inline-stat-card";
 export { ResponsiveCardGrid } from "./responsive-card-grid";
 export { ViewModeToggle, type ViewMode, type ViewModeToggleProps } from "./view-mode-toggle";
 export { MobileCard } from "./mobile-card";
 export { SelectionCard, type SelectionCardProps } from "./selection-card";
 export { DatePicker } from "./date-picker";
-export { Drawer } from "./drawer";
 export { FormField } from "./form-field";
 export { ActionMenu, type ActionMenuItem } from "./action-menu";
 export {
@@ -67,9 +56,7 @@ export {
 export { Dropdown, type DropdownOption } from "./dropdown";
 export { LoadingState } from "./loading-state";
 export { ErrorState } from "./error-state";
-export { EmptyState } from "./empty-state";
-// Spinner, Alert, OfflineState and NoPermissionState are exported above with
-// the core primitives.
+// Spinner and Alert are exported above with the core primitives.
 
 // ADR-008 Phase A — unified entity table
 export {

@@ -86,8 +86,6 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
     documentSettings.companySettings.currency;
 
   const handlePrintMaintenanceList = () => {
-    // Guard inside the async boundary so the handler fails closed with a
-    // visible Arabic reason rather than silently doing nothing.
     void runGuardedDocumentAction({
       isReady: documentSettings.isReady,
       operation: () => {
@@ -141,9 +139,6 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
     </Button>
   );
 
-  // Embedded mode (operations hub tab) keeps the historic inline rail;
-  // standalone mode uses the PageHeader primary/secondary contract so the
-  // secondary print action collapses into the mobile overflow sheet.
   const actions = (
     <div className="flex flex-col gap-2 sm:flex-row">
       {printAction}
@@ -333,14 +328,14 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
 
   if (mode === 'embedded') {
     return (
-      <div data-visual-wave="malek-pro" className="space-y-5">
+      <div className="space-y-5">
         {body}
       </div>
     );
   }
 
   return (
-    <PageLayout dir="rtl" size="wide" visualVariant="malek-pro">
+    <PageLayout dir="rtl" size="wide">
       <PageHeader
         title="طلبات الصيانة"
         count={controller.visibleMaintenanceRows.length}

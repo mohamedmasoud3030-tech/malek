@@ -1,5 +1,5 @@
 import { AccessDenied } from '@/components/layout/access-denied';
-import { EmptyState } from '@/components/empty-state';
+import { EmptyState } from '@/components/ui/state-surfaces';
 import { DataErrorScreen } from '@/components/data-error-screen';
 import { LoadingScreen } from '@/components/loading-screen';
 import { Button } from '@/components/ui/button';

@@ -1,5 +1,5 @@
 import { Printer } from 'lucide-react';
-import { EmptyState } from '@/components/empty-state';
+import { EmptyState } from '@/components/ui/state-surfaces';
 import { Button } from '@/components/ui/button';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Skeleton } from '@/components/ui/skeleton';

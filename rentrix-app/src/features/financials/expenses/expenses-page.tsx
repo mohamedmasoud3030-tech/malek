@@ -4,7 +4,7 @@ import { ArrowLeft, ReceiptText } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { EmptyState } from '@/components/empty-state';
+import { EmptyState } from '@/components/ui/state-surfaces';
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { Button } from '@/components/ui/button';
 import { useProperties } from '@/features/properties/use-properties';
@@ -127,7 +127,6 @@ export function ExpensesWorkspace({ embedded = false }: ExpensesWorkspaceProps) 
       embedded={embedded}
       size="default"
       title="المصروفات"
-      visualVariant="malek-pro"
       secondaryActions={
         <>
           <Button variant="secondary" className="min-h-11" asChild>
