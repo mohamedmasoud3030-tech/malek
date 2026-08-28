@@ -22,6 +22,9 @@ const ownerLinks = [
   },
 ];
 
+type OwnerLinkFixture = (typeof ownerLinks)[number];
+type AgreementFixture = { starts_on: string; ends_on: string | null };
+
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => (opts: { search: { tab: string } }) => {
     lastNavigation = opts;
@@ -31,8 +34,12 @@ vi.mock('@tanstack/react-router', () => ({
 
 let lastNavigation: { search: { tab: string } } | null = null;
 
-const ownersResult = vi.hoisted(() => ({ value: { data: [], isLoading: false } }));
-const agreementsResult = vi.hoisted(() => ({ value: { data: [], isLoading: false } }));
+const ownersResult = vi.hoisted(() => ({
+  value: { data: [] as OwnerLinkFixture[], isLoading: false },
+}));
+const agreementsResult = vi.hoisted(() => ({
+  value: { data: [] as AgreementFixture[], isLoading: false },
+}));
 
 vi.mock('@/features/owners/useOwners', () => ({
   usePropertyOwners: () => ownersResult.value,
