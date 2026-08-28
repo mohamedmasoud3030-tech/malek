@@ -32,6 +32,9 @@ export function ContractDetailPage() {
   const documentSettings = useDocumentSettings();
   const { canAccess } = useAuth();
   const canViewReports = canAccess('financial.reports.view');
+  const canEditContract = canAccess('contracts.edit');
+  const canCancelContract = canAccess('contracts.cancel');
+  const canGenerateInvoices = canAccess('financial.invoices.generate');
   const [renewOpen, setRenewOpen] = useState(false);
   const [extendOpen, setExtendOpen] = useState(false);
   const [terminateOpen, setTerminateOpen] = useState(false);
@@ -59,14 +62,12 @@ export function ContractDetailPage() {
 
   const contract = contractQuery.data;
   const contractStatus = normalizeContractStatus(contract.status);
-  const renewalAllowed = canRenewContract(contract);
-  const terminationAllowed = canTerminateContract(contract);
-  const extensionAllowed = canExtendShortStayContract(contract)
-    && canAccess('contracts.write')
-    && canAccess('financial.invoices.generate');
-  const openRenewal = () => setRenewOpen(true);
-  const openExtension = () => setExtendOpen(true);
-  const openTermination = () => setTerminateOpen(true);
+  const renewalAllowed = canEditContract && canRenewContract(contract);
+  const terminationAllowed = canCancelContract && canTerminateContract(contract);
+  const extensionAllowed = canEditContract && canGenerateInvoices && canExtendShortStayContract(contract);
+  const openRenewal = () => { if (renewalAllowed) setRenewOpen(true); };
+  const openExtension = () => { if (extensionAllowed) setExtendOpen(true); };
+  const openTermination = () => { if (terminationAllowed) setTerminateOpen(true); };
   const handleShare = () => shareContractLink(contract);
   const contractMenuActions: ActionMenuItem[] = [
     ...(extensionAllowed ? [{
@@ -105,23 +106,29 @@ export function ContractDetailPage() {
         backTo="/contracts"
         actions={(
           <>
-            <Button asChild className="min-h-11">
-              <Link to="/contracts/$contractId/edit" params={{ contractId }}>
-                <Edit className="me-2 size-4" aria-hidden="true" />
-                تعديل
-              </Link>
-            </Button>
-            <ActionMenu items={contractMenuActions} label="إجراءات العقد" />
+            {canEditContract ? (
+              <Button asChild className="min-h-11">
+                <Link to="/contracts/$contractId/edit" params={{ contractId }}>
+                  <Edit className="me-2 size-4" aria-hidden="true" />
+                  تعديل
+                </Link>
+              </Button>
+            ) : null}
+            {contractMenuActions.length > 0 ? <ActionMenu items={contractMenuActions} label="إجراءات العقد" /> : null}
           </>
         )}
       />
-      <ContractDetailWorkspace
-        contract={contract}
-        settings={companySettings}
-      />
-      <ContractRenewalDialog contract={contract} open={renewOpen} onOpenChange={setRenewOpen} onRenewed={async (result) => navigate({ to: '/contracts/$contractId', params: { contractId: result.new_contract_id } })} />
-      <ContractShortStayExtensionDialog contract={contract} open={extendOpen} onOpenChange={setExtendOpen} />
-      <ContractTerminationDialog contractId={contract.id} open={terminateOpen} onOpenChange={setTerminateOpen} />
+      <ContractDetailWorkspace contract={contract} settings={companySettings} />
+      {renewalAllowed ? (
+        <ContractRenewalDialog
+          contract={contract}
+          open={renewOpen}
+          onOpenChange={setRenewOpen}
+          onRenewed={async (result) => navigate({ to: '/contracts/$contractId', params: { contractId: result.new_contract_id } })}
+        />
+      ) : null}
+      {extensionAllowed ? <ContractShortStayExtensionDialog contract={contract} open={extendOpen} onOpenChange={setExtendOpen} /> : null}
+      {terminationAllowed ? <ContractTerminationDialog contractId={contract.id} open={terminateOpen} onOpenChange={setTerminateOpen} /> : null}
     </PageLayout>
   );
 }
