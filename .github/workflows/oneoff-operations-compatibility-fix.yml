@@ -1,9 +1,8 @@
 name: One-off operations compatibility fix
 
 on:
-  push:
-    branches:
-      - integration/final-consolidation-20260828
+  pull_request:
+    branches: [main]
     paths:
       - .github/workflows/oneoff-operations-compatibility-fix.yml
 
@@ -12,6 +11,7 @@ permissions:
 
 jobs:
   fix:
+    if: github.event.pull_request.head.ref == 'integration/final-consolidation-20260828'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -30,25 +30,13 @@ jobs:
         shell: python
         run: |
           from pathlib import Path
-
           migration = Path('supabase/migrations/20260901000055_permission_boundary_closeout.sql')
           text = migration.read_text()
-          text = text.replace(
-              "-- * OPERATIONS historically included properties.write/contracts.write/expenses.write/documents.write\n--   which made RLS allow property/contract creation while frontend denied it.\n--   Remove those broad writes so OPERATIONS matches the frontend's\n--   view-only portfolio/leasing posture and only retains maintenance authority.\n",
-              "-- * Preserve the P6/P51 compatibility contract for OPERATIONS: historical\n--   properties.write/contracts.write remain fallback inputs until the office owner\n--   makes an explicit granular decision. Exact granular owner overrides still win.\n"
-          )
-          text = text.replace(
-              "-- Six-role matrix alignment: OPERATIONS must not retain portfolio/leasing\n-- broad writes that frontend denies. MANAGER and OPERATIONS gain explicit\n-- granular action permissions so UI/RPC/RLS match without relying solely on\n-- parent fallback.\n",
-              "-- Six-role matrix alignment: keep historical OPERATIONS portfolio/leasing\n-- broad writes as compatibility parents. Granular owner decisions remain the\n-- authoritative way to refine those defaults action by action.\n"
-          )
-          old = """        'properties.view',
-        'contracts.view',
-        'maintenance.view','maintenance.create','maintenance.edit','maintenance.approve','maintenance.cancel','maintenance.write',"""
-          new = """        'properties.view','properties.write',
-        'contracts.view','contracts.write',
-        'maintenance.view','maintenance.create','maintenance.edit','maintenance.approve','maintenance.cancel','maintenance.write',"""
-          if old not in text:
-              raise SystemExit('OPERATIONS role block anchor not found')
+          text = text.replace("-- * OPERATIONS historically included properties.write/contracts.write/expenses.write/documents.write\n--   which made RLS allow property/contract creation while frontend denied it.\n--   Remove those broad writes so OPERATIONS matches the frontend's\n--   view-only portfolio/leasing posture and only retains maintenance authority.\n", "-- * Preserve the P6/P51 compatibility contract for OPERATIONS: historical\n--   properties.write/contracts.write remain fallback inputs until the office owner\n--   makes an explicit granular decision. Exact granular owner overrides still win.\n")
+          text = text.replace("-- Six-role matrix alignment: OPERATIONS must not retain portfolio/leasing\n-- broad writes that frontend denies. MANAGER and OPERATIONS gain explicit\n-- granular action permissions so UI/RPC/RLS match without relying solely on\n-- parent fallback.\n", "-- Six-role matrix alignment: keep historical OPERATIONS portfolio/leasing\n-- broad writes as compatibility parents. Granular owner decisions remain the\n-- authoritative way to refine those defaults action by action.\n")
+          old = "        'properties.view',\n        'contracts.view',\n        'maintenance.view','maintenance.create','maintenance.edit','maintenance.approve','maintenance.cancel','maintenance.write',"
+          new = "        'properties.view','properties.write',\n        'contracts.view','contracts.write',\n        'maintenance.view','maintenance.create','maintenance.edit','maintenance.approve','maintenance.cancel','maintenance.write',"
+          if old not in text: raise SystemExit('OPERATIONS role block anchor not found')
           migration.write_text(text.replace(old, new))
 
           matrix = Path('scripts/supabase-tests/rls-matrix.mjs')
@@ -88,24 +76,15 @@ jobs:
      ) select count(*)::int as n from u`,
     { id: 'rls.operationsA.insert.properties.compat', group: 'rls-write', title: 'OPERATIONS keeps historical properties.write compatibility fallback' },
   );
-
-  await expectHelper(
-    db,
-    ids.operationsA,
-    `select public.current_user_has_effective_app_permission('contracts.create') as v`,
-    true,
-    { id: 'auth.operationsA.contracts_create.compat', group: 'auth', title: 'OPERATIONS keeps historical contracts.write compatibility fallback' },
-  );
-
+  await expectHelper(db, ids.operationsA, `select public.current_user_has_effective_app_permission('contracts.create') as v`, true,
+    { id: 'auth.operationsA.contracts_create.compat', group: 'auth', title: 'OPERATIONS keeps historical contracts.write compatibility fallback' });
   await db.exec(`
     insert into public.user_permission_overrides(company_id,user_id,permission,allowed,set_by,reason,set_at)
     values
       ('${COMPANY_A}','${OPERATIONS_A}','properties.create',false,'${ADMIN_A}','matrix explicit granular deny',now()),
       ('${COMPANY_A}','${OPERATIONS_A}','contracts.create',false,'${ADMIN_A}','matrix explicit granular deny',now())
-    on conflict(company_id,user_id,permission) do update set
-      allowed=excluded.allowed,set_by=excluded.set_by,reason=excluded.reason,set_at=excluded.set_at
+    on conflict(company_id,user_id,permission) do update set allowed=excluded.allowed,set_by=excluded.set_by,reason=excluded.reason,set_at=excluded.set_at
   `);
-
   await expectMutationDenied(
     db,
     ids.operationsA,
@@ -116,17 +95,10 @@ jobs:
      ) select count(*)::int as n from u`,
     { id: 'rls.operationsA.insert.properties.override', group: 'rls-write', title: 'explicit properties.create=false overrides OPERATIONS compatibility fallback' },
   );
-
-  await expectHelper(
-    db,
-    ids.operationsA,
-    `select public.current_user_has_effective_app_permission('contracts.create') as v`,
-    false,
-    { id: 'auth.operationsA.contracts_create.override', group: 'auth', title: 'explicit contracts.create=false overrides OPERATIONS compatibility fallback' },
-  );
+  await expectHelper(db, ids.operationsA, `select public.current_user_has_effective_app_permission('contracts.create') as v`, false,
+    { id: 'auth.operationsA.contracts_create.override', group: 'auth', title: 'explicit contracts.create=false overrides OPERATIONS compatibility fallback' });
 """
-          if old not in text:
-              raise SystemExit('RLS matrix OPERATIONS block anchor not found')
+          if old not in text: raise SystemExit('RLS matrix OPERATIONS block anchor not found')
           matrix.write_text(text.replace(old, new))
       - name: Validate focused boundaries
         run: |
