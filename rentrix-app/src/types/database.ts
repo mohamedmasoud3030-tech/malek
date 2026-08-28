@@ -8664,6 +8664,12 @@ export type Database = {
         };
         Returns: boolean;
       };
+      current_user_can_transition_maintenance: {
+        Args: {
+          p_next_status: string | null;
+        };
+        Returns: boolean;
+      };
       current_user_has_effective_app_permission: {
         Args: {
           p_permission: string | null;
