@@ -1,18 +1,8 @@
 /**
  * Tenant Portal v1 read-only projection contract.
  *
- * The portal may expose only the authenticated tenant's (Document 1 / 6):
- *   - identity/account summary;
- *   - unit and active contract;
- *   - due schedule;
- *   - paid/remaining/overdue position;
- *   - services/utilities relevant to that tenant;
- *   - receipts/evidence;
- *   - documents;
- *   - maintenance records relevant to that tenant.
- *
- * Every field is a projection of canonical data — no alternate calculation,
- * no financial authority. The portal never writes anything.
+ * Every field is a projection of canonical company/tenant-scoped data. The
+ * portal is never an accounting authority and never writes office records.
  */
 
 export type TenantPortalIdentity = Readonly<{
@@ -115,6 +105,6 @@ export function isTenantPortalSectionId(value: string): value is TenantPortalSec
 export type TenantPortalLoadResult =
   | Readonly<{ status: 'ready'; snapshot: TenantPortalSnapshot }>
   | Readonly<{
-      status: 'deferred';
-      reason: 'TENANT_PORTAL_READ_MODEL_UNAVAILABLE';
+      status: 'invalid';
+      reason: 'TENANT_PORTAL_LINK_REQUIRED' | 'TENANT_PORTAL_LINK_INVALID_OR_EXPIRED';
     }>;
