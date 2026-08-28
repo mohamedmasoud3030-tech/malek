@@ -19,12 +19,12 @@ import { formatCompanyDateTime } from '@/lib/companyFormatters';
 import { useTenantDossier } from '../useTenantWorkspace';
 import { useDialogNavigate } from '@/app/router/background-location';
 
-type TenantSection = 'overview' | 'contracts' | 'financials' | 'records';
+type TenantSection = 'overview' | 'contracts' | 'ledger' | 'records';
 
 const tenantSections = [
   { id: 'overview', label: 'نظرة عامة', icon: UserRound },
   { id: 'contracts', label: 'العقود', icon: FileText },
-  { id: 'financials', label: 'المالية', icon: ReceiptText },
+  { id: 'ledger', label: 'الاستحقاقات والمدفوعات', icon: ReceiptText },
   { id: 'records', label: 'السجل', icon: Activity },
 ] as const;
 
@@ -94,10 +94,11 @@ export function TenantDossierContent({ tenantId, section }: Readonly<{ tenantId:
       </Card>
       ) : null}
 
-      {(!section || section === 'financials') && canViewFinancial ? (
+      {(!section || section === 'ledger') && canViewFinancial ? (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><ReceiptText className="size-5 text-primary" />الفواتير والمتأخرات</CardTitle>
+            <CardTitle className="flex items-center gap-2"><ReceiptText className="size-5 text-primary" />سجل الاستحقاقات والمدفوعات</CardTitle>
+            <p className="text-sm text-muted-foreground">جدول الاستحقاقات التعاقدي وما سُدد فعليًا والمتبقي والمتأخر؛ لا يغيّر الدفع تاريخ الاستحقاق الأصلي.</p>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex flex-wrap gap-2">
@@ -105,13 +106,30 @@ export function TenantDossierContent({ tenantId, section }: Readonly<{ tenantId:
               <StatusBadge tone={outstanding > 0 ? 'warning' : 'success'}>الرصيد المفتوح {companyFormatters.money(outstanding)}</StatusBadge>
             </div>
 
-            {dossier.invoices.map((invoice) => (
+            {dossier.invoices.slice().sort((a, b) => (a.due_date ?? '').localeCompare(b.due_date ?? '')).map((invoice) => (
               <div key={invoice.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3">
                 <span className="font-bold">{businessReferenceOrLabel(invoice, 'فاتورة مسجلة')}</span>
                 <span className="text-sm">الاستحقاق {invoice.due_date} · المتبقي {companyFormatters.money(Math.max(0, Number(invoice.amount) - Number(invoice.paid_amount)))}</span>
                 <Button asChild variant="secondary"><Link to="/invoices" search={{ invoiceId: invoice.id } as never}>فتح الفاتورة</Link></Button>
               </div>
             ))}
+
+            <div className="border-t border-border/60 pt-4">
+              <p className="text-sm font-bold">الدفعات وإثباتاتها</p>
+              {dossier.receipts.length === 0 ? (
+                <p className="mt-2 text-sm text-muted-foreground">لا توجد دفعات أو إثباتات دفع مسجلة لهذا المستأجر.</p>
+              ) : (
+                <ul className="mt-2 space-y-2" aria-label="دفعات المستأجر وإثباتاتها">
+                  {dossier.receipts.map((receipt) => (
+                    <li key={receipt.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3 text-sm">
+                      <span className="font-bold">{receipt.reference ?? receipt.no ?? 'دفعة مسجلة'}</span>
+                      <span className="text-muted-foreground">{receipt.date_time.slice(0, 10)}{receipt.channel ? ` · ${receipt.channel}` : ''}</span>
+                      <span className="font-bold tabular-nums" dir="ltr">{companyFormatters.money(Number(receipt.amount))}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
 
             <div className="flex flex-wrap gap-2 border-t border-border/60 pt-3">
               {statementContract ? (

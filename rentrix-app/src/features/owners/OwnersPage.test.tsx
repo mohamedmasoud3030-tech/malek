@@ -3,7 +3,6 @@ import { describe, expect, it, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { OwnerDetailView } from './components/owner-detail-view';
 import type { Owner, OwnerDetailSnapshot, PropertyWithOwners } from './services/owner-service';
-import type { OwnerSettlementRecord } from './services/owner-settlements-service';
 import { ownerRowFixtureDefaults, propertyOwnerRowFixtureDefaults, propertyRowFixtureDefaults } from '@/test/ownerRowFixture';
 
 vi.mock('../settings/useCompanySettings', async () => {
@@ -75,14 +74,12 @@ const property: PropertyWithOwners = {
 function renderOwnerDetail(
   props: Readonly<{
     state: Parameters<typeof OwnerDetailView>[0]['state'];
-    settlements?: Parameters<typeof OwnerDetailView>[0]['settlements'];
-    canOpenOwnerSettlements?: boolean;
   }>,
 ) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return renderToStaticMarkup(
     <QueryClientProvider client={client}>
-      <OwnerDetailView state={props.state} settlements={props.settlements} canOpenOwnerSettlements={props.canOpenOwnerSettlements} />
+      <OwnerDetailView state={props.state} />
     </QueryClientProvider>,
   );
 }
@@ -121,14 +118,15 @@ describe('Owner detail recovery states', () => {
     expect(html).toContain('مالك موثق');
     expect(html).toContain('العقارات المرتبطة');
     expect(html).toContain('العقود النشطة');
-    expect(html).toContain('مستحقات المستأجرين');
-    expect(html).toContain('OMR');
-    expect(html).toContain('750');
+    expect(html).toContain('اتفاقيات الإدارة');
+    expect(html).toContain('المالية التفصيلية في مساحة المال والتقارير');
+    expect(html).not.toContain('مستحقات المستأجرين');
+    expect(html).not.toContain('الموقف المالي للمالك');
     expect(html).toContain('/owners');
     expect(html).not.toContain('/owners-hub');
   });
 
-  it('renders the owner settlements section when settlements are provided', () => {
+  it('keeps settlements out of the owner dossier even when settlement data exists upstream', () => {
     const snapshot: OwnerDetailSnapshot = {
       owner,
       properties: [property],
@@ -137,29 +135,11 @@ describe('Owner detail recovery states', () => {
       invoices: [],
       financialSummary: { outstandingBalance: 0, outstandingInvoicesCount: 0 },
     };
-    const settlement: OwnerSettlementRecord = {
-      id: 'settlement-1',
-      owner_id: owner.id,
-      owner_name: owner.full_name,
-      property_id: property.id,
-      property_title: property.title,
-      period_start: '2026-07-01',
-      period_end: '2026-07-31',
-      gross_rent_collected: 1200,
-      management_fee_amount: 60,
-      owner_expenses: 40,
-      fee_vat_amount: 0,
-      net_payable_amount: 1100,
-      status: 'pending',
-      created_at: '2026-07-20T00:00:00.000Z',
-    };
-    const html = renderOwnerDetail({ state: { status: 'ready', snapshot }, settlements: [settlement], canOpenOwnerSettlements: true });
+    const html = renderOwnerDetail({ state: { status: 'ready', snapshot } });
 
-    expect(html).toContain('تسويات المالك');
-    expect(html).toContain('مسودة بانتظار الاعتماد');
-    expect(html).toContain('الموقف المالي للمالك');
-    expect(html).not.toContain('/owner-settlements');
-    expect(html).toContain('عقار موثق');
+    expect(html).not.toContain('تسويات المالك');
+    expect(html).not.toContain('الموقف المالي للمالك');
+    expect(html).toContain('/reports');
   });
 
   it('hides the settlements section when settlements are not provided', () => {
@@ -173,8 +153,7 @@ describe('Owner detail recovery states', () => {
     };
     const html = renderOwnerDetail({ state: { status: 'ready', snapshot } });
 
-    // The settlements section (with its dedicated description) must be absent
-    // when no settlement data is provided.
+    // No owner dossier state may become a second financial authority.
     expect(html).not.toContain('أحدث التسويات المعدة لهذا المالك');
     expect(html).not.toContain('مسودة بانتظار الاعتماد');
   });

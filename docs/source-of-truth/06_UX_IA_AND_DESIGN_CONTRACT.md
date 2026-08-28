@@ -19,7 +19,7 @@ The target principle is **simple by default, powerful on demand**. Strong backen
 | `UX-002` | Canonical navigation/routes follow one route contract and one page authority. Compatibility aliases preserve deep links; they never create competing information architectures. |
 | `UX-003` | Money is the operational financial workspace. Daily UX exposes obligations, collections, receipts, arrears, expenses, management consideration, owner obligations/settlements and light bank verification; specialist accounting remains advanced rather than becoming the daily shell. |
 | `UX-004` | Reports is a distinct top-level workspace and presents business-language summaries, useful visuals and detailed tables from authoritative read models; specialist GL/accounting reports remain available without dominating routine use. |
-| `UX-005` | Party identity may remain unified underneath, but routine UX uses task-specific Owners and Tenants. Generic People is not a primary navigation destination; dossiers emphasize relationship/operations and defer heavy financial analysis to Money/Reports. |
+| `UX-005` | Party identity may remain unified underneath, but routine UX uses three task-specific registers: Owners, Tenants and Service Providers. Generic People is not a primary navigation destination; dossiers emphasize relationship/operations and defer heavy financial analysis to Money/Reports. |
 | `UX-006` | Services owns maintenance, service providers and utilities/meters. Documents are contextual-first; an aggregate document search/index may exist, but Documents Vault is not a routine product pillar or a second document authority. |
 | `UX-007` | AI Assistant is a global optional assistant with a compact entry point and optional expanded workspace. It may read/explain/suggest/navigate/prepare drafts, but cannot silently authorize sensitive financial/operational actions. |
 | `UX-008` | Shared semantic tokens, shared components/register primitives, company-aware money/date formatting, accessible states, print/document guards and consistent interaction patterns form one design contract; parallel token systems, raw technical copy and page-specific replacement primitives are prohibited. |
@@ -148,6 +148,7 @@ Company, employees/effective permissions, document/print preferences and approve
 - links to statement/settlement/performance reports.
 
 Do not create a separate owner-balance calculation inside the dossier when a canonical financial source already exists.
+The owner dossier does not render a financial tab, balance, settlement list, collections total, expense total or management-fee total. Those are opened through the linked Money/Reports workspaces.
 
 ### Tenant dossier
 
@@ -160,6 +161,8 @@ Do not create a separate owner-balance calculation inside the dossier when a can
 - documents;
 - claims/damages;
 - maintenance relevant to the tenant.
+
+The tenant dossier's **Due schedule and payments** section is the operational ledger: it lists contractual due dates, paid and remaining amounts, arrears, and recorded receipts/payment evidence in chronological order. It does not alter the contractual schedule when a payment is posted.
 
 ### Property/unit dossiers
 
