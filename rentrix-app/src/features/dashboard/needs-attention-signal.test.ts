@@ -61,7 +61,20 @@ describe('buildNeedsAttentionSignal', () => {
       utilityObligations: EMPTY_UTILITY_OBLIGATIONS_SIGNAL,
       maintenanceFollowUp: EMPTY_MAINTENANCE_FOLLOW_UP_SIGNAL,
     });
-    expect(signal).toEqual(EMPTY_NEEDS_ATTENTION_SIGNAL);
+    expect(signal).toEqual({ ...EMPTY_NEEDS_ATTENTION_SIGNAL, isComplete: false });
+  });
+
+  it('marks a valid partial queue as incomplete when a contributing read failed', () => {
+    const signal = buildNeedsAttentionSignal({
+      snapshot: makeSnapshot(),
+      vacancyAnalytics: emptyVacancy,
+      utilityObligations: EMPTY_UTILITY_OBLIGATIONS_SIGNAL,
+      maintenanceFollowUp: EMPTY_MAINTENANCE_FOLLOW_UP_SIGNAL,
+      isComplete: false,
+    });
+
+    expect(signal.isComplete).toBe(false);
+    expect(signal.totalCount).toBe(0);
   });
 
   it('merges real conditions from the snapshot queues into one queue', () => {

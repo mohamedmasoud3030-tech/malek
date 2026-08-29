@@ -48,6 +48,18 @@ describe('page-by-page data refresh reliability', () => {
     expect(receipt).toContain('disabled={!canUseReceiptDocument}');
   });
 
+  it('keeps the command center honest when only supporting reads fail', () => {
+    const dashboard = source('../features/dashboard/dashboard-page.tsx');
+    const attention = source('../features/dashboard/components/needs-attention-section.tsx');
+
+    expect(dashboard).not.toContain('utilityBillsQuery.isError ? EMPTY_UTILITY_OBLIGATIONS_SIGNAL');
+    expect(dashboard).not.toContain('maintenanceQuery.isError\n      ? EMPTY_MAINTENANCE_FOLLOW_UP_SIGNAL');
+    expect(dashboard).toContain('isComplete: attentionSourcesComplete');
+    expect(dashboard).toContain('بعض مؤشرات لوحة التحكم غير متاحة');
+    expect(attention).toContain('تعذر اكتمال قائمة الأولويات');
+    expect(attention).toContain('بعض المصادر غير متاحة');
+  });
+
   it('isolates owner ready-state hooks in a stable child component', () => {
     const owner = source('../features/owners/components/owner-detail-view.tsx');
 

@@ -27,6 +27,7 @@ import {
   type ReactNode,
 } from 'react';
 import { DataErrorScreen } from '@/components/data-error-screen';
+import { DataRefreshAlert } from '@/components/data-refresh-alert';
 import { EmptyState } from '@/components/ui/state-surfaces';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -561,7 +562,7 @@ export function EntityTable<T>({
     );
   }
 
-  if (error != null) {
+  if (error != null && rows.length === 0) {
     return <DataErrorScreen title={errorTitle} error={error} fallbackMessage={error instanceof Error ? error.message : undefined} action={onRetry ? <Button onClick={onRetry}>إعادة المحاولة</Button> : undefined} />;
   }
 
@@ -601,6 +602,19 @@ export function EntityTable<T>({
 
   return (
     <div className={cn('space-y-2', className)} data-entity-table-register>
+      {error != null ? (
+        <DataRefreshAlert
+          title={errorTitle}
+          description="الصفوف المعروضة من آخر تحميل مكتمل وقد لا تطابق أحدث حالة أو عوامل التصفية الحالية."
+          onRetry={onRetry}
+        />
+      ) : null}
+      <div
+        className="space-y-2"
+        inert={error != null ? true : undefined}
+        aria-disabled={error != null ? 'true' : undefined}
+        data-stale-register-content={error != null ? 'true' : undefined}
+      >
       {toolbar || enableViewModeToggle ? (
         <div data-entity-table-toolbar className="flex min-h-9 flex-wrap items-center justify-end gap-1.5">
           {enableViewModeToggle ? (
@@ -779,6 +793,7 @@ export function EntityTable<T>({
       )}
 
       {pagination ? <PaginationBar pagination={pagination} /> : null}
+      </div>
     </div>
   );
 }

@@ -62,9 +62,17 @@ describe('EntityTable — desktop table + mobile canonical EntityCard register',
     const empty = renderToStaticMarkup(<EntityTable {...props({ rows: [], emptyTitle: 'لا توجد نتائج' })} />);
     expect(empty).toContain('لا توجد نتائج');
 
-    const error = renderToStaticMarkup(<EntityTable {...props({ error: new Error('boom'), errorTitle: 'تعذر التحميل', onRetry: () => undefined })} />);
-    expect(error).toContain('تعذر التحميل');
-    expect(error).toContain('إعادة المحاولة');
+    const initialError = renderToStaticMarkup(<EntityTable {...props({ rows: [], error: new Error('boom'), errorTitle: 'تعذر التحميل', onRetry: () => undefined })} />);
+    expect(initialError).toContain('role="alert"');
+    expect(initialError).toContain('تعذر التحميل');
+    expect(initialError).toContain('إعادة المحاولة');
+
+    const staleError = renderToStaticMarkup(<EntityTable {...props({ error: new Error('boom'), errorTitle: 'تعذر التحميل', onRetry: () => undefined })} />);
+    expect(staleError).toContain('تعذر التحميل');
+    expect(staleError).toContain('الصفوف المعروضة من آخر تحميل مكتمل');
+    expect(staleError).toContain('data-stale-register-content="true"');
+    expect(staleError).toContain('inert=""');
+    expect(staleError).toContain('أحمد الطويل جداً');
   });
 
   it('does not render pagination for a single page', () => {
