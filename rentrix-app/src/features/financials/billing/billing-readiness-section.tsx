@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { AlertTriangle, CalendarDays, CheckCircle2, Clock, FileCheck } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { AsyncContentState } from '@/components/async-content-state';
@@ -61,7 +61,7 @@ export function BillingReadinessSection() {
   const needsAttention = totalBlocked + totalCheckFailed;
   const actionableCount = needsAttention + totalDue;
 
-  const columns: ColumnDef<BillingObligation>[] = [
+  const columns = useMemo((): ColumnDef<BillingObligation>[] => [
     {
       key: 'contract',
       header: 'العقد',
@@ -113,7 +113,7 @@ export function BillingReadinessSection() {
         );
       },
     },
-  ];
+  ], []);
 
   const status = readinessQuery.isLoading
     ? ('loading' as const)
