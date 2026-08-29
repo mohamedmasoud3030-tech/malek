@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 const uiDir = resolve(dirname(fileURLToPath(import.meta.url)));
+const srcDir = resolve(uiDir, '../..');
 const table = readFileSync(resolve(uiDir, 'table.tsx'), 'utf8');
 const entityCard = readFileSync(resolve(uiDir, 'entity-card.tsx'), 'utf8');
 const entityTable = readFileSync(resolve(uiDir, 'entity-table.tsx'), 'utf8');
@@ -39,6 +40,28 @@ describe('canonical register visual contract', () => {
     expect(entityTable).toContain("'h-8 bg-muted/35 px-2 text-[11px]");
     expect(entityTable).not.toContain("'h-11 px-3 py-2 align-middle sm:px-3.5'");
     expect(entityTable).not.toContain('min-w-full text-[13px]');
+  });
+
+  it('keeps every register card on one visual shell with entity identity only', () => {
+    const units = readFileSync(resolve(srcDir, 'features/units/units-page.tsx'), 'utf8');
+    const owners = readFileSync(resolve(srcDir, 'features/owners/components/owner-workspace-table.tsx'), 'utf8');
+    const tenants = readFileSync(resolve(srcDir, 'features/tenants/TenantsPage.tsx'), 'utf8');
+    const contracts = readFileSync(resolve(srcDir, 'features/contracts/components/ContractTable.tsx'), 'utf8');
+    const maintenance = readFileSync(resolve(srcDir, 'features/maintenance/components/maintenance-list.tsx'), 'utf8');
+
+    expect(entityCard).toContain("type = 'record'");
+    expect(entityCard).toContain("property: { label: 'عقار'");
+    expect(entityCard).toContain("unit: { label: 'وحدة'");
+    expect(entityCard).toContain("contract: { label: 'عقد'");
+    expect(entityCard).toContain('bg-muted/45 text-foreground/70');
+    expect(entityCard).not.toContain('tone.bg');
+    expect(entityCard).not.toContain('tone.text');
+
+    expect(units).toContain('mobileCardType="unit"');
+    expect(owners).toContain('mobileCardType="owner"');
+    expect(tenants).toContain('mobileCardType="tenant"');
+    expect(contracts).toContain('mobileCardType="contract"');
+    expect(maintenance).toContain('mobileCardType="maintenance"');
   });
 
   it('keeps mobile cards compact, flat and non-overlapping', () => {
