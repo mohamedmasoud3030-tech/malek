@@ -1,6 +1,7 @@
 import { Link, useLocation } from '@tanstack/react-router';
 import { useEffect, useId, useRef, useState, type Ref } from 'react';
 import { Bot, ChevronDown, FileText, HandCoins, Lock, Menu, Plus, ReceiptText, Search, Wrench, X } from 'lucide-react';
+import { MalekBrandWordmark } from '@/components/brand/malek-wordmark';
 import { OPEN_AI_ASSISTANT_EVENT } from '@/features/ai-assistant/ai-assistant-global-action';
 import { useCommandPaletteStore } from '@/features/command-palette/command-palette-store';
 import { canShowNavigationItem, canAccessRoute, type AuthorizationContext, type AppPermission } from '@/features/auth/permissions';
@@ -114,6 +115,15 @@ export function NavigationLinks({
 
   return (
     <div className="space-y-4 [[data-mobile-nav-drawer]_&]:space-y-2 [[data-mobile-nav-sheet]_&]:space-y-3">
+      {onNavigate ? (
+        <div
+          data-mobile-nav-brand
+          className="sticky top-0 z-10 -mx-1 flex items-center border-b border-border/70 bg-card/95 px-3 pb-3 pt-1 backdrop-blur-sm"
+        >
+          <MalekBrandWordmark size="sidebar" />
+        </div>
+      ) : null}
+
       {navGroups.map(([sectionTitle, items, adminOnly]) => {
         if (adminOnly && !items.some(([, , , , permission]) => canShowNavigationItem(authorization, permission))) return null;
         if (items.length === 0) return null;
