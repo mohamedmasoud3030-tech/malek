@@ -27,6 +27,10 @@ vi.mock('@tanstack/react-router', () => ({
   useSearch: () => ({}),
 }));
 
+vi.mock('@/hooks/use-auth', () => ({
+  useAuth: () => ({ canAccess: () => true }),
+}));
+
 vi.mock('@/hooks/use-company', () => ({
   ACTIVE_COMPANY_ERROR: 'تعذر تحديد الشركة النشطة',
   useActiveCompanyId: () => '00000000-0000-4000-8000-000000000001',

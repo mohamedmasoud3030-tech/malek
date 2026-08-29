@@ -292,8 +292,7 @@
 
   [data-page-layout] [data-section-header] { margin-bottom: 1rem; }
 
-  [data-page-layout] [data-filter-bar],
-  [data-page-layout] [data-list-controls] {
+  [data-page-layout] [data-filter-bar] {
     align-items: center;
     border-color: hsl(var(--border));
     background: hsl(var(--card));

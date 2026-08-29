@@ -11,18 +11,17 @@ describe('tenants embeddable workspace contract', () => {
     expect(source).toContain('return <TenantsWorkspace />;');
   });
 
-  it('keeps the embedded branch free of nested page shells', () => {
-    const embeddedSection = source.match(
-      /<section data-workspace="tenants"[\s\S]*?<\/section>/,
-    )?.[0];
-
-    expect(embeddedSection).toBeDefined();
-    expect(embeddedSection).not.toContain('<PageLayout');
-    expect(embeddedSection).not.toContain('<PageHeader');
+  it('delegates embedded-vs-standalone shell ownership to EmbeddableWorkspace', () => {
+    expect(source).toContain("import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';");
+    expect(source).toContain('<EmbeddableWorkspace');
+    expect(source).toContain('embedded={embedded}');
+    expect(source).toContain('workspaceName="tenants"');
+    expect(source).not.toContain('<PageLayout');
+    expect(source).not.toContain('<PageHeader');
   });
 
   it('keeps create and modal actions available in both modes', () => {
-    expect(source).toContain('<div className="flex justify-end">{createAction}</div>');
+    expect(source).toContain('primaryAction={createAction}');
     expect(source).toContain('<PersonFormModal open={formOpen}');
     expect(source).toContain('openCreate');
   });

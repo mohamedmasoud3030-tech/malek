@@ -4,6 +4,7 @@
 @import './app-density-contract.css';
 @import './design-system-foundation.css';
 @import './page-polish.css';
+@import './ux-foundation.css';
 
 /* MALEK global entrypoint — Final unified theme.
    Theme tokens live only in tokens.css. This file owns document base behavior,

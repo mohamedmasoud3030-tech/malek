@@ -199,7 +199,7 @@
   --filter-tabs-fade-surface: hsl(var(--background));
 }
 
-[data-list-controls] [data-filter-tabs-wrapper] {
+[data-filter-bar] [data-filter-tabs-wrapper] {
   --filter-tabs-fade-surface: hsl(var(--card));
 }
 

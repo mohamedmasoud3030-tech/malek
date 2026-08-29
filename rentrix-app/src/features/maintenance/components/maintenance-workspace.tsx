@@ -1,8 +1,6 @@
 import { Clock3, Flame, PlusCircle, Printer, Wrench } from 'lucide-react';
 import { useMemo } from 'react';
-import { AsyncContentState } from '@/components/async-content-state';
-import { PageHeader } from '@/components/layout/page-header';
-import { PageLayout } from '@/components/layout/page-layout';
+import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { RegisterAttention, RegisterHeading, RegisterMetricStrip } from '@/components/layout/register-summary';
 import { ActiveFilterBar, type ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { Button } from '@/components/ui/button';
@@ -136,28 +134,15 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
     <Button
       type="button"
       onClick={controller.openCreateForm}
-      className="min-h-11 border border-info/30 bg-info-bg text-info hover:bg-info/15"
+      className="min-h-11"
     >
       <PlusCircle className="me-2 size-4" aria-hidden="true" />
       طلب صيانة جديد
     </Button>
   ) : null;
 
-  const actions = (
-    <div className="flex flex-col gap-2 sm:flex-row">
-      {printAction}
-      {createAction}
-    </div>
-  );
-
   const body = (
     <>
-      {mode === 'embedded' ? (
-        <div className="flex flex-wrap justify-end gap-2">
-          {actions}
-        </div>
-      ) : null}
-
       {!documentSettings.isReady && !documentSettings.isLoading ? (
         <DocumentReadinessNotice />
       ) : null}
@@ -238,56 +223,41 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
 
       <ActiveFilterBar filters={activeFilters} onClearAll={clearAllFilters} />
 
-      <section
-        data-maintenance-register
-        className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card"
-      >
-        <header className="border-b border-border/70 px-3 py-2.5 sm:px-4">
-          <RegisterHeading
-            title="سجل طلبات الصيانة"
-            extra={<RegisterAttention count={controller.maintenanceSummary.urgent} label="عاجلة" />}
-          />
-        </header>
+      <section data-maintenance-register className="min-w-0 space-y-2.5">
+        <RegisterHeading
+          title="سجل طلبات الصيانة"
+          extra={<RegisterAttention count={controller.maintenanceSummary.urgent} label="عاجلة" />}
+        />
 
-        <div className="p-3 sm:p-4">
-          <AsyncContentState
-            status={controller.isLoading
-              ? 'loading'
-              : controller.hasLoadError
-                ? 'error'
-                : controller.filteredMaintenanceRows.length === 0
-                  ? 'empty'
-                  : 'ready'}
-            error={controller.loadError}
-            errorTitle="تعذر تحميل طلبات الصيانة"
-            errorAction={(
-              <Button type="button" onClick={controller.retryMaintenanceWorkspace}>
-                إعادة المحاولة
-              </Button>
-            )}
-            emptyTitle="لا توجد طلبات صيانة"
-            emptyDescription={controller.hasFilters
-              ? 'لا توجد طلبات تطابق الفلاتر الحالية.'
-              : canCreateMaintenance
-                ? 'أضف طلب صيانة جديد للبدء.'
-                : 'لا توجد طلبات صيانة مسجلة الآن.'}
-          >
-            <MaintenanceList
-              rows={controller.visibleMaintenanceRows}
-              attentionByRequestId={controller.attentionByRequestId}
-              properties={controller.properties}
-              allUnits={controller.allUnits}
-              providerOptions={controller.providerOptions}
-              actionsPending={
-                controller.updateStatusMutation.isPending ||
-                controller.resolveMutation.isPending
-              }
-              onViewDetails={controller.openDetailsRequest}
-              onEdit={controller.openEditForm}
-              onStatusAction={controller.handleStatusAction}
-            />
-          </AsyncContentState>
-        </div>
+        <MaintenanceList
+          rows={controller.visibleMaintenanceRows}
+          attentionByRequestId={controller.attentionByRequestId}
+          properties={controller.properties}
+          allUnits={controller.allUnits}
+          providerOptions={controller.providerOptions}
+          actionsPending={
+            controller.updateStatusMutation.isPending ||
+            controller.resolveMutation.isPending
+          }
+          isLoading={controller.isLoading}
+          error={controller.hasLoadError ? controller.loadError : undefined}
+          onRetry={controller.retryMaintenanceWorkspace}
+          emptyTitle="لا توجد طلبات صيانة"
+          emptyDescription={controller.hasFilters
+            ? 'لا توجد طلبات تطابق الفلاتر الحالية.'
+            : canCreateMaintenance
+              ? 'أضف طلب صيانة جديد للبدء.'
+              : 'لا توجد طلبات صيانة مسجلة الآن.'}
+          emptyAction={canCreateMaintenance && !controller.hasFilters ? (
+            <Button type="button" onClick={controller.openCreateForm}>
+              <PlusCircle className="me-2 size-4" aria-hidden="true" />
+              طلب صيانة جديد
+            </Button>
+          ) : undefined}
+          onViewDetails={controller.openDetailsRequest}
+          onEdit={controller.openEditForm}
+          onStatusAction={controller.handleStatusAction}
+        />
       </section>
 
       {((controller.editingRequest && canEditMaintenance) || (!controller.editingRequest && canCreateMaintenance)) ? (
@@ -336,23 +306,19 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
     </>
   );
 
-  if (mode === 'embedded') {
-    return (
-      <div className="space-y-5">
-        {body}
-      </div>
-    );
-  }
-
   return (
-    <PageLayout dir="rtl" size="wide">
-      <PageHeader
-        title="طلبات الصيانة"
-        count={controller.visibleMaintenanceRows.length}
-        primaryAction={createAction ?? undefined}
-        secondaryActions={printAction}
-      />
+    <EmbeddableWorkspace
+      embedded={mode === 'embedded'}
+      workspaceName="maintenance"
+      dir="rtl"
+      lang="ar"
+      size="wide"
+      title="طلبات الصيانة"
+      count={controller.visibleMaintenanceRows.length}
+      primaryAction={createAction ?? undefined}
+      secondaryActions={printAction}
+    >
       {body}
-    </PageLayout>
+    </EmbeddableWorkspace>
   );
 }

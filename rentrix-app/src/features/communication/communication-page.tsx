@@ -1,7 +1,6 @@
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
-import { PageHeader } from '@/components/layout/page-header';
-import { PageLayout } from '@/components/layout/page-layout';
+import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { Button } from '@/components/ui/button';
 import { CommunicationHubView } from './components/communication-hub-view';
 import { CommunicationOutboundPanel } from './components/communication-outbound-panel';
@@ -96,24 +95,18 @@ export function CommunicationWorkspace({ embedded = false }: CommunicationWorksp
     </>
   );
 
-  if (embedded) {
-    return (
-      <section data-workspace="communication" dir="rtl" lang="ar" className="space-y-5">
-        <div className="flex justify-end">{createAction}</div>
-        {workspaceContent}
-      </section>
-    );
-  }
-
   return (
-    <PageLayout dir="rtl" lang="ar">
-      <PageHeader
-        title="مركز التواصل"
-        description="سجل تشغيلي للتواصل مع الأطراف، مع معاينات محلية آمنة للبريد وواتساب دون روابط تسليم أو مزود خارجي حي."
-        primaryAction={createAction}
-      />
+    <EmbeddableWorkspace
+      embedded={embedded}
+      workspaceName="communication"
+      dir="rtl"
+      lang="ar"
+      title="مركز التواصل"
+      description="سجل تشغيلي للتواصل مع الأطراف، مع معاينات محلية آمنة للبريد وواتساب دون روابط تسليم أو مزود خارجي حي."
+      primaryAction={createAction}
+    >
       {workspaceContent}
-    </PageLayout>
+    </EmbeddableWorkspace>
   );
 }
 

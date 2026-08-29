@@ -31,7 +31,7 @@ describe('canonical search and filter usage', () => {
     const offenders = collectReactSourceFiles(featureDir)
       .filter((path) => {
         const source = readFileSync(path, 'utf8');
-        return source.includes("@/components/ui/search-input") || source.includes('ListControlSurface');
+        return source.includes("@/components/ui/search-input");
       })
       .map((path) => relative(srcDir, path))
       .sort();
@@ -46,10 +46,8 @@ describe('canonical search and filter usage', () => {
     expect(listPage).toContain("import { FilterBar } from '@/components/ui/filter-bar'");
     expect(listPage).toContain('<FilterBar');
     expect(listPage).not.toContain('SearchInput');
-    expect(listPage).not.toContain('ListControlSurface');
 
     expect(contractsPage).toContain('<ContractFilters');
-    expect(contractsPage).not.toContain('ListControlSurface');
   });
 
   it('keeps complex register filtering inside the shared FilterBar system', () => {

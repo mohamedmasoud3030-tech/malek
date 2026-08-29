@@ -407,7 +407,7 @@ export function AppShell() {
           className="sticky top-0 z-20 border-b border-border bg-card pt-[env(safe-area-inset-top,0px)]"
         >
           <div className="mx-auto flex min-h-[var(--app-header-height)] w-full max-w-[110rem] items-center justify-between gap-2 px-3 py-1 sm:px-4">
-            <div className="z-10 flex shrink-0 items-center" data-header-brand-side data-header-wordmark-side>
+            <div className="z-10 flex shrink-0 items-center lg:hidden" data-header-brand-side data-header-wordmark-side>
               <HeaderBrandLockup onOpenNav={handleOpenNav} />
             </div>
 

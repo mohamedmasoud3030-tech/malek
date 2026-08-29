@@ -1,7 +1,6 @@
 import { AlertTriangle, Building2, Edit, Eye, FileText, KeyRound, Plus, TriangleAlert, Users } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { PageHeader } from '@/components/layout/page-header';
-import { PageLayout } from '@/components/layout/page-layout';
+import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { RegisterHeading, RegisterMetricStrip } from '@/components/layout/register-summary';
 import { Button } from '@/components/ui/button';
 import { DataTableColumnsMenu } from '@/components/ui/data-table';
@@ -235,25 +234,19 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
     </>
   );
 
-  const workspace = embedded ? (
-    <section data-workspace="tenants" dir="rtl" className="space-y-4 sm:space-y-5">
-      <div className="flex justify-end">{createAction}</div>
-      {workspaceContent}
-    </section>
-  ) : (
-    <PageLayout dir="rtl" size="wide">
-      <PageHeader
+  return (
+    <>
+      <EmbeddableWorkspace
+        embedded={embedded}
+        workspaceName="tenants"
+        dir="rtl"
+        size="wide"
         title="المستأجرون"
         count={totalCount}
         primaryAction={createAction}
-      />
-      {workspaceContent}
-    </PageLayout>
-  );
-
-  return (
-    <>
-      {workspace}
+      >
+        {workspaceContent}
+      </EmbeddableWorkspace>
       {previewTenantId ? (
         <TenantPreviewDialog
           tenantId={previewTenantId}
