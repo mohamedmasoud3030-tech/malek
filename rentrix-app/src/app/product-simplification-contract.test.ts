@@ -63,18 +63,17 @@ describe('production product simplification contract', () => {
     expect(workspaceChildNavItems['/contracts'].map(([, labelKey]) => labelKey)).toEqual(['tenants']);
   });
 
-  it('keeps specialist Money tools available without advertising them as daily destinations', () => {
+  it('keeps Money task-first while specialist views stay available in the same workspace', () => {
     expect(workspaceChildNavItems['/financials'].map(([, labelKey]) => labelKey)).toEqual([
       'invoices',
       'receipts',
-      'arrears',
       'expenses',
     ]);
 
     expect(FINANCE_SECTIONS.filter((section) => section.showInPrimaryNavigation).map((section) => section.id))
-      .toEqual(['overview', 'collections', 'expenses']);
+      .toEqual(['collections', 'fees', 'expenses', 'funds', 'banking']);
     expect(FINANCE_SECTIONS.filter((section) => !section.showInPrimaryNavigation).map((section) => section.id))
-      .toEqual(['fees', 'funds', 'banking']);
+      .toEqual(['overview']);
   });
 
   it('keeps Services routine navigation focused on maintenance and utilities', () => {
