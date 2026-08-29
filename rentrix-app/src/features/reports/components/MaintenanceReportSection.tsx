@@ -1,6 +1,4 @@
-import { AlertCircle, Clock, Flame, Wrench } from 'lucide-react';
-import { KpiCard } from '@/components/ui/kpi-card';
-import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
+import { Clock, Wrench } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { formatDate } from '@/features/financials/components/financials-formatters';
 import {
@@ -25,7 +23,6 @@ import {
 } from './report-section-primitives';
 import { formatLatinNumber } from '@/lib/formatters';
 import { ReportShareActions } from './ReportShareActions';
-
 
 const reportMaintenanceStatusTone = {
   open: 'info',
@@ -99,9 +96,6 @@ export function MaintenanceReportSection({ rows, summary, canExportReports, isLo
   };
 
   const handlePrintMaintenanceReport = async () => {
-    // Readiness is enforced HERE, not only via the button's disabled prop:
-    // the handler stays reachable (keyboard, stale closure, automation), so
-    // the guard must live inside the async boundary and fail closed.
     await runGuardedDocumentAction({
       isReady: isDocumentSettingsReady,
       operation: () => documentService.printDocument('generic_report', { settings: documentSettings, payload: toReportDocumentPayload(buildMaintenanceReportData()) }),
@@ -110,9 +104,6 @@ export function MaintenanceReportSection({ rows, summary, canExportReports, isLo
   };
 
   const handleDownloadMaintenanceReport = async () => {
-    // Readiness is enforced HERE, not only via the button's disabled prop:
-    // the handler stays reachable (keyboard, stale closure, automation), so
-    // the guard must live inside the async boundary and fail closed.
     await runGuardedDocumentAction({
       isReady: isDocumentSettingsReady,
       operation: () => documentService.downloadDocumentPdf('generic_report', { settings: documentSettings, payload: toReportDocumentPayload(buildMaintenanceReportData()) }),
@@ -122,12 +113,16 @@ export function MaintenanceReportSection({ rows, summary, canExportReports, isLo
 
   return (
     <div className="space-y-4">
-      <ResponsiveCardGrid data-report-summary="maintenance">
-        <KpiCard label="إجمالي البلاغات" value={formatLatinNumber(summary.total, 'ar')} icon={Wrench} sub={`${formatLatinNumber(completedCount, 'ar')} طلبات مكتملة`} />
-        <KpiCard label="طلبات مفتوحة" value={formatLatinNumber(summary.open, 'ar')} icon={AlertCircle} sub="تحتاج بدء المتابعة" />
-        <KpiCard label="قيد التنفيذ" value={formatLatinNumber(summary.inProgress, 'ar')} icon={Clock} sub={`${formatLatinNumber(assignedCount, 'ar')} طلبات مسندة`} />
-        <KpiCard label="عاجلة ونشطة" value={formatLatinNumber(urgentActiveCount, 'ar')} icon={Flame} sub="أولوية تدخل فوري" />
-      </ResponsiveCardGrid>
+      <div
+        className="grid grid-cols-2 overflow-hidden rounded-xl border border-border/80 bg-card sm:grid-cols-4"
+        data-report-summary="maintenance"
+        aria-label="ملخص الصيانة"
+      >
+        <MaintenanceMetric label="إجمالي البلاغات" value={formatLatinNumber(summary.total, 'ar')} helper={`${formatLatinNumber(completedCount, 'ar')} مكتملة`} />
+        <MaintenanceMetric label="طلبات مفتوحة" value={formatLatinNumber(summary.open, 'ar')} helper="تحتاج بدء المتابعة" />
+        <MaintenanceMetric label="قيد التنفيذ" value={formatLatinNumber(summary.inProgress, 'ar')} helper={`${formatLatinNumber(assignedCount, 'ar')} مسندة`} />
+        <MaintenanceMetric label="عاجلة ونشطة" value={formatLatinNumber(urgentActiveCount, 'ar')} helper="أولوية تدخل فوري" />
+      </div>
 
       <div className="grid gap-3 sm:grid-cols-3">
         <ReportProgress
@@ -233,6 +228,16 @@ export function MaintenanceReportSection({ rows, summary, canExportReports, isLo
           </ReportPanel>
         </div>
       </ReportColumns>
+    </div>
+  );
+}
+
+function MaintenanceMetric({ label, value, helper }: Readonly<{ label: string; value: string; helper: string }>) {
+  return (
+    <div className="min-w-0 border-b border-border/70 px-3 py-3 odd:border-e sm:border-b-0 sm:border-e sm:last:border-e-0">
+      <p className="text-[11px] font-bold text-muted-foreground sm:text-xs">{label}</p>
+      <p className="mt-1 truncate text-base font-black tabular-nums sm:text-lg" dir="ltr">{value}</p>
+      <p className="mt-1 truncate text-[11px] font-semibold text-muted-foreground">{helper}</p>
     </div>
   );
 }
