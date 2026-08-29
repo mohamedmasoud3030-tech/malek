@@ -1,27 +1,34 @@
 import { fetchAllRows } from '@/lib/paginatedRead';
 import { supabase } from '@/lib/supabase';
-import type { Invoice, Payment } from '@/types/domain';
+import type { Invoice, Payment, Person, Property, Unit } from '@/types/domain';
 import { getInvoiceStatusVariants } from '../components/invoice-status-labels';
 import { getSafeRemainingAmount, toFinancialNumber } from '../financialMath';
 
 export type InvoiceStatusFilter = 'unpaid' | 'partial' | 'paid' | 'overdue' | 'all';
-export type InvoiceListItem = Invoice & { contracts: { id: string; property_id: string; tenant_id: string } | null };
+
+export type InvoiceContractContext = {
+  id: string;
+  property_id: string;
+  tenant_id: string;
+  properties: Pick<Property, 'id' | 'title'> | null;
+  units: Pick<Unit, 'id' | 'unit_number'> | null;
+  people: Pick<Person, 'id' | 'full_name' | 'phone'> | null;
+};
+
+export type InvoiceListItem = Invoice & { contracts: InvoiceContractContext | null };
 export type InvoiceDetail = InvoiceListItem & { payments: Payment[] };
 export type InvoiceListParams = { status: InvoiceStatusFilter; search?: string };
 export type InvoiceSummary = { totalAmount: number; totalTax: number; totalPaid: number; totalRemaining: number; count: number };
 
-const invoiceSelect = '*, contracts:contract_id(id,property_id,tenant_id)';
-const invoiceSelectWithContractFilter = '*, contracts:contract_id!inner(id,property_id,tenant_id)';
+const invoiceContractContextSelect =
+  'id,property_id,tenant_id,properties:properties!contracts_property_id_fkey(id,title),units:units!contracts_unit_id_fkey(id,unit_number),people:people!contracts_tenant_id_fkey(id,full_name,phone)';
+const invoiceSelect = `*, contracts:contract_id(${invoiceContractContextSelect})`;
+const invoiceSelectWithContractFilter = `*, contracts:contract_id!inner(${invoiceContractContextSelect})`;
 
-// `supabase.from(...)` returns a query builder (insert/update/delete); only
-// after `.select()` is it a filter builder exposing `.in()`/`.or()`. Typing the
-// parameter as the builder that is actually passed in keeps the filter helpers
-// type-safe against the generated schema instead of requiring a cast.
 function applyStatusFilter<Q extends { in(column: 'status', values: string[]): Q }>(
   query: Q,
   status: InvoiceStatusFilter,
 ): Q {
-  // Cover every casing present in live rows (legacy lowercase + modern UPPERCASE).
   if (status === 'all') return query;
   return query.in('status', getInvoiceStatusVariants(status));
 }
@@ -47,19 +54,37 @@ export function summarizeInvoices(invoices: Array<Pick<Invoice, 'amount' | 'paid
   );
 }
 
-function applyInvoiceSearch<Q extends { or(filters: string): Q }>(query: Q, search: string): Q {
+function escapeOrSearch(value: string): string {
+  return value
+    .replaceAll('\\', '\\\\')
+    .replaceAll('%', '\\%')
+    .replaceAll('_', '\\_')
+    .replaceAll('"', '\\"')
+    .replaceAll(',', '\\,');
+}
+
+function applyInvoiceSearch<Q extends { or(filters: string): Q }>(
+  query: Q,
+  search: string,
+  contextContractIds: readonly string[] = [],
+): Q {
   if (!search) return query;
-  const escaped = search.replaceAll('%', '\\%').replaceAll('_', '\\_');
+  const escaped = escapeOrSearch(search);
   const term = `"%${escaped}%"`;
-  return query.or(`id.ilike.${term},status.ilike.${term}`);
+  const filters = [
+    `reference.ilike.${term}`,
+    `status.ilike.${term}`,
+  ];
+  if (/^[0-9a-f-]{36}$/i.test(search)) filters.push(`id.eq.${search}`);
+  if (contextContractIds.length > 0) {
+    filters.push(`contract_id.in.(${contextContractIds.join(',')})`);
+  }
+  return query.or(filters.join(','));
 }
 
 export async function listInvoices(params: InvoiceStatusFilter | InvoiceListParams): Promise<InvoiceListItem[]> {
   const status = typeof params === 'string' ? params : params.status;
   const search = typeof params === 'string' ? '' : params.search?.trim() ?? '';
-
-  // PostgREST silently caps a single response at 1000 rows. Walking pages
-  // keeps list totals from going quietly wrong once a company exceeds that.
   const { rows } = await fetchAllRows<InvoiceListItem>(() => {
     let query = supabase.from('invoices').select(invoiceSelect).is('deleted_at', null).order('due_date', { ascending: false });
     query = applyStatusFilter(query, status);
@@ -69,11 +94,6 @@ export async function listInvoices(params: InvoiceStatusFilter | InvoiceListPara
   return rows;
 }
 
-/**
- * Property-scoped invoice read. Filters through the contract inner join so
- * the browser never downloads the company-wide invoice table and then
- * discards other properties in memory.
- */
 export async function listInvoicesForProperty(propertyId: string): Promise<InvoiceListItem[]> {
   const { rows } = await fetchAllRows<InvoiceListItem>(() =>
     supabase
@@ -97,8 +117,6 @@ export async function getInvoiceDetail(invoiceId: string): Promise<InvoiceDetail
     .maybeSingle()
     .returns<InvoiceListItem>();
   if (invoiceError) throw invoiceError;
-  // Zero-row lookups must be an explicit not-found, not a PostgREST 406 from
-  // `.single()`. Also normalize a lenient 200+[] payload to null.
   const invoiceRow = (Array.isArray(invoice) ? invoice[0] ?? null : invoice) as InvoiceListItem | null;
   if (!invoiceRow) throw new Error('الفاتورة غير موجودة أو غير متاحة لصلاحياتك.');
   const { data: payments, error: paymentsError } = await supabase
@@ -125,6 +143,8 @@ export type InvoicePaginationParams = {
   dateTo?: string;
   tenantId?: string;
   propertyId?: string;
+  /** Contract ids whose tenant/property/unit context matched the unified search. */
+  contextContractIds?: readonly string[];
   page: number;
   pageSize: number;
 };
@@ -137,14 +157,12 @@ export type InvoicePage = {
 };
 
 /**
- * Server-paginated invoice loader with optional date, status, tenant, and
- * property filters. Tenant/property filtering is performed by an inner
- * PostgREST relationship join, so the browser never has to prefetch an
- * unbounded contract-id list or send thousands of IDs through `.in(...)`.
- * The exact count and range therefore operate on the same filtered row set.
+ * Server-paginated invoice loader with optional date, status, tenant, property,
+ * and task-search context. Search remains one user action while related-party
+ * matches are resolved to canonical contract ids before the server query.
  */
 export async function listInvoicesPaginated(params: InvoicePaginationParams): Promise<InvoicePage> {
-  const { status, search, dateFrom, dateTo, tenantId, propertyId, page, pageSize } = params;
+  const { status, search, dateFrom, dateTo, tenantId, propertyId, contextContractIds = [], page, pageSize } = params;
   const from = Math.max(0, (page - 1) * pageSize);
   const to = from + pageSize - 1;
   const hasContractFilter = Boolean(tenantId || propertyId);
@@ -162,7 +180,7 @@ export async function listInvoicesPaginated(params: InvoicePaginationParams): Pr
   if (hasContractFilter) query = query.is('contracts.deleted_at', null);
   if (tenantId) query = query.eq('contracts.tenant_id', tenantId);
   if (propertyId) query = query.eq('contracts.property_id', propertyId);
-  query = applyInvoiceSearch(query, search?.trim() ?? '');
+  query = applyInvoiceSearch(query, search?.trim() ?? '', contextContractIds);
 
   const { data, error, count } = await query.range(from, to).returns<InvoiceListItem[]>();
   if (error) throw error;
