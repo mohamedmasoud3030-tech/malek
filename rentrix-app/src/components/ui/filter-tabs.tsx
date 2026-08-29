@@ -89,7 +89,7 @@ export function FilterTabs<T extends string>({
         ref={scrollRef}
         data-filter-tabs-scroll
         className={cn(
-          'flex scroll-px-2 gap-1 overflow-x-auto px-0.5 no-scrollbar sm:px-0',
+          'flex max-w-full scroll-px-2 gap-1 overflow-x-auto overscroll-x-contain px-0.5 no-scrollbar sm:px-0',
           className,
         )}
         role="group"

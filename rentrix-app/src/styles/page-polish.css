@@ -283,8 +283,6 @@
 /* ── Desktop workspace contract ─────────────────────────────────────
    Desktop is a work surface, not a scaled-up phone screen. */
 @media (min-width: 1024px) {
-  [data-page-layout] > div { padding-inline: clamp(1.25rem, 2.2vw, 2.5rem); }
-
   [data-page-layout] [data-page-header] {
     margin-bottom: 0.25rem;
     padding-bottom: 1.1rem;
@@ -338,6 +336,11 @@
     inset-block: 0;
     width: 14rem;
     overflow: hidden;
+  }
+
+  [data-app-shell] [data-sidebar] {
+    inset-inline-start: 0;
+    inset-inline-end: auto;
   }
 
   [data-app-shell] [data-sidebar] + div { padding-inline-start: 14rem; padding-inline-end: 0; }

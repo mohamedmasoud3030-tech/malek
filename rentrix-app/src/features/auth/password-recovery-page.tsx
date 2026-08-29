@@ -11,7 +11,7 @@ import { buildPasswordRecoveryRedirect, requestPasswordRecovery } from './passwo
 
 function AuthCard({ title, description, children }: Readonly<{ title: string; description: string; children: React.ReactNode }>) {
   return (
-    <main className="min-h-screen min-h-dvh w-full bg-background px-5 py-8" dir="rtl">
+    <main className="min-h-screen min-h-dvh w-full min-w-0 overflow-x-hidden bg-background px-4 py-8 sm:px-6" dir="rtl">
       <section className="safe-top-app safe-bottom-overlay mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-[25rem] flex-col justify-center">
         <header className="mb-7 text-center">
           <img src={APP_BRAND_LOCKUP_ASSET} alt={APP_BRAND_NAME} className="mx-auto size-16 object-contain" />

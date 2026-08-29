@@ -285,7 +285,7 @@ export function ReceiptDetailPage() {
         </CardContent>
       </Card>
 
-      <div className="fixed bottom-20 left-4 right-4 print:hidden md:hidden">
+      <div className="fixed inset-x-4 bottom-[var(--mobile-dock-clearance,5.25rem)] z-30 print:hidden md:hidden">
         <Button className="min-h-14 w-full" onClick={handlePrint} disabled={!documentSettings.isReady}>
           <Printer className="me-2 size-5" />
           طباعة الإيصال المعتمد A4

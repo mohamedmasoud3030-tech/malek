@@ -64,7 +64,7 @@ export function TenantPortalPage() {
   const snapshot = result?.status === 'ready' ? result.snapshot : null;
 
   return (
-    <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro" className="pb-8" contentClassName="space-y-4 pb-8 md:pb-8">
+    <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro" contentClassName="min-w-0 space-y-4">
       <div data-tenant-portal className="space-y-4">
         <header className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-card" data-tenant-portal-header>
           <div className="p-4 sm:p-5">

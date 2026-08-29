@@ -157,7 +157,7 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
       priority: "actions",
       render: (unit) => (
         <div
-          className="flex gap-2"
+          className="flex flex-wrap gap-2"
           onClick={(event) => event.stopPropagation()}
           onKeyDown={(event) => event.stopPropagation()}
         >

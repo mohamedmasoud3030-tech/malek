@@ -391,7 +391,7 @@ export function AppShell() {
 
       <aside
         data-sidebar
-        className="fixed inset-y-0 right-0 z-30 hidden w-[14rem] overflow-hidden border-l border-sidebar-border bg-sidebar text-sidebar-foreground lg:flex lg:flex-col"
+        className="fixed inset-y-0 start-0 z-30 hidden w-[14rem] overflow-hidden border-e border-sidebar-border bg-sidebar text-sidebar-foreground lg:flex lg:flex-col"
       >
         <div className="flex min-h-[4.5rem] items-center border-b border-sidebar-border/60 px-5 py-4">
           <Brand expanded />
@@ -401,7 +401,7 @@ export function AppShell() {
         </nav>
       </aside>
 
-      <div className="w-full lg:pr-[14rem]">
+      <div className="min-w-0 w-full lg:ps-[14rem]">
         <header
           data-app-shell-header
           className="sticky top-0 z-20 border-b border-border bg-card pt-[env(safe-area-inset-top,0px)]"

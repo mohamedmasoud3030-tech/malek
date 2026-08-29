@@ -77,7 +77,7 @@ export function FinancialsHubE2EFixture() {
             {financialWorkspaces.map(([key, label, description, Icon]) => (
               <div
                 key={key}
-                className="group flex min-h-20 items-center gap-3 rounded-2xl border border-border/70 bg-card px-4 py-3 text-right shadow-card transition hover:border-primary/25 hover:shadow-card-hover"
+                className="group flex min-h-20 items-center gap-3 rounded-2xl border border-border/70 bg-card px-4 py-3 text-start shadow-card transition hover:border-primary/25 hover:shadow-card-hover"
               >
                 <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary transition-transform group-hover:scale-110">
                   <Icon className="size-5" aria-hidden="true" />

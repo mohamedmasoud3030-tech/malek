@@ -145,7 +145,7 @@ export function BankReconciliationWorkspace({ embedded = false }: BankReconcilia
               aria-label="الحساب البنكي"
               value={ctrl.filters.bankAccountId}
               onChange={(event) => ctrl.setFilters({ ...ctrl.filters, bankAccountId: event.target.value })}
-              className="w-full sm:w-52"
+              className="min-h-11 w-full sm:w-52"
             >
               <option value="">كل الحسابات</option>
               {ctrl.accounts.map((account) => <option key={account.id} value={account.id}>{account.account_name}</option>)}
@@ -154,12 +154,12 @@ export function BankReconciliationWorkspace({ embedded = false }: BankReconcilia
               aria-label="حالة المطابقة"
               value={ctrl.filters.status}
               onChange={(event) => ctrl.setFilters({ ...ctrl.filters, status: event.target.value as BankReconciliationFilters['status'] })}
-              className="w-full sm:w-44"
+              className="min-h-11 w-full sm:w-44"
             >
               {Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </Select>
-            <Input className="w-full sm:w-40" aria-label="من تاريخ" type="date" value={ctrl.filters.from} onChange={(event) => ctrl.setFilters({ ...ctrl.filters, from: event.target.value })} />
-            <Input className="w-full sm:w-40" aria-label="إلى تاريخ" type="date" value={ctrl.filters.to} onChange={(event) => ctrl.setFilters({ ...ctrl.filters, to: event.target.value })} />
+            <Input className="min-h-11 w-full sm:w-40" aria-label="من تاريخ" type="date" value={ctrl.filters.from} onChange={(event) => ctrl.setFilters({ ...ctrl.filters, from: event.target.value })} />
+            <Input className="min-h-11 w-full sm:w-40" aria-label="إلى تاريخ" type="date" value={ctrl.filters.to} onChange={(event) => ctrl.setFilters({ ...ctrl.filters, to: event.target.value })} />
           </>
         )}
       />
@@ -398,7 +398,7 @@ function BankStatementLinesTable({
       header: 'الإجراء',
       priority: 'actions',
       render: (line) => (line.status === 'unmatched' ? (
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="secondary" className="min-h-11 px-3 text-xs" onClick={() => onMatch(line)}>مطابقة</Button>
           <Button variant="secondary" className="min-h-11 px-3 text-xs" disabled={isIgnoring} onClick={() => onIgnore(line.id)}>تجاهل</Button>
         </div>

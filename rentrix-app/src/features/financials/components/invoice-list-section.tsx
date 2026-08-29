@@ -242,7 +242,7 @@ export function InvoiceListSection({
                 priority: 'primary',
                 render: (invoice) => (
                   <div className="min-w-0">
-                    <p className="max-w-48 truncate font-bold">{invoice.contracts?.people?.full_name ?? 'مستأجر غير محدد'}</p>
+                    <p className="min-w-0 truncate font-bold">{invoice.contracts?.people?.full_name ?? 'مستأجر غير محدد'}</p>
                     {invoice.contracts?.people?.phone ? (
                       <p className="mt-0.5 text-[11px] text-muted-foreground" dir="ltr">{invoice.contracts.people.phone}</p>
                     ) : null}
@@ -255,7 +255,7 @@ export function InvoiceListSection({
                 priority: 'primary',
                 render: (invoice) => (
                   <div className="min-w-0">
-                    <p className="max-w-44 truncate font-bold">{invoice.contracts?.properties?.title ?? 'عقار غير محدد'}</p>
+                    <p className="min-w-0 truncate font-bold">{invoice.contracts?.properties?.title ?? 'عقار غير محدد'}</p>
                     <p className="mt-0.5 text-[11px] text-muted-foreground">
                       {invoice.contracts?.units?.unit_number ? `وحدة ${invoice.contracts.units.unit_number}` : 'وحدة غير محددة'}
                     </p>

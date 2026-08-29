@@ -440,7 +440,7 @@ export function OwnerSettlementWorkspace({ ownerId }: Readonly<{ ownerId?: strin
               title="معاينة الصرف"
               description="المبلغ مستمد من الخادم ويعاد اشتقاقه عند الاعتماد والدفع — لا يمكن تعديله من هنا."
             >
-              <div className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-4">
+              <div className="grid grid-cols-2 gap-3 text-xs md:grid-cols-4">
                 <Metric label="صافي المستحق" value={selectedSettlement.net_payable_amount} tone="success" />
                 <Metric label="المحصل" value={selectedSettlement.gross_rent_collected} />
                 <Metric label="أتعاب المكتب" value={selectedSettlement.management_fee_amount} tone="primary" />
@@ -573,7 +573,7 @@ function DraftOverlay({
             <p className="rounded-xl bg-destructive/10 p-3 text-xs font-medium text-destructive">{previewError}</p>
           ) : preview ? (
             <>
-              <div className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-5">
+              <div className="grid grid-cols-2 gap-3 text-xs md:grid-cols-3 lg:grid-cols-5">
                 <Metric label="تحصيلات الفترة" value={preview.gross_collected} />
                 <Metric label="أتعاب المكتب" value={preview.office_fee} tone="primary" />
                 <Metric label="مصروفات على المالك" value={preview.owner_expenses} tone="danger" />

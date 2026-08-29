@@ -32,8 +32,8 @@ const defaultOwnerColumns = ownerColumnOptions.map((column) => column.key);
 function OwnerContact({ owner }: Readonly<{ owner: Owner }>) {
   return (
     <div className="space-y-1 text-sm">
-      <div dir="ltr" className="text-right">{owner.phone ?? '—'}</div>
-      <div dir="ltr" className="text-right text-muted-foreground">{owner.email ?? '—'}</div>
+      <div dir="ltr" className="text-end">{owner.phone ?? '—'}</div>
+      <div dir="ltr" className="text-end text-muted-foreground">{owner.email ?? '—'}</div>
     </div>
   );
 }

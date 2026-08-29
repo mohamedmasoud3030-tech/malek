@@ -110,14 +110,14 @@ function DashboardFocusStrip({
     >
       <div className="flex min-w-0 items-center gap-2">
         <span className="hidden shrink-0 px-2 text-[11px] font-black text-muted-foreground sm:inline">ركّز على</span>
-        <div data-dashboard-focus-scroll className="flex min-w-0 flex-1 gap-1.5 overflow-x-auto overscroll-x-contain">
+        <div data-dashboard-focus-scroll className="no-scrollbar flex min-w-0 flex-1 gap-1.5 overflow-x-auto overscroll-x-contain">
           {items.map((item) => (
             <a
               key={item.href}
               href={item.href}
               data-dashboard-focus-item
               data-tone={item.tone}
-              className={`flex min-h-11 min-w-[8.75rem] shrink-0 items-center justify-between gap-2 rounded-xl border px-3 text-start outline-none transition-[background-color,border-color,transform] hover:-translate-y-px focus-visible:ring-2 focus-visible:ring-primary/25 ${dashboardFocusToneClass[item.tone]}`}
+              className={`flex min-h-11 min-w-[7.5rem] shrink-0 items-center justify-between gap-2 rounded-xl border px-3 text-start outline-none transition-[background-color,border-color,transform] hover:-translate-y-px focus-visible:ring-2 focus-visible:ring-primary/25 sm:min-w-[8.75rem] ${dashboardFocusToneClass[item.tone]}`}
             >
               <span className="text-[11px] font-extrabold leading-4 text-current/75">{item.label}</span>
               <span className="text-sm font-black tabular-nums">{formatDashboardFocusValue(item.value)}</span>
@@ -312,7 +312,7 @@ export function DashboardPage() {
   const snapshotUnavailable = hasDashboardError && !snapshot;
 
   return (
-    <PageLayout size="wide" className="pb-8" visualVariant="malek-pro">
+    <PageLayout size="wide" visualVariant="malek-pro">
       <PageHeader
         title="لوحة التحكم"
         description="مركز قيادة اليوم: الأداء، الأولويات، التحصيل، الإشغال، العقود والالتزامات في مسار واحد."

@@ -205,18 +205,18 @@ function KnowledgeBase() {
           ابحث عن المهمة أو المشكلة؛ المقالات المختصرة تربطك بمسار العمل الفعلي.
         </p>
       </div>
-      <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_16rem]">
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_16rem]">
         <label className="relative block">
           <span className="sr-only">البحث في المساعدة</span>
           <Search
-            className="pointer-events-none absolute end-3 top-3.5 size-5 text-muted-foreground"
+            className="pointer-events-none absolute start-3 top-3.5 size-5 text-muted-foreground"
             aria-hidden="true"
           />
           <Input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="مثال: صلاحية، عقد، فاتورة، دون اتصال"
-            className="pe-11"
+            className="ps-11"
           />
         </label>
         <label>
