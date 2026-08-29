@@ -11,7 +11,16 @@ import { Skeleton } from './skeleton';
  * instead of crushing, wrapping or overlapping cell content.
  */
 const tableVariants = cva(
-  'w-full min-w-max caption-bottom text-[12px] leading-4 tabular-nums [&_td+td]:border-s [&_td+td]:border-border/60 [&_th+th]:border-s [&_th+th]:border-border/70',
+  [
+    'w-full min-w-max caption-bottom text-[12px] leading-4 tabular-nums',
+    '[&_td+td]:border-s [&_td+td]:border-border/60 [&_th+th]:border-s [&_th+th]:border-border/70',
+    // Phone table mode is intentionally Excel-like: one compact row height,
+    // narrow cell padding, and the whole row scrolls as one surface. Identity
+    // and action columns must never pin to either edge on phones.
+    'max-md:[&_td]:!h-8 max-md:[&_td]:!px-1.5 max-md:[&_td]:!py-0.5 max-md:[&_th]:!h-8 max-md:[&_th]:!px-1.5',
+    'max-md:[&_[data-column-priority=identity]]:!static max-md:[&_[data-column-priority=identity]]:!min-w-0 max-md:[&_[data-column-priority=identity]]:!max-w-none max-md:[&_[data-column-priority=identity]]:!shadow-none',
+    'max-md:[&_[data-column-priority=actions]]:!static max-md:[&_[data-column-priority=actions]]:!min-w-0 max-md:[&_[data-column-priority=actions]]:!shadow-none',
+  ].join(' '),
   {
     variants: {
       density: {

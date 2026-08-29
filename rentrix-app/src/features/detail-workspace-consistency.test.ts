@@ -24,4 +24,24 @@ describe('detail workspace consistency', () => {
     expect(land).toContain('ariaLabel="أقسام ملف الأرض"');
     expect(land).toContain('section={activeSection}');
   });
+
+  it('keeps quick preview separate from explicit full-detail navigation', () => {
+    const units = read('./units/units-page.tsx');
+    const owners = read('./owners/components/owner-workspace-table.tsx');
+    const tenants = read('./tenants/TenantsPage.tsx');
+
+    expect(units).toContain('<UnitPreviewDialog');
+    expect(units).toContain('onRowClick={openPreview}');
+    expect(units).toContain('التفاصيل الكاملة');
+
+    expect(owners).toContain('<OwnerPreviewDialog');
+    expect(owners).toContain('onRowClick={(row) => openPreview(row.owner.id)}');
+    expect(owners).not.toContain('state: { backgroundLocation: location }');
+
+    expect(tenants).toContain('<TenantPreviewDialog');
+    expect(tenants).toContain('onRowClick={openPreview}');
+    expect(tenants).toContain("to: '/tenants/$tenantId'");
+    expect(tenants).not.toContain('useDialogNavigate');
+    expect(tenants).not.toContain('backgroundLocation');
+  });
 });

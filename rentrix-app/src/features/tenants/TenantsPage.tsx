@@ -1,17 +1,15 @@
-import { AlertTriangle, Building2, Edit, FileText, KeyRound, Mail, Phone, Plus, ShieldCheck, TriangleAlert, Users } from 'lucide-react';
+import { AlertTriangle, Building2, Edit, Eye, FileText, KeyRound, Plus, TriangleAlert, Users } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { RegisterHeading, RegisterMetricStrip } from '@/components/layout/register-summary';
-import { useDialogNavigate } from '@/app/router/background-location';
 import { Button } from '@/components/ui/button';
 import { DataTableColumnsMenu } from '@/components/ui/data-table';
-import { EntityActions } from '@/components/ui/entity-actions';
-import { useLocation, useNavigate, useSearch } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { FilterBar } from '@/components/ui/filter-bar';
-
 import { PersonFormModal } from '@/features/people/person-form-modal';
+import { TenantPreviewDialog } from './components/TenantPreviewDialog';
 import type { TenantWorkspaceRow } from './tenantWorkspaceService';
 import { useTenantWorkspace } from './useTenantWorkspace';
 
@@ -27,56 +25,12 @@ const tenantColumnOptions = [
 
 const defaultTenantColumns = tenantColumnOptions.map((column) => column.key);
 
-function valueOrDash(value: string | number | null | undefined) {
-  return value === null || value === undefined || value === '' ? '—' : String(value);
-}
-
 function getTenantLocationText(tenant: TenantWorkspaceRow) {
   return {
     hasLocation: tenant.propertyTitle !== null || tenant.unitNumber !== null,
     propertyLabel: tenant.propertyTitle ?? 'عقار غير محدد',
     unitLabel: tenant.unitNumber ? `وحدة ${tenant.unitNumber}` : 'وحدة غير محددة',
   };
-}
-
-function InfoPill({ icon: Icon, label, value, dir }: Readonly<{ icon: typeof Phone; label: string; value: string | number | null | undefined; dir?: 'ltr' | 'rtl' }>) {
-  return (
-    <div className="rounded-xl border border-border/70 bg-background/85 px-3 py-2.5">
-      <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground">
-        <Icon className="size-3.5" aria-hidden="true" /><span>{label}</span>
-      </div>
-      <p className="mt-1 truncate text-sm font-black" dir={dir}>{valueOrDash(value)}</p>
-    </div>
-  );
-}
-
-function TenantLocation({ tenant }: Readonly<{ tenant: TenantWorkspaceRow }>) {
-  const location = getTenantLocationText(tenant);
-  return (
-    <div className="rounded-xl border border-border/70 bg-muted/35 p-3">
-      <p className="text-xs font-bold text-muted-foreground">الوحدة والعقار</p>
-      <p className="mt-1 font-black">{location.hasLocation ? location.propertyLabel : '—'}</p>
-      {location.hasLocation ? <p className="mt-0.5 text-xs text-muted-foreground">{location.unitLabel}</p> : null}
-    </div>
-  );
-}
-
-function TenantSafeLinks({ tenant, onEdit, onPreview }: Readonly<{ tenant: TenantWorkspaceRow; onEdit: (personId: string) => void; onPreview: (tenant: TenantWorkspaceRow) => void }>) {
-  const navigate = useNavigate();
-  const location = useLocation();
-  return (
-    <EntityActions className="flex flex-wrap gap-2">
-      <Button variant="secondary" className="min-h-11 px-3" onClick={() => onPreview(tenant)}>عرض</Button>
-      <Button variant="secondary" className="min-h-11 px-3" onClick={() => onEdit(tenant.person.id)}>
-        <Edit className="me-1 size-4" />تعديل
-      </Button>
-      {tenant.primaryContractId !== null && (
-        <Button variant="secondary" className="min-h-11 px-3" onClick={() => (navigate as unknown as (opts: unknown) => void)({ to: '/contracts/$contractId', params: { contractId: tenant.primaryContractId! }, state: { backgroundLocation: location } as unknown as Record<string, unknown> })}>
-          <FileText className="me-1 size-4" />فتح العقد
-        </Button>
-      )}
-    </EntityActions>
-  );
 }
 
 function TenantSummary({ rows, total }: Readonly<{ rows: TenantWorkspaceRow[]; total: number }>) {
@@ -115,14 +69,13 @@ type TenantsWorkspaceProps = Readonly<{
 
 export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
   const navigate = useNavigate();
-  const dialogNavigate = useDialogNavigate();
-  const dialogLocation = useLocation();
   const routeSearch = useSearch({ strict: false }) as Record<string, unknown>;
   const urlSearch = typeof routeSearch.search === 'string' ? routeSearch.search : '';
   const [search, setSearch] = useState(urlSearch);
   const [page, setPage] = useState(typeof routeSearch.page === 'number' && routeSearch.page > 0 ? routeSearch.page : 1);
   const [formOpen, setFormOpen] = useState(false);
   const [editingPersonId, setEditingPersonId] = useState<string | undefined>();
+  const [previewTenantId, setPreviewTenantId] = useState<string | null>(null);
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultTenantColumns]);
 
   useEffect(() => {
@@ -138,6 +91,9 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
   const openCreate = () => { setEditingPersonId(undefined); setFormOpen(true); };
   const openEdit = (personId: string) => { setEditingPersonId(personId); setFormOpen(true); };
   const closeForm = () => { setFormOpen(false); setEditingPersonId(undefined); tenantsQuery.refetch(); };
+  const openPreview = (tenant: TenantWorkspaceRow) => setPreviewTenantId(tenant.person.id);
+  const openFullDetail = (tenant: TenantWorkspaceRow) => void navigate({ to: '/tenants/$tenantId', params: { tenantId: tenant.person.id } });
+  const openContract = (contractId: string) => void navigate({ to: '/contracts/$contractId', params: { contractId } });
 
   const createAction = <Button onClick={openCreate}><Plus className="me-2 size-4" />إضافة مستأجر</Button>;
 
@@ -178,7 +134,7 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
       header: 'المتأخرات',
       priority: 'primary',
       render: (tenant) => tenant.hasArrears ? (
-        <span className="inline-flex items-center gap-1 rounded-full border border-warning/20 bg-warning/10 px-2.5 py-0.5 text-xs font-bold text-warning">
+        <span className="inline-flex items-center gap-1 rounded-full border border-warning/20 bg-warning/10 px-2 py-0.5 text-xs font-bold text-warning">
           <TriangleAlert className="size-3" />له متأخرات
         </span>
       ) : '—',
@@ -189,12 +145,13 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
       priority: 'actions',
       render: (tenant) => (
         <div className="flex flex-wrap gap-2" onClick={(event) => event.stopPropagation()}>
-          <Button variant="secondary" className="min-h-11 px-3" onClick={() => dialogNavigate({ to: '/tenants/$tenantId', params: { tenantId: tenant.person.id } })}>عرض</Button>
+          <Button variant="secondary" className="min-h-11 px-3" onClick={() => openPreview(tenant)}><Eye className="me-1 size-4" />معاينة</Button>
           <Button variant="secondary" className="min-h-11 px-3" onClick={() => openEdit(tenant.person.id)}>
             <Edit className="me-1 size-4" />تعديل
           </Button>
+          <Button variant="ghost" className="min-h-11 px-3" onClick={() => openFullDetail(tenant)}>التفاصيل</Button>
           {tenant.primaryContractId !== null && (
-            <Button variant="secondary" className="min-h-11 px-3" onClick={() => (navigate as unknown as (opts: unknown) => void)({ to: '/contracts/$contractId', params: { contractId: tenant.primaryContractId! }, state: { backgroundLocation: dialogLocation } as unknown as Record<string, unknown> })}>
+            <Button variant="secondary" className="min-h-11 px-3" onClick={() => openContract(tenant.primaryContractId!)}>
               <FileText className="me-1 size-4" />العقد
             </Button>
           )}
@@ -233,18 +190,32 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
           mobileSummaryKeys={['property', 'contracts']}
           mobileCardActions={(tenant) => [
             {
+              label: 'معاينة',
+              icon: Eye,
+              variant: 'secondary',
+              onClick: () => openPreview(tenant),
+              ariaLabel: `معاينة ${tenant.person.full_name}`,
+            },
+            {
               label: 'تعديل',
               icon: Edit,
               variant: 'secondary',
               onClick: () => openEdit(tenant.person.id),
               ariaLabel: `تعديل ${tenant.person.full_name}`,
             },
+            {
+              label: 'التفاصيل الكاملة',
+              icon: Users,
+              variant: 'secondary',
+              onClick: () => openFullDetail(tenant),
+              ariaLabel: `فتح ملف ${tenant.person.full_name}`,
+            },
             ...(tenant.primaryContractId !== null
               ? [{
                   label: 'العقد',
                   icon: FileText,
                   variant: 'secondary' as const,
-                  onClick: () => (navigate as unknown as (opts: unknown) => void)({ to: '/contracts/$contractId', params: { contractId: tenant.primaryContractId! }, state: { backgroundLocation: dialogLocation } as unknown as Record<string, unknown> }),
+                  onClick: () => openContract(tenant.primaryContractId!),
                   ariaLabel: `فتح عقد ${tenant.person.full_name}`,
                 }]
               : []),
@@ -258,7 +229,7 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
           emptyDescription="سيظهر هنا أي شخص مصنف كمستأجر من نموذج الأشخاص الحالي."
           emptyAction={<Button onClick={openCreate}><Plus className="me-2 size-4" />إضافة مستأجر</Button>}
           pagination={{ page, pageSize, total: totalCount, onPageChange: setPage }}
-          onRowClick={(tenant) => dialogNavigate({ to: '/tenants/$tenantId', params: { tenantId: tenant.person.id } })}
+          onRowClick={openPreview}
         />
       </section>
     </>
@@ -283,6 +254,14 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
   return (
     <>
       {workspace}
+      {previewTenantId ? (
+        <TenantPreviewDialog
+          tenantId={previewTenantId}
+          open
+          onOpenChange={(open) => { if (!open) setPreviewTenantId(null); }}
+          onEdit={openEdit}
+        />
+      ) : null}
       <PersonFormModal open={formOpen} onClose={closeForm} personId={editingPersonId} defaultType="tenant" />
     </>
   );
