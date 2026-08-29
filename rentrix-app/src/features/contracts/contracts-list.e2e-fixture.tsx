@@ -1,6 +1,5 @@
 import { Download, Plus } from 'lucide-react';
 import { useState } from 'react';
-import { ListControlSurface } from '@/components/layout/list-controls';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
@@ -167,20 +166,18 @@ export function ContractsListE2EFixture() {
           filteredContracts={filteredContracts}
           totalCount={fixtureContracts.length}
         />
-        <ListControlSurface>
-          <ContractFilters
-            expiringOnly={expiringOnly}
-            hasActiveFilters={hasActiveFilters}
-            leaseMode={leaseMode}
-            resetFilters={() => { setStatus('all'); setLeaseMode('all'); setSearchTerm(''); setExpiringOnly(false); }}
-            searchTerm={searchTerm}
-            setExpiringOnly={(updater) => setExpiringOnly(updater)}
-            setLeaseMode={setLeaseMode}
-            setSearchTerm={setSearchTerm}
-            setStatus={setStatus}
-            status={status}
-          />
-        </ListControlSurface>
+        <ContractFilters
+          expiringOnly={expiringOnly}
+          hasActiveFilters={hasActiveFilters}
+          leaseMode={leaseMode}
+          resetFilters={() => { setStatus('all'); setLeaseMode('all'); setSearchTerm(''); setExpiringOnly(false); }}
+          searchTerm={searchTerm}
+          setExpiringOnly={(updater) => setExpiringOnly(updater)}
+          setLeaseMode={setLeaseMode}
+          setSearchTerm={setSearchTerm}
+          setStatus={setStatus}
+          status={status}
+        />
         <ContractResults
           companySettings={defaultCompanySettingsContract}
           contracts={filteredContracts}
