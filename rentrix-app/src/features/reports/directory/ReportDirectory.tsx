@@ -36,7 +36,10 @@ const directoryTabs: readonly { id: DirectoryTab; label: string; groups?: readon
   { id: 'properties', label: 'العقارات والوحدات', groups: ['properties'] },
 ];
 
-const directoryFilterOptions = directoryTabs.map((item) => ({ value: item.id, label: item.label }));
+const directoryFilterOptions: { value: DirectoryTab; label: string }[] = directoryTabs.map((item) => ({
+  value: item.id,
+  label: item.label,
+}));
 
 export function ReportDirectory({ activeSection, activeView, scope, onOpen }: ReportDirectoryProps) {
   const [query, setQuery] = useState('');
