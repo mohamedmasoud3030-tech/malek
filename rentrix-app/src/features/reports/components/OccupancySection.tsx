@@ -1,6 +1,4 @@
-import { Building2, CalendarClock, DoorOpen, TrendingUp, WalletCards } from 'lucide-react';
-import { KpiCard } from '@/components/ui/kpi-card';
-import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
+import { Building2, CalendarClock, DoorOpen } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { defaultCompanyLocalSettings } from '@/lib/companySettings';
 import { formatCompanyNumber } from '@/lib/companyFormatters';
@@ -119,32 +117,16 @@ export function OccupancySection({
 
   return (
     <div className="space-y-4">
-      <ResponsiveCardGrid data-report-summary="occupancy">
-        <KpiCard
-          label="نسبة الإشغال"
-          value={`${roundedOccupancyRate}%`}
-          icon={TrendingUp}
-          sub={`${number(vacancyAnalytics.occupiedUnits)} من ${number(totalUnits)} وحدة`}
-        />
-        <KpiCard
-          label="نسبة الشغور"
-          value={`${roundedVacancyRate}%`}
-          icon={DoorOpen}
-          sub={`${number(vacancyAnalytics.availableUnits)} وحدة متاحة للتأجير`}
-        />
-        <KpiCard
-          label="متوسط أيام الشغور"
-          value={historyComplete ? `${number(vacancyAnalytics.averageVacancyDays)} يوم` : '—'}
-          icon={CalendarClock}
-          sub={historyComplete && longestVacant ? `الأطول ${number(longestVacant.daysVacant)} يوم` : 'يتطلب تاريخ عقود كامل'}
-        />
-        <KpiCard
-          label="إيجار مرجعي للشواغر"
-          value={money(vacancyAnalytics.referenceVacantRent)}
-          icon={WalletCards}
-          sub="سعر مرجعي وليس إيرادًا محققًا"
-        />
-      </ResponsiveCardGrid>
+      <div
+        className="grid grid-cols-2 overflow-hidden rounded-xl border border-border/80 bg-card sm:grid-cols-4"
+        data-report-summary="occupancy"
+        aria-label="ملخص الإشغال والشغور"
+      >
+        <OccupancyMetric label="نسبة الإشغال" value={`${roundedOccupancyRate}%`} helper={`${number(vacancyAnalytics.occupiedUnits)} من ${number(totalUnits)} وحدة`} />
+        <OccupancyMetric label="نسبة الشغور" value={`${roundedVacancyRate}%`} helper={`${number(vacancyAnalytics.availableUnits)} متاحة للتأجير`} />
+        <OccupancyMetric label="متوسط أيام الشغور" value={historyComplete ? `${number(vacancyAnalytics.averageVacancyDays)} يوم` : '—'} helper={historyComplete && longestVacant ? `الأطول ${number(longestVacant.daysVacant)} يوم` : 'يتطلب تاريخ عقود كامل'} />
+        <OccupancyMetric label="إيجار مرجعي للشواغر" value={money(vacancyAnalytics.referenceVacantRent)} helper="سعر مرجعي وليس إيرادًا محققًا" />
+      </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
         <ReportProgress
@@ -276,6 +258,16 @@ export function OccupancySection({
           )}
         </ReportPanel>
       </ReportColumns>
+    </div>
+  );
+}
+
+function OccupancyMetric({ label, value, helper }: Readonly<{ label: string; value: string; helper: string }>) {
+  return (
+    <div className="min-w-0 border-b border-border/70 px-3 py-3 odd:border-e sm:border-b-0 sm:border-e sm:last:border-e-0">
+      <p className="text-[11px] font-bold text-muted-foreground sm:text-xs">{label}</p>
+      <p className="mt-1 truncate text-base font-black tabular-nums sm:text-lg" dir="ltr">{value}</p>
+      <p className="mt-1 truncate text-[11px] font-semibold text-muted-foreground">{helper}</p>
     </div>
   );
 }

@@ -1,6 +1,4 @@
-import { CircleDollarSign, FileCheck2, Gauge, Zap } from 'lucide-react';
-import { KpiCard } from '@/components/ui/kpi-card';
-import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
+import { CircleDollarSign, Zap } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/status-badge';
 import {
   responsiblePartyLabels,
@@ -168,12 +166,16 @@ export function ServicesReportSection({
 
   return (
     <div className="space-y-4" data-services-report>
-      <ResponsiveCardGrid data-report-summary="services">
-        <KpiCard label="إجمالي الخدمات" value={formatMoney(totalBilled, currency)} icon={Zap} sub={`${rows.length} فاتورة في الفترة`} />
-        <KpiCard label="المدفوع" value={formatMoney(totalPaid, currency)} icon={CircleDollarSign} sub="من فواتير الخدمات المسجلة" accent="emerald" />
-        <KpiCard label="المتبقي" value={formatMoney(remaining, currency)} icon={Gauge} sub={`${overdue.length} فاتورة متأخرة حتى تاريخ التقرير`} accent={overdue.length ? 'amber' : 'primary'} />
-        <KpiCard label="إثباتات الدفع" value={`${proofCount}/${rows.length}`} icon={FileCheck2} sub="فواتير مرتبطة بإثبات متاح" accent="sky" />
-      </ResponsiveCardGrid>
+      <div
+        className="grid grid-cols-2 overflow-hidden rounded-xl border border-border/80 bg-card sm:grid-cols-4"
+        data-report-summary="services"
+        aria-label="ملخص الخدمات والمرافق"
+      >
+        <ServiceMetric label="إجمالي الخدمات" value={formatMoney(totalBilled, currency)} helper={`${rows.length} فاتورة`} />
+        <ServiceMetric label="المدفوع" value={formatMoney(totalPaid, currency)} helper="من الفواتير المسجلة" />
+        <ServiceMetric label="المتبقي" value={formatMoney(remaining, currency)} helper={`${overdue.length} متأخرة`} />
+        <ServiceMetric label="إثباتات الدفع" value={`${proofCount}/${rows.length}`} helper="مرتبطة بإثبات" />
+      </div>
 
       <ReportColumns>
         <ReportPanel
@@ -240,6 +242,16 @@ export function ServicesReportSection({
           </ReportPanel>
         </div>
       </ReportColumns>
+    </div>
+  );
+}
+
+function ServiceMetric({ label, value, helper }: Readonly<{ label: string; value: string; helper: string }>) {
+  return (
+    <div className="min-w-0 border-b border-border/70 px-3 py-3 odd:border-e sm:border-b-0 sm:border-e sm:last:border-e-0">
+      <p className="text-[11px] font-bold text-muted-foreground sm:text-xs">{label}</p>
+      <p className="mt-1 truncate text-base font-black tabular-nums sm:text-lg" dir="ltr">{value}</p>
+      <p className="mt-1 truncate text-[11px] font-semibold text-muted-foreground">{helper}</p>
     </div>
   );
 }

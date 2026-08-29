@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
 import { AlertTriangle, BookOpenCheck, Building2, Receipt, TrendingUp } from 'lucide-react';
-import { FinanceKpiCard, FinanceKpiGrid, FinanceSection } from '@/features/financials/components/finance-reporting-visual-foundations';
 import { getErrorMessage } from '@/features/financials/components/financials-formatters';
 import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
 import { formatCompanyMoney } from '@/lib/companyFormatters';
+import { cn } from '@/lib/utils';
 import type { ReportsWorkspaceModel } from '../use-reports-workspace';
 import type { ReportsFilterState } from '../reports-workspace-filters';
 import type { ReportSectionId } from '../reports-page.sections';
@@ -19,7 +19,36 @@ type ReportsShellProps = Readonly<{
   onSectionViewChange: (section: ReportSectionId, view: ReportViewId) => void;
 }>;
 
-/** Reports scope + plain-language summary. The workspace model remains the data authority. */
+type MetricButtonProps = Readonly<{
+  label: string;
+  value: string;
+  detail: string;
+  icon: typeof Receipt;
+  onClick: () => void;
+  tone?: 'default' | 'warning';
+}>;
+
+function MetricButton({ label, value, detail, icon: Icon, onClick, tone = 'default' }: MetricButtonProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'group min-w-0 px-3 py-2.5 text-start transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/30 sm:px-4 sm:py-3',
+        tone === 'warning' ? 'hover:bg-destructive/[0.035]' : 'hover:bg-primary/[0.025]',
+      )}
+    >
+      <span className="flex items-center gap-2 text-[11px] font-black text-muted-foreground sm:text-xs">
+        <Icon className={cn('size-3.5 shrink-0', tone === 'warning' ? 'text-destructive' : 'text-primary')} aria-hidden="true" />
+        {label}
+      </span>
+      <span className="mt-1 block truncate text-sm font-black tabular-nums text-foreground sm:text-base">{value}</span>
+      <span className="mt-0.5 block truncate text-[11px] font-semibold text-muted-foreground sm:text-xs">{detail}</span>
+    </button>
+  );
+}
+
+/** Global report scope plus one compact executive readout. Report bodies own their detailed analysis. */
 export function ReportsShell({
   model,
   filters,
@@ -49,97 +78,66 @@ export function ReportsShell({
   }, [model.sections.occupancy.occupancyRows]);
 
   const collectionRate = model.hero.collectionRate;
-  const plainLanguageInsight = (summary?.outstanding ?? 0) > 0
-    ? `يوجد ${money(summary?.outstanding ?? 0)} مستحق يحتاج متابعة التحصيل في النطاق الحالي.`
-    : occupancy.vacant > 0
-      ? `يوجد ${occupancy.vacant} وحدات شاغرة؛ افتح تقرير الإشغال لمعرفة أين يتركز الشغور.`
-      : 'لا تظهر في النطاق الحالي متأخرات أو شواغر تحتاج لفت انتباه فوري.';
 
   return (
-    <>
-      <FinanceSection ariaLabel="نطاق التقرير">
-        <ReportsFilterSurface
-          filters={filters}
-          costCenterRows={model.filters.costCenterRows}
-          ownerRows={model.filters.ownerRows}
-          contractRows={model.filters.contractRows}
-          onChange={onFiltersChange}
-          onResetCurrentMonth={onResetCurrentMonth}
-        />
-      </FinanceSection>
+    <div className="space-y-3">
+      <ReportsFilterSurface
+        filters={filters}
+        costCenterRows={model.filters.costCenterRows}
+        ownerRows={model.filters.ownerRows}
+        contractRows={model.filters.contractRows}
+        onChange={onFiltersChange}
+        onResetCurrentMonth={onResetCurrentMonth}
+      />
 
-      <FinanceSection ariaLabel="خلاصة التقرير">
-        <div className="rounded-2xl border border-primary/15 bg-gradient-to-l from-primary/[0.045] via-background to-background p-3 sm:p-4" data-report-summary-layer>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-[11px] font-black text-primary">الخلاصة</p>
-              <h2 className="mt-1 text-sm font-black sm:text-base">أهم ما تحتاج معرفته قبل التفاصيل</h2>
-            </div>
-            <p className="max-w-2xl text-xs font-semibold leading-5 text-muted-foreground">{plainLanguageInsight}</p>
-          </div>
-          <FinanceKpiGrid desktopColumns={4} className="mt-3">
-            <FinanceKpiCard
-              label="المحصّل للفترة"
-              value={money(summary?.paid ?? 0)}
-              icon={Receipt}
-              sub={`${summary?.paymentsCount ?? 0} مدفوعات مسجلة`}
-              trend={collectionRate >= 85 ? 'up' : collectionRate >= 65 ? 'neutral' : 'down'}
-              trendValue={`كفاءة ${Math.round(collectionRate)}%`}
-              accent="primary"
-              onDrill={() => onSectionViewChange('analytics', 'collections')}
-              drillAriaLabel={`المحصّل للفترة ${money(summary?.paid ?? 0)} — كفاءة التحصيل ${Math.round(collectionRate)}% — عرض تقرير التحصيل`}
-              unit={companySettings.defaultCurrency}
-            />
-            <FinanceKpiCard
-              label="نسبة الإشغال"
-              value={`${occupancy.rate}%`}
-              icon={Building2}
-              sub={`${occupancy.occupied} من ${occupancy.total} وحدة`}
-              trend={occupancy.rate >= 90 ? 'up' : occupancy.rate >= 75 ? 'neutral' : 'down'}
-              trendValue={`${occupancy.vacant} شاغرة`}
-              accent="primary"
-              onDrill={() => onSectionViewChange('analytics', 'occupancy')}
-              drillAriaLabel={`نسبة الإشغال ${occupancy.rate}% — عرض تقرير الإشغال`}
-            />
-            <FinanceKpiCard
-              label="الرصيد المستحق"
-              value={money(summary?.outstanding ?? 0)}
-              icon={AlertTriangle}
-              sub="رصيد يحتاج متابعة التحصيل"
-              trend="neutral"
-              trendValue={`${summary?.invoicesCount ?? 0} فواتير`}
-              accent="primary"
-              onDrill={() => onSectionViewChange('analytics', 'overdue')}
-              drillAriaLabel={`الرصيد المستحق ${money(summary?.outstanding ?? 0)} — عرض تقرير المتأخرات`}
-              unit={companySettings.defaultCurrency}
-            />
-            <FinanceKpiCard
-              label="فرق التحصيل والمصروفات"
-              value={money(summary?.netCash ?? 0)}
-              icon={TrendingUp}
-              sub="مؤشر متابعة تشغيلي للفترة، وليس صافي الربح."
-              trend={(summary?.netCash ?? 0) >= 0 ? 'up' : 'down'}
-              trendValue={(summary?.netCash ?? 0) >= 0 ? 'التحصيل أعلى' : 'المصروفات أعلى'}
-              accent="primary"
-              onDrill={() => onSectionViewChange('analytics', 'overview')}
-              unit={companySettings.defaultCurrency}
-            />
-          </FinanceKpiGrid>
+      <section
+        className="overflow-hidden rounded-xl border border-border/80 bg-card"
+        aria-label="خلاصة الفترة"
+        data-report-summary-layer
+      >
+        <div className="grid grid-cols-2 divide-x divide-y divide-border/70 sm:grid-cols-4 sm:divide-y-0 rtl:divide-x-reverse">
+          <MetricButton
+            label="المحصّل"
+            value={money(summary?.paid ?? 0)}
+            detail={`${Math.round(collectionRate)}% من المطلوب`}
+            icon={Receipt}
+            onClick={() => onSectionViewChange('analytics', 'collections')}
+          />
+          <MetricButton
+            label="الإشغال"
+            value={`${occupancy.rate}%`}
+            detail={`${occupancy.vacant} وحدة شاغرة`}
+            icon={Building2}
+            onClick={() => onSectionViewChange('analytics', 'occupancy')}
+          />
+          <MetricButton
+            label="المستحق"
+            value={money(summary?.outstanding ?? 0)}
+            detail={`${summary?.invoicesCount ?? 0} فواتير`}
+            icon={AlertTriangle}
+            tone={(summary?.outstanding ?? 0) > 0 ? 'warning' : 'default'}
+            onClick={() => onSectionViewChange('analytics', 'overdue')}
+          />
+          <MetricButton
+            label="التحصيل − المصروفات"
+            value={money(summary?.netCash ?? 0)}
+            detail={(summary?.netCash ?? 0) >= 0 ? 'التحصيل أعلى' : 'المصروفات أعلى'}
+            icon={TrendingUp}
+            onClick={() => onSectionViewChange('analytics', 'overview')}
+          />
         </div>
-      </FinanceSection>
+      </section>
 
       {activeSection === 'accounting' ? (
-        <div className="flex items-start gap-2.5 rounded-xl border border-primary/15 bg-primary/[0.035] px-3 py-2.5 text-xs font-semibold leading-5 text-muted-foreground">
+        <div className="flex items-start gap-2.5 rounded-lg border border-primary/15 bg-primary/[0.025] px-3 py-2.5 text-xs font-semibold leading-5 text-muted-foreground">
           <BookOpenCheck className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
-          <p>
-            هذه مراجعة مالية متقدمة تعتمد على المصدر المحاسبي المعتمد. لا تُعرض كنقطة دخول أساسية لصاحب المكتب.
-          </p>
+          <p>هذه مراجعة مالية متقدمة تعتمد على المصدر المحاسبي المعتمد.</p>
         </div>
       ) : null}
 
       {model.firstError ? (
         <div
-          className="rounded-2xl border border-destructive/25 bg-destructive/5 p-4 text-sm font-semibold leading-6 text-destructive"
+          className="rounded-lg border border-destructive/25 bg-destructive/5 p-3 text-sm font-semibold leading-6 text-destructive"
           role="alert"
           data-finance-error
         >
@@ -149,6 +147,6 @@ export function ReportsShell({
           )}
         </div>
       ) : null}
-    </>
+    </div>
   );
 }
