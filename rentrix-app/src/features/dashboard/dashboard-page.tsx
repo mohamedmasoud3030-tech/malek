@@ -39,6 +39,19 @@ import { buildUtilityObligationsSignal, EMPTY_UTILITY_OBLIGATIONS_SIGNAL } from 
 import { buildExpiringContracts, toDateInputValue } from './dashboard-utils';
 import { buildMonthlyCashflowChartRows, getFinancialPerformanceRange, type FinancialPerformanceWindow } from './financial-performance';
 
+const dashboardGroupAccent: Record<string, string> = {
+  'office-pulse': 'bg-primary',
+  'financial-performance': 'bg-info',
+  'needs-attention': 'bg-warning',
+  occupancy: 'bg-info',
+  collections: 'bg-success',
+  maintenance: 'bg-warning',
+  'upcoming-contracts': 'bg-primary',
+  'property-health': 'bg-info',
+  'owner-obligations': 'bg-success',
+  'finance-exceptions': 'bg-warning',
+};
+
 function DashboardGroup({
   eyebrow,
   title,
@@ -54,7 +67,13 @@ function DashboardGroup({
 }>) {
   return (
     <section className="min-w-0 space-y-2.5" aria-label={ariaLabel} data-dashboard-section={sectionId}>
-      <SectionHeader eyebrow={eyebrow} title={title} className="mb-0 px-0.5" />
+      <div className="flex min-w-0 items-end gap-2.5 border-b border-border/45 pb-2">
+        <span
+          className={`mb-0.5 h-5 w-1 shrink-0 rounded-full ${dashboardGroupAccent[sectionId] ?? 'bg-primary'}`}
+          aria-hidden="true"
+        />
+        <SectionHeader eyebrow={eyebrow} title={title} className="mb-0 min-w-0 flex-1 px-0" />
+      </div>
       {children}
     </section>
   );
@@ -120,11 +139,9 @@ export function DashboardPage() {
     [snapshot?.queues.expiringContracts],
   );
 
-  // Daily collection sparkline — authoritative server aggregate for the month.
   const periodStart = toDateInputValue(new Date(now.getFullYear(), now.getMonth(), 1));
   const dailySeriesQuery = useDailyCollectionSeries(periodStart, today);
 
-  // Financial performance — canonical Reports monthly cashflow service.
   const [performanceWindow, setPerformanceWindow] = useState<FinancialPerformanceWindow>('six_months');
   const performanceRange = useMemo(
     () => getFinancialPerformanceRange(performanceWindow, now),
@@ -211,9 +228,12 @@ export function DashboardPage() {
 
   return (
     <PageLayout size="wide" className="pb-8" visualVariant="malek-pro">
-      <PageHeader title="لوحة التحكم" />
+      <PageHeader
+        title="لوحة التحكم"
+        description="مركز قيادة اليوم: الأداء، الأولويات، التحصيل، الإشغال، العقود والالتزامات في مسار واحد."
+      />
 
-      <div className="space-y-5 lg:space-y-6">
+      <div className="space-y-4 lg:space-y-5">
         {hasDashboardError ? (
           <ErrorState
             title={snapshotUnavailable ? 'تعذر تحميل بيانات اليوم' : 'تعذر تحديث بيانات اليوم'}
@@ -235,14 +255,7 @@ export function DashboardPage() {
               </div>
             ) : null}
 
-            {/*
-              One intentional 12-column workspace. DOM order is the mobile
-              priority (pulse → needs attention → collections → occupancy →
-              financial trend → maintenance → contracts → property health →
-              owner obligations); xl:order restores the desktop hierarchy and
-              col-spans set the 7/5 · 8/4 relationships.
-            */}
-            <div className="grid min-w-0 grid-cols-1 gap-5 lg:gap-6 xl:grid-cols-12 xl:items-start">
+            <div className="grid min-w-0 grid-cols-1 gap-4 lg:gap-5 xl:grid-cols-12 xl:items-start">
               <div className="min-w-0 xl:col-span-12 xl:order-1">
                 <DashboardGroup eyebrow="الآن" title="نبض المكتب" ariaLabel="نبض المكتب" sectionId="office-pulse">
                   <OfficePulse
@@ -357,16 +370,18 @@ export function DashboardPage() {
               </div>
 
               <div className="min-w-0 xl:col-span-12 xl:order-9">
-                <div className="grid min-w-0 gap-3 xl:grid-cols-12 xl:items-start" data-dashboard-closing-row>
-                  <section className="min-w-0 xl:col-span-7" aria-label="مستحقات الملاك" data-dashboard-section="owner-obligations">
-                    <SectionHeader eyebrow="ملاك" title="مستحقات الملاك" className="mb-2.5 px-0.5" />
-                    <OwnerObligationsSection snapshot={snapshot} isLoading={isLoading} settings={settings} />
-                  </section>
+                <div className="grid min-w-0 gap-4 lg:gap-5 xl:grid-cols-12 xl:items-start" data-dashboard-closing-row>
+                  <div className="min-w-0 xl:col-span-7">
+                    <DashboardGroup eyebrow="ملاك" title="مستحقات الملاك" ariaLabel="مستحقات الملاك" sectionId="owner-obligations">
+                      <OwnerObligationsSection snapshot={snapshot} isLoading={isLoading} settings={settings} />
+                    </DashboardGroup>
+                  </div>
 
-                  <section className="min-w-0 xl:col-span-5" aria-label="استثناءات مالية" data-dashboard-section="finance-exceptions">
-                    <SectionHeader eyebrow="التزامات" title="استثناءات مالية" className="mb-2.5 px-0.5" />
-                    <FinanceExceptionsSection snapshot={snapshot} isLoading={isLoading} />
-                  </section>
+                  <div className="min-w-0 xl:col-span-5">
+                    <DashboardGroup eyebrow="التزامات" title="استثناءات مالية" ariaLabel="استثناءات مالية" sectionId="finance-exceptions">
+                      <FinanceExceptionsSection snapshot={snapshot} isLoading={isLoading} />
+                    </DashboardGroup>
+                  </div>
                 </div>
               </div>
             </div>
