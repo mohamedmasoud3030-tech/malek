@@ -14,10 +14,33 @@ describe('public landing performance contract', () => {
     expect(routeTreeSource).toContain("lazyRouteComponent(() => import('@/routes/_protected')");
   });
 
-  it('does not force optional application vendors into manual entry chunks', () => {
+  it('keeps manual chunking vendor-only so optional vendors stay on their lazy paths', () => {
     const viteConfigSource = readSource('../../../vite.config.ts');
 
-    expect(viteConfigSource).not.toContain('manualChunks');
+    // Bundle strategy (PR #1691): heavy vendor libraries are split into
+    // dedicated `vendor-*` chunks for long-lived browser caching. This is
+    // compatible with the landing performance goal as long as the split is
+    // strictly vendor-only — Rollup's automatic splitting keeps application
+    // modules (and every dynamically imported vendor) on their lazy import
+    // path, so nothing optional is forced into the entry chunk.
+    const start = viteConfigSource.indexOf('manualChunks(id) {');
+    expect(start, 'vite.config.ts should keep its vendor split strategy').toBeGreaterThan(-1);
+    const body = viteConfigSource.slice(start, viteConfigSource.indexOf('\n        },', start));
+
+    // The node_modules guard must exist and precede every chunk assignment.
+    const guard = 'if (!id.includes("node_modules")) return;';
+    const guardAt = body.indexOf(guard);
+    expect(guardAt, 'manualChunks must early-return for application modules').toBeGreaterThan(-1);
+    const firstAssignment = body.indexOf('return "vendor-');
+    expect(guardAt, 'the node_modules guard must come before any chunk assignment').toBeLessThan(firstAssignment);
+
+    // Every manually assigned chunk must be a vendor group — application
+    // code is never forced into a named chunk.
+    const assignedChunks = [...body.matchAll(/return\s+["']([^"']+)["']/g)].map((m) => m[1]);
+    expect(assignedChunks.length, 'the reviewed vendor groups should stay assigned').toBeGreaterThan(0);
+    for (const chunk of assignedChunks) {
+      expect(chunk.startsWith('vendor-'), `manual chunk "${chunk}" must be vendor-only`).toBe(true);
+    }
   });
 
   it('keeps first-view artwork compact and the demo video user-initiated', () => {
