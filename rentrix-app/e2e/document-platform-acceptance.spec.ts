@@ -196,7 +196,7 @@ function mobileInvoiceCard(page: Page): Locator {
 async function gotoInvoicesRegister(page: Page): Promise<Locator> {
   await page.goto('/invoices');
   await expect(page).toHaveURL(/\/financials\?section=collections&view=invoices(?:&|$)/);
-  await expect(page.getByRole('heading', { name: 'الوضع المالي اليوم', level: 1, exact: true })).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByRole('heading', { name: 'المالية', level: 1, exact: true })).toBeVisible({ timeout: 20_000 });
   await expect(page.getByRole('region', { name: 'قائمة الفواتير', exact: true })).toBeVisible({ timeout: 20_000 });
 
   const register = visibleInvoiceRegister(page);
@@ -228,7 +228,7 @@ async function openInvoiceDocumentActions(page: Page): Promise<void> {
 }
 
 async function openContractDocumentActions(page: Page): Promise<void> {
-  const trigger = page.getByRole('button', { name: 'إجراءات أخرى', exact: true });
+  const trigger = page.getByRole('button', { name: 'إجراءات العقد', exact: true });
   await expect(trigger).toBeVisible({ timeout: 15_000 });
   await expect(trigger).toBeInViewport();
   await trigger.click();
