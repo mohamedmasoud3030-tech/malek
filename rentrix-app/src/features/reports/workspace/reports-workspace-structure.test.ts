@@ -39,8 +39,9 @@ describe('WP-C C.1 — workspace is split by responsibility', () => {
 
     const shellSource = read(shell);
     expect(shellSource).toContain('ReportsFilterSurface');
-    expect(shellSource).toContain('FinanceKpiGrid');
+    expect(shellSource).toContain('MetricButton');
     expect(shellSource).toContain('data-report-summary-layer');
+    expect(shellSource).not.toContain('FinanceKpiGrid');
     expect(shellSource).not.toContain('SectionTabs');
 
     const rootSource = read(root);
