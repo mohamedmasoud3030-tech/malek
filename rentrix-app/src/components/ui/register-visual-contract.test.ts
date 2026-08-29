@@ -13,6 +13,7 @@ describe('canonical register visual contract', () => {
     expect(table).toContain('min-w-max');
     expect(entityTable).toContain('data-entity-table-scroll');
     expect(entityTable).toContain('قابلة للتمرير أفقياً');
+    expect(entityTable).toContain('overscroll-x-contain touch-pan-x');
   });
 
   it('keeps actions as the final sticky desktop column', () => {
@@ -20,17 +21,27 @@ describe('canonical register visual contract', () => {
     expect(entityTable).toContain('sticky end-0');
   });
 
-  it('uses one crisp shared row and column sizing contract', () => {
-    expect(table).toContain("'[&_td]:h-11 [&_td]:py-2 [&_th]:h-10'");
-    expect(table).toContain('text-[13px]');
+  it('uses one dense shared row and column sizing contract without page-level reinflation', () => {
+    expect(table).toContain("'[&_td]:h-9 [&_td]:py-1.5 [&_th]:h-9'");
+    expect(table).toContain('text-[12px]');
     expect(table).toContain('[&_td+td]:border-s');
     expect(table).toContain('[&_th+th]:border-s');
+    expect(table).not.toContain('sm:px-3.5');
+    expect(entityTable).toContain("'h-9 px-2 py-1.5 align-middle text-[12px] sm:px-2.5'");
+    expect(entityTable).toContain("'h-8 bg-muted/35 px-2 text-[11px]");
+    expect(entityTable).not.toContain("'h-11 px-3 py-2 align-middle sm:px-3.5'");
+    expect(entityTable).not.toContain('min-w-full text-[13px]');
   });
 
-  it('keeps cards available but flatter and easier to scan', () => {
-    expect(entityCard).toContain('shadow-none');
-    expect(entityCard).toContain('border-border/90');
-    expect(entityCard).toContain('text-[14px]');
-    expect(entityCard).toContain('min-h-10');
+  it('keeps mobile cards compact, flat and non-overlapping', () => {
+    expect(entityCard).toContain('p-2 text-start shadow-none');
+    expect(entityCard).toContain('border-border/70');
+    expect(entityCard).toContain('text-[13px]');
+    expect(entityCard).toContain('min-h-9');
+    expect(entityCard).toContain('[overflow-wrap:anywhere]');
+    expect(entityCard).not.toContain('sm:text-[15px]');
+    expect(entityTable).toContain('className="grid gap-1.5" data-entity-table-mobile-list');
+    expect(entityTable).toContain('gap-x-2 gap-y-1');
+    expect(entityTable).toContain('rounded-lg border border-border/60 bg-card p-1 shadow-none');
   });
 });
