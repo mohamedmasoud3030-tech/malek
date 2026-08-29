@@ -41,7 +41,8 @@ describe('MALEK canonical brand contract', () => {
     expect(shellWordmark).not.toContain('data-brand-m');
     expect(shellWordmark).not.toContain('data-brand-name');
 
-    // The mobile navigation pins that same canonical lockup above the menu.
+    // Sidebar/mobile-menu use the same centered lockup at the top of navigation.
+    expect(shellWordmark).toContain("size === 'sidebar' && 'w-full justify-center'");
     expect(navigation).toContain('data-mobile-nav-brand');
     expect(navigation).toContain('<MalekBrandWordmark size="sidebar" />');
     expect(navigation).toContain('sticky top-0');
