@@ -61,7 +61,7 @@ export function ReportDirectory({ activeSection, activeView, scope, onOpen }: Re
           searchPlaceholder="ابحث في التقارير…"
           searchAriaLabel="بحث في مركز التقارير"
           filters={(
-            <FilterTabs
+            <FilterTabs<DirectoryTab>
               options={directoryFilterOptions}
               value={tab}
               onChange={setTab}
