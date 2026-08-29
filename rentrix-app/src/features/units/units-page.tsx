@@ -4,6 +4,7 @@ import {
   CircleGauge,
   DoorOpen,
   Edit,
+  Eye,
   Home,
   Plus,
   Wrench,
@@ -25,6 +26,7 @@ import { FilterBar } from "@/components/ui/filter-bar";
 import { formatMoney, formatNumber } from "@/hooks/useCompanyFormatters";
 import { useAuth } from "@/hooks/use-auth";
 import { UnitFormModal } from "./unit-form-modal";
+import { UnitPreviewDialog } from "./components/UnitPreviewDialog";
 import type { Unit } from "@/types/domain";
 
 const unitStatusTone = {
@@ -55,6 +57,7 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
   const { canAccess } = useAuth();
   const canCreateUnit = canAccess("properties.create");
   const canEditUnit = canAccess("properties.edit");
+  const [previewUnitId, setPreviewUnitId] = useState<string | null>(null);
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultUnitRegisterColumns]);
   if (ctrl.isLoading) return <LoadingState variant="route" />;
 
@@ -65,6 +68,7 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
   const maintenanceCount = ctrl.units.filter(
     (unit) => getUnitPageStatus(unit) === "maintenance",
   ).length;
+  const openPreview = (unit: Unit) => setPreviewUnitId(unit.id);
 
   const primaryAction = (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -270,7 +274,7 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
           rows={ctrl.filteredUnits}
           columns={columns}
           visibleColumnKeys={visibleColumnKeys}
-          onRowClick={ctrl.navigateToUnit}
+          onRowClick={openPreview}
           keyOf={(unit) => unit.id}
           isLoading={ctrl.unitsQuery.isLoading || ctrl.propertiesQuery.isLoading}
           error={ctrl.isError ? new Error("تعذر تحميل الوحدات") : null}
@@ -287,6 +291,13 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
           mobileBadgeKey="status"
           mobileSummaryKeys={["rent", "property"]}
           mobileCardActions={(unit) => [
+            {
+              label: "معاينة",
+              icon: Eye,
+              variant: "secondary" as const,
+              ariaLabel: `معاينة وحدة ${unit.unit_number}`,
+              onClick: () => openPreview(unit),
+            },
             ...(canEditUnit ? [{
               label: "تعديل",
               icon: Edit,
@@ -295,7 +306,7 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
               onClick: () => ctrl.openEdit(unit),
             }] : []),
             {
-              label: "فتح التفاصيل",
+              label: "التفاصيل الكاملة",
               icon: DoorOpen,
               variant: "secondary" as const,
               ariaLabel: `فتح تفاصيل وحدة ${unit.unit_number}`,
@@ -304,6 +315,12 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
           ]}
         />
       </section>
+
+      <UnitPreviewDialog
+        unitId={previewUnitId}
+        open={Boolean(previewUnitId)}
+        onOpenChange={(open) => { if (!open) setPreviewUnitId(null); }}
+      />
 
       {canCreateUnit ? (
         <UnitFormModal
