@@ -199,6 +199,7 @@ export function ContractTable({
       emptyDescription={emptyDescription}
       emptyAction={onCreate ? <Button onClick={onCreate}>إنشاء عقد</Button> : undefined}
       pagination={pagination}
+      mobileCardType="contract"
       mobileBadgeKey="status"
       mobileSummaryKeys={["tenant", "unit", "period", "rent_amount"]}
       mobileCardPrimaryAction={(contract) => ({
