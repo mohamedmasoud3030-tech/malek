@@ -16,13 +16,21 @@ describe('canonical register visual contract', () => {
     expect(entityTable).toContain('overscroll-x-contain touch-pan-x');
   });
 
-  it('keeps actions as the final sticky desktop column', () => {
+  it('keeps sticky identity/actions desktop-only and lets the whole row move on phones', () => {
     expect(entityTable).toContain("priority === 'actions'");
     expect(entityTable).toContain('sticky end-0');
+    expect(table).toContain('max-md:[&_[data-column-priority=identity]]:!static');
+    expect(table).toContain('max-md:[&_[data-column-priority=actions]]:!static');
+    expect(table).toContain('max-md:[&_[data-column-priority=identity]]:!min-w-0');
+    expect(table).toContain('max-md:[&_[data-column-priority=actions]]:!min-w-0');
   });
 
   it('uses one dense shared row and column sizing contract without page-level reinflation', () => {
     expect(table).toContain("'[&_td]:h-9 [&_td]:py-1.5 [&_th]:h-9'");
+    expect(table).toContain('max-md:[&_td]:!h-8');
+    expect(table).toContain('max-md:[&_td]:!px-1.5');
+    expect(table).toContain('max-md:[&_td]:!py-0.5');
+    expect(table).toContain('max-md:[&_th]:!h-8');
     expect(table).toContain('text-[12px]');
     expect(table).toContain('[&_td+td]:border-s');
     expect(table).toContain('[&_th+th]:border-s');
