@@ -89,7 +89,7 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
 
   const handlePrintMaintenanceList = () => {
     void runGuardedDocumentAction({
-      isReady: documentSettings.isReady,
+      isReady: documentSettings.isReady && !controller.hasLoadError,
       operation: () => {
         const today = getTodayLocalDateString();
         const report = {
@@ -122,7 +122,7 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
       type="button"
       variant="outline"
       onClick={handlePrintMaintenanceList}
-      disabled={!documentSettings.isReady}
+      disabled={!documentSettings.isReady || controller.hasLoadError}
       className="min-h-11 gap-2 font-bold"
     >
       <Printer className="size-4 text-primary" aria-hidden="true" />
@@ -133,7 +133,8 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
   const createAction = canCreateMaintenance ? (
     <Button
       type="button"
-      onClick={controller.openCreateForm}
+      onClick={() => { if (!controller.hasLoadError) controller.openCreateForm(); }}
+      disabled={controller.hasLoadError}
       className="min-h-11"
     >
       <PlusCircle className="me-2 size-4" aria-hidden="true" />
@@ -248,15 +249,15 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
             : canCreateMaintenance
               ? 'أضف طلب صيانة جديد للبدء.'
               : 'لا توجد طلبات صيانة مسجلة الآن.'}
-          emptyAction={canCreateMaintenance && !controller.hasFilters ? (
+          emptyAction={canCreateMaintenance && !controller.hasFilters && !controller.hasLoadError ? (
             <Button type="button" onClick={controller.openCreateForm}>
               <PlusCircle className="me-2 size-4" aria-hidden="true" />
               طلب صيانة جديد
             </Button>
           ) : undefined}
           onViewDetails={controller.openDetailsRequest}
-          onEdit={controller.openEditForm}
-          onStatusAction={controller.handleStatusAction}
+          onEdit={(request) => { if (!controller.hasLoadError) controller.openEditForm(request); }}
+          onStatusAction={(request, action) => { if (!controller.hasLoadError) controller.handleStatusAction(request, action); }}
         />
       </section>
 

@@ -23,16 +23,17 @@ describe('bank reconciliation error vs empty honesty', () => {
     expect(page).toContain('onRetry={() => { void ctrl.linesQuery.refetch(); }}');
   });
 
-  it('gates empty-state cards behind successful non-error reads', () => {
-    expect(page).toContain('!ctrl.accountsQuery.isLoading && !ctrl.accountsQuery.isError && ctrl.accounts.length === 0');
-    expect(page).toContain('!ctrl.linesQuery.isLoading && !ctrl.linesQuery.isError && ctrl.lines.length === 0');
-    // Table only when lines query is not in error.
-    expect(page).toContain('!ctrl.linesQuery.isError ? (');
+  it('gates empty-state cards behind authoritative or cached payloads', () => {
+    expect(page).toContain('!ctrl.accountsQuery.isLoading && !hasBlockingAccountsError && ctrl.accounts.length === 0');
+    expect(page).toContain('!ctrl.linesQuery.isLoading && !hasBlockingLinesError && ctrl.lines.length === 0');
+    expect(page).toContain('!hasBlockingLinesError ? (');
     expect(page).toContain('<BankStatementLinesTable');
   });
 
-  it('does not show zero KPI cards while a read is failing', () => {
-    expect(page).toContain('!ctrl.accountsQuery.isError && !ctrl.linesQuery.isError ? (');
+  it('does not show false zero KPIs for blocking errors but preserves stale populated KPIs', () => {
+    expect(page).toContain('!hasBlockingAccountsError && !hasBlockingLinesError ? (');
+    expect(page).toContain('hasStaleReadError');
+    expect(page).toContain('<DataRefreshAlert');
     expect(page).toContain('<FinanceKpiGrid desktopColumns={4}>');
   });
 });

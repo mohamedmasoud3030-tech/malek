@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { AlertTriangle, ArrowLeft, CheckCircle2, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -75,6 +75,7 @@ export function ForgotPasswordPage() {
 
 export function ResetPasswordPage() {
   const [checking, setChecking] = useState(true);
+  const [sessionCheckError, setSessionCheckError] = useState(false);
   const [hasRecoverySession, setHasRecoverySession] = useState(false);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -82,17 +83,23 @@ export function ResetPasswordPage() {
   const [error, setError] = useState<string | null>(null);
   const [succeeded, setSucceeded] = useState(false);
 
-  useEffect(() => {
-    let active = true;
-    void supabase.auth.getSession().then(({ data }) => {
-      if (active) setHasRecoverySession(Boolean(data.session));
-    }).catch(() => {
-      if (active) setHasRecoverySession(false);
-    }).finally(() => {
-      if (active) setChecking(false);
-    });
-    return () => { active = false; };
+  const checkRecoverySession = useCallback(async () => {
+    setChecking(true);
+    setSessionCheckError(false);
+    try {
+      const { data } = await supabase.auth.getSession();
+      setHasRecoverySession(Boolean(data.session));
+    } catch {
+      // A connectivity failure is not evidence that a recovery link expired.
+      setSessionCheckError(true);
+    } finally {
+      setChecking(false);
+    }
   }, []);
+
+  useEffect(() => {
+    void checkRecoverySession();
+  }, [checkRecoverySession]);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -116,7 +123,14 @@ export function ResetPasswordPage() {
 
   return (
     <AuthCard title="تعيين كلمة مرور جديدة" description="استخدم 8 أحرف على الأقل، ثم سجّل الدخول مجدداً بكلمة المرور الجديدة.">
-      {checking ? <p className="text-center text-sm text-muted-foreground" role="status">جارٍ التحقق من رابط الاستعادة...</p> : succeeded ? (
+      {checking ? <p className="text-center text-sm text-muted-foreground" role="status">جارٍ التحقق من رابط الاستعادة...</p> : sessionCheckError ? (
+        <div className="space-y-4 rounded-2xl border border-warning/30 bg-warning/5 p-5 text-center" role="alert">
+          <AlertTriangle className="mx-auto size-8 text-warning" aria-hidden="true" />
+          <p className="font-bold">تعذر التحقق من رابط الاستعادة</p>
+          <p className="text-sm leading-6 text-muted-foreground">تحقق من الاتصال ثم أعد المحاولة. لم نعتبر الرابط منتهيًا بسبب فشل الشبكة.</p>
+          <Button type="button" variant="secondary" className="min-h-11 w-full" onClick={() => { void checkRecoverySession(); }}>إعادة المحاولة</Button>
+        </div>
+      ) : succeeded ? (
         <div className="space-y-4 rounded-2xl border border-success/30 bg-success/5 p-5 text-center" role="status" aria-live="polite">
           <CheckCircle2 className="mx-auto size-8 text-success" aria-hidden="true" />
           <p className="font-bold">تم تحديث كلمة المرور</p>

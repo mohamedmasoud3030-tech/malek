@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { RefreshCw, ShieldCheck, UserCog, UsersRound } from 'lucide-react';
 import { DataErrorScreen } from '@/components/data-error-screen';
+import { DataRefreshAlert } from '@/components/data-refresh-alert';
 import { EmptyState } from '@/components/ui/state-surfaces';
 import { AccessDenied } from '@/components/layout/access-denied';
 import { Badge } from '@/components/ui/badge';
@@ -96,7 +97,7 @@ function UserAccessCard({
                           type="button"
                           size="sm"
                           variant={allowed ? 'default' : 'secondary'}
-                          disabled={!user.isActive || pendingPermission === operationKey}
+                          disabled={!user.isActive || pendingPermission === '__stale__' || pendingPermission === operationKey}
                           aria-pressed={allowed}
                           onClick={() => onTogglePermission(user.id, permission, !allowed)}
                         >
@@ -166,7 +167,7 @@ function PermissionRequestsQueue() {
       </div>
 
       {requestsQuery.isPending ? <LoadingState variant="section" label="جارٍ تحميل طلبات الصلاحية..." /> : null}
-      {requestsQuery.isError ? (
+      {requestsQuery.isError && !requestsQuery.data ? (
         <DataErrorScreen
           title="تعذر تحميل طلبات الصلاحية"
           fallbackMessage="تحقق من الاتصال ثم أعد المحاولة."
@@ -174,11 +175,18 @@ function PermissionRequestsQueue() {
           action={<Button variant="secondary" onClick={() => void requestsQuery.refetch()}>إعادة المحاولة</Button>}
         />
       ) : null}
+      {requestsQuery.isError && requestsQuery.data ? (
+        <DataRefreshAlert
+          title="تعذر تحديث طلبات الصلاحية"
+          description="نعرض آخر قائمة متاحة للقراءة فقط. القرارات والإلغاء متوقفة حتى ينجح التحديث."
+          onRetry={() => { void requestsQuery.refetch(); }}
+        />
+      ) : null}
       {!requestsQuery.isPending && !requestsQuery.isError && requests.length === 0 ? (
         <EmptyState title="لا توجد طلبات صلاحية" description="لا توجد طلبات تحتاج مراجعة الآن." />
       ) : null}
 
-      {!requestsQuery.isPending && !requestsQuery.isError && requests.length > 0 ? (
+      {!requestsQuery.isPending && requests.length > 0 ? (
         <div className="space-y-2">
           {requests.map((request) => (
             <article key={request.id} className="grid gap-3 rounded-xl border border-border/70 p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
@@ -200,11 +208,11 @@ function PermissionRequestsQueue() {
               </div>
               {request.status === 'PENDING' ? (
                 <div className="flex flex-wrap gap-2">
-                  <Button disabled={decisionMutation.isPending} onClick={() => decisionMutation.mutate({ request, decision: 'APPROVED', reason: 'تمت المراجعة والموافقة' })}>موافقة</Button>
-                  <Button variant="danger" disabled={decisionMutation.isPending} onClick={() => { setRejecting(request); setDecisionReason(''); }}>رفض</Button>
+                  <Button disabled={requestsQuery.isError || decisionMutation.isPending} onClick={() => { if (!requestsQuery.isError) decisionMutation.mutate({ request, decision: 'APPROVED', reason: 'تمت المراجعة والموافقة' }); }}>موافقة</Button>
+                  <Button variant="danger" disabled={requestsQuery.isError || decisionMutation.isPending} onClick={() => { if (!requestsQuery.isError) { setRejecting(request); setDecisionReason(''); } }}>رفض</Button>
                 </div>
               ) : request.status === 'APPROVED' && request.grant_active !== false ? (
-                <Button variant="secondary" disabled={revokeMutation.isPending} onClick={() => revokeMutation.mutate(request)}>إلغاء الصلاحية</Button>
+                <Button variant="secondary" disabled={requestsQuery.isError || revokeMutation.isPending} onClick={() => { if (!requestsQuery.isError) revokeMutation.mutate(request); }}>إلغاء الصلاحية</Button>
               ) : null}
             </article>
           ))}
@@ -263,6 +271,9 @@ export function UserRolesWorkspace() {
     return <AccessDenied message="لا تملك صلاحية إدارة الموظفين أو مراجعة طلبات الصلاحية." />;
   }
 
+  const hasUsersReadError = usersQuery.isError || permissionsQuery.isError;
+  const hasCachedUsersSnapshot = Boolean(usersQuery.data && permissionsQuery.data);
+
   const pendingPermission = permissionMutation.variables
     ? `${permissionMutation.variables.userId}:${permissionMutation.variables.permission}`
     : null;
@@ -290,12 +301,19 @@ export function UserRolesWorkspace() {
           </div>
 
           {usersQuery.isPending || permissionsQuery.isPending ? <LoadingState variant="section" label="جارٍ تحميل الموظفين والصلاحيات..." /> : null}
-          {usersQuery.isError || permissionsQuery.isError ? (
+          {hasUsersReadError && !hasCachedUsersSnapshot ? (
             <DataErrorScreen
               title="تعذر تحميل الموظفين والصلاحيات"
               fallbackMessage="تحقق من الاتصال ثم أعد المحاولة."
               error={usersQuery.error ?? permissionsQuery.error}
               action={<Button variant="secondary" onClick={() => { void usersQuery.refetch(); void permissionsQuery.refetch(); }}>إعادة المحاولة</Button>}
+            />
+          ) : null}
+          {hasUsersReadError && hasCachedUsersSnapshot ? (
+            <DataRefreshAlert
+              title="تعذر تحديث الموظفين والصلاحيات"
+              description="نعرض آخر إعدادات مؤكدة للقراءة فقط. تغيير الصلاحيات متوقف لتجنب الكتابة فوق قرار أحدث."
+              onRetry={() => { void usersQuery.refetch(); void permissionsQuery.refetch(); }}
             />
           ) : null}
           {usersQuery.data && usersQuery.data.length === 0 ? (
@@ -314,8 +332,8 @@ export function UserRolesWorkspace() {
                     user={governedUser}
                     currentUserId={user?.id}
                     permissions={permissionsQuery.data.filter((entry) => entry.user_id === governedUser.id)}
-                    pendingPermission={permissionMutation.isPending ? pendingPermission : null}
-                    onTogglePermission={(userId, permission, allowed) => permissionMutation.mutate({ userId, permission, allowed })}
+                    pendingPermission={hasUsersReadError ? '__stale__' : permissionMutation.isPending ? pendingPermission : null}
+                    onTogglePermission={(userId, permission, allowed) => { if (!hasUsersReadError) permissionMutation.mutate({ userId, permission, allowed }); }}
                   />
                 ))}
               </ResponsiveCardGrid>

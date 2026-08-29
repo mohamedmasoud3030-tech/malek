@@ -15,6 +15,7 @@ import {
   WifiOff,
 } from "lucide-react";
 import { type FormEvent, useEffect, useMemo, useState } from "react";
+import { DataRefreshAlert } from "@/components/data-refresh-alert";
 import { PageHeader } from "@/components/layout/page-header";
 import { PageLayout } from "@/components/layout/page-layout";
 import { Badge } from "@/components/ui/badge";
@@ -194,7 +195,6 @@ function KnowledgeBase() {
       ),
     [category, query],
   );
-
   return (
     <section aria-labelledby="help-articles-title" className="space-y-4">
       <div>
@@ -288,7 +288,6 @@ function SystemStatusCard() {
       window.removeEventListener("offline", update);
     };
   }, []);
-
   return (
     <Card>
       <CardHeader>
@@ -327,12 +326,8 @@ function SystemStatusCard() {
 }
 function SupportIntake() {
   const queryClient = useQueryClient();
-  const [receipt, setReceipt] = useState<Awaited<
-    ReturnType<typeof createSupportRequest>
-  > | null>(null);
-  const [validationMessage, setValidationMessage] = useState<string | null>(
-    null,
-  );
+  const [receipt, setReceipt] = useState<Awaited<ReturnType<typeof createSupportRequest>> | null>(null);
+  const [validationMessage, setValidationMessage] = useState<string | null>(null);
   const [form, setForm] = useState({
     category: "HOW_TO" as SupportCategory,
     urgency: "NORMAL" as SupportUrgency,
@@ -375,9 +370,7 @@ function SupportIntake() {
     setReceipt(null);
     mutation.mutate(input);
   }
-  const errorMessage =
-    mutation.error instanceof Error ? mutation.error.message : null;
-
+  const errorMessage = mutation.error instanceof Error ? mutation.error.message : null;
   return (
     <section aria-labelledby="support-intake-title" className="space-y-4">
       <div>
@@ -569,13 +562,23 @@ function SupportIntake() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {requests.isError && requests.data ? (
+            <DataRefreshAlert
+              title="تعذر تحديث طلبات الدعم"
+              description="نعرض آخر قائمة متاحة وقد لا تتضمن أحدث ردود فريق الدعم."
+              onRetry={() => { void requests.refetch(); }}
+            />
+          ) : null}
           {requests.isLoading ? (
             <p role="status" className="text-sm text-muted-foreground">
               جارٍ تحميل الطلبات...
             </p>
-          ) : requests.isError ? (
-            <div role="alert" className="text-sm text-destructive">
-              تعذر تحميل الطلبات. تحقق من الاتصال أو تطبيق تحديث قاعدة البيانات.
+          ) : requests.isError && !requests.data ? (
+            <div role="alert" className="space-y-3 text-sm text-destructive">
+              <p>تعذر تحميل الطلبات. تحقق من الاتصال أو تطبيق تحديث قاعدة البيانات.</p>
+              <Button type="button" variant="secondary" onClick={() => { void requests.refetch(); }}>
+                إعادة المحاولة
+              </Button>
             </div>
           ) : requests.data && requests.data.length > 0 ? (
             <ul className="divide-y">
@@ -624,10 +627,7 @@ function SupportIntake() {
 export function HelpSupportPage() {
   return (
     <PageLayout size="wide" dir="rtl" lang="ar" visualVariant="malek-pro">
-      <PageHeader
-        title="المساعدة والدعم"
-        description="إرشادات قصيرة مرتبطة بالمهام، تشخيص آمن، وطلبات دعم داخلية دون مشاركة البيانات مع طرف خارجي."
-      />
+      <PageHeader title="المساعدة والدعم" description="إرشادات قصيرة مرتبطة بالمهام، تشخيص آمن، وطلبات دعم داخلية دون مشاركة البيانات مع طرف خارجي." />
       <KnowledgeBase />
       <SupportIntake />
       <Card variant="muted">

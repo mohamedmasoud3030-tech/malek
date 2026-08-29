@@ -13,6 +13,8 @@ const fixtureDate = '2026-07-15';
 const fixtureModel: ReportsWorkspaceModel = {
   today: fixtureDate,
   firstError: null,
+  isIncomplete: false,
+  retryFailedSources: async () => undefined,
   filters: {
     costCenterRows: [],
     ownerRows: [],
