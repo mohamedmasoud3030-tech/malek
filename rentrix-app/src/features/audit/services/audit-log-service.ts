@@ -4,9 +4,21 @@ import type { AuditLogRecord, AuditLogResult } from '../types';
 import type { Database } from '@/types/database';
 
 type AuditLogRow = Database['public']['Tables']['audit_log']['Row'];
-type AuditLogInputRow = Omit<AuditLogRow, 'new_value'> & {
-  new_value?: AuditLogRow['new_value'] | null;
-};
+type AuditLogInputRow = Pick<
+  AuditLogRow,
+  | 'id'
+  | 'ts'
+  | 'created_at'
+  | 'updated_at'
+  | 'username'
+  | 'user_id'
+  | 'action'
+  | 'entity'
+  | 'table'
+  | 'entity_id'
+  | 'note'
+  | 'details'
+> & Record<string, unknown>;
 
 const AUDIT_LOG_COLUMNS =
   'id, ts, user_id, username, action, entity, entity_id, note, table, details, created_at, updated_at';
