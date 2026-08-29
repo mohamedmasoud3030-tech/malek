@@ -139,7 +139,9 @@ describe('Owner detail recovery states', () => {
 
     expect(html).not.toContain('تسويات المالك');
     expect(html).not.toContain('الموقف المالي للمالك');
-    expect(html).toContain('/reports');
+    // The dossier header points operators to the Money/Reports workspaces for
+    // detailed finances instead of embedding settlement data here.
+    expect(html).toContain('المالية التفصيلية في مساحة المال والتقارير');
   });
 
   it('hides the settlements section when settlements are not provided', () => {

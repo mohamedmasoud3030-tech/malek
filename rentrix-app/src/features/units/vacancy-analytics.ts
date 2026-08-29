@@ -102,17 +102,23 @@ function calendarDayDiff(later: string, earlier: string): number {
   return Math.max(0, Math.round((toUtcTimestamp(later) - toUtcTimestamp(earlier)) / DAY_MS));
 }
 
+function toUtcDateOnly(date: Date): string {
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 function addDays(dateOnly: string, days: number): string {
   const date = new Date(toUtcTimestamp(dateOnly));
   date.setUTCDate(date.getUTCDate() + days);
-  return date.toISOString().slice(0, 10);
+  return toUtcDateOnly(date);
 }
 
 function getPreviousMonthEnd(asOf: string): string {
   const [year, month] = asOf.split('-').map(Number);
-  const firstOfCurrentMonth = new Date(Date.UTC(year, month - 1, 1));
-  firstOfCurrentMonth.setUTCDate(0);
-  return firstOfCurrentMonth.toISOString().slice(0, 10);
+  // UTC day 0 of the current month is the last day of the previous month.
+  return toUtcDateOnly(new Date(Date.UTC(year, month - 1, 0)));
 }
 
 function normalizeUnitStatus(status: unknown): string {

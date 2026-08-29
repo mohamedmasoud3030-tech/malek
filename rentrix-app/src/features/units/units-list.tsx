@@ -217,7 +217,7 @@ export function UnitsList({
           errorTitle="تعذر تحميل وحدات العقار"
           onRetry={() => unitsQuery.refetch()}
           emptyTitle="لا توجد وحدات"
-          emptyDescription="لا توجد وحدات تابعة لهذا العقار حتى الآن."
+          emptyDescription="لا توجد وحدات تابعة لهذا العقار حتى الآن — ستظهر الوحدات هنا بعد إضافتها."
           emptyAction={canCreateUnit ? <Button onClick={openForCreate}>إضافة وحدة</Button> : undefined}
           onRowClick={(unit) =>
             navigate({

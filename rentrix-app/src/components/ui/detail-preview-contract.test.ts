@@ -55,7 +55,11 @@ describe('unified detail preview contract', () => {
   });
 
   it('keeps owner and maintenance details on the same shared EntityPreviewDialog primitive', () => {
-    expect(ownerWorkspace).toContain('<EntityPreviewDialog');
+    // Owner rows open the owner preview dialog, which renders the shared
+    // EntityPreviewDialog surface (see OwnerPreviewDialog.tsx).
+    expect(ownerWorkspace).toContain('<OwnerPreviewDialog');
+    const ownerPreview = readFileSync(new URL('../../features/owners/components/OwnerPreviewDialog.tsx', import.meta.url), 'utf8');
+    expect(ownerPreview).toContain('<EntityPreviewDialog');
     expect(ownerWorkspace).not.toContain("navigate({ to: '/owners/$ownerId'");
     expect(maintenanceWorkspace).toContain('<MaintenanceDetailsOverlay');
     expect(maintenanceOverlay).toContain('<EntityPreviewDialog');

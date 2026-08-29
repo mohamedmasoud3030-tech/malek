@@ -9,6 +9,7 @@ import {
   type ResponsibleParty,
   type UtilityBill,
 } from '@/features/utilities/use-utilities';
+import { formatMoney, normalizeCurrency } from '@/lib/formatters';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
 import type { CsvRow } from '@/lib/csvExport';
 import { documentService } from '@/services/documents/DocumentService';
@@ -33,14 +34,7 @@ const statusTone = {
   paid: 'success',
 } as const;
 
-function formatMoney(value: number, currency: string) {
-  return new Intl.NumberFormat('ar-OM-u-nu-latn', {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 3,
-    maximumFractionDigits: 3,
-  }).format(Number(value) || 0);
-}
+const money = (value: number | null | undefined, currency: string) => formatMoney({ amount: value, currency: normalizeCurrency(currency), locale: 'ar-OM-u-nu-latn' });
 
 function formatDate(value: string) {
   const parsed = new Date(`${value}T00:00:00`);
@@ -65,7 +59,7 @@ export function ServicesReportSection({
   const billsQuery = useUtilityBills({ propertyId });
   const metersQuery = useUtilityMeters(propertyId);
   const { companySettings: documentSettings, isReady: isDocumentSettingsReady } = useDocumentSettings();
-  const currency = documentSettings.currency || 'OMR';
+  const currency = normalizeCurrency(documentSettings.currency);
 
   const rows = (billsQuery.data ?? []).filter((row) => isWithinScope(row, filters));
   const meterById = new Map((metersQuery.data ?? []).map((meter) => [meter.id, meter]));
@@ -111,9 +105,9 @@ export function ServicesReportSection({
         title: 'ملخص الخدمات والمرافق',
         rows: [
           { label: 'عدد الفواتير', value: rows.length },
-          { label: 'إجمالي المستحق', value: formatMoney(totalBilled, currency) },
-          { label: 'المدفوع', value: formatMoney(totalPaid, currency) },
-          { label: 'المتبقي', value: formatMoney(remaining, currency) },
+          { label: 'إجمالي المستحق', value: money(totalBilled, currency) },
+          { label: 'المدفوع', value: money(totalPaid, currency) },
+          { label: 'المتبقي', value: money(remaining, currency) },
           { label: 'متأخرة حتى تاريخ التقرير', value: overdue.length },
           { label: 'فواتير معها إثبات', value: proofCount },
         ],
@@ -129,14 +123,14 @@ export function ServicesReportSection({
             row.due_date,
             responsiblePartyLabels[row.responsible_party],
             utilityBillStatusLabels[row.status],
-            formatMoney(row.amount, currency),
-            formatMoney(row.paid_amount, currency),
-            formatMoney(Math.max(0, row.amount - row.paid_amount), currency),
+            money(row.amount, currency),
+            money(row.paid_amount, currency),
+            money(Math.max(0, Number(row.amount || 0) - Number(row.paid_amount || 0)), currency),
           ];
         }),
       },
     ],
-    totalSummary: `إجمالي المستحق: ${formatMoney(totalBilled, currency)} | المدفوع: ${formatMoney(totalPaid, currency)} | المتبقي: ${formatMoney(remaining, currency)}`,
+    totalSummary: `إجمالي المستحق: ${money(totalBilled, currency)} | المدفوع: ${money(totalPaid, currency)} | المتبقي: ${money(remaining, currency)}`,
   });
 
   const handlePrint = async () => {
@@ -170,9 +164,9 @@ export function ServicesReportSection({
       <ReportSummaryStrip
         dataReportSummary="services"
         items={[
-          { label: 'إجمالي الخدمات', value: formatMoney(totalBilled, currency), detail: `${rows.length} فاتورة` },
-          { label: 'المدفوع', value: formatMoney(totalPaid, currency), detail: 'من الفواتير المسجلة' },
-          { label: 'المتبقي', value: formatMoney(remaining, currency), detail: `${overdue.length} متأخرة`, tone: overdue.length > 0 ? 'warning' : undefined },
+          { label: 'إجمالي الخدمات', value: money(totalBilled, currency), detail: `${rows.length} فاتورة` },
+          { label: 'المدفوع', value: money(totalPaid, currency), detail: 'من الفواتير المسجلة' },
+          { label: 'المتبقي', value: money(remaining, currency), detail: `${overdue.length} متأخرة`, tone: overdue.length > 0 ? 'warning' : undefined },
           { label: 'إثباتات الدفع', value: `${proofCount}/${rows.length}`, detail: 'مرتبطة بإثبات' },
         ]}
       />
@@ -189,7 +183,7 @@ export function ServicesReportSection({
               className="flex flex-wrap gap-2"
               reportLabel="تقرير الخدمات والمرافق"
               target={{ section: 'analytics', view: 'services', filters }}
-              summaryText={`إجمالي الخدمات ${formatMoney(totalBilled, currency)} · المتبقي ${formatMoney(remaining, currency)}`}
+              summaryText={`إجمالي الخدمات ${money(totalBilled, currency)} · المتبقي ${money(remaining, currency)}`}
               onPrint={handlePrint}
               onDownloadPdf={handlePdf}
               csv={{ filename: buildReportCsvFilename('utilities-services'), rows: csvRows }}
@@ -209,7 +203,7 @@ export function ServicesReportSection({
                     title={`${serviceLabel} · ${row.bill_number || 'فاتورة بدون رقم'}`}
                     subtitle={`${formatDate(row.due_date)} · على ${responsiblePartyLabels[row.responsible_party]}${row.actual_payer ? ` · دفعها ${responsiblePartyLabels[row.actual_payer]}` : ''}${row.attachment_url ? ' · يوجد إثبات' : ''}`}
                     meta={<StatusBadge tone={statusTone[row.status]}>{utilityBillStatusLabels[row.status]}</StatusBadge>}
-                    value={formatMoney(Math.max(0, row.amount - row.paid_amount), currency)}
+                    value={money(Math.max(0, Number(row.amount || 0) - Number(row.paid_amount || 0)), currency)}
                   />
                 );
               })}
@@ -235,7 +229,7 @@ export function ServicesReportSection({
                   key={party}
                   title={responsiblePartyLabels[party as ResponsibleParty]}
                   subtitle={`${count} فاتورة`}
-                  value={formatMoney(amount, currency)}
+                  value={money(amount, currency)}
                 />
               ))}
             </ReportList>

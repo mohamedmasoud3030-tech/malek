@@ -195,7 +195,6 @@ export function InvoiceListSection({
             onRowClick={(invoice) => onSelectInvoice(invoice.id)}
             pagination={{ page, pageSize, total, onPageChange }}
             mobileBadgeKey="status"
-            mobileVisibleSecondaryKey="tenant"
             mobileSummaryKeys={['tenant', 'property_unit', 'billing_period', 'remaining']}
             mobileCardPrimaryAction={(invoice) => ({
               label: isInvoiceCollectible(invoice) && canCollectPayments && onCollectInvoice ? 'تحصيل' : 'عرض الفاتورة',

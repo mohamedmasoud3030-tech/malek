@@ -24,6 +24,10 @@ export type ShortStayExtensionResult = Readonly<{
   idempotent: boolean;
 }>;
 
+function isJsonObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 /**
  * Reconcile date-driven Short Stay checkout state before operational reads.
  *
@@ -32,15 +36,17 @@ export type ShortStayExtensionResult = Readonly<{
  * browser supplies no company, contract, unit, date, status or amount.
  */
 export async function reconcileDueShortStays(): Promise<ShortStayReconciliationResult> {
-  // Generated DB types are refreshed from migrations by db0:gen-types. Until
-  // that canonical generation runs, keep this newly-added RPC behind the same
-  // narrow compatibility cast used for other migration-ahead seams.
-  const { data, error } = await (supabase as any).rpc('reconcile_due_short_stays_atomic');
+  const { data, error } = await supabase.rpc('reconcile_due_short_stays_atomic');
   if (error) throw error;
-  if (!data || typeof data !== 'object' || data.status !== 'reconciled') {
+  if (!isJsonObject(data) || data.status !== 'reconciled') {
     throw new Error('استجابة غير صالحة من مزامنة انتهاء الإقامة القصيرة');
   }
-  return data as ShortStayReconciliationResult;
+  return {
+    status: 'reconciled',
+    expired_contracts: Number(data.expired_contracts ?? 0),
+    released_units: Number(data.released_units ?? 0),
+    as_of: String(data.as_of ?? ''),
+  } satisfies ShortStayReconciliationResult;
 }
 
 /**
@@ -74,15 +80,29 @@ export async function extendShortStayContract(
   }
 
   const requestId = input.requestId ?? crypto.randomUUID();
-  const { data, error } = await (supabase as any).rpc('extend_short_stay_contract_atomic', {
+  const { data, error } = await supabase.rpc('extend_short_stay_contract_atomic', {
     p_contract_id: contractId,
     p_new_end_date: input.newEndDate,
     p_extension_amount: input.extensionAmount,
     p_request_id: requestId,
   });
   if (error) throw error;
-  if (!data || typeof data !== 'object' || data.status !== 'extended' || typeof data.invoice_id !== 'string') {
+  if (
+    !isJsonObject(data)
+    || data.status !== 'extended'
+    || typeof data.invoice_id !== 'string'
+    || typeof data.new_contract_total !== 'number'
+  ) {
     throw new Error('استجابة غير صالحة من تمديد الإقامة القصيرة');
   }
-  return data as ShortStayExtensionResult;
+  return {
+    status: 'extended',
+    contract_id: String(data.contract_id ?? contractId),
+    old_end_date: String(data.old_end_date ?? ''),
+    new_end_date: String(data.new_end_date ?? input.newEndDate),
+    extension_amount: Number(data.extension_amount ?? input.extensionAmount),
+    new_contract_total: data.new_contract_total,
+    invoice_id: data.invoice_id,
+    idempotent: data.idempotent === true,
+  } satisfies ShortStayExtensionResult;
 }

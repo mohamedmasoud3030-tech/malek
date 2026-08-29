@@ -123,7 +123,7 @@ describe('billing readiness service — FOM-007 remediation', () => {
     // The bulk-generate/recovery action lives in the invoice workspace
     // (dialog) so the readiness section stays a compact secondary summary.
     expect(workspace).toContain('BillingReadinessSection');
-    expect(workspace).toContain('توليد فواتير العقود النشطة');
+    expect(workspace).toContain('إنشاء الفواتير الجاهزة');
     expect(workspace).toContain('onConfirm');
   });
 

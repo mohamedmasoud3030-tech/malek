@@ -94,8 +94,6 @@ export interface EntityTableProps<T> {
   renderRowExpansion?: (row: T) => ReactNode;
   expandedRowId?: string | null;
   onExpandedRowChange?: (rowId: string | null) => void;
-  /** High-value field shown below identity on mobile cards. */
-  mobileVisibleSecondaryKey?: string;
   /** Canonical entity label/tone used by the mobile card when no badge overrides it. */
   mobileCardType?: EntityCardType | ((row: T) => EntityCardType);
   /**
@@ -178,12 +176,7 @@ function priorityClass(priority: ColumnPriority, sticky = true) {
 function selectMobileDatum<T>(
   columns: ResolvedColumn<T>[],
   identityColumn: ResolvedColumn<T>,
-  mobileVisibleSecondaryKey?: string,
 ): ResolvedColumn<T> | undefined {
-  if (mobileVisibleSecondaryKey) {
-    const designated = columns.find((column) => column.key === mobileVisibleSecondaryKey);
-    if (designated && designated !== identityColumn && designated.resolvedPriority !== 'actions') return designated;
-  }
   return (
     columns.find((column) => column.resolvedPriority === 'primary' && column !== identityColumn)
     ?? columns.find((column) => (column.resolvedPriority === 'secondary' || column.resolvedPriority === 'detail') && column !== identityColumn)
@@ -464,7 +457,6 @@ export function EntityTable<T>({
   renderRowExpansion,
   expandedRowId,
   onExpandedRowChange,
-  mobileVisibleSecondaryKey,
   mobileCardType,
   mobileBadgeKey,
   mobileSummaryKeys,
@@ -593,7 +585,7 @@ export function EntityTable<T>({
 
   const identityColumn = resolvedColumns.find((column) => column.resolvedPriority === 'identity') ?? resolvedColumns[0];
   if (!identityColumn) return null;
-  const datumColumn = selectMobileDatum(resolvedColumns, identityColumn, mobileVisibleSecondaryKey);
+  const datumColumn = selectMobileDatum(resolvedColumns, identityColumn);
   const actionsColumn = resolvedColumns.find((column) => column.resolvedPriority === 'actions');
   const badgeColumn = mobileBadgeKey
     ? resolvedColumns.find((column) => column.key === mobileBadgeKey)

@@ -48,6 +48,8 @@ describe('malek-pro operational table header contrast', () => {
   it('pins explicit readable text on the header (no page-polish leak)', () => {
     expect(operationalThBlock).not.toBe('');
     expect(operationalThBlock).toContain('background: transparent');
-    expect(operationalThBlock).toContain('color: hsl(var(--foreground)');
+    // Soft-gray header: text is explicitly pinned to the muted foreground
+    // tone instead of inheriting generic page-polish text colors.
+    expect(operationalThBlock).toContain('color: hsl(var(--muted-foreground))');
   });
 });

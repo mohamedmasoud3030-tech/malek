@@ -130,6 +130,18 @@ export type DateFormatOptions = {
   dateStyle?: Intl.DateTimeFormatOptions['dateStyle'];
 };
 
+/**
+ * Date-only ISO string (YYYY-MM-DD) in the LOCAL timezone. Never use
+ * toISOString() for date-only values: it serializes in UTC and shifts the
+ * calendar day backwards for any timezone east of UTC.
+ */
+export function toDateOnlyISO(value: Date = new Date()): string {
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, '0');
+  const day = String(value.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export function formatDate({ value, locale = DEFAULT_LOCALE, timeZone, dateStyle = 'medium' }: DateFormatOptions) {
   if (value === null || value === undefined || value === '') return '—';
   const date = value instanceof Date ? value : new Date(value as string | number);

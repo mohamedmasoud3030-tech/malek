@@ -51,7 +51,7 @@ describe('design tokens — single source of truth', () => {
   it('keeps Malek Pro as a presentation scope without forking theme tokens', () => {
     expect(globals).toContain("@import './malek-pro-visual-wave.css';");
     expect(visualWave).toContain("[data-visual-wave='malek-pro']");
-    expect(visualWave).toContain('Theme values inherit from tokens.css');
+    expect(visualWave).toContain('Tokens come from tokens.css only');
     for (const forked of ['--background:', '--primary:', '--color-success-text:', '--shadow-card:']) {
       expect(visualWave, `visual wave must not fork ${forked}`).not.toContain(forked);
     }

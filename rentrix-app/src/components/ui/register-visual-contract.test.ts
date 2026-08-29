@@ -68,7 +68,8 @@ describe('canonical register visual contract', () => {
     expect(entityCard).toContain('p-2 text-start shadow-none');
     expect(entityCard).toContain('border-border/70');
     expect(entityCard).toContain('text-[13px]');
-    expect(entityCard).toContain('min-h-9');
+    // Compact cards still keep 44px touch targets on their actions.
+    expect(entityCard).toContain('min-h-11');
     expect(entityCard).toContain('[overflow-wrap:anywhere]');
     expect(entityCard).not.toContain('sm:text-[15px]');
     expect(entityTable).toContain('className="grid gap-1.5" data-entity-table-mobile-list');

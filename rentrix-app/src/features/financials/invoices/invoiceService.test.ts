@@ -128,7 +128,7 @@ describe('invoiceService financial reconciliation', () => {
     expect(log).toEqual(expect.arrayContaining([
       { table: 'invoices', method: 'is', args: ['deleted_at', null] },
       { table: 'invoices', method: 'in', args: ['status', ['partial', 'PARTIALLY_PAID']] },
-      { table: 'invoices', method: 'or', args: ['id.ilike."%invoice\\_\\%%",status.ilike."%invoice\\_\\%%"'] },
+      { table: 'invoices', method: 'or', args: ['reference.ilike."%invoice\\_\\%%",status.ilike."%invoice\\_\\%%"'] },
     ]));
     expect(supabaseMock.rpc).not.toHaveBeenCalled();
     expect(log.some((entry) => ['insert', 'update', 'delete', 'upsert'].includes(entry.method))).toBe(false);
