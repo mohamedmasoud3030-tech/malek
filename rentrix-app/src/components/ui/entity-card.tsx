@@ -31,16 +31,10 @@ type EntityCardTone = Readonly<{
 export const entityCardTypeMap: Record<string, EntityCardTone> = {
   tenant: { label: 'مستأجر', bg: 'bg-primary/10', text: 'text-primary', icon: User },
   owner: {
-    label: 'مالك',
-    bg: 'bg-[hsl(var(--color-success-bg))]',
-    text: 'text-[hsl(var(--color-success-text))]',
-    icon: Briefcase,
+    label: 'مالك', bg: 'bg-[hsl(var(--color-success-bg))]', text: 'text-[hsl(var(--color-success-text))]', icon: Briefcase,
   },
   contact: {
-    label: 'جهة اتصال',
-    bg: 'bg-[hsl(var(--color-neutral-bg))]',
-    text: 'text-[hsl(var(--color-neutral-text))]',
-    icon: Contact,
+    label: 'جهة اتصال', bg: 'bg-[hsl(var(--color-neutral-bg))]', text: 'text-[hsl(var(--color-neutral-text))]', icon: Contact,
   },
 };
 
@@ -60,9 +54,9 @@ export interface EntityCardProps {
 }
 
 function getActionClassName(variant: EntityCardAction['variant'] = 'secondary') {
-  if (variant === 'danger') return 'border-destructive/20 bg-destructive/10 text-destructive hover:bg-destructive/15';
-  if (variant === 'default') return 'border-primary/20 bg-primary/10 text-primary hover:bg-primary/15';
-  return 'border-border/70 bg-background text-foreground/80 hover:bg-muted/70 hover:text-foreground';
+  if (variant === 'danger') return 'border-destructive/25 bg-destructive/5 text-destructive hover:bg-destructive/10';
+  if (variant === 'default') return 'border-primary/25 bg-primary/8 text-primary hover:bg-primary/12';
+  return 'border-border/80 bg-background text-foreground/85 hover:bg-muted/55 hover:text-foreground';
 }
 
 function handleCardKeyDown(event: KeyboardEvent<HTMLElement>, onClick?: () => void) {
@@ -73,13 +67,7 @@ function handleCardKeyDown(event: KeyboardEvent<HTMLElement>, onClick?: () => vo
   onClick();
 }
 
-function EntityCardShell({
-  id,
-  clickable,
-  onClick,
-  className,
-  children,
-}: Readonly<{
+function EntityCardShell({ id, clickable, onClick, className, children }: Readonly<{
   id: string;
   clickable: boolean;
   onClick?: () => void;
@@ -95,9 +83,8 @@ function EntityCardShell({
       onClick={onClick}
       onKeyDown={(event) => handleCardKeyDown(event, onClick)}
       className={cn(
-        'relative w-full min-w-0 overflow-hidden rounded-xl border border-border/80 bg-card p-3 text-start shadow-sm transition-[border-color,box-shadow] sm:p-3.5',
-        clickable &&
-          'cursor-pointer hover:border-primary/25 hover:shadow-card-focus visible:focus-visible:ring-2 focus-visible:ring-primary/15',
+        'relative w-full min-w-0 overflow-hidden rounded-xl border border-border/90 bg-card p-3 text-start shadow-none transition-[border-color,background-color] sm:p-3.5',
+        clickable && 'cursor-pointer hover:border-primary/35 hover:bg-muted/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20',
         className,
       )}
     >
@@ -107,18 +94,7 @@ function EntityCardShell({
 }
 
 export function EntityCard({
-  id,
-  name,
-  subtitle,
-  supportingText,
-  type = 'contact',
-  badge,
-  meta,
-  stats,
-  actions,
-  onClick,
-  className,
-  avatarIcon,
+  id, name, subtitle, supportingText, type = 'contact', badge, meta, stats, actions, onClick, className, avatarIcon,
 }: EntityCardProps) {
   const tone = entityCardTypeMap[type] ?? entityCardTypeMap.contact!;
   const AvatarIcon = avatarIcon ?? tone.icon ?? Users;
@@ -127,45 +103,37 @@ export function EntityCard({
     <EntityCardShell id={id} clickable={Boolean(onClick)} onClick={onClick} className={className}>
       <div className="flex min-w-0 items-start justify-between gap-3">
         <div className="flex min-w-0 flex-1 items-start gap-2.5 sm:gap-3">
-          <div className={cn('grid size-9 shrink-0 place-items-center rounded-xl shadow-sm sm:size-10', tone.bg)}>
-            <AvatarIcon className={cn('size-4 sm:size-4.5', tone.text)} aria-hidden="true" />
+          <div className={cn('grid size-9 shrink-0 place-items-center rounded-lg border border-border/50 sm:size-10', tone.bg)}>
+            <AvatarIcon className={cn('size-4 sm:size-[18px]', tone.text)} aria-hidden="true" />
           </div>
           <div className="min-w-0 flex-1 overflow-hidden">
-            <div className="line-clamp-2 break-words text-sm font-bold leading-5 [overflow-wrap:anywhere] sm:text-[15px] sm:leading-6">{name}</div>
+            <div className="line-clamp-2 break-words text-[14px] font-extrabold leading-5 text-foreground [overflow-wrap:anywhere] sm:text-[15px] sm:leading-6">{name}</div>
             {subtitle ? (
-              <div className="mt-0.5 line-clamp-2 break-words text-xs font-medium leading-5 text-muted-foreground [overflow-wrap:anywhere]">
-                {subtitle}
-              </div>
+              <div className="mt-0.5 line-clamp-2 break-words text-[12.5px] font-medium leading-5 text-muted-foreground [overflow-wrap:anywhere]">{subtitle}</div>
             ) : null}
             {supportingText ? (
-              <div className="mt-1 break-words text-xs font-semibold leading-5 text-muted-foreground [overflow-wrap:anywhere]">{supportingText}</div>
+              <div className="mt-1 break-words text-[12.5px] font-semibold leading-5 text-muted-foreground [overflow-wrap:anywhere]">{supportingText}</div>
             ) : null}
           </div>
         </div>
         {badge ?? (
-          <span className={cn('inline-flex min-h-6 shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-bold', tone.bg, tone.text)}>
+          <span className={cn('inline-flex min-h-6 shrink-0 items-center rounded-md border border-current/10 px-2 py-0.5 text-[11.5px] font-extrabold', tone.bg, tone.text)}>
             {tone.label}
           </span>
         )}
       </div>
 
-      {stats ? (
-        <div className="mt-2 border-t border-border/55 pt-2 text-xs text-foreground/80">
-          {stats}
-        </div>
-      ) : null}
+      {stats ? <div className="mt-2.5 border-t border-border/70 pt-2.5 text-[12.5px] text-foreground/85">{stats}</div> : null}
 
       {meta?.length ? (
-        <div className="mt-2 grid gap-1.5 border-t border-border/55 pt-2 text-xs text-muted-foreground">
+        <div className="mt-2.5 grid gap-1.5 border-t border-border/70 pt-2.5 text-[12.5px] leading-5 text-muted-foreground">
           {meta.map((item, index) => {
             const MetaIcon = item.icon;
             return (
-              <div key={index} className={cn('flex items-center gap-1.5', item.className)}>
-                {MetaIcon ? <MetaIcon className="size-3 shrink-0 text-muted-foreground/70" aria-hidden="true" /> : null}
-                {item.label ? <span className="font-bold text-foreground/80">{item.label}</span> : null}
-                <span dir={item.dir} className="min-w-0 flex-1 break-words [overflow-wrap:anywhere] text-muted-foreground/80">
-                  {item.value}
-                </span>
+              <div key={index} className={cn('flex min-w-0 items-center gap-1.5', item.className)}>
+                {MetaIcon ? <MetaIcon className="size-3.5 shrink-0 text-muted-foreground/75" aria-hidden="true" /> : null}
+                {item.label ? <span className="shrink-0 font-extrabold text-foreground/80">{item.label}</span> : null}
+                <span dir={item.dir} className="min-w-0 flex-1 break-words font-medium [overflow-wrap:anywhere]">{item.value}</span>
               </div>
             );
           })}
@@ -174,10 +142,7 @@ export function EntityCard({
 
       {actions?.length ? (
         <div
-          className={cn(
-            'mt-2 grid gap-1.5 border-t border-border/55 pt-2',
-            actions.length === 1 ? 'grid-cols-1' : 'grid-cols-2',
-          )}
+          className={cn('mt-2.5 grid gap-1.5 border-t border-border/70 pt-2.5', actions.length === 1 ? 'grid-cols-1' : 'grid-cols-2')}
           onClick={(event) => event.stopPropagation()}
           onKeyDown={(event) => event.stopPropagation()}
         >
@@ -189,7 +154,7 @@ export function EntityCard({
                 type="button"
                 aria-label={action.ariaLabel}
                 className={cn(
-                  'inline-flex min-h-11 min-w-0 items-center justify-center gap-1.5 rounded-lg border px-2 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/15',
+                  'inline-flex min-h-10 min-w-0 items-center justify-center gap-1.5 rounded-md border px-2.5 text-[12px] font-extrabold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20',
                   getActionClassName(action.variant),
                 )}
                 onClick={action.onClick}

@@ -3,15 +3,25 @@ import type { HTMLAttributes, ReactNode, TdHTMLAttributes, ThHTMLAttributes } fr
 import { cn } from '@/lib/utils';
 import { Skeleton } from './skeleton';
 
-const tableVariants = cva('w-full min-w-max caption-bottom text-sm', {
-  variants: {
-    density: {
-      default: '[&_td]:py-3 [&_th]:h-11',
-      compact: '[&_td]:py-2 [&_th]:h-10',
+/**
+ * Canonical MALEK table sizing.
+ *
+ * Registers keep natural column width (`min-w-max`) so narrow viewports scroll
+ * horizontally instead of crushing cells. The visual contract is intentionally
+ * spreadsheet-like: compact, even rows, crisp separators, and quiet surfaces.
+ */
+const tableVariants = cva(
+  'w-full min-w-max caption-bottom text-[13px] leading-5 tabular-nums [&_td+td]:border-s [&_td+td]:border-border/75 [&_th+th]:border-s [&_th+th]:border-border/85',
+  {
+    variants: {
+      density: {
+        default: '[&_td]:h-11 [&_td]:py-2 [&_th]:h-10',
+        compact: '[&_td]:h-10 [&_td]:py-1.5 [&_th]:h-9',
+      },
     },
+    defaultVariants: { density: 'default' },
   },
-  defaultVariants: { density: 'default' },
-});
+);
 
 type TableProps = HTMLAttributes<HTMLTableElement> & VariantProps<typeof tableVariants>;
 
@@ -20,7 +30,7 @@ export function Table({ className, density, ...props }: TableProps) {
 }
 
 export function TableHeader({ className, ...props }: HTMLAttributes<HTMLTableSectionElement>) {
-  return <thead className={cn('[&_tr]:border-b', className)} {...props} />;
+  return <thead className={cn('[&_tr]:border-b [&_tr]:border-border/90', className)} {...props} />;
 }
 
 export function TableBody({ className, ...props }: HTMLAttributes<HTMLTableSectionElement>) {
@@ -36,8 +46,8 @@ export function TableRow({
     <tr
       data-selected={selected ? 'true' : undefined}
       className={cn(
-        'border-b border-border/60 transition-colors hover:bg-muted/45',
-        selected && 'bg-primary/8 hover:bg-primary/12',
+        'border-b border-border/75 bg-card transition-colors hover:bg-muted/35',
+        selected && 'bg-primary/7 hover:bg-primary/10',
         className,
       )}
       {...props}
@@ -49,7 +59,7 @@ export function TableHead({ className, ...props }: ThHTMLAttributes<HTMLTableCel
   return (
     <th
       className={cn(
-        'h-11 whitespace-nowrap bg-muted/40 px-3 text-start align-middle text-xs font-bold text-muted-foreground sm:px-3.5',
+        'h-10 whitespace-nowrap bg-muted/55 px-3 text-start align-middle text-[12px] font-extrabold leading-4 text-foreground/80 sm:px-3.5',
         className,
       )}
       {...props}
@@ -58,13 +68,19 @@ export function TableHead({ className, ...props }: ThHTMLAttributes<HTMLTableCel
 }
 
 export function TableCell({ className, ...props }: TdHTMLAttributes<HTMLTableCellElement>) {
-  return <td className={cn('px-3 py-2 align-middle sm:px-3.5', className)} {...props} />;
+  return (
+    <td
+      className={cn(
+        'h-11 whitespace-nowrap px-3 py-2 align-middle text-[13px] font-medium text-foreground sm:px-3.5',
+        className,
+      )}
+      {...props}
+    />
+  );
 }
 
 export function TableCaption({ className, ...props }: HTMLAttributes<HTMLElement>) {
-  return (
-    <caption className={cn('mt-3 text-xs text-muted-foreground', className)} {...props} />
-  );
+  return <caption className={cn('mt-3 text-xs text-muted-foreground', className)} {...props} />;
 }
 
 /** Reusable table loading block — screen-reader-safe (role=status, aria-live). */
@@ -80,9 +96,9 @@ export function TableLoading({
   return (
     <tbody role="status" aria-live="polite" aria-label={label}>
       {Array.from({ length: rows }).map((_, rowIndex) => (
-        <tr key={rowIndex} aria-hidden="true">
+        <tr key={rowIndex} aria-hidden="true" className="border-b border-border/75">
           {Array.from({ length: columns }).map((__, colIndex) => (
-            <td key={colIndex} className="px-4 py-3">
+            <td key={colIndex} className="h-11 border-s border-border/75 px-3 py-2 first:border-s-0">
               <Skeleton className="h-4 w-full" />
             </td>
           ))}
