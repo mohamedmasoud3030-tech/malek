@@ -1,6 +1,4 @@
-import { Building2, ClipboardList, ReceiptText, WalletCards } from 'lucide-react';
-import { KpiCard } from '@/components/ui/kpi-card';
-import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
+import { Building2, ClipboardList } from 'lucide-react';
 import { formatMoney, formatShortId } from '@/features/financials/components/financials-formatters';
 import { useExpenseBreakdownReport } from '@/features/financials/reports/useFinancialReports';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
@@ -49,11 +47,7 @@ export function ExpensesSection({ report, canExportReports, isLoading }: Readonl
         {
           title: 'توزيع المصروفات حسب التصنيف',
           columns: ['التصنيف', 'عدد السندات', 'المبلغ الإجمالي'],
-          rows: categoryRows.map((row) => [
-            row.category,
-            row.count,
-            `${formatLatinNumber(row.total, 'ar-OM')} ${currencySymbol}`,
-          ]),
+          rows: categoryRows.map((row) => [row.category, row.count, `${formatLatinNumber(row.total, 'ar-OM')} ${currencySymbol}`]),
           totals: ['الإجمالي العام', '', `${formatLatinNumber(totalExpenses, 'ar-OM')} ${currencySymbol}`],
         },
         {
@@ -71,9 +65,6 @@ export function ExpensesSection({ report, canExportReports, isLoading }: Readonl
   };
 
   const handlePrintExpensesReport = async () => {
-    // Readiness is enforced HERE, not only via the button's disabled prop:
-    // the handler stays reachable (keyboard, stale closure, automation), so
-    // the guard must live inside the async boundary and fail closed.
     await runGuardedDocumentAction({
       isReady: isDocumentSettingsReady,
       operation: () => documentService.printDocument('generic_report', { settings: documentSettings, payload: toReportDocumentPayload(buildExpensesReportData()) }),
@@ -82,9 +73,6 @@ export function ExpensesSection({ report, canExportReports, isLoading }: Readonl
   };
 
   const handleDownloadExpensesReport = async () => {
-    // Readiness is enforced HERE, not only via the button's disabled prop:
-    // the handler stays reachable (keyboard, stale closure, automation), so
-    // the guard must live inside the async boundary and fail closed.
     await runGuardedDocumentAction({
       isReady: isDocumentSettingsReady,
       operation: () => documentService.downloadDocumentPdf('generic_report', { settings: documentSettings, payload: toReportDocumentPayload(buildExpensesReportData()) }),
@@ -120,12 +108,16 @@ export function ExpensesSection({ report, canExportReports, isLoading }: Readonl
 
   return (
     <div className="space-y-4">
-      <ResponsiveCardGrid data-report-summary="expenses">
-        <KpiCard label="إجمالي المصروفات" value={formatMoney(totalExpenses)} icon={WalletCards} sub={`${expensesCount} مصروفات`} />
-        <KpiCard label="متوسط المصروف" value={formatMoney(averageExpense)} icon={ReceiptText} sub="لكل حركة مسجلة" />
-        <KpiCard label="التصنيفات" value={formatLatinNumber(categoryRows.length, 'ar')} icon={ClipboardList} sub={topCategory ? `الأعلى: ${topCategory.category}` : 'لا توجد تصنيفات'} />
-        <KpiCard label="العقارات المتأثرة" value={formatLatinNumber(propertyRows.length, 'ar')} icon={Building2} sub={topProperty ? `الأعلى: ${topProperty.propertyTitle ?? formatShortId(topProperty.propertyId)}` : 'لا توجد عقارات'} />
-      </ResponsiveCardGrid>
+      <div
+        className="grid grid-cols-2 overflow-hidden rounded-xl border border-border/80 bg-card sm:grid-cols-4"
+        data-report-summary="expenses"
+        aria-label="ملخص المصروفات"
+      >
+        <ExpenseMetric label="إجمالي المصروفات" value={formatMoney(totalExpenses)} helper={`${formatLatinNumber(expensesCount, 'ar')} حركة`} />
+        <ExpenseMetric label="متوسط المصروف" value={formatMoney(averageExpense)} helper="لكل حركة مسجلة" />
+        <ExpenseMetric label="التصنيفات" value={formatLatinNumber(categoryRows.length, 'ar')} helper={topCategory ? `الأعلى: ${topCategory.category}` : 'لا توجد تصنيفات'} />
+        <ExpenseMetric label="العقارات المتأثرة" value={formatLatinNumber(propertyRows.length, 'ar')} helper={topProperty ? `الأعلى: ${topProperty.propertyTitle ?? formatShortId(topProperty.propertyId)}` : 'لا توجد عقارات'} />
+      </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
         <ReportProgress
@@ -198,6 +190,16 @@ export function ExpensesSection({ report, canExportReports, isLoading }: Readonl
           )}
         </ReportPanel>
       </ReportColumns>
+    </div>
+  );
+}
+
+function ExpenseMetric({ label, value, helper }: Readonly<{ label: string; value: string; helper: string }>) {
+  return (
+    <div className="min-w-0 border-b border-border/70 px-3 py-3 odd:border-e sm:border-b-0 sm:border-e sm:last:border-e-0">
+      <p className="text-[11px] font-bold text-muted-foreground sm:text-xs">{label}</p>
+      <p className="mt-1 truncate text-base font-black tabular-nums sm:text-lg" dir="ltr">{value}</p>
+      <p className="mt-1 truncate text-[11px] font-semibold text-muted-foreground">{helper}</p>
     </div>
   );
 }
