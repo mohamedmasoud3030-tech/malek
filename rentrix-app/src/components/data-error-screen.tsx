@@ -1,6 +1,6 @@
 import { AlertTriangle } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { StateSurface } from '@/components/ui/state-surfaces';
 import { getEnvDiagnostics, parseSupabaseDiagnostics } from '@/lib/runtime-diagnostics';
 
 type DataErrorScreenProps = {
@@ -23,15 +23,16 @@ export function DataErrorScreen({ title, fallbackMessage, error, action }: DataE
     ?? SAFE_DATA_ERROR_FALLBACK;
 
   return (
-    <Card className="border-destructive/40 bg-destructive/5" role="alert" aria-live="assertive">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-destructive">
-          <AlertTriangle className="size-5" aria-hidden="true" />
-          {title}
-        </CardTitle>
-        <CardDescription>{message}</CardDescription>
-      </CardHeader>
-      {action ? <CardContent>{action}</CardContent> : null}
-    </Card>
+    <StateSurface
+      kind="error"
+      tone="danger"
+      icon={<AlertTriangle className="size-5" aria-hidden="true" />}
+      title={title}
+      description={message}
+      role="alert"
+      ariaLive="assertive"
+      className="border-destructive/40 bg-destructive/5"
+      action={action}
+    />
   );
 }

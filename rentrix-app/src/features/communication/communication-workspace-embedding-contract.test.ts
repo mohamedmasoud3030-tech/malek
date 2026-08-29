@@ -11,20 +11,18 @@ describe('communication embeddable workspace contract', () => {
     expect(source).toContain('return <CommunicationWorkspace />;');
   });
 
-  it('renders embedded content without a nested page layout or page header', () => {
-    expect(source).toContain('if (embedded)');
-
-    const embeddedSection = source.match(
-      /<section data-workspace="communication"[\s\S]*?<\/section>/,
-    )?.[0];
-
-    expect(embeddedSection).toBeDefined();
-    expect(embeddedSection).not.toContain('<PageLayout');
-    expect(embeddedSection).not.toContain('<PageHeader');
+  it('delegates embedded-vs-standalone shell ownership to EmbeddableWorkspace', () => {
+    expect(source).toContain("import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';");
+    expect(source).toContain('<EmbeddableWorkspace');
+    expect(source).toContain('embedded={embedded}');
+    expect(source).toContain('workspaceName="communication"');
+    expect(source).not.toContain('if (embedded)');
+    expect(source).not.toContain('<PageLayout');
+    expect(source).not.toContain('<PageHeader');
   });
 
   it('keeps create access available when embedded', () => {
-    expect(source).toContain('<div className="flex justify-end">{createAction}</div>');
+    expect(source).toContain('primaryAction={createAction}');
     expect(source).toContain('onCreate={openCreate}');
   });
 });

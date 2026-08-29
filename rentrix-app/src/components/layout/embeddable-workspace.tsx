@@ -13,6 +13,8 @@ export type EmbeddableWorkspaceProps = Readonly<{
   className?: string;
   contentClassName?: string;
   count?: number | string;
+  /** Optional stable data hook for embedded hub workspaces. */
+  workspaceName?: string;
   backTo?: string;
   backLabel?: string;
   primaryAction?: ReactNode;
@@ -32,11 +34,12 @@ export function EmbeddableWorkspace({
   className,
   contentClassName,
   count,
+  workspaceName,
   backTo,
   backLabel,
   primaryAction,
   secondaryActions,
-  visualVariant,
+  visualVariant = 'malek-pro',
   children,
 }: EmbeddableWorkspaceProps) {
   if (embedded) {
@@ -45,6 +48,7 @@ export function EmbeddableWorkspace({
     return (
       <div
         data-embedded-workspace
+        data-workspace={workspaceName}
         data-visual-wave={visualVariant}
         className="min-w-0 space-y-4 sm:space-y-5"
       >

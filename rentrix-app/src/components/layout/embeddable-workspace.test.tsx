@@ -23,6 +23,7 @@ describe('EmbeddableWorkspace — standalone mode', () => {
     );
 
     expect(container.querySelectorAll('[data-page-layout]')).toHaveLength(1);
+    expect(container.querySelector('[data-page-layout]')?.getAttribute('data-visual-wave')).toBe('malek-pro');
     expect(container.querySelectorAll('[data-page-header]')).toHaveLength(1);
     expect(screen.getByRole('heading', { name: 'عنوان' })).toBeTruthy();
     expect(screen.getByText('وصف')).toBeTruthy();
@@ -49,13 +50,15 @@ describe('EmbeddableWorkspace — standalone mode', () => {
 describe('EmbeddableWorkspace — embedded mode', () => {
   it('renders no page layout and no page header', () => {
     const { container } = render(
-      <EmbeddableWorkspace embedded title="عنوان" description="وصف">
+      <EmbeddableWorkspace embedded title="عنوان" description="وصف" workspaceName="test-workspace">
         <p>محتوى</p>
       </EmbeddableWorkspace>,
     );
 
     expect(container.querySelector('[data-page-layout]')).toBeNull();
     expect(container.querySelector('[data-page-header]')).toBeNull();
+    expect(container.querySelector('[data-embedded-workspace]')?.getAttribute('data-workspace')).toBe('test-workspace');
+    expect(container.querySelector('[data-embedded-workspace]')?.getAttribute('data-visual-wave')).toBe('malek-pro');
   });
 
   it('does not repeat the title, because the hub header already shows it', () => {

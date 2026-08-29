@@ -456,6 +456,13 @@ for (const viewport of viewportMatrix) {
       const officePulseCards = page.locator('[data-dashboard-office-pulse] [data-kpi-card]');
       await expect(officePulseCards).toHaveCount(4);
 
+      const focusItems = page.locator('[data-dashboard-focus-item]');
+      await expect(focusItems).toHaveCount(4);
+      await expect(focusItems.nth(0)).toHaveAttribute('href', '#dashboard-needs-attention');
+      await expect(focusItems.nth(1)).toHaveAttribute('href', '#dashboard-collections');
+      await expect(focusItems.nth(1)).toContainText('80%');
+      await expect(page.locator('[data-dashboard-section="needs-attention"]')).toHaveAttribute('data-dashboard-priority', 'attention');
+
       await expect(page.locator('[data-dashboard-section="collections"]')).toContainText('التحصيل والمتأخرات');
       await expect(page.locator('[data-dashboard-section="upcoming-contracts"]')).toContainText('العقود القادمة');
       await expect(page.locator('[data-dashboard-section="needs-attention"]')).toContainText('يحتاج انتباهك');

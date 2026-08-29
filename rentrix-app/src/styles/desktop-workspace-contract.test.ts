@@ -16,6 +16,7 @@ describe('desktop workspace contract', () => {
   it('keeps desktop registers and work controls dense, calm, and readable', () => {
     expect(desktopStyles).toContain('@media (min-width: 1024px)');
     expect(desktopStyles).toContain('[data-page-layout] [data-filter-bar]');
+    expect(desktopStyles).not.toContain('[data-list-controls]');
     expect(desktopStyles).toContain('[data-page-layout] [data-entity-table] thead th');
     expect(desktopStyles).toContain('[data-page-layout] [data-entity-table] tbody td');
     expect(desktopStyles).toContain('[data-page-layout] [data-kpi-card]');

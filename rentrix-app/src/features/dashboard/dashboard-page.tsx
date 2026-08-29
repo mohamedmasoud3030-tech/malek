@@ -1,3 +1,4 @@
+import './dashboard-v2.css';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { PageHeader } from '@/components/layout/page-header';
@@ -14,7 +15,7 @@ import { useAllUnits } from '@/features/units/use-units';
 import { buildVacancyAnalytics } from '@/features/units/vacancy-analytics';
 import { listPropertyTitles } from '@/features/properties/property-service';
 import { useFinancialCashflowReport } from '@/features/financials/reports/useFinancialReports';
-import { getDashboardSnapshot } from './dashboard-snapshot';
+import { getDashboardSnapshot, type DashboardSnapshot } from './dashboard-snapshot';
 import { useDailyCollectionSeries } from './daily-collection-series';
 import { OfficePulse } from './components/office-pulse';
 import { FinancialPerformanceSection } from './components/financial-performance-section';
@@ -27,7 +28,7 @@ import { PropertyHealthSection } from './components/property-health-section';
 import { OwnerObligationsSection } from './components/owner-obligations-section';
 import { FinanceExceptionsSection } from './components/finance-exceptions-section';
 import { UtilityObligationsSection } from './components/utility-obligations-section';
-import { buildNeedsAttentionSignal } from './needs-attention-signal';
+import { buildNeedsAttentionSignal, type NeedsAttentionSignal } from './needs-attention-signal';
 import { buildMaintenanceDashboardSummary } from './maintenance-dashboard-summary';
 import { buildPropertyHealthRows } from './property-health-signal';
 import {
@@ -52,22 +53,106 @@ const dashboardGroupAccent: Record<string, string> = {
   'finance-exceptions': 'bg-warning',
 };
 
+type DashboardGroupPriority = 'primary' | 'attention' | 'supporting';
+type DashboardFocusTone = 'info' | 'success' | 'warning' | 'danger';
+
+const dashboardFocusToneClass: Record<DashboardFocusTone, string> = {
+  info: 'border-info/20 bg-info-bg/40 text-info-text',
+  success: 'border-success/20 bg-success-bg/40 text-success-text',
+  warning: 'border-warning/25 bg-warning-bg/45 text-warning-text',
+  danger: 'border-danger/25 bg-danger-bg/45 text-danger-text',
+};
+
+function formatDashboardFocusValue(value: string | number | undefined): string {
+  if (value === undefined || value === null || value === '') return '—';
+  return String(value);
+}
+
+function DashboardFocusStrip({
+  snapshot,
+  needsAttention,
+}: Readonly<{
+  snapshot: DashboardSnapshot | undefined;
+  needsAttention: NeedsAttentionSignal;
+}>) {
+  const items = [
+    {
+      href: '#dashboard-needs-attention',
+      label: 'الأولوية الآن',
+      value: snapshot ? needsAttention.totalCount : undefined,
+      tone: !snapshot ? 'info' : needsAttention.totalCount > 0 ? 'warning' : 'success',
+    },
+    {
+      href: '#dashboard-collections',
+      label: 'التحصيل',
+      value: snapshot ? `${snapshot.collections.collectionRate}%` : undefined,
+      tone: !snapshot ? 'info' : snapshot.collections.collectionRate >= 80 ? 'success' : 'warning',
+    },
+    {
+      href: '#dashboard-occupancy',
+      label: 'الشغور',
+      value: snapshot ? snapshot.occupancy.vacantUnits : undefined,
+      tone: !snapshot ? 'info' : snapshot.occupancy.vacantUnits > 0 ? 'info' : 'success',
+    },
+    {
+      href: '#dashboard-maintenance',
+      label: 'الصيانة العاجلة',
+      value: snapshot ? snapshot.maintenance.urgentOpen : undefined,
+      tone: !snapshot ? 'info' : snapshot.maintenance.urgentOpen > 0 ? 'danger' : 'success',
+    },
+  ] as const;
+
+  return (
+    <nav
+      data-dashboard-focus-strip
+      aria-label="محاور التركيز في لوحة اليوم"
+      className="min-w-0 rounded-2xl border border-border/65 bg-card p-1.5 shadow-sm"
+    >
+      <div className="flex min-w-0 items-center gap-2">
+        <span className="hidden shrink-0 px-2 text-[11px] font-black text-muted-foreground sm:inline">ركّز على</span>
+        <div data-dashboard-focus-scroll className="flex min-w-0 flex-1 gap-1.5 overflow-x-auto overscroll-x-contain">
+          {items.map((item) => (
+            <a
+              key={item.href}
+              href={item.href}
+              data-dashboard-focus-item
+              data-tone={item.tone}
+              className={`flex min-h-11 min-w-[8.75rem] shrink-0 items-center justify-between gap-2 rounded-xl border px-3 text-start outline-none transition-[background-color,border-color,transform] hover:-translate-y-px focus-visible:ring-2 focus-visible:ring-primary/25 ${dashboardFocusToneClass[item.tone]}`}
+            >
+              <span className="text-[11px] font-extrabold leading-4 text-current/75">{item.label}</span>
+              <span className="text-sm font-black tabular-nums">{formatDashboardFocusValue(item.value)}</span>
+            </a>
+          ))}
+        </div>
+      </div>
+    </nav>
+  );
+}
+
 function DashboardGroup({
   eyebrow,
   title,
   ariaLabel,
   sectionId,
+  priority = 'supporting',
   children,
 }: Readonly<{
   eyebrow: string;
   title: string;
   ariaLabel: string;
   sectionId: string;
+  priority?: DashboardGroupPriority;
   children: ReactNode;
 }>) {
   return (
-    <section className="min-w-0 space-y-2.5" aria-label={ariaLabel} data-dashboard-section={sectionId}>
-      <div className="flex min-w-0 items-end gap-2.5 border-b border-border/45 pb-2">
+    <section
+      id={`dashboard-${sectionId}`}
+      className="min-w-0 space-y-2.5"
+      aria-label={ariaLabel}
+      data-dashboard-section={sectionId}
+      data-dashboard-priority={priority}
+    >
+      <div className="flex min-w-0 items-end gap-2.5 border-b border-border/45 pb-2" data-dashboard-group-header>
         <span
           className={`mb-0.5 h-5 w-1 shrink-0 rounded-full ${dashboardGroupAccent[sectionId] ?? 'bg-primary'}`}
           aria-hidden="true"
@@ -233,7 +318,7 @@ export function DashboardPage() {
         description="مركز قيادة اليوم: الأداء، الأولويات، التحصيل، الإشغال، العقود والالتزامات في مسار واحد."
       />
 
-      <div className="space-y-4 lg:space-y-5">
+      <div data-dashboard-page className="space-y-4 lg:space-y-5">
         {hasDashboardError ? (
           <ErrorState
             title={snapshotUnavailable ? 'تعذر تحميل بيانات اليوم' : 'تعذر تحديث بيانات اليوم'}
@@ -255,9 +340,11 @@ export function DashboardPage() {
               </div>
             ) : null}
 
+            <DashboardFocusStrip snapshot={snapshot} needsAttention={needsAttention} />
+
             <div className="grid min-w-0 grid-cols-1 gap-4 lg:gap-5 xl:grid-cols-12 xl:items-start">
               <div className="min-w-0 xl:col-span-12 xl:order-1">
-                <DashboardGroup eyebrow="الآن" title="نبض المكتب" ariaLabel="نبض المكتب" sectionId="office-pulse">
+                <DashboardGroup eyebrow="الآن" title="نبض المكتب" ariaLabel="نبض المكتب" sectionId="office-pulse" priority="primary">
                   <OfficePulse
                     snapshot={snapshot}
                     isLoading={isLoading}
@@ -269,7 +356,7 @@ export function DashboardPage() {
               </div>
 
               <div className="min-w-0 xl:col-span-12 xl:order-3">
-                <DashboardGroup eyebrow="أولويات" title="يحتاج انتباهك" ariaLabel="الحالات التي تحتاج انتباهاً" sectionId="needs-attention">
+                <DashboardGroup eyebrow="أولويات" title="يحتاج انتباهك" ariaLabel="الحالات التي تحتاج انتباهاً" sectionId="needs-attention" priority="attention">
                   <NeedsAttentionSection
                     signal={needsAttention}
                     isLoading={isLoading}
@@ -303,7 +390,7 @@ export function DashboardPage() {
               </div>
 
               <div className="min-w-0 xl:col-span-12 xl:order-2">
-                <DashboardGroup eyebrow="الأداء المالي" title="أداء المكتب" ariaLabel="الأداء المالي" sectionId="financial-performance">
+                <DashboardGroup eyebrow="الأداء المالي" title="أداء المكتب" ariaLabel="الأداء المالي" sectionId="financial-performance" priority="primary">
                   <FinancialPerformanceSection
                     snapshot={snapshot}
                     vacancyAnalytics={vacancyAnalytics}

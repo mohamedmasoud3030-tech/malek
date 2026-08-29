@@ -25,7 +25,6 @@
 }
 
 /* Cards, entity cards, mobile cards, KPI, table wrappers — visible borders, not floating blobs. */
-[data-visual-wave='malek-pro'] [data-list-controls],
 [data-visual-wave='malek-pro'] [data-filter-bar] {
   border: 1px solid hsl(var(--border));
   background: hsl(var(--card));
@@ -117,7 +116,6 @@
 [data-theme='dark'] [data-visual-wave='malek-pro'] [data-mobile-card],
 [data-theme='dark'] [data-visual-wave='malek-pro'] [data-kpi-card],
 [data-theme='dark'] [data-visual-wave='malek-pro'] [data-entity-table-wrapper],
-[data-theme='dark'] [data-list-controls],
 [data-theme='dark'] [data-filter-bar] {
   background: hsl(var(--card));
   border-color: hsl(var(--border));
@@ -148,7 +146,7 @@
   max-width: min(100%, 96rem);
 }
 
-[data-operational-route='true'] [data-visual-wave='malek-pro'] :is([data-list-controls], [data-filter-bar]) {
+[data-operational-route='true'] [data-visual-wave='malek-pro'] [data-filter-bar] {
   position: relative;
   z-index: 2;
   padding: 0.625rem 0.75rem;
@@ -158,7 +156,7 @@
   box-shadow: none;
 }
 
-[data-operational-route='true'] [data-visual-wave='malek-pro'] :is([data-list-controls], [data-filter-bar]) :is(input, select) {
+[data-operational-route='true'] [data-visual-wave='malek-pro'] [data-filter-bar] :is(input, select) {
   min-height: 44px;
   border-radius: 0.625rem;
   background: hsl(var(--background));
@@ -335,7 +333,7 @@
     background: hsl(var(--card));
   }
 
-  [data-operational-route='true'] [data-visual-wave='malek-pro'] :is([data-list-controls], [data-filter-bar]) {
+  [data-operational-route='true'] [data-visual-wave='malek-pro'] [data-filter-bar] {
     padding: 0.75rem;
     border-radius: 0.875rem;
   }

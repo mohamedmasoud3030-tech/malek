@@ -15,6 +15,7 @@ import { EntityTable, type ColumnDef } from "@/components/ui/entity-table";
 import { entityCardTypeMap } from "@/components/ui/entity-card";
 import { Select } from "@/components/ui/select";
 import { ListPage } from "@/components/layout/list-page";
+import { RegisterHeading, RegisterMetricStrip } from "@/components/layout/register-summary";
 import { useDebounce } from "@/hooks/useDebounce";
 import { cn } from "@/lib/utils";
 import { personTypeLabels, personTypeValues } from "./person-schema";
@@ -36,33 +37,6 @@ const peopleColumnOptions = [
 ] as const;
 
 const defaultPeopleColumns = peopleColumnOptions.map((column) => column.key);
-
-function PeopleMetric({
-  label,
-  value,
-  hint,
-  icon: Icon,
-}: Readonly<{
-  label: string;
-  value: number;
-  hint: string;
-  icon: typeof Users;
-}>) {
-  return (
-    <article className="group relative min-w-0 overflow-hidden rounded-xl border border-border/75 bg-card p-3 shadow-card sm:p-3.5">
-      <div className="relative flex min-w-0 items-start justify-between gap-2.5">
-        <div className="min-w-0">
-          <p className="truncate text-xs font-bold text-muted-foreground sm:text-xs">{label}</p>
-          <p className="mt-1.5 text-xl font-black tabular-nums sm:text-2xl">{formatCount(value)}</p>
-          <p className="mt-0.5 line-clamp-2 text-xs font-medium leading-4 text-muted-foreground sm:text-xs">{hint}</p>
-        </div>
-        <span className="grid size-9 shrink-0 place-items-center rounded-lg border border-primary/15 bg-primary/8 text-primary sm:size-10">
-          <Icon className="size-4 sm:size-[1.05rem]" aria-hidden="true" />
-        </span>
-      </div>
-    </article>
-  );
-}
 
 export type PeopleListPageProps = Readonly<{
   embedded?: boolean;
@@ -307,52 +281,23 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
         }
       >
         {!peopleQuery.isLoading && !peopleQuery.isError ? (
-          <section
-            data-people-summary
+          <RegisterMetricStrip
             aria-label="ملخص الأشخاص"
-            className="grid grid-cols-2 gap-3"
-          >
-            <PeopleMetric
-              label="إجمالي السجلات"
-              value={totalCount}
-              hint="كل النتائج المطابقة"
-              icon={Users}
-            />
-            <PeopleMetric
-              label="ملاك في الصفحة"
-              value={ownersOnPage}
-              hint="من السجلات المعروضة"
-              icon={UserRound}
-            />
-            <PeopleMetric
-              label="مستأجرون في الصفحة"
-              value={tenantsOnPage}
-              hint="من السجلات المعروضة"
-              icon={UserCheck}
-            />
-            <PeopleMetric
-              label="بيانات تواصل متاحة"
-              value={completeContactsOnPage}
-              hint="هاتف أو بريد مسجل"
-              icon={IdCard}
-            />
-          </section>
+            className="max-w-full"
+            items={[
+              { id: "total", label: "إجمالي السجلات", value: formatCount(totalCount), hint: "كل النتائج المطابقة", icon: Users },
+              { id: "owners", label: "ملاك في الصفحة", value: formatCount(ownersOnPage), hint: "من السجلات المعروضة", icon: UserRound },
+              { id: "tenants", label: "مستأجرون في الصفحة", value: formatCount(tenantsOnPage), hint: "من السجلات المعروضة", icon: UserCheck },
+              { id: "contacts", label: "بيانات تواصل متاحة", value: formatCount(completeContactsOnPage), hint: "هاتف أو بريد مسجل", icon: IdCard },
+            ]}
+          />
         ) : null}
 
         <section data-people-register className="min-w-0 space-y-2.5">
-          <header className="flex min-h-11 items-center justify-between gap-3 px-1">
-            <div className="flex min-w-0 items-center gap-2.5">
-              <span className="grid size-8 shrink-0 place-items-center rounded-lg border border-primary/10 bg-primary/[0.06] text-primary">
-                <Users className="size-4" aria-hidden="true" />
-              </span>
-              <div className="min-w-0">
-                <h2 className="truncate text-sm font-black">سجل الأشخاص</h2>
-                <p className="truncate text-xs font-medium text-muted-foreground">
-                  {formatCount(rows.length)} سجل في الصفحة الحالية
-                </p>
-              </div>
-            </div>
-          </header>
+          <RegisterHeading
+            title="سجل الأشخاص"
+            meta={`${formatCount(rows.length)} سجل في الصفحة الحالية`}
+          />
 
           <EntityTable
             aria-label="جدول الأشخاص"

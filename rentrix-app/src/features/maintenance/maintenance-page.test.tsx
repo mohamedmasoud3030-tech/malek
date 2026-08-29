@@ -17,6 +17,10 @@ const maintenanceMocks = vi.hoisted(() => ({
 
 vi.mock('@tanstack/react-router', () => ({ useNavigate: () => vi.fn(), useSearch: () => ({}) }));
 
+vi.mock('@/hooks/use-auth', () => ({
+  useAuth: () => ({ canAccess: () => true }),
+}));
+
 vi.mock('@/hooks/use-company', () => ({
   ACTIVE_COMPANY_ERROR: 'تعذر تحديد الشركة النشطة',
   useActiveCompanyId: () => '00000000-0000-4000-8000-000000000001',

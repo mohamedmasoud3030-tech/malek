@@ -1,5 +1,5 @@
 import { Edit, Eye } from "lucide-react";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { ActionMenu } from "@/components/ui/action-menu";
 import { Button } from "@/components/ui/button";
 import { DataTableColumnsMenu } from "@/components/ui/data-table";
@@ -67,6 +67,12 @@ export type MaintenanceListProps = Readonly<{
   allUnits: Unit[];
   providerOptions: ServiceProviderOption[];
   actionsPending: boolean;
+  isLoading?: boolean;
+  error?: unknown;
+  onRetry?: () => void;
+  emptyTitle?: string;
+  emptyDescription?: string;
+  emptyAction?: ReactNode;
   onViewDetails: (row: Maintenance) => void;
   onEdit: (row: Maintenance) => void;
   onStatusAction: (
@@ -83,6 +89,12 @@ export function MaintenanceList(props: MaintenanceListProps) {
     allUnits,
     providerOptions,
     actionsPending,
+    isLoading = false,
+    error,
+    onRetry,
+    emptyTitle = "لا توجد طلبات صيانة",
+    emptyDescription = "لا توجد طلبات تطابق الفلاتر الحالية.",
+    emptyAction,
     onViewDetails,
     onEdit,
     onStatusAction,
@@ -242,6 +254,10 @@ export function MaintenanceList(props: MaintenanceListProps) {
           </div>
         )}
         keyOf={(row) => row.id}
+        isLoading={isLoading}
+        error={error}
+        errorTitle="تعذر تحميل طلبات الصيانة"
+        onRetry={onRetry}
         mobileCardType="maintenance"
         mobileBadgeKey="status"
         mobileSummaryKeys={["attention", "priority", "location", "provider"]}
@@ -272,8 +288,9 @@ export function MaintenanceList(props: MaintenanceListProps) {
             })) : []),
           ];
         }}
-        emptyTitle="لا توجد طلبات صيانة"
-        emptyDescription="لا توجد طلبات تطابق الفلاتر الحالية."
+        emptyTitle={emptyTitle}
+        emptyDescription={emptyDescription}
+        emptyAction={emptyAction}
       />
     </div>
   );
