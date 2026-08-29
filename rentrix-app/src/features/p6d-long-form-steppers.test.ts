@@ -13,7 +13,7 @@ describe('P6d — long form mobile steppers (closeout)', () => {
     expect(source).toContain("{ id: 'review', label: 'التأكيد' }");
     expect(source).not.toContain("{ id: 'details', label: 'التفاصيل والاتفاقية' }");
     expect(source).toContain("['property_id', 'unit_id', 'tenant_id']");
-    expect(source).toContain("['start_date', 'end_date', 'rent_amount', 'payment_cycle', 'billing_day', 'grace_days', 'payment_terms_id']");
+    expect(source).toContain("['start_date', 'end_date', 'rent_amount', 'payment_cycle', 'billing_day', 'grace_days', 'payment_terms_id', 'lease_mode', 'daily_reference_rate']");
     expect(source).toContain('خيارات الفوترة');
     expect(source).toContain('form.register(\'billing_day\')');
     expect(source).toContain('form.register(\'grace_days\')');

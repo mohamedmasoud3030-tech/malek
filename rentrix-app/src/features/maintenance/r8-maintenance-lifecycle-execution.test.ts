@@ -146,16 +146,19 @@ describe('R8 — maintenance lifecycle authority', () => {
   it('enforces the legal transition matrix and allows technical completion only after work begins', async () => {
     const id = await createRequest('طلب مصفوفة الانتقالات');
 
-    // open → closed is illegal (work never happened).
-    await expect(transition(id, 'closed')).rejects.toThrow(/MAINTENANCE_TRANSITION_ILLEGAL/);
+    // open → closed is rejected outright: 'closed' is not a target of the
+    // transition command (closure flows through the close command), so the
+    // server raises UNSUPPORTED rather than ILLEGAL.
+    await expect(transition(id, 'closed')).rejects.toThrow(/MAINTENANCE_TRANSITION_UNSUPPORTED/);
     // completion before work starts is illegal.
     await expect(transition(id, 'resolved')).rejects.toThrow(/MAINTENANCE_TRANSITION_ILLEGAL/);
 
-    // open → in_progress → open → in_progress is legal (work rescheduling).
+    // open → in_progress is legal (work begins), then technical completion
+    // is legal — and resolved is a DISTINCT terminal state: reopening is
+    // rejected, only in_progress → open rescheduling remains possible.
     expect((await transition(id, 'in_progress')).status).toBe('in_progress');
     expect((await transition(id, 'resolved')).status).toBe('resolved');
-    expect((await transition(id, 'open')).status).toBe('open');
-    expect((await transition(id, 'in_progress')).status).toBe('in_progress');
+    await expect(transition(id, 'open')).rejects.toThrow(/MAINTENANCE_LIFECYCLE_TERMINAL/);
   });
 
   it('raw status updates fail closed — transitions are server commands only', async () => {

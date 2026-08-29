@@ -34,6 +34,7 @@ describe('single-pass form validation', () => {
       floor: 'أول',
       status: 'available',
       rent_amount: 90,
+      daily_reference_rate: null,
       notes: null,
     });
 
