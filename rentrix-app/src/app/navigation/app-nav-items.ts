@@ -34,7 +34,7 @@ export const navGroups: readonly NavGroup[] = [
     ['/dashboard', 'today', 'ما يحتاج انتباهك وتنفيذك الآن', LayoutDashboard],
     ['/properties', 'portfolio', 'العقارات والوحدات والملاك', Building2, 'properties.view'],
     ['/contracts', 'leasing', 'العقود والمستأجرون من البداية حتى التجديد أو الإخلاء', FileText, 'contracts.view'],
-    ['/financials', 'money', 'المستحقات والتحصيل والمصروفات وما يحتاج متابعة', PieChart, 'financial.workspace.view'],
+    ['/financials', 'money', 'الفواتير والتحصيل والمصروفات وأموال الملاك والبنوك', PieChart, 'financial.workspace.view'],
     ['/maintenance', 'services', 'الصيانة والمرافق وما يحتاج متابعة', Wrench, 'maintenance.view'],
   ]],
   ['التحليل والإدارة', [
@@ -44,9 +44,9 @@ export const navGroups: readonly NavGroup[] = [
 ];
 
 /**
- * Workspace children preserve context instead of sending the user to another
- * feature module. Specialist registers stay deep-link/contextual instead of
- * competing with the user's daily navigation.
+ * Workspace children are the shortest routine paths, not an inventory of every
+ * specialist register. Extra finance capabilities stay inside the Money shell
+ * or behind contextual deep links so the global navigation remains obvious.
  */
 export const workspaceChildNavItems: Record<string, readonly NavItem[]> = {
   '/properties': [
@@ -57,10 +57,9 @@ export const workspaceChildNavItems: Record<string, readonly NavItem[]> = {
     ['/contracts', 'tenants', 'المستأجرون وعلاقات الإيجار', UserCheck, 'contracts.view', { workspace: 'tenants' }],
   ],
   '/financials': [
-    ['/financials', 'invoices', 'المستحقات والفواتير', FileText, 'financial.workspace.view', { section: 'collections', view: 'invoices' }],
-    ['/financials', 'receipts', 'التحصيل والإيصالات', BadgeDollarSign, 'financial.workspace.view', { section: 'collections', view: 'receipts' }],
-    ['/financials', 'arrears', 'المتأخرات التي تحتاج متابعة', BarChart3, 'arrears.view', { section: 'collections', view: 'arrears' }],
-    ['/financials', 'expenses', 'المصروفات', PieChart, 'expenses.view', { section: 'expenses', view: 'expenses' }],
+    ['/financials', 'invoices', 'ابحث عن الفاتورة وحصّلها مباشرة', FileText, 'financial.workspace.view', { section: 'collections', view: 'invoices' }],
+    ['/financials', 'receipts', 'سجل التحصيلات والإيصالات السابقة', BadgeDollarSign, 'financial.workspace.view', { section: 'collections', view: 'receipts' }],
+    ['/financials', 'expenses', 'إضافة المصروفات ومراجعتها', PieChart, 'expenses.view', { section: 'expenses', view: 'expenses' }],
   ],
   '/maintenance': [
     ['/maintenance', 'maintenance', 'طلبات الصيانة والمتابعة', Wrench, 'maintenance.view', { section: 'maintenance' }],

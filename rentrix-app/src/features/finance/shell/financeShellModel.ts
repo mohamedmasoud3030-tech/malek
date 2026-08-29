@@ -1,9 +1,9 @@
 /**
- * Finance Hub Unified Shell — Navigation, Permissions, Deep-Link Resolution.
+ * Finance workspace navigation, permissions and deep-link resolution.
  *
- * Single source of truth for finance navigation. Daily operator navigation stays
- * focused on overview, collections and expenses; specialist finance work remains
- * permission-guarded and addressable through deep links/contextual actions.
+ * The routine shell is task-first: operators land on invoices and move between
+ * the few independent money jobs they actually perform. Specialist/history
+ * views remain addressable without competing in the daily navigation.
  */
 import {
   BadgeDollarSign,
@@ -46,6 +46,8 @@ export interface FinanceViewDefinition {
   label: string;
   icon: LucideIcon;
   permission: AppPermission | null;
+  /** Hidden views stay deep-linkable but do not become another routine tab. */
+  showInSectionNavigation?: boolean;
 }
 
 export interface FinanceSectionDefinition {
@@ -57,25 +59,26 @@ export interface FinanceSectionDefinition {
 }
 
 export const FINANCE_SECTIONS: readonly FinanceSectionDefinition[] = [
-  { id: 'overview', label: 'وضع المال', icon: LayoutDashboard, defaultViewId: 'overview', showInPrimaryNavigation: true },
-  { id: 'collections', label: 'المستحقات والتحصيل', icon: ReceiptText, defaultViewId: 'invoices', showInPrimaryNavigation: true },
+  { id: 'collections', label: 'الفواتير والتحصيل', icon: ReceiptText, defaultViewId: 'invoices', showInPrimaryNavigation: true },
+  { id: 'fees', label: 'دخل المكتب', icon: BadgeDollarSign, defaultViewId: 'fixed_monthly_accruals', showInPrimaryNavigation: true },
   { id: 'expenses', label: 'المصروفات', icon: WalletCards, defaultViewId: 'expenses', showInPrimaryNavigation: true },
-  { id: 'fees', label: 'الأتعاب والاستحقاقات', icon: CalendarDays, defaultViewId: 'fixed_monthly_accruals', showInPrimaryNavigation: false },
-  { id: 'funds', label: 'التأمينات والملاك', icon: FileCheck, defaultViewId: 'deposits', showInPrimaryNavigation: false },
-  { id: 'banking', label: 'البنوك والمطابقة', icon: Landmark, defaultViewId: 'bank_reconciliation', showInPrimaryNavigation: false },
+  { id: 'funds', label: 'الأمانات والملاك', icon: FileCheck, defaultViewId: 'deposits', showInPrimaryNavigation: true },
+  { id: 'banking', label: 'البنوك', icon: Landmark, defaultViewId: 'bank_reconciliation', showInPrimaryNavigation: true },
+  // Compatibility only. The old cockpit is no longer a routine destination.
+  { id: 'overview', label: 'وضع المال', icon: LayoutDashboard, defaultViewId: 'overview', showInPrimaryNavigation: false },
 ];
 
 export const FINANCE_VIEWS: readonly FinanceViewDefinition[] = [
-  { id: 'overview', sectionId: 'overview', label: 'وضع المال', icon: LayoutDashboard, permission: null },
-  { id: 'invoices', sectionId: 'collections', label: 'المستحقات والفواتير', icon: FileSpreadsheet, permission: null },
-  { id: 'receipts', sectionId: 'collections', label: 'التحصيل والإيصالات', icon: ReceiptText, permission: null },
-  { id: 'arrears', sectionId: 'collections', label: 'المتأخرات', icon: ClipboardList, permission: 'arrears.view' },
+  { id: 'invoices', sectionId: 'collections', label: 'الفواتير', icon: FileSpreadsheet, permission: null },
+  { id: 'receipts', sectionId: 'collections', label: 'سجل التحصيلات', icon: ReceiptText, permission: null },
+  { id: 'arrears', sectionId: 'collections', label: 'المتأخرات', icon: ClipboardList, permission: 'arrears.view', showInSectionNavigation: false },
+  { id: 'fixed_monthly_accruals', sectionId: 'fees', label: 'أتعاب الإدارة', icon: CalendarDays, permission: 'financial.fixed_monthly_accruals.view' },
+  { id: 'commissions', sectionId: 'fees', label: 'العمولات', icon: BadgeDollarSign, permission: 'commissions.view' },
   { id: 'expenses', sectionId: 'expenses', label: 'المصروفات', icon: WalletCards, permission: 'expenses.view' },
-  { id: 'commissions', sectionId: 'expenses', label: 'العمولات', icon: BadgeDollarSign, permission: 'commissions.view' },
-  { id: 'fixed_monthly_accruals', sectionId: 'fees', label: 'استحقاق أتعاب الإدارة الشهرية', icon: CalendarDays, permission: 'financial.fixed_monthly_accruals.view' },
   { id: 'deposits', sectionId: 'funds', label: 'تأمينات المستأجرين', icon: FileCheck, permission: 'financial.deposits.view' },
   { id: 'owner_settlements', sectionId: 'funds', label: 'مستحقات وتسويات الملاك', icon: HandCoins, permission: 'financial.owner_settlements.view' },
-  { id: 'bank_reconciliation', sectionId: 'banking', label: 'مطابقة كشف البنك', icon: Landmark, permission: 'financial.bank_reconciliation.view' },
+  { id: 'bank_reconciliation', sectionId: 'banking', label: 'المطابقة البنكية', icon: Landmark, permission: 'financial.bank_reconciliation.view' },
+  { id: 'overview', sectionId: 'overview', label: 'وضع المال', icon: LayoutDashboard, permission: null, showInSectionNavigation: false },
 ];
 
 export function isViewPermitted(
@@ -92,10 +95,16 @@ export function getPermittedViews(
   return FINANCE_VIEWS.filter((view) => isViewPermitted(authorization, view));
 }
 
-/**
- * Sections rendered by the routine Finance shell navigation. Specialist sections
- * remain reachable when an explicitly requested permitted view resolves to them.
- */
+export function getRoutineFinanceViews(
+  authorization: AuthorizationContext | null | undefined,
+  sectionId: FinanceSectionId | null,
+): FinanceViewDefinition[] {
+  if (!sectionId) return [];
+  return getPermittedViews(authorization).filter(
+    (view) => view.sectionId === sectionId && view.showInSectionNavigation !== false,
+  );
+}
+
 export function getPermittedSections(
   authorization: AuthorizationContext | null | undefined,
 ): FinanceSectionDefinition[] {
@@ -114,7 +123,7 @@ export interface FinancialsSearch {
 export type ResolvedFinanceLocation = Readonly<{
   resolvedSectionId: FinanceSectionId;
   resolvedViewId: FinanceViewId;
-  /** @deprecated Commissions is now a first-class Money view. Always false. */
+  /** @deprecated Kept for old callers. Commissions now resolve into Income. */
   isLegacyCommissionsLink: boolean;
 }>;
 
@@ -124,28 +133,29 @@ export function resolveFinanceLocation(
   rawView: string,
   authorization: AuthorizationContext | null | undefined,
 ): ResolvedFinanceLocation {
-  let sId: FinanceSectionId = 'overview';
-  let vId: FinanceViewId = 'overview';
+  let sId: FinanceSectionId = 'collections';
+  let vId: FinanceViewId = 'invoices';
 
   const sec = rawSection.toLowerCase().trim();
   const vi = rawView.toLowerCase().trim();
 
-  if (sec === 'overview' || !sec) {
-    sId = 'overview';
-    vId = 'overview';
+  // Old /financials and ?section=overview links now land on the primary job.
+  if (!sec || sec === 'overview') {
+    sId = 'collections';
+    vId = 'invoices';
   } else if (['collections', 'invoices', 'receipts', 'arrears'].includes(sec)) {
     sId = 'collections';
     const defaultView = sec === 'collections' ? 'invoices' : sec;
     vId = (vi || defaultView) as FinanceViewId;
   } else if (sec === 'expenses') {
     sId = 'expenses';
-    vId = vi === 'commissions' ? 'commissions' : 'expenses';
+    vId = 'expenses';
   } else if (sec === 'commissions' || vi === 'commissions') {
-    sId = 'expenses';
+    sId = 'fees';
     vId = 'commissions';
   } else if (sec === 'fees' || sec === 'fixed_monthly_accruals' || vi === 'fixed_monthly_accruals') {
     sId = 'fees';
-    vId = 'fixed_monthly_accruals';
+    vId = vi === 'commissions' ? 'commissions' : 'fixed_monthly_accruals';
   } else if (['funds', 'deposits', 'owner_settlements'].includes(sec)) {
     sId = 'funds';
     const defaultView = sec === 'funds' ? 'deposits' : sec;
@@ -156,15 +166,16 @@ export function resolveFinanceLocation(
   }
 
   const viewMeta = FINANCE_VIEWS.find((view) => view.id === vId);
-  if (viewMeta && viewMeta.sectionId !== sId) {
-    const permittedSectionViews = FINANCE_VIEWS.filter(
-      (view) => view.sectionId === sId && isViewPermitted(authorization, view),
-    );
+  const permitted = viewMeta ? isViewPermitted(authorization, viewMeta) : false;
+  if (!viewMeta || viewMeta.sectionId !== sId || !permitted) {
+    const permittedSectionViews = getRoutineFinanceViews(authorization, sId);
     if (permittedSectionViews[0]) {
       vId = permittedSectionViews[0].id;
     } else {
-      sId = 'overview';
-      vId = 'overview';
+      const firstSection = getPermittedSections(authorization)[0];
+      const firstView = firstSection ? getRoutineFinanceViews(authorization, firstSection.id)[0] : undefined;
+      sId = firstSection?.id ?? 'collections';
+      vId = firstView?.id ?? 'invoices';
     }
   }
 

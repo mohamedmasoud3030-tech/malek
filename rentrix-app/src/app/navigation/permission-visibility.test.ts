@@ -76,7 +76,7 @@ describe('permission visibility — task-centric IA must not widen access', () =
   it('pins progressive-disclosure workspace membership', () => {
     expect(workspaceChildNavItems['/properties'].length).toBe(2);
     expect(workspaceChildNavItems['/contracts'].length).toBe(1);
-    expect(workspaceChildNavItems['/financials'].length).toBe(4);
+    expect(workspaceChildNavItems['/financials'].length).toBe(3);
     expect(workspaceChildNavItems['/maintenance'].length).toBe(2);
     expect(workspaceChildNavItems['/reports'].length).toBe(0);
     expect(workspaceChildNavItems['/settings'].length).toBe(2);
