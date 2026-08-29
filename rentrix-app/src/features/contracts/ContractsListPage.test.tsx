@@ -164,7 +164,7 @@ describe('ContractsListPage load states', () => {
     expect(html).toContain('data-page-header');
     expect(html.match(/<h1/g)).toHaveLength(1);
     expect(html).toContain('عدد السجلات 1');
-    expect(html).toContain('data-list-controls');
+    expect(html).toContain('data-filter-bar');
     expect(html).toContain('data-contract-summary');
     expect(html).toContain('data-contract-register');
     expect(html).toContain('<h2');

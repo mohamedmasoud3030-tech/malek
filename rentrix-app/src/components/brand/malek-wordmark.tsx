@@ -13,8 +13,8 @@ const sizeClasses = {
     gap: 'gap-2',
   },
   sidebar: {
-    mark: 'size-10',
-    wordmark: 'text-[18px] tracking-[0.16em]',
+    mark: 'size-9',
+    wordmark: 'text-[17px] tracking-[0.16em]',
     gap: 'gap-2.5',
   },
   sm: {
@@ -40,7 +40,11 @@ export function MalekBrandWordmark({ className, size = 'header' }: MalekBrandWor
   const sizing = sizeClasses[size];
 
   return (
-    <span data-malek-brand-wordmark data-variant={size} className={cn('inline-flex min-w-0', className)}>
+    <span
+      data-malek-brand-wordmark
+      data-variant={size}
+      className={cn('inline-flex min-w-0', size === 'sidebar' && 'w-full justify-center', className)}
+    >
       <MalikBrand
         layout="horizontal"
         inverse={size === 'sidebar'}

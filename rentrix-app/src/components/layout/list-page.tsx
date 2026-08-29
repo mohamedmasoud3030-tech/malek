@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
-import { SearchInput } from '@/components/ui/search-input';
+import { FilterBar } from '@/components/ui/filter-bar';
 import { EmbeddableWorkspace } from './embeddable-workspace';
-import { ListControlSurface } from './list-controls';
 
 interface ListPageProps {
   title: string;
@@ -35,8 +34,10 @@ interface ListPageProps {
 
 /**
  * Canonical MALEK list-page scaffold.
- * Search owns the first compact line on mobile; filters and table utilities
- * share the second line so register controls never become a tall card stack.
+ *
+ * Search and filters are deliberately delegated to FilterBar so list pages do
+ * not grow a second toolbar/search system. Pages provide values and controls;
+ * FilterBar owns responsive composition, spacing and mobile behavior.
  */
 export function ListPage({
   title,
@@ -73,41 +74,14 @@ export function ListPage({
       visualVariant={visualVariant}
     >
       {search || filters || toolbarActions ? (
-        <ListControlSurface>
-          <div
-            data-list-toolbar
-            className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-1.5 lg:flex lg:items-center lg:gap-1.5"
-          >
-            {search ? (
-              <div data-list-search className="col-span-2 min-w-0 flex-1 lg:max-w-xl">
-                <SearchInput
-                  value={search.value}
-                  onChange={search.onChange}
-                  placeholder={search.placeholder}
-                  className="w-full"
-                />
-              </div>
-            ) : null}
-
-            {filters ? (
-              <div
-                data-list-filters
-                className="min-w-0 flex-1 overflow-hidden lg:flex lg:items-center"
-              >
-                {filters}
-              </div>
-            ) : null}
-
-            {toolbarActions ? (
-              <div
-                data-list-toolbar-actions
-                className={`flex min-w-0 shrink-0 items-center justify-end gap-1 overflow-x-auto no-scrollbar ${filters ? '' : 'col-span-2'}`}
-              >
-                {toolbarActions}
-              </div>
-            ) : null}
-          </div>
-        </ListControlSurface>
+        <FilterBar
+          searchValue={search?.value}
+          onSearchChange={search?.onChange}
+          searchPlaceholder={search?.placeholder}
+          searchAriaLabel={`بحث في ${title}`}
+          filters={filters}
+          actions={toolbarActions}
+        />
       ) : null}
 
       <div data-list-results className="space-y-2.5 sm:space-y-3">

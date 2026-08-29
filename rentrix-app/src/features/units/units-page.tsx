@@ -288,6 +288,7 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
               إضافة وحدة
             </Button>
           ) : undefined}
+          mobileCardType="unit"
           mobileBadgeKey="status"
           mobileSummaryKeys={["rent", "property"]}
           mobileCardActions={(unit) => [
