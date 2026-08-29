@@ -17,6 +17,7 @@ import {
   ReportPanel,
   ReportProgress,
   ReportState,
+  ReportSummaryStrip,
 } from './report-section-primitives';
 
 /** Operating cash comparison series — labels only, values come from the report. */
@@ -141,11 +142,16 @@ export function OverviewSection({
               xKey="month"
               ariaLabel="مقارنة المحصّل والمصروفات الشهرية"
             />
-            <div className="mt-3 grid grid-cols-2 overflow-hidden rounded-lg border border-border/70 text-center sm:grid-cols-4" data-report-overview-metrics>
-              <MiniSummary label="الفواتير" value={formatMoney(collectionSummary?.invoiced ?? report.invoiced)} />
-              <MiniSummary label="المحصّل" value={formatMoney(collectionSummary?.paid ?? report.paid)} />
-              <MiniSummary label="المصروفات" value={formatMoney(collectionSummary?.expensesTotal ?? report.expenses)} />
-              <MiniSummary label="فرق التحصيل والمصروفات" value={formatMoney(report.netCash)} />
+            <div className="mt-3 px-3 sm:px-5">
+              <ReportSummaryStrip
+                dataReportSummary="overview"
+                items={[
+                  { label: 'الفواتير', value: formatMoney(collectionSummary?.invoiced ?? report.invoiced) },
+                  { label: 'المحصّل', value: formatMoney(collectionSummary?.paid ?? report.paid) },
+                  { label: 'المصروفات', value: formatMoney(collectionSummary?.expensesTotal ?? report.expenses) },
+                  { label: 'فرق التحصيل والمصروفات', value: formatMoney(report.netCash) },
+                ]}
+              />
             </div>
           </div>
         )}
@@ -215,11 +221,3 @@ export function OverviewSection({
   );
 }
 
-function MiniSummary({ label, value }: Readonly<{ label: string; value: string }>) {
-  return (
-    <div className="min-w-0 px-3 py-2.5 odd:border-e odd:border-border/70 sm:border-e sm:border-border/70 sm:last:border-e-0">
-      <p className="text-[11px] font-semibold text-muted-foreground sm:text-xs">{label}</p>
-      <p className="mt-1 truncate text-sm font-extrabold tabular-nums" dir="ltr">{value}</p>
-    </div>
-  );
-}

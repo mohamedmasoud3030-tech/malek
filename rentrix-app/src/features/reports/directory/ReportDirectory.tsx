@@ -5,10 +5,10 @@ import { FilterTabs } from '@/components/ui/filter-tabs';
 import { ReportState } from '@/components/ui/report-section-primitives';
 import { cn } from '@/lib/utils';
 import {
-  REPORT_DIRECTORY_ENTRY_COUNT,
   filterReportGroups,
   reportGroups,
   type ReportGroupId,
+  type ReportShortcut,
 } from './report-directory-groups';
 import type { ReportSectionId } from '../reports-page.sections';
 import type { ReportViewId } from '../report-view-registry';
@@ -29,9 +29,9 @@ type DirectoryTab = 'all' | 'office' | 'collections' | 'leases' | 'maintenance' 
 const directoryTabs: readonly { id: DirectoryTab; label: string; groups?: readonly ReportGroupId[] }[] = [
   { id: 'all', label: 'الكل' },
   { id: 'office', label: 'أداء المكتب', groups: ['office'] },
-  { id: 'collections', label: 'التحصيل', groups: ['collections'] },
+  { id: 'collections', label: 'التحصيل والمتأخرات', groups: ['collections'] },
   { id: 'leases', label: 'العقود والإشغال', groups: ['leases'] },
-  { id: 'maintenance', label: 'الصيانة والمصروفات', groups: ['maintenance'] },
+  { id: 'maintenance', label: 'المصروفات والصيانة', groups: ['maintenance'] },
   { id: 'owners', label: 'الملاك والمستأجرون', groups: ['owners'] },
   { id: 'properties', label: 'العقارات والوحدات', groups: ['properties'] },
 ];
@@ -41,9 +41,44 @@ const directoryFilterOptions: { value: DirectoryTab; label: string }[] = directo
   label: item.label,
 }));
 
+/**
+ * Curated set of the reports an office reaches for most often. These remain
+ * real catalogue destinations; pinning only shortens navigation.
+ */
+const pinnedReports: readonly { section: ReportSectionId; view: ReportViewId; label: string }[] = [
+  { section: 'analytics', view: 'overview', label: 'أداء المكتب' },
+  { section: 'analytics', view: 'collections', label: 'التحصيل' },
+  { section: 'analytics', view: 'overdue', label: 'المتأخرات' },
+  { section: 'analytics', view: 'occupancy', label: 'الإشغال والشغور' },
+  { section: 'analytics', view: 'expenses', label: 'المصروفات' },
+];
+
+function shortcutIsActive(
+  shortcut: Pick<ReportShortcut, 'section' | 'view'>,
+  activeSection: ReportSectionId,
+  activeView: ReportViewId,
+  scopeOwner: boolean,
+) {
+  const isOwnerStatement = shortcut.section === 'statements' && shortcut.view === '' && scopeOwner;
+  const isRegular = shortcut.section === activeSection && shortcut.view === activeView;
+  return isOwnerStatement || isRegular;
+}
+
+function isGroupActive(
+  group: { section: ReportSectionId; matches: readonly ReportViewId[] },
+  activeSection: ReportSectionId,
+  activeView: ReportViewId,
+  scopeOwner: boolean,
+) {
+  const isOwnerStatement = group.section === 'statements' && scopeOwner;
+  const isRegular = group.section === activeSection && group.matches.includes(activeView);
+  return isOwnerStatement || isRegular;
+}
+
 export function ReportDirectory({ activeSection, activeView, scope, onOpen }: ReportDirectoryProps) {
   const [query, setQuery] = useState('');
   const [tab, setTab] = useState<DirectoryTab>('all');
+  const scopeOwner = Boolean(scope?.ownerId);
 
   const visibleGroups = useMemo(() => {
     const searched = filterReportGroups(reportGroups, query);
@@ -52,14 +87,26 @@ export function ReportDirectory({ activeSection, activeView, scope, onOpen }: Re
     return searched.filter((group) => tabMeta.groups?.includes(group.id));
   }, [query, tab]);
 
+  const pinnedVisible = useMemo(() => {
+    const searched = filterReportGroups(reportGroups, query);
+    const visibleIds = new Set(searched.map((group) => group.id));
+    return pinnedReports.filter((pinned) => {
+      const group = reportGroups.find((item) => item.shortcuts.some((shortcut) => shortcut.section === pinned.section && shortcut.view === pinned.view));
+      return group ? visibleIds.has(group.id) : false;
+    });
+  }, [query]);
+
   return (
-    <section className="space-y-3" data-report-directory aria-labelledby="report-directory-title">
+    <section className="space-y-2.5" data-report-directory aria-labelledby="report-directory-title">
+      <h2 className="sr-only" id="report-directory-title">اختر التقرير حسب ما تريد معرفته</h2>
+
       <div data-report-global-search>
         <FilterBar
           searchValue={query}
           onSearchChange={setQuery}
           searchPlaceholder="ابحث في التقارير…"
           searchAriaLabel="بحث في مركز التقارير"
+          className="shadow-none lg:grid-cols-1"
           filters={(
             <FilterTabs<DirectoryTab>
               options={directoryFilterOptions}
@@ -69,78 +116,87 @@ export function ReportDirectory({ activeSection, activeView, scope, onOpen }: Re
               tone="primary"
             />
           )}
-          actions={(
-            <p className="whitespace-nowrap px-2 text-[11px] font-bold text-muted-foreground sm:text-xs">
-              {REPORT_DIRECTORY_ENTRY_COUNT} تقريرًا وكشفًا
-            </p>
-          )}
         />
       </div>
 
-      <div className="space-y-3">
-        <div className="flex items-end justify-between gap-3">
-          <div>
-            <p className="text-[11px] font-black text-primary">مركز التقارير</p>
-            <h2 id="report-directory-title" className="mt-0.5 text-base font-black sm:text-lg">اختر التقرير حسب ما تريد معرفته</h2>
-          </div>
-        </div>
-
-        {visibleGroups.length === 0 ? (
-          <ReportState title="لا يوجد تقرير مطابق" message="جرّب كلمة بحث أخرى أو اعرض مجالًا مختلفًا." />
-        ) : (
-          <div className="divide-y divide-border/70 overflow-hidden rounded-xl border border-border/80 bg-card">
-            {visibleGroups.map((group) => {
-              const Icon = group.icon;
-              const isOwnerStatement = group.id === 'owners' && activeSection === 'statements' && Boolean(scope?.ownerId);
-              const isRegularActive = group.section === activeSection && group.matches.includes(activeView);
-              const isActive = isOwnerStatement || isRegularActive;
-
+      {pinnedVisible.length > 0 && !query ? (
+        <div data-report-pinned>
+          <p className="px-1 text-[11px] font-black text-muted-foreground">الأكثر استخدامًا</p>
+          <div className="mt-1 flex flex-wrap gap-1.5">
+            {pinnedVisible.map((pinned) => {
+              const active = shortcutIsActive(pinned, activeSection, activeView, scopeOwner);
               return (
-                <section
-                  key={group.id}
-                  className={cn('p-3 sm:p-4', isActive && 'bg-primary/[0.025]')}
-                  data-report-group={group.id}
-                  data-active={isActive ? 'true' : undefined}
+                <button
+                  key={`${pinned.section}:${pinned.view}`}
+                  type="button"
+                  onClick={() => onOpen(pinned.section, pinned.view)}
+                  aria-current={active ? 'page' : undefined}
+                  className={cn(
+                    'inline-flex min-h-9 items-center gap-1 rounded-lg border px-2.5 text-xs font-black transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
+                    active
+                      ? 'border-primary/35 bg-primary/10 text-primary'
+                      : 'border-border/75 bg-background text-foreground hover:border-primary/30 hover:bg-primary/[0.035]',
+                  )}
                 >
-                  <div className="flex items-start gap-3">
-                    <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
-                      <Icon className="size-4" aria-hidden="true" />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <h3 className="text-sm font-black sm:text-base">{group.title}</h3>
-                      <p className="mt-0.5 hidden text-xs font-semibold leading-5 text-muted-foreground sm:block">{group.description}</p>
-
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        {group.shortcuts.map((shortcut) => {
-                          const shortcutActive = shortcut.section === activeSection && shortcut.view === activeView;
-                          return (
-                            <button
-                              key={`${shortcut.section}:${shortcut.view}:${shortcut.label}`}
-                              type="button"
-                              onClick={() => onOpen(shortcut.section, shortcut.view)}
-                              aria-current={shortcutActive ? 'page' : undefined}
-                              title={shortcut.description}
-                              className={cn(
-                                'inline-flex min-h-11 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-black transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
-                                shortcutActive
-                                  ? 'border-primary/35 bg-primary/10 text-primary'
-                                  : 'border-border/75 bg-background text-foreground hover:border-primary/30 hover:bg-primary/[0.035]',
-                              )}
-                            >
-                              <span>{shortcut.label}</span>
-                              <ArrowLeft className="size-3.5 shrink-0" aria-hidden="true" />
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                </section>
+                  <span>{pinned.label}</span>
+                  <ArrowLeft className="size-3.5 shrink-0" aria-hidden="true" />
+                </button>
               );
             })}
           </div>
-        )}
-      </div>
+        </div>
+      ) : null}
+
+      {visibleGroups.length === 0 ? (
+        <ReportState title="لا يوجد تقرير مطابق" message="جرّب كلمة بحث أخرى أو اعرض مجالًا مختلفًا." />
+      ) : (
+        <div className="divide-y divide-border/50 rounded-xl border border-border/70 bg-card" data-report-directory-groups>
+          {visibleGroups.map((group) => {
+            const Icon = group.icon;
+            const groupActive = isGroupActive(group, activeSection, activeView, scopeOwner);
+
+            return (
+              <section
+                key={group.id}
+                className={cn('px-1 py-1.5', groupActive && 'bg-primary/[0.025]')}
+                data-report-group={group.id}
+                data-active={groupActive ? 'true' : undefined}
+              >
+                <div className="flex items-center gap-2.5 px-2 py-1.5">
+                  <span className={cn('grid size-7 shrink-0 place-items-center rounded-lg', groupActive ? 'bg-primary/15 text-primary' : 'bg-primary/10 text-primary')}>
+                    <Icon className="size-3.5" aria-hidden="true" />
+                  </span>
+                  <h3 className="min-w-0 flex-1 truncate text-[13px] font-black leading-5">{group.title}</h3>
+                </div>
+
+                <div className="mt-0.5 flex flex-col">
+                  {group.shortcuts.map((shortcut) => {
+                    const shortcutActive = shortcutIsActive(shortcut, activeSection, activeView, scopeOwner);
+                    return (
+                      <button
+                        key={`${shortcut.section}:${shortcut.view}:${shortcut.label}`}
+                        type="button"
+                        onClick={() => onOpen(shortcut.section, shortcut.view)}
+                        aria-current={shortcutActive ? 'page' : undefined}
+                        title={shortcut.description}
+                        className={cn(
+                          'group flex min-h-10 items-center justify-between gap-2 rounded-lg px-3 py-1.5 text-start text-[13px] font-semibold leading-5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
+                          shortcutActive
+                            ? 'bg-primary/[0.06] text-primary'
+                            : 'text-foreground hover:bg-muted/60',
+                        )}
+                      >
+                        <span className="min-w-0 flex-1 truncate">{shortcut.label}</span>
+                        <ArrowLeft className="size-3.5 shrink-0 text-muted-foreground/60 rtl:rotate-180" aria-hidden="true" />
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+            );
+          })}
+        </div>
+      )}
     </section>
   );
 }

@@ -8,7 +8,7 @@ import { documentService } from '@/services/documents/DocumentService';
 import { runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
 import { toReportDocumentPayload, type ReportDocumentData } from '@/services/documents/documentPayloadAdapters';
 import { buildReportCsvFilename, downloadCsv, toDailyCollectionCsv, type RentRollReportRow } from '../reports-page.helpers';
-import { ReportColumns, ReportInsightNote, ReportProgress } from './report-section-primitives';
+import { ReportColumns, ReportInsightNote, ReportProgress, ReportSummaryStrip } from './report-section-primitives';
 import { DailyCollectionsPanel } from './collections/daily-collections-panel';
 import { ReceiptLinksPanel, type CollectionReceiptRow } from './collections/receipt-links-panel';
 import { RentRollPanel } from './collections/rent-roll-panel';
@@ -154,19 +154,26 @@ export function CollectionsSection({ summary, rows, receiptRows, rentRollRows, c
   ) : undefined;
 
   return (
-    <div className="space-y-4">
-      <div
-        className="grid grid-cols-2 overflow-hidden rounded-xl border border-border/80 bg-card sm:grid-cols-4"
-        data-report-summary="collections"
-        aria-label="ملخص التحصيل"
-      >
-        <CollectionMetric label="إجمالي التحصيل" value={formatMoney(totalCollected)} helper={`${formatLatinNumber(paymentsCount, 'ar')} مدفوعات`} />
-        <CollectionMetric label="كفاءة التحصيل" value={`${formatLatinNumber(Math.round(collectionRate), 'ar')}%`} helper={`${formatMoney(summary?.outstanding ?? 0)} مستحق`} />
-        <CollectionMetric label="متوسط الدفعة" value={formatMoney(averagePayment)} helper={`${formatLatinNumber(receiptRows.length, 'ar')} إيصالات`} />
-        <CollectionMetric label="العقود النشطة" value={formatLatinNumber(activeContracts, 'ar')} helper={`${formatLatinNumber(rentRollRows.length, 'ar')} في السجل`} />
-      </div>
+    <div className="space-y-3">
+      <ReportSummaryStrip
+        dataReportSummary="collections"
+        items={[
+          { label: 'إجمالي التحصيل', value: formatMoney(totalCollected), detail: `${formatLatinNumber(paymentsCount, 'ar')} مدفوعات` },
+          { label: 'كفاءة التحصيل', value: `${formatLatinNumber(Math.round(collectionRate), 'ar')}%`, detail: `${formatMoney(summary?.outstanding ?? 0)} مستحق` },
+          { label: 'متوسط الدفعة', value: formatMoney(averagePayment), detail: `${formatLatinNumber(receiptRows.length, 'ar')} إيصالات` },
+          { label: 'العقود النشطة', value: formatLatinNumber(activeContracts, 'ar'), detail: `${formatLatinNumber(rentRollRows.length, 'ar')} في السجل` },
+        ]}
+      />
 
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+      <ReportInsightNote title="قراءة التحصيل">
+        {collectionRate < 65
+          ? 'المحصّل أقل من ثلثي قيمة الفواتير في النطاق؛ راجع المتأخرات والعقود ذات الرصيد الأعلى.'
+          : dominantMethodShare > 85
+            ? 'التحصيل يعتمد بشدة على طريقة سداد واحدة؛ راجع الضوابط التشغيلية والتسوية اليومية لهذه الطريقة.'
+            : 'معدل التحصيل وتوزيع طرق السداد متوازنان نسبيًا داخل الفترة.'}
+      </ReportInsightNote>
+
+      <div className="grid gap-3 lg:grid-cols-2">
         <ReportProgress
           label="نسبة التحصيل من الفواتير"
           value={collectionRate}
@@ -181,30 +188,12 @@ export function CollectionsSection({ summary, rows, receiptRows, rentRollRows, c
         />
       </div>
 
-      <ReportInsightNote title="قراءة التحصيل">
-        {collectionRate < 65
-          ? 'المحصّل أقل من ثلثي قيمة الفواتير في النطاق؛ راجع المتأخرات والعقود ذات الرصيد الأعلى.'
-          : dominantMethodShare > 85
-            ? 'التحصيل يعتمد بشدة على طريقة سداد واحدة؛ راجع الضوابط التشغيلية والتسوية اليومية لهذه الطريقة.'
-            : 'معدل التحصيل وتوزيع طرق السداد متوازنان نسبيًا داخل الفترة.'}
-      </ReportInsightNote>
-
       <DailyCollectionsPanel rows={rows} action={dailyActions} isLoading={isLoading} />
 
       <ReportColumns>
         <ReceiptLinksPanel rows={receiptRows} isLoading={isLoading} />
         <RentRollPanel rows={rentRollRows} action={rentRollAction} isLoading={isLoading} />
       </ReportColumns>
-    </div>
-  );
-}
-
-function CollectionMetric({ label, value, helper }: Readonly<{ label: string; value: string; helper: string }>) {
-  return (
-    <div className="min-w-0 border-b border-border/70 px-3 py-3 odd:border-e sm:border-b-0 sm:border-e sm:last:border-e-0">
-      <p className="text-[11px] font-bold text-muted-foreground sm:text-xs">{label}</p>
-      <p className="mt-1 truncate text-base font-black tabular-nums sm:text-lg" dir="ltr">{value}</p>
-      <p className="mt-1 truncate text-[11px] font-semibold text-muted-foreground">{helper}</p>
     </div>
   );
 }

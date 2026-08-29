@@ -35,11 +35,12 @@ export function ReportsWorkspace({
   onResetCurrentMonth,
 }: ReportsWorkspaceProps) {
   return (
-    <div className="space-y-3 sm:space-y-4">
+    <div className="min-w-0 space-y-3">
       <ReportsShell
         model={model}
         filters={filters}
         activeSection={activeSection}
+        activeView={activeView}
         onFiltersChange={onFiltersChange}
         onResetCurrentMonth={onResetCurrentMonth}
         onSectionViewChange={onSectionViewChange}
