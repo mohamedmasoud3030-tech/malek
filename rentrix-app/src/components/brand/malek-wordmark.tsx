@@ -1,4 +1,4 @@
-import { APP_BRAND_NAME } from '@/lib/brand';
+import { MalikBrand } from './malik-brand';
 import { cn } from '@/lib/utils';
 
 type MalekBrandWordmarkProps = Readonly<{
@@ -6,39 +6,51 @@ type MalekBrandWordmarkProps = Readonly<{
   size?: 'header' | 'sidebar' | 'sm' | 'lg';
 }>;
 
+const sizeClasses = {
+  header: {
+    mark: 'size-8 sm:size-9',
+    wordmark: 'text-[17px] sm:text-[18px] tracking-[0.16em]',
+    gap: 'gap-2',
+  },
+  sidebar: {
+    mark: 'size-10',
+    wordmark: 'text-[18px] tracking-[0.16em]',
+    gap: 'gap-2.5',
+  },
+  sm: {
+    mark: 'size-8',
+    wordmark: 'text-[16px] tracking-[0.16em]',
+    gap: 'gap-2',
+  },
+  lg: {
+    mark: 'size-12',
+    wordmark: 'text-[22px] sm:text-[24px] tracking-[0.17em]',
+    gap: 'gap-3',
+  },
+} as const;
+
 /**
- * MALEK final wordmark — M Malek where M is visually larger than Malek.
- * No icon container, no background tile, theme-aware colors.
- * - Light header: M = primary (royal blue), Malek = foreground (dark readable)
- * - Dark header: M = primary (light blue visible), Malek = foreground (light)
- * - Sidebar (dark navy): M = white, Malek = white/92 via CSS [data-sidebar] override
- * Real wordmark, not icon+label.
+ * Compatibility wrapper for older shell imports.
+ *
+ * There is only one visible MALEK identity now: the same MalikBrand + MalikMark
+ * lockup used on the login screen. This wrapper only adapts dimensions for the
+ * available surface; it must not draw its own M or brand text.
  */
 export function MalekBrandWordmark({ className, size = 'header' }: MalekBrandWordmarkProps) {
+  const sizing = sizeClasses[size];
+
   return (
-    <span
-      data-malek-brand-wordmark
-      data-variant={size}
-      dir="ltr"
-      aria-label={APP_BRAND_NAME}
-      className={cn(
-        'inline-flex items-baseline gap-[0.22em] select-none whitespace-nowrap leading-none',
-        size === 'header' && 'text-[19px] sm:text-[20px]',
-        size === 'sidebar' && 'text-[20px] lg:text-[22px]',
-        size === 'sm' && 'text-[16px]',
-        size === 'lg' && 'text-[24px] sm:text-[26px]',
-        className,
-      )}
-    >
-      <span data-brand-m className="font-black tracking-[-0.02em] leading-[0.9] text-[1.55em]" aria-hidden="true">
-        M
-      </span>
-      <span data-brand-name className="font-bold tracking-[0.12em] uppercase leading-none text-[1em]">
-        Malek
-      </span>
+    <span data-malek-brand-wordmark data-variant={size} className={cn('inline-flex min-w-0', className)}>
+      <MalikBrand
+        layout="horizontal"
+        inverse={size === 'sidebar'}
+        className={sizing.gap}
+        markClassName={sizing.mark}
+        wordmarkClassName={sizing.wordmark}
+      />
     </span>
   );
 }
 
-// Alias for compatibility
+// Alias retained for import compatibility; both names resolve to the canonical lockup.
 export const MalekWordmark = MalekBrandWordmark;

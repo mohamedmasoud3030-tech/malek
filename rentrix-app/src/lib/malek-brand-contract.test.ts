@@ -24,11 +24,21 @@ describe('MALEK canonical brand contract', () => {
 
     const markComponent = read('src/components/brand/malik-mark.tsx');
     const brandComponent = read('src/components/brand/malik-brand.tsx');
+    const shellWordmark = read('src/components/brand/malek-wordmark.tsx');
+    const shell = read('src/app/layout/app-shell.tsx');
     const login = read('src/features/auth/login-page.tsx');
+
     expect(markComponent).toContain('APP_BRAND_MARK_ASSET');
     expect(brandComponent).toContain('<MalikMark');
     expect(login).toContain('<MalikBrand layout="vertical"');
     expect(login).not.toContain('/icon-malik-192.png');
+
+    // Header/sidebar compatibility imports must resolve to the exact same
+    // MalikBrand + MalikMark identity as login, never a hand-built text M.
+    expect(shell).toContain('MalekBrandWordmark');
+    expect(shellWordmark).toContain('<MalikBrand');
+    expect(shellWordmark).not.toContain('data-brand-m');
+    expect(shellWordmark).not.toContain('data-brand-name');
   });
 
   it('stores MALEK inside the actual lockup image', () => {
