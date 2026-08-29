@@ -15,7 +15,7 @@ const queryState = vi.hoisted(() => ({
   refetch: vi.fn(),
 }));
 
-const persistedState = vi.hoisted(() => ({ data: [] as unknown[], isLoading: false, isError: false, refetch: vi.fn() }));
+const persistedState = vi.hoisted(() => ({ data: [] as unknown[] | undefined, isLoading: false, isError: false, refetch: vi.fn() }));
 const requestsState = vi.hoisted(() => ({ data: [] as unknown[], isLoading: false, isError: false, refetch: vi.fn() }));
 vi.mock('@tanstack/react-query', () => ({
   useQuery: ({ queryKey }: { queryKey: unknown[] }) => queryKey[0] === 'app-notifications' ? persistedState : queryKey[0] === 'permission-requests' ? requestsState : queryState,

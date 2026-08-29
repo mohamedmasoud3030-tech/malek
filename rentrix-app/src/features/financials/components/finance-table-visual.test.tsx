@@ -3,15 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { InvoiceListSection } from './invoice-list-section';
-import type { InvoiceListItem, InvoiceSummary } from '../invoices/invoiceService';
-
-const mockSummary: InvoiceSummary = {
-  count: 10,
-  totalAmount: 10000,
-  totalTax: 500,
-  totalPaid: 6000,
-  totalRemaining: 4000,
-} as InvoiceSummary;
+import type { InvoiceListItem } from '../invoices/invoiceService';
 
 const mockInvoices: InvoiceListItem[] = [
   {
@@ -38,11 +30,9 @@ describe('Wave 2 finance table desktop behavior', () => {
   it('preserves table as table on desktop, not Bento cards', () => {
     render(
       <InvoiceListSection
-        summary={mockSummary}
         status="all"
         invoiceSearch=""
         invoices={mockInvoices}
-        selectedInvoiceId=""
         isLoading={false}
         isError={false}
         error={undefined}
@@ -84,11 +74,9 @@ describe('Wave 2 finance table desktop behavior', () => {
   it('distinguishes loading vs empty vs error (error not rendered as empty)', () => {
     const { rerender, container } = render(
       <InvoiceListSection
-        summary={mockSummary}
         status="all"
         invoiceSearch=""
         invoices={[]}
-        selectedInvoiceId=""
         isLoading={true}
         isError={false}
         error={undefined}
@@ -120,11 +108,9 @@ describe('Wave 2 finance table desktop behavior', () => {
 
     rerender(
       <InvoiceListSection
-        summary={mockSummary}
         status="all"
         invoiceSearch=""
         invoices={[]}
-        selectedInvoiceId=""
         isLoading={false}
         isError={true}
         error={new Error('Network failure')}
@@ -159,11 +145,9 @@ describe('Wave 2 finance table desktop behavior', () => {
     const onSelect = vi.fn();
     render(
       <InvoiceListSection
-        summary={mockSummary}
         status="all"
         invoiceSearch=""
         invoices={mockInvoices}
-        selectedInvoiceId=""
         isLoading={false}
         isError={false}
         error={undefined}
@@ -205,11 +189,9 @@ describe('Wave 2 finance table desktop behavior', () => {
     const onSelect = vi.fn();
     render(
       <InvoiceListSection
-        summary={mockSummary}
         status="all"
         invoiceSearch=""
         invoices={mockInvoices}
-        selectedInvoiceId=""
         isLoading={false}
         isError={false}
         error={undefined}
@@ -247,11 +229,9 @@ describe('Wave 2 finance table desktop behavior', () => {
   it('primary controls have at least 44x44 touch target', () => {
     render(
       <InvoiceListSection
-        summary={mockSummary}
         status="all"
         invoiceSearch=""
         invoices={mockInvoices}
-        selectedInvoiceId=""
         isLoading={false}
         isError={false}
         error={undefined}
