@@ -5,7 +5,6 @@ import { ContractFilters } from './components/ContractFilters';
 import { ContractKpiGrid } from './components/ContractKpiGrid';
 import { ContractResults } from './components/ContractResults';
 import { ContractFormModal } from './contract-form-modal';
-import { ListControlSurface } from '@/components/layout/list-controls';
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -152,20 +151,18 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
       >
         <ContractKpiGrid companySettings={companySettings} contracts={contracts} filteredContracts={filteredContracts} totalCount={contractsQuery.data?.count ?? contracts.length} />
 
-        <ListControlSurface>
-          <ContractFilters
-            expiringOnly={expiringOnly}
-            hasActiveFilters={hasActiveFilters}
-            leaseMode={leaseMode}
-            resetFilters={resetFilters}
-            searchTerm={searchTerm}
-            setExpiringOnly={(updater) => { setExpiringOnly(updater); setPage(1); }}
-            setLeaseMode={(value) => { setLeaseMode(value); setPage(1); }}
-            setSearchTerm={(value) => { setSearchTerm(value); setPage(1); }}
-            setStatus={(value) => { setStatus(value); setPage(1); }}
-            status={status}
-          />
-        </ListControlSurface>
+        <ContractFilters
+          expiringOnly={expiringOnly}
+          hasActiveFilters={hasActiveFilters}
+          leaseMode={leaseMode}
+          resetFilters={resetFilters}
+          searchTerm={searchTerm}
+          setExpiringOnly={(updater) => { setExpiringOnly(updater); setPage(1); }}
+          setLeaseMode={(value) => { setLeaseMode(value); setPage(1); }}
+          setSearchTerm={(value) => { setSearchTerm(value); setPage(1); }}
+          setStatus={(value) => { setStatus(value); setPage(1); }}
+          status={status}
+        />
 
         <ContractResults
           companySettings={companySettings}
