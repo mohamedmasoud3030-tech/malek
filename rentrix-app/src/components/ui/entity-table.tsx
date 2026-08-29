@@ -208,12 +208,12 @@ function isNestedInteractive(target: EventTarget | null, currentTarget: EventTar
 
 function SortIcon({ field, sort }: { field: string; sort?: SortState }) {
   if (!sort || sort.field !== field) {
-    return <ChevronsUpDown className="ms-1 inline size-3.5 opacity-35" aria-hidden="true" />;
+    return <ChevronsUpDown className="ms-1 inline size-3 opacity-35" aria-hidden="true" />;
   }
   return sort.direction === 'asc' ? (
-    <ChevronUp className="ms-1 inline size-3.5 text-primary" aria-hidden="true" />
+    <ChevronUp className="ms-1 inline size-3 text-primary" aria-hidden="true" />
   ) : (
-    <ChevronDown className="ms-1 inline size-3.5 text-primary" aria-hidden="true" />
+    <ChevronDown className="ms-1 inline size-3 text-primary" aria-hidden="true" />
   );
 }
 
@@ -247,13 +247,13 @@ function SelectionCheckbox({
 function DesktopTableSkeleton({ rows, cols, hasSelection }: { rows: number; cols: number; hasSelection: boolean }) {
   const totalColumns = cols + (hasSelection ? 1 : 0);
   return (
-    <Card className="overflow-hidden rounded-xl border-border/70 bg-card shadow-card" data-entity-table-grid>
+    <Card className="overflow-hidden rounded-lg border-border/60 bg-card shadow-none" data-entity-table-grid>
       <div className="mobile-scroll-x">
-        <Table density="compact" className="text-xs [&_td+td]:border-s [&_td+td]:border-border/60 [&_th+th]:border-s [&_th+th]:border-border/70">
+        <Table density="compact" className="text-[12px] [&_td+td]:border-s [&_td+td]:border-border/50 [&_th+th]:border-s [&_th+th]:border-border/60">
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               {Array.from({ length: totalColumns }, (_, index) => (
-                <TableHead key={index} className="h-11 bg-muted/35 px-3"><Skeleton className="h-3.5 w-20" /></TableHead>
+                <TableHead key={index} className="h-8 bg-muted/30 px-2"><Skeleton className="h-3 w-16" /></TableHead>
               ))}
             </TableRow>
           </TableHeader>
@@ -261,7 +261,7 @@ function DesktopTableSkeleton({ rows, cols, hasSelection }: { rows: number; cols
             {Array.from({ length: rows }, (_, rowIndex) => (
               <TableRow key={rowIndex} className="hover:bg-transparent">
                 {Array.from({ length: totalColumns }, (_, columnIndex) => (
-                  <TableCell key={columnIndex} className="h-12 px-3 py-2.5"><Skeleton className="h-4 w-full" /></TableCell>
+                  <TableCell key={columnIndex} className="h-8 px-2 py-1"><Skeleton className="h-3.5 w-full" /></TableCell>
                 ))}
               </TableRow>
             ))}
@@ -274,14 +274,14 @@ function DesktopTableSkeleton({ rows, cols, hasSelection }: { rows: number; cols
 
 function MobileRegisterSkeleton({ rows }: { rows: number }) {
   return (
-    <div className="grid gap-2.5" aria-hidden="true" data-entity-table-mobile-skeleton>
+    <div className="grid gap-1.5" aria-hidden="true" data-entity-table-mobile-skeleton>
       {Array.from({ length: rows }, (_, index) => (
-        <div key={index} className="rounded-xl border border-border/70 bg-card p-3 shadow-card">
-          <Skeleton className="h-5 w-2/3" />
-          <Skeleton className="mt-2 h-12 w-full rounded-xl" />
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <Skeleton className="h-11 rounded-xl" />
-            <Skeleton className="h-11 rounded-xl" />
+        <div key={index} className="rounded-lg border border-border/60 bg-card p-2 shadow-none">
+          <Skeleton className="h-4 w-2/3" />
+          <Skeleton className="mt-1.5 h-8 w-full rounded-lg" />
+          <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+            <Skeleton className="h-9 rounded-lg" />
+            <Skeleton className="h-9 rounded-lg" />
           </div>
         </div>
       ))}
@@ -295,14 +295,14 @@ function PaginationBar({ pagination }: { pagination: PaginationState }) {
   const { page, onPageChange } = pagination;
   return (
     <nav
-      className="flex flex-col gap-2 rounded-xl border border-border/70 bg-card px-3 py-2 text-xs font-medium text-muted-foreground sm:flex-row sm:items-center sm:justify-between"
+      className="flex flex-col gap-1.5 rounded-lg border border-border/60 bg-card px-2 py-1.5 text-[11px] font-medium text-muted-foreground sm:flex-row sm:items-center sm:justify-between"
       aria-label="ترقيم الصفحات"
     >
       <span>
-        الصفحة <strong className="font-black text-foreground">{page}</strong> من {totalPages}
+        الصفحة <strong className="font-bold text-foreground">{page}</strong> من {totalPages}
         {pagination.total > 0 ? <span className="ms-2 opacity-70">· {pagination.total} سجل</span> : null}
       </span>
-      <div className="grid grid-cols-2 gap-1.5 sm:flex">
+      <div className="grid grid-cols-2 gap-1 sm:flex">
         <Button size="sm" variant="secondary" disabled={page <= 1} onClick={() => onPageChange(Math.max(1, page - 1))} aria-label="الصفحة السابقة">السابق</Button>
         <Button size="sm" variant="secondary" disabled={page >= totalPages} onClick={() => onPageChange(Math.min(totalPages, page + 1))} aria-label="الصفحة التالية">التالي</Button>
       </div>
@@ -381,11 +381,11 @@ function MobileRegisterListItem<T>({
         stats={
           hasSummaryGrid
             ? (
-              <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5" data-entity-table-mobile-summary>
+              <dl className="grid grid-cols-2 gap-x-2 gap-y-1" data-entity-table-mobile-summary>
                 {summaryColumns!.map((column) => (
                   <div key={column.key} className="min-w-0">
-                    <dt className="truncate text-[10px] font-bold leading-4 text-muted-foreground">{column.header}</dt>
-                    <dd className="line-clamp-2 break-words text-xs font-semibold leading-4 text-foreground [overflow-wrap:anywhere]" data-entity-table-mobile-datum>
+                    <dt className="truncate text-[10px] font-bold leading-3.5 text-muted-foreground">{column.header}</dt>
+                    <dd className="line-clamp-2 break-words text-[11.5px] font-semibold leading-4 text-foreground [overflow-wrap:anywhere]" data-entity-table-mobile-datum>
                       {column.render(row)}
                     </dd>
                   </div>
@@ -393,12 +393,12 @@ function MobileRegisterListItem<T>({
               </dl>
             )
             : datumColumn
-              ? <div data-entity-table-mobile-datum className="min-w-0 break-words font-bold [overflow-wrap:anywhere]">{datumColumn.render(row)}</div>
+              ? <div data-entity-table-mobile-datum className="min-w-0 break-words text-[11.5px] font-semibold leading-4 [overflow-wrap:anywhere]">{datumColumn.render(row)}</div>
               : undefined
         }
-        badge={badgeColumn ? badgeColumn.render(row) : selected ? <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-bold text-primary">محدد</span> : undefined}
+        badge={badgeColumn ? badgeColumn.render(row) : selected ? <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10.5px] font-bold text-primary">محدد</span> : undefined}
         actions={cardActions.length > 0 ? cardActions : undefined}
-        className={selected ? 'border-primary/35 ring-2 ring-primary/10' : undefined}
+        className={selected ? 'border-primary/35 ring-1 ring-primary/10' : undefined}
       />
 
       {/*
@@ -407,7 +407,7 @@ function MobileRegisterListItem<T>({
         render their secondary actions flat inside the card above.
       */}
       {!hasStructuredActions && actionsColumn ? (
-        <div className="mt-1.5 rounded-xl border border-border/70 bg-card p-1.5 shadow-sm">
+        <div className="mt-1 rounded-lg border border-border/60 bg-card p-1 shadow-none">
           <Button
             ref={triggerRef}
             type="button"
@@ -434,7 +434,7 @@ function MobileRegisterListItem<T>({
             <div
               id={`mobile-actions-${rowKey}`}
               data-entity-table-mobile-actions-panel
-              className="mt-1 min-w-0 rounded-lg bg-muted/20 p-1 [&>div]:flex-wrap"
+              className="mt-1 min-w-0 rounded-md bg-muted/20 p-1 [&>div]:flex-wrap"
               aria-label={`إجراءات ${ariaLabel}`}
             >
               {actionsColumn.render(row)}
@@ -545,17 +545,17 @@ export function EntityTable<T>({
 
   if (isLoading) {
     return (
-      <div className={cn('space-y-2.5', className)} data-entity-table-register>
+      <div className={cn('space-y-2', className)} data-entity-table-register>
         {enableViewModeToggle ? (
-          <div data-entity-table-toolbar className="flex min-h-11 items-center justify-end">
-            <div className="inline-flex min-h-11 items-center rounded-xl border border-border/70 bg-muted/35 p-1" role="group" aria-label={`طريقة عرض ${ariaLabel}`}>
+          <div data-entity-table-toolbar className="flex min-h-9 items-center justify-end">
+            <div className="inline-flex min-h-9 items-center rounded-lg border border-border/60 bg-muted/25 p-0.5" role="group" aria-label={`طريقة عرض ${ariaLabel}`}>
               <Button type="button" variant={viewMode === 'cards' ? 'secondary' : 'ghost'} size="sm" aria-pressed={viewMode === 'cards'} onClick={() => chooseViewMode('cards')}>
-                <LayoutGrid className="size-4" aria-hidden="true" />
-                <span className="ms-1.5">بطاقات</span>
+                <LayoutGrid className="size-3.5" aria-hidden="true" />
+                <span className="ms-1">بطاقات</span>
               </Button>
               <Button type="button" variant={viewMode === 'table' ? 'secondary' : 'ghost'} size="sm" aria-pressed={viewMode === 'table'} onClick={() => chooseViewMode('table')}>
-                <TableProperties className="size-4" aria-hidden="true" />
-                <span className="ms-1.5">جدول</span>
+                <TableProperties className="size-3.5" aria-hidden="true" />
+                <span className="ms-1">جدول</span>
               </Button>
             </div>
           </div>
@@ -608,18 +608,18 @@ export function EntityTable<T>({
   const colSpan = resolvedColumns.length + (hasExpansion ? 1 : 0) + (rowSelection ? 1 : 0);
 
   return (
-    <div className={cn('space-y-3', className)} data-entity-table-register>
+    <div className={cn('space-y-2', className)} data-entity-table-register>
       {toolbar || enableViewModeToggle ? (
-        <div data-entity-table-toolbar className="flex min-h-11 flex-wrap items-center justify-end gap-2">
+        <div data-entity-table-toolbar className="flex min-h-9 flex-wrap items-center justify-end gap-1.5">
           {enableViewModeToggle ? (
-            <div className="inline-flex min-h-11 items-center rounded-xl border border-border/70 bg-muted/35 p-1" role="group" aria-label={`طريقة عرض ${ariaLabel}`}>
+            <div className="inline-flex min-h-9 items-center rounded-lg border border-border/60 bg-muted/25 p-0.5" role="group" aria-label={`طريقة عرض ${ariaLabel}`}>
               <Button type="button" variant={viewMode === 'cards' ? 'secondary' : 'ghost'} size="sm" aria-pressed={viewMode === 'cards'} onClick={() => chooseViewMode('cards')}>
-                <LayoutGrid className="size-4" aria-hidden="true" />
-                <span className="ms-1.5">بطاقات</span>
+                <LayoutGrid className="size-3.5" aria-hidden="true" />
+                <span className="ms-1">بطاقات</span>
               </Button>
               <Button type="button" variant={viewMode === 'table' ? 'secondary' : 'ghost'} size="sm" aria-pressed={viewMode === 'table'} onClick={() => chooseViewMode('table')}>
-                <TableProperties className="size-4" aria-hidden="true" />
-                <span className="ms-1.5">جدول</span>
+                <TableProperties className="size-3.5" aria-hidden="true" />
+                <span className="ms-1">جدول</span>
               </Button>
             </div>
           ) : null}
@@ -629,7 +629,7 @@ export function EntityTable<T>({
 
       {viewMode === 'cards' ? (
         <div data-entity-table-mobile>
-          <ul role="list" aria-label={ariaLabel} className="grid gap-2.5" data-entity-table-mobile-list>
+          <ul role="list" aria-label={ariaLabel} className="grid gap-1.5" data-entity-table-mobile-list>
             {rows.map((row) => {
               const rowKey = keyOf(row);
               const cardType = typeof mobileCardType === 'function' ? mobileCardType(row) : mobileCardType;
@@ -657,24 +657,24 @@ export function EntityTable<T>({
         </div>
       ) : (
         <div>
-          <Card data-entity-table-wrapper data-compact-responsive-table data-entity-table-grid className="overflow-hidden rounded-xl border-border/70 bg-card shadow-card">
+          <Card data-entity-table-wrapper data-compact-responsive-table data-entity-table-grid className="overflow-hidden rounded-lg border-border/60 bg-card shadow-none">
             <div
               data-entity-table-scroll
               tabIndex={0}
               role="region"
               aria-label={`${ariaLabel} — منطقة جدول قابلة للتمرير أفقياً عند الحاجة`}
-              className="mobile-scroll-x overscroll-x-contain touch-pan-x focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
+              className="mobile-scroll-x overscroll-x-contain touch-pan-x focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
             >
               <Table
                 data-entity-table
                 density="compact"
                 aria-label={ariaLabel}
-                className="min-w-full text-[13px] [&_td+td]:border-s [&_td+td]:border-border/40 [&_th+th]:border-s [&_th+th]:border-border/50"
+                className="min-w-full text-[12px] [&_td+td]:border-s [&_td+td]:border-border/35 [&_th+th]:border-s [&_th+th]:border-border/45"
               >
-                <TableHeader className="bg-muted/35">
+                <TableHeader className="bg-muted/30">
                   <TableRow className="hover:bg-transparent">
                     {rowSelection ? (
-                      <TableHead className="w-11 bg-muted/35 px-3 text-center">
+                      <TableHead className="w-9 bg-muted/30 px-2 text-center">
                         <SelectionCheckbox
                           checked={allCurrentSelected}
                           mixed={someCurrentSelected}
@@ -683,7 +683,7 @@ export function EntityTable<T>({
                         />
                       </TableHead>
                     ) : null}
-                    {hasExpansion ? <TableHead className="w-11 bg-muted/35 px-2"><span className="sr-only">تفاصيل الصف</span></TableHead> : null}
+                    {hasExpansion ? <TableHead className="w-9 bg-muted/30 px-1.5"><span className="sr-only">تفاصيل الصف</span></TableHead> : null}
                     {resolvedColumns.map((column) => {
                       const sortDirection = column.sortable && sort?.field === column.key
                         ? (sort.direction === 'asc' ? 'ascending' : 'descending')
@@ -693,7 +693,7 @@ export function EntityTable<T>({
                           key={column.key}
                           data-column-priority={column.resolvedPriority}
                           className={cn(
-                            'h-10 bg-muted/40 px-3 text-xs font-bold tracking-[0.01em] text-muted-foreground sm:px-3.5',
+                            'h-8 bg-muted/35 px-2 text-[11px] font-bold tracking-normal text-muted-foreground sm:px-2.5',
                             priorityClass(column.resolvedPriority, column.sticky !== false),
                             column.className,
                           )}
@@ -702,7 +702,7 @@ export function EntityTable<T>({
                           {column.sortable && onSort ? (
                             <button
                               type="button"
-                              className="inline-flex min-h-11 cursor-pointer items-center font-black text-muted-foreground outline-none transition hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/25"
+                              className="inline-flex min-h-8 cursor-pointer items-center font-bold text-muted-foreground outline-none transition hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/25"
                               onClick={() => handleSort(column.key)}
                             >
                               {column.header}<SortIcon field={column.key} sort={sort} />
@@ -726,14 +726,14 @@ export function EntityTable<T>({
                           onClick={onRowClick ? (event) => activateRow(row, event) : undefined}
                           onKeyDown={onRowClick ? (event) => activateRow(row, event) : undefined}
                           className={cn(
-                            'min-h-11 bg-card hover:bg-muted/45',
+                            'min-h-9 bg-card hover:bg-muted/30',
                             onRowClick && 'cursor-pointer focus-visible:bg-primary/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/35',
                           )}
                           tabIndex={onRowClick ? 0 : undefined}
                           aria-expanded={hasExpansion ? isExpanded : undefined}
                         >
                           {rowSelection ? (
-                            <TableCell className="w-11 px-3 text-center" data-row-action>
+                            <TableCell className="w-9 px-2 text-center" data-row-action>
                               <SelectionCheckbox
                                 checked={isSelected}
                                 label={`تحديد ${nodeToText(identityColumn.render(row)).trim() || 'السجل'}`}
@@ -742,16 +742,16 @@ export function EntityTable<T>({
                             </TableCell>
                           ) : null}
                           {hasExpansion ? (
-                            <TableCell className="w-11 px-2" data-row-action>
+                            <TableCell className="w-9 px-1.5" data-row-action>
                               <button
                                 type="button"
-                                className="grid size-11 place-items-center rounded-lg text-muted-foreground outline-none transition hover:bg-muted hover:text-foreground focus-visible:ring-4 focus-visible:ring-primary/20"
+                                className="grid size-9 place-items-center rounded-md text-muted-foreground outline-none transition hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/20"
                                 aria-label={isExpanded ? 'إخفاء تفاصيل الصف' : 'عرض كل تفاصيل الصف'}
                                 aria-expanded={isExpanded}
                                 aria-controls={detailId}
                                 onClick={() => toggleRow(rowKey)}
                               >
-                                {isExpanded ? <ChevronUp className="size-4" aria-hidden="true" /> : <ChevronDown className="size-4" aria-hidden="true" />}
+                                {isExpanded ? <ChevronUp className="size-3.5" aria-hidden="true" /> : <ChevronDown className="size-3.5" aria-hidden="true" />}
                               </button>
                             </TableCell>
                           ) : null}
@@ -760,7 +760,7 @@ export function EntityTable<T>({
                               key={column.key}
                               data-column-priority={column.resolvedPriority}
                               className={cn(
-                                'h-11 px-3 py-2 align-middle sm:px-3.5',
+                                'h-9 px-2 py-1.5 align-middle text-[12px] sm:px-2.5',
                                 priorityClass(column.resolvedPriority, column.sticky !== false),
                                 column.className,
                               )}
@@ -771,7 +771,7 @@ export function EntityTable<T>({
                         </TableRow>
                         {hasExpansion && isExpanded ? (
                           <TableRow id={detailId} data-row-disclosure className="hover:bg-transparent">
-                            <TableCell colSpan={colSpan} className="border-s-0 bg-muted/20 p-4">
+                            <TableCell colSpan={colSpan} className="border-s-0 bg-muted/15 p-3">
                               {renderRowExpansion!(row)}
                             </TableCell>
                           </TableRow>
