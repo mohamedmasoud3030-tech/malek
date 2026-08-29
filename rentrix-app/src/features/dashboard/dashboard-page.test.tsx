@@ -196,7 +196,7 @@ describe('Dashboard command center query boundary tests', () => {
     await act(async () => { await new Promise((resolve) => setTimeout(resolve, 50)); });
   }
 
-  it('renders the nine command-center sections from the authoritative snapshot', async () => {
+  it('renders the ten command-center sections from the authoritative snapshot', async () => {
     (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
     await renderPage();
     expect(getDashboardSnapshot).toHaveBeenCalled();
@@ -225,6 +225,28 @@ describe('Dashboard command center query boundary tests', () => {
       'owner-obligations',
       'finance-exceptions',
     ]);
+  });
+
+  it('adds a compact focus strip for the four highest-value dashboard anchors', async () => {
+    (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
+    await renderPage();
+
+    const focusStrip = container?.querySelector<HTMLElement>('[data-dashboard-focus-strip]');
+    expect(focusStrip).not.toBeNull();
+    expect(focusStrip?.getAttribute('aria-label')).toBe('محاور التركيز في لوحة اليوم');
+
+    const items = Array.from(focusStrip?.querySelectorAll<HTMLAnchorElement>('[data-dashboard-focus-item]') ?? []);
+    expect(items).toHaveLength(4);
+    expect(items.map((item) => item.getAttribute('href'))).toEqual([
+      '#dashboard-needs-attention',
+      '#dashboard-collections',
+      '#dashboard-occupancy',
+      '#dashboard-maintenance',
+    ]);
+    expect(focusStrip?.textContent).toContain('الأولوية الآن');
+    expect(focusStrip?.textContent).toContain('التحصيل');
+    expect(focusStrip?.textContent).toContain('80%');
+    expect(container?.querySelector('[data-dashboard-section="needs-attention"]')?.getAttribute('data-dashboard-priority')).toBe('attention');
   });
 
   it('keeps page identity plus day and date in the canonical PageHeader without a routine refresh action', async () => {

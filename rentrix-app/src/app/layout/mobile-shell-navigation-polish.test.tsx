@@ -334,6 +334,8 @@ describe('MALEK mobile shell & navigation polish pass (Section O verification ma
       const dashboardCss = readFileSync(resolve(process.cwd(), 'src/features/dashboard/dashboard-v2.css'), 'utf8');
       expect(dashboardCss).toContain('--dashboard-section-gap: 0.75rem');
       expect(dashboardCss).toContain('--dashboard-cluster-gap: 0.5rem');
+      expect(dashboardCss).toContain('[data-dashboard-focus-strip]');
+      expect(dashboardCss).toContain("[data-dashboard-priority='attention']");
     });
   });
 
