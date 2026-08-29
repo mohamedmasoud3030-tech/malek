@@ -1,9 +1,34 @@
 import type { LucideIcon } from 'lucide-react';
-import { Briefcase, Contact, Mail, Phone, User, Users } from 'lucide-react';
+import {
+  Briefcase,
+  Building2,
+  Contact,
+  DoorOpen,
+  FileText,
+  Mail,
+  MapPinned,
+  Phone,
+  ReceiptText,
+  User,
+  Users,
+  Wrench,
+} from 'lucide-react';
 import type { KeyboardEvent, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
-export type EntityCardType = 'tenant' | 'owner' | 'contact' | string;
+export type EntityCardType =
+  | 'record'
+  | 'tenant'
+  | 'owner'
+  | 'contact'
+  | 'property'
+  | 'unit'
+  | 'contract'
+  | 'maintenance'
+  | 'land'
+  | 'service-provider'
+  | 'invoice'
+  | string;
 
 export type EntityCardMetaItem = Readonly<{
   icon?: LucideIcon;
@@ -21,21 +46,27 @@ export type EntityCardAction = Readonly<{
   ariaLabel?: string;
 }>;
 
-type EntityCardTone = Readonly<{
+type EntityCardIdentity = Readonly<{
   label: string;
-  bg: string;
-  text: string;
   icon: LucideIcon;
 }>;
 
-export const entityCardTypeMap: Record<string, EntityCardTone> = {
-  tenant: { label: 'مستأجر', bg: 'bg-primary/10', text: 'text-primary', icon: User },
-  owner: {
-    label: 'مالك', bg: 'bg-[hsl(var(--color-success-bg))]', text: 'text-[hsl(var(--color-success-text))]', icon: Briefcase,
-  },
-  contact: {
-    label: 'جهة اتصال', bg: 'bg-[hsl(var(--color-neutral-bg))]', text: 'text-[hsl(var(--color-neutral-text))]', icon: Contact,
-  },
+/**
+ * Entity identity changes only the semantic icon/label. Geometry, surface,
+ * spacing, type scale, borders and actions stay identical for every register.
+ */
+export const entityCardTypeMap: Record<string, EntityCardIdentity> = {
+  record: { label: 'سجل', icon: Users },
+  tenant: { label: 'مستأجر', icon: User },
+  owner: { label: 'مالك', icon: Briefcase },
+  contact: { label: 'جهة اتصال', icon: Contact },
+  property: { label: 'عقار', icon: Building2 },
+  unit: { label: 'وحدة', icon: DoorOpen },
+  contract: { label: 'عقد', icon: FileText },
+  maintenance: { label: 'صيانة', icon: Wrench },
+  land: { label: 'أرض', icon: MapPinned },
+  'service-provider': { label: 'مزود خدمة', icon: Wrench },
+  invoice: { label: 'فاتورة', icon: ReceiptText },
 };
 
 export interface EntityCardProps {
@@ -83,7 +114,7 @@ function EntityCardShell({ id, clickable, onClick, className, children }: Readon
       onClick={onClick}
       onKeyDown={(event) => handleCardKeyDown(event, onClick)}
       className={cn(
-        'relative w-full min-w-0 overflow-hidden rounded-lg border border-border/70 bg-card p-2 text-start shadow-none transition-[border-color,background-color] sm:p-2.5',
+        'relative w-full min-w-0 overflow-hidden rounded-lg border border-border/70 bg-card p-2 text-start shadow-none transition-[border-color,background-color]',
         clickable && 'cursor-pointer hover:border-primary/30 hover:bg-muted/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20',
         className,
       )}
@@ -94,17 +125,17 @@ function EntityCardShell({ id, clickable, onClick, className, children }: Readon
 }
 
 export function EntityCard({
-  id, name, subtitle, supportingText, type = 'contact', badge, meta, stats, actions, onClick, className, avatarIcon,
+  id, name, subtitle, supportingText, type = 'record', badge, meta, stats, actions, onClick, className, avatarIcon,
 }: EntityCardProps) {
-  const tone = entityCardTypeMap[type] ?? entityCardTypeMap.contact!;
-  const AvatarIcon = avatarIcon ?? tone.icon ?? Users;
+  const identity = entityCardTypeMap[type] ?? entityCardTypeMap.record!;
+  const AvatarIcon = avatarIcon ?? identity.icon;
 
   return (
     <EntityCardShell id={id} clickable={Boolean(onClick)} onClick={onClick} className={className}>
       <div className="flex min-w-0 items-start justify-between gap-2">
         <div className="flex min-w-0 flex-1 items-start gap-2">
-          <div className={cn('grid size-8 shrink-0 place-items-center rounded-md border border-border/45', tone.bg)}>
-            <AvatarIcon className={cn('size-3.5', tone.text)} aria-hidden="true" />
+          <div className="grid size-8 shrink-0 place-items-center rounded-md border border-border/55 bg-muted/45 text-foreground/70">
+            <AvatarIcon className="size-3.5" aria-hidden="true" />
           </div>
           <div className="min-w-0 flex-1 overflow-hidden">
             <div className="line-clamp-2 break-words text-[13px] font-bold leading-[18px] text-foreground [overflow-wrap:anywhere]">{name}</div>
@@ -117,8 +148,8 @@ export function EntityCard({
           </div>
         </div>
         {badge ?? (
-          <span className={cn('inline-flex min-h-5 shrink-0 items-center rounded border border-current/10 px-1.5 py-0 text-[10.5px] font-bold leading-4', tone.bg, tone.text)}>
-            {tone.label}
+          <span className="inline-flex min-h-5 shrink-0 items-center rounded border border-border/60 bg-muted/45 px-1.5 py-0 text-[10.5px] font-bold leading-4 text-muted-foreground">
+            {identity.label}
           </span>
         )}
       </div>
