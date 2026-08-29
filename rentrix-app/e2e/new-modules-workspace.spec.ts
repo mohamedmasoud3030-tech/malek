@@ -18,7 +18,7 @@ test.describe('New Real Modules - Utilities, Vault, Deposits, Automation', () =>
       await expect(page.locator('body')).not.toContainText('W-441209');
     });
 
-    test(`vault workspace loads with private storage controls at ${vp.width}x${vp.height}`, async ({ page }) => {
+    test(`vault workspace loads as the contextual document index at ${vp.width}x${vp.height}`, async ({ page }) => {
       await page.setViewportSize(vp);
       // This is a login-route E2E fixture. Seeding an authenticated session here
       // correctly triggers authRoute's production redirect to /dashboard before
@@ -28,10 +28,12 @@ test.describe('New Real Modules - Utilities, Vault, Deposits, Automation', () =>
       await page.goto('/login?e2e-vault-workspace=1');
       const workspace = page.locator('[data-e2e-vault-workspace]');
       await expect(workspace).toBeVisible({ timeout: 10000 });
-      await expect(page.getByRole('heading', { name: 'خزينة المستندات والمرفقات' })).toBeVisible();
-      await expect(workspace).toContainText('أرشيف خاص');
+      await expect(workspace.getByLabel('بحث في فهرس المستندات')).toBeVisible();
       await expect(page.locator('body')).not.toContainText('placehold.co');
-      await expect(workspace.getByRole('button', { name: 'رفع مستند', exact: true }).first()).toBeVisible();
+      // The vault is now a cross-entity index only. Creating a document without
+      // a canonical property/unit/contract/maintenance/owner context is forbidden.
+      await expect(workspace.getByRole('button', { name: 'رفع مستند', exact: true })).toHaveCount(0);
+      await expect(workspace.locator('input[type="file"]')).toHaveCount(0);
     });
 
     test(`deposits workspace loads with the real governed ledger at ${vp.width}x${vp.height}`, async ({ page }) => {
@@ -53,20 +55,14 @@ test.describe('New Real Modules - Utilities, Vault, Deposits, Automation', () =>
     });
   }
 
-  test('vault upload form validates the current private-file contract', async ({ page }) => {
+  test('vault index never exposes a contextless upload form', async ({ page }) => {
     await installFakeSupabaseBackend(page, 'complete');
     await page.goto('/login?e2e-vault-workspace=1');
     const workspace = page.locator('[data-e2e-vault-workspace]');
     await expect(workspace).toBeVisible({ timeout: 10000 });
-    await workspace.getByRole('button', { name: 'رفع مستند', exact: true }).first().click();
-
-    const dialog = page.getByRole('dialog', { name: 'رفع مستند' });
-    await expect(dialog).toBeVisible();
-    await expect(dialog).toContainText('الحد الأقصى 5MB');
-    await expect(dialog).toContainText('PDF أو JPEG أو PNG أو WebP');
-    const fileInput = dialog.locator('input[type="file"]');
-    await expect(fileInput).toHaveAttribute('accept', 'application/pdf,image/jpeg,image/png,image/webp');
-    await expect(dialog.getByRole('button', { name: 'رفع', exact: true })).toBeDisabled();
+    await expect(workspace.getByLabel('بحث في فهرس المستندات')).toBeVisible();
+    await expect(workspace.getByRole('button', { name: 'رفع مستند', exact: true })).toHaveCount(0);
+    await expect(workspace.locator('input[type="file"]')).toHaveCount(0);
   });
 
   test('deposits create flow is guarded and cannot report false success before valid input', async ({ page }) => {
