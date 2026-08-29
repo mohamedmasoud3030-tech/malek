@@ -63,18 +63,18 @@ export function PageHeader({
         data-global-page-context
         data-global-today-context
         data-unified-surface="page-header"
-        className="flex min-h-14 min-w-0 items-center gap-3 rounded-2xl border border-border/70 bg-card px-3 py-2.5 shadow-card sm:px-4 sm:py-3"
+        className="flex min-h-14 min-w-0 flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl border border-border/70 bg-card px-3 py-2.5 shadow-card sm:flex-nowrap sm:px-4 sm:py-3"
         aria-label={
           isArabic
             ? `${title} — ${todayLabel} ${weekday} ${date}`
             : `${title} — ${todayLabel}, ${weekday} ${date}`
         }
       >
-        <div className="flex min-w-0 flex-1 items-center gap-3">
-          <div className="flex min-w-0 items-center gap-1.5">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1.5 sm:flex-nowrap">
+          <div className="flex min-w-0 max-w-full items-center gap-1.5">
             <h1
               data-global-page-title
-              className="min-w-0 truncate text-xl font-black leading-7 sm:text-[1.375rem] sm:leading-8"
+              className="min-w-0 truncate text-xl font-black leading-7 [overflow-wrap:anywhere] sm:text-[1.375rem] sm:leading-8"
             >
               {title}
             </h1>
@@ -90,7 +90,7 @@ export function PageHeader({
 
           <span className="hidden h-5 w-px shrink-0 bg-border sm:block" aria-hidden="true" />
 
-          <div className="flex min-w-0 items-center gap-2 text-muted-foreground">
+          <div className="flex min-w-0 max-w-full basis-full items-center gap-2 text-muted-foreground sm:basis-auto sm:flex-1">
             <span
               className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary"
               aria-hidden="true"

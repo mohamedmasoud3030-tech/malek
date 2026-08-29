@@ -34,9 +34,7 @@ export function PageHeaderActions({ primaryAction, secondaryActions, title }: Pa
     <>
       <div
         className={cn(
-          'flex min-w-0 max-w-[min(62vw,18rem)] items-center justify-end gap-1.5 overflow-hidden sm:gap-2',
-          // Mobile: prevent horizontal overflow, allow wrap only on desktop
-          'sm:max-w-none',
+          'flex min-w-0 max-w-full items-center justify-end gap-1.5 overflow-hidden sm:max-w-none sm:gap-2',
           'shrink-0',
         )}
         data-page-actions

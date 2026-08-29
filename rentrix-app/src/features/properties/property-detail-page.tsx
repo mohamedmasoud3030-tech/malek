@@ -139,7 +139,6 @@ export function PropertyDetailPage() {
                 value={activeSection}
                 onChange={(e) => handleSelectChange(e.target.value as PropertyDetailSectionId)}
                 className="min-h-11 w-full rounded-xl border border-border bg-card px-3 py-2.5 text-sm font-semibold focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
-                dir="rtl"
               >
                 {propertyDetailSections.map((section) => (
                   <option key={section.id} value={section.id}>
@@ -154,7 +153,7 @@ export function PropertyDetailPage() {
 
             <nav
               aria-label="أقسام العقار"
-              className="sticky top-[4.5rem] hidden overflow-hidden rounded-2xl border border-border/70 bg-card shadow-card md:block"
+              className="sticky top-[calc(var(--app-header-height)+0.75rem)] hidden max-h-[calc(var(--visual-viewport-height,100dvh)-var(--app-header-height)-1.5rem)] overflow-y-auto overflow-x-hidden rounded-2xl border border-border/70 bg-card shadow-card md:block"
             >
               <div className="border-b border-border/60 bg-muted/30 px-4 py-3">
                 <p className="text-xs font-bold text-muted-foreground">تفاصيل العقار</p>

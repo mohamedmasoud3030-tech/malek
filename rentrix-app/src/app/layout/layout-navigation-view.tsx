@@ -266,7 +266,7 @@ export function MobileFloatingControl({
             role="menu"
             aria-label="الإضافة السريعة"
             data-mobile-quick-add-menu
-            className="absolute bottom-[calc(100%+0.75rem)] left-1/2 w-[min(18.5rem,calc(100vw-1.5rem))] -translate-x-1/2 overflow-hidden rounded-2xl border border-border bg-card shadow-elevated"
+            className="absolute inset-x-0 bottom-[calc(100%+0.75rem)] mx-auto w-[min(18.5rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-border bg-card shadow-elevated"
           >
             <div className="flex items-center justify-between border-b border-border px-3 py-2.5">
               <p className="text-xs font-bold tracking-wide text-muted-foreground" data-mobile-quick-add-title>

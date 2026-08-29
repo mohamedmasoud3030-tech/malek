@@ -110,7 +110,7 @@ function DashboardFocusStrip({
     >
       <div className="flex min-w-0 items-center gap-2">
         <span className="hidden shrink-0 px-2 text-[11px] font-black text-muted-foreground sm:inline">ركّز على</span>
-        <div data-dashboard-focus-scroll className="flex min-w-0 flex-1 gap-1.5 overflow-x-auto overscroll-x-contain">
+        <div data-dashboard-focus-scroll className="no-scrollbar flex min-w-0 flex-1 gap-1.5 overflow-x-auto overscroll-x-contain">
           {items.map((item) => (
             <a
               key={item.href}
