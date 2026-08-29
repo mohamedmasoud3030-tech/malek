@@ -213,6 +213,30 @@ describe('financialReportsService aggregation helpers', () => {
     });
   });
 
+  it('groups complete period collections by property for property decision reports', async () => {
+    const { summarizePropertyCollectionBreakdownReport } = await import('./financialReportsService');
+
+    expect(summarizePropertyCollectionBreakdownReport(
+      [
+        { amount: 100, contract: { id: 'contract_1', property_id: 'property_1', tenant_id: 'tenant_1' } },
+        { amount: '25.5' as unknown as number, contract: { id: 'contract_2', property_id: 'property_1', tenant_id: 'tenant_2' } },
+        { amount: 80, contract: { id: 'contract_3', property_id: 'property_2', tenant_id: 'tenant_3' } },
+        { amount: 999, contract: null },
+      ],
+      new Map([
+        ['property_1', { id: 'property_1', title: 'برج النخيل' }],
+        ['property_2', { id: 'property_2', title: 'مجمع الواحة' }],
+      ]),
+    )).toEqual({
+      rows: [
+        { propertyId: 'property_1', propertyTitle: 'برج النخيل', totalPaid: 125.5, paymentsCount: 2 },
+        { propertyId: 'property_2', propertyTitle: 'مجمع الواحة', totalPaid: 80, paymentsCount: 1 },
+      ],
+      grandTotal: 205.5,
+      paymentsCount: 3,
+    });
+  });
+
   it('builds a financial period summary without dashboard-only metrics or accounting net profit', async () => {
     const { summarizeFinancialPeriodSummaryReport } = await import('./financialReportsService');
 

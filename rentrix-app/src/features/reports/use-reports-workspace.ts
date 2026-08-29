@@ -17,6 +17,7 @@ import {
   useFinancialPeriodSummaryReport,
   useOverdueInvoicesReport,
   useOwnerStatementReport,
+  usePropertyCollectionBreakdownReport,
   useTenantStatementReport,
   useVatReturnReport,
 } from '@/features/financials/reports/useFinancialReports';
@@ -109,6 +110,7 @@ export function useReportsWorkspace(filters: ReportsFilterState, location: Repor
   const collectionRateQuery = useAuthoritativeReportsCollectionRate({ from: filters.from, to: filters.to });
 
   const collectionSummaryQuery = useCollectionSummaryReport(financialFilters, { enabled: needsOverview || needsCollections });
+  const propertyCollectionBreakdownQuery = usePropertyCollectionBreakdownReport(financialFilters, { enabled: needsPropertyPerformance });
   const financialCashflowQuery = useFinancialCashflowReport(financialFilters, { enabled: needsOverview });
   const vatReturnQuery = useVatReturnReport(financialFilters, { enabled: needsStatements });
   const dailyCollectionQuery = useDailyCollectionReport(financialFilters, { enabled: needsCollections || needsStatements });
@@ -211,13 +213,14 @@ export function useReportsWorkspace(filters: ReportsFilterState, location: Repor
     () => buildPropertyPerformanceRows({
       occupancyRows,
       contracts: scopedContracts,
-      receipts: receiptRows,
+      collectionRows: propertyCollectionBreakdownQuery.data?.rows ?? [],
+      period: { from: filters.from, to: filters.to, asOf: filters.asOf },
       overdueRows: overdueInvoicesQuery.data?.rows ?? [],
       expenseRows: expenseBreakdownQuery.data?.byProperty ?? [],
       maintenanceRows,
       vacancyRows: vacancyAnalytics.vacantRows,
     }),
-    [expenseBreakdownQuery.data?.byProperty, maintenanceRows, occupancyRows, overdueInvoicesQuery.data?.rows, receiptRows, scopedContracts, vacancyAnalytics.vacantRows],
+    [expenseBreakdownQuery.data?.byProperty, filters.asOf, filters.from, filters.to, maintenanceRows, occupancyRows, overdueInvoicesQuery.data?.rows, propertyCollectionBreakdownQuery.data?.rows, scopedContracts, vacancyAnalytics.vacantRows],
   );
   const deferredRevenueAudit = useMemo(
     () => buildDeferredRevenueAudit(scopedContracts, receiptRows, filters.asOf),
@@ -228,6 +231,7 @@ export function useReportsWorkspace(filters: ReportsFilterState, location: Repor
     financialSummaryQuery.error,
     collectionRateQuery.error,
     collectionSummaryQuery.error,
+    propertyCollectionBreakdownQuery.error,
     financialCashflowQuery.error,
     vatReturnQuery.error,
     dailyCollectionQuery.error,
@@ -298,7 +302,7 @@ export function useReportsWorkspace(filters: ReportsFilterState, location: Repor
         isLoading: isLoadingAny(
           unitsQuery.isLoading,
           contractsQuery.isLoading,
-          receiptsQuery.isLoading,
+          propertyCollectionBreakdownQuery.isLoading,
           overdueInvoicesQuery.isLoading,
           expenseBreakdownQuery.isLoading,
           maintenanceQuery.isLoading,

@@ -7,6 +7,7 @@ import type {
   DailyCollectionReportRow,
   OverdueInvoiceReportRow,
   OverdueInvoicesReport,
+  PropertyCollectionBreakdownRow,
 } from '@/features/financials/reports/financialReportsService';
 import { listPropertyTitles, type PropertyTitleRow } from '@/features/properties/property-service';
 import type { Unit } from '@/types/domain';
@@ -61,12 +62,12 @@ type MutablePropertyPerformanceDraft = {
   openMaintenanceCount: number;
 };
 
-type PropertyPerformanceReceiptRow = Readonly<{ contract_id: string | null; amount: number }>;
-
 type PropertyPerformanceParams = Readonly<{
   occupancyRows: readonly OccupancyChartRow[];
   contracts: readonly ContractListItem[];
-  receipts: readonly PropertyPerformanceReceiptRow[];
+  /** Complete, paginated report read model for the full selected period. */
+  collectionRows: readonly PropertyCollectionBreakdownRow[];
+  period: Readonly<{ from: string; to: string; asOf: string }>;
   overdueRows: readonly OverdueInvoiceReportRow[];
   expenseRows: readonly { propertyId: string; propertyTitle: string | null; total: number; count: number }[];
   maintenanceRows: readonly Maintenance[];
@@ -101,6 +102,28 @@ function ensurePropertyPerformanceRow(
   return row;
 }
 
+function dateOnly(value: string | null | undefined) {
+  return value?.slice(0, 10) ?? '';
+}
+
+function dateIsOnOrBefore(value: string | null | undefined, dateTo: string) {
+  const normalized = dateOnly(value);
+  return Boolean(normalized && normalized <= dateTo);
+}
+
+function dateIsWithinPeriod(value: string | null | undefined, period: Pick<PropertyPerformanceParams['period'], 'from' | 'to'>) {
+  const normalized = dateOnly(value);
+  return Boolean(normalized && normalized >= period.from && normalized <= period.to);
+}
+
+function isOpenMaintenanceRequest(request: Maintenance) {
+  return !['resolved', 'closed', 'cancelled'].includes(String(request.status ?? '').toLowerCase());
+}
+
+function getMaintenanceCostDate(request: Maintenance) {
+  return request.completed_at ?? request.resolved_at ?? request.request_date ?? request.created_at;
+}
+
 /**
  * Decision report model for property/unit performance. It intentionally merges
  * the operational read models that used to appear as separate report islands:
@@ -110,14 +133,14 @@ function ensurePropertyPerformanceRow(
 export function buildPropertyPerformanceRows({
   occupancyRows,
   contracts,
-  receipts,
+  collectionRows,
+  period,
   overdueRows,
   expenseRows,
   maintenanceRows,
   vacancyRows,
 }: PropertyPerformanceParams): PropertyPerformanceRow[] {
   const rowsByProperty = new Map<string, MutablePropertyPerformanceDraft>();
-  const contractPropertyById = new Map<string, { propertyId: string | null; propertyTitle: string | null }>();
 
   for (const row of occupancyRows) {
     const property = ensurePropertyPerformanceRow(rowsByProperty, row.propertyId, row.property);
@@ -126,19 +149,14 @@ export function buildPropertyPerformanceRows({
   }
 
   for (const contract of contracts) {
-    contractPropertyById.set(contract.id, {
-      propertyId: contract.property_id,
-      propertyTitle: contract.properties?.title ?? null,
-    });
     if (!isContractStatus(contract.status, 'active')) continue;
     const property = ensurePropertyPerformanceRow(rowsByProperty, contract.property_id, contract.properties?.title);
     property.referenceRevenue += contract.rent_amount ?? 0;
   }
 
-  for (const receipt of receipts) {
-    const contract = receipt.contract_id ? contractPropertyById.get(receipt.contract_id) : undefined;
-    const property = ensurePropertyPerformanceRow(rowsByProperty, contract?.propertyId, contract?.propertyTitle);
-    property.collected += receipt.amount;
+  for (const collection of collectionRows) {
+    const property = ensurePropertyPerformanceRow(rowsByProperty, collection.propertyId, collection.propertyTitle);
+    property.collected += collection.totalPaid;
   }
 
   for (const overdue of overdueRows) {
@@ -153,8 +171,14 @@ export function buildPropertyPerformanceRows({
 
   for (const request of maintenanceRows) {
     const property = ensurePropertyPerformanceRow(rowsByProperty, request.property_id, null);
-    property.maintenanceCost += request.cost ?? 0;
-    if (!['resolved', 'closed', 'cancelled'].includes(String(request.status ?? '').toLowerCase())) {
+    // Closed maintenance normally creates a real expense row. Do not add those
+    // costs again here; only surface in-period maintenance cost that has not
+    // been posted as an expense yet, so operational impact is visible without
+    // inflating property cost.
+    if (!request.expense_id && dateIsWithinPeriod(getMaintenanceCostDate(request), period)) {
+      property.maintenanceCost += request.cost ?? 0;
+    }
+    if (isOpenMaintenanceRequest(request) && dateIsOnOrBefore(request.request_date ?? request.created_at, period.asOf)) {
       property.openMaintenanceCount += 1;
     }
   }

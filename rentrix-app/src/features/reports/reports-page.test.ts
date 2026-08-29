@@ -144,13 +144,14 @@ describe('ReportsPage shaping helpers', () => {
         { property: 'برج النخيل', propertyId: 'property_a', shortPropertyId: '', hasTitle: true, occupied: 3, vacant: 2 },
       ],
       contracts: [createContract({ id: 'contract_a', property_id: 'property_a', rent_amount: 1200 })],
-      receipts: [{ contract_id: 'contract_a', amount: 900 }],
+      collectionRows: [{ propertyId: 'property_a', propertyTitle: 'برج النخيل', totalPaid: 900, paymentsCount: 1 }],
+      period: { from: '2026-05-01', to: '2026-05-31', asOf: '2026-05-31' },
       overdueRows: [
         { invoiceId: 'invoice_1', shortInvoiceId: 'invoice_', contractId: 'contract_a', tenantId: null, tenantName: null, propertyId: 'property_a', propertyTitle: 'برج النخيل', unitId: null, unitNumber: null, dueDate: '2026-05-10', daysOverdue: 74, amount: 1500, paidAmount: 300, remainingAmount: 1200, status: 'partial' },
       ],
       expenseRows: [{ propertyId: 'property_a', propertyTitle: 'برج النخيل', total: 450, count: 2 }],
       maintenanceRows: [
-        { id: 'm1', no: null, property_id: 'property_a', unit_id: null, title: 'تسريب', description: null, priority: 'urgent', status: 'open', assigned_to: null, cost: 250, charged_to: null, notes: null, request_date: null, scheduled_date: null, work_description: null, technician_name: null, response_time_hours: null, expense_id: null, invoice_id: null, reported_by: null, completed_at: null, resolved_at: null, created_at: null, updated_at: null, attachment_url: null, deleted_at: null, company_id: 'company_1', reference: null, service_provider_id: null, service_provider_category_id: null, cancelled_at: null, cancellation_reason: null, request_id: null },
+        { id: 'm1', no: null, property_id: 'property_a', unit_id: null, title: 'تسريب', description: null, priority: 'urgent', status: 'open', assigned_to: null, cost: 250, charged_to: null, notes: null, request_date: '2026-05-12', scheduled_date: null, work_description: null, technician_name: null, response_time_hours: null, expense_id: null, invoice_id: null, reported_by: null, completed_at: null, resolved_at: null, created_at: null, updated_at: null, attachment_url: null, deleted_at: null, company_id: 'company_1', reference: null, service_provider_id: null, service_provider_category_id: null, cancelled_at: null, cancellation_reason: null, request_id: null },
       ],
       vacancyRows: [{ propertyId: 'property_a', daysVacant: 66 }],
     });
@@ -169,6 +170,24 @@ describe('ReportsPage shaping helpers', () => {
       longestVacancyDays: 66,
       priority: 'متابعة فورية',
     });
+  });
+
+  it('does not double-count closed maintenance costs already posted as expenses and ignores old costs', () => {
+    const rows = buildPropertyPerformanceRows({
+      occupancyRows: [{ property: 'برج النخيل', propertyId: 'property_a', shortPropertyId: '', hasTitle: true, occupied: 1, vacant: 0 }],
+      contracts: [createContract({ id: 'contract_a', property_id: 'property_a', rent_amount: 1200 })],
+      collectionRows: [{ propertyId: 'property_a', propertyTitle: 'برج النخيل', totalPaid: 1000, paymentsCount: 3 }],
+      period: { from: '2026-05-01', to: '2026-05-31', asOf: '2026-05-31' },
+      overdueRows: [],
+      expenseRows: [{ propertyId: 'property_a', propertyTitle: 'برج النخيل', total: 700, count: 1 }],
+      maintenanceRows: [
+        { id: 'posted-maintenance', no: null, property_id: 'property_a', unit_id: null, title: 'مغسلة', description: null, priority: 'high', status: 'closed', assigned_to: null, cost: 700, charged_to: null, notes: null, request_date: '2026-05-10', scheduled_date: null, work_description: null, technician_name: null, response_time_hours: null, expense_id: 'expense_1', invoice_id: null, reported_by: null, completed_at: '2026-05-12', resolved_at: null, created_at: null, updated_at: null, attachment_url: null, deleted_at: null, company_id: 'company_1', reference: null, service_provider_id: null, service_provider_category_id: null, cancelled_at: null, cancellation_reason: null, request_id: null },
+        { id: 'old-unposted-maintenance', no: null, property_id: 'property_a', unit_id: null, title: 'باب', description: null, priority: 'medium', status: 'closed', assigned_to: null, cost: 300, charged_to: null, notes: null, request_date: '2025-12-10', scheduled_date: null, work_description: null, technician_name: null, response_time_hours: null, expense_id: null, invoice_id: null, reported_by: null, completed_at: '2025-12-12', resolved_at: null, created_at: null, updated_at: null, attachment_url: null, deleted_at: null, company_id: 'company_1', reference: null, service_provider_id: null, service_provider_category_id: null, cancelled_at: null, cancellation_reason: null, request_id: null },
+      ],
+      vacancyRows: [],
+    });
+
+    expect(rows[0]).toMatchObject({ expenses: 700, maintenanceCost: 0, openMaintenanceCount: 0 });
   });
 
   it('keeps legacy-cased expiring contracts visible in the renewals window report', () => {

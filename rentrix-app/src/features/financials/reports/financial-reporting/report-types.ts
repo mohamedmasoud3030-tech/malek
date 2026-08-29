@@ -50,6 +50,19 @@ export type DailyCollectionReport = {
   methodTotals: PaymentMethodTotals;
 };
 
+export type PropertyCollectionBreakdownRow = {
+  propertyId: string;
+  propertyTitle: string | null;
+  totalPaid: number;
+  paymentsCount: number;
+};
+
+export type PropertyCollectionBreakdownReport = {
+  rows: PropertyCollectionBreakdownRow[];
+  grandTotal: number;
+  paymentsCount: number;
+};
+
 export type FinancialPeriodSummaryReport = {
   invoiced: number;
   paid: number;

@@ -70,6 +70,7 @@ export {
   getInvoiceTotalsReport,
   getOutstandingBalanceReport,
   getPaymentTotalsReport,
+  getPropertyCollectionBreakdownReport,
   summarizeCollectionReport,
   summarizeDailyCollectionReport,
   summarizeExpenseBreakdownReport,
@@ -79,6 +80,7 @@ export {
   summarizeInvoiceTotals,
   summarizeOutstandingBalance,
   summarizePaymentTotals,
+  summarizePropertyCollectionBreakdownReport,
   type CollectionSummaryReport,
   type DailyCollectionReport,
   type DailyCollectionReportRow,
@@ -96,4 +98,6 @@ export {
   type OutstandingBalanceReport,
   type PaymentMethodTotals,
   type PaymentTotalsReport,
+  type PropertyCollectionBreakdownReport,
+  type PropertyCollectionBreakdownRow,
 } from './operational-collection-service';

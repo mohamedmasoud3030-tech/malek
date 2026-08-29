@@ -83,7 +83,7 @@ export function PropertyAnalyticsSection({ occupancyRows, expenseRows, performan
       sections: [
         {
           title: 'تقرير أداء العقارات والوحدات — صف قرار موحّد',
-          columns: ['العقار', 'الإيراد المرجعي', 'الإشغال', 'أطول شغور', 'المحصّل', 'المتأخر', 'المصروفات', 'أثر الصيانة', 'الأولوية'],
+          columns: ['العقار', 'إيجارات العقود حسب دورتها', 'الإشغال', 'أطول شغور', 'المحصّل', 'المتأخر', 'المصروفات', 'صيانة غير مرحلة كمصروف', 'أولوية المتابعة'], 
           rows: (performanceRows.length > 0 ? performanceRows : Array.from(propertyMap.values()).map((property) => {
             const units = property.occupied + property.vacant;
             const rate = units > 0 ? Math.round((property.occupied / units) * 100) : 0;
@@ -162,6 +162,7 @@ export function PropertyAnalyticsSection({ occupancyRows, expenseRows, performan
       </div>
 
       <ReportInsightNote title="قراءة المحفظة">
+        <p className="mb-2">أولوية المتابعة محسوبة تشغيليًا من ضغط المتأخرات والشغور وطلبات الصيانة المفتوحة وعبء المصروفات؛ ليست درجة خطر مالية أو بديلًا عن القوائم المحاسبية.</p>
         {lowestOccupancyProperty && lowestOccupancyRate < 70
           ? `${lowestOccupancyProperty.property} هو الأقل إشغالًا بنسبة ${Math.round(lowestOccupancyRate)}%؛ ابدأ بمراجعة شواغره وتسعيره وحالته التشغيلية.`
           : highestExpenseShare > 60
@@ -171,7 +172,7 @@ export function PropertyAnalyticsSection({ occupancyRows, expenseRows, performan
 
       <ReportPanel
         title="أداء العقارات والوحدات"
-        description="صف قرار واحد لكل عقار: الإيراد المرجعي، الإشغال، الشغور بالأيام، التحصيل، المتأخرات، المصروفات، وأثر الصيانة."
+        description="صف قرار واحد لكل عقار: إيجارات العقود حسب دورتها دون تطبيع شهري، الإشغال، الشغور بالأيام، التحصيل الكامل للفترة، المتأخرات، المصروفات، والصيانة غير المرحلة كمصروف."
         eyebrow="تقرير قرار قابل للتصرف"
         icon={Building2}
         action={(
@@ -198,12 +199,12 @@ export function PropertyAnalyticsSection({ occupancyRows, expenseRows, performan
                 <ReportListRow
                   key={row.propertyId}
                   title={row.propertyTitle}
-                  subtitle={`مرجعي ${formatMoney(row.referenceRevenue)} · محصّل ${formatMoney(row.collected)} · متأخر ${formatMoney(row.overdue)}`}
+                  subtitle={`إيجارات العقود حسب دورتها ${formatMoney(row.referenceRevenue)} · محصّل الفترة ${formatMoney(row.collected)} · متأخر ${formatMoney(row.overdue)}`}
                   meta={`${formatLatinNumber(row.occupiedUnits, 'ar')} مشغولة / ${formatLatinNumber(row.vacantUnits, 'ar')} شاغرة · أطول شغور ${formatLatinNumber(row.longestVacancyDays, 'ar')} يوم · صيانة مفتوحة ${formatLatinNumber(row.openMaintenanceCount, 'ar')}`}
                   value={(
                     <div className="space-y-1 text-end">
                       <StatusBadge tone={priorityTone}>{row.priority}</StatusBadge>
-                      <p className="text-xs font-medium text-muted-foreground" dir="ltr">{Math.round(row.occupancyRate)}% · {formatMoney(row.expenses + row.maintenanceCost)}</p>
+                      <p className="text-xs font-medium text-muted-foreground" dir="ltr">أولوية {row.riskScore}/100 · {Math.round(row.occupancyRate)}% · مصروفات {formatMoney(row.expenses)}</p>
                     </div>
                   )}
                 />
