@@ -7,6 +7,12 @@ import { contractRowFixtureDefaults } from '@/test/contractRowFixture';
 
 afterEach(() => cleanup());
 
+// The page registers permission-gated actions through the shared auth seam.
+vi.mock('@/hooks/use-auth', () => ({
+  useAuth: () => ({ authorization: { role: 'MANAGER' }, canAccess: () => true }),
+  useOptionalAuth: () => ({ canAccess: () => true }),
+}));
+
 vi.mock('../useContracts', () => ({
   useSubmitContractForApproval: () => ({ isPending: false, mutateAsync: vi.fn() }),
   useApproveContract: () => ({ isPending: false, mutateAsync: vi.fn() }),

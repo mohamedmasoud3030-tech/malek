@@ -79,12 +79,12 @@ export function ReportsFilterSurface({
               onClick={onResetCurrentMonth}
               aria-label="إعادة نطاق التقرير إلى الشهر الحالي"
               title="الشهر الحالي"
-              className="grid size-8 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+              className="grid size-11 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
             >
               <RotateCcw className="size-3.5" aria-hidden="true" />
             </button>
           ) : null}
-          <Button type="button" variant="ghost" className="min-h-9 gap-1.5 px-2 text-xs font-black" onClick={() => setIsOpen(true)}>
+          <Button type="button" variant="ghost" className="min-h-11 gap-1.5 px-2 text-xs font-black" onClick={() => setIsOpen(true)}>
             <SlidersHorizontal className="size-3.5" aria-hidden="true" />
             تعديل النطاق
           </Button>

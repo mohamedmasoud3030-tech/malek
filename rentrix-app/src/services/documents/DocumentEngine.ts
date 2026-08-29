@@ -25,7 +25,7 @@ import '@/lib/formatters';
 import { getCurrencySymbol, getCurrencyWordConfig, numberToArabicWords } from '@/lib/numberToArabicWords';
 import { TableGenerator } from './TableGenerator';
 import type { DocumentHeader, DocumentRequest, DocumentTable, UnifiedDocumentModel } from './types';
-import { formatLatinDate, formatLatinNumber } from '@/lib/formatters';
+import { formatLatinDate, formatLatinNumber, toDateOnlyISO } from '@/lib/formatters';
 import {
   assertDocumentCompanySettings,
   deriveHonestReference,
@@ -1021,7 +1021,7 @@ function buildUnitPassportModel(entry: DocumentTemplateEntry, settings: Document
       title,
       reference: payload.unitNumber,
       dateLabel: 'تاريخ إصدار الجواز',
-      dateValue: formatDate(new Date().toISOString().split('T')[0]),
+      dateValue: formatDate(toDateOnlyISO()),
       ctx,
     }),
     kpis: [
@@ -1172,7 +1172,7 @@ function buildLegalDossierModel(entry: DocumentTemplateEntry, settings: Document
       title,
       reference: payload.reference,
       dateLabel: 'تاريخ إعداد الملف',
-      dateValue: formatDate(new Date().toISOString().split('T')[0]),
+      dateValue: formatDate(toDateOnlyISO()),
       ctx,
     }),
     kpis: [

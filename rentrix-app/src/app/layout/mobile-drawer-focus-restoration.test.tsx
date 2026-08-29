@@ -92,7 +92,7 @@ describe('AppShell mobile navigation bottom sheet — scroll lock and focus rest
     expect(sheet?.getAttribute('role')).toBe('dialog');
     expect(sheet?.getAttribute('aria-modal')).toBe('true');
     expect(sheet?.className).toContain('w-full');
-    expect(sheet?.className).toContain('rounded-t-3xl');
+    expect(sheet?.className).toContain('rounded-t-[1.35rem]');
 
     expect(document.body.style.overflow).toBe('hidden');
     expect(document.documentElement.style.overflow).toBe('hidden');

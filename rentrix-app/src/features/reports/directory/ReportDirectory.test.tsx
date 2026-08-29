@@ -16,7 +16,11 @@ describe('ReportDirectory', () => {
     expect(html.match(/data-report-group=/g)).toHaveLength(6);
     expect(html).toContain('بحث في مركز التقارير');
     expect(html).toContain('الأكثر استخدامًا');
-    expect(html).toContain("role=\"tablist\"");
+    // Scope filter is a shared FilterTabs toggle group (aria-pressed buttons),
+    // not a tablist.
+    expect(html).toContain('role="group"');
+    expect(html).toContain('aria-label="مجالات التقارير"');
+    expect(html).toContain('aria-pressed="true"');
     expect(html).toContain('أداء المكتب');
     expect(html).toContain('التحصيل والمتأخرات');
     expect(html).toContain('العقود والإشغال');

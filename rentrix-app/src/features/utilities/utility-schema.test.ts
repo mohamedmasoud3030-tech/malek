@@ -36,6 +36,7 @@ const billPayload = {
   paid_amount: 0,
   due_date: '2026-08-01',
   responsible_party: 'tenant' as const,
+  actual_payer: 'tenant' as const,
   attachment_url: null,
   notes: null,
 };

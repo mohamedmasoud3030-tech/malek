@@ -189,7 +189,7 @@ export function EntityCard({
                 type="button"
                 aria-label={action.ariaLabel}
                 className={cn(
-                  'inline-flex min-h-9 min-w-0 items-center justify-center gap-1 rounded border px-2 text-[11.5px] font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20',
+                  'inline-flex min-h-11 min-w-0 items-center justify-center gap-1 rounded border px-2 text-[11.5px] font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20',
                   getActionClassName(action.variant),
                 )}
                 onClick={action.onClick}

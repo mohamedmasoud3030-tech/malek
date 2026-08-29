@@ -17,8 +17,11 @@ describe('accessibility baseline — landmarks & nav semantics', () => {
     expect(navViewSource).toContain('aria-current={isActive ? \'page\'');
   });
 
-  it('mobile drawer is a Dialog with hidden title for screen readers', () => {
-    expect(shellSource).toContain('<DialogTitle className="sr-only"');
+  it('mobile drawer is a labelled dialog surface for screen readers', () => {
+    // The mobile nav BottomSheet renders a visible <h2> title and links the
+    // dialog to it via aria-labelledby (see components/ui/bottom-sheet.tsx).
+    expect(shellSource).toContain('<BottomSheet');
+    expect(shellSource).toContain('title="القائمة الرئيسية"');
   });
 
   it('canonical Money tabs and navigation are labeled', () => {
@@ -56,7 +59,12 @@ describe('accessibility baseline — meaningful text remains readable', () => {
   });
 
   it('dense finance metadata remains explicit text rather than decoration', () => {
-    const occurrences = (financialsSource.match(/text-\[11px\]|text-xs/g) ?? []).length;
+    // The dense register metadata lives in the collections workspace now.
+    const invoiceRegister = readFileSync(
+      new URL('../features/financials/components/invoice-list-section.tsx', import.meta.url),
+      'utf8',
+    );
+    const occurrences = (invoiceRegister.match(/text-\[11px\]|text-xs/g) ?? []).length;
     expect(occurrences).toBeGreaterThan(0);
   });
 });

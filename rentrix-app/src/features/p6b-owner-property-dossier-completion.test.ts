@@ -13,18 +13,20 @@ describe('P6b — owner and property operational dossiers (closeout)', () => {
     expect(detail).toContain('OwnerDossierBody');
   });
 
-  it('surfaces the full real owner context: identity, KPIs, properties, units, contracts, financial, settlements, activity, documents', () => {
+  it('surfaces the operational owner context: identity, KPIs, properties, units, contracts, activity, documents', () => {
     const body = read('./owners/components/owner-dossier-body.tsx');
     expect(body).toContain('بيانات التواصل');
-    // Tenant receivables are never presented as an owner balance.
-    expect(body).toContain('مستحقات المستأجرين');
-    expect(body).toContain('فواتير المستأجرين على العقارات');
     expect(body).toContain('العقارات المرتبطة');
     expect(body).toContain('الوحدات المرتبطة');
     expect(body).toContain('العقود المرتبطة');
-    expect(body).toContain('تسويات المالك');
     expect(body).toContain('آخر النشاط');
     expect(body).toContain('ContextualDocumentsSection');
+    // Tenant receivables and owner settlements are never presented as an
+    // owner balance — detailed finances live in the Money/Reports workspaces
+    // and the detail page header says so explicitly.
+    expect(body).not.toContain('تسويات المالك');
+    const detailView = read('./owners/components/owner-detail-view.tsx');
+    expect(detailView).toContain('المالية التفصيلية في مساحة المال والتقارير');
   });
 
   it('uses readable references, never raw ids, in the owner dossier', () => {

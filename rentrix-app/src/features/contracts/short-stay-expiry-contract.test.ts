@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 const migration = readFileSync(
   resolve(
     import.meta.dirname,
-    '../../../supabase/migrations/20260901000047_short_stay_date_driven_expiry.sql',
+    '../../../../supabase/migrations/20260901000047_short_stay_date_driven_expiry.sql',
   ),
   'utf8',
 );
@@ -35,7 +35,14 @@ describe('short stay checkout expiry', () => {
 
   it('accepts no browser-selected company, contract, unit, date or target status', () => {
     expect(service).toContain("rpc('reconcile_due_short_stays_atomic')");
-    expect(service).not.toMatch(/p_(company|contract|unit|date|status)/);
+    // The date-driven reconciliation RPC takes no parameters at all — the
+    // server decides everything. (The extension RPC is a separate deliberate
+    // operator action and is allowed to name one contract and its new dates.)
+    const reconcileCall = service.slice(
+      service.indexOf("rpc('reconcile_due_short_stays_atomic')"),
+      service.indexOf('}', service.indexOf("rpc('reconcile_due_short_stays_atomic')")),
+    );
+    expect(reconcileCall).not.toMatch(/p_/);
   });
 
   it('reconciles before the normal contract and unit operational reads', () => {

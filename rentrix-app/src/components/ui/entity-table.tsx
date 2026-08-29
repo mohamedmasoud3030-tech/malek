@@ -94,8 +94,6 @@ export interface EntityTableProps<T> {
   renderRowExpansion?: (row: T) => ReactNode;
   expandedRowId?: string | null;
   onExpandedRowChange?: (rowId: string | null) => void;
-  /** High-value field shown below identity on mobile cards. */
-  mobileVisibleSecondaryKey?: string;
   /** Canonical entity label/tone used by the mobile card when no badge overrides it. */
   mobileCardType?: EntityCardType | ((row: T) => EntityCardType);
   /**
@@ -178,12 +176,7 @@ function priorityClass(priority: ColumnPriority, sticky = true) {
 function selectMobileDatum<T>(
   columns: ResolvedColumn<T>[],
   identityColumn: ResolvedColumn<T>,
-  mobileVisibleSecondaryKey?: string,
 ): ResolvedColumn<T> | undefined {
-  if (mobileVisibleSecondaryKey) {
-    const designated = columns.find((column) => column.key === mobileVisibleSecondaryKey);
-    if (designated && designated !== identityColumn && designated.resolvedPriority !== 'actions') return designated;
-  }
   return (
     columns.find((column) => column.resolvedPriority === 'primary' && column !== identityColumn)
     ?? columns.find((column) => (column.resolvedPriority === 'secondary' || column.resolvedPriority === 'detail') && column !== identityColumn)
@@ -464,7 +457,6 @@ export function EntityTable<T>({
   renderRowExpansion,
   expandedRowId,
   onExpandedRowChange,
-  mobileVisibleSecondaryKey,
   mobileCardType,
   mobileBadgeKey,
   mobileSummaryKeys,
@@ -548,7 +540,7 @@ export function EntityTable<T>({
       <div className={cn('space-y-2', className)} data-entity-table-register>
         {enableViewModeToggle ? (
           <div data-entity-table-toolbar className="flex min-h-9 items-center justify-end">
-            <div className="inline-flex min-h-9 items-center rounded-lg border border-border/60 bg-muted/25 p-0.5" role="group" aria-label={`طريقة عرض ${ariaLabel}`}>
+            <div className="inline-flex min-h-11 items-center rounded-lg border border-border/60 bg-muted/25 p-0.5" role="group" aria-label={`طريقة عرض ${ariaLabel}`}>
               <Button type="button" variant={viewMode === 'cards' ? 'secondary' : 'ghost'} size="sm" aria-pressed={viewMode === 'cards'} onClick={() => chooseViewMode('cards')}>
                 <LayoutGrid className="size-3.5" aria-hidden="true" />
                 <span className="ms-1">بطاقات</span>
@@ -593,7 +585,7 @@ export function EntityTable<T>({
 
   const identityColumn = resolvedColumns.find((column) => column.resolvedPriority === 'identity') ?? resolvedColumns[0];
   if (!identityColumn) return null;
-  const datumColumn = selectMobileDatum(resolvedColumns, identityColumn, mobileVisibleSecondaryKey);
+  const datumColumn = selectMobileDatum(resolvedColumns, identityColumn);
   const actionsColumn = resolvedColumns.find((column) => column.resolvedPriority === 'actions');
   const badgeColumn = mobileBadgeKey
     ? resolvedColumns.find((column) => column.key === mobileBadgeKey)
@@ -612,7 +604,7 @@ export function EntityTable<T>({
       {toolbar || enableViewModeToggle ? (
         <div data-entity-table-toolbar className="flex min-h-9 flex-wrap items-center justify-end gap-1.5">
           {enableViewModeToggle ? (
-            <div className="inline-flex min-h-9 items-center rounded-lg border border-border/60 bg-muted/25 p-0.5" role="group" aria-label={`طريقة عرض ${ariaLabel}`}>
+            <div className="inline-flex min-h-11 items-center rounded-lg border border-border/60 bg-muted/25 p-0.5" role="group" aria-label={`طريقة عرض ${ariaLabel}`}>
               <Button type="button" variant={viewMode === 'cards' ? 'secondary' : 'ghost'} size="sm" aria-pressed={viewMode === 'cards'} onClick={() => chooseViewMode('cards')}>
                 <LayoutGrid className="size-3.5" aria-hidden="true" />
                 <span className="ms-1">بطاقات</span>
@@ -702,7 +694,7 @@ export function EntityTable<T>({
                           {column.sortable && onSort ? (
                             <button
                               type="button"
-                              className="inline-flex min-h-8 cursor-pointer items-center font-bold text-muted-foreground outline-none transition hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/25"
+                              className="inline-flex min-h-11 cursor-pointer items-center font-bold text-muted-foreground outline-none transition hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/25"
                               onClick={() => handleSort(column.key)}
                             >
                               {column.header}<SortIcon field={column.key} sort={sort} />
@@ -745,7 +737,7 @@ export function EntityTable<T>({
                             <TableCell className="w-9 px-1.5" data-row-action>
                               <button
                                 type="button"
-                                className="grid size-9 place-items-center rounded-md text-muted-foreground outline-none transition hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/20"
+                                className="grid size-11 place-items-center rounded-md text-muted-foreground outline-none transition hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/20"
                                 aria-label={isExpanded ? 'إخفاء تفاصيل الصف' : 'عرض كل تفاصيل الصف'}
                                 aria-expanded={isExpanded}
                                 aria-controls={detailId}

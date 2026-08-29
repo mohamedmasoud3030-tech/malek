@@ -9,7 +9,8 @@ export const governedUserRoles = ['ADMIN', 'MANAGER', 'ACCOUNTANT', 'OPERATIONS'
 export type OfficePersona = 'OWNER' | 'EMPLOYEE';
 
 export function getOfficePersona(role: UserRole | null): OfficePersona | null {
-  if (!role) return null;
+  // Unknown role strings (stale clients, bad data) must not leak into a persona.
+  if (!role || !governedUserRoles.includes(role)) return null;
   return role === 'ADMIN' ? 'OWNER' : 'EMPLOYEE';
 }
 

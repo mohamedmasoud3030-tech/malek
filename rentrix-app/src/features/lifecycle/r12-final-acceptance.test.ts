@@ -232,24 +232,28 @@ describe('R12 — full acceptance journey (canonical commands only)', () => {
     maintenanceId = String(created.maintenance.id);
 
     await db.query(`select public.transition_maintenance_status_atomic($1::text, 'in_progress', null)`, [maintenanceId]);
+    // Technical completion first; the expense is created at verified close by
+    // close_maintenance_with_expense (journal-coupled), which is the only
+    // sanctioned path into 'closed'.
     const resolved = (await db.query<{ out: any }>(
-      `select public.resolve_maintenance_with_expense(
-         p_request_id := $1::text, p_cost := ${EXPENSE_COST}, p_notes := 'إصلاح نهائي') as out`,
+      `select public.transition_maintenance_status_atomic($1::text, 'resolved', null) as out`,
       [maintenanceId],
     )).rows[0]?.out as any;
-    expenseId = String(resolved.expense_id);
-    expect(resolved.maintenance.status).toBe('resolved');
+    expect(resolved.status).toBe('resolved');
+
+    const closed = (await db.query<{ out: any }>(
+      `select public.close_maintenance_with_expense(
+         p_request_id := $1::text, p_cost := ${EXPENSE_COST},
+         p_charged_to := 'COMPANY', p_notes := 'إصلاح نهائي', p_confirmed := true) as out`,
+      [maintenanceId],
+    )).rows[0]?.out as any;
+    expect(closed.maintenance.status).toBe('closed');
+    expenseId = String(closed.expense_id);
     const { rows: expense } = await db.query<{ amount: string }>(
       `select amount::text from public.expenses where id::text = $1 and deleted_at is null`,
       [expenseId],
     );
     expect(Number(expense[0].amount)).toBe(EXPENSE_COST);
-
-    const closed = (await db.query<{ out: any }>(
-      `select public.transition_maintenance_status_atomic($1::text, 'closed', null) as out`,
-      [maintenanceId],
-    )).rows[0]?.out as any;
-    expect(closed.status).toBe('closed');
   });
 
   it('owner settlement: draft (server-derived) → approve → pay with balanced journal', async () => {

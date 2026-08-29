@@ -2,12 +2,19 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { OwnersPage } from './OwnersPage';
 
 const createOwnerMock = vi.fn();
 const updateOwnerMock = vi.fn();
 let ownersRows: any[] = [];
 let propertiesRows: any[] = [];
+
+// The page registers permission-gated actions through the shared auth seam.
+vi.mock('@/hooks/use-auth', () => ({
+  useAuth: () => ({ authorization: { role: 'MANAGER' }, canAccess: () => true }),
+  useOptionalAuth: () => ({ canAccess: () => true }),
+}));
 
 vi.mock('@tanstack/react-router', () => ({
   Link: ({ children, params, to }: any) => <a href={params?.ownerId ? `/owners/${params.ownerId}` : params?.propertyId ? `/properties/${params.propertyId}` : to}>{children}</a>,
@@ -20,6 +27,14 @@ vi.mock('./useOwners', () => ({
   useCreateOwner: () => ({ isPending: false, mutateAsync: createOwnerMock }),
   useUpdateOwner: () => ({ isPending: false, mutateAsync: updateOwnerMock }),
   usePropertiesWithOwners: () => ({ data: propertiesRows, isLoading: false, isError: false, error: null, refetch: vi.fn() }),
+  // OwnerPreviewDialog reads the owner dossier snapshot for its inline preview.
+  useOwnerDetailSnapshot: () => ({
+    data: null,
+    isLoading: false,
+    isError: false,
+    error: null,
+    refetch: vi.fn(),
+  }),
   useOwnerActiveContracts: () => ({ data: [{ id: 'contract-1', property_id: 'property-1' }], isLoading: false, isError: false, error: null, refetch: vi.fn() }),
   useLinkOwnerToProperty: () => ({ isPending: false, mutateAsync: vi.fn() }),
   useUpdatePropertyOwnerLink: () => ({ isPending: false, mutateAsync: vi.fn() }),
@@ -86,7 +101,7 @@ describe('OwnersPage actual owner-model mobile workflow interactions', () => {
   });
 
   it('opens the owner create form from the header and shows inline Arabic validation', async () => {
-    await act(async () => root.render(<OwnersPage />));
+    await act(async () => root.render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><OwnersPage /></QueryClientProvider>));
 
     const addButton = Array.from(container.querySelectorAll('button')).find((button) => button.textContent?.includes('إضافة مالك'));
     expect(addButton).toBeTruthy();
@@ -103,14 +118,15 @@ describe('OwnersPage actual owner-model mobile workflow interactions', () => {
   });
 
   it('exposes detail, statement, relationships, and edit actions in the shared table', async () => {
-    await act(async () => root.render(<OwnersPage />));
+    await act(async () => root.render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><OwnersPage /></QueryClientProvider>));
 
     expect(container.textContent).toContain('عقار المالك');
     const actionMenu = container.querySelector('button[aria-haspopup="menu"]');
     expect(actionMenu).toBeTruthy();
     await act(async () => actionMenu?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
     const menuItems = Array.from(document.body.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'));
-    expect(menuItems.map((item) => item.textContent)).toEqual(expect.arrayContaining(['التفاصيل', 'العلاقات', 'تعديل']));
+    // Detail access is the shared preview action (معاينة) across the registers.
+    expect(menuItems.map((item) => item.textContent)).toEqual(expect.arrayContaining(['معاينة', 'العلاقات', 'تعديل']));
 
     const editButton = menuItems.find((button) => button.textContent?.trim() === 'تعديل');
     expect(editButton).toBeTruthy();
@@ -122,7 +138,7 @@ describe('OwnersPage actual owner-model mobile workflow interactions', () => {
   it('exposes the empty-state create action', async () => {
     ownersRows = [];
     propertiesRows = [];
-    await act(async () => root.render(<OwnersPage />));
+    await act(async () => root.render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><OwnersPage /></QueryClientProvider>));
     expect(container.textContent).toContain('لا يوجد ملاك');
     expect(Array.from(container.querySelectorAll('button')).some((button) => button.textContent?.includes('إضافة مالك'))).toBe(true);
   });

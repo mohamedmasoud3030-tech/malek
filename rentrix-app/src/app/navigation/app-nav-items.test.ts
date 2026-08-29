@@ -43,7 +43,7 @@ describe('task-centric app navigation', () => {
     const portfolio = workspaceChildNavItems['/properties'];
     expect(portfolio.map(([, labelKey]) => labelKey)).toEqual(['units', 'owners']);
     expect(portfolio.map(([, labelKey, , , permission, search]) => ({ labelKey, permission, search }))).toEqual([
-      { labelKey: 'units', permission: undefined, search: { section: 'units' } },
+      { labelKey: 'units', permission: 'properties.view', search: { section: 'units' } },
       { labelKey: 'owners', permission: 'owners.hub.view', search: { section: 'owners' } },
     ]);
     expect(portfolio.some(([, labelKey]) => labelKey === 'lands')).toBe(false);
@@ -57,14 +57,14 @@ describe('task-centric app navigation', () => {
 
   it('shows only daily Money tasks in routine navigation', () => {
     const children = workspaceChildNavItems['/financials'];
-    expect(children.map(([to]) => to)).toEqual(Array(4).fill('/financials'));
+    expect(children.map(([to]) => to)).toEqual(Array(3).fill('/financials'));
     expect(children.map(([, labelKey, , , permission, search]) => ({ labelKey, permission, search }))).toEqual([
-      { labelKey: 'invoices', permission: undefined, search: { section: 'collections', view: 'invoices' } },
-      { labelKey: 'receipts', permission: undefined, search: { section: 'collections', view: 'receipts' } },
-      { labelKey: 'arrears', permission: 'arrears.view', search: { section: 'collections', view: 'arrears' } },
+      { labelKey: 'invoices', permission: 'financial.workspace.view', search: { section: 'collections', view: 'invoices' } },
+      { labelKey: 'receipts', permission: 'financial.workspace.view', search: { section: 'collections', view: 'receipts' } },
       { labelKey: 'expenses', permission: 'expenses.view', search: { section: 'expenses', view: 'expenses' } },
     ]);
-    for (const specialist of ['deposits', 'ownerSettlements', 'bankReconciliation', 'commissions']) {
+    // Arrears and the specialist registers stay inside the Money shell.
+    for (const specialist of ['arrears', 'deposits', 'ownerSettlements', 'bankReconciliation', 'commissions']) {
       expect(children.some(([, labelKey]) => labelKey === specialist)).toBe(false);
     }
   });
@@ -73,8 +73,8 @@ describe('task-centric app navigation', () => {
     const services = workspaceChildNavItems['/maintenance'];
     expect(services.map(([, labelKey]) => labelKey)).toEqual(['maintenance', 'utilities']);
     expect(services.map(([, labelKey, , , permission, search]) => ({ labelKey, permission, search }))).toEqual([
-      { labelKey: 'maintenance', permission: undefined, search: { section: 'maintenance' } },
-      { labelKey: 'utilities', permission: undefined, search: { section: 'utilities' } },
+      { labelKey: 'maintenance', permission: 'maintenance.view', search: { section: 'maintenance' } },
+      { labelKey: 'utilities', permission: 'maintenance.view', search: { section: 'utilities' } },
     ]);
     expect(services.some(([, labelKey]) => labelKey === 'serviceProviders')).toBe(false);
     expect(services.some(([, labelKey]) => labelKey === 'documentsVault')).toBe(false);

@@ -9,6 +9,7 @@
  * Costs and estimates are strictly passed from canonical maintenance records.
  */
 import { documentService } from '@/services/documents/DocumentService';
+import { toDateOnlyISO } from '@/lib/formatters';
 import { hasCompleteCompanyIdentity, type DocumentCompanySettings } from '@/services/documents/companyIdentity';
 import { runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
 import type { MaintenanceCompletionPayload, MaintenanceWorkOrderPayload } from '@/services/documents/documentPayloads';
@@ -32,7 +33,7 @@ export function toMaintenanceWorkOrderPayload(params: {
   return {
     reference: reference ?? null,
     status: maintenance.status ?? 'open',
-    issueDate: maintenance.created_at ? maintenance.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
+    issueDate: maintenance.created_at ? maintenance.created_at.split('T')[0] : toDateOnlyISO(),
     scheduledDate: maintenance.scheduled_date ?? null,
     propertyTitle: propertyTitle ?? null,
     unitNumber: unitNumber ?? null,
@@ -123,7 +124,7 @@ export function toMaintenanceCompletionPayload(params: {
 
   return {
     reference: reference ?? null,
-    completionDate: completionDate ?? new Date().toISOString().split('T')[0],
+    completionDate: completionDate ?? toDateOnlyISO(),
     status: maintenance.status ?? 'resolved',
     propertyTitle: propertyTitle ?? null,
     unitNumber: unitNumber ?? null,

@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { createRoot } from 'react-dom/client';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act } from 'react';
 import { UnitsPage } from './units-page';
 
@@ -8,6 +9,12 @@ import { UnitsPage } from './units-page';
 const mockNavigate = vi.fn();
 const createUnitMock = vi.fn();
 const updateUnitMock = vi.fn();
+
+// The page registers permission-gated actions through the shared auth seam.
+vi.mock('@/hooks/use-auth', () => ({
+  useAuth: () => ({ authorization: { role: 'MANAGER' }, canAccess: () => true }),
+  useOptionalAuth: () => ({ canAccess: () => true }),
+}));
 
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => mockNavigate,
@@ -50,6 +57,15 @@ vi.mock('./use-units', () => ({
   }),
   useCreateUnit: () => ({ isPending: false, mutateAsync: createUnitMock }),
   useUpdateUnit: () => ({ isPending: false, mutateAsync: updateUnitMock }),
+  useUnitDetail: () => ({
+    data: {
+      id: 'unit-1', property_id: 'prop-1', unit_number: '101', status: 'available',
+      rent_amount: 1500, daily_reference_rate: null, floor: '1', notes: null, name: null,
+      created_at: '', updated_at: '', deleted_at: null, company_id: 'company-1',
+    },
+    isLoading: false,
+    isError: false,
+  }),
 }));
 
 vi.mock('@/features/properties/use-properties', () => ({
@@ -89,7 +105,11 @@ describe('Global UnitsPage Real Rendered User-Interaction Tests', () => {
 
   it('exposes a mobile-safe create entry point and opens the unit form from the global units route', async () => {
     await act(async () => {
-      root.render(<UnitsPage />);
+      root.render(
+        <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+          <UnitsPage />
+        </QueryClientProvider>,
+      );
     });
 
     const addButton = Array.from(container?.querySelectorAll('button') ?? [])
@@ -106,7 +126,11 @@ describe('Global UnitsPage Real Rendered User-Interaction Tests', () => {
 
   it('opens the edit form from the mobile card without requiring property selection again', async () => {
     await act(async () => {
-      root.render(<UnitsPage />);
+      root.render(
+        <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+          <UnitsPage />
+        </QueryClientProvider>,
+      );
     });
 
     const editButton = Array.from(container?.querySelectorAll('button') ?? [])
@@ -122,9 +146,13 @@ describe('Global UnitsPage Real Rendered User-Interaction Tests', () => {
     expect(document.body.textContent).not.toContain('اختيار العقار مطلوب');
   });
 
-  it('proves clicking a desktop row in UnitsPage navigates to nested unit detail URL', async () => {
+  it('proves clicking a desktop row in UnitsPage opens the route-native unit preview', async () => {
     await act(async () => {
-      root.render(<UnitsPage />);
+      root.render(
+        <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+          <UnitsPage />
+        </QueryClientProvider>,
+      );
     });
 
     // Locate desktop row in table body
@@ -136,16 +164,18 @@ describe('Global UnitsPage Real Rendered User-Interaction Tests', () => {
       row.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
 
-    // Verify row click correctly navigates to nested unit detail
-    expect(mockNavigate).toHaveBeenCalledWith({
-      to: '/properties/$propertyId/units/$unitId',
-      params: { propertyId: 'prop-1', unitId: 'unit-1' },
-    });
+    // Row clicks open the shared preview dialog instead of leaving the register.
+    expect(document.body.textContent).toContain('معاينة الوحدة');
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 
-  it('proves clicking a compact responsive table row in UnitsPage navigates to nested unit detail URL', async () => {
+  it('proves clicking a compact responsive table row in UnitsPage opens the unit preview', async () => {
     await act(async () => {
-      root.render(<UnitsPage />);
+      root.render(
+        <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+          <UnitsPage />
+        </QueryClientProvider>,
+      );
     });
 
     const row = container?.querySelector('tbody tr') as HTMLElement;
@@ -155,16 +185,17 @@ describe('Global UnitsPage Real Rendered User-Interaction Tests', () => {
       row.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
 
-    // Verify card click correctly navigates to nested unit detail
-    expect(mockNavigate).toHaveBeenCalledWith({
-      to: '/properties/$propertyId/units/$unitId',
-      params: { propertyId: 'prop-1', unitId: 'unit-1' },
-    });
+    expect(document.body.textContent).toContain('معاينة الوحدة');
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 
   it('proves that clicking the embedded property link does not bubble and routes only to property detail', async () => {
     await act(async () => {
-      root.render(<UnitsPage />);
+      root.render(
+        <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+          <UnitsPage />
+        </QueryClientProvider>,
+      );
     });
 
     // Locate the embedded property link in the desktop table (under td)

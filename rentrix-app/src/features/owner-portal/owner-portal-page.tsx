@@ -5,6 +5,7 @@ import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { LoadingState } from '@/components/ui/loading-state';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { APP_BRAND_NAME } from '@/lib/brand';
+import { DEFAULT_CURRENCY, formatMoney, normalizeCurrency } from '@/lib/formatters';
 import { loadOwnerPortalSnapshot } from './owner-portal-service';
 import type {
   OwnerPortalLoadResult,
@@ -13,13 +14,8 @@ import type {
   OwnerPortalUnit,
 } from './owner-portal-read-model';
 
-function money(value: number, currency = 'OMR') {
-  return new Intl.NumberFormat('ar-OM-u-nu-latn', {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 3,
-    maximumFractionDigits: 3,
-  }).format(Number(value) || 0);
+function money(value: number, currency: string = DEFAULT_CURRENCY) {
+  return formatMoney({ amount: value, currency: normalizeCurrency(currency), locale: 'ar-OM-u-nu-latn' });
 }
 
 function date(value: string | null | undefined) {

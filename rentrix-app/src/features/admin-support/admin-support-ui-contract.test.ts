@@ -56,8 +56,10 @@ describe("admin/support UI safety contract", () => {
     expect(service).not.toContain("updateGovernedUserAccess");
     // Roles display read-only; access changes flow through governed
     // permission requests, never direct browser edits.
-    expect(workspace).toContain("الدور معروض للمراجعة فقط");
-    expect(workspace).toContain("طلبات الصلاحية المعتمدة");
+    expect(workspace).toContain("نوع الحساب");
+    expect(workspace).toContain("getRoleLabel(user.role");
+    expect(workspace).toContain("صاحب المكتب لديه كل الصلاحيات تلقائيًا");
+    expect(workspace).toContain("طلبات الصلاحية");
     expect(workspace).not.toContain("updateGovernedUserAccess");
   });
 });

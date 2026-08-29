@@ -17,6 +17,12 @@ let propertyRows: any[] = [];
 let propertyCount = 0;
 const createPropertyWithAgreementMock = vi.fn();
 
+// The page registers permission-gated actions through the shared auth seam.
+vi.mock('@/hooks/use-auth', () => ({
+  useAuth: () => ({ authorization: { role: 'MANAGER' }, canAccess: () => true }),
+  useOptionalAuth: () => ({ canAccess: () => true }),
+}));
+
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => mockNavigate,
   Link: ({ children, to }: { children: ReactNode; to: string }) => <a href={to}>{children}</a>,
@@ -94,12 +100,12 @@ describe('PropertiesListPage controller regression', () => {
     const desktopRows = container.querySelectorAll('tbody tr');
     expect(desktopRows.length).toBe(2);
 
-    // The responsive register keeps both semantic presentations available;
-    // CSS selects the table or cards for the active viewport.
+    // The register keeps one explicit Cards ⇄ Table choice: the table view
+    // carries the shared view-mode toggle instead of a duplicate card list.
     expect(container.querySelector('[data-entity-table-scroll]')).toBeTruthy();
     expect(container.querySelector('[data-compact-responsive-table]')).toBeTruthy();
     expect(container.querySelector('table[data-entity-table]')).toBeTruthy();
-    expect(container.querySelectorAll('[data-entity-table-mobile-card]').length).toBe(2);
+    expect(container.querySelector('[role="group"][aria-label*="طريقة عرض"]')).toBeTruthy();
   });
 
   it('opens create modal and shows agreement fields', async () => {
@@ -130,6 +136,9 @@ describe('PropertiesListPage controller regression', () => {
   });
 
   it('renders mobile property cards with scan-level summary fields and flat actions', async () => {
+    // The shared register keeps an explicit Cards ⇄ Table choice; pin the
+    // cards presentation so the mobile card surface is the one under test.
+    window.localStorage.setItem('malek:entity-register:view-mode', 'cards');
     propertyRows = [{
       id: 'p1', title: 'عمارة الندى', type: 'سكني', address: 'الرياض', status: 'active',
       purchase_value: null, current_value: null, notes: null,

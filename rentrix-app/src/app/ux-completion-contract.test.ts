@@ -67,7 +67,8 @@ describe('UX completion contract', () => {
     const owners = source('features/owners/components/owner-workspace-table.tsx');
     expect(owners).not.toContain('معرّف السجل');
     expect(owners).not.toContain('<Link to="/reports"');
-    expect(owners).toContain('التفاصيل');
+    // Owner detail access is the shared preview action across the registers.
+    expect(owners).toContain('معاينة');
     expect(owners).toContain('العلاقات');
     expect(owners).toContain('تعديل');
   });

@@ -58,7 +58,7 @@ describe('listInvoicesPaginated', () => {
       {
         table: 'invoices',
         method: 'select',
-        args: ['*, contracts:contract_id!inner(id,property_id,tenant_id)', { count: 'exact' }],
+        args: ['*, contracts:contract_id!inner(id,property_id,tenant_id,properties:properties!contracts_property_id_fkey(id,title),units:units!contracts_unit_id_fkey(id,unit_number),people:people!contracts_tenant_id_fkey(id,full_name,phone))', { count: 'exact' }],
       },
       { table: 'invoices', method: 'is', args: ['deleted_at', null] },
       { table: 'invoices', method: 'is', args: ['contracts.deleted_at', null] },
@@ -88,7 +88,7 @@ describe('listInvoicesPaginated', () => {
       {
         table: 'invoices',
         method: 'select',
-        args: ['*, contracts:contract_id(id,property_id,tenant_id)', { count: 'exact' }],
+        args: ['*, contracts:contract_id(id,property_id,tenant_id,properties:properties!contracts_property_id_fkey(id,title),units:units!contracts_unit_id_fkey(id,unit_number),people:people!contracts_tenant_id_fkey(id,full_name,phone))', { count: 'exact' }],
       },
       { table: 'invoices', method: 'range', args: [0, 9] },
     ]));

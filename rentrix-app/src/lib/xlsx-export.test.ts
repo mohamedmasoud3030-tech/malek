@@ -31,7 +31,9 @@ describe('XLSX export', () => {
     expect(packageText).toContain('rightToLeft="1"');
     expect(packageText).toContain('state="frozen"');
     expect(packageText).toContain('autoFilter');
-    expect(packageText).toContain("'=malicious()");
+    // Formula-injection guard prefixes an apostrophe; XML escaping turns it
+    // into &apos; inside the inline string.
+    expect(packageText).toContain('&apos;=malicious()');
     expect(packageText).not.toContain('<f>');
   });
 });

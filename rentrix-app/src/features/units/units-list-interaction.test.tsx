@@ -11,6 +11,12 @@ import { UnitsList } from './units-list';
 const mockNavigate = vi.fn();
 const mockSoftDeleteMutate = vi.fn();
 
+// The page registers permission-gated actions through the shared auth seam.
+vi.mock('@/hooks/use-auth', () => ({
+  useAuth: () => ({ authorization: { role: 'MANAGER' }, canAccess: () => true }),
+  useOptionalAuth: () => ({ canAccess: () => true }),
+}));
+
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => mockNavigate,
   Link: ({ children }: any) => children,
