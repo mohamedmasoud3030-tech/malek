@@ -34,7 +34,8 @@ export function DashboardSignalPanel({
       aria-labelledby={labelledBy}
       data-dashboard-signal-panel
       className={cn(
-        'overflow-hidden border-y border-border/80 bg-card sm:rounded-2xl sm:border sm:shadow-card',
+        'relative min-w-0 overflow-hidden rounded-xl border border-border/70 bg-card shadow-sm',
+        'shadow-[inset_0_1px_0_hsl(var(--border)/0.2)] sm:rounded-2xl sm:shadow-card',
         className,
       )}
     >
@@ -59,13 +60,13 @@ export function DashboardSignalHeader({
   trailing?: ReactNode;
 }>) {
   return (
-    <div className="flex min-h-14 items-center justify-between gap-3 px-3 py-2.5 sm:px-4" data-dashboard-signal-header>
-      <div className="flex min-w-0 items-center gap-2.5">
-        <span className={cn('grid size-8 shrink-0 place-items-center rounded-xl', toneClasses[tone])} aria-hidden="true">
+    <div className="flex min-h-14 items-center justify-between gap-3 px-3.5 py-3 sm:min-h-16 sm:px-4" data-dashboard-signal-header>
+      <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
+        <span className={cn('grid size-9 shrink-0 place-items-center rounded-lg ring-1 ring-current/10', toneClasses[tone])} aria-hidden="true">
           <Icon className="size-4" />
         </span>
         <div className="min-w-0">
-          <h3 id={id} className="truncate text-sm font-extrabold leading-5 text-foreground">{title}</h3>
+          <h3 id={id} className="truncate text-[13.5px] font-extrabold leading-5 text-foreground sm:text-sm">{title}</h3>
           {meta ? <p className="mt-0.5 line-clamp-1 text-[11px] font-medium leading-4 text-muted-foreground">{meta}</p> : null}
         </div>
       </div>
@@ -76,7 +77,7 @@ export function DashboardSignalHeader({
 
 export function DashboardSignalList({ children, label }: Readonly<{ children: ReactNode; label?: string }>) {
   return (
-    <ul className="divide-y divide-border/65 border-t border-border/70" role="list" aria-label={label} data-dashboard-signal-list>
+    <ul className="divide-y divide-border/55 border-t border-border/60" role="list" aria-label={label} data-dashboard-signal-list>
       {children}
     </ul>
   );
@@ -84,8 +85,8 @@ export function DashboardSignalList({ children, label }: Readonly<{ children: Re
 
 export function dashboardSignalRowClass(tone: DashboardSignalTone = 'neutral', className?: string) {
   return cn(
-    'grid min-h-[3.25rem] w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-s-2 px-3 py-2 text-start outline-none transition-colors',
-    'hover:bg-muted/55 focus-visible:bg-muted/55 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/25 sm:px-4',
+    'grid min-h-[3.125rem] w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-s-2 px-3.5 py-2 text-start outline-none transition-[background-color,border-color,transform]',
+    'hover:bg-muted/35 focus-visible:bg-muted/35 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/25 active:translate-y-px sm:px-4',
     rowToneClasses[tone],
     className,
   );
@@ -123,7 +124,7 @@ export function DashboardSignalEmpty({
   role?: 'status' | 'alert';
 }>) {
   return (
-    <div className="border-t border-border/70 px-3 py-2.5 sm:px-4" role={role} data-dashboard-signal-empty>
+    <div className="border-t border-border/60 bg-muted/[0.08] px-3.5 py-3 sm:px-4" role={role} data-dashboard-signal-empty>
       <p className="text-xs font-bold text-foreground">{title}</p>
       {description ? <p className="mt-0.5 hidden text-[11px] leading-4 text-muted-foreground sm:block">{description}</p> : null}
     </div>
@@ -132,8 +133,8 @@ export function DashboardSignalEmpty({
 
 export function DashboardSignalLoading({ label }: Readonly<{ label: string }>) {
   return (
-    <div className="border-t border-border/70 px-3 py-2.5 sm:px-4" aria-label={label}>
-      <div className="h-10 animate-pulse rounded-xl bg-muted" />
+    <div className="border-t border-border/60 px-3.5 py-3 sm:px-4" aria-label={label}>
+      <div className="h-10 animate-pulse rounded-lg bg-muted" />
     </div>
   );
 }

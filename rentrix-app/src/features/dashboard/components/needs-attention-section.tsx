@@ -38,9 +38,14 @@ export function NeedsAttentionSection({ signal, isLoading, isError = false }: Ne
   const visibleItems = signal.items.slice(0, NEEDS_ATTENTION_VISIBLE_LIMIT);
   const hiddenCount = signal.totalCount - visibleItems.length;
   const dangerCount = signal.items.reduce((count, item) => count + (item.severity === 'danger' ? 1 : 0), 0);
+  const panelClassName = dangerCount > 0
+    ? 'border-danger/25 bg-gradient-to-b from-danger-bg/35 via-card to-card shadow-[0_12px_34px_-28px_hsl(var(--color-danger-text))]'
+    : signal.totalCount > 0
+      ? 'border-warning/25 bg-gradient-to-b from-warning-bg/30 via-card to-card'
+      : 'border-success/20 bg-gradient-to-b from-success-bg/20 via-card to-card';
 
   return (
-    <DashboardSignalPanel labelledBy="needs-attention-title">
+    <DashboardSignalPanel labelledBy="needs-attention-title" className={panelClassName}>
       <DashboardSignalHeader
         id="needs-attention-title"
         title="يحتاج انتباهك"
@@ -53,6 +58,16 @@ export function NeedsAttentionSection({ signal, isLoading, isError = false }: Ne
         }
         icon={signal.totalCount > 0 ? AlertCircle : CheckCircle2}
         tone={dangerCount > 0 ? 'danger' : signal.totalCount > 0 ? 'warning' : 'success'}
+        trailing={signal.totalCount > 0 ? (
+          <span className={cn(
+            'inline-flex min-h-7 items-center rounded-full border px-2.5 text-[11px] font-black tabular-nums',
+            dangerCount > 0
+              ? 'border-danger/20 bg-danger-bg text-danger-text'
+              : 'border-warning/20 bg-warning-bg text-warning-text',
+          )}>
+            {signal.totalCount}
+          </span>
+        ) : undefined}
       />
 
       {isLoading ? <DashboardSignalLoading label="جارٍ تحميل الحالات التي تحتاج انتباهاً" /> : null}
@@ -83,7 +98,7 @@ export function NeedsAttentionSection({ signal, isLoading, isError = false }: Ne
                   <DashboardSignalMain title={item.title} meta={item.meta} />
                   <span
                     className={cn(
-                      'grid size-6 shrink-0 place-items-center rounded-full',
+                      'grid size-6 shrink-0 place-items-center rounded-full ring-1 ring-current/10',
                       tone === 'danger' ? 'bg-danger-bg text-danger-text' : tone === 'warning' ? 'bg-warning-bg text-warning-text' : 'bg-info-bg text-info-text',
                     )}
                     aria-hidden="true"
@@ -128,7 +143,7 @@ export function NeedsAttentionSection({ signal, isLoading, isError = false }: Ne
             })}
           </DashboardSignalList>
           {hiddenCount > 0 ? (
-            <p className="border-t border-border/70 px-3 py-2 text-[11px] font-bold text-muted-foreground sm:px-4" data-dashboard-attention-more>
+            <p className="border-t border-border/60 bg-muted/[0.08] px-3.5 py-2 text-[11px] font-bold text-muted-foreground sm:px-4" data-dashboard-attention-more>
               +{hiddenCount} حالات أخرى في مساحات العمل المرتبطة
             </p>
           ) : null}

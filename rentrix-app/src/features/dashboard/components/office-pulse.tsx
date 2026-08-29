@@ -50,14 +50,20 @@ export function OfficePulse({ snapshot, isLoading, settings, dailySeries, dailyS
 
   const sparkValues = dailySeries?.rows.map((row) => row.total) ?? [];
   const showSparkline = !dailySeriesLoading && sparkValues.length >= 2;
+  const pulseCardClass = 'h-full border-border/55 bg-card/95 shadow-sm transition-[transform,border-color,box-shadow] duration-200 group-hover:-translate-y-0.5 group-hover:border-primary/25 group-hover:shadow-card-hover';
+  const pulseLinkClass = 'group block min-w-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2';
 
   return (
-    <div data-dashboard-office-pulse>
+    <div
+      data-dashboard-office-pulse
+      className="relative overflow-hidden rounded-2xl border border-border/65 bg-gradient-to-br from-primary/[0.055] via-card to-card p-2 shadow-[inset_0_1px_0_hsl(var(--border)/0.22)] sm:p-2.5"
+    >
+      <span className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-primary/35 to-transparent" aria-hidden="true" />
       <ResponsiveCardGrid gap="sm" aria-label="نبض المكتب" desktopColumns={4}>
         <Link
           to="/financials"
           data-dashboard-kpi-link
-          className="block min-w-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          className={pulseLinkClass}
           aria-label="التحصيل هذا الشهر — انتقل إلى المركز المالي"
         >
           <KpiCard
@@ -67,7 +73,7 @@ export function OfficePulse({ snapshot, isLoading, settings, dailySeries, dailyS
             icon={HandCoins}
             accent={collectionRate >= 80 ? 'emerald' : collectionRate >= 50 ? 'amber' : 'rose'}
             compact
-            className="h-full"
+            className={pulseCardClass}
             visual={showSparkline ? (
               <Sparkline values={sparkValues} label="حركة التحصيل اليومي خلال الشهر" />
             ) : undefined}
@@ -77,7 +83,7 @@ export function OfficePulse({ snapshot, isLoading, settings, dailySeries, dailyS
         <Link
           to="/units"
           data-dashboard-kpi-link
-          className="block min-w-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          className={pulseLinkClass}
           aria-label={`نسبة الإشغال ${occupancyRate}% — انتقل إلى سجل الوحدات`}
         >
           <KpiCard
@@ -87,7 +93,7 @@ export function OfficePulse({ snapshot, isLoading, settings, dailySeries, dailyS
             icon={Building2}
             accent={occupancyRate >= 90 ? 'emerald' : occupancyRate >= 75 ? 'amber' : 'rose'}
             compact
-            className="h-full"
+            className={pulseCardClass}
             visual={(
               <RadialMetric
                 percent={occupancyRate}
@@ -102,7 +108,7 @@ export function OfficePulse({ snapshot, isLoading, settings, dailySeries, dailyS
         <Link
           to="/arrears"
           data-dashboard-kpi-link
-          className="block min-w-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          className={pulseLinkClass}
           aria-label={`المتأخرات ${money(totalOverdue)} — انتقل إلى المتأخرات`}
         >
           <KpiCard
@@ -116,14 +122,14 @@ export function OfficePulse({ snapshot, isLoading, settings, dailySeries, dailyS
             icon={AlertOctagon}
             accent={totalOverdue === 0 ? 'emerald' : over90Count > 0 ? 'rose' : 'amber'}
             compact
-            className="h-full"
+            className={pulseCardClass}
           />
         </Link>
 
         <Link
           to="/reports"
           data-dashboard-kpi-link
-          className="block min-w-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          className={pulseLinkClass}
           aria-label="نبض سيولة المكتب — انتقل إلى التقارير"
         >
           <KpiCard
@@ -133,7 +139,7 @@ export function OfficePulse({ snapshot, isLoading, settings, dailySeries, dailyS
             icon={TrendingUp}
             accent={netCash >= 0 ? 'emerald' : 'rose'}
             compact
-            className="h-full"
+            className={pulseCardClass}
             visual={(
               <MiniBarsCompare
                 items={[
