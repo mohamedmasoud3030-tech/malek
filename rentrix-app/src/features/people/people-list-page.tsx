@@ -257,7 +257,7 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
                 setType(event.target.value as PersonTypeFilter);
                 setPage(1);
               }}
-              className="h-10 w-36 shrink-0 rounded-lg"
+              className="min-h-11 w-36 shrink-0 rounded-lg"
             >
               <option value="all">كل الأنواع</option>
               {personTypeValues.map((item) => (

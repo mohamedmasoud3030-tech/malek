@@ -104,6 +104,7 @@ export function OperationsHubWorkspace({
             activeId={activeSection}
             onChange={handleSectionChange}
             ariaLabel="أقسام الخدمات"
+            compactMobile
           />
         ) : null}
 

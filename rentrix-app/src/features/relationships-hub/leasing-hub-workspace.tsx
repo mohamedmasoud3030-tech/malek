@@ -105,6 +105,7 @@ export function LeasingHubWorkspace() {
               activeId={activeSection}
               onChange={handleSectionChange}
               ariaLabel="أقسام التأجير"
+              compactMobile
             />
           ) : null}
 

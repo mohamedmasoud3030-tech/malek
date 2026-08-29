@@ -69,7 +69,7 @@ export function ReportsPage() {
   }
 
   return (
-    <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro" className="pb-8">
+    <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro">
       <PageHeader title={reportsTitle} description={pageDescription} />
 
       <div data-finance-root className="min-w-0 grid gap-4 lg:grid-cols-[17.5rem_minmax(0,1fr)] lg:items-start">

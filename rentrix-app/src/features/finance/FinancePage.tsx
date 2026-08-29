@@ -145,7 +145,7 @@ export function FinancePage() {
   }
 
   return (
-    <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro" className="pb-8">
+    <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro">
       <PageHeader
         title="المالية"
         description={activeSectionDefinition ? FINANCE_SECTION_HELP[activeSectionDefinition.id] : 'أنجز العمل المالي من مكان واحد.'}

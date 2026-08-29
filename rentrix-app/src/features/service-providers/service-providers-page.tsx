@@ -128,10 +128,10 @@ export function ServiceProvidersWorkspace({ embedded = false }: Readonly<{ embed
         search={{ value: search, onChange: (value) => { setSearch(value); setPage(1); }, placeholder: 'بحث بالاسم أو الهاتف أو السجل' }}
         filters={(
           <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto no-scrollbar">
-            <Select aria-label="تصفية مزودي الخدمات حسب الحالة" value={status} onChange={(event) => { setStatus(event.target.value as ServiceProviderStatusFilter); setPage(1); }} className="h-10 w-32 shrink-0">
+            <Select aria-label="تصفية مزودي الخدمات حسب الحالة" value={status} onChange={(event) => { setStatus(event.target.value as ServiceProviderStatusFilter); setPage(1); }} className="min-h-11 w-32 shrink-0">
               <option value="all">كل الحالات</option><option value="active">نشط</option><option value="inactive">غير نشط</option>
             </Select>
-            <Select aria-label="تصفية حسب نوع الخدمة" value={categoryId} disabled={categoriesQuery.isLoading || categoriesQuery.isError} onChange={(event) => { setCategoryId(event.target.value); setPage(1); }} className="h-10 w-40 shrink-0">
+            <Select aria-label="تصفية حسب نوع الخدمة" value={categoryId} disabled={categoriesQuery.isLoading || categoriesQuery.isError} onChange={(event) => { setCategoryId(event.target.value); setPage(1); }} className="min-h-11 w-40 shrink-0">
               <option value="">كل الأنواع</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
             </Select>
             <ActiveFilterBar filters={activeFilters} onClearAll={clearFilters} />

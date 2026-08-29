@@ -312,7 +312,7 @@ export function DashboardPage() {
   const snapshotUnavailable = hasDashboardError && !snapshot;
 
   return (
-    <PageLayout size="wide" className="pb-8" visualVariant="malek-pro">
+    <PageLayout size="wide" visualVariant="malek-pro">
       <PageHeader
         title="لوحة التحكم"
         description="مركز قيادة اليوم: الأداء، الأولويات، التحصيل، الإشغال، العقود والالتزامات في مسار واحد."

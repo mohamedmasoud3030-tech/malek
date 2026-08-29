@@ -147,7 +147,7 @@ export function LandsView({
       )}
       primaryAction={<Button onClick={onCreate}><Plus className="size-4" />إضافة أرض</Button>}
     >
-      <ResponsiveCardGrid>
+      <ResponsiveCardGrid desktopColumns={4}>
         {isLoading ? Array.from({ length: 4 }).map((_, index) => <Skeleton key={index} className="h-24 rounded-2xl sm:h-28" />) : (
           <>
             <KpiCard label="إجمالي السجلات" value={rows.length} icon={MapPinned} accent="primary" sub={`${activeRows} نشطة`} />
