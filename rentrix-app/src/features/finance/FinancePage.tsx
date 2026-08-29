@@ -1,24 +1,17 @@
-import { Link, useNavigate, useSearch } from '@tanstack/react-router';
-import { AlertTriangle, BadgeDollarSign, FileCheck, FileSpreadsheet, HandCoins, ReceiptText, WalletCards } from 'lucide-react';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { lazy, Suspense, useCallback, useMemo } from 'react';
 import { AccessDenied } from '@/components/layout/access-denied';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
-import { Button } from '@/components/ui/button';
-import { SectionHeader } from '@/components/ui/section-header';
 import { SectionTabs } from '@/components/ui/section-tabs';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getTodayLocalDateString } from '@/features/financials/financials-date-utils';
-import { useArrearsSummaryReport, useCollectionSummaryReport } from '@/features/financials/reports/useFinancialReports';
 import { useAuth } from '@/hooks/use-auth';
-import { cn } from '@/lib/utils';
-import { FinanceOperationsOverview } from './components/finance-operations-overview';
 import {
   FINANCE_SECTIONS,
   FINANCE_VIEWS,
   getPermittedSections,
   getPermittedViews,
-  isViewPermitted,
+  getRoutineFinanceViews,
   resolveFinanceLocation,
   type FinanceSectionId,
   type FinanceViewId,
@@ -26,106 +19,19 @@ import {
 } from './shell/financeShellModel';
 
 const FINANCE_SECTION_HELP: Record<FinanceSectionId, string> = {
-  overview: 'صورة سريعة عن الجاهزية والتحصيل الحالي.',
-  collections: 'الفواتير والإيصالات والمتأخرات في دورة تحصيل واحدة.',
-  expenses: 'المصروفات والعمولات ومتابعة ما تم اعتماده أو دفعه.',
-  fees: 'استحقاقات أتعاب الإدارة الدورية ومتابعة تسجيلها.',
+  overview: 'مسار قديم متوافق؛ العمل اليومي يبدأ من الفواتير.',
+  collections: 'ابحث عن الفاتورة، اعرف صاحبها وعقارها، ثم حصّلها من نفس السجل.',
+  fees: 'دخل المكتب من أتعاب الإدارة والعمولات.',
+  expenses: 'إضافة المصروف ومراجعته من سجل واحد.',
   funds: 'تأمينات المستأجرين ومستحقات وتسويات الملاك.',
-  banking: 'مطابقة كشف البنك وربط الحركة المصرفية بالسجلات.',
+  banking: 'الحسابات البنكية والمطابقة والفروقات التي تحتاج مراجعة.',
 };
-
-function getSectionStatus(
-  sectionId: FinanceSectionId,
-  outstanding: number,
-  overdue: number,
-  expenses: number,
-  dataUnavailable: boolean,
-): string {
-  if (sectionId === 'overview') return 'الآن';
-  if (dataUnavailable && (sectionId === 'collections' || sectionId === 'expenses')) return 'غير متاح';
-  if (sectionId === 'collections') {
-    if (overdue > 0) return 'تدخل مطلوب';
-    return outstanding > 0 ? 'قيد التحصيل' : 'مستقر';
-  }
-  if (sectionId === 'expenses') return expenses > 0 ? 'حركة مسجلة' : 'لا حركة';
-  if (sectionId === 'fees') return 'استحقاق دوري';
-  if (sectionId === 'funds') return 'أموال محفوظة';
-  return 'جاهز للمطابقة';
-}
-
-type FinanceHeaderAction = Readonly<{
-  id: string;
-  label: string;
-  icon: typeof ReceiptText;
-  sectionId?: FinanceSectionId;
-  viewId?: FinanceViewId;
-  reports?: boolean;
-}>;
-
-function getHeaderActions(
-  sectionId: FinanceSectionId | null,
-  viewId: FinanceViewId | null,
-  permittedViewIds: ReadonlySet<FinanceViewId>,
-): FinanceHeaderAction[] {
-  const canViewArrears = permittedViewIds.has('arrears');
-  if (sectionId === 'overview') {
-    return [
-      { id: 'record-receipt', label: 'تسجيل تحصيل', icon: ReceiptText, sectionId: 'collections', viewId: 'receipts' },
-      canViewArrears
-        ? { id: 'review-arrears', label: 'المتأخرات', icon: AlertTriangle, sectionId: 'collections', viewId: 'arrears' }
-        : permittedViewIds.has('expenses')
-          ? { id: 'review-expenses', label: 'المصروفات', icon: WalletCards, sectionId: 'expenses', viewId: 'expenses' }
-          : { id: 'open-reports', label: 'التقارير', icon: FileSpreadsheet, reports: true },
-    ];
-  }
-  if (sectionId === 'collections') {
-    const actions: FinanceHeaderAction[] = [
-      viewId === 'receipts'
-        ? { id: 'open-invoices', label: 'الفواتير', icon: FileSpreadsheet, sectionId: 'collections', viewId: 'invoices' }
-        : { id: 'record-receipt', label: 'تسجيل تحصيل', icon: ReceiptText, sectionId: 'collections', viewId: 'receipts' },
-    ];
-    if (canViewArrears && viewId !== 'arrears') {
-      actions.push({ id: 'review-arrears', label: 'المتأخرات', icon: AlertTriangle, sectionId: 'collections', viewId: 'arrears' });
-    }
-    return actions;
-  }
-  if (sectionId === 'expenses') {
-    if (viewId === 'expenses' && permittedViewIds.has('commissions')) {
-      return [{ id: 'open-commissions', label: 'العمولات', icon: BadgeDollarSign, sectionId: 'expenses', viewId: 'commissions' }];
-    }
-    if (viewId !== 'expenses' && permittedViewIds.has('expenses')) {
-      return [{ id: 'open-expenses', label: 'المصروفات', icon: WalletCards, sectionId: 'expenses', viewId: 'expenses' }];
-    }
-    return [{ id: 'open-reports', label: 'التقارير', icon: FileSpreadsheet, reports: true }];
-  }
-  if (sectionId === 'funds') {
-    if (viewId === 'deposits' && permittedViewIds.has('owner_settlements')) {
-      return [{ id: 'open-settlements', label: 'تسويات الملاك', icon: HandCoins, sectionId: 'funds', viewId: 'owner_settlements' }];
-    }
-    if (viewId !== 'deposits' && permittedViewIds.has('deposits')) {
-      return [{ id: 'open-deposits', label: 'التأمينات', icon: FileCheck, sectionId: 'funds', viewId: 'deposits' }];
-    }
-    return [{ id: 'open-reports', label: 'التقارير', icon: FileSpreadsheet, reports: true }];
-  }
-  return [{ id: 'open-reports', label: 'التقارير', icon: FileSpreadsheet, reports: true }];
-}
-
-function getCurrentMonthReportRange() {
-  const now = new Date();
-  const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-  return {
-    dateFrom: getTodayLocalDateString(firstDay),
-    dateTo: getTodayLocalDateString(lastDay),
-    status: 'all' as const,
-  };
-}
 
 function SectionFallback() {
   return (
     <div className="space-y-3" role="status" aria-label="جارٍ تحميل القسم">
-      <Skeleton className="h-24 rounded-2xl" />
-      <Skeleton className="h-64 rounded-2xl" />
+      <Skeleton className="h-20 rounded-xl" />
+      <Skeleton className="h-64 rounded-xl" />
     </div>
   );
 }
@@ -163,14 +69,8 @@ export function FinancePage() {
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as FinancialsSearch;
 
-  const reportFilters = useMemo(() => getCurrentMonthReportRange(), []);
   const permittedViews = useMemo(() => getPermittedViews(authorization), [authorization]);
   const permittedSections = useMemo(() => getPermittedSections(authorization), [authorization]);
-  const permittedViewIds = useMemo(() => new Set(permittedViews.map((view) => view.id)), [permittedViews]);
-  const canViewArrears = permittedViewIds.has('arrears');
-  const arrearsFilters = useMemo(() => ({ asOf: getTodayLocalDateString() }), []);
-  const collectionReport = useCollectionSummaryReport(reportFilters);
-  const arrearsReport = useArrearsSummaryReport(arrearsFilters, { enabled: canViewArrears });
 
   const rawSection = search.section || '';
   const rawView = search.view || '';
@@ -179,48 +79,33 @@ export function FinancePage() {
     [rawSection, rawView, authorization],
   );
 
-  const { activeSection, activeView, isRequestedViewForbidden } = useMemo(() => {
-    if (permittedSections.length === 0) {
-      return { activeSection: null, activeView: null, isRequestedViewForbidden: false };
-    }
+  const explicitlyRequestedView = useMemo(
+    () => rawView ? FINANCE_VIEWS.find((view) => view.id === rawView) : undefined,
+    [rawView],
+  );
+  const isRequestedViewForbidden = Boolean(
+    explicitlyRequestedView && !permittedViews.some((view) => view.id === explicitlyRequestedView.id),
+  );
 
-    const matchedView = permittedViews.find((view) => view.id === resolvedViewId);
-    const isExplicitlyRequested = Boolean(rawSection || rawView);
-    const viewExists = FINANCE_VIEWS.some((view) => view.id === resolvedViewId);
-    const hasPermissionForView = Boolean(matchedView);
-
-    if (isExplicitlyRequested && viewExists && !hasPermissionForView) {
-      return { activeSection: null, activeView: null, isRequestedViewForbidden: true };
-    }
-
-    if (matchedView) {
-      return { activeSection: resolvedSectionId, activeView: resolvedViewId, isRequestedViewForbidden: false };
-    }
-
-    const fallbackSection = permittedSections.find((section) => section.id === 'overview') || permittedSections[0];
-    const sectionViews = permittedViews.filter((view) => view.sectionId === fallbackSection.id);
-    const fallbackView = sectionViews[0];
-
-    return {
-      activeSection: fallbackSection.id,
-      activeView: fallbackView ? fallbackView.id : null,
-      isRequestedViewForbidden: false,
-    };
-  }, [resolvedSectionId, resolvedViewId, rawSection, rawView, permittedViews, permittedSections]);
+  const activeSection = permittedSections.some((section) => section.id === resolvedSectionId)
+    ? resolvedSectionId
+    : permittedSections[0]?.id ?? null;
+  const activeView = permittedViews.some((view) => view.id === resolvedViewId)
+    ? resolvedViewId
+    : activeSection
+      ? getRoutineFinanceViews(authorization, activeSection)[0]?.id ?? null
+      : null;
 
   const handleSectionChange = useCallback((sectionId: FinanceSectionId) => {
-    const sectionViews = FINANCE_VIEWS.filter((view) => view.sectionId === sectionId);
-    const permittedSectionViews = sectionViews.filter((view) => isViewPermitted(authorization, view));
-    const defaultView = permittedSectionViews[0] ? permittedSectionViews[0].id : '';
-
+    const defaultView = getRoutineFinanceViews(authorization, sectionId)[0]?.id;
+    if (!defaultView) return;
     void navigate({
       to: '.',
-      search: (previous: Record<string, unknown>) => {
-        const next: Record<string, unknown> = { ...previous, section: sectionId };
-        if (defaultView) next.view = defaultView;
-        else delete next.view;
-        return next;
-      },
+      search: (previous: Record<string, unknown>) => ({
+        ...previous,
+        section: sectionId,
+        view: defaultView,
+      }),
       replace: true,
     });
   }, [navigate, authorization]);
@@ -233,57 +118,13 @@ export function FinancePage() {
     });
   }, [navigate]);
 
-  const handleLocationChange = useCallback((sectionId: FinanceSectionId, viewId: FinanceViewId) => {
-    void navigate({
-      to: '.',
-      search: (previous: Record<string, unknown>) => ({
-        ...previous,
-        section: sectionId,
-        view: viewId,
-      }),
-      replace: true,
-    });
-  }, [navigate]);
-
-  const subViews = useMemo(
-    () => permittedViews.filter((view) => view.sectionId === activeSection),
-    [activeSection, permittedViews],
+  const routineViews = useMemo(
+    () => getRoutineFinanceViews(authorization, activeSection),
+    [activeSection, authorization],
   );
   const activeSectionDefinition = FINANCE_SECTIONS.find((section) => section.id === activeSection) ?? null;
   const activeViewDefinition = FINANCE_VIEWS.find((view) => view.id === activeView) ?? null;
-  const cockpitIsLoading = collectionReport.isLoading || (canViewArrears && arrearsReport.isLoading);
-  const cockpitIsError = collectionReport.isError || (canViewArrears && arrearsReport.isError);
-  const headerActions = getHeaderActions(activeSection, activeView, permittedViewIds);
-  const primaryHeaderAction = headerActions[0] ?? null;
-  const secondaryHeaderActions = headerActions.slice(1);
-
-  const renderHeaderAction = (action: FinanceHeaderAction, variant: 'default' | 'outline') => {
-    const Icon = action.icon;
-    if (action.reports) {
-      return (
-        <Button key={action.id} variant={variant} size="sm" asChild className="min-h-11">
-          <Link to="/reports">
-            <Icon className="me-1.5 size-4" aria-hidden="true" />
-            {action.label}
-          </Link>
-        </Button>
-      );
-    }
-
-    return (
-      <Button
-        key={action.id}
-        type="button"
-        variant={variant}
-        size="sm"
-        className="min-h-11"
-        onClick={() => action.sectionId && action.viewId && handleLocationChange(action.sectionId, action.viewId)}
-      >
-        <Icon className="me-1.5 size-4" aria-hidden="true" />
-        {action.label}
-      </Button>
-    );
-  };
+  const routineActiveView = routineViews.some((view) => view.id === activeView) ? activeView ?? '' : '';
 
   if (isRequestedViewForbidden) {
     return (
@@ -294,7 +135,7 @@ export function FinancePage() {
     );
   }
 
-  if (permittedSections.length === 0) {
+  if (permittedSections.length === 0 || !activeSection || !activeView) {
     return (
       <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro">
         <PageHeader title="المالية" />
@@ -307,181 +148,95 @@ export function FinancePage() {
     <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro" className="pb-8">
       <PageHeader
         title="المالية"
-        description={activeSectionDefinition ? FINANCE_SECTION_HELP[activeSectionDefinition.id] : undefined}
-        primaryAction={primaryHeaderAction ? renderHeaderAction(primaryHeaderAction, 'default') : undefined}
-        secondaryActions={secondaryHeaderActions.length > 0
-          ? <>{secondaryHeaderActions.map((action) => renderHeaderAction(action, 'outline'))}</>
-          : undefined}
+        description={activeSectionDefinition ? FINANCE_SECTION_HELP[activeSectionDefinition.id] : 'أنجز العمل المالي من مكان واحد.'}
       />
 
-      <div data-finance-root className="min-w-0 space-y-4 sm:space-y-5">
-        <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(15rem,18rem)_minmax(0,1fr)] lg:items-start">
-          <aside className="min-w-0 space-y-3 lg:sticky lg:top-4">
-            <nav
-              aria-label="أقسام المالية"
-              className="hidden overflow-hidden rounded-2xl border border-border/70 bg-card p-2 shadow-card lg:block"
-            >
-              <div className="px-3 pb-2 pt-1">
-                <p className="text-xs font-black text-muted-foreground">مساحات العمل</p>
-                <p className="mt-0.5 text-sm font-black">انتقل حسب دورة المال</p>
-              </div>
-              <div className="space-y-1.5">
-                {permittedSections.map((section) => {
-                  const isActive = activeSection === section.id;
-                  return (
-                    <button
-                      key={section.id}
-                      type="button"
-                      onClick={() => handleSectionChange(section.id)}
-                      aria-current={isActive ? 'page' : undefined}
-                      className={cn(
-                        'group flex min-h-12 w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-start transition-[background-color,color,box-shadow,transform] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20',
-                        isActive
-                          ? 'bg-primary text-primary-foreground shadow-sm'
-                          : 'text-foreground hover:-translate-y-px hover:bg-muted/60',
-                      )}
-                    >
-                      <span className={cn(
-                        'grid size-8 shrink-0 place-items-center rounded-lg',
-                        isActive ? 'bg-primary-foreground/15' : 'bg-muted text-muted-foreground group-hover:text-foreground',
-                      )}>
-                        <section.icon className="size-4" aria-hidden="true" />
-                      </span>
-                      <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
-                        <span className="truncate text-sm font-black">{section.label}</span>
-                        <span className={cn(
-                          'shrink-0 rounded-full px-2 py-0.5 text-[9px] font-black',
-                          isActive ? 'bg-primary-foreground/15 text-primary-foreground/85' : 'bg-muted text-muted-foreground',
-                        )}>
-                          {getSectionStatus(
-                            section.id,
-                            collectionReport.data?.outstanding ?? 0,
-                            arrearsReport.data?.totalOverdue ?? 0,
-                            collectionReport.data?.expensesTotal ?? 0,
-                            cockpitIsError,
-                          )}
-                        </span>
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </nav>
+      <div data-finance-root className="min-w-0 space-y-3 sm:space-y-4">
+        <nav
+          aria-label="أقسام المالية"
+          className="min-w-0 overflow-hidden rounded-xl border border-border/70 bg-card px-2 py-2 shadow-card"
+          data-finance-primary-nav
+        >
+          <SectionTabs
+            items={permittedSections}
+            activeId={activeSection}
+            onChange={handleSectionChange}
+            ariaLabel="أقسام المالية"
+            panelId="finance-workspace-panel"
+            idPrefix="finance-section"
+          />
+        </nav>
 
-            <div className="lg:hidden" data-finance-mobile-nav data-finance-mobile-nav-mode="direct-tabs">
-              <SectionTabs
-                items={permittedSections}
-                activeId={activeSection || permittedSections[0]?.id || 'overview'}
-                onChange={handleSectionChange}
-                ariaLabel="أقسام المالية"
-                panelId="finance-workspace-panel"
-                idPrefix="finance-section"
-              />
+        {routineViews.length > 1 ? (
+          <div className="min-w-0 border-b border-border/60 pb-2" data-finance-subview-strip>
+            <SectionTabs
+              items={routineViews}
+              activeId={routineActiveView}
+              onChange={handleViewChange}
+              ariaLabel={`تفاصيل ${activeSectionDefinition?.label ?? 'المالية'}`}
+              panelId="finance-workspace-panel"
+              idPrefix="finance-view"
+            />
+          </div>
+        ) : null}
+
+        {activeViewDefinition?.showInSectionNavigation === false ? (
+          <div className="rounded-xl border border-border/60 bg-muted/20 px-3 py-2 text-sm font-bold" data-finance-specialist-view>
+            {activeViewDefinition.label}
+          </div>
+        ) : null}
+
+        <section id="finance-workspace-panel" className="min-w-0" aria-label="مساحة العمل المالية الحالية">
+          {activeSection === 'collections' && activeView === 'invoices' ? (
+            <div id="finance-view-panel-invoices" role="tabpanel" aria-labelledby="finance-view-tab-invoices">
+              <Suspense fallback={<SectionFallback />}><InvoicesWorkspace embedded /></Suspense>
             </div>
-          </aside>
+          ) : null}
+          {activeSection === 'collections' && activeView === 'receipts' ? (
+            <div id="finance-view-panel-receipts" role="tabpanel" aria-labelledby="finance-view-tab-receipts">
+              <Suspense fallback={<SectionFallback />}><ReceiptsWorkspace embedded /></Suspense>
+            </div>
+          ) : null}
+          {activeSection === 'collections' && activeView === 'arrears' ? (
+            <div id="finance-view-panel-arrears" role="tabpanel">
+              <Suspense fallback={<SectionFallback />}><ArrearsWorkspace embedded /></Suspense>
+            </div>
+          ) : null}
 
-          <main className="min-w-0">
-            <section
-              id="finance-workspace-panel"
-              className="min-w-0 rounded-2xl border border-border/70 bg-card shadow-card"
-              aria-label="مساحة العمل المالية الحالية"
-            >
-              <div className="border-b border-border/60 px-3 py-3 sm:px-4 sm:py-4">
-                <SectionHeader
-                  eyebrow={activeSectionDefinition?.label ?? 'المالية'}
-                  title={activeViewDefinition?.label ?? activeSectionDefinition?.label ?? 'المالية'}
-                  description={activeSectionDefinition ? FINANCE_SECTION_HELP[activeSectionDefinition.id] : undefined}
-                  className="mb-0"
-                />
+          {activeSection === 'fees' && activeView === 'fixed_monthly_accruals' ? (
+            <div id="finance-view-panel-fixed_monthly_accruals" role="tabpanel" aria-labelledby="finance-view-tab-fixed_monthly_accruals">
+              <Suspense fallback={<SectionFallback />}><FixedMonthlyAccrualWorkspace /></Suspense>
+            </div>
+          ) : null}
+          {activeSection === 'fees' && activeView === 'commissions' ? (
+            <div id="finance-view-panel-commissions" role="tabpanel" aria-labelledby="finance-view-tab-commissions">
+              <Suspense fallback={<SectionFallback />}><CommissionsWorkspace embedded /></Suspense>
+            </div>
+          ) : null}
 
-                <div className="mt-3 min-h-12 border-t border-border/50 pt-3" data-finance-subview-strip>
-                  {subViews.length > 0 ? (
-                    <SectionTabs
-                      items={subViews}
-                      activeId={activeView || ''}
-                      onChange={handleViewChange}
-                      ariaLabel="أقسام فرعية للمالية"
-                      idPrefix="finance-view"
-                    />
-                  ) : null}
-                </div>
-              </div>
+          {activeSection === 'expenses' && activeView === 'expenses' ? (
+            <div id="finance-view-panel-expenses" role="tabpanel" aria-labelledby="finance-view-tab-expenses">
+              <Suspense fallback={<SectionFallback />}><ExpensesWorkspace embedded /></Suspense>
+            </div>
+          ) : null}
 
-              <div className="relative min-w-0 p-3 sm:p-4">
-                {activeSection === 'overview' ? (
-                  <div id="finance-view-panel-overview" role="tabpanel" aria-labelledby="finance-view-tab-overview">
-                    <FinanceOperationsOverview
-                      summary={collectionReport.data}
-                      arrears={arrearsReport.data}
-                      isLoading={cockpitIsLoading}
-                      isError={cockpitIsError}
-                      canViewArrears={canViewArrears}
-                      canViewExpenses={permittedViewIds.has('expenses')}
-                      canViewManagementFees={permittedViewIds.has('fixed_monthly_accruals')}
-                      canViewOwnerSettlements={permittedViewIds.has('owner_settlements')}
-                      onOpenCollections={() => handleLocationChange('collections', 'invoices')}
-                      onOpenReceipts={() => handleLocationChange('collections', 'receipts')}
-                      onOpenArrears={() => handleLocationChange('collections', 'arrears')}
-                      onOpenExpenses={() => handleLocationChange('expenses', 'expenses')}
-                      onOpenManagementFees={() => handleLocationChange('fees', 'fixed_monthly_accruals')}
-                      onOpenOwnerSettlements={() => handleLocationChange('funds', 'owner_settlements')}
-                    />
-                  </div>
-                ) : null}
+          {activeSection === 'funds' && activeView === 'deposits' ? (
+            <div id="finance-view-panel-deposits" role="tabpanel" aria-labelledby="finance-view-tab-deposits">
+              <Suspense fallback={<SectionFallback />}><DepositsWorkspace /></Suspense>
+            </div>
+          ) : null}
+          {activeSection === 'funds' && activeView === 'owner_settlements' ? (
+            <div id="finance-view-panel-owner_settlements" role="tabpanel" aria-labelledby="finance-view-tab-owner_settlements">
+              <Suspense fallback={<SectionFallback />}><OwnerSettlementsWorkspace embedded /></Suspense>
+            </div>
+          ) : null}
 
-                {activeSection === 'collections' && activeView === 'invoices' ? (
-                  <div id="finance-view-panel-invoices" role="tabpanel" aria-labelledby="finance-view-tab-invoices">
-                    <Suspense fallback={<SectionFallback />}><InvoicesWorkspace embedded /></Suspense>
-                  </div>
-                ) : null}
-                {activeSection === 'collections' && activeView === 'receipts' ? (
-                  <div id="finance-view-panel-receipts" role="tabpanel" aria-labelledby="finance-view-tab-receipts">
-                    <Suspense fallback={<SectionFallback />}><ReceiptsWorkspace embedded /></Suspense>
-                  </div>
-                ) : null}
-                {activeSection === 'collections' && activeView === 'arrears' ? (
-                  <div id="finance-view-panel-arrears" role="tabpanel" aria-labelledby="finance-view-tab-arrears">
-                    <Suspense fallback={<SectionFallback />}><ArrearsWorkspace embedded /></Suspense>
-                  </div>
-                ) : null}
-
-                {activeSection === 'expenses' && activeView === 'expenses' ? (
-                  <div id="finance-view-panel-expenses" role="tabpanel" aria-labelledby="finance-view-tab-expenses">
-                    <Suspense fallback={<SectionFallback />}><ExpensesWorkspace embedded /></Suspense>
-                  </div>
-                ) : null}
-                {activeSection === 'expenses' && activeView === 'commissions' ? (
-                  <div id="finance-view-panel-commissions" role="tabpanel" aria-labelledby="finance-view-tab-commissions">
-                    <Suspense fallback={<SectionFallback />}><CommissionsWorkspace embedded /></Suspense>
-                  </div>
-                ) : null}
-
-                {activeSection === 'fees' && activeView === 'fixed_monthly_accruals' ? (
-                  <div id="finance-view-panel-fixed_monthly_accruals" role="tabpanel" aria-labelledby="finance-view-tab-fixed_monthly_accruals">
-                    <Suspense fallback={<SectionFallback />}><FixedMonthlyAccrualWorkspace /></Suspense>
-                  </div>
-                ) : null}
-
-                {activeSection === 'funds' && activeView === 'deposits' ? (
-                  <div id="finance-view-panel-deposits" role="tabpanel" aria-labelledby="finance-view-tab-deposits">
-                    <Suspense fallback={<SectionFallback />}><DepositsWorkspace /></Suspense>
-                  </div>
-                ) : null}
-                {activeSection === 'funds' && activeView === 'owner_settlements' ? (
-                  <div id="finance-view-panel-owner_settlements" role="tabpanel" aria-labelledby="finance-view-tab-owner_settlements">
-                    <Suspense fallback={<SectionFallback />}><OwnerSettlementsWorkspace embedded /></Suspense>
-                  </div>
-                ) : null}
-
-                {activeSection === 'banking' && activeView === 'bank_reconciliation' ? (
-                  <div id="finance-view-panel-bank_reconciliation" role="tabpanel" aria-labelledby="finance-view-tab-bank_reconciliation">
-                    <Suspense fallback={<SectionFallback />}><BankReconciliationWorkspace embedded /></Suspense>
-                  </div>
-                ) : null}
-              </div>
-            </section>
-          </main>
-        </div>
+          {activeSection === 'banking' && activeView === 'bank_reconciliation' ? (
+            <div id="finance-view-panel-bank_reconciliation" role="tabpanel" aria-labelledby="finance-view-tab-bank_reconciliation">
+              <Suspense fallback={<SectionFallback />}><BankReconciliationWorkspace embedded /></Suspense>
+            </div>
+          ) : null}
+        </section>
       </div>
     </PageLayout>
   );
