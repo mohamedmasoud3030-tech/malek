@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import {
   Fragment,
+  memo,
   useEffect,
   useId,
   useMemo,
@@ -200,7 +201,7 @@ function isNestedInteractive(target: EventTarget | null, currentTarget: EventTar
   return Boolean(target.closest("a,button,input,select,textarea,label,[role='button'],[role='menuitem'],[data-row-action]"));
 }
 
-function SortIcon({ field, sort }: { field: string; sort?: SortState }) {
+const SortIcon = memo(function SortIcon({ field, sort }: { field: string; sort?: SortState }) {
   if (!sort || sort.field !== field) {
     return <ChevronsUpDown className="ms-1 inline size-3 opacity-35" aria-hidden="true" />;
   }
@@ -209,9 +210,9 @@ function SortIcon({ field, sort }: { field: string; sort?: SortState }) {
   ) : (
     <ChevronDown className="ms-1 inline size-3 text-primary" aria-hidden="true" />
   );
-}
+});
 
-function SelectionCheckbox({
+const SelectionCheckbox = memo(function SelectionCheckbox({
   checked,
   mixed = false,
   label,
@@ -236,9 +237,9 @@ function SelectionCheckbox({
       data-row-action
     />
   );
-}
+});
 
-function DesktopTableSkeleton({ rows, cols, hasSelection }: { rows: number; cols: number; hasSelection: boolean }) {
+const DesktopTableSkeleton = memo(function DesktopTableSkeleton({ rows, cols, hasSelection }: { rows: number; cols: number; hasSelection: boolean }) {
   const totalColumns = cols + (hasSelection ? 1 : 0);
   return (
     <Card className="overflow-hidden rounded-lg border-border/60 bg-card shadow-none" data-entity-table-grid>
@@ -264,9 +265,9 @@ function DesktopTableSkeleton({ rows, cols, hasSelection }: { rows: number; cols
       </div>
     </Card>
   );
-}
+});
 
-function MobileRegisterSkeleton({ rows }: { rows: number }) {
+const MobileRegisterSkeleton = memo(function MobileRegisterSkeleton({ rows }: { rows: number }) {
   return (
     <div className="grid gap-1.5" aria-hidden="true" data-entity-table-mobile-skeleton>
       {Array.from({ length: rows }, (_, index) => (
@@ -281,9 +282,9 @@ function MobileRegisterSkeleton({ rows }: { rows: number }) {
       ))}
     </div>
   );
-}
+});
 
-function PaginationBar({ pagination }: { pagination: PaginationState }) {
+const PaginationBar = memo(function PaginationBar({ pagination }: { pagination: PaginationState }) {
   const totalPages = Math.max(1, Math.ceil(pagination.total / pagination.pageSize));
   if (totalPages <= 1) return null;
   const { page, onPageChange } = pagination;
@@ -302,9 +303,9 @@ function PaginationBar({ pagination }: { pagination: PaginationState }) {
       </div>
     </nav>
   );
-}
+});
 
-function PaginationRecovery({ pagination }: { pagination: PaginationState }) {
+const PaginationRecovery = memo(function PaginationRecovery({ pagination }: { pagination: PaginationState }) {
   const totalPages = Math.max(1, Math.ceil(pagination.total / pagination.pageSize));
   return (
     <EmptyState
@@ -313,7 +314,7 @@ function PaginationRecovery({ pagination }: { pagination: PaginationState }) {
       action={<Button onClick={() => pagination.onPageChange(1)}><ListRestart className="me-2 size-4" aria-hidden="true" />العودة إلى الصفحة الأولى</Button>}
     />
   );
-}
+});
 
 function MobileRegisterListItem<T>({
   row,

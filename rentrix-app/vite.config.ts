@@ -217,6 +217,35 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    // Target modern browsers (all support ESM) to avoid unnecessary
+    // transpilation and polyfills. Vite defaults to a broader set; we
+    // narrow to the MALEK PWA browser matrix (Chrome 95+, Safari 15.4+,
+    // Firefox 95+, Edge 95+).
+    target: "es2022",
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          // Vendor split: isolate heavy libraries into dedicated chunks for
+          // long-lived browser caching independent of app-code churn.
+          if (id.includes("node_modules")) {
+            if (id.includes("@supabase")) return "vendor-supabase";
+            if (id.includes("@tanstack")) return "vendor-tanstack";
+            if (id.includes("recharts") || id.includes("d3-") || id.includes("victory")) return "vendor-charts";
+            if (id.includes("react-dom") || id.includes("react/")) return "vendor-react";
+            if (id.includes("jspdf") || id.includes("html2canvas")) return "vendor-pdf";
+            if (id.includes("framer-motion")) return "vendor-motion";
+            if (id.includes("zustand") || id.includes("sonner") || id.includes("zod")) return "vendor-ui";
+            if (id.includes("date-fns")) return "vendor-date";
+            // Remaining node_modules fall into a generic vendor chunk.
+            return "vendor";
+          }
+        },
+      },
+    },
+    // Raise the warning threshold: the Supabase SDK and the chart vendor
+    // chunk legitimately exceed the default 500 KiB limit. Warning at 1 MiB
+    // keeps the developer informed without false-positive noise.
+    chunkSizeWarningLimit: 1024,
   },
   server: {
     port,

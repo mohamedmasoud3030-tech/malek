@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Link, useLocation, useNavigate } from '@tanstack/react-router';
 import { AlertCircle, CheckCircle2, ShieldQuestion } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -34,8 +35,7 @@ const severityTone: Record<NeedsAttentionItem['severity'], 'danger' | 'warning' 
  * metrics. Every item is a real condition sourced from an existing
  * authoritative signal and deep-links into the workflow that owns it.
  */
-export function NeedsAttentionSection({ signal, isLoading, isError = false, isPartial = false }: NeedsAttentionSectionProps) {
-  const navigate = useNavigate();
+export const NeedsAttentionSection = memo(function NeedsAttentionSection({ signal, isLoading, isError = false, isPartial = false }: NeedsAttentionSectionProps) {  const navigate = useNavigate();
   const location = useLocation();
   const visibleItems = signal.items.slice(0, NEEDS_ATTENTION_VISIBLE_LIMIT);
   const hiddenCount = signal.totalCount - visibleItems.length;
@@ -163,4 +163,4 @@ export function NeedsAttentionSection({ signal, isLoading, isError = false, isPa
       ) : null}
     </DashboardSignalPanel>
   );
-}
+});

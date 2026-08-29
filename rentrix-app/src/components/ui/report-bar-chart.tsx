@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import {
   Bar,
   BarChart,
@@ -48,7 +49,7 @@ const AXIS_TICK = { fill: 'hsl(var(--muted-foreground))', fontSize: 11 } as cons
  *
  * Presentation only: it renders whatever series the caller already computed.
  */
-export function ReportBarChart({
+export const ReportBarChart = memo(function ReportBarChart({
   data,
   series,
   xKey,
@@ -86,4 +87,4 @@ export function ReportBarChart({
       </ResponsiveContainer>
     </div>
   );
-}
+});
