@@ -179,7 +179,7 @@ describe('AppShell — redesigned MALEK header & navigation', () => {
     expect(sheet).not.toBeNull();
     expect(document.querySelector('[data-mobile-nav-bottom-sheet]')).not.toBeNull();
     expect(sheet?.className).toContain('w-full');
-    expect(sheet?.className).toContain('rounded-t-[1.35rem]');
+    expect(sheet?.className).toContain('rounded-t-3xl');
     expect(sheet?.className).not.toContain('right-0');
     expect(sheet?.className).not.toContain('w-[85vw]');
 

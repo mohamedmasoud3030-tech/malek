@@ -166,7 +166,7 @@ describe('WP-06 / GAP-020 Browser & UX Acceptance Hardening', () => {
       expect(sheet).toContain("document.documentElement.style.overflow = 'hidden'");
       expect(sheet).toContain('data-bottom-sheet');
       expect(sheet).toContain('justify-end');
-      expect(sheet).toContain('rounded-t-[1.35rem]');
+      expect(sheet).toContain('rounded-t-3xl');
     });
   });
 });

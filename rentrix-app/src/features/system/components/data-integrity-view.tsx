@@ -1,6 +1,8 @@
 import { CheckCircle2, ListChecks, TriangleAlert } from 'lucide-react';
 import { DataErrorScreen } from '@/components/data-error-screen';
 import { EmptyState } from '@/components/ui/state-surfaces';
+import { Alert } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { LoadingState } from '@/components/ui/loading-state';
@@ -12,19 +14,31 @@ import type { DataIntegrityResult } from '../types';
 export type DataIntegrityViewState =
   | Readonly<{ status: 'loading' }>
   | Readonly<{ status: 'error'; error: unknown }>
-  | Readonly<{ status: 'ready'; result: DataIntegrityResult }>;
+  | Readonly<{ status: 'ready'; result: DataIntegrityResult; refreshError?: unknown }>;
 
-export function DataIntegrityView({ state }: Readonly<{ state: DataIntegrityViewState }>) {
+type DataIntegrityViewProps = Readonly<{
+  state: DataIntegrityViewState;
+  onRetry?: () => void;
+  isRefreshing?: boolean;
+}>;
+
+export function DataIntegrityView({ state, onRetry, isRefreshing = false }: DataIntegrityViewProps) {
   const companySettings = useCompanySettingsContract();
 
   if (state.status === 'loading') return <LoadingState variant="route" />;
 
+  const retryAction = onRetry ? (
+    <Button variant="secondary" size="sm" loading={isRefreshing} onClick={onRetry}>
+      إعادة الفحص
+    </Button>
+  ) : undefined;
+
   if (state.status === 'error') {
-    return <DataErrorScreen title="تعذر تشغيل فحص سلامة البيانات" fallbackMessage="لم يتم تنفيذ أي تغييرات على البيانات. أعد المحاولة لاحقاً." error={state.error} />;
+    return <DataErrorScreen title="تعذر تشغيل فحص سلامة البيانات" fallbackMessage="لم يتم تنفيذ أي تغييرات على البيانات. أعد المحاولة لاحقاً." error={state.error} action={retryAction} />;
   }
 
   if (state.result.status === 'unavailable') {
-    return <EmptyState title="فحص سلامة البيانات غير متاح" description={state.result.reason} role="alert" ariaLive="assertive" />;
+    return <EmptyState title="فحص سلامة البيانات غير متاح" description={state.result.reason} role="alert" ariaLive="assertive" action={retryAction} />;
   }
 
   if (state.result.snapshot.checks.length === 0) {
@@ -36,6 +50,14 @@ export function DataIntegrityView({ state }: Readonly<{ state: DataIntegrityView
 
   return (
     <section className="space-y-4">
+      {state.refreshError ? (
+        <Alert
+          variant="warning"
+          title="تعذر تحديث الفحص"
+          description="النتائج أدناه من آخر فحص مكتمل، وليست تأكيداً للحالة الحالية. تحقق من الاتصال ثم أعد الفحص."
+          action={retryAction}
+        />
+      ) : null}
       <div className="space-y-2">
         <h2 className="sr-only">تدقيق سلامة البيانات</h2>
         <p className="text-sm leading-6 text-muted-foreground">آخر فحص: {checkedAt}</p>

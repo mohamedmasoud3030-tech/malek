@@ -8,6 +8,7 @@ import { fetchAuditLog, normalizeAuditRecords } from '@/features/audit/services/
 import { canShowNavigationItem } from '@/features/auth/permissions';
 import { assertSessionPermission } from '@/features/auth/route-guards';
 import { DataIntegrityView } from './components/data-integrity-view';
+import { getDataIntegrityViewState } from './data-integrity-page';
 import { DATA_INTEGRITY_MAX_PAGES, DATA_INTEGRITY_PAGE_SIZE, buildDataIntegritySnapshot, fetchPaginatedRows } from './services/data-integrity-service';
 import { getAllNavItems, navGroups, type NavItem } from '@/app/navigation/app-nav-items';
 
@@ -163,6 +164,32 @@ describe('data integrity audit recovery states', () => {
     expect(html).toContain('schema unavailable');
   });
 
+  it('keeps the last completed snapshot visible when a background refresh fails', () => {
+    const result = buildDataIntegritySnapshot(baseIntegrityInput());
+    const state = getDataIntegrityViewState({
+      isPending: false,
+      isError: true,
+      error: new Error('refresh failed'),
+      data: result,
+    });
+    const html = renderToStaticMarkup(<DataIntegrityView state={state} onRetry={() => undefined} />);
+
+    expect(state.status).toBe('ready');
+    expect(html).toContain('تعذر تحديث الفحص');
+    expect(html).toContain('النتائج أدناه من آخر فحص مكتمل');
+    expect(html).toContain('إعادة الفحص');
+    expect(html).toContain('وحدات بلا عقار نشط');
+  });
+
+  it('uses a full error state when the initial audit has no usable snapshot', () => {
+    expect(getDataIntegrityViewState({
+      isPending: false,
+      isError: true,
+      error: new Error('initial failure'),
+      data: undefined,
+    })).toMatchObject({ status: 'error' });
+  });
+
   it('renders supported integrity check results', () => {
     const result = buildDataIntegritySnapshot({
       properties: [{ id: 'property-1', deleted_at: null }],
@@ -285,6 +312,15 @@ describe('system governance dependency boundaries', () => {
       expect(source).not.toContain('useApp');
       expect(source).not.toContain('react-router-dom');
     }
+  });
+
+  it('keeps tenant-scoped integrity cache identity and deterministic relationship pagination', () => {
+    const pageSource = readFileSync(fileURLToPath(new URL('./data-integrity-page.tsx', import.meta.url)), 'utf8');
+    const serviceSource = readFileSync(fileURLToPath(new URL('./services/data-integrity-service.ts', import.meta.url)), 'utf8');
+
+    expect(pageSource).toContain("queryKey: ['data-integrity-audit', activeCompanyId]");
+    expect(serviceSource).toMatch(/from\('property_owners'\)[\s\S]*?order\('property_id',[\s\S]*?order\('id'/u);
+    expect(serviceSource).toMatch(/from\('owner_agreements'\)[\s\S]*?order\('property_id',[\s\S]*?order\('id'/u);
   });
 
   it('keeps audit and integrity services free of write operations', () => {

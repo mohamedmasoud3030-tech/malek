@@ -77,7 +77,7 @@ describe('cross-device design unification', () => {
     expect(operationsHub).toContain('visualVariant="malek-pro"');
     expect(financials).toContain('visualVariant="malek-pro"');
     expect(financials).toContain('data-finance-primary-nav');
-    expect(reports).toContain('data-report-landing');
+    expect(reports).toContain('data-active-report-workspace');
     expect(reports).toContain("translateSharedLabel('reportsPageDescription')");
     expect(financials).not.toContain('💡');
     expect(reports).not.toContain('💡');
