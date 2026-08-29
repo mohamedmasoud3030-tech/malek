@@ -10,6 +10,7 @@ describe('cross-device design unification', () => {
   const palette = source('features/command-palette/command-palette-trigger.tsx');
   const pageHeader = source('components/layout/page-header.tsx');
   const detailHeader = source('components/layout/entity-detail-header.tsx');
+  const entityForm = source('components/ui/entity-form.tsx');
   const ux = source('styles/ux-foundation.css');
   const propertyDetail = source('features/properties/property-detail-page.tsx');
   const operationsHub = source('features/operations-hub/operations-hub-workspace.tsx');
@@ -39,13 +40,24 @@ describe('cross-device design unification', () => {
     expect(palette).not.toContain('hidden lg:flex');
   });
 
-  it('unifies page and dossier headers on the elevated token radius', () => {
+  it('keeps page headers elevated while detail headers avoid a second card layer', () => {
     expect(pageHeader).toContain('rounded-2xl');
-    expect(detailHeader).toContain('rounded-2xl');
     expect(pageHeader).toContain('data-unified-surface="page-header"');
     expect(detailHeader).toContain('data-unified-surface="page-header"');
+    expect(detailHeader).toContain('border-b border-border/70');
+    expect(detailHeader).not.toContain('shadow-card');
+    expect(detailHeader).not.toContain("'rounded-2xl border");
     expect(pageHeader).not.toContain('rounded-[1.5rem]');
     expect(detailHeader).not.toContain('rounded-[1.5rem]');
+  });
+
+  it('keeps entity forms as one responsive dialog surface with mobile-safe actions', () => {
+    expect(entityForm).toContain('data-entity-form-surface="dialog"');
+    expect(entityForm).toContain('max-h-[92dvh]');
+    expect(entityForm).toContain('w-[min(calc(100vw-1rem),48rem)]');
+    expect(entityForm).toContain('data-entity-form-actions');
+    expect(entityForm).toContain('env(safe-area-inset-bottom,0px)');
+    expect(entityForm).toContain('data-entity-form-section');
   });
 
   it('reserves floating-control clearance for phone widths only', () => {
