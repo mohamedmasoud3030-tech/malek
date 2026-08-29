@@ -60,7 +60,7 @@ export function ReportDirectory({ activeSection, activeView, scope, onOpen }: Re
               autoComplete="off"
               dir="rtl"
               placeholder="ابحث في التقارير…"
-              className="min-h-10 border-border/80 bg-background ps-9 pe-10"
+              className="min-h-11 border-border/80 bg-background ps-9 pe-10"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
             />
@@ -69,7 +69,7 @@ export function ReportDirectory({ activeSection, activeView, scope, onOpen }: Re
                 type="button"
                 onClick={() => setQuery('')}
                 aria-label="مسح بحث التقارير"
-                className="absolute inset-y-0 end-2 my-auto grid size-8 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                className="absolute inset-y-0 end-2 my-auto grid size-9 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
               >
                 <X className="size-4" aria-hidden="true" />
               </button>
@@ -90,7 +90,7 @@ export function ReportDirectory({ activeSection, activeView, scope, onOpen }: Re
                 aria-selected={tab === item.id}
                 onClick={() => setTab(item.id)}
                 className={cn(
-                  'min-h-9 rounded-lg px-3 text-xs font-black transition-colors sm:text-sm',
+                  'min-h-11 rounded-lg px-3 text-xs font-black transition-colors sm:text-sm',
                   tab === item.id
                     ? 'bg-primary text-primary-foreground'
                     : 'text-muted-foreground hover:bg-muted hover:text-foreground',
@@ -107,7 +107,7 @@ export function ReportDirectory({ activeSection, activeView, scope, onOpen }: Re
         <div className="flex items-end justify-between gap-3">
           <div>
             <p className="text-[11px] font-black text-primary">مركز التقارير</p>
-            <h2 id="report-directory-title" className="mt-0.5 text-base font-black sm:text-lg">اختر ما تريد معرفته</h2>
+            <h2 id="report-directory-title" className="mt-0.5 text-base font-black sm:text-lg">اختر التقرير حسب ما تريد معرفته</h2>
           </div>
         </div>
 
@@ -133,12 +133,8 @@ export function ReportDirectory({ activeSection, activeView, scope, onOpen }: Re
                       <Icon className="size-4" aria-hidden="true" />
                     </span>
                     <div className="min-w-0 flex-1">
-                      <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
-                        <div>
-                          <h3 className="text-sm font-black sm:text-base">{group.title}</h3>
-                          <p className="mt-0.5 text-xs font-semibold leading-5 text-muted-foreground">{group.description}</p>
-                        </div>
-                      </div>
+                      <h3 className="text-sm font-black sm:text-base">{group.title}</h3>
+                      <p className="mt-0.5 hidden text-xs font-semibold leading-5 text-muted-foreground sm:block">{group.description}</p>
 
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         {group.shortcuts.map((shortcut) => {
@@ -151,7 +147,7 @@ export function ReportDirectory({ activeSection, activeView, scope, onOpen }: Re
                               aria-current={shortcutActive ? 'page' : undefined}
                               title={shortcut.description}
                               className={cn(
-                                'inline-flex min-h-9 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-black transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
+                                'inline-flex min-h-11 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-black transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
                                 shortcutActive
                                   ? 'border-primary/35 bg-primary/10 text-primary'
                                   : 'border-border/75 bg-background text-foreground hover:border-primary/30 hover:bg-primary/[0.035]',
