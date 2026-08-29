@@ -36,17 +36,19 @@ test.describe('Documents Vault route consolidation', () => {
     // 1. Final URL is the single Services authority.
     await expect(page).toHaveURL(/\/maintenance\?section=documents_vault(?:&|$)/);
 
-    // 2. Documents Vault UI is rendered (embedded DocumentsVaultWorkspace),
-    //    not the maintenance fallback. The shared workspace uses the concise
-    //    "رفع مستند" action in both populated and empty states.
+    // 2. Documents Vault UI is rendered as the embedded cross-entity index,
+    //    not the maintenance fallback. Upload belongs to the owning entity and
+    //    therefore must not be offered from this global index.
     const vaultSection = page.locator('[data-operations-section="documents_vault"]');
     await expect(vaultSection).toBeVisible({ timeout: 10000 });
-    await expect(page.getByRole('heading', { name: 'خزينة المستندات والمرفقات' })).toHaveCount(0); // embedded: no duplicate header
-    await expect(vaultSection.getByRole('button', { name: 'رفع مستند', exact: true }).first()).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'خزينة المستندات والمرفقات' })).toHaveCount(0);
+    await expect(vaultSection.getByLabel('بحث في فهرس المستندات')).toBeVisible();
+    await expect(vaultSection.getByRole('button', { name: 'رفع مستند', exact: true })).toHaveCount(0);
+    await expect(vaultSection.locator('input[type="file"]')).toHaveCount(0);
 
     // 3. Contextual/deep-link sections intentionally do not render the daily
-    //    Services tab strip. They stay reachable without competing with the
-    //    routine Maintenance / Utilities navigation.
+    // Services tab strip. They stay reachable without competing with the
+    // routine Maintenance / Utilities navigation.
     await expect(page.getByRole('tab', { name: 'المستندات التشغيلية' })).toHaveCount(0);
     await expect(page.getByRole('tab', { name: 'الصيانة' })).toHaveCount(0);
     await expect(page.locator('[data-operations-section="maintenance"]')).toHaveCount(0);
