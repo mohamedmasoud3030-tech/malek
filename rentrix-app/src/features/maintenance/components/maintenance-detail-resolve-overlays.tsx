@@ -105,7 +105,7 @@ export function MaintenanceDetailsOverlay({ request, providerOptions, providerCa
           {request.attachment_url ? (
             <section className="border-b border-border/60 pb-4" aria-label="مرفق طلب الصيانة">
               <p className="text-xs font-medium text-muted-foreground">المرفق</p>
-              <img src={request.attachment_url} alt="مرفق طلب الصيانة" className="mt-2 max-h-60 w-full rounded-xl object-cover" />
+              <img src={request.attachment_url} alt="مرفق طلب الصيانة" loading="lazy" decoding="async" className="mt-2 max-h-60 w-full rounded-xl object-cover" />
             </section>
           ) : null}
           <ContextualDocumentsSection entityType="maintenance" entityId={request.id} entityLabel="طلب الصيانة" />

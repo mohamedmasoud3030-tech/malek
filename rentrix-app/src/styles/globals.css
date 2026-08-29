@@ -311,3 +311,46 @@
 
 .text-gradient { color: hsl(var(--primary)); }
 .section-light { background: hsl(var(--background)); color: hsl(var(--foreground)); }
+
+/* Performance: CSS containment for list/register pages.
+   Isolates each register's paint and layout recalculations so filter
+   changes in one section don't trigger full-page style recalculation.
+   Especially impactful on mobile where style recalc is expensive. */
+[data-entity-table-register],
+[data-entity-table-grid],
+[data-finance-section],
+[data-dashboard-section],
+[data-provider-detail-section],
+[data-owner-dossier-section] {
+  contain: layout style;
+}
+
+/* Performance: isolate form overlays from the page behind them.
+   When a dialog/sheet opens, the page behind doesn't need repainting. */
+[data-entity-form-overlay],
+[data-bottom-sheet-backdrop] {
+  contain: strict;
+}
+
+/* Performance: skip rendering off-screen rows and cards.
+   content-visibility: auto + contain-intrinsic-size gives the browser
+   permission to skip layout/paint for rows that are off-screen.
+   The intrinsic size is an estimate; the browser corrects it when
+   the row scrolls into view. Especially impactful on mobile where
+   painting is the most expensive operation. */
+[data-entity-table] tbody tr,
+[data-entity-table-mobile-card] {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 3.5rem;
+}
+
+/* Performance: promote animated mobile UI to GPU layer.
+   Bottom sheets and navigation sheets animate on mobile; promoting
+   them to their own compositor layer avoids main-thread paint
+   during the animation. Only applied when the element is visible
+   to avoid wasting GPU memory on hidden elements. */
+[data-bottom-sheet][data-state="open"],
+[data-mobile-nav-bottom-sheet] {
+  will-change: transform;
+  transform: translateZ(0);
+}
