@@ -164,7 +164,7 @@ const cases: ReadonlyArray<readonly [string, ReactElement]> = [
     </div>
   )],
   ['KpiCard', <KpiCard label="الإيراد" value="1,234.500 OMR" icon={Home} trend="up" trendValue="12%" />],
-  ['Badges', <div><Badge>نشط</Badge><StatusBadge status="active" /></div>],
+  ['Badges', <div><Badge>نشط</Badge><StatusBadge tone="success">نشط</StatusBadge></div>],
   ['Alert', <Alert><AlertTitle>تنبيه</AlertTitle><AlertDescription>وصف التنبيه</AlertDescription></Alert>],
   ['Card', (
     <Card>
@@ -178,7 +178,7 @@ const cases: ReadonlyArray<readonly [string, ReactElement]> = [
       name="برج الواحة"
       subtitle="مسقط - الخوير"
       type="property"
-      badge={<StatusBadge status="active" />}
+      badge={<StatusBadge tone="success">نشط</StatusBadge>}
       onClick={() => undefined}
       actions={[{ label: 'تعديل', icon: Home, onClick: () => undefined, ariaLabel: 'تعديل السجل' }]}
     />
