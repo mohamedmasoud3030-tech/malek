@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearch } from '@tanstack/react-router';
 import { canAccess, financialOperationPermissions } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
-import { useContracts } from '@/features/contracts/useContracts';
+import { useAllContracts } from '@/features/contracts/useContracts';
 import type { Contract, Payment, Person, Property, Unit } from '@/types/domain';
 import { getTodayLocalDateString, isValidDateInput } from '../financials-date-utils';
 import { toFinancialNumber } from '../financialMath';
@@ -40,15 +40,14 @@ function contractContextForDocument(contract: any) {
   };
 }
 
-const INVOICE_PAGE_SIZE = 10;
+const INVOICE_PAGE_SIZE = 20;
 
-/**
- * An invoice document needs its contract context (tenant/unit/property) to
- * carry truthful parties; without it the document is refused rather than
- * rendered with placeholder parties.
- */
 const MISSING_INVOICE_CONTEXT_MESSAGE =
   'تعذر إصدار مستند الفاتورة: بيانات العقد المرتبط بالفاتورة غير متاحة حالياً. يرجى إعادة المحاولة بعد اكتمال تحميل العقود.';
+
+function normalizeLookup(value: unknown): string {
+  return typeof value === 'string' ? value.trim().toLocaleLowerCase('ar') : '';
+}
 
 export function useInvoiceWorkspaceController() {
   const [status, setStatus] = useState<InvoiceStatusFilter>('unpaid');
@@ -74,9 +73,29 @@ export function useInvoiceWorkspaceController() {
   const quickPaySubmitRef = useRef(false);
   const quickPayRequestIdRef = useRef<string | null>(null);
 
+  // Invoice identity and document generation both need the same canonical
+  // contract/tenant/property/unit context. The all-pages read prevents the
+  // old 1000-row dropdown/search blind spot.
+  const contractsQuery = useAllContracts('all', { enabled: true });
+  const contractRows = contractsQuery.data?.rows ?? [];
+  const normalizedSearch = normalizeLookup(invoiceSearch);
+  const contextContractIds = useMemo(() => {
+    if (!normalizedSearch) return [] as string[];
+    return contractRows
+      .filter((contract) => [
+        contract.reference,
+        contract.people?.full_name,
+        contract.people?.phone,
+        contract.properties?.title,
+        contract.units?.unit_number,
+      ].some((value) => normalizeLookup(value).includes(normalizedSearch)))
+      .map((contract) => contract.id);
+  }, [contractRows, normalizedSearch]);
+
   const invoicesQuery = useInvoicesPaginated({
     status,
     search: invoiceSearch,
+    contextContractIds,
     dateFrom,
     dateTo,
     tenantId,
@@ -87,14 +106,10 @@ export function useInvoiceWorkspaceController() {
   const invoiceQuery = useInvoice(selectedInvoiceId);
   const generate = useGenerateInvoices();
   const postPayment = usePostPayment();
-  // A freshly posted receipt stays available inside the invoice collection
-  // confirmation without mounting a second receipt register below invoices.
   const collectionReceiptQuery = useReceipt(collectionSuccess?.receiptId ?? '');
-  const contractsQuery = useContracts({ status: 'all', page: 1, pageSize: 1000 });
   const documentSettings = useDocumentSettings();
   const { authorization } = useAuth();
 
-  const contractRows = contractsQuery.data?.rows ?? [];
   const tenantOptions = useMemo<InvoiceFilterOption[]>(() => {
     const map = new Map<string, string>();
     for (const contract of contractRows) {
@@ -126,8 +141,6 @@ export function useInvoiceWorkspaceController() {
     () => (invoiceDetail ? getInvoiceRemainingAmount(invoiceDetail) : 0),
     [invoiceDetail],
   );
-  // The «collector walk»: next unpaid/partial invoice on the current page,
-  // skipping the one that was just settled.
   const nextCollectibleInvoiceId = useMemo(
     () => findNextCollectibleInvoiceId(invoices, selectedInvoiceId || undefined),
     [invoices, selectedInvoiceId],
@@ -147,7 +160,7 @@ export function useInvoiceWorkspaceController() {
 
   const canExportInvoiceDocuments = canExportInvoices && documentSettings.isReady;
   const canExportInvoiceDocument = canExportInvoiceDocuments && Boolean(
-    invoiceDetail && contractsQuery.data?.rows.some((contract) => contract.id === invoiceDetail.contract_id),
+    invoiceDetail && contractRows.some((contract) => contract.id === invoiceDetail.contract_id),
   );
 
   const onConfirmGenerateInvoices = () => {
@@ -157,12 +170,6 @@ export function useInvoiceWorkspaceController() {
     });
   };
 
-  /**
-   * Deep link (e.g. from the arrears «تحصيل» action): select the target
-   * invoice, and once its detail resolves, prefill the FULL gross remaining
-   * and focus the payment form — the collector lands one confirmation away
-   * from settling the debt they clicked. No permission → nothing is armed.
-   */
   const search = useSearch({ strict: false }) as Record<string, unknown>;
   const deepLink = useMemo(() => parseQuickCollectSearch(search), [search]);
   const deepLinkInvoiceId = deepLink.invoiceId;
@@ -227,12 +234,6 @@ export function useInvoiceWorkspaceController() {
     );
   };
 
-  /**
-   * «تحصيل» row action: select the invoice, prefill the FULL gross remaining
-   * (dominant rent-collection case; partial payers edit freely), then bump
-   * the focus nonce so the payment form scrolls into view and focuses the
-   * amount input once it renders.
-   */
   const onCollectInvoice = (invoiceId: string) => {
     setCollectionSuccess(null);
     setSelectedInvoiceId(invoiceId);
@@ -260,7 +261,7 @@ export function useInvoiceWorkspaceController() {
   };
 
   const invoiceDocumentContext = (invoice: any) => {
-    const contract = contractsQuery.data?.rows.find((candidate) => candidate.id === invoice.contract_id);
+    const contract = contractRows.find((candidate) => candidate.id === invoice.contract_id);
     return contract ? { settings: documentSettings.companySettings, ...contractContextForDocument(contract) } : null;
   };
 
@@ -341,6 +342,7 @@ export function useInvoiceWorkspaceController() {
     collectionSuccess,
     collectionFocusKey,
     nextCollectibleInvoiceId,
+    contractContextSearchTruncated: Boolean(contractsQuery.data?.truncated),
     onCollectInvoice,
     onCollectNextInvoice,
     onPrintCollectionReceipt,
