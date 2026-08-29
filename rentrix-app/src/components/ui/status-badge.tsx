@@ -22,13 +22,13 @@ const legacyToProduct: Record<LegacyTone, ProductTone> = {
 };
 
 const semanticTones: Record<SemanticTone, string> = {
-  success: 'bg-success/10 text-success ring-success/20',
-  warning: 'bg-warning/10 text-warning ring-warning/20',
-  danger: 'bg-danger/10 text-danger ring-danger/20',
-  info: 'bg-info/10 text-info ring-info/20',
-  neutral: 'bg-neutral/10 text-neutral ring-neutral/20',
+  success: 'bg-success-bg text-success-text ring-success/20',
+  warning: 'bg-warning-bg text-warning-text ring-warning/20',
+  danger: 'bg-danger-bg text-danger-text ring-danger/20',
+  info: 'bg-info-bg text-info-text ring-info/20',
+  neutral: 'bg-neutral-bg text-neutral-text ring-neutral/20',
   primary: 'bg-primary/10 text-primary ring-primary/20',
-  secondary: 'bg-neutral/10 text-neutral ring-neutral/20',
+  secondary: 'bg-neutral-bg text-neutral-text ring-neutral/20',
 };
 
 const semanticDotTones: Record<SemanticTone, string> = {
