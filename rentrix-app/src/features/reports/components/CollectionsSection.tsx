@@ -1,7 +1,5 @@
-import { Building2, CalendarDays, FileSpreadsheet, FileText, ReceiptText, WalletCards } from 'lucide-react';
+import { FileSpreadsheet, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { KpiCard } from '@/components/ui/kpi-card';
-import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { formatMoney } from '@/features/financials/components/financials-formatters';
 import type { DailyCollectionReportRow } from '@/features/financials/reports/financialReportsService';
 import { useCollectionSummaryReport } from '@/features/financials/reports/useFinancialReports';
@@ -157,12 +155,16 @@ export function CollectionsSection({ summary, rows, receiptRows, rentRollRows, c
 
   return (
     <div className="space-y-4">
-      <ResponsiveCardGrid data-report-summary="collections">
-        <KpiCard label="إجمالي التحصيل" value={formatMoney(totalCollected)} icon={WalletCards} sub={`${formatLatinNumber(paymentsCount, 'ar')} مدفوعات`} />
-        <KpiCard label="كفاءة التحصيل" value={`${formatLatinNumber(Math.round(collectionRate), 'ar')}%`} icon={CalendarDays} sub={`${formatMoney(summary?.outstanding ?? 0)} مستحق`} />
-        <KpiCard label="متوسط الدفعة" value={formatMoney(averagePayment)} icon={ReceiptText} sub={`${formatLatinNumber(receiptRows.length, 'ar')} إيصالات متاحة`} />
-        <KpiCard label="العقود النشطة" value={formatLatinNumber(activeContracts, 'ar')} icon={Building2} sub={`${formatLatinNumber(rentRollRows.length, 'ar')} عقود بالسجل`} />
-      </ResponsiveCardGrid>
+      <div
+        className="grid grid-cols-2 overflow-hidden rounded-xl border border-border/80 bg-card sm:grid-cols-4"
+        data-report-summary="collections"
+        aria-label="ملخص التحصيل"
+      >
+        <CollectionMetric label="إجمالي التحصيل" value={formatMoney(totalCollected)} helper={`${formatLatinNumber(paymentsCount, 'ar')} مدفوعات`} />
+        <CollectionMetric label="كفاءة التحصيل" value={`${formatLatinNumber(Math.round(collectionRate), 'ar')}%`} helper={`${formatMoney(summary?.outstanding ?? 0)} مستحق`} />
+        <CollectionMetric label="متوسط الدفعة" value={formatMoney(averagePayment)} helper={`${formatLatinNumber(receiptRows.length, 'ar')} إيصالات`} />
+        <CollectionMetric label="العقود النشطة" value={formatLatinNumber(activeContracts, 'ar')} helper={`${formatLatinNumber(rentRollRows.length, 'ar')} في السجل`} />
+      </div>
 
       <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <ReportProgress
@@ -193,6 +195,16 @@ export function CollectionsSection({ summary, rows, receiptRows, rentRollRows, c
         <ReceiptLinksPanel rows={receiptRows} isLoading={isLoading} />
         <RentRollPanel rows={rentRollRows} action={rentRollAction} isLoading={isLoading} />
       </ReportColumns>
+    </div>
+  );
+}
+
+function CollectionMetric({ label, value, helper }: Readonly<{ label: string; value: string; helper: string }>) {
+  return (
+    <div className="min-w-0 border-b border-border/70 px-3 py-3 odd:border-e sm:border-b-0 sm:border-e sm:last:border-e-0">
+      <p className="text-[11px] font-bold text-muted-foreground sm:text-xs">{label}</p>
+      <p className="mt-1 truncate text-base font-black tabular-nums sm:text-lg" dir="ltr">{value}</p>
+      <p className="mt-1 truncate text-[11px] font-semibold text-muted-foreground">{helper}</p>
     </div>
   );
 }
