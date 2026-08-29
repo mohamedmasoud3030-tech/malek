@@ -5,11 +5,11 @@ import { BottomSheet } from '@/components/ui/bottom-sheet';
 import type { InvoiceStatusFilter } from '../invoices/invoiceService';
 
 export const invoiceStatusFilters: { value: InvoiceStatusFilter; label: string }[] = [
-  { value: 'all', label: 'الكل' },
   { value: 'unpaid', label: 'غير مدفوعة' },
-  { value: 'partial', label: 'مدفوعة جزئياً' },
   { value: 'overdue', label: 'متأخرة' },
+  { value: 'partial', label: 'مدفوعة جزئياً' },
   { value: 'paid', label: 'مدفوعة' },
+  { value: 'all', label: 'الكل' },
 ];
 
 export type InvoiceFilterOption = { id: string; label: string };
@@ -88,9 +88,7 @@ export function InvoiceFilters({
         >
           <option value="">كل المستأجرين</option>
           {tenantOptions.map((option) => (
-            <option key={option.id} value={option.id}>
-              {option.label}
-            </option>
+            <option key={option.id} value={option.id}>{option.label}</option>
           ))}
         </select>
       </label>
@@ -104,9 +102,7 @@ export function InvoiceFilters({
         >
           <option value="">كل العقارات</option>
           {propertyOptions.map((option) => (
-            <option key={option.id} value={option.id}>
-              {option.label}
-            </option>
+            <option key={option.id} value={option.id}>{option.label}</option>
           ))}
         </select>
       </label>
@@ -115,88 +111,77 @@ export function InvoiceFilters({
 
   return (
     <div className="space-y-2.5" data-finance-filter-bar>
-      {/* Primary status filters + search + generate — always visible */}
-      <div className="flex flex-col gap-2.5">
-        <div className="flex gap-1.5 overflow-x-auto no-scrollbar" role="tablist" aria-label="حالات الفواتير">
-          {invoiceStatusFilters.map((filter) => (
-            <Button
-              key={filter.value}
-              variant={status === filter.value ? 'primary' : 'secondary'}
-              className="min-h-11 shrink-0 rounded-lg whitespace-nowrap px-3 text-xs font-semibold"
-              role="tab"
-              aria-selected={status === filter.value}
-              onClick={() => onStatusChange(filter.value)}
-            >
-              {filter.label}
-            </Button>
-          ))}
-        </div>
-
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center">
-            <input
-              className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary"
-              aria-label="بحث الفواتير"
-              placeholder="ابحث برقم الفاتورة أو الحالة"
-              value={invoiceSearch}
-              onChange={(event) => onInvoiceSearchChange(event.target.value)}
-            />
-            <Button
-              variant="secondary"
-              className="min-h-11 rounded-xl md:hidden"
-              aria-label="فلاتر متقدمة"
-              onClick={() => setIsComplexFilterOpen(true)}
-            >
-              <SlidersHorizontal className="me-2 size-4" />
-              فلاتر {hasComplexFilters ? `(${[dateFrom, dateTo, tenantId, propertyId].filter(Boolean).length})` : ''}
-            </Button>
-            {hasComplexFilters ? (
-              <Button
-                variant="outline"
-                className="min-h-11 rounded-xl"
-                onClick={() => {
-                  onDateFromChange('');
-                  onDateToChange('');
-                  onTenantChange('');
-                  onPropertyChange('');
-                }}
-                aria-label="مسح الفلاتر المتقدمة"
-              >
-                <X className="me-1 size-4" />
-                مسح
-              </Button>
-            ) : null}
-          </div>
-
-          <div className="flex gap-2">
-            <Button
-              className="min-h-11 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
-              onClick={onGenerateInvoices}
-              disabled={!canGenerateInvoices || isGenerating}
-              title={canGenerateInvoices ? undefined : 'ليس لديك صلاحية توليد الفواتير'}
-              aria-label="توليد الفواتير"
-            >
-              {isGenerating ? 'جارٍ التوليد...' : 'توليد الفواتير'}
-            </Button>
-          </div>
-        </div>
+      <div className="flex gap-1.5 overflow-x-auto no-scrollbar" role="tablist" aria-label="حالات الفواتير">
+        {invoiceStatusFilters.map((filter) => (
+          <Button
+            key={filter.value}
+            variant={status === filter.value ? 'primary' : 'secondary'}
+            className="min-h-11 shrink-0 rounded-lg whitespace-nowrap px-3 text-xs font-semibold"
+            role="tab"
+            aria-selected={status === filter.value}
+            onClick={() => onStatusChange(filter.value)}
+          >
+            {filter.label}
+          </Button>
+        ))}
       </div>
 
-      {/* Desktop: inline complex filters */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <input
+          className="min-h-11 min-w-0 flex-1 rounded-xl border border-border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          aria-label="بحث الفواتير"
+          placeholder="ابحث برقم الفاتورة، المستأجر، الهاتف، العقار أو الوحدة"
+          value={invoiceSearch}
+          onChange={(event) => onInvoiceSearchChange(event.target.value)}
+        />
+        <Button
+          variant="secondary"
+          className="min-h-11 shrink-0 rounded-xl md:hidden"
+          aria-label="فلاتر إضافية"
+          onClick={() => setIsComplexFilterOpen(true)}
+        >
+          <SlidersHorizontal className="me-2 size-4" />
+          فلاتر {hasComplexFilters ? `(${[dateFrom, dateTo, tenantId, propertyId].filter(Boolean).length})` : ''}
+        </Button>
+        {hasComplexFilters ? (
+          <Button
+            variant="outline"
+            className="min-h-11 shrink-0 rounded-xl"
+            onClick={() => {
+              onDateFromChange('');
+              onDateToChange('');
+              onTenantChange('');
+              onPropertyChange('');
+            }}
+            aria-label="مسح الفلاتر الإضافية"
+          >
+            <X className="me-1 size-4" />
+            مسح
+          </Button>
+        ) : null}
+        <Button
+          className="min-h-11 shrink-0 rounded-xl"
+          onClick={onGenerateInvoices}
+          disabled={!canGenerateInvoices || isGenerating}
+          title={canGenerateInvoices ? undefined : 'ليس لديك صلاحية إنشاء الفواتير'}
+          aria-label="إنشاء الفواتير المستحقة"
+        >
+          {isGenerating ? 'جارٍ الإنشاء...' : 'إنشاء المستحق'}
+        </Button>
+      </div>
+
       <div className="hidden rounded-xl border border-border/55 bg-muted/15 p-2.5 md:block">
-        <p className="sr-only">فلاتر متقدمة — محفوظة أثناء التنقل والتفصيل</p>
         {complexFiltersContent}
       </div>
 
-      {/* Mobile: bottom sheet for complex filters */}
-      <BottomSheet open={isComplexFilterOpen} onClose={() => setIsComplexFilterOpen(false)} title="فلاتر الفواتير المتقدمة">
+      <BottomSheet open={isComplexFilterOpen} onClose={() => setIsComplexFilterOpen(false)} title="فلاتر الفواتير">
         <div className="space-y-4">
           <p className="text-xs leading-5 text-muted-foreground">
-            الفلاتر محفوظة أثناء drill-down والعودة للسياق السابق. الأرقام تظهر كجزر LTR داخل RTL.
+            استخدم هذه الفلاتر فقط عندما تحتاج تضييق السجل بتاريخ أو مستأجر أو عقار محدد.
           </p>
           {complexFiltersContent}
-          <Button className="min-h-11 w-full rounded-xl bg-primary text-primary-foreground" onClick={() => setIsComplexFilterOpen(false)}>
-            تطبيق الفلاتر
+          <Button className="min-h-11 w-full rounded-xl" onClick={() => setIsComplexFilterOpen(false)}>
+            عرض النتائج
           </Button>
         </div>
       </BottomSheet>
