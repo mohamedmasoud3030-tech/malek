@@ -192,7 +192,7 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
       className: "w-40",
       render: (person) => (
         <div
-          className="flex gap-2"
+          className="flex flex-wrap gap-2"
           onClick={(event) => event.stopPropagation()}
           onKeyDown={(event) => event.stopPropagation()}
         >
@@ -249,7 +249,7 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
           placeholder: "بحث بالاسم أو الهاتف أو الهوية",
         }}
         filters={
-          <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto no-scrollbar">
+          <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto overscroll-x-contain no-scrollbar">
             <Select
               aria-label="تصفية الأشخاص حسب النوع"
               value={type}

@@ -152,7 +152,7 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
           </Button>
         ) : undefined}
         secondaryActions={canExport ? (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               type="button"
               variant="secondary"
@@ -184,7 +184,7 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
           placeholder: "بحث بالاسم أو العنوان...",
         }}
         filters={
-          <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto no-scrollbar">
+          <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto overscroll-x-contain no-scrollbar">
             <Select
               aria-label="الحالة"
               value={controller.status}

@@ -132,7 +132,7 @@ export function ReportDirectory({ activeSection, activeView, scope, onOpen }: Re
                   onClick={() => onOpen(pinned.section, pinned.view)}
                   aria-current={active ? 'page' : undefined}
                   className={cn(
-                    'inline-flex min-h-9 items-center gap-1 rounded-lg border px-2.5 text-xs font-black transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
+                    'inline-flex min-h-11 items-center gap-1 rounded-lg border px-2.5 text-xs font-black transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
                     active
                       ? 'border-primary/35 bg-primary/10 text-primary'
                       : 'border-border/75 bg-background text-foreground hover:border-primary/30 hover:bg-primary/[0.035]',
@@ -180,7 +180,7 @@ export function ReportDirectory({ activeSection, activeView, scope, onOpen }: Re
                         aria-current={shortcutActive ? 'page' : undefined}
                         title={shortcut.description}
                         className={cn(
-                          'group flex min-h-10 items-center justify-between gap-2 rounded-lg px-3 py-1.5 text-start text-[13px] font-semibold leading-5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
+                          'group flex min-h-11 items-center justify-between gap-2 rounded-lg px-3 py-1.5 text-start text-[13px] font-semibold leading-5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
                           shortcutActive
                             ? 'bg-primary/[0.06] text-primary'
                             : 'text-foreground hover:bg-muted/60',

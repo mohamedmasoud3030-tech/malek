@@ -164,6 +164,7 @@ export function FinancePage() {
             ariaLabel="أقسام المالية"
             panelId="finance-workspace-panel"
             idPrefix="finance-section"
+            compactMobile
           />
         </nav>
 
@@ -176,6 +177,7 @@ export function FinancePage() {
               ariaLabel={`تفاصيل ${activeSectionDefinition?.label ?? 'المالية'}`}
               panelId="finance-workspace-panel"
               idPrefix="finance-view"
+              compactMobile
             />
           </div>
         ) : null}

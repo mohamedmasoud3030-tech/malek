@@ -106,7 +106,7 @@ export function IdentitySection({
         </label>
       </fieldset>
 
-      <details className="group rounded-xl border border-border/70 bg-card md:hidden">
+      <details className="group rounded-xl border border-border/70 bg-card lg:hidden">
         <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 px-3 py-2 text-xs font-black [&::-webkit-details-marker]:hidden">
           <span className="min-w-0 flex-1">معاينة الهوية والطباعة</span>
           <ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" aria-hidden="true" />
@@ -116,7 +116,7 @@ export function IdentitySection({
         </div>
       </details>
 
-      <div className="hidden md:block">
+      <div className="hidden lg:block">
         <IdentityPreview preview={preview} formattedPreviewDate={formattedPreviewDate} formattedPreviewMoney={formattedPreviewMoney} />
       </div>
     </SectionCard>
