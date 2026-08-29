@@ -73,8 +73,9 @@ export function FilterBar({
         {filters ? (
           <div
             className={cn(
-              'flex min-w-0 items-center gap-1.5 overflow-x-auto no-scrollbar [&>*]:shrink-0 [&_input]:min-h-11 [&_input]:h-11 [&_select]:min-h-11 [&_select]:h-11',
-              !showSearch && 'col-span-1 lg:col-span-2',
+              'flex min-w-0 max-w-full items-center gap-1.5 overflow-x-auto overscroll-x-contain no-scrollbar [&>*]:shrink-0 [&_input]:min-h-11 [&_input]:h-11 [&_select]:min-h-11 [&_select]:h-11',
+              'col-span-2 lg:col-span-1',
+              !showSearch && 'lg:col-span-2',
             )}
           >
             {filters}
@@ -84,9 +85,10 @@ export function FilterBar({
         {showUtilities ? (
           <div
             className={cn(
-              'flex min-w-0 shrink-0 items-center justify-end gap-1.5 overflow-x-auto no-scrollbar [&>*]:shrink-0',
-              !filters && !showSearch && 'col-span-2 lg:col-span-3',
-              !filters && showSearch && 'col-span-2 lg:col-span-2',
+              'flex min-w-0 flex-wrap items-center justify-end gap-1.5 [&>*]:shrink-0',
+              'col-span-2 lg:col-span-1',
+              !filters && !showSearch && 'lg:col-span-3',
+              !filters && showSearch && 'lg:col-span-2',
             )}
           >
             {advancedFilters ? (

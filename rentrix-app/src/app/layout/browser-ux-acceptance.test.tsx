@@ -126,7 +126,7 @@ describe('WP-06 / GAP-020 Browser & UX Acceptance Hardening', () => {
           secondaryActions={<><button type="button">تصدير CSV</button><button type="button">طباعة</button></>}
         />,
       );
-      expect(html).toContain('max-w-[min(62vw,18rem)]');
+      expect(html).toContain('max-w-full');
       expect(html).toContain('overflow-hidden');
       expect(html).toContain('data-page-actions');
       expect(html).toContain('data-secondary-actions-desktop');

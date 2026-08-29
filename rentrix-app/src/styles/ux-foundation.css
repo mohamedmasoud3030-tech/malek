@@ -268,8 +268,22 @@
 /* Local horizontal scroll only — the document itself must not grow sideways. */
 [data-entity-table-scroll],
 [data-dashboard-focus-scroll],
-[data-filter-tabs-wrapper] {
+[data-filter-tabs-wrapper],
+[data-filter-bar],
+[data-search-filter-system] {
   max-inline-size: 100%;
+}
+
+[data-kpi-card] p,
+[data-entity-card],
+[data-page-header] {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 479px) {
+  [data-dashboard-focus-item] {
+    min-width: 7.5rem;
+  }
 }
 
 /* ── Input zoom prevention (iOS phones) ──── */

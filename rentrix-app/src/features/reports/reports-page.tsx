@@ -130,7 +130,7 @@ function MobileReportChooser({ activeSection, activeView, scope, onOpen }: Mobil
         aria-haspopup="dialog"
         aria-label="اختر تقريرًا من المستكشف"
         data-mobile-report-chooser
-        className="inline-flex min-h-10 w-full items-center justify-between gap-2 rounded-lg border border-border/70 bg-card px-3 text-sm font-black text-foreground transition-colors hover:border-primary/30 hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+        className="inline-flex min-h-11 w-full items-center justify-between gap-2 rounded-lg border border-border/70 bg-card px-3 text-sm font-black text-foreground transition-colors hover:border-primary/30 hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
       >
         <span className="min-w-0 truncate">اختر تقريرًا</span>
         <ChevronDown className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />

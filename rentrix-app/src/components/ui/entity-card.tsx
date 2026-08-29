@@ -177,7 +177,10 @@ export function EntityCard({
 
       {actions?.length ? (
         <div
-          className={cn('mt-1.5 grid gap-1 border-t border-border/55 pt-1.5', actions.length === 1 ? 'grid-cols-1' : 'grid-cols-2')}
+          className={cn(
+            'mt-1.5 grid gap-1 border-t border-border/55 pt-1.5',
+            actions.length === 1 ? 'grid-cols-1' : 'grid-cols-2 [&>:last-child:nth-child(odd)]:col-span-2',
+          )}
           onClick={(event) => event.stopPropagation()}
           onKeyDown={(event) => event.stopPropagation()}
         >

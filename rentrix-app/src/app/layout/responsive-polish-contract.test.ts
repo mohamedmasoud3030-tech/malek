@@ -42,4 +42,16 @@ describe('responsive polish contract', () => {
     const polish = read('src/styles/page-polish.css');
     expect(polish).not.toContain('[data-page-layout] > div { padding-inline:');
   });
+
+  it('stacks register filters on their own phone row instead of crowding the actions', () => {
+    const filterBar = read('src/components/ui/filter-bar.tsx');
+    expect(filterBar).toContain('col-span-2 lg:col-span-1');
+    expect(filterBar).toContain('overscroll-x-contain');
+  });
+
+  it('keeps the shared bottom sheet on the contracted top radius', () => {
+    const sheet = read('src/components/ui/bottom-sheet.tsx');
+    expect(sheet).toContain('rounded-t-[1.35rem]');
+    expect(sheet).not.toContain('rounded-t-3xl');
+  });
 });

@@ -117,7 +117,7 @@ function DashboardFocusStrip({
               href={item.href}
               data-dashboard-focus-item
               data-tone={item.tone}
-              className={`flex min-h-11 min-w-[8.75rem] shrink-0 items-center justify-between gap-2 rounded-xl border px-3 text-start outline-none transition-[background-color,border-color,transform] hover:-translate-y-px focus-visible:ring-2 focus-visible:ring-primary/25 ${dashboardFocusToneClass[item.tone]}`}
+              className={`flex min-h-11 min-w-[7.5rem] shrink-0 items-center justify-between gap-2 rounded-xl border px-3 text-start outline-none transition-[background-color,border-color,transform] hover:-translate-y-px focus-visible:ring-2 focus-visible:ring-primary/25 sm:min-w-[8.75rem] ${dashboardFocusToneClass[item.tone]}`}
             >
               <span className="text-[11px] font-extrabold leading-4 text-current/75">{item.label}</span>
               <span className="text-sm font-black tabular-nums">{formatDashboardFocusValue(item.value)}</span>
