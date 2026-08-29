@@ -3,6 +3,7 @@ import { ArrowRight, Printer, Share2, Copy, ExternalLink, Download } from 'lucid
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { DataErrorScreen } from '@/components/data-error-screen';
+import { DataRefreshAlert } from '@/components/data-refresh-alert';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
@@ -49,6 +50,9 @@ export function ReceiptDetailPage() {
   const [isSharing, setIsSharing] = useState(false);
 
   const receipt = receiptQuery.data;
+  // A stale receipt may have been voided since the cached read. Do not issue,
+  // print, or download it until the authoritative refresh succeeds.
+  const canUseReceiptDocument = documentSettings.isReady && !receiptQuery.isError;
 
   const buildReceiptDocument = useCallback(() => {
     if (!receipt) return null;
@@ -73,7 +77,7 @@ export function ReceiptDetailPage() {
     setIsPrinting(true);
     try {
       await runGuardedDocumentAction({
-        isReady: documentSettings.isReady,
+        isReady: canUseReceiptDocument,
         operation: () => {
           const receiptDocument = buildReceiptDocument();
           if (!receiptDocument) throw new DocumentReadinessError(MISSING_RECEIPT_MESSAGE);
@@ -84,11 +88,11 @@ export function ReceiptDetailPage() {
     } finally {
       window.setTimeout(() => setIsPrinting(false), 300);
     }
-  }, [buildReceiptDocument, documentSettings.isReady]);
+  }, [buildReceiptDocument, canUseReceiptDocument]);
 
   const handleDownloadPdf = useCallback(async () => {
     await runGuardedDocumentAction({
-      isReady: documentSettings.isReady,
+      isReady: canUseReceiptDocument,
       operation: () => {
         const receiptDocument = buildReceiptDocument();
         if (!receiptDocument) throw new DocumentReadinessError(MISSING_RECEIPT_MESSAGE);
@@ -96,7 +100,7 @@ export function ReceiptDetailPage() {
       },
       fallbackMessage: 'تعذر تنزيل الإيصال كملف PDF.',
     });
-  }, [buildReceiptDocument, documentSettings.isReady]);
+  }, [buildReceiptDocument, canUseReceiptDocument]);
 
   const handleShare = useCallback(async () => {
     setIsSharing(true);
@@ -121,7 +125,7 @@ export function ReceiptDetailPage() {
     });
   }, [receipt]);
 
-  if (receiptQuery.isLoading) {
+  if (!receipt && receiptQuery.isLoading) {
     return (
       <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro">
         <ReceiptPageHeader />
@@ -130,7 +134,7 @@ export function ReceiptDetailPage() {
     );
   }
 
-  if (receiptQuery.isError || !receipt) {
+  if (!receipt) {
     return (
       <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro">
         <ReceiptPageHeader description="تعذر تحميل بيانات الإيصال." />
@@ -165,6 +169,11 @@ export function ReceiptDetailPage() {
       className="print:block"
       contentClassName="print:max-w-none print:space-y-0 print:p-0"
     >
+      {receiptQuery.isError ? (
+        <div className="print:hidden">
+          <DataRefreshAlert onRetry={() => { void receiptQuery.refetch(); }} isRefreshing={receiptQuery.isFetching} />
+        </div>
+      ) : null}
       <div className="print:hidden">
         <PageHeader
           title="إيصال استلام نقدية"
@@ -172,14 +181,14 @@ export function ReceiptDetailPage() {
           backTo="/receipts"
           backLabel="الإيصالات"
           primaryAction={(
-            <Button variant="primary" onClick={handlePrint} disabled={isPrinting || !documentSettings.isReady}>
+            <Button variant="primary" onClick={handlePrint} disabled={isPrinting || !canUseReceiptDocument}>
               <Printer className="me-2 size-4" />
               {isPrinting ? 'جارٍ الطباعة...' : 'طباعة A4'}
             </Button>
           )}
           secondaryActions={(
             <>
-              <Button variant="secondary" onClick={handleDownloadPdf} disabled={!documentSettings.isReady}>
+              <Button variant="secondary" onClick={handleDownloadPdf} disabled={!canUseReceiptDocument}>
                 <Download className="me-2 size-4" />
                 تنزيل PDF
               </Button>
@@ -286,7 +295,7 @@ export function ReceiptDetailPage() {
       </Card>
 
       <div className="fixed inset-x-4 bottom-[var(--mobile-dock-clearance,5.25rem)] z-30 print:hidden md:hidden">
-        <Button className="min-h-14 w-full" onClick={handlePrint} disabled={!documentSettings.isReady}>
+        <Button className="min-h-14 w-full" onClick={handlePrint} disabled={!canUseReceiptDocument}>
           <Printer className="me-2 size-5" />
           طباعة الإيصال المعتمد A4
         </Button>

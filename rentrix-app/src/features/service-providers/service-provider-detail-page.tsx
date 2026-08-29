@@ -2,6 +2,7 @@ import { useNavigate, useParams } from '@tanstack/react-router';
 import { useState } from 'react';
 import { BriefcaseBusiness, Edit, FolderCog, Mail, MapPin, Phone, Wrench } from 'lucide-react';
 import { AsyncContentState } from '@/components/async-content-state';
+import { DataRefreshAlert } from '@/components/data-refresh-alert';
 import { ContextualDocumentsSection } from '@/components/documents/contextual-documents-section';
 import { EntityDetailHeader } from '@/components/layout/entity-detail-header';
 import { PageLayout } from '@/components/layout/page-layout';
@@ -50,11 +51,11 @@ export function ServiceProviderDetailPage() {
   if (!providerId) {
     return <AsyncContentState status="empty" emptyTitle="ملف مزود الخدمة غير متاح" emptyDescription="معرف مزود الخدمة غير موجود في الرابط.">{null}</AsyncContentState>;
   }
-  if (dossierQuery.isLoading) return <AsyncContentState status="loading">{null}</AsyncContentState>;
-  if (dossierQuery.isError || !dossierQuery.data) {
+  if (!dossierQuery.data && dossierQuery.isLoading) return <AsyncContentState status="loading">{null}</AsyncContentState>;
+  if (!dossierQuery.data) {
     return (
       <AsyncContentState
-        status="error"
+        status={dossierQuery.isError ? 'error' : 'empty'}
         error={dossierQuery.error}
         errorTitle="تعذر تحميل ملف مزود الخدمة"
         errorFallbackMessage="تعذر تحميل بيانات مزود الخدمة وسجل الصيانة المرتبط."
@@ -69,6 +70,9 @@ export function ServiceProviderDetailPage() {
 
   return (
     <PageLayout dir="rtl" size="wide" visualVariant="malek-pro">
+      {dossierQuery.isError ? (
+        <DataRefreshAlert onRetry={() => { void dossierQuery.refetch(); }} isRefreshing={dossierQuery.isFetching} />
+      ) : null}
       <EntityDetailHeader
         title={provider.name}
         subtitle="ملف مزود الخدمة وبيانات التواصل والتغطية وأنواع الخدمات وأعمال الصيانة والمستندات."

@@ -2,6 +2,7 @@ import { Link, Outlet, useLocation, useNavigate, useParams } from '@tanstack/rea
 import { Building2, DoorOpen, FileText, FolderKanban, ListChecks, UserRoundCog, WalletCards, Wrench } from 'lucide-react';
 import { Edit } from 'lucide-react';
 import { AsyncContentState } from '@/components/async-content-state';
+import { DataRefreshAlert } from '@/components/data-refresh-alert';
 import { EntityDetailHeader } from '@/components/layout/entity-detail-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
@@ -103,7 +104,7 @@ export function PropertyDetailPage() {
 
   return (
     <AsyncContentState
-      status={propertyQuery.isLoading ? 'loading' : propertyQuery.isError ? 'error' : !property ? 'empty' : 'ready'}
+      status={property ? 'ready' : propertyQuery.isLoading ? 'loading' : propertyQuery.isError ? 'error' : 'empty'}
       error={propertyQuery.error}
       errorTitle="تعذر تحميل العقار"
       errorAction={<Button onClick={() => propertyQuery.refetch()}>إعادة المحاولة</Button>}
@@ -112,6 +113,9 @@ export function PropertyDetailPage() {
     >
       {property && (
         <PageLayout dir="rtl" size="wide" visualVariant="malek-pro">
+          {propertyQuery.isError ? (
+            <DataRefreshAlert onRetry={() => { void propertyQuery.refetch(); }} isRefreshing={propertyQuery.isFetching} />
+          ) : null}
           <EntityDetailHeader
             title={property.title ?? 'عقار'}
             subtitle={property.address ?? undefined}

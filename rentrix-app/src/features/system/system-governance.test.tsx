@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { createMemoryHistory, createRootRoute, createRoute, createRouter, RouterProvider } from '@tanstack/react-router';
 import { describe, expect, it, vi } from 'vitest';
 import { AuditLogView } from '@/features/audit/components/audit-log-view';
+import { getAuditLogViewState } from '@/features/audit/audit-log-page';
 import { fetchAuditLog, normalizeAuditRecords } from '@/features/audit/services/audit-log-service';
 import { canShowNavigationItem } from '@/features/auth/permissions';
 import { assertSessionPermission } from '@/features/auth/route-guards';
@@ -148,6 +149,25 @@ describe('audit log recovery states', () => {
     expect(html).toContain('settings');
   });
 
+  it('preserves stale audit rows after a background refresh failure', () => {
+    const records = normalizeAuditRecords([{ id: 'a-1', created_at: '2026-06-04T00:00:00.000Z', username: 'admin@example.com', action: 'VIEW', entity: 'settings', entity_id: 's-1', note: null, ts: null, user_id: null, table: null, details: null, updated_at: null, old_value: null, new_value: null, action_timestamp: null }]);
+    const state = getAuditLogViewState({ isPending: false, isError: true, error: new Error('refresh failed'), data: { status: 'available', records } });
+    const html = renderToStaticMarkup(<AuditLogView state={state} onRetry={() => undefined} />);
+
+    expect(state.status).toBe('ready');
+    expect(html).toContain('تعذر تحديث البيانات');
+    expect(html).toContain('admin@example.com');
+    expect(html).toContain('إعادة المحاولة');
+  });
+
+  it('labels a bounded audit prefix instead of presenting it as complete history', () => {
+    const records = normalizeAuditRecords([{ id: 'a-1', created_at: '2026-06-04T00:00:00.000Z', username: 'admin@example.com', action: 'VIEW', entity: 'settings', entity_id: null, note: null, ts: null, user_id: null, table: null, details: null, updated_at: null, old_value: null, new_value: null, action_timestamp: null }]);
+    const html = renderToStaticMarkup(<AuditLogView state={{ status: 'ready', result: { status: 'available', records, truncated: true } }} />);
+
+    expect(html).toContain('يُعرض أحدث 200 حدث');
+    expect(html).toContain('لا تعتبر القائمة المعروضة سجلاً تاريخياً كاملاً');
+  });
+
   it('returns a safe unavailable audit result until schema assumptions are verified', async () => {
     await expect(fetchAuditLog()).resolves.toMatchObject({ status: 'unavailable' });
   });
@@ -177,7 +197,7 @@ describe('data integrity audit recovery states', () => {
     expect(state.status).toBe('ready');
     expect(html).toContain('تعذر تحديث الفحص');
     expect(html).toContain('النتائج أدناه من آخر فحص مكتمل');
-    expect(html).toContain('إعادة الفحص');
+    expect(html).toContain('إعادة المحاولة');
     expect(html).toContain('وحدات بلا عقار نشط');
   });
 
@@ -314,13 +334,18 @@ describe('system governance dependency boundaries', () => {
     }
   });
 
-  it('keeps tenant-scoped integrity cache identity and deterministic relationship pagination', () => {
-    const pageSource = readFileSync(fileURLToPath(new URL('./data-integrity-page.tsx', import.meta.url)), 'utf8');
-    const serviceSource = readFileSync(fileURLToPath(new URL('./services/data-integrity-service.ts', import.meta.url)), 'utf8');
+  it('keeps tenant-scoped governance cache identity and deterministic bounded reads', () => {
+    const integrityPageSource = readFileSync(fileURLToPath(new URL('./data-integrity-page.tsx', import.meta.url)), 'utf8');
+    const integrityServiceSource = readFileSync(fileURLToPath(new URL('./services/data-integrity-service.ts', import.meta.url)), 'utf8');
+    const auditPageSource = readFileSync(fileURLToPath(new URL('../audit/audit-log-page.tsx', import.meta.url)), 'utf8');
+    const auditServiceSource = readFileSync(fileURLToPath(new URL('../audit/services/audit-log-service.ts', import.meta.url)), 'utf8');
 
-    expect(pageSource).toContain("queryKey: ['data-integrity-audit', activeCompanyId]");
-    expect(serviceSource).toMatch(/from\('property_owners'\)[\s\S]*?order\('property_id',[\s\S]*?order\('id'/u);
-    expect(serviceSource).toMatch(/from\('owner_agreements'\)[\s\S]*?order\('property_id',[\s\S]*?order\('id'/u);
+    expect(integrityPageSource).toContain("queryKey: ['data-integrity-audit', activeCompanyId]");
+    expect(auditPageSource).toContain("queryKey: ['audit-log', activeCompanyId]");
+    expect(integrityServiceSource).toMatch(/from\('property_owners'\)[\s\S]*?order\('property_id',[\s\S]*?order\('id'/u);
+    expect(integrityServiceSource).toMatch(/from\('owner_agreements'\)[\s\S]*?order\('property_id',[\s\S]*?order\('id'/u);
+    expect(auditServiceSource).toContain('.limit(AUDIT_LOG_LIMIT + 1)');
+    expect(auditServiceSource).toContain('truncated: rows.length > AUDIT_LOG_LIMIT');
   });
 
   it('keeps audit and integrity services free of write operations', () => {

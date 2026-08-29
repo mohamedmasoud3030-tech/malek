@@ -14,14 +14,24 @@ export function OwnerDetailPage() {
     enabled: Boolean(ownerId),
   });
 
-  if (!ownerId) return <OwnerDetailView state={{ status: 'unavailable', reason: 'معرف المالك غير موجود في الرابط.' }} />;
-  if (ownerDetailQuery.isPending) return <OwnerDetailView state={{ status: 'loading' }} />;
-  if (ownerDetailQuery.isError) return <OwnerDetailView state={{ status: 'error', error: ownerDetailQuery.error }} />;
+  const retry = () => { void Promise.all([ownerDetailQuery.refetch(), activityQuery.refetch()]); };
+  const isRefreshing = ownerDetailQuery.isFetching || activityQuery.isFetching;
 
-  return (
-    <OwnerDetailView
-      state={{ status: 'ready', snapshot: ownerDetailQuery.data }}
-      activity={activityQuery.data}
-    />
-  );
+  if (!ownerId) return <OwnerDetailView state={{ status: 'unavailable', reason: 'معرف المالك غير موجود في الرابط.' }} />;
+  if (ownerDetailQuery.data) {
+    return (
+      <OwnerDetailView
+        state={{ status: 'ready', snapshot: ownerDetailQuery.data }}
+        activity={activityQuery.data}
+        refreshError={ownerDetailQuery.isError ? ownerDetailQuery.error : activityQuery.isError ? activityQuery.error : undefined}
+        onRetry={retry}
+        isRefreshing={isRefreshing}
+      />
+    );
+  }
+  if (ownerDetailQuery.isPending) return <OwnerDetailView state={{ status: 'loading' }} />;
+  if (ownerDetailQuery.isError) {
+    return <OwnerDetailView state={{ status: 'error', error: ownerDetailQuery.error }} onRetry={retry} isRefreshing={isRefreshing} />;
+  }
+  return <OwnerDetailView state={{ status: 'unavailable', reason: 'لم يرجع مصدر البيانات ملفاً لهذا المالك.' }} onRetry={retry} />;
 }

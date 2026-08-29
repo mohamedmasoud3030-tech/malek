@@ -1,7 +1,7 @@
 import { CheckCircle2, ListChecks, TriangleAlert } from 'lucide-react';
 import { DataErrorScreen } from '@/components/data-error-screen';
+import { DataRefreshAlert } from '@/components/data-refresh-alert';
 import { EmptyState } from '@/components/ui/state-surfaces';
-import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { KpiCard } from '@/components/ui/kpi-card';
@@ -51,11 +51,11 @@ export function DataIntegrityView({ state, onRetry, isRefreshing = false }: Data
   return (
     <section className="space-y-4">
       {state.refreshError ? (
-        <Alert
-          variant="warning"
+        <DataRefreshAlert
           title="تعذر تحديث الفحص"
           description="النتائج أدناه من آخر فحص مكتمل، وليست تأكيداً للحالة الحالية. تحقق من الاتصال ثم أعد الفحص."
-          action={retryAction}
+          onRetry={onRetry}
+          isRefreshing={isRefreshing}
         />
       ) : null}
       <div className="space-y-2">

@@ -56,12 +56,16 @@ export async function fetchAuditLog(): Promise<AuditLogResult> {
     .select(AUDIT_LOG_COLUMNS)
     .order('created_at', { ascending: false })
     .order('id', { ascending: false })
-    .limit(AUDIT_LOG_LIMIT);
+    // Read one sentinel row so the UI never presents a bounded prefix as the
+    // complete audit history.
+    .limit(AUDIT_LOG_LIMIT + 1);
 
   if (error) throw error;
 
+  const rows = (data ?? []) as AuditLogRow[];
   return {
     status: 'available',
-    records: normalizeAuditRecords((data ?? []) as AuditLogRow[]),
+    records: normalizeAuditRecords(rows.slice(0, AUDIT_LOG_LIMIT)),
+    truncated: rows.length > AUDIT_LOG_LIMIT,
   };
 }

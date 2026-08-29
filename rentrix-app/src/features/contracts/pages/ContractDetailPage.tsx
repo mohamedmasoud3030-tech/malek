@@ -2,6 +2,7 @@ import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import { BarChart3, CalendarPlus, Edit } from 'lucide-react';
 import { useState } from 'react';
 import { AsyncContentState } from '@/components/async-content-state';
+import { DataRefreshAlert } from '@/components/data-refresh-alert';
 import { EntityDetailHeader } from '@/components/layout/entity-detail-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { ActionMenu, type ActionMenuItem } from '@/components/ui/action-menu';
@@ -44,7 +45,7 @@ export function ContractDetailPage() {
   const [extendOpen, setExtendOpen] = useState(false);
   const [terminateOpen, setTerminateOpen] = useState(false);
 
-  if (contractQuery.isLoading || contractQuery.isError || !contractQuery.data) {
+  if (!contractQuery.data) {
     let status: 'loading' | 'error' | 'empty' = 'empty';
     if (contractQuery.isLoading) status = 'loading';
     else if (contractQuery.isError) status = 'error';
@@ -104,6 +105,12 @@ export function ContractDetailPage() {
 
   return (
     <PageLayout dir="rtl" size="wide" visualVariant="malek-pro">
+      {contractQuery.isError ? (
+        <DataRefreshAlert
+          onRetry={() => { void contractQuery.refetch(); }}
+          isRefreshing={contractQuery.isFetching}
+        />
+      ) : null}
       {!documentSettings.isReady && !documentSettings.isLoading ? <DocumentReadinessNotice /> : null}
       <EntityDetailHeader
         title={contract.reference ?? 'عقد الإيجار'}
