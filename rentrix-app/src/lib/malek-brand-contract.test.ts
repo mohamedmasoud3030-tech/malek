@@ -26,6 +26,7 @@ describe('MALEK canonical brand contract', () => {
     const brandComponent = read('src/components/brand/malik-brand.tsx');
     const shellWordmark = read('src/components/brand/malek-wordmark.tsx');
     const shell = read('src/app/layout/app-shell.tsx');
+    const navigation = read('src/app/layout/layout-navigation-view.tsx');
     const login = read('src/features/auth/login-page.tsx');
 
     expect(markComponent).toContain('APP_BRAND_MARK_ASSET');
@@ -39,6 +40,11 @@ describe('MALEK canonical brand contract', () => {
     expect(shellWordmark).toContain('<MalikBrand');
     expect(shellWordmark).not.toContain('data-brand-m');
     expect(shellWordmark).not.toContain('data-brand-name');
+
+    // The mobile navigation pins that same canonical lockup above the menu.
+    expect(navigation).toContain('data-mobile-nav-brand');
+    expect(navigation).toContain('<MalekBrandWordmark size="sidebar" />');
+    expect(navigation).toContain('sticky top-0');
   });
 
   it('stores MALEK inside the actual lockup image', () => {
