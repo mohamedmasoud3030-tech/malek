@@ -64,7 +64,8 @@ export function AnalyticsReportsAdapter({ view, model, filters, canExportReports
         <PropertyAnalyticsSection
           occupancyRows={model.sections.occupancy.occupancyRows}
           expenseRows={model.sections.expenses.report?.byProperty ?? []}
-          isLoading={model.sections.occupancy.isLoading || model.sections.expenses.isLoading}
+          performanceRows={model.sections.propertyPerformance?.rows ?? []}
+          isLoading={model.sections.propertyPerformance?.isLoading ?? (model.sections.occupancy.isLoading || model.sections.expenses.isLoading)}
         />
       );
     case 'occupancy':

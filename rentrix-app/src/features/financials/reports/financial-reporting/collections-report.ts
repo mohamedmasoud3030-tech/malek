@@ -12,6 +12,7 @@ import type {
   InvoiceTotalsReport,
   OutstandingBalanceReport,
   PaymentTotalsReport,
+  PropertyCollectionBreakdownReport,
 } from './report-types';
 import {
   summarizeCollectionReport,
@@ -23,6 +24,7 @@ import {
   summarizeInvoiceTotals,
   summarizeOutstandingBalance,
   summarizePaymentTotals,
+  summarizePropertyCollectionBreakdownReport,
 } from './report-calculations';
 import { loadExpenses, loadInvoices, loadPayments } from './report-loaders';
 
@@ -66,6 +68,12 @@ export async function getCollectionSummaryReport(filters: FinancialReportFilters
 export async function getDailyCollectionReport(filters: FinancialReportFilters): Promise<DailyCollectionReport> {
   const payments = await loadPayments(filters);
   return summarizeDailyCollectionReport(payments);
+}
+
+export async function getPropertyCollectionBreakdownReport(filters: FinancialReportFilters): Promise<PropertyCollectionBreakdownReport> {
+  const payments = await loadPayments(filters);
+  const propertiesById = await loadPropertiesById(supabase, uniqueStrings(payments.map((payment) => payment.contract?.property_id)));
+  return summarizePropertyCollectionBreakdownReport(payments, propertiesById);
 }
 
 export async function getFinancialPeriodSummaryReport(filters: FinancialReportFilters): Promise<FinancialPeriodSummaryReport> {

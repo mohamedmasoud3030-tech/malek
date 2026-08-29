@@ -1,6 +1,6 @@
 import type { Payment } from '@/types/domain';
 import { sumFinancialValues, toFinancialNumber } from '../../financialMath';
-import type { ExpenseReportRow, InvoiceReportRow, PaymentReportRow, PropertyContext } from '../financial-report-rows';
+import type { ExpenseReportRow, InvoiceReportRow, PaymentReportRow, PaymentWithInvoiceContext, PropertyContext } from '../financial-report-rows';
 import { getInvoiceReportGrossAmount, getInvoiceReportRemainingAmount } from '../financial-report-rows';
 import type {
   CollectionSummaryReport,
@@ -17,6 +17,8 @@ import type {
   OutstandingBalanceReport,
   PaymentMethodTotals,
   PaymentTotalsReport,
+  PropertyCollectionBreakdownReport,
+  PropertyCollectionBreakdownRow,
 } from './report-types';
 
 export function summarizeInvoiceTotals(invoices: Array<Pick<InvoiceReportRow, 'amount' | 'paid_amount'> & Partial<Pick<InvoiceReportRow, 'tax_amount'>>>): InvoiceTotalsReport {
@@ -78,6 +80,36 @@ function createEmptyPaymentMethodTotals(): PaymentMethodTotals {
 
 function addPaymentAmountByMethod(totals: PaymentMethodTotals, method: Payment['payment_method'], amount: unknown) {
   totals[method] = toFinancialNumber(totals[method]) + toFinancialNumber(amount);
+}
+
+export function summarizePropertyCollectionBreakdownReport(
+  payments: Array<Pick<PaymentWithInvoiceContext, 'amount' | 'contract'>>,
+  propertiesById: Map<string, PropertyContext> = new Map(),
+): PropertyCollectionBreakdownReport {
+  const rowsByProperty = new Map<string, PropertyCollectionBreakdownRow>();
+
+  for (const payment of payments) {
+    const propertyId = payment.contract?.property_id;
+    if (!propertyId) continue;
+    const row = rowsByProperty.get(propertyId) ?? {
+      propertyId,
+      propertyTitle: propertiesById.get(propertyId)?.title ?? null,
+      totalPaid: 0,
+      paymentsCount: 0,
+    };
+    row.totalPaid = toFinancialNumber(row.totalPaid) + toFinancialNumber(payment.amount);
+    row.paymentsCount += 1;
+    rowsByProperty.set(propertyId, row);
+  }
+
+  const rows = Array.from(rowsByProperty.values())
+    .sort((a, b) => b.totalPaid - a.totalPaid || (a.propertyTitle ?? a.propertyId).localeCompare(b.propertyTitle ?? b.propertyId, 'ar'));
+
+  return {
+    rows,
+    grandTotal: sumFinancialValues(rows.map((row) => row.totalPaid)),
+    paymentsCount: rows.reduce((count, row) => count + row.paymentsCount, 0),
+  };
 }
 
 export function summarizeDailyCollectionReport(payments: Pick<PaymentReportRow, 'amount' | 'payment_date' | 'payment_method'>[]): DailyCollectionReport {

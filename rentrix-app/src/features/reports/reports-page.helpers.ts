@@ -1,10 +1,13 @@
 import type { ContractListItem } from '@/features/contracts/services/contractService';
+import type { Maintenance } from '@/features/maintenance/maintenance-service';
 import type { CanonicalContractStatus } from '@/lib/contractStatus';
 import { isContractStatus, normalizeContractStatus } from '@/lib/contractStatus';
 import type {
   AgedReceivablesBucket,
   DailyCollectionReportRow,
+  OverdueInvoiceReportRow,
   OverdueInvoicesReport,
+  PropertyCollectionBreakdownRow,
 } from '@/features/financials/reports/financialReportsService';
 import { listPropertyTitles, type PropertyTitleRow } from '@/features/properties/property-service';
 import type { Unit } from '@/types/domain';
@@ -27,6 +30,203 @@ export type OccupancyChartRow = {
   vacant: number;
 };
 export type PaymentsTrendRow = { month: string; collections: number; overdue: number };
+
+export type PropertyPerformanceRow = Readonly<{
+  propertyId: string;
+  propertyTitle: string;
+  referenceRevenue: number;
+  occupiedUnits: number;
+  vacantUnits: number;
+  occupancyRate: number;
+  longestVacancyDays: number;
+  collected: number;
+  overdue: number;
+  expenses: number;
+  maintenanceCost: number;
+  openMaintenanceCount: number;
+  riskScore: number;
+  priority: 'متابعة فورية' | 'مراجعة' | 'مستقر';
+}>;
+
+type MutablePropertyPerformanceDraft = {
+  propertyId: string;
+  propertyTitle: string;
+  referenceRevenue: number;
+  occupiedUnits: number;
+  vacantUnits: number;
+  longestVacancyDays: number;
+  collected: number;
+  overdue: number;
+  expenses: number;
+  maintenanceCost: number;
+  openMaintenanceCount: number;
+};
+
+type PropertyPerformanceParams = Readonly<{
+  occupancyRows: readonly OccupancyChartRow[];
+  contracts: readonly ContractListItem[];
+  /** Complete, paginated report read model for the full selected period. */
+  collectionRows: readonly PropertyCollectionBreakdownRow[];
+  period: Readonly<{ from: string; to: string; asOf: string }>;
+  overdueRows: readonly OverdueInvoiceReportRow[];
+  expenseRows: readonly { propertyId: string; propertyTitle: string | null; total: number; count: number }[];
+  maintenanceRows: readonly Maintenance[];
+  vacancyRows: readonly { propertyId: string; daysVacant: number }[];
+}>;
+
+function ensurePropertyPerformanceRow(
+  rowsByProperty: Map<string, MutablePropertyPerformanceDraft>,
+  propertyId: string | null | undefined,
+  fallbackTitle: string | null | undefined,
+) {
+  const id = propertyId || 'unassigned';
+  const existing = rowsByProperty.get(id);
+  if (existing) {
+    if (existing.propertyTitle === 'عقار غير محدد' && fallbackTitle?.trim()) existing.propertyTitle = fallbackTitle.trim();
+    return existing;
+  }
+  const row = {
+    propertyId: id,
+    propertyTitle: fallbackTitle?.trim() || 'عقار غير محدد',
+    referenceRevenue: 0,
+    occupiedUnits: 0,
+    vacantUnits: 0,
+    longestVacancyDays: 0,
+    collected: 0,
+    overdue: 0,
+    expenses: 0,
+    maintenanceCost: 0,
+    openMaintenanceCount: 0,
+  };
+  rowsByProperty.set(id, row);
+  return row;
+}
+
+function dateOnly(value: string | null | undefined) {
+  return value?.slice(0, 10) ?? '';
+}
+
+function dateIsOnOrBefore(value: string | null | undefined, dateTo: string) {
+  const normalized = dateOnly(value);
+  return Boolean(normalized && normalized <= dateTo);
+}
+
+function dateIsWithinPeriod(value: string | null | undefined, period: Pick<PropertyPerformanceParams['period'], 'from' | 'to'>) {
+  const normalized = dateOnly(value);
+  return Boolean(normalized && normalized >= period.from && normalized <= period.to);
+}
+
+function isOpenMaintenanceRequest(request: Maintenance) {
+  return !['resolved', 'closed', 'cancelled'].includes(String(request.status ?? '').toLowerCase());
+}
+
+function isCompletedMaintenanceRequest(request: Maintenance) {
+  return ['resolved', 'closed'].includes(String(request.status ?? '').toLowerCase());
+}
+
+function getMaintenanceCostDate(request: Maintenance) {
+  return request.completed_at ?? request.resolved_at ?? request.request_date ?? request.created_at;
+}
+
+/**
+ * Current status alone cannot answer a historical "as of" question. A request
+ * closed after the selected date was still open at that date; a terminal row
+ * without a terminal timestamp is deliberately excluded rather than guessed.
+ */
+function wasMaintenanceRequestOpenAsOf(request: Maintenance, asOf: string) {
+  if (!dateIsOnOrBefore(request.request_date ?? request.created_at, asOf)) return false;
+  if (isOpenMaintenanceRequest(request)) return true;
+
+  const terminalDate = request.cancelled_at ?? request.resolved_at ?? request.completed_at;
+  return Boolean(terminalDate && dateOnly(terminalDate) > asOf);
+}
+
+/**
+ * Decision report model for property/unit performance. It intentionally merges
+ * the operational read models that used to appear as separate report islands:
+ * reference rent, occupancy/vacancy, collections, arrears, expenses, and
+ * maintenance impact are all visible in one sortable row per property.
+ */
+export function buildPropertyPerformanceRows({
+  occupancyRows,
+  contracts,
+  collectionRows,
+  period,
+  overdueRows,
+  expenseRows,
+  maintenanceRows,
+  vacancyRows,
+}: PropertyPerformanceParams): PropertyPerformanceRow[] {
+  const rowsByProperty = new Map<string, MutablePropertyPerformanceDraft>();
+
+  for (const row of occupancyRows) {
+    const property = ensurePropertyPerformanceRow(rowsByProperty, row.propertyId, row.property);
+    property.occupiedUnits += row.occupied;
+    property.vacantUnits += row.vacant;
+  }
+
+  for (const contract of contracts) {
+    if (!isContractStatus(contract.status, 'active')) continue;
+    const property = ensurePropertyPerformanceRow(rowsByProperty, contract.property_id, contract.properties?.title);
+    property.referenceRevenue += contract.rent_amount ?? 0;
+  }
+
+  for (const collection of collectionRows) {
+    const property = ensurePropertyPerformanceRow(rowsByProperty, collection.propertyId, collection.propertyTitle);
+    property.collected += collection.totalPaid;
+  }
+
+  for (const overdue of overdueRows) {
+    const property = ensurePropertyPerformanceRow(rowsByProperty, overdue.propertyId, overdue.propertyTitle);
+    property.overdue += overdue.remainingAmount;
+  }
+
+  for (const expense of expenseRows) {
+    const property = ensurePropertyPerformanceRow(rowsByProperty, expense.propertyId, expense.propertyTitle);
+    property.expenses += expense.total;
+  }
+
+  for (const request of maintenanceRows) {
+    const property = ensurePropertyPerformanceRow(rowsByProperty, request.property_id, null);
+    // Closed maintenance normally creates a real expense row. Do not add those
+    // costs again here; only surface in-period maintenance cost that has not
+    // been posted as an expense yet, so operational impact is visible without
+    // inflating property cost.
+    if (
+      isCompletedMaintenanceRequest(request)
+      && !request.expense_id
+      && dateIsWithinPeriod(getMaintenanceCostDate(request), period)
+    ) {
+      property.maintenanceCost += request.cost ?? 0;
+    }
+    if (wasMaintenanceRequestOpenAsOf(request, period.asOf)) {
+      property.openMaintenanceCount += 1;
+    }
+  }
+
+  for (const vacancy of vacancyRows) {
+    const property = ensurePropertyPerformanceRow(rowsByProperty, vacancy.propertyId, null);
+    property.longestVacancyDays = Math.max(property.longestVacancyDays, vacancy.daysVacant);
+  }
+
+  return Array.from(rowsByProperty.values())
+    .map((row) => {
+      const totalUnits = row.occupiedUnits + row.vacantUnits;
+      const occupancyRate = totalUnits > 0 ? (row.occupiedUnits / totalUnits) * 100 : 0;
+      const overduePressure = row.referenceRevenue > 0 ? Math.min(40, (row.overdue / row.referenceRevenue) * 30) : row.overdue > 0 ? 25 : 0;
+      const vacancyPressure = Math.min(30, row.vacantUnits * 6 + Math.max(0, row.longestVacancyDays - 30) / 3);
+      const maintenancePressure = Math.min(20, row.openMaintenanceCount * 4);
+      const expensePressure = row.collected > 0 ? Math.min(10, (row.expenses / row.collected) * 8) : row.expenses > 0 ? 8 : 0;
+      const riskScore = Math.round(overduePressure + vacancyPressure + maintenancePressure + expensePressure);
+      return {
+        ...row,
+        occupancyRate,
+        riskScore,
+        priority: riskScore >= 45 ? 'متابعة فورية' : riskScore >= 25 ? 'مراجعة' : 'مستقر',
+      } satisfies PropertyPerformanceRow;
+    })
+    .sort((a, b) => b.riskScore - a.riskScore || b.overdue - a.overdue || a.propertyTitle.localeCompare(b.propertyTitle, 'ar'));
+}
 export type RentRollReportRow = {
   contractId: string;
   contractReference?: string | null;

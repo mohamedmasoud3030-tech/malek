@@ -201,6 +201,27 @@ const fixtureModel: ReportsWorkspaceModel = {
       historyComplete: true,
       isLoading: false,
     },
+    propertyPerformance: {
+      rows: [
+        {
+          propertyId: 'property-1',
+          propertyTitle: 'برج الخوير',
+          referenceRevenue: 21600,
+          occupiedUnits: 18,
+          vacantUnits: 2,
+          occupancyRate: 90,
+          longestVacancyDays: 35,
+          collected: 1200,
+          overdue: 1600,
+          expenses: 1125,
+          maintenanceCost: 900,
+          openMaintenanceCount: 3,
+          riskScore: 36,
+          priority: 'مراجعة',
+        },
+      ],
+      isLoading: false,
+    },
     maintenance: {
       rows: [],
       summary: { total: 14, open: 3, inProgress: 4, urgent: 2 },

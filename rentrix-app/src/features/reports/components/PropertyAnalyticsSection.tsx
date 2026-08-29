@@ -1,11 +1,12 @@
 import { Building2, Download, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { formatMoney } from '@/features/financials/components/financials-formatters';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
 import { documentService } from '@/services/documents/DocumentService';
 import { runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
 import { toReportDocumentPayload, type ReportDocumentData } from '@/services/documents/documentPayloadAdapters';
-import type { OccupancyChartRow } from '../reports-page.helpers';
+import type { OccupancyChartRow, PropertyPerformanceRow } from '../reports-page.helpers';
 import { getTodayLocalDateString } from '../reports-page.helpers';
 import {
   ReportInsightNote,
@@ -21,10 +22,11 @@ import { formatLatinNumber } from '@/lib/formatters';
 export type PropertyAnalyticsProps = Readonly<{
   occupancyRows: OccupancyChartRow[];
   expenseRows: Array<{ propertyId: string; propertyTitle: string | null; total: number; count: number }>;
+  performanceRows: readonly PropertyPerformanceRow[];
   isLoading: boolean;
 }>;
 
-export function PropertyAnalyticsSection({ occupancyRows, expenseRows, isLoading }: PropertyAnalyticsProps) {
+export function PropertyAnalyticsSection({ occupancyRows, expenseRows, performanceRows, isLoading }: PropertyAnalyticsProps) {
   const expenseByProperty = new Map(expenseRows.map((row) => [row.propertyId, row] as const));
   const totalProperties = occupancyRows.length;
   const totalOccupiedUnits = occupancyRows.reduce((total, row) => total + row.occupied, 0);
@@ -80,20 +82,36 @@ export function PropertyAnalyticsSection({ occupancyRows, expenseRows, isLoading
       periodTo: todayStr,
       sections: [
         {
-          title: 'جدول أداء واستغلال العقارات ونسب العائد والنفقات',
-          columns: ['العقار', 'إجمالي الوحدات', 'المشغولة', 'الشاغرة', 'نسبة الإشغال', 'إجمالي المصروفات'],
-          rows: Array.from(propertyMap.values()).map((property) => {
+          title: 'تقرير أداء العقارات والوحدات — صف قرار موحّد',
+          columns: ['العقار', 'إيجارات العقود حسب دورتها', 'الإشغال', 'أطول شغور', 'المحصّل', 'المتأخر', 'المصروفات', 'صيانة غير مرحلة كمصروف', 'أولوية المتابعة'], 
+          rows: (performanceRows.length > 0 ? performanceRows : Array.from(propertyMap.values()).map((property) => {
             const units = property.occupied + property.vacant;
             const rate = units > 0 ? Math.round((property.occupied / units) * 100) : 0;
-            return [
-              property.title,
-              units,
-              property.occupied,
-              property.vacant,
-              `${rate}%`,
-              `${formatLatinNumber(property.expenses, 'ar-OM')} ${currencySymbol}`,
-            ];
-          }),
+            return {
+              propertyTitle: property.title,
+              referenceRevenue: 0,
+              occupancyRate: rate,
+              occupiedUnits: property.occupied,
+              vacantUnits: property.vacant,
+              longestVacancyDays: 0,
+              collected: 0,
+              overdue: 0,
+              expenses: property.expenses,
+              maintenanceCost: 0,
+              openMaintenanceCount: 0,
+              priority: 'مستقر' as const,
+            };
+          })).map((property) => [
+            property.propertyTitle,
+            `${formatLatinNumber(property.referenceRevenue, 'ar-OM')} ${currencySymbol}`,
+            `${Math.round(property.occupancyRate)}% (${property.occupiedUnits}/${property.occupiedUnits + property.vacantUnits})`,
+            `${formatLatinNumber(property.longestVacancyDays, 'ar')} يوم`,
+            `${formatLatinNumber(property.collected, 'ar-OM')} ${currencySymbol}`,
+            `${formatLatinNumber(property.overdue, 'ar-OM')} ${currencySymbol}`,
+            `${formatLatinNumber(property.expenses, 'ar-OM')} ${currencySymbol}`,
+            `${formatLatinNumber(property.maintenanceCost, 'ar-OM')} ${currencySymbol} / ${formatLatinNumber(property.openMaintenanceCount, 'ar')} مفتوحة`,
+            property.priority,
+          ]),
         },
       ],
       totalSummary: `إجمالي العقارات: ${propertyMap.size} | إشغال المحفظة: ${overallOccupancyRate}% | المصروف لكل وحدة مشغولة: ${formatLatinNumber(expensePerOccupiedUnit, 'ar-OM')} ${currencySymbol}`,
@@ -144,6 +162,7 @@ export function PropertyAnalyticsSection({ occupancyRows, expenseRows, isLoading
       </div>
 
       <ReportInsightNote title="قراءة المحفظة">
+        <p className="mb-2">أولوية المتابعة محسوبة تشغيليًا من ضغط المتأخرات والشغور وطلبات الصيانة المفتوحة وعبء المصروفات؛ ليست درجة خطر مالية أو بديلًا عن القوائم المحاسبية.</p>
         {lowestOccupancyProperty && lowestOccupancyRate < 70
           ? `${lowestOccupancyProperty.property} هو الأقل إشغالًا بنسبة ${Math.round(lowestOccupancyRate)}%؛ ابدأ بمراجعة شواغره وتسعيره وحالته التشغيلية.`
           : highestExpenseShare > 60
@@ -152,9 +171,9 @@ export function PropertyAnalyticsSection({ occupancyRows, expenseRows, isLoading
       </ReportInsightNote>
 
       <ReportPanel
-        title="أداء العقارات"
-        description="قراءة موحّدة للإشغال والشواغر والمصروفات لكل عقار."
-        eyebrow="مقارنة المحفظة"
+        title="أداء العقارات والوحدات"
+        description="صف قرار واحد لكل عقار: إيجارات العقود حسب دورتها دون تطبيع شهري، الإشغال، الشغور بالأيام، التحصيل الكامل للفترة، المتأخرات، المصروفات، والصيانة غير المرحلة كمصروف."
+        eyebrow="تقرير قرار قابل للتصرف"
         icon={Building2}
         action={(
           <div className="flex items-center gap-1.5">
@@ -170,8 +189,28 @@ export function PropertyAnalyticsSection({ occupancyRows, expenseRows, isLoading
         )}
         isLoading={isLoading}
       >
-        {occupancyRows.length === 0 ? (
+        {performanceRows.length === 0 && occupancyRows.length === 0 ? (
           <div className="p-4"><ReportState message="لا توجد بيانات عقارية متاحة للتحليل." /></div>
+        ) : performanceRows.length > 0 ? (
+          <ReportList>
+            {performanceRows.map((row) => {
+              const priorityTone = row.priority === 'متابعة فورية' ? 'danger' : row.priority === 'مراجعة' ? 'warning' : 'success';
+              return (
+                <ReportListRow
+                  key={row.propertyId}
+                  title={row.propertyTitle}
+                  subtitle={`إيجارات العقود حسب دورتها ${formatMoney(row.referenceRevenue)} · محصّل الفترة ${formatMoney(row.collected)} · متأخر ${formatMoney(row.overdue)}`}
+                  meta={`${formatLatinNumber(row.occupiedUnits, 'ar')} مشغولة / ${formatLatinNumber(row.vacantUnits, 'ar')} شاغرة · أطول شغور ${formatLatinNumber(row.longestVacancyDays, 'ar')} يوم · صيانة مفتوحة ${formatLatinNumber(row.openMaintenanceCount, 'ar')}`}
+                  value={(
+                    <div className="space-y-1 text-end">
+                      <StatusBadge tone={priorityTone}>{row.priority}</StatusBadge>
+                      <p className="text-xs font-medium text-muted-foreground" dir="ltr">أولوية {row.riskScore}/100 · {Math.round(row.occupancyRate)}% · مصروفات {formatMoney(row.expenses)}</p>
+                    </div>
+                  )}
+                />
+              );
+            })}
+          </ReportList>
         ) : (
           <ReportList>
             {occupancyRows.map((row) => {
@@ -185,12 +224,7 @@ export function PropertyAnalyticsSection({ occupancyRows, expenseRows, isLoading
                   title={row.property}
                   subtitle={`${formatLatinNumber(row.occupied, 'ar')} مشغولة · ${formatLatinNumber(row.vacant, 'ar')} شاغرة · ${formatLatinNumber(expense?.count ?? 0, 'ar')} مصروفات`}
                   meta={`${formatLatinNumber(units, 'ar')} وحدة · ${formatMoney(propertyExpensePerOccupied)} للوحدة المشغولة`}
-                  value={(
-                    <div className="text-end">
-                      <p dir="ltr">{rate}%</p>
-                      <p className="mt-1 text-xs font-medium text-muted-foreground" dir="ltr">{formatMoney(expense?.total ?? 0)}</p>
-                    </div>
-                  )}
+                  value={(<div className="text-end"><p dir="ltr">{rate}%</p><p className="mt-1 text-xs font-medium text-muted-foreground" dir="ltr">{formatMoney(expense?.total ?? 0)}</p></div>)}
                 />
               );
             })}

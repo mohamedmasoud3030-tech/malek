@@ -14,6 +14,7 @@ import {
   getOwnerStatementReport,
   getOutstandingBalanceReport,
   getPaymentTotalsReport,
+  getPropertyCollectionBreakdownReport,
   getTenantStatementReport,
   getVatReturnReport,
   getTrialBalanceReport,
@@ -31,6 +32,7 @@ export const financialReportKeys = {
   agedReceivables: (filters: ArrearsReportFilters) => [...financialReportKeys.all, 'agedReceivables', filters] as const,
   arrearsSummary: (filters: ArrearsReportFilters) => [...financialReportKeys.all, 'arrearsSummary', filters] as const,
   dailyCollection: (filters: FinancialReportFilters) => [...financialReportKeys.all, 'dailyCollection', filters] as const,
+  propertyCollectionBreakdown: (filters: FinancialReportFilters) => [...financialReportKeys.all, 'propertyCollectionBreakdown', filters] as const,
   financialPeriodSummary: (filters: FinancialReportFilters) => [...financialReportKeys.all, 'financialPeriodSummary', filters] as const,
   financialCashflow: (filters: FinancialReportFilters) => [...financialReportKeys.all, 'financialCashflow', filters] as const,
   cashFlowStatement: (filters: Pick<FinancialReportFilters, 'dateFrom' | 'dateTo'>) => [...financialReportKeys.all, 'cashFlowStatement', filters] as const,
@@ -74,6 +76,14 @@ export function useDailyCollectionReport(filters: FinancialReportFilters, option
   return useQuery({
     queryKey: financialReportKeys.dailyCollection(filters),
     queryFn: () => getDailyCollectionReport(filters),
+    enabled: (options.enabled ?? true) && (hasRequiredDateRange(filters)),
+  });
+}
+
+export function usePropertyCollectionBreakdownReport(filters: FinancialReportFilters, options: ReportQueryOptions = {}) {
+  return useQuery({
+    queryKey: financialReportKeys.propertyCollectionBreakdown(filters),
+    queryFn: () => getPropertyCollectionBreakdownReport(filters),
     enabled: (options.enabled ?? true) && (hasRequiredDateRange(filters)),
   });
 }
