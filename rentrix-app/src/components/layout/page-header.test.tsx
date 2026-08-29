@@ -49,6 +49,8 @@ describe('PageHeader — العنوان الموحد للصفحات', () => {
     expect(html).toContain('data-secondary-overflow-trigger');
     expect(html).not.toContain('max-w-[58vw]');
     expect(html).not.toContain('overflow-x-auto');
+    expect(html).toContain('flex-wrap');
+    expect(html).toContain('[overflow-wrap:anywhere]');
   });
 
   it('groups secondary actions without broken menus and preserves accessible names', () => {

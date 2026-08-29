@@ -225,31 +225,25 @@ export async function getFinanceReadiness(companyId: string): Promise<FinanceRea
     accountingPeriod = { state: 'BLOCKED', openPeriod: null };
   }
 
-  // Chart of accounts readiness
+  // Chart and payment-method readiness must derive from one successful
+  // authoritative snapshot. Calling the RPC twice could show contradictory
+  // states and the old payment-method branch silently ignored its RPC error.
   let chartOfAccounts: FinanceReadiness['chartOfAccounts'];
+  let paymentMethods: FinanceReadiness['paymentMethods'];
   try {
     const { data, error } = await supabase.rpc('list_chart_of_accounts');
     if (error) throw error;
-    const count = Array.isArray(data) ? (data as unknown[]).length : 0;
+    const accounts = Array.isArray(data) ? (data as unknown as { account_no: string }[]) : [];
+    const count = accounts.length;
     chartOfAccounts = {
       state: count >= 18 ? 'READY' : count > 0 ? 'BLOCKED' : 'MISSING',
       count,
     };
+    const hasCash = accounts.some((account) => account.account_no === '1111');
+    const hasBank = accounts.some((account) => account.account_no === '1120');
+    paymentMethods = { state: hasCash && hasBank ? 'READY' : 'MISSING' };
   } catch {
     chartOfAccounts = { state: 'BLOCKED', count: 0 };
-  }
-
-  // Payment methods readiness
-  let paymentMethods: FinanceReadiness['paymentMethods'];
-  try {
-    const { data } = await supabase.rpc('list_chart_of_accounts');
-    const accounts = Array.isArray(data) ? (data as unknown as { account_no: string }[]) : [];
-    const hasCash = accounts.some((a) => a.account_no === '1111');
-    const hasBank = accounts.some((a) => a.account_no === '1120');
-    paymentMethods = {
-      state: hasCash && hasBank ? 'READY' : 'MISSING',
-    };
-  } catch {
     paymentMethods = { state: 'BLOCKED' };
   }
 

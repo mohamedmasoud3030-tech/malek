@@ -146,7 +146,7 @@ export function FinancePage() {
   }
 
   return (
-    <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro" className="pb-8">
+    <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro">
       <PageHeader
         title="المالية"
         description={activeSectionDefinition ? FINANCE_SECTION_HELP[activeSectionDefinition.id] : 'أنجز العمل المالي من مكان واحد.'}
@@ -165,6 +165,7 @@ export function FinancePage() {
             ariaLabel="أقسام المالية"
             panelId="finance-workspace-panel"
             idPrefix="finance-section"
+            compactMobile
           />
         </nav>
 
@@ -177,6 +178,7 @@ export function FinancePage() {
               ariaLabel={`تفاصيل ${activeSectionDefinition?.label ?? 'المالية'}`}
               panelId="finance-workspace-panel"
               idPrefix="finance-view"
+              compactMobile
             />
           </div>
         ) : null}

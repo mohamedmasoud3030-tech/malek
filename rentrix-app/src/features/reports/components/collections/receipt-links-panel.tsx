@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { ExternalLink, Printer, ReceiptText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
@@ -33,7 +34,7 @@ const paymentMethodLabels: Record<string, string> = {
 };
 
 export function ReceiptLinksPanel({ rows, isLoading }: Readonly<{ rows: CollectionReceiptRow[]; isLoading: boolean }>) {
-  const columns: ColumnDef<CollectionReceiptRow>[] = [
+  const columns = useMemo((): ColumnDef<CollectionReceiptRow>[] => [
     {
       key: 'receipt',
       header: 'الإيصال / المرجع',
@@ -124,7 +125,7 @@ export function ReceiptLinksPanel({ rows, isLoading }: Readonly<{ rows: Collecti
         </div>
       ),
     },
-  ];
+  ], []);
 
   return (
     <ReportPanel

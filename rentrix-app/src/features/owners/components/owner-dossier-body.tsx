@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import {
   Activity,
   Building2,
@@ -8,7 +9,7 @@ import {
 import { ContextualDocumentsSection } from '@/components/documents/contextual-documents-section';
 import { Button } from '@/components/ui/button';
 import { DetailFields } from '@/components/ui/detail-fields';
-import { EntityTable } from '@/components/ui/entity-table';
+import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -59,6 +60,18 @@ export function OwnerDossierBody({
   const availableUnits = units.filter((unit) => unit.status === 'available').length;
   const maintenanceUnits = units.filter((unit) => unit.status === 'maintenance').length;
   const reservedUnits = units.filter((unit) => unit.status === 'reserved').length;
+
+  const dossierPropertyColumns: ColumnDef<typeof properties[number]>[] = useMemo(() => [
+    { key: 'title', header: 'العقار', priority: 'identity', render: (property) => <span className="font-semibold text-primary">{property.title}</span> },
+    { key: 'address', header: 'العنوان', priority: 'secondary', render: (property) => property.address ?? '—' },
+    { key: 'ownership', header: 'نسبة الملكية', priority: 'secondary', render: (property) => {
+      const pct = property.property_owners.find((link) => link.owner_id === owner.id && !link.ends_on)?.ownership_percentage ?? 100;
+      return `${formatCompanyNumber(companySettings, pct)}%`;
+    }},
+    { key: 'units', header: 'الوحدات', priority: 'detail', render: (property) => formatCompanyNumber(companySettings, units.filter((unit) => unit.property_id === property.id).length) },
+    { key: 'active_contracts', header: 'العقود النشطة', priority: 'detail', render: (property) => formatCompanyNumber(companySettings, contracts.filter((contract) => contract.property_id === property.id && contract.status === 'active').length) },
+    { key: 'status', header: 'الحالة', priority: 'secondary', render: (property) => property.status },
+  ], [owner.id, companySettings, units, contracts]);
 
   return (
     <div className="space-y-6">
@@ -113,17 +126,7 @@ export function OwnerDossierBody({
               <EntityTable
                 aria-label="جدول عقارات المالك"
                 rows={properties}
-                columns={[
-                  { key: 'title', header: 'العقار', priority: 'identity', render: (property) => <span className="font-semibold text-primary">{property.title}</span> },
-                  { key: 'address', header: 'العنوان', priority: 'secondary', render: (property) => property.address ?? '—' },
-                  { key: 'ownership', header: 'نسبة الملكية', priority: 'secondary', render: (property) => {
-                    const pct = property.property_owners.find((link) => link.owner_id === owner.id && !link.ends_on)?.ownership_percentage ?? 100;
-                    return `${formatCompanyNumber(companySettings, pct)}%`;
-                  }},
-                  { key: 'units', header: 'الوحدات', priority: 'detail', render: (property) => formatCompanyNumber(companySettings, units.filter((unit) => unit.property_id === property.id).length) },
-                  { key: 'active_contracts', header: 'العقود النشطة', priority: 'detail', render: (property) => formatCompanyNumber(companySettings, contracts.filter((contract) => contract.property_id === property.id && contract.status === 'active').length) },
-                  { key: 'status', header: 'الحالة', priority: 'secondary', render: (property) => property.status },
-                ]}
+                columns={dossierPropertyColumns}
                 keyOf={(property) => property.id}
                 emptyTitle="لا توجد عقارات مرتبطة"
                 emptyDescription="لا توجد علاقة ملكية نشطة موثقة لهذا المالك. يمكنك ربط المالك بعقار من صفحة العقارات."

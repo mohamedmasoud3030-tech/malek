@@ -315,7 +315,7 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
     // Guard inside the async boundary so the handler fails closed with a
     // visible Arabic reason rather than silently doing nothing.
     void runGuardedDocumentAction({
-      isReady: documentSettings.isReady,
+      isReady: documentSettings.isReady && !isError,
       operation: () => {
         const report = buildUtilitiesReport() satisfies ReportDocumentData;
         return documentService.printDocument('generic_report', { settings: documentSettings.companySettings, payload: toReportDocumentPayload(report) });
@@ -328,7 +328,7 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
     // Guard inside the async boundary so the handler fails closed with a
     // visible Arabic reason rather than silently doing nothing.
     void runGuardedDocumentAction({
-      isReady: documentSettings.isReady,
+      isReady: documentSettings.isReady && !isError,
       operation: () => {
         const report = buildUtilitiesReport() satisfies ReportDocumentData;
         return documentService.downloadDocumentPdf('generic_report', { settings: documentSettings.companySettings, payload: toReportDocumentPayload(report) });
@@ -473,8 +473,8 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
 
   const headerActions = (
     <div className="flex flex-wrap gap-2">
-      <Button variant="outline" onClick={handlePrint} disabled={!documentSettings.isReady}><Printer className="size-4" />طباعة كشف المرافق</Button>
-      <Button variant="secondary" onClick={handleDownloadPdf} disabled={!documentSettings.isReady}><Download className="size-4" />تنزيل PDF</Button>
+      <Button variant="outline" onClick={handlePrint} disabled={!documentSettings.isReady || isError}><Printer className="size-4" />طباعة كشف المرافق</Button>
+      <Button variant="secondary" onClick={handleDownloadPdf} disabled={!documentSettings.isReady || isError}><Download className="size-4" />تنزيل PDF</Button>
     </div>
   );
 
@@ -523,18 +523,18 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
         searchAriaLabel="بحث في فواتير المرافق"
         filters={(
           <>
-            <Select aria-label="العقار" value={propertyFilter} onChange={(event) => setPropertyFilter(event.target.value)} className="w-full sm:w-44">
+            <Select aria-label="العقار" value={propertyFilter} onChange={(event) => setPropertyFilter(event.target.value)} className="min-h-11 w-full sm:w-44">
               <option value="all">كل العقارات</option>
               {properties.map((property) => <option key={property.id} value={property.id}>{property.title}</option>)}
             </Select>
-            <Select aria-label="نوع المرفق" value={utilityFilter} onChange={(event) => setUtilityFilter(event.target.value)} className="w-full sm:w-44">
+            <Select aria-label="نوع المرفق" value={utilityFilter} onChange={(event) => setUtilityFilter(event.target.value)} className="min-h-11 w-full sm:w-44">
               <option value="all">كل أنواع المرافق</option>
               {Object.entries(utilityTypeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               <optgroup label="حسب العداد">
                 {meters.map((meter) => <option key={meter.id} value={`meter:${meter.id}`}>{utilityTypeLabels[meter.utility_type]} · {meter.meter_number}</option>)}
               </optgroup>
             </Select>
-            <Select aria-label="حالة السداد" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as UtilityBillStatus | 'all')} className="w-full sm:w-40">
+            <Select aria-label="حالة السداد" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as UtilityBillStatus | 'all')} className="min-h-11 w-full sm:w-40">
               <option value="all">كل الحالات</option>
               {Object.entries(utilityBillStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </Select>
@@ -565,15 +565,15 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
         )}
         actions={(
           <div className="flex w-full gap-2 sm:w-auto">
-            <Button onClick={() => setShowMeterForm(true)}><Plus className="size-4" />إضافة عداد</Button>
-            <Button variant="secondary" onClick={() => setShowBillForm(true)}><Plus className="size-4" />فاتورة مرافق</Button>
+            <Button disabled={isError} onClick={() => { if (!isError) setShowMeterForm(true); }}><Plus className="size-4" />إضافة عداد</Button>
+            <Button variant="secondary" disabled={isError} onClick={() => { if (!isError) setShowBillForm(true); }}><Plus className="size-4" />فاتورة مرافق</Button>
           </div>
         )}
       />
       <ActiveFilterBar filters={activeFilters} onClearAll={clearFilters} />
 
       <AsyncContentState
-        status={isLoading ? 'loading' : isError ? 'error' : meters.length === 0 && filteredBills.length === 0 ? 'empty' : 'ready'}
+        status={isLoading ? 'loading' : isError && meters.length === 0 && bills.length === 0 ? 'error' : meters.length === 0 && filteredBills.length === 0 ? 'empty' : 'ready'}
         error={error}
         errorTitle="تعذر تحميل بيانات المرافق"
         errorAction={<Button onClick={() => { void metersQuery.refetch(); void billsQuery.refetch(); void propertiesQuery.refetch(); }}>إعادة المحاولة</Button>}
@@ -594,6 +594,8 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
             <EntityTable
               aria-label="جدول عدادات المرافق"
               rows={visibleMeters}
+              error={isError ? error : undefined}
+              onRetry={() => { void metersQuery.refetch(); void billsQuery.refetch(); void propertiesQuery.refetch(); }}
               columns={meterColumns}
               keyOf={(meter) => meter.id}
               mobileBadgeKey="status"
@@ -619,6 +621,8 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
             <EntityTable
               aria-label="جدول فواتير المرافق"
               rows={visibleBills}
+              error={isError ? error : undefined}
+              onRetry={() => { void metersQuery.refetch(); void billsQuery.refetch(); void propertiesQuery.refetch(); }}
               columns={billColumns}
               keyOf={(bill) => bill.id}
               onRowClick={(bill) => setBillToPreview(bill)}

@@ -1,5 +1,5 @@
 import { Archive, Edit, Layers, MapPinned, Plus, Tag, TrendingUp } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { AsyncContentState } from '@/components/async-content-state';
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { useDialogNavigate } from '@/app/router/background-location';
@@ -111,7 +111,7 @@ export function LandsView({
     </div>
   );
 
-  const columns: ColumnDef<LandRecord>[] = [
+  const columns = useMemo((): ColumnDef<LandRecord>[] => [
     {
       key: 'name', priority: 'identity' as const,
       header: 'الأرض',
@@ -128,7 +128,7 @@ export function LandsView({
     { key: 'value', priority: 'detail' as const, header: 'القيمة', render: (row) => <span dir="ltr">{money(row.owner_price ?? row.purchase_price)}</span> },
     { key: 'status', priority: 'primary' as const, header: 'الحالة', render: (row) => <StatusBadge tone={landStatusTone[row.status ?? ""] ?? "neutral"}>{landStatusLabels[row.status ?? ''] ?? 'حالة أخرى'}</StatusBadge> },
     { key: 'actions', priority: 'actions' as const, header: 'إجراءات', render: rowActions },
-  ];
+  ], []);
 
   return (
     <EmbeddableWorkspace
@@ -140,14 +140,14 @@ export function LandsView({
       description="إدارة قطع الأراضي وحالتها ومساحتها ومالكها وقيمتها من سجل واحد."
       count={isLoading ? '...' : rows.length}
       secondaryActions={(
-        <div className="hidden min-w-max items-center gap-2 rounded-xl border bg-background/70 px-3 py-2 text-xs font-bold text-muted-foreground sm:flex">
+        <div className="hidden max-w-full items-center gap-2 rounded-xl border bg-background/70 px-3 py-2 text-xs font-bold text-muted-foreground lg:flex">
           <Layers className="size-4" />
           <span>{isLoading ? 'جارٍ حساب المساحة...' : `إجمالي المساحة ${area(totalArea)}`}</span>
         </div>
       )}
       primaryAction={<Button onClick={onCreate}><Plus className="size-4" />إضافة أرض</Button>}
     >
-      <ResponsiveCardGrid>
+      <ResponsiveCardGrid desktopColumns={4}>
         {isLoading ? Array.from({ length: 4 }).map((_, index) => <Skeleton key={index} className="h-24 rounded-2xl sm:h-28" />) : (
           <>
             <KpiCard label="إجمالي السجلات" value={rows.length} icon={MapPinned} accent="primary" sub={`${activeRows} نشطة`} />

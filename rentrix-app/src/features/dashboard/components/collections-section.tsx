@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Link } from '@tanstack/react-router';
 import { HandCoins, Layers3 } from 'lucide-react';
 import { formatCompanyMoney } from '@/lib/companyFormatters';
@@ -39,7 +40,7 @@ function collectionPeriodTitle(month: number, year: number): string {
  * aging from the snapshot. Bucket boundaries are the server's fixed cohorts —
  * they are never rebucketed in the browser.
  */
-export function CollectionsSection({ snapshot, isLoading, isError = false, settings }: CollectionsSectionProps) {
+export const CollectionsSection = memo(function CollectionsSection({ snapshot, isLoading, isError = false, settings }: CollectionsSectionProps) {
   const money = (value: number) => formatCompanyMoney(settings, value);
 
   const invoiced = snapshot?.billing.invoicedAmount ?? 0;
@@ -122,7 +123,7 @@ export function CollectionsSection({ snapshot, isLoading, isError = false, setti
           title="تعذر تحميل المتأخرات"
           description="راجع تنبيه أعلى الصفحة ثم أعد المحاولة. لن نعرض قائمة فارغة عند فشل التحميل."
         />
-      ) : null}
+      ) : null});
     </DashboardSignalPanel>
   );
-}
+});

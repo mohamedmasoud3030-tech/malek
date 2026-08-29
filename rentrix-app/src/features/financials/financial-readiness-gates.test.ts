@@ -1,7 +1,18 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { filterPaymentsForReport, summarizeDailyCollectionReport } from './reports/financialReportsService';
 
 describe('financial readiness gates', () => {
+  it('derives chart and payment-method readiness from one checked account snapshot', () => {
+    const source = readFileSync(fileURLToPath(new URL('./tax-authority/finance-readiness-service.ts', import.meta.url)), 'utf8');
+    const accountReadCalls = source.match(/rpc\('list_chart_of_accounts'\)/gu) ?? [];
+
+    expect(accountReadCalls).toHaveLength(1);
+    expect(source).toContain('if (error) throw error');
+    expect(source).toContain("paymentMethods = { state: 'BLOCKED' }");
+  });
+
   it('filters deleted and voided payments before report totals are summarized', () => {
     const rows = filterPaymentsForReport([
       { id: 'p-1', invoice_id: 'i-1', amount: 100, payment_date: '2026-07-01', payment_method: 'cash', status: 'posted', deleted_at: null, invoice: { id: 'i-1', contract_id: 'c-1' }, contract: null },

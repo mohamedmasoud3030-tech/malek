@@ -153,9 +153,11 @@ export function useInvoiceWorkspaceController() {
     [amount, amountValue, invoiceDetail, paymentDate, rawAmountValue, selectedInvoiceId],
   );
 
-  const canGenerateInvoices = canAccess(authorization, financialOperationPermissions.generateInvoices);
-  const canCreatePayment = canAccess(authorization, financialOperationPermissions.createPayment);
-  const canExportInvoices = canAccess(authorization, financialOperationPermissions.exportInvoices);
+  const hasAuthoritativeInvoiceList = !invoicesQuery.isError && !contractsQuery.isError;
+  const hasAuthoritativeInvoiceDetail = hasAuthoritativeInvoiceList && !invoiceQuery.isError;
+  const canGenerateInvoices = canAccess(authorization, financialOperationPermissions.generateInvoices) && hasAuthoritativeInvoiceList;
+  const canCreatePayment = canAccess(authorization, financialOperationPermissions.createPayment) && hasAuthoritativeInvoiceDetail;
+  const canExportInvoices = canAccess(authorization, financialOperationPermissions.exportInvoices) && hasAuthoritativeInvoiceList;
   const isPaymentDisabled = !canCreatePayment || quickPaySubmitRef.current || postPayment.isPending || remaining <= 0 || Boolean(amountValidationMessage);
 
   const canExportInvoiceDocuments = canExportInvoices && documentSettings.isReady;

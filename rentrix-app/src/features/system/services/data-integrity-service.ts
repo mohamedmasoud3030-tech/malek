@@ -12,8 +12,8 @@ type PersonRow = Pick<Database['public']['Tables']['people']['Row'], 'id' | 'typ
 type ContractRow = Pick<Database['public']['Tables']['contracts']['Row'], 'id' | 'property_id' | 'unit_id' | 'tenant_id' | 'start_date' | 'end_date' | 'deleted_at'>;
 type InvoiceRow = Pick<Database['public']['Tables']['invoices']['Row'], 'id' | 'contract_id' | 'amount' | 'paid_amount' | 'deleted_at'>;
 type OwnerRow = { id: string; name: string; full_name: string | null; deleted_at: string | null };
-type PropertyOwnerRow = Pick<Database['public']['Tables']['property_owners']['Row'], 'property_id' | 'owner_id' | 'is_primary' | 'starts_on' | 'ends_on'>;
-type OwnerAgreementRow = Pick<Database['public']['Tables']['owner_agreements']['Row'], 'property_id' | 'owner_id' | 'starts_on' | 'ends_on'>;
+type PropertyOwnerRow = Pick<Database['public']['Tables']['property_owners']['Row'], 'property_id' | 'owner_id' | 'is_primary' | 'starts_on' | 'ends_on'> & { id?: string };
+type OwnerAgreementRow = Pick<Database['public']['Tables']['owner_agreements']['Row'], 'property_id' | 'owner_id' | 'starts_on' | 'ends_on'> & { id?: string };
 
 const INTEGRITY_UNAVAILABLE_REASON = 'تعذر تشغيل فحص سلامة البيانات باستخدام مخطط التشغيل الحالي دون افتراضات إضافية.';
 const INTEGRITY_BROWSER_LIMIT_REASON = 'وصل فحص سلامة البيانات إلى حد القراءة الآمن في المتصفح قبل تأكيد اكتمال البيانات. هذا الفحص مناسب لبيانات العرض أو التدريج فقط، ويحتاج الإنتاج إلى مسار قراءة خادمي قابل للتوسع ومتحقق منه.';
@@ -160,8 +160,11 @@ export async function runDataIntegrityAudit(): Promise<DataIntegrityResult> {
     fetchPaginatedRows<ContractRow>(() => supabase.from('contracts').select('id, property_id, unit_id, tenant_id, start_date, end_date, deleted_at').order('id', { ascending: true })),
     fetchPaginatedRows<InvoiceRow>(() => supabase.from('invoices').select('id, contract_id, amount, paid_amount, deleted_at').order('id', { ascending: true })),
     fetchPaginatedRows<OwnerRow>(() => supabase.from('owners').select('id, name, full_name, deleted_at' as never).order('id', { ascending: true }).returns<OwnerRow[]>()),
-    fetchPaginatedRows<PropertyOwnerRow>(() => supabase.from('property_owners').select('property_id, owner_id, is_primary, starts_on, ends_on').order('property_id', { ascending: true })),
-    fetchPaginatedRows<OwnerAgreementRow>(() => supabase.from('owner_agreements').select('property_id, owner_id, starts_on, ends_on').order('property_id', { ascending: true })),
+    // Offset pagination requires a globally unique final ordering key. Ordering
+    // relationship tables by property_id alone can duplicate or skip rows when
+    // a page boundary cuts through one property's links.
+    fetchPaginatedRows<PropertyOwnerRow>(() => supabase.from('property_owners').select('id, property_id, owner_id, is_primary, starts_on, ends_on').order('property_id', { ascending: true }).order('id', { ascending: true })),
+    fetchPaginatedRows<OwnerAgreementRow>(() => supabase.from('owner_agreements').select('id, property_id, owner_id, starts_on, ends_on').order('property_id', { ascending: true }).order('id', { ascending: true })),
   ]);
 
   if (properties.status === 'unavailable') return properties;

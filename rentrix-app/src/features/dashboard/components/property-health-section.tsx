@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Building2, Stethoscope } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -50,7 +51,7 @@ function healthMeta(row: PropertyHealthRow): string {
  * Property health — transparent, deterministic indicators. Every label is
  * explained by the metrics printed next to it; there is no opaque score.
  */
-export function PropertyHealthSection({ rows, isLoading, isError = false }: PropertyHealthSectionProps) {
+export const PropertyHealthSection = memo(function PropertyHealthSection({ rows, isLoading, isError = false }: PropertyHealthSectionProps) {
   const visibleRows = rows.slice(0, PROPERTY_HEALTH_VISIBLE_LIMIT);
   const criticalCount = rows.reduce((count, row) => count + (row.status === 'critical' ? 1 : 0), 0);
 
@@ -113,4 +114,4 @@ export function PropertyHealthSection({ rows, isLoading, isError = false }: Prop
       ) : null}
     </DashboardSignalPanel>
   );
-}
+});

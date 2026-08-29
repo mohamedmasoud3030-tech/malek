@@ -35,6 +35,10 @@
   scroll-margin-block-start: calc(
     var(--app-header-height, 3rem) + var(--dashboard-section-gap)
   );
+  /* Performance: CSS containment isolates each dashboard section's paint
+     and layout recalculations, so a state change in one section (e.g.
+     collections) does not trigger a full-page style recalculation. */
+  contain: layout style;
 }
 
 [data-dashboard-page] [data-dashboard-priority='attention'] {

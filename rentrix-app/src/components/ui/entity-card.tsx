@@ -200,7 +200,17 @@ export function EntityCard({
 
       {actions?.length ? (
         <div
-          className={cn('mt-1.5 grid gap-1 border-t border-border/55 pt-1.5', actions.length === 1 ? 'grid-cols-1' : 'grid-cols-2')}
+          /*
+           * Keeps the incoming layout fix (a lone trailing action spans both
+           * columns). The stopPropagation handlers that used to sit here are
+           * deliberately gone: the card is no longer an ancestor button, so
+           * action clicks never reach a parent handler and suppressing
+           * bubbling would only break normal event flow.
+           */
+          className={cn(
+            'mt-1.5 grid gap-1 border-t border-border/55 pt-1.5',
+            actions.length === 1 ? 'grid-cols-1' : 'grid-cols-2 [&>:last-child:nth-child(odd)]:col-span-2',
+          )}
         >
           {actions.map((action, index) => {
             const ActionIcon = action.icon;

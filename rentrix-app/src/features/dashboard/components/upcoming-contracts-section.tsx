@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Link, useLocation, useNavigate } from '@tanstack/react-router';
 import { CalendarClock, Clock } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -31,7 +32,7 @@ interface UpcomingContractsSectionProps {
  * derived from the server's cumulative 30/60/90 windows — the dashboard
  * never recounts contracts from row reads.
  */
-export function UpcomingContractsSection({
+export const UpcomingContractsSection = memo(function UpcomingContractsSection({
   rows,
   expiring30,
   expiring60,
@@ -135,4 +136,4 @@ export function UpcomingContractsSection({
       ) : null}
     </DashboardSignalPanel>
   );
-}
+});

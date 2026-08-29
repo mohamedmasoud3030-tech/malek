@@ -236,7 +236,7 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
             role="tab"
             aria-selected={step === 1}
             onClick={() => setStep(1)}
-            className={`px-3 py-1.5 rounded-lg border ${step === 1 ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted/50 text-muted-foreground hover:bg-muted'}`}
+            className={`min-h-11 rounded-lg border px-3 py-1.5 ${step === 1 ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted/50 text-muted-foreground hover:bg-muted'}`}
           >
             الخطوة 1: بيانات العقار
           </button>
@@ -245,7 +245,7 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
             role="tab"
             aria-selected={step === 2}
             onClick={() => { if (canAdvanceToStep2()) setStep(2); else setSubmitError('يرجى إكمال الحقول الإلزامية في الخطوة 1 (اسم العقار، النوع، العنوان) قبل الانتقال.'); }}
-            className={`px-3 py-1.5 rounded-lg border ${step === 2 ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted/50 text-muted-foreground hover:bg-muted'}`}
+            className={`min-h-11 rounded-lg border px-3 py-1.5 ${step === 2 ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted/50 text-muted-foreground hover:bg-muted'}`}
           >
             الخطوة 2: المالك، نوع الاتفاقية، قيمة العمولة
           </button>
@@ -254,7 +254,7 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
             role="tab"
             aria-selected={step === 3}
             onClick={() => { if (canAdvanceToStep3()) setStep(3); else setSubmitError('يرجى اختيار المالك وتحديد قيمة العمولة قبل الانتقال للمراجعة.'); }}
-            className={`px-3 py-1.5 rounded-lg border ${step === 3 ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted/50 text-muted-foreground hover:bg-muted'}`}
+            className={`min-h-11 rounded-lg border px-3 py-1.5 ${step === 3 ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted/50 text-muted-foreground hover:bg-muted'}`}
           >
             الخطوة 3: المراجعة والانتقال للوحدات
           </button>
@@ -271,9 +271,9 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
                 <PropertyFormCoreFields register={form.register} errors={form.formState.errors} />
               </div>
             </EntityForm.Section>
-            <div className="md:col-span-2 flex justify-end gap-2 pt-2 border-t border-border">
-              <Button type="button" variant="outline" onClick={onClose}>إلغاء</Button>
-              <Button type="button" onClick={() => { if (canAdvanceToStep2()) setStep(2); else setSubmitError('يرجى إكمال الحقول الإلزامية في الخطوة 1 (اسم العقار، النوع، العنوان) قبل الانتقال.'); }}>التالي: الملكية والاتفاقية</Button>
+            <div className="md:col-span-2 flex flex-wrap justify-end gap-2 pt-2 border-t border-border">
+              <Button type="button" variant="outline" className="min-h-11" onClick={onClose}>إلغاء</Button>
+              <Button type="button" className="min-h-11" onClick={() => { if (canAdvanceToStep2()) setStep(2); else setSubmitError('يرجى إكمال الحقول الإلزامية في الخطوة 1 (اسم العقار، النوع، العنوان) قبل الانتقال.'); }}>التالي: الملكية والاتفاقية</Button>
             </div>
           </>
         )}
@@ -324,7 +324,7 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
 
               {/* Multi-owner co-owners list */}
               <div className="space-y-3 pt-2 border-t border-border/60">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="text-xs font-bold text-foreground">الشركاء في الملكية (اختياري)</span>
                   <Button
                     type="button"
@@ -336,8 +336,8 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
                   </Button>
                 </div>
                 {extraOwners.map((co, index) => (
-                  <div key={index} className="grid grid-cols-12 gap-2 items-center">
-                    <div className="col-span-7">
+                  <div key={index} className="grid grid-cols-1 items-center gap-2 sm:grid-cols-12">
+                    <div className="sm:col-span-7">
                       <Select
                         value={co.owner_id}
                         onChange={(e) => {
@@ -352,7 +352,7 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
                         ))}
                       </Select>
                     </div>
-                    <div className="col-span-3">
+                    <div className="sm:col-span-3">
                       <Input
                         type="number"
                         placeholder="%"
@@ -364,7 +364,7 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
                         }}
                       />
                     </div>
-                    <div className="col-span-2 flex justify-end">
+                    <div className="flex justify-end sm:col-span-2">
                       <Button
                         type="button"
                         size="sm"
@@ -437,9 +437,9 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
                 </EntityForm.Field>
               </div>
             </EntityForm.Section>
-            <div className="md:col-span-2 flex justify-between gap-2 pt-2 border-t border-border">
-              <Button type="button" variant="outline" onClick={() => setStep(1)}>السابق: بيانات العقار</Button>
-              <Button type="button" onClick={() => { if (canAdvanceToStep3()) setStep(3); else setSubmitError('يرجى اختيار المالك وتحديد قيمة العمولة قبل الانتقال للمراجعة.'); }}>التالي: المراجعة والانتقال للوحدات</Button>
+            <div className="md:col-span-2 flex flex-wrap justify-between gap-2 pt-2 border-t border-border">
+              <Button type="button" variant="outline" className="min-h-11" onClick={() => setStep(1)}>السابق: بيانات العقار</Button>
+              <Button type="button" className="min-h-11" onClick={() => { if (canAdvanceToStep3()) setStep(3); else setSubmitError('يرجى اختيار المالك وتحديد قيمة العمولة قبل الانتقال للمراجعة.'); }}>التالي: المراجعة والانتقال للوحدات</Button>
             </div>
           </>
         )}
@@ -452,7 +452,7 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
               description="تأكد من صحة بيانات العقار والملكية قبل اعتماد الحفظ."
             >
               <div className="space-y-4 rounded-xl border border-border bg-muted/20 p-4 text-sm">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
                     <span className="text-muted-foreground text-xs">اسم العقار:</span>
                     <p className="font-semibold">{title || 'غير محدد'}</p>
@@ -483,7 +483,7 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
                 </div>
               </div>
             </EntityForm.Section>
-            <div className="md:col-span-2 flex justify-between items-center pt-2 border-t border-border">
+            <div className="md:col-span-2 flex flex-col items-stretch gap-2 border-t border-border pt-2 sm:flex-row sm:items-center sm:justify-between">
               <Button type="button" variant="outline" onClick={() => setStep(2)}>السابق: الملكية والاتفاقية</Button>
               <EntityForm.Actions
                 className="!mt-0"

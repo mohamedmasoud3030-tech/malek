@@ -162,7 +162,7 @@ export function TaxAuthorityWorkspace() {
           <CardDescription>حدد الضريبة والنسبة وفترة السريان. أي تعديل جديد يُحفظ كمسودة ويحتاج اعتماد مستخدم مخوّل مختلف قبل أن يصبح ساريًا.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="flex justify-end">
+          <div className="flex ms-auto w-full justify-end sm:w-auto">
             <Button onClick={() => setActionType('createTax')} size="sm" className="min-h-11 gap-1"><Plus className="size-4" aria-hidden="true" /> إعداد جديد</Button>
           </div>
           <EntityTable aria-label="إعدادات ضريبة الإيجار" rows={taxProfilesQuery.data ?? []} columns={taxColumns} keyOf={(row) => row.id} />

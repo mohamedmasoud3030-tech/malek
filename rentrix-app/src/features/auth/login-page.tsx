@@ -59,7 +59,7 @@ export function LoginPage() {
 
   return (
     <main
-      className="relative min-h-screen min-h-dvh w-full overflow-hidden px-5 py-8 sm:px-6"
+      className="relative min-h-screen min-h-dvh w-full min-w-0 overflow-x-hidden px-4 py-8 sm:px-6"
       data-login-surface
       dir="rtl"
     >

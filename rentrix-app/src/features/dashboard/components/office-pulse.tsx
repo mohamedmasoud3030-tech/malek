@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Link } from '@tanstack/react-router';
 import { AlertOctagon, Building2, HandCoins, TrendingUp } from 'lucide-react';
 import { KpiCard } from '@/components/ui/kpi-card';
@@ -26,7 +27,7 @@ interface OfficePulseProps {
  * is never presented as office revenue: the cash-pulse surface stays
  * explicitly labelled «collections minus recorded expenses».
  */
-export function OfficePulse({ snapshot, isLoading, settings, dailySeries, dailySeriesLoading = false }: OfficePulseProps) {
+export const OfficePulse = memo(function OfficePulse({ snapshot, isLoading, settings, dailySeries, dailySeriesLoading = false }: OfficePulseProps) {
   if (isLoading) {
     return <LoadingState variant="cards" rows={4} label="جارٍ تحميل نبض المكتب" />;
   }
@@ -153,4 +154,4 @@ export function OfficePulse({ snapshot, isLoading, settings, dailySeries, dailyS
       </ResponsiveCardGrid>
     </div>
   );
-}
+});

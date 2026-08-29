@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import {
   Archive,
   CheckCircle2,
@@ -134,7 +135,7 @@ export function LeadsView(props: Props) {
       }
     >
 
-      <ResponsiveCardGrid>
+      <ResponsiveCardGrid desktopColumns={4}>
         <KpiCard
           label="إجمالي العملاء"
           value={rows.length}
@@ -410,11 +411,11 @@ function LeadRows({
   onEdit: (row: LeadRecord) => void;
   onArchiveClick: (row: LeadRecord) => void;
 }>) {
-  const columns: ColumnDef<LeadRecord>[] = [
+  const columns = useMemo((): ColumnDef<LeadRecord>[] => [
     {
       key: "name", priority: 'identity' as const,
       header: "العميل",
-      className: "max-w-56",
+      className: "min-w-0 max-w-56",
       render: (row) => (
         <>
           <p className="whitespace-normal break-words font-bold">{row.name}</p>
@@ -459,7 +460,7 @@ function LeadRows({
         />
       ),
     },
-  ];
+  ], [onEdit, onArchiveClick]);
 
   return (
     <EntityTable

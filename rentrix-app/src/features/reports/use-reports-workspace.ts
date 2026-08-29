@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
   useAccountingBalanceSheetReport,
   useAccountingIncomeStatementReport,
@@ -227,6 +227,27 @@ export function useReportsWorkspace(filters: ReportsFilterState, location: Repor
     [filters.asOf, receiptRows, scopedContracts],
   );
 
+  const retryFailedSources = useCallback(async () => {
+    const queries = [
+      financialSummaryQuery, collectionRateQuery, collectionSummaryQuery,
+      propertyCollectionBreakdownQuery, financialCashflowQuery, vatReturnQuery,
+      dailyCollectionQuery, expenseBreakdownQuery, overdueInvoicesQuery,
+      agedReceivablesQuery, arrearsSummaryQuery, trialBalanceQuery,
+      incomeStatementQuery, balanceSheetQuery, contractsQuery, ownersQuery,
+      tenantStatementQuery, ownerStatementQuery, unitsQuery, maintenanceQuery,
+      receiptsQuery, costCentersQuery, propertyTitlesQuery,
+    ];
+    await Promise.all(queries.filter((query) => query.isError).map((query) => query.refetch()));
+  }, [
+    financialSummaryQuery, collectionRateQuery, collectionSummaryQuery,
+    propertyCollectionBreakdownQuery, financialCashflowQuery, vatReturnQuery,
+    dailyCollectionQuery, expenseBreakdownQuery, overdueInvoicesQuery,
+    agedReceivablesQuery, arrearsSummaryQuery, trialBalanceQuery,
+    incomeStatementQuery, balanceSheetQuery, contractsQuery, ownersQuery,
+    tenantStatementQuery, ownerStatementQuery, unitsQuery, maintenanceQuery,
+    receiptsQuery, costCentersQuery, propertyTitlesQuery,
+  ]);
+
   const firstError = firstErrorOf(
     financialSummaryQuery.error,
     collectionRateQuery.error,
@@ -256,6 +277,8 @@ export function useReportsWorkspace(filters: ReportsFilterState, location: Repor
   return {
     today: getTodayLocalDateString(),
     firstError,
+    isIncomplete: firstError != null,
+    retryFailedSources,
     filters: {
       costCenterRows: costCentersQuery.data ?? [],
       ownerRows: ownersQuery.data ?? [],

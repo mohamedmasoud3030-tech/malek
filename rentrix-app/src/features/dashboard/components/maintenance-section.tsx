@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Link } from '@tanstack/react-router';
 import { AlertTriangle, Wrench } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -40,7 +41,7 @@ function maintenanceLocation(row: DashboardQueueMaintenanceRow) {
  * the highest-value cases (urgent requests and work that stopped moving).
  * The dashboard is not the maintenance register — the footer deep-links to it.
  */
-export function MaintenanceSection({
+export const MaintenanceSection = memo(function MaintenanceSection({
   summary,
   urgentRows,
   followUp,
@@ -77,7 +78,7 @@ export function MaintenanceSection({
       />
 
       {isLoading ? <DashboardSignalLoading label="جارٍ تحميل الصيانة" /> : (
-        <div className="grid grid-cols-2 gap-x-3 gap-y-2 border-t border-border/70 bg-muted/20 p-3 sm:grid-cols-4 sm:p-4" data-dashboard-maintenance-summary>
+        <div className="grid grid-cols-2 gap-x-3 gap-y-2 border-t border-border/70 bg-muted/20 p-3 md:grid-cols-4 md:p-4" data-dashboard-maintenance-summary>
           <div className="min-w-0">
             <p className="text-[11px] font-bold text-muted-foreground">الطلبات</p>
             <p className="mt-0.5 text-xl font-black tabular-nums text-foreground">{summary.total}</p>
@@ -171,7 +172,7 @@ export function MaintenanceSection({
             ))
             : null}
         </DashboardSignalList>
-      ) : null}
+      ) : null});
     </DashboardSignalPanel>
   );
-}
+});

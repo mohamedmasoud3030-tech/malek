@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ErrorState } from '@/components/ui/error-state';
@@ -35,7 +36,7 @@ interface FinancialPerformanceSectionProps {
  * operational context metrics that explain it. No decorative multi-chart
  * grid: the relationship is the point.
  */
-export function FinancialPerformanceSection({
+export const FinancialPerformanceSection = memo(function FinancialPerformanceSection({
   snapshot,
   vacancyAnalytics,
   vacancyDetailsUnavailable,
@@ -171,4 +172,4 @@ export function FinancialPerformanceSection({
       </DashboardSignalPanel>
     </div>
   );
-}
+});

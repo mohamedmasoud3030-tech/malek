@@ -41,11 +41,14 @@ export type NeedsAttentionSignal = Readonly<{
   items: readonly NeedsAttentionItem[];
   /** Every merged item, before any presentation cap. */
   totalCount: number;
+  /** False when one or more contributing reads were unavailable. */
+  isComplete: boolean;
 }>;
 
 export const EMPTY_NEEDS_ATTENTION_SIGNAL: NeedsAttentionSignal = {
   items: [],
   totalCount: 0,
+  isComplete: true,
 };
 
 /** A vacancy older than this joins the queue — the re-letting risk window. */
@@ -67,9 +70,10 @@ export function buildNeedsAttentionSignal(params: {
   vacancyAnalytics: VacancyAnalytics | undefined;
   utilityObligations: UtilityObligationsSignal;
   maintenanceFollowUp: MaintenanceFollowUpSignal;
+  isComplete?: boolean;
 }): NeedsAttentionSignal {
-  const { snapshot, vacancyAnalytics, utilityObligations, maintenanceFollowUp } = params;
-  if (!snapshot) return EMPTY_NEEDS_ATTENTION_SIGNAL;
+  const { snapshot, vacancyAnalytics, utilityObligations, maintenanceFollowUp, isComplete = true } = params;
+  if (!snapshot) return { ...EMPTY_NEEDS_ATTENTION_SIGNAL, isComplete: false };
 
   const items: NeedsAttentionItem[] = [];
 
@@ -201,5 +205,5 @@ export function buildNeedsAttentionSignal(params: {
     return a.title.localeCompare(b.title, 'ar');
   });
 
-  return { items, totalCount: items.length };
+  return { items, totalCount: items.length, isComplete };
 }

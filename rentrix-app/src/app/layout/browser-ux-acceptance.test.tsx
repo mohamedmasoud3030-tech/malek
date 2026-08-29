@@ -126,7 +126,7 @@ describe('WP-06 / GAP-020 Browser & UX Acceptance Hardening', () => {
           secondaryActions={<><button type="button">تصدير CSV</button><button type="button">طباعة</button></>}
         />,
       );
-      expect(html).toContain('max-w-[min(62vw,18rem)]');
+      expect(html).toContain('max-w-full');
       expect(html).toContain('overflow-hidden');
       expect(html).toContain('data-page-actions');
       expect(html).toContain('data-secondary-actions-desktop');
@@ -166,7 +166,7 @@ describe('WP-06 / GAP-020 Browser & UX Acceptance Hardening', () => {
       expect(sheet).toContain("document.documentElement.style.overflow = 'hidden'");
       expect(sheet).toContain('data-bottom-sheet');
       expect(sheet).toContain('justify-end');
-      expect(sheet).toContain('rounded-t-[1.35rem]');
+      expect(sheet).toContain('rounded-t-3xl');
     });
   });
 });

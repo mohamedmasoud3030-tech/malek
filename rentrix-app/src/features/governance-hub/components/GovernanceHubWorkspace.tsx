@@ -120,16 +120,14 @@ export function GovernanceHubWorkspace() {
       ) : (
         <>
           {visibleSections.length > 0 ? (
-            <div className="no-scrollbar sticky top-0 z-20 -mx-1 overflow-x-auto border-b border-border/55 bg-background/95 px-1 py-1 backdrop-blur md:rounded-xl md:border md:bg-card/95 md:py-2">
-              <div className="min-w-max">
-                <SectionTabs
-                  items={visibleSections}
-                  activeId={resolvedActiveTab}
-                  onChange={handleTabChange}
-                  ariaLabel="أقسام الإعدادات"
-                  compactMobile
-                />
-              </div>
+            <div className="sticky top-[var(--app-header-height)] z-20 -mx-1 overflow-x-auto overscroll-x-contain border-b border-border/55 bg-background/95 px-1 py-1 backdrop-blur md:rounded-xl md:border md:bg-card/95 md:py-2">
+              <SectionTabs
+                items={visibleSections}
+                activeId={resolvedActiveTab}
+                onChange={handleTabChange}
+                ariaLabel="أقسام الإعدادات"
+                compactMobile
+              />
             </div>
           ) : null}
 

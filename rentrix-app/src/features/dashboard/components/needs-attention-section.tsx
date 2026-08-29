@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Link, useLocation, useNavigate } from '@tanstack/react-router';
 import { AlertCircle, CheckCircle2, ShieldQuestion } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -19,6 +20,8 @@ interface NeedsAttentionSectionProps {
   signal: NeedsAttentionSignal;
   isLoading: boolean;
   isError?: boolean;
+  /** Some contributing sources failed; visible rows are valid but incomplete. */
+  isPartial?: boolean;
 }
 
 const severityTone: Record<NeedsAttentionItem['severity'], 'danger' | 'warning' | 'info'> = {
@@ -32,15 +35,14 @@ const severityTone: Record<NeedsAttentionItem['severity'], 'danger' | 'warning' 
  * metrics. Every item is a real condition sourced from an existing
  * authoritative signal and deep-links into the workflow that owns it.
  */
-export function NeedsAttentionSection({ signal, isLoading, isError = false }: NeedsAttentionSectionProps) {
-  const navigate = useNavigate();
+export const NeedsAttentionSection = memo(function NeedsAttentionSection({ signal, isLoading, isError = false, isPartial = false }: NeedsAttentionSectionProps) {  const navigate = useNavigate();
   const location = useLocation();
   const visibleItems = signal.items.slice(0, NEEDS_ATTENTION_VISIBLE_LIMIT);
   const hiddenCount = signal.totalCount - visibleItems.length;
   const dangerCount = signal.items.reduce((count, item) => count + (item.severity === 'danger' ? 1 : 0), 0);
   const panelClassName = dangerCount > 0
     ? 'border-danger/25 bg-gradient-to-b from-danger-bg/35 via-card to-card shadow-[0_12px_34px_-28px_hsl(var(--color-danger-text))]'
-    : signal.totalCount > 0
+    : isPartial || signal.totalCount > 0
       ? 'border-warning/25 bg-gradient-to-b from-warning-bg/30 via-card to-card'
       : 'border-success/20 bg-gradient-to-b from-success-bg/20 via-card to-card';
 
@@ -52,12 +54,14 @@ export function NeedsAttentionSection({ signal, isLoading, isError = false }: Ne
         meta={
           isLoading
             ? 'جارٍ تجميع الأولويات'
-            : signal.totalCount > 0
-              ? `${signal.totalCount} حالة تحتاج قراراً أو متابعة${dangerCount > 0 ? ` · منها ${dangerCount} عاجلة` : ''}`
-              : 'لا توجد حالات عاجلة الآن'
+            : isPartial
+              ? `${signal.totalCount} حالة ظاهرة · بعض المصادر غير متاحة`
+              : signal.totalCount > 0
+                ? `${signal.totalCount} حالة تحتاج قراراً أو متابعة${dangerCount > 0 ? ` · منها ${dangerCount} عاجلة` : ''}`
+                : 'لا توجد حالات عاجلة الآن'
         }
-        icon={signal.totalCount > 0 ? AlertCircle : CheckCircle2}
-        tone={dangerCount > 0 ? 'danger' : signal.totalCount > 0 ? 'warning' : 'success'}
+        icon={isPartial ? ShieldQuestion : signal.totalCount > 0 ? AlertCircle : CheckCircle2}
+        tone={isPartial ? 'info' : dangerCount > 0 ? 'danger' : signal.totalCount > 0 ? 'warning' : 'success'}
         trailing={signal.totalCount > 0 ? (
           <span className={cn(
             'inline-flex min-h-7 items-center rounded-full border px-2.5 text-[11px] font-black tabular-nums',
@@ -80,7 +84,15 @@ export function NeedsAttentionSection({ signal, isLoading, isError = false }: Ne
         />
       ) : null}
 
-      {!isLoading && !isError && signal.totalCount === 0 ? (
+      {!isLoading && !isError && isPartial && signal.totalCount === 0 ? (
+        <DashboardSignalEmpty
+          role="status"
+          title="تعذر اكتمال قائمة الأولويات"
+          description="لم تظهر حالات من المصادر المتاحة، لكن لا يمكن تأكيد خلو القائمة حتى تنجح بقية القراءات."
+        />
+      ) : null}
+
+      {!isLoading && !isError && !isPartial && signal.totalCount === 0 ? (
         <DashboardSignalEmpty
           title="كل شيء تحت السيطرة"
           description="لا متأخرات عاجلة ولا صيانة طارئة ولا عقود على وشك الانتهاء. راجع المؤشرات للأداء الحالي."
@@ -151,4 +163,4 @@ export function NeedsAttentionSection({ signal, isLoading, isError = false }: Ne
       ) : null}
     </DashboardSignalPanel>
   );
-}
+});

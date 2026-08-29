@@ -96,7 +96,7 @@ export function PortfolioHubWorkspace({
     return (
       <>
         {isActiveSectionVisible ? (
-          <SectionTabs items={visibleSections} activeId={activeSection} onChange={handleSectionChange} ariaLabel="أقسام المحفظة" />
+          <SectionTabs items={visibleSections} activeId={activeSection} onChange={handleSectionChange} ariaLabel="أقسام المحفظة" compactMobile />
         ) : null}
         {portfolioHubSections
           .filter((section) => mountedSections.current.has(section.id) && accessibleSections.some((accessible) => accessible.id === section.id))

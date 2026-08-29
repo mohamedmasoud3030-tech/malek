@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Link } from '@tanstack/react-router';
 import { CheckCircle2, Landmark, Scale } from 'lucide-react';
 import type { DashboardSnapshot } from '../dashboard-snapshot';
@@ -21,7 +22,7 @@ interface FinanceExceptionsSectionProps {
  * still need a decision: unmatched bank lines and settlements that nobody
  * moved. Both counts are server snapshot KPIs.
  */
-export function FinanceExceptionsSection({ snapshot, isLoading }: FinanceExceptionsSectionProps) {
+export const FinanceExceptionsSection = memo(function FinanceExceptionsSection({ snapshot, isLoading }: FinanceExceptionsSectionProps) {
   const unmatched = snapshot?.exceptions.unmatchedBankLines ?? 0;
   const pendingSettlements = snapshot?.exceptions.pendingSettlements ?? 0;
   const hasExceptions = unmatched > 0 || pendingSettlements > 0;
@@ -84,4 +85,4 @@ export function FinanceExceptionsSection({ snapshot, isLoading }: FinanceExcepti
       ) : null}
     </DashboardSignalPanel>
   );
-}
+});

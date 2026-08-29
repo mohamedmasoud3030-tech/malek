@@ -1,7 +1,8 @@
+import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { EntityPreviewDialog } from '@/components/ui/entity-preview-dialog';
-import { EntityTable } from '@/components/ui/entity-table';
+import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { Download, Printer, ReceiptText } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/status-badge';
 import type { ReceiptRecord } from '../receipts/receiptService';
@@ -38,6 +39,23 @@ export function ReceiptsSection({
   onPrintReceipt,
   onExportReceipt,
 }: ReceiptsSectionProps) {
+  const receiptColumns = useMemo((): ColumnDef<ReceiptRecord>[] => [
+              { key: 'receipt_number', priority: 'identity' as const, header: 'رقم الإيصال', render: (receipt) => <span className="font-bold">{`إيصال ${receipt.receipt_number}`}</span> },
+              { key: 'payment_date', priority: 'secondary' as const, header: 'التاريخ والطريقة', render: (receipt) => <span>{formatDate(receipt.payment_date)} · {paymentMethodLabels[receipt.payment_method] ?? receipt.payment_method}</span> },
+              { key: 'invoice', priority: 'detail' as const, header: 'الفاتورة والسياق', render: (receipt) => <span>{formatShortId(receipt.invoice_id)} · {formatReceiptContext(receipt)}</span> },
+              { key: 'amount', priority: 'primary' as const, header: 'المبلغ المحصل', render: (receipt) => <span dir="ltr" className="font-black text-success">{formatMoney(receipt.amount)}</span> },
+              { key: 'status', priority: 'secondary' as const, header: 'الحالة', render: (receipt) => <StatusBadge tone={receipt.status === 'void' ? 'danger' : 'success'}>{receiptStatusLabels[receipt.status] ?? receipt.status}</StatusBadge> },
+              {
+                key: 'actions', priority: 'actions' as const,
+                header: 'إجراءات',
+                render: (receipt) => (
+                  <div className="flex flex-wrap gap-2" onClick={(event) => event.stopPropagation()}>
+                    {onPrintReceipt ? <Button variant="secondary" className="min-h-11" onClick={() => onPrintReceipt(receipt.id)}><Printer className="me-1 size-4" aria-hidden="true" />طباعة</Button> : null}
+                    {onExportReceipt ? <Button variant="secondary" className="min-h-11" onClick={() => onExportReceipt(receipt.id)}><Download className="me-1 size-4" aria-hidden="true" />PDF</Button> : null}
+                  </div>
+                ),
+              }], [onPrintReceipt, onExportReceipt]);
+
   return (
     <>
       <Card className="overflow-hidden">
@@ -56,23 +74,8 @@ export function ReceiptsSection({
           <EntityTable
             aria-label="جدول الإيصالات"
             rows={receipts}
-            columns={[
-              { key: 'receipt_number', priority: 'identity' as const, header: 'رقم الإيصال', render: (receipt) => <span className="font-bold">{`إيصال ${receipt.receipt_number}`}</span> },
-              { key: 'payment_date', priority: 'secondary' as const, header: 'التاريخ والطريقة', render: (receipt) => <span>{formatDate(receipt.payment_date)} · {paymentMethodLabels[receipt.payment_method] ?? receipt.payment_method}</span> },
-              { key: 'invoice', priority: 'detail' as const, header: 'الفاتورة والسياق', render: (receipt) => <span>{formatShortId(receipt.invoice_id)} · {formatReceiptContext(receipt)}</span> },
-              { key: 'amount', priority: 'primary' as const, header: 'المبلغ المحصل', render: (receipt) => <span dir="ltr" className="font-black text-success">{formatMoney(receipt.amount)}</span> },
-              { key: 'status', priority: 'secondary' as const, header: 'الحالة', render: (receipt) => <StatusBadge tone={receipt.status === 'void' ? 'danger' : 'success'}>{receiptStatusLabels[receipt.status] ?? receipt.status}</StatusBadge> },
-              {
-                key: 'actions', priority: 'actions' as const,
-                header: 'إجراءات',
-                render: (receipt) => (
-                  <div className="flex flex-wrap gap-2" onClick={(event) => event.stopPropagation()}>
-                    {onPrintReceipt ? <Button variant="secondary" className="min-h-11" onClick={() => onPrintReceipt(receipt.id)}><Printer className="me-1 size-4" aria-hidden="true" />طباعة</Button> : null}
-                    {onExportReceipt ? <Button variant="secondary" className="min-h-11" onClick={() => onExportReceipt(receipt.id)}><Download className="me-1 size-4" aria-hidden="true" />PDF</Button> : null}
-                  </div>
-                ),
-              },
-            ]}
+            columns={receiptColumns}
+
             keyOf={(receipt) => receipt.id}
             isLoading={isReceiptsLoading}
             error={isReceiptsError ? receiptsError : null}

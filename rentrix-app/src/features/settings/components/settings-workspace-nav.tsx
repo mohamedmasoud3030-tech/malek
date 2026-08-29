@@ -18,7 +18,7 @@ export function SettingsWorkspaceNav({
 }>) {
   return (
     <>
-      <nav className="md:hidden" aria-label="أقسام إعدادات المكتب">
+      <nav className="lg:hidden" aria-label="أقسام إعدادات المكتب">
         <Select
           aria-label="قسم الإعدادات"
           value={activeSection}
@@ -31,8 +31,8 @@ export function SettingsWorkspaceNav({
         </Select>
       </nav>
 
-      <nav className="hidden md:block" aria-label="أقسام الإعدادات">
-        <div className="sticky top-4 overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm">
+      <nav className="hidden lg:block" aria-label="أقسام الإعدادات">
+        <div className="sticky top-[calc(var(--app-header-height)+0.75rem)] max-h-[calc(var(--visual-viewport-height,100dvh)-var(--app-header-height)-1.5rem)] overflow-y-auto overflow-x-hidden rounded-2xl border border-border/70 bg-card shadow-sm">
           <div className="border-b border-border/60 px-3 py-2.5">
             <p className="text-xs font-black">أقسام إعدادات المكتب</p>
           </div>

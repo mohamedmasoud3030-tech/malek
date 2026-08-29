@@ -73,7 +73,7 @@ export function Showcase() {
         <Reveal className="mt-12">
           <div className="grid items-start gap-6 lg:grid-cols-[280px_1fr] lg:gap-10">
             {/* Tab list */}
-            <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0">
+            <div className="no-scrollbar flex gap-2 overflow-x-auto overscroll-x-contain pb-1 lg:flex-col lg:overflow-visible lg:pb-0">
               {TAB_META.map((tab, i) => {
                 const Icon = tab.icon;
                 const copy = t.showcase.tabs[i];

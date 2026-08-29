@@ -1,6 +1,6 @@
 import { communicationChannelLabels, communicationDirectionLabels, communicationStatusLabels, communicationStatusTone } from "../labels";
 import { Archive, CheckCircle2, Edit, Rows3, UserRoundSearch } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ActiveFilterBar, type ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -81,7 +81,7 @@ export function CommunicationHubView({
     </div>
   );
 
-  const columns: ColumnDef<CommunicationRecord>[] = [
+  const columns = useMemo((): ColumnDef<CommunicationRecord>[] => [
     {
       key: 'contact', priority: 'identity' as const,
       header: 'جهة التواصل',
@@ -98,7 +98,7 @@ export function CommunicationHubView({
       key: 'subject', priority: 'secondary' as const,
       header: 'الموضوع',
       render: (row) => (
-        <div className="max-w-72">
+        <div className="min-w-0 max-w-full">
           <p className="truncate font-semibold">{row.subject || 'بدون موضوع'}</p>
           <p className="truncate text-xs text-muted-foreground">{row.body}</p>
         </div>
@@ -106,7 +106,7 @@ export function CommunicationHubView({
     },
     { key: 'status', priority: 'primary' as const, header: 'الحالة', render: (row) => <StatusBadge tone={communicationStatusTone[row.status] ?? 'neutral'}>{communicationStatusLabels[row.status] ?? row.status}</StatusBadge> },
     { key: 'actions', priority: 'actions' as const, header: 'إجراءات', render: rowActions },
-  ];
+  ], []);
 
   return (
     <section className="space-y-5">
@@ -115,7 +115,7 @@ export function CommunicationHubView({
         <p className="mt-1 text-sm leading-6 text-muted-foreground">المكالمات والرسائل والاجتماعات والمتابعات في سجل واحد؛ الربط التقني بالكيانات لا يُطلب من المستخدم يدوياً.</p>
       </div>
 
-      <ResponsiveCardGrid>
+      <ResponsiveCardGrid desktopColumns={4}>
         <KpiCard label="إجمالي السجلات" value={rows.length} icon={Rows3} accent="primary" compact />
         <KpiCard label="متابعة مطلوبة" value={followUps} icon={UserRoundSearch} accent="amber" compact />
         <KpiCard label="مغلقة" value={resolved} icon={CheckCircle2} accent="emerald" compact />
@@ -187,7 +187,7 @@ export function CommunicationHubView({
           </EntityForm.Section>
 
           <EntityForm.Section title="تفاصيل التواصل">
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
               <EntityForm.Field label="القناة *"><Select required value={draft.channel} onChange={(event) => onDraftChange({ ...draft, channel: event.target.value as CommunicationFormValues['channel'] })}>{Object.entries(communicationChannelLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></EntityForm.Field>
               <EntityForm.Field label="الاتجاه *"><Select required value={draft.direction} onChange={(event) => onDraftChange({ ...draft, direction: event.target.value as CommunicationFormValues['direction'] })}>{Object.entries(communicationDirectionLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></EntityForm.Field>
               <EntityForm.Field label="الحالة *"><Select required value={draft.status} onChange={(event) => onDraftChange({ ...draft, status: event.target.value as CommunicationFormValues['status'] })}>{Object.entries(communicationStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></EntityForm.Field>

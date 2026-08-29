@@ -52,10 +52,10 @@ describe('document readiness gate replaces fake company identity', () => {
 
   it('receipt print/PDF actions are disabled until settings are ready', () => {
     const source = read('financials/receipts/receipt-detail-page.tsx');
-    expect(source).toContain('disabled={isPrinting || !documentSettings.isReady}');
-    expect(source).toContain('onClick={handleDownloadPdf} disabled={!documentSettings.isReady}');
+    expect(source).toContain('disabled={isPrinting || !canUseReceiptDocument}');
+    expect(source).toContain('onClick={handleDownloadPdf} disabled={!canUseReceiptDocument}');
     expect(source).toContain('runGuardedDocumentAction');
-    expect(source).toContain('isReady: documentSettings.isReady');
+    expect(source).toContain('isReady: canUseReceiptDocument');
     expect(source).toContain('DocumentReadinessError(MISSING_RECEIPT_MESSAGE)');
     expect(source).toContain('settings: documentSettings.companySettings');
   });
@@ -63,8 +63,8 @@ describe('document readiness gate replaces fake company identity', () => {
   it('maintenance A4 statement is guarded and uses the real currency', () => {
     const source = read('maintenance/components/maintenance-workspace.tsx');
     expect(source).toContain('runGuardedDocumentAction');
-    expect(source).toContain('isReady: documentSettings.isReady');
-    expect(source).toMatch(/onClick=\{handlePrintMaintenanceList\}[\s\S]*?disabled=\{!documentSettings\.isReady\}/);
+    expect(source).toContain('isReady: documentSettings.isReady && !controller.hasLoadError');
+    expect(source).toMatch(/onClick=\{handlePrintMaintenanceList\}[\s\S]*?disabled=\{!documentSettings\.isReady \|\| controller\.hasLoadError\}/);
     expect(source).toContain('settings: documentSettings.companySettings');
     expect(source).not.toContain("`${r.cost} ر.ع`");
   });
@@ -89,9 +89,9 @@ describe('document readiness gate replaces fake company identity', () => {
   it('utilities report remains guarded', () => {
     const utilities = read('utilities/components/utilities-workspace.tsx');
     expect(utilities).toContain('runGuardedDocumentAction');
-    expect(utilities).toContain('isReady: documentSettings.isReady');
-    expect(utilities).toContain('onClick={handlePrint} disabled={!documentSettings.isReady}');
-    expect(utilities).toContain('onClick={handleDownloadPdf} disabled={!documentSettings.isReady}');
+    expect(utilities).toContain('isReady: documentSettings.isReady && !isError');
+    expect(utilities).toContain('onClick={handlePrint} disabled={!documentSettings.isReady || isError}');
+    expect(utilities).toContain('onClick={handleDownloadPdf} disabled={!documentSettings.isReady || isError}');
     expect(utilities).not.toContain('ر.ع`');
   });
 

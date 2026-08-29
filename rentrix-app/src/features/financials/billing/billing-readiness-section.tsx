@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { AlertTriangle, CalendarDays, CheckCircle2, Clock, FileCheck } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { AsyncContentState } from '@/components/async-content-state';
@@ -61,7 +61,7 @@ export function BillingReadinessSection() {
   const needsAttention = totalBlocked + totalCheckFailed;
   const actionableCount = needsAttention + totalDue;
 
-  const columns: ColumnDef<BillingObligation>[] = [
+  const columns = useMemo((): ColumnDef<BillingObligation>[] => [
     {
       key: 'contract',
       header: 'العقد',
@@ -113,7 +113,7 @@ export function BillingReadinessSection() {
         );
       },
     },
-  ];
+  ], []);
 
   const status = readinessQuery.isLoading
     ? ('loading' as const)
@@ -153,7 +153,7 @@ export function BillingReadinessSection() {
       </CardHeader>
 
       <CardContent className="space-y-3">
-        <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4" aria-label="ملخص جاهزية الفوترة">
+        <div className="grid grid-cols-2 gap-2 text-xs md:grid-cols-4" aria-label="ملخص جاهزية الفوترة">
           <div className="flex items-center gap-2 rounded-xl border border-border/60 bg-muted/20 px-2.5 py-2">
             <Clock className="size-3.5 text-warning" aria-hidden="true" />
             <span>جاهز <strong>{totalDue}</strong></span>
