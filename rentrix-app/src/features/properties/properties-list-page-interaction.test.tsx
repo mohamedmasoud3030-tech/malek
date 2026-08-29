@@ -8,6 +8,12 @@ const mockNavigate = vi.fn();
 const createPropertyWithAgreementMock = vi.fn();
 let propertyRows: any[] = [];
 
+// The page registers permission-gated actions through the shared auth seam.
+vi.mock('@/hooks/use-auth', () => ({
+  useAuth: () => ({ authorization: { role: 'MANAGER' }, canAccess: () => true }),
+  useOptionalAuth: () => ({ canAccess: () => true }),
+}));
+
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => mockNavigate,
   Link: ({ children, to }: { children: ReactNode; to: string }) => <a href={to}>{children}</a>,

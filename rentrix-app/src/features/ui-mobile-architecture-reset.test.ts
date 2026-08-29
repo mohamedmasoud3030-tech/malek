@@ -14,8 +14,7 @@ describe('UI mobile architecture reset — shared foundation', () => {
   it('uses direct product navigation for the canonical FinancePage', () => {
     const finance = read('./finance/FinancePage.tsx');
     expect(finance).toContain('SectionTabs');
-    expect(finance).toContain('data-finance-mobile-nav');
-    expect(finance).toContain('data-finance-mobile-nav-mode="direct-tabs"');
+    expect(finance).toContain('data-finance-primary-nav');
     expect(finance).not.toMatch(/<select[\s\S]*أقسام المالية/);
   });
 
@@ -35,7 +34,7 @@ describe('UI mobile architecture reset — shared foundation', () => {
   });
 
   it('keeps empty states compact and register summaries shared', () => {
-    const empty = read('../components/empty-state.tsx');
+    const empty = read('../components/ui/state-surfaces.tsx');
     const summary = read('../components/layout/register-summary.tsx');
     expect(empty).toContain('min-h-28');
     expect(empty).not.toContain('min-h-56');

@@ -92,28 +92,30 @@ describe('Visual Wave 1 — app-shell notification states', () => {
   });
 
   it('does not misrepresent a request failure as an empty notification queue and exposes retry', () => {
-    queryState.isError = true;
+    // The bell feed is the app-notifications query; a failed read with no
+    // cached rows must surface the retryable error state, never the empty copy.
+    persistedState.isError = true;
+    persistedState.data = undefined;
     act(() => {
       root.render(<NotificationsMenu authorization={authorization} sharedLabel={sharedLabel} />);
     });
 
     open(host);
     expect(host.textContent).toContain('تعذر تحميل التنبيهات');
-    expect(host.textContent).not.toContain('لا توجد تنبيهات جديدة');
+    expect(host.textContent).not.toContain('لا توجد أحداث جديدة حالياً');
 
     const retry = Array.from(host.querySelectorAll('button')).find((button) => button.textContent?.includes('إعادة المحاولة'));
     act(() => {
       retry?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
-    expect(queryState.refetch).toHaveBeenCalledOnce();
+    expect(persistedState.refetch).toHaveBeenCalledOnce();
   });
 
   it('keeps focus management and trigger toggling reliable for a real notification link', () => {
-    queryState.data = {
-      arrears: { overdueCount: 1 },
-      maintenance: { urgentOpen: 0 },
-      contracts: { expiring30: 0 },
-    };
+    persistedState.data = [{
+      id: 'notif-1', title: 'فاتورة متأخرة', message: 'فاتورة تحتاج متابعة تحصيل',
+      link: '/arrears', isRead: false, createdAt: '2026-08-29T00:00:00Z', type: 'invoice_overdue',
+    }];
     act(() => {
       root.render(<NotificationsMenu authorization={authorization} sharedLabel={sharedLabel} />);
     });
@@ -137,30 +139,21 @@ describe('Visual Wave 1 — app-shell notification states', () => {
     expect(document.activeElement).toBe(trigger);
   });
 
-  it('renders pending permission requests as a distinct actionable group, not an ordinary notification', () => {
-    requestsState.data = [{
-      id: 'permission-1', requester_user_id: 'user-1', requester_name: 'أحمد السالمي',
-      requester_email: 'ahmed@malek.test', permission: 'lands.view', resource_route: '/lands',
-      reason: 'لإدارة سجل الأراضي', status: 'PENDING', reviewer_user_id: null,
-      decided_at: null, decision_reason: null, created_at: '2026-08-09T00:00:00Z',
+  it('keeps permission requests out of the ordinary bell feed (they are reviewed in the governance hub)', () => {
+    // Permission request review moved to the governance hub workspace. The
+    // bell is an event feed only: request rows never inflate its count and
+    // requester identity or free-text reasons never reach the shell.
+    persistedState.data = [{
+      id: 'request-feed-1', title: 'طلب صلاحية', message: 'طلب صلاحية أراضٍ',
+      link: '/settings?section=users-permissions', isRead: false,
+      createdAt: '2026-08-09T00:00:00Z', type: 'permission_request',
     }];
-    persistedState.data = [];
-    queryState.data = { arrears: { overdueCount: 0 }, maintenance: { urgentOpen: 0 }, contracts: { expiring30: 0 } };
     act(() => { root.render(<NotificationsMenu authorization={authorization} sharedLabel={sharedLabel} />); });
-    // The pending request must be reflected in the bell count.
-    expect(host.querySelector('button[aria-label="التنبيهات (1)"]')).toBeTruthy();
+    expect(host.querySelector('button[aria-label="التنبيهات (1)"]')).toBeNull();
     open(host);
-    // Distinct group communicates "this requires action" without exposing
-    // requester identity or free-text reason in the notification preview.
-    expect(host.textContent).toContain('طلبات تحتاج إجراء (1)');
-    expect(host.textContent).toContain('طلب صلاحية جديد');
+    expect(host.textContent).toContain('لا توجد أحداث جديدة حالياً');
     expect(host.textContent).not.toContain('أحمد السالمي');
     expect(host.textContent).not.toContain('لإدارة سجل الأراضي');
-    expect(host.textContent).toContain('عرض الأراضي');
-    expect(host.textContent).toContain('قيد المراجعة');
-    expect(host.querySelector('[data-permission-requests-need-action]')).not.toBeNull();
-    const cta = host.querySelector<HTMLAnchorElement>('a[href="/settings"]');
-    expect(cta).not.toBeNull();
   });
 
   it('keeps historical permission decisions in the ordinary feed and marks them read on navigation', () => {
@@ -169,8 +162,6 @@ describe('Visual Wave 1 — app-shell notification states', () => {
       link: '/settings?section=users-permissions', isRead: false,
       createdAt: '2026-08-09T00:00:00Z', type: 'permission_decision',
     }];
-    requestsState.data = [];
-    queryState.data = { arrears: { overdueCount: 0 }, maintenance: { urgentOpen: 0 }, contracts: { expiring30: 0 } };
     act(() => { root.render(<NotificationsMenu authorization={authorization} sharedLabel={sharedLabel} />); });
     open(host);
     expect(host.textContent).toContain('تم اعتماد طلب الصلاحية');
@@ -180,11 +171,10 @@ describe('Visual Wave 1 — app-shell notification states', () => {
   });
 
   it('keeps notification controls at the compact touch-target contract', () => {
-    queryState.data = {
-      arrears: { overdueCount: 1 },
-      maintenance: { urgentOpen: 0 },
-      contracts: { expiring30: 0 },
-    };
+    persistedState.data = [{
+      id: 'notif-1', title: 'فاتورة متأخرة', message: 'فاتورة تحتاج متابعة تحصيل',
+      link: '/arrears', isRead: false, createdAt: '2026-08-29T00:00:00Z', type: 'invoice_overdue',
+    }];
     act(() => {
       root.render(<NotificationsMenu authorization={authorization} sharedLabel={sharedLabel} />);
     });

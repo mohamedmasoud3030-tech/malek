@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { getAllNavItems, navGroups, quickCreateItems, workspaceChildNavItems } from './app-nav-items';
 
 const routeTreeSource = readFileSync(new URL('../router/route-tree.ts', import.meta.url), 'utf8');
+const protectedLayoutSource = readFileSync(new URL('../../routes/_protected.tsx', import.meta.url), 'utf8');
 
 function routeHasPermission(path: string, perm: string): boolean {
   const token = `path: '${path}'`;
@@ -11,7 +12,26 @@ function routeHasPermission(path: string, perm: string): boolean {
   const start = routeTreeSource.lastIndexOf('createRoute({', idx);
   const end = routeTreeSource.indexOf('});', idx);
   const block = routeTreeSource.slice(start, end + 3);
-  return block.includes(`'${perm}'`);
+  if (block.includes(`'${perm}'`)) return true;
+  // Workspace roots (e.g. /properties) are guarded at the protected-layout
+  // level via workspacePermissionForPath; a route-level guard is not required.
+  return layoutGuardCoversPath(path, perm);
+}
+
+function routeBlock(path: string): string {
+  const token = `path: '${path}'`;
+  const idx = routeTreeSource.indexOf(token);
+  return routeTreeSource.slice(routeTreeSource.lastIndexOf('createRoute({', idx), routeTreeSource.indexOf('});', idx) + 3);
+}
+
+function layoutGuardCoversPath(path: string, perm: string): boolean {
+  const token = `pathname === '${path}'`;
+  const idx = protectedLayoutSource.indexOf(token);
+  if (idx === -1) return false;
+  const end = protectedLayoutSource.indexOf('return', idx);
+  return protectedLayoutSource.slice(idx, end).includes(`'${perm}'`) || (
+    protectedLayoutSource.slice(end, protectedLayoutSource.indexOf(';', end)).includes(`'${perm}'`)
+  );
 }
 
 describe('permission visibility — task-centric IA must not widen access', () => {
@@ -63,10 +83,13 @@ describe('permission visibility — task-centric IA must not widen access', () =
 
   it('does not invent a people.view permission', () => {
     expect(routeHasPermission('/people', 'people.view')).toBe(false);
-    const token = `path: '/people/new'`;
-    const idx = routeTreeSource.indexOf(token);
-    const block = routeTreeSource.slice(routeTreeSource.lastIndexOf('createRoute({', idx), routeTreeSource.indexOf('});', idx) + 3);
-    expect(block).not.toMatch(/requirePermission\(/);
+    expect(routeTreeSource).not.toContain("requirePermission('people.view')");
+    // Creating/editing a person stays aligned with the leasing workspace
+    // (people are contract counterparties), never with a dedicated people perm.
+    const newBlock = routeBlock('/people/new');
+    expect(newBlock).toContain("requirePermission('contracts.create')");
+    const editBlock = routeBlock('/people/$personId/edit');
+    expect(editBlock).toContain("requirePermission('contracts.edit')");
   });
 
   it('does not use adminOnly groups to bypass item permissions', () => {

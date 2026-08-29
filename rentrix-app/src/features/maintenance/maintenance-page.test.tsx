@@ -15,6 +15,12 @@ const maintenanceMocks = vi.hoisted(() => ({
   resolveMutation: { isPending: false, mutate: vi.fn() },
 }));
 
+// The page registers permission-gated actions through the shared auth seam.
+vi.mock('@/hooks/use-auth', () => ({
+  useAuth: () => ({ authorization: { role: 'MANAGER' }, canAccess: () => true }),
+  useOptionalAuth: () => ({ canAccess: () => true }),
+}));
+
 vi.mock('@tanstack/react-router', () => ({ useNavigate: () => vi.fn(), useSearch: () => ({}) }));
 
 vi.mock('@/hooks/use-company', () => ({

@@ -44,12 +44,15 @@ const sharedLabel = (key: string) => `label:${key}`;
 
 describe('WP-06 / GAP-020 Browser & UX Acceptance Hardening', () => {
   describe('Navigation RTL & active state', () => {
-    it('active nav item includes rtl variant for indicator (shadow flips in RTL)', () => {
+    it('active nav item uses logical properties so the indicator state is RTL-safe', () => {
       const html = renderToStaticMarkup(
         <NavigationLinks authorization={adminAuth} expanded sharedLabel={sharedLabel} />,
       );
-      expect(html).toContain('shadow-[inset_3px_0_0_0');
-      expect(html).toContain('rtl:shadow-[inset_-3px_0_0_0');
+      // The active state is token-based (border + background + trailing dot),
+      // expressed with logical utilities so it mirrors correctly in RTL.
+      expect(html).toContain('data-active="true"');
+      expect(html).toContain('bg-sidebar-accent');
+      expect(html).toContain('ms-auto size-1.5');
     });
 
     it('child nav items use logical border-s (RTL-aware)', () => {
@@ -90,9 +93,10 @@ describe('WP-06 / GAP-020 Browser & UX Acceptance Hardening', () => {
       const html = renderToStaticMarkup(
         <PageHeader title="عنوان طويل جداً جداً جداً قد يسبب تجاوز العرض في الموبايل إذا لم يتم كسر الكلمات" description="وصف طويل جداً يحتوي على نص عربي مختلط مع EnglishLongUnbrokenStringThatCouldOverflowIfNotHandledProperly" />,
       );
-      expect(html).toContain('break-words');
+      // The h1 truncates on one line (min-w-0 + truncate) and the supporting
+      // description wraps anywhere so unbroken strings cannot overflow.
+      expect(html).toContain('truncate');
       expect(html).toContain('[overflow-wrap:anywhere]');
-      expect(html).toContain('overflow-hidden');
     });
 
     it('DetailFields values use break-words to prevent horizontal overflow', () => {
@@ -162,7 +166,7 @@ describe('WP-06 / GAP-020 Browser & UX Acceptance Hardening', () => {
       expect(sheet).toContain("document.documentElement.style.overflow = 'hidden'");
       expect(sheet).toContain('data-bottom-sheet');
       expect(sheet).toContain('justify-end');
-      expect(sheet).toContain('rounded-t-3xl');
+      expect(sheet).toContain('rounded-t-[1.35rem]');
     });
   });
 });

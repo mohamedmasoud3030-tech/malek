@@ -252,7 +252,8 @@ describe('MALEK brand contract — no legacy name reaches a user', () => {
   it('keeps user-facing app chrome on the brand constant', () => {
     const appShell = readApp('src/app/layout/app-shell.tsx');
     expect(appShell).toContain('APP_BRAND_NAME');
-    expect(appShell).toContain('MalikBrand');
+    // The unified shell chrome renders the shared MALEK wordmark lockup.
+    expect(appShell).toContain('MalekBrandWordmark');
     expect(appShell).not.toContain('Rentrix');
 
     const routeTree = readApp('src/app/router/route-tree.ts');
@@ -260,10 +261,15 @@ describe('MALEK brand contract — no legacy name reaches a user', () => {
     expect(routeTree).not.toContain('Rentrix');
   });
 
-  it('keeps the sidebar and drawer on the MALEK lockup and login on the PWA identity', () => {
+  it('keeps the sidebar and header on the MALEK lockup and login on the PWA identity', () => {
     const appShell = readApp('src/app/layout/app-shell.tsx');
-    // Both the expanded sidebar and the mobile drawer render the same <Brand/>.
-    expect(appShell.match(/<Brand\s/g)?.length ?? 0).toBeGreaterThanOrEqual(2);
+    // The desktop sidebar and the header brand button render the same shared
+    // wordmark lockup; tapping the header lockup opens primary navigation.
+    expect(appShell).toContain('<Brand expanded />');
+    expect(appShell).toContain('data-malek-brand-lockup');
+    expect(appShell).toContain('<MalekBrandWordmark size="sidebar" />');
+    expect(appShell).toContain('<MalekBrandWordmark size="header" />');
+    expect(appShell).toContain('data-header-brand-wordmark-button');
 
     const loginPage = readApp('src/features/auth/login-page.tsx');
     expect(loginPage).toContain('MalikBrand');

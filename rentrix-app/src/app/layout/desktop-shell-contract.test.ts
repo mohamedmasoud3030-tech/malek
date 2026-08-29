@@ -5,23 +5,27 @@ import { describe, expect, it } from 'vitest';
 
 const appLayoutDir = resolve(dirname(fileURLToPath(import.meta.url)));
 const shell = readFileSync(resolve(appLayoutDir, 'app-shell.tsx'), 'utf8');
-const pagePolish = readFileSync(resolve(appLayoutDir, '../../styles/page-polish.css'), 'utf8');
+const visualWave = readFileSync(resolve(appLayoutDir, '../../styles/malek-pro-visual-wave.css'), 'utf8');
 
 describe('desktop shell declutter contract', () => {
   it('keeps the desktop navigation fixed and expanded with visible labels', () => {
     expect(shell).toContain('<Brand expanded />');
     expect(shell).toContain('<NavigationLinks authorization={authorization} expanded sharedLabel={sharedLabel} />');
     expect(shell).not.toContain("sidebarCollapsed ? 'w-[4.5rem] overflow-visible'");
-    expect(pagePolish).toContain('width: 14rem;');
-    expect(pagePolish).toContain('padding-inline-end: 14rem;');
+    // The fixed, named workspace rail keeps a 14rem footprint and offsets the
+    // main content by the same measure (physical right padding in the RTL shell).
+    expect(shell).toContain('w-[14rem]');
+    expect(shell).toContain('lg:pr-[14rem]');
   });
 
   it('uses restrained premium chrome instead of the legacy flat/glass split', () => {
-    expect(pagePolish).toContain('/* ── Desktop shell: fixed, named, and quiet');
-    expect(pagePolish).toContain('[data-app-shell] [data-sidebar] > nav');
-    expect(pagePolish).toContain('[data-app-shell] [data-app-shell-header]');
-    expect(pagePolish).toContain('background: var(--material-chrome);');
-    expect(pagePolish).toContain('backdrop-filter: blur(var(--material-blur));');
-    expect(pagePolish).not.toContain('backdrop-filter: none');
+    // The malek-pro visual wave pins the shell chrome: clean, opaque,
+    // border-based surfaces with no glass/blur stack.
+    expect(visualWave).toContain('/* App chrome — clean, opaque, border-based, no glass stack */');
+    expect(visualWave).toContain('[data-app-shell] [data-sidebar]');
+    expect(visualWave).toContain('[data-app-shell] [data-app-shell-header]');
+    expect(visualWave).toContain('background: hsl(var(--card));');
+    expect(visualWave).toContain('background: hsl(var(--sidebar));');
+    expect(visualWave).toContain('backdrop-filter: none;');
   });
 });

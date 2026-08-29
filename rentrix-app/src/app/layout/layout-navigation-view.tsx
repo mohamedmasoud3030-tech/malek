@@ -259,7 +259,7 @@ export function MobileFloatingControl({
       <div
         ref={quickRootRef}
         data-mobile-dock-surface
-        className="pointer-events-auto relative flex w-auto items-center gap-1 rounded-[1rem] border border-border bg-card p-1.5 shadow-none"
+        className="pointer-events-auto relative flex w-auto items-center gap-1 rounded-2xl border border-border bg-card p-1.5 shadow-none"
       >
         {quickOpen && visibleQuickActions.length > 0 ? (
           <div

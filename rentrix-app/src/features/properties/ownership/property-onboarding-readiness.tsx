@@ -219,7 +219,7 @@ export function PropertyOnboardingWorkflow({ propertyId }: Readonly<{ propertyId
                     {index + 1}
                   </span>
                   {step.complete ? (
-                    <CheckCircle2 className="mt-1 size-4 shrink-0 text-emerald-600" aria-hidden="true" />
+                    <CheckCircle2 className="mt-1 size-4 shrink-0 text-success" aria-hidden="true" />
                   ) : (
                     <CircleDashed className="mt-1 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                   )}

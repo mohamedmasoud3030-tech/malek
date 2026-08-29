@@ -82,7 +82,7 @@ describe('AppShell — redesigned MALEK header & navigation', () => {
 
     const header = host.querySelector<HTMLElement>('[data-app-shell-header]');
     expect(header).not.toBeNull();
-    const wordmark = header?.querySelector('[data-header-wordmark]');
+    const wordmark = header?.querySelector('[data-malek-brand-wordmark]');
     expect(wordmark).not.toBeNull();
     expect(wordmark?.textContent).toContain('MALEK');
     expect(header?.textContent).not.toContain('العقارات');
@@ -100,7 +100,7 @@ describe('AppShell — redesigned MALEK header & navigation', () => {
     expect(monogramButton?.getAttribute('aria-label')).toContain('القائمة الرئيسية');
     expect(monogramButton?.getAttribute('aria-haspopup')).toBe('dialog');
     expect(monogramButton?.querySelector('[data-malek-canonical-mark]')).not.toBeNull();
-    expect(lockup?.querySelector('[data-header-wordmark]')).not.toBeNull();
+    expect(lockup?.querySelector('[data-malek-brand-wordmark]')).not.toBeNull();
     expect(lockup?.className).toContain('items-center');
     expect(header?.querySelector('[data-header-brand-side] [data-header-brand-lockup]')).not.toBeNull();
   });
@@ -150,18 +150,19 @@ describe('AppShell — redesigned MALEK header & navigation', () => {
 
     const header = host.querySelector<HTMLElement>('[data-app-shell-header]');
     expect(header).not.toBeNull();
+    // Each compact control is itself the 44px hit area (min-h-11/min-w-11).
     const hitAreas = header?.querySelectorAll<HTMLElement>('[data-header-control-hit]');
     expect(hitAreas?.length).toBe(2);
     for (const hit of hitAreas ?? []) {
-      expect(hit.className).toContain('size-11');
-      const visible = hit.querySelector('button');
-      expect(visible).not.toBeNull();
-      expect(visible?.className).toContain('size-8');
+      const control = hit.tagName === 'BUTTON' ? hit : hit.querySelector('button');
+      expect(control, 'each header control must render its own button').not.toBeNull();
+      expect(control?.className).toContain('min-h-11');
+      expect(control?.className).toContain('min-w-11');
     }
 
-    const monogramHit = header?.querySelector<HTMLElement>('[data-header-monogram-hit]');
-    expect(monogramHit).not.toBeNull();
-    expect(monogramHit?.className).toContain('size-11');
+    const monogramButton = header?.querySelector<HTMLElement>('[data-header-brand-monogram]');
+    expect(monogramButton).not.toBeNull();
+    expect(monogramButton?.className).toContain('min-h-11');
     const controls = header?.querySelector<HTMLElement>('[data-header-utility-side]');
     expect(controls?.className).toContain('gap-0.5');
     const headerRow = controls?.parentElement;
@@ -178,7 +179,7 @@ describe('AppShell — redesigned MALEK header & navigation', () => {
     expect(sheet).not.toBeNull();
     expect(document.querySelector('[data-mobile-nav-bottom-sheet]')).not.toBeNull();
     expect(sheet?.className).toContain('w-full');
-    expect(sheet?.className).toContain('rounded-t-3xl');
+    expect(sheet?.className).toContain('rounded-t-[1.35rem]');
     expect(sheet?.className).not.toContain('right-0');
     expect(sheet?.className).not.toContain('w-[85vw]');
 

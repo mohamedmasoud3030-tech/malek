@@ -6,6 +6,12 @@ import { describe, expect, it, vi } from 'vitest';
 import type { Unit } from '@/types/domain';
 import { UnitsList } from './units-list';
 
+// The page registers permission-gated actions through the shared auth seam.
+vi.mock('@/hooks/use-auth', () => ({
+  useAuth: () => ({ authorization: { role: 'MANAGER' }, canAccess: () => true }),
+  useOptionalAuth: () => ({ canAccess: () => true }),
+}));
+
 vi.mock('./unit-form-modal', () => ({
   UnitFormModal: () => null,
 }));
@@ -62,6 +68,9 @@ describe('UnitsList load states', () => {
 
 describe('UnitsList mobile card density', () => {
   it('shows unit identity, status, rent and flat actions on the mobile card', () => {
+    // The shared register keeps an explicit Cards ⇄ Table choice; pin the
+    // cards presentation so the mobile card surface is the one under test.
+    window.localStorage.setItem('malek:entity-register:view-mode', 'cards');
     const unitsQuery = makeUnitsQuery({
       data: [
         {

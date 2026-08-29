@@ -12,6 +12,12 @@ import { testCompanySettingsContract } from '@/test/companySettingsContractMock'
 const startDateLabel = formatContractDate(testCompanySettingsContract, '2026-01-01');
 const endDateLabel = formatContractDate(testCompanySettingsContract, '2026-12-31');
 
+// The page registers permission-gated actions through the shared auth seam.
+vi.mock('@/hooks/use-auth', () => ({
+  useAuth: () => ({ authorization: { role: 'MANAGER' }, canAccess: () => true }),
+  useOptionalAuth: () => ({ canAccess: () => true }),
+}));
+
 vi.mock('../settings/useCompanySettings', async () => {
   const { testCompanySettingsContract } = await import('../../test/companySettingsContractMock');
 
@@ -105,13 +111,17 @@ describe('ContractsListPage load states', () => {
     expect(html).toContain('data-compact-responsive-table="true"');
     expect(html).toContain('data-entity-table-scroll');
     expect(html).toContain('<table');
-    expect(html).toContain('data-entity-table-mobile-list');
-    expect(html).toContain('data-entity-table-mobile-card');
+    // The register keeps one explicit Cards ⇄ Table choice; the table view
+    // carries the shared view-mode toggle instead of a duplicate card list.
+    expect(html).toContain('طريقة عرض جدول العقود');
     expect(html).toContain('أحمد سالم');
     expect(html).toContain('A-101');
   });
 
   it('shows tenant, unit, period and rent on the contract mobile card with flat actions', () => {
+    // The shared register keeps an explicit Cards ⇄ Table choice; pin the
+    // cards presentation so the mobile card surface is the one under test.
+    window.localStorage.setItem('malek:entity-register:view-mode', 'cards');
     contractsMocks.contractsQuery.data = { rows: [contractFixture], count: 1 };
 
     const html = renderToStaticMarkup(<ContractsListPage />);

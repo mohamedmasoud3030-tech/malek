@@ -76,17 +76,19 @@ describe('cross-device design unification', () => {
   it('keeps operational hubs on the same explicit workspace wave', () => {
     expect(operationsHub).toContain('visualVariant="malek-pro"');
     expect(financials).toContain('visualVariant="malek-pro"');
-    expect(financials).toContain('data-finance-mobile-nav-mode="direct-tabs"');
-    expect(reports).toContain('data-reports-cockpit');
+    expect(financials).toContain('data-finance-primary-nav');
+    expect(reports).toContain('data-report-landing');
     expect(reports).toContain("translateSharedLabel('reportsPageDescription')");
     expect(financials).not.toContain('💡');
     expect(reports).not.toContain('💡');
   });
 
-  it('shows AI starter actions and documents send shortcuts', () => {
+  it('shows AI starter actions and keeps Enter-to-send with the read-only disclaimer', () => {
     expect(assistant).toContain('const assistantActions = [');
     expect(assistant).toContain('assistantActions.map');
-    expect(assistant).toContain('Enter للإرسال');
-    expect(assistant).toContain('Shift+Enter لسطر جديد');
+    // Enter sends, Shift+Enter inserts a newline — implemented on the keydown
+    // handler instead of a visible hint chip.
+    expect(assistant).toContain("event.key === 'Enter' && !event.shiftKey");
+    expect(assistant).toContain('قراءة وتحليل فقط');
   });
 });

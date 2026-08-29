@@ -548,7 +548,7 @@ export function EntityTable<T>({
       <div className={cn('space-y-2', className)} data-entity-table-register>
         {enableViewModeToggle ? (
           <div data-entity-table-toolbar className="flex min-h-9 items-center justify-end">
-            <div className="inline-flex min-h-9 items-center rounded-lg border border-border/60 bg-muted/25 p-0.5" role="group" aria-label={`طريقة عرض ${ariaLabel}`}>
+            <div className="inline-flex min-h-11 items-center rounded-lg border border-border/60 bg-muted/25 p-0.5" role="group" aria-label={`طريقة عرض ${ariaLabel}`}>
               <Button type="button" variant={viewMode === 'cards' ? 'secondary' : 'ghost'} size="sm" aria-pressed={viewMode === 'cards'} onClick={() => chooseViewMode('cards')}>
                 <LayoutGrid className="size-3.5" aria-hidden="true" />
                 <span className="ms-1">بطاقات</span>
@@ -612,7 +612,7 @@ export function EntityTable<T>({
       {toolbar || enableViewModeToggle ? (
         <div data-entity-table-toolbar className="flex min-h-9 flex-wrap items-center justify-end gap-1.5">
           {enableViewModeToggle ? (
-            <div className="inline-flex min-h-9 items-center rounded-lg border border-border/60 bg-muted/25 p-0.5" role="group" aria-label={`طريقة عرض ${ariaLabel}`}>
+            <div className="inline-flex min-h-11 items-center rounded-lg border border-border/60 bg-muted/25 p-0.5" role="group" aria-label={`طريقة عرض ${ariaLabel}`}>
               <Button type="button" variant={viewMode === 'cards' ? 'secondary' : 'ghost'} size="sm" aria-pressed={viewMode === 'cards'} onClick={() => chooseViewMode('cards')}>
                 <LayoutGrid className="size-3.5" aria-hidden="true" />
                 <span className="ms-1">بطاقات</span>
@@ -702,7 +702,7 @@ export function EntityTable<T>({
                           {column.sortable && onSort ? (
                             <button
                               type="button"
-                              className="inline-flex min-h-8 cursor-pointer items-center font-bold text-muted-foreground outline-none transition hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/25"
+                              className="inline-flex min-h-11 cursor-pointer items-center font-bold text-muted-foreground outline-none transition hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/25"
                               onClick={() => handleSort(column.key)}
                             >
                               {column.header}<SortIcon field={column.key} sort={sort} />
@@ -745,7 +745,7 @@ export function EntityTable<T>({
                             <TableCell className="w-9 px-1.5" data-row-action>
                               <button
                                 type="button"
-                                className="grid size-9 place-items-center rounded-md text-muted-foreground outline-none transition hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/20"
+                                className="grid size-11 place-items-center rounded-md text-muted-foreground outline-none transition hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/20"
                                 aria-label={isExpanded ? 'إخفاء تفاصيل الصف' : 'عرض كل تفاصيل الصف'}
                                 aria-expanded={isExpanded}
                                 aria-controls={detailId}

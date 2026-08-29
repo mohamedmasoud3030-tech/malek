@@ -73,8 +73,8 @@ describe('Mobile dock Quick Add — clear vertical action list', () => {
     expect(labels).toEqual(['عقد جديد', 'تحصيل مبلغ', 'طلب صيانة', 'فاتورة مرافق']);
 
     for (const item of items) {
-      // Comfortable tap target with an icon and a full, unclipped label.
-      expect(item.className).toContain('min-h-11');
+      // Comfortable tap target (48px — above the 44px floor) with an icon and a full, unclipped label.
+      expect(item.className).toContain('min-h-12');
       expect(item.querySelector('svg')).not.toBeNull();
       const labelSpan = item.querySelector('span.min-w-0');
       expect(labelSpan).not.toBeNull();

@@ -9,12 +9,19 @@
  */
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { createRoot } from 'react-dom/client';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act } from 'react';
 import { UnitsPage } from './units-page';
 import { computeUnitKpis, getUnitPageStatus } from './use-units-list-controller';
 import type { Unit } from '@/types/domain';
 
 const mockNavigate = vi.fn();
+
+// The page registers permission-gated actions through the shared auth seam.
+vi.mock('@/hooks/use-auth', () => ({
+  useAuth: () => ({ authorization: { role: 'MANAGER' }, canAccess: () => true }),
+  useOptionalAuth: () => ({ canAccess: () => true }),
+}));
 
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => mockNavigate,
@@ -45,6 +52,7 @@ const unitsData: Unit[] = [
 
 vi.mock('./use-units', () => ({
   useAllUnits: () => ({ data: unitsData, isLoading: false, isError: false }),
+  useUnitDetail: () => ({ data: unitsData[0], isLoading: false, isError: false }),
   useCreateUnit: () => ({ isPending: false, mutateAsync: vi.fn().mockResolvedValue({}) }),
   useUpdateUnit: () => ({ isPending: false, mutateAsync: vi.fn().mockResolvedValue({}) }),
   useSoftDeleteUnit: () => ({ isPending: false, mutate: vi.fn() }),
@@ -118,7 +126,7 @@ describe('UnitsPage controller regression', () => {
   });
 
   it('renders one dense desktop table row per unit plus the shared horizontally scrollable table', async () => {
-    await act(async () => { root.render(<UnitsPage />); });
+    await act(async () => { root.render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><UnitsPage /></QueryClientProvider>); });
 
     const desktopRows = container.querySelectorAll('tbody tr');
     expect(desktopRows.length).toBe(3);
@@ -127,13 +135,14 @@ describe('UnitsPage controller regression', () => {
     expect(container.querySelector('[data-entity-table-scroll]')).toBeTruthy();
     expect(container.querySelector('[data-compact-responsive-table]')).toBeTruthy();
     expect(container.querySelector('table[data-entity-table]')).toBeTruthy();
-    // Wave 4: EntityTable renders mobile cards in DOM (hidden via md:hidden CSS).
-    // The mobile list is always present; visibility is controlled by breakpoint.
-    expect(container.querySelector('[data-entity-table-mobile-list]')).toBeTruthy();
+    // The shared register keeps an explicit Cards ⇄ Table choice on every
+    // viewport: the cards list replaces the table only in the cards view mode.
+    const viewModeToggle = container.querySelector('[role="group"][aria-label*="طريقة عرض"]');
+    expect(viewModeToggle).toBeTruthy();
   });
 
   it('renders KPI cards with computed values', async () => {
-    await act(async () => { root.render(<UnitsPage />); });
+    await act(async () => { root.render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><UnitsPage /></QueryClientProvider>); });
     const text = container.textContent ?? '';
     // Arabic locale uses Arabic-Indic numerals: ٣=3, ١=1
     expect(text).toContain('3'); // total units
@@ -142,7 +151,7 @@ describe('UnitsPage controller regression', () => {
   });
 
   it('renders filter selects: property, status, occupancy', async () => {
-    await act(async () => { root.render(<UnitsPage />); });
+    await act(async () => { root.render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><UnitsPage /></QueryClientProvider>); });
     const selects = container.querySelectorAll('select');
     expect(selects.length).toBe(3);
 
@@ -154,7 +163,7 @@ describe('UnitsPage controller regression', () => {
   });
 
   it('opens create modal on add button click', async () => {
-    await act(async () => { root.render(<UnitsPage />); });
+    await act(async () => { root.render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><UnitsPage /></QueryClientProvider>); });
     const addBtn = Array.from(container.querySelectorAll('button')).find(b => b.textContent?.includes('إضافة وحدة'));
     expect(addBtn).toBeTruthy();
     await act(async () => { addBtn?.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
@@ -162,7 +171,7 @@ describe('UnitsPage controller regression', () => {
   });
 
   it('opens edit modal from the row action without property selection', async () => {
-    await act(async () => { root.render(<UnitsPage />); });
+    await act(async () => { root.render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><UnitsPage /></QueryClientProvider>); });
     const editBtn = Array.from(container.querySelectorAll('button')).find(b => b.textContent?.includes('تعديل'));
     expect(editBtn).toBeTruthy();
     await act(async () => { editBtn?.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
@@ -170,37 +179,34 @@ describe('UnitsPage controller regression', () => {
     expect(document.body.textContent).not.toContain('اختيار العقار مطلوب');
   });
 
-  it('navigates to unit detail from desktop row click', async () => {
-    await act(async () => { root.render(<UnitsPage />); });
+  it('opens the unit preview dialog from desktop row click', async () => {
+    await act(async () => { root.render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><UnitsPage /></QueryClientProvider>); });
     const row = container.querySelector('tbody tr') as HTMLElement;
     expect(row).toBeTruthy();
     await act(async () => { row.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
-    expect(mockNavigate).toHaveBeenCalledWith({
-      to: '/properties/$propertyId/units/$unitId',
-      params: { propertyId: 'p1', unitId: 'u1' },
-    });
+    // Row clicks keep the operator in the register behind the shared preview dialog.
+    expect(document.body.textContent).toContain('معاينة الوحدة');
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 
-  it('navigates to unit detail from keyboard row activation', async () => {
-    await act(async () => { root.render(<UnitsPage />); });
+  it('opens the unit preview dialog from keyboard row activation', async () => {
+    await act(async () => { root.render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><UnitsPage /></QueryClientProvider>); });
     const row = container.querySelector('tbody tr') as HTMLElement;
     expect(row?.tabIndex).toBe(0);
     await act(async () => { row.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); });
-    expect(mockNavigate).toHaveBeenCalledWith({
-      to: '/properties/$propertyId/units/$unitId',
-      params: { propertyId: 'p1', unitId: 'u1' },
-    });
+    expect(document.body.textContent).toContain('معاينة الوحدة');
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 
   it('renders search input with correct placeholder', async () => {
-    await act(async () => { root.render(<UnitsPage />); });
+    await act(async () => { root.render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><UnitsPage /></QueryClientProvider>); });
     const searchInput = container.querySelector('input[placeholder*="رقم"]') as HTMLInputElement;
     expect(searchInput).toBeTruthy();
     expect(searchInput.placeholder).toBe('رقم الوحدة، الدور، العقار');
   });
 
   it('displays unit count in card description', async () => {
-    await act(async () => { root.render(<UnitsPage />); });
+    await act(async () => { root.render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><UnitsPage /></QueryClientProvider>); });
     const text = container.textContent ?? '';
     // Arabic locale uses Arabic-Indic numerals; description ends with period
     expect(text).toContain('وحدة ضمن الفلاتر الحالية');

@@ -62,28 +62,28 @@ describe('Finance cockpit UI remediation', () => {
     expect(cockpitStateSource).not.toContain('className=');
     expect(pageSource).toContain("import { PageHeader } from '@/components/layout/page-header';");
     expect(pageSource).toContain('<PageHeader');
-    expect(pageSource).toContain('<SectionHeader');
+    expect(pageSource).toContain('<SectionTabs');
     expect(pageSource).not.toContain('FinanceWorkspaceHero');
-    expect(pageSource).toContain('data-finance-mobile-nav-mode="direct-tabs"');
+    // One direct primary nav serves every viewport (no separate mobile mode).
+    expect(pageSource).toContain('data-finance-primary-nav');
     expect(pageSource).not.toContain('<WorkspaceNav');
     expect(pageSource).toContain('data-finance-subview-strip');
     expect(pageSource).not.toContain('subViews.length > 1');
-    expect(pageSource).toContain('<FinanceOperationsOverview');
     expect(pageSource).not.toContain('<FinancialReportsPreviewSection');
   });
 
-  it('surfaces management fees and owner settlements as routine Money overview entries without widening access', () => {
-    const overviewSource = readFileSync(join(financeRoot, 'components/finance-operations-overview.tsx'), 'utf8');
+  it('surfaces management fees and owner settlements as routine Money entries without widening access', () => {
+    const shellModelSource = readFileSync(join(financeRoot, 'shell/financeShellModel.ts'), 'utf8');
 
-    expect(overviewSource).toContain('canViewManagementFees');
-    expect(overviewSource).toContain('canViewOwnerSettlements');
-    expect(overviewSource).toContain('استحقاق أتعاب الإدارة الشهرية');
-    expect(overviewSource).toContain('مستحقات وتسويات الملاك');
-    expect(overviewSource).toContain('{canViewManagementFees || canViewOwnerSettlements ? (');
+    // Both specialist views are ordinary shell-model views, each behind its
+    // own narrow permission rather than a widened shared grant.
+    expect(shellModelSource).toContain("{ id: 'fixed_monthly_accruals', sectionId: 'fees'");
+    expect(shellModelSource).toContain("permission: 'financial.fixed_monthly_accruals.view'");
+    expect(shellModelSource).toContain("{ id: 'owner_settlements', sectionId: 'funds'");
+    expect(shellModelSource).toContain("permission: 'financial.owner_settlements.view'");
 
-    expect(pageSource).toContain("canViewManagementFees={permittedViewIds.has('fixed_monthly_accruals')}");
-    expect(pageSource).toContain("canViewOwnerSettlements={permittedViewIds.has('owner_settlements')}");
-    expect(pageSource).toContain("handleLocationChange('fees', 'fixed_monthly_accruals')");
-    expect(pageSource).toContain("handleLocationChange('funds', 'owner_settlements')");
+    // The page renders them as ordinary permitted tabpanels.
+    expect(pageSource).toContain("activeSection === 'fees' && activeView === 'fixed_monthly_accruals'");
+    expect(pageSource).toContain("activeSection === 'funds' && activeView === 'owner_settlements'");
   });
 });
