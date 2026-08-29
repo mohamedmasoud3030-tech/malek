@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useMemo, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { RefreshCw } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
-import { Button } from '@/components/ui/button';
 import { ErrorState } from '@/components/ui/error-state';
 import { SectionHeader } from '@/components/ui/section-header';
 import { useCompanyFormatters } from '@/hooks/useCompanyFormatters';
@@ -72,7 +70,6 @@ export function DashboardPage() {
     isError,
     error,
     refetch,
-    isFetching,
     isRefetchError,
   } = useQuery({
     queryKey: ['dashboard-snapshot', now.getMonth() + 1, now.getFullYear(), today],
@@ -157,22 +154,7 @@ export function DashboardPage() {
 
   return (
     <PageLayout size="wide" className="pb-8" visualVariant="malek-pro">
-      <PageHeader
-        title="لوحة التحكم"
-        primaryAction={(
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            className="min-h-11"
-            onClick={retryDashboard}
-            disabled={isFetching && !isLoading}
-          >
-            <RefreshCw className={`me-1.5 size-4 ${isFetching && !isLoading ? 'animate-spin' : ''}`} aria-hidden="true" />
-            تحديث
-          </Button>
-        )}
-      />
+      <PageHeader title="لوحة التحكم" />
 
       <div className="space-y-5 lg:space-y-6">
         {hasDashboardError ? (
@@ -244,8 +226,8 @@ export function DashboardPage() {
               </div>
             </DashboardGroup>
 
-            <div className="grid min-w-0 gap-3 xl:grid-cols-2 xl:items-start">
-              <section className="min-w-0" aria-label="العقود القريبة من الانتهاء" data-dashboard-section="expiring-contracts">
+            <div className="grid min-w-0 gap-3 xl:grid-cols-12 xl:items-start" data-dashboard-closing-row>
+              <section className="min-w-0 xl:col-span-7" aria-label="العقود القريبة من الانتهاء" data-dashboard-section="expiring-contracts">
                 <ExpiringContractsSection
                   rows={expiringContracts}
                   totalCount={snapshot?.contracts.expiring30}
@@ -255,7 +237,7 @@ export function DashboardPage() {
                 />
               </section>
 
-              <section className="min-w-0" aria-label="مستحقات الملاك" data-dashboard-section="owner-obligations">
+              <section className="min-w-0 xl:col-span-5" aria-label="مستحقات الملاك" data-dashboard-section="owner-obligations">
                 <OwnerObligationsSection snapshot={snapshot} isLoading={isLoading} settings={settings} />
               </section>
             </div>
