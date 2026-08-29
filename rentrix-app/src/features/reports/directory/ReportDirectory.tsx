@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
-import { ArrowLeft, Search, X } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { ArrowLeft } from 'lucide-react';
+import { FilterBar } from '@/components/ui/filter-bar';
+import { FilterTabs } from '@/components/ui/filter-tabs';
 import { ReportState } from '@/components/ui/report-section-primitives';
 import { cn } from '@/lib/utils';
 import {
@@ -35,6 +36,8 @@ const directoryTabs: readonly { id: DirectoryTab; label: string; groups?: readon
   { id: 'properties', label: 'العقارات والوحدات', groups: ['properties'] },
 ];
 
+const directoryFilterOptions = directoryTabs.map((item) => ({ value: item.id, label: item.label }));
+
 export function ReportDirectory({ activeSection, activeView, scope, onOpen }: ReportDirectoryProps) {
   const [query, setQuery] = useState('');
   const [tab, setTab] = useState<DirectoryTab>('all');
@@ -48,59 +51,27 @@ export function ReportDirectory({ activeSection, activeView, scope, onOpen }: Re
 
   return (
     <section className="space-y-3" data-report-directory aria-labelledby="report-directory-title">
-      <div className="rounded-xl border border-border/80 bg-card" data-report-global-search>
-        <div className="flex flex-col gap-2 border-b border-border/70 p-2.5 sm:flex-row sm:items-center sm:gap-3 sm:p-3">
-          <div className="relative min-w-0 flex-1">
-            <label htmlFor="report-directory-search" className="sr-only">بحث في مركز التقارير</label>
-            <Search className="pointer-events-none absolute inset-y-0 start-3 my-auto size-4 text-muted-foreground" aria-hidden="true" />
-            <Input
-              id="report-directory-search"
-              type="search"
-              inputMode="search"
-              autoComplete="off"
-              dir="rtl"
-              placeholder="ابحث في التقارير…"
-              className="min-h-11 border-border/80 bg-background ps-9 pe-10"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
+      <div data-report-global-search>
+        <FilterBar
+          searchValue={query}
+          onSearchChange={setQuery}
+          searchPlaceholder="ابحث في التقارير…"
+          searchAriaLabel="بحث في مركز التقارير"
+          filters={(
+            <FilterTabs
+              options={directoryFilterOptions}
+              value={tab}
+              onChange={setTab}
+              ariaLabel="مجالات التقارير"
+              tone="primary"
             />
-            {query ? (
-              <button
-                type="button"
-                onClick={() => setQuery('')}
-                aria-label="مسح بحث التقارير"
-                className="absolute inset-y-0 end-2 my-auto grid size-9 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-              >
-                <X className="size-4" aria-hidden="true" />
-              </button>
-            ) : null}
-          </div>
-          <p className="shrink-0 text-[11px] font-bold text-muted-foreground sm:text-xs">
-            {REPORT_DIRECTORY_ENTRY_COUNT} تقريرًا وكشفًا
-          </p>
-        </div>
-
-        <div className="overflow-x-auto p-1.5" data-report-category-tabs>
-          <div className="flex min-w-max gap-1" role="tablist" aria-label="مجالات التقارير">
-            {directoryTabs.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                role="tab"
-                aria-selected={tab === item.id}
-                onClick={() => setTab(item.id)}
-                className={cn(
-                  'min-h-11 rounded-lg px-3 text-xs font-black transition-colors sm:text-sm',
-                  tab === item.id
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-                )}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
-        </div>
+          )}
+          actions={(
+            <p className="whitespace-nowrap px-2 text-[11px] font-bold text-muted-foreground sm:text-xs">
+              {REPORT_DIRECTORY_ENTRY_COUNT} تقريرًا وكشفًا
+            </p>
+          )}
+        />
       </div>
 
       <div className="space-y-3">
