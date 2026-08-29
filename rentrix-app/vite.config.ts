@@ -225,20 +225,19 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
+          if (!id.includes("node_modules")) return;
           // Vendor split: isolate heavy libraries into dedicated chunks for
           // long-lived browser caching independent of app-code churn.
-          if (id.includes("node_modules")) {
-            if (id.includes("@supabase")) return "vendor-supabase";
-            if (id.includes("@tanstack")) return "vendor-tanstack";
-            if (id.includes("recharts") || id.includes("d3-") || id.includes("victory")) return "vendor-charts";
-            if (id.includes("react-dom") || id.includes("react/")) return "vendor-react";
-            if (id.includes("jspdf") || id.includes("html2canvas")) return "vendor-pdf";
-            if (id.includes("framer-motion")) return "vendor-motion";
-            if (id.includes("zustand") || id.includes("sonner") || id.includes("zod")) return "vendor-ui";
-            if (id.includes("date-fns")) return "vendor-date";
-            // Remaining node_modules fall into a generic vendor chunk.
-            return "vendor";
-          }
+          // Only match libraries that have no cross-chunk React dependencies
+          // to avoid circular chunk warnings.
+          if (id.includes("@supabase")) return "vendor-supabase";
+          if (id.includes("recharts") || id.includes("d3-") || id.includes("victory")) return "vendor-charts";
+          if (id.includes("jspdf") || id.includes("html2canvas")) return "vendor-pdf";
+          if (id.includes("framer-motion")) return "vendor-motion";
+          if (id.includes("date-fns")) return "vendor-date";
+          // React, TanStack, Zustand, Sonner, Zod and all other node_modules
+          // stay in a single vendor chunk to avoid circular dependencies
+          // between React-dependent libraries.
         },
       },
     },

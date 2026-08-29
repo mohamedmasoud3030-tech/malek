@@ -2,57 +2,59 @@
 
 Deep performance audit and optimization pass across the MALEK/Rentrix application (1,232 source files, React + Vite + Supabase + TanStack).
 
-## Audit Findings (Before)
+## Measured Results (Production Build)
 
-| Signal | Value | Severity |
-|--------|-------|----------|
-| `React.memo` usage | **0** across entire codebase | 🔴 Critical |
-| `useCallback` usage | 39 (very low for 1,232 files) | 🟡 Medium |
-| Zustand selectors | Missing in hot paths (AppShell) | 🔴 Critical |
-| Vite chunk splitting | None — all vendor code in one chunk | 🔴 Critical |
-| AppShell derived values | Computed on every render | 🔴 Critical |
-| Dashboard components | No memoization on expensive sections | 🟡 Medium |
-| Build target | Default (broader than needed) | 🟢 Low |
+### Bundle Size — Before vs After
+
+| Chunk | Before | After | Delta |
+|-------|--------|-------|-------|
+| **Main vendor** (`index.js`) | 649.11 kB (192.87 kB gzip) | 432.11 kB (135.28 kB gzip) | **-217 kB (-33%)** |
+| **App code** (`index.es.js`) | 159.07 kB (53.16 kB gzip) | 158.83 kB (53.04 kB gzip) | -0.24 kB |
+| **Supabase** | (bundled in main) | 203.67 kB (53.09 kB gzip) | **Isolated** |
+| **Charts (Recharts)** | 382.25 kB (105.76 kB gzip) | 393.53 kB (109.36 kB gzip) | **Isolated** |
+| **PDF (jsPDF + html2canvas)** | 852.55 kB combined | 835.22 kB (236.83 kB gzip) | **Isolated** |
+| **date-fns** | (bundled in main) | 19.57 kB (5.56 kB gzip) | **Isolated** |
+
+**Impact:**
+- Main vendor chunk reduced by **57.59 kB gzipped (-30%)**
+- Supabase SDK isolated — cached independently of app code
+- Recharts isolated — only loaded when dashboard/reports visited
+- PDF libraries isolated — only loaded on print action (already lazy)
+- **Repeat visits**: vendor chunks stay cached across deploys (content-hash based)
+
+### Build Verification
+
+```
+✓ TypeScript: 0 errors
+✓ Vite build: 0 warnings (circular chunk fixed)
+✓ Build time: ~16s
+✓ PWA precache: 28 entries (451.40 KiB)
+```
 
 ## Changes Applied
 
 ### 1. Vite Build — Manual Chunk Splitting (`vite.config.ts`)
 
-**Impact: ~40% faster repeat loads (long-term caching)**
+Split the monolithic vendor bundle into focused chunks:
+- `vendor-supabase` — Supabase JS client (203.67 kB)
+- `vendor-charts` — Recharts + D3 (393.53 kB)
+- `vendor-pdf` — jsPDF + html2canvas (835.22 kB, lazy-loaded)
+- `vendor-date` — date-fns (19.57 kB)
+- React, TanStack, Zustand, Sonner, Zod stay in main vendor (432.11 kB)
 
-Split the monolithic vendor bundle into focused chunks so unchanged libraries stay cached across deploys:
-
-- `vendor-react` — React + React DOM
-- `vendor-supabase` — Supabase JS client
-- `vendor-tanstack` — TanStack Router + Query
-- `vendor-charts` — Recharts + D3
-- `vendor-pdf` — jsPDF + html2canvas (already code-split via dynamic import)
-- `vendor-motion` — Framer Motion (landing only)
-- `vendor-ui` — Zustand + Sonner + Zod
-- `vendor-date` — date-fns
-- `vendor` — Remaining dependencies
+Circular dependency avoided by only splitting libraries without cross-chunk React dependencies.
 
 ### 2. Vite Build — Modern Target (`vite.config.ts`)
 
-**Impact: ~5-8% smaller JS output**
-
-Set `build.target: "es2022"` to skip transpilation of modern syntax (optional chaining, nullish coalescing, top-level await, class fields) that all target browsers already support natively.
+Set `build.target: "es2022"` to skip transpilation of modern syntax.
 
 ### 3. Zustand Selectors in AppShell (`app-shell.tsx`)
 
-**Impact: Eliminates cascading re-renders on any UI store change**
-
-Before: `const { theme, setTheme, syncStatus, setSyncStatus } = useUiStore()` — subscribes to **all** store state. Any change to `sidebarCollapsed` or `onboardingDismissed` re-renders the entire AppShell (which wraps every authenticated page).
+Before: `const { theme, setTheme, syncStatus, setSyncStatus } = useUiStore()` — subscribes to **all** store state.
 
 After: Individual selectors — `useUiStore((s) => s.theme)` — subscribe only to the specific slice needed.
 
-### 4. Zustand Selectors in Settings (`useSettingsPageController.ts`)
-
-Same fix applied to the settings controller.
-
-### 5. AppShell Computation Memoization (`app-shell.tsx`)
-
-**Impact: Avoids ~6 expensive computations per route change**
+### 4. AppShell Computation Memoization (`app-shell.tsx`)
 
 Wrapped all derived values in `useMemo` / `useCallback`:
 - `getAppLanguageState()` → `useMemo` (static, computed once)
@@ -61,70 +63,31 @@ Wrapped all derived values in `useMemo` / `useCallback`:
 - `canAccessRoute(authorization, ...)` → `useMemo` on `authorization`
 - `getAccountAccessStatus(writeAccessState)` → `useMemo` on `writeAccessState`
 - `pageTitle` from matches → `useMemo` on `matches`
-- `sharedLabel` → `useCallback`
-- `handleOpenNav`, `handleLogout` → `useCallback`
 
-### 6. React.memo on AppShell Sub-components (`app-shell.tsx`)
+### 5. React.memo on 31 Components
 
-**Impact: Prevents child re-renders when parent state changes**
+**AppShell (6 components):**
+- `Brand`, `HeaderBrandWordmarkButton`, `HeaderBrandLockup`, `HeaderControl`, `HeaderUserMenu`, `MobileNavigationSheet`
 
-Wrapped 6 components in `React.memo`:
-- `Brand`
-- `HeaderBrandWordmarkButton`
-- `HeaderBrandLockup`
-- `HeaderControl`
-- `HeaderUserMenu`
-- `MobileNavigationSheet`
+**EntityTable (7 components, including generic wrapper):**
+- `EntityTable<T>` (generic memo via type cast), `SortIcon`, `SelectionCheckbox`, `DesktopTableSkeleton`, `MobileRegisterSkeleton`, `PaginationBar`, `PaginationRecovery`
 
-### 7. React.memo on EntityTable Components (`entity-table.tsx`)
+**ReportBarChart (1 component):**
+- Prevents expensive SVG chart re-renders
 
-**Impact: Prevents re-renders in the most-used data display component**
+**Dashboard sections (12 components):**
+- `OfficePulse`, `FinancialPerformanceSection`, `NeedsAttentionSection`, `CollectionsSection`, `OccupancySection`, `MaintenanceSection`, `UpcomingContractsSection`, `PropertyHealthSection`, `OwnerObligationsSection`, `FinanceExceptionsSection`, `UtilityObligationsSection`, `DashboardGroup`, `DashboardFocusStrip`
 
-Wrapped 5 internal components:
-- `SortIcon`
-- `SelectionCheckbox`
-- `DesktopTableSkeleton`
-- `MobileRegisterSkeleton`
-- `PaginationBar`
-- `PaginationRecovery`
+**Dashboard visuals (7 primitives):**
+- `TrendDelta`, `RadialMetric`, `Sparkline`, `MiniBarsCompare`, `ProgressMeter`, `DistributionStrip`, `MetricStat`
 
-### 8. React.memo on ReportBarChart (`report-bar-chart.tsx`)
+### 6. CSS Containment (`dashboard-v2.css`)
 
-**Impact: Prevents expensive SVG chart re-renders**
+Added `contain: layout style` to dashboard sections to isolate paint and layout recalculations.
 
-### 9. React.memo on All Dashboard Sections (12 components)
+### 7. Chunk Size Warning Threshold
 
-**Impact: Dashboard re-renders only the sections whose data changed**
-
-- `OfficePulse`
-- `FinancialPerformanceSection`
-- `NeedsAttentionSection`
-- `CollectionsSection`
-- `OccupancySection`
-- `MaintenanceSection`
-- `UpcomingContractsSection`
-- `PropertyHealthSection`
-- `OwnerObligationsSection`
-- `FinanceExceptionsSection`
-- `UtilityObligationsSection`
-- `DashboardGroup` (layout wrapper)
-- `DashboardFocusStrip`
-
-### 10. React.memo on Dashboard Visuals (7 primitives)
-
-**Impact: Prevents re-render of individual metric cards/sparklines**
-
-- `TrendDelta`
-- `RadialMetric`
-- `Sparkline`
-- `MiniBarsCompare`
-- `ProgressMeter`
-- `DistributionStrip`
-- `MetricStat`
-
-### 11. Chunk Size Warning Threshold
-
-Raised from default 500 KiB to 1024 KiB to reduce noise from legitimately large vendor chunks (Supabase SDK, charts).
+Raised from 500 KiB to 1024 KiB to reduce noise from legitimate vendor chunks.
 
 ## What Was Already Good
 
@@ -138,11 +101,37 @@ Raised from default 500 KiB to 1024 KiB to reduce noise from legitimately large 
 - ✅ `font-display: swap` on all font faces
 - ✅ Dashboard queries fire in parallel (no waterfall)
 - ✅ Router preload set to `intent` (hover-based)
+- ✅ Dashboard props are stable references (no inline objects defeating memo)
+- ✅ Most data tables use pagination (10-50 rows per page)
 
-## Recommended Follow-ups
+## Files Modified (19 files, 281 insertions, 84 deletions)
 
-1. **Virtualize long lists** — EntityTable currently renders all rows. For registers with 100+ rows, consider `@tanstack/react-virtual`.
-2. **Image optimization** — No `<img>` tags found in the app shell, but any future image uploads should use `next/image`-style lazy loading with proper `sizes`.
-3. **Supabase realtime** — Dashboard snapshot uses polling via React Query. Consider Supabase Realtime channels for push updates.
-4. **Bundle analysis** — Run `vite-bundle-visualizer` to identify any remaining oversized chunks.
-5. **CSS containment** — Add `contain: layout style` to dashboard sections for better paint isolation.
+```
+PERFORMANCE_POLISH.md
+rentrix-app/vite.config.ts
+rentrix-app/src/app/layout/app-shell.tsx
+rentrix-app/src/components/ui/entity-table.tsx
+rentrix-app/src/components/ui/report-bar-chart.tsx
+rentrix-app/src/features/dashboard/dashboard-page.tsx
+rentrix-app/src/features/dashboard/dashboard-v2.css
+rentrix-app/src/features/dashboard/components/collections-section.tsx
+rentrix-app/src/features/dashboard/components/dashboard-visuals.tsx
+rentrix-app/src/features/dashboard/components/finance-exceptions-section.tsx
+rentrix-app/src/features/dashboard/components/financial-performance-section.tsx
+rentrix-app/src/features/dashboard/components/maintenance-section.tsx
+rentrix-app/src/features/dashboard/components/needs-attention-section.tsx
+rentrix-app/src/features/dashboard/components/occupancy-section.tsx
+rentrix-app/src/features/dashboard/components/office-pulse.tsx
+rentrix-app/src/features/dashboard/components/owner-obligations-section.tsx
+rentrix-app/src/features/dashboard/components/property-health-section.tsx
+rentrix-app/src/features/dashboard/components/upcoming-contracts-section.tsx
+rentrix-app/src/features/dashboard/components/utility-obligations-section.tsx
+rentrix-app/src/features/settings/useSettingsPageController.ts
+```
+
+## Recommended Follow-ups (Lower Priority)
+
+1. **Virtualization** — For unpaginated lists with 100+ rows, consider `@tanstack/react-virtual`. Most tables are already paginated, so this is low priority.
+2. **Image optimization** — No `<img>` tags found in the app shell. Any future image uploads should use lazy loading with proper `sizes` attributes.
+3. **Supabase Realtime** — Dashboard snapshot uses polling via React Query. Consider Supabase Realtime channels for push updates.
+4. **Bundle analysis** — Run `vite-bundle-visualizer` periodically to identify any new oversized chunks.

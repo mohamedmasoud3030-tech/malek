@@ -441,7 +441,7 @@ function MobileRegisterListItem<T>({
   );
 }
 
-export function EntityTable<T>({
+function EntityTableImpl<T>({
   rows,
   columns,
   keyOf,
@@ -798,3 +798,10 @@ export function EntityTable<T>({
     </div>
   );
 }
+
+/**
+ * Memoised generic wrapper — preserves the `EntityTable<T>` call signature
+ * while allowing React to skip re-renders when the row list and column
+ * definitions are referentially stable.
+ */
+export const EntityTable = memo(EntityTableImpl) as typeof EntityTableImpl;
