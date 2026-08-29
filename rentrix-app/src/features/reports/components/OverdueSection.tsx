@@ -8,7 +8,7 @@ import { documentService } from '@/services/documents/DocumentService';
 import { runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
 import { toReportDocumentPayload, type ReportDocumentData } from '@/services/documents/documentPayloadAdapters';
 import { agingBucketKeys, buildAgingBucketChartRows, buildReportCsvFilename, downloadCsv, getTodayLocalDateString } from '../reports-page.helpers';
-import { ReportColumns, ReportInsightNote, ReportProgress } from './report-section-primitives';
+import { ReportColumns, ReportInsightNote, ReportProgress, ReportSummaryStrip } from './report-section-primitives';
 import { AgingBucketsPanel } from './overdue/aging-buckets-panel';
 import { getAgingLabel, OverdueInvoicesPanel } from './overdue/overdue-invoices-panel';
 import { formatLatinNumber } from '@/lib/formatters';
@@ -146,23 +146,22 @@ export function OverdueSection({ rows, agedReport, summary, canExportReports, is
   ) : undefined;
 
   return (
-    <div className="space-y-4">
-      <div
-        className="grid grid-cols-2 overflow-hidden rounded-xl border border-border/80 bg-card sm:grid-cols-4"
-        data-report-summary="overdue"
-        aria-label="ملخص المتأخرات"
-      >
-        <OverdueMetric label="إجمالي المتأخر" value={formatMoney(totalOverdue)} helper="رصيد يحتاج تحصيل" />
-        <OverdueMetric label="الفواتير المتأخرة" value={formatLatinNumber((summary?.overdueInvoiceCount ?? rows.length), 'ar')} helper="فواتير مفتوحة" />
-        <OverdueMetric label="متوسط التأخير" value={`${formatLatinNumber(Math.round(averageDelay), 'ar')} يوم`} helper="متوسط عمر المتأخر" />
-        <OverdueMetric label="أكثر من 90 يوم" value={formatMoney(over90Amount)} helper={`${formatLatinNumber(over90Count, 'ar')} عالية المخاطر`} />
-      </div>
+    <div className="space-y-3">
+      <ReportSummaryStrip
+        dataReportSummary="overdue"
+        items={[
+          { label: 'إجمالي المتأخر', value: formatMoney(totalOverdue), detail: 'رصيد يحتاج تحصيل' },
+          { label: 'الفواتير المتأخرة', value: formatLatinNumber((summary?.overdueInvoiceCount ?? rows.length), 'ar'), detail: 'فواتير مفتوحة' },
+          { label: 'متوسط التأخير', value: `${formatLatinNumber(Math.round(averageDelay), 'ar')} يوم`, detail: 'متوسط عمر المتأخر' },
+          { label: 'أكثر من 90 يوم', value: formatMoney(over90Amount), detail: `${formatLatinNumber(over90Count, 'ar')} عالية المخاطر`, tone: over90Share > 40 ? 'critical' : undefined },
+        ]}
+      />
 
       <OverdueInvoicesPanel rows={rows} action={invoiceActions} isLoading={isLoading} />
 
       <ReportColumns>
         <AgingBucketsPanel rows={bucketRows} action={agingAction} isLoading={isLoading} />
-        <div className="space-y-4">
+        <div className="space-y-3">
           <div className="grid gap-3 sm:grid-cols-2">
             <ReportProgress
               label="تركيز الذمم القديمة"
@@ -186,16 +185,6 @@ export function OverdueSection({ rows, agedReport, summary, canExportReports, is
           </ReportInsightNote>
         </div>
       </ReportColumns>
-    </div>
-  );
-}
-
-function OverdueMetric({ label, value, helper }: Readonly<{ label: string; value: string; helper: string }>) {
-  return (
-    <div className="min-w-0 border-b border-border/70 px-3 py-3 odd:border-e sm:border-b-0 sm:border-e sm:last:border-e-0">
-      <p className="text-[11px] font-bold text-muted-foreground sm:text-xs">{label}</p>
-      <p className="mt-1 truncate text-base font-black tabular-nums sm:text-lg" dir="ltr">{value}</p>
-      <p className="mt-1 truncate text-[11px] font-semibold text-muted-foreground">{helper}</p>
     </div>
   );
 }

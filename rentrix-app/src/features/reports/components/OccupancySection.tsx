@@ -17,8 +17,8 @@ import {
   ReportList,
   ReportListRow,
   ReportPanel,
-  ReportProgress,
   ReportState,
+  ReportSummaryStrip,
 } from './report-section-primitives';
 import { formatLatinNumber } from '@/lib/formatters';
 import { ReportShareActions } from './ReportShareActions';
@@ -116,32 +116,16 @@ export function OccupancySection({
   };
 
   return (
-    <div className="space-y-4">
-      <div
-        className="grid grid-cols-2 overflow-hidden rounded-xl border border-border/80 bg-card sm:grid-cols-4"
-        data-report-summary="occupancy"
-        aria-label="ملخص الإشغال والشغور"
-      >
-        <OccupancyMetric label="نسبة الإشغال" value={`${roundedOccupancyRate}%`} helper={`${number(vacancyAnalytics.occupiedUnits)} من ${number(totalUnits)} وحدة`} />
-        <OccupancyMetric label="نسبة الشغور" value={`${roundedVacancyRate}%`} helper={`${number(vacancyAnalytics.availableUnits)} متاحة للتأجير`} />
-        <OccupancyMetric label="متوسط أيام الشغور" value={historyComplete ? `${number(vacancyAnalytics.averageVacancyDays)} يوم` : '—'} helper={historyComplete && longestVacant ? `الأطول ${number(longestVacant.daysVacant)} يوم` : 'يتطلب تاريخ عقود كامل'} />
-        <OccupancyMetric label="إيجار مرجعي للشواغر" value={money(vacancyAnalytics.referenceVacantRent)} helper="سعر مرجعي وليس إيرادًا محققًا" />
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-2">
-        <ReportProgress
-          label="إشغال المحفظة"
-          value={occupancyRate}
-          helper={`${number(vacancyAnalytics.occupiedUnits)} مشغولة من ${number(totalUnits)} وحدة`}
-          tone={occupancyRate >= 90 ? 'good' : occupancyRate >= 75 ? 'warning' : 'critical'}
-        />
-        <ReportProgress
-          label="الشغور الحقيقي"
-          value={vacancyRate}
-          helper={`${number(vacancyAnalytics.availableUnits)} متاحة · ${number(vacancyAnalytics.nonRentableUnits)} محجوزة/صيانة خارج الشغور`}
-          tone={vacancyRate <= 5 ? 'good' : vacancyRate <= 15 ? 'warning' : 'critical'}
-        />
-      </div>
+    <div className="space-y-3">
+      <ReportSummaryStrip
+        dataReportSummary="occupancy"
+        items={[
+          { label: 'نسبة الإشغال', value: `${roundedOccupancyRate}%`, detail: `${number(vacancyAnalytics.occupiedUnits)} من ${number(totalUnits)} وحدة`, tone: occupancyRate >= 90 ? 'good' : occupancyRate < 75 ? 'warning' : undefined },
+          { label: 'نسبة الشغور', value: `${roundedVacancyRate}%`, detail: `${number(vacancyAnalytics.availableUnits)} متاحة للتأجير` },
+          { label: 'متوسط أيام الشغور', value: historyComplete ? `${number(vacancyAnalytics.averageVacancyDays)} يوم` : '—', detail: historyComplete && longestVacant ? `الأطول ${number(longestVacant.daysVacant)} يوم` : 'يتطلب تاريخ عقود كامل' },
+          { label: 'إيجار مرجعي للشواغر', value: money(vacancyAnalytics.referenceVacantRent), detail: 'سعر مرجعي وليس إيرادًا محققًا' },
+        ]}
+      />
 
       <ReportInsightNote title="تغير الإشغال مقارنة بالشهر السابق">
         {!historyComplete
@@ -262,12 +246,3 @@ export function OccupancySection({
   );
 }
 
-function OccupancyMetric({ label, value, helper }: Readonly<{ label: string; value: string; helper: string }>) {
-  return (
-    <div className="min-w-0 border-b border-border/70 px-3 py-3 odd:border-e sm:border-b-0 sm:border-e sm:last:border-e-0">
-      <p className="text-[11px] font-bold text-muted-foreground sm:text-xs">{label}</p>
-      <p className="mt-1 truncate text-base font-black tabular-nums sm:text-lg" dir="ltr">{value}</p>
-      <p className="mt-1 truncate text-[11px] font-semibold text-muted-foreground">{helper}</p>
-    </div>
-  );
-}

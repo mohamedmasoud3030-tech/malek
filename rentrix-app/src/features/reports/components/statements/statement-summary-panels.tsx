@@ -5,7 +5,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { formatMoney } from '@/features/financials/components/financials-formatters';
 import type { CashFlowReport } from '@/features/accounting/wp05Services';
 import type { VatReturnReport } from '@/features/financials/reports/financial-statements-service';
-import { ReportColumns, ReportPanel, ReportPanelSkeleton } from '../report-section-primitives';
+import { ReportColumns, ReportPanel, ReportPanelSkeleton, ReportSummaryStrip } from '../report-section-primitives';
 import { formatLatinNumber } from '@/lib/formatters';
 
 export function StatementSelectionStrip({
@@ -71,12 +71,17 @@ export function OfficeSummaryPanel({
       description="الفواتير والتحصيلات والمصروفات والرصيد داخل الفترة؛ ملخص تشغيلي وليس قائمة دخل أو تدفق نقدي."
       icon={Landmark}
     >
-      <ResponsiveCardGrid className="p-4" gap="sm">
-        <KpiCard label="فواتير الفترة" value={formatMoney(invoiced)} icon={ReceiptText} sub={`${formatLatinNumber(invoicesCount, 'ar')} فواتير`} compact />
-        <KpiCard label="تحصيلات الفترة" value={formatMoney(collections)} icon={WalletCards} sub={`${formatLatinNumber(paymentsCount, 'ar')} مدفوعات`} compact />
-        <KpiCard label="مصروفات الفترة" value={formatMoney(expenses)} icon={WalletCards} sub={`${formatLatinNumber(expensesCount, 'ar')} مصروفات`} compact />
-        <KpiCard label="الرصيد المستحق" value={formatMoney(outstanding)} icon={Scale} sub={`${formatLatinNumber(receiptsCount, 'ar')} إيصالات`} compact />
-      </ResponsiveCardGrid>
+      <div className="p-4">
+        <ReportSummaryStrip
+          dataReportSummary="office-movement"
+          items={[
+            { label: 'فواتير الفترة', value: formatMoney(invoiced), detail: `${formatLatinNumber(invoicesCount, 'ar')} فواتير` },
+            { label: 'تحصيلات الفترة', value: formatMoney(collections), detail: `${formatLatinNumber(paymentsCount, 'ar')} مدفوعات` },
+            { label: 'مصروفات الفترة', value: formatMoney(expenses), detail: `${formatLatinNumber(expensesCount, 'ar')} مصروفات` },
+            { label: 'الرصيد المستحق', value: formatMoney(outstanding), detail: `${formatLatinNumber(receiptsCount, 'ar')} إيصالات` },
+          ]}
+        />
+      </div>
     </ReportPanel>
   );
 }

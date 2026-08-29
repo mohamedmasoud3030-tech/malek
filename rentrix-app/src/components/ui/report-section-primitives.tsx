@@ -64,3 +64,44 @@ export function ReportProgress({ label, value, helper, tone = 'neutral' }: Reado
 export function ReportInsightNote({ title, children, className }: Readonly<{ title: string; children: React.ReactNode; className?: string }>) {
   return <div data-report-insight className={cn('rounded-2xl border border-primary/15 bg-primary/[0.045] p-4 text-sm leading-6', className)}><div className="flex items-center gap-2 text-primary"><Sparkles className="size-4" aria-hidden="true" /><p className="font-extrabold">{title}</p></div><div className="mt-2 text-muted-foreground">{children}</div></div>;
 }
+
+export type ReportSummaryItem = Readonly<{
+  label: string;
+  value: string;
+  detail?: string;
+  tone?: 'default' | 'good' | 'warning' | 'critical';
+}>;
+
+/**
+ * Compact contextual executive strip. One report, a handful of relevant figures,
+ * no dashboard card grid. Reads as a single quiet line under the report header;
+ * on mobile it collapses to a horizontally scrollable row.
+ */
+export function ReportSummaryStrip({ items, className, dataReportSummary }: Readonly<{ items: readonly ReportSummaryItem[]; className?: string; dataReportSummary?: string }>) {
+  return (
+    <div
+      data-report-summary={dataReportSummary}
+      className={cn('no-scrollbar -mx-1 flex items-stretch gap-x-1 overflow-x-auto px-1 sm:mx-0 sm:flex-wrap sm:gap-x-0 sm:overflow-visible sm:px-0', className)}
+    >
+      {items.map((item, index) => (
+        <div
+          key={item.label}
+          className={cn(
+            'min-w-max shrink-0 border-border/60 px-1 py-1 sm:px-3 sm:py-0',
+            'sm:border-e sm:last:border-e-0',
+            index > 0 && 'border-s sm:border-s-0',
+            item.tone === 'warning' && 'text-warning',
+            item.tone === 'critical' && 'text-danger',
+            item.tone === 'good' && 'text-success',
+          )}
+        >
+          <p className="text-[11px] font-bold leading-4 text-muted-foreground sm:text-xs">{item.label}</p>
+          <p className="mt-0.5 text-sm font-black leading-5 tabular-nums" dir="ltr">{item.value}</p>
+          {item.detail ? <p className="mt-0.5 whitespace-nowrap text-[11px] font-medium leading-4 text-muted-foreground">{item.detail}</p> : null}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+
