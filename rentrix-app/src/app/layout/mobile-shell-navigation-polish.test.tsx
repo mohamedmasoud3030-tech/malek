@@ -111,7 +111,7 @@ describe('MALEK mobile shell & navigation polish pass (Section O verification ma
       expect(monogram?.getAttribute('aria-haspopup')).toBe('dialog');
       expect(monogram?.querySelector('[data-malek-canonical-mark]')).not.toBeNull();
 
-      const wordmark = header?.querySelector<HTMLElement>('[data-malek-brand-wordmark]');
+      const wordmark = header?.querySelector<HTMLElement>('[data-header-wordmark]');
       expect(wordmark).not.toBeNull();
       expect(wordmark?.textContent).toContain('MALEK');
     });
@@ -195,7 +195,7 @@ describe('MALEK mobile shell & navigation polish pass (Section O verification ma
       expect(sheet).not.toBeNull();
       expect(document.querySelector('[data-mobile-nav-bottom-sheet]')).not.toBeNull();
       expect(sheet?.className).toContain('w-full');
-      expect(sheet?.className).toContain('rounded-t-[1.35rem]');
+      expect(sheet?.className).toContain('rounded-t-3xl');
       expect(sheet?.className).not.toContain('right-0');
       expect(sheet?.className).not.toContain('w-[85vw]');
 
@@ -330,12 +330,12 @@ describe('MALEK mobile shell & navigation polish pass (Section O verification ma
       expect(host.querySelector('[data-global-refresh]')).toBeNull();
     });
 
-    it('keeps compact mobile section gaps on the rebuilt dashboard page', () => {
-      const dashboardSource = readFileSync(resolve(process.cwd(), 'src/features/dashboard/dashboard-page.tsx'), 'utf8');
-      // The rebuilt dashboard keeps the compact vertical rhythm directly on
-      // its section wrapper (0.625rem) instead of a separate dashboard-v2.css.
-      expect(dashboardSource).toContain('space-y-2.5" aria-label={ariaLabel} data-dashboard-section={sectionId}');
-      expect(dashboardSource).toContain('<PageLayout size="wide"');
+    it('defines compact mobile section gaps in dashboard-v2.css', () => {
+      const dashboardCss = readFileSync(resolve(process.cwd(), 'src/features/dashboard/dashboard-v2.css'), 'utf8');
+      expect(dashboardCss).toContain('--dashboard-section-gap: 0.75rem');
+      expect(dashboardCss).toContain('--dashboard-cluster-gap: 0.5rem');
+      expect(dashboardCss).toContain('[data-dashboard-focus-strip]');
+      expect(dashboardCss).toContain("[data-dashboard-priority='attention']");
     });
   });
 
