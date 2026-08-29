@@ -242,6 +242,7 @@ export function MaintenanceList(props: MaintenanceListProps) {
           </div>
         )}
         keyOf={(row) => row.id}
+        mobileCardType="maintenance"
         mobileBadgeKey="status"
         mobileSummaryKeys={["attention", "priority", "location", "provider"]}
         mobileCardPrimaryAction={(row) => ({
