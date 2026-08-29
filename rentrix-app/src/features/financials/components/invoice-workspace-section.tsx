@@ -1,4 +1,4 @@
-import { AlertCircle, FileText } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { EntityPreviewDialog } from '@/components/ui/entity-preview-dialog';
@@ -21,39 +21,26 @@ function GenerateInvoicesDialog({ open, isGenerating, onOpenChange, onConfirm }:
       if (isGenerating) return;
       onOpenChange(nextOpen);
     }}>
-      <DialogContent className="max-h-[92dvh] overflow-y-auto sm:max-w-xl" dir="rtl">
+      <DialogContent className="max-h-[92dvh] overflow-y-auto sm:max-w-2xl" dir="rtl">
         <DialogHeader>
           <div className="flex items-start gap-3">
-            <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
-              <FileText className="size-6" aria-hidden="true" />
+            <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+              <FileText className="size-5" aria-hidden="true" />
             </span>
-            <div className="space-y-2">
-              <DialogTitle>توليد فواتير العقود النشطة</DialogTitle>
+            <div className="space-y-1.5">
+              <DialogTitle>إنشاء الفواتير المستحقة</DialogTitle>
               <DialogDescription>
-                سيبحث النظام عن العقود النشطة التي تحتاج فواتير دورية وينشئ الفواتير الناقصة فقط.
+                راجع الجاهزية هنا فقط عند إصدار الفواتير؛ النظام ينشئ الفواتير الناقصة للعقود المؤهلة ولا يسجل أي دفعة تلقائيًا.
               </DialogDescription>
             </div>
           </div>
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="rounded-2xl border bg-muted/30 p-4">
-            <p className="text-sm font-black">قبل المتابعة</p>
-            <ul className="mt-3 space-y-2 text-sm leading-6 text-muted-foreground">
-              <li className="flex gap-2"><span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary" aria-hidden="true" /><span>راجع العقود النشطة وتواريخ الاستحقاق قبل تشغيل التوليد.</span></li>
-              <li className="flex gap-2"><span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary" aria-hidden="true" /><span>لن يتم تسجيل أي دفعات أو إيصالات من هذه الخطوة.</span></li>
-              <li className="flex gap-2"><span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary" aria-hidden="true" /><span>بعد التوليد سيتم تحديث الفواتير ولوحات الملخص تلقائياً.</span></li>
-            </ul>
-          </div>
-
-          <div className="flex gap-3 rounded-2xl border border-warning/30 bg-warning/10 p-4 text-sm leading-6 text-warning">
-            <AlertCircle className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
-            <p>هذه عملية مالية جماعية. استخدمها عند جاهزية العقود النشطة للمراجعة الشهرية.</p>
-          </div>
-
+          <BillingReadinessSection />
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <Button variant="secondary" className="min-h-12" onClick={() => onOpenChange(false)} disabled={isGenerating}>إلغاء</Button>
-            <Button className="min-h-12" onClick={onConfirm} disabled={isGenerating}>{isGenerating ? 'جارٍ توليد الفواتير...' : 'تأكيد توليد الفواتير'}</Button>
+            <Button className="min-h-12" onClick={onConfirm} disabled={isGenerating}>{isGenerating ? 'جارٍ إنشاء الفواتير...' : 'إنشاء الفواتير الجاهزة'}</Button>
           </div>
         </div>
       </DialogContent>
@@ -66,14 +53,11 @@ export function InvoiceWorkspaceSection() {
 
   return (
     <>
-      <BillingReadinessSection />
       {!ctrl.isDocumentSettingsReady && <DocumentReadinessNotice />}
       <InvoiceListSection
-        summary={ctrl.summary}
         status={ctrl.status}
         invoiceSearch={ctrl.invoiceSearch}
         invoices={ctrl.invoices}
-        selectedInvoiceId={ctrl.selectedInvoiceId}
         isLoading={ctrl.invoicesQuery.isLoading}
         isError={ctrl.invoicesQuery.isError}
         error={ctrl.invoicesQuery.error}
@@ -114,8 +98,10 @@ export function InvoiceWorkspaceSection() {
       <EntityPreviewDialog
         open={Boolean(ctrl.selectedInvoiceId)}
         onOpenChange={(open) => { if (!open) ctrl.setSelectedInvoiceId(''); }}
-        title="معاينة الفاتورة"
-        description={ctrl.invoiceDetail ? `${ctrl.invoiceDetail.reference ?? 'فاتورة بلا مرجع'} — التفاصيل والتحصيل بدون مغادرة سجل الفواتير.` : 'تحميل تفاصيل الفاتورة...'}
+        title="الفاتورة والتحصيل"
+        description={ctrl.invoiceDetail
+          ? `${ctrl.invoiceDetail.contracts?.people?.full_name ?? 'مستأجر غير محدد'} · ${ctrl.invoiceDetail.contracts?.properties?.title ?? 'عقار غير محدد'} · ${ctrl.invoiceDetail.reference ?? 'فاتورة بلا مرجع'}`
+          : 'تحميل بيانات الفاتورة...'}
       >
         <InvoiceDetailSection
           selectedInvoiceId={ctrl.selectedInvoiceId}
