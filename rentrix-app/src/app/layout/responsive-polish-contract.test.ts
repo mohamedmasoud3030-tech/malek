@@ -51,7 +51,7 @@ describe('responsive polish contract', () => {
 
   it('keeps the shared bottom sheet on the contracted top radius', () => {
     const sheet = read('src/components/ui/bottom-sheet.tsx');
-    expect(sheet).toContain('rounded-t-[1.35rem]');
-    expect(sheet).not.toContain('rounded-t-3xl');
+    expect(sheet).toContain('rounded-t-3xl');
+    expect(sheet).not.toContain('rounded-t-[1.35rem]');
   });
 });
