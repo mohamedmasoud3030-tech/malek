@@ -13,9 +13,11 @@ type SectionTabsProps<TId extends string> = Readonly<{
   onChange: (id: NoInfer<TId>) => void;
   ariaLabel: string;
   /**
-   * ID of the tabpanel this tab list controls. When unset each tab's
-   * aria-controls is `section-panel-${item.id}` (one panel per tab). View
-   * switchers that share a single panel must pass the real panel id.
+   * ID of the single tabpanel this tab list controls. That panel is always
+   * rendered, so every tab may reference it. When unset the tabs use the
+   * one-panel-per-tab scheme `${idPrefix}-panel-${item.id}`; see the
+   * `aria-controls` note on the tab below for why only the active tab
+   * advertises it.
    */
   panelId?: string;
   /** Keep the active label visible on phones while inactive tabs collapse to icons. */
@@ -91,7 +93,17 @@ export function SectionTabs<TId extends string>({
               role="tab"
               tabIndex={isActive ? 0 : -1}
               aria-selected={isActive}
-              aria-controls={panelId ?? `${idPrefix}-panel-${item.id}`}
+              /*
+               * `aria-controls` must reference an element that exists (WCAG
+               * 4.1.2 / axe `aria-valid-attr-value`). With the shared
+               * `panelId` the panel is always rendered, so every tab can point
+               * at it. With one panel per tab, consumers mount only the active
+               * panel — `GovernanceHubWorkspace` and `ContractDetailWorkspace`
+               * both do — so inactive tabs would otherwise reference ids that
+               * are not in the DOM. Only the active tab advertises the
+               * relationship in that mode.
+               */
+              aria-controls={panelId ?? (isActive ? `${idPrefix}-panel-${item.id}` : undefined)}
               aria-label={compactMobile ? item.label : undefined}
               id={`${idPrefix}-tab-${item.id}`}
               className={cn(
@@ -115,13 +127,29 @@ export function SectionTabs<TId extends string>({
 type SectionTabPanelProps<TId extends string> = Readonly<{
   id: TId;
   activeId: TId;
+  /**
+   * Must match the `idPrefix` given to the paired `SectionTabs`, otherwise the
+   * tab's `aria-controls` and this panel's `aria-labelledby` point at ids that
+   * do not exist.
+   */
+  idPrefix?: string;
   children: ReactNode;
 }>;
 
 /** Renders children only when id === activeId; otherwise sets `hidden`. */
-export function SectionTabPanel<TId extends string>({ id, activeId, children }: SectionTabPanelProps<TId>) {
+export function SectionTabPanel<TId extends string>({
+  id,
+  activeId,
+  idPrefix = 'section',
+  children,
+}: SectionTabPanelProps<TId>) {
   return (
-    <div id={`section-panel-${id}`} role="tabpanel" aria-labelledby={`section-tab-${id}`} hidden={activeId !== id}>
+    <div
+      id={`${idPrefix}-panel-${id}`}
+      role="tabpanel"
+      aria-labelledby={`${idPrefix}-tab-${id}`}
+      hidden={activeId !== id}
+    >
       {children}
     </div>
   );

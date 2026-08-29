@@ -25,7 +25,10 @@ describe('shared entity form composition', () => {
     expect(html).toContain('<label');
     expect(html).toContain('data-entity-form-field');
     expect(html).toContain('الاسم');
-    expect(html).toContain('<input name="name"/>');
+    expect(html).toContain('name="name"');
+    // The control is labelled by the label text alone, so its accessible name
+    // never absorbs the surrounding description/error copy.
+    expect(html).toMatch(/<input aria-labelledby="[^"]+" name="name"\/>/);
   });
 
   it('owns optional field guidance and accessible validation errors', () => {
@@ -43,6 +46,22 @@ describe('shared entity form composition', () => {
     expect(html).toContain('role="alert"');
     expect(html).toContain('data-field-error');
     expect(html).toContain('رقم العقد مطلوب');
+
+    // Guidance and validation copy must reach the control as *description*,
+    // not by being folded into its accessible name, and the error must be
+    // exposed as state rather than colour alone.
+    document.body.innerHTML = html;
+    const control = document.querySelector('input[name="contract_number"]');
+    expect(control?.getAttribute('aria-invalid')).toBe('true');
+
+    const describedBy = control?.getAttribute('aria-describedby')?.split(' ') ?? [];
+    const describedText = describedBy.map((id) => document.getElementById(id)?.textContent);
+    expect(describedText).toContain('يجب أن يكون فريدًا.');
+    expect(describedText).toContain('رقم العقد مطلوب');
+
+    const labelledBy = control?.getAttribute('aria-labelledby');
+    expect(labelledBy).toBeTruthy();
+    expect(document.getElementById(labelledBy!)?.textContent).toBe('رقم العقد');
   });
 
   it('groups form sections with separators instead of stacked mini-cards', () => {

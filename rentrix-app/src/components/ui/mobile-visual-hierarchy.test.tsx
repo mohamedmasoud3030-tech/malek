@@ -93,7 +93,12 @@ describe('mobile visual hierarchy contract', () => {
     const card = host.querySelector<HTMLElement>('[data-entity-card]');
     const stats = Array.from(host.querySelectorAll('span')).find((node) => node.textContent === '1,250 ر.ع');
     const meta = Array.from(host.querySelectorAll('span')).find((node) => node.textContent === '90000000');
-    const actionButtons = Array.from(host.querySelectorAll('button'));
+    // The card body is its own button (record actions must not be nested
+    // inside it), so the record actions are the buttons outside that region.
+    const cardPrimary = host.querySelector<HTMLButtonElement>('[data-entity-card-primary]');
+    const actionButtons = Array.from(host.querySelectorAll('button')).filter(
+      (button) => button !== cardPrimary && !cardPrimary?.contains(button),
+    );
     const actionsContainer = actionButtons[0]?.parentElement;
 
     expect(card).not.toBeNull();

@@ -176,6 +176,9 @@ importers:
       autoprefixer:
         specifier: ^10.5.0
         version: 10.5.0(postcss@8.5.13)
+      axe-core:
+        specifier: 4.12.1
+        version: 4.12.1
       class-variance-authority:
         specifier: 'catalog:'
         version: 0.7.1

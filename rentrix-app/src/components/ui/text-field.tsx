@@ -54,16 +54,24 @@ export function FieldShell({
 }: FieldShellProps) {
   const generatedId = useId();
   const controlId = id ?? generatedId;
-  const descriptionId = description ? `${controlId}-description` : undefined;
-  const errorId = error ? `${controlId}-error` : undefined;
-  const warningId = warning && !error ? `${controlId}-warning` : undefined;
-  const successId = success && !error && !warning ? `${controlId}-success` : undefined;
-  const describedBy = [descriptionId, errorId, warningId, successId].filter(Boolean).join(' ') || undefined;
   const state = resolveState(error, warning, success);
 
   const hasAffix = Boolean(leadingIcon || trailingIcon || trailingAction || loading);
 
   const message = error ?? warning ?? success;
+
+  /*
+   * `aria-describedby` may only reference elements that are actually rendered
+   * (WCAG 4.1.2 / axe `aria-valid-attr-value`). The description paragraph is
+   * suppressed while a message is shown, so its id must drop out of the
+   * description list at the same time — otherwise a field in error advertises
+   * a description that does not exist and the reference resolves to nothing.
+   */
+  const descriptionId = description && !message ? `${controlId}-description` : undefined;
+  const errorId = error ? `${controlId}-error` : undefined;
+  const warningId = warning && !error ? `${controlId}-warning` : undefined;
+  const successId = success && !error && !warning ? `${controlId}-success` : undefined;
+  const describedBy = [descriptionId, errorId, warningId, successId].filter(Boolean).join(' ') || undefined;
   const messageTone =
     state === 'error'
       ? 'text-destructive'
