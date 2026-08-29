@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft, HandCoins } from 'lucide-react';
 import { formatCompanyMoney } from '@/lib/companyFormatters';
@@ -21,7 +22,7 @@ interface OwnerObligationsSectionProps {
  * never office profit; the numbers are the snapshot KPIs rendered as-is, and
  * the next action is the canonical settlements workspace.
  */
-export function OwnerObligationsSection({ snapshot, isLoading, settings }: OwnerObligationsSectionProps) {
+export const OwnerObligationsSection = memo(function OwnerObligationsSection({ snapshot, isLoading, settings }: OwnerObligationsSectionProps) {
   const payable = snapshot?.ownerFunds.netPayable ?? 0;
   const drafts = snapshot?.ownerFunds.settlementsDraft ?? 0;
   const approved = snapshot?.ownerFunds.settlementsApproved ?? 0;
@@ -81,4 +82,4 @@ export function OwnerObligationsSection({ snapshot, isLoading, settings }: Owner
       )}
     </DashboardSignalPanel>
   );
-}
+});

@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { MONEY_STEP } from '@/lib/money';
 import {
   Banknote,
@@ -391,7 +392,7 @@ function BankStatementLinesTable({
   onMatch: (line: BankStatementLine) => void;
   isIgnoring: boolean;
 }>) {
-  const columns: ColumnDef<BankStatementLine>[] = [
+  const columns = useMemo((): ColumnDef<BankStatementLine>[] => [
     { key: 'date', header: 'التاريخ', priority: 'secondary', render: (line) => formatDate(companySettings, line.transaction_date) },
     { key: 'description', header: 'الوصف', priority: 'identity', render: (line) => <span className="font-bold">{line.description}</span> },
     { key: 'reference', header: 'المرجع', priority: 'detail', render: (line) => line.reference ?? '—' },
@@ -418,7 +419,7 @@ function BankStatementLinesTable({
         </div>
       ) : '—'),
     },
-  ];
+  ], []);
 
   return (
     <EntityTable

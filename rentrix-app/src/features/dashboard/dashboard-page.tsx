@@ -1,5 +1,5 @@
 import './dashboard-v2.css';
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { DataRefreshAlert } from '@/components/data-refresh-alert';
 import { PageHeader } from '@/components/layout/page-header';
@@ -66,7 +66,7 @@ function formatDashboardFocusValue(value: string | number | undefined): string {
   return String(value);
 }
 
-function DashboardFocusStrip({
+const DashboardFocusStrip = memo(function DashboardFocusStrip({
   snapshot,
   needsAttention,
 }: Readonly<{
@@ -125,9 +125,9 @@ function DashboardFocusStrip({
       </div>
     </nav>
   );
-}
+});
 
-function DashboardGroup({
+const DashboardGroup = memo(function DashboardGroup({
   eyebrow,
   title,
   ariaLabel,
@@ -160,7 +160,7 @@ function DashboardGroup({
       {children}
     </section>
   );
-}
+});
 
 /**
  * MALEK Property Office Command Center.

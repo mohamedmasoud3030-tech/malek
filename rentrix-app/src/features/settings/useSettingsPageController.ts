@@ -27,7 +27,8 @@ import {
  * controller stays reusable in standalone and embedded settings surfaces.
  */
 export function useSettingsPageController() {
-  const { theme, setTheme } = useUiStore();
+  const theme = useUiStore((s) => s.theme);
+  const setTheme = useUiStore((s) => s.setTheme);
   const { authorization, authorizationDiagnostics, user } = useAuth();
   const companySettingsQuery = useCompanySettings();
   const updateCompanySettingsMutation = useUpdateCompanySettings();

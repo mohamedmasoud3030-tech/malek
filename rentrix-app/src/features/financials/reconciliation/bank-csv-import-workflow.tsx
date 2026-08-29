@@ -516,7 +516,7 @@ export function BankCsvImportWorkflow({ open, onOpenChange, defaultBankAccountId
         ) : null}
 
         {step === 'completed' ? (
-          <div className="mt-3 flex justify-end gap-2">
+          <div className="mt-3 flex flex-wrap justify-end gap-2">
             <Button type="button" variant="secondary" onClick={() => handleOpenChange(false)}>
               إغلاق
             </Button>

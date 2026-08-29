@@ -81,7 +81,7 @@ export function ReportSummaryStrip({ items, className, dataReportSummary }: Read
   return (
     <div
       data-report-summary={dataReportSummary}
-      className={cn('no-scrollbar -mx-1 flex items-stretch gap-x-1 overflow-x-auto px-1 sm:mx-0 sm:flex-wrap sm:gap-x-0 sm:overflow-visible sm:px-0', className)}
+      className={cn('no-scrollbar -mx-1 flex items-stretch gap-x-1 overflow-x-auto overscroll-x-contain px-1 sm:mx-0 sm:flex-wrap sm:gap-x-0 sm:overflow-visible sm:px-0', className)}
     >
       {items.map((item, index) => (
         <div

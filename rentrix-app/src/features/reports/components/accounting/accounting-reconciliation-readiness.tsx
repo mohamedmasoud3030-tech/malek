@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { AlertTriangle, CheckCircle2, RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,7 +9,7 @@ import { formatMoney } from '@/features/financials/components/financials-formatt
 import type { ReconciliationRow } from '@/features/accounting/wp05Services';
 import type { ReconciliationReadiness } from '../../accounting-report-authority';
 
-const columns: ColumnDef<ReconciliationRow>[] = [
+const columns = useMemo((): ColumnDef<ReconciliationRow>[] => [
   {
     key: 'account',
     header: 'الحساب',
@@ -52,7 +53,7 @@ const columns: ColumnDef<ReconciliationRow>[] = [
       </StatusBadge>
     ),
   },
-];
+], []);
 
 type Props = Readonly<{
   asOf: string;

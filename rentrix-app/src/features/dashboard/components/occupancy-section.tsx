@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Building2, CalendarClock } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -38,7 +39,7 @@ interface OccupancySectionProps {
  * `available` remains the only vacancy authority — maintenance/reserved
  * units are never counted as vacant.
  */
-export function OccupancySection({
+export const OccupancySection = memo(function OccupancySection({
   snapshot,
   analytics,
   isLoading,
@@ -183,7 +184,7 @@ export function OccupancySection({
             </div>
           ) : null}
         </>
-      ) : null}
+      ) : null});
     </DashboardSignalPanel>
   );
-}
+});

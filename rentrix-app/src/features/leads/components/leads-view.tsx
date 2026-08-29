@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import {
   Archive,
   CheckCircle2,
@@ -410,7 +411,7 @@ function LeadRows({
   onEdit: (row: LeadRecord) => void;
   onArchiveClick: (row: LeadRecord) => void;
 }>) {
-  const columns: ColumnDef<LeadRecord>[] = [
+  const columns = useMemo((): ColumnDef<LeadRecord>[] => [
     {
       key: "name", priority: 'identity' as const,
       header: "العميل",
@@ -459,7 +460,7 @@ function LeadRows({
         />
       ),
     },
-  ];
+  ], [onEdit, onArchiveClick]);
 
   return (
     <EntityTable

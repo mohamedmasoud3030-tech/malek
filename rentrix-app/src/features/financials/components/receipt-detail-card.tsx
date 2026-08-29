@@ -91,7 +91,7 @@ export function ReceiptDetailCard({ selectedReceiptId, receiptDetail, isLoading,
                 <p className="text-xs text-muted-foreground">تاريخ الإنشاء</p>
                 <p className="mt-1 font-bold">{formatDate(receiptDetail.created_at)}</p>
               </div>
-              <div className="col-span-2 rounded-xl bg-muted/30 p-3">
+              <div className="rounded-xl bg-muted/30 p-3 sm:col-span-2">
                 <p className="text-xs text-muted-foreground">السياق المرتبط</p>
                 <p className="mt-1 font-bold">{formatReceiptContext(receiptDetail)}</p>
               </div>

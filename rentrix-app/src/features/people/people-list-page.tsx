@@ -134,7 +134,7 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
     setPage(1);
   };
 
-  const columns: ColumnDef<Person>[] = [
+  const columns = useMemo((): ColumnDef<Person>[] => [
     {
       key: "name", priority: 'identity' as const,
       header: "الاسم",
@@ -223,7 +223,7 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
         </div>
       ),
     },
-  ];
+  ], []);
 
   return (
     <>

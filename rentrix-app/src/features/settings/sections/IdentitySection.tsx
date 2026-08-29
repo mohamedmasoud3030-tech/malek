@@ -43,7 +43,7 @@ function IdentityPreview({
     <div className="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-2 rounded-xl border bg-muted/15 p-2.5 sm:grid-cols-[7rem_minmax(0,1fr)] sm:gap-3 sm:p-3">
       <div className="flex min-h-20 items-center justify-center rounded-lg border border-dashed bg-background/70 p-2 text-center sm:rounded-xl sm:p-3">
         {preview.logoUrl ? (
-          <img src={preview.logoUrl} alt={`شعار ${preview.companyName}`} className="max-h-20 max-w-full rounded object-contain" />
+          <img src={preview.logoUrl} alt={`شعار ${preview.companyName}`} loading="lazy" decoding="async" className="max-h-20 max-w-full rounded object-contain" />
         ) : (
           <div className="grid size-11 place-items-center rounded-xl bg-primary/10 text-sm font-black text-primary sm:size-12">
             {preview.companyName.slice(0, 2)}

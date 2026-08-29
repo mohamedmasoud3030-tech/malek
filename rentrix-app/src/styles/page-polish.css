@@ -20,10 +20,16 @@
 
 [data-entity-table] {
   width: 100%;
-  min-width: max(100%, 52rem);
+  min-width: max(100%, 32rem);
   border-collapse: separate;
   border-spacing: 0;
   table-layout: auto;
+}
+
+@media (min-width: 768px) {
+  [data-entity-table] {
+    min-width: max(100%, 52rem);
+  }
 }
 
 [data-entity-table] thead th {

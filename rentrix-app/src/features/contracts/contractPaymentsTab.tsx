@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { FileText, LockKeyhole, ReceiptText, WalletCards } from 'lucide-react';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
@@ -42,7 +43,7 @@ function ContractPaymentsSummary({ snapshot }: Readonly<{ snapshot: ContractPaym
 }
 
 function ContractInvoicesTable({ snapshot }: Readonly<{ snapshot: ContractPaymentsSnapshot }>) {
-  const columns: ColumnDef<Invoice>[] = [
+  const columns = useMemo((): ColumnDef<Invoice>[] => [
     { key: 'id', priority: 'identity' as const, header: 'الفاتورة', render: (inv) => <span className="font-mono text-xs font-bold">{inv.reference ?? 'فاتورة بلا مرجع'}</span> },
     { key: 'due_date', header: 'الاستحقاق', render: (inv) => formatDate(inv.due_date) },
     {
@@ -56,7 +57,7 @@ function ContractInvoicesTable({ snapshot }: Readonly<{ snapshot: ContractPaymen
     { key: 'amount', priority: 'detail' as const, header: 'المبلغ', render: (inv) => <span className="font-bold">{formatDefaultCompanyMoney(inv.amount)}</span> },
     { key: 'paid_amount', priority: 'detail' as const, header: 'المدفوع', render: (inv) => <span className="font-bold text-success tabular-nums">{formatDefaultCompanyMoney(inv.paid_amount)}</span> },
     { key: 'remaining', priority: 'primary' as const, header: 'المتبقي', render: (inv) => <span className="font-bold">{formatDefaultCompanyMoney(inv.remaining_amount)}</span> },
-  ];
+  ], []);
 
   return (
     <EntityTable

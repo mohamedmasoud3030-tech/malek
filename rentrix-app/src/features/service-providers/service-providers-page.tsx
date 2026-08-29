@@ -72,7 +72,7 @@ export function ServiceProvidersWorkspace({ embedded = false }: Readonly<{ embed
   ];
   const clearFilters = () => { setSearch(''); setStatus('all'); setCategoryId(''); setPage(1); };
 
-  const columns: ColumnDef<ServiceProviderListItem>[] = [
+  const columns = useMemo((): ColumnDef<ServiceProviderListItem>[] => [
     {
       key: 'provider',
       header: 'مزود الخدمة',
@@ -102,7 +102,7 @@ export function ServiceProvidersWorkspace({ embedded = false }: Readonly<{ embed
         </div>
       ),
     },
-  ];
+  ], []);
 
   const createAction = canWrite ? (
     <Button className="min-h-11" onClick={() => dialogNavigate({ to: '/service-providers/new' })}>

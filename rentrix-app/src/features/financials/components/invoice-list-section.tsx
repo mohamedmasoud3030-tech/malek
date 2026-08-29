@@ -1,8 +1,8 @@
 import { Button } from '@/components/ui/button';
 import { Download, HandCoins, Printer } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { DataTableColumnsMenu } from '@/components/ui/data-table';
-import { EntityTable } from '@/components/ui/entity-table';
+import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { getSafeRemainingAmount } from '../financialMath';
 import { isInvoiceCollectible } from '../invoices/quick-collect';
 import {
@@ -137,94 +137,7 @@ export function InvoiceListSection({
     return INVOICE_REGISTER_VIEW_MODE_KEY;
   });
 
-  return (
-    <div className="space-y-3" data-invoice-register>
-      <FinanceSection ariaLabel="البحث وحالة الفواتير">
-        <FinanceFilterBar ariaLabel="البحث وحالة الفواتير" className="rounded-xl border border-border/70 bg-card p-2 shadow-card">
-          <InvoiceFilters
-            status={status}
-            invoiceSearch={invoiceSearch}
-            isGenerating={isGenerating}
-            canGenerateInvoices={canGenerateInvoices}
-            dateFrom={dateFrom}
-            dateTo={dateTo}
-            tenantId={tenantId}
-            propertyId={propertyId}
-            tenantOptions={tenantOptions}
-            propertyOptions={propertyOptions}
-            onStatusChange={onStatusChange}
-            onInvoiceSearchChange={onInvoiceSearchChange}
-            onGenerateInvoices={onGenerateInvoices}
-            onDateFromChange={onDateFromChange}
-            onDateToChange={onDateToChange}
-            onTenantChange={onTenantChange}
-            onPropertyChange={onPropertyChange}
-          />
-        </FinanceFilterBar>
-      </FinanceSection>
-
-      <FinanceSection ariaLabel="سجل الفواتير">
-        <div data-finance-table-wrapper>
-          <EntityTable
-            aria-label="سجل الفواتير"
-            rows={invoices}
-            keyOf={(invoice) => invoice.id}
-            visibleColumnKeys={visibleColumnKeys}
-            viewModeStorageKey={registerViewModeKey}
-            toolbar={(
-              <div className="flex min-w-0 items-center justify-between gap-3">
-                <p className="truncate text-xs font-bold text-muted-foreground">
-                  {total} فاتورة مطابقة · اضغط الصف للمعاينة أو «تحصيل» للدفع مباشرة
-                </p>
-                <DataTableColumnsMenu
-                  columns={invoiceColumnOptions}
-                  visibleKeys={visibleColumnKeys}
-                  onChange={setVisibleColumnKeys}
-                />
-              </div>
-            )}
-            isLoading={isLoading}
-            error={isError ? error : undefined}
-            errorTitle="تعذر تحميل الفواتير"
-            emptyTitle={hasInvoiceFilter ? 'لا توجد فواتير مطابقة' : 'لا توجد فواتير حتى الآن'}
-            emptyDescription={
-              hasInvoiceFilter
-                ? 'غيّر البحث أو الحالة أو الفلاتر للوصول إلى الفاتورة المطلوبة.'
-                : 'لا توجد فواتير مسجلة في هذا المكتب حتى الآن.'
-            }
-            onRowClick={(invoice) => onSelectInvoice(invoice.id)}
-            pagination={{ page, pageSize, total, onPageChange }}
-            mobileBadgeKey="status"
-            mobileSummaryKeys={['tenant', 'property_unit', 'billing_period', 'remaining']}
-            mobileCardPrimaryAction={(invoice) => ({
-              label: isInvoiceCollectible(invoice) && canCollectPayments && onCollectInvoice ? 'تحصيل' : 'عرض الفاتورة',
-              icon: isInvoiceCollectible(invoice) && canCollectPayments && onCollectInvoice ? HandCoins : undefined,
-              variant: 'default',
-              ariaLabel: isInvoiceCollectible(invoice) && canCollectPayments && onCollectInvoice
-                ? `تحصيل ${invoice.reference ?? 'الفاتورة'}`
-                : `عرض ${invoice.reference ?? 'الفاتورة'}`,
-              onClick: () => {
-                if (isInvoiceCollectible(invoice) && canCollectPayments && onCollectInvoice) onCollectInvoice(invoice.id);
-                else onSelectInvoice(invoice.id);
-              },
-            })}
-            mobileCardActions={(invoice) => [
-              ...(onPrintInvoice ? [{
-                label: 'طباعة',
-                icon: Printer,
-                variant: 'secondary' as const,
-                ariaLabel: `طباعة ${invoice.reference ?? 'الفاتورة'}`,
-                onClick: () => onPrintInvoice(invoice.id),
-              }] : []),
-              ...(onExportInvoice ? [{
-                label: 'PDF',
-                icon: Download,
-                variant: 'secondary' as const,
-                ariaLabel: `تنزيل ${invoice.reference ?? 'الفاتورة'} بصيغة PDF`,
-                onClick: () => onExportInvoice(invoice.id),
-              }] : []),
-            ]}
-            columns={[
+  const invoiceColumns = useMemo((): ColumnDef<InvoiceListItem>[] => [
               {
                 key: 'id',
                 header: 'الفاتورة',
@@ -349,7 +262,96 @@ export function InvoiceListSection({
                   );
                 },
               },
+            ], [canCollectPayments, onCollectInvoice, onPrintInvoice, onExportInvoice]);
+
+  return (
+    <div className="space-y-3" data-invoice-register>
+      <FinanceSection ariaLabel="البحث وحالة الفواتير">
+        <FinanceFilterBar ariaLabel="البحث وحالة الفواتير" className="rounded-xl border border-border/70 bg-card p-2 shadow-card">
+          <InvoiceFilters
+            status={status}
+            invoiceSearch={invoiceSearch}
+            isGenerating={isGenerating}
+            canGenerateInvoices={canGenerateInvoices}
+            dateFrom={dateFrom}
+            dateTo={dateTo}
+            tenantId={tenantId}
+            propertyId={propertyId}
+            tenantOptions={tenantOptions}
+            propertyOptions={propertyOptions}
+            onStatusChange={onStatusChange}
+            onInvoiceSearchChange={onInvoiceSearchChange}
+            onGenerateInvoices={onGenerateInvoices}
+            onDateFromChange={onDateFromChange}
+            onDateToChange={onDateToChange}
+            onTenantChange={onTenantChange}
+            onPropertyChange={onPropertyChange}
+          />
+        </FinanceFilterBar>
+      </FinanceSection>
+
+      <FinanceSection ariaLabel="سجل الفواتير">
+        <div data-finance-table-wrapper>
+          <EntityTable
+            aria-label="سجل الفواتير"
+            rows={invoices}
+            keyOf={(invoice) => invoice.id}
+            visibleColumnKeys={visibleColumnKeys}
+            viewModeStorageKey={registerViewModeKey}
+            toolbar={(
+              <div className="flex min-w-0 items-center justify-between gap-3">
+                <p className="truncate text-xs font-bold text-muted-foreground">
+                  {total} فاتورة مطابقة · اضغط الصف للمعاينة أو «تحصيل» للدفع مباشرة
+                </p>
+                <DataTableColumnsMenu
+                  columns={invoiceColumnOptions}
+                  visibleKeys={visibleColumnKeys}
+                  onChange={setVisibleColumnKeys}
+                />
+              </div>
+            )}
+            isLoading={isLoading}
+            error={isError ? error : undefined}
+            errorTitle="تعذر تحميل الفواتير"
+            emptyTitle={hasInvoiceFilter ? 'لا توجد فواتير مطابقة' : 'لا توجد فواتير حتى الآن'}
+            emptyDescription={
+              hasInvoiceFilter
+                ? 'غيّر البحث أو الحالة أو الفلاتر للوصول إلى الفاتورة المطلوبة.'
+                : 'لا توجد فواتير مسجلة في هذا المكتب حتى الآن.'
+            }
+            onRowClick={(invoice) => onSelectInvoice(invoice.id)}
+            pagination={{ page, pageSize, total, onPageChange }}
+            mobileBadgeKey="status"
+            mobileSummaryKeys={['tenant', 'property_unit', 'billing_period', 'remaining']}
+            mobileCardPrimaryAction={(invoice) => ({
+              label: isInvoiceCollectible(invoice) && canCollectPayments && onCollectInvoice ? 'تحصيل' : 'عرض الفاتورة',
+              icon: isInvoiceCollectible(invoice) && canCollectPayments && onCollectInvoice ? HandCoins : undefined,
+              variant: 'default',
+              ariaLabel: isInvoiceCollectible(invoice) && canCollectPayments && onCollectInvoice
+                ? `تحصيل ${invoice.reference ?? 'الفاتورة'}`
+                : `عرض ${invoice.reference ?? 'الفاتورة'}`,
+              onClick: () => {
+                if (isInvoiceCollectible(invoice) && canCollectPayments && onCollectInvoice) onCollectInvoice(invoice.id);
+                else onSelectInvoice(invoice.id);
+              },
+            })}
+            mobileCardActions={(invoice) => [
+              ...(onPrintInvoice ? [{
+                label: 'طباعة',
+                icon: Printer,
+                variant: 'secondary' as const,
+                ariaLabel: `طباعة ${invoice.reference ?? 'الفاتورة'}`,
+                onClick: () => onPrintInvoice(invoice.id),
+              }] : []),
+              ...(onExportInvoice ? [{
+                label: 'PDF',
+                icon: Download,
+                variant: 'secondary' as const,
+                ariaLabel: `تنزيل ${invoice.reference ?? 'الفاتورة'} بصيغة PDF`,
+                onClick: () => onExportInvoice(invoice.id),
+              }] : []),
             ]}
+            columns={invoiceColumns}
           />
         </div>
       </FinanceSection>
