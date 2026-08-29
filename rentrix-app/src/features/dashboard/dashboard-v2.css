@@ -1,0 +1,25 @@
+/* MALEK Today workspace density contract.
+   The dashboard is a decision surface, not a vertical card train. Keep mobile
+   sections compact while preserving readable desktop breathing room. */
+
+[data-dashboard-page] {
+  --dashboard-section-gap: 0.75rem;
+  --dashboard-cluster-gap: 0.5rem;
+}
+
+@media (min-width: 1024px) {
+  [data-dashboard-page] {
+    --dashboard-section-gap: 1.25rem;
+    --dashboard-cluster-gap: 0.75rem;
+  }
+}
+
+[data-dashboard-page] [data-dashboard-section] {
+  scroll-margin-block-start: calc(
+    var(--app-header-height, 3rem) + var(--dashboard-section-gap)
+  );
+}
+
+[data-dashboard-page] :where([data-component-card], [data-kpi-card]) {
+  min-width: 0;
+}

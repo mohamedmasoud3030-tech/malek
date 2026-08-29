@@ -42,6 +42,7 @@ export function MalekBrandWordmark({ className, size = 'header' }: MalekBrandWor
   return (
     <span
       data-malek-brand-wordmark
+      data-header-wordmark={size === 'header' ? 'true' : undefined}
       data-variant={size}
       className={cn('inline-flex min-w-0', size === 'sidebar' && 'w-full justify-center', className)}
     >

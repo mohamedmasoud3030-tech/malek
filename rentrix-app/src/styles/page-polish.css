@@ -120,6 +120,30 @@
 }
 [data-status-badge] [data-status-dot] { background: currentColor; }
 
+/* ── Shared state surfaces ───────────────────────────────────────── */
+[data-state-surface] {
+  position: relative;
+  overflow: hidden;
+}
+
+[data-state-surface]::before {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: 0;
+  height: 2px;
+  content: '';
+  background: hsl(var(--border));
+}
+
+[data-state-surface][data-empty-state]::before { background: hsl(var(--muted-foreground) / 0.3); }
+[data-state-surface][data-offline-state]::before { background: hsl(var(--warning-text) / 0.72); }
+[data-state-surface][data-no-permission-state]::before,
+[data-state-surface][data-error-state]::before { background: hsl(var(--danger-text) / 0.72); }
+
+[data-state-surface] [data-state-surface-content] {
+  isolation: isolate;
+}
+
 /* ── App chrome only ────────────────────────────────────────────────
    Dialogs and bottom sheets own their own surfaces; this contract must not
    restyle them from a second cascade layer. */

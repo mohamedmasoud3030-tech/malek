@@ -33,15 +33,15 @@ type EmptyStateProps = PublicStateProps & {
 };
 
 const cardTone: Record<StateTone, string> = {
-  neutral: 'border-border/70',
-  warning: 'border-warning/20',
-  danger: 'border-danger/25',
+  neutral: 'border-border/70 bg-card',
+  warning: 'border-warning/20 bg-[hsl(var(--color-warning-bg)/0.12)]',
+  danger: 'border-danger/25 bg-[hsl(var(--color-danger-bg)/0.1)]',
 };
 
 const iconTone: Record<StateTone, string> = {
-  neutral: 'bg-muted/70 text-muted-foreground/60',
-  warning: 'bg-warning-bg text-warning',
-  danger: 'bg-danger-bg text-danger',
+  neutral: 'bg-muted/70 text-muted-foreground/70',
+  warning: 'bg-warning-bg text-warning ring-1 ring-warning/10',
+  danger: 'bg-danger-bg text-danger ring-1 ring-danger/10',
 };
 
 /**
@@ -80,6 +80,7 @@ export function StateSurface({
       )}
     >
       <CardContent
+        data-state-surface-content
         className={cn(
           'flex flex-col items-center justify-center text-center',
           compact ? 'min-h-0 gap-2 px-4 py-4' : 'min-h-28 gap-2.5 px-4 py-5',

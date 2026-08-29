@@ -4,7 +4,7 @@ import { CircleHelp, KeyRound, LogOut, Moon, Settings, ShieldAlert, Sun, UserRou
 import { toast } from 'sonner';
 import { MalekBrandWordmark } from '@/components/brand/malek-wordmark';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
-import { canAccessRoute, getWriteAccessState, type AuthorizationContext } from '@/features/auth/permissions';
+import { canAccessRoute, getWriteAccessState, type AuthorizationContext, type WriteAccessState } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
 import { APP_BRAND_NAME, APP_BRAND_TAGLINE_AR } from '@/lib/brand';
 import { getAppLanguageState, translateSharedLabel, type SharedLabel } from '@/lib/i18n';
@@ -14,6 +14,33 @@ import { MobileFloatingControl, NavigationLinks } from './layout-navigation-view
 import { CommandPaletteDialog } from '@/features/command-palette/command-palette-dialog';
 import { AiAssistantGlobalAction } from '@/features/ai-assistant/ai-assistant-global-action';
 import { sanitizeSupportRoute } from '@/features/help-support/help-context';
+
+type AccountAccessStatus = Readonly<{
+  tone: 'info' | 'warning';
+  title: string;
+  description: string;
+  buttonLabelSuffix: string;
+}>;
+
+function getAccountAccessStatus(writeAccessState: WriteAccessState): AccountAccessStatus | null {
+  if (writeAccessState === 'full') return null;
+
+  if (writeAccessState === 'read-only') {
+    return {
+      tone: 'info',
+      title: 'وضع العرض فقط',
+      description: 'يمكنك استعراض البيانات. الإضافة، التعديل أو الاعتماد تظهر عند منح صلاحية إضافية.',
+      buttonLabelSuffix: 'وضع العرض فقط',
+    };
+  }
+
+  return {
+    tone: 'warning',
+    title: 'صلاحيات الحساب تحتاج مراجعة',
+    description: 'حالة الحساب محفوظة هنا حتى تبقى الصفحات واضحة. افتح الأقسام المقفلة لإرسال طلب صلاحية للمسؤول.',
+    buttonLabelSuffix: 'صلاحيات الحساب تحتاج مراجعة',
+  };
+}
 
 function Brand({ expanded, showTagline }: Readonly<{ expanded: boolean; showTagline?: boolean }>) {
   return (
@@ -49,8 +76,9 @@ function HeaderBrandWordmarkButton({
       data-header-brand-button
       data-header-brand-monogram
       data-header-brand-wordmark-button
-      className="inline-flex min-h-11 items-center justify-center rounded-lg p-1.5 -ms-1.5 outline-none transition-[background-color,opacity] duration-150 hover:bg-muted/70 active:opacity-85 focus-visible:ring-2 focus-visible:ring-primary/20"
+      className="relative inline-flex min-h-11 items-center justify-center rounded-lg p-1.5 -ms-1.5 outline-none transition-[background-color,opacity] duration-150 hover:bg-muted/70 active:opacity-85 focus-visible:ring-2 focus-visible:ring-primary/20"
     >
+      <span data-header-monogram-hit className="pointer-events-none absolute inset-y-0 start-0 size-11" aria-hidden="true" />
       <MalekBrandWordmark size="header" />
     </button>
   );
@@ -86,20 +114,21 @@ function HeaderControl({
 } & Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children' | 'aria-label'>>) {
   const { className, ...rest } = props;
   return (
-    <button
-      ref={ref}
-      type="button"
-      aria-label={label}
-      data-header-control-standalone
-      data-header-control-hit
-      className={cn(
-        'grid place-items-center min-h-11 min-w-11 rounded-lg border-0 bg-transparent p-2.5 text-foreground outline-none transition-colors hover:bg-muted hover:text-foreground active:bg-muted/80 focus-visible:ring-2 focus-visible:ring-primary/20',
-        className,
-      )}
-      {...rest}
-    >
-      {children}
-    </button>
+    <span data-header-control-hit className="grid size-11 shrink-0 place-items-center">
+      <button
+        ref={ref}
+        type="button"
+        aria-label={label}
+        data-header-control-standalone
+        className={cn(
+          'grid size-8 min-h-11 min-w-11 place-items-center rounded-lg border-0 bg-transparent p-2.5 text-foreground outline-none transition-colors hover:bg-muted hover:text-foreground active:bg-muted/80 focus-visible:ring-2 focus-visible:ring-primary/20',
+          className,
+        )}
+        {...rest}
+      >
+        {children}
+      </button>
+    </span>
   );
 }
 
@@ -107,11 +136,13 @@ function HeaderUserMenu({
   email,
   canOpenSettings,
   supportFrom,
+  accessStatus,
   onLogout,
 }: Readonly<{
   email?: string | null;
   canOpenSettings: boolean;
   supportFrom: string;
+  accessStatus: AccountAccessStatus | null;
   onLogout: () => void | Promise<void>;
 }>) {
   const [open, setOpen] = useState(false);
@@ -143,24 +174,35 @@ function HeaderUserMenu({
 
   const itemClass =
     'flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-start text-sm font-semibold text-foreground outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary/20';
+  const statusCardClass = accessStatus?.tone === 'warning'
+    ? 'border-[hsl(var(--color-warning-text)/0.22)] bg-[hsl(var(--color-warning-bg)/0.08)] text-warning'
+    : 'border-[hsl(var(--color-info-text)/0.22)] bg-[hsl(var(--color-info-bg)/0.08)] text-info';
+  const statusDotClass = accessStatus?.tone === 'warning' ? 'bg-warning' : 'bg-info';
 
   return (
-    <div ref={rootRef} className="relative flex shrink-0 items-center" data-header-user-menu data-header-control-hit>
+    <div ref={rootRef} className="relative grid size-11 shrink-0 place-items-center" data-header-user-menu data-header-control-hit>
       <button
         ref={triggerRef}
         type="button"
-        aria-label="فتح قائمة المستخدم"
+        aria-label={accessStatus ? `فتح قائمة المستخدم — ${accessStatus.buttonLabelSuffix}` : 'فتح قائمة المستخدم'}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
         onClick={() => setOpen((value) => !value)}
         data-header-control-standalone
         className={cn(
-          'grid place-items-center min-h-11 min-w-11 rounded-lg border-0 bg-transparent p-2.5 text-foreground outline-none transition-colors hover:bg-muted hover:text-foreground active:bg-muted/80 focus-visible:ring-2 focus-visible:ring-primary/20',
+          'relative grid size-8 min-h-11 min-w-11 place-items-center rounded-lg border-0 bg-transparent p-2.5 text-foreground outline-none transition-colors hover:bg-muted hover:text-foreground active:bg-muted/80 focus-visible:ring-2 focus-visible:ring-primary/20',
           open && 'bg-muted text-foreground',
         )}
       >
         <UserRound className="size-[18px]" aria-hidden="true" />
+        {accessStatus ? (
+          <span
+            data-account-status-indicator
+            className={cn('absolute end-2 top-2 size-2 rounded-full ring-2 ring-card', statusDotClass)}
+            aria-hidden="true"
+          />
+        ) : null}
       </button>
 
       {open ? (
@@ -188,6 +230,22 @@ function HeaderUserMenu({
                 </p>
               </div>
             </div>
+
+            {accessStatus ? (
+              <div
+                data-account-status-entry
+                role="status"
+                className={cn('m-1.5 rounded-xl border px-3 py-2.5', statusCardClass)}
+              >
+                <div className="flex items-start gap-2.5">
+                  <ShieldAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+                  <div className="min-w-0">
+                    <p data-account-status-title className="text-[12px] font-black leading-5">{accessStatus.title}</p>
+                    <p className="mt-0.5 text-[11px] font-semibold leading-4 text-current/75">{accessStatus.description}</p>
+                  </div>
+                </div>
+              </div>
+            ) : null}
 
             <div className="space-y-0.5 p-1.5">
               {canOpenSettings ? (
@@ -282,18 +340,7 @@ export function AppShell() {
   const writeAccessState = getWriteAccessState(authorization);
   const supportFrom = sanitizeSupportRoute(router.state?.location?.pathname ?? '/dashboard');
   const canOpenSettings = canAccessRoute(authorization, 'company.settings.manage');
-  const writeAccessNotice =
-    writeAccessState === 'read-only'
-      ? {
-          title: 'وضع العرض فقط',
-          description: 'يمكنك استعراض البيانات، لكن الإضافة والتعديل يحتاجان صلاحية مدير أو مسؤول.',
-        }
-      : writeAccessState === 'unconfigured'
-        ? {
-            title: 'صلاحيات الحساب غير مكتملة',
-            description: 'لن تتوفر الإضافة والتعديل حتى يراجع مسؤول النظام إعداد صلاحيات حسابك.',
-          }
-        : null;
+  const accountAccessStatus = getAccountAccessStatus(writeAccessState);
   const pageTitle =
     ([...matches]
       .reverse()
@@ -382,6 +429,7 @@ export function AppShell() {
                 email={user?.email}
                 canOpenSettings={canOpenSettings}
                 supportFrom={supportFrom}
+                accessStatus={accountAccessStatus}
                 onLogout={handleLogout}
               />
             </div>
@@ -400,19 +448,6 @@ export function AppShell() {
               <div className="min-w-0 sm:flex sm:items-baseline sm:gap-2">
                 <p className="text-[13px] font-bold">لا يوجد اتصال بالشبكة</p>
                 <p className="mt-0.5 text-[12px] leading-4 text-warning/80 sm:mt-0">قد يفشل الحفظ والتحديث حتى يعود الاتصال.</p>
-              </div>
-            </div>
-          ) : null}
-          {writeAccessNotice ? (
-            <div
-              data-write-access-notice
-              role="status"
-              className="mx-3 mb-2 mt-3 flex items-center gap-2 rounded-xl border border-[hsl(var(--color-warning-text)/0.18)] bg-[hsl(var(--color-warning-bg)/0.07)] px-3.5 py-2.5 text-warning sm:mx-4"
-            >
-              <ShieldAlert className="size-4 shrink-0" aria-hidden="true" />
-              <div className="min-w-0 sm:flex sm:items-baseline sm:gap-2">
-                <p className="text-[13px] font-bold">{writeAccessNotice.title}</p>
-                <p className="mt-0.5 text-[12px] leading-4 text-warning/75 sm:mt-0">{writeAccessNotice.description}</p>
               </div>
             </div>
           ) : null}

@@ -111,7 +111,7 @@ export function BottomSheet({ open, onClose, title, children, className }: Botto
         aria-label={title ? undefined : 'لوحة إجراء'}
         data-bottom-sheet
         className={cn(
-          'relative z-10 flex w-full max-w-full min-w-0 flex-col overflow-hidden rounded-t-[1.35rem] border border-b-0 border-border bg-card outline-none',
+          'relative z-10 flex w-full max-w-full min-w-0 flex-col overflow-hidden rounded-t-[1.35rem] rounded-t-3xl border border-b-0 border-border bg-card outline-none',
           'shadow-[0_-18px_44px_-28px_hsl(var(--overlay)/0.55),0_-1px_0_0_hsl(var(--border)/0.7)]',
           'max-h-[calc(var(--visual-viewport-height,100dvh)-0.75rem)]',
           'ps-[env(safe-area-inset-left,0px)] pe-[env(safe-area-inset-right,0px)]',

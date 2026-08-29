@@ -1,3 +1,4 @@
+import './dashboard-v2.css';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { PageHeader } from '@/components/layout/page-header';
@@ -233,7 +234,7 @@ export function DashboardPage() {
         description="مركز قيادة اليوم: الأداء، الأولويات، التحصيل، الإشغال، العقود والالتزامات في مسار واحد."
       />
 
-      <div className="space-y-4 lg:space-y-5">
+      <div data-dashboard-page className="space-y-4 lg:space-y-5">
         {hasDashboardError ? (
           <ErrorState
             title={snapshotUnavailable ? 'تعذر تحميل بيانات اليوم' : 'تعذر تحديث بيانات اليوم'}
