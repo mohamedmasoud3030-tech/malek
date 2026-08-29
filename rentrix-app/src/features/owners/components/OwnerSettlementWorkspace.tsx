@@ -308,7 +308,7 @@ export function OwnerSettlementWorkspace({ ownerId }: Readonly<{ ownerId?: strin
     ];
   };
 
-  const columns: ColumnDef<OwnerSettlementRecord>[] = [
+  const columns = useMemo((): ColumnDef<OwnerSettlementRecord>[] => [
     {
       key: 'owner', priority: 'identity' as const,
       header: 'المالك والعقار',
@@ -339,7 +339,7 @@ export function OwnerSettlementWorkspace({ ownerId }: Readonly<{ ownerId?: strin
     { key: 'net', priority: 'primary' as const, header: 'الصافي', render: (settlement) => <strong dir="ltr" className="text-success">{formatMoney(settlement.net_payable_amount)}</strong> },
     { key: 'status', priority: 'secondary' as const, header: 'الحالة', render: (settlement) => <StatusBadge tone={settlementTone(settlement.status)}>{settlementStatusLabels[settlement.status]}</StatusBadge> },
     { key: 'actions', priority: 'actions' as const, header: 'إجراءات', render: (settlement) => <ActionMenu label={`إجراءات تسوية ${settlement.owner_name}`} items={settlementActions(settlement)} /> },
-  ];
+  ], []);
 
   return (
     <div className="space-y-4">

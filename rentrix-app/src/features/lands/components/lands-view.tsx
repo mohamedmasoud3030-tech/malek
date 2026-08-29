@@ -1,5 +1,5 @@
 import { Archive, Edit, Layers, MapPinned, Plus, Tag, TrendingUp } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { AsyncContentState } from '@/components/async-content-state';
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { useDialogNavigate } from '@/app/router/background-location';
@@ -111,7 +111,7 @@ export function LandsView({
     </div>
   );
 
-  const columns: ColumnDef<LandRecord>[] = [
+  const columns = useMemo((): ColumnDef<LandRecord>[] => [
     {
       key: 'name', priority: 'identity' as const,
       header: 'الأرض',
@@ -128,7 +128,7 @@ export function LandsView({
     { key: 'value', priority: 'detail' as const, header: 'القيمة', render: (row) => <span dir="ltr">{money(row.owner_price ?? row.purchase_price)}</span> },
     { key: 'status', priority: 'primary' as const, header: 'الحالة', render: (row) => <StatusBadge tone={landStatusTone[row.status ?? ""] ?? "neutral"}>{landStatusLabels[row.status ?? ''] ?? 'حالة أخرى'}</StatusBadge> },
     { key: 'actions', priority: 'actions' as const, header: 'إجراءات', render: rowActions },
-  ];
+  ], []);
 
   return (
     <EmbeddableWorkspace

@@ -1,5 +1,5 @@
 import { Eye, LinkIcon, Pencil } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { ActionMenu } from '@/components/ui/action-menu';
 import { Button } from '@/components/ui/button';
@@ -100,7 +100,7 @@ export function OwnerWorkspaceTable({
 
   const openPreview = (ownerId: string) => setPreviewOwnerId(ownerId);
 
-  const columns: ColumnDef<OwnerWorkspaceRow>[] = [
+  const columns = useMemo((): ColumnDef<OwnerWorkspaceRow>[] => [
     {
       key: 'name',
       header: 'اسم المالك',
@@ -139,7 +139,7 @@ export function OwnerWorkspaceTable({
         </div>
       ),
     },
-  ];
+  ], []);
 
   return (
     <div className="space-y-3" data-owner-workspace-table>

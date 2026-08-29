@@ -96,7 +96,7 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
 
   const createAction = <Button onClick={openCreate}><Plus className="me-2 size-4" />إضافة مستأجر</Button>;
 
-  const columns: ColumnDef<TenantWorkspaceRow>[] = [
+  const columns = useMemo((): ColumnDef<TenantWorkspaceRow>[] => [
     {
       key: 'name',
       header: 'الاسم',
@@ -157,7 +157,7 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
         </div>
       ),
     },
-  ];
+  ], []);
 
   const workspaceContent = (
     <>

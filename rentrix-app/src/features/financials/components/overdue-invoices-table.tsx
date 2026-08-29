@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { HandCoins } from 'lucide-react';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { Button } from '@/components/ui/button';
@@ -21,7 +22,7 @@ function getContextLabel(row: OverdueInvoiceReportRow) {
 }
 
 export function OverdueInvoicesTable({ rows, onSelectInvoice, onCollectInvoice }: OverdueInvoicesTableProps) {
-  const columns: ColumnDef<OverdueInvoiceReportRow>[] = [
+  const columns = useMemo((): ColumnDef<OverdueInvoiceReportRow>[] => [
     {
       key: 'invoice_id', priority: 'identity' as const,
       header: 'الفاتورة',
@@ -66,7 +67,7 @@ export function OverdueInvoicesTable({ rows, onSelectInvoice, onCollectInvoice }
           },
         ] satisfies ColumnDef<OverdueInvoiceReportRow>[])
       : []),
-  ];
+  ], []);
 
   return (
     <EntityTable

@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Link } from '@tanstack/react-router';
 import { ShieldCheck } from 'lucide-react';
 import { DataErrorScreen } from '@/components/data-error-screen';
@@ -54,13 +55,13 @@ export function AuditLogView({ state, onRetry, isRefreshing = false }: AuditLogV
     );
   }
 
-  const columns: ColumnDef<AuditLogRecord>[] = [
+  const columns = useMemo((): ColumnDef<AuditLogRecord>[] => [
     { key: 'time', priority: 'identity' as const, header: 'الوقت', render: (record) => <span className="font-bold">{formatAuditDate(companySettings, record.occurredAt)}</span> },
     { key: 'actor', priority: 'secondary' as const, header: 'المستخدم', render: (record) => record.actor },
     { key: 'action', priority: 'primary' as const, header: 'الإجراء', render: (record) => <StatusBadge tone="info">{record.action}</StatusBadge> },
     { key: 'scope', priority: 'secondary' as const, header: 'النطاق', render: (record) => record.entityType || 'عام' },
     { key: 'description', priority: 'detail' as const, header: 'الوصف', render: (record) => <span className="max-w-lg whitespace-normal text-muted-foreground">{record.description ?? 'لا يوجد وصف'}</span> },
-  ];
+  ], []);
 
   return (
     <div className="space-y-4">

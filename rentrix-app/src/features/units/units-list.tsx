@@ -1,5 +1,5 @@
 import { Archive, DoorOpen, Edit, FilePlus2, Plus } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from 'react';
 import type { UseQueryResult } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
@@ -85,7 +85,7 @@ export function UnitsList({
     }
   };
 
-  const columns: ColumnDef<Unit>[] = [
+  const columns = useMemo((): ColumnDef<Unit>[] => [
     {
       key: "unit_number",
       header: "رقم الوحدة",
@@ -181,7 +181,7 @@ export function UnitsList({
         </div>
       ),
     },
-  ];
+  ], []);
 
   return (
     <section aria-labelledby="property-units-register-heading">

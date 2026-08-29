@@ -1,6 +1,6 @@
 import { communicationChannelLabels, communicationDirectionLabels, communicationStatusLabels, communicationStatusTone } from "../labels";
 import { Archive, CheckCircle2, Edit, Rows3, UserRoundSearch } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ActiveFilterBar, type ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -81,7 +81,7 @@ export function CommunicationHubView({
     </div>
   );
 
-  const columns: ColumnDef<CommunicationRecord>[] = [
+  const columns = useMemo((): ColumnDef<CommunicationRecord>[] => [
     {
       key: 'contact', priority: 'identity' as const,
       header: 'جهة التواصل',
@@ -106,7 +106,7 @@ export function CommunicationHubView({
     },
     { key: 'status', priority: 'primary' as const, header: 'الحالة', render: (row) => <StatusBadge tone={communicationStatusTone[row.status] ?? 'neutral'}>{communicationStatusLabels[row.status] ?? row.status}</StatusBadge> },
     { key: 'actions', priority: 'actions' as const, header: 'إجراءات', render: rowActions },
-  ];
+  ], []);
 
   return (
     <section className="space-y-5">
