@@ -27,6 +27,18 @@ describe('canonical search and filter usage', () => {
     expect(offenders).toEqual([]);
   });
 
+  it('keeps feature registers from bypassing the FilterBar composition owner', () => {
+    const offenders = collectReactSourceFiles(featureDir)
+      .filter((path) => {
+        const source = readFileSync(path, 'utf8');
+        return source.includes("@/components/ui/search-input") || source.includes('ListControlSurface');
+      })
+      .map((path) => relative(srcDir, path))
+      .sort();
+
+    expect(offenders).toEqual([]);
+  });
+
   it('keeps one composition owner for list-page search and filters', () => {
     const listPage = readFileSync(resolve(srcDir, 'components/layout/list-page.tsx'), 'utf8');
     const contractsPage = readFileSync(resolve(srcDir, 'features/contracts/ContractsListPage.tsx'), 'utf8');
