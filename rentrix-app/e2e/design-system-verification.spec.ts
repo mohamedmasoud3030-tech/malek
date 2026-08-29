@@ -15,7 +15,7 @@ const pages = [
     name: 'dashboard',
     url: '/login?e2e-dashboard-workspace=1',
     ready: 'main[data-e2e-dashboard-workspace]',
-    content: '[data-dashboard-kpi-grid]',
+    content: '[data-dashboard-office-pulse]',
   },
   {
     name: 'properties',

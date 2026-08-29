@@ -5,6 +5,49 @@ import type { Unit } from '@/types/domain';
 const DAY_MS = 24 * 60 * 60 * 1000;
 export const VACANCY_RISK_WINDOW_DAYS = 60;
 
+/**
+ * Vacancy aging buckets: presentation grouping over the shared vacancy
+ * derivation above. The days-vacant number of each row stays authoritative —
+ * bucketing only decides which presentation lane a row sits in.
+ */
+export type VacancyAgingBucketKey = 'days_0_15' | 'days_16_30' | 'days_31_60' | 'days_61_plus';
+
+export const vacancyAgingBucketOrder: readonly VacancyAgingBucketKey[] = [
+  'days_0_15',
+  'days_16_30',
+  'days_31_60',
+  'days_61_plus',
+];
+
+export const vacancyAgingBucketLabels: Record<VacancyAgingBucketKey, string> = {
+  days_0_15: '0–15 يوم',
+  days_16_30: '16–30 يوم',
+  days_31_60: '31–60 يوم',
+  days_61_plus: '+60 يوم',
+};
+
+export function vacancyAgingBucketForDays(daysVacant: number): VacancyAgingBucketKey {
+  if (daysVacant <= 15) return 'days_0_15';
+  if (daysVacant <= 30) return 'days_16_30';
+  if (daysVacant <= 60) return 'days_31_60';
+  return 'days_61_plus';
+}
+
+export function buildVacancyAgingBuckets(
+  vacantRows: readonly VacantUnitAnalyticsRow[],
+): Record<VacancyAgingBucketKey, number> {
+  const buckets: Record<VacancyAgingBucketKey, number> = {
+    days_0_15: 0,
+    days_16_30: 0,
+    days_31_60: 0,
+    days_61_plus: 0,
+  };
+  for (const row of vacantRows) {
+    buckets[vacancyAgingBucketForDays(row.daysVacant)] += 1;
+  }
+  return buckets;
+}
+
 export type VacancySinceSource = 'contract_end' | 'unit_created';
 
 export type VacantUnitAnalyticsRow = Readonly<{

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
@@ -13,22 +13,31 @@ import { useAllContracts } from '@/features/contracts/useContracts';
 import { useAllUnits } from '@/features/units/use-units';
 import { buildVacancyAnalytics } from '@/features/units/vacancy-analytics';
 import { listPropertyTitles } from '@/features/properties/property-service';
+import { useFinancialCashflowReport } from '@/features/financials/reports/useFinancialReports';
 import { getDashboardSnapshot } from './dashboard-snapshot';
+import { useDailyCollectionSeries } from './daily-collection-series';
 import { OfficePulse } from './components/office-pulse';
-import { ExpiringContractsSection } from './components/expiring-contracts-section';
-import { OverdueSection } from './components/overdue-section';
-import { UrgentMaintenanceSection } from './components/urgent-maintenance-section';
-import { MaintenanceFollowUpSection } from './components/maintenance-follow-up-section';
+import { FinancialPerformanceSection } from './components/financial-performance-section';
+import { NeedsAttentionSection } from './components/needs-attention-section';
+import { OccupancySection } from './components/occupancy-section';
+import { CollectionsSection } from './components/collections-section';
+import { MaintenanceSection } from './components/maintenance-section';
+import { UpcomingContractsSection } from './components/upcoming-contracts-section';
+import { PropertyHealthSection } from './components/property-health-section';
+import { OwnerObligationsSection } from './components/owner-obligations-section';
+import { FinanceExceptionsSection } from './components/finance-exceptions-section';
+import { UtilityObligationsSection } from './components/utility-obligations-section';
+import { buildNeedsAttentionSignal } from './needs-attention-signal';
+import { buildMaintenanceDashboardSummary } from './maintenance-dashboard-summary';
+import { buildPropertyHealthRows } from './property-health-signal';
 import {
   buildMaintenanceFollowUpSignal,
   EMPTY_MAINTENANCE_FOLLOW_UP_SIGNAL,
 } from './maintenance-follow-up-signal';
 import { useMaintenance } from '@/features/maintenance/use-maintenance';
-import { UtilityObligationsSection } from './components/utility-obligations-section';
-import { VacantUnitsSection } from './components/vacant-units-section';
 import { buildUtilityObligationsSignal, EMPTY_UTILITY_OBLIGATIONS_SIGNAL } from './utility-obligations-signal';
-import { buildExpiringContracts, buildOverdueTenantRows, toDateInputValue } from './dashboard-utils';
-import { OwnerObligationsSection } from './components/owner-obligations-section';
+import { buildExpiringContracts, toDateInputValue } from './dashboard-utils';
+import { buildMonthlyCashflowChartRows, getFinancialPerformanceRange, type FinancialPerformanceWindow } from './financial-performance';
 
 function DashboardGroup({
   eyebrow,
@@ -52,10 +61,16 @@ function DashboardGroup({
 }
 
 /**
- * MALEK command center.
+ * MALEK Property Office Command Center.
+ *
  * Financial and operational truth remains server-authoritative through
- * rpt_dashboard_snapshot. The presentation is deliberately bounded and compact:
- * performance → vacancy/collection → problems → renewals/owner obligations.
+ * rpt_dashboard_snapshot; the monthly cash series comes from the canonical
+ * Reports cashflow service and the daily collection sparkline from
+ * rpt_daily_collection. The page composes those read models into nine
+ * decision sections:
+ *
+ *   pulse → financial performance → needs attention → occupancy →
+ *   collections → maintenance → contracts → property health → owner obligations.
  */
 export function DashboardPage() {
   const { authorization } = useAuth();
@@ -104,10 +119,28 @@ export function DashboardPage() {
     () => buildExpiringContracts(snapshot?.queues.expiringContracts),
     [snapshot?.queues.expiringContracts],
   );
-  const overdueRows = useMemo(
-    () => buildOverdueTenantRows(snapshot?.queues.overdueInvoices),
-    [snapshot?.queues.overdueInvoices],
+
+  // Daily collection sparkline — authoritative server aggregate for the month.
+  const periodStart = toDateInputValue(new Date(now.getFullYear(), now.getMonth(), 1));
+  const dailySeriesQuery = useDailyCollectionSeries(periodStart, today);
+
+  // Financial performance — canonical Reports monthly cashflow service.
+  const [performanceWindow, setPerformanceWindow] = useState<FinancialPerformanceWindow>('six_months');
+  const performanceRange = useMemo(
+    () => getFinancialPerformanceRange(performanceWindow, now),
+    [performanceWindow, now],
   );
+  const cashflowQuery = useFinancialCashflowReport({
+    dateFrom: performanceRange.dateFrom,
+    dateTo: performanceRange.dateTo,
+  });
+  const chartRows = useMemo(
+    () => buildMonthlyCashflowChartRows(cashflowQuery.data?.rows),
+    [cashflowQuery.data],
+  );
+  const retryCashflow = useCallback(() => {
+    cashflowQuery.refetch().catch(() => undefined);
+  }, [cashflowQuery]);
 
   const utilityBillsQuery = useUtilityBills();
   const utilityObligations = useMemo(
@@ -148,6 +181,30 @@ export function DashboardPage() {
       : buildMaintenanceFollowUpSignal(maintenanceQuery.data, today, propertyTitleMap, unitNumberMap)),
     [maintenanceQuery.data, maintenanceQuery.isError, today, propertyTitleMap, unitNumberMap],
   );
+  const maintenanceSummary = useMemo(
+    () => buildMaintenanceDashboardSummary(maintenanceQuery.data, today, snapshot?.maintenance.urgentOpen),
+    [maintenanceQuery.data, snapshot?.maintenance.urgentOpen, today],
+  );
+
+  const needsAttention = useMemo(
+    () => buildNeedsAttentionSignal({
+      snapshot,
+      vacancyAnalytics,
+      utilityObligations,
+      maintenanceFollowUp,
+    }),
+    [snapshot, vacancyAnalytics, utilityObligations, maintenanceFollowUp],
+  );
+
+  const propertyHealthRows = useMemo(
+    () => buildPropertyHealthRows({
+      units: unitsQuery.data,
+      vacantRows: vacancyAnalytics.vacantRows,
+      maintenance: maintenanceQuery.data,
+      propertyTitles: propertyTitleMap,
+    }),
+    [unitsQuery.data, vacancyAnalytics.vacantRows, maintenanceQuery.data, propertyTitleMap],
+  );
 
   const hasDashboardError = isError || isRefetchError;
   const snapshotUnavailable = hasDashboardError && !snapshot;
@@ -178,68 +235,140 @@ export function DashboardPage() {
               </div>
             ) : null}
 
-            <DashboardGroup eyebrow="الآن" title="أداء المكتب" ariaLabel="أداء المكتب" sectionId="office-performance">
-              <OfficePulse snapshot={snapshot} isLoading={isLoading} settings={settings} />
-            </DashboardGroup>
-
-            <div className="grid min-w-0 gap-3 xl:grid-cols-12 xl:items-start">
-              <section className="min-w-0 xl:col-span-7" aria-label="الوحدات الفارغة" data-dashboard-section="vacant-units">
-                <VacantUnitsSection
-                  analytics={vacancyAnalytics}
-                  isLoading={unitsQuery.isLoading || (hasVacantUnit && contractsQuery.isLoading)}
-                  isError={unitsQuery.isError}
-                  detailsUnavailable={vacancyDetailsUnavailable}
-                  settings={settings}
-                />
-              </section>
-
-              <section className="min-w-0 xl:col-span-5" aria-label="الفلوس المطلوب تحصيلها" data-dashboard-section="collections">
-                <OverdueSection
-                  rows={overdueRows}
-                  totalCount={snapshot?.arrears.overdueCount}
-                  isLoading={isLoading}
-                  isError={hasDashboardError}
-                  settings={settings}
-                />
-              </section>
-            </div>
-
-            <DashboardGroup eyebrow="خدمات" title="المشاكل والصيانة" ariaLabel="المشاكل والصيانة" sectionId="maintenance-problems">
-              <div className="grid min-w-0 gap-3 md:grid-cols-2 xl:grid-cols-3" data-dashboard-maintenance-problems>
-                <UrgentMaintenanceSection
-                  rows={snapshot?.queues.urgentMaintenance ?? []}
-                  totalCount={snapshot?.maintenance.urgentOpen}
-                  isLoading={isLoading}
-                  isError={hasDashboardError}
-                />
-                <MaintenanceFollowUpSection
-                  signal={maintenanceFollowUp}
-                  isLoading={maintenanceQuery.isLoading}
-                  isError={maintenanceQuery.isError}
-                />
-                <UtilityObligationsSection
-                  signal={utilityObligations}
-                  isLoading={utilityBillsQuery.isLoading}
-                  isError={utilityBillsQuery.isError}
-                  settings={settings}
-                />
+            {/*
+              One intentional 12-column workspace. DOM order is the mobile
+              priority (pulse → needs attention → collections → occupancy →
+              financial trend → maintenance → contracts → property health →
+              owner obligations); xl:order restores the desktop hierarchy and
+              col-spans set the 7/5 · 8/4 relationships.
+            */}
+            <div className="grid min-w-0 grid-cols-1 gap-5 lg:gap-6 xl:grid-cols-12 xl:items-start">
+              <div className="min-w-0 xl:col-span-12 xl:order-1">
+                <DashboardGroup eyebrow="الآن" title="نبض المكتب" ariaLabel="نبض المكتب" sectionId="office-pulse">
+                  <OfficePulse
+                    snapshot={snapshot}
+                    isLoading={isLoading}
+                    settings={settings}
+                    dailySeries={dailySeriesQuery.data}
+                    dailySeriesLoading={dailySeriesQuery.isLoading}
+                  />
+                </DashboardGroup>
               </div>
-            </DashboardGroup>
 
-            <div className="grid min-w-0 gap-3 xl:grid-cols-12 xl:items-start" data-dashboard-closing-row>
-              <section className="min-w-0 xl:col-span-7" aria-label="العقود القريبة من الانتهاء" data-dashboard-section="expiring-contracts">
-                <ExpiringContractsSection
-                  rows={expiringContracts}
-                  totalCount={snapshot?.contracts.expiring30}
-                  isLoading={isLoading}
-                  isError={hasDashboardError}
-                  settings={settings}
-                />
-              </section>
+              <div className="min-w-0 xl:col-span-12 xl:order-3">
+                <DashboardGroup eyebrow="أولويات" title="يحتاج انتباهك" ariaLabel="الحالات التي تحتاج انتباهاً" sectionId="needs-attention">
+                  <NeedsAttentionSection
+                    signal={needsAttention}
+                    isLoading={isLoading}
+                    isError={hasDashboardError}
+                  />
+                </DashboardGroup>
+              </div>
 
-              <section className="min-w-0 xl:col-span-5" aria-label="مستحقات الملاك" data-dashboard-section="owner-obligations">
-                <OwnerObligationsSection snapshot={snapshot} isLoading={isLoading} settings={settings} />
-              </section>
+              <div className="min-w-0 xl:col-span-5 xl:order-5">
+                <DashboardGroup eyebrow="تحصيل" title="التحصيل والمتأخرات" ariaLabel="التحصيل والمتأخرات" sectionId="collections">
+                  <CollectionsSection
+                    snapshot={snapshot}
+                    isLoading={isLoading}
+                    isError={hasDashboardError}
+                    settings={settings}
+                  />
+                </DashboardGroup>
+              </div>
+
+              <div className="min-w-0 xl:col-span-7 xl:order-4">
+                <DashboardGroup eyebrow="المحفظة" title="الإشغال والشغور" ariaLabel="الإشغال والشغور" sectionId="occupancy">
+                  <OccupancySection
+                    snapshot={snapshot}
+                    analytics={vacancyAnalytics}
+                    isLoading={isLoading || unitsQuery.isLoading || (hasVacantUnit && contractsQuery.isLoading)}
+                    isError={unitsQuery.isError}
+                    detailsUnavailable={vacancyDetailsUnavailable}
+                    settings={settings}
+                  />
+                </DashboardGroup>
+              </div>
+
+              <div className="min-w-0 xl:col-span-12 xl:order-2">
+                <DashboardGroup eyebrow="الأداء المالي" title="أداء المكتب" ariaLabel="الأداء المالي" sectionId="financial-performance">
+                  <FinancialPerformanceSection
+                    snapshot={snapshot}
+                    vacancyAnalytics={vacancyAnalytics}
+                    vacancyDetailsUnavailable={vacancyDetailsUnavailable}
+                    settings={settings}
+                    window={performanceWindow}
+                    onWindowChange={setPerformanceWindow}
+                    chartRows={chartRows}
+                    chartIsLoading={cashflowQuery.isLoading}
+                    chartIsError={cashflowQuery.isError}
+                    onChartRetry={retryCashflow}
+                  />
+                </DashboardGroup>
+              </div>
+
+              <div className="min-w-0 xl:col-span-12 xl:order-6">
+                <DashboardGroup eyebrow="خدمات" title="الصيانة والخدمات" ariaLabel="الصيانة والخدمات" sectionId="maintenance">
+                  <div className="grid min-w-0 gap-3 xl:grid-cols-12 xl:items-start">
+                    <div className="min-w-0 xl:col-span-7">
+                      <MaintenanceSection
+                        summary={maintenanceSummary}
+                        urgentRows={snapshot?.queues.urgentMaintenance ?? []}
+                        followUp={maintenanceFollowUp}
+                        isLoading={isLoading}
+                        isError={hasDashboardError}
+                        maintenanceIsLoading={maintenanceQuery.isLoading}
+                        maintenanceIsError={maintenanceQuery.isError}
+                      />
+                    </div>
+                    <div className="min-w-0 xl:col-span-5">
+                      <UtilityObligationsSection
+                        signal={utilityObligations}
+                        isLoading={utilityBillsQuery.isLoading}
+                        isError={utilityBillsQuery.isError}
+                        settings={settings}
+                      />
+                    </div>
+                  </div>
+                </DashboardGroup>
+              </div>
+
+              <div className="min-w-0 xl:col-span-7 xl:order-7">
+                <DashboardGroup eyebrow="عقود" title="العقود القادمة" ariaLabel="العقود القريبة من الانتهاء" sectionId="upcoming-contracts">
+                  <UpcomingContractsSection
+                    rows={expiringContracts}
+                    expiring30={snapshot?.contracts.expiring30}
+                    expiring60={snapshot?.contracts.expiring60}
+                    expiring90={snapshot?.contracts.expiring90}
+                    isLoading={isLoading}
+                    isError={hasDashboardError}
+                    settings={settings}
+                  />
+                </DashboardGroup>
+              </div>
+
+              <div className="min-w-0 xl:col-span-5 xl:order-8">
+                <DashboardGroup eyebrow="المحفظة" title="صحة العقارات" ariaLabel="صحة العقارات" sectionId="property-health">
+                  <PropertyHealthSection
+                    rows={propertyHealthRows}
+                    isLoading={unitsQuery.isLoading || maintenanceQuery.isLoading}
+                    isError={unitsQuery.isError || maintenanceQuery.isError}
+                  />
+                </DashboardGroup>
+              </div>
+
+              <div className="min-w-0 xl:col-span-12 xl:order-9">
+                <div className="grid min-w-0 gap-3 xl:grid-cols-12 xl:items-start" data-dashboard-closing-row>
+                  <section className="min-w-0 xl:col-span-7" aria-label="مستحقات الملاك" data-dashboard-section="owner-obligations">
+                    <SectionHeader eyebrow="ملاك" title="مستحقات الملاك" className="mb-2.5 px-0.5" />
+                    <OwnerObligationsSection snapshot={snapshot} isLoading={isLoading} settings={settings} />
+                  </section>
+
+                  <section className="min-w-0 xl:col-span-5" aria-label="استثناءات مالية" data-dashboard-section="finance-exceptions">
+                    <SectionHeader eyebrow="التزامات" title="استثناءات مالية" className="mb-2.5 px-0.5" />
+                    <FinanceExceptionsSection snapshot={snapshot} isLoading={isLoading} />
+                  </section>
+                </div>
+              </div>
             </div>
           </>
         )}

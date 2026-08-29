@@ -41,16 +41,19 @@ Entity dossiers, specialist/admin tools and compatibility routes remain deep-lin
 ## Workspace contract
 
 ### Today
-Today answers “what is the office state now?” in this priority order:
+Today is the Property Office Command Center. It answers four questions within seconds: how is money performing, how is occupancy performing, what needs attention now, and what to act on next. The locked section hierarchy (desktop reading order; the mobile stream keeps the same semantics with attention and collections immediately after the pulse):
 
-1. office performance;
-2. vacancy;
-3. money to collect;
-4. maintenance/problems;
-5. contracts nearing expiry;
-6. owner obligations;
+1. **Office Pulse** — four executive surfaces: collections, occupancy, arrears, office cash movement (collections less recorded expenses; never labelled profit);
+2. **Financial Performance** — one primary monthly chart (collections vs recorded expenses, 6-month/1-year window) beside contextual operational metrics;
+3. **Needs Attention** — one ranked, actionable queue merged from the authoritative signals, each item deep-linking into its owning workflow;
+4. **Occupancy & Vacancy** — occupancy indicator plus vacancy aging and the longest vacancies;
+5. **Collections & Arrears** — period collection progress plus the authoritative arrears aging buckets;
+6. **Maintenance** — operational summary plus only the highest-value cases, alongside utility obligations;
+7. **Upcoming Contracts** — expiry windows and the nearest renewals;
+8. **Property Health** — transparent deterministic per-property indicators (no opaque score);
+9. **Owner Obligations** — owner funds as a liability signal plus financial exceptions.
 
-Today is a signal/decision surface, not a substitute for detailed Reports. Notifications show events/information; Today shows items requiring attention. Do not duplicate the same feed twice.
+Charts consume existing authoritative read models (the dashboard snapshot RPC, the daily-collection RPC, the Reports cashflow service) and never recompute financial truth in the browser. Numbers stay available as text beside every visualization. Today is a signal/decision surface, not a substitute for detailed Reports. Notifications show events/information; Today shows items requiring attention. Do not duplicate the same feed twice.
 
 ### Portfolio
 Primary routine surfaces:

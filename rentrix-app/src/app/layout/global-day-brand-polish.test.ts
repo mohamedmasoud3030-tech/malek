@@ -29,11 +29,13 @@ describe('shared day context and compact header brand contract', () => {
     expect(routeTree).toContain("staticData: { title: 'لوحة التحكم' }");
   });
 
-  it('keeps dashboard freshness as the PageHeader primary action without restoring a hero card', () => {
+  it('keeps the dashboard header clean — no routine refresh action, no hero card', () => {
     expect(dashboardPage).not.toContain('HeroBanner');
     expect(dashboardPage).toContain('<PageHeader');
-    expect(dashboardPage).toContain('primaryAction={(');
-    expect(dashboardPage).toContain('onClick={retryDashboard}');
+    expect(dashboardPage).toContain('title="لوحة التحكم"');
+    // The routine manual refresh button is gone; retry remains an error-state
+    // affordance rendered by the shared ErrorState, not header chrome.
+    expect(dashboardPage).not.toContain('primaryAction={(');
     expect(dashboardPage).not.toContain('آخر تحديث');
     expect(dashboardPage).not.toContain('data-dashboard-today-context');
   });

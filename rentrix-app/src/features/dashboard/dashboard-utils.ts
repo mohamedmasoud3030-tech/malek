@@ -6,7 +6,7 @@
  * server queue rows into the display shapes the queue cards render — they
  * never filter, count, or derive an authoritative number.
  */
-import type { DashboardQueueContractRow, DashboardQueueInvoiceRow } from './dashboard-snapshot';
+import type { DashboardQueueContractRow } from './dashboard-snapshot';
 
 export const DASHBOARD_WINDOW_DAYS = 30;
 
@@ -44,18 +44,4 @@ export function buildExpiringContracts(rows: DashboardQueueContractRow[] | undef
   }));
 }
 
-export type OverdueTenantRow = {
-  invoiceId: string; tenantName: string; location: string;
-  dueDate: string; daysOverdue: number; remainingAmount: number;
-};
 
-export function buildOverdueTenantRows(rows: DashboardQueueInvoiceRow[] | undefined): OverdueTenantRow[] {
-  return (rows ?? []).map((row) => ({
-    invoiceId: row.invoiceId,
-    tenantName: row.tenantName ?? 'مستأجر غير محدد',
-    location: formatQueueLocation(row.propertyTitle, row.unitNumber),
-    dueDate: row.dueDate,
-    daysOverdue: row.daysOverdue,
-    remainingAmount: row.remainingAmount,
-  }));
-}

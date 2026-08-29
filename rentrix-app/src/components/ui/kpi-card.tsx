@@ -1,4 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 export type KpiAccent = 'primary' | 'emerald' | 'amber' | 'sky' | 'rose' | 'violet' | 'slate';
@@ -14,6 +15,11 @@ interface KpiCardProps {
   accent?: KpiAccent;
   /** Legacy compatibility prop. Compact sizing is determined by context. */
   compact?: boolean;
+  /**
+   * Optional visualization slot under the value (sparkline, radial, mini
+   * bars). Presentation only — the value above stays the readable truth.
+   */
+  visual?: ReactNode;
 }
 
 /**
@@ -30,6 +36,7 @@ export function KpiCard({
   trendValue,
   className,
   accent = 'primary',
+  visual,
 }: KpiCardProps) {
   return (
     <article
@@ -68,6 +75,7 @@ export function KpiCard({
         {sub ? (
           <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">{sub}</p>
         ) : null}
+        {visual ? <div className="mt-2 min-w-0">{visual}</div> : null}
       </div>
     </article>
   );

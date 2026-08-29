@@ -35,14 +35,16 @@ const TONE_FILL: Record<NonNullable<ReportBarSeries['tone']>, string> = {
 const AXIS_TICK = { fill: 'hsl(var(--muted-foreground))', fontSize: 11 } as const;
 
 /**
- * WP-C — shared report bar chart.
+ * WP-C — shared report bar chart (single canonical chart primitive).
  *
  * Reports previously inlined their only chart (the operating cash comparison in
  * the overview) with raw recharts markup: token colours, tick styling and the
  * responsive wrapper were all hand-written and could not be reused by the next
- * report that needs a bar comparison. This is the single neutral report chart
+ * surface that needs a bar comparison. This is the single neutral chart
  * primitive — RTL-safe (it fills its container instead of a fixed pixel width),
  * keyboard/inert-safe (decorative, labelled region) and theme-token driven.
+ * Lives in the shared UI layer because both Reports and the Today command
+ * center compose it; no second chart abstraction may be introduced.
  *
  * Presentation only: it renders whatever series the caller already computed.
  */

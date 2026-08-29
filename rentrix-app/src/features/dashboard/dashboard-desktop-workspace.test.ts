@@ -5,14 +5,22 @@ import { describe, expect, it } from 'vitest';
 
 const dashboardDir = resolve(dirname(fileURLToPath(import.meta.url)));
 const page = readFileSync(resolve(dashboardDir, 'dashboard-page.tsx'), 'utf8');
-const kpiGrid = readFileSync(resolve(dashboardDir, 'components/kpi-grid.tsx'), 'utf8');
+const officePulse = readFileSync(resolve(dashboardDir, 'components/office-pulse.tsx'), 'utf8');
 
 describe('dashboard desktop workspace contract', () => {
   it('uses the wide workspace instead of leaving the command center constrained', () => {
     expect(page).toContain('<PageLayout size="wide"');
   });
 
-  it('keeps the four money and obligation signals visible in one desktop row', () => {
-    expect(kpiGrid).toContain('<ResponsiveCardGrid desktopColumns={4}');
+  it('keeps the four Office Pulse surfaces in one bounded desktop row', () => {
+    expect(officePulse).toContain('<ResponsiveCardGrid gap="sm" aria-label="نبض المكتب" desktopColumns={4}');
+    expect(page).toContain('sectionId="office-pulse"');
+  });
+
+  it('lays the command center out on the intentional 12-column desktop grid', () => {
+    expect(page).toContain('xl:grid-cols-12');
+    expect(page).toContain('xl:col-span-7');
+    expect(page).toContain('xl:col-span-5');
+    expect(page).toContain('data-dashboard-closing-row');
   });
 });
