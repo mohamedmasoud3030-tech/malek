@@ -50,12 +50,17 @@ vi.mock('@/hooks/use-auth', () => ({
   }),
 }));
 vi.mock('@/store/ui-store', () => ({
-  useUiStore: () => ({
-    theme: 'light',
-    setTheme: mockState.setTheme,
-    syncStatus: 'idle',
-    setSyncStatus: mockState.setSyncStatus,
-  }),
+  // app-shell reads the store through zustand selectors, so the mock must
+  // apply the selector when one is passed.
+  useUiStore: (selector?: (state: Record<string, unknown>) => unknown) => {
+    const state = {
+      theme: 'light',
+      setTheme: mockState.setTheme,
+      syncStatus: 'idle',
+      setSyncStatus: mockState.setSyncStatus,
+    };
+    return selector ? selector(state) : state;
+  },
 }));
 vi.mock('./layout-navigation-view', () => ({
   NavigationLinks: () => <nav data-navigation-links />,

@@ -4,7 +4,7 @@ import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ContractsListPage } from './ContractsListPage';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ContractDetailPage } from './ContractDetailPage';
+import { ContractDetailPage } from './pages/ContractDetailPage';
 
 const navigateMock = vi.fn();
 const deleteContractMock = vi.fn();

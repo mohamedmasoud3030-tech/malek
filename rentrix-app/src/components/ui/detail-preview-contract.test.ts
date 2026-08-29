@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 const contractTable = readFileSync(new URL('../../features/contracts/components/ContractTable.tsx', import.meta.url), 'utf8');
 const invoiceWorkspace = readFileSync(new URL('../../features/financials/components/invoice-workspace-section.tsx', import.meta.url), 'utf8');
-const receiptsSection = readFileSync(new URL('../../features/financials/components/receipts-section.tsx', import.meta.url), 'utf8');
+const receiptsPage = readFileSync(new URL('../../features/financials/receipts/receipts-page.tsx', import.meta.url), 'utf8');
 const propertyController = readFileSync(new URL('../../features/properties/use-property-list-controller.ts', import.meta.url), 'utf8');
 const unitController = readFileSync(new URL('../../features/units/use-units-list-controller.ts', import.meta.url), 'utf8');
 const ownerWorkspace = readFileSync(new URL('../../features/owners/components/owner-workspace-table.tsx', import.meta.url), 'utf8');
@@ -40,11 +40,10 @@ describe('unified detail preview contract', () => {
     expect(existsSync(new URL('../../features/contracts/components/ContractMobileCard.tsx', import.meta.url))).toBe(false);
   });
 
-  it('renders invoice and receipt details inside the shared preview surface', () => {
+  it('renders invoice details inside the shared preview surface and receipt details via the shared detail card', () => {
     expect(invoiceWorkspace).toContain('<EntityPreviewDialog');
     expect(invoiceWorkspace).toContain('<InvoiceDetailSection');
-    expect(receiptsSection).toContain('<EntityPreviewDialog');
-    expect(receiptsSection).toContain('<ReceiptDetailCard');
+    expect(receiptsPage).toContain('<ReceiptDetailCard');
   });
 
   it('routes property and unit register browsing via route-native navigation (Phase 3)', () => {

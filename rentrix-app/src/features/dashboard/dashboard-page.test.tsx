@@ -123,7 +123,6 @@ vi.mock('@/features/properties/property-service', () => ({
   ]),
 }));
 
-vi.mock('@/services/action-center-counts', () => ({ fetchIntegrityWarningsCount: vi.fn().mockResolvedValue(0) }));
 vi.mock('@/features/onboarding/OnboardingChecklist', () => ({
   OnboardingChecklist: () => <div data-onboarding-checklist>مسار الإعداد الأول</div>,
 }));

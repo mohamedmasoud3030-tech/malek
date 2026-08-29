@@ -33,10 +33,11 @@ describe('automation real execution', () => {
     expect(content).toContain('AsyncContentState');
   });
 
-  it('automation page is not just local preview', () => {
-    const pagePath = resolve(import.meta.dirname, './automation-page.tsx');
-    const content = readFileSync(pagePath, 'utf8');
-    expect(content).not.toContain('لم يتم تشغيل عامل أتمتة خارجي');
+  it('automation surfaces are not just local preview', () => {
+    for (const surface of ['./components/automation-workspace.tsx', './components/automation-center-view.tsx']) {
+      const content = readFileSync(resolve(import.meta.dirname, surface), 'utf8');
+      expect(content, surface).not.toContain('لم يتم تشغيل عامل أتمتة خارجي');
+    }
   });
 
   it('service delegates retry/scheduling to the durable worker instead of browser RPCs', () => {

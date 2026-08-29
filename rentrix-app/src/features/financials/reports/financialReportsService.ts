@@ -100,4 +100,4 @@ export {
   type PaymentTotalsReport,
   type PropertyCollectionBreakdownReport,
   type PropertyCollectionBreakdownRow,
-} from './operational-collection-service';
+} from './financial-reporting';

@@ -23,18 +23,22 @@ vi.mock('@/hooks/use-auth', () => ({
   }),
 }));
 vi.mock('@/store/ui-store', () => ({
-  useUiStore: () => ({
-    sidebarCollapsed: false,
-    theme: 'light',
-    toggleSidebar: vi.fn(),
-    setTheme: vi.fn(),
-    syncStatus: 'idle',
-    lastSyncedAt: null,
-    setSyncStatus: vi.fn(),
-  }),
+  // app-shell reads the store through zustand selectors, so the mock must
+  // apply the selector when one is passed.
+  useUiStore: (selector?: (state: Record<string, unknown>) => unknown) => {
+    const state = {
+      sidebarCollapsed: false,
+      theme: 'light',
+      toggleSidebar: vi.fn(),
+      setTheme: vi.fn(),
+      syncStatus: 'idle',
+      lastSyncedAt: null,
+      setSyncStatus: vi.fn(),
+    };
+    return selector ? selector(state) : state;
+  },
 }));
 vi.mock('./notifications-menu', () => ({ NotificationsMenu: () => null }));
-vi.mock('@/features/command-palette/command-palette-trigger', () => ({ CommandPaletteTrigger: () => null }));
 vi.mock('@/features/command-palette/command-palette-dialog', () => ({ CommandPaletteDialog: () => null }));
 vi.mock('@/features/ai-assistant/ai-assistant-global-action', () => ({ AiAssistantGlobalAction: () => null }));
 

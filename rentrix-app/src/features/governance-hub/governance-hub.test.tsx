@@ -10,7 +10,7 @@ import { ChangePasswordRouteComponent } from '@/routes/_protected.change-passwor
 import { DataIntegrityRouteComponent } from '@/routes/_protected.data-integrity';
 import { SettingsRouteComponent } from '@/routes/_protected.settings';
 import { SystemRouteComponent } from '@/routes/_protected.system';
-import { GovernanceHubPage } from './governance-hub-page';
+import { GovernanceHubWorkspace } from './components/GovernanceHubWorkspace';
 import {
   getAccessibleGovernanceHubSections,
   getVisibleGovernanceHubSections,
@@ -55,7 +55,7 @@ describe('governance hub permissions', () => {
 
 describe('governance and legacy route wiring', () => {
   it('routes /settings to the governance hub', () => {
-    expect(SettingsRouteComponent).toBe(GovernanceHubPage);
+    expect(SettingsRouteComponent).toBe(GovernanceHubWorkspace);
   });
 
   it('keeps advanced standalone routes wired to their original page entries', () => {

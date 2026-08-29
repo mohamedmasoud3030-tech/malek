@@ -1,1 +1,1 @@
-export { GovernanceHubPage as SettingsRouteComponent } from '@/features/governance-hub/governance-hub-page';
+export { GovernanceHubWorkspace as SettingsRouteComponent } from '@/features/governance-hub/components/GovernanceHubWorkspace';
