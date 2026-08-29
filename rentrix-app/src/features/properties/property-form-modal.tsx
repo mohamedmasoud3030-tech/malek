@@ -287,7 +287,7 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
             >
               {ownersQuery.isError ? (
                 <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-3" role="alert">
-              assName="text-sm font-bold text-destructive">تعذر تحميل الملاك؛ لن يتم حفظ العقار قبل التحقق منهم.</p>
+                  <p className="text-sm font-bold text-destructive">تعذر تحميل الملاك؛ لن يتم حفظ العقار قبل التحقق منهم.</p>
                   <Button type="button" variant="secondary" onClick={() => { void ownersQuery.refetch(); }}>إعادة المحاولة</Button>
                 </div>
               ) : null}
