@@ -24,7 +24,11 @@ describe('PWA safety contract', () => {
 
   it('keeps sensitive Supabase and private data outside runtime cache rules', () => {
     const config = read('vite.config.ts');
-    const runtimeCaching = config.slice(config.indexOf('runtimeCaching:'));
+    // Bound the scan to the runtimeCaching array itself. Slicing to end of
+    // file would also scan unrelated later config (e.g. the manualChunks
+    // vendor split, which legitimately names @supabase for bundle chunking).
+    const runtimeCachingStart = config.indexOf('runtimeCaching:');
+    const runtimeCaching = config.slice(runtimeCachingStart, config.indexOf('],', runtimeCachingStart) + 2);
 
     expect(runtimeCaching).not.toMatch(/supabase|rest\/v1|storage\/v1|auth\/v1/i);
     expect(runtimeCaching).not.toMatch(/BackgroundSync|queueName/i);

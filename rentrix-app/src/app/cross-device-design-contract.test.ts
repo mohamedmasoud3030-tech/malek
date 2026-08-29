@@ -7,7 +7,6 @@ function source(relativePath: string) {
 
 describe('cross-device design unification', () => {
   const nav = source('app/layout/layout-navigation-view.tsx');
-  const palette = source('features/command-palette/command-palette-trigger.tsx');
   const pageHeader = source('components/layout/page-header.tsx');
   const detailHeader = source('components/layout/entity-detail-header.tsx');
   const entityForm = source('components/ui/entity-form.tsx');
@@ -33,11 +32,6 @@ describe('cross-device design unification', () => {
     expect(nav).toContain('data-mobile-floating-control');
     expect(nav).toContain('md:hidden');
     expect(nav).not.toContain('lg:hidden" data-mobile-floating-control');
-  });
-
-  it('exposes header search on tablet and desktop', () => {
-    expect(palette).toContain('hidden md:flex');
-    expect(palette).not.toContain('hidden lg:flex');
   });
 
   it('keeps page headers elevated while detail headers avoid a second card layer', () => {

@@ -39,7 +39,6 @@ describe('interface register mobile hierarchy', () => {
     { file: 'features/commissions/components/commissions-view.tsx', datum: 'amount' },
     { file: 'features/people/people-list-page.tsx', datum: 'type' },
     { file: 'features/financials/components/overdue-invoices-table.tsx', datum: 'remaining' },
-    { file: 'features/financials/components/receipts-section.tsx', datum: 'amount' },
     { file: 'features/owners/components/OwnerSettlementWorkspace.tsx', datum: 'net' },
     { file: 'features/utilities/components/utilities-workspace.tsx', datum: 'amount' },
     { file: 'features/audit/components/audit-log-view.tsx', datum: 'action', requireActions: false },

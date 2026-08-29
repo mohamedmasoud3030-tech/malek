@@ -41,7 +41,6 @@ export const ACTIVE_REGISTER_INVENTORY = [
   { component: 'features/audit/components/audit-log-view.tsx', routes: ['/settings?section=audit-log', '/audit-log'] },
   { component: 'features/commissions/components/commissions-view.tsx', routes: ['/commissions'] },
   { component: 'features/financials/components/invoice-list-section.tsx', routes: ['/financials?section=collections&view=invoices', '/invoices'] },
-  { component: 'features/financials/components/receipts-section.tsx', routes: ['/financials?section=collections&view=receipts', '/receipts'] },
   { component: 'features/financials/components/overdue-invoices-table.tsx', routes: ['/financials?section=collections&view=arrears', '/arrears'] },
   { component: 'features/financials/components/expenses-section.tsx', routes: ['/financials?section=expenses', '/expenses'] },
   { component: 'features/financials/deposits/deposits-workspace.tsx', routes: ['/financials?section=funds&view=deposits', '/deposits'] },

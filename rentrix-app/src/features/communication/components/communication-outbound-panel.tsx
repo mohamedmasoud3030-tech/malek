@@ -21,7 +21,7 @@ import {
   type OutboundChannel,
   type OutboundMessageResult,
 } from "../services/outbound-communication-service";
-import { openWhatsAppComposer } from "../services/whatsapp-share-service";
+import { openWhatsAppComposer } from "@/lib/whatsapp-share";
 
 export function CommunicationOutboundPanel() {
   const [channel, setChannel] = useState<OutboundChannel>("whatsapp");

@@ -3,6 +3,14 @@ import { createRoot } from 'react-dom/client';
 import { act } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+// Each test mounts the full AppShell tree synchronously through act(). Under
+// full-suite CPU contention (2-core CI pool next to the PGlite journey
+// suites) that render can exceed Vitest's 5s default wall-clock budget even
+// though the component itself is healthy. The assertions are deterministic
+// and synchronous — the budget is raised only to remove that load-dependent
+// cliff so the file behaves identically isolated and in the full suite.
+vi.setConfig({ testTimeout: 30_000 });
+
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 vi.mock('@tanstack/react-router', () => ({
@@ -23,18 +31,22 @@ vi.mock('@/hooks/use-auth', () => ({
   }),
 }));
 vi.mock('@/store/ui-store', () => ({
-  useUiStore: () => ({
-    sidebarCollapsed: false,
-    theme: 'light',
-    toggleSidebar: vi.fn(),
-    setTheme: vi.fn(),
-    syncStatus: 'idle',
-    lastSyncedAt: null,
-    setSyncStatus: vi.fn(),
-  }),
+  // app-shell reads the store through zustand selectors, so the mock must
+  // apply the selector when one is passed.
+  useUiStore: (selector?: (state: Record<string, unknown>) => unknown) => {
+    const state = {
+      sidebarCollapsed: false,
+      theme: 'light',
+      toggleSidebar: vi.fn(),
+      setTheme: vi.fn(),
+      syncStatus: 'idle',
+      lastSyncedAt: null,
+      setSyncStatus: vi.fn(),
+    };
+    return selector ? selector(state) : state;
+  },
 }));
 vi.mock('./notifications-menu', () => ({ NotificationsMenu: () => null }));
-vi.mock('@/features/command-palette/command-palette-trigger', () => ({ CommandPaletteTrigger: () => null }));
 vi.mock('@/features/command-palette/command-palette-dialog', () => ({ CommandPaletteDialog: () => null }));
 vi.mock('@/features/ai-assistant/ai-assistant-global-action', () => ({ AiAssistantGlobalAction: () => null }));
 

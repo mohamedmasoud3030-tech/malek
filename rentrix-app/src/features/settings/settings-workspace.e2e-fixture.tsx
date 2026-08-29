@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { CompanyProfileSections } from './components/company-profile-sections';
 import { OverviewRow, SettingsHero } from './components/settings-hero';
-import { SettingsAppearanceSection } from './components/settings-appearance-section';
+import { SystemSection } from './sections/SystemSection';
 import { SettingsSaveBar } from './components/settings-save-bar';
 import { SettingsWorkspaceNav } from './components/settings-workspace-nav';
 import {
@@ -109,7 +109,7 @@ export function SettingsWorkspaceE2EFixture() {
                 onDraftChange={handleDraftChange}
                 onLogoFileChange={() => undefined}
               />
-              <SettingsAppearanceSection
+              <SystemSection
                 activeSection={activeSection}
                 preview={preview}
                 theme={theme}

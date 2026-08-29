@@ -25,15 +25,20 @@ vi.mock('@/hooks/use-auth', () => ({
 const setSyncStatusSpy = vi.fn();
 let mockSyncStatus: 'idle' | 'offline' = 'idle';
 vi.mock('@/store/ui-store', () => ({
-  useUiStore: () => ({
-    sidebarCollapsed: false,
-    theme: 'light',
-    toggleSidebar: vi.fn(),
-    setTheme: vi.fn(),
-    syncStatus: mockSyncStatus,
-    lastSyncedAt: null,
-    setSyncStatus: setSyncStatusSpy,
-  }),
+  // app-shell reads the store through zustand selectors, so the mock must
+  // apply the selector when one is passed.
+  useUiStore: (selector?: (state: Record<string, unknown>) => unknown) => {
+    const state = {
+      sidebarCollapsed: false,
+      theme: 'light',
+      toggleSidebar: vi.fn(),
+      setTheme: vi.fn(),
+      syncStatus: mockSyncStatus,
+      lastSyncedAt: null,
+      setSyncStatus: setSyncStatusSpy,
+    };
+    return selector ? selector(state) : state;
+  },
 }));
 vi.mock('./layout-navigation-view', () => ({
   NavigationLinks: () => null,

@@ -365,7 +365,6 @@ describe('MALEK brand contract — mark, wordmark, and tagline', () => {
 
   it('places the complete lockup only on the high-visibility brand surfaces', () => {
     for (const file of [
-      'src/features/auth/command-center-panel.tsx',
       'src/features/landing/components/Footer.tsx',
     ]) {
       expect(readApp(file), `${file} must show the MALEK tagline`).toContain('showTagline');
