@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { BriefcaseBusiness, Edit, FolderCog, Mail, MapPin, Phone, Wrench } from 'lucide-react';
 import { AsyncContentState } from '@/components/async-content-state';
 import { DataRefreshAlert } from '@/components/data-refresh-alert';
@@ -9,7 +9,7 @@ import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { DetailFields } from '@/components/ui/detail-fields';
-import { EntityTable } from '@/components/ui/entity-table';
+import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { SectionTabPanel, SectionTabs } from '@/components/ui/section-tabs';
@@ -65,6 +65,14 @@ export function ServiceProviderDetailPage() {
   }
 
   const { provider, maintenanceJobs } = dossierQuery.data;
+
+  const detailColumns: ColumnDef<typeof maintenanceJobs[number]>[] = useMemo(() => [
+    { key: 'title', priority: 'identity' as const, header: 'الطلب', render: (job) => <div><p className="font-bold">{job.title ?? 'طلب صيانة'}</p><p className="text-xs text-muted-foreground" dir="ltr">{job.reference ?? ''}</p></div> },
+    { key: 'location', priority: 'secondary' as const, header: 'الموقع', render: (job) => `${job.properties?.title ?? 'عقار غير محدد'}${job.units?.unit_number ? ` / ${job.units.unit_number}` : ''}` },
+    { key: 'category', priority: 'detail' as const, header: 'نوع الخدمة', render: (job) => job.category?.name ?? 'غير محدد' },
+    { key: 'priority', priority: 'secondary' as const, header: 'الأولوية', render: (job) => maintenancePriorityLabels[job.priority ?? ''] ?? job.priority ?? '—' },
+    { key: 'status', priority: 'primary' as const, header: 'الحالة', render: (job) => <StatusBadge tone={statusTone(job.status)}>{maintenanceStatusLabels[job.status ?? ''] ?? job.status ?? '—'}</StatusBadge> },
+  ], []);
   const openJobs = maintenanceJobs.filter((job) => job.status === 'open' || job.status === 'in_progress').length;
   const resolvedJobs = maintenanceJobs.filter((job) => job.status === 'resolved' || job.status === 'closed').length;
 
@@ -162,13 +170,7 @@ export function ServiceProviderDetailPage() {
           <EntityTable
             aria-label="أعمال صيانة مزود الخدمة"
             rows={[...maintenanceJobs]}
-            columns={[
-              { key: 'title', priority: 'identity' as const, header: 'الطلب', render: (job) => <div><p className="font-bold">{job.title ?? 'طلب صيانة'}</p><p className="text-xs text-muted-foreground" dir="ltr">{job.reference ?? ''}</p></div> },
-              { key: 'location', priority: 'secondary' as const, header: 'الموقع', render: (job) => `${job.properties?.title ?? 'عقار غير محدد'}${job.units?.unit_number ? ` / ${job.units.unit_number}` : ''}` },
-              { key: 'category', priority: 'detail' as const, header: 'نوع الخدمة', render: (job) => job.category?.name ?? 'غير محدد' },
-              { key: 'priority', priority: 'secondary' as const, header: 'الأولوية', render: (job) => maintenancePriorityLabels[job.priority ?? ''] ?? job.priority ?? '—' },
-              { key: 'status', priority: 'primary' as const, header: 'الحالة', render: (job) => <StatusBadge tone={statusTone(job.status)}>{maintenanceStatusLabels[job.status ?? ''] ?? job.status ?? '—'}</StatusBadge> },
-            ]}
+            columns={detailColumns}
             keyOf={(job) => job.id}
             emptyTitle="لا توجد أعمال صيانة مرتبطة"
             emptyDescription="سيظهر هنا سجل الطلبات بعد تعيين هذا المزود من مساحة الصيانة."

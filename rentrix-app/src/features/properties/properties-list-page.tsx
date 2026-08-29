@@ -9,7 +9,7 @@ import {
   Trash2,
   TriangleAlert,
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { PropertyFormModal } from "./property-form-modal";
 import { formatPropertyUnitSummary } from "./property-card-utils";
 import { usePropertyListController } from "./use-property-list-controller";
@@ -22,7 +22,7 @@ import { RegisterAttention, RegisterHeading, RegisterMetricStrip } from "@/compo
 import { Select } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { ActiveFilterBar } from "@/components/ui/active-filter-bar";
-import { EntityTable } from "@/components/ui/entity-table";
+import { EntityTable, type ColumnDef } from "@/components/ui/entity-table";
 import { getAppLanguageState, translateSharedLabel } from "@/lib/i18n";
 import { toast } from "sonner";
 import {
@@ -136,6 +136,119 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
       toast.error("تعذر تصدير ملف Excel");
     }
   };
+
+  const propertyColumns = useMemo((): ColumnDef<PropertyListItem>[] => [
+              {
+                key: "title",
+                header: "العقار",
+                priority: "identity",
+                render: (property) => (
+                  <EntityCell icon={Building2} title={property.title ?? "—"} />
+                ),
+              },
+              {
+                key: "status",
+                header: "الحالة",
+                priority: "primary",
+                render: (property) => (
+                  <StatusBadge
+                    tone={
+                      propertyStatusTone[
+                        property.status as keyof typeof propertyStatusTone
+                      ] ?? "gray"
+                    }
+                  >
+                    {controller.statusLabels[
+                      property.status as keyof typeof controller.statusLabels
+                    ] ?? property.status}
+                  </StatusBadge>
+                ),
+              },
+              {
+                key: "type",
+                header: "النوع",
+                priority: "detail",
+                render: (property) => (
+                  <span className="text-sm text-muted-foreground">{property.type || "—"}</span>
+                ),
+              },
+              {
+                key: "address",
+                header: "العنوان",
+                priority: "detail",
+                render: (property) => (
+                  <span className="text-sm text-muted-foreground">
+                    {property.address ?? "—"}
+                  </span>
+                ),
+              },
+              {
+                key: "owner",
+                header: "المالك",
+                priority: "detail",
+                render: (property) => (
+                  <span className="text-sm text-muted-foreground">
+                    {property.current_owner_name || property.owner_name || "—"}
+                  </span>
+                ),
+              },
+              {
+                key: "units",
+                header: "الوحدات",
+                priority: "detail",
+                render: (property) => {
+                  const units = property.units ?? [];
+                  const summary = formatPropertyUnitSummary(
+                    units.length,
+                    units.filter((unit) => unit.status === "occupied").length,
+                  );
+                  return (
+                    <span className="text-sm tabular-nums text-muted-foreground">{summary.text}</span>
+                  );
+                },
+              },
+              {
+                key: "workflow",
+                header: "المالك والتشغيل",
+                priority: "secondary",
+                render: (property) => <PropertyWorkflowStatus property={property} />,
+              },
+              {
+                key: "actions",
+                header: "إجراءات",
+                priority: "actions",
+                render: (property) => hasRowActions ? (
+                  <div
+                    className="flex flex-wrap items-center gap-2"
+                    onClick={(event) => event.stopPropagation()}
+                    onKeyDown={(event) => event.stopPropagation()}
+                  >
+                    {canEdit ? (
+                      <Button
+                        variant="secondary"
+                        className="min-h-11 px-3"
+                        aria-label={`تعديل ${property.title ?? "العقار"}`}
+                        onClick={() => controller.openEditModal(property.id)}
+                      >
+                        <Edit className="me-1 size-4" aria-hidden="true" />
+                        تعديل
+                      </Button>
+                    ) : null}
+                    {canArchive ? (
+                      <Button
+                        variant="danger"
+                        className="min-h-11 px-3"
+                        aria-label={`أرشفة ${property.title ?? "العقار"}`}
+                        onClick={() => controller.requestArchive(property.id, property.title ?? "عقار")}
+                      >
+                        <Trash2 className="me-1 size-4" aria-hidden="true" />
+                        أرشفة
+                      </Button>
+                    ) : null}
+                  </div>
+                ) : null,
+              },
+            ], [controller, canEdit, canArchive, hasRowActions]);
 
   return (
     <>
@@ -275,118 +388,8 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
                 onClick: () => controller.requestArchive(property.id, property.title ?? "عقار"),
               }] : []),
             ]}
-            columns={[
-              {
-                key: "title",
-                header: "العقار",
-                priority: "identity",
-                render: (property) => (
-                  <EntityCell icon={Building2} title={property.title ?? "—"} />
-                ),
-              },
-              {
-                key: "status",
-                header: "الحالة",
-                priority: "primary",
-                render: (property) => (
-                  <StatusBadge
-                    tone={
-                      propertyStatusTone[
-                        property.status as keyof typeof propertyStatusTone
-                      ] ?? "gray"
-                    }
-                  >
-                    {controller.statusLabels[
-                      property.status as keyof typeof controller.statusLabels
-                    ] ?? property.status}
-                  </StatusBadge>
-                ),
-              },
-              {
-                key: "type",
-                header: "النوع",
-                priority: "detail",
-                render: (property) => (
-                  <span className="text-sm text-muted-foreground">{property.type || "—"}</span>
-                ),
-              },
-              {
-                key: "address",
-                header: "العنوان",
-                priority: "detail",
-                render: (property) => (
-                  <span className="text-sm text-muted-foreground">
-                    {property.address ?? "—"}
-                  </span>
-                ),
-              },
-              {
-                key: "owner",
-                header: "المالك",
-                priority: "detail",
-                render: (property) => (
-                  <span className="text-sm text-muted-foreground">
-                    {property.current_owner_name || property.owner_name || "—"}
-                  </span>
-                ),
-              },
-              {
-                key: "units",
-                header: "الوحدات",
-                priority: "detail",
-                render: (property) => {
-                  const units = property.units ?? [];
-                  const summary = formatPropertyUnitSummary(
-                    units.length,
-                    units.filter((unit) => unit.status === "occupied").length,
-                  );
-                  return (
-                    <span className="text-sm tabular-nums text-muted-foreground">{summary.text}</span>
-                  );
-                },
-              },
-              {
-                key: "workflow",
-                header: "المالك والتشغيل",
-                priority: "secondary",
-                render: (property) => <PropertyWorkflowStatus property={property} />,
-              },
-              {
-                key: "actions",
-                header: "إجراءات",
-                priority: "actions",
-                render: (property) => hasRowActions ? (
-                  <div
-                    className="flex flex-wrap items-center gap-2"
-                    onClick={(event) => event.stopPropagation()}
-                    onKeyDown={(event) => event.stopPropagation()}
-                  >
-                    {canEdit ? (
-                      <Button
-                        variant="secondary"
-                        className="min-h-11 px-3"
-                        aria-label={`تعديل ${property.title ?? "العقار"}`}
-                        onClick={() => controller.openEditModal(property.id)}
-                      >
-                        <Edit className="me-1 size-4" aria-hidden="true" />
-                        تعديل
-                      </Button>
-                    ) : null}
-                    {canArchive ? (
-                      <Button
-                        variant="danger"
-                        className="min-h-11 px-3"
-                        aria-label={`أرشفة ${property.title ?? "العقار"}`}
-                        onClick={() => controller.requestArchive(property.id, property.title ?? "عقار")}
-                      >
-                        <Trash2 className="me-1 size-4" aria-hidden="true" />
-                        أرشفة
-                      </Button>
-                    ) : null}
-                  </div>
-                ) : null,
-              },
-            ]}
+            columns={propertyColumns}
+
           />
         </section>
       </ListPage>
