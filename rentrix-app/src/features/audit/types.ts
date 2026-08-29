@@ -9,6 +9,11 @@ export type AuditLogRecord = Readonly<{
 }>;
 
 export type AuditLogResult =
-  | Readonly<{ status: 'available'; records: readonly AuditLogRecord[] }>
+  | Readonly<{
+      status: 'available';
+      records: readonly AuditLogRecord[];
+      /** True when additional older events exist beyond this bounded page. */
+      truncated?: boolean;
+    }>
   | Readonly<{ status: 'unavailable'; reason: string }>;
 

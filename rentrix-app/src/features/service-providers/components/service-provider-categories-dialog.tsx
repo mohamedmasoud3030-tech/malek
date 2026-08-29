@@ -1,10 +1,10 @@
 import { Edit, Plus, Trash2 } from 'lucide-react';
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { AsyncContentState } from '@/components/async-content-state';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EntityForm } from '@/components/ui/entity-form';
-import { EntityTable } from '@/components/ui/entity-table';
+import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { serviceProviderCategorySchema } from '../service-provider-schema';
@@ -62,6 +62,17 @@ export function ServiceProviderCategoriesDialog({ open, onOpenChange }: Readonly
     }
   };
 
+  const categoryColumns: ColumnDef<ServiceProviderCategory>[] = useMemo(() => [
+    { key: 'name', header: 'النوع', render: (category) => <span className="font-bold">{category.name}</span> },
+    { key: 'description', header: 'الوصف', render: (category) => category.description ?? '—' },
+    { key: 'actions', header: 'إجراءات', render: (category) => (
+      <div className="flex flex-wrap gap-2">
+        <Button type="button" variant="secondary" className="min-h-11" onClick={() => beginEdit(category)}><Edit className="me-1 size-4" aria-hidden="true" />تعديل</Button>
+        <Button type="button" variant="ghost" className="min-h-11 text-destructive" onClick={() => setArchiveTarget(category)}><Trash2 className="me-1 size-4" aria-hidden="true" />أرشفة</Button>
+      </div>
+    ) },
+  ], [beginEdit]);
+
   return (
     <>
       <EntityForm.Overlay
@@ -100,16 +111,7 @@ export function ServiceProviderCategoriesDialog({ open, onOpenChange }: Readonly
               <EntityTable
                 aria-label="أنواع خدمات المزودين"
                 rows={categoriesQuery.data ?? []}
-                columns={[
-                  { key: 'name', header: 'النوع', render: (category) => <span className="font-bold">{category.name}</span> },
-                  { key: 'description', header: 'الوصف', render: (category) => category.description ?? '—' },
-                  { key: 'actions', header: 'إجراءات', render: (category) => (
-                    <div className="flex flex-wrap gap-2">
-                      <Button type="button" variant="secondary" className="min-h-11" onClick={() => beginEdit(category)}><Edit className="me-1 size-4" aria-hidden="true" />تعديل</Button>
-                      <Button type="button" variant="ghost" className="min-h-11 text-destructive" onClick={() => setArchiveTarget(category)}><Trash2 className="me-1 size-4" aria-hidden="true" />أرشفة</Button>
-                    </div>
-                  ) },
-                ]}
+                columns={categoryColumns}
                 keyOf={(category) => category.id}
                 emptyTitle="لا توجد أنواع خدمات"
               />

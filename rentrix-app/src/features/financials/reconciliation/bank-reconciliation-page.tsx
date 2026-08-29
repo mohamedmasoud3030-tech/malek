@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { MONEY_STEP } from '@/lib/money';
 import {
   Banknote,
@@ -9,6 +10,7 @@ import {
   ShieldCheck,
   Unlink,
 } from 'lucide-react';
+import { DataRefreshAlert } from '@/components/data-refresh-alert';
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { PageStateCard, WriteErrorCard } from '@/components/page-state-card';
 import { ActiveFilterBar, type ActiveFilterItem } from '@/components/ui/active-filter-bar';
@@ -56,6 +58,11 @@ export type BankReconciliationWorkspaceProps = Readonly<{
 export function BankReconciliationWorkspace({ embedded = false }: BankReconciliationWorkspaceProps) {
   const ctrl = useBankReconciliationController();
   const companySettings = useCompanySettingsContract();
+  const hasReadError = ctrl.accountsQuery.isError || ctrl.linesQuery.isError;
+  const hasBlockingAccountsError = ctrl.accountsQuery.isError && ctrl.accounts.length === 0;
+  const hasBlockingLinesError = ctrl.linesQuery.isError && ctrl.lines.length === 0;
+  const hasStaleReadError = hasReadError && !hasBlockingAccountsError && !hasBlockingLinesError;
+  const canMutateCurrentSnapshot = ctrl.canManageReconciliation && !hasReadError;
   const activeFilters: ActiveFilterItem[] = [];
   if (ctrl.filters.bankAccountId) {
     const account = ctrl.accounts.find((item) => item.id === ctrl.filters.bankAccountId);
@@ -99,11 +106,11 @@ export function BankReconciliationWorkspace({ embedded = false }: BankReconcilia
       description="مراجعة حركات كشف البنك ومطابقتها مع الدفعات أو الإيصالات أو المصروفات."
       secondaryActions={(
         <>
-          <Button variant="secondary" className="min-h-11" disabled={!ctrl.canManageReconciliation || ctrl.accounts.length === 0} onClick={ctrl.openImportForm}>
+          <Button variant="secondary" className="min-h-11" disabled={!canMutateCurrentSnapshot || ctrl.accounts.length === 0} onClick={ctrl.openImportForm}>
             <FileUp className="me-2 size-4" aria-hidden="true" />
             استيراد CSV
           </Button>
-          <Button variant="secondary" className="min-h-11" disabled={!ctrl.canManageReconciliation || ctrl.unmatchedLines.length === 0} onClick={ctrl.openMatchForm}>
+          <Button variant="secondary" className="min-h-11" disabled={!canMutateCurrentSnapshot || ctrl.unmatchedLines.length === 0} onClick={ctrl.openMatchForm}>
             <Link2 className="me-2 size-4" aria-hidden="true" />
             مطابقة حركة
           </Button>
@@ -112,9 +119,9 @@ export function BankReconciliationWorkspace({ embedded = false }: BankReconcilia
       primaryAction={(
         <Button
           className="min-h-11"
-          disabled={!ctrl.canManageReconciliation || ctrl.accounts.length === 0}
-          title={ctrl.canManageReconciliation ? undefined : 'ليس لديك صلاحية مطابقة البنك'}
-          onClick={ctrl.openManualLineForm}
+          disabled={!canMutateCurrentSnapshot || ctrl.accounts.length === 0}
+          title={canMutateCurrentSnapshot ? undefined : 'ليس لديك صلاحية مطابقة البنك'}
+          onClick={() => { if (canMutateCurrentSnapshot) ctrl.openManualLineForm(); }}
         >
           <Plus className="me-2 size-4" aria-hidden="true" />
           حركة يدوية
@@ -122,7 +129,7 @@ export function BankReconciliationWorkspace({ embedded = false }: BankReconcilia
       )}
     >
       {/* KPI zeros from failed loads would look like “no bank activity”. Hide them until a successful read. */}
-      {!ctrl.accountsQuery.isError && !ctrl.linesQuery.isError ? (
+      {!hasBlockingAccountsError && !hasBlockingLinesError ? (
         <FinanceKpiGrid desktopColumns={4}>
           <FinanceKpiCard label="إجمالي الحركات" value={ctrl.summary.totalLines} sub="ضمن الفلاتر الحالية" icon={Landmark} accent="primary" />
           <FinanceKpiCard label="غير مطابقة" value={ctrl.summary.unmatchedCount} sub="تحتاج إلى مراجعة" icon={Unlink} accent="primary" trend="down" trendValue="مراجعة" onDrill={() => ctrl.setFilters({ ...ctrl.filters, status: 'unmatched' })} />
@@ -145,7 +152,7 @@ export function BankReconciliationWorkspace({ embedded = false }: BankReconcilia
               aria-label="الحساب البنكي"
               value={ctrl.filters.bankAccountId}
               onChange={(event) => ctrl.setFilters({ ...ctrl.filters, bankAccountId: event.target.value })}
-              className="w-full sm:w-52"
+              className="min-h-11 w-full sm:w-52"
             >
               <option value="">كل الحسابات</option>
               {ctrl.accounts.map((account) => <option key={account.id} value={account.id}>{account.account_name}</option>)}
@@ -154,12 +161,12 @@ export function BankReconciliationWorkspace({ embedded = false }: BankReconcilia
               aria-label="حالة المطابقة"
               value={ctrl.filters.status}
               onChange={(event) => ctrl.setFilters({ ...ctrl.filters, status: event.target.value as BankReconciliationFilters['status'] })}
-              className="w-full sm:w-44"
+              className="min-h-11 w-full sm:w-44"
             >
               {Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </Select>
-            <Input className="w-full sm:w-40" aria-label="من تاريخ" type="date" value={ctrl.filters.from} onChange={(event) => ctrl.setFilters({ ...ctrl.filters, from: event.target.value })} />
-            <Input className="w-full sm:w-40" aria-label="إلى تاريخ" type="date" value={ctrl.filters.to} onChange={(event) => ctrl.setFilters({ ...ctrl.filters, to: event.target.value })} />
+            <Input className="min-h-11 w-full sm:w-40" aria-label="من تاريخ" type="date" value={ctrl.filters.from} onChange={(event) => ctrl.setFilters({ ...ctrl.filters, from: event.target.value })} />
+            <Input className="min-h-11 w-full sm:w-40" aria-label="إلى تاريخ" type="date" value={ctrl.filters.to} onChange={(event) => ctrl.setFilters({ ...ctrl.filters, to: event.target.value })} />
           </>
         )}
       />
@@ -168,11 +175,19 @@ export function BankReconciliationWorkspace({ embedded = false }: BankReconcilia
         onClearAll={() => ctrl.setFilters({ bankAccountId: '', status: 'all', from: '', to: '' })}
       />
 
+      {hasStaleReadError ? (
+        <DataRefreshAlert
+          title="تعذر تأكيد أحدث بيانات المطابقة البنكية"
+          description="نعرض آخر بيانات متاحة للقراءة فقط. تم إيقاف الاستيراد والمطابقة والتجاهل حتى ينجح التحديث."
+          onRetry={() => { void Promise.all([ctrl.accountsQuery.refetch(), ctrl.linesQuery.refetch()]); }}
+        />
+      ) : null}
+
       {ctrl.writeError ? <WriteErrorCard message={ctrl.writeError instanceof Error ? ctrl.writeError.message : 'تعذر حفظ التغيير في مطابقة البنك.'} /> : null}
       {ctrl.accountsQuery.isLoading || ctrl.linesQuery.isLoading ? <PageStateCard title="جارٍ تحميل حركات البنك..." /> : null}
 
       {/* Read failures must never render as empty lists (false “no data” signal). */}
-      {ctrl.accountsQuery.isError ? (
+      {hasBlockingAccountsError ? (
         <ErrorState
           title="تعذر تحميل الحسابات البنكية"
           description="تحقق من الاتصال والصلاحيات ثم أعد المحاولة. لن نعرض قائمة فارغة عند فشل التحميل."
@@ -180,7 +195,7 @@ export function BankReconciliationWorkspace({ embedded = false }: BankReconcilia
           onRetry={() => { void ctrl.accountsQuery.refetch(); }}
         />
       ) : null}
-      {ctrl.linesQuery.isError ? (
+      {hasBlockingLinesError ? (
         <ErrorState
           title="تعذر تحميل حركات كشف البنك"
           description="تحقق من الاتصال أو الفلاتر ثم أعد المحاولة. الخطأ لا يُعرض كـ«لا توجد حركات»."
@@ -189,25 +204,25 @@ export function BankReconciliationWorkspace({ embedded = false }: BankReconcilia
         />
       ) : null}
 
-      {!ctrl.accountsQuery.isLoading && !ctrl.accountsQuery.isError && ctrl.accounts.length === 0 ? (
+      {!ctrl.accountsQuery.isLoading && !hasBlockingAccountsError && ctrl.accounts.length === 0 ? (
         <PageStateCard
           title="لا توجد حسابات بنكية بعد"
           description="أضف حساباً بنكياً قبل تسجيل أو استيراد حركات كشف البنك."
         />
       ) : null}
 
-      {!ctrl.linesQuery.isLoading && !ctrl.linesQuery.isError && ctrl.lines.length === 0 ? (
+      {!ctrl.linesQuery.isLoading && !hasBlockingLinesError && ctrl.lines.length === 0 ? (
         <PageStateCard
           title="لا توجد حركات كشف ضمن الفلاتر"
           description={ctrl.hasFilters ? 'غيّر الفلاتر أو امسحها لعرض نتائج أخرى.' : 'أضف حركة يدوية أو استورد كشفاً بنكياً للبدء.'}
         />
-      ) : !ctrl.linesQuery.isError ? (
+      ) : !hasBlockingLinesError ? (
         <BankStatementLinesTable
           companySettings={companySettings}
           lines={ctrl.lines}
-          onIgnore={(id) => { if (ctrl.canManageReconciliation) ctrl.setPendingIgnoreLineId(id); }}
+          onIgnore={(id) => { if (canMutateCurrentSnapshot) ctrl.setPendingIgnoreLineId(id); }}
           onMatch={(line) => {
-            if (!ctrl.canManageReconciliation || line.status !== 'unmatched') return;
+            if (!canMutateCurrentSnapshot || line.status !== 'unmatched') return;
             ctrl.setMatchDraft({
               ...emptyMatchDraft,
               statement_line_id: line.id,
@@ -215,7 +230,7 @@ export function BankReconciliationWorkspace({ embedded = false }: BankReconcilia
             });
             ctrl.setMatchFormOpen(true);
           }}
-          isIgnoring={!ctrl.canManageReconciliation || ctrl.ignoreLine.isPending}
+          isIgnoring={!canMutateCurrentSnapshot || ctrl.ignoreLine.isPending}
         />
       ) : null}
 
@@ -377,7 +392,7 @@ function BankStatementLinesTable({
   onMatch: (line: BankStatementLine) => void;
   isIgnoring: boolean;
 }>) {
-  const columns: ColumnDef<BankStatementLine>[] = [
+  const columns = useMemo((): ColumnDef<BankStatementLine>[] => [
     { key: 'date', header: 'التاريخ', priority: 'secondary', render: (line) => formatDate(companySettings, line.transaction_date) },
     { key: 'description', header: 'الوصف', priority: 'identity', render: (line) => <span className="font-bold">{line.description}</span> },
     { key: 'reference', header: 'المرجع', priority: 'detail', render: (line) => line.reference ?? '—' },
@@ -398,13 +413,13 @@ function BankStatementLinesTable({
       header: 'الإجراء',
       priority: 'actions',
       render: (line) => (line.status === 'unmatched' ? (
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="secondary" className="min-h-11 px-3 text-xs" onClick={() => onMatch(line)}>مطابقة</Button>
           <Button variant="secondary" className="min-h-11 px-3 text-xs" disabled={isIgnoring} onClick={() => onIgnore(line.id)}>تجاهل</Button>
         </div>
       ) : '—'),
     },
-  ];
+  ], []);
 
   return (
     <EntityTable

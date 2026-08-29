@@ -13,7 +13,7 @@ import {
   Users,
   Wrench,
 } from 'lucide-react';
-import type { KeyboardEvent, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 export type EntityCardType =
@@ -94,18 +94,23 @@ function getActionClassName(variant: EntityCardAction['variant'] = 'secondary') 
   return 'border-border/65 bg-background text-foreground/85 hover:bg-muted/45 hover:text-foreground';
 }
 
-function handleCardKeyDown(event: KeyboardEvent<HTMLElement>, onClick?: () => void) {
-  if (!onClick) return;
-  if (event.key !== 'Enter' && event.key !== ' ') return;
-  if ((event.target as HTMLElement).closest('button, a, input, select, textarea')) return;
-  event.preventDefault();
-  onClick();
-}
-
-function EntityCardShell({ id, clickable, onClick, className, children }: Readonly<{
+/**
+ * Card shell.
+ *
+ * The whole card used to carry `role="button"` while still containing the
+ * per-record action buttons, which is a `nested-interactive` failure (WCAG
+ * 4.1.2): a screen reader reaches one composite "button" whose own name is the
+ * entire card text, and the nested actions become unreachable in some
+ * AT browse modes.
+ *
+ * The clickable region is now a real `<button>` covering the record body only,
+ * rendered as a sibling of the action row — the same structure `MobileCard`
+ * already uses. The `<article>` stays a plain container, so the card keeps one
+ * predictable primary activation plus independently reachable actions.
+ */
+function EntityCardShell({ id, clickable, className, children }: Readonly<{
   id: string;
   clickable: boolean;
-  onClick?: () => void;
   className?: string;
   children: ReactNode;
 }>) {
@@ -113,13 +118,11 @@ function EntityCardShell({ id, clickable, onClick, className, children }: Readon
     <article
       data-entity-card
       data-entity-id={id}
-      role={clickable ? 'button' : undefined}
-      tabIndex={clickable ? 0 : undefined}
-      onClick={onClick}
-      onKeyDown={(event) => handleCardKeyDown(event, onClick)}
       className={cn(
         'relative w-full min-w-0 overflow-hidden rounded-lg border border-border/70 bg-card p-2 text-start shadow-none transition-[border-color,background-color]',
-        clickable && 'cursor-pointer hover:border-primary/30 hover:bg-muted/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20',
+        // The hover affordance stays on the card while activation lives on the
+        // inner button, so the visual behaviour is unchanged.
+        clickable && 'has-[[data-entity-card-primary]:hover]:border-primary/30',
         className,
       )}
     >
@@ -134,8 +137,8 @@ export function EntityCard({
   const identity = entityCardTypeMap[type] ?? entityCardTypeMap.record!;
   const AvatarIcon = avatarIcon ?? identity.icon;
 
-  return (
-    <EntityCardShell id={id} clickable={Boolean(onClick)} onClick={onClick} className={className}>
+  const body = (
+    <>
       <div className="flex min-w-0 items-start justify-between gap-2">
         <div className="flex min-w-0 flex-1 items-start gap-2">
           <div className="grid size-8 shrink-0 place-items-center rounded-md border border-border/55 bg-muted/45 text-foreground/70">
@@ -174,12 +177,40 @@ export function EntityCard({
           })}
         </div>
       ) : null}
+    </>
+  );
+
+  return (
+    <EntityCardShell id={id} clickable={Boolean(onClick)} className={className}>
+      {onClick ? (
+        <button
+          type="button"
+          data-entity-card-primary
+          onClick={onClick}
+          className={cn(
+            'block w-full min-w-0 cursor-pointer rounded-md text-start outline-none',
+            'transition-colors hover:bg-muted/10 focus-visible:ring-2 focus-visible:ring-primary/20',
+          )}
+        >
+          {body}
+        </button>
+      ) : (
+        body
+      )}
 
       {actions?.length ? (
         <div
-          className={cn('mt-1.5 grid gap-1 border-t border-border/55 pt-1.5', actions.length === 1 ? 'grid-cols-1' : 'grid-cols-2')}
-          onClick={(event) => event.stopPropagation()}
-          onKeyDown={(event) => event.stopPropagation()}
+          /*
+           * Keeps the incoming layout fix (a lone trailing action spans both
+           * columns). The stopPropagation handlers that used to sit here are
+           * deliberately gone: the card is no longer an ancestor button, so
+           * action clicks never reach a parent handler and suppressing
+           * bubbling would only break normal event flow.
+           */
+          className={cn(
+            'mt-1.5 grid gap-1 border-t border-border/55 pt-1.5',
+            actions.length === 1 ? 'grid-cols-1' : 'grid-cols-2 [&>:last-child:nth-child(odd)]:col-span-2',
+          )}
         >
           {actions.map((action, index) => {
             const ActionIcon = action.icon;

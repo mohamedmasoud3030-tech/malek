@@ -189,14 +189,14 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
       </div>
 
       <div className="shrink-0 border-t border-border/60 bg-muted/20 px-3 py-2">
-        <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
+        <div className="flex max-w-full gap-1.5 overflow-x-auto overscroll-x-contain no-scrollbar">
           {assistantActions.map((item) => (
             <button
               key={item.action}
               type="button"
               onClick={() => submitPrompt(item.prompt, item.action)}
               disabled={pending || configurationMissing}
-              className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted disabled:opacity-50"
+              className="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-full border border-border bg-card px-3 text-xs font-medium text-foreground transition hover:bg-muted disabled:opacity-50"
             >
               <Sparkles className="size-3" />
               {item.title}

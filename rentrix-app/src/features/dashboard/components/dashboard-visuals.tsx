@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -11,7 +12,7 @@ import { cn } from '@/lib/utils';
  * the chart is never the sole representation).
  */
 
-export function TrendDelta({
+export const TrendDelta = memo(function TrendDelta({
   direction,
   text,
   tone = 'neutral',
@@ -40,13 +41,13 @@ export function TrendDelta({
       {text}
     </span>
   );
-}
+});
 
 /**
  * Compact radial/donut occupancy indicator. Decorative SVG — the numeric
  * value is always rendered beside it by the caller.
  */
-export function RadialMetric({
+export const RadialMetric = memo(function RadialMetric({
   percent,
   label,
   className,
@@ -102,13 +103,13 @@ export function RadialMetric({
       </span>
     </span>
   );
-}
+});
 
 /**
  * Minimal daily-collection sparkline. Pure decoration next to the collection
  * KPI — hidden by the caller when there is no authoritative series.
  */
-export function Sparkline({
+export const Sparkline = memo(function Sparkline({
   values,
   label,
   className,
@@ -151,13 +152,13 @@ export function Sparkline({
       />
     </svg>
   );
-}
+});
 
 /**
  * Two-value horizontal comparison (collections vs expenses). Widths are
  * relative to the larger value; the actual numbers stay visible as text.
  */
-export function MiniBarsCompare({
+export const MiniBarsCompare = memo(function MiniBarsCompare({
   items,
   className,
 }: Readonly<{
@@ -187,12 +188,12 @@ export function MiniBarsCompare({
       })}
     </div>
   );
-}
+});
 
 /**
  * Linear progress meter with an explicit textual value (collection rate).
  */
-export function ProgressMeter({
+export const ProgressMeter = memo(function ProgressMeter({
   percent,
   label,
   valueText,
@@ -228,13 +229,13 @@ export function ProgressMeter({
       </div>
     </div>
   );
-}
+});
 
 /**
  * Distribution strip: shares of a whole as proportional segments with a
  * legend (vacancy aging / arrears aging). Values remain visible as text.
  */
-export function DistributionStrip({
+export const DistributionStrip = memo(function DistributionStrip({
   segments,
   total,
   label,
@@ -279,13 +280,13 @@ export function DistributionStrip({
       </ul>
     </div>
   );
-}
+});
 
 /**
  * Small labelled stat used in dense metric columns — number first, context
  * below, optional trailing node (trend delta).
  */
-export function MetricStat({
+export const MetricStat = memo(function MetricStat({
   label,
   value,
   hint,
@@ -308,4 +309,4 @@ export function MetricStat({
       {trailing ? <div className="shrink-0">{trailing}</div> : null}
     </div>
   );
-}
+});

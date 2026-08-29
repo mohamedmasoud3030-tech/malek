@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { MONEY_STEP } from '@/lib/money';
 import {
   Archive,
@@ -22,7 +23,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { EntityForm } from "@/components/ui/entity-form";
-import { EntityTable } from "@/components/ui/entity-table";
+import { EntityTable, type ColumnDef } from "@/components/ui/entity-table";
 import { FilterBar } from "@/components/ui/filter-bar";
 import { Input } from "@/components/ui/input";
 import { RegisterMetricStrip } from "@/components/layout/register-summary";
@@ -395,12 +396,7 @@ function CommissionRows({
     />
   );
 
-  return (
-    <EntityTable
-      aria-label="جدول العمولات"
-      rows={rows}
-      keyOf={(row) => row.id}
-      columns={[
+  const commissionColumns = useMemo((): ColumnDef<CommissionRecord>[] => [
         {
           key: "staff_name", priority: 'identity' as const,
           header: "المستفيد",
@@ -424,7 +420,14 @@ function CommissionRows({
           ),
         },
         { key: "actions", priority: 'actions' as const, header: "إجراءات", render: actionsFor },
-      ]}
+      ], [actionsFor]);
+
+  return (
+    <EntityTable
+      aria-label="جدول العمولات"
+      rows={rows}
+      keyOf={(row) => row.id}
+      columns={commissionColumns}
     />
   );
 }

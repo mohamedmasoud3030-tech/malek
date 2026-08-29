@@ -2,6 +2,7 @@ import { Link, Outlet, useLocation, useNavigate, useParams } from '@tanstack/rea
 import { Building2, DoorOpen, FileText, FolderKanban, ListChecks, UserRoundCog, WalletCards, Wrench } from 'lucide-react';
 import { Edit } from 'lucide-react';
 import { AsyncContentState } from '@/components/async-content-state';
+import { DataRefreshAlert } from '@/components/data-refresh-alert';
 import { EntityDetailHeader } from '@/components/layout/entity-detail-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
@@ -103,7 +104,7 @@ export function PropertyDetailPage() {
 
   return (
     <AsyncContentState
-      status={propertyQuery.isLoading ? 'loading' : propertyQuery.isError ? 'error' : !property ? 'empty' : 'ready'}
+      status={property ? 'ready' : propertyQuery.isLoading ? 'loading' : propertyQuery.isError ? 'error' : 'empty'}
       error={propertyQuery.error}
       errorTitle="تعذر تحميل العقار"
       errorAction={<Button onClick={() => propertyQuery.refetch()}>إعادة المحاولة</Button>}
@@ -112,6 +113,9 @@ export function PropertyDetailPage() {
     >
       {property && (
         <PageLayout dir="rtl" size="wide" visualVariant="malek-pro">
+          {propertyQuery.isError ? (
+            <DataRefreshAlert onRetry={() => { void propertyQuery.refetch(); }} isRefreshing={propertyQuery.isFetching} />
+          ) : null}
           <EntityDetailHeader
             title={property.title ?? 'عقار'}
             subtitle={property.address ?? undefined}
@@ -127,9 +131,9 @@ export function PropertyDetailPage() {
             }
           />
 
-          <div className="grid min-w-0 gap-4 md:grid-cols-[minmax(220px,260px)_minmax(0,1fr)] md:items-start">
-            {/* Phone: compact select. iPad/desktop: grouped sidebar. Content renders once. */}
-            <div className="md:hidden" data-property-detail-mobile-nav>
+          <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(220px,260px)_minmax(0,1fr)] lg:items-start">
+            {/* Phone and tablet: compact select. Desktop ≥1024: grouped named sidebar. */}
+            <div className="lg:hidden" data-property-detail-mobile-nav>
               <label htmlFor="property-detail-select" className="sr-only">
                 أقسام العقار
               </label>
@@ -139,7 +143,6 @@ export function PropertyDetailPage() {
                 value={activeSection}
                 onChange={(e) => handleSelectChange(e.target.value as PropertyDetailSectionId)}
                 className="min-h-11 w-full rounded-xl border border-border bg-card px-3 py-2.5 text-sm font-semibold focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
-                dir="rtl"
               >
                 {propertyDetailSections.map((section) => (
                   <option key={section.id} value={section.id}>
@@ -154,7 +157,7 @@ export function PropertyDetailPage() {
 
             <nav
               aria-label="أقسام العقار"
-              className="sticky top-[4.5rem] hidden overflow-hidden rounded-2xl border border-border/70 bg-card shadow-card md:block"
+              className="sticky top-[calc(var(--app-header-height)+0.75rem)] hidden max-h-[calc(var(--visual-viewport-height,100dvh)-var(--app-header-height)-1.5rem)] overflow-y-auto overflow-x-hidden rounded-2xl border border-border/70 bg-card shadow-card lg:block"
             >
               <div className="border-b border-border/60 bg-muted/30 px-4 py-3">
                 <p className="text-xs font-bold text-muted-foreground">تفاصيل العقار</p>

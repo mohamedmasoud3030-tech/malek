@@ -2,6 +2,7 @@ import { Link, useParams } from '@tanstack/react-router';
 import { BarChart3, Edit, FilePlus2 } from 'lucide-react';
 import { useState } from 'react';
 import { AsyncContentState } from '@/components/async-content-state';
+import { DataRefreshAlert } from '@/components/data-refresh-alert';
 import { EntityDetailHeader } from '@/components/layout/entity-detail-header';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -30,16 +31,31 @@ export function PropertyUnitDetailPage() {
   const property = propertyQuery.data;
   const unit = unitsQuery.data?.find((candidate) => candidate.id === unitId);
   const pendingDraft = unitDraftsQuery.data?.[0] ?? null;
+  const refreshError = unitsQuery.isError
+    ? unitsQuery.error
+    : propertyQuery.isError
+      ? propertyQuery.error
+      : unitDraftsQuery.isError
+        ? unitDraftsQuery.error
+        : undefined;
+  const retry = () => { void Promise.all([unitsQuery.refetch(), propertyQuery.refetch(), unitDraftsQuery.refetch()]); };
 
   return (
     <AsyncContentState
-      status={unitsQuery.isLoading ? 'loading' : unitsQuery.isError ? 'error' : !unit ? 'empty' : 'ready'}
+      status={unit ? 'ready' : unitsQuery.isLoading ? 'loading' : unitsQuery.isError ? 'error' : 'empty'}
       error={unitsQuery.error}
       errorTitle="تعذر تحميل تفاصيل الوحدة"
+      errorAction={<Button onClick={retry}>إعادة المحاولة</Button>}
       emptyTitle="الوحدة غير موجودة"
     >
       {unit && (
         <div className="space-y-6">
+          {refreshError ? (
+            <DataRefreshAlert
+              onRetry={retry}
+              isRefreshing={unitsQuery.isFetching || propertyQuery.isFetching || unitDraftsQuery.isFetching}
+            />
+          ) : null}
           <EntityDetailHeader
             title={`وحدة ${unit.unit_number}`}
             subtitle={property ? property.title : undefined}

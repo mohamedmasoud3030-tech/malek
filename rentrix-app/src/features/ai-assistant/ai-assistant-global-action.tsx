@@ -117,7 +117,7 @@ export function AiAssistantGlobalAction({ showTrigger = true }: Readonly<{ showT
               asChild
               type="button"
               variant="ghost"
-              className="size-8 rounded-full px-0 text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="grid size-11 min-h-11 min-w-11 place-items-center rounded-full px-0 text-muted-foreground hover:bg-muted hover:text-foreground"
             >
               <Link
                 to="/ai-assistant"
@@ -131,7 +131,7 @@ export function AiAssistantGlobalAction({ showTrigger = true }: Readonly<{ showT
             <Button
               type="button"
               variant="ghost"
-              className="size-8 rounded-full px-0 text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="grid size-11 min-h-11 min-w-11 place-items-center rounded-full px-0 text-muted-foreground hover:bg-muted hover:text-foreground"
               onClick={close}
               aria-label="إغلاق المساعد"
             >

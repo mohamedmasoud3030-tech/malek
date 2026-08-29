@@ -1,3 +1,4 @@
+import { DataRefreshAlert } from '@/components/data-refresh-alert';
 import type { ReportsWorkspaceModel } from '../use-reports-workspace';
 import type { ReportsFilterState } from '../reports-workspace-filters';
 import type { ReportViewId } from '../report-view-registry';
@@ -46,13 +47,26 @@ export function ReportsWorkspace({
         onSectionViewChange={onSectionViewChange}
       />
 
-      <ReportsViewPanel
-        activeSection={activeSection}
-        activeView={activeView}
-        model={model}
-        filters={filters}
-        canExportReports={canExportReports}
-      />
+      {model.isIncomplete ? (
+        <DataRefreshAlert
+          title="نتائج التقرير غير مكتملة"
+          description="تعذر تحديث مصدر واحد أو أكثر. قد تبقى النتائج السابقة ظاهرة للمراجعة، لكن الطباعة والتصدير متوقفان حتى ينجح تحديث جميع المصادر."
+          onRetry={() => { void model.retryFailedSources(); }}
+        />
+      ) : null}
+
+      <div
+        data-stale-report-content={model.isIncomplete ? 'true' : undefined}
+        aria-label={model.isIncomplete ? 'نتائج تقرير غير مكتملة للقراءة فقط' : undefined}
+      >
+        <ReportsViewPanel
+          activeSection={activeSection}
+          activeView={activeView}
+          model={model}
+          filters={filters}
+          canExportReports={canExportReports && !model.isIncomplete}
+        />
+      </div>
     </div>
   );
 }

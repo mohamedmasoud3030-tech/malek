@@ -1,5 +1,6 @@
 import { Suspense, useEffect, useState, type ReactNode } from 'react';
 import { RefreshCcw } from 'lucide-react';
+import { DataRefreshAlert } from '@/components/data-refresh-alert';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -157,7 +158,7 @@ export function SettingsWorkspace({
     });
   }, [activeSection]);
 
-  if (companySettingsQuery.isError) {
+  if (companySettingsQuery.isError && !draft) {
     return (
       <SettingsVariantShell variant={variant} dir={pageLanguage.direction} lang={pageLanguage.locale} contentClassName="space-y-3">
         <SettingsHero companyName="—" hasUnsavedChanges={false} />
@@ -222,14 +223,28 @@ export function SettingsWorkspace({
       variant={variant}
       dir={pageLanguage.direction}
       lang={pageLanguage.locale}
-      contentClassName={cn('min-w-0 space-y-2 pb-2 md:space-y-4 md:pb-8', isDirty && 'pb-24 md:pb-8')}
+      contentClassName={cn('min-w-0 space-y-2 pb-2 md:space-y-4', isDirty && 'pb-24 md:pb-8')}
     >
       <SettingsHero companyName={preview.companyName} hasUnsavedChanges={isDirty} />
-      <div className="hidden md:block">
+      {companySettingsQuery.isError ? (
+        <DataRefreshAlert
+          title="تعذر تحديث إعدادات الشركة"
+          description="المعروض هو آخر إعداد مكتمل. أوقفنا التعديل والحفظ حتى نؤكد أحدث نسخة من الخادم، مع الاحتفاظ بأي مسودة محلية."
+          onRetry={() => { void handleRetryLoad(); }}
+          isRefreshing={companySettingsQuery.isFetching}
+        />
+      ) : null}
+      <div
+        className="space-y-2 md:space-y-4"
+        inert={companySettingsQuery.isError ? true : undefined}
+        aria-disabled={companySettingsQuery.isError ? 'true' : undefined}
+        data-stale-settings-content={companySettingsQuery.isError ? 'true' : undefined}
+      >
+      <div className="hidden lg:block">
         <OverviewRow tiles={summaryTiles} onOpenSection={handleJumpToSection} />
       </div>
 
-      <div className="grid min-w-0 gap-2 md:grid-cols-[minmax(210px,255px)_minmax(0,1fr)] md:items-start md:gap-4">
+      <div className="grid min-w-0 gap-2 lg:grid-cols-[minmax(210px,255px)_minmax(0,1fr)] lg:items-start lg:gap-4">
         <SettingsWorkspaceNav activeSection={activeSection} onChange={handleJumpToSection} sections={workspaceSections} />
         <div className="min-w-0 space-y-2 md:space-y-3">
           {isSpecialistSection ? (
@@ -253,8 +268,9 @@ export function SettingsWorkspace({
           <SettingsSaveBar isDirty={isDirty} isSaving={isSaving} onDiscard={discardDraft} />
         </div>
       </div>
+      </div>
 
-      <DirtyRouteNavigationGuard isDirty={isDirty} disabled={isSaving} onDiscard={discardDraft} />
+      <DirtyRouteNavigationGuard isDirty={isDirty} disabled={isSaving || companySettingsQuery.isError} onDiscard={discardDraft} />
     </SettingsVariantShell>
   );
 }

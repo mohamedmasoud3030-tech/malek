@@ -326,8 +326,7 @@
   }
 
   [data-operational-route='true'] [data-visual-wave='malek-pro'] [data-page-header] {
-    margin-inline: -0.25rem;
-    border-radius: 0 0 1rem 1rem;
+    border-radius: 1rem;
     padding: 1rem;
     border: 1px solid hsl(var(--border));
     background: hsl(var(--card));

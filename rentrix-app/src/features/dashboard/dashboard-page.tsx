@@ -1,6 +1,7 @@
 import './dashboard-v2.css';
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { DataRefreshAlert } from '@/components/data-refresh-alert';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { ErrorState } from '@/components/ui/error-state';
@@ -31,12 +32,9 @@ import { UtilityObligationsSection } from './components/utility-obligations-sect
 import { buildNeedsAttentionSignal, type NeedsAttentionSignal } from './needs-attention-signal';
 import { buildMaintenanceDashboardSummary } from './maintenance-dashboard-summary';
 import { buildPropertyHealthRows } from './property-health-signal';
-import {
-  buildMaintenanceFollowUpSignal,
-  EMPTY_MAINTENANCE_FOLLOW_UP_SIGNAL,
-} from './maintenance-follow-up-signal';
+import { buildMaintenanceFollowUpSignal } from './maintenance-follow-up-signal';
 import { useMaintenance } from '@/features/maintenance/use-maintenance';
-import { buildUtilityObligationsSignal, EMPTY_UTILITY_OBLIGATIONS_SIGNAL } from './utility-obligations-signal';
+import { buildUtilityObligationsSignal } from './utility-obligations-signal';
 import { buildExpiringContracts, toDateInputValue } from './dashboard-utils';
 import { buildMonthlyCashflowChartRows, getFinancialPerformanceRange, type FinancialPerformanceWindow } from './financial-performance';
 
@@ -68,7 +66,7 @@ function formatDashboardFocusValue(value: string | number | undefined): string {
   return String(value);
 }
 
-function DashboardFocusStrip({
+const DashboardFocusStrip = memo(function DashboardFocusStrip({
   snapshot,
   needsAttention,
 }: Readonly<{
@@ -79,8 +77,8 @@ function DashboardFocusStrip({
     {
       href: '#dashboard-needs-attention',
       label: 'الأولوية الآن',
-      value: snapshot ? needsAttention.totalCount : undefined,
-      tone: !snapshot ? 'info' : needsAttention.totalCount > 0 ? 'warning' : 'success',
+      value: snapshot && needsAttention.isComplete ? needsAttention.totalCount : undefined,
+      tone: !snapshot || !needsAttention.isComplete ? 'info' : needsAttention.totalCount > 0 ? 'warning' : 'success',
     },
     {
       href: '#dashboard-collections',
@@ -110,14 +108,14 @@ function DashboardFocusStrip({
     >
       <div className="flex min-w-0 items-center gap-2">
         <span className="hidden shrink-0 px-2 text-[11px] font-black text-muted-foreground sm:inline">ركّز على</span>
-        <div data-dashboard-focus-scroll className="flex min-w-0 flex-1 gap-1.5 overflow-x-auto overscroll-x-contain">
+        <div data-dashboard-focus-scroll className="no-scrollbar flex min-w-0 flex-1 gap-1.5 overflow-x-auto overscroll-x-contain">
           {items.map((item) => (
             <a
               key={item.href}
               href={item.href}
               data-dashboard-focus-item
               data-tone={item.tone}
-              className={`flex min-h-11 min-w-[8.75rem] shrink-0 items-center justify-between gap-2 rounded-xl border px-3 text-start outline-none transition-[background-color,border-color,transform] hover:-translate-y-px focus-visible:ring-2 focus-visible:ring-primary/25 ${dashboardFocusToneClass[item.tone]}`}
+              className={`flex min-h-11 min-w-[7.5rem] shrink-0 items-center justify-between gap-2 rounded-xl border px-3 text-start outline-none transition-[background-color,border-color,transform] hover:-translate-y-px focus-visible:ring-2 focus-visible:ring-primary/25 sm:min-w-[8.75rem] ${dashboardFocusToneClass[item.tone]}`}
             >
               <span className="text-[11px] font-extrabold leading-4 text-current/75">{item.label}</span>
               <span className="text-sm font-black tabular-nums">{formatDashboardFocusValue(item.value)}</span>
@@ -127,9 +125,9 @@ function DashboardFocusStrip({
       </div>
     </nav>
   );
-}
+});
 
-function DashboardGroup({
+const DashboardGroup = memo(function DashboardGroup({
   eyebrow,
   title,
   ariaLabel,
@@ -162,7 +160,7 @@ function DashboardGroup({
       {children}
     </section>
   );
-}
+});
 
 /**
  * MALEK Property Office Command Center.
@@ -246,8 +244,8 @@ export function DashboardPage() {
 
   const utilityBillsQuery = useUtilityBills();
   const utilityObligations = useMemo(
-    () => (utilityBillsQuery.isError ? EMPTY_UTILITY_OBLIGATIONS_SIGNAL : buildUtilityObligationsSignal(utilityBillsQuery.data, today)),
-    [utilityBillsQuery.data, utilityBillsQuery.isError, today],
+    () => buildUtilityObligationsSignal(utilityBillsQuery.data, today),
+    [utilityBillsQuery.data, today],
   );
 
   const unitsQuery = useAllUnits();
@@ -278,24 +276,28 @@ export function DashboardPage() {
     [unitsQuery.data],
   );
   const maintenanceFollowUp = useMemo(
-    () => (maintenanceQuery.isError
-      ? EMPTY_MAINTENANCE_FOLLOW_UP_SIGNAL
-      : buildMaintenanceFollowUpSignal(maintenanceQuery.data, today, propertyTitleMap, unitNumberMap)),
-    [maintenanceQuery.data, maintenanceQuery.isError, today, propertyTitleMap, unitNumberMap],
+    () => buildMaintenanceFollowUpSignal(maintenanceQuery.data, today, propertyTitleMap, unitNumberMap),
+    [maintenanceQuery.data, today, propertyTitleMap, unitNumberMap],
   );
   const maintenanceSummary = useMemo(
     () => buildMaintenanceDashboardSummary(maintenanceQuery.data, today, snapshot?.maintenance.urgentOpen),
     [maintenanceQuery.data, snapshot?.maintenance.urgentOpen, today],
   );
 
+  const attentionSourcesComplete = !(isError || isRefetchError)
+    && !unitsQuery.isError
+    && !(hasVacantUnit && contractsQuery.isError)
+    && !maintenanceQuery.isError
+    && !utilityBillsQuery.isError;
   const needsAttention = useMemo(
     () => buildNeedsAttentionSignal({
       snapshot,
       vacancyAnalytics,
       utilityObligations,
       maintenanceFollowUp,
+      isComplete: attentionSourcesComplete,
     }),
-    [snapshot, vacancyAnalytics, utilityObligations, maintenanceFollowUp],
+    [snapshot, vacancyAnalytics, utilityObligations, maintenanceFollowUp, attentionSourcesComplete],
   );
 
   const propertyHealthRows = useMemo(
@@ -310,9 +312,34 @@ export function DashboardPage() {
 
   const hasDashboardError = isError || isRefetchError;
   const snapshotUnavailable = hasDashboardError && !snapshot;
+  const hasSupplementalError = dailySeriesQuery.isError
+    || cashflowQuery.isError
+    || utilityBillsQuery.isError
+    || unitsQuery.isError
+    || (hasVacantUnit && contractsQuery.isError)
+    || propertyTitlesQuery.isError
+    || maintenanceQuery.isError;
+  const supplementalIsFetching = dailySeriesQuery.isFetching
+    || cashflowQuery.isFetching
+    || utilityBillsQuery.isFetching
+    || unitsQuery.isFetching
+    || contractsQuery.isFetching
+    || propertyTitlesQuery.isFetching
+    || maintenanceQuery.isFetching;
+  const retrySupplemental = () => {
+    void Promise.all([
+      dailySeriesQuery.refetch(),
+      cashflowQuery.refetch(),
+      utilityBillsQuery.refetch(),
+      unitsQuery.refetch(),
+      propertyTitlesQuery.refetch(),
+      maintenanceQuery.refetch(),
+      ...(hasVacantUnit ? [contractsQuery.refetch()] : []),
+    ]);
+  };
 
   return (
-    <PageLayout size="wide" className="pb-8" visualVariant="malek-pro">
+    <PageLayout size="wide" visualVariant="malek-pro">
       <PageHeader
         title="لوحة التحكم"
         description="مركز قيادة اليوم: الأداء، الأولويات، التحصيل، الإشغال، العقود والالتزامات في مسار واحد."
@@ -329,6 +356,15 @@ export function DashboardPage() {
             }
             error={error}
             onRetry={retryDashboard}
+          />
+        ) : null}
+
+        {!snapshotUnavailable && hasSupplementalError ? (
+          <DataRefreshAlert
+            title="بعض مؤشرات لوحة التحكم غير متاحة"
+            description="المصادر التي نجحت ما زالت معروضة، لكن إجمالي الأولويات غير مكتمل حتى تنجح بقية القراءات."
+            onRetry={retrySupplemental}
+            isRefreshing={supplementalIsFetching}
           />
         ) : null}
 
@@ -360,7 +396,8 @@ export function DashboardPage() {
                   <NeedsAttentionSection
                     signal={needsAttention}
                     isLoading={isLoading}
-                    isError={hasDashboardError}
+                    isError={hasDashboardError && !snapshot}
+                    isPartial={!needsAttention.isComplete}
                   />
                 </DashboardGroup>
               </div>
@@ -370,7 +407,7 @@ export function DashboardPage() {
                   <CollectionsSection
                     snapshot={snapshot}
                     isLoading={isLoading}
-                    isError={hasDashboardError}
+                    isError={hasDashboardError && !snapshot}
                     settings={settings}
                   />
                 </DashboardGroup>
@@ -382,7 +419,7 @@ export function DashboardPage() {
                     snapshot={snapshot}
                     analytics={vacancyAnalytics}
                     isLoading={isLoading || unitsQuery.isLoading || (hasVacantUnit && contractsQuery.isLoading)}
-                    isError={unitsQuery.isError}
+                    isError={unitsQuery.isError && !unitsQuery.data}
                     detailsUnavailable={vacancyDetailsUnavailable}
                     settings={settings}
                   />
@@ -400,7 +437,7 @@ export function DashboardPage() {
                     onWindowChange={setPerformanceWindow}
                     chartRows={chartRows}
                     chartIsLoading={cashflowQuery.isLoading}
-                    chartIsError={cashflowQuery.isError}
+                    chartIsError={cashflowQuery.isError && !cashflowQuery.data}
                     onChartRetry={retryCashflow}
                   />
                 </DashboardGroup>
@@ -415,16 +452,16 @@ export function DashboardPage() {
                         urgentRows={snapshot?.queues.urgentMaintenance ?? []}
                         followUp={maintenanceFollowUp}
                         isLoading={isLoading}
-                        isError={hasDashboardError}
+                        isError={hasDashboardError && !snapshot}
                         maintenanceIsLoading={maintenanceQuery.isLoading}
-                        maintenanceIsError={maintenanceQuery.isError}
+                        maintenanceIsError={maintenanceQuery.isError && !maintenanceQuery.data}
                       />
                     </div>
                     <div className="min-w-0 xl:col-span-5">
                       <UtilityObligationsSection
                         signal={utilityObligations}
                         isLoading={utilityBillsQuery.isLoading}
-                        isError={utilityBillsQuery.isError}
+                        isError={utilityBillsQuery.isError && !utilityBillsQuery.data}
                         settings={settings}
                       />
                     </div>
@@ -440,7 +477,7 @@ export function DashboardPage() {
                     expiring60={snapshot?.contracts.expiring60}
                     expiring90={snapshot?.contracts.expiring90}
                     isLoading={isLoading}
-                    isError={hasDashboardError}
+                    isError={hasDashboardError && !snapshot}
                     settings={settings}
                   />
                 </DashboardGroup>
@@ -451,7 +488,7 @@ export function DashboardPage() {
                   <PropertyHealthSection
                     rows={propertyHealthRows}
                     isLoading={unitsQuery.isLoading || maintenanceQuery.isLoading}
-                    isError={unitsQuery.isError || maintenanceQuery.isError}
+                    isError={(unitsQuery.isError && !unitsQuery.data) || (maintenanceQuery.isError && !maintenanceQuery.data)}
                   />
                 </DashboardGroup>
               </div>

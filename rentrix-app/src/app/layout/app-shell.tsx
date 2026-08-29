@@ -1,5 +1,5 @@
 import { Link, Outlet, useMatches, useRouter } from '@tanstack/react-router';
-import { useEffect, useId, useRef, useState, type ButtonHTMLAttributes, type ReactNode, type Ref } from 'react';
+import { memo, useCallback, useEffect, useId, useMemo, useRef, useState, type ButtonHTMLAttributes, type ReactNode, type Ref } from 'react';
 import { CircleHelp, KeyRound, LogOut, Moon, Settings, ShieldAlert, Sun, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { MalekBrandWordmark } from '@/components/brand/malek-wordmark';
@@ -42,7 +42,7 @@ function getAccountAccessStatus(writeAccessState: WriteAccessState): AccountAcce
   };
 }
 
-function Brand({ expanded, showTagline }: Readonly<{ expanded: boolean; showTagline?: boolean }>) {
+const Brand = memo(function Brand({ expanded, showTagline }: Readonly<{ expanded: boolean; showTagline?: boolean }>) {
   return (
     <div className="flex min-w-0 flex-col gap-2" data-malek-brand-lockup data-layout="horizontal" data-sidebar-brand>
       <MalekBrandWordmark size="sidebar" />
@@ -51,14 +51,14 @@ function Brand({ expanded, showTagline }: Readonly<{ expanded: boolean; showTagl
       ) : null}
     </div>
   );
-}
+});
 
 /**
  * MALEK final header brand — M Malek wordmark, M larger than Malek, no icon container.
  * Tapping opens primary navigation on mobile. No surrounding shape/background tile.
  * Theme-aware colors via [data-malek-brand-wordmark] CSS.
  */
-function HeaderBrandWordmarkButton({
+const HeaderBrandWordmarkButton = memo(function HeaderBrandWordmarkButton({
   onClick,
   buttonRef,
 }: Readonly<{
@@ -82,9 +82,9 @@ function HeaderBrandWordmarkButton({
       <MalekBrandWordmark size="header" />
     </button>
   );
-}
+});
 
-function HeaderBrandLockup({
+const HeaderBrandLockup = memo(function HeaderBrandLockup({
   onOpenNav,
   monogramRef,
 }: Readonly<{
@@ -96,13 +96,13 @@ function HeaderBrandLockup({
       <HeaderBrandWordmarkButton onClick={onOpenNav} buttonRef={monogramRef} />
     </div>
   );
-}
+});
 
 /**
  * Header control — standalone icon, no visible box, 44px touch target via padding.
  * Clearly visible, aligned, consistent size, not dominating.
  */
-function HeaderControl({
+const HeaderControl = memo(function HeaderControl({
   label,
   children,
   ref,
@@ -130,9 +130,9 @@ function HeaderControl({
       </button>
     </span>
   );
-}
+});
 
-function HeaderUserMenu({
+const HeaderUserMenu = memo(function HeaderUserMenu({
   email,
   canOpenSettings,
   supportFrom,
@@ -291,9 +291,9 @@ function HeaderUserMenu({
       ) : null}
     </div>
   );
-}
+});
 
-function MobileNavigationSheet({
+const MobileNavigationSheet = memo(function MobileNavigationSheet({
   authorization,
   sharedLabel,
   onClose,
@@ -324,28 +324,33 @@ function MobileNavigationSheet({
       </div>
     </BottomSheet>
   );
-}
+});
 
 export function AppShell() {
   const router = useRouter();
   const matches = useMatches();
   const { authorization, logout, user } = useAuth();
-  const { theme, setTheme, syncStatus, setSyncStatus } = useUiStore();
+  const theme = useUiStore((s) => s.theme);
+  const setTheme = useUiStore((s) => s.setTheme);
+  const syncStatus = useUiStore((s) => s.syncStatus);
+  const setSyncStatus = useUiStore((s) => s.setSyncStatus);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const dockMenuTriggerRef = useRef<HTMLButtonElement | null>(null);
 
-  const handleOpenNav = () => setMobileNavOpen(true);
-  const appLanguage = getAppLanguageState();
-  const sharedLabel = (key: string) => translateSharedLabel(key, appLanguage.language);
-  const writeAccessState = getWriteAccessState(authorization);
-  const supportFrom = sanitizeSupportRoute(router.state?.location?.pathname ?? '/dashboard');
-  const canOpenSettings = canAccessRoute(authorization, 'company.settings.manage');
-  const accountAccessStatus = getAccountAccessStatus(writeAccessState);
-  const pageTitle =
+  const handleOpenNav = useCallback(() => setMobileNavOpen(true), []);
+  const appLanguage = useMemo(() => getAppLanguageState(), []);
+  const sharedLabel = useCallback((key: string) => translateSharedLabel(key, appLanguage.language), [appLanguage.language]);
+  const writeAccessState = useMemo(() => getWriteAccessState(authorization), [authorization]);
+  const supportFrom = useMemo(() => sanitizeSupportRoute(router.state?.location?.pathname ?? '/dashboard'), [router.state?.location?.pathname]);
+  const canOpenSettings = useMemo(() => canAccessRoute(authorization, 'company.settings.manage'), [authorization]);
+  const accountAccessStatus = useMemo(() => getAccountAccessStatus(writeAccessState), [writeAccessState]);
+  const pageTitle = useMemo(() =>
     ([...matches]
       .reverse()
       .find((match) => (match.staticData as { title?: string } | undefined)?.title)
-      ?.staticData as { title?: string } | undefined)?.title ?? APP_BRAND_NAME;
+      ?.staticData as { title?: string } | undefined)?.title ?? APP_BRAND_NAME,
+    [matches],
+  );
 
   useEffect(() => {
     document.title = `${pageTitle} | ${APP_BRAND_NAME}`;
@@ -362,12 +367,12 @@ export function AppShell() {
     };
   }, [setSyncStatus]);
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     await logout();
     setMobileNavOpen(false);
     toast.success(sharedLabel('logoutSuccess'));
     await router.navigate({ to: '/login' });
-  };
+  }, [logout, sharedLabel, router]);
 
   return (
     <div
@@ -391,7 +396,7 @@ export function AppShell() {
 
       <aside
         data-sidebar
-        className="fixed inset-y-0 right-0 z-30 hidden w-[14rem] overflow-hidden border-l border-sidebar-border bg-sidebar text-sidebar-foreground lg:flex lg:flex-col"
+        className="fixed inset-y-0 start-0 z-30 hidden w-[14rem] overflow-hidden border-e border-sidebar-border bg-sidebar text-sidebar-foreground lg:flex lg:flex-col"
       >
         <div className="flex min-h-[4.5rem] items-center border-b border-sidebar-border/60 px-5 py-4">
           <Brand expanded />
@@ -401,7 +406,7 @@ export function AppShell() {
         </nav>
       </aside>
 
-      <div className="w-full lg:pr-[14rem]">
+      <div className="min-w-0 w-full lg:ps-[14rem]">
         <header
           data-app-shell-header
           className="sticky top-0 z-20 border-b border-border bg-card pt-[env(safe-area-inset-top,0px)]"

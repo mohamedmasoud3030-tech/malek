@@ -87,7 +87,7 @@ export function SettingsWorkspaceE2EFixture() {
         <SettingsHero companyName={preview.companyName} hasUnsavedChanges={isDirty} />
         <OverviewRow tiles={summaryTiles} />
 
-        <div className="grid min-w-0 gap-4 md:grid-cols-[minmax(230px,285px)_minmax(0,1fr)] md:items-start">
+        <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(230px,285px)_minmax(0,1fr)] lg:items-start">
           <SettingsWorkspaceNav activeSection={activeSection} onChange={setActiveSection} />
 
           <div className="min-w-0 space-y-3">

@@ -245,6 +245,47 @@ same product:
 - Respect reduced motion and forced-colors/user contrast settings.
 - Images and logos must preserve aspect ratio; decorative assets are hidden from assistive technology.
 
+### Name, description and ARIA references
+
+These four rules cover the failures that are invisible on screen — the layout
+looks correct while assistive technology receives the wrong thing.
+
+- **A control's accessible name is its label, and nothing else.** Never render
+  a description, hint, counter or validation error inside a wrapping `<label>`:
+  a wrapping label contributes its whole text content to the name, so the name
+  becomes one run-on string that is re-announced in full on every focus.
+  Supporting copy is bound with `aria-describedby`.
+- **Supporting copy must be programmatically bound, not merely adjacent.** An
+  error or hint that is only visually near a field is not announced. The shared
+  shells — `EntityForm.Field`, `FormField`, `TextField`/`TextAreaField` — own
+  this wiring; use them instead of hand-rolling a label + message stack.
+- **A validation error is state, not colour.** An errored control carries
+  `aria-invalid`, and its message uses `role="alert"`.
+- **Every ARIA id reference must resolve to a rendered element.** A dangling
+  `aria-describedby`/`aria-controls`/`aria-labelledby` fails silently. Two
+  recurring traps: a description that is swapped out for an error message while
+  its id stays in `aria-describedby`, and a tab whose `aria-controls` names a
+  panel the page mounts lazily. Tabs that share one always-rendered panel pass
+  `panelId`; tabs with one panel each only advertise `aria-controls` while
+  active, and their `SectionTabs`/`SectionTabPanel` pair must share one
+  `idPrefix`.
+- **Do not nest interactive controls.** A card whose whole surface is clickable
+  must not also contain buttons: make the record body its own `<button>` and
+  keep record actions as siblings (see `EntityCard`, `MobileCard`).
+- **A composite role owns its children.** `role="menu"` may contain only menu
+  items, so a panel title or close button belongs outside it — put the role on
+  the list of items and name it with `aria-labelledby`, not on the whole
+  surface. The same applies to `tablist`/`tab` and `radiogroup`/`radio`.
+- **`role="tabpanel"` implies a tab.** A view reachable only by deep link or
+  redirect (no tab controls it) is a `role="region"` named by its own heading;
+  labelling it after a tab that is never rendered is a dangling reference.
+
+`components/ui/form-association.a11y.test.tsx`,
+`components/ui/primitives.axe.test.tsx` and
+`app/layout/mobile-quick-add-list.test.tsx` enforce the above against the real
+rendered DOM using the axe-core rule engine; `app/accessibility-baseline.test.ts`
+continues to guard landmark/navigation semantics at source level.
+
 ## 7. Migration priorities
 
 ### P0 — foundation (implemented/locked)

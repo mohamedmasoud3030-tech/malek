@@ -50,7 +50,7 @@ export function OverdueInvoicesPanel({ rows, action, isLoading }: Readonly<{ row
     setSelected(null);
     dialogNavigate(target);
   };
-  const columns: ColumnDef<OverdueInvoiceReportRow>[] = [
+  const columns = useMemo((): ColumnDef<OverdueInvoiceReportRow>[] => [
     { key: 'invoice', header: 'الفاتورة', priority: 'identity', render: (row) => <Button variant="link" className="min-h-11 px-1 font-black" onClick={() => setSelected(row)}>{row.invoiceReference ?? 'فاتورة بلا مرجع'}</Button> },
     {
       key: 'tenant', header: 'المستأجر', priority: 'secondary', render: (row) => (
@@ -70,7 +70,7 @@ export function OverdueInvoicesPanel({ rows, action, isLoading }: Readonly<{ row
     { key: 'remaining', header: 'المتبقي', priority: 'primary', render: (row) => <span dir="ltr" className="font-black text-destructive">{formatMoney(row.remainingAmount)}</span> },
     { key: 'status', header: 'الحالة', priority: 'detail', render: (row) => <StatusBadge tone="neutral">{formatInvoiceStatusLabel(row.status)}</StatusBadge> },
     { key: 'actions', header: 'إجراء', priority: 'actions', render: (row) => <Button variant="secondary" className="min-h-11" onClick={() => setSelected(row)}>عرض</Button> },
-  ];
+  ], []);
 
   return (
     <ReportPanel title="تحليل المتأخرات" description="سجل تحليلي يربط المستأجر والعقار والوحدة والعقد والفاتورة بالتعتيق وإجراء تحصيل قابل للتنفيذ." icon={AlertTriangle} action={action} isLoading={isLoading}>

@@ -1,14 +1,15 @@
 import { useNavigate, useParams } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { BriefcaseBusiness, Edit, FolderCog, Mail, MapPin, Phone, Wrench } from 'lucide-react';
 import { AsyncContentState } from '@/components/async-content-state';
+import { DataRefreshAlert } from '@/components/data-refresh-alert';
 import { ContextualDocumentsSection } from '@/components/documents/contextual-documents-section';
 import { EntityDetailHeader } from '@/components/layout/entity-detail-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { DetailFields } from '@/components/ui/detail-fields';
-import { EntityTable } from '@/components/ui/entity-table';
+import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { SectionTabPanel, SectionTabs } from '@/components/ui/section-tabs';
@@ -50,11 +51,11 @@ export function ServiceProviderDetailPage() {
   if (!providerId) {
     return <AsyncContentState status="empty" emptyTitle="ملف مزود الخدمة غير متاح" emptyDescription="معرف مزود الخدمة غير موجود في الرابط.">{null}</AsyncContentState>;
   }
-  if (dossierQuery.isLoading) return <AsyncContentState status="loading">{null}</AsyncContentState>;
-  if (dossierQuery.isError || !dossierQuery.data) {
+  if (!dossierQuery.data && dossierQuery.isLoading) return <AsyncContentState status="loading">{null}</AsyncContentState>;
+  if (!dossierQuery.data) {
     return (
       <AsyncContentState
-        status="error"
+        status={dossierQuery.isError ? 'error' : 'empty'}
         error={dossierQuery.error}
         errorTitle="تعذر تحميل ملف مزود الخدمة"
         errorFallbackMessage="تعذر تحميل بيانات مزود الخدمة وسجل الصيانة المرتبط."
@@ -64,11 +65,22 @@ export function ServiceProviderDetailPage() {
   }
 
   const { provider, maintenanceJobs } = dossierQuery.data;
+
+  const detailColumns: ColumnDef<typeof maintenanceJobs[number]>[] = useMemo(() => [
+    { key: 'title', priority: 'identity' as const, header: 'الطلب', render: (job) => <div><p className="font-bold">{job.title ?? 'طلب صيانة'}</p><p className="text-xs text-muted-foreground" dir="ltr">{job.reference ?? ''}</p></div> },
+    { key: 'location', priority: 'secondary' as const, header: 'الموقع', render: (job) => `${job.properties?.title ?? 'عقار غير محدد'}${job.units?.unit_number ? ` / ${job.units.unit_number}` : ''}` },
+    { key: 'category', priority: 'detail' as const, header: 'نوع الخدمة', render: (job) => job.category?.name ?? 'غير محدد' },
+    { key: 'priority', priority: 'secondary' as const, header: 'الأولوية', render: (job) => maintenancePriorityLabels[job.priority ?? ''] ?? job.priority ?? '—' },
+    { key: 'status', priority: 'primary' as const, header: 'الحالة', render: (job) => <StatusBadge tone={statusTone(job.status)}>{maintenanceStatusLabels[job.status ?? ''] ?? job.status ?? '—'}</StatusBadge> },
+  ], []);
   const openJobs = maintenanceJobs.filter((job) => job.status === 'open' || job.status === 'in_progress').length;
   const resolvedJobs = maintenanceJobs.filter((job) => job.status === 'resolved' || job.status === 'closed').length;
 
   return (
     <PageLayout dir="rtl" size="wide" visualVariant="malek-pro">
+      {dossierQuery.isError ? (
+        <DataRefreshAlert onRetry={() => { void dossierQuery.refetch(); }} isRefreshing={dossierQuery.isFetching} />
+      ) : null}
       <EntityDetailHeader
         title={provider.name}
         subtitle="ملف مزود الخدمة وبيانات التواصل والتغطية وأنواع الخدمات وأعمال الصيانة والمستندات."
@@ -158,13 +170,7 @@ export function ServiceProviderDetailPage() {
           <EntityTable
             aria-label="أعمال صيانة مزود الخدمة"
             rows={[...maintenanceJobs]}
-            columns={[
-              { key: 'title', priority: 'identity' as const, header: 'الطلب', render: (job) => <div><p className="font-bold">{job.title ?? 'طلب صيانة'}</p><p className="text-xs text-muted-foreground" dir="ltr">{job.reference ?? ''}</p></div> },
-              { key: 'location', priority: 'secondary' as const, header: 'الموقع', render: (job) => `${job.properties?.title ?? 'عقار غير محدد'}${job.units?.unit_number ? ` / ${job.units.unit_number}` : ''}` },
-              { key: 'category', priority: 'detail' as const, header: 'نوع الخدمة', render: (job) => job.category?.name ?? 'غير محدد' },
-              { key: 'priority', priority: 'secondary' as const, header: 'الأولوية', render: (job) => maintenancePriorityLabels[job.priority ?? ''] ?? job.priority ?? '—' },
-              { key: 'status', priority: 'primary' as const, header: 'الحالة', render: (job) => <StatusBadge tone={statusTone(job.status)}>{maintenanceStatusLabels[job.status ?? ''] ?? job.status ?? '—'}</StatusBadge> },
-            ]}
+            columns={detailColumns}
             keyOf={(job) => job.id}
             emptyTitle="لا توجد أعمال صيانة مرتبطة"
             emptyDescription="سيظهر هنا سجل الطلبات بعد تعيين هذا المزود من مساحة الصيانة."

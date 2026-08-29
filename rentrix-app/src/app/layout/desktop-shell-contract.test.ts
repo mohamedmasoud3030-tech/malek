@@ -16,7 +16,12 @@ describe('desktop shell declutter contract', () => {
     expect(shell).toContain('lg:hidden');
     expect(shell).not.toContain("sidebarCollapsed ? 'w-[4.5rem] overflow-visible'");
     expect(pagePolish).toContain('width: 14rem;');
+    expect(pagePolish).toContain('inset-inline-start: 0;');
     expect(pagePolish).toContain('padding-inline-start: 14rem; padding-inline-end: 0;');
+    expect(shell).toContain('start-0');
+    expect(shell).toContain('lg:ps-[14rem]');
+    expect(shell).not.toContain('lg:pr-[14rem]');
+    expect(shell).not.toContain('right-0 z-30');
   });
 
   it('uses restrained opaque chrome instead of the legacy glass split', () => {

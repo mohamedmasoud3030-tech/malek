@@ -1,5 +1,5 @@
 import { Edit, Eye, Trash2, User } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { DataTableColumnsMenu } from "@/components/ui/data-table";
 import { EntityCell } from "@/components/ui/entity-cell";
@@ -76,7 +76,7 @@ export function ContractTable({
 }) {
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultContractColumns]);
 
-  const columns: ColumnDef<ContractListItem>[] = [
+  const columns = useMemo((): ColumnDef<ContractListItem>[] => [
     {
       key: "contract_number",
       header: "العقد رقم",
@@ -173,7 +173,7 @@ export function ContractTable({
         </div>
       ),
     },
-  ];
+  ], [onPreview, onEdit]);
 
   return (
     <EntityTable

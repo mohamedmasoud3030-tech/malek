@@ -67,7 +67,7 @@ export function KpiCard({
       </div>
 
       <div className="mt-3 min-w-0">
-        <p className="break-words text-lg sm:text-2xl font-bold tabular-nums leading-tight text-foreground" dir="ltr">
+        <p className="break-words text-lg font-bold tabular-nums leading-tight text-foreground [overflow-wrap:anywhere] sm:text-2xl" dir="ltr">
           {value}
         </p>
         <p className="mt-1 text-xs font-medium text-muted-foreground">{label}</p>

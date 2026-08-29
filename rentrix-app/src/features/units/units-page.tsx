@@ -9,7 +9,7 @@ import {
   Plus,
   Wrench,
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from 'react';
 import {
   useUnitsListController,
   getUnitPageStatus,
@@ -89,7 +89,7 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
     </div>
   );
 
-  const columns: ColumnDef<Unit>[] = [
+  const columns = useMemo((): ColumnDef<Unit>[] => [
     {
       key: "unit_number",
       header: "الوحدة",
@@ -157,7 +157,7 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
       priority: "actions",
       render: (unit) => (
         <div
-          className="flex gap-2"
+          className="flex flex-wrap gap-2"
           onClick={(event) => event.stopPropagation()}
           onKeyDown={(event) => event.stopPropagation()}
         >
@@ -178,7 +178,7 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
         </div>
       ),
     },
-  ];
+  ], []);
 
   return (
     <EmbeddableWorkspace

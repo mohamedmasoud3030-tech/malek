@@ -126,7 +126,7 @@ export function DocumentsVaultWorkspace({ mode = 'standalone' }: DocumentsVaultW
             aria-label="التصنيف"
             value={selectedCategory}
             onChange={(event) => setSelectedCategory(event.target.value as VaultCategory)}
-            className="w-full sm:w-48"
+            className="min-h-11 w-full sm:w-48"
           >
             {Object.entries(vaultCategoryLabels).map(([category, label]) => (
               <option key={category} value={category}>

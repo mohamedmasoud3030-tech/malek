@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import { APP_BRAND_FILE_SLUG } from '@/lib/brand';
 import { Controller } from 'react-hook-form';
 import { Building2, Download, Edit, Eye, Plus, Printer, ReceiptText, Tags, WalletCards } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { EntityTable } from '@/components/ui/entity-table';
+import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { ActionMenu } from '@/components/ui/action-menu';
 import { EntityForm } from '@/components/ui/entity-form';
 import { FilterBar } from '@/components/ui/filter-bar';
@@ -162,6 +162,55 @@ export function ExpensesSection({
     .map((fieldError) => fieldError?.message)
     .find((message): message is string => typeof message === 'string' && message.length > 0);
 
+  const expenseColumns = useMemo((): ColumnDef<Expense>[] => [
+            {
+              key: 'expense_date',
+              header: 'التاريخ',
+              priority: 'secondary',
+              render: (expense) => <span className="text-muted-foreground">{formatDate(expense.expense_date)}</span>,
+            },
+            {
+              key: 'label',
+              header: 'العقار والتصنيف',
+              priority: 'identity',
+              render: (expense) => {
+                const label = buildExpensePropertyLabel(expense, propertyById);
+                const costCenterLabel = expense.cost_center_id
+                  ? costCenterById.get(expense.cost_center_id)?.name ?? 'مركز تكلفة غير معروف'
+                  : null;
+                const chargedToLabel = getExpenseChargedToLabel(getExpenseChargedTo(expense));
+                return (
+                  <span className="min-w-0 truncate">
+                    {label} — {expense.category}
+                    {costCenterLabel ? ` — ${costCenterLabel}` : ''}
+                    {chargedToLabel !== 'الشركة' ? ` — يتحمّلها ${chargedToLabel}` : ''}
+                  </span>
+                );
+              },
+            },
+            {
+              key: 'amount',
+              header: 'المبلغ',
+              priority: 'primary',
+              render: (expense) => <span className="font-bold tabular-nums">{formatMoney(expense.amount)}</span>,
+            },
+            {
+              key: 'actions',
+              header: 'إجراءات',
+              priority: 'actions',
+              render: (expense) => (
+                <ActionMenu
+                  label="إجراءات المصروف"
+                  items={[
+                    { id: 'details', label: 'التفاصيل', icon: Eye, onClick: () => setDetailsExpense(expense) },
+                    { id: 'edit', label: 'تعديل', icon: Edit, onClick: () => openEditForm(expense), disabled: !onUpdateExpense },
+                    { id: 'pdf', label: 'تصدير PDF', icon: Download, onClick: () => exportExpenseVoucher(expense), disabled: !documentSettings.isReady },
+                    { id: 'print', label: 'طباعة', icon: Printer, onClick: () => printExpenseVoucher(expense), disabled: !documentSettings.isReady },
+                  ]}
+                />
+              ),
+            }], [propertyById, costCenterById, documentSettings.isReady, exportExpenseVoucher, printExpenseVoucher, openEditForm, onUpdateExpense]);
+
   return (
     <Card className="overflow-hidden rounded-2xl">
       <CardHeader className="gap-4 border-b border-border/60 bg-muted/20 sm:flex sm:flex-row sm:items-start sm:justify-between">
@@ -232,55 +281,8 @@ export function ExpensesSection({
           isLoading={isLoading}
           error={error}
           onRetry={onRetry}
-          columns={[
-            {
-              key: 'expense_date',
-              header: 'التاريخ',
-              priority: 'secondary',
-              render: (expense) => <span className="text-muted-foreground">{formatDate(expense.expense_date)}</span>,
-            },
-            {
-              key: 'label',
-              header: 'العقار والتصنيف',
-              priority: 'identity',
-              render: (expense) => {
-                const label = buildExpensePropertyLabel(expense, propertyById);
-                const costCenterLabel = expense.cost_center_id
-                  ? costCenterById.get(expense.cost_center_id)?.name ?? 'مركز تكلفة غير معروف'
-                  : null;
-                const chargedToLabel = getExpenseChargedToLabel(getExpenseChargedTo(expense));
-                return (
-                  <span className="min-w-0 truncate">
-                    {label} — {expense.category}
-                    {costCenterLabel ? ` — ${costCenterLabel}` : ''}
-                    {chargedToLabel !== 'الشركة' ? ` — يتحمّلها ${chargedToLabel}` : ''}
-                  </span>
-                );
-              },
-            },
-            {
-              key: 'amount',
-              header: 'المبلغ',
-              priority: 'primary',
-              render: (expense) => <span className="font-bold tabular-nums">{formatMoney(expense.amount)}</span>,
-            },
-            {
-              key: 'actions',
-              header: 'إجراءات',
-              priority: 'actions',
-              render: (expense) => (
-                <ActionMenu
-                  label="إجراءات المصروف"
-                  items={[
-                    { id: 'details', label: 'التفاصيل', icon: Eye, onClick: () => setDetailsExpense(expense) },
-                    { id: 'edit', label: 'تعديل', icon: Edit, onClick: () => openEditForm(expense), disabled: !onUpdateExpense },
-                    { id: 'pdf', label: 'تصدير PDF', icon: Download, onClick: () => exportExpenseVoucher(expense), disabled: !documentSettings.isReady },
-                    { id: 'print', label: 'طباعة', icon: Printer, onClick: () => printExpenseVoucher(expense), disabled: !documentSettings.isReady },
-                  ]}
-                />
-              ),
-            },
-          ]}
+          columns={expenseColumns}
+
 
         />
       </CardContent>

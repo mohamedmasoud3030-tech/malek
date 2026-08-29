@@ -388,7 +388,7 @@ export function ContractFormFields({
               سماح {graceDays} يوم
             </span>
           </summary>
-          <div className="grid gap-4 border-t border-border/60 p-4 sm:grid-cols-3">
+          <div className="grid gap-4 border-t border-border/60 p-4 md:grid-cols-3">
             {isShortStay ? null : (
               <EntityForm.Field label="يوم الفوترة" error={form.formState.errors.billing_day?.message}>
                 <Input type="number" min="1" max="28" step="1" inputMode="numeric" {...form.register('billing_day')} />

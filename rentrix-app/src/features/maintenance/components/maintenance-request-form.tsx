@@ -167,7 +167,7 @@ export function MaintenanceRequestForm({
         {currentTitle || selectedProp ? (
           <EntityForm.Section title="معاينة الطلب قبل الاعتماد" description="مراجعة ملخص البيانات المدخلة قبل الحفظ النهائي.">
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-xs space-y-2">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                 <div>
                   <span className="text-muted-foreground">الموقع:</span>
                   <p className="font-semibold text-foreground">{selectedProp?.title || '—'}{selectedUnit ? ` (${selectedUnit.unit_number})` : ''}</p>

@@ -6,7 +6,7 @@ import { APP_BRAND_NAME } from '@/lib/brand';
 export function NotFoundPage() {
   return (
     <div className="grid min-h-[60vh] place-items-center p-6">
-      <Card className="max-w-lg text-center">
+      <Card className="w-full min-w-0 max-w-lg text-center">
         <CardHeader>
           <CardTitle>الصفحة غير موجودة</CardTitle>
           <CardDescription>{`المسار المطلوب غير متاح في بنية ${APP_BRAND_NAME} الجديدة.`}</CardDescription>

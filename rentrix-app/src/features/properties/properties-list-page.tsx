@@ -9,7 +9,7 @@ import {
   Trash2,
   TriangleAlert,
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { PropertyFormModal } from "./property-form-modal";
 import { formatPropertyUnitSummary } from "./property-card-utils";
 import { usePropertyListController } from "./use-property-list-controller";
@@ -22,7 +22,7 @@ import { RegisterAttention, RegisterHeading, RegisterMetricStrip } from "@/compo
 import { Select } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { ActiveFilterBar } from "@/components/ui/active-filter-bar";
-import { EntityTable } from "@/components/ui/entity-table";
+import { EntityTable, type ColumnDef } from "@/components/ui/entity-table";
 import { getAppLanguageState, translateSharedLabel } from "@/lib/i18n";
 import { toast } from "sonner";
 import {
@@ -137,145 +137,7 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
     }
   };
 
-  return (
-    <>
-      <ListPage
-        embedded={embedded}
-        dir="rtl"
-        visualVariant="malek-pro"
-        title="العقارات"
-        count={controller.totalCount}
-        primaryAction={canCreate ? (
-          <Button onClick={controller.openCreateModal}>
-            <Plus className="me-2 size-4" />
-            إضافة عقار
-          </Button>
-        ) : undefined}
-        secondaryActions={canExport ? (
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={handleExportXlsx}
-              disabled={controller.properties.length === 0}
-              aria-label="تصدير العقارات كملف Excel"
-            >
-              <FileSpreadsheet className="me-2 size-4" />
-              Excel
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={handleExportCsv}
-              disabled={controller.properties.length === 0}
-              aria-label="تصدير العقارات كملف CSV"
-            >
-              <Download className="me-2 size-4" />
-              CSV
-            </Button>
-          </div>
-        ) : undefined}
-        search={{
-          value: controller.search,
-          onChange: (value) => {
-            controller.setSearch(value);
-            controller.setPage(1);
-          },
-          placeholder: "بحث بالاسم أو العنوان...",
-        }}
-        filters={
-          <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto no-scrollbar">
-            <Select
-              aria-label="الحالة"
-              value={controller.status}
-              onChange={(event) => {
-                controller.setStatus(event.target.value as typeof controller.status);
-                controller.setPage(1);
-              }}
-              className="h-10 w-36 shrink-0 rounded-lg"
-            >
-              <option value="all">كل الحالات</option>
-              {controller.statusValues.map((status) => (
-                <option key={status} value={status}>
-                  {controller.statusLabels[status]}
-                </option>
-              ))}
-            </Select>
-            <ActiveFilterBar
-              filters={controller.activeFilters}
-              onClearAll={controller.clearFilters}
-            />
-          </div>
-        }
-        toolbarActions={
-          <DataTableColumnsMenu
-            columns={propertyColumnOptions}
-            visibleKeys={visibleColumnKeys}
-            onChange={setVisibleColumnKeys}
-          />
-        }
-      >
-        {!controller.propertiesQuery.isLoading && !controller.propertiesQuery.isError ? (
-          <RegisterMetricStrip
-            aria-label="ملخص جاهزية العقارات"
-            items={[
-              { id: 'total', label: 'العقارات', value: formatCount(controller.totalCount), icon: Building2 },
-              { id: 'ready', label: 'جاهزة', value: `${formatCount(readinessRate)}%`, hint: `${formatCount(readyCount)} سجل`, icon: CircleCheck, tone: 'success' },
-              { id: 'linked', label: 'مرتبطة بمالك', value: formatCount(linkedOwnerCount), icon: Handshake },
-              { id: 'attention', label: 'تحتاج متابعة', value: formatCount(attentionCount), icon: TriangleAlert, tone: 'warning', hideWhenEmpty: true },
-            ]}
-          />
-        ) : null}
-
-        <section data-property-register className="min-w-0 space-y-2.5">
-          <RegisterHeading
-            title="سجل العقارات"
-            extra={<RegisterAttention count={attentionCount} label="تحتاج متابعة" />}
-          />
-
-          <EntityTable
-            aria-label="جدول العقارات"
-            rows={controller.properties}
-            keyOf={(property) => property.id}
-            onRowClick={(property) => controller.navigateToProperty(property.id)}
-            visibleColumnKeys={hasRowActions ? visibleColumnKeys : visibleColumnKeys.filter((key) => key !== 'actions')}
-            isLoading={controller.propertiesQuery.isLoading}
-            error={controller.propertiesQuery.isError ? controller.propertiesQuery.error : null}
-            errorTitle="تعذر تحميل قائمة العقارات"
-            onRetry={() => controller.propertiesQuery.refetch()}
-            emptyTitle={controller.hasFilterValues ? "لا توجد نتائج مطابقة للبحث" : "لم تُضف عقارات بعد"}
-            emptyDescription={controller.hasFilterValues ? "جرّب تغيير عوامل البحث أو إزالة الفلتر." : canCreate ? "ابدأ بإضافة أول عقار لك." : "لا توجد عقارات مسجلة الآن."}
-            emptyAction={!controller.hasFilterValues && canCreate ? (
-              <Button onClick={controller.openCreateModal}>
-                <Building2 className="me-2 size-4" />
-                إضافة أول عقار
-              </Button>
-            ) : undefined}
-            pagination={{
-              page: controller.page,
-              pageSize: 10,
-              total: controller.totalCount,
-              onPageChange: controller.setPage,
-            }}
-            mobileBadgeKey="status"
-            mobileSummaryKeys={["type", "address", "owner", "units"]}
-            mobileCardActions={(property) => [
-              ...(canEdit ? [{
-                label: "تعديل",
-                icon: Edit,
-                variant: "secondary" as const,
-                ariaLabel: `تعديل ${property.title ?? "العقار"}`,
-                onClick: () => controller.openEditModal(property.id),
-              }] : []),
-              ...(canArchive ? [{
-                label: "أرشفة",
-                icon: Trash2,
-                variant: "danger" as const,
-                ariaLabel: `أرشفة ${property.title ?? "العقار"}`,
-                onClick: () => controller.requestArchive(property.id, property.title ?? "عقار"),
-              }] : []),
-            ]}
-            columns={[
+  const propertyColumns = useMemo((): ColumnDef<PropertyListItem>[] => [
               {
                 key: "title",
                 header: "العقار",
@@ -386,7 +248,148 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
                   </div>
                 ) : null,
               },
+            ], [controller, canEdit, canArchive, hasRowActions]);
+
+  return (
+    <>
+      <ListPage
+        embedded={embedded}
+        dir="rtl"
+        visualVariant="malek-pro"
+        title="العقارات"
+        count={controller.totalCount}
+        primaryAction={canCreate ? (
+          <Button onClick={controller.openCreateModal}>
+            <Plus className="me-2 size-4" />
+            إضافة عقار
+          </Button>
+        ) : undefined}
+        secondaryActions={canExport ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleExportXlsx}
+              disabled={controller.properties.length === 0}
+              aria-label="تصدير العقارات كملف Excel"
+            >
+              <FileSpreadsheet className="me-2 size-4" />
+              Excel
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={handleExportCsv}
+              disabled={controller.properties.length === 0}
+              aria-label="تصدير العقارات كملف CSV"
+            >
+              <Download className="me-2 size-4" />
+              CSV
+            </Button>
+          </div>
+        ) : undefined}
+        search={{
+          value: controller.search,
+          onChange: (value) => {
+            controller.setSearch(value);
+            controller.setPage(1);
+          },
+          placeholder: "بحث بالاسم أو العنوان...",
+        }}
+        filters={
+          <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto overscroll-x-contain no-scrollbar">
+            <Select
+              aria-label="الحالة"
+              value={controller.status}
+              onChange={(event) => {
+                controller.setStatus(event.target.value as typeof controller.status);
+                controller.setPage(1);
+              }}
+              className="min-h-11 w-36 shrink-0 rounded-lg"
+            >
+              <option value="all">كل الحالات</option>
+              {controller.statusValues.map((status) => (
+                <option key={status} value={status}>
+                  {controller.statusLabels[status]}
+                </option>
+              ))}
+            </Select>
+            <ActiveFilterBar
+              filters={controller.activeFilters}
+              onClearAll={controller.clearFilters}
+            />
+          </div>
+        }
+        toolbarActions={
+          <DataTableColumnsMenu
+            columns={propertyColumnOptions}
+            visibleKeys={visibleColumnKeys}
+            onChange={setVisibleColumnKeys}
+          />
+        }
+      >
+        {!controller.propertiesQuery.isLoading && !controller.propertiesQuery.isError ? (
+          <RegisterMetricStrip
+            aria-label="ملخص جاهزية العقارات"
+            items={[
+              { id: 'total', label: 'العقارات', value: formatCount(controller.totalCount), icon: Building2 },
+              { id: 'ready', label: 'جاهزة', value: `${formatCount(readinessRate)}%`, hint: `${formatCount(readyCount)} سجل`, icon: CircleCheck, tone: 'success' },
+              { id: 'linked', label: 'مرتبطة بمالك', value: formatCount(linkedOwnerCount), icon: Handshake },
+              { id: 'attention', label: 'تحتاج متابعة', value: formatCount(attentionCount), icon: TriangleAlert, tone: 'warning', hideWhenEmpty: true },
             ]}
+          />
+        ) : null}
+
+        <section data-property-register className="min-w-0 space-y-2.5">
+          <RegisterHeading
+            title="سجل العقارات"
+            extra={<RegisterAttention count={attentionCount} label="تحتاج متابعة" />}
+          />
+
+          <EntityTable
+            aria-label="جدول العقارات"
+            rows={controller.properties}
+            keyOf={(property) => property.id}
+            onRowClick={(property) => controller.navigateToProperty(property.id)}
+            visibleColumnKeys={hasRowActions ? visibleColumnKeys : visibleColumnKeys.filter((key) => key !== 'actions')}
+            isLoading={controller.propertiesQuery.isLoading}
+            error={controller.propertiesQuery.isError ? controller.propertiesQuery.error : null}
+            errorTitle="تعذر تحميل قائمة العقارات"
+            onRetry={() => controller.propertiesQuery.refetch()}
+            emptyTitle={controller.hasFilterValues ? "لا توجد نتائج مطابقة للبحث" : "لم تُضف عقارات بعد"}
+            emptyDescription={controller.hasFilterValues ? "جرّب تغيير عوامل البحث أو إزالة الفلتر." : canCreate ? "ابدأ بإضافة أول عقار لك." : "لا توجد عقارات مسجلة الآن."}
+            emptyAction={!controller.hasFilterValues && canCreate ? (
+              <Button onClick={controller.openCreateModal}>
+                <Building2 className="me-2 size-4" />
+                إضافة أول عقار
+              </Button>
+            ) : undefined}
+            pagination={{
+              page: controller.page,
+              pageSize: 10,
+              total: controller.totalCount,
+              onPageChange: controller.setPage,
+            }}
+            mobileBadgeKey="status"
+            mobileSummaryKeys={["type", "address", "owner", "units"]}
+            mobileCardActions={(property) => [
+              ...(canEdit ? [{
+                label: "تعديل",
+                icon: Edit,
+                variant: "secondary" as const,
+                ariaLabel: `تعديل ${property.title ?? "العقار"}`,
+                onClick: () => controller.openEditModal(property.id),
+              }] : []),
+              ...(canArchive ? [{
+                label: "أرشفة",
+                icon: Trash2,
+                variant: "danger" as const,
+                ariaLabel: `أرشفة ${property.title ?? "العقار"}`,
+                onClick: () => controller.requestArchive(property.id, property.title ?? "عقار"),
+              }] : []),
+            ]}
+            columns={propertyColumns}
+
           />
         </section>
       </ListPage>

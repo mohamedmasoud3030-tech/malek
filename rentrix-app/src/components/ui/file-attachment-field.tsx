@@ -109,7 +109,7 @@ export function FileAttachmentField({
       {value ? (
         <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/40 p-3">
           {isImageUrl(value) && resolvedUrl ? (
-            <img src={resolvedUrl} alt="مرفق" className="size-16 rounded-lg object-cover border border-border" />
+            <img src={resolvedUrl} alt="مرفق" loading="lazy" decoding="async" className="size-16 rounded-lg object-cover border border-border" />
           ) : (
             <div className="grid size-16 place-items-center rounded-lg border border-border bg-background">
               <Paperclip className="size-6 text-muted-foreground" />

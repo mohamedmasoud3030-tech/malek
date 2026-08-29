@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import {
   Fragment,
+  memo,
   useEffect,
   useId,
   useMemo,
@@ -27,6 +28,7 @@ import {
   type ReactNode,
 } from 'react';
 import { DataErrorScreen } from '@/components/data-error-screen';
+import { DataRefreshAlert } from '@/components/data-refresh-alert';
 import { EmptyState } from '@/components/ui/state-surfaces';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -199,7 +201,7 @@ function isNestedInteractive(target: EventTarget | null, currentTarget: EventTar
   return Boolean(target.closest("a,button,input,select,textarea,label,[role='button'],[role='menuitem'],[data-row-action]"));
 }
 
-function SortIcon({ field, sort }: { field: string; sort?: SortState }) {
+const SortIcon = memo(function SortIcon({ field, sort }: { field: string; sort?: SortState }) {
   if (!sort || sort.field !== field) {
     return <ChevronsUpDown className="ms-1 inline size-3 opacity-35" aria-hidden="true" />;
   }
@@ -208,9 +210,9 @@ function SortIcon({ field, sort }: { field: string; sort?: SortState }) {
   ) : (
     <ChevronDown className="ms-1 inline size-3 text-primary" aria-hidden="true" />
   );
-}
+});
 
-function SelectionCheckbox({
+const SelectionCheckbox = memo(function SelectionCheckbox({
   checked,
   mixed = false,
   label,
@@ -235,9 +237,9 @@ function SelectionCheckbox({
       data-row-action
     />
   );
-}
+});
 
-function DesktopTableSkeleton({ rows, cols, hasSelection }: { rows: number; cols: number; hasSelection: boolean }) {
+const DesktopTableSkeleton = memo(function DesktopTableSkeleton({ rows, cols, hasSelection }: { rows: number; cols: number; hasSelection: boolean }) {
   const totalColumns = cols + (hasSelection ? 1 : 0);
   return (
     <Card className="overflow-hidden rounded-lg border-border/60 bg-card shadow-none" data-entity-table-grid>
@@ -263,9 +265,9 @@ function DesktopTableSkeleton({ rows, cols, hasSelection }: { rows: number; cols
       </div>
     </Card>
   );
-}
+});
 
-function MobileRegisterSkeleton({ rows }: { rows: number }) {
+const MobileRegisterSkeleton = memo(function MobileRegisterSkeleton({ rows }: { rows: number }) {
   return (
     <div className="grid gap-1.5" aria-hidden="true" data-entity-table-mobile-skeleton>
       {Array.from({ length: rows }, (_, index) => (
@@ -280,9 +282,9 @@ function MobileRegisterSkeleton({ rows }: { rows: number }) {
       ))}
     </div>
   );
-}
+});
 
-function PaginationBar({ pagination }: { pagination: PaginationState }) {
+const PaginationBar = memo(function PaginationBar({ pagination }: { pagination: PaginationState }) {
   const totalPages = Math.max(1, Math.ceil(pagination.total / pagination.pageSize));
   if (totalPages <= 1) return null;
   const { page, onPageChange } = pagination;
@@ -301,9 +303,9 @@ function PaginationBar({ pagination }: { pagination: PaginationState }) {
       </div>
     </nav>
   );
-}
+});
 
-function PaginationRecovery({ pagination }: { pagination: PaginationState }) {
+const PaginationRecovery = memo(function PaginationRecovery({ pagination }: { pagination: PaginationState }) {
   const totalPages = Math.max(1, Math.ceil(pagination.total / pagination.pageSize));
   return (
     <EmptyState
@@ -312,7 +314,7 @@ function PaginationRecovery({ pagination }: { pagination: PaginationState }) {
       action={<Button onClick={() => pagination.onPageChange(1)}><ListRestart className="me-2 size-4" aria-hidden="true" />العودة إلى الصفحة الأولى</Button>}
     />
   );
-}
+});
 
 function MobileRegisterListItem<T>({
   row,
@@ -439,7 +441,7 @@ function MobileRegisterListItem<T>({
   );
 }
 
-export function EntityTable<T>({
+function EntityTableImpl<T>({
   rows,
   columns,
   keyOf,
@@ -561,7 +563,7 @@ export function EntityTable<T>({
     );
   }
 
-  if (error != null) {
+  if (error != null && rows.length === 0) {
     return <DataErrorScreen title={errorTitle} error={error} fallbackMessage={error instanceof Error ? error.message : undefined} action={onRetry ? <Button onClick={onRetry}>إعادة المحاولة</Button> : undefined} />;
   }
 
@@ -601,6 +603,19 @@ export function EntityTable<T>({
 
   return (
     <div className={cn('space-y-2', className)} data-entity-table-register>
+      {error != null ? (
+        <DataRefreshAlert
+          title={errorTitle}
+          description="الصفوف المعروضة من آخر تحميل مكتمل وقد لا تطابق أحدث حالة أو عوامل التصفية الحالية."
+          onRetry={onRetry}
+        />
+      ) : null}
+      <div
+        className="space-y-2"
+        inert={error != null ? true : undefined}
+        aria-disabled={error != null ? 'true' : undefined}
+        data-stale-register-content={error != null ? 'true' : undefined}
+      >
       {toolbar || enableViewModeToggle ? (
         <div data-entity-table-toolbar className="flex min-h-9 flex-wrap items-center justify-end gap-1.5">
           {enableViewModeToggle ? (
@@ -779,6 +794,14 @@ export function EntityTable<T>({
       )}
 
       {pagination ? <PaginationBar pagination={pagination} /> : null}
+      </div>
     </div>
   );
 }
+
+/**
+ * Memoised generic wrapper — preserves the `EntityTable<T>` call signature
+ * while allowing React to skip re-renders when the row list and column
+ * definitions are referentially stable.
+ */
+export const EntityTable = memo(EntityTableImpl) as typeof EntityTableImpl;

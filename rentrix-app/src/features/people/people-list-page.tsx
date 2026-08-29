@@ -134,7 +134,7 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
     setPage(1);
   };
 
-  const columns: ColumnDef<Person>[] = [
+  const columns = useMemo((): ColumnDef<Person>[] => [
     {
       key: "name", priority: 'identity' as const,
       header: "الاسم",
@@ -176,7 +176,7 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
       key: "email", priority: 'detail' as const,
       header: "البريد",
       render: (person) => (
-        <span dir="ltr" className="block text-right">
+        <span dir="ltr" className="block text-end">
           {person.email ?? "—"}
         </span>
       ),
@@ -192,7 +192,7 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
       className: "w-40",
       render: (person) => (
         <div
-          className="flex gap-2"
+          className="flex flex-wrap gap-2"
           onClick={(event) => event.stopPropagation()}
           onKeyDown={(event) => event.stopPropagation()}
         >
@@ -223,7 +223,7 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
         </div>
       ),
     },
-  ];
+  ], []);
 
   return (
     <>
@@ -249,7 +249,7 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
           placeholder: "بحث بالاسم أو الهاتف أو الهوية",
         }}
         filters={
-          <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto no-scrollbar">
+          <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto overscroll-x-contain no-scrollbar">
             <Select
               aria-label="تصفية الأشخاص حسب النوع"
               value={type}
@@ -257,7 +257,7 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
                 setType(event.target.value as PersonTypeFilter);
                 setPage(1);
               }}
-              className="h-10 w-36 shrink-0 rounded-lg"
+              className="min-h-11 w-36 shrink-0 rounded-lg"
             >
               <option value="all">كل الأنواع</option>
               {personTypeValues.map((item) => (

@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Gauge } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -23,7 +24,7 @@ interface UtilityObligationsSectionProps {
 }
 
 /** Operational utility obligations: late or imminently due claims. */
-export function UtilityObligationsSection({ signal, isLoading, isError = false, settings }: UtilityObligationsSectionProps) {
+export const UtilityObligationsSection = memo(function UtilityObligationsSection({ signal, isLoading, isError = false, settings }: UtilityObligationsSectionProps) {
   const { money } = settings;
   const { summary, rows, actionableCount } = signal;
   const headerTone = summary.overdueCount > 0 ? 'danger' : actionableCount > 0 ? 'warning' : 'success';
@@ -84,4 +85,4 @@ export function UtilityObligationsSection({ signal, isLoading, isError = false, 
       ) : null}
     </DashboardSignalPanel>
   );
-}
+});

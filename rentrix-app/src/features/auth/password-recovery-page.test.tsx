@@ -44,6 +44,19 @@ describe('password recovery pages', () => {
     expect(screen.getByRole('link', { name: 'طلب رابط جديد' })).toHaveAttribute('href', '/forgot-password');
   });
 
+  it('does not mislabel a connectivity failure as an expired recovery link', async () => {
+    auth.getSession
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValueOnce({ data: { session: null }, error: null });
+    render(<ResetPasswordPage />);
+
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('تعذر التحقق من رابط الاستعادة'));
+    expect(screen.queryByText('رابط الاستعادة غير صالح أو منتهي')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'إعادة المحاولة' }));
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('رابط الاستعادة غير صالح أو منتهي'));
+    expect(auth.getSession).toHaveBeenCalledTimes(2);
+  });
+
   it('validates and updates a password only with a recovery session', async () => {
     auth.getSession.mockResolvedValue({ data: { session: { user: { id: 'user-1' } } }, error: null });
     render(<ResetPasswordPage />);

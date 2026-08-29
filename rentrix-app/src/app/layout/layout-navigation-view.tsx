@@ -213,6 +213,7 @@ export function MobileFloatingControl({
   const { authorization } = useAuth();
   const [quickOpen, setQuickOpen] = useState(false);
   const quickRootRef = useRef<HTMLDivElement>(null);
+  const quickAddTitleId = useId();
   const visibleQuickActions = mobileQuickActions.filter(
     (item) => !item.permission || canAccessRoute(authorization, item.permission),
   );
@@ -263,13 +264,11 @@ export function MobileFloatingControl({
       >
         {quickOpen && visibleQuickActions.length > 0 ? (
           <div
-            role="menu"
-            aria-label="الإضافة السريعة"
             data-mobile-quick-add-menu
-            className="absolute bottom-[calc(100%+0.75rem)] left-1/2 w-[min(18.5rem,calc(100vw-1.5rem))] -translate-x-1/2 overflow-hidden rounded-2xl border border-border bg-card shadow-elevated"
+            className="absolute inset-x-0 bottom-[calc(100%+0.75rem)] mx-auto w-[min(18.5rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-border bg-card shadow-elevated"
           >
             <div className="flex items-center justify-between border-b border-border px-3 py-2.5">
-              <p className="text-xs font-bold tracking-wide text-muted-foreground" data-mobile-quick-add-title>
+              <p className="text-xs font-bold tracking-wide text-muted-foreground" data-mobile-quick-add-title id={quickAddTitleId}>
                 إضافة سريعة
               </p>
               <button
@@ -281,7 +280,19 @@ export function MobileFloatingControl({
                 <X className="size-4" />
               </button>
             </div>
-            <div className="flex flex-col gap-0.5 p-1.5" data-mobile-quick-add-list>
+            {/*
+              `role="menu"` may only contain menu items (WCAG 4.1.2 / axe
+              `aria-required-children`). The panel title and close button are
+              not menu items, so the role belongs to this list of links rather
+              than to the whole surface — otherwise the menu is exposed as
+              malformed and its items may not be announced or counted.
+            */}
+            <div
+              role="menu"
+              aria-labelledby={quickAddTitleId}
+              className="flex flex-col gap-0.5 p-1.5"
+              data-mobile-quick-add-list
+            >
               {visibleQuickActions.map((item) => {
                 const Icon = item.icon;
                 return (

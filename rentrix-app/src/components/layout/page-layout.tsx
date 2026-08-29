@@ -42,7 +42,7 @@ export function PageLayout({
       <div
         className={cn(
           pageSizes[size],
-          'min-w-0 space-y-2.5 pb-[var(--mobile-dock-clearance,5.25rem)] sm:space-y-3 md:space-y-3.5 md:pb-6 lg:space-y-5 lg:pb-10',
+          'min-w-0 space-y-2.5 sm:space-y-3 md:space-y-3.5 md:pb-6 lg:space-y-5 lg:pb-10',
           contentClassName,
         )}
       >

@@ -79,6 +79,7 @@ describe('dashboard queue error honesty', () => {
     expect(expiring).toContain('تعذر تحميل العقود القريبة من الانتهاء');
     expect(maintenance).toContain('تعذر تحميل الصيانة العاجلة');
     expect(needsAttention).toContain('تعذر تحميل الحالات التي تحتاج انتباهاً');
-    expect(page.match(/isError=\{hasDashboardError\}/g)?.length).toBeGreaterThanOrEqual(3);
+    expect(page.match(/isError=\{hasDashboardError && !snapshot\}/g)?.length).toBeGreaterThanOrEqual(3);
+    expect(page).toContain('DataRefreshAlert');
   });
 });

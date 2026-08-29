@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import axe from 'axe-core';
 
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -90,6 +91,32 @@ describe('Mobile dock Quick Add — clear vertical action list', () => {
     expect(host.querySelector('[data-mobile-dock-quick-add]')).not.toBeNull();
     expect(host.querySelector('[data-mobile-dock-notifications]')).not.toBeNull();
     expect(host.querySelector('[data-mobile-dock-ai]')).not.toBeNull();
+  });
+
+  it('exposes a well-formed menu whose items are its only children', async () => {
+    openQuickAdd();
+
+    const menu = host.querySelector<HTMLElement>('[role="menu"]');
+    expect(menu).not.toBeNull();
+
+    // `role="menu"` may only contain menu items. The panel title and close
+    // button must therefore stay outside it, or the menu is exposed as
+    // malformed (axe `aria-required-children`, critical).
+    for (const child of Array.from(menu!.children)) {
+      expect(child.getAttribute('role')).toBe('menuitem');
+    }
+
+    // The menu keeps an accessible name even though its label moved out of it.
+    const labelledBy = menu!.getAttribute('aria-labelledby');
+    expect(labelledBy).toBeTruthy();
+    expect(host.querySelector(`#${CSS.escape(labelledBy!)}`)?.textContent?.trim()).toBe('إضافة سريعة');
+
+    const results = await axe.run(host, {
+      runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'] },
+      rules: { 'color-contrast': { enabled: false }, 'target-size': { enabled: false } },
+    });
+    const report = results.violations.map((violation) => `${violation.id}: ${violation.help}`);
+    expect(report, report.join('\n')).toEqual([]);
   });
 
   it('hides quick actions the role cannot complete (permission rules)', () => {

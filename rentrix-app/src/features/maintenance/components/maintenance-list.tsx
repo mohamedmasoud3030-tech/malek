@@ -1,5 +1,5 @@
 import { Edit, Eye } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from 'react';
 import { ActionMenu } from "@/components/ui/action-menu";
 import { Button } from "@/components/ui/button";
 import { DataTableColumnsMenu } from "@/components/ui/data-table";
@@ -112,7 +112,7 @@ export function MaintenanceList(props: MaintenanceListProps) {
     return canEdit;
   };
 
-  const columns: ColumnDef<Maintenance>[] = [
+  const columns = useMemo((): ColumnDef<Maintenance>[] => [
     {
       key: "title",
       header: "العنوان",
@@ -235,7 +235,7 @@ export function MaintenanceList(props: MaintenanceListProps) {
         );
       },
     },
-  ];
+  ], []);
 
   return (
     <div data-visual-wave="malek-pro" data-maintenance-list>

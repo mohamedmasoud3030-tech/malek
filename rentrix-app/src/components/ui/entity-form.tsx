@@ -1,5 +1,5 @@
-import type { ComponentPropsWithoutRef, FormEventHandler, ReactNode } from 'react';
-import { createContext, useContext } from 'react';
+import type { ComponentPropsWithoutRef, FormEventHandler, ReactElement, ReactNode } from 'react';
+import { Children, cloneElement, createContext, isValidElement, useContext, useId } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogBody, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
@@ -55,14 +55,68 @@ function Root({ className, children, onSubmit, onInvalidCapture, noValidate = tr
 type EntityFormSectionProps = Readonly<{ title?: ReactNode; description?: ReactNode; children: ReactNode; className?: string }>;
 type EntityFormFieldProps = Readonly<{ label: ReactNode; children: ReactNode; description?: ReactNode; error?: ReactNode; className?: string }>;
 
+/**
+ * Accessibility contract (WCAG 1.3.1 / 3.3.1 / 3.3.2).
+ *
+ * The field previously rendered the description and the error *inside* the
+ * wrapping `<label>`. A wrapping label contributes its entire text content to
+ * the control's accessible name, so the name became one run-on string —
+ * "‏<label><description><error>" — re-announced in full on every focus, with
+ * the validation error indistinguishable from the field name and no
+ * programmatic description at all.
+ *
+ * The fix keeps the wrapping `<label>` (so every child, including composites
+ * that do not forward props, keeps a label association) and additionally:
+ *
+ *  - points the control at the label text alone via `aria-labelledby`, which
+ *    takes precedence over the wrapping label and yields a clean name;
+ *  - binds description and error through `aria-describedby` so they are
+ *    announced as description instead of being folded into the name;
+ *  - moves the error out of the label — it was already the last row, so the
+ *    rendered order is unchanged — and sets `aria-invalid` from `error` so
+ *    `focusFirstInvalidField` also reaches schema-reported errors.
+ *
+ * Layout is preserved: the nested label reuses the same `grid gap-1.5`, so
+ * every row keeps its original spacing.
+ *
+ * Cloning is a best-effort enhancement. When the child is not a single element
+ * the wrapping label still supplies the association, exactly as before.
+ */
 function Field({ label, children, description, error, className }: EntityFormFieldProps) {
+  const fieldId = useId();
+  const labelId = `${fieldId}-label`;
+  const descriptionId = description ? `${fieldId}-description` : undefined;
+  const errorId = error ? `${fieldId}-error` : undefined;
+
+  const onlyChild = Children.count(children) === 1 ? Children.toArray(children)[0] : null;
+  const controlElement = isValidElement(onlyChild) ? (onlyChild as ReactElement<Record<string, unknown>>) : null;
+  const childProps = (controlElement?.props ?? {}) as Record<string, unknown>;
+
+  const describedBy = [childProps['aria-describedby'] as string | undefined, descriptionId, errorId]
+    .filter(Boolean)
+    .join(' ') || undefined;
+
+  const control = controlElement
+    ? cloneElement(controlElement, {
+        'aria-labelledby': childProps['aria-labelledby'] ?? (childProps['aria-label'] ? undefined : labelId),
+        ...(describedBy ? { 'aria-describedby': describedBy } : null),
+        'aria-invalid': childProps['aria-invalid'] ?? (error ? true : undefined),
+      })
+    : children;
+
   return (
-    <label data-entity-form-field className={cn('grid min-w-0 gap-1.5 text-sm font-bold', className)}>
-      <span>{label}</span>
-      {description ? <span className="text-xs font-medium leading-5 text-muted-foreground">{description}</span> : null}
-      {children}
-      {error ? <span data-field-error className="text-xs font-bold leading-5 text-destructive" role="alert">{error}</span> : null}
-    </label>
+    <div data-entity-form-field className={cn('grid min-w-0 gap-1.5 text-sm font-bold', className)}>
+      <label className="grid min-w-0 gap-1.5">
+        <span id={labelId}>{label}</span>
+        {description ? (
+          <span id={descriptionId} className="text-xs font-medium leading-5 text-muted-foreground">{description}</span>
+        ) : null}
+        {control}
+      </label>
+      {error ? (
+        <span id={errorId} data-field-error className="text-xs font-bold leading-5 text-destructive" role="alert">{error}</span>
+      ) : null}
+    </div>
   );
 }
 

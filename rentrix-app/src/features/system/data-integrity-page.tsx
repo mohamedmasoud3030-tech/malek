@@ -4,14 +4,22 @@ import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { canAccess } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
+import { useActiveCompanyId } from '@/hooks/use-company';
 import { APP_BRAND_NAME } from '@/lib/brand';
 import { DataIntegrityView } from './components/data-integrity-view';
 import { runDataIntegrityAudit } from './services/data-integrity-service';
+import type { DataIntegrityResult } from './types';
 
-function getDataIntegrityViewState(query: { isPending: boolean; isError: boolean; error: unknown; data: any }) {
+export function getDataIntegrityViewState(query: { isPending: boolean; isError: boolean; error: unknown; data: DataIntegrityResult | undefined }) {
   if (query.isPending) return { status: 'loading' } as const;
+  // A failed background refresh must not replace a previously verified
+  // snapshot with a full-page error. Keep the snapshot visible and label it as
+  // stale until the operator retries or reconnect reconciliation succeeds.
+  if (query.data !== undefined) {
+    return { status: 'ready', result: query.data, refreshError: query.isError ? query.error : null } as const;
+  }
   if (query.isError) return { status: 'error', error: query.error } as const;
-  return { status: 'ready', result: query.data } as const;
+  return { status: 'error', error: new Error('DATA_INTEGRITY_RESULT_MISSING') } as const;
 }
 
 export type DataIntegrityWorkspaceVariant = 'standalone' | 'embedded';
@@ -28,16 +36,33 @@ type DataIntegrityWorkspaceProps = Readonly<{
 
 export function DataIntegrityWorkspace({ variant = 'standalone' }: DataIntegrityWorkspaceProps = {}) {
   const { authorization } = useAuth();
-  const integrityQuery = useQuery({ queryKey: ['data-integrity-audit'], queryFn: runDataIntegrityAudit, enabled: canAccess(authorization, 'integrity.view') });
+  const activeCompanyId = useActiveCompanyId();
+  const hasAccess = canAccess(authorization, 'integrity.view');
+  const integrityQuery = useQuery({
+    // Defense in depth: never let one company's audit snapshot share a cache
+    // identity with another company, even though CompanyProvider also clears
+    // the cache during a verified tenant switch.
+    queryKey: ['data-integrity-audit', activeCompanyId],
+    queryFn: runDataIntegrityAudit,
+    enabled: hasAccess && Boolean(activeCompanyId),
+  });
 
-  if (!canAccess(authorization, 'integrity.view')) {
+  if (!hasAccess) {
     return <AccessDenied message="فحوصات سلامة البيانات متاحة فقط للمدير أو المسؤول." />;
   }
 
   const state = getDataIntegrityViewState(integrityQuery);
 
+  const view = (
+    <DataIntegrityView
+      state={state}
+      isRefreshing={integrityQuery.isFetching && !integrityQuery.isPending}
+      onRetry={() => { void integrityQuery.refetch(); }}
+    />
+  );
+
   if (variant === 'embedded') {
-    return <DataIntegrityView state={state} />;
+    return view;
   }
 
   return (
@@ -46,7 +71,7 @@ export function DataIntegrityWorkspace({ variant = 'standalone' }: DataIntegrity
         title="سلامة البيانات"
         description={`فحص قراءة فقط للعلاقات الأساسية في مخطط ${APP_BRAND_NAME} الحالي. لا ينفذ أي تغييرات على البيانات.`}
       />
-      <DataIntegrityView state={state} />
+      {view}
     </PageLayout>
   );
 }

@@ -1,8 +1,8 @@
 import { Button } from '@/components/ui/button';
 import { Download, HandCoins, Printer } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { DataTableColumnsMenu } from '@/components/ui/data-table';
-import { EntityTable } from '@/components/ui/entity-table';
+import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { getSafeRemainingAmount } from '../financialMath';
 import { isInvoiceCollectible } from '../invoices/quick-collect';
 import {
@@ -137,6 +137,133 @@ export function InvoiceListSection({
     return INVOICE_REGISTER_VIEW_MODE_KEY;
   });
 
+  const invoiceColumns = useMemo((): ColumnDef<InvoiceListItem>[] => [
+              {
+                key: 'id',
+                header: 'الفاتورة',
+                priority: 'identity',
+                render: (invoice) => (
+                  <div className="min-w-0">
+                    <p className="font-black tabular-nums">{invoice.reference ?? invoice.id.slice(0, 8)}</p>
+                    <p className="mt-0.5 text-[11px] font-semibold text-muted-foreground">إصدار {formatDate(invoice.issue_date)}</p>
+                  </div>
+                ),
+              },
+              {
+                key: 'tenant',
+                header: 'المستأجر',
+                priority: 'primary',
+                render: (invoice) => (
+                  <div className="min-w-0">
+                    <p className="min-w-0 truncate font-bold">{invoice.contracts?.people?.full_name ?? 'مستأجر غير محدد'}</p>
+                    {invoice.contracts?.people?.phone ? (
+                      <p className="mt-0.5 text-[11px] text-muted-foreground" dir="ltr">{invoice.contracts.people.phone}</p>
+                    ) : null}
+                  </div>
+                ),
+              },
+              {
+                key: 'property_unit',
+                header: 'العقار / الوحدة',
+                priority: 'primary',
+                render: (invoice) => (
+                  <div className="min-w-0">
+                    <p className="min-w-0 truncate font-bold">{invoice.contracts?.properties?.title ?? 'عقار غير محدد'}</p>
+                    <p className="mt-0.5 text-[11px] text-muted-foreground">
+                      {invoice.contracts?.units?.unit_number ? `وحدة ${invoice.contracts.units.unit_number}` : 'وحدة غير محددة'}
+                    </p>
+                  </div>
+                ),
+              },
+              {
+                key: 'billing_period',
+                header: 'الفترة',
+                priority: 'secondary',
+                render: (invoice) => <span className="whitespace-nowrap text-xs font-semibold tabular-nums">{billingPeriodLabel(invoice)}</span>,
+              },
+              {
+                key: 'due_date',
+                header: 'الاستحقاق',
+                priority: 'secondary',
+                render: (invoice) => <span dir="ltr" className="whitespace-nowrap tabular-nums">{formatDate(invoice.due_date)}</span>,
+              },
+              {
+                key: 'gross',
+                header: 'الإجمالي',
+                priority: 'detail',
+                render: (invoice) => {
+                  const grossAmount = getInvoiceGrossAmount(invoice);
+                  return (
+                    <span className="inline-flex flex-col">
+                      <FinanceAmount>{formatMoney(grossAmount)}</FinanceAmount>
+                      {invoice.tax_amount ? <span className="text-[11px] text-muted-foreground">VAT {formatMoney(invoice.tax_amount)}</span> : null}
+                    </span>
+                  );
+                },
+              },
+              {
+                key: 'paid_amount',
+                header: 'المدفوع',
+                priority: 'detail',
+                render: (invoice) => <FinanceAmount className="text-success">{formatMoney(invoice.paid_amount)}</FinanceAmount>,
+              },
+              {
+                key: 'remaining',
+                header: 'المتبقي',
+                priority: 'primary',
+                render: (invoice) => {
+                  const grossAmount = getInvoiceGrossAmount(invoice);
+                  const remaining = getSafeRemainingAmount(grossAmount, invoice.paid_amount);
+                  return <FinanceAmount className={remaining > 0 ? 'text-destructive' : 'text-success'}>{formatMoney(remaining)}</FinanceAmount>;
+                },
+              },
+              {
+                key: 'status',
+                header: 'الحالة',
+                priority: 'secondary',
+                render: (invoice) => (
+                  <FinanceStatusBadge
+                    kind={mapInvoiceStatusToFinanceKind(invoice.status)}
+                    label={formatInvoiceStatusLabel(invoice.status)}
+                  />
+                ),
+              },
+              {
+                key: 'actions',
+                header: 'إجراءات',
+                priority: 'actions',
+                render: (invoice) => {
+                  const showCollect = canCollectPayments && onCollectInvoice && isInvoiceCollectible(invoice);
+                  if (!showCollect && !onPrintInvoice && !onExportInvoice) return null;
+                  return (
+                    <div className="flex flex-wrap items-center justify-end gap-1" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+                      {showCollect ? (
+                        <Button
+                          size="sm"
+                          className="h-11 min-w-11 px-2.5"
+                          aria-label={`تحصيل ${invoice.reference ?? 'فاتورة مسجلة'}`}
+                          onClick={() => onCollectInvoice(invoice.id)}
+                          title="تسجيل الدفعة من نفس سجل الفواتير"
+                        >
+                          <HandCoins className="size-3.5" />
+                          تحصيل
+                        </Button>
+                      ) : null}
+                      {(onPrintInvoice || onExportInvoice) ? (
+                        <ActionMenu
+                          label="إجراءات إضافية للفاتورة"
+                          items={[
+                            ...(onPrintInvoice ? [{ id: 'print', label: 'طباعة', icon: Printer, onClick: () => onPrintInvoice(invoice.id) }] : []),
+                            ...(onExportInvoice ? [{ id: 'pdf', label: 'PDF', icon: Download, onClick: () => onExportInvoice(invoice.id) }] : []),
+                          ]}
+                        />
+                      ) : null}
+                    </div>
+                  );
+                },
+              },
+            ], [canCollectPayments, onCollectInvoice, onPrintInvoice, onExportInvoice]);
+
   return (
     <div className="space-y-3" data-invoice-register>
       <FinanceSection ariaLabel="البحث وحالة الفواتير">
@@ -224,132 +351,7 @@ export function InvoiceListSection({
                 onClick: () => onExportInvoice(invoice.id),
               }] : []),
             ]}
-            columns={[
-              {
-                key: 'id',
-                header: 'الفاتورة',
-                priority: 'identity',
-                render: (invoice) => (
-                  <div className="min-w-0">
-                    <p className="font-black tabular-nums">{invoice.reference ?? invoice.id.slice(0, 8)}</p>
-                    <p className="mt-0.5 text-[11px] font-semibold text-muted-foreground">إصدار {formatDate(invoice.issue_date)}</p>
-                  </div>
-                ),
-              },
-              {
-                key: 'tenant',
-                header: 'المستأجر',
-                priority: 'primary',
-                render: (invoice) => (
-                  <div className="min-w-0">
-                    <p className="max-w-48 truncate font-bold">{invoice.contracts?.people?.full_name ?? 'مستأجر غير محدد'}</p>
-                    {invoice.contracts?.people?.phone ? (
-                      <p className="mt-0.5 text-[11px] text-muted-foreground" dir="ltr">{invoice.contracts.people.phone}</p>
-                    ) : null}
-                  </div>
-                ),
-              },
-              {
-                key: 'property_unit',
-                header: 'العقار / الوحدة',
-                priority: 'primary',
-                render: (invoice) => (
-                  <div className="min-w-0">
-                    <p className="max-w-44 truncate font-bold">{invoice.contracts?.properties?.title ?? 'عقار غير محدد'}</p>
-                    <p className="mt-0.5 text-[11px] text-muted-foreground">
-                      {invoice.contracts?.units?.unit_number ? `وحدة ${invoice.contracts.units.unit_number}` : 'وحدة غير محددة'}
-                    </p>
-                  </div>
-                ),
-              },
-              {
-                key: 'billing_period',
-                header: 'الفترة',
-                priority: 'secondary',
-                render: (invoice) => <span className="whitespace-nowrap text-xs font-semibold tabular-nums">{billingPeriodLabel(invoice)}</span>,
-              },
-              {
-                key: 'due_date',
-                header: 'الاستحقاق',
-                priority: 'secondary',
-                render: (invoice) => <span dir="ltr" className="whitespace-nowrap tabular-nums">{formatDate(invoice.due_date)}</span>,
-              },
-              {
-                key: 'gross',
-                header: 'الإجمالي',
-                priority: 'detail',
-                render: (invoice) => {
-                  const grossAmount = getInvoiceGrossAmount(invoice);
-                  return (
-                    <span className="inline-flex flex-col">
-                      <FinanceAmount>{formatMoney(grossAmount)}</FinanceAmount>
-                      {invoice.tax_amount ? <span className="text-[11px] text-muted-foreground">VAT {formatMoney(invoice.tax_amount)}</span> : null}
-                    </span>
-                  );
-                },
-              },
-              {
-                key: 'paid_amount',
-                header: 'المدفوع',
-                priority: 'detail',
-                render: (invoice) => <FinanceAmount className="text-success">{formatMoney(invoice.paid_amount)}</FinanceAmount>,
-              },
-              {
-                key: 'remaining',
-                header: 'المتبقي',
-                priority: 'primary',
-                render: (invoice) => {
-                  const grossAmount = getInvoiceGrossAmount(invoice);
-                  const remaining = getSafeRemainingAmount(grossAmount, invoice.paid_amount);
-                  return <FinanceAmount className={remaining > 0 ? 'text-destructive' : 'text-success'}>{formatMoney(remaining)}</FinanceAmount>;
-                },
-              },
-              {
-                key: 'status',
-                header: 'الحالة',
-                priority: 'secondary',
-                render: (invoice) => (
-                  <FinanceStatusBadge
-                    kind={mapInvoiceStatusToFinanceKind(invoice.status)}
-                    label={formatInvoiceStatusLabel(invoice.status)}
-                  />
-                ),
-              },
-              {
-                key: 'actions',
-                header: 'إجراءات',
-                priority: 'actions',
-                render: (invoice) => {
-                  const showCollect = canCollectPayments && onCollectInvoice && isInvoiceCollectible(invoice);
-                  if (!showCollect && !onPrintInvoice && !onExportInvoice) return null;
-                  return (
-                    <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
-                      {showCollect ? (
-                        <Button
-                          size="sm"
-                          className="h-11 min-w-11 px-2.5"
-                          aria-label={`تحصيل ${invoice.reference ?? 'فاتورة مسجلة'}`}
-                          onClick={() => onCollectInvoice(invoice.id)}
-                          title="تسجيل الدفعة من نفس سجل الفواتير"
-                        >
-                          <HandCoins className="size-3.5" />
-                          تحصيل
-                        </Button>
-                      ) : null}
-                      {(onPrintInvoice || onExportInvoice) ? (
-                        <ActionMenu
-                          label="إجراءات إضافية للفاتورة"
-                          items={[
-                            ...(onPrintInvoice ? [{ id: 'print', label: 'طباعة', icon: Printer, onClick: () => onPrintInvoice(invoice.id) }] : []),
-                            ...(onExportInvoice ? [{ id: 'pdf', label: 'PDF', icon: Download, onClick: () => onExportInvoice(invoice.id) }] : []),
-                          ]}
-                        />
-                      ) : null}
-                    </div>
-                  );
-                },
-              },
-            ]}
+            columns={invoiceColumns}
           />
         </div>
       </FinanceSection>

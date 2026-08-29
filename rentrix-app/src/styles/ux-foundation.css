@@ -38,6 +38,16 @@
   }
 }
 
+[data-app-shell],
+[data-app-shell] > div,
+[data-page-layout],
+[data-page-content],
+[data-list-results],
+[data-dashboard-page] {
+  min-width: 0;
+  max-width: 100%;
+}
+
 #main-content {
   min-width: 0;
   max-width: 100%;
@@ -104,6 +114,16 @@
 
   [data-entity-card] {
     padding: 0.75rem;
+  }
+
+  [data-global-page-title] {
+    font-size: 1.125rem;
+    line-height: 1.35;
+  }
+
+  [data-filter-bar] {
+    gap: 0.5rem;
+    padding: 0.5rem;
   }
 }
 
@@ -243,6 +263,27 @@
 /* ── Tap highlight suppression (custom handled) */
 * {
   -webkit-tap-highlight-color: transparent;
+}
+
+/* Local horizontal scroll only — the document itself must not grow sideways. */
+[data-entity-table-scroll],
+[data-dashboard-focus-scroll],
+[data-filter-tabs-wrapper],
+[data-filter-bar],
+[data-search-filter-system] {
+  max-inline-size: 100%;
+}
+
+[data-kpi-card] p,
+[data-entity-card],
+[data-page-header] {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 479px) {
+  [data-dashboard-focus-item] {
+    min-width: 7.5rem;
+  }
 }
 
 /* ── Input zoom prevention (iOS phones) ──── */
