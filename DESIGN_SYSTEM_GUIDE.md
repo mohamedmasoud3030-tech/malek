@@ -272,9 +272,17 @@ looks correct while assistive technology receives the wrong thing.
 - **Do not nest interactive controls.** A card whose whole surface is clickable
   must not also contain buttons: make the record body its own `<button>` and
   keep record actions as siblings (see `EntityCard`, `MobileCard`).
+- **A composite role owns its children.** `role="menu"` may contain only menu
+  items, so a panel title or close button belongs outside it — put the role on
+  the list of items and name it with `aria-labelledby`, not on the whole
+  surface. The same applies to `tablist`/`tab` and `radiogroup`/`radio`.
+- **`role="tabpanel"` implies a tab.** A view reachable only by deep link or
+  redirect (no tab controls it) is a `role="region"` named by its own heading;
+  labelling it after a tab that is never rendered is a dangling reference.
 
-`components/ui/form-association.a11y.test.tsx` and
-`components/ui/primitives.axe.test.tsx` enforce the above against the real
+`components/ui/form-association.a11y.test.tsx`,
+`components/ui/primitives.axe.test.tsx` and
+`app/layout/mobile-quick-add-list.test.tsx` enforce the above against the real
 rendered DOM using the axe-core rule engine; `app/accessibility-baseline.test.ts`
 continues to guard landmark/navigation semantics at source level.
 

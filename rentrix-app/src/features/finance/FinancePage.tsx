@@ -1,5 +1,5 @@
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { lazy, Suspense, useCallback, useMemo } from 'react';
+import { lazy, Suspense, useCallback, useId, useMemo } from 'react';
 import { AccessDenied } from '@/components/layout/access-denied';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
@@ -125,6 +125,7 @@ export function FinancePage() {
   const activeSectionDefinition = FINANCE_SECTIONS.find((section) => section.id === activeSection) ?? null;
   const activeViewDefinition = FINANCE_VIEWS.find((view) => view.id === activeView) ?? null;
   const routineActiveView = routineViews.some((view) => view.id === activeView) ? activeView ?? '' : '';
+  const specialistViewLabelId = useId();
 
   if (isRequestedViewForbidden) {
     return (
@@ -181,7 +182,11 @@ export function FinancePage() {
         ) : null}
 
         {activeViewDefinition?.showInSectionNavigation === false ? (
-          <div className="rounded-xl border border-border/60 bg-muted/20 px-3 py-2 text-sm font-bold" data-finance-specialist-view>
+          <div
+            id={specialistViewLabelId}
+            className="rounded-xl border border-border/60 bg-muted/20 px-3 py-2 text-sm font-bold"
+            data-finance-specialist-view
+          >
             {activeViewDefinition.label}
           </div>
         ) : null}
@@ -198,7 +203,13 @@ export function FinancePage() {
             </div>
           ) : null}
           {activeSection === 'collections' && activeView === 'arrears' ? (
-            <div id="finance-view-panel-arrears" role="tabpanel">
+            /*
+             * Arrears is a specialist view (showInSectionNavigation: false), so
+             * no tab ever controls it. It is a standalone region named by the
+             * specialist-view heading rather than an orphan tabpanel whose
+             * aria-labelledby would point at an element that is never rendered.
+             */
+            <div id="finance-view-panel-arrears" role="region" aria-labelledby={specialistViewLabelId}>
               <Suspense fallback={<SectionFallback />}><ArrearsWorkspace embedded /></Suspense>
             </div>
           ) : null}

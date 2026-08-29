@@ -28,6 +28,7 @@ import { Badge } from './badge';
 import { Button } from './button';
 import { Card, CardContent, CardHeader, CardTitle } from './card';
 import { Dropdown } from './dropdown';
+import { EntityCard } from './entity-card';
 import { EntityForm } from './entity-form';
 import { ErrorState } from './error-state';
 import { FilterTabs } from './filter-tabs';
@@ -36,6 +37,7 @@ import { IconButton } from './icon-button';
 import { Input } from './input';
 import { KpiCard } from './kpi-card';
 import { LoadingState } from './loading-state';
+import { MobileCard } from './mobile-card';
 import { SearchInput } from './search-input';
 import { SectionTabPanel, SectionTabs } from './section-tabs';
 import { Select } from './select';
@@ -170,6 +172,26 @@ const cases: ReadonlyArray<readonly [string, ReactElement]> = [
       <CardContent>محتوى البطاقة</CardContent>
     </Card>
   )],
+  ['EntityCard (clickable, with actions)', (
+    <EntityCard
+      id="p-1"
+      name="برج الواحة"
+      subtitle="مسقط - الخوير"
+      type="property"
+      badge={<StatusBadge status="active" />}
+      onClick={() => undefined}
+      actions={[{ label: 'تعديل', icon: Home, onClick: () => undefined, ariaLabel: 'تعديل السجل' }]}
+    />
+  )],
+  ['EntityCard (static)', <EntityCard id="p-2" name="شقة ١٢" subtitle="بوشر" type="unit" />],
+  ['MobileCard (clickable, with actions)', (
+    <MobileCard
+      title="عقد ٢٠٢٤/١١"
+      subtitle="مستأجر: أحمد"
+      onClick={() => undefined}
+      actions={<Button type="button" variant="ghost">تعديل</Button>}
+    />
+  )],
   ['Table', (
     <Table aria-label="سجل العقود">
       <TableHeader>
@@ -231,6 +253,49 @@ describe('axe — ARIA relationships resolve to rendered elements', () => {
             ).not.toBeNull();
           }
         }
+      }
+    });
+  }
+});
+
+describe('axe — cards never nest one interactive control inside another', () => {
+  /**
+   * A card that is itself a button cannot legally contain per-record action
+   * buttons: the inner controls are unreachable for some assistive tech and
+   * the card's accessible name swallows their labels (axe
+   * `nested-interactive`, serious). Primary activation must be a sibling of
+   * the action row, not its ancestor.
+   */
+  const nestingCases: ReadonlyArray<readonly [string, ReactElement, number]> = [
+    ['EntityCard', (
+      <EntityCard
+        id="p-1"
+        name="برج الواحة"
+        type="property"
+        onClick={() => undefined}
+        actions={[{ label: 'تعديل', icon: Home, onClick: () => undefined, ariaLabel: 'تعديل السجل' }]}
+      />
+    ), 2],
+    ['MobileCard', (
+      <MobileCard
+        title="عقد ٢٠٢٤/١١"
+        onClick={() => undefined}
+        actions={<Button type="button" variant="ghost">تعديل</Button>}
+      />
+    ), 2],
+  ];
+
+  for (const [name, ui, expectedControls] of nestingCases) {
+    it(`${name} keeps primary activation and row actions independently reachable`, () => {
+      const { container } = render(ui);
+
+      const controls = Array.from(container.querySelectorAll('button, a[href], [role="button"]'));
+      expect(controls).toHaveLength(expectedControls);
+
+      // No control may be an ancestor of another.
+      for (const control of controls) {
+        const nested = control.querySelector('button, a[href], [role="button"]');
+        expect(nested, `${name}: <${control.tagName.toLowerCase()}> nests another control`).toBeNull();
       }
     });
   }
