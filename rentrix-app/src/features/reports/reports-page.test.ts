@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ContractListItem } from '@/features/contracts/services/contractService';
 import { contractRowFixtureDefaults } from '@/test/contractRowFixture';
-import { buildAgingBucketChartRows, buildExpiringContractsRows, buildOccupancyRows, buildPaymentsTrendRows, buildRentRollRows, createReceiptPrintHref } from './reports-page.helpers';
+import { buildAgingBucketChartRows, buildExpiringContractsRows, buildOccupancyRows, buildPaymentsTrendRows, buildPropertyPerformanceRows, buildRentRollRows, createReceiptPrintHref } from './reports-page.helpers';
 import { buildReportCsvFilename, escapeCsvValue, toDateInputValue } from './reports-page';
 
 function createContract(overrides: Partial<ContractListItem>): ContractListItem {
@@ -136,6 +136,39 @@ describe('ReportsPage shaping helpers', () => {
         endDate: '2026-12-31',
       },
     ]);
+  });
+
+  it('builds property performance rows as a decision report instead of separate data islands', () => {
+    const rows = buildPropertyPerformanceRows({
+      occupancyRows: [
+        { property: 'برج النخيل', propertyId: 'property_a', shortPropertyId: '', hasTitle: true, occupied: 3, vacant: 2 },
+      ],
+      contracts: [createContract({ id: 'contract_a', property_id: 'property_a', rent_amount: 1200 })],
+      receipts: [{ contract_id: 'contract_a', amount: 900 }],
+      overdueRows: [
+        { invoiceId: 'invoice_1', shortInvoiceId: 'invoice_', contractId: 'contract_a', tenantId: null, tenantName: null, propertyId: 'property_a', propertyTitle: 'برج النخيل', unitId: null, unitNumber: null, dueDate: '2026-05-10', daysOverdue: 74, amount: 1500, paidAmount: 300, remainingAmount: 1200, status: 'partial' },
+      ],
+      expenseRows: [{ propertyId: 'property_a', propertyTitle: 'برج النخيل', total: 450, count: 2 }],
+      maintenanceRows: [
+        { id: 'm1', no: null, property_id: 'property_a', unit_id: null, title: 'تسريب', description: null, priority: 'urgent', status: 'open', assigned_to: null, cost: 250, charged_to: null, notes: null, request_date: null, scheduled_date: null, work_description: null, technician_name: null, response_time_hours: null, expense_id: null, invoice_id: null, reported_by: null, completed_at: null, resolved_at: null, created_at: null, updated_at: null, attachment_url: null, deleted_at: null, company_id: 'company_1', reference: null, service_provider_id: null, service_provider_category_id: null, cancelled_at: null, cancellation_reason: null, request_id: null },
+      ],
+      vacancyRows: [{ propertyId: 'property_a', daysVacant: 66 }],
+    });
+
+    expect(rows[0]).toMatchObject({
+      propertyId: 'property_a',
+      propertyTitle: 'برج النخيل',
+      referenceRevenue: 1200,
+      occupiedUnits: 3,
+      vacantUnits: 2,
+      collected: 900,
+      overdue: 1200,
+      expenses: 450,
+      maintenanceCost: 250,
+      openMaintenanceCount: 1,
+      longestVacancyDays: 66,
+      priority: 'متابعة فورية',
+    });
   });
 
   it('keeps legacy-cased expiring contracts visible in the renewals window report', () => {

@@ -1,11 +1,10 @@
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { ArrowRight, ChevronDown } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { AccessDenied } from '@/components/layout/access-denied';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
-import { Button } from '@/components/ui/button';
 import { canAccess, financialOperationPermissions } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
 import { translateSharedLabel } from '@/lib/i18n';
@@ -36,11 +35,6 @@ export function ReportsPage() {
     search[REPORTS_SECTION_SEARCH_KEY],
     search.view,
   );
-  const hasExplicitSection = typeof search[REPORTS_SECTION_SEARCH_KEY] === 'string'
-    && search[REPORTS_SECTION_SEARCH_KEY].trim().length > 0;
-  const hasExplicitView = typeof search.view === 'string' && search.view.trim().length > 0;
-  const isReportOpen = hasExplicitSection || hasExplicitView;
-
   const reportsTitle = translateSharedLabel('financialsSectionReports');
   const pageDescription = translateSharedLabel('reportsPageDescription');
 
@@ -93,46 +87,25 @@ export function ReportsPage() {
         </aside>
 
         <div className="min-w-0" data-active-report-workspace>
-          {isReportOpen ? (
-            <>
-              {/* Mobile: one clear "Choose report" action atop the open report. The
-                  report identity/scope live in the workspace header, so this stays
-                  a single switch control, never a second page title. */}
-              <div className="mb-2 lg:hidden">
-                <MobileReportChooser
-                  activeSection={activeSection}
-                  activeView={activeView}
-                  scope={{ ownerId: filters.ownerId, tenantId: filters.tenantId, contractId: filters.contractId }}
-                  onOpen={handleSectionViewChange}
-                />
-              </div>
-              <OpenReportWorkspace
-                filters={filters}
-                canExportReports={canExportReports}
-                activeSection={activeSection}
-                activeView={activeView}
-                onSectionViewChange={handleSectionViewChange}
-                onFiltersChange={setFilters}
-                onResetCurrentMonth={handleResetCurrentMonth}
-              />
-            </>
-          ) : (
-            <>
-              {/* Mobile landing: the directory owns the screen when nothing is open. */}
-              <div className="lg:hidden">
-                <ReportDirectory
-                  activeSection={activeSection}
-                  activeView={activeView}
-                  scope={{ ownerId: filters.ownerId, tenantId: filters.tenantId, contractId: filters.contractId }}
-                  onOpen={handleSectionViewChange}
-                />
-              </div>
-              {/* Desktop landing: keep the report the visual focus and lean on the explorer. */}
-              <div className="hidden lg:block">
-                <DesktopReportsLanding onOpen={handleSectionViewChange} />
-              </div>
-            </>
-          )}
+          {/* No empty landing state: with no URL selection, resolveReportLocation
+              opens the decision-first office performance report immediately. */}
+          <div className="mb-2 lg:hidden">
+            <MobileReportChooser
+              activeSection={activeSection}
+              activeView={activeView}
+              scope={{ ownerId: filters.ownerId, tenantId: filters.tenantId, contractId: filters.contractId }}
+              onOpen={handleSectionViewChange}
+            />
+          </div>
+          <OpenReportWorkspace
+            filters={filters}
+            canExportReports={canExportReports}
+            activeSection={activeSection}
+            activeView={activeView}
+            onSectionViewChange={handleSectionViewChange}
+            onFiltersChange={setFilters}
+            onResetCurrentMonth={handleResetCurrentMonth}
+          />
         </div>
       </div>
     </PageLayout>
@@ -175,35 +148,6 @@ function MobileReportChooser({ activeSection, activeView, scope, onOpen }: Mobil
         />
       </BottomSheet>
     </>
-  );
-}
-
-type DesktopReportsLandingProps = Readonly<{
-  onOpen: (section: ReportSectionId, view: ReportViewId) => void;
-}>;
-
-function DesktopReportsLanding({ onOpen }: DesktopReportsLandingProps) {
-  return (
-    <section
-      className="flex min-h-[24rem] flex-col items-center justify-center rounded-2xl border border-dashed border-border/70 bg-card/40 px-6 text-center"
-      data-report-landing
-      aria-label="مركز التقارير — اختر تقريرًا"
-    >
-      <span className="grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary">
-        <ArrowRight className="size-5" aria-hidden="true" />
-      </span>
-      <h2 className="mt-4 text-base font-black leading-6">اختر تقريرًا من القائمة</h2>
-      <p className="mt-1 max-w-md text-sm font-medium leading-6 text-muted-foreground">
-        يفتح التقرير هنا داخل مساحة العمل نفسها، مع ملخص تنفيذي ونطاق التقرير الحالي وطريقة تصديره.
-      </p>
-      <button
-        type="button"
-        onClick={() => onOpen('analytics', 'overview')}
-        className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-lg border border-border/70 bg-card px-4 text-sm font-black text-foreground transition-colors hover:border-primary/30 hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-      >
-        عرض أداء المكتب
-      </button>
-    </section>
   );
 }
 

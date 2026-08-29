@@ -30,6 +30,7 @@ import { buildDeferredRevenueAudit } from './reports-insights';
 import {
   buildExpiringContractsRows,
   buildOccupancyRows,
+  buildPropertyPerformanceRows,
   buildRentRollRows,
   contractStatusLabels,
   getTodayLocalDateString,
@@ -94,11 +95,12 @@ export function useReportsWorkspace(filters: ReportsFilterState, location: Repor
   const isStatements = location.section === 'statements';
 
   const needsOverview = isAnalytics && view === 'overview';
-  const needsCollections = isAnalytics && view === 'collections';
-  const needsOverdue = isAnalytics && view === 'overdue';
-  const needsExpenses = isAnalytics && view === 'expenses';
-  const needsOccupancy = isAnalytics && (view === 'occupancy' || view === 'property_analytics');
-  const needsMaintenance = isAnalytics && view === 'maintenance_analytics';
+  const needsPropertyPerformance = isAnalytics && view === 'property_analytics';
+  const needsCollections = isAnalytics && (view === 'collections' || needsOverview || needsPropertyPerformance);
+  const needsOverdue = isAnalytics && (view === 'overdue' || needsPropertyPerformance);
+  const needsExpenses = isAnalytics && (view === 'expenses' || needsOverview || needsPropertyPerformance || view === 'maintenance_analytics');
+  const needsOccupancy = isAnalytics && (view === 'occupancy' || needsOverview || needsPropertyPerformance);
+  const needsMaintenance = isAnalytics && (view === 'maintenance_analytics' || needsPropertyPerformance);
   const needsAccountingReports = isAccounting && view === 'accounting_reports';
   const needsDeferredRevenue = isAccounting && view === 'deferred_revenue';
   const needsStatements = isStatements || needsAccountingReports;
@@ -167,7 +169,15 @@ export function useReportsWorkspace(filters: ReportsFilterState, location: Repor
     [filters.asOf, occupancyContracts, occupancyUnits, propertyTitlesById],
   );
   const expiringRows = useMemo(() => buildExpiringContractsRows(scopedContracts, new Date()), [scopedContracts]);
-  const maintenanceSummary = useMemo(() => summarizeMaintenanceRequests(maintenanceQuery.data ?? []), [maintenanceQuery.data]);
+  const maintenanceRows = useMemo(
+    () => (maintenanceQuery.data ?? []).filter((request) => {
+      if (filters.propertyId && request.property_id !== filters.propertyId) return false;
+      if (filters.unitId && request.unit_id !== filters.unitId) return false;
+      return true;
+    }),
+    [filters.propertyId, filters.unitId, maintenanceQuery.data],
+  );
+  const maintenanceSummary = useMemo(() => summarizeMaintenanceRequests(maintenanceRows), [maintenanceRows]);
   const receiptRows = useMemo(
     () => allReceipts
       .filter((receipt) => isWithinDateRange(receipt.payment_date, filters))
@@ -196,6 +206,18 @@ export function useReportsWorkspace(filters: ReportsFilterState, location: Repor
         status: receipt.status,
       })),
     [allReceipts, contractById, filters],
+  );
+  const propertyPerformanceRows = useMemo(
+    () => buildPropertyPerformanceRows({
+      occupancyRows,
+      contracts: scopedContracts,
+      receipts: receiptRows,
+      overdueRows: overdueInvoicesQuery.data?.rows ?? [],
+      expenseRows: expenseBreakdownQuery.data?.byProperty ?? [],
+      maintenanceRows,
+      vacancyRows: vacancyAnalytics.vacantRows,
+    }),
+    [expenseBreakdownQuery.data?.byProperty, maintenanceRows, occupancyRows, overdueInvoicesQuery.data?.rows, receiptRows, scopedContracts, vacancyAnalytics.vacantRows],
   );
   const deferredRevenueAudit = useMemo(
     () => buildDeferredRevenueAudit(scopedContracts, receiptRows, filters.asOf),
@@ -271,7 +293,19 @@ export function useReportsWorkspace(filters: ReportsFilterState, location: Repor
         historyComplete: !contractsQuery.isError && !contractsQuery.data?.truncated,
         isLoading: isLoadingAny(unitsQuery.isLoading, contractsQuery.isLoading, propertyTitlesQuery.isLoading),
       },
-      maintenance: { rows: maintenanceQuery.data ?? [], summary: maintenanceSummary, isLoading: maintenanceQuery.isLoading },
+      propertyPerformance: {
+        rows: propertyPerformanceRows,
+        isLoading: isLoadingAny(
+          unitsQuery.isLoading,
+          contractsQuery.isLoading,
+          receiptsQuery.isLoading,
+          overdueInvoicesQuery.isLoading,
+          expenseBreakdownQuery.isLoading,
+          maintenanceQuery.isLoading,
+          propertyTitlesQuery.isLoading,
+        ),
+      },
+      maintenance: { rows: maintenanceRows, summary: maintenanceSummary, isLoading: maintenanceQuery.isLoading },
       deferredRevenue: { audit: deferredRevenueAudit, asOf: filters.asOf, isLoading: isLoadingAny(receiptsQuery.isLoading, contractsQuery.isLoading) },
       accounting: {
         asOf: filters.asOf,

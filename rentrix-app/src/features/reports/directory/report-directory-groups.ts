@@ -45,7 +45,7 @@ export const reportGroups: readonly ReportGroup[] = [
   {
     id: 'office',
     title: 'أداء المكتب',
-    description: 'خلاصة مفهومة لأهم ما تغيّر في التحصيل والإشغال والمصروفات خلال الفترة.',
+    description: 'تحصيل مقابل المستحق، المتأخر، الإشغال، الشغور، العقود المعرضة للانتهاء، وأهم 5 تنبيهات.',
     icon: BarChart3,
     section: 'analytics',
     view: 'overview',
@@ -57,7 +57,7 @@ export const reportGroups: readonly ReportGroup[] = [
   {
     id: 'collections',
     title: 'التحصيل والمتأخرات',
-    description: 'ما تم تحصيله، وما بقي مستحقًا، وأين تتركز المتأخرات.',
+    description: 'قائمة متابعة تنفيذية مرتبة حسب الخطر والقيمة والمسؤول، لا مجرد أرقام تعتيق.',
     icon: Receipt,
     section: 'analytics',
     view: 'collections',
@@ -71,7 +71,7 @@ export const reportGroups: readonly ReportGroup[] = [
   {
     id: 'leases',
     title: 'العقود والإشغال والشغور',
-    description: 'العقود القريبة من الانتهاء والوحدات المشغولة والشاغرة ونسب الإشغال.',
+    description: 'Forecast للتجديدات والشغور: المنتهي قريبًا، احتمالية الشغور، وقيمة الإيجار المعرضة للخطر.',
     icon: FileText,
     section: 'analytics',
     view: 'occupancy',
