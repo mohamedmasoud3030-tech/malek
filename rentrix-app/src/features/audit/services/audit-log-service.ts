@@ -4,6 +4,9 @@ import type { AuditLogRecord, AuditLogResult } from '../types';
 import type { Database } from '@/types/database';
 
 type AuditLogRow = Database['public']['Tables']['audit_log']['Row'];
+type AuditLogInputRow = Omit<AuditLogRow, 'new_value'> & {
+  new_value?: AuditLogRow['new_value'] | null;
+};
 
 const AUDIT_LOG_COLUMNS =
   'id, ts, user_id, username, action, entity, entity_id, note, table, details, created_at, updated_at';
@@ -30,7 +33,7 @@ function readTimestamp(value: unknown): string | null {
   return Number.isNaN(d.getTime()) ? text : d.toISOString();
 }
 
-export function normalizeAuditRecords(rows: readonly AuditLogRow[]): readonly AuditLogRecord[] {
+export function normalizeAuditRecords(rows: readonly AuditLogInputRow[]): readonly AuditLogRecord[] {
   return rows.map((row, index) => ({
     id: row.id ?? `audit-${index}`,
     occurredAt:
