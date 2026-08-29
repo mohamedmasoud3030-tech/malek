@@ -384,7 +384,7 @@ export function FinanceTableWrapper({
         tabIndex={0}
         role="region"
         aria-label={`${ariaLabel} — منطقة جدول قابلة للتمرير أفقياً عند الحاجة`}
-        className="overflow-x-auto focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
+        className="mobile-scroll-x overscroll-x-contain focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
       >
         {children}
       </div>

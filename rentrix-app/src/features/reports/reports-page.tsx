@@ -86,7 +86,7 @@ export function ReportsPage() {
           </div>
         </aside>
 
-        <div className="min-w-0" data-active-report-workspace>
+        <div className="min-w-0" data-active-report-workspace data-report-landing>
           {/* No empty landing state: with no URL selection, resolveReportLocation
               opens the decision-first office performance report immediately. */}
           <div className="mb-2 lg:hidden">
