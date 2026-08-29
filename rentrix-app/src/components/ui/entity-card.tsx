@@ -56,7 +56,7 @@ export interface EntityCardProps {
 function getActionClassName(variant: EntityCardAction['variant'] = 'secondary') {
   if (variant === 'danger') return 'border-destructive/25 bg-destructive/5 text-destructive hover:bg-destructive/10';
   if (variant === 'default') return 'border-primary/25 bg-primary/8 text-primary hover:bg-primary/12';
-  return 'border-border/80 bg-background text-foreground/85 hover:bg-muted/55 hover:text-foreground';
+  return 'border-border/65 bg-background text-foreground/85 hover:bg-muted/45 hover:text-foreground';
 }
 
 function handleCardKeyDown(event: KeyboardEvent<HTMLElement>, onClick?: () => void) {
@@ -83,8 +83,8 @@ function EntityCardShell({ id, clickable, onClick, className, children }: Readon
       onClick={onClick}
       onKeyDown={(event) => handleCardKeyDown(event, onClick)}
       className={cn(
-        'relative w-full min-w-0 overflow-hidden rounded-xl border border-border/90 bg-card p-3 text-start shadow-none transition-[border-color,background-color] sm:p-3.5',
-        clickable && 'cursor-pointer hover:border-primary/35 hover:bg-muted/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20',
+        'relative w-full min-w-0 overflow-hidden rounded-lg border border-border/70 bg-card p-2 text-start shadow-none transition-[border-color,background-color] sm:p-2.5',
+        clickable && 'cursor-pointer hover:border-primary/30 hover:bg-muted/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20',
         className,
       )}
     >
@@ -101,38 +101,38 @@ export function EntityCard({
 
   return (
     <EntityCardShell id={id} clickable={Boolean(onClick)} onClick={onClick} className={className}>
-      <div className="flex min-w-0 items-start justify-between gap-3">
-        <div className="flex min-w-0 flex-1 items-start gap-2.5 sm:gap-3">
-          <div className={cn('grid size-9 shrink-0 place-items-center rounded-lg border border-border/50 sm:size-10', tone.bg)}>
-            <AvatarIcon className={cn('size-4 sm:size-[18px]', tone.text)} aria-hidden="true" />
+      <div className="flex min-w-0 items-start justify-between gap-2">
+        <div className="flex min-w-0 flex-1 items-start gap-2">
+          <div className={cn('grid size-8 shrink-0 place-items-center rounded-md border border-border/45', tone.bg)}>
+            <AvatarIcon className={cn('size-3.5', tone.text)} aria-hidden="true" />
           </div>
           <div className="min-w-0 flex-1 overflow-hidden">
-            <div className="line-clamp-2 break-words text-[14px] font-extrabold leading-5 text-foreground [overflow-wrap:anywhere] sm:text-[15px] sm:leading-6">{name}</div>
+            <div className="line-clamp-2 break-words text-[13px] font-bold leading-[18px] text-foreground [overflow-wrap:anywhere]">{name}</div>
             {subtitle ? (
-              <div className="mt-0.5 line-clamp-2 break-words text-[12.5px] font-medium leading-5 text-muted-foreground [overflow-wrap:anywhere]">{subtitle}</div>
+              <div className="mt-0.5 line-clamp-2 break-words text-[11.5px] font-medium leading-4 text-muted-foreground [overflow-wrap:anywhere]">{subtitle}</div>
             ) : null}
             {supportingText ? (
-              <div className="mt-1 break-words text-[12.5px] font-semibold leading-5 text-muted-foreground [overflow-wrap:anywhere]">{supportingText}</div>
+              <div className="mt-0.5 break-words text-[11.5px] font-medium leading-4 text-muted-foreground [overflow-wrap:anywhere]">{supportingText}</div>
             ) : null}
           </div>
         </div>
         {badge ?? (
-          <span className={cn('inline-flex min-h-6 shrink-0 items-center rounded-md border border-current/10 px-2 py-0.5 text-[11.5px] font-extrabold', tone.bg, tone.text)}>
+          <span className={cn('inline-flex min-h-5 shrink-0 items-center rounded border border-current/10 px-1.5 py-0 text-[10.5px] font-bold leading-4', tone.bg, tone.text)}>
             {tone.label}
           </span>
         )}
       </div>
 
-      {stats ? <div className="mt-2.5 border-t border-border/70 pt-2.5 text-[12.5px] text-foreground/85">{stats}</div> : null}
+      {stats ? <div className="mt-1.5 border-t border-border/55 pt-1.5 text-[11.5px] leading-4 text-foreground/85">{stats}</div> : null}
 
       {meta?.length ? (
-        <div className="mt-2.5 grid gap-1.5 border-t border-border/70 pt-2.5 text-[12.5px] leading-5 text-muted-foreground">
+        <div className="mt-1.5 grid gap-1 border-t border-border/55 pt-1.5 text-[11.5px] leading-4 text-muted-foreground">
           {meta.map((item, index) => {
             const MetaIcon = item.icon;
             return (
-              <div key={index} className={cn('flex min-w-0 items-center gap-1.5', item.className)}>
-                {MetaIcon ? <MetaIcon className="size-3.5 shrink-0 text-muted-foreground/75" aria-hidden="true" /> : null}
-                {item.label ? <span className="shrink-0 font-extrabold text-foreground/80">{item.label}</span> : null}
+              <div key={index} className={cn('flex min-w-0 items-center gap-1', item.className)}>
+                {MetaIcon ? <MetaIcon className="size-3 shrink-0 text-muted-foreground/70" aria-hidden="true" /> : null}
+                {item.label ? <span className="shrink-0 font-bold text-foreground/78">{item.label}</span> : null}
                 <span dir={item.dir} className="min-w-0 flex-1 break-words font-medium [overflow-wrap:anywhere]">{item.value}</span>
               </div>
             );
@@ -142,7 +142,7 @@ export function EntityCard({
 
       {actions?.length ? (
         <div
-          className={cn('mt-2.5 grid gap-1.5 border-t border-border/70 pt-2.5', actions.length === 1 ? 'grid-cols-1' : 'grid-cols-2')}
+          className={cn('mt-1.5 grid gap-1 border-t border-border/55 pt-1.5', actions.length === 1 ? 'grid-cols-1' : 'grid-cols-2')}
           onClick={(event) => event.stopPropagation()}
           onKeyDown={(event) => event.stopPropagation()}
         >
@@ -154,7 +154,7 @@ export function EntityCard({
                 type="button"
                 aria-label={action.ariaLabel}
                 className={cn(
-                  'inline-flex min-h-10 min-w-0 items-center justify-center gap-1.5 rounded-md border px-2.5 text-[12px] font-extrabold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20',
+                  'inline-flex min-h-9 min-w-0 items-center justify-center gap-1 rounded border px-2 text-[11.5px] font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20',
                   getActionClassName(action.variant),
                 )}
                 onClick={action.onClick}

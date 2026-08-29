@@ -6,17 +6,17 @@ import { Skeleton } from './skeleton';
 /**
  * Canonical MALEK table sizing.
  *
- * Registers keep natural column width (`min-w-max`) so narrow viewports scroll
- * horizontally instead of crushing cells. The visual contract is intentionally
- * spreadsheet-like: compact, even rows, crisp separators, and quiet surfaces.
+ * One table primitive owns spacing, type scale, separators and overflow across
+ * the product. Columns keep natural width so narrow viewports scroll cleanly
+ * instead of crushing, wrapping or overlapping cell content.
  */
 const tableVariants = cva(
-  'w-full min-w-max caption-bottom text-[13px] leading-5 tabular-nums [&_td+td]:border-s [&_td+td]:border-border/75 [&_th+th]:border-s [&_th+th]:border-border/85',
+  'w-full min-w-max caption-bottom text-[12px] leading-4 tabular-nums [&_td+td]:border-s [&_td+td]:border-border/60 [&_th+th]:border-s [&_th+th]:border-border/70',
   {
     variants: {
       density: {
-        default: '[&_td]:h-11 [&_td]:py-2 [&_th]:h-10',
-        compact: '[&_td]:h-10 [&_td]:py-1.5 [&_th]:h-9',
+        default: '[&_td]:h-9 [&_td]:py-1.5 [&_th]:h-9',
+        compact: '[&_td]:h-8 [&_td]:py-1 [&_th]:h-8',
       },
     },
     defaultVariants: { density: 'default' },
@@ -30,7 +30,7 @@ export function Table({ className, density, ...props }: TableProps) {
 }
 
 export function TableHeader({ className, ...props }: HTMLAttributes<HTMLTableSectionElement>) {
-  return <thead className={cn('[&_tr]:border-b [&_tr]:border-border/90', className)} {...props} />;
+  return <thead className={cn('[&_tr]:border-b [&_tr]:border-border/75', className)} {...props} />;
 }
 
 export function TableBody({ className, ...props }: HTMLAttributes<HTMLTableSectionElement>) {
@@ -46,7 +46,7 @@ export function TableRow({
     <tr
       data-selected={selected ? 'true' : undefined}
       className={cn(
-        'border-b border-border/75 bg-card transition-colors hover:bg-muted/35',
+        'border-b border-border/60 bg-card transition-colors hover:bg-muted/25',
         selected && 'bg-primary/7 hover:bg-primary/10',
         className,
       )}
@@ -59,7 +59,7 @@ export function TableHead({ className, ...props }: ThHTMLAttributes<HTMLTableCel
   return (
     <th
       className={cn(
-        'h-10 whitespace-nowrap bg-muted/55 px-3 text-start align-middle text-[12px] font-extrabold leading-4 text-foreground/80 sm:px-3.5',
+        'h-9 whitespace-nowrap bg-muted/45 px-2 text-start align-middle text-[11px] font-bold leading-4 text-foreground/75 sm:px-2.5',
         className,
       )}
       {...props}
@@ -71,7 +71,7 @@ export function TableCell({ className, ...props }: TdHTMLAttributes<HTMLTableCel
   return (
     <td
       className={cn(
-        'h-11 whitespace-nowrap px-3 py-2 align-middle text-[13px] font-medium text-foreground sm:px-3.5',
+        'h-9 whitespace-nowrap px-2 py-1.5 align-middle text-[12px] font-medium text-foreground sm:px-2.5',
         className,
       )}
       {...props}
@@ -80,7 +80,7 @@ export function TableCell({ className, ...props }: TdHTMLAttributes<HTMLTableCel
 }
 
 export function TableCaption({ className, ...props }: HTMLAttributes<HTMLElement>) {
-  return <caption className={cn('mt-3 text-xs text-muted-foreground', className)} {...props} />;
+  return <caption className={cn('mt-2 text-[11px] text-muted-foreground', className)} {...props} />;
 }
 
 /** Reusable table loading block — screen-reader-safe (role=status, aria-live). */
@@ -96,10 +96,10 @@ export function TableLoading({
   return (
     <tbody role="status" aria-live="polite" aria-label={label}>
       {Array.from({ length: rows }).map((_, rowIndex) => (
-        <tr key={rowIndex} aria-hidden="true" className="border-b border-border/75">
+        <tr key={rowIndex} aria-hidden="true" className="border-b border-border/60">
           {Array.from({ length: columns }).map((__, colIndex) => (
-            <td key={colIndex} className="h-11 border-s border-border/75 px-3 py-2 first:border-s-0">
-              <Skeleton className="h-4 w-full" />
+            <td key={colIndex} className="h-9 border-s border-border/60 px-2 py-1.5 first:border-s-0">
+              <Skeleton className="h-3.5 w-full" />
             </td>
           ))}
         </tr>
@@ -116,7 +116,7 @@ function TableStateRow({ colSpan, className, children, ...props }: TableStateRow
   return (
     <tbody>
       <tr {...props}>
-        <td colSpan={colSpan} className={cn('px-4 py-10 text-center', className)}>
+        <td colSpan={colSpan} className={cn('px-3 py-8 text-center', className)}>
           {children}
         </td>
       </tr>
@@ -137,10 +137,10 @@ export function TableEmpty({
 }) {
   return (
     <TableStateRow colSpan={colSpan}>
-      <div className="flex flex-col items-center gap-2 text-center">
+      <div className="flex flex-col items-center gap-1.5 text-center">
         <p className="text-sm font-semibold text-foreground">{title}</p>
         {description ? (
-          <p className="max-w-sm text-sm leading-6 text-muted-foreground">{description}</p>
+          <p className="max-w-sm text-xs leading-5 text-muted-foreground">{description}</p>
         ) : null}
         {action}
       </div>
@@ -159,7 +159,7 @@ export function TableError({
 }) {
   return (
     <TableStateRow colSpan={colSpan} className="text-danger">
-      <div className="flex flex-col items-center gap-3" role="alert">
+      <div className="flex flex-col items-center gap-2" role="alert">
         <p className="text-sm font-semibold">{title}</p>
         {onRetry ? (
           <button

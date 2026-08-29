@@ -20,17 +20,20 @@ describe('canonical register visual contract', () => {
     expect(entityTable).toContain('sticky end-0');
   });
 
-  it('uses one crisp shared row and column sizing contract', () => {
-    expect(table).toContain("'[&_td]:h-11 [&_td]:py-2 [&_th]:h-10'");
-    expect(table).toContain('text-[13px]');
+  it('uses one dense shared row and column sizing contract', () => {
+    expect(table).toContain("'[&_td]:h-9 [&_td]:py-1.5 [&_th]:h-9'");
+    expect(table).toContain('text-[12px]');
     expect(table).toContain('[&_td+td]:border-s');
     expect(table).toContain('[&_th+th]:border-s');
+    expect(table).not.toContain('sm:px-3.5');
   });
 
-  it('keeps cards available but flatter and easier to scan', () => {
-    expect(entityCard).toContain('shadow-none');
-    expect(entityCard).toContain('border-border/90');
-    expect(entityCard).toContain('text-[14px]');
-    expect(entityCard).toContain('min-h-10');
+  it('keeps mobile cards compact, flat and non-overlapping', () => {
+    expect(entityCard).toContain('p-2 text-start shadow-none');
+    expect(entityCard).toContain('border-border/70');
+    expect(entityCard).toContain('text-[13px]');
+    expect(entityCard).toContain('min-h-9');
+    expect(entityCard).toContain('[overflow-wrap:anywhere]');
+    expect(entityCard).not.toContain('sm:text-[15px]');
   });
 });
