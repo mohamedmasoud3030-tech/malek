@@ -48,28 +48,29 @@ describe('Task-centric canonical IA', () => {
     }
   });
 
-  it('keeps Money daily navigation to collections and expenses while specialist finance stays addressable', () => {
+  it('keeps Money task-first: invoices, receipt history and expenses are the routine shortcuts', () => {
     const children = workspaceChildNavItems['/financials'];
-    expect(children).toHaveLength(4);
+    expect(children).toHaveLength(3);
     expect(children.every(([to]) => to === '/financials')).toBe(true);
-    expect(children.map(([, , , , , search]) => search?.view)).toEqual([
-      'invoices', 'receipts', 'arrears', 'expenses',
-    ]);
-    for (const specialistSection of ['fees', 'funds', 'banking']) {
-      expect(financeModelSource).toMatch(new RegExp(`id: '${specialistSection}'[\\s\\S]*?showInPrimaryNavigation: false`));
+    expect(children.map(([, , , , , search]) => search?.view)).toEqual(['invoices', 'receipts', 'expenses']);
+
+    for (const routineSection of ['collections', 'fees', 'expenses', 'funds', 'banking']) {
+      expect(financeModelSource).toMatch(new RegExp(`id: '${routineSection}'[\\s\\S]*?showInPrimaryNavigation: true`));
     }
+    expect(financeModelSource).toMatch(/id: 'overview'[\s\S]*?showInPrimaryNavigation: false/);
+    expect(financeModelSource).toMatch(/id: 'arrears'[\s\S]*?showInSectionNavigation: false/);
     expect(financeModelSource).toContain("id: 'commissions'");
     expect(financePageSource).toContain('<CommissionsWorkspace embedded />');
     expect(financePageSource).toContain('id="finance-view-panel-commissions"');
+    expect(financePageSource).toContain('data-finance-primary-nav');
+    expect(financePageSource).not.toContain('lg:grid-cols-[minmax(15rem,18rem)_minmax(0,1fr)]');
   });
 
   it('keeps Services routine navigation to maintenance and utilities only', () => {
     const children = workspaceChildNavItems['/maintenance'];
     expect(children).toHaveLength(2);
     expect(children.every(([to]) => to === '/maintenance')).toBe(true);
-    expect(children.map(([, , , , , search]) => search?.section)).toEqual([
-      'maintenance', 'utilities',
-    ]);
+    expect(children.map(([, , , , , search]) => search?.section)).toEqual(['maintenance', 'utilities']);
     expect(servicesSectionsSource).toMatch(/id: 'service_providers'[\s\S]*?showInPrimaryNavigation: false/);
     expect(servicesSectionsSource).toMatch(/id: 'documents_vault'[\s\S]*?showInPrimaryNavigation: false/);
     expect(servicesSectionsSource).not.toContain("| 'automation'");
