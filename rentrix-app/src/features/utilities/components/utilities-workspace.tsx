@@ -523,18 +523,18 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
         searchAriaLabel="بحث في فواتير المرافق"
         filters={(
           <>
-            <Select aria-label="العقار" value={propertyFilter} onChange={(event) => setPropertyFilter(event.target.value)} className="w-full sm:w-44">
+            <Select aria-label="العقار" value={propertyFilter} onChange={(event) => setPropertyFilter(event.target.value)} className="min-h-11 w-full sm:w-44">
               <option value="all">كل العقارات</option>
               {properties.map((property) => <option key={property.id} value={property.id}>{property.title}</option>)}
             </Select>
-            <Select aria-label="نوع المرفق" value={utilityFilter} onChange={(event) => setUtilityFilter(event.target.value)} className="w-full sm:w-44">
+            <Select aria-label="نوع المرفق" value={utilityFilter} onChange={(event) => setUtilityFilter(event.target.value)} className="min-h-11 w-full sm:w-44">
               <option value="all">كل أنواع المرافق</option>
               {Object.entries(utilityTypeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               <optgroup label="حسب العداد">
                 {meters.map((meter) => <option key={meter.id} value={`meter:${meter.id}`}>{utilityTypeLabels[meter.utility_type]} · {meter.meter_number}</option>)}
               </optgroup>
             </Select>
-            <Select aria-label="حالة السداد" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as UtilityBillStatus | 'all')} className="w-full sm:w-40">
+            <Select aria-label="حالة السداد" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as UtilityBillStatus | 'all')} className="min-h-11 w-full sm:w-40">
               <option value="all">كل الحالات</option>
               {Object.entries(utilityBillStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </Select>

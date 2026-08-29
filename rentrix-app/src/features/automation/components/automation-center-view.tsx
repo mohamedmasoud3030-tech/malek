@@ -198,7 +198,7 @@ export function AutomationCenterView() {
             <StatusBadge tone="neutral" dot>{counts.all} الكل</StatusBadge>
           </div>
         </div>
-        <ResponsiveCardGrid>
+        <ResponsiveCardGrid desktopColumns={4}>
           <KpiCard label="قواعد العقود" value={rules.filter((rule) => rule.rule_type === 'contract_expiry').length} icon={CalendarClock} accent="primary" />
           <KpiCard label="قواعد الإيجار" value={rules.filter((rule) => rule.rule_type === 'overdue_invoice').length} icon={MessageCircle} accent="amber" />
           <KpiCard label="إجمالي التشغيلات" value={runs.length} icon={Mail} accent="sky" />

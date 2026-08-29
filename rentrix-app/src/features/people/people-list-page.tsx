@@ -176,7 +176,7 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
       key: "email", priority: 'detail' as const,
       header: "البريد",
       render: (person) => (
-        <span dir="ltr" className="block text-right">
+        <span dir="ltr" className="block text-end">
           {person.email ?? "—"}
         </span>
       ),

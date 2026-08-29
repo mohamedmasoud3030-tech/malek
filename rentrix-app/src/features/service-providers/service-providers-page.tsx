@@ -87,7 +87,7 @@ export function ServiceProvidersWorkspace({ embedded = false }: Readonly<{ embed
         <div className="flex max-w-72 flex-wrap gap-1.5">{provider.categories.slice(0, 3).map((category) => <StatusBadge key={category.id} tone="info">{category.name}</StatusBadge>)}{provider.categories.length > 3 ? <StatusBadge tone="neutral">+{formatCount(provider.categories.length - 3)}</StatusBadge> : null}</div>
       ) : <span className="text-muted-foreground">غير محددة</span>,
     },
-    { key: 'contact', header: 'التواصل', priority: 'detail', render: (provider) => <div><p dir="ltr" className="text-right font-medium">{provider.phone ?? '—'}</p><p dir="ltr" className="text-right text-xs text-muted-foreground">{provider.email ?? ''}</p></div> },
+    { key: 'contact', header: 'التواصل', priority: 'detail', render: (provider) => <div><p dir="ltr" className="text-end font-medium">{provider.phone ?? '—'}</p><p dir="ltr" className="text-end text-xs text-muted-foreground">{provider.email ?? ''}</p></div> },
     { key: 'jobs', header: 'أعمال الصيانة', priority: 'secondary', render: (provider) => <div className="tabular-nums"><span className="font-bold">{formatCount(provider.maintenance_jobs_count)}</span>{provider.open_jobs_count > 0 ? <span className="ms-2 text-xs text-warning">{formatCount(provider.open_jobs_count)} جارية</span> : null}</div> },
     { key: 'status', header: 'الحالة', priority: 'primary', render: (provider) => <StatusBadge tone={provider.is_active ? 'success' : 'neutral'} dot>{provider.is_active ? 'نشط' : 'غير نشط'}</StatusBadge> },
     {

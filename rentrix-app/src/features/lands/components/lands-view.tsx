@@ -140,7 +140,7 @@ export function LandsView({
       description="إدارة قطع الأراضي وحالتها ومساحتها ومالكها وقيمتها من سجل واحد."
       count={isLoading ? '...' : rows.length}
       secondaryActions={(
-        <div className="hidden min-w-max items-center gap-2 rounded-xl border bg-background/70 px-3 py-2 text-xs font-bold text-muted-foreground sm:flex">
+        <div className="hidden max-w-full items-center gap-2 rounded-xl border bg-background/70 px-3 py-2 text-xs font-bold text-muted-foreground lg:flex">
           <Layers className="size-4" />
           <span>{isLoading ? 'جارٍ حساب المساحة...' : `إجمالي المساحة ${area(totalArea)}`}</span>
         </div>

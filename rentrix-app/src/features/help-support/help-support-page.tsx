@@ -205,7 +205,7 @@ function KnowledgeBase() {
           ابحث عن المهمة أو المشكلة؛ المقالات المختصرة تربطك بمسار العمل الفعلي.
         </p>
       </div>
-      <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_16rem]">
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_16rem]">
         <label className="relative block">
           <span className="sr-only">البحث في المساعدة</span>
           <Search

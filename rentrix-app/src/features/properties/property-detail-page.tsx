@@ -127,9 +127,9 @@ export function PropertyDetailPage() {
             }
           />
 
-          <div className="grid min-w-0 gap-4 md:grid-cols-[minmax(220px,260px)_minmax(0,1fr)] md:items-start">
-            {/* Phone: compact select. iPad/desktop: grouped sidebar. Content renders once. */}
-            <div className="md:hidden" data-property-detail-mobile-nav>
+          <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(220px,260px)_minmax(0,1fr)] lg:items-start">
+            {/* Phone and tablet: compact select. Desktop ≥1024: grouped named sidebar. */}
+            <div className="lg:hidden" data-property-detail-mobile-nav>
               <label htmlFor="property-detail-select" className="sr-only">
                 أقسام العقار
               </label>
@@ -153,7 +153,7 @@ export function PropertyDetailPage() {
 
             <nav
               aria-label="أقسام العقار"
-              className="sticky top-[calc(var(--app-header-height)+0.75rem)] hidden max-h-[calc(var(--visual-viewport-height,100dvh)-var(--app-header-height)-1.5rem)] overflow-y-auto overflow-x-hidden rounded-2xl border border-border/70 bg-card shadow-card md:block"
+              className="sticky top-[calc(var(--app-header-height)+0.75rem)] hidden max-h-[calc(var(--visual-viewport-height,100dvh)-var(--app-header-height)-1.5rem)] overflow-y-auto overflow-x-hidden rounded-2xl border border-border/70 bg-card shadow-card lg:block"
             >
               <div className="border-b border-border/60 bg-muted/30 px-4 py-3">
                 <p className="text-xs font-bold text-muted-foreground">تفاصيل العقار</p>

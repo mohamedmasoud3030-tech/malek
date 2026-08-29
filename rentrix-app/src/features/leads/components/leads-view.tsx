@@ -134,7 +134,7 @@ export function LeadsView(props: Props) {
       }
     >
 
-      <ResponsiveCardGrid>
+      <ResponsiveCardGrid desktopColumns={4}>
         <KpiCard
           label="إجمالي العملاء"
           value={rows.length}
@@ -414,7 +414,7 @@ function LeadRows({
     {
       key: "name", priority: 'identity' as const,
       header: "العميل",
-      className: "max-w-56",
+      className: "min-w-0 max-w-56",
       render: (row) => (
         <>
           <p className="whitespace-normal break-words font-bold">{row.name}</p>
