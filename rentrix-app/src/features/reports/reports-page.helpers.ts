@@ -120,8 +120,25 @@ function isOpenMaintenanceRequest(request: Maintenance) {
   return !['resolved', 'closed', 'cancelled'].includes(String(request.status ?? '').toLowerCase());
 }
 
+function isCompletedMaintenanceRequest(request: Maintenance) {
+  return ['resolved', 'closed'].includes(String(request.status ?? '').toLowerCase());
+}
+
 function getMaintenanceCostDate(request: Maintenance) {
   return request.completed_at ?? request.resolved_at ?? request.request_date ?? request.created_at;
+}
+
+/**
+ * Current status alone cannot answer a historical "as of" question. A request
+ * closed after the selected date was still open at that date; a terminal row
+ * without a terminal timestamp is deliberately excluded rather than guessed.
+ */
+function wasMaintenanceRequestOpenAsOf(request: Maintenance, asOf: string) {
+  if (!dateIsOnOrBefore(request.request_date ?? request.created_at, asOf)) return false;
+  if (isOpenMaintenanceRequest(request)) return true;
+
+  const terminalDate = request.cancelled_at ?? request.resolved_at ?? request.completed_at;
+  return Boolean(terminalDate && dateOnly(terminalDate) > asOf);
 }
 
 /**
@@ -175,10 +192,14 @@ export function buildPropertyPerformanceRows({
     // costs again here; only surface in-period maintenance cost that has not
     // been posted as an expense yet, so operational impact is visible without
     // inflating property cost.
-    if (!request.expense_id && dateIsWithinPeriod(getMaintenanceCostDate(request), period)) {
+    if (
+      isCompletedMaintenanceRequest(request)
+      && !request.expense_id
+      && dateIsWithinPeriod(getMaintenanceCostDate(request), period)
+    ) {
       property.maintenanceCost += request.cost ?? 0;
     }
-    if (isOpenMaintenanceRequest(request) && dateIsOnOrBefore(request.request_date ?? request.created_at, period.asOf)) {
+    if (wasMaintenanceRequestOpenAsOf(request, period.asOf)) {
       property.openMaintenanceCount += 1;
     }
   }
