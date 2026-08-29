@@ -36,6 +36,7 @@ export { SectionHeader } from "./section-header";
 export { ConfirmDialog } from "./confirm-dialog";
 export { FilterTabs } from "./filter-tabs";
 export { FilterBar } from "./filter-bar";
+export { ActiveFilterBar, type ActiveFilterItem } from "./active-filter-bar";
 export { WorkspaceNav, type WorkspaceNavItem } from "./workspace-nav";
 export { FilePickerField } from "./file-picker-field";
 export { KpiCard } from "./kpi-card";
