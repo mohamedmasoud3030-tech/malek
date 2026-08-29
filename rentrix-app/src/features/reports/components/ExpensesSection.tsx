@@ -14,6 +14,7 @@ import {
   ReportPanel,
   ReportProgress,
   ReportState,
+  ReportSummaryStrip,
 } from './report-section-primitives';
 import { formatLatinNumber } from '@/lib/formatters';
 import { ReportShareActions } from './ReportShareActions';
@@ -107,17 +108,24 @@ export function ExpensesSection({ report, canExportReports, isLoading }: Readonl
   ) : undefined;
 
   return (
-    <div className="space-y-4">
-      <div
-        className="grid grid-cols-2 overflow-hidden rounded-xl border border-border/80 bg-card sm:grid-cols-4"
-        data-report-summary="expenses"
-        aria-label="ملخص المصروفات"
-      >
-        <ExpenseMetric label="إجمالي المصروفات" value={formatMoney(totalExpenses)} helper={`${formatLatinNumber(expensesCount, 'ar')} حركة`} />
-        <ExpenseMetric label="متوسط المصروف" value={formatMoney(averageExpense)} helper="لكل حركة مسجلة" />
-        <ExpenseMetric label="التصنيفات" value={formatLatinNumber(categoryRows.length, 'ar')} helper={topCategory ? `الأعلى: ${topCategory.category}` : 'لا توجد تصنيفات'} />
-        <ExpenseMetric label="العقارات المتأثرة" value={formatLatinNumber(propertyRows.length, 'ar')} helper={topProperty ? `الأعلى: ${topProperty.propertyTitle ?? formatShortId(topProperty.propertyId)}` : 'لا توجد عقارات'} />
-      </div>
+    <div className="space-y-3">
+      <ReportSummaryStrip
+        dataReportSummary="expenses"
+        items={[
+          { label: 'إجمالي المصروفات', value: formatMoney(totalExpenses), detail: `${formatLatinNumber(expensesCount, 'ar')} حركة` },
+          { label: 'متوسط المصروف', value: formatMoney(averageExpense), detail: 'لكل حركة مسجلة' },
+          { label: 'التصنيفات', value: formatLatinNumber(categoryRows.length, 'ar'), detail: topCategory ? `الأعلى: ${topCategory.category}` : 'لا توجد تصنيفات' },
+          { label: 'العقارات المتأثرة', value: formatLatinNumber(propertyRows.length, 'ar'), detail: topProperty ? `الأعلى: ${topProperty.propertyTitle ?? formatShortId(topProperty.propertyId)}` : 'لا توجد عقارات' },
+        ]}
+      />
+
+      <ReportInsightNote title="قراءة المصروفات">
+        {topCategoryShare > 60
+          ? 'معظم المصروفات متركزة في تصنيف واحد؛ راجع تفاصيل هذا التصنيف والتكرار قبل اعتماد الفترة.'
+          : topPropertyShare > 65
+            ? 'عقار واحد يتحمل الحصة الأكبر من المصروفات؛ راجع الصيانة والخدمات المرتبطة به.'
+            : 'المصروفات موزعة نسبيًا بين التصنيفات والعقارات دون تركّز حاد.'}
+      </ReportInsightNote>
 
       <div className="grid gap-3 sm:grid-cols-2">
         <ReportProgress
@@ -133,14 +141,6 @@ export function ExpensesSection({ report, canExportReports, isLoading }: Readonl
           tone={topPropertyShare <= 45 ? 'good' : topPropertyShare <= 65 ? 'warning' : 'critical'}
         />
       </div>
-
-      <ReportInsightNote title="قراءة المصروفات">
-        {topCategoryShare > 60
-          ? 'معظم المصروفات متركزة في تصنيف واحد؛ راجع تفاصيل هذا التصنيف والتكرار قبل اعتماد الفترة.'
-          : topPropertyShare > 65
-            ? 'عقار واحد يتحمل الحصة الأكبر من المصروفات؛ راجع الصيانة والخدمات المرتبطة به.'
-            : 'المصروفات موزعة نسبيًا بين التصنيفات والعقارات دون تركّز حاد.'}
-      </ReportInsightNote>
 
       <ReportColumns>
         <ReportPanel
@@ -194,12 +194,3 @@ export function ExpensesSection({ report, canExportReports, isLoading }: Readonl
   );
 }
 
-function ExpenseMetric({ label, value, helper }: Readonly<{ label: string; value: string; helper: string }>) {
-  return (
-    <div className="min-w-0 border-b border-border/70 px-3 py-3 odd:border-e sm:border-b-0 sm:border-e sm:last:border-e-0">
-      <p className="text-[11px] font-bold text-muted-foreground sm:text-xs">{label}</p>
-      <p className="mt-1 truncate text-base font-black tabular-nums sm:text-lg" dir="ltr">{value}</p>
-      <p className="mt-1 truncate text-[11px] font-semibold text-muted-foreground">{helper}</p>
-    </div>
-  );
-}

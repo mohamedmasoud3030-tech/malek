@@ -14,6 +14,7 @@ import {
   ReportPanel,
   ReportProgress,
   ReportState,
+  ReportSummaryStrip,
 } from './report-section-primitives';
 import { formatLatinNumber } from '@/lib/formatters';
 
@@ -116,17 +117,16 @@ export function PropertyAnalyticsSection({ occupancyRows, expenseRows, isLoading
   };
 
   return (
-    <div className="space-y-4">
-      <div
-        className="grid grid-cols-2 overflow-hidden rounded-xl border border-border/80 bg-card sm:grid-cols-4"
-        data-report-summary="property-analytics"
-        aria-label="ملخص أداء العقارات"
-      >
-        <PropertyMetric label="العقارات المدارة" value={formatLatinNumber(totalProperties, 'ar')} helper={`${formatLatinNumber(totalPortfolioUnits, 'ar')} وحدة`} />
-        <PropertyMetric label="إشغال المحفظة" value={`${overallOccupancyRate}%`} helper={`${formatLatinNumber(totalOccupiedUnits, 'ar')} وحدة مشغولة`} />
-        <PropertyMetric label="مصروف للوحدة المشغولة" value={formatMoney(expensePerOccupiedUnit)} helper={`${formatLatinNumber(totalExpenses, 'ar-OM')} إجمالي المصروفات`} />
-        <PropertyMetric label="الوحدات الشاغرة" value={formatLatinNumber(totalVacantUnits, 'ar')} helper="فرص تأجير متاحة" />
-      </div>
+    <div className="space-y-3">
+      <ReportSummaryStrip
+        dataReportSummary="property-analytics"
+        items={[
+          { label: 'العقارات المدارة', value: formatLatinNumber(totalProperties, 'ar'), detail: `${formatLatinNumber(totalPortfolioUnits, 'ar')} وحدة` },
+          { label: 'إشغال المحفظة', value: `${overallOccupancyRate}%`, detail: `${formatLatinNumber(totalOccupiedUnits, 'ar')} وحدة مشغولة`, tone: overallOccupancyRate < 75 ? 'warning' : undefined },
+          { label: 'مصروف للوحدة المشغولة', value: formatMoney(expensePerOccupiedUnit), detail: `${formatLatinNumber(totalExpenses, 'ar-OM')} إجمالي المصروفات` },
+          { label: 'الوحدات الشاغرة', value: formatLatinNumber(totalVacantUnits, 'ar'), detail: 'فرص تأجير متاحة' },
+        ]}
+      />
 
       <div className="grid gap-3 sm:grid-cols-2">
         <ReportProgress
@@ -201,12 +201,3 @@ export function PropertyAnalyticsSection({ occupancyRows, expenseRows, isLoading
   );
 }
 
-function PropertyMetric({ label, value, helper }: Readonly<{ label: string; value: string; helper: string }>) {
-  return (
-    <div className="min-w-0 border-b border-border/70 px-3 py-3 odd:border-e sm:border-b-0 sm:border-e sm:last:border-e-0">
-      <p className="text-[11px] font-bold text-muted-foreground sm:text-xs">{label}</p>
-      <p className="mt-1 truncate text-base font-black tabular-nums sm:text-lg" dir="ltr">{value}</p>
-      <p className="mt-1 truncate text-[11px] font-semibold text-muted-foreground">{helper}</p>
-    </div>
-  );
-}

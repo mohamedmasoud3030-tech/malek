@@ -108,6 +108,7 @@ describe('production product simplification contract', () => {
       'property_analytics',
       'occupancy',
       'maintenance_analytics',
+      'services',
     ]);
 
     const workspace = source('../features/reports/workspace/ReportsWorkspace.tsx');

@@ -20,6 +20,7 @@ import {
   ReportPanel,
   ReportProgress,
   ReportState,
+  ReportSummaryStrip,
 } from './report-section-primitives';
 import { formatLatinNumber } from '@/lib/formatters';
 import { ReportShareActions } from './ReportShareActions';
@@ -112,17 +113,16 @@ export function MaintenanceReportSection({ rows, summary, canExportReports, isLo
   };
 
   return (
-    <div className="space-y-4">
-      <div
-        className="grid grid-cols-2 overflow-hidden rounded-xl border border-border/80 bg-card sm:grid-cols-4"
-        data-report-summary="maintenance"
-        aria-label="ملخص الصيانة"
-      >
-        <MaintenanceMetric label="إجمالي البلاغات" value={formatLatinNumber(summary.total, 'ar')} helper={`${formatLatinNumber(completedCount, 'ar')} مكتملة`} />
-        <MaintenanceMetric label="طلبات مفتوحة" value={formatLatinNumber(summary.open, 'ar')} helper="تحتاج بدء المتابعة" />
-        <MaintenanceMetric label="قيد التنفيذ" value={formatLatinNumber(summary.inProgress, 'ar')} helper={`${formatLatinNumber(assignedCount, 'ar')} مسندة`} />
-        <MaintenanceMetric label="عاجلة ونشطة" value={formatLatinNumber(urgentActiveCount, 'ar')} helper="أولوية تدخل فوري" />
-      </div>
+    <div className="space-y-3">
+      <ReportSummaryStrip
+        dataReportSummary="maintenance"
+        items={[
+          { label: 'إجمالي البلاغات', value: formatLatinNumber(summary.total, 'ar'), detail: `${formatLatinNumber(completedCount, 'ar')} مكتملة` },
+          { label: 'طلبات مفتوحة', value: formatLatinNumber(summary.open, 'ar'), detail: 'تحتاج بدء المتابعة', tone: summary.open > 0 ? 'warning' : undefined },
+          { label: 'قيد التنفيذ', value: formatLatinNumber(summary.inProgress, 'ar'), detail: `${formatLatinNumber(assignedCount, 'ar')} مسندة` },
+          { label: 'عاجلة ونشطة', value: formatLatinNumber(urgentActiveCount, 'ar'), detail: 'أولوية تدخل فوري', tone: urgentActiveCount > 0 ? 'critical' : undefined },
+        ]}
+      />
 
       <div className="grid gap-3 sm:grid-cols-3">
         <ReportProgress
@@ -232,12 +232,3 @@ export function MaintenanceReportSection({ rows, summary, canExportReports, isLo
   );
 }
 
-function MaintenanceMetric({ label, value, helper }: Readonly<{ label: string; value: string; helper: string }>) {
-  return (
-    <div className="min-w-0 border-b border-border/70 px-3 py-3 odd:border-e sm:border-b-0 sm:border-e sm:last:border-e-0">
-      <p className="text-[11px] font-bold text-muted-foreground sm:text-xs">{label}</p>
-      <p className="mt-1 truncate text-base font-black tabular-nums sm:text-lg" dir="ltr">{value}</p>
-      <p className="mt-1 truncate text-[11px] font-semibold text-muted-foreground">{helper}</p>
-    </div>
-  );
-}

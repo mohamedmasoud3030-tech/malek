@@ -1,14 +1,12 @@
 import { useMemo, useState } from 'react';
-import { Building2, CalendarRange, Check, CircleDot, DoorOpen, FileText, Landmark, RotateCcw, SlidersHorizontal, UserRound, UsersRound } from 'lucide-react';
+import { CalendarRange, Check, RotateCcw, SlidersHorizontal } from 'lucide-react';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { Button } from '@/components/ui/button';
 import { invoiceStatusLabels } from '@/features/financials/components/invoice-status-labels';
 import type { ContractListItem } from '@/features/contracts/services/contractService';
 import type { Owner } from '@/features/owners/services/owner-service';
 import type { CostCenterRecord } from '@/features/settings/costCenterService';
-import { cn } from '@/lib/utils';
-import { buildReportFilterSummary, type ReportFilterChip } from '../reports-filter-summary';
-import { getInitialReportsFilters, type ReportsFilterState } from '../reports-workspace-filters';
+import type { ReportsFilterState } from '../reports-workspace-filters';
 import { describeReportFilterSelections, getSelectedFilterEntities } from '../reports-filters.shared';
 import { FiltersPanel } from './FiltersPanel';
 
@@ -21,17 +19,14 @@ type ReportsFilterSurfaceProps = Readonly<{
   onResetCurrentMonth: () => void;
 }>;
 
-const filterChipIcons = {
-  period: CalendarRange,
-  asOf: CalendarRange,
-  property: Building2,
-  unit: DoorOpen,
-  tenant: UserRound,
-  status: CircleDot,
-  costCenter: Landmark,
-  owner: UsersRound,
-  contract: FileText,
-} satisfies Record<ReportFilterChip['key'], React.ComponentType<{ className?: string }>>;
+/**
+ * Reports surface does not re-derive the default scope here; it reads it from
+ * the workspace filters so the "This month" baseline always matches what the
+ * data layer actually renders.
+ */
+function readDefaultScope(filters: ReportsFilterState): Pick<ReportsFilterState, 'from' | 'to' | 'asOf'> {
+  return { from: filters.from, to: filters.to, asOf: filters.asOf };
+}
 
 export function ReportsFilterSurface({
   filters,
@@ -42,89 +37,59 @@ export function ReportsFilterSurface({
   onResetCurrentMonth,
 }: ReportsFilterSurfaceProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const defaults = useMemo(() => getInitialReportsFilters(), []);
+  const { from: defaultFrom, to: defaultTo, asOf: defaultAsOf } = useMemo(() => readDefaultScope(filters), [filters]);
   const labels = describeReportFilterSelections(
     getSelectedFilterEntities(filters, costCenterRows, ownerRows, contractRows),
   );
-  const summary = buildReportFilterSummary(filters, defaults, {
-    ...labels,
-    status: filters.status && filters.status !== 'all' ? (invoiceStatusLabels[filters.status] ?? filters.status) : undefined,
-  });
-  const isCurrentPeriod = filters.from === defaults.from && filters.to === defaults.to && filters.asOf === defaults.asOf;
-  const visibleChips = summary.chips.filter((chip) => chip.isActive || chip.key === 'period' || chip.key === 'asOf');
+  const scopeSummary = useMemo(() => {
+    const parts: string[] = [];
+    const periodLabel = filters.from === defaultFrom && filters.to === defaultTo
+      ? 'الشهر الحالي'
+      : `${filters.from} — ${filters.to}`;
+    parts.push(periodLabel);
+    if (filters.propertyId && labels.property) parts.push(`العقار: ${labels.property}`);
+    if (filters.unitId && labels.unit) parts.push(`الوحدة: ${labels.unit}`);
+    if (filters.tenantId && labels.tenant) parts.push(`المستأجر: ${labels.tenant}`);
+    if (filters.ownerId && labels.owner) parts.push(labels.owner);
+    if (filters.contractId && labels.contract) parts.push(`العقد: ${labels.contract}`);
+    if (filters.costCenterId && labels.costCenter) parts.push(`مركز التكلفة: ${labels.costCenter}`);
+    if (filters.status && filters.status !== 'all') parts.push(`الحالة: ${invoiceStatusLabels[filters.status] ?? filters.status}`);
+    return parts.join(' · ');
+  }, [defaultFrom, defaultTo, filters, labels]);
+
+  const isDefaultPeriod = filters.from === defaultFrom && filters.to === defaultTo && filters.asOf === defaultAsOf;
 
   return (
     <>
-      <section className="overflow-hidden rounded-xl border border-border/65 bg-card shadow-sm">
-        <div className="flex min-w-0 items-center gap-2.5 p-2.5 sm:p-3">
-          <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
-            <SlidersHorizontal className="size-4" aria-hidden="true" />
-          </span>
+      <div
+        className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5"
+        data-report-filter-surface
+        role="region"
+        aria-label="نطاق التقرير الحالي"
+      >
+        <span className="inline-flex min-h-8 items-center gap-1.5 rounded-full bg-muted/40 px-2.5 text-[11px] font-bold text-muted-foreground">
+          <CalendarRange className="size-3.5" aria-hidden="true" />
+          <span className="min-w-0">{scopeSummary}</span>
+        </span>
 
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-1.5">
-              <h2 className="text-xs font-black sm:text-sm">نطاق التقرير</h2>
-              <span className={cn(
-                'rounded-full px-2 py-0.5 text-[11px] font-bold',
-                summary.activeCount > 0
-                  ? 'bg-primary/10 text-info'
-                  : 'bg-muted text-muted-foreground',
-              )}>
-                {summary.activeCount > 0 ? `${summary.activeCount} مخصص` : 'الشهر الحالي'}
-              </span>
-            </div>
-            <p className="mt-0.5 hidden truncate text-[11px] font-medium text-muted-foreground sm:block">
-              الفترة والأبعاد المشتركة لكل التقارير
-            </p>
-          </div>
-
-          <div className="flex shrink-0 items-center gap-1.5">
-            {!isCurrentPeriod ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={onResetCurrentMonth}
-                aria-label="إعادة نطاق التقرير إلى الشهر الحالي"
-                title="الشهر الحالي"
-              >
-                <RotateCcw className="size-4" aria-hidden="true" />
-              </Button>
-            ) : null}
-            <Button type="button" variant="outline" className="min-h-11 px-3" onClick={() => setIsOpen(true)}>
-              <SlidersHorizontal className="me-1.5 size-4" aria-hidden="true" />
-              تعديل النطاق
-            </Button>
-          </div>
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+          {!isDefaultPeriod ? (
+            <button
+              type="button"
+              onClick={onResetCurrentMonth}
+              aria-label="إعادة نطاق التقرير إلى الشهر الحالي"
+              title="الشهر الحالي"
+              className="grid size-8 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+            >
+              <RotateCcw className="size-3.5" aria-hidden="true" />
+            </button>
+          ) : null}
+          <Button type="button" variant="ghost" className="min-h-9 gap-1.5 px-2 text-xs font-black" onClick={() => setIsOpen(true)}>
+            <SlidersHorizontal className="size-3.5" aria-hidden="true" />
+            تعديل النطاق
+          </Button>
         </div>
-
-        <div
-          className="no-scrollbar flex gap-1.5 overflow-x-auto border-t border-border/50 p-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/35 sm:flex-wrap sm:overflow-visible sm:p-3"
-          aria-live="polite"
-          tabIndex={0}
-          role="region"
-          aria-label="ملخص نطاق التقرير الحالي — قابل للتمرير أفقياً على الشاشات الصغيرة"
-        >
-          {visibleChips.map((chip) => {
-            const Icon = filterChipIcons[chip.key];
-            return (
-              <div
-                key={chip.key}
-                className={cn(
-                  'flex min-w-max items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] sm:text-xs',
-                  chip.isActive
-                    ? 'border-primary/25 bg-primary/5 text-foreground'
-                    : 'border-border/65 bg-muted/20 text-muted-foreground',
-                )}
-              >
-                <Icon className={cn('size-3.5', chip.isActive ? 'text-primary' : 'text-muted-foreground')} aria-hidden="true" />
-                <span className="font-semibold text-muted-foreground">{chip.label}</span>
-                <span className="font-bold" dir={chip.key === 'period' || chip.key === 'asOf' ? 'ltr' : undefined}>{chip.value}</span>
-              </div>
-            );
-          })}
-        </div>
-      </section>
+      </div>
 
       <BottomSheet open={isOpen} onClose={() => setIsOpen(false)} title="فلترة نطاق التقرير">
         <div id="reports-filter-sheet" className="space-y-4">

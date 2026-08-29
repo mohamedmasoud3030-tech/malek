@@ -23,6 +23,7 @@ import {
   ReportListRow,
   ReportPanel,
   ReportState,
+  ReportSummaryStrip,
 } from './report-section-primitives';
 import { ReportShareActions } from './ReportShareActions';
 
@@ -165,17 +166,16 @@ export function ServicesReportSection({
   }
 
   return (
-    <div className="space-y-4" data-services-report>
-      <div
-        className="grid grid-cols-2 overflow-hidden rounded-xl border border-border/80 bg-card sm:grid-cols-4"
-        data-report-summary="services"
-        aria-label="ملخص الخدمات والمرافق"
-      >
-        <ServiceMetric label="إجمالي الخدمات" value={formatMoney(totalBilled, currency)} helper={`${rows.length} فاتورة`} />
-        <ServiceMetric label="المدفوع" value={formatMoney(totalPaid, currency)} helper="من الفواتير المسجلة" />
-        <ServiceMetric label="المتبقي" value={formatMoney(remaining, currency)} helper={`${overdue.length} متأخرة`} />
-        <ServiceMetric label="إثباتات الدفع" value={`${proofCount}/${rows.length}`} helper="مرتبطة بإثبات" />
-      </div>
+    <div className="space-y-3" data-services-report>
+      <ReportSummaryStrip
+        dataReportSummary="services"
+        items={[
+          { label: 'إجمالي الخدمات', value: formatMoney(totalBilled, currency), detail: `${rows.length} فاتورة` },
+          { label: 'المدفوع', value: formatMoney(totalPaid, currency), detail: 'من الفواتير المسجلة' },
+          { label: 'المتبقي', value: formatMoney(remaining, currency), detail: `${overdue.length} متأخرة`, tone: overdue.length > 0 ? 'warning' : undefined },
+          { label: 'إثباتات الدفع', value: `${proofCount}/${rows.length}`, detail: 'مرتبطة بإثبات' },
+        ]}
+      />
 
       <ReportColumns>
         <ReportPanel
@@ -246,12 +246,3 @@ export function ServicesReportSection({
   );
 }
 
-function ServiceMetric({ label, value, helper }: Readonly<{ label: string; value: string; helper: string }>) {
-  return (
-    <div className="min-w-0 border-b border-border/70 px-3 py-3 odd:border-e sm:border-b-0 sm:border-e sm:last:border-e-0">
-      <p className="text-[11px] font-bold text-muted-foreground sm:text-xs">{label}</p>
-      <p className="mt-1 truncate text-base font-black tabular-nums sm:text-lg" dir="ltr">{value}</p>
-      <p className="mt-1 truncate text-[11px] font-semibold text-muted-foreground">{helper}</p>
-    </div>
-  );
-}

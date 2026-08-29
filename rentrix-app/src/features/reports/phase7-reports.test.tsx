@@ -96,9 +96,9 @@ describe('CSV export utility', () => {
 });
 
 describe('Reports Workspace Render Regression (Point 3)', () => {
-  it('renders AccountingReportsSection for plain /reports (resolved as accounting / accounting_reports)', () => {
+  it('lands on the analytics overview for plain /reports, keeping accounting specialist-only', () => {
     const location = resolveReportLocation(undefined, undefined);
-    expect(location).toEqual({ section: 'accounting', view: 'accounting_reports' });
+    expect(location).toEqual({ section: 'analytics', view: 'overview' });
 
     const html = renderToStaticMarkup(
       <ReportsWorkspace
@@ -112,13 +112,14 @@ describe('Reports Workspace Render Regression (Point 3)', () => {
         onResetCurrentMonth={vi.fn()}
       />
     );
-    expect(html).toContain('id="section-tab-accounting_reports"');
-    expect(html).toContain('bg-card text-foreground shadow-card');
+    expect(html).toContain('data-report-summary-layer');
+    expect(html).toContain('نظرة عامة على الأداء');
+    expect(html).toContain('data-report-filter-surface');
   });
 
-  it('renders AccountingReportsSection for unknown section fallback', () => {
+  it('falls back to the analytics overview for an unknown section', () => {
     const location = resolveReportLocation('unknown_section', 'anything');
-    expect(location).toEqual({ section: 'accounting', view: 'accounting_reports' });
+    expect(location).toEqual({ section: 'analytics', view: 'overview' });
 
     const html = renderToStaticMarkup(
       <ReportsWorkspace
@@ -132,11 +133,12 @@ describe('Reports Workspace Render Regression (Point 3)', () => {
         onResetCurrentMonth={vi.fn()}
       />
     );
-    expect(html).toContain('id="section-tab-accounting_reports"');
-    expect(html).toContain('bg-card text-foreground shadow-card');
+    expect(html).toContain('data-report-summary-layer');
+    expect(html).toContain('نظرة عامة على الأداء');
+    expect(html).toContain('data-report-filter-surface');
   });
 
-  it('renders OverviewSection for analytics + invalid view', () => {
+  it('renders the overview workspace for analytics with an invalid view', () => {
     const location = resolveReportLocation('analytics', 'garbage_view');
     expect(location).toEqual({ section: 'analytics', view: 'overview' });
 
@@ -152,11 +154,12 @@ describe('Reports Workspace Render Regression (Point 3)', () => {
         onResetCurrentMonth={vi.fn()}
       />
     );
-    expect(html).toContain('id="section-tab-overview"');
-    expect(html).toContain('bg-card text-foreground shadow-card');
+    expect(html).toContain('data-report-summary-layer');
+    expect(html).toContain('نظرة عامة على الأداء');
+    expect(html).toContain('data-report-filter-surface');
   });
 
-  it('renders AccountingReportsSection for accounting + invalid view', () => {
+  it('keeps the accounting report header available through the specialist deep link', () => {
     const location = resolveReportLocation('accounting', 'garbage_view');
     expect(location).toEqual({ section: 'accounting', view: 'accounting_reports' });
 
@@ -172,7 +175,7 @@ describe('Reports Workspace Render Regression (Point 3)', () => {
         onResetCurrentMonth={vi.fn()}
       />
     );
-    expect(html).toContain('id="section-tab-accounting_reports"');
-    expect(html).toContain('bg-card text-foreground shadow-card');
+    expect(html).toContain('data-report-summary-layer');
+    expect(html).toContain('ميزان المراجعة والقوائم');
   });
 });
