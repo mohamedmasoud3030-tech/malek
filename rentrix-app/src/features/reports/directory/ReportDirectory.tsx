@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
-import { ArrowLeft, Search, X } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { ArrowLeft } from 'lucide-react';
+import { FilterBar } from '@/components/ui/filter-bar';
+import { FilterTabs } from '@/components/ui/filter-tabs';
 import { ReportState } from '@/components/ui/report-section-primitives';
 import { cn } from '@/lib/utils';
 import {
@@ -35,10 +36,14 @@ const directoryTabs: readonly { id: DirectoryTab; label: string; groups?: readon
   { id: 'properties', label: 'العقارات والوحدات', groups: ['properties'] },
 ];
 
+const directoryFilterOptions: { value: DirectoryTab; label: string }[] = directoryTabs.map((item) => ({
+  value: item.id,
+  label: item.label,
+}));
+
 /**
- * Curated set of the reports an office reaches for most often. These are
- * surfaced as a quiet intro row so the explorer never feels like a long
- * settings list; every one of them is still a real shortcut into the catalogue.
+ * Curated set of the reports an office reaches for most often. These remain
+ * real catalogue destinations; pinning only shortens navigation.
  */
 const pinnedReports: readonly { section: ReportSectionId; view: ReportViewId; label: string }[] = [
   { section: 'analytics', view: 'overview', label: 'أداء المكتب' },
@@ -52,7 +57,7 @@ function shortcutIsActive(
   shortcut: Pick<ReportShortcut, 'section' | 'view'>,
   activeSection: ReportSectionId,
   activeView: ReportViewId,
-  scopeOwner?: boolean,
+  scopeOwner: boolean,
 ) {
   const isOwnerStatement = shortcut.section === 'statements' && shortcut.view === '' && scopeOwner;
   const isRegular = shortcut.section === activeSection && shortcut.view === activeView;
@@ -63,7 +68,7 @@ function isGroupActive(
   group: { section: ReportSectionId; matches: readonly ReportViewId[] },
   activeSection: ReportSectionId,
   activeView: ReportViewId,
-  scopeOwner?: boolean,
+  scopeOwner: boolean,
 ) {
   const isOwnerStatement = group.section === 'statements' && scopeOwner;
   const isRegular = group.section === activeSection && group.matches.includes(activeView);
@@ -86,64 +91,32 @@ export function ReportDirectory({ activeSection, activeView, scope, onOpen }: Re
     const searched = filterReportGroups(reportGroups, query);
     const visibleIds = new Set(searched.map((group) => group.id));
     return pinnedReports.filter((pinned) => {
-      const ownerGroup = pinned.section === 'statements';
-      const group = reportGroups.find((item) => item.shortcuts.some((s) => s.section === pinned.section && s.view === pinned.view));
-      const inSearched = ownerGroup && visibleIds.has('owners') ? true : group ? visibleIds.has(group.id) : false;
-      return inSearched;
+      const group = reportGroups.find((item) => item.shortcuts.some((shortcut) => shortcut.section === pinned.section && shortcut.view === pinned.view));
+      return group ? visibleIds.has(group.id) : false;
     });
   }, [query]);
 
   return (
-    <section className="space-y-2.5" data-report-directory aria-label="مستكشف التقارير">
+    <section className="space-y-2.5" data-report-directory aria-labelledby="report-directory-title">
       <h2 className="sr-only" id="report-directory-title">اختر التقرير حسب ما تريد معرفته</h2>
-      <div data-report-global-search>
-        <div className="relative min-w-0">
-          <label htmlFor="report-directory-search" className="sr-only">بحث في مركز التقارير</label>
-          <Search className="pointer-events-none absolute inset-y-0 start-3 my-auto size-4 text-muted-foreground" aria-hidden="true" />
-          <Input
-            id="report-directory-search"
-            type="search"
-            inputMode="search"
-            autoComplete="off"
-            dir="rtl"
-            placeholder="ابحث في التقارير…"
-            className="min-h-10 border-border/80 bg-background ps-9 pe-10"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-          />
-          {query ? (
-            <button
-              type="button"
-              onClick={() => setQuery('')}
-              aria-label="مسح بحث التقارير"
-              className="absolute inset-y-0 end-2 my-auto grid size-8 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-            >
-              <X className="size-4" aria-hidden="true" />
-            </button>
-          ) : null}
-        </div>
-      </div>
 
-      <div className="no-scrollbar -mx-1 flex gap-1 overflow-x-auto px-1" data-report-category-tabs>
-        <div className="flex min-w-max gap-1" role="tablist" aria-label="مجالات التقارير">
-          {directoryTabs.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              role="tab"
-              aria-selected={tab === item.id}
-              onClick={() => setTab(item.id)}
-              className={cn(
-                'min-h-9 rounded-lg px-2.5 text-xs font-black transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
-                tab === item.id
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-              )}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
+      <div data-report-global-search>
+        <FilterBar
+          searchValue={query}
+          onSearchChange={setQuery}
+          searchPlaceholder="ابحث في التقارير…"
+          searchAriaLabel="بحث في مركز التقارير"
+          className="shadow-none lg:grid-cols-1"
+          filters={(
+            <FilterTabs<DirectoryTab>
+              options={directoryFilterOptions}
+              value={tab}
+              onChange={setTab}
+              ariaLabel="مجالات التقارير"
+              tone="primary"
+            />
+          )}
+        />
       </div>
 
       {pinnedVisible.length > 0 && !query ? (
