@@ -1,4 +1,5 @@
 import type { Page, Route } from '@playwright/test';
+import { appPermissions } from '../../src/features/auth/permissions';
 import { buildAcceptanceAccessToken } from './document-acceptance-session';
 
 /**
@@ -361,6 +362,13 @@ export function buildAcceptanceSeed(mode: CompanySettingsMode): AcceptanceSeed {
       registration: null,
       inspections: [],
       inspection_templates: [],
+    }),
+    list_my_effective_app_permissions: () => appPermissions.map((permission) => ({ permission })),
+    reconcile_due_short_stays_atomic: () => ({
+      status: 'reconciled',
+      expired_contracts: 0,
+      released_units: 0,
+      as_of: '2026-08-29',
     }),
     rpt_trial_balance: (args) => buildTrialBalancePayload(typeof args.p_as_of === 'string' ? args.p_as_of : '2026-08-06'),
     rpt_tenant_statement: () => buildTenantStatementPayload(),

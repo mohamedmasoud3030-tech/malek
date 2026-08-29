@@ -21,6 +21,15 @@ const legacyToProduct: Record<LegacyTone, ProductTone> = {
   gold: 'amber',
 };
 
+const productToSemantic: Record<ProductTone, SemanticTone> = {
+  emerald: 'success',
+  amber: 'warning',
+  sky: 'info',
+  rose: 'danger',
+  violet: 'primary',
+  slate: 'neutral',
+};
+
 const semanticTones: Record<SemanticTone, string> = {
   success: 'bg-success-bg text-success-text ring-success/20',
   warning: 'bg-warning-bg text-warning-text ring-warning/20',
@@ -41,11 +50,14 @@ const semanticDotTones: Record<SemanticTone, string> = {
   secondary: 'bg-neutral',
 };
 
-const productTones = new Set<ProductTone>(['emerald', 'amber', 'sky', 'rose', 'violet', 'slate']);
-
 function resolveTone(tone: StatusTone): ResolvedTone {
   if (tone in legacyToProduct) return legacyToProduct[tone as LegacyTone];
   return tone as ResolvedTone;
+}
+
+function resolveVisualTone(tone: ResolvedTone): SemanticTone {
+  if (tone in productToSemantic) return productToSemantic[tone as ProductTone];
+  return tone as SemanticTone;
 }
 
 function containsCustomStatusIndicator(children: ReactNode): boolean {
@@ -58,9 +70,9 @@ function containsCustomStatusIndicator(children: ReactNode): boolean {
 /**
  * StatusBadge — the single status indicator for the application.
  *
- * Semantic tones remain suitable for business meaning. Product accents are
- * available when a page needs stronger visual grouping without hard-coded
- * light-only Tailwind colors.
+ * Semantic tones remain suitable for business meaning. Product accents retain
+ * their public tone names while resolving through the same canonical semantic
+ * token graph, so both light and dark themes always render a visible state.
  */
 export function StatusBadge({
   tone,
@@ -74,7 +86,7 @@ export function StatusBadge({
   dot?: boolean;
 }) {
   const resolved = resolveTone(tone);
-  const isProductTone = productTones.has(resolved as ProductTone);
+  const visualTone = resolveVisualTone(resolved);
   const shouldRenderDefaultDot = dot && !containsCustomStatusIndicator(children);
 
   return (
@@ -83,7 +95,7 @@ export function StatusBadge({
       data-tone={resolved}
       className={cn(
         'inline-flex min-h-6 max-w-full items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold leading-5 ring-1 ring-inset [overflow-wrap:anywhere]',
-        isProductTone ? 'ring-transparent' : semanticTones[resolved as SemanticTone],
+        semanticTones[visualTone],
         className,
       )}
     >
@@ -91,10 +103,7 @@ export function StatusBadge({
         <span
           data-status-dot
           aria-hidden="true"
-          className={cn(
-            'size-1.5 rounded-full',
-            isProductTone ? undefined : semanticDotTones[resolved as SemanticTone],
-          )}
+          className={cn('size-1.5 rounded-full', semanticDotTones[visualTone])}
         />
       ) : null}
       {children}
