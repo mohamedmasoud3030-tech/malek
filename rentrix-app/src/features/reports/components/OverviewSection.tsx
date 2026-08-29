@@ -1,5 +1,6 @@
 import { BarChart3, FileSpreadsheet, FileText, Gauge, ReceiptText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ReportBarChart, type ReportBarSeries } from '@/components/ui/report-bar-chart';
 import { formatDate, formatMoney } from '@/features/financials/components/financials-formatters';
 import {
   useCollectionSummaryReport,
@@ -9,7 +10,6 @@ import {
 import { csvRowsToXlsxBlob, downloadBlob, xlsxFilenameFromCsv } from '@/lib/tabular-export';
 import { buildExecutiveHealthInsights } from '../reports-insights';
 import { buildReportCsvFilename, createReceiptPrintHref, downloadCsv, toFinancialSummaryCsv } from '../reports-page.helpers';
-import { ReportBarChart, type ReportBarSeries } from './charts/report-bar-chart';
 import {
   ReportInsightNote,
   ReportList,

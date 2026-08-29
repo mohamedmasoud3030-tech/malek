@@ -1,0 +1,139 @@
+import { Link, useLocation, useNavigate } from '@tanstack/react-router';
+import { AlertCircle, CheckCircle2, ShieldQuestion } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import type { NeedsAttentionItem, NeedsAttentionSignal } from '../needs-attention-signal';
+import {
+  DashboardSignalEmpty,
+  DashboardSignalHeader,
+  DashboardSignalList,
+  DashboardSignalLoading,
+  DashboardSignalMain,
+  DashboardSignalPanel,
+  dashboardSignalRowClass,
+} from './dashboard-signal-primitives';
+
+/** Visible queue length — the rest lives in the owning workspaces. */
+export const NEEDS_ATTENTION_VISIBLE_LIMIT = 6;
+
+interface NeedsAttentionSectionProps {
+  signal: NeedsAttentionSignal;
+  isLoading: boolean;
+  isError?: boolean;
+}
+
+const severityTone: Record<NeedsAttentionItem['severity'], 'danger' | 'warning' | 'info'> = {
+  danger: 'danger',
+  warning: 'warning',
+  info: 'info',
+};
+
+/**
+ * «يحتاج انتباهك» — one ranked, actionable queue instead of ten unrelated
+ * metrics. Every item is a real condition sourced from an existing
+ * authoritative signal and deep-links into the workflow that owns it.
+ */
+export function NeedsAttentionSection({ signal, isLoading, isError = false }: NeedsAttentionSectionProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const visibleItems = signal.items.slice(0, NEEDS_ATTENTION_VISIBLE_LIMIT);
+  const hiddenCount = signal.totalCount - visibleItems.length;
+  const dangerCount = signal.items.reduce((count, item) => count + (item.severity === 'danger' ? 1 : 0), 0);
+
+  return (
+    <DashboardSignalPanel labelledBy="needs-attention-title">
+      <DashboardSignalHeader
+        id="needs-attention-title"
+        title="يحتاج انتباهك"
+        meta={
+          isLoading
+            ? 'جارٍ تجميع الأولويات'
+            : signal.totalCount > 0
+              ? `${signal.totalCount} حالة تحتاج قراراً أو متابعة${dangerCount > 0 ? ` · منها ${dangerCount} عاجلة` : ''}`
+              : 'لا توجد حالات عاجلة الآن'
+        }
+        icon={signal.totalCount > 0 ? AlertCircle : CheckCircle2}
+        tone={dangerCount > 0 ? 'danger' : signal.totalCount > 0 ? 'warning' : 'success'}
+      />
+
+      {isLoading ? <DashboardSignalLoading label="جارٍ تحميل الحالات التي تحتاج انتباهاً" /> : null}
+
+      {!isLoading && isError ? (
+        <DashboardSignalEmpty
+          role="alert"
+          title="تعذر تحميل الحالات التي تحتاج انتباهاً"
+          description="راجع تنبيه أعلى الصفحة ثم أعد المحاولة. لن نعرض قائمة فارغة عند فشل التحميل."
+        />
+      ) : null}
+
+      {!isLoading && !isError && signal.totalCount === 0 ? (
+        <DashboardSignalEmpty
+          title="كل شيء تحت السيطرة"
+          description="لا متأخرات عاجلة ولا صيانة طارئة ولا عقود على وشك الانتهاء. راجع المؤشرات للأداء الحالي."
+        />
+      ) : null}
+
+      {!isLoading && !isError && visibleItems.length > 0 ? (
+        <>
+          <DashboardSignalList label="الحالات التي تحتاج انتباهاً">
+            {visibleItems.map((item) => {
+              const tone = severityTone[item.severity];
+              const ariaLabel = `${item.title} — ${item.meta}`;
+              const content = (
+                <>
+                  <DashboardSignalMain title={item.title} meta={item.meta} />
+                  <span
+                    className={cn(
+                      'grid size-6 shrink-0 place-items-center rounded-full',
+                      tone === 'danger' ? 'bg-danger-bg text-danger-text' : tone === 'warning' ? 'bg-warning-bg text-warning-text' : 'bg-info-bg text-info-text',
+                    )}
+                    aria-hidden="true"
+                  >
+                    <ShieldQuestion className="size-3.5" />
+                  </span>
+                </>
+              );
+
+              return (
+                <li key={item.key} role="listitem" className="min-w-0">
+                  {item.contractId ? (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        (navigate as unknown as (opts: unknown) => void)({
+                          to: '/contracts/$contractId',
+                          params: { contractId: item.contractId },
+                          state: { backgroundLocation: location } as unknown as Record<string, unknown>,
+                        })
+                      }
+                      className={dashboardSignalRowClass(tone)}
+                      data-dashboard-queue-link
+                      data-needs-attention-link
+                      aria-label={ariaLabel}
+                    >
+                      {content}
+                    </button>
+                  ) : (
+                    <Link
+                      to={item.to}
+                      className={dashboardSignalRowClass(tone)}
+                      data-dashboard-queue-link
+                      data-needs-attention-link
+                      aria-label={ariaLabel}
+                    >
+                      {content}
+                    </Link>
+                  )}
+                </li>
+              );
+            })}
+          </DashboardSignalList>
+          {hiddenCount > 0 ? (
+            <p className="border-t border-border/70 px-3 py-2 text-[11px] font-bold text-muted-foreground sm:px-4" data-dashboard-attention-more>
+              +{hiddenCount} حالات أخرى في مساحات العمل المرتبطة
+            </p>
+          ) : null}
+        </>
+      ) : null}
+    </DashboardSignalPanel>
+  );
+}

@@ -5,10 +5,12 @@ import { describe, expect, it } from 'vitest';
 /**
  * R1 — Dashboard Truth architecture guard.
  *
- * The dashboard feature must never rebuild client-side truth:
- *   - one authoritative RPC (rpt_dashboard_snapshot) is the only data source,
- *   - no dataset fan-out (contracts/maintenance/invoice list reads),
- *   - no rows.length or client filtering as a KPI source.
+ * The command center must never rebuild client-side truth:
+ *   - one authoritative RPC (rpt_dashboard_snapshot) is the KPI source,
+ *   - the collection sparkline reads the server daily aggregate RPC,
+ *   - the monthly chart consumes the canonical Reports cashflow service,
+ *   - no dataset fan-out becomes a KPI, and no rows.length or client
+ *     filtering of capped reads is presented as an authoritative number.
  */
 describe('dashboard frontend/backend data contract (R1)', () => {
   const read = (file: string) => readFileSync(resolve(import.meta.dirname, file), 'utf8');
@@ -24,15 +26,25 @@ describe('dashboard frontend/backend data contract (R1)', () => {
     expect(snapshotSource).not.toContain('getFinancialPeriodSummaryReport');
   });
 
+  it('reads the collection series from the server daily aggregate, never from row reads', () => {
+    const seriesSource = read('daily-collection-series.ts');
+    expect(seriesSource).toContain("supabase.rpc('rpt_daily_collection'");
+    expect(seriesSource).not.toContain('supabase.from(');
+    expect(seriesSource).toContain('retry: false');
+  });
+
   it('never derives an authoritative KPI from rows.length or client filtering', () => {
     const sources = [
       read('dashboard-snapshot.ts'),
       read('dashboard-page.tsx'),
-      read('components/alert-center.tsx'),
       read('components/office-pulse.tsx'),
-      read('components/kpi-grid.tsx'),
-      read('components/dashboard-charts.tsx'),
-      read('components/urgent-maintenance-section.tsx'),
+      read('components/financial-performance-section.tsx'),
+      read('components/needs-attention-section.tsx'),
+      read('components/occupancy-section.tsx'),
+      read('components/collections-section.tsx'),
+      read('components/maintenance-section.tsx'),
+      read('components/upcoming-contracts-section.tsx'),
+      read('components/property-health-section.tsx'),
     ].join('\n');
     // The forbidden client-derivation patterns from the pre-R1 dashboard.
     expect(sources).not.toContain('activeContracts.length');
@@ -45,5 +57,13 @@ describe('dashboard frontend/backend data contract (R1)', () => {
     expect(pageSource).toContain('retry: false');
     expect(pageSource).not.toContain('listBankStatementLines');
     expect(pageSource).not.toContain('fetchPendingSettlementsCount');
+  });
+
+  it('keeps the monthly chart on the canonical Reports cashflow service', () => {
+    const pageSource = read('dashboard-page.tsx');
+    expect(pageSource).toContain('useFinancialCashflowReport');
+    // The dashboard picks the window; it never recomputes money series itself.
+    expect(pageSource).not.toContain('supabase.from(\'payments\'');
+    expect(pageSource).not.toContain('supabase.from(\'expenses\'');
   });
 });
