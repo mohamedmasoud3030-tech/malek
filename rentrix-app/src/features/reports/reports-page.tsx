@@ -3,15 +3,13 @@ import { useCallback, useState } from 'react';
 import { AccessDenied } from '@/components/layout/access-denied';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
-import { SectionHeader } from '@/components/ui/section-header';
 import { canAccess, financialOperationPermissions } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
 import { translateSharedLabel } from '@/lib/i18n';
 import { ReportDirectory } from './directory/ReportDirectory';
 import { getCurrentMonthFilters } from './reports-page.helpers';
 import { getInitialReportsFilters } from './reports-workspace-filters';
-import { reportSections, type ReportSectionId } from './reports-page.sections';
-import { getReportSubViewLabel } from './report-view-registry';
+import type { ReportSectionId } from './reports-page.sections';
 import {
   REPORTS_SECTION_SEARCH_KEY,
   resolveReportLocation,
@@ -39,9 +37,6 @@ export function ReportsPage() {
 
   const reportsTitle = translateSharedLabel('financialsSectionReports');
   const pageDescription = translateSharedLabel('reportsPageDescription');
-  const activeSectionMeta = reportSections.find((section) => section.id === activeSection) ?? reportSections[0];
-  const activeViewLabel = getReportSubViewLabel(activeSection, activeView);
-  const activeReportLabel = activeViewLabel ?? activeSectionMeta.label;
 
   const handleSectionViewChange = useCallback(
     (nextSection: ReportSectionId, nextView: ReportViewId) => {
@@ -78,27 +73,19 @@ export function ReportsPage() {
           onOpen={handleSectionViewChange}
         />
 
-        <section className="space-y-2" aria-label={activeReportLabel} data-active-report-workspace>
-          <SectionHeader
-            eyebrow="التقرير المفتوح"
-            title={activeReportLabel}
-            description="الخلاصة أولًا، ثم الجدول والفلاتر والتصدير"
-          />
-
-          <ReportsWorkspace
-            model={workspace}
-            filters={filters}
-            canExportReports={canExportReports}
-            activeSection={activeSection}
-            activeView={activeView}
-            onSectionViewChange={handleSectionViewChange}
-            onFiltersChange={setFilters}
-            onResetCurrentMonth={() => setFilters((current) => ({
-              ...current,
-              ...getCurrentMonthFilters(),
-            }))}
-          />
-        </section>
+        <ReportsWorkspace
+          model={workspace}
+          filters={filters}
+          canExportReports={canExportReports}
+          activeSection={activeSection}
+          activeView={activeView}
+          onSectionViewChange={handleSectionViewChange}
+          onFiltersChange={setFilters}
+          onResetCurrentMonth={() => setFilters((current) => ({
+            ...current,
+            ...getCurrentMonthFilters(),
+          }))}
+        />
       </div>
     </PageLayout>
   );
