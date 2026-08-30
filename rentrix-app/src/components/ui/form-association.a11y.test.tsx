@@ -2,7 +2,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { EntityForm } from './entity-form';
-import { FormField } from './form-field';
 import { Input } from './input';
 import { Select } from './select';
 import { Textarea } from './textarea';
@@ -14,6 +13,11 @@ function describedText(control: Element): string[] {
   return ids.map((id) => document.getElementById(id)?.textContent ?? '');
 }
 
+/**
+ * The retired `FormField` shell was merged into the single canonical field
+ * contract. These cases keep its required/hint and error association
+ * coverage alive against `EntityForm.Field`.
+ */
 describe('EntityForm.Field — canonical field association', () => {
   it('keeps supporting copy as description and marks errors invalid', () => {
     render(<EntityForm.Field label="رقم العقد" description="يجب أن يكون فريدًا." error="رقم العقد مطلوب"><Input /></EntityForm.Field>);
@@ -27,11 +31,9 @@ describe('EntityForm.Field — canonical field association', () => {
     expect(screen.getByLabelText('الحالة').tagName).toBe('SELECT');
     expect(screen.getByLabelText('ملاحظات').tagName).toBe('TEXTAREA');
   });
-});
 
-describe('FormField — canonical lightweight field shell', () => {
   it('binds errors and required state to the control', () => {
-    render(<FormField label="اسم العقار" htmlFor="property-name" required error="هذا الحقل مطلوب"><Input id="property-name" /></FormField>);
+    render(<EntityForm.Field label="اسم العقار" required error="هذا الحقل مطلوب"><Input /></EntityForm.Field>);
     const control = screen.getByLabelText(/اسم العقار/);
     expect(describedText(control)).toContain('هذا الحقل مطلوب');
     expect(control.getAttribute('aria-invalid')).toBe('true');
@@ -39,7 +41,7 @@ describe('FormField — canonical lightweight field shell', () => {
   });
 
   it('binds hints to the control', () => {
-    render(<FormField label="الاسم" htmlFor="trade-name" hint="الاسم التجاري"><Input id="trade-name" /></FormField>);
+    render(<EntityForm.Field label="الاسم" hint="الاسم التجاري"><Input /></EntityForm.Field>);
     expect(describedText(screen.getByLabelText('الاسم'))).toContain('الاسم التجاري');
   });
 });

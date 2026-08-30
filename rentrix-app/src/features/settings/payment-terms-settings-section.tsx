@@ -1,6 +1,7 @@
 import { Plus, X } from 'lucide-react';
 import { useState, type KeyboardEvent } from 'react';
 import { Button } from '@/components/ui/button';
+import { EntityForm } from '@/components/ui/entity-form';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
@@ -98,12 +99,10 @@ export function PaymentTermsSettingsSection() {
               <X className="size-4" aria-hidden="true" />
             </Button>
           </div>
-          <label className="space-y-1 text-xs font-bold">
-            <span>اسم شرط السداد</span>
+          <EntityForm.Field label="اسم شرط السداد">
             <Input className="min-h-11 rounded-lg text-sm" value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} placeholder="مثال: ربع سنوي" />
-          </label>
-          <label className="space-y-1 text-xs font-bold">
-            <span>عدد الدفعات</span>
+          </EntityForm.Field>
+          <EntityForm.Field label="عدد الدفعات">
             <Input
               className="min-h-11 rounded-lg text-sm"
               type="number"
@@ -113,15 +112,14 @@ export function PaymentTermsSettingsSection() {
               value={draft.installments}
               onChange={(event) => setDraft({ ...draft, installments: Number(event.target.value) })}
             />
-          </label>
-          <label className="space-y-1 text-xs font-bold">
-            <span>الفاصل الزمني</span>
+          </EntityForm.Field>
+          <EntityForm.Field label="الفاصل الزمني">
             <Select className="min-h-11 rounded-lg text-sm" value={draft.interval_type} onChange={(event) => setDraft({ ...draft, interval_type: event.target.value as PaymentTermsFormValues['interval_type'] })}>
               {paymentTermsIntervalValues.map((interval) => (
                 <option key={interval} value={interval}>{paymentTermsIntervalLabels[interval]}</option>
               ))}
             </Select>
-          </label>
+          </EntityForm.Field>
           <label className="flex min-h-11 items-center gap-2 rounded-lg border bg-background/70 px-3 py-2 text-xs font-bold">
             <input
               type="checkbox"
@@ -130,10 +128,9 @@ export function PaymentTermsSettingsSection() {
             />
             <span>نشط للاستخدام في العقود</span>
           </label>
-          <label className="space-y-1 text-xs font-bold sm:col-span-2">
-            <span>ملاحظات</span>
+          <EntityForm.Field label="ملاحظات" className="sm:col-span-2">
             <Textarea className="min-h-20 rounded-lg text-sm" value={draft.notes} onChange={(event) => setDraft({ ...draft, notes: event.target.value })} placeholder="ملاحظات داخلية اختيارية" />
-          </label>
+          </EntityForm.Field>
           <div className="flex gap-2 sm:col-span-2">
             <Button type="button" size="sm" onClick={saveDraft} disabled={savePaymentTerms.isPending}>
               {editingId ? 'حفظ التعديل' : 'إضافة القالب'}

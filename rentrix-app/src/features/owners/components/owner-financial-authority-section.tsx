@@ -3,6 +3,7 @@ import { CalendarRange, FileChartColumn, HandCoins, Landmark, RefreshCw, WalletC
 import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { EntityForm } from '@/components/ui/entity-form';
 import { Input } from '@/components/ui/input';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { getTodayLocalDateString } from '@/features/financials/financials-date-utils';
@@ -61,14 +62,12 @@ export function OwnerFinancialAuthoritySection({
         </div>
 
         <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
-          <label className="space-y-1.5 text-xs font-bold text-muted-foreground">
-            من
+          <EntityForm.Field label="من">
             <Input type="date" value={from} onChange={(event) => setFrom(event.target.value)} aria-label="بداية فترة الموقف المالي" />
-          </label>
-          <label className="space-y-1.5 text-xs font-bold text-muted-foreground">
-            إلى
+          </EntityForm.Field>
+          <EntityForm.Field label="إلى">
             <Input type="date" value={to} onChange={(event) => setTo(event.target.value)} aria-label="نهاية فترة الموقف المالي" />
-          </label>
+          </EntityForm.Field>
           <Button type="button" variant="secondary" className="min-h-11" onClick={() => void query.refetch()} disabled={!periodValid || query.isFetching}>
             <RefreshCw className={`me-2 size-4 ${query.isFetching ? 'animate-spin' : ''}`} aria-hidden="true" />
             تحديث

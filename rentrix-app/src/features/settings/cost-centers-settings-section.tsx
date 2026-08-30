@@ -1,6 +1,7 @@
 import { useMemo, useState, type KeyboardEvent } from 'react';
 import { Archive, Pencil, RefreshCcw, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { EntityForm } from '@/components/ui/entity-form';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -107,26 +108,23 @@ export function CostCentersSettingsSection() {
           <p className="mt-1 text-xs text-muted-foreground">اربط المصروفات لاحقاً بعقار أو مركز تشغيلي بدون فتح دفتر أستاذ عام.</p>
         </div>
 
-        <label className="space-y-1 text-sm font-medium">
-          <span>اسم مركز التكلفة</span>
+        <EntityForm.Field label="اسم مركز التكلفة">
           <Input value={form.name} disabled={isBusy} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="مثال: صيانة برج النخيل" />
-        </label>
+        </EntityForm.Field>
 
-        <label className="space-y-1 text-sm font-medium">
-          <span>العقار المرتبط</span>
+        <EntityForm.Field label="العقار المرتبط">
           <Select value={form.property_id} disabled={isBusy} onChange={(event) => setForm({ ...form, property_id: event.target.value })}>
             <option value="">بدون عقار محدد</option>
             {properties.map((property) => <option key={property.id} value={property.id}>{property.title}</option>)}
           </Select>
-        </label>
+        </EntityForm.Field>
 
-        <label className="space-y-1 text-sm font-medium">
-          <span>المركز الأب</span>
+        <EntityForm.Field label="المركز الأب">
           <Select value={form.parent_id} disabled={isBusy} onChange={(event) => setForm({ ...form, parent_id: event.target.value })}>
             <option value="">مركز رئيسي</option>
             {activeCostCenters.map((costCenter) => <option key={costCenter.id} value={costCenter.id}>{costCenter.name}</option>)}
           </Select>
-        </label>
+        </EntityForm.Field>
 
         <label className="flex items-center gap-2 rounded-xl border bg-card p-3 text-sm font-medium">
           <input type="checkbox" checked={form.is_active} disabled={isBusy} onChange={(event) => setForm({ ...form, is_active: event.target.checked })} />

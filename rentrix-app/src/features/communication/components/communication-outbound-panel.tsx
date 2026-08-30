@@ -10,7 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { FormField } from "@/components/ui/form-field";
+import { EntityForm } from "@/components/ui/entity-form";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -132,7 +132,7 @@ export function CommunicationOutboundPanel() {
         </div>
 
         <div className="grid gap-3 md:grid-cols-2">
-          <FormField label="القناة">
+          <EntityForm.Field label="القناة">
             <Select
               value={channel}
               onChange={(event) => {
@@ -145,9 +145,9 @@ export function CommunicationOutboundPanel() {
               <option value="whatsapp">واتساب — معاينة فقط</option>
               <option value="email">بريد إلكتروني — معاينة فقط</option>
             </Select>
-          </FormField>
+          </EntityForm.Field>
 
-          <FormField label="اللغة">
+          <EntityForm.Field label="اللغة">
             <Select
               value={locale}
               onChange={(event) => {
@@ -160,9 +160,9 @@ export function CommunicationOutboundPanel() {
               <option value="ar">العربية</option>
               <option value="en">English</option>
             </Select>
-          </FormField>
+          </EntityForm.Field>
 
-          <FormField label="القالب">
+          <EntityForm.Field label="القالب">
             <Select
               value={selectedTemplate?.id ?? ""}
               onChange={(event) => {
@@ -177,9 +177,9 @@ export function CommunicationOutboundPanel() {
                 </option>
               ))}
             </Select>
-          </FormField>
+          </EntityForm.Field>
 
-          <FormField
+          <EntityForm.Field
             label={
               channel === "whatsapp" ? "رقم واتساب للاختبار" : "بريد للاختبار"
             }
@@ -195,26 +195,26 @@ export function CommunicationOutboundPanel() {
               autoComplete="off"
               dir="ltr"
             />
-          </FormField>
+          </EntityForm.Field>
 
           {selectedTemplate?.subject ? (
-            <FormField label="الموضوع الآمن">
+            <EntityForm.Field label="الموضوع الآمن">
               <Input
                 value={selectedTemplate.subject}
                 readOnly
                 dir={locale === "ar" ? "rtl" : "ltr"}
               />
-            </FormField>
+            </EntityForm.Field>
           ) : null}
 
-          <FormField label="نص القالب الآمن" wide>
+          <EntityForm.Field label="نص القالب الآمن" wide className="md:col-span-2">
             <Textarea
               value={selectedTemplate?.body ?? ""}
               readOnly
               className="min-h-28"
               dir={locale === "ar" ? "rtl" : "ltr"}
             />
-          </FormField>
+          </EntityForm.Field>
         </div>
 
         <div className="grid gap-3 rounded-2xl border bg-muted/20 p-3 sm:grid-cols-2">

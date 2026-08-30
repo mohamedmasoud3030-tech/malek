@@ -1,7 +1,7 @@
 import { AlertTriangle } from 'lucide-react';
 import type { CompanySettingsDraft, CompanySettingsDraftField, CompanySettingsValidationErrors } from '../settingsForm';
 import { useSettingsSection } from '../form/useSettingsSection';
-import { FormField } from '../components/settings-form-fields';
+import { SettingsFormField } from '../components/settings-form-fields';
 import { SectionCard } from '../components/settings-section-card';
 import type { SettingsSectionId } from '../settingsSections';
 
@@ -27,10 +27,10 @@ export function DocumentsSection({
       <fieldset className="min-w-0 space-y-2.5">
         <legend className="mb-2 text-[11px] font-black text-muted-foreground">ترقيم المستندات</legend>
         <div className="grid grid-cols-2 gap-x-2.5 gap-y-2.5 sm:gap-3">
-          <FormField label="بادئة الفواتير" field="invoice_prefix" draft={section.draft} errors={section.errors} disabled={isSaving} onChange={section.setField} />
-          <FormField label="بادئة الإيصالات" field="receipt_prefix" draft={section.draft} errors={section.errors} disabled={isSaving} onChange={section.setField} />
+          <SettingsFormField label="بادئة الفواتير" field="invoice_prefix" draft={section.draft} errors={section.errors} disabled={isSaving} onChange={section.setField} />
+          <SettingsFormField label="بادئة الإيصالات" field="receipt_prefix" draft={section.draft} errors={section.errors} disabled={isSaving} onChange={section.setField} />
           <div className="col-span-2 sm:col-span-1">
-            <FormField label="بادئة العقود" field="contract_prefix" draft={section.draft} errors={section.errors} disabled={isSaving} onChange={section.setField} />
+            <SettingsFormField label="بادئة العقود" field="contract_prefix" draft={section.draft} errors={section.errors} disabled={isSaving} onChange={section.setField} />
           </div>
         </div>
       </fieldset>
@@ -38,10 +38,10 @@ export function DocumentsSection({
       <fieldset className="min-w-0 space-y-2.5 border-t border-border/55 pt-3">
         <legend className="mb-2 text-[11px] font-black text-muted-foreground">بيانات VAT المرجعية</legend>
         <div className="grid grid-cols-2 gap-x-2.5 gap-y-2.5 sm:gap-3">
-          <FormField label="VAT مرجعية %" field="default_vat_rate" draft={section.draft} errors={section.errors} disabled={isSaving} type="number" inputMode="decimal" onChange={section.setField} />
-          <FormField label="VAT قديمة %" field="vat_rate" draft={section.draft} errors={section.errors} disabled={isSaving} type="number" inputMode="decimal" onChange={section.setField} />
+          <SettingsFormField label="VAT مرجعية %" field="default_vat_rate" draft={section.draft} errors={section.errors} disabled={isSaving} type="number" inputMode="decimal" onChange={section.setField} />
+          <SettingsFormField label="VAT قديمة %" field="vat_rate" draft={section.draft} errors={section.errors} disabled={isSaving} type="number" inputMode="decimal" onChange={section.setField} />
           <div className="col-span-2">
-            <FormField label="رقم تسجيل VAT" field="vat_registration_number" draft={section.draft} errors={section.errors} disabled={isSaving} onChange={section.setField} />
+            <SettingsFormField label="رقم تسجيل VAT" field="vat_registration_number" draft={section.draft} errors={section.errors} disabled={isSaving} onChange={section.setField} />
           </div>
           <label className="col-span-2 flex min-h-11 items-center gap-2.5 rounded-lg border bg-background/70 px-3 py-2 text-xs font-bold sm:rounded-xl">
             <input

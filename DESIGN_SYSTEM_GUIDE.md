@@ -148,7 +148,7 @@ Use `Card` and its subcomponents for grouped content. Prefer `default`, `muted`,
 
 ### Forms
 
-Use `TextField`/`FormField` for label, help, error, and required-state behavior. Use `Input`, `Select`, and `Textarea` as primitives. Errors must be text plus semantic styling; color alone is insufficient.
+Use `EntityForm.Field` for label, help, error, and required-state behavior. Use `Input`, `Select`, and `Textarea` as primitives. Errors must be text plus semantic styling; color alone is insufficient.
 
 ### Data
 
@@ -257,7 +257,7 @@ looks correct while assistive technology receives the wrong thing.
   Supporting copy is bound with `aria-describedby`.
 - **Supporting copy must be programmatically bound, not merely adjacent.** An
   error or hint that is only visually near a field is not announced. The shared
-  shells — `EntityForm.Field`, `FormField`, `TextField`/`TextAreaField` — own
+  shells — `EntityForm.Field` — own
   this wiring; use them instead of hand-rolling a label + message stack.
 - **A validation error is state, not colour.** An errored control carries
   `aria-invalid`, and its message uses `role="alert"`.

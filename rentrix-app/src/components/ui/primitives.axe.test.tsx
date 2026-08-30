@@ -12,7 +12,6 @@ import { EntityCard } from './entity-card';
 import { EntityForm } from './entity-form';
 import { ErrorState } from './error-state';
 import { FilterTabs } from './filter-tabs';
-import { FormField } from './form-field';
 import { Input } from './input';
 import { KpiCard } from './kpi-card';
 import { LoadingState } from './loading-state';
@@ -43,7 +42,7 @@ const cases: ReadonlyArray<readonly [string, ReactElement]> = [
   ['FilterTabs', <FilterTabs options={[{ value: 'all', label: 'الكل' }, { value: 'active', label: 'نشط' }]} value="all" onChange={() => {}} />],
   ['SectionTabs', <><SectionTabs items={[{ id: 'a', label: 'نظرة عامة', icon: Home }]} activeId="a" onChange={() => {}} ariaLabel="أقسام" /><SectionTabPanel id="a" activeId="a">المحتوى</SectionTabPanel></>],
   ['EntityForm', <EntityForm.Root><EntityForm.Section title="بيانات"><EntityForm.Field label="رقم العقد" description="فريد" error="مطلوب"><Input /></EntityForm.Field><EntityForm.Field label="الحالة"><Select><option>نشط</option></Select></EntityForm.Field><EntityForm.Field label="ملاحظات"><Textarea /></EntityForm.Field></EntityForm.Section><EntityForm.Actions submitLabel="حفظ" onCancel={() => {}} /></EntityForm.Root>],
-  ['FormField', <FormField label="اسم العقار" htmlFor="pf-1" required error="مطلوب"><Input id="pf-1" /></FormField>],
+  ['EntityFormField', <EntityForm.Root><EntityForm.Field label="اسم العقار" required error="مطلوب" hint="بيانات السجل"><Input /></EntityForm.Field></EntityForm.Root>],
   ['States', <div><EmptyState title="لا توجد بيانات" /><OfflineState title="غير متصل" /><NoPermissionState title="لا صلاحية" /><ErrorState title="خطأ" /><LoadingState /></div>],
   ['KpiCard', <KpiCard label="الإيراد" value="1,234.500 OMR" icon={Home} />],
   ['Badges', <div><Badge>نشط</Badge><StatusBadge tone="success">نشط</StatusBadge></div>],

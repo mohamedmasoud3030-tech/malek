@@ -20,6 +20,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { PageLayout } from "@/components/layout/page-layout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { EntityForm } from "@/components/ui/entity-form";
 import {
   Card,
   CardContent,
@@ -397,8 +398,7 @@ function SupportIntake() {
           <CardContent>
             <form onSubmit={submit} className="space-y-4" noValidate>
               <div className="grid gap-4 sm:grid-cols-2">
-                <label className="space-y-1.5">
-                  <span className="text-sm font-bold">النوع</span>
+                <EntityForm.Field label="النوع">
                   <Select
                     value={form.category}
                     onChange={(event) =>
@@ -414,9 +414,8 @@ function SupportIntake() {
                       </option>
                     ))}
                   </Select>
-                </label>
-                <label className="space-y-1.5">
-                  <span className="text-sm font-bold">الأولوية</span>
+                </EntityForm.Field>
+                <EntityForm.Field label="الأولوية">
                   <Select
                     value={form.urgency}
                     onChange={(event) =>
@@ -432,15 +431,18 @@ function SupportIntake() {
                       </option>
                     ))}
                   </Select>
-                </label>
+                </EntityForm.Field>
               </div>
-              <label className="block space-y-1.5">
-                <span className="text-sm font-bold">
-                  مرجع الخطأ{" "}
-                  <span className="font-normal text-muted-foreground">
-                    (اختياري)
-                  </span>
-                </span>
+              <EntityForm.Field
+                label={
+                  <>
+                    مرجع الخطأ{" "}
+                    <span className="font-normal text-muted-foreground">
+                      (اختياري)
+                    </span>
+                  </>
+                }
+              >
                 <Input
                   dir="ltr"
                   value={form.errorReference}
@@ -453,9 +455,8 @@ function SupportIntake() {
                   maxLength={120}
                   placeholder="ERR-... أو PGRST... دون نسخ الرسالة كاملة"
                 />
-              </label>
-              <label className="block space-y-1.5">
-                <span className="text-sm font-bold">ما النتيجة المتوقعة؟</span>
+              </EntityForm.Field>
+              <EntityForm.Field label="ما النتيجة المتوقعة؟" required>
                 <Textarea
                   value={form.expectedBehavior}
                   onChange={(event) =>
@@ -468,9 +469,8 @@ function SupportIntake() {
                   required
                   aria-describedby="support-safe-hint"
                 />
-              </label>
-              <label className="block space-y-1.5">
-                <span className="text-sm font-bold">ماذا حدث فعلياً؟</span>
+              </EntityForm.Field>
+              <EntityForm.Field label="ماذا حدث فعلياً؟" required>
                 <Textarea
                   value={form.actualBehavior}
                   onChange={(event) =>
@@ -483,7 +483,7 @@ function SupportIntake() {
                   required
                   aria-describedby="support-safe-hint"
                 />
-              </label>
+              </EntityForm.Field>
               <div
                 id="support-safe-hint"
                 className="flex items-start gap-2 rounded-xl border border-warning/30 bg-warning/10 p-3 text-xs leading-5 text-warning"
