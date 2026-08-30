@@ -65,6 +65,30 @@ async function main() {
     'public.gl_post_journal_batch(uuid)',
     'public.reverse_journal_batch(uuid)',
     'public.guard_bank_reconciliation_match_integrity()',
+    // Internal GL posting primitives + helpers whose only legitimate callers
+    // are SECURITY DEFINER wrappers or the service role. They take a
+    // company_id from their payload/arguments, so browser EXECUTE would allow
+    // cross-company posting/reads. See migration
+    // 20260901000056_revoke_browser_execute_internal_gl_rpcs.sql and
+    // scripts/supabase-tests/internal-gl-rpc-browser-boundary.mjs.
+    'public.gl_ml_post_sublease_receipt(jsonb)',
+    'public.gl_pm_accrue_fixed_monthly_fee(jsonb)',
+    'public.gl_pm_post_broker_commission_approval(jsonb)',
+    'public.gl_pm_post_broker_commission_payment(jsonb)',
+    'public.gl_pm_post_collection_office_is_creditor(jsonb)',
+    'public.gl_pm_post_collection_owner_is_creditor(jsonb)',
+    'public.gl_pm_post_deposit_receipt(jsonb)',
+    'public.gl_pm_post_invoice_office_is_creditor(jsonb)',
+    'public.gl_pm_post_owner_expense(jsonb)',
+    'public.gl_pm_post_owner_payment(jsonb)',
+    'public.gl_validate_and_normalize_lines(uuid,jsonb)',
+    'public.owner_settlement_reservable_expenses(uuid,uuid,date,date,text)',
+    'public.owner_settlement_reservable_payments(uuid,uuid,date,date,text)',
+    'public.assert_owner_funds_event_cutover(uuid,date,uuid)',
+    'public.assert_owner_settlement_links_backfillable()',
+    'public.contract_evidence_assert_documents(uuid,uuid,uuid[])',
+    'public.require_company_account_id(uuid,text)',
+    'public.check_unit_maintenance_block(uuid)',
   ];
 
   let caseNo = 3;

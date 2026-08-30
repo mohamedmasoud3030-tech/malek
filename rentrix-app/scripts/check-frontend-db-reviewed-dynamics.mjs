@@ -39,7 +39,10 @@ const REVIEWED = new Map([
   ['mutation|features/lands/services/lands-service.ts|lands|update', 1],
   ['mutation|features/communication/services/communication-service.ts|communication_records|insert', 1],
   ['mutation|features/communication/services/communication-service.ts|communication_records|update', 1],
-  ['mutation|features/financials/reconciliation/bankReconciliationService.ts|bank_statement_lines|insert', 1],
+  // bankReconciliationService no longer performs a direct bank_statement_lines
+  // insert: the manual-line write path moved to the governed RPC
+  // create_bank_statement_line_governed (migration 00057), which the primary
+  // scanner auto-discovers as a literal .rpc() call.
   ['mutation|features/leads/services/leads-service.ts|leads|insert', 1],
   ['mutation|features/leads/services/leads-service.ts|leads|update', 1],
   ['mutation|features/maintenance/maintenance-service.ts|maintenance_records|update', 1],

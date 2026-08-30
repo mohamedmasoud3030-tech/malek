@@ -1,5 +1,5 @@
 {
-  "version": 5,
+  "version": 6,
   "authorityModel": {
     "identity": "public.users must be ACTIVE, is_active=true, deleted_at IS NULL",
     "membershipSource": "public.company_members.role",
@@ -9,7 +9,14 @@
     "jwt": "Server-issued claims are context/cache only; they never override database authority.",
     "failClosed": true
   },
-  "canonicalRoles": ["ADMIN", "MANAGER", "ACCOUNTANT", "OPERATIONS", "USER", "VIEWER"],
+  "canonicalRoles": [
+    "ADMIN",
+    "MANAGER",
+    "ACCOUNTANT",
+    "OPERATIONS",
+    "USER",
+    "VIEWER"
+  ],
   "adminManagerSensitiveFunctions": [
     "preview_bank_statement_batch_atomic(jsonb)",
     "import_bank_statement_batch_atomic(jsonb)",
@@ -19,10 +26,12 @@
     "execute_receipt_void_internal(jsonb)",
     "approve_receipt_void_atomic(jsonb)",
     "recalculate_all_balances()",
-    "resolve_maintenance_with_expense(text,numeric,text)",
     "run_scheduled_automation_rules()"
   ],
-  "permissionGovernedSensitiveRpcs": {},
+  "permissionGovernedSensitiveRpcs": {
+    "resolve_maintenance_with_expense(text,numeric,text)": "maintenance.approve",
+    "close_maintenance_with_expense(text,numeric,text,text,text,boolean)": "maintenance.approve"
+  },
   "serviceOrInternalOnlyFunctions": [
     "post_receipt_atomic(jsonb)",
     "record_invoice_payment_atomic_engine(jsonb)",
@@ -65,7 +74,19 @@
       "is_app_user(",
       "contract_evidence_actor_can_operate(",
       "contract_evidence_actor_can_verify(",
-      "authorize_ai_assistant_access("
+      "authorize_ai_assistant_access(",
+      "current_user_can_transition_maintenance("
     ]
-  }
+  },
+  "externalTokenAuthorityRpcs": {
+    "get_tenant_portal_snapshot(uuid)": [
+      "revoked_at is null",
+      "expires_at > now()"
+    ],
+    "get_owner_portal_snapshot(uuid)": [
+      "revoked_at is null",
+      "expires_at > now()"
+    ]
+  },
+  "externalTokenAuthorityModel": "External portal snapshot RPCs (get_tenant_portal_snapshot / get_owner_portal_snapshot) authorize through the private unguessable portal link token alone: token lookup must reject revoked (revoked_at is null) and expired (expires_at > now()) links, and every returned row must be derived server-side from the company/owner resolved from that token. These callers have no company membership by design, so membership role resolvers do not apply; the scanner still requires the token-validation markers in the effective definition."
 }

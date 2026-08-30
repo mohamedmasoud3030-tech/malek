@@ -30,6 +30,11 @@ const layers = [
     cmd: ['node', [join(HERE, 'rls-matrix.mjs')]],
   },
   {
+    id: 'internal-gl-rpc-boundary',
+    title: 'Internal GL posting/helper RPC browser EXECUTE boundary',
+    cmd: ['node', [join(HERE, 'internal-gl-rpc-browser-boundary.mjs')]],
+  },
+  {
     id: 'client-visibility',
     title: 'Client session, data-visibility, and function contracts',
     cmd: [

@@ -225,7 +225,25 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
+          // Shared runtime must stay in its own tiny eager chunk: Rollup
+          // otherwise merges the Vite preload helper and small shared
+          // utilities into a heavy manual vendor chunk (pdf/charts), which
+          // forces that whole chunk into the entry's static graph and
+          // modulepreload list.
+          if (id.includes("vite/preload-helper")) return "preload-runtime";
           if (!id.includes("node_modules")) return;
+          // React must be pinned to its own eager chunk. With function-form
+          // manualChunks, Rollup's default grouping otherwise merges the
+          // `react` package into whichever heavy manual chunk references it
+          // (vendor-charts), which forces that 391 KiB chunk into the entry's
+          // modulepreload list even for the unauthenticated login page.
+          if (
+            /node_modules[\\/]react[\\/]|node_modules[\\/]react-dom[\\/]|node_modules[\\/]scheduler[\\/]/.test(id)
+          ) return "vendor-react";
+          // clsx/tailwind-merge/react-is are shared by the entry shell and by
+          // lazy vendor chunks; keeping them out of vendor-charts lets the
+          // chart stack load only when a chart is actually rendered.
+          if (id.includes("clsx") || id.includes("tailwind-merge") || id.includes("react-is")) return "vendor-runtime";
           // Vendor split: isolate heavy libraries into dedicated chunks for
           // long-lived browser caching independent of app-code churn.
           // Only match libraries that have no cross-chunk React dependencies
