@@ -27,7 +27,7 @@
  */
 import type { ProfessionalReportBody, ReportChart, ReportKpi, ReportNote, ReportTable } from '../types';
 import { MAX_ROWS_PER_TABLE_CHUNK } from '../documentRegistry';
-import { escapeDocumentHtml } from './documentHtml';
+import { escapeDocumentHtml } from './documentHtmlShared';
 import { formatLatinNumber } from '@/lib/formatters';
 
 /* ------------------------------------------------------------------ */
