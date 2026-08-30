@@ -45,7 +45,7 @@ export function MalikBrand({
             dir="ltr"
             aria-label={APP_BRAND_NAME}
             className={cn(
-              'malik-wordmark malek-wordmark text-center text-[1.65rem] font-extrabold uppercase leading-none tracking-[0.18em] sm:text-[1.85rem]',
+              'malik-wordmark malek-wordmark text-center text-[1.65rem] font-extrabold uppercase leading-none tracking-[0.12em] sm:text-[1.85rem]',
               inverse ? 'text-white' : 'text-foreground',
               wordmarkClassName,
             )}
@@ -75,7 +75,7 @@ export function MalikBrand({
           dir="ltr"
           aria-label={APP_BRAND_NAME}
           className={cn(
-            'malik-wordmark malek-wordmark truncate text-[18px] font-extrabold uppercase leading-none tracking-[0.16em]',
+            'malik-wordmark malek-wordmark truncate text-[18px] font-extrabold uppercase leading-none tracking-[0.08em]',
             inverse ? 'text-white' : 'text-foreground',
             wordmarkClassName,
           )}

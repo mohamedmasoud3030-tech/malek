@@ -1,18 +1,19 @@
 import {
-  BadgeDollarSign,
   BarChart3,
   Building2,
+  CircleDollarSign,
   DoorOpen,
   FileText,
+  Gauge,
+  KeyRound,
   LayoutDashboard,
-  PieChart,
+  Receipt,
   Settings,
   ShieldCheck,
-  UserCheck,
   UserPlus,
-  UserRoundCog,
+  Users,
+  Wallet,
   Wrench,
-  Zap,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { AppPermission } from '@/features/auth/permissions';
@@ -34,7 +35,7 @@ export const navGroups: readonly NavGroup[] = [
     ['/dashboard', 'today', 'ما يحتاج انتباهك وتنفيذك الآن', LayoutDashboard],
     ['/properties', 'portfolio', 'العقارات والوحدات والملاك', Building2, 'properties.view'],
     ['/contracts', 'leasing', 'العقود والمستأجرون من البداية حتى التجديد أو الإخلاء', FileText, 'contracts.view'],
-    ['/financials', 'money', 'الفواتير والتحصيل والمصروفات وأموال الملاك والبنوك', PieChart, 'financial.workspace.view'],
+    ['/financials', 'money', 'الفواتير والتحصيل والمصروفات وأموال الملاك والبنوك', Wallet, 'financial.workspace.view'],
     ['/maintenance', 'services', 'الصيانة والمرافق وما يحتاج متابعة', Wrench, 'maintenance.view'],
   ]],
   ['التحليل والإدارة', [
@@ -51,19 +52,19 @@ export const navGroups: readonly NavGroup[] = [
 export const workspaceChildNavItems: Record<string, readonly NavItem[]> = {
   '/properties': [
     ['/properties', 'units', 'كل الوحدات وحالات الإشغال', DoorOpen, 'properties.view', { section: 'units' }],
-    ['/properties', 'owners', 'الملاك وعلاقات الملكية والإدارة', UserRoundCog, 'owners.hub.view', { section: 'owners' }],
+    ['/properties', 'owners', 'الملاك وعلاقات الملكية والإدارة', KeyRound, 'owners.hub.view', { section: 'owners' }],
   ],
   '/contracts': [
-    ['/contracts', 'tenants', 'المستأجرون وعلاقات الإيجار', UserCheck, 'contracts.view', { workspace: 'tenants' }],
+    ['/contracts', 'tenants', 'المستأجرون وعلاقات الإيجار', Users, 'contracts.view', { workspace: 'tenants' }],
   ],
   '/financials': [
     ['/financials', 'invoices', 'ابحث عن الفاتورة وحصّلها مباشرة', FileText, 'financial.workspace.view', { section: 'collections', view: 'invoices' }],
-    ['/financials', 'receipts', 'سجل التحصيلات والإيصالات السابقة', BadgeDollarSign, 'financial.workspace.view', { section: 'collections', view: 'receipts' }],
-    ['/financials', 'expenses', 'إضافة المصروفات ومراجعتها', PieChart, 'expenses.view', { section: 'expenses', view: 'expenses' }],
+    ['/financials', 'receipts', 'سجل التحصيلات والإيصالات السابقة', Receipt, 'financial.workspace.view', { section: 'collections', view: 'receipts' }],
+    ['/financials', 'expenses', 'إضافة المصروفات ومراجعتها', CircleDollarSign, 'expenses.view', { section: 'expenses', view: 'expenses' }],
   ],
   '/maintenance': [
     ['/maintenance', 'maintenance', 'طلبات الصيانة والمتابعة', Wrench, 'maintenance.view', { section: 'maintenance' }],
-    ['/maintenance', 'utilities', 'المرافق والعدادات', Zap, 'maintenance.view', { section: 'utilities' }],
+    ['/maintenance', 'utilities', 'المرافق والعدادات', Gauge, 'maintenance.view', { section: 'utilities' }],
   ],
   '/reports': [],
   '/settings': [
