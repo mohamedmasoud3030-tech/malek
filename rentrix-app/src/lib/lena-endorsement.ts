@@ -1,20 +1,71 @@
 /**
- * Endorsed-brand contract between MALEK and LENA Digital House.
+ * Parent-brand contract between MALEK and LENA Digital House.
  *
- * MALEK stays the product. LENA Digital House is the studio that developed it.
- * The login surface therefore links to the same-origin LENA namespace (/lena),
- * never to support, help, WhatsApp, email, GitHub or an internal Vercel host.
+ * MALEK is an independent product. LENA Digital House is the parent company
+ * that developed it. The login surface therefore endorses the company and
+ * links to LENA's own website — never to support, help, WhatsApp, email,
+ * GitHub, a MALEK `/lena` path, or a hardcoded preview host.
+ *
+ * Set `VITE_LENA_HOUSE_ORIGIN` on the MALEK Vercel project to the independent
+ * LENA production origin (custom domain preferred). MALEK must not reverse-proxy
+ * LENA; the two products keep separate deployments.
  */
 
-/** Public LENA entry on the MALEK domain. `from=malek` is a non-sensitive referral marker. */
-export const LENA_PUBLIC_ENTRY = '/lena/ar?from=malek';
+export type LenaLocale = 'ar' | 'en';
+
+function readConfiguredOrigin(): string {
+  try {
+    const raw = import.meta.env?.VITE_LENA_HOUSE_ORIGIN;
+    return typeof raw === 'string' ? raw : '';
+  } catch {
+    return '';
+  }
+}
+
+/** True when a candidate must never be used as the public LENA destination. */
+export function isForbiddenLenaDestination(value: string): boolean {
+  const trimmed = value.trim().toLowerCase();
+  if (!trimmed) return true;
+  if (trimmed.includes('github.com')) return true;
+  if (trimmed.includes('whatsapp')) return true;
+  if (/(^|[^a-z])support([^a-z]|$)/.test(trimmed)) return true;
+  if (/(^|[^a-z])help([^a-z]|$)/.test(trimmed)) return true;
+  if (trimmed.includes('powered by')) return true;
+  try {
+    const url = trimmed.startsWith('http://') || trimmed.startsWith('https://')
+      ? new URL(trimmed)
+      : new URL(trimmed, 'https://malek.invalid');
+    if (url.pathname === '/lena' || url.pathname.startsWith('/lena/')) return true;
+    if (url.pathname.includes('/support') || url.pathname.includes('/help')) return true;
+  } catch {
+    return true;
+  }
+  return false;
+}
 
 /**
- * Platform production origin that MALEK reverse-proxies /lena to.
- * Must be a rewrite destination, never a browser-facing redirect.
- *
- * Update this when the Platform Vercel project production URL is confirmed.
- * vercel.json duplicates the same host so the edge rewrite does not depend on
- * runtime env interpolation (Vercel does not expand env vars in vercel.json).
+ * Independent LENA Digital House origin with no trailing slash.
+ * Empty string means the operator has not configured the public company site yet.
  */
-export const LENA_PLATFORM_REWRITE_ORIGIN = 'https://lena-digital-house.vercel.app';
+export function resolveLenaHouseOrigin(raw: string | undefined | null = readConfiguredOrigin()): string {
+  const origin = String(raw ?? '').trim().replace(/\/+$/, '');
+  if (!origin) return '';
+  if (!/^https:\/\//i.test(origin)) return '';
+  if (isForbiddenLenaDestination(origin)) return '';
+  return origin;
+}
+
+/** Public LENA entry for a given locale. `from=malek` is a non-sensitive referral marker. */
+export function lenaHousePublicEntry(
+  origin: string | undefined | null = readConfiguredOrigin(),
+  locale: LenaLocale = 'ar',
+): string {
+  const resolved = resolveLenaHouseOrigin(origin);
+  if (!resolved) return '';
+  const url = new URL(`/${locale}`, `${resolved}/`);
+  url.searchParams.set('from', 'malek');
+  return url.toString();
+}
+
+/** Login endorsement target. Empty when `VITE_LENA_HOUSE_ORIGIN` is unset. */
+export const LENA_PUBLIC_ENTRY = lenaHousePublicEntry();

@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, type FormEvent, type KeyboardEvent } from 'react';
 import { Link } from '@tanstack/react-router';
 import { AlertTriangle, ArrowLeft, ArrowUpRight, Eye, EyeOff, LockKeyhole, Mail } from 'lucide-react';
-import { LENA_PUBLIC_ENTRY } from '@/lib/lena-endorsement';
+import { lenaHousePublicEntry } from '@/lib/lena-endorsement';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,6 +22,7 @@ export function LoginPage() {
   const [isCapsLock, setIsCapsLock] = useState(false);
   const isSubmittingRef = useRef(false);
   const hasFieldError = Boolean(formError || runtimeError);
+  const lenaHref = lenaHousePublicEntry();
 
   const handleSubmit = useCallback(async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -93,16 +94,21 @@ export function LoginPage() {
           </form>
         </div>
 
-        {/* Company endorsement — secondary to Login, not a support CTA. Native <a> so TanStack never intercepts /lena. */}
+        {/* Parent company endorsement — secondary to Login, not a support CTA. Native <a> to LENA's independent site. */}
         <p className="mt-6 text-center text-xs leading-relaxed text-muted-foreground" data-lena-endorsement>
           <span>تم تطوير MALEK بواسطة </span>
-          <a
-            href={LENA_PUBLIC_ENTRY}
-            className="inline-flex min-h-11 items-center gap-0.5 rounded-lg px-1 font-semibold text-muted-foreground underline-offset-4 outline-none hover:text-foreground hover:underline focus-visible:ring-4 focus-visible:ring-primary/20"
-          >
-            LENA Digital House
-            <ArrowUpRight className="size-3.5" aria-hidden="true" />
-          </a>
+          {lenaHousePublicEntry() ? (
+            <a
+              href={lenaHousePublicEntry()}
+              rel="noopener noreferrer"
+              className="inline-flex min-h-11 items-center gap-0.5 rounded-lg px-1 font-semibold text-muted-foreground underline-offset-4 outline-none hover:text-foreground hover:underline focus-visible:ring-4 focus-visible:ring-primary/20"
+            >
+              LENA Digital House
+              <ArrowUpRight className="size-3.5" aria-hidden="true" />
+            </a>
+          ) : (
+            <span className="font-semibold text-muted-foreground">LENA Digital House</span>
+          )}
         </p>
       </section>
     </main>
