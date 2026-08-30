@@ -46,10 +46,14 @@ describe('MALEK parent-brand contract — independent LENA site', () => {
     expect(endorsementSource).toContain('VITE_LENA_HOUSE_ORIGIN');
   });
 
-  it('builds an absolute company URL from the independent origin', () => {
+  it('builds an absolute company homepage URL, not a product deep-link', () => {
     expect(lenaHousePublicEntry('https://lena.example', 'ar')).toBe('https://lena.example/ar?from=malek');
     expect(lenaHousePublicEntry('https://lena.example/', 'en')).toBe('https://lena.example/en?from=malek');
     expect(resolveLenaHouseOrigin('https://lena.example/')).toBe('https://lena.example');
+    const ar = new URL(lenaHousePublicEntry('https://lena.example', 'ar'));
+    expect(ar.pathname).toBe('/ar');
+    expect(ar.searchParams.get('from')).toBe('malek');
+    expect(ar.pathname).not.toContain('/products');
   });
 
   it('rejects support, GitHub, and same-origin /lena destinations', () => {
@@ -58,6 +62,7 @@ describe('MALEK parent-brand contract — independent LENA site', () => {
     expect(isForbiddenLenaDestination('https://malek.example/lena')).toBe(true);
     expect(isForbiddenLenaDestination('https://lena.example/support')).toBe(true);
     expect(isForbiddenLenaDestination('https://lena.example/help')).toBe(true);
+    expect(isForbiddenLenaDestination('https://lena.example/products/malek')).toBe(true);
     expect(lenaHousePublicEntry('https://github.com/acme', 'ar')).toBe('');
     expect(lenaHousePublicEntry('/lena', 'ar')).toBe('');
     expect(lenaHousePublicEntry('', 'ar')).toBe('');

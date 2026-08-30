@@ -69,6 +69,8 @@ describe('LoginPage — minimal SaaS contract', () => {
       expect(href).not.toContain('github.com');
       expect(href).not.toContain('/support');
       expect(href).not.toContain('/help');
+      expect(href).not.toContain('/products');
+      expect(new URL(href).pathname).toMatch(/^\/(ar|en)\/?$/);
       expect(new URL(href).pathname).not.toMatch(/^\/lena(\/|$)/);
       expect(endorsement.className).toContain('min-h-11');
     }

@@ -36,6 +36,7 @@ export function isForbiddenLenaDestination(value: string): boolean {
       ? new URL(trimmed)
       : new URL(trimmed, 'https://malek.invalid');
     if (url.pathname === '/lena' || url.pathname.startsWith('/lena/')) return true;
+    if (url.pathname.includes('/products')) return true;
     if (url.pathname.includes('/support') || url.pathname.includes('/help')) return true;
   } catch {
     return true;
@@ -55,7 +56,12 @@ export function resolveLenaHouseOrigin(raw: string | undefined | null = readConf
   return origin;
 }
 
-/** Public LENA entry for a given locale. `from=malek` is a non-sensitive referral marker. */
+/**
+ * LENA's normal homepage for a locale.
+ * Lands on the company site root (`/ar` or `/en`), never `/products/malek`,
+ * never support. `from=malek` is a non-PII referral marker for analytics only;
+ * LENA must not change the homepage into a support or app-chooser flow.
+ */
 export function lenaHousePublicEntry(
   origin: string | undefined | null = readConfiguredOrigin(),
   locale: LenaLocale = 'ar',
@@ -64,6 +70,7 @@ export function lenaHousePublicEntry(
   if (!resolved) return '';
   const url = new URL(`/${locale}`, `${resolved}/`);
   url.searchParams.set('from', 'malek');
+  if (url.pathname.includes('/products') || url.pathname.includes('/support')) return '';
   return url.toString();
 }
 
