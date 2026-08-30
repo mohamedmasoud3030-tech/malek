@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { CompanyProfileSections } from './components/company-profile-sections';
 import { OverviewRow, SettingsHero } from './components/settings-hero';
+import { DocumentsSection } from './sections/DocumentsSection';
+import { IdentitySection } from './sections/IdentitySection';
+import { OfficeSection } from './sections/OfficeSection';
 import { SystemSection } from './sections/SystemSection';
 import { SettingsSaveBar } from './components/settings-save-bar';
 import { SettingsWorkspaceNav } from './components/settings-workspace-nav';
@@ -91,14 +93,11 @@ export function SettingsWorkspaceE2EFixture() {
           <SettingsWorkspaceNav activeSection={activeSection} onChange={setActiveSection} />
 
           <div className="min-w-0 space-y-3">
-            <SettingsSaveBar
-              isDirty={isDirty}
-              isSaving={false}
-              onDiscard={() => setDraft(baseDraft)}
-            />
+            <SettingsSaveBar isDirty={isDirty} isSaving={false} onDiscard={() => setDraft(baseDraft)} />
 
             <form id="settings-company-form" className="min-w-0 space-y-4" onSubmit={handleSubmit}>
-              <CompanyProfileSections
+              <OfficeSection activeSection={activeSection} draft={draft} errors={{}} isSaving={false} onDraftChange={handleDraftChange} />
+              <IdentitySection
                 activeSection={activeSection}
                 draft={draft}
                 errors={{}}
@@ -109,6 +108,7 @@ export function SettingsWorkspaceE2EFixture() {
                 onDraftChange={handleDraftChange}
                 onLogoFileChange={() => undefined}
               />
+              <DocumentsSection activeSection={activeSection} draft={draft} errors={{}} isSaving={false} onDraftChange={handleDraftChange} />
               <SystemSection
                 activeSection={activeSection}
                 preview={preview}
