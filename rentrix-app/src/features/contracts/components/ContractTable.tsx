@@ -14,6 +14,7 @@ import {
 } from "../contractDisplayFormatters";
 import { contractStatusLabels, contractStatusTone, leaseModeLabels, paymentCycleLabels } from "../contractSchema";
 import { normalizeContractStatus } from "@/lib/contractStatus";
+import { unitStatusLabels, type UnitStatus } from "@/features/units/unit-schema";
 import type { ContractListItem } from "../services/contractService";
 import { getDaysUntilEnd, isExpiringSoon } from "../hooks/useContractFilters";
 
@@ -261,7 +262,7 @@ export function ContractTable({
               {contractStatusLabels[normalizeContractStatus(contract.status)]}
             </StatusBadge>
             <p className={cn("mt-2 text-muted-foreground", contract.units?.status === "occupied" && "text-primary")}>
-              حالة الوحدة: {contract.units?.status ?? "—"}
+              حالة الوحدة: {contract.units?.status ? (unitStatusLabels[contract.units.status as UnitStatus] ?? contract.units.status) : "—"}
             </p>
           </DetailBox>
         </div>

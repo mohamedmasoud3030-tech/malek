@@ -16,6 +16,22 @@
  */
 export type CanonicalContractStatus = 'draft' | 'active' | 'expired' | 'terminated';
 
+export const contractStatusLabels: Record<CanonicalContractStatus, string> = {
+  draft: 'مسودة',
+  active: 'نشط',
+  expired: 'منتهي',
+  terminated: 'ملغي',
+};
+
+type ContractStatusTone = 'success' | 'warning' | 'danger' | 'info' | 'neutral';
+
+export const contractStatusTone: Record<CanonicalContractStatus, ContractStatusTone> = {
+  draft: 'neutral',
+  active: 'success',
+  expired: 'warning',
+  terminated: 'danger',
+};
+
 const CONTRACT_STATUS_CASE_VARIANTS: Readonly<Record<CanonicalContractStatus, readonly string[]>> = {
   draft: ['draft'],
   active: ['active', 'ACTIVE'],

@@ -20,11 +20,22 @@ describe('desktop workspace contract', () => {
     expect(desktopStyles).toContain('[data-page-layout] [data-entity-table] thead th');
     expect(desktopStyles).toContain('[data-page-layout] [data-entity-table] tbody td');
     expect(desktopStyles).toContain('[data-page-layout] [data-kpi-card]');
+    expect(desktopStyles).toContain('[data-page-layout] [data-register-metric]');
   });
 
   it('does not apply the desktop contract to phone breakpoints', () => {
     const desktopStart = desktopStyles.indexOf('/* ── Desktop workspace contract');
     const desktopSlice = desktopStyles.slice(desktopStart);
     expect(desktopSlice).toContain('@media (min-width: 1024px)');
+  });
+
+  it('covers 1366, 1440, and 1920 desktop widths with the same 1024px contract', () => {
+    expect(desktopStyles).toContain('@media (min-width: 1024px)');
+    expect(desktopStyles).not.toContain('@media (min-width: 1366px)');
+    expect(desktopStyles).not.toContain('@media (min-width: 1440px)');
+    expect(desktopStyles).not.toContain('@media (min-width: 1920px)');
+    for (const width of [1366, 1440, 1920]) {
+      expect(width).toBeGreaterThanOrEqual(1024);
+    }
   });
 });

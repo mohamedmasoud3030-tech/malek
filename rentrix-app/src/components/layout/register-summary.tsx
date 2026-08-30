@@ -59,7 +59,7 @@ export function RegisterMetricStrip({
             <div
               key={item.id}
               data-register-metric
-              className="flex min-w-0 items-center gap-2 rounded-xl border border-border/70 bg-card px-3 py-2 shadow-card"
+              className="flex min-w-0 items-center gap-2 rounded-xl border border-border/70 bg-card px-3 py-2 shadow-card lg:rounded-lg lg:shadow-none"
             >
               {Icon ? (
                 <span className="hidden size-8 shrink-0 place-items-center rounded-md bg-muted text-muted-foreground sm:grid">
@@ -117,9 +117,9 @@ export function RegisterHeading({
   extra?: ReactNode;
 }>) {
   return (
-    <header data-register-heading className="flex min-h-9 min-w-0 flex-wrap items-center justify-between gap-2 px-0.5">
+    <header data-register-heading className="flex min-h-9 min-w-0 flex-wrap items-center justify-between gap-2 px-0.5 lg:min-h-8">
       <div className="min-w-0">
-        <h2 className="truncate text-sm font-black">{title}</h2>
+        <h2 className="truncate text-sm font-black lg:text-xs lg:font-bold lg:text-muted-foreground">{title}</h2>
         {meta ? <p className="truncate text-xs font-medium leading-5 text-muted-foreground">{meta}</p> : null}
       </div>
       {extra}

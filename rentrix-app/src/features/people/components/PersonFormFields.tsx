@@ -35,7 +35,7 @@ export function PersonFormFields({ form, autoFocusName = false }: PersonFormFiel
       <EntityForm.Field label="العنوان">
         <Input {...form.register('address')} />
       </EntityForm.Field>
-      <EntityForm.Field label="ملاحظات" className="md:col-span-2">
+      <EntityForm.Field wide label="ملاحظات" className="md:col-span-2">
         <Textarea {...form.register('notes')} />
       </EntityForm.Field>
     </>

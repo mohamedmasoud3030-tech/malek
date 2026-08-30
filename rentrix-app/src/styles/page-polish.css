@@ -225,8 +225,18 @@
    Desktop is a work surface, not a scaled-up phone screen. */
 @media (min-width: 1024px) {
   [data-page-layout] [data-page-header] {
-    margin-bottom: 0.25rem;
-    padding-bottom: 1.1rem;
+    margin-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  [data-page-layout] [data-page-header] [data-global-page-context] {
+    min-height: 3.25rem;
+    padding-block: 0.5rem;
+    padding-inline: 0;
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+    border-radius: 0;
   }
 
   [data-page-layout] [data-section-header] { margin-bottom: 1rem; }
@@ -263,9 +273,28 @@
   }
 
   [data-page-layout] [data-kpi-card] {
-    min-height: 8rem;
+    min-height: 0;
     border-color: hsl(var(--border));
     box-shadow: none;
+  }
+
+  [data-page-layout] [data-register-metric] {
+    box-shadow: none;
+  }
+
+  [data-page-layout] [data-register-heading] h2 {
+    color: hsl(var(--muted-foreground));
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+
+  [data-owner-register],
+  [data-owner-relationships] {
+    box-shadow: none;
+  }
+
+  [data-app-shell][data-sidebar-collapsed='true'] [data-sidebar] + div {
+    padding-inline-start: 0;
   }
 }
 

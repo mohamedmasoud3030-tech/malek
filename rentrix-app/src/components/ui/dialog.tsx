@@ -164,6 +164,7 @@ export const DialogContent = forwardRef<DialogContentElement, DialogContentProps
         <DialogPrimitive.Content
           ref={setContentRef}
           aria-modal="true"
+          dir={typeof document !== 'undefined' ? document.documentElement.dir || 'rtl' : 'rtl'}
           data-dialog-content
           data-dialog-form={containsDataEntryControls ? 'true' : undefined}
           onOpenAutoFocus={composeEventHandlers(props.onOpenAutoFocus, handleOpenAutoFocus)}

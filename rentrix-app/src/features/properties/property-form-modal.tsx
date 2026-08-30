@@ -15,6 +15,7 @@ import { useOperationalOwners } from '@/features/owners/useOwners';
 import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
 import { getActionableSupabaseErrorMessage } from '@/lib/supabase-error';
 import { propertyStatusLabels, propertyStatusValues } from './property-schema';
+import { translatePropertyType } from './components/property-status';
 import { applyPropertyOwnershipSplit } from './property-service';
 import { useProperty, useUpdateProperty } from './use-properties';
 import { PropertyFormCoreFields } from './components/property-form-core-fields';
@@ -369,9 +370,10 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
                         type="button"
                         size="sm"
                         variant="ghost"
+                        aria-label="حذف الشريك"
                         onClick={() => setExtraOwners(extraOwners.filter((_, idx) => idx !== index))}
                       >
-                        <Trash2 className="size-4 text-destructive" />
+                        <Trash2 className="size-4 text-destructive" aria-hidden="true" />
                       </Button>
                     </div>
                   </div>
@@ -459,7 +461,7 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
                   </div>
                   <div>
                     <span className="text-muted-foreground text-xs">النوع والعنوان:</span>
-                    <p className="font-semibold">{type || '—'} - {address || '—'}</p>
+                    <p className="font-semibold">{translatePropertyType(type) || '—'} - {address || '—'}</p>
                   </div>
                   <div>
                     <span className="text-muted-foreground text-xs">المالك:</span>

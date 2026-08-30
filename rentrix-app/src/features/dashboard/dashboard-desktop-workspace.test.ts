@@ -23,4 +23,9 @@ describe('dashboard desktop workspace contract', () => {
     expect(page).toContain('xl:col-span-5');
     expect(page).toContain('data-dashboard-closing-row');
   });
+
+  it('does not repeat section titles when the panel already names itself', () => {
+    expect(page).toContain('showHeader={false}');
+    expect(page).toContain('sectionId="office-pulse"');
+  });
 });

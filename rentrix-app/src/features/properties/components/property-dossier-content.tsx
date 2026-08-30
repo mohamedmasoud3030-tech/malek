@@ -12,15 +12,10 @@ import { businessReferenceOrLabel } from '@/lib/business-reference';
 import { usePropertyOwners } from '@/features/owners/useOwners';
 import { useProperty } from '../use-properties';
 import { useUnits } from '@/features/units/use-units';
+import { unitStatusLabels, type UnitStatus } from '@/features/units/unit-schema';
 import { usePropertyContractsTab, usePropertyInvoicesTab } from '../use-property-workspace-tabs';
+import { contractStatusLabels, contractStatusTone, normalizeContractStatus } from '@/lib/contractStatus';
 import { PropertyIdentityCard, PropertyUnitsSummaryCard } from '../overview/property-overview-cards';
-
-const unitStatusLabels: Record<string, string> = {
-  occupied: 'مشغولة',
-  available: 'متاحة',
-  maintenance: 'صيانة',
-  reserved: 'محجوزة',
-};
 
 function unitStatusTone(status: string): 'success' | 'info' | 'warning' | 'neutral' {
   if (status === 'occupied') return 'success';
@@ -146,7 +141,7 @@ export function PropertyDossierContent({ propertyId }: Readonly<{ propertyId: st
                   <span className="font-bold">وحدة {unit.unit_number}</span>
                   <span className="text-xs text-muted-foreground">{unit.floor ? `الدور ${unit.floor}` : 'بدون دور'}</span>
                   <span className="ms-auto flex items-center gap-2">
-                    <StatusBadge tone={unitStatusTone(unit.status)}>{unitStatusLabels[unit.status] ?? unit.status}</StatusBadge>
+                    <StatusBadge tone={unitStatusTone(unit.status)}>{unitStatusLabels[unit.status as UnitStatus] ?? unit.status}</StatusBadge>
                     <span className="text-xs font-semibold tabular-nums" dir="ltr">{formatCompanyMoney(companySettings, unit.rent_amount)}</span>
                   </span>
                 </button>
@@ -173,7 +168,9 @@ export function PropertyDossierContent({ propertyId }: Readonly<{ propertyId: st
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-bold">{contract.people?.full_name ?? 'مستأجر مسجل'}</span>
-                    <StatusBadge tone={contract.status === 'active' ? 'success' : 'neutral'}>{contract.status === 'active' ? 'نشط' : contract.status}</StatusBadge>
+                    <StatusBadge tone={contractStatusTone[normalizeContractStatus(contract.status)]}>
+                      {contractStatusLabels[normalizeContractStatus(contract.status)]}
+                    </StatusBadge>
                   </div>
                   <p className="mt-1 break-words text-xs leading-5 text-muted-foreground">
                     {businessReferenceOrLabel(contract, 'عقد مسجل')}

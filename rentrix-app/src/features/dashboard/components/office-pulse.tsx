@@ -51,13 +51,13 @@ export const OfficePulse = memo(function OfficePulse({ snapshot, isLoading, sett
 
   const sparkValues = dailySeries?.rows.map((row) => row.total) ?? [];
   const showSparkline = !dailySeriesLoading && sparkValues.length >= 2;
-  const pulseCardClass = 'h-full border-border/55 bg-card/95 shadow-sm transition-[transform,border-color,box-shadow] duration-200 group-hover:-translate-y-0.5 group-hover:border-primary/25 group-hover:shadow-card-hover';
+  const pulseCardClass = 'h-full border-border/55 bg-card/95 shadow-sm';
   const pulseLinkClass = 'group block min-w-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2';
 
   return (
     <div
       data-dashboard-office-pulse
-      className="relative overflow-hidden rounded-2xl border border-border/65 bg-gradient-to-br from-primary/[0.055] via-card to-card p-2 shadow-[inset_0_1px_0_hsl(var(--border)/0.22)] sm:p-2.5"
+      className="relative overflow-hidden rounded-2xl border border-border/65 bg-card p-1.5 sm:p-2"
     >
       <span className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-primary/35 to-transparent" aria-hidden="true" />
       <ResponsiveCardGrid gap="sm" aria-label="نبض المكتب" desktopColumns={4}>

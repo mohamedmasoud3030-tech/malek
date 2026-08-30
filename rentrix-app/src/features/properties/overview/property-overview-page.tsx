@@ -4,7 +4,6 @@ import { AsyncContentState } from '@/components/async-content-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useProperty } from '../use-properties';
-import { PropertyOwnerAgreementsSection } from '../ownership/property-owner-agreements-section';
 import { PropertyOnboardingWorkflow } from '../ownership/property-onboarding-readiness';
 import { PropertyDossierContent } from '../components/property-dossier-content';
 
@@ -46,8 +45,6 @@ export function PropertyOverview() {
               </Button>
             </CardContent>
           </Card>
-
-          <PropertyOwnerAgreementsSection propertyId={propertyId} />
         </div>
       )}
     </AsyncContentState>

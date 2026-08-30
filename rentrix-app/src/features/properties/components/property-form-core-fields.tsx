@@ -31,7 +31,7 @@ export function PropertyFormCoreFields<T extends FieldValues>({
       <EntityForm.Field label="نوع العقار" error={errors.type?.message as string | undefined}>
         <Input {...register('type' as Path<T>)} placeholder="سكني، تجاري، أرض..." />
       </EntityForm.Field>
-      <EntityForm.Field label="العنوان" className="md:col-span-2" error={errors.address?.message as string | undefined}>
+      <EntityForm.Field wide label="العنوان" className="md:col-span-2" error={errors.address?.message as string | undefined}>
         <Input {...register('address' as Path<T>)} placeholder="المدينة، الحي، الشارع" />
       </EntityForm.Field>
       <EntityForm.Field label="الحالة" error={errors.status?.message as string | undefined}>
@@ -45,7 +45,7 @@ export function PropertyFormCoreFields<T extends FieldValues>({
       <EntityForm.Field label="القيمة الحالية" error={errors.current_value?.message as string | undefined}>
         <Input type="number" step={MONEY_STEP} inputMode="decimal" min="0" {...register('current_value' as Path<T>)} />
       </EntityForm.Field>
-      <EntityForm.Field label="ملاحظات" className="md:col-span-2">
+      <EntityForm.Field wide label="ملاحظات" className="md:col-span-2">
         <Textarea {...register('notes' as Path<T>)} placeholder="أي تفاصيل إضافية" />
       </EntityForm.Field>
     </>

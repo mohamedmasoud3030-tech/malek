@@ -63,7 +63,7 @@ export function PageHeader({
         data-global-page-context
         data-global-today-context
         data-unified-surface="page-header"
-        className="flex min-h-14 min-w-0 flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl border border-border/70 bg-card px-3 py-2.5 shadow-card sm:flex-nowrap sm:px-4 sm:py-3"
+        className="flex min-h-14 min-w-0 flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl border border-border/70 bg-card px-3 py-2.5 shadow-card sm:flex-nowrap sm:px-4 sm:py-3 lg:min-h-12 lg:rounded-none lg:border-0 lg:border-b lg:border-border/60 lg:bg-transparent lg:px-0 lg:py-2 lg:shadow-none"
         aria-label={
           isArabic
             ? `${title} — ${todayLabel} ${weekday} ${date}`
@@ -116,7 +116,7 @@ export function PageHeader({
       </header>
 
       {description ? (
-        <p className="px-3 text-[0.8125rem] leading-5 text-muted-foreground [overflow-wrap:anywhere] sm:px-4">
+        <p className="px-3 text-[0.8125rem] leading-5 text-muted-foreground [overflow-wrap:anywhere] sm:px-4 lg:px-0">
           {description}
         </p>
       ) : null}
@@ -124,7 +124,7 @@ export function PageHeader({
       {hasSupportingTools ? (
         <div
           data-page-supporting-tools
-          className="flex min-w-0 flex-wrap items-center justify-end gap-1.5 px-3 sm:gap-2 sm:px-4"
+          className="flex min-w-0 flex-wrap items-center justify-end gap-1.5 px-3 sm:gap-2 sm:px-4 lg:px-0"
         >
           {backTo ? (
             <Button variant="secondary" size="sm" asChild className="min-h-11">

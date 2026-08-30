@@ -24,7 +24,13 @@ export function isBellEventNotification(notification: Pick<AppNotification, 'typ
 export function NotificationsMenu({
   authorization,
   sharedLabel: sharedLabelProp,
-}: Readonly<{ authorization: AuthorizationContext | null; sharedLabel?: SharedLabel }>) {
+  chrome = 'dock',
+}: Readonly<{
+  authorization: AuthorizationContext | null;
+  sharedLabel?: SharedLabel;
+  /** `header` matches desktop shell controls; `dock` keeps the mobile floating control. */
+  chrome?: 'dock' | 'header';
+}>) {
   const [isOpen, setIsOpen] = useState(false);
   const menuId = useId();
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -104,6 +110,7 @@ export function NotificationsMenu({
         aria-haspopup="dialog"
         aria-expanded={isOpen}
         aria-controls={isOpen ? menuId : undefined}
+        data-header-notifications-trigger={chrome === 'header' ? 'true' : undefined}
         className={cn(
           'pressable relative inline-flex size-11 min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg border-0 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary/20 motion-reduce:transition-none',
           totalCount > 0

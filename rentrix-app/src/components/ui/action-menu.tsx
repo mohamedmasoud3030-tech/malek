@@ -132,7 +132,7 @@ export function ActionMenu({ items, label = 'الإجراءات', align = 'end',
           ref={menuRef}
           id={menuId}
           role="menu"
-          dir="rtl"
+          dir={typeof document !== 'undefined' && document.documentElement.dir === 'ltr' ? 'ltr' : 'rtl'}
           style={menuPosition}
           className={cn('fixed z-[100] min-w-44 overflow-hidden rounded-xl border border-border/80 bg-card p-1 shadow-elevated', align === 'center' && '-translate-x-1/2')}
         >

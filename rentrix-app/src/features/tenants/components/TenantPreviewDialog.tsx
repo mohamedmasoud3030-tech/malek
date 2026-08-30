@@ -10,6 +10,7 @@ import { DetailFields } from '@/components/ui/detail-fields';
 import { ErrorState } from '@/components/ui/error-state';
 import { LoadingState } from '@/components/ui/loading-state';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { contractStatusLabels, contractStatusTone, normalizeContractStatus } from '@/lib/contractStatus';
 import { SectionTabs } from '@/components/ui/section-tabs';
 import { useAuth } from '@/hooks/use-auth';
 import { useCompanyFormatters } from '@/hooks/useCompanyFormatters';
@@ -83,7 +84,9 @@ export function TenantDossierContent({ tenantId, section }: Readonly<{ tenantId:
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
-                    <StatusBadge tone={contract.status === 'active' ? 'success' : 'neutral'}>{contract.status}</StatusBadge>
+                    <StatusBadge tone={contractStatusTone[normalizeContractStatus(contract.status)]}>
+                      {contractStatusLabels[normalizeContractStatus(contract.status)]}
+                    </StatusBadge>
                     <Button variant="secondary" className="min-h-11" onClick={() => dialogNavigate({ to: '/contracts/$contractId', params: { contractId: contract.id } })}>فتح العقد</Button>
                   </div>
                 </li>
@@ -178,7 +181,7 @@ export function TenantDossierContent({ tenantId, section }: Readonly<{ tenantId:
 export function TenantPreviewDialog({ tenantId, open, onOpenChange, onEdit }: Readonly<{ tenantId: string; open: boolean; onOpenChange: (open: boolean) => void; onEdit?: (personId: string) => void }>) {
   return (
     <EntityPreviewDialog open={open} onOpenChange={onOpenChange} title="ملف المستأجر" description="العلاقات والعقود والفواتير والمستندات حسب الصلاحية." actions={onEdit ? <Button onClick={() => onEdit(tenantId)}><Edit className="me-2 size-4" />تعديل</Button> : undefined}>
-      <TenantDossierContent tenantId={tenantId} />
+      <TenantDossierContent tenantId={tenantId} section="overview" />
     </EntityPreviewDialog>
   );
 }

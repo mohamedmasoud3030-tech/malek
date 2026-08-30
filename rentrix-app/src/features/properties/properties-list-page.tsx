@@ -31,7 +31,7 @@ import {
   buildPropertiesXlsxBlob,
   buildPropertiesXlsxFilename,
 } from "./property-list-export";
-import { propertyStatusTone } from "./components/property-status";
+import { propertyStatusTone, translatePropertyType } from "./components/property-status";
 import type { PropertyListItem } from "./property-service";
 import { formatCount } from '@/lib/formatters';
 import { useAuth } from '@/hooks/use-auth';
@@ -169,7 +169,7 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
                 header: "النوع",
                 priority: "detail",
                 render: (property) => (
-                  <span className="text-sm text-muted-foreground">{property.type || "—"}</span>
+                  <span className="text-sm text-muted-foreground">{translatePropertyType(property.type)}</span>
                 ),
               },
               {

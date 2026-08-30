@@ -52,8 +52,8 @@ function Root({ className, children, onSubmit, onInvalidCapture, noValidate = tr
   return <form data-entity-form className={cn('entity-form grid min-w-0 gap-4', className)} noValidate={noValidate} onSubmit={handleSubmit} onInvalidCapture={handleInvalidCapture} {...props}>{children}</form>;
 }
 
-type EntityFormSectionProps = Readonly<{ title?: ReactNode; description?: ReactNode; children: ReactNode; className?: string }>;
-type EntityFormFieldProps = Readonly<{ label: ReactNode; children: ReactNode; description?: ReactNode; error?: ReactNode; className?: string }>;
+type EntityFormFieldProps = Readonly<{ label: ReactNode; children: ReactNode; description?: ReactNode; error?: ReactNode; className?: string; wide?: boolean }>;
+type EntityFormSectionProps = Readonly<{ title?: ReactNode; description?: ReactNode; children: ReactNode; className?: string; columns?: 1 | 2 }>;
 
 /**
  * Accessibility contract (WCAG 1.3.1 / 3.3.1 / 3.3.2).
@@ -82,7 +82,7 @@ type EntityFormFieldProps = Readonly<{ label: ReactNode; children: ReactNode; de
  * Cloning is a best-effort enhancement. When the child is not a single element
  * the wrapping label still supplies the association, exactly as before.
  */
-function Field({ label, children, description, error, className }: EntityFormFieldProps) {
+function Field({ label, children, description, error, className, wide = false }: EntityFormFieldProps) {
   const fieldId = useId();
   const labelId = `${fieldId}-label`;
   const descriptionId = description ? `${fieldId}-description` : undefined;
@@ -105,7 +105,7 @@ function Field({ label, children, description, error, className }: EntityFormFie
     : children;
 
   return (
-    <div data-entity-form-field className={cn('grid min-w-0 gap-1.5 text-sm font-bold', className)}>
+    <div data-entity-form-field className={cn('grid min-w-0 gap-1.5 text-sm font-bold', wide && 'lg:col-span-2', className)}>
       <label className="grid min-w-0 gap-1.5">
         <span id={labelId}>{label}</span>
         {description ? (
@@ -120,16 +120,16 @@ function Field({ label, children, description, error, className }: EntityFormFie
   );
 }
 
-function Section({ title, description, children, className }: EntityFormSectionProps) {
+function Section({ title, description, children, className, columns = 1 }: EntityFormSectionProps) {
   return (
-    <section data-entity-form-section className={cn('min-w-0 space-y-3.5 border-b border-border/60 pb-4 last:border-b-0 last:pb-0', className)}>
+    <section data-entity-form-section data-form-columns={columns} className={cn('min-w-0 space-y-3.5 border-b border-border/60 pb-4 last:border-b-0 last:pb-0', className)}>
       {title || description ? (
         <div className="pb-0.5">
           {title ? <h2 className="text-sm font-extrabold leading-6">{title}</h2> : null}
           {description ? <p className="mt-0.5 max-w-3xl text-xs font-medium leading-5 text-muted-foreground">{description}</p> : null}
         </div>
       ) : null}
-      <div className="grid min-w-0 gap-3 sm:gap-3.5">{children}</div>
+      <div className={cn('grid min-w-0 gap-3 sm:gap-3.5', columns === 2 && 'lg:grid-cols-2')}>{children}</div>
     </section>
   );
 }

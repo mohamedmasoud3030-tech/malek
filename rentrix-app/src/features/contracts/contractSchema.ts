@@ -33,21 +33,7 @@ export const leaseModeLabels: Record<(typeof leaseModeValues)[number], string> =
   short_stay: 'إقامة قصيرة',
 };
 
-export const contractStatusLabels: Record<(typeof contractStatusValues)[number], string> = {
-  draft: 'مسودة',
-  active: 'نشط',
-  expired: 'منتهي',
-  terminated: 'ملغي',
-};
-
-type ContractStatusTone = 'success' | 'warning' | 'danger' | 'info' | 'neutral';
-
-export const contractStatusTone: Record<(typeof contractStatusValues)[number], ContractStatusTone> = {
-  draft: 'neutral',
-  active: 'success',
-  expired: 'warning',
-  terminated: 'danger',
-};
+export { contractStatusLabels, contractStatusTone } from '@/lib/contractStatus';
 
 export const paymentCycleLabels: Record<(typeof paymentCycleValues)[number], string> = {
   monthly: 'شهري',
