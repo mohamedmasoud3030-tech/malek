@@ -10,12 +10,13 @@ const dashboardPage = readFileSync(resolve(layoutDir, '../../features/dashboard/
 const routeTree = readFileSync(resolve(layoutDir, '../../app/router/route-tree.ts'), 'utf8');
 const malikMark = readFileSync(resolve(layoutDir, '../../components/brand/malik-mark.tsx'), 'utf8');
 
-describe('shared day context and compact header brand contract', () => {
-  it('keeps page identity and day/date in the single canonical PageHeader', () => {
+describe('contextual day information and compact header brand contract', () => {
+  it('keeps page identity canonical while day/date stays an explicit contextual option', () => {
     expect(pageHeader).toContain('data-global-page-context');
     expect(pageHeader).toContain('data-global-page-title');
-    expect(pageHeader).toContain('data-global-day-label');
-    expect(pageHeader).toContain("todayLabel: isArabic ? 'اليوم' : 'Today'");
+    expect(pageHeader).toContain('showTodayContext?: boolean');
+    expect(pageHeader).toContain('showTodayContext = false');
+    expect(pageHeader).toContain('data-global-today-context');
     expect(pageHeader).toContain('data-global-today-weekday');
     expect(pageHeader).toContain('data-global-today-day-date');
 
@@ -29,10 +30,11 @@ describe('shared day context and compact header brand contract', () => {
     expect(routeTree).toContain("staticData: { title: 'لوحة التحكم' }");
   });
 
-  it('keeps the dashboard header clean — no routine refresh action, no hero card', () => {
+  it('keeps the dashboard header clean — no routine refresh action, no hero card, no forced day chrome', () => {
     expect(dashboardPage).not.toContain('HeroBanner');
     expect(dashboardPage).toContain('<PageHeader');
     expect(dashboardPage).toContain('title="لوحة التحكم"');
+    expect(dashboardPage).not.toContain('showTodayContext');
     // The routine manual refresh button is gone; retry remains an error-state
     // affordance rendered by the shared ErrorState, not header chrome.
     expect(dashboardPage).not.toContain('primaryAction={(');
