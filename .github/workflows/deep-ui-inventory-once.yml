@@ -1,84 +1,80 @@
-name: Deep UI Reports Seam Cleanup
+name: Deep UI Fixpoint Inventory
 on:
   push:
     branches: [audit/deep-ui-inventory-0830]
 permissions:
-  contents: write
+  contents: read
 jobs:
-  cleanup:
+  inventory:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: refactor/shared-ui-deep-clean-work
-          fetch-depth: 0
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10.11.1
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - name: Migrate reports consumers to canonical owners
+      - name: Recompute production import graph
         shell: bash
         run: |
           python3 <<'PY'
           from pathlib import Path
           import re
+          from collections import defaultdict
 
-          src = Path('rentrix-app/src')
-          changed = []
-          for p in src.rglob('*'):
-            if not p.is_file() or p.suffix not in {'.ts', '.tsx'}:
-              continue
-            s = p.read_text()
-            old = s
-            s = re.sub(r"from (['\"])(?:\.\./)+report-section-primitives\1", "from '@/components/ui/report-section-primitives'", s)
-            s = re.sub(r"from (['\"])\./report-section-primitives\1", "from '@/components/ui/report-section-primitives'", s)
-            s = s.replace("@/features/reports/components/ReportDirectory", "@/features/reports/directory/ReportDirectory")
-            s = s.replace("@/features/reports/components/ReportsWorkspace", "@/features/reports/workspace/ReportsWorkspace")
-            s = s.replace("./components/ReportDirectory", "./directory/ReportDirectory")
-            s = s.replace("./components/ReportsWorkspace", "./workspace/ReportsWorkspace")
-            s = s.replace("../components/ReportDirectory", "../directory/ReportDirectory")
-            s = s.replace("../components/ReportsWorkspace", "../workspace/ReportsWorkspace")
-            if p.as_posix().endswith('reports/workspace/reports-workspace-structure.test.ts'):
-              s = s.replace("import { readFileSync, readdirSync } from 'node:fs';", "import { existsSync, readFileSync, readdirSync } from 'node:fs';")
-              old_block = '''  it('keeps the historical component import paths working through compatibility seams', () => {\n    const workspaceShim = read(resolve(reportsDir, 'components/ReportsWorkspace.tsx'));\n    const directoryShim = read(resolve(reportsDir, 'components/ReportDirectory.tsx'));\n\n    expect(workspaceShim).toContain(\"from '../workspace/ReportsWorkspace'\");\n    expect(directoryShim).toContain(\"from '../directory/ReportDirectory'\");\n  });'''
-              new_block = '''  it('uses canonical report owners without compatibility shims', () => {\n    expect(existsSync(resolve(reportsDir, 'workspace/ReportsWorkspace.tsx'))).toBe(true);\n    expect(existsSync(resolve(reportsDir, 'directory/ReportDirectory.tsx'))).toBe(true);\n    expect(existsSync(resolve(reportsDir, 'components/ReportsWorkspace.tsx'))).toBe(false);\n    expect(existsSync(resolve(reportsDir, 'components/ReportDirectory.tsx'))).toBe(false);\n  });'''
-              if old_block not in s:
-                raise SystemExit('expected legacy seam contract block not found')
-              s = s.replace(old_block, new_block)
-            if s != old:
-              p.write_text(s)
-              changed.append(str(p))
+          root = Path('rentrix-app/src').resolve()
+          exts = ('.ts', '.tsx', '.js', '.jsx')
+          files = [p.resolve() for p in root.rglob('*') if p.is_file() and p.suffix in exts]
+          file_set = set(files)
 
-          seams = [
-            src / 'features/reports/components/ReportDirectory.tsx',
-            src / 'features/reports/components/ReportsWorkspace.tsx',
-            src / 'features/reports/components/report-section-primitives.tsx',
-          ]
-          for p in seams:
-            if not p.exists(): raise SystemExit(f'missing seam: {p}')
-            p.unlink()
+          def nonprod(p):
+            s=p.as_posix().lower(); n=p.name.lower()
+            return any(x in n for x in ('.test.','.spec.','.stories.')) or 'e2e-fixture' in s or '/__tests__/' in s or '/test/' in s
 
-          offenders = []
-          for p in src.rglob('*'):
-            if not p.is_file() or p.suffix not in {'.ts', '.tsx'}: continue
-            s = p.read_text(errors='ignore')
-            for needle in ['./report-section-primitives', '../report-section-primitives']:
-              if needle in s: offenders.append(f'{p}: {needle}')
-          if offenders:
-            raise SystemExit('legacy report primitive paths remain:\n' + '\n'.join(offenders))
-          print(f'migrated {len(changed)} consumers')
+          def resolve(base,spec):
+            if spec.startswith('@/'): q=root/spec[2:]
+            elif spec.startswith('.'): q=(base.parent/spec).resolve()
+            else: return None
+            c=[q]
+            if q.suffix=='':
+              c += [Path(str(q)+e) for e in exts] + [q/('index'+e) for e in exts]
+            for x in c:
+              try: x=x.resolve()
+              except: pass
+              if x in file_set: return x
+            return None
+
+          inbound=defaultdict(set)
+          pat=re.compile(r"(?:from\s+|import\s*\()\s*['\"]([^'\"]+)['\"]")
+          for p in files:
+            try: text=p.read_text()
+            except: continue
+            for spec in pat.findall(text):
+              t=resolve(p,spec)
+              if t and not nonprod(p): inbound[t].add(p)
+
+          def rel(p): return p.relative_to(root).as_posix()
+          print('=== ZERO PROD INBOUND SHARED ===')
+          for p in sorted(files,key=rel):
+            r=rel(p)
+            if r.startswith('components/') and not nonprod(p) and p.name not in ('index.ts','index.tsx') and not inbound[p]:
+              print(r)
+
+          print('=== ZERO PROD INBOUND FEATURE COMPONENTS ===')
+          for p in sorted(files,key=rel):
+            r=rel(p)
+            if r.startswith('features/') and '/components/' in r and not nonprod(p) and not inbound[p]:
+              print(r)
+
+          print('=== BARREL-ONLY SHARED ===')
+          for p in sorted(files,key=rel):
+            r=rel(p)
+            if not r.startswith('components/') or nonprod(p): continue
+            prod=inbound[p]
+            if prod and all(q.name in ('index.ts','index.tsx') for q in prod):
+              print(r)
+
+          print('=== DUPLICATE STEMS ===')
+          stems=defaultdict(list)
+          for p in files:
+            if not nonprod(p): stems[p.stem.lower()].append(p)
+          for stem,ps in sorted(stems.items()):
+            if len(ps)>=2: print(stem,'::',' | '.join(rel(p) for p in sorted(ps)))
           PY
-      - name: Targeted report structure tests
-        run: pnpm --filter @workspace/rentrix exec vitest run --config vite.config.ts src/features/reports/workspace/reports-workspace-structure.test.ts src/features/reports/phase7-reports.test.tsx
-      - name: Commit migration
-        shell: bash
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "refactor(reports): remove compatibility presentation seams"
-          git push origin HEAD:refactor/shared-ui-deep-clean-work
