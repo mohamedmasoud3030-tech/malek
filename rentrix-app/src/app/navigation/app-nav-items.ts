@@ -11,7 +11,7 @@ import {
   Settings,
   ShieldCheck,
   UserPlus,
-  Users,
+  UserRound,
   Wallet,
   Wrench,
 } from 'lucide-react';
@@ -52,10 +52,10 @@ export const navGroups: readonly NavGroup[] = [
 export const workspaceChildNavItems: Record<string, readonly NavItem[]> = {
   '/properties': [
     ['/properties', 'units', 'كل الوحدات وحالات الإشغال', DoorOpen, 'properties.view', { section: 'units' }],
-    ['/properties', 'owners', 'الملاك وعلاقات الملكية والإدارة', KeyRound, 'owners.hub.view', { section: 'owners' }],
+    ['/properties', 'owners', 'الملاك وعلاقات الملكية والإدارة', UserRound, 'owners.hub.view', { section: 'owners' }],
   ],
   '/contracts': [
-    ['/contracts', 'tenants', 'المستأجرون وعلاقات الإيجار', Users, 'contracts.view', { workspace: 'tenants' }],
+    ['/contracts', 'tenants', 'المستأجرون وعلاقات الإيجار', KeyRound, 'contracts.view', { workspace: 'tenants' }],
   ],
   '/financials': [
     ['/financials', 'invoices', 'ابحث عن الفاتورة وحصّلها مباشرة', FileText, 'financial.workspace.view', { section: 'collections', view: 'invoices' }],

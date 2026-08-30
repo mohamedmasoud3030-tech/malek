@@ -53,7 +53,7 @@ export function LoginPage() {
       data-login-surface
       dir="rtl"
     >
-      <section className="safe-top-app safe-bottom-overlay mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-[26rem] flex-col justify-center" data-login-main>
+      <section className="safe-top-app safe-bottom-overlay mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-[26rem] flex-col justify-start md:justify-center" data-login-main>
         <div className="rounded-2xl border border-border/70 bg-card p-6 shadow-card sm:p-7" data-login-card>
           <header className="mb-6 flex flex-col items-center justify-center text-center" data-login-brand>
             <h1 className="sr-only">تسجيل الدخول إلى MALEK</h1>
@@ -92,9 +92,9 @@ export function LoginPage() {
           </form>
         </div>
 
-        {/* Support lives on the dedicated /help route, not inside the auth card. */}
+        {/* Support lives on a dedicated public-safe route, not inside the auth card. */}
         <div className="mt-6 flex justify-center" data-login-support-link>
-          <Link to="/help" className="inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-semibold text-muted-foreground outline-none hover:text-foreground hover:underline focus-visible:ring-4 focus-visible:ring-primary/20">تحتاج مساعدة؟ تواصل معنا</Link>
+          <Link to="/support" className="inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-semibold text-muted-foreground outline-none hover:text-foreground hover:underline focus-visible:ring-4 focus-visible:ring-primary/20">تحتاج مساعدة؟ تواصل معنا</Link>
         </div>
       </section>
     </main>

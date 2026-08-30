@@ -8,7 +8,7 @@ type MalekBrandWordmarkProps = Readonly<{
 
 const sizeClasses = {
   header: {
-    mark: 'size-8',
+    mark: 'size-9',
     wordmark: 'text-[18px] tracking-[0.08em]',
     gap: 'gap-1.5',
   },

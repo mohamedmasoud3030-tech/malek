@@ -42,15 +42,15 @@ describe('LoginPage — minimal SaaS contract', () => {
     expect(html).toContain('/forgot-password');
   });
 
-  it('removes the heavy support footer from the auth card and links to the dedicated support route', () => {
+  it('removes the heavy support footer from the auth card and links to the dedicated public support route', () => {
     render(<LoginPage />);
     // No inline WhatsApp/email contact inventory inside the auth card.
     expect(screen.queryByText('+968 9192 8186')).not.toBeInTheDocument();
     expect(screen.queryByText(/واتساب عُمان/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Ahmedmasoud@outlook\.com/i)).not.toBeInTheDocument();
-    // Support is a subtle secondary link to /help, outside the main card.
+    // Support is a subtle secondary link to a public-safe route, outside the main card.
     const supportLink = screen.getByRole('link', { name: /تحتاج مساعدة؟ تواصل معنا/i });
-    expect(supportLink).toHaveAttribute('href', '/help');
+    expect(supportLink).toHaveAttribute('href', '/support');
   });
 });
 
