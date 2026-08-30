@@ -18,6 +18,7 @@ import {
   type TenantStatementData,
 } from '@/services/documents/documentPayloadAdapters';
 import { useAuthoritativeGlCashFlow } from '../accounting-report-authority';
+import { loadOwnerReportContext, printOwnerReport, downloadOwnerReportPdf } from '../documents/professional-owner-report';
 import { ReportColumns } from './report-section-primitives';
 import { OwnerStatementPanel, TenantStatementPanel } from './statements/statement-account-panels';
 import { OfficeSummaryPanel, RegulatorySummaryPanels, StatementSelectionStrip } from './statements/statement-summary-panels';
@@ -79,7 +80,7 @@ export function StatementsSection({
   isTenantStatementLoading: boolean;
   isOwnerStatementLoading: boolean;
   isLoading: boolean;
-  filters?: { from: string; to: string };
+  filters?: { from: string; to: string; propertyId?: string; ownerId?: string };
 }>) {
   const tenantRows = (agedReport?.rows ?? []).slice(0, 6);
   const ownerMovementRows = (expenseBreakdown?.byProperty ?? []).slice(0, 6);
@@ -203,6 +204,41 @@ export function StatementsSection({
     });
   };
 
+  const runProfessionalOwnerReport = async (mode: 'print' | 'pdf') => {
+    await runGuardedDocumentAction({
+      isReady: isDocumentSettingsReady,
+      operation: async () => {
+        if (!selectedOwnerId) {
+          throw new DocumentReadinessError('تعذر إصدار كشف المالك التفصيلي: لم يتم تحديد المالك. اختر مالكًا من فلاتر التقرير أولاً.');
+        }
+        if (!ownerStatement) {
+          throw new DocumentReadinessError('تعذر إصدار كشف المالك التفصيلي: لا توجد بيانات كشف مالك معتمدة للفترة أو النطاق المحدد.');
+        }
+        if (ownerStatement.error) {
+          throw new DocumentReadinessError('تعذر إصدار كشف المالك التفصيلي: كشف المالك المحمّل يحتوي على خطأ في المصدر المعتمد.');
+        }
+        const context = await loadOwnerReportContext({
+          ownerId: selectedOwnerId,
+          from: filters?.from || ownerStatement.periodFrom || '—',
+          to: filters?.to || ownerStatement.periodTo || '—',
+          propertyId: filters?.propertyId || null,
+          statement: ownerStatement,
+        });
+        if (mode === 'print') {
+          await printOwnerReport({ settings: documentSettings, context });
+        } else {
+          await downloadOwnerReportPdf({ settings: documentSettings, context });
+        }
+      },
+      fallbackMessage: mode === 'print'
+        ? 'تعذرت طباعة كشف المالك التفصيلي.'
+        : 'تعذر تنزيل كشف المالك التفصيلي كملف PDF.',
+    });
+  };
+
+  const handlePrintProfessionalOwnerReport = () => runProfessionalOwnerReport('print');
+  const handleDownloadProfessionalOwnerReport = () => runProfessionalOwnerReport('pdf');
+
   const handleDownloadOwnerExcel = () => {
     if (!ownerStatement) return;
     let runningBalance = 0;
@@ -261,6 +297,8 @@ export function StatementsSection({
           onPrint={handlePrintOwnerStatement}
           onDownloadPdf={handleDownloadOwnerStatement}
           onDownloadExcel={handleDownloadOwnerExcel}
+          onPrintProfessionalReport={handlePrintProfessionalOwnerReport}
+          onDownloadProfessionalReportPdf={handleDownloadProfessionalOwnerReport}
           actionsDisabled={!isDocumentSettingsReady}
         />
       </ReportColumns>

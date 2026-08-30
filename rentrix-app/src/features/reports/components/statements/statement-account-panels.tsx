@@ -189,6 +189,8 @@ export function OwnerStatementPanel({
   onPrint,
   onDownloadPdf,
   onDownloadExcel,
+  onPrintProfessionalReport,
+  onDownloadProfessionalReportPdf,
   actionsDisabled = false,
 }: Readonly<{
   selectedOwnerId: string;
@@ -199,6 +201,10 @@ export function OwnerStatementPanel({
   onPrint: () => void;
   onDownloadPdf: () => void;
   onDownloadExcel: () => void;
+  /** Professional owner financial report pack (كشف مالك تفصيلي) — print. */
+  onPrintProfessionalReport?: () => void;
+  /** Professional owner financial report pack — PDF. */
+  onDownloadProfessionalReportPdf?: () => void;
   actionsDisabled?: boolean;
 }>) {
   let runningBalance = 0;
@@ -240,6 +246,18 @@ export function OwnerStatementPanel({
             <FileSpreadsheet className="size-3.5" aria-hidden="true" />
             تنزيل Excel
           </Button>
+          {onPrintProfessionalReport ? (
+            <Button type="button" size="sm" variant="outline" onClick={onPrintProfessionalReport} disabled={actionsDisabled} className="min-h-11 gap-1.5 text-xs" title="كشف المالك التفصيلي — نسخة احترافية">
+              <Printer className="size-3.5" aria-hidden="true" />
+              كشف المالك التفصيلي
+            </Button>
+          ) : null}
+          {onDownloadProfessionalReportPdf ? (
+            <Button type="button" size="sm" variant="outline" onClick={onDownloadProfessionalReportPdf} disabled={actionsDisabled} className="min-h-11 gap-1.5 text-xs" title="كشف المالك التفصيلي — نسخة احترافية PDF">
+              <Download className="size-3.5" aria-hidden="true" />
+              كشف المالك التفصيلي PDF
+            </Button>
+          ) : null}
         </div>
       ) : undefined}
     >

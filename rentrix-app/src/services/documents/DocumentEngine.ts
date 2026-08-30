@@ -24,7 +24,15 @@ import type { Contract, Expense, Invoice, Receipt } from '@/types/domain';
 import '@/lib/formatters';
 import { getCurrencySymbol, getCurrencyWordConfig, numberToArabicWords } from '@/lib/numberToArabicWords';
 import { TableGenerator } from './TableGenerator';
-import type { DocumentHeader, DocumentRequest, DocumentTable, UnifiedDocumentModel } from './types';
+import type {
+  DocumentHeader,
+  DocumentRequest,
+  DocumentTable,
+  ProfessionalReportBody,
+  ReportKpi,
+  ReportTable,
+  UnifiedDocumentModel,
+} from './types';
 import { formatLatinDate, formatLatinNumber, toDateOnlyISO } from '@/lib/formatters';
 import {
   assertDocumentCompanySettings,
@@ -58,9 +66,13 @@ import type {
   MaintenanceWorkOrderPayload,
   ManagementExitPayload,
   MoneyRow,
+  OwnerReportPayload,
   OwnerSettlementPayload,
   OwnerStatementPayload,
+  ProfessionalReportGroup,
+  PropertyReportPayload,
   ReceiptDocumentPayload,
+  ReportCellFormat,
   TenantClearancePayload,
   TenantStatementPayload,
   TrialBalanceReportPayload,
@@ -122,6 +134,7 @@ export class DocumentDataError extends Error {
 const REQUIRED_ARRAY_FIELDS = new Set([
   'transactions', 'lines', 'sections', 'revenues', 'expenses', 'assets', 'liabilities', 'equity',
   'conditionRows', 'installments', 'supportingRows', 'leaseHistory', 'maintenanceHistory', 'timelineEvents',
+  'identity', 'groups',
 ]);
 const REQUIRED_NUMBER_FIELDS = new Set([
   'amount', 'rentAmount', 'paidAmount', 'totalRent', 'totalExpenses', 'totalCommission', 'netAmount',
@@ -1189,6 +1202,113 @@ function buildLegalDossierModel(entry: DocumentTemplateEntry, settings: Document
   };
 }
 
+/* ------------------------------------------------------------------ */
+/* Professional report builders (owner_report / property_report)       */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Formats one typed report cell at build time — the ONLY place money and
+ * percentage cells become strings, so print and PDF share one precise,
+ * currency-correct representation. Text cells pass through unchanged.
+ */
+function reportCellToString(cell: ReportCellFormat, ctx: FormatContext): string {
+  switch (cell.kind) {
+    case 'amount':
+      return money(cell.value, ctx);
+    case 'percent': {
+      const maximumFractionDigits = Number.isInteger(cell.value) ? 0 : 1;
+      const formatted = formatLatinNumber(cell.value, 'ar-OM', { minimumFractionDigits: 0, maximumFractionDigits });
+      return `${formatted}%`;
+    }
+    case 'text':
+      return cell.value;
+  }
+}
+
+function buildProfessionalReportModel(
+  entry: DocumentTemplateEntry,
+  settings: DocumentCompanySettings,
+  payload: Readonly<{ reportTitle: string; periodFrom?: string | null; periodTo?: string | null; generatedAt?: string | null; identity: Array<{ label: string; value: string }>; groups: ProfessionalReportGroup[] }>,
+  fileNameValues: Readonly<Record<string, string | null | undefined>>,
+): UnifiedDocumentModel {
+  const ctx = formatContextOf(settings);
+
+  const headerDateLabel = payload.periodFrom || payload.periodTo
+    ? 'فترة التقرير'
+    : payload.generatedAt
+      ? 'تاريخ الإصدار'
+      : null;
+  const headerDateValue = payload.periodFrom || payload.periodTo
+    ? `${formatDate(payload.periodFrom)} - ${formatDate(payload.periodTo)}`
+    : payload.generatedAt
+      ? formatDate(payload.generatedAt)
+      : null;
+
+  const groups = payload.groups.map((group) => ({
+    keepTogether: group.keepTogether ?? undefined,
+    blocks: group.blocks.map((block) => {
+      switch (block.kind) {
+        case 'kpis':
+          return {
+            kind: 'kpis' as const,
+            kpis: block.kpis.map((kpi): ReportKpi => ({
+              label: kpi.label,
+              value: reportCellToString(kpi.value, ctx),
+              comparison: kpi.comparison != null ? reportCellToString(kpi.comparison, ctx) : null,
+            })),
+          };
+        case 'table':
+          return {
+            kind: 'table' as const,
+            table: {
+              title: block.table.title ?? null,
+              columns: block.table.columns,
+              rows: block.table.rows.map((row) => row.map((cell) => reportCellToString(cell, ctx))),
+              totals: block.table.totals?.map((cell) => reportCellToString(cell, ctx)),
+              emptyNote: block.table.emptyNote ?? null,
+            } satisfies ReportTable,
+          };
+        case 'chart':
+          // Chart data is numeric by design — the renderer draws it, so no
+          // formatting is applied here (and none is ever re-derived later).
+          return { kind: 'chart' as const, chart: block.chart };
+        case 'note':
+          return { kind: 'note' as const, note: block.note };
+      }
+    }),
+  }));
+
+  return {
+    type: entry.type,
+    header: buildHeader(settings, entry, {
+      title: payload.reportTitle,
+      reference: null,
+      dateLabel: headerDateLabel,
+      dateValue: headerDateValue,
+      ctx,
+    }),
+    kpis: [],
+    tables: [],
+    professional: { identity: payload.identity, groups } satisfies ProfessionalReportBody,
+    footer: buildFooter(entry, payload.reportTitle),
+    fileName: buildDocumentFileName(entry, fileNameValues),
+  };
+}
+
+function buildOwnerReportModel(entry: DocumentTemplateEntry, settings: DocumentCompanySettings, payload: OwnerReportPayload): UnifiedDocumentModel {
+  return buildProfessionalReportModel(entry, settings, payload, {
+    ownerName: payload.ownerName,
+    periodTo: payload.periodTo,
+  });
+}
+
+function buildPropertyReportModel(entry: DocumentTemplateEntry, settings: DocumentCompanySettings, payload: PropertyReportPayload): UnifiedDocumentModel {
+  return buildProfessionalReportModel(entry, settings, payload, {
+    propertyTitle: payload.propertyTitle,
+    periodTo: payload.periodTo,
+  });
+}
+
 const builders: { [T in DocumentTypeId]: (entry: DocumentTemplateEntry, settings: DocumentCompanySettings, payload: CanonicalDocumentPayloadMap[T]) => UnifiedDocumentModel } = {
   contract: buildContractModel,
   invoice: buildInvoiceModel,
@@ -1212,6 +1332,8 @@ const builders: { [T in DocumentTypeId]: (entry: DocumentTemplateEntry, settings
   maintenance_work_order: buildMaintenanceWorkOrderModel,
   maintenance_completion: buildMaintenanceCompletionModel,
   legal_dossier: buildLegalDossierModel,
+  owner_report: buildOwnerReportModel,
+  property_report: buildPropertyReportModel,
 };
 
 /* ------------------------------------------------------------------ */
