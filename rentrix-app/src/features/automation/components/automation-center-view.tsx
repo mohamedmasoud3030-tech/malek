@@ -1,6 +1,7 @@
 import { AlertTriangle, BellRing, CalendarClock, Mail, MessageCircle, PauseCircle, PlayCircle, RefreshCw, Smartphone, Wrench } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { AsyncContentState } from '@/components/async-content-state';
+import { ActionMenu } from '@/components/ui/action-menu';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -141,15 +142,27 @@ export function AutomationCenterView() {
   const ruleActions = (rule: AutomationRule) => {
     const queueSupported = ['contract_expiry', 'overdue_invoice', 'maintenance_overdue'].includes(rule.rule_type);
     return (
-    <div className="flex flex-wrap gap-2" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
-      <Button variant="secondary" disabled={toggleMut.isPending} onClick={() => toggleMut.mutate({ id: rule.id, enabled: !rule.is_enabled })}>
-        {rule.is_enabled ? <PauseCircle className="size-4" /> : <PlayCircle className="size-4" />}
-        {rule.is_enabled ? 'إيقاف' : 'تفعيل'}
-      </Button>
-      <Button variant="outline" disabled={executeMut.isPending || !queueSupported} title={queueSupported ? undefined : 'نوع القاعدة غير مدعوم في العامل المتين'} onClick={() => executeMut.mutate(rule.id)}>
-        <RefreshCw className="size-4" />{queueSupported ? 'تشغيل الآن' : 'غير مدعوم'}
-      </Button>
-    </div>
+      <div className="flex" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+        <ActionMenu
+          label={`إجراءات ${rule.name}`}
+          items={[
+            {
+              id: 'toggle',
+              label: rule.is_enabled ? 'إيقاف' : 'تفعيل',
+              icon: rule.is_enabled ? PauseCircle : PlayCircle,
+              disabled: toggleMut.isPending,
+              onClick: () => toggleMut.mutate({ id: rule.id, enabled: !rule.is_enabled }),
+            },
+            {
+              id: 'run',
+              label: queueSupported ? 'تشغيل الآن' : 'غير مدعوم',
+              icon: RefreshCw,
+              disabled: executeMut.isPending || !queueSupported,
+              onClick: () => executeMut.mutate(rule.id),
+            },
+          ]}
+        />
+      </div>
     );
   };
 

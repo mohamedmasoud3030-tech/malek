@@ -3,7 +3,7 @@ import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { formatMoney, getErrorMessage } from '@/features/financials/components/financials-formatters';
 import type { IncomeStatementReport } from '@/features/accounting/reports/contracts';
-import { ReportList, ReportListRow, ReportPanel, ReportState } from '../report-section-primitives';
+import { ReportList, ReportListRow, ReportPanel, ReportState } from '@/components/ui/report-section-primitives';
 
 export function IncomeStatementPanel({
   from,

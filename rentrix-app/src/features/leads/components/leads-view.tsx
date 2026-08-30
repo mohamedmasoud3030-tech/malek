@@ -9,7 +9,8 @@ import {
   UsersRound,
 } from "lucide-react";
 import { useState } from "react";
-import { ActiveFilterBar, type ActiveFilterItem } from "@/components/ui/active-filter-bar";
+import type { ActiveFilterItem } from '@/components/ui/active-filter-bar';
+import { ActionMenu } from "@/components/ui/action-menu";
 import { Button } from "@/components/ui/button";
 import { AsyncContentState } from "@/components/async-content-state";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -209,11 +210,11 @@ export function LeadsView(props: Props) {
             </Select>
           </>
         }
+
+        activeFilters={activeFilters}
+        onClearAllFilters={() => onFiltersChange({ query: "", status: "all", source: "all" })}
       />
-      <ActiveFilterBar
-        filters={activeFilters}
-        onClearAll={() => onFiltersChange({ query: "", status: "all", source: "all" })}
-      />
+
 
       {writeError ? (
         <WriteErrorCard
@@ -484,20 +485,14 @@ function RowActions({
   onArchiveClick: () => void;
 }>) {
   return (
-    <div className="mt-3 flex flex-wrap gap-2">
-      <Button className="min-h-11" variant="secondary" onClick={onEdit}>
-        <Edit className="me-2 size-4" />
-        تعديل
-      </Button>
-      <Button
-        className="min-h-11"
-        variant="danger"
-        disabled={disabled}
-        onClick={onArchiveClick}
-      >
-        <Archive className="me-2 size-4" />
-        أرشفة
-      </Button>
+    <div className="flex">
+      <ActionMenu
+        label={`إجراءات العميل ${id}`}
+        items={[
+          { id: 'edit', label: 'تعديل', icon: Edit, onClick: onEdit },
+          { id: 'archive', label: 'أرشفة', icon: Archive, danger: true, disabled, onClick: onArchiveClick },
+        ]}
+      />
     </div>
   );
 }

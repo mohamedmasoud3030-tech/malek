@@ -18,7 +18,7 @@ import {
   ReportPanel,
   ReportProgress,
   ReportState,
-} from './report-section-primitives';
+} from '@/components/ui/report-section-primitives';
 import { formatLatinNumber } from '@/lib/formatters';
 
 export function DeferredRevenueReportSection({

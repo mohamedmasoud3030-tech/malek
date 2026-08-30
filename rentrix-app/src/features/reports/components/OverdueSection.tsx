@@ -8,7 +8,7 @@ import { documentService } from '@/services/documents/DocumentService';
 import { runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
 import { toReportDocumentPayload, type ReportDocumentData } from '@/services/documents/documentPayloadAdapters';
 import { agingBucketKeys, buildAgingBucketChartRows, buildReportCsvFilename, downloadCsv, getTodayLocalDateString } from '../reports-page.helpers';
-import { ReportColumns, ReportInsightNote, ReportProgress, ReportSummaryStrip } from './report-section-primitives';
+import { ReportColumns, ReportInsightNote, ReportProgress, ReportSummaryStrip } from '@/components/ui/report-section-primitives';
 import { AgingBucketsPanel } from './overdue/aging-buckets-panel';
 import { getAgingLabel, OverdueInvoicesPanel } from './overdue/overdue-invoices-panel';
 import { formatLatinNumber } from '@/lib/formatters';

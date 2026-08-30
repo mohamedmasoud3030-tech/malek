@@ -12,7 +12,8 @@ import {
   Undo2,
 } from "lucide-react";
 import { useState } from "react";
-import { ActiveFilterBar, type ActiveFilterItem } from "@/components/ui/active-filter-bar";
+import type { ActiveFilterItem } from '@/components/ui/active-filter-bar';
+import { ActionMenu } from "@/components/ui/action-menu";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { PageStateCard, WriteErrorCard } from "@/components/page-state-card";
@@ -185,8 +186,11 @@ export function CommissionsView(props: Props) {
               </Select>
             </>
           }
-        />
-        <ActiveFilterBar filters={activeFilters} onClearAll={() => onFiltersChange({ query: "", status: "all", type: "all" })} />
+
+        activeFilters={activeFilters}
+        onClearAllFilters={() => onFiltersChange({ query: "", status: "all", type: "all" })}
+      />
+
       </section>
 
       <section data-finance-section aria-label="حالات التحميل والخطأ">
@@ -448,25 +452,16 @@ function RowActions({
   onReverseClick?: () => void;
 }>) {
   return (
-    <div className="flex flex-wrap gap-2" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
-      <Button className="min-h-11" variant="secondary" onClick={onEdit}>
-        <Edit className="me-1 size-4" />تعديل
-      </Button>
-      {onPayClick ? (
-        <Button className="min-h-11" onClick={onPayClick}>
-          <Banknote className="me-1 size-4" />صرف مالي
-        </Button>
-      ) : null}
-      {onReverseClick ? (
-        <Button className="min-h-11" variant="secondary" onClick={onReverseClick}>
-          <Undo2 className="me-1 size-4" />عكس الصرف
-        </Button>
-      ) : null}
-      {row.status !== 'paid' && row.status !== 'cancelled' ? (
-        <Button className="min-h-11" variant="danger" disabled={disabled} onClick={onArchiveClick}>
-          <Archive className="me-1 size-4" />إلغاء
-        </Button>
-      ) : null}
+    <div className="flex" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+      <ActionMenu
+        label={`إجراءات عمولة ${row.staff_name}`}
+        items={[
+          { id: 'edit', label: 'تعديل', icon: Edit, onClick: onEdit },
+          ...(onPayClick ? [{ id: 'pay', label: 'صرف مالي', icon: Banknote, onClick: onPayClick }] : []),
+          ...(onReverseClick ? [{ id: 'reverse', label: 'عكس الصرف', icon: Undo2, onClick: onReverseClick }] : []),
+          ...(row.status !== 'paid' && row.status !== 'cancelled' ? [{ id: 'cancel', label: 'إلغاء', icon: Archive, danger: true, disabled, onClick: onArchiveClick }] : []),
+        ]}
+      />
     </div>
   );
 }

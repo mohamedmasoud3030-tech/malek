@@ -22,7 +22,7 @@ import {
   ReportProgress,
   ReportState,
   ReportSummaryStrip,
-} from './report-section-primitives';
+} from '@/components/ui/report-section-primitives';
 
 type ReceiptRow = Readonly<{
   id: string;

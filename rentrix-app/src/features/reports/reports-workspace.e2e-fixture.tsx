@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { PageHeader } from '@/components/layout/page-header';
 import { companySettingsKeys } from '@/features/settings/useCompanySettings';
-import { ReportsWorkspace } from './components/ReportsWorkspace';
+import { ReportsWorkspace } from './workspace/ReportsWorkspace';
 import { getCurrentMonthFilters, type FilterState } from './reports-page.helpers';
 import { getReportWorkspace, type ReportWorkspaceId } from './report-workspaces';
 import type { ReportsWorkspaceModel } from './use-reports-workspace';

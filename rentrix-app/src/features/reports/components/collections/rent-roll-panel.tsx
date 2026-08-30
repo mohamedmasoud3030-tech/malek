@@ -4,7 +4,7 @@ import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { formatDate, formatMoney } from '@/features/financials/components/financials-formatters';
 import type { RentRollReportRow } from '../../reports-page.helpers';
 import { SafeAnchor } from '../common';
-import { ReportPanel, ReportState } from '../report-section-primitives';
+import { ReportPanel, ReportState } from '@/components/ui/report-section-primitives';
 
 export function RentRollPanel({ rows, action, isLoading }: Readonly<{ rows: RentRollReportRow[]; action?: React.ReactNode; isLoading: boolean }>) {
   const rentRollColumns: ColumnDef<RentRollReportRow>[] = useMemo(() => [

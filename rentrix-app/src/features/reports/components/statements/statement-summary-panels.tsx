@@ -5,7 +5,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { formatMoney } from '@/features/financials/components/financials-formatters';
 import type { CashFlowReport } from '@/features/accounting/wp05Services';
 import type { VatReturnReport } from '@/features/financials/reports/financial-statements-service';
-import { ReportColumns, ReportPanel, ReportPanelSkeleton, ReportSummaryStrip } from '../report-section-primitives';
+import { ReportColumns, ReportPanel, ReportPanelSkeleton, ReportSummaryStrip } from '@/components/ui/report-section-primitives';
 import { formatLatinNumber } from '@/lib/formatters';
 
 export function StatementSelectionStrip({

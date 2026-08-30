@@ -16,7 +16,7 @@ import {
   ReportProgress,
   ReportState,
   ReportSummaryStrip,
-} from './report-section-primitives';
+} from '@/components/ui/report-section-primitives';
 import { ReportOutputActions } from './report-output-actions';
 import { formatLatinNumber } from '@/lib/formatters';
 

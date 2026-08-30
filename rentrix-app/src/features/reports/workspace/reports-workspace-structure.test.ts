@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { resolveReportLocation } from '../reports-section-model';
@@ -54,12 +54,11 @@ describe('WP-C C.1 — workspace is split by responsibility', () => {
     expect(panelSource).toContain('AnalyticsReportsAdapter');
   });
 
-  it('keeps the historical component import paths working through compatibility seams', () => {
-    const workspaceShim = read(resolve(reportsDir, 'components/ReportsWorkspace.tsx'));
-    const directoryShim = read(resolve(reportsDir, 'components/ReportDirectory.tsx'));
-
-    expect(workspaceShim).toContain("from '../workspace/ReportsWorkspace'");
-    expect(directoryShim).toContain("from '../directory/ReportDirectory'");
+  it('uses canonical report owners without compatibility shims', () => {
+    expect(existsSync(resolve(reportsDir, 'workspace/ReportsWorkspace.tsx'))).toBe(true);
+    expect(existsSync(resolve(reportsDir, 'directory/ReportDirectory.tsx'))).toBe(true);
+    expect(existsSync(resolve(reportsDir, 'components/ReportsWorkspace.tsx'))).toBe(false);
+    expect(existsSync(resolve(reportsDir, 'components/ReportDirectory.tsx'))).toBe(false);
   });
 });
 
