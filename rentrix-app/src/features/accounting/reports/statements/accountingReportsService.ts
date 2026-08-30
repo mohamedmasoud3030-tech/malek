@@ -6,7 +6,7 @@
  */
 
 import { supabase } from '@/lib/supabase';
-import { normalizeOm3 } from '@/shared/monetary/monetaryContract';
+import { normalizeOm3 } from '@/lib/money';
 import type {
   TrialBalanceReport,
   IncomeStatementReport,
