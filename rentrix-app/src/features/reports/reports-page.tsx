@@ -11,12 +11,13 @@ import { translateSharedLabel } from '@/lib/i18n';
 import { ReportDirectory } from './directory/ReportDirectory';
 import { getCurrentMonthFilters } from './reports-page.helpers';
 import { getInitialReportsFilters, type ReportsFilterState } from './reports-workspace-filters';
-import type { ReportSectionId } from './reports-page.sections';
 import {
   REPORTS_SECTION_SEARCH_KEY,
-  resolveReportLocation,
-  type ReportViewId,
+  buildWorkspaceSearch,
+  resolveWorkspaceLocation,
 } from './reports-section-model';
+import type { ReportViewId } from './report-view-registry';
+import { WORKSPACE_SEARCH_KEY, type ReportDrillHandler, type ReportWorkspaceId } from './report-workspaces';
 import { ReportsWorkspace } from './workspace/ReportsWorkspace';
 import { useReportsWorkspace } from './use-reports-workspace';
 
@@ -31,27 +32,39 @@ export function ReportsPage() {
   const canExportReports = canAccess(authorization, financialOperationPermissions.exportReports);
   const canViewReports = canAccess(authorization, financialOperationPermissions.viewReports);
 
-  const { section: activeSection, view: activeView } = resolveReportLocation(
-    search[REPORTS_SECTION_SEARCH_KEY],
+  const { workspace: activeWorkspace, section: activeSection, view: activeView } = resolveWorkspaceLocation(
+    search[WORKSPACE_SEARCH_KEY],
     search.view,
+    search[REPORTS_SECTION_SEARCH_KEY],
   );
   const reportsTitle = translateSharedLabel('financialsSectionReports');
   const pageDescription = translateSharedLabel('reportsPageDescription');
 
-  const handleSectionViewChange = useCallback(
-    (nextSection: ReportSectionId, nextView: ReportViewId) => {
+  /**
+   * Deliberate user navigation between workspaces/sub-views pushes browser
+   * history so Back walks the natural chain: أداء المكتب → المتأخرات →
+   * عقار محدد → Back → المتأخرات → Back → أداء المكتب. Normalization of
+   * malformed URLs never rewrites the address; it only renders a default.
+   */
+  const handleOpenReport = useCallback(
+    (nextWorkspace: ReportWorkspaceId, nextView?: ReportViewId) => {
       void navigate({
         to: '.',
-        search: (previous: Record<string, unknown>) => {
-          const next: Record<string, unknown> = {
-            ...previous,
-            [REPORTS_SECTION_SEARCH_KEY]: nextSection,
-          };
-          if (nextView) next.view = nextView;
-          else delete next.view;
-          return next;
-        },
-        replace: true,
+        search: (previous: Record<string, unknown>) => buildWorkspaceSearch(previous, nextWorkspace, nextView),
+      });
+    },
+    [navigate],
+  );
+
+  /** Contextual drill-through: carry the relevant scope into the target workspace. */
+  const handleDrill: ReportDrillHandler = useCallback(
+    (targetWorkspace, targetView, filterPatch) => {
+      if (filterPatch) {
+        setFilters((current) => ({ ...current, ...filterPatch }));
+      }
+      void navigate({
+        to: '.',
+        search: (previous: Record<string, unknown>) => buildWorkspaceSearch(previous, targetWorkspace, targetView),
       });
     },
     [navigate],
@@ -78,31 +91,31 @@ export function ReportsPage() {
         <aside className="hidden min-w-0 lg:block" data-report-explorer-pane>
           <div className="lg:sticky lg:top-[calc(var(--app-header-height,4.5rem)+1rem)]">
             <ReportDirectory
-              activeSection={activeSection}
+              activeWorkspace={activeWorkspace}
               activeView={activeView}
-              scope={{ ownerId: filters.ownerId, tenantId: filters.tenantId, contractId: filters.contractId }}
-              onOpen={handleSectionViewChange}
+              onOpen={handleOpenReport}
             />
           </div>
         </aside>
 
         <div className="min-w-0" data-active-report-workspace data-report-landing>
-          {/* No empty landing state: with no URL selection, resolveReportLocation
-              opens the decision-first office performance report immediately. */}
+          {/* No empty landing state: with no URL selection, the office
+              performance launchpad opens immediately. */}
           <div className="mb-2 lg:hidden">
             <MobileReportChooser
-              activeSection={activeSection}
+              activeWorkspace={activeWorkspace}
               activeView={activeView}
-              scope={{ ownerId: filters.ownerId, tenantId: filters.tenantId, contractId: filters.contractId }}
-              onOpen={handleSectionViewChange}
+              onOpen={handleOpenReport}
             />
           </div>
           <OpenReportWorkspace
             filters={filters}
             canExportReports={canExportReports}
+            activeWorkspace={activeWorkspace}
             activeSection={activeSection}
             activeView={activeView}
-            onSectionViewChange={handleSectionViewChange}
+            onOpenView={(view) => handleOpenReport(activeWorkspace, view)}
+            onDrill={handleDrill}
             onFiltersChange={setFilters}
             onResetCurrentMonth={handleResetCurrentMonth}
           />
@@ -113,13 +126,12 @@ export function ReportsPage() {
 }
 
 type MobileReportChooserProps = Readonly<{
-  activeSection: ReportSectionId;
+  activeWorkspace: ReportWorkspaceId;
   activeView: ReportViewId;
-  scope?: Readonly<{ ownerId?: string; tenantId?: string; contractId?: string }>;
-  onOpen: (section: ReportSectionId, view: ReportViewId) => void;
+  onOpen: (workspace: ReportWorkspaceId, view: ReportViewId) => void;
 }>;
 
-function MobileReportChooser({ activeSection, activeView, scope, onOpen }: MobileReportChooserProps) {
+function MobileReportChooser({ activeWorkspace, activeView, onOpen }: MobileReportChooserProps) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -138,12 +150,11 @@ function MobileReportChooser({ activeSection, activeView, scope, onOpen }: Mobil
 
       <BottomSheet open={open} onClose={() => setOpen(false)} title="اختر التقرير" className="max-h-[min(92dvh,52rem)]">
         <ReportDirectory
-          activeSection={activeSection}
+          activeWorkspace={activeWorkspace}
           activeView={activeView}
-          scope={scope}
-          onOpen={(section, view) => {
+          onOpen={(workspace, view) => {
             setOpen(false);
-            onOpen(section, view);
+            onOpen(workspace, view);
           }}
         />
       </BottomSheet>
@@ -154,9 +165,11 @@ function MobileReportChooser({ activeSection, activeView, scope, onOpen }: Mobil
 type OpenReportWorkspaceProps = Readonly<{
   filters: ReportsFilterState;
   canExportReports: boolean;
-  activeSection: ReportSectionId;
+  activeWorkspace: ReportWorkspaceId;
+  activeSection: Parameters<typeof useReportsWorkspace>[1]['section'];
   activeView: ReportViewId;
-  onSectionViewChange: (section: ReportSectionId, view: ReportViewId) => void;
+  onOpenView: (view: ReportViewId) => void;
+  onDrill: ReportDrillHandler;
   onFiltersChange: (filters: ReportsFilterState) => void;
   onResetCurrentMonth: () => void;
 }>;
@@ -164,9 +177,11 @@ type OpenReportWorkspaceProps = Readonly<{
 function OpenReportWorkspace({
   filters,
   canExportReports,
+  activeWorkspace,
   activeSection,
   activeView,
-  onSectionViewChange,
+  onOpenView,
+  onDrill,
   onFiltersChange,
   onResetCurrentMonth,
 }: OpenReportWorkspaceProps) {
@@ -177,9 +192,11 @@ function OpenReportWorkspace({
       model={workspace}
       filters={filters}
       canExportReports={canExportReports}
+      activeWorkspace={activeWorkspace}
       activeSection={activeSection}
       activeView={activeView}
-      onSectionViewChange={onSectionViewChange}
+      onOpenView={onOpenView}
+      onDrill={onDrill}
       onFiltersChange={onFiltersChange}
       onResetCurrentMonth={onResetCurrentMonth}
     />

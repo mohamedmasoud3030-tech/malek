@@ -352,7 +352,17 @@ function toDateOnlyTimestamp(value: string) {
   return Date.parse(`${value}T00:00:00.000Z`);
 }
 
-export function buildExpiringContractsRows(contracts: ContractListItem[], fromDate: Date) {
+export type ExpiringContractRow = Readonly<{
+  contractId: string;
+  tenantName: string;
+  propertyTitle: string;
+  unitNumber: string;
+  endDate: string;
+  daysRemaining: number;
+  monthlyRent: number;
+}>;
+
+export function buildExpiringContractsRows(contracts: ContractListItem[], fromDate: Date): ExpiringContractRow[] {
   const todayValue = toDateInputValue(fromDate);
   const cutoffValue = toDateInputValue(addDays(fromDate, expiringContractWindowDays));
 
@@ -367,6 +377,7 @@ export function buildExpiringContractsRows(contracts: ContractListItem[], fromDa
       unitNumber: contract.units?.unit_number ?? '—',
       endDate: contract.end_date,
       daysRemaining: Math.max(0, Math.ceil((toDateOnlyTimestamp(contract.end_date) - toDateOnlyTimestamp(todayValue)) / (24 * 60 * 60 * 1000))),
+      monthlyRent: contract.rent_amount ?? 0,
     }));
 }
 

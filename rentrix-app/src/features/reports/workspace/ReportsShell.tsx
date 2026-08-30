@@ -5,19 +5,20 @@ import { formatCompanyMoney } from '@/lib/companyFormatters';
 import { cn } from '@/lib/utils';
 import type { ReportsWorkspaceModel } from '../use-reports-workspace';
 import type { ReportsFilterState } from '../reports-workspace-filters';
-import type { ReportSectionId } from '../reports-page.sections';
 import type { ReportViewId } from '../report-view-registry';
 import { getActiveReportMeta } from '../reports-page.meta';
+import { getReportWorkspace, type ReportWorkspaceId } from '../report-workspaces';
 import { ReportsFilterSurface } from '../components/ReportsFilterSurface';
+import { WorkspaceSubViewTabs } from './WorkspaceSubViewTabs';
 
 type ReportsShellProps = Readonly<{
   model: ReportsWorkspaceModel;
   filters: ReportsFilterState;
-  activeSection: ReportSectionId;
+  activeWorkspace: ReportWorkspaceId;
   activeView: ReportViewId;
+  onOpenView: (view: ReportViewId) => void;
   onFiltersChange: (filters: ReportsFilterState) => void;
   onResetCurrentMonth: () => void;
-  onSectionViewChange: (section: ReportSectionId, view: ReportViewId) => void;
 }>;
 
 type MetricButtonProps = Readonly<{
@@ -50,27 +51,28 @@ function MetricButton({ label, value, detail, icon: Icon, onClick, tone = 'defau
 }
 
 /**
- * The one compact header for the open report. It owns the report identity and
- * the active scope (via the context bar) and its single headline aggregation —
- * it is deliberately NOT a repeated four-KPI dashboard grid. Each report body
- * owns its own contextual executive strip.
+ * The one compact header for the open workspace. It owns the workspace
+ * identity, its sub-view switcher and the active scope (via the context bar).
+ * The two collection metrics are navigation shortcuts into that workspace's
+ * own sub-views — not a repeated KPI grid.
  */
 export function ReportsShell({
   model,
   filters,
-  activeSection,
+  activeWorkspace,
   activeView,
+  onOpenView,
   onFiltersChange,
   onResetCurrentMonth,
-  onSectionViewChange,
 }: ReportsShellProps) {
   const companySettings = useCompanySettingsContract();
   const money = (value: number | null | undefined) => formatCompanyMoney(companySettings, value);
+  const workspace = getReportWorkspace(activeWorkspace);
   const summary = model.hero.summary;
   const collectionRate = model.hero.collectionRate;
-  const meta = getActiveReportMeta(activeSection, activeView);
-  const isAccounting = activeSection === 'accounting';
-  const isOperational = activeSection === 'analytics';
+  const meta = getActiveReportMeta(activeWorkspace, activeView);
+  const isSpecialist = workspace?.specialist ?? false;
+  const isCollections = activeWorkspace === 'collections';
 
   return (
     <div className="space-y-2.5">
@@ -83,14 +85,14 @@ export function ReportsShell({
             ) : null}
           </div>
 
-          {isOperational && summary ? (
+          {isCollections && summary ? (
             <div className="flex shrink-0 items-center gap-2">
               <MetricButton
                 label="كفاءة التحصيل"
                 value={`${Number.isFinite(collectionRate) ? Math.round(collectionRate) : 0}%`}
                 detail={`${money(summary.paid ?? 0)} من ${money(summary.invoiced ?? 0)}`}
                 icon={Receipt}
-                onClick={() => onSectionViewChange('analytics', 'overview')}
+                onClick={() => onOpenView('collections')}
               />
               {(summary.outstanding ?? 0) > 0 ? (
                 <MetricButton
@@ -99,27 +101,32 @@ export function ReportsShell({
                   detail={`${summary.invoicesCount ?? 0} فاتورة`}
                   icon={AlertTriangle}
                   tone="warning"
-                  onClick={() => onSectionViewChange('analytics', 'overdue')}
+                  onClick={() => onOpenView('overdue')}
                 />
               ) : null}
             </div>
           ) : null}
         </div>
 
+        {workspace ? (
+          <WorkspaceSubViewTabs workspace={workspace} activeView={activeView} onOpenView={onOpenView} />
+        ) : null}
+
         <ReportsFilterSurface
           filters={filters}
           costCenterRows={model.filters.costCenterRows}
           ownerRows={model.filters.ownerRows}
           contractRows={model.filters.contractRows}
+          visibleFields={workspace?.visibleFilterFields}
           onChange={onFiltersChange}
           onResetCurrentMonth={onResetCurrentMonth}
         />
       </div>
 
-      {isAccounting ? (
+      {isSpecialist ? (
         <div className="flex items-start gap-2.5 rounded-lg border border-primary/15 bg-primary/[0.025] px-3 py-2.5 text-xs font-semibold leading-5 text-muted-foreground">
           <BookOpenCheck className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
-          <p>هذه مراجعة مالية متقدمة تعتمد على المصدر المحاسبي المعتمد.</p>
+          <p>هذه مراجعة مالية متقدمة تعتمد على المصدر المحاسبي المعتمد، وهي خارج التنقل اليومي للمكتب.</p>
         </div>
       ) : null}
 

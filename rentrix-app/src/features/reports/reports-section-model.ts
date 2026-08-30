@@ -9,6 +9,12 @@ import {
   type AnalyticsReportViewId,
   type ReportViewId,
 } from './report-view-registry';
+import {
+  WORKSPACE_SEARCH_KEY,
+  getReportWorkspace,
+  getWorkspaceForReportLocation,
+  type ReportWorkspaceId,
+} from './report-workspaces';
 
 export type { AccountingReportViewId, AnalyticsReportViewId, ReportViewId };
 
@@ -65,4 +71,53 @@ export function mergeReportSectionIntoSearch(
     ...previous,
     [REPORTS_SECTION_SEARCH_KEY]: nextSection,
   };
+}
+
+export type ResolvedReportLocation = ReportLocation & Readonly<{
+  workspace: ReportWorkspaceId;
+}>;
+
+/**
+ * Resolve the active workspace from the user-facing `?workspace=` key, with a
+ * full legacy fallback for `?section=&view=` bookmarks. Unknown workspace
+ * values fall through to legacy resolution (which itself defaults to the
+ * office launchpad), so malformed URLs always land somewhere useful.
+ */
+export function resolveWorkspaceLocation(
+  requestedWorkspace: unknown,
+  requestedView: unknown,
+  requestedSection: unknown,
+): ResolvedReportLocation {
+  const workspaceParam = typeof requestedWorkspace === 'string' ? requestedWorkspace.toLowerCase().trim() : '';
+  const workspace = getReportWorkspace(workspaceParam);
+  if (workspace) {
+    const viewParam = typeof requestedView === 'string' ? requestedView.toLowerCase().trim() : '';
+    const subView = workspace.subViews.find((candidate) => candidate.id === viewParam);
+    const view = (subView ? subView.id : workspace.defaultView) as ReportViewId;
+    return { workspace: workspace.id, section: workspace.defaultSection, view };
+  }
+
+  const legacy = resolveReportLocation(requestedSection, requestedView);
+  return {
+    workspace: getWorkspaceForReportLocation(legacy.section, legacy.view),
+    section: legacy.section,
+    view: legacy.view,
+  };
+}
+
+/**
+ * Build the search object for user-facing workspace navigation. The legacy
+ * `section` key is removed so new URLs stay canonical, while every unrelated
+ * search parameter (e.g. entity scope carried into the page) is preserved.
+ */
+export function buildWorkspaceSearch(
+  previous: Record<string, unknown>,
+  workspace: ReportWorkspaceId,
+  view?: ReportViewId,
+): Record<string, unknown> {
+  const next: Record<string, unknown> = { ...previous, [WORKSPACE_SEARCH_KEY]: workspace };
+  if (view) next.view = view;
+  else delete next.view;
+  delete next[REPORTS_SECTION_SEARCH_KEY];
+  return next;
 }

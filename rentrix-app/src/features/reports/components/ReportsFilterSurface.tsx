@@ -7,6 +7,7 @@ import type { ContractListItem } from '@/features/contracts/services/contractSer
 import type { Owner } from '@/features/owners/services/owner-service';
 import type { CostCenterRecord } from '@/features/settings/costCenterService';
 import type { ReportsFilterState } from '../reports-workspace-filters';
+import type { ReportFilterFieldId } from '../report-workspaces';
 import { describeReportFilterSelections, getSelectedFilterEntities } from '../reports-filters.shared';
 import { FiltersPanel } from './FiltersPanel';
 
@@ -15,6 +16,7 @@ type ReportsFilterSurfaceProps = Readonly<{
   costCenterRows: CostCenterRecord[];
   ownerRows: Owner[];
   contractRows: ContractListItem[];
+  visibleFields?: readonly ReportFilterFieldId[];
   onChange: (filters: ReportsFilterState) => void;
   onResetCurrentMonth: () => void;
 }>;
@@ -33,6 +35,7 @@ export function ReportsFilterSurface({
   costCenterRows,
   ownerRows,
   contractRows,
+  visibleFields,
   onChange,
   onResetCurrentMonth,
 }: ReportsFilterSurfaceProps) {
@@ -98,6 +101,7 @@ export function ReportsFilterSurface({
             costCenterRows={costCenterRows}
             ownerRows={ownerRows}
             contractRows={contractRows}
+            visibleFields={visibleFields}
             onChange={onChange}
             onResetCurrentMonth={onResetCurrentMonth}
           />

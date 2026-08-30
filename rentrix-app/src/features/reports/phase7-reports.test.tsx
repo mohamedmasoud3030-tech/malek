@@ -5,7 +5,9 @@ import { buildCsv, withUtf8Bom } from '@/lib/csvExport';
 import { ReportsPage } from './reports-page';
 import { ReportsRouteComponent } from '@/routes/_protected.reports';
 import { ReportsWorkspace } from './components/ReportsWorkspace';
-import { resolveReportLocation } from './reports-section-model';
+import { resolveWorkspaceLocation } from './reports-section-model';
+import { getReportWorkspace, type ReportWorkspaceId } from './report-workspaces';
+import type { ReportViewId } from './report-view-registry';
 import type { FilterState } from './reports-page.helpers';
 
 vi.mock('@/features/settings/useCompanySettings', () => ({
@@ -96,86 +98,69 @@ describe('CSV export utility', () => {
 });
 
 describe('Reports Workspace Render Regression (Point 3)', () => {
-  it('lands on the analytics overview for plain /reports, keeping accounting specialist-only', () => {
-    const location = resolveReportLocation(undefined, undefined);
-    expect(location).toEqual({ section: 'analytics', view: 'overview' });
-
-    const html = renderToStaticMarkup(
+  const renderWorkspace = (workspace: ReportWorkspaceId, view: ReportViewId) => {
+    const section = getReportWorkspace(workspace)?.defaultSection ?? 'analytics';
+    return renderToStaticMarkup(
       <ReportsWorkspace
         model={minimalModel}
         filters={reportFilters}
         canExportReports={false}
-        activeSection={location.section}
-        activeView={location.view}
-        onSectionViewChange={vi.fn()}
+        activeWorkspace={workspace}
+        activeSection={section}
+        activeView={view}
+        onOpenView={vi.fn()}
+        onDrill={vi.fn()}
         onFiltersChange={vi.fn()}
         onResetCurrentMonth={vi.fn()}
       />
     );
+  };
+
+  it('lands on the office launchpad for plain /reports, keeping accounting specialist-only', () => {
+    const location = resolveWorkspaceLocation(undefined, undefined, undefined);
+    expect(location).toEqual({ workspace: 'office', section: 'analytics', view: 'overview' });
+
+    const html = renderWorkspace(location.workspace, location.view);
     expect(html).toContain('data-report-summary-layer');
-    expect(html).toContain('نظرة عامة على الأداء');
+    expect(html).toContain('أداء المكتب');
     expect(html).toContain('data-report-filter-surface');
   });
 
-  it('falls back to the analytics overview for an unknown section', () => {
-    const location = resolveReportLocation('unknown_section', 'anything');
-    expect(location).toEqual({ section: 'analytics', view: 'overview' });
+  it('falls back to the office launchpad for an unknown section', () => {
+    const location = resolveWorkspaceLocation(undefined, undefined, 'unknown_section');
+    expect(location).toEqual({ workspace: 'office', section: 'analytics', view: 'overview' });
 
-    const html = renderToStaticMarkup(
-      <ReportsWorkspace
-        model={minimalModel}
-        filters={reportFilters}
-        canExportReports={false}
-        activeSection={location.section}
-        activeView={location.view}
-        onSectionViewChange={vi.fn()}
-        onFiltersChange={vi.fn()}
-        onResetCurrentMonth={vi.fn()}
-      />
-    );
+    const html = renderWorkspace(location.workspace, location.view);
     expect(html).toContain('data-report-summary-layer');
-    expect(html).toContain('نظرة عامة على الأداء');
+    expect(html).toContain('أداء المكتب');
     expect(html).toContain('data-report-filter-surface');
   });
 
-  it('renders the overview workspace for analytics with an invalid view', () => {
-    const location = resolveReportLocation('analytics', 'garbage_view');
-    expect(location).toEqual({ section: 'analytics', view: 'overview' });
+  it('renders the office launchpad for analytics with an invalid view', () => {
+    const location = resolveWorkspaceLocation(undefined, 'garbage_view', 'analytics');
+    expect(location).toEqual({ workspace: 'office', section: 'analytics', view: 'overview' });
 
-    const html = renderToStaticMarkup(
-      <ReportsWorkspace
-        model={minimalModel}
-        filters={reportFilters}
-        canExportReports={false}
-        activeSection={location.section}
-        activeView={location.view}
-        onSectionViewChange={vi.fn()}
-        onFiltersChange={vi.fn()}
-        onResetCurrentMonth={vi.fn()}
-      />
-    );
+    const html = renderWorkspace(location.workspace, location.view);
     expect(html).toContain('data-report-summary-layer');
-    expect(html).toContain('نظرة عامة على الأداء');
+    expect(html).toContain('أداء المكتب');
     expect(html).toContain('data-report-filter-surface');
   });
 
   it('keeps the accounting report header available through the specialist deep link', () => {
-    const location = resolveReportLocation('accounting', 'garbage_view');
-    expect(location).toEqual({ section: 'accounting', view: 'accounting_reports' });
+    const location = resolveWorkspaceLocation(undefined, 'garbage_view', 'accounting');
+    expect(location).toEqual({ workspace: 'financial_review', section: 'accounting', view: 'accounting_reports' });
 
-    const html = renderToStaticMarkup(
-      <ReportsWorkspace
-        model={minimalModel}
-        filters={reportFilters}
-        canExportReports={false}
-        activeSection={location.section}
-        activeView={location.view}
-        onSectionViewChange={vi.fn()}
-        onFiltersChange={vi.fn()}
-        onResetCurrentMonth={vi.fn()}
-      />
-    );
+    const html = renderWorkspace(location.workspace, location.view);
     expect(html).toContain('data-report-summary-layer');
     expect(html).toContain('ميزان المراجعة والقوائم');
+  });
+
+  it('resolves a workspace sub-view deep link', () => {
+    const location = resolveWorkspaceLocation('collections', 'overdue', undefined);
+    expect(location).toEqual({ workspace: 'collections', section: 'analytics', view: 'overdue' });
+
+    const html = renderWorkspace(location.workspace, location.view);
+    expect(html).toContain('data-workspace-subview-tabs');
+    expect(html).toContain('المتأخرات والأعمار');
   });
 });

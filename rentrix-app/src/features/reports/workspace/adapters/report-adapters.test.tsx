@@ -53,6 +53,18 @@ vi.mock('../../components/MaintenanceReportSection', () => ({
 vi.mock('../../components/ServicesReportSection', () => ({
   ServicesReportSection: () => <div data-testid="report-body-services" />,
 }));
+vi.mock('../../components/FollowUpSection', () => ({
+  FollowUpSection: () => <div data-testid="report-body-follow_up" />,
+}));
+vi.mock('../../components/CollectionMovementSection', () => ({
+  CollectionMovementSection: () => <div data-testid="report-body-collection_movement" />,
+}));
+vi.mock('../../components/ExpiringContractsSection', () => ({
+  ExpiringContractsSection: () => <div data-testid="report-body-expiring" />,
+}));
+vi.mock('../../components/OperationsOverviewSection', () => ({
+  OperationsOverviewSection: () => <div data-testid="report-body-operations_overview" />,
+}));
 
 const model = {
   sections: {
@@ -75,6 +87,7 @@ const adapterProps = (view: string): ReportAdapterProps => ({
   model,
   filters,
   canExportReports: true,
+  onDrill: vi.fn(),
 });
 
 /** Renders an adapter behind the same Suspense boundary the view panel provides. */

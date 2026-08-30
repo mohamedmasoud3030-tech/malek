@@ -8,6 +8,7 @@ import { runGuardedDocumentAction } from '@/services/documents/runDocumentAction
 import { toReportDocumentPayload, type ReportDocumentData } from '@/services/documents/documentPayloadAdapters';
 import type { OccupancyChartRow, PropertyPerformanceRow } from '../reports-page.helpers';
 import { getTodayLocalDateString } from '../reports-page.helpers';
+import type { ReportDrillHandler } from '../report-workspaces';
 import {
   ReportInsightNote,
   ReportList,
@@ -24,9 +25,10 @@ export type PropertyAnalyticsProps = Readonly<{
   expenseRows: Array<{ propertyId: string; propertyTitle: string | null; total: number; count: number }>;
   performanceRows: readonly PropertyPerformanceRow[];
   isLoading: boolean;
+  onDrill: ReportDrillHandler;
 }>;
 
-export function PropertyAnalyticsSection({ occupancyRows, expenseRows, performanceRows, isLoading }: PropertyAnalyticsProps) {
+export function PropertyAnalyticsSection({ occupancyRows, expenseRows, performanceRows, isLoading, onDrill }: PropertyAnalyticsProps) {
   const expenseByProperty = new Map(expenseRows.map((row) => [row.propertyId, row] as const));
   const totalProperties = occupancyRows.length;
   const totalOccupiedUnits = occupancyRows.reduce((total, row) => total + row.occupied, 0);
@@ -207,6 +209,31 @@ export function PropertyAnalyticsSection({ occupancyRows, expenseRows, performan
                       <p className="text-xs font-medium text-muted-foreground" dir="ltr">أولوية {row.riskScore}/100 · {Math.round(row.occupancyRate)}% · مصروفات {formatMoney(row.expenses)}</p>
                     </div>
                   )}
+                  action={(
+                    <div className="flex flex-wrap gap-1">
+                      <button
+                        type="button"
+                        onClick={() => onDrill('collections', 'overdue', { propertyId: row.propertyId })}
+                        className="inline-flex min-h-9 items-center rounded-lg border border-border/70 px-2 text-[11px] font-black text-foreground transition-colors hover:border-primary/30 hover:text-primary"
+                      >
+                        متأخرات العقار
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onDrill('leasing', 'occupancy', { propertyId: row.propertyId })}
+                        className="inline-flex min-h-9 items-center rounded-lg border border-border/70 px-2 text-[11px] font-black text-foreground transition-colors hover:border-primary/30 hover:text-primary"
+                      >
+                        الشواغر
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onDrill('operations', 'maintenance_analytics', { propertyId: row.propertyId })}
+                        className="inline-flex min-h-9 items-center rounded-lg border border-border/70 px-2 text-[11px] font-black text-foreground transition-colors hover:border-primary/30 hover:text-primary"
+                      >
+                        الصيانة
+                      </button>
+                    </div>
+                  )}
                 />
               );
             })}
@@ -225,6 +252,24 @@ export function PropertyAnalyticsSection({ occupancyRows, expenseRows, performan
                   subtitle={`${formatLatinNumber(row.occupied, 'ar')} مشغولة · ${formatLatinNumber(row.vacant, 'ar')} شاغرة · ${formatLatinNumber(expense?.count ?? 0, 'ar')} مصروفات`}
                   meta={`${formatLatinNumber(units, 'ar')} وحدة · ${formatMoney(propertyExpensePerOccupied)} للوحدة المشغولة`}
                   value={(<div className="text-end"><p dir="ltr">{rate}%</p><p className="mt-1 text-xs font-medium text-muted-foreground" dir="ltr">{formatMoney(expense?.total ?? 0)}</p></div>)}
+                  action={(
+                    <div className="flex flex-wrap gap-1">
+                      <button
+                        type="button"
+                        onClick={() => onDrill('leasing', 'occupancy', { propertyId: row.propertyId })}
+                        className="inline-flex min-h-9 items-center rounded-lg border border-border/70 px-2 text-[11px] font-black text-foreground transition-colors hover:border-primary/30 hover:text-primary"
+                      >
+                        الشواغر
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onDrill('operations', 'expenses', { propertyId: row.propertyId })}
+                        className="inline-flex min-h-9 items-center rounded-lg border border-border/70 px-2 text-[11px] font-black text-foreground transition-colors hover:border-primary/30 hover:text-primary"
+                      >
+                        المصروفات
+                      </button>
+                    </div>
+                  )}
                 />
               );
             })}
