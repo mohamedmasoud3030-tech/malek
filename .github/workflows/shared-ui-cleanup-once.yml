@@ -10,11 +10,25 @@ permissions:
 
 jobs:
   cleanup:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: refactor/shared-ui-cleanup
           fetch-depth: 0
-      - name: Smoke
-        run: echo "shared-ui-cleanup runner is valid"
+      - name: Consolidate ownership
+        run: python3 scripts/shared-ui-cleanup-once.py
+      - name: Commit cleanup
+        run: |
+          rm -f .github/workflows/shared-ui-cleanup-once.yml scripts/shared-ui-cleanup-once.py
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo "No cleanup changes produced"
+            exit 0
+          fi
+          git commit -m "refactor(ui): centralize active filter ownership"
+          git push origin HEAD:refactor/shared-ui-cleanup
