@@ -1,15 +1,18 @@
 /**
  * EntityTable — the canonical MALEK responsive data-register foundation.
  *
- * Desktop and tablet keep one semantic table. Phone viewports transform the
- * same rows into compact card-style table rows at the shared layer without
- * duplicating queries, sorting, filters, pagination, or actions.
+ * The register keeps one data/query model while allowing the human to choose
+ * how that data is presented. Phones default to cards; tablet/desktop default
+ * to table. A saved choice wins afterwards, and the visible toggle is shared
+ * by both surfaces.
  */
 
 import {
   ChevronDown,
   ChevronUp,
   ChevronsUpDown,
+  LayoutGrid,
+  List,
   MoreHorizontal,
 } from 'lucide-react';
 import {
@@ -98,21 +101,21 @@ export interface EntityTableProps<T> {
   renderRowExpansion?: (row: T) => ReactNode;
   expandedRowId?: string | null;
   onExpandedRowChange?: (rowId: string | null) => void;
-  /** Canonical entity label used by the mobile row when no badge overrides it. */
+  /** Canonical entity label used by the mobile/card row when no badge overrides it. */
   mobileCardType?: EntityCardType | ((row: T) => EntityCardType);
-  /** Mobile badge/status column key (e.g. status). */
+  /** Card badge/status column key (e.g. status). */
   mobileBadgeKey?: string;
-  /** Optional secondary identity/context line under the mobile title. */
+  /** Optional secondary identity/context line under the card title. */
   mobileSupportingKey?: string;
-  /** Primary mobile quick facts, usually short dates/counts/amounts. */
+  /** Primary card quick facts, usually short dates/counts/amounts. */
   mobilePrimaryMetaKeys?: readonly string[];
-  /** Secondary mobile metadata, usually contextual text. */
+  /** Secondary card metadata, usually contextual text. */
   mobileSecondaryMetaKeys?: readonly string[];
   /** Backward-compatible alias for legacy quick facts. */
   mobileSummaryKeys?: readonly string[];
-  /** Structured secondary actions for the mobile card. */
+  /** Structured secondary actions for cards. */
   mobileCardActions?: (row: T) => EntityCardAction[];
-  /** Explicit mobile primary action (e.g. Collect). */
+  /** Explicit card primary action (e.g. Collect). */
   mobileCardPrimaryAction?: (row: T) => EntityCardAction | undefined;
   /** Optional shared toolbar content rendered inside the register chrome. */
   toolbar?: ReactNode;
@@ -120,9 +123,9 @@ export interface EntityTableProps<T> {
   rowSelection?: RowSelectionState;
   /** Optional visible column keys. Omit to show every configured column. */
   visibleColumnKeys?: readonly string[];
-  /** Legacy opt-in cards/table toggle. Responsive auto mode remains the default. */
+  /** Keep the human-facing cards/table switcher visible. Defaults to true. */
   enableViewModeToggle?: boolean;
-  /** Optional stable storage key for the legacy manual toggle. */
+  /** Optional stable storage key; otherwise aria-label creates a per-register key. */
   viewModeStorageKey?: string;
   'aria-label': string;
   className?: string;
@@ -133,17 +136,20 @@ type ResolvedColumn<T> = ColumnDef<T> & { resolvedPriority: ColumnPriority };
 type ViewMode = 'cards' | 'table';
 type ResponsiveViewport = 'mobile' | 'tablet' | 'desktop';
 
-const DEFAULT_VIEW_MODE_STORAGE_KEY = 'malek:entity-register:view-mode';
+function normalizeStorageKey(label: string): string {
+  const normalized = label.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^\p{L}\p{N}-]+/gu, '');
+  return `malek:entity-register:${normalized || 'default'}:view-mode`;
+}
 
-function getInitialViewMode(storageKey: string): ViewMode {
-  if (typeof window === 'undefined') return 'table';
+function getStoredViewMode(storageKey: string): ViewMode | null {
+  if (typeof window === 'undefined') return null;
   try {
     const stored = window.localStorage.getItem(storageKey);
     if (stored === 'cards' || stored === 'table') return stored;
   } catch {
     // Storage may be unavailable in hardened/private browser contexts.
   }
-  return 'table';
+  return null;
 }
 
 function getViewportMode(): ResponsiveViewport {
@@ -152,6 +158,10 @@ function getViewportMode(): ResponsiveViewport {
   if (width < 768) return 'mobile';
   if (width < 1024) return 'tablet';
   return 'desktop';
+}
+
+function getDefaultViewMode(viewport: ResponsiveViewport): ViewMode {
+  return viewport === 'mobile' ? 'cards' : 'table';
 }
 
 function resolveColumns<T>(columns: ColumnDef<T>[], visibleColumnKeys?: readonly string[]): ResolvedColumn<T>[] {
@@ -424,7 +434,7 @@ function MobileRegisterListItem<T>({
     }] : []),
   ];
   const primaryAction = explicitPrimaryAction;
-  const secondaryAction = overflowPool.length === 1 ? overflowPool[0] : overflowPool[0];
+  const secondaryAction = overflowPool[0];
   const overflowActions = overflowPool.length > 1 ? overflowPool.slice(1) : [];
 
   return (
@@ -495,11 +505,38 @@ function ViewModeToggle({
   onChange: (nextMode: ViewMode) => void;
 }>) {
   return (
-    <div className="inline-flex min-h-11 items-center rounded-xl border border-border/60 bg-muted/25 p-0.5" role="group" aria-label={`طريقة عرض ${ariaLabel}`}>
-      <Button type="button" variant={viewMode === 'cards' ? 'secondary' : 'ghost'} size="sm" aria-pressed={viewMode === 'cards'} onClick={() => onChange('cards')}>
+    <div
+      className="inline-flex min-h-11 items-center rounded-xl border border-border/65 bg-card p-1 shadow-sm"
+      role="group"
+      aria-label={`طريقة عرض ${ariaLabel}`}
+      data-entity-table-view-toggle
+    >
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        aria-pressed={viewMode === 'cards'}
+        onClick={() => onChange('cards')}
+        className={cn(
+          'min-h-9 gap-1.5 rounded-lg px-2.5 text-xs font-bold',
+          viewMode === 'cards' && 'bg-primary/10 text-primary shadow-none hover:bg-primary/15',
+        )}
+      >
+        <LayoutGrid className="size-3.5" aria-hidden="true" />
         بطاقات
       </Button>
-      <Button type="button" variant={viewMode === 'table' ? 'secondary' : 'ghost'} size="sm" aria-pressed={viewMode === 'table'} onClick={() => onChange('table')}>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        aria-pressed={viewMode === 'table'}
+        onClick={() => onChange('table')}
+        className={cn(
+          'min-h-9 gap-1.5 rounded-lg px-2.5 text-xs font-bold',
+          viewMode === 'table' && 'bg-info/10 text-info shadow-none hover:bg-info/15',
+        )}
+      >
+        <List className="size-3.5" aria-hidden="true" />
         جدول
       </Button>
     </div>
@@ -535,16 +572,16 @@ function EntityTableImpl<T>({
   toolbar,
   rowSelection,
   visibleColumnKeys,
-  enableViewModeToggle = false,
+  enableViewModeToggle = true,
   viewModeStorageKey,
   'aria-label': ariaLabel,
   className,
   skeletonRows = 5,
 }: EntityTableProps<T>) {
   const disclosurePrefix = useId();
-  const storageKey = viewModeStorageKey ?? DEFAULT_VIEW_MODE_STORAGE_KEY;
-  const [manualViewMode, setManualViewMode] = useState<ViewMode>(() => getInitialViewMode(storageKey));
+  const storageKey = viewModeStorageKey ?? normalizeStorageKey(ariaLabel);
   const [viewportMode, setViewportMode] = useState<ResponsiveViewport>(() => getViewportMode());
+  const [manualViewMode, setManualViewMode] = useState<ViewMode | null>(() => getStoredViewMode(storageKey));
   const [internalExpandedRows, setInternalExpandedRows] = useState<Set<string>>(() => new Set());
   const isControlledSingle = expandedRowId !== undefined;
   const resolvedColumns = useMemo(
@@ -564,9 +601,8 @@ function EntityTableImpl<T>({
   }, []);
 
   useEffect(() => {
-    if (!enableViewModeToggle) return;
-    setManualViewMode(getInitialViewMode(storageKey));
-  }, [enableViewModeToggle, storageKey]);
+    setManualViewMode(getStoredViewMode(storageKey));
+  }, [storageKey]);
 
   const chooseViewMode = (nextMode: ViewMode) => {
     setManualViewMode(nextMode);
@@ -578,10 +614,8 @@ function EntityTableImpl<T>({
   };
 
   const presentationMode: ViewMode = enableViewModeToggle
-    ? manualViewMode
-    : viewportMode === 'mobile'
-      ? 'cards'
-      : 'table';
+    ? manualViewMode ?? getDefaultViewMode(viewportMode)
+    : getDefaultViewMode(viewportMode);
 
   const isRowExpanded = (rowKey: string) =>
     isControlledSingle ? resolvedExpandedRowId === rowKey : internalExpandedRows.has(rowKey);
@@ -622,16 +656,16 @@ function EntityTableImpl<T>({
   };
 
   const tableColumns = useMemo(
-    () => viewportMode === 'tablet' && !enableViewModeToggle ? resolveTabletColumns(resolvedColumns) : resolvedColumns,
-    [enableViewModeToggle, resolvedColumns, viewportMode],
+    () => viewportMode === 'tablet' && !manualViewMode ? resolveTabletColumns(resolvedColumns) : resolvedColumns,
+    [manualViewMode, resolvedColumns, viewportMode],
   );
 
   if (isLoading) {
     return (
       <div className={cn('space-y-2.5', className)} data-entity-table-register data-entity-table-presentation={presentationMode}>
         {toolbar || enableViewModeToggle ? (
-          <div data-entity-table-toolbar className="flex min-h-11 flex-wrap items-center justify-end gap-2">
-            {enableViewModeToggle ? <ViewModeToggle ariaLabel={ariaLabel} viewMode={manualViewMode} onChange={chooseViewMode} /> : null}
+          <div data-entity-table-toolbar className="flex min-h-11 flex-wrap items-center justify-between gap-2">
+            {enableViewModeToggle ? <ViewModeToggle ariaLabel={ariaLabel} viewMode={presentationMode} onChange={chooseViewMode} /> : null}
             {toolbar}
           </div>
         ) : null}
@@ -721,15 +755,15 @@ function EntityTableImpl<T>({
         data-stale-register-content={error != null ? 'true' : undefined}
       >
         {toolbar || enableViewModeToggle ? (
-          <div data-entity-table-toolbar className="flex min-h-11 flex-wrap items-center justify-end gap-2">
-            {enableViewModeToggle ? <ViewModeToggle ariaLabel={ariaLabel} viewMode={manualViewMode} onChange={chooseViewMode} /> : null}
+          <div data-entity-table-toolbar className="flex min-h-11 flex-wrap items-center justify-between gap-2">
+            {enableViewModeToggle ? <ViewModeToggle ariaLabel={ariaLabel} viewMode={presentationMode} onChange={chooseViewMode} /> : null}
             {toolbar}
           </div>
         ) : null}
 
         {presentationMode === 'cards' ? (
-          <div data-entity-table-mobile>
-            <ul role="list" aria-label={ariaLabel} className="grid gap-2.5" data-entity-table-mobile-list>
+          <div data-entity-table-mobile data-entity-table-cards>
+            <ul role="list" aria-label={ariaLabel} className="grid gap-2.5 md:grid-cols-2 2xl:grid-cols-3" data-entity-table-mobile-list>
               {rows.map((row) => {
                 const rowKey = keyOf(row);
                 const cardType = typeof mobileCardType === 'function' ? mobileCardType(row) : mobileCardType;
@@ -827,8 +861,8 @@ function EntityTableImpl<T>({
                           onClick={onRowClick ? (event) => activateRow(row, event) : undefined}
                           onKeyDown={onRowClick ? (event) => activateRow(row, event) : undefined}
                           className={cn(
-                            'bg-transparent hover:[&>td]:border-border/70 hover:[&>td]:bg-muted/12',
-                            isSelected && '[&>td]:border-primary/30 [&>td]:bg-primary/[0.05]',
+                            'bg-transparent hover:[&>td]:border-primary/20 hover:[&>td]:bg-primary/[0.035]',
+                            isSelected && '[&>td]:border-primary/30 [&>td]:bg-primary/[0.06]',
                             onRowClick && 'cursor-pointer focus-visible:outline-none focus-visible:[&>td]:border-primary/35 focus-visible:[&>td]:bg-primary/[0.06]',
                           )}
                           tabIndex={onRowClick ? 0 : undefined}
@@ -847,7 +881,7 @@ function EntityTableImpl<T>({
                             <TableCell className={cn('w-11 border-y border-border/60 bg-card px-2 text-center', !rowSelection && 'first:rounded-s-[16px] first:border-s first:ps-3')} data-row-action>
                               <button
                                 type="button"
-                                className="grid size-11 place-items-center rounded-xl text-muted-foreground outline-none transition hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/20"
+                                className="grid size-11 place-items-center rounded-xl text-muted-foreground outline-none transition hover:bg-primary/8 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/20"
                                 aria-label={isExpanded ? 'إخفاء تفاصيل الصف' : 'عرض كل تفاصيل الصف'}
                                 aria-expanded={isExpanded}
                                 aria-controls={detailId}
@@ -876,7 +910,7 @@ function EntityTableImpl<T>({
                         </TableRow>
                         {hasExpansion && isExpanded ? (
                           <TableRow id={detailId} data-row-disclosure className="hover:bg-transparent">
-                            <TableCell colSpan={colSpan} className="rounded-[16px] border border-border/60 bg-card p-4">
+                            <TableCell colSpan={colSpan} className="rounded-[16px] border border-primary/15 bg-primary/[0.025] p-4">
                               {renderRowExpansion!(row)}
                             </TableCell>
                           </TableRow>
