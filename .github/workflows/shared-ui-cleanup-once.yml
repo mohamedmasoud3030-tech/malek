@@ -1,0 +1,246 @@
+name: Shared UI cleanup once
+
+on:
+  push:
+    branches:
+      - refactor/shared-ui-cleanup
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refactor/shared-ui-cleanup
+          fetch-depth: 0
+
+      - name: Consolidate active-filter ownership
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          import re
+
+          feature_root = Path('rentrix-app/src/features')
+          changed = []
+
+          def scan_tag_close(src: str, start: int, self_closing: bool) -> int:
+              braces = 0
+              quote = None
+              escape = False
+              i = start
+              while i < len(src):
+                  ch = src[i]
+                  if quote:
+                      if escape:
+                          escape = False
+                      elif ch == '\\':
+                          escape = True
+                      elif ch == quote:
+                          quote = None
+                      i += 1
+                      continue
+                  if ch in "'\"`":
+                      quote = ch
+                  elif ch == '{':
+                      braces += 1
+                  elif ch == '}':
+                      braces = max(0, braces - 1)
+                  elif braces == 0:
+                      if self_closing and src.startswith('/>', i):
+                          return i + 2
+                      if not self_closing and ch == '>':
+                          return i + 1
+                  i += 1
+              raise RuntimeError('JSX tag close not found')
+
+          def extract_braced_prop(tag: str, prop: str):
+              match = re.search(r'\b' + re.escape(prop) + r'\s*=\s*', tag)
+              if not match:
+                  return None
+              i = match.end()
+              if i >= len(tag) or tag[i] != '{':
+                  return None
+              start = i + 1
+              depth = 1
+              quote = None
+              escape = False
+              i += 1
+              while i < len(tag):
+                  ch = tag[i]
+                  if quote:
+                      if escape:
+                          escape = False
+                      elif ch == '\\':
+                          escape = True
+                      elif ch == quote:
+                          quote = None
+                  else:
+                      if ch in "'\"`":
+                          quote = ch
+                      elif ch == '{':
+                          depth += 1
+                      elif ch == '}':
+                          depth -= 1
+                          if depth == 0:
+                              return tag[start:i].strip()
+                  i += 1
+              return None
+
+          def clean_import(src: str) -> str:
+              pattern = re.compile(
+                  r'import\s*\{(?P<body>[^}]+)\}\s*from\s*[\'\"]@/components/ui/active-filter-bar[\'\"];?',
+                  re.S,
+              )
+              def repl(match):
+                  parts = [part.strip() for part in match.group('body').split(',') if part.strip()]
+                  parts = [part for part in parts if part != 'ActiveFilterBar']
+                  if not parts:
+                      return ''
+                  type_names = []
+                  values = []
+                  for part in parts:
+                      if part.startswith('type '):
+                          type_names.append(part[5:].strip())
+                      else:
+                          values.append(part)
+                  out = []
+                  if values:
+                      out.append("import { " + ', '.join(values) + " } from '@/components/ui/active-filter-bar';")
+                  if type_names:
+                      out.append("import type { " + ', '.join(type_names) + " } from '@/components/ui/active-filter-bar';")
+                  return '\n'.join(out)
+              return pattern.sub(repl, src)
+
+          def migrate_list_page(src: str) -> str:
+              search_at = 0
+              while True:
+                  start = src.find('<ListPage', search_at)
+                  if start < 0:
+                      break
+                  end = scan_tag_close(src, start, self_closing=False)
+                  opening = src[start:end]
+                  af_rel = opening.find('<ActiveFilterBar')
+                  if af_rel < 0:
+                      search_at = end
+                      continue
+                  af_start = start + af_rel
+                  af_end = scan_tag_close(src, af_start, self_closing=True)
+                  af_tag = src[af_start:af_end]
+                  filters_expr = extract_braced_prop(af_tag, 'filters')
+                  clear_expr = extract_braced_prop(af_tag, 'onClearAll')
+                  if not filters_expr:
+                      raise RuntimeError('ListPage ActiveFilterBar without filters prop')
+
+                  src = src[:af_start] + src[af_end:]
+                  end = scan_tag_close(src, start, self_closing=False)
+                  opening = src[start:end]
+
+                  additions = ''
+                  if 'activeFilters=' not in opening:
+                      additions += f"\n        activeFilters={{{filters_expr}}}"
+                  if clear_expr and 'onClearAllFilters=' not in opening:
+                      additions += f"\n        onClearAllFilters={{{clear_expr}}}"
+                  if additions:
+                      src = src[:end - 1] + additions + '\n      ' + src[end - 1:]
+                      end += len(additions) + len('\n      ')
+                  search_at = end
+              return src
+
+          def migrate_adjacent_filter_bar(src: str) -> str:
+              search_at = 0
+              while True:
+                  start = src.find('<FilterBar', search_at)
+                  if start < 0:
+                      break
+                  end = scan_tag_close(src, start, self_closing=True)
+                  cursor = end
+                  while cursor < len(src) and src[cursor].isspace():
+                      cursor += 1
+                  if not src.startswith('<ActiveFilterBar', cursor):
+                      search_at = end
+                      continue
+                  af_end = scan_tag_close(src, cursor, self_closing=True)
+                  af_tag = src[cursor:af_end]
+                  filters_expr = extract_braced_prop(af_tag, 'filters')
+                  clear_expr = extract_braced_prop(af_tag, 'onClearAll')
+                  if not filters_expr:
+                      raise RuntimeError('FilterBar ActiveFilterBar without filters prop')
+                  opening = src[start:end]
+                  additions = ''
+                  if 'activeFilters=' not in opening:
+                      additions += f"\n        activeFilters={{{filters_expr}}}"
+                  if clear_expr and 'onClearAllFilters=' not in opening:
+                      additions += f"\n        onClearAllFilters={{{clear_expr}}}"
+                  new_opening = opening[:-2] + additions + '\n      />'
+                  src = src[:start] + new_opening + src[end:cursor] + src[af_end:]
+                  search_at = start + len(new_opening)
+              return src
+
+          for path in feature_root.rglob('*.tsx'):
+              if any(token in path.name for token in ('.test.', '.spec.', '.e2e-fixture.')):
+                  continue
+              original = path.read_text()
+              src = migrate_list_page(original)
+              src = migrate_adjacent_filter_bar(src)
+              if src != original:
+                  src = clean_import(src)
+                  path.write_text(src)
+                  changed.append(path.as_posix())
+
+          offenders = []
+          for path in feature_root.rglob('*.tsx'):
+              if any(token in path.name for token in ('.test.', '.spec.', '.e2e-fixture.')):
+                  continue
+              src = path.read_text()
+              if '<ActiveFilterBar' in src and ('<FilterBar' in src or '<ListPage' in src):
+                  offenders.append(path.as_posix())
+
+          if offenders:
+              raise SystemExit('duplicate active-filter ownership remains:\n' + '\n'.join(offenders))
+
+          guard = Path('rentrix-app/src/components/ui/canonical-search-filter-usage.test.ts')
+          guard_src = guard.read_text()
+          marker = "  it('prevents feature surfaces from rendering a second active-filter row', () => {"
+          if marker not in guard_src:
+              block = """
+
+  it('prevents feature surfaces from rendering a second active-filter row', () => {
+    const offenders = collectReactSourceFiles(featureDir)
+      .filter((path) => {
+        const source = readFileSync(path, 'utf8');
+        return source.includes('<ActiveFilterBar') && (source.includes('<FilterBar') || source.includes('<ListPage'));
+      })
+      .map((path) => relative(srcDir, path))
+      .sort();
+
+    expect(offenders).toEqual([]);
+  });
+"""
+              pos = guard_src.rfind('\n});')
+              if pos < 0:
+                  raise RuntimeError('guard suite close not found')
+              guard.write_text(guard_src[:pos] + block + guard_src[pos:])
+              changed.append(guard.as_posix())
+
+          print('changed files:')
+          for item in changed:
+              print(item)
+          PY
+
+      - name: Commit cleanup
+        run: |
+          rm -f .github/workflows/shared-ui-cleanup-once.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo "No cleanup changes produced"
+            exit 0
+          fi
+          git commit -m "refactor(ui): centralize active filter ownership"
+          git push origin HEAD:refactor/shared-ui-cleanup
