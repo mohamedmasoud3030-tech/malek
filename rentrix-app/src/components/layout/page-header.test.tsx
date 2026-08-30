@@ -16,6 +16,19 @@ describe('PageHeader — العنوان الموحد للصفحات', () => {
     expect(html).toContain('data-page-header');
   });
 
+  it('keeps routine page headers focused instead of repeating the day on every screen', () => {
+    const html = renderToStaticMarkup(<PageHeader title="العقود" />);
+    expect(html).not.toContain('data-global-today-context');
+    expect(html).not.toContain('data-global-today-weekday');
+  });
+
+  it('renders day context only when the owning workflow explicitly asks for it', () => {
+    const html = renderToStaticMarkup(<PageHeader title="عمل اليوم" showTodayContext />);
+    expect(html).toContain('data-global-today-context');
+    expect(html).toContain('data-global-today-weekday');
+    expect(html).toContain('data-global-today-day-date');
+  });
+
   it('renders the record count badge with an accessible label', () => {
     const html = renderToStaticMarkup(<PageHeader title="العقارات" count={42} />);
     expect(html).toContain('42');
