@@ -15,6 +15,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useCompanyFormatters } from '@/hooks/useCompanyFormatters';
 import { businessReferenceOrLabel } from '@/lib/business-reference';
 import { formatCompanyDateTime } from '@/lib/companyFormatters';
+import { contractStatusLabels, contractStatusTone, normalizeContractStatus } from '@/lib/contractStatus';
 import { personTypeLabels } from '../person-schema';
 import { usePersonDossier } from '../use-people';
 import { useDialogNavigate } from '@/app/router/background-location';
@@ -84,7 +85,9 @@ export function PersonDossierContent({ personId, section }: Readonly<{ personId:
                     <p className="mt-1 break-words text-xs leading-5 text-muted-foreground">{contract.properties?.title ?? 'عقار غير محدد'} · {contract.units?.unit_number ? `وحدة ${contract.units.unit_number}` : 'بدون وحدة'} · {contract.start_date} — {contract.end_date}</p>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
-                    <StatusBadge tone={contract.status === 'active' ? 'success' : 'neutral'}>{contract.status}</StatusBadge>
+                    <StatusBadge tone={contractStatusTone[normalizeContractStatus(contract.status)]}>
+                      {contractStatusLabels[normalizeContractStatus(contract.status)]}
+                    </StatusBadge>
                     <Button variant="secondary" className="min-h-11" onClick={() => dialogNavigate({ to: '/contracts/$contractId', params: { contractId: contract.id } })}>فتح العقد</Button>
                   </div>
                 </li>
@@ -165,7 +168,7 @@ export function PersonPreviewDialog({ personId, open, onOpenChange }: Readonly<{
       description="بيانات الشخص وعلاقاته وعقوده وسياقه المالي حسب الصلاحية."
       actions={<Button asChild><Link to="/people/$personId/edit" params={{ personId }}><Edit className="me-2 size-4" />تعديل</Link></Button>}
     >
-      <PersonDossierContent personId={personId} />
+      <PersonDossierContent personId={personId} section="overview" />
     </EntityPreviewDialog>
   );
 }

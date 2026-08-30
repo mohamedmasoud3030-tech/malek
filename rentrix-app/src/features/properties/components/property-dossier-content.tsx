@@ -13,6 +13,7 @@ import { usePropertyOwners } from '@/features/owners/useOwners';
 import { useProperty } from '../use-properties';
 import { useUnits } from '@/features/units/use-units';
 import { usePropertyContractsTab, usePropertyInvoicesTab } from '../use-property-workspace-tabs';
+import { contractStatusLabels, contractStatusTone, normalizeContractStatus } from '@/lib/contractStatus';
 import { PropertyIdentityCard, PropertyUnitsSummaryCard } from '../overview/property-overview-cards';
 
 const unitStatusLabels: Record<string, string> = {
@@ -173,7 +174,9 @@ export function PropertyDossierContent({ propertyId }: Readonly<{ propertyId: st
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-bold">{contract.people?.full_name ?? 'مستأجر مسجل'}</span>
-                    <StatusBadge tone={contract.status === 'active' ? 'success' : 'neutral'}>{contract.status === 'active' ? 'نشط' : contract.status}</StatusBadge>
+                    <StatusBadge tone={contractStatusTone[normalizeContractStatus(contract.status)]}>
+                      {contractStatusLabels[normalizeContractStatus(contract.status)]}
+                    </StatusBadge>
                   </div>
                   <p className="mt-1 break-words text-xs leading-5 text-muted-foreground">
                     {businessReferenceOrLabel(contract, 'عقد مسجل')}

@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { getContractStatusVariants, isContractStatus, normalizeContractStatus } from './contractStatus';
+import {
+  contractStatusLabels,
+  getContractStatusVariants,
+  isContractStatus,
+  normalizeContractStatus,
+} from './contractStatus';
 
 describe('normalizeContractStatus', () => {
   it('passes modern lowercase statuses through unchanged', () => {
@@ -37,6 +42,15 @@ describe('getContractStatusVariants', () => {
   it('resolves variants from legacy input spellings too', () => {
     expect(getContractStatusVariants('ACTIVE')).toEqual(['active', 'ACTIVE']);
     expect(getContractStatusVariants('ENDED')).toEqual(['expired', 'ENDED']);
+  });
+});
+
+describe('contractStatusLabels', () => {
+  it('exposes Arabic labels for every canonical status', () => {
+    expect(contractStatusLabels.active).toBe('نشط');
+    expect(contractStatusLabels.draft).toBe('مسودة');
+    expect(contractStatusLabels.expired).toBe('منتهي');
+    expect(contractStatusLabels.terminated).toBe('ملغي');
   });
 });
 

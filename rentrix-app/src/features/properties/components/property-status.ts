@@ -2,8 +2,15 @@ export const propertyStatusTone = { active: 'success', inactive: 'neutral', main
 
 const propertyTypeAliases: Readonly<Record<string, string>> = {
   building: 'مبنى',
-  Building: 'مبنى',
-  BUILDING: 'مبنى',
+  residential: 'سكني',
+  commercial: 'تجاري',
+  villa: 'فيلا',
+  apartment: 'شقة',
+  land: 'أرض',
+  office: 'مكتبي',
+  mixed: 'متعدد الاستخدام',
+  warehouse: 'مستودع',
+  shop: 'محل',
 };
 
 export function translatePropertyType(value: string | null | undefined): string {
@@ -12,5 +19,6 @@ export function translatePropertyType(value: string | null | undefined): string 
   // An unguarded value.trim() here crashed the whole property detail route
   // with a raw TypeError instead of degrading gracefully.
   const trimmed = (value ?? '').trim();
-  return propertyTypeAliases[trimmed] ?? trimmed;
+  if (!trimmed) return '—';
+  return propertyTypeAliases[trimmed] ?? propertyTypeAliases[trimmed.toLowerCase()] ?? trimmed;
 }
