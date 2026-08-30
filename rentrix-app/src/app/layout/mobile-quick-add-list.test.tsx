@@ -20,6 +20,7 @@ vi.mock('@/hooks/use-auth', () => ({
       email: 'user@malek.test',
       role: mockRole,
     },
+    logout: vi.fn(),
   }),
 }));
 
@@ -32,12 +33,22 @@ vi.mock('@tanstack/react-router', () => ({
 
 import { MobileFloatingControl } from './layout-navigation-view';
 
-describe('Mobile dock Quick Add — clear vertical action list', () => {
+describe('Mobile chrome Quick Add — header actions + compact dock', () => {
   let host: HTMLDivElement;
   let root: ReturnType<typeof createRoot>;
 
   beforeEach(() => {
     mockRole = 'ADMIN';
+    const header = document.createElement('header');
+    header.setAttribute('data-app-shell-header', '');
+    const utility = document.createElement('div');
+    utility.setAttribute('data-header-utility-side', '');
+    const userMenu = document.createElement('div');
+    userMenu.setAttribute('data-header-user-menu', '');
+    utility.appendChild(userMenu);
+    header.appendChild(utility);
+    document.body.appendChild(header);
+
     host = document.createElement('div');
     document.body.appendChild(host);
     root = createRoot(host);
@@ -51,7 +62,7 @@ describe('Mobile dock Quick Add — clear vertical action list', () => {
 
   function openQuickAdd() {
     act(() => root.render(<MobileFloatingControl onMenu={() => undefined} />));
-    const trigger = host.querySelector<HTMLButtonElement>('[data-mobile-dock-quick-add]');
+    const trigger = document.querySelector<HTMLButtonElement>('[data-header-quick-add]');
     expect(trigger).not.toBeNull();
     act(() => { trigger?.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
   }
@@ -63,50 +74,47 @@ describe('Mobile dock Quick Add — clear vertical action list', () => {
     expect(menu).not.toBeNull();
     const list = menu?.querySelector<HTMLElement>('[data-mobile-quick-add-list]');
     expect(list).not.toBeNull();
-    // Vertical rhythm: one row per action, not a 2-column icon grid.
     expect(list?.className).toContain('flex-col');
     expect(list?.className).not.toContain('grid-cols-2');
 
     const items = menu?.querySelectorAll<HTMLElement>('[data-mobile-quick-add-item]') ?? [];
-    // The four existing actions, none invented, each on its own row.
     expect(items.length).toBe(4);
     const labels = Array.from(items).map((item) => item.textContent?.trim());
     expect(labels).toEqual(['عقد جديد', 'تحصيل مبلغ', 'طلب صيانة', 'فاتورة مرافق']);
 
     for (const item of items) {
-      // Comfortable tap target (48px — above the 44px floor) with an icon and a full, unclipped label.
       expect(item.className).toContain('min-h-12');
       expect(item.querySelector('svg')).not.toBeNull();
       const labelSpan = item.querySelector('span.min-w-0');
       expect(labelSpan).not.toBeNull();
-      // Rows stack vertically: each item is a direct block child of the list.
       expect(item.parentElement).toBe(list);
     }
   });
 
-  it('exposes the full mobile dock tools with hamburger menu', () => {
+  it('promotes Search and Quick Add into the real header and keeps only three dock tools', () => {
     act(() => root.render(<MobileFloatingControl onMenu={() => undefined} />));
-    expect(host.querySelector('[data-mobile-dock-menu]')).not.toBeNull();
-    expect(host.querySelector('[data-mobile-dock-search]')).not.toBeNull();
-    expect(host.querySelector('[data-mobile-dock-quick-add]')).not.toBeNull();
-    expect(host.querySelector('[data-mobile-dock-notifications]')).not.toBeNull();
-    expect(host.querySelector('[data-mobile-dock-ai]')).not.toBeNull();
+
+    const headerUtility = document.querySelector<HTMLElement>('[data-header-utility-side]');
+    expect(headerUtility?.querySelector('[data-header-phone-search]')).not.toBeNull();
+    expect(headerUtility?.querySelector('[data-header-quick-add]')).not.toBeNull();
+
+    const dock = host.querySelector<HTMLElement>('[data-mobile-floating-control]');
+    expect(dock?.querySelector('[data-mobile-dock-menu]')).not.toBeNull();
+    expect(dock?.querySelector('[data-mobile-dock-notifications]')).not.toBeNull();
+    expect(dock?.querySelector('[data-mobile-dock-ai]')).not.toBeNull();
+    expect(dock?.querySelector('[data-mobile-dock-search]')).toBeNull();
+    expect(dock?.querySelector('[data-mobile-dock-quick-add]')).toBeNull();
   });
 
-  it('exposes a well-formed menu whose items are its only children', async () => {
+  it('exposes a well-formed quick-add menu whose items are its only menu children', async () => {
     openQuickAdd();
 
     const menu = host.querySelector<HTMLElement>('[role="menu"]');
     expect(menu).not.toBeNull();
-
-    // `role="menu"` may only contain menu items. The panel title and close
-    // button must therefore stay outside it, or the menu is exposed as
-    // malformed (axe `aria-required-children`, critical).
     for (const child of Array.from(menu!.children)) {
       expect(child.getAttribute('role')).toBe('menuitem');
     }
 
-    // The menu keeps an accessible name even though its label moved out of it.
     const labelledBy = menu!.getAttribute('aria-labelledby');
     expect(labelledBy).toBeTruthy();
     expect(host.querySelector(`#${CSS.escape(labelledBy!)}`)?.textContent?.trim()).toBe('إضافة سريعة');
@@ -119,15 +127,13 @@ describe('Mobile dock Quick Add — clear vertical action list', () => {
     expect(report, report.join('\n')).toEqual([]);
   });
 
-  it('hides quick actions the role cannot complete (permission rules)', () => {
+  it('disables Quick Add when the role has no permitted write actions', () => {
     mockRole = 'USER';
-    openQuickAdd();
+    act(() => root.render(<MobileFloatingControl onMenu={() => undefined} />));
 
-    // USER has none of the write permissions behind the four actions, so the
-    // menu must not open with dead ends — no visible items, no empty panel.
-    const items = host.querySelectorAll<HTMLElement>('[data-mobile-quick-add-item]');
-    expect(items.length).toBe(0);
-    const menu = host.querySelector('[data-mobile-quick-add-menu]');
-    expect(menu).toBeNull();
+    const trigger = document.querySelector<HTMLButtonElement>('[data-header-quick-add]');
+    expect(trigger).not.toBeNull();
+    expect(trigger?.disabled).toBe(true);
+    expect(host.querySelector('[data-mobile-quick-add-menu]')).toBeNull();
   });
 });
