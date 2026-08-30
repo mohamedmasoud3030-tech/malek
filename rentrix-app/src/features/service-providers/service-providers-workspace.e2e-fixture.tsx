@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { EntityCell } from "@/components/ui/entity-cell";
 import { EntityTable } from "@/components/ui/entity-table";
 import { Input } from "@/components/ui/input";
-import { OperationalMetricCard } from "@/components/ui/operational-summary";
+import { KpiCard } from "@/components/ui/kpi-card";
 import { Select } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Textarea } from "@/components/ui/textarea";
@@ -142,28 +142,28 @@ export function ServiceProvidersWorkspaceE2EFixture() {
           aria-label="ملخص مزودي الخدمات"
           className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
         >
-          <OperationalMetricCard
+          <KpiCard
             label="إجمالي المزودين"
             value="2"
-            hint="سجلات غير مؤرشفة"
+            sub="سجلات غير مؤرشفة"
             icon={BriefcaseBusiness}
           />
-          <OperationalMetricCard
+          <KpiCard
             label="مزودون نشطون"
             value="1"
-            hint="متاحون للتعيين الجديد"
+            sub="متاحون للتعيين الجديد"
             icon={BriefcaseBusiness}
           />
-          <OperationalMetricCard
+          <KpiCard
             label="أنواع الخدمات"
             value="2"
-            hint="أنواع نشطة قابلة للصيانة"
+            sub="أنواع نشطة قابلة للصيانة"
             icon={FolderCog}
           />
-          <OperationalMetricCard
+          <KpiCard
             label="أعمال جارية"
             value="2"
-            hint="مفتوحة أو قيد التنفيذ"
+            sub="مفتوحة أو قيد التنفيذ"
             icon={Wrench}
           />
         </section>

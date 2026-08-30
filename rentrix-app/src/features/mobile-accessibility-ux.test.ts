@@ -2,6 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
+/**
+ * Mobile RTL and accessibility UX quality contract for operational surfaces.
+ * The retired NextStepActions contract was removed with its component; this
+ * file keeps the live property workspace contracts.
+ */
 describe('mobile RTL and accessibility UX quality contract', () => {
   const propertyModalSource = readFileSync(
     resolve(import.meta.dirname, './properties/property-form-modal.tsx'),
@@ -10,11 +15,6 @@ describe('mobile RTL and accessibility UX quality contract', () => {
 
   const propertyDetailSource = readFileSync(
     resolve(import.meta.dirname, './properties/property-detail-page.tsx'),
-    'utf8',
-  );
-
-  const nextStepsSource = readFileSync(
-    resolve(import.meta.dirname, '../components/ui/next-step-actions.tsx'),
     'utf8',
   );
 
@@ -29,12 +29,5 @@ describe('mobile RTL and accessibility UX quality contract', () => {
     expect(propertyModalSource).toContain('aria-selected={step === 1}');
     expect(propertyModalSource).toContain('aria-selected={step === 2}');
     expect(propertyModalSource).toContain('aria-selected={step === 3}');
-  });
-
-  it('3. NextStepActions component uses accessible headings and semantic region roles without overlapping buttons', () => {
-    expect(nextStepsSource).toContain('role="region"');
-    expect(nextStepsSource).toContain('aria-label={title}');
-    expect(nextStepsSource).toContain('aria-hidden="true"');
-    expect(nextStepsSource).toContain('h-auto justify-between');
   });
 });

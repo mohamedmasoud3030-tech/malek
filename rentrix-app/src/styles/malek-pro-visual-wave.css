@@ -277,13 +277,6 @@
   background: hsl(var(--background));
 }
 
-[data-entity-form-surface][data-entity-form-variant='operational'] [data-entity-form-field] > span:first-child {
-  font-size: 0.875rem;
-  font-weight: 700;
-  line-height: 1.4;
-  color: hsl(var(--foreground));
-}
-
 [data-entity-form-surface][data-entity-form-variant='operational'] :is(input, select, textarea) {
   min-height: 46px;
   border-radius: 0.625rem;
