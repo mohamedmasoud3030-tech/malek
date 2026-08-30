@@ -21,6 +21,19 @@ jobs:
         run: python3 scripts/shared-ui-cleanup-once.py
       - name: Commit cleanup
         run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import subprocess
+
+          for name in subprocess.check_output(['git', 'diff', '--name-only'], text=True).splitlines():
+              path = Path(name)
+              if not path.exists() or path.suffix not in {'.ts', '.tsx'}:
+                  continue
+              text = path.read_text()
+              had_newline = text.endswith('\n')
+              cleaned = '\n'.join(line.rstrip() for line in text.splitlines())
+              path.write_text(cleaned + ('\n' if had_newline else ''))
+          PY
           rm -f .github/workflows/shared-ui-cleanup-once.yml scripts/shared-ui-cleanup-once.py
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
