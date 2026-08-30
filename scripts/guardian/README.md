@@ -13,6 +13,7 @@ It composes the repository's existing database proofs with the governance-stabil
 - DB0 canonical replay/gate
 - canonical membership authority + Auth Hook behavior
 - sensitive RPC authorization behavior
+- internal GL posting/helper RPC browser EXECUTE boundary
 - effective `SECURITY DEFINER` governance audit
 - internal `SECURITY DEFINER` EXECUTE-boundary audit
 - strict Guardian governance scan (`DG-GOV-008`)
@@ -52,6 +53,11 @@ The RPC must either:
 2. call a canonical database authorization resolver such as `current_user_has_effective_app_permission(...)`, `is_admin_or_manager()`, `is_admin()`, `is_accountant()`, `is_operations()`, or another resolver explicitly allowed by the contract.
 
 The stricter rule closes the permissive gap in the earlier Guardian draft where identity/scoping/validation could be mistaken for authorization, while still preserving intentional existing role boundaries.
+
+Two documented authority models exist alongside the membership/permission resolvers:
+
+- **Granular Employee action permissions.** Maintenance lifecycle RPCs authorize through `current_user_has_effective_app_permission('maintenance.approve' | 'maintenance.edit' | 'maintenance.cancel')` or the canonical wrapper `current_user_can_transition_maintenance(...)` (migrations `00051`/`00053`). These are listed in `governance-contract.json` under `permissionGovernedSensitiveRpcs`, which requires both the effective permission resolver and the exact permission token.
+- **External bearer-token portal snapshots.** `get_tenant_portal_snapshot` / `get_owner_portal_snapshot` serve external tenants/owners who have no company membership by design; the private unguessable portal link token is the only browser-supplied authority input. They are listed under `externalTokenAuthorityRpcs`, and the scan only accepts them while every required token-validation marker (`revoked_at is null`, `expires_at > now()`) is present in the effective definition. Losing the marker check re-opens the finding.
 
 ## Exit codes
 

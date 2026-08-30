@@ -1,8 +1,8 @@
 import { isContractStatus } from '@/lib/contractStatus';
+import { toDateOnlyISO as toDateInputValue } from '@/lib/formatters';
 import type { ContractDetail } from '../services/contractService';
 import type { RenewalPayload } from '../contractSchema';
 
-const toDateInputValue = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 const addDays = (value: string, days: number) => { const date = new Date(`${value}T00:00:00`); date.setDate(date.getDate() + days); return date; };
 const addYear = (date: Date) => { const nextDate = new Date(date); nextDate.setFullYear(nextDate.getFullYear() + 1); nextDate.setDate(nextDate.getDate() - 1); return nextDate; };
 

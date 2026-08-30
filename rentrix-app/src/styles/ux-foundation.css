@@ -7,20 +7,12 @@
   --entity-form-action-clearance: 6rem;
   /* Height of the sticky app-shell header. Anything that sticks underneath it
      must offset by THIS token so the two can never drift apart and collide. */
-  --app-header-height: 3rem;
-  --mobile-floating-control-height: 4.5rem;
+  --app-header-height: 3.5rem;
+  --mobile-floating-control-height: 3.75rem;
   /* Space an overlay needs to leave between itself and the phone dock.
      Dock height + the dock's own 0.75rem breathing gap. Redefined below in
      the phone media block to add the safe-area inset. */
   --mobile-dock-clearance: calc(var(--mobile-floating-control-height) + 0.75rem);
-}
-
-/* Tailwind's `sm` breakpoint — the app-shell header grows one step here, and
-   every sticky element below it must follow the same token. */
-@media (min-width: 640px) {
-  :root {
-    --app-header-height: 3.5rem;
-  }
 }
 
 /* iPad / tablet portrait — more air without wasting the 768–1023 band as a phone. */

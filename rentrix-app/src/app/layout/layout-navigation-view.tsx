@@ -1,7 +1,6 @@
 import { Link, useLocation } from '@tanstack/react-router';
 import { useEffect, useId, useRef, useState, type Ref } from 'react';
-import { Bot, ChevronDown, FileText, HandCoins, Lock, Menu, Plus, ReceiptText, Search, Wrench, X } from 'lucide-react';
-import { MalekBrandWordmark } from '@/components/brand/malek-wordmark';
+import { ChevronDown, FileText, HandCoins, Lock, Menu, Plus, ReceiptText, Search, Sparkles, Wrench, X } from 'lucide-react';
 import { OPEN_AI_ASSISTANT_EVENT } from '@/features/ai-assistant/ai-assistant-global-action';
 import { useCommandPaletteStore } from '@/features/command-palette/command-palette-store';
 import { canShowNavigationItem, canAccessRoute, type AuthorizationContext, type AppPermission } from '@/features/auth/permissions';
@@ -95,16 +94,15 @@ export function NavigationLinks({
       >
         <span
           className={cn(
-            'grid size-8 shrink-0 place-items-center rounded-lg transition-colors',
-            // Sidebar: subtle bg, strong icon
-            'bg-sidebar-foreground/8 text-sidebar-foreground/80 group-hover:bg-sidebar-foreground/12 group-hover:text-sidebar-foreground',
-            '[[data-mobile-nav-drawer]_&]:size-7 [[data-mobile-nav-drawer]_&]:bg-sidebar-foreground/8 [[data-mobile-nav-drawer]_&]:text-sidebar-foreground/75',
-            // Mobile sheet: clear icon visibility, not washed
-            '[[data-mobile-nav-sheet]_&]:size-8 [[data-mobile-nav-sheet]_&]:bg-muted [[data-mobile-nav-sheet]_&]:text-foreground',
-            isActive && 'bg-sidebar-accent-foreground/15 text-sidebar-accent-foreground [[data-mobile-nav-drawer]_&]:bg-primary/15 [[data-mobile-nav-drawer]_&]:text-primary [[data-mobile-nav-sheet]_&]:bg-primary/15 [[data-mobile-nav-sheet]_&]:text-primary',
+            'grid size-8 shrink-0 place-items-center',
+            // No permanent tile behind every icon — the icon itself carries
+            // the semantics and inherits the row's foreground.
+            'text-sidebar-foreground/80 group-hover:text-sidebar-foreground',
+            '[[data-mobile-nav-sheet]_&]:text-foreground/80 [[data-mobile-nav-sheet]_&]:group-hover:text-foreground',
+            isActive && 'text-sidebar-accent-foreground [[data-mobile-nav-sheet]_&]:text-primary',
           )}
         >
-          <Icon className={cn(isChild ? 'size-[18px]' : 'size-[18px]', 'shrink-0')} aria-hidden="true" />
+          <Icon className={cn(isChild ? 'size-[18px]' : 'size-[20px]', 'shrink-0')} aria-hidden="true" />
         </span>
         {expanded ? <span className="min-w-0 flex-1 truncate">{label}</span> : null}
         {isLocked ? <Lock className="ms-auto size-3.5 text-warning" aria-hidden="true" /> : null}
@@ -115,15 +113,6 @@ export function NavigationLinks({
 
   return (
     <div className="space-y-4 [[data-mobile-nav-drawer]_&]:space-y-2 [[data-mobile-nav-sheet]_&]:space-y-3">
-      {onNavigate ? (
-        <div
-          data-mobile-nav-brand
-          className="sticky top-0 z-10 -mx-1 flex items-center border-b border-border/70 bg-card/95 px-3 pb-3 pt-1 backdrop-blur-sm"
-        >
-          <MalekBrandWordmark size="sidebar" />
-        </div>
-      ) : null}
-
       {navGroups.map(([sectionTitle, items, adminOnly]) => {
         if (adminOnly && !items.some(([, , , , permission]) => canShowNavigationItem(authorization, permission))) return null;
         if (items.length === 0) return null;
@@ -133,7 +122,7 @@ export function NavigationLinks({
             className="space-y-1"
           >
             {expanded
-              ? <div className="px-3 pb-1 pt-2"><p className="text-[11px] font-bold uppercase tracking-wide text-sidebar-foreground/45 [[data-mobile-nav-sheet]_&]:text-[11px] [[data-mobile-nav-sheet]_&]:font-extrabold [[data-mobile-nav-sheet]_&]:tracking-widest [[data-mobile-nav-sheet]_&]:text-muted-foreground">{sectionTitle}</p></div>
+              ? <div className="px-3 pb-1 pt-2"><p className="text-[11px] font-bold text-sidebar-foreground/45 [[data-mobile-nav-sheet]_&]:text-xs [[data-mobile-nav-sheet]_&]:font-bold [[data-mobile-nav-sheet]_&]:text-muted-foreground">{sectionTitle}</p></div>
               : <div aria-hidden="true" className="mx-3 mb-2 h-px bg-sidebar-foreground/10" />}
             {items.map((item) => {
               const [to] = item;
@@ -219,7 +208,7 @@ export function MobileFloatingControl({
   );
 
   const utilityActionClass =
-    'grid size-11 min-h-11 min-w-11 shrink-0 place-items-center rounded-xl border-0 bg-transparent text-foreground outline-none transition-colors duration-150 hover:bg-muted hover:text-foreground active:bg-muted/80 focus-visible:ring-2 focus-visible:ring-primary/20';
+    'grid size-11 min-h-11 min-w-11 shrink-0 place-items-center rounded-lg border-0 bg-transparent text-foreground outline-none transition-colors duration-150 hover:bg-muted hover:text-foreground active:bg-muted/80 focus-visible:ring-2 focus-visible:ring-primary/20';
 
   useEffect(() => {
     if (!quickOpen) return;
@@ -260,7 +249,7 @@ export function MobileFloatingControl({
       <div
         ref={quickRootRef}
         data-mobile-dock-surface
-        className="pointer-events-auto relative flex w-auto items-center gap-1 rounded-2xl border border-border bg-card p-1.5 shadow-none"
+        className="pointer-events-auto relative flex w-auto items-center gap-2 rounded-full border border-border bg-card px-2 py-1.5 shadow-none"
       >
         {quickOpen && visibleQuickActions.length > 0 ? (
           <div
@@ -305,9 +294,7 @@ export function MobileFloatingControl({
                     onClick={() => setQuickOpen(false)}
                     className="flex min-h-12 items-center gap-3 rounded-xl px-3 text-[14px] font-bold text-foreground outline-none transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:ring-2 focus-visible:ring-primary/20"
                   >
-                    <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary" aria-hidden="true">
-                      <Icon className="size-4" />
-                    </span>
+                    <Icon className="size-[18px] shrink-0 text-primary" aria-hidden="true" />
                     <span className="min-w-0 whitespace-nowrap font-bold text-foreground">{item.label}</span>
                   </Link>
                 );
@@ -321,11 +308,13 @@ export function MobileFloatingControl({
           type="button"
           onClick={onMenu}
           aria-label="فتح القائمة"
+          aria-haspopup="dialog"
+          aria-expanded={drawerOpen}
           title="القائمة الرئيسية"
           data-mobile-dock-menu
           className={utilityActionClass}
         >
-          <Menu className="size-5" aria-hidden="true" />
+          <Menu className="size-[22px]" aria-hidden="true" />
         </button>
 
         <button
@@ -336,7 +325,7 @@ export function MobileFloatingControl({
           data-mobile-dock-search
           className={utilityActionClass}
         >
-          <Search className="size-5" aria-hidden="true" />
+          <Search className="size-[22px]" aria-hidden="true" />
         </button>
 
         <button
@@ -347,15 +336,12 @@ export function MobileFloatingControl({
           aria-expanded={quickOpen}
           title="إضافة سريعة"
           data-mobile-dock-quick-add
-          className={cn(utilityActionClass, quickOpen && 'bg-primary/10 text-primary')}
+          className={cn(utilityActionClass, 'text-primary hover:text-primary', quickOpen && 'bg-primary/10')}
         >
-          <Plus className="size-5" aria-hidden="true" />
+          <Plus className="size-[22px]" aria-hidden="true" />
         </button>
 
-        <div
-          className="relative [&>div>button]:!size-11 [&>div>button]:!min-h-11 [&>div>button]:!min-w-11 [&>div>button]:!rounded-xl [&>div>button]:!border-0 [&>div>button]:!bg-transparent [&>div>button]:!text-foreground [&>div>button]:hover:!bg-muted [&>div>button]:hover:!text-foreground [&>div>button[aria-expanded='true']]:!bg-primary/10 [&>div>button[aria-expanded='true']]:!text-primary"
-          data-mobile-dock-notifications
-        >
+        <div className="relative" data-mobile-dock-notifications>
           <NotificationsMenu authorization={authorization} />
         </div>
 
@@ -367,7 +353,7 @@ export function MobileFloatingControl({
           data-mobile-dock-ai
           className={utilityActionClass}
         >
-          <Bot className="size-5" aria-hidden="true" />
+          <Sparkles className="size-[22px]" aria-hidden="true" />
         </button>
       </div>
     </div>

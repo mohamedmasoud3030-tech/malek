@@ -112,6 +112,7 @@ async function main() {
     const adminManagerSensitive = normalizedSet(contract.adminManagerSensitiveFunctions);
     const permissionGoverned = normalizedEntries(contract.permissionGovernedSensitiveRpcs);
     const allowedHelpers = normalizedSet(contract.allowedNonPermissionAuthenticatedSecurityDefiners);
+    const externalTokenAuthority = normalizedEntries(contract.externalTokenAuthorityRpcs ?? {});
 
     // DG-GOV-001 — canonical authority foundation itself.
     const activeRole = bySignature.get(normalizeSignature('active_company_role(uuid)'));
@@ -210,12 +211,24 @@ async function main() {
       const sig = signature(row);
       if (allowedHelpers.has(sig)) continue;
       if (!hasCanonicalAuthorityResolver(row.definition)) {
-        add(
-          'DG-GOV-008',
-          'HIGH',
-          `Authenticated SECURITY DEFINER control RPC lacks canonical authority resolver: ${sig}`,
-          'Accepted proof is a canonical database role/permission resolver call. auth.uid(), require_company_id(), company scoping, input validation and RAISE EXCEPTION do not count.',
-        );
+        // External bearer-token portal projections are the documented
+        // exception: their authority input is the private unguessable portal
+        // link token, not a membership role (external tenants/owners have no
+        // company membership by design). The exception is earned, not assumed:
+        // every required token-validation marker must be present in the
+        // effective definition, otherwise the finding stands.
+        const requiredMarkers = externalTokenAuthority.get(sig);
+        const compactDef = compact(row.definition);
+        const hasAllMarkers = Boolean(requiredMarkers)
+          && requiredMarkers.every((marker) => compactDef.includes(compact(marker)));
+        if (!hasAllMarkers) {
+          add(
+            'DG-GOV-008',
+            'HIGH',
+            `Authenticated SECURITY DEFINER control RPC lacks canonical authority resolver: ${sig}`,
+            'Accepted proof is a canonical database role/permission resolver call. auth.uid(), require_company_id(), company scoping, input validation and RAISE EXCEPTION do not count.',
+          );
+        }
       }
     }
 

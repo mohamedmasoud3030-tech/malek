@@ -55,7 +55,11 @@ const featureDependencyAllowList = new Map([
   // operations-hub composes maintenance/utilities/automation/documents-vault.
   ['operations-hub', new Set(['auth', 'automation', 'documents-vault', 'maintenance', 'service-providers', 'utilities'])],
   ['owners', new Set(['auth', 'financials', 'properties', 'reports', 'settings'])],
-  ['people', new Set(['tenants'])],
+  // people dossier (getPersonDossier) reads the canonical dossier invoice
+  // read (listDossierInvoicesForContracts) from financials/invoices — the
+  // same query-only invoice-read seam already granted to owners, tenants and
+  // reports. No writes, no second invoices authority.
+  ['people', new Set(['financials', 'tenants'])],
   // portfolio-hub composes properties/owners/units/lands under /properties.
   ['portfolio-hub', new Set(['auth', 'lands', 'owners', 'properties', 'units'])],
   // properties reads the shared company-settings seam (useCompanySettingsContract)

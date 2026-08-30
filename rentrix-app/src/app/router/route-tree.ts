@@ -402,6 +402,11 @@ const tenantPortalRoute = createRoute({
 });
 const privacyRoute = createRoute({ getParentRoute: () => rootRoute, path: '/privacy', component: lazyRouteComponent(() => import('@/routes/privacy'), 'PrivacyRouteComponent'), staticData: { title: 'سياسة الخصوصية' } });
 const termsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/terms', component: lazyRouteComponent(() => import('@/routes/terms'), 'TermsRouteComponent'), staticData: { title: 'شروط الاستخدام' } });
+// Public-safe support destination for unauthenticated visitors (login/forgot
+// password). Renders only static contact channels — no auth, Supabase, or
+// support-ticket intake. The full authenticated support workspace stays at
+// /help under protectedRoute.
+const publicSupportRoute = createRoute({ getParentRoute: () => rootRoute, path: '/support', component: lazyRouteComponent(() => import('@/routes/support'), 'SupportRouteComponent'), staticData: { title: 'الدعم والتواصل' } });
 const landingCompatRoute = createRoute({ getParentRoute: () => rootRoute, path: '/landing', beforeLoad: () => { throw redirect({ to: '/' }); } });
 const designSystemRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -421,6 +426,7 @@ export const routeTree = rootRoute.addChildren([
   landingCompatRoute,
   privacyRoute,
   termsRoute,
+  publicSupportRoute,
   designSystemRoute,
   protectedRoute.addChildren([
     dashboardRoute,

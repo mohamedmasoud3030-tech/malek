@@ -112,20 +112,13 @@ export function NotificationsMenu({
         aria-controls={isOpen ? menuId : undefined}
         data-header-notifications-trigger={chrome === 'header' ? 'true' : undefined}
         className={cn(
-          'pressable relative inline-flex size-11 min-h-11 min-w-11 shrink-0 items-center justify-center outline-none transition-colors motion-reduce:transition-none',
-          chrome === 'header'
-            ? 'rounded-lg border-0 bg-transparent text-foreground hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/20'
-            : 'rounded-xl border focus-visible:ring-4 focus-visible:ring-primary/25',
-          chrome === 'dock' && totalCount > 0
-            ? 'border-danger/30 bg-danger/5 text-danger hover:bg-danger/10 hover:text-danger'
-            : chrome === 'dock'
-              ? 'border-transparent text-muted-foreground hover:bg-muted hover:text-foreground'
-              : totalCount > 0
-                ? 'text-danger'
-                : 'text-foreground',
+          'pressable relative inline-flex size-11 min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg border-0 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary/20 motion-reduce:transition-none',
+          totalCount > 0
+            ? 'text-danger hover:bg-danger/10 hover:text-danger'
+            : 'text-foreground hover:bg-muted hover:text-foreground',
         )}
       >
-        <Bell className={cn('size-[18px]', totalCount > 0 && 'text-danger')} aria-hidden="true" />
+        <Bell className={cn('size-[22px]', totalCount > 0 && 'text-danger')} aria-hidden="true" />
         {totalCount > 0 ? (
           <span
             aria-hidden="true"

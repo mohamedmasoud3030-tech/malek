@@ -162,3 +162,45 @@ describe('invoiceService financial reconciliation', () => {
     await expect(getInvoiceDetail('missing-invoice')).rejects.toThrow('الفاتورة غير موجودة');
   });
 });
+
+describe('listDossierInvoicesForContracts — canonical dossier invoice read', () => {
+  it('returns [] without touching the database for an empty contract list', async () => {
+    const log = mockSupabaseTables({ invoices: [] });
+    const { listDossierInvoicesForContracts } = await import('./invoiceService');
+
+    const rows = await listDossierInvoicesForContracts([]);
+
+    expect(rows).toEqual([]);
+    expect(log).toEqual([]);
+  });
+
+  it('reads the dossier column set for the given contracts, newest due_date first, non-deleted only', async () => {
+    const calls: Array<{ method: string; args: unknown[] }> = [];
+    const resultRows = [
+      { id: 'i1', reference: 'INV-1', contract_id: 'c1', due_date: '2026-05-01', amount: 100, paid_amount: 0, status: 'ISSUED' },
+      { id: 'i2', reference: null, contract_id: 'c2', due_date: '2026-06-01', amount: 200, paid_amount: 50, status: 'PARTIALLY_PAID' },
+    ];
+    const chain = {
+      select: vi.fn((...args: unknown[]) => { calls.push({ method: 'select', args }); return chain; }),
+      in: vi.fn((...args: unknown[]) => { calls.push({ method: 'in', args }); return chain; }),
+      is: vi.fn((...args: unknown[]) => { calls.push({ method: 'is', args }); return chain; }),
+      order: vi.fn((...args: unknown[]) => {
+        calls.push({ method: 'order', args });
+        return Promise.resolve({ data: resultRows, error: null });
+      }),
+    };
+    supabaseMock.from.mockReturnValue(chain);
+    const { listDossierInvoicesForContracts } = await import('./invoiceService');
+
+    const rows = await listDossierInvoicesForContracts(['c1', 'c2']);
+
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toMatchObject({ id: 'i1', contract_id: 'c1', due_date: '2026-05-01' });
+    expect(calls).toEqual([
+      { method: 'select', args: ['id,reference,contract_id,due_date,amount,paid_amount,status'] },
+      { method: 'in', args: ['contract_id', ['c1', 'c2']] },
+      { method: 'is', args: ['deleted_at', null] },
+      { method: 'order', args: ['due_date', { ascending: false }] },
+    ]);
+  });
+});

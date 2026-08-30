@@ -76,7 +76,6 @@ async function main() {
     ['SD-06', 'public.execute_receipt_void_internal(jsonb)'],
     ['SD-07', 'public.approve_receipt_void_atomic(jsonb)'],
     ['SD-08', 'public.recalculate_all_balances()'],
-    ['SD-09', 'public.resolve_maintenance_with_expense(text,numeric,text)'],
   ];
   for (const [id, signature] of managerGateTargets) {
     const info = await functionInfo(db, signature);
@@ -84,6 +83,30 @@ async function main() {
       id,
       `${signature} uses canonical membership ADMIN/MANAGER gate and no users.role authority`,
       info.security_definer && hasCanonicalManagerGate(info.definition) && !hasRawUsersRoleAuthority(info.definition),
+      info.definition.slice(0, 700),
+    );
+  }
+
+  // SD-09: resolve_maintenance_with_expense moved from the ADMIN/MANAGER
+  // membership gate to the canonical granular Employee action permission model
+  // (migrations 00051/00053): the effective boundary is
+  // current_user_has_effective_app_permission('maintenance.approve'), which
+  // resolves through active_company_role and fails closed. Accept either the
+  // historical membership gate or the canonical granular permission gate; raw
+  // public.users.role authority stays forbidden in both cases.
+  console.log('\n[canonical granular permission gates]');
+  {
+    const id = 'SD-09';
+    const signature = 'public.resolve_maintenance_with_expense(text,numeric,text)';
+    const info = await functionInfo(db, signature);
+    const hasCanonicalPermissionGate =
+      /current_user_has_effective_app_permission\s*\(\s*'maintenance\.approve'/.test(info.definition);
+    record(
+      id,
+      `${signature} uses a canonical authority gate (ADMIN/MANAGER membership or maintenance.approve permission) and no users.role authority`,
+      info.security_definer
+        && (hasCanonicalManagerGate(info.definition) || hasCanonicalPermissionGate)
+        && !hasRawUsersRoleAuthority(info.definition),
       info.definition.slice(0, 700),
     );
   }

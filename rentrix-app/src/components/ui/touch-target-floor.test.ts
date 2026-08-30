@@ -45,22 +45,14 @@ const SUB_44_RAW_CONTROL = new RegExp(String.raw`\b(?:${SUB_44_MIN_HEIGHT}|${SUB
  * Raw `<button>` elements allowed to stay visually smaller than 44px because
  * they are centred inside an explicit 44px hit wrapper. The wrapper (not the
  * button) is the element a finger lands on, so the touch floor is met while
- * the visible control keeps its compact header chrome.
+ * the visible control keeps its compact chrome.
  *
  * Every entry must name the wrapper attribute so the exception is auditable.
+ *
+ * The header chrome no longer relies on hit wrappers: header controls are now
+ * self-contained 44×44 (`size-11`) buttons, so no app-shell entry is needed.
  */
-const RAW_BUTTON_WRAPPER_ALLOWLIST: ReadonlyArray<{ file: string; wrapper: string; reason: string }> = [
-  {
-    file: 'app/layout/app-shell.tsx',
-    wrapper: 'data-header-control-hit',
-    reason: 'header utility buttons are centred in a size-11 (44px) hit span',
-  },
-  {
-    file: 'app/layout/app-shell.tsx',
-    wrapper: 'data-header-monogram-hit',
-    reason: 'brand monogram button is centred in a size-11 (44px) hit span',
-  },
-];
+const RAW_BUTTON_WRAPPER_ALLOWLIST: ReadonlyArray<{ file: string; wrapper: string; reason: string }> = [];
 
 function collectComponentFiles(dir: string, found: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {

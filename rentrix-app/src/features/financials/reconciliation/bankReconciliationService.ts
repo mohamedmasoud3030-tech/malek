@@ -250,10 +250,24 @@ export async function listBankStatementLines(filters: BankReconciliationFilters)
 
 export async function createBankStatementLine(values: BankStatementLineFormValues): Promise<BankStatementLine> {
   const payload = toBankStatementLinePayload(values);
-  const { data, error } = await supabase.from('bank_statement_lines').insert(payload).select('*').single().returns<BankStatementLine>();
+  // Governed RPC (create_bank_statement_line_governed): direct table inserts
+  // are forbidden for browser clients — the table ACL denies them, and the
+  // server path computes the duplicate fingerprint and company scope.
+  const { data, error } = await supabase.rpc('create_bank_statement_line_governed', {
+    payload: {
+      bank_account_id: payload.bank_account_id,
+      transaction_date: payload.transaction_date,
+      description: payload.description,
+      reference: payload.reference ?? undefined,
+      amount: payload.amount,
+    },
+  });
   if (error) handleSupabaseError(error, 'تعذر إضافة حركة كشف البنك');
-  if (!data) throw new Error('لم يتم إرجاع حركة البنك بعد الحفظ.');
-  return data;
+  const line = data as unknown;
+  if (!line || typeof line !== 'object' || !('id' in line) || !('status' in line)) {
+    throw new Error('لم يتم إرجاع حركة البنك بعد الحفظ.');
+  }
+  return { ...(line as object), status: normalizeBankStatementLineStatus((line as BankStatementLine).status) } as BankStatementLine;
 }
 
 export async function createBankStatementImportFromCsv(values: BankStatementImportValues): Promise<BankStatementLine[]> {
@@ -558,10 +572,12 @@ export async function matchBankStatementLine(values: BankReconciliationMatchValu
 }
 
 export async function ignoreBankStatementLine(statementLineId: string): Promise<void> {
-  const { error } = await supabase
-    .from('bank_statement_lines')
-    .update({ status: 'ignored', updated_at: new Date().toISOString() })
-    .eq('id', statementLineId);
+  // Governed RPC (ignore_bank_statement_line_governed): direct status updates
+  // are forbidden for browser clients; the RPC also refuses to ignore a line
+  // that is already matched, so a reconciliation match can never be orphaned.
+  const { error } = await supabase.rpc('ignore_bank_statement_line_governed', {
+    p_statement_line_id: statementLineId,
+  });
   if (error) handleSupabaseError(error, 'تعذر تجاهل حركة كشف البنك');
 }
 

@@ -32,6 +32,11 @@ const layers = [
     cmd: ['node', ['scripts/supabase-tests/sensitive-rpc-authorization-matrix.mjs']],
   },
   {
+    id: 'internal-gl-rpc-boundary',
+    title: 'Internal GL posting/helper RPC browser EXECUTE boundary',
+    cmd: ['node', ['scripts/supabase-tests/internal-gl-rpc-browser-boundary.mjs']],
+  },
+  {
     id: 'security-definer-governance',
     title: 'Effective SECURITY DEFINER governance audit',
     cmd: ['node', ['scripts/supabase-tests/security-definer-governance-audit.mjs']],
