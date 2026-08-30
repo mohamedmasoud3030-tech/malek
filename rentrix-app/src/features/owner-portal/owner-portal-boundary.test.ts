@@ -6,6 +6,7 @@ import { OWNER_PORTAL_SECTIONS } from './owner-portal-read-model';
 
 const featureDir = resolve(import.meta.dirname);
 const portalProjectionMigration = resolve(featureDir, '../../../../supabase/migrations/20260901000045_owner_portal_canonical_projection.sql');
+const portalCompanyScopeMigration = resolve(featureDir, '../../../../supabase/migrations/20260901000062_owner_portal_vault_company_scope.sql');
 
 function featureFiles(): string[] {
   return readdirSync(featureDir).filter((file) => file.endsWith('.ts') || file.endsWith('.tsx'));
@@ -43,6 +44,15 @@ describe('Owner Portal read-only boundary', () => {
     expect(source).not.toMatch(/jsonb_build_object\([\s\S]*?['"]storage(Path|_path|Url|_url)['"]/i);
     expect(source).toContain('set schema app_private');
     expect(source).toContain('revoke all on function app_private.get_owner_portal_snapshot_legacy(uuid)');
+  });
+
+  it('scopes owner portal vault documents to the bearer-token company', () => {
+    const source = readFileSync(portalCompanyScopeMigration, 'utf8');
+    expect(source).toContain('from public.vault_documents vd');
+    expect(source).toContain('where vd.company_id = v_company');
+    expect(source).toContain('and vd.deleted_at is null');
+    expect(source).toContain('l.revoked_at is null');
+    expect(source).toContain('l.expires_at > now()');
   });
 
   it('does not count paid settlements as currently payable', () => {
