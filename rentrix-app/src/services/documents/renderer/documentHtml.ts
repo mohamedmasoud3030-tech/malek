@@ -20,6 +20,9 @@ import type { SignatureRole, UnifiedDocumentModel } from '../types';
 import { formatLatinDateTime } from '@/lib/formatters';
 import { MAX_ROWS_PER_TABLE_CHUNK } from '../documentRegistry';
 import { buildProfessionalDocumentBlocks, collectProfessionalTextChunks } from './professionalDocumentHtml';
+import { escapeDocumentHtml } from './documentHtmlShared';
+
+export { escapeDocumentHtml } from './documentHtmlShared';
 
 const ARABIC_REGEX = /[\u0600-\u06FF]/;
 const DEFAULT_SIGNATURE_LABELS = new Set([
@@ -39,18 +42,6 @@ export const signatureLabel: Record<SignatureRole, string> = {
   inspector: 'توقيع الفاحص / المفتش',
   vendor: 'توقيع المقاول / الفني',
 };
-
-export const escapeDocumentHtml = (value: string | null | undefined): string =>
-  (value ?? '').replace(/[&<>"']/g, (char) => {
-    switch (char) {
-      case '&': return '&amp;';
-      case '<': return '&lt;';
-      case '>': return '&gt;';
-      case '"': return '&quot;';
-      case "'": return '&#39;';
-      default: return char;
-    }
-  });
 
 export const collectDocumentTextChunks = (model: UnifiedDocumentModel): string[] => {
   const signatureTexts = model.footer.signatures
