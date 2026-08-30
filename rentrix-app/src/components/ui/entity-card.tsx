@@ -1,19 +1,8 @@
 import type { LucideIcon } from 'lucide-react';
-import {
-  Briefcase,
-  Building2,
-  Contact,
-  DoorOpen,
-  FileText,
-  Mail,
-  MapPinned,
-  Phone,
-  ReceiptText,
-  User,
-  Users,
-  Wrench,
-} from 'lucide-react';
+import { Briefcase, Building2, Contact, DoorOpen, FileText, Mail, MapPinned, Phone, ReceiptText, User, Users, Wrench } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { ActionMenu } from '@/components/ui/action-menu';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 export type EntityCardType =
@@ -49,15 +38,15 @@ export type EntityCardAction = Readonly<{
 type EntityCardIdentity = Readonly<{
   label: string;
   icon: LucideIcon;
-  /** Compatibility metadata for non-card identity badges. EntityCard ignores it. */
+  /** Compatibility metadata for non-card identity badges. */
   bg: string;
   text: string;
 }>;
 
 /**
- * Entity identity changes the semantic icon/label only inside EntityCard.
- * The bg/text metadata remains available to existing table badges, but card
- * geometry, surface, spacing, borders and actions are identical for all types.
+ * Entity identity now drives only the fallback chip label. Mobile register rows
+ * intentionally stay visually quiet: one neutral shell, optional status badge,
+ * strong title, secondary metadata, and compact actions.
  */
 export const entityCardTypeMap: Record<string, EntityCardIdentity> = {
   record: { label: 'سجل', icon: Users, bg: 'bg-muted/45', text: 'text-muted-foreground' },
@@ -80,37 +69,57 @@ export interface EntityCardProps {
   supportingText?: ReactNode;
   type?: EntityCardType;
   badge?: ReactNode;
+  primaryMeta?: EntityCardMetaItem[];
+  secondaryMeta?: EntityCardMetaItem[];
+  /** Backward-compatible alias; renders as secondary metadata when provided. */
   meta?: EntityCardMetaItem[];
+  /** Backward-compatible freeform stats block. */
   stats?: ReactNode;
+  primaryAction?: EntityCardAction;
+  secondaryAction?: EntityCardAction;
+  overflowActions?: EntityCardAction[];
+  /** Backward-compatible flat actions list. */
   actions?: EntityCardAction[];
   onClick?: () => void;
   className?: string;
+  bodyAriaLabel?: string;
   avatarIcon?: LucideIcon;
 }
 
 function getActionClassName(variant: EntityCardAction['variant'] = 'secondary') {
-  if (variant === 'danger') return 'border-destructive/25 bg-destructive/5 text-destructive hover:bg-destructive/10';
-  if (variant === 'default') return 'border-primary/25 bg-primary/8 text-primary hover:bg-primary/12';
-  return 'border-border/65 bg-background text-foreground/85 hover:bg-muted/45 hover:text-foreground';
+  if (variant === 'danger') return 'border-destructive/20 bg-destructive/5 text-destructive hover:bg-destructive/10';
+  if (variant === 'default') return 'border-primary/15 bg-primary text-primary-foreground hover:bg-primary/92';
+  return 'border-border/70 bg-background text-foreground/88 hover:bg-muted/35 hover:text-foreground';
 }
 
-/**
- * Card shell.
- *
- * The whole card used to carry `role="button"` while still containing the
- * per-record action buttons, which is a `nested-interactive` failure (WCAG
- * 4.1.2): a screen reader reaches one composite "button" whose own name is the
- * entire card text, and the nested actions become unreachable in some
- * AT browse modes.
- *
- * The clickable region is now a real `<button>` covering the record body only,
- * rendered as a sibling of the action row — the same structure `MobileCard`
- * already uses. The `<article>` stays a plain container, so the card keeps one
- * predictable primary activation plus independently reachable actions.
- */
-function EntityCardShell({ id, clickable, className, children }: Readonly<{
+function actionLabelText(label: ReactNode) {
+  if (label == null || typeof label === 'boolean') return '';
+  if (typeof label === 'string' || typeof label === 'number') return String(label);
+  return 'إجراء';
+}
+
+function ActionButton({ action, className }: Readonly<{ action: EntityCardAction; className?: string }>) {
+  const ActionIcon = action.icon;
+  return (
+    <Button
+      type="button"
+      size="sm"
+      aria-label={action.ariaLabel}
+      className={cn(
+        'min-w-0 gap-1.5 rounded-xl border px-3 text-[11.5px] font-semibold shadow-none',
+        getActionClassName(action.variant),
+        className,
+      )}
+      onClick={action.onClick}
+    >
+      {ActionIcon ? <ActionIcon className="size-3.5 shrink-0" aria-hidden="true" /> : null}
+      <span className="truncate">{action.label}</span>
+    </Button>
+  );
+}
+
+function EntityCardShell({ id, className, children }: Readonly<{
   id: string;
-  clickable: boolean;
   className?: string;
   children: ReactNode;
 }>) {
@@ -119,10 +128,8 @@ function EntityCardShell({ id, clickable, className, children }: Readonly<{
       data-entity-card
       data-entity-id={id}
       className={cn(
-        'relative w-full min-w-0 overflow-hidden rounded-lg border border-border/70 bg-card p-2 text-start shadow-none transition-[border-color,background-color]',
-        // The hover affordance stays on the card while activation lives on the
-        // inner button, so the visual behaviour is unchanged.
-        clickable && 'has-[[data-entity-card-primary]:hover]:border-primary/30',
+        'relative w-full min-w-0 overflow-hidden rounded-[16px] border border-border/70 bg-card px-4 py-3 text-start shadow-none',
+        '[&_[data-status-badge]]:min-h-5 [&_[data-status-badge]]:gap-1 [&_[data-status-badge]]:px-1.5 [&_[data-status-badge]]:py-0 [&_[data-status-badge]]:text-[10.5px] [&_[data-status-badge]]:leading-4',
         className,
       )}
     >
@@ -131,65 +138,118 @@ function EntityCardShell({ id, clickable, className, children }: Readonly<{
   );
 }
 
+function MetaGrid({ items, primary = false }: Readonly<{ items: EntityCardMetaItem[]; primary?: boolean }>) {
+  const columnClass = items.length <= 1 ? 'grid-cols-1' : items.length === 2 ? 'grid-cols-2' : 'grid-cols-3';
+  return (
+    <dl
+      data-entity-table-mobile-summary={primary ? '' : undefined}
+      data-entity-table-mobile-secondary-meta={primary ? undefined : ''}
+      className={cn(
+        primary
+          ? cn('mt-3 grid gap-2 border-t border-border/55 pt-3', columnClass)
+          : 'mt-2 grid gap-1.5 text-[12px] leading-4.5 text-muted-foreground',
+      )}
+    >
+      {items.map((item, index) => {
+        const MetaIcon = item.icon;
+        return (
+          <div key={index} className={cn('min-w-0', item.className)}>
+            {item.label ? (
+              <dt className={cn(primary ? 'truncate text-[10px] font-bold leading-3.5 text-muted-foreground' : 'text-[10.5px] font-semibold text-muted-foreground/90')}>
+                {item.label}
+              </dt>
+            ) : null}
+            <dd
+              dir={item.dir}
+              className={cn(
+                'min-w-0 [overflow-wrap:anywhere]',
+                primary
+                  ? 'mt-0.5 line-clamp-2 text-[12.5px] font-semibold leading-4.5 text-foreground'
+                  : item.label
+                    ? 'mt-0.5 text-[12px] font-medium leading-4.5 text-foreground/88'
+                    : 'text-[12px] font-medium leading-4.5 text-muted-foreground',
+              )}
+            >
+              <span className="inline-flex min-w-0 items-start gap-1.5">
+                {MetaIcon ? <MetaIcon className="mt-0.5 size-3 shrink-0 text-muted-foreground/70" aria-hidden="true" /> : null}
+                <span className="min-w-0 flex-1">{item.value}</span>
+              </span>
+            </dd>
+          </div>
+        );
+      })}
+    </dl>
+  );
+}
+
 export function EntityCard({
-  id, name, subtitle, supportingText, type = 'record', badge, meta, stats, actions, onClick, className, avatarIcon,
+  id,
+  name,
+  subtitle,
+  supportingText,
+  type = 'record',
+  badge,
+  primaryMeta,
+  secondaryMeta,
+  meta,
+  stats,
+  primaryAction,
+  secondaryAction,
+  overflowActions,
+  actions,
+  onClick,
+  className,
+  bodyAriaLabel,
 }: EntityCardProps) {
   const identity = entityCardTypeMap[type] ?? entityCardTypeMap.record!;
-  const AvatarIcon = avatarIcon ?? identity.icon;
+  const resolvedSecondaryMeta = secondaryMeta ?? meta;
+  const resolvedPrimaryAction = primaryAction;
+  const resolvedSecondaryAction = secondaryAction ?? actions?.[0];
+  const resolvedOverflowActions = overflowActions ?? (actions && actions.length > 1 ? actions.slice(1) : []);
+  const hasActions = Boolean(resolvedPrimaryAction || resolvedSecondaryAction || resolvedOverflowActions?.length);
 
   const body = (
-    <>
-      <div className="flex min-w-0 items-start justify-between gap-2">
-        <div className="flex min-w-0 flex-1 items-start gap-2">
-          <div className="grid size-8 shrink-0 place-items-center rounded-md border border-border/55 bg-muted/45 text-foreground/70">
-            <AvatarIcon className="size-3.5" aria-hidden="true" />
+    <div className="min-w-0">
+      <div className="flex min-w-0 items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="line-clamp-2 break-words text-[15px] font-semibold leading-5 text-foreground [overflow-wrap:anywhere]">
+            {name}
           </div>
-          <div className="min-w-0 flex-1 overflow-hidden">
-            <div className="line-clamp-2 break-words text-[13px] font-bold leading-[18px] text-foreground [overflow-wrap:anywhere]">{name}</div>
-            {subtitle ? (
-              <div className="mt-0.5 line-clamp-2 break-words text-[11.5px] font-medium leading-4 text-muted-foreground [overflow-wrap:anywhere]">{subtitle}</div>
-            ) : null}
-            {supportingText ? (
-              <div className="mt-0.5 break-words text-[11.5px] font-medium leading-4 text-muted-foreground [overflow-wrap:anywhere]">{supportingText}</div>
-            ) : null}
-          </div>
+          {subtitle ? (
+            <div className="mt-1 line-clamp-2 break-words text-[12.5px] font-medium leading-4.5 text-foreground/86 [overflow-wrap:anywhere]">
+              {subtitle}
+            </div>
+          ) : null}
+          {supportingText ? (
+            <div className="mt-1 break-words text-[12px] font-medium leading-4.5 text-muted-foreground [overflow-wrap:anywhere]">
+              {supportingText}
+            </div>
+          ) : null}
         </div>
         {badge ?? (
-          <span className="inline-flex min-h-5 shrink-0 items-center rounded border border-border/60 bg-muted/45 px-1.5 py-0 text-[10.5px] font-bold leading-4 text-muted-foreground">
+          <span className="inline-flex min-h-5 shrink-0 items-center rounded-full border border-border/60 bg-muted/35 px-1.5 py-0 text-[10.5px] font-semibold leading-4 text-muted-foreground">
             {identity.label}
           </span>
         )}
       </div>
 
-      {stats ? <div className="mt-1.5 border-t border-border/55 pt-1.5 text-[11.5px] leading-4 text-foreground/85">{stats}</div> : null}
-
-      {meta?.length ? (
-        <div className="mt-1.5 grid gap-1 border-t border-border/55 pt-1.5 text-[11.5px] leading-4 text-muted-foreground">
-          {meta.map((item, index) => {
-            const MetaIcon = item.icon;
-            return (
-              <div key={index} className={cn('flex min-w-0 items-center gap-1', item.className)}>
-                {MetaIcon ? <MetaIcon className="size-3 shrink-0 text-muted-foreground/70" aria-hidden="true" /> : null}
-                {item.label ? <span className="shrink-0 font-bold text-foreground/78">{item.label}</span> : null}
-                <span dir={item.dir} className="min-w-0 flex-1 break-words font-medium [overflow-wrap:anywhere]">{item.value}</span>
-              </div>
-            );
-          })}
-        </div>
-      ) : null}
-    </>
+      {primaryMeta?.length ? <MetaGrid items={primaryMeta} primary /> : null}
+      {stats ? <div className="mt-3 border-t border-border/55 pt-3 text-[12.5px] leading-4.5 text-foreground/88">{stats}</div> : null}
+      {resolvedSecondaryMeta?.length ? <MetaGrid items={resolvedSecondaryMeta} /> : null}
+    </div>
   );
 
   return (
-    <EntityCardShell id={id} clickable={Boolean(onClick)} className={className}>
+    <EntityCardShell id={id} className={className}>
       {onClick ? (
         <button
           type="button"
           data-entity-card-primary
+          aria-label={bodyAriaLabel}
           onClick={onClick}
           className={cn(
-            'block w-full min-w-0 cursor-pointer rounded-md text-start outline-none',
-            'transition-colors hover:bg-muted/10 focus-visible:ring-2 focus-visible:ring-primary/20',
+            'block w-full min-w-0 rounded-[12px] text-start outline-none transition-colors hover:bg-muted/8',
+            'focus-visible:ring-2 focus-visible:ring-primary/20',
           )}
         >
           {body}
@@ -198,38 +258,23 @@ export function EntityCard({
         body
       )}
 
-      {actions?.length ? (
-        <div
-          /*
-           * Keeps the incoming layout fix (a lone trailing action spans both
-           * columns). The stopPropagation handlers that used to sit here are
-           * deliberately gone: the card is no longer an ancestor button, so
-           * action clicks never reach a parent handler and suppressing
-           * bubbling would only break normal event flow.
-           */
-          className={cn(
-            'mt-1.5 grid gap-1 border-t border-border/55 pt-1.5',
-            actions.length === 1 ? 'grid-cols-1' : 'grid-cols-2 [&>:last-child:nth-child(odd)]:col-span-2',
-          )}
-        >
-          {actions.map((action, index) => {
-            const ActionIcon = action.icon;
-            return (
-              <button
-                key={index}
-                type="button"
-                aria-label={action.ariaLabel}
-                className={cn(
-                  'inline-flex min-h-11 min-w-0 items-center justify-center gap-1 rounded border px-2 text-[11.5px] font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20',
-                  getActionClassName(action.variant),
-                )}
-                onClick={action.onClick}
-              >
-                {ActionIcon ? <ActionIcon className="size-3.5 shrink-0" aria-hidden="true" /> : null}
-                <span className="truncate">{action.label}</span>
-              </button>
-            );
-          })}
+      {hasActions ? (
+        <div className="mt-3 flex items-center gap-2 border-t border-border/55 pt-3" role="presentation">
+          {resolvedPrimaryAction ? <ActionButton action={resolvedPrimaryAction} className="min-w-0 flex-1" /> : null}
+          {resolvedSecondaryAction ? <ActionButton action={resolvedSecondaryAction} className={resolvedPrimaryAction ? 'shrink-0' : 'min-w-0 flex-1'} /> : null}
+          {resolvedOverflowActions?.length ? (
+            <ActionMenu
+              label={`المزيد حول ${actionLabelText(name) || identity.label}`}
+              className="shrink-0"
+              items={resolvedOverflowActions.map((action, index) => ({
+                id: `${id}-overflow-${index}`,
+                label: actionLabelText(action.label),
+                icon: action.icon,
+                danger: action.variant === 'danger',
+                onClick: action.onClick,
+              }))}
+            />
+          ) : null}
         </div>
       ) : null}
     </EntityCardShell>

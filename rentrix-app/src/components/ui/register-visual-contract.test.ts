@@ -10,70 +10,53 @@ const entityCard = readFileSync(resolve(uiDir, 'entity-card.tsx'), 'utf8');
 const entityTable = readFileSync(resolve(uiDir, 'entity-table.tsx'), 'utf8');
 
 describe('canonical register visual contract', () => {
-  it('keeps natural-width horizontally scrollable tables instead of crushing columns', () => {
+  it('keeps natural-width semantic tables with a keyboard-reachable horizontal region when needed', () => {
     expect(table).toContain('min-w-max');
     expect(entityTable).toContain('data-entity-table-scroll');
     expect(entityTable).toContain('قابلة للتمرير أفقياً');
-    expect(entityTable).toContain('overscroll-x-contain touch-pan-x');
+    expect(entityTable).toContain('mobile-scroll-x overflow-x-auto overscroll-x-contain touch-pan-x');
   });
 
-  it('keeps sticky identity/actions desktop-only and lets the whole row move on phones', () => {
-    expect(entityTable).toContain("priority === 'actions'");
-    expect(entityTable).toContain('sticky end-0');
-    expect(table).toContain('max-md:[&_[data-column-priority=identity]]:!static');
-    expect(table).toContain('max-md:[&_[data-column-priority=actions]]:!static');
-    expect(table).toContain('max-md:[&_[data-column-priority=identity]]:!min-w-0');
-    expect(table).toContain('max-md:[&_[data-column-priority=actions]]:!min-w-0');
+  it('uses responsive viewport switching instead of a second data architecture', () => {
+    expect(entityTable).toContain("type ResponsiveViewport = 'mobile' | 'tablet' | 'desktop'");
+    expect(entityTable).toContain('function getViewportMode()');
+    expect(entityTable).toContain("viewportMode === 'mobile'");
+    expect(entityTable).toContain('resolveTabletColumns');
+    expect(entityTable).toContain('mobileSupportingKey?: string;');
+    expect(entityTable).toContain('mobilePrimaryMetaKeys?: readonly string[];');
+    expect(entityTable).toContain('mobileSecondaryMetaKeys?: readonly string[];');
   });
 
-  it('uses one dense shared row and column sizing contract without page-level reinflation', () => {
-    expect(table).toContain("'[&_td]:h-9 [&_td]:py-1.5 [&_th]:h-9'");
-    expect(table).toContain('max-md:[&_td]:!h-8');
-    expect(table).toContain('max-md:[&_td]:!px-1.5');
-    expect(table).toContain('max-md:[&_td]:!py-0.5');
-    expect(table).toContain('max-md:[&_th]:!h-8');
-    expect(table).toContain('text-[12px]');
-    expect(table).toContain('[&_td+td]:border-s');
-    expect(table).toContain('[&_th+th]:border-s');
-    expect(table).not.toContain('sm:px-3.5');
-    expect(entityTable).toContain("'h-9 px-2 py-1.5 align-middle text-[12px] sm:px-2.5'");
-    expect(entityTable).toContain("'h-8 bg-muted/35 px-2 text-[11px]");
-    expect(entityTable).not.toContain("'h-11 px-3 py-2 align-middle sm:px-3.5'");
-    expect(entityTable).not.toContain('min-w-full text-[13px]');
+  it('keeps sticky identity/actions for wide desktop only and trims lower-priority tablet columns', () => {
+    expect(entityTable).toContain('xl:sticky xl:start-0');
+    expect(entityTable).toContain('xl:sticky xl:end-0');
+    expect(entityTable).toContain("column.resolvedPriority !== 'detail'");
+    expect(entityTable).toContain('secondaryColumns.slice(0, stableColumns.length <= 4 ? 2 : 1)');
   });
 
-  it('keeps every register card on one visual shell with entity identity only', () => {
+  it('renders mobile rows as quiet card-style table rows without nested inner cards', () => {
+    expect(entityCard).toContain('rounded-[16px]');
+    expect(entityCard).toContain('border border-border/70 bg-card px-4 py-3');
+    expect(entityCard).toContain('text-[15px] font-semibold');
+    expect(entityCard).toContain('text-[12.5px] font-medium');
+    expect(entityCard).toContain('min-h-5');
+    expect(entityCard).toContain('ActionMenu');
+    expect(entityCard).not.toContain('shadow-[0_16px_38px');
+    expect(entityTable).toContain('className="grid gap-2.5" data-entity-table-mobile-list');
+  });
+
+  it('applies the shared mobile row contract on representative registers', () => {
+    const properties = readFileSync(resolve(srcDir, 'features/properties/properties-list-page.tsx'), 'utf8');
     const units = readFileSync(resolve(srcDir, 'features/units/units-page.tsx'), 'utf8');
-    const owners = readFileSync(resolve(srcDir, 'features/owners/components/owner-workspace-table.tsx'), 'utf8');
-    const tenants = readFileSync(resolve(srcDir, 'features/tenants/TenantsPage.tsx'), 'utf8');
     const contracts = readFileSync(resolve(srcDir, 'features/contracts/components/ContractTable.tsx'), 'utf8');
+    const invoices = readFileSync(resolve(srcDir, 'features/financials/components/invoice-list-section.tsx'), 'utf8');
     const maintenance = readFileSync(resolve(srcDir, 'features/maintenance/components/maintenance-list.tsx'), 'utf8');
 
-    expect(entityCard).toContain("type = 'record'");
-    expect(entityCard).toContain("property: { label: 'عقار'");
-    expect(entityCard).toContain("unit: { label: 'وحدة'");
-    expect(entityCard).toContain("contract: { label: 'عقد'");
-    expect(entityCard).toContain('bg-muted/45 text-foreground/70');
-    expect(entityCard).not.toContain('tone.bg');
-    expect(entityCard).not.toContain('tone.text');
-
-    expect(units).toContain('mobileCardType="unit"');
-    expect(owners).toContain('mobileCardType="owner"');
-    expect(tenants).toContain('mobileCardType="tenant"');
-    expect(contracts).toContain('mobileCardType="contract"');
-    expect(maintenance).toContain('mobileCardType="maintenance"');
-  });
-
-  it('keeps mobile cards compact, flat and non-overlapping', () => {
-    expect(entityCard).toContain('p-2 text-start shadow-none');
-    expect(entityCard).toContain('border-border/70');
-    expect(entityCard).toContain('text-[13px]');
-    // Compact cards still keep 44px touch targets on their actions.
-    expect(entityCard).toContain('min-h-11');
-    expect(entityCard).toContain('[overflow-wrap:anywhere]');
-    expect(entityCard).not.toContain('sm:text-[15px]');
-    expect(entityTable).toContain('className="grid gap-1.5" data-entity-table-mobile-list');
-    expect(entityTable).toContain('gap-x-2 gap-y-1');
-    expect(entityTable).toContain('rounded-lg border border-border/60 bg-card p-1 shadow-none');
+    expect(properties).toContain('mobileCardType="property"');
+    expect(properties).toContain('mobileSupportingKey="owner"');
+    expect(units).toContain('mobileSupportingKey="property"');
+    expect(contracts).toContain('mobileSupportingKey="tenant"');
+    expect(invoices).toContain('mobilePrimaryMetaKeys={[\'remaining\', \'gross\', \'due_date\']}');
+    expect(maintenance).toContain('mobileSupportingKey="location"');
   });
 });

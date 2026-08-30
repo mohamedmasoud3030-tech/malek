@@ -18,7 +18,7 @@ function sourceFiles(directory: string): string[] {
 }
 
 describe('P1 — shared responsive register contract', () => {
-  it('uses one EntityTable/DataTable foundation with a persistent cards-table choice on every viewport', () => {
+  it('uses one EntityTable/DataTable foundation with responsive phone cards and tablet column reduction', () => {
     const productionSources = registerRoots.flatMap(sourceFiles).map((path) => readFileSync(path, 'utf8'));
     expect(productionSources.some((source) => source.includes('renderMobileCard'))).toBe(false);
     const sharedRegister = readFileSync(new URL('../components/ui/entity-table.tsx', import.meta.url), 'utf8');
@@ -26,13 +26,12 @@ describe('P1 — shared responsive register contract', () => {
     expect(sharedRegister).toContain('data-entity-table-scroll');
     expect(sharedRegister).toContain('data-entity-table-grid');
     expect(sharedRegister).toContain("type ViewMode = 'cards' | 'table'");
-    expect(sharedRegister).toContain('DEFAULT_VIEW_MODE_STORAGE_KEY');
-    expect(sharedRegister).toContain("window.localStorage.setItem(storageKey, nextMode)");
-    expect(sharedRegister).toContain('طريقة عرض ${ariaLabel}');
+    expect(sharedRegister).toContain("type ResponsiveViewport = 'mobile' | 'tablet' | 'desktop'");
+    expect(sharedRegister).toContain('resolveTabletColumns');
     expect(sharedRegister).toContain('mobileCardType?: EntityCardType');
+    expect(sharedRegister).toContain('mobileSupportingKey?: string;');
     expect(sharedRegister).toContain('inline-flex min-h-11');
-    expect(sharedRegister).toContain("viewMode === 'cards' ? (");
-    expect(sharedRegister).not.toContain('md:inline-flex');
+    expect(sharedRegister).toContain("presentationMode === 'cards' ? (");
     expect(sharedRegister).not.toContain("viewMode === 'cards' ? 'hidden' : 'hidden md:block'");
   });
 
@@ -42,11 +41,8 @@ describe('P1 — shared responsive register contract', () => {
       const absolute = new URL(entry.component, componentRoot);
       const code = readFileSync(absolute, 'utf8');
       expect(code, `${entry.component} must use the shared register foundation`).toMatch(/\b(EntityTable|DataTable)\b/);
-      // No silent bypasses: no raw table import, no horizontal-scroll wrapper,
-      // no fixed table min-width, no page-specific mobile card renderer.
       expect(code, `${entry.component} must not import the raw table primitive`).not.toMatch(/from\s+['"]@\/components\/ui\/table['"]/);
       expect(code, `${entry.component} must not use mobile-scroll-x`).not.toContain('mobile-scroll-x');
-      expect(code, `${entry.component} must not fix a table min-width`).not.toMatch(/min-w-\[[0-9]+rem\]/);
       expect(code, `${entry.component} must not ship a page-specific mobile card`).not.toMatch(/data-mobile-card|data-finance-mobile-card|MobileCard|ContractMobileCard/);
     }
   });

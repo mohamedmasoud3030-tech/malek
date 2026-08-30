@@ -26,6 +26,11 @@ vi.mock('@/features/contracts/queries/useUnitContractDrafts', () => ({
   useUnitContractDrafts: () => ({ data: [], isLoading: false, isError: false }),
 }));
 
+function setViewportWidth(width: number) {
+  Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: width });
+  window.dispatchEvent(new Event('resize'));
+}
+
 function makeUnitsQuery(overrides: Partial<UseQueryResult<Unit[]>>): UseQueryResult<Unit[]> {
   return {
     data: [],
@@ -67,10 +72,8 @@ describe('UnitsList load states', () => {
 });
 
 describe('UnitsList mobile card density', () => {
-  it('shows unit identity, status, rent and flat actions on the mobile card', () => {
-    // The shared register keeps an explicit Cards ⇄ Table choice; pin the
-    // cards presentation so the mobile card surface is the one under test.
-    window.localStorage.setItem('malek:entity-register:view-mode', 'cards');
+  it('shows unit identity, status, rent and compact overflow actions on the mobile card', () => {
+    setViewportWidth(375);
     const unitsQuery = makeUnitsQuery({
       data: [
         {
@@ -97,18 +100,19 @@ describe('UnitsList mobile card density', () => {
 
     const card = host.querySelector<HTMLElement>('[data-entity-table-mobile-card]');
     expect(card).not.toBeNull();
-    // Identity + occupancy status.
     expect(card?.textContent).toContain('وحدة A-101');
     expect(card?.textContent).toContain('مشغولة');
-    // Quick facts: rent (authoritative in the list model) + notes.
+
     const summary = card?.querySelector<HTMLElement>('[data-entity-table-mobile-summary]');
     expect(summary).not.toBeNull();
     expect(summary?.textContent).toContain('الإيجار');
-    expect(summary?.textContent).toContain('تسليم مفتاح تم');
-    // Flat actions: no «إجراءات» disclosure layer.
+
+    const secondaryMeta = card?.querySelector<HTMLElement>('[data-entity-table-mobile-secondary-meta]');
+    expect(secondaryMeta?.textContent).toContain('تسليم مفتاح تم');
+
     expect(host.querySelector('[data-entity-table-mobile-actions]')).toBeNull();
-    expect(card?.textContent).toContain('فتح التفاصيل');
+    expect(card?.querySelector('[data-entity-card-primary]')).not.toBeNull();
     expect(card?.textContent).toContain('تعديل');
-    expect(card?.textContent).toContain('أرشفة');
+    expect(card?.querySelector('[data-action-menu]')).toBeTruthy();
   });
 });

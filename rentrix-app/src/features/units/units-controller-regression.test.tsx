@@ -65,6 +65,11 @@ vi.mock('@/features/properties/use-properties', () => ({
   }),
 }));
 
+function setViewportWidth(width: number) {
+  Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: width });
+  window.dispatchEvent(new Event('resize'));
+}
+
 /* ── Pure helper unit tests ────────────────────────────────────────── */
 
 describe('computeUnitKpis', () => {
@@ -114,6 +119,7 @@ describe('UnitsPage controller regression', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    setViewportWidth(1280);
     container = document.createElement('div');
     document.body.appendChild(container);
     root = createRoot(container);
@@ -131,14 +137,10 @@ describe('UnitsPage controller regression', () => {
     const desktopRows = container.querySelectorAll('tbody tr');
     expect(desktopRows.length).toBe(3);
 
-    // The same semantic table remains present at narrow widths and scrolls horizontally.
     expect(container.querySelector('[data-entity-table-scroll]')).toBeTruthy();
     expect(container.querySelector('[data-compact-responsive-table]')).toBeTruthy();
     expect(container.querySelector('table[data-entity-table]')).toBeTruthy();
-    // The shared register keeps an explicit Cards ⇄ Table choice on every
-    // viewport: the cards list replaces the table only in the cards view mode.
-    const viewModeToggle = container.querySelector('[role="group"][aria-label*="طريقة عرض"]');
-    expect(viewModeToggle).toBeTruthy();
+    expect(container.querySelector('[role="group"][aria-label*="طريقة عرض"]')).toBeNull();
   });
 
   it('renders KPI cards with computed values', async () => {

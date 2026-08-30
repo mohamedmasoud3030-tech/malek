@@ -46,7 +46,6 @@ const defaultInvoiceColumns = [
   'actions',
 ];
 
-const INVOICE_REGISTER_VIEW_MODE_KEY = 'malek:invoices:register-view-mode-v1';
 
 type InvoiceListSectionProps = {
   status: InvoiceStatusFilter;
@@ -124,18 +123,6 @@ export function InvoiceListSection({
   onPageChange,
 }: InvoiceListSectionProps) {
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultInvoiceColumns]);
-  const [registerViewModeKey] = useState(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        if (!window.localStorage.getItem(INVOICE_REGISTER_VIEW_MODE_KEY)) {
-          window.localStorage.setItem(INVOICE_REGISTER_VIEW_MODE_KEY, 'table');
-        }
-      } catch {
-        // EntityTable still falls back safely when storage is unavailable.
-      }
-    }
-    return INVOICE_REGISTER_VIEW_MODE_KEY;
-  });
 
   const invoiceColumns = useMemo((): ColumnDef<InvoiceListItem>[] => [
               {
@@ -297,7 +284,6 @@ export function InvoiceListSection({
             rows={invoices}
             keyOf={(invoice) => invoice.id}
             visibleColumnKeys={visibleColumnKeys}
-            viewModeStorageKey={registerViewModeKey}
             toolbar={(
               <div className="flex min-w-0 items-center justify-between gap-3">
                 <p className="truncate text-xs font-bold text-muted-foreground">
@@ -321,8 +307,11 @@ export function InvoiceListSection({
             }
             onRowClick={(invoice) => onSelectInvoice(invoice.id)}
             pagination={{ page, pageSize, total, onPageChange }}
+            mobileCardType="invoice"
             mobileBadgeKey="status"
-            mobileSummaryKeys={['tenant', 'property_unit', 'billing_period', 'remaining']}
+            mobileSupportingKey="tenant"
+            mobilePrimaryMetaKeys={['remaining', 'gross', 'due_date']}
+            mobileSecondaryMetaKeys={['property_unit', 'billing_period']}
             mobileCardPrimaryAction={(invoice) => ({
               label: isInvoiceCollectible(invoice) && canCollectPayments && onCollectInvoice ? 'تحصيل' : 'عرض الفاتورة',
               icon: isInvoiceCollectible(invoice) && canCollectPayments && onCollectInvoice ? HandCoins : undefined,

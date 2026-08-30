@@ -202,11 +202,12 @@ export function ContractTable({
       pagination={pagination}
       mobileCardType="contract"
       mobileBadgeKey="status"
-      mobileSummaryKeys={["tenant", "unit", "period", "rent_amount"]}
+      mobileSupportingKey="tenant"
+      mobilePrimaryMetaKeys={["unit", "rent_amount", "period"]}
       mobileCardPrimaryAction={(contract) => ({
-        label: "فتح التفاصيل",
+        label: "عرض العقد",
         variant: "default",
-        ariaLabel: `فتح تفاصيل العقد ${getContractNumber(contract)}`,
+        ariaLabel: `عرض العقد ${getContractNumber(contract)}`,
         onClick: () => onPreview(contract.id),
       })}
       mobileCardActions={(contract) => [

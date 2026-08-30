@@ -55,12 +55,18 @@ vi.mock('@/features/owners/useOwnerAgreements', () => ({
   useCreatePropertyWithAgreement: () => ({ isPending: false, mutateAsync: createPropertyWithAgreementMock }),
 }));
 
+function setViewportWidth(width: number) {
+  Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: width });
+  window.dispatchEvent(new Event('resize'));
+}
+
 describe('PropertiesListPage controller regression', () => {
   let container: HTMLDivElement;
   let root: ReturnType<typeof createRoot>;
 
   beforeEach(() => {
     vi.clearAllMocks();
+    setViewportWidth(1280);
     createPropertyWithAgreementMock.mockResolvedValue({ id: 'new-id' });
     propertyRows = [
       { id: 'p1', title: 'عمارة الندى', type: 'سكني', address: 'الرياض', status: 'active', purchase_value: null, current_value: null, notes: null },
@@ -100,12 +106,10 @@ describe('PropertiesListPage controller regression', () => {
     const desktopRows = container.querySelectorAll('tbody tr');
     expect(desktopRows.length).toBe(2);
 
-    // The register keeps one explicit Cards ⇄ Table choice: the table view
-    // carries the shared view-mode toggle instead of a duplicate card list.
     expect(container.querySelector('[data-entity-table-scroll]')).toBeTruthy();
     expect(container.querySelector('[data-compact-responsive-table]')).toBeTruthy();
     expect(container.querySelector('table[data-entity-table]')).toBeTruthy();
-    expect(container.querySelector('[role="group"][aria-label*="طريقة عرض"]')).toBeTruthy();
+    expect(container.querySelector('[role="group"][aria-label*="طريقة عرض"]')).toBeNull();
   });
 
   it('opens create modal and shows agreement fields', async () => {
@@ -136,9 +140,7 @@ describe('PropertiesListPage controller regression', () => {
   });
 
   it('renders mobile property cards with scan-level summary fields and flat actions', async () => {
-    // The shared register keeps an explicit Cards ⇄ Table choice; pin the
-    // cards presentation so the mobile card surface is the one under test.
-    window.localStorage.setItem('malek:entity-register:view-mode', 'cards');
+    setViewportWidth(375);
     propertyRows = [{
       id: 'p1', title: 'عمارة الندى', type: 'سكني', address: 'الرياض', status: 'active',
       purchase_value: null, current_value: null, notes: null,
@@ -154,26 +156,24 @@ describe('PropertiesListPage controller regression', () => {
 
     const card = container.querySelector<HTMLElement>('[data-entity-table-mobile-card]');
     expect(card).toBeTruthy();
-    // Identity + primary status badge.
     expect(card?.textContent).toContain('عمارة الندى');
     expect(card?.textContent).toContain('نشط');
-    // Quick facts: type, address, owner, units (counted from the embedded units).
+    expect(card?.textContent).toContain('مالك تجريبي');
+
     const summary = card?.querySelector<HTMLElement>('[data-entity-table-mobile-summary]');
     expect(summary).toBeTruthy();
-    expect(summary?.textContent).toContain('النوع');
-    expect(summary?.textContent).toContain('سكني');
-    expect(summary?.textContent).toContain('العنوان');
-    expect(summary?.textContent).toContain('الرياض');
-    expect(summary?.textContent).toContain('المالك');
-    expect(summary?.textContent).toContain('مالك تجريبي');
     expect(summary?.textContent).toContain('الوحدات');
     expect(summary?.textContent).toContain('2/3 وحدة');
-    // No intermediate «إجراءات» disclosure on the card.
+    expect(summary?.textContent).toContain('النوع');
+    expect(summary?.textContent).toContain('سكني');
+
+    const secondaryMeta = card?.querySelector<HTMLElement>('[data-entity-table-mobile-secondary-meta]');
+    expect(secondaryMeta?.textContent).toContain('العنوان');
+    expect(secondaryMeta?.textContent).toContain('الرياض');
+
     expect(container.querySelector('[data-entity-table-mobile-actions]')).toBeNull();
-    // Primary + secondary actions live flat on the card.
-    expect(card?.textContent).toContain('فتح التفاصيل');
     expect(card?.textContent).toContain('تعديل');
-    expect(card?.textContent).toContain('أرشفة');
+    expect(card?.querySelector('[data-action-menu]')).toBeTruthy();
   });
 
   it('opens edit modal from the flat row action (no three-dot menu layer)', async () => {

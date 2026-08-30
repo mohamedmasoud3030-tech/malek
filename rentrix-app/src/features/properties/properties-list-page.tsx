@@ -370,8 +370,11 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
               total: controller.totalCount,
               onPageChange: controller.setPage,
             }}
+            mobileCardType="property"
             mobileBadgeKey="status"
-            mobileSummaryKeys={["type", "address", "owner", "units"]}
+            mobileSupportingKey="owner"
+            mobilePrimaryMetaKeys={["units", "type"]}
+            mobileSecondaryMetaKeys={["address"]}
             mobileCardActions={(property) => [
               ...(canEdit ? [{
                 label: "تعديل",
@@ -389,7 +392,6 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
               }] : []),
             ]}
             columns={propertyColumns}
-
           />
         </section>
       </ListPage>

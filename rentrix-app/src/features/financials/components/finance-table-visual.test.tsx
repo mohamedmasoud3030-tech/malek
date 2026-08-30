@@ -90,7 +90,7 @@ describe('Wave 2 finance table desktop behavior', () => {
     expect(scrollRegion).not.toBeNull();
     expect(scrollRegion?.getAttribute('tabIndex')).toBe('0');
     expect(scrollRegion?.getAttribute('role')).toBe('region');
-    expect(scrollRegion?.getAttribute('aria-label')).toContain('قابلة للتمرير');
+    expect(scrollRegion?.getAttribute('aria-label')).toContain('قابلة للتمرير أفقياً');
     const financeRoot = document.querySelector('[data-finance-table-wrapper]');
     expect(financeRoot).not.toBeNull();
   });

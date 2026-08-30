@@ -290,15 +290,10 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
           ) : undefined}
           mobileCardType="unit"
           mobileBadgeKey="status"
-          mobileSummaryKeys={["rent", "property"]}
+          mobileSupportingKey="property"
+          mobilePrimaryMetaKeys={["rent", "floor"]}
+          mobileSecondaryMetaKeys={["notes"]}
           mobileCardActions={(unit) => [
-            {
-              label: "معاينة",
-              icon: Eye,
-              variant: "secondary" as const,
-              ariaLabel: `معاينة وحدة ${unit.unit_number}`,
-              onClick: () => openPreview(unit),
-            },
             ...(canEditUnit ? [{
               label: "تعديل",
               icon: Edit,

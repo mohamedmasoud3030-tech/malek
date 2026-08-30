@@ -164,7 +164,9 @@ export function OwnerWorkspaceTable({
           columns={columns}
           visibleColumnKeys={visibleColumnKeys}
           mobileCardType="owner"
-          mobileSummaryKeys={['contact', 'property_count']}
+          mobileSupportingKey="contact"
+          mobilePrimaryMetaKeys={['contracts', 'property_count']}
+          mobileSecondaryMetaKeys={['ownership']}
           mobileCardActions={(row) => [
             {
               label: 'العلاقات',

@@ -260,9 +260,11 @@ export function MaintenanceList(props: MaintenanceListProps) {
         onRetry={onRetry}
         mobileCardType="maintenance"
         mobileBadgeKey="status"
-        mobileSummaryKeys={["attention", "priority", "location", "provider"]}
+        mobileSupportingKey="location"
+        mobilePrimaryMetaKeys={["priority", "attention"]}
+        mobileSecondaryMetaKeys={["provider"]}
         mobileCardPrimaryAction={(row) => ({
-          label: "التفاصيل",
+          label: "عرض الطلب",
           icon: Eye,
           variant: "default",
           ariaLabel: `عرض تفاصيل ${row.title}`,
