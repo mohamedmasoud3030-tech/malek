@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { SlidersHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { ActiveFilterBar, type ActiveFilterItem } from './active-filter-bar';
+import type { ActiveFilterItem } from './active-filter-bar';
 import { BottomSheet } from './bottom-sheet';
 import { Button } from './button';
 import { SearchInput } from './search-input';
@@ -24,9 +24,9 @@ type FilterBarProps = {
 /**
  * Canonical MALEK search + filter system.
  *
- * Search and filtering are working tools, not content cards. The surface stays
- * visually quiet, keeps the search first, and progressively reveals advanced
- * controls only when the user asks for them.
+ * Every register exposes one calm control only: search plus an icon-only filter
+ * trigger. Quick filters, advanced filters and view utilities live inside the
+ * same sheet so pages do not accumulate duplicated filter rows and chips.
  */
 export function FilterBar({
   searchValue,
@@ -35,32 +35,31 @@ export function FilterBar({
   searchAriaLabel = 'بحث',
   filters,
   advancedFilters,
-  advancedFilterTitle = 'فلاتر إضافية',
-  advancedFilterDescription = 'استخدم الفلاتر الإضافية لتضييق النتائج عند الحاجة.',
+  advancedFilterTitle = 'الفلاتر',
+  advancedFilterDescription = 'اختر فقط ما تحتاجه لتضييق النتائج.',
   activeFilters = [],
   onClearAllFilters,
   actions,
   className,
 }: FilterBarProps) {
-  const [advancedOpen, setAdvancedOpen] = useState(false);
-  const [desktopAdvancedOpen, setDesktopAdvancedOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const showSearch = typeof onSearchChange === 'function';
   const activeFilterCount = activeFilters.length;
-  const showUtilities = Boolean(advancedFilters || actions);
+  const hasFilterContent = Boolean(filters || advancedFilters || actions || activeFilterCount > 0);
 
   return (
-    <div className="min-w-0 space-y-1.5" data-search-filter-system>
+    <div className="min-w-0" data-search-filter-system>
       <section
         data-filter-bar
         data-register-toolbar
         className={cn(
-          'grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-1.5 border-y border-border/50 bg-muted/15 py-2 sm:gap-2 lg:grid-cols-[minmax(18rem,1.1fr)_minmax(0,2fr)_auto]',
+          'flex min-w-0 items-center gap-2 border-y border-border/50 bg-muted/10 py-2',
           className,
         )}
         aria-label="البحث والتصفية"
       >
         {showSearch ? (
-          <div className="col-span-2 min-w-0 lg:col-span-1">
+          <div className="min-w-0 flex-1">
             <SearchInput
               value={searchValue ?? ''}
               onChange={onSearchChange}
@@ -68,100 +67,61 @@ export function FilterBar({
               aria-label={searchAriaLabel}
             />
           </div>
-        ) : null}
+        ) : <div className="min-w-0 flex-1" />}
 
-        {filters ? (
-          <div
-            className={cn(
-              'flex min-w-0 max-w-full items-center gap-1.5 overflow-x-auto overscroll-x-contain no-scrollbar [&>*]:shrink-0 [&_input]:min-h-11 [&_input]:h-11 [&_select]:min-h-11 [&_select]:h-11',
-              'col-span-2 lg:col-span-1',
-              !showSearch && 'lg:col-span-2',
-            )}
+        {hasFilterContent ? (
+          <Button
+            type="button"
+            variant={activeFilterCount > 0 ? 'secondary' : 'ghost'}
+            size="icon"
+            className="relative size-11 shrink-0 rounded-xl border border-border/60 bg-card/80 text-foreground shadow-none"
+            aria-label={activeFilterCount > 0 ? `${advancedFilterTitle}، ${activeFilterCount} نشطة` : advancedFilterTitle}
+            aria-expanded={filtersOpen}
+            onClick={() => setFiltersOpen(true)}
           >
-            {filters}
-          </div>
-        ) : null}
-
-        {showUtilities ? (
-          <div
-            className={cn(
-              'flex min-w-0 flex-wrap items-center justify-end gap-1.5 [&>*]:shrink-0',
-              'col-span-2 lg:col-span-1',
-              !filters && !showSearch && 'lg:col-span-3',
-              !filters && showSearch && 'lg:col-span-2',
-            )}
-          >
-            {advancedFilters ? (
-              <>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="min-h-11 rounded-lg px-3 text-xs md:hidden"
-                  aria-label={activeFilterCount > 0 ? `${advancedFilterTitle}، ${activeFilterCount} نشطة` : advancedFilterTitle}
-                  onClick={() => setAdvancedOpen(true)}
-                >
-                  <SlidersHorizontal className="me-1.5 size-3.5" aria-hidden="true" />
-                  <span>{advancedFilterTitle}</span>
-                  {activeFilterCount > 0 ? (
-                    <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[11px] font-black text-primary tabular-nums">
-                      {activeFilterCount}
-                    </span>
-                  ) : null}
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="hidden min-h-11 rounded-lg px-3 text-xs md:inline-flex"
-                  aria-label={activeFilterCount > 0 ? `${advancedFilterTitle}، ${activeFilterCount} نشطة` : advancedFilterTitle}
-                  aria-expanded={desktopAdvancedOpen}
-                  aria-controls="desktop-advanced-filters"
-                  onClick={() => setDesktopAdvancedOpen((open) => !open)}
-                >
-                  <SlidersHorizontal className="me-1.5 size-3.5" aria-hidden="true" />
-                  <span>{advancedFilterTitle}</span>
-                  {activeFilterCount > 0 ? (
-                    <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[11px] font-black text-primary tabular-nums">
-                      {activeFilterCount}
-                    </span>
-                  ) : null}
-                </Button>
-              </>
+            <SlidersHorizontal className="size-4" aria-hidden="true" />
+            {activeFilterCount > 0 ? (
+              <span
+                className="absolute -end-1 -top-1 grid min-h-5 min-w-5 place-items-center rounded-full bg-primary px-1 text-[10px] font-black leading-none text-primary-foreground tabular-nums"
+                aria-hidden="true"
+              >
+                {activeFilterCount}
+              </span>
             ) : null}
-            {actions}
-          </div>
-        ) : null}
-
-        {advancedFilters && desktopAdvancedOpen ? (
-          <div
-            id="desktop-advanced-filters"
-            className="col-span-2 hidden min-w-0 border-t border-border/45 pt-2 md:block lg:col-span-3"
-            data-advanced-filter-desktop
-          >
-            {advancedFilters}
-          </div>
+          </Button>
         ) : null}
       </section>
 
-      {activeFilterCount > 0 ? (
-        <ActiveFilterBar
-          filters={activeFilters}
-          onClearAll={onClearAllFilters}
-          className="shadow-none"
-        />
-      ) : null}
-
-      {advancedFilters ? (
-        <BottomSheet open={advancedOpen} onClose={() => setAdvancedOpen(false)} title={advancedFilterTitle}>
-          <div className="space-y-3" data-advanced-filter-mobile>
+      {hasFilterContent ? (
+        <BottomSheet open={filtersOpen} onClose={() => setFiltersOpen(false)} title={advancedFilterTitle}>
+          <div className="space-y-4" data-unified-filter-sheet>
             <p className="text-xs font-medium leading-5 text-muted-foreground">{advancedFilterDescription}</p>
-            {advancedFilters}
-            <div className="flex items-center gap-2 pt-1">
+
+            {filters ? (
+              <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2" data-filter-sheet-quick>
+                {filters}
+              </div>
+            ) : null}
+
+            {advancedFilters ? (
+              <div className="border-t border-border/50 pt-3" data-filter-sheet-advanced>
+                {advancedFilters}
+              </div>
+            ) : null}
+
+            {actions ? (
+              <div className="flex min-w-0 flex-wrap items-center gap-2 border-t border-border/50 pt-3" data-filter-sheet-actions>
+                {actions}
+              </div>
+            ) : null}
+
+            <div className="grid grid-cols-2 gap-2 border-t border-border/50 pt-3">
               {activeFilterCount > 0 && onClearAllFilters ? (
-                <Button type="button" variant="ghost" className="min-h-11 flex-1 rounded-lg" onClick={onClearAllFilters}>
-                  مسح الكل
+                <Button type="button" variant="ghost" className="min-h-11 rounded-xl" onClick={onClearAllFilters}>
+                  مسح الفلاتر
                 </Button>
-              ) : null}
-              <Button type="button" className="min-h-11 flex-1 rounded-lg" onClick={() => setAdvancedOpen(false)}>
+              ) : <span aria-hidden="true" />}
+              <Button type="button" className="min-h-11 rounded-xl" onClick={() => setFiltersOpen(false)}>
                 عرض النتائج
               </Button>
             </div>
