@@ -1,6 +1,5 @@
 import { CircleCheck, Download, HandCoins, Printer, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import type { Payment } from '@/types/domain';
 import { getInvoiceGrossAmount, type InvoiceDetail } from '../invoices/invoiceService';
@@ -87,25 +86,21 @@ export function InvoiceDetailSection({
   const collectionReceiptNumber = collectionReceiptDetail?.receipt_number ?? collectionSuccess?.receiptNumber ?? null;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>تفاصيل الفاتورة وسجل المدفوعات</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {!selectedInvoiceId ? <div className="rounded-2xl border border-dashed p-6 text-center text-muted-foreground">اختر فاتورة لعرض التفاصيل وتسجيل دفعة</div> : null}
-        {selectedInvoiceId && isLoading ? <div className="rounded-2xl border border-dashed p-6 text-center text-muted-foreground">جارٍ تحميل تفاصيل الفاتورة...</div> : null}
-        {selectedInvoiceId && isError ? <div className="rounded-2xl border border-destructive/40 bg-destructive/10 p-6 text-center text-destructive">{getErrorMessage(error, 'تعذر تحميل تفاصيل الفاتورة')}</div> : null}
-        {invoiceDetail ? <>
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-muted/20 p-4">
-            <div>
-              <p className="text-sm text-muted-foreground">إخراج المستند</p>
-              <p className="font-black">يمكن تصدير الفاتورة الحالية من نفس بياناتها المحملة.</p>
-            </div>
-            <Button type="button" variant="secondary" onClick={onExportPdf} disabled={!onExportPdf}>
-              <Download className="me-2 size-4" />تصدير PDF
-            </Button>
-          </div>
-
+    <section className="space-y-4" aria-labelledby="invoice-detail-heading" data-invoice-detail>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h3 id="invoice-detail-heading" className="text-base font-black">تفاصيل الفاتورة وسجل المدفوعات</h3>
+        {invoiceDetail ? (
+          <Button type="button" variant="secondary" className="min-h-11" onClick={onExportPdf} disabled={!onExportPdf}>
+            <Download className="me-2 size-4" aria-hidden="true" />تصدير PDF
+          </Button>
+        ) : null}
+      </div>
+      {!selectedInvoiceId ? <div className="rounded-2xl border border-dashed p-6 text-center text-muted-foreground">اختر فاتورة لعرض التفاصيل وتسجيل دفعة</div> : null}
+      {selectedInvoiceId && isLoading ? <div className="rounded-2xl border border-dashed p-6 text-center text-muted-foreground">جارٍ تحميل تفاصيل الفاتورة...</div> : null}
+      {selectedInvoiceId && isError ? <div className="rounded-2xl border border-destructive/40 bg-destructive/10 p-6 text-center text-destructive">{getErrorMessage(error, 'تعذر تحميل تفاصيل الفاتورة')}</div> : null}
+      {invoiceDetail ? (
+        <div className="grid min-w-0 gap-4 lg:grid-cols-12 lg:items-start">
+          <div className="min-w-0 space-y-4 lg:col-span-7">
           <ResponsiveCardGrid gap="sm">
             <div className="rounded-2xl border bg-muted/30 p-4">
               <p className="text-sm text-muted-foreground">رقم الفاتورة</p>
@@ -226,24 +221,28 @@ export function InvoiceDetailSection({
             </div>
           ) : null}
 
-          <QuickPaymentForm
-            remainingAmount={remaining}
-            amount={amount}
-            method={method}
-            paymentDate={paymentDate}
-            reference={reference}
-            amountValidationMessage={amountValidationMessage}
-            isPending={isPaymentPending}
-            isPaymentDisabled={isPaymentDisabled}
-            focusKey={collectionFocusKey}
-            onAmountChange={onAmountChange}
-            onMethodChange={onMethodChange}
-            onPaymentDateChange={onPaymentDateChange}
-            onReferenceChange={onReferenceChange}
-            onPostPayment={onPostPayment}
-          />
-        </> : null}
-      </CardContent>
-    </Card>
+          </div>
+
+          <div className="min-w-0 lg:col-span-5">
+            <QuickPaymentForm
+              remainingAmount={remaining}
+              amount={amount}
+              method={method}
+              paymentDate={paymentDate}
+              reference={reference}
+              amountValidationMessage={amountValidationMessage}
+              isPending={isPaymentPending}
+              isPaymentDisabled={isPaymentDisabled}
+              focusKey={collectionFocusKey}
+              onAmountChange={onAmountChange}
+              onMethodChange={onMethodChange}
+              onPaymentDateChange={onPaymentDateChange}
+              onReferenceChange={onReferenceChange}
+              onPostPayment={onPostPayment}
+            />
+          </div>
+        </div>
+      ) : null}
+    </section>
   );
 }

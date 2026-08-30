@@ -397,7 +397,7 @@ export function DashboardPage() {
                 </DashboardGroup>
               </div>
 
-              <div className="min-w-0 xl:col-span-12 xl:order-3">
+              <div className="min-w-0 xl:col-span-5 xl:order-3">
                 <DashboardGroup eyebrow="أولويات" title="يحتاج انتباهك" ariaLabel="الحالات التي تحتاج انتباهاً" sectionId="needs-attention" priority="attention" showHeader={false}>
                   <NeedsAttentionSection
                     signal={needsAttention}
@@ -432,7 +432,7 @@ export function DashboardPage() {
                 </DashboardGroup>
               </div>
 
-              <div className="min-w-0 xl:col-span-12 xl:order-2">
+              <div className="min-w-0 xl:col-span-7 xl:order-2">
                 <DashboardGroup eyebrow="الأداء المالي" title="أداء المكتب" ariaLabel="الأداء المالي" sectionId="financial-performance" priority="primary" showHeader={false}>
                   <FinancialPerformanceSection
                     snapshot={snapshot}

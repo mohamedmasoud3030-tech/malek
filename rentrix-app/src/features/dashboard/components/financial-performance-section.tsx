@@ -115,7 +115,7 @@ export const FinancialPerformanceSection = memo(function FinancialPerformanceSec
                     { dataKey: 'collected', name: 'المحصّل', tone: 'primary' },
                     { dataKey: 'expenses', name: 'المصروفات', tone: 'negative' },
                   ]}
-                  className="h-48 sm:h-56 lg:h-60"
+                  className="h-44 sm:h-52 lg:h-52"
                 />
               </div>
               <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-border/50 pt-2.5 text-[11px] font-bold text-muted-foreground" data-dashboard-performance-summary>
