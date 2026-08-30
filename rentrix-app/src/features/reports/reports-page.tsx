@@ -1,6 +1,6 @@
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { ChevronDown } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AccessDenied } from '@/components/layout/access-denied';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
@@ -14,6 +14,7 @@ import { getInitialReportsFilters, type ReportsFilterState } from './reports-wor
 import {
   REPORTS_SECTION_SEARCH_KEY,
   buildWorkspaceSearch,
+  diffReportFiltersFromSearch,
   resolveWorkspaceLocation,
 } from './reports-section-model';
 import type { ReportViewId } from './report-view-registry';
@@ -56,15 +57,33 @@ export function ReportsPage() {
     [navigate],
   );
 
-  /** Contextual drill-through: carry the relevant scope into the target workspace. */
+  /**
+   * URL↔state synchronization. The URL is the authority for contextual
+   * drill-through scope: navigation writes the filter patch into the search
+   * object (via buildWorkspaceSearch) and this effect mirrors only the keys
+   * that changed into local state. Back/Forward/refresh therefore restore
+   * the report scope from the URL, while keys the URL never carried (e.g.
+   * locally edited dates) keep their local values.
+   */
+  const lastSearchRef = useRef<Record<string, unknown>>(search);
+  useEffect(() => {
+    const previous = lastSearchRef.current;
+    if (previous === search) return;
+    lastSearchRef.current = search;
+    const patch = diffReportFiltersFromSearch(previous, search);
+    if (patch) setFilters((current) => ({ ...current, ...patch }));
+  }, [search]);
+
+  /**
+   * Contextual drill-through: the filter patch is serialized into the target
+   * URL so the scope survives refresh, share links, and Back/Forward. The
+   * resulting search state carries workspace + view + the patched filter keys.
+   */
   const handleDrill: ReportDrillHandler = useCallback(
     (targetWorkspace, targetView, filterPatch) => {
-      if (filterPatch) {
-        setFilters((current) => ({ ...current, ...filterPatch }));
-      }
       void navigate({
         to: '.',
-        search: (previous: Record<string, unknown>) => buildWorkspaceSearch(previous, targetWorkspace, targetView),
+        search: (previous: Record<string, unknown>) => buildWorkspaceSearch(previous, targetWorkspace, targetView, filterPatch),
       });
     },
     [navigate],

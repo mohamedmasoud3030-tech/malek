@@ -8,8 +8,10 @@ import {
 } from './report-workspaces';
 import {
   buildWorkspaceSearch,
+  diffReportFiltersFromSearch,
   resolveWorkspaceLocation,
 } from './reports-section-model';
+import { getInitialReportsFilters } from './reports-workspace-filters';
 
 describe('report workspace registry — approved consolidation contract', () => {
   it('defines exactly the seven approved workspaces in order', () => {
@@ -167,5 +169,173 @@ describe('workspace filter configuration', () => {
     expect(get('operations').visibleFilterFields).toEqual(['period', 'property', 'unit', 'costCenter']);
     expect(get('statements').visibleFilterFields).toEqual(['period', 'property', 'owner', 'contract']);
     expect(get('financial_review').visibleFilterFields).toEqual(['period', 'asOf']);
+  });
+});
+
+describe('contextual drill-through serialization — URL-backed scope (review A–E)', () => {
+  it('A. property drill writes the canonical filter keys into the target search', () => {
+    const previous = {
+      workspace: 'properties',
+      from: '2026-08-01',
+      to: '2026-08-31',
+    };
+    const next = buildWorkspaceSearch(
+      previous,
+      'collections',
+      'overdue',
+      { propertyId: 'property-123' },
+    );
+    expect(next).toEqual({
+      workspace: 'collections',
+      view: 'overdue',
+      propertyId: 'property-123',
+      from: '2026-08-01',
+      to: '2026-08-31',
+    });
+  });
+
+  it('B. cross-workspace property drill (properties → leasing/occupancy) carries propertyId', () => {
+    const next = buildWorkspaceSearch(
+      { workspace: 'properties', view: 'property_analytics' },
+      'leasing',
+      'occupancy',
+      { propertyId: 'property-123' },
+    );
+    expect(next).toEqual({ workspace: 'leasing', view: 'occupancy', propertyId: 'property-123' });
+  });
+
+  it('C. operations drill (properties → operations/maintenance) carries propertyId', () => {
+    const next = buildWorkspaceSearch(
+      { workspace: 'properties', view: 'property_analytics' },
+      'operations',
+      'maintenance_analytics',
+      { propertyId: 'property-123' },
+    );
+    expect(next).toEqual({
+      workspace: 'operations',
+      view: 'maintenance_analytics',
+      propertyId: 'property-123',
+    });
+  });
+
+  it('E. unrelated valid search params survive a drill', () => {
+    const next = buildWorkspaceSearch(
+      { workspace: 'office', from: '2026-08-01', to: '2026-08-31', asOf: '2026-08-31', costCenterId: 'cc-9' },
+      'operations',
+      'expenses',
+      { propertyId: 'property-123' },
+    );
+    expect(next.from).toBe('2026-08-01');
+    expect(next.to).toBe('2026-08-31');
+    expect(next.asOf).toBe('2026-08-31');
+    expect(next.costCenterId).toBe('cc-9');
+    expect(next.workspace).toBe('operations');
+    expect(next.view).toBe('expenses');
+    expect(next.propertyId).toBe('property-123');
+  });
+
+  it('sets a broader scope and clears stale dependent scope like the filter panel', () => {
+    const next = buildWorkspaceSearch(
+      { workspace: 'collections', view: 'overdue', propertyId: 'old-p', unitId: 'u1', tenantId: 't1', contractId: 'c1' },
+      'collections',
+      'overdue',
+      { propertyId: 'property-123' },
+    );
+    expect(next.propertyId).toBe('property-123');
+    expect('unitId' in next).toBe(false);
+    expect('tenantId' in next).toBe(false);
+    expect('contractId' in next).toBe(false);
+  });
+
+  it('keeps dependent scope explicitly present in the patch', () => {
+    const next = buildWorkspaceSearch(
+      { workspace: 'collections', view: 'overdue' },
+      'collections',
+      'overdue',
+      { propertyId: 'property-123', unitId: 'u1' },
+    );
+    expect(next.propertyId).toBe('property-123');
+    expect(next.unitId).toBe('u1');
+  });
+
+  it('deletes a filter key when the patch intentionally clears it', () => {
+    const next = buildWorkspaceSearch(
+      { workspace: 'collections', view: 'overdue', propertyId: 'property-123', unitId: 'u1' },
+      'collections',
+      'overdue',
+      { propertyId: '' },
+    );
+    expect('propertyId' in next).toBe(false);
+    expect('unitId' in next).toBe(false);
+  });
+
+  it('leaves untouched fields when the patch omits them', () => {
+    const next = buildWorkspaceSearch(
+      { workspace: 'collections', view: 'overdue', propertyId: 'property-123' },
+      'collections',
+      'overdue',
+      { unitId: 'u1' },
+    );
+    expect(next.propertyId).toBe('property-123');
+    expect(next.unitId).toBe('u1');
+  });
+});
+
+describe('URL → filter-state synchronization (diff helper)', () => {
+  it('adds a scope field when the URL gains it', () => {
+    expect(diffReportFiltersFromSearch(
+      { workspace: 'properties' },
+      { workspace: 'collections', view: 'overdue', propertyId: 'property-123' },
+    )).toEqual({ propertyId: 'property-123' });
+  });
+
+  it('clears a scope field when the URL drops it (Back navigation)', () => {
+    expect(diffReportFiltersFromSearch(
+      { workspace: 'collections', view: 'overdue', propertyId: 'property-123' },
+      { workspace: 'properties', view: 'property_analytics' },
+    )).toEqual({ propertyId: undefined });
+  });
+
+  it('applies valid date changes from the URL but never clobbers locally edited dates on removal', () => {
+    expect(diffReportFiltersFromSearch(
+      { workspace: 'office' },
+      { workspace: 'office', from: '2026-08-01', to: '2026-08-31' },
+    )).toEqual({ from: '2026-08-01', to: '2026-08-31' });
+
+    expect(diffReportFiltersFromSearch(
+      { workspace: 'office', from: '2026-08-01', to: '2026-08-31' },
+      { workspace: 'office' },
+    )).toEqual(null);
+  });
+
+  it('restores status from the URL and defaults to all when removed', () => {
+    expect(diffReportFiltersFromSearch(
+      { workspace: 'collections' },
+      { workspace: 'collections', status: 'overdue' },
+    )).toEqual({ status: 'overdue' });
+    expect(diffReportFiltersFromSearch(
+      { workspace: 'collections', status: 'overdue' },
+      { workspace: 'collections' },
+    )).toEqual({ status: 'all' });
+  });
+
+  it('returns null when no filter key changed', () => {
+    expect(diffReportFiltersFromSearch(
+      { workspace: 'collections', view: 'overdue', propertyId: 'property-123' },
+      { workspace: 'collections', view: 'overdue', propertyId: 'property-123' },
+    )).toBeNull();
+  });
+
+  it('D. reconstructs the contextual property filter from the resulting URL on reload', () => {
+    const filters = getInitialReportsFilters({
+      workspace: 'collections',
+      view: 'overdue',
+      propertyId: 'property-123',
+      from: '2026-08-01',
+      to: '2026-08-31',
+    });
+    expect(filters.propertyId).toBe('property-123');
+    expect(filters.from).toBe('2026-08-01');
+    expect(filters.to).toBe('2026-08-31');
   });
 });

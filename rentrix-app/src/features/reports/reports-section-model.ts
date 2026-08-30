@@ -15,6 +15,7 @@ import {
   getWorkspaceForReportLocation,
   type ReportWorkspaceId,
 } from './report-workspaces';
+import type { ReportsFilterState } from './reports-workspace-filters';
 
 export type { AccountingReportViewId, AnalyticsReportViewId, ReportViewId };
 
@@ -106,18 +107,137 @@ export function resolveWorkspaceLocation(
 }
 
 /**
+ * Filter fields with a canonical URL representation. These are the exact keys
+ * `getInitialReportsFilters` reads from the search object — drill-through and
+ * deep links share one naming scheme, never a parallel one.
+ */
+export const REPORT_FILTER_SEARCH_KEYS = [
+  'from',
+  'to',
+  'asOf',
+  'propertyId',
+  'unitId',
+  'tenantId',
+  'ownerId',
+  'contractId',
+  'costCenterId',
+  'status',
+] as const;
+
+export type ReportFilterSearchKey = (typeof REPORT_FILTER_SEARCH_KEYS)[number];
+
+/**
+ * Mutable contextual filter patch for URL serialization. Deliberately not
+ * `Partial<ReportsFilterState>`: the filter state is readonly and a patch is
+ * a working object the search builder and the diff helper assign into.
+ */
+export type ReportFilterPatch = {
+  from?: string;
+  to?: string;
+  asOf?: string;
+  propertyId?: string;
+  unitId?: string;
+  tenantId?: string;
+  ownerId?: string;
+  contractId?: string;
+  costCenterId?: string;
+  status?: ReportsFilterState['status'];
+};
+
+const REPORT_DATE_KEYS: readonly ReportFilterSearchKey[] = ['from', 'to', 'asOf'];
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+function readRawSearchValue(search: Record<string, unknown>, key: ReportFilterSearchKey): string | undefined {
+  const value = search[key];
+  if (typeof value !== 'string') return undefined;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
+/**
+ * Apply a contextual filter patch onto a search object. Patch semantics:
+ *
+ *   - field absent (`undefined`) → leave the existing search value untouched,
+ *   - field cleared (`''` / `null`) → remove the key from the search,
+ *   - field set → write the canonical URL key.
+ *
+ * Setting a broader scope cascades like the filter panel: an explicit
+ * property clears stale unit/tenant/contract scope (and so on down the
+ * chain) unless those fields are themselves explicitly present in the patch.
+ */
+function applyReportFilterPatch(search: Record<string, unknown>, patch: ReportFilterPatch): void {
+  const patchHas = (key: ReportFilterSearchKey) => patch[key] !== undefined;
+
+  for (const key of REPORT_FILTER_SEARCH_KEYS) {
+    if (!patchHas(key)) continue;
+    const value = patch[key];
+    if (value === '' || value == null) delete search[key];
+    else search[key] = String(value);
+  }
+
+  const clearStaleDependents = (dependents: readonly ReportFilterSearchKey[]) => {
+    for (const dependent of dependents) {
+      if (!patchHas(dependent)) delete search[dependent];
+    }
+  };
+
+  if (patchHas('propertyId')) clearStaleDependents(['unitId', 'tenantId', 'contractId']);
+  if (patchHas('unitId')) clearStaleDependents(['tenantId', 'contractId']);
+  if (patchHas('tenantId')) clearStaleDependents(['contractId']);
+}
+
+/**
  * Build the search object for user-facing workspace navigation. The legacy
  * `section` key is removed so new URLs stay canonical, while every unrelated
- * search parameter (e.g. entity scope carried into the page) is preserved.
+ * search parameter (e.g. a bookmark's own scope) is preserved. An optional
+ * contextual filter patch is serialized into the same canonical keys the
+ * initial-filter reader consumes, so drill-through scope is URL-backed.
  */
 export function buildWorkspaceSearch(
   previous: Record<string, unknown>,
   workspace: ReportWorkspaceId,
   view?: ReportViewId,
+  filterPatch?: ReportFilterPatch,
 ): Record<string, unknown> {
   const next: Record<string, unknown> = { ...previous, [WORKSPACE_SEARCH_KEY]: workspace };
   if (view) next.view = view;
   else delete next.view;
   delete next[REPORTS_SECTION_SEARCH_KEY];
+  if (filterPatch) applyReportFilterPatch(next, filterPatch);
   return next;
+}
+
+/**
+ * Diff two search objects over the canonical filter keys and return the
+ * filter-state patch that mirrors the URL change. The URL is the authority
+ * for scope fields (added → set, removed → cleared), while date fields are
+ * only applied when the new URL carries a valid value — dropping a date from
+ * the URL never clobbers locally edited dates, and reload reconstruction
+ * remains owned by `getInitialReportsFilters`.
+ */
+export function diffReportFiltersFromSearch(
+  previous: Record<string, unknown>,
+  next: Record<string, unknown>,
+): ReportFilterPatch | null {
+  const patch: ReportFilterPatch = {};
+
+  for (const key of REPORT_FILTER_SEARCH_KEYS) {
+    const before = readRawSearchValue(previous, key);
+    const after = readRawSearchValue(next, key);
+    if (before === after) continue;
+
+    if (REPORT_DATE_KEYS.includes(key)) {
+      if (after && DATE_PATTERN.test(after)) patch[key] = after;
+      continue;
+    }
+
+    if (key === 'status') {
+      patch.status = (after ?? 'all') as ReportsFilterState['status'];
+      continue;
+    }
+
+    patch[key] = after;
+  }
+
+  return Object.keys(patch).length > 0 ? patch : null;
 }
