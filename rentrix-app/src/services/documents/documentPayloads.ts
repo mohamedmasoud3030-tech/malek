@@ -34,7 +34,10 @@ export type DocumentTypeId =
   | 'unit_passport'
   | 'maintenance_work_order'
   | 'maintenance_completion'
-  | 'legal_dossier';
+  | 'legal_dossier'
+  // --- professional report documents ---
+  | 'owner_report'
+  | 'property_report';
 
 export type ContractDocumentPayload = {
   /** Real business reference when one exists. Never a UUID fragment. */
@@ -214,6 +217,90 @@ export type GenericReportPayload = {
   periodTo?: string | null;
   sections: GenericReportSection[];
   totalSummary?: string | null;
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// Professional report documents (owner_report / property_report)
+//
+// These payloads describe a *composition*, not a single table: page groups,
+// KPI strips, deterministic print charts and insight notes. The adapters
+// compose them from canonical read models; the engine formats money and
+// percentages (company currency precision) and never recalculates financial
+// values. Cells may only be `amount`/`percent`/`text` so formatting stays in
+// one authoritative place.
+// ═══════════════════════════════════════════════════════════════════
+
+export type ReportCellFormat =
+  | { kind: 'amount'; value: number }
+  | { kind: 'percent'; value: number }
+  | { kind: 'text'; value: string };
+
+export type ReportKpiValue = {
+  label: string;
+  value: ReportCellFormat;
+  /** Signed change vs the comparable previous period; absent when not comparable. */
+  comparison?: ReportCellFormat | null;
+};
+
+export type ReportChartSeries = { name: string; values: number[] };
+
+export type ReportChartData = {
+  chartType: 'bars' | 'hbar' | 'stacked-bars';
+  title: string;
+  caption?: string | null;
+  categories: string[];
+  series: ReportChartSeries[];
+  note?: string | null;
+};
+
+export type ReportTableData = {
+  title?: string | null;
+  columns: string[];
+  rows: ReportCellFormat[][];
+  totals?: ReportCellFormat[];
+  emptyNote?: string | null;
+};
+
+export type ProfessionalReportBlock =
+  | { kind: 'kpis'; kpis: ReportKpiValue[] }
+  | { kind: 'table'; table: ReportTableData }
+  | { kind: 'chart'; chart: ReportChartData }
+  | { kind: 'note'; note: { text: string; tone: 'info' | 'risk' | 'success' | 'neutral' } };
+
+/**
+ * A group of report blocks. `keepTogether` makes the WHOLE group one atomic
+ * page block — use only when the combined content provably fits one A4 page
+ * (the engine cannot split an oversized keep-together group).
+ */
+export type ProfessionalReportGroup = {
+  keepTogether?: boolean;
+  blocks: ProfessionalReportBlock[];
+};
+
+export type ProfessionalReportPayload = {
+  reportTitle: string;
+  reportType?: string | null;
+  periodFrom?: string | null;
+  periodTo?: string | null;
+  /** Machine-generated-on date (today), kept distinct from the period. */
+  generatedAt?: string | null;
+  /** Property scope label (specific property or "all managed properties"). */
+  scopeLabel?: string | null;
+  /** Identity facts rendered under the header (never invented IDs/phones). */
+  identity: Array<{ label: string; value: string }>;
+  groups: ProfessionalReportGroup[];
+};
+
+/** كشف المالك التفصيلي — Owner Financial Report Pack. */
+export type OwnerReportPayload = ProfessionalReportPayload & {
+  /** Real owner display name from the owners read model. */
+  ownerName: string;
+  propertyTitle?: string | null;
+};
+
+/** تقرير أداء العقار — Property Performance Report. */
+export type PropertyReportPayload = ProfessionalReportPayload & {
+  propertyTitle?: string | null;
 };
 
 // ═══════════════════════════════════════════════════════════════════
@@ -550,6 +637,9 @@ export type CanonicalDocumentPayloadMap = {
   maintenance_work_order: MaintenanceWorkOrderPayload;
   maintenance_completion: MaintenanceCompletionPayload;
   legal_dossier: LegalDossierPayload;
+  // --- professional report documents ---
+  owner_report: OwnerReportPayload;
+  property_report: PropertyReportPayload;
 };
 
 export type DocumentBuildInput<T extends DocumentTypeId> = {

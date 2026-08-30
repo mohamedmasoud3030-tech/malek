@@ -103,6 +103,8 @@ export function AnalyticsReportsAdapter({ view, model, filters, canExportReports
           performanceRows={model.sections.propertyPerformance?.rows ?? []}
           isLoading={model.sections.propertyPerformance?.isLoading ?? (model.sections.occupancy.isLoading || model.sections.expenses.isLoading)}
           onDrill={onDrill}
+          model={model}
+          filters={filters}
         />
       );
     case 'occupancy':

@@ -35,6 +35,7 @@ const productionFiles = collectSourceFiles(documentsDir, (name) => /\.(ts|tsx)$/
 const rendererInternals = new Set([
   'DocumentRenderer.ts',
   'renderer/documentHtml.ts',
+  'renderer/professionalDocumentHtml.ts',
   'renderer/pagination.ts',
   'renderer/offscreen.ts',
   'renderer/latinPdf.ts',

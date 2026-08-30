@@ -4,11 +4,14 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { formatMoney } from '@/features/financials/components/financials-formatters';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
 import { documentService } from '@/services/documents/DocumentService';
-import { runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
+import { DocumentReadinessError, runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
 import { toReportDocumentPayload, type ReportDocumentData } from '@/services/documents/documentPayloadAdapters';
+import { downloadPropertyReportPdf, printPropertyReport } from '../documents/professional-property-report';
 import type { OccupancyChartRow, PropertyPerformanceRow } from '../reports-page.helpers';
 import { getTodayLocalDateString } from '../reports-page.helpers';
 import type { ReportDrillHandler } from '../report-workspaces';
+import type { ReportsWorkspaceModel } from '../use-reports-workspace';
+import type { ReportsFilterState } from '../reports-workspace-filters';
 import {
   ReportInsightNote,
   ReportList,
@@ -26,9 +29,13 @@ export type PropertyAnalyticsProps = Readonly<{
   performanceRows: readonly PropertyPerformanceRow[];
   isLoading: boolean;
   onDrill: ReportDrillHandler;
+  /** Workspace read model — enables the professional property performance report. */
+  model?: ReportsWorkspaceModel | null;
+  /** Workspace scope — period, as-of and property selection for the report. */
+  filters?: ReportsFilterState | null;
 }>;
 
-export function PropertyAnalyticsSection({ occupancyRows, expenseRows, performanceRows, isLoading, onDrill }: PropertyAnalyticsProps) {
+export function PropertyAnalyticsSection({ occupancyRows, expenseRows, performanceRows, isLoading, onDrill, model, filters }: PropertyAnalyticsProps) {
   const expenseByProperty = new Map(expenseRows.map((row) => [row.propertyId, row] as const));
   const totalProperties = occupancyRows.length;
   const totalOccupiedUnits = occupancyRows.reduce((total, row) => total + row.occupied, 0);
@@ -136,6 +143,31 @@ export function PropertyAnalyticsSection({ occupancyRows, expenseRows, performan
     });
   };
 
+  const runProfessionalPropertyReport = async (mode: 'print' | 'pdf') => {
+    await runGuardedDocumentAction({
+      isReady: isDocumentSettingsReady && Boolean(model && filters),
+      operation: async () => {
+        if (!model || !filters) {
+          throw new DocumentReadinessError('تعذر إصدار تقرير أداء العقار: نموذج بيانات التقرير غير متاح في هذه الورشة.');
+        }
+        if (model.isIncomplete) {
+          throw new DocumentReadinessError('تعذر إصدار تقرير أداء العقار: مصادر البيانات غير مكتملة. أعد تحديث المصادر ثم أعد المحاولة.');
+        }
+        if (mode === 'print') {
+          await printPropertyReport({ settings: documentSettings, model, filters });
+        } else {
+          await downloadPropertyReportPdf({ settings: documentSettings, model, filters });
+        }
+      },
+      fallbackMessage: mode === 'print'
+        ? 'تعذرت طباعة تقرير أداء العقار.'
+        : 'تعذر تنزيل تقرير أداء العقار كملف PDF.',
+    });
+  };
+
+  const handlePrintProfessionalPropertyReport = () => runProfessionalPropertyReport('print');
+  const handleDownloadProfessionalPropertyReport = () => runProfessionalPropertyReport('pdf');
+
   return (
     <div className="space-y-3">
       <ReportSummaryStrip
@@ -178,7 +210,7 @@ export function PropertyAnalyticsSection({ occupancyRows, expenseRows, performan
         eyebrow="تقرير قرار قابل للتصرف"
         icon={Building2}
         action={(
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5">
             <Button variant="outline" size="sm" onClick={handlePrintPropertyAnalytics} disabled={!isDocumentSettingsReady} className="min-h-11 gap-1.5 text-xs">
               <Printer className="size-3.5" aria-hidden="true" />
               طباعة A4
@@ -187,6 +219,19 @@ export function PropertyAnalyticsSection({ occupancyRows, expenseRows, performan
               <Download className="size-3.5" aria-hidden="true" />
               تنزيل PDF
             </Button>
+            {model && filters ? (
+              <>
+                <span className="mx-1 hidden text-xs text-muted-foreground sm:inline" aria-hidden="true">|</span>
+                <Button variant="outline" size="sm" onClick={handlePrintProfessionalPropertyReport} disabled={!isDocumentSettingsReady} className="min-h-11 gap-1.5 text-xs" title="تقرير أداء العقار الاحترافي — طباعة">
+                  <Printer className="size-3.5" aria-hidden="true" />
+                  تقرير أداء العقار
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleDownloadProfessionalPropertyReport} disabled={!isDocumentSettingsReady} className="min-h-11 gap-1.5 text-xs" title="تقرير أداء العقار الاحترافي — PDF">
+                  <Download className="size-3.5" aria-hidden="true" />
+                  تقرير أداء العقار PDF
+                </Button>
+              </>
+            ) : null}
           </div>
         )}
         isLoading={isLoading}

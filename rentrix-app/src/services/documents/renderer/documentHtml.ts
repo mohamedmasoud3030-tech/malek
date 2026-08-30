@@ -19,6 +19,10 @@
 import type { SignatureRole, UnifiedDocumentModel } from '../types';
 import { formatLatinDateTime } from '@/lib/formatters';
 import { MAX_ROWS_PER_TABLE_CHUNK } from '../documentRegistry';
+import { buildProfessionalDocumentBlocks, collectProfessionalTextChunks } from './professionalDocumentHtml';
+import { escapeDocumentHtml } from './documentHtmlShared';
+
+export { escapeDocumentHtml } from './documentHtmlShared';
 
 const ARABIC_REGEX = /[\u0600-\u06FF]/;
 const DEFAULT_SIGNATURE_LABELS = new Set([
@@ -39,22 +43,12 @@ export const signatureLabel: Record<SignatureRole, string> = {
   vendor: 'توقيع المقاول / الفني',
 };
 
-export const escapeDocumentHtml = (value: string | null | undefined): string =>
-  (value ?? '').replace(/[&<>"']/g, (char) => {
-    switch (char) {
-      case '&': return '&amp;';
-      case '<': return '&lt;';
-      case '>': return '&gt;';
-      case '"': return '&quot;';
-      case "'": return '&#39;';
-      default: return char;
-    }
-  });
-
 export const collectDocumentTextChunks = (model: UnifiedDocumentModel): string[] => {
   const signatureTexts = model.footer.signatures
     .map((role) => signatureLabel[role])
     .filter((label) => !DEFAULT_SIGNATURE_LABELS.has(label));
+
+  const professionalChunks = model.professional ? collectProfessionalTextChunks(model.professional) : [];
 
   return [
     model.header.companyName,
@@ -69,6 +63,7 @@ export const collectDocumentTextChunks = (model: UnifiedDocumentModel): string[]
     model.header.dateValue,
     ...model.kpis.flatMap((k) => [k.label, k.value]),
     ...model.tables.flatMap((t) => [t.title, ...t.columns, ...t.rows.flat(), ...(t.totals ?? []), t.emptyNote]),
+    ...professionalChunks,
     model.footer.companyStampLabel,
     model.footer.metadata,
     ...signatureTexts,
@@ -278,14 +273,22 @@ const buildAuditFooterBlock = (model: UnifiedDocumentModel): string =>
  */
 export function buildDocumentBodyBlocks(model: UnifiedDocumentModel, options: { withAuditFooter?: boolean } = {}): string[] {
   const blocks: string[] = [buildHeaderBlock(model)];
-  const kpiBlock = buildKpiBlock(model);
-  if (kpiBlock) blocks.push(kpiBlock);
 
-  for (const table of model.tables) {
-    for (const block of chunkTableBlocks(table)) {
-      blocks.push(
-        `<section class="document-block" style="margin-bottom: 24px;">${block.title ? tableTitleHtml(block.title) : ''}${block.html}</section>`,
-      );
+  if (model.professional) {
+    // Professional reports compose from their dedicated body (identity strip
+    // + atomic keep-together groups) — same header/signature/audit shell as
+    // every other document, same block pagination contract.
+    blocks.push(...buildProfessionalDocumentBlocks(model.professional));
+  } else {
+    const kpiBlock = buildKpiBlock(model);
+    if (kpiBlock) blocks.push(kpiBlock);
+
+    for (const table of model.tables) {
+      for (const block of chunkTableBlocks(table)) {
+        blocks.push(
+          `<section class="document-block" style="margin-bottom: 24px;">${block.title ? tableTitleHtml(block.title) : ''}${block.html}</section>`,
+        );
+      }
     }
   }
 

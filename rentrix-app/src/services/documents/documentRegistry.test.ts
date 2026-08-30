@@ -109,6 +109,22 @@ const minimalPayloads: CanonicalDocumentPayloadMap = {
   legal_dossier: {
     timelineEvents: [{ date: '2026-08-01', eventType: 'إشعار', description: 'إشعار تأخر السداد' }],
   },
+  owner_report: {
+    reportTitle: 'كشف المالك التفصيلي',
+    ownerName: 'مالك العقار',
+    periodFrom: '2026-08-01',
+    periodTo: '2026-08-31',
+    identity: [{ label: 'اسم المالك', value: 'مالك العقار' }],
+    groups: [],
+  },
+  property_report: {
+    reportTitle: 'تقرير أداء العقار',
+    propertyTitle: 'برج الياسمين',
+    periodFrom: '2026-08-01',
+    periodTo: '2026-08-31',
+    identity: [{ label: 'العقار', value: 'برج الياسمين' }],
+    groups: [],
+  },
 };
 
 describe('document template registry completeness', () => {
@@ -126,6 +142,8 @@ describe('document template registry completeness', () => {
       'income_statement',
       'balance_sheet',
       'generic_report',
+      'owner_report',
+      'property_report',
       'unit_inspection',
       'lease_notice',
       'deposit_voucher',
@@ -165,7 +183,7 @@ describe('document template registry completeness', () => {
       expect(entry.fileName.prefix.trim().length).toBeGreaterThan(0);
       expect(entry.fileName.maxLength).toBeGreaterThan(10);
       // A header document number is only allowed for real business numbers.
-      if (['owner_statement', 'tenant_statement', 'trial_balance', 'income_statement', 'balance_sheet', 'generic_report', 'unit_passport'].includes(entry.type)) {
+      if (['owner_statement', 'tenant_statement', 'trial_balance', 'income_statement', 'balance_sheet', 'generic_report', 'unit_passport', 'owner_report', 'property_report'].includes(entry.type)) {
         expect(entry.businessReference.displayAsDocumentNo, `${entry.type} must not show a pseudo document number`).toBe(false);
       }
     }
