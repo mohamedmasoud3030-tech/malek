@@ -47,6 +47,7 @@ export const ROUTE_CONTRACT: readonly RouteContractEntry[] = [
   { canonical: '/login', titleAr: 'تسجيل الدخول', sidebarRoot: '/dashboard', isPrimaryNav: false, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: null },
   { canonical: '/privacy', titleAr: 'سياسة الخصوصية', sidebarRoot: '/dashboard', isPrimaryNav: false, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: null },
   { canonical: '/terms', titleAr: 'شروط الاستخدام', sidebarRoot: '/dashboard', isPrimaryNav: false, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: null },
+  { canonical: '/support', titleAr: 'الدعم والتواصل', sidebarRoot: '/dashboard', isPrimaryNav: false, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: null },
 
   // Today
   { canonical: '/dashboard', titleAr: 'لوحة التحكم', sidebarRoot: '/dashboard', isPrimaryNav: true, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: null, targetIANote: 'Global label is اليوم; route stays /dashboard for compatibility.' },

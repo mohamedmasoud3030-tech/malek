@@ -41,11 +41,11 @@ describe('MALEK canonical brand contract', () => {
     expect(shellWordmark).not.toContain('data-brand-m');
     expect(shellWordmark).not.toContain('data-brand-name');
 
-    // Sidebar/mobile-menu use the same centered lockup at the top of navigation.
+    // Sidebar uses the centered lockup; the mobile navigation sheet does NOT
+    // duplicate the brand — the user is already inside MALEK.
     expect(shellWordmark).toContain("size === 'sidebar' && 'w-full justify-center'");
-    expect(navigation).toContain('data-mobile-nav-brand');
-    expect(navigation).toContain('<MalekBrandWordmark size="sidebar" />');
-    expect(navigation).toContain('sticky top-0');
+    expect(navigation).not.toContain('data-mobile-nav-brand');
+    expect(navigation).not.toContain('<MalekBrandWordmark size="sidebar" />');
   });
 
   it('stores MALEK inside the actual lockup image', () => {

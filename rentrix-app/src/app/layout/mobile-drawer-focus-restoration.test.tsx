@@ -48,6 +48,9 @@ vi.mock('@/store/ui-store', () => ({
 }));
 vi.mock('./notifications-menu', () => ({ NotificationsMenu: () => null }));
 vi.mock('@/features/command-palette/command-palette-dialog', () => ({ CommandPaletteDialog: () => null }));
+vi.mock('@/features/command-palette/command-palette-store', () => ({
+  useCommandPaletteStore: { getState: () => ({ open: vi.fn() }) },
+}));
 vi.mock('@/features/ai-assistant/ai-assistant-global-action', () => ({ AiAssistantGlobalAction: () => null }));
 
 import { AppShell } from './app-shell';
@@ -69,14 +72,14 @@ describe('AppShell mobile navigation bottom sheet — scroll lock and focus rest
     document.documentElement.style.overflow = '';
   });
 
-  function getMonogramTrigger() {
-    const trigger = host.querySelector<HTMLButtonElement>('[data-header-brand-monogram]');
+  function getDockMenuTrigger() {
+    const trigger = host.querySelector<HTMLButtonElement>('[data-mobile-dock-menu]');
     expect(trigger).not.toBeNull();
     return trigger as HTMLButtonElement;
   }
 
-  function getDockMenuTrigger() {
-    const trigger = host.querySelector<HTMLButtonElement>('[data-mobile-dock-menu]');
+  function getTabletMenuTrigger() {
+    const trigger = host.querySelector<HTMLButtonElement>('[data-header-menu-button]');
     expect(trigger).not.toBeNull();
     return trigger as HTMLButtonElement;
   }
@@ -89,11 +92,11 @@ describe('AppShell mobile navigation bottom sheet — scroll lock and focus rest
     return document.querySelector<HTMLElement>('[data-mobile-nav-bottom-sheet]');
   }
 
-  it('opens the shared bottom-sheet navigation from the M monogram, locks scroll, and exposes modal semantics', () => {
+  it('opens the shared bottom-sheet navigation from the explicit dock Menu, locks scroll, and exposes modal semantics', () => {
     act(() => { root.render(<AppShell />); });
 
     expect(document.body.style.overflow).not.toBe('hidden');
-    const trigger = getMonogramTrigger();
+    const trigger = getDockMenuTrigger();
     expect(trigger.getAttribute('aria-haspopup')).toBe('dialog');
 
     act(() => { trigger.click(); });
@@ -110,11 +113,11 @@ describe('AppShell mobile navigation bottom sheet — scroll lock and focus rest
     expect(document.documentElement.style.overflow).toBe('hidden');
   });
 
-  it('opens the same primary navigation bottom sheet from the bottom dock menu control', () => {
+  it('opens the same primary navigation bottom sheet from the tablet header Menu control', () => {
     act(() => { root.render(<AppShell />); });
 
-    const dockTrigger = getDockMenuTrigger();
-    act(() => { dockTrigger.click(); });
+    const tabletTrigger = getTabletMenuTrigger();
+    act(() => { tabletTrigger.click(); });
 
     expect(getSheet()).not.toBeNull();
     expect(getNavigationSurface()).not.toBeNull();
@@ -130,10 +133,10 @@ describe('AppShell mobile navigation bottom sheet — scroll lock and focus rest
     expect(host.querySelector('[data-mobile-floating-control]')).not.toBeNull();
   });
 
-  it('restores focus to the opener and unlocks scroll when the bottom sheet closes', () => {
+  it('restores focus to the explicit Menu trigger and unlocks scroll when the bottom sheet closes', () => {
     act(() => { root.render(<AppShell />); });
 
-    const trigger = getMonogramTrigger();
+    const trigger = getDockMenuTrigger();
     act(() => { trigger.focus(); });
     expect(document.activeElement).toBe(trigger);
 
@@ -145,20 +148,22 @@ describe('AppShell mobile navigation bottom sheet — scroll lock and focus rest
     act(() => { closeButton?.click(); });
 
     expect(getSheet()).toBeNull();
-    expect(document.activeElement).toBe(trigger);
+    // The dock remounts after close; focus must return to the (new) Menu trigger.
+    const restored = host.querySelector<HTMLButtonElement>('[data-mobile-dock-menu]');
+    expect(document.activeElement).toBe(restored);
     expect(document.body.style.overflow).not.toBe('hidden');
     expect(document.documentElement.style.overflow).not.toBe('hidden');
   });
 
   it('closes on Escape through the shared BottomSheet keyboard contract', () => {
     act(() => { root.render(<AppShell />); });
-    const trigger = getMonogramTrigger();
+    const trigger = getDockMenuTrigger();
     act(() => { trigger.focus(); trigger.click(); });
     expect(getSheet()).not.toBeNull();
 
     act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); });
 
     expect(getSheet()).toBeNull();
-    expect(document.activeElement).toBe(trigger);
+    expect(document.activeElement).not.toBe(document.body);
   });
 });

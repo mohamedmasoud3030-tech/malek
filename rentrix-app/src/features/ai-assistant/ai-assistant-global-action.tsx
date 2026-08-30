@@ -1,4 +1,4 @@
-import { Bot, Maximize2, X } from 'lucide-react';
+import { Maximize2, Sparkles, X } from 'lucide-react';
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
@@ -82,7 +82,7 @@ export function AiAssistantGlobalAction({ showTrigger = true }: Readonly<{ showT
           onClick={() => setOpen((value) => !value)}
           data-ai-assistant-trigger
         >
-          <Bot className="size-4" aria-hidden="true" />
+          <Sparkles className="size-4" aria-hidden="true" />
         </Button>
       ) : null}
 
@@ -105,7 +105,7 @@ export function AiAssistantGlobalAction({ showTrigger = true }: Readonly<{ showT
         <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border/60 bg-muted/20 px-3.5 py-2.5">
           <div className="flex min-w-0 items-center gap-2.5">
             <div className="grid size-7 place-items-center rounded-full bg-primary text-primary-foreground">
-              <Bot className="size-4" aria-hidden="true" />
+              <Sparkles className="size-4" aria-hidden="true" />
             </div>
             <div className="min-w-0">
               <p className="truncate text-[13px] font-bold leading-none">المساعد الذكي</p>

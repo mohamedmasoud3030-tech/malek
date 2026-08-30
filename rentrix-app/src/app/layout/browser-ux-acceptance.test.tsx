@@ -80,11 +80,17 @@ describe('WP-06 / GAP-020 Browser & UX Acceptance Hardening', () => {
       }
     });
 
-    it('mobile floating control container has bottom safe-area padding and comfortable rhythm', () => {
+    it('mobile floating control container has bottom safe-area padding and a compact pill', () => {
       const html = renderToStaticMarkup(<MobileFloatingControl onMenu={() => undefined} />);
       expect(html).toContain('pb-[calc(0.75rem+env(safe-area-inset-bottom');
       expect(html).toContain('data-mobile-floating-control');
-      expect(html).toContain('rounded-2xl');
+      expect(html).toContain('rounded-full');
+    });
+
+    it('mobile dock stays phone-only and yields to tablet/desktop chrome', () => {
+      const html = renderToStaticMarkup(<MobileFloatingControl onMenu={() => undefined} />);
+      // The dock is hidden at the `md` breakpoint and above (tablet/desktop).
+      expect(html).toContain('md:hidden');
     });
   });
 

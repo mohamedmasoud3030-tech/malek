@@ -1,6 +1,6 @@
 import { Link, Outlet, useMatches, useRouter } from '@tanstack/react-router';
-import { memo, useCallback, useEffect, useId, useMemo, useRef, useState, type ButtonHTMLAttributes, type ReactNode, type Ref } from 'react';
-import { CircleHelp, KeyRound, LogOut, Moon, Settings, ShieldAlert, Sun, UserRound } from 'lucide-react';
+import { memo, useCallback, useEffect, useId, useMemo, useRef, useState, type ButtonHTMLAttributes, type ReactNode } from 'react';
+import { CircleHelp, KeyRound, LogOut, Menu, Moon, Search, Settings, ShieldAlert, Sun, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { MalekBrandWordmark } from '@/components/brand/malek-wordmark';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { useUiStore } from '@/store/ui-store';
 import { MobileFloatingControl, NavigationLinks } from './layout-navigation-view';
 import { CommandPaletteDialog } from '@/features/command-palette/command-palette-dialog';
+import { useCommandPaletteStore } from '@/features/command-palette/command-palette-store';
 import { AiAssistantGlobalAction } from '@/features/ai-assistant/ai-assistant-global-action';
 import { sanitizeSupportRoute } from '@/features/help-support/help-context';
 
@@ -54,81 +55,56 @@ const Brand = memo(function Brand({ expanded, showTagline }: Readonly<{ expanded
 });
 
 /**
- * MALEK final header brand — M Malek wordmark, M larger than Malek, no icon container.
- * Tapping opens primary navigation on mobile. No surrounding shape/background tile.
+ * MALEK header brand — M + MALEK lockup rendered as pure identity.
+ *
+ * On phone and tablet the header brand is identity only, NOT a hidden
+ * navigation trigger. Navigation has an explicit Menu control (the bottom
+ * dock on phone, a header Menu button on tablet). No surrounding tile.
  * Theme-aware colors via [data-malek-brand-wordmark] CSS.
  */
-const HeaderBrandWordmarkButton = memo(function HeaderBrandWordmarkButton({
-  onClick,
-  buttonRef,
-}: Readonly<{
-  onClick: () => void;
-  buttonRef?: Ref<HTMLButtonElement>;
-}>) {
+const HeaderBrandIdentity = memo(function HeaderBrandIdentity() {
   return (
-    <button
-      ref={buttonRef}
-      type="button"
-      onClick={onClick}
-      aria-label="القائمة الرئيسية - مالك"
-      aria-haspopup="dialog"
-      title="القائمة الرئيسية"
-      data-header-brand-button
-      data-header-brand-monogram
-      data-header-brand-wordmark-button
-      className="relative inline-flex min-h-11 items-center justify-center rounded-lg p-1.5 -ms-1.5 outline-none transition-[background-color,opacity] duration-150 hover:bg-muted/70 active:opacity-85 focus-visible:ring-2 focus-visible:ring-primary/20"
+    <div
+      className="flex min-w-0 shrink-0 items-center"
+      data-header-brand-lockup
+      data-header-brand-identity
+      data-header-wordmark-side
     >
-      <span data-header-monogram-hit className="pointer-events-none absolute inset-y-0 start-0 size-11" aria-hidden="true" />
       <MalekBrandWordmark size="header" />
-    </button>
-  );
-});
-
-const HeaderBrandLockup = memo(function HeaderBrandLockup({
-  onOpenNav,
-  monogramRef,
-}: Readonly<{
-  onOpenNav: () => void;
-  monogramRef?: Ref<HTMLButtonElement>;
-}>) {
-  return (
-    <div className="flex min-w-0 shrink-0 items-center" data-header-brand-lockup data-header-wordmark-side>
-      <HeaderBrandWordmarkButton onClick={onOpenNav} buttonRef={monogramRef} />
     </div>
   );
 });
 
 /**
- * Header control — standalone icon, no visible box, 44px touch target via padding.
+ * Shared chrome action geometry — one authority for the header's standalone
+ * icon controls (Theme, User, Menu, Search). 44×44 touch target, ~22px glyph,
+ * transparent at rest, subtle surface on hover/press/focus.
+ */
+const chromeButtonClass =
+  'grid size-11 min-h-11 min-w-11 shrink-0 place-items-center rounded-xl border-0 bg-transparent text-foreground outline-none transition-colors hover:bg-muted hover:text-foreground active:bg-muted/80 focus-visible:ring-2 focus-visible:ring-primary/20';
+
+/**
+ * Header control — standalone icon, no visible box, 44×44 touch target.
  * Clearly visible, aligned, consistent size, not dominating.
  */
 const HeaderControl = memo(function HeaderControl({
   label,
   children,
-  ref,
   ...props
 }: Readonly<{
   label: string;
   children: ReactNode;
-  ref?: Ref<HTMLButtonElement>;
 } & Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children' | 'aria-label'>>) {
   const { className, ...rest } = props;
   return (
-    <span data-header-control-hit className="grid size-11 shrink-0 place-items-center">
-      <button
-        ref={ref}
-        type="button"
-        aria-label={label}
-        data-header-control-standalone
-        className={cn(
-          'grid size-8 min-h-11 min-w-11 place-items-center rounded-lg border-0 bg-transparent p-2.5 text-foreground outline-none transition-colors hover:bg-muted hover:text-foreground active:bg-muted/80 focus-visible:ring-2 focus-visible:ring-primary/20',
-          className,
-        )}
-        {...rest}
-      >
-        {children}
-      </button>
-    </span>
+    <button
+      type="button"
+      aria-label={label}
+      className={cn(chromeButtonClass, className)}
+      {...rest}
+    >
+      {children}
+    </button>
   );
 });
 
@@ -180,7 +156,7 @@ const HeaderUserMenu = memo(function HeaderUserMenu({
   const statusDotClass = accessStatus?.tone === 'warning' ? 'bg-warning' : 'bg-info';
 
   return (
-    <div ref={rootRef} className="relative grid size-11 shrink-0 place-items-center" data-header-user-menu data-header-control-hit>
+    <div ref={rootRef} className="relative grid size-11 shrink-0 place-items-center" data-header-user-menu>
       <button
         ref={triggerRef}
         type="button"
@@ -189,13 +165,9 @@ const HeaderUserMenu = memo(function HeaderUserMenu({
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
         onClick={() => setOpen((value) => !value)}
-        data-header-control-standalone
-        className={cn(
-          'relative grid size-8 min-h-11 min-w-11 place-items-center rounded-lg border-0 bg-transparent p-2.5 text-foreground outline-none transition-colors hover:bg-muted hover:text-foreground active:bg-muted/80 focus-visible:ring-2 focus-visible:ring-primary/20',
-          open && 'bg-muted text-foreground',
-        )}
+        className={cn(chromeButtonClass, open && 'bg-muted text-foreground')}
       >
-        <UserRound className="size-[18px]" aria-hidden="true" />
+        <UserRound className="size-[22px]" aria-hidden="true" />
         {accessStatus ? (
           <span
             data-account-status-indicator
@@ -338,6 +310,18 @@ export function AppShell() {
   const dockMenuTriggerRef = useRef<HTMLButtonElement | null>(null);
 
   const handleOpenNav = useCallback(() => setMobileNavOpen(true), []);
+  const openSearch = useCallback(() => useCommandPaletteStore.getState().open(), []);
+
+  // When the phone dock Menu opens the navigation sheet, the dock unmounts
+  // while the sheet is open, so BottomSheet's internal focus restoration
+  // cannot reach the trigger. Re-target the remounted Menu on close.
+  const prevNavOpenRef = useRef(false);
+  useEffect(() => {
+    if (prevNavOpenRef.current && !mobileNavOpen && document.activeElement === document.body) {
+      dockMenuTriggerRef.current?.focus();
+    }
+    prevNavOpenRef.current = mobileNavOpen;
+  }, [mobileNavOpen]);
   const appLanguage = useMemo(() => getAppLanguageState(), []);
   const sharedLabel = useCallback((key: string) => translateSharedLabel(key, appLanguage.language), [appLanguage.language]);
   const writeAccessState = useMemo(() => getWriteAccessState(authorization), [authorization]);
@@ -412,11 +396,36 @@ export function AppShell() {
           className="sticky top-0 z-20 border-b border-border bg-card pt-[env(safe-area-inset-top,0px)]"
         >
           <div className="mx-auto flex min-h-[var(--app-header-height)] w-full max-w-[110rem] items-center justify-between gap-2 px-3 py-1 sm:px-4">
-            <div className="z-10 flex shrink-0 items-center lg:hidden" data-header-brand-side data-header-wordmark-side>
-              <HeaderBrandLockup onOpenNav={handleOpenNav} />
+            <div className="z-10 flex min-w-0 shrink-0 items-center gap-1" data-header-brand-side data-header-wordmark-side>
+              {/* Tablet (768–1023): explicit Menu control — no hidden logo trigger. */}
+              <HeaderControl
+                label="فتح القائمة"
+                title="القائمة الرئيسية"
+                onClick={handleOpenNav}
+                aria-haspopup="dialog"
+                aria-expanded={mobileNavOpen}
+                data-header-menu-button
+                className="hidden md:grid lg:hidden"
+              >
+                <Menu className="size-[22px]" aria-hidden="true" />
+              </HeaderControl>
+              {/* Phone + tablet: brand identity (desktop holds it in the sidebar). */}
+              <div className="lg:hidden">
+                <HeaderBrandIdentity />
+              </div>
             </div>
 
             <div className="z-10 flex shrink-0 items-center gap-0.5" data-header-utility-side data-header-right-controls>
+              {/* Tablet: explicit global search. */}
+              <HeaderControl
+                label="البحث"
+                title="البحث"
+                onClick={openSearch}
+                data-header-search-button
+                className="hidden md:grid lg:hidden"
+              >
+                <Search className="size-[22px]" aria-hidden="true" />
+              </HeaderControl>
               <HeaderControl
                 label={sharedLabel('toggleTheme')}
                 title={theme === 'dark' ? 'الوضع الفاتح' : 'الوضع الداكن'}
@@ -424,9 +433,9 @@ export function AppShell() {
                 data-header-theme-toggle
               >
                 {theme === 'dark' ? (
-                  <Sun className="size-[18px]" aria-hidden="true" />
+                  <Sun className="size-[22px]" aria-hidden="true" />
                 ) : (
-                  <Moon className="size-[18px]" aria-hidden="true" />
+                  <Moon className="size-[22px]" aria-hidden="true" />
                 )}
               </HeaderControl>
 

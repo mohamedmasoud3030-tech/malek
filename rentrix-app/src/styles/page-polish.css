@@ -153,11 +153,10 @@
 /* ── App chrome only ────────────────────────────────────────────────
    Dialogs and bottom sheets own their own surfaces; this contract must not
    restyle them from a second cascade layer. */
-[data-app-shell-header],
-[data-ai-assistant-panel] {
+[data-app-shell-header] {
   border-color: hsl(var(--border));
   background: hsl(var(--card));
-  box-shadow: 0 1px 0 hsl(var(--border));
+  box-shadow: none;
 }
 
 [data-ai-assistant-panel] { background: hsl(var(--card)); }
@@ -166,77 +165,13 @@
 [data-header-utility-side],
 [data-app-shell-header] > div { direction: ltr; }
 
-/* ── Brand wordmark (M Malek) — canonical header + sidebar brand ─── */
+/* ── Brand wordmark — the canonical lockup is a single M mark + MALEK label.
+   Only layout helpers live here; sizing/tracking live in the brand component. */
 [data-malek-brand-wordmark] {
   display: inline-flex;
-  align-items: baseline;
-  gap: 0.22em;
-  line-height: 1;
   user-select: none;
   white-space: nowrap;
   direction: ltr;
-}
-[data-malek-brand-wordmark] [data-brand-m] {
-  font-family: var(--font-sans);
-  font-weight: 900;
-  font-size: 1.55em;
-  line-height: 0.9;
-  letter-spacing: -0.02em;
-  color: hsl(var(--primary));
-}
-[data-malek-brand-wordmark] [data-brand-name] {
-  font-family: var(--font-sans);
-  font-weight: 800;
-  font-size: 1em;
-  line-height: 1;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: hsl(var(--foreground));
-}
-/* Sidebar inverse: brand on dark navy surface must be clearly visible. */
-[data-sidebar] [data-malek-brand-wordmark] [data-brand-m] {
-  color: hsl(0 0% 100%);
-}
-[data-sidebar] [data-malek-brand-wordmark] [data-brand-name] {
-  color: hsl(0 0% 100% / 0.92);
-}
-[data-theme='dark'] [data-app-shell-header] [data-malek-brand-wordmark] [data-brand-m] {
-  color: hsl(var(--primary));
-}
-[data-theme='dark'] [data-app-shell-header] [data-malek-brand-wordmark] [data-brand-name] {
-  color: hsl(var(--foreground));
-}
-
-/* ── Header controls — standalone icons, no visible boxes ────────── */
-[data-header-control-standalone] {
-  display: grid;
-  place-items: center;
-  min-width: 44px;
-  min-height: 44px;
-  padding: 0.5rem;
-  border: 0;
-  border-radius: 0.625rem;
-  background: transparent;
-  color: hsl(var(--foreground));
-  outline: none;
-  transition: background-color 140ms ease, color 140ms ease, opacity 140ms ease;
-}
-[data-header-control-standalone]:hover {
-  background: hsl(var(--muted));
-  color: hsl(var(--foreground));
-}
-[data-header-control-standalone]:active {
-  background: hsl(var(--muted) / 0.8);
-  opacity: 0.92;
-}
-[data-header-control-standalone]:focus-visible {
-  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.18);
-}
-[data-theme='dark'] [data-header-control-standalone] {
-  color: hsl(var(--foreground));
-}
-[data-theme='dark'] [data-header-control-standalone]:hover {
-  background: hsl(var(--muted));
 }
 
 /* ── Typography scale — mobile readable, hierarchy clear ─────────── */

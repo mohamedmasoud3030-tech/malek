@@ -35,14 +35,14 @@ describe('route-contract — single source of truth', () => {
   it('all sidebarRoot values exist in routeNavRoot values', () => {
     const knownRoots = new Set(routeNavRoot.values());
     for (const entry of ROUTE_CONTRACT) {
-      if (['/', '/login', '/privacy', '/terms', '/dev/design-system'].includes(entry.canonical)) continue;
+      if (['/', '/login', '/privacy', '/terms', '/support', '/dev/design-system'].includes(entry.canonical)) continue;
       expect(knownRoots.has(entry.sidebarRoot), `unknown sidebarRoot ${entry.sidebarRoot} for ${entry.canonical}`).toBe(true);
     }
   });
 
   it('every non-public canonical maps correctly via getNavRoot', () => {
     for (const entry of ROUTE_CONTRACT) {
-      if (['/', '/login', '/privacy', '/terms'].includes(entry.canonical)) continue;
+      if (['/', '/login', '/privacy', '/terms', '/support'].includes(entry.canonical)) continue;
       const testPath = entry.canonical.replace(/\/\$[^/]+/g, '/_id');
       expect(getNavRoot(testPath)).toBe(entry.sidebarRoot);
     }

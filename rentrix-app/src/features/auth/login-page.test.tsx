@@ -42,14 +42,24 @@ describe('LoginPage — minimal SaaS contract', () => {
     expect(html).toContain('/forgot-password');
   });
 
-  it('keeps support compact until requested', () => {
+  it('removes the heavy support footer from the auth card and endorses LENA Digital House below login', () => {
     render(<LoginPage />);
-    const supportButton = screen.getByRole('button', { name: /تحتاج مساعدة؟ تواصل معنا/i });
-    expect(supportButton).toHaveAttribute('aria-expanded', 'false');
+    // No inline WhatsApp/email contact inventory inside the auth card.
     expect(screen.queryByText('+968 9192 8186')).not.toBeInTheDocument();
-    fireEvent.click(supportButton);
-    expect(screen.getByText('+968 9192 8186')).toBeInTheDocument();
-    expect(supportButton).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.queryByText(/واتساب عُمان/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Ahmedmasoud@outlook\.com/i)).not.toBeInTheDocument();
+    // Company discovery, not support: no help/support/powered-by language.
+    expect(screen.queryByText(/تحتاج مساعدة/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Support/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Powered by/i)).not.toBeInTheDocument();
+    expect(document.querySelector('[data-login-support-link]')).toBeNull();
+    expect(document.querySelector('[data-support-panel]')).toBeNull();
+
+    expect(screen.getByText(/تم تطوير MALEK بواسطة/)).toBeInTheDocument();
+    const endorsement = screen.getByRole('link', { name: /LENA Digital House/i });
+    expect(endorsement).toHaveAttribute('href', '/lena/ar?from=malek');
+    expect(endorsement.closest('[data-login-card]')).toBeNull();
+    expect(endorsement.className).toContain('min-h-11');
   });
 });
 

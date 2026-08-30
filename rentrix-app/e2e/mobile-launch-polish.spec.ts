@@ -318,13 +318,13 @@ for (const viewport of MOBILE_VIEWPORTS) {
 
       await expect(page.locator('[data-header-date-center]')).toHaveCount(0);
 
-      const hitAreas = page.locator('[data-header-control-hit]');
-      await expect(hitAreas).toHaveCount(2);
-      const firstButton = hitAreas.first().locator('button');
-      const buttonBox = await firstButton.boundingBox();
-      expect(buttonBox, `${label}: visible control box`).not.toBeNull();
-      expect(buttonBox!.height, `${label}: visible control must be compact (<=36px)`).toBeLessThanOrEqual(36);
-      expect(buttonBox!.width, `${label}: visible control must be compact (<=36px)`).toBeLessThanOrEqual(36);
+      // Header controls are self-contained 44px targets (no hit wrapper).
+      const themeToggle = page.locator('[data-header-theme-toggle]');
+      await expect(themeToggle).toBeVisible();
+      const themeBox = await themeToggle.boundingBox();
+      expect(themeBox, `${label}: theme toggle box`).not.toBeNull();
+      expect(themeBox!.height, `${label}: theme toggle must meet the 44px touch floor`).toBeGreaterThanOrEqual(44);
+      expect(themeBox!.width, `${label}: theme toggle must meet the 44px touch floor`).toBeGreaterThanOrEqual(44);
 
       const headerBox = await header.boundingBox();
       expect(headerBox, `${label}: header box`).not.toBeNull();

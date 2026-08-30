@@ -263,13 +263,13 @@ describe('MALEK brand contract — no legacy name reaches a user', () => {
 
   it('keeps the sidebar and header on the MALEK lockup and login on the PWA identity', () => {
     const appShell = readApp('src/app/layout/app-shell.tsx');
-    // The desktop sidebar and the header brand button render the same shared
-    // wordmark lockup; tapping the header lockup opens primary navigation.
+    // The desktop sidebar and the header brand render the same shared
+    // wordmark lockup. The header brand is identity, not a menu trigger.
     expect(appShell).toContain('<Brand expanded />');
     expect(appShell).toContain('data-malek-brand-lockup');
     expect(appShell).toContain('<MalekBrandWordmark size="sidebar" />');
     expect(appShell).toContain('<MalekBrandWordmark size="header" />');
-    expect(appShell).toContain('data-header-brand-wordmark-button');
+    expect(appShell).toContain('data-header-brand-identity');
 
     const loginPage = readApp('src/features/auth/login-page.tsx');
     expect(loginPage).toContain('MalikBrand');
