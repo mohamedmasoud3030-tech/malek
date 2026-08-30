@@ -1,6 +1,8 @@
 import { AlertTriangle, RotateCcw } from 'lucide-react';
-import type { ReactNode } from 'react';
+import type { AriaAttributes, ReactNode } from 'react';
+import { cn } from '@/lib/utils';
 import { getEnvDiagnostics, parseSupabaseDiagnostics } from '@/lib/runtime-diagnostics';
+import { getActionableSupabaseErrorMessage } from '@/lib/supabase-error';
 import { Button } from './button';
 import { StateSurface } from './state-surfaces';
 
@@ -12,7 +14,14 @@ type ErrorStateProps = {
   action?: ReactNode;
   compact?: boolean;
   variant?: 'default' | 'write';
+  className?: string;
+  ariaLive?: AriaAttributes['aria-live'];
 };
+
+type WriteErrorCardProps = Readonly<{
+  error?: unknown;
+  fallbackMessage?: string;
+}>;
 
 const SAFE_ERROR_DETAIL = 'تعذر إكمال الطلب الآن. أعد المحاولة، وإذا استمرت المشكلة تواصل مع مسؤول النظام.';
 
@@ -31,6 +40,8 @@ export function ErrorState({
   action,
   compact = false,
   variant = 'default',
+  className,
+  ariaLive,
 }: ErrorStateProps) {
   const detail = resolveSafeErrorMessage(error);
 
@@ -43,8 +54,9 @@ export function ErrorState({
         title={title}
         description={description}
         role="alert"
+        ariaLive={ariaLive}
         compact
-        className="border-destructive/40 bg-destructive/5"
+        className={cn('border-destructive/40 bg-destructive/5', className)}
       />
     );
   }
@@ -69,7 +81,9 @@ export function ErrorState({
       title={title}
       description={description}
       role="alert"
+      ariaLive={ariaLive}
       compact={compact}
+      className={className}
       detail={
         detail ? (
           <p className="rounded-lg bg-danger/5 px-3 py-2 text-xs font-medium text-danger/90">
@@ -80,4 +94,16 @@ export function ErrorState({
       action={controls}
     />
   );
+}
+
+/**
+ * Write-error surface — canonical compact presentation of a failed save/mutation.
+ *
+ * The message is always resolved through `getActionableSupabaseErrorMessage`,
+ * never raw provider/Error.message copy, so write diagnostics stay safe and
+ * actionable while already-translated Arabic domain messages are preserved.
+ */
+export function WriteErrorCard({ error, fallbackMessage = 'تعذر حفظ التغيير' }: WriteErrorCardProps) {
+  const message = getActionableSupabaseErrorMessage(error, fallbackMessage);
+  return <ErrorState variant="write" title="لم يتم حفظ التغيير" description={message} />;
 }
