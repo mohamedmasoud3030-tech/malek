@@ -24,10 +24,9 @@ type FilterBarProps = {
 /**
  * Canonical MALEK search + filter system.
  *
- * Pages provide only values, filter controls and actions. This component owns
- * the shared responsive composition: one search control, one compact quick-
- * filter rail, desktop advanced filters, a mobile BottomSheet for the same
- * advanced controls, active-filter chips, counts and clear-all behavior.
+ * Search and filtering are working tools, not content cards. The surface stays
+ * visually quiet, keeps the search first, and progressively reveals advanced
+ * controls only when the user asks for them.
  */
 export function FilterBar({
   searchValue,
@@ -55,7 +54,7 @@ export function FilterBar({
         data-filter-bar
         data-register-toolbar
         className={cn(
-          'grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-1.5 rounded-xl border border-border/70 bg-card p-1.5 shadow-card sm:p-2 lg:grid-cols-[minmax(18rem,1.1fr)_minmax(0,2fr)_auto] lg:gap-2',
+          'grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-1.5 border-y border-border/50 bg-muted/15 py-2 sm:gap-2 lg:grid-cols-[minmax(18rem,1.1fr)_minmax(0,2fr)_auto]',
           className,
         )}
         aria-label="البحث والتصفية"
@@ -96,7 +95,7 @@ export function FilterBar({
               <>
                 <Button
                   type="button"
-                  variant="secondary"
+                  variant="ghost"
                   className="min-h-11 rounded-lg px-3 text-xs md:hidden"
                   aria-label={activeFilterCount > 0 ? `${advancedFilterTitle}، ${activeFilterCount} نشطة` : advancedFilterTitle}
                   onClick={() => setAdvancedOpen(true)}
@@ -104,14 +103,14 @@ export function FilterBar({
                   <SlidersHorizontal className="me-1.5 size-3.5" aria-hidden="true" />
                   <span>{advancedFilterTitle}</span>
                   {activeFilterCount > 0 ? (
-                    <span className="rounded-md bg-primary/12 px-1.5 py-0.5 text-[11px] font-black text-primary tabular-nums">
+                    <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[11px] font-black text-primary tabular-nums">
                       {activeFilterCount}
                     </span>
                   ) : null}
                 </Button>
                 <Button
                   type="button"
-                  variant={desktopAdvancedOpen ? 'secondary' : 'ghost'}
+                  variant="ghost"
                   className="hidden min-h-11 rounded-lg px-3 text-xs md:inline-flex"
                   aria-label={activeFilterCount > 0 ? `${advancedFilterTitle}، ${activeFilterCount} نشطة` : advancedFilterTitle}
                   aria-expanded={desktopAdvancedOpen}
@@ -121,7 +120,7 @@ export function FilterBar({
                   <SlidersHorizontal className="me-1.5 size-3.5" aria-hidden="true" />
                   <span>{advancedFilterTitle}</span>
                   {activeFilterCount > 0 ? (
-                    <span className="rounded-md bg-primary/12 px-1.5 py-0.5 text-[11px] font-black text-primary tabular-nums">
+                    <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[11px] font-black text-primary tabular-nums">
                       {activeFilterCount}
                     </span>
                   ) : null}
@@ -135,7 +134,7 @@ export function FilterBar({
         {advancedFilters && desktopAdvancedOpen ? (
           <div
             id="desktop-advanced-filters"
-            className="col-span-2 hidden min-w-0 border-t border-border/60 pt-2 md:block lg:col-span-3"
+            className="col-span-2 hidden min-w-0 border-t border-border/45 pt-2 md:block lg:col-span-3"
             data-advanced-filter-desktop
           >
             {advancedFilters}
