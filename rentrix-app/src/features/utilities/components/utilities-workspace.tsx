@@ -4,7 +4,9 @@ import { AsyncContentState } from '@/components/async-content-state';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import type { ActiveFilterItem } from '@/components/ui/active-filter-bar';
+import { ActionMenu } from '@/components/ui/action-menu';
 import { Button } from '@/components/ui/button';
+import { ExportMenu } from '@/components/ui/export-menu';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EntityForm } from '@/components/ui/entity-form';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
@@ -454,28 +456,28 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
       key: 'actions', priority: 'actions' as const,
       header: 'إجراء',
       render: (bill) => (
-        <div className="flex flex-wrap gap-2" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
-          <Button
-            variant="secondary"
-            size="sm"
-            aria-label={`تفاصيل فاتورة المرافق ${bill.bill_number ?? 'فاتورة مرافق بلا مرجع'}`}
-            onClick={() => setBillToPreview(bill)}
-          >
-            <FileText className="size-4" />التفاصيل
-          </Button>
-          <Button variant="danger" size="sm" aria-label={`أرشفة فاتورة المرافق ${bill.bill_number ?? 'فاتورة مرافق بلا مرجع'}`} onClick={() => setBillToArchive(bill)}>
-            <Trash2 className="size-4" />أرشفة
-          </Button>
+        <div className="flex" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+          <ActionMenu
+            label={`إجراءات ${bill.bill_number ?? 'فاتورة المرافق'}`}
+            items={[
+              { id: 'details', label: 'التفاصيل', icon: FileText, onClick: () => setBillToPreview(bill) },
+              { id: 'archive', label: 'أرشفة', icon: Trash2, danger: true, onClick: () => setBillToArchive(bill) },
+            ]}
+          />
         </div>
       ),
     },
   ];
 
   const headerActions = (
-    <div className="flex flex-wrap gap-2">
-      <Button variant="outline" onClick={handlePrint} disabled={!documentSettings.isReady || isError}><Printer className="size-4" />طباعة كشف المرافق</Button>
-      <Button variant="secondary" onClick={handleDownloadPdf} disabled={!documentSettings.isReady || isError}><Download className="size-4" />تنزيل PDF</Button>
-    </div>
+    <ExportMenu
+      label="تصدير كشف المرافق"
+      disabled={!documentSettings.isReady || isError}
+      items={[
+        { id: 'print', label: 'طباعة', icon: Printer, onClick: handlePrint },
+        { id: 'pdf', label: 'تنزيل PDF', icon: Download, onClick: handleDownloadPdf },
+      ]}
+    />
   );
 
   const body = (
