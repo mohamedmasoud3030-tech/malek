@@ -1,6 +1,5 @@
-import { AlertTriangle } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { StateSurface } from '@/components/ui/state-surfaces';
+import { ErrorState } from '@/components/ui/error-state';
 import { getEnvDiagnostics, parseSupabaseDiagnostics } from '@/lib/runtime-diagnostics';
 
 type DataErrorScreenProps = {
@@ -23,16 +22,12 @@ export function DataErrorScreen({ title, fallbackMessage, error, action }: DataE
     ?? SAFE_DATA_ERROR_FALLBACK;
 
   return (
-    <StateSurface
-      kind="error"
-      tone="danger"
-      icon={<AlertTriangle className="size-5" aria-hidden="true" />}
+    <ErrorState
       title={title}
       description={message}
-      role="alert"
+      action={action}
       ariaLive="assertive"
       className="border-destructive/40 bg-destructive/5"
-      action={action}
     />
   );
 }

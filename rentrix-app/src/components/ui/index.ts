@@ -46,7 +46,7 @@ export {
   buildReportActions,
 } from "./entity-action-presets";
 export { LoadingState } from "./loading-state";
-export { ErrorState } from "./error-state";
+export { ErrorState, WriteErrorCard } from "./error-state";
 
 // ADR-008 Phase A — unified entity table
 export {
