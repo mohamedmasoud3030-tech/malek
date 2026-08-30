@@ -15,6 +15,7 @@ type ReportsWorkspaceProps = Readonly<{
   activeSection: ReportSectionId;
   activeView: ReportViewId;
   onOpenView: (view: ReportViewId) => void;
+  onOpenReport?: (workspace: ReportWorkspaceId, view: ReportViewId) => void;
   onDrill: ReportDrillHandler;
   onFiltersChange: (filters: ReportsFilterState) => void;
   onResetCurrentMonth: () => void;
@@ -37,6 +38,7 @@ export function ReportsWorkspace({
   activeSection,
   activeView,
   onOpenView,
+  onOpenReport,
   onDrill,
   onFiltersChange,
   onResetCurrentMonth,
@@ -49,6 +51,7 @@ export function ReportsWorkspace({
         activeWorkspace={activeWorkspace}
         activeView={activeView}
         onOpenView={onOpenView}
+        onOpenReport={onOpenReport}
         onFiltersChange={onFiltersChange}
         onResetCurrentMonth={onResetCurrentMonth}
       />

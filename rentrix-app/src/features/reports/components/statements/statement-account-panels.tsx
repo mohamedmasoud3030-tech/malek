@@ -1,5 +1,4 @@
-import { Download, FileSpreadsheet, Landmark, Printer, ReceiptText, Scale, UserRound, UsersRound, WalletCards } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Landmark, ReceiptText, Scale, UserRound, UsersRound, WalletCards } from 'lucide-react';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
@@ -7,6 +6,7 @@ import { formatMoney, getErrorMessage } from '@/features/financials/components/f
 import type { OwnerStatementReport, TenantStatementReport } from '@/features/financials/reports/financialReportsService';
 import { createReceiptPrintHref } from '../../reports-page.helpers';
 import { ReportList, ReportListRow, ReportPanel, ReportPanelSkeleton, ReportState } from '../report-section-primitives';
+import { ReportOutputActions } from '../report-output-actions';
 import { formatLatinNumber } from '@/lib/formatters';
 
 type ReceiptRow = Readonly<{
@@ -105,20 +105,14 @@ export function TenantStatementPanel({
       description="دفتر حركة فعلي للعقد المحدد: افتتاحي، استحقاقات، تحصيلات/عكوس، رصيد جارٍ وختامي."
       icon={UserRound}
       action={statement ? (
-        <div className="flex flex-wrap items-center gap-1.5">
-          <Button type="button" size="sm" variant="outline" onClick={onPrint} disabled={actionsDisabled} className="min-h-11 gap-1.5 text-xs">
-            <Printer className="size-3.5" aria-hidden="true" />
-            طباعة الكشف
-          </Button>
-          <Button type="button" size="sm" variant="outline" onClick={onDownloadPdf} disabled={actionsDisabled} className="min-h-11 gap-1.5 text-xs">
-            <Download className="size-3.5" aria-hidden="true" />
-            تنزيل PDF
-          </Button>
-          <Button type="button" size="sm" variant="outline" onClick={onDownloadExcel} className="min-h-11 gap-1.5 text-xs">
-            <FileSpreadsheet className="size-3.5" aria-hidden="true" />
-            تنزيل Excel
-          </Button>
-        </div>
+        <ReportOutputActions
+          downloadLabel="تنزيل كشف المستأجر PDF"
+          menuLabel="خيارات إخراج كشف المستأجر"
+          onDownloadPdf={onDownloadPdf}
+          onPrint={onPrint}
+          onDownloadExcel={onDownloadExcel}
+          disabled={actionsDisabled}
+        />
       ) : undefined}
     >
       {isLoading ? (
@@ -189,8 +183,6 @@ export function OwnerStatementPanel({
   onPrint,
   onDownloadPdf,
   onDownloadExcel,
-  onPrintProfessionalReport,
-  onDownloadProfessionalReportPdf,
   actionsDisabled = false,
 }: Readonly<{
   selectedOwnerId: string;
@@ -201,10 +193,6 @@ export function OwnerStatementPanel({
   onPrint: () => void;
   onDownloadPdf: () => void;
   onDownloadExcel: () => void;
-  /** Professional owner financial report pack (كشف مالك تفصيلي) — print. */
-  onPrintProfessionalReport?: () => void;
-  /** Professional owner financial report pack — PDF. */
-  onDownloadProfessionalReportPdf?: () => void;
   actionsDisabled?: boolean;
 }>) {
   let runningBalance = 0;
@@ -233,32 +221,14 @@ export function OwnerStatementPanel({
       description="حركة المالك للفترة: العقارات، إجمالي التحصيل/الحركة، الاستقطاعات، التسويات وصافي الرصيد الجاري."
       icon={UsersRound}
       action={statement ? (
-        <div className="flex flex-wrap items-center gap-1.5">
-          <Button type="button" size="sm" variant="outline" onClick={onPrint} disabled={actionsDisabled} className="min-h-11 gap-1.5 text-xs">
-            <Printer className="size-3.5" aria-hidden="true" />
-            طباعة الكشف
-          </Button>
-          <Button type="button" size="sm" variant="outline" onClick={onDownloadPdf} disabled={actionsDisabled} className="min-h-11 gap-1.5 text-xs">
-            <Download className="size-3.5" aria-hidden="true" />
-            تنزيل PDF
-          </Button>
-          <Button type="button" size="sm" variant="outline" onClick={onDownloadExcel} className="min-h-11 gap-1.5 text-xs">
-            <FileSpreadsheet className="size-3.5" aria-hidden="true" />
-            تنزيل Excel
-          </Button>
-          {onPrintProfessionalReport ? (
-            <Button type="button" size="sm" variant="outline" onClick={onPrintProfessionalReport} disabled={actionsDisabled} className="min-h-11 gap-1.5 text-xs" title="كشف المالك التفصيلي — نسخة احترافية">
-              <Printer className="size-3.5" aria-hidden="true" />
-              كشف المالك التفصيلي
-            </Button>
-          ) : null}
-          {onDownloadProfessionalReportPdf ? (
-            <Button type="button" size="sm" variant="outline" onClick={onDownloadProfessionalReportPdf} disabled={actionsDisabled} className="min-h-11 gap-1.5 text-xs" title="كشف المالك التفصيلي — نسخة احترافية PDF">
-              <Download className="size-3.5" aria-hidden="true" />
-              كشف المالك التفصيلي PDF
-            </Button>
-          ) : null}
-        </div>
+        <ReportOutputActions
+          downloadLabel="تنزيل كشف المالك PDF"
+          menuLabel="خيارات إخراج كشف المالك"
+          onDownloadPdf={onDownloadPdf}
+          onPrint={onPrint}
+          onDownloadExcel={onDownloadExcel}
+          disabled={actionsDisabled}
+        />
       ) : undefined}
     >
       {isLoading ? (

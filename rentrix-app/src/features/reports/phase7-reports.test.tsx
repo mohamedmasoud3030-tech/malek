@@ -109,6 +109,7 @@ describe('Reports Workspace Render Regression (Point 3)', () => {
         activeSection={section}
         activeView={view}
         onOpenView={vi.fn()}
+        onOpenReport={vi.fn()}
         onDrill={vi.fn()}
         onFiltersChange={vi.fn()}
         onResetCurrentMonth={vi.fn()}

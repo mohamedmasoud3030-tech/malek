@@ -59,10 +59,10 @@ export interface FinanceSectionDefinition {
 }
 
 export const FINANCE_SECTIONS: readonly FinanceSectionDefinition[] = [
-  { id: 'collections', label: 'الفواتير والتحصيل', icon: ReceiptText, defaultViewId: 'invoices', showInPrimaryNavigation: true },
+  { id: 'collections', label: 'التحصيل', icon: ReceiptText, defaultViewId: 'invoices', showInPrimaryNavigation: true },
   { id: 'fees', label: 'دخل المكتب', icon: BadgeDollarSign, defaultViewId: 'fixed_monthly_accruals', showInPrimaryNavigation: true },
   { id: 'expenses', label: 'المصروفات', icon: WalletCards, defaultViewId: 'expenses', showInPrimaryNavigation: true },
-  { id: 'funds', label: 'الأمانات والملاك', icon: FileCheck, defaultViewId: 'deposits', showInPrimaryNavigation: true },
+  { id: 'funds', label: 'أموال الملاك', icon: FileCheck, defaultViewId: 'deposits', showInPrimaryNavigation: true },
   { id: 'banking', label: 'البنوك', icon: Landmark, defaultViewId: 'bank_reconciliation', showInPrimaryNavigation: true },
   // Compatibility only. The old cockpit is no longer a routine destination.
   { id: 'overview', label: 'وضع المال', icon: LayoutDashboard, defaultViewId: 'overview', showInPrimaryNavigation: false },
@@ -70,7 +70,7 @@ export const FINANCE_SECTIONS: readonly FinanceSectionDefinition[] = [
 
 export const FINANCE_VIEWS: readonly FinanceViewDefinition[] = [
   { id: 'invoices', sectionId: 'collections', label: 'الفواتير', icon: FileSpreadsheet, permission: null },
-  { id: 'receipts', sectionId: 'collections', label: 'سجل التحصيلات', icon: ReceiptText, permission: null },
+  { id: 'receipts', sectionId: 'collections', label: 'الإيصالات', icon: ReceiptText, permission: null },
   { id: 'arrears', sectionId: 'collections', label: 'المتأخرات', icon: ClipboardList, permission: 'arrears.view', showInSectionNavigation: false },
   { id: 'fixed_monthly_accruals', sectionId: 'fees', label: 'أتعاب الإدارة', icon: CalendarDays, permission: 'financial.fixed_monthly_accruals.view' },
   { id: 'commissions', sectionId: 'fees', label: 'العمولات', icon: BadgeDollarSign, permission: 'commissions.view' },

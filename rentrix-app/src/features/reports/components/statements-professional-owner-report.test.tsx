@@ -138,13 +138,14 @@ describe('StatementsSection professional owner report wiring', () => {
 
   it('renders the professional owner report actions next to the canonical statement', () => {
     renderOwnerSection();
-    expect(screen.getByRole('button', { name: 'كشف المالك التفصيلي' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'كشف المالك التفصيلي PDF' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'تنزيل كشف المالك PDF' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'خيارات إخراج كشف المالك' })).toBeDefined();
   });
 
   it('prints the professional owner report pack with the canonical statement scope', async () => {
     renderOwnerSection();
-    fireEvent.click(screen.getByRole('button', { name: 'كشف المالك التفصيلي' }));
+    fireEvent.click(screen.getByRole('button', { name: 'خيارات إخراج كشف المالك' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'طباعة' }));
 
     await vi.waitFor(() => {
       expect(documentService.printDocument).toHaveBeenCalledWith('owner_report', expect.objectContaining({
@@ -157,7 +158,7 @@ describe('StatementsSection professional owner report wiring', () => {
 
   it('downloads the professional owner report pack as PDF', async () => {
     renderOwnerSection();
-    fireEvent.click(screen.getByRole('button', { name: 'كشف المالك التفصيلي PDF' }));
+    fireEvent.click(screen.getByRole('button', { name: 'تنزيل كشف المالك PDF' }));
 
     await vi.waitFor(() => {
       expect(documentService.downloadDocumentPdf).toHaveBeenCalledWith('owner_report', expect.objectContaining({
@@ -170,7 +171,7 @@ describe('StatementsSection professional owner report wiring', () => {
     renderOwnerSection({ ownerStatement: undefined });
     // The canonical panel and its actions only render when a statement is loaded —
     // the truthful refusal is to withhold the action entirely.
-    expect(screen.queryByRole('button', { name: 'كشف المالك التفصيلي' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'كشف المالك التفصيلي PDF' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'تنزيل كشف المالك PDF' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'خيارات إخراج كشف المالك' })).toBeNull();
   });
 });
