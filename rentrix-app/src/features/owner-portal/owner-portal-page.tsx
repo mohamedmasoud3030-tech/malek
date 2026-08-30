@@ -174,7 +174,7 @@ export function OwnerPortalPage() {
                   rows={[...snapshot.properties]}
                   columns={propertyColumns}
                   keyOf={(property) => property.id}
-                  mobileSummaryKeys={['ownership', 'units']}
+                  mobilePrimaryMetaKeys={['ownership', 'units']}
                   emptyTitle="لا توجد عقارات مرتبطة بهذا المالك"
                   emptyDescription="سيظهر هنا أي عقار مرتبط بهذا الرابط عند توفره."
                 />
@@ -185,7 +185,7 @@ export function OwnerPortalPage() {
                     columns={unitColumns}
                     keyOf={(unit) => unit.id}
                     mobileBadgeKey="status"
-                    mobileSummaryKeys={['property', 'rent']}
+                    mobilePrimaryMetaKeys={['property', 'rent']}
                   />
                 ) : null}
               </div>
@@ -208,7 +208,7 @@ export function OwnerPortalPage() {
                   columns={settlementColumns}
                   keyOf={(settlement) => settlement.id}
                   mobileBadgeKey="status"
-                  mobileSummaryKeys={['period', 'net']}
+                  mobilePrimaryMetaKeys={['period', 'net']}
                   emptyTitle="لا توجد تسويات مسجلة"
                   emptyDescription="ستظهر التسويات الخاصة بهذا المالك هنا عند تسجيلها."
                 />

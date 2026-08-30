@@ -604,7 +604,7 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
               columns={meterColumns}
               keyOf={(meter) => meter.id}
               mobileBadgeKey="status"
-              mobileSummaryKeys={['billing', 'property', 'account', 'responsible']}
+              mobilePrimaryMetaKeys={['billing', 'property', 'account', 'responsible']}
               emptyTitle={meterBillingFilter === 'all' ? 'لا توجد عدادات' : `لا توجد عدادات ${meterBillingStateLabels[meterBillingFilter]}`}
               emptyDescription={
                 meterBillingFilter === 'all'
@@ -632,7 +632,7 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
               keyOf={(bill) => bill.id}
               onRowClick={(bill) => setBillToPreview(bill)}
               mobileBadgeKey="status"
-              mobileSummaryKeys={['due', 'remaining', 'responsible', 'property']}
+              mobilePrimaryMetaKeys={['due', 'remaining', 'responsible', 'property']}
               emptyTitle={urgencyFilter === 'all' ? 'لا توجد فواتير مطابقة' : `لا توجد فواتير ${utilityObligationUrgencyLabels[urgencyFilter]}`}
               emptyDescription={
                 urgencyFilter === 'all'

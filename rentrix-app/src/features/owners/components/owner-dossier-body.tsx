@@ -131,7 +131,7 @@ export function OwnerDossierBody({
                 emptyTitle="لا توجد عقارات مرتبطة"
                 emptyDescription="لا توجد علاقة ملكية نشطة موثقة لهذا المالك. يمكنك ربط المالك بعقار من صفحة العقارات."
                 onRowClick={(property) => dialogNavigate({ to: '/properties/$propertyId', params: { propertyId: property.id } })}
-                mobileSummaryKeys={['address', 'ownership', 'units', 'active_contracts']}
+                mobilePrimaryMetaKeys={['address', 'ownership', 'units', 'active_contracts']}
               />
             </div>
           </section>
