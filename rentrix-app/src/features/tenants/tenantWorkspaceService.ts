@@ -3,6 +3,7 @@ import { fetchAllRowsInBatches } from '@/lib/paginatedRead';
 import { supabase } from '@/lib/supabase';
 import { getTodayLocalDateString } from '@/features/financials/financials-date-utils';
 import { normalizeInvoiceStatus } from '@/features/financials/components/invoice-status-labels';
+import { listDossierInvoicesForContracts } from '@/features/financials/invoices/invoiceService';
 import type { Contract, Invoice, Person, Property, Unit } from '@/types/domain';
 
 export type TenantWorkspaceParams = {
@@ -171,7 +172,10 @@ export async function getTenantDossier(tenantId: string, options: { includeFinan
 
   const [invoiceResult, receiptResult, activityResult] = await Promise.all([
     options.includeFinancial && contractIds.length > 0
-      ? (supabase as any).from('invoices').select('id,reference,contract_id,status,amount,paid_amount,due_date').in('contract_id', contractIds).is('deleted_at', null).order('due_date', { ascending: false })
+      ? listDossierInvoicesForContracts(contractIds).then(
+          (rows) => ({ data: rows, error: null }),
+          (error) => ({ data: [], error }),
+        )
       : Promise.resolve({ data: [], error: null }),
     options.includeFinancial
       ? (supabase as any).from('receipts').select('id,reference,no,amount,date_time,channel,status').eq('tenant_id', tenantId).is('deleted_at', null).order('date_time', { ascending: false }).limit(20)
