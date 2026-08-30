@@ -179,7 +179,7 @@ export async function getBalanceSheetReport(asOf: string): Promise<BalanceSheetR
 // ---------------------------------------------------------------------------
 
 export async function getCashFlowReport(from: string, to: string): Promise<CashFlowReport> {
-  const { data, error } = await supabase.rpc('wp05_rpt_cash_flow_gl', {
+  const { data, error } = await supabase.rpc('rpt_cash_flow_gl', {
     p_from: from,
     p_to: to,
   });
