@@ -7,7 +7,11 @@ import { leasingHubSections } from '@/features/relationships-hub/leasing-hub-sec
 import { portfolioHubSections } from '@/features/portfolio-hub/portfolio-hub-sections';
 import { operationsHubSections } from '@/features/operations-hub/operations-hub.sections';
 import { ACCOUNTING_REPORT_VIEWS, ANALYTICS_REPORT_VIEWS } from '@/features/reports/report-view-registry';
-import { reportGroups } from '@/features/reports/directory/report-directory-groups';
+import {
+  businessReportGroups,
+  reportGroups,
+  specialistReportGroups,
+} from '@/features/reports/directory/report-directory-groups';
 import { settingsSectionRegistry } from '@/features/settings/registry/sectionRegistry';
 
 function source(relativePath: string) {
@@ -85,15 +89,17 @@ describe('production product simplification contract', () => {
   });
 
   it('keeps Reports owner-facing navigation task-first while specialist views remain deep-linkable', () => {
-    expect(reportGroups.map((group) => group.id)).toEqual([
+    expect(businessReportGroups.map((group) => group.id)).toEqual([
       'office',
       'collections',
-      'leases',
-      'maintenance',
-      'owners',
+      'leasing',
+      'operations',
       'properties',
+      'statements',
     ]);
-    expect(reportGroups.flatMap((group) => group.shortcuts).some((shortcut) => shortcut.section === 'accounting')).toBe(false);
+    expect(specialistReportGroups.map((group) => group.id)).toEqual(['financial_review']);
+    expect(businessReportGroups.flatMap((group) => group.shortcuts).some((shortcut) => shortcut.section === 'accounting')).toBe(false);
+    expect(reportGroups).toHaveLength(7);
 
     expect(ACCOUNTING_REPORT_VIEWS.map((view) => view.id)).toEqual([
       'accounting_reports',
@@ -104,10 +110,14 @@ describe('production product simplification contract', () => {
       'overview',
       'collections',
       'overdue',
+      'follow_up',
+      'collection_movement',
       'expenses',
       'property_analytics',
       'occupancy',
+      'expiring',
       'maintenance_analytics',
+      'operations_overview',
       'services',
     ]);
 

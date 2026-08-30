@@ -47,6 +47,6 @@ export function getInitialReportsFilters(search?: Record<string, unknown>): Repo
     costCenterId: readSearchString(search, 'costCenterId'),
     ownerId: readSearchString(search, 'ownerId'),
     contractId: readSearchString(search, 'contractId'),
-    status: 'all',
+    status: (readSearchString(search, 'status') as FinancialReportStatus) || 'all',
   };
 }

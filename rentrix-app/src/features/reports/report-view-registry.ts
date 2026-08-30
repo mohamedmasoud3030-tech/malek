@@ -22,10 +22,14 @@ export type AnalyticsReportViewId =
   | 'overview'
   | 'collections'
   | 'overdue'
+  | 'follow_up'
+  | 'collection_movement'
   | 'expenses'
   | 'property_analytics'
   | 'occupancy'
+  | 'expiring'
   | 'maintenance_analytics'
+  | 'operations_overview'
   | 'services';
 
 /** `''` is the statements section, which has no sub-views. */
@@ -49,13 +53,17 @@ export const ACCOUNTING_REPORT_VIEWS = [
 ] as const satisfies readonly ReportViewMeta[];
 
 export const ANALYTICS_REPORT_VIEWS = [
-  { id: 'overview', label: 'نظرة عامة على الأداء', icon: LayoutDashboard, showInPrimaryNavigation: true },
-  { id: 'collections', label: 'قائمة متابعة التحصيل', icon: Receipt, showInPrimaryNavigation: true },
-  { id: 'overdue', label: 'المتأخرات حسب الخطر', icon: AlertTriangle, showInPrimaryNavigation: true },
-  { id: 'expenses', label: 'المصروفات وأثر التشغيل', icon: ClipboardList, showInPrimaryNavigation: true },
+  { id: 'overview', label: 'أداء المكتب', icon: LayoutDashboard, showInPrimaryNavigation: true },
+  { id: 'collections', label: 'ملخص الفترة', icon: Receipt, showInPrimaryNavigation: true },
+  { id: 'overdue', label: 'المتأخرات والأعمار', icon: AlertTriangle, showInPrimaryNavigation: true },
+  { id: 'follow_up', label: 'المتابعة', icon: AlertTriangle, showInPrimaryNavigation: true },
+  { id: 'collection_movement', label: 'حركة التحصيل', icon: Receipt, showInPrimaryNavigation: true },
+  { id: 'expenses', label: 'المصروفات', icon: ClipboardList, showInPrimaryNavigation: true },
   { id: 'property_analytics', label: 'أداء العقارات والوحدات', icon: Building2, showInPrimaryNavigation: true },
-  { id: 'occupancy', label: 'الشغور والتجديدات', icon: Building2, showInPrimaryNavigation: true },
-  { id: 'maintenance_analytics', label: 'الصيانة وتكلفتها', icon: Wrench, showInPrimaryNavigation: true },
+  { id: 'occupancy', label: 'الإشغال والشغور', icon: Building2, showInPrimaryNavigation: true },
+  { id: 'expiring', label: 'العقود القريبة من الانتهاء', icon: Building2, showInPrimaryNavigation: true },
+  { id: 'maintenance_analytics', label: 'الصيانة', icon: Wrench, showInPrimaryNavigation: true },
+  { id: 'operations_overview', label: 'نظرة تشغيلية', icon: Wrench, showInPrimaryNavigation: true },
   { id: 'services', label: 'الخدمات والمرافق', icon: Zap, showInPrimaryNavigation: false },
 ] as const satisfies readonly ReportViewMeta[];
 

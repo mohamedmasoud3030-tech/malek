@@ -4,7 +4,7 @@ import { PageHeader } from '@/components/layout/page-header';
 import { companySettingsKeys } from '@/features/settings/useCompanySettings';
 import { ReportsWorkspace } from './components/ReportsWorkspace';
 import { getCurrentMonthFilters, type FilterState } from './reports-page.helpers';
-import type { ReportSectionId } from './reports-page.sections';
+import { getReportWorkspace, type ReportWorkspaceId } from './report-workspaces';
 import type { ReportsWorkspaceModel } from './use-reports-workspace';
 import { type ReportViewId } from './reports-section-model';
 
@@ -337,9 +337,10 @@ export function ReportsWorkspaceE2EFixture() {
     asOf: fixtureDate,
   }));
   // The fixture renders ReportsWorkspace without the /reports route, so the
-  // section selection is local state here (the real route is URL-backed).
-  const [activeSection, setActiveSection] = useState<ReportSectionId>('accounting');
+  // workspace selection is local state here (the real route is URL-backed).
+  const [activeWorkspace, setActiveWorkspace] = useState<ReportWorkspaceId>('financial_review');
   const [activeView, setActiveView] = useState<ReportViewId>('accounting_reports');
+  const activeSection = getReportWorkspace(activeWorkspace)?.defaultSection ?? 'analytics';
 
   useEffect(() => {
     queryClient.setQueryDefaults(companySettingsKeys.detail(), { staleTime: Infinity });
@@ -375,11 +376,13 @@ export function ReportsWorkspaceE2EFixture() {
           model={fixtureModel}
           filters={filters}
           canExportReports
+          activeWorkspace={activeWorkspace}
           activeSection={activeSection}
           activeView={activeView}
-          onSectionViewChange={(sec, vi) => {
-            setActiveSection(sec);
-            setActiveView(vi);
+          onOpenView={(view) => setActiveView(view)}
+          onDrill={(workspace, view) => {
+            setActiveWorkspace(workspace);
+            if (view) setActiveView(view);
           }}
           onFiltersChange={setFilters}
           onResetCurrentMonth={() => setFilters({

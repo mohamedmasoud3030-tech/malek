@@ -3,6 +3,7 @@ import type { ReportsWorkspaceModel } from '../use-reports-workspace';
 import type { ReportsFilterState } from '../reports-workspace-filters';
 import type { ReportViewId } from '../report-view-registry';
 import type { ReportSectionId } from '../reports-page.sections';
+import type { ReportDrillHandler, ReportWorkspaceId } from '../report-workspaces';
 import { ReportsShell } from './ReportsShell';
 import { ReportsViewPanel } from './ReportsViewPanel';
 
@@ -10,9 +11,11 @@ type ReportsWorkspaceProps = Readonly<{
   model: ReportsWorkspaceModel;
   filters: ReportsFilterState;
   canExportReports: boolean;
+  activeWorkspace: ReportWorkspaceId;
   activeSection: ReportSectionId;
   activeView: ReportViewId;
-  onSectionViewChange: (section: ReportSectionId, view: ReportViewId) => void;
+  onOpenView: (view: ReportViewId) => void;
+  onDrill: ReportDrillHandler;
   onFiltersChange: (filters: ReportsFilterState) => void;
   onResetCurrentMonth: () => void;
 }>;
@@ -20,18 +23,21 @@ type ReportsWorkspaceProps = Readonly<{
 /**
  * Reports workspace composition root.
  *
- * Owner-facing navigation is intentionally task/report-first. The legacy
+ * Owner-facing navigation is workspace-first: the directory opens one of the
+ * seven business workspaces and the shell presents its sub-views. The legacy
  * accounting/statements/analytics section ids remain internal routing
  * contracts only, so deep links and authoritative report adapters keep
- * working without exposing implementation-oriented categories to the user.
+ * working without exposing implementation categories to the user.
  */
 export function ReportsWorkspace({
   model,
   filters,
   canExportReports,
+  activeWorkspace,
   activeSection,
   activeView,
-  onSectionViewChange,
+  onOpenView,
+  onDrill,
   onFiltersChange,
   onResetCurrentMonth,
 }: ReportsWorkspaceProps) {
@@ -40,11 +46,11 @@ export function ReportsWorkspace({
       <ReportsShell
         model={model}
         filters={filters}
-        activeSection={activeSection}
+        activeWorkspace={activeWorkspace}
         activeView={activeView}
+        onOpenView={onOpenView}
         onFiltersChange={onFiltersChange}
         onResetCurrentMonth={onResetCurrentMonth}
-        onSectionViewChange={onSectionViewChange}
       />
 
       {model.isIncomplete ? (
@@ -65,6 +71,7 @@ export function ReportsWorkspace({
           model={model}
           filters={filters}
           canExportReports={canExportReports && !model.isIncomplete}
+          onDrill={onDrill}
         />
       </div>
     </div>

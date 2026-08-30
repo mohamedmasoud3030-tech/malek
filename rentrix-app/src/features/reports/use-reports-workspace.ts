@@ -97,11 +97,11 @@ export function useReportsWorkspace(filters: ReportsFilterState, location: Repor
 
   const needsOverview = isAnalytics && view === 'overview';
   const needsPropertyPerformance = isAnalytics && view === 'property_analytics';
-  const needsCollections = isAnalytics && (view === 'collections' || needsOverview || needsPropertyPerformance);
-  const needsOverdue = isAnalytics && (view === 'overdue' || needsPropertyPerformance);
-  const needsExpenses = isAnalytics && (view === 'expenses' || needsOverview || needsPropertyPerformance || view === 'maintenance_analytics');
-  const needsOccupancy = isAnalytics && (view === 'occupancy' || needsOverview || needsPropertyPerformance);
-  const needsMaintenance = isAnalytics && (view === 'maintenance_analytics' || needsPropertyPerformance);
+  const needsCollections = isAnalytics && (view === 'collections' || view === 'collection_movement' || needsOverview || needsPropertyPerformance);
+  const needsOverdue = isAnalytics && (view === 'overdue' || view === 'follow_up' || needsOverview || needsPropertyPerformance);
+  const needsExpenses = isAnalytics && (view === 'expenses' || view === 'operations_overview' || needsOverview || needsPropertyPerformance || view === 'maintenance_analytics');
+  const needsOccupancy = isAnalytics && (view === 'occupancy' || view === 'expiring' || needsOverview || needsPropertyPerformance);
+  const needsMaintenance = isAnalytics && (view === 'maintenance_analytics' || view === 'operations_overview' || needsOverview || needsPropertyPerformance);
   const needsAccountingReports = isAccounting && view === 'accounting_reports';
   const needsDeferredRevenue = isAccounting && view === 'deferred_revenue';
   const needsStatements = isStatements || needsAccountingReports;

@@ -81,7 +81,7 @@ describe('WP-C C.4 — every adapter chunk is lazy', () => {
       .map((file) => ({ file, source: read(resolve(workspaceDir, file)) }))
       .map(({ file, source }) => ({ file, count: (source.match(/lazy\(\(\) =>/g) ?? []).length }));
 
-    expect(lazyBodyImports.reduce((total, entry) => total + entry.count, 0)).toBe(12);
+    expect(lazyBodyImports.reduce((total, entry) => total + entry.count, 0)).toBe(16);
 
     for (const { file, source } of adapterModules()
       .filter((name) => name.endsWith('.tsx'))
@@ -112,10 +112,14 @@ describe('WP-C — the view registry is the only declaration of an internal repo
       'overview',
       'collections',
       'overdue',
+      'follow_up',
+      'collection_movement',
       'expenses',
       'property_analytics',
       'occupancy',
+      'expiring',
       'maintenance_analytics',
+      'operations_overview',
       'services',
     ]);
     expect(read(resolve(workspaceDir, 'ReportsWorkspace.tsx'))).not.toContain('SectionTabs');

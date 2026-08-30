@@ -17,6 +17,12 @@ const CollectionsSection = lazy(() =>
 const OverdueSection = lazy(() =>
   import('../../components/OverdueSection').then((m) => ({ default: m.OverdueSection })),
 );
+const FollowUpSection = lazy(() =>
+  import('../../components/FollowUpSection').then((m) => ({ default: m.FollowUpSection })),
+);
+const CollectionMovementSection = lazy(() =>
+  import('../../components/CollectionMovementSection').then((m) => ({ default: m.CollectionMovementSection })),
+);
 const ExpensesSection = lazy(() =>
   import('../../components/ExpensesSection').then((m) => ({ default: m.ExpensesSection })),
 );
@@ -26,8 +32,14 @@ const PropertyAnalyticsSection = lazy(() =>
 const OccupancySection = lazy(() =>
   import('../../components/OccupancySection').then((m) => ({ default: m.OccupancySection })),
 );
+const ExpiringContractsSection = lazy(() =>
+  import('../../components/ExpiringContractsSection').then((m) => ({ default: m.ExpiringContractsSection })),
+);
 const MaintenanceReportSection = lazy(() =>
   import('../../components/MaintenanceReportSection').then((m) => ({ default: m.MaintenanceReportSection })),
+);
+const OperationsOverviewSection = lazy(() =>
+  import('../../components/OperationsOverviewSection').then((m) => ({ default: m.OperationsOverviewSection })),
 );
 const ServicesReportSection = lazy(() =>
   import('../../components/ServicesReportSection').then((m) => ({ default: m.ServicesReportSection })),
@@ -49,14 +61,38 @@ export function resolveAnalyticsReportView(view: string): AnalyticsReportViewId 
  *
  * These are operating indicators, never accounting statements: the adapter
  * forwards Finance/operational read models and never computes a profit, a
- * balance, or a GL-backed figure of its own.
+ * balance, or a GL-backed figure of its own. Views grouped under one business
+ * workspace keep their separate read models — the UI consolidates, the data
+ * sources do not.
  */
-export function AnalyticsReportsAdapter({ view, model, filters, canExportReports }: ReportAdapterProps) {
+export function AnalyticsReportsAdapter({ view, model, filters, canExportReports, onDrill }: ReportAdapterProps) {
   switch (resolveAnalyticsReportView(view)) {
     case 'collections':
       return <CollectionsSection {...model.sections.collections} canExportReports={canExportReports} />;
     case 'overdue':
       return <OverdueSection {...model.sections.overdue} canExportReports={canExportReports} />;
+    case 'follow_up':
+      return (
+        <FollowUpSection
+          rows={model.sections.overdue.rows}
+          isLoading={model.sections.overdue.isLoading}
+          canExportReports={canExportReports}
+        />
+      );
+    case 'collection_movement': {
+      const collections = model.sections.collections;
+      return (
+        <CollectionMovementSection
+          summary={collections.summary}
+          rows={collections.rows}
+          receiptRows={collections.receiptRows}
+          from={collections.from}
+          to={collections.to}
+          canExportReports={canExportReports}
+          isLoading={collections.isLoading}
+        />
+      );
+    }
     case 'expenses':
       return <ExpensesSection {...model.sections.expenses} canExportReports={canExportReports} />;
     case 'property_analytics':
@@ -66,27 +102,57 @@ export function AnalyticsReportsAdapter({ view, model, filters, canExportReports
           expenseRows={model.sections.expenses.report?.byProperty ?? []}
           performanceRows={model.sections.propertyPerformance?.rows ?? []}
           isLoading={model.sections.propertyPerformance?.isLoading ?? (model.sections.occupancy.isLoading || model.sections.expenses.isLoading)}
+          onDrill={onDrill}
         />
       );
     case 'occupancy':
       return <OccupancySection {...model.sections.occupancy} canExportReports={canExportReports} />;
+    case 'expiring':
+      return (
+        <ExpiringContractsSection
+          expiringRows={model.sections.occupancy.expiringRows}
+          vacancyAnalytics={model.sections.occupancy.vacancyAnalytics}
+          canExportReports={canExportReports}
+          isLoading={model.sections.occupancy.isLoading}
+        />
+      );
     case 'maintenance_analytics':
       return <MaintenanceReportSection {...model.sections.maintenance} canExportReports={canExportReports} />;
+    case 'operations_overview':
+      return (
+        <OperationsOverviewSection
+          expenseReport={model.sections.expenses.report}
+          maintenanceRows={model.sections.maintenance.rows}
+          maintenanceSummary={model.sections.maintenance.summary}
+          isLoading={model.sections.expenses.isLoading || model.sections.maintenance.isLoading}
+          onDrill={onDrill}
+        />
+      );
     case 'services':
       return <ServicesReportSection filters={filters} canExportReports={canExportReports} />;
     case 'overview':
     default:
       return (
         <OverviewSection
-          {...model.sections.overview}
+          summary={model.sections.overview.summary}
+          collectionSummary={model.sections.overview.collectionSummary}
+          collectionRate={model.sections.overview.collectionRate}
+          cashflowRows={model.sections.overview.cashflowRows}
           receiptRows={model.sections.collections.receiptRows}
           occupancyRows={model.sections.occupancy.occupancyRows}
+          expiringRows={model.sections.occupancy.expiringRows}
+          expenseRows={model.sections.expenses.report?.byProperty ?? []}
+          overdueSummary={model.sections.overdue.summary}
+          maintenanceSummary={model.sections.maintenance.summary}
           canExportReports={canExportReports}
           isLoading={
             model.sections.overview.isLoading
             || model.sections.collections.isLoading
             || model.sections.occupancy.isLoading
+            || model.sections.overdue.isLoading
+            || model.sections.maintenance.isLoading
           }
+          onDrill={onDrill}
         />
       );
   }

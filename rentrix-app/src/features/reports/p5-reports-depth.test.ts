@@ -18,7 +18,7 @@ describe('P5 — reports depth contract', () => {
     expect(getNavRoot('/reports')).toBe('/reports');
     expect(getNavRoot('/accounting')).toBe('/reports');
     expect(getNavRoot('/reports')).not.toBe('/financials');
-    expect(workspace).toContain("onSectionViewChange('analytics', 'overdue')");
+    expect(workspace).toContain("onOpenView('overdue')");
     for (const field of ['المتأخر', 'العقار', 'الوحدة', 'العقد', 'الفاتورة', 'الاستحقاق', 'أيام التأخير', 'المبلغ الأصلي', 'المدفوع', 'المتبقي', 'Aging', 'الإجراء التالي']) expect(arrears).toContain(field);
     expect(arrears).toContain('EntityPreviewDialog');
   });

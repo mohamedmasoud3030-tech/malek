@@ -1,7 +1,5 @@
-import { reportGroups } from './directory/report-directory-groups';
-import { getReportSubViewLabel } from './report-view-registry';
-import type { ReportSectionId } from './reports-page.sections';
-import type { ReportViewId } from './reports-section-model';
+import { getReportWorkspace, getReportWorkspaceSubView, type ReportWorkspaceId } from './report-workspaces';
+import type { ReportViewId } from './report-view-registry';
 
 export type ActiveReportMeta = Readonly<{
   title: string;
@@ -9,21 +7,17 @@ export type ActiveReportMeta = Readonly<{
 }>;
 
 /**
- * Resolve the one compact report header for the open report. Title and
- * description come from the owner-facing catalogue (task/decision language),
- * never from the internal accounting/analytics section labels.
+ * Resolve the one compact report header for the open workspace. Title and
+ * description come from the workspace registry (task/decision language), never
+ * from internal section labels or implementation categories.
  */
-export function getActiveReportMeta(section: ReportSectionId, view: ReportViewId): ActiveReportMeta {
-  const viewLabel = getReportSubViewLabel(section, view);
-  const group =
-    reportGroups.find((item) => item.section === section && item.matches.includes(view))
-    ?? (section === 'statements' ? reportGroups.find((item) => item.id === 'owners') : undefined);
+export function getActiveReportMeta(workspaceId: ReportWorkspaceId, view: ReportViewId): ActiveReportMeta {
+  const workspace = getReportWorkspace(workspaceId);
+  if (!workspace) return { title: 'تقرير', description: '' };
 
-  const title = viewLabel || group?.title || 'تقرير';
-  const description =
-    group?.shortcuts.find((shortcut) => shortcut.section === section && shortcut.view === view)?.description
-    ?? group?.description
-    ?? '';
-
-  return { title, description };
+  const subView = getReportWorkspaceSubView(workspace, view);
+  if (subView) {
+    return { title: subView.label, description: subView.description ?? workspace.description };
+  }
+  return { title: workspace.label, description: workspace.description };
 }
