@@ -1,4 +1,4 @@
-import { Eye, LinkIcon, Pencil } from 'lucide-react';
+import { LinkIcon, Pencil } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { ActionMenu } from '@/components/ui/action-menu';
@@ -10,7 +10,6 @@ import { EntityCell } from '@/components/ui/entity-cell';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { formatLatinNumber } from '@/lib/formatters';
 import type { Owner } from '../services/owner-service';
-import { OwnerPreviewDialog } from './OwnerPreviewDialog';
 import {
   getOwnerDisplayLabel,
   getOwnerPropertyOwnershipLabel,
@@ -87,7 +86,6 @@ export function OwnerWorkspaceTable({
   onSearchChange,
   onSelectOwner,
 }: OwnerWorkspaceTableProps) {
-  const [previewOwnerId, setPreviewOwnerId] = useState<string | null>(null);
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultOwnerColumns]);
   const hasSearch = Boolean(search.trim());
   const emptyState = (
@@ -97,8 +95,6 @@ export function OwnerWorkspaceTable({
       action={hasSearch ? undefined : <Button onClick={onCreateOwner}>إضافة مالك</Button>}
     />
   );
-
-  const openPreview = (ownerId: string) => setPreviewOwnerId(ownerId);
 
   const columns = useMemo((): ColumnDef<OwnerWorkspaceRow>[] => [
     {
@@ -131,15 +127,14 @@ export function OwnerWorkspaceTable({
           <ActionMenu
             label={`إجراءات ${getOwnerDisplayLabel(row.owner)}`}
             items={[
-              { id: 'preview', label: 'معاينة', icon: Eye, onClick: () => openPreview(row.owner.id) },
-              { id: 'relationships', label: 'العلاقات', icon: LinkIcon, onClick: () => onSelectOwner(row.owner.id) },
-              { id: 'edit', label: 'تعديل', icon: Pencil, onClick: () => onEditOwner(row.owner) },
+              { id: 'relationships', label: 'فتح الملف', icon: LinkIcon, onClick: () => onSelectOwner(row.owner.id) },
+              { id: 'edit', label: 'تعديل البيانات', icon: Pencil, onClick: () => onEditOwner(row.owner) },
             ]}
           />
         </div>
       ),
     },
-  ], []);
+  ], [onEditOwner, onSelectOwner]);
 
   return (
     <div className="space-y-3" data-owner-workspace-table>
@@ -160,23 +155,23 @@ export function OwnerWorkspaceTable({
         <EntityTable
           aria-label="جدول الملاك"
           rows={rows}
-          onRowClick={(row) => openPreview(row.owner.id)}
+          onRowClick={(row) => onSelectOwner(row.owner.id)}
           columns={columns}
           visibleColumnKeys={visibleColumnKeys}
           mobileCardType="owner"
           mobileSupportingKey="contact"
           mobilePrimaryMetaKeys={['contracts', 'property_count']}
           mobileSecondaryMetaKeys={['ownership']}
+          mobileCardPrimaryAction={(row) => ({
+            label: 'فتح الملف',
+            icon: LinkIcon,
+            variant: 'default',
+            onClick: () => onSelectOwner(row.owner.id),
+            ariaLabel: `فتح ملف ${getOwnerDisplayLabel(row.owner)}`,
+          })}
           mobileCardActions={(row) => [
             {
-              label: 'العلاقات',
-              icon: LinkIcon,
-              variant: 'secondary',
-              onClick: () => onSelectOwner(row.owner.id),
-              ariaLabel: `علاقات ${getOwnerDisplayLabel(row.owner)}`,
-            },
-            {
-              label: 'تعديل',
+              label: 'تعديل البيانات',
               icon: Pencil,
               variant: 'secondary',
               onClick: () => onEditOwner(row.owner),
@@ -188,12 +183,6 @@ export function OwnerWorkspaceTable({
           emptyDescription="أضف أول مالك لبدء ربطه بالعقارات."
         />
       ) : emptyState}
-
-      <OwnerPreviewDialog
-        ownerId={previewOwnerId}
-        open={Boolean(previewOwnerId)}
-        onOpenChange={(open) => { if (!open) setPreviewOwnerId(null); }}
-      />
     </div>
   );
 }
