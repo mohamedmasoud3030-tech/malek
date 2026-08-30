@@ -36,7 +36,9 @@ describe('canonical register visual contract', () => {
   });
 
   it('renders mobile rows as quiet card-style table rows without nested inner cards', () => {
-    expect(entityCard).toContain('rounded-[16px]');
+    // The card surface sits on the canonical elevated radius (rounded-2xl).
+    expect(entityCard).toContain('rounded-2xl');
+    expect(entityCard).not.toContain('rounded-[16px]');
     expect(entityCard).toContain('border border-border/70 bg-card px-4 py-3');
     expect(entityCard).toContain('text-[15px] font-semibold');
     expect(entityCard).toContain('text-[12.5px] font-medium');

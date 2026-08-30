@@ -31,7 +31,14 @@ describe('MALEK canonical brand contract', () => {
 
     expect(markComponent).toContain('APP_BRAND_MARK_ASSET');
     expect(brandComponent).toContain('<MalikMark');
-    expect(login).toContain('<MalikBrand layout="vertical"');
+    // Login uses the canonical lockup exactly once, in vertical composition,
+    // with the tagline — never hand-built brand markup or another asset size.
+    expect(login).toContain("import { MalikBrand } from '@/components/brand/malik-brand'");
+    expect(login.match(/<MalikBrand/g)).toHaveLength(1);
+    expect(login).toContain('layout="vertical"');
+    expect(login).toContain('showTagline');
+    expect(login).not.toContain('data-brand-m');
+    expect(login).not.toContain('data-brand-name');
     expect(login).not.toContain('/icon-malik-192.png');
 
     // Header/sidebar compatibility imports must resolve to the exact same

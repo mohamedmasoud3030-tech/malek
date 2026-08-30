@@ -95,7 +95,7 @@ export function CommandPaletteDialog() {
         aria-modal="true"
         aria-label="البحث السريع"
         data-command-palette-dialog
-        className="absolute inset-x-3 top-[calc(env(safe-area-inset-top,0px)+4.25rem)] mx-auto flex max-h-[min(72dvh,34rem)] w-auto max-w-[34rem] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-elevated sm:top-20 sm:rounded-3xl"
+        className="absolute inset-x-3 top-[calc(env(safe-area-inset-top,0px)+4.25rem)] mx-auto flex max-h-[min(72dvh,34rem)] w-auto max-w-[34rem] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-elevated sm:top-20"
       >
         <div className="flex min-h-14 shrink-0 items-center gap-2 border-b border-border/70 px-3 py-2">
           <Search className="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />

@@ -299,7 +299,7 @@ const SelectionCheckbox = memo(function SelectionCheckbox({
 const DesktopTableSkeleton = memo(function DesktopTableSkeleton({ rows, cols, hasSelection }: { rows: number; cols: number; hasSelection: boolean }) {
   const totalColumns = cols + (hasSelection ? 1 : 0);
   return (
-    <Card className="overflow-hidden rounded-[18px] border-border/60 bg-muted/[0.16] p-2 shadow-none" data-entity-table-grid>
+    <Card className="overflow-hidden rounded-2xl border-border/60 bg-muted/[0.16] p-2 shadow-none" data-entity-table-grid>
       <div data-entity-table-scroll className="mobile-scroll-x overflow-x-auto overscroll-x-contain">
         <Table density="default" className="min-w-full border-separate border-spacing-x-0 border-spacing-y-2 text-[12.5px]">
           <TableHeader>
@@ -332,7 +332,7 @@ const MobileRegisterSkeleton = memo(function MobileRegisterSkeleton({ rows }: { 
   return (
     <div className="grid gap-2.5" aria-hidden="true" data-entity-table-mobile-skeleton>
       {Array.from({ length: rows }, (_, index) => (
-        <div key={index} className="rounded-[16px] border border-border/70 bg-card px-4 py-3 shadow-none">
+        <div key={index} className="rounded-2xl border border-border/70 bg-card px-4 py-3 shadow-none">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
               <Skeleton className="h-4 w-2/3" />
@@ -361,7 +361,7 @@ const PaginationBar = memo(function PaginationBar({ pagination }: { pagination: 
   const { page, onPageChange } = pagination;
   return (
     <nav
-      className="flex flex-col gap-2 rounded-[16px] border border-border/60 bg-card px-3 py-2 text-[11.5px] font-medium text-muted-foreground sm:flex-row sm:items-center sm:justify-between"
+      className="flex flex-col gap-2 rounded-2xl border border-border/60 bg-card px-3 py-2 text-[11.5px] font-medium text-muted-foreground sm:flex-row sm:items-center sm:justify-between"
       aria-label="ترقيم الصفحات"
     >
       <span>
@@ -456,7 +456,7 @@ function MobileRegisterListItem<T>({
       />
 
       {!hasStructuredActions && actionsColumn ? (
-        <div className="mt-2 rounded-[14px] border border-border/60 bg-card px-3 py-2 shadow-none">
+        <div className="mt-2 rounded-xl border border-border/60 bg-card px-3 py-2 shadow-none">
           <Button
             ref={triggerRef}
             type="button"
@@ -792,7 +792,7 @@ function EntityTableImpl<T>({
             </ul>
           </div>
         ) : (
-          <Card data-entity-table-wrapper data-compact-responsive-table data-entity-table-grid className="overflow-hidden rounded-[18px] border-border/60 bg-muted/[0.16] p-2 shadow-none">
+          <Card data-entity-table-wrapper data-compact-responsive-table data-entity-table-grid className="overflow-hidden rounded-2xl border-border/60 bg-muted/[0.16] p-2 shadow-none">
             <div
               data-entity-table-scroll
               tabIndex={0}
@@ -910,7 +910,7 @@ function EntityTableImpl<T>({
                         </TableRow>
                         {hasExpansion && isExpanded ? (
                           <TableRow id={detailId} data-row-disclosure className="hover:bg-transparent">
-                            <TableCell colSpan={colSpan} className="rounded-[16px] border border-primary/15 bg-primary/[0.025] p-4">
+                            <TableCell colSpan={colSpan} className="rounded-2xl border border-primary/15 bg-primary/[0.025] p-4">
                               {renderRowExpansion!(row)}
                             </TableCell>
                           </TableRow>

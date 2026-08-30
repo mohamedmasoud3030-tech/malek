@@ -95,7 +95,7 @@ export function AiAssistantGlobalAction({ showTrigger = true }: Readonly<{ showT
         inert={open ? undefined : true}
         className={cn(
           'fixed z-[90] flex flex-col overflow-hidden border border-border/80 bg-card shadow-elevated transition-[transform,opacity] duration-200 motion-reduce:transition-none',
-          'bottom-[calc(var(--mobile-dock-clearance,5.25rem)+0.75rem)] left-1/2 h-[min(32rem,64dvh)] w-[min(21.5rem,calc(100vw-2rem))] max-h-[calc(100dvh-var(--mobile-dock-clearance,5.25rem)-2.25rem)] -translate-x-1/2 rounded-[1.35rem]',
+          'bottom-[calc(var(--mobile-dock-clearance,5.25rem)+0.75rem)] left-1/2 h-[min(32rem,64dvh)] w-[min(21.5rem,calc(100vw-2rem))] max-h-[calc(100dvh-var(--mobile-dock-clearance,5.25rem)-2.25rem)] -translate-x-1/2 rounded-2xl',
           'sm:bottom-5 sm:left-4 sm:w-[22rem] sm:max-w-[calc(100vw-2rem)] sm:h-[32rem] sm:max-h-[72dvh] sm:translate-x-0',
           'md:w-[23rem]',
           open ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-4 opacity-0',

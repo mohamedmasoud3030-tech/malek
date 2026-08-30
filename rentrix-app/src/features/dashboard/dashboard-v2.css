@@ -13,10 +13,12 @@
   }
 }
 
-/* The first scan should feel like a brief, not another KPI card. */
+/* The first scan should feel like a brief, not another KPI card.
+   Radius stays on the canonical quiet surface step (rounded-xl = 0.75rem),
+   one step below the elevated card radius (rounded-2xl). */
 [data-dashboard-focus-strip] {
   scroll-margin-block-start: calc(var(--app-header-height, 3rem) + var(--dashboard-section-gap));
-  border-radius: 0.9rem;
+  border-radius: 0.75rem;
   border-color: hsl(var(--border) / 0.45);
   background: hsl(var(--muted) / 0.16);
   box-shadow: none;
