@@ -1,4 +1,4 @@
-import { AlertTriangle, Building2, Edit, Eye, FileText, KeyRound, Plus, TriangleAlert, Users } from 'lucide-react';
+import { AlertTriangle, Building2, Edit, FileText, KeyRound, Plus, TriangleAlert, Users } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { RegisterHeading, RegisterMetricStrip } from '@/components/layout/register-summary';
@@ -9,7 +9,6 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { PersonFormModal } from '@/features/people/person-form-modal';
-import { TenantPreviewDialog } from './components/TenantPreviewDialog';
 import type { TenantWorkspaceRow } from './tenantWorkspaceService';
 import { useTenantWorkspace } from './useTenantWorkspace';
 
@@ -75,7 +74,6 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
   const [page, setPage] = useState(typeof routeSearch.page === 'number' && routeSearch.page > 0 ? routeSearch.page : 1);
   const [formOpen, setFormOpen] = useState(false);
   const [editingPersonId, setEditingPersonId] = useState<string | undefined>();
-  const [previewTenantId, setPreviewTenantId] = useState<string | null>(null);
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultTenantColumns]);
 
   useEffect(() => {
@@ -91,7 +89,6 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
   const openCreate = () => { setEditingPersonId(undefined); setFormOpen(true); };
   const openEdit = (personId: string) => { setEditingPersonId(personId); setFormOpen(true); };
   const closeForm = () => { setFormOpen(false); setEditingPersonId(undefined); tenantsQuery.refetch(); };
-  const openPreview = (tenant: TenantWorkspaceRow) => setPreviewTenantId(tenant.person.id);
   const openFullDetail = (tenant: TenantWorkspaceRow) => void navigate({ to: '/tenants/$tenantId', params: { tenantId: tenant.person.id } });
   const openContract = (contractId: string) => void navigate({ to: '/contracts/$contractId', params: { contractId } });
 
@@ -145,21 +142,15 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
       priority: 'actions',
       render: (tenant) => (
         <div className="flex items-center gap-1.5" onClick={(event) => event.stopPropagation()}>
-          <Button variant="secondary" className="min-h-11 px-3" onClick={() => openPreview(tenant)}>
-            <Eye className="me-1 size-4" />معاينة
+          <Button variant="secondary" className="min-h-11 px-3" onClick={() => openFullDetail(tenant)}>
+            <Users className="me-1 size-4" />فتح الملف
           </Button>
           <ActionMenu
             label={`إجراءات ${tenant.person.full_name}`}
             items={[
               {
-                id: 'details',
-                label: 'التفاصيل الكاملة',
-                icon: Users,
-                onClick: () => openFullDetail(tenant),
-              },
-              {
                 id: 'edit',
-                label: 'تعديل',
+                label: 'تعديل البيانات',
                 icon: Edit,
                 onClick: () => openEdit(tenant.person.id),
               },
@@ -176,7 +167,7 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
         </div>
       ),
     },
-  ], []);
+  ], [navigate]);
 
   const workspaceContent = (
     <>
@@ -209,30 +200,23 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
           mobilePrimaryMetaKeys={['contracts']}
           mobileSecondaryMetaKeys={['arrears']}
           mobileCardPrimaryAction={(tenant) => ({
-            label: 'معاينة',
-            icon: Eye,
+            label: 'فتح الملف',
+            icon: Users,
             variant: 'default',
-            onClick: () => openPreview(tenant),
-            ariaLabel: `معاينة ${tenant.person.full_name}`,
+            onClick: () => openFullDetail(tenant),
+            ariaLabel: `فتح ملف ${tenant.person.full_name}`,
           })}
           mobileCardActions={(tenant) => [
             {
-              label: 'تعديل',
+              label: 'تعديل البيانات',
               icon: Edit,
               variant: 'secondary',
               onClick: () => openEdit(tenant.person.id),
               ariaLabel: `تعديل ${tenant.person.full_name}`,
             },
-            {
-              label: 'التفاصيل الكاملة',
-              icon: Users,
-              variant: 'secondary',
-              onClick: () => openFullDetail(tenant),
-              ariaLabel: `فتح ملف ${tenant.person.full_name}`,
-            },
             ...(tenant.primaryContractId !== null
               ? [{
-                  label: 'العقد',
+                  label: 'فتح العقد',
                   icon: FileText,
                   variant: 'secondary' as const,
                   onClick: () => openContract(tenant.primaryContractId!),
@@ -249,7 +233,7 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
           emptyDescription="سيظهر هنا أي شخص مصنف كمستأجر من نموذج الأشخاص الحالي."
           emptyAction={<Button onClick={openCreate}><Plus className="me-2 size-4" />إضافة مستأجر</Button>}
           pagination={{ page, pageSize, total: totalCount, onPageChange: setPage }}
-          onRowClick={openPreview}
+          onRowClick={openFullDetail}
         />
       </section>
     </>
@@ -268,14 +252,6 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
       >
         {workspaceContent}
       </EmbeddableWorkspace>
-      {previewTenantId ? (
-        <TenantPreviewDialog
-          tenantId={previewTenantId}
-          open
-          onOpenChange={(open) => { if (!open) setPreviewTenantId(null); }}
-          onEdit={openEdit}
-        />
-      ) : null}
       <PersonFormModal open={formOpen} onClose={closeForm} personId={editingPersonId} defaultType="tenant" />
     </>
   );
