@@ -87,7 +87,7 @@ export function OwnerFormDialog({ owner, open, onOpenChange }: OwnerFormDialogPr
     >
       <EntityForm.Root onSubmit={handleSubmit} aria-busy={isPending}>
         <EntityForm.ErrorSummary message={error} />
-        <EntityForm.Section columns={2}>
+        <div className="grid gap-4 md:grid-cols-2">
           <EntityForm.Field label="اسم المالك *" error={fieldErrors.full_name}>
             <Input value={values.full_name} onChange={(event) => setField('full_name', event.target.value)} />
           </EntityForm.Field>
@@ -106,13 +106,13 @@ export function OwnerFormDialog({ owner, open, onOpenChange }: OwnerFormDialogPr
           <EntityForm.Field label="الرقم الضريبي">
             <Input value={values.tax_number ?? ''} onChange={(event) => setField('tax_number', event.target.value)} />
           </EntityForm.Field>
-          <EntityForm.Field wide label="العنوان">
-            <Textarea value={values.address ?? ''} onChange={(event) => setField('address', event.target.value)} />
-          </EntityForm.Field>
-          <EntityForm.Field wide label="ملاحظات">
-            <Textarea value={values.notes ?? ''} onChange={(event) => setField('notes', event.target.value)} />
-          </EntityForm.Field>
-        </EntityForm.Section>
+        </div>
+        <EntityForm.Field label="العنوان">
+          <Textarea value={values.address ?? ''} onChange={(event) => setField('address', event.target.value)} />
+        </EntityForm.Field>
+        <EntityForm.Field label="ملاحظات">
+          <Textarea value={values.notes ?? ''} onChange={(event) => setField('notes', event.target.value)} />
+        </EntityForm.Field>
         <OwnerCheckbox checked={values.is_active ?? false} label="مالك نشط" onCheckedChange={(checked) => setField('is_active', checked)} />
         <EntityForm.Actions onCancel={() => onOpenChange(false)} isSubmitting={isPending} submitLabel={isEditing ? 'حفظ التعديلات' : 'إنشاء المالك'} />
       </EntityForm.Root>

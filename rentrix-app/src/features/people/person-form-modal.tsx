@@ -131,14 +131,14 @@ export function PersonFormModal({ open, onClose, personId, defaultType = 'tenant
           <LoadingState variant="route" />
         ) : (
           <EntityForm.Root
+            className="md:grid-cols-2"
             onSubmit={handleSubmit}
             aria-busy={isSubmitting}
           >
-            <EntityForm.ErrorSummary message={submitError} />
-            <EntityForm.Section columns={2}>
-              <PersonFormFields form={form} autoFocusName />
-            </EntityForm.Section>
+            <EntityForm.ErrorSummary className="md:col-span-2" message={submitError} />
+            <PersonFormFields form={form} autoFocusName />
             <EntityForm.Actions
+              className="md:col-span-2"
               onCancel={() => handleOpenChange(false)}
               isSubmitting={isSubmitting}
               submitLabel={isSubmitting ? 'جار الحفظ...' : 'حفظ'}

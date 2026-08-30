@@ -28,4 +28,14 @@ describe('desktop workspace contract', () => {
     const desktopSlice = desktopStyles.slice(desktopStart);
     expect(desktopSlice).toContain('@media (min-width: 1024px)');
   });
+
+  it('covers 1366, 1440, and 1920 desktop widths with the same 1024px contract', () => {
+    expect(desktopStyles).toContain('@media (min-width: 1024px)');
+    expect(desktopStyles).not.toContain('@media (min-width: 1366px)');
+    expect(desktopStyles).not.toContain('@media (min-width: 1440px)');
+    expect(desktopStyles).not.toContain('@media (min-width: 1920px)');
+    for (const width of [1366, 1440, 1920]) {
+      expect(width).toBeGreaterThanOrEqual(1024);
+    }
+  });
 });

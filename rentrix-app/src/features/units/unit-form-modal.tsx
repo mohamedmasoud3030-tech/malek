@@ -89,6 +89,7 @@ export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitForm
       }
     >
       <EntityForm.Root
+        className="md:grid-cols-2"
         aria-busy={isSubmitting}
         onSubmit={form.handleSubmit(
           async (values) => {
@@ -118,9 +119,8 @@ export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitForm
           },
         )}
       >
-        <EntityForm.Section columns={2}>
         {!unit ? (
-          <EntityForm.Field wide label="العقار" error={propertyError}>
+          <EntityForm.Field label="العقار" className="md:col-span-2" error={propertyError}>
             <Select
               value={selectedPropertyId}
               onChange={(event) => setSelectedPropertyId(event.target.value)}
@@ -194,14 +194,14 @@ export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitForm
           </p>
         </EntityForm.Field>
 
-        <EntityForm.Field wide label="ملاحظات">
+        <EntityForm.Field label="ملاحظات" className="md:col-span-2">
           <Textarea {...form.register('notes')} />
         </EntityForm.Field>
-        </EntityForm.Section>
 
-        <EntityForm.ErrorSummary message={submitError} />
+        <EntityForm.ErrorSummary className="md:col-span-2" message={submitError} />
 
         <EntityForm.Actions
+          className="md:col-span-2"
           onCancel={() => onOpenChange(false)}
           isSubmitting={isSubmitting}
           submitDisabled={
