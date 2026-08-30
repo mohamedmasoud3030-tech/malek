@@ -1,6 +1,6 @@
 import { Link, Outlet, useMatches, useRouter } from '@tanstack/react-router';
 import { memo, useCallback, useEffect, useId, useMemo, useRef, useState, type ButtonHTMLAttributes, type ReactNode } from 'react';
-import { ChevronsLeft, CircleHelp, KeyRound, LogOut, Menu, Moon, Search, Settings, ShieldAlert, Sun, UserRound } from 'lucide-react';
+import { CircleHelp, KeyRound, LogOut, Menu, Moon, Search, Settings, ShieldAlert, Sun, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { MalekBrandWordmark } from '@/components/brand/malek-wordmark';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
@@ -11,26 +11,10 @@ import { getAppLanguageState, translateSharedLabel, type SharedLabel } from '@/l
 import { cn } from '@/lib/utils';
 import { useUiStore } from '@/store/ui-store';
 import { MobileFloatingControl, NavigationLinks } from './layout-navigation-view';
-import { NotificationsMenu } from './notifications-menu';
 import { CommandPaletteDialog } from '@/features/command-palette/command-palette-dialog';
 import { useCommandPaletteStore } from '@/features/command-palette/command-palette-store';
 import { AiAssistantGlobalAction } from '@/features/ai-assistant/ai-assistant-global-action';
 import { sanitizeSupportRoute } from '@/features/help-support/help-context';
-
-function useDesktopViewport() {
-  const [isDesktop, setIsDesktop] = useState(false);
-
-  useEffect(() => {
-    if (typeof window.matchMedia !== 'function') return;
-    const media = window.matchMedia('(min-width: 1024px)');
-    const sync = () => setIsDesktop(media.matches);
-    sync();
-    media.addEventListener('change', sync);
-    return () => media.removeEventListener('change', sync);
-  }, []);
-
-  return isDesktop;
-}
 
 type AccountAccessStatus = Readonly<{
   tone: 'info' | 'warning';
@@ -322,9 +306,6 @@ export function AppShell() {
   const setTheme = useUiStore((s) => s.setTheme);
   const syncStatus = useUiStore((s) => s.syncStatus);
   const setSyncStatus = useUiStore((s) => s.setSyncStatus);
-  const sidebarCollapsed = useUiStore((s) => s.sidebarCollapsed);
-  const toggleSidebar = useUiStore((s) => s.toggleSidebar);
-  const isDesktop = useDesktopViewport();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const dockMenuTriggerRef = useRef<HTMLButtonElement | null>(null);
 
@@ -380,7 +361,6 @@ export function AppShell() {
   return (
     <div
       data-app-shell
-      data-sidebar-collapsed={sidebarCollapsed ? 'true' : undefined}
       className="min-h-screen min-h-dvh overflow-x-hidden bg-background text-foreground"
     >
       <a
@@ -400,10 +380,7 @@ export function AppShell() {
 
       <aside
         data-sidebar
-        className={cn(
-          'fixed inset-y-0 start-0 z-30 w-[14rem] overflow-hidden border-e border-sidebar-border bg-sidebar text-sidebar-foreground',
-          sidebarCollapsed ? 'hidden' : 'hidden lg:flex lg:flex-col',
-        )}
+        className="fixed inset-y-0 start-0 z-30 hidden w-[14rem] overflow-hidden border-e border-sidebar-border bg-sidebar text-sidebar-foreground lg:flex lg:flex-col"
       >
         <div className="flex min-h-[4.5rem] items-center border-b border-sidebar-border/60 px-5 py-4">
           <Brand expanded />
@@ -411,22 +388,9 @@ export function AppShell() {
         <nav className="sidebar-scroll flex-1 overflow-y-auto p-3 pb-6">
           <NavigationLinks authorization={authorization} expanded sharedLabel={sharedLabel} />
         </nav>
-        <div className="border-t border-sidebar-border/60 p-2">
-          <button
-            type="button"
-            onClick={toggleSidebar}
-            aria-label={sharedLabel('collapseMenu')}
-            aria-expanded="true"
-            data-desktop-sidebar-collapse
-            className="flex min-h-11 w-full items-center gap-2.5 rounded-lg px-3 text-start text-sm font-semibold text-sidebar-foreground/75 outline-none transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-primary/20"
-          >
-            <ChevronsLeft className="size-4 rtl:rotate-180" aria-hidden="true" />
-            <span>{sharedLabel('collapseMenu')}</span>
-          </button>
-        </div>
       </aside>
 
-      <div className={cn('min-w-0 w-full', sidebarCollapsed ? 'lg:ps-0' : 'lg:ps-[14rem]')}>
+      <div className="min-w-0 w-full lg:ps-[14rem]">
         <header
           data-app-shell-header
           className="sticky top-0 z-20 border-b border-border bg-card pt-[env(safe-area-inset-top,0px)]"

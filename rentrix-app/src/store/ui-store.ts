@@ -17,37 +17,18 @@ type UiState = {
   setOnboardingDismissed: (value: boolean) => void;
 };
 
-const SIDEBAR_COLLAPSED_KEY = 'malek-sidebar-collapsed';
-
 const getInitialTheme = (): Theme => {
   if (typeof window === 'undefined') return 'dark';
   return (localStorage.getItem('rentrix-theme') as Theme | null) ?? 'dark';
 };
 
-const getInitialSidebarCollapsed = (): boolean => {
-  if (typeof window === 'undefined') return false;
-  try {
-    return window.localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === 'true';
-  } catch {
-    return false;
-  }
-};
-
 export const useUiStore = create<UiState>((set) => ({
-  sidebarCollapsed: getInitialSidebarCollapsed(),
+  sidebarCollapsed: false,
   theme: getInitialTheme(),
   syncStatus: 'idle',
   lastSyncedAt: null,
   onboardingDismissed: false,
-  toggleSidebar: () => set((state) => {
-    const sidebarCollapsed = !state.sidebarCollapsed;
-    try {
-      window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(sidebarCollapsed));
-    } catch {
-      // Session-only collapse is still useful when storage is unavailable.
-    }
-    return { sidebarCollapsed };
-  }),
+  toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
   setTheme: (theme) => {
     localStorage.setItem('rentrix-theme', theme);
     document.documentElement.dataset.theme = theme;
