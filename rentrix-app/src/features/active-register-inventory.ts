@@ -54,8 +54,4 @@ export const ACTIVE_REGISTER_INVENTORY = [
   { component: 'features/reports/components/collections/rent-roll-panel.tsx', routes: ['/reports?workspace=collections&view=collections'] },
   { component: 'features/reports/components/overdue/overdue-invoices-panel.tsx', routes: ['/reports?workspace=collections&view=overdue'] },
   { component: 'features/reports/components/GeneralLedgerCoreSection.tsx', routes: ['/reports?workspace=financial_review&view=general_ledger'] },
-  { component: 'features/reports/components/FollowUpSection.tsx', routes: ['/reports?workspace=collections&view=follow_up'] },
-  { component: 'features/reports/components/CollectionMovementSection.tsx', routes: ['/reports?workspace=collections&view=collection_movement'] },
-  { component: 'features/reports/components/ExpiringContractsSection.tsx', routes: ['/reports?workspace=leasing&view=expiring'] },
-  { component: 'features/reports/components/OperationsOverviewSection.tsx', routes: ['/reports?workspace=operations&view=operations_overview'] },
 ] as const;

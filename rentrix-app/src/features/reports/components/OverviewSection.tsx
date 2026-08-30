@@ -178,7 +178,7 @@ export function OverviewSection({
       key: 'expiring',
       label: 'عقود قريبة من الانتهاء',
       value: formatLatinNumber(expiringRows.length, 'ar'),
-      detail: 'خلال ٦٠ يومًا',
+      detail: 'خلال 60 يومًا',
       icon: FileText,
       tone: expiringRows.length > 0 ? 'warning' : 'default',
       workspace: 'leasing',

@@ -84,7 +84,7 @@ export function ExpiringContractsSection({
 
       <ReportPanel
         title="العقود القريبة من الانتهاء"
-        description={`عقود نشطة تنتهي خلال ٦٠ يومًا، مرتبة من الأقرب انتهاءً — ${formatLatinNumber(expiringRows.length, 'ar')} عقدًا ضمن النطاق المحدد.`}
+        description={`عقود نشطة تنتهي خلال 60 يومًا، مرتبة من الأقرب انتهاءً — ${formatLatinNumber(expiringRows.length, 'ar')} عقدًا ضمن النطاق المحدد.`}
         eyebrow="قرارات تجديد"
         icon={AlertTriangle}
         action={exportAction}
