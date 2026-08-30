@@ -104,38 +104,41 @@ describe('MALEK mobile shell & navigation polish pass (Section O verification ma
   }
 
   describe('1. Mobile Header', () => {
-    it('presents the interactive M monogram brand icon with proper accessibility and canonical mark', () => {
+    it('presents the MALEK brand as identity with the canonical mark, not a menu trigger', () => {
       renderWithClient(<AppShell />);
 
       const header = host.querySelector<HTMLElement>('[data-app-shell-header]');
       expect(header).not.toBeNull();
 
-      const monogram = header?.querySelector<HTMLButtonElement>('[data-header-brand-monogram]');
-      expect(monogram).not.toBeNull();
-      expect(monogram?.getAttribute('aria-label')).toContain('القائمة الرئيسية');
-      expect(monogram?.getAttribute('aria-haspopup')).toBe('dialog');
-      expect(monogram?.querySelector('[data-malek-canonical-mark]')).not.toBeNull();
+      const identity = header?.querySelector<HTMLElement>('[data-header-brand-identity]');
+      expect(identity).not.toBeNull();
+      expect(identity?.querySelector('[data-malek-canonical-mark]')).not.toBeNull();
+      expect(identity?.querySelector('button')).toBeNull();
 
       const wordmark = header?.querySelector<HTMLElement>('[data-header-wordmark]');
       expect(wordmark).not.toBeNull();
       expect(wordmark?.textContent).toContain('MALEK');
     });
 
-    it('has no hamburger menu icon in the header', () => {
+    it('keeps the phone header free of a redundant menu (navigation lives in the dock)', () => {
       renderWithClient(<AppShell />);
       const header = host.querySelector<HTMLElement>('[data-app-shell-header]');
       expect(header).not.toBeNull();
+      // Legacy top-menu marker is gone.
       expect(header?.querySelector('[data-mobile-top-menu]')).toBeNull();
-      expect(header?.querySelector('button[aria-label="فتح القائمة"]')).toBeNull();
-      expect(header?.querySelector('svg.lucide-menu')).toBeNull();
+      // The header menu button exists only as a tablet affordance (hidden on phone).
+      const menuButton = header?.querySelector<HTMLButtonElement>('[data-header-menu-button]');
+      expect(menuButton).not.toBeNull();
+      expect(menuButton?.className).toContain('hidden');
+      expect(menuButton?.className).toContain('md:grid');
     });
 
-    it('tapping M monogram opens the shared primary-navigation bottom sheet', () => {
+    it('the explicit dock Menu opens the shared primary-navigation bottom sheet', () => {
       renderWithClient(<AppShell />);
 
-      const monogram = host.querySelector<HTMLButtonElement>('[data-header-brand-monogram]');
-      expect(monogram).not.toBeNull();
-      act(() => { monogram?.click(); });
+      const dockMenu = host.querySelector<HTMLButtonElement>('[data-mobile-dock-menu]');
+      expect(dockMenu).not.toBeNull();
+      act(() => { dockMenu?.click(); });
 
       const sheet = document.querySelector<HTMLElement>('[data-bottom-sheet]');
       expect(sheet).not.toBeNull();
@@ -193,8 +196,8 @@ describe('MALEK mobile shell & navigation polish pass (Section O verification ma
   describe('3. Primary Navigation Bottom Sheet', () => {
     it('uses the shared bottom-sheet primitive instead of a side drawer', () => {
       renderWithClient(<AppShell />);
-      const monogram = host.querySelector<HTMLButtonElement>('[data-header-brand-monogram]');
-      act(() => { monogram?.click(); });
+      const dockMenu = host.querySelector<HTMLButtonElement>('[data-mobile-dock-menu]');
+      act(() => { dockMenu?.click(); });
 
       const sheet = document.querySelector<HTMLElement>('[data-bottom-sheet]');
       expect(sheet).not.toBeNull();
@@ -213,8 +216,8 @@ describe('MALEK mobile shell & navigation polish pass (Section O verification ma
       renderWithClient(<AppShell />);
       expect(host.querySelector('[data-mobile-floating-control]')).not.toBeNull();
 
-      const monogram = host.querySelector<HTMLButtonElement>('[data-header-brand-monogram]');
-      act(() => { monogram?.click(); });
+      const dockMenu = host.querySelector<HTMLButtonElement>('[data-mobile-dock-menu]');
+      act(() => { dockMenu?.click(); });
       expect(host.querySelector('[data-mobile-floating-control]')).toBeNull();
 
       const sheet = document.querySelector<HTMLElement>('[data-bottom-sheet]');

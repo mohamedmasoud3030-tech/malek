@@ -40,8 +40,8 @@ describe('shared day context and compact header brand contract', () => {
     expect(dashboardPage).not.toContain('data-dashboard-today-context');
   });
 
-  it('lets the canonical MALEK mark fill the compact header button', () => {
-    expect(malikMark).toContain('group-data-[header-brand-monogram]:size-7');
+  it('keeps the canonical MALEK mark self-contained, sized by the lockup not a button group', () => {
     expect(malikMark).toContain('data-malek-canonical-mark');
+    expect(malikMark).not.toContain('header-brand-monogram');
   });
 });

@@ -42,10 +42,10 @@ vi.mock('@/store/ui-store', () => ({
 }));
 vi.mock('./layout-navigation-view', () => ({
   NavigationLinks: () => null,
-  MobileFloatingControl: ({ drawerOpen }: { drawerOpen?: boolean }) => (
+  MobileFloatingControl: ({ drawerOpen, onMenu }: { drawerOpen?: boolean; onMenu?: () => void }) => (
     drawerOpen ? null : (
       <div data-mobile-floating-control>
-        <button type="button" aria-label="فتح القائمة" data-mobile-dock-menu />
+        <button type="button" aria-label="فتح القائمة" data-mobile-dock-menu onClick={onMenu} />
         <button type="button" aria-label="البحث السريع للنظام والكيانات" data-mobile-dock-search />
         <button type="button" aria-label="الإضافة السريعة" data-mobile-dock-quick-add />
         <button type="button" aria-label="الإشعارات" data-mobile-dock-notifications />
@@ -57,6 +57,9 @@ vi.mock('./layout-navigation-view', () => ({
 vi.mock('./notifications-menu', () => ({ NotificationsMenu: () => null }));
 vi.mock('@/features/command-palette/command-palette-trigger', () => ({ CommandPaletteTrigger: () => null }));
 vi.mock('@/features/command-palette/command-palette-dialog', () => ({ CommandPaletteDialog: () => null }));
+vi.mock('@/features/command-palette/command-palette-store', () => ({
+  useCommandPaletteStore: { getState: () => ({ open: vi.fn() }) },
+}));
 vi.mock('@/features/ai-assistant/ai-assistant-global-action', () => ({ AiAssistantGlobalAction: () => null }));
 
 import { AppShell } from './app-shell';
@@ -93,29 +96,54 @@ describe('AppShell — redesigned MALEK header & navigation', () => {
     expect(header?.textContent).not.toContain('العقارات');
   });
 
-  it('renders the interactive [ M ] monogram and MALEK wordmark lockup on the brand side', () => {
+  it('renders the MALEK brand as pure identity — not an interactive menu trigger', () => {
     act(() => { root.render(<AppShell />); });
 
     const header = host.querySelector<HTMLElement>('[data-app-shell-header]');
     expect(header).not.toBeNull();
-    const lockup = header?.querySelector<HTMLElement>('[data-header-brand-lockup]');
-    expect(lockup).not.toBeNull();
-    const monogramButton = lockup?.querySelector('[data-header-brand-monogram]');
-    expect(monogramButton).not.toBeNull();
-    expect(monogramButton?.getAttribute('aria-label')).toContain('القائمة الرئيسية');
-    expect(monogramButton?.getAttribute('aria-haspopup')).toBe('dialog');
-    expect(monogramButton?.querySelector('[data-malek-canonical-mark]')).not.toBeNull();
-    expect(lockup?.querySelector('[data-malek-brand-wordmark]')).not.toBeNull();
-    expect(lockup?.className).toContain('items-center');
-    expect(header?.querySelector('[data-header-brand-side] [data-header-brand-lockup]')).not.toBeNull();
+    const identity = header?.querySelector<HTMLElement>('[data-header-brand-identity]');
+    expect(identity).not.toBeNull();
+    // The brand lockup holds the canonical mark and wordmark…
+    expect(identity?.querySelector('[data-malek-canonical-mark]')).not.toBeNull();
+    expect(identity?.querySelector('[data-malek-brand-wordmark]')).not.toBeNull();
+    // …but is NOT a button, has no menu label/haspopup, and no legacy monogram.
+    expect(identity?.closest('button')).toBeNull();
+    expect(identity?.querySelector('[data-header-brand-monogram]')).toBeNull();
+    expect(header?.querySelector('[data-header-brand-monogram]')).toBeNull();
   });
 
-  it('tapping the interactive M monogram opens the primary navigation bottom sheet', () => {
+  it('does not make the phone brand a hidden primary navigation trigger', () => {
     act(() => { root.render(<AppShell />); });
 
-    const monogramButton = host.querySelector<HTMLElement>('[data-header-brand-monogram]');
-    expect(monogramButton).not.toBeNull();
-    act(() => { monogramButton?.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
+    const header = host.querySelector<HTMLElement>('[data-app-shell-header]');
+    const identity = header?.querySelector<HTMLElement>('[data-header-brand-identity]');
+    expect(identity).not.toBeNull();
+    // No interactive element inside the identity lockup.
+    expect(identity?.querySelector('button, a')).toBeNull();
+
+    // Clicking the brand surface cannot open the navigation sheet.
+    act(() => {
+      identity?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    expect(document.querySelector('[data-bottom-sheet]')).toBeNull();
+  });
+
+  it('provides an explicit tablet Menu control for the 768–1023 breakpoint', () => {
+    act(() => { root.render(<AppShell />); });
+
+    const header = host.querySelector<HTMLElement>('[data-app-shell-header]');
+    const menuButton = header?.querySelector<HTMLElement>('[data-header-menu-button]');
+    expect(menuButton).not.toBeNull();
+    expect(menuButton?.getAttribute('aria-label')).toBe('فتح القائمة');
+    expect(menuButton?.getAttribute('aria-haspopup')).toBe('dialog');
+    // Visible only on tablet (md–lg), not on phone.
+    expect(menuButton?.className).toContain('hidden');
+    expect(menuButton?.className).toContain('md:grid');
+    expect(menuButton?.className).toContain('lg:hidden');
+
+    act(() => {
+      menuButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
 
     const sheet = document.querySelector<HTMLElement>('[data-bottom-sheet]');
     expect(sheet).not.toBeNull();
@@ -128,13 +156,16 @@ describe('AppShell — redesigned MALEK header & navigation', () => {
     });
   });
 
-  it('removes the hamburger menu icon completely from the header', () => {
+  it('provides an explicit tablet Search control on the utility side', () => {
     act(() => { root.render(<AppShell />); });
 
     const header = host.querySelector<HTMLElement>('[data-app-shell-header]');
-    expect(header).not.toBeNull();
-    expect(header?.querySelector('[data-mobile-top-menu]')).toBeNull();
-    expect(header?.querySelector('button[aria-label="فتح القائمة"]')).toBeNull();
+    const searchButton = header?.querySelector<HTMLElement>('[data-header-search-button]');
+    expect(searchButton).not.toBeNull();
+    expect(searchButton?.getAttribute('aria-label')).toBe('البحث');
+    expect(searchButton?.className).toContain('hidden');
+    expect(searchButton?.className).toContain('md:grid');
+    expect(searchButton?.className).toContain('lg:hidden');
   });
 
   it('keeps Day + Date OUT of the top header (moved to the Today context)', () => {
@@ -150,24 +181,19 @@ describe('AppShell — redesigned MALEK header & navigation', () => {
     expect(header?.querySelector('[data-header-brand-side]')).not.toBeNull();
   });
 
-  it('keeps compact header controls on 44px hit wrappers without growing the header', () => {
+  it('keeps compact header controls on the 44px touch grid without growing the header', () => {
     act(() => { root.render(<AppShell />); });
 
     const header = host.querySelector<HTMLElement>('[data-app-shell-header]');
     expect(header).not.toBeNull();
-    // Each compact control is itself the 44px hit area (min-h-11/min-w-11).
-    const hitAreas = header?.querySelectorAll<HTMLElement>('[data-header-control-hit]');
-    expect(hitAreas?.length).toBe(2);
-    for (const hit of hitAreas ?? []) {
-      const control = hit.tagName === 'BUTTON' ? hit : hit.querySelector('button');
-      expect(control, 'each header control must render its own button').not.toBeNull();
-      expect(control?.className).toContain('min-h-11');
-      expect(control?.className).toContain('min-w-11');
-    }
+    // Theme + User are each a self-contained 44px control (min-h-11/min-w-11).
+    const themeToggle = header?.querySelector<HTMLElement>('[data-header-theme-toggle]');
+    const userMenu = header?.querySelector<HTMLElement>('[data-header-user-menu]');
+    expect(themeToggle?.className).toContain('min-h-11');
+    expect(themeToggle?.className).toContain('min-w-11');
+    expect(userMenu?.querySelector('button')?.className).toContain('min-h-11');
+    expect(userMenu?.querySelector('button')?.className).toContain('min-w-11');
 
-    const monogramButton = header?.querySelector<HTMLElement>('[data-header-brand-monogram]');
-    expect(monogramButton).not.toBeNull();
-    expect(monogramButton?.className).toContain('min-h-11');
     const controls = header?.querySelector<HTMLElement>('[data-header-utility-side]');
     expect(controls?.className).toContain('gap-0.5');
     const headerRow = controls?.parentElement;
@@ -177,8 +203,10 @@ describe('AppShell — redesigned MALEK header & navigation', () => {
   it('uses the shared full-width bottom-sheet navigation instead of a right-side drawer', () => {
     act(() => { root.render(<AppShell />); });
 
-    const monogram = host.querySelector<HTMLElement>('[data-header-brand-monogram]');
-    act(() => { monogram?.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
+    // Navigation opens from the explicit dock Menu control (mocked here).
+    const dockMenu = host.querySelector<HTMLElement>('[data-mobile-dock-menu]');
+    expect(dockMenu).not.toBeNull();
+    act(() => { dockMenu?.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
 
     const sheet = document.querySelector<HTMLElement>('[data-bottom-sheet]');
     expect(sheet).not.toBeNull();

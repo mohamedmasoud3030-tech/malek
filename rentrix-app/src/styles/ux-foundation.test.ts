@@ -36,11 +36,11 @@ function mediaBlock(source: string, query: string): string {
 
 describe('ux foundation — mobile surface contracts', () => {
   it('derives the mobile bottom-nav clearance from one central height token', () => {
-    expect(ux).toContain('--mobile-floating-control-height: 4.5rem');
+    expect(ux).toContain('--mobile-floating-control-height: 3.75rem');
     const clearance = mediaBlock(ux, '(max-width: 767px)');
     expect(clearance).toContain('var(--mobile-floating-control-height)');
     expect(clearance).toContain('env(safe-area-inset-bottom');
-    expect(clearance).not.toContain('calc(4.5rem');
+    expect(clearance).not.toContain('calc(3.75rem');
   });
 
   it('scopes press states and the ghost-hover guard to true touch devices (hover: none)', () => {
