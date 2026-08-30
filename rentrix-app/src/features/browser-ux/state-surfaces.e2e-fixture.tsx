@@ -1,27 +1,19 @@
 import { AccessDenied } from '@/components/layout/access-denied';
 import { EmptyState } from '@/components/ui/state-surfaces';
 import { DataErrorScreen } from '@/components/data-error-screen';
-import { LoadingScreen } from '@/components/loading-screen';
+import { LoadingState } from '@/components/ui/loading-state';
 import { Button } from '@/components/ui/button';
 
-/**
- * E2E fixture exposing Loading / Empty / Error / Permission surfaces
- * with explicit RTL direction, used by WP-06 browser UX acceptance.
- *
- * Each surface is rendered with a stable data attribute so Playwright can
- * assert its presence without conditional fallbacks.
- */
+/** E2E fixture exposing the canonical Loading / Empty / Error / Permission surfaces. */
 export function StateSurfacesE2EFixture() {
   return (
     <main dir="rtl" lang="ar" className="min-h-screen bg-background p-4" data-e2e-state-surfaces>
-      <h1 className="mb-6 text-xl font-bold" data-e2e-state-title>
-        اختبار حالات الواجهة
-      </h1>
+      <h1 className="mb-6 text-xl font-bold" data-e2e-state-title>اختبار حالات الواجهة</h1>
 
       <section className="mb-8 space-y-4" data-e2e-state-section="loading" aria-label="حالة التحميل">
         <h2 className="text-base font-bold">حالة التحميل</h2>
         <div data-e2e-loading-surface>
-          <LoadingScreen rows={3} />
+          <LoadingState variant="table" rows={3} label="جارٍ تحميل السجلات" />
         </div>
       </section>
 
