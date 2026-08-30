@@ -1,20 +1,221 @@
-name: Deep UI State Surface Inspection
+name: Deep UI State Surface Cleanup
 on:
   push:
     branches: [audit/deep-ui-inventory-0830]
 permissions:
-  contents: read
+  contents: write
 jobs:
-  inspect:
+  cleanup:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: refactor/shared-ui-deep-clean-work
-      - name: Show state wrapper call sites
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.11.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Consolidate state surfaces
         shell: bash
         run: |
-          echo '=== DataErrorScreen ==='
-          grep -R -n -C 3 --include='*.ts' --include='*.tsx' 'DataErrorScreen' rentrix-app/src || true
-          echo '=== PageStateCard / WriteErrorCard ==='
-          grep -R -n -C 3 -E --include='*.ts' --include='*.tsx' 'PageStateCard|WriteErrorCard' rentrix-app/src || true
+          python3 <<'PY'
+          from pathlib import Path
+          import re
+
+          root = Path('rentrix-app/src')
+          error_state = root / 'components/ui/error-state.tsx'
+          error_state.write_text('''import { AlertTriangle, RotateCcw } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { getEnvDiagnostics, parseSupabaseDiagnostics } from '@/lib/runtime-diagnostics';
+import { Button } from './button';
+import { StateSurface } from './state-surfaces';
+
+type ErrorStateProps = {
+  title?: string;
+  description?: string;
+  error?: unknown;
+  onRetry?: () => void;
+  action?: ReactNode;
+  compact?: boolean;
+  variant?: 'default' | 'write' | 'data';
+};
+
+const SAFE_ERROR_DETAIL = 'تعذر إكمال الطلب الآن. أعد المحاولة، وإذا استمرت المشكلة تواصل مع مسؤول النظام.';
+const SAFE_DATA_ERROR_FALLBACK = 'تعذر تحميل البيانات. تحقق من الاتصال ثم أعد المحاولة.';
+const DEFAULT_ERROR_DESCRIPTION = 'تحقق من الاتصال ثم أعد المحاولة.';
+
+function getDiagnostics(error: unknown) {
+  return [...getEnvDiagnostics(), ...parseSupabaseDiagnostics(error)];
+}
+
+/** Canonical recoverable error surface for read, write, list and detail failures. */
+export function ErrorState({
+  title = 'تعذر تحميل البيانات',
+  description,
+  error,
+  onRetry,
+  action,
+  compact = false,
+  variant = 'default',
+}: ErrorStateProps) {
+  if (variant === 'data') {
+    const diagnostics = getDiagnostics(error);
+    // Data reads fail closed: never expose raw provider/SQL/network messages.
+    const safeDescription = diagnostics[0]?.messageAr
+      ?? (error instanceof Error ? SAFE_DATA_ERROR_FALLBACK : description)
+      ?? SAFE_DATA_ERROR_FALLBACK;
+
+    return (
+      <StateSurface
+        kind="error"
+        tone="danger"
+        icon={<AlertTriangle className="size-5" aria-hidden="true" />}
+        title={title}
+        description={safeDescription}
+        role="alert"
+        ariaLive="assertive"
+        compact={compact}
+        className="border-destructive/40 bg-destructive/5"
+        action={action}
+      />
+    );
+  }
+
+  const safeDescription = description ?? DEFAULT_ERROR_DESCRIPTION;
+
+  if (variant === 'write') {
+    return (
+      <StateSurface
+        kind="error"
+        tone="danger"
+        icon={<AlertTriangle className="size-5" aria-hidden="true" />}
+        title={title}
+        description={safeDescription}
+        role="alert"
+        compact
+        className="border-destructive/40 bg-destructive/5"
+      />
+    );
+  }
+
+  const diagnostics = error ? getDiagnostics(error) : [];
+  const detail = error ? diagnostics[0]?.messageAr ?? SAFE_ERROR_DETAIL : null;
+  const controls = onRetry || action ? (
+    <div className="flex flex-wrap justify-center gap-2">
+      {onRetry ? (
+        <Button variant="secondary" size="sm" onClick={onRetry}>
+          <RotateCcw className="me-1.5 size-4" aria-hidden="true" />
+          إعادة المحاولة
+        </Button>
+      ) : null}
+      {action}
+    </div>
+  ) : undefined;
+
+  return (
+    <StateSurface
+      kind="error"
+      tone="danger"
+      icon={<AlertTriangle className="size-5" aria-hidden="true" />}
+      title={title}
+      description={safeDescription}
+      role="alert"
+      compact={compact}
+      detail={detail ? <p className="rounded-lg bg-danger/5 px-3 py-2 text-xs font-medium text-danger/90">{detail}</p> : undefined}
+      action={controls}
+    />
+  );
+}
+''')
+
+          def ensure_abs_import(text: str, symbol: str, module: str) -> str:
+            if re.search(rf"import\s+\{{[^}}]*\b{re.escape(symbol)}\b[^}}]*\}}\s+from\s+['\"]{re.escape(module)}['\"]", text):
+              return text
+            return f"import {{ {symbol} }} from '{module}';\n" + text
+
+          # Migrate every DataErrorScreen consumer to the canonical ErrorState data variant.
+          for p in root.rglob('*'):
+            if not p.is_file() or p.suffix not in {'.ts', '.tsx'}:
+              continue
+            s = p.read_text()
+            if 'DataErrorScreen' not in s or p.name == 'data-error-screen.tsx':
+              continue
+            s = re.sub(r"^import \{ DataErrorScreen \} from ['\"]@/components/data-error-screen['\"];\n", '', s, flags=re.M)
+            s = re.sub(r"^import \{ DataErrorScreen \} from ['\"]\./data-error-screen['\"];\n", '', s, flags=re.M)
+            s = s.replace('<DataErrorScreen', '<ErrorState variant="data"')
+            s = s.replace('fallbackMessage=', 'description=')
+            module = './ui/error-state' if p.as_posix().endswith('components/shared-state-semantics.test.tsx') else '@/components/ui/error-state'
+            s = ensure_abs_import(s, 'ErrorState', module)
+            p.write_text(s)
+
+          # AsyncContentState remains a state coordinator, not a visual owner.
+          async_file = root / 'components/async-content-state.tsx'
+          s = async_file.read_text()
+          s = s.replace('LoadingState (route variant), DataErrorScreen, and EmptyState', 'LoadingState (route variant), ErrorState, and EmptyState')
+          async_file.write_text(s)
+
+          # Retire PageStateCard/WriteErrorCard and move callers to canonical surfaces.
+          write_files = [
+            root / 'features/lands/components/lands-view.tsx',
+            root / 'features/leads/components/leads-view.tsx',
+            root / 'features/commissions/components/commissions-view.tsx',
+            root / 'features/communication/components/communication-hub-view.tsx',
+            root / 'features/financials/reconciliation/bank-reconciliation-page.tsx',
+          ]
+          for p in write_files:
+            s = p.read_text()
+            s = re.sub(r"^import \{[^\n]*\} from ['\"]@/components/page-state-card['\"];\n", '', s, flags=re.M)
+            s = s.replace('<WriteErrorCard message=', '<ErrorState variant="write" title="لم يتم حفظ التغيير" description=')
+            s = ensure_abs_import(s, 'ErrorState', '@/components/ui/error-state')
+            p.write_text(s)
+
+          bank = root / 'features/financials/reconciliation/bank-reconciliation-page.tsx'
+          s = bank.read_text()
+          s = s.replace('<PageStateCard title="جارٍ تحميل حركات البنك..." />', '<LoadingState variant="section" label="جارٍ تحميل حركات البنك..." />')
+          s = s.replace('<PageStateCard\n          title="لا توجد حسابات بنكية بعد"', '<EmptyState\n          title="لا توجد حسابات بنكية بعد"')
+          s = s.replace('<PageStateCard\n          title="لا توجد حركات كشف ضمن الفلاتر"', '<EmptyState\n          title="لا توجد حركات كشف ضمن الفلاتر"')
+          s = ensure_abs_import(s, 'LoadingState', '@/components/ui/loading-state')
+          s = ensure_abs_import(s, 'EmptyState', '@/components/ui/state-surfaces')
+          bank.write_text(s)
+
+          commissions = root / 'features/commissions/components/commissions-view.tsx'
+          s = commissions.read_text()
+          s = s.replace('<PageStateCard title="جارٍ تحميل العمولات..." />', '<LoadingState variant="section" label="جارٍ تحميل العمولات..." />')
+          s = s.replace('<PageStateCard\n            title={hasFilters ? "لا توجد عمولات ضمن الفلاتر الحالية" : "لا توجد عمولات بعد"}', '<EmptyState\n            title={hasFilters ? "لا توجد عمولات ضمن الفلاتر الحالية" : "لا توجد عمولات بعد"}')
+          s = ensure_abs_import(s, 'LoadingState', '@/components/ui/loading-state')
+          s = ensure_abs_import(s, 'EmptyState', '@/components/ui/state-surfaces')
+          commissions.write_text(s)
+
+          # Remove retired alternate owners.
+          for p in [root / 'components/data-error-screen.tsx', root / 'components/page-state-card.tsx']:
+            if not p.exists():
+              raise SystemExit(f'missing retired state owner: {p}')
+            p.unlink()
+
+          # No old owner may remain referenced anywhere under src.
+          offenders = []
+          for p in root.rglob('*'):
+            if not p.is_file() or p.suffix not in {'.ts', '.tsx'}: continue
+            s = p.read_text(errors='ignore')
+            for token in ('DataErrorScreen', 'PageStateCard', 'WriteErrorCard', '@/components/data-error-screen', '@/components/page-state-card'):
+              if token in s: offenders.append(f'{p}: {token}')
+          if offenders:
+            raise SystemExit('retired state-owner references remain:\n' + '\n'.join(offenders))
+          PY
+      - name: Targeted state contracts
+        run: pnpm --filter @workspace/rentrix exec vitest run --config vite.config.ts src/components/shared-state-semantics.test.tsx src/components/ui/primitives.axe.test.tsx src/components/ui/entity-table.interaction.test.tsx
+      - name: Architecture guard
+        run: pnpm --filter @workspace/rentrix run check:architecture
+      - name: Commit consolidation
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "refactor(ui): consolidate state surfaces"
+          git push origin HEAD:refactor/shared-ui-deep-clean-work
