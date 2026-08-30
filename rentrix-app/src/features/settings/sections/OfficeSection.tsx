@@ -1,10 +1,11 @@
 import type { ChangeEvent } from 'react';
+import { EntityForm } from '@/components/ui/entity-form';
 import { Textarea } from '@/components/ui/textarea';
 import { APP_BRAND_NAME } from '@/lib/brand';
 import { supportedCountries } from '@/lib/companySettings';
 import type { CompanySettingsDraft, CompanySettingsDraftField, CompanySettingsValidationErrors } from '../settingsForm';
 import { useSettingsSection } from '../form/useSettingsSection';
-import { FormField, SelectField } from '../components/settings-form-fields';
+import { SettingsFormField, SettingsSelectField } from '../components/settings-form-fields';
 import { SectionCard } from '../components/settings-section-card';
 import type { SettingsSectionId } from '../settingsSections';
 
@@ -38,26 +39,26 @@ export function OfficeSection({
         <legend className="mb-2 text-[11px] font-black text-muted-foreground">الهوية القانونية</legend>
         <div className="grid grid-cols-2 gap-x-2.5 gap-y-2.5 sm:gap-3">
           <div className="col-span-2 sm:col-span-1">
-            <FormField label="اسم الشركة" field="company_name" draft={section.draft} errors={section.errors} disabled={isSaving} placeholder={APP_BRAND_NAME} onChange={section.setField} />
+            <SettingsFormField label="اسم الشركة" field="company_name" draft={section.draft} errors={section.errors} disabled={isSaving} placeholder={APP_BRAND_NAME} onChange={section.setField} />
           </div>
           <div className="col-span-2 sm:col-span-1">
-            <FormField label="الاسم القانوني" field="legal_name" draft={section.draft} errors={section.errors} disabled={isSaving} placeholder="الاسم القانوني للشركة" onChange={section.setField} />
+            <SettingsFormField label="الاسم القانوني" field="legal_name" draft={section.draft} errors={section.errors} disabled={isSaving} placeholder="الاسم القانوني للشركة" onChange={section.setField} />
           </div>
-          <FormField label="الرقم الضريبي" field="tax_number" draft={section.draft} errors={section.errors} disabled={isSaving} onChange={section.setField} />
-          <FormField label="السجل التجاري" field="registration_number" draft={section.draft} errors={section.errors} disabled={isSaving} onChange={section.setField} />
+          <SettingsFormField label="الرقم الضريبي" field="tax_number" draft={section.draft} errors={section.errors} disabled={isSaving} onChange={section.setField} />
+          <SettingsFormField label="السجل التجاري" field="registration_number" draft={section.draft} errors={section.errors} disabled={isSaving} onChange={section.setField} />
         </div>
       </fieldset>
 
       <fieldset className="min-w-0 space-y-2.5 border-t border-border/55 pt-3">
         <legend className="mb-2 text-[11px] font-black text-muted-foreground">التواصل والموقع</legend>
         <div className="grid grid-cols-2 gap-x-2.5 gap-y-2.5 sm:gap-3">
-          <FormField label="الهاتف" field="phone" draft={section.draft} errors={section.errors} disabled={isSaving} onChange={section.setField} />
-          <FormField label="المدينة" field="city" draft={section.draft} errors={section.errors} disabled={isSaving} onChange={section.setField} />
+          <SettingsFormField label="الهاتف" field="phone" draft={section.draft} errors={section.errors} disabled={isSaving} onChange={section.setField} />
+          <SettingsFormField label="المدينة" field="city" draft={section.draft} errors={section.errors} disabled={isSaving} onChange={section.setField} />
           <div className="col-span-2 sm:col-span-1">
-            <FormField label="البريد الإلكتروني" field="email" draft={section.draft} errors={section.errors} disabled={isSaving} type="email" placeholder="email@example.com" onChange={section.setField} />
+            <SettingsFormField label="البريد الإلكتروني" field="email" draft={section.draft} errors={section.errors} disabled={isSaving} type="email" placeholder="email@example.com" onChange={section.setField} />
           </div>
           <div className="col-span-2 sm:col-span-1">
-            <SelectField label="الدولة" field="country" draft={section.draft} errors={section.errors} disabled={isSaving} options={countryOptions} onChange={section.setField} />
+            <SettingsSelectField label="الدولة" field="country" draft={section.draft} errors={section.errors} disabled={isSaving} options={countryOptions} onChange={section.setField} />
           </div>
         </div>
       </fieldset>

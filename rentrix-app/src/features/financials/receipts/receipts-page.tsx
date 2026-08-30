@@ -277,15 +277,14 @@ function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Rea
         searchAriaLabel="بحث في الإيصالات"
         filters={(
           <>
-            <label className="grid gap-1 text-sm font-bold">
-              <span className="sr-only">طريقة الدفع</span>
+            <EntityForm.Field label={<span className="sr-only">طريقة الدفع</span>}>
               <Select aria-label="طريقة الدفع" value={method} onChange={(event) => setMethod(event.target.value as MethodFilter)}>
                 <option value="all">كل طرق الدفع</option>
                 {Object.entries(paymentMethodLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </Select>
-            </label>
-            <label className="grid gap-1 text-sm font-bold"><span className="sr-only">من تاريخ</span><Input aria-label="من تاريخ" type="date" value={from} onChange={(event) => setFrom(event.target.value)} /></label>
-            <label className="grid gap-1 text-sm font-bold"><span className="sr-only">إلى تاريخ</span><Input aria-label="إلى تاريخ" type="date" value={to} onChange={(event) => setTo(event.target.value)} /></label>
+            </EntityForm.Field>
+            <EntityForm.Field label={<span className="sr-only">من تاريخ</span>}><Input aria-label="من تاريخ" type="date" value={from} onChange={(event) => setFrom(event.target.value)} /></EntityForm.Field>
+            <EntityForm.Field label={<span className="sr-only">إلى تاريخ</span>}><Input aria-label="إلى تاريخ" type="date" value={to} onChange={(event) => setTo(event.target.value)} /></EntityForm.Field>
           </>
         )}
         actions={(

@@ -248,8 +248,6 @@
     box-shadow: none;
   }
 
-  [data-page-layout] [data-list-toolbar] { gap: 0.75rem; }
-
   [data-page-layout] [data-entity-table-wrapper],
   [data-page-layout] [data-entity-table-grid] {
     width: 100%;

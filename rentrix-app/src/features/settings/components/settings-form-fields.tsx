@@ -1,4 +1,5 @@
-import { useId, type ChangeEvent } from 'react';
+import { type ChangeEvent } from 'react';
+import { EntityForm } from '@/components/ui/entity-form';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import type {
@@ -8,7 +9,12 @@ import type {
 } from '../settingsForm';
 
 /**
- * Shared form primitives for the Settings workspace (WP-D `form/` machinery).
+ * Settings field adapters (WP-D `form/` machinery).
+ *
+ * These are thin domain adapters: they map the settings draft/field model
+ * onto the canonical field shell (`EntityForm.Field`) so label/help/error/
+ * required composition and its ARIA wiring have exactly one owner. Only the
+ * `draft` → control value binding is settings-specific.
  *
  * `draft` is intentionally a partial view: section components pass the
  * section-scoped slice produced by `useSettingsSection`, so these primitives
@@ -24,70 +30,56 @@ type BaseFieldProps = Readonly<{
   onChange: (field: CompanySettingsDraftField, value: string) => void;
 }>;
 
-type FormFieldProps = BaseFieldProps & Readonly<{
+type SettingsFormFieldProps = BaseFieldProps & Readonly<{
   placeholder?: string;
   type?: string;
   inputMode?: 'decimal' | 'numeric' | 'text';
 }>;
 
-export function FormField({ label, field, draft, errors, disabled, placeholder, type = 'text', inputMode, onChange }: FormFieldProps) {
-  const inputId = useId();
-  const errorId = `${inputId}-error`;
+export function SettingsFormField({ label, field, draft, errors, disabled, placeholder, type = 'text', inputMode, onChange }: SettingsFormFieldProps) {
   const isInvalid = Boolean(errors[field]);
   return (
-    <label htmlFor={inputId} className="block min-w-0 space-y-1 text-xs font-bold text-foreground">
-      <span className="block px-0.5">{label}</span>
+    <EntityForm.Field label={label} error={isInvalid ? errors[field] : undefined}>
       <Input
-        id={inputId}
         type={type}
         inputMode={inputMode}
         value={draft[field] ?? ''}
         placeholder={placeholder}
         disabled={disabled}
-        aria-invalid={isInvalid}
-        aria-describedby={isInvalid ? errorId : undefined}
         className="min-h-11 rounded-lg px-3 text-sm"
         onChange={(event: ChangeEvent<HTMLInputElement>) => onChange(field, event.target.value)}
       />
-      {isInvalid ? <span id={errorId} className="block px-0.5 text-[11px] text-destructive" role="alert">{errors[field]}</span> : null}
-    </label>
+    </EntityForm.Field>
   );
 }
 
-type SelectFieldProps = BaseFieldProps & Readonly<{
+type SettingsSelectFieldProps = BaseFieldProps & Readonly<{
   options: readonly string[];
 }>;
 
-export function SelectField({ label, field, draft, errors, disabled, options, onChange }: SelectFieldProps) {
-  const selectId = useId();
-  const errorId = `${selectId}-error`;
+export function SettingsSelectField({ label, field, draft, errors, disabled, options, onChange }: SettingsSelectFieldProps) {
   const isInvalid = Boolean(errors[field]);
   return (
-    <label htmlFor={selectId} className="block min-w-0 space-y-1 text-xs font-bold text-foreground">
-      <span className="block px-0.5">{label}</span>
+    <EntityForm.Field label={label} error={isInvalid ? errors[field] : undefined}>
       <Select
-        id={selectId}
         value={draft[field] ?? ''}
         disabled={disabled}
-        aria-invalid={isInvalid}
-        aria-describedby={isInvalid ? errorId : undefined}
         className="min-h-11 rounded-lg px-3 text-sm"
         onChange={(event: ChangeEvent<HTMLSelectElement>) => onChange(field, event.target.value)}
       >
         {options.map((option) => <option key={option} value={option}>{option}</option>)}
       </Select>
-      {isInvalid ? <span id={errorId} className="block px-0.5 text-[11px] text-destructive" role="alert">{errors[field]}</span> : null}
-    </label>
+    </EntityForm.Field>
   );
 }
 
-type PreviewFieldProps = Readonly<{
+type SettingsPreviewFieldProps = Readonly<{
   label: string;
   value: string;
   muted?: boolean;
 }>;
 
-export function PreviewField({ label, value, muted = false }: PreviewFieldProps) {
+export function SettingsPreviewField({ label, value, muted = false }: SettingsPreviewFieldProps) {
   return (
     <div className="rounded-lg border bg-background/70 p-2.5 sm:rounded-xl sm:p-3">
       <dt className="text-[11px] font-bold text-muted-foreground sm:text-xs">{label}</dt>

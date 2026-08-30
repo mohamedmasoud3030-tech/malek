@@ -8,7 +8,7 @@ import {
 import { supportedCurrencies } from '@/lib/formatters';
 import type { CompanySettingsDraft, CompanySettingsDraftField, CompanySettingsPreviewModel, CompanySettingsValidationErrors } from '../settingsForm';
 import { useSettingsSection } from '../form/useSettingsSection';
-import { FormField, PreviewField, SelectField } from '../components/settings-form-fields';
+import { SettingsFormField, SettingsPreviewField, SettingsSelectField } from '../components/settings-form-fields';
 import { SectionCard } from '../components/settings-section-card';
 import type { SettingsSectionId } from '../settingsSections';
 
@@ -51,10 +51,10 @@ function IdentityPreview({
         )}
       </div>
       <div className="grid gap-1.5 sm:grid-cols-2 sm:gap-2">
-        <PreviewField label="التاريخ" value={formattedPreviewDate} />
-        <PreviewField label="المبلغ" value={formattedPreviewMoney} />
+        <SettingsPreviewField label="التاريخ" value={formattedPreviewDate} />
+        <SettingsPreviewField label="المبلغ" value={formattedPreviewMoney} />
         <div className="sm:col-span-2">
-          <PreviewField label="لغة المستندات" value={`${preview.defaultLanguage} (${preview.locale})`} />
+          <SettingsPreviewField label="لغة المستندات" value={`${preview.defaultLanguage} (${preview.locale})`} />
         </div>
       </div>
     </div>
@@ -79,19 +79,19 @@ export function IdentitySection({
       <fieldset className="min-w-0 space-y-2.5">
         <legend className="mb-2 text-[11px] font-black text-muted-foreground">التنسيق واللغة</legend>
         <div className="grid grid-cols-2 gap-x-2.5 gap-y-2.5 sm:gap-3">
-          <SelectField label="العملة" field="currency" draft={section.draft} errors={section.errors} disabled={isSaving} options={currencyOptions} onChange={section.setField} />
-          <SelectField label="اللغة المحلية" field="locale" draft={section.draft} errors={section.errors} disabled={isSaving} options={localeOptions} onChange={section.setField} />
+          <SettingsSelectField label="العملة" field="currency" draft={section.draft} errors={section.errors} disabled={isSaving} options={currencyOptions} onChange={section.setField} />
+          <SettingsSelectField label="اللغة المحلية" field="locale" draft={section.draft} errors={section.errors} disabled={isSaving} options={localeOptions} onChange={section.setField} />
           <div className="col-span-2">
-            <SelectField label="المنطقة الزمنية" field="timezone" draft={section.draft} errors={section.errors} disabled={isSaving} options={timezoneOptions} onChange={section.setField} />
+            <SettingsSelectField label="المنطقة الزمنية" field="timezone" draft={section.draft} errors={section.errors} disabled={isSaving} options={timezoneOptions} onChange={section.setField} />
           </div>
-          <SelectField label="صيغة التاريخ" field="date_format" draft={section.draft} errors={section.errors} disabled={isSaving} options={dateFormatOptions} onChange={section.setField} />
-          <SelectField label="صيغة الأرقام" field="number_format" draft={section.draft} errors={section.errors} disabled={isSaving} options={numberFormatOptions} onChange={section.setField} />
+          <SettingsSelectField label="صيغة التاريخ" field="date_format" draft={section.draft} errors={section.errors} disabled={isSaving} options={dateFormatOptions} onChange={section.setField} />
+          <SettingsSelectField label="صيغة الأرقام" field="number_format" draft={section.draft} errors={section.errors} disabled={isSaving} options={numberFormatOptions} onChange={section.setField} />
         </div>
       </fieldset>
 
       <fieldset className="min-w-0 space-y-2.5 border-t border-border/55 pt-3">
         <legend className="mb-2 text-[11px] font-black text-muted-foreground">شعار الشركة</legend>
-        <FormField label="رابط الشعار" field="logo_url" draft={section.draft} errors={section.errors} disabled={isSaving} type="url" placeholder="https://example.com/logo.png" onChange={section.setField} />
+        <SettingsFormField label="رابط الشعار" field="logo_url" draft={section.draft} errors={section.errors} disabled={isSaving} type="url" placeholder="https://example.com/logo.png" onChange={section.setField} />
         <label className="block space-y-1 text-xs font-bold text-foreground">
           <span className="block px-0.5" id="settings-logo-upload-label">أو ارفع ملفًا</span>
           <Input

@@ -10,8 +10,10 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
+  EntityForm,
+  Input,
+  LoadingState,
   Skeleton,
-  Spinner,
   StatusBadge,
   StatusBadgePill,
   Table,
@@ -24,9 +26,7 @@ import {
   TableHeader,
   TableLoading,
   TableRow,
-  TextAreaField,
-  TextField,
-  Typography,
+  Textarea,
 } from '@/components/ui';
 import { useUiStore } from '@/store/ui-store';
 
@@ -34,8 +34,8 @@ function Section({ title, description, children }: { title: string; description?
   return (
     <section className="space-y-4">
       <div>
-        <Typography variant="h4">{title}</Typography>
-        {description ? <Typography variant="caption">{description}</Typography> : null}
+        <h4 className="text-base font-black">{title}</h4>
+        {description ? <p className="text-xs text-muted-foreground">{description}</p> : null}
       </div>
       <Card>
         <CardContent className="flex flex-wrap items-center gap-3 p-5">{children}</CardContent>
@@ -95,12 +95,10 @@ export function DesignSystemShowcase() {
   return (
     <div className="mx-auto w-full max-w-6xl space-y-8 p-4 sm:p-6">
       <header className="space-y-2">
-        <Typography variant="display" className="text-3xl">
-          MALEK Design System
-        </Typography>
-        <Typography variant="subtitle">
+        <h1 className="text-3xl font-black">MALEK Design System</h1>
+        <p className="text-sm text-muted-foreground">
           Wave 3 foundation — معرض المطورين فقط (development-only). لا يظهر في التنقل الإنتاجي.
-        </Typography>
+        </p>
         <div className="flex flex-wrap gap-2 pt-2">
           <Button size="sm" variant="secondary" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
             {theme === 'dark' ? 'الوضع الفاتح' : 'الوضع الداكن'}
@@ -119,17 +117,17 @@ export function DesignSystemShowcase() {
 
       <Section title="Typography">
         <div className="w-full space-y-2">
-          <Typography variant="display">Display</Typography>
-          <Typography variant="h1">Heading 1</Typography>
-          <Typography variant="h2">Heading 2</Typography>
-          <Typography variant="h3">Heading 3</Typography>
-          <Typography variant="title">Title</Typography>
-          <Typography variant="subtitle">Subtitle</Typography>
-          <Typography variant="body-lg">Body Large — كل أملاكك في مكان واحد</Typography>
-          <Typography variant="body">Body — كل أملاكك في مكان واحد</Typography>
-          <Typography variant="caption">Caption</Typography>
-          <Typography variant="overline">Overline</Typography>
-          <Typography variant="mono">Mono — 1,234.56</Typography>
+          <p className="text-3xl font-black">Display</p>
+          <p className="text-2xl font-black">Heading 1</p>
+          <p className="text-xl font-black">Heading 2</p>
+          <p className="text-lg font-bold">Heading 3</p>
+          <p className="text-base font-bold">Title</p>
+          <p className="text-sm text-muted-foreground">Subtitle</p>
+          <p className="text-base">Body Large — كل أملاكك في مكان واحد</p>
+          <p className="text-sm">Body — كل أملاكك في مكان واحد</p>
+          <p className="text-xs text-muted-foreground">Caption</p>
+          <p className="text-xs font-bold uppercase tracking-wide">Overline</p>
+          <p className="font-mono text-sm">Mono — 1,234.56</p>
         </div>
       </Section>
 
@@ -158,19 +156,44 @@ export function DesignSystemShowcase() {
         <Button type="button" fullWidth>بعرض كامل</Button>
       </Section>
 
-      <Section title="Inputs" description="States · label · error · icons · loading · currency">
+      <Section title="Inputs" description="Canonical field shell · states · error · hint">
         <div className="grid w-full gap-4 sm:grid-cols-2">
-          <TextField label="الاسم" placeholder="أدخل الاسم" />
-          <TextField label="البريد" type="email" leadingIcon={<Mail className="size-4" />} placeholder="name@example.com" />
-          <TextField label="بحث" leadingIcon={<Search className="size-4" />} placeholder="بحث..." />
-          <TextField label="المبلغ" type="number" inputMode="decimal" currency="ر.ع" placeholder="0.000" />
-          <TextField label="تحميل" loading defaultValue="نص" />
-          <TextField label="نجاح" success="متاح" defaultValue="مالك" />
-          <TextField label="تحذير" warning="راجع القيمة" defaultValue="10" />
-          <TextField label="خطأ" error="هذا الحقل مطلوب" defaultValue="" />
-          <TextField label="للقراءة فقط" readOnly defaultValue="قيمة ثابتة" />
-          <TextField label="معطّل" disabled defaultValue="غير متاح" />
-          <TextAreaField label="ملاحظات" placeholder="اكتب هنا..." className="sm:col-span-2" />
+          <EntityForm.Field label="الاسم" hint="الاسم الكامل للمستأجر">
+            <Input placeholder="أدخل الاسم" />
+          </EntityForm.Field>
+          <EntityForm.Field label="البريد" hint="name@example.com">
+            <Input type="email" dir="ltr" placeholder="name@example.com" />
+          </EntityForm.Field>
+          <EntityForm.Field label="بحث" hint="ابحث في السجل">
+            <Input placeholder="بحث..." />
+          </EntityForm.Field>
+          <EntityForm.Field label="المبلغ" hint="ر.ع">
+            <Input type="number" inputMode="decimal" placeholder="0.000" />
+          </EntityForm.Field>
+          <EntityForm.Field label="خطأ" error="هذا الحقل مطلوب">
+            <Input state="error" defaultValue="" />
+          </EntityForm.Field>
+          <EntityForm.Field label="تحذير" hint="راجع القيمة">
+            <Input state="warning" defaultValue="10" />
+          </EntityForm.Field>
+          <EntityForm.Field label="نجاح" hint="متاح">
+            <Input state="success" defaultValue="مالك" />
+          </EntityForm.Field>
+          <EntityForm.Field label="للقراءة فقط">
+            <Input readOnly defaultValue="قيمة ثابتة" />
+          </EntityForm.Field>
+          <EntityForm.Field label="معطّل">
+            <Input disabled defaultValue="غير متاح" />
+          </EntityForm.Field>
+          <EntityForm.Field label="بحث بأيقونة">
+            <div className="relative">
+              <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+              <Input className="ps-10" placeholder="بحث..." />
+            </div>
+          </EntityForm.Field>
+          <EntityForm.Field label="ملاحظات" className="sm:col-span-2">
+            <Textarea placeholder="اكتب هنا..." />
+          </EntityForm.Field>
         </div>
       </Section>
 
@@ -188,12 +211,16 @@ export function DesignSystemShowcase() {
           <CardContent>مسافات مضغوطة</CardContent>
         </Card>
         <Card variant="statistic" className="w-64">
-          <Typography variant="caption">إجمالي التحصيل</Typography>
-          <Typography variant="h2" className="mt-1 text-financial-positive">12,450 ر.ع</Typography>
+          <CardContent className="p-5">
+            <p className="text-xs text-muted-foreground">إجمالي التحصيل</p>
+            <p className="mt-1 text-xl font-black text-financial-positive">12,450 ر.ع</p>
+          </CardContent>
         </Card>
         <Card variant="financial" className="w-64">
-          <Typography variant="caption">رصيد المالك</Typography>
-          <Typography variant="h2" className="mt-1">4,820 ر.ع</Typography>
+          <CardContent className="p-5">
+            <p className="text-xs text-muted-foreground">رصيد المالك</p>
+            <p className="mt-1 text-xl font-black">4,820 ر.ع</p>
+          </CardContent>
         </Card>
       </Section>
 
@@ -215,16 +242,13 @@ export function DesignSystemShowcase() {
         <StatusBadge tone="rose">StatusBadge rose</StatusBadge>
       </Section>
 
-      <Section title="Dialogs / Feedback" description="Alert · Spinner · Skeleton (dialogs reuse existing Radix Dialog)">
+      <Section title="Dialogs / Feedback" description="Alert · LoadingState · Skeleton (dialogs reuse existing Radix Dialog)">
         <Alert variant="info" title="معلومة" description="هذا تنبيه معلوماتي." />
         <Alert variant="success" title="تم الحفظ" description="تم حفظ التغييرات بنجاح." />
         <Alert variant="warning" title="تنبيه" description="هناك شيء يحتاج مراجعتك." />
         <Alert variant="danger" title="خطأ" description="تعذر إكمال الإجراء." />
         <div className="flex w-full items-center gap-4">
-          <Spinner size="xs" />
-          <Spinner size="sm" />
-          <Spinner size="md" />
-          <Spinner size="lg" />
+          <LoadingState variant="inline" label="تحميل..." />
         </div>
         <div className="w-full space-y-2">
           <Skeleton className="h-4 w-1/3" />
@@ -279,9 +303,9 @@ export function DesignSystemShowcase() {
       </Section>
 
       <footer className="pb-10">
-        <Typography variant="caption">
+        <p className="text-xs text-muted-foreground">
           MALEK Pro — Visual Wave 3 · Enterprise Design System Foundation
-        </Typography>
+        </p>
       </footer>
     </div>
   );

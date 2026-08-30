@@ -17,7 +17,7 @@ describe('shared design system barrel', () => {
     const required = [
       'Button', 'Card', 'Badge', 'StatusBadge', 'DataTable', 'EntityTable', 'EntityCard',
       'SearchInput', 'FilterBar', 'Dialog', 'BottomSheet', 'ConfirmDialog', 'EmptyState',
-      'LoadingState', 'ErrorState', 'ActionMenu', 'FormField', 'KpiCard', 'SectionHeader',
+      'LoadingState', 'ErrorState', 'ActionMenu', 'KpiCard', 'SectionHeader',
       'ResponsiveCardGrid',
     ] as const;
 
@@ -30,7 +30,7 @@ describe('shared design system barrel', () => {
     for (const name of [
       'Modal', 'Drawer', 'InlineStatCard', 'StatCard', 'MobileCard', 'ViewModeToggle',
       'Dropdown', 'IconButton', 'DatePicker', 'FilePickerField', 'Spinner', 'TextField',
-      'TextAreaField', 'PasswordField', 'Typography', 'WorkspaceNav',
+      'TextAreaField', 'PasswordField', 'Typography', 'WorkspaceNav', 'FormField',
     ]) {
       expect(name in ui, `${name} should not be part of the public UI surface`).toBe(false);
     }

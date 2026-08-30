@@ -244,29 +244,26 @@ export function ExpensesSection({
         <FilterBar
           filters={(
             <>
-              <label className="min-w-0 space-y-1 text-sm font-bold">
-                <span className="sr-only">العقار</span>
+              <EntityForm.Field label={<span className="sr-only">العقار</span>}>
                 <Select aria-label="العقار" value={filters.propertyId} onChange={(event) => onFiltersChange({ ...filters, propertyId: event.target.value })}>
                   <option value="">كل العقارات</option>
                   {propertyRows.map((property) => <option key={property.id} value={property.id}>{property.title}</option>)}
                 </Select>
-              </label>
-              <label className="min-w-0 space-y-1 text-sm font-bold">
-                <span className="sr-only">التصنيف</span>
+              </EntityForm.Field>
+              <EntityForm.Field label={<span className="sr-only">التصنيف</span>}>
                 <Select aria-label="التصنيف" value={filters.category} onChange={(event) => onFiltersChange({ ...filters, category: event.target.value })}>
                   <option value="">كل التصنيفات</option>
                   {categoryOptions.map((category) => <option key={category} value={category}>{category}</option>)}
                 </Select>
-              </label>
-              <label className="min-w-0 space-y-1 text-sm font-bold">
-                <span className="sr-only">مركز التكلفة</span>
+              </EntityForm.Field>
+              <EntityForm.Field label={<span className="sr-only">مركز التكلفة</span>}>
                 <Select aria-label="مركز التكلفة" value={filters.costCenterId} onChange={(event) => onFiltersChange({ ...filters, costCenterId: event.target.value })}>
                   <option value="">كل مراكز التكلفة</option>
                   {costCenterRows.filter((costCenter) => costCenter.is_active !== false).map((costCenter) => <option key={costCenter.id} value={costCenter.id}>{costCenter.name}</option>)}
                 </Select>
-              </label>
-              <label className="min-w-0 space-y-1 text-sm font-bold"><span className="sr-only">من تاريخ</span><Input aria-label="من تاريخ" type="date" value={filters.from} onChange={(event) => onFiltersChange({ ...filters, from: event.target.value })} /></label>
-              <label className="min-w-0 space-y-1 text-sm font-bold"><span className="sr-only">إلى تاريخ</span><Input aria-label="إلى تاريخ" type="date" value={filters.to} onChange={(event) => onFiltersChange({ ...filters, to: event.target.value })} /></label>
+              </EntityForm.Field>
+              <EntityForm.Field label={<span className="sr-only">من تاريخ</span>}><Input aria-label="من تاريخ" type="date" value={filters.from} onChange={(event) => onFiltersChange({ ...filters, from: event.target.value })} /></EntityForm.Field>
+              <EntityForm.Field label={<span className="sr-only">إلى تاريخ</span>}><Input aria-label="إلى تاريخ" type="date" value={filters.to} onChange={(event) => onFiltersChange({ ...filters, to: event.target.value })} /></EntityForm.Field>
             </>
           )}
           actions={hasFilters ? <Button variant="secondary" onClick={clearFilters}>مسح الفلاتر</Button> : undefined}
@@ -331,48 +328,44 @@ export function ExpensesSection({
 
           <EntityForm.Section title="بيانات المصروف" description="اختر العقار والتصنيف ثم أدخل المبلغ والتاريخ.">
             <div className="grid gap-4 sm:grid-cols-2">
-              <label className="space-y-1.5 text-sm font-bold">
-                <span>العقار</span>
-                <Select {...expenseForm.register('property_id')} disabled={Boolean(editingExpense)} aria-invalid={Boolean(expenseForm.formState.errors.property_id)}>
+              <EntityForm.Field label="العقار" error={expenseForm.formState.errors.property_id?.message}>
+                <Select {...expenseForm.register('property_id')} disabled={Boolean(editingExpense)}>
                   <option value="">اختر العقار</option>
                   {propertyRows.map((property) => <option key={property.id} value={property.id}>{property.title}</option>)}
                 </Select>
-                {expenseForm.formState.errors.property_id?.message ? <span className="text-xs text-destructive">{expenseForm.formState.errors.property_id.message}</span> : null}
-              </label>
+              </EntityForm.Field>
 
-              <label className="space-y-1.5 text-sm font-bold">
-                <span>التصنيف</span>
-                <Select {...expenseForm.register('category')} aria-invalid={Boolean(expenseForm.formState.errors.category)}>
+              <EntityForm.Field label="التصنيف" error={expenseForm.formState.errors.category?.message}>
+                <Select {...expenseForm.register('category')}>
                   {OPERATIONAL_EXPENSE_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
                 </Select>
-              </label>
+              </EntityForm.Field>
 
-              <label className="space-y-1.5 text-sm font-bold sm:col-span-2">
-                <span>يتحمّل المصروف</span>
-                <Select {...expenseForm.register('charged_to')} aria-invalid={Boolean(expenseForm.formState.errors.charged_to)}>
+              <EntityForm.Field
+                label="يتحمّل المصروف"
+                className="sm:col-span-2"
+                hint="اختيار «المالك» يُظهر المصروف في كشف حساب المالك."
+                error={expenseForm.formState.errors.charged_to?.message}
+              >
+                <Select {...expenseForm.register('charged_to')}>
                   {EXPENSE_CHARGED_TO_VALUES.map((value) => <option key={value} value={value}>{EXPENSE_CHARGED_TO_LABELS[value]}</option>)}
                 </Select>
-                <span className="text-xs font-normal text-muted-foreground">اختيار «المالك» يُظهر المصروف في كشف حساب المالك.</span>
-              </label>
+              </EntityForm.Field>
 
-              <label className="space-y-1.5 text-sm font-bold">
-                <span>مركز التكلفة</span>
+              <EntityForm.Field label="مركز التكلفة" error={expenseForm.formState.errors.cost_center_id?.message}>
                 <Select {...expenseForm.register('cost_center_id')} disabled={Boolean(editingExpense)}>
                   <option value="">بدون مركز تكلفة</option>
                   {costCenterRows.filter((costCenter) => costCenter.is_active !== false).map((costCenter) => <option key={costCenter.id} value={costCenter.id}>{costCenter.name}</option>)}
                 </Select>
-              </label>
+              </EntityForm.Field>
 
-              <label className="space-y-1.5 text-sm font-bold">
-                <span>المبلغ</span>
-                <Input type="number" min={MONEY_MIN_POSITIVE} inputMode="decimal" step={MONEY_STEP} placeholder="0.000" {...expenseForm.register('amount')} aria-invalid={Boolean(expenseForm.formState.errors.amount)} />
-                {expenseForm.formState.errors.amount?.message ? <span className="text-xs text-destructive">{expenseForm.formState.errors.amount.message}</span> : null}
-              </label>
+              <EntityForm.Field label="المبلغ" error={expenseForm.formState.errors.amount?.message}>
+                <Input type="number" min={MONEY_MIN_POSITIVE} inputMode="decimal" step={MONEY_STEP} placeholder="0.000" {...expenseForm.register('amount')} />
+              </EntityForm.Field>
 
-              <label className="space-y-1.5 text-sm font-bold sm:col-span-2">
-                <span>التاريخ</span>
-                <Input type="date" {...expenseForm.register('expense_date')} disabled={Boolean(editingExpense)} aria-invalid={Boolean(expenseForm.formState.errors.expense_date)} />
-              </label>
+              <EntityForm.Field label="التاريخ" className="sm:col-span-2" error={expenseForm.formState.errors.expense_date?.message}>
+                <Input type="date" {...expenseForm.register('expense_date')} disabled={Boolean(editingExpense)} />
+              </EntityForm.Field>
             </div>
           </EntityForm.Section>
 

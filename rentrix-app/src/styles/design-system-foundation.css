@@ -31,7 +31,6 @@
 @layer components {
   /* Shared surfaces must not jump when interactive content appears. */
   [data-component-card],
-  [data-list-toolbar],
   [data-list-results] {
     min-width: 0;
   }

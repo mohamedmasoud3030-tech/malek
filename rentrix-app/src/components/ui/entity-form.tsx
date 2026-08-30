@@ -48,7 +48,18 @@ function Root({ className, children, onSubmit, onInvalidCapture, noValidate = tr
   return <form data-entity-form className={cn('entity-form grid min-w-0 gap-4', className)} noValidate={noValidate} onSubmit={handleSubmit} onInvalidCapture={handleInvalidCapture} {...props}>{children}</form>;
 }
 
-type EntityFormFieldProps = Readonly<{ label: ReactNode; children: ReactNode; description?: ReactNode; error?: ReactNode; className?: string; wide?: boolean }>;
+type EntityFormFieldProps = Readonly<{
+  label: ReactNode;
+  children: ReactNode;
+  description?: ReactNode;
+  error?: ReactNode;
+  /** Lightweight supporting copy rendered below the control (bound via aria-describedby). */
+  hint?: ReactNode;
+  /** Marks the field required and carries aria-required onto the control. */
+  required?: boolean;
+  className?: string;
+  wide?: boolean;
+}>;
 type EntityFormSectionProps = Readonly<{ title?: ReactNode; description?: ReactNode; children: ReactNode; className?: string; columns?: 1 | 2 }>;
 
 /**
@@ -66,7 +77,7 @@ type EntityFormSectionProps = Readonly<{ title?: ReactNode; description?: ReactN
  *
  *  - points the control at the label text alone via `aria-labelledby`, which
  *    takes precedence over the wrapping label and yields a clean name;
- *  - binds description and error through `aria-describedby` so they are
+ *  - binds description, hint and error through `aria-describedby` so they are
  *    announced as description instead of being folded into the name;
  *  - moves the error out of the label — it was already the last row, so the
  *    rendered order is unchanged — and sets `aria-invalid` from `error` so
@@ -77,18 +88,22 @@ type EntityFormSectionProps = Readonly<{ title?: ReactNode; description?: ReactN
  *
  * Cloning is a best-effort enhancement. When the child is not a single element
  * the wrapping label still supplies the association, exactly as before.
+ *
+ * `hint` and `required` keep the same contract the retired `FormField` shell
+ * owned, so label/help/error/required composition has one owner.
  */
-function Field({ label, children, description, error, className, wide = false }: EntityFormFieldProps) {
+function Field({ label, children, description, error, hint, required = false, className, wide = false }: EntityFormFieldProps) {
   const fieldId = useId();
   const labelId = `${fieldId}-label`;
   const descriptionId = description ? `${fieldId}-description` : undefined;
+  const hintId = hint ? `${fieldId}-hint` : undefined;
   const errorId = error ? `${fieldId}-error` : undefined;
 
   const onlyChild = Children.count(children) === 1 ? Children.toArray(children)[0] : null;
   const controlElement = isValidElement(onlyChild) ? (onlyChild as ReactElement<Record<string, unknown>>) : null;
   const childProps = (controlElement?.props ?? {}) as Record<string, unknown>;
 
-  const describedBy = [childProps['aria-describedby'] as string | undefined, descriptionId, errorId]
+  const describedBy = [childProps['aria-describedby'] as string | undefined, descriptionId, hintId, errorId]
     .filter(Boolean)
     .join(' ') || undefined;
 
@@ -97,18 +112,25 @@ function Field({ label, children, description, error, className, wide = false }:
         'aria-labelledby': childProps['aria-labelledby'] ?? (childProps['aria-label'] ? undefined : labelId),
         ...(describedBy ? { 'aria-describedby': describedBy } : null),
         'aria-invalid': childProps['aria-invalid'] ?? (error ? true : undefined),
+        'aria-required': childProps['aria-required'] ?? (required ? true : undefined),
       })
     : children;
 
   return (
     <div data-entity-form-field className={cn('grid min-w-0 gap-1.5 text-sm font-bold', wide && 'lg:col-span-2', className)}>
       <label className="grid min-w-0 gap-1.5">
-        <span id={labelId}>{label}</span>
+        <span id={labelId}>
+          {label}
+          {required ? <span className="ms-1 text-destructive" aria-hidden="true">*</span> : null}
+        </span>
         {description ? (
           <span id={descriptionId} className="text-xs font-medium leading-5 text-muted-foreground">{description}</span>
         ) : null}
         {control}
       </label>
+      {hint ? (
+        <span id={hintId} className="text-xs font-medium leading-5 text-muted-foreground">{hint}</span>
+      ) : null}
       {error ? (
         <span id={errorId} data-field-error className="text-xs font-bold leading-5 text-destructive" role="alert">{error}</span>
       ) : null}

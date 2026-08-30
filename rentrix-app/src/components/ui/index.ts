@@ -36,7 +36,6 @@ export { ActiveFilterBar, type ActiveFilterItem } from "./active-filter-bar";
 export { KpiCard } from "./kpi-card";
 export { ResponsiveCardGrid } from "./responsive-card-grid";
 export { SelectionCard, type SelectionCardProps } from "./selection-card";
-export { FormField } from "./form-field";
 export { ActionMenu, type ActionMenuItem } from "./action-menu";
 export { buildContractActions } from "./entity-action-presets";
 export { LoadingState } from "./loading-state";

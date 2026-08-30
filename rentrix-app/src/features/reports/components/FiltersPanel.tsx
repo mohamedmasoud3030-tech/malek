@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { EntityForm } from '@/components/ui/entity-form';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
@@ -69,22 +70,19 @@ export function FiltersPanel({
         <>
           {fields.has('period') ? (
             <>
-              <label className="min-w-0 space-y-1 text-sm font-bold">
-                <span className="sr-only">من تاريخ</span>
+              <EntityForm.Field label={<span className="sr-only">من تاريخ</span>}>
                 <Input aria-label="من تاريخ" type="date" value={filters.from} onChange={(event) => onChange({ ...filters, from: event.target.value })} />
-              </label>
-              <label className="min-w-0 space-y-1 text-sm font-bold">
-                <span className="sr-only">إلى تاريخ</span>
+              </EntityForm.Field>
+              <EntityForm.Field label={<span className="sr-only">إلى تاريخ</span>}>
                 <Input aria-label="إلى تاريخ" type="date" value={filters.to} onChange={(event) => onChange({ ...filters, to: event.target.value })} />
-              </label>
+              </EntityForm.Field>
             </>
           ) : null}
 
           {fields.has('asOf') ? (
-            <label className="min-w-0 space-y-1 text-sm font-bold">
-              <span className="sr-only">تاريخ الاحتساب</span>
+            <EntityForm.Field label={<span className="sr-only">تاريخ الاحتساب</span>}>
               <Input aria-label="تاريخ الاحتساب" type="date" value={filters.asOf} onChange={(event) => onChange({ ...filters, asOf: event.target.value })} />
-            </label>
+            </EntityForm.Field>
           ) : null}
 
           {fields.has('property') ? (
