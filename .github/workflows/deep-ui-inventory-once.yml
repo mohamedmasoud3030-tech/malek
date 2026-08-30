@@ -1,0 +1,121 @@
+name: Deep UI Inventory Once
+on:
+  push:
+    branches: [audit/deep-ui-inventory-0830]
+permissions:
+  contents: read
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Static ownership inventory
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          import re
+          from collections import defaultdict
+
+          root = Path('rentrix-app/src').resolve()
+          exts = ('.ts', '.tsx', '.js', '.jsx')
+          files = [p.resolve() for p in root.rglob('*') if p.is_file() and p.suffix in exts]
+          file_set = set(files)
+
+          def is_nonprod(p: Path):
+              s = p.as_posix().lower()
+              n = p.name.lower()
+              return any(x in n for x in ('.test.', '.spec.', '.stories.')) or 'e2e-fixture' in s or '/__tests__/' in s or '/test/' in s
+
+          def resolve(base: Path, spec: str):
+              if spec.startswith('@/'):
+                  q = root / spec[2:]
+              elif spec.startswith('.'):
+                  q = (base.parent / spec).resolve()
+              else:
+                  return None
+              cands = [q]
+              if q.suffix == '':
+                  cands += [Path(str(q)+e) for e in exts]
+                  cands += [q / ('index'+e) for e in exts]
+              for c in cands:
+                  try: c = c.resolve()
+                  except Exception: pass
+                  if c in file_set:
+                      return c
+              return None
+
+          import_re = re.compile(r"(?:from\s+|import\s*\()\s*['\"]([^'\"]+)['\"]")
+          inbound_prod = defaultdict(set)
+          inbound_all = defaultdict(set)
+          outbound = defaultdict(set)
+
+          for p in files:
+              try: text = p.read_text(encoding='utf-8')
+              except Exception: continue
+              for spec in import_re.findall(text):
+                  target = resolve(p, spec)
+                  if not target: continue
+                  inbound_all[target].add(p)
+                  outbound[p].add(target)
+                  if not is_nonprod(p): inbound_prod[target].add(p)
+
+          def rel(p): return p.relative_to(root).as_posix()
+          shared = [p for p in files if rel(p).startswith('components/') and not is_nonprod(p)]
+
+          print('\n=== ZERO PRODUCTION INBOUND: SHARED COMPONENTS ===')
+          zeros = []
+          for p in sorted(shared, key=lambda x: rel(x)):
+              if p.name.startswith('index.'):
+                  continue
+              if len(inbound_prod[p]) == 0:
+                  zeros.append(p)
+                  print(rel(p))
+          print(f'COUNT={len(zeros)}')
+
+          print('\n=== ONLY BARREL/TEST INBOUND: SHARED COMPONENTS ===')
+          barrel_only = []
+          for p in sorted(shared, key=lambda x: rel(x)):
+              prod = inbound_prod[p]
+              if not prod: continue
+              meaningful = [q for q in prod if q.name not in ('index.ts','index.tsx')]
+              if not meaningful:
+                  barrel_only.append(p)
+                  print(rel(p), '<-', ', '.join(rel(q) for q in sorted(prod)))
+          print(f'COUNT={len(barrel_only)}')
+
+          print('\n=== LOW-FANOUT SHARED COMPONENTS (1 production consumer) ===')
+          for p in sorted(shared, key=lambda x: rel(x)):
+              prod = [q for q in inbound_prod[p] if q.name not in ('index.ts','index.tsx')]
+              if len(prod) == 1:
+                  print(rel(p), '<-', rel(prod[0]))
+
+          print('\n=== DUPLICATE STEMS ACROSS SRC (>=2 production files) ===')
+          stems = defaultdict(list)
+          for p in files:
+              if is_nonprod(p): continue
+              stems[p.stem.lower()].append(p)
+          for stem, ps in sorted(stems.items()):
+              if len(ps) >= 2:
+                  print(stem, '::', ' | '.join(rel(p) for p in sorted(ps)))
+
+          print('\n=== TARGET SHARED SURFACE FANOUT ===')
+          targets = ['mobile-card','view-mode-toggle','data-table','entity-table','entity-card','filter-bar','active-filter-bar','action-menu','export-menu','loading-state','error-state','state-surfaces','form-field','text-field','section-header','kpi-card','responsive-card-grid','dropdown','selection-card']
+          by_stem = defaultdict(list)
+          for p in shared: by_stem[p.stem].append(p)
+          for stem in targets:
+              for p in by_stem.get(stem, []):
+                  prod = [rel(q) for q in sorted(inbound_prod[p]) if q.name not in ('index.ts','index.tsx')]
+                  print(f'{rel(p)} :: {len(prod)} :: ' + ' | '.join(prod))
+
+          print('\n=== FEATURE COMPONENTS WITH ZERO PRODUCTION INBOUND (heuristic) ===')
+          feature_zeros = []
+          for p in files:
+              r = rel(p)
+              if not r.startswith('features/') or is_nonprod(p): continue
+              if '/components/' not in r: continue
+              if len(inbound_prod[p]) == 0:
+                  feature_zeros.append(p)
+                  print(r)
+          print(f'COUNT={len(feature_zeros)}')
+          PY
