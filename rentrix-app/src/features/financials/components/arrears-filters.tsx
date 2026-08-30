@@ -1,3 +1,4 @@
+import { EntityForm } from '@/components/ui/entity-form';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
@@ -28,18 +29,16 @@ export function ArrearsFilters({
       searchAriaLabel="بحث في المتأخرات"
       filters={(
         <>
-          <label className="grid min-w-0 gap-1 text-sm font-bold">
-            <span className="sr-only">حتى تاريخ</span>
+          <EntityForm.Field label={<span className="sr-only">حتى تاريخ</span>}>
             <Input aria-label="حتى تاريخ" type="date" value={asOf} onChange={(event) => onAsOfChange(event.target.value)} />
-          </label>
-          <label className="grid min-w-0 gap-1 text-sm font-bold">
-            <span className="sr-only">فئة العمر</span>
+          </EntityForm.Field>
+          <EntityForm.Field label={<span className="sr-only">فئة العمر</span>}>
             <Select aria-label="فئة عمر المتأخرات" value={bucketFilter} onChange={(event) => onBucketFilterChange(event.currentTarget.value as ArrearsBucketFilter)}>
               {arrearsBucketOptions.map((option) => (
                 <option key={option.value} value={option.value}>{option.label}</option>
               ))}
             </Select>
-          </label>
+          </EntityForm.Field>
         </>
       )}
     />

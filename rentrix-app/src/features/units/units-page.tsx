@@ -19,6 +19,7 @@ import { RegisterHeading, RegisterMetricStrip } from "@/components/layout/regist
 import { LoadingState } from "@/components/ui/loading-state";
 import { Button } from "@/components/ui/button";
 import { DataTableColumnsMenu } from "@/components/ui/data-table";
+import { EntityForm } from "@/components/ui/entity-form";
 import { Select } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EntityTable, type ColumnDef } from "@/components/ui/entity-table";
@@ -206,8 +207,7 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
         searchAriaLabel="بحث في الوحدات"
         filters={
           <>
-            <label className="min-w-0 flex-1 space-y-1 text-sm font-bold sm:min-w-36">
-              <span className="sr-only">العقار</span>
+            <EntityForm.Field label={<span className="sr-only">العقار</span>} className="min-w-0 flex-1 sm:min-w-36">
               <Select
                 aria-label="العقار"
                 value={ctrl.propertyId}
@@ -220,9 +220,8 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
                   </option>
                 ))}
               </Select>
-            </label>
-            <label className="min-w-0 flex-1 space-y-1 text-sm font-bold sm:min-w-32">
-              <span className="sr-only">الحالة</span>
+            </EntityForm.Field>
+            <EntityForm.Field label={<span className="sr-only">الحالة</span>} className="min-w-0 flex-1 sm:min-w-32">
               <Select
                 aria-label="الحالة"
                 value={ctrl.status}
@@ -235,9 +234,8 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
                   </option>
                 ))}
               </Select>
-            </label>
-            <label className="min-w-0 flex-1 space-y-1 text-sm font-bold sm:min-w-32">
-              <span className="sr-only">الإشغال</span>
+            </EntityForm.Field>
+            <EntityForm.Field label={<span className="sr-only">الإشغال</span>} className="min-w-0 flex-1 sm:min-w-32">
               <Select
                 aria-label="الإشغال"
                 value={ctrl.occupancy}
@@ -247,7 +245,7 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
                 <option value="occupied">مشغولة فقط</option>
                 <option value="open">غير مشغولة</option>
               </Select>
-            </label>
+            </EntityForm.Field>
           </>
         }
         actions={(

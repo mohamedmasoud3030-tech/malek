@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { EntityForm } from '@/components/ui/entity-form';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { FilterTabs } from '@/components/ui/filter-tabs';
 import { Input } from '@/components/ui/input';
@@ -81,42 +82,38 @@ export function InvoiceFilters({
 
   const advancedFilters = (
     <div className="grid min-w-0 gap-2 sm:grid-cols-2 lg:grid-cols-4">
-      <label className="min-w-0 space-y-1 text-xs font-bold text-muted-foreground">
-        <span>من تاريخ الإصدار</span>
+      <EntityForm.Field label="من تاريخ الإصدار">
         <Input
           type="date"
           aria-label="من تاريخ الإصدار"
           value={dateFrom}
           onChange={(event) => onDateFromChange(event.target.value)}
         />
-      </label>
-      <label className="min-w-0 space-y-1 text-xs font-bold text-muted-foreground">
-        <span>إلى تاريخ الإصدار</span>
+      </EntityForm.Field>
+      <EntityForm.Field label="إلى تاريخ الإصدار">
         <Input
           type="date"
           aria-label="إلى تاريخ الإصدار"
           value={dateTo}
           onChange={(event) => onDateToChange(event.target.value)}
         />
-      </label>
-      <label className="min-w-0 space-y-1 text-xs font-bold text-muted-foreground">
-        <span>المستأجر</span>
+      </EntityForm.Field>
+      <EntityForm.Field label="المستأجر">
         <Select aria-label="تصفية حسب المستأجر" value={tenantId} onChange={(event) => onTenantChange(event.target.value)}>
           <option value="">كل المستأجرين</option>
           {tenantOptions.map((option) => (
             <option key={option.id} value={option.id}>{option.label}</option>
           ))}
         </Select>
-      </label>
-      <label className="min-w-0 space-y-1 text-xs font-bold text-muted-foreground">
-        <span>العقار</span>
+      </EntityForm.Field>
+      <EntityForm.Field label="العقار">
         <Select aria-label="تصفية حسب العقار" value={propertyId} onChange={(event) => onPropertyChange(event.target.value)}>
           <option value="">كل العقارات</option>
           {propertyOptions.map((option) => (
             <option key={option.id} value={option.id}>{option.label}</option>
           ))}
         </Select>
-      </label>
+      </EntityForm.Field>
     </div>
   );
 
