@@ -103,7 +103,7 @@ const sharedTranslationEntries = [
   // between "financials", "financialOverview", and "reports" labels.
   ['financialsPageDescription', 'فهرس العمليات المالية اليومية: الفواتير، التحصيل، المصروفات، التسويات، والمطابقة.', 'Day-to-day financial operations: invoices, collections, expenses, settlements, and reconciliation.'],
   ['financialsPageHint', 'كل عملية لها صفحتها المستقلة بصلاحياتها الخاصة.', 'Each workflow has its own page with its own permissions.'],
-  ['reportsPageDescription', 'اختر تقريرًا حسب العمل، حدّد العقار أو المالك والفترة، ثم راجع الخلاصة أولًا وبعدها الجدول والتفاصيل من المصدر المعتمد.', 'Pick a report by task, scope it by property, owner or period, then read the summary first and the detailed table from the approved source.'],
+  ['reportsPageDescription', 'ملخصات واضحة وكشوف جاهزة حسب الفترة والعقار أو المالك.', 'Clear summaries and ready statements by period, property, or owner.'],
   ['reportsPageHint', 'ابدأ بالخلاصة، ثم استخدم الجدول والفلاتر والتصدير عندما تحتاج التفاصيل.', 'Start with the summary, then use the table, filters, and export when you need detail.'],
   ['financialsSectionSummary', 'الملخص السريع', 'Quick summary'],
   ['financialsSectionReports', 'التقارير والكشوف', 'Reports & statements'],

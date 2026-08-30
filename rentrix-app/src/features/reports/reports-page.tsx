@@ -1,14 +1,11 @@
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { ChevronDown } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AccessDenied } from '@/components/layout/access-denied';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
-import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { canAccess, financialOperationPermissions } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
 import { translateSharedLabel } from '@/lib/i18n';
-import { ReportDirectory } from './directory/ReportDirectory';
 import { getCurrentMonthFilters } from './reports-page.helpers';
 import { getInitialReportsFilters, type ReportsFilterState } from './reports-workspace-filters';
 import {
@@ -19,6 +16,7 @@ import {
 } from './reports-section-model';
 import type { ReportViewId } from './report-view-registry';
 import { WORKSPACE_SEARCH_KEY, type ReportDrillHandler, type ReportWorkspaceId } from './report-workspaces';
+import { ReportsPrimaryNavigation } from './workspace/ReportsPrimaryNavigation';
 import { ReportsWorkspace } from './workspace/ReportsWorkspace';
 import { useReportsWorkspace } from './use-reports-workspace';
 
@@ -104,29 +102,10 @@ export function ReportsPage() {
     <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro">
       <PageHeader title={reportsTitle} description={pageDescription} />
 
-      <div data-finance-root className="min-w-0 grid gap-4 lg:grid-cols-[17.5rem_minmax(0,1fr)] lg:items-start">
-        {/* Semi-persistent report explorer on desktop. Never duplicated by the
-            mobile chooser, which is the single "Choose report" control. */}
-        <aside className="hidden min-w-0 lg:block" data-report-explorer-pane>
-          <div className="lg:sticky lg:top-[calc(var(--app-header-height,4.5rem)+1rem)]">
-            <ReportDirectory
-              activeWorkspace={activeWorkspace}
-              activeView={activeView}
-              onOpen={handleOpenReport}
-            />
-          </div>
-        </aside>
+      <div data-finance-root className="min-w-0 space-y-3">
+        <ReportsPrimaryNavigation activeWorkspace={activeWorkspace} onOpen={handleOpenReport} />
 
-        <div className="min-w-0" data-active-report-workspace data-report-landing>
-          {/* No empty landing state: with no URL selection, the office
-              performance launchpad opens immediately. */}
-          <div className="mb-2 lg:hidden">
-            <MobileReportChooser
-              activeWorkspace={activeWorkspace}
-              activeView={activeView}
-              onOpen={handleOpenReport}
-            />
-          </div>
+        <div id="reports-workspace-panel" className="min-w-0" data-active-report-workspace data-report-landing>
           <OpenReportWorkspace
             filters={filters}
             canExportReports={canExportReports}
@@ -134,6 +113,7 @@ export function ReportsPage() {
             activeSection={activeSection}
             activeView={activeView}
             onOpenView={(view) => handleOpenReport(activeWorkspace, view)}
+            onOpenReport={handleOpenReport}
             onDrill={handleDrill}
             onFiltersChange={setFilters}
             onResetCurrentMonth={handleResetCurrentMonth}
@@ -144,43 +124,6 @@ export function ReportsPage() {
   );
 }
 
-type MobileReportChooserProps = Readonly<{
-  activeWorkspace: ReportWorkspaceId;
-  activeView: ReportViewId;
-  onOpen: (workspace: ReportWorkspaceId, view: ReportViewId) => void;
-}>;
-
-function MobileReportChooser({ activeWorkspace, activeView, onOpen }: MobileReportChooserProps) {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        aria-haspopup="dialog"
-        aria-label="اختر تقريرًا من المستكشف"
-        data-mobile-report-chooser
-        className="inline-flex min-h-11 w-full items-center justify-between gap-2 rounded-lg border border-border/70 bg-card px-3 text-sm font-black text-foreground transition-colors hover:border-primary/30 hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-      >
-        <span className="min-w-0 truncate">اختر تقريرًا</span>
-        <ChevronDown className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-      </button>
-
-      <BottomSheet open={open} onClose={() => setOpen(false)} title="اختر التقرير" className="max-h-[min(92dvh,52rem)]">
-        <ReportDirectory
-          activeWorkspace={activeWorkspace}
-          activeView={activeView}
-          onOpen={(workspace, view) => {
-            setOpen(false);
-            onOpen(workspace, view);
-          }}
-        />
-      </BottomSheet>
-    </>
-  );
-}
-
 type OpenReportWorkspaceProps = Readonly<{
   filters: ReportsFilterState;
   canExportReports: boolean;
@@ -188,6 +131,7 @@ type OpenReportWorkspaceProps = Readonly<{
   activeSection: Parameters<typeof useReportsWorkspace>[1]['section'];
   activeView: ReportViewId;
   onOpenView: (view: ReportViewId) => void;
+  onOpenReport: (workspace: ReportWorkspaceId, view: ReportViewId) => void;
   onDrill: ReportDrillHandler;
   onFiltersChange: (filters: ReportsFilterState) => void;
   onResetCurrentMonth: () => void;
@@ -200,6 +144,7 @@ function OpenReportWorkspace({
   activeSection,
   activeView,
   onOpenView,
+  onOpenReport,
   onDrill,
   onFiltersChange,
   onResetCurrentMonth,
@@ -215,6 +160,7 @@ function OpenReportWorkspace({
       activeSection={activeSection}
       activeView={activeView}
       onOpenView={onOpenView}
+      onOpenReport={onOpenReport}
       onDrill={onDrill}
       onFiltersChange={onFiltersChange}
       onResetCurrentMonth={onResetCurrentMonth}

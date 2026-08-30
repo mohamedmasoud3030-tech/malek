@@ -12,9 +12,7 @@ import { buildXlsxBlob } from '@/lib/xlsx-export';
 import { documentService } from '@/services/documents/DocumentService';
 import { DocumentReadinessError, runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
 import {
-  toOwnerStatementDocumentPayload,
   toTenantStatementDocumentPayload,
-  type OwnerStatementData,
   type TenantStatementData,
 } from '@/services/documents/documentPayloadAdapters';
 import { useAuthoritativeGlCashFlow } from '../accounting-report-authority';
@@ -156,54 +154,6 @@ export function StatementsSection({
     );
   };
 
-  const buildOwnerStatementData = (): OwnerStatementData | null => {
-    if (!ownerStatement) return null;
-    const totalRent = ownerStatement.transactions.filter((t) => t.type === 'receipt').reduce((sum, t) => sum + (t.gross || 0), 0);
-    const totalExpenses = ownerStatement.transactions.filter((t) => t.type === 'expense').reduce((sum, t) => sum + Math.abs(t.gross || 0), 0);
-    const totalCommission = ownerStatement.totalDeductions || 0;
-
-    return {
-      ownerName: ownerStatement.ownerName || 'مالك غير محدد',
-      periodFrom: filters?.from || ownerStatement.periodFrom || '—',
-      periodTo: filters?.to || ownerStatement.periodTo || '—',
-      propertyTitle: 'كافة العقارات المدارة',
-      totalRent,
-      totalExpenses,
-      totalCommission,
-      netAmount: ownerStatement.totalNet || 0,
-      transactions: ownerStatement.transactions.map((transaction) => ({
-        date: transaction.date || '—',
-        type: transaction.type === 'receipt' ? 'تحصيل' : transaction.type === 'expense' ? 'مصروف' : transaction.type === 'settlement' ? 'تسوية' : 'حركة',
-        description: transaction.details || 'حركة مالية',
-        amount: transaction.net || 0,
-      })),
-    };
-  };
-
-  const handlePrintOwnerStatement = async () => {
-    await runGuardedDocumentAction({
-      isReady: isDocumentSettingsReady,
-      operation: async () => {
-        const data = buildOwnerStatementData();
-        if (!data) throw new DocumentReadinessError(MISSING_STATEMENT_DATA_MESSAGE);
-        await documentService.printDocument('owner_statement', { settings: documentSettings, payload: toOwnerStatementDocumentPayload(data) });
-      },
-      fallbackMessage: 'تعذرت طباعة الكشف.',
-    });
-  };
-
-  const handleDownloadOwnerStatement = async () => {
-    await runGuardedDocumentAction({
-      isReady: isDocumentSettingsReady,
-      operation: async () => {
-        const data = buildOwnerStatementData();
-        if (!data) throw new DocumentReadinessError(MISSING_STATEMENT_DATA_MESSAGE);
-        await documentService.downloadDocumentPdf('owner_statement', { settings: documentSettings, payload: toOwnerStatementDocumentPayload(data) });
-      },
-      fallbackMessage: 'تعذر تنزيل ملف PDF.',
-    });
-  };
-
   const runProfessionalOwnerReport = async (mode: 'print' | 'pdf') => {
     await runGuardedDocumentAction({
       isReady: isDocumentSettingsReady,
@@ -294,11 +244,9 @@ export function StatementsSection({
           error={ownerStatementError}
           isLoading={isOwnerStatementLoading}
           fallbackRows={ownerMovementRows}
-          onPrint={handlePrintOwnerStatement}
-          onDownloadPdf={handleDownloadOwnerStatement}
+          onPrint={handlePrintProfessionalOwnerReport}
+          onDownloadPdf={handleDownloadProfessionalOwnerReport}
           onDownloadExcel={handleDownloadOwnerExcel}
-          onPrintProfessionalReport={handlePrintProfessionalOwnerReport}
-          onDownloadProfessionalReportPdf={handleDownloadProfessionalOwnerReport}
           actionsDisabled={!isDocumentSettingsReady}
         />
       </ReportColumns>

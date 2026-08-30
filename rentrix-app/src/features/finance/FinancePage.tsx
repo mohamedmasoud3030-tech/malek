@@ -18,15 +18,6 @@ import {
   type FinancialsSearch,
 } from './shell/financeShellModel';
 
-const FINANCE_SECTION_HELP: Record<FinanceSectionId, string> = {
-  overview: 'مسار قديم متوافق؛ العمل اليومي يبدأ من الفواتير.',
-  collections: 'ابحث عن الفاتورة، اعرف صاحبها وعقارها، ثم حصّلها من نفس السجل.',
-  fees: 'دخل المكتب من أتعاب الإدارة والعمولات.',
-  expenses: 'إضافة المصروف ومراجعته من سجل واحد.',
-  funds: 'تأمينات المستأجرين ومستحقات وتسويات الملاك.',
-  banking: 'الحسابات البنكية والمطابقة والفروقات التي تحتاج مراجعة.',
-};
-
 function SectionFallback() {
   return (
     <div className="space-y-3" role="status" aria-label="جارٍ تحميل القسم">
@@ -149,13 +140,13 @@ export function FinancePage() {
     <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro">
       <PageHeader
         title="المالية"
-        description={activeSectionDefinition ? FINANCE_SECTION_HELP[activeSectionDefinition.id] : 'أنجز العمل المالي من مكان واحد.'}
+        description="الفواتير والتحصيل والمصروفات وأموال الملاك والبنوك من مكان واحد."
       />
 
       <div data-finance-root className="min-w-0 space-y-3 sm:space-y-4">
         <nav
           aria-label="أقسام المالية"
-          className="min-w-0 overflow-hidden rounded-xl border border-border/70 bg-card px-2 py-2 shadow-card"
+          className="min-w-0"
           data-finance-primary-nav
         >
           <SectionTabs
@@ -170,7 +161,7 @@ export function FinancePage() {
         </nav>
 
         {routineViews.length > 1 ? (
-          <div className="min-w-0 border-b border-border/60 pb-2" data-finance-subview-strip>
+          <div className="min-w-0" data-finance-subview-strip>
             <SectionTabs
               items={routineViews}
               activeId={routineActiveView}
@@ -186,7 +177,7 @@ export function FinancePage() {
         {activeViewDefinition?.showInSectionNavigation === false ? (
           <div
             id={specialistViewLabelId}
-            className="rounded-xl border border-border/60 bg-muted/20 px-3 py-2 text-sm font-bold"
+            className="sr-only"
             data-finance-specialist-view
           >
             {activeViewDefinition.label}

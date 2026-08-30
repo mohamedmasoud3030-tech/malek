@@ -1,14 +1,10 @@
-import { Building2, Download, Printer } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Building2 } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { formatMoney } from '@/features/financials/components/financials-formatters';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
-import { documentService } from '@/services/documents/DocumentService';
 import { DocumentReadinessError, runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
-import { toReportDocumentPayload, type ReportDocumentData } from '@/services/documents/documentPayloadAdapters';
 import { downloadPropertyReportPdf, printPropertyReport } from '../documents/professional-property-report';
 import type { OccupancyChartRow, PropertyPerformanceRow } from '../reports-page.helpers';
-import { getTodayLocalDateString } from '../reports-page.helpers';
 import type { ReportDrillHandler } from '../report-workspaces';
 import type { ReportsWorkspaceModel } from '../use-reports-workspace';
 import type { ReportsFilterState } from '../reports-workspace-filters';
@@ -21,6 +17,7 @@ import {
   ReportState,
   ReportSummaryStrip,
 } from './report-section-primitives';
+import { ReportOutputActions } from './report-output-actions';
 import { formatLatinNumber } from '@/lib/formatters';
 
 export type PropertyAnalyticsProps = Readonly<{
@@ -56,92 +53,6 @@ export function PropertyAnalyticsSection({ occupancyRows, expenseRows, performan
     : 0;
 
   const { companySettings: documentSettings, isReady: isDocumentSettingsReady } = useDocumentSettings();
-  const currencySymbol = documentSettings.currencySymbol || documentSettings.currency;
-
-  const buildPropertyAnalyticsData = (): ReportDocumentData => {
-    const propertyMap = new Map<string, { title: string; occupied: number; vacant: number; expenses: number }>();
-
-    for (const row of occupancyRows) {
-      propertyMap.set(row.propertyId, {
-        title: row.property,
-        occupied: row.occupied,
-        vacant: row.vacant,
-        expenses: 0,
-      });
-    }
-
-    for (const expense of expenseRows) {
-      const existing = propertyMap.get(expense.propertyId);
-      if (existing) existing.expenses = expense.total;
-      else {
-        propertyMap.set(expense.propertyId, {
-          title: expense.propertyTitle || 'عقار',
-          occupied: 0,
-          vacant: 0,
-          expenses: expense.total,
-        });
-      }
-    }
-
-    const todayStr = getTodayLocalDateString();
-    return {
-      reportTitle: 'كشف التحليل التنفيذي واستغلال المحفظة العقارية',
-      reportType: 'Property_Portfolio_Executive_Analysis',
-      periodFrom: todayStr,
-      periodTo: todayStr,
-      sections: [
-        {
-          title: 'تقرير أداء العقارات والوحدات — صف قرار موحّد',
-          columns: ['العقار', 'إيجارات العقود حسب دورتها', 'الإشغال', 'أطول شغور', 'المحصّل', 'المتأخر', 'المصروفات', 'صيانة غير مرحلة كمصروف', 'أولوية المتابعة'], 
-          rows: (performanceRows.length > 0 ? performanceRows : Array.from(propertyMap.values()).map((property) => {
-            const units = property.occupied + property.vacant;
-            const rate = units > 0 ? Math.round((property.occupied / units) * 100) : 0;
-            return {
-              propertyTitle: property.title,
-              referenceRevenue: 0,
-              occupancyRate: rate,
-              occupiedUnits: property.occupied,
-              vacantUnits: property.vacant,
-              longestVacancyDays: 0,
-              collected: 0,
-              overdue: 0,
-              expenses: property.expenses,
-              maintenanceCost: 0,
-              openMaintenanceCount: 0,
-              priority: 'مستقر' as const,
-            };
-          })).map((property) => [
-            property.propertyTitle,
-            `${formatLatinNumber(property.referenceRevenue, 'ar-OM')} ${currencySymbol}`,
-            `${Math.round(property.occupancyRate)}% (${property.occupiedUnits}/${property.occupiedUnits + property.vacantUnits})`,
-            `${formatLatinNumber(property.longestVacancyDays, 'ar')} يوم`,
-            `${formatLatinNumber(property.collected, 'ar-OM')} ${currencySymbol}`,
-            `${formatLatinNumber(property.overdue, 'ar-OM')} ${currencySymbol}`,
-            `${formatLatinNumber(property.expenses, 'ar-OM')} ${currencySymbol}`,
-            `${formatLatinNumber(property.maintenanceCost, 'ar-OM')} ${currencySymbol} / ${formatLatinNumber(property.openMaintenanceCount, 'ar')} مفتوحة`,
-            property.priority,
-          ]),
-        },
-      ],
-      totalSummary: `إجمالي العقارات: ${propertyMap.size} | إشغال المحفظة: ${overallOccupancyRate}% | المصروف لكل وحدة مشغولة: ${formatLatinNumber(expensePerOccupiedUnit, 'ar-OM')} ${currencySymbol}`,
-    };
-  };
-
-  const handlePrintPropertyAnalytics = async () => {
-    await runGuardedDocumentAction({
-      isReady: isDocumentSettingsReady,
-      operation: () => documentService.printDocument('generic_report', { settings: documentSettings, payload: toReportDocumentPayload(buildPropertyAnalyticsData()) }),
-      fallbackMessage: 'تعذرت طباعة التقرير.',
-    });
-  };
-
-  const handleDownloadPropertyAnalytics = async () => {
-    await runGuardedDocumentAction({
-      isReady: isDocumentSettingsReady,
-      operation: () => documentService.downloadDocumentPdf('generic_report', { settings: documentSettings, payload: toReportDocumentPayload(buildPropertyAnalyticsData()) }),
-      fallbackMessage: 'تعذر تنزيل ملف PDF.',
-    });
-  };
 
   const runProfessionalPropertyReport = async (mode: 'print' | 'pdf') => {
     await runGuardedDocumentAction({
@@ -209,31 +120,14 @@ export function PropertyAnalyticsSection({ occupancyRows, expenseRows, performan
         description="صف قرار واحد لكل عقار: إيجارات العقود حسب دورتها دون تطبيع شهري، الإشغال، الشغور بالأيام، التحصيل الكامل للفترة، المتأخرات، المصروفات، والصيانة غير المرحلة كمصروف."
         eyebrow="تقرير قرار قابل للتصرف"
         icon={Building2}
-        action={(
-          <div className="flex flex-wrap items-center gap-1.5">
-            <Button variant="outline" size="sm" onClick={handlePrintPropertyAnalytics} disabled={!isDocumentSettingsReady} className="min-h-11 gap-1.5 text-xs">
-              <Printer className="size-3.5" aria-hidden="true" />
-              طباعة A4
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleDownloadPropertyAnalytics} disabled={!isDocumentSettingsReady} className="min-h-11 gap-1.5 text-xs">
-              <Download className="size-3.5" aria-hidden="true" />
-              تنزيل PDF
-            </Button>
-            {model && filters ? (
-              <>
-                <span className="mx-1 hidden text-xs text-muted-foreground sm:inline" aria-hidden="true">|</span>
-                <Button variant="outline" size="sm" onClick={handlePrintProfessionalPropertyReport} disabled={!isDocumentSettingsReady} className="min-h-11 gap-1.5 text-xs" title="تقرير أداء العقار الاحترافي — طباعة">
-                  <Printer className="size-3.5" aria-hidden="true" />
-                  تقرير أداء العقار
-                </Button>
-                <Button variant="outline" size="sm" onClick={handleDownloadProfessionalPropertyReport} disabled={!isDocumentSettingsReady} className="min-h-11 gap-1.5 text-xs" title="تقرير أداء العقار الاحترافي — PDF">
-                  <Download className="size-3.5" aria-hidden="true" />
-                  تقرير أداء العقار PDF
-                </Button>
-              </>
-            ) : null}
-          </div>
-        )}
+        action={model && filters ? (
+          <ReportOutputActions
+            downloadLabel="تنزيل تقرير العقار PDF"
+            menuLabel="خيارات إخراج تقرير العقار"
+            onDownloadPdf={handleDownloadProfessionalPropertyReport}
+            onPrint={handlePrintProfessionalPropertyReport}
+          />
+        ) : undefined}
         isLoading={isLoading}
       >
         {performanceRows.length === 0 && occupancyRows.length === 0 ? (
@@ -324,4 +218,3 @@ export function PropertyAnalyticsSection({ occupancyRows, expenseRows, performan
     </div>
   );
 }
-

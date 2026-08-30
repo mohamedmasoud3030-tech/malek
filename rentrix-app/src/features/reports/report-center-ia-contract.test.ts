@@ -7,33 +7,29 @@ import { ACCOUNTING_REPORT_VIEWS, getVisibleReportSubViews } from './report-view
 const reportsDir = resolve(dirname(fileURLToPath(import.meta.url)));
 const reportsPage = readFileSync(resolve(reportsDir, 'reports-page.tsx'), 'utf8');
 const i18nResources = readFileSync(resolve(reportsDir, '../../lib/i18n.ts'), 'utf8');
-const directory = readFileSync(resolve(reportsDir, 'directory/ReportDirectory.tsx'), 'utf8');
+const primaryNavigation = readFileSync(resolve(reportsDir, 'workspace/ReportsPrimaryNavigation.tsx'), 'utf8');
 const catalogue = readFileSync(resolve(reportsDir, 'directory/report-directory-groups.ts'), 'utf8');
 const registry = readFileSync(resolve(reportsDir, 'report-workspaces.ts'), 'utf8');
 
 describe('reports center — MALEK workspace consolidation contract', () => {
-  it('keeps the decision-first directory as the primary reports experience', () => {
-    expect(reportsPage).toContain('<ReportDirectory');
+  it('keeps one compact primary navigation as the reports experience', () => {
+    expect(reportsPage).toContain('<ReportsPrimaryNavigation');
     expect(reportsPage).toContain('data-active-report-workspace');
-    expect(reportsPage).not.toContain('directoryOpen');
-    expect(reportsPage).not.toContain('SectionTabs');
+    expect(reportsPage).not.toContain('<ReportDirectory');
+    expect(reportsPage).not.toContain('MobileReportChooser');
   });
 
-  it('keeps search, frequent reports and the workspace explorer visible', () => {
-    expect(directory).toContain('بحث في مركز التقارير');
-    expect(directory).toContain('الأكثر استخدامًا');
-    expect(directory).toContain("id: 'all'");
-    expect(directory).toContain('أداء المكتب');
-    expect(directory).toContain('ملخص الفترة');
-    expect(directory).toContain('المتأخرات');
-    expect(directory).toContain('الإشغال والشغور');
-    expect(directory).toContain('المصروفات');
+  it('shows five plain-language destinations without duplicate search and pinned layers', () => {
+    for (const label of ['الملخص', 'التحصيل', 'العقارات والعقود', 'التشغيل', 'الكشوف']) {
+      expect(primaryNavigation).toContain(label);
+    }
+    expect(reportsPage).not.toContain('بحث في مركز التقارير');
+    expect(reportsPage).not.toContain('الأكثر استخدامًا');
   });
 
-  it('renders the specialist financial review as a visually secondary section', () => {
-    expect(directory).toContain('للمختصين');
-    expect(directory).toContain('data-report-specialist-groups');
-    expect(directory).toContain('specialistReportGroups');
+  it('keeps specialist financial review as one secondary destination', () => {
+    expect(primaryNavigation).toContain('مراجعة متقدمة');
+    expect(primaryNavigation).toContain("onOpen('financial_review', 'accounting_reports')");
   });
 
   it('exposes the approved workspace outcomes without accounting-shaped daily navigation', () => {
@@ -79,6 +75,6 @@ describe('reports center — MALEK workspace consolidation contract', () => {
 
   it('keeps headline language source-authoritative', () => {
     expect(reportsPage).toContain("translateSharedLabel('reportsPageDescription')");
-    expect(i18nResources).toContain('من المصدر المعتمد');
+    expect(i18nResources).toContain('ملخصات واضحة وكشوف جاهزة');
   });
 });

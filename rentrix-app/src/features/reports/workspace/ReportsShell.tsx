@@ -17,6 +17,7 @@ type ReportsShellProps = Readonly<{
   activeWorkspace: ReportWorkspaceId;
   activeView: ReportViewId;
   onOpenView: (view: ReportViewId) => void;
+  onOpenReport?: (workspace: ReportWorkspaceId, view: ReportViewId) => void;
   onFiltersChange: (filters: ReportsFilterState) => void;
   onResetCurrentMonth: () => void;
 }>;
@@ -62,6 +63,7 @@ export function ReportsShell({
   activeWorkspace,
   activeView,
   onOpenView,
+  onOpenReport,
   onFiltersChange,
   onResetCurrentMonth,
 }: ReportsShellProps) {
@@ -109,7 +111,14 @@ export function ReportsShell({
         </div>
 
         {workspace ? (
-          <WorkspaceSubViewTabs workspace={workspace} activeView={activeView} onOpenView={onOpenView} />
+          <WorkspaceSubViewTabs
+            activeWorkspace={activeWorkspace}
+            activeView={activeView}
+            onOpen={(nextWorkspace, nextView) => {
+              if (onOpenReport) onOpenReport(nextWorkspace, nextView);
+              else if (nextWorkspace === activeWorkspace) onOpenView(nextView);
+            }}
+          />
         ) : null}
 
         <ReportsFilterSurface

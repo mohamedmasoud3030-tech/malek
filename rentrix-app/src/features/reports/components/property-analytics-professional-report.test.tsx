@@ -91,19 +91,19 @@ describe('PropertyAnalyticsSection professional property report wiring', () => {
 
   it('renders the professional property report actions when the workspace model is available', () => {
     renderSection();
-    expect(screen.getByRole('button', { name: 'تقرير أداء العقار' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'تقرير أداء العقار PDF' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'تنزيل تقرير العقار PDF' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'طباعة' })).toBeDefined();
   });
 
   it('hides the professional actions when the workspace model/scope is absent', () => {
     renderSection(null, null);
-    expect(screen.queryByRole('button', { name: 'تقرير أداء العقار' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'تقرير أداء العقار PDF' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'تنزيل تقرير العقار PDF' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'طباعة' })).toBeNull();
   });
 
   it('prints the property performance report with the active workspace scope', async () => {
     renderSection();
-    fireEvent.click(screen.getByRole('button', { name: 'تقرير أداء العقار' }));
+    fireEvent.click(screen.getByRole('button', { name: 'طباعة' }));
 
     await vi.waitFor(() => {
       expect(documentService.printDocument).toHaveBeenCalledWith('property_report', expect.objectContaining({
@@ -115,7 +115,7 @@ describe('PropertyAnalyticsSection professional property report wiring', () => {
 
   it('downloads the property performance report as PDF', async () => {
     renderSection();
-    fireEvent.click(screen.getByRole('button', { name: 'تقرير أداء العقار PDF' }));
+    fireEvent.click(screen.getByRole('button', { name: 'تنزيل تقرير العقار PDF' }));
 
     await vi.waitFor(() => {
       expect(documentService.downloadDocumentPdf).toHaveBeenCalledWith('property_report', expect.objectContaining({
@@ -126,7 +126,7 @@ describe('PropertyAnalyticsSection professional property report wiring', () => {
 
   it('refuses generation truthfully when the workspace sources are incomplete', async () => {
     renderSection({ ...emptyModel, isIncomplete: true } as unknown as ReportsWorkspaceModel, filters);
-    fireEvent.click(screen.getByRole('button', { name: 'تقرير أداء العقار' }));
+    fireEvent.click(screen.getByRole('button', { name: 'طباعة' }));
 
     // The guarded action never reaches documentService on incomplete data.
     await vi.waitFor(() => {

@@ -15,10 +15,10 @@ const user: AuthorizationContext = { userId: 'u-user', email: null, role: 'USER'
 describe('canonical Money workspace route model', () => {
   it('keeps six finance capabilities with five routine sections and the legacy overview hidden', () => {
     expect(FINANCE_SECTIONS.map((section) => [section.id, section.label, section.showInPrimaryNavigation])).toEqual([
-      ['collections', 'الفواتير والتحصيل', true],
+      ['collections', 'التحصيل', true],
       ['fees', 'دخل المكتب', true],
       ['expenses', 'المصروفات', true],
-      ['funds', 'الأمانات والملاك', true],
+      ['funds', 'أموال الملاك', true],
       ['banking', 'البنوك', true],
       ['overview', 'وضع المال', false],
     ]);
