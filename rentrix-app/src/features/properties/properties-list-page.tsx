@@ -17,6 +17,7 @@ import { ListPage } from "@/components/layout/list-page";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { DataTableColumnsMenu } from "@/components/ui/data-table";
+import { ActionMenu } from "@/components/ui/action-menu";
 import { EntityCell } from "@/components/ui/entity-cell";
 import { RegisterHeading, RegisterMetricStrip } from "@/components/layout/register-summary";
 import { ExportMenu } from "@/components/ui/export-menu";
@@ -96,7 +97,6 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
   const canEdit = canAccess('properties.edit');
   const canArchive = canAccess('properties.archive');
   const canExport = canAccess('properties.view');
-  const hasRowActions = canEdit || canArchive;
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultPropertyColumns]);
   const readyCount = controller.properties.filter(
     (property) => property.workflow_health === "ready",
@@ -217,38 +217,43 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
                 key: "actions",
                 header: "إجراءات",
                 priority: "actions",
-                render: (property) => hasRowActions ? (
+                render: (property) => (
                   <div
-                    className="flex flex-wrap items-center gap-2"
+                    className="flex items-center justify-end gap-1"
                     onClick={(event) => event.stopPropagation()}
                     onKeyDown={(event) => event.stopPropagation()}
                   >
-                    {canEdit ? (
-                      <Button
-                        variant="secondary"
-                        className="min-h-11 px-3"
-                        aria-label={`تعديل ${property.title ?? "العقار"}`}
-                        onClick={() => controller.openEditModal(property.id)}
-                      >
-                        <Edit className="me-1 size-4" aria-hidden="true" />
-                        تعديل
-                      </Button>
-                    ) : null}
-                    {canArchive ? (
-                      <Button
-                        variant="danger"
-                        className="min-h-11 px-3"
-                        aria-label={`أرشفة ${property.title ?? "العقار"}`}
-                        onClick={() => controller.requestArchive(property.id, property.title ?? "عقار")}
-                      >
-                        <Trash2 className="me-1 size-4" aria-hidden="true" />
-                        أرشفة
-                      </Button>
-                    ) : null}
+                    <Button
+                      variant="secondary"
+                      className="min-h-11 px-3"
+                      aria-label={`فتح ملف ${property.title ?? "العقار"}`}
+                      onClick={() => controller.navigateToProperty(property.id)}
+                    >
+                      <Building2 className="me-1 size-4" aria-hidden="true" />
+                      فتح الملف
+                    </Button>
+                    <ActionMenu
+                      label={`إجراءات ${property.title ?? "العقار"}`}
+                      items={[
+                        ...(canEdit ? [{
+                          id: 'edit',
+                          label: 'تعديل البيانات',
+                          icon: Edit,
+                          onClick: () => controller.openEditModal(property.id),
+                        }] : []),
+                        ...(canArchive ? [{
+                          id: 'archive',
+                          label: 'أرشفة العقار',
+                          icon: Trash2,
+                          variant: 'destructive' as const,
+                          onClick: () => controller.requestArchive(property.id, property.title ?? 'عقار'),
+                        }] : []),
+                      ]}
+                    />
                   </div>
-                ) : null,
+                ),
               },
-            ], [controller, canEdit, canArchive, hasRowActions]);
+            ], [controller, canEdit, canArchive]);
 
   return (
     <>
@@ -331,7 +336,7 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
             rows={controller.properties}
             keyOf={(property) => property.id}
             onRowClick={(property) => controller.navigateToProperty(property.id)}
-            visibleColumnKeys={hasRowActions ? visibleColumnKeys : visibleColumnKeys.filter((key) => key !== 'actions')}
+            visibleColumnKeys={visibleColumnKeys}
             isLoading={controller.propertiesQuery.isLoading}
             error={controller.propertiesQuery.isError ? controller.propertiesQuery.error : null}
             errorTitle="تعذر تحميل قائمة العقارات"
@@ -355,16 +360,23 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
             mobileSupportingKey="owner"
             mobilePrimaryMetaKeys={["units", "type"]}
             mobileSecondaryMetaKeys={["address"]}
+            mobileCardPrimaryAction={(property) => ({
+              label: 'فتح الملف',
+              icon: Building2,
+              variant: 'default',
+              ariaLabel: `فتح ملف ${property.title ?? 'العقار'}`,
+              onClick: () => controller.navigateToProperty(property.id),
+            })}
             mobileCardActions={(property) => [
               ...(canEdit ? [{
-                label: "تعديل",
+                label: "تعديل البيانات",
                 icon: Edit,
                 variant: "secondary" as const,
                 ariaLabel: `تعديل ${property.title ?? "العقار"}`,
                 onClick: () => controller.openEditModal(property.id),
               }] : []),
               ...(canArchive ? [{
-                label: "أرشفة",
+                label: "أرشفة العقار",
                 icon: Trash2,
                 variant: "danger" as const,
                 ariaLabel: `أرشفة ${property.title ?? "العقار"}`,

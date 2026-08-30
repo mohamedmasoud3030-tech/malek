@@ -140,7 +140,7 @@ describe('PropertiesListPage controller regression', () => {
     expect(mockNavigate).toHaveBeenCalledWith({ to: '/properties/$propertyId', params: { propertyId: 'p1' } });
   });
 
-  it('renders mobile property cards with scan-level summary fields and flat actions', async () => {
+  it('renders mobile property cards with scan-level summary fields and one clear dossier action', async () => {
     setViewportWidth(375);
     propertyRows = [{
       id: 'p1', title: 'عمارة الندى', type: 'سكني', address: 'الرياض', status: 'active',
@@ -173,24 +173,26 @@ describe('PropertiesListPage controller regression', () => {
     expect(secondaryMeta?.textContent).toContain('الرياض');
 
     expect(container.querySelector('[data-entity-table-mobile-actions]')).toBeNull();
-    expect(card?.textContent).toContain('تعديل');
-    expect(card?.querySelector('[data-action-menu]')).toBeTruthy();
+    expect(card?.textContent).toContain('فتح الملف');
+    expect(card?.textContent).toContain('تعديل البيانات');
   });
 
-  it('opens edit modal from the flat row action (no three-dot menu layer)', async () => {
+  it('opens edit modal from the contextual property action menu', async () => {
     await act(async () => { root.render(<PropertiesListPage />); });
-    // The legacy «إجراءات العقار» disclosure must be gone: edit is a direct action.
-    const menu = Array.from(container.querySelectorAll('button')).find((button) => button.textContent?.includes('إجراءات العقار'));
-    expect(menu).toBeUndefined();
-    const editBtn = Array.from(container.querySelectorAll('button')).find((button) => button.textContent?.trim() === 'تعديل');
+    const menu = container.querySelector<HTMLButtonElement>('tbody [data-action-menu-trigger]');
+    expect(menu).toBeTruthy();
+    await act(async () => { menu?.click(); });
+    const editBtn = Array.from(document.body.querySelectorAll('button')).find((button) => button.textContent?.trim() === 'تعديل البيانات');
     expect(editBtn).toBeTruthy();
     await act(async () => { editBtn?.click(); });
     expect(document.body.textContent).toContain('تعديل عقار');
   });
 
-  it('shows archive confirmation dialog from the flat row action (no accidental one-tap archive)', async () => {
+  it('shows archive confirmation from the contextual menu (never a one-tap archive)', async () => {
     await act(async () => { root.render(<PropertiesListPage />); });
-    const archiveBtn = Array.from(container.querySelectorAll('button')).find((button) => button.textContent?.trim() === 'أرشفة');
+    const menu = container.querySelector<HTMLButtonElement>('tbody [data-action-menu-trigger]');
+    await act(async () => { menu?.click(); });
+    const archiveBtn = Array.from(document.body.querySelectorAll('button')).find((button) => button.textContent?.trim() === 'أرشفة العقار');
     expect(archiveBtn).toBeTruthy();
     await act(async () => { archiveBtn?.click(); });
     // Archive must open the confirmation dialog, never act immediately.
