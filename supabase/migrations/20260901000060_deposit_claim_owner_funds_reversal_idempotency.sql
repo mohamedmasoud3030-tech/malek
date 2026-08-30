@@ -1,3 +1,8 @@
+-- ALLOW_GOVERNED_DATA_MIGRATION
+-- The INSERT statements below live inside the governed trigger function that
+-- mirrors canonical deposit-claim journal movements into owner_funds_events.
+-- They are runtime invariant writes, not migration-time demo/business seeding.
+--
 -- Avoid re-entering owner_funds_events INSERT guards for an application event
 -- that already exists when a deposit claim transitions from APPLIED to REVERSED.
 --
