@@ -15,9 +15,7 @@ type SectionTabsProps<TId extends string> = Readonly<{
   /**
    * ID of the single tabpanel this tab list controls. That panel is always
    * rendered, so every tab may reference it. When unset the tabs use the
-   * one-panel-per-tab scheme `${idPrefix}-panel-${item.id}`; see the
-   * `aria-controls` note on the tab below for why only the active tab
-   * advertises it.
+   * one-panel-per-tab scheme `${idPrefix}-panel-${item.id}`.
    */
   panelId?: string;
   /** Keep the active label visible on phones while inactive tabs collapse to icons. */
@@ -27,9 +25,11 @@ type SectionTabsProps<TId extends string> = Readonly<{
 }>;
 
 /**
- * Compact, horizontally scrollable workspace switcher.
- * The previous gradient mask was intentionally removed because WebKit can
- * render mask-backed scroll strips inconsistently inside composited dialogs.
+ * Horizontally scrollable workspace navigation.
+ *
+ * Tabs are intentionally rendered as a navigation rail rather than another
+ * segmented card. The active destination is communicated by typography and a
+ * quiet underline, keeping page content visually dominant.
  */
 export function SectionTabs<TId extends string>({
   items,
@@ -79,7 +79,7 @@ export function SectionTabs<TId extends string>({
       <nav
         aria-label={ariaLabel}
         role="tablist"
-        className="flex min-w-0 gap-0.5 overflow-x-auto overscroll-x-contain rounded-lg border border-border/55 bg-muted/20 p-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex min-w-0 gap-0.5 overflow-x-auto overscroll-x-contain border-b border-border/60 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {items.map((item, index) => {
           const isActive = activeId === item.id;
@@ -93,28 +93,18 @@ export function SectionTabs<TId extends string>({
               role="tab"
               tabIndex={isActive ? 0 : -1}
               aria-selected={isActive}
-              /*
-               * `aria-controls` must reference an element that exists (WCAG
-               * 4.1.2 / axe `aria-valid-attr-value`). With the shared
-               * `panelId` the panel is always rendered, so every tab can point
-               * at it. With one panel per tab, consumers mount only the active
-               * panel — `GovernanceHubWorkspace` and `ContractDetailWorkspace`
-               * both do — so inactive tabs would otherwise reference ids that
-               * are not in the DOM. Only the active tab advertises the
-               * relationship in that mode.
-               */
               aria-controls={panelId ?? (isActive ? `${idPrefix}-panel-${item.id}` : undefined)}
               aria-label={compactMobile ? item.label : undefined}
               id={`${idPrefix}-tab-${item.id}`}
               className={cn(
-                'flex min-h-11 shrink-0 items-center gap-1.5 rounded-md border border-transparent px-2.5 py-1 text-[12px] font-semibold outline-none transition-colors focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none',
+                'relative flex min-h-11 shrink-0 items-center gap-1.5 px-3 py-1 text-[12px] font-semibold outline-none transition-colors focus-visible:ring-4 focus-visible:ring-primary/15 motion-reduce:transition-none',
                 compactMobile && !isActive && 'max-sm:min-w-11 max-sm:justify-center max-sm:px-2',
                 isActive
-                  ? 'bg-card text-foreground shadow-card'
-                  : 'text-muted-foreground hover:bg-background/80 hover:text-foreground',
+                  ? 'text-foreground after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:rounded-full after:bg-primary'
+                  : 'text-muted-foreground hover:bg-muted/30 hover:text-foreground',
               )}
             >
-              <item.icon className="size-3.5" aria-hidden="true" />
+              <item.icon className={cn('size-3.5', isActive && 'text-primary')} aria-hidden="true" />
               <span className={cn('whitespace-nowrap', compactMobile && !isActive && 'max-sm:hidden')}>{item.label}</span>
             </button>
           );
@@ -127,11 +117,7 @@ export function SectionTabs<TId extends string>({
 type SectionTabPanelProps<TId extends string> = Readonly<{
   id: TId;
   activeId: TId;
-  /**
-   * Must match the `idPrefix` given to the paired `SectionTabs`, otherwise the
-   * tab's `aria-controls` and this panel's `aria-labelledby` point at ids that
-   * do not exist.
-   */
+  /** Must match the `idPrefix` given to the paired `SectionTabs`. */
   idPrefix?: string;
   children: ReactNode;
 }>;
