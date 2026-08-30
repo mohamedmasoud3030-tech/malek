@@ -9620,6 +9620,13 @@ export type Database = {
         };
         Returns: Json;
       };
+      rpt_cash_flow_gl: {
+        Args: {
+          p_from: string | null;
+          p_to: string | null;
+        };
+        Returns: Json;
+      };
       rpt_daily_collection: {
         Args: {
           p_from: string | null;
@@ -10177,13 +10184,6 @@ export type Database = {
       wp05_rpt_balance_sheet_gl: {
         Args: {
           p_as_of: string | null;
-        };
-        Returns: Json;
-      };
-      wp05_rpt_cash_flow_gl: {
-        Args: {
-          p_from: string | null;
-          p_to: string | null;
         };
         Returns: Json;
       };
