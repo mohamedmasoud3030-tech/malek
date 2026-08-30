@@ -15,6 +15,6 @@ jobs:
         shell: bash
         run: |
           echo '=== DataErrorScreen ==='
-          rg -n -C 3 --glob 'rentrix-app/src/**/*.{ts,tsx}' 'DataErrorScreen' || true
+          grep -R -n -C 3 --include='*.ts' --include='*.tsx' 'DataErrorScreen' rentrix-app/src || true
           echo '=== PageStateCard / WriteErrorCard ==='
-          rg -n -C 3 --glob 'rentrix-app/src/**/*.{ts,tsx}' 'PageStateCard|WriteErrorCard' || true
+          grep -R -n -C 3 -E --include='*.ts' --include='*.tsx' 'PageStateCard|WriteErrorCard' rentrix-app/src || true
