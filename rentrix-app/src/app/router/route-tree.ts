@@ -60,34 +60,34 @@ const requirePermission = (permission: AppPermission) => async () => {
 };
 
 const loginRoute = createRoute({ getParentRoute: () => authRoute, path: '/login', component: lazyRouteComponent(() => import('@/routes/_auth.login'), 'LoginRouteComponent'), staticData: { title: 'تسجيل الدخول' } });
-const forgotPasswordRoute = createRoute({ getParentRoute: () => authRoute, path: '/forgot-password', component: lazyRouteComponent(() => import('@/routes/_auth.forgot-password'), 'ForgotPasswordRouteComponent'), staticData: { title: 'استعادة كلمة المرور' } });
-const resetPasswordRoute = createRoute({ getParentRoute: () => rootRoute, path: '/reset-password', component: lazyRouteComponent(() => import('@/routes/reset-password'), 'ResetPasswordRouteComponent'), staticData: { title: 'تعيين كلمة مرور جديدة' } });
-const dashboardRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/dashboard', component: lazyRouteComponent(() => import('@/routes/_protected.index'), 'DashboardRouteComponent'), staticData: { title: 'لوحة التحكم' } });
-const propertiesRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/properties', component: lazyRouteComponent(() => import('@/routes/_protected.properties'), 'PropertiesRouteComponent'), staticData: { title: 'العقارات' } });
-const propertyNewRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/properties/new', beforeLoad: requirePermission('properties.create'), component: lazyRouteComponent(() => import('@/routes/_protected.properties.new'), 'PropertyNewRouteComponent'), staticData: { title: 'إضافة عقار' } });
-const propertyDetailRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/properties/$propertyId', component: lazyRouteComponent(() => import('@/routes/_protected.properties.$propertyId'), 'PropertyDetailRouteComponent'), staticData: { title: 'تفاصيل العقار' } });
-const propertyIndexRoute = createRoute({ getParentRoute: () => propertyDetailRoute, path: '/', component: lazyRouteComponent(() => import('@/routes/_protected.properties.$propertyId.index'), 'PropertyOverviewRouteComponent'), staticData: { title: 'نظرة عامة على العقار' } });
-const propertyUnitsRoute = createRoute({ getParentRoute: () => propertyDetailRoute, path: '/units', component: lazyRouteComponent(() => import('@/routes/_protected.properties.$propertyId.units'), 'PropertyUnitsRouteComponent'), staticData: { title: 'وحدات العقار' } });
-const propertyUnitDetailRoute = createRoute({ getParentRoute: () => propertyDetailRoute, path: '/units/$unitId', component: lazyRouteComponent(() => import('@/routes/_protected.properties.$propertyId.units.$unitId'), 'PropertyUnitDetailRouteComponent'), staticData: { title: 'تفاصيل الوحدة بالعقار' } });
-const propertyEditRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/properties/$propertyId/edit', beforeLoad: requirePermission('properties.edit'), component: lazyRouteComponent(() => import('@/routes/_protected.properties.$propertyId.edit'), 'PropertyEditRouteComponent'), staticData: { title: 'تعديل عقار' } });
+const forgotPasswordRoute = createRoute({ getParentRoute: () => authRoute, path: '/forgot-password', component: lazyRouteComponent(() => import('@/features/auth/password-recovery-page'), 'ForgotPasswordPage'), staticData: { title: 'استعادة كلمة المرور' } });
+const resetPasswordRoute = createRoute({ getParentRoute: () => rootRoute, path: '/reset-password', component: lazyRouteComponent(() => import('@/features/auth/password-recovery-page'), 'ResetPasswordPage'), staticData: { title: 'تعيين كلمة مرور جديدة' } });
+const dashboardRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/dashboard', component: lazyRouteComponent(() => import('@/features/dashboard/dashboard-page'), 'DashboardPage'), staticData: { title: 'لوحة التحكم' } });
+const propertiesRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/properties', component: lazyRouteComponent(() => import('@/features/portfolio-hub/portfolio-hub-workspace'), 'PortfolioHubPage'), staticData: { title: 'العقارات' } });
+const propertyNewRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/properties/new', beforeLoad: requirePermission('properties.create'), component: lazyRouteComponent(() => import('@/features/properties/property-form-page'), 'PropertyFormPage'), staticData: { title: 'إضافة عقار' } });
+const propertyDetailRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/properties/$propertyId', component: lazyRouteComponent(() => import('@/features/properties/property-detail-page'), 'PropertyDetailPage'), staticData: { title: 'تفاصيل العقار' } });
+const propertyIndexRoute = createRoute({ getParentRoute: () => propertyDetailRoute, path: '/', component: lazyRouteComponent(() => import('@/features/properties/overview/property-overview-page'), 'PropertyOverview'), staticData: { title: 'نظرة عامة على العقار' } });
+const propertyUnitsRoute = createRoute({ getParentRoute: () => propertyDetailRoute, path: '/units', component: lazyRouteComponent(() => import('@/features/properties/property-detail-page'), 'PropertyUnitsPage'), staticData: { title: 'وحدات العقار' } });
+const propertyUnitDetailRoute = createRoute({ getParentRoute: () => propertyDetailRoute, path: '/units/$unitId', component: lazyRouteComponent(() => import('@/features/properties/units/property-unit-detail-page'), 'PropertyUnitDetailPage'), staticData: { title: 'تفاصيل الوحدة بالعقار' } });
+const propertyEditRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/properties/$propertyId/edit', beforeLoad: requirePermission('properties.edit'), component: lazyRouteComponent(() => import('@/features/properties/property-form-page'), 'PropertyFormPage'), staticData: { title: 'تعديل عقار' } });
 
 // Asset-supporting routes: units stays inside property workspace; lands is now first-class standalone (Phase 2).
 const unitsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/units', beforeLoad: () => { throw redirect({ to: '/properties', search: (previous: Record<string, unknown>) => ({ ...previous, section: 'units' }) }); }, staticData: { title: 'الوحدات' } });
-const landsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/lands', beforeLoad: requirePermission('lands.view'), component: lazyRouteComponent(() => import('@/routes/_protected.lands'), 'LandsRouteComponent'), staticData: { title: 'الأراضي' } });
+const landsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/lands', beforeLoad: requirePermission('lands.view'), component: lazyRouteComponent(() => import('@/features/lands/lands-page'), 'LandsWorkspace'), staticData: { title: 'الأراضي' } });
 const landDetailRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/lands/$landId', beforeLoad: requirePermission('lands.view'), component: lazyRouteComponent(() => import('@/routes/_protected.lands.$landId'), 'LandDetailRouteComponent'), staticData: { title: 'ملف الأرض' } });
 
 // Owners and tenants are core entities with first-class standalone routes.
-const ownersRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/owners', beforeLoad: requirePermission('owners.hub.view'), component: lazyRouteComponent(() => import('@/routes/_protected.owners'), 'OwnersRouteComponent'), staticData: { title: 'الملاك' } });
-const ownerDetailRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/owners/$ownerId', beforeLoad: requirePermission('owners.detail.view'), component: lazyRouteComponent(() => import('@/routes/_protected.owners.$ownerId'), 'OwnerDetailRouteComponent'), staticData: { title: 'ملف المالك' } });
+const ownersRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/owners', beforeLoad: requirePermission('owners.hub.view'), component: lazyRouteComponent(() => import('@/features/owners/OwnersPage'), 'OwnersWorkspace'), staticData: { title: 'الملاك' } });
+const ownerDetailRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/owners/$ownerId', beforeLoad: requirePermission('owners.detail.view'), component: lazyRouteComponent(() => import('@/features/owners/owner-detail-page'), 'OwnerDetailPage'), staticData: { title: 'ملف المالك' } });
 const ownerEditRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/owners/$ownerId/edit', beforeLoad: requirePermission('owners.hub.view'), component: lazyRouteComponent(() => import('@/routes/_protected.owners.$ownerId.edit'), 'OwnerEditRouteComponent'), staticData: { title: 'تعديل مالك' } });
-const tenantsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/tenants', component: lazyRouteComponent(() => import('@/routes/_protected.tenants'), 'TenantsRouteComponent'), staticData: { title: 'المستأجرون' } });
-const tenantDetailRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/tenants/$tenantId', component: lazyRouteComponent(() => import('@/routes/_protected.tenants.$tenantId'), 'TenantDetailRouteComponent'), staticData: { title: 'ملف المستأجر' } });
+const tenantsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/tenants', component: lazyRouteComponent(() => import('@/features/tenants/TenantsPage'), 'TenantsWorkspace'), staticData: { title: 'المستأجرون' } });
+const tenantDetailRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/tenants/$tenantId', component: lazyRouteComponent(() => import('@/features/tenants/components/TenantPreviewDialog'), 'TenantDetailPage'), staticData: { title: 'ملف المستأجر' } });
 
 // People directory is now first-class standalone (Phase 2). Legacy contracts?section=people redirects via hub.
-const peopleRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/people', component: lazyRouteComponent(() => import('@/routes/_protected.people'), 'PeopleRouteComponent'), staticData: { title: 'جهات التعامل' } });
-const leadsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/leads', beforeLoad: requirePermission('leads.view'), component: lazyRouteComponent(() => import('@/routes/_protected.leads'), 'LeadsRouteComponent'), staticData: { title: 'العملاء المحتملون' } });
-const communicationRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/communication', beforeLoad: requirePermission('communication.view'), component: lazyRouteComponent(() => import('@/routes/_protected.communication'), 'CommunicationRouteComponent'), staticData: { title: 'التواصل' } });
-const personDetailRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/people/$personId', component: lazyRouteComponent(() => import('@/routes/_protected.people.$personId'), 'PersonDetailRouteComponent'), staticData: { title: 'ملف الشخص' } });
+const peopleRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/people', component: lazyRouteComponent(() => import('@/features/people/people-list-page'), 'PeopleListPage'), staticData: { title: 'جهات التعامل' } });
+const leadsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/leads', beforeLoad: requirePermission('leads.view'), component: lazyRouteComponent(() => import('@/features/leads/leads-page'), 'LeadsPage'), staticData: { title: 'العملاء المحتملون' } });
+const communicationRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/communication', beforeLoad: requirePermission('communication.view'), component: lazyRouteComponent(() => import('@/features/communication/communication-page'), 'CommunicationPage'), staticData: { title: 'التواصل' } });
+const personDetailRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/people/$personId', component: lazyRouteComponent(() => import('@/features/people/components/PersonDossier'), 'PersonDetailPage'), staticData: { title: 'ملف الشخص' } });
 const personNewRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/people/new', beforeLoad: requirePermission('contracts.create'), component: lazyRouteComponent(() => import('@/routes/_protected.people.new'), 'PersonNewRouteComponent'), staticData: { title: 'إضافة شخص' } });
 const personEditRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/people/$personId/edit', beforeLoad: requirePermission('contracts.edit'), component: lazyRouteComponent(() => import('@/routes/_protected.people.$personId.edit'), 'PersonEditRouteComponent'), staticData: { title: 'تعديل شخص' } });
 const contractsRoute = createRoute({
@@ -115,17 +115,17 @@ const contractsRoute = createRoute({
       });
     }
   },
-  component: lazyRouteComponent(() => import('@/routes/_protected.contracts'), 'ContractsRouteComponent'),
+  component: lazyRouteComponent(() => import('@/features/relationships-hub/leasing-hub-workspace'), 'LeasingHubPage'),
   staticData: { title: 'العقود' },
 });
-const contractNewRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/contracts/new', beforeLoad: requirePermission('contracts.create'), component: lazyRouteComponent(() => import('@/routes/_protected.contracts.new'), 'ContractNewRouteComponent'), staticData: { title: 'إنشاء عقد' } });
-const contractDetailRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/contracts/$contractId', component: lazyRouteComponent(() => import('@/routes/_protected.contracts.$contractId'), 'ContractDetailRouteComponent'), staticData: { title: 'تفاصيل العقد' } });
-const contractEditRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/contracts/$contractId/edit', beforeLoad: requirePermission('contracts.edit'), component: lazyRouteComponent(() => import('@/routes/_protected.contracts.$contractId.edit'), 'ContractEditRouteComponent'), staticData: { title: 'تعديل عقد' } });
+const contractNewRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/contracts/new', beforeLoad: requirePermission('contracts.create'), component: lazyRouteComponent(() => import('@/features/contracts/ContractFormPage'), 'ContractFormPage'), staticData: { title: 'إنشاء عقد' } });
+const contractDetailRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/contracts/$contractId', component: lazyRouteComponent(() => import('@/features/contracts/pages/ContractDetailPage'), 'ContractDetailPage'), staticData: { title: 'تفاصيل العقد' } });
+const contractEditRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/contracts/$contractId/edit', beforeLoad: requirePermission('contracts.edit'), component: lazyRouteComponent(() => import('@/features/contracts/ContractFormPage'), 'ContractFormPage'), staticData: { title: 'تعديل عقد' } });
 
 const financialsRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: '/financials',
-  component: lazyRouteComponent(() => import('@/routes/_protected.financials'), 'FinancialsRouteComponent'),
+  component: lazyRouteComponent(() => import('@/features/finance/FinancePage'), 'FinancePage'),
   staticData: { title: 'المالية' }
 });
 
@@ -200,7 +200,7 @@ const commissionsRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: '/commissions',
   beforeLoad: requirePermission('commissions.view'),
-  component: lazyRouteComponent(() => import('@/routes/_protected.commissions'), 'CommissionsRouteComponent'),
+  component: lazyRouteComponent(() => import('@/features/commissions/commissions-page'), 'CommissionsWorkspace'),
   staticData: { title: 'العمولات' }
 });
 
@@ -215,7 +215,7 @@ const receiptsRoute = createRoute({
       search: (previous: Record<string, unknown>) => ({ ...previous, ...(search as Record<string, unknown>), section: 'collections', view: 'receipts' })
     });
   },
-  component: lazyRouteComponent(() => import('@/routes/_protected.receipts'), 'ReceiptsRouteComponent'),
+  component: lazyRouteComponent(() => import('@/features/financials/receipts/receipts-page'), 'ReceiptsPage'),
   staticData: { title: 'الإيصالات' }
 });
 
@@ -317,26 +317,26 @@ const reportsRoute = createRoute({
   // to the dashboard instead of being shown a permission-denied page from a
   // nav entry they can see.
   beforeLoad: requirePermission('financial.reports.view'),
-  component: lazyRouteComponent(() => import('@/routes/_protected.reports'), 'ReportsRouteComponent'),
+  component: lazyRouteComponent(() => import('@/features/reports/reports-page'), 'ReportsPage'),
   staticData: { title: 'المحاسبة والتقارير' }
 });
 const aiAssistantRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: '/ai-assistant',
-  component: lazyRouteComponent(() => import('@/routes/_protected.ai-assistant'), 'AiAssistantRouteComponent'),
+  component: lazyRouteComponent(() => import('@/features/ai-assistant/ai-assistant-page'), 'AiAssistantPage'),
   staticData: { title: 'المساعد الذكي' },
 });
 const helpSupportRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: '/help',
-  component: lazyRouteComponent(() => import('@/routes/_protected.help'), 'HelpSupportRouteComponent'),
+  component: lazyRouteComponent(() => import('@/features/help-support/help-support-page'), 'HelpSupportPage'),
   staticData: { title: 'المساعدة والدعم' },
 });
 const adminSupportRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: '/admin-support',
   beforeLoad: requirePermission('support.operations.view'),
-  component: lazyRouteComponent(() => import('@/routes/_protected.admin-support'), 'AdminSupportOperationsRouteComponent'),
+  component: lazyRouteComponent(() => import('@/features/admin-support/admin-support-page'), 'AdminSupportOperationsPage'),
   staticData: { title: 'عمليات الدعم والتحقيق' },
 });
 
@@ -370,12 +370,12 @@ const changePasswordRoute = createRoute({ getParentRoute: () => protectedRoute, 
 const settingsRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: '/settings',
-  component: lazyRouteComponent(() => import('@/routes/_protected.settings'), 'SettingsRouteComponent'),
+  component: lazyRouteComponent(() => import('@/features/governance-hub/components/GovernanceHubWorkspace'), 'GovernanceHubWorkspace'),
   staticData: { title: 'الإعدادات' },
 });
-const serviceProvidersRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/service-providers', beforeLoad: requirePermission('service_providers.view'), component: lazyRouteComponent(() => import('@/routes/_protected.service-providers'), 'ServiceProvidersRouteComponent'), staticData: { title: 'مزودو الخدمات' } });
+const serviceProvidersRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/service-providers', beforeLoad: requirePermission('service_providers.view'), component: lazyRouteComponent(() => import('@/features/service-providers/service-providers-page'), 'ServiceProvidersPage'), staticData: { title: 'مزودو الخدمات' } });
 const serviceProviderNewRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/service-providers/new', beforeLoad: requirePermission('service_providers.write'), component: lazyRouteComponent(() => import('@/routes/_protected.service-providers.new'), 'ServiceProviderNewRouteComponent'), staticData: { title: 'إضافة مزود خدمة' } });
-const serviceProviderDetailRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/service-providers/$providerId', beforeLoad: requirePermission('service_providers.view'), component: lazyRouteComponent(() => import('@/routes/_protected.service-providers.$providerId'), 'ServiceProviderDetailRouteComponent'), staticData: { title: 'ملف مزود الخدمة' } });
+const serviceProviderDetailRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/service-providers/$providerId', beforeLoad: requirePermission('service_providers.view'), component: lazyRouteComponent(() => import('@/features/service-providers/service-provider-detail-page'), 'ServiceProviderDetailPage'), staticData: { title: 'ملف مزود الخدمة' } });
 const serviceProviderEditRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/service-providers/$providerId/edit', beforeLoad: requirePermission('service_providers.write'), component: lazyRouteComponent(() => import('@/routes/_protected.service-providers.$providerId.edit'), 'ServiceProviderEditRouteComponent'), staticData: { title: 'تعديل مزود الخدمة' } });
 const maintenanceRoute = createRoute({
   getParentRoute: () => protectedRoute,
@@ -397,7 +397,7 @@ const landingRoute = createRoute({
 const tenantPortalRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/tenant-portal',
-  component: lazyRouteComponent(() => import('@/routes/tenant-portal'), 'TenantPortalRouteComponent'),
+  component: lazyRouteComponent(() => import('@/features/tenant-portal/tenant-portal-page'), 'TenantPortalPage'),
   staticData: { title: 'بوابة المستأجر' },
 });
 const privacyRoute = createRoute({ getParentRoute: () => rootRoute, path: '/privacy', component: lazyRouteComponent(() => import('@/routes/privacy'), 'PrivacyRouteComponent'), staticData: { title: 'سياسة الخصوصية' } });
@@ -406,7 +406,7 @@ const termsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/terms'
 // password). Renders only static contact channels — no auth, Supabase, or
 // support-ticket intake. The full authenticated support workspace stays at
 // /help under protectedRoute.
-const publicSupportRoute = createRoute({ getParentRoute: () => rootRoute, path: '/support', component: lazyRouteComponent(() => import('@/routes/support'), 'SupportRouteComponent'), staticData: { title: 'الدعم والتواصل' } });
+const publicSupportRoute = createRoute({ getParentRoute: () => rootRoute, path: '/support', component: lazyRouteComponent(() => import('@/features/help-support/public-support-page'), 'PublicSupportPage'), staticData: { title: 'الدعم والتواصل' } });
 const landingCompatRoute = createRoute({ getParentRoute: () => rootRoute, path: '/landing', beforeLoad: () => { throw redirect({ to: '/' }); } });
 const designSystemRoute = createRoute({
   getParentRoute: () => rootRoute,

@@ -10,10 +10,11 @@ const ownerWorkspace = readFileSync(new URL('../../features/owners/components/ow
 const maintenanceWorkspace = readFileSync(new URL('../../features/maintenance/components/maintenance-workspace.tsx', import.meta.url), 'utf8');
 const maintenanceOverlay = readFileSync(new URL('../../features/maintenance/components/maintenance-detail-resolve-overlays.tsx', import.meta.url), 'utf8');
 const previewDialog = readFileSync(new URL('./entity-preview-dialog.tsx', import.meta.url), 'utf8');
-const contractDetailRoute = readFileSync(new URL('../../routes/_protected.contracts.$contractId.tsx', import.meta.url), 'utf8');
-const ownerDetailRoute = readFileSync(new URL('../../routes/_protected.owners.$ownerId.tsx', import.meta.url), 'utf8');
-const propertyDetailRoute = readFileSync(new URL('../../routes/_protected.properties.$propertyId.index.tsx', import.meta.url), 'utf8');
-const unitDetailRoute = readFileSync(new URL('../../routes/_protected.properties.$propertyId.units.$unitId.tsx', import.meta.url), 'utf8');
+const routeTree = readFileSync(new URL('../../app/router/route-tree.ts', import.meta.url), 'utf8');
+const contractDetailRoute = readFileSync(new URL('../../features/contracts/pages/ContractDetailPage.tsx', import.meta.url), 'utf8');
+const ownerDetailRoute = readFileSync(new URL('../../features/owners/owner-detail-page.tsx', import.meta.url), 'utf8');
+const propertyDetailRoute = readFileSync(new URL('../../features/properties/overview/property-overview-page.tsx', import.meta.url), 'utf8');
+const unitDetailRoute = readFileSync(new URL('../../features/properties/units/property-unit-detail-page.tsx', import.meta.url), 'utf8');
 const backgroundLocation = readFileSync(new URL('../../app/router/background-location.tsx', import.meta.url), 'utf8');
 const legacyRedirect = readFileSync(new URL('../../app/router/legacy-preview-redirect.tsx', import.meta.url), 'utf8');
 const protectedRoute = readFileSync(new URL('../../routes/_protected.tsx', import.meta.url), 'utf8');
@@ -78,14 +79,17 @@ describe('unified detail preview contract', () => {
     expect(protectedRoute).not.toContain('EntityPreviewHost');
   });
 
-  it('dedicated heavyweight entity routes render canonical full pages', () => {
+  it('dedicated heavyweight entity routes render canonical full pages bound directly from route-tree', () => {
+    expect(routeTree).toContain("import('@/features/contracts/pages/ContractDetailPage')");
+    expect(routeTree).toContain("import('@/features/owners/owner-detail-page')");
+    expect(routeTree).toContain("import('@/features/properties/property-detail-page')");
+    expect(routeTree).toContain("import('@/features/properties/overview/property-overview-page')");
+    expect(routeTree).toContain("import('@/features/properties/units/property-unit-detail-page')");
     expect(contractDetailRoute).toContain('ContractDetailPage');
     expect(ownerDetailRoute).toContain('OwnerDetailPage');
-    const propertyDetailFull = readFileSync(new URL('../../routes/_protected.properties.$propertyId.tsx', import.meta.url), 'utf8');
-    expect(propertyDetailFull).toContain('PropertyDetailPage');
     expect(propertyDetailRoute).toContain('PropertyOverview');
     expect(unitDetailRoute).toContain('PropertyUnitDetailPage');
-    for (const src of [contractDetailRoute, ownerDetailRoute, propertyDetailFull, unitDetailRoute]) {
+    for (const src of [contractDetailRoute, ownerDetailRoute, propertyDetailRoute, unitDetailRoute]) {
       expect(src).not.toContain('useBackgroundLocation');
       expect(src).not.toContain('window.history.back()');
       expect(src).not.toContain('openEntityPreview');

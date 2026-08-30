@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router';
+import { Link, useParams } from '@tanstack/react-router';
 import { Activity, Edit, FileText, ReceiptText, UserRound } from 'lucide-react';
 import { useState } from 'react';
 import { EntityPreviewDialog } from '@/components/ui/entity-preview-dialog';
@@ -186,7 +186,9 @@ export function TenantPreviewDialog({ tenantId, open, onOpenChange, onEdit }: Re
   );
 }
 
-export function TenantDetailPage({ tenantId }: Readonly<{ tenantId: string }>) {
+export function TenantDetailPage({ tenantId: tenantIdProp }: Readonly<{ tenantId?: string }>) {
+  const params = useParams({ strict: false });
+  const tenantId = tenantIdProp ?? (typeof params.tenantId === 'string' ? params.tenantId : '');
   const [activeSection, setActiveSection] = useState<TenantSection>('overview');
 
   return (

@@ -8,8 +8,8 @@ import {
 } from '@/features/finance/shell/financeShellModel';
 
 const readFinancePage = () => readFileSync(new URL('../finance/FinancePage.tsx', import.meta.url), 'utf8');
-const routeSource = readFileSync(new URL('../../routes/_protected.financials.tsx', import.meta.url), 'utf8');
 const routeTreeSource = readFileSync(new URL('../../app/router/route-tree.ts', import.meta.url), 'utf8');
+const financePageSource = readFileSync(new URL('../finance/FinancePage.tsx', import.meta.url), 'utf8');
 const invoiceControllerSource = readFileSync(new URL('./invoices/useInvoiceWorkspaceController.ts', import.meta.url), 'utf8');
 const invoiceWorkspaceSource = readFileSync(new URL('./components/invoice-workspace-section.tsx', import.meta.url), 'utf8');
 const invoiceDetailSource = readFileSync(new URL('./components/invoice-detail-section.tsx', import.meta.url), 'utf8');
@@ -28,9 +28,10 @@ const mockAuth = (permissions: string[]): TestAuthorizationContext => ({
 });
 
 describe('/financials Money workspace IA', () => {
-  it('routes the primary financial entry through the unified FinancePage', () => {
-    expect(routeSource).toContain('FinancePage as FinancialsRouteComponent');
-    expect(routeSource).toContain('@/features/finance/FinancePage');
+  it('routes the primary financial entry directly through the unified FinancePage', () => {
+    expect(routeTreeSource).toContain("import('@/features/finance/FinancePage')");
+    expect(routeTreeSource).toContain("'FinancePage'");
+    expect(financePageSource).toContain('export function FinancePage');
   });
 
   it('keeps commissions in the same Money route without duplicating its business logic', () => {
