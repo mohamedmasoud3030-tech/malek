@@ -1,5 +1,10 @@
 -- Align governed bank-statement writes with the canonical granular permission model.
 --
+-- ALLOW_GOVERNED_DATA_MIGRATION: the INSERT below remains inside the governed
+-- SECURITY DEFINER RPC body; this migration only replaces that RPC definition
+-- to use the canonical effective-permission resolver. It performs no data seed,
+-- backfill, or direct migration-time transactional write.
+--
 -- Migration 57 correctly moved browser writes behind SECURITY DEFINER RPCs, but
 -- gated them with is_admin_or_manager(). That bypassed the canonical effective
 -- permission resolver and incorrectly excluded ACCOUNTANT, even though
