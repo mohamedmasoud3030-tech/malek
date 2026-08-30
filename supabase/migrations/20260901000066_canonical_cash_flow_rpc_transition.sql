@@ -14,7 +14,7 @@ begin
     alter function app_private.rpt_income_statement_impl(date,date) rename to financial_income_statement_core;
   end if;
   if to_regprocedure('app_private.rpt_balance_sheet_impl(date)') is not null
-     and to_regprocedure('app_private.financial_balance_sheet_core(date,date)') is null then
+     and to_regprocedure('app_private.financial_balance_sheet_core(date)') is null then
     alter function app_private.rpt_balance_sheet_impl(date) rename to financial_balance_sheet_core;
   end if;
   if to_regprocedure('app_private.rpt_general_ledger_impl(date,date)') is not null
