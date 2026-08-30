@@ -2,6 +2,7 @@ import { BriefcaseBusiness, Edit, FolderCog, Plus, Trash2, Wrench } from 'lucide
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useDialogNavigate } from '@/app/router/background-location';
+import { ActionMenu } from '@/components/ui/action-menu';
 import type { ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -95,10 +96,17 @@ export function ServiceProvidersWorkspace({ embedded = false }: Readonly<{ embed
       header: 'إجراءات',
       priority: 'actions',
       render: (provider) => (
-        <div className="flex flex-wrap gap-2" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
-          <Button type="button" variant="secondary" className="min-h-11" onClick={() => void navigate({ to: '/service-providers/$providerId', params: { providerId: provider.id } })}>عرض</Button>
-          {canWrite ? <Button type="button" variant="secondary" className="min-h-11" onClick={() => dialogNavigate({ to: '/service-providers/$providerId/edit', params: { providerId: provider.id } })}><Edit className="me-1 size-4" aria-hidden="true" />تعديل</Button> : null}
-          {canWrite ? <Button type="button" variant="ghost" className="min-h-11 text-destructive" onClick={() => setArchiveTarget(provider)}><Trash2 className="me-1 size-4" aria-hidden="true" />أرشفة</Button> : null}
+        <div className="flex" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+          <ActionMenu
+            label={`إجراءات ${provider.name}`}
+            items={[
+              { id: 'view', label: 'عرض', onClick: () => void navigate({ to: '/service-providers/$providerId', params: { providerId: provider.id } }) },
+              ...(canWrite ? [
+                { id: 'edit', label: 'تعديل', icon: Edit, onClick: () => dialogNavigate({ to: '/service-providers/$providerId/edit', params: { providerId: provider.id } }) },
+                { id: 'archive', label: 'أرشفة', icon: Trash2, danger: true, onClick: () => setArchiveTarget(provider) },
+              ] : []),
+            ]}
+          />
         </div>
       ),
     },

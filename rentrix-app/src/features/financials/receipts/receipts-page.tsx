@@ -3,6 +3,7 @@ import { ArrowRight, Ban, CalendarDays, CheckCircle2, Clock3, Eye, Printer, Rece
 import { useDeferredValue, useMemo, useState } from 'react';
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { RegisterHeading, RegisterMetricStrip } from '@/components/layout/register-summary';
+import { ActionMenu } from '@/components/ui/action-menu';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { DataTableColumnsMenu } from '@/components/ui/data-table';
@@ -229,14 +230,22 @@ function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Rea
     { key: 'context', header: 'السياق', priority: 'secondary', render: (receipt) => formatReceiptContext(receipt) },
     { key: 'status', header: 'الحالة', priority: 'secondary', render: (receipt) => <StatusBadge tone={receiptStatusTone(receipt.status)}>{receiptStatusLabels[receipt.status] ?? receipt.status}</StatusBadge> },
     { key: 'actions', header: 'الإجراءات', priority: 'actions', render: (receipt) => (
-      <div className="flex flex-wrap gap-2" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
-        <Button variant="secondary" className="min-h-11 px-3" onClick={() => setSelectedReceiptId(receipt.id)}>عرض</Button>
-        <Button variant="secondary" className="min-h-11 px-3" onClick={() => openReceiptPrintView(receipt.id)}><Printer className="me-2 size-4" />طباعة</Button>
-        {canVoidReceipt && receipt.status === 'posted' ? (
-          <Button variant="danger" className="min-h-11 px-3" onClick={() => openVoidDialog(receipt)} disabled={requestVoidMutation.isPending}>
-            <Ban className="me-2 size-4" />طلب إلغاء
-          </Button>
-        ) : null}
+      <div className="flex" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+        <ActionMenu
+          label={`إجراءات الإيصال ${receipt.receipt_number}`}
+          items={[
+            { id: 'view', label: 'عرض', icon: Eye, onClick: () => setSelectedReceiptId(receipt.id) },
+            { id: 'print', label: 'طباعة', icon: Printer, onClick: () => openReceiptPrintView(receipt.id) },
+            ...(canVoidReceipt && receipt.status === 'posted' ? [{
+              id: 'void',
+              label: 'طلب إلغاء',
+              icon: Ban,
+              danger: true,
+              disabled: requestVoidMutation.isPending,
+              onClick: () => openVoidDialog(receipt),
+            }] : []),
+          ]}
+        />
       </div>
     ) },
   ];

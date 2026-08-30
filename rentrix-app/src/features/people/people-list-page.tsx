@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { PersonFormModal } from "./person-form-modal";
 import { useDialogNavigate } from "@/app/router/background-location";
+import { ActionMenu } from "@/components/ui/action-menu";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { DataTableColumnsMenu } from "@/components/ui/data-table";
@@ -189,34 +190,18 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
       className: "w-40",
       render: (person) => (
         <div
-          className="flex flex-wrap gap-2"
+          className="flex"
           onClick={(event) => event.stopPropagation()}
           onKeyDown={(event) => event.stopPropagation()}
         >
-          <Button
-            variant="secondary"
-            className="min-h-11 px-3"
-            onClick={() => dialogNavigate({ to: '/people/$personId', params: { personId: person.id } })}
-          >
-            عرض
-          </Button>
-          <Button
-            variant="secondary"
-            className="min-h-11 px-3"
-            onClick={() => openEdit(person.id)}
-          >
-            <Edit className="size-4" aria-hidden="true" />
-            تعديل
-          </Button>
-          <Button
-            variant="danger"
-            className="min-h-11 px-3"
-            aria-label={`أرشفة ${person.full_name}`}
-            onClick={() => setDeleteId(person.id)}
-          >
-            <Trash2 className="size-4" aria-hidden="true" />
-            أرشفة
-          </Button>
+          <ActionMenu
+            label={`إجراءات ${person.full_name}`}
+            items={[
+              { id: 'view', label: 'عرض', onClick: () => dialogNavigate({ to: '/people/$personId', params: { personId: person.id } }) },
+              { id: 'edit', label: 'تعديل', icon: Edit, onClick: () => openEdit(person.id) },
+              { id: 'archive', label: 'أرشفة', icon: Trash2, danger: true, onClick: () => setDeleteId(person.id) },
+            ]}
+          />
         </div>
       ),
     },
