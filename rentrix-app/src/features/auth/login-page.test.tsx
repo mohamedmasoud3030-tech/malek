@@ -42,15 +42,24 @@ describe('LoginPage — minimal SaaS contract', () => {
     expect(html).toContain('/forgot-password');
   });
 
-  it('removes the heavy support footer from the auth card and links to the dedicated public support route', () => {
+  it('removes the heavy support footer from the auth card and endorses LENA Digital House below login', () => {
     render(<LoginPage />);
     // No inline WhatsApp/email contact inventory inside the auth card.
     expect(screen.queryByText('+968 9192 8186')).not.toBeInTheDocument();
     expect(screen.queryByText(/واتساب عُمان/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Ahmedmasoud@outlook\.com/i)).not.toBeInTheDocument();
-    // Support is a subtle secondary link to a public-safe route, outside the main card.
-    const supportLink = screen.getByRole('link', { name: /تحتاج مساعدة؟ تواصل معنا/i });
-    expect(supportLink).toHaveAttribute('href', '/support');
+    // Company discovery, not support: no help/support/powered-by language.
+    expect(screen.queryByText(/تحتاج مساعدة/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Support/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Powered by/i)).not.toBeInTheDocument();
+    expect(document.querySelector('[data-login-support-link]')).toBeNull();
+    expect(document.querySelector('[data-support-panel]')).toBeNull();
+
+    expect(screen.getByText(/تم تطوير MALEK بواسطة/)).toBeInTheDocument();
+    const endorsement = screen.getByRole('link', { name: /LENA Digital House/i });
+    expect(endorsement).toHaveAttribute('href', '/lena/ar?from=malek');
+    expect(endorsement.closest('[data-login-card]')).toBeNull();
+    expect(endorsement.className).toContain('min-h-11');
   });
 });
 
