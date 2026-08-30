@@ -3,7 +3,7 @@ import { Activity, AlertCircle, CheckCircle2, Download, Droplets, FileText, Flam
 import { AsyncContentState } from '@/components/async-content-state';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
-import { ActiveFilterBar, type ActiveFilterItem } from '@/components/ui/active-filter-bar';
+import type { ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EntityForm } from '@/components/ui/entity-form';
@@ -569,8 +569,11 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
             <Button variant="secondary" disabled={isError} onClick={() => { if (!isError) setShowBillForm(true); }}><Plus className="size-4" />فاتورة مرافق</Button>
           </div>
         )}
+
+        activeFilters={activeFilters}
+        onClearAllFilters={clearFilters}
       />
-      <ActiveFilterBar filters={activeFilters} onClearAll={clearFilters} />
+
 
       <AsyncContentState
         status={isLoading ? 'loading' : isError && meters.length === 0 && bills.length === 0 ? 'error' : meters.length === 0 && filteredBills.length === 0 ? 'empty' : 'ready'}

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
 import { AsyncContentState } from '@/components/async-content-state';
 import { FilterBar } from '@/components/ui/filter-bar';
-import { ActiveFilterBar, type ActiveFilterItem } from '@/components/ui/active-filter-bar';
+import type { ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { ContextualDocumentsPanel } from '@/components/documents/contextual-documents-panel';
 import {
   vaultCategoryLabels,
@@ -135,15 +135,15 @@ export function DocumentsVaultWorkspace({ mode = 'standalone' }: DocumentsVaultW
             ))}
           </Select>
         }
-      />
 
-      <ActiveFilterBar
-        filters={activeFilters}
-        onClearAll={() => {
+        activeFilters={activeFilters}
+        onClearAllFilters={() => {
           setSelectedCategory('all');
           setSearchQuery('');
         }}
       />
+
+
 
       <AsyncContentState
         status={documentsQuery.isLoading ? 'loading' : documentsQuery.isError ? 'error' : documents.length === 0 ? 'empty' : 'ready'}

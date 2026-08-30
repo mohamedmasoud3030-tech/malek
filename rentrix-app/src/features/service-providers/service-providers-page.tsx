@@ -2,7 +2,7 @@ import { BriefcaseBusiness, Edit, FolderCog, Plus, Trash2, Wrench } from 'lucide
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useDialogNavigate } from '@/app/router/background-location';
-import { ActiveFilterBar, type ActiveFilterItem } from '@/components/ui/active-filter-bar';
+import type { ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EntityCell } from '@/components/ui/entity-cell';
@@ -134,9 +134,12 @@ export function ServiceProvidersWorkspace({ embedded = false }: Readonly<{ embed
             <Select aria-label="تصفية حسب نوع الخدمة" value={categoryId} disabled={categoriesQuery.isLoading || categoriesQuery.isError} onChange={(event) => { setCategoryId(event.target.value); setPage(1); }} className="min-h-11 w-40 shrink-0">
               <option value="">كل الأنواع</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
             </Select>
-            <ActiveFilterBar filters={activeFilters} onClearAll={clearFilters} />
+
           </div>
         )}
+
+        activeFilters={activeFilters}
+        onClearAllFilters={clearFilters}
       >
         {summaryQuery.data ? (
           <RegisterMetricStrip

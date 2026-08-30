@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { AsyncContentState } from '@/components/async-content-state';
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { useDialogNavigate } from '@/app/router/background-location';
-import { ActiveFilterBar, type ActiveFilterItem } from '@/components/ui/active-filter-bar';
+import type { ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EntityForm } from '@/components/ui/entity-form';
@@ -169,8 +169,11 @@ export function LandsView({
             {Object.entries(landStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </Select>
         )}
+
+        activeFilters={activeFilters}
+        onClearAllFilters={clearFilters}
       />
-      <ActiveFilterBar filters={activeFilters} onClearAll={clearFilters} />
+
 
       {writeError ? <WriteErrorCard message={getActionableSupabaseErrorMessage(writeError, 'تعذر حفظ التغيير على سجل الأرض.')} /> : null}
 

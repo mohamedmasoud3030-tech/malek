@@ -1,7 +1,7 @@
 import { communicationChannelLabels, communicationDirectionLabels, communicationStatusLabels, communicationStatusTone } from "../labels";
 import { Archive, CheckCircle2, Edit, Rows3, UserRoundSearch } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { ActiveFilterBar, type ActiveFilterItem } from '@/components/ui/active-filter-bar';
+import type { ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EntityForm } from '@/components/ui/entity-form';
@@ -139,8 +139,11 @@ export function CommunicationHubView({
             </Select>
           </>
         )}
+
+        activeFilters={activeFilters}
+        onClearAllFilters={clearFilters}
       />
-      <ActiveFilterBar filters={activeFilters} onClearAll={clearFilters} />
+
 
       {writeError ? <WriteErrorCard message={writeError instanceof Error ? writeError.message : 'تعذر حفظ التغيير على سجل التواصل.'} /> : null}
 

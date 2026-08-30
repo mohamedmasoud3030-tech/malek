@@ -7,10 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { DataTableColumnsMenu } from "@/components/ui/data-table";
 import { EntityCell } from "@/components/ui/entity-cell";
-import {
-  ActiveFilterBar,
-  type ActiveFilterItem,
-} from "@/components/ui/active-filter-bar";
+import type { ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { EntityTable, type ColumnDef } from "@/components/ui/entity-table";
 import { entityCardTypeMap } from "@/components/ui/entity-card";
 import { Select } from "@/components/ui/select";
@@ -266,10 +263,7 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
                 </option>
               ))}
             </Select>
-            <ActiveFilterBar
-              filters={activeFilters}
-              onClearAll={clearFilters}
-            />
+
           </div>
         }
         toolbarActions={
@@ -279,6 +273,9 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
             onChange={setVisibleColumnKeys}
           />
         }
+
+        activeFilters={activeFilters}
+        onClearAllFilters={clearFilters}
       >
         {!peopleQuery.isLoading && !peopleQuery.isError ? (
           <RegisterMetricStrip

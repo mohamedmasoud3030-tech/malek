@@ -9,7 +9,7 @@ import {
   UsersRound,
 } from "lucide-react";
 import { useState } from "react";
-import { ActiveFilterBar, type ActiveFilterItem } from "@/components/ui/active-filter-bar";
+import type { ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { Button } from "@/components/ui/button";
 import { AsyncContentState } from "@/components/async-content-state";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -209,11 +209,11 @@ export function LeadsView(props: Props) {
             </Select>
           </>
         }
+
+        activeFilters={activeFilters}
+        onClearAllFilters={() => onFiltersChange({ query: "", status: "all", source: "all" })}
       />
-      <ActiveFilterBar
-        filters={activeFilters}
-        onClearAll={() => onFiltersChange({ query: "", status: "all", source: "all" })}
-      />
+
 
       {writeError ? (
         <WriteErrorCard

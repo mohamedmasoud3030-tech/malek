@@ -13,7 +13,7 @@ import {
 import { DataRefreshAlert } from '@/components/data-refresh-alert';
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { PageStateCard, WriteErrorCard } from '@/components/page-state-card';
-import { ActiveFilterBar, type ActiveFilterItem } from '@/components/ui/active-filter-bar';
+import type { ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EntityForm } from '@/components/ui/entity-form';
@@ -169,11 +169,11 @@ export function BankReconciliationWorkspace({ embedded = false }: BankReconcilia
             <Input className="min-h-11 w-full sm:w-40" aria-label="إلى تاريخ" type="date" value={ctrl.filters.to} onChange={(event) => ctrl.setFilters({ ...ctrl.filters, to: event.target.value })} />
           </>
         )}
+
+        activeFilters={activeFilters}
+        onClearAllFilters={() => ctrl.setFilters({ bankAccountId: '', status: 'all', from: '', to: '' })}
       />
-      <ActiveFilterBar
-        filters={activeFilters}
-        onClearAll={() => ctrl.setFilters({ bankAccountId: '', status: 'all', from: '', to: '' })}
-      />
+
 
       {hasStaleReadError ? (
         <DataRefreshAlert

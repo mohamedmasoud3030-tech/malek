@@ -68,4 +68,17 @@ describe('canonical search and filter usage', () => {
     expect(reportDirectory).toContain('<FilterTabs');
     expect(reportDirectory).not.toContain('type="search"');
   });
+
+  it('prevents feature surfaces from rendering a second active-filter row', () => {
+    const offenders = collectReactSourceFiles(featureDir)
+      .filter((path) => {
+        const source = readFileSync(path, 'utf8');
+        return source.includes('<ActiveFilterBar') && (source.includes('<FilterBar') || source.includes('<ListPage'));
+      })
+      .map((path) => relative(srcDir, path))
+      .sort();
+
+    expect(offenders).toEqual([]);
+  });
+
 });

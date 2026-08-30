@@ -12,7 +12,7 @@ import {
   Undo2,
 } from "lucide-react";
 import { useState } from "react";
-import { ActiveFilterBar, type ActiveFilterItem } from "@/components/ui/active-filter-bar";
+import type { ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { PageStateCard, WriteErrorCard } from "@/components/page-state-card";
@@ -185,8 +185,11 @@ export function CommissionsView(props: Props) {
               </Select>
             </>
           }
-        />
-        <ActiveFilterBar filters={activeFilters} onClearAll={() => onFiltersChange({ query: "", status: "all", type: "all" })} />
+
+        activeFilters={activeFilters}
+        onClearAllFilters={() => onFiltersChange({ query: "", status: "all", type: "all" })}
+      />
+
       </section>
 
       <section data-finance-section aria-label="حالات التحميل والخطأ">
