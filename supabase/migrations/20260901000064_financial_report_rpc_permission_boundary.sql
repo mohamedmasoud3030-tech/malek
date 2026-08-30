@@ -1,6 +1,6 @@
 -- Enforce the canonical financial.reports.view permission at the database RPC
--- boundary. Existing report implementations are moved unchanged behind private
--- implementation names; public signatures remain stable guarded wrappers.
+-- boundary. Existing report implementations move unchanged behind private core
+-- names; canonical public signatures remain narrow guarded wrappers.
 
 begin;
 
@@ -31,33 +31,33 @@ revoke all on function app_private.require_financial_reports_view() from public,
 grant execute on function app_private.require_financial_reports_view() to service_role;
 
 alter function public.rpt_trial_balance(date) set schema app_private;
-alter function app_private.rpt_trial_balance(date) rename to rpt_trial_balance_impl;
+alter function app_private.rpt_trial_balance(date) rename to financial_trial_balance_core;
 
 alter function public.rpt_income_statement(date,date) set schema app_private;
-alter function app_private.rpt_income_statement(date,date) rename to rpt_income_statement_impl;
+alter function app_private.rpt_income_statement(date,date) rename to financial_income_statement_core;
 
 alter function public.rpt_balance_sheet(date) set schema app_private;
-alter function app_private.rpt_balance_sheet(date) rename to rpt_balance_sheet_impl;
+alter function app_private.rpt_balance_sheet(date) rename to financial_balance_sheet_core;
 
 alter function public.rpt_general_ledger(date,date) set schema app_private;
-alter function app_private.rpt_general_ledger(date,date) rename to rpt_general_ledger_impl;
+alter function app_private.rpt_general_ledger(date,date) rename to financial_general_ledger_core;
 
 alter function public.rpt_cash_flow(date,date) set schema app_private;
-alter function app_private.rpt_cash_flow(date,date) rename to rpt_cash_flow_impl;
+alter function app_private.rpt_cash_flow(date,date) rename to financial_legacy_cash_flow_core;
 
 alter function public.rpt_vat_return(date,date) set schema app_private;
-alter function app_private.rpt_vat_return(date,date) rename to rpt_vat_return_impl;
+alter function app_private.rpt_vat_return(date,date) rename to financial_vat_return_core;
 
 alter function public.wp05_rpt_cash_flow_gl(date,date) set schema app_private;
-alter function app_private.wp05_rpt_cash_flow_gl(date,date) rename to wp05_rpt_cash_flow_gl_impl;
+alter function app_private.wp05_rpt_cash_flow_gl(date,date) rename to financial_cash_flow_gl_core;
 
-revoke all on function app_private.rpt_trial_balance_impl(date) from public, anon, authenticated;
-revoke all on function app_private.rpt_income_statement_impl(date,date) from public, anon, authenticated;
-revoke all on function app_private.rpt_balance_sheet_impl(date) from public, anon, authenticated;
-revoke all on function app_private.rpt_general_ledger_impl(date,date) from public, anon, authenticated;
-revoke all on function app_private.rpt_cash_flow_impl(date,date) from public, anon, authenticated;
-revoke all on function app_private.rpt_vat_return_impl(date,date) from public, anon, authenticated;
-revoke all on function app_private.wp05_rpt_cash_flow_gl_impl(date,date) from public, anon, authenticated;
+revoke all on function app_private.financial_trial_balance_core(date) from public, anon, authenticated;
+revoke all on function app_private.financial_income_statement_core(date,date) from public, anon, authenticated;
+revoke all on function app_private.financial_balance_sheet_core(date) from public, anon, authenticated;
+revoke all on function app_private.financial_general_ledger_core(date,date) from public, anon, authenticated;
+revoke all on function app_private.financial_legacy_cash_flow_core(date,date) from public, anon, authenticated;
+revoke all on function app_private.financial_vat_return_core(date,date) from public, anon, authenticated;
+revoke all on function app_private.financial_cash_flow_gl_core(date,date) from public, anon, authenticated;
 
 create function public.rpt_trial_balance(p_as_of date)
 returns jsonb
@@ -67,7 +67,7 @@ set search_path to 'public', 'pg_temp'
 as $function$
 begin
   perform app_private.require_financial_reports_view();
-  return app_private.rpt_trial_balance_impl(p_as_of);
+  return app_private.financial_trial_balance_core(p_as_of);
 end;
 $function$;
 
@@ -79,7 +79,7 @@ set search_path to 'public', 'pg_temp'
 as $function$
 begin
   perform app_private.require_financial_reports_view();
-  return app_private.rpt_income_statement_impl(p_from, p_to);
+  return app_private.financial_income_statement_core(p_from, p_to);
 end;
 $function$;
 
@@ -91,7 +91,7 @@ set search_path to 'public', 'pg_temp'
 as $function$
 begin
   perform app_private.require_financial_reports_view();
-  return app_private.rpt_balance_sheet_impl(p_as_of);
+  return app_private.financial_balance_sheet_core(p_as_of);
 end;
 $function$;
 
@@ -103,7 +103,7 @@ set search_path to 'public', 'pg_temp'
 as $function$
 begin
   perform app_private.require_financial_reports_view();
-  return app_private.rpt_general_ledger_impl(p_from, p_to);
+  return app_private.financial_general_ledger_core(p_from, p_to);
 end;
 $function$;
 
@@ -115,7 +115,7 @@ set search_path to 'public', 'pg_temp'
 as $function$
 begin
   perform app_private.require_financial_reports_view();
-  return app_private.rpt_cash_flow_impl(p_from_date, p_to_date);
+  return app_private.financial_legacy_cash_flow_core(p_from_date, p_to_date);
 end;
 $function$;
 
@@ -127,11 +127,11 @@ set search_path to 'public', 'pg_temp'
 as $function$
 begin
   perform app_private.require_financial_reports_view();
-  return app_private.rpt_vat_return_impl(p_from_date, p_to_date);
+  return app_private.financial_vat_return_core(p_from_date, p_to_date);
 end;
 $function$;
 
-create function public.wp05_rpt_cash_flow_gl(p_from date, p_to date)
+create function public.rpt_cash_flow_gl(p_from date, p_to date)
 returns jsonb
 language plpgsql
 security definer
@@ -139,7 +139,7 @@ set search_path to 'public', 'pg_temp'
 as $function$
 begin
   perform app_private.require_financial_reports_view();
-  return app_private.wp05_rpt_cash_flow_gl_impl(p_from, p_to);
+  return app_private.financial_cash_flow_gl_core(p_from, p_to);
 end;
 $function$;
 
@@ -159,14 +159,14 @@ revoke all on function public.rpt_balance_sheet(date) from public, anon, authent
 revoke all on function public.rpt_general_ledger(date,date) from public, anon, authenticated;
 revoke all on function public.rpt_cash_flow(date,date) from public, anon, authenticated;
 revoke all on function public.rpt_vat_return(date,date) from public, anon, authenticated;
-revoke all on function public.wp05_rpt_cash_flow_gl(date,date) from public, anon, authenticated;
+revoke all on function public.rpt_cash_flow_gl(date,date) from public, anon, authenticated;
 grant execute on function public.rpt_trial_balance(date) to authenticated, service_role;
 grant execute on function public.rpt_income_statement(date,date) to authenticated, service_role;
 grant execute on function public.rpt_balance_sheet(date) to authenticated, service_role;
 grant execute on function public.rpt_general_ledger(date,date) to authenticated, service_role;
 grant execute on function public.rpt_cash_flow(date,date) to authenticated, service_role;
 grant execute on function public.rpt_vat_return(date,date) to authenticated, service_role;
-grant execute on function public.wp05_rpt_cash_flow_gl(date,date) to authenticated, service_role;
+grant execute on function public.rpt_cash_flow_gl(date,date) to authenticated, service_role;
 
 comment on function app_private.require_financial_reports_view() is
   'Fail-closed server-side authority gate for canonical financial report RPCs.';
