@@ -415,7 +415,7 @@ export function buildAcceptanceSeed(mode: CompanySettingsMode): AcceptanceSeed {
       outflows: [{ label: 'مصروفات تشغيلية', amount: 920 }],
       closing_balance: 4580,
     }),
-    wp05_rpt_cash_flow_gl: (args) => ({
+    rpt_cash_flow_gl: (args) => ({
       period: { from: args.p_from ?? '2026-01-01', to: args.p_to ?? '2026-12-31' },
       opening_cash: 0,
       operating: 0,
