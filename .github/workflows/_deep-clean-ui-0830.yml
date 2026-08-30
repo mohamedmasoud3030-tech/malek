@@ -1,0 +1,242 @@
+name: Deep clean UI ownership
+
+on:
+  push:
+    branches: [refactor/deep-clean-ui-0830]
+
+permissions:
+  contents: write
+
+jobs:
+  deep-clean:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refactor/deep-clean-ui-0830
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.11.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Consolidate duplicated filter ownership
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          root = Path('rentrix-app/src/features')
+
+          def tag_end(src: str, start: int) -> int:
+              i = start
+              braces = 0
+              quote = None
+              esc = False
+              while i < len(src) - 1:
+                  ch = src[i]
+                  if quote:
+                      if esc:
+                          esc = False
+                      elif ch == '\\':
+                          esc = True
+                      elif ch == quote:
+                          quote = None
+                      i += 1
+                      continue
+                  if ch in "'\"`":
+                      quote = ch
+                      i += 1
+                      continue
+                  if ch == '{': braces += 1
+                  elif ch == '}': braces = max(0, braces - 1)
+                  elif ch == '/' and src[i + 1] == '>' and braces == 0:
+                      return i + 2
+                  i += 1
+              raise RuntimeError('self-closing JSX tag end not found')
+
+          def extract_prop(tag: str, name: str):
+              m = re.search(r'\\b' + re.escape(name) + r'\\s*=\\s*', tag)
+              if not m: return None
+              i = m.end()
+              if i >= len(tag) or tag[i] != '{': return None
+              start = i + 1
+              depth = 1
+              quote = None
+              esc = False
+              i += 1
+              while i < len(tag):
+                  ch = tag[i]
+                  if quote:
+                      if esc: esc = False
+                      elif ch == '\\': esc = True
+                      elif ch == quote: quote = None
+                  else:
+                      if ch in "'\"`": quote = ch
+                      elif ch == '{': depth += 1
+                      elif ch == '}':
+                          depth -= 1
+                          if depth == 0: return tag[start:i].strip()
+                  i += 1
+              return None
+
+          def normalize_active_filter_import(src: str) -> str:
+              pattern = re.compile(r'import\\s*\\{(?P<body>[^}]+)\\}\\s*from\\s*[\'\"]@/components/ui/active-filter-bar[\'\"];?', re.S)
+              def repl(m):
+                  body = m.group('body')
+                  names = [x.strip() for x in body.split(',') if x.strip()]
+                  names = [x for x in names if x != 'ActiveFilterBar']
+                  if not names:
+                      return ''
+                  if all(x.startswith('type ') for x in names):
+                      clean = ', '.join(x.removeprefix('type ').strip() for x in names)
+                      return f"import type {{ {clean} }} from '@/components/ui/active-filter-bar';"
+                  return "import { " + ', '.join(names) + " } from '@/components/ui/active-filter-bar';"
+              return pattern.sub(repl, src)
+
+          changed = []
+          for path in root.rglob('*.tsx'):
+              if any(token in path.name for token in ('.test.', '.spec.', '.e2e-fixture.')):
+                  continue
+              src = path.read_text()
+              original = src
+
+              # Standalone duplicate ActiveFilterBar immediately following the canonical FilterBar.
+              search_from = 0
+              while True:
+                  fb = src.find('<FilterBar', search_from)
+                  if fb < 0: break
+                  try: fb_end = tag_end(src, fb)
+                  except RuntimeError: break
+                  j = fb_end
+                  while j < len(src) and src[j].isspace(): j += 1
+                  if src.startswith('<ActiveFilterBar', j):
+                      af_end = tag_end(src, j)
+                      af_tag = src[j:af_end]
+                      filters_expr = extract_prop(af_tag, 'filters')
+                      clear_expr = extract_prop(af_tag, 'onClearAll')
+                      if filters_expr:
+                          insertion = f"\n        activeFilters={{{filters_expr}}}"
+                          if clear_expr:
+                              insertion += f"\n        onClearAllFilters={{{clear_expr}}}"
+                          src = src[:fb_end-2] + insertion + '\n      />' + src[fb_end:]
+                          # Recompute location after insertion, then remove the old row.
+                          shift = len(insertion) + len('\n      />') - 2
+                          j += shift
+                          af_end += shift
+                          src = src[:j] + src[af_end:]
+                          search_from = j
+                          continue
+                  search_from = fb_end
+
+              # ListPage owns active-filter rendering; feature pages only provide state.
+              if '<ListPage' in src and '<ActiveFilterBar' in src:
+                  lp = src.find('<ListPage')
+                  af = src.find('<ActiveFilterBar', lp)
+                  if af >= 0:
+                      af_end = tag_end(src, af)
+                      af_tag = src[af:af_end]
+                      filters_expr = extract_prop(af_tag, 'filters')
+                      clear_expr = extract_prop(af_tag, 'onClearAll')
+                      if filters_expr:
+                          src = src[:af] + src[af_end:]
+                          anchor = src.find('toolbarActions=', lp)
+                          if anchor < 0:
+                              anchor = src.find('>', lp)
+                          indent = '        '
+                          props = f"{indent}activeFilters={{{filters_expr}}}\n"
+                          if clear_expr:
+                              props += f"{indent}onClearAllFilters={{{clear_expr}}}\n"
+                          src = src[:anchor] + props + src[anchor:]
+
+              if src != original:
+                  src = normalize_active_filter_import(src)
+                  path.write_text(src)
+                  changed.append(str(path))
+
+          offenders = []
+          for path in root.rglob('*.tsx'):
+              if any(token in path.name for token in ('.test.', '.spec.', '.e2e-fixture.')):
+                  continue
+              src = path.read_text()
+              if '<ActiveFilterBar' in src and ('<FilterBar' in src or '<ListPage' in src):
+                  offenders.append(str(path))
+          if offenders:
+              raise SystemExit('duplicate active-filter ownership remains:\n' + '\n'.join(offenders))
+
+          print('changed files:')
+          print('\n'.join(changed) if changed else '(none)')
+
+      - name: Strengthen ownership regression guards
+        shell: python
+        run: |
+          from pathlib import Path
+
+          search_test = Path('rentrix-app/src/components/ui/canonical-search-filter-usage.test.ts')
+          src = search_test.read_text()
+          marker = "  it('prevents feature surfaces from rendering a second active-filter row', () => {"
+          if marker not in src:
+              block = r'''
+
+  it('prevents feature surfaces from rendering a second active-filter row', () => {
+    const offenders = collectReactSourceFiles(featureDir)
+      .filter((path) => {
+        const source = readFileSync(path, 'utf8');
+        return source.includes('<ActiveFilterBar') && (source.includes('<FilterBar') || source.includes('<ListPage'));
+      })
+      .map((path) => relative(srcDir, path))
+      .sort();
+
+    expect(offenders).toEqual([]);
+  });
+'''
+              pos = src.rfind('\n});')
+              src = src[:pos] + block + src[pos:]
+              search_test.write_text(src)
+
+          table_test = Path('rentrix-app/src/components/ui/canonical-table-usage.test.ts')
+          src = table_test.read_text()
+          marker2 = "  it('keeps operational register surfaces on the shared table owner', () => {"
+          if marker2 not in src:
+              block2 = r'''
+
+  it('keeps operational register surfaces on the shared table owner', () => {
+    const inventory = readFileSync(resolve(srcDir, 'features/active-register-inventory.ts'), 'utf8');
+    const paths = [...inventory.matchAll(/component: '([^']+)'/g)].map((match) => match[1]);
+    const offenders = paths
+      .filter((componentPath) => {
+        const source = readFileSync(resolve(srcDir, componentPath), 'utf8');
+        const usesOwner = source.includes('<EntityTable') || source.includes('<DataTable');
+        const bypassesOwner = /<table(?:\\s|>)/.test(source) || source.includes("@/components/ui/table");
+        return !usesOwner || bypassesOwner;
+      })
+      .sort();
+
+    expect(offenders).toEqual([]);
+  });
+'''
+              pos = src.rfind('\n});')
+              src = src[:pos] + block2 + src[pos:]
+              table_test.write_text(src)
+
+      - name: Run focused ownership checks
+        run: |
+          pnpm --filter @workspace/rentrix exec vitest run src/components/ui/canonical-search-filter-usage.test.ts src/components/ui/canonical-table-usage.test.ts src/features/p1-compact-responsive-registers.test.ts --reporter=dot
+          pnpm --filter @workspace/rentrix run typecheck
+      - name: Commit deep-clean result and remove helper
+        shell: bash
+        run: |
+          rm -f .github/workflows/_deep-clean-ui-0830.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No deep-clean changes produced"
+            exit 0
+          fi
+          git commit -m "refactor(ui): enforce single filter and register ownership"
+          git push origin HEAD:refactor/deep-clean-ui-0830
