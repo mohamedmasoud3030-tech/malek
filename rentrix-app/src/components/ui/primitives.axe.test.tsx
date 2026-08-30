@@ -48,7 +48,7 @@ const cases: ReadonlyArray<readonly [string, ReactElement]> = [
   ['Badges', <div><Badge>نشط</Badge><StatusBadge tone="success">نشط</StatusBadge></div>],
   ['Alert', <Alert><AlertTitle>تنبيه</AlertTitle><AlertDescription>وصف</AlertDescription></Alert>],
   ['Card', <Card><CardHeader><CardTitle>عنوان</CardTitle></CardHeader><CardContent>محتوى</CardContent></Card>],
-  ['EntityCard', <EntityCard id="p-1" name="برج الواحة" type="property" onClick={() => undefined} actions={[{ label: 'تعديل', icon: Home, onClick: () => undefined, ariaLabel: 'تعديل السجل' }]} />],
+  ['EntityCard', <EntityCard id="p-1" name="برج الواحة" type="property" onClick={() => undefined} secondaryAction={{ label: 'تعديل', icon: Home, onClick: () => undefined, ariaLabel: 'تعديل السجل' }} />],
   ['Table', <Table aria-label="سجل"><TableHeader><TableRow><TableHead>الاسم</TableHead></TableRow></TableHeader><TableBody><TableRow><TableCell>سجل ١</TableCell></TableRow></TableBody></Table>],
 ];
 
@@ -58,7 +58,7 @@ describe('axe — active shared primitives', () => {
 
 describe('axe — entity cards avoid nested controls', () => {
   it('keeps primary activation and row actions as siblings', () => {
-    const { container } = render(<EntityCard id="p-1" name="برج الواحة" type="property" onClick={() => undefined} actions={[{ label: 'تعديل', icon: Home, onClick: () => undefined, ariaLabel: 'تعديل السجل' }]} />);
+    const { container } = render(<EntityCard id="p-1" name="برج الواحة" type="property" onClick={() => undefined} secondaryAction={{ label: 'تعديل', icon: Home, onClick: () => undefined, ariaLabel: 'تعديل السجل' }} />);
     const controls = Array.from(container.querySelectorAll('button, a[href], [role="button"]'));
     expect(controls).toHaveLength(2);
     for (const control of controls) expect(control.querySelector('button, a[href], [role="button"]')).toBeNull();
