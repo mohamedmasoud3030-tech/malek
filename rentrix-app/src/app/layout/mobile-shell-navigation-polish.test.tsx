@@ -153,16 +153,20 @@ describe('MALEK mobile shell & navigation polish pass (Section O verification ma
   });
 
   describe('2. Bottom Mobile Tools', () => {
-    it('contains Search, AI, Menu, Quick Add, and Notifications in the dock', () => {
-      renderWithClient(<MobileFloatingControl onMenu={vi.fn()} />);
+    it('keeps the dock minimal while Search and Quick Add live in the phone header', () => {
+      renderWithClient(<AppShell />);
+
+      const header = host.querySelector<HTMLElement>('[data-app-shell-header]');
+      expect(header?.querySelector('[data-header-phone-search]')).not.toBeNull();
+      expect(header?.querySelector('[data-header-quick-add]')).not.toBeNull();
 
       const dock = host.querySelector<HTMLElement>('[data-mobile-floating-control]');
       expect(dock).not.toBeNull();
       expect(dock?.querySelector('[data-mobile-dock-menu]')).not.toBeNull();
-      expect(dock?.querySelector('[data-mobile-dock-search]')).not.toBeNull();
-      expect(dock?.querySelector('[data-mobile-dock-quick-add]')).not.toBeNull();
       expect(dock?.querySelector('[data-mobile-dock-notifications]')).not.toBeNull();
       expect(dock?.querySelector('[data-mobile-dock-ai]')).not.toBeNull();
+      expect(dock?.querySelector('[data-mobile-dock-search]')).toBeNull();
+      expect(dock?.querySelector('[data-mobile-dock-quick-add]')).toBeNull();
     });
 
     it('menu button in bottom tool bar opens primary navigation', () => {
@@ -174,9 +178,9 @@ describe('MALEK mobile shell & navigation polish pass (Section O verification ma
       expect(onMenuSpy).toHaveBeenCalledOnce();
     });
 
-    it('search button opens global command palette', () => {
-      renderWithClient(<MobileFloatingControl onMenu={vi.fn()} />);
-      const searchBtn = host.querySelector<HTMLButtonElement>('[data-mobile-dock-search]');
+    it('phone header search button opens global command palette', () => {
+      renderWithClient(<AppShell />);
+      const searchBtn = host.querySelector<HTMLButtonElement>('[data-header-phone-search]');
       expect(searchBtn).not.toBeNull();
       act(() => { searchBtn?.click(); });
       expect(mockOpenCommandPalette).toHaveBeenCalledOnce();
@@ -185,7 +189,7 @@ describe('MALEK mobile shell & navigation polish pass (Section O verification ma
     it('enforces 44px min touch-target size across all bottom dock controls', () => {
       renderWithClient(<MobileFloatingControl onMenu={vi.fn()} />);
       const buttons = host.querySelectorAll<HTMLElement>('[data-mobile-floating-control] button');
-      expect(buttons.length).toBeGreaterThanOrEqual(4);
+      expect(buttons.length).toBeGreaterThanOrEqual(3);
       for (const btn of Array.from(buttons)) {
         expect(btn.className).toContain('min-h-11');
         expect(btn.className).toContain('min-w-11');
@@ -230,9 +234,9 @@ describe('MALEK mobile shell & navigation polish pass (Section O verification ma
 
   describe('4. Quick Add Menu', () => {
     it('displays complete Arabic labels without truncation for core actions', () => {
-      renderWithClient(<MobileFloatingControl onMenu={vi.fn()} />);
+      renderWithClient(<AppShell />);
 
-      const quickAddBtn = host.querySelector<HTMLButtonElement>('[data-mobile-dock-quick-add]');
+      const quickAddBtn = host.querySelector<HTMLButtonElement>('[data-header-quick-add]');
       act(() => { quickAddBtn?.click(); });
 
       const menu = host.querySelector<HTMLElement>('[data-mobile-quick-add-menu]');
@@ -251,8 +255,8 @@ describe('MALEK mobile shell & navigation polish pass (Section O verification ma
     });
 
     it('includes a header with close control and click-outside handling', () => {
-      renderWithClient(<MobileFloatingControl onMenu={vi.fn()} />);
-      const quickAddBtn = host.querySelector<HTMLButtonElement>('[data-mobile-dock-quick-add]');
+      renderWithClient(<AppShell />);
+      const quickAddBtn = host.querySelector<HTMLButtonElement>('[data-header-quick-add]');
       act(() => { quickAddBtn?.click(); });
       expect(host.querySelector('[data-mobile-quick-add-menu]')).not.toBeNull();
 
@@ -323,14 +327,15 @@ describe('MALEK mobile shell & navigation polish pass (Section O verification ma
 
   describe('8. Dashboard Density & Shared Today Context', () => {
     it('renders a compact Today context strip with localized weekday and date from the canonical PageHeader', () => {
-      renderWithClient(<PageHeader title="لوحة التحكم" />);
+      renderWithClient(<PageHeader title="لوحة التحكم" showTodayContext />);
       const today = host.querySelector<HTMLElement>('[data-global-today-context]');
       expect(today).not.toBeNull();
       expect(today?.textContent).toContain('اليوم');
       expect(today?.querySelector('[data-global-today-weekday]')?.textContent).not.toBe('');
       expect(today?.querySelector('[data-global-today-day-date]')?.textContent).not.toBe('');
-      expect(today?.className).toContain('min-h-14');
-      expect(today?.className).toContain('rounded-2xl');
+      // Document chrome: the strip is an inline text layer, not a card.
+      expect(today?.className).not.toContain('min-h-14');
+      expect(today?.className).not.toContain('rounded-2xl');
     });
 
     it('keeps PageLayout structural and does not duplicate global refresh chrome', () => {
@@ -338,9 +343,9 @@ describe('MALEK mobile shell & navigation polish pass (Section O verification ma
       expect(host.querySelector('[data-global-refresh]')).toBeNull();
     });
 
-    it('defines compact mobile section gaps in dashboard-v2.css', () => {
+    it('defines compact mobile section gaps and the single attention treatment in dashboard-v2.css', () => {
       const dashboardCss = readFileSync(resolve(process.cwd(), 'src/features/dashboard/dashboard-v2.css'), 'utf8');
-      expect(dashboardCss).toContain('--dashboard-section-gap: 0.75rem');
+      expect(dashboardCss).toContain('--dashboard-section-gap: 0.85rem');
       expect(dashboardCss).toContain('--dashboard-cluster-gap: 0.5rem');
       expect(dashboardCss).toContain('[data-dashboard-focus-strip]');
       expect(dashboardCss).toContain("[data-dashboard-priority='attention']");

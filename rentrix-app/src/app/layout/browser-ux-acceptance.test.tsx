@@ -97,7 +97,8 @@ describe('WP-06 / GAP-020 Browser & UX Acceptance Hardening', () => {
       const html = renderToStaticMarkup(
         <PageHeader title="عنوان طويل جداً جداً جداً قد يسبب تجاوز العرض في الموبايل إذا لم يتم كسر الكلمات" description="وصف طويل جداً يحتوي على نص عربي مختلط مع EnglishLongUnbrokenStringThatCouldOverflowIfNotHandledProperly" />,
       );
-      expect(html).toContain('truncate');
+      // Titles wrap instead of clipping; long unbroken strings break anywhere.
+      expect(html).toContain('min-w-0');
       expect(html).toContain('[overflow-wrap:anywhere]');
     });
 

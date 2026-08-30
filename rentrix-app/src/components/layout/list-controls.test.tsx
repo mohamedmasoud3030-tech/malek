@@ -20,13 +20,20 @@ describe('FilterBar — سطح البحث والفلاتر الموحد', () => 
     expect(html).toContain('aria-label="الحالة"');
   });
 
-  it('applies the shared surface tokens (border/card/radius/shadow)', () => {
-    const html = renderToStaticMarkup(<FilterBar actions={<button type="button">x</button>} />);
+  it('applies the shared toolbar tokens: tools, not cards', () => {
+    const html = renderToStaticMarkup(
+      <FilterBar filters={<select aria-label="الفلاتر"><option>الكل</option></select>} actions={<button type="button">x</button>} />,
+    );
 
-    expect(html).toContain('border-border/70');
-    expect(html).toContain('bg-card');
-    expect(html).toContain('rounded-xl');
-    expect(html).toContain('shadow-card');
+    // The toolbar is a quiet edge-to-edge strip; it never becomes a card.
+    expect(html).toContain('border-y border-border/50 bg-muted/10 py-2');
+    expect(html).toContain('shadow-none');
+    // Quick filters sit inline at md+ so routine filtering stays one step away.
+    expect(html).toContain('data-quick-filters-desktop');
+    expect(html).toContain('data-filter-actions-desktop');
+    // The phone trigger remains the single compact affordance.
+    expect(html).toContain('md:hidden');
+    expect(html).toContain('aria-haspopup="dialog"');
   });
 
   it('accepts a className override while preserving the canonical aria label', () => {

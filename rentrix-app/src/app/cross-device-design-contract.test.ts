@@ -36,9 +36,12 @@ describe('cross-device design unification', () => {
     expect(nav).not.toContain('lg:hidden" data-mobile-floating-control');
   });
 
-  it('keeps page headers elevated while detail headers avoid a second card layer', () => {
-    expect(pageHeader).toContain('rounded-2xl');
+  it('keeps page and detail headers on quiet shared chrome; neither becomes a card', () => {
+    // Headers are document chrome: identity, context and one action rail under
+    // a hairline border. They never borrow a rounded card/shadow layer.
     expect(pageHeader).toContain('data-unified-surface="page-header"');
+    expect(pageHeader).toContain('border-b border-border/60');
+    expect(pageHeader).not.toContain('rounded-2xl');
     expect(detailHeader).toContain('data-unified-surface="page-header"');
     expect(detailHeader).toContain('border-b border-border/70');
     expect(detailHeader).not.toContain('shadow-card');

@@ -62,7 +62,13 @@ export const FINANCE_SECTIONS: readonly FinanceSectionDefinition[] = [
   { id: 'collections', label: 'التحصيل', icon: ReceiptText, defaultViewId: 'invoices', showInPrimaryNavigation: true },
   { id: 'fees', label: 'دخل المكتب', icon: BadgeDollarSign, defaultViewId: 'fixed_monthly_accruals', showInPrimaryNavigation: true },
   { id: 'expenses', label: 'المصروفات', icon: WalletCards, defaultViewId: 'expenses', showInPrimaryNavigation: true },
-  { id: 'funds', label: 'أموال الملاك', icon: FileCheck, defaultViewId: 'deposits', showInPrimaryNavigation: true },
+  {
+    id: 'funds',
+    label: 'أموال الملاك',
+    icon: HandCoins,
+    defaultViewId: 'owner_settlements',
+    showInPrimaryNavigation: true,
+  },
   { id: 'banking', label: 'البنوك', icon: Landmark, defaultViewId: 'bank_reconciliation', showInPrimaryNavigation: true },
   // Compatibility only. The old cockpit is no longer a routine destination.
   { id: 'overview', label: 'وضع المال', icon: LayoutDashboard, defaultViewId: 'overview', showInPrimaryNavigation: false },
@@ -75,8 +81,8 @@ export const FINANCE_VIEWS: readonly FinanceViewDefinition[] = [
   { id: 'fixed_monthly_accruals', sectionId: 'fees', label: 'أتعاب الإدارة', icon: CalendarDays, permission: 'financial.fixed_monthly_accruals.view' },
   { id: 'commissions', sectionId: 'fees', label: 'العمولات', icon: BadgeDollarSign, permission: 'commissions.view' },
   { id: 'expenses', sectionId: 'expenses', label: 'المصروفات', icon: WalletCards, permission: 'expenses.view' },
+  { id: 'owner_settlements', sectionId: 'funds', label: 'تسويات الملاك', icon: HandCoins, permission: 'financial.owner_settlements.view' },
   { id: 'deposits', sectionId: 'funds', label: 'تأمينات المستأجرين', icon: FileCheck, permission: 'financial.deposits.view' },
-  { id: 'owner_settlements', sectionId: 'funds', label: 'مستحقات وتسويات الملاك', icon: HandCoins, permission: 'financial.owner_settlements.view' },
   { id: 'bank_reconciliation', sectionId: 'banking', label: 'المطابقة البنكية', icon: Landmark, permission: 'financial.bank_reconciliation.view' },
   { id: 'overview', sectionId: 'overview', label: 'وضع المال', icon: LayoutDashboard, permission: null, showInSectionNavigation: false },
 ];
@@ -103,6 +109,20 @@ export function getRoutineFinanceViews(
   return getPermittedViews(authorization).filter(
     (view) => view.sectionId === sectionId && view.showInSectionNavigation !== false,
   );
+}
+
+/**
+ * Resolve the first human-facing view for a section without assuming that the
+ * configured default is permitted for the current role.
+ */
+export function getDefaultFinanceView(
+  authorization: AuthorizationContext | null | undefined,
+  sectionId: FinanceSectionId | null,
+): FinanceViewDefinition | undefined {
+  if (!sectionId) return undefined;
+  const routineViews = getRoutineFinanceViews(authorization, sectionId);
+  const section = FINANCE_SECTIONS.find((candidate) => candidate.id === sectionId);
+  return routineViews.find((view) => view.id === section?.defaultViewId) ?? routineViews[0];
 }
 
 export function getPermittedSections(
@@ -158,7 +178,7 @@ export function resolveFinanceLocation(
     vId = vi === 'commissions' ? 'commissions' : 'fixed_monthly_accruals';
   } else if (['funds', 'deposits', 'owner_settlements'].includes(sec)) {
     sId = 'funds';
-    const defaultView = sec === 'funds' ? 'deposits' : sec;
+    const defaultView = sec === 'funds' ? 'owner_settlements' : sec;
     vId = (vi || defaultView) as FinanceViewId;
   } else if (['banking', 'bank_reconciliation'].includes(sec)) {
     sId = 'banking';
@@ -168,12 +188,12 @@ export function resolveFinanceLocation(
   const viewMeta = FINANCE_VIEWS.find((view) => view.id === vId);
   const permitted = viewMeta ? isViewPermitted(authorization, viewMeta) : false;
   if (!viewMeta || viewMeta.sectionId !== sId || !permitted) {
-    const permittedSectionViews = getRoutineFinanceViews(authorization, sId);
-    if (permittedSectionViews[0]) {
-      vId = permittedSectionViews[0].id;
+    const defaultView = getDefaultFinanceView(authorization, sId);
+    if (defaultView) {
+      vId = defaultView.id;
     } else {
       const firstSection = getPermittedSections(authorization)[0];
-      const firstView = firstSection ? getRoutineFinanceViews(authorization, firstSection.id)[0] : undefined;
+      const firstView = getDefaultFinanceView(authorization, firstSection?.id ?? null);
       sId = firstSection?.id ?? 'collections';
       vId = firstView?.id ?? 'invoices';
     }

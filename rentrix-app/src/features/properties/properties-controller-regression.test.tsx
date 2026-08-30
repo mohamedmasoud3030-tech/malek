@@ -109,7 +109,8 @@ describe('PropertiesListPage controller regression', () => {
     expect(container.querySelector('[data-entity-table-scroll]')).toBeTruthy();
     expect(container.querySelector('[data-compact-responsive-table]')).toBeTruthy();
     expect(container.querySelector('table[data-entity-table]')).toBeTruthy();
-    expect(container.querySelector('[role="group"][aria-label*="طريقة عرض"]')).toBeNull();
+    // The shared register exposes one Cards ⇄ Table toggle (default: Table on desktop).
+    expect(container.querySelector('[role="group"][aria-label*="طريقة عرض"]')).toBeTruthy();
   });
 
   it('opens create modal and shows agreement fields', async () => {

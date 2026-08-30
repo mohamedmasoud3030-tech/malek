@@ -40,7 +40,11 @@ export function ReportsPrimaryNavigation({ activeWorkspace, onOpen }: ReportsPri
   const activeId = resolvePrimaryNavigationId(activeWorkspace);
 
   return (
-    <nav className="flex min-w-0 items-center gap-1.5" aria-label="أقسام التقارير" data-reports-primary-navigation>
+    <nav
+      className="flex min-w-0 flex-col gap-1.5 sm:flex-row sm:items-center"
+      aria-label="أقسام التقارير"
+      data-reports-primary-navigation
+    >
       <div className="min-w-0 flex-1">
         <SectionTabs
           items={primaryTabs}
@@ -52,7 +56,6 @@ export function ReportsPrimaryNavigation({ activeWorkspace, onOpen }: ReportsPri
           ariaLabel="أقسام التقارير"
           panelId="reports-workspace-panel"
           idPrefix="reports-primary"
-          compactMobile
         />
       </div>
       <Button
@@ -60,13 +63,12 @@ export function ReportsPrimaryNavigation({ activeWorkspace, onOpen }: ReportsPri
         variant="ghost"
         size="sm"
         aria-current={activeId === 'advanced' ? 'page' : undefined}
-        className="min-h-11 shrink-0 gap-1.5 px-2 text-xs font-black text-muted-foreground data-[active=true]:bg-muted data-[active=true]:text-foreground"
+        className="min-h-11 self-end gap-1.5 px-2.5 text-xs font-black text-muted-foreground data-[active=true]:bg-muted data-[active=true]:text-foreground sm:self-auto"
         data-active={activeId === 'advanced'}
         onClick={() => onOpen('financial_review', 'accounting_reports')}
       >
         <Scale className="size-3.5" aria-hidden="true" />
-        <span className="hidden sm:inline">مراجعة متقدمة</span>
-        <span className="sm:hidden">متقدمة</span>
+        <span>مراجعة متقدمة</span>
       </Button>
     </nav>
   );

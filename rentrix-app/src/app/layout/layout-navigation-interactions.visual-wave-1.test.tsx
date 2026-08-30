@@ -8,6 +8,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AuthorizationContext } from '@/features/auth/permissions';
 
 vi.mock('@/components/layout/permission-request-dialog', () => ({ PermissionRequestDialog: () => null }));
+vi.mock('@/hooks/use-auth', () => ({
+  useAuth: () => ({ logout: vi.fn().mockResolvedValue(undefined) }),
+}));
 
 vi.mock('@tanstack/react-router', () => ({
   Link: ({ children, to, activeOptions: _activeOptions, ...props }: { children: ReactNode; to: string; activeOptions?: unknown } & Record<string, unknown>) => (

@@ -31,6 +31,10 @@ export interface ActionMenuProps {
   label?: string;
   align?: 'start' | 'center' | 'end';
   className?: string;
+  /** Icon-only trigger (default) or a compact labeled trigger such as «تصدير». */
+  variant?: 'icon' | 'labeled';
+  /** Disable the trigger without removing the menu from the layout. */
+  disabled?: boolean;
 }
 
 function isActionMenuItem(item: ActionMenuEntry): item is ActionMenuItem {
@@ -52,7 +56,7 @@ function isDestructive(item: ActionMenuEntry): boolean {
   return isActionMenuItem(item) ? Boolean(item.destructive) : item.variant === 'destructive' || Boolean(item.danger);
 }
 
-export function ActionMenu({ items, label = 'الإجراءات', align = 'end', className }: ActionMenuProps) {
+export function ActionMenu({ items, label = 'الإجراءات', align = 'end', className, variant = 'icon', disabled = false }: ActionMenuProps) {
   // Disabled actions are deliberately unavailable rather than focusable/selectable.
   const visibleItems = items.filter((item) => !item.disabled);
   const [open, setOpen] = useState(false);
@@ -61,6 +65,7 @@ export function ActionMenu({ items, label = 'الإجراءات', align = 'end',
   const menuRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const menuId = useId();
+  const labeled = variant === 'labeled';
 
   const positionMenu = () => {
     const rect = triggerRef.current?.getBoundingClientRect();
@@ -97,9 +102,23 @@ export function ActionMenu({ items, label = 'الإجراءات', align = 'end',
   }, [open]);
 
   if (visibleItems.length === 0) return null;
-  if (visibleItems.length === 1) {
+  if (!labeled && visibleItems.length === 1) {
     const item = visibleItems[0];
-    return <Button variant="ghost" size="icon" onClick={() => selectItem(item)} className={cn('size-11 text-muted-foreground hover:text-foreground', className)} aria-label={item.label} title={item.label} data-action-menu>{getIcon(item) ?? <MoreVertical className="size-4" aria-hidden="true" />}<span className="sr-only">{item.label}</span></Button>;
+    return (
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => selectItem(item)}
+        disabled={disabled}
+        className={cn('size-11 text-muted-foreground hover:text-foreground', className)}
+        aria-label={item.label}
+        title={item.label}
+        data-action-menu
+      >
+        {getIcon(item) ?? <MoreVertical className="size-4" aria-hidden="true" />}
+        <span className="sr-only">{item.label}</span>
+      </Button>
+    );
   }
 
   return (
@@ -107,14 +126,18 @@ export function ActionMenu({ items, label = 'الإجراءات', align = 'end',
       <Button
         ref={triggerRef}
         type="button"
-        variant="ghost"
-        size="icon"
-        aria-label={label}
+        variant={labeled ? 'secondary' : 'ghost'}
+        size={labeled ? 'sm' : 'icon'}
+        aria-label={labeled ? undefined : label}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
-        title={label}
-        className="size-11 text-muted-foreground hover:bg-muted hover:text-foreground"
+        title={labeled ? undefined : label}
+        disabled={disabled}
+        data-action-menu-trigger
+        className={labeled
+          ? 'min-h-11 gap-1.5 rounded-lg px-3 text-xs font-bold'
+          : 'size-11 text-muted-foreground hover:bg-muted hover:text-foreground'}
         onClick={() => setOpen((current) => !current)}
         onKeyDown={(event) => {
           if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
@@ -124,8 +147,17 @@ export function ActionMenu({ items, label = 'الإجراءات', align = 'end',
           }
         }}
       >
-        <MoreHorizontal className="size-4" aria-hidden="true" />
-        <span className="sr-only">{label}</span>
+        {labeled ? (
+          <>
+            <span>{label}</span>
+            <MoreVertical className="size-4 rtl:-scale-x-100" aria-hidden="true" />
+          </>
+        ) : (
+          <>
+            <MoreHorizontal className="size-4" aria-hidden="true" />
+            <span className="sr-only">{label}</span>
+          </>
+        )}
       </Button>
       {open ? createPortal(
         <div

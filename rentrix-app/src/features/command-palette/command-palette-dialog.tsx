@@ -103,7 +103,8 @@ export function CommandPaletteDialog() {
             ref={inputRef}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            type="search"
+            type="text"
+            role="searchbox"
             inputMode="search"
             autoComplete="off"
             enterKeyHint="search"

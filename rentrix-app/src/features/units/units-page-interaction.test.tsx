@@ -146,7 +146,7 @@ describe('Global UnitsPage Real Rendered User-Interaction Tests', () => {
     expect(document.body.textContent).not.toContain('اختيار العقار مطلوب');
   });
 
-  it('proves clicking a desktop row in UnitsPage opens the route-native unit preview', async () => {
+  it('proves clicking a desktop row in UnitsPage opens the shared unit preview', async () => {
     await act(async () => {
       root.render(
         <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
@@ -164,12 +164,12 @@ describe('Global UnitsPage Real Rendered User-Interaction Tests', () => {
       row.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
 
-    // Row clicks open the shared preview dialog instead of leaving the register.
+    // Row clicks give a quick glance; the full dossier stays an explicit action.
     expect(document.body.textContent).toContain('معاينة الوحدة');
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 
-  it('proves clicking a compact responsive table row in UnitsPage opens the unit preview', async () => {
+  it('proves the explicit full-detail action routes to the unit dossier', async () => {
     await act(async () => {
       root.render(
         <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
@@ -178,15 +178,17 @@ describe('Global UnitsPage Real Rendered User-Interaction Tests', () => {
       );
     });
 
-    const row = container?.querySelector('tbody tr') as HTMLElement;
-    expect(row).not.toBeNull();
+    const fullDetail = Array.from(container?.querySelectorAll('a') ?? []).find((anchor) => anchor.textContent?.includes('التفاصيل الكاملة'));
+    expect(fullDetail).toBeTruthy();
 
     await act(async () => {
-      row.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      fullDetail?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
 
-    expect(document.body.textContent).toContain('معاينة الوحدة');
-    expect(mockNavigate).not.toHaveBeenCalled();
+    expect(mockNavigate).toHaveBeenCalledWith({
+      to: '/properties/$propertyId/units/$unitId',
+      params: { propertyId: 'prop-1', unitId: 'unit-1' },
+    });
   });
 
   it('proves that clicking the embedded property link does not bubble and routes only to property detail', async () => {

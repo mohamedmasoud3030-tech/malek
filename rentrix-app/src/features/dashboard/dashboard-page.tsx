@@ -349,6 +349,7 @@ export function DashboardPage() {
       <PageHeader
         title="لوحة التحكم"
         description="مركز قيادة اليوم: الأداء، الأولويات، التحصيل، الإشغال، العقود والالتزامات في مسار واحد."
+        showTodayContext
       />
 
       <div data-dashboard-page className="space-y-3 lg:space-y-4">

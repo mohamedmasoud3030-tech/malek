@@ -1,8 +1,6 @@
 import { Clock3, Flame, PlusCircle, Printer, Wrench } from 'lucide-react';
-import { useMemo } from 'react';
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { RegisterAttention, RegisterHeading, RegisterMetricStrip } from '@/components/layout/register-summary';
-import { ActiveFilterBar, type ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { Button } from '@/components/ui/button';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { Select } from '@/components/ui/select';
@@ -18,7 +16,7 @@ import { MaintenanceList } from './maintenance-list';
 import { maintenancePriorityLabels, maintenanceStatusLabels } from './maintenance-list';
 import { MaintenanceRequestForm } from './maintenance-request-form';
 import type { MaintenancePriorityFilter, MaintenanceStatusFilter } from '../maintenance-helpers';
-import { maintenanceAttentionLabels, type MaintenanceAttentionFilter } from '../maintenance-attention';
+import type { MaintenanceAttentionFilter } from '../maintenance-attention';
 import { useMaintenancePageController } from '../useMaintenancePageController';
 import { formatCount } from '@/lib/formatters';
 
@@ -35,46 +33,6 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
   const canCreateMaintenance = canAccess('maintenance.create');
   const canEditMaintenance = canAccess('maintenance.edit');
   const canApproveMaintenance = canAccess('maintenance.approve');
-
-  const activeFilters = useMemo<readonly ActiveFilterItem[]>(() => {
-    const items: ActiveFilterItem[] = [];
-    if (controller.statusFilter !== 'all') {
-      items.push({
-        key: 'status',
-        label: 'الحالة',
-        value: maintenanceStatusLabels[controller.statusFilter as keyof typeof maintenanceStatusLabels] ?? controller.statusFilter,
-        onRemove: () => controller.setStatusFilter('all'),
-      });
-    }
-    if (controller.priorityFilter !== 'all') {
-      items.push({
-        key: 'priority',
-        label: 'الأولوية',
-        value: maintenancePriorityLabels[controller.priorityFilter as keyof typeof maintenancePriorityLabels] ?? controller.priorityFilter,
-        onRemove: () => controller.setPriorityFilter('all'),
-      });
-    }
-    if (controller.attentionFilter !== 'all') {
-      items.push({
-        key: 'attention',
-        label: 'المتابعة',
-        value: maintenanceAttentionLabels[controller.attentionFilter],
-        onRemove: () => controller.setAttentionFilter('all'),
-      });
-    }
-    if (controller.propertyFilterId) {
-      const propertyLabel = controller.properties.find(
-        (property) => property.id === controller.propertyFilterId,
-      )?.title ?? controller.propertyFilterId;
-      items.push({
-        key: 'property',
-        label: 'العقار',
-        value: propertyLabel,
-        onRemove: () => controller.setPropertyFilterId(''),
-      });
-    }
-    return items;
-  }, [controller]);
 
   const clearAllFilters = () => {
     controller.setStatusFilter('all');
@@ -221,8 +179,6 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
           </Button>
         ) : undefined}
       />
-
-      <ActiveFilterBar filters={activeFilters} onClearAll={clearAllFilters} />
 
       <section data-maintenance-register className="min-w-0 space-y-2.5">
         <RegisterHeading

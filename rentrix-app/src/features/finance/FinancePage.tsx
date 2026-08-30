@@ -9,12 +9,12 @@ import { useAuth } from '@/hooks/use-auth';
 import {
   FINANCE_SECTIONS,
   FINANCE_VIEWS,
+  getDefaultFinanceView,
   getPermittedSections,
   getPermittedViews,
   getRoutineFinanceViews,
   resolveFinanceLocation,
   type FinanceSectionId,
-  type FinanceViewId,
   type FinancialsSearch,
 } from './shell/financeShellModel';
 
@@ -83,12 +83,10 @@ export function FinancePage() {
     : permittedSections[0]?.id ?? null;
   const activeView = permittedViews.some((view) => view.id === resolvedViewId)
     ? resolvedViewId
-    : activeSection
-      ? getRoutineFinanceViews(authorization, activeSection)[0]?.id ?? null
-      : null;
+    : getDefaultFinanceView(authorization, activeSection)?.id ?? null;
 
   const handleSectionChange = useCallback((sectionId: FinanceSectionId) => {
-    const defaultView = getRoutineFinanceViews(authorization, sectionId)[0]?.id;
+    const defaultView = getDefaultFinanceView(authorization, sectionId)?.id;
     if (!defaultView) return;
     void navigate({
       to: '.',
@@ -140,7 +138,7 @@ export function FinancePage() {
     <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro">
       <PageHeader
         title="المالية"
-        description="الفواتير والتحصيل والمصروفات وأموال الملاك والبنوك من مكان واحد."
+        description="الفواتير والتحصيل والمصروفات والتسويات والأمانات والبنوك من مكان واحد."
       />
 
       <div data-finance-root className="min-w-0 space-y-3 sm:space-y-4">
@@ -156,7 +154,6 @@ export function FinancePage() {
             ariaLabel="أقسام المالية"
             panelId="finance-workspace-panel"
             idPrefix="finance-section"
-            compactMobile
           />
         </nav>
 
@@ -169,7 +166,6 @@ export function FinancePage() {
               ariaLabel={`تفاصيل ${activeSectionDefinition?.label ?? 'المالية'}`}
               panelId="finance-workspace-panel"
               idPrefix="finance-view"
-              compactMobile
             />
           </div>
         ) : null}

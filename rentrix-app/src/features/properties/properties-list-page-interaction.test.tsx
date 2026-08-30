@@ -97,9 +97,10 @@ describe('PropertiesListPage mobile workflow interactions', () => {
     await act(async () => row?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
     expect(mockNavigate).toHaveBeenCalledWith({ to: '/properties/$propertyId', params: { propertyId: 'property-1' } });
 
-    // Secondary actions are flat now: no «إجراءات» layer to open first —
-    // edit is a direct row action on both the desktop row and the mobile card.
-    expect(container.querySelector('[data-action-menu]')).toBeNull();
+    // Row actions are flat: no «إجراءات» layer to open first — edit is a direct
+    // row action on both the desktop row and the mobile card. (Toolbar-level
+    // utilities such as export/columns may use their own menus.)
+    expect(container.querySelector('tbody [data-action-menu]')).toBeNull();
     const editButton = Array.from(container.querySelectorAll('button')).find((button) => button.textContent?.trim() === 'تعديل');
     expect(editButton).toBeTruthy();
     await act(async () => editButton?.dispatchEvent(new MouseEvent('click', { bubbles: true })));

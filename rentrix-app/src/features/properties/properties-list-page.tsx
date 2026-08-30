@@ -1,9 +1,9 @@
 import {
   Building2,
   CircleCheck,
-  Download,
   Edit,
   FileSpreadsheet,
+  FileText,
   Handshake,
   Plus,
   Trash2,
@@ -18,10 +18,10 @@ import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { DataTableColumnsMenu } from "@/components/ui/data-table";
 import { EntityCell } from "@/components/ui/entity-cell";
-import { RegisterAttention, RegisterHeading, RegisterMetricStrip } from "@/components/layout/register-summary";
+import { RegisterHeading, RegisterMetricStrip } from "@/components/layout/register-summary";
+import { ExportMenu } from "@/components/ui/export-menu";
 import { Select } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { ActiveFilterBar } from "@/components/ui/active-filter-bar";
 import { EntityTable, type ColumnDef } from "@/components/ui/entity-table";
 import { getAppLanguageState, translateSharedLabel } from "@/lib/i18n";
 import { toast } from "sonner";
@@ -264,30 +264,6 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
             إضافة عقار
           </Button>
         ) : undefined}
-        secondaryActions={canExport ? (
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={handleExportXlsx}
-              disabled={controller.properties.length === 0}
-              aria-label="تصدير العقارات كملف Excel"
-            >
-              <FileSpreadsheet className="me-2 size-4" />
-              Excel
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={handleExportCsv}
-              disabled={controller.properties.length === 0}
-              aria-label="تصدير العقارات كملف CSV"
-            >
-              <Download className="me-2 size-4" />
-              CSV
-            </Button>
-          </div>
-        ) : undefined}
         search={{
           value: controller.search,
           onChange: (value) => {
@@ -297,35 +273,42 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
           placeholder: "بحث بالاسم أو العنوان...",
         }}
         filters={
-          <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto overscroll-x-contain no-scrollbar">
-            <Select
-              aria-label="الحالة"
-              value={controller.status}
-              onChange={(event) => {
-                controller.setStatus(event.target.value as typeof controller.status);
-                controller.setPage(1);
-              }}
-              className="min-h-11 w-36 shrink-0 rounded-lg"
-            >
-              <option value="all">كل الحالات</option>
-              {controller.statusValues.map((status) => (
-                <option key={status} value={status}>
-                  {controller.statusLabels[status]}
-                </option>
-              ))}
-            </Select>
-            <ActiveFilterBar
-              filters={controller.activeFilters}
-              onClearAll={controller.clearFilters}
-            />
-          </div>
+          <Select
+            aria-label="الحالة"
+            value={controller.status}
+            onChange={(event) => {
+              controller.setStatus(event.target.value as typeof controller.status);
+              controller.setPage(1);
+            }}
+            className="min-h-11 w-36 shrink-0 rounded-lg"
+          >
+            <option value="all">كل الحالات</option>
+            {controller.statusValues.map((status) => (
+              <option key={status} value={status}>
+                {controller.statusLabels[status]}
+              </option>
+            ))}
+          </Select>
         }
+        activeFilters={controller.activeFilters}
+        onClearAllFilters={controller.clearFilters}
         toolbarActions={
-          <DataTableColumnsMenu
-            columns={propertyColumnOptions}
-            visibleKeys={visibleColumnKeys}
-            onChange={setVisibleColumnKeys}
-          />
+          <>
+            {canExport ? (
+              <ExportMenu
+                disabled={controller.properties.length === 0}
+                items={[
+                  { id: 'xlsx', label: 'ملف Excel', icon: FileSpreadsheet, onClick: handleExportXlsx },
+                  { id: 'csv', label: 'ملف CSV', icon: FileText, onClick: handleExportCsv },
+                ]}
+              />
+            ) : null}
+            <DataTableColumnsMenu
+              columns={propertyColumnOptions}
+              visibleKeys={visibleColumnKeys}
+              onChange={setVisibleColumnKeys}
+            />
+          </>
         }
       >
         {!controller.propertiesQuery.isLoading && !controller.propertiesQuery.isError ? (
@@ -341,10 +324,7 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
         ) : null}
 
         <section data-property-register className="min-w-0 space-y-2.5">
-          <RegisterHeading
-            title="سجل العقارات"
-            extra={<RegisterAttention count={attentionCount} label="تحتاج متابعة" />}
-          />
+          <RegisterHeading title="سجل العقارات" />
 
           <EntityTable
             aria-label="جدول العقارات"

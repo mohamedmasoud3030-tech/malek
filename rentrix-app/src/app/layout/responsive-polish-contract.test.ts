@@ -23,7 +23,8 @@ describe('responsive polish contract', () => {
     const header = read('src/components/layout/page-header.tsx');
     expect(header).toContain('flex-wrap');
     expect(header).toContain('[overflow-wrap:anywhere]');
-    expect(header).toContain('basis-full');
+    // The identity block yields its own full row before the actions rail.
+    expect(header).toContain('min-w-0 flex-1');
   });
 
   it('clears the phone dock with the shared token instead of a hard-coded bottom offset', () => {
@@ -43,9 +44,13 @@ describe('responsive polish contract', () => {
     expect(polish).not.toContain('[data-page-layout] > div { padding-inline:');
   });
 
-  it('stacks register filters on their own phone row instead of crowding the actions', () => {
+  it('stacks register filters into one quiet toolbar and the phone sheet', () => {
     const filterBar = read('src/components/ui/filter-bar.tsx');
-    expect(filterBar).toContain('col-span-2 lg:col-span-1');
+    // Quick filters and utilities sit inline at md+; on phones everything
+    // shares a single sheet behind the filter trigger.
+    expect(filterBar).toContain('data-quick-filters-desktop');
+    expect(filterBar).toContain('data-filter-actions-desktop');
+    expect(filterBar).toContain('md:hidden');
     expect(filterBar).toContain('overscroll-x-contain');
   });
 

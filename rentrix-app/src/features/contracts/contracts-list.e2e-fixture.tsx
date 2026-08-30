@@ -167,10 +167,13 @@ export function ContractsListE2EFixture() {
           totalCount={fixtureContracts.length}
         />
         <ContractFilters
+          activeFilters={[]}
+          canExport={false}
           expiringOnly={expiringOnly}
-          hasActiveFilters={hasActiveFilters}
           leaseMode={leaseMode}
-          resetFilters={() => { setStatus('all'); setLeaseMode('all'); setSearchTerm(''); setExpiringOnly(false); }}
+          onClearAllFilters={() => { setStatus('all'); setLeaseMode('all'); setSearchTerm(''); setExpiringOnly(false); }}
+          onExportCsv={() => undefined}
+          onExportXlsx={() => undefined}
           searchTerm={searchTerm}
           setExpiringOnly={(updater) => setExpiringOnly(updater)}
           setLeaseMode={setLeaseMode}

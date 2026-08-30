@@ -9,7 +9,8 @@ describe('UI mobile architecture reset — shared foundation', () => {
     expect(table).toContain('data-compact-responsive-table');
     expect(table).toContain('data-entity-table-mobile-list');
     expect(table).toContain('mobile-scroll-x');
-    expect(table).toContain("viewportMode === 'mobile'");
+    expect(table).toContain("getDefaultViewMode(viewportMode)");
+    expect(table).toContain("viewport === 'mobile' ? 'cards' : 'table'");
     expect(table).toContain('if (totalPages <= 1) return null');
   });
 

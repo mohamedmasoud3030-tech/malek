@@ -281,6 +281,7 @@ export function InvoiceListSection({
         <div data-finance-table-wrapper>
           <EntityTable
             aria-label="سجل الفواتير"
+            viewModeStorageKey="malek:invoices:register-view-mode-v1"
             rows={invoices}
             keyOf={(invoice) => invoice.id}
             visibleColumnKeys={visibleColumnKeys}

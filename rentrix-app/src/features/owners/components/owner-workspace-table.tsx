@@ -9,8 +9,8 @@ import { EmptyState } from '@/components/ui/state-surfaces';
 import { EntityCell } from '@/components/ui/entity-cell';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { formatLatinNumber } from '@/lib/formatters';
-import type { Owner } from '../services/owner-service';
 import { OwnerPreviewDialog } from './OwnerPreviewDialog';
+import type { Owner } from '../services/owner-service';
 import {
   getOwnerDisplayLabel,
   getOwnerPropertyOwnershipLabel,
@@ -87,9 +87,11 @@ export function OwnerWorkspaceTable({
   onSearchChange,
   onSelectOwner,
 }: OwnerWorkspaceTableProps) {
-  const [previewOwnerId, setPreviewOwnerId] = useState<string | null>(null);
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultOwnerColumns]);
+  const [previewOwnerId, setPreviewOwnerId] = useState<string | null>(null);
   const hasSearch = Boolean(search.trim());
+
+  const openPreview = (ownerId: string) => setPreviewOwnerId(ownerId);
   const emptyState = (
     <EmptyState
       title={hasSearch ? 'لا توجد نتائج مطابقة' : 'لا يوجد ملاك'}
@@ -97,8 +99,6 @@ export function OwnerWorkspaceTable({
       action={hasSearch ? undefined : <Button onClick={onCreateOwner}>إضافة مالك</Button>}
     />
   );
-
-  const openPreview = (ownerId: string) => setPreviewOwnerId(ownerId);
 
   const columns = useMemo((): ColumnDef<OwnerWorkspaceRow>[] => [
     {
@@ -139,7 +139,7 @@ export function OwnerWorkspaceTable({
         </div>
       ),
     },
-  ], []);
+  ], [onEditOwner, onSelectOwner, openPreview]);
 
   return (
     <div className="space-y-3" data-owner-workspace-table>
@@ -167,6 +167,13 @@ export function OwnerWorkspaceTable({
           mobileSupportingKey="contact"
           mobilePrimaryMetaKeys={['contracts', 'property_count']}
           mobileSecondaryMetaKeys={['ownership']}
+          mobileCardPrimaryAction={(row) => ({
+            label: 'معاينة',
+            icon: Eye,
+            variant: 'default',
+            onClick: () => openPreview(row.owner.id),
+            ariaLabel: `معاينة ${getOwnerDisplayLabel(row.owner)}`,
+          })}
           mobileCardActions={(row) => [
             {
               label: 'العلاقات',
@@ -191,7 +198,7 @@ export function OwnerWorkspaceTable({
 
       <OwnerPreviewDialog
         ownerId={previewOwnerId}
-        open={Boolean(previewOwnerId)}
+        open={previewOwnerId !== null}
         onOpenChange={(open) => { if (!open) setPreviewOwnerId(null); }}
       />
     </div>

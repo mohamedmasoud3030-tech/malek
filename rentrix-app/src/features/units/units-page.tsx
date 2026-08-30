@@ -57,9 +57,12 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
   const { canAccess } = useAuth();
   const canCreateUnit = canAccess("properties.create");
   const canEditUnit = canAccess("properties.edit");
-  const [previewUnitId, setPreviewUnitId] = useState<string | null>(null);
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultUnitRegisterColumns]);
+  const [previewUnitId, setPreviewUnitId] = useState<string | null>(null);
   if (ctrl.isLoading) return <LoadingState variant="route" />;
+
+  const openPreview = (unit: Unit) => setPreviewUnitId(unit.id);
+  const closePreview = () => setPreviewUnitId(null);
 
   const totalUnits = ctrl.units.length;
   const occupancyRate = totalUnits > 0
@@ -68,26 +71,13 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
   const maintenanceCount = ctrl.units.filter(
     (unit) => getUnitPageStatus(unit) === "maintenance",
   ).length;
-  const openPreview = (unit: Unit) => setPreviewUnitId(unit.id);
 
-  const primaryAction = (
-    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-      {canCreateUnit ? (
-        <Button onClick={ctrl.openCreate}>
-          <Plus className="me-2 size-4" />
-          إضافة وحدة
-        </Button>
-      ) : null}
-      {!embedded ? (
-        <Button asChild variant="secondary" className="min-h-11">
-          <Link to="/properties">
-            <Building2 className="me-2 size-4" />
-            العقارات
-          </Link>
-        </Button>
-      ) : null}
-    </div>
-  );
+  const primaryAction = canCreateUnit ? (
+    <Button onClick={ctrl.openCreate}>
+      <Plus className="me-2 size-4" />
+      إضافة وحدة
+    </Button>
+  ) : undefined;
 
   const columns = useMemo((): ColumnDef<Unit>[] => [
     {
@@ -161,24 +151,28 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
           onClick={(event) => event.stopPropagation()}
           onKeyDown={(event) => event.stopPropagation()}
         >
-          {canEditUnit ? (
-            <Button variant="secondary" onClick={() => ctrl.openEdit(unit)}>
-              <Edit className="me-1 size-4" aria-hidden="true" />
-              تعديل
-            </Button>
-          ) : null}
-          <Button variant="ghost" asChild>
+          <Button variant="ghost" className="min-h-11 px-3" onClick={() => openPreview(unit)}>
+            <Eye className="me-1 size-4" aria-hidden="true" />
+            معاينة
+          </Button>
+          <Button variant="secondary" className="min-h-11 px-3" asChild>
             <Link
               to="/properties/$propertyId/units/$unitId"
               params={{ propertyId: unit.property_id, unitId: unit.id }}
             >
-              التفاصيل
+              التفاصيل الكاملة
             </Link>
           </Button>
+          {canEditUnit ? (
+            <Button variant="ghost" className="min-h-11 px-3" onClick={() => ctrl.openEdit(unit)}>
+              <Edit className="me-1 size-4" aria-hidden="true" />
+              تعديل البيانات
+            </Button>
+          ) : null}
         </div>
       ),
     },
-  ], []);
+  ], [canEditUnit, ctrl, openPreview]);
 
   return (
     <EmbeddableWorkspace
@@ -189,6 +183,8 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
       title="الوحدات"
       count={formatNumber(totalUnits)}
       primaryAction={primaryAction}
+      backTo={embedded ? undefined : "/properties"}
+      backLabel={embedded ? undefined : "العقارات"}
     >
       <section data-unit-summary aria-label="ملخص تشغيل الوحدات">
         <RegisterMetricStrip
@@ -293,29 +289,36 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
           mobileSupportingKey="property"
           mobilePrimaryMetaKeys={["rent", "floor"]}
           mobileSecondaryMetaKeys={["notes"]}
+          mobileCardPrimaryAction={(unit) => ({
+            label: "معاينة",
+            icon: Eye,
+            variant: "default",
+            ariaLabel: `معاينة وحدة ${unit.unit_number}`,
+            onClick: () => openPreview(unit),
+          })}
           mobileCardActions={(unit) => [
+            {
+              label: "التفاصيل الكاملة",
+              icon: DoorOpen,
+              variant: "secondary" as const,
+              ariaLabel: `فتح ملف وحدة ${unit.unit_number}`,
+              onClick: () => ctrl.navigateToUnit(unit),
+            },
             ...(canEditUnit ? [{
-              label: "تعديل",
+              label: "تعديل البيانات",
               icon: Edit,
               variant: "secondary" as const,
               ariaLabel: `تعديل وحدة ${unit.unit_number}`,
               onClick: () => ctrl.openEdit(unit),
             }] : []),
-            {
-              label: "التفاصيل الكاملة",
-              icon: DoorOpen,
-              variant: "secondary" as const,
-              ariaLabel: `فتح تفاصيل وحدة ${unit.unit_number}`,
-              onClick: () => ctrl.navigateToUnit(unit),
-            },
           ]}
         />
       </section>
 
       <UnitPreviewDialog
         unitId={previewUnitId}
-        open={Boolean(previewUnitId)}
-        onOpenChange={(open) => { if (!open) setPreviewUnitId(null); }}
+        open={previewUnitId !== null}
+        onOpenChange={(open) => { if (!open) closePreview(); }}
       />
 
       {canCreateUnit ? (
