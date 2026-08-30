@@ -79,14 +79,13 @@ function renderPropertyOverview() {
 }
 
 describe('PropertyOverview Component Rendering and Copy Integrity', () => {
-  it('renders accurate Arabic agreement and financial empty copy', () => {
+  it('renders a useful financial snapshot without duplicating the ownership tab', () => {
     const html = renderPropertyOverview();
 
-    // Renders the current service-backed empty state for owner agreements
-    expect(html).toContain('لا توجد اتفاقية سارية اليوم.');
-    // The overview now renders the real property financial context (was a stub).
+    // Overview keeps a short receivable snapshot; agreement management lives on the ownership tab.
     expect(html).toContain('فواتير المستأجرين على العقار');
     expect(html).toContain('لا توجد فواتير مفتوحة على عقود هذا العقار.');
+    expect(html).not.toContain('لا توجد اتفاقية سارية اليوم.');
 
     // DOES NOT render unsupported legacy wording
     expect(html).not.toContain('ستظهر اتفاقية التشغيل هنا عند توفر بياناتها.');

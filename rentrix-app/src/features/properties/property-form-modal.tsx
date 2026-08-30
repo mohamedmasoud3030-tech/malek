@@ -15,6 +15,7 @@ import { useOperationalOwners } from '@/features/owners/useOwners';
 import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
 import { getActionableSupabaseErrorMessage } from '@/lib/supabase-error';
 import { propertyStatusLabels, propertyStatusValues } from './property-schema';
+import { translatePropertyType } from './components/property-status';
 import { applyPropertyOwnershipSplit } from './property-service';
 import { useProperty, useUpdateProperty } from './use-properties';
 import { PropertyFormCoreFields } from './components/property-form-core-fields';
@@ -263,13 +264,12 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
         {step === 1 && (
           <>
             <EntityForm.Section
+              columns={2}
               className="md:col-span-2"
               title="1. بيانات العقار الأساسية"
               description="أدخل بيانات الأصل نفسه أولاً (الاسم، النوع، العنوان، والتقييم)."
             >
-              <div className="grid gap-4 md:grid-cols-2">
-                <PropertyFormCoreFields register={form.register} errors={form.formState.errors} />
-              </div>
+              <PropertyFormCoreFields register={form.register} errors={form.formState.errors} />
             </EntityForm.Section>
             <div className="md:col-span-2 flex flex-wrap justify-end gap-2 pt-2 border-t border-border">
               <Button type="button" variant="outline" className="min-h-11" onClick={onClose}>إلغاء</Button>
@@ -391,11 +391,11 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
             </EntityForm.Section>
 
             <EntityForm.Section
+              columns={2}
               className="md:col-span-2"
               title="3. اتفاقية تشغيل المكتب"
               description="تحدد الاتفاقية كيف يدير المكتب هذا العقار، وهي شرط قبل إنشاء أي عقد إيجار."
             >
-              <div className="grid gap-4 md:grid-cols-2">
                 <EntityForm.Field label="نوع الاتفاقية" error={form.formState.errors.agreement_type?.message}>
                   <Select {...form.register('agreement_type')} disabled>
                     <option value="property_management">إدارة عقارية</option>
@@ -435,7 +435,6 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
                 >
                   <Input type="date" {...form.register('agreement_ends_on')} />
                 </EntityForm.Field>
-              </div>
             </EntityForm.Section>
             <div className="md:col-span-2 flex flex-wrap justify-between gap-2 pt-2 border-t border-border">
               <Button type="button" variant="outline" className="min-h-11" onClick={() => setStep(1)}>السابق: بيانات العقار</Button>
@@ -459,7 +458,7 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
                   </div>
                   <div>
                     <span className="text-muted-foreground text-xs">النوع والعنوان:</span>
-                    <p className="font-semibold">{type || '—'} - {address || '—'}</p>
+                    <p className="font-semibold">{translatePropertyType(type) || '—'} - {address || '—'}</p>
                   </div>
                   <div>
                     <span className="text-muted-foreground text-xs">المالك:</span>
