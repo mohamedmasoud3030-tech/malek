@@ -1,0 +1,30 @@
+name: Secondary Register Cleanup
+
+on:
+  push:
+    branches:
+      - refactor/shared-ui-cleanup
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refactor/shared-ui-cleanup
+          fetch-depth: 0
+      - name: Consolidate actions
+        run: python3 scripts/register-actions-cleanup-two.py
+      - name: Commit cleanup
+        run: |
+          rm -f .github/workflows/register-actions-cleanup-two.yml scripts/register-actions-cleanup-two.py
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "refactor(ui): consolidate secondary register actions"
+          git push origin HEAD:refactor/shared-ui-cleanup
