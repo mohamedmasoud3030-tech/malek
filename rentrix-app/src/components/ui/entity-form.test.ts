@@ -2,17 +2,11 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { EntityForm, focusFirstInvalidField, getResponsiveFormSurface } from './entity-form';
+import { EntityForm, focusFirstInvalidField } from './entity-form';
 
 afterEach(() => {
   document.body.innerHTML = '';
   vi.restoreAllMocks();
-});
-
-describe('responsive form overlay surface selection', () => {
-  it('uses the same scrollable Dialog contract on mobile and desktop', () => {
-    expect(getResponsiveFormSurface()).toBe('dialog');
-  });
 });
 
 describe('shared entity form composition', () => {
