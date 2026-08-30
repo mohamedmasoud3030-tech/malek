@@ -17,14 +17,16 @@ describe('cross-device design unification', () => {
   const reports = source('features/reports/reports-page.tsx');
   const assistant = source('features/ai-assistant/ai-assistant-page.tsx');
 
-  it('keeps one current floating dock with Menu, Search and utilities', () => {
+  it('keeps Search and Quick Add in the phone header while the dock stays minimal', () => {
     for (const hook of [
+      'data-header-phone-search',
+      'data-header-quick-add',
       'data-mobile-dock-menu',
-      'data-mobile-dock-search',
-      'data-mobile-dock-quick-add',
       'data-mobile-dock-notifications',
       'data-mobile-dock-ai',
     ]) expect(nav).toContain(hook);
+    expect(nav).not.toContain('data-mobile-dock-search');
+    expect(nav).not.toContain('data-mobile-dock-quick-add');
     expect(nav).toContain('md:hidden');
   });
 
@@ -80,8 +82,6 @@ describe('cross-device design unification', () => {
   it('shows AI starter actions and keeps Enter-to-send with the read-only disclaimer', () => {
     expect(assistant).toContain('const assistantActions = [');
     expect(assistant).toContain('assistantActions.map');
-    // Enter sends, Shift+Enter inserts a newline — implemented on the keydown
-    // handler instead of a visible hint chip.
     expect(assistant).toContain("event.key === 'Enter' && !event.shiftKey");
     expect(assistant).toContain('قراءة وتحليل فقط');
   });

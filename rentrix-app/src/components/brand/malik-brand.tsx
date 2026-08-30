@@ -8,6 +8,7 @@ type MalikBrandProps = Readonly<{
   className?: string;
   markClassName?: string;
   wordmarkClassName?: string;
+  taglineClassName?: string;
   showTagline?: boolean;
   /** Render on a dark surface (sidebar, mobile drawer). */
   inverse?: boolean;
@@ -24,6 +25,7 @@ export function MalikBrand({
   className,
   markClassName,
   wordmarkClassName,
+  taglineClassName,
   showTagline = false,
   inverse = false,
   layout = 'horizontal',
@@ -57,6 +59,7 @@ export function MalikBrand({
               className={cn(
                 'mt-2.5 text-center text-[13px] font-medium leading-5 tracking-wide sm:text-sm',
                 inverse ? 'text-sidebar-foreground/70' : 'text-muted-foreground',
+                taglineClassName,
               )}
             >
               {APP_BRAND_TAGLINE_AR}
@@ -87,6 +90,7 @@ export function MalikBrand({
             className={cn(
               'mt-1 truncate text-xs font-semibold leading-tight',
               inverse ? 'text-sidebar-foreground/60' : 'text-muted-foreground',
+              taglineClassName,
             )}
           >
             {APP_BRAND_TAGLINE_AR}

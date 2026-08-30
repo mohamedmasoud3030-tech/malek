@@ -7,6 +7,7 @@ vi.mock('@/components/layout/permission-request-dialog', () => ({ PermissionRequ
 vi.mock('@/hooks/use-auth', () => ({
   useAuth: () => ({
     authorization: { userId: 'admin-1', email: 'admin@malek.test', role: 'ADMIN' },
+    logout: vi.fn(),
   }),
 }));
 vi.mock('./notifications-menu', () => ({
@@ -48,8 +49,6 @@ describe('WP-06 / GAP-020 Browser & UX Acceptance Hardening', () => {
       const html = renderToStaticMarkup(
         <NavigationLinks authorization={adminAuth} expanded sharedLabel={sharedLabel} />,
       );
-      // The active state is token-based (border + background + trailing dot),
-      // expressed with logical utilities so it mirrors correctly in RTL.
       expect(html).toContain('data-active="true"');
       expect(html).toContain('bg-sidebar-accent');
       expect(html).toContain('ms-auto size-1.5');
@@ -63,33 +62,32 @@ describe('WP-06 / GAP-020 Browser & UX Acceptance Hardening', () => {
       expect(html).toContain('border-s-sidebar-border');
     });
 
-    it('mobile floating control exposes accessible names and compact touch targets with balanced tools', () => {
+    it('mobile floating control exposes only the compact lower tools with accessible targets', () => {
       const html = renderToStaticMarkup(<MobileFloatingControl onMenu={() => undefined} />);
       const host = document.createElement('div');
       host.innerHTML = html;
       expect(host.querySelector('[data-mobile-dock-menu]')).not.toBeNull();
-      expect(host.querySelector('[data-mobile-dock-search]')).not.toBeNull();
-      expect(host.querySelector('[data-mobile-dock-quick-add]')).not.toBeNull();
       expect(host.querySelector('[data-mobile-dock-notifications]')).not.toBeNull();
       expect(host.querySelector('[data-mobile-dock-ai]')).not.toBeNull();
+      expect(host.querySelector('[data-mobile-dock-search]')).toBeNull();
+      expect(host.querySelector('[data-mobile-dock-quick-add]')).toBeNull();
       const labeled = host.querySelectorAll('button[aria-label]');
-      expect(labeled.length).toBeGreaterThanOrEqual(4);
+      expect(labeled.length).toBeGreaterThanOrEqual(3);
       for (const btn of Array.from(labeled)) {
         expect(btn.className).toMatch(/min-h-(10|11)/);
         expect(btn.className).toMatch(/min-w-(10|11)/);
       }
     });
 
-    it('mobile floating control container has bottom safe-area padding and a compact pill', () => {
+    it('mobile floating control container sits higher above safe-area and keeps a compact pill', () => {
       const html = renderToStaticMarkup(<MobileFloatingControl onMenu={() => undefined} />);
-      expect(html).toContain('pb-[calc(0.75rem+env(safe-area-inset-bottom');
+      expect(html).toContain('pb-[calc(1.15rem+env(safe-area-inset-bottom');
       expect(html).toContain('data-mobile-floating-control');
       expect(html).toContain('rounded-full');
     });
 
     it('mobile dock stays phone-only and yields to tablet/desktop chrome', () => {
       const html = renderToStaticMarkup(<MobileFloatingControl onMenu={() => undefined} />);
-      // The dock is hidden at the `md` breakpoint and above (tablet/desktop).
       expect(html).toContain('md:hidden');
     });
   });
@@ -99,8 +97,6 @@ describe('WP-06 / GAP-020 Browser & UX Acceptance Hardening', () => {
       const html = renderToStaticMarkup(
         <PageHeader title="عنوان طويل جداً جداً جداً قد يسبب تجاوز العرض في الموبايل إذا لم يتم كسر الكلمات" description="وصف طويل جداً يحتوي على نص عربي مختلط مع EnglishLongUnbrokenStringThatCouldOverflowIfNotHandledProperly" />,
       );
-      // The h1 truncates on one line (min-w-0 + truncate) and the supporting
-      // description wraps anywhere so unbroken strings cannot overflow.
       expect(html).toContain('truncate');
       expect(html).toContain('[overflow-wrap:anywhere]');
     });

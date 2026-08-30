@@ -123,30 +123,46 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
 
   const chatContent = (
     <div className={cn('flex h-full flex-col', embedded ? 'min-h-0' : 'min-h-[70dvh]')}>
-      <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain p-3 sm:p-4" aria-live="polite">
-        <div className="space-y-3">
+      <div
+        ref={scrollRef}
+        className={cn('flex-1 overflow-y-auto overscroll-contain', embedded ? 'px-2.5 py-2' : 'p-3 sm:p-4')}
+        aria-live="polite"
+      >
+        <div className={cn(embedded ? 'space-y-2.5' : 'space-y-3')}>
           {messages.map((message) => {
             const isUser = message.role === 'user';
-            const navigationTargets = isUser
+            const isWelcome = message.id === 'assistant-welcome';
+            const navigationTargets = isUser || (embedded && !message.action)
               ? []
               : buildAiNavigationTargets(message.action, { freeform: true });
+
             return (
               <div key={message.id} className={cn('flex w-full', isUser ? 'justify-end' : 'justify-start')}>
-                <div className={cn('flex max-w-[85%] gap-2', isUser ? 'flex-row-reverse' : 'flex-row')}>
+                <div
+                  className={cn(
+                    'flex gap-2',
+                    isUser ? 'max-w-[86%] flex-row-reverse' : 'max-w-[88%] flex-row',
+                    embedded && isWelcome && 'max-w-full',
+                  )}
+                >
+                  {!embedded || isUser || !isWelcome ? (
+                    <div
+                      className={cn(
+                        'grid size-7 shrink-0 place-items-center rounded-full text-xs font-bold',
+                        isUser ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground',
+                      )}
+                    >
+                      {isUser ? 'أنت' : <Bot className="size-4" />}
+                    </div>
+                  ) : null}
+
                   <div
                     className={cn(
-                      'grid size-7 shrink-0 place-items-center rounded-full text-xs font-bold',
-                      isUser ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground',
-                    )}
-                  >
-                    {isUser ? 'أنت' : <Bot className="size-4" />}
-                  </div>
-                  <div
-                    className={cn(
-                      'rounded-2xl px-3.5 py-2.5 text-[13px] leading-6 shadow-sm',
+                      'text-[13px] leading-6',
                       isUser
-                        ? 'rounded-br-md bg-primary text-primary-foreground'
-                        : 'rounded-bl-md border border-border/60 bg-card text-foreground',
+                        ? 'rounded-2xl rounded-br-md bg-primary px-3.5 py-2.5 text-primary-foreground shadow-sm'
+                        : 'rounded-2xl rounded-bl-md border border-border/60 bg-card px-3.5 py-2.5 text-foreground shadow-sm',
+                      embedded && isWelcome && 'rounded-none border-0 bg-transparent px-0.5 py-0.5 text-[12.5px] leading-5 shadow-none',
                     )}
                   >
                     <p className="whitespace-pre-wrap break-words">{message.content}</p>
@@ -170,6 +186,7 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
               </div>
             );
           })}
+
           {pending ? (
             <div className="flex justify-start">
               <div className="flex max-w-[85%] gap-2">
@@ -188,7 +205,7 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
         </div>
       </div>
 
-      <div className="shrink-0 border-t border-border/60 bg-muted/20 px-3 py-2">
+      <div className={cn('shrink-0 border-t border-border/50 bg-card', embedded ? 'px-2 py-1.5' : 'bg-muted/20 px-3 py-2')}>
         <div className="flex max-w-full gap-1.5 overflow-x-auto overscroll-x-contain no-scrollbar">
           {assistantActions.map((item) => (
             <button
@@ -196,7 +213,10 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
               type="button"
               onClick={() => submitPrompt(item.prompt, item.action)}
               disabled={pending || configurationMissing}
-              className="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-full border border-border bg-card px-3 text-xs font-medium text-foreground transition hover:bg-muted disabled:opacity-50"
+              className={cn(
+                'inline-flex shrink-0 items-center gap-1 rounded-full border border-border bg-card text-xs font-medium text-foreground transition hover:bg-muted disabled:opacity-50',
+                embedded ? 'min-h-10 px-2.5' : 'min-h-11 px-3',
+              )}
             >
               <Sparkles className="size-3" />
               {item.title}
@@ -211,7 +231,7 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
         </div>
       ) : null}
 
-      <div className="shrink-0 border-t border-border/70 bg-card p-3">
+      <div className={cn('shrink-0 border-t border-border/60 bg-card', embedded ? 'p-2' : 'p-3')}>
         <form onSubmit={handleSubmit} className="flex items-end gap-2">
           <Textarea
             value={input}
@@ -222,10 +242,13 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
                 submitPrompt(input);
               }
             }}
-            placeholder="اسأل مثلاً: مين متأخر؟ عندي كام وحدة فاضية؟"
+            placeholder={embedded ? 'اسأل المساعد...' : 'اسأل مثلاً: مين متأخر؟ عندي كام وحدة فاضية؟'}
             disabled={pending || configurationMissing}
             aria-label="رسالة المساعد"
-            className="max-h-32 min-h-11 flex-1 resize-none rounded-xl border-border/70 bg-muted/30 px-3 py-2.5 text-sm leading-6 focus-visible:ring-2 focus-visible:ring-primary/20"
+            className={cn(
+              'max-h-32 min-h-11 flex-1 resize-none rounded-xl border-border/70 bg-muted/25 px-3 py-2.5 text-sm leading-6 focus-visible:ring-2 focus-visible:ring-primary/20',
+              embedded && 'max-h-24',
+            )}
             rows={1}
           />
           <Button
@@ -238,9 +261,11 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
             <Send className="size-4" />
           </Button>
         </form>
-        <p className="mt-1.5 px-1 text-[11px] leading-4 text-muted-foreground">
-          قراءة وتحليل فقط — أي اعتماد أو تسجيل نهائي يظل بيد المستخدم المخول.
-        </p>
+        {!embedded ? (
+          <p className="mt-1.5 px-1 text-[11px] leading-4 text-muted-foreground">
+            قراءة وتحليل فقط — أي اعتماد أو تسجيل نهائي يظل بيد المستخدم المخول.
+          </p>
+        ) : null}
       </div>
     </div>
   );

@@ -63,7 +63,6 @@ describe('task-centric app navigation', () => {
       { labelKey: 'receipts', permission: 'financial.workspace.view', search: { section: 'collections', view: 'receipts' } },
       { labelKey: 'expenses', permission: 'expenses.view', search: { section: 'expenses', view: 'expenses' } },
     ]);
-    // Arrears and the specialist registers stay inside the Money shell.
     for (const specialist of ['arrears', 'deposits', 'ownerSettlements', 'bankReconciliation', 'commissions']) {
       expect(children.some(([, labelKey]) => labelKey === specialist)).toBe(false);
     }
@@ -113,14 +112,16 @@ describe('task-centric app navigation', () => {
     expect(getRouteDefinition('/automation')).toContain("to: '/settings'");
   });
 
-  it('keeps destination-style mobile nav empty and exposes one five-tool utility dock', () => {
+  it('keeps destination-style mobile nav empty, with two header actions and three lower utilities', () => {
     expect(mobileNavItems).toHaveLength(0);
     for (const hook of [
+      'data-header-phone-search',
+      'data-header-quick-add',
       'data-mobile-dock-menu',
-      'data-mobile-dock-search',
-      'data-mobile-dock-quick-add',
       'data-mobile-dock-notifications',
       'data-mobile-dock-ai',
     ]) expect(mobileNavigationSource).toContain(hook);
+    expect(mobileNavigationSource).not.toContain('data-mobile-dock-search');
+    expect(mobileNavigationSource).not.toContain('data-mobile-dock-quick-add');
   });
 });

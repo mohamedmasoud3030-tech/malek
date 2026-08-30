@@ -7,7 +7,7 @@
   --entity-form-action-clearance: 6rem;
   /* Height of the sticky app-shell header. Anything that sticks underneath it
      must offset by THIS token so the two can never drift apart and collide. */
-  --app-header-height: 3.5rem;
+  --app-header-height: 3rem;
   --mobile-floating-control-height: 3.75rem;
   /* Space an overlay needs to leave between itself and the phone dock.
      Dock height + the dock's own 0.75rem breathing gap. Redefined below in
@@ -18,6 +18,7 @@
 /* iPad / tablet portrait — more air without wasting the 768–1023 band as a phone. */
 @media (min-width: 768px) {
   :root {
+    --app-header-height: 3.5rem;
     --app-page-gutter-inline: clamp(1rem, 2.2vw, 1.75rem);
     --app-page-gutter-block: 1.25rem;
   }
@@ -183,6 +184,42 @@
     --mobile-dock-clearance: calc(
       var(--mobile-floating-control-height) + 0.75rem + env(safe-area-inset-bottom, 0px)
     );
+  }
+
+  /* Compact native phone toolbar: 48px chrome with 44px touch targets. */
+  [data-app-shell-header] [data-header-utility-side] svg {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  /* Phone account access stays available through navigation/settings; the
+     persistent profile glyph is removed from the compact top toolbar. */
+  [data-app-shell-header] [data-header-user-menu] {
+    display: none !important;
+  }
+
+  /* Search and Quick Add are the same live dock controls, promoted into the
+     top toolbar on phones. Fixed positioning removes them from the dock flex
+     row, so there is one functional control for each action, not duplicates. */
+  [data-mobile-dock-search],
+  [data-mobile-dock-quick-add] {
+    position: fixed;
+    top: calc(env(safe-area-inset-top, 0px) + 0.125rem);
+    z-index: 50;
+  }
+
+  [data-mobile-dock-search] {
+    right: calc(0.75rem + 2.875rem);
+  }
+
+  [data-mobile-dock-quick-add] {
+    right: calc(0.75rem + 5.75rem);
+  }
+
+  [data-mobile-dock-search] svg,
+  [data-mobile-dock-quick-add] svg {
+    width: 1.5rem;
+    height: 1.5rem;
   }
 
   [data-page-layout] {
