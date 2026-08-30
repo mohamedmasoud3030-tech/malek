@@ -1,86 +1,32 @@
-/** Canonical route-to-primary-navigation-root map. */
-export const routeNavRoot = new Map<string, string>([
-  ['/dashboard', '/dashboard'],
-  ['/', '/dashboard'],
+/**
+ * Canonical route-to-primary-navigation-root map.
+ *
+ * The bindings are DERIVED from ROUTE_CONTRACT so the contract stays the single
+ * authority for route → sidebar-root semantics. Parametric canonicals
+ * contribute their static path prefix (e.g. `/properties/$propertyId` adds
+ * `/properties`); getNavRoot's prefix fallback then covers every deep link
+ * under that prefix, exactly like the previous hand-written map.
+ */
+import { ROUTE_CONTRACT } from './route-contract';
 
-  // Portfolio owns managed assets and ownership context.
-  ['/properties', '/properties'],
-  ['/properties/new', '/properties'],
-  ['/properties/$propertyId', '/properties'],
-  ['/properties/$propertyId/edit', '/properties'],
-  ['/properties/$propertyId/units', '/properties'],
-  ['/properties/$propertyId/units/$unitId', '/properties'],
-  ['/units', '/properties'],
-  ['/lands', '/properties'],
-  ['/lands/$landId', '/properties'],
-  ['/owners', '/properties'],
-  ['/owners/$ownerId', '/properties'],
-  ['/owners/$ownerId/edit', '/properties'],
+function rootKeyFor(canonical: string): string | null {
+  if (!canonical.startsWith('/')) return null;
+  const paramIndex = canonical.indexOf('/$');
+  if (paramIndex === -1) return canonical;
+  const prefix = canonical.slice(0, paramIndex);
+  return prefix === '' ? null : prefix;
+}
 
-  // Leasing owns tenant/party relationship workflows around contracts.
-  ['/contracts', '/contracts'],
-  ['/contracts/new', '/contracts'],
-  ['/contracts/$contractId', '/contracts'],
-  ['/contracts/$contractId/edit', '/contracts'],
-  ['/tenants', '/contracts'],
-  ['/tenants/$tenantId', '/contracts'],
-  ['/people', '/contracts'],
-  ['/people/$personId', '/contracts'],
-  ['/people/new', '/contracts'],
-  ['/people/$personId/edit', '/contracts'],
-  ['/leads', '/contracts'],
-  ['/communication', '/contracts'],
-
-  // Services owns operational work and its supporting records.
-  ['/maintenance', '/maintenance'],
-  ['/service-providers', '/maintenance'],
-  ['/service-providers/new', '/maintenance'],
-  ['/service-providers/$providerId', '/maintenance'],
-  ['/service-providers/$providerId/edit', '/maintenance'],
-  ['/utilities', '/maintenance'],
-  ['/documents-vault', '/maintenance'],
-
-  ['/automation', '/settings'],
-
-  // Money is one operational financial destination. Detailed registers remain
-  // addressable, but they never become competing global navigation roots.
-  ['/financials', '/financials'],
-  ['/finance/collections', '/financials'],
-  ['/finance/expenses', '/financials'],
-  ['/finance/deposits', '/financials'],
-  ['/finance/banking', '/financials'],
-  ['/invoices', '/financials'],
-  ['/receipts', '/financials'],
-  ['/expenses', '/financials'],
-  ['/arrears', '/financials'],
-  ['/deposits', '/financials'],
-  ['/owner-settlements', '/financials'],
-  ['/bank-reconciliation', '/financials'],
-  ['/commissions', '/financials'],
-
-  // Reports stays independent from day-to-day money operations.
-  ['/reports', '/reports'],
-  ['/accounting', '/reports'],
-  ['/ai-assistant', '/dashboard'],
-  ['/help', '/settings'],
-  ['/admin-support', '/settings'],
-
-  ['/settings', '/settings'],
-  ['/change-password', '/settings'],
-  ['/audit-log', '/settings'],
-  ['/data-integrity', '/settings'],
-  ['/system', '/settings'],
-]);
-
-export const navRootTitle: Record<string, string> = {
-  '/dashboard': 'اليوم',
-  '/properties': 'المحفظة',
-  '/contracts': 'التأجير',
-  '/financials': 'المال',
-  '/maintenance': 'الخدمات',
-  '/reports': 'التقارير',
-  '/settings': 'الإعدادات',
-};
+export const routeNavRoot = new Map<string, string>();
+for (const entry of ROUTE_CONTRACT) {
+  const key = rootKeyFor(entry.canonical);
+  if (key === null) continue;
+  const existing = routeNavRoot.get(key);
+  if (existing !== undefined && existing !== entry.sidebarRoot) {
+    throw new Error(`route-contract conflict: ${key} resolves to both ${existing} and ${entry.sidebarRoot}`);
+  }
+  routeNavRoot.set(key, entry.sidebarRoot);
+}
 
 export function getNavRoot(pathname: string): string {
   if (routeNavRoot.has(pathname)) return routeNavRoot.get(pathname)!;

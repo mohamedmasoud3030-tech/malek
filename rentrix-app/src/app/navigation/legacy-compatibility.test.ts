@@ -76,8 +76,8 @@ const REDIRECT_SPECS: Array<{ path: string; to: string; section?: string; view?:
 
 describe('legacy compatibility — redirects preserve bookmarks and deep links', () => {
   it('keeps Leads and Communication first-class while adapting old contract section links', () => {
-    expect(containsNear('/leads', "@/routes/_protected.leads")).toBe(true);
-    expect(containsNear('/communication', "@/routes/_protected.communication")).toBe(true);
+    expect(containsNear('/leads', "@/features/leads/leads-page")).toBe(true);
+    expect(containsNear('/communication', "@/features/communication/communication-page")).toBe(true);
     expect(containsNear('/leads', "to: '/contracts'")).toBe(false);
     expect(source).toContain("legacySection === 'leads'");
     expect(source).toContain("? '/communication'");
@@ -115,7 +115,7 @@ describe('legacy compatibility — redirects preserve bookmarks and deep links',
     const block = getRouteBlockForRedirect('/receipts');
     expect(block).toContain('receiptId');
     expect(block).toContain(`if (typeof requestedReceiptId === 'string' && requestedReceiptId !== '') return;`);
-    expect(source).toContain(`lazyRouteComponent(() => import('@/routes/_protected.receipts')`);
+    expect(source).toContain(`lazyRouteComponent(() => import('@/features/financials/receipts/receipts-page')`);
     // That import must be on the /receipts route block (conditional print shell)
     expect(block.length).toBeGreaterThan(0);
   });

@@ -1,10 +1,6 @@
-import { AppProviders } from '@/app/providers/app-providers';
 import { AuthLayout } from '@/components/layout/auth-layout';
 
+/** AppProviders already wrap every route at the root shell (see routes/__root.tsx). */
 export function AuthRouteComponent() {
-  return (
-    <AppProviders>
-      <AuthLayout />
-    </AppProviders>
-  );
+  return <AuthLayout />;
 }

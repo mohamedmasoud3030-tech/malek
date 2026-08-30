@@ -2,13 +2,13 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 const routeTree = readFileSync(new URL('./route-tree.ts', import.meta.url), 'utf8');
-const contractDetail = readFileSync(new URL('../../routes/_protected.contracts.$contractId.tsx', import.meta.url), 'utf8');
-const ownerDetail = readFileSync(new URL('../../routes/_protected.owners.$ownerId.tsx', import.meta.url), 'utf8');
-const tenantDetail = readFileSync(new URL('../../routes/_protected.tenants.$tenantId.tsx', import.meta.url), 'utf8');
-const personDetail = readFileSync(new URL('../../routes/_protected.people.$personId.tsx', import.meta.url), 'utf8');
-const propertyDetail = readFileSync(new URL('../../routes/_protected.properties.$propertyId.tsx', import.meta.url), 'utf8');
-const propertyOverview = readFileSync(new URL('../../routes/_protected.properties.$propertyId.index.tsx', import.meta.url), 'utf8');
-const unitDetail = readFileSync(new URL('../../routes/_protected.properties.$propertyId.units.$unitId.tsx', import.meta.url), 'utf8');
+const contractDetail = readFileSync(new URL('../../features/contracts/pages/ContractDetailPage.tsx', import.meta.url), 'utf8');
+const ownerDetail = readFileSync(new URL('../../features/owners/owner-detail-page.tsx', import.meta.url), 'utf8');
+const tenantDetail = readFileSync(new URL('../../features/tenants/components/TenantPreviewDialog.tsx', import.meta.url), 'utf8');
+const personDetail = readFileSync(new URL('../../features/people/components/PersonDossier.tsx', import.meta.url), 'utf8');
+const propertyDetail = readFileSync(new URL('../../features/properties/property-detail-page.tsx', import.meta.url), 'utf8');
+const propertyOverview = readFileSync(new URL('../../features/properties/overview/property-overview-page.tsx', import.meta.url), 'utf8');
+const unitDetail = readFileSync(new URL('../../features/properties/units/property-unit-detail-page.tsx', import.meta.url), 'utf8');
 const peopleNew = readFileSync(new URL('../../routes/_protected.people.new.tsx', import.meta.url), 'utf8');
 const peopleEdit = readFileSync(new URL('../../routes/_protected.people.$personId.edit.tsx', import.meta.url), 'utf8');
 const propertyController = readFileSync(new URL('../../features/properties/use-property-list-controller.ts', import.meta.url), 'utf8');
@@ -26,7 +26,13 @@ describe('Route-native entity presentation', () => {
     expect(peopleEdit).toContain('PersonFormModal');
   });
 
-  it('opens heavyweight dossiers as full pages only', () => {
+  it('opens heavyweight dossiers as full pages only, bound directly from route-tree', () => {
+    expect(routeTree).toContain("import('@/features/contracts/pages/ContractDetailPage')");
+    expect(routeTree).toContain("import('@/features/owners/owner-detail-page')");
+    expect(routeTree).toContain("import('@/features/tenants/components/TenantPreviewDialog')");
+    expect(routeTree).toContain("import('@/features/people/components/PersonDossier')");
+    expect(routeTree).toContain("import('@/features/properties/property-detail-page')");
+    expect(routeTree).toContain("import('@/features/properties/units/property-unit-detail-page')");
     expect(contractDetail).toContain('ContractDetailPage');
     expect(ownerDetail).toContain('OwnerDetailPage');
     expect(tenantDetail).toContain('TenantDetailPage');
@@ -68,11 +74,12 @@ describe('Route-native entity presentation', () => {
     expect(routeTree).toContain("path: '/tenants/$tenantId'");
     expect(routeTree).toContain("path: '/people/$personId'");
     expect(routeTree).toContain("path: '/properties/$propertyId'");
-    expect(contractDetail).toContain('if (!contractId) return null');
-    expect(ownerDetail).toContain('if (!ownerId) return null');
-    expect(tenantDetail).toContain('if (!tenantId) return null');
-    expect(personDetail).toContain('if (!personId) return null');
-    expect(unitDetail).toContain('if (!unitId) return null');
+    // Pages bind their own URL params and render a defined empty state for missing ids.
+    expect(contractDetail).toContain('useParams');
+    expect(ownerDetail).toContain('useParams');
+    expect(tenantDetail).toContain('useParams');
+    expect(personDetail).toContain('useParams');
+    expect(unitDetail).toContain('useParams');
   });
 
   it('no migrated detail route revives the global preview event bus', () => {

@@ -5,12 +5,6 @@ import { ChangePasswordPage, ChangePasswordWorkspace } from '@/features/auth/cha
 import { SettingsPage, SettingsWorkspace } from '@/features/settings/settings-page';
 import { DataIntegrityPage, DataIntegrityWorkspace } from '@/features/system/data-integrity-page';
 import { SystemPage, SystemWorkspace } from '@/features/system/system-page';
-import { AuditLogRouteComponent } from '@/routes/_protected.audit-log';
-import { ChangePasswordRouteComponent } from '@/routes/_protected.change-password';
-import { DataIntegrityRouteComponent } from '@/routes/_protected.data-integrity';
-import { SettingsRouteComponent } from '@/routes/_protected.settings';
-import { SystemRouteComponent } from '@/routes/_protected.system';
-import { GovernanceHubWorkspace } from './components/GovernanceHubWorkspace';
 import {
   getAccessibleGovernanceHubSections,
   getVisibleGovernanceHubSections,
@@ -19,6 +13,8 @@ import {
 } from './governance-hub-sections';
 
 const readSource = (path: string) => readFileSync(new URL(path, import.meta.url), 'utf8');
+
+const routeTreeSource = readSource('../../app/router/route-tree.ts');
 
 describe('governance hub permissions', () => {
   it('shows only routine settings in primary navigation', () => {
@@ -54,15 +50,23 @@ describe('governance hub permissions', () => {
 });
 
 describe('governance and legacy route wiring', () => {
-  it('routes /settings to the governance hub', () => {
-    expect(SettingsRouteComponent).toBe(GovernanceHubWorkspace);
+  it('routes /settings directly to the governance hub', () => {
+    expect(routeTreeSource).toContain("import('@/features/governance-hub/components/GovernanceHubWorkspace')");
+    expect(routeTreeSource).toContain("'GovernanceHubWorkspace'");
   });
 
-  it('keeps advanced standalone routes wired to their original page entries', () => {
-    expect(SystemRouteComponent).toBe(SystemPage);
-    expect(AuditLogRouteComponent).toBe(AuditLogPage);
-    expect(DataIntegrityRouteComponent).toBe(DataIntegrityPage);
-    expect(ChangePasswordRouteComponent).toBe(ChangePasswordPage);
+  it('keeps advanced settings surfaces as redirect-only URL aliases (workspace lives in the hub)', () => {
+    for (const route of ['/system', '/audit-log', '/data-integrity', '/change-password']) {
+      const idx = routeTreeSource.indexOf(`path: '${route}'`);
+      const block = routeTreeSource.slice(routeTreeSource.lastIndexOf('createRoute({', idx), routeTreeSource.indexOf('});', idx) + 3);
+      expect(block).toContain("settingsLegacyRedirect(");
+      expect(block).not.toContain('lazyRouteComponent');
+    }
+    // The page entries themselves are composed inside the governance hub.
+    expect(routeTreeSource).not.toContain("import('@/features/system/system-page')");
+    expect(routeTreeSource).not.toContain("import('@/features/audit/audit-log-page')");
+    expect(routeTreeSource).not.toContain("import('@/features/system/data-integrity-page')");
+    expect(routeTreeSource).not.toContain("import('@/features/auth/change-password-page')");
   });
 
   it('keeps every page entry explicitly in standalone mode', () => {

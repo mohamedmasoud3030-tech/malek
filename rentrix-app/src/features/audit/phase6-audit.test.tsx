@@ -1,13 +1,18 @@
+import { readFileSync } from 'node:fs';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { RoleSimulatorSection } from '@/features/settings/role-simulator-section';
 import { getSimulatedRole, setSimulatedRole } from '@/services/mock-role-simulator';
-import { AuditLogPage } from './audit-log-page';
-import { AuditLogRouteComponent } from '@/routes/_protected.audit-log';
 
 describe('audit-log route wiring', () => {
-  it('AuditLogRouteComponent points to AuditLogPage (Supabase-backed)', () => {
-    expect(AuditLogRouteComponent).toBe(AuditLogPage);
+  it('keeps /audit-log a redirect-only alias; the page is composed by the governance hub', () => {
+    const routeTreeSource = readFileSync(new URL('../../app/router/route-tree.ts', import.meta.url), 'utf8');
+    const idx = routeTreeSource.indexOf("path: '/audit-log'");
+    const block = routeTreeSource.slice(routeTreeSource.lastIndexOf('createRoute({', idx), routeTreeSource.indexOf('});', idx) + 3);
+    expect(block).toContain("settingsLegacyRedirect('audit.view'");
+    expect(block).not.toContain('lazyRouteComponent');
+    // Governance hub is the single composition point for the audit workspace.
+    expect(routeTreeSource).toContain("import('@/features/governance-hub/components/GovernanceHubWorkspace')");
   });
 });
 
