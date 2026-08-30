@@ -274,10 +274,10 @@ describe('softDeleteProperty legacy-status guard coverage', () => {
   it('rejects archival while any active or draft contract exists', async () => {
     const chain = createArchiveChain();
     chain.limit
-      .mockResolvedValueOnce({ data: [], error: null }) // units
-      .mockResolvedValueOnce({ data: [], error: null }) // owner agreements
-      .mockResolvedValueOnce({ data: [], error: null }) // open maintenance
-      .mockResolvedValueOnce({ data: [{ id: 'contract-1' }], error: null }); // active contract
+      .mockResolvedValueOnce({ data: [], error: null } as never) // units
+      .mockResolvedValueOnce({ data: [], error: null } as never) // owner agreements
+      .mockResolvedValueOnce({ data: [], error: null } as never) // open maintenance
+      .mockResolvedValueOnce({ data: [{ id: 'contract-1' }], error: null } as never); // active contract
     supabaseMock.from.mockReturnValue(chain);
 
     const { softDeleteProperty } = await import('./property-service');
