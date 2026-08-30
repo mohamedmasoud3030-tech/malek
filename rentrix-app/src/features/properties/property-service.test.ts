@@ -240,3 +240,47 @@ describe('listPropertyTitles paged read', () => {
     await expect(listPropertyTitles()).rejects.toThrow('سقف الأمان');
   });
 });
+
+describe('softDeleteProperty legacy-status guard coverage', () => {
+  function createArchiveChain() {
+    const chain = {
+      eq: vi.fn(() => chain),
+      is: vi.fn(() => chain),
+      in: vi.fn(() => chain),
+      limit: vi.fn(() => Promise.resolve({ data: [], error: null })),
+      select: vi.fn(() => chain),
+      update: vi.fn(() => chain),
+    };
+    return chain;
+  }
+
+  it('blocks archival on every stored active/draft spelling, including legacy uppercase rows', async () => {
+    const statusFilters: unknown[][] = [];
+    const chain = createArchiveChain();
+    chain.in = vi.fn((column: string, values: unknown[]) => {
+      if (column === 'status') statusFilters.push(values);
+      return chain;
+    });
+    supabaseMock.from.mockReturnValue(chain);
+
+    const { softDeleteProperty } = await import('./property-service');
+    await softDeleteProperty('property-1');
+
+    const contractGuardFilter = statusFilters.find((values) => values.includes('active'));
+    expect(contractGuardFilter).toBeDefined();
+    expect(contractGuardFilter).toEqual(expect.arrayContaining(['active', 'ACTIVE', 'draft', 'DRAFT']));
+  });
+
+  it('rejects archival while any active or draft contract exists', async () => {
+    const chain = createArchiveChain();
+    chain.limit
+      .mockResolvedValueOnce({ data: [], error: null }) // units
+      .mockResolvedValueOnce({ data: [], error: null }) // owner agreements
+      .mockResolvedValueOnce({ data: [], error: null }) // open maintenance
+      .mockResolvedValueOnce({ data: [{ id: 'contract-1' }], error: null }); // active contract
+    supabaseMock.from.mockReturnValue(chain);
+
+    const { softDeleteProperty } = await import('./property-service');
+    await expect(softDeleteProperty('property-1')).rejects.toThrow('عقد نشط أو مسودة');
+  });
+});

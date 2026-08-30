@@ -1,3 +1,4 @@
+import { getContractStatusVariants } from '@/lib/contractStatus';
 import { getCrudWriteErrorMessage } from '@/lib/data/crud-write-error';
 import { toDateOnlyISO } from '@/lib/formatters';
 import { fetchAllRows } from '@/lib/paginatedRead';
@@ -124,11 +125,22 @@ type PropertyInsert = Database['public']['Tables']['properties']['Insert'];
 type PropertyUpdate = Database['public']['Tables']['properties']['Update'];
 
 async function assertPropertyHasNoActiveContracts(propertyId: string, actionLabel: string): Promise<void> {
+  // Compose blocking statuses from the canonical variant source instead of a
+  // hand-written list. Keep the legacy 'DRAFT' spelling (historically stored
+  // before lowercase statuses) so old rows can never escape the guard — the
+  // generated Contract['status'] type only lists modern lowercase spellings,
+  // hence the cast (same rationale as contractService's status filtering).
+  const blockingStatuses = [
+    ...getContractStatusVariants('active'),
+    ...getContractStatusVariants('draft'),
+    'DRAFT',
+  ] as Contract['status'][];
+
   const { data, error } = await supabase
     .from('contracts')
     .select('id')
     .eq('property_id', propertyId)
-    .in('status', ['active', 'ACTIVE', 'draft', 'DRAFT'] as Contract['status'][])
+    .in('status', blockingStatuses)
     .is('deleted_at', null)
     .limit(1);
 
