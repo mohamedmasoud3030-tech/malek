@@ -8430,6 +8430,12 @@ export type Database = {
         };
         Returns: Json;
       };
+      create_bank_statement_line_governed: {
+        Args: {
+          payload: Json | null;
+        };
+        Returns: Json;
+      };
       create_commission_atomic: {
         Args: {
           p_payload: Json | null;
@@ -9076,6 +9082,12 @@ export type Database = {
         Args: {
           p_company_id: string | null;
           p_lines: Json | null;
+        };
+        Returns: Json;
+      };
+      ignore_bank_statement_line_governed: {
+        Args: {
+          p_statement_line_id: string | null;
         };
         Returns: Json;
       };

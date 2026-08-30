@@ -66,4 +66,58 @@ describe('bank reconciliation atomic RPC service boundary', () => {
       notes: '',
     })).rejects.toThrow('تعذر تسجيل المطابقة البنكية');
   });
+
+  it('creates a manual statement line through the governed RPC, never a direct table insert', async () => {
+    const line = {
+      id: 'line-2',
+      company_id: 'company-1',
+      bank_account_id: 'bank-1',
+      transaction_date: '2026-08-21',
+      description: 'manual line',
+      amount: 42.5,
+      status: 'unmatched',
+    };
+    supabaseMock.rpc.mockResolvedValue({ data: line, error: null });
+
+    const { createBankStatementLine } = await import('./bankReconciliationService');
+
+    await expect(createBankStatementLine({
+      bank_account_id: 'bank-1',
+      transaction_date: '2026-08-21',
+      description: 'manual line',
+      reference: '',
+      amount: '42.5',
+    })).resolves.toEqual(line);
+
+    expect(supabaseMock.rpc).toHaveBeenCalledWith('create_bank_statement_line_governed', {
+      payload: {
+        bank_account_id: 'bank-1',
+        transaction_date: '2026-08-21',
+        description: 'manual line',
+        reference: undefined,
+        amount: 42.5,
+      },
+    });
+    expect(supabaseMock.from).not.toHaveBeenCalledWith('bank_statement_lines');
+  });
+
+  it('ignores a statement line through the governed RPC, never a direct table update', async () => {
+    supabaseMock.rpc.mockResolvedValue({ data: null, error: null });
+
+    const { ignoreBankStatementLine } = await import('./bankReconciliationService');
+
+    await expect(ignoreBankStatementLine('line-3')).resolves.toBeUndefined();
+
+    expect(supabaseMock.rpc).toHaveBeenCalledWith('ignore_bank_statement_line_governed', {
+      p_statement_line_id: 'line-3',
+    });
+    expect(supabaseMock.from).not.toHaveBeenCalledWith('bank_statement_lines');
+  });
+
+  it('does not hide governed create/ignore errors from the RPC', async () => {
+    supabaseMock.rpc.mockResolvedValue({ data: null, error: new Error('BANK_LINE_MATCHED_CANNOT_BE_IGNORED') });
+
+    const { ignoreBankStatementLine } = await import('./bankReconciliationService');
+    await expect(ignoreBankStatementLine('line-4')).rejects.toThrow('تعذر تجاهل حركة كشف البنك');
+  });
 });
