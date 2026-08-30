@@ -2,6 +2,7 @@ import { AlertTriangle, Building2, Edit, Eye, FileText, KeyRound, Plus, Triangle
 import { useEffect, useMemo, useState } from 'react';
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { RegisterHeading, RegisterMetricStrip } from '@/components/layout/register-summary';
+import { ActionMenu } from '@/components/ui/action-menu';
 import { Button } from '@/components/ui/button';
 import { DataTableColumnsMenu } from '@/components/ui/data-table';
 import { useNavigate, useSearch } from '@tanstack/react-router';
@@ -143,17 +144,35 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
       header: 'إجراءات',
       priority: 'actions',
       render: (tenant) => (
-        <div className="flex flex-wrap gap-2" onClick={(event) => event.stopPropagation()}>
-          <Button variant="secondary" className="min-h-11 px-3" onClick={() => openPreview(tenant)}><Eye className="me-1 size-4" />معاينة</Button>
-          <Button variant="secondary" className="min-h-11 px-3" onClick={() => openEdit(tenant.person.id)}>
-            <Edit className="me-1 size-4" />تعديل
+        <div className="flex items-center gap-1.5" onClick={(event) => event.stopPropagation()}>
+          <Button variant="secondary" className="min-h-11 px-3" onClick={() => openPreview(tenant)}>
+            <Eye className="me-1 size-4" />معاينة
           </Button>
-          <Button variant="ghost" className="min-h-11 px-3" onClick={() => openFullDetail(tenant)}>التفاصيل</Button>
-          {tenant.primaryContractId !== null && (
-            <Button variant="secondary" className="min-h-11 px-3" onClick={() => openContract(tenant.primaryContractId!)}>
-              <FileText className="me-1 size-4" />العقد
-            </Button>
-          )}
+          <ActionMenu
+            label={`إجراءات ${tenant.person.full_name}`}
+            items={[
+              {
+                id: 'details',
+                label: 'التفاصيل الكاملة',
+                icon: Users,
+                onClick: () => openFullDetail(tenant),
+              },
+              {
+                id: 'edit',
+                label: 'تعديل',
+                icon: Edit,
+                onClick: () => openEdit(tenant.person.id),
+              },
+              ...(tenant.primaryContractId !== null
+                ? [{
+                    id: 'contract',
+                    label: 'فتح العقد',
+                    icon: FileText,
+                    onClick: () => openContract(tenant.primaryContractId!),
+                  }]
+                : []),
+            ]}
+          />
         </div>
       ),
     },
@@ -189,6 +208,13 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
           mobileSupportingKey="property"
           mobilePrimaryMetaKeys={['contracts']}
           mobileSecondaryMetaKeys={['arrears']}
+          mobileCardPrimaryAction={(tenant) => ({
+            label: 'معاينة',
+            icon: Eye,
+            variant: 'default',
+            onClick: () => openPreview(tenant),
+            ariaLabel: `معاينة ${tenant.person.full_name}`,
+          })}
           mobileCardActions={(tenant) => [
             {
               label: 'تعديل',
