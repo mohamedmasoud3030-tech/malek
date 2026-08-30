@@ -701,6 +701,7 @@ function EntityTableImpl<T>({
                           data-column-priority={column.resolvedPriority}
                           className={cn(
                             'h-8 bg-muted/35 px-2 text-[11px] font-bold tracking-normal text-muted-foreground sm:px-2.5',
+                            column.resolvedPriority === 'actions' && 'lg:w-[1%] lg:whitespace-nowrap',
                             priorityClass(column.resolvedPriority, column.sticky !== false),
                             column.className,
                           )}
@@ -768,6 +769,7 @@ function EntityTableImpl<T>({
                               data-column-priority={column.resolvedPriority}
                               className={cn(
                                 'h-9 px-2 py-1.5 align-middle text-[12px] sm:px-2.5',
+                                column.resolvedPriority === 'actions' && 'lg:w-[1%] lg:whitespace-nowrap [&_a]:lg:min-h-9 [&_a]:lg:px-2.5 [&_button]:lg:min-h-9 [&_button]:lg:px-2.5',
                                 priorityClass(column.resolvedPriority, column.sticky !== false),
                                 column.className,
                               )}

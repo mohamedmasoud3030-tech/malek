@@ -125,7 +125,7 @@ export function ExpensesWorkspace({ embedded = false }: ExpensesWorkspaceProps) 
   return (
     <EmbeddableWorkspace
       embedded={embedded}
-      size="default"
+      size="wide"
       title="المصروفات"
       secondaryActions={
         <>

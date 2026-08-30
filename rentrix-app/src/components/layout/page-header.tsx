@@ -116,7 +116,7 @@ export function PageHeader({
       </header>
 
       {description ? (
-        <p className="px-3 text-[0.8125rem] leading-5 text-muted-foreground [overflow-wrap:anywhere] sm:px-4">
+        <p className="px-3 text-[0.8125rem] leading-5 text-muted-foreground [overflow-wrap:anywhere] sm:px-4 lg:px-0">
           {description}
         </p>
       ) : null}
@@ -124,7 +124,7 @@ export function PageHeader({
       {hasSupportingTools ? (
         <div
           data-page-supporting-tools
-          className="flex min-w-0 flex-wrap items-center justify-end gap-1.5 px-3 sm:gap-2 sm:px-4"
+          className="flex min-w-0 flex-wrap items-center justify-end gap-1.5 px-3 sm:gap-2 sm:px-4 lg:px-0"
         >
           {backTo ? (
             <Button variant="secondary" size="sm" asChild className="min-h-11">

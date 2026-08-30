@@ -343,6 +343,21 @@
     box-shadow: none;
   }
 
+  [data-page-layout] [data-register-metric] {
+    box-shadow: none;
+  }
+
+  [data-page-layout] [data-register-heading] h2 {
+    color: hsl(var(--muted-foreground));
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+
+  [data-owner-register],
+  [data-owner-relationships] {
+    box-shadow: none;
+  }
+
   [data-app-shell][data-sidebar-collapsed='true'] [data-sidebar] + div {
     padding-inline-start: 0;
   }
