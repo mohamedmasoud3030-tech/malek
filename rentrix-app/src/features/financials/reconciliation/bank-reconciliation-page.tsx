@@ -14,6 +14,7 @@ import { DataRefreshAlert } from '@/components/data-refresh-alert';
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { PageStateCard, WriteErrorCard } from '@/components/page-state-card';
 import type { ActiveFilterItem } from '@/components/ui/active-filter-bar';
+import { ActionMenu } from '@/components/ui/action-menu';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EntityForm } from '@/components/ui/entity-form';
@@ -413,9 +414,14 @@ function BankStatementLinesTable({
       header: 'الإجراء',
       priority: 'actions',
       render: (line) => (line.status === 'unmatched' ? (
-        <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" className="min-h-11 px-3 text-xs" onClick={() => onMatch(line)}>مطابقة</Button>
-          <Button variant="secondary" className="min-h-11 px-3 text-xs" disabled={isIgnoring} onClick={() => onIgnore(line.id)}>تجاهل</Button>
+        <div className="flex">
+          <ActionMenu
+            label={`إجراءات حركة ${line.description}`}
+            items={[
+              { id: 'match', label: 'مطابقة', onClick: () => onMatch(line) },
+              { id: 'ignore', label: 'تجاهل', disabled: isIgnoring, onClick: () => onIgnore(line.id) },
+            ]}
+          />
         </div>
       ) : '—'),
     },

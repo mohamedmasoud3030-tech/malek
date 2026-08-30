@@ -231,25 +231,22 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
           placeholder: "بحث بالاسم أو الهاتف أو الهوية",
         }}
         filters={
-          <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto overscroll-x-contain no-scrollbar">
-            <Select
-              aria-label="تصفية الأشخاص حسب النوع"
-              value={type}
-              onChange={(event) => {
-                setType(event.target.value as PersonTypeFilter);
-                setPage(1);
-              }}
-              className="min-h-11 w-36 shrink-0 rounded-lg"
-            >
-              <option value="all">كل الأنواع</option>
-              {personTypeValues.map((item) => (
-                <option key={item} value={item}>
-                  {personTypeLabels[item]}
-                </option>
-              ))}
-            </Select>
-
-          </div>
+          <Select
+            aria-label="تصفية الأشخاص حسب النوع"
+            value={type}
+            onChange={(event) => {
+              setType(event.target.value as PersonTypeFilter);
+              setPage(1);
+            }}
+            className="min-h-11 w-36 shrink-0 rounded-lg"
+          >
+            <option value="all">كل الأنواع</option>
+            {personTypeValues.map((item) => (
+              <option key={item} value={item}>
+                {personTypeLabels[item]}
+              </option>
+            ))}
+          </Select>
         }
         toolbarActions={
           <DataTableColumnsMenu
