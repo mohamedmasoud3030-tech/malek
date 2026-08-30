@@ -1,6 +1,6 @@
 import { Link, Outlet, useMatches, useRouter } from '@tanstack/react-router';
 import { memo, useCallback, useEffect, useId, useMemo, useRef, useState, type ButtonHTMLAttributes, type ReactNode } from 'react';
-import { CircleHelp, KeyRound, LogOut, Menu, Moon, Search, Settings, ShieldAlert, Sun, UserRound } from 'lucide-react';
+import { ChevronsLeft, CircleHelp, KeyRound, LogOut, Menu, Moon, Search, Settings, ShieldAlert, Sun, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { MalekBrandWordmark } from '@/components/brand/malek-wordmark';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
