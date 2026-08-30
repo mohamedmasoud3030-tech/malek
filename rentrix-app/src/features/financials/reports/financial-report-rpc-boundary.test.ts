@@ -26,7 +26,7 @@ describe('financial report RPC database authority', () => {
       'rpt_general_ledger',
       'rpt_cash_flow',
       'rpt_vat_return',
-      'wp05_rpt_cash_flow_gl',
+      'rpt_cash_flow_gl',
     ]) {
       expect(source, `${rpc} must remain behind the canonical report permission gate`).toMatch(
         new RegExp(`create function public\\.${rpc}\\([\\s\\S]*?perform app_private\\.require_financial_reports_view\\(\\)`),
@@ -34,7 +34,7 @@ describe('financial report RPC database authority', () => {
     }
   });
 
-  it('keeps sensitive WP05 GL delegates out of the browser execution surface', () => {
+  it('keeps sensitive legacy WP05 GL delegates out of the browser execution surface', () => {
     const source = readFileSync(authorityMigration, 'utf8');
 
     for (const signature of [
@@ -46,6 +46,12 @@ describe('financial report RPC database authority', () => {
       expect(source).toContain(`revoke all on function ${signature} from public, anon, authenticated;`);
       expect(source).toContain(`grant execute on function ${signature} to service_role;`);
     }
+  });
+
+  it('does not create new sprint/version-named report APIs', () => {
+    const source = readFileSync(authorityMigration, 'utf8');
+    expect(source).not.toMatch(/create\s+(?:or\s+replace\s+)?function\s+(?:public|app_private)\.wp\d+_/i);
+    expect(source).not.toMatch(/create\s+(?:or\s+replace\s+)?function\s+[^\s(]+_impl\s*\(/i);
   });
 
   it('keeps financial.reports.view in the assignable permission catalog', () => {
