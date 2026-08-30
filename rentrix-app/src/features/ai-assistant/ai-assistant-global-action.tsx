@@ -13,8 +13,9 @@ const AiAssistantExperience = lazy(async () => {
 export const OPEN_AI_ASSISTANT_EVENT = 'malek:open-ai-assistant';
 
 /**
- * Canonical AI entry point: compact floating conversation on the current page,
- * with an explicit expansion path to the full assistant workspace.
+ * Canonical AI entry point: a deliberately compact floating conversation.
+ * It stays narrow on phones and relies on the explicit expand control for the
+ * full assistant workspace instead of pretending to be a full-screen sheet.
  */
 export function AiAssistantGlobalAction({ showTrigger = true }: Readonly<{ showTrigger?: boolean }>) {
   const search = useSearch({ strict: false }) as Record<string, unknown>;
@@ -93,31 +94,31 @@ export function AiAssistantGlobalAction({ showTrigger = true }: Readonly<{ showT
         aria-hidden={open ? undefined : true}
         inert={open ? undefined : true}
         className={cn(
-          'fixed z-[90] flex flex-col overflow-hidden border border-border bg-card shadow-elevated transition-[transform,opacity] duration-200 motion-reduce:transition-none',
-          'inset-x-3 bottom-[var(--mobile-dock-clearance,5.25rem)] top-auto h-[min(27rem,58dvh)] max-h-[calc(100dvh-var(--mobile-dock-clearance,5.25rem)-1.5rem)] rounded-2xl',
-          'sm:inset-x-auto sm:start-4 sm:bottom-4 sm:w-[24rem] sm:max-w-[calc(100vw-2rem)] sm:h-[30rem] sm:max-h-[70dvh]',
-          'md:w-[26rem]',
+          'fixed z-[90] flex flex-col overflow-hidden border border-border/80 bg-card shadow-elevated transition-[transform,opacity] duration-200 motion-reduce:transition-none',
+          'bottom-[calc(var(--mobile-dock-clearance,5.25rem)+0.75rem)] left-1/2 h-[min(32rem,64dvh)] w-[min(21.5rem,calc(100vw-2rem))] max-h-[calc(100dvh-var(--mobile-dock-clearance,5.25rem)-2.25rem)] -translate-x-1/2 rounded-[1.35rem]',
+          'sm:bottom-5 sm:left-4 sm:w-[22rem] sm:max-w-[calc(100vw-2rem)] sm:h-[32rem] sm:max-h-[72dvh] sm:translate-x-0',
+          'md:w-[23rem]',
           open ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-4 opacity-0',
         )}
         role="dialog"
         aria-label="مساعد الذكاء الاصطناعي"
       >
-        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border/60 bg-muted/20 px-3.5 py-2.5">
-          <div className="flex min-w-0 items-center gap-2.5">
-            <div className="grid size-7 place-items-center rounded-full bg-primary text-primary-foreground">
-              <Sparkles className="size-4" aria-hidden="true" />
+        <div className="flex min-h-12 shrink-0 items-center justify-between gap-2 border-b border-border/50 bg-card px-3 py-1.5">
+          <div className="flex min-w-0 items-center gap-2">
+            <div className="grid size-6 place-items-center rounded-full bg-primary text-primary-foreground">
+              <Sparkles className="size-3.5" aria-hidden="true" />
             </div>
             <div className="min-w-0">
-              <p className="truncate text-[13px] font-bold leading-none">المساعد الذكي</p>
-              <p className="mt-0.5 truncate text-[11px] leading-none text-muted-foreground">قراءة وتحليل — القرار النهائي لك</p>
+              <p className="truncate text-[13px] font-bold leading-4">المساعد الذكي</p>
+              <p className="truncate text-[10px] leading-4 text-muted-foreground">قراءة وتحليل</p>
             </div>
           </div>
-          <div className="flex shrink-0 items-center gap-1">
+          <div className="flex shrink-0 items-center gap-0.5">
             <Button
               asChild
               type="button"
               variant="ghost"
-              className="grid size-11 min-h-11 min-w-11 place-items-center rounded-full px-0 text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="grid size-10 min-h-11 min-w-11 place-items-center rounded-full px-0 text-muted-foreground hover:bg-muted hover:text-foreground"
             >
               <Link
                 to="/ai-assistant"
@@ -125,13 +126,13 @@ export function AiAssistantGlobalAction({ showTrigger = true }: Readonly<{ showT
                 aria-label="تكبير المساعد إلى مساحة عمل كاملة"
                 title="فتح مساحة العمل الكاملة"
               >
-                <Maximize2 className="size-4" />
+                <Maximize2 className="size-3.5" />
               </Link>
             </Button>
             <Button
               type="button"
               variant="ghost"
-              className="grid size-11 min-h-11 min-w-11 place-items-center rounded-full px-0 text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="grid size-10 min-h-11 min-w-11 place-items-center rounded-full px-0 text-muted-foreground hover:bg-muted hover:text-foreground"
               onClick={close}
               aria-label="إغلاق المساعد"
             >
