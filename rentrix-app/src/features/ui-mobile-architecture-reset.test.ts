@@ -18,19 +18,21 @@ describe('UI mobile architecture reset — shared foundation', () => {
     expect(finance).not.toMatch(/<select[\s\S]*أقسام المالية/);
   });
 
-  it('keeps Menu, Search and utilities in the current compact dock order', () => {
-    const dock = read('../app/layout/layout-navigation-view.tsx');
-    const menu = dock.indexOf('data-mobile-dock-menu');
-    const search = dock.indexOf('data-mobile-dock-search');
-    const quickAdd = dock.indexOf('data-mobile-dock-quick-add');
-    const notifications = dock.indexOf('data-mobile-dock-notifications');
-    const ai = dock.indexOf('data-mobile-dock-ai');
-    expect(menu).toBeGreaterThan(0);
-    expect(search).toBeGreaterThan(menu);
-    expect(quickAdd).toBeGreaterThan(search);
-    expect(notifications).toBeGreaterThan(quickAdd);
+  it('keeps Search and Quick Add in the phone header and a minimal lower dock', () => {
+    const chrome = read('../app/layout/layout-navigation-view.tsx');
+    const quickAdd = chrome.indexOf('data-header-quick-add');
+    const search = chrome.indexOf('data-header-phone-search');
+    const menu = chrome.indexOf('data-mobile-dock-menu');
+    const notifications = chrome.indexOf('data-mobile-dock-notifications');
+    const ai = chrome.indexOf('data-mobile-dock-ai');
+    expect(quickAdd).toBeGreaterThan(0);
+    expect(search).toBeGreaterThan(quickAdd);
+    expect(menu).toBeGreaterThan(search);
+    expect(notifications).toBeGreaterThan(menu);
     expect(ai).toBeGreaterThan(notifications);
-    expect(dock).toContain('pb-[calc(0.75rem+env(safe-area-inset-bottom');
+    expect(chrome).not.toContain('data-mobile-dock-search');
+    expect(chrome).not.toContain('data-mobile-dock-quick-add');
+    expect(chrome).toContain('pb-[calc(1.15rem+env(safe-area-inset-bottom');
   });
 
   it('keeps empty states compact and register summaries shared', () => {
