@@ -14,19 +14,18 @@ export interface PageHeaderProps {
   backLabel?: string;
   primaryAction?: ReactNode;
   secondaryActions?: ReactNode;
+  /** Show today's day/date only when the current workflow is genuinely time-sensitive. */
+  showTodayContext?: boolean;
   /** @deprecated Use primaryAction for the main page action. */
   action?: ReactNode;
   className?: string;
 }
 
-function getTodayContext() {
-  const { language } = getAppLanguageState();
-  const isArabic = language === 'ar';
+function getTodayContext(isArabic: boolean) {
   const locale = isArabic ? 'ar-EG' : 'en-GB';
   const now = new Date();
 
   return {
-    isArabic,
     todayLabel: isArabic ? 'اليوم' : 'Today',
     weekday: new Intl.DateTimeFormat(locale, { weekday: 'long' }).format(now),
     date: new Intl.DateTimeFormat(locale, {
@@ -39,8 +38,9 @@ function getTodayContext() {
 
 /**
  * The one visible page chrome across MALEK.
- * The bar owns page name + today/date + exactly one primary page action.
- * Supporting description, back navigation and secondary actions stay below it.
+ * It owns page identity and one primary action. Day/date is deliberately
+ * opt-in so routine registers are not forced to compete with irrelevant
+ * global context on every visit.
  */
 export function PageHeader({
   title,
@@ -50,25 +50,27 @@ export function PageHeader({
   backLabel = 'العودة',
   primaryAction,
   secondaryActions,
+  showTodayContext = false,
   action,
   className,
 }: PageHeaderProps) {
   const resolvedPrimaryAction = primaryAction ?? action;
   const hasSupportingTools = Boolean(backTo || secondaryActions);
-  const { isArabic, todayLabel, weekday, date } = getTodayContext();
+  const { language } = getAppLanguageState();
+  const isArabic = language === 'ar';
+  const todayContext = showTodayContext ? getTodayContext(isArabic) : null;
 
   return (
     <div data-page-header className={cn('min-w-0 space-y-2', className)}>
       <header
         data-global-page-context
-        data-global-today-context
         data-unified-surface="page-header"
         className="flex min-h-14 min-w-0 flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl border border-border/70 bg-card px-3 py-2.5 shadow-card sm:flex-nowrap sm:px-4 sm:py-3 lg:min-h-12 lg:rounded-none lg:border-0 lg:border-b lg:border-border/60 lg:bg-transparent lg:px-0 lg:py-2 lg:shadow-none"
-        aria-label={
-          isArabic
-            ? `${title} — ${todayLabel} ${weekday} ${date}`
-            : `${title} — ${todayLabel}, ${weekday} ${date}`
-        }
+        aria-label={todayContext
+          ? isArabic
+            ? `${title} — ${todayContext.todayLabel} ${todayContext.weekday} ${todayContext.date}`
+            : `${title} — ${todayContext.todayLabel}, ${todayContext.weekday} ${todayContext.date}`
+          : title}
       >
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1.5 sm:flex-nowrap">
           <div className="flex min-w-0 max-w-full items-center gap-1.5">
@@ -88,24 +90,30 @@ export function PageHeader({
             ) : null}
           </div>
 
-          <span className="hidden h-5 w-px shrink-0 bg-border sm:block" aria-hidden="true" />
-
-          <div className="flex min-w-0 max-w-full basis-full items-center gap-2 text-muted-foreground sm:basis-auto sm:flex-1">
-            <span
-              className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary"
-              aria-hidden="true"
-            >
-              <CalendarDays className="size-4" />
-            </span>
-            <span data-global-day-label className="hidden shrink-0 text-xs font-black text-foreground sm:inline">
-              {todayLabel}
-            </span>
-            <p className="min-w-0 truncate text-[0.8125rem] font-medium leading-5" data-global-today-date>
-              <span data-global-today-weekday>{weekday}</span>
-              <span aria-hidden="true"> · </span>
-              <span data-global-today-day-date>{date}</span>
-            </p>
-          </div>
+          {todayContext ? (
+            <>
+              <span className="hidden h-5 w-px shrink-0 bg-border sm:block" aria-hidden="true" />
+              <div
+                data-global-today-context
+                className="flex min-w-0 max-w-full basis-full items-center gap-2 text-muted-foreground sm:basis-auto sm:flex-1"
+              >
+                <span
+                  className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary"
+                  aria-hidden="true"
+                >
+                  <CalendarDays className="size-4" />
+                </span>
+                <span data-global-day-label className="hidden shrink-0 text-xs font-black text-foreground sm:inline">
+                  {todayContext.todayLabel}
+                </span>
+                <p className="min-w-0 truncate text-[0.8125rem] font-medium leading-5" data-global-today-date>
+                  <span data-global-today-weekday>{todayContext.weekday}</span>
+                  <span aria-hidden="true"> · </span>
+                  <span data-global-today-day-date>{todayContext.date}</span>
+                </p>
+              </div>
+            </>
+          ) : null}
         </div>
 
         {resolvedPrimaryAction ? (
