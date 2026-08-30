@@ -6,7 +6,7 @@ import type { Maintenance } from '@/features/maintenance/maintenance-service';
 import type { MaintenanceSummary } from '@/features/maintenance/maintenance-helpers';
 import { formatLatinNumber } from '@/lib/formatters';
 import type { ReportDrillHandler } from '../report-workspaces';
-import { ReportInsightNote, ReportPanel, ReportState, ReportSummaryStrip } from './report-section-primitives';
+import { ReportInsightNote, ReportPanel, ReportState, ReportSummaryStrip } from '@/components/ui/report-section-primitives';
 
 type OperationsOverviewProps = Readonly<{
   expenseReport: ExpenseBreakdownReport | undefined;

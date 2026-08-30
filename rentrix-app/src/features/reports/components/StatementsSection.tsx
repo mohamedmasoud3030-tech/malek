@@ -17,7 +17,7 @@ import {
 } from '@/services/documents/documentPayloadAdapters';
 import { useAuthoritativeGlCashFlow } from '../accounting-report-authority';
 import { loadOwnerReportContext, printOwnerReport, downloadOwnerReportPdf } from '../documents/professional-owner-report';
-import { ReportColumns } from './report-section-primitives';
+import { ReportColumns } from '@/components/ui/report-section-primitives';
 import { OwnerStatementPanel, TenantStatementPanel } from './statements/statement-account-panels';
 import { OfficeSummaryPanel, RegulatorySummaryPanels, StatementSelectionStrip } from './statements/statement-summary-panels';
 

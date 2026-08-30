@@ -25,7 +25,7 @@ import {
   ReportPanel,
   ReportState,
   ReportSummaryStrip,
-} from './report-section-primitives';
+} from '@/components/ui/report-section-primitives';
 import { ReportShareActions } from './ReportShareActions';
 
 const statusTone = {

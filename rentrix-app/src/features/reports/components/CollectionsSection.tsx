@@ -8,7 +8,7 @@ import { documentService } from '@/services/documents/DocumentService';
 import { runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
 import { toReportDocumentPayload, type ReportDocumentData } from '@/services/documents/documentPayloadAdapters';
 import { buildReportCsvFilename, downloadCsv, toDailyCollectionCsv, type RentRollReportRow } from '../reports-page.helpers';
-import { ReportColumns, ReportInsightNote, ReportProgress, ReportSummaryStrip } from './report-section-primitives';
+import { ReportColumns, ReportInsightNote, ReportProgress, ReportSummaryStrip } from '@/components/ui/report-section-primitives';
 import { DailyCollectionsPanel } from './collections/daily-collections-panel';
 import { ReceiptLinksPanel, type CollectionReceiptRow } from './collections/receipt-links-panel';
 import { RentRollPanel } from './collections/rent-roll-panel';

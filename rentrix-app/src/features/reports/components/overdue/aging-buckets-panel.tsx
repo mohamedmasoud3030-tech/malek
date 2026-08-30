@@ -1,7 +1,7 @@
 import { Hourglass } from 'lucide-react';
 import { formatMoney } from '@/features/financials/components/financials-formatters';
 import type { AgingBucketChartRow } from '../../reports-page.helpers';
-import { ReportList, ReportListRow, ReportPanel, ReportState } from '../report-section-primitives';
+import { ReportList, ReportListRow, ReportPanel, ReportState } from '@/components/ui/report-section-primitives';
 import { formatLatinNumber } from '@/lib/formatters';
 
 export function AgingBucketsPanel({

@@ -2,7 +2,7 @@ import { ReceiptText } from 'lucide-react';
 import { formatMoney } from '@/features/financials/components/financials-formatters';
 import type { DailyCollectionReportRow } from '@/features/financials/reports/financialReportsService';
 import type { CollectionSummaryReport } from '@/features/financials/reports/financial-reporting/report-types';
-import { ReportPanel, ReportState, ReportSummaryStrip } from './report-section-primitives';
+import { ReportPanel, ReportState, ReportSummaryStrip } from '@/components/ui/report-section-primitives';
 import { DailyCollectionsPanel } from './collections/daily-collections-panel';
 import { ReceiptLinksPanel, type CollectionReceiptRow } from './collections/receipt-links-panel';
 

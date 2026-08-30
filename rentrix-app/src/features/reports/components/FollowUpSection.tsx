@@ -8,7 +8,7 @@ import { formatDate, formatInvoiceStatusLabel, formatMoney } from '@/features/fi
 import type { OverdueInvoiceReportRow } from '@/features/financials/reports/financialReportsService';
 import { formatLatinNumber } from '@/lib/formatters';
 import { buildReportCsvFilename, downloadCsv } from '../reports-page.helpers';
-import { ReportList, ReportListRow, ReportPanel, ReportState } from './report-section-primitives';
+import { ReportList, ReportListRow, ReportPanel, ReportState } from '@/components/ui/report-section-primitives';
 import { getAgingLabel } from './overdue/overdue-invoices-panel';
 
 const FOLLOW_UP_QUEUE_LIMIT = 20;

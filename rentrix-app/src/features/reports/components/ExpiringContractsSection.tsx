@@ -6,7 +6,7 @@ import { formatDate, formatMoney } from '@/features/financials/components/financ
 import { formatLatinNumber } from '@/lib/formatters';
 import type { VacancyAnalytics } from '@/features/units/vacancy-analytics';
 import { buildReportCsvFilename, downloadCsv, type ExpiringContractRow } from '../reports-page.helpers';
-import { ReportList, ReportListRow, ReportPanel, ReportState, ReportSummaryStrip } from './report-section-primitives';
+import { ReportList, ReportListRow, ReportPanel, ReportState, ReportSummaryStrip } from '@/components/ui/report-section-primitives';
 
 type ExpiringContractsSectionProps = Readonly<{
   expiringRows: ExpiringContractRow[];

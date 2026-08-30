@@ -6,7 +6,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { formatDate, formatMoney } from '@/features/financials/components/financials-formatters';
 import { formatInvoiceStatusLabel } from '@/features/financials/components/invoice-status-labels';
 import { createReceiptPrintHref } from '../../reports-page.helpers';
-import { ReportPanel } from '../report-section-primitives';
+import { ReportPanel } from '@/components/ui/report-section-primitives';
 
 export type CollectionReceiptRow = Readonly<{
   id: string;

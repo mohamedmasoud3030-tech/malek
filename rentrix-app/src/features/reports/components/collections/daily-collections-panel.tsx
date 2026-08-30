@@ -3,7 +3,7 @@ import { WalletCards } from 'lucide-react';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { formatDate, formatMoney } from '@/features/financials/components/financials-formatters';
 import type { DailyCollectionReportRow } from '@/features/financials/reports/financialReportsService';
-import { ReportPanel, ReportState } from '../report-section-primitives';
+import { ReportPanel, ReportState } from '@/components/ui/report-section-primitives';
 import { formatLatinNumber } from '@/lib/formatters';
 
 export function DailyCollectionsPanel({ rows, action, isLoading }: Readonly<{ rows: DailyCollectionReportRow[]; action?: React.ReactNode; isLoading: boolean }>) {

@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { buildCsv, withUtf8Bom } from '@/lib/csvExport';
 import { ReportsPage } from './reports-page';
 import { ReportsRouteComponent } from '@/routes/_protected.reports';
-import { ReportsWorkspace } from './components/ReportsWorkspace';
+import { ReportsWorkspace } from './workspace/ReportsWorkspace';
 import { resolveWorkspaceLocation } from './reports-section-model';
 import { getReportWorkspace, type ReportWorkspaceId } from './report-workspaces';
 import type { ReportViewId } from './report-view-registry';

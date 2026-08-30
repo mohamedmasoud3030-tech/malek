@@ -5,7 +5,7 @@ import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { formatMoney, getErrorMessage } from '@/features/financials/components/financials-formatters';
 import type { OwnerStatementReport, TenantStatementReport } from '@/features/financials/reports/financialReportsService';
 import { createReceiptPrintHref } from '../../reports-page.helpers';
-import { ReportList, ReportListRow, ReportPanel, ReportPanelSkeleton, ReportState } from '../report-section-primitives';
+import { ReportList, ReportListRow, ReportPanel, ReportPanelSkeleton, ReportState } from '@/components/ui/report-section-primitives';
 import { ReportOutputActions } from '../report-output-actions';
 import { formatLatinNumber } from '@/lib/formatters';
 

@@ -9,7 +9,7 @@ import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { formatDate, formatInvoiceStatusLabel, formatMoney } from '@/features/financials/components/financials-formatters';
 import type { OverdueInvoiceReportRow } from '@/features/financials/reports/financialReportsService';
-import { ReportPanel, ReportState } from '../report-section-primitives';
+import { ReportPanel, ReportState } from '@/components/ui/report-section-primitives';
 import { formatLatinNumber } from '@/lib/formatters';
 
 export function getAgingLabel(daysOverdue: number) {
