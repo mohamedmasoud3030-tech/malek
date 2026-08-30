@@ -79,12 +79,10 @@ describe('mobile visual hierarchy contract', () => {
           id="owner-1"
           name="محمد سالم"
           type="owner"
-          stats={<span>1,250 ر.ع</span>}
-          meta={[{ label: 'الهاتف', value: '90000000' }]}
-          actions={[
-            { label: 'فتح', variant: 'default', onClick: primaryAction },
-            { label: 'تعديل', onClick: vi.fn() },
-          ]}
+          primaryMeta={[{ label: 'الرصيد', value: <span>1,250 ر.ع</span> }]}
+          secondaryMeta={[{ label: 'الهاتف', value: '90000000' }]}
+          primaryAction={{ label: 'فتح', variant: 'default', onClick: primaryAction }}
+          secondaryAction={{ label: 'تعديل', onClick: vi.fn() }}
           onClick={cardClick}
         />,
       );

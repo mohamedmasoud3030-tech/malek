@@ -182,7 +182,7 @@ export function ServiceProvidersWorkspace({ embedded = false }: Readonly<{ embed
               pagination={{ page, pageSize: PAGE_SIZE, total, onPageChange: setPage }}
               onRowClick={(provider) => void navigate({ to: '/service-providers/$providerId', params: { providerId: provider.id } })}
               mobileBadgeKey="status"
-              mobileSummaryKeys={["categories", "contact", "jobs"]}
+              mobilePrimaryMetaKeys={["categories", "contact", "jobs"]}
               mobileCardActions={(provider) => canWrite ? [
                 {
                   label: 'تعديل',

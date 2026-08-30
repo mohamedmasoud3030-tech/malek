@@ -7,10 +7,7 @@ export {
   EntityTable as DataTable,
   type ColumnDef,
   type ColumnPriority,
-  type SortState,
-  type SortDirection,
   type PaginationState,
-  type RowSelectionState,
   type EntityTableProps as DataTableProps,
 } from './entity-table';
 

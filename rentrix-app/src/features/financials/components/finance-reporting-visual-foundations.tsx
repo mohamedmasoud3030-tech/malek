@@ -367,32 +367,6 @@ export function FinanceFilterBar({
   );
 }
 
-export function FinanceTableWrapper({
-  children,
-  ariaLabel,
-  className,
-}: Readonly<{ children: React.ReactNode; ariaLabel: string; className?: string }>) {
-  return (
-    <div
-      data-finance-table-wrapper
-      data-entity-table-wrapper
-      aria-label={ariaLabel}
-      className={cn('overflow-hidden rounded-2xl border bg-card shadow-card', className)}
-    >
-      <div
-        data-entity-table-scroll
-        tabIndex={0}
-        role="region"
-        aria-label={`${ariaLabel} — منطقة جدول قابلة للتمرير أفقياً عند الحاجة`}
-        className="mobile-scroll-x overscroll-x-contain focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
-      >
-        {children}
-      </div>
-    </div>
-  );
-}
-
-
 export function FinanceAlert({
   tone = 'info',
   title,

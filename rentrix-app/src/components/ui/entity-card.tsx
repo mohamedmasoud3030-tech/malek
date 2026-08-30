@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { Briefcase, Building2, Contact, DoorOpen, FileText, Mail, MapPinned, Phone, ReceiptText, User, Users, Wrench } from 'lucide-react';
+import { Briefcase, Building2, Contact, DoorOpen, FileText, MapPinned, ReceiptText, User, Users, Wrench } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { ActionMenu } from '@/components/ui/action-menu';
 import { Button } from '@/components/ui/button';
@@ -66,24 +66,16 @@ export interface EntityCardProps {
   id: string;
   name: ReactNode;
   subtitle?: ReactNode;
-  supportingText?: ReactNode;
   type?: EntityCardType;
   badge?: ReactNode;
   primaryMeta?: EntityCardMetaItem[];
   secondaryMeta?: EntityCardMetaItem[];
-  /** Backward-compatible alias; renders as secondary metadata when provided. */
-  meta?: EntityCardMetaItem[];
-  /** Backward-compatible freeform stats block. */
-  stats?: ReactNode;
   primaryAction?: EntityCardAction;
   secondaryAction?: EntityCardAction;
   overflowActions?: EntityCardAction[];
-  /** Backward-compatible flat actions list. */
-  actions?: EntityCardAction[];
   onClick?: () => void;
   className?: string;
   bodyAriaLabel?: string;
-  avatarIcon?: LucideIcon;
 }
 
 function getActionClassName(variant: EntityCardAction['variant'] = 'secondary') {
@@ -186,27 +178,19 @@ export function EntityCard({
   id,
   name,
   subtitle,
-  supportingText,
   type = 'record',
   badge,
   primaryMeta,
   secondaryMeta,
-  meta,
-  stats,
   primaryAction,
   secondaryAction,
   overflowActions,
-  actions,
   onClick,
   className,
   bodyAriaLabel,
 }: EntityCardProps) {
   const identity = entityCardTypeMap[type] ?? entityCardTypeMap.record!;
-  const resolvedSecondaryMeta = secondaryMeta ?? meta;
-  const resolvedPrimaryAction = primaryAction;
-  const resolvedSecondaryAction = secondaryAction ?? actions?.[0];
-  const resolvedOverflowActions = overflowActions ?? (actions && actions.length > 1 ? actions.slice(1) : []);
-  const hasActions = Boolean(resolvedPrimaryAction || resolvedSecondaryAction || resolvedOverflowActions?.length);
+  const hasActions = Boolean(primaryAction || secondaryAction || overflowActions?.length);
 
   const body = (
     <div className="min-w-0">
@@ -220,11 +204,6 @@ export function EntityCard({
               {subtitle}
             </div>
           ) : null}
-          {supportingText ? (
-            <div className="mt-1 break-words text-[12px] font-medium leading-4.5 text-muted-foreground [overflow-wrap:anywhere]">
-              {supportingText}
-            </div>
-          ) : null}
         </div>
         {badge ?? (
           <span className="inline-flex min-h-5 shrink-0 items-center rounded-full border border-border/60 bg-muted/35 px-1.5 py-0 text-[10.5px] font-semibold leading-4 text-muted-foreground">
@@ -234,8 +213,7 @@ export function EntityCard({
       </div>
 
       {primaryMeta?.length ? <MetaGrid items={primaryMeta} primary /> : null}
-      {stats ? <div className="mt-3 border-t border-border/55 pt-3 text-[12.5px] leading-4.5 text-foreground/88">{stats}</div> : null}
-      {resolvedSecondaryMeta?.length ? <MetaGrid items={resolvedSecondaryMeta} /> : null}
+      {secondaryMeta?.length ? <MetaGrid items={secondaryMeta} /> : null}
     </div>
   );
 
@@ -260,13 +238,13 @@ export function EntityCard({
 
       {hasActions ? (
         <div className="mt-3 flex items-center gap-2 border-t border-border/55 pt-3" role="presentation">
-          {resolvedPrimaryAction ? <ActionButton action={resolvedPrimaryAction} className="min-w-0 flex-1" /> : null}
-          {resolvedSecondaryAction ? <ActionButton action={resolvedSecondaryAction} className={resolvedPrimaryAction ? 'shrink-0' : 'min-w-0 flex-1'} /> : null}
-          {resolvedOverflowActions?.length ? (
+          {primaryAction ? <ActionButton action={primaryAction} className="min-w-0 flex-1" /> : null}
+          {secondaryAction ? <ActionButton action={secondaryAction} className={primaryAction ? 'shrink-0' : 'min-w-0 flex-1'} /> : null}
+          {overflowActions?.length ? (
             <ActionMenu
               label={`المزيد حول ${actionLabelText(name) || identity.label}`}
               className="shrink-0"
-              items={resolvedOverflowActions.map((action, index) => ({
+              items={overflowActions.map((action, index) => ({
                 id: `${id}-overflow-${index}`,
                 label: actionLabelText(action.label),
                 icon: action.icon,
@@ -280,8 +258,3 @@ export function EntityCard({
     </EntityCardShell>
   );
 }
-
-export const entityCardContactMeta = {
-  phone: (value: ReactNode): EntityCardMetaItem => ({ icon: Phone, value, dir: 'ltr' }),
-  email: (value: ReactNode): EntityCardMetaItem => ({ icon: Mail, value, dir: 'ltr' }),
-};

@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { AsyncContentState } from "@/components/async-content-state";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { EmbeddableWorkspace } from "@/components/layout/embeddable-workspace";
-import { WriteErrorCard } from "@/components/ui/error-state";
+import { WriteErrorCard } from "@/components/page-state-card";
 import { EntityTable, type ColumnDef } from "@/components/ui/entity-table";
 import { FilterBar } from "@/components/ui/filter-bar";
 import { EntityForm } from "@/components/ui/entity-form";
@@ -218,8 +218,11 @@ export function LeadsView(props: Props) {
 
       {writeError ? (
         <WriteErrorCard
-          error={writeError}
-          fallbackMessage="تعذر حفظ التغيير على العميل المحتمل. راجع الصلاحيات أو الاتصال ثم حاول مرة أخرى."
+          message={
+            writeError instanceof Error
+              ? writeError.message
+              : "تعذر حفظ التغيير على العميل المحتمل. راجع الصلاحيات أو الاتصال ثم حاول مرة أخرى."
+          }
         />
       ) : null}
 

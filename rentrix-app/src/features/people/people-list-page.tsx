@@ -284,7 +284,7 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
             columns={columns}
             visibleColumnKeys={visibleColumnKeys}
             mobileCardType={(person) => person.type}
-            mobileSummaryKeys={["phone", "email"]}
+            mobilePrimaryMetaKeys={["phone", "email"]}
             mobileCardActions={(person) => [
               {
                 label: "تعديل",

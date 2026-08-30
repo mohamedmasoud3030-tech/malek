@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { DataRefreshAlert } from '@/components/data-refresh-alert';
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
-import { WriteErrorCard } from '@/components/ui/error-state';
+import { PageStateCard, WriteErrorCard } from '@/components/page-state-card';
 import type { ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { ActionMenu } from '@/components/ui/action-menu';
 import { Button } from '@/components/ui/button';
@@ -22,8 +22,6 @@ import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { ErrorState } from '@/components/ui/error-state';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { Input } from '@/components/ui/input';
-import { LoadingState } from '@/components/ui/loading-state';
-import { EmptyState } from '@/components/ui/state-surfaces';
 import { FinanceKpiGrid, FinanceKpiCard } from '../components/finance-reporting-visual-foundations';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -186,8 +184,8 @@ export function BankReconciliationWorkspace({ embedded = false }: BankReconcilia
         />
       ) : null}
 
-      {ctrl.writeError ? <WriteErrorCard error={ctrl.writeError} fallbackMessage="تعذر حفظ التغيير في مطابقة البنك." /> : null}
-      {ctrl.accountsQuery.isLoading || ctrl.linesQuery.isLoading ? <LoadingState variant="section" label="جارٍ تحميل حركات البنك..." /> : null}
+      {ctrl.writeError ? <WriteErrorCard message={ctrl.writeError instanceof Error ? ctrl.writeError.message : 'تعذر حفظ التغيير في مطابقة البنك.'} /> : null}
+      {ctrl.accountsQuery.isLoading || ctrl.linesQuery.isLoading ? <PageStateCard title="جارٍ تحميل حركات البنك..." /> : null}
 
       {/* Read failures must never render as empty lists (false “no data” signal). */}
       {hasBlockingAccountsError ? (
@@ -208,14 +206,14 @@ export function BankReconciliationWorkspace({ embedded = false }: BankReconcilia
       ) : null}
 
       {!ctrl.accountsQuery.isLoading && !hasBlockingAccountsError && ctrl.accounts.length === 0 ? (
-        <EmptyState
+        <PageStateCard
           title="لا توجد حسابات بنكية بعد"
           description="أضف حساباً بنكياً قبل تسجيل أو استيراد حركات كشف البنك."
         />
       ) : null}
 
       {!ctrl.linesQuery.isLoading && !hasBlockingLinesError && ctrl.lines.length === 0 ? (
-        <EmptyState
+        <PageStateCard
           title="لا توجد حركات كشف ضمن الفلاتر"
           description={ctrl.hasFilters ? 'غيّر الفلاتر أو امسحها لعرض نتائج أخرى.' : 'أضف حركة يدوية أو استورد كشفاً بنكياً للبدء.'}
         />

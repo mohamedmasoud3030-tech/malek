@@ -10,7 +10,6 @@
 import {
   ChevronDown,
   ChevronUp,
-  ChevronsUpDown,
   LayoutGrid,
   List,
   MoreHorizontal,
@@ -55,7 +54,6 @@ export interface ColumnDef<T> {
   key: string;
   header: ReactNode;
   render: (row: T) => ReactNode;
-  sortable?: boolean;
   className?: string;
   /** Controls mobile datum selection and desktop sticky behavior. */
   priority?: ColumnPriority;
@@ -63,24 +61,11 @@ export interface ColumnDef<T> {
   sticky?: boolean;
 }
 
-export type SortDirection = 'asc' | 'desc';
-
-export interface SortState {
-  field: string;
-  direction: SortDirection;
-}
-
 export interface PaginationState {
   page: number;
   pageSize: number;
   total: number;
   onPageChange: (page: number) => void;
-}
-
-export interface RowSelectionState {
-  selectedIds: readonly string[];
-  onChange: (selectedIds: string[]) => void;
-  ariaLabel?: string;
 }
 
 export interface EntityTableProps<T> {
@@ -95,12 +80,10 @@ export interface EntityTableProps<T> {
   errorTitle?: string;
   onRetry?: () => void;
   pagination?: PaginationState;
-  sort?: SortState;
-  onSort?: (field: string, direction: SortDirection) => void;
   onRowClick?: (row: T) => void;
   renderRowExpansion?: (row: T) => ReactNode;
+  /** Controlled single-row expansion state (e.g. contract row details). */
   expandedRowId?: string | null;
-  onExpandedRowChange?: (rowId: string | null) => void;
   /** Canonical entity label used by the mobile/card row when no badge overrides it. */
   mobileCardType?: EntityCardType | ((row: T) => EntityCardType);
   /** Card badge/status column key (e.g. status). */
@@ -111,25 +94,18 @@ export interface EntityTableProps<T> {
   mobilePrimaryMetaKeys?: readonly string[];
   /** Secondary card metadata, usually contextual text. */
   mobileSecondaryMetaKeys?: readonly string[];
-  /** Backward-compatible alias for legacy quick facts. */
-  mobileSummaryKeys?: readonly string[];
   /** Structured secondary actions for cards. */
   mobileCardActions?: (row: T) => EntityCardAction[];
   /** Explicit card primary action (e.g. Collect). */
   mobileCardPrimaryAction?: (row: T) => EntityCardAction | undefined;
   /** Optional shared toolbar content rendered inside the register chrome. */
   toolbar?: ReactNode;
-  /** Optional row-selection contract. Selection remains page-owned. */
-  rowSelection?: RowSelectionState;
   /** Optional visible column keys. Omit to show every configured column. */
   visibleColumnKeys?: readonly string[];
-  /** Keep the human-facing cards/table switcher visible. Defaults to true. */
-  enableViewModeToggle?: boolean;
   /** Optional stable storage key; otherwise aria-label creates a per-register key. */
   viewModeStorageKey?: string;
   'aria-label': string;
   className?: string;
-  skeletonRows?: number;
 }
 
 type ResolvedColumn<T> = ColumnDef<T> & { resolvedPriority: ColumnPriority };
@@ -258,46 +234,8 @@ function isNestedInteractive(target: EventTarget | null, currentTarget: EventTar
   return Boolean(target.closest("a,button,input,select,textarea,label,[role='button'],[role='menuitem'],[data-row-action]"));
 }
 
-const SortIcon = memo(function SortIcon({ field, sort }: { field: string; sort?: SortState }) {
-  if (!sort || sort.field !== field) {
-    return <ChevronsUpDown className="ms-1 inline size-3 opacity-35" aria-hidden="true" />;
-  }
-  return sort.direction === 'asc' ? (
-    <ChevronUp className="ms-1 inline size-3 text-primary" aria-hidden="true" />
-  ) : (
-    <ChevronDown className="ms-1 inline size-3 text-primary" aria-hidden="true" />
-  );
-});
-
-const SelectionCheckbox = memo(function SelectionCheckbox({
-  checked,
-  mixed = false,
-  label,
-  onChange,
-}: Readonly<{
-  checked: boolean;
-  mixed?: boolean;
-  label: string;
-  onChange: () => void;
-}>) {
-  return (
-    <input
-      type="checkbox"
-      checked={checked}
-      ref={(node) => {
-        if (node) node.indeterminate = mixed;
-      }}
-      onChange={onChange}
-      onClick={(event) => event.stopPropagation()}
-      aria-label={label}
-      className="size-4 rounded border-border accent-primary outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
-      data-row-action
-    />
-  );
-});
-
-const DesktopTableSkeleton = memo(function DesktopTableSkeleton({ rows, cols, hasSelection }: { rows: number; cols: number; hasSelection: boolean }) {
-  const totalColumns = cols + (hasSelection ? 1 : 0);
+const DesktopTableSkeleton = memo(function DesktopTableSkeleton({ rows, cols }: { rows: number; cols: number }) {
+  const totalColumns = cols;
   return (
     <Card className="overflow-hidden rounded-2xl border-border/60 bg-muted/[0.16] p-2 shadow-none" data-entity-table-grid>
       <div data-entity-table-scroll className="mobile-scroll-x overflow-x-auto overscroll-x-contain">
@@ -400,8 +338,6 @@ function MobileRegisterListItem<T>({
   actionsColumn,
   structuredActions,
   explicitPrimaryAction,
-  selected,
-  onToggleSelected,
   onRowClick,
 }: Readonly<{
   row: T;
@@ -416,26 +352,16 @@ function MobileRegisterListItem<T>({
   actionsColumn?: ResolvedColumn<T>;
   structuredActions?: EntityCardAction[];
   explicitPrimaryAction?: EntityCardAction;
-  selected: boolean;
-  onToggleSelected?: () => void;
   onRowClick?: (row: T) => void;
 }>) {
   const [actionsOpen, setActionsOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const rowLabel = nodeToText(identityColumn.render(row)).trim() || 'السجل';
   const hasStructuredActions = structuredActions !== undefined;
-  const overflowPool = [
-    ...(structuredActions ?? []),
-    ...(onToggleSelected ? [{
-      label: selected ? 'إلغاء التحديد' : 'تحديد السجل',
-      variant: 'secondary' as const,
-      ariaLabel: `${selected ? 'إلغاء تحديد' : 'تحديد'} ${rowLabel}`,
-      onClick: onToggleSelected,
-    }] : []),
-  ];
+  const actionList = structuredActions ?? [];
   const primaryAction = explicitPrimaryAction;
-  const secondaryAction = overflowPool[0];
-  const overflowActions = overflowPool.length > 1 ? overflowPool.slice(1) : [];
+  const secondaryAction = actionList[0];
+  const overflowActions = actionList.length > 1 ? actionList.slice(1) : [];
 
   return (
     <li role="listitem" data-entity-table-mobile-card className="min-w-0">
@@ -444,7 +370,7 @@ function MobileRegisterListItem<T>({
         type={cardType}
         name={<span data-entity-table-mobile-primary>{identityColumn.render(row)}</span>}
         subtitle={supportingColumn ? <span data-entity-table-mobile-supporting>{supportingColumn.render(row)}</span> : undefined}
-        badge={badgeColumn ? badgeColumn.render(row) : selected ? <span className="rounded-full bg-primary/10 px-1.5 py-0 text-[10.5px] font-semibold text-primary">محدد</span> : undefined}
+        badge={badgeColumn ? badgeColumn.render(row) : undefined}
         primaryMeta={primaryMetaColumns.map((column) => toMetaItem(column, row))}
         secondaryMeta={secondaryMetaColumns.map((column) => toMetaItem(column, row))}
         onClick={onRowClick ? () => onRowClick(row) : undefined}
@@ -452,7 +378,6 @@ function MobileRegisterListItem<T>({
         primaryAction={primaryAction}
         secondaryAction={secondaryAction}
         overflowActions={overflowActions}
-        className={selected ? 'border-primary/35 ring-1 ring-primary/10' : undefined}
       />
 
       {!hasStructuredActions && actionsColumn ? (
@@ -555,28 +480,21 @@ function EntityTableImpl<T>({
   errorTitle = 'تعذر تحميل البيانات',
   onRetry,
   pagination,
-  sort,
-  onSort,
   onRowClick,
   renderRowExpansion,
   expandedRowId,
-  onExpandedRowChange,
   mobileCardType,
   mobileBadgeKey,
   mobileSupportingKey,
   mobilePrimaryMetaKeys,
   mobileSecondaryMetaKeys,
-  mobileSummaryKeys,
   mobileCardActions,
   mobileCardPrimaryAction,
   toolbar,
-  rowSelection,
   visibleColumnKeys,
-  enableViewModeToggle = true,
   viewModeStorageKey,
   'aria-label': ariaLabel,
   className,
-  skeletonRows = 5,
 }: EntityTableProps<T>) {
   const disclosurePrefix = useId();
   const storageKey = viewModeStorageKey ?? normalizeStorageKey(ariaLabel);
@@ -590,7 +508,6 @@ function EntityTableImpl<T>({
   );
   const hasExpansion = renderRowExpansion !== undefined;
   const resolvedExpandedRowId = expandedRowId === undefined ? null : expandedRowId;
-  const selectedSet = useMemo(() => new Set(rowSelection?.selectedIds ?? []), [rowSelection?.selectedIds]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -613,46 +530,21 @@ function EntityTableImpl<T>({
     }
   };
 
-  const presentationMode: ViewMode = enableViewModeToggle
-    ? manualViewMode ?? getDefaultViewMode(viewportMode)
-    : getDefaultViewMode(viewportMode);
+  const presentationMode: ViewMode = manualViewMode ?? getDefaultViewMode(viewportMode);
 
   const isRowExpanded = (rowKey: string) =>
     isControlledSingle ? resolvedExpandedRowId === rowKey : internalExpandedRows.has(rowKey);
 
   const toggleRow = (rowKey: string) => {
-    if (isControlledSingle) {
-      onExpandedRowChange?.(resolvedExpandedRowId === rowKey ? null : rowKey);
-      return;
-    }
+    // Controlled expansion is owned by the page (row click drives it); the
+    // uncontrolled path keeps internal state.
+    if (isControlledSingle) return;
     setInternalExpandedRows((current) => {
       const next = new Set(current);
       if (next.has(rowKey)) next.delete(rowKey);
       else next.add(rowKey);
       return next;
     });
-    onExpandedRowChange?.(rowKey);
-  };
-
-  const toggleSelected = (rowKey: string) => {
-    if (!rowSelection) return;
-    const next = new Set(selectedSet);
-    if (next.has(rowKey)) next.delete(rowKey);
-    else next.add(rowKey);
-    rowSelection.onChange([...next]);
-  };
-
-  const currentPageIds = rows.map(keyOf);
-  const selectedOnPage = currentPageIds.filter((id) => selectedSet.has(id)).length;
-  const allCurrentSelected = currentPageIds.length > 0 && selectedOnPage === currentPageIds.length;
-  const someCurrentSelected = selectedOnPage > 0 && !allCurrentSelected;
-
-  const toggleSelectCurrentPage = () => {
-    if (!rowSelection) return;
-    const next = new Set(selectedSet);
-    if (allCurrentSelected) currentPageIds.forEach((id) => next.delete(id));
-    else currentPageIds.forEach((id) => next.add(id));
-    rowSelection.onChange([...next]);
   };
 
   const tableColumns = useMemo(
@@ -663,16 +555,14 @@ function EntityTableImpl<T>({
   if (isLoading) {
     return (
       <div className={cn('space-y-2.5', className)} data-entity-table-register data-entity-table-presentation={presentationMode}>
-        {toolbar || enableViewModeToggle ? (
-          <div data-entity-table-toolbar className="flex min-h-11 flex-wrap items-center justify-between gap-2">
-            {enableViewModeToggle ? <ViewModeToggle ariaLabel={ariaLabel} viewMode={presentationMode} onChange={chooseViewMode} /> : null}
-            {toolbar}
-          </div>
-        ) : null}
+        <div data-entity-table-toolbar className="flex min-h-11 flex-wrap items-center justify-between gap-2">
+          <ViewModeToggle ariaLabel={ariaLabel} viewMode={presentationMode} onChange={chooseViewMode} />
+          {toolbar}
+        </div>
         {presentationMode === 'cards' ? (
-          <MobileRegisterSkeleton rows={skeletonRows} />
+          <MobileRegisterSkeleton rows={5} />
         ) : (
-          <DesktopTableSkeleton rows={skeletonRows} cols={(tableColumns.length || columns.length) + (hasExpansion ? 1 : 0)} hasSelection={Boolean(rowSelection)} />
+          <DesktopTableSkeleton rows={5} cols={(tableColumns.length || columns.length) + (hasExpansion ? 1 : 0)} />
         )}
       </div>
     );
@@ -685,12 +575,6 @@ function EntityTableImpl<T>({
   if (rows.length === 0) {
     if (pagination && pagination.total > 0 && pagination.page > 1) return <PaginationRecovery pagination={pagination} />;
     return <EmptyState title={emptyTitle} description={emptyDescription} action={emptyAction} />;
-  }
-
-  function handleSort(field: string) {
-    if (!onSort) return;
-    const nextDirection: SortDirection = sort?.field === field && sort.direction === 'asc' ? 'desc' : 'asc';
-    onSort(field, nextDirection);
   }
 
   const activateRow = (row: T, event: MouseEvent<HTMLTableRowElement> | KeyboardEvent<HTMLTableRowElement>) => {
@@ -709,7 +593,7 @@ function EntityTableImpl<T>({
 
   const explicitlyPrimaryMetaColumns = resolveMobileColumns(
     resolvedColumns,
-    mobilePrimaryMetaKeys ?? mobileSummaryKeys,
+    mobilePrimaryMetaKeys,
   );
   const explicitlySecondaryMetaColumns = resolveMobileColumns(resolvedColumns, mobileSecondaryMetaKeys);
 
@@ -737,7 +621,7 @@ function EntityTableImpl<T>({
   const secondaryMetaColumns = explicitlySecondaryMetaColumns.filter(
     (column) => column !== supportingColumn && column !== badgeColumn,
   );
-  const colSpan = tableColumns.length + (hasExpansion ? 1 : 0) + (rowSelection ? 1 : 0);
+  const colSpan = tableColumns.length + (hasExpansion ? 1 : 0);
 
   return (
     <div className={cn('space-y-2.5', className)} data-entity-table-register data-entity-table-presentation={presentationMode} data-entity-table-viewport={viewportMode}>
@@ -754,12 +638,10 @@ function EntityTableImpl<T>({
         aria-disabled={error != null ? 'true' : undefined}
         data-stale-register-content={error != null ? 'true' : undefined}
       >
-        {toolbar || enableViewModeToggle ? (
-          <div data-entity-table-toolbar className="flex min-h-11 flex-wrap items-center justify-between gap-2">
-            {enableViewModeToggle ? <ViewModeToggle ariaLabel={ariaLabel} viewMode={presentationMode} onChange={chooseViewMode} /> : null}
-            {toolbar}
-          </div>
-        ) : null}
+        <div data-entity-table-toolbar className="flex min-h-11 flex-wrap items-center justify-between gap-2">
+          <ViewModeToggle ariaLabel={ariaLabel} viewMode={presentationMode} onChange={chooseViewMode} />
+          {toolbar}
+        </div>
 
         {presentationMode === 'cards' ? (
           <div data-entity-table-mobile data-entity-table-cards>
@@ -783,8 +665,6 @@ function EntityTableImpl<T>({
                     actionsColumn={actionsColumn}
                     structuredActions={mobileCardActions ? mobileCardActions(row) : undefined}
                     explicitPrimaryAction={explicitPrimaryAction}
-                    selected={selectedSet.has(rowKey)}
-                    onToggleSelected={rowSelection ? () => toggleSelected(rowKey) : undefined}
                     onRowClick={explicitPrimaryAction ? undefined : onRowClick}
                   />
                 );
@@ -808,77 +688,41 @@ function EntityTableImpl<T>({
               >
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
-                    {rowSelection ? (
-                      <TableHead className="h-8 w-11 bg-transparent px-2 text-center first:ps-4">
-                        <SelectionCheckbox
-                          checked={allCurrentSelected}
-                          mixed={someCurrentSelected}
-                          label={rowSelection.ariaLabel ?? `تحديد سجلات ${ariaLabel}`}
-                          onChange={toggleSelectCurrentPage}
-                        />
-                      </TableHead>
-                    ) : null}
                     {hasExpansion ? <TableHead className="h-8 w-11 bg-transparent px-2"><span className="sr-only">تفاصيل الصف</span></TableHead> : null}
-                    {tableColumns.map((column) => {
-                      const sortDirection = column.sortable && sort?.field === column.key
-                        ? (sort.direction === 'asc' ? 'ascending' : 'descending')
-                        : undefined;
-                      return (
-                        <TableHead
-                          key={column.key}
-                          data-column-priority={column.resolvedPriority}
-                          className={cn(
-                            'h-8 bg-transparent px-3 text-[11px] font-semibold tracking-normal text-muted-foreground/90 first:ps-4 last:pe-4',
-                            priorityClass(column.resolvedPriority, column.sticky !== false),
-                            column.className,
-                          )}
-                          aria-sort={sortDirection}
-                        >
-                          {column.sortable && onSort ? (
-                            <button
-                              type="button"
-                              className="inline-flex min-h-11 items-center font-semibold text-muted-foreground outline-none transition hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/25"
-                              onClick={() => handleSort(column.key)}
-                            >
-                              {column.header}<SortIcon field={column.key} sort={sort} />
-                            </button>
-                          ) : column.header}
-                        </TableHead>
-                      );
-                    })}
+                    {tableColumns.map((column) => (
+                      <TableHead
+                        key={column.key}
+                        data-column-priority={column.resolvedPriority}
+                        className={cn(
+                          'h-8 bg-transparent px-3 text-[11px] font-semibold tracking-normal text-muted-foreground/90 first:ps-4 last:pe-4',
+                          priorityClass(column.resolvedPriority, column.sticky !== false),
+                          column.className,
+                        )}
+                      >
+                        {column.header}
+                      </TableHead>
+                    ))}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {rows.map((row) => {
                     const rowKey = keyOf(row);
                     const isExpanded = isRowExpanded(rowKey);
-                    const isSelected = selectedSet.has(rowKey);
                     const detailId = `${disclosurePrefix}-${rowKey}`;
                     return (
                       <Fragment key={rowKey}>
                         <TableRow
-                          selected={isSelected}
                           onClick={onRowClick ? (event) => activateRow(row, event) : undefined}
                           onKeyDown={onRowClick ? (event) => activateRow(row, event) : undefined}
                           className={cn(
                             'bg-transparent hover:[&>td]:border-primary/20 hover:[&>td]:bg-primary/[0.035]',
-                            isSelected && '[&>td]:border-primary/30 [&>td]:bg-primary/[0.06]',
                             onRowClick && 'cursor-pointer focus-visible:outline-none focus-visible:[&>td]:border-primary/35 focus-visible:[&>td]:bg-primary/[0.06]',
                           )}
                           tabIndex={onRowClick ? 0 : undefined}
                           aria-expanded={hasExpansion ? isExpanded : undefined}
                         >
-                          {rowSelection ? (
-                            <TableCell className="w-11 border-y border-border/60 bg-card px-2 text-center first:rounded-s-[16px] first:border-s first:ps-3" data-row-action>
-                              <SelectionCheckbox
-                                checked={isSelected}
-                                label={`تحديد ${nodeToText(identityColumn.render(row)).trim() || 'السجل'}`}
-                                onChange={() => toggleSelected(rowKey)}
-                              />
-                            </TableCell>
-                          ) : null}
                           {hasExpansion ? (
-                            <TableCell className={cn('w-11 border-y border-border/60 bg-card px-2 text-center', !rowSelection && 'first:rounded-s-[16px] first:border-s first:ps-3')} data-row-action>
+                            <TableCell className={cn('w-11 border-y border-border/60 bg-card px-2 text-center', 'first:rounded-s-[16px] first:border-s first:ps-3')} data-row-action>
                               <button
                                 type="button"
                                 className="grid size-11 place-items-center rounded-xl text-muted-foreground outline-none transition hover:bg-primary/8 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/20"
@@ -897,8 +741,8 @@ function EntityTableImpl<T>({
                               data-column-priority={column.resolvedPriority}
                               className={cn(
                                 'border-y border-border/60 bg-card px-3 py-3 align-top text-[12.5px] leading-5',
-                                (!rowSelection && !hasExpansion && columnIndex === 0) && 'rounded-s-[16px] border-s ps-4',
-                                (rowSelection || hasExpansion) && columnIndex === 0 && 'ps-3',
+                                (!hasExpansion && columnIndex === 0) && 'rounded-s-[16px] border-s ps-4',
+                                hasExpansion && columnIndex === 0 && 'ps-3',
                                 columnIndex === tableColumns.length - 1 && 'rounded-e-[16px] border-e pe-4',
                                 priorityClass(column.resolvedPriority, column.sticky !== false),
                                 column.className,
