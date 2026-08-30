@@ -75,14 +75,21 @@ describe('TenantsPage shared person mobile workflow interactions', () => {
     expect(document.body.textContent).toContain('رقم الهوية');
   });
 
-  it('opens edit from the mobile card and keeps all domain links accessible', async () => {
+  it('opens edit from the register and keeps all domain links accessible', async () => {
     await act(async () => root.render(<TenantsPage />));
 
     expect(container.textContent).toContain('العقود النشطة');
     expect(container.textContent).toContain('المتأخرات');
+    // The contract is the primary domain link and stays a flat action.
     expect(container.textContent).toContain('العقد');
 
-    const editButton = Array.from(container.querySelectorAll('button')).find((button) => button.textContent?.includes('تعديل'));
+    // Edit lives in the shared row menu (معاينة / التفاصيل الكاملة / تعديل).
+    const actionMenu = Array.from(container.querySelectorAll('button'))
+      .find((button) => button.getAttribute('aria-haspopup') === 'menu');
+    expect(actionMenu).toBeTruthy();
+    await act(async () => actionMenu?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+    const editButton = Array.from(document.body.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'))
+      .find((button) => button.textContent?.trim() === 'تعديل');
     expect(editButton).toBeTruthy();
     await act(async () => editButton?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
     expect(document.body.textContent).toContain('تعديل person-tenant-1');

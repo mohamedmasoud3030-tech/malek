@@ -128,7 +128,7 @@ function EntityCardShell({ id, className, children }: Readonly<{
       data-entity-card
       data-entity-id={id}
       className={cn(
-        'relative w-full min-w-0 overflow-hidden rounded-[16px] border border-border/70 bg-card px-4 py-3 text-start shadow-none',
+        'relative w-full min-w-0 overflow-hidden rounded-2xl border border-border/70 bg-card px-4 py-3 text-start shadow-none',
         '[&_[data-status-badge]]:min-h-5 [&_[data-status-badge]]:gap-1 [&_[data-status-badge]]:px-1.5 [&_[data-status-badge]]:py-0 [&_[data-status-badge]]:text-[10.5px] [&_[data-status-badge]]:leading-4',
         className,
       )}
@@ -248,7 +248,7 @@ export function EntityCard({
           aria-label={bodyAriaLabel}
           onClick={onClick}
           className={cn(
-            'block w-full min-w-0 rounded-[12px] text-start outline-none transition-colors hover:bg-muted/8',
+            'block w-full min-w-0 rounded-xl text-start outline-none transition-colors hover:bg-muted/8',
             'focus-visible:ring-2 focus-visible:ring-primary/20',
           )}
         >

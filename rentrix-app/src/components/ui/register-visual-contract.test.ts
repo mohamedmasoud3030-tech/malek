@@ -20,7 +20,8 @@ describe('canonical register visual contract', () => {
   it('uses responsive viewport switching instead of a second data architecture', () => {
     expect(entityTable).toContain("type ResponsiveViewport = 'mobile' | 'tablet' | 'desktop'");
     expect(entityTable).toContain('function getViewportMode()');
-    expect(entityTable).toContain("viewportMode === 'mobile'");
+    expect(entityTable).toContain('getDefaultViewMode(viewportMode)');
+    expect(entityTable).toContain("viewport === 'mobile' ? 'cards' : 'table'");
     expect(entityTable).toContain('resolveTabletColumns');
     expect(entityTable).toContain('mobileSupportingKey?: string;');
     expect(entityTable).toContain('mobilePrimaryMetaKeys?: readonly string[];');
@@ -35,7 +36,9 @@ describe('canonical register visual contract', () => {
   });
 
   it('renders mobile rows as quiet card-style table rows without nested inner cards', () => {
-    expect(entityCard).toContain('rounded-[16px]');
+    // The card surface sits on the canonical elevated radius (rounded-2xl).
+    expect(entityCard).toContain('rounded-2xl');
+    expect(entityCard).not.toContain('rounded-[16px]');
     expect(entityCard).toContain('border border-border/70 bg-card px-4 py-3');
     expect(entityCard).toContain('text-[15px] font-semibold');
     expect(entityCard).toContain('text-[12.5px] font-medium');
@@ -43,6 +46,10 @@ describe('canonical register visual contract', () => {
     expect(entityCard).toContain('ActionMenu');
     expect(entityCard).not.toContain('shadow-[0_16px_38px');
     expect(entityTable).toContain('className="grid gap-2.5" data-entity-table-mobile-list');
+    // The shared card grid has a single owner: the CSS contract in ux-foundation.
+    const foundation = readFileSync(resolve(uiDir, '../../styles/ux-foundation.css'), 'utf8');
+    expect(foundation).toContain('[data-entity-table-mobile-list],');
+    expect(foundation).toContain('grid-template-columns: minmax(0, 1fr);');
   });
 
   it('applies the shared mobile row contract on representative registers', () => {

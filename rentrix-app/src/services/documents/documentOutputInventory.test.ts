@@ -100,7 +100,6 @@ const APPROVED_DOCUMENT_CALL_SITES: ReadonlySet<string> = new Set([
   'features/reports/components/MaintenanceReportSection.tsx',
   'features/reports/components/OccupancySection.tsx',
   'features/reports/components/OverdueSection.tsx',
-  'features/reports/components/PropertyAnalyticsSection.tsx',
   'features/reports/components/ServicesReportSection.tsx',
   'features/reports/components/StatementsSection.tsx',
   'features/reports/documents/report-documents.ts',

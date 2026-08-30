@@ -1,12 +1,15 @@
 import { AlertTriangle } from 'lucide-react';
+import type { ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { Button } from '@/components/ui/button';
+import { ExportMenu } from '@/components/ui/export-menu';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { FilterTabs } from '@/components/ui/filter-tabs';
+import { FileSpreadsheet, FileText } from 'lucide-react';
 import { contractStatusValues } from '../contractSchema';
 import type { LeaseModeFilter } from '../hooks/useContractFilters';
 import type { ContractStatusFilter } from '../services/contractService';
 
-const filterLabels: Record<ContractStatusFilter, string> = {
+export const contractStatusFilterLabels: Record<ContractStatusFilter, string> = {
   all: 'الكل',
   draft: 'مسودة',
   active: 'نشط',
@@ -14,17 +17,21 @@ const filterLabels: Record<ContractStatusFilter, string> = {
   terminated: 'ملغي',
 };
 
-const leaseModeOptions: { value: LeaseModeFilter; label: string }[] = [
+export const contractLeaseModeOptions: { value: LeaseModeFilter; label: string }[] = [
   { value: 'all', label: 'كل الإيجارات' },
   { value: 'long_term', label: 'طويل' },
   { value: 'short_stay', label: 'إقامة قصيرة' },
 ];
 
 export function ContractFilters({
+  activeFilters,
+  canExport,
   expiringOnly,
-  hasActiveFilters,
   leaseMode,
-  resetFilters,
+  onClearAllFilters,
+  onExportCsv,
+  onExportXlsx,
+  exportDisabled = false,
   searchTerm,
   setExpiringOnly,
   setLeaseMode,
@@ -32,10 +39,14 @@ export function ContractFilters({
   setStatus,
   status,
 }: {
+  activeFilters: ActiveFilterItem[];
+  canExport: boolean;
   expiringOnly: boolean;
-  hasActiveFilters: boolean;
   leaseMode: LeaseModeFilter;
-  resetFilters: () => void;
+  onClearAllFilters: () => void;
+  onExportCsv: () => void;
+  onExportXlsx: () => void;
+  exportDisabled?: boolean;
   searchTerm: string;
   setExpiringOnly: (updater: (value: boolean) => boolean) => void;
   setLeaseMode: (value: LeaseModeFilter) => void;
@@ -45,7 +56,7 @@ export function ContractFilters({
 }) {
   const filterOptions = (['all', ...contractStatusValues] as ContractStatusFilter[]).map((filter) => ({
     value: filter,
-    label: filterLabels[filter],
+    label: contractStatusFilterLabels[filter],
   }));
 
   return (
@@ -56,7 +67,7 @@ export function ContractFilters({
       searchAriaLabel="بحث في العقود"
       filters={(
         <>
-          <FilterTabs options={leaseModeOptions} value={leaseMode} onChange={setLeaseMode} tone="contracts" />
+          <FilterTabs options={contractLeaseModeOptions} value={leaseMode} onChange={setLeaseMode} tone="contracts" />
           <FilterTabs options={filterOptions} value={status} onChange={setStatus} tone="contracts" />
           <Button
             variant={expiringOnly ? 'primary' : 'secondary'}
@@ -68,10 +79,16 @@ export function ContractFilters({
           </Button>
         </>
       )}
-      actions={hasActiveFilters ? (
-        <Button variant="ghost" className="min-h-11 shrink-0 rounded-lg px-3 text-xs" onClick={resetFilters}>
-          مسح الفلاتر
-        </Button>
+      activeFilters={activeFilters}
+      onClearAllFilters={onClearAllFilters}
+      actions={canExport ? (
+        <ExportMenu
+          disabled={exportDisabled}
+          items={[
+            { id: 'xlsx', label: 'ملف Excel', icon: FileSpreadsheet, onClick: onExportXlsx },
+            { id: 'csv', label: 'ملف CSV', icon: FileText, onClick: onExportCsv },
+          ]}
+        />
       ) : undefined}
     />
   );

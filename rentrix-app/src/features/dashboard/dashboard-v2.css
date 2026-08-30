@@ -1,21 +1,27 @@
 /* MALEK Today workspace density contract.
-   The dashboard is a decision surface, not a vertical card train. Keep mobile
-   sections compact while preserving readable desktop breathing room. */
+   The dashboard is a decision surface, not a vertical card train. */
 
 [data-dashboard-page] {
-  --dashboard-section-gap: 0.75rem;
+  --dashboard-section-gap: 0.85rem;
   --dashboard-cluster-gap: 0.5rem;
 }
 
 @media (min-width: 1024px) {
   [data-dashboard-page] {
-    --dashboard-section-gap: 0.85rem;
-    --dashboard-cluster-gap: 0.55rem;
+    --dashboard-section-gap: 1rem;
+    --dashboard-cluster-gap: 0.625rem;
   }
 }
 
+/* The first scan should feel like a brief, not another KPI card.
+   Radius stays on the canonical quiet surface step (rounded-xl = 0.75rem),
+   one step below the elevated card radius (rounded-2xl). */
 [data-dashboard-focus-strip] {
   scroll-margin-block-start: calc(var(--app-header-height, 3rem) + var(--dashboard-section-gap));
+  border-radius: 0.75rem;
+  border-color: hsl(var(--border) / 0.45);
+  background: hsl(var(--muted) / 0.16);
+  box-shadow: none;
 }
 
 [data-dashboard-focus-scroll] {
@@ -28,34 +34,73 @@
 }
 
 [data-dashboard-focus-item] {
-  box-shadow: inset 0 1px 0 hsl(var(--card) / 0.72);
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+
+[data-dashboard-focus-item] + [data-dashboard-focus-item] {
+  border-inline-start-color: hsl(var(--border) / 0.55);
+  border-inline-start-width: 1px;
+  border-start-start-radius: 0;
+  border-end-start-radius: 0;
+}
+
+[data-dashboard-focus-item]:focus-visible {
+  background: hsl(var(--background) / 0.75);
 }
 
 [data-dashboard-page] [data-dashboard-section] {
   scroll-margin-block-start: calc(
     var(--app-header-height, 3rem) + var(--dashboard-section-gap)
   );
-  /* Performance: CSS containment isolates each dashboard section's paint
-     and layout recalculations, so a state change in one section (e.g.
-     collections) does not trigger a full-page style recalculation. */
   contain: layout style;
 }
 
+/* Attention is a real operational state, not a decorative warning card. */
 [data-dashboard-page] [data-dashboard-priority='attention'] {
-  border-radius: 1rem;
-  background: linear-gradient(180deg, hsl(var(--warning-bg) / 0.14), transparent 58%);
-  outline: 1px solid hsl(var(--warning-text) / 0.16);
-  outline-offset: 0.35rem;
+  border-inline-start: 3px solid hsl(var(--warning-text) / 0.55);
+  padding-inline-start: 0.75rem;
+  border-radius: 0;
+  background: linear-gradient(
+    to left,
+    transparent,
+    hsl(var(--warning-bg) / 0.12)
+  );
+  outline: 0;
+}
+
+[dir='ltr'] [data-dashboard-page] [data-dashboard-priority='attention'] {
+  background: linear-gradient(
+    to right,
+    hsl(var(--warning-bg) / 0.12),
+    transparent
+  );
 }
 
 [data-dashboard-page] [data-dashboard-priority='attention'] [data-dashboard-group-header] {
-  border-color: hsl(var(--warning-text) / 0.25);
+  border-color: hsl(var(--warning-text) / 0.22);
 }
 
 [data-dashboard-page] [data-dashboard-priority='primary'] [data-dashboard-group-header] {
-  border-color: hsl(var(--primary) / 0.18);
+  border-color: hsl(var(--primary) / 0.16);
+}
+
+[data-dashboard-page] [data-dashboard-group-header] {
+  padding-block-end: 0.4rem;
 }
 
 [data-dashboard-page] :where([data-component-card], [data-kpi-card]) {
   min-width: 0;
+}
+
+@media (max-width: 639px) {
+  [data-dashboard-focus-strip] {
+    margin-inline: calc(var(--app-page-gutter-inline) * -0.15);
+  }
+
+  [data-dashboard-focus-item] {
+    min-width: 7rem;
+    padding-inline: 0.7rem;
+  }
 }

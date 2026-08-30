@@ -57,9 +57,11 @@ describe('finance task-first UX', () => {
     expect(invoiceWorkspace.slice(listIndex)).not.toContain('<BillingReadinessSection />');
   });
 
-  it('defaults the invoice register to table mode without changing the shared EntityTable contract', () => {
-    expect(invoiceList).toContain("malek:invoices:register-view-mode-v1");
-    expect(invoiceList).toContain("window.localStorage.setItem(INVOICE_REGISTER_VIEW_MODE_KEY, 'table')");
-    expect(invoiceList).toContain('viewModeStorageKey={registerViewModeKey}');
+  it('defaults the invoice register by viewport through the shared EntityTable contract', () => {
+    // One data architecture: the shared EntityTable owns cards/table defaults
+    // (mobile → cards, wider viewports → table) and the persisted choice.
+    expect(invoiceList).toContain('viewModeStorageKey');
+    // No page-level view-mode bookkeeping that could drift from the primitive.
+    expect(invoiceList).not.toContain('window.localStorage.setItem');
   });
 });

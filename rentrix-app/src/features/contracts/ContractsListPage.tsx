@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { Download, FileSpreadsheet, Plus } from 'lucide-react';
-import { ContractFilters } from './components/ContractFilters';
+import { Plus } from 'lucide-react';
+import type { ActiveFilterItem } from '@/components/ui/active-filter-bar';
+import { ContractFilters, contractLeaseModeOptions, contractStatusFilterLabels } from './components/ContractFilters';
 import { ContractKpiGrid } from './components/ContractKpiGrid';
 import { ContractResults } from './components/ContractResults';
 import { ContractFormModal } from './contract-form-modal';
@@ -102,6 +103,20 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
     void navigate({ to: '/contracts/$contractId', params: { contractId: id } });
   };
   const resetFilters = () => { setStatus('all'); setLeaseMode('all'); setSearchTerm(''); setExpiringOnly(false); setPage(1); };
+  const activeFilters: ActiveFilterItem[] = [];
+  if (searchTerm.trim()) {
+    activeFilters.push({ key: 'search', label: 'البحث', value: searchTerm.trim(), onRemove: () => { setSearchTerm(''); setPage(1); } });
+  }
+  if (status !== 'all') {
+    activeFilters.push({ key: 'status', label: 'الحالة', value: contractStatusFilterLabels[status], onRemove: () => { setStatus('all'); setPage(1); } });
+  }
+  if (leaseMode !== 'all') {
+    const leaseLabel = contractLeaseModeOptions.find((option) => option.value === leaseMode)?.label ?? leaseMode;
+    activeFilters.push({ key: 'leaseMode', label: 'نوع الإيجار', value: leaseLabel, onRemove: () => { setLeaseMode('all'); setPage(1); } });
+  }
+  if (expiringOnly) {
+    activeFilters.push({ key: 'expiringOnly', label: 'الانتهاء', value: 'خلال 30 يوم', onRemove: () => { setExpiringOnly(false); setPage(1); } });
+  }
   const confirmDelete = async () => {
     if (!canCancel || !deleteId || deleteMutation.isPending) return;
     try {
@@ -111,27 +126,6 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
       // keep dialog open on failure, preserve context
     }
   };
-
-  const exportActions = canExport ? (
-    <div className="flex items-center gap-2">
-      <Button
-        variant="secondary"
-        onClick={() => exportContractsXlsx(filteredContracts)}
-        disabled={!filteredContracts.length}
-        aria-label="تصدير العقود كملف Excel"
-      >
-        <FileSpreadsheet className="me-2 size-4" />Excel
-      </Button>
-      <Button
-        variant="ghost"
-        onClick={() => exportContractsCsv(filteredContracts)}
-        disabled={!filteredContracts.length}
-        aria-label="تصدير العقود كملف CSV"
-      >
-        <Download className="me-2 size-4" />CSV
-      </Button>
-    </div>
-  ) : undefined;
 
   return (
     <>
@@ -147,15 +141,18 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
             <Plus className="me-2 size-4" />إنشاء عقد
           </Button>
         ) : undefined}
-        secondaryActions={exportActions}
       >
         <ContractKpiGrid companySettings={companySettings} contracts={contracts} filteredContracts={filteredContracts} totalCount={contractsQuery.data?.count ?? contracts.length} />
 
         <ContractFilters
+          activeFilters={activeFilters}
+          canExport={canExport}
           expiringOnly={expiringOnly}
-          hasActiveFilters={hasActiveFilters}
+          exportDisabled={filteredContracts.length === 0}
           leaseMode={leaseMode}
-          resetFilters={resetFilters}
+          onClearAllFilters={resetFilters}
+          onExportCsv={() => exportContractsCsv(filteredContracts)}
+          onExportXlsx={() => exportContractsXlsx(filteredContracts)}
           searchTerm={searchTerm}
           setExpiringOnly={(updater) => { setExpiringOnly(updater); setPage(1); }}
           setLeaseMode={(value) => { setLeaseMode(value); setPage(1); }}

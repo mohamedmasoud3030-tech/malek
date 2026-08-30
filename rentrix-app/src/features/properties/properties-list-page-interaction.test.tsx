@@ -89,7 +89,7 @@ describe('PropertiesListPage mobile workflow interactions', () => {
     expect(document.body.textContent).toContain('قيمة العمولة');
   });
 
-  it('opens details from the compact register row and exposes edit', async () => {
+  it('keeps the property dossier as the obvious row action and moves secondary work into context', async () => {
     await act(async () => root.render(<PropertiesListPage />));
 
     const row = container.querySelector('tbody tr') as HTMLElement | null;
@@ -97,10 +97,15 @@ describe('PropertiesListPage mobile workflow interactions', () => {
     await act(async () => row?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
     expect(mockNavigate).toHaveBeenCalledWith({ to: '/properties/$propertyId', params: { propertyId: 'property-1' } });
 
-    // Secondary actions are flat now: no «إجراءات» layer to open first —
-    // edit is a direct row action on both the desktop row and the mobile card.
-    expect(container.querySelector('[data-action-menu]')).toBeNull();
-    const editButton = Array.from(container.querySelectorAll('button')).find((button) => button.textContent?.trim() === 'تعديل');
+    const dossierButton = Array.from(container.querySelectorAll('button')).find((button) => button.textContent?.trim() === 'فتح الملف');
+    expect(dossierButton).toBeTruthy();
+    expect(container.querySelector('tbody [data-action-menu]')).toBeTruthy();
+
+    const actionTrigger = container.querySelector<HTMLButtonElement>('tbody [data-action-menu-trigger]');
+    expect(actionTrigger).toBeTruthy();
+    await act(async () => actionTrigger?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+
+    const editButton = Array.from(document.body.querySelectorAll('button')).find((button) => button.textContent?.trim() === 'تعديل البيانات');
     expect(editButton).toBeTruthy();
     await act(async () => editButton?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
     expect(document.body.textContent).toContain('تعديل عقار');

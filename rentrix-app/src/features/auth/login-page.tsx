@@ -68,7 +68,7 @@ export function LoginPage() {
           />
         </header>
 
-        <div className="w-full rounded-[1.75rem] border border-border/70 bg-card px-5 py-6 shadow-card sm:px-6 sm:py-7 md:rounded-2xl" data-login-card>
+        <div className="w-full rounded-2xl border border-border/70 bg-card px-5 py-6 shadow-card sm:px-6 sm:py-7" data-login-card>
           <form className="space-y-4" onSubmit={handleSubmit} noValidate={false} aria-describedby={hasFieldError ? 'login-error' : undefined}>
             <div className="grid gap-1.5">
               <label htmlFor="login-email" className="text-sm font-semibold text-foreground">البريد الإلكتروني</label>

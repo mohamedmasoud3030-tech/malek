@@ -131,7 +131,7 @@ describe('UnitsPage controller regression', () => {
     container.innerHTML = '';
   });
 
-  it('renders one dense desktop table row per unit plus the shared horizontally scrollable table', async () => {
+  it('renders one dense desktop table row per unit plus the shared Cards⇄Table register', async () => {
     await act(async () => { root.render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><UnitsPage /></QueryClientProvider>); });
 
     const desktopRows = container.querySelectorAll('tbody tr');
@@ -140,7 +140,8 @@ describe('UnitsPage controller regression', () => {
     expect(container.querySelector('[data-entity-table-scroll]')).toBeTruthy();
     expect(container.querySelector('[data-compact-responsive-table]')).toBeTruthy();
     expect(container.querySelector('table[data-entity-table]')).toBeTruthy();
-    expect(container.querySelector('[role="group"][aria-label*="طريقة عرض"]')).toBeNull();
+    // The shared register exposes one Cards ⇄ Table toggle (default: Table on desktop).
+    expect(container.querySelector('[role="group"][aria-label*="طريقة عرض"]')).toBeTruthy();
   });
 
   it('renders KPI cards with computed values', async () => {
@@ -186,7 +187,7 @@ describe('UnitsPage controller regression', () => {
     const row = container.querySelector('tbody tr') as HTMLElement;
     expect(row).toBeTruthy();
     await act(async () => { row.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
-    // Row clicks keep the operator in the register behind the shared preview dialog.
+    // Row clicks give a quick glance; the full dossier is an explicit action.
     expect(document.body.textContent).toContain('معاينة الوحدة');
     expect(mockNavigate).not.toHaveBeenCalled();
   });
@@ -198,6 +199,17 @@ describe('UnitsPage controller regression', () => {
     await act(async () => { row.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); });
     expect(document.body.textContent).toContain('معاينة الوحدة');
     expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  it('routes the explicit full-detail action to the unit dossier', async () => {
+    await act(async () => { root.render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><UnitsPage /></QueryClientProvider>); });
+    const fullDetail = Array.from(container.querySelectorAll('a')).find((anchor) => anchor.textContent?.includes('التفاصيل الكاملة'));
+    expect(fullDetail).toBeTruthy();
+    await act(async () => { fullDetail?.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
+    expect(mockNavigate).toHaveBeenCalledWith({
+      to: '/properties/$propertyId/units/$unitId',
+      params: { propertyId: 'p1', unitId: 'u1' },
+    });
   });
 
   it('renders search input with correct placeholder', async () => {

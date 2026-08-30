@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import type { ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { EmbeddableWorkspace } from './embeddable-workspace';
 
@@ -17,6 +18,9 @@ interface ListPageProps {
     placeholder?: string;
   };
   filters?: ReactNode;
+  /** Active filter chips shown once under the toolbar, each removable. */
+  activeFilters?: readonly ActiveFilterItem[];
+  onClearAllFilters?: () => void;
   /** Optional compact utilities such as view, columns, export, or sort controls. */
   toolbarActions?: ReactNode;
   children: ReactNode;
@@ -50,6 +54,8 @@ export function ListPage({
   backLabel,
   search,
   filters,
+  activeFilters,
+  onClearAllFilters,
   toolbarActions,
   children,
   className,
@@ -80,6 +86,8 @@ export function ListPage({
           searchPlaceholder={search?.placeholder}
           searchAriaLabel={`بحث في ${title}`}
           filters={filters}
+          activeFilters={activeFilters}
+          onClearAllFilters={onClearAllFilters}
           actions={toolbarActions}
         />
       ) : null}

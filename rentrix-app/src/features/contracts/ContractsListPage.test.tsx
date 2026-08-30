@@ -117,7 +117,8 @@ describe('ContractsListPage load states', () => {
     expect(html).toContain('data-compact-responsive-table="true"');
     expect(html).toContain('data-entity-table-scroll');
     expect(html).toContain('<table');
-    expect(html).not.toContain('طريقة عرض جدول العقود');
+    // The shared Cards ⇄ Table foundation exposes one toggle (default: Table on desktop).
+    expect(html).toContain('طريقة عرض جدول العقود');
     expect(html).toContain('أحمد سالم');
     expect(html).toContain('A-101');
   });
