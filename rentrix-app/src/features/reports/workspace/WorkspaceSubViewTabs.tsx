@@ -34,7 +34,7 @@ export function WorkspaceSubViewTabs({ workspace, activeView, onOpenView }: Work
             aria-selected={active}
             onClick={() => onOpenView(subView.id)}
             className={cn(
-              'inline-flex min-h-9 items-center rounded-lg border px-2.5 text-xs font-black transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
+              'inline-flex min-h-11 items-center rounded-lg border px-2.5 text-xs font-black transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
               active
                 ? 'border-primary/35 bg-primary/10 text-primary'
                 : 'border-border/70 bg-background text-muted-foreground hover:border-primary/30 hover:text-foreground',

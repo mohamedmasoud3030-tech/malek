@@ -214,21 +214,21 @@ export function PropertyAnalyticsSection({ occupancyRows, expenseRows, performan
                       <button
                         type="button"
                         onClick={() => onDrill('collections', 'overdue', { propertyId: row.propertyId })}
-                        className="inline-flex min-h-9 items-center rounded-lg border border-border/70 px-2 text-[11px] font-black text-foreground transition-colors hover:border-primary/30 hover:text-primary"
+                        className="inline-flex min-h-11 items-center rounded-lg border border-border/70 px-2 text-[11px] font-black text-foreground transition-colors hover:border-primary/30 hover:text-primary"
                       >
                         متأخرات العقار
                       </button>
                       <button
                         type="button"
                         onClick={() => onDrill('leasing', 'occupancy', { propertyId: row.propertyId })}
-                        className="inline-flex min-h-9 items-center rounded-lg border border-border/70 px-2 text-[11px] font-black text-foreground transition-colors hover:border-primary/30 hover:text-primary"
+                        className="inline-flex min-h-11 items-center rounded-lg border border-border/70 px-2 text-[11px] font-black text-foreground transition-colors hover:border-primary/30 hover:text-primary"
                       >
                         الشواغر
                       </button>
                       <button
                         type="button"
                         onClick={() => onDrill('operations', 'maintenance_analytics', { propertyId: row.propertyId })}
-                        className="inline-flex min-h-9 items-center rounded-lg border border-border/70 px-2 text-[11px] font-black text-foreground transition-colors hover:border-primary/30 hover:text-primary"
+                        className="inline-flex min-h-11 items-center rounded-lg border border-border/70 px-2 text-[11px] font-black text-foreground transition-colors hover:border-primary/30 hover:text-primary"
                       >
                         الصيانة
                       </button>
@@ -257,14 +257,14 @@ export function PropertyAnalyticsSection({ occupancyRows, expenseRows, performan
                       <button
                         type="button"
                         onClick={() => onDrill('leasing', 'occupancy', { propertyId: row.propertyId })}
-                        className="inline-flex min-h-9 items-center rounded-lg border border-border/70 px-2 text-[11px] font-black text-foreground transition-colors hover:border-primary/30 hover:text-primary"
+                        className="inline-flex min-h-11 items-center rounded-lg border border-border/70 px-2 text-[11px] font-black text-foreground transition-colors hover:border-primary/30 hover:text-primary"
                       >
                         الشواغر
                       </button>
                       <button
                         type="button"
                         onClick={() => onDrill('operations', 'expenses', { propertyId: row.propertyId })}
-                        className="inline-flex min-h-9 items-center rounded-lg border border-border/70 px-2 text-[11px] font-black text-foreground transition-colors hover:border-primary/30 hover:text-primary"
+                        className="inline-flex min-h-11 items-center rounded-lg border border-border/70 px-2 text-[11px] font-black text-foreground transition-colors hover:border-primary/30 hover:text-primary"
                       >
                         المصروفات
                       </button>
