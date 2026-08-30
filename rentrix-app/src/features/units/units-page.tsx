@@ -4,7 +4,6 @@ import {
   CircleGauge,
   DoorOpen,
   Edit,
-  Eye,
   Home,
   Plus,
   Wrench,
@@ -26,7 +25,6 @@ import { FilterBar } from "@/components/ui/filter-bar";
 import { formatMoney, formatNumber } from "@/hooks/useCompanyFormatters";
 import { useAuth } from "@/hooks/use-auth";
 import { UnitFormModal } from "./unit-form-modal";
-import { UnitPreviewDialog } from "./components/UnitPreviewDialog";
 import type { Unit } from "@/types/domain";
 
 const unitStatusTone = {
@@ -57,7 +55,6 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
   const { canAccess } = useAuth();
   const canCreateUnit = canAccess("properties.create");
   const canEditUnit = canAccess("properties.edit");
-  const [previewUnitId, setPreviewUnitId] = useState<string | null>(null);
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultUnitRegisterColumns]);
   if (ctrl.isLoading) return <LoadingState variant="route" />;
 
@@ -68,7 +65,6 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
   const maintenanceCount = ctrl.units.filter(
     (unit) => getUnitPageStatus(unit) === "maintenance",
   ).length;
-  const openPreview = (unit: Unit) => setPreviewUnitId(unit.id);
 
   const primaryAction = (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -161,24 +157,24 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
           onClick={(event) => event.stopPropagation()}
           onKeyDown={(event) => event.stopPropagation()}
         >
-          {canEditUnit ? (
-            <Button variant="secondary" onClick={() => ctrl.openEdit(unit)}>
-              <Edit className="me-1 size-4" aria-hidden="true" />
-              تعديل
-            </Button>
-          ) : null}
           <Button variant="ghost" asChild>
             <Link
               to="/properties/$propertyId/units/$unitId"
               params={{ propertyId: unit.property_id, unitId: unit.id }}
             >
-              التفاصيل
+              فتح الوحدة
             </Link>
           </Button>
+          {canEditUnit ? (
+            <Button variant="secondary" onClick={() => ctrl.openEdit(unit)}>
+              <Edit className="me-1 size-4" aria-hidden="true" />
+              تعديل البيانات
+            </Button>
+          ) : null}
         </div>
       ),
     },
-  ], []);
+  ], [canEditUnit, ctrl]);
 
   return (
     <EmbeddableWorkspace
@@ -274,7 +270,7 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
           rows={ctrl.filteredUnits}
           columns={columns}
           visibleColumnKeys={visibleColumnKeys}
-          onRowClick={openPreview}
+          onRowClick={ctrl.navigateToUnit}
           keyOf={(unit) => unit.id}
           isLoading={ctrl.unitsQuery.isLoading || ctrl.propertiesQuery.isLoading}
           error={ctrl.isError ? new Error("تعذر تحميل الوحدات") : null}
@@ -293,30 +289,24 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
           mobileSupportingKey="property"
           mobilePrimaryMetaKeys={["rent", "floor"]}
           mobileSecondaryMetaKeys={["notes"]}
+          mobileCardPrimaryAction={(unit) => ({
+            label: "فتح الوحدة",
+            icon: DoorOpen,
+            variant: "default",
+            ariaLabel: `فتح تفاصيل وحدة ${unit.unit_number}`,
+            onClick: () => ctrl.navigateToUnit(unit),
+          })}
           mobileCardActions={(unit) => [
             ...(canEditUnit ? [{
-              label: "تعديل",
+              label: "تعديل البيانات",
               icon: Edit,
               variant: "secondary" as const,
               ariaLabel: `تعديل وحدة ${unit.unit_number}`,
               onClick: () => ctrl.openEdit(unit),
             }] : []),
-            {
-              label: "التفاصيل الكاملة",
-              icon: DoorOpen,
-              variant: "secondary" as const,
-              ariaLabel: `فتح تفاصيل وحدة ${unit.unit_number}`,
-              onClick: () => ctrl.navigateToUnit(unit),
-            },
           ]}
         />
       </section>
-
-      <UnitPreviewDialog
-        unitId={previewUnitId}
-        open={Boolean(previewUnitId)}
-        onOpenChange={(open) => { if (!open) setPreviewUnitId(null); }}
-      />
 
       {canCreateUnit ? (
         <UnitFormModal
