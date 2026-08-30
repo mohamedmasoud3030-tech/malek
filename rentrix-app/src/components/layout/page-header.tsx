@@ -37,10 +37,11 @@ function getTodayContext(isArabic: boolean) {
 }
 
 /**
- * The one visible page chrome across MALEK.
- * It owns page identity and one primary action. Day/date is deliberately
- * opt-in so routine registers are not forced to compete with irrelevant
- * global context on every visit.
+ * Canonical MALEK page identity.
+ *
+ * The header behaves like document chrome rather than another card: identity
+ * first, context immediately beneath it, one obvious primary action at the
+ * edge. Time context is opt-in instead of repeated across the whole product.
  */
 export function PageHeader({
   title,
@@ -61,28 +62,28 @@ export function PageHeader({
   const todayContext = showTodayContext ? getTodayContext(isArabic) : null;
 
   return (
-    <div data-page-header className={cn('min-w-0 space-y-2', className)}>
+    <div data-page-header className={cn('min-w-0 space-y-2.5', className)}>
       <header
         data-global-page-context
         data-unified-surface="page-header"
-        className="flex min-h-14 min-w-0 flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl border border-border/70 bg-card px-3 py-2.5 shadow-card sm:flex-nowrap sm:px-4 sm:py-3 lg:min-h-12 lg:rounded-none lg:border-0 lg:border-b lg:border-border/60 lg:bg-transparent lg:px-0 lg:py-2 lg:shadow-none"
+        className="flex min-w-0 flex-col gap-3 border-b border-border/60 pb-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4 sm:pb-4"
         aria-label={todayContext
           ? isArabic
             ? `${title} — ${todayContext.todayLabel} ${todayContext.weekday} ${todayContext.date}`
             : `${title} — ${todayContext.todayLabel}, ${todayContext.weekday} ${todayContext.date}`
           : title}
       >
-        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1.5 sm:flex-nowrap">
-          <div className="flex min-w-0 max-w-full items-center gap-1.5">
+        <div className="min-w-0 flex-1 space-y-1.5">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
             <h1
               data-global-page-title
-              className="min-w-0 truncate text-xl font-black leading-7 [overflow-wrap:anywhere] sm:text-[1.375rem] sm:leading-8"
+              className="min-w-0 text-[1.45rem] font-black leading-8 tracking-[-0.02em] [overflow-wrap:anywhere] sm:text-[1.65rem] sm:leading-9"
             >
               {title}
             </h1>
             {count !== undefined ? (
               <span
-                className="inline-flex min-h-6 shrink-0 items-center rounded-md border border-border bg-muted/45 px-2 py-0.5 text-xs font-bold tabular-nums text-muted-foreground"
+                className="inline-flex min-h-6 shrink-0 items-center rounded-full bg-muted/60 px-2 py-0.5 text-xs font-bold tabular-nums text-muted-foreground"
                 aria-label={`${isArabic ? 'عدد السجلات' : 'Records'} ${count}`}
               >
                 {count}
@@ -90,49 +91,40 @@ export function PageHeader({
             ) : null}
           </div>
 
+          {description ? (
+            <p className="max-w-3xl text-[0.8125rem] font-medium leading-5 text-muted-foreground [overflow-wrap:anywhere] sm:text-sm sm:leading-6">
+              {description}
+            </p>
+          ) : null}
+
           {todayContext ? (
-            <>
-              <span className="hidden h-5 w-px shrink-0 bg-border sm:block" aria-hidden="true" />
-              <div
-                data-global-today-context
-                className="flex min-w-0 max-w-full basis-full items-center gap-2 text-muted-foreground sm:basis-auto sm:flex-1"
-              >
-                <span
-                  className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary"
-                  aria-hidden="true"
-                >
-                  <CalendarDays className="size-4" />
-                </span>
-                <span data-global-day-label className="hidden shrink-0 text-xs font-black text-foreground sm:inline">
-                  {todayContext.todayLabel}
-                </span>
-                <p className="min-w-0 truncate text-[0.8125rem] font-medium leading-5" data-global-today-date>
-                  <span data-global-today-weekday>{todayContext.weekday}</span>
-                  <span aria-hidden="true"> · </span>
-                  <span data-global-today-day-date>{todayContext.date}</span>
-                </p>
-              </div>
-            </>
+            <div
+              data-global-today-context
+              className="inline-flex min-w-0 items-center gap-1.5 text-xs font-semibold text-muted-foreground"
+            >
+              <CalendarDays className="size-3.5 shrink-0 text-primary" aria-hidden="true" />
+              <span data-global-day-label className="font-black text-foreground">{todayContext.todayLabel}</span>
+              <span aria-hidden="true">·</span>
+              <span data-global-today-date className="min-w-0 truncate">
+                <span data-global-today-weekday>{todayContext.weekday}</span>
+                <span aria-hidden="true">، </span>
+                <span data-global-today-day-date>{todayContext.date}</span>
+              </span>
+            </div>
           ) : null}
         </div>
 
         {resolvedPrimaryAction ? (
-          <div data-page-primary-action className="shrink-0">
+          <div data-page-primary-action className="shrink-0 self-start sm:self-center">
             {resolvedPrimaryAction}
           </div>
         ) : null}
       </header>
 
-      {description ? (
-        <p className="px-3 text-[0.8125rem] leading-5 text-muted-foreground [overflow-wrap:anywhere] sm:px-4 lg:px-0">
-          {description}
-        </p>
-      ) : null}
-
       {hasSupportingTools ? (
         <div
           data-page-supporting-tools
-          className="flex min-w-0 flex-wrap items-center justify-end gap-1.5 px-3 sm:gap-2 sm:px-4 lg:px-0"
+          className="flex min-w-0 flex-wrap items-center justify-end gap-1.5 sm:gap-2"
         >
           {backTo ? (
             <Button variant="secondary" size="sm" asChild className="min-h-11">
