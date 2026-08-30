@@ -1,7 +1,8 @@
 import { communicationChannelLabels, communicationDirectionLabels, communicationStatusLabels, communicationStatusTone } from "../labels";
 import { Archive, CheckCircle2, Edit, Rows3, UserRoundSearch } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { ActiveFilterBar, type ActiveFilterItem } from '@/components/ui/active-filter-bar';
+import type { ActiveFilterItem } from '@/components/ui/active-filter-bar';
+import { ActionMenu } from '@/components/ui/action-menu';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EntityForm } from '@/components/ui/entity-form';
@@ -73,11 +74,14 @@ export function CommunicationHubView({
   const clearFilters = () => onFiltersChange({ query: '', channel: 'all', status: 'all' });
 
   const rowActions = (row: CommunicationRecord) => (
-    <div className="flex flex-wrap gap-2" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
-      <Button variant="secondary" onClick={() => onEdit(row)}><Edit className="size-4" />تعديل</Button>
-      {row.status !== 'archived' ? (
-        <Button variant="danger" disabled={isArchiving} onClick={() => setArchiveCandidate(row)}><Archive className="size-4" />أرشفة</Button>
-      ) : null}
+    <div className="flex" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+      <ActionMenu
+        label={`إجراءات ${row.contact_name}`}
+        items={[
+          { id: 'edit', label: 'تعديل', icon: Edit, onClick: () => onEdit(row) },
+          ...(row.status !== 'archived' ? [{ id: 'archive', label: 'أرشفة', icon: Archive, danger: true, disabled: isArchiving, onClick: () => setArchiveCandidate(row) }] : []),
+        ]}
+      />
     </div>
   );
 
@@ -139,8 +143,11 @@ export function CommunicationHubView({
             </Select>
           </>
         )}
+
+        activeFilters={activeFilters}
+        onClearAllFilters={clearFilters}
       />
-      <ActiveFilterBar filters={activeFilters} onClearAll={clearFilters} />
+
 
       {writeError ? <WriteErrorCard message={writeError instanceof Error ? writeError.message : 'تعذر حفظ التغيير على سجل التواصل.'} /> : null}
 

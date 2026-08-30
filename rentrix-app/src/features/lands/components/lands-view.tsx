@@ -3,7 +3,8 @@ import { useMemo, useState } from 'react';
 import { AsyncContentState } from '@/components/async-content-state';
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { useDialogNavigate } from '@/app/router/background-location';
-import { ActiveFilterBar, type ActiveFilterItem } from '@/components/ui/active-filter-bar';
+import type { ActiveFilterItem } from '@/components/ui/active-filter-bar';
+import { ActionMenu } from '@/components/ui/action-menu';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EntityForm } from '@/components/ui/entity-form';
@@ -103,11 +104,14 @@ export function LandsView({
   };
 
   const rowActions = (row: LandRecord) => (
-    <div className="flex flex-wrap gap-2" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
-      <Button variant="secondary" onClick={() => onEdit(row)}><Edit className="size-4" />تعديل</Button>
-      {row.status !== 'archived' ? (
-        <Button variant="danger" disabled={isArchiving} onClick={() => setArchiveCandidate(row)}><Archive className="size-4" />أرشفة</Button>
-      ) : null}
+    <div className="flex" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+      <ActionMenu
+        label={`إجراءات ${row.name || row.plot_no || 'الأرض'}`}
+        items={[
+          { id: 'edit', label: 'تعديل', icon: Edit, onClick: () => onEdit(row) },
+          ...(row.status !== 'archived' ? [{ id: 'archive', label: 'أرشفة', icon: Archive, danger: true, disabled: isArchiving, onClick: () => setArchiveCandidate(row) }] : []),
+        ]}
+      />
     </div>
   );
 
@@ -169,8 +173,11 @@ export function LandsView({
             {Object.entries(landStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </Select>
         )}
+
+        activeFilters={activeFilters}
+        onClearAllFilters={clearFilters}
       />
-      <ActiveFilterBar filters={activeFilters} onClearAll={clearFilters} />
+
 
       {writeError ? <WriteErrorCard message={getActionableSupabaseErrorMessage(writeError, 'تعذر حفظ التغيير على سجل الأرض.')} /> : null}
 

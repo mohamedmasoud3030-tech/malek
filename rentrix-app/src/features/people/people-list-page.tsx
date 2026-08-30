@@ -3,14 +3,12 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { PersonFormModal } from "./person-form-modal";
 import { useDialogNavigate } from "@/app/router/background-location";
+import { ActionMenu } from "@/components/ui/action-menu";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { DataTableColumnsMenu } from "@/components/ui/data-table";
 import { EntityCell } from "@/components/ui/entity-cell";
-import {
-  ActiveFilterBar,
-  type ActiveFilterItem,
-} from "@/components/ui/active-filter-bar";
+import type { ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { EntityTable, type ColumnDef } from "@/components/ui/entity-table";
 import { entityCardTypeMap } from "@/components/ui/entity-card";
 import { Select } from "@/components/ui/select";
@@ -192,34 +190,18 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
       className: "w-40",
       render: (person) => (
         <div
-          className="flex flex-wrap gap-2"
+          className="flex"
           onClick={(event) => event.stopPropagation()}
           onKeyDown={(event) => event.stopPropagation()}
         >
-          <Button
-            variant="secondary"
-            className="min-h-11 px-3"
-            onClick={() => dialogNavigate({ to: '/people/$personId', params: { personId: person.id } })}
-          >
-            عرض
-          </Button>
-          <Button
-            variant="secondary"
-            className="min-h-11 px-3"
-            onClick={() => openEdit(person.id)}
-          >
-            <Edit className="size-4" aria-hidden="true" />
-            تعديل
-          </Button>
-          <Button
-            variant="danger"
-            className="min-h-11 px-3"
-            aria-label={`أرشفة ${person.full_name}`}
-            onClick={() => setDeleteId(person.id)}
-          >
-            <Trash2 className="size-4" aria-hidden="true" />
-            أرشفة
-          </Button>
+          <ActionMenu
+            label={`إجراءات ${person.full_name}`}
+            items={[
+              { id: 'view', label: 'عرض', onClick: () => dialogNavigate({ to: '/people/$personId', params: { personId: person.id } }) },
+              { id: 'edit', label: 'تعديل', icon: Edit, onClick: () => openEdit(person.id) },
+              { id: 'archive', label: 'أرشفة', icon: Trash2, danger: true, onClick: () => setDeleteId(person.id) },
+            ]}
+          />
         </div>
       ),
     },
@@ -249,28 +231,22 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
           placeholder: "بحث بالاسم أو الهاتف أو الهوية",
         }}
         filters={
-          <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto overscroll-x-contain no-scrollbar">
-            <Select
-              aria-label="تصفية الأشخاص حسب النوع"
-              value={type}
-              onChange={(event) => {
-                setType(event.target.value as PersonTypeFilter);
-                setPage(1);
-              }}
-              className="min-h-11 w-36 shrink-0 rounded-lg"
-            >
-              <option value="all">كل الأنواع</option>
-              {personTypeValues.map((item) => (
-                <option key={item} value={item}>
-                  {personTypeLabels[item]}
-                </option>
-              ))}
-            </Select>
-            <ActiveFilterBar
-              filters={activeFilters}
-              onClearAll={clearFilters}
-            />
-          </div>
+          <Select
+            aria-label="تصفية الأشخاص حسب النوع"
+            value={type}
+            onChange={(event) => {
+              setType(event.target.value as PersonTypeFilter);
+              setPage(1);
+            }}
+            className="min-h-11 w-36 shrink-0 rounded-lg"
+          >
+            <option value="all">كل الأنواع</option>
+            {personTypeValues.map((item) => (
+              <option key={item} value={item}>
+                {personTypeLabels[item]}
+              </option>
+            ))}
+          </Select>
         }
         toolbarActions={
           <DataTableColumnsMenu
@@ -279,6 +255,9 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
             onChange={setVisibleColumnKeys}
           />
         }
+
+        activeFilters={activeFilters}
+        onClearAllFilters={clearFilters}
       >
         {!peopleQuery.isLoading && !peopleQuery.isError ? (
           <RegisterMetricStrip
