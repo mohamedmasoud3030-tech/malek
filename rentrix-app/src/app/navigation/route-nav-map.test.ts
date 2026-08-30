@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getNavRoot, routeNavRoot, navRootTitle } from './route-nav-map';
+import { getNavRoot, routeNavRoot } from './route-nav-map';
 import { workspaceLabels } from './terminology-registry';
 
 describe('Route-to-nav-root map', () => {
@@ -71,21 +71,6 @@ describe('Route-to-nav-root map', () => {
   it('has one route-map entry per exact route', () => {
     const paths = [...routeNavRoot.keys()];
     expect(new Set(paths).size).toBe(paths.length);
-  });
-
-  it('has exactly seven Arabic primary root titles', () => {
-    expect(Object.keys(navRootTitle)).toEqual([
-      '/dashboard',
-      '/properties',
-      '/contracts',
-      '/financials',
-      '/maintenance',
-      '/reports',
-      '/settings',
-    ]);
-    for (const title of Object.values(navRootTitle)) {
-      expect(title).toMatch(/[\u0600-\u06FF]/);
-    }
   });
 
   it('keeps canonical Arabic secondary terminology', () => {

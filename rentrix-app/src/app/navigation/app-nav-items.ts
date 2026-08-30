@@ -5,12 +5,13 @@ import {
   DoorOpen,
   FileText,
   Gauge,
+  HandCoins,
   KeyRound,
   LayoutDashboard,
   Receipt,
+  ReceiptText,
   Settings,
   ShieldCheck,
-  UserPlus,
   UserRound,
   Wallet,
   Wrench,
@@ -26,7 +27,13 @@ export type NavItem = readonly [
   permission?: AppPermission,
   search?: Readonly<Record<string, string>>,
 ];
-export type MobileNavItem = readonly [to: string, labelKey: string, Icon: LucideIcon, permission?: AppPermission];
+export type MobileNavItem = readonly [
+  to: string,
+  labelKey: string,
+  Icon: LucideIcon,
+  permission?: AppPermission,
+  search?: Readonly<Record<string, string>>,
+];
 export type NavGroup = readonly [sectionTitle: string, items: readonly NavItem[], adminOnly?: boolean];
 
 /** Task-centric product IA: Today → Portfolio → Leasing → Money → Services → Reports → Settings. */
@@ -77,10 +84,24 @@ export function getAllNavItems(): readonly NavItem[] {
   return [...navGroups.flatMap((group) => group[1]), ...Object.values(workspaceChildNavItems).flat()];
 }
 
+/**
+ * Destination-style mobile bottom navigation is intentionally EMPTY: phones use
+ * the primary NavigationLinks sheet plus the dock (menu/notifications/AI)
+ * instead of a second destination model.
+ */
 export const mobileNavItems: readonly MobileNavItem[] = [];
 
+/**
+ * Canonical mobile quick-create rail (phones).
+ *
+ * This is the SINGLE quick-create model shared by the phone header and the
+ * navigation tests. Deep links keep the user inside the owning workspace
+ * (section/view/quickAdd search), and every item carries the same permission
+ * the destination surface enforces.
+ */
 export const quickCreateItems: readonly MobileNavItem[] = [
   ['/contracts/new', 'newContract', FileText, 'contracts.create'],
-  ['/properties/new', 'newProperty', Building2, 'properties.create'],
-  ['/people/new', 'newPerson', UserPlus, 'contracts.create'],
+  ['/financials', 'collectPayment', HandCoins, 'financial.payments.create', { section: 'collections', view: 'invoices', quickAdd: 'collect' }],
+  ['/maintenance', 'maintenanceRequest', Wrench, 'maintenance.create', { section: 'maintenance', quickAdd: 'maintenance' }],
+  ['/maintenance', 'utilityBill', ReceiptText, 'maintenance.create', { section: 'utilities', quickAdd: 'utility-bill' }],
 ];

@@ -175,8 +175,7 @@
 }
 
 /* ── Typography scale — mobile readable, hierarchy clear ─────────── */
-[data-page-layout] [data-page-header] h1,
-[data-page-layout] h1[data-page-title] {
+[data-page-layout] [data-page-header] h1 {
   font-size: clamp(1.25rem, 4.5vw, 1.625rem);
   line-height: 1.25;
   font-weight: 800;
@@ -291,10 +290,6 @@
   [data-owner-register],
   [data-owner-relationships] {
     box-shadow: none;
-  }
-
-  [data-app-shell][data-sidebar-collapsed='true'] [data-sidebar] + div {
-    padding-inline-start: 0;
   }
 }
 

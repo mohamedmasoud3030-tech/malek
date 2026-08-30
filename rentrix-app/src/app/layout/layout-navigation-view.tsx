@@ -1,7 +1,7 @@
 import { Link, useLocation } from '@tanstack/react-router';
 import { createPortal } from 'react-dom';
 import { useEffect, useId, useRef, useState, type Ref } from 'react';
-import { ChevronDown, FileText, HandCoins, Lock, LogOut, Menu, Plus, ReceiptText, Search, Sparkles, Wrench, X } from 'lucide-react';
+import { ChevronDown, Lock, LogOut, Menu, Plus, Search, Sparkles, X } from 'lucide-react';
 import { OPEN_AI_ASSISTANT_EVENT } from '@/features/ai-assistant/ai-assistant-global-action';
 import { useCommandPaletteStore } from '@/features/command-palette/command-palette-store';
 import { canShowNavigationItem, canAccessRoute, type AuthorizationContext, type AppPermission } from '@/features/auth/permissions';
@@ -9,7 +9,7 @@ import { PermissionRequestDialog } from '@/components/layout/permission-request-
 import { getNavRoot } from '@/app/navigation/route-nav-map';
 import { navigationLabels } from '@/app/navigation/terminology-registry';
 import { cn } from '@/lib/utils';
-import { navGroups, workspaceChildNavItems, type NavItem } from '@/app/navigation/app-nav-items';
+import { navGroups, quickCreateItems, workspaceChildNavItems, type NavItem } from '@/app/navigation/app-nav-items';
 import { useAuth } from '@/hooks/use-auth';
 import { type SharedLabel } from '@/lib/i18n';
 import { NotificationsMenu } from './notifications-menu';
@@ -84,11 +84,10 @@ export function NavigationLinks({
         className={cn(
           'group relative flex min-h-11 items-center gap-2.5 rounded-lg border border-transparent px-3 py-2 text-[14px] font-semibold leading-5 text-sidebar-foreground outline-none transition-[background-color,border-color,color] duration-150',
           'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-primary/20',
-          '[[data-mobile-nav-drawer]_&]:min-h-11 [[data-mobile-nav-drawer]_&]:rounded-lg [[data-mobile-nav-drawer]_&]:px-2.5 [[data-mobile-nav-drawer]_&]:text-sidebar-foreground/90 [[data-mobile-nav-drawer]_&]:hover:bg-sidebar-accent',
           '[[data-mobile-nav-sheet]_&]:min-h-12 [[data-mobile-nav-sheet]_&]:rounded-xl [[data-mobile-nav-sheet]_&]:px-3 [[data-mobile-nav-sheet]_&]:py-2.5 [[data-mobile-nav-sheet]_&]:text-[15px] [[data-mobile-nav-sheet]_&]:font-bold [[data-mobile-nav-sheet]_&]:text-foreground [[data-mobile-nav-sheet]_&]:hover:bg-muted [[data-mobile-nav-sheet]_&]:hover:text-foreground',
-          isChild && 'ms-3 min-h-11 border-s-2 border-s-sidebar-border/60 ps-3 [[data-mobile-nav-drawer]_&]:ms-2 [[data-mobile-nav-sheet]_&]:ms-2 [[data-mobile-nav-sheet]_&]:border-s-border [[data-mobile-nav-sheet]_&]:ps-3',
+          isChild && 'ms-3 min-h-11 border-s-2 border-s-sidebar-border/60 ps-3 [[data-mobile-nav-sheet]_&]:ms-2 [[data-mobile-nav-sheet]_&]:border-s-border [[data-mobile-nav-sheet]_&]:ps-3',
           isLocked && 'cursor-not-allowed opacity-70 [[data-mobile-nav-sheet]_&]:opacity-80 [[data-mobile-nav-sheet]_&]:text-muted-foreground',
-          isActive && 'border-sidebar-accent/20 bg-sidebar-accent text-sidebar-accent-foreground shadow-none [[data-mobile-nav-drawer]_&]:border-sidebar-border [[data-mobile-nav-drawer]_&]:bg-sidebar-accent [[data-mobile-nav-sheet]_&]:border-primary/20 [[data-mobile-nav-sheet]_&]:bg-primary/10 [[data-mobile-nav-sheet]_&]:text-foreground',
+          isActive && 'border-sidebar-accent/20 bg-sidebar-accent text-sidebar-accent-foreground shadow-none [[data-mobile-nav-sheet]_&]:border-primary/20 [[data-mobile-nav-sheet]_&]:bg-primary/10 [[data-mobile-nav-sheet]_&]:text-foreground',
         )}
       >
         <span
@@ -103,7 +102,7 @@ export function NavigationLinks({
         </span>
         {expanded ? <span className="min-w-0 flex-1 truncate">{label}</span> : null}
         {isLocked ? <Lock className="ms-auto size-3.5 text-warning" aria-hidden="true" /> : null}
-        {isActive ? <span className="ms-auto size-1.5 shrink-0 rounded-full bg-sidebar-accent-foreground [[data-mobile-nav-drawer]_&]:bg-primary [[data-mobile-nav-sheet]_&]:bg-primary" aria-hidden="true" /> : null}
+        {isActive ? <span className="ms-auto size-1.5 shrink-0 rounded-full bg-sidebar-accent-foreground [[data-mobile-nav-sheet]_&]:bg-primary" aria-hidden="true" /> : null}
       </Link>
     );
   };
@@ -120,7 +119,7 @@ export function NavigationLinks({
   };
 
   return (
-    <div className="space-y-4 [[data-mobile-nav-drawer]_&]:space-y-2 [[data-mobile-nav-sheet]_&]:space-y-3">
+    <div className="space-y-4 [[data-mobile-nav-sheet]_&]:space-y-3">
       {navGroups.map(([sectionTitle, items, adminOnly]) => {
         if (adminOnly && !items.some(([, , , , permission]) => canShowNavigationItem(authorization, permission))) return null;
         if (items.length === 0) return null;
@@ -191,22 +190,6 @@ export function NavigationLinks({
   );
 }
 
-type MobileQuickAction = Readonly<{
-  id: string;
-  label: string;
-  to: string;
-  search?: Readonly<Record<string, string>>;
-  icon: typeof FileText;
-  permission?: AppPermission;
-}>;
-
-const mobileQuickActions: readonly MobileQuickAction[] = [
-  { id: 'contract', label: 'عقد جديد', to: '/contracts/new', icon: FileText, permission: 'contracts.create' },
-  { id: 'collect', label: 'تحصيل مبلغ', to: '/financials', search: { section: 'collections', view: 'invoices', quickAdd: 'collect' }, icon: HandCoins, permission: 'financial.payments.create' },
-  { id: 'maintenance', label: 'طلب صيانة', to: '/maintenance', search: { section: 'maintenance', quickAdd: 'maintenance' }, icon: Wrench, permission: 'maintenance.create' },
-  { id: 'utility-bill', label: 'فاتورة مرافق', to: '/maintenance', search: { section: 'utilities', quickAdd: 'utility-bill' }, icon: ReceiptText, permission: 'maintenance.create' },
-];
-
 /**
  * Phone chrome contract:
  * - Search and Quick Add are real header controls, portaled into the header DOM.
@@ -230,8 +213,8 @@ export function MobileFloatingControl({
   const quickTriggerRef = useRef<HTMLButtonElement>(null);
   const lastScrollYRef = useRef(0);
   const quickAddTitleId = useId();
-  const visibleQuickActions = mobileQuickActions.filter(
-    (item) => !item.permission || canAccessRoute(authorization, item.permission),
+  const visibleQuickActions = quickCreateItems.filter(
+    ([, , , permission]) => !permission || canAccessRoute(authorization, permission),
   );
 
   const utilityActionClass =
@@ -416,23 +399,20 @@ export function MobileFloatingControl({
             className="flex flex-col gap-0.5 p-1.5"
             data-mobile-quick-add-list
           >
-            {visibleQuickActions.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.id}
-                  to={item.to}
-                  search={item.search as Record<string, string> | undefined}
-                  role="menuitem"
-                  data-mobile-quick-add-item
-                  onClick={() => setQuickOpen(false)}
-                  className="flex min-h-12 items-center gap-3 rounded-xl px-3 text-[14px] font-bold text-foreground outline-none transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:ring-2 focus-visible:ring-primary/20"
-                >
-                  <Icon className="size-[18px] shrink-0 text-primary" aria-hidden="true" />
-                  <span className="min-w-0 whitespace-nowrap font-bold text-foreground">{item.label}</span>
-                </Link>
-              );
-            })}
+            {visibleQuickActions.map(([to, labelKey, Icon, , search]) => (
+              <Link
+                key={`${to}:${labelKey}`}
+                to={to}
+                search={search as Record<string, string> | undefined}
+                role="menuitem"
+                data-mobile-quick-add-item
+                onClick={() => setQuickOpen(false)}
+                className="flex min-h-12 items-center gap-3 rounded-xl px-3 text-[14px] font-bold text-foreground outline-none transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:ring-2 focus-visible:ring-primary/20"
+              >
+                <Icon className="size-[18px] shrink-0 text-primary" aria-hidden="true" />
+                <span className="min-w-0 whitespace-nowrap font-bold text-foreground">{navigationLabels[labelKey] ?? labelKey}</span>
+              </Link>
+            ))}
           </div>
         </div>
       ) : null}

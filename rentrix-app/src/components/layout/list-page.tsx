@@ -7,7 +7,6 @@ interface ListPageProps {
   title: string;
   description?: string;
   count?: number | string;
-  action?: ReactNode;
   primaryAction?: ReactNode;
   secondaryActions?: ReactNode;
   backTo?: string;
@@ -47,7 +46,6 @@ export function ListPage({
   title,
   description,
   count,
-  action,
   primaryAction,
   secondaryActions,
   backTo,
@@ -63,15 +61,13 @@ export function ListPage({
   embedded = false,
   visualVariant,
 }: ListPageProps) {
-  const resolvedPrimary = primaryAction ?? action;
-
   return (
     <EmbeddableWorkspace
       embedded={embedded}
       title={title}
       description={description}
       count={count}
-      primaryAction={resolvedPrimary}
+      primaryAction={primaryAction}
       secondaryActions={secondaryActions}
       backTo={backTo}
       backLabel={backLabel}
