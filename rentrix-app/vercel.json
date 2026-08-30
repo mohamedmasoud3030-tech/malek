@@ -5,18 +5,7 @@
   "outputDirectory": "dist/public",
   "framework": "vite",
   "rewrites": [
-    {
-      "source": "/lena",
-      "destination": "https://lena-digital-house.vercel.app/lena"
-    },
-    {
-      "source": "/lena/:path*",
-      "destination": "https://lena-digital-house.vercel.app/lena/:path*"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
+    { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [
     {
