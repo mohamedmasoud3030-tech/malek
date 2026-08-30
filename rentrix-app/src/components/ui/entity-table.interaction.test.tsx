@@ -2,7 +2,7 @@
 import { createRoot } from 'react-dom/client';
 import { act } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EntityTable, type ColumnDef } from './entity-table';
 
 interface Row { id: string; name: string }
@@ -14,32 +14,40 @@ const columns: ColumnDef<Row>[] = [
 ];
 const props = (overrides: Partial<Parameters<typeof EntityTable<Row>>[0]> = {}) => ({ 'aria-label': 'جدول الاختبار', rows, columns, keyOf: (row: Row) => row.id, ...overrides });
 
-describe('EntityTable — desktop table + mobile canonical EntityCard register', () => {
+function setViewportWidth(width: number) {
+  Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: width });
+  window.dispatchEvent(new Event('resize'));
+}
+
+describe('EntityTable — responsive desktop/tablet table and phone row cards', () => {
   beforeEach(() => {
-    window.localStorage.removeItem('malek:entity-register:view-mode');
+    setViewportWidth(1280);
   });
 
-  it('renders the dense semantic table for desktop and shared EntityCards for the cards view', () => {
-    // Default presentation: the dense semantic table.
+  afterEach(() => {
+    setViewportWidth(1280);
+  });
+
+  it('renders the semantic table on desktop and shared row cards on phone', () => {
     const table = renderToStaticMarkup(<EntityTable {...props()} />);
     expect(table).toContain('<table');
     expect(table).toContain('data-entity-table-scroll');
-    expect(table).toContain('sticky start-0');
-    expect(table).toContain('sticky end-0');
+    expect(table).toContain('mobile-scroll-x');
+    expect(table).toContain('xl:sticky xl:start-0');
+    expect(table).toContain('xl:sticky xl:end-0');
 
-    // Explicit Cards presentation: the shared canonical EntityCard list.
-    window.localStorage.setItem('malek:entity-register:view-mode', 'cards');
+    setViewportWidth(375);
     const cards = renderToStaticMarkup(<EntityTable {...props()} />);
     expect(cards).toContain('data-entity-table-mobile-list');
     expect(cards).toContain('data-entity-table-mobile-card');
     expect(cards).toContain('data-entity-card');
-    expect(cards).toContain('data-entity-table-mobile-datum');
+    expect(cards).toContain('data-entity-table-mobile-primary');
   });
 
-  it('selects the highest-priority primary datum for mobile cards', () => {
-    window.localStorage.setItem('malek:entity-register:view-mode', 'cards');
+  it('selects the highest-priority primary datum for mobile supporting text when a table does not opt in explicitly', () => {
+    setViewportWidth(375);
     const html = renderToStaticMarkup(<EntityTable {...props()} />);
-    expect(html).toContain('المبلغ');
+    expect(html).toContain('data-entity-table-mobile-supporting');
     expect(html).toContain('أحمد الطويل جداً مبلغ');
   });
 
@@ -54,7 +62,7 @@ describe('EntityTable — desktop table + mobile canonical EntityCard register',
   });
 
   it('renders shared mobile loading cards and shared empty/error states', () => {
-    window.localStorage.setItem('malek:entity-register:view-mode', 'cards');
+    setViewportWidth(375);
     const loading = renderToStaticMarkup(<EntityTable {...props({ isLoading: true })} />);
     expect(loading).toContain('data-entity-table-mobile-skeleton');
     expect(loading).not.toContain('أحمد الطويل جداً');
@@ -95,18 +103,32 @@ describe('EntityTable — desktop table + mobile canonical EntityCard register',
     container.remove();
   });
 
-  it('exposes a >=44px mobile detail action and the existing row actions disclosure', () => {
+  it('keeps one table on tablet but removes lower-priority detail columns', () => {
+    setViewportWidth(820);
+    const tabletColumns: ColumnDef<Row>[] = [
+      { key: 'name', header: 'الاسم', priority: 'identity', render: (row) => row.name },
+      { key: 'status', header: 'الحالة', priority: 'primary', render: () => 'نشط' },
+      { key: 'secondary-a', header: 'ثانوي أ', priority: 'secondary', render: () => 'أ' },
+      { key: 'secondary-b', header: 'ثانوي ب', priority: 'secondary', render: () => 'ب' },
+      { key: 'detail', header: 'تفصيل', priority: 'detail', render: () => 'تفصيل طويل' },
+      { key: 'actions', header: 'إجراءات', priority: 'actions', render: () => <button type="button">إجراء</button> },
+    ];
+    const html = renderToStaticMarkup(<EntityTable {...props({ columns: tabletColumns })} />);
+    expect(html).toContain('<table');
+    expect(html).toContain('ثانوي أ');
+    expect(html).not.toContain('تفصيل طويل');
+  });
+
+  it('keeps a tappable card body plus a fallback more-actions disclosure on phone', () => {
     let container: HTMLDivElement;
     const root = createRoot((container = document.createElement('div')));
     document.body.appendChild(container);
     const onRowClick = vi.fn();
-    window.localStorage.setItem('malek:entity-register:view-mode', 'cards');
+    setViewportWidth(375);
     act(() => root.render(<EntityTable {...props({ onRowClick })} />));
 
-    const detail = Array.from(container.querySelectorAll<HTMLButtonElement>('[data-entity-table-mobile-card] button'))
-      .find((button) => button.textContent?.includes('فتح التفاصيل'));
+    const detail = container.querySelector<HTMLButtonElement>('[data-entity-card-primary]');
     expect(detail).toBeDefined();
-    expect(detail?.className).toContain('min-h-11');
     act(() => detail?.click());
     expect(onRowClick).toHaveBeenCalledWith(rows[0]);
 

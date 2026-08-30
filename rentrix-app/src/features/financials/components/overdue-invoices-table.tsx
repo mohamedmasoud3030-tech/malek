@@ -77,8 +77,11 @@ export function OverdueInvoicesTable({ rows, onSelectInvoice, onCollectInvoice }
       keyOf={(row) => row.invoiceId}
       emptyTitle="لا توجد فواتير متأخرة"
       emptyDescription="لا توجد فواتير متأخرة حتى تاريخ التقرير الحالي."
+      mobileCardType="invoice"
       mobileBadgeKey="status"
-      mobileSummaryKeys={['tenant', 'context', 'due_date', 'days_overdue', 'remaining', 'bucket']}
+      mobileSupportingKey="tenant"
+      mobilePrimaryMetaKeys={['remaining', 'due_date', 'days_overdue']}
+      mobileSecondaryMetaKeys={['context', 'bucket']}
       mobileCardPrimaryAction={(row) => ({
         label: 'عرض الفاتورة',
         variant: 'default',

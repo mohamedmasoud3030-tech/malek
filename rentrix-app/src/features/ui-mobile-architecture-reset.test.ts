@@ -4,10 +4,12 @@ import { describe, expect, it } from 'vitest';
 const read = (relative: string) => readFileSync(new URL(relative, import.meta.url), 'utf8');
 
 describe('UI mobile architecture reset — shared foundation', () => {
-  it('keeps one shared table that scrolls horizontally instead of a second mobile card system', () => {
+  it('keeps one shared register foundation that becomes phone row cards instead of a second data architecture', () => {
     const table = read('../components/ui/entity-table.tsx');
     expect(table).toContain('data-compact-responsive-table');
+    expect(table).toContain('data-entity-table-mobile-list');
     expect(table).toContain('mobile-scroll-x');
+    expect(table).toContain("viewportMode === 'mobile'");
     expect(table).toContain('if (totalPages <= 1) return null');
   });
 

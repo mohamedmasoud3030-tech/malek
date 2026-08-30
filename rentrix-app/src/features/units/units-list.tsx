@@ -225,8 +225,10 @@ export function UnitsList({
               params: { propertyId, unitId: unit.id },
             })
           }
+          mobileCardType="unit"
           mobileBadgeKey="status"
-          mobileSummaryKeys={["rent_amount", "notes"]}
+          mobilePrimaryMetaKeys={["rent_amount"]}
+          mobileSecondaryMetaKeys={["notes"]}
           mobileCardActions={(unit) => {
             const actions: Array<{ label: string; icon: typeof Edit; variant: "secondary" | "danger"; ariaLabel: string; onClick: () => void }> = [];
             if (canViewContracts && unitDraftsByUnitId.has(unit.id)) {

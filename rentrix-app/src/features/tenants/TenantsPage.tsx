@@ -186,15 +186,10 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
           columns={columns}
           visibleColumnKeys={visibleColumnKeys}
           mobileCardType="tenant"
-          mobileSummaryKeys={['property', 'contracts']}
+          mobileSupportingKey="property"
+          mobilePrimaryMetaKeys={['contracts']}
+          mobileSecondaryMetaKeys={['arrears']}
           mobileCardActions={(tenant) => [
-            {
-              label: 'معاينة',
-              icon: Eye,
-              variant: 'secondary',
-              onClick: () => openPreview(tenant),
-              ariaLabel: `معاينة ${tenant.person.full_name}`,
-            },
             {
               label: 'تعديل',
               icon: Edit,

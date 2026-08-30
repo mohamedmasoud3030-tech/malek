@@ -282,8 +282,38 @@ export function ExpensesSection({
           error={error}
           onRetry={onRetry}
           columns={expenseColumns}
-
-
+          mobileSupportingKey="expense_date"
+          mobilePrimaryMetaKeys={["amount"]}
+          mobileCardPrimaryAction={(expense) => ({
+            label: 'التفاصيل',
+            icon: Eye,
+            variant: 'default',
+            ariaLabel: `تفاصيل مصروف ${formatDate(expense.expense_date)}`,
+            onClick: () => setDetailsExpense(expense),
+          })}
+          mobileCardActions={(expense) => [
+            ...(onUpdateExpense ? [{
+              label: 'تعديل',
+              icon: Edit,
+              variant: 'secondary' as const,
+              ariaLabel: `تعديل مصروف ${formatDate(expense.expense_date)}`,
+              onClick: () => openEditForm(expense),
+            }] : []),
+            {
+              label: 'PDF',
+              icon: Download,
+              variant: 'secondary' as const,
+              ariaLabel: `تصدير مصروف ${formatDate(expense.expense_date)} بصيغة PDF`,
+              onClick: () => exportExpenseVoucher(expense),
+            },
+            {
+              label: 'طباعة',
+              icon: Printer,
+              variant: 'secondary' as const,
+              ariaLabel: `طباعة مصروف ${formatDate(expense.expense_date)}`,
+              onClick: () => printExpenseVoucher(expense),
+            },
+          ]}
         />
       </CardContent>
 

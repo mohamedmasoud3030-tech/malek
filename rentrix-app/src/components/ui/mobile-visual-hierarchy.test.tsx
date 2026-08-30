@@ -93,8 +93,6 @@ describe('mobile visual hierarchy contract', () => {
     const card = host.querySelector<HTMLElement>('[data-entity-card]');
     const stats = Array.from(host.querySelectorAll('span')).find((node) => node.textContent === '1,250 ر.ع');
     const meta = Array.from(host.querySelectorAll('span')).find((node) => node.textContent === '90000000');
-    // The card body is its own button (record actions must not be nested
-    // inside it), so the record actions are the buttons outside that region.
     const cardPrimary = host.querySelector<HTMLButtonElement>('[data-entity-card-primary]');
     const actionButtons = Array.from(host.querySelectorAll('button')).filter(
       (button) => button !== cardPrimary && !cardPrimary?.contains(button),
@@ -105,7 +103,9 @@ describe('mobile visual hierarchy contract', () => {
     expect(stats).toBeDefined();
     expect(meta).toBeDefined();
     expect(Boolean(stats!.compareDocumentPosition(meta!) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
-    expect(actionsContainer?.classList.contains('grid-cols-2')).toBe(true);
+    expect(actionsContainer?.className).toContain('flex');
+    expect(actionsContainer?.className).toContain('gap-2');
+    expect(actionButtons.length).toBeGreaterThanOrEqual(2);
 
     act(() => actionButtons[0]?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
     expect(primaryAction).toHaveBeenCalledOnce();

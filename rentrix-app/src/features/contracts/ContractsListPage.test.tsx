@@ -77,8 +77,14 @@ vi.mock('./useContracts', () => ({
   useSoftDeleteContract: () => contractsMocks.deleteMutation,
 }));
 
+function setViewportWidth(width: number) {
+  Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: width });
+  window.dispatchEvent(new Event('resize'));
+}
+
 describe('ContractsListPage load states', () => {
   beforeEach(() => {
+    setViewportWidth(1280);
     contractsMocks.contractsQuery.data = { rows: [], count: 0 };
     contractsMocks.contractsQuery.error = null;
     contractsMocks.contractsQuery.isError = false;
@@ -111,17 +117,13 @@ describe('ContractsListPage load states', () => {
     expect(html).toContain('data-compact-responsive-table="true"');
     expect(html).toContain('data-entity-table-scroll');
     expect(html).toContain('<table');
-    // The register keeps one explicit Cards ⇄ Table choice; the table view
-    // carries the shared view-mode toggle instead of a duplicate card list.
-    expect(html).toContain('طريقة عرض جدول العقود');
+    expect(html).not.toContain('طريقة عرض جدول العقود');
     expect(html).toContain('أحمد سالم');
     expect(html).toContain('A-101');
   });
 
   it('shows tenant, unit, period and rent on the contract mobile card with flat actions', () => {
-    // The shared register keeps an explicit Cards ⇄ Table choice; pin the
-    // cards presentation so the mobile card surface is the one under test.
-    window.localStorage.setItem('malek:entity-register:view-mode', 'cards');
+    setViewportWidth(375);
     contractsMocks.contractsQuery.data = { rows: [contractFixture], count: 1 };
 
     const html = renderToStaticMarkup(<ContractsListPage />);
@@ -130,27 +132,25 @@ describe('ContractsListPage load states', () => {
 
     const card = host.querySelector<HTMLElement>('[data-entity-table-mobile-card]');
     expect(card).not.toBeNull();
-    // Primary status badge.
     expect(card?.textContent).toContain('نشط');
-    // Quick facts: tenant, unit, full period (start ← end), rent.
+    expect(card?.textContent).toContain('أحمد سالم');
+
     const summary = card?.querySelector<HTMLElement>('[data-entity-table-mobile-summary]');
     expect(summary).not.toBeNull();
-    expect(summary?.textContent).toContain('المستأجر');
-    expect(summary?.textContent).toContain('أحمد سالم');
     expect(summary?.textContent).toContain('الوحدة');
     expect(summary?.textContent).toContain('A-101');
     expect(summary?.textContent).toContain('الفترة');
     expect(summary?.textContent).toContain(startDateLabel);
     expect(summary?.textContent).toContain(endDateLabel);
     expect(summary?.textContent).toContain('قيمة الإيجار');
-    // Flat actions: details + edit + archive, no «إجراءات» disclosure layer.
+
     expect(host.querySelector('[data-entity-table-mobile-actions]')).toBeNull();
     const columnsControl = host.querySelector<HTMLElement>('[data-contract-columns-control]');
     expect(columnsControl?.className).toContain('hidden');
     expect(columnsControl?.className).toContain('md:flex');
-    expect(card?.textContent).toContain('فتح التفاصيل');
+    expect(card?.textContent).toContain('عرض العقد');
     expect(card?.textContent).toContain('تعديل');
-    expect(card?.textContent).toContain('أرشفة');
+    expect(card?.querySelector('[data-action-menu]')).toBeTruthy();
   });
 
   it('shows the server-exact totals instead of the loaded page size', () => {

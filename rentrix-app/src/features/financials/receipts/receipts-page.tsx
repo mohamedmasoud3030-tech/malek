@@ -391,6 +391,26 @@ function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Rea
               emptyTitle="لا توجد إيصالات مطابقة"
               emptyDescription={hasFilters ? 'غيّر البحث أو الفلاتر لعرض إيصالات أخرى.' : 'لا توجد إيصالات منشورة حتى الآن.'}
               onRowClick={(receipt) => setSelectedReceiptId(receipt.id)}
+              mobileBadgeKey="status"
+              mobileSupportingKey="context"
+              mobilePrimaryMetaKeys={["amount", "payment_date"]}
+              mobileSecondaryMetaKeys={["method", "invoice_id"]}
+              mobileCardActions={(receipt) => [
+                {
+                  label: 'طباعة',
+                  icon: Printer,
+                  variant: 'secondary' as const,
+                  ariaLabel: `طباعة الإيصال ${receipt.receipt_number}`,
+                  onClick: () => openReceiptPrintView(receipt.id),
+                },
+                ...(canVoidReceipt && receipt.status === 'posted' ? [{
+                  label: 'طلب إلغاء',
+                  icon: Ban,
+                  variant: 'danger' as const,
+                  ariaLabel: `طلب إلغاء الإيصال ${receipt.receipt_number}`,
+                  onClick: () => openVoidDialog(receipt),
+                }] : []),
+              ]}
             />
 
             {(hasMoreReceipts || receiptsLimit > RECEIPTS_PAGE_SIZE) ? (
