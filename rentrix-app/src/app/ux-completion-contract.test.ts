@@ -121,13 +121,15 @@ describe('UX completion contract', () => {
     const password = source('features/auth/change-password-page.tsx');
     const lands = source('features/lands/components/lands-view.tsx');
     const propertyForm = source('features/properties/property-form-modal.tsx');
+    const writeErrorSurface = source('components/ui/error-state.tsx');
 
     expect(ownerPreview).toContain('getActionableSupabaseErrorMessage');
     expect(ownerPreview).not.toContain('detailQuery.error.message');
     expect(personForm).toContain('getActionableSupabaseErrorMessage');
     expect(personForm).not.toContain('error instanceof Error ? error.message');
     expect(password).not.toContain('جلسة Supabase');
-    expect(lands).toContain('getActionableSupabaseErrorMessage');
+    expect(writeErrorSurface).toContain('getActionableSupabaseErrorMessage');
+    expect(lands).toContain('WriteErrorCard');
     expect(lands).not.toContain('writeError instanceof Error ? writeError.message');
     expect(lands).not.toContain('?? row.status');
     expect(lands).not.toContain('?? row.category');

@@ -1,11 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { createEntityQueryKeys } from '@/lib/data/query-keys';
+import { defineEntityKeys } from '@/lib/query-keys';
 import { archiveLand, createLand, getLandDossier, listLands, updateLand } from './services/lands-service';
 import type { LandFormInput } from './land-schema';
 import type { LandFilters } from './types';
 
-export const landKeys = createEntityQueryKeys<LandFilters>('lands');
+export const landKeys = defineEntityKeys('lands');
 
 export function useLands(filters: LandFilters) {
   return useQuery({ queryKey: landKeys.list(filters), queryFn: () => listLands(filters) });

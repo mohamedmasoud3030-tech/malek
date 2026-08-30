@@ -17,10 +17,9 @@ import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
-import { WriteErrorCard } from '@/components/page-state-card';
+import { WriteErrorCard } from '@/components/ui/error-state';
 import { useOwnerOptions } from '@/hooks/use-owner-options';
 import { formatMoney, formatNumber } from '@/hooks/useCompanyFormatters';
-import { getActionableSupabaseErrorMessage } from '@/lib/supabase-error';
 import type { LandFilters, LandRecord } from '../types';
 import type { LandFormValues } from '../land-schema';
 import { MONEY_STEP } from '@/lib/money';
@@ -179,7 +178,7 @@ export function LandsView({
       />
 
 
-      {writeError ? <WriteErrorCard message={getActionableSupabaseErrorMessage(writeError, 'تعذر حفظ التغيير على سجل الأرض.')} /> : null}
+      {writeError ? <WriteErrorCard error={writeError} fallbackMessage="تعذر حفظ التغيير على سجل الأرض." /> : null}
 
       <AsyncContentState
         status={isLoading ? 'loading' : error ? 'error' : rows.length === 0 ? 'empty' : 'ready'}
