@@ -1,0 +1,38 @@
+name: Temporary Regenerate Database Types
+
+on:
+  push:
+    branches:
+      - fix/deposit-claim-owner-funds-lineage
+
+permissions:
+  contents: write
+
+jobs:
+  regenerate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          ref: fix/deposit-claim-owner-funds-lineage
+          fetch-depth: 0
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - run: pnpm rebuild esbuild
+      - name: Regenerate canonical database contract
+        run: pnpm db0:gen-types
+      - name: Commit generated contract and remove temporary workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/tmp-regenerate-db-types.yml
+          git add rentrix-app/src/types/database.ts
+          git diff --cached --check
+          git commit -m "chore(db): regenerate canonical database types"
+          git push origin HEAD:fix/deposit-claim-owner-funds-lineage
