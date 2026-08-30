@@ -58,6 +58,8 @@ vi.mock('@/store/ui-store', () => ({
       setTheme: mockState.setTheme,
       syncStatus: 'idle',
       setSyncStatus: mockState.setSyncStatus,
+      sidebarCollapsed: false,
+      toggleSidebar: vi.fn(),
     };
     return selector ? selector(state) : state;
   },
@@ -66,6 +68,9 @@ vi.mock('./layout-navigation-view', () => ({
   NavigationLinks: () => <nav data-navigation-links />,
   MobileFloatingControl: ({ drawerOpen }: { drawerOpen?: boolean }) =>
     drawerOpen ? null : <div data-mobile-floating-control />,
+}));
+vi.mock('./notifications-menu', () => ({
+  NotificationsMenu: () => null,
 }));
 vi.mock('@/features/command-palette/command-palette-dialog', () => ({
   CommandPaletteDialog: () => null,

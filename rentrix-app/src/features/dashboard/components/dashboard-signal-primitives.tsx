@@ -60,7 +60,7 @@ export function DashboardSignalHeader({
   trailing?: ReactNode;
 }>) {
   return (
-    <div className="flex min-h-14 items-center justify-between gap-3 px-3.5 py-3 sm:min-h-16 sm:px-4" data-dashboard-signal-header>
+    <div className="flex min-h-12 items-center justify-between gap-3 px-3.5 py-2.5 sm:min-h-14 sm:px-4 lg:min-h-12 lg:py-2" data-dashboard-signal-header>
       <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
         <span className={cn('grid size-9 shrink-0 place-items-center rounded-lg ring-1 ring-current/10', toneClasses[tone])} aria-hidden="true">
           <Icon className="size-4" />

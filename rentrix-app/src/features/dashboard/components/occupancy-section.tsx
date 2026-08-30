@@ -142,10 +142,6 @@ export const OccupancySection = memo(function OccupancySection({
         />
       ) : null}
 
-      {!isLoading && !isError && vacantUnits === 0 && isError === false ? (
-        <DashboardSignalEmpty title="لا توجد وحدات شاغرة حاليًا" description="المحجوزة أو المتوقفة للصيانة لا تُحسب كشاغرة." />
-      ) : null}
-
       {!isLoading && !isError && longestRows.length > 0 ? (
         <>
           <DashboardSignalList label="أطول الوحدات الشاغرة">
@@ -184,7 +180,7 @@ export const OccupancySection = memo(function OccupancySection({
             </div>
           ) : null}
         </>
-      ) : null});
+      ) : null}
     </DashboardSignalPanel>
   );
 });

@@ -67,6 +67,7 @@ const sharedTranslationEntries = [
   ['changePassword', 'تغيير كلمة المرور', 'Change password'],
   ['settings', 'الإعدادات', 'Settings'],
   ['collapseMenu', 'طي القائمة', 'Collapse menu'],
+  ['expandMenu', 'إظهار القائمة', 'Show menu'],
   ['toggleTheme', 'تبديل الوضع', 'Toggle theme'],
   ['notifications', 'الإشعارات', 'Notifications'],
   ['notificationsNone', 'لا توجد إشعارات حالياً', 'No notifications right now'],

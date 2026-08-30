@@ -24,7 +24,13 @@ export function isBellEventNotification(notification: Pick<AppNotification, 'typ
 export function NotificationsMenu({
   authorization,
   sharedLabel: sharedLabelProp,
-}: Readonly<{ authorization: AuthorizationContext | null; sharedLabel?: SharedLabel }>) {
+  chrome = 'dock',
+}: Readonly<{
+  authorization: AuthorizationContext | null;
+  sharedLabel?: SharedLabel;
+  /** `header` matches desktop shell controls; `dock` keeps the mobile floating control. */
+  chrome?: 'dock' | 'header';
+}>) {
   const [isOpen, setIsOpen] = useState(false);
   const menuId = useId();
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -104,11 +110,19 @@ export function NotificationsMenu({
         aria-haspopup="dialog"
         aria-expanded={isOpen}
         aria-controls={isOpen ? menuId : undefined}
+        data-header-notifications-trigger={chrome === 'header' ? 'true' : undefined}
         className={cn(
-          'pressable relative inline-flex size-11 min-h-11 min-w-11 shrink-0 items-center justify-center rounded-xl border outline-none transition-colors focus-visible:ring-4 focus-visible:ring-primary/25 motion-reduce:transition-none',
-          totalCount > 0
+          'pressable relative inline-flex size-11 min-h-11 min-w-11 shrink-0 items-center justify-center outline-none transition-colors motion-reduce:transition-none',
+          chrome === 'header'
+            ? 'rounded-lg border-0 bg-transparent text-foreground hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/20'
+            : 'rounded-xl border focus-visible:ring-4 focus-visible:ring-primary/25',
+          chrome === 'dock' && totalCount > 0
             ? 'border-danger/30 bg-danger/5 text-danger hover:bg-danger/10 hover:text-danger'
-            : 'border-transparent text-muted-foreground hover:bg-muted hover:text-foreground',
+            : chrome === 'dock'
+              ? 'border-transparent text-muted-foreground hover:bg-muted hover:text-foreground'
+              : totalCount > 0
+                ? 'text-danger'
+                : 'text-foreground',
         )}
       >
         <Bell className={cn('size-[18px]', totalCount > 0 && 'text-danger')} aria-hidden="true" />

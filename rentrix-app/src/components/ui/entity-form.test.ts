@@ -64,6 +64,16 @@ describe('shared entity form composition', () => {
     expect(document.getElementById(labelledBy!)?.textContent).toBe('رقم العقد');
   });
 
+  it('can lay related fields in two desktop columns without a second form system', () => {
+    const html = renderToStaticMarkup(createElement(
+      EntityForm.Section,
+      { title: 'بيانات الاتصال', columns: 2, children: createElement('span', null, 'المحتوى') },
+    ));
+
+    expect(html).toContain('data-form-columns="2"');
+    expect(html).toContain('lg:grid-cols-2');
+  });
+
   it('groups form sections with separators instead of stacked mini-cards', () => {
     const html = renderToStaticMarkup(createElement(
       EntityForm.Section,

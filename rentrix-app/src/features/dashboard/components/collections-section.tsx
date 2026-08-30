@@ -123,7 +123,7 @@ export const CollectionsSection = memo(function CollectionsSection({ snapshot, i
           title="تعذر تحميل المتأخرات"
           description="راجع تنبيه أعلى الصفحة ثم أعد المحاولة. لن نعرض قائمة فارغة عند فشل التحميل."
         />
-      ) : null});
+      ) : null}
     </DashboardSignalPanel>
   );
 });

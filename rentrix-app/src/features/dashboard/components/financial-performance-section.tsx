@@ -1,10 +1,9 @@
 import { memo } from 'react';
 import { BarChart3 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { ErrorState } from '@/components/ui/error-state';
 import { LoadingState } from '@/components/ui/loading-state';
 import { ReportBarChart } from '@/components/ui/report-bar-chart';
-import { formatCompanyMoney, formatCompanyNumber } from '@/lib/companyFormatters';
+import { formatCompanyMoney } from '@/lib/companyFormatters';
 import type { CompanySettingsContract } from '@/lib/companySettings';
 import type { VacancyAnalytics } from '@/features/units/vacancy-analytics';
 import type { DashboardSnapshot } from '../dashboard-snapshot';
@@ -13,7 +12,6 @@ import {
   type FinancialPerformanceWindow,
   type MonthlyCashflowChartRow,
 } from '../financial-performance';
-import { MetricStat } from './dashboard-visuals';
 import { DashboardSignalPanel } from './dashboard-signal-primitives';
 import { cn } from '@/lib/utils';
 
@@ -31,15 +29,11 @@ interface FinancialPerformanceSectionProps {
 }
 
 /**
- * «أداء المكتب» — one primary analytical chart (monthly collections vs
- * recorded expenses from the canonical Reports cashflow service) beside the
- * operational context metrics that explain it. No decorative multi-chart
- * grid: the relationship is the point.
+ * «أداء المكتب» — one primary monthly collections-vs-expenses chart from the
+ * canonical Reports cashflow service. Occupancy, arrears and contract signals
+ * stay in their own command-center sections instead of being repeated here.
  */
 export const FinancialPerformanceSection = memo(function FinancialPerformanceSection({
-  snapshot,
-  vacancyAnalytics,
-  vacancyDetailsUnavailable,
   settings,
   window,
   onWindowChange,
@@ -49,17 +43,16 @@ export const FinancialPerformanceSection = memo(function FinancialPerformanceSec
   onChartRetry,
 }: FinancialPerformanceSectionProps) {
   const money = (value: number) => formatCompanyMoney(settings, value);
-  const number = (value: number) => formatCompanyNumber(settings, value);
 
   const chartData = chartRows.map((row) => ({ label: row.label, collected: row.collected, expenses: row.expenses }));
   const totalCollected = chartRows.reduce((sum, row) => sum + row.collected, 0);
   const totalExpenses = chartRows.reduce((sum, row) => sum + row.expenses, 0);
 
   return (
-    <div className="grid min-w-0 gap-3 xl:grid-cols-12 xl:items-stretch" data-dashboard-financial-performance>
+    <div className="grid min-w-0" data-dashboard-financial-performance>
       <DashboardSignalPanel
         labelledBy="financial-performance-title"
-        className="min-w-0 border-primary/20 bg-gradient-to-br from-primary/[0.045] via-card to-card xl:col-span-8"
+        className="min-w-0 border-primary/20 bg-gradient-to-br from-primary/[0.045] via-card to-card"
       >
         <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 px-3.5 py-3 sm:px-4" data-dashboard-signal-header>
           <div className="flex min-w-0 items-center gap-3">
@@ -103,7 +96,7 @@ export const FinancialPerformanceSection = memo(function FinancialPerformanceSec
               onRetry={onChartRetry}
             />
           ) : chartRows.length === 0 ? (
-            <div className="grid min-h-44 place-items-center rounded-xl border border-dashed border-border/60 bg-muted/20 px-4 py-6 text-center" data-dashboard-performance-empty>
+            <div className="grid min-h-24 place-items-center rounded-xl border border-dashed border-border/60 bg-muted/20 px-4 py-4 text-center" data-dashboard-performance-empty>
               <div>
                 <p className="text-sm font-bold text-foreground">لا توجد حركة مالية مسجلة ضمن هذه الفترة</p>
                 <p className="mt-1 text-xs leading-5 text-muted-foreground">
@@ -122,7 +115,7 @@ export const FinancialPerformanceSection = memo(function FinancialPerformanceSec
                     { dataKey: 'collected', name: 'المحصّل', tone: 'primary' },
                     { dataKey: 'expenses', name: 'المصروفات', tone: 'negative' },
                   ]}
-                  className="h-60 sm:h-72"
+                  className="h-48 sm:h-56 lg:h-60"
                 />
               </div>
               <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-border/50 pt-2.5 text-[11px] font-bold text-muted-foreground" data-dashboard-performance-summary>
@@ -131,43 +124,6 @@ export const FinancialPerformanceSection = memo(function FinancialPerformanceSec
               </div>
             </>
           )}
-        </div>
-      </DashboardSignalPanel>
-
-      <DashboardSignalPanel labelledBy="financial-context-title" className="min-w-0 bg-muted/[0.055] xl:col-span-4">
-        <div className="px-3.5 py-3 sm:px-4" data-dashboard-signal-header>
-          <h3 id="financial-context-title" className="text-[13.5px] font-extrabold leading-5 text-foreground sm:text-sm">مؤشرات تشغيلية</h3>
-          <p className="mt-0.5 text-[11px] font-medium leading-4 text-muted-foreground">سياق الفترة الحالية من المؤشرات المعتمدة</p>
-        </div>
-        <div className="divide-y divide-border/55 border-t border-border/60 px-3.5 py-1 sm:px-4" role="list" aria-label="مؤشرات تشغيلية">
-          <div role="listitem">
-            <MetricStat
-              label="نسبة الإشغال"
-              value={`${snapshot?.occupancy.occupancyRate ?? 0}%`}
-              hint={`${number(snapshot?.portfolio.units ?? 0)} وحدة في المحفظة`}
-            />
-          </div>
-          <div role="listitem">
-            <MetricStat
-              label="متوسط أيام الشغور"
-              value={!vacancyDetailsUnavailable && vacancyAnalytics.availableUnits > 0 ? `${number(vacancyAnalytics.averageVacancyDays)} يوم` : vacancyAnalytics.availableUnits > 0 ? '—' : 'لا شواغر'}
-              hint={vacancyAnalytics.availableUnits > 0 ? `${number(vacancyAnalytics.availableUnits)} وحدة شاغرة الآن` : 'المحفظة مؤجرة بالكامل'}
-            />
-          </div>
-          <div role="listitem">
-            <MetricStat
-              label="عقود تنتهي خلال 30 يوماً"
-              value={number(snapshot?.contracts.expiring30 ?? 0)}
-              hint={`${number(snapshot?.contracts.active ?? 0)} عقد نشط`}
-            />
-          </div>
-          <div role="listitem">
-            <MetricStat
-              label="المستحق لهذا الشهر"
-              value={money(snapshot?.billing.invoicedAmount ?? 0)}
-              hint={`المحصّل ${money(snapshot?.collections.collectedAmount ?? 0)} · المتبقي ${money(snapshot?.collections.outstandingAmount ?? 0)}`}
-            />
-          </div>
         </div>
       </DashboardSignalPanel>
     </div>

@@ -63,7 +63,7 @@ export function PageHeader({
         data-global-page-context
         data-global-today-context
         data-unified-surface="page-header"
-        className="flex min-h-14 min-w-0 flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl border border-border/70 bg-card px-3 py-2.5 shadow-card sm:flex-nowrap sm:px-4 sm:py-3"
+        className="flex min-h-14 min-w-0 flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl border border-border/70 bg-card px-3 py-2.5 shadow-card sm:flex-nowrap sm:px-4 sm:py-3 lg:min-h-12 lg:rounded-none lg:border-0 lg:border-b lg:border-border/60 lg:bg-transparent lg:px-0 lg:py-2 lg:shadow-none"
         aria-label={
           isArabic
             ? `${title} — ${todayLabel} ${weekday} ${date}`

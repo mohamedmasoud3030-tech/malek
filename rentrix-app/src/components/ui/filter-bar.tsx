@@ -44,6 +44,7 @@ export function FilterBar({
   className,
 }: FilterBarProps) {
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [desktopAdvancedOpen, setDesktopAdvancedOpen] = useState(false);
   const showSearch = typeof onSearchChange === 'function';
   const activeFilterCount = activeFilters.length;
   const showUtilities = Boolean(advancedFilters || actions);
@@ -92,28 +93,48 @@ export function FilterBar({
             )}
           >
             {advancedFilters ? (
-              <Button
-                type="button"
-                variant="secondary"
-                className="min-h-11 rounded-lg px-3 text-xs md:hidden"
-                aria-label={activeFilterCount > 0 ? `${advancedFilterTitle}، ${activeFilterCount} نشطة` : advancedFilterTitle}
-                onClick={() => setAdvancedOpen(true)}
-              >
-                <SlidersHorizontal className="me-1.5 size-3.5" aria-hidden="true" />
-                <span>{advancedFilterTitle}</span>
-                {activeFilterCount > 0 ? (
-                  <span className="rounded-md bg-primary/12 px-1.5 py-0.5 text-[11px] font-black text-primary tabular-nums">
-                    {activeFilterCount}
-                  </span>
-                ) : null}
-              </Button>
+              <>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="min-h-11 rounded-lg px-3 text-xs md:hidden"
+                  aria-label={activeFilterCount > 0 ? `${advancedFilterTitle}، ${activeFilterCount} نشطة` : advancedFilterTitle}
+                  onClick={() => setAdvancedOpen(true)}
+                >
+                  <SlidersHorizontal className="me-1.5 size-3.5" aria-hidden="true" />
+                  <span>{advancedFilterTitle}</span>
+                  {activeFilterCount > 0 ? (
+                    <span className="rounded-md bg-primary/12 px-1.5 py-0.5 text-[11px] font-black text-primary tabular-nums">
+                      {activeFilterCount}
+                    </span>
+                  ) : null}
+                </Button>
+                <Button
+                  type="button"
+                  variant={desktopAdvancedOpen ? 'secondary' : 'ghost'}
+                  className="hidden min-h-11 rounded-lg px-3 text-xs md:inline-flex"
+                  aria-label={activeFilterCount > 0 ? `${advancedFilterTitle}، ${activeFilterCount} نشطة` : advancedFilterTitle}
+                  aria-expanded={desktopAdvancedOpen}
+                  aria-controls="desktop-advanced-filters"
+                  onClick={() => setDesktopAdvancedOpen((open) => !open)}
+                >
+                  <SlidersHorizontal className="me-1.5 size-3.5" aria-hidden="true" />
+                  <span>{advancedFilterTitle}</span>
+                  {activeFilterCount > 0 ? (
+                    <span className="rounded-md bg-primary/12 px-1.5 py-0.5 text-[11px] font-black text-primary tabular-nums">
+                      {activeFilterCount}
+                    </span>
+                  ) : null}
+                </Button>
+              </>
             ) : null}
             {actions}
           </div>
         ) : null}
 
-        {advancedFilters ? (
+        {advancedFilters && desktopAdvancedOpen ? (
           <div
+            id="desktop-advanced-filters"
             className="col-span-2 hidden min-w-0 border-t border-border/60 pt-2 md:block lg:col-span-3"
             data-advanced-filter-desktop
           >

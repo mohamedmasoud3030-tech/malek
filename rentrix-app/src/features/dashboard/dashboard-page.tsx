@@ -115,7 +115,7 @@ const DashboardFocusStrip = memo(function DashboardFocusStrip({
               href={item.href}
               data-dashboard-focus-item
               data-tone={item.tone}
-              className={`flex min-h-11 min-w-[7.5rem] shrink-0 items-center justify-between gap-2 rounded-xl border px-3 text-start outline-none transition-[background-color,border-color,transform] hover:-translate-y-px focus-visible:ring-2 focus-visible:ring-primary/25 sm:min-w-[8.75rem] ${dashboardFocusToneClass[item.tone]}`}
+              className={`flex min-h-11 min-w-[7.5rem] shrink-0 items-center justify-between gap-2 rounded-xl border px-3 text-start outline-none transition-[background-color,border-color] focus-visible:ring-2 focus-visible:ring-primary/25 sm:min-w-[8.75rem] ${dashboardFocusToneClass[item.tone]}`}
             >
               <span className="text-[11px] font-extrabold leading-4 text-current/75">{item.label}</span>
               <span className="text-sm font-black tabular-nums">{formatDashboardFocusValue(item.value)}</span>
@@ -133,6 +133,7 @@ const DashboardGroup = memo(function DashboardGroup({
   ariaLabel,
   sectionId,
   priority = 'supporting',
+  showHeader = true,
   children,
 }: Readonly<{
   eyebrow: string;
@@ -140,23 +141,28 @@ const DashboardGroup = memo(function DashboardGroup({
   ariaLabel: string;
   sectionId: string;
   priority?: DashboardGroupPriority;
+  showHeader?: boolean;
   children: ReactNode;
 }>) {
   return (
     <section
       id={`dashboard-${sectionId}`}
-      className="min-w-0 space-y-2.5"
+      className="min-w-0 space-y-2"
       aria-label={ariaLabel}
       data-dashboard-section={sectionId}
       data-dashboard-priority={priority}
     >
-      <div className="flex min-w-0 items-end gap-2.5 border-b border-border/45 pb-2" data-dashboard-group-header>
-        <span
-          className={`mb-0.5 h-5 w-1 shrink-0 rounded-full ${dashboardGroupAccent[sectionId] ?? 'bg-primary'}`}
-          aria-hidden="true"
-        />
-        <SectionHeader eyebrow={eyebrow} title={title} className="mb-0 min-w-0 flex-1 px-0" />
-      </div>
+      {showHeader ? (
+        <div className="flex min-w-0 items-end gap-2.5 border-b border-border/45 pb-1.5" data-dashboard-group-header>
+          <span
+            className={`mb-0.5 h-5 w-1 shrink-0 rounded-full ${dashboardGroupAccent[sectionId] ?? 'bg-primary'}`}
+            aria-hidden="true"
+          />
+          <SectionHeader eyebrow={eyebrow} title={title} className="mb-0 min-w-0 flex-1 px-0" />
+        </div>
+      ) : (
+        <h2 className="sr-only">{title}</h2>
+      )}
       {children}
     </section>
   );
@@ -345,7 +351,7 @@ export function DashboardPage() {
         description="مركز قيادة اليوم: الأداء، الأولويات، التحصيل، الإشغال، العقود والالتزامات في مسار واحد."
       />
 
-      <div data-dashboard-page className="space-y-4 lg:space-y-5">
+      <div data-dashboard-page className="space-y-3 lg:space-y-4">
         {hasDashboardError ? (
           <ErrorState
             title={snapshotUnavailable ? 'تعذر تحميل بيانات اليوم' : 'تعذر تحديث بيانات اليوم'}
@@ -378,7 +384,7 @@ export function DashboardPage() {
 
             <DashboardFocusStrip snapshot={snapshot} needsAttention={needsAttention} />
 
-            <div className="grid min-w-0 grid-cols-1 gap-4 lg:gap-5 xl:grid-cols-12 xl:items-start">
+            <div className="grid min-w-0 grid-cols-1 gap-3 lg:gap-4 xl:grid-cols-12 xl:items-start">
               <div className="min-w-0 xl:col-span-12 xl:order-1">
                 <DashboardGroup eyebrow="الآن" title="نبض المكتب" ariaLabel="نبض المكتب" sectionId="office-pulse" priority="primary">
                   <OfficePulse
@@ -392,7 +398,7 @@ export function DashboardPage() {
               </div>
 
               <div className="min-w-0 xl:col-span-12 xl:order-3">
-                <DashboardGroup eyebrow="أولويات" title="يحتاج انتباهك" ariaLabel="الحالات التي تحتاج انتباهاً" sectionId="needs-attention" priority="attention">
+                <DashboardGroup eyebrow="أولويات" title="يحتاج انتباهك" ariaLabel="الحالات التي تحتاج انتباهاً" sectionId="needs-attention" priority="attention" showHeader={false}>
                   <NeedsAttentionSection
                     signal={needsAttention}
                     isLoading={isLoading}
@@ -403,7 +409,7 @@ export function DashboardPage() {
               </div>
 
               <div className="min-w-0 xl:col-span-5 xl:order-5">
-                <DashboardGroup eyebrow="تحصيل" title="التحصيل والمتأخرات" ariaLabel="التحصيل والمتأخرات" sectionId="collections">
+                <DashboardGroup eyebrow="تحصيل" title="التحصيل والمتأخرات" ariaLabel="التحصيل والمتأخرات" sectionId="collections" showHeader={false}>
                   <CollectionsSection
                     snapshot={snapshot}
                     isLoading={isLoading}
@@ -414,7 +420,7 @@ export function DashboardPage() {
               </div>
 
               <div className="min-w-0 xl:col-span-7 xl:order-4">
-                <DashboardGroup eyebrow="المحفظة" title="الإشغال والشغور" ariaLabel="الإشغال والشغور" sectionId="occupancy">
+                <DashboardGroup eyebrow="المحفظة" title="الإشغال والشغور" ariaLabel="الإشغال والشغور" sectionId="occupancy" showHeader={false}>
                   <OccupancySection
                     snapshot={snapshot}
                     analytics={vacancyAnalytics}
@@ -427,7 +433,7 @@ export function DashboardPage() {
               </div>
 
               <div className="min-w-0 xl:col-span-12 xl:order-2">
-                <DashboardGroup eyebrow="الأداء المالي" title="أداء المكتب" ariaLabel="الأداء المالي" sectionId="financial-performance" priority="primary">
+                <DashboardGroup eyebrow="الأداء المالي" title="أداء المكتب" ariaLabel="الأداء المالي" sectionId="financial-performance" priority="primary" showHeader={false}>
                   <FinancialPerformanceSection
                     snapshot={snapshot}
                     vacancyAnalytics={vacancyAnalytics}
@@ -444,7 +450,7 @@ export function DashboardPage() {
               </div>
 
               <div className="min-w-0 xl:col-span-12 xl:order-6">
-                <DashboardGroup eyebrow="خدمات" title="الصيانة والخدمات" ariaLabel="الصيانة والخدمات" sectionId="maintenance">
+                <DashboardGroup eyebrow="خدمات" title="الصيانة والخدمات" ariaLabel="الصيانة والخدمات" sectionId="maintenance" showHeader={false}>
                   <div className="grid min-w-0 gap-3 xl:grid-cols-12 xl:items-start">
                     <div className="min-w-0 xl:col-span-7">
                       <MaintenanceSection
@@ -470,7 +476,7 @@ export function DashboardPage() {
               </div>
 
               <div className="min-w-0 xl:col-span-7 xl:order-7">
-                <DashboardGroup eyebrow="عقود" title="العقود القادمة" ariaLabel="العقود القريبة من الانتهاء" sectionId="upcoming-contracts">
+                <DashboardGroup eyebrow="عقود" title="العقود القادمة" ariaLabel="العقود القريبة من الانتهاء" sectionId="upcoming-contracts" showHeader={false}>
                   <UpcomingContractsSection
                     rows={expiringContracts}
                     expiring30={snapshot?.contracts.expiring30}
@@ -484,7 +490,7 @@ export function DashboardPage() {
               </div>
 
               <div className="min-w-0 xl:col-span-5 xl:order-8">
-                <DashboardGroup eyebrow="المحفظة" title="صحة العقارات" ariaLabel="صحة العقارات" sectionId="property-health">
+                <DashboardGroup eyebrow="المحفظة" title="صحة العقارات" ariaLabel="صحة العقارات" sectionId="property-health" showHeader={false}>
                   <PropertyHealthSection
                     rows={propertyHealthRows}
                     isLoading={unitsQuery.isLoading || maintenanceQuery.isLoading}
@@ -502,7 +508,7 @@ export function DashboardPage() {
                   </div>
 
                   <div className="min-w-0 xl:col-span-5">
-                    <DashboardGroup eyebrow="التزامات" title="استثناءات مالية" ariaLabel="استثناءات مالية" sectionId="finance-exceptions">
+                    <DashboardGroup eyebrow="التزامات" title="استثناءات مالية" ariaLabel="استثناءات مالية" sectionId="finance-exceptions" showHeader={false}>
                       <FinanceExceptionsSection snapshot={snapshot} isLoading={isLoading} />
                     </DashboardGroup>
                   </div>
