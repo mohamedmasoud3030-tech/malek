@@ -10,6 +10,7 @@ import {
   getCurrencyMinorUnit,
   getCurrencyStep,
   moneyInputProps,
+  normalizeOm3,
   parseMoneyInput,
   roundMoney,
   validateMoney,
@@ -66,5 +67,23 @@ describe('R3 money contract (OMR = 3 decimals)', () => {
     expect(moneyInputProps()).toEqual({ step: '0.001', min: '0', inputMode: 'decimal', dir: 'ltr' });
     expect(moneyInputProps({ positive: true }).min).toBe('0.001');
     expect(moneyInputProps({ currency: 'AED' }).step).toBe('0.01');
+  });
+});
+
+describe('normalizeOm3 — server row normalization (former shared/monetary contract)', () => {
+  it('rounds finite numeric rows to OMR 3dp with server _r3 semantics', () => {
+    expect(normalizeOm3(12.3456)).toBe(12.346);
+    expect(normalizeOm3(1.0005)).toBe(1.001); // EPSILON absorbs float artifact
+    // Postgres round(numeric,3) rounds half away from zero; the sign-adjusted
+    // EPSILON in roundMoney reproduces that (Math.round alone goes toward +∞).
+    expect(normalizeOm3(-1.2345)).toBe(-1.235);
+    expect(normalizeOm3(0)).toBe(0);
+  });
+
+  it('resolves non-numeric rows to 0 without coercing strings', () => {
+    expect(normalizeOm3(null)).toBe(0);
+    expect(normalizeOm3(undefined)).toBe(0);
+    expect(normalizeOm3(Number.NaN)).toBe(0);
+    expect(normalizeOm3('12.345')).toBe(0); // row normalizer, not a user-input parser
   });
 });

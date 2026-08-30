@@ -1,3 +1,4 @@
+import { listDossierInvoicesForContracts } from '@/features/financials/invoices/invoiceService';
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
 import type { Database } from '@/types/database';
@@ -155,7 +156,10 @@ export async function getPersonDossier(
 
   const [invoiceResult, activityResult] = await Promise.all([
     options.includeFinancial && contractIds.length > 0
-      ? (supabase as any).from('invoices').select('id,reference,contract_id,due_date,amount,paid_amount,status').in('contract_id', contractIds).is('deleted_at', null).order('due_date', { ascending: false })
+      ? listDossierInvoicesForContracts(contractIds).then(
+          (rows) => ({ data: rows, error: null }),
+          (error) => ({ data: [], error }),
+        )
       : Promise.resolve({ data: [], error: null }),
     options.includeActivity
       ? (supabase as any).from('communication_records').select('id,subject,body,status,created_at').eq('related_entity_type', 'person').eq('related_entity_id', personId).is('deleted_at', null).order('created_at', { ascending: false }).limit(10)

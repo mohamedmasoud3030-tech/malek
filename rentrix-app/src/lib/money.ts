@@ -96,3 +96,17 @@ export function moneyInputProps(options: { positive?: boolean; currency?: Suppor
     dir: 'ltr' as const,
   };
 }
+
+/**
+ * Normalize a server/RPC monetary value to OMR 3dp.
+ *
+ * Designed for numeric rows coming from PostgREST RPCs: finite numbers are
+ * rounded with roundMoney (server `_r3` semantics); anything else (null,
+ * undefined, strings, NaN) resolves to 0. String inputs intentionally do NOT
+ * get coerced — this is a row-normalizer, not a user-input parser (use
+ * parseMoneyInput for user input).
+ */
+export function normalizeOm3(value: unknown): number {
+  const n = typeof value === 'number' && Number.isFinite(value) ? value : 0;
+  return roundMoney(n);
+}

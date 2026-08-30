@@ -108,6 +108,36 @@ export async function listInvoicesForProperty(propertyId: string): Promise<Invoi
   return rows;
 }
 
+export type DossierInvoiceRow = Readonly<{
+  id: string;
+  reference: string | null;
+  contract_id: string;
+  status: string;
+  amount: number;
+  paid_amount: number;
+  due_date: string;
+}>;
+
+/**
+ * Dossier-scoped invoice read shared by the person and tenant dossier loaders.
+ *
+ * Both prior implementations queried the identical seven columns with the same
+ * due_date-desc ordering; this is their canonical home (invoices are owned by
+ * the financials/invoices feature). Kept separate from listInvoices* because
+ * dossiers need a bounded contract-scoped list without search/status filters.
+ */
+export async function listDossierInvoicesForContracts(contractIds: readonly string[]): Promise<DossierInvoiceRow[]> {
+  if (contractIds.length === 0) return [];
+  const { data, error } = await supabase
+    .from('invoices')
+    .select('id,reference,contract_id,due_date,amount,paid_amount,status')
+    .in('contract_id', contractIds as string[])
+    .is('deleted_at', null)
+    .order('due_date', { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as DossierInvoiceRow[];
+}
+
 export async function getInvoiceDetail(invoiceId: string): Promise<InvoiceDetail> {
   const { data: invoice, error: invoiceError } = await supabase
     .from('invoices')
