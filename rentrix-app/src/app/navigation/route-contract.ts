@@ -118,10 +118,6 @@ export const ROUTE_CONTRACT: readonly RouteContractEntry[] = [
   { canonical: '/system', titleAr: 'إدارة النظام', sidebarRoot: '/settings', isPrimaryNav: false, inMobileNav: false, permission: 'system.view', legacyAliases: [], viewBinding: null },
 ] as const;
 
-export const LEGACY_REDIRECT_PATHS = ROUTE_CONTRACT.flatMap((e) =>
-  e.legacyAliases.length > 0 ? [{ from: e.legacyAliases[0], to: e.canonical } as const] : [],
-);
-
 export const REDIRECT_ROUTES = [
   '/landing', '/units', '/utilities', '/automation', '/documents-vault',
   '/finance/collections', '/finance/expenses', '/finance/deposits', '/finance/banking',
@@ -132,11 +128,3 @@ export const REDIRECT_ROUTES = [
 export const TARGET_IA_TOP_LEVEL = [
   '/dashboard', '/properties', '/contracts', '/financials', '/maintenance', '/reports', '/settings',
 ] as const;
-
-export function findContract(canonical: string): RouteContractEntry | undefined {
-  return ROUTE_CONTRACT.find((e) => e.canonical === canonical);
-}
-
-export function contractsBySidebarRoot(root: SidebarRoot): readonly RouteContractEntry[] {
-  return ROUTE_CONTRACT.filter((e) => e.sidebarRoot === root);
-}

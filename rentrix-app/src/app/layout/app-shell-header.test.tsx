@@ -46,8 +46,6 @@ vi.mock('./layout-navigation-view', () => ({
     drawerOpen ? null : (
       <div data-mobile-floating-control>
         <button type="button" aria-label="فتح القائمة" data-mobile-dock-menu onClick={onMenu} />
-        <button type="button" aria-label="البحث السريع للنظام والكيانات" data-mobile-dock-search />
-        <button type="button" aria-label="الإضافة السريعة" data-mobile-dock-quick-add />
         <button type="button" aria-label="الإشعارات" data-mobile-dock-notifications />
         <button type="button" aria-label="فتح المساعد الذكي" data-mobile-dock-ai />
       </div>

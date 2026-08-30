@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router';
+import { Link, useParams } from '@tanstack/react-router';
 import { Activity, Edit, FileText, ReceiptText, UserRound } from 'lucide-react';
 import { useState } from 'react';
 import { ContextualDocumentsSection } from '@/components/documents/contextual-documents-section';
@@ -173,7 +173,9 @@ export function PersonPreviewDialog({ personId, open, onOpenChange }: Readonly<{
   );
 }
 
-export function PersonDetailPage({ personId }: Readonly<{ personId: string }>) {
+export function PersonDetailPage({ personId: personIdProp }: Readonly<{ personId?: string }>) {
+  const params = useParams({ strict: false });
+  const personId = personIdProp ?? (typeof params.personId === 'string' ? params.personId : '');
   const [activeSection, setActiveSection] = useState<PersonSection>('overview');
 
   return (

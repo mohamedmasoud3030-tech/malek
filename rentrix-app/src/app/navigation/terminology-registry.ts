@@ -22,11 +22,9 @@ export const navigationLabels: Readonly<Record<string, string>> = {
   maintenance: 'الصيانة',
   serviceProviders: 'مزودو الخدمات',
   financials: 'المالية',
-  financialOverview: 'المالية',
   accountingReports: 'التقارير',
   reports: 'التقارير',
   reportsAndStatements: 'التقارير والكشوف',
-  aiAssistant: 'المساعد الذكي',
   settings: 'الإعدادات',
   companySettings: 'الشركة',
   usersPermissions: 'المستخدمون والصلاحيات',
@@ -41,13 +39,11 @@ export const navigationLabels: Readonly<Record<string, string>> = {
   utilities: 'المرافق',
   automation: 'الأتمتة',
   documentsVault: 'خزينة المستندات',
-  changePassword: 'تغيير كلمة المرور',
-  auditLog: 'سجل التدقيق',
-  dataIntegrity: 'سلامة البيانات',
   system: 'إدارة النظام',
   newContract: 'عقد جديد',
-  newProperty: 'عقار جديد',
-  newPerson: 'شخص جديد',
+  collectPayment: 'تحصيل مبلغ',
+  maintenanceRequest: 'طلب صيانة',
+  utilityBill: 'فاتورة مرافق',
 };
 
 /** Canonical Arabic workspace label for secondary items. */

@@ -36,9 +36,15 @@ function layoutGuardCoversPath(path: string, perm: string): boolean {
 
 describe('permission visibility — task-centric IA must not widen access', () => {
   it('every nav item with a permission has that permission on its route guard', () => {
-    for (const [to, , , , perm, search] of [...getAllNavItems(), ...quickCreateItems]) {
+    for (const [to, , , , perm, search] of getAllNavItems()) {
       if (!perm || search) continue;
       expect(routeHasPermission(to, perm), `nav ${to} requires ${perm} but route guard missing`).toBe(true);
+    }
+    // Quick-create deep links without search params are route-guarded; the
+    // search-carrying items are handled by the destination workspace itself.
+    for (const [to, , , perm, search] of quickCreateItems) {
+      if (!perm || search) continue;
+      expect(routeHasPermission(to, perm), `quick-create ${to} requires ${perm} but route guard missing`).toBe(true);
     }
   });
 

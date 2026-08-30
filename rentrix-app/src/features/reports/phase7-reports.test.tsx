@@ -1,9 +1,8 @@
+import { readFileSync } from 'node:fs';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { buildCsv, withUtf8Bom } from '@/lib/csvExport';
-import { ReportsPage } from './reports-page';
-import { ReportsRouteComponent } from '@/routes/_protected.reports';
 import { ReportsWorkspace } from './workspace/ReportsWorkspace';
 import { resolveWorkspaceLocation } from './reports-section-model';
 import { getReportWorkspace, type ReportWorkspaceId } from './report-workspaces';
@@ -78,8 +77,10 @@ const reportFilters: FilterState = {
 };
 
 describe('reports route wiring', () => {
-  it('ReportsRouteComponent points to ReportsPage (Supabase-backed)', () => {
-    expect(ReportsRouteComponent).toBe(ReportsPage);
+  it('binds /reports directly to ReportsPage (Supabase-backed)', () => {
+    const routeTreeSource = readFileSync(new URL('../../app/router/route-tree.ts', import.meta.url), 'utf8');
+    expect(routeTreeSource).toContain("import('@/features/reports/reports-page')");
+    expect(routeTreeSource).toContain("'ReportsPage'");
   });
 });
 

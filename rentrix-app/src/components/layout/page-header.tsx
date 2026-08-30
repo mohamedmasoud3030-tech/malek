@@ -16,8 +16,6 @@ export interface PageHeaderProps {
   secondaryActions?: ReactNode;
   /** Show today's day/date only when the current workflow is genuinely time-sensitive. */
   showTodayContext?: boolean;
-  /** @deprecated Use primaryAction for the main page action. */
-  action?: ReactNode;
   className?: string;
 }
 
@@ -52,10 +50,9 @@ export function PageHeader({
   primaryAction,
   secondaryActions,
   showTodayContext = false,
-  action,
   className,
 }: PageHeaderProps) {
-  const resolvedPrimaryAction = primaryAction ?? action;
+  const resolvedPrimaryAction = primaryAction;
   const hasSupportingTools = Boolean(backTo || secondaryActions);
   const { language } = getAppLanguageState();
   const isArabic = language === 'ar';
