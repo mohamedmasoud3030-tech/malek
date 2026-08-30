@@ -1,27 +1,82 @@
-name: Deep UI Inventory Once
+name: Deep UI Reports Seam Cleanup
 on:
   push:
     branches: [audit/deep-ui-inventory-0830]
 permissions:
-  contents: read
+  contents: write
 jobs:
-  inventory:
+  cleanup:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Candidate symbol references
+        with:
+          ref: refactor/shared-ui-deep-clean-work
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.11.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Migrate reports consumers to canonical owners
         shell: bash
         run: |
-          cd rentrix-app
-          echo '=== DEAD/BARREL CANDIDATE SYMBOL REFERENCES (production only) ==='
-          for s in LoadingScreen NextStepActions OperationalSummary DatePicker Dropdown FilePickerField IconButton MobileCard StatCard ListItemCard Spinner TextField TextAreaField PasswordField FieldShell Typography ViewModeToggle WorkspaceNav WorkspaceNavItem; do
-            echo "--- $s ---"
-            rg -n --glob 'src/**/*.{ts,tsx}' --glob '!src/**/*.test.*' --glob '!src/**/*.spec.*' --glob '!src/**/*e2e-fixture*' --glob '!src/components/ui/index.ts' "\\b${s}\\b" src || true
-          done
-          echo '=== REPORT COMPATIBILITY PATH REFERENCES ==='
-          rg -n --glob 'src/**/*.{ts,tsx}' "components/ReportDirectory|components/ReportsWorkspace|report-section-primitives" src || true
-          echo '=== CANDIDATE FILE IMPORT PATH REFERENCES ==='
-          for p in loading-screen next-step-actions operational-summary date-picker dropdown file-picker-field icon-button mobile-card spinner text-field typography view-mode-toggle workspace-nav; do
-            echo "--- $p ---"
-            rg -n --glob 'src/**/*.{ts,tsx}' --glob '!src/**/*.test.*' --glob '!src/**/*.spec.*' --glob '!src/**/*e2e-fixture*' "$p" src || true
-          done
+          python3 <<'PY'
+          from pathlib import Path
+          import re
+
+          src = Path('rentrix-app/src')
+          changed = []
+          for p in src.rglob('*'):
+            if not p.is_file() or p.suffix not in {'.ts', '.tsx'}:
+              continue
+            s = p.read_text()
+            old = s
+            s = re.sub(r"from (['\"])(?:\.\./)+report-section-primitives\1", "from '@/components/ui/report-section-primitives'", s)
+            s = re.sub(r"from (['\"])\./report-section-primitives\1", "from '@/components/ui/report-section-primitives'", s)
+            s = s.replace("@/features/reports/components/ReportDirectory", "@/features/reports/directory/ReportDirectory")
+            s = s.replace("@/features/reports/components/ReportsWorkspace", "@/features/reports/workspace/ReportsWorkspace")
+            s = s.replace("./components/ReportDirectory", "./directory/ReportDirectory")
+            s = s.replace("./components/ReportsWorkspace", "./workspace/ReportsWorkspace")
+            s = s.replace("../components/ReportDirectory", "../directory/ReportDirectory")
+            s = s.replace("../components/ReportsWorkspace", "../workspace/ReportsWorkspace")
+            if s != old:
+              p.write_text(s)
+              changed.append(str(p))
+
+          seams = [
+            src / 'features/reports/components/ReportDirectory.tsx',
+            src / 'features/reports/components/ReportsWorkspace.tsx',
+            src / 'features/reports/components/report-section-primitives.tsx',
+          ]
+          for p in seams:
+            if not p.exists(): raise SystemExit(f'missing seam: {p}')
+            p.unlink()
+
+          offenders = []
+          needles = [
+            'components/ReportDirectory', 'components/ReportsWorkspace',
+            './report-section-primitives', '../report-section-primitives',
+          ]
+          for p in src.rglob('*'):
+            if not p.is_file() or p.suffix not in {'.ts', '.tsx'}: continue
+            s = p.read_text(errors='ignore')
+            for needle in needles:
+              if needle in s:
+                offenders.append(f'{p}: {needle}')
+          if offenders:
+            raise SystemExit('legacy report paths remain:\n' + '\n'.join(offenders))
+          print(f'migrated {len(changed)} consumers')
+          PY
+      - name: Targeted report structure tests
+        run: pnpm --filter @workspace/rentrix exec vitest run --config vite.config.ts src/features/reports/workspace/reports-workspace-structure.test.ts src/features/reports/phase7-reports.test.tsx
+      - name: Commit migration
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "refactor(reports): remove compatibility presentation seams"
+          git push origin HEAD:refactor/shared-ui-deep-clean-work
