@@ -4,8 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogBody, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 
-export type ResponsiveFormSurface = 'dialog';
-export type EntityFormSurfacePreference = 'auto' | 'dialog';
 export type EntityFormVisualVariant = 'operational';
 
 const invalidFieldSelector = [
@@ -21,8 +19,6 @@ const EntityFormVisualContext = createContext<EntityFormVisualVariant | undefine
 export function EntityFormVisualProvider({ variant, children }: Readonly<{ variant?: EntityFormVisualVariant; children: ReactNode }>) {
   return <EntityFormVisualContext.Provider value={variant}>{children}</EntityFormVisualContext.Provider>;
 }
-
-export function getResponsiveFormSurface(): ResponsiveFormSurface { return 'dialog'; }
 
 export function focusFirstInvalidField(form: HTMLFormElement, behavior: ScrollBehavior = 'smooth') {
   const invalidField = form.querySelector<HTMLElement>(invalidFieldSelector);
@@ -178,7 +174,7 @@ function Actions({ submitLabel, cancelLabel = 'إلغاء', onCancel, isSubmitti
   );
 }
 
-type EntityFormOverlayProps = Readonly<{ open: boolean; onOpenChange: (open: boolean) => void; title: string; description?: ReactNode; headerExtra?: ReactNode; children: ReactNode; className?: string; /** @deprecated Entity forms always use the shared responsive Dialog. */ surface?: EntityFormSurfacePreference; visualVariant?: EntityFormVisualVariant }>;
+type EntityFormOverlayProps = Readonly<{ open: boolean; onOpenChange: (open: boolean) => void; title: string; description?: ReactNode; headerExtra?: ReactNode; children: ReactNode; className?: string; visualVariant?: EntityFormVisualVariant }>;
 
 function Overlay({ open, onOpenChange, title, description, headerExtra, children, className, visualVariant }: EntityFormOverlayProps) {
   const inheritedVisualVariant = useContext(EntityFormVisualContext);
