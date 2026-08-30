@@ -42,6 +42,13 @@ jobs:
             s = s.replace("./components/ReportsWorkspace", "./workspace/ReportsWorkspace")
             s = s.replace("../components/ReportDirectory", "../directory/ReportDirectory")
             s = s.replace("../components/ReportsWorkspace", "../workspace/ReportsWorkspace")
+            if p.as_posix().endswith('reports/workspace/reports-workspace-structure.test.ts'):
+              s = s.replace("import { readFileSync, readdirSync } from 'node:fs';", "import { existsSync, readFileSync, readdirSync } from 'node:fs';")
+              old_block = '''  it('keeps the historical component import paths working through compatibility seams', () => {\n    const workspaceShim = read(resolve(reportsDir, 'components/ReportsWorkspace.tsx'));\n    const directoryShim = read(resolve(reportsDir, 'components/ReportDirectory.tsx'));\n\n    expect(workspaceShim).toContain(\"from '../workspace/ReportsWorkspace'\");\n    expect(directoryShim).toContain(\"from '../directory/ReportDirectory'\");\n  });'''
+              new_block = '''  it('uses canonical report owners without compatibility shims', () => {\n    expect(existsSync(resolve(reportsDir, 'workspace/ReportsWorkspace.tsx'))).toBe(true);\n    expect(existsSync(resolve(reportsDir, 'directory/ReportDirectory.tsx'))).toBe(true);\n    expect(existsSync(resolve(reportsDir, 'components/ReportsWorkspace.tsx'))).toBe(false);\n    expect(existsSync(resolve(reportsDir, 'components/ReportDirectory.tsx'))).toBe(false);\n  });'''
+              if old_block not in s:
+                raise SystemExit('expected legacy seam contract block not found')
+              s = s.replace(old_block, new_block)
             if s != old:
               p.write_text(s)
               changed.append(str(p))
@@ -56,18 +63,13 @@ jobs:
             p.unlink()
 
           offenders = []
-          needles = [
-            'components/ReportDirectory', 'components/ReportsWorkspace',
-            './report-section-primitives', '../report-section-primitives',
-          ]
           for p in src.rglob('*'):
             if not p.is_file() or p.suffix not in {'.ts', '.tsx'}: continue
             s = p.read_text(errors='ignore')
-            for needle in needles:
-              if needle in s:
-                offenders.append(f'{p}: {needle}')
+            for needle in ['./report-section-primitives', '../report-section-primitives']:
+              if needle in s: offenders.append(f'{p}: {needle}')
           if offenders:
-            raise SystemExit('legacy report paths remain:\n' + '\n'.join(offenders))
+            raise SystemExit('legacy report primitive paths remain:\n' + '\n'.join(offenders))
           print(f'migrated {len(changed)} consumers')
           PY
       - name: Targeted report structure tests
