@@ -56,14 +56,15 @@ export function LoginPage() {
       dir="rtl"
     >
       <section className="safe-top-app safe-bottom-overlay mx-auto flex min-h-[calc(100dvh-1.75rem)] w-full max-w-[23.5rem] flex-col md:min-h-[calc(100dvh-4rem)] md:max-w-[26rem] md:justify-center" data-login-main>
-        <header className="flex min-h-[12.75rem] shrink-0 flex-col items-center justify-center px-4 pb-7 pt-8 text-center sm:min-h-[13.5rem] md:min-h-0 md:px-0 md:pb-8 md:pt-0" data-login-brand>
+        <header className="flex min-h-[14.75rem] shrink-0 flex-col items-center justify-end px-4 pb-8 pt-10 text-center sm:min-h-[15.25rem] md:min-h-0 md:px-0 md:pb-8 md:pt-0" data-login-brand>
           <h1 className="sr-only">تسجيل الدخول إلى MALEK</h1>
           <MalikBrand
             layout="vertical"
             showTagline
-            className="gap-3"
-            markClassName="size-12 sm:size-14"
-            wordmarkClassName="text-[1.8rem] sm:text-[1.95rem]"
+            className="gap-4 md:gap-3"
+            markClassName="size-[4.5rem] sm:size-20 md:size-16"
+            wordmarkClassName="text-[2.25rem] sm:text-[2.4rem] md:text-[1.95rem]"
+            taglineClassName="mt-3 text-base leading-6 sm:text-[17px] md:mt-2.5 md:text-sm"
           />
         </header>
 
