@@ -10,6 +10,7 @@
  * queues.* are bounded (max 5) presentation rows for the work-queue cards.
  * They are display context only and are never used as a KPI source.
  */
+import { toDateOnlyISO } from '@/lib/formatters';
 import { supabase } from '@/lib/supabase';
 
 export type DashboardPeriod = {
@@ -166,10 +167,7 @@ function asArray(value: unknown): unknown[] {
 }
 
 export function getTodayLocalDateString(date = new Date()): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  return toDateOnlyISO(date);
 }
 
 export function createDashboardPeriod(date = new Date()): DashboardPeriod {

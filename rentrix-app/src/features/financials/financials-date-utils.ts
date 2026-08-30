@@ -1,3 +1,5 @@
+import { toDateOnlyISO } from '@/lib/formatters';
+
 /** Compact English date like `22/8` — no year, no time. */
 export function formatCompactDate(value: string | Date | null | undefined): string {
   if (!value) return '—';
@@ -10,11 +12,15 @@ export function formatCompactDate(value: string | Date | null | undefined): stri
   return `${day}/${month}`;
 }
 
+/**
+ * Canonical local-date serialization now lives in `@/lib/formatters` as
+ * `toDateOnlyISO` (local-timezone `YYYY-MM-DD`; never `toISOString()`, which
+ * shifts the calendar day for timezones east of UTC). This feature-scoped
+ * helper is kept as a thin delegation so the ~21 existing cross-feature
+ * importers keep their meaningful name without duplicating the logic.
+ */
 export function getTodayLocalDateString(date = new Date()) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  return toDateOnlyISO(date);
 }
 
 export function isValidDateInput(value: string) {

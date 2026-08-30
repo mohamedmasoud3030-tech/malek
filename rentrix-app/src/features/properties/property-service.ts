@@ -1,4 +1,5 @@
 import { getCrudWriteErrorMessage } from '@/lib/data/crud-write-error';
+import { toDateOnlyISO } from '@/lib/formatters';
 import { fetchAllRows } from '@/lib/paginatedRead';
 import { supabase } from '@/lib/supabase';
 import type { Database } from '@/types/database';
@@ -75,20 +76,13 @@ export type PropertyListItem = PropertyWithWorkflowRelations & Readonly<{
   current_owner_name: string | null;
 }>;
 
-function getTodayLocalDateString(date = new Date()): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
 function coversDate(startsOn: string | null, endsOn: string | null, asOf: string): boolean {
   return (!startsOn || startsOn <= asOf) && (!endsOn || endsOn >= asOf);
 }
 
 export function derivePropertyWorkflowHealth(
   property: PropertyWorkflowRelations,
-  asOf = getTodayLocalDateString(),
+  asOf = toDateOnlyISO(),
 ): Pick<PropertyListItem, 'workflow_health' | 'current_owner_name'> {
   const currentOwnerLinks = (property.property_owners ?? [])
     .filter((link) => coversDate(link.starts_on, link.ends_on, asOf))
