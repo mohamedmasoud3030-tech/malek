@@ -104,7 +104,7 @@ export type CashFlowReport = {
 };
 
 export async function getCashFlowReport(from: string, to: string): Promise<CashFlowReport> {
-  const { data, error } = await supabase.rpc('wp05_rpt_cash_flow_gl', { p_from: from, p_to: to });
+  const { data, error } = await supabase.rpc('rpt_cash_flow_gl', { p_from: from, p_to: to });
   if (error) throw error;
   const r = asRecord(data);
   const period = asRecord(r.period);
