@@ -219,7 +219,7 @@ export function OwnerStatementPanel({
   return (
     <ReportPanel
       title="كشف حساب المالك"
-      description="حركة المالك للفترة: العقارات، إجمالي التحصيل/الحركة، الاستقطاعات، التسويات وصافي الرصيد الجاري."
+      description="حركة المالك للفترة: العقارات، إجمالي التحصيل/الحركة، الاستقطاعات والتسويات. الرصيد الجاري لا يُعرض لأن مصدر كشف المالك لا يوفّر رصيدًا افتتاحيًا معتمدًا."
       icon={UsersRound}
       action={statement ? (
         <ReportOutputActions
