@@ -11,6 +11,7 @@ import type { MaintenanceSummary } from '@/features/maintenance/maintenance-help
 import { formatLatinNumber } from '@/lib/formatters';
 import { csvRowsToXlsxBlob, downloadBlob, xlsxFilenameFromCsv } from '@/lib/tabular-export';
 import { buildExecutiveHealthInsights } from '../reports-insights';
+import { OperationalPrioritiesPanel } from './OperationalPrioritiesPanel';
 import type { ExpiringContractRow, OccupancyChartRow } from '../reports-page.helpers';
 import { buildReportCsvFilename, createReceiptPrintHref, downloadCsv, toFinancialSummaryCsv } from '../reports-page.helpers';
 import type { ReportDrillHandler } from '../report-workspaces';
@@ -271,6 +272,16 @@ export function OverviewSection({
           })}
         </div>
       </ReportPanel>
+
+      <OperationalPrioritiesPanel
+        overdueTotal={overdueTotal}
+        overdueAsOf={overdueSummary?.asOf}
+        vacantUnits={occupancy.vacant}
+        expiringContracts={expiringRows.length}
+        openMaintenance={openMaintenance}
+        isLoading={isLoading}
+        onDrill={onDrill}
+      />
 
       <div className="grid gap-4 lg:grid-cols-12">
         <ReportPanel
