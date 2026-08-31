@@ -38,7 +38,16 @@ test.describe('Service Providers workspace', () => {
 
   test('filters the register by active state and keeps 44px actions', async ({ page }) => {
     await page.goto(fixtureUrl);
-    await page.getByLabel('تصفية مزودي الخدمات حسب الحالة').selectOption('inactive');
+
+    const filterBar = page.locator('[data-filter-bar]');
+    await expect(filterBar).toBeVisible();
+    if ((page.viewportSize()?.width ?? 1440) < 768) {
+      const mobileFilterTrigger = filterBar.locator('button[aria-haspopup="dialog"]:visible');
+      await expect(mobileFilterTrigger).toBeVisible();
+      await mobileFilterTrigger.click();
+    }
+
+    await page.locator('select[aria-label="تصفية مزودي الخدمات حسب الحالة"]:visible').selectOption('inactive');
 
     await expect(page.getByText('مؤسسة الحلول السريعة', { exact: true }).filter({ visible: true }).first()).toBeVisible();
     await expect(page.getByText('شركة الأفق للتبريد', { exact: true }).filter({ visible: true })).toHaveCount(0);
