@@ -22,6 +22,10 @@ interface ListPageProps {
   onClearAllFilters?: () => void;
   /** Optional compact utilities such as view, columns, export, or sort controls. */
   toolbarActions?: ReactNode;
+  /** Optional stable storage key shared by the page toolbar and its register. */
+  viewModeStorageKey?: string;
+  /** Avoid a second title when this list is mounted inside a named hub. */
+  embeddedHeader?: 'full' | 'actions-only' | 'none';
   children: ReactNode;
   className?: string;
   dir?: 'rtl' | 'ltr';
@@ -55,6 +59,8 @@ export function ListPage({
   activeFilters,
   onClearAllFilters,
   toolbarActions,
+  viewModeStorageKey,
+  embeddedHeader,
   children,
   className,
   dir,
@@ -74,8 +80,9 @@ export function ListPage({
       className={className}
       dir={dir}
       visualVariant={visualVariant}
+      viewModeStorageKey={viewModeStorageKey}
+      embeddedHeader={embeddedHeader}
     >
-      {search || filters || toolbarActions ? (
         <FilterBar
           searchValue={search?.value}
           onSearchChange={search?.onChange}
@@ -86,11 +93,10 @@ export function ListPage({
           onClearAllFilters={onClearAllFilters}
           actions={toolbarActions}
         />
-      ) : null}
 
-      <div data-list-results className="space-y-2.5 sm:space-y-3">
-        {children}
-      </div>
+        <div data-list-results className="space-y-2.5 sm:space-y-3">
+          {children}
+        </div>
     </EmbeddableWorkspace>
   );
 }

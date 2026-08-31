@@ -215,15 +215,6 @@ export function MaintenanceList(props: MaintenanceListProps) {
           })),
         ];
 
-        if (menuItems.length === 1 && availableStatusActions.length === 0 && !canEdit) {
-          return (
-            <Button type="button" variant="ghost" size="sm" onClick={() => onViewDetails(row)}>
-              <Eye className="me-1 size-4" />
-              التفاصيل
-            </Button>
-          );
-        }
-
         return (
           <div
             className="flex"

@@ -145,15 +145,16 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
       header: 'إجراءات',
       priority: 'actions',
       render: (tenant) => (
-        <div className="flex items-center gap-1.5" onClick={(event) => event.stopPropagation()}>
-          {tenant.primaryContractId !== null ? (
-            <Button variant="secondary" className="min-h-11 px-3" onClick={() => openContract(tenant.primaryContractId!)}>
-              <FileText className="me-1 size-4" />العقد
-            </Button>
-          ) : null}
+        <div className="flex items-center" onClick={(event) => event.stopPropagation()}>
           <ActionMenu
             label={`إجراءات ${tenant.person.full_name}`}
             items={[
+              ...(tenant.primaryContractId !== null ? [{
+                id: 'contract',
+                label: 'فتح العقد',
+                icon: FileText,
+                onClick: () => openContract(tenant.primaryContractId!),
+              }] : []),
               {
                 id: 'preview',
                 label: 'معاينة',

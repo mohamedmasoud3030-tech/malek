@@ -19,7 +19,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { DataTableColumnsMenu } from "@/components/ui/data-table";
 import { ActionMenu } from "@/components/ui/action-menu";
 import { EntityCell } from "@/components/ui/entity-cell";
-import { RegisterHeading, RegisterMetricStrip } from "@/components/layout/register-summary";
+import { RegisterMetricStrip } from "@/components/layout/register-summary";
 import { ExportMenu } from "@/components/ui/export-menu";
 import { Select } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -219,22 +219,19 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
                 priority: "actions",
                 render: (property) => (
                   <div
-                    className="flex items-center justify-end gap-1"
+                    className="flex items-center justify-end"
                     onClick={(event) => event.stopPropagation()}
                     onKeyDown={(event) => event.stopPropagation()}
                   >
-                    <Button
-                      variant="secondary"
-                      className="min-h-11 px-3"
-                      aria-label={`فتح ملف ${property.title ?? "العقار"}`}
-                      onClick={() => controller.navigateToProperty(property.id)}
-                    >
-                      <Building2 className="me-1 size-4" aria-hidden="true" />
-                      فتح الملف
-                    </Button>
                     <ActionMenu
                       label={`إجراءات ${property.title ?? "العقار"}`}
                       items={[
+                        {
+                          id: 'open',
+                          label: 'فتح الملف',
+                          icon: Building2,
+                          onClick: () => controller.navigateToProperty(property.id),
+                        },
                         ...(canEdit ? [{
                           id: 'edit',
                           label: 'تعديل البيانات',
@@ -261,6 +258,7 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
         embedded={embedded}
         dir="rtl"
         visualVariant="malek-pro"
+        embeddedHeader={embedded ? 'actions-only' : 'full'}
         title="العقارات"
         count={controller.totalCount}
         primaryAction={canCreate ? (
@@ -329,8 +327,6 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
         ) : null}
 
         <section data-property-register className="min-w-0 space-y-2.5">
-          <RegisterHeading title="سجل العقارات" />
-
           <EntityTable
             aria-label="جدول العقارات"
             rows={controller.properties}

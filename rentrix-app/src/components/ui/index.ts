@@ -44,9 +44,12 @@ export { ErrorState, WriteErrorCard } from "./error-state";
 // ADR-008 Phase A — unified entity table
 export {
   EntityTable,
+  EntityTableViewModeProvider,
+  EntityTableViewModeToggle,
   type ColumnDef,
   type PaginationState,
   type EntityTableProps,
+  type ViewMode,
 } from "./entity-table";
 export {
   DataTable,

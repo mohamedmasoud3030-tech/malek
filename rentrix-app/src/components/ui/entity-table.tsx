@@ -15,8 +15,10 @@ import {
   MoreHorizontal,
 } from 'lucide-react';
 import {
+  createContext,
   Fragment,
   memo,
+  useContext,
   useEffect,
   useId,
   useMemo,
@@ -109,8 +111,17 @@ export interface EntityTableProps<T> {
 }
 
 type ResolvedColumn<T> = ColumnDef<T> & { resolvedPriority: ColumnPriority };
-type ViewMode = 'cards' | 'table';
+export type ViewMode = 'cards' | 'table';
 type ResponsiveViewport = 'mobile' | 'tablet' | 'desktop';
+
+type EntityTableViewModeContextValue = {
+  viewMode: ViewMode;
+  manualViewMode: ViewMode | null;
+  viewportMode: ResponsiveViewport;
+  onChange: (nextMode: ViewMode) => void;
+};
+
+const EntityTableViewModeContext = createContext<EntityTableViewModeContextValue | null>(null);
 
 function normalizeStorageKey(label: string): string {
   const normalized = label.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^\p{L}\p{N}-]+/gu, '');
@@ -138,6 +149,59 @@ function getViewportMode(): ResponsiveViewport {
 
 function getDefaultViewMode(viewport: ResponsiveViewport): ViewMode {
   return viewport === 'mobile' ? 'cards' : 'table';
+}
+
+export function EntityTableViewModeProvider({
+  storageKey,
+  children,
+}: Readonly<{
+  storageKey: string;
+  children: ReactNode;
+}>) {
+  const [viewportMode, setViewportMode] = useState<ResponsiveViewport>(() => getViewportMode());
+  const [manualViewMode, setManualViewMode] = useState<ViewMode | null>(() => getStoredViewMode(storageKey));
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const updateViewportMode = () => setViewportMode(getViewportMode());
+    updateViewportMode();
+    window.addEventListener('resize', updateViewportMode);
+    return () => window.removeEventListener('resize', updateViewportMode);
+  }, []);
+
+  useEffect(() => {
+    setManualViewMode(getStoredViewMode(storageKey));
+  }, [storageKey]);
+
+  const onChange = (nextMode: ViewMode) => {
+    setManualViewMode(nextMode);
+    try {
+      window.localStorage.setItem(storageKey, nextMode);
+    } catch {
+      // Keep the in-memory choice even when storage is unavailable.
+    }
+  };
+
+  return (
+    <EntityTableViewModeContext.Provider
+      value={{
+        viewMode: manualViewMode ?? getDefaultViewMode(viewportMode),
+        manualViewMode,
+        viewportMode,
+        onChange,
+      }}
+    >
+      {children}
+    </EntityTableViewModeContext.Provider>
+  );
+}
+
+export function EntityTableViewModeToggle({
+  ariaLabel,
+}: Readonly<{ ariaLabel: string }>) {
+  const context = useContext(EntityTableViewModeContext);
+  if (!context) return null;
+  return <ViewModeToggle ariaLabel={ariaLabel} viewMode={context.viewMode} onChange={context.onChange} />;
 }
 
 function resolveColumns<T>(columns: ColumnDef<T>[], visibleColumnKeys?: readonly string[]): ResolvedColumn<T>[] {
@@ -498,6 +562,7 @@ function EntityTableImpl<T>({
 }: EntityTableProps<T>) {
   const disclosurePrefix = useId();
   const storageKey = viewModeStorageKey ?? normalizeStorageKey(ariaLabel);
+  const sharedViewMode = useContext(EntityTableViewModeContext);
   const [viewportMode, setViewportMode] = useState<ResponsiveViewport>(() => getViewportMode());
   const [manualViewMode, setManualViewMode] = useState<ViewMode | null>(() => getStoredViewMode(storageKey));
   const [internalExpandedRows, setInternalExpandedRows] = useState<Set<string>>(() => new Set());
@@ -530,7 +595,11 @@ function EntityTableImpl<T>({
     }
   };
 
-  const presentationMode: ViewMode = manualViewMode ?? getDefaultViewMode(viewportMode);
+  const effectiveViewportMode = sharedViewMode?.viewportMode ?? viewportMode;
+  const effectiveManualViewMode = sharedViewMode?.manualViewMode ?? manualViewMode;
+  const presentationMode: ViewMode = sharedViewMode?.viewMode
+    ?? effectiveManualViewMode
+    ?? getDefaultViewMode(effectiveViewportMode);
 
   const isRowExpanded = (rowKey: string) =>
     isControlledSingle ? resolvedExpandedRowId === rowKey : internalExpandedRows.has(rowKey);
@@ -548,17 +617,19 @@ function EntityTableImpl<T>({
   };
 
   const tableColumns = useMemo(
-    () => viewportMode === 'tablet' && !manualViewMode ? resolveTabletColumns(resolvedColumns) : resolvedColumns,
-    [manualViewMode, resolvedColumns, viewportMode],
+    () => effectiveViewportMode === 'tablet' && !effectiveManualViewMode ? resolveTabletColumns(resolvedColumns) : resolvedColumns,
+    [effectiveManualViewMode, effectiveViewportMode, resolvedColumns],
   );
 
   if (isLoading) {
     return (
       <div className={cn('space-y-2.5', className)} data-entity-table-register data-entity-table-presentation={presentationMode}>
-        <div data-entity-table-toolbar className="flex min-h-11 flex-wrap items-center justify-between gap-2">
-          <ViewModeToggle ariaLabel={ariaLabel} viewMode={presentationMode} onChange={chooseViewMode} />
-          {toolbar}
-        </div>
+        {!sharedViewMode || toolbar ? (
+          <div data-entity-table-toolbar className="flex min-h-11 flex-wrap items-center justify-between gap-2">
+            {!sharedViewMode ? <ViewModeToggle ariaLabel={ariaLabel} viewMode={presentationMode} onChange={chooseViewMode} /> : null}
+            {toolbar}
+          </div>
+        ) : null}
         {presentationMode === 'cards' ? (
           <MobileRegisterSkeleton rows={5} />
         ) : (
@@ -638,10 +709,12 @@ function EntityTableImpl<T>({
         aria-disabled={error != null ? 'true' : undefined}
         data-stale-register-content={error != null ? 'true' : undefined}
       >
-        <div data-entity-table-toolbar className="flex min-h-11 flex-wrap items-center justify-between gap-2">
-          <ViewModeToggle ariaLabel={ariaLabel} viewMode={presentationMode} onChange={chooseViewMode} />
-          {toolbar}
-        </div>
+        {!sharedViewMode || toolbar ? (
+          <div data-entity-table-toolbar className="flex min-h-11 flex-wrap items-center justify-between gap-2">
+            {!sharedViewMode ? <ViewModeToggle ariaLabel={ariaLabel} viewMode={presentationMode} onChange={chooseViewMode} /> : null}
+            {toolbar}
+          </div>
+        ) : null}
 
         {presentationMode === 'cards' ? (
           <div data-entity-table-mobile data-entity-table-cards>

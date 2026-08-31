@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { ActiveFilterBar, type ActiveFilterItem } from './active-filter-bar';
 import { BottomSheet } from './bottom-sheet';
 import { Button } from './button';
+import { EntityTableViewModeToggle } from './entity-table';
 import { SearchInput } from './search-input';
 
 type FilterBarProps = {
@@ -21,6 +22,8 @@ type FilterBarProps = {
   onClearAllFilters?: () => void;
   /** Register utilities: columns, export, sort. Inline on md+, sheet on phones. */
   actions?: ReactNode;
+  /** The canonical Cards/Table control, kept beside search and filters. */
+  viewModeToggle?: ReactNode;
   className?: string;
 };
 
@@ -48,6 +51,7 @@ export function FilterBar({
   activeFilters = [],
   onClearAllFilters,
   actions,
+  viewModeToggle,
   className,
 }: FilterBarProps) {
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -55,6 +59,11 @@ export function FilterBar({
   const showSearch = typeof onSearchChange === 'function';
   const activeFilterCount = activeFilters.length;
   const hasFilterContent = Boolean(filters || advancedFilters || actions || activeFilterCount > 0);
+  const resolvedViewModeToggle = viewModeToggle ?? (
+    <EntityTableViewModeToggle
+      ariaLabel={searchAriaLabel.replace(/^بحث في\s*/, '')}
+    />
+  );
 
   return (
     <div className="min-w-0 space-y-1" data-search-filter-system>
@@ -92,6 +101,12 @@ export function FilterBar({
         {actions ? (
           <div className="hidden shrink-0 items-center gap-1.5 md:flex" data-filter-actions-desktop>
             {actions}
+          </div>
+        ) : null}
+
+        {resolvedViewModeToggle ? (
+          <div className="shrink-0" data-filter-view-mode>
+            {resolvedViewModeToggle}
           </div>
         ) : null}
 
