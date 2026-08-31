@@ -219,22 +219,19 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
                 priority: "actions",
                 render: (property) => (
                   <div
-                    className="flex items-center justify-end gap-1"
+                    className="flex items-center justify-end"
                     onClick={(event) => event.stopPropagation()}
                     onKeyDown={(event) => event.stopPropagation()}
                   >
-                    <Button
-                      variant="secondary"
-                      className="min-h-11 px-3"
-                      aria-label={`فتح ملف ${property.title ?? "العقار"}`}
-                      onClick={() => controller.navigateToProperty(property.id)}
-                    >
-                      <Building2 className="me-1 size-4" aria-hidden="true" />
-                      فتح الملف
-                    </Button>
                     <ActionMenu
                       label={`إجراءات ${property.title ?? "العقار"}`}
                       items={[
+                        {
+                          id: 'open',
+                          label: 'فتح الملف',
+                          icon: Building2,
+                          onClick: () => controller.navigateToProperty(property.id),
+                        },
                         ...(canEdit ? [{
                           id: 'edit',
                           label: 'تعديل البيانات',
