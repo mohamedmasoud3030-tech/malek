@@ -222,29 +222,23 @@ export function InvoiceListSection({
                 render: (invoice) => {
                   const showCollect = canCollectPayments && onCollectInvoice && isInvoiceCollectible(invoice);
                   if (!showCollect && !onPrintInvoice && !onExportInvoice) return null;
+                  const menuItems = [
+                    ...(showCollect ? [{
+                      id: 'collect',
+                      label: 'تحصيل',
+                      icon: HandCoins,
+                      onClick: () => onCollectInvoice(invoice.id),
+                    }] : []),
+                    ...(onPrintInvoice ? [{ id: 'print', label: 'طباعة', icon: Printer, onClick: () => onPrintInvoice(invoice.id) }] : []),
+                    ...(onExportInvoice ? [{ id: 'pdf', label: 'PDF', icon: Download, onClick: () => onExportInvoice(invoice.id) }] : []),
+                  ];
                   return (
-                    <div className="flex flex-wrap items-center justify-end gap-1" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
-                      {showCollect ? (
-                        <Button
-                          size="sm"
-                          className="h-11 min-w-11 px-2.5"
-                          aria-label={`تحصيل ${invoice.reference ?? 'فاتورة مسجلة'}`}
-                          onClick={() => onCollectInvoice(invoice.id)}
-                          title="تسجيل الدفعة من نفس سجل الفواتير"
-                        >
-                          <HandCoins className="size-3.5" />
-                          تحصيل
-                        </Button>
-                      ) : null}
-                      {(onPrintInvoice || onExportInvoice) ? (
-                        <ActionMenu
-                          label="إجراءات إضافية للفاتورة"
-                          items={[
-                            ...(onPrintInvoice ? [{ id: 'print', label: 'طباعة', icon: Printer, onClick: () => onPrintInvoice(invoice.id) }] : []),
-                            ...(onExportInvoice ? [{ id: 'pdf', label: 'PDF', icon: Download, onClick: () => onExportInvoice(invoice.id) }] : []),
-                          ]}
-                        />
-                      ) : null}
+                    <div className="flex items-center justify-end" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+                      <ActionMenu
+                        variant="labeled"
+                        label={`إجراءات ${invoice.reference ?? 'الفاتورة'}`}
+                        items={menuItems}
+                      />
                     </div>
                   );
                 },
