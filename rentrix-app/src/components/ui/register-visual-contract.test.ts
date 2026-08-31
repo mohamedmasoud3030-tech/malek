@@ -6,8 +6,10 @@ import { describe, expect, it } from 'vitest';
 const uiDir = resolve(dirname(fileURLToPath(import.meta.url)));
 const srcDir = resolve(uiDir, '../..');
 const table = readFileSync(resolve(uiDir, 'table.tsx'), 'utf8');
-const entityCard = readFileSync(resolve(uiDir, 'entity-card.tsx'), 'utf8');
-const entityTable = readFileSync(resolve(uiDir, 'entity-table.tsx'), 'utf8');
+    const entityCard = readFileSync(resolve(uiDir, 'entity-card.tsx'), 'utf8');
+    const entityTable = readFileSync(resolve(uiDir, 'entity-table.tsx'), 'utf8');
+    const filterBar = readFileSync(resolve(uiDir, 'filter-bar.tsx'), 'utf8');
+    const embeddableWorkspace = readFileSync(resolve(srcDir, 'components/layout/embeddable-workspace.tsx'), 'utf8');
 
 describe('canonical register visual contract', () => {
   it('keeps natural-width semantic tables with a keyboard-reachable horizontal region when needed', () => {
@@ -26,6 +28,11 @@ describe('canonical register visual contract', () => {
     expect(entityTable).toContain('mobileSupportingKey?: string;');
     expect(entityTable).toContain('mobilePrimaryMetaKeys?: readonly string[];');
     expect(entityTable).toContain('mobileSecondaryMetaKeys?: readonly string[];');
+    expect(entityTable).toContain('EntityTableViewModeProvider');
+    expect(entityTable).toContain('sharedViewMode');
+    expect(filterBar).toContain('EntityTableViewModeToggle');
+    expect(filterBar).toContain('data-filter-view-mode');
+    expect(embeddableWorkspace).toContain('EntityTableViewModeProvider');
   });
 
   it('keeps sticky identity/actions for wide desktop only and trims lower-priority tablet columns', () => {
@@ -65,5 +72,20 @@ describe('canonical register visual contract', () => {
     expect(contracts).toContain('mobileSupportingKey="tenant"');
     expect(invoices).toContain('mobilePrimaryMetaKeys={[\'remaining\', \'gross\', \'due_date\']}');
     expect(maintenance).toContain('mobileSupportingKey="location"');
+  });
+
+  it('keeps register row actions under one visible action authority', () => {
+    const properties = readFileSync(resolve(srcDir, 'features/properties/properties-list-page.tsx'), 'utf8');
+    const tenants = readFileSync(resolve(srcDir, 'features/tenants/TenantsPage.tsx'), 'utf8');
+    const invoices = readFileSync(resolve(srcDir, 'features/financials/components/invoice-list-section.tsx'), 'utf8');
+    const maintenance = readFileSync(resolve(srcDir, 'features/maintenance/components/maintenance-list.tsx'), 'utf8');
+
+    expect(properties).toContain("id: 'open'");
+    expect(properties).not.toContain('aria-label={`فتح ملف ${property.title ?? "العقار"}`}');
+    expect(tenants).toContain("id: 'contract'");
+    expect(tenants).not.toContain('<Button variant="secondary" className="min-h-11 px-3" onClick={() => openContract');
+    expect(invoices).toContain("id: 'collect'");
+    expect(invoices).not.toContain('إجراءات إضافية للفاتورة');
+    expect(maintenance).not.toContain('menuItems.length === 1');
   });
 });
