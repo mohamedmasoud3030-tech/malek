@@ -35,6 +35,8 @@ export interface ActionMenuProps {
   variant?: 'icon' | 'labeled';
   /** Disable the trigger without removing the menu from the layout. */
   disabled?: boolean;
+  /** Override the default ellipsis while retaining the shared accessible menu behavior. */
+  triggerIcon?: ReactNode;
 }
 
 function isActionMenuItem(item: ActionMenuEntry): item is ActionMenuItem {
@@ -56,7 +58,7 @@ function isDestructive(item: ActionMenuEntry): boolean {
   return isActionMenuItem(item) ? Boolean(item.destructive) : item.variant === 'destructive' || Boolean(item.danger);
 }
 
-export function ActionMenu({ items, label = 'الإجراءات', align = 'end', className, variant = 'icon', disabled = false }: ActionMenuProps) {
+export function ActionMenu({ items, label = 'الإجراءات', align = 'end', className, variant = 'icon', disabled = false, triggerIcon }: ActionMenuProps) {
   // Disabled actions are deliberately unavailable rather than focusable/selectable.
   const visibleItems = items.filter((item) => !item.disabled);
   const [open, setOpen] = useState(false);
@@ -139,7 +141,7 @@ export function ActionMenu({ items, label = 'الإجراءات', align = 'end',
           </>
         ) : (
           <>
-            <MoreHorizontal className="size-4" aria-hidden="true" />
+            {triggerIcon ?? <MoreHorizontal className="size-4" aria-hidden="true" />}
             <span className="sr-only">{label}</span>
           </>
         )}

@@ -83,6 +83,19 @@ describe('LoginPage — interaction behaviour', () => {
 
   function setup() { return render(<div dir="rtl"><LoginPage /></div>); }
 
+  it('exposes the two accessible quick actions with canonical destinations', () => {
+    setup();
+    const trigger = screen.getByRole('button', { name: 'خيارات المساعدة' });
+    expect(trigger).toHaveAttribute('aria-haspopup', 'menu');
+    fireEvent.click(trigger);
+    const items = screen.getAllByRole('menuitem');
+    expect(items).toHaveLength(2);
+    expect(items[0]).toHaveTextContent('الدعم والمساعدة');
+    expect(items[1]).toHaveTextContent('LENA Digital House');
+    fireEvent.click(items[0]);
+    expect(window.location.pathname).toBe('/support');
+  });
+
   it('submits credentials once', async () => {
     setup();
     fireEvent.input(screen.getByLabelText('البريد الإلكتروني', { selector: 'input' }), { target: { value: 'test@example.com' } });

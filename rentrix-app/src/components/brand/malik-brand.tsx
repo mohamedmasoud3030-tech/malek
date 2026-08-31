@@ -14,6 +14,8 @@ type MalikBrandProps = Readonly<{
   inverse?: boolean;
   /** Layout direction for the lockup. Vertical puts M above MALEK. */
   layout?: 'horizontal' | 'vertical';
+  /** Optional canonical blue/cyan treatment; defaults stay unchanged elsewhere. */
+  wordmarkVariant?: 'default' | 'brand-gradient';
 }>;
 
 /**
@@ -29,6 +31,7 @@ export function MalikBrand({
   showTagline = false,
   inverse = false,
   layout = 'horizontal',
+  wordmarkVariant = 'default',
 }: MalikBrandProps) {
   if (compact) {
     return (
@@ -48,7 +51,11 @@ export function MalikBrand({
             aria-label={APP_BRAND_NAME}
             className={cn(
               'malik-wordmark malek-wordmark text-center text-[1.65rem] font-extrabold uppercase leading-none tracking-[0.12em] sm:text-[1.85rem]',
-              inverse ? 'text-white' : 'text-foreground',
+              inverse
+                ? 'text-white'
+                : wordmarkVariant === 'brand-gradient'
+                  ? 'bg-gradient-to-r from-[#1688BC] to-[#18B9E6] bg-clip-text text-transparent'
+                  : 'text-foreground',
               wordmarkClassName,
             )}
           >
