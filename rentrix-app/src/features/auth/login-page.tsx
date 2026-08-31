@@ -1,10 +1,11 @@
 import { useState, useCallback, useRef, type FormEvent, type KeyboardEvent } from 'react';
 import { Link } from '@tanstack/react-router';
-import { AlertTriangle, ArrowLeft, ArrowUpRight, Eye, EyeOff, LockKeyhole, Mail } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, ArrowUpRight, Eye, EyeOff, Headphones, LockKeyhole, Mail, Menu } from 'lucide-react';
 import { lenaHousePublicEntry } from '@/lib/lena-endorsement';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { ActionMenu } from '@/components/ui/action-menu';
 import { useAuth } from '@/hooks/use-auth';
 import { MalikBrand } from '@/components/brand/malik-brand';
 import { getEnvDiagnostics } from '@/lib/runtime-diagnostics';
@@ -23,6 +24,10 @@ export function LoginPage() {
   const isSubmittingRef = useRef(false);
   const hasFieldError = Boolean(formError || runtimeError);
   const lenaHref = lenaHousePublicEntry();
+  const quickActions = [
+    { id: 'support', label: 'الدعم والمساعدة', icon: Headphones, onClick: () => window.location.assign('/support') },
+    { id: 'lena', label: 'LENA Digital House', icon: ArrowUpRight, onClick: () => { if (lenaHref) window.open(lenaHref, '_blank', 'noopener,noreferrer'); } },
+  ];
 
   const handleSubmit = useCallback(async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -55,16 +60,26 @@ export function LoginPage() {
       data-login-surface
       dir="rtl"
     >
-      <section className="safe-top-app safe-bottom-overlay mx-auto flex min-h-[calc(100dvh-1.75rem)] w-full max-w-[23.5rem] flex-col md:min-h-[calc(100dvh-4rem)] md:max-w-[26rem] md:justify-center" data-login-main>
-        <header className="flex min-h-[14.75rem] shrink-0 flex-col items-center justify-end px-4 pb-8 pt-10 text-center sm:min-h-[15.25rem] md:min-h-0 md:px-0 md:pb-8 md:pt-0" data-login-brand>
+      <div className="absolute right-5 top-[max(0.75rem,env(safe-area-inset-top))] z-10 sm:right-6 sm:top-6">
+        <ActionMenu
+          items={quickActions}
+          label="خيارات المساعدة"
+          align="end"
+          triggerIcon={<Menu className="size-5" aria-hidden="true" />}
+          className="rounded-xl border border-border/70 bg-card/90 shadow-sm"
+        />
+      </div>
+      <section className="safe-top-app safe-bottom-overlay mx-auto flex min-h-[calc(100dvh-1.75rem)] w-full max-w-[23.5rem] flex-col justify-center md:min-h-[calc(100dvh-4rem)] md:max-w-[26rem]" data-login-main>
+        <header className="flex shrink-0 flex-col items-center px-4 pb-6 pt-14 text-center sm:pb-7 sm:pt-12 md:px-0 md:pb-7 md:pt-0" data-login-brand>
           <h1 className="sr-only">تسجيل الدخول إلى MALEK</h1>
           <MalikBrand
             layout="vertical"
             showTagline
-            className="gap-4 md:gap-3"
-            markClassName="size-[4.5rem] sm:size-20 md:size-16"
-            wordmarkClassName="text-[2.25rem] sm:text-[2.4rem] md:text-[1.95rem]"
-            taglineClassName="mt-3 text-base leading-6 sm:text-[17px] md:mt-2.5 md:text-sm"
+            className="gap-3 md:gap-2.5"
+            markClassName="size-[5.25rem] sm:size-[5.5rem] md:size-[4.75rem]"
+            wordmarkClassName="text-[2.35rem] sm:text-[2.5rem] md:text-[2.15rem]"
+            wordmarkVariant="brand-gradient"
+            taglineClassName="mt-1.5 text-[17px] leading-6 sm:text-lg md:mt-1.5 md:text-base"
           />
         </header>
 
@@ -102,16 +117,17 @@ export function LoginPage() {
         </div>
 
         {/* Parent company endorsement — secondary to Login, not a support CTA. Native <a> to LENA's independent site. */}
-        <p className="mt-auto flex min-h-20 items-end justify-center pb-1 pt-6 text-center text-xs leading-relaxed text-muted-foreground md:mt-6 md:min-h-0 md:p-0" data-lena-endorsement>
+        <p className="flex min-h-16 items-center justify-center pt-4 text-center text-xs leading-relaxed text-muted-foreground md:min-h-0 md:pt-5" data-lena-endorsement>
           <span>تم تطوير MALEK بواسطة </span>
           {lenaHref ? (
             <a
               href={lenaHref}
               rel="noopener noreferrer"
               className="inline-flex min-h-11 items-center gap-0.5 rounded-lg px-1 font-semibold text-muted-foreground underline-offset-4 outline-none hover:text-foreground hover:underline focus-visible:ring-4 focus-visible:ring-primary/20"
+              target="_blank"
             >
               LENA Digital House
-              <ArrowUpRight className="size-3.5" aria-hidden="true" />
+              <ArrowUpRight className="size-3.5 text-primary" aria-hidden="true" />
             </a>
           ) : (
             <span className="font-semibold text-muted-foreground">LENA Digital House</span>
