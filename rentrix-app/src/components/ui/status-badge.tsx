@@ -30,14 +30,20 @@ const productToSemantic: Record<ProductTone, SemanticTone> = {
   slate: 'neutral',
 };
 
+/**
+ * Status badges are also styled by the shared page-polish cascade through
+ * --status-tone/--status-soft. Define those variables for every semantic tone
+ * here so the generic [data-status-badge][data-tone] rule can never resolve
+ * to an invalid (transparent) background.
+ */
 const semanticTones: Record<SemanticTone, string> = {
-  success: 'bg-success-bg text-success-text ring-success/20',
-  warning: 'bg-warning-bg text-warning-text ring-warning/20',
-  danger: 'bg-danger-bg text-danger-text ring-danger/20',
-  info: 'bg-info-bg text-info-text ring-info/20',
-  neutral: 'bg-neutral-bg text-neutral-text ring-neutral/20',
-  primary: 'bg-primary/10 text-primary ring-primary/20',
-  secondary: 'bg-neutral-bg text-neutral-text ring-neutral/20',
+  success: 'bg-success-bg text-success-text ring-success/20 [--status-tone:var(--success-text)] [--status-soft:var(--success-bg)]',
+  warning: 'bg-warning-bg text-warning-text ring-warning/20 [--status-tone:var(--warning-text)] [--status-soft:var(--warning-bg)]',
+  danger: 'bg-danger-bg text-danger-text ring-danger/20 [--status-tone:var(--danger-text)] [--status-soft:var(--danger-bg)]',
+  info: 'bg-info-bg text-info-text ring-info/20 [--status-tone:var(--info-text)] [--status-soft:var(--info-bg)]',
+  neutral: 'bg-neutral-bg text-neutral-text ring-neutral/20 [--status-tone:var(--neutral-text)] [--status-soft:var(--neutral-bg)]',
+  primary: 'bg-primary/10 text-primary ring-primary/20 [--status-tone:var(--primary)] [--status-soft:var(--card-muted)]',
+  secondary: 'bg-neutral-bg text-neutral-text ring-neutral/20 [--status-tone:var(--neutral-text)] [--status-soft:var(--neutral-bg)]',
 };
 
 const semanticDotTones: Record<SemanticTone, string> = {

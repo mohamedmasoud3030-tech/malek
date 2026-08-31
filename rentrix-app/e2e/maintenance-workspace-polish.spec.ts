@@ -50,9 +50,16 @@ test.describe('Maintenance workspace RTL polish', () => {
 
         const filterBar = page.locator('[data-filter-bar]');
         await expect(filterBar).toBeVisible({ timeout: 10_000 });
-        await expect(page.getByLabel('تصفية حسب الحالة')).toBeVisible();
-        await expect(page.getByLabel('تصفية حسب الأولوية')).toBeVisible();
-        await expect(page.getByLabel('تصفية حسب العقار')).toBeVisible();
+
+        if (vp.width < 768) {
+          const mobileFilterTrigger = filterBar.locator('button[aria-haspopup="dialog"]:visible');
+          await expect(mobileFilterTrigger).toBeVisible();
+          await mobileFilterTrigger.click();
+        }
+
+        await expect(page.locator('select[aria-label="تصفية حسب الحالة"]:visible')).toBeVisible();
+        await expect(page.locator('select[aria-label="تصفية حسب الأولوية"]:visible')).toBeVisible();
+        await expect(page.locator('select[aria-label="تصفية حسب العقار"]:visible')).toBeVisible();
       });
 
       test(`maintenance cards keep 44px actions at ${vp.width}px [${scheme}]`, async ({ page }) => {

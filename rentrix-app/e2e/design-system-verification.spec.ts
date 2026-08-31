@@ -44,19 +44,22 @@ async function expectNoHorizontalOverflow(page: Page, label: string) {
 
 async function expectTokenUtilitiesReal(page: Page) {
   const result = await page.evaluate(() => {
-    const shadowCandidates = Array.from(document.querySelectorAll<HTMLElement>(
-      '.shadow-card, [data-component-card], [data-kpi-card], [data-entity-table-wrapper]',
-    ));
-    const shadow = shadowCandidates
-      .map((element) => getComputedStyle(element).boxShadow)
-      .find((value) => value && value !== 'none') ?? '';
+    // Probe the actual generated utility in the browser. A surface may
+    // intentionally render flat cards on a given viewport, which should not
+    // make the token-bridge assertion depend on incidental page composition.
+    const shadowProbe = document.createElement('div');
+    shadowProbe.className = 'shadow-card';
+    document.body.appendChild(shadowProbe);
+    const shadow = getComputedStyle(shadowProbe).boxShadow;
+    shadowProbe.remove();
+
     const successBadge = document.querySelector('[data-status-badge][data-tone="success"], [data-status-badge][data-tone="emerald"]');
     const badgeBg = successBadge ? getComputedStyle(successBadge).backgroundColor : '';
     return { shadow, badgeBg };
   });
   expect(
     result.shadow,
-    'a token-backed card must resolve to a real shadow (token bridge working)',
+    'the shadow-card utility must resolve to a real shadow (token bridge working)',
   ).not.toBe('');
   expect(result.shadow).not.toBe('none');
   if (result.badgeBg) {
