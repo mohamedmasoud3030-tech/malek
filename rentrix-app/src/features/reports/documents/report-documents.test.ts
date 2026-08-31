@@ -93,8 +93,8 @@ describe('report-documents adapters', () => {
 
   it('#12 maps portfolio performance occupancy rows to generic_report', () => {
     const mockOccupancy: OccupancyChartRow[] = [
-      { property: 'برج الشروق', propertyId: 'p-1', shortPropertyId: 'p-1', hasTitle: true, occupied: 8, vacant: 2 },
-      { property: 'مجمع الواحة', propertyId: 'p-2', shortPropertyId: 'p-2', hasTitle: true, occupied: 10, vacant: 0 },
+      { property: 'برج الشروق', propertyId: 'p-1', shortPropertyId: 'p-1', hasTitle: true, occupied: 8, vacant: 2, nonRentable: 0 },
+      { property: 'مجمع الواحة', propertyId: 'p-2', shortPropertyId: 'p-2', hasTitle: true, occupied: 10, vacant: 0, nonRentable: 0 },
     ];
 
     const payload = toPortfolioPerformancePayload({
@@ -108,7 +108,7 @@ describe('report-documents adapters', () => {
     expect(payload.sections[0].rows[0][0]).toBe('برج الشروق');
     expect(payload.sections[0].rows[0][1]).toBe('8');
     expect(payload.sections[0].rows[0][2]).toBe('2');
-    expect(payload.sections[0].rows[0][4]).toBe('80%');
+    expect(payload.sections[0].rows[0][5]).toBe('80%');
   });
 
   it('#14 maps vacancy loss items correctly', () => {

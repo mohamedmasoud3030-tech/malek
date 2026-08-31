@@ -2,11 +2,12 @@ import { useMemo } from 'react';
 import { AlertTriangle, FileText, TrendingDown } from 'lucide-react';
 import { useDialogNavigate } from '@/app/router/background-location';
 import { Button } from '@/components/ui/button';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { formatDate, formatMoney } from '@/features/financials/components/financials-formatters';
 import { formatLatinNumber } from '@/lib/formatters';
 import type { VacancyAnalytics } from '@/features/units/vacancy-analytics';
 import { buildReportCsvFilename, downloadCsv, type ExpiringContractRow } from '../reports-page.helpers';
-import { ReportList, ReportListRow, ReportPanel, ReportState, ReportSummaryStrip } from '@/components/ui/report-section-primitives';
+import { ReportInsightNote, ReportList, ReportListRow, ReportPanel, ReportState, ReportSummaryStrip } from '@/components/ui/report-section-primitives';
 
 type ExpiringContractsSectionProps = Readonly<{
   expiringRows: ExpiringContractRow[];
@@ -15,10 +16,26 @@ type ExpiringContractsSectionProps = Readonly<{
   isLoading: boolean;
 }>;
 
+function urgencyTone(daysRemaining: number): 'danger' | 'warning' | 'info' {
+  if (daysRemaining <= 15) return 'danger';
+  if (daysRemaining <= 30) return 'warning';
+  return 'info';
+}
+
+function urgencyLabel(daysRemaining: number): string {
+  if (daysRemaining <= 7) return 'عاجل';
+  if (daysRemaining <= 15) return 'قريب جدًا';
+  if (daysRemaining <= 30) return 'يتطلب متابعة';
+  return 'ضمن النطاق';
+}
+
 /**
  * العقود القريبة من الانتهاء — deterministic leasing-risk view: days until
- * expiry, current contract value, vacancy duration and exposed income. No
- * renewal probability or predictive score is computed anywhere.
+ * expiry, current contract value, vacancy duration and reference rent
+ * exposure. No renewal probability or predictive score is computed anywhere.
+ *
+ * Reference rent for vacant units is an opportunity value — it is NOT an
+ * invoice, NOT an outstanding balance, and NOT a receivable.
  */
 export function ExpiringContractsSection({
   expiringRows,
@@ -37,6 +54,11 @@ export function ExpiringContractsSection({
     return { expiringRent, vacantRent, total: expiringRent + vacantRent };
   }, [expiringRows, vacancyAnalytics.vacantRows]);
 
+  const urgentCount = useMemo(
+    () => expiringRows.filter((row) => row.daysRemaining <= 15).length,
+    [expiringRows],
+  );
+
   const exportAction = canExportReports ? (
     <Button
       type="button"
@@ -52,6 +74,7 @@ export function ExpiringContractsSection({
           endDate: row.endDate,
           daysRemaining: row.daysRemaining,
           monthlyRent: row.monthlyRent,
+          urgency: urgencyLabel(row.daysRemaining),
         })),
       )}
       disabled={expiringRows.length === 0}
@@ -62,25 +85,20 @@ export function ExpiringContractsSection({
   ) : undefined;
 
   return (
-    <div className="space-y-4">
-      <ReportPanel
-        title="الدخل المعرض للخطر"
-        description="إيجار العقود القريبة من الانتهاء وإيجار الوحدات الشاغرة — أرقام فعلية من العقود والوحدات، بلا توقعات."
-        eyebrow="انكشاف تأجيري"
-        icon={TrendingDown}
-        isLoading={isLoading}
-      >
-        <div className="px-4 pt-3 sm:px-5">
-          <ReportSummaryStrip
-            dataReportSummary="expiring-income-risk"
-            items={[
-              { label: 'إيجار عقود قريبة من الانتهاء', value: formatMoney(exposedIncome.expiringRent), tone: 'warning' },
-              { label: 'إيجار وحدات شاغرة', value: formatMoney(exposedIncome.vacantRent), tone: 'warning' },
-              { label: 'الإجمالي المعرض', value: formatMoney(exposedIncome.total), tone: 'critical' },
-            ]}
-          />
-        </div>
-      </ReportPanel>
+    <div className="space-y-3">
+      <ReportSummaryStrip
+        dataReportSummary="expiring-income-risk"
+        items={[
+          { label: 'عقود تنتهي قريبًا', value: formatLatinNumber(expiringRows.length, 'ar'), detail: urgentCount > 0 ? `${formatLatinNumber(urgentCount, 'ar')} عاجل (≤15 يوم)` : 'لا يوجد عاجل', tone: urgentCount > 0 ? 'critical' : expiringRows.length > 0 ? 'warning' : undefined },
+          { label: 'إيجار عقود قريبة من الانتهاء', value: formatMoney(exposedIncome.expiringRent), detail: 'إيجار شهري تعاقدي فعلي' },
+          { label: 'إيجار مرجعي للشواغر', value: formatMoney(exposedIncome.vacantRent), detail: 'قيمة فرصة ضائعة — ليس مستحقًا' },
+          { label: 'إجمالي الانكشاف المرجعي', value: formatMoney(exposedIncome.total), detail: 'مرجعي للتخطيط لا محاسبي' },
+        ]}
+      />
+
+      <ReportInsightNote title="قراءة الانكشاف التأجيري">
+        إيجار العقود القريبة من الانتهاء هو إيجار تعاقدي فعلي معرض للتوقف عند انتهاء العقد. إيجار الوحدات الشاغرة هو سعر مرجعي يمثّل فرصة ضائعة وليس فاتورة أو رصيدًا مستحقًا. الأرقام للتخطيط واتخاذ قرار التجديد أو التأجير، وليست قيدًا محاسبيًا.
+      </ReportInsightNote>
 
       <ReportPanel
         title="العقود القريبة من الانتهاء"
@@ -101,8 +119,15 @@ export function ExpiringContractsSection({
                 key={row.contractId}
                 title={row.tenantName}
                 subtitle={`${row.propertyTitle} · ${row.unitNumber ? `وحدة ${row.unitNumber}` : 'وحدة غير محددة'}`}
-                meta={`ينتهي ${formatDate(row.endDate)} · ${formatLatinNumber(row.daysRemaining, 'ar')} يوم متبقٍ`}
-                value={<span dir="ltr">{formatMoney(row.monthlyRent)}</span>}
+                meta={`ينتهي ${formatDate(row.endDate)}`}
+                value={(
+                  <div className="space-y-1 text-end">
+                    <StatusBadge tone={urgencyTone(row.daysRemaining)}>
+                      {formatLatinNumber(row.daysRemaining, 'ar')} يوم · {urgencyLabel(row.daysRemaining)}
+                    </StatusBadge>
+                    <p className="text-xs font-medium text-muted-foreground" dir="ltr">{formatMoney(row.monthlyRent)}</p>
+                  </div>
+                )}
                 action={(
                   <Button
                     variant="secondary"

@@ -95,10 +95,11 @@ export function OverviewSection({
     (totals, row) => ({
       occupied: totals.occupied + row.occupied,
       vacant: totals.vacant + row.vacant,
+      nonRentable: totals.nonRentable + (row.nonRentable ?? 0),
     }),
-    { occupied: 0, vacant: 0 },
+    { occupied: 0, vacant: 0, nonRentable: 0 },
   );
-  const totalUnits = occupancy.occupied + occupancy.vacant;
+  const totalUnits = occupancy.occupied + occupancy.vacant + occupancy.nonRentable;
   const occupancyRate = totalUnits > 0 ? (occupancy.occupied / totalUnits) * 100 : 0;
   const overdueTotal = overdueSummary?.totalOverdue ?? report.outstanding;
   const expensesTotal = expenseRows.reduce((total, row) => total + row.total, 0);

@@ -62,8 +62,8 @@ describe('ReportsPage shaping helpers', () => {
       { property_id: 'alpha_property', status: 'maintenance' },
       { property_id: 'beta_property', status: 'occupied' },
     ])).toEqual([
-      { property: 'عقار بدون اسم', propertyId: 'alpha_property', shortPropertyId: '', hasTitle: false, occupied: 1, vacant: 2 },
-      { property: 'عقار بدون اسم', propertyId: 'beta_property', shortPropertyId: '', hasTitle: false, occupied: 1, vacant: 0 },
+      { property: 'عقار بدون اسم', propertyId: 'alpha_property', shortPropertyId: '', hasTitle: false, occupied: 1, vacant: 1, nonRentable: 1 },
+      { property: 'عقار بدون اسم', propertyId: 'beta_property', shortPropertyId: '', hasTitle: false, occupied: 1, vacant: 0, nonRentable: 0 },
     ]);
   });
 
@@ -73,7 +73,7 @@ describe('ReportsPage shaping helpers', () => {
       { property_id: 'alpha_property', status: 'rented' as any },
       { property_id: 'alpha_property', status: 'available' },
     ])).toEqual([
-      { property: 'عقار بدون اسم', propertyId: 'alpha_property', shortPropertyId: '', hasTitle: false, occupied: 2, vacant: 1 },
+      { property: 'عقار بدون اسم', propertyId: 'alpha_property', shortPropertyId: '', hasTitle: false, occupied: 2, vacant: 1, nonRentable: 0 },
     ]);
   });
 
@@ -89,9 +89,9 @@ describe('ReportsPage shaping helpers', () => {
         { id: 'gamma_property', title: '   ' }, // blank titles are ignored
       ],
     )).toEqual([
-      { property: 'برج النخيل', propertyId: 'beta_property', shortPropertyId: '', hasTitle: true, occupied: 1, vacant: 0 },
-      { property: 'عقار بدون اسم', propertyId: 'alpha_property', shortPropertyId: '', hasTitle: false, occupied: 1, vacant: 0 },
-      { property: 'عقار بدون اسم', propertyId: 'gamma_property', shortPropertyId: '', hasTitle: false, occupied: 0, vacant: 1 },
+      { property: 'برج النخيل', propertyId: 'beta_property', shortPropertyId: '', hasTitle: true, occupied: 1, vacant: 0, nonRentable: 0 },
+      { property: 'عقار بدون اسم', propertyId: 'alpha_property', shortPropertyId: '', hasTitle: false, occupied: 1, vacant: 0, nonRentable: 0 },
+      { property: 'عقار بدون اسم', propertyId: 'gamma_property', shortPropertyId: '', hasTitle: false, occupied: 0, vacant: 0, nonRentable: 1 },
     ]);
   });
 
@@ -141,7 +141,7 @@ describe('ReportsPage shaping helpers', () => {
   it('builds property performance rows as a decision report instead of separate data islands', () => {
     const rows = buildPropertyPerformanceRows({
       occupancyRows: [
-        { property: 'برج النخيل', propertyId: 'property_a', shortPropertyId: '', hasTitle: true, occupied: 3, vacant: 2 },
+        { property: 'برج النخيل', propertyId: 'property_a', shortPropertyId: '', hasTitle: true, occupied: 3, vacant: 2, nonRentable: 0 },
       ],
       contracts: [createContract({ id: 'contract_a', property_id: 'property_a', rent_amount: 1200 })],
       collectionRows: [{ propertyId: 'property_a', propertyTitle: 'برج النخيل', totalPaid: 900, paymentsCount: 1 }],
@@ -163,6 +163,7 @@ describe('ReportsPage shaping helpers', () => {
       referenceRevenue: 1200,
       occupiedUnits: 3,
       vacantUnits: 2,
+      nonRentableUnits: 0,
       collected: 900,
       overdue: 1200,
       expenses: 450,
@@ -175,7 +176,7 @@ describe('ReportsPage shaping helpers', () => {
 
   it('does not double-count closed maintenance costs already posted as expenses and ignores old costs', () => {
     const rows = buildPropertyPerformanceRows({
-      occupancyRows: [{ property: 'برج النخيل', propertyId: 'property_a', shortPropertyId: '', hasTitle: true, occupied: 1, vacant: 0 }],
+      occupancyRows: [{ property: 'برج النخيل', propertyId: 'property_a', shortPropertyId: '', hasTitle: true, occupied: 1, vacant: 0, nonRentable: 0 }],
       contracts: [createContract({ id: 'contract_a', property_id: 'property_a', rent_amount: 1200 })],
       collectionRows: [{ propertyId: 'property_a', propertyTitle: 'برج النخيل', totalPaid: 1000, paymentsCount: 3 }],
       period: { from: '2026-05-01', to: '2026-05-31', asOf: '2026-05-31' },
@@ -193,7 +194,7 @@ describe('ReportsPage shaping helpers', () => {
 
   it('counts a request closed after asOf as open historically, without treating its open-row cost as actual cost', () => {
     const rows = buildPropertyPerformanceRows({
-      occupancyRows: [{ property: 'برج النخيل', propertyId: 'property_a', shortPropertyId: '', hasTitle: true, occupied: 1, vacant: 0 }],
+      occupancyRows: [{ property: 'برج النخيل', propertyId: 'property_a', shortPropertyId: '', hasTitle: true, occupied: 1, vacant: 0, nonRentable: 0 }],
       contracts: [createContract({ id: 'contract_a', property_id: 'property_a', rent_amount: 1200 })],
       collectionRows: [],
       period: { from: '2026-05-01', to: '2026-05-31', asOf: '2026-05-31' },
@@ -264,5 +265,59 @@ describe('ReportsPage shaping helpers', () => {
     expect(buildReportCsvFilename('overdue-invoices')).toBe('overdue-invoices-2026-06-16.csv');
     expect(buildReportCsvFilename('aged-receivables')).toBe('aged-receivables-2026-06-16.csv');
     expect(buildReportCsvFilename('daily-collection')).toBe('daily-collection-2026-06-16.csv');
+  });
+});
+
+describe('Vacancy classification semantics (canonical three-way rule)', () => {
+  it('counts maintenance and reserved units as nonRentable, NOT as vacant', () => {
+    const rows = buildOccupancyRows([
+      { property_id: 'prop_1', status: 'occupied' },
+      { property_id: 'prop_1', status: 'available' },
+      { property_id: 'prop_1', status: 'maintenance' },
+      { property_id: 'prop_1', status: 'reserved' },
+    ]);
+
+    expect(rows[0]).toEqual({
+      property: 'عقار بدون اسم',
+      propertyId: 'prop_1',
+      shortPropertyId: '',
+      hasTitle: false,
+      occupied: 1,
+      vacant: 1,
+      nonRentable: 2,
+    });
+  });
+
+  it('only available units are vacant — never counts unknown statuses as vacant', () => {
+    const rows = buildOccupancyRows([
+      { property_id: 'prop_1', status: 'occupied' },
+      { property_id: 'prop_1', status: 'available' },
+      { property_id: 'prop_1', status: 'some_custom_status' as any },
+    ]);
+
+    expect(rows[0].vacant).toBe(1);
+    expect(rows[0].nonRentable).toBe(1);
+    expect(rows[0].occupied).toBe(1);
+  });
+
+  it('does not inflate vacant count in property performance when maintenance units exist', () => {
+    const rows = buildPropertyPerformanceRows({
+      occupancyRows: [
+        { property: 'Test', propertyId: 'prop_1', shortPropertyId: '', hasTitle: true, occupied: 2, vacant: 1, nonRentable: 3 },
+      ],
+      contracts: [],
+      collectionRows: [],
+      period: { from: '2026-05-01', to: '2026-05-31', asOf: '2026-05-31' },
+      overdueRows: [],
+      expenseRows: [],
+      maintenanceRows: [],
+      vacancyRows: [],
+    });
+
+    expect(rows[0].vacantUnits).toBe(1);
+    expect(rows[0].nonRentableUnits).toBe(3);
+    expect(rows[0].occupiedUnits).toBe(2);
+    // Occupancy rate is calculated over ALL units including nonRentable
+    expect(rows[0].occupancyRate).toBeCloseTo(33.33, 1);
   });
 });

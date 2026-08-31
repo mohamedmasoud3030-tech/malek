@@ -335,4 +335,35 @@ describe('professional-property-report adapter', () => {
       payload: expect.objectContaining({ reportType: 'Property_Performance_Report' }),
     }));
   });
+
+  it('includes nonRentable in the occupancy denominator — never folds non-rentable into vacant', () => {
+    const input = {
+      ...makeAggregateInput(),
+      occupancyRows: [
+        { occupied: 7, vacant: 2, nonRentable: 1 },
+      ],
+    };
+    const data = aggregatePropertyReportData(input);
+
+    // total units = 7 + 2 + 1 = 10
+    expect(data.occupancy.units).toBe(10);
+    // vacant count stays 2 — nonRentable is NOT vacant
+    expect(data.occupancy.vacant).toBe(2);
+    expect(data.occupancy.nonRentable).toBe(1);
+    // occupancy rate = 7 / 10 = 70%, NOT 7 / 9 ≈ 77.78%
+    expect(data.occupancy.rate).toBeCloseTo(70, 1);
+    expect(data.occupancy.occupied).toBe(7);
+  });
+
+  it('defaults nonRentable to 0 when rows omit the field (backward-compatible)', () => {
+    const input = {
+      ...makeAggregateInput(),
+      occupancyRows: [{ occupied: 8, vacant: 2 }],
+    };
+    const data = aggregatePropertyReportData(input);
+
+    expect(data.occupancy.units).toBe(10);
+    expect(data.occupancy.nonRentable).toBe(0);
+    expect(data.occupancy.rate).toBeCloseTo(80, 1);
+  });
 });

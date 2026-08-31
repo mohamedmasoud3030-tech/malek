@@ -37,7 +37,8 @@ export function PropertyAnalyticsSection({ occupancyRows, expenseRows, performan
   const totalProperties = occupancyRows.length;
   const totalOccupiedUnits = occupancyRows.reduce((total, row) => total + row.occupied, 0);
   const totalVacantUnits = occupancyRows.reduce((total, row) => total + row.vacant, 0);
-  const totalPortfolioUnits = totalOccupiedUnits + totalVacantUnits;
+  const totalNonRentableUnits = occupancyRows.reduce((total, row) => total + (row.nonRentable ?? 0), 0);
+  const totalPortfolioUnits = totalOccupiedUnits + totalVacantUnits + totalNonRentableUnits;
   const overallOccupancyRate = totalPortfolioUnits > 0 ? Math.round((totalOccupiedUnits / totalPortfolioUnits) * 100) : 0;
   const totalExpenses = expenseRows.reduce((total, row) => total + row.total, 0);
   const expensePerOccupiedUnit = totalOccupiedUnits > 0 ? totalExpenses / totalOccupiedUnits : 0;
@@ -46,10 +47,14 @@ export function PropertyAnalyticsSection({ occupancyRows, expenseRows, performan
     ? (highestExpenseProperty.total / totalExpenses) * 100
     : 0;
   const lowestOccupancyProperty = [...occupancyRows]
-    .filter((row) => row.occupied + row.vacant > 0)
-    .sort((a, b) => (a.occupied / (a.occupied + a.vacant)) - (b.occupied / (b.occupied + b.vacant)))[0];
+    .filter((row) => row.occupied + row.vacant + (row.nonRentable ?? 0) > 0)
+    .sort((a, b) => {
+      const totalA = a.occupied + a.vacant + (a.nonRentable ?? 0);
+      const totalB = b.occupied + b.vacant + (b.nonRentable ?? 0);
+      return (a.occupied / totalA) - (b.occupied / totalB);
+    })[0];
   const lowestOccupancyRate = lowestOccupancyProperty
-    ? (lowestOccupancyProperty.occupied / (lowestOccupancyProperty.occupied + lowestOccupancyProperty.vacant)) * 100
+    ? (lowestOccupancyProperty.occupied / (lowestOccupancyProperty.occupied + lowestOccupancyProperty.vacant + (lowestOccupancyProperty.nonRentable ?? 0))) * 100
     : 0;
 
   const { companySettings: documentSettings, isReady: isDocumentSettingsReady } = useDocumentSettings();
@@ -180,7 +185,7 @@ export function PropertyAnalyticsSection({ occupancyRows, expenseRows, performan
         ) : (
           <ReportList>
             {occupancyRows.map((row) => {
-              const units = row.occupied + row.vacant;
+              const units = row.occupied + row.vacant + (row.nonRentable ?? 0);
               const rate = units > 0 ? Math.round((row.occupied / units) * 100) : 0;
               const expense = expenseByProperty.get(row.propertyId);
               const propertyExpensePerOccupied = row.occupied > 0 ? (expense?.total ?? 0) / row.occupied : 0;
@@ -188,7 +193,7 @@ export function PropertyAnalyticsSection({ occupancyRows, expenseRows, performan
                 <ReportListRow
                   key={row.propertyId}
                   title={row.property}
-                  subtitle={`${formatLatinNumber(row.occupied, 'ar')} مشغولة · ${formatLatinNumber(row.vacant, 'ar')} شاغرة · ${formatLatinNumber(expense?.count ?? 0, 'ar')} مصروفات`}
+                  subtitle={`${formatLatinNumber(row.occupied, 'ar')} مشغولة · ${formatLatinNumber(row.vacant, 'ar')} شاغرة · ${formatLatinNumber(row.nonRentable ?? 0, 'ar')} غير قابلة للتأجير · ${formatLatinNumber(expense?.count ?? 0, 'ar')} مصروفات`}
                   meta={`${formatLatinNumber(units, 'ar')} وحدة · ${formatMoney(propertyExpensePerOccupied)} للوحدة المشغولة`}
                   value={(<div className="text-end"><p dir="ltr">{rate}%</p><p className="mt-1 text-xs font-medium text-muted-foreground" dir="ltr">{formatMoney(expense?.total ?? 0)}</p></div>)}
                   action={(

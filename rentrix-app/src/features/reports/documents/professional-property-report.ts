@@ -99,7 +99,7 @@ export type PropertyReportData = {
   collectionRateCurrent: number | null;
   collectionRatePrevious: number | null;
   asOf: string;
-  occupancy: { units: number; occupied: number; vacant: number; rate: number | null };
+  occupancy: { units: number; occupied: number; vacant: number; nonRentable: number; rate: number | null };
   summary: FinancialPeriodSummaryReport | null;
   overdueTotal: number | null;
   arrearsAsOf: string | null;
@@ -216,11 +216,12 @@ function countMaintenanceOpenAsOf(rows: readonly Maintenance[], asOf: string): n
   return rows.filter((row) => maintenanceRequestOpenAsOf(row, asOf.slice(0, 10))).length;
 }
 
-function occupancyFromRows(rows: Array<{ occupied: number; vacant: number }>): { units: number; occupied: number; vacant: number; rate: number | null } {
+function occupancyFromRows(rows: Array<{ occupied: number; vacant: number; nonRentable?: number }>): { units: number; occupied: number; vacant: number; nonRentable: number; rate: number | null } {
   const occupied = rows.reduce((sum, row) => sum + row.occupied, 0);
   const vacant = rows.reduce((sum, row) => sum + row.vacant, 0);
-  const units = occupied + vacant;
-  return { units, occupied, vacant, rate: units > 0 ? (occupied / units) * 100 : null };
+  const nonRentable = rows.reduce((sum, row) => sum + (row.nonRentable ?? 0), 0);
+  const units = occupied + vacant + nonRentable;
+  return { units, occupied, vacant, nonRentable, rate: units > 0 ? (occupied / units) * 100 : null };
 }
 
 /* ------------------------------------------------------------------ */
@@ -569,7 +570,7 @@ export type PropertyReadModelInput = {
   from: string;
   to: string;
   asOf: string;
-  occupancyRows: Array<{ occupied: number; vacant: number }>;
+  occupancyRows: Array<{ occupied: number; vacant: number; nonRentable?: number }>;
   summary: FinancialPeriodSummaryReport | null;
   overdueTotal: number | null;
   arrears: AgedReceivablesReport | null;

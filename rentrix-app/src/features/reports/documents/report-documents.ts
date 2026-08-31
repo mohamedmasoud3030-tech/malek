@@ -169,16 +169,18 @@ export function toPortfolioPerformancePayload(params: {
 
   let totalOccupied = 0;
   let totalVacant = 0;
+  let totalNonRentable = 0;
 
   const rows: string[][] = occupancyRows.map((row) => {
     totalOccupied += row.occupied;
     totalVacant += row.vacant;
-    const totalUnits = row.occupied + row.vacant;
+    totalNonRentable += row.nonRentable ?? 0;
+    const totalUnits = row.occupied + row.vacant + (row.nonRentable ?? 0);
     const occupancyRate = totalUnits > 0 ? `${Math.round((row.occupied / totalUnits) * 100)}%` : '—';
-    return [row.property, String(row.occupied), String(row.vacant), String(totalUnits), occupancyRate];
+    return [row.property, String(row.occupied), String(row.vacant), String(row.nonRentable ?? 0), String(totalUnits), occupancyRate];
   });
 
-  const grandTotal = totalOccupied + totalVacant;
+  const grandTotal = totalOccupied + totalVacant + totalNonRentable;
   const overallRate = grandTotal > 0 ? `${Math.round((totalOccupied / grandTotal) * 100)}%` : '—';
 
   return {
@@ -189,12 +191,12 @@ export function toPortfolioPerformancePayload(params: {
     sections: [
       {
         title: 'مؤشرات الإشغال والطاقة الاستيعابية للعقارات',
-        columns: ['اسم العقار', 'الوحدات المؤجرة', 'الوحدات الشاغرة', 'إجمالي الوحدات', 'نسبة الإشغال'],
+        columns: ['اسم العقار', 'الوحدات المؤجرة', 'الوحدات الشاغرة', 'غير قابلة للتأجير', 'إجمالي الوحدات', 'نسبة الإشغال'],
         rows,
-        totals: ['الإجمالي العام للمحفظة', String(totalOccupied), String(totalVacant), String(grandTotal), overallRate],
+        totals: ['الإجمالي العام للمحفظة', String(totalOccupied), String(totalVacant), String(totalNonRentable), String(grandTotal), overallRate],
       },
     ],
-    totalSummary: performanceNote ?? `إجمالي الوحدات: ${grandTotal} | المؤجر: ${totalOccupied} (${overallRate}) | الشاغر: ${totalVacant}`,
+    totalSummary: performanceNote ?? `إجمالي الوحدات: ${grandTotal} | المؤجر: ${totalOccupied} (${overallRate}) | الشاغر: ${totalVacant} | غير قابلة للتأجير: ${totalNonRentable}`,
   };
 }
 
