@@ -1,11 +1,12 @@
-import { Building2, ClipboardList } from 'lucide-react';
+import { Building2, ClipboardList, ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { formatMoney, formatShortId } from '@/features/financials/components/financials-formatters';
 import { useExpenseBreakdownReport } from '@/features/financials/reports/useFinancialReports';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
 import { documentService } from '@/services/documents/DocumentService';
 import { runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
 import { toReportDocumentPayload, type ReportDocumentData } from '@/services/documents/documentPayloadAdapters';
-import { buildReportCsvFilename, getTodayLocalDateString } from '../reports-page.helpers';
+import { buildReportCsvFilename } from '../reports-page.helpers';
 import {
   ReportColumns,
   ReportInsightNote,
@@ -18,17 +19,29 @@ import {
 } from '@/components/ui/report-section-primitives';
 import { formatLatinNumber } from '@/lib/formatters';
 import { ReportShareActions } from './ReportShareActions';
+import type { ReportDrillHandler } from '../report-workspaces';
 
-export function ExpensesSection({ report, canExportReports, isLoading }: Readonly<{
+export function ExpensesSection({
+  report,
+  canExportReports,
+  isLoading,
+  from,
+  to,
+  onDrill,
+}: Readonly<{
   report: NonNullable<ReturnType<typeof useExpenseBreakdownReport>['data']> | undefined;
   canExportReports: boolean;
   isLoading: boolean;
+  from: string;
+  to: string;
+  onDrill?: ReportDrillHandler;
 }>) {
   const categoryRows = report?.byCategory ?? [];
   const propertyRows = report?.byProperty ?? [];
   const totalExpenses = report?.totalExpenses ?? 0;
   const expensesCount = report?.expensesCount ?? 0;
-  const averageExpense = expensesCount > 0 ? totalExpenses / expensesCount : 0;
+  const averageExpense = expensesCount > 0 ? totalExpenses / expensesCount : undefined;
+
   const topCategory = [...categoryRows].sort((a, b) => b.total - a.total)[0];
   const topProperty = [...propertyRows].sort((a, b) => b.total - a.total)[0];
   const topCategoryShare = topCategory && totalExpenses > 0 ? (topCategory.total / totalExpenses) * 100 : 0;
@@ -37,38 +50,43 @@ export function ExpensesSection({ report, canExportReports, isLoading }: Readonl
   const { companySettings: documentSettings, isReady: isDocumentSettingsReady } = useDocumentSettings();
   const currencySymbol = documentSettings.currencySymbol || documentSettings.currency;
 
-  const buildExpensesReportData = (): ReportDocumentData => {
-    const todayStr = getTodayLocalDateString();
-    return {
-      reportTitle: 'تقرير وتوزيع المصروفات التشغيلية',
-      reportType: 'Operational_Expenses_Report',
-      periodFrom: todayStr,
-      periodTo: todayStr,
-      sections: [
-        {
-          title: 'توزيع المصروفات حسب التصنيف',
-          columns: ['التصنيف', 'عدد السندات', 'المبلغ الإجمالي'],
-          rows: categoryRows.map((row) => [row.category, row.count, `${formatLatinNumber(row.total, 'ar-OM')} ${currencySymbol}`]),
-          totals: ['الإجمالي العام', '', `${formatLatinNumber(totalExpenses, 'ar-OM')} ${currencySymbol}`],
-        },
-        {
-          title: 'توزيع المصروفات حسب العقارات',
-          columns: ['العقار', 'عدد الحركات', 'المبلغ الإجمالي'],
-          rows: propertyRows.map((row) => [
-            row.propertyTitle ?? formatShortId(row.propertyId),
-            row.count,
-            `${formatLatinNumber(row.total, 'ar-OM')} ${currencySymbol}`,
-          ]),
-        },
-      ],
-      totalSummary: `إجمالي النفقات: ${formatLatinNumber(totalExpenses, 'ar-OM')} ${currencySymbol} | عدد السندات: ${expensesCount}`,
-    };
-  };
+  const buildExpensesReportData = (): ReportDocumentData => ({
+    reportTitle: 'تقرير وتوزيع المصروفات التشغيلية',
+    reportType: 'Operational_Expenses_Report',
+    periodFrom: from,
+    periodTo: to,
+    sections: [
+      {
+        title: 'توزيع المصروفات حسب التصنيف',
+        columns: ['التصنيف', 'عدد السندات', 'المبلغ الإجمالي'],
+        rows: categoryRows.map((row) => [
+          row.category,
+          row.count,
+          `${formatLatinNumber(row.total, 'ar-OM')} ${currencySymbol}`,
+        ]),
+        totals: ['الإجمالي العام', '', `${formatLatinNumber(totalExpenses, 'ar-OM')} ${currencySymbol}`],
+      },
+      {
+        title: 'توزيع المصروفات حسب العقارات',
+        columns: ['العقار', 'عدد الحركات', 'المبلغ الإجمالي'],
+        rows: propertyRows.map((row) => [
+          row.propertyTitle ?? formatShortId(row.propertyId),
+          row.count,
+          `${formatLatinNumber(row.total, 'ar-OM')} ${currencySymbol}`,
+        ]),
+      },
+    ],
+    totalSummary: `إجمالي النفقات: ${formatLatinNumber(totalExpenses, 'ar-OM')} ${currencySymbol} | عدد السندات: ${expensesCount}`,
+  });
 
   const handlePrintExpensesReport = async () => {
     await runGuardedDocumentAction({
       isReady: isDocumentSettingsReady,
-      operation: () => documentService.printDocument('generic_report', { settings: documentSettings, payload: toReportDocumentPayload(buildExpensesReportData()) }),
+      operation: () =>
+        documentService.printDocument('generic_report', {
+          settings: documentSettings,
+          payload: toReportDocumentPayload(buildExpensesReportData()),
+        }),
       fallbackMessage: 'تعذرت طباعة التقرير.',
     });
   };
@@ -76,12 +94,15 @@ export function ExpensesSection({ report, canExportReports, isLoading }: Readonl
   const handleDownloadExpensesReport = async () => {
     await runGuardedDocumentAction({
       isReady: isDocumentSettingsReady,
-      operation: () => documentService.downloadDocumentPdf('generic_report', { settings: documentSettings, payload: toReportDocumentPayload(buildExpensesReportData()) }),
+      operation: () =>
+        documentService.downloadDocumentPdf('generic_report', {
+          settings: documentSettings,
+          payload: toReportDocumentPayload(buildExpensesReportData()),
+        }),
       fallbackMessage: 'تعذر تنزيل ملف PDF.',
     });
   };
 
-  const todayStr = getTodayLocalDateString();
   const actions = canExportReports ? (
     <ReportShareActions
       className="flex flex-wrap gap-2"
@@ -90,9 +111,9 @@ export function ExpensesSection({ report, canExportReports, isLoading }: Readonl
         section: 'analytics',
         view: 'expenses',
         filters: {
-          from: todayStr,
-          to: todayStr,
-          asOf: todayStr,
+          from,
+          to,
+          asOf: to,
           propertyId: '',
           unitId: '',
           tenantId: '',
@@ -112,10 +133,28 @@ export function ExpensesSection({ report, canExportReports, isLoading }: Readonl
       <ReportSummaryStrip
         dataReportSummary="expenses"
         items={[
-          { label: 'إجمالي المصروفات', value: formatMoney(totalExpenses), detail: `${formatLatinNumber(expensesCount, 'ar')} حركة` },
-          { label: 'متوسط المصروف', value: formatMoney(averageExpense), detail: 'لكل حركة مسجلة' },
-          { label: 'التصنيفات', value: formatLatinNumber(categoryRows.length, 'ar'), detail: topCategory ? `الأعلى: ${topCategory.category}` : 'لا توجد تصنيفات' },
-          { label: 'العقارات المتأثرة', value: formatLatinNumber(propertyRows.length, 'ar'), detail: topProperty ? `الأعلى: ${topProperty.propertyTitle ?? formatShortId(topProperty.propertyId)}` : 'لا توجد عقارات' },
+          {
+            label: 'إجمالي المصروفات',
+            value: formatMoney(totalExpenses),
+            detail: `${formatLatinNumber(expensesCount, 'ar')} حركة`,
+          },
+          {
+            label: 'متوسط المصروف',
+            value: averageExpense !== undefined ? formatMoney(averageExpense) : '—',
+            detail: averageExpense !== undefined ? 'لكل حركة مسجلة' : 'لا حركات في الفترة',
+          },
+          {
+            label: 'التصنيفات',
+            value: formatLatinNumber(categoryRows.length, 'ar'),
+            detail: topCategory ? `الأعلى: ${topCategory.category}` : 'لا توجد تصنيفات',
+          },
+          {
+            label: 'العقارات المتأثرة',
+            value: formatLatinNumber(propertyRows.length, 'ar'),
+            detail: topProperty
+              ? `الأعلى: ${topProperty.propertyTitle ?? formatShortId(topProperty.propertyId)}`
+              : 'لا توجد عقارات',
+          },
         ]}
       />
 
@@ -152,7 +191,9 @@ export function ExpensesSection({ report, canExportReports, isLoading }: Readonl
           isLoading={isLoading}
         >
           {categoryRows.length === 0 ? (
-            <div className="p-4"><ReportState message="لا توجد مصروفات في الفترة المحددة." /></div>
+            <div className="p-4">
+              <ReportState message="لا توجد مصروفات في الفترة المحددة." />
+            </div>
           ) : (
             <ReportList>
               {categoryRows.map((row) => (
@@ -169,23 +210,46 @@ export function ExpensesSection({ report, canExportReports, isLoading }: Readonl
 
         <ReportPanel
           title="المصروفات حسب العقار"
-          description="العقارات الأعلى تحمّلًا للتكاليف داخل النطاق."
+          description={
+            onDrill
+              ? 'العقارات الأعلى تحمّلًا — افتح النظرة التشغيلية مع فلتر العقار.'
+              : 'العقارات الأعلى تحمّلًا للتكاليف داخل النطاق.'
+          }
           eyebrow="تحليل المحفظة"
           icon={Building2}
           isLoading={isLoading}
         >
           {propertyRows.length === 0 ? (
-            <div className="p-4"><ReportState message="لا توجد مصروفات مرتبطة بعقارات في الفترة المحددة." /></div>
+            <div className="p-4">
+              <ReportState message="لا توجد مصروفات مرتبطة بعقارات في الفترة المحددة." />
+            </div>
           ) : (
             <ReportList>
-              {propertyRows.map((row) => (
-                <ReportListRow
-                  key={row.propertyId}
-                  title={row.propertyTitle ?? formatShortId(row.propertyId)}
-                  subtitle={`${formatLatinNumber(row.count, 'ar')} حركة`}
-                  value={<span dir="ltr">{formatMoney(row.total)}</span>}
-                />
-              ))}
+              {propertyRows.map((row) => {
+                const label = row.propertyTitle ?? formatShortId(row.propertyId);
+                return (
+                  <ReportListRow
+                    key={row.propertyId}
+                    title={label}
+                    subtitle={`${formatLatinNumber(row.count, 'ar')} حركة`}
+                    value={<span dir="ltr">{formatMoney(row.total)}</span>}
+                    action={
+                      onDrill ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onDrill('operations', 'operations_overview', { propertyId: row.propertyId })}
+                          className="min-h-11 gap-1 px-2 text-xs text-muted-foreground hover:text-primary"
+                          aria-label={`فتح النظرة التشغيلية لـ ${label}`}
+                        >
+                          عرض
+                          <ArrowLeft className="size-3.5" aria-hidden="true" />
+                        </Button>
+                      ) : undefined
+                    }
+                  />
+                );
+              })}
             </ReportList>
           )}
         </ReportPanel>
@@ -193,4 +257,3 @@ export function ExpensesSection({ report, canExportReports, isLoading }: Readonl
     </div>
   );
 }
-
