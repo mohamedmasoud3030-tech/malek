@@ -278,7 +278,7 @@ export function InvoiceListSection({
         </FinanceFilterBar>
       </FinanceSection>
 
-      <FinanceSection ariaLabel="سجل الفواتير">
+      <FinanceSection ariaLabel="قائمة الفواتير">
         <div data-finance-table-wrapper>
           <p className="text-xs font-bold text-muted-foreground" aria-live="polite">
             {total} فاتورة مطابقة · اضغط الصف للمعاينة أو «تحصيل» للدفع مباشرة
