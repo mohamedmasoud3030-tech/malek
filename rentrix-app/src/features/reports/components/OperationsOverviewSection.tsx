@@ -90,7 +90,6 @@ export function OperationsOverviewSection({
     [expenseReport?.byCategory],
   );
 
-  // Insight: what is the most operationally significant signal right now?
   const insightBody = (() => {
     if (urgentOpenRequests > 0 && openRequests > 0 && (urgentOpenRequests / openRequests) >= 0.5) {
       return `نصف الطلبات المفتوحة أو أكثر مصنّفة عاجلة (${formatLatinNumber(urgentOpenRequests, 'ar')} من ${formatLatinNumber(openRequests, 'ar')}). راجع جدولة التنفيذ وأولويات الفريق.`;
@@ -198,7 +197,7 @@ export function OperationsOverviewSection({
                         variant="ghost"
                         size="sm"
                         onClick={() => onDrill('properties', undefined, { propertyId: row.propertyId })}
-                        className="min-h-9 px-2 text-muted-foreground hover:text-primary"
+                        className="min-h-11 px-2 text-muted-foreground hover:text-primary"
                         aria-label={`عرض تفاصيل ${row.propertyTitle ?? 'عقار غير محدد'}`}
                       >
                         <ArrowLeft className="size-3.5" aria-hidden="true" />
