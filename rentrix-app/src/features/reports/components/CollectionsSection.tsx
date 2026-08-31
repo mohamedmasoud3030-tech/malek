@@ -41,7 +41,7 @@ export function CollectionsSection({ summary, collectionRate, rows, receiptRows,
   // reconstructed from rendered rows.
   const dailyRowsTotal = rows.reduce((total, row) => total + row.totalPaid, 0);
   const totalCollected = summary?.paid ?? dailyRowsTotal;
-  const isCollectionRateAvailable = Number.isFinite(collectionRate);
+  const isCollectionRateAvailable = typeof collectionRate === 'number' && Number.isFinite(collectionRate);
   const collectionRateLabel = isCollectionRateAvailable
     ? `${formatLatinNumber(Math.round(collectionRate!), 'ar')}%`
     : 'غير متاحة';
