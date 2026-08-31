@@ -57,13 +57,13 @@ export function FilterBar({
   const hasFilterContent = Boolean(filters || advancedFilters || actions || activeFilterCount > 0);
 
   return (
-    <div className="min-w-0 space-y-1.5" data-search-filter-system>
+    <div className="min-w-0 space-y-1" data-search-filter-system>
       <section
         data-filter-bar
         data-register-toolbar
         aria-label="البحث والتصفية"
         className={cn(
-          'flex min-w-0 items-center gap-2 border-y border-border/50 bg-muted/10 py-2',
+          'flex min-w-0 items-center gap-2 !rounded-none !border-x-0 border-y border-border/50 !bg-transparent !px-0 py-1.5 shadow-none sm:py-2',
           className,
         )}
       >
@@ -108,7 +108,7 @@ export function FilterBar({
             <SlidersHorizontal className="me-1.5 size-3.5" aria-hidden="true" />
             <span>{advancedFilterTitle}</span>
             {activeFilterCount > 0 ? (
-              <span className="rounded-md bg-primary/12 px-1.5 py-0.5 text-[11px] font-black text-primary tabular-nums">
+              <span className="rounded-md bg-primary/12 px-1.5 py-0.5 text-[11px] font-black text-primary">
                 {activeFilterCount}
               </span>
             ) : null}
@@ -120,7 +120,7 @@ export function FilterBar({
             type="button"
             variant={activeFilterCount > 0 ? 'secondary' : 'ghost'}
             size="icon"
-            className="relative size-11 shrink-0 rounded-xl shadow-none md:hidden"
+            className="relative size-11 shrink-0 rounded-lg shadow-none md:hidden"
             aria-label={activeFilterCount > 0 ? `${advancedFilterTitle}، ${activeFilterCount} نشطة` : advancedFilterTitle}
             aria-expanded={filtersOpen}
             aria-haspopup="dialog"
@@ -129,7 +129,7 @@ export function FilterBar({
             <SlidersHorizontal className="size-4" aria-hidden="true" />
             {activeFilterCount > 0 ? (
               <span
-                className="absolute -end-1 -top-1 grid min-h-5 min-w-5 place-items-center rounded-full bg-primary px-1 text-[10px] font-black leading-none text-primary-foreground tabular-nums"
+                className="absolute -end-1 -top-1 grid min-h-5 min-w-5 place-items-center rounded-full bg-primary px-1 text-[10px] font-black leading-none text-primary-foreground"
                 aria-hidden="true"
               >
                 {activeFilterCount}
