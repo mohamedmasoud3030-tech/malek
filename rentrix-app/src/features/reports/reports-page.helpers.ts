@@ -29,6 +29,13 @@ export type OccupancyChartRow = {
   hasTitle: boolean;
   occupied: number;
   vacant: number;
+  /**
+   * Units that are not rentable right now (maintenance, reserved, or any
+   * status that is neither occupied nor genuinely available for lease).
+   * They are NOT vacant — a non-rentable unit must not be counted as
+   * available stock or as an opportunity for letting.
+   */
+  nonRentable: number;
 };
 export type PaymentsTrendRow = { month: string; collections: number; overdue: number };
 
@@ -38,6 +45,7 @@ export type PropertyPerformanceRow = Readonly<{
   referenceRevenue: number;
   occupiedUnits: number;
   vacantUnits: number;
+  nonRentableUnits: number;
   occupancyRate: number;
   longestVacancyDays: number;
   collected: number;
@@ -55,6 +63,7 @@ type MutablePropertyPerformanceDraft = {
   referenceRevenue: number;
   occupiedUnits: number;
   vacantUnits: number;
+  nonRentableUnits: number;
   longestVacancyDays: number;
   collected: number;
   overdue: number;
@@ -92,6 +101,7 @@ function ensurePropertyPerformanceRow(
     referenceRevenue: 0,
     occupiedUnits: 0,
     vacantUnits: 0,
+    nonRentableUnits: 0,
     longestVacancyDays: 0,
     collected: 0,
     overdue: 0,
@@ -164,6 +174,7 @@ export function buildPropertyPerformanceRows({
     const property = ensurePropertyPerformanceRow(rowsByProperty, row.propertyId, row.property);
     property.occupiedUnits += row.occupied;
     property.vacantUnits += row.vacant;
+    property.nonRentableUnits += row.nonRentable ?? 0;
   }
 
   for (const contract of contracts) {
@@ -212,7 +223,7 @@ export function buildPropertyPerformanceRows({
 
   return Array.from(rowsByProperty.values())
     .map((row) => {
-      const totalUnits = row.occupiedUnits + row.vacantUnits;
+      const totalUnits = row.occupiedUnits + row.vacantUnits + row.nonRentableUnits;
       const occupancyRate = totalUnits > 0 ? (row.occupiedUnits / totalUnits) * 100 : 0;
       const overduePressure = row.referenceRevenue > 0 ? Math.min(40, (row.overdue / row.referenceRevenue) * 30) : row.overdue > 0 ? 25 : 0;
       const vacancyPressure = Math.min(30, row.vacantUnits * 6 + Math.max(0, row.longestVacancyDays - 30) / 3);
@@ -343,9 +354,11 @@ function addDays(date: Date, days: number) {
   return nextDate;
 }
 
-function isOccupiedUnitStatus(status: unknown) {
+function normalizeUnitStatusForOccupancy(status: unknown): 'occupied' | 'available' | 'nonRentable' {
   const normalized = String(status ?? '').trim().toLowerCase();
-  return normalized === 'occupied' || normalized === 'rented';
+  if (normalized === 'occupied' || normalized === 'rented') return 'occupied';
+  if (normalized === 'available') return 'available';
+  return 'nonRentable';
 }
 
 function toDateOnlyTimestamp(value: string) {
@@ -390,6 +403,12 @@ export function usePropertyTitles(options?: Readonly<{ enabled?: boolean }>) {
   });
 }
 
+/**
+ * Per-property occupancy aggregation. Uses the canonical three-way unit
+ * classification so that non-rentable units (maintenance, reserved, etc.)
+ * are never silently counted as vacant. A unit is vacant only when its
+ * status is `available` — genuinely ready to be leased.
+ */
 export function buildOccupancyRows(
   units: Pick<Unit, 'property_id' | 'status'>[] = [],
   properties: ReadonlyMap<string, string> | readonly { id: string; title: string | null }[] = new Map(),
@@ -409,10 +428,12 @@ export function buildOccupancyRows(
     const id = unit.property_id;
     const title = titleById.get(id);
     const hasTitle = Boolean(title);
+    const status = normalizeUnitStatusForOccupancy(unit.status);
     const existing = rowsByProperty.get(id);
     if (existing) {
-      if (isOccupiedUnitStatus(unit.status)) existing.occupied += 1;
-      else existing.vacant += 1;
+      if (status === 'occupied') existing.occupied += 1;
+      else if (status === 'available') existing.vacant += 1;
+      else existing.nonRentable += 1;
       continue;
     }
     const row: OccupancyChartRow = {
@@ -420,8 +441,9 @@ export function buildOccupancyRows(
       propertyId: id,
       shortPropertyId: '',
       hasTitle,
-      occupied: isOccupiedUnitStatus(unit.status) ? 1 : 0,
-      vacant: isOccupiedUnitStatus(unit.status) ? 0 : 1,
+      occupied: status === 'occupied' ? 1 : 0,
+      vacant: status === 'available' ? 1 : 0,
+      nonRentable: status === 'nonRentable' ? 1 : 0,
     };
     rowsByProperty.set(id, row);
   }

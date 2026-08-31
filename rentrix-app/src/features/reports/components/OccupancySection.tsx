@@ -46,6 +46,7 @@ export function OccupancySection({
   const longestVacant = vacancyAnalytics.vacantRows[0];
   const occupancyChange = vacancyAnalytics.occupancyChangePoints;
   const occupancyChangeLabel = `${occupancyChange >= 0 ? '+' : ''}${occupancyChange.toFixed(1)} نقطة`;
+  const nonRentableCount = vacancyAnalytics.nonRentableUnits;
 
   const { companySettings: documentSettings, isReady: isDocumentSettingsReady } = useDocumentSettings();
 
@@ -59,13 +60,13 @@ export function OccupancySection({
       sections: [
         {
           title: 'الإشغال حسب العقار',
-          columns: ['العقار', 'إجمالي الوحدات', 'المشغولة', 'غير المشغولة', 'نسبة الإشغال'],
+          columns: ['العقار', 'إجمالي الوحدات', 'المشغولة', 'الشاغرة فعلاً', 'غير قابلة للتأجير', 'نسبة الإشغال'],
           rows: occupancyRows.map((row) => {
-            const total = row.occupied + row.vacant;
+            const total = row.occupied + row.vacant + row.nonRentable;
             const rate = total > 0 ? Math.round((row.occupied / total) * 100) : 0;
-            return [row.property, total, row.occupied, row.vacant, `${rate}%`];
+            return [row.property, total, row.occupied, row.vacant, row.nonRentable, `${rate}%`];
           }),
-          totals: ['الإجمالي العام', `${totalUnits}`, `${vacancyAnalytics.occupiedUnits}`, `${totalUnits - vacancyAnalytics.occupiedUnits}`, `${roundedOccupancyRate}%`],
+          totals: ['الإجمالي العام', `${totalUnits}`, `${vacancyAnalytics.occupiedUnits}`, `${vacancyAnalytics.availableUnits}`, `${nonRentableCount}`, `${roundedOccupancyRate}%`],
         },
         {
           title: 'الوحدات الشاغرة حسب مدة الشغور',
@@ -122,6 +123,7 @@ export function OccupancySection({
         items={[
           { label: 'نسبة الإشغال', value: `${roundedOccupancyRate}%`, detail: `${number(vacancyAnalytics.occupiedUnits)} من ${number(totalUnits)} وحدة`, tone: occupancyRate >= 90 ? 'good' : occupancyRate < 75 ? 'warning' : undefined },
           { label: 'نسبة الشغور', value: `${roundedVacancyRate}%`, detail: `${number(vacancyAnalytics.availableUnits)} متاحة للتأجير` },
+          { label: 'غير قابلة للتأجير', value: number(nonRentableCount), detail: 'صيانة أو حجز — ليست شواغر' },
           { label: 'متوسط أيام الشغور', value: historyComplete ? `${number(vacancyAnalytics.averageVacancyDays)} يوم` : '—', detail: historyComplete && longestVacant ? `الأطول ${number(longestVacant.daysVacant)} يوم` : 'يتطلب تاريخ عقود كامل' },
           { label: 'إيجار مرجعي للشواغر', value: money(vacancyAnalytics.referenceVacantRent), detail: 'سعر مرجعي وليس إيرادًا محققًا' },
         ]}
@@ -136,7 +138,7 @@ export function OccupancySection({
       <ReportColumns>
         <ReportPanel
           title="الإشغال حسب العقار"
-          description="المشغولة مقابل غير المشغولة لكل عقار. الصيانة والحجز لا يُعاد تصنيفهما كشغور حقيقي."
+          description="مشغولة، شاغرة فعلاً، وغير قابلة للتأجير (صيانة/حجز). الشاغر الحقيقي هو المتاح للتأجير فقط."
           eyebrow="استغلال المحفظة"
           icon={Building2}
           action={canExportReports ? (
@@ -157,7 +159,7 @@ export function OccupancySection({
                   contractId: '',
                 },
               }}
-              summaryText={`الإشغال: ${roundedOccupancyRate}% | الشغور: ${roundedVacancyRate}% | متوسط الشغور: ${historyComplete ? vacancyAnalytics.averageVacancyDays : '—'} يوم`}
+              summaryText={`الإشغال: ${roundedOccupancyRate}% | الشغور: ${roundedVacancyRate}% | غير قابلة للتأجير: ${nonRentableCount} | متوسط الشغور: ${historyComplete ? vacancyAnalytics.averageVacancyDays : '—'} يوم`}
               onPrint={handlePrintOccupancyReport}
               onDownloadPdf={handleDownloadOccupancyReport}
             />
@@ -169,8 +171,11 @@ export function OccupancySection({
           ) : (
             <ReportList>
               {occupancyRows.map((row) => {
-                const propertyTotal = row.occupied + row.vacant;
+                const propertyTotal = row.occupied + row.vacant + row.nonRentable;
                 const rate = propertyTotal > 0 ? Math.round((row.occupied / propertyTotal) * 100) : 0;
+                const nonRentableSuffix = row.nonRentable > 0
+                  ? ` · ${formatCompanyNumber(defaultCompanyLocalSettings, row.nonRentable)} غير قابلة للتأجير`
+                  : '';
                 return (
                   <ReportListRow
                     key={row.propertyId}
@@ -180,7 +185,7 @@ export function OccupancySection({
                         {!row.hasTitle ? <span className="ms-2 text-xs text-muted-foreground">اسم العقار غير موثق</span> : null}
                       </span>
                     )}
-                    subtitle={`${formatCompanyNumber(defaultCompanyLocalSettings, row.occupied)} مشغولة · ${formatCompanyNumber(defaultCompanyLocalSettings, row.vacant)} غير مشغولة`}
+                    subtitle={`${formatCompanyNumber(defaultCompanyLocalSettings, row.occupied)} مشغولة · ${formatCompanyNumber(defaultCompanyLocalSettings, row.vacant)} شاغرة${nonRentableSuffix}`}
                     meta={`${formatLatinNumber(propertyTotal, 'ar')} وحدة`}
                     value={<span dir="ltr">{rate}%</span>}
                   />

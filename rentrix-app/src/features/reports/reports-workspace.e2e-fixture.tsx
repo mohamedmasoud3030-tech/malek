@@ -167,8 +167,8 @@ const fixtureModel: ReportsWorkspaceModel = {
     },
     occupancy: {
       occupancyRows: [
-        { property: 'برج الخوير', propertyId: 'property-1', shortPropertyId: 'property', hasTitle: true, occupied: 18, vacant: 2 },
-        { property: 'مجمع الموالح', propertyId: 'property-2', shortPropertyId: 'property', hasTitle: true, occupied: 11, vacant: 1 },
+        { property: 'برج الخوير', propertyId: 'property-1', shortPropertyId: 'property', hasTitle: true, occupied: 18, vacant: 2, nonRentable: 0 },
+        { property: 'مجمع الموالح', propertyId: 'property-2', shortPropertyId: 'property', hasTitle: true, occupied: 11, vacant: 1, nonRentable: 1 },
       ],
       expiringRows: [],
       vacancyAnalytics: {
@@ -211,6 +211,7 @@ const fixtureModel: ReportsWorkspaceModel = {
           referenceRevenue: 21600,
           occupiedUnits: 18,
           vacantUnits: 2,
+          nonRentableUnits: 0,
           occupancyRate: 90,
           longestVacancyDays: 35,
           collected: 1200,
