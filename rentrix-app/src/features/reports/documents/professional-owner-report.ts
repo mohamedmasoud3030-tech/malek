@@ -150,24 +150,33 @@ export function buildOwnerReportPayload(context: OwnerReportContext): OwnerRepor
   };
   groups.push(summaryGroup);
 
-  /* --- Group 2 — collections / rental income detail --- */
-  const collectionTransactions = (statement?.transactions ?? []).filter((tx) => tx.type === 'payment' && tx.gross > 0);
-  const collectionRows: ReportCellFormat[][] = collectionTransactions.map((tx) => [
-    text(dateLabel(tx.date)),
-    text(tx.propertyName),
-    text(tx.details),
-    amount(tx.gross),
-    amount(tx.deduction),
-    amount(tx.net),
-  ]);
-  const collectionTotals = collectionRows.length > 0
+  /* --- Group 2 — detailed daily financial movement (all transactions) --- */
+  const allTransactions = statement?.transactions ?? [];
+  const movementRows: ReportCellFormat[][] = allTransactions.map((tx) => {
+    const typeLabel = tx.type === 'payment' ? 'تحصيل إيجار'
+      : tx.type === 'receipt' ? 'تحصيل'
+      : tx.type === 'expense' ? 'مصروف مُحمَّل على المالك'
+      : tx.type === 'settlement' ? 'تسوية / صرف'
+      : 'حركة مالية';
+    return [
+      text(dateLabel(tx.date)),
+      text(typeLabel),
+      text(tx.propertyName),
+      text(tx.details),
+      amount(tx.gross),
+      amount(tx.deduction),
+      amount(tx.net),
+    ];
+  });
+  const movementTotals = movementRows.length > 0
     ? [
-        text('إجمالي حركات التحصيل'),
+        text('إجمالي حركات الفترة'),
         text(''),
         text(''),
-        amount(collectionTransactions.reduce((sum, tx) => sum + tx.gross, 0)),
-        amount(collectionTransactions.reduce((sum, tx) => sum + tx.deduction, 0)),
-        amount(collectionTransactions.reduce((sum, tx) => sum + tx.net, 0)),
+        text(''),
+        amount(allTransactions.reduce((sum, tx) => sum + tx.gross, 0)),
+        amount(allTransactions.reduce((sum, tx) => sum + tx.deduction, 0)),
+        amount(allTransactions.reduce((sum, tx) => sum + tx.net, 0)),
       ]
     : undefined;
 
@@ -176,17 +185,17 @@ export function buildOwnerReportPayload(context: OwnerReportContext): OwnerRepor
       {
         kind: 'table',
         table: {
-          title: 'تفاصيل التحصيلات العائدة للمالك (إيرادات الإيجار)',
-          columns: ['التاريخ', 'العقار', 'البيان والمرجع', 'المحصل', 'الاستقطاع', 'صافي الحركة'],
-          rows: collectionRows,
-          totals: collectionTotals,
-          emptyNote: 'لا توجد حركات تحصيل مسجلة للفترة ضمن كشف المالك المعتمد.',
+          title: 'الحركة المالية اليومية التفصيلية',
+          columns: ['التاريخ', 'نوع الحركة', 'العقار', 'البيان والمرجع', 'الإجمالي', 'الاستقطاع', 'صافي الحركة'],
+          rows: movementRows,
+          totals: movementTotals,
+          emptyNote: 'لا توجد حركات مالية مسجلة للفترة ضمن كشف المالك المعتمد.',
         },
       },
       {
         kind: 'note',
         note: {
-          text: 'المحصل هنا هو المبلغ المقبوض فعلاً العائد للمالك (من كشف المالك المعتمد). لا يُخلط بين الإيجار المتوقع والمفوتر والمحصل — فهي مفاهيم مختلفة.',
+          text: 'جميع الأرقام من كشف المالك المعتمد (rpt_owner_statement). رصيد أول المدة ورصيد آخر المدة الدائر غير متاحين من سلطة قراءة معتمدة حاليًا. «مصروف مُحمَّل على المالك» يعني أن المصروف مسجل كاستقطاع في الكشف ولا يُحتسب مرتين مع الصيانة.',
           tone: 'info',
         },
       },

@@ -174,4 +174,17 @@ describe('StatementsSection professional owner report wiring', () => {
     expect(screen.queryByRole('button', { name: 'تنزيل كشف المالك PDF' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'خيارات إخراج كشف المالك' })).toBeNull();
   });
+
+  it('shows the document workspace strip with identity readiness indicator', () => {
+    renderOwnerSection();
+    expect(screen.getByText('هوية المستند')).toBeDefined();
+    expect(screen.getByText('جاهز للإصدار')).toBeDefined();
+  });
+
+  it('does NOT show a running balance column in the owner panel (authority unavailable)', () => {
+    renderOwnerSection();
+    // The "الرصيد الجاري" column header must not appear in the owner panel
+    // because there is no authoritative opening balance to compute from.
+    expect(screen.queryByText('الرصيد الجاري')).toBeNull();
+  });
 });
