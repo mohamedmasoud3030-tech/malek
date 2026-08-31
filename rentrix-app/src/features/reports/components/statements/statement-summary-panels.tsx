@@ -13,23 +13,26 @@ export function StatementSelectionStrip({
   selectedOwnerId,
   from,
   to,
+  isDocumentReady,
 }: Readonly<{
   selectedContractId: string;
   selectedOwnerId: string;
   from?: string;
   to?: string;
+  isDocumentReady?: boolean;
 }>) {
   return (
     <ResponsiveCardGrid
       as="section"
-      desktopColumns={3}
+      desktopColumns={4}
       gap="sm"
       className="rounded-xl border border-border/70 bg-muted/20 p-3"
-      aria-label="حالة اختيار الكشوف"
+      aria-label="حالة إصدار الكشوفات"
     >
       <SelectionItem label="كشف المستأجر" value={selectedContractId ? 'عقد محدد' : 'اختر عقدًا'} ready={Boolean(selectedContractId)} />
       <SelectionItem label="كشف المالك" value={selectedOwnerId ? 'مالك محدد' : 'اختر مالكًا'} ready={Boolean(selectedOwnerId)} />
       <SelectionItem label="فترة الكشف" value={`${from || '—'} إلى ${to || '—'}`} ready />
+      <SelectionItem label="هوية المستند" value={isDocumentReady ? 'جاهز للإصدار' : 'بيانات المكتب ناقصة'} ready={isDocumentReady ?? false} />
     </ResponsiveCardGrid>
   );
 }

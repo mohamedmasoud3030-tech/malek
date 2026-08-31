@@ -191,24 +191,23 @@ export function StatementsSection({
 
   const handleDownloadOwnerExcel = () => {
     if (!ownerStatement) return;
-    let runningBalance = 0;
-    const rows = ownerStatement.transactions.map((transaction) => {
-      runningBalance += transaction.net || 0;
-      return [
-        transaction.date || '—',
-        transaction.type === 'receipt' ? 'تحصيل' : transaction.type === 'expense' ? 'مصروف' : transaction.type === 'settlement' ? 'تسوية / صرف' : 'حركة مالية',
-        transaction.propertyName || 'غير محدد',
-        transaction.details || 'حركة مالية',
-        transaction.gross || 0,
-        transaction.deduction || 0,
-        transaction.net || 0,
-        runningBalance,
-      ] as const;
-    });
+    // Financial truth: opening/closing running balance is NOT available from
+    // an authoritative read source (rpt_owner_statement does not expose one).
+    // We never derive it from zero — the column is omitted entirely rather
+    // than carrying a fabricated cumulative figure.
+    const rows = ownerStatement.transactions.map((transaction) => [
+      transaction.date || '—',
+      transaction.type === 'receipt' ? 'تحصيل' : transaction.type === 'expense' ? 'مصروف' : transaction.type === 'settlement' ? 'تسوية / صرف' : 'حركة مالية',
+      transaction.propertyName || 'غير محدد',
+      transaction.details || 'حركة مالية',
+      transaction.gross || 0,
+      transaction.deduction || 0,
+      transaction.net || 0,
+    ] as const);
     downloadBlob(
       buildXlsxBlob({
         name: 'كشف المالك',
-        headers: ['التاريخ', 'نوع الحركة', 'العقار', 'البيان', 'الإجمالي', 'الاستقطاع', 'صافي الحركة', 'الرصيد الجاري'],
+        headers: ['التاريخ', 'نوع الحركة', 'العقار', 'البيان', 'الإجمالي', 'الاستقطاع', 'صافي الحركة'],
         rows,
       }),
       `owner-statement-${selectedOwnerId || 'statement'}.xlsx`,
@@ -223,6 +222,7 @@ export function StatementsSection({
         selectedOwnerId={selectedOwnerId}
         from={filters?.from}
         to={filters?.to}
+        isDocumentReady={isDocumentSettingsReady}
       />
 
       <ReportColumns>

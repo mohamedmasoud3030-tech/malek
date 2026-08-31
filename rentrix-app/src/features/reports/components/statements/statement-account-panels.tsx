@@ -33,7 +33,7 @@ type OwnerFallbackRow = Readonly<{
 }>;
 
 type TenantLedgerRow = TenantStatementReport['lines'][number] & { rowKey: string };
-type OwnerLedgerRow = OwnerStatementReport['transactions'][number] & { rowKey: string; runningBalance: number };
+type OwnerLedgerRow = OwnerStatementReport['transactions'][number] & { rowKey: string };
 
 function tenantOpeningBalance(statement: TenantStatementReport) {
   const first = statement.lines[0];
@@ -195,11 +195,13 @@ export function OwnerStatementPanel({
   onDownloadExcel: () => void;
   actionsDisabled?: boolean;
 }>) {
-  let runningBalance = 0;
-  const ledgerRows: OwnerLedgerRow[] = (statement?.transactions ?? []).map((transaction, index) => {
-    runningBalance += transaction.net || 0;
-    return { ...transaction, runningBalance, rowKey: `${transaction.date ?? 'line'}-${index}` };
-  });
+  // Financial truth: opening running balance is NOT available from the
+  // authoritative owner statement source, so a cumulative running balance
+  // column is never shown in the panel or the Excel export.
+  const ledgerRows: OwnerLedgerRow[] = (statement?.transactions ?? []).map((transaction, index) => ({
+    ...transaction,
+    rowKey: `${transaction.date ?? 'line'}-${index}`,
+  }));
   const settlementMovement = ledgerRows
     .filter((row) => row.type === 'settlement')
     .reduce((sum, row) => sum + Math.abs(row.net || 0), 0);
@@ -212,13 +214,12 @@ export function OwnerStatementPanel({
     { key: 'gross', header: 'إجمالي', priority: 'detail', render: (row) => <span dir="ltr">{formatMoney(row.gross)}</span> },
     { key: 'deduction', header: 'استقطاع', priority: 'detail', render: (row) => <span dir="ltr">{formatMoney(row.deduction)}</span> },
     { key: 'net', header: 'صافي الحركة', priority: 'primary', render: (row) => <strong dir="ltr">{formatMoney(row.net)}</strong> },
-    { key: 'balance', header: 'الرصيد الجاري', priority: 'primary', render: (row) => <strong dir="ltr">{formatMoney(row.runningBalance)}</strong> },
   ];
 
   return (
     <ReportPanel
       title="كشف حساب المالك"
-      description="حركة المالك للفترة: العقارات، إجمالي التحصيل/الحركة، الاستقطاعات، التسويات وصافي الرصيد الجاري."
+      description="حركة المالك للفترة: العقارات، إجمالي التحصيل/الحركة، الاستقطاعات والتسويات. الرصيد الجاري لا يُعرض لأن مصدر كشف المالك لا يوفّر رصيدًا افتتاحيًا معتمدًا."
       icon={UsersRound}
       action={statement ? (
         <ReportOutputActions
