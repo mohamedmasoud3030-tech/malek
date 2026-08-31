@@ -1,5 +1,4 @@
-import { AlertTriangle, ArrowLeft, Building2, FileSpreadsheet, FileText, Gauge, LayoutDashboard, ReceiptText, Wrench } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Gauge, LayoutDashboard } from 'lucide-react';
 import { formatDate, formatMoney } from '@/features/financials/components/financials-formatters';
 import type {
   CollectionSummaryReport,
@@ -9,73 +8,70 @@ import type {
 import type { ArrearsSummaryReport } from '@/features/financials/reports/arrears-reports-service';
 import type { MaintenanceSummary } from '@/features/maintenance/maintenance-helpers';
 import { formatLatinNumber } from '@/lib/formatters';
-import { csvRowsToXlsxBlob, downloadBlob, xlsxFilenameFromCsv } from '@/lib/tabular-export';
 import { buildExecutiveHealthInsights } from '../reports-insights';
 import { OperationalPrioritiesPanel } from './OperationalPrioritiesPanel';
 import type { ExpiringContractRow, OccupancyChartRow } from '../reports-page.helpers';
-import { buildReportCsvFilename, createReceiptPrintHref, downloadCsv, toFinancialSummaryCsv } from '../reports-page.helpers';
+import { buildReportCsvFilename, toFinancialSummaryCsv } from '../reports-page.helpers';
 import type { ReportDrillHandler } from '../report-workspaces';
+import { ReportShareActions } from './ReportShareActions';
 import {
+  ReportDrillAction,
   ReportInsightNote,
-  ReportList,
-  ReportListRow,
   ReportPanel,
   ReportProgress,
-  ReportState,
   ReportSummaryStrip,
+  type ReportSummaryItem,
 } from '@/components/ui/report-section-primitives';
-
-type ReceiptRow = Readonly<{
-  id: string;
-  receipt_number: string;
-  payment_date: string;
-  amount: number;
-  tenant_name: string | null;
-}>;
 
 type OverviewSectionProps = Readonly<{
   summary: FinancialPeriodSummaryReport | undefined;
   collectionSummary: CollectionSummaryReport | undefined;
-  collectionRate: number;
-  cashflowRows: ReadonlyArray<Readonly<{ month: string; revenue: number; expenses: number }>>;
-  receiptRows: readonly ReceiptRow[];
+  /** Server-authoritative realization rate. Never derived from period cash here. */
+  collectionRate: number | undefined;
   occupancyRows: readonly OccupancyChartRow[];
   expiringRows: readonly ExpiringContractRow[];
   expenseRows: ExpenseBreakdownPropertyRow[];
   overdueSummary: ArrearsSummaryReport | undefined;
   maintenanceSummary: MaintenanceSummary;
+  /** Active report scope, used only to build canonical share/export targets. */
+  from: string;
+  to: string;
   canExportReports: boolean;
   isLoading: boolean;
   onDrill: ReportDrillHandler;
 }>;
 
-type LaunchKpi = Readonly<{
-  key: string;
-  label: string;
-  value: string;
-  detail: string;
-  icon: typeof LayoutDashboard;
-  tone?: 'default' | 'warning' | 'critical' | 'good';
-  workspace: Parameters<ReportDrillHandler>[0];
-  view?: Parameters<ReportDrillHandler>[1];
-}>;
-
 /**
- * أداء المكتب — an executive launchpad, deliberately NOT a second dashboard.
- * Every KPI is a doorway into the workspace that owns the detail; the
- * destination tables are never repeated here. Summary → insight →
- * drill-through.
+ * أداء المكتب — the office decision surface.
+ *
+ * It answers exactly one question: *what deserves my attention across the
+ * office right now?* It is deliberately NOT a second dashboard and NOT a
+ * report of its own:
+ *
+ *   - it summarizes (one quiet authoritative strip, no KPI card grid),
+ *   - it reads (one executive note plus four portfolio ratios),
+ *   - it routes (the priority queue opens the workspace that owns the detail).
+ *
+ * Detail that another workspace owns — receipt lists, per-property expense
+ * tables, aging tables — is never repeated here.
+ *
+ * Financial authority is untouched. Nothing on this surface recomputes a
+ * financial truth: the collection rate is the server-authoritative value,
+ * `outstanding` and `overdue` stay two different figures with two different
+ * meanings, posted expenses are never netted into a profit, and occupancy is
+ * read from the canonical occupancy rows exactly as provided.
  */
 export function OverviewSection({
   summary,
   collectionSummary,
   collectionRate,
-  receiptRows,
   occupancyRows,
   expiringRows,
   expenseRows,
   overdueSummary,
   maintenanceSummary,
+  from,
+  to,
   canExportReports,
   isLoading,
   onDrill,
@@ -91,6 +87,10 @@ export function OverviewSection({
     expensesCount: 0,
   };
   const report = summary ?? emptySummary;
+
+  // Occupancy semantics are consumed, not decided here. Preserve the canonical
+  // three-way leasing classification: available is vacant; maintenance/reserved
+  // remain non-rentable and stay inside the total-unit denominator.
   const occupancy = occupancyRows.reduce(
     (totals, row) => ({
       occupied: totals.occupied + row.occupied,
@@ -101,15 +101,32 @@ export function OverviewSection({
   );
   const totalUnits = occupancy.occupied + occupancy.vacant + occupancy.nonRentable;
   const occupancyRate = totalUnits > 0 ? (occupancy.occupied / totalUnits) * 100 : 0;
-  const overdueTotal = overdueSummary?.totalOverdue ?? report.outstanding;
+
+  const invoiced = collectionSummary?.invoiced ?? report.invoiced;
+  const paid = collectionSummary?.paid ?? report.paid;
+  const outstanding = collectionSummary?.outstanding ?? report.outstanding;
+
+  // outstanding ≠ overdue. `outstanding` is every uncollected obligation in the
+  // period (current + late); `overdue` is only what passed its due date and is
+  // owned by the arrears summary. When arrears are unavailable the figure is
+  // reported as unavailable — the outstanding balance is never substituted for
+  // it, because that would silently relabel current receivables as late.
+  const hasOverdueAuthority = overdueSummary !== undefined;
+  const overdueTotal = overdueSummary?.totalOverdue ?? 0;
+
   const expensesTotal = expenseRows.reduce((total, row) => total + row.total, 0);
   const openMaintenance = (maintenanceSummary.open ?? 0) + (maintenanceSummary.inProgress ?? 0);
-  const latestReceipts = receiptRows.slice(0, 4);
+
+  const hasCollectionRate = typeof collectionRate === 'number' && Number.isFinite(collectionRate);
+  const collectionRateLabel = hasCollectionRate
+    ? `${formatLatinNumber(Math.round(collectionRate), 'ar')}%`
+    : 'غير متاحة';
+
   const insights = buildExecutiveHealthInsights({
-    collectionRate,
-    invoiced: collectionSummary?.invoiced ?? report.invoiced,
-    paid: collectionSummary?.paid ?? report.paid,
-    outstanding: collectionSummary?.outstanding ?? report.outstanding,
+    collectionRate: hasCollectionRate ? collectionRate : 0,
+    invoiced,
+    paid,
+    outstanding,
     expenses: collectionSummary?.expensesTotal ?? report.expenses,
     occupiedUnits: occupancy.occupied,
     totalUnits,
@@ -117,165 +134,106 @@ export function OverviewSection({
   const collectionInsight = insights[0];
   const expenseInsight = insights[1];
 
-  const kpis: readonly LaunchKpi[] = [
+  // `buildExecutiveHealthInsights` returns the four canonical ratios in a fixed
+  // order with collection efficiency first. When the authoritative rate is
+  // unavailable that ratio is dropped rather than published as a 0% nobody
+  // measured; the executive note states why.
+  const healthRatios = hasCollectionRate ? insights : insights.slice(1);
+
+  const executiveSummary = !hasCollectionRate
+    ? 'مؤشر كفاءة التحصيل المعتمد غير متاح حاليًا؛ اقرأ المستحق والمحصّل والمتبقي كما هي دون افتراض نسبة بديلة.'
+    : collectionInsight?.tone === 'critical'
+      ? 'كفاءة التحصيل منخفضة وتحتاج مراجعة قائمة المتابعة وترتيب أولوية التواصل.'
+      : expenseInsight?.tone === 'critical'
+        ? 'المصروفات المسجلة مرتفعة مقارنة بالتحصيلات في هذا العرض التشغيلي؛ راجع التصنيفات والعقارات الأعلى تكلفة قبل استنتاج الربحية.'
+        : 'المؤشرات التشغيلية الأساسية مستقرة؛ تابع التحصيل والإشغال، وافتح المراجعة المالية المتقدمة عند الحاجة إلى تحليل محاسبي أعمق.';
+
+  /**
+   * One compact strip instead of a grid of clickable KPI cards. Each figure
+   * carries the label that keeps its meaning unambiguous — especially the two
+   * receivable figures, which are neither interchangeable nor additive.
+   */
+  const summaryItems: readonly ReportSummaryItem[] = [
     {
-      key: 'invoiced',
       label: 'المستحق للفترة',
-      value: formatMoney(collectionSummary?.invoiced ?? report.invoiced),
+      value: formatMoney(invoiced),
       detail: `${formatLatinNumber(collectionSummary?.invoicesCount ?? report.invoicesCount, 'ar')} فاتورة`,
-      icon: ReceiptText,
-      workspace: 'collections',
-      view: 'collections',
     },
     {
-      key: 'paid',
       label: 'المحصّل',
-      value: formatMoney(collectionSummary?.paid ?? report.paid),
-      detail: `كفاءة ${Number.isFinite(collectionRate) ? Math.round(collectionRate) : 0}%`,
-      icon: ReceiptText,
+      value: formatMoney(paid),
+      detail: `كفاءة التحصيل ${collectionRateLabel}`,
       tone: 'good',
-      workspace: 'collections',
-      view: 'collections',
     },
     {
-      key: 'outstanding',
       label: 'المتبقي',
-      value: formatMoney(collectionSummary?.outstanding ?? report.outstanding),
-      detail: 'مستحق غير محصّل',
-      icon: ReceiptText,
+      value: formatMoney(outstanding),
+      detail: 'يشمل الجاري والمتأخر',
       tone: 'warning',
-      workspace: 'collections',
-      view: 'collections',
     },
     {
-      key: 'overdue',
       label: 'المتأخر',
-      value: formatMoney(overdueTotal),
-      detail: overdueSummary ? `حتى ${formatDate(overdueSummary.asOf)}` : 'حتى تاريخ اليوم',
-      icon: AlertTriangle,
-      tone: overdueTotal > 0 ? 'critical' : 'default',
-      workspace: 'collections',
-      view: 'overdue',
+      value: hasOverdueAuthority ? formatMoney(overdueTotal) : '—',
+      detail: hasOverdueAuthority
+        ? `تجاوز تاريخ استحقاقه حتى ${formatDate(overdueSummary.asOf)}`
+        : 'مؤشر المتأخرات غير متاح',
+      tone: hasOverdueAuthority && overdueTotal > 0 ? 'critical' : 'default',
     },
     {
-      key: 'occupancy',
       label: 'نسبة الإشغال',
-      value: `${Math.round(occupancyRate)}%`,
+      value: `${formatLatinNumber(Math.round(occupancyRate), 'ar')}%`,
       detail: `${formatLatinNumber(occupancy.occupied, 'ar')} مشغولة من ${formatLatinNumber(totalUnits, 'ar')}`,
-      icon: Building2,
-      workspace: 'leasing',
-      view: 'occupancy',
     },
     {
-      key: 'vacant',
-      label: 'وحدات شاغرة',
-      value: formatLatinNumber(occupancy.vacant, 'ar'),
-      detail: 'تحتاج تأجيرًا أو متابعة',
-      icon: Building2,
-      tone: occupancy.vacant > 0 ? 'warning' : 'default',
-      workspace: 'leasing',
-      view: 'occupancy',
-    },
-    {
-      key: 'expiring',
-      label: 'عقود قريبة من الانتهاء',
-      value: formatLatinNumber(expiringRows.length, 'ar'),
-      detail: 'خلال 60 يومًا',
-      icon: FileText,
-      tone: expiringRows.length > 0 ? 'warning' : 'default',
-      workspace: 'leasing',
-      view: 'expiring',
-    },
-    {
-      key: 'expenses',
       label: 'المصروفات المسجلة',
       value: formatMoney(expensesTotal),
-      detail: 'من سندات المصروفات',
-      icon: FileSpreadsheet,
-      workspace: 'operations',
-      view: 'expenses',
-    },
-    {
-      key: 'maintenance',
-      label: 'صيانة مفتوحة',
-      value: formatLatinNumber(openMaintenance, 'ar'),
-      detail: 'مفتوحة أو قيد التنفيذ',
-      icon: Wrench,
-      tone: openMaintenance > 0 ? 'warning' : 'default',
-      workspace: 'operations',
-      view: 'maintenance_analytics',
+      detail: 'سندات مصروفات — ليست قائمة دخل',
     },
   ];
 
   const financialSummaryRows = toFinancialSummaryCsv(report);
-  const financialSummaryCsvFilename = buildReportCsvFilename('financial-summary');
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-[13px] font-bold leading-5 text-muted-foreground">
-          القراءة التنفيذية لهذه الفترة — كل مؤشر يفتح ورشة العمل المختصة به بالتفاصيل الكاملة.
-        </p>
-        {canExportReports ? (
-          <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              className="min-h-11 shrink-0 gap-2 text-xs"
-              onClick={() => downloadBlob(csvRowsToXlsxBlob(financialSummaryRows, 'الملخص المالي'), xlsxFilenameFromCsv(financialSummaryCsvFilename))}
-            >
-              <FileSpreadsheet className="size-4" aria-hidden="true" />
-              Excel
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="min-h-11 shrink-0 gap-2 text-xs"
-              onClick={() => downloadCsv(financialSummaryCsvFilename, financialSummaryRows)}
-            >
-              <FileText className="size-4" aria-hidden="true" />
-              CSV
-            </Button>
-          </div>
-        ) : null}
-      </div>
-
       <ReportPanel
-        title="مؤشرات المكتب"
-        description="المستحق والمحصّل والمتبقي والمتأخر والإشغال والمصروفات والصيانة — بلا جداول مكررة هنا."
-        eyebrow="خلاصة الفترة"
+        title="خلاصة المكتب"
+        description="أرقام الفترة كما تعتمدها مصادرها — بلا إعادة احتساب هنا وبلا تكرار لجداول ورش العمل المالكة لها."
+        eyebrow="القراءة التنفيذية"
         icon={LayoutDashboard}
         isLoading={isLoading}
+        action={canExportReports ? (
+          <ReportShareActions
+            className="flex flex-wrap gap-2"
+            reportLabel="خلاصة أداء المكتب"
+            target={{
+              section: 'analytics',
+              view: 'overview',
+              filters: {
+                from,
+                to,
+                asOf: to,
+                propertyId: '',
+                unitId: '',
+                tenantId: '',
+                ownerId: '',
+                contractId: '',
+              },
+            }}
+            summaryText={`المستحق ${formatMoney(invoiced)} | المحصّل ${formatMoney(paid)} | المتبقي ${formatMoney(outstanding)} | كفاءة التحصيل ${collectionRateLabel}`}
+            csv={{ filename: buildReportCsvFilename('financial-summary'), rows: financialSummaryRows }}
+          />
+        ) : null}
       >
-        <div className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-3 sm:p-5">
-          {kpis.map((kpi) => {
-            const Icon = kpi.icon;
-            return (
-              <button
-                key={kpi.key}
-                type="button"
-                onClick={() => onDrill(kpi.workspace, kpi.view)}
-                className="group flex min-h-24 items-start justify-between gap-2 rounded-xl border border-border/70 bg-background p-3.5 text-start transition-colors hover:border-primary/30 hover:bg-primary/[0.025] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-              >
-                <span className="min-w-0">
-                  <span className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground">
-                    <Icon className="size-3.5 shrink-0" aria-hidden="true" />
-                    {kpi.label}
-                  </span>
-                  <span className="mt-1.5 block truncate text-lg font-black tabular-nums text-foreground">{kpi.value}</span>
-                  <span className="mt-0.5 block truncate text-[11px] font-semibold text-muted-foreground">{kpi.detail}</span>
-                </span>
-                <ArrowLeft className="mt-1 size-3.5 shrink-0 text-muted-foreground/50 transition-colors group-hover:text-primary rtl:rotate-180" aria-hidden="true" />
-              </button>
-            );
-          })}
+        <div className="px-4 pb-4 pt-3 sm:px-5">
+          <ReportSummaryStrip dataReportSummary="office-overview" items={summaryItems} />
+        </div>
+        <div className="px-4 pb-4 sm:px-5">
+          <ReportInsightNote title="الخلاصة التنفيذية">{executiveSummary}</ReportInsightNote>
         </div>
       </ReportPanel>
 
       <OperationalPrioritiesPanel
-        overdueTotal={overdueTotal}
+        overdueTotal={hasOverdueAuthority ? overdueTotal : 0}
         overdueAsOf={overdueSummary?.asOf}
         vacantUnits={occupancy.vacant}
         expiringContracts={expiringRows.length}
@@ -284,116 +242,30 @@ export function OverviewSection({
         onDrill={onDrill}
       />
 
-      <div className="grid gap-4 lg:grid-cols-12">
-        <ReportPanel
-          title="صحة المحفظة"
-          description="أربع نسب تلخص التحصيل والتكلفة والإشغال وانكشاف المتأخرات."
-          eyebrow="قراءة تنفيذية"
-          icon={Gauge}
-          className="lg:col-span-7"
-          isLoading={isLoading}
-        >
-          <div className="grid gap-3 p-4 sm:grid-cols-2">
-            {insights.map((insight) => (
-              <ReportProgress
-                key={insight.label}
-                label={insight.label}
-                value={insight.value}
-                helper={insight.helper}
-                tone={insight.tone}
-              />
-            ))}
-          </div>
-          <div className="px-4 pb-4">
-            <ReportInsightNote title="الخلاصة التنفيذية">
-              {collectionInsight?.tone === 'critical'
-                ? 'كفاءة التحصيل منخفضة وتحتاج مراجعة قائمة المتابعة وترتيب أولوية التواصل.'
-                : expenseInsight?.tone === 'critical'
-                  ? 'المصروفات المسجلة مرتفعة مقارنة بالتحصيلات في هذا العرض التشغيلي؛ راجع التصنيفات والعقارات الأعلى تكلفة قبل استنتاج الربحية.'
-                  : 'المؤشرات التشغيلية الأساسية مستقرة؛ تابع التحصيل والإشغال، وافتح المراجعة المالية المتقدمة عند الحاجة إلى تحليل محاسبي أعمق.'}
-            </ReportInsightNote>
-          </div>
-        </ReportPanel>
-
-        <ReportPanel
-          title="آخر التحصيلات"
-          description="أحدث الإيصالات المنشورة داخل النطاق المحدد."
-          eyebrow="حركة حديثة"
-          icon={ReceiptText}
-          className="lg:col-span-5"
-          isLoading={isLoading}
-          action={(
-            <button
-              type="button"
-              onClick={() => onDrill('collections', 'collection_movement')}
-              className="inline-flex min-h-11 items-center gap-1 rounded-lg border border-border/70 px-2.5 text-xs font-black text-primary transition-colors hover:bg-primary/[0.025]"
-            >
-              حركة التحصيل
-              <ArrowLeft className="size-3.5" aria-hidden="true" />
-            </button>
-          )}
-        >
-          {latestReceipts.length === 0 ? (
-            <div className="p-4">
-              <ReportState message="لا توجد تحصيلات حديثة داخل الفترة." />
-            </div>
-          ) : (
-            <ReportList>
-              {latestReceipts.map((receipt) => (
-                <ReportListRow
-                  key={receipt.id}
-                  title={(
-                    <a className="hover:text-primary hover:underline" href={createReceiptPrintHref(receipt.id)}>
-                      {receipt.tenant_name || 'مستأجر غير مسمى'}
-                    </a>
-                  )}
-                  subtitle={`إيصال ${receipt.receipt_number}`}
-                  meta={formatDate(receipt.payment_date)}
-                  value={<span dir="ltr">{formatMoney(receipt.amount)}</span>}
-                />
-              ))}
-            </ReportList>
-          )}
-        </ReportPanel>
-      </div>
-
       <ReportPanel
-        title="أعلى العقارات مصروفات"
-        description="أعلى ثلاثة عقارات في المصروفات المسجلة لهذه الفترة — افتح أي عقار في ورشة العقارات والوحدات."
-        eyebrow="تركيز التكلفة"
-        icon={Building2}
+        title="صحة المحفظة"
+        description="أربع نسب تلخص التحصيل والتكلفة والإشغال وانكشاف الذمم — للقراءة فقط، والتفاصيل في ورشة العمل المختصة."
+        eyebrow="نسب معتمدة"
+        icon={Gauge}
         isLoading={isLoading}
-      >
-        {expenseRows.length === 0 ? (
-          <div className="p-4">
-            <ReportState message="لا توجد مصروفات مسجلة خلال الفترة." />
-          </div>
-        ) : (
-          <div className="px-4 pb-4 pt-2 sm:px-5">
-            <ReportSummaryStrip
-              dataReportSummary="office-top-cost-properties"
-              items={[...expenseRows]
-                .sort((a, b) => b.total - a.total)
-                .slice(0, 3)
-                .map((row) => ({
-                  label: row.propertyTitle ?? 'عقار غير محدد',
-                  value: formatMoney(row.total),
-                  detail: `${formatLatinNumber(row.count, 'ar')} حركة`,
-                  tone: 'warning' as const,
-                }))}
-            />
-            <div className="mt-3">
-              <button
-                type="button"
-                onClick={() => onDrill('properties')}
-                className="inline-flex min-h-11 items-center gap-1 rounded-lg border border-border/70 px-2.5 text-xs font-black text-primary transition-colors hover:bg-primary/[0.025]"
-              >
-                فتح العقارات والوحدات
-                <ArrowLeft className="size-3.5" aria-hidden="true" />
-              </button>
-            </div>
-          </div>
+        action={(
+          <ReportDrillAction
+            label="التحصيل والمتأخرات"
+            onClick={() => onDrill('collections', 'collections')}
+          />
         )}
+      >
+        <div className="grid gap-3 p-4 sm:grid-cols-2 sm:p-5">
+          {healthRatios.map((insight) => (
+            <ReportProgress
+              key={insight.label}
+              label={insight.label}
+              value={insight.value}
+              helper={insight.helper}
+              tone={insight.tone}
+            />
+          ))}
+        </div>
       </ReportPanel>
     </div>
   );

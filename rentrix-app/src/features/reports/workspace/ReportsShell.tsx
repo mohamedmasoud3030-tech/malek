@@ -71,8 +71,16 @@ export function ReportsShell({
   const money = (value: number | null | undefined) => formatCompanyMoney(companySettings, value);
   const workspace = getReportWorkspace(activeWorkspace);
   const summary = model.hero.summary;
-  const collectionRate = model.sections.collections.collectionRate;
-  const hasCollectionRate = typeof collectionRate === 'number' && Number.isFinite(collectionRate);
+  // The hero read model is the shell's only headline source: it carries the
+  // server-authoritative realization rate, so the shell never derives a rate
+  // from period cash and period invoices. Availability is taken from the
+  // collections read model, which omits the field entirely when the
+  // authoritative query has not resolved — so an unmeasured rate renders as
+  // "unavailable" instead of a fabricated 0%.
+  const collectionRate = model.hero.collectionRate;
+  const hasCollectionRate = model.sections.collections.collectionRate !== undefined
+    && typeof collectionRate === 'number'
+    && Number.isFinite(collectionRate);
   const meta = getActiveReportMeta(activeWorkspace, activeView);
   const isSpecialist = workspace?.specialist ?? false;
   const isCollections = activeWorkspace === 'collections';
@@ -92,7 +100,7 @@ export function ReportsShell({
             <div className="flex shrink-0 items-center gap-2">
               <MetricButton
                 label="كفاءة التحصيل"
-                value={hasCollectionRate ? `${Math.round(collectionRate!)}%` : '—'}
+                value={hasCollectionRate ? `${Math.round(collectionRate)}%` : '—'}
                 detail={hasCollectionRate ? `${money(summary.paid ?? 0)} من ${money(summary.invoiced ?? 0)}` : 'المؤشر المعتمد غير متاح حاليًا'}
                 icon={Receipt}
                 onClick={() => onOpenView('collections')}

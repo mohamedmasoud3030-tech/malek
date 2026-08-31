@@ -146,14 +146,14 @@ export function AnalyticsReportsAdapter({ view, model, filters, canExportReports
         <OverviewSection
           summary={model.sections.overview.summary}
           collectionSummary={model.sections.overview.collectionSummary}
-          collectionRate={model.sections.overview.collectionRate}
-          cashflowRows={model.sections.overview.cashflowRows}
-          receiptRows={model.sections.collections.receiptRows}
+          collectionRate={model.sections.collections.collectionRate}
           occupancyRows={model.sections.occupancy.occupancyRows}
           expiringRows={model.sections.occupancy.expiringRows}
           expenseRows={model.sections.expenses.report?.byProperty ?? []}
           overdueSummary={model.sections.overdue.summary}
           maintenanceSummary={model.sections.maintenance.summary}
+          from={filters.from}
+          to={filters.to}
           canExportReports={canExportReports}
           isLoading={
             model.sections.overview.isLoading
