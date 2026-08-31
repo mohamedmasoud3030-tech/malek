@@ -187,4 +187,9 @@ describe('StatementsSection professional owner report wiring', () => {
     // because there is no authoritative opening balance to compute from.
     expect(screen.queryByText('الرصيد الجاري')).toBeNull();
   });
+
+  it('explains truthfully why the owner running balance is unavailable', () => {
+    renderOwnerSection();
+    expect(screen.getByText(/لا يُعرض لأن مصدر كشف المالك لا يوفّر رصيدًا افتتاحيًا معتمدًا/)).toBeDefined();
+  });
 });
