@@ -13,7 +13,7 @@ import { EntityTable, type ColumnDef } from "@/components/ui/entity-table";
 import { entityCardTypeMap } from "@/components/ui/entity-card";
 import { Select } from "@/components/ui/select";
 import { ListPage } from "@/components/layout/list-page";
-import { RegisterHeading, RegisterMetricStrip } from "@/components/layout/register-summary";
+import { RegisterMetricStrip } from "@/components/layout/register-summary";
 import { useDebounce } from "@/hooks/useDebounce";
 import { cn } from "@/lib/utils";
 import { personTypeLabels, personTypeValues } from "./person-schema";
@@ -205,7 +205,7 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
         </div>
       ),
     },
-  ], []);
+  ], [dialogNavigate, openEdit]);
 
   return (
     <>
@@ -273,11 +273,6 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
         ) : null}
 
         <section data-people-register className="min-w-0 space-y-2.5">
-          <RegisterHeading
-            title="سجل الأشخاص"
-            meta={`${formatCount(rows.length)} سجل في الصفحة الحالية`}
-          />
-
           <EntityTable
             aria-label="جدول الأشخاص"
             rows={rows}

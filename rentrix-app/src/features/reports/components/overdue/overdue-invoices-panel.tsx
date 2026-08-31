@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { AlertTriangle, Building2, FileText, ReceiptText, UserRound } from 'lucide-react';
 import { useDialogNavigate } from '@/app/router/background-location';
-import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
+import { ActionMenu } from '@/components/ui/action-menu';
+import { EntityTable, EntityTableViewModeProvider, type ColumnDef } from '@/components/ui/entity-table';
 import { EntityPreviewDialog } from '@/components/ui/entity-preview-dialog';
 import { Button } from '@/components/ui/button';
 import { FilterBar } from '@/components/ui/filter-bar';
@@ -69,7 +70,19 @@ export function OverdueInvoicesPanel({ rows, action, isLoading }: Readonly<{ row
     { key: 'paid', header: 'المدفوع', priority: 'detail', render: (row) => <span dir="ltr">{formatMoney(row.paidAmount)}</span> },
     { key: 'remaining', header: 'المتبقي', priority: 'primary', render: (row) => <span dir="ltr" className="font-black text-destructive">{formatMoney(row.remainingAmount)}</span> },
     { key: 'status', header: 'الحالة', priority: 'detail', render: (row) => <StatusBadge tone="neutral">{formatInvoiceStatusLabel(row.status)}</StatusBadge> },
-    { key: 'actions', header: 'إجراء', priority: 'actions', render: (row) => <Button variant="secondary" className="min-h-11" onClick={() => setSelected(row)}>عرض</Button> },
+    {
+      key: 'actions',
+      header: 'إجراء',
+      priority: 'actions',
+      render: (row) => (
+        <div className="flex" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+          <ActionMenu
+            label={`إجراءات ${row.invoiceReference ?? 'الفاتورة'}`}
+            items={[{ id: 'view', label: 'عرض', onClick: () => setSelected(row) }]}
+          />
+        </div>
+      ),
+    },
   ], []);
 
   return (
@@ -77,8 +90,9 @@ export function OverdueInvoicesPanel({ rows, action, isLoading }: Readonly<{ row
       {rows.length === 0 ? (
         <div className="p-4"><ReportState message="لا توجد فواتير متأخرة حسب تاريخ التقرير." /></div>
       ) : (
-        <div className="space-y-3 p-3 sm:p-4">
-          <FilterBar
+        <EntityTableViewModeProvider storageKey="malek:reports:overdue-view-mode-v1">
+          <div className="space-y-3 p-3 sm:p-4">
+            <FilterBar
             searchValue={query}
             onSearchChange={setQuery}
             searchPlaceholder="بحث بالمستأجر، الهاتف، العقار، الوحدة، العقد أو الفاتورة"
@@ -97,8 +111,9 @@ export function OverdueInvoicesPanel({ rows, action, isLoading }: Readonly<{ row
             <ReportState message="لا توجد نتائج مطابقة للبحث الحالي. امسح البحث أو جرّب قيمة أخرى." />
           ) : (
             <EntityTable aria-label="جدول تحليل المتأخرات" rows={visibleRows} columns={columns} keyOf={(row) => row.invoiceId} onRowClick={(row) => setSelected(row)} />
-          )}
-        </div>
+            )}
+          </div>
+        </EntityTableViewModeProvider>
       )}
       <EntityPreviewDialog open={Boolean(selected)} onOpenChange={(open) => { if (!open) setSelected(null); }} title={selected ? `تفاصيل المتأخرات — ${selected.invoiceReference ?? 'فاتورة مسجلة'}` : 'تفاصيل المتأخرات'} description="Drill-down سياقي إلى السجلات الأصلية بدون فقد سياق التقرير.">
         {selected ? (

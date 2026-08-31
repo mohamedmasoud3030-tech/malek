@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { EntityForm } from '@/components/ui/entity-form';
 import { FilterBar } from '@/components/ui/filter-bar';
@@ -22,6 +23,7 @@ type InvoiceFiltersProps = {
   invoiceSearch: string;
   isGenerating: boolean;
   canGenerateInvoices: boolean;
+  columnVisibilityControl?: ReactNode;
   dateFrom: string;
   dateTo: string;
   tenantId: string;
@@ -42,6 +44,7 @@ export function InvoiceFilters({
   invoiceSearch,
   isGenerating,
   canGenerateInvoices,
+  columnVisibilityControl,
   dateFrom,
   dateTo,
   tenantId,
@@ -138,15 +141,18 @@ export function InvoiceFilters({
       activeFilters={activeFilters}
       onClearAllFilters={clearAdvancedFilters}
       actions={(
-        <Button
-          className="min-h-11 shrink-0 rounded-lg"
-          onClick={onGenerateInvoices}
-          disabled={!canGenerateInvoices || isGenerating}
-          title={canGenerateInvoices ? undefined : 'ليس لديك صلاحية إنشاء الفواتير'}
-          aria-label="إنشاء الفواتير المستحقة"
-        >
-          {isGenerating ? 'جارٍ الإنشاء...' : 'إنشاء المستحق'}
-        </Button>
+        <>
+          {columnVisibilityControl}
+          <Button
+            className="min-h-11 shrink-0 rounded-lg"
+            onClick={onGenerateInvoices}
+            disabled={!canGenerateInvoices || isGenerating}
+            title={canGenerateInvoices ? undefined : 'ليس لديك صلاحية إنشاء الفواتير'}
+            aria-label="إنشاء الفواتير المستحقة"
+          >
+            {isGenerating ? 'جارٍ الإنشاء...' : 'إنشاء المستحق'}
+          </Button>
+        </>
       )}
     />
   );

@@ -3,10 +3,13 @@ import { useState } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
+import { DataTableColumnsMenu } from '@/components/ui/data-table';
+import { EntityTableViewModeProvider } from '@/components/ui/entity-table';
 import { defaultCompanySettingsContract } from '@/lib/companySettings';
 import { ContractFilters } from './components/ContractFilters';
 import { ContractKpiGrid } from './components/ContractKpiGrid';
 import { ContractResults } from './components/ContractResults';
+import { contractColumnOptions, defaultContractColumns } from './components/ContractTable';
 import { useContractFilters, type LeaseModeFilter } from './hooks/useContractFilters';
 import type { ContractListItem, ContractStatusFilter } from './services/contractService';
 
@@ -133,6 +136,7 @@ export function ContractsListE2EFixture() {
   const [searchTerm, setSearchTerm] = useState('');
   const [expiringOnly, setExpiringOnly] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultContractColumns]);
 
   const { filteredContracts, hasActiveFilters } = useContractFilters({
     contracts: fixtureContracts,
@@ -160,6 +164,7 @@ export function ContractsListE2EFixture() {
             </Button>
           }
         />
+        <EntityTableViewModeProvider storageKey="malek:list-page:العقود">
         <ContractKpiGrid
           companySettings={defaultCompanySettingsContract}
           contracts={fixtureContracts}
@@ -169,6 +174,13 @@ export function ContractsListE2EFixture() {
         <ContractFilters
           activeFilters={[]}
           canExport={false}
+          columnVisibilityControl={(
+            <DataTableColumnsMenu
+              columns={contractColumnOptions}
+              visibleKeys={visibleColumnKeys}
+              onChange={setVisibleColumnKeys}
+            />
+          )}
           expiringOnly={expiringOnly}
           leaseMode={leaseMode}
           onClearAllFilters={() => { setStatus('all'); setLeaseMode('all'); setSearchTerm(''); setExpiringOnly(false); }}
@@ -195,7 +207,9 @@ export function ContractsListE2EFixture() {
           onPreview={() => undefined}
           onRetry={() => undefined}
           setExpandedId={setExpandedId}
+          visibleColumnKeys={visibleColumnKeys}
         />
+        </EntityTableViewModeProvider>
       </PageLayout>
     </main>
   );

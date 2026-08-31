@@ -80,15 +80,16 @@ describe('TenantsPage shared person mobile workflow interactions', () => {
 
     expect(container.textContent).toContain('العقود النشطة');
     expect(container.textContent).toContain('المتأخرات');
-    // The contract is the primary domain link and stays a flat action.
-    expect(container.textContent).toContain('العقد');
 
-    // Edit lives in the shared row menu (معاينة / التفاصيل الكاملة / تعديل).
+    // Domain links and edit live in the shared row menu, keeping the table to
+    // one desktop action trigger without hiding the tenant's contract link.
     const actionMenu = Array.from(container.querySelectorAll('button'))
       .find((button) => button.getAttribute('aria-haspopup') === 'menu');
     expect(actionMenu).toBeTruthy();
     await act(async () => actionMenu?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
-    const editButton = Array.from(document.body.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'))
+    const menuItems = Array.from(document.body.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'));
+    expect(menuItems.some((button) => button.textContent?.trim() === 'فتح العقد')).toBe(true);
+    const editButton = menuItems
       .find((button) => button.textContent?.trim() === 'تعديل');
     expect(editButton).toBeTruthy();
     await act(async () => editButton?.dispatchEvent(new MouseEvent('click', { bubbles: true })));

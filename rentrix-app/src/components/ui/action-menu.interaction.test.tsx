@@ -10,6 +10,24 @@ describe('ActionMenu keyboard contract', () => {
   beforeEach(() => { container = document.createElement('div'); document.body.appendChild(container); root = createRoot(container); });
   afterEach(() => { act(() => root.unmount()); container.remove(); document.querySelectorAll('[role="menu"]').forEach((node) => node.remove()); });
 
+  it('keeps a single available action behind the canonical menu trigger', () => {
+    const onSelect = vi.fn();
+    act(() => root.render(<ActionMenu label="إجراءات السجل" items={[{ id: 'view', label: 'عرض', onSelect }]} />));
+
+    const trigger = container.querySelector<HTMLButtonElement>('[data-action-menu-trigger]');
+    expect(trigger).not.toBeNull();
+    expect(trigger?.getAttribute('aria-haspopup')).toBe('menu');
+    expect(container.querySelector('[role="menu"]')).toBeNull();
+
+    act(() => trigger?.click());
+    const item = document.querySelector<HTMLButtonElement>('[role="menuitem"]');
+    expect(item?.textContent).toContain('عرض');
+    expect(onSelect).not.toHaveBeenCalled();
+
+    act(() => item?.click());
+    expect(onSelect).toHaveBeenCalledTimes(1);
+  });
+
   it('uses menu semantics and supports keyboard navigation, escape, selection, and outside dismissal', () => {
     const edit = vi.fn(); const archive = vi.fn();
     act(() => root.render(<table><tbody><tr><td><ActionMenu items={[

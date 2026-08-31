@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import { APP_BRAND_FILE_SLUG } from '@/lib/brand';
 import { Controller } from 'react-hook-form';
-import { Building2, Download, Edit, Eye, Plus, Printer, ReceiptText, Tags, WalletCards } from 'lucide-react';
+import { Building2, Download, Edit, Eye, Printer, ReceiptText, Tags, WalletCards } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { ActionMenu } from '@/components/ui/action-menu';
 import { EntityForm } from '@/components/ui/entity-form';
@@ -54,6 +54,11 @@ type ExpensesSectionProps = Readonly<{
   isUpdateExpenseSuccess?: boolean;
 }>;
 
+export type ExpensesSectionHandle = Readonly<{
+  openCreateForm: () => void;
+  exportVisibleExpenses: () => void;
+}>;
+
 function escapeCsvCell(value: string | number | null | undefined) {
   return escapeCsvValue(value);
 }
@@ -75,7 +80,7 @@ export function buildExpensesCsv(expenses: readonly Expense[], propertyRows: rea
   ].join('\n');
 }
 
-export function ExpensesSection({
+export const ExpensesSection = forwardRef<ExpensesSectionHandle, ExpensesSectionProps>(function ExpensesSection({
   expenses,
   propertyRows,
   costCenterRows,
@@ -91,7 +96,7 @@ export function ExpensesSection({
   onUpdateExpense,
   isUpdateExpensePending = false,
   isUpdateExpenseSuccess = false,
-}: ExpensesSectionProps) {
+}: ExpensesSectionProps, ref) {
   const [formOpen, setFormOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [detailsExpense, setDetailsExpense] = useState<Expense | null>(null);
@@ -132,6 +137,8 @@ export function ExpensesSection({
     expenseForm.reset({ property_id: '', category: 'صيانة', cost_center_id: '', charged_to: 'COMPANY', amount: 0, expense_date: getTodayLocalDateString(), description: '', attachment_url: null });
     setFormOpen(true);
   };
+
+  useImperativeHandle(ref, () => ({ openCreateForm, exportVisibleExpenses }), [exportVisibleExpenses, openCreateForm]);
 
   const openEditForm = (expense: Expense) => {
     setEditingExpense(expense);
@@ -213,23 +220,6 @@ export function ExpensesSection({
 
   return (
     <Card className="overflow-hidden rounded-2xl">
-      <CardHeader className="gap-4 border-b border-border/60 bg-muted/20 sm:flex sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <CardTitle>المصروفات التشغيلية</CardTitle>
-          <CardDescription className="mt-1 leading-6">فلترة المصروفات وتصدير النتائج أو تسجيل مصروف جديد دون ازدحام الصفحة.</CardDescription>
-        </div>
-        <div className="grid grid-cols-1 gap-2 sm:flex sm:shrink-0">
-          <Button variant="secondary" onClick={exportVisibleExpenses} disabled={expenses.length === 0}>
-            <Download className="me-2 size-4" aria-hidden="true" />
-            تصدير CSV
-          </Button>
-          <Button onClick={openCreateForm} disabled={propertyRows.length === 0}>
-            <Plus className="me-2 size-4" aria-hidden="true" />
-            إضافة مصروف
-          </Button>
-        </div>
-      </CardHeader>
-
       <CardContent className="space-y-5 p-3 sm:p-5">
         <RegisterMetricStrip
           aria-label="ملخص المصروفات"
@@ -407,4 +397,4 @@ export function ExpensesSection({
       </EntityForm.Overlay>
     </Card>
   );
-}
+});

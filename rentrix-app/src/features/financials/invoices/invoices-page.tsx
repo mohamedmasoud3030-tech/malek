@@ -21,6 +21,7 @@ export function InvoicesWorkspace({ embedded = false }: InvoicesWorkspaceProps) 
       visualVariant="malek-pro"
       embedded={embedded}
       title="الفواتير"
+      viewModeStorageKey="malek:invoices:register-view-mode-v1"
     >
       <InvoiceWorkspaceSection />
     </EmbeddableWorkspace>

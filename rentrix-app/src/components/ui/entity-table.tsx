@@ -119,6 +119,8 @@ type EntityTableViewModeContextValue = {
   manualViewMode: ViewMode | null;
   viewportMode: ResponsiveViewport;
   onChange: (nextMode: ViewMode) => void;
+  /** Only direct EntityTable consumers own a local toggle; shared toolbars do not. */
+  renderStandaloneToggle: boolean;
 };
 
 const EntityTableViewModeContext = createContext<EntityTableViewModeContextValue | null>(null);
@@ -154,9 +156,12 @@ function getDefaultViewMode(viewport: ResponsiveViewport): ViewMode {
 export function EntityTableViewModeProvider({
   storageKey,
   children,
+  renderStandaloneToggle = false,
 }: Readonly<{
   storageKey: string;
   children: ReactNode;
+  /** Direct EntityTable fallback only; page FilterBar consumers leave this false. */
+  renderStandaloneToggle?: boolean;
 }>) {
   const [viewportMode, setViewportMode] = useState<ResponsiveViewport>(() => getViewportMode());
   const [manualViewMode, setManualViewMode] = useState<ViewMode | null>(() => getStoredViewMode(storageKey));
@@ -189,6 +194,7 @@ export function EntityTableViewModeProvider({
         manualViewMode,
         viewportMode,
         onChange,
+        renderStandaloneToggle,
       }}
     >
       {children}
@@ -556,15 +562,11 @@ function EntityTableImpl<T>({
   mobileCardPrimaryAction,
   toolbar,
   visibleColumnKeys,
-  viewModeStorageKey,
   'aria-label': ariaLabel,
   className,
 }: EntityTableProps<T>) {
   const disclosurePrefix = useId();
-  const storageKey = viewModeStorageKey ?? normalizeStorageKey(ariaLabel);
   const sharedViewMode = useContext(EntityTableViewModeContext);
-  const [viewportMode, setViewportMode] = useState<ResponsiveViewport>(() => getViewportMode());
-  const [manualViewMode, setManualViewMode] = useState<ViewMode | null>(() => getStoredViewMode(storageKey));
   const [internalExpandedRows, setInternalExpandedRows] = useState<Set<string>>(() => new Set());
   const isControlledSingle = expandedRowId !== undefined;
   const resolvedColumns = useMemo(
@@ -574,29 +576,12 @@ function EntityTableImpl<T>({
   const hasExpansion = renderRowExpansion !== undefined;
   const resolvedExpandedRowId = expandedRowId === undefined ? null : expandedRowId;
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const updateViewportMode = () => setViewportMode(getViewportMode());
-    updateViewportMode();
-    window.addEventListener('resize', updateViewportMode);
-    return () => window.removeEventListener('resize', updateViewportMode);
-  }, []);
-
-  useEffect(() => {
-    setManualViewMode(getStoredViewMode(storageKey));
-  }, [storageKey]);
-
-  const chooseViewMode = (nextMode: ViewMode) => {
-    setManualViewMode(nextMode);
-    try {
-      window.localStorage.setItem(storageKey, nextMode);
-    } catch {
-      // Keep the in-memory choice even when storage is unavailable.
-    }
-  };
-
-  const effectiveViewportMode = sharedViewMode?.viewportMode ?? viewportMode;
-  const effectiveManualViewMode = sharedViewMode?.manualViewMode ?? manualViewMode;
+  // EntityTable never owns a second viewport/view-mode state machine. The
+  // wrapper below supplies a provider for direct consumers; page registers get
+  // the provider from EmbeddableWorkspace and the sibling FilterBar owns the
+  // only visible Cards/Table toggle.
+  const effectiveViewportMode = sharedViewMode?.viewportMode ?? getViewportMode();
+  const effectiveManualViewMode = sharedViewMode?.manualViewMode ?? null;
   const presentationMode: ViewMode = sharedViewMode?.viewMode
     ?? effectiveManualViewMode
     ?? getDefaultViewMode(effectiveViewportMode);
@@ -624,9 +609,9 @@ function EntityTableImpl<T>({
   if (isLoading) {
     return (
       <div className={cn('space-y-2.5', className)} data-entity-table-register data-entity-table-presentation={presentationMode}>
-        {!sharedViewMode || toolbar ? (
+        {sharedViewMode?.renderStandaloneToggle || toolbar ? (
           <div data-entity-table-toolbar className="flex min-h-11 flex-wrap items-center justify-between gap-2">
-            {!sharedViewMode ? <ViewModeToggle ariaLabel={ariaLabel} viewMode={presentationMode} onChange={chooseViewMode} /> : null}
+            {sharedViewMode?.renderStandaloneToggle ? <ViewModeToggle ariaLabel={ariaLabel} viewMode={presentationMode} onChange={sharedViewMode.onChange} /> : null}
             {toolbar}
           </div>
         ) : null}
@@ -695,7 +680,7 @@ function EntityTableImpl<T>({
   const colSpan = tableColumns.length + (hasExpansion ? 1 : 0);
 
   return (
-    <div className={cn('space-y-2.5', className)} data-entity-table-register data-entity-table-presentation={presentationMode} data-entity-table-viewport={viewportMode}>
+    <div className={cn('space-y-2.5', className)} data-entity-table-register data-entity-table-presentation={presentationMode} data-entity-table-viewport={effectiveViewportMode}>
       {error != null ? (
         <DataRefreshAlert
           title={errorTitle}
@@ -709,9 +694,9 @@ function EntityTableImpl<T>({
         aria-disabled={error != null ? 'true' : undefined}
         data-stale-register-content={error != null ? 'true' : undefined}
       >
-        {!sharedViewMode || toolbar ? (
+        {sharedViewMode?.renderStandaloneToggle || toolbar ? (
           <div data-entity-table-toolbar className="flex min-h-11 flex-wrap items-center justify-between gap-2">
-            {!sharedViewMode ? <ViewModeToggle ariaLabel={ariaLabel} viewMode={presentationMode} onChange={chooseViewMode} /> : null}
+            {sharedViewMode?.renderStandaloneToggle ? <ViewModeToggle ariaLabel={ariaLabel} viewMode={presentationMode} onChange={sharedViewMode.onChange} /> : null}
             {toolbar}
           </div>
         ) : null}
@@ -848,8 +833,26 @@ function EntityTableImpl<T>({
 }
 
 /**
+ * Direct consumers still get a usable Cards/Table control, but the state lives
+ * in the same provider used by page-level FilterBar consumers. Registers inside
+ * EmbeddableWorkspace simply consume its existing provider and render no local
+ * toggle or duplicate viewport listener.
+ */
+function EntityTableWithViewMode<T>(props: EntityTableProps<T>) {
+  const sharedViewMode = useContext(EntityTableViewModeContext);
+  if (sharedViewMode) return <EntityTableImpl {...props} />;
+
+  const storageKey = props.viewModeStorageKey ?? normalizeStorageKey(props['aria-label']);
+  return (
+    <EntityTableViewModeProvider storageKey={storageKey} renderStandaloneToggle>
+      <EntityTableImpl {...props} />
+    </EntityTableViewModeProvider>
+  );
+}
+
+/**
  * Memoised generic wrapper — preserves the `EntityTable<T>` call signature
  * while allowing React to skip re-renders when the row list and column
  * definitions are referentially stable.
  */
-export const EntityTable = memo(EntityTableImpl) as typeof EntityTableImpl;
+export const EntityTable = memo(EntityTableWithViewMode) as typeof EntityTableImpl;

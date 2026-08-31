@@ -1,7 +1,7 @@
 import { Edit, Eye, Trash2, User } from "lucide-react";
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
+import { ActionMenu } from "@/components/ui/action-menu";
 import { Button } from "@/components/ui/button";
-import { DataTableColumnsMenu } from "@/components/ui/data-table";
 import { EntityCell } from "@/components/ui/entity-cell";
 import { EntityTable, type ColumnDef } from "@/components/ui/entity-table";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -32,7 +32,7 @@ function isShortStayContract(contract: Pick<ContractListItem, "lease_mode">) {
   return contract.lease_mode === "short_stay";
 }
 
-const contractColumnOptions = [
+export const contractColumnOptions = [
   { key: "contract_number", label: "رقم العقد", locked: true },
   { key: "tenant", label: "المستأجر" },
   { key: "unit", label: "الوحدة" },
@@ -42,7 +42,7 @@ const contractColumnOptions = [
   { key: "actions", label: "الإجراءات", locked: true },
 ] as const;
 
-const defaultContractColumns = contractColumnOptions.map((column) => column.key);
+export const defaultContractColumns = contractColumnOptions.map((column) => column.key);
 
 export function ContractTable({
   companySettings,
@@ -59,6 +59,7 @@ export function ContractTable({
   onRetry,
   pagination,
   setExpandedId,
+  visibleColumnKeys,
 }: {
   companySettings: CompanySettingsContract;
   contracts: ContractListItem[];
@@ -74,9 +75,8 @@ export function ContractTable({
   onRetry: () => void;
   pagination?: { page: number; pageSize: number; total: number; onPageChange: (page: number) => void };
   setExpandedId: (updater: (value: string | null) => string | null) => void;
+  visibleColumnKeys: readonly string[];
 }) {
-  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultContractColumns]);
-
   const columns = useMemo((): ColumnDef<ContractListItem>[] => [
     {
       key: "contract_number",
@@ -149,32 +149,35 @@ export function ContractTable({
       priority: "actions",
       className: "w-52",
       render: (contract) => (
-        <div className="flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
-          <Button
-            variant="secondary"
-            className="min-h-11 px-3"
-            aria-label={`معاينة تفاصيل العقد ${getContractNumber(contract)}`}
-            onClick={() => onPreview(contract.id)}
-          >
-            <Eye className="size-4" aria-hidden="true" />
-            عرض
-          </Button>
-          {onEdit ? (
-            <Button variant="secondary" className="min-h-11 px-3" onClick={() => onEdit(contract.id)}>
-              <Edit className="size-4" aria-hidden="true" />
-              تعديل
-            </Button>
-          ) : null}
-          {onDelete ? (
-            <Button variant="danger" className="min-h-11 px-3" aria-label={`أرشفة العقد ${getContractNumber(contract)}`} onClick={() => onDelete(contract.id)}>
-              <Trash2 className="size-4" aria-hidden="true" />
-              أرشفة
-            </Button>
-          ) : null}
+        <div className="flex" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+          <ActionMenu
+            label={`إجراءات العقد ${getContractNumber(contract)}`}
+            items={[
+              {
+                id: 'preview',
+                label: 'عرض',
+                icon: Eye,
+                onClick: () => onPreview(contract.id),
+              },
+              ...(onEdit ? [{
+                id: 'edit',
+                label: 'تعديل',
+                icon: Edit,
+                onClick: () => onEdit(contract.id),
+              }] : []),
+              ...(onDelete ? [{
+                id: 'archive',
+                label: 'أرشفة',
+                icon: Trash2,
+                danger: true,
+                onClick: () => onDelete(contract.id),
+              }] : []),
+            ]}
+          />
         </div>
       ),
     },
-  ], [onPreview, onEdit]);
+  ], [companySettings, onDelete, onEdit, onPreview]);
 
   return (
     <EntityTable
@@ -182,15 +185,6 @@ export function ContractTable({
       rows={contracts}
       columns={columns}
       keyOf={(c) => c.id}
-      toolbar={(
-        <div className="hidden min-w-0 items-center justify-end gap-2 md:flex" data-contract-columns-control>
-          <DataTableColumnsMenu
-            columns={contractColumnOptions}
-            visibleKeys={visibleColumnKeys}
-            onChange={setVisibleColumnKeys}
-          />
-        </div>
-      )}
       visibleColumnKeys={visibleColumnKeys}
       isLoading={isLoading}
       error={error}

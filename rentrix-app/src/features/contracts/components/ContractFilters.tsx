@@ -1,4 +1,5 @@
 import { AlertTriangle } from 'lucide-react';
+import type { ReactNode } from 'react';
 import type { ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { Button } from '@/components/ui/button';
 import { ExportMenu } from '@/components/ui/export-menu';
@@ -26,6 +27,7 @@ export const contractLeaseModeOptions: { value: LeaseModeFilter; label: string }
 export function ContractFilters({
   activeFilters,
   canExport,
+  columnVisibilityControl,
   expiringOnly,
   leaseMode,
   onClearAllFilters,
@@ -41,6 +43,7 @@ export function ContractFilters({
 }: {
   activeFilters: ActiveFilterItem[];
   canExport: boolean;
+  columnVisibilityControl?: ReactNode;
   expiringOnly: boolean;
   leaseMode: LeaseModeFilter;
   onClearAllFilters: () => void;
@@ -81,14 +84,23 @@ export function ContractFilters({
       )}
       activeFilters={activeFilters}
       onClearAllFilters={onClearAllFilters}
-      actions={canExport ? (
-        <ExportMenu
-          disabled={exportDisabled}
-          items={[
-            { id: 'xlsx', label: 'ملف Excel', icon: FileSpreadsheet, onClick: onExportXlsx },
-            { id: 'csv', label: 'ملف CSV', icon: FileText, onClick: onExportCsv },
-          ]}
-        />
+      actions={canExport || columnVisibilityControl ? (
+        <>
+          {columnVisibilityControl ? (
+            <div className="hidden min-w-0 items-center gap-2 md:flex" data-contract-columns-control>
+              {columnVisibilityControl}
+            </div>
+          ) : null}
+          {canExport ? (
+            <ExportMenu
+              disabled={exportDisabled}
+              items={[
+                { id: 'xlsx', label: 'ملف Excel', icon: FileSpreadsheet, onClick: onExportXlsx },
+                { id: 'csv', label: 'ملف CSV', icon: FileText, onClick: onExportCsv },
+              ]}
+            />
+          ) : null}
+        </>
       ) : undefined}
     />
   );

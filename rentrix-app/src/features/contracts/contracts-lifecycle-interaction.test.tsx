@@ -130,14 +130,23 @@ describe('Contracts lifecycle mobile interactions', () => {
     const closeButton = Array.from(document.body.querySelectorAll('button')).find((button) => button.textContent?.includes('إغلاق'));
     await act(async () => closeButton?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
 
-    const editButton = Array.from(container.querySelectorAll('button')).find((button) => button.textContent?.includes('تعديل'));
-    expect(editButton).toBeTruthy();
-    await act(async () => editButton?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+    const selectListAction = async (label: string) => {
+      const trigger = Array.from(container.querySelectorAll<HTMLButtonElement>('[data-action-menu-trigger]'))
+        .find((button) => button.getAttribute('aria-label')?.startsWith('إجراءات العقد'));
+      expect(trigger).toBeTruthy();
+      await act(async () => trigger?.click());
+      const action = Array.from(document.body.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'))
+        .find((button) => button.textContent?.trim() === label);
+      expect(action).toBeTruthy();
+      await act(async () => action?.click());
+    };
+
+    await selectListAction('تعديل');
     expect(document.body.textContent).toContain('تعديل عقد contract-1');
 
-    const deleteButton = Array.from(container.querySelectorAll('button')).find((button) => button.textContent?.includes('أرشفة'));
-    expect(deleteButton).toBeTruthy();
-    await act(async () => deleteButton?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+    const editCloseButton = Array.from(document.body.querySelectorAll('button')).find((button) => button.textContent?.includes('إغلاق'));
+    await act(async () => editCloseButton?.click());
+    await selectListAction('أرشفة');
     expect(document.body.textContent).toContain('أرشفة العقد؟');
   });
 

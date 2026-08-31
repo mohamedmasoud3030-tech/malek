@@ -92,7 +92,7 @@ describe('PropertyAnalyticsSection professional property report wiring', () => {
   it('renders the professional property report actions when the workspace model is available', () => {
     renderSection();
     expect(screen.getByRole('button', { name: 'تنزيل تقرير العقار PDF' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'طباعة' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'خيارات إخراج تقرير العقار' })).toBeDefined();
   });
 
   it('hides the professional actions when the workspace model/scope is absent', () => {
@@ -103,7 +103,8 @@ describe('PropertyAnalyticsSection professional property report wiring', () => {
 
   it('prints the property performance report with the active workspace scope', async () => {
     renderSection();
-    fireEvent.click(screen.getByRole('button', { name: 'طباعة' }));
+    fireEvent.click(screen.getByRole('button', { name: 'خيارات إخراج تقرير العقار' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'طباعة' }));
 
     await vi.waitFor(() => {
       expect(documentService.printDocument).toHaveBeenCalledWith('property_report', expect.objectContaining({
@@ -126,7 +127,8 @@ describe('PropertyAnalyticsSection professional property report wiring', () => {
 
   it('refuses generation truthfully when the workspace sources are incomplete', async () => {
     renderSection({ ...emptyModel, isIncomplete: true } as unknown as ReportsWorkspaceModel, filters);
-    fireEvent.click(screen.getByRole('button', { name: 'طباعة' }));
+    fireEvent.click(screen.getByRole('button', { name: 'خيارات إخراج تقرير العقار' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'طباعة' }));
 
     // The guarded action never reaches documentService on incomplete data.
     await vi.waitFor(() => {

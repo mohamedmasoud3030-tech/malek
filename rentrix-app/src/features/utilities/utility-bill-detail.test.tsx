@@ -92,11 +92,17 @@ describe('utility bill detail overlay (P3)', () => {
 
   async function openDetail() {
     const trigger = document.querySelector(
-      'button[aria-label="تفاصيل فاتورة المرافق UB-1001"]',
+      'button[aria-label="إجراءات UB-1001"]',
     ) as HTMLButtonElement;
     expect(trigger).not.toBeNull();
     await act(async () => {
       trigger.click();
+    });
+    const detailAction = Array.from(document.body.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'))
+      .find((button) => button.textContent?.trim() === 'التفاصيل');
+    expect(detailAction).not.toBeUndefined();
+    await act(async () => {
+      detailAction?.click();
     });
   }
 

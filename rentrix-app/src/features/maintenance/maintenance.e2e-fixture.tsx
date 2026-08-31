@@ -1,11 +1,14 @@
 import { AlertCircle, Clock, Flame, PlusCircle, Printer, Wrench } from 'lucide-react';
+import { useState } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
+import { DataTableColumnsMenu } from '@/components/ui/data-table';
+import { EntityTableViewModeProvider } from '@/components/ui/entity-table';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { Select } from '@/components/ui/select';
 import type { Property, Unit } from '@/types/domain';
-import { MaintenanceList } from './components/maintenance-list';
+import { MaintenanceList, defaultMaintenanceColumns, maintenanceColumnOptions } from './components/maintenance-list';
 import type { Maintenance } from './maintenance-service';
 
 const fixtureProperties: Property[] = [
@@ -85,6 +88,7 @@ function Metric({
 }
 
 export function MaintenanceE2EFixture() {
+  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultMaintenanceColumns]);
   const openCount = fixtureRows.filter((row) => row.status === 'open').length;
   const inProgressCount = fixtureRows.filter((row) => row.status === 'in_progress').length;
   const urgentCount = fixtureRows.filter((row) => row.priority === 'urgent').length;
@@ -142,6 +146,7 @@ export function MaintenanceE2EFixture() {
           </div>
         </section>
 
+        <EntityTableViewModeProvider storageKey="malek:list-page:طلبات الصيانة">
         <FilterBar
           searchValue=""
           onSearchChange={() => undefined}
@@ -162,6 +167,13 @@ export function MaintenanceE2EFixture() {
                 <option value="low">منخفضة</option>
               </Select>
             </>
+          )}
+          actions={(
+            <DataTableColumnsMenu
+              columns={maintenanceColumnOptions}
+              visibleKeys={visibleColumnKeys}
+              onChange={setVisibleColumnKeys}
+            />
           )}
         />
 
@@ -191,9 +203,11 @@ export function MaintenanceE2EFixture() {
               onViewDetails={() => undefined}
               onEdit={() => undefined}
               onStatusAction={() => undefined}
+              visibleColumnKeys={visibleColumnKeys}
             />
           </div>
         </section>
+        </EntityTableViewModeProvider>
       </PageLayout>
     </main>
   );

@@ -112,13 +112,12 @@ describe('ContractsListPage load states', () => {
     contractsMocks.contractsQuery.data = { rows: [contractFixture], count: 1 };
 
     const html = renderToStaticMarkup(<ContractsListPage />);
-
     expect(html).toContain('aria-label="جدول العقود"');
     expect(html).toContain('data-compact-responsive-table="true"');
     expect(html).toContain('data-entity-table-scroll');
     expect(html).toContain('<table');
     // The shared Cards ⇄ Table foundation exposes one toggle (default: Table on desktop).
-    expect(html).toContain('طريقة عرض جدول العقود');
+    expect(html).toContain('طريقة عرض العقود');
     expect(html).toContain('أحمد سالم');
     expect(html).toContain('A-101');
   });

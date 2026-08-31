@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { ExternalLink, Printer, ReceiptText } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { ActionMenu } from '@/components/ui/action-menu';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { formatDate, formatMoney } from '@/features/financials/components/financials-formatters';
@@ -107,21 +107,24 @@ export function ReceiptLinksPanel({ rows, isLoading }: Readonly<{ rows: Collecti
       header: 'إجراءات',
       priority: 'actions',
       render: (receipt) => (
-        <div className="flex flex-wrap gap-1.5" data-row-action>
-          <Button asChild size="sm" variant="secondary" className="min-h-11">
-            <a href={createReceiptPrintHref(receipt.id)}>
-              <Printer className="me-1 size-3.5" aria-hidden="true" />
-              الإيصال
-            </a>
-          </Button>
-          {receipt.contract_id ? (
-            <Button asChild size="sm" variant="ghost" className="min-h-11">
-              <a href={`/contracts/${encodeURIComponent(receipt.contract_id)}`}>
-                <ExternalLink className="me-1 size-3.5" aria-hidden="true" />
-                العقد
-              </a>
-            </Button>
-          ) : null}
+        <div className="flex" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+          <ActionMenu
+            label={`إجراءات الإيصال ${receipt.receipt_number}`}
+            items={[
+              {
+                id: 'receipt',
+                label: 'الإيصال',
+                icon: Printer,
+                onClick: () => { window.location.href = createReceiptPrintHref(receipt.id); },
+              },
+              ...(receipt.contract_id ? [{
+                id: 'contract',
+                label: 'العقد',
+                icon: ExternalLink,
+                onClick: () => { window.location.href = `/contracts/${encodeURIComponent(receipt.contract_id!)}`; },
+              }] : []),
+            ]}
+          />
         </div>
       ),
     },

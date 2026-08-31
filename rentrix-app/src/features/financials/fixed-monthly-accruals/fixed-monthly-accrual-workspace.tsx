@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { RegisterMetricStrip } from '@/components/layout/register-summary';
+import { ActionMenu } from '@/components/ui/action-menu';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -196,17 +197,21 @@ export function FixedMonthlyAccrualWorkspace() {
       header: 'الإجراء',
       priority: 'actions',
       render: (row) => canReverse && row.status !== 'REVERSED' ? (
-        <Button
-          size="sm"
-          variant="outline"
-          leftIcon={<RotateCcw className="size-3.5" />}
-          onClick={() => {
-            setReversalAccrualId(row.id);
-            setReversalReason('');
-          }}
-        >
-          عكس
-        </Button>
+        <div className="flex" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+          <ActionMenu
+            label={`إجراءات استحقاق ${formatCompactDate(row.accrualDate)}`}
+            items={[{
+              id: 'reverse',
+              label: 'عكس',
+              icon: RotateCcw,
+              danger: true,
+              onClick: () => {
+                setReversalAccrualId(row.id);
+                setReversalReason('');
+              },
+            }]}
+          />
+        </div>
       ) : <span className="text-muted-foreground">—</span>,
     },
   ], [canReverse, formatOmr]);

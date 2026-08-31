@@ -1,6 +1,7 @@
 import { Edit, Plus, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { AsyncContentState } from '@/components/async-content-state';
+import { ActionMenu } from '@/components/ui/action-menu';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EntityForm } from '@/components/ui/entity-form';
@@ -65,10 +66,15 @@ export function ServiceProviderCategoriesDialog({ open, onOpenChange }: Readonly
   const categoryColumns: ColumnDef<ServiceProviderCategory>[] = useMemo(() => [
     { key: 'name', header: 'النوع', render: (category) => <span className="font-bold">{category.name}</span> },
     { key: 'description', header: 'الوصف', render: (category) => category.description ?? '—' },
-    { key: 'actions', header: 'إجراءات', render: (category) => (
-      <div className="flex flex-wrap gap-2">
-        <Button type="button" variant="secondary" className="min-h-11" onClick={() => beginEdit(category)}><Edit className="me-1 size-4" aria-hidden="true" />تعديل</Button>
-        <Button type="button" variant="ghost" className="min-h-11 text-destructive" onClick={() => setArchiveTarget(category)}><Trash2 className="me-1 size-4" aria-hidden="true" />أرشفة</Button>
+    { key: 'actions', header: 'إجراءات', priority: 'actions', render: (category) => (
+      <div className="flex" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+        <ActionMenu
+          label={`إجراءات نوع الخدمة ${category.name}`}
+          items={[
+            { id: 'edit', label: 'تعديل', icon: Edit, onClick: () => beginEdit(category) },
+            { id: 'archive', label: 'أرشفة', icon: Trash2, danger: true, onClick: () => setArchiveTarget(category) },
+          ]}
+        />
       </div>
     ) },
   ], [beginEdit]);

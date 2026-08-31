@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EntityCell } from '@/components/ui/entity-cell';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
-import { RegisterHeading, RegisterMetricStrip } from '@/components/layout/register-summary';
+import { RegisterMetricStrip } from '@/components/layout/register-summary';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { ListPage } from '@/components/layout/list-page';
@@ -110,7 +110,7 @@ export function ServiceProvidersWorkspace({ embedded = false }: Readonly<{ embed
         </div>
       ),
     },
-  ], []);
+  ], [canWrite, dialogNavigate, navigate]);
 
   const createAction = canWrite ? (
     <Button className="min-h-11" onClick={() => dialogNavigate({ to: '/service-providers/new' })}>
@@ -165,7 +165,6 @@ export function ServiceProvidersWorkspace({ embedded = false }: Readonly<{ embed
         ) : null}
 
         <section className="min-w-0 space-y-2.5">
-          <RegisterHeading title="سجل مزودي الخدمات" />
           <div>
             <EntityTable
               aria-label="جدول مزودي الخدمات"

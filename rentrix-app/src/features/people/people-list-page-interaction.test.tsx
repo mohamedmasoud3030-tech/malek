@@ -85,10 +85,14 @@ describe('PeopleListPage mobile workflow interactions', () => {
   it('opens a prefilled edit form from table row actions', async () => {
     await act(async () => root.render(<PeopleListPage />));
 
-    const editButton = Array.from(container.querySelectorAll('button')).find((button) => button.textContent?.includes('تعديل'));
+    const actionTrigger = container.querySelector<HTMLButtonElement>('[data-action-menu-trigger]');
+    expect(actionTrigger).toBeTruthy();
+    await act(async () => actionTrigger?.click());
+    const editButton = Array.from(document.body.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'))
+      .find((button) => button.textContent?.trim() === 'تعديل');
     expect(editButton).toBeTruthy();
 
-    await act(async () => editButton?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+    await act(async () => editButton?.click());
     expect(document.body.textContent).toContain('تعديل شخص');
     const nameInput = document.body.querySelector('input[name="full_name"]') as HTMLInputElement | null;
     expect(nameInput?.value).toBe('أحمد علي');

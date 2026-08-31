@@ -97,8 +97,9 @@ describe('PropertiesListPage mobile workflow interactions', () => {
     await act(async () => row?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
     expect(mockNavigate).toHaveBeenCalledWith({ to: '/properties/$propertyId', params: { propertyId: 'property-1' } });
 
-    const dossierButton = Array.from(container.querySelectorAll('button')).find((button) => button.textContent?.trim() === 'فتح الملف');
-    expect(dossierButton).toBeTruthy();
+    // Desktop rows expose one canonical overflow trigger; the dossier action is
+    // intentionally inside that menu rather than beside it.
+    expect(container.querySelectorAll('tbody [data-action-menu-trigger]')).toHaveLength(1);
     expect(container.querySelector('tbody [data-action-menu]')).toBeTruthy();
 
     const actionTrigger = container.querySelector<HTMLButtonElement>('tbody [data-action-menu-trigger]');

@@ -102,25 +102,10 @@ export function ActionMenu({ items, label = 'الإجراءات', align = 'end',
   }, [open]);
 
   if (visibleItems.length === 0) return null;
-  if (!labeled && visibleItems.length === 1) {
-    const item = visibleItems[0];
-    return (
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => selectItem(item)}
-        disabled={disabled}
-        className={cn('size-11 text-muted-foreground hover:text-foreground', className)}
-        aria-label={item.label}
-        title={item.label}
-        data-action-menu
-      >
-        {getIcon(item) ?? <MoreVertical className="size-4" aria-hidden="true" />}
-        <span className="sr-only">{item.label}</span>
-      </Button>
-    );
-  }
-
+  // Keep the overflow contract stable even when a row currently has one
+  // available operation. A single visible item still opens the same menu so
+  // permissions, confirmations, and future actions never change the trigger
+  // shape or bypass the canonical action authority.
   return (
     <div className={cn('relative', className)} data-action-menu>
       <Button

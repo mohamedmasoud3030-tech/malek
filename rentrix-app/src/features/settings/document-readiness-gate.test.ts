@@ -90,8 +90,11 @@ describe('document readiness gate replaces fake company identity', () => {
     const utilities = read('utilities/components/utilities-workspace.tsx');
     expect(utilities).toContain('runGuardedDocumentAction');
     expect(utilities).toContain('isReady: documentSettings.isReady && !isError');
-    expect(utilities).toContain('onClick={handlePrint} disabled={!documentSettings.isReady || isError}');
-    expect(utilities).toContain('onClick={handleDownloadPdf} disabled={!documentSettings.isReady || isError}');
+    expect(utilities).toContain('disabled={!documentSettings.isReady || isError}');
+    expect(utilities).toContain("id: 'print'");
+    expect(utilities).toContain('onClick: handlePrint');
+    expect(utilities).toContain("id: 'pdf'");
+    expect(utilities).toContain('onClick: handleDownloadPdf');
     expect(utilities).not.toContain('ر.ع`');
   });
 
