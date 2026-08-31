@@ -260,6 +260,13 @@ export function InvoiceListSection({
             propertyId={propertyId}
             tenantOptions={tenantOptions}
             propertyOptions={propertyOptions}
+            columnVisibilityControl={(
+              <DataTableColumnsMenu
+                columns={invoiceColumnOptions}
+                visibleKeys={visibleColumnKeys}
+                onChange={setVisibleColumnKeys}
+              />
+            )}
             onStatusChange={onStatusChange}
             onInvoiceSearchChange={onInvoiceSearchChange}
             onGenerateInvoices={onGenerateInvoices}
@@ -273,24 +280,15 @@ export function InvoiceListSection({
 
       <FinanceSection ariaLabel="سجل الفواتير">
         <div data-finance-table-wrapper>
+          <p className="text-xs font-bold text-muted-foreground" aria-live="polite">
+            {total} فاتورة مطابقة · اضغط الصف للمعاينة أو «تحصيل» للدفع مباشرة
+          </p>
           <EntityTable
             aria-label="سجل الفواتير"
             viewModeStorageKey="malek:invoices:register-view-mode-v1"
             rows={invoices}
             keyOf={(invoice) => invoice.id}
             visibleColumnKeys={visibleColumnKeys}
-            toolbar={(
-              <div className="flex min-w-0 items-center justify-between gap-3">
-                <p className="truncate text-xs font-bold text-muted-foreground">
-                  {total} فاتورة مطابقة · اضغط الصف للمعاينة أو «تحصيل» للدفع مباشرة
-                </p>
-                <DataTableColumnsMenu
-                  columns={invoiceColumnOptions}
-                  visibleKeys={visibleColumnKeys}
-                  onChange={setVisibleColumnKeys}
-                />
-              </div>
-            )}
             isLoading={isLoading}
             error={isError ? error : undefined}
             errorTitle="تعذر تحميل الفواتير"

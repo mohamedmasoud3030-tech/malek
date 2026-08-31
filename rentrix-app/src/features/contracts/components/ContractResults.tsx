@@ -20,6 +20,7 @@ export function ContractResults({
   onRetry,
   pagination,
   setExpandedId,
+  visibleColumnKeys,
 }: {
   companySettings: CompanySettingsContract;
   contracts: ContractListItem[];
@@ -36,6 +37,7 @@ export function ContractResults({
   onRetry: () => void;
   pagination?: { page: number; pageSize: number; total: number; onPageChange: (page: number) => void };
   setExpandedId: (updater: (value: string | null) => string | null) => void;
+  visibleColumnKeys: readonly string[];
 }) {
   return (
     <section data-contract-register className="min-w-0 space-y-2.5">
@@ -68,6 +70,7 @@ export function ContractResults({
         onRetry={onRetry}
         pagination={pagination}
         setExpandedId={setExpandedId}
+        visibleColumnKeys={visibleColumnKeys}
       />
     </section>
   );

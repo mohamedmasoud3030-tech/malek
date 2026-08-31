@@ -36,7 +36,7 @@ describe('finance task-first UX', () => {
     expect(invoiceList).toContain('invoice.contracts?.units?.unit_number');
     expect(invoiceList).toContain('invoice.billing_period_start');
     expect(invoiceList).toContain('invoice.billing_period_end');
-    expect(invoiceList).toContain('تسجيل الدفعة من نفس سجل الفواتير');
+    expect(invoiceList).toContain('اضغط الصف للمعاينة أو «تحصيل» للدفع مباشرة');
   });
 
   it('uses one human search across invoice and contract context', () => {

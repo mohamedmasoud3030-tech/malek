@@ -54,8 +54,10 @@ describe('Service Providers register', () => {
     const writable = renderToStaticMarkup(<ServiceProvidersPage />);
     expect(writable).toContain('إضافة مزود');
     expect(writable).toContain('إدارة أنواع الخدمات');
-    expect(writable).toContain('تعديل');
-    expect(writable).toContain('أرشفة');
+    // Row mutations are behind the single canonical overflow trigger; the
+    // closed menu intentionally does not render its menu items in the DOM.
+    expect(writable).toContain('data-action-menu-trigger');
+    expect(writable).toContain('إجراءات شركة التبريد');
 
     mocks.canWrite = false;
     const readOnly = renderToStaticMarkup(<ServiceProvidersPage />);
@@ -63,7 +65,8 @@ describe('Service Providers register', () => {
     expect(readOnly).not.toContain('إدارة أنواع الخدمات');
     expect(readOnly).not.toContain('>تعديل<');
     expect(readOnly).not.toContain('>أرشفة<');
-    expect(readOnly).toContain('>عرض<');
+    expect(readOnly).toContain('data-action-menu-trigger');
+    expect(readOnly).toContain('إجراءات شركة التبريد');
   });
 
   it('renders a retryable register error instead of an empty success state', () => {

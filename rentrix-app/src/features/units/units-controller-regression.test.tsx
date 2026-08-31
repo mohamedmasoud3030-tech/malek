@@ -175,9 +175,13 @@ describe('UnitsPage controller regression', () => {
 
   it('opens edit modal from the row action without property selection', async () => {
     await act(async () => { root.render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><UnitsPage /></QueryClientProvider>); });
-    const editBtn = Array.from(container.querySelectorAll('button')).find(b => b.textContent?.includes('تعديل'));
+    const actionTrigger = container.querySelector<HTMLButtonElement>('[data-action-menu-trigger]');
+    expect(actionTrigger).toBeTruthy();
+    await act(async () => { actionTrigger?.click(); });
+    const editBtn = Array.from(document.body.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'))
+      .find((button) => button.textContent?.trim() === 'تعديل البيانات');
     expect(editBtn).toBeTruthy();
-    await act(async () => { editBtn?.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
+    await act(async () => { editBtn?.click(); });
     expect(document.body.textContent).toContain('تعديل وحدة');
     expect(document.body.textContent).not.toContain('اختيار العقار مطلوب');
   });
@@ -203,9 +207,13 @@ describe('UnitsPage controller regression', () => {
 
   it('routes the explicit full-detail action to the unit dossier', async () => {
     await act(async () => { root.render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><UnitsPage /></QueryClientProvider>); });
-    const fullDetail = Array.from(container.querySelectorAll('a')).find((anchor) => anchor.textContent?.includes('التفاصيل الكاملة'));
+    const actionTrigger = container.querySelector<HTMLButtonElement>('[data-action-menu-trigger]');
+    expect(actionTrigger).toBeTruthy();
+    await act(async () => { actionTrigger?.click(); });
+    const fullDetail = Array.from(document.body.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'))
+      .find((button) => button.textContent?.trim() === 'التفاصيل الكاملة');
     expect(fullDetail).toBeTruthy();
-    await act(async () => { fullDetail?.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
+    await act(async () => { fullDetail?.click(); });
     expect(mockNavigate).toHaveBeenCalledWith({
       to: '/properties/$propertyId/units/$unitId',
       params: { propertyId: 'p1', unitId: 'u1' },
@@ -219,10 +227,11 @@ describe('UnitsPage controller regression', () => {
     expect(searchInput.placeholder).toBe('رقم الوحدة، الدور، العقار');
   });
 
-  it('displays unit count in card description', async () => {
+  it('displays unit count in the shared summary strip', async () => {
     await act(async () => { root.render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><UnitsPage /></QueryClientProvider>); });
-    const text = container.textContent ?? '';
-    // Arabic locale uses Arabic-Indic numerals; description ends with period
-    expect(text).toContain('وحدة ضمن الفلاتر الحالية');
+    const summary = container.querySelector('[data-unit-summary]');
+    expect(summary).toBeTruthy();
+    expect(summary?.textContent).toContain('الوحدات');
+    expect(summary?.textContent).toContain('3');
   });
 });

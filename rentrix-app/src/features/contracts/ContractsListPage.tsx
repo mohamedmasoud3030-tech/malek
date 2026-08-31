@@ -5,9 +5,11 @@ import type { ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { ContractFilters, contractLeaseModeOptions, contractStatusFilterLabels } from './components/ContractFilters';
 import { ContractKpiGrid } from './components/ContractKpiGrid';
 import { ContractResults } from './components/ContractResults';
+import { contractColumnOptions, defaultContractColumns } from './components/ContractTable';
 import { ContractFormModal } from './contract-form-modal';
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { Button } from '@/components/ui/button';
+import { DataTableColumnsMenu } from '@/components/ui/data-table';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import {
   buildContractsCsvBlob,
@@ -67,6 +69,7 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
   const [modalOpen, setModalOpen] = useState(false);
   const [editContractId, setEditContractId] = useState<string | undefined>();
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultContractColumns]);
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
@@ -147,6 +150,13 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
         <ContractFilters
           activeFilters={activeFilters}
           canExport={canExport}
+          columnVisibilityControl={(
+            <DataTableColumnsMenu
+              columns={contractColumnOptions}
+              visibleKeys={visibleColumnKeys}
+              onChange={setVisibleColumnKeys}
+            />
+          )}
           expiringOnly={expiringOnly}
           exportDisabled={filteredContracts.length === 0}
           leaseMode={leaseMode}
@@ -177,6 +187,7 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
           onRetry={() => contractsQuery.refetch()}
           pagination={!hasClientFilter && totalPages > 1 ? { page, pageSize, total: contractsQuery.data?.count ?? 0, onPageChange: setPage } : undefined}
           setExpandedId={setExpandedId}
+          visibleColumnKeys={visibleColumnKeys}
         />
       </EmbeddableWorkspace>
 

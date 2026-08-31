@@ -5,6 +5,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { DataTableColumnsMenu } from "@/components/ui/data-table";
+import { ActionMenu } from "@/components/ui/action-menu";
 import { EntityCell } from "@/components/ui/entity-cell";
 import { EntityTable, type ColumnDef } from "@/components/ui/entity-table";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -132,56 +133,42 @@ export function UnitsList({
       header: "إجراءات",
       priority: "actions",
       render: (unit) => (
-        <div
-          className="flex flex-wrap gap-2"
-          onClick={(e) => e.stopPropagation()}
-          onKeyDown={(e) => e.stopPropagation()}
-        >
-          {canViewContracts && unitDraftsByUnitId.has(unit.id) ? (
-            <Button
-              variant="secondary"
-              className="min-h-11 px-3"
-              aria-label={`مراجعة مسودة عقد وحدة ${unit.unit_number}`}
-              onClick={() => void navigate({ to: "/contracts/$contractId", params: { contractId: unitDraftsByUnitId.get(unit.id)! } })}
-            >
-              <FilePlus2 className="me-1 size-4" aria-hidden="true" />
-              مراجعة المسودة
-            </Button>
-          ) : unit.status === "available" && canCreateContract ? (
-            <Button
-              className="min-h-11 px-3"
-              aria-label={`بدء تأجير وحدة ${unit.unit_number}`}
-              onClick={() => startLeasing(unit)}
-            >
-              <FilePlus2 className="me-1 size-4" aria-hidden="true" />
-              تأجير
-            </Button>
-          ) : null}
-          {canEditUnit ? (
-            <Button
-              variant="secondary"
-              className="min-h-11 px-3"
-              aria-label={`تعديل وحدة ${unit.unit_number}`}
-              onClick={() => openForEdit(unit)}
-            >
-              <Edit className="size-4" />
-            </Button>
-          ) : null}
-          {canArchiveUnit ? (
-            <Button
-              variant="danger"
-              className="min-h-11 px-3"
-              aria-label={`أرشفة وحدة ${unit.unit_number}`}
-              onClick={() => setArchiveCandidate(unit)}
-              disabled={deleteMutation.isPending}
-            >
-              <Archive className="size-4" />
-            </Button>
-          ) : null}
+        <div className="flex" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+          <ActionMenu
+            label={`إجراءات وحدة ${unit.unit_number}`}
+            items={[
+              ...(canViewContracts && unitDraftsByUnitId.has(unit.id) ? [{
+                id: 'draft',
+                label: 'مراجعة المسودة',
+                icon: FilePlus2,
+                onClick: () => void navigate({ to: "/contracts/$contractId", params: { contractId: unitDraftsByUnitId.get(unit.id)! } }),
+              }] : []),
+              ...(unit.status === "available" && canCreateContract && !unitDraftsByUnitId.has(unit.id) ? [{
+                id: 'lease',
+                label: 'تأجير',
+                icon: FilePlus2,
+                onClick: () => startLeasing(unit),
+              }] : []),
+              ...(canEditUnit ? [{
+                id: 'edit',
+                label: 'تعديل',
+                icon: Edit,
+                onClick: () => openForEdit(unit),
+              }] : []),
+              ...(canArchiveUnit ? [{
+                id: 'archive',
+                label: 'أرشفة',
+                icon: Archive,
+                danger: true,
+                disabled: deleteMutation.isPending,
+                onClick: () => setArchiveCandidate(unit),
+              }] : []),
+            ]}
+          />
         </div>
       ),
     },
-  ], []);
+  ], [canArchiveUnit, canCreateContract, canEditUnit, canViewContracts, deleteMutation.isPending, navigate, openForEdit, startLeasing, unitDraftsByUnitId]);
 
   return (
     <section aria-labelledby="property-units-register-heading">

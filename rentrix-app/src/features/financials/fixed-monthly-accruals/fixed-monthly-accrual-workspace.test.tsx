@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AuthorizationContext } from '@/features/auth/permissions';
 
@@ -87,7 +87,9 @@ describe('fixed monthly accrual Arabic workspace', () => {
       render(<FixedMonthlyAccrualWorkspace />);
 
       expect(await screen.findByRole('button', { name: /احتساب الاستحقاقات/ })).toBeTruthy();
-      expect(await screen.findByRole('button', { name: /عكس/ })).toBeTruthy();
+      const actionTrigger = await screen.findByRole('button', { name: /إجراءات استحقاق/ });
+      fireEvent.click(actionTrigger);
+      expect(await screen.findByRole('menuitem', { name: 'عكس' })).toBeTruthy();
       expect(screen.getByText('مسجل')).toBeTruthy();
       expect(screen.getByText(/الضريبة غير محتسبة حاليًا/)).toBeTruthy();
       expect(screen.getAllByText('الصافي').length).toBeGreaterThan(0);

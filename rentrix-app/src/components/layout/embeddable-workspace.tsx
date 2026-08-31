@@ -40,7 +40,10 @@ export function EmbeddableWorkspace({
   contentClassName,
   count,
   workspaceName,
-  embeddedHeader = 'full',
+  // Embedded hubs already own the title hierarchy. Keep only reachable actions
+  // at the top of the child workspace unless a consumer explicitly opts back
+  // into the legacy full embedded header.
+  embeddedHeader = embedded ? 'actions-only' : 'full',
   viewModeStorageKey,
   backTo,
   backLabel,

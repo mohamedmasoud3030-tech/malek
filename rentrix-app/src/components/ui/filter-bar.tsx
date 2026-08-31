@@ -98,15 +98,15 @@ export function FilterBar({
           </div>
         ) : null}
 
-        {actions ? (
-          <div className="hidden shrink-0 items-center gap-1.5 md:flex" data-filter-actions-desktop>
-            {actions}
-          </div>
-        ) : null}
-
         {resolvedViewModeToggle ? (
           <div className="shrink-0" data-filter-view-mode>
             {resolvedViewModeToggle}
+          </div>
+        ) : null}
+
+        {actions ? (
+          <div className="hidden shrink-0 items-center gap-1.5 md:flex" data-filter-actions-desktop>
+            {actions}
           </div>
         ) : null}
 

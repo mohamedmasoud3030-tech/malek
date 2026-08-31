@@ -1,8 +1,7 @@
 import { Edit, Eye } from "lucide-react";
-import { useMemo, useState, type ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { ActionMenu } from "@/components/ui/action-menu";
 import { Button } from "@/components/ui/button";
-import { DataTableColumnsMenu } from "@/components/ui/data-table";
 import { EntityTable, type ColumnDef } from "@/components/ui/entity-table";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { useAuth } from "@/hooks/use-auth";
@@ -49,7 +48,7 @@ export const maintenancePriorityTone = {
   urgent: "danger",
 } as const;
 
-const maintenanceColumnOptions = [
+export const maintenanceColumnOptions = [
   { key: "title", label: "العنوان", locked: true },
   { key: "location", label: "الموقع" },
   { key: "provider", label: "مزود الخدمة" },
@@ -59,7 +58,7 @@ const maintenanceColumnOptions = [
   { key: "action", label: "الإجراء", locked: true },
 ] as const;
 
-const defaultMaintenanceColumns = maintenanceColumnOptions.map((column) => column.key);
+export const defaultMaintenanceColumns = maintenanceColumnOptions.map((column) => column.key);
 
 export type MaintenanceListProps = Readonly<{
   rows: Maintenance[];
@@ -80,6 +79,7 @@ export type MaintenanceListProps = Readonly<{
     status: Exclude<MaintenanceStatusFilter, "all">,
   ) => void;
   attentionByRequestId?: ReadonlyMap<string, MaintenanceAttention>;
+  visibleColumnKeys: readonly string[];
 }>;
 
 export function MaintenanceList(props: MaintenanceListProps) {
@@ -99,12 +99,12 @@ export function MaintenanceList(props: MaintenanceListProps) {
     onEdit,
     onStatusAction,
     attentionByRequestId,
+    visibleColumnKeys,
   } = props;
   const { canAccess } = useAuth();
   const canEdit = canAccess("maintenance.edit");
   const canApprove = canAccess("maintenance.approve");
   const canCancel = canAccess("maintenance.cancel");
-  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultMaintenanceColumns]);
 
   const canRunStatusAction = (status: Exclude<MaintenanceStatusFilter, "all">) => {
     if (status === "cancelled") return canCancel;
@@ -235,15 +235,6 @@ export function MaintenanceList(props: MaintenanceListProps) {
         rows={rows}
         columns={columns}
         visibleColumnKeys={visibleColumnKeys}
-        toolbar={(
-          <div className="flex justify-end">
-            <DataTableColumnsMenu
-              columns={maintenanceColumnOptions}
-              visibleKeys={visibleColumnKeys}
-              onChange={setVisibleColumnKeys}
-            />
-          </div>
-        )}
         keyOf={(row) => row.id}
         isLoading={isLoading}
         error={error}

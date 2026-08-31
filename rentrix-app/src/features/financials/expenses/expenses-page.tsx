@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from '@tanstack/react-router';
-import { ArrowLeft, ReceiptText } from 'lucide-react';
-import { useState } from 'react';
+import { ArrowLeft, Download, Plus, ReceiptText } from 'lucide-react';
+import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { EmptyState } from '@/components/ui/state-surfaces';
@@ -11,7 +11,7 @@ import { useProperties } from '@/features/properties/use-properties';
 import { useCostCenters } from '@/features/settings/useCostCenters';
 
 
-import { ExpensesSection, type ExpenseFormValues } from '../components/expenses-section';
+import { ExpensesSection, type ExpenseFormValues, type ExpensesSectionHandle } from '../components/expenses-section';
 import { getTodayLocalDateString } from '../financials-date-utils';
 import {
   EXPENSE_CHARGED_TO_VALUES,
@@ -122,13 +122,35 @@ export function ExpensesWorkspace({ embedded = false }: ExpensesWorkspaceProps) 
     });
   };
 
+  const expensesSectionRef = useRef<ExpensesSectionHandle>(null);
+
   return (
     <EmbeddableWorkspace
       embedded={embedded}
       size="wide"
       title="المصروفات"
+      primaryAction={(
+        <Button
+          className="min-h-11"
+          onClick={() => expensesSectionRef.current?.openCreateForm()}
+          disabled={propertyRows.length === 0}
+          title={propertyRows.length > 0 ? undefined : 'لا يمكن تسجيل مصروف قبل تحميل عقار واحد على الأقل'}
+        >
+          <Plus className="me-2 size-4" aria-hidden="true" />
+          إضافة مصروف
+        </Button>
+      )}
       secondaryActions={
         <>
+          <Button
+            variant="secondary"
+            className="min-h-11"
+            onClick={() => expensesSectionRef.current?.exportVisibleExpenses()}
+            disabled={expenses.length === 0}
+          >
+            <Download className="me-2 size-4" aria-hidden="true" />
+            تصدير CSV
+          </Button>
           <Button variant="secondary" className="min-h-11" asChild>
             <Link to="/financials">
               <ArrowLeft className="me-2 size-4" />
@@ -175,6 +197,7 @@ export function ExpensesWorkspace({ embedded = false }: ExpensesWorkspaceProps) 
 
         <FinanceSection ariaLabel="جدول المصروفات والفلاتر">
           <ExpensesSection
+            ref={expensesSectionRef}
             expenses={expenses}
             propertyRows={propertyRows}
             costCenterRows={costCentersQuery.data ?? []}

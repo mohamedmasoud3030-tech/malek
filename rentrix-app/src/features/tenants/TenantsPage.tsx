@@ -1,7 +1,7 @@
 import { AlertTriangle, Building2, Edit, Eye, FileText, KeyRound, Plus, TriangleAlert, Users } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
-import { RegisterHeading, RegisterMetricStrip } from '@/components/layout/register-summary';
+import { RegisterMetricStrip } from '@/components/layout/register-summary';
 import { ActionMenu } from '@/components/ui/action-menu';
 import { Button } from '@/components/ui/button';
 import { DataTableColumnsMenu } from '@/components/ui/data-table';
@@ -199,8 +199,6 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
       />
 
       <section data-tenant-register className="min-w-0 space-y-2.5">
-        <RegisterHeading title="سجل المستأجرين" />
-
         <EntityTable
           aria-label="جدول المستأجرين"
           rows={rows}

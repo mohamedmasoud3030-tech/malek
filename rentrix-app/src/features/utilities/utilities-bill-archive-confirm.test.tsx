@@ -145,16 +145,20 @@ describe('utility bill removal requires explicit confirmation (P0)', () => {
     });
   }
 
-  function billTrashButton(): HTMLButtonElement {
-    const button = container!.querySelector('button[aria-label^="أرشفة فاتورة المرافق"]') as HTMLButtonElement | null;
-    expect(button).not.toBeNull();
-    return button!;
+  async function billArchiveAction(): Promise<HTMLButtonElement> {
+    const trigger = document.body.querySelector('button[aria-label="إجراءات UB-1001"]') as HTMLButtonElement | null;
+    expect(trigger).not.toBeNull();
+    await click(trigger!);
+    const action = Array.from(document.body.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'))
+      .find((button) => button.textContent?.trim() === 'أرشفة');
+    expect(action).not.toBeUndefined();
+    return action!;
   }
 
   it('opening the dialog does not run the mutation — first click only stages the bill', async () => {
     await renderWorkspace();
 
-    await click(billTrashButton());
+    await click(await billArchiveAction());
 
     expect(deleteBillMutState.mutate).not.toHaveBeenCalled();
     const dialog = container!.querySelector('[data-testid="bill-confirm-dialog"]');
@@ -165,7 +169,7 @@ describe('utility bill removal requires explicit confirmation (P0)', () => {
   it('shows the bill identity inside the dialog (number, utility, property, amount, period)', async () => {
     await renderWorkspace();
 
-    await click(billTrashButton());
+    await click(await billArchiveAction());
 
     const body = container!.querySelector('[data-testid="dialog-body"]')!;
     expect(body.textContent).toContain('UB-1001');
@@ -183,7 +187,7 @@ describe('utility bill removal requires explicit confirmation (P0)', () => {
   it('cancelling the dialog never runs the mutation', async () => {
     await renderWorkspace();
 
-    await click(billTrashButton());
+    await click(await billArchiveAction());
     await click(container!.querySelector('[data-testid="cancel-btn"]') as HTMLButtonElement);
 
     expect(deleteBillMutState.mutate).not.toHaveBeenCalled();
@@ -193,7 +197,7 @@ describe('utility bill removal requires explicit confirmation (P0)', () => {
   it('confirming runs the mutation exactly once and closes the dialog on success', async () => {
     await renderWorkspace();
 
-    await click(billTrashButton());
+    await click(await billArchiveAction());
     await click(container!.querySelector('[data-testid="confirm-archive-btn"]') as HTMLButtonElement);
 
     expect(deleteBillMutState.mutate).toHaveBeenCalledTimes(1);
@@ -213,7 +217,7 @@ describe('utility bill removal requires explicit confirmation (P0)', () => {
   it('double-confirming while the request is in flight does not submit twice', async () => {
     await renderWorkspace();
 
-    await click(billTrashButton());
+    await click(await billArchiveAction());
 
     // The request becomes in-flight; force a re-render (status filter change)
     // so the dialog observes the pending mutation.
@@ -236,7 +240,7 @@ describe('utility bill removal requires explicit confirmation (P0)', () => {
   it('keeps the dialog actionable on failure with a readable Arabic error toast', async () => {
     await renderWorkspace();
 
-    await click(billTrashButton());
+    await click(await billArchiveAction());
     await click(container!.querySelector('[data-testid="confirm-archive-btn"]') as HTMLButtonElement);
 
     const [, options] = deleteBillMutState.mutate.mock.calls[0] as unknown as [

@@ -133,8 +133,13 @@ describe('Global UnitsPage Real Rendered User-Interaction Tests', () => {
       );
     });
 
-    const editButton = Array.from(container?.querySelectorAll('button') ?? [])
-      .find((button) => button.textContent?.includes('تعديل')) as HTMLButtonElement | undefined;
+    const actionTrigger = container?.querySelector<HTMLButtonElement>('[data-action-menu-trigger]');
+    expect(actionTrigger).toBeTruthy();
+    await act(async () => {
+      actionTrigger?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    const editButton = Array.from(document.body.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'))
+      .find((button) => button.textContent?.includes('تعديل البيانات'));
     expect(editButton).toBeTruthy();
 
     await act(async () => {
@@ -178,7 +183,13 @@ describe('Global UnitsPage Real Rendered User-Interaction Tests', () => {
       );
     });
 
-    const fullDetail = Array.from(container?.querySelectorAll('a') ?? []).find((anchor) => anchor.textContent?.includes('التفاصيل الكاملة'));
+    const actionTrigger = container?.querySelector<HTMLButtonElement>('[data-action-menu-trigger]');
+    expect(actionTrigger).toBeTruthy();
+    await act(async () => {
+      actionTrigger?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    const fullDetail = Array.from(document.body.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'))
+      .find((button) => button.textContent?.includes('التفاصيل الكاملة'));
     expect(fullDetail).toBeTruthy();
 
     await act(async () => {

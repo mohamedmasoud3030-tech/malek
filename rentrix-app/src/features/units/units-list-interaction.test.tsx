@@ -170,10 +170,16 @@ describe('UnitsList Real Rendered User-Interaction Tests', () => {
       root.render(renderUnitsList(unitsQuery));
     });
 
-    const editButton = container?.querySelector<HTMLButtonElement>('button[aria-label="تعديل وحدة 101"]');
-    expect(editButton).not.toBeNull();
+    const actionTrigger = container?.querySelector<HTMLButtonElement>('[data-action-menu-trigger]');
+    expect(actionTrigger).not.toBeNull();
+    await act(async () => {
+      actionTrigger!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    const editButton = Array.from(document.body.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'))
+      .find((button) => button.textContent?.trim() === 'تعديل');
+    expect(editButton).toBeDefined();
 
-    // Trigger a click on the secondary Edit button
+    // Trigger a click on the secondary Edit menu item
     await act(async () => {
       editButton!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
@@ -196,10 +202,16 @@ describe('UnitsList Real Rendered User-Interaction Tests', () => {
       root.render(renderUnitsList(unitsQuery));
     });
 
-    const archiveButton = container?.querySelector<HTMLButtonElement>('button[aria-label="أرشفة وحدة 101"]');
-    expect(archiveButton).not.toBeNull();
+    const actionTrigger = container?.querySelector<HTMLButtonElement>('[data-action-menu-trigger]');
+    expect(actionTrigger).not.toBeNull();
+    await act(async () => {
+      actionTrigger!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    const archiveButton = Array.from(document.body.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'))
+      .find((button) => button.textContent?.trim() === 'أرشفة');
+    expect(archiveButton).toBeDefined();
 
-    // Trigger a click on the secondary Archive button
+    // Trigger a click on the secondary Archive menu item
     await act(async () => {
       archiveButton!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });

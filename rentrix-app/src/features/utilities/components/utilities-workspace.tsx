@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { ExportMenu } from '@/components/ui/export-menu';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EntityForm } from '@/components/ui/entity-form';
-import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
+import { EntityTable, EntityTableViewModeProvider, type ColumnDef } from '@/components/ui/entity-table';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { Input } from '@/components/ui/input';
 import { KpiCard } from '@/components/ui/kpi-card';
@@ -391,9 +391,18 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
       key: 'actions', priority: 'actions' as const,
       header: 'إجراء',
       render: (meter) => (
-        <Button variant="danger" size="sm" aria-label={`أرشفة العداد ${meter.meter_number}`} onClick={() => setMeterToArchive(meter)}>
-          <Trash2 className="size-4" />أرشفة
-        </Button>
+        <div className="flex" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+          <ActionMenu
+            label={`إجراءات العداد ${meter.meter_number}`}
+            items={[{
+              id: 'archive',
+              label: 'أرشفة',
+              icon: Trash2,
+              danger: true,
+              onClick: () => setMeterToArchive(meter),
+            }]}
+          />
+        </div>
       ),
     },
   ];
@@ -722,7 +731,9 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
   return (
     <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro">
       <PageHeader title="إدارة المرافق والعدادات" description="العدادات وفواتير الاستهلاك في جداول مدمجة تحفظ كامل المعلومات على كل المقاسات." primaryAction={headerActions} />
-      {body}
+      <EntityTableViewModeProvider storageKey="malek:list-page:إدارة المرافق والعدادات">
+        {body}
+      </EntityTableViewModeProvider>
     </PageLayout>
   );
 }

@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { HandCoins } from 'lucide-react';
+import { ActionMenu } from '@/components/ui/action-menu';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -60,14 +61,22 @@ export function OverdueInvoicesTable({ rows, onSelectInvoice, onCollectInvoice }
             priority: 'actions' as const,
             header: 'إجراء',
             render: (row: OverdueInvoiceReportRow) => (
-              <Button className="min-h-11" onClick={() => onCollectInvoice(row.invoiceId)} title="انتقال مباشر لتسجيل دفعة على هذه الفاتورة">
-                <HandCoins className="me-1 size-4" />تحصيل
-              </Button>
+              <div className="flex" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+                <ActionMenu
+                  label={`إجراءات ${row.invoiceReference ?? 'الفاتورة'}`}
+                  items={[{
+                    id: 'collect',
+                    label: 'تحصيل',
+                    icon: HandCoins,
+                    onClick: () => onCollectInvoice(row.invoiceId),
+                  }]}
+                />
+              </div>
             ),
           },
         ] satisfies ColumnDef<OverdueInvoiceReportRow>[])
       : []),
-  ], []);
+  ], [onCollectInvoice, onSelectInvoice]);
 
   return (
     <EntityTable

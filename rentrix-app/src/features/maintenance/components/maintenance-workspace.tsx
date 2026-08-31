@@ -1,7 +1,9 @@
 import { Clock3, Flame, PlusCircle, Printer, Wrench } from 'lucide-react';
+import { useState } from 'react';
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
-import { RegisterAttention, RegisterHeading, RegisterMetricStrip } from '@/components/layout/register-summary';
+import { RegisterAttention, RegisterMetricStrip } from '@/components/layout/register-summary';
 import { Button } from '@/components/ui/button';
+import { DataTableColumnsMenu } from '@/components/ui/data-table';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { Select } from '@/components/ui/select';
 import { documentService } from '@/services/documents/DocumentService';
@@ -13,7 +15,7 @@ import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
 import { useAuth } from '@/hooks/use-auth';
 import { MaintenanceDetailsOverlay, MaintenanceResolveOverlay } from './maintenance-detail-resolve-overlays';
 import { MaintenanceList } from './maintenance-list';
-import { maintenancePriorityLabels, maintenanceStatusLabels } from './maintenance-list';
+import { defaultMaintenanceColumns, maintenanceColumnOptions, maintenancePriorityLabels, maintenanceStatusLabels } from './maintenance-list';
 import { MaintenanceRequestForm } from './maintenance-request-form';
 import type { MaintenancePriorityFilter, MaintenanceStatusFilter } from '../maintenance-helpers';
 import type { MaintenanceAttentionFilter } from '../maintenance-attention';
@@ -32,6 +34,7 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
   const { canAccess } = useAuth();
   const canCreateMaintenance = canAccess('maintenance.create');
   const canEditMaintenance = canAccess('maintenance.edit');
+  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultMaintenanceColumns]);
   const canApproveMaintenance = canAccess('maintenance.approve');
 
   const clearAllFilters = () => {
@@ -173,19 +176,23 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
             </Select>
           </>
         )}
-        actions={controller.hasFilters ? (
-          <Button type="button" variant="secondary" onClick={clearAllFilters}>
-            مسح الفلاتر
-          </Button>
-        ) : undefined}
+        actions={(
+          <>
+            <DataTableColumnsMenu
+              columns={maintenanceColumnOptions}
+              visibleKeys={visibleColumnKeys}
+              onChange={setVisibleColumnKeys}
+            />
+            {controller.hasFilters ? (
+              <Button type="button" variant="secondary" onClick={clearAllFilters}>
+                مسح الفلاتر
+              </Button>
+            ) : null}
+          </>
+        )}
       />
 
       <section data-maintenance-register className="min-w-0 space-y-2.5">
-        <RegisterHeading
-          title="سجل طلبات الصيانة"
-          extra={<RegisterAttention count={controller.maintenanceSummary.urgent} label="عاجلة" />}
-        />
-
         <MaintenanceList
           rows={controller.visibleMaintenanceRows}
           attentionByRequestId={controller.attentionByRequestId}
@@ -214,6 +221,7 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
           onViewDetails={controller.openDetailsRequest}
           onEdit={(request) => { if (!controller.hasLoadError) controller.openEditForm(request); }}
           onStatusAction={(request, action) => { if (!controller.hasLoadError) controller.handleStatusAction(request, action); }}
+          visibleColumnKeys={visibleColumnKeys}
         />
       </section>
 

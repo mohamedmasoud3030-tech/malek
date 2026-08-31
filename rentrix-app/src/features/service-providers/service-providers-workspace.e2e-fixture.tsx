@@ -1,6 +1,7 @@
 import { BriefcaseBusiness, FolderCog, Plus, Wrench } from "lucide-react";
 import { useState } from "react";
 import { ListPage } from "@/components/layout/list-page";
+import { ActionMenu } from "@/components/ui/action-menu";
 import { EntityForm } from "@/components/ui/entity-form";
 import { Button } from "@/components/ui/button";
 import { EntityCell } from "@/components/ui/entity-cell";
@@ -226,10 +227,11 @@ export function ServiceProvidersWorkspaceE2EFixture() {
                 {
                   key: "actions",
                   header: "إجراءات",
-                  render: () => (
-                    <Button variant="secondary" className="min-h-11">
-                      عرض
-                    </Button>
+                  render: (provider) => (
+                    <ActionMenu
+                      label={`إجراءات ${provider.name}`}
+                      items={[{ id: "view", label: "عرض", onClick: () => undefined }]}
+                    />
                   ),
                 },
               ]}

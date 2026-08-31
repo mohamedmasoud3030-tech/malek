@@ -15,7 +15,8 @@ import {
   getUnitPageStatus,
 } from "./use-units-list-controller";
 import { EmbeddableWorkspace } from "@/components/layout/embeddable-workspace";
-import { RegisterHeading, RegisterMetricStrip } from "@/components/layout/register-summary";
+import { RegisterMetricStrip } from "@/components/layout/register-summary";
+import { ActionMenu } from "@/components/ui/action-menu";
 import { LoadingState } from "@/components/ui/loading-state";
 import { Button } from "@/components/ui/button";
 import { DataTableColumnsMenu } from "@/components/ui/data-table";
@@ -147,29 +148,30 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
       header: "إجراء",
       priority: "actions",
       render: (unit) => (
-        <div
-          className="flex flex-wrap gap-2"
-          onClick={(event) => event.stopPropagation()}
-          onKeyDown={(event) => event.stopPropagation()}
-        >
-          <Button variant="ghost" className="min-h-11 px-3" onClick={() => openPreview(unit)}>
-            <Eye className="me-1 size-4" aria-hidden="true" />
-            معاينة
-          </Button>
-          <Button variant="secondary" className="min-h-11 px-3" asChild>
-            <Link
-              to="/properties/$propertyId/units/$unitId"
-              params={{ propertyId: unit.property_id, unitId: unit.id }}
-            >
-              التفاصيل الكاملة
-            </Link>
-          </Button>
-          {canEditUnit ? (
-            <Button variant="ghost" className="min-h-11 px-3" onClick={() => ctrl.openEdit(unit)}>
-              <Edit className="me-1 size-4" aria-hidden="true" />
-              تعديل البيانات
-            </Button>
-          ) : null}
+        <div className="flex" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+          <ActionMenu
+            label={`إجراءات وحدة ${unit.unit_number}`}
+            items={[
+              {
+                id: 'preview',
+                label: 'معاينة',
+                icon: Eye,
+                onClick: () => openPreview(unit),
+              },
+              {
+                id: 'details',
+                label: 'التفاصيل الكاملة',
+                icon: DoorOpen,
+                onClick: () => ctrl.navigateToUnit(unit),
+              },
+              ...(canEditUnit ? [{
+                id: 'edit',
+                label: 'تعديل البيانات',
+                icon: Edit,
+                onClick: () => ctrl.openEdit(unit),
+              }] : []),
+            ]}
+          />
         </div>
       ),
     },
@@ -258,11 +260,6 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
       />
 
       <section data-unit-register className="min-w-0 space-y-2.5">
-        <RegisterHeading
-          title="سجل الوحدات"
-          meta={`${formatNumber(ctrl.filteredUnits.length)} وحدة ضمن الفلاتر الحالية`}
-        />
-
         <EntityTable
           aria-label="جدول الوحدات"
           rows={ctrl.filteredUnits}
