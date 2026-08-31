@@ -8,7 +8,7 @@ import { documentService } from '@/services/documents/DocumentService';
 import { runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
 import { toReportDocumentPayload, type ReportDocumentData } from '@/services/documents/documentPayloadAdapters';
 import { buildReportCsvFilename, downloadCsv, toDailyCollectionCsv, type RentRollReportRow } from '../reports-page.helpers';
-import { ReportColumns, ReportInsightNote, ReportProgress, ReportSummaryStrip } from '@/components/ui/report-section-primitives';
+import { ReportColumns, ReportInsightNote, ReportProgress, ReportState, ReportSummaryStrip } from '@/components/ui/report-section-primitives';
 import { DailyCollectionsPanel } from './collections/daily-collections-panel';
 import { ReceiptLinksPanel, type CollectionReceiptRow } from './collections/receipt-links-panel';
 import { RentRollPanel } from './collections/rent-roll-panel';
@@ -24,8 +24,10 @@ const paymentMethodLabels = {
   other: 'أخرى',
 } as const;
 
-export function CollectionsSection({ summary, rows, receiptRows, rentRollRows, canExportReports, isLoading, from, to }: Readonly<{
+export function CollectionsSection({ summary, collectionRate, rows, receiptRows, rentRollRows, canExportReports, isLoading, from, to }: Readonly<{
   summary: NonNullable<ReturnType<typeof useCollectionSummaryReport>['data']> | undefined;
+  /** Dashboard Truth RPC value. Presentation must render it, never derive paid / invoiced here. */
+  collectionRate: number | undefined;
   rows: DailyCollectionReportRow[];
   receiptRows: CollectionReceiptRow[];
   rentRollRows: RentRollReportRow[];
@@ -34,18 +36,26 @@ export function CollectionsSection({ summary, rows, receiptRows, rentRollRows, c
   from: string;
   to: string;
 }>) {
-  const totalCollected = summary?.paid ?? rows.reduce((total, row) => total + row.totalPaid, 0);
-  const paymentsCount = rows.reduce((total, row) => total + row.paymentsCount, 0);
-  const activeContracts = rentRollRows.filter((row) => row.statusLabel === 'نشط').length;
-  const collectionRate = summary && summary.invoiced > 0 ? (summary.paid / summary.invoiced) * 100 : 0;
+  // The detailed daily report remains the source of its own table total for document output.
+  // Executive financial metrics below come from the authoritative summary instead of being
+  // reconstructed from rendered rows.
+  const dailyRowsTotal = rows.reduce((total, row) => total + row.totalPaid, 0);
+  const totalCollected = summary?.paid ?? dailyRowsTotal;
+  const isCollectionRateAvailable = Number.isFinite(collectionRate);
+  const collectionRateLabel = isCollectionRateAvailable
+    ? `${formatLatinNumber(Math.round(collectionRate!), 'ar')}%`
+    : 'غير متاحة';
+
   const methodTotals = rows.reduce((totals, row) => {
     for (const key of Object.keys(totals) as Array<keyof typeof totals>) totals[key] += row.methodTotals[key];
     return totals;
   }, { cash: 0, bank_transfer: 0, card: 0, check: 0, other: 0 });
   const dominantMethod = (Object.entries(methodTotals) as Array<[keyof typeof methodTotals, number]>)
     .sort((a, b) => b[1] - a[1])[0];
-  const dominantMethodShare = dominantMethod && totalCollected > 0 ? (dominantMethod[1] / totalCollected) * 100 : 0;
-  const averagePayment = paymentsCount > 0 ? totalCollected / paymentsCount : 0;
+  const paymentMethodTotal = Object.values(methodTotals).reduce((total, value) => total + value, 0);
+  const dominantMethodShare = dominantMethod && paymentMethodTotal > 0
+    ? (dominantMethod[1] / paymentMethodTotal) * 100
+    : 0;
 
   const { companySettings: documentSettings, isReady: isDocumentSettingsReady } = useDocumentSettings();
   const currencySymbol = documentSettings.currencySymbol || documentSettings.currency;
@@ -67,7 +77,7 @@ export function CollectionsSection({ summary, rows, receiptRows, rentRollRows, c
           `${formatLatinNumber(row.methodTotals.check, 'ar-OM')}`,
           `${formatLatinNumber(row.totalPaid, 'ar-OM')} ${currencySymbol}`,
         ]),
-        totals: ['الإجمالي العام', '', '', '', '', `${formatLatinNumber(totalCollected, 'ar-OM')} ${currencySymbol}`],
+        totals: ['الإجمالي العام', '', '', '', '', `${formatLatinNumber(dailyRowsTotal, 'ar-OM')} ${currencySymbol}`],
       },
       {
         title: 'سياق الإيصالات والتحصيلات',
@@ -83,7 +93,7 @@ export function CollectionsSection({ summary, rows, receiptRows, rentRollRows, c
         ]),
       },
     ],
-    totalSummary: `إجمالي المبلغ المحصل: ${formatLatinNumber(totalCollected, 'ar-OM')} ${currencySymbol} | كفاءة التحصيل: ${Math.round(collectionRate)}%`,
+    totalSummary: `إجمالي المبلغ المحصل: ${formatLatinNumber(totalCollected, 'ar-OM')} ${currencySymbol} | كفاءة التحصيل: ${collectionRateLabel}`,
   });
 
   const handlePrintCollectionsReport = async () => {
@@ -120,7 +130,7 @@ export function CollectionsSection({ summary, rows, receiptRows, rentRollRows, c
           contractId: '',
         },
       }}
-      summaryText={`إجمالي المبلغ المحصل: ${formatMoney(totalCollected)} | كفاءة التحصيل: ${Math.round(collectionRate)}%`}
+      summaryText={`إجمالي المبلغ المحصل: ${formatMoney(totalCollected)} | كفاءة التحصيل: ${collectionRateLabel}`}
       onPrint={handlePrintCollectionsReport}
       onDownloadPdf={handleDownloadCollectionsReport}
       csv={{ filename: buildReportCsvFilename('daily-collection'), rows: toDailyCollectionCsv(rows) }}
@@ -153,33 +163,67 @@ export function CollectionsSection({ summary, rows, receiptRows, rentRollRows, c
     </div>
   ) : undefined;
 
+  const collectionRateTone = !isCollectionRateAvailable
+    ? 'default'
+    : collectionRate! >= 85
+      ? 'good'
+      : collectionRate! >= 65
+        ? 'warning'
+        : 'critical';
+
   return (
     <div className="space-y-3">
       <ReportSummaryStrip
         dataReportSummary="collections"
         items={[
-          { label: 'إجمالي التحصيل', value: formatMoney(totalCollected), detail: `${formatLatinNumber(paymentsCount, 'ar')} مدفوعات` },
-          { label: 'كفاءة التحصيل', value: `${formatLatinNumber(Math.round(collectionRate), 'ar')}%`, detail: `${formatMoney(summary?.outstanding ?? 0)} مستحق` },
-          { label: 'متوسط الدفعة', value: formatMoney(averagePayment), detail: `${formatLatinNumber(receiptRows.length, 'ar')} إيصالات` },
-          { label: 'العقود النشطة', value: formatLatinNumber(activeContracts, 'ar'), detail: `${formatLatinNumber(rentRollRows.length, 'ar')} في السجل` },
+          {
+            label: 'المفوتر',
+            value: summary ? formatMoney(summary.invoiced) : '—',
+            detail: summary ? `${formatLatinNumber(summary.invoicesCount, 'ar')} فاتورة` : 'بيانات الفترة غير متاحة',
+          },
+          {
+            label: 'المحصّل',
+            value: summary ? formatMoney(summary.paid) : '—',
+            detail: summary ? `${formatLatinNumber(summary.receiptsCount, 'ar')} إيصال` : 'بيانات الفترة غير متاحة',
+          },
+          {
+            label: 'الرصيد المستحق',
+            value: summary ? formatMoney(summary.outstanding) : '—',
+            detail: 'يشمل الجاري والمتأخر',
+          },
+          {
+            label: 'كفاءة التحصيل',
+            value: collectionRateLabel,
+            detail: 'مؤشر خادمي معتمد',
+            tone: collectionRateTone,
+          },
         ]}
       />
 
       <ReportInsightNote title="قراءة التحصيل">
-        {collectionRate < 65
-          ? 'المحصّل أقل من ثلثي قيمة الفواتير في النطاق؛ راجع المتأخرات والعقود ذات الرصيد الأعلى.'
-          : dominantMethodShare > 85
-            ? 'التحصيل يعتمد بشدة على طريقة سداد واحدة؛ راجع الضوابط التشغيلية والتسوية اليومية لهذه الطريقة.'
-            : 'معدل التحصيل وتوزيع طرق السداد متوازنان نسبيًا داخل الفترة.'}
+        {!isCollectionRateAvailable
+          ? 'تعذر تحميل مؤشر كفاءة التحصيل المعتمد حاليًا؛ تبقى تفاصيل التحصيل متاحة دون افتراض نسبة بديلة.'
+          : collectionRate! < 65
+            ? 'المحصّل أقل من ثلثي قيمة الفواتير في النطاق؛ راجع المتأخرات والعقود ذات الرصيد الأعلى.'
+            : dominantMethodShare > 85
+              ? 'التحصيل يعتمد بشدة على طريقة سداد واحدة؛ راجع الضوابط التشغيلية والتسوية اليومية لهذه الطريقة.'
+              : 'معدل التحصيل وتوزيع طرق السداد متوازنان نسبيًا داخل الفترة.'}
       </ReportInsightNote>
 
       <div className="grid gap-3 lg:grid-cols-2">
-        <ReportProgress
-          label="نسبة التحصيل من الفواتير"
-          value={collectionRate}
-          helper={`${formatMoney(summary?.paid ?? totalCollected)} من ${formatMoney(summary?.invoiced ?? 0)}`}
-          tone={collectionRate >= 85 ? 'good' : collectionRate >= 65 ? 'warning' : 'critical'}
-        />
+        {isCollectionRateAvailable ? (
+          <ReportProgress
+            label="نسبة التحصيل من الفواتير"
+            value={collectionRate!}
+            helper={summary ? `${formatMoney(summary.paid)} من ${formatMoney(summary.invoiced)}` : 'تفاصيل الفترة غير متاحة'}
+            tone={collectionRate! >= 85 ? 'good' : collectionRate! >= 65 ? 'warning' : 'critical'}
+          />
+        ) : (
+          <ReportState
+            title="كفاءة التحصيل غير متاحة"
+            message="لم يصل المؤشر المعتمد من الخادم، لذلك لن يعرض مالك نسبة محسوبة محليًا بدلًا منه."
+          />
+        )}
         <ReportProgress
           label="تركيز طريقة السداد الأولى"
           value={dominantMethodShare}
