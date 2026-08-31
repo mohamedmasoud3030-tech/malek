@@ -68,6 +68,8 @@ describe('canonical register visual contract', () => {
 
     expect(properties).toContain('mobileCardType="property"');
     expect(properties).toContain('mobileSupportingKey="owner"');
+    expect(properties).toContain("embeddedHeader={embedded ? 'actions-only' : 'full'}");
+    expect(properties).not.toContain('<RegisterHeading title="سجل العقارات"');
     expect(units).toContain('mobileSupportingKey="property"');
     expect(contracts).toContain('mobileSupportingKey="tenant"');
     expect(invoices).toContain('mobilePrimaryMetaKeys={[\'remaining\', \'gross\', \'due_date\']}');
