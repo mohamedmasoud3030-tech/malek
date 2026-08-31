@@ -239,7 +239,7 @@ export function ExpensesSection({
                           variant="ghost"
                           size="sm"
                           onClick={() => onDrill('operations', 'operations_overview', { propertyId: row.propertyId })}
-                          className="min-h-9 gap-1 px-2 text-xs text-muted-foreground hover:text-primary"
+                          className="min-h-11 gap-1 px-2 text-xs text-muted-foreground hover:text-primary"
                           aria-label={`فتح النظرة التشغيلية لـ ${label}`}
                         >
                           عرض
