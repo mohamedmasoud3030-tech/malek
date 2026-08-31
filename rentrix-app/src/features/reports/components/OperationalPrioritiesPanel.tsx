@@ -1,8 +1,14 @@
-import { AlertTriangle, ArrowLeft, Building2, FileText, Wrench } from 'lucide-react';
-import { formatMoney } from '@/features/financials/components/financials-formatters';
+import { AlertTriangle, Building2, FileText, Wrench } from 'lucide-react';
+import { formatDate, formatMoney } from '@/features/financials/components/financials-formatters';
 import { formatLatinNumber } from '@/lib/formatters';
 import type { ReportDrillHandler } from '../report-workspaces';
-import { ReportPanel, ReportState } from '@/components/ui/report-section-primitives';
+import {
+  ReportDrillAction,
+  ReportList,
+  ReportListRow,
+  ReportPanel,
+  ReportState,
+} from '@/components/ui/report-section-primitives';
 
 type OperationalPrioritiesPanelProps = Readonly<{
   overdueTotal: number;
@@ -43,7 +49,7 @@ export function OperationalPrioritiesPanel({
       ? {
         id: 'overdue',
         label: 'رتّب متابعة المتأخرات',
-        detail: overdueAsOf ? `المتأخر حتى ${overdueAsOf}` : 'مبالغ مستحقة غير محصلة',
+        detail: overdueAsOf ? `تجاوز تاريخ الاستحقاق حتى ${formatDate(overdueAsOf)}` : 'مبالغ تجاوزت تاريخ استحقاقها',
         value: formatMoney(overdueTotal),
         icon: AlertTriangle,
         workspace: 'collections',
@@ -99,33 +105,34 @@ export function OperationalPrioritiesPanel({
           <ReportState message="لا توجد أولويات تشغيلية حرجة داخل نطاق التقرير الحالي." />
         </div>
       ) : (
-        <div className="divide-y divide-border/60">
+        <ReportList>
           {priorities.map((priority) => {
             const Icon = priority.icon;
             return (
-              <button
+              <ReportListRow
                 key={priority.id}
-                type="button"
-                onClick={() => onDrill(priority.workspace, priority.view)}
-                className="group flex min-h-16 w-full items-center justify-between gap-3 px-4 py-3 text-start transition-colors hover:bg-primary/[0.025] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 sm:px-5"
-              >
-                <span className="flex min-w-0 items-center gap-3">
-                  <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-warning/10 text-warning-foreground">
-                    <Icon className="size-4" aria-hidden="true" />
+                title={(
+                  <span className="flex min-w-0 items-center gap-2">
+                    <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-warning/10 text-warning-foreground">
+                      <Icon className="size-4" aria-hidden="true" />
+                    </span>
+                    <span className="min-w-0 break-words">{priority.label}</span>
                   </span>
-                  <span className="min-w-0">
-                    <span className="block text-sm font-black">{priority.label}</span>
-                    <span className="mt-0.5 block truncate text-xs font-semibold text-muted-foreground">{priority.detail}</span>
-                  </span>
-                </span>
-                <span className="flex shrink-0 items-center gap-2">
-                  <span className="font-extrabold tabular-nums" dir="ltr">{priority.value}</span>
-                  <ArrowLeft className="size-3.5 text-muted-foreground/60 transition-colors group-hover:text-primary rtl:rotate-180" aria-hidden="true" />
-                </span>
-              </button>
+                )}
+                subtitle={priority.detail}
+                value={<span dir="ltr">{priority.value}</span>}
+                action={(
+                  <ReportDrillAction
+                    label="فتح"
+                    variant="ghost"
+                    ariaLabel={priority.label}
+                    onClick={() => onDrill(priority.workspace, priority.view)}
+                  />
+                )}
+              />
             );
           })}
-        </div>
+        </ReportList>
       )}
     </ReportPanel>
   );
