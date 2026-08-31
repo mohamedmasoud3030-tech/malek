@@ -48,23 +48,28 @@ export function RegisterMetricStrip({
 }>) {
   const visible = items.filter((item) => !(item.hideWhenEmpty && isEmptyMetricValue(item.value)));
   if (visible.length === 0) return null;
+  const hasOddMobileTail = visible.length % 2 === 1;
 
   return (
     <section
       data-register-metric-strip
       aria-label={ariaLabel}
       className={cn(
-        'grid min-w-0 grid-cols-2 gap-px overflow-hidden rounded-xl border border-border/70 bg-border/60 sm:grid-cols-3 lg:grid-cols-[repeat(auto-fit,minmax(9rem,1fr))]',
+        'grid min-w-0 grid-cols-2 gap-px overflow-hidden rounded-lg border border-border/70 bg-border/60 sm:grid-cols-3 lg:grid-cols-[repeat(auto-fit,minmax(9rem,1fr))]',
         className,
       )}
     >
-      {visible.map((item) => {
+      {visible.map((item, index) => {
         const Icon = item.icon;
+        const isLast = index === visible.length - 1;
         return (
           <div
             key={item.id}
             data-register-metric=""
-            className="flex min-w-0 items-start gap-2 bg-card px-3 py-2.5"
+            className={cn(
+              'flex min-w-0 items-start gap-2 bg-card px-2.5 py-2 sm:px-3 sm:py-2.5',
+              hasOddMobileTail && isLast && 'col-span-2 sm:col-span-1',
+            )}
           >
             {Icon ? (
               <Icon className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
@@ -126,7 +131,7 @@ export function RegisterHeading({
   extra?: ReactNode;
 }>) {
   return (
-    <header data-register-heading className="flex min-h-9 min-w-0 flex-wrap items-center justify-between gap-2 px-0.5 lg:min-h-8">
+    <header data-register-heading className="flex min-h-8 min-w-0 flex-wrap items-center justify-between gap-2 px-0.5">
       <div className="min-w-0">
         <h2 className="truncate text-sm font-black lg:text-xs lg:font-bold lg:text-muted-foreground">{title}</h2>
         {meta ? <p className="truncate text-xs font-medium leading-5 text-muted-foreground">{meta}</p> : null}

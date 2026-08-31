@@ -59,22 +59,28 @@ export function PageHeader({
   const todayContext = showTodayContext ? getTodayContext(isArabic) : null;
 
   return (
-    <div data-page-header className={cn('min-w-0 space-y-2.5', className)}>
+    <div
+      data-page-header
+      className={cn(
+        'min-w-0 space-y-2 max-md:!rounded-none max-md:!border-0 max-md:!bg-transparent max-md:!p-0',
+        className,
+      )}
+    >
       <header
         data-global-page-context
         data-unified-surface="page-header"
-        className="flex min-w-0 flex-col gap-3 border-b border-border/60 pb-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4 sm:pb-4"
+        className="flex min-w-0 flex-col gap-2 border-b border-border/60 pb-2.5 sm:flex-row sm:items-end sm:justify-between sm:gap-4 sm:pb-4"
         aria-label={todayContext
           ? isArabic
             ? `${title} — ${todayContext.todayLabel} ${todayContext.weekday} ${todayContext.date}`
             : `${title} — ${todayContext.todayLabel}, ${todayContext.weekday} ${todayContext.date}`
           : title}
       >
-        <div className="min-w-0 flex-1 space-y-1.5">
+        <div className="min-w-0 flex-1 space-y-1">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <h1
               data-global-page-title
-              className="min-w-0 text-[1.45rem] font-black leading-8 tracking-[-0.02em] [overflow-wrap:anywhere] sm:text-[1.65rem] sm:leading-9"
+              className="min-w-0 text-[1.35rem] font-black leading-7 tracking-[-0.02em] [overflow-wrap:anywhere] sm:text-[1.65rem] sm:leading-9"
             >
               {title}
             </h1>

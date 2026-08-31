@@ -50,17 +50,34 @@ export function EmbeddableWorkspace({
         data-embedded-workspace
         data-workspace={workspaceName}
         data-visual-wave={visualVariant}
-        className="min-w-0 space-y-4 sm:space-y-5"
+        className="min-w-0 space-y-2.5 sm:space-y-3"
       >
-        {hasActions ? (
-          <div data-workspace-actions className="flex justify-end" aria-label={`إجراءات ${title}`}>
-            <PageHeaderActions
-              title={title}
-              primaryAction={primaryAction}
-              secondaryActions={secondaryActions}
-            />
+        <header
+          data-embedded-workspace-header
+          className="flex min-w-0 items-center justify-between gap-3 border-b border-border/50 pb-2"
+        >
+          <div className="flex min-w-0 items-center gap-2">
+            <h2 className="truncate text-base font-black tracking-[-0.01em] sm:text-lg">{title}</h2>
+            {count !== undefined ? (
+              <span
+                className="inline-flex min-h-6 shrink-0 items-center rounded-full bg-muted/60 px-2 py-0.5 text-xs font-bold tabular-nums text-muted-foreground"
+                aria-label={`عدد السجلات ${count}`}
+              >
+                {count}
+              </span>
+            ) : null}
           </div>
-        ) : null}
+
+          {hasActions ? (
+            <div data-workspace-actions className="shrink-0" aria-label={`إجراءات ${title}`}>
+              <PageHeaderActions
+                title={title}
+                primaryAction={primaryAction}
+                secondaryActions={secondaryActions}
+              />
+            </div>
+          ) : null}
+        </header>
         {children}
       </div>
     );
