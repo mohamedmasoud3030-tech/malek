@@ -72,6 +72,7 @@ export function ReportsShell({
   const workspace = getReportWorkspace(activeWorkspace);
   const summary = model.hero.summary;
   const collectionRate = model.sections.collections.collectionRate;
+  const hasCollectionRate = typeof collectionRate === 'number' && Number.isFinite(collectionRate);
   const meta = getActiveReportMeta(activeWorkspace, activeView);
   const isSpecialist = workspace?.specialist ?? false;
   const isCollections = activeWorkspace === 'collections';
@@ -91,8 +92,8 @@ export function ReportsShell({
             <div className="flex shrink-0 items-center gap-2">
               <MetricButton
                 label="كفاءة التحصيل"
-                value={Number.isFinite(collectionRate) ? `${Math.round(collectionRate!)}%` : '—'}
-                detail={Number.isFinite(collectionRate) ? `${money(summary.paid ?? 0)} من ${money(summary.invoiced ?? 0)}` : 'المؤشر المعتمد غير متاح حاليًا'}
+                value={hasCollectionRate ? `${Math.round(collectionRate!)}%` : '—'}
+                detail={hasCollectionRate ? `${money(summary.paid ?? 0)} من ${money(summary.invoiced ?? 0)}` : 'المؤشر المعتمد غير متاح حاليًا'}
                 icon={Receipt}
                 onClick={() => onOpenView('collections')}
               />
