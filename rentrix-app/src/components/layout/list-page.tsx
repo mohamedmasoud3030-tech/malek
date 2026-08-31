@@ -24,6 +24,8 @@ interface ListPageProps {
   toolbarActions?: ReactNode;
   /** Optional stable storage key shared by the page toolbar and its register. */
   viewModeStorageKey?: string;
+  /** Avoid a second title when this list is mounted inside a named hub. */
+  embeddedHeader?: 'full' | 'actions-only' | 'none';
   children: ReactNode;
   className?: string;
   dir?: 'rtl' | 'ltr';
@@ -58,6 +60,7 @@ export function ListPage({
   onClearAllFilters,
   toolbarActions,
   viewModeStorageKey,
+  embeddedHeader,
   children,
   className,
   dir,
@@ -78,6 +81,7 @@ export function ListPage({
       dir={dir}
       visualVariant={visualVariant}
       viewModeStorageKey={viewModeStorageKey}
+      embeddedHeader={embeddedHeader}
     >
         <FilterBar
           searchValue={search?.value}
