@@ -13,7 +13,8 @@ vi.mock('@/app/router/background-location', () => ({
 }));
 
 const collectionsProps = {
-  summary: { invoiced: 1000, paid: 800, outstanding: 200 },
+  summary: { invoiced: 1000, paid: 800, outstanding: 200, receiptsCount: 2, invoicesCount: 4, expensesTotal: 0 },
+  collectionRate: 73,
   rows: [
     {
       paymentDate: '2026-08-01',
@@ -65,15 +66,28 @@ const overdueProps = {
 describe('canonical report pattern: Summary → Visual Insight → Detailed Table', () => {
   it('collections report renders summary KPIs, visual progress, insight and detail table', () => {
     const markup = renderToStaticMarkup(<CollectionsSection {...(collectionsProps as any)} />);
-    // Summary layer: canonical summary marker lives on the KPI grid.
     expect(markup).toContain('data-report-summary');
-    // Visual layer: at least one progress/ratio visual block.
     expect(markup).toMatch(/data-report-visual/);
-    // Insight layer: business-language reading note.
     expect(markup).toMatch(/data-report-insight/);
-    // Detail layer: an accessible detail table plus the canonical action group.
     expect(markup).toContain('جدول التحصيل اليومي');
     expect(markup).toContain('data-report-share-actions');
+  });
+
+  it('renders the authoritative collection rate instead of recomputing paid / invoiced', () => {
+    const markup = renderToStaticMarkup(<CollectionsSection {...(collectionsProps as any)} />);
+    expect(markup).toContain('73%');
+    expect(markup).not.toContain('80%');
+    expect(markup).toContain('الرصيد المستحق');
+    expect(markup).toContain('يشمل الجاري والمتأخر');
+  });
+
+  it('does not invent a 0% collection rate when the authoritative metric is unavailable', () => {
+    const markup = renderToStaticMarkup(
+      <CollectionsSection {...(collectionsProps as any)} collectionRate={undefined} />,
+    );
+    expect(markup).toContain('كفاءة التحصيل غير متاحة');
+    expect(markup).toContain('غير متاحة');
+    expect(markup).not.toContain('80%');
   });
 
   it('overdue report renders summary KPIs, visual progress, insight and detail table', () => {
@@ -83,7 +97,6 @@ describe('canonical report pattern: Summary → Visual Insight → Detailed Tabl
     expect(markup).toMatch(/data-report-insight/);
     expect(markup).toContain('الفواتير المتأخرة');
     expect(markup).toContain('data-report-share-actions');
-    // Prepared WhatsApp/share actions are present for permitted users.
     expect(markup).toContain('واتساب');
     expect(markup).toContain('مشاركة');
   });

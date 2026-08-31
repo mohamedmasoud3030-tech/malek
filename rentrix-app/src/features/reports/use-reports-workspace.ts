@@ -301,6 +301,7 @@ export function useReportsWorkspace(filters: ReportsFilterState, location: Repor
         from: filters.from,
         to: filters.to,
         summary: collectionSummaryQuery.data,
+        ...(collectionRateQuery.data === undefined ? {} : { collectionRate: collectionRateQuery.data }),
         rows: dailyCollectionQuery.data?.rows ?? [],
         receiptRows,
         rentRollRows,

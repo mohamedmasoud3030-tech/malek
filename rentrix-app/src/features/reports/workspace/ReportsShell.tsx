@@ -54,8 +54,8 @@ function MetricButton({ label, value, detail, icon: Icon, onClick, tone = 'defau
 /**
  * The one compact header for the open workspace. It owns the workspace
  * identity, its sub-view switcher and the active scope (via the context bar).
- * The two collection metrics are navigation shortcuts into that workspace's
- * own sub-views — not a repeated KPI grid.
+ * Collection shortcuts render the canonical metric meanings without creating
+ * a second KPI grid inside the report body.
  */
 export function ReportsShell({
   model,
@@ -71,7 +71,8 @@ export function ReportsShell({
   const money = (value: number | null | undefined) => formatCompanyMoney(companySettings, value);
   const workspace = getReportWorkspace(activeWorkspace);
   const summary = model.hero.summary;
-  const collectionRate = model.hero.collectionRate;
+  const collectionRate = model.sections.collections.collectionRate;
+  const hasCollectionRate = typeof collectionRate === 'number' && Number.isFinite(collectionRate);
   const meta = getActiveReportMeta(activeWorkspace, activeView);
   const isSpecialist = workspace?.specialist ?? false;
   const isCollections = activeWorkspace === 'collections';
@@ -91,18 +92,17 @@ export function ReportsShell({
             <div className="flex shrink-0 items-center gap-2">
               <MetricButton
                 label="كفاءة التحصيل"
-                value={`${Number.isFinite(collectionRate) ? Math.round(collectionRate) : 0}%`}
-                detail={`${money(summary.paid ?? 0)} من ${money(summary.invoiced ?? 0)}`}
+                value={hasCollectionRate ? `${Math.round(collectionRate!)}%` : '—'}
+                detail={hasCollectionRate ? `${money(summary.paid ?? 0)} من ${money(summary.invoiced ?? 0)}` : 'المؤشر المعتمد غير متاح حاليًا'}
                 icon={Receipt}
                 onClick={() => onOpenView('collections')}
               />
               {(summary.outstanding ?? 0) > 0 ? (
                 <MetricButton
-                  label="المتأخرات"
+                  label="الرصيد المستحق"
                   value={money(summary.outstanding ?? 0)}
-                  detail={`${summary.invoicesCount ?? 0} فاتورة`}
+                  detail="يشمل الجاري والمتأخر"
                   icon={AlertTriangle}
-                  tone="warning"
                   onClick={() => onOpenView('overdue')}
                 />
               ) : null}
