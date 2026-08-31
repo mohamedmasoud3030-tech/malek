@@ -38,7 +38,7 @@ export function OperationalPrioritiesPanel({
   isLoading,
   onDrill,
 }: OperationalPrioritiesPanelProps) {
-  const priorities: Priority[] = [
+  const priorityCandidates: Array<Priority | null> = [
     overdueTotal > 0
       ? {
         id: 'overdue',
@@ -83,7 +83,8 @@ export function OperationalPrioritiesPanel({
         view: 'maintenance_analytics',
       }
       : null,
-  ].filter((priority): priority is Priority => priority !== null);
+  ];
+  const priorities = priorityCandidates.filter((priority): priority is Priority => priority !== null);
 
   return (
     <ReportPanel
