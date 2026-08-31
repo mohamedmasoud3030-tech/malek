@@ -472,3 +472,19 @@ for (const viewport of MOBILE_VIEWPORTS) {
     });
   }
 }
+
+
+test('properties runtime wiring — one visible register authority on the phone viewport', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await openAuthenticatedDashboard(page);
+  await page.goto('/properties', { waitUntil: 'domcontentloaded' });
+
+  await expect(page.locator('[data-property-register]')).toBeVisible({ timeout: 20_000 });
+  await expect(page.locator('[data-embedded-workspace-header]')).toHaveCount(0);
+  await expect(page.locator('[data-register-heading]')).toHaveCount(0);
+
+  const filterViewMode = page.locator('[data-filter-view-mode]');
+  await expect(filterViewMode).toBeVisible();
+  await expect(page.locator('[data-entity-table-toolbar]')).toHaveCount(0);
+  await expectNoHorizontalOverflow(page, 'properties-runtime-wiring@375');
+});
