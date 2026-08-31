@@ -94,7 +94,15 @@ export function AnalyticsReportsAdapter({ view, model, filters, canExportReports
       );
     }
     case 'expenses':
-      return <ExpensesSection {...model.sections.expenses} canExportReports={canExportReports} />;
+      return (
+        <ExpensesSection
+          {...model.sections.expenses}
+          from={filters.from}
+          to={filters.to}
+          onDrill={onDrill}
+          canExportReports={canExportReports}
+        />
+      );
     case 'property_analytics':
       return (
         <PropertyAnalyticsSection
