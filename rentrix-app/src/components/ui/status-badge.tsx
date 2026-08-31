@@ -31,29 +31,29 @@ const productToSemantic: Record<ProductTone, SemanticTone> = {
 };
 
 /**
- * Semantic status tokens are HSL channel custom properties, not Tailwind
- * `--color-*` theme entries. Use explicit arbitrary color utilities so the
- * browser resolves the canonical runtime tokens instead of silently emitting
- * a transparent background when a generated color utility is unavailable.
+ * Status badges are also styled by the shared page-polish cascade through
+ * --status-tone/--status-soft. Define those variables for every semantic tone
+ * here so the generic [data-status-badge][data-tone] rule can never resolve
+ * to an invalid (transparent) background.
  */
 const semanticTones: Record<SemanticTone, string> = {
-  success: 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] ring-[hsl(var(--success-text)/0.2)]',
-  warning: 'bg-[hsl(var(--warning-bg))] text-[hsl(var(--warning-text))] ring-[hsl(var(--warning-text)/0.2)]',
-  danger: 'bg-[hsl(var(--danger-bg))] text-[hsl(var(--danger-text))] ring-[hsl(var(--danger-text)/0.2)]',
-  info: 'bg-[hsl(var(--info-bg))] text-[hsl(var(--info-text))] ring-[hsl(var(--info-text)/0.2)]',
-  neutral: 'bg-[hsl(var(--neutral-bg))] text-[hsl(var(--neutral-text))] ring-[hsl(var(--neutral-text)/0.2)]',
-  primary: 'bg-primary/10 text-primary ring-primary/20',
-  secondary: 'bg-[hsl(var(--neutral-bg))] text-[hsl(var(--neutral-text))] ring-[hsl(var(--neutral-text)/0.2)]',
+  success: 'bg-success-bg text-success-text ring-success/20 [--status-tone:var(--success-text)] [--status-soft:var(--success-bg)]',
+  warning: 'bg-warning-bg text-warning-text ring-warning/20 [--status-tone:var(--warning-text)] [--status-soft:var(--warning-bg)]',
+  danger: 'bg-danger-bg text-danger-text ring-danger/20 [--status-tone:var(--danger-text)] [--status-soft:var(--danger-bg)]',
+  info: 'bg-info-bg text-info-text ring-info/20 [--status-tone:var(--info-text)] [--status-soft:var(--info-bg)]',
+  neutral: 'bg-neutral-bg text-neutral-text ring-neutral/20 [--status-tone:var(--neutral-text)] [--status-soft:var(--neutral-bg)]',
+  primary: 'bg-primary/10 text-primary ring-primary/20 [--status-tone:var(--primary)] [--status-soft:var(--card-muted)]',
+  secondary: 'bg-neutral-bg text-neutral-text ring-neutral/20 [--status-tone:var(--neutral-text)] [--status-soft:var(--neutral-bg)]',
 };
 
 const semanticDotTones: Record<SemanticTone, string> = {
-  success: 'bg-[hsl(var(--success-text))]',
-  warning: 'bg-[hsl(var(--warning-text))]',
-  danger: 'bg-[hsl(var(--danger-text))]',
-  info: 'bg-[hsl(var(--info-text))]',
-  neutral: 'bg-[hsl(var(--neutral-text))]',
+  success: 'bg-success',
+  warning: 'bg-warning',
+  danger: 'bg-danger',
+  info: 'bg-info',
+  neutral: 'bg-neutral',
   primary: 'bg-primary',
-  secondary: 'bg-[hsl(var(--neutral-text))]',
+  secondary: 'bg-neutral',
 };
 
 function resolveTone(tone: StatusTone): ResolvedTone {
