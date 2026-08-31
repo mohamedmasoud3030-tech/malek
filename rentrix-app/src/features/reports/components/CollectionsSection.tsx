@@ -27,7 +27,7 @@ const paymentMethodLabels = {
 export function CollectionsSection({ summary, collectionRate, rows, receiptRows, rentRollRows, canExportReports, isLoading, from, to }: Readonly<{
   summary: NonNullable<ReturnType<typeof useCollectionSummaryReport>['data']> | undefined;
   /** Dashboard Truth RPC value. Presentation must render it, never derive paid / invoiced here. */
-  collectionRate: number | undefined;
+  collectionRate?: number;
   rows: DailyCollectionReportRow[];
   receiptRows: CollectionReceiptRow[];
   rentRollRows: RentRollReportRow[];
