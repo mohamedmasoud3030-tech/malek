@@ -30,24 +30,30 @@ const productToSemantic: Record<ProductTone, SemanticTone> = {
   slate: 'neutral',
 };
 
+/**
+ * Semantic status tokens are HSL channel custom properties, not Tailwind
+ * `--color-*` theme entries. Use explicit arbitrary color utilities so the
+ * browser resolves the canonical runtime tokens instead of silently emitting
+ * a transparent background when a generated color utility is unavailable.
+ */
 const semanticTones: Record<SemanticTone, string> = {
-  success: 'bg-success-bg text-success-text ring-success/20',
-  warning: 'bg-warning-bg text-warning-text ring-warning/20',
-  danger: 'bg-danger-bg text-danger-text ring-danger/20',
-  info: 'bg-info-bg text-info-text ring-info/20',
-  neutral: 'bg-neutral-bg text-neutral-text ring-neutral/20',
+  success: 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] ring-[hsl(var(--success-text)/0.2)]',
+  warning: 'bg-[hsl(var(--warning-bg))] text-[hsl(var(--warning-text))] ring-[hsl(var(--warning-text)/0.2)]',
+  danger: 'bg-[hsl(var(--danger-bg))] text-[hsl(var(--danger-text))] ring-[hsl(var(--danger-text)/0.2)]',
+  info: 'bg-[hsl(var(--info-bg))] text-[hsl(var(--info-text))] ring-[hsl(var(--info-text)/0.2)]',
+  neutral: 'bg-[hsl(var(--neutral-bg))] text-[hsl(var(--neutral-text))] ring-[hsl(var(--neutral-text)/0.2)]',
   primary: 'bg-primary/10 text-primary ring-primary/20',
-  secondary: 'bg-neutral-bg text-neutral-text ring-neutral/20',
+  secondary: 'bg-[hsl(var(--neutral-bg))] text-[hsl(var(--neutral-text))] ring-[hsl(var(--neutral-text)/0.2)]',
 };
 
 const semanticDotTones: Record<SemanticTone, string> = {
-  success: 'bg-success',
-  warning: 'bg-warning',
-  danger: 'bg-danger',
-  info: 'bg-info',
-  neutral: 'bg-neutral',
+  success: 'bg-[hsl(var(--success-text))]',
+  warning: 'bg-[hsl(var(--warning-text))]',
+  danger: 'bg-[hsl(var(--danger-text))]',
+  info: 'bg-[hsl(var(--info-text))]',
+  neutral: 'bg-[hsl(var(--neutral-text))]',
   primary: 'bg-primary',
-  secondary: 'bg-neutral',
+  secondary: 'bg-[hsl(var(--neutral-text))]',
 };
 
 function resolveTone(tone: StatusTone): ResolvedTone {
