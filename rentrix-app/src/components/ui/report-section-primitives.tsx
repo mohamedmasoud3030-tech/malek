@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
-import { AlertCircle, Inbox, Sparkles } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Inbox, Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -42,6 +43,49 @@ export function ReportPanelSkeleton({ className }: Readonly<{ className?: string
 export function ReportState({ kind = 'empty', title, message, className }: Readonly<{ kind?: 'empty' | 'error'; title?: string; message: string; className?: string }>) {
   const Icon = kind === 'error' ? AlertCircle : Inbox;
   return <div className={cn('flex min-h-28 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed p-5 text-center text-sm sm:min-h-32', kind === 'error' ? 'border-destructive/40 bg-destructive/10 text-destructive' : 'border-border/70 bg-muted/20 text-muted-foreground', className)} role={kind === 'error' ? 'alert' : 'status'}><span className={cn('grid size-10 place-items-center rounded-xl', kind === 'error' ? 'bg-destructive/10 text-destructive' : 'bg-background text-muted-foreground shadow-sm')}><Icon className="size-5" aria-hidden="true" /></span><div className="max-w-xl">{title ? <p className="font-bold text-foreground">{title}</p> : null}<p className={cn('leading-6', title && 'mt-1')}>{message}</p></div></div>;
+}
+
+export type ReportDrillActionProps = Readonly<{
+  /** Business-language destination, e.g. "المتأخرات والأعمار". */
+  label: string;
+  onClick: () => void;
+  /** `outline` for a panel header action, `ghost` for an in-row affordance. */
+  variant?: 'outline' | 'ghost';
+  /** Required when the visible label is not descriptive on its own. */
+  ariaLabel?: string;
+  disabled?: boolean;
+  className?: string;
+}>;
+
+/**
+ * The one drill-through affordance for report surfaces.
+ *
+ * Every report body needs the same control — "open the workspace that owns
+ * this detail" — and each one had grown its own version: a bordered native
+ * element here, an ad-hoc shared-button + arrow combination there, each with a
+ * different size, weight and arrow treatment. This is that control, once: the
+ * canonical MALEK `Button`, the 44px minimum touch target, and a single
+ * forward-arrow convention for the RTL reading direction.
+ *
+ * It routes only. It never computes, formats or re-states a figure, so it
+ * cannot become a second place where a report's numbers live.
+ */
+export function ReportDrillAction({ label, onClick, variant = 'outline', ariaLabel, disabled = false, className }: ReportDrillActionProps) {
+  return (
+    <Button
+      type="button"
+      size="sm"
+      variant={variant}
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={ariaLabel}
+      data-report-drill
+      className={cn('min-h-11 shrink-0 gap-1.5 text-xs font-black text-primary', className)}
+    >
+      {label}
+      <ArrowLeft className="size-3.5 shrink-0" aria-hidden="true" />
+    </Button>
+  );
 }
 
 export function ReportList({ children, className }: Readonly<{ children: React.ReactNode; className?: string }>) {
