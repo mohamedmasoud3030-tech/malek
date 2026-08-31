@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { EntityTableViewModeProvider } from '@/components/ui/entity-table';
 import { PageHeader } from './page-header';
 import { PageHeaderActions } from './page-header-actions';
 import { PageLayout } from './page-layout';
@@ -15,6 +16,8 @@ export type EmbeddableWorkspaceProps = Readonly<{
   count?: number | string;
   /** Optional stable data hook for embedded hub workspaces. */
   workspaceName?: string;
+  /** Optional stable storage key shared by the register view control. */
+  viewModeStorageKey?: string;
   backTo?: string;
   backLabel?: string;
   primaryAction?: ReactNode;
@@ -35,6 +38,7 @@ export function EmbeddableWorkspace({
   contentClassName,
   count,
   workspaceName,
+  viewModeStorageKey,
   backTo,
   backLabel,
   primaryAction,
@@ -78,7 +82,11 @@ export function EmbeddableWorkspace({
             </div>
           ) : null}
         </header>
-        {children}
+        <EntityTableViewModeProvider
+          storageKey={viewModeStorageKey ?? `malek:list-page:${title}`}
+        >
+          {children}
+        </EntityTableViewModeProvider>
       </div>
     );
   }
@@ -101,7 +109,11 @@ export function EmbeddableWorkspace({
         primaryAction={primaryAction}
         secondaryActions={secondaryActions}
       />
-      {children}
+      <EntityTableViewModeProvider
+        storageKey={viewModeStorageKey ?? `malek:list-page:${title}`}
+      >
+        {children}
+      </EntityTableViewModeProvider>
     </PageLayout>
   );
 }
