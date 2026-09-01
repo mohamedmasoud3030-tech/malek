@@ -16,7 +16,10 @@ export type EmbeddableWorkspaceProps = Readonly<{
   count?: number | string;
   /** Optional stable data hook for embedded hub workspaces. */
   workspaceName?: string;
-  /** Embedded hubs can retain actions without repeating the child title. */
+  /**
+   * Embedded hubs never own a second page identity. `full` remains accepted
+   * temporarily for source compatibility, but is normalized to actions-only.
+   */
   embeddedHeader?: 'full' | 'actions-only' | 'none';
   /** Optional stable storage key shared by the register view control. */
   viewModeStorageKey?: string;
@@ -29,6 +32,14 @@ export type EmbeddableWorkspaceProps = Readonly<{
   children: ReactNode;
 }>;
 
+/**
+ * Canonical boundary between route pages and hub-embedded workspaces.
+ *
+ * A standalone route owns PageLayout + PageHeader. An embedded workspace owns
+ * content and reachable actions only. This invariant prevents the historical
+ * "hub header + child page header" duplication from returning through feature
+ * code or stale props.
+ */
 export function EmbeddableWorkspace({
   embedded = false,
   title,
@@ -40,9 +51,6 @@ export function EmbeddableWorkspace({
   contentClassName,
   count,
   workspaceName,
-  // Embedded hubs already own the title hierarchy. Keep only reachable actions
-  // at the top of the child workspace unless a consumer explicitly opts back
-  // into the legacy full embedded header.
   embeddedHeader = embedded ? 'actions-only' : 'full',
   viewModeStorageKey,
   backTo,
@@ -54,6 +62,7 @@ export function EmbeddableWorkspace({
 }: EmbeddableWorkspaceProps) {
   if (embedded) {
     const hasActions = Boolean(primaryAction || secondaryActions);
+    const showActions = embeddedHeader !== 'none' && hasActions;
 
     return (
       <div
@@ -62,34 +71,7 @@ export function EmbeddableWorkspace({
         data-visual-wave={visualVariant}
         className="min-w-0 space-y-2.5 sm:space-y-3"
       >
-        {embeddedHeader === 'full' ? (
-          <header
-            data-embedded-workspace-header
-            className="flex min-w-0 items-center justify-between gap-3 border-b border-border/50 pb-2"
-          >
-            <div className="flex min-w-0 items-center gap-2">
-              <h2 className="truncate text-base font-black tracking-[-0.01em] sm:text-lg">{title}</h2>
-              {count !== undefined ? (
-                <span
-                  className="inline-flex min-h-6 shrink-0 items-center rounded-full bg-muted/60 px-2 py-0.5 text-xs font-bold tabular-nums text-muted-foreground"
-                  aria-label={`عدد السجلات ${count}`}
-                >
-                  {count}
-                </span>
-              ) : null}
-            </div>
-
-            {hasActions ? (
-              <div data-workspace-actions className="shrink-0" aria-label={`إجراءات ${title}`}>
-                <PageHeaderActions
-                  title={title}
-                  primaryAction={primaryAction}
-                  secondaryActions={secondaryActions}
-                />
-              </div>
-            ) : null}
-          </header>
-        ) : embeddedHeader === 'actions-only' && hasActions ? (
+        {showActions ? (
           <div data-embedded-workspace-actions className="flex justify-end">
             <div data-workspace-actions aria-label={`إجراءات ${title}`}>
               <PageHeaderActions
