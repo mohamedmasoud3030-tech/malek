@@ -128,7 +128,6 @@ export function ServiceProvidersWorkspace({ embedded = false }: Readonly<{ embed
       <ListPage
         embedded={embedded}
         dir="rtl"
-        visualVariant="malek-pro"
         title="مزودو الخدمات"
         count={total || undefined}
         primaryAction={createAction}
