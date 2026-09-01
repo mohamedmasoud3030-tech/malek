@@ -127,7 +127,7 @@ export function ReceiptDetailPage() {
 
   if (!receipt && receiptQuery.isLoading) {
     return (
-      <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro">
+      <PageLayout dir="rtl" lang="ar" size="wide">
         <ReceiptPageHeader />
         <LoadingState variant="route" label="جارٍ تحميل بيانات الإيصال..." />
       </PageLayout>
@@ -136,7 +136,7 @@ export function ReceiptDetailPage() {
 
   if (!receipt) {
     return (
-      <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro">
+      <PageLayout dir="rtl" lang="ar" size="wide">
         <ReceiptPageHeader description="تعذر تحميل بيانات الإيصال." />
         <DataErrorScreen
           title="تعذر تحميل الإيصال"
@@ -165,7 +165,6 @@ export function ReceiptDetailPage() {
       dir="rtl"
       lang="ar"
       size="wide"
-      visualVariant="malek-pro"
       className="print:block"
       contentClassName="print:max-w-none print:space-y-0 print:p-0"
     >
