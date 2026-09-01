@@ -99,7 +99,7 @@ export function ChangePasswordWorkspace({ variant = 'standalone' }: ChangePasswo
   if (variant === 'embedded') return <div className="max-w-3xl space-y-4">{body}</div>;
 
   return (
-    <PageLayout dir="rtl" lang="ar" contentClassName="w-full min-w-0 max-w-3xl" visualVariant="malek-pro">
+    <PageLayout dir="rtl" lang="ar" contentClassName="w-full min-w-0 max-w-3xl">
       <PageHeader title="تغيير كلمة المرور" description="حدّث كلمة مرور حسابك الحالي بأمان دون التأثير على أي حسابات أخرى." />
       {body}
     </PageLayout>
