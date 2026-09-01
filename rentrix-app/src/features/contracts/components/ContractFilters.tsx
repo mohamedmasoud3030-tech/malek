@@ -69,19 +69,29 @@ export function ContractFilters({
       searchPlaceholder="بحث باسم المستأجر، الوحدة، العقار، أو رقم العقد"
       searchAriaLabel="بحث في العقود"
       filters={(
-        <>
-          <FilterTabs options={contractLeaseModeOptions} value={leaseMode} onChange={setLeaseMode} tone="contracts" />
-          <FilterTabs options={filterOptions} value={status} onChange={setStatus} tone="contracts" />
-          <Button
-            variant={expiringOnly ? 'primary' : 'secondary'}
-            onClick={() => setExpiringOnly((value) => !value)}
-            className="min-h-11 shrink-0 rounded-lg px-3 text-xs"
-          >
-            <AlertTriangle className="me-1.5 size-3.5" />
-            تنتهي خلال 30 يوم
-          </Button>
-        </>
+        <FilterTabs options={contractLeaseModeOptions} value={leaseMode} onChange={setLeaseMode} tone="contracts" />
       )}
+      advancedFilters={(
+        <div className="grid min-w-0 gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-start" data-contract-advanced-filters>
+          <div className="min-w-0 space-y-1.5">
+            <p className="text-[11px] font-black text-muted-foreground">حالة العقد</p>
+            <FilterTabs options={filterOptions} value={status} onChange={setStatus} tone="contracts" />
+          </div>
+          <div className="min-w-0 space-y-1.5">
+            <p className="text-[11px] font-black text-muted-foreground">قرب الانتهاء</p>
+            <Button
+              variant={expiringOnly ? 'primary' : 'secondary'}
+              onClick={() => setExpiringOnly((value) => !value)}
+              className="min-h-11 shrink-0 rounded-lg px-3 text-xs"
+            >
+              <AlertTriangle className="me-1.5 size-3.5" />
+              تنتهي خلال 30 يوم
+            </Button>
+          </div>
+        </div>
+      )}
+      advancedFilterTitle="فلاتر العقود"
+      advancedFilterDescription="ابدأ بالبحث ونوع الإيجار. افتح هذه الفلاتر عند الحاجة لتقييد الحالة أو العقود القريبة من الانتهاء."
       activeFilters={activeFilters}
       onClearAllFilters={onClearAllFilters}
       actions={canExport || columnVisibilityControl ? (

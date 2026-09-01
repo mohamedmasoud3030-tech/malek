@@ -379,3 +379,38 @@ A round is done only when:
 - remaining audit findings are assigned to the next named round.
 
 **Green CI with visually unresolved audit findings is not complete. A polished screenshot with broken operational contracts is also not complete.**
+## 12. Screenshot evidence validity protocol
+
+A screenshot is evidence only after route and page identity are verified in the running browser. A successful screenshot command is not sufficient.
+
+For every capture, record:
+
+- requested route/URL;
+- expected page identity;
+- at least one stable DOM marker or page-specific text marker;
+- authentication/navigation state;
+- loading/error absence;
+- whether an unrelated route, stale screen, or dialog covers the target.
+
+Classification must be one of:
+
+- `VALID`;
+- `INVALID — wrong route`;
+- `INVALID — wrong page identity`;
+- `INVALID — authentication/navigation failure`;
+- `INVALID — incomplete/loading state`;
+- `INVALID — obstructed by unrelated dialog/chrome`;
+- another explicit invalid reason.
+
+Invalid captures are excluded from scoring and must be recaptured. Filenames never prove identity; the rendered page does.
+
+Historical correction for PR #1749 Round 1: the earlier screenshots named as Contract Detail captured the Contracts register again. They are recorded as `INVALID — wrong page identity` and must not be scored or reused as detail-page evidence. A future valid contract-detail capture must verify the detail route and a contract-specific marker such as the contract identifier/reference plus the detail workspace marker.
+
+## 13. Round 1 evidence ledger — live entries
+
+| Target screen | Route / harness | Viewport | Identity marker | Validity | Defect observed | Implemented resolution | Final score | Remaining issue |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Contracts register | `/login?e2e-showcase-contracts=1` or `/contracts` | pending recapture | `data-e2e-contracts-workspace` / `data-contract-register` / single `h1` «العقود» | pending | Duplicate historical authorities; overloaded simultaneous toolbar controls | Production and harness keep one PageHeader authority; status/expiry move to progressive `فلاتر العقود`; export/columns live in register toolbar | pending | Fresh capture required |
+| Financial overview / invoices | `/login?e2e-showcase-financials=1` or Money routes | pending recapture | `data-e2e-financials-workspace` / `h1` «الملخص المالي» / invoice table | pending | Fixture/runtime evidence had hand-written `ر.ع.` money and raw ISO dates, masking canonical OMR/RTL contract | Showcase financial values now route through `formatCompanyMoney`/`formatCompanyDate` and LTR `bdi` wrappers for date/money table cells | pending | Fresh capture required |
+| Contract Detail historical evidence | historical screenshots only | historical | Filename claimed detail, page content showed Contracts register | INVALID — wrong page identity | Wrong screen captured and risk of false scoring | Explicitly excluded by this ledger and validity protocol | excluded | Must recapture actual detail route later |
+
