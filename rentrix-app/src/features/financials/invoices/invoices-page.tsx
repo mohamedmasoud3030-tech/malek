@@ -18,7 +18,6 @@ export type InvoicesWorkspaceProps = Readonly<{
 export function InvoicesWorkspace({ embedded = false }: InvoicesWorkspaceProps) {
   return (
     <EmbeddableWorkspace
-      visualVariant="malek-pro"
       embedded={embedded}
       title="الفواتير"
       viewModeStorageKey="malek:invoices:register-view-mode-v1"
