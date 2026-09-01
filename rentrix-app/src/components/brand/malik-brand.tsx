@@ -54,7 +54,7 @@ export function MalikBrand({
               inverse
                 ? 'text-white'
                 : wordmarkVariant === 'brand-gradient'
-                  ? 'bg-gradient-to-r from-[#1688BC] to-[#18B9E6] bg-clip-text text-transparent'
+                  ? 'bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent'
                   : 'text-foreground',
               wordmarkClassName,
             )}
