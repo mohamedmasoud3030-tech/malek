@@ -75,7 +75,7 @@ describe('Task-centric canonical IA', () => {
     expect(servicesSectionsSource).toMatch(/id: 'documents_vault'[\s\S]*?showInPrimaryNavigation: false/);
     expect(servicesSectionsSource).not.toContain("| 'automation'");
     expect(servicesSource).not.toContain('AutomationWorkspace');
-    expect(servicesSource).toContain("title = 'الخدمات'");
+    expect(servicesSource).toContain('title={title ?? activeSectionDefinition.label}');
     expect(routeTreeSource).toContain("path: '/automation'");
     expect(routeTreeSource).toContain("to: '/settings'");
   });
