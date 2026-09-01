@@ -32,8 +32,11 @@ async function expectNoViolations(ui: ReactElement) {
     runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'] },
     rules: Object.fromEntries(LAYOUT_DEPENDENT_RULES.map((id) => [id, { enabled: false }])),
   });
-  const report = results.violations.map((v) => `${v.id}: ${v.help}`).join('\n');
-  expect(report, `axe violations:\n${report}`).toBe('');
+  const report = results.violations.map((violation) => {
+    const nodes = violation.nodes.map((node) => `      ${node.html}`).join('\n');
+    return `  ${violation.id} (${violation.impact}): ${violation.help}\n${nodes}`;
+  });
+  expect(report.join('\n'), `axe violations:\n${report.join('\n')}`).toBe('');
 }
 
 const cases: ReadonlyArray<readonly [string, ReactElement]> = [

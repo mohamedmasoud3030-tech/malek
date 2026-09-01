@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { OwnerAgreementsSection } from './owner-agreements-section';
 
@@ -40,6 +40,15 @@ function agreementRow(overrides: Record<string, unknown> = {}) {
 }
 
 describe('owner dossier agreements section', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-08-31T12:00:00Z'));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('shows a business-language empty state when the owner has no agreements', () => {
     agreementsResult.value = { data: [], isLoading: false };
     const html = renderSection();
@@ -77,7 +86,6 @@ describe('owner dossier agreements section', () => {
     expect(html).toContain('فيلا الحديقة');
     expect(html).toContain('منتهية');
     expect(html).toContain('مفتوحة');
-    // every row links back to the property ownership authority
     expect((html.match(/فتح قسم الملكية/g) ?? []).length).toBe(3);
   });
 
