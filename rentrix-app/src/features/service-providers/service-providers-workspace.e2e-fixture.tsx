@@ -106,7 +106,6 @@ export function ServiceProvidersWorkspaceE2EFixture() {
     >
       <ListPage
         dir="rtl"
-        visualVariant="malek-pro"
         title="مزودو الخدمات"
         description="سجل الشركات وجهات التنفيذ، تخصصاتها، بيانات التواصل، وأعمال الصيانة المرتبطة."
         count={filtered.length}
