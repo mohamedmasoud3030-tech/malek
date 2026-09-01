@@ -53,6 +53,8 @@ jobs:
         run: pnpm typecheck
       - name: Test typecheck
         run: pnpm --filter ./rentrix-app run typecheck:test
+      - name: Shared primitive accessibility gate
+        run: pnpm --filter ./rentrix-app exec vitest run --config vite.config.ts src/components/ui/primitives.axe.test.tsx
       - name: Lint
         run: pnpm lint
       - name: Architecture check
