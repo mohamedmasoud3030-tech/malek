@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Download, Landmark, Printer, Scale, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ReportSegmentedTabs } from '@/components/ui/report-section-primitives';
 import type { BalanceSheetReport, IncomeStatementReport, TrialBalanceReport } from '@/features/accounting/reports/contracts';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
 import { documentService } from '@/services/documents/DocumentService';
@@ -180,34 +181,13 @@ export function AccountingReportsSection({
         onRefetch={() => { void reconciliationQuery.refetch(); }}
       />
 
-      <div
-        className="grid grid-cols-3 gap-1 rounded-xl border border-border/60 bg-muted/20 p-1"
-        role="tablist"
-        aria-label="القوائم المحاسبية"
-      >
-        {statementViews.map((statement) => {
-          const Icon = statement.icon;
-          const isActive = activeStatement === statement.id;
-          return (
-            <button
-              key={statement.id}
-              type="button"
-              role="tab"
-              aria-selected={isActive}
-              aria-controls={`accounting-statement-${statement.id}`}
-              onClick={() => setActiveStatement(statement.id)}
-              className={`flex min-h-11 min-w-0 items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-black transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 ${
-                isActive
-                  ? 'bg-card text-foreground shadow-card'
-                  : 'text-muted-foreground hover:bg-background/80 hover:text-foreground'
-              }`}
-            >
-              <Icon className="size-3.5 shrink-0" aria-hidden="true" />
-              <span className="truncate">{statement.label}</span>
-            </button>
-          );
-        })}
-      </div>
+      <ReportSegmentedTabs
+        items={statementViews}
+        activeId={activeStatement}
+        onChange={setActiveStatement}
+        ariaLabel="القوائم المحاسبية"
+        panelIdPrefix="accounting-statement"
+      />
 
       {activeStatement === 'trial_balance' ? (
         <div id="accounting-statement-trial_balance" role="tabpanel">

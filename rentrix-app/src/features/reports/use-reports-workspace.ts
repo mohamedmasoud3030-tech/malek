@@ -26,6 +26,15 @@ import { useMaintenance } from '@/features/maintenance/use-maintenance';
 import { useCostCenters } from '@/features/settings/useCostCenters';
 import { useAllUnits } from '@/features/units/use-units';
 import { buildVacancyAnalytics } from '@/features/units/vacancy-analytics';
+import { previousPeriodRange } from './documents/report-period';
+import {
+  buildPropertyAnalyticsComparison,
+  buildPropertyAnalyticsExecutive,
+  buildPropertyAnalyticsInsights,
+  buildPropertyAnalyticsBenchmark,
+  rateOf,
+  type PropertyAnalyticsInput,
+} from './property-analytics-model';
 import { useAuthoritativeReportsCollectionRate } from './reports-collection-efficiency';
 import { buildDeferredRevenueAudit } from './reports-insights';
 import {
@@ -106,6 +115,43 @@ export function useReportsWorkspace(filters: ReportsFilterState, location: Repor
   const needsDeferredRevenue = isAccounting && view === 'deferred_revenue';
   const needsStatements = isStatements || needsAccountingReports;
 
+  /**
+   * Previous comparable period for the Property Analytics workspace. Same
+   * deterministic window arithmetic the professional property report uses, so
+   * in-app comparison and the printed document can never disagree about what
+   * "previous period" means. Loaded only for that workspace.
+   */
+  const previousRange = useMemo(() => previousPeriodRange(filters.from, filters.to), [filters.from, filters.to]);
+  const previousFinancialFilters = useMemo(
+    () => ({
+      dateFrom: previousRange?.from ?? filters.from,
+      dateTo: previousRange?.to ?? filters.to,
+      propertyId: filters.propertyId || undefined,
+      unitId: filters.unitId || undefined,
+      tenantId: filters.tenantId || undefined,
+      contractId: filters.contractId || undefined,
+      costCenterId: filters.costCenterId || undefined,
+      status: filters.status ?? 'all',
+    }),
+    [filters.contractId, filters.costCenterId, filters.from, filters.propertyId, filters.status, filters.tenantId, filters.to, filters.unitId, previousRange],
+  );
+  const previousExpenseFilters = useMemo(
+    () => ({
+      dateFrom: previousRange?.from ?? filters.from,
+      dateTo: previousRange?.to ?? filters.to,
+      propertyId: filters.propertyId || undefined,
+      costCenterId: filters.costCenterId || undefined,
+    }),
+    [filters.costCenterId, filters.from, filters.propertyId, filters.to, previousRange],
+  );
+  const previousArrearsFilters = useMemo(() => ({
+    asOf: previousRange?.to ?? filters.asOf,
+    propertyId: filters.propertyId || undefined,
+    unitId: filters.unitId || undefined,
+    tenantId: filters.tenantId || undefined,
+    contractId: filters.contractId || undefined,
+  }), [filters.asOf, filters.contractId, filters.propertyId, filters.tenantId, filters.unitId, previousRange]);
+
   const financialSummaryQuery = useFinancialPeriodSummaryReport(financialFilters);
   const collectionRateQuery = useAuthoritativeReportsCollectionRate({ from: filters.from, to: filters.to });
 
@@ -130,6 +176,10 @@ export function useReportsWorkspace(filters: ReportsFilterState, location: Repor
   const receiptsQuery = useReceipts({ limit: latestReceiptLimit }, { enabled: needsCollections || needsDeferredRevenue || needsStatements });
   const costCentersQuery = useCostCenters();
   const propertyTitlesQuery = usePropertyTitles({ enabled: needsOccupancy });
+  const needsPreviousPeriod = needsPropertyPerformance && previousRange != null;
+  const previousSummaryQuery = useFinancialPeriodSummaryReport(previousFinancialFilters, { enabled: needsPreviousPeriod });
+  const previousExpenseQuery = useExpenseBreakdownReport(previousExpenseFilters, { enabled: needsPreviousPeriod });
+  const previousOverdueQuery = useOverdueInvoicesReport(previousArrearsFilters, { enabled: needsPreviousPeriod });
 
   const contracts = contractsQuery.data?.rows ?? [];
   const scopedContracts = useMemo(
@@ -222,6 +272,66 @@ export function useReportsWorkspace(filters: ReportsFilterState, location: Repor
     }),
     [expenseBreakdownQuery.data?.byProperty, filters.asOf, filters.from, filters.to, maintenanceRows, occupancyRows, overdueInvoicesQuery.data?.rows, propertyCollectionBreakdownQuery.data?.rows, scopedContracts, vacancyAnalytics.vacantRows],
   );
+  /**
+   * Property Analytics decision model. Built from the SAME authoritative read
+   * models the rest of Reports uses — this hook never recomputes a financial
+   * figure, it only assembles already-authoritative values into the
+   * deterministic comparison/insight shape. Unavailable sources stay `null`
+   * (never a fake zero) all the way through to the presentation layer.
+   */
+  const propertyAnalyticsInput = useMemo<PropertyAnalyticsInput>(() => {
+    const previousSummary = previousSummaryQuery.data;
+    const previousUnits = unitsQuery.data ?? [];
+    const previousVacancy = previousRange
+      ? buildVacancyAnalytics(
+        previousUnits.filter((unit) => (!filters.propertyId || unit.property_id === filters.propertyId) && (!filters.unitId || unit.id === filters.unitId)),
+        occupancyContracts,
+        propertyTitlesById,
+        previousRange.to,
+      )
+      : null;
+    return {
+      occupancyRows,
+      expenseRows: expenseBreakdownQuery.data?.byProperty ?? [],
+      performanceRows: propertyPerformanceRows,
+      periodSummary: financialSummaryQuery.data ?? null,
+      overdueTotal: overdueInvoicesQuery.data
+        ? overdueInvoicesQuery.data.rows.reduce((sum, row) => sum + row.remainingAmount, 0)
+        : null,
+      expenseTotal: expenseBreakdownQuery.data?.totalExpenses ?? null,
+      openMaintenanceCount: maintenanceQuery.data
+        ? propertyPerformanceRows.reduce((sum, row) => sum + row.openMaintenanceCount, 0)
+        : null,
+      expiringContractsCount: contractsQuery.data ? expiringRows.length : null,
+      longestVacancyDays: vacancyAnalytics.vacantRows.length > 0
+        ? vacancyAnalytics.vacantRows.reduce((max, row) => Math.max(max, row.daysVacant), 0)
+        : null,
+      // Reference value of vacant stock — a letting-decision reference, never
+      // income and never a receivable.
+      vacancyReferenceRent: vacancyAnalytics.vacantRows.length > 0 ? vacancyAnalytics.referenceVacantRent : null,
+      previous: previousRange && (previousSummary || previousVacancy || previousOverdueQuery.data || previousExpenseQuery.data)
+        ? {
+          from: previousRange.from,
+          to: previousRange.to,
+          occupancyRate: previousVacancy && previousVacancy.totalUnits > 0
+            ? rateOf(previousVacancy.occupiedUnits, previousVacancy.totalUnits)
+            : null,
+          due: previousSummary?.invoiced ?? null,
+          collected: previousSummary?.paid ?? null,
+          overdue: previousOverdueQuery.data?.totalOverdue ?? null,
+          expenses: previousExpenseQuery.data?.totalExpenses ?? null,
+        }
+        : null,
+      selectedPropertyId: filters.propertyId || null,
+    };
+  }, [
+    contractsQuery.data, expenseBreakdownQuery.data, expiringRows.length, filters.propertyId, filters.unitId,
+    financialSummaryQuery.data, maintenanceQuery.data, occupancyContracts, occupancyRows,
+    overdueInvoicesQuery.data, previousExpenseQuery.data, previousOverdueQuery.data, previousRange,
+    previousSummaryQuery.data, propertyPerformanceRows,
+    propertyTitlesById, unitsQuery.data, vacancyAnalytics,
+  ]);
+
   const deferredRevenueAudit = useMemo(
     () => buildDeferredRevenueAudit(scopedContracts, receiptRows, filters.asOf),
     [filters.asOf, receiptRows, scopedContracts],
@@ -236,6 +346,9 @@ export function useReportsWorkspace(filters: ReportsFilterState, location: Repor
       incomeStatementQuery, balanceSheetQuery, contractsQuery, ownersQuery,
       tenantStatementQuery, ownerStatementQuery, unitsQuery, maintenanceQuery,
       receiptsQuery, costCentersQuery, propertyTitlesQuery,
+      // Comparison sources: a failure here only removes the comparison, it
+      // never marks the workspace incomplete — but the user can still retry.
+      previousSummaryQuery, previousExpenseQuery, previousOverdueQuery,
     ];
     await Promise.all(queries.filter((query) => query.isError).map((query) => query.refetch()));
   }, [
@@ -246,6 +359,7 @@ export function useReportsWorkspace(filters: ReportsFilterState, location: Repor
     incomeStatementQuery, balanceSheetQuery, contractsQuery, ownersQuery,
     tenantStatementQuery, ownerStatementQuery, unitsQuery, maintenanceQuery,
     receiptsQuery, costCentersQuery, propertyTitlesQuery,
+    previousSummaryQuery, previousExpenseQuery, previousOverdueQuery,
   ]);
 
   const firstError = firstErrorOf(
@@ -323,6 +437,11 @@ export function useReportsWorkspace(filters: ReportsFilterState, location: Repor
       },
       propertyPerformance: {
         rows: propertyPerformanceRows,
+        executive: buildPropertyAnalyticsExecutive(propertyAnalyticsInput),
+        comparison: buildPropertyAnalyticsComparison(propertyAnalyticsInput),
+        benchmark: buildPropertyAnalyticsBenchmark(propertyAnalyticsInput),
+        insights: buildPropertyAnalyticsInsights(propertyAnalyticsInput),
+        previousPeriod: propertyAnalyticsInput.previous ?? null,
         isLoading: isLoadingAny(
           unitsQuery.isLoading,
           contractsQuery.isLoading,

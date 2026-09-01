@@ -29,10 +29,19 @@ describe('reports center — touch-target contract', () => {
     }
   });
 
-  it('keeps the property drill buttons at min-h-11', () => {
+  /**
+   * Property Analytics no longer styles its own drill buttons: it composes the
+   * canonical `ReportDrillAction`, which owns the 44px target. The contract
+   * therefore locks the canonical usage plus the primitive's own target.
+   */
+  it('routes property drill affordances through the canonical ReportDrillAction', () => {
     const source = readFileSync(resolve(reportsDir, 'components/PropertyAnalyticsSection.tsx'), 'utf8');
-    const drillTargets = source.match(/min-h-11 items-center rounded-lg border/g) ?? [];
+    const drillTargets = source.match(/<ReportDrillAction/g) ?? [];
     expect(drillTargets.length).toBeGreaterThanOrEqual(5);
+    expect(source).not.toMatch(/<button/);
+
+    const primitive = readFileSync(resolve(reportsDir, '../../components/ui/report-section-primitives.tsx'), 'utf8');
+    expect(primitive).toContain('min-h-11 shrink-0 gap-1.5');
   });
 
   it('keeps the workspace sub-view tabs at min-h-11', () => {

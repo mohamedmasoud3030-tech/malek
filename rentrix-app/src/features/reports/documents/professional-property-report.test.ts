@@ -289,7 +289,9 @@ describe('professional-property-report adapter', () => {
   it('builds the month-end occupancy trend from contracts deterministically', () => {
     const units = [
       { id: 'u-01', property_id: 'p-01', unit_number: '101', status: 'occupied' },
-      { id: 'u-02', property_id: 'p-01', unit_number: '102', status: 'vacant' },
+      { id: 'u-02', property_id: 'p-01', unit_number: '102', status: 'available' },
+      // Maintenance stock is NOT vacant: it must never be counted as lettable.
+      { id: 'u-03', property_id: 'p-01', unit_number: '103', status: 'maintenance' },
     ] as unknown as Unit[];
     const contracts = [
       { id: 'c-01', unit_id: 'u-01', property_id: 'p-01', start_date: '2025-01-01', end_date: '2026-03-31', deleted_at: null },
@@ -298,9 +300,9 @@ describe('professional-property-report adapter', () => {
     const trend = buildOccupancyTrend(contracts, units, '2026-01-01', '2026-03-31');
     expect(trend).toHaveLength(3);
     // u-01 covered for all three months (contract spans the whole range).
-    expect(trend[0]).toEqual({ month: '2026-01', occupied: 1, vacant: 1 });
-    expect(trend[1]).toEqual({ month: '2026-02', occupied: 1, vacant: 1 });
-    expect(trend[2]).toEqual({ month: '2026-03', occupied: 1, vacant: 1 });
+    expect(trend[0]).toEqual({ month: '2026-01', occupied: 1, vacant: 1, nonRentable: 1 });
+    expect(trend[1]).toEqual({ month: '2026-02', occupied: 1, vacant: 1, nonRentable: 1 });
+    expect(trend[2]).toEqual({ month: '2026-03', occupied: 1, vacant: 1, nonRentable: 1 });
   });
 
   it('delegates print and PDF download to documentService with the property_report type', async () => {
