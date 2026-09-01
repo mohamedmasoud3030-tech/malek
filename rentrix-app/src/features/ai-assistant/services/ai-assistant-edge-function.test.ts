@@ -13,14 +13,11 @@ const adapter = () =>
 describe("AI assistant edge function", () => {
   it("authorizes before any deterministic or provider response and fails closed", () => {
     const content = edge();
+    const accessCall = "const accessError = await authorizeAccess(request, auth.user.userId)";
     expect(content).toContain("assertAuthenticated");
     expect(content).toContain("authorize_ai_assistant_access");
-    expect(content).toContain(
-      "const accessError = await authorizeAccess(request)",
-    );
-    expect(
-      content.indexOf("const accessError = await authorizeAccess(request)"),
-    ).toBeLessThan(content.indexOf("deterministicResponse(assistantRequest)"));
+    expect(content).toContain(accessCall);
+    expect(content.indexOf(accessCall)).toBeLessThan(content.indexOf("deterministicResponse(assistantRequest)"));
     expect(content).toContain("AI_ACCESS_DENIED");
   });
 
