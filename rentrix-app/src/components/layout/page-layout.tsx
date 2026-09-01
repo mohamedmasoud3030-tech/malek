@@ -8,8 +8,6 @@ export interface PageLayoutProps {
   dir?: 'rtl' | 'ltr';
   size?: 'default' | 'wide' | 'full';
   lang?: string;
-  /** Temporary caller compatibility; ignored because MALEK has one visual system. */
-  visualVariant?: 'malek-pro';
 }
 
 const pageSizes: Record<NonNullable<PageLayoutProps['size']>, string> = {
