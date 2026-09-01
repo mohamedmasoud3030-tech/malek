@@ -38,8 +38,6 @@ interface ListPageProps {
    * via EmbeddableWorkspace's action rail.
    */
   embedded?: boolean;
-  /** Scoped visual system for approved operational workspaces only. */
-  visualVariant?: 'malek-pro';
 }
 
 /**
@@ -71,7 +69,6 @@ export function ListPage({
   className,
   dir,
   embedded = false,
-  visualVariant,
 }: ListPageProps) {
   return (
     <EmbeddableWorkspace
@@ -85,7 +82,6 @@ export function ListPage({
       backLabel={backLabel}
       className={className}
       dir={dir}
-      visualVariant={visualVariant}
       viewModeStorageKey={viewModeStorageKey}
       workspaceName={workspaceName}
     >
