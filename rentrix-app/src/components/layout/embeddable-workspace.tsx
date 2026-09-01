@@ -16,11 +16,6 @@ export type EmbeddableWorkspaceProps = Readonly<{
   count?: number | string;
   /** Optional stable data hook for embedded hub workspaces. */
   workspaceName?: string;
-  /**
-   * Embedded hubs never own a second page identity. `full` remains accepted
-   * temporarily for source compatibility, but is normalized to actions-only.
-   */
-  embeddedHeader?: 'full' | 'actions-only' | 'none';
   /** Optional stable storage key shared by the register view control. */
   viewModeStorageKey?: string;
   backTo?: string;
@@ -36,9 +31,8 @@ export type EmbeddableWorkspaceProps = Readonly<{
  * Canonical boundary between route pages and hub-embedded workspaces.
  *
  * A standalone route owns PageLayout + PageHeader. An embedded workspace owns
- * content and reachable actions only. This invariant prevents the historical
- * "hub header + child page header" duplication from returning through feature
- * code or stale props.
+ * content and reachable actions only. There is intentionally no API for a
+ * second embedded page identity.
  */
 export function EmbeddableWorkspace({
   embedded = false,
@@ -51,7 +45,6 @@ export function EmbeddableWorkspace({
   contentClassName,
   count,
   workspaceName,
-  embeddedHeader = embedded ? 'actions-only' : 'full',
   viewModeStorageKey,
   backTo,
   backLabel,
@@ -62,7 +55,6 @@ export function EmbeddableWorkspace({
 }: EmbeddableWorkspaceProps) {
   if (embedded) {
     const hasActions = Boolean(primaryAction || secondaryActions);
-    const showActions = embeddedHeader !== 'none' && hasActions;
 
     return (
       <div
@@ -71,7 +63,7 @@ export function EmbeddableWorkspace({
         data-visual-wave={visualVariant}
         className="min-w-0 space-y-2.5 sm:space-y-3"
       >
-        {showActions ? (
+        {hasActions ? (
           <div data-embedded-workspace-actions className="flex justify-end">
             <div data-workspace-actions aria-label={`إجراءات ${title}`}>
               <PageHeaderActions
