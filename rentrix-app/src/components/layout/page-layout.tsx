@@ -8,7 +8,7 @@ export interface PageLayoutProps {
   dir?: 'rtl' | 'ltr';
   size?: 'default' | 'wide' | 'full';
   lang?: string;
-  /** Temporary caller compatibility; MALEK now has one visual system. */
+  /** Temporary caller compatibility; ignored because MALEK has one visual system. */
   visualVariant?: 'malek-pro';
 }
 
@@ -29,13 +29,11 @@ export function PageLayout({
   dir,
   lang,
   size = 'default',
-  visualVariant = 'malek-pro',
 }: PageLayoutProps) {
   return (
     <div
       data-page-layout
       data-malek-surface
-      data-visual-wave={visualVariant}
       className={cn('min-w-0 overflow-x-clip', className)}
       dir={dir}
       lang={lang}
