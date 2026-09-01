@@ -42,6 +42,8 @@
     "qa:lifecycle": "bash scripts/run-agent-qa-lifecycle.sh",
     "pilot:seed": "pnpm --filter ./rentrix-app exec node scripts/pilot-demo-seed.mjs",
     "test:pilot-seed": "node --test rentrix-app/scripts/pilot-demo-seed.test.mjs",
+    "production-demo:preflight": "pnpm --filter @workspace/rentrix exec node scripts/production-demo-preflight.mjs",
+    "test:production-demo-preflight": "node --test rentrix-app/scripts/production-demo-preflight.test.mjs",
     "test:qa-runtime": "node --test scripts/agent-qa-preflight.test.mjs",
     "e2e": "pnpm --filter @workspace/rentrix run e2e",
     "e2e:install": "pnpm --filter @workspace/rentrix exec playwright install --with-deps chromium",

@@ -35,7 +35,25 @@ It currently allows only:
 
 For hosted QA, `QA_SUPABASE_PROJECT_REF` must exactly match `VITE_SUPABASE_URL` and `QA_MUTATION_APPROVED=1` must be explicitly set. The script also receives `PRODUCTION_SUPABASE_PROJECT_REF` and refuses to run when the target host matches Production.
 
-This separation is deliberate: prove the dataset on the dedicated QA/presentation stack first. Promoting the same presentation dataset into the production project is a separate controlled release action, not an accidental consequence of running a local command.
+That seed boundary remains unchanged. The public Production presentation surface does not need production seeding because the current Supabase main dataset is already explicitly classified by the owner as experimental/demo data.
+
+## Production presentation surface
+
+For the current sales/presentation phase, the public Vercel Production URL intentionally uses the existing MALEK Supabase main project `nnggcnpcuomwfuupupwg` as its demo datastore. This is an explicit product-owner decision for the current experimental dataset, not an accidental fallback.
+
+`rentrix-app/scripts/production-demo-preflight.mjs` executes before the Vercel production bundle and fails closed unless:
+
+- `VERCEL_ENV=production` has a configured `VITE_SUPABASE_URL`.
+- the URL uses HTTPS.
+- the URL exactly targets `nnggcnpcuomwfuupupwg.supabase.co`.
+- `VITE_SUPABASE_ANON_KEY` is present.
+- when that key is a legacy Supabase JWT, its embedded project ref also matches `nnggcnpcuomwfuupupwg`.
+
+This turns the current shared-main decision into a version-controlled deployment contract: silent drift to another Supabase project or a mismatched legacy anon key is rejected before the application bundle is built.
+
+`.env.production-demo.example` documents the pinned presentation target. Privileged service-role credentials are intentionally not part of the Vercel frontend deployment profile.
+
+When MALEK transitions from experimental/demo records to genuine customer production data, this shared-main classification must be retired deliberately: establish the real production data boundary, review migration/cleanup requirements, and update this preflight in the same controlled release. Do not silently reinterpret the current demo dataset as permanent customer production.
 
 ## Run
 

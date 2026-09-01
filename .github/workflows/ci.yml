@@ -49,6 +49,8 @@ jobs:
         run: pnpm check:expired-flags
       - name: Pilot demo seed safety contract
         run: pnpm test:pilot-seed
+      - name: Production demo deployment safety contract
+        run: pnpm test:production-demo-preflight
       - name: Typecheck
         run: pnpm typecheck
       - name: Test typecheck
