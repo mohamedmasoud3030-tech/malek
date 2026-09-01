@@ -16,12 +16,7 @@ import {
   type TenantStatementData,
 } from '@/services/documents/documentPayloadAdapters';
 import { useAuthoritativeGlCashFlow } from '../accounting-report-authority';
-import {
-  buildOwnerReportPayload,
-  loadOwnerReportContext,
-  printOwnerReport,
-  downloadOwnerReportPdf,
-} from '../documents/professional-owner-report';
+import { loadPremiumOwnerReportPayload } from '../documents/premium-owner-report';
 import type { StatementProductFocus } from '../report-products';
 import { ReportColumns } from '@/components/ui/report-section-primitives';
 import { OwnerStatementPanel, TenantStatementPanel } from './statements/statement-account-panels';
@@ -168,17 +163,17 @@ export function StatementsSection({
     );
   };
 
-  const loadProfessionalOwnerContext = async () => {
+  const buildProfessionalOwnerPayload = async () => {
     if (!selectedOwnerId) {
-      throw new DocumentReadinessError('تعذر إصدار كشف المالك التفصيلي: لم يتم تحديد المالك. اختر مالكًا من فلاتر التقرير أولاً.');
+      throw new DocumentReadinessError('تعذر إصدار كشف المالك الشامل: لم يتم تحديد المالك. اختر مالكًا من فلاتر التقرير أولاً.');
     }
     if (!ownerStatement) {
-      throw new DocumentReadinessError('تعذر إصدار كشف المالك التفصيلي: لا توجد بيانات كشف مالك معتمدة للفترة أو النطاق المحدد.');
+      throw new DocumentReadinessError('تعذر إصدار كشف المالك الشامل: لا توجد بيانات كشف مالك معتمدة للفترة أو النطاق المحدد.');
     }
     if (ownerStatement.error) {
-      throw new DocumentReadinessError('تعذر إصدار كشف المالك التفصيلي: كشف المالك المحمّل يحتوي على خطأ في المصدر المعتمد.');
+      throw new DocumentReadinessError('تعذر إصدار كشف المالك الشامل: كشف المالك المحمّل يحتوي على خطأ في المصدر المعتمد.');
     }
-    return loadOwnerReportContext({
+    return loadPremiumOwnerReportPayload({
       ownerId: selectedOwnerId,
       from: filters?.from || ownerStatement.periodFrom || '—',
       to: filters?.to || ownerStatement.periodTo || '—',
@@ -191,16 +186,16 @@ export function StatementsSection({
     await runGuardedDocumentAction({
       isReady: isDocumentSettingsReady,
       operation: async () => {
-        const context = await loadProfessionalOwnerContext();
+        const payload = await buildProfessionalOwnerPayload();
         if (mode === 'print') {
-          await printOwnerReport({ settings: documentSettings, context });
+          await documentService.printDocument('owner_report', { settings: documentSettings, payload });
         } else {
-          await downloadOwnerReportPdf({ settings: documentSettings, context });
+          await documentService.downloadDocumentPdf('owner_report', { settings: documentSettings, payload });
         }
       },
       fallbackMessage: mode === 'print'
-        ? 'تعذرت طباعة كشف المالك التفصيلي.'
-        : 'تعذر تنزيل كشف المالك التفصيلي كملف PDF.',
+        ? 'تعذرت طباعة كشف المالك الشامل.'
+        : 'تعذر تنزيل كشف المالك الشامل كملف PDF.',
     });
   };
 
@@ -208,11 +203,8 @@ export function StatementsSection({
   const handleDownloadProfessionalOwnerReport = () => runProfessionalOwnerReport('pdf');
   const handleBuildProfessionalOwnerPdfFile = async (): Promise<File> => {
     requireDocumentReadiness(isDocumentSettingsReady);
-    const context = await loadProfessionalOwnerContext();
-    return documentService.createDocumentPdfFile('owner_report', {
-      settings: documentSettings,
-      payload: buildOwnerReportPayload(context),
-    });
+    const payload = await buildProfessionalOwnerPayload();
+    return documentService.createDocumentPdfFile('owner_report', { settings: documentSettings, payload });
   };
 
   const handleDownloadOwnerExcel = () => {
