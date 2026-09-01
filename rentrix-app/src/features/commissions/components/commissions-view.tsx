@@ -7,7 +7,6 @@ import {
   CheckCircle2,
   Clock3,
   Edit,
-  RotateCcw,
   Undo2,
 } from "lucide-react";
 import { useState } from "react";
@@ -15,13 +14,9 @@ import type { ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { ActionMenu } from "@/components/ui/action-menu";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { PageStateCard, WriteErrorCard } from "@/components/page-state-card";
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { ErrorState, WriteErrorCard } from "@/components/ui/error-state";
+import { LoadingState } from "@/components/ui/loading-state";
+import { EmptyState } from "@/components/ui/state-surfaces";
 import { EntityForm } from "@/components/ui/entity-form";
 import { EntityTable, type ColumnDef } from "@/components/ui/entity-table";
 import { FilterBar } from "@/components/ui/filter-bar";
@@ -182,13 +177,23 @@ export function CommissionsView(props: Props) {
       </section>
 
       <section data-finance-section aria-label="حالات التحميل والخطأ">
-        {error ? <ErrorCard message="تعذر تحميل العمولات" onRetry={onRetry} /> : null}
-        {writeError ? (
-          <WriteErrorCard message={writeError instanceof Error ? writeError.message : "تعذر حفظ التغيير على العمولة. راجع الصلاحيات أو الاتصال ثم حاول مرة أخرى."} />
+        {error ? (
+          <ErrorState
+            title="تعذر تحميل العمولات"
+            description="راجع الاتصال والصلاحيات ثم أعد المحاولة."
+            error={error}
+            onRetry={onRetry}
+          />
         ) : null}
-        {isLoading ? <PageStateCard title="جارٍ تحميل العمولات..." /> : null}
+        {writeError ? (
+          <WriteErrorCard
+            error={writeError}
+            fallbackMessage="تعذر حفظ التغيير على العمولة. راجع الصلاحيات أو الاتصال ثم حاول مرة أخرى."
+          />
+        ) : null}
+        {isLoading ? <LoadingState variant="table" label="جارٍ تحميل العمولات..." /> : null}
         {!isLoading && !error && rows.length === 0 ? (
-          <PageStateCard
+          <EmptyState
             title={hasFilters ? "لا توجد عمولات ضمن الفلاتر الحالية" : "لا توجد عمولات بعد"}
             description={hasFilters ? "غيّر البحث أو الحالة أو النوع لعرض سجلات عمولات أخرى — الفلاتر محفوظة." : "أضف عمولة تشغيلية عند توفر مصدر ومبلغ حقيقيين. هذه الصفحة للتتبع فقط ولا تنشئ أمر صرف."}
             action={hasFilters ? undefined : <Button onClick={onCreate} className="min-h-11">إضافة عمولة</Button>}
@@ -344,21 +349,6 @@ export function CommissionsView(props: Props) {
         </div>
       </ConfirmDialog>
     </section>
-  );
-}
-
-function ErrorCard({ message, onRetry }: Readonly<{ message: string; onRetry: () => void }>) {
-  return (
-    <Card role="alert" data-finance-error>
-      <CardHeader>
-        <CardTitle className="text-sm font-bold text-destructive">{message}</CardTitle>
-        <CardDescription>راجع الاتصال والصلاحيات ثم أعد المحاولة.</CardDescription>
-        <Button variant="secondary" onClick={onRetry} className="min-h-11">
-          <RotateCcw className="me-2 size-4" />
-          إعادة المحاولة
-        </Button>
-      </CardHeader>
-    </Card>
   );
 }
 
