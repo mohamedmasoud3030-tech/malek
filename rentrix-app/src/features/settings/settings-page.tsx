@@ -49,12 +49,12 @@ function SettingsVariantShell({
   if (variant === 'embedded') {
     return (
       <EntityFormVisualProvider variant="operational">
-        <div data-visual-wave="malek-pro" className={contentClassName} dir={dir} lang={lang}>{children}</div>
+        <div data-malek-surface className={contentClassName} dir={dir} lang={lang}>{children}</div>
       </EntityFormVisualProvider>
     );
   }
   return (
-    <PageLayout dir={dir} lang={lang} contentClassName={contentClassName} visualVariant="malek-pro">
+    <PageLayout dir={dir} lang={lang} contentClassName={contentClassName}>
       {children}
     </PageLayout>
   );
@@ -240,34 +240,34 @@ export function SettingsWorkspace({
         aria-disabled={companySettingsQuery.isError ? 'true' : undefined}
         data-stale-settings-content={companySettingsQuery.isError ? 'true' : undefined}
       >
-      <div className="hidden lg:block">
-        <OverviewRow tiles={summaryTiles} onOpenSection={handleJumpToSection} />
-      </div>
-
-      <div className="grid min-w-0 gap-2 lg:grid-cols-[minmax(210px,255px)_minmax(0,1fr)] lg:items-start lg:gap-4">
-        <SettingsWorkspaceNav activeSection={activeSection} onChange={handleJumpToSection} sections={workspaceSections} />
-        <div className="min-w-0 space-y-2 md:space-y-3">
-          {isSpecialistSection ? (
-            <div
-              data-settings-specialist-context
-              className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/70 bg-muted/20 px-3 py-2 text-xs text-muted-foreground"
-            >
-              <span>إعداد متخصص مفتوح من سياق مرتبط. لا يظهر ضمن إعدادات المكتب اليومية.</span>
-              <Button type="button" size="sm" variant="ghost" className="min-h-11" onClick={() => handleJumpToSection(fallbackWorkspaceSection)}>
-                العودة لإعدادات المكتب
-              </Button>
-            </div>
-          ) : null}
-          <form id="settings-company-form" className="min-w-0 space-y-2.5 md:space-y-4" onSubmit={handleSubmit}>
-            {accessibleDefinitions
-              .filter((section) => mountedSections.has(section.id))
-              .map((section) => (
-                <SettingsSectionView key={section.id} definition={section} renderProps={sectionRenderProps} />
-              ))}
-          </form>
-          <SettingsSaveBar isDirty={isDirty} isSaving={isSaving} onDiscard={discardDraft} />
+        <div className="hidden lg:block">
+          <OverviewRow tiles={summaryTiles} onOpenSection={handleJumpToSection} />
         </div>
-      </div>
+
+        <div className="grid min-w-0 gap-2 lg:grid-cols-[minmax(210px,255px)_minmax(0,1fr)] lg:items-start lg:gap-4">
+          <SettingsWorkspaceNav activeSection={activeSection} onChange={handleJumpToSection} sections={workspaceSections} />
+          <div className="min-w-0 space-y-2 md:space-y-3">
+            {isSpecialistSection ? (
+              <div
+                data-settings-specialist-context
+                className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/70 bg-muted/20 px-3 py-2 text-xs text-muted-foreground"
+              >
+                <span>إعداد متخصص مفتوح من سياق مرتبط. لا يظهر ضمن إعدادات المكتب اليومية.</span>
+                <Button type="button" size="sm" variant="ghost" className="min-h-11" onClick={() => handleJumpToSection(fallbackWorkspaceSection)}>
+                  العودة لإعدادات المكتب
+                </Button>
+              </div>
+            ) : null}
+            <form id="settings-company-form" className="min-w-0 space-y-2.5 md:space-y-4" onSubmit={handleSubmit}>
+              {accessibleDefinitions
+                .filter((section) => mountedSections.has(section.id))
+                .map((section) => (
+                  <SettingsSectionView key={section.id} definition={section} renderProps={sectionRenderProps} />
+                ))}
+            </form>
+            <SettingsSaveBar isDirty={isDirty} isSaving={isSaving} onDiscard={discardDraft} />
+          </div>
+        </div>
       </div>
 
       <DirtyRouteNavigationGuard isDirty={isDirty} disabled={isSaving || companySettingsQuery.isError} onDiscard={discardDraft} />
