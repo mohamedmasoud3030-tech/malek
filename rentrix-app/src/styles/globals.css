@@ -1,39 +1,21 @@
-/* MALEK global entrypoint — Final unified theme.
+/* MALEK global entrypoint — single visual system.
    Theme tokens live only in tokens.css. This file owns document base behavior,
    cross-component shell constraints, utilities, print rules and public helpers.
-   No second theme system, no competing token layers.
 
-   STYLE AUTHORITY ORDER (this list IS the architecture):
+   STYLE AUTHORITY ORDER:
      1. tokens.css                   design tokens — the only theme source
-     2. ux-foundation.css            structure, geometry, responsive/a11y contracts
-     3. design-system-foundation.css cross-screen base behavior (@layer base/components)
-     4. app-density-contract.css     register/grid density contract
-     5. malek-pro-visual-wave.css    MALEK visual authority — imported LAST
+     2. ux-foundation.css            structure, geometry and responsive/a11y behavior
+     3. design-system-foundation.css shared base/component behavior
+     4. malek-visual-system.css      final MALEK visual authority — imported LAST
 
-   Why this order is the whole fix: Tailwind v4 puts theme/base/components/
-   utilities into cascade layers, and an UNLAYERED normal-author rule outranks
-   every layered rule no matter what its specificity is. Files 2, 4 and 5 are
-   unlayered, so the only thing that settles a tie between them is source order
-   — and 5 is last, which is what makes MALEK win those ties without an
-   !important flood. File 3 keeps its component behavior inside
-   @layer base/components so utilities may still refine it, and only lifts its
-   forced-colors and reduced-motion blocks out of the layers — accessibility
-   overrides must not be refinable. Where structure
-   and visual ink describe the same element, they set DISJOINT properties
-   (foundation: position, inset, size, padding, scroll, direction; wave: color,
-   background, border ink, shadow, radius, typography), so no tie is needed.
-
-   The retired page-polish.css was an unlayered file imported AFTER the visual
-   wave, so it out-ranked MALEK on every equal-specificity tie — that, not
-   color choice, was the runtime conflict. Its rules were split: geometry to
-   ux-foundation.css, ink to malek-pro-visual-wave.css, dead selectors removed.
-   Do not add a new unlayered stylesheet after malek-pro-visual-wave.css. */
+   Responsive grid density belongs to the page/component that owns the grid.
+   There is intentionally no global selector that rewrites 4/5/6-column grids.
+   Do not add a new unlayered stylesheet after malek-visual-system.css. */
 @import 'tailwindcss';
 @import './tokens.css';
 @import './ux-foundation.css';
 @import './design-system-foundation.css';
-@import './app-density-contract.css';
-@import './malek-pro-visual-wave.css';
+@import './malek-visual-system.css';
 
 @keyframes shimmer {
   100% { transform: translateX(-100%); }
