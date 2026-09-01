@@ -35,7 +35,6 @@ export function PageLayout({
     <div
       data-page-layout
       data-visual-wave={visualVariant}
-      data-arena-world="magic-beauty"
       className={cn('min-w-0 overflow-x-clip', className)}
       dir={dir}
       lang={lang}
