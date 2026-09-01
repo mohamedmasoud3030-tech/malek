@@ -6,10 +6,10 @@ import { describe, expect, it } from 'vitest';
 const uiDir = resolve(dirname(fileURLToPath(import.meta.url)));
 const srcDir = resolve(uiDir, '../..');
 const table = readFileSync(resolve(uiDir, 'table.tsx'), 'utf8');
-    const entityCard = readFileSync(resolve(uiDir, 'entity-card.tsx'), 'utf8');
-    const entityTable = readFileSync(resolve(uiDir, 'entity-table.tsx'), 'utf8');
-    const filterBar = readFileSync(resolve(uiDir, 'filter-bar.tsx'), 'utf8');
-    const embeddableWorkspace = readFileSync(resolve(srcDir, 'components/layout/embeddable-workspace.tsx'), 'utf8');
+const entityCard = readFileSync(resolve(uiDir, 'entity-card.tsx'), 'utf8');
+const entityTable = readFileSync(resolve(uiDir, 'entity-table.tsx'), 'utf8');
+const filterBar = readFileSync(resolve(uiDir, 'filter-bar.tsx'), 'utf8');
+const embeddableWorkspace = readFileSync(resolve(srcDir, 'components/layout/embeddable-workspace.tsx'), 'utf8');
 
 describe('canonical register visual contract', () => {
   it('keeps natural-width semantic tables with a keyboard-reachable horizontal region when needed', () => {
@@ -33,6 +33,13 @@ describe('canonical register visual contract', () => {
     expect(filterBar).toContain('EntityTableViewModeToggle');
     expect(filterBar).toContain('data-filter-view-mode');
     expect(embeddableWorkspace).toContain('EntityTableViewModeProvider');
+  });
+
+  it('enforces a single page identity when registers are embedded in hubs', () => {
+    expect(embeddableWorkspace).toContain("const showActions = embeddedHeader !== 'none' && hasActions");
+    expect(embeddableWorkspace).not.toContain('data-embedded-workspace-header');
+    expect(embeddableWorkspace).not.toContain('<h2 className=');
+    expect(embeddableWorkspace).not.toContain("embeddedHeader === 'full'");
   });
 
   it('keeps sticky identity/actions for wide desktop only and trims lower-priority tablet columns', () => {
@@ -68,7 +75,6 @@ describe('canonical register visual contract', () => {
 
     expect(properties).toContain('mobileCardType="property"');
     expect(properties).toContain('mobileSupportingKey="owner"');
-    expect(properties).toContain("embeddedHeader={embedded ? 'actions-only' : 'full'}");
     expect(properties).not.toContain('<RegisterHeading title="سجل العقارات"');
     expect(units).toContain('mobileSupportingKey="property"');
     expect(contracts).toContain('mobileSupportingKey="tenant"');
