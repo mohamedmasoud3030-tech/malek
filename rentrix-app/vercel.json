@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "pnpm install --frozen-lockfile",
-  "buildCommand": "pnpm --filter @workspace/rentrix run build",
+  "buildCommand": "pnpm --filter @workspace/rentrix exec node scripts/production-demo-preflight.mjs && pnpm --filter @workspace/rentrix run build",
   "outputDirectory": "dist/public",
   "framework": "vite",
   "rewrites": [
