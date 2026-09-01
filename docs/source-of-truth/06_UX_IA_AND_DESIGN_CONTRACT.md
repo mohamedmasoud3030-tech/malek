@@ -2,7 +2,7 @@
 
 > **Status:** CANONICAL  
 > **Target Architecture Lock:** 2026-08-27  
-> **Magic City visual/hierarchy amendment:** 2026-09-01  
+> **Runtime UI/UX audit amendment:** 2026-09-01  
 > **Repository reality baseline for this lock:** `main@9e5c32e83082cac8227640cf260c51af01e54dc3`  
 > **Precedence:** this target contract supersedes older design-guide statements and older implementation contracts where they conflict; repository reality remains separately classified in Document 7.
 
@@ -12,7 +12,9 @@ MALEK is Arabic-first, RTL-first, dark-first and desktop/mobile first-class. The
 
 The target principle is **simple by default, powerful on demand**. Strong backend/accounting capabilities may remain hidden or contextual rather than being exposed as routine navigation.
 
-The approved experience character is **Magic City / مدينة السحر والجمال**: a calm operational city with clear districts, luminous orientation, controlled depth and purposeful motion. This is a presentation character inside the shared semantic-token system, not a fantasy skin or a second color/theme authority. Operational truth, readability and decision speed always outrank decoration.
+The 2026-09-01 runtime audit is implementation evidence, not a new design theme. It confirms that MALEK's strongest visual asset is its existing semantic-token foundation and that the highest-priority defects are structural: duplicated page authority, Dashboard composition, inconsistent register grammar, terminology, typography hierarchy, deep container nesting, persistent assistant chrome, record-inspection gaps and mobile intentionality.
+
+**LENA ecosystem boundary:** MALEK may inherit controlled parent-platform brand/portal cues, but LENA's broader **“السحر والجمال / Magic & Beauty”** world identity is not an internal MALEK operational theme. Routine MALEK screens remain property-operations/financial, calm, trustworthy and data-first. Cross-product identity belongs at ecosystem touchpoints rather than being painted across registers, tables and finance workflows.
 
 ## Canonical UX/IA rules
 
@@ -58,7 +60,7 @@ The locked section hierarchy (desktop reading order; mobile keeps the same seman
 8. **Property Health** — transparent deterministic per-property indicators (no opaque score);
 9. **Owner Obligations** — owner funds as a liability signal plus financial exceptions.
 
-The first viewport should behave like a command brief, not another analytics page: Pulse and Needs Attention receive visual priority, common authorized actions remain quickly reachable, and supporting analytics must not delay the path to the next operational action.
+The first viewport should behave like a command brief, not another analytics page: Pulse and Needs Attention receive structural priority, common authorized actions remain quickly reachable, and supporting analytics must not delay the path to the next operational action. This priority is achieved through composition and hierarchy, not decorative ambience.
 
 Charts consume existing authoritative read models (the dashboard snapshot RPC, the daily-collection RPC, the Reports cashflow service) and never recompute financial truth in the browser. Numbers stay available as text beside every visualization. Today is a signal/decision surface, not a substitute for detailed Reports. Notifications show events/information; Today shows items requiring attention. Do not duplicate the same feed twice.
 
@@ -282,12 +284,13 @@ Phone Table mode may horizontally scroll **inside the table container only**. Th
 
 - **Dark-first** is the flagship presentation direction.
 - Light theme is mandatory and equal quality.
-- The Magic City character is expressed through restrained token-derived ambient light, selected depth, clear landmarks/active states and purposeful spatial continuity — not a second palette.
 - Use semantic tokens; do not create page-specific raw palettes when a semantic token exists.
+- MALEK's existing royal/deep-blue token foundation is preserved unless evidence proves a specific token defect; the runtime audit explicitly identified the palette/token base as a product strength.
 - Medium density: no oversized empty surfaces, no cramped spreadsheet wall, no endless stacked cards.
 - Cards are not the default answer to grouping; separators, sections, tables, anchored navigation and selective elevation should carry hierarchy where more appropriate.
 - Charts/visual indicators must help a decision (trend, comparison, collection, occupancy, performance); decoration-only charts are rejected.
 - Premium motion is short and functional, with reduced-motion support. Looping decorative motion, hover scaling and animated sheen are rejected in operational workspaces.
+- Parent-LENA identity may influence ecosystem transitions/brand touchpoints, but it does not authorize ambient/fantasy decoration inside routine MALEK workspaces.
 
 ## Copy contract
 
@@ -313,7 +316,8 @@ Tenant Portal is a separate, constrained shell. v1 is read-only and shows only t
 
 ## Evidence anchors
 
-- `docs/execution/MALEK_MAGIC_CITY_UI_BLUEPRINT.md` — active visual execution translation and screenshot self-review protocol;
+- `docs/execution/MALEK_RUNTIME_UI_UX_RECONSTRUCTION_BLUEPRINT.md` — active runtime-audit execution translation and screenshot self-review protocol;
+- authenticated 2026-09-01 runtime screenshot campaign and structural audit evidence;
 - `rentrix-app/src/app/navigation/route-contract.ts`
 - `rentrix-app/src/app/router/route-tree.ts`
 - `rentrix-app/src/app/layout/app-shell.tsx`
