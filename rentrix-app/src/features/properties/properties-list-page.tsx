@@ -258,7 +258,6 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
         embedded={embedded}
         dir="rtl"
         visualVariant="malek-pro"
-        embeddedHeader={embedded ? 'actions-only' : 'full'}
         title="العقارات"
         count={controller.totalCount}
         primaryAction={canCreate ? (
