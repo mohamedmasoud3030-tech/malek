@@ -20,6 +20,7 @@ type ReportsShellProps = Readonly<{
   onOpenReport?: (workspace: ReportWorkspaceId, view: ReportViewId) => void;
   onFiltersChange: (filters: ReportsFilterState) => void;
   onResetCurrentMonth: () => void;
+  hideWorkspaceNavigation?: boolean;
 }>;
 
 type MetricButtonProps = Readonly<{
@@ -52,10 +53,8 @@ function MetricButton({ label, value, detail, icon: Icon, onClick, tone = 'defau
 }
 
 /**
- * The one compact header for the open workspace. It owns the workspace
- * identity, its sub-view switcher and the active scope (via the context bar).
- * Collection shortcuts render the canonical metric meanings without creating
- * a second KPI grid inside the report body.
+ * The one compact header for the open report surface. Premium products reuse
+ * the same filters and data states while owning their higher-level navigation.
  */
 export function ReportsShell({
   model,
@@ -66,17 +65,12 @@ export function ReportsShell({
   onOpenReport,
   onFiltersChange,
   onResetCurrentMonth,
+  hideWorkspaceNavigation = false,
 }: ReportsShellProps) {
   const companySettings = useCompanySettingsContract();
   const money = (value: number | null | undefined) => formatCompanyMoney(companySettings, value);
   const workspace = getReportWorkspace(activeWorkspace);
   const summary = model.hero.summary;
-  // The hero read model is the shell's only headline source: it carries the
-  // server-authoritative realization rate, so the shell never derives a rate
-  // from period cash and period invoices. Availability is taken from the
-  // collections read model, which omits the field entirely when the
-  // authoritative query has not resolved — so an unmeasured rate renders as
-  // "unavailable" instead of a fabricated 0%.
   const collectionRate = model.hero.collectionRate;
   const hasCollectionRate = model.sections.collections.collectionRate !== undefined
     && typeof collectionRate === 'number'
@@ -118,7 +112,7 @@ export function ReportsShell({
           ) : null}
         </div>
 
-        {workspace ? (
+        {workspace && !hideWorkspaceNavigation ? (
           <WorkspaceSubViewTabs
             activeWorkspace={activeWorkspace}
             activeView={activeView}
