@@ -31,10 +31,11 @@ const productToSemantic: Record<ProductTone, SemanticTone> = {
 };
 
 /**
- * Status badges are also styled by the shared page-polish cascade through
- * --status-tone/--status-soft. Define those variables for every semantic tone
- * here so the generic [data-status-badge][data-tone] rule can never resolve
- * to an invalid (transparent) background.
+ * Status badges are also painted by the MALEK visual authority
+ * (styles/malek-pro-visual-wave.css) through --status-tone/--status-soft.
+ * Define those variables for every semantic tone here so the generic
+ * [data-status-badge][data-tone] rule can never resolve to an invalid
+ * (transparent) background, no matter which scope reaches it first.
  */
 const semanticTones: Record<SemanticTone, string> = {
   success: 'bg-success-bg text-success-text ring-success/20 [--status-tone:var(--success-text)] [--status-soft:var(--success-bg)]',
