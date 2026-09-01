@@ -18,7 +18,7 @@ jobs:
   build:
     name: build
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       VITE_SUPABASE_URL: https://example.supabase.co
@@ -54,7 +54,9 @@ jobs:
       - name: Test typecheck
         run: pnpm --filter ./rentrix-app run typecheck:test
       - name: Shared primitive accessibility gate
-        run: pnpm --filter ./rentrix-app exec vitest run --config vite.config.ts src/components/ui/primitives.axe.test.tsx
+        run: pnpm --filter ./rentrix-app run test:a11y-primitives
+      - name: Full application test gate
+        run: pnpm --filter ./rentrix-app test
       - name: Lint
         run: pnpm lint
       - name: Architecture check
@@ -99,5 +101,7 @@ jobs:
         run: pnpm check:docs
       - name: Full application tests
         run: pnpm --filter ./rentrix-app test
+      - name: Shared primitive accessibility proof
+        run: pnpm --filter ./rentrix-app run test:a11y-primitives
       - name: Financial safety tests
         run: pnpm --filter ./rentrix-app run test:financials
