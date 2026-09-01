@@ -174,7 +174,7 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
           <FilterTabs
             options={contractLeaseModeOptions}
             value={leaseMode}
-            onChange={(value) => { setLeaseMode(value); setPage(1); }}
+            onChange={(value) => { setLeaseMode(value as LeaseModeFilter); setPage(1); }}
             tone="contracts"
           />
         )}
@@ -185,7 +185,7 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
               <FilterTabs
                 options={contractStatusFilterOptions}
                 value={status}
-                onChange={(value) => { setStatus(value); setPage(1); }}
+                onChange={(value) => { setStatus(value as ContractStatusFilter); setPage(1); }}
                 tone="contracts"
               />
             </div>
@@ -206,7 +206,7 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
         advancedFilterDescription="ابدأ بالبحث ونوع الإيجار. افتح هذه الفلاتر عند الحاجة لتقييد الحالة أو العقود القريبة من الانتهاء."
         activeFilters={activeFilters}
         onClearAllFilters={resetFilters}
-        toolbarActions={canExport || true ? (
+        toolbarActions={(
           <>
             <div className="hidden min-w-0 items-center gap-2 md:flex" data-contract-columns-control>
               <DataTableColumnsMenu
@@ -225,7 +225,7 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
               />
             ) : null}
           </>
-        ) : undefined}
+        )}
       >
         <ContractKpiGrid companySettings={companySettings} contracts={contracts} filteredContracts={filteredContracts} totalCount={contractsQuery.data?.count ?? contracts.length} />
 
