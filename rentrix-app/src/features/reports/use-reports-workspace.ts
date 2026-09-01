@@ -91,6 +91,14 @@ export function useReportsWorkspace(filters: ReportsFilterState, location: Repor
     }),
     [filters.costCenterId, filters.from, filters.propertyId, filters.to],
   );
+  const portfolioExpenseFilters = useMemo(
+    () => ({
+      dateFrom: filters.from,
+      dateTo: filters.to,
+      costCenterId: filters.costCenterId || undefined,
+    }),
+    [filters.costCenterId, filters.from, filters.to],
+  );
   const arrearsFilters = useMemo(() => ({
     asOf: filters.asOf,
     propertyId: filters.propertyId || undefined,
@@ -161,6 +169,7 @@ export function useReportsWorkspace(filters: ReportsFilterState, location: Repor
   const vatReturnQuery = useVatReturnReport(financialFilters, { enabled: needsStatements });
   const dailyCollectionQuery = useDailyCollectionReport(financialFilters, { enabled: needsCollections || needsStatements });
   const expenseBreakdownQuery = useExpenseBreakdownReport(expenseFilters, { enabled: needsExpenses || needsStatements });
+  const portfolioExpenseQuery = useExpenseBreakdownReport(portfolioExpenseFilters, { enabled: needsPropertyPerformance && Boolean(filters.propertyId) });
   const overdueInvoicesQuery = useOverdueInvoicesReport(arrearsFilters, { enabled: needsOverdue });
   const agedReceivablesQuery = useAgedReceivablesReport(arrearsFilters, { enabled: needsOverdue || needsStatements });
   const arrearsSummaryQuery = useArrearsSummaryReport(arrearsFilters, { enabled: needsOverdue });
@@ -210,6 +219,10 @@ export function useReportsWorkspace(filters: ReportsFilterState, location: Repor
   const occupancyRows = useMemo(
     () => buildOccupancyRows(occupancyUnits, propertyTitlesById),
     [occupancyUnits, propertyTitlesById],
+  );
+  const portfolioOccupancyRows = useMemo(
+    () => buildOccupancyRows(unitsQuery.data ?? [], propertyTitlesById),
+    [propertyTitlesById, unitsQuery.data],
   );
   const occupancyUnitIds = useMemo(() => new Set(occupancyUnits.map((unit) => unit.id)), [occupancyUnits]);
   const occupancyContracts = useMemo(
@@ -282,10 +295,13 @@ export function useReportsWorkspace(filters: ReportsFilterState, location: Repor
   const propertyAnalyticsInput = useMemo<PropertyAnalyticsInput>(() => {
     const previousSummary = previousSummaryQuery.data;
     const previousUnits = unitsQuery.data ?? [];
+    const previousScopedUnits = previousUnits.filter((unit) => (!filters.propertyId || unit.property_id === filters.propertyId) && (!filters.unitId || unit.id === filters.unitId));
+    const previousScopedUnitIds = new Set(previousScopedUnits.map((unit) => unit.id));
+    const previousScopedContracts = contracts.filter((contract) => Boolean(contract.unit_id) && previousScopedUnitIds.has(contract.unit_id!));
     const previousVacancy = previousRange
       ? buildVacancyAnalytics(
-        previousUnits.filter((unit) => (!filters.propertyId || unit.property_id === filters.propertyId) && (!filters.unitId || unit.id === filters.unitId)),
-        occupancyContracts,
+        previousScopedUnits,
+        previousScopedContracts,
         propertyTitlesById,
         previousRange.to,
       )
@@ -294,6 +310,8 @@ export function useReportsWorkspace(filters: ReportsFilterState, location: Repor
       occupancyRows,
       expenseRows: expenseBreakdownQuery.data?.byProperty ?? [],
       performanceRows: propertyPerformanceRows,
+      benchmarkOccupancyRows: filters.propertyId ? portfolioOccupancyRows : undefined,
+      benchmarkExpenseRows: filters.propertyId ? portfolioExpenseQuery.data?.byProperty : undefined,
       periodSummary: financialSummaryQuery.data ?? null,
       overdueTotal: overdueInvoicesQuery.data
         ? overdueInvoicesQuery.data.rows.reduce((sum, row) => sum + row.remainingAmount, 0)
@@ -325,10 +343,10 @@ export function useReportsWorkspace(filters: ReportsFilterState, location: Repor
       selectedPropertyId: filters.propertyId || null,
     };
   }, [
-    contractsQuery.data, expenseBreakdownQuery.data, expiringRows.length, filters.propertyId, filters.unitId,
-    financialSummaryQuery.data, maintenanceQuery.data, occupancyContracts, occupancyRows,
-    overdueInvoicesQuery.data, previousExpenseQuery.data, previousOverdueQuery.data, previousRange,
-    previousSummaryQuery.data, propertyPerformanceRows,
+    contracts, contractsQuery.data, expenseBreakdownQuery.data, expiringRows.length, filters.propertyId, filters.unitId,
+    financialSummaryQuery.data, maintenanceQuery.data, occupancyRows, overdueInvoicesQuery.data,
+    portfolioExpenseQuery.data?.byProperty, portfolioOccupancyRows, previousExpenseQuery.data,
+    previousOverdueQuery.data, previousRange, previousSummaryQuery.data, propertyPerformanceRows,
     propertyTitlesById, unitsQuery.data, vacancyAnalytics,
   ]);
 
@@ -341,7 +359,7 @@ export function useReportsWorkspace(filters: ReportsFilterState, location: Repor
     const queries = [
       financialSummaryQuery, collectionRateQuery, collectionSummaryQuery,
       propertyCollectionBreakdownQuery, financialCashflowQuery, vatReturnQuery,
-      dailyCollectionQuery, expenseBreakdownQuery, overdueInvoicesQuery,
+      dailyCollectionQuery, expenseBreakdownQuery, portfolioExpenseQuery, overdueInvoicesQuery,
       agedReceivablesQuery, arrearsSummaryQuery, trialBalanceQuery,
       incomeStatementQuery, balanceSheetQuery, contractsQuery, ownersQuery,
       tenantStatementQuery, ownerStatementQuery, unitsQuery, maintenanceQuery,
@@ -354,7 +372,7 @@ export function useReportsWorkspace(filters: ReportsFilterState, location: Repor
   }, [
     financialSummaryQuery, collectionRateQuery, collectionSummaryQuery,
     propertyCollectionBreakdownQuery, financialCashflowQuery, vatReturnQuery,
-    dailyCollectionQuery, expenseBreakdownQuery, overdueInvoicesQuery,
+    dailyCollectionQuery, expenseBreakdownQuery, portfolioExpenseQuery, overdueInvoicesQuery,
     agedReceivablesQuery, arrearsSummaryQuery, trialBalanceQuery,
     incomeStatementQuery, balanceSheetQuery, contractsQuery, ownersQuery,
     tenantStatementQuery, ownerStatementQuery, unitsQuery, maintenanceQuery,
@@ -448,6 +466,7 @@ export function useReportsWorkspace(filters: ReportsFilterState, location: Repor
           propertyCollectionBreakdownQuery.isLoading,
           overdueInvoicesQuery.isLoading,
           expenseBreakdownQuery.isLoading,
+          portfolioExpenseQuery.isLoading,
           maintenanceQuery.isLoading,
           propertyTitlesQuery.isLoading,
         ),
