@@ -31,7 +31,6 @@ describe('feature flag definitions', () => {
       'financial-wave-2',
       'owner-agreements-v2',
       'dashboard-v2',
-      'malek-pro-visual',
       'commission-lifecycle-v2',
       'next-accounting',
     ];
@@ -143,10 +142,6 @@ describe('default and local preview semantics', () => {
     expect(isFeatureEnabled('ai-assistant', { env: {} })).toBe(false);
   });
 
-  it('all-role flag follows normal rollout semantics for USER', () => {
-    expect(isFeatureEnabled('malek-pro-visual', { role: 'USER', env: {} })).toBe(true);
-  });
-
   it('localStorage=0 turns an otherwise authorized flag OFF', () => {
     stubLocalStorage({ 'ff:ai-assistant': '0' });
     expect(isFeatureEnabled('ai-assistant', { role: 'ADMIN', env: {} })).toBe(false);
@@ -162,14 +157,13 @@ describe('default and local preview semantics', () => {
 });
 
 describe('public states preserve role restrictions', () => {
-  it('does not expose ADMIN-only flags to USER even when env enables them', () => {
+  it('does not expose restricted flags to USER even when env enables them', () => {
     const states = getPublicFlagStates({
       role: 'USER',
       env: { VITE_FEATURE_FINANCIAL_WAVE_2: 'true' },
     });
     expect(states['financial-wave-2']).toBe(false);
     expect(states['ai-assistant']).toBe(false);
-    expect(states['malek-pro-visual']).toBe(true);
   });
 });
 
@@ -185,24 +179,13 @@ describe('expiry contract', () => {
 });
 
 describe('role vocabulary alignment', () => {
-  it('accepts the full authorization role set, not just ADMIN/MANAGER/USER', () => {
-    // The app authorizes 6 roles (ADMIN, MANAGER, ACCOUNTANT, OPERATIONS, USER, VIEWER).
-    // The flag evaluator must model the same set so any real role can be targeted
-    // and non-modeled roles are not silently dropped to null.
-    for (const role of ['ACCOUNTANT', 'OPERATIONS', 'VIEWER'] as const) {
-      // A flag with no role restriction stays visible to every real role.
-      expect(isFeatureEnabled('malek-pro-visual', { role })).toBe(true);
-    }
-  });
-
   it('treats a restricted flag as fail-closed for non-targeted real roles', () => {
-    // ai-assistant is ADMIN+MANAGER only; an OPERATIONS role must stay OFF even
-    // though OPERATIONS is now a valid (known) role rather than "unknown".
     expect(isFeatureEnabled('ai-assistant', { role: 'OPERATIONS' })).toBe(false);
+    expect(isFeatureEnabled('ai-assistant', { role: 'ACCOUNTANT' })).toBe(false);
+    expect(isFeatureEnabled('ai-assistant', { role: 'VIEWER' })).toBe(false);
   });
 
   it('still rejects genuinely unknown roles', () => {
-    expect(isFeatureEnabled('malek-pro-visual', { role: 'SUPERUSER' })).toBe(true); // no role gate on this flag
-    expect(isFeatureEnabled('ai-assistant', { role: 'SUPERUSER' })).toBe(false);   // fail closed on restricted flag
+    expect(isFeatureEnabled('ai-assistant', { role: 'SUPERUSER' })).toBe(false);
   });
 });
