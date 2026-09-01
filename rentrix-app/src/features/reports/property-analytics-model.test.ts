@@ -141,6 +141,27 @@ describe('property analytics — portfolio benchmark', () => {
     expect(expense.portfolio).toBe(37.5);
   });
 
+  it('keeps the selected property scoped while benchmarking against an unscoped portfolio population', () => {
+    const selectedOccupancy = [baseInput.occupancyRows[0]];
+    const selectedExpenses = [baseInput.expenseRows[0]];
+    const rows = buildPropertyAnalyticsBenchmark({
+      ...baseInput,
+      occupancyRows: selectedOccupancy,
+      expenseRows: selectedExpenses,
+      benchmarkOccupancyRows: baseInput.occupancyRows,
+      benchmarkExpenseRows: baseInput.expenseRows,
+      selectedPropertyId: 'p1',
+    });
+
+    const occupancy = rows.find((row) => row.key === 'occupancy')!;
+    expect(occupancy.property).toBe(60);
+    expect(occupancy.portfolio).toBe(80);
+
+    const expense = rows.find((row) => row.key === 'expense_per_occupied')!;
+    expect(expense.property).toBe(150);
+    expect(expense.portfolio).toBe(37.5);
+  });
+
   it('is omitted when there is no other property to compare with', () => {
     expect(buildPropertyAnalyticsBenchmark({
       ...baseInput,
