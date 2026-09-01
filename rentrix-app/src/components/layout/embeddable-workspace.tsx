@@ -22,7 +22,7 @@ export type EmbeddableWorkspaceProps = Readonly<{
   backLabel?: string;
   primaryAction?: ReactNode;
   secondaryActions?: ReactNode;
-  /** Kept for source compatibility while the app uses one shared visual system. */
+  /** Temporary caller compatibility; MALEK now has one visual system. */
   visualVariant?: 'malek-pro';
   children: ReactNode;
 }>;
@@ -60,6 +60,7 @@ export function EmbeddableWorkspace({
       <div
         data-embedded-workspace
         data-workspace={workspaceName}
+        data-malek-surface
         data-visual-wave={visualVariant}
         className="min-w-0 space-y-2.5 sm:space-y-3"
       >
