@@ -53,7 +53,6 @@ describe('canonical search and filter usage', () => {
   it('keeps complex register filtering inside the shared FilterBar system', () => {
     const filterBar = readFileSync(resolve(uiDir, 'filter-bar.tsx'), 'utf8');
     const invoiceFilters = readFileSync(resolve(srcDir, 'features/financials/components/invoice-filters.tsx'), 'utf8');
-    const reportDirectory = readFileSync(resolve(srcDir, 'features/reports/directory/ReportDirectory.tsx'), 'utf8');
 
     expect(filterBar).toContain('<SearchInput');
     expect(filterBar).toContain('<BottomSheet');
@@ -64,9 +63,11 @@ describe('canonical search and filter usage', () => {
     expect(invoiceFilters).not.toContain('<BottomSheet');
     expect(invoiceFilters).not.toContain('SlidersHorizontal');
 
-    expect(reportDirectory).toContain('<FilterBar');
-    expect(reportDirectory).toContain('<FilterTabs');
-    expect(reportDirectory).not.toContain('type="search"');
+    // Reports has no register-style search surface of its own: its navigation
+    // is the primary rail + workspace sub-view tabs, and its scoping uses the
+    // shared reports filter surface.
+    const reportsFilterSurface = readFileSync(resolve(srcDir, 'features/reports/components/ReportsFilterSurface.tsx'), 'utf8');
+    expect(reportsFilterSurface).not.toContain('type="search"');
   });
 
   it('prevents feature surfaces from rendering a second active-filter row', () => {

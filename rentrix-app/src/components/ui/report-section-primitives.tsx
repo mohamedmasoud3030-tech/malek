@@ -88,6 +88,78 @@ export function ReportDrillAction({ label, onClick, variant = 'outline', ariaLab
   );
 }
 
+export type ReportSegmentedTabItem<TId extends string> = Readonly<{
+  id: TId;
+  label: string;
+  /** Optional quiet second line (e.g. "12 حساب"). */
+  sub?: string;
+  icon?: LucideIcon;
+}>;
+
+/**
+ * The one segmented switcher for report bodies that hold several equally
+ * weighted panels (the accounting statements, the general-ledger workspaces).
+ *
+ * Both of those surfaces had grown a byte-identical local implementation of
+ * this control — same grid, same muted track, same active card treatment —
+ * differing only in whether a second line was rendered. This is that control
+ * once: canonical 44px targets, correct `tablist`/`tab` semantics wired to the
+ * caller's panel ids, and a single active-state grammar.
+ *
+ * It switches panels only. It never owns data or formatting.
+ */
+export function ReportSegmentedTabs<TId extends string>({
+  items,
+  activeId,
+  onChange,
+  ariaLabel,
+  panelIdPrefix,
+  className,
+}: Readonly<{
+  items: ReadonlyArray<ReportSegmentedTabItem<TId>>;
+  activeId: TId;
+  onChange: (id: NoInfer<TId>) => void;
+  ariaLabel: string;
+  /** Panel element ids follow `${panelIdPrefix}-${item.id}`. */
+  panelIdPrefix: string;
+  className?: string;
+}>) {
+  return (
+    <div
+      className={cn('grid gap-1 rounded-xl border border-border/60 bg-muted/20 p-1', className)}
+      style={{ gridTemplateColumns: `repeat(${Math.max(1, items.length)}, minmax(0, 1fr))` }}
+      role="tablist"
+      aria-label={ariaLabel}
+      data-report-segmented-tabs
+    >
+      {items.map((item) => {
+        const Icon = item.icon;
+        const isActive = activeId === item.id;
+        return (
+          <button
+            key={item.id}
+            type="button"
+            role="tab"
+            aria-selected={isActive}
+            aria-controls={`${panelIdPrefix}-${item.id}`}
+            onClick={() => onChange(item.id)}
+            className={cn(
+              'flex min-h-11 min-w-0 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-start transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20',
+              isActive ? 'bg-card text-foreground shadow-card' : 'text-muted-foreground hover:bg-background/80 hover:text-foreground',
+            )}
+          >
+            {Icon ? <Icon className="size-4 shrink-0" aria-hidden="true" /> : null}
+            <span className="min-w-0">
+              <span className="block truncate text-xs font-black">{item.label}</span>
+              {item.sub ? <span className="block truncate text-[10px] font-bold text-muted-foreground">{item.sub}</span> : null}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export function ReportList({ children, className }: Readonly<{ children: React.ReactNode; className?: string }>) {
   return <div className={cn('divide-y divide-border/60', className)}>{children}</div>;
 }

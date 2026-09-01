@@ -43,7 +43,12 @@ describe('ReportDrillAction — the one report drill-through affordance', () => 
   it('builds on the shared Button rather than re-implementing one', () => {
     expect(source).toContain("import { Button } from '@/components/ui/button'");
     expect(source).toContain('export function ReportDrillAction');
-    expect(source).not.toMatch(/<button[\s>]/);
+    // Scoped to the drill affordance itself: this file is the canonical home
+    // for report primitives, and `ReportSegmentedTabs` legitimately owns a
+    // native tab element with `role="tab"` semantics Button does not provide.
+    const drillAction = source.slice(source.indexOf('export function ReportDrillAction'));
+    const drillBody = drillAction.slice(0, drillAction.indexOf('\nexport '));
+    expect(drillBody).not.toMatch(/<button[\s>]/);
   });
 
   it('stays a routing primitive and never formats or computes a figure', () => {

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ReportSegmentedTabs } from '@/components/ui/report-section-primitives';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
 import { useGeneralLedgerCore, type AccountType, type NormalBalance, type AccountingPeriodStatus, type JournalBatchStatus } from '../use-general-ledger-core';
@@ -113,37 +114,13 @@ export function GeneralLedgerCoreSection() {
 
   return (
     <div className="space-y-3 sm:space-y-4">
-      <div
-        className="grid grid-cols-3 gap-1 rounded-xl border border-border/60 bg-muted/20 p-1"
-        role="tablist"
-        aria-label="مساحات الأستاذ العام"
-      >
-        {workspaces.map((workspace) => {
-          const Icon = workspace.icon;
-          const isActive = activeWorkspace === workspace.id;
-          return (
-            <button
-              key={workspace.id}
-              type="button"
-              role="tab"
-              aria-selected={isActive}
-              aria-controls={`ledger-workspace-${workspace.id}`}
-              onClick={() => setActiveWorkspace(workspace.id)}
-              className={`flex min-h-12 min-w-0 items-center justify-center gap-2 rounded-lg px-2 py-1.5 text-start transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 ${
-                isActive
-                  ? 'bg-card text-foreground shadow-card'
-                  : 'text-muted-foreground hover:bg-background/80 hover:text-foreground'
-              }`}
-            >
-              <Icon className="size-4 shrink-0" aria-hidden="true" />
-              <span className="min-w-0">
-                <span className="block truncate text-xs font-black">{workspace.label}</span>
-                <span className="block truncate text-[10px] font-bold text-muted-foreground">{workspace.sub}</span>
-              </span>
-            </button>
-          );
-        })}
-      </div>
+      <ReportSegmentedTabs
+        items={workspaces}
+        activeId={activeWorkspace}
+        onChange={setActiveWorkspace}
+        ariaLabel="مساحات الأستاذ العام"
+        panelIdPrefix="ledger-workspace"
+      />
 
       {activeWorkspace === 'accounts' ? (
         <Card id="ledger-workspace-accounts" role="tabpanel" className="overflow-hidden rounded-2xl border border-border/70 shadow-card">

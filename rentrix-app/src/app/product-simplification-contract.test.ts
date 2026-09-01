@@ -122,10 +122,18 @@ describe('production product simplification contract', () => {
     ]);
 
     const workspace = source('../features/reports/workspace/ReportsWorkspace.tsx');
-    const directory = source('../features/reports/directory/ReportDirectory.tsx');
     expect(workspace).not.toContain('ReportsSectionTabs');
     expect(workspace).not.toContain('SectionTabs');
-    expect(directory).toContain('اختر التقرير حسب ما تريد معرفته');
+
+    // Reports navigation is the primary-navigation rail plus the workspace
+    // sub-view tabs. The catalogue model remains the single reachability
+    // authority; there is no second directory surface rendering the same
+    // destinations.
+    const reportsPage = source('../features/reports/reports-page.tsx');
+    expect(reportsPage).toContain('<ReportsPrimaryNavigation');
+    for (const group of reportGroups) {
+      expect(group.shortcuts.length).toBeGreaterThan(0);
+    }
   });
 
   it('keeps advanced routes available without advertising them as normal product destinations', () => {

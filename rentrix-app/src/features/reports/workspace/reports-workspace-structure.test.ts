@@ -56,7 +56,10 @@ describe('WP-C C.1 — workspace is split by responsibility', () => {
 
   it('uses canonical report owners without compatibility shims', () => {
     expect(existsSync(resolve(reportsDir, 'workspace/ReportsWorkspace.tsx'))).toBe(true);
-    expect(existsSync(resolve(reportsDir, 'directory/ReportDirectory.tsx'))).toBe(true);
+    // The standalone report directory surface was removed: it duplicated the
+    // primary navigation rail and was unreachable from the Reports page.
+    expect(existsSync(resolve(reportsDir, 'directory/ReportDirectory.tsx'))).toBe(false);
+    expect(existsSync(resolve(reportsDir, 'directory/report-directory-groups.ts'))).toBe(true);
     expect(existsSync(resolve(reportsDir, 'components/ReportsWorkspace.tsx'))).toBe(false);
     expect(existsSync(resolve(reportsDir, 'components/ReportDirectory.tsx'))).toBe(false);
   });

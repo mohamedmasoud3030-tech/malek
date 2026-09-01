@@ -113,6 +113,11 @@ export function AnalyticsReportsAdapter({ view, model, filters, canExportReports
           onDrill={onDrill}
           model={model}
           filters={filters}
+          executive={model.sections.propertyPerformance?.executive}
+          comparison={model.sections.propertyPerformance?.comparison}
+          benchmark={model.sections.propertyPerformance?.benchmark}
+          insights={model.sections.propertyPerformance?.insights}
+          previousPeriod={model.sections.propertyPerformance?.previousPeriod ?? null}
         />
       );
     case 'occupancy':

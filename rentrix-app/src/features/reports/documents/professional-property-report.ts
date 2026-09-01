@@ -51,7 +51,7 @@ import { hasCompleteCompanyIdentity, type DocumentCompanySettings } from '@/serv
 import { runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
 import type { ProfessionalReportGroup, PropertyReportPayload, ReportCellFormat, ReportChartData } from '@/services/documents/documentPayloads';
 import { getAuthoritativeReportsCollectionRate } from '../reports-collection-efficiency';
-import { getTodayLocalDateString, type ExpiringContractRow } from '../reports-page.helpers';
+import { buildOccupancyRows, getTodayLocalDateString, type ExpiringContractRow } from '../reports-page.helpers';
 import type { ReportsWorkspaceModel } from '../use-reports-workspace';
 import type { ReportsFilterState } from '../reports-workspace-filters';
 import { arabicMonthLabel, formatPointChange, formatSignedAmountChange, monthEndIso, monthKeyOf, previousPeriodRange } from './report-period';
@@ -62,6 +62,19 @@ import { arabicMonthLabel, formatPointChange, formatSignedAmountChange, monthEnd
 
 const OCCUPIED_UNIT_STATUSES = new Set(['occupied', 'rented']);
 const isOccupiedUnitStatus = (status: string | null | undefined): boolean => OCCUPIED_UNIT_STATUSES.has(String(status ?? '').trim().toLowerCase());
+
+/**
+ * A unit is genuinely available for letting only when its status is
+ * `available`. Maintenance / reserved / any other status is NOT vacant stock.
+ */
+const isRentableUnitStatus = (status: string | null | undefined): boolean => String(status ?? '').trim().toLowerCase() === 'available';
+
+/** Canonical three-way unit label — vacancy and non-rentability never blur. */
+function unitStatusLabel(status: string | null | undefined): string {
+  if (isOccupiedUnitStatus(status)) return 'مشغولة';
+  if (isRentableUnitStatus(status)) return 'شاغرة';
+  return 'غير قابلة للتأجير';
+}
 
 const ARREARS_BUCKET_LABELS: Array<{ key: string; label: string }> = [
   { key: 'current', label: 'غير متأخر بعد' },
@@ -116,7 +129,7 @@ export type PropertyReportData = {
   vacancyCount: number;
   vacancyRows: Array<{ unitNumber: string; propertyTitle: string; daysVacant: number; referenceRent: number | null }> | null;
   monthlyCollectionTrend: Array<{ month: string; due: number; collected: number }>;
-  occupancyTrend: Array<{ month: string; occupied: number; vacant: number }>;
+  occupancyTrend: Array<{ month: string; occupied: number; vacant: number; nonRentable?: number }>;
   unitRows: UnitPerformanceRow[];
   /** Total utility invoices in scope when the caller can supply them (else omitted truthfully). */
   utilitiesTotal?: number | null;
@@ -137,6 +150,8 @@ export type PropertyReportData = {
     totalUnits: number;
     occupiedUnits: number;
     vacantUnits: number;
+    /** Non-rentable units in the benchmark population — never counted as vacant. */
+    nonRentableUnits?: number;
     expensePerOccupiedUnit: number | null;
   } | null;
 };
@@ -146,7 +161,11 @@ export type PropertyReportData = {
 /* ------------------------------------------------------------------ */
 
 const text = (value: string | null | undefined): ReportCellFormat => ({ kind: 'text', value: value?.trim() || '—' });
-const amount = (value: number | null | undefined): ReportCellFormat => ({ kind: 'amount', value: value ?? 0 });
+/**
+ * Money cell. An UNAVAILABLE amount renders as `—`, never as `0` — a printed
+ * zero must always mean a real zero from an authoritative source.
+ */
+const amount = (value: number | null | undefined): ReportCellFormat => (value != null ? { kind: 'amount', value } : text('—'));
 const percentOf = (value: number | null | undefined): ReportCellFormat => (value != null ? { kind: 'percent', value } : text('—'));
 const countCell = (value: number | null | undefined): ReportCellFormat => (value != null ? { kind: 'text', value: String(value) } : text('—'));
 const dateLabel = (value: string | null | undefined): string => (value ? value.slice(0, 10) : '—');
@@ -312,6 +331,7 @@ export function buildPropertyReportPayload(data: PropertyReportData): PropertyRe
           [text('نسبة الإشغال'), percentOf(occupancyRate), percentOf(p.occupancyRate)],
           [text('الوحدات المشغولة'), countCell(occupancy.occupied), countCell(p.occupiedUnits)],
           [text('الوحدات الشاغرة'), countCell(occupancy.vacant), countCell(p.vacantUnits)],
+          [text('وحدات غير قابلة للتأجير'), countCell(occupancy.nonRentable), countCell(p.nonRentableUnits ?? null)],
           [text('إجمالي الوحدات'), countCell(occupancy.units), countCell(p.totalUnits)],
           [text('مصروف لكل وحدة مشغولة'), amount(propertyExpensePerOccupied), amount(p.expensePerOccupiedUnit)],
         ],
@@ -343,11 +363,12 @@ export function buildPropertyReportPayload(data: PropertyReportData): PropertyRe
       chart: {
         chartType: 'stacked-bars',
         title: 'اتجاه الإشغال الشهري',
-        caption: 'الوحدات المشغولة مقابل الشاغرة',
+        caption: 'الوحدات المشغولة مقابل الشاغرة وغير القابلة للتأجير',
         categories: data.occupancyTrend.map((month) => arabicMonthLabel(month.month)),
         series: [
           { name: 'مشغول', values: data.occupancyTrend.map((month) => month.occupied) },
           { name: 'شاغر', values: data.occupancyTrend.map((month) => month.vacant) },
+          { name: 'غير قابل للتأجير', values: data.occupancyTrend.map((month) => month.nonRentable ?? 0) },
         ],
         note: 'الإشغال مقدر من تغطية العقود كما في نهاية كل شهر داخل الفترة (تحديد قاطع من العقود والوحدات، بلا نماذج تنبؤية).',
       },
@@ -581,7 +602,7 @@ export type PropertyReadModelInput = {
   vacancyAnalytics: VacancyAnalytics | null;
   unitRows: UnitPerformanceRow[];
   monthlyCollectionTrend: Array<{ month: string; due: number; collected: number }>;
-  occupancyTrend: Array<{ month: string; occupied: number; vacant: number }>;
+  occupancyTrend: Array<{ month: string; occupied: number; vacant: number; nonRentable?: number }>;
   vacancyRows?: Array<{ unitNumber: string; propertyTitle: string; daysVacant: number; referenceRent: number | null }> | null;
   previous?: PropertyReportData['previous'] | null;
   portfolio?: PropertyReportData['portfolio'] | null;
@@ -593,8 +614,9 @@ export function aggregatePropertyReportData(input: PropertyReadModelInput): Prop
   const occupancy = occupancyFromRows(input.occupancyRows);
   const arrearsBuckets = aggregateArrearsBuckets(input.arrears);
   const vacancyCount = input.vacancyAnalytics?.vacantRows.length ?? 0;
-  const longestVacancyDays = input.vacancyAnalytics
-    ? input.vacancyAnalytics.vacantRows.reduce((max, row) => Math.max(max, row.daysVacant), 0)
+  const hasVacancies = vacancyCount > 0;
+  const longestVacancyDays = hasVacancies
+    ? input.vacancyAnalytics!.vacantRows.reduce((max, row) => Math.max(max, row.daysVacant), 0)
     : null;
 
   return {
@@ -620,7 +642,7 @@ export function aggregatePropertyReportData(input: PropertyReadModelInput): Prop
     expiringRentExposed: input.expiringRentExposed,
     expiringRowsSlice: input.expiringRows,
     longestVacancyDays,
-    averageVacancyDays: input.vacancyAnalytics?.averageVacancyDays ?? null,
+    averageVacancyDays: hasVacancies ? (input.vacancyAnalytics?.averageVacancyDays ?? null) : null,
     vacancyCount,
     vacancyRows: input.vacancyRows ?? null,
     monthlyCollectionTrend: input.monthlyCollectionTrend,
@@ -661,22 +683,31 @@ function isDateInRange(iso: string | null | undefined, from: string, to: string)
   return value >= from && value <= to;
 }
 
-/** Deterministic monthly occupancy series (contractual coverage at month-end). */
+/**
+ * Deterministic monthly occupancy series (contractual coverage at month-end).
+ *
+ * Three-way classification is preserved: a unit with no covering contract at
+ * month end is only VACANT when the unit is genuinely rentable. Units that are
+ * not rentable (maintenance, reserved, any status that is neither occupied nor
+ * available) are reported separately and never counted as available stock.
+ */
 export function buildOccupancyTrend(
   contracts: readonly ContractListItem[],
   units: readonly Unit[],
   from: string,
   to: string,
-): Array<{ month: string; occupied: number; vacant: number }> {
+): Array<{ month: string; occupied: number; vacant: number; nonRentable: number }> {
   return monthsBetween(from, to).map((month) => {
     const asOf = monthEndIso(month);
     let occupied = 0;
     let vacant = 0;
+    let nonRentable = 0;
     for (const unit of units) {
       if (unitOccupiedAsOf(contracts, unit.id, asOf)) occupied += 1;
-      else vacant += 1;
+      else if (isRentableUnitStatus(unit.status)) vacant += 1;
+      else nonRentable += 1;
     }
-    return { month, occupied, vacant };
+    return { month, occupied, vacant, nonRentable };
   });
 }
 
@@ -734,6 +765,11 @@ export async function loadPropertyReportData(params: {
   const vacancyAnalytics = model.sections.occupancy.vacancyAnalytics;
 
   const allContracts = model.filters.contractRows;
+  const propertyTitlesById = new Map(
+    allContracts
+      .filter((contract) => contract.properties?.id && contract.properties?.title)
+      .map((contract) => [contract.properties!.id, contract.properties!.title!] as const),
+  );
   const scopedContracts = allContracts.filter((contract) => !propertyId || contract.property_id === propertyId);
   const allUnits = await listUnits();
   const scopedUnits = allUnits.filter((unit) => !propertyId || unit.property_id === propertyId);
@@ -763,12 +799,14 @@ export async function loadPropertyReportData(params: {
         .reduce((sum, payment) => sum + payment.amount, 0);
       return {
         unit: unit.unit_number,
-        statusLabel: isOccupiedUnitStatus(unit.status) ? 'مشغولة' : 'شاغرة',
+        statusLabel: unitStatusLabel(unit.status),
         tenant: contract?.people?.full_name ?? '—',
         rent: contract?.rent_amount ?? null,
-        due: due > 0 ? due : null,
-        collected: collected > 0 ? collected : null,
-        overdue: overdueByUnit.get(unit.id) ?? null,
+        // Real zeros: the invoice/payment/arrears sources ARE loaded for this
+        // period, so "no invoices" is a genuine 0, not an unavailable metric.
+        due,
+        collected,
+        overdue: overdueByUnit.get(unit.id) ?? 0,
         endDate: contract?.end_date ?? null,
       };
     });
@@ -783,7 +821,7 @@ export async function loadPropertyReportData(params: {
 
   /* Previous comparable period — same-length window immediately before. */
   const prevRange = previousPeriodRange(from, to);
-  const collectionRateCurrent = isPortfolioScope ? model.hero.collectionRate : null;
+  const collectionRateCurrent = isPortfolioScope ? (model.sections.collections.collectionRate ?? null) : null;
   let collectionRatePrevious: number | null = null;
   let previous: PropertyReportData['previous'] = null;
 
@@ -795,12 +833,11 @@ export async function loadPropertyReportData(params: {
       getExpenseBreakdownReport(prevFilters),
       isPortfolioScope ? getAuthoritativeReportsCollectionRate(prevRange) : Promise.resolve<number | null>(null),
     ]);
-    const propertyTitlesById = new Map(
-      allContracts
-        .filter((contract) => contract.properties?.id && contract.properties?.title)
-        .map((contract) => [contract.properties!.id, contract.properties!.title!] as const),
-    );
-    const prevVacancy = buildVacancyAnalytics(allUnits, allContracts, propertyTitlesById, prevRange.to);
+    // Previous-period occupancy must use the SAME property/unit scope as the
+    // current report. Comparing a selected property with the prior portfolio
+    // would fabricate a trend that never existed.
+    const prevVacancy = buildVacancyAnalytics(scopedUnits, scopedContracts, propertyTitlesById, prevRange.to);
+    const hasPreviousVacancies = prevVacancy.vacantRows.length > 0;
     previous = {
       occupancyRate: prevVacancy.totalUnits > 0 ? (prevVacancy.occupiedUnits / prevVacancy.totalUnits) * 100 : null,
       due: prevSummary?.invoiced ?? null,
@@ -810,32 +847,38 @@ export async function loadPropertyReportData(params: {
       expenses: prevExpenses?.totalExpenses ?? null,
       maintenanceCount: countMaintenanceInPeriod(maintenanceRows, prevRange.from, prevRange.to),
       maintenanceOpen: countMaintenanceOpenAsOf(maintenanceRows, prevRange.to),
-      averageVacancyDays: prevVacancy.averageVacancyDays,
+      averageVacancyDays: hasPreviousVacancies ? prevVacancy.averageVacancyDays : null,
       collectionRate: prevRate,
     };
     collectionRatePrevious = prevRate;
   }
 
-  /* Portfolio benchmark (single-property scope only) — same read models, so
-     the comparison population is complete and not misleading. */
+  /* Portfolio benchmark (single-property scope only). The current property is
+     scoped, but the benchmark population must come from the UNFILTERED unit
+     universe. `model.sections.occupancy.occupancyRows` is property-scoped on a
+     selected-property report and therefore cannot be used as the benchmark. */
   let portfolio: PropertyReportData['portfolio'] = null;
   if (!isPortfolioScope) {
-    const portfolioRows = model.sections.occupancy.occupancyRows.filter((row) => row.propertyId !== propertyId);
+    const fullPortfolioRows = buildOccupancyRows(allUnits, propertyTitlesById);
+    const portfolioRows = fullPortfolioRows.filter((row) => row.propertyId !== propertyId);
     const pOccupied = portfolioRows.reduce((sum, row) => sum + row.occupied, 0);
     const pVacant = portfolioRows.reduce((sum, row) => sum + row.vacant, 0);
-    const pExpense = (model.sections.expenses.report?.byProperty ?? []).filter((row) => row.propertyId !== propertyId).reduce((sum, row) => sum + row.total, 0);
-    const portfolioTotal = pOccupied + pVacant;
-    portfolio = {
+    const pNonRentable = portfolioRows.reduce((sum, row) => sum + (row.nonRentable ?? 0), 0);
+    const portfolioTotal = pOccupied + pVacant + pNonRentable;
+    const expenseBenchmark = model.sections.propertyPerformance.benchmark
+      .find((row) => row.key === 'expense_per_occupied')?.portfolio ?? null;
+    portfolio = portfolioRows.length > 0 ? {
       occupancyRate: portfolioTotal > 0 ? (pOccupied / portfolioTotal) * 100 : null,
       totalUnits: portfolioTotal,
       occupiedUnits: pOccupied,
       vacantUnits: pVacant,
-      expensePerOccupiedUnit: pOccupied > 0 ? pExpense / pOccupied : null,
-    };
+      nonRentableUnits: pNonRentable,
+      expensePerOccupiedUnit: expenseBenchmark,
+    } : null;
   }
 
   const propertyTitle = propertyId
-    ? (model.sections.occupancy.occupancyRows.find((row) => row.propertyId === propertyId)?.property ?? 'العقار المحدد')
+    ? (propertyTitlesById.get(propertyId) ?? model.sections.occupancy.occupancyRows.find((row) => row.propertyId === propertyId)?.property ?? 'العقار المحدد')
     : null;
 
   const vacancyRows = vacancyAnalytics?.vacantRows.map((row) => ({
@@ -844,6 +887,7 @@ export async function loadPropertyReportData(params: {
     daysVacant: row.daysVacant,
     referenceRent: row.referenceRent,
   })) ?? null;
+  const hasCurrentVacancies = (vacancyAnalytics?.vacantRows.length ?? 0) > 0;
 
   return {
     propertyTitle,
@@ -856,7 +900,7 @@ export async function loadPropertyReportData(params: {
     collectionRateCurrent,
     collectionRatePrevious,
     asOf,
-    occupancy: occupancyFromRows(model.sections.occupancy.occupancyRows),
+    occupancy,
     summary: summary ?? null,
     overdueTotal,
     arrearsAsOf: agedReport?.asOf ?? null,
@@ -868,8 +912,10 @@ export async function loadPropertyReportData(params: {
     expiringCount: expiringRows.length,
     expiringRentExposed: expiringRentExposed,
     expiringRowsSlice: expiringRows,
-    longestVacancyDays: vacancyAnalytics ? vacancyAnalytics.vacantRows.reduce((max, row) => Math.max(max, row.daysVacant), 0) : null,
-    averageVacancyDays: vacancyAnalytics?.averageVacancyDays ?? null,
+    longestVacancyDays: hasCurrentVacancies
+      ? vacancyAnalytics!.vacantRows.reduce((max, row) => Math.max(max, row.daysVacant), 0)
+      : null,
+    averageVacancyDays: hasCurrentVacancies ? (vacancyAnalytics?.averageVacancyDays ?? null) : null,
     vacancyCount: vacancyAnalytics?.vacantRows.length ?? 0,
     vacancyRows,
     monthlyCollectionTrend,
