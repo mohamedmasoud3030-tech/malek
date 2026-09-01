@@ -13,7 +13,7 @@ describe('WP05 GL-backed cash flow authority', () => {
     vi.clearAllMocks();
   });
 
-  it('loads cash flow from wp05_rpt_cash_flow_gl and preserves its reconciliation fields', async () => {
+  it('loads cash flow from the canonical rpt_cash_flow_gl boundary and preserves its reconciliation fields', async () => {
     supabaseMock.rpc.mockResolvedValue({
       data: {
         period: { from: '2026-08-01', to: '2026-08-31' },
@@ -34,7 +34,7 @@ describe('WP05 GL-backed cash flow authority', () => {
     const { getCashFlowReport } = await import('./wp05Services');
     const report = await getCashFlowReport('2026-08-01', '2026-08-31');
 
-    expect(supabaseMock.rpc).toHaveBeenCalledWith('wp05_rpt_cash_flow_gl', {
+    expect(supabaseMock.rpc).toHaveBeenCalledWith('rpt_cash_flow_gl', {
       p_from: '2026-08-01',
       p_to: '2026-08-31',
     });
