@@ -17,7 +17,6 @@ import type { Unit } from '@/types/domain';
 
 const mockNavigate = vi.fn();
 
-// The page registers permission-gated actions through the shared auth seam.
 vi.mock('@/hooks/use-auth', () => ({
   useAuth: () => ({ authorization: { role: 'MANAGER' }, canAccess: () => true }),
   useOptionalAuth: () => ({ canAccess: () => true }),
@@ -33,13 +32,11 @@ vi.mock('@tanstack/react-router', () => ({
   ),
 }));
 
-// Mirror real PageHeader: primaryAction is the current API; `action` is the
-// deprecated alias. EmbeddableWorkspace (and the units page) pass primaryAction.
 vi.mock('@/components/layout/page-header', () => ({
-  PageHeader: ({ action, primaryAction, secondaryActions }: any) => (
+  PageHeader: ({ primaryAction, secondaryActions }: any) => (
     <header data-page-header>
       {secondaryActions}
-      {primaryAction ?? action}
+      {primaryAction}
     </header>
   ),
 }));
@@ -69,8 +66,6 @@ function setViewportWidth(width: number) {
   Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: width });
   window.dispatchEvent(new Event('resize'));
 }
-
-/* ── Pure helper unit tests ────────────────────────────────────────── */
 
 describe('computeUnitKpis', () => {
   it('computes correct KPIs from mixed-status units', () => {
@@ -111,8 +106,6 @@ describe('getUnitPageStatus', () => {
   });
 });
 
-/* ── Page-level regression tests ───────────────────────────────────── */
-
 describe('UnitsPage controller regression', () => {
   let container: HTMLDivElement;
   let root: ReturnType<typeof createRoot>;
@@ -140,17 +133,15 @@ describe('UnitsPage controller regression', () => {
     expect(container.querySelector('[data-entity-table-scroll]')).toBeTruthy();
     expect(container.querySelector('[data-compact-responsive-table]')).toBeTruthy();
     expect(container.querySelector('table[data-entity-table]')).toBeTruthy();
-    // The shared register exposes one Cards ⇄ Table toggle (default: Table on desktop).
     expect(container.querySelector('[role="group"][aria-label*="طريقة عرض"]')).toBeTruthy();
   });
 
   it('renders KPI cards with computed values', async () => {
     await act(async () => { root.render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><UnitsPage /></QueryClientProvider>); });
     const text = container.textContent ?? '';
-    // Arabic locale uses Arabic-Indic numerals: ٣=3, ١=1
-    expect(text).toContain('3'); // total units
-    expect(text).toContain('1'); // occupied and available
-    expect(text).toContain('OMR'); // expected rent currency
+    expect(text).toContain('3');
+    expect(text).toContain('1');
+    expect(text).toContain('OMR');
   });
 
   it('renders filter selects: property, status, occupancy', async () => {
@@ -191,7 +182,6 @@ describe('UnitsPage controller regression', () => {
     const row = container.querySelector('tbody tr') as HTMLElement;
     expect(row).toBeTruthy();
     await act(async () => { row.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
-    // Row clicks give a quick glance; the full dossier is an explicit action.
     expect(document.body.textContent).toContain('معاينة الوحدة');
     expect(mockNavigate).not.toHaveBeenCalled();
   });
