@@ -102,7 +102,6 @@ export function BankReconciliationWorkspace({ embedded = false }: BankReconcilia
 
   return (
     <EmbeddableWorkspace
-      visualVariant="malek-pro"
       embedded={embedded}
       title="المطابقة البنكية"
       description="مراجعة حركات كشف البنك ومطابقتها مع الدفعات أو الإيصالات أو المصروفات."
