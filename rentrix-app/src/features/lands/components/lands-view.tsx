@@ -138,7 +138,6 @@ export function LandsView({
       embedded={embedded}
       dir="rtl"
       lang="ar"
-      visualVariant="malek-pro"
       title="الأراضي"
       description="إدارة قطع الأراضي وحالتها ومساحتها ومالكها وقيمتها من سجل واحد."
       count={isLoading ? '...' : rows.length}
