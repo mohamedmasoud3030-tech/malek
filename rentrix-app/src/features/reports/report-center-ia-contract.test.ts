@@ -65,6 +65,6 @@ describe('reports center — premium report catalog contract', () => {
       'general_ledger',
       'deferred_revenue',
     ]);
-    expect(REPORT_PRODUCTS.some((product) => product.id === ('general-ledger' as never))).toBe(false);
+    expect(REPORT_PRODUCTS.some((product) => String(product.id) === 'general-ledger')).toBe(false);
   });
 });
