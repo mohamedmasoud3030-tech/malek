@@ -1,24 +1,11 @@
-/* MALEK Today — Magic City command-center density contract.
-   The dashboard is a decision surface, not a vertical card train. */
+/* MALEK Today workspace density contract.
+   The dashboard is a decision surface, not a vertical card train.
+   This layer implements runtime-audit hierarchy fixes only; LENA-world identity
+   does not decorate routine MALEK operational screens. */
 
 [data-dashboard-page] {
   --dashboard-section-gap: 0.85rem;
   --dashboard-cluster-gap: 0.5rem;
-  position: relative;
-}
-
-[data-dashboard-page]::before {
-  content: '';
-  position: absolute;
-  z-index: -1;
-  inset: -0.75rem -0.5rem auto;
-  height: 18rem;
-  pointer-events: none;
-  background: radial-gradient(circle at 82% 0%, hsl(var(--primary) / 0.055), transparent 44%);
-}
-
-[data-theme='dark'] [data-dashboard-page]::before {
-  background: radial-gradient(circle at 82% 0%, hsl(var(--primary) / 0.11), transparent 44%);
 }
 
 @media (min-width: 1024px) {
@@ -28,21 +15,13 @@
   }
 }
 
-/* The first scan is a live orientation rail, not another KPI card. */
+/* Compact first-scan rail: operational shortcuts, not another KPI card. */
 [data-dashboard-focus-strip] {
   scroll-margin-block-start: calc(var(--app-header-height, 3rem) + var(--dashboard-section-gap));
-  border-radius: 0.875rem;
-  border-color: hsl(var(--border) / 0.72);
-  background:
-    linear-gradient(to left, hsl(var(--primary) / 0.025), transparent 38%),
-    hsl(var(--card));
-  box-shadow: var(--shadow-card);
-}
-
-[data-theme='dark'] [data-dashboard-focus-strip] {
-  background:
-    linear-gradient(to left, hsl(var(--primary) / 0.055), transparent 42%),
-    hsl(var(--card));
+  border-radius: 0.75rem;
+  border-color: hsl(var(--border) / 0.55);
+  background: hsl(var(--muted) / 0.16);
+  box-shadow: none;
 }
 
 [data-dashboard-focus-scroll] {
@@ -58,9 +37,7 @@
   border-color: transparent;
   background: transparent;
   box-shadow: none;
-  transition:
-    background-color var(--duration-fast) var(--motion-ease-standard),
-    border-color var(--duration-fast) var(--motion-ease-standard);
+  transition: background-color var(--duration-fast) var(--motion-ease-standard);
 }
 
 [data-dashboard-focus-item] + [data-dashboard-focus-item] {
@@ -72,7 +49,7 @@
 
 [data-dashboard-focus-item]:hover,
 [data-dashboard-focus-item]:focus-visible {
-  background: hsl(var(--primary) / 0.045);
+  background: hsl(var(--background) / 0.75);
 }
 
 [data-dashboard-page] [data-dashboard-section] {
@@ -82,83 +59,45 @@
   contain: layout style;
 }
 
-/* Primary sections gain hierarchy through rhythm, not giant containers. */
-[data-dashboard-page] [data-dashboard-priority='primary'] {
-  position: relative;
-}
-
 [data-dashboard-page] [data-dashboard-priority='primary'] [data-dashboard-group-header] {
-  border-color: hsl(var(--primary) / 0.18);
+  border-color: hsl(var(--primary) / 0.16);
 }
 
-/* Needs Attention is the operational beacon. */
+/* Needs Attention is structurally distinct because the audit identified it as
+   the daily queue. Emphasis uses the canonical warning tokens only. */
 [data-dashboard-page] [data-dashboard-priority='attention'] {
-  position: relative;
-  overflow: hidden;
-  border: 1px solid hsl(var(--warning-text) / 0.20);
-  border-inline-start: 3px solid hsl(var(--warning-text) / 0.68);
-  padding: 0.85rem;
-  border-radius: 0.9rem;
-  background:
-    radial-gradient(circle at 96% 0%, hsl(var(--warning-bg) / 0.46), transparent 34%),
-    linear-gradient(to left, hsl(var(--warning-bg) / 0.18), transparent 42%),
-    hsl(var(--card));
-  box-shadow: var(--shadow-card);
-}
-
-[data-theme='dark'] [data-dashboard-page] [data-dashboard-priority='attention'] {
-  background:
-    radial-gradient(circle at 96% 0%, hsl(var(--warning-text) / 0.10), transparent 34%),
-    linear-gradient(to left, hsl(var(--warning-text) / 0.045), transparent 42%),
-    hsl(var(--card));
-}
-
-[data-dashboard-page] [data-dashboard-priority='attention']::after {
-  content: '';
-  position: absolute;
-  inset-inline: 1rem;
-  inset-block-start: 0;
-  height: 1px;
-  background: linear-gradient(to left, transparent, hsl(var(--warning-text) / 0.38), transparent);
-  pointer-events: none;
+  border-inline-start: 3px solid hsl(var(--warning-text) / 0.58);
+  padding-inline-start: 0.75rem;
+  border-radius: 0;
+  background: linear-gradient(
+    to left,
+    transparent,
+    hsl(var(--warning-bg) / 0.12)
+  );
+  outline: 0;
 }
 
 [dir='ltr'] [data-dashboard-page] [data-dashboard-priority='attention'] {
-  border-inline-start: 3px solid hsl(var(--warning-text) / 0.68);
-  background:
-    radial-gradient(circle at 4% 0%, hsl(var(--warning-bg) / 0.46), transparent 34%),
-    linear-gradient(to right, hsl(var(--warning-bg) / 0.18), transparent 42%),
-    hsl(var(--card));
+  background: linear-gradient(
+    to right,
+    hsl(var(--warning-bg) / 0.12),
+    transparent
+  );
 }
 
 [data-dashboard-page] [data-dashboard-priority='attention'] [data-dashboard-group-header] {
-  border-color: hsl(var(--warning-text) / 0.24);
+  border-color: hsl(var(--warning-text) / 0.22);
 }
 
 [data-dashboard-page] [data-dashboard-group-header] {
-  padding-block-end: 0.45rem;
-}
-
-[data-dashboard-page] [data-dashboard-group-header] > span:first-child {
-  box-shadow: 0 0 14px hsl(var(--primary) / 0.14);
-}
-
-[data-dashboard-page] [data-dashboard-priority='attention'] [data-dashboard-group-header] > span:first-child {
-  box-shadow: 0 0 14px hsl(var(--warning-text) / 0.17);
+  padding-block-end: 0.4rem;
 }
 
 [data-dashboard-page] :where([data-component-card], [data-kpi-card]) {
   min-width: 0;
 }
 
-/* Keep compact summaries visually connected on phones; do not create a long
-   one-column ceremonial procession when the underlying component supports a grid. */
 @media (max-width: 639px) {
-  [data-dashboard-page]::before {
-    inset-inline: -0.35rem;
-    height: 14rem;
-  }
-
   [data-dashboard-focus-strip] {
     margin-inline: calc(var(--app-page-gutter-inline) * -0.15);
   }
@@ -166,11 +105,6 @@
   [data-dashboard-focus-item] {
     min-width: 7rem;
     padding-inline: 0.7rem;
-  }
-
-  [data-dashboard-page] [data-dashboard-priority='attention'] {
-    padding: 0.75rem;
-    border-radius: 0.875rem;
   }
 }
 
