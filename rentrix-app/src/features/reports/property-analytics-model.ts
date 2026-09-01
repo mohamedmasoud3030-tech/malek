@@ -113,9 +113,19 @@ export type PropertyAnalyticsPreviousPeriod = Readonly<{
 }>;
 
 export type PropertyAnalyticsInput = Readonly<{
+  /** Current report scope only. */
   occupancyRows: readonly OccupancyChartRow[];
+  /** Current report scope only. */
   expenseRows: readonly PropertyExpenseRow[];
   performanceRows: readonly PropertyPerformanceRow[];
+  /**
+   * Optional full managed-portfolio population used only for single-property
+   * benchmarking. It must remain unscoped by `selectedPropertyId`; otherwise
+   * the selected property would be compared with an empty population.
+   */
+  benchmarkOccupancyRows?: readonly OccupancyChartRow[];
+  /** Optional full-portfolio expense population. Omit when that authority is not loaded. */
+  benchmarkExpenseRows?: readonly PropertyExpenseRow[];
   /** Authoritative period summary (already scoped by the workspace filters). */
   periodSummary?: Readonly<{ invoiced: number; paid: number; outstanding: number }> | null;
   /** Overdue as-of total; `null`/undefined when the arrears source is unavailable. */
@@ -223,17 +233,20 @@ export function buildPropertyAnalyticsComparison(input: PropertyAnalyticsInput):
 }
 
 /**
- * Portfolio benchmark for a SINGLE selected property. The benchmark population
- * is the rest of the managed portfolio drawn from the same read models, so the
- * comparison is complete rather than a partial sample. Returns an empty list
- * at portfolio scope (a portfolio cannot benchmark against itself) or when
- * there is no other property to compare with.
+ * Portfolio benchmark for a SINGLE selected property. The selected property's
+ * current figures remain scoped, while the comparison population comes from an
+ * explicitly unscoped managed-portfolio read model when supplied. This avoids
+ * the subtle bug where applying `propertyId` before benchmarking made the
+ * "rest of portfolio" population empty.
  */
 export function buildPropertyAnalyticsBenchmark(input: PropertyAnalyticsInput): readonly PropertyAnalyticsBenchmarkRow[] {
   const propertyId = input.selectedPropertyId;
   if (!propertyId) return [];
-  const own = input.occupancyRows.find((row) => row.propertyId === propertyId);
-  const others = input.occupancyRows.filter((row) => row.propertyId !== propertyId);
+
+  const occupancyUniverse = input.benchmarkOccupancyRows ?? input.occupancyRows;
+  const own = input.occupancyRows.find((row) => row.propertyId === propertyId)
+    ?? occupancyUniverse.find((row) => row.propertyId === propertyId);
+  const others = occupancyUniverse.filter((row) => row.propertyId !== propertyId);
   if (!own || others.length === 0) return [];
 
   const ownUnits = own.occupied + own.vacant + (own.nonRentable ?? 0);
@@ -242,9 +255,14 @@ export function buildPropertyAnalyticsBenchmark(input: PropertyAnalyticsInput): 
   const otherNonRentable = others.reduce((sum, row) => sum + (row.nonRentable ?? 0), 0);
   const otherUnits = otherOccupied + otherVacant + otherNonRentable;
 
-  const ownExpenses = input.expenseRows.find((row) => row.propertyId === propertyId)?.total ?? null;
-  const otherExpenses = input.expenseRows.filter((row) => row.propertyId !== propertyId).reduce((sum, row) => sum + row.total, 0);
-  const hasOtherExpenseSource = input.expenseRows.some((row) => row.propertyId !== propertyId);
+  const expenseUniverse = input.benchmarkExpenseRows ?? input.expenseRows;
+  const ownExpenses = input.expenseRows.find((row) => row.propertyId === propertyId)?.total
+    ?? expenseUniverse.find((row) => row.propertyId === propertyId)?.total
+    ?? null;
+  const hasOtherExpenseSource = expenseUniverse.some((row) => row.propertyId !== propertyId);
+  const otherExpenses = hasOtherExpenseSource
+    ? expenseUniverse.filter((row) => row.propertyId !== propertyId).reduce((sum, row) => sum + row.total, 0)
+    : null;
 
   return [
     {
@@ -266,7 +284,7 @@ export function buildPropertyAnalyticsBenchmark(input: PropertyAnalyticsInput): 
       label: 'مصروف لكل وحدة مشغولة',
       kind: 'amount',
       property: perUnit(ownExpenses, own.occupied),
-      portfolio: hasOtherExpenseSource ? perUnit(otherExpenses, otherOccupied) : null,
+      portfolio: otherExpenses != null ? perUnit(otherExpenses, otherOccupied) : null,
     },
   ];
 }
