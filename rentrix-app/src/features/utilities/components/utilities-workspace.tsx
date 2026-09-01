@@ -729,7 +729,7 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
   if (mode === 'embedded') return <div className="space-y-5">{body}</div>;
 
   return (
-    <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro">
+    <PageLayout dir="rtl" lang="ar" size="wide">
       <PageHeader title="إدارة المرافق والعدادات" description="العدادات وفواتير الاستهلاك في جداول مدمجة تحفظ كامل المعلومات على كل المقاسات." primaryAction={headerActions} />
       <EntityTableViewModeProvider storageKey="malek:list-page:إدارة المرافق والعدادات">
         {body}
