@@ -10,23 +10,23 @@ import { DocumentReadinessNotice } from '@/features/settings/components/document
 import { downloadBlob } from '@/lib/tabular-export';
 import { buildXlsxBlob } from '@/lib/xlsx-export';
 import { documentService } from '@/services/documents/DocumentService';
-import { DocumentReadinessError, runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
+import { DocumentReadinessError, requireDocumentReadiness, runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
 import {
   toTenantStatementDocumentPayload,
   type TenantStatementData,
 } from '@/services/documents/documentPayloadAdapters';
 import { useAuthoritativeGlCashFlow } from '../accounting-report-authority';
-import { loadOwnerReportContext, printOwnerReport, downloadOwnerReportPdf } from '../documents/professional-owner-report';
+import {
+  buildOwnerReportPayload,
+  loadOwnerReportContext,
+  printOwnerReport,
+  downloadOwnerReportPdf,
+} from '../documents/professional-owner-report';
 import type { StatementProductFocus } from '../report-products';
 import { ReportColumns } from '@/components/ui/report-section-primitives';
 import { OwnerStatementPanel, TenantStatementPanel } from './statements/statement-account-panels';
 import { OfficeSummaryPanel, RegulatorySummaryPanels, StatementSelectionStrip } from './statements/statement-summary-panels';
 
-/**
- * A statement is a legal/financial document: without its authoritative
- * snapshot there is nothing truthful to render, so output is refused rather
- * than emitting an empty or partially-populated statement.
- */
 const MISSING_STATEMENT_DATA_MESSAGE =
   'تعذر إصدار الكشف: لا توجد بيانات كشف حساب مُحمَّلة للفترة أو الطرف المحدد. يرجى تحديد النطاق وعرض النتائج أولاً.';
 
@@ -138,6 +138,16 @@ export function StatementsSection({
     });
   };
 
+  const handleBuildTenantPdfFile = async (): Promise<File> => {
+    requireDocumentReadiness(isDocumentSettingsReady);
+    const data = buildTenantStatementData();
+    if (!data) throw new DocumentReadinessError(MISSING_STATEMENT_DATA_MESSAGE);
+    return documentService.createDocumentPdfFile('tenant_statement', {
+      settings: documentSettings,
+      payload: toTenantStatementDocumentPayload(data),
+    });
+  };
+
   const handleDownloadTenantExcel = () => {
     if (!tenantStatement) return;
     const rows = tenantStatement.lines.map((line) => [
@@ -158,26 +168,30 @@ export function StatementsSection({
     );
   };
 
+  const loadProfessionalOwnerContext = async () => {
+    if (!selectedOwnerId) {
+      throw new DocumentReadinessError('تعذر إصدار كشف المالك التفصيلي: لم يتم تحديد المالك. اختر مالكًا من فلاتر التقرير أولاً.');
+    }
+    if (!ownerStatement) {
+      throw new DocumentReadinessError('تعذر إصدار كشف المالك التفصيلي: لا توجد بيانات كشف مالك معتمدة للفترة أو النطاق المحدد.');
+    }
+    if (ownerStatement.error) {
+      throw new DocumentReadinessError('تعذر إصدار كشف المالك التفصيلي: كشف المالك المحمّل يحتوي على خطأ في المصدر المعتمد.');
+    }
+    return loadOwnerReportContext({
+      ownerId: selectedOwnerId,
+      from: filters?.from || ownerStatement.periodFrom || '—',
+      to: filters?.to || ownerStatement.periodTo || '—',
+      propertyId: filters?.propertyId || null,
+      statement: ownerStatement,
+    });
+  };
+
   const runProfessionalOwnerReport = async (mode: 'print' | 'pdf') => {
     await runGuardedDocumentAction({
       isReady: isDocumentSettingsReady,
       operation: async () => {
-        if (!selectedOwnerId) {
-          throw new DocumentReadinessError('تعذر إصدار كشف المالك التفصيلي: لم يتم تحديد المالك. اختر مالكًا من فلاتر التقرير أولاً.');
-        }
-        if (!ownerStatement) {
-          throw new DocumentReadinessError('تعذر إصدار كشف المالك التفصيلي: لا توجد بيانات كشف مالك معتمدة للفترة أو النطاق المحدد.');
-        }
-        if (ownerStatement.error) {
-          throw new DocumentReadinessError('تعذر إصدار كشف المالك التفصيلي: كشف المالك المحمّل يحتوي على خطأ في المصدر المعتمد.');
-        }
-        const context = await loadOwnerReportContext({
-          ownerId: selectedOwnerId,
-          from: filters?.from || ownerStatement.periodFrom || '—',
-          to: filters?.to || ownerStatement.periodTo || '—',
-          propertyId: filters?.propertyId || null,
-          statement: ownerStatement,
-        });
+        const context = await loadProfessionalOwnerContext();
         if (mode === 'print') {
           await printOwnerReport({ settings: documentSettings, context });
         } else {
@@ -192,6 +206,14 @@ export function StatementsSection({
 
   const handlePrintProfessionalOwnerReport = () => runProfessionalOwnerReport('print');
   const handleDownloadProfessionalOwnerReport = () => runProfessionalOwnerReport('pdf');
+  const handleBuildProfessionalOwnerPdfFile = async (): Promise<File> => {
+    requireDocumentReadiness(isDocumentSettingsReady);
+    const context = await loadProfessionalOwnerContext();
+    return documentService.createDocumentPdfFile('owner_report', {
+      settings: documentSettings,
+      payload: buildOwnerReportPayload(context),
+    });
+  };
 
   const handleDownloadOwnerExcel = () => {
     if (!ownerStatement) return;
@@ -240,6 +262,7 @@ export function StatementsSection({
               onPrint={handlePrintTenantStatement}
               onDownloadPdf={handleDownloadTenantStatement}
               onDownloadExcel={handleDownloadTenantExcel}
+              onBuildPdfFile={handleBuildTenantPdfFile}
               actionsDisabled={!isDocumentSettingsReady}
             />
           ) : null}
@@ -253,6 +276,7 @@ export function StatementsSection({
               onPrint={handlePrintProfessionalOwnerReport}
               onDownloadPdf={handleDownloadProfessionalOwnerReport}
               onDownloadExcel={handleDownloadOwnerExcel}
+              onBuildPdfFile={handleBuildProfessionalOwnerPdfFile}
               actionsDisabled={!isDocumentSettingsReady}
             />
           ) : null}
