@@ -38,6 +38,7 @@ const PASSIVE_DESCRIPTION_PATTERN = /emptyDescription\s*=\s*(['"`])([^'"`]*)\1/;
 const ALLOWABLE_PASSIVE_PREFIXES = [
   'ربما', 'معرف', 'لم يتم العثور',
   'لا توجد فواتير متأخرة',  // factual statement (no overdue invoices)
+  'لا توجد فواتير في النطاق المحدد', // scoped report fact; changing operational data happens outside Reports
 ];
 
 /**
