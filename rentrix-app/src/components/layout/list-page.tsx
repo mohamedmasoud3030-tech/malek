@@ -24,6 +24,8 @@ interface ListPageProps {
   toolbarActions?: ReactNode;
   /** Optional stable storage key shared by the page toolbar and its register. */
   viewModeStorageKey?: string;
+  /** Optional stable data hook for this list when mounted inside a hub. */
+  workspaceName?: string;
   children: ReactNode;
   className?: string;
   dir?: 'rtl' | 'ltr';
@@ -58,6 +60,7 @@ export function ListPage({
   onClearAllFilters,
   toolbarActions,
   viewModeStorageKey,
+  workspaceName,
   children,
   className,
   dir,
@@ -78,6 +81,7 @@ export function ListPage({
       dir={dir}
       visualVariant={visualVariant}
       viewModeStorageKey={viewModeStorageKey}
+      workspaceName={workspaceName}
     >
       <FilterBar
         searchValue={search?.value}
