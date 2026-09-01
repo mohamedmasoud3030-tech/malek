@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { buildAcceptanceSeed } from '../../e2e/support/fake-supabase-backend';
 
 describe('document acceptance backend accounting dependencies', () => {
-  it('seeds the authoritative WP05 cash-flow and six-account reconciliation contracts', () => {
+  it('seeds the authoritative cash-flow and six-account reconciliation contracts', () => {
     const seed = buildAcceptanceSeed('complete');
 
-    expect(seed.rpcs.wp05_rpt_cash_flow_gl({ p_from: '2026-08-01', p_to: '2026-08-31' })).toMatchObject({
+    expect(seed.rpcs.rpt_cash_flow_gl({ p_from: '2026-08-01', p_to: '2026-08-31' })).toMatchObject({
       period: { from: '2026-08-01', to: '2026-08-31' },
       variance: 0,
       is_balanced: true,
