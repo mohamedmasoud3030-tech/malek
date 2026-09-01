@@ -12,10 +12,10 @@ import type { ReportsFilterState } from '../reports-workspace-filters';
 const docSettingsState: { companySettings: DocumentCompanySettings; isReady: boolean } = {
   companySettings: {
     companyName: 'شركة مسار العقارية',
-    crNumber: '12345678',
+    registrationNumber: '12345678',
     taxNumber: 'OM12345678',
     currency: 'OMR',
-    city: 'مسقط',
+    address: 'مسقط',
     documentPrefixes: {},
   },
   isReady: true,
