@@ -57,8 +57,11 @@ function csvEscape(value: string) {
 export function buildCanonicalOfficeImportTemplate(entity: OfficeImportEntity, format: 'csv' | 'xlsx') {
   if (entity !== 'units') return buildOfficeImportTemplate(entity, format);
 
-  const headers = ['العقار', 'رقم الوحدة', 'الطابق', 'الإيجار', 'الحالة', 'السعر اليومي المرجعي', 'ملاحظات'];
-  const row = ['برج النخيل', '101', '1', '250.000', 'available', '', ''];
+  // Keep the downloadable v1 template to the field subset that both the
+  // browser parser and the canonical unit service understand end-to-end.
+  // Extra unit fields can be added only when both sides share the contract.
+  const headers = ['العقار', 'رقم الوحدة', 'الطابق', 'الإيجار', 'الحالة'];
+  const row = ['برج النخيل', '101', '1', '250.000', 'available'];
   const filename = `malek-units-import-template.${format}`;
   if (format === 'xlsx') {
     return { filename, blob: buildXlsxBlob({ name: 'الوحدات', headers, rows: [row] }) };
