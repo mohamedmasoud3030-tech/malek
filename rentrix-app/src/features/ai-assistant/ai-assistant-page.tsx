@@ -275,7 +275,7 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
   }
 
   return (
-    <PageLayout size="wide" dir="rtl" lang="ar" visualVariant="malek-pro" className="p-0">
+    <PageLayout size="wide" dir="rtl" lang="ar" className="p-0">
       <div className="mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-border/70 bg-card shadow-card">
         <div className="flex shrink-0 items-center gap-2 border-b border-border/70 bg-muted/20 px-4 py-3">
           <div className="grid size-8 place-items-center rounded-full bg-primary text-primary-foreground">
