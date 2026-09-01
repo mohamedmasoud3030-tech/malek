@@ -127,6 +127,7 @@ Document 7 uses:
 | Documents 01–08 | CANONICAL | Domain authorities |
 | `governance/final-decision-register.json` | SUPPORTING / LOCKED DECISIONS | Referenced governance decisions |
 | `governance/10-stage-master-plan.json` | SUPPORTING / GOVERNANCE AUTHORITY | Governed stage credit |
+| `docs/execution/MALEK_MAGIC_CITY_UI_BLUEPRINT.md` | SUPPORTING / ACTIVE EXECUTION | Visual execution translation of `UX-001..UX-008`, runtime screenshot self-review loop and phased UI work; cannot override Document 6 |
 | `docs/execution/**` | SUPPORTING | Execution/reviewer evidence ledgers |
 | `docs/decisions/**` | SUPPORTING | Immutable decision history |
 | `docs/malek-target/**` | DRAFT / SUPPORTING | Planning work used to derive this lock; cannot override this pack |
