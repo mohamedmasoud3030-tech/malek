@@ -174,11 +174,15 @@ const DashboardGroup = memo(function DashboardGroup({
  * Financial and operational truth remains server-authoritative through
  * rpt_dashboard_snapshot; the monthly cash series comes from the canonical
  * Reports cashflow service and the daily collection sparkline from
- * rpt_daily_collection. The page composes those read models into nine
- * decision sections:
+ * rpt_daily_collection. The visual reading order is locked as:
  *
  *   pulse → needs attention → financial performance → occupancy →
  *   collections → maintenance → contracts → property health → owner obligations.
+ *
+ * DOM order is preserved in Round 1 to avoid silently invalidating existing E2E
+ * and assistive-technology assumptions; the visual order is applied consistently
+ * at every breakpoint and semantic DOM reordering requires an explicit follow-up
+ * with updated accessibility evidence.
  */
 export function DashboardPage() {
   const { authorization } = useAuth();
@@ -386,7 +390,7 @@ export function DashboardPage() {
             <DashboardFocusStrip snapshot={snapshot} needsAttention={needsAttention} />
 
             <div className="grid min-w-0 grid-cols-1 gap-3 lg:gap-4 xl:grid-cols-12 xl:items-start">
-              <div className="min-w-0 xl:col-span-12 xl:order-1">
+              <div className="order-1 min-w-0 xl:col-span-12 xl:order-1">
                 <DashboardGroup eyebrow="الآن" title="نبض المكتب" ariaLabel="نبض المكتب" sectionId="office-pulse" priority="primary">
                   <OfficePulse
                     snapshot={snapshot}
@@ -398,7 +402,7 @@ export function DashboardPage() {
                 </DashboardGroup>
               </div>
 
-              <div className="min-w-0 xl:col-span-5 xl:order-2">
+              <div className="order-2 min-w-0 xl:col-span-5 xl:order-2">
                 <DashboardGroup eyebrow="أولويات" title="يحتاج انتباهك" ariaLabel="الحالات التي تحتاج انتباهاً" sectionId="needs-attention" priority="attention" showHeader={false}>
                   <NeedsAttentionSection
                     signal={needsAttention}
@@ -409,7 +413,31 @@ export function DashboardPage() {
                 </DashboardGroup>
               </div>
 
-              <div className="min-w-0 xl:col-span-7 xl:order-3">
+              <div className="order-5 min-w-0 xl:col-span-5 xl:order-5">
+                <DashboardGroup eyebrow="تحصيل" title="التحصيل والمتأخرات" ariaLabel="التحصيل والمتأخرات" sectionId="collections" showHeader={false}>
+                  <CollectionsSection
+                    snapshot={snapshot}
+                    isLoading={isLoading}
+                    isError={hasDashboardError && !snapshot}
+                    settings={settings}
+                  />
+                </DashboardGroup>
+              </div>
+
+              <div className="order-4 min-w-0 xl:col-span-7 xl:order-4">
+                <DashboardGroup eyebrow="المحفظة" title="الإشغال والشغور" ariaLabel="الإشغال والشغور" sectionId="occupancy" showHeader={false}>
+                  <OccupancySection
+                    snapshot={snapshot}
+                    analytics={vacancyAnalytics}
+                    isLoading={isLoading || unitsQuery.isLoading || (hasVacantUnit && contractsQuery.isLoading)}
+                    isError={unitsQuery.isError && !unitsQuery.data}
+                    detailsUnavailable={vacancyDetailsUnavailable}
+                    settings={settings}
+                  />
+                </DashboardGroup>
+              </div>
+
+              <div className="order-3 min-w-0 xl:col-span-7 xl:order-3">
                 <DashboardGroup eyebrow="الأداء المالي" title="أداء المكتب" ariaLabel="الأداء المالي" sectionId="financial-performance" priority="primary" showHeader={false}>
                   <FinancialPerformanceSection
                     snapshot={snapshot}
@@ -426,31 +454,7 @@ export function DashboardPage() {
                 </DashboardGroup>
               </div>
 
-              <div className="min-w-0 xl:col-span-7 xl:order-4">
-                <DashboardGroup eyebrow="المحفظة" title="الإشغال والشغور" ariaLabel="الإشغال والشغور" sectionId="occupancy" showHeader={false}>
-                  <OccupancySection
-                    snapshot={snapshot}
-                    analytics={vacancyAnalytics}
-                    isLoading={isLoading || unitsQuery.isLoading || (hasVacantUnit && contractsQuery.isLoading)}
-                    isError={unitsQuery.isError && !unitsQuery.data}
-                    detailsUnavailable={vacancyDetailsUnavailable}
-                    settings={settings}
-                  />
-                </DashboardGroup>
-              </div>
-
-              <div className="min-w-0 xl:col-span-5 xl:order-5">
-                <DashboardGroup eyebrow="تحصيل" title="التحصيل والمتأخرات" ariaLabel="التحصيل والمتأخرات" sectionId="collections" showHeader={false}>
-                  <CollectionsSection
-                    snapshot={snapshot}
-                    isLoading={isLoading}
-                    isError={hasDashboardError && !snapshot}
-                    settings={settings}
-                  />
-                </DashboardGroup>
-              </div>
-
-              <div className="min-w-0 xl:col-span-12 xl:order-6">
+              <div className="order-6 min-w-0 xl:col-span-12 xl:order-6">
                 <DashboardGroup eyebrow="خدمات" title="الصيانة والخدمات" ariaLabel="الصيانة والخدمات" sectionId="maintenance" showHeader={false}>
                   <div className="grid min-w-0 gap-3 xl:grid-cols-12 xl:items-start">
                     <div className="min-w-0 xl:col-span-7">
@@ -476,7 +480,7 @@ export function DashboardPage() {
                 </DashboardGroup>
               </div>
 
-              <div className="min-w-0 xl:col-span-7 xl:order-7">
+              <div className="order-7 min-w-0 xl:col-span-7 xl:order-7">
                 <DashboardGroup eyebrow="عقود" title="العقود القادمة" ariaLabel="العقود القريبة من الانتهاء" sectionId="upcoming-contracts" showHeader={false}>
                   <UpcomingContractsSection
                     rows={expiringContracts}
@@ -490,7 +494,7 @@ export function DashboardPage() {
                 </DashboardGroup>
               </div>
 
-              <div className="min-w-0 xl:col-span-5 xl:order-8">
+              <div className="order-8 min-w-0 xl:col-span-5 xl:order-8">
                 <DashboardGroup eyebrow="المحفظة" title="صحة العقارات" ariaLabel="صحة العقارات" sectionId="property-health" showHeader={false}>
                   <PropertyHealthSection
                     rows={propertyHealthRows}
@@ -500,7 +504,7 @@ export function DashboardPage() {
                 </DashboardGroup>
               </div>
 
-              <div className="min-w-0 xl:col-span-12 xl:order-9">
+              <div className="order-9 min-w-0 xl:col-span-12 xl:order-9">
                 <div className="grid min-w-0 gap-4 lg:gap-5 xl:grid-cols-12 xl:items-start" data-dashboard-closing-row>
                   <div className="min-w-0 xl:col-span-7">
                     <DashboardGroup eyebrow="ملاك" title="مستحقات الملاك" ariaLabel="مستحقات الملاك" sectionId="owner-obligations">
