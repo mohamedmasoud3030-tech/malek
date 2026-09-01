@@ -104,7 +104,7 @@ export function ContractDetailPage() {
   ];
 
   return (
-    <PageLayout dir="rtl" size="wide" visualVariant="malek-pro">
+    <PageLayout dir="rtl" size="wide">
       {contractQuery.isError ? (
         <DataRefreshAlert
           onRetry={() => { void contractQuery.refetch(); }}
