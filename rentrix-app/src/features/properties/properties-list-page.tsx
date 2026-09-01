@@ -257,7 +257,6 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
       <ListPage
         embedded={embedded}
         dir="rtl"
-        visualVariant="malek-pro"
         title="العقارات"
         count={controller.totalCount}
         primaryAction={canCreate ? (
