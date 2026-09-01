@@ -1,9 +1,11 @@
 # MALEK Reports — Final Closure Certificate
 
-**Status: Reports repository scope CLOSED.**
+**Status: Reports work complete in this repository; closure is PENDING REVIEW
+and pending a green CI run on `main`.** This document does not itself declare
+Reports closed — see "Repository gate status" below for the literal state.
 
-This document records the state of Reports at closure. It is a record, not a
-plan. It contains no planned phases and no future Reports work.
+This document records the state of Reports at the end of the work. It is a
+record, not a plan. It contains no planned phases and no future Reports work.
 
 ## Baseline
 
@@ -93,6 +95,17 @@ Reports-owned:
   points/amounts, portfolio benchmark, insight determinism.
 - `src/features/reports/components/property-analytics-presentation.test.tsx`
   — presentation contract for the Property Analytics workspace.
+- `src/features/reports/reports-scope-wiring-regression.test.ts` — source
+  guard pinning the scope wiring in the hook and the document.
+- `src/features/reports/property-benchmark-wiring.test.tsx` — **wiring**
+  contract: renders the real `useReportsWorkspace` at single-property scope and
+  proves the benchmark population is the unfiltered portfolio while the
+  property's own figures stay scoped, and that every previous-period query is
+  scoped to the same property.
+- `src/features/reports/documents/property-report-scope.test.ts` — **wiring**
+  contract for the Property Golden Report: previous period and current period
+  measure the same population, and the printed benchmark survives the scoped
+  workspace rows.
 - `src/features/reports/documents/professional-property-report.test.ts`
 - `src/features/reports/documents/professional-owner-report.test.ts`
 - `src/features/reports/report-center-ia-contract.test.ts`
@@ -107,10 +120,44 @@ Shared:
   professional report engine, renderer contracts)
 - `src/app/product-simplification-contract.test.ts`
 
-Repository gates run at closure: TypeScript (`tsc --noEmit`), full Vitest
-suite, `check:architecture` (+ active-register inventory), canonical business
-rules, documentation link check, 10-stage execution plan guard, and the
-production Vite build.
+## Repository gate status (measured, not assumed)
+
+Every step of `.github/workflows/ci.yml` was run locally against this branch.
+The result is reported literally, including what is failing.
+
+| CI step | Result |
+| --- | --- |
+| `pnpm typecheck` | pass |
+| `pnpm lint` | pass |
+| `check:architecture` | pass |
+| `check:frontend-db-contract` | pass |
+| `Frontend ↔ Backend runtime contract suite` | **FAIL — 3 tests** |
+| `pnpm build` | pass |
+
+Also run outside CI: canonical business rules, documentation link check,
+10-stage execution plan guard — all pass. Full Vitest suite: 3369 passed,
+15 failed.
+
+### The failing gate, stated plainly
+
+`Frontend ↔ Backend runtime contract suite` fails on three tests in
+`src/features/lifecycle/product-workflow-scenarios.test.ts` (Scenario 2 reads
+`receiptRes.rows[0].id` on an empty result; Scenario 4 violates
+`owner_settlements_payment_state_check`).
+
+These failures are **pre-existing and unrelated to Reports**. This was
+verified, not assumed:
+
+- a clean worktree at the untouched baseline `a7d9636` reproduces the same
+  three failures with the same messages;
+- the three most recent CI runs on `main` — including the run for the baseline
+  commit itself — all concluded `failure`.
+
+No Reports file is involved in any of the three. Fixing the lifecycle/owner
+settlement scenarios is outside the Reports scope and is not attempted here.
+**CI for this branch will therefore be red until that separate defect is
+fixed**, and Reports must not be recorded as closed on the basis of a green
+pipeline that does not exist.
 
 ## Known external-only validation remaining
 
