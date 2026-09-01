@@ -2,8 +2,6 @@
  * MALEK visual system — Final unified layer.
  * Professional royal/deep blue, clean light surfaces, deep navy dark,
  * strong controlled blue accents, high readability, premium operational.
- * Arena's Magic & Beauty world appears as controlled light, depth and rhythm
- * in shared chrome — never as a competing palette or decorative fantasy UI.
  * Tokens come from tokens.css only; this file owns layout/surface usage.
  */
 
@@ -17,22 +15,7 @@
   position: absolute;
   z-index: -1;
   inset: -1rem -0.75rem auto;
-  height: min(24rem, 42vh);
-  content: '';
-  pointer-events: none;
-  background:
-    radial-gradient(circle at 86% 0%, hsl(var(--primary) / 0.12), transparent 48%),
-    radial-gradient(circle at 14% 12%, hsl(var(--info) / 0.07), transparent 42%);
-  opacity: 0.9;
-}
-
-[data-visual-wave='malek-pro'] > div {
-  max-width: min(100%, 90rem);
-}
-
-[data-visual-wave='malek-pro'] [data-page-header] {
-  position: relative;
-  overflow: hidden;
+  height: min(ow: hidden;
   padding: 1rem;
   border: 1px solid hsl(var(--border) / 0.82);
   border-radius: 1rem;
