@@ -44,7 +44,7 @@ From the repository root:
 ```bash
 PILOT_ENVIRONMENT_KIND=qa \
 QA_MUTATION_APPROVED=1 \
-pnpm pilot:demo:seed
+pnpm pilot:seed
 ```
 
 Credentials and project references are supplied from the secret runtime. Never commit them.
