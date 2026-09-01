@@ -1,15 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { Plus } from 'lucide-react';
+import { AlertTriangle, FileSpreadsheet, FileText, Plus } from 'lucide-react';
 import type { ActiveFilterItem } from '@/components/ui/active-filter-bar';
-import { ContractFilters, contractLeaseModeOptions, contractStatusFilterLabels } from './components/ContractFilters';
 import { ContractKpiGrid } from './components/ContractKpiGrid';
 import { ContractResults } from './components/ContractResults';
 import { contractColumnOptions, defaultContractColumns } from './components/ContractTable';
 import { ContractFormModal } from './contract-form-modal';
-import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
+import { ListPage } from '@/components/layout/list-page';
 import { Button } from '@/components/ui/button';
 import { DataTableColumnsMenu } from '@/components/ui/data-table';
+import { ExportMenu } from '@/components/ui/export-menu';
+import { FilterTabs } from '@/components/ui/filter-tabs';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import {
   buildContractsCsvBlob,
@@ -22,7 +23,27 @@ import { useContractFilters, type LeaseModeFilter } from './hooks/useContractFil
 import { useContracts, useSoftDeleteContract } from './useContracts';
 import { useAuth } from '@/hooks/use-auth';
 import { toast } from 'sonner';
+import { contractStatusValues } from './contractSchema';
 import type { ContractListItem, ContractStatusFilter } from './services/contractService';
+
+const contractStatusFilterLabels: Record<ContractStatusFilter, string> = {
+  all: 'الكل',
+  draft: 'مسودة',
+  active: 'نشط',
+  expired: 'منتهي',
+  terminated: 'ملغي',
+};
+
+const contractLeaseModeOptions: { value: LeaseModeFilter; label: string }[] = [
+  { value: 'all', label: 'كل الإيجارات' },
+  { value: 'long_term', label: 'طويل' },
+  { value: 'short_stay', label: 'إقامة قصيرة' },
+];
+
+const contractStatusFilterOptions = (['all', ...contractStatusValues] as ContractStatusFilter[]).map((filter) => ({
+  value: filter,
+  label: contractStatusFilterLabels[filter],
+}));
 
 function downloadContractsFile(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
@@ -132,44 +153,81 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
 
   return (
     <>
-      <EmbeddableWorkspace
+      <ListPage
         embedded={embedded}
         dir="rtl"
-        size="wide"
-        visualVariant="malek-pro"
         title="العقود"
+        workspaceName="contracts"
+        viewModeStorageKey="malek:contracts:register-view-mode-v1"
         count={hasClientFilter ? filteredContracts.length : (contractsQuery.data?.count ?? filteredContracts.length)}
         primaryAction={canCreate ? (
           <Button onClick={openCreate}>
             <Plus className="me-2 size-4" />إنشاء عقد
           </Button>
         ) : undefined}
+        search={{
+          value: searchTerm,
+          onChange: (value) => { setSearchTerm(value); setPage(1); },
+          placeholder: 'بحث باسم المستأجر، الوحدة، العقار، أو رقم العقد',
+        }}
+        filters={(
+          <FilterTabs
+            options={contractLeaseModeOptions}
+            value={leaseMode}
+            onChange={(value) => { setLeaseMode(value); setPage(1); }}
+            tone="contracts"
+          />
+        )}
+        advancedFilters={(
+          <div className="grid min-w-0 gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-start" data-contract-advanced-filters>
+            <div className="min-w-0 space-y-1.5">
+              <p className="text-[11px] font-black text-muted-foreground">حالة العقد</p>
+              <FilterTabs
+                options={contractStatusFilterOptions}
+                value={status}
+                onChange={(value) => { setStatus(value); setPage(1); }}
+                tone="contracts"
+              />
+            </div>
+            <div className="min-w-0 space-y-1.5">
+              <p className="text-[11px] font-black text-muted-foreground">قرب الانتهاء</p>
+              <Button
+                variant={expiringOnly ? 'primary' : 'secondary'}
+                onClick={() => { setExpiringOnly((value) => !value); setPage(1); }}
+                className="min-h-11 shrink-0 rounded-lg px-3 text-xs"
+              >
+                <AlertTriangle className="me-1.5 size-3.5" />
+                تنتهي خلال 30 يوم
+              </Button>
+            </div>
+          </div>
+        )}
+        advancedFilterTitle="فلاتر العقود"
+        advancedFilterDescription="ابدأ بالبحث ونوع الإيجار. افتح هذه الفلاتر عند الحاجة لتقييد الحالة أو العقود القريبة من الانتهاء."
+        activeFilters={activeFilters}
+        onClearAllFilters={resetFilters}
+        toolbarActions={canExport || true ? (
+          <>
+            <div className="hidden min-w-0 items-center gap-2 md:flex" data-contract-columns-control>
+              <DataTableColumnsMenu
+                columns={contractColumnOptions}
+                visibleKeys={visibleColumnKeys}
+                onChange={setVisibleColumnKeys}
+              />
+            </div>
+            {canExport ? (
+              <ExportMenu
+                disabled={filteredContracts.length === 0}
+                items={[
+                  { id: 'xlsx', label: 'ملف Excel', icon: FileSpreadsheet, onClick: () => exportContractsXlsx(filteredContracts) },
+                  { id: 'csv', label: 'ملف CSV', icon: FileText, onClick: () => exportContractsCsv(filteredContracts) },
+                ]}
+              />
+            ) : null}
+          </>
+        ) : undefined}
       >
         <ContractKpiGrid companySettings={companySettings} contracts={contracts} filteredContracts={filteredContracts} totalCount={contractsQuery.data?.count ?? contracts.length} />
-
-        <ContractFilters
-          activeFilters={activeFilters}
-          canExport={canExport}
-          columnVisibilityControl={(
-            <DataTableColumnsMenu
-              columns={contractColumnOptions}
-              visibleKeys={visibleColumnKeys}
-              onChange={setVisibleColumnKeys}
-            />
-          )}
-          expiringOnly={expiringOnly}
-          exportDisabled={filteredContracts.length === 0}
-          leaseMode={leaseMode}
-          onClearAllFilters={resetFilters}
-          onExportCsv={() => exportContractsCsv(filteredContracts)}
-          onExportXlsx={() => exportContractsXlsx(filteredContracts)}
-          searchTerm={searchTerm}
-          setExpiringOnly={(updater) => { setExpiringOnly(updater); setPage(1); }}
-          setLeaseMode={(value) => { setLeaseMode(value); setPage(1); }}
-          setSearchTerm={(value) => { setSearchTerm(value); setPage(1); }}
-          setStatus={(value) => { setStatus(value); setPage(1); }}
-          status={status}
-        />
 
         <ContractResults
           companySettings={companySettings}
@@ -189,7 +247,7 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
           setExpandedId={setExpandedId}
           visibleColumnKeys={visibleColumnKeys}
         />
-      </EmbeddableWorkspace>
+      </ListPage>
 
       {canCreate || canEdit ? <ContractFormModal open={modalOpen} onClose={closeModal} contractId={editContractId} /> : null}
 
