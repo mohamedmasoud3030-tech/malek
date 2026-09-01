@@ -8,7 +8,8 @@ import { describe, expect, it } from 'vitest';
  *
  * The reference specifies a soft gray table header (not the dark command bar
  * used in earlier explorations). The operational thead/th block must pin its
- * background/color explicitly so generic page-polish rules do not leak.
+ * background/color explicitly so a generic structural rule cannot leak into
+ * the operational header.
  */
 
 const stylesDir = resolve(dirname(fileURLToPath(import.meta.url)));
@@ -45,11 +46,11 @@ describe('malek-pro operational table header contrast', () => {
     expect(theadBlock).toContain('background: hsl(var(--muted)');
   });
 
-  it('pins explicit readable text on the header (no page-polish leak)', () => {
+  it('pins explicit readable text on the header (no generic-rule leak)', () => {
     expect(operationalThBlock).not.toBe('');
     expect(operationalThBlock).toContain('background: transparent');
     // Soft-gray header: text is explicitly pinned to the muted foreground
-    // tone instead of inheriting generic page-polish text colors.
+    // tone instead of inheriting text colors from the structural layer.
     expect(operationalThBlock).toContain('color: hsl(var(--muted-foreground))');
   });
 });
