@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EntityForm } from '@/components/ui/entity-form';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
-import { ErrorState, WriteErrorCard } from '@/components/ui/error-state';
+import { WriteErrorCard } from '@/components/ui/error-state';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { Input } from '@/components/ui/input';
 import { KpiCard } from '@/components/ui/kpi-card';
