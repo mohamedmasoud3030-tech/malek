@@ -3,10 +3,7 @@ import { getDocumentTemplateEntry, listDocumentTemplateEntries } from './documen
 import type { DocumentBuildInput, DocumentTypeId } from './documentPayloads';
 import type { DocumentRequest } from './types';
 
-/**
- * Supported document outputs for the current local template engine.
- * Provider/storage integration is intentionally not part of this boundary.
- */
+/** Supported document outputs for the current local template engine. */
 export type DocumentType = DocumentTypeId;
 
 export type DocumentCapability = Readonly<{
@@ -15,10 +12,6 @@ export type DocumentCapability = Readonly<{
   externalProviderRequired: boolean;
 }>;
 
-/**
- * The capability list is derived from the template registry — a document
- * type is printable/exportable exactly when it has a registered template.
- */
 const templateCapabilities: readonly DocumentCapability[] = listDocumentTemplateEntries().map((entry) => ({
   type: entry.type,
   templateAvailable: true,
@@ -39,28 +32,24 @@ function assertSupported(type: string): void {
 
 /**
  * Document service — the ONLY public boundary UI actions should use.
- *
- * It deliberately returns promises so a future provider/storage adapter can
- * be introduced without changing page contracts. `print*` and
- * `download*Pdf` are two distinct operations: print opens a scoped A4
- * preview and triggers the browser print dialog; download produces a real
- * `application/pdf` file. Neither is implemented in terms of the other.
- *
- * Prefer the canonical typed methods (`printDocument`/`downloadDocumentPdf`)
- * with payloads from `documentPayloads.ts`; the legacy `print`/
- * `downloadPdf` request shape stays only for compatibility-era callers.
+ * Print, download and share-file outputs all build from the same registered
+ * document templates and unified model.
  */
 export const documentService = {
-  /** Canonical typed print. */
   async printDocument<T extends DocumentTypeId>(type: T, input: DocumentBuildInput<T>): Promise<void> {
     assertSupported(type);
     await DocumentController.printDocument(type, input);
   },
 
-  /** Canonical typed PDF download. */
   async downloadDocumentPdf<T extends DocumentTypeId>(type: T, input: DocumentBuildInput<T>): Promise<void> {
     assertSupported(type);
     await DocumentController.downloadDocumentPdf(type, input);
+  },
+
+  /** Produces an in-memory application/pdf File for Web Share capable browsers. */
+  async createDocumentPdfFile<T extends DocumentTypeId>(type: T, input: DocumentBuildInput<T>): Promise<File> {
+    assertSupported(type);
+    return DocumentController.createDocumentPdfFile(type, input);
   },
 
   /** @deprecated compatibility request shape — migrate to `printDocument`. */
@@ -75,10 +64,8 @@ export const documentService = {
     await DocumentController.downloadPdf(request);
   },
 
-  /** @deprecated use the canonical `downloadDocumentPdf` — kept temporarily for callers mid-migration. */
+  /** @deprecated use the canonical `downloadDocumentPdf`. */
   async renderPdf(request: DocumentRequest): Promise<void> {
-    // Delegates straight to the controller so the compat path never routes
-    // through another deprecated member.
     assertSupported(request.type);
     await DocumentController.downloadPdf(request);
   },
