@@ -17,7 +17,6 @@ import { describe, expect, it } from 'vitest';
 const stylesDir = resolve(dirname(fileURLToPath(import.meta.url)));
 const tokens = readFileSync(resolve(stylesDir, 'tokens.css'), 'utf8');
 const globals = readFileSync(resolve(stylesDir, 'globals.css'), 'utf8');
-const pagePolish = readFileSync(resolve(stylesDir, 'page-polish.css'), 'utf8');
 const visualWave = readFileSync(resolve(stylesDir, 'malek-pro-visual-wave.css'), 'utf8');
 
 const themeBridge = (() => {
@@ -58,15 +57,24 @@ describe('design tokens — single source of truth', () => {
     expect(visualWave).not.toMatch(/(^|\n)\s*:root\s*\{/);
   });
 
-  it('page-polish.css consumes tokens instead of redefining them', () => {
-    expect(pagePolish).not.toContain('--tone-emerald:');
-    expect(pagePolish).not.toContain('--accent-foreground:');
-    expect(pagePolish).toContain('var(--tone-');
+  it('the final visual authority consumes tokens instead of redefining them', () => {
+    // page-polish.css used to be the file that quietly forked the palette; its
+    // still-valid rules were migrated into the wave, so the same guard now
+    // protects the file that actually paints MALEK.
+    expect(visualWave).not.toContain('--tone-emerald:');
+    expect(visualWave).not.toContain('--accent-foreground:');
+    expect(visualWave).toContain('var(--tone-');
   });
 
-  it('does not restyle overlay primitives from the page-polish layer', () => {
-    expect(pagePolish).not.toContain('[data-bottom-sheet]');
-    expect(pagePolish).not.toContain('[data-account-menu-panel]');
+  it('does not restyle overlay primitives from the visual authority', () => {
+    // Overlay geometry lives in ux-foundation.css; nobody paints it from here.
+    expect(visualWave).not.toContain('[data-bottom-sheet]');
+    expect(visualWave).not.toContain('[data-account-menu-panel]');
+  });
+
+  it('keeps the retired page-polish stylesheet out of the token system for good', () => {
+    expect(existsSync(resolve(stylesDir, 'page-polish.css'))).toBe(false);
+    expect(globals).not.toMatch(/@import '\.\/page-polish\.css';/);
   });
 
   it('no dead tailwind.config.js remains to masquerade as the token source', () => {
