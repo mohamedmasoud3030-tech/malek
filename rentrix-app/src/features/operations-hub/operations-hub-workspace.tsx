@@ -141,7 +141,6 @@ export function OperationsHubWorkspace({
       title={title ?? activeSectionDefinition.label}
       description={description ?? activeSectionDefinition.description}
       size="wide"
-      visualVariant="malek-pro"
     >
       {content}
     </EmbeddableWorkspace>
