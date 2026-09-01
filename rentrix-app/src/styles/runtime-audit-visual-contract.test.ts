@@ -9,16 +9,15 @@ const dashboard = readFileSync(resolve(stylesDir, '../features/dashboard/dashboa
 const pageHeader = readFileSync(resolve(stylesDir, '../components/layout/page-header.tsx'), 'utf8');
 
 describe('MALEK runtime-audit visual contract', () => {
-  it('expresses Arena Magic & Beauty through controlled shared chrome without a palette fork', () => {
+  it('keeps MALEK professional blue authority in one shared visual layer', () => {
     expect(visualWave).toContain('MALEK visual system — Final unified layer');
-    expect(visualWave).toContain('Magic & Beauty');
-    expect(visualWave).toContain("[data-arena-world='magic-beauty']::before");
-    expect(visualWave).toContain('radial-gradient');
-  });
-
-  it('keeps the existing semantic-token presentation scope without a raw palette fork', () => {
     expect(visualWave).toContain("[data-visual-wave='malek-pro']");
     expect(visualWave).toContain('hsl(var(--primary)');
+    expect(visualWave).not.toContain('Magic & Beauty');
+    expect(visualWave).not.toContain("[data-arena-world='magic-beauty']");
+  });
+
+  it('keeps the semantic-token presentation scope without a raw palette fork', () => {
     expect(visualWave).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
   });
 
@@ -32,7 +31,7 @@ describe('MALEK runtime-audit visual contract', () => {
     expect(visualWave).toContain('transition-duration: 0.01ms !important');
   });
 
-  it('keeps Needs Attention operational while the shared shell owns the world ambience', () => {
+  it('keeps Needs Attention operational while the shared shell remains restrained', () => {
     expect(dashboard).toContain("[data-dashboard-priority='attention']");
     expect(dashboard).toContain('border-inline-start: 3px solid');
     expect(dashboard).toContain('var(--warning-text)');
