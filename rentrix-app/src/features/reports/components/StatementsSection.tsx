@@ -17,6 +17,7 @@ import {
 } from '@/services/documents/documentPayloadAdapters';
 import { useAuthoritativeGlCashFlow } from '../accounting-report-authority';
 import { loadOwnerReportContext, printOwnerReport, downloadOwnerReportPdf } from '../documents/professional-owner-report';
+import type { StatementProductFocus } from '../report-products';
 import { ReportColumns } from '@/components/ui/report-section-primitives';
 import { OwnerStatementPanel, TenantStatementPanel } from './statements/statement-account-panels';
 import { OfficeSummaryPanel, RegulatorySummaryPanels, StatementSelectionStrip } from './statements/statement-summary-panels';
@@ -32,8 +33,6 @@ const MISSING_STATEMENT_DATA_MESSAGE =
 function deriveTenantOpeningBalance(statement: TenantStatementReport): number {
   const firstLine = statement.lines[0];
   if (!firstLine) return statement.finalBalance || 0;
-  // Each authoritative line exposes its post-movement running balance.
-  // Reverse the first movement to recover the opening balance; never hardcode 0.
   return (firstLine.balance || 0) - (firstLine.debit || 0) + (firstLine.credit || 0);
 }
 
@@ -62,6 +61,7 @@ export function StatementsSection({
   isOwnerStatementLoading,
   isLoading,
   filters,
+  focus = 'all',
 }: Readonly<{
   agedReport: NonNullable<ReturnType<typeof useAgedReceivablesReport>['data']> | undefined;
   receiptRows: ReceiptRow[];
@@ -79,11 +79,15 @@ export function StatementsSection({
   isOwnerStatementLoading: boolean;
   isLoading: boolean;
   filters?: { from: string; to: string; propertyId?: string; ownerId?: string };
+  focus?: StatementProductFocus;
 }>) {
   const tenantRows = (agedReport?.rows ?? []).slice(0, 6);
   const ownerMovementRows = (expenseBreakdown?.byProperty ?? []).slice(0, 6);
   const totalCollections = dailyRows.reduce((total, row) => total + row.totalPaid, 0);
   const glCashFlowQuery = useAuthoritativeGlCashFlow(filters?.from, filters?.to);
+  const showTenant = focus === 'all' || focus === 'tenant';
+  const showOwner = focus === 'all' || focus === 'owner';
+  const showFinancial = focus === 'all' || focus === 'financial';
 
   const { companySettings: documentSettings, isReady: isDocumentSettingsReady } = useDocumentSettings();
 
@@ -191,10 +195,6 @@ export function StatementsSection({
 
   const handleDownloadOwnerExcel = () => {
     if (!ownerStatement) return;
-    // Financial truth: opening/closing running balance is NOT available from
-    // an authoritative read source (rpt_owner_statement does not expose one).
-    // We never derive it from zero — the column is omitted entirely rather
-    // than carrying a fabricated cumulative figure.
     const rows = ownerStatement.transactions.map((transaction) => [
       transaction.date || '—',
       transaction.type === 'receipt' ? 'تحصيل' : transaction.type === 'expense' ? 'مصروف' : transaction.type === 'settlement' ? 'تسوية / صرف' : 'حركة مالية',
@@ -216,59 +216,71 @@ export function StatementsSection({
 
   return (
     <div className="space-y-4">
-      {!isDocumentSettingsReady && <DocumentReadinessNotice />}
-      <StatementSelectionStrip
-        selectedContractId={selectedContractId}
-        selectedOwnerId={selectedOwnerId}
-        from={filters?.from}
-        to={filters?.to}
-        isDocumentReady={isDocumentSettingsReady}
-      />
-
-      <ReportColumns>
-        <TenantStatementPanel
+      {!isDocumentSettingsReady && (showTenant || showOwner) ? <DocumentReadinessNotice /> : null}
+      {(showTenant || showOwner) ? (
+        <StatementSelectionStrip
           selectedContractId={selectedContractId}
-          statement={tenantStatement}
-          error={tenantStatementError}
-          isLoading={isTenantStatementLoading}
-          fallbackRows={tenantRows}
-          receipts={receiptRows}
-          onPrint={handlePrintTenantStatement}
-          onDownloadPdf={handleDownloadTenantStatement}
-          onDownloadExcel={handleDownloadTenantExcel}
-          actionsDisabled={!isDocumentSettingsReady}
-        />
-        <OwnerStatementPanel
           selectedOwnerId={selectedOwnerId}
-          statement={ownerStatement}
-          error={ownerStatementError}
-          isLoading={isOwnerStatementLoading}
-          fallbackRows={ownerMovementRows}
-          onPrint={handlePrintProfessionalOwnerReport}
-          onDownloadPdf={handleDownloadProfessionalOwnerReport}
-          onDownloadExcel={handleDownloadOwnerExcel}
-          actionsDisabled={!isDocumentSettingsReady}
+          from={filters?.from}
+          to={filters?.to}
+          isDocumentReady={isDocumentSettingsReady}
         />
-      </ReportColumns>
+      ) : null}
 
-      <OfficeSummaryPanel
-        invoiced={financialSummary?.invoiced ?? 0}
-        collections={totalCollections}
-        expenses={financialSummary?.expenses ?? 0}
-        outstanding={financialSummary?.outstanding ?? 0}
-        invoicesCount={financialSummary?.invoicesCount ?? 0}
-        paymentsCount={financialSummary?.paymentsCount ?? 0}
-        expensesCount={financialSummary?.expensesCount ?? 0}
-        receiptsCount={receiptRows.length}
-      />
+      {(showTenant || showOwner) ? (
+        <ReportColumns>
+          {showTenant ? (
+            <TenantStatementPanel
+              selectedContractId={selectedContractId}
+              statement={tenantStatement}
+              error={tenantStatementError}
+              isLoading={isTenantStatementLoading}
+              fallbackRows={tenantRows}
+              receipts={receiptRows}
+              onPrint={handlePrintTenantStatement}
+              onDownloadPdf={handleDownloadTenantStatement}
+              onDownloadExcel={handleDownloadTenantExcel}
+              actionsDisabled={!isDocumentSettingsReady}
+            />
+          ) : null}
+          {showOwner ? (
+            <OwnerStatementPanel
+              selectedOwnerId={selectedOwnerId}
+              statement={ownerStatement}
+              error={ownerStatementError}
+              isLoading={isOwnerStatementLoading}
+              fallbackRows={ownerMovementRows}
+              onPrint={handlePrintProfessionalOwnerReport}
+              onDownloadPdf={handleDownloadProfessionalOwnerReport}
+              onDownloadExcel={handleDownloadOwnerExcel}
+              actionsDisabled={!isDocumentSettingsReady}
+            />
+          ) : null}
+        </ReportColumns>
+      ) : null}
 
-      <RegulatorySummaryPanels
-        cashFlow={glCashFlowQuery.data}
-        cashFlowError={glCashFlowQuery.error}
-        isCashFlowLoading={glCashFlowQuery.isLoading}
-        vatReturn={vatReturn}
-        isLoading={isLoading}
-      />
+      {showFinancial ? (
+        <>
+          <OfficeSummaryPanel
+            invoiced={financialSummary?.invoiced ?? 0}
+            collections={totalCollections}
+            expenses={financialSummary?.expenses ?? 0}
+            outstanding={financialSummary?.outstanding ?? 0}
+            invoicesCount={financialSummary?.invoicesCount ?? 0}
+            paymentsCount={financialSummary?.paymentsCount ?? 0}
+            expensesCount={financialSummary?.expensesCount ?? 0}
+            receiptsCount={receiptRows.length}
+          />
+
+          <RegulatorySummaryPanels
+            cashFlow={glCashFlowQuery.data}
+            cashFlowError={glCashFlowQuery.error}
+            isCashFlowLoading={glCashFlowQuery.isLoading}
+            vatReturn={vatReturn}
+            isLoading={isLoading}
+          />
+        </>
+      ) : null}
     </div>
   );
 }
