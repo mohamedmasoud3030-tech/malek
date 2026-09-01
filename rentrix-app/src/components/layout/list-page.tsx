@@ -24,7 +24,7 @@ interface ListPageProps {
   toolbarActions?: ReactNode;
   /** Optional stable storage key shared by the page toolbar and its register. */
   viewModeStorageKey?: string;
-  /** Avoid a second title when this list is mounted inside a named hub. */
+  /** Legacy input retained only until the last consumer is removed; it has no runtime effect. */
   embeddedHeader?: 'full' | 'actions-only' | 'none';
   children: ReactNode;
   className?: string;
@@ -60,7 +60,6 @@ export function ListPage({
   onClearAllFilters,
   toolbarActions,
   viewModeStorageKey,
-  embeddedHeader,
   children,
   className,
   dir,
@@ -81,22 +80,21 @@ export function ListPage({
       dir={dir}
       visualVariant={visualVariant}
       viewModeStorageKey={viewModeStorageKey}
-      embeddedHeader={embeddedHeader}
     >
-        <FilterBar
-          searchValue={search?.value}
-          onSearchChange={search?.onChange}
-          searchPlaceholder={search?.placeholder}
-          searchAriaLabel={`بحث في ${title}`}
-          filters={filters}
-          activeFilters={activeFilters}
-          onClearAllFilters={onClearAllFilters}
-          actions={toolbarActions}
-        />
+      <FilterBar
+        searchValue={search?.value}
+        onSearchChange={search?.onChange}
+        searchPlaceholder={search?.placeholder}
+        searchAriaLabel={`بحث في ${title}`}
+        filters={filters}
+        activeFilters={activeFilters}
+        onClearAllFilters={onClearAllFilters}
+        actions={toolbarActions}
+      />
 
-        <div data-list-results className="space-y-2.5 sm:space-y-3">
-          {children}
-        </div>
+      <div data-list-results className="space-y-2.5 sm:space-y-3">
+        {children}
+      </div>
     </EmbeddableWorkspace>
   );
 }
