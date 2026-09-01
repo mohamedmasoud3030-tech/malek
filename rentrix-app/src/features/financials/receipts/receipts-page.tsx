@@ -252,7 +252,6 @@ function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Rea
   return (
     <EmbeddableWorkspace
       embedded={embedded}
-      visualVariant="malek-pro"
       title="الإيصالات"
       secondaryActions={<Button variant="secondary" className="min-h-11" asChild><Link to="/financials"><ArrowRight className="me-2 size-4" />المالية</Link></Button>}
       primaryAction={selectedReceiptId ? (
