@@ -16,10 +16,10 @@ import type { DocumentCompanySettings } from '@/services/documents/companyIdenti
 const docSettingsState: { companySettings: DocumentCompanySettings; isReady: boolean } = {
   companySettings: {
     companyName: 'شركة مسار العقارية',
-    crNumber: '12345678',
+    registrationNumber: '12345678',
     taxNumber: 'OM12345678',
     currency: 'OMR',
-    city: 'مسقط',
+    address: 'مسقط',
     documentPrefixes: {},
   },
   isReady: true,
