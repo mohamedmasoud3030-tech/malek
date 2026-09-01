@@ -34,10 +34,10 @@ vi.mock('@/features/utilities/utilities-service', () => ({
 
 const validSettings = {
   companyName: 'شركة مسار العقارية',
-  crNumber: '12345678',
+  registrationNumber: '12345678',
   taxNumber: 'OM12345678',
   currency: 'OMR',
-  city: 'مسقط',
+  address: 'مسقط',
   documentPrefixes: {},
 };
 
@@ -237,15 +237,11 @@ describe('professional-owner-report adapter', () => {
 
     const movementTable = findTable(payload, 'الحركة المالية اليومية التفصيلية');
     expect(movementTable).toBeDefined();
-    // Both the payment and expense transactions appear
     expect(movementTable!.table.rows).toHaveLength(2);
-    // First row is the payment
     expect(movementTable!.table.rows[0][1]).toEqual({ kind: 'text', value: 'تحصيل إيجار' });
     expect(movementTable!.table.rows[0][4]).toEqual({ kind: 'amount', value: 1000 });
-    // Second row is the expense
     expect(movementTable!.table.rows[1][1]).toEqual({ kind: 'text', value: 'مصروف مُحمَّل على المالك' });
     expect(movementTable!.table.rows[1][4]).toEqual({ kind: 'amount', value: 120 });
-    // Totals row aggregates all
     expect(movementTable!.table.totals).toBeDefined();
     expect(movementTable!.table.totals![4]).toEqual({ kind: 'amount', value: 1120 });
   });
@@ -257,7 +253,6 @@ describe('professional-owner-report adapter', () => {
     expect(note).toBeDefined();
     expect(note!.note.text).toContain('لا توجد بيانات مالية معتمدة للفترة.');
 
-    // No final account rows may be fabricated.
     const finalTable = findTable(payload, 'الحساب الختامي — تسوية حساب المالك');
     expect(finalTable!.table.rows).toHaveLength(0);
   });
@@ -271,13 +266,9 @@ describe('professional-owner-report adapter', () => {
 
     const settlementTable = findTable(payload, 'تسويات مستحقات المالك');
     expect(settlementTable).toBeDefined();
-    // Cancelled settlements are filtered out
     expect(settlementTable!.table.rows).toHaveLength(2);
-    // Approved settlement is labeled truthfully (NOT as paid)
     expect(settlementTable!.table.rows[0][2]).toEqual({ kind: 'text', value: 'كشف تسوية مالك معتمد للصرف' });
-    // Paid settlement shows its truthful status
     expect(settlementTable!.table.rows[1][2]).toEqual({ kind: 'text', value: 'كشف تسوية مالك مصروف ومسدد' });
-    // Payout reference shown only for actually-paid settlement
     expect(settlementTable!.table.rows[0][4]).toEqual({ kind: 'text', value: '—' });
     expect(settlementTable!.table.rows[1][4]).toEqual({ kind: 'text', value: 'PAY-2026-001' });
   });
@@ -288,12 +279,10 @@ describe('professional-owner-report adapter', () => {
     const maintenanceTable = findTable(payload, 'تفاصيل الصيانة');
     expect(maintenanceTable).toBeDefined();
     expect(maintenanceTable!.table.rows).toHaveLength(2);
-    // [date, property, work order, status, technician, charged-to, cost, linked-expense]
     expect(maintenanceTable!.table.rows[0][3]).toEqual({ kind: 'text', value: 'قيد التنفيذ' });
     expect(maintenanceTable!.table.rows[0][5]).toEqual({ kind: 'text', value: 'المالك' });
     expect(maintenanceTable!.table.rows[0][6]).toEqual({ kind: 'amount', value: 60 });
     expect(maintenanceTable!.table.rows[0][7]).toEqual({ kind: 'text', value: 'نعم' });
-    // Second maintenance: tenant-charged, no linked expense
     expect(maintenanceTable!.table.rows[1][5]).toEqual({ kind: 'text', value: 'المستأجر' });
     expect(maintenanceTable!.table.rows[1][7]).toEqual({ kind: 'text', value: '—' });
 
@@ -306,8 +295,6 @@ describe('professional-owner-report adapter', () => {
 
   it('shows maintenance cost as operational info, NOT as automatic owner deduction', () => {
     const payload = buildOwnerReportPayload({ ...baseContext, statement, maintenanceRows: maintenanceRows.slice(0, 1) });
-
-    // The note explains maintenance cost ≠ automatic deduction
     const note = findNote(payload, 'تكلفة طلب الصيانة لا تُخصم تلقائياً');
     expect(note).toBeDefined();
   });
@@ -317,26 +304,21 @@ describe('professional-owner-report adapter', () => {
 
     const expenseTable = findTable(payload, 'تفاصيل المصروفات المسجلة');
     expect(expenseTable).toBeDefined();
-    // The expense row comes from the statement's 'expense' type transaction
     expect(expenseTable!.table.rows).toHaveLength(1);
     expect(expenseTable!.table.rows[0][2]).toEqual({ kind: 'text', value: 'إصلاح سباكة' });
     expect(expenseTable!.table.rows[0][3]).toEqual({ kind: 'amount', value: 120 });
   });
 
   it('omits empty operational sections (no fixed empty pages)', () => {
-    // No maintenance, no expense transactions, no utilities → no operational group
     const cleanStatement: OwnerStatementReport = {
       ...statement,
       transactions: [{ date: '2026-02-10', details: 'إيجار', type: 'payment', propertyName: 'برج الشروق', gross: 1000, deduction: 50, net: 950 }],
     };
     const payload = buildOwnerReportPayload({ ...baseContext, statement: cleanStatement });
 
-    const maintenanceTable = findTable(payload, 'تفاصيل الصيانة');
-    expect(maintenanceTable).toBeUndefined();
-    const expenseTable = findTable(payload, 'تفاصيل المصروفات المسجلة');
-    expect(expenseTable).toBeUndefined();
-    const utilityTable = findTable(payload, 'الخدمات والمرافق');
-    expect(utilityTable).toBeUndefined();
+    expect(findTable(payload, 'تفاصيل الصيانة')).toBeUndefined();
+    expect(findTable(payload, 'تفاصيل المصروفات المسجلة')).toBeUndefined();
+    expect(findTable(payload, 'الخدمات والمرافق')).toBeUndefined();
   });
 
   it('final reconciliation is always the LAST meaningful financial group', () => {
@@ -357,12 +339,8 @@ describe('professional-owner-report adapter', () => {
 
   it('opening/closing running balance remains unavailable (never fabricated)', () => {
     const payload = buildOwnerReportPayload({ ...baseContext, statement });
-
-    // The movement note explicitly states that running balance is unavailable
     const note = findNote(payload, 'رصيد أول المدة ورصيد آخر المدة');
     expect(note).toBeDefined();
-
-    // No "الرصيد الجاري" or "رصيد افتتاحي" anywhere in the movement table
     const movementTable = findTable(payload, 'الحركة المالية اليومية التفصيلية');
     expect(movementTable).toBeDefined();
     expect(movementTable!.table.columns).not.toContain('الرصيد الجاري');
@@ -388,21 +366,6 @@ describe('professional-owner-report adapter', () => {
 });
 
 describe('Golden Owner fixture — full integration', () => {
-  /**
-   * Representative Golden Owner fixture with:
-   *  - multiple properties
-   *  - collections (payment transactions)
-   *  - owner expense (expense transaction)
-   *  - maintenance linked to expense (m-01 has expense_id)
-   *  - maintenance NOT linked to expense (m-02 has no expense_id)
-   *  - utility bill
-   *  - management fee/VAT
-   *  - approved unpaid settlement
-   *  - paid settlement
-   *  - cancelled settlement
-   *
-   * Proves the document does not double count or mislabel anything.
-   */
   const goldenStatement: OwnerStatementReport = {
     ownerName: 'خالد بن عبدالله',
     commissionType: 'RATE',
@@ -459,7 +422,7 @@ describe('Golden Owner fixture — full integration', () => {
       technician_name: 'شركة التبريد',
       charged_to: 'owner',
       cost: 200,
-      expense_id: 'exp-g1', // linked to expense
+      expense_id: 'exp-g1',
     },
     {
       id: 'm-g2',
@@ -474,7 +437,7 @@ describe('Golden Owner fixture — full integration', () => {
       technician_name: 'نجار',
       charged_to: 'tenant',
       cost: 80,
-      expense_id: null, // NOT linked to expense
+      expense_id: null,
     },
   ] as unknown as Maintenance[];
 
@@ -569,7 +532,6 @@ describe('Golden Owner fixture — full integration', () => {
   it('produces the full Golden Report without double-counting or mislabeling', () => {
     const payload = buildOwnerReportPayload(goldenContext);
 
-    // --- Executive summary uses canonical position ---
     const kpiBlock = allBlocks(payload).find((block) => (block as { kind?: string }).kind === 'kpis') as {
       kind: string; kpis: Array<{ label: string; value: { value: number } }>;
     };
@@ -578,47 +540,35 @@ describe('Golden Owner fixture — full integration', () => {
     const fees = kpiBlock.kpis.find((k) => k.label === 'أتعاب إدارة الأملاك');
     expect(fees?.value.value).toBe(245);
 
-    // --- Daily movement shows ALL 4 transactions ---
     const movementTable = findTable(payload, 'الحركة المالية اليومية التفصيلية');
     expect(movementTable!.table.rows).toHaveLength(4);
-    // Settlement type is correctly labeled
     expect(movementTable!.table.rows[3][1]).toEqual({ kind: 'text', value: 'تسوية / صرف' });
 
-    // --- Maintenance table has both rows; cost is operational info only ---
     const maintTable = findTable(payload, 'تفاصيل الصيانة');
     expect(maintTable!.table.rows).toHaveLength(2);
-    // m-g1: linked to expense → "نعم"
     expect(maintTable!.table.rows[0][7]).toEqual({ kind: 'text', value: 'نعم' });
-    // m-g2: NOT linked to expense → "—"
     expect(maintTable!.table.rows[1][7]).toEqual({ kind: 'text', value: '—' });
-    // m-g2 charged to tenant, not owner
     expect(maintTable!.table.rows[1][5]).toEqual({ kind: 'text', value: 'المستأجر' });
 
-    // --- Expense table shows only the statement expense (not maintenance cost) ---
     const expTable = findTable(payload, 'تفاصيل المصروفات المسجلة');
     expect(expTable!.table.rows).toHaveLength(1);
     expect(expTable!.table.rows[0][2]).toEqual({ kind: 'text', value: 'صيانة مكيف شقة 201' });
-    // Maintenance cost 200 is the same figure — NOT double-counted
 
-    // --- Utility shows tenant responsibility correctly ---
     const utilTable = findTable(payload, 'الخدمات والمرافق');
     expect(utilTable!.table.rows).toHaveLength(1);
     expect(utilTable!.table.rows[0][6]).toEqual({ kind: 'text', value: 'المستأجر' });
 
-    // --- Settlements: approved ≠ paid, cancelled filtered ---
     const stlTable = findTable(payload, 'تسويات مستحقات المالك');
-    expect(stlTable!.table.rows).toHaveLength(2); // approved + paid, cancelled filtered
+    expect(stlTable!.table.rows).toHaveLength(2);
     expect(stlTable!.table.rows[0][2]).toEqual({ kind: 'text', value: 'كشف تسوية مالك معتمد للصرف' });
-    expect(stlTable!.table.rows[0][4]).toEqual({ kind: 'text', value: '—' }); // no payout ref for approved
+    expect(stlTable!.table.rows[0][4]).toEqual({ kind: 'text', value: '—' });
     expect(stlTable!.table.rows[1][2]).toEqual({ kind: 'text', value: 'كشف تسوية مالك مصروف ومسدد' });
     expect(stlTable!.table.rows[1][4]).toEqual({ kind: 'text', value: 'TRF-2026-042' });
 
-    // --- Final reconciliation is last and uses canonical position ---
     const lastGroup = payload.groups[payload.groups.length - 1];
     const finalTable = lastGroup.blocks.find((block) => (block as { table?: { title?: string } }).table?.title === 'الحساب الختامي — تسوية حساب المالك') as { table: { rows: unknown[][] } };
     expect(finalTable).toBeDefined();
     expect(finalTable.table.rows).toHaveLength(7);
-    // Final row shows remaining payable from canonical authority
     expect(finalTable.table.rows[6][1]).toEqual({ kind: 'amount', value: 3042.75 });
   });
 });
@@ -633,7 +583,7 @@ describe('loadOwnerReportContext', () => {
   const ownerPropertyRows = [
     { id: 'p-01', title: 'برج الشروق' },
     { id: 'p-02', title: 'مجمع الواحة' },
-  ] as unknown as ReturnType<typeof listOwnerProperties> extends Promise<infer T> ? T[number][] : Array<{ id: string; title: string }>;
+  ] as unknown as Awaited<ReturnType<typeof listOwnerProperties>>;
   const maintenanceRows = [
     { id: 'm-1', property_id: 'p-01', request_date: '2026-02-10', created_at: '2026-02-10T00:00:00Z', status: 'open' },
     { id: 'm-2', property_id: 'p-02', request_date: '2026-02-15', created_at: '2026-02-15T00:00:00Z', status: 'resolved' },
@@ -657,12 +607,7 @@ describe('loadOwnerReportContext', () => {
     vi.mocked(listMaintenance).mockResolvedValue(maintenanceRows);
     vi.mocked(listUtilityBills).mockResolvedValue(utilityBills);
 
-    const context = await loadOwnerReportContext({
-      ownerId: 'o-01',
-      from: '2026-02-01',
-      to: '2026-02-28',
-      statement,
-    });
+    const context = await loadOwnerReportContext({ ownerId: 'o-01', from: '2026-02-01', to: '2026-02-28', statement });
 
     expect(context.ownerName).toBe('سالم الحارثي');
     expect(context.periodFrom).toBe('2026-02-01');
@@ -670,15 +615,9 @@ describe('loadOwnerReportContext', () => {
     expect(context.statement).toBe(statement);
     expect(context.position).toBe(position);
     expect(context.scopeLabel).toBe('عقارات المالك المُدارة (2)');
-
-    // Settlements are already owner-filtered (the builder only drops cancelled).
-    expect(context.settlements.map((settlement) => settlement.id)).toEqual(['stl-owner-1', 'stl-owner-2']);
-
-    // Maintenance scoped to the owner's properties AND inside the period.
-    expect(context.maintenanceRows.map((row) => row.id)).toEqual(['m-1', 'm-2']);
-    // Utilities scoped to the owner's properties AND period-end inside the period.
-    expect(context.utilityBills.map((bill) => bill.id)).toEqual(['b-1']);
-
+    expect(context.settlements!.map((settlement) => settlement.id)).toEqual(['stl-owner-1', 'stl-owner-2']);
+    expect(context.maintenanceRows!.map((row) => row.id)).toEqual(['m-1', 'm-2']);
+    expect(context.utilityBills!.map((bill) => bill.id)).toEqual(['b-1']);
     expect(context.propertyTitles?.get('p-01')).toBe('برج الشروق');
     expect(context.propertyTitles?.get('p-02')).toBe('مجمع الواحة');
   });
@@ -690,17 +629,11 @@ describe('loadOwnerReportContext', () => {
     vi.mocked(listMaintenance).mockResolvedValue(maintenanceRows);
     vi.mocked(listUtilityBills).mockResolvedValue(utilityBills);
 
-    const context = await loadOwnerReportContext({
-      ownerId: 'o-01',
-      from: '2026-02-01',
-      to: '2026-02-28',
-      propertyId: 'p-01',
-      statement,
-    });
+    const context = await loadOwnerReportContext({ ownerId: 'o-01', from: '2026-02-01', to: '2026-02-28', propertyId: 'p-01', statement });
 
     expect(context.scopeLabel).toBe('العقار: برج الشروق');
-    expect(context.maintenanceRows.map((row) => row.id)).toEqual(['m-1']);
-    expect(context.utilityBills.map((bill) => bill.id)).toEqual(['b-1']);
+    expect(context.maintenanceRows!.map((row) => row.id)).toEqual(['m-1']);
+    expect(context.utilityBills!.map((bill) => bill.id)).toEqual(['b-1']);
     expect([...context.propertyTitles!.keys()]).toEqual(['p-01']);
   });
 
@@ -711,17 +644,10 @@ describe('loadOwnerReportContext', () => {
     vi.mocked(listMaintenance).mockResolvedValue(maintenanceRows);
     vi.mocked(listUtilityBills).mockResolvedValue(utilityBills);
 
-    const context = await loadOwnerReportContext({
-      ownerId: 'o-01',
-      from: '2026-02-01',
-      to: '2026-02-28',
-      propertyId: 'p-99',
-      statement,
-    });
+    const context = await loadOwnerReportContext({ ownerId: 'o-01', from: '2026-02-01', to: '2026-02-28', propertyId: 'p-99', statement });
 
-    // Falls back to the owner's real property scope instead of faking p-99.
     expect(context.scopeLabel).toBe('عقارات المالك المُدارة (2)');
-    expect(context.maintenanceRows.map((row) => row.id)).toEqual(['m-1', 'm-2']);
+    expect(context.maintenanceRows!.map((row) => row.id)).toEqual(['m-1', 'm-2']);
     expect(context.propertyTitles?.has('p-99')).toBe(false);
   });
 });

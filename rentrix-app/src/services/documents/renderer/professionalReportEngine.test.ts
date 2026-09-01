@@ -22,7 +22,7 @@ import type { ReportCellFormat } from '../documentPayloads';
 
 const settings: DocumentCompanySettings = {
   companyName: 'شركة الأفق لإدارة الأملاك',
-  companyAddress: 'مسقط، سلطنة عمان',
+  address: 'مسقط، سلطنة عمان',
   currency: 'OMR',
   currencySymbol: 'ر.ع',
   documentPrefixes: {},
