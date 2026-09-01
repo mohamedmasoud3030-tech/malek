@@ -51,6 +51,8 @@ jobs:
         run: pnpm test:pilot-seed
       - name: Typecheck
         run: pnpm typecheck
+      - name: Test typecheck
+        run: pnpm --filter ./rentrix-app run typecheck:test
       - name: Lint
         run: pnpm lint
       - name: Architecture check
@@ -93,8 +95,6 @@ jobs:
         run: pnpm test:supabase:rls
       - name: Documentation links
         run: pnpm check:docs
-      - name: Test typecheck
-        run: pnpm --filter ./rentrix-app run typecheck:test
       - name: Full application tests
         run: pnpm --filter ./rentrix-app test
       - name: Financial safety tests
