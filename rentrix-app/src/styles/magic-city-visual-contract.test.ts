@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 const stylesDir = resolve(dirname(fileURLToPath(import.meta.url)));
 const visualWave = readFileSync(resolve(stylesDir, 'malek-pro-visual-wave.css'), 'utf8');
 const dashboard = readFileSync(resolve(stylesDir, '../features/dashboard/dashboard-v2.css'), 'utf8');
+const pageHeader = readFileSync(resolve(stylesDir, '../components/layout/page-header.tsx'), 'utf8');
 
 describe('MALEK Magic City presentation contract', () => {
   it('keeps the existing malek-pro scope as the only presentation wave', () => {
@@ -33,5 +34,13 @@ describe('MALEK Magic City presentation contract', () => {
     expect(dashboard).toContain("[data-dashboard-priority='attention']");
     expect(dashboard).toContain('border-inline-start: 3px solid');
     expect(dashboard).toContain('var(--shadow-card)');
+  });
+
+  it('lets the shared visual wave own mobile page-header presentation', () => {
+    expect(pageHeader).toContain("className={cn('min-w-0 space-y-2', className)}");
+    expect(pageHeader).not.toContain('max-md:!rounded-none');
+    expect(pageHeader).not.toContain('max-md:!border-0');
+    expect(pageHeader).not.toContain('max-md:!bg-transparent');
+    expect(pageHeader).not.toContain('max-md:!p-0');
   });
 });
