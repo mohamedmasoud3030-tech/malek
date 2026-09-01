@@ -51,7 +51,6 @@ export function OwnersWorkspace({ embedded = false }: OwnersWorkspaceProps) {
       embedded={embedded}
       dir="rtl"
       size="wide"
-      visualVariant="malek-pro"
       title="إدارة الملاك"
       count={formatCount(controller.summary.totalOwners)}
       primaryAction={(
