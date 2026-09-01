@@ -35,7 +35,23 @@ It currently allows only:
 
 For hosted QA, `QA_SUPABASE_PROJECT_REF` must exactly match `VITE_SUPABASE_URL` and `QA_MUTATION_APPROVED=1` must be explicitly set. The script also receives `PRODUCTION_SUPABASE_PROJECT_REF` and refuses to run when the target host matches Production.
 
-This separation is deliberate: prove the dataset on the dedicated QA/presentation stack first. Promoting the same presentation dataset into the production project is a separate controlled release action, not an accidental consequence of running a local command.
+This separation is deliberate. The dataset is seeded only into a disposable/dedicated presentation backend. The canonical MALEK live Supabase project is never converted into a demo database and is never a valid pilot-seed target.
+
+## Production presentation surface
+
+The public Vercel Production URL may serve the presentation build, but its backend must remain physically separate from MALEK live Production.
+
+`rentrix-app/scripts/production-demo-preflight.mjs` executes before the Vercel production bundle and fails closed unless all of the following are true:
+
+- `VERCEL_ENV=production` is explicitly configured with `MALEK_DEPLOYMENT_PROFILE=production-demo`.
+- `PRODUCTION_DEMO_APPROVED=1` is present in the Vercel Production environment.
+- `PRODUCTION_SUPABASE_PROJECT_REF` identifies the canonical live project `nnggcnpcuomwfuupupwg` for comparison only.
+- `DEMO_SUPABASE_PROJECT_REF` identifies a different Supabase project/branch.
+- `VITE_SUPABASE_URL` exactly targets that declared Demo project over HTTPS.
+
+A production deployment that points at the live project, lies about the live project reference, omits the explicit approval, or points at a host that does not match the declared Demo ref is rejected before the application bundle is built.
+
+The environment-name contract is documented in `.env.production-demo.example`. Privileged service-role credentials are intentionally not part of the Vercel frontend deployment profile.
 
 ## Run
 
