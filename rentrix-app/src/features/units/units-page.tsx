@@ -181,7 +181,6 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
       <ListPage
         embedded={embedded}
         dir="rtl"
-        visualVariant="malek-pro"
         title="الوحدات"
         count={formatNumber(totalUnits)}
         primaryAction={primaryAction}
