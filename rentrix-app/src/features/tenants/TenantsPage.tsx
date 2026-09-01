@@ -185,7 +185,6 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
         embedded={embedded}
         workspaceName="tenants"
         dir="rtl"
-        visualVariant="malek-pro"
         title="المستأجرون"
         count={totalCount}
         primaryAction={createAction}
