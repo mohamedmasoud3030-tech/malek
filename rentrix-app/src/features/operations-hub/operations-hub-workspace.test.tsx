@@ -77,7 +77,7 @@ describe('Services workspace', () => {
     await screen.findByTestId('maintenance-body');
     expect(container.querySelectorAll('[data-page-layout]')).toHaveLength(1);
     expect(container.querySelectorAll('[data-page-header]')).toHaveLength(1);
-    expect(screen.getByText('الخدمات')).toBeTruthy();
+    expect(screen.getByText('الصيانة')).toBeTruthy();
     // Routine tabs stay reduced to daily work; the specialist surfaces remain
     // reachable in place through section deep links.
     expect(screen.getAllByRole('tab')).toHaveLength(2);
