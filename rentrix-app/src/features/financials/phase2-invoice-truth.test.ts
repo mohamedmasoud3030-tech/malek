@@ -236,13 +236,14 @@ describe('PHASE 2 — invoice truth & billing integrity', () => {
   });
 
   it('enforces DRAFT -> POSTED lifecycle and blocks edits after POST', async () => {
-    // Insert a DRAFT invoice (document fields editable while draft).
+    // Use a non-current billing period so this lifecycle fixture can never
+    // collide with the invoice generated for the current month above.
     const draft = await db.query<{ id: string }>(
       `insert into public.invoices
          (contract_id, issue_date, due_date, amount, tax_amount, status, company_id,
           document_status, charge_type, billing_period_start, billing_period_end)
-       values ($1::uuid, date '2026-09-01', date '2026-09-30', 500, 0, 'UNPAID', $2::uuid,
-          'DRAFT', 'RENT', date '2026-09-01', date '2026-09-30')
+       values ($1::uuid, date '2026-11-01', date '2026-11-30', 500, 0, 'UNPAID', $2::uuid,
+          'DRAFT', 'RENT', date '2026-11-01', date '2026-11-30')
         returning id::text as id`,
       [CONTRACT, COMPANY],
     );
