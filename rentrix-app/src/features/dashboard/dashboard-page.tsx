@@ -351,7 +351,7 @@ export function DashboardPage() {
   return (
     <PageLayout size="wide" visualVariant="malek-pro">
       <PageHeader
-        title="لوحة التحكم"
+        title="اليوم"
         description="مركز قيادة اليوم: الأداء، الأولويات، التحصيل، الإشغال، العقود والالتزامات في مسار واحد."
         showTodayContext
       />

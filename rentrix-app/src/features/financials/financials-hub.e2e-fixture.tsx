@@ -108,7 +108,7 @@ export function FinancialsHubE2EFixture() {
                 { key: 'number', header: 'رقم الفاتورة', render: (row) => <span className="font-mono text-xs font-bold">{row.number}</span> },
                 { key: 'tenant', header: 'المستأجر', render: (row) => row.tenant },
                 { key: 'property', header: 'العقار / الوحدة', render: (row) => row.property },
-                { key: 'dueDate', header: 'تاريخ الاستحقاق', render: (row) => <bdi dir="ltr" className="whitespace-nowrap tabular-nums">{fmtDate(row.dueDate)}</bdi> },
+                { key: 'dueDate', header: 'تاريخ الاستحقاق', render: (row) => <time dateTime={row.dueDate} className="whitespace-nowrap tabular-nums">{fmtDate(row.dueDate)}</time> },
                 { key: 'amount', header: 'المبلغ', render: (row) => <FinancialValue>{fmtMoney(row.amount)}</FinancialValue> },
                 {
                   key: 'status',

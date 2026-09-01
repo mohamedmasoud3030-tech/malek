@@ -55,7 +55,7 @@ export type OperationsHubWorkspaceProps = Readonly<{
 
 export function OperationsHubWorkspace({
   defaultSection,
-  title = 'الخدمات',
+  title,
   description,
   mode = 'standalone',
 }: OperationsHubWorkspaceProps) {
@@ -69,6 +69,7 @@ export function OperationsHubWorkspace({
     [requestedSection, defaultSection, authorization],
   );
   const isActiveSectionVisible = Boolean(activeSection && visibleSections.some((section) => section.id === activeSection));
+  const activeSectionDefinition = operationsHubSections.find((section) => section.id === activeSection) ?? operationsHubSections[0];
 
   const mountedSections = useRef(new Set<OperationsHubSectionId>());
   if (activeSection) mountedSections.current.add(activeSection);
@@ -137,8 +138,8 @@ export function OperationsHubWorkspace({
   return (
     <EmbeddableWorkspace
       embedded={mode === 'embedded'}
-      title={title}
-      description={description}
+      title={title ?? activeSectionDefinition.label}
+      description={description ?? activeSectionDefinition.description}
       size="wide"
       visualVariant="malek-pro"
     >

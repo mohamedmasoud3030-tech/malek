@@ -2,12 +2,28 @@
  * MALEK visual system — Final unified layer.
  * Professional royal/deep blue, clean light surfaces, deep navy dark,
  * strong controlled blue accents, high readability, premium operational.
- * No teal/purple/gold, no excessive gradients, no glass-heavy, no second palette.
+ * Arena's Magic & Beauty world appears as controlled light, depth and rhythm
+ * in shared chrome — never as a competing palette or decorative fantasy UI.
  * Tokens come from tokens.css only; this file owns layout/surface usage.
  */
 
 [data-visual-wave='malek-pro'] {
+  position: relative;
+  isolation: isolate;
   color: hsl(var(--foreground));
+}
+
+[data-visual-wave='malek-pro'][data-arena-world='magic-beauty']::before {
+  position: absolute;
+  z-index: -1;
+  inset: -1rem -0.75rem auto;
+  height: min(24rem, 42vh);
+  content: '';
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 86% 0%, hsl(var(--primary) / 0.12), transparent 48%),
+    radial-gradient(circle at 14% 12%, hsl(var(--info) / 0.07), transparent 42%);
+  opacity: 0.9;
 }
 
 [data-visual-wave='malek-pro'] > div {
@@ -15,8 +31,32 @@
 }
 
 [data-visual-wave='malek-pro'] [data-page-header] {
+  position: relative;
+  overflow: hidden;
+  padding: 1rem;
+  border: 1px solid hsl(var(--border) / 0.82);
+  border-radius: 1rem;
+  background:
+    linear-gradient(135deg, hsl(var(--card) / 0.98), hsl(var(--primary) / 0.045)),
+    hsl(var(--card));
+  box-shadow: var(--shadow-card);
+}
+
+[data-visual-wave='malek-pro'] [data-page-header]::before {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 3px;
+  content: '';
+  background: linear-gradient(180deg, hsl(var(--primary)), hsl(var(--info) / 0.58));
+}
+
+[data-theme='dark'] [data-visual-wave='malek-pro'] [data-page-header] {
   border-color: hsl(var(--border));
-  padding-block-end: 1rem;
+  background:
+    linear-gradient(135deg, hsl(var(--card)), hsl(var(--primary) / 0.08)),
+    hsl(var(--card));
+  box-shadow: 0 18px 48px hsl(var(--background) / 0.34);
 }
 
 [data-visual-wave='malek-pro'] [data-ui-button] {
@@ -38,13 +78,14 @@
 [data-visual-wave='malek-pro'] [data-entity-table-wrapper] {
   border: 1px solid hsl(var(--border));
   background: hsl(var(--card));
-  box-shadow: none;
+  border-radius: 1rem;
+  box-shadow: var(--shadow-card);
 }
 
 [data-visual-wave='malek-pro'] [data-entity-card]:hover,
 [data-visual-wave='malek-pro'] [data-mobile-card]:hover {
   border-color: hsl(var(--primary) / 0.28);
-  box-shadow: none;
+  box-shadow: var(--shadow-card-hover);
 }
 
 [data-visual-wave='malek-pro'] [data-entity-table] thead {
@@ -67,7 +108,7 @@
 /* App chrome — clean, opaque, border-based, no glass stack */
 [data-app-shell],
 [data-app-shell] main#main-content {
-  background: hsl(var(--background));
+  background-color: hsl(var(--background));
 }
 
 [data-app-shell] [data-app-shell-header] {
@@ -167,7 +208,7 @@
 [data-operational-route='true'] [data-visual-wave='malek-pro'] :is([data-entity-card], [data-mobile-card]) {
   position: relative;
   overflow: hidden;
-  border-radius: 0.75rem;
+  border-radius: 1rem;
   background: hsl(var(--card));
   border: 1px solid hsl(var(--border));
   transition: border-color 150ms ease;
@@ -175,12 +216,12 @@
 
 [data-operational-route='true'] [data-visual-wave='malek-pro'] :is([data-entity-card], [data-mobile-card]):hover {
   border-color: hsl(var(--primary) / 0.24);
-  box-shadow: none;
+  box-shadow: var(--shadow-card-hover);
 }
 
 [data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-table-wrapper] {
   overflow: hidden;
-  border-radius: 0.75rem;
+  border-radius: 1rem;
   background: hsl(var(--card));
   border: 1px solid hsl(var(--border));
 }
@@ -261,9 +302,15 @@
 
 [data-entity-form-surface='dialog'][data-entity-form-variant='operational'] {
   border: 1px solid hsl(var(--border));
-  border-radius: 1rem;
+  border-radius: 1.25rem;
   background: hsl(var(--card));
   box-shadow: var(--shadow-elevated);
+}
+
+[data-entity-form-surface='dialog'][data-entity-form-variant='operational'] [data-dialog-header] {
+  background:
+    linear-gradient(135deg, hsl(var(--card)), hsl(var(--primary) / 0.065)),
+    hsl(var(--card));
 }
 
 [data-theme='dark'] [data-entity-form-surface='dialog'][data-entity-form-variant='operational'] {
@@ -297,9 +344,11 @@
 }
 
 [data-entity-form-surface][data-entity-form-variant='operational'] [data-entity-form] section {
-  border: 1px solid hsl(var(--border));
-  border-radius: 0.875rem;
-  background: hsl(var(--card));
+  padding: 0.25rem 0 1rem;
+  border: 0;
+  border-bottom: 1px solid hsl(var(--border) / 0.7);
+  border-radius: 0;
+  background: transparent;
   box-shadow: none;
 }
 
@@ -322,7 +371,9 @@
     border-radius: 1rem;
     padding: 1rem;
     border: 1px solid hsl(var(--border));
-    background: hsl(var(--card));
+    background:
+      linear-gradient(135deg, hsl(var(--card)), hsl(var(--primary) / 0.055)),
+      hsl(var(--card));
   }
 
   [data-operational-route='true'] [data-visual-wave='malek-pro'] [data-filter-bar] {

@@ -332,7 +332,7 @@ for (const viewport of MOBILE_VIEWPORTS) {
 
       const today = page.locator('[data-global-today-context]');
       await expect(today).toBeVisible();
-      await expect(today).toContainText('لوحة التحكم');
+      await expect(today).toContainText('اليوم');
       const weekday = today.locator('[data-global-today-weekday]');
       const dayDate = today.locator('[data-global-today-day-date]');
       expect((await weekday.textContent())?.trim(), `${label}: weekday must be populated`).not.toBe('');

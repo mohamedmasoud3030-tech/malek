@@ -199,7 +199,7 @@ export const DialogContent = forwardRef<DialogContentElement, DialogContentProps
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 
 export function DialogHeader({ className, ...props }: ComponentPropsWithoutRef<'div'>) {
-  return <div className={cn('space-y-2 text-start', className)} {...props} />;
+  return <div data-dialog-header className={cn('space-y-2 text-start', className)} {...props} />;
 }
 
 export function DialogBody({ className, ...props }: ComponentPropsWithoutRef<'div'>) {

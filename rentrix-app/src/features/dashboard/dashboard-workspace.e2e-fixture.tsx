@@ -199,7 +199,7 @@ export function DashboardWorkspaceE2EFixture() {
     <main className="fixed inset-0 z-[200] overflow-y-auto bg-background text-foreground outline-none" dir="rtl" tabIndex={-1} data-e2e-dashboard-workspace>
       <div className="px-3 py-4 sm:px-6 lg:px-8">
         <PageLayout>
-          <PageHeader title="لوحة التحكم" />
+          <PageHeader title="اليوم" />
           <div className="grid min-w-0 gap-5">
             <section aria-label="نبض المكتب" data-dashboard-section="office-pulse">
               <SectionHeader eyebrow="1 · الآن" title="نبض المكتب" />

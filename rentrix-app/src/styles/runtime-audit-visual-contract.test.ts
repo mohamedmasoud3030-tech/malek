@@ -9,11 +9,11 @@ const dashboard = readFileSync(resolve(stylesDir, '../features/dashboard/dashboa
 const pageHeader = readFileSync(resolve(stylesDir, '../components/layout/page-header.tsx'), 'utf8');
 
 describe('MALEK runtime-audit visual contract', () => {
-  it('keeps MALEK operational styling product-native instead of applying LENA world theming', () => {
+  it('expresses Arena Magic & Beauty through controlled shared chrome without a palette fork', () => {
     expect(visualWave).toContain('MALEK visual system — Final unified layer');
-    expect(visualWave).not.toContain('Magic City');
-    expect(visualWave).not.toContain('مدينة السحر والجمال');
-    expect(visualWave).not.toContain('radial-gradient');
+    expect(visualWave).toContain('Magic & Beauty');
+    expect(visualWave).toContain("[data-arena-world='magic-beauty']::before");
+    expect(visualWave).toContain('radial-gradient');
   });
 
   it('keeps the existing semantic-token presentation scope without a raw palette fork', () => {
@@ -32,12 +32,11 @@ describe('MALEK runtime-audit visual contract', () => {
     expect(visualWave).toContain('transition-duration: 0.01ms !important');
   });
 
-  it('treats Needs Attention as an operational state without fantasy ambience', () => {
+  it('keeps Needs Attention operational while the shared shell owns the world ambience', () => {
     expect(dashboard).toContain("[data-dashboard-priority='attention']");
     expect(dashboard).toContain('border-inline-start: 3px solid');
     expect(dashboard).toContain('var(--warning-text)');
     expect(dashboard).not.toContain('radial-gradient');
-    expect(dashboard).not.toContain('Magic City');
   });
 
   it('keeps shared ownership of mobile page-header presentation', () => {

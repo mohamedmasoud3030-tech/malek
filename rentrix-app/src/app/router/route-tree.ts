@@ -62,7 +62,7 @@ const requirePermission = (permission: AppPermission) => async () => {
 const loginRoute = createRoute({ getParentRoute: () => authRoute, path: '/login', component: lazyRouteComponent(() => import('@/routes/_auth.login'), 'LoginRouteComponent'), staticData: { title: 'تسجيل الدخول' } });
 const forgotPasswordRoute = createRoute({ getParentRoute: () => authRoute, path: '/forgot-password', component: lazyRouteComponent(() => import('@/features/auth/password-recovery-page'), 'ForgotPasswordPage'), staticData: { title: 'استعادة كلمة المرور' } });
 const resetPasswordRoute = createRoute({ getParentRoute: () => rootRoute, path: '/reset-password', component: lazyRouteComponent(() => import('@/features/auth/password-recovery-page'), 'ResetPasswordPage'), staticData: { title: 'تعيين كلمة مرور جديدة' } });
-const dashboardRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/dashboard', component: lazyRouteComponent(() => import('@/features/dashboard/dashboard-page'), 'DashboardPage'), staticData: { title: 'لوحة التحكم' } });
+const dashboardRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/dashboard', component: lazyRouteComponent(() => import('@/features/dashboard/dashboard-page'), 'DashboardPage'), staticData: { title: 'اليوم' } });
 const propertiesRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/properties', component: lazyRouteComponent(() => import('@/features/portfolio-hub/portfolio-hub-workspace'), 'PortfolioHubPage'), staticData: { title: 'العقارات' } });
 const propertyNewRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/properties/new', beforeLoad: requirePermission('properties.create'), component: lazyRouteComponent(() => import('@/features/properties/property-form-page'), 'PropertyFormPage'), staticData: { title: 'إضافة عقار' } });
 const propertyDetailRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/properties/$propertyId', component: lazyRouteComponent(() => import('@/features/properties/property-detail-page'), 'PropertyDetailPage'), staticData: { title: 'تفاصيل العقار' } });
@@ -126,7 +126,7 @@ const financialsRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: '/financials',
   component: lazyRouteComponent(() => import('@/features/finance/FinancePage'), 'FinancePage'),
-  staticData: { title: 'المالية' }
+  staticData: { title: 'المال' }
 });
 
 // Finance operational detail routes remain available behind one primary Finance entry.

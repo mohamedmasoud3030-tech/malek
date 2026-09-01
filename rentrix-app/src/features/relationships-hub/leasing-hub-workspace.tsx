@@ -69,6 +69,7 @@ export function LeasingHubWorkspace() {
     requestedDefinition?.permission && !canAccess(requestedDefinition.permission),
   );
   const activeSection: LeasingHubSectionId = requestedSection ?? 'contracts';
+  const activeSectionDefinition = leasingHubSections.find((section) => section.id === activeSection) ?? leasingHubSections[0];
   const isActiveSectionVisible = visibleSections.some((section) => section.id === activeSection);
 
   const mountedSections = useRef(new Set<LeasingHubSectionId>());
@@ -90,8 +91,8 @@ export function LeasingHubWorkspace() {
 
   return (
     <EmbeddableWorkspace
-      title="التأجير"
-      description="العقود والمستأجرون في مساحة واحدة، مع الوصول إلى السجلات المساندة عند الحاجة."
+      title={activeSectionDefinition.label}
+      description={activeSectionDefinition.description}
       size="wide"
       visualVariant="malek-pro"
     >

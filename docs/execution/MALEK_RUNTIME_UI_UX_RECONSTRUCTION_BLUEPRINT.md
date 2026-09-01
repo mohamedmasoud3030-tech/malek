@@ -1,10 +1,10 @@
 # MALEK — Runtime UI/UX Reconstruction Blueprint
 
-> **Status:** ACTIVE EXECUTION BLUEPRINT  
-> **Effective:** 2026-09-01  
-> **Authority:** subordinate implementation translation of `docs/source-of-truth/06_UX_IA_AND_DESIGN_CONTRACT.md` (`UX-001..UX-008`).  
-> **Primary evidence:** the authenticated 2026-09-01 runtime audit produced from Arena's 62 fresh runtime screenshots plus DOM/structural metrics and code inspection.  
-> **Visual source of truth:** the latest runnable MALEK runtime. Historical screenshots are evidence only.  
+> **Status:** ACTIVE EXECUTION BLUEPRINT
+> **Effective:** 2026-09-01
+> **Authority:** subordinate implementation translation of `docs/source-of-truth/06_UX_IA_AND_DESIGN_CONTRACT.md` (`UX-001..UX-008`).
+> **Primary evidence:** the authenticated 2026-09-01 runtime audit produced from Arena's 62 fresh runtime screenshots plus DOM/structural metrics and code inspection.
+> **Visual source of truth:** the latest runnable MALEK runtime. Historical screenshots are evidence only.
 > **Not a parallel source of truth:** if this file conflicts with the Canonical Pack, the Canonical Pack wins and this file must be reconciled.
 
 ## 1. Why this blueprint exists
@@ -36,15 +36,16 @@ The implementation objective is therefore **operational clarity, coherence, dens
 
 MALEK is a product inside the wider LENA platform ecosystem.
 
-**LENA's “السحر والجمال / Magic & Beauty” identity is the parent-world DNA, not MALEK's internal UI theme.**
+**LENA/Arena's “السحر والجمال / Magic & Beauty” identity is the parent-world DNA and must be visibly present through MALEK's shared chrome without becoming a literal fantasy theme.**
 
 Inside MALEK:
 
 - the product remains property-operations + financial, calm, serious and data-first;
 - tables, registers, money, contracts and workflows must look trustworthy and work for long daily sessions;
-- no fantasy treatment, ornamental gradients, spatial-world decoration or “city” metaphors may be injected into routine operational screens merely to express LENA identity.
+- shared page chrome must carry a recognizable royal-blue language of light, depth, rhythm and refined motion across every connected production surface;
+- routine tables, forms and financial records remain calm and readable; world identity must not obscure operational truth or create a second palette.
 
-LENA connection may appear through controlled ecosystem touchpoints only, such as:
+LENA/Arena connection appears through controlled ecosystem and shared-chrome touchpoints, such as:
 
 - parent-platform / LENA Digital House entry and return affordances;
 - shared brand family cues;
@@ -52,7 +53,7 @@ LENA connection may appear through controlled ecosystem touchpoints only, such a
 - consistent quality, motion discipline and interaction principles across products;
 - future shared intelligence/network capabilities.
 
-**Rule:** the audit decides what MALEK needs fixing. LENA DNA decides how MALEK remains recognizably part of one ecosystem without losing its own product character.
+**Rule:** the audit decides what MALEK needs fixing. Arena's Magic & Beauty DNA must make the connected runtime recognizably part of one world through semantic-token light, depth and rhythm, without weakening MALEK's operational character.
 
 ## 3. Locked product principles
 
@@ -379,6 +380,7 @@ A round is done only when:
 - remaining audit findings are assigned to the next named round.
 
 **Green CI with visually unresolved audit findings is not complete. A polished screenshot with broken operational contracts is also not complete.**
+
 ## 12. Screenshot evidence validity protocol
 
 A screenshot is evidence only after route and page identity are verified in the running browser. A successful screenshot command is not sufficient.
@@ -404,13 +406,18 @@ Classification must be one of:
 
 Invalid captures are excluded from scoring and must be recaptured. Filenames never prove identity; the rendered page does.
 
-Historical correction for PR #1749 Round 1: the earlier screenshots named as Contract Detail captured the Contracts register again. They are recorded as `INVALID — wrong page identity` and must not be scored or reused as detail-page evidence. A future valid contract-detail capture must verify the detail route and a contract-specific marker such as the contract identifier/reference plus the detail workspace marker.
+Historical correction for PR #1749 Round 1: the earlier screenshots named as Contract Detail captured the Contracts register again. They are recorded as `INVALID — wrong page identity` and must not be scored or reused as detail-page evidence. Any replacement capture must verify the authenticated production route and contract entity identity; a fixture is useful for regression testing but is not production completion evidence.
 
-## 13. Round 1 evidence ledger — live entries
+## 13. Round 1 implementation/evidence ledger
 
-| Target screen | Route / harness | Viewport | Identity marker | Validity | Defect observed | Implemented resolution | Final score | Remaining issue |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Contracts register | `/login?e2e-showcase-contracts=1` or `/contracts` | pending recapture | `data-e2e-contracts-workspace` / `data-contract-register` / single `h1` «العقود» | pending | Duplicate historical authorities; overloaded simultaneous toolbar controls | Production and harness keep one PageHeader authority; status/expiry move to progressive `فلاتر العقود`; export/columns live in register toolbar | pending | Fresh capture required |
-| Financial overview / invoices | `/login?e2e-showcase-financials=1` or Money routes | pending recapture | `data-e2e-financials-workspace` / `h1` «الملخص المالي» / invoice table | pending | Fixture/runtime evidence had hand-written `ر.ع.` money and raw ISO dates, masking canonical OMR/RTL contract | Showcase financial values now route through `formatCompanyMoney`/`formatCompanyDate` and LTR `bdi` wrappers for date/money table cells | pending | Fresh capture required |
-| Contract Detail historical evidence | historical screenshots only | historical | Filename claimed detail, page content showed Contracts register | INVALID — wrong page identity | Wrong screen captured and risk of false scoring | Explicitly excluded by this ledger and validity protocol | excluded | Must recapture actual detail route later |
+The first evidence bundle was removed from the active branch because it mixed production authority with E2E fixture screens and therefore could not prove that the connected application had changed. Recapture is intentionally deferred while the owner prioritizes connected implementation.
 
+| Production surface | Connected authority fixed in this round | Evidence status |
+| --- | --- | --- |
+| Today | `/dashboard` route metadata, route contract and production `DashboardPage` now share «اليوم» | recapture deferred |
+| Portfolio | `PortfolioHubWorkspace` derives page identity/description from the active production section | recapture deferred |
+| Leasing | `LeasingHubWorkspace` derives page identity/description from the active production section; Contracts toolbar changes remain in the real `ContractsListPage` | recapture deferred |
+| Money | `/financials` now shares «المال» authority and all financial/detail aliases activate the operational form visual provider | recapture deferred |
+| Services | `OperationsHubWorkspace` derives page identity/description from the active production section | recapture deferred |
+| Shared pages/forms | `PageLayout` activates the unified Arena visual wave by default; `EntityForm` dialogs inherit it across property, contract, unit, maintenance and financial routes | recapture deferred |
+| Historical mislabeled Contract Detail | excluded permanently: rendered page identity was the Contracts register | `INVALID — wrong page identity` |

@@ -24,6 +24,10 @@ export type ScreenshotValidityResult = Readonly<{
   marker: string;
 }>;
 
+function textMatches(actual: string, expected: string | RegExp): boolean {
+  return typeof expected === 'string' ? actual.includes(expected) : expected.test(actual);
+}
+
 /**
  * PR #1749 evidence contract: a screenshot is not proof until the page itself
  * proves route and identity. Filenames are never accepted as identity evidence.
@@ -46,11 +50,17 @@ export async function classifyScreenshotTarget(page: Page, target: ScreenshotVal
   }
 
   if (target.identityText) {
-    await expect(marker).toContainText(target.identityText, { timeout: 10_000 });
+    const markerText = (await marker.textContent()) ?? '';
+    if (!textMatches(markerText, target.identityText)) {
+      return { status: 'INVALID — wrong page identity', reason: 'Visible identity marker does not contain the expected page text.', url, marker: target.identityMarker };
+    }
   }
 
   if (target.entityMarker) {
-    await expect(page.getByText(target.entityMarker).first()).toBeVisible({ timeout: 10_000 });
+    const pageText = (await page.locator('body').textContent()) ?? '';
+    if (!textMatches(pageText, target.entityMarker)) {
+      return { status: 'INVALID — wrong page identity', reason: 'Expected entity marker is missing from the rendered page.', url, marker: target.identityMarker };
+    }
   }
 
   const loading = page.locator('[data-e2e-fixture-loading], [aria-busy="true"]').first();

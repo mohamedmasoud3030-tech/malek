@@ -2,7 +2,7 @@
 
 > **Status:** CANONICAL  
 > **Target Architecture Lock:** 2026-08-27  
-> **Runtime UI/UX audit amendment:** 2026-09-01  
+> **Runtime UI/UX audit amendment:** 2026-09-01
 > **Repository reality baseline for this lock:** `main@9e5c32e83082cac8227640cf260c51af01e54dc3`  
 > **Precedence:** this target contract supersedes older design-guide statements and older implementation contracts where they conflict; repository reality remains separately classified in Document 7.
 
@@ -14,7 +14,7 @@ The target principle is **simple by default, powerful on demand**. Strong backen
 
 The 2026-09-01 runtime audit is implementation evidence, not a new design theme. It confirms that MALEK's strongest visual asset is its existing semantic-token foundation and that the highest-priority defects are structural: duplicated page authority, Dashboard composition, inconsistent register grammar, terminology, typography hierarchy, deep container nesting, persistent assistant chrome, record-inspection gaps and mobile intentionality.
 
-**LENA ecosystem boundary:** MALEK may inherit controlled parent-platform brand/portal cues, but LENA's broader **“السحر والجمال / Magic & Beauty”** world identity is not an internal MALEK operational theme. Routine MALEK screens remain property-operations/financial, calm, trustworthy and data-first. Cross-product identity belongs at ecosystem touchpoints rather than being painted across registers, tables and finance workflows.
+**LENA/Arena ecosystem boundary:** MALEK inherits a visible, controlled **“السحر والجمال / Magic & Beauty”** shared-chrome language: royal-blue light, layered depth, spatial rhythm and refined motion built only from the canonical semantic tokens. It is not a literal fantasy skin or a second palette. Routine property, contract and financial surfaces remain calm, trustworthy and data-first while still feeling part of one Arena world.
 
 ## Canonical UX/IA rules
 

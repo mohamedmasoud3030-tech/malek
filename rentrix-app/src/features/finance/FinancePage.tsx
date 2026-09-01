@@ -119,7 +119,7 @@ export function FinancePage() {
   if (isRequestedViewForbidden) {
     return (
       <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro">
-        <PageHeader title="المالية" />
+        <PageHeader title="المال" />
         <AccessDenied message="ليس لديك صلاحية لعرض هذا القسم المالي." />
       </PageLayout>
     );
@@ -128,7 +128,7 @@ export function FinancePage() {
   if (permittedSections.length === 0 || !activeSection || !activeView) {
     return (
       <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro">
-        <PageHeader title="المالية" />
+        <PageHeader title="المال" />
         <AccessDenied message="ليس لديك صلاحية لعرض أي من أقسام المالية." />
       </PageLayout>
     );
@@ -137,7 +137,7 @@ export function FinancePage() {
   return (
     <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro">
       <PageHeader
-        title="المالية"
+        title="المال"
         description="الفواتير والتحصيل والمصروفات والتسويات والأمانات والبنوك من مكان واحد."
       />
 

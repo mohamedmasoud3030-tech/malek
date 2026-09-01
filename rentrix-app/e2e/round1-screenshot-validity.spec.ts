@@ -7,7 +7,7 @@ const targets = [
     route: '/login?e2e-dashboard-workspace=1',
     expectedUrlIncludes: 'e2e-dashboard-workspace=1',
     identityMarker: 'main[data-e2e-dashboard-workspace]',
-    identityText: /لوحة التحكم|نبض المكتب/,
+    identityText: /اليوم|نبض المكتب/,
   },
   {
     name: 'contracts register',
@@ -23,6 +23,14 @@ const targets = [
     identityMarker: 'main[data-e2e-contract-detail-workspace]',
     identityText: /CON-2026-01749|مساحة عمل العقد/,
     entityMarker: 'CON-2026-01749',
+  },
+  {
+    name: 'dense entity form dialog',
+    route: '/login?e2e-form-contract=1&surface=dialog',
+    expectedUrlIncludes: 'e2e-form-contract=1',
+    identityMarker: 'main[data-e2e-form-contract]',
+    identityText: /اختبار عقد الفورم المشترك|إضافة جهة اتصال/,
+    entityMarker: 'إضافة جهة اتصال',
   },
   {
     name: 'financial overview',
