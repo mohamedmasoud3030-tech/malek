@@ -127,7 +127,7 @@ describe('UX completion contract', () => {
     expect(personForm).toContain('getActionableSupabaseErrorMessage');
     expect(personForm).not.toContain('error instanceof Error ? error.message');
     expect(password).not.toContain('جلسة Supabase');
-    expect(lands).toContain('getActionableSupabaseErrorMessage');
+    expect(lands).toContain('WriteErrorCard');
     expect(lands).not.toContain('writeError instanceof Error ? writeError.message');
     expect(lands).not.toContain('?? row.status');
     expect(lands).not.toContain('?? row.category');
