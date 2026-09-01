@@ -1,69 +1,22 @@
 /*
- * MALEK visual system — Magic City / مدينة السحر والجمال.
- *
- * This is the presentation layer for the canonical token system, not a second
- * theme. The "magic" is spatial: restrained light, depth, focus and continuity.
- * Operational truth always wins over decoration. No raw page palettes, no
- * fantasy gradients, no glass-heavy card soup, no hover scaling.
+ * MALEK visual system — Final unified layer.
+ * Professional royal/deep blue, clean light surfaces, deep navy dark,
+ * strong controlled blue accents, high readability, premium operational.
+ * No teal/purple/gold, no excessive gradients, no glass-heavy, no second palette.
+ * Tokens come from tokens.css only; this file owns layout/surface usage.
  */
 
 [data-visual-wave='malek-pro'] {
   color: hsl(var(--foreground));
-  position: relative;
-  isolation: isolate;
-}
-
-[data-visual-wave='malek-pro']::before {
-  content: '';
-  position: absolute;
-  z-index: -1;
-  inset: -1.5rem -1rem auto;
-  height: min(28rem, 42vh);
-  pointer-events: none;
-  background:
-    radial-gradient(circle at 88% 8%, hsl(var(--primary) / 0.075), transparent 34%),
-    radial-gradient(circle at 18% 0%, hsl(var(--info-text) / 0.04), transparent 30%);
-  opacity: 0.82;
-}
-
-[data-theme='dark'] [data-visual-wave='malek-pro']::before {
-  background:
-    radial-gradient(circle at 88% 8%, hsl(var(--primary) / 0.15), transparent 34%),
-    radial-gradient(circle at 18% 0%, hsl(var(--info-text) / 0.075), transparent 30%);
-  opacity: 1;
 }
 
 [data-visual-wave='malek-pro'] > div {
   max-width: min(100%, 90rem);
 }
 
-/* The page header is the district gate: one authority, clear orientation. */
 [data-visual-wave='malek-pro'] [data-page-header] {
-  position: relative;
-  overflow: hidden;
-  border-color: hsl(var(--border) / 0.78);
+  border-color: hsl(var(--border));
   padding-block-end: 1rem;
-}
-
-[data-visual-wave='malek-pro'] [data-page-header]::after {
-  content: '';
-  position: absolute;
-  inset-inline: 0;
-  inset-block-end: 0;
-  height: 1px;
-  background: linear-gradient(
-    to left,
-    transparent,
-    hsl(var(--primary) / 0.34) 24%,
-    hsl(var(--primary) / 0.12) 72%,
-    transparent
-  );
-  pointer-events: none;
-}
-
-[data-visual-wave='malek-pro'] [data-page-header] h1 {
-  text-wrap: balance;
-  letter-spacing: -0.018em;
 }
 
 [data-visual-wave='malek-pro'] [data-ui-button] {
@@ -71,11 +24,11 @@
   min-block-size: 44px;
 }
 
-/* Shared work surfaces: selective depth, never floating blobs. */
+/* Cards, entity cards, mobile cards, KPI, table wrappers — visible borders, not floating blobs. */
 [data-visual-wave='malek-pro'] [data-filter-bar] {
-  border: 1px solid hsl(var(--border) / 0.82);
-  background: hsl(var(--card) / 0.985);
-  box-shadow: var(--shadow-card);
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--card));
+  box-shadow: none;
 }
 
 [data-visual-wave='malek-pro'] [data-component-card],
@@ -83,22 +36,15 @@
 [data-visual-wave='malek-pro'] [data-mobile-card],
 [data-visual-wave='malek-pro'] [data-kpi-card],
 [data-visual-wave='malek-pro'] [data-entity-table-wrapper] {
-  border: 1px solid hsl(var(--border) / 0.82);
+  border: 1px solid hsl(var(--border));
   background: hsl(var(--card));
-  box-shadow: var(--shadow-card);
-}
-
-[data-visual-wave='malek-pro'] :is([data-entity-card], [data-mobile-card], [data-kpi-card]) {
-  transition:
-    border-color var(--duration-base) var(--motion-ease-standard),
-    box-shadow var(--duration-base) var(--motion-ease-standard),
-    background-color var(--duration-base) var(--motion-ease-standard);
+  box-shadow: none;
 }
 
 [data-visual-wave='malek-pro'] [data-entity-card]:hover,
 [data-visual-wave='malek-pro'] [data-mobile-card]:hover {
-  border-color: hsl(var(--primary) / 0.30);
-  box-shadow: var(--shadow-card-hover);
+  border-color: hsl(var(--primary) / 0.28);
+  box-shadow: none;
 }
 
 [data-visual-wave='malek-pro'] [data-entity-table] thead {
@@ -106,79 +52,65 @@
 }
 
 [data-visual-wave='malek-pro'] [data-entity-table] tbody tr:hover {
-  background: hsl(var(--primary) / 0.035);
+  background: hsl(var(--muted) / 0.7);
 }
 
 [data-visual-wave='malek-pro'] [data-empty-state-icon] {
   color: hsl(var(--primary));
   background: hsl(var(--primary) / 0.09);
-  box-shadow: inset 0 0 0 1px hsl(var(--primary) / 0.10);
 }
 
 [data-visual-wave='malek-pro'] [data-error-state] {
   border-color: hsl(var(--danger-text) / 0.24);
 }
 
-/* App chrome — the city perimeter. */
+/* App chrome — clean, opaque, border-based, no glass stack */
 [data-app-shell],
 [data-app-shell] main#main-content {
   background: hsl(var(--background));
 }
 
 [data-app-shell] [data-app-shell-header] {
-  background: hsl(var(--card) / 0.985);
-  border-color: hsl(var(--border) / 0.78);
+  background: hsl(var(--card));
+  border-color: hsl(var(--border));
   border-bottom-width: 1px;
-  box-shadow: 0 1px 0 hsl(var(--foreground) / 0.025);
+  box-shadow: none;
   backdrop-filter: none;
 }
 
 [data-theme='dark'] [data-app-shell] [data-app-shell-header] {
-  background: hsl(var(--card) / 0.97);
+  background: hsl(var(--card));
   border-color: hsl(var(--border));
-  box-shadow: 0 1px 0 hsl(var(--primary) / 0.06);
+  box-shadow: none;
   backdrop-filter: none;
 }
 
 [data-app-shell] [data-sidebar] {
-  background:
-    radial-gradient(circle at 50% -10%, hsl(var(--sidebar-active-text) / 0.055), transparent 28%),
-    hsl(var(--sidebar));
+  background: hsl(var(--sidebar));
   border-color: hsl(var(--sidebar-border));
-  box-shadow: var(--shadow-sidebar);
+  box-shadow: none;
 }
 
-/* Navigation — visible location without a saturated wall. */
+/* Navigation — professional, readable, strong active state */
 [data-sidebar] [data-nav-item] {
-  position: relative;
   font-size: 0.875rem;
-  font-weight: 650;
-  letter-spacing: 0.005em;
-  transition:
-    background-color var(--duration-fast) var(--motion-ease-standard),
-    color var(--duration-fast) var(--motion-ease-standard),
-    border-color var(--duration-fast) var(--motion-ease-standard);
+  font-weight: 600;
+  letter-spacing: 0.01em;
 }
 
 [data-sidebar] [data-nav-item][data-active='true'] {
-  background: linear-gradient(
-    to left,
-    hsl(var(--sidebar-active-bg)),
-    hsl(var(--sidebar-active-bg) / 0.72)
-  );
+  background: hsl(var(--sidebar-active-bg));
   color: hsl(var(--sidebar-active-text));
-  border-color: hsl(var(--sidebar-active-text) / 0.12);
-  box-shadow:
-    inset -2px 0 0 hsl(var(--sidebar-active-text) / 0.78),
-    0 8px 24px -18px hsl(var(--sidebar-active-text) / 0.34);
+  border-color: hsl(var(--sidebar-active-bg));
+  box-shadow: none;
 }
 
 [data-sidebar] [data-nav-item][data-active='true'] span:first-child {
-  background: hsl(var(--sidebar-active-text) / 0.11);
+  background: hsl(var(--sidebar-active-text) / 0.12);
   color: hsl(var(--sidebar-active-text));
 }
 
-/* Dark mode keeps the same hierarchy; only canonical tokens remap. */
+/* Dark mode surfaces — same hierarchy, only remapped tokens, no second palette */
 [data-theme='dark'] [data-visual-wave='malek-pro'] [data-component-card],
 [data-theme='dark'] [data-visual-wave='malek-pro'] [data-entity-card],
 [data-theme='dark'] [data-visual-wave='malek-pro'] [data-mobile-card],
@@ -187,23 +119,27 @@
 [data-theme='dark'] [data-filter-bar] {
   background: hsl(var(--card));
   border-color: hsl(var(--border));
-  box-shadow: var(--shadow-card);
+  box-shadow: none;
   backdrop-filter: none;
 }
 
 [data-theme='dark'] [data-visual-wave='malek-pro'] [data-entity-card]:hover,
 [data-theme='dark'] [data-visual-wave='malek-pro'] [data-mobile-card]:hover {
-  border-color: hsl(var(--primary) / 0.38);
-  box-shadow: var(--shadow-card-hover);
+  border-color: hsl(var(--primary) / 0.32);
+  box-shadow: none;
 }
 
-/* Operational workspace contract. */
+[data-visual-wave='malek-pro'] [data-active='true'] {
+  --active-glow: transparent;
+}
+
+/* Operational workspace contract */
 [data-operational-route='true'] [data-visual-wave='malek-pro'] {
   position: relative;
   isolation: isolate;
   padding: 0;
   border-radius: 0;
-  background: transparent;
+  background: hsl(var(--background));
 }
 
 [data-operational-route='true'] [data-visual-wave='malek-pro'] > div {
@@ -214,10 +150,10 @@
   position: relative;
   z-index: 2;
   padding: 0.625rem 0.75rem;
-  border: 1px solid hsl(var(--border) / 0.82);
-  border-radius: 0.875rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.75rem;
   background: hsl(var(--card));
-  box-shadow: var(--shadow-card);
+  box-shadow: none;
 }
 
 [data-operational-route='true'] [data-visual-wave='malek-pro'] [data-filter-bar] :is(input, select) {
@@ -231,38 +167,22 @@
 [data-operational-route='true'] [data-visual-wave='malek-pro'] :is([data-entity-card], [data-mobile-card]) {
   position: relative;
   overflow: hidden;
-  border-radius: 0.875rem;
+  border-radius: 0.75rem;
   background: hsl(var(--card));
-  border: 1px solid hsl(var(--border) / 0.82);
-}
-
-[data-operational-route='true'] [data-visual-wave='malek-pro'] :is([data-entity-card], [data-mobile-card])::before {
-  content: '';
-  position: absolute;
-  inset-inline: 1rem;
-  inset-block-start: 0;
-  height: 1px;
-  background: linear-gradient(to left, transparent, hsl(var(--primary) / 0.18), transparent);
-  opacity: 0;
-  transition: opacity var(--duration-base) var(--motion-ease-standard);
-  pointer-events: none;
-}
-
-[data-operational-route='true'] [data-visual-wave='malek-pro'] :is([data-entity-card], [data-mobile-card]):hover::before {
-  opacity: 1;
+  border: 1px solid hsl(var(--border));
+  transition: border-color 150ms ease;
 }
 
 [data-operational-route='true'] [data-visual-wave='malek-pro'] :is([data-entity-card], [data-mobile-card]):hover {
-  border-color: hsl(var(--primary) / 0.30);
-  box-shadow: var(--shadow-card-hover);
+  border-color: hsl(var(--primary) / 0.24);
+  box-shadow: none;
 }
 
 [data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-table-wrapper] {
   overflow: hidden;
-  border-radius: 0.875rem;
+  border-radius: 0.75rem;
   background: hsl(var(--card));
-  border: 1px solid hsl(var(--border) / 0.82);
-  box-shadow: var(--shadow-card);
+  border: 1px solid hsl(var(--border));
 }
 
 [data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-table] thead {
@@ -295,11 +215,11 @@
 }
 
 [data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-table] tbody tr:nth-child(even) {
-  background: hsl(var(--muted) / 0.18);
+  background: hsl(var(--muted) / 0.22);
 }
 
 [data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-table] tbody tr:hover {
-  background: hsl(var(--primary) / 0.035);
+  background: hsl(var(--muted) / 0.65);
 }
 
 [data-theme='dark'] [data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-table] thead {
@@ -316,25 +236,25 @@
   gap: 0.125rem;
   padding: 0.2rem;
   border: 1px solid hsl(var(--border));
-  border-radius: 0.7rem;
-  background: hsl(var(--muted) / 0.52);
+  border-radius: 0.625rem;
+  background: hsl(var(--muted) / 0.6);
 }
 
 [data-operational-route='true'] [data-visual-wave='malek-pro'] [role='tab'] {
   min-height: 44px;
-  border-radius: 0.55rem;
+  border-radius: 0.5rem;
   font-size: 0.875rem;
-  font-weight: 650;
-  transition: background-color 140ms ease, color 140ms ease, box-shadow 140ms ease;
+  font-weight: 600;
+  transition: background-color 140ms ease, color 140ms ease;
 }
 
 [data-operational-route='true'] [data-visual-wave='malek-pro'] [role='tab'][aria-selected='true'] {
   background: hsl(var(--card));
   color: hsl(var(--foreground));
-  box-shadow: 0 1px 2px hsl(var(--foreground) / 0.06), inset 0 0 0 1px hsl(var(--primary) / 0.08);
+  box-shadow: 0 1px 2px hsl(var(--foreground) / 0.06);
 }
 
-/* Forms — confidence and hierarchy without extra chrome. */
+/* Forms — readable labels, clear inputs, visible borders */
 [data-entity-form-surface][data-entity-form-variant='operational'] {
   --entity-form-action-offset: 0px;
 }
@@ -380,7 +300,7 @@
   border: 1px solid hsl(var(--border));
   border-radius: 0.875rem;
   background: hsl(var(--card));
-  box-shadow: var(--shadow-card);
+  box-shadow: none;
 }
 
 [data-entity-form-surface][data-entity-form-variant='operational'] [data-entity-form-actions] {
@@ -390,27 +310,19 @@
   backdrop-filter: none;
 }
 
-/* Mobile: spatial quality through composition, never tiny text. */
+/* Mobile: keep density via spacing, not tiny fonts */
 @media (max-width: 767px) {
-  [data-visual-wave='malek-pro']::before {
-    inset: -0.75rem -0.5rem auto;
-    height: 19rem;
-  }
-
   [data-operational-route='true'] [data-visual-wave='malek-pro'] {
     padding: 0;
     border-radius: 0;
-    background: transparent;
+    background: hsl(var(--background));
   }
 
   [data-operational-route='true'] [data-visual-wave='malek-pro'] [data-page-header] {
     border-radius: 1rem;
     padding: 1rem;
-    border: 1px solid hsl(var(--border) / 0.82);
-    background:
-      linear-gradient(to bottom, hsl(var(--primary) / 0.035), transparent 48%),
-      hsl(var(--card));
-    box-shadow: var(--shadow-card);
+    border: 1px solid hsl(var(--border));
+    background: hsl(var(--card));
   }
 
   [data-operational-route='true'] [data-visual-wave='malek-pro'] [data-filter-bar] {
