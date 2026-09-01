@@ -212,7 +212,6 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
       <ListPage
         embedded={embedded}
         dir="rtl"
-        visualVariant="malek-pro"
         title="الأشخاص"
         description="سجل موحد للمستأجرين والملاك وجهات الاتصال مع بيانات التواصل والهوية."
         count={totalCount || undefined}
