@@ -1,22 +1,42 @@
-import { Plus } from 'lucide-react';
+import { AlertTriangle, FileSpreadsheet, FileText, Plus } from 'lucide-react';
 import { useState } from 'react';
-import { PageHeader } from '@/components/layout/page-header';
-import { PageLayout } from '@/components/layout/page-layout';
+import { ListPage } from '@/components/layout/list-page';
+import type { ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { Button } from '@/components/ui/button';
 import { DataTableColumnsMenu } from '@/components/ui/data-table';
-import { EntityTableViewModeProvider } from '@/components/ui/entity-table';
+import { ExportMenu } from '@/components/ui/export-menu';
+import { FilterTabs } from '@/components/ui/filter-tabs';
 import { defaultCompanySettingsContract } from '@/lib/companySettings';
-import { ContractFilters } from './components/ContractFilters';
 import { ContractKpiGrid } from './components/ContractKpiGrid';
 import { ContractResults } from './components/ContractResults';
 import { contractColumnOptions, defaultContractColumns } from './components/ContractTable';
+import { contractStatusValues } from './contractSchema';
 import { useContractFilters, type LeaseModeFilter } from './hooks/useContractFilters';
 import type { ContractListItem, ContractStatusFilter } from './services/contractService';
 
+const contractStatusFilterLabels: Record<ContractStatusFilter, string> = {
+  all: 'الكل',
+  draft: 'مسودة',
+  active: 'نشط',
+  expired: 'منتهي',
+  terminated: 'ملغي',
+};
+
+const contractLeaseModeOptions: { value: LeaseModeFilter; label: string }[] = [
+  { value: 'all', label: 'كل الإيجارات' },
+  { value: 'long_term', label: 'طويل' },
+  { value: 'short_stay', label: 'إقامة قصيرة' },
+];
+
+const contractStatusFilterOptions = (['all', ...contractStatusValues] as ContractStatusFilter[]).map((filter) => ({
+  value: filter,
+  label: contractStatusFilterLabels[filter],
+}));
+
 /**
  * Static marketing/demo capture of the real contracts workspace —
- * same header, KPI grid, filters and results components as production,
- * fed with showcase rows. Rendered only behind VITE_E2E.
+ * same canonical list shell, KPI grid, filters and results components as
+ * production, fed with showcase rows. Rendered only behind VITE_E2E.
  */
 const FIXTURE_COMPANY_ID = '00000000-0000-4000-8000-0000000000c1';
 
@@ -146,53 +166,76 @@ export function ContractsListE2EFixture() {
     status,
   });
 
+  const activeFilters: ActiveFilterItem[] = [];
+  if (searchTerm.trim()) activeFilters.push({ key: 'search', label: 'البحث', value: searchTerm.trim(), onRemove: () => setSearchTerm('') });
+  if (status !== 'all') activeFilters.push({ key: 'status', label: 'الحالة', value: contractStatusFilterLabels[status], onRemove: () => setStatus('all') });
+  if (leaseMode !== 'all') activeFilters.push({ key: 'leaseMode', label: 'نوع الإيجار', value: contractLeaseModeOptions.find((option) => option.value === leaseMode)?.label ?? leaseMode, onRemove: () => setLeaseMode('all') });
+  if (expiringOnly) activeFilters.push({ key: 'expiringOnly', label: 'الانتهاء', value: 'خلال 30 يوم', onRemove: () => setExpiringOnly(false) });
+
   return (
     <main className="fixed inset-0 z-[200] overflow-y-auto bg-background text-foreground outline-none" dir="rtl" tabIndex={-1} data-e2e-contracts-workspace>
-      <PageLayout dir="rtl" size="wide">
-        <PageHeader
-          title="العقود"
-          description="إدارة دورة العقد من مسودة إلى نشط ثم منتهي أو ملغي."
-          count={filteredContracts.length}
-          primaryAction={
-            <Button onClick={() => undefined}>
-              <Plus className="me-2 size-4" />إنشاء عقد
-            </Button>
-          }
-        />
-        <EntityTableViewModeProvider storageKey="malek:list-page:العقود">
+      <ListPage
+        dir="rtl"
+        title="العقود"
+        description="إدارة دورة العقد من مسودة إلى نشط ثم منتهي أو ملغي."
+        count={filteredContracts.length}
+        workspaceName="contracts"
+        viewModeStorageKey="malek:contracts:register-view-mode-v1"
+        primaryAction={(
+          <Button onClick={() => undefined}>
+            <Plus className="me-2 size-4" />إنشاء عقد
+          </Button>
+        )}
+        search={{ value: searchTerm, onChange: setSearchTerm, placeholder: 'بحث باسم المستأجر، الوحدة، العقار، أو رقم العقد' }}
+        filters={<FilterTabs options={contractLeaseModeOptions} value={leaseMode} onChange={setLeaseMode} tone="contracts" />}
+        advancedFilters={(
+          <div className="grid min-w-0 gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-start" data-contract-advanced-filters>
+            <div className="min-w-0 space-y-1.5">
+              <p className="text-[11px] font-black text-muted-foreground">حالة العقد</p>
+              <FilterTabs options={contractStatusFilterOptions} value={status} onChange={setStatus} tone="contracts" />
+            </div>
+            <div className="min-w-0 space-y-1.5">
+              <p className="text-[11px] font-black text-muted-foreground">قرب الانتهاء</p>
+              <Button
+                variant={expiringOnly ? 'primary' : 'secondary'}
+                onClick={() => setExpiringOnly((value) => !value)}
+                className="min-h-11 shrink-0 rounded-lg px-3 text-xs"
+              >
+                <AlertTriangle className="me-1.5 size-3.5" />
+                تنتهي خلال 30 يوم
+              </Button>
+            </div>
+          </div>
+        )}
+        advancedFilterTitle="فلاتر العقود"
+        advancedFilterDescription="ابدأ بالبحث ونوع الإيجار. افتح هذه الفلاتر عند الحاجة لتقييد الحالة أو العقود القريبة من الانتهاء."
+        activeFilters={activeFilters}
+        onClearAllFilters={() => { setStatus('all'); setLeaseMode('all'); setSearchTerm(''); setExpiringOnly(false); }}
+        toolbarActions={(
+          <>
+            <div className="hidden min-w-0 items-center gap-2 md:flex" data-contract-columns-control>
+              <DataTableColumnsMenu columns={contractColumnOptions} visibleKeys={visibleColumnKeys} onChange={setVisibleColumnKeys} />
+            </div>
+            <ExportMenu
+              items={[
+                { id: 'xlsx', label: 'ملف Excel', icon: FileSpreadsheet, onClick: () => undefined },
+                { id: 'csv', label: 'ملف CSV', icon: FileText, onClick: () => undefined },
+              ]}
+            />
+          </>
+        )}
+      >
         <ContractKpiGrid
           companySettings={defaultCompanySettingsContract}
           contracts={fixtureContracts}
           filteredContracts={filteredContracts}
           totalCount={fixtureContracts.length}
         />
-        <ContractFilters
-          activeFilters={[]}
-          canExport
-          columnVisibilityControl={(
-            <DataTableColumnsMenu
-              columns={contractColumnOptions}
-              visibleKeys={visibleColumnKeys}
-              onChange={setVisibleColumnKeys}
-            />
-          )}
-          expiringOnly={expiringOnly}
-          leaseMode={leaseMode}
-          onClearAllFilters={() => { setStatus('all'); setLeaseMode('all'); setSearchTerm(''); setExpiringOnly(false); }}
-          onExportCsv={() => undefined}
-          onExportXlsx={() => undefined}
-          searchTerm={searchTerm}
-          setExpiringOnly={(updater) => setExpiringOnly(updater)}
-          setLeaseMode={setLeaseMode}
-          setSearchTerm={setSearchTerm}
-          setStatus={setStatus}
-          status={status}
-        />
         <ContractResults
           companySettings={defaultCompanySettingsContract}
           contracts={filteredContracts}
           expandedId={expandedId}
-          emptyDescription="لا توجد عقود مطابقة لبيانات الاختبار."
+          emptyDescription={hasActiveFilters ? 'لا توجد عقود مطابقة لبيانات الاختبار.' : 'لا توجد عقود في بيانات الاختبار.'}
           emptyTitle="لا توجد عقود مطابقة"
           error={null}
           isError={false}
@@ -204,8 +247,7 @@ export function ContractsListE2EFixture() {
           setExpandedId={setExpandedId}
           visibleColumnKeys={visibleColumnKeys}
         />
-        </EntityTableViewModeProvider>
-      </PageLayout>
+      </ListPage>
     </main>
   );
 }
