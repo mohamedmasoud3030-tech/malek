@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EntityForm } from '@/components/ui/entity-form';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
+import { ErrorState, WriteErrorCard } from '@/components/ui/error-state';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { Input } from '@/components/ui/input';
 import { KpiCard } from '@/components/ui/kpi-card';
@@ -17,10 +18,8 @@ import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
-import { WriteErrorCard } from '@/components/page-state-card';
 import { useOwnerOptions } from '@/hooks/use-owner-options';
 import { formatMoney, formatNumber } from '@/hooks/useCompanyFormatters';
-import { getActionableSupabaseErrorMessage } from '@/lib/supabase-error';
 import type { LandFilters, LandRecord } from '../types';
 import type { LandFormValues } from '../land-schema';
 import { MONEY_STEP } from '@/lib/money';
@@ -173,13 +172,11 @@ export function LandsView({
             {Object.entries(landStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </Select>
         )}
-
         activeFilters={activeFilters}
         onClearAllFilters={clearFilters}
       />
 
-
-      {writeError ? <WriteErrorCard message={getActionableSupabaseErrorMessage(writeError, 'تعذر حفظ التغيير على سجل الأرض.')} /> : null}
+      {writeError ? <WriteErrorCard error={writeError} fallbackMessage="تعذر حفظ التغيير على سجل الأرض." /> : null}
 
       <AsyncContentState
         status={isLoading ? 'loading' : error ? 'error' : rows.length === 0 ? 'empty' : 'ready'}
