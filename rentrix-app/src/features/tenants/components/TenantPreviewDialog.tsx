@@ -192,7 +192,7 @@ export function TenantDetailPage({ tenantId: tenantIdProp }: Readonly<{ tenantId
   const [activeSection, setActiveSection] = useState<TenantSection>('overview');
 
   return (
-    <PageLayout dir="rtl" size="wide" visualVariant="malek-pro">
+    <PageLayout dir="rtl" size="wide">
       <EntityDetailHeader
         title="ملف المستأجر"
         subtitle="علاقات المستأجر وعقوده وسياقه المالي."
