@@ -2,79 +2,69 @@ import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { ACCOUNTING_REPORT_VIEWS, getVisibleReportSubViews } from './report-view-registry';
+import { ACCOUNTING_REPORT_VIEWS, ANALYTICS_REPORT_VIEWS } from './report-view-registry';
+import { LEGACY_REPORT_DESTINATION_MAP, REPORT_PRODUCTS } from './report-products';
 
 const reportsDir = resolve(dirname(fileURLToPath(import.meta.url)));
 const reportsPage = readFileSync(resolve(reportsDir, 'reports-page.tsx'), 'utf8');
-const i18nResources = readFileSync(resolve(reportsDir, '../../lib/i18n.ts'), 'utf8');
-const primaryNavigation = readFileSync(resolve(reportsDir, 'workspace/ReportsPrimaryNavigation.tsx'), 'utf8');
-const catalogue = readFileSync(resolve(reportsDir, 'directory/report-directory-groups.ts'), 'utf8');
-const registry = readFileSync(resolve(reportsDir, 'report-workspaces.ts'), 'utf8');
+const catalogSource = readFileSync(resolve(reportsDir, 'components/ReportsCatalog.tsx'), 'utf8');
 
-describe('reports center — MALEK workspace consolidation contract', () => {
-  it('keeps one compact primary navigation as the reports experience', () => {
+describe('reports center — premium report catalog contract', () => {
+  it('publishes exactly the five approved report products', () => {
+    expect(REPORT_PRODUCTS.map((product) => product.title)).toEqual([
+      'كشف المالك الشامل',
+      'كشف حساب المستأجر',
+      'التحصيل والمتأخرات والشيكات',
+      'أداء المحفظة والعقارات',
+      'الحزمة المالية والتسويات',
+    ]);
+    expect(REPORT_PRODUCTS).toHaveLength(5);
+    expect(new Set(REPORT_PRODUCTS.map((product) => product.id)).size).toBe(5);
+  });
+
+  it('makes the bare /reports page a catalog rather than a dashboard', () => {
+    expect(reportsPage).toContain('<ReportsCatalog />');
+    expect(catalogSource).toContain('data-reports-premium-catalog');
+    expect(catalogSource).not.toMatch(/KpiCard|ResponsiveChart|ChartContainer|formatMoney|financialSummary|collectionRate/);
+    expect(catalogSource).not.toContain('ReportDirectory');
+    expect(catalogSource).not.toContain('Dialog');
+  });
+
+  it('keeps the catalog at least two columns on mobile and three/four on larger screens', () => {
+    expect(catalogSource).toContain('grid-cols-2');
+    expect(catalogSource).toContain('lg:grid-cols-3');
+    expect(catalogSource).toContain('2xl:grid-cols-4');
+    expect(catalogSource).not.toContain('grid-cols-1');
+  });
+
+  it('opens durable report URLs and leaves legacy workspace links compatible', () => {
+    expect(catalogSource).toContain("to: '/reports'");
+    expect(catalogSource).toContain('report: product.id');
+    expect(reportsPage).toContain('data-open-report-product');
+    expect(reportsPage).toContain('data-legacy-report-location');
     expect(reportsPage).toContain('<ReportsPrimaryNavigation');
-    expect(reportsPage).toContain('data-active-report-workspace');
-    expect(reportsPage).not.toContain('<ReportDirectory');
-    expect(reportsPage).not.toContain('MobileReportChooser');
   });
 
-  it('shows five plain-language destinations without duplicate search and pinned layers', () => {
-    for (const label of ['الملخص', 'التحصيل', 'العقارات والعقود', 'التشغيل', 'الكشوف']) {
-      expect(primaryNavigation).toContain(label);
+  it('assigns every useful legacy analytics/accounting view to a premium product', () => {
+    for (const view of [...ANALYTICS_REPORT_VIEWS, ...ACCOUNTING_REPORT_VIEWS]) {
+      expect(LEGACY_REPORT_DESTINATION_MAP[view.id], `${view.id} must have a premium destination`).toBeTruthy();
     }
-    expect(reportsPage).not.toContain('بحث في مركز التقارير');
-    expect(reportsPage).not.toContain('الأكثر استخدامًا');
+    expect(LEGACY_REPORT_DESTINATION_MAP.statements).toBe('owner-comprehensive-statement');
   });
 
-  it('keeps specialist financial review as one secondary destination', () => {
-    expect(primaryNavigation).toContain('مراجعة متقدمة');
-    expect(primaryNavigation).toContain("onOpen('financial_review', 'accounting_reports')");
+  it('does not invent a post-dated-cheque custody lifecycle', () => {
+    expect(reportsPage).toContain('لا توجد في نموذج البيانات الحالي دورة حيازة موثقة للشيك المؤجل');
+    expect(reportsPage).toContain('لا يعرض MALEK حالات شيكات مصطنعة');
   });
 
-  it('exposes the approved workspace outcomes without accounting-shaped daily navigation', () => {
-    for (const label of [
-      'أداء المكتب',
-      'التحصيل والمتأخرات',
-      'العقود والإشغال',
-      'التشغيل والمصروفات',
-      'العقارات والوحدات',
-      'الكشوف',
-      'المراجعة المالية',
-      'ملخص الفترة',
-      'المتأخرات والأعمار',
-      'المتابعة',
-      'حركة التحصيل',
-      'الإشغال والشغور',
-      'العقود القريبة من الانتهاء',
-      'نظرة تشغيلية',
-      'الخدمات والمرافق',
-      'ميزان المراجعة والقوائم',
-      'دفتر الأستاذ والشجرة',
-      'تسوية الإيرادات',
-    ]) {
-      expect(registry).toContain(label);
-    }
-    // Party-perspective doorways live in the directory catalogue.
-    for (const label of ['كشف المالك', 'كشف المستأجر', 'التسويات والحركة المرتبطة']) {
-      expect(catalogue).toContain(label);
-    }
-    // Business groups never expose the internal accounting section.
-    expect(registry).not.toContain("defaultSection: 'accounting',\n    defaultView: 'overview'");
-  });
-
-  it('keeps raw accounting views available only to specialist navigation', () => {
-    expect(ACCOUNTING_REPORT_VIEWS.map((view) => view.id)).toEqual([
+  it('keeps specialist accounting inside the financial pack rather than top-level catalog noise', () => {
+    const financialPack = REPORT_PRODUCTS.find((product) => product.id === 'financial-settlement-pack');
+    expect(financialPack?.targets.map((target) => target.view)).toEqual([
+      '',
       'accounting_reports',
       'general_ledger',
       'deferred_revenue',
     ]);
-    expect(ACCOUNTING_REPORT_VIEWS.every((view) => view.showInPrimaryNavigation === false)).toBe(true);
-    expect(getVisibleReportSubViews('accounting')).toEqual([]);
-  });
-
-  it('keeps headline language source-authoritative', () => {
-    expect(reportsPage).toContain("translateSharedLabel('reportsPageDescription')");
-    expect(i18nResources).toContain('ملخصات واضحة وكشوف جاهزة');
+    expect(REPORT_PRODUCTS.some((product) => product.id === ('general-ledger' as never))).toBe(false);
   });
 });
