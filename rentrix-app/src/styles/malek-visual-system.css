@@ -1,21 +1,21 @@
 /*
- * MALEK visual system — Final unified layer.
- * Professional royal/deep blue, clean light surfaces, deep navy dark,
- * strong controlled blue accents, high readability, premium operational.
- * Tokens come from tokens.css only; this file owns layout/surface usage.
+ * MALEK visual system — the single presentation authority for application
+ * pages and embedded operational workspaces. Tokens come from tokens.css;
+ * geometry belongs to components/ux-foundation.css; this file owns visual ink.
  */
 
-[data-visual-wave='malek-pro'] {
+[data-malek-surface] {
   position: relative;
   isolation: isolate;
   color: hsl(var(--foreground));
 }
 
-[data-visual-wave='malek-pro'] > div {
-  max-width: min(100%, 90rem);
+[data-malek-surface] > div {
+  max-width: min(100%, 96rem);
 }
 
-[data-visual-wave='malek-pro'] [data-page-header] {
+/* Page identity */
+[data-malek-surface] [data-page-header] {
   position: relative;
   overflow: hidden;
   padding: 1rem;
@@ -27,7 +27,7 @@
   box-shadow: var(--shadow-card);
 }
 
-[data-visual-wave='malek-pro'] [data-page-header]::before {
+[data-malek-surface] [data-page-header]::before {
   position: absolute;
   inset-block: 0;
   inset-inline-start: 0;
@@ -36,7 +36,7 @@
   background: linear-gradient(180deg, hsl(var(--primary)), hsl(var(--info) / 0.58));
 }
 
-[data-theme='dark'] [data-visual-wave='malek-pro'] [data-page-header] {
+[data-theme='dark'] [data-malek-surface] [data-page-header] {
   border-color: hsl(var(--border));
   background:
     linear-gradient(135deg, hsl(var(--card)), hsl(var(--primary) / 0.08)),
@@ -44,53 +44,49 @@
   box-shadow: 0 18px 48px hsl(var(--background) / 0.34);
 }
 
-[data-visual-wave='malek-pro'] [data-ui-button] {
+[data-malek-surface] [data-ui-button] {
   min-inline-size: 44px;
   min-block-size: 44px;
 }
 
-/* Cards, entity cards, mobile cards, KPI, table wrappers — visible borders, not floating blobs. */
-[data-visual-wave='malek-pro'] [data-filter-bar] {
+/* Shared toolbar and register surfaces */
+[data-malek-surface] [data-filter-bar] {
   border: 1px solid hsl(var(--border));
   background: hsl(var(--card));
   box-shadow: none;
 }
 
-[data-visual-wave='malek-pro'] [data-component-card],
-[data-visual-wave='malek-pro'] [data-entity-card],
-[data-visual-wave='malek-pro'] [data-mobile-card],
-[data-visual-wave='malek-pro'] [data-kpi-card],
-[data-visual-wave='malek-pro'] [data-entity-table-wrapper] {
+[data-malek-surface] [data-component-card],
+[data-malek-surface] [data-entity-card],
+[data-malek-surface] [data-mobile-card],
+[data-malek-surface] [data-kpi-card],
+[data-malek-surface] [data-entity-table-wrapper] {
   border: 1px solid hsl(var(--border));
   background: hsl(var(--card));
   border-radius: 1rem;
   box-shadow: var(--shadow-card);
 }
 
-[data-visual-wave='malek-pro'] [data-entity-card]:hover,
-[data-visual-wave='malek-pro'] [data-mobile-card]:hover {
+[data-malek-surface] [data-entity-card]:hover,
+[data-malek-surface] [data-mobile-card]:hover {
   border-color: hsl(var(--primary) / 0.28);
   box-shadow: var(--shadow-card-hover);
 }
 
-[data-visual-wave='malek-pro'] [data-entity-table] thead {
-  background: hsl(var(--muted) / 0.9);
-}
-
-[data-visual-wave='malek-pro'] [data-entity-table] tbody tr:hover {
-  background: hsl(var(--muted) / 0.7);
-}
-
-[data-visual-wave='malek-pro'] [data-empty-state-icon] {
+[data-malek-surface] [data-empty-state-icon] {
   color: hsl(var(--primary));
   background: hsl(var(--primary) / 0.09);
 }
 
-[data-visual-wave='malek-pro'] [data-error-state] {
+[data-malek-surface] [data-error-state] {
   border-color: hsl(var(--danger-text) / 0.24);
 }
 
-/* App chrome — clean, opaque, border-based, no glass stack */
+[data-malek-surface] [data-active='true'] {
+  --active-glow: transparent;
+}
+
+/* App chrome */
 [data-app-shell],
 [data-app-shell] main#main-content {
   background-color: hsl(var(--background));
@@ -117,7 +113,6 @@
   box-shadow: none;
 }
 
-/* Navigation — professional, readable, strong active state */
 [data-sidebar] [data-nav-item] {
   font-size: 0.875rem;
   font-weight: 600;
@@ -136,12 +131,12 @@
   color: hsl(var(--sidebar-active-text));
 }
 
-/* Dark mode surfaces — same hierarchy, only remapped tokens, no second palette */
-[data-theme='dark'] [data-visual-wave='malek-pro'] [data-component-card],
-[data-theme='dark'] [data-visual-wave='malek-pro'] [data-entity-card],
-[data-theme='dark'] [data-visual-wave='malek-pro'] [data-mobile-card],
-[data-theme='dark'] [data-visual-wave='malek-pro'] [data-kpi-card],
-[data-theme='dark'] [data-visual-wave='malek-pro'] [data-entity-table-wrapper],
+/* Dark surfaces use the same hierarchy with remapped tokens. */
+[data-theme='dark'] [data-malek-surface] [data-component-card],
+[data-theme='dark'] [data-malek-surface] [data-entity-card],
+[data-theme='dark'] [data-malek-surface] [data-mobile-card],
+[data-theme='dark'] [data-malek-surface] [data-kpi-card],
+[data-theme='dark'] [data-malek-surface] [data-entity-table-wrapper],
 [data-theme='dark'] [data-filter-bar] {
   background: hsl(var(--card));
   border-color: hsl(var(--border));
@@ -149,30 +144,20 @@
   backdrop-filter: none;
 }
 
-[data-theme='dark'] [data-visual-wave='malek-pro'] [data-entity-card]:hover,
-[data-theme='dark'] [data-visual-wave='malek-pro'] [data-mobile-card]:hover {
+[data-theme='dark'] [data-malek-surface] [data-entity-card]:hover,
+[data-theme='dark'] [data-malek-surface] [data-mobile-card]:hover {
   border-color: hsl(var(--primary) / 0.32);
   box-shadow: none;
 }
 
-[data-visual-wave='malek-pro'] [data-active='true'] {
-  --active-glow: transparent;
-}
-
-/* Operational workspace contract */
-[data-operational-route='true'] [data-visual-wave='malek-pro'] {
-  position: relative;
-  isolation: isolate;
+/* Operational workspaces share one register language. */
+[data-operational-route='true'] [data-malek-surface] {
   padding: 0;
   border-radius: 0;
   background: hsl(var(--background));
 }
 
-[data-operational-route='true'] [data-visual-wave='malek-pro'] > div {
-  max-width: min(100%, 96rem);
-}
-
-[data-operational-route='true'] [data-visual-wave='malek-pro'] [data-filter-bar] {
+[data-operational-route='true'] [data-malek-surface] [data-filter-bar] {
   position: relative;
   z-index: 2;
   padding: 0.625rem 0.75rem;
@@ -182,7 +167,7 @@
   box-shadow: none;
 }
 
-[data-operational-route='true'] [data-visual-wave='malek-pro'] [data-filter-bar] :is(input, select) {
+[data-operational-route='true'] [data-malek-surface] [data-filter-bar] :is(input, select) {
   min-height: 44px;
   border-radius: 0.625rem;
   background: hsl(var(--background));
@@ -190,7 +175,7 @@
   font-size: 0.9375rem;
 }
 
-[data-operational-route='true'] [data-visual-wave='malek-pro'] :is([data-entity-card], [data-mobile-card]) {
+[data-operational-route='true'] [data-malek-surface] :is([data-entity-card], [data-mobile-card]) {
   position: relative;
   overflow: hidden;
   border-radius: 1rem;
@@ -199,19 +184,19 @@
   transition: border-color 150ms ease;
 }
 
-[data-operational-route='true'] [data-visual-wave='malek-pro'] :is([data-entity-card], [data-mobile-card]):hover {
+[data-operational-route='true'] [data-malek-surface] :is([data-entity-card], [data-mobile-card]):hover {
   border-color: hsl(var(--primary) / 0.24);
   box-shadow: var(--shadow-card-hover);
 }
 
-[data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-table-wrapper] {
+[data-operational-route='true'] [data-malek-surface] [data-entity-table-wrapper] {
   overflow: hidden;
   border-radius: 1rem;
   background: hsl(var(--card));
   border: 1px solid hsl(var(--border));
 }
 
-[data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-table] thead {
+[data-operational-route='true'] [data-malek-surface] [data-entity-table] thead {
   position: sticky;
   top: 0;
   z-index: 1;
@@ -219,7 +204,7 @@
   color: hsl(var(--foreground) / 0.92);
 }
 
-[data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-table] thead th {
+[data-operational-route='true'] [data-malek-surface] [data-entity-table] thead th {
   height: 2.75rem;
   background: transparent;
   color: hsl(var(--muted-foreground));
@@ -231,34 +216,29 @@
   text-transform: none;
 }
 
-[data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-table] tbody td {
+[data-operational-route='true'] [data-malek-surface] [data-entity-table] tbody td {
   font-size: 0.875rem;
   line-height: 1.5;
 }
 
-[data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-table] tbody tr {
+[data-operational-route='true'] [data-malek-surface] [data-entity-table] tbody tr {
   transition: background-color 140ms ease;
 }
 
-[data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-table] tbody tr:nth-child(even) {
+[data-operational-route='true'] [data-malek-surface] [data-entity-table] tbody tr:nth-child(even) {
   background: hsl(var(--muted) / 0.22);
 }
 
-[data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-table] tbody tr:hover {
+[data-operational-route='true'] [data-malek-surface] [data-entity-table] tbody tr:hover {
   background: hsl(var(--muted) / 0.65);
 }
 
-[data-theme='dark'] [data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-table] thead {
+[data-theme='dark'] [data-operational-route='true'] [data-malek-surface] [data-entity-table] thead {
   background: hsl(var(--muted) / 0.8);
   color: hsl(var(--foreground));
 }
 
-[data-theme='dark'] [data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-table] thead th {
-  color: hsl(var(--muted-foreground));
-  border-bottom-color: hsl(var(--border));
-}
-
-[data-operational-route='true'] [data-visual-wave='malek-pro'] [role='tablist'] {
+[data-operational-route='true'] [data-malek-surface] [role='tablist'] {
   gap: 0.125rem;
   padding: 0.2rem;
   border: 1px solid hsl(var(--border));
@@ -266,7 +246,7 @@
   background: hsl(var(--muted) / 0.6);
 }
 
-[data-operational-route='true'] [data-visual-wave='malek-pro'] [role='tab'] {
+[data-operational-route='true'] [data-malek-surface] [role='tab'] {
   min-height: 44px;
   border-radius: 0.5rem;
   font-size: 0.875rem;
@@ -274,13 +254,13 @@
   transition: background-color 140ms ease, color 140ms ease;
 }
 
-[data-operational-route='true'] [data-visual-wave='malek-pro'] [role='tab'][aria-selected='true'] {
+[data-operational-route='true'] [data-malek-surface] [role='tab'][aria-selected='true'] {
   background: hsl(var(--card));
   color: hsl(var(--foreground));
   box-shadow: 0 1px 2px hsl(var(--foreground) / 0.06);
 }
 
-/* Forms — readable labels, clear inputs, visible borders */
+/* Forms */
 [data-entity-form-surface][data-entity-form-variant='operational'] {
   --entity-form-action-offset: 0px;
 }
@@ -323,11 +303,6 @@
   box-shadow: 0 0 0 3px hsl(var(--primary) / 0.12);
 }
 
-[data-theme='dark'] [data-entity-form-surface][data-entity-form-variant='operational'] :is(input, select, textarea):focus {
-  border-color: hsl(var(--primary) / 0.6);
-  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.14);
-}
-
 [data-entity-form-surface][data-entity-form-variant='operational'] [data-entity-form] section {
   padding: 0.25rem 0 1rem;
   border: 0;
@@ -344,28 +319,19 @@
   backdrop-filter: none;
 }
 
-/* ── Active press + ghost-hover suppression (touch only) ─
-   Migrated from ux-foundation.css: these are paint decisions, not structure,
-   and they must live after the hover rules above so a tapped card on a phone
-   cannot keep a stuck hover state. */
+/* Touch behavior */
 @media (hover: none) and (pointer: coarse) {
-  [data-visual-wave='malek-pro'] [data-entity-card]:active,
-  [data-visual-wave='malek-pro'] [role='button']:active {
+  [data-malek-surface] [data-entity-card]:active,
+  [data-malek-surface] [role='button']:active {
     opacity: 0.88;
   }
 
-  /* Specificity parity with the operational :hover rule above (0,4,0) and
-     declared after it, so a tapped card on a phone cannot keep a stuck hover
-     state on any surface, including operational registers. */
-  [data-visual-wave='malek-pro'] :is([data-entity-card], [data-mobile-card]):hover:not(:active) {
+  [data-malek-surface] :is([data-entity-card], [data-mobile-card]):hover:not(:active) {
     box-shadow: var(--shadow-card);
     border-color: hsl(var(--border));
   }
 }
 
-/* Ultra-narrow phones: the readable page title steps down one notch. This is
-   typography, so the responsive trigger lives with the visual authority rather
-   than fighting it from the structural layer. */
 @media (max-width: 359px) {
   [data-page-layout] [data-global-page-title] {
     font-size: 1.125rem;
@@ -373,9 +339,7 @@
   }
 }
 
-/* ── Register table presentation ─
-   Structure (sticky offset, min row height, padding, scroller containment)
-   lives in ux-foundation.css. Only ink is decided here. */
+/* Register table presentation */
 [data-entity-table] thead th {
   border-bottom: 1px solid hsl(var(--border));
   background: hsl(var(--card));
@@ -397,18 +361,20 @@
   transition: background-color var(--duration-fast) var(--motion-ease-standard);
 }
 
-[data-entity-table] tbody tr:hover { background: hsl(var(--muted) / 0.6); }
+[data-entity-table] tbody tr:hover {
+  background: hsl(var(--muted) / 0.6);
+}
 
-[data-entity-table] [data-column-priority='identity'] { font-weight: 700; }
+[data-entity-table] [data-column-priority='identity'] {
+  font-weight: 700;
+}
 
-/* ── Semantic KPI accents ─────────────────────────────────────────── */
+/* Semantic KPI accents */
 [data-kpi-card] {
   --kpi-tone: var(--primary);
   --kpi-soft: var(--card-muted);
 }
 
-/* Geometry (position/inset/height/content) lives in ux-foundation.css as the
-   shared accent-rail contract; this rule only chooses the ink. */
 [data-kpi-card]::before {
   background: hsl(var(--kpi-tone) / 0.72);
 }
@@ -426,7 +392,7 @@
   box-shadow: inset 0 0 0 1px hsl(var(--kpi-tone) / 0.14);
 }
 
-/* ── Status accents ───────────────────────────────────────────────── */
+/* Status accents */
 [data-status-badge][data-tone='emerald'] { --status-tone: var(--tone-emerald); --status-soft: var(--tone-emerald-soft); }
 [data-status-badge][data-tone='amber'] { --status-tone: var(--tone-amber); --status-soft: var(--tone-amber-soft); }
 [data-status-badge][data-tone='sky'] { --status-tone: var(--tone-sky); --status-soft: var(--tone-sky-soft); }
@@ -440,22 +406,18 @@
   --tw-ring-color: hsl(var(--status-tone) / 0.18);
 }
 
-[data-status-badge] [data-status-dot] { background: currentColor; }
-
-/* ── Shared state surfaces ─────────────────────────────────────────
-   The 2px rule above each state card is the only thing that separates an
-   offline/permission/error/empty surface; positioning and overflow for it are
-   declared in ux-foundation.css. */
-[data-state-surface]::before {
-  background: hsl(var(--border));
+[data-status-badge] [data-status-dot] {
+  background: currentColor;
 }
 
+/* Shared state surfaces */
+[data-state-surface]::before { background: hsl(var(--border)); }
 [data-state-surface][data-empty-state]::before { background: hsl(var(--muted-foreground) / 0.3); }
 [data-state-surface][data-offline-state]::before { background: hsl(var(--warning-text) / 0.72); }
 [data-state-surface][data-no-permission-state]::before,
 [data-state-surface][data-error-state]::before { background: hsl(var(--danger-text) / 0.72); }
 
-/* ── Typography scale — mobile readable, hierarchy clear ─────────── */
+/* Typography */
 [data-page-layout] [data-page-header] h1 {
   font-size: clamp(1.25rem, 4.5vw, 1.625rem);
   line-height: 1.25;
@@ -477,8 +439,7 @@
   color: hsl(var(--text-secondary));
 }
 
-/* ── Desktop visual quieting ─
-   Desktop is a work surface: no stacked chrome, no double elevation. */
+/* Desktop is a quiet work surface: one chrome layer, no stacked elevation. */
 @media (min-width: 1024px) {
   [data-page-layout] [data-page-header] [data-global-page-context] {
     border-color: transparent;
@@ -494,24 +455,13 @@
   }
 
   [data-page-layout] [data-entity-table-wrapper],
-  [data-page-layout] [data-entity-table-grid] {
-    border-color: hsl(var(--border));
+  [data-page-layout] [data-entity-table-grid],
+  [data-page-layout] [data-kpi-card],
+  [data-page-layout] [data-register-metric],
+  [data-owner-register],
+  [data-owner-relationships] {
     box-shadow: none;
   }
-
-  [data-page-layout] [data-entity-table] thead th {
-    font-size: 0.8125rem;
-    letter-spacing: 0.01em;
-  }
-
-  [data-page-layout] [data-entity-table] tbody td { font-size: 0.875rem; }
-
-  [data-page-layout] [data-kpi-card] {
-    border-color: hsl(var(--border));
-    box-shadow: none;
-  }
-
-  [data-page-layout] [data-register-metric] { box-shadow: none; }
 
   [data-page-layout] [data-register-heading] h2 {
     color: hsl(var(--muted-foreground));
@@ -519,23 +469,19 @@
     font-weight: 700;
   }
 
-  [data-owner-register],
-  [data-owner-relationships] {
-    box-shadow: none;
+  [data-app-shell] [data-sidebar] [data-nav-item] {
+    border-radius: 0.65rem;
   }
-
-  [data-app-shell] [data-sidebar] [data-nav-item] { border-radius: 0.65rem; }
 }
 
-/* Mobile: keep density via spacing, not tiny fonts */
 @media (max-width: 767px) {
-  [data-operational-route='true'] [data-visual-wave='malek-pro'] {
+  [data-operational-route='true'] [data-malek-surface] {
     padding: 0;
     border-radius: 0;
     background: hsl(var(--background));
   }
 
-  [data-operational-route='true'] [data-visual-wave='malek-pro'] [data-page-header] {
+  [data-operational-route='true'] [data-malek-surface] [data-page-header] {
     border-radius: 1rem;
     padding: 1rem;
     border: 1px solid hsl(var(--border));
@@ -544,18 +490,14 @@
       hsl(var(--card));
   }
 
-  [data-operational-route='true'] [data-visual-wave='malek-pro'] [data-filter-bar] {
+  [data-operational-route='true'] [data-malek-surface] [data-filter-bar] {
     padding: 0.75rem;
     border-radius: 0.875rem;
-  }
-
-  [data-entity-table] tbody td {
-    font-size: 0.875rem;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  [data-visual-wave='malek-pro'] *,
+  [data-malek-surface] *,
   [data-app-shell] *,
   [data-entity-form-surface][data-entity-form-variant='operational'] * {
     transition-duration: 0.01ms !important;
