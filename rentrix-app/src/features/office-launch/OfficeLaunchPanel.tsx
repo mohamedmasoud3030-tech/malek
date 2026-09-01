@@ -114,7 +114,7 @@ export function OfficeLaunchPanel({ draft }: Readonly<{ draft: CompanySettingsDr
         {readiness.items.map((item) => (
           <div key={item.id} className="rounded-xl border border-border/60 bg-background px-3 py-2.5">
             <div className="flex items-center gap-2">
-              {item.ready ? <CheckCircle2 className="size-4 shrink-0 text-emerald-600" aria-hidden="true" /> : <AlertTriangle className="size-4 shrink-0 text-amber-600" aria-hidden="true" />}
+              {item.ready ? <CheckCircle2 className="size-4 shrink-0 text-success" aria-hidden="true" /> : <AlertTriangle className="size-4 shrink-0 text-warning" aria-hidden="true" />}
               <span className="text-xs font-black">{item.label}</span>
             </div>
             <p className="mt-1.5 text-[11px] leading-4 text-muted-foreground">{item.helper}</p>
@@ -123,7 +123,7 @@ export function OfficeLaunchPanel({ draft }: Readonly<{ draft: CompanySettingsDr
       </div>
 
       {!readiness.ready ? (
-        <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs" role="status">
+        <div className="rounded-xl border border-warning/30 bg-warning-bg px-3 py-2 text-xs" role="status">
           الخطوة التالية لإكمال إعداد المكتب: <strong>{readiness.nextAction}</strong>. يمكنك فحص ملفات الاستيراد الآن، لكن لا تعتمد تشغيل المكتب قبل اكتمال الإعداد.
         </div>
       ) : null}
@@ -150,8 +150,8 @@ export function OfficeLaunchPanel({ draft }: Readonly<{ draft: CompanySettingsDr
           </label>
         </div>
 
-        <div className="mt-3 flex items-start gap-2 rounded-xl border border-sky-500/25 bg-sky-500/5 px-3 py-2 text-xs text-muted-foreground">
-          <FileSpreadsheet className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+        <div className="mt-3 flex items-start gap-2 rounded-xl border border-info/25 bg-info-bg px-3 py-2 text-xs text-muted-foreground">
+          <FileSpreadsheet className="mt-0.5 size-4 shrink-0 text-info" aria-hidden="true" />
           <p><strong className="text-foreground">معاينة آمنة:</strong> رفع الملف هنا لا يكتب في قاعدة البيانات. الاعتماد الفعلي يظل خلف حدود الخدمات وRPCs المعتمدة حتى لا تتحول عملية نقل البيانات إلى مسار يتجاوز قواعد MALEK.</p>
         </div>
 
@@ -162,11 +162,11 @@ export function OfficeLaunchPanel({ draft }: Readonly<{ draft: CompanySettingsDr
             <div className="flex flex-wrap gap-2 text-xs">
               <span className="rounded-full border border-border px-2.5 py-1">الملف: {fileName}</span>
               <span className="rounded-full border border-border px-2.5 py-1">السجلات: {preview.rows.length}</span>
-              <span className="rounded-full border border-emerald-500/30 px-2.5 py-1 text-emerald-700">صالحة: {preview.validRows.length}</span>
+              <span className="rounded-full border border-success/30 px-2.5 py-1 text-success-text">صالحة: {preview.validRows.length}</span>
               <span className="rounded-full border border-destructive/30 px-2.5 py-1 text-destructive">مشكلات: {preview.issues.length}</span>
             </div>
             {preview.canCommit ? (
-              <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 px-3 py-2 text-xs text-emerald-800" role="status">الملف اجتاز الفحص بالكامل وهو جاهز لمرحلة الاعتماد عبر المسار التشغيلي.</div>
+              <div className="rounded-xl border border-success/30 bg-success-bg px-3 py-2 text-xs text-success-text" role="status">الملف اجتاز الفحص بالكامل وهو جاهز لمرحلة الاعتماد عبر المسار التشغيلي.</div>
             ) : (
               <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs" role="alert">
                 <p className="font-black text-destructive">لن يتم اعتماد الملف قبل معالجة جميع المشكلات.</p>
