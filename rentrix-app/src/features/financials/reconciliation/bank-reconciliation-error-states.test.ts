@@ -14,7 +14,7 @@ describe('bank reconciliation error vs empty honesty', () => {
   );
 
   it('renders ErrorState for accounts and lines failures with retry', () => {
-    expect(page).toContain("import { ErrorState } from '@/components/ui/error-state'");
+    expect(page).toMatch(/import\s+\{[^}]*ErrorState[^}]*\}\s+from '@\/components\/ui\/error-state'/);
     expect(page).toContain('ctrl.accountsQuery.isError');
     expect(page).toContain('ctrl.linesQuery.isError');
     expect(page).toContain('تعذر تحميل الحسابات البنكية');

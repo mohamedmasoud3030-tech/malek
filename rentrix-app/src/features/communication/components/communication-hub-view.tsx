@@ -15,7 +15,7 @@ import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
 import { AsyncContentState } from '@/components/async-content-state';
-import { WriteErrorCard } from '@/components/page-state-card';
+import { WriteErrorCard } from '@/components/ui/error-state';
 import type { CommunicationFilters, CommunicationFormValues, CommunicationRecord } from '../types';
 
 
@@ -143,13 +143,16 @@ export function CommunicationHubView({
             </Select>
           </>
         )}
-
         activeFilters={activeFilters}
         onClearAllFilters={clearFilters}
       />
 
-
-      {writeError ? <WriteErrorCard message={writeError instanceof Error ? writeError.message : 'تعذر حفظ التغيير على سجل التواصل.'} /> : null}
+      {writeError ? (
+        <WriteErrorCard
+          error={writeError}
+          fallbackMessage="تعذر حفظ التغيير على سجل التواصل."
+        />
+      ) : null}
 
       <AsyncContentState
         status={isLoading ? 'loading' : error ? 'error' : rows.length === 0 ? 'empty' : 'ready'}

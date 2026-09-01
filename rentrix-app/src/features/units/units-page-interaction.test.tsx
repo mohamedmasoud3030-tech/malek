@@ -5,12 +5,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act } from 'react';
 import { UnitsPage } from './units-page';
 
-// Global navigation spy
 const mockNavigate = vi.fn();
 const createUnitMock = vi.fn();
 const updateUnitMock = vi.fn();
 
-// The page registers permission-gated actions through the shared auth seam.
 vi.mock('@/hooks/use-auth', () => ({
   useAuth: () => ({ authorization: { role: 'MANAGER' }, canAccess: () => true }),
   useOptionalAuth: () => ({ canAccess: () => true }),
@@ -20,8 +18,8 @@ vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => mockNavigate,
   Link: (props: any) => {
     return (
-      <a 
-        data-testid="mock-link" 
+      <a
+        data-testid="mock-link"
         onClick={(e) => {
           if (props.onClick) props.onClick(e);
           if (!e.defaultPrevented) {
@@ -36,13 +34,11 @@ vi.mock('@tanstack/react-router', () => ({
   },
 }));
 
-// Mirror real PageHeader: primaryAction is the current API; `action` is the
-// deprecated alias. EmbeddableWorkspace (and the units page) pass primaryAction.
 vi.mock('@/components/layout/page-header', () => ({
-  PageHeader: ({ action, primaryAction, secondaryActions }: any) => (
+  PageHeader: ({ primaryAction, secondaryActions }: any) => (
     <header data-page-header>
       {secondaryActions}
-      {primaryAction ?? action}
+      {primaryAction}
     </header>
   ),
 }));
@@ -160,16 +156,13 @@ describe('Global UnitsPage Real Rendered User-Interaction Tests', () => {
       );
     });
 
-    // Locate desktop row in table body
     const row = container?.querySelector('tbody tr') as HTMLElement;
     expect(row).not.toBeNull();
 
-    // Click the row (not on the anchor)
     await act(async () => {
       row.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
 
-    // Row clicks give a quick glance; the full dossier stays an explicit action.
     expect(document.body.textContent).toContain('معاينة الوحدة');
     expect(mockNavigate).not.toHaveBeenCalled();
   });
@@ -211,22 +204,18 @@ describe('Global UnitsPage Real Rendered User-Interaction Tests', () => {
       );
     });
 
-    // Locate the embedded property link in the desktop table (under td)
     const propertyLink = container?.querySelector('tbody tr td a[href="/properties/$propertyId"]') as HTMLAnchorElement;
     expect(propertyLink).not.toBeNull();
 
-    // Click the property link
     await act(async () => {
       propertyLink.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
 
-    // 1. Verify it navigates to the property details route with the correct propertyId
     expect(mockNavigate).toHaveBeenCalledWith({
       to: '/properties/$propertyId',
       params: { propertyId: 'prop-1' },
     });
 
-    // 2. Verify it did NOT trigger the parent row's unit detail navigation!
     expect(mockNavigate).not.toHaveBeenCalledWith({
       to: '/properties/$propertyId/units/$unitId',
       params: { propertyId: 'prop-1', unitId: 'unit-1' },

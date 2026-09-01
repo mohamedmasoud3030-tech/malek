@@ -60,17 +60,6 @@
     "public": true
   },
   {
-    "key": "malek-pro-visual",
-    "labelAr": "الهوية البصرية MALEK Pro",
-    "labelEn": "MALEK Pro Visual",
-    "owner": "platform",
-    "description": "Emerald/slate operational visual wave (data-visual-wave=malek-pro).",
-    "cleanupBy": "2026-09-15",
-    "phase": "beta",
-    "defaultValue": true,
-    "public": true
-  },
-  {
     "key": "commission-lifecycle-v2",
     "labelAr": "دورة العمولات المتقدمة",
     "labelEn": "Commission Lifecycle V2",

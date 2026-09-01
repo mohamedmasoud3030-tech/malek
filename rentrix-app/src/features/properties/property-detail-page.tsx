@@ -112,7 +112,7 @@ export function PropertyDetailPage() {
       emptyDescription="ربما تم حذف العقار أو لا تملك صلاحية الوصول إليه."
     >
       {property && (
-        <PageLayout dir="rtl" size="wide" visualVariant="malek-pro">
+        <PageLayout dir="rtl" size="wide">
           {propertyQuery.isError ? (
             <DataRefreshAlert onRetry={() => { void propertyQuery.refetch(); }} isRefreshing={propertyQuery.isFetching} />
           ) : null}

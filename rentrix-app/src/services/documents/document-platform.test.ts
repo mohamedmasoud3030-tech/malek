@@ -1,22 +1,9 @@
 /**
- * Document platform contract lock (characterization tests).
+ * Canonical document platform behavior.
  *
- * These tests lock the *externally visible* contracts of the document,
- * print, and PDF platform so the canonical-engine refactor can proceed
- * without silently changing truthfulness, identity, or output behavior:
- *
- *  - every supported document type builds a UnifiedDocumentModel that
- *    echoes the *real* company identity (never a platform brand name);
- *  - missing company identity always raises a visible Arabic error
- *    instead of rendering placeholder branding;
- *  - status wording stays truthful (draft contracts are drafts, paid
- *    invoices are paid, unbalanced trial balances are unbalanced);
- *  - OMR money keeps 3-decimal precision everywhere it is rendered;
- *  - every user-controlled string is HTML-escaped before print HTML;
- *  - `print` and `downloadPdf` stay two distinct service operations.
- *
- * The inventory behind these contracts lives in the platform PR
- * description (document type → caller → builder → paths → coverage).
+ * These tests protect user-visible truthfulness, identity, precision, output
+ * safety, and the print/PDF service boundary without coupling the suite to a
+ * historical migration or compatibility surface.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -28,7 +15,8 @@ vi.mock('./DocumentController', () => ({
 }));
 
 import { DocumentController } from './DocumentController';
-import { documentEngine, MissingCompanyIdentityError } from './DocumentEngine';
+import { documentEngine } from './DocumentEngine';
+import { MissingDocumentSettingsError } from './companyIdentity';
 import { documentService, getDocumentCapability, listDocumentCapabilities } from './DocumentService';
 import { collectDocumentTextChunks, escapeDocumentHtml } from './DocumentRenderer';
 import type { Contract, Expense, Invoice, Person, Property, Receipt, Unit } from '@/types/domain';
@@ -170,7 +158,7 @@ function buildEachSupportedType() {
   } as const;
 }
 
-describe('document platform contracts — inventory lock', () => {
+describe('document platform behavior', () => {
   it('every supported document type builds a model carrying the real company identity', () => {
     const models = buildEachSupportedType();
     for (const [type, model] of Object.entries(models)) {
@@ -196,7 +184,7 @@ describe('document platform contracts — inventory lock', () => {
     ];
 
     for (const attempt of attempts) {
-      expect(attempt).toThrow(MissingCompanyIdentityError);
+      expect(attempt).toThrow(MissingDocumentSettingsError);
       expect(attempt).toThrow(/بيانات هوية الشركة غير مكتملة/);
     }
   });
@@ -257,7 +245,6 @@ describe('document platform contracts — inventory lock', () => {
       expect(escaped).not.toContain('<img');
       expect(escaped.includes('<') ? escaped.includes('&lt;') : true).toBe(true);
     }
-    // The raw model keeps original text; neutralization is the renderer's duty.
     expect(collectDocumentTextChunks(hostileModel).some((chunk) => chunk.includes('<script>'))).toBe(true);
     expect(escapeDocumentHtml(xss)).not.toMatch(/<script|<img/);
   });
@@ -281,7 +268,7 @@ describe('document platform contracts — inventory lock', () => {
   });
 });
 
-describe('document service boundary — capability and path contracts', () => {
+describe('document service boundary', () => {
   beforeEach(() => {
     vi.mocked(DocumentController.print).mockClear();
     vi.mocked(DocumentController.downloadPdf).mockClear();
@@ -294,9 +281,6 @@ describe('document service boundary — capability and path contracts', () => {
       expect(capability.templateAvailable).toBe(true);
       expect(capability.externalProviderRequired).toBe(false);
     }
-    // The generic report is a first-class capability: real callers (reports
-    // sections, deposits clearance, maintenance and utilities workspaces)
-    // already print/export it through the compatibility adapters.
     expect(getDocumentCapability('generic_report')).toEqual({
       type: 'generic_report',
       templateAvailable: true,

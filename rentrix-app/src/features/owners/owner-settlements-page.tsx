@@ -38,7 +38,6 @@ export function OwnerSettlementsWorkspace({ embedded = false }: OwnerSettlements
 
   return (
     <EmbeddableWorkspace
-      visualVariant="malek-pro"
       embedded={embedded}
       title="تسويات الملاك"
       description="إعداد تسويات كل مالك عن الفترة، اعتمادها للصرف، وتنفيذ دفعات الصافي المستحق مع مستندات الطباعة."

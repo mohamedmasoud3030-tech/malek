@@ -16,19 +16,22 @@ export type EmbeddableWorkspaceProps = Readonly<{
   count?: number | string;
   /** Optional stable data hook for embedded hub workspaces. */
   workspaceName?: string;
-  /** Embedded hubs can retain actions without repeating the child title. */
-  embeddedHeader?: 'full' | 'actions-only' | 'none';
   /** Optional stable storage key shared by the register view control. */
   viewModeStorageKey?: string;
   backTo?: string;
   backLabel?: string;
   primaryAction?: ReactNode;
   secondaryActions?: ReactNode;
-  /** Kept for source compatibility while the app uses one shared visual system. */
-  visualVariant?: 'malek-pro';
   children: ReactNode;
 }>;
 
+/**
+ * Canonical boundary between route pages and hub-embedded workspaces.
+ *
+ * A standalone route owns PageLayout + PageHeader. An embedded workspace owns
+ * content and reachable actions only. There is intentionally no API for a
+ * second embedded page identity or an alternate visual system.
+ */
 export function EmbeddableWorkspace({
   embedded = false,
   title,
@@ -40,16 +43,11 @@ export function EmbeddableWorkspace({
   contentClassName,
   count,
   workspaceName,
-  // Embedded hubs already own the title hierarchy. Keep only reachable actions
-  // at the top of the child workspace unless a consumer explicitly opts back
-  // into the legacy full embedded header.
-  embeddedHeader = embedded ? 'actions-only' : 'full',
   viewModeStorageKey,
   backTo,
   backLabel,
   primaryAction,
   secondaryActions,
-  visualVariant = 'malek-pro',
   children,
 }: EmbeddableWorkspaceProps) {
   if (embedded) {
@@ -59,37 +57,10 @@ export function EmbeddableWorkspace({
       <div
         data-embedded-workspace
         data-workspace={workspaceName}
-        data-visual-wave={visualVariant}
+        data-malek-surface
         className="min-w-0 space-y-2.5 sm:space-y-3"
       >
-        {embeddedHeader === 'full' ? (
-          <header
-            data-embedded-workspace-header
-            className="flex min-w-0 items-center justify-between gap-3 border-b border-border/50 pb-2"
-          >
-            <div className="flex min-w-0 items-center gap-2">
-              <h2 className="truncate text-base font-black tracking-[-0.01em] sm:text-lg">{title}</h2>
-              {count !== undefined ? (
-                <span
-                  className="inline-flex min-h-6 shrink-0 items-center rounded-full bg-muted/60 px-2 py-0.5 text-xs font-bold tabular-nums text-muted-foreground"
-                  aria-label={`عدد السجلات ${count}`}
-                >
-                  {count}
-                </span>
-              ) : null}
-            </div>
-
-            {hasActions ? (
-              <div data-workspace-actions className="shrink-0" aria-label={`إجراءات ${title}`}>
-                <PageHeaderActions
-                  title={title}
-                  primaryAction={primaryAction}
-                  secondaryActions={secondaryActions}
-                />
-              </div>
-            ) : null}
-          </header>
-        ) : embeddedHeader === 'actions-only' && hasActions ? (
+        {hasActions ? (
           <div data-embedded-workspace-actions className="flex justify-end">
             <div data-workspace-actions aria-label={`إجراءات ${title}`}>
               <PageHeaderActions
@@ -116,7 +87,6 @@ export function EmbeddableWorkspace({
       size={size}
       className={className}
       contentClassName={contentClassName}
-      visualVariant={visualVariant}
     >
       <PageHeader
         title={title}

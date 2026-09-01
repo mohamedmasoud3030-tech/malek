@@ -626,7 +626,7 @@ function SupportIntake() {
 }
 export function HelpSupportPage() {
   return (
-    <PageLayout size="wide" dir="rtl" lang="ar" visualVariant="malek-pro">
+    <PageLayout size="wide" dir="rtl" lang="ar">
       <PageHeader title="المساعدة والدعم" description="إرشادات قصيرة مرتبطة بالمهام، تشخيص آمن، وطلبات دعم داخلية دون مشاركة البيانات مع طرف خارجي." />
       <KnowledgeBase />
       <SupportIntake />

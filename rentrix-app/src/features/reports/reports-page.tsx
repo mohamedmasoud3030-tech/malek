@@ -39,12 +39,6 @@ export function ReportsPage() {
   const reportsTitle = translateSharedLabel('financialsSectionReports');
   const pageDescription = translateSharedLabel('reportsPageDescription');
 
-  /**
-   * Deliberate user navigation between workspaces/sub-views pushes browser
-   * history so Back walks the natural chain: أداء المكتب → المتأخرات →
-   * عقار محدد → Back → المتأخرات → Back → أداء المكتب. Normalization of
-   * malformed URLs never rewrites the address; it only renders a default.
-   */
   const handleOpenReport = useCallback(
     (nextWorkspace: ReportWorkspaceId, nextView?: ReportViewId) => {
       void navigate({
@@ -55,14 +49,6 @@ export function ReportsPage() {
     [navigate],
   );
 
-  /**
-   * URL↔state synchronization. The URL is the authority for contextual
-   * drill-through scope: navigation writes the filter patch into the search
-   * object (via buildWorkspaceSearch) and this effect mirrors only the keys
-   * that changed into local state. Back/Forward/refresh therefore restore
-   * the report scope from the URL, while keys the URL never carried (e.g.
-   * locally edited dates) keep their local values.
-   */
   const lastSearchRef = useRef<Record<string, unknown>>(search);
   useEffect(() => {
     const previous = lastSearchRef.current;
@@ -72,11 +58,6 @@ export function ReportsPage() {
     if (patch) setFilters((current) => ({ ...current, ...patch }));
   }, [search]);
 
-  /**
-   * Contextual drill-through: the filter patch is serialized into the target
-   * URL so the scope survives refresh, share links, and Back/Forward. The
-   * resulting search state carries workspace + view + the patched filter keys.
-   */
   const handleDrill: ReportDrillHandler = useCallback(
     (targetWorkspace, targetView, filterPatch) => {
       void navigate({
@@ -99,7 +80,7 @@ export function ReportsPage() {
   }
 
   return (
-    <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro">
+    <PageLayout dir="rtl" lang="ar" size="wide">
       <PageHeader title={reportsTitle} description={pageDescription} />
 
       <div data-finance-root className="min-w-0 space-y-3">

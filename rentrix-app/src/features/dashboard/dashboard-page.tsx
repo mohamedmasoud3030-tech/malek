@@ -349,7 +349,7 @@ export function DashboardPage() {
   };
 
   return (
-    <PageLayout size="wide" visualVariant="malek-pro">
+    <PageLayout size="wide">
       <PageHeader
         title="اليوم"
         description="مركز قيادة اليوم: الأداء، الأولويات، التحصيل، الإشغال، العقود والالتزامات في مسار واحد."

@@ -8,8 +8,6 @@ export interface PageLayoutProps {
   dir?: 'rtl' | 'ltr';
   size?: 'default' | 'wide' | 'full';
   lang?: string;
-  /** Kept for source compatibility while all pages use one visual system. */
-  visualVariant?: 'malek-pro';
 }
 
 const pageSizes: Record<NonNullable<PageLayoutProps['size']>, string> = {
@@ -29,12 +27,11 @@ export function PageLayout({
   dir,
   lang,
   size = 'default',
-  visualVariant = 'malek-pro',
 }: PageLayoutProps) {
   return (
     <div
       data-page-layout
-      data-visual-wave={visualVariant}
+      data-malek-surface
       className={cn('min-w-0 overflow-x-clip', className)}
       dir={dir}
       lang={lang}

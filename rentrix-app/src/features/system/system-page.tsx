@@ -99,7 +99,7 @@ export function SystemWorkspace({ variant = 'standalone' }: SystemWorkspaceProps
   }
 
   return (
-    <PageLayout dir="rtl" lang="ar" visualVariant="malek-pro">
+    <PageLayout dir="rtl" lang="ar">
       <PageHeader
         title="النظام والحوكمة"
         description="مركز وصول للوظائف الإدارية والحساسة حسب صلاحياتك."

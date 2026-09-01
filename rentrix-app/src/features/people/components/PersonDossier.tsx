@@ -179,7 +179,7 @@ export function PersonDetailPage({ personId: personIdProp }: Readonly<{ personId
   const [activeSection, setActiveSection] = useState<PersonSection>('overview');
 
   return (
-    <PageLayout dir="rtl" size="wide" visualVariant="malek-pro">
+    <PageLayout dir="rtl" size="wide">
       <EntityDetailHeader
         title="ملف الشخص"
         subtitle="البيانات والعلاقات والمستندات والنشاط الموثق."

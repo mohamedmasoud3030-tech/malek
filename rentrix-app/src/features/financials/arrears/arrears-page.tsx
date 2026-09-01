@@ -22,7 +22,6 @@ export function ArrearsWorkspace({ embedded = false }: ArrearsWorkspaceProps) {
   return (
     <EmbeddableWorkspace
       embedded={embedded}
-      visualVariant="malek-pro"
       title="المتأخرات"
       description="متابعة المبالغ المتأخرة وأعمار الديون — الفلاتر محفوظة أثناء التنقل."
       secondaryActions={(

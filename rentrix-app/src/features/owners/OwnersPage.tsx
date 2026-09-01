@@ -2,7 +2,7 @@ import { Building2, LinkIcon, Plus, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { EntityForm } from '@/components/ui/entity-form';
-import { RegisterHeading, RegisterMetricStrip } from '@/components/layout/register-summary';
+import { RegisterMetricStrip } from '@/components/layout/register-summary';
 import { AsyncContentState } from '@/components/async-content-state';
 import { OwnerFormDialog } from './components/owner-form-dialog';
 import { OwnerRelationshipsList, OwnershipLinkForm } from './components/owner-relationships';
@@ -10,7 +10,6 @@ import { OwnerWorkspaceTable } from './components/owner-workspace-table';
 import { getOwnerDisplayLabel } from './utils/owner-ui-helpers';
 import { getOwnerPageErrorMessage, useOwnersPageController } from './useOwnersPageController';
 import { formatCount } from '@/lib/formatters';
-
 
 export type OwnersWorkspaceProps = Readonly<{
   embedded?: boolean;
@@ -52,7 +51,6 @@ export function OwnersWorkspace({ embedded = false }: OwnersWorkspaceProps) {
       embedded={embedded}
       dir="rtl"
       size="wide"
-      visualVariant="malek-pro"
       title="إدارة الملاك"
       count={formatCount(controller.summary.totalOwners)}
       primaryAction={(
@@ -75,24 +73,16 @@ export function OwnersWorkspace({ embedded = false }: OwnersWorkspaceProps) {
       </section>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.18fr)_minmax(22rem,0.82fr)]">
-        <section
-          data-owner-register
-          className="min-w-0 overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card"
-        >
-          <header className="border-b border-border/70 px-3 py-2.5 sm:px-4">
-            <RegisterHeading title="سجل الملاك" />
-          </header>
-          <div className="p-3 sm:p-4">
-            <OwnerWorkspaceTable
-              rows={controller.filteredOwnerRows}
-              search={controller.ownerSearch}
-              selectedOwner={controller.selectedOwner}
-              onCreateOwner={controller.openCreateForm}
-              onEditOwner={controller.openEditForm}
-              onSearchChange={controller.setOwnerSearch}
-              onSelectOwner={controller.setSelectedOwnerId}
-            />
-          </div>
+        <section data-owner-register className="min-w-0">
+          <OwnerWorkspaceTable
+            rows={controller.filteredOwnerRows}
+            search={controller.ownerSearch}
+            selectedOwner={controller.selectedOwner}
+            onCreateOwner={controller.openCreateForm}
+            onEditOwner={controller.openEditForm}
+            onSearchChange={controller.setOwnerSearch}
+            onSelectOwner={controller.setSelectedOwnerId}
+          />
         </section>
 
         <aside

@@ -22,8 +22,10 @@ describe('EmbeddableWorkspace — standalone mode', () => {
       </EmbeddableWorkspace>,
     );
 
+    const pageLayout = container.querySelector('[data-page-layout]');
     expect(container.querySelectorAll('[data-page-layout]')).toHaveLength(1);
-    expect(container.querySelector('[data-page-layout]')?.getAttribute('data-visual-wave')).toBe('malek-pro');
+    expect(pageLayout?.hasAttribute('data-malek-surface')).toBe(true);
+    expect(pageLayout?.hasAttribute('data-visual-wave')).toBe(false);
     expect(container.querySelectorAll('[data-page-header]')).toHaveLength(1);
     expect(screen.getByRole('heading', { name: 'عنوان' })).toBeTruthy();
     expect(screen.getByText('وصف')).toBeTruthy();
@@ -55,10 +57,12 @@ describe('EmbeddableWorkspace — embedded mode', () => {
       </EmbeddableWorkspace>,
     );
 
+    const embeddedWorkspace = container.querySelector('[data-embedded-workspace]');
     expect(container.querySelector('[data-page-layout]')).toBeNull();
     expect(container.querySelector('[data-page-header]')).toBeNull();
-    expect(container.querySelector('[data-embedded-workspace]')?.getAttribute('data-workspace')).toBe('test-workspace');
-    expect(container.querySelector('[data-embedded-workspace]')?.getAttribute('data-visual-wave')).toBe('malek-pro');
+    expect(embeddedWorkspace?.getAttribute('data-workspace')).toBe('test-workspace');
+    expect(embeddedWorkspace?.hasAttribute('data-malek-surface')).toBe(true);
+    expect(embeddedWorkspace?.hasAttribute('data-visual-wave')).toBe(false);
   });
 
   it('does not repeat the title, because the hub header already shows it', () => {

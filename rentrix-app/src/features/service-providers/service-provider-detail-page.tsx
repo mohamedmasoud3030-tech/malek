@@ -29,7 +29,6 @@ function statusTone(status: string | null): 'info' | 'warning' | 'success' | 'ne
   return 'neutral';
 }
 
-
 type ProviderSection = 'overview' | 'operations' | 'documents';
 
 const providerSections = [
@@ -77,7 +76,7 @@ export function ServiceProviderDetailPage() {
   const resolvedJobs = maintenanceJobs.filter((job) => job.status === 'resolved' || job.status === 'closed').length;
 
   return (
-    <PageLayout dir="rtl" size="wide" visualVariant="malek-pro">
+    <PageLayout dir="rtl" size="wide">
       {dossierQuery.isError ? (
         <DataRefreshAlert onRetry={() => { void dossierQuery.refetch(); }} isRefreshing={dossierQuery.isFetching} />
       ) : null}

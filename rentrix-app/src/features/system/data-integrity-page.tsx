@@ -66,7 +66,7 @@ export function DataIntegrityWorkspace({ variant = 'standalone' }: DataIntegrity
   }
 
   return (
-    <PageLayout dir="rtl" lang="ar" visualVariant="malek-pro">
+    <PageLayout dir="rtl" lang="ar">
       <PageHeader
         title="سلامة البيانات"
         description={`فحص قراءة فقط للعلاقات الأساسية في مخطط ${APP_BRAND_NAME} الحالي. لا ينفذ أي تغييرات على البيانات.`}
@@ -80,4 +80,3 @@ export function DataIntegrityWorkspace({ variant = 'standalone' }: DataIntegrity
 export function DataIntegrityPage() {
   return <DataIntegrityWorkspace variant="standalone" />;
 }
-

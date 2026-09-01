@@ -13,7 +13,6 @@ export function DepositsWorkspace({ embedded = false }: DepositsWorkspaceProps) 
   return (
     <EmbeddableWorkspace
       embedded={embedded}
-      visualVariant="malek-pro"
       title="التأمينات"
     >
       <DepositsWorkspaceBody />

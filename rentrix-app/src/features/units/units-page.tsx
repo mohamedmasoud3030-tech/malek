@@ -14,7 +14,7 @@ import {
   useUnitsListController,
   getUnitPageStatus,
 } from "./use-units-list-controller";
-import { EmbeddableWorkspace } from "@/components/layout/embeddable-workspace";
+import { ListPage } from "@/components/layout/list-page";
 import { RegisterMetricStrip } from "@/components/layout/register-summary";
 import { ActionMenu } from "@/components/ui/action-menu";
 import { LoadingState } from "@/components/ui/loading-state";
@@ -24,7 +24,6 @@ import { EntityForm } from "@/components/ui/entity-form";
 import { Select } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EntityTable, type ColumnDef } from "@/components/ui/entity-table";
-import { FilterBar } from "@/components/ui/filter-bar";
 import { formatMoney, formatNumber } from "@/hooks/useCompanyFormatters";
 import { useAuth } from "@/hooks/use-auth";
 import { UnitFormModal } from "./unit-form-modal";
@@ -175,38 +174,23 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
         </div>
       ),
     },
-  ], [canEditUnit, ctrl, openPreview]);
+  ], [canEditUnit, ctrl]);
 
   return (
-    <EmbeddableWorkspace
-      embedded={embedded}
-      dir="rtl"
-      size="wide"
-      visualVariant="malek-pro"
-      title="الوحدات"
-      count={formatNumber(totalUnits)}
-      primaryAction={primaryAction}
-      backTo={embedded ? undefined : "/properties"}
-      backLabel={embedded ? undefined : "العقارات"}
-    >
-      <section data-unit-summary aria-label="ملخص تشغيل الوحدات">
-        <RegisterMetricStrip
-          aria-label="ملخص تشغيل الوحدات"
-          items={[
-            { id: 'total', label: 'الوحدات', value: formatNumber(totalUnits), icon: DoorOpen },
-            { id: 'occupancy', label: 'الإشغال', value: `${formatNumber(occupancyRate)}%`, hint: `${formatNumber(ctrl.kpis.occupiedCount)} مشغولة`, icon: CircleGauge },
-            { id: 'available', label: 'متاحة', value: formatNumber(ctrl.kpis.availableCount), icon: Home, tone: 'success', hideWhenEmpty: true },
-            { id: 'maintenance', label: 'صيانة', value: formatNumber(maintenanceCount), icon: Wrench, tone: 'warning', hideWhenEmpty: true },
-            { id: 'rent', label: 'الإيجار المتوقع', value: formatMoney(ctrl.kpis.expectedRent), icon: Building2 },
-          ]}
-        />
-      </section>
-
-      <FilterBar
-        searchValue={ctrl.search}
-        onSearchChange={ctrl.setSearch}
-        searchPlaceholder="رقم الوحدة، الدور، العقار"
-        searchAriaLabel="بحث في الوحدات"
+    <>
+      <ListPage
+        embedded={embedded}
+        dir="rtl"
+        title="الوحدات"
+        count={formatNumber(totalUnits)}
+        primaryAction={primaryAction}
+        backTo={embedded ? undefined : "/properties"}
+        backLabel={embedded ? undefined : "العقارات"}
+        search={{
+          value: ctrl.search,
+          onChange: ctrl.setSearch,
+          placeholder: "رقم الوحدة، الدور، العقار",
+        }}
         filters={
           <>
             <EntityForm.Field label={<span className="sr-only">العقار</span>} className="min-w-0 flex-1 sm:min-w-36">
@@ -250,65 +234,78 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
             </EntityForm.Field>
           </>
         }
-        actions={(
+        toolbarActions={(
           <DataTableColumnsMenu
             columns={unitRegisterColumnOptions}
             visibleKeys={visibleColumnKeys}
             onChange={setVisibleColumnKeys}
           />
         )}
-      />
+      >
+        <section data-unit-summary aria-label="ملخص تشغيل الوحدات">
+          <RegisterMetricStrip
+            aria-label="ملخص تشغيل الوحدات"
+            items={[
+              { id: 'total', label: 'الوحدات', value: formatNumber(totalUnits), icon: DoorOpen },
+              { id: 'occupancy', label: 'الإشغال', value: `${formatNumber(occupancyRate)}%`, hint: `${formatNumber(ctrl.kpis.occupiedCount)} مشغولة`, icon: CircleGauge },
+              { id: 'available', label: 'متاحة', value: formatNumber(ctrl.kpis.availableCount), icon: Home, tone: 'success', hideWhenEmpty: true },
+              { id: 'maintenance', label: 'صيانة', value: formatNumber(maintenanceCount), icon: Wrench, tone: 'warning', hideWhenEmpty: true },
+              { id: 'rent', label: 'الإيجار المتوقع', value: formatMoney(ctrl.kpis.expectedRent), icon: Building2 },
+            ]}
+          />
+        </section>
 
-      <section data-unit-register className="min-w-0 space-y-2.5">
-        <EntityTable
-          aria-label="جدول الوحدات"
-          rows={ctrl.filteredUnits}
-          columns={columns}
-          visibleColumnKeys={visibleColumnKeys}
-          onRowClick={openPreview}
-          keyOf={(unit) => unit.id}
-          isLoading={ctrl.unitsQuery.isLoading || ctrl.propertiesQuery.isLoading}
-          error={ctrl.isError ? new Error("تعذر تحميل الوحدات") : null}
-          errorTitle="تعذر تحميل الوحدات"
-          onRetry={ctrl.refetchAll}
-          emptyTitle="لا توجد وحدات مطابقة"
-          emptyDescription={canCreateUnit ? "غيّر البحث أو الفلاتر لعرض وحدات أخرى، أو أضف وحدة مرتبطة بعقار قائم." : "غيّر البحث أو الفلاتر لعرض وحدات أخرى."}
-          emptyAction={canCreateUnit ? (
-            <Button onClick={ctrl.openCreate}>
-              <Plus className="me-2 size-4" />
-              إضافة وحدة
-            </Button>
-          ) : undefined}
-          mobileCardType="unit"
-          mobileBadgeKey="status"
-          mobileSupportingKey="property"
-          mobilePrimaryMetaKeys={["rent", "floor"]}
-          mobileSecondaryMetaKeys={["notes"]}
-          mobileCardPrimaryAction={(unit) => ({
-            label: "معاينة",
-            icon: Eye,
-            variant: "default",
-            ariaLabel: `معاينة وحدة ${unit.unit_number}`,
-            onClick: () => openPreview(unit),
-          })}
-          mobileCardActions={(unit) => [
-            {
-              label: "التفاصيل الكاملة",
-              icon: DoorOpen,
-              variant: "secondary" as const,
-              ariaLabel: `فتح ملف وحدة ${unit.unit_number}`,
-              onClick: () => ctrl.navigateToUnit(unit),
-            },
-            ...(canEditUnit ? [{
-              label: "تعديل البيانات",
-              icon: Edit,
-              variant: "secondary" as const,
-              ariaLabel: `تعديل وحدة ${unit.unit_number}`,
-              onClick: () => ctrl.openEdit(unit),
-            }] : []),
-          ]}
-        />
-      </section>
+        <section data-unit-register className="min-w-0 space-y-2.5">
+          <EntityTable
+            aria-label="جدول الوحدات"
+            rows={ctrl.filteredUnits}
+            columns={columns}
+            visibleColumnKeys={visibleColumnKeys}
+            onRowClick={openPreview}
+            keyOf={(unit) => unit.id}
+            isLoading={ctrl.unitsQuery.isLoading || ctrl.propertiesQuery.isLoading}
+            error={ctrl.isError ? new Error("تعذر تحميل الوحدات") : null}
+            errorTitle="تعذر تحميل الوحدات"
+            onRetry={ctrl.refetchAll}
+            emptyTitle="لا توجد وحدات مطابقة"
+            emptyDescription={canCreateUnit ? "غيّر البحث أو الفلاتر لعرض وحدات أخرى، أو أضف وحدة مرتبطة بعقار قائم." : "غيّر البحث أو الفلاتر لعرض وحدات أخرى."}
+            emptyAction={canCreateUnit ? (
+              <Button onClick={ctrl.openCreate}>
+                <Plus className="me-2 size-4" />
+                إضافة وحدة
+              </Button>
+            ) : undefined}
+            mobileCardType="unit"
+            mobileBadgeKey="status"
+            mobileSupportingKey="property"
+            mobilePrimaryMetaKeys={["rent", "floor"]}
+            mobileSecondaryMetaKeys={["notes"]}
+            mobileCardPrimaryAction={(unit) => ({
+              label: "معاينة",
+              icon: Eye,
+              variant: "default",
+              ariaLabel: `معاينة وحدة ${unit.unit_number}`,
+              onClick: () => openPreview(unit),
+            })}
+            mobileCardActions={(unit) => [
+              {
+                label: "التفاصيل الكاملة",
+                icon: DoorOpen,
+                variant: "secondary" as const,
+                ariaLabel: `فتح ملف وحدة ${unit.unit_number}`,
+                onClick: () => ctrl.navigateToUnit(unit),
+              },
+              ...(canEditUnit ? [{
+                label: "تعديل البيانات",
+                icon: Edit,
+                variant: "secondary" as const,
+                ariaLabel: `تعديل وحدة ${unit.unit_number}`,
+                onClick: () => ctrl.openEdit(unit),
+              }] : []),
+            ]}
+          />
+        </section>
+      </ListPage>
 
       <UnitPreviewDialog
         unitId={previewUnitId}
@@ -337,7 +334,7 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
           }}
         />
       ) : null}
-    </EmbeddableWorkspace>
+    </>
   );
 }
 

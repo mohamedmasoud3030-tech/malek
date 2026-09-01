@@ -116,7 +116,7 @@ function OwnerDetailReady({
   ) : undefined;
 
   return (
-    <PageLayout dir="rtl" size="wide" visualVariant="malek-pro">
+    <PageLayout dir="rtl" size="wide">
       {refreshError ? <DataRefreshAlert onRetry={onRetry} isRefreshing={isRefreshing} /> : null}
       <EntityDetailHeader
         title="ملف المالك"

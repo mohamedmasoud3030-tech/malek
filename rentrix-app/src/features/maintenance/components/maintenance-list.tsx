@@ -229,7 +229,7 @@ export function MaintenanceList(props: MaintenanceListProps) {
   ], []);
 
   return (
-    <div data-visual-wave="malek-pro" data-maintenance-list>
+    <div data-maintenance-list>
       <EntityTable
         aria-label="جدول طلبات الصيانة"
         rows={rows}

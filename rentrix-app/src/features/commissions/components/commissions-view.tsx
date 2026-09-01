@@ -7,8 +7,6 @@ import {
   CheckCircle2,
   Clock3,
   Edit,
-  Plus,
-  RotateCcw,
   Undo2,
 } from "lucide-react";
 import { useState } from "react";
@@ -16,19 +14,14 @@ import type { ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { ActionMenu } from "@/components/ui/action-menu";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { PageStateCard, WriteErrorCard } from "@/components/page-state-card";
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { ErrorState, WriteErrorCard } from "@/components/ui/error-state";
+import { LoadingState } from "@/components/ui/loading-state";
+import { EmptyState } from "@/components/ui/state-surfaces";
 import { EntityForm } from "@/components/ui/entity-form";
 import { EntityTable, type ColumnDef } from "@/components/ui/entity-table";
 import { FilterBar } from "@/components/ui/filter-bar";
 import { Input } from "@/components/ui/input";
 import { RegisterMetricStrip } from "@/components/layout/register-summary";
-import { PageHeader } from "@/components/layout/page-header";
 import { Select } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { formatMoney } from "@/hooks/useCompanyFormatters";
@@ -83,6 +76,10 @@ type Props = Readonly<{
   onReverseAtomic?: (id: string, reason: string) => Promise<unknown>;
 }>;
 
+/**
+ * Commission workspace body only. Route identity/actions belong to the shared
+ * workspace shell so this component renders identically standalone or embedded.
+ */
 export function CommissionsView(props: Props) {
   const {
     rows,
@@ -144,18 +141,6 @@ export function CommissionsView(props: Props) {
 
   return (
     <section className="space-y-5" data-finance-root>
-      <div data-finance-header>
-        <PageHeader
-          title="العمولات"
-          primaryAction={
-            <Button onClick={onCreate} className="min-h-11 bg-primary text-primary-foreground">
-              <Plus className="me-2 size-4" />
-              إضافة عمولة
-            </Button>
-          }
-        />
-      </div>
-
       <section data-finance-section aria-label="ملخص العمولات">
         <RegisterMetricStrip
           aria-label="ملخص العمولات"
@@ -186,21 +171,29 @@ export function CommissionsView(props: Props) {
               </Select>
             </>
           }
-
-        activeFilters={activeFilters}
-        onClearAllFilters={() => onFiltersChange({ query: "", status: "all", type: "all" })}
-      />
-
+          activeFilters={activeFilters}
+          onClearAllFilters={() => onFiltersChange({ query: "", status: "all", type: "all" })}
+        />
       </section>
 
       <section data-finance-section aria-label="حالات التحميل والخطأ">
-        {error ? <ErrorCard message="تعذر تحميل العمولات" onRetry={onRetry} /> : null}
-        {writeError ? (
-          <WriteErrorCard message={writeError instanceof Error ? writeError.message : "تعذر حفظ التغيير على العمولة. راجع الصلاحيات أو الاتصال ثم حاول مرة أخرى."} />
+        {error ? (
+          <ErrorState
+            title="تعذر تحميل العمولات"
+            description="راجع الاتصال والصلاحيات ثم أعد المحاولة."
+            error={error}
+            onRetry={onRetry}
+          />
         ) : null}
-        {isLoading ? <PageStateCard title="جارٍ تحميل العمولات..." /> : null}
+        {writeError ? (
+          <WriteErrorCard
+            error={writeError}
+            fallbackMessage="تعذر حفظ التغيير على العمولة. راجع الصلاحيات أو الاتصال ثم حاول مرة أخرى."
+          />
+        ) : null}
+        {isLoading ? <LoadingState variant="table" label="جارٍ تحميل العمولات..." /> : null}
         {!isLoading && !error && rows.length === 0 ? (
-          <PageStateCard
+          <EmptyState
             title={hasFilters ? "لا توجد عمولات ضمن الفلاتر الحالية" : "لا توجد عمولات بعد"}
             description={hasFilters ? "غيّر البحث أو الحالة أو النوع لعرض سجلات عمولات أخرى — الفلاتر محفوظة." : "أضف عمولة تشغيلية عند توفر مصدر ومبلغ حقيقيين. هذه الصفحة للتتبع فقط ولا تنشئ أمر صرف."}
             action={hasFilters ? undefined : <Button onClick={onCreate} className="min-h-11">إضافة عمولة</Button>}
@@ -359,21 +352,6 @@ export function CommissionsView(props: Props) {
   );
 }
 
-function ErrorCard({ message, onRetry }: Readonly<{ message: string; onRetry: () => void }>) {
-  return (
-    <Card role="alert" data-finance-error>
-      <CardHeader>
-        <CardTitle className="text-sm font-bold text-destructive">{message}</CardTitle>
-        <CardDescription>راجع الاتصال والصلاحيات ثم أعد المحاولة.</CardDescription>
-        <Button variant="secondary" onClick={onRetry} className="min-h-11">
-          <RotateCcw className="me-2 size-4" />
-          إعادة المحاولة
-        </Button>
-      </CardHeader>
-    </Card>
-  );
-}
-
 function CommissionRows({
   rows,
   isArchiving,
@@ -401,30 +379,30 @@ function CommissionRows({
   );
 
   const commissionColumns = useMemo((): ColumnDef<CommissionRecord>[] => [
-        {
-          key: "staff_name", priority: 'identity' as const,
-          header: "المستفيد",
-          render: (row) => (
-            <span className="max-w-56 whitespace-normal break-words">
-              <span className="font-bold">{row.staff_name ?? "—"}</span>
-              <p className="text-xs text-muted-foreground">{formatSourceLabel(row.type, row.source_id)}</p>
-            </span>
-          ),
-        },
-        { key: "type", priority: 'secondary' as const, header: "النوع", render: (row) => commissionTypeLabels[row.type ?? ""] ?? row.type ?? "—" },
-        { key: "amount", priority: 'primary' as const, header: "المبلغ", render: (row) => <span dir="ltr" className="tabular-nums font-bold">{money(row.amount)}</span> },
-        {
-          key: "status", priority: 'secondary' as const,
-          header: "الحالة",
-          render: (row) => (
-            <span className="flex flex-col items-start gap-1">
-              <StatusBadge tone={commissionStatusTone[row.status ?? ""] ?? "neutral"}>{commissionStatusLabels[row.status ?? ""] ?? row.status ?? "—"}</StatusBadge>
-              {nextActionLabels[row.status ?? ""] ? <span className="text-xs font-semibold text-muted-foreground">{nextActionLabels[row.status ?? ""]}</span> : null}
-            </span>
-          ),
-        },
-        { key: "actions", priority: 'actions' as const, header: "إجراءات", render: actionsFor },
-      ], [actionsFor]);
+    {
+      key: "staff_name", priority: 'identity' as const,
+      header: "المستفيد",
+      render: (row) => (
+        <span className="max-w-56 whitespace-normal break-words">
+          <span className="font-bold">{row.staff_name ?? "—"}</span>
+          <p className="text-xs text-muted-foreground">{formatSourceLabel(row.type, row.source_id)}</p>
+        </span>
+      ),
+    },
+    { key: "type", priority: 'secondary' as const, header: "النوع", render: (row) => commissionTypeLabels[row.type ?? ""] ?? row.type ?? "—" },
+    { key: "amount", priority: 'primary' as const, header: "المبلغ", render: (row) => <span dir="ltr" className="tabular-nums font-bold">{money(row.amount)}</span> },
+    {
+      key: "status", priority: 'secondary' as const,
+      header: "الحالة",
+      render: (row) => (
+        <span className="flex flex-col items-start gap-1">
+          <StatusBadge tone={commissionStatusTone[row.status ?? ""] ?? "neutral"}>{commissionStatusLabels[row.status ?? ""] ?? row.status ?? "—"}</StatusBadge>
+          {nextActionLabels[row.status ?? ""] ? <span className="text-xs font-semibold text-muted-foreground">{nextActionLabels[row.status ?? ""]}</span> : null}
+        </span>
+      ),
+    },
+    { key: "actions", priority: 'actions' as const, header: "إجراءات", render: actionsFor },
+  ], [actionsFor]);
 
   return (
     <EntityTable

@@ -1,13 +1,12 @@
 import { AlertTriangle, Building2, Edit, Eye, FileText, KeyRound, Plus, TriangleAlert, Users } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
+import { ListPage } from '@/components/layout/list-page';
 import { RegisterMetricStrip } from '@/components/layout/register-summary';
 import { ActionMenu } from '@/components/ui/action-menu';
 import { Button } from '@/components/ui/button';
 import { DataTableColumnsMenu } from '@/components/ui/data-table';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
-import { FilterBar } from '@/components/ui/filter-bar';
 import { PersonFormModal } from '@/features/people/person-form-modal';
 import { TenantPreviewDialog } from './components/TenantPreviewDialog';
 import type { TenantWorkspaceRow } from './tenantWorkspaceService';
@@ -180,78 +179,85 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
     },
   ], [navigate]);
 
-  const workspaceContent = (
+  return (
     <>
-      {!tenantsQuery.isLoading && !tenantsQuery.isError ? <TenantSummary rows={rows} total={totalCount} /> : null}
-
-      <FilterBar
-        searchValue={search}
-        onSearchChange={(value) => { setSearch(value); setPage(1); }}
-        searchPlaceholder="بحث باسم المستأجر أو الهاتف أو الإيميل أو رقم الهوية"
-        searchAriaLabel="بحث في المستأجرين"
-        actions={(
+      <ListPage
+        embedded={embedded}
+        workspaceName="tenants"
+        dir="rtl"
+        title="المستأجرون"
+        count={totalCount}
+        primaryAction={createAction}
+        search={{
+          value: search,
+          onChange: (value) => { setSearch(value); setPage(1); },
+          placeholder: "بحث باسم المستأجر أو الهاتف أو الإيميل أو رقم الهوية",
+        }}
+        toolbarActions={(
           <DataTableColumnsMenu
             columns={tenantColumnOptions}
             visibleKeys={visibleColumnKeys}
             onChange={setVisibleColumnKeys}
           />
         )}
-      />
+      >
+        {!tenantsQuery.isLoading && !tenantsQuery.isError ? <TenantSummary rows={rows} total={totalCount} /> : null}
 
-      <section data-tenant-register className="min-w-0 space-y-2.5">
-        <EntityTable
-          aria-label="جدول المستأجرين"
-          rows={rows}
-          columns={columns}
-          visibleColumnKeys={visibleColumnKeys}
-          mobileCardType="tenant"
-          mobileSupportingKey="property"
-          mobilePrimaryMetaKeys={['contracts']}
-          mobileSecondaryMetaKeys={['arrears']}
-          mobileCardPrimaryAction={(tenant) => ({
-            label: 'معاينة',
-            icon: Eye,
-            variant: 'default',
-            onClick: () => openPreview(tenant),
-            ariaLabel: `معاينة ${tenant.person.full_name}`,
-          })}
-          mobileCardActions={(tenant) => [
-            {
-              label: 'التفاصيل الكاملة',
-              icon: Users,
-              variant: 'secondary',
-              onClick: () => openFullDetail(tenant),
-              ariaLabel: `فتح ملف ${tenant.person.full_name}`,
-            },
-            {
-              label: 'تعديل',
-              icon: Edit,
-              variant: 'secondary',
-              onClick: () => openEdit(tenant.person.id),
-              ariaLabel: `تعديل ${tenant.person.full_name}`,
-            },
-            ...(tenant.primaryContractId !== null
-              ? [{
-                  label: 'العقد',
-                  icon: FileText,
-                  variant: 'secondary' as const,
-                  onClick: () => openContract(tenant.primaryContractId!),
-                  ariaLabel: `فتح عقد ${tenant.person.full_name}`,
-                }]
-              : []),
-          ]}
-          keyOf={(tenant) => tenant.person.id}
-          isLoading={tenantsQuery.isLoading}
-          error={tenantsQuery.isError ? tenantsQuery.error : null}
-          errorTitle="تعذر تحميل المستأجرين"
-          onRetry={() => tenantsQuery.refetch()}
-          emptyTitle="لا توجد سجلات مستأجرين"
-          emptyDescription="سيظهر هنا أي شخص مصنف كمستأجر من نموذج الأشخاص الحالي."
-          emptyAction={<Button onClick={openCreate}><Plus className="me-2 size-4" />إضافة مستأجر</Button>}
-          pagination={{ page, pageSize, total: totalCount, onPageChange: setPage }}
-          onRowClick={openPreview}
-        />
-      </section>
+        <section data-tenant-register className="min-w-0 space-y-2.5">
+          <EntityTable
+            aria-label="جدول المستأجرين"
+            rows={rows}
+            columns={columns}
+            visibleColumnKeys={visibleColumnKeys}
+            mobileCardType="tenant"
+            mobileSupportingKey="property"
+            mobilePrimaryMetaKeys={['contracts']}
+            mobileSecondaryMetaKeys={['arrears']}
+            mobileCardPrimaryAction={(tenant) => ({
+              label: 'معاينة',
+              icon: Eye,
+              variant: 'default',
+              onClick: () => openPreview(tenant),
+              ariaLabel: `معاينة ${tenant.person.full_name}`,
+            })}
+            mobileCardActions={(tenant) => [
+              {
+                label: 'التفاصيل الكاملة',
+                icon: Users,
+                variant: 'secondary',
+                onClick: () => openFullDetail(tenant),
+                ariaLabel: `فتح ملف ${tenant.person.full_name}`,
+              },
+              {
+                label: 'تعديل',
+                icon: Edit,
+                variant: 'secondary',
+                onClick: () => openEdit(tenant.person.id),
+                ariaLabel: `تعديل ${tenant.person.full_name}`,
+              },
+              ...(tenant.primaryContractId !== null
+                ? [{
+                    label: 'العقد',
+                    icon: FileText,
+                    variant: 'secondary' as const,
+                    onClick: () => openContract(tenant.primaryContractId!),
+                    ariaLabel: `فتح عقد ${tenant.person.full_name}`,
+                  }]
+                : []),
+            ]}
+            keyOf={(tenant) => tenant.person.id}
+            isLoading={tenantsQuery.isLoading}
+            error={tenantsQuery.isError ? tenantsQuery.error : null}
+            errorTitle="تعذر تحميل المستأجرين"
+            onRetry={() => tenantsQuery.refetch()}
+            emptyTitle="لا توجد سجلات مستأجرين"
+            emptyDescription="سيظهر هنا أي شخص مصنف كمستأجر من نموذج الأشخاص الحالي."
+            emptyAction={<Button onClick={openCreate}><Plus className="me-2 size-4" />إضافة مستأجر</Button>}
+            pagination={{ page, pageSize, total: totalCount, onPageChange: setPage }}
+            onRowClick={openPreview}
+          />
+        </section>
+      </ListPage>
 
       <TenantPreviewDialog
         tenantId={previewTenantId ?? ''}
@@ -259,22 +265,6 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
         onOpenChange={(open) => { if (!open) closePreview(); }}
         onEdit={(personId) => { closePreview(); openEdit(personId); }}
       />
-    </>
-  );
-
-  return (
-    <>
-      <EmbeddableWorkspace
-        embedded={embedded}
-        workspaceName="tenants"
-        dir="rtl"
-        size="wide"
-        title="المستأجرون"
-        count={totalCount}
-        primaryAction={createAction}
-      >
-        {workspaceContent}
-      </EmbeddableWorkspace>
       <PersonFormModal open={formOpen} onClose={closeForm} personId={editingPersonId} defaultType="tenant" />
     </>
   );

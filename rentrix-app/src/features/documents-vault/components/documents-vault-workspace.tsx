@@ -135,15 +135,12 @@ export function DocumentsVaultWorkspace({ mode = 'standalone' }: DocumentsVaultW
             ))}
           </Select>
         }
-
         activeFilters={activeFilters}
         onClearAllFilters={() => {
           setSelectedCategory('all');
           setSearchQuery('');
         }}
       />
-
-
 
       <AsyncContentState
         status={documentsQuery.isLoading ? 'loading' : documentsQuery.isError ? 'error' : documents.length === 0 ? 'empty' : 'ready'}
@@ -185,7 +182,7 @@ export function DocumentsVaultWorkspace({ mode = 'standalone' }: DocumentsVaultW
   }
 
   return (
-    <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro">
+    <PageLayout dir="rtl" lang="ar" size="wide">
       <PageHeader
         title="فهرس المستندات"
         description="بحث ومعاينة عبر كل الملفات المرتبطة. الإضافة والتعديل يتمان من ملف الكيان نفسه حتى يظل كل مستند مرتبطًا بسياقه الصحيح."

@@ -169,7 +169,6 @@ export function PropertiesListE2EFixture() {
   return (
     <main className="fixed inset-0 z-[200] overflow-y-auto bg-background text-foreground outline-none" dir="rtl" tabIndex={-1} data-e2e-properties-workspace>
       <ListPage
-        visualVariant="malek-pro"
         title="العقارات"
         description="متابعة جاهزية العقار والمالك واتفاقية التشغيل والوحدات من مساحة واحدة."
         count={fixtureProperties.length}

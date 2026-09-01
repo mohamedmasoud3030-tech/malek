@@ -17,6 +17,9 @@ interface ListPageProps {
     placeholder?: string;
   };
   filters?: ReactNode;
+  advancedFilters?: ReactNode;
+  advancedFilterTitle?: string;
+  advancedFilterDescription?: string;
   /** Active filter chips shown once under the toolbar, each removable. */
   activeFilters?: readonly ActiveFilterItem[];
   onClearAllFilters?: () => void;
@@ -24,8 +27,8 @@ interface ListPageProps {
   toolbarActions?: ReactNode;
   /** Optional stable storage key shared by the page toolbar and its register. */
   viewModeStorageKey?: string;
-  /** Avoid a second title when this list is mounted inside a named hub. */
-  embeddedHeader?: 'full' | 'actions-only' | 'none';
+  /** Optional stable data hook for this list when mounted inside a hub. */
+  workspaceName?: string;
   children: ReactNode;
   className?: string;
   dir?: 'rtl' | 'ltr';
@@ -35,8 +38,6 @@ interface ListPageProps {
    * via EmbeddableWorkspace's action rail.
    */
   embedded?: boolean;
-  /** Scoped visual system for approved operational workspaces only. */
-  visualVariant?: 'malek-pro';
 }
 
 /**
@@ -56,16 +57,18 @@ export function ListPage({
   backLabel,
   search,
   filters,
+  advancedFilters,
+  advancedFilterTitle,
+  advancedFilterDescription,
   activeFilters,
   onClearAllFilters,
   toolbarActions,
   viewModeStorageKey,
-  embeddedHeader,
+  workspaceName,
   children,
   className,
   dir,
   embedded = false,
-  visualVariant,
 }: ListPageProps) {
   return (
     <EmbeddableWorkspace
@@ -79,24 +82,26 @@ export function ListPage({
       backLabel={backLabel}
       className={className}
       dir={dir}
-      visualVariant={visualVariant}
       viewModeStorageKey={viewModeStorageKey}
-      embeddedHeader={embeddedHeader}
+      workspaceName={workspaceName}
     >
-        <FilterBar
-          searchValue={search?.value}
-          onSearchChange={search?.onChange}
-          searchPlaceholder={search?.placeholder}
-          searchAriaLabel={`بحث في ${title}`}
-          filters={filters}
-          activeFilters={activeFilters}
-          onClearAllFilters={onClearAllFilters}
-          actions={toolbarActions}
-        />
+      <FilterBar
+        searchValue={search?.value}
+        onSearchChange={search?.onChange}
+        searchPlaceholder={search?.placeholder}
+        searchAriaLabel={`بحث في ${title}`}
+        filters={filters}
+        advancedFilters={advancedFilters}
+        advancedFilterTitle={advancedFilterTitle}
+        advancedFilterDescription={advancedFilterDescription}
+        activeFilters={activeFilters}
+        onClearAllFilters={onClearAllFilters}
+        actions={toolbarActions}
+      />
 
-        <div data-list-results className="space-y-2.5 sm:space-y-3">
-          {children}
-        </div>
+      <div data-list-results className="space-y-2.5 sm:space-y-3">
+        {children}
+      </div>
     </EmbeddableWorkspace>
   );
 }

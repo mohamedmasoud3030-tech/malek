@@ -64,7 +64,7 @@ export function LandDetailPage({ landId }: Readonly<{ landId: string }>) {
   const [activeSection, setActiveSection] = useState<LandSection>('overview');
 
   return (
-    <PageLayout dir="rtl" size="wide" visualVariant="malek-pro">
+    <PageLayout dir="rtl" size="wide">
       <EntityDetailHeader title="ملف الأرض" subtitle="بيانات الأرض وعلاقاتها وعمولاتها ومستنداتها." backTo="/lands" backLabel="الأراضي" />
       <SectionTabs items={landSections} activeId={activeSection} onChange={setActiveSection} ariaLabel="أقسام ملف الأرض" panelId="land-detail-panel" idPrefix="land-detail" compactMobile />
       <div id="land-detail-panel" role="tabpanel" aria-labelledby={`land-detail-tab-${activeSection}`}>
