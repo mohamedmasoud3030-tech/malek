@@ -70,6 +70,7 @@ export function TenantStatementPanel({
   onPrint,
   onDownloadPdf,
   onDownloadExcel,
+  onBuildPdfFile,
   actionsDisabled = false,
 }: Readonly<{
   selectedContractId: string;
@@ -81,6 +82,7 @@ export function TenantStatementPanel({
   onPrint: () => void;
   onDownloadPdf: () => void;
   onDownloadExcel: () => void;
+  onBuildPdfFile?: () => Promise<File>;
   actionsDisabled?: boolean;
 }>) {
   const ledgerRows: TenantLedgerRow[] = (statement?.lines ?? []).map((line, index) => ({
@@ -111,6 +113,7 @@ export function TenantStatementPanel({
           onDownloadPdf={onDownloadPdf}
           onPrint={onPrint}
           onDownloadExcel={onDownloadExcel}
+          onBuildPdfFile={onBuildPdfFile}
           disabled={actionsDisabled}
         />
       ) : undefined}
@@ -183,6 +186,7 @@ export function OwnerStatementPanel({
   onPrint,
   onDownloadPdf,
   onDownloadExcel,
+  onBuildPdfFile,
   actionsDisabled = false,
 }: Readonly<{
   selectedOwnerId: string;
@@ -193,11 +197,9 @@ export function OwnerStatementPanel({
   onPrint: () => void;
   onDownloadPdf: () => void;
   onDownloadExcel: () => void;
+  onBuildPdfFile?: () => Promise<File>;
   actionsDisabled?: boolean;
 }>) {
-  // Financial truth: opening running balance is NOT available from the
-  // authoritative owner statement source, so a cumulative running balance
-  // column is never shown in the panel or the Excel export.
   const ledgerRows: OwnerLedgerRow[] = (statement?.transactions ?? []).map((transaction, index) => ({
     ...transaction,
     rowKey: `${transaction.date ?? 'line'}-${index}`,
@@ -228,6 +230,7 @@ export function OwnerStatementPanel({
           onDownloadPdf={onDownloadPdf}
           onPrint={onPrint}
           onDownloadExcel={onDownloadExcel}
+          onBuildPdfFile={onBuildPdfFile}
           disabled={actionsDisabled}
         />
       ) : undefined}
