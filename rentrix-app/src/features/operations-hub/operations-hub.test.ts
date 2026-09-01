@@ -55,7 +55,7 @@ describe('Services workspace contract', () => {
 
   it('preserves state in one Services composition layer', () => {
     const component = readFileSync(resolve(import.meta.dirname, './operations-hub-workspace.tsx'), 'utf8');
-    expect(component).toContain("title = 'الخدمات'");
+    expect(component).toContain("title ?? activeSectionDefinition.label");
     expect(component).toContain('mountedSections');
     expect(component).toContain("to: '/maintenance'");
     expect(component).not.toContain('AutomationWorkspace');

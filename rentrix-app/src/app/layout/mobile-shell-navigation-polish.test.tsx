@@ -25,7 +25,7 @@ vi.mock('@tanstack/react-router', () => ({
   ),
   Outlet: () => <div data-page-outlet>محتوى الصفحة</div>,
   useRouter: () => ({ navigate: vi.fn() }),
-  useMatches: () => [{ staticData: { title: 'لوحة التحكم' } }],
+  useMatches: () => [{ staticData: { title: 'اليوم' } }],
   useLocation: () => ({ pathname: '/dashboard', search: {} }),
 }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
@@ -327,7 +327,7 @@ describe('MALEK mobile shell & navigation polish pass (Section O verification ma
 
   describe('8. Dashboard Density & Shared Today Context', () => {
     it('renders a compact Today context strip with localized weekday and date from the canonical PageHeader', () => {
-      renderWithClient(<PageHeader title="لوحة التحكم" showTodayContext />);
+      renderWithClient(<PageHeader title="اليوم" showTodayContext />);
       const today = host.querySelector<HTMLElement>('[data-global-today-context]');
       expect(today).not.toBeNull();
       expect(today?.textContent).toContain('اليوم');

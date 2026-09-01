@@ -17,20 +17,23 @@ export function SectionCard({ id, activeId, title, subtitle, children }: Section
     <Card
       id={id}
       role="tabpanel"
+      aria-label={title}
       hidden={activeId !== id}
       className="scroll-mt-24 overflow-visible rounded-none border-0 bg-transparent shadow-none md:overflow-hidden md:rounded-2xl md:border md:border-border/70 md:bg-card md:shadow-sm"
       data-settings-section={id}
     >
-      <CardHeader className="border-b border-border/55 bg-transparent px-0 py-2.5 md:bg-muted/20 md:px-5 md:py-4">
-        <div className="flex min-w-0 items-center gap-2.5 md:items-start md:gap-3">
+      <CardHeader className="border-b border-border/55 bg-transparent px-0 py-2 md:bg-muted/20 md:px-5 md:py-3">
+        <div className="flex min-w-0 items-center gap-2.5">
           {Icon ? (
-            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary md:size-10 md:rounded-2xl">
-              <Icon className="size-4 md:size-5" aria-hidden="true" />
+            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+              <Icon className="size-4" aria-hidden="true" />
             </span>
           ) : null}
           <div className="min-w-0 flex-1">
-            <h2 className="truncate text-sm font-black md:text-base">{title}</h2>
-            <p className="mt-1 hidden text-xs font-bold leading-5 text-muted-foreground md:block">{subtitle}</p>
+            <p data-settings-section-title className="truncate text-xs font-black text-muted-foreground md:text-sm md:text-foreground">
+              {title}
+            </p>
+            <p className="mt-0.5 hidden text-xs font-semibold leading-5 text-muted-foreground md:block">{subtitle}</p>
           </div>
         </div>
       </CardHeader>

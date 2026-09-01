@@ -2,6 +2,7 @@
 
 > **Status:** CANONICAL  
 > **Target Architecture Lock:** 2026-08-27  
+> **Runtime UI/UX audit amendment:** 2026-09-01
 > **Repository reality baseline for this lock:** `main@9e5c32e83082cac8227640cf260c51af01e54dc3`  
 > **Precedence:** this target contract supersedes older design-guide statements and older implementation contracts where they conflict; repository reality remains separately classified in Document 7.
 
@@ -10,6 +11,10 @@
 MALEK is Arabic-first, RTL-first, dark-first and desktop/mobile first-class. The product should feel premium, Gulf-native and globally modern: data-rich but understandable, medium-density rather than empty or cramped, with no developer language and no endless vertical card trains.
 
 The target principle is **simple by default, powerful on demand**. Strong backend/accounting capabilities may remain hidden or contextual rather than being exposed as routine navigation.
+
+The 2026-09-01 runtime audit is implementation evidence, not a new design theme. It confirms that MALEK's strongest visual asset is its existing semantic-token foundation and that the highest-priority defects are structural: duplicated page authority, Dashboard composition, inconsistent register grammar, terminology, typography hierarchy, deep container nesting, persistent assistant chrome, record-inspection gaps and mobile intentionality.
+
+**LENA/Arena ecosystem boundary:** MALEK inherits a visible, controlled **“السحر والجمال / Magic & Beauty”** shared-chrome language: royal-blue light, layered depth, spatial rhythm and refined motion built only from the canonical semantic tokens. It is not a literal fantasy skin or a second palette. Routine property, contract and financial surfaces remain calm, trustworthy and data-first while still feeling part of one Arena world.
 
 ## Canonical UX/IA rules
 
@@ -41,17 +46,21 @@ Entity dossiers, specialist/admin tools and compatibility routes remain deep-lin
 ## Workspace contract
 
 ### Today
-Today is the Property Office Command Center. It answers four questions within seconds: how is money performing, how is occupancy performing, what needs attention now, and what to act on next. The locked section hierarchy (desktop reading order; the mobile stream keeps the same semantics with attention and collections immediately after the pulse):
+Today is the Property Office Command Center. It answers four questions within seconds: what requires intervention now, how money is performing, how occupancy/contracts are changing, and what to act on next.
+
+The locked section hierarchy (desktop reading order; mobile keeps the same semantics and brings attention immediately after the pulse) is:
 
 1. **Office Pulse** — four executive surfaces: collections, occupancy, arrears, office cash movement (collections less recorded expenses; never labelled profit);
-2. **Financial Performance** — one primary monthly chart (collections vs recorded expenses, 6-month/1-year window) beside contextual operational metrics;
-3. **Needs Attention** — one ranked, actionable queue merged from the authoritative signals, each item deep-linking into its owning workflow;
+2. **Needs Attention** — the dominant ranked actionable queue merged from authoritative signals, each item deep-linking into its owning workflow;
+3. **Financial Performance** — one primary monthly chart (collections vs recorded expenses, 6-month/1-year window) beside contextual operational metrics;
 4. **Occupancy & Vacancy** — occupancy indicator plus vacancy aging and the longest vacancies;
 5. **Collections & Arrears** — period collection progress plus the authoritative arrears aging buckets;
 6. **Maintenance** — operational summary plus only the highest-value cases, alongside utility obligations;
 7. **Upcoming Contracts** — expiry windows and the nearest renewals;
 8. **Property Health** — transparent deterministic per-property indicators (no opaque score);
 9. **Owner Obligations** — owner funds as a liability signal plus financial exceptions.
+
+The first viewport should behave like a command brief, not another analytics page: Pulse and Needs Attention receive structural priority, common authorized actions remain quickly reachable, and supporting analytics must not delay the path to the next operational action. This priority is achieved through composition and hierarchy, not decorative ambience.
 
 Charts consume existing authoritative read models (the dashboard snapshot RPC, the daily-collection RPC, the Reports cashflow service) and never recompute financial truth in the browser. Numbers stay available as text beside every visualization. Today is a signal/decision surface, not a substitute for detailed Reports. Notifications show events/information; Today shows items requiring attention. Do not duplicate the same feed twice.
 
@@ -135,6 +144,18 @@ Company, employees/effective permissions, document/print preferences and approve
 | Automation / Data Integrity / Audit / System | HIDDEN specialist/admin surfaces |
 | MASTER_LEASE visible workflow | LATER/specialist until deliberately promoted |
 | Dev design-system routes | HIDDEN development-only |
+
+## Page authority and header contract
+
+Every operational route has one page authority:
+
+- one page title (`h1`);
+- one primary action area;
+- one concise context/description only when it adds operational meaning;
+- secondary actions grouped rather than scattered;
+- embedded workspaces may expose actions but must not create a competing second title by default.
+
+Duplicate Hub Header + Embedded Header composition, repeated register headings and decorative second titles are implementation defects under `UX-002` and `UX-008`.
 
 ## Dossier contract
 
@@ -232,6 +253,7 @@ Tablet is first-class, not stretched phone. Use appropriate two-column compositi
 - Safe-area bottom clearance is mandatory.
 - Minimum practical action targets are 44px.
 - Mobile default register presentation may be Cards, but users may switch to Table where the register benefits from it.
+- Compact summaries/grids should use two columns where content remains readable; avoid an unnecessary one-card-per-row train merely because the viewport is narrow.
 
 ## Register contract — Cards ⇄ Table
 
@@ -260,12 +282,15 @@ Phone Table mode may horizontally scroll **inside the table container only**. Th
 
 ## Theme and visual system
 
-- **Dark-first** is the primary design direction.
+- **Dark-first** is the flagship presentation direction.
 - Light theme is mandatory and equal quality.
 - Use semantic tokens; do not create page-specific raw palettes when a semantic token exists.
+- MALEK's existing royal/deep-blue token foundation is preserved unless evidence proves a specific token defect; the runtime audit explicitly identified the palette/token base as a product strength.
 - Medium density: no oversized empty surfaces, no cramped spreadsheet wall, no endless stacked cards.
+- Cards are not the default answer to grouping; separators, sections, tables, anchored navigation and selective elevation should carry hierarchy where more appropriate.
 - Charts/visual indicators must help a decision (trend, comparison, collection, occupancy, performance); decoration-only charts are rejected.
-- Premium motion is short and functional, with reduced-motion support.
+- Premium motion is short and functional, with reduced-motion support. Looping decorative motion, hover scaling and animated sheen are rejected in operational workspaces.
+- Parent-LENA identity may influence ecosystem transitions/brand touchpoints, but it does not authorize ambient/fantasy decoration inside routine MALEK workspaces.
 
 ## Copy contract
 
@@ -291,6 +316,8 @@ Tenant Portal is a separate, constrained shell. v1 is read-only and shows only t
 
 ## Evidence anchors
 
+- `docs/execution/MALEK_RUNTIME_UI_UX_RECONSTRUCTION_BLUEPRINT.md` — active runtime-audit execution translation and screenshot self-review protocol;
+- authenticated 2026-09-01 runtime screenshot campaign and structural audit evidence;
 - `rentrix-app/src/app/navigation/route-contract.ts`
 - `rentrix-app/src/app/router/route-tree.ts`
 - `rentrix-app/src/app/layout/app-shell.tsx`

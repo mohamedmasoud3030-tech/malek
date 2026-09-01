@@ -1,4 +1,4 @@
-import { Download, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useState } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
@@ -158,11 +158,6 @@ export function ContractsListE2EFixture() {
               <Plus className="me-2 size-4" />إنشاء عقد
             </Button>
           }
-          secondaryActions={
-            <Button variant="secondary" disabled={!filteredContracts.length} aria-label="تصدير العقود كملف CSV">
-              <Download className="me-2 size-4" />تصدير CSV
-            </Button>
-          }
         />
         <EntityTableViewModeProvider storageKey="malek:list-page:العقود">
         <ContractKpiGrid
@@ -173,7 +168,7 @@ export function ContractsListE2EFixture() {
         />
         <ContractFilters
           activeFilters={[]}
-          canExport={false}
+          canExport
           columnVisibilityControl={(
             <DataTableColumnsMenu
               columns={contractColumnOptions}

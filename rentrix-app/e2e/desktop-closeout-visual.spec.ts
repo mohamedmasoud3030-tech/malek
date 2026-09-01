@@ -64,7 +64,7 @@ test.describe('desktop closeout visual matrix', () => {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
       await prepareAuthenticatedDesktop(page);
       await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
-      await expect(page.getByRole('heading', { name: 'لوحة التحكم', level: 1 })).toBeVisible({ timeout: 20_000 });
+      await expect(page.getByRole('heading', { name: 'اليوم', level: 1 })).toBeVisible({ timeout: 20_000 });
       await expect(page.locator('[data-dashboard-section]')).toHaveCount(10);
       await assertDesktopChrome(page);
       await assertNoHorizontalOverflow(page);
@@ -102,7 +102,7 @@ test.describe('desktop closeout visual matrix', () => {
       await prepareAuthenticatedDesktop(page);
       await page.goto('/invoices', { waitUntil: 'domcontentloaded' });
       await expect(page).toHaveURL(/\/financials\?section=collections&view=invoices/);
-      await expect(page.getByRole('heading', { name: 'المالية', level: 1 })).toBeVisible({ timeout: 20_000 });
+      await expect(page.getByRole('heading', { name: 'المال', level: 1 })).toBeVisible({ timeout: 20_000 });
       const register = page.getByRole('table', { name: 'سجل الفواتير' });
       await expect(register).toBeVisible({ timeout: 20_000 });
       await expect(page.getByRole('button', { name: 'تحصيل فاتورة مسجلة' }).first()).toBeVisible();

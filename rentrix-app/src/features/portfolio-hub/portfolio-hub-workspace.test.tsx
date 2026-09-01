@@ -76,7 +76,7 @@ describe('Portfolio workspace', () => {
     await screen.findByTestId('properties-body');
     expect(container.querySelectorAll('[data-page-layout]')).toHaveLength(1);
     expect(container.querySelectorAll('[data-page-header]')).toHaveLength(1);
-    expect(screen.getByText('المحفظة')).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'العقارات' })).toBeTruthy();
   });
 
   it('shows properties, units and owners as routine Portfolio tabs', async () => {

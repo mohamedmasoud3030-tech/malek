@@ -2,11 +2,12 @@
  * MALEK visual system — Final unified layer.
  * Professional royal/deep blue, clean light surfaces, deep navy dark,
  * strong controlled blue accents, high readability, premium operational.
- * No teal/purple/gold, no excessive gradients, no glass-heavy, no second palette.
  * Tokens come from tokens.css only; this file owns layout/surface usage.
  */
 
 [data-visual-wave='malek-pro'] {
+  position: relative;
+  isolation: isolate;
   color: hsl(var(--foreground));
 }
 
@@ -15,8 +16,32 @@
 }
 
 [data-visual-wave='malek-pro'] [data-page-header] {
+  position: relative;
+  overflow: hidden;
+  padding: 1rem;
+  border: 1px solid hsl(var(--border) / 0.82);
+  border-radius: 1rem;
+  background:
+    linear-gradient(135deg, hsl(var(--card) / 0.98), hsl(var(--primary) / 0.045)),
+    hsl(var(--card));
+  box-shadow: var(--shadow-card);
+}
+
+[data-visual-wave='malek-pro'] [data-page-header]::before {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 3px;
+  content: '';
+  background: linear-gradient(180deg, hsl(var(--primary)), hsl(var(--info) / 0.58));
+}
+
+[data-theme='dark'] [data-visual-wave='malek-pro'] [data-page-header] {
   border-color: hsl(var(--border));
-  padding-block-end: 1rem;
+  background:
+    linear-gradient(135deg, hsl(var(--card)), hsl(var(--primary) / 0.08)),
+    hsl(var(--card));
+  box-shadow: 0 18px 48px hsl(var(--background) / 0.34);
 }
 
 [data-visual-wave='malek-pro'] [data-ui-button] {
@@ -38,13 +63,14 @@
 [data-visual-wave='malek-pro'] [data-entity-table-wrapper] {
   border: 1px solid hsl(var(--border));
   background: hsl(var(--card));
-  box-shadow: none;
+  border-radius: 1rem;
+  box-shadow: var(--shadow-card);
 }
 
 [data-visual-wave='malek-pro'] [data-entity-card]:hover,
 [data-visual-wave='malek-pro'] [data-mobile-card]:hover {
   border-color: hsl(var(--primary) / 0.28);
-  box-shadow: none;
+  box-shadow: var(--shadow-card-hover);
 }
 
 [data-visual-wave='malek-pro'] [data-entity-table] thead {
@@ -67,7 +93,7 @@
 /* App chrome — clean, opaque, border-based, no glass stack */
 [data-app-shell],
 [data-app-shell] main#main-content {
-  background: hsl(var(--background));
+  background-color: hsl(var(--background));
 }
 
 [data-app-shell] [data-app-shell-header] {
@@ -167,7 +193,7 @@
 [data-operational-route='true'] [data-visual-wave='malek-pro'] :is([data-entity-card], [data-mobile-card]) {
   position: relative;
   overflow: hidden;
-  border-radius: 0.75rem;
+  border-radius: 1rem;
   background: hsl(var(--card));
   border: 1px solid hsl(var(--border));
   transition: border-color 150ms ease;
@@ -175,12 +201,12 @@
 
 [data-operational-route='true'] [data-visual-wave='malek-pro'] :is([data-entity-card], [data-mobile-card]):hover {
   border-color: hsl(var(--primary) / 0.24);
-  box-shadow: none;
+  box-shadow: var(--shadow-card-hover);
 }
 
 [data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-table-wrapper] {
   overflow: hidden;
-  border-radius: 0.75rem;
+  border-radius: 1rem;
   background: hsl(var(--card));
   border: 1px solid hsl(var(--border));
 }
@@ -261,9 +287,15 @@
 
 [data-entity-form-surface='dialog'][data-entity-form-variant='operational'] {
   border: 1px solid hsl(var(--border));
-  border-radius: 1rem;
+  border-radius: 1.25rem;
   background: hsl(var(--card));
   box-shadow: var(--shadow-elevated);
+}
+
+[data-entity-form-surface='dialog'][data-entity-form-variant='operational'] [data-dialog-header] {
+  background:
+    linear-gradient(135deg, hsl(var(--card)), hsl(var(--primary) / 0.065)),
+    hsl(var(--card));
 }
 
 [data-theme='dark'] [data-entity-form-surface='dialog'][data-entity-form-variant='operational'] {
@@ -297,9 +329,11 @@
 }
 
 [data-entity-form-surface][data-entity-form-variant='operational'] [data-entity-form] section {
-  border: 1px solid hsl(var(--border));
-  border-radius: 0.875rem;
-  background: hsl(var(--card));
+  padding: 0.25rem 0 1rem;
+  border: 0;
+  border-bottom: 1px solid hsl(var(--border) / 0.7);
+  border-radius: 0;
+  background: transparent;
   box-shadow: none;
 }
 
@@ -308,6 +342,189 @@
   background: hsl(var(--card));
   border-top: 1px solid hsl(var(--border));
   backdrop-filter: none;
+}
+
+/* ── Active press + ghost-hover suppression (touch only) ─
+   Migrated from ux-foundation.css: these are paint decisions, not structure,
+   and they must live after the hover rules above so a tapped card on a phone
+   cannot keep a stuck hover state. */
+@media (hover: none) and (pointer: coarse) {
+  [data-visual-wave='malek-pro'] [data-entity-card]:active,
+  [data-visual-wave='malek-pro'] [role='button']:active {
+    opacity: 0.88;
+  }
+
+  /* Specificity parity with the operational :hover rule above (0,4,0) and
+     declared after it, so a tapped card on a phone cannot keep a stuck hover
+     state on any surface, including operational registers. */
+  [data-visual-wave='malek-pro'] :is([data-entity-card], [data-mobile-card]):hover:not(:active) {
+    box-shadow: var(--shadow-card);
+    border-color: hsl(var(--border));
+  }
+}
+
+/* Ultra-narrow phones: the readable page title steps down one notch. This is
+   typography, so the responsive trigger lives with the visual authority rather
+   than fighting it from the structural layer. */
+@media (max-width: 359px) {
+  [data-page-layout] [data-global-page-title] {
+    font-size: 1.125rem;
+    line-height: 1.35;
+  }
+}
+
+/* ── Register table presentation ─
+   Structure (sticky offset, min row height, padding, scroller containment)
+   lives in ux-foundation.css. Only ink is decided here. */
+[data-entity-table] thead th {
+  border-bottom: 1px solid hsl(var(--border));
+  background: hsl(var(--card));
+  color: hsl(var(--muted-foreground));
+  font-size: 0.8125rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+[data-entity-table] tbody td {
+  border-bottom: 1px solid hsl(var(--border-light));
+  color: hsl(var(--foreground));
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+[data-entity-table] tbody tr {
+  background: hsl(var(--card));
+  transition: background-color var(--duration-fast) var(--motion-ease-standard);
+}
+
+[data-entity-table] tbody tr:hover { background: hsl(var(--muted) / 0.6); }
+
+[data-entity-table] [data-column-priority='identity'] { font-weight: 700; }
+
+/* ── Semantic KPI accents ─────────────────────────────────────────── */
+[data-kpi-card] {
+  --kpi-tone: var(--primary);
+  --kpi-soft: var(--card-muted);
+}
+
+/* Geometry (position/inset/height/content) lives in ux-foundation.css as the
+   shared accent-rail contract; this rule only chooses the ink. */
+[data-kpi-card]::before {
+  background: hsl(var(--kpi-tone) / 0.72);
+}
+
+[data-kpi-card][data-accent='emerald'] { --kpi-tone: var(--tone-emerald); --kpi-soft: var(--tone-emerald-soft); }
+[data-kpi-card][data-accent='amber'] { --kpi-tone: var(--tone-amber); --kpi-soft: var(--tone-amber-soft); }
+[data-kpi-card][data-accent='sky'] { --kpi-tone: var(--tone-sky); --kpi-soft: var(--tone-sky-soft); }
+[data-kpi-card][data-accent='rose'] { --kpi-tone: var(--tone-rose); --kpi-soft: var(--tone-rose-soft); }
+[data-kpi-card][data-accent='violet'] { --kpi-tone: var(--tone-violet); --kpi-soft: var(--tone-violet-soft); }
+[data-kpi-card][data-accent='slate'] { --kpi-tone: var(--tone-slate); --kpi-soft: var(--tone-slate-soft); }
+
+.kpi-card__icon {
+  color: hsl(var(--kpi-tone));
+  background: hsl(var(--kpi-soft));
+  box-shadow: inset 0 0 0 1px hsl(var(--kpi-tone) / 0.14);
+}
+
+/* ── Status accents ───────────────────────────────────────────────── */
+[data-status-badge][data-tone='emerald'] { --status-tone: var(--tone-emerald); --status-soft: var(--tone-emerald-soft); }
+[data-status-badge][data-tone='amber'] { --status-tone: var(--tone-amber); --status-soft: var(--tone-amber-soft); }
+[data-status-badge][data-tone='sky'] { --status-tone: var(--tone-sky); --status-soft: var(--tone-sky-soft); }
+[data-status-badge][data-tone='rose'] { --status-tone: var(--tone-rose); --status-soft: var(--tone-rose-soft); }
+[data-status-badge][data-tone='violet'] { --status-tone: var(--tone-violet); --status-soft: var(--tone-violet-soft); }
+[data-status-badge][data-tone='slate'] { --status-tone: var(--tone-slate); --status-soft: var(--tone-slate-soft); }
+
+[data-status-badge][data-tone] {
+  color: hsl(var(--status-tone));
+  background: hsl(var(--status-soft));
+  --tw-ring-color: hsl(var(--status-tone) / 0.18);
+}
+
+[data-status-badge] [data-status-dot] { background: currentColor; }
+
+/* ── Shared state surfaces ─────────────────────────────────────────
+   The 2px rule above each state card is the only thing that separates an
+   offline/permission/error/empty surface; positioning and overflow for it are
+   declared in ux-foundation.css. */
+[data-state-surface]::before {
+  background: hsl(var(--border));
+}
+
+[data-state-surface][data-empty-state]::before { background: hsl(var(--muted-foreground) / 0.3); }
+[data-state-surface][data-offline-state]::before { background: hsl(var(--warning-text) / 0.72); }
+[data-state-surface][data-no-permission-state]::before,
+[data-state-surface][data-error-state]::before { background: hsl(var(--danger-text) / 0.72); }
+
+/* ── Typography scale — mobile readable, hierarchy clear ─────────── */
+[data-page-layout] [data-page-header] h1 {
+  font-size: clamp(1.25rem, 4.5vw, 1.625rem);
+  line-height: 1.25;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+[data-page-layout] [data-section-header] h2,
+[data-page-layout] h2 {
+  font-size: clamp(1.05rem, 3.5vw, 1.25rem);
+  line-height: 1.3;
+  font-weight: 700;
+}
+
+[data-page-layout] [data-section-header] p,
+[data-page-layout] [data-page-header] p {
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: hsl(var(--text-secondary));
+}
+
+/* ── Desktop visual quieting ─
+   Desktop is a work surface: no stacked chrome, no double elevation. */
+@media (min-width: 1024px) {
+  [data-page-layout] [data-page-header] [data-global-page-context] {
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+    border-radius: 0;
+  }
+
+  [data-page-layout] [data-filter-bar] {
+    border-color: hsl(var(--border));
+    background: hsl(var(--card));
+    box-shadow: none;
+  }
+
+  [data-page-layout] [data-entity-table-wrapper],
+  [data-page-layout] [data-entity-table-grid] {
+    border-color: hsl(var(--border));
+    box-shadow: none;
+  }
+
+  [data-page-layout] [data-entity-table] thead th {
+    font-size: 0.8125rem;
+    letter-spacing: 0.01em;
+  }
+
+  [data-page-layout] [data-entity-table] tbody td { font-size: 0.875rem; }
+
+  [data-page-layout] [data-kpi-card] {
+    border-color: hsl(var(--border));
+    box-shadow: none;
+  }
+
+  [data-page-layout] [data-register-metric] { box-shadow: none; }
+
+  [data-page-layout] [data-register-heading] h2 {
+    color: hsl(var(--muted-foreground));
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+
+  [data-owner-register],
+  [data-owner-relationships] {
+    box-shadow: none;
+  }
+
+  [data-app-shell] [data-sidebar] [data-nav-item] { border-radius: 0.65rem; }
 }
 
 /* Mobile: keep density via spacing, not tiny fonts */
@@ -322,7 +539,9 @@
     border-radius: 1rem;
     padding: 1rem;
     border: 1px solid hsl(var(--border));
-    background: hsl(var(--card));
+    background:
+      linear-gradient(135deg, hsl(var(--card)), hsl(var(--primary) / 0.055)),
+      hsl(var(--card));
   }
 
   [data-operational-route='true'] [data-visual-wave='malek-pro'] [data-filter-bar] {

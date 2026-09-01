@@ -40,8 +40,18 @@ describe('responsive polish contract', () => {
   });
 
   it('does not add a second desktop page gutter on top of #main-content', () => {
-    const polish = read('src/styles/page-polish.css');
-    expect(polish).not.toContain('[data-page-layout] > div { padding-inline:');
+    // #main-content already carries --app-page-gutter-inline in ux-foundation,
+    // so no authority layer — structural or visual — may re-pad the layout
+    // wrapper. page-polish.css used to be the file that got this wrong; the
+    // guard now runs against both surviving owners.
+    for (const stylesheet of [
+      'src/styles/ux-foundation.css',
+      'src/styles/malek-pro-visual-wave.css',
+      'src/styles/globals.css',
+    ]) {
+      const sheet = read(stylesheet);
+      expect(sheet, stylesheet).not.toMatch(/\[data-page-layout\]\s*>\s*div\s*\{[^}]*padding-inline/);
+    }
   });
 
   it('stacks register filters into one quiet toolbar and the phone sheet', () => {

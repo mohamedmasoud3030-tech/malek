@@ -126,6 +126,6 @@ test.describe('seeded staging readiness smoke', () => {
     await page.getByRole('button', { name: /تسجيل الدخول/ }).click();
 
     await expect(page).toHaveURL(/\/dashboard$/);
-    await expect(page.getByText('لوحة التحكم').first()).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'اليوم', level: 1 })).toBeVisible();
   });
 });

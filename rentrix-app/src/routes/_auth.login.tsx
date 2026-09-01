@@ -8,6 +8,7 @@ const SettingsWorkspaceE2EFixture = lazy(() => import('@/features/settings/setti
 const OwnerDetailE2EFixture = lazy(() => import('@/features/owners/owner-detail.e2e-fixture').then((module) => ({ default: module.OwnerDetailE2EFixture })));
 const PropertiesListE2EFixture = lazy(() => import('@/features/properties/properties-list.e2e-fixture').then((module) => ({ default: module.PropertiesListE2EFixture })));
 const ContractsListE2EFixture = lazy(() => import('@/features/contracts/contracts-list.e2e-fixture').then((module) => ({ default: module.ContractsListE2EFixture })));
+const ContractDetailE2EFixture = lazy(() => import('@/features/contracts/contract-detail.e2e-fixture').then((module) => ({ default: module.ContractDetailE2EFixture })));
 const FinancialsHubE2EFixture = lazy(() => import('@/features/financials/financials-hub.e2e-fixture').then((module) => ({ default: module.FinancialsHubE2EFixture })));
 const MaintenanceE2EFixture = lazy(() => import('@/features/maintenance/maintenance.e2e-fixture').then((module) => ({ default: module.MaintenanceE2EFixture })));
 const AiAssistantE2EFixture = lazy(() => import('@/features/ai-assistant/ai-assistant.e2e-fixture').then((module) => ({ default: module.AiAssistantE2EFixture })));
@@ -52,6 +53,8 @@ export function LoginRouteComponent() {
       fixture = <PropertiesListE2EFixture />;
     } else if (search.get('e2e-showcase-contracts') === '1') {
       fixture = <ContractsListE2EFixture />;
+    } else if (search.get('e2e-contract-detail-workspace') === '1') {
+      fixture = <ContractDetailE2EFixture />;
     } else if (search.get('e2e-showcase-financials') === '1') {
       fixture = <FinancialsHubE2EFixture />;
     } else if (search.get('e2e-showcase-maintenance') === '1') {

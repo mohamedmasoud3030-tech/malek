@@ -29,7 +29,7 @@ export function PageLayout({
   dir,
   lang,
   size = 'default',
-  visualVariant,
+  visualVariant = 'malek-pro',
 }: PageLayoutProps) {
   return (
     <div

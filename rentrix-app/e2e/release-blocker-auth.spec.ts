@@ -65,7 +65,7 @@ async function submitLogin(page: Page, candidatePassword: string): Promise<Respo
 
 async function expectProtectedShell(page: Page) {
   await expect(page).toHaveURL(/\/dashboard$/);
-  await expect(page.getByText('لوحة التحكم').first()).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'اليوم', level: 1 })).toBeVisible();
 }
 
 test.describe('release blocker: deployed read-only authentication lifecycle', () => {
@@ -101,7 +101,7 @@ test.describe('release blocker: deployed read-only authentication lifecycle', ()
     await expect(loginButton).toBeEnabled();
     await expect(page).toHaveURL(/\/login$/);
     await expect(page.getByRole('heading', { name: 'كل أملاكك في مكان واحد', exact: true })).toBeVisible();
-    await expect(page.getByText('لوحة التحكم')).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'اليوم', level: 1 })).toHaveCount(0);
 
     const authStorageValue = await page.evaluate(
       (storageKey) => localStorage.getItem(storageKey),
@@ -139,6 +139,6 @@ test.describe('release blocker: deployed read-only authentication lifecycle', ()
     await page.goto('/dashboard');
     await expect(page).toHaveURL(/\/login$/, { timeout: 15_000 });
     await expect(page.getByRole('heading', { name: 'كل أملاكك في مكان واحد', exact: true })).toBeVisible();
-    await expect(page.getByText('لوحة التحكم')).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'اليوم', level: 1 })).toHaveCount(0);
   });
 });

@@ -254,7 +254,7 @@ describe('Dashboard command center query boundary tests', () => {
 
     const todayContext = container?.querySelector<HTMLElement>('[data-global-today-context]');
     expect(todayContext).not.toBeNull();
-    expect(container?.querySelector('h1')?.textContent).toBe('لوحة التحكم');
+    expect(container?.querySelector('h1')?.textContent).toBe('اليوم');
     expect(container?.querySelector('[data-page-primary-action] button')).toBeNull();
     expect(Array.from(container?.querySelectorAll('button') ?? []).some((button) => button.textContent?.includes('تحديث'))).toBe(false);
   });

@@ -1,10 +1,11 @@
 import { ChevronLeft, ClipboardList, FileCheck, FileText, HandCoins, Landmark, ReceiptText, TrendingUp, WalletCards } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
-import { Card, CardContent } from '@/components/ui/card';
 import { DataTable } from '@/components/ui/data-table';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { defaultCompanySettingsContract } from '@/lib/companySettings';
+import { formatCompanyDate, formatCompanyMoney } from '@/lib/companyFormatters';
 
 /**
  * Static marketing/demo capture of the real financials overview — same page
@@ -48,7 +49,9 @@ const fixtureInvoices: FixtureInvoice[] = [
   { id: 'i-07', number: 'INV-2026-0150', tenant: 'خميس الحضرمي', property: 'مجمع السلام — B-12', dueDate: '2026-07-20', amount: 700, status: 'issued' },
 ];
 
-const fmt = (value: number) => `${value.toLocaleString('en-US', { minimumFractionDigits: 0 })} ر.ع.`;
+const fmtMoney = (value: number) => formatCompanyMoney(defaultCompanySettingsContract, value);
+const fmtDate = (value: string) => formatCompanyDate(defaultCompanySettingsContract, `${value}T00:00:00`);
+const FinancialValue = ({ children }: Readonly<{ children: string }>) => <bdi dir="ltr" className="whitespace-nowrap tabular-nums">{children}</bdi>;
 
 export function FinancialsHubE2EFixture() {
   return (
@@ -60,10 +63,10 @@ export function FinancialsHubE2EFixture() {
         />
 
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <KpiCard icon={FileText} label="إجمالي فواتير يوليو" value={fmt(5130)} sub="7 فواتير صادرة" trend="up" trendValue="+12%" />
-          <KpiCard icon={TrendingUp} label="المحصّل هذا الشهر" value={fmt(1370)} sub="سداد كامل وجزئي" trend="up" trendValue="+8%" />
-          <KpiCard icon={ClipboardList} label="متأخرات قائمة" value={fmt(1580)} sub="فاتورتان تجاوزتا الاستحقاق" trend="down" trendValue="2 فاتورة" />
-          <KpiCard icon={WalletCards} label="مصروفات تشغيلية" value={fmt(730)} sub="صيانة ومرافق وعمولات" trend="neutral" trendValue="—" />
+          <KpiCard icon={FileText} label="إجمالي فواتير يوليو" value={fmtMoney(5130)} sub="7 فواتير صادرة" trend="up" trendValue="+12%" />
+          <KpiCard icon={TrendingUp} label="المحصّل هذا الشهر" value={fmtMoney(1370)} sub="سداد كامل وجزئي" trend="up" trendValue="+8%" />
+          <KpiCard icon={ClipboardList} label="متأخرات قائمة" value={fmtMoney(1580)} sub="فاتورتان تجاوزتا الاستحقاق" trend="down" trendValue="2 فاتورة" />
+          <KpiCard icon={WalletCards} label="مصروفات تشغيلية" value={fmtMoney(730)} sub="صيانة ومرافق وعمولات" trend="neutral" trendValue="—" />
         </div>
 
         <section aria-label="مساحات العمل المالية" className="space-y-3">
@@ -92,8 +95,11 @@ export function FinancialsHubE2EFixture() {
           </div>
         </section>
 
-        <Card>
-          <CardContent className="space-y-5 p-3 sm:p-4">
+        <section aria-label="الفواتير الأخيرة" className="space-y-3">
+          <div>
+            <h2 className="text-base font-bold">الفواتير الأخيرة</h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">تواريخ وأرقام مالية موحدة بعقد الشركة لعرض RTL آمن.</p>
+          </div>
             <DataTable
               aria-label="جدول الفواتير"
               rows={fixtureInvoices}
@@ -102,8 +108,8 @@ export function FinancialsHubE2EFixture() {
                 { key: 'number', header: 'رقم الفاتورة', render: (row) => <span className="font-mono text-xs font-bold">{row.number}</span> },
                 { key: 'tenant', header: 'المستأجر', render: (row) => row.tenant },
                 { key: 'property', header: 'العقار / الوحدة', render: (row) => row.property },
-                { key: 'dueDate', header: 'تاريخ الاستحقاق', render: (row) => row.dueDate },
-                { key: 'amount', header: 'المبلغ', render: (row) => <span className="font-bold">{fmt(row.amount)}</span> },
+                { key: 'dueDate', header: 'تاريخ الاستحقاق', render: (row) => <time dateTime={row.dueDate} className="whitespace-nowrap tabular-nums">{fmtDate(row.dueDate)}</time> },
+                { key: 'amount', header: 'المبلغ', render: (row) => <FinancialValue>{fmtMoney(row.amount)}</FinancialValue> },
                 {
                   key: 'status',
                   header: 'الحالة',
@@ -115,8 +121,7 @@ export function FinancialsHubE2EFixture() {
                 },
               ]}
             />
-          </CardContent>
-        </Card>
+        </section>
       </PageLayout>
     </main>
   );

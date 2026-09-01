@@ -18,15 +18,20 @@
 - `@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *))` يربط فئات `dark:*` بهذا الـ dataset
 - `index.html` يحتوي على سكريبت inline صغير يقرأ `localStorage rentrix-theme` قبل الـ render لمنع flash
 
-### طبقات الـ CSS
+### طبقات الـ CSS (ترتيب الاستيراد في `globals.css` هو الملكية نفسها)
 1. `tokens.css` - المصدر الوحيد للألوان والظلال والنصف قطر والمسافات
 2. `globals.css` - base layer + utilities + landing tokens + print styles
-3. `malek-pro-visual-wave.css` - تصميم تشغيلي محمي بـ `[data-operational-route='true']`
-4. `app-density-contract.css` - يمنع grids من 4-6 أعمدة للكروت
-5. `design-system-foundation.css` - focus ring, tap highlight, table base
-6. `ux-foundation.css` - gutters, scroll, touch targets, safe-area
-7. `page-polish.css` - تحسينات صفحات عامة
-8. `dashboard-v2.css` - تصميم الداشبورد فقط
+3. `ux-foundation.css` - **الهيكل فقط**: gutters, scroll, sticky, touch targets, safe-area، هندسة الدراج/الديالوج، قواعد الاتجاه RTL/LTR
+4. `design-system-foundation.css` - focus ring, tap highlight, table base (داخل `@layer base/components`)
+5. `app-density-contract.css` - يمنع grids من 4-6 أعمدة للكروت
+6. `malek-pro-visual-wave.css` - **المرجع البصري النهائي**: لون/خلفية/حدود/ظل/نصف قطر/تايبوغرافي، محمي بـ `[data-visual-wave='malek-pro']` ومقيّد للتشغيلي بـ `[data-operational-route='true']`
+7. `dashboard-v2.css` - تصميم الداشبورد فقط (يُستورد من المكوّن، ليس من globals)
+
+> **قاعدة صارمة**: لا يُضاف ملف CSS غير طبقي (unlayered) بعد `malek-pro-visual-wave.css`.
+> كان `page-polish.css` يفعل ذلك بالضبط — ملف غير طبقي يُستورد بعد الـ wave فيخسر MALEK
+> كل تعادل في الـ specificity. أُزيل الملف بعد ترحيل قواعده: الهندسة إلى `ux-foundation.css`
+> والحبر البصري إلى `malek-pro-visual-wave.css`، والحقول الميتة حُذفت.
+> الأولوية تُحسم بترتيب الاستيراد لا بسيول `!important`.
 
 ---
 
@@ -205,7 +210,7 @@
 ### Cards
 - `border-border/65 bg-card p-3 shadow-card` + `hover:shadow-card-hover`
 - KPI cards: `data-kpi-card` مع `::before` 2px top rule بلون الـ accent
-- `kpi-card__icon`: `color: hsl(kpi-tone) bg: hsl(kpi-soft) inset shadow 0.18 opacity`
+- `kpi-card__icon`: `color: hsl(kpi-tone) bg: hsl(kpi-soft) inset shadow 0.14 opacity` (مالكه الآن `malek-pro-visual-wave.css`)
 
 ### Forms
 - `input, select, textarea`: `min-height 44px border-radius 0.625rem bg-background` في operational route

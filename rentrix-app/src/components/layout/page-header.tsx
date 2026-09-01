@@ -40,6 +40,8 @@ function getTodayContext(isArabic: boolean) {
  * The header behaves like document chrome rather than another card: identity
  * first, context immediately beneath it, one obvious primary action at the
  * edge. Time context is opt-in instead of repeated across the whole product.
+ * Presentation belongs to the shared visual-wave contract on every viewport;
+ * this component must not hard-reset the mobile surface with utility overrides.
  */
 export function PageHeader({
   title,
@@ -61,10 +63,7 @@ export function PageHeader({
   return (
     <div
       data-page-header
-      className={cn(
-        'min-w-0 space-y-2 max-md:!rounded-none max-md:!border-0 max-md:!bg-transparent max-md:!p-0',
-        className,
-      )}
+      className={cn('min-w-0 space-y-2', className)}
     >
       <header
         data-global-page-context

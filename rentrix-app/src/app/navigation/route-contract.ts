@@ -50,7 +50,7 @@ export const ROUTE_CONTRACT: readonly RouteContractEntry[] = [
   { canonical: '/support', titleAr: 'الدعم والتواصل', sidebarRoot: '/dashboard', isPrimaryNav: false, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: null },
 
   // Today
-  { canonical: '/dashboard', titleAr: 'لوحة التحكم', sidebarRoot: '/dashboard', isPrimaryNav: true, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: null, targetIANote: 'Global label is اليوم; route stays /dashboard for compatibility.' },
+  { canonical: '/dashboard', titleAr: 'اليوم', sidebarRoot: '/dashboard', isPrimaryNav: true, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: null, targetIANote: 'Canonical label is اليوم; route stays /dashboard for compatibility.' },
 
   // Portfolio
   { canonical: '/properties', titleAr: 'العقارات', sidebarRoot: '/properties', isPrimaryNav: true, inMobileNav: false, permission: 'properties.view', legacyAliases: [], viewBinding: null },
@@ -88,7 +88,7 @@ export const ROUTE_CONTRACT: readonly RouteContractEntry[] = [
   { canonical: '/documents-vault', titleAr: 'المستندات — توافق قديم', sidebarRoot: '/maintenance', isPrimaryNav: false, inMobileNav: false, permission: 'maintenance.view', legacyAliases: [], viewBinding: { param: 'section', section: 'documents_vault' } },
 
   // Money
-  { canonical: '/financials', titleAr: 'المالية', sidebarRoot: '/financials', isPrimaryNav: true, inMobileNav: false, permission: 'financial.workspace.view', legacyAliases: [], viewBinding: null },
+  { canonical: '/financials', titleAr: 'المال', sidebarRoot: '/financials', isPrimaryNav: true, inMobileNav: false, permission: 'financial.workspace.view', legacyAliases: [], viewBinding: null },
   { canonical: '/finance/collections', titleAr: 'التحصيل والفواتير', sidebarRoot: '/financials', isPrimaryNav: false, inMobileNav: false, permission: 'financial.workspace.view', legacyAliases: [], viewBinding: { param: 'section', section: 'collections' } },
   { canonical: '/finance/expenses', titleAr: 'المصروفات والمتأخرات', sidebarRoot: '/financials', isPrimaryNav: false, inMobileNav: false, permission: 'expenses.view', legacyAliases: [], viewBinding: { param: 'section', section: 'expenses' } },
   { canonical: '/finance/deposits', titleAr: 'التأمينات وتسويات الملاك', sidebarRoot: '/financials', isPrimaryNav: false, inMobileNav: false, permission: 'financial.deposits.view', legacyAliases: [], viewBinding: { param: 'section', section: 'funds' } },

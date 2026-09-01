@@ -177,7 +177,10 @@ describe('ContractsListPage load states', () => {
     expect(html).toContain('data-filter-bar');
     expect(html).toContain('data-contract-summary');
     expect(html).toContain('data-contract-register');
-    expect(html).toContain('<h2');
+    // Round 1 removes the audited duplicate-heading defect: the register no
+    // longer re-declares «التأجير»/«سجل العقود» as a competing visual authority.
+    expect(html).not.toContain('>التأجير<');
+    expect(html).not.toContain('>سجل العقود<');
   });
 });
 

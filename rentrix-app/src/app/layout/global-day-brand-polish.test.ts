@@ -27,13 +27,13 @@ describe('contextual day information and compact header brand contract', () => {
     expect(pageLayout).not.toContain('data-global-refresh');
 
     expect(routeTree).toContain("path: '/dashboard'");
-    expect(routeTree).toContain("staticData: { title: 'لوحة التحكم' }");
+    expect(routeTree).toContain("staticData: { title: 'اليوم' }");
   });
 
   it('keeps the dashboard header clean — no routine refresh action, no hero card, one time-sensitive Today context', () => {
     expect(dashboardPage).not.toContain('HeroBanner');
     expect(dashboardPage).toContain('<PageHeader');
-    expect(dashboardPage).toContain('title="لوحة التحكم"');
+    expect(dashboardPage).toContain('title="اليوم"');
     // Today is the time-sensitive surface, so it opts into the canonical context.
     expect(dashboardPage).toContain('showTodayContext');
     // The routine manual refresh button is gone; retry remains an error-state

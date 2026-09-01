@@ -14,7 +14,11 @@
 [data-app-shell] .grid:is([class*='grid-cols-4'], [class*='grid-cols-5'], [class*='grid-cols-6']):has(> [data-finance-kpi-drill]),
 [data-app-shell] [data-entity-form] .grid:is([class*='grid-cols-4'], [class*='grid-cols-5'], [class*='grid-cols-6']):has(> [class~='rounded-xl'][class*='bg-muted']),
 [data-app-shell] .grid:is([class*='grid-cols-4'], [class*='grid-cols-5'], [class*='grid-cols-6']):has(> article) {
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  /* No !important: this file is unlayered, and an unlayered normal-author
+     declaration already outranks the layered `grid-cols-*` utilities it is
+     meant to clamp. The old !important was insurance against a cascade that no
+     longer exists here. */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 /* Do not finish an overridden repeated-card grid with an empty half-row. */

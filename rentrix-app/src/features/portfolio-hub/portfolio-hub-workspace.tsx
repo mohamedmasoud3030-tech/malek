@@ -52,7 +52,7 @@ export type PortfolioHubWorkspaceProps = Readonly<{
 
 export function PortfolioHubWorkspace({
   defaultSection = 'properties',
-  title = 'المحفظة',
+  title,
   description,
   mode = 'standalone',
 }: PortfolioHubWorkspaceProps) {
@@ -66,6 +66,7 @@ export function PortfolioHubWorkspace({
     [requestedSection, defaultSection, authorization],
   );
   const isActiveSectionVisible = Boolean(activeSection && visibleSections.some((section) => section.id === activeSection));
+  const activeSectionDefinition = portfolioHubSections.find((section) => section.id === activeSection) ?? portfolioHubSections[0];
 
   const mountedSections = useRef(new Set<PortfolioHubSectionId>());
   if (activeSection) mountedSections.current.add(activeSection);
@@ -123,8 +124,8 @@ export function PortfolioHubWorkspace({
   return (
     <EmbeddableWorkspace
       embedded={mode === 'embedded'}
-      title={title}
-      description={description}
+      title={title ?? activeSectionDefinition.label}
+      description={description ?? activeSectionDefinition.description}
       size="wide"
       visualVariant="malek-pro"
     >

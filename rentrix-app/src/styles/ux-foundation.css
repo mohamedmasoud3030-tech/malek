@@ -1,5 +1,17 @@
-/* MALIK UX Foundation v2.0 — aligned with Visual Contract */
+/* MALEK UX foundation — structure, geometry and responsive/accessibility contracts.
+ *
+ * Ownership rule for this file: it may define sizing, direction, scroll, sticky,
+ * safe-area and breakpoint behavior ONLY. Color, border, shadow, radius and
+ * typography decisions belong to malek-pro-visual-wave.css (the final MALEK
+ * visual authority) or to the component itself.
+ *
+ * This file is imported BEFORE the visual wave so that, at equal specificity,
+ * MALEK's visual layer wins. Nothing here uses !important to out-shout the
+ * visual system; the one !important below defeats an inline style, which no
+ * unlayered rule can otherwise override.
+ */
 
+/* ── Layout tokens shared by the shell, overlays and sticky offsets ─── */
 :root {
   --visual-viewport-height: 100dvh;
   --app-page-gutter-inline: clamp(0.75rem, 2.4vw, 1.25rem);
@@ -107,11 +119,6 @@
     padding: 0.75rem;
   }
 
-  [data-global-page-title] {
-    font-size: 1.125rem;
-    line-height: 1.35;
-  }
-
   [data-filter-bar] {
     gap: 0.5rem;
     padding: 0.5rem;
@@ -159,21 +166,11 @@
   }
 }
 
-/* ── Active press states (mobile-first) ──── */
-@media (hover: none) and (pointer: coarse) {
-  /* hover:none keeps hybrid laptops (mouse + touchscreen) on the real hover styles */
-  /* Slightly dim interactive cards on press */
-  [data-entity-card]:active,
-  [role='button']:active {
-    opacity: 0.88;
-  }
-
-  /* Prevent ghost hover states after tap */
-  [data-entity-card]:hover:not(:active) {
-    box-shadow: var(--shadow-card);
-    border-color: hsl(var(--border));
-  }
-}
+/* Press feedback and ghost-hover suppression intentionally do NOT live here.
+   They paint (opacity / box-shadow / border-color) and must be able to defeat
+   the hover rules in malek-pro-visual-wave.css, so their single owner is that
+   file — see its "touch press + ghost-hover" block. Duplicating them here was
+   how the old stack kept two authorities for the same surface. */
 
 /* ── Floating control clearance (phone only) ─ */
 /* iPad/tablet use the header hamburger + search, so they keep full height. */
@@ -193,7 +190,7 @@
   /* Phone account access stays available through navigation/settings; the
      persistent profile glyph is removed from the compact top toolbar. */
   [data-app-shell-header] [data-header-user-menu] {
-    display: none !important;
+    display: none;
   }
 
   [data-page-layout] {
@@ -261,11 +258,6 @@
 
 [dir='rtl'] [data-filter-tabs-wrapper]::after {
   background: linear-gradient(to right, var(--filter-tabs-fade-surface), transparent);
-}
-
-/* ── Tap highlight suppression (custom handled) */
-* {
-  -webkit-tap-highlight-color: transparent;
 }
 
 /* Local horizontal scroll only — the document itself must not grow sideways. */
@@ -362,5 +354,199 @@
     select {
       font-size: max(1rem, 16px);
     }
+  }
+}
+
+/* ── Accent-rail hosts ───────────────────────────────────────────────
+   The KPI card and every state surface carry a 2px semantic rail drawn with
+   ::before (its color is decided in malek-pro-visual-wave.css). The host must
+   be positioned and clipped for that rail to sit on its edge, and the content
+   must be isolated so it stays above the rail. That geometry is a shared
+   structural contract, so it lives here and not in a feature stylesheet. */
+[data-kpi-card],
+[data-state-surface] {
+  position: relative;
+  overflow: hidden;
+}
+
+[data-kpi-card]::before,
+[data-state-surface]::before {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: 0;
+  height: 2px;
+  content: '';
+}
+
+[data-state-surface] [data-state-surface-content] {
+  isolation: isolate;
+}
+
+/* ── Register/table mechanics (migrated from the retired page-polish.css) ──
+   Scroller containment, sticky header geometry and the minimum row rhythm are
+   structural contracts. Every color/border/typography decision for the same
+   table lives in malek-pro-visual-wave.css. */
+[data-entity-table-wrapper],
+[data-entity-table-grid] {
+  min-width: 0;
+  max-width: 100%;
+}
+
+[data-entity-table-scroll] {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
+}
+
+[data-entity-table] {
+  width: 100%;
+  min-width: max(100%, 32rem);
+  table-layout: auto;
+}
+
+@media (min-width: 768px) {
+  [data-entity-table] {
+    min-width: max(100%, 52rem);
+  }
+}
+
+[data-entity-table] thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  height: 2.875rem;
+  padding: 0.5rem 0.875rem;
+  text-align: start;
+  white-space: nowrap;
+}
+
+[data-entity-table] tbody td {
+  min-height: 46px;
+  padding: 0.65rem 0.875rem;
+  vertical-align: middle;
+}
+
+/* ── Direction contracts — the app is RTL, these lockups are not ──
+   The brand wordmark, its header/utility clusters and every compact numeric
+   cell stay LTR so digits and the M mark never mirror with the document. */
+[data-header-brand-lockup],
+[data-header-utility-side],
+[data-app-shell-header] > div,
+[data-malek-brand-wordmark] {
+  direction: ltr;
+}
+
+[data-malek-brand-wordmark] {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  user-select: none;
+}
+
+/* Note: the retired page-polish.css also carried `[data-financial-amount]` and
+   `[data-status-row]` rules. Repo-wide grep shows no element in this project
+   ever emits either attribute, so both were dropped as dead rather than
+   migrated. `[data-column-priority]` is real (entity-table.tsx) and stays. */
+[data-entity-table] [data-column-priority='actions'] {
+  white-space: nowrap;
+}
+
+/* ── Entity form dialogs are the only intentional full-screen mobile surface.
+   DialogContent centers itself with an inline transform (see
+   components/ui/dialog.tsx); an inline style can only be defeated by an
+   author-level !important, so that single flag stays. Everything else here
+   wins by being unlayered and does not need it. */
+@media (max-width: 639px) {
+  html { scrollbar-gutter: auto; }
+
+  [data-dialog-content][data-entity-form-surface='dialog'][data-dialog-form='true'] {
+    left: 0;
+    right: 0;
+    top: var(--visual-viewport-offset-top, 0px);
+    bottom: auto;
+    width: auto;
+    min-width: 0;
+    max-width: none;
+    height: var(--visual-viewport-height, 100dvh);
+    max-height: var(--visual-viewport-height, 100dvh);
+    transform: none !important;
+    translate: none;
+    border-inline-width: 0;
+    border-radius: 0;
+    padding-block-start: calc(1rem + env(safe-area-inset-top, 0px));
+    padding-block-end: calc(1rem + env(safe-area-inset-bottom, 0px));
+    scrollbar-gutter: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* ── Desktop workspace geometry (migrated from the retired page-polish.css)
+   Desktop is a work surface, not a scaled-up phone screen: header rail,
+   filter toolbar and row density are sized here, painted by the visual wave. */
+@media (min-width: 1024px) {
+  [data-page-layout] [data-page-header] {
+    margin-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  [data-page-layout] [data-page-header] [data-global-page-context] {
+    min-height: 3.25rem;
+    padding-block: 0.5rem;
+    padding-inline: 0;
+  }
+
+  [data-page-layout] [data-section-header] { margin-bottom: 1rem; }
+
+  [data-page-layout] [data-filter-bar] { align-items: center; }
+
+  [data-page-layout] [data-entity-table-wrapper],
+  [data-page-layout] [data-entity-table-grid] {
+    width: 100%;
+    max-width: none;
+  }
+
+  [data-page-layout] [data-entity-table] thead th {
+    height: 3rem;
+    padding-inline: 0.95rem;
+  }
+
+  [data-page-layout] [data-entity-table] tbody td {
+    min-height: 3.2rem;
+    padding-inline: 0.95rem;
+    padding-block: 0.7rem;
+  }
+
+  [data-page-layout] [data-kpi-card] { min-height: 0; }
+
+  /* Sidebar geometry that the shell markup also expresses as utilities.
+     Kept as a single source so the rail and its content offset can never
+     drift apart when a page forgets the matching class. */
+  [data-app-shell] [data-sidebar] {
+    position: fixed;
+    inset-block: 0;
+    inset-inline-start: 0;
+    inset-inline-end: auto;
+    width: 14rem;
+    overflow: hidden;
+  }
+
+  [data-app-shell] [data-sidebar] + div {
+    padding-inline-start: 14rem;
+    padding-inline-end: 0;
+  }
+
+  [data-app-shell] [data-sidebar] > nav {
+    padding: 0.75rem 0.75rem 1rem;
+    scrollbar-gutter: stable;
+  }
+
+  [data-app-shell] [data-sidebar] [data-nav-item] { min-height: 2.75rem; }
+
+  [data-app-shell] [data-app-shell-header] > div {
+    max-width: none;
+    padding-inline: clamp(1.1rem, 1.8vw, 2rem);
   }
 }
