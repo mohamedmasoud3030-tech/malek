@@ -58,7 +58,7 @@ export function ContractDetailE2EFixture() {
   const status = fixtureContract.status;
   return (
     <main className="fixed inset-0 z-[200] overflow-y-auto bg-background text-foreground outline-none" dir="rtl" tabIndex={-1} data-e2e-contract-detail-workspace>
-      <PageLayout dir="rtl" size="wide" visualVariant="malek-pro">
+      <PageLayout dir="rtl" size="wide">
         <EntityDetailHeader
           title={fixtureContract.reference ?? 'عقد الإيجار'}
           subtitle={`${fixtureContract.people?.full_name} · ${fixtureContract.properties?.title} · الوحدة ${fixtureContract.units?.unit_number}`}
