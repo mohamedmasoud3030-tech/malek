@@ -3,18 +3,20 @@ import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 
 const script = new URL('./production-demo-preflight.mjs', import.meta.url);
-const LIVE_REF = 'nnggcnpcuomwfuupupwg';
-const DEMO_REF = 'abcdefghijklmnopqrst';
+const PRESENTATION_REF = 'nnggcnpcuomwfuupupwg';
+
+function makeJwt(ref = PRESENTATION_REF) {
+  const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
+  const payload = Buffer.from(JSON.stringify({ ref, role: 'anon' })).toString('base64url');
+  return `${header}.${payload}.signature`;
+}
 
 function run(overrides = {}) {
   const env = {
     ...process.env,
     VERCEL_ENV: 'production',
-    MALEK_DEPLOYMENT_PROFILE: 'production-demo',
-    PRODUCTION_DEMO_APPROVED: '1',
-    PRODUCTION_SUPABASE_PROJECT_REF: LIVE_REF,
-    DEMO_SUPABASE_PROJECT_REF: DEMO_REF,
-    VITE_SUPABASE_URL: `https://${DEMO_REF}.supabase.co`,
+    VITE_SUPABASE_URL: `https://${PRESENTATION_REF}.supabase.co`,
+    VITE_SUPABASE_ANON_KEY: makeJwt(),
     ...overrides,
   };
   for (const [key, value] of Object.entries(env)) {
@@ -26,51 +28,47 @@ function run(overrides = {}) {
 test('preview builds are not blocked by the production-demo gate', () => {
   const result = run({
     VERCEL_ENV: 'preview',
-    MALEK_DEPLOYMENT_PROFILE: undefined,
-    PRODUCTION_DEMO_APPROVED: undefined,
-    DEMO_SUPABASE_PROJECT_REF: undefined,
     VITE_SUPABASE_URL: 'https://example.supabase.co',
+    VITE_SUPABASE_ANON_KEY: undefined,
   });
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /"status":"not-applicable"/);
 });
 
-test('Vercel Production requires the explicit production-demo profile', () => {
-  const result = run({ MALEK_DEPLOYMENT_PROFILE: undefined });
+test('Vercel Production requires the Supabase URL', () => {
+  const result = run({ VITE_SUPABASE_URL: undefined });
   assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /MALEK_DEPLOYMENT_PROFILE=production-demo/);
+  assert.match(result.stderr, /VITE_SUPABASE_URL is required/);
 });
 
-test('production demo requires explicit release approval', () => {
-  const result = run({ PRODUCTION_DEMO_APPROVED: undefined });
+test('Vercel Production requires the public Supabase key', () => {
+  const result = run({ VITE_SUPABASE_ANON_KEY: undefined });
   assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /PRODUCTION_DEMO_APPROVED=1/);
+  assert.match(result.stderr, /VITE_SUPABASE_ANON_KEY is required/);
 });
 
-test('production demo refuses the canonical MALEK live Supabase project', () => {
-  const result = run({
-    DEMO_SUPABASE_PROJECT_REF: LIVE_REF,
-    VITE_SUPABASE_URL: `https://${LIVE_REF}.supabase.co`,
-  });
+test('production demo requires HTTPS', () => {
+  const result = run({ VITE_SUPABASE_URL: `http://${PRESENTATION_REF}.supabase.co` });
   assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /physically separate from MALEK live Production/);
+  assert.match(result.stderr, /must use HTTPS/);
 });
 
-test('production demo refuses a URL that does not match the declared demo ref', () => {
-  const result = run({ VITE_SUPABASE_URL: 'https://differentprojectref.supabase.co' });
+test('production demo rejects drift to a different Supabase project', () => {
+  const result = run({ VITE_SUPABASE_URL: 'https://abcdefghijklmnopqrst.supabase.co' });
   assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /must exactly target the declared Demo project/);
+  assert.match(result.stderr, /must remain pinned to the approved presentation project/);
 });
 
-test('production demo refuses a falsified production ref', () => {
-  const result = run({ PRODUCTION_SUPABASE_PROJECT_REF: 'not-the-live-project' });
+test('production demo rejects a JWT key from another Supabase project', () => {
+  const result = run({ VITE_SUPABASE_ANON_KEY: makeJwt('abcdefghijklmnopqrst') });
   assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /must identify the canonical MALEK live project/);
+  assert.match(result.stderr, /belongs to a different Supabase project/);
 });
 
-test('production demo accepts an explicitly approved, physically separate demo project', () => {
+test('production demo accepts the owner-approved current Supabase main dataset', () => {
   const result = run();
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /"status":"approved"/);
-  assert.match(result.stdout, new RegExp(`"targetProjectRef":"${DEMO_REF}"`));
+  assert.match(result.stdout, /"datasetMode":"shared-current-main-demo"/);
+  assert.match(result.stdout, new RegExp(`"targetProjectRef":"${PRESENTATION_REF}"`));
 });

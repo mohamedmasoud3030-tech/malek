@@ -35,23 +35,25 @@ It currently allows only:
 
 For hosted QA, `QA_SUPABASE_PROJECT_REF` must exactly match `VITE_SUPABASE_URL` and `QA_MUTATION_APPROVED=1` must be explicitly set. The script also receives `PRODUCTION_SUPABASE_PROJECT_REF` and refuses to run when the target host matches Production.
 
-This separation is deliberate. The dataset is seeded only into a disposable/dedicated presentation backend. The canonical MALEK live Supabase project is never converted into a demo database and is never a valid pilot-seed target.
+That seed boundary remains unchanged. The public Production presentation surface does not need production seeding because the current Supabase main dataset is already explicitly classified by the owner as experimental/demo data.
 
 ## Production presentation surface
 
-The public Vercel Production URL may serve the presentation build, but its backend must remain physically separate from MALEK live Production.
+For the current sales/presentation phase, the public Vercel Production URL intentionally uses the existing MALEK Supabase main project `nnggcnpcuomwfuupupwg` as its demo datastore. This is an explicit product-owner decision for the current experimental dataset, not an accidental fallback.
 
-`rentrix-app/scripts/production-demo-preflight.mjs` executes before the Vercel production bundle and fails closed unless all of the following are true:
+`rentrix-app/scripts/production-demo-preflight.mjs` executes before the Vercel production bundle and fails closed unless:
 
-- `VERCEL_ENV=production` is explicitly configured with `MALEK_DEPLOYMENT_PROFILE=production-demo`.
-- `PRODUCTION_DEMO_APPROVED=1` is present in the Vercel Production environment.
-- `PRODUCTION_SUPABASE_PROJECT_REF` identifies the canonical live project `nnggcnpcuomwfuupupwg` for comparison only.
-- `DEMO_SUPABASE_PROJECT_REF` identifies a different Supabase project/branch.
-- `VITE_SUPABASE_URL` exactly targets that declared Demo project over HTTPS.
+- `VERCEL_ENV=production` has a configured `VITE_SUPABASE_URL`.
+- the URL uses HTTPS.
+- the URL exactly targets `nnggcnpcuomwfuupupwg.supabase.co`.
+- `VITE_SUPABASE_ANON_KEY` is present.
+- when that key is a legacy Supabase JWT, its embedded project ref also matches `nnggcnpcuomwfuupupwg`.
 
-A production deployment that points at the live project, lies about the live project reference, omits the explicit approval, or points at a host that does not match the declared Demo ref is rejected before the application bundle is built.
+This turns the current shared-main decision into a version-controlled deployment contract: silent drift to another Supabase project or a mismatched legacy anon key is rejected before the application bundle is built.
 
-The environment-name contract is documented in `.env.production-demo.example`. Privileged service-role credentials are intentionally not part of the Vercel frontend deployment profile.
+`.env.production-demo.example` documents the pinned presentation target. Privileged service-role credentials are intentionally not part of the Vercel frontend deployment profile.
+
+When MALEK transitions from experimental/demo records to genuine customer production data, this shared-main classification must be retired deliberately: establish the real production data boundary, review migration/cleanup requirements, and update this preflight in the same controlled release. Do not silently reinterpret the current demo dataset as permanent customer production.
 
 ## Run
 
