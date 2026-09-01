@@ -120,23 +120,3 @@ export function RegisterAttention({
     </div>
   );
 }
-
-export function RegisterHeading({
-  title,
-  meta,
-  extra,
-}: Readonly<{
-  title: string;
-  meta?: string;
-  extra?: ReactNode;
-}>) {
-  return (
-    <header data-register-heading className="flex min-h-8 min-w-0 flex-wrap items-center justify-between gap-2 px-0.5">
-      <div className="min-w-0">
-        <h2 className="truncate text-sm font-black lg:text-xs lg:font-bold lg:text-muted-foreground">{title}</h2>
-        {meta ? <p className="truncate text-xs font-medium leading-5 text-muted-foreground">{meta}</p> : null}
-      </div>
-      {extra}
-    </header>
-  );
-}
