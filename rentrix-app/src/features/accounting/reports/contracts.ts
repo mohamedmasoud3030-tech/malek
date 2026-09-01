@@ -4,7 +4,7 @@
  * These are the authoritative RPC return shapes for all accounting domain reports.
  * Every consumer MUST import these interfaces; no ad-hoc payloads are permitted.
  *
- * Report order & purpose (per DEEP_REFACTOR_PLAN.md WP-A):
+ * Canonical report order & purpose:
  *   1. Trial Balance — per-account balances, must balance (debits = credits)
  *   2. Income Statement (P&L) — revenue minus expenses = net income
  *   3. Balance Sheet — assets = liabilities + equity
