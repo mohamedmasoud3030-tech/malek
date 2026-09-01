@@ -177,7 +177,7 @@ const DashboardGroup = memo(function DashboardGroup({
  * rpt_daily_collection. The page composes those read models into nine
  * decision sections:
  *
- *   pulse → financial performance → needs attention → occupancy →
+ *   pulse → needs attention → financial performance → occupancy →
  *   collections → maintenance → contracts → property health → owner obligations.
  */
 export function DashboardPage() {
@@ -398,7 +398,7 @@ export function DashboardPage() {
                 </DashboardGroup>
               </div>
 
-              <div className="min-w-0 xl:col-span-5 xl:order-3">
+              <div className="min-w-0 xl:col-span-5 xl:order-2">
                 <DashboardGroup eyebrow="أولويات" title="يحتاج انتباهك" ariaLabel="الحالات التي تحتاج انتباهاً" sectionId="needs-attention" priority="attention" showHeader={false}>
                   <NeedsAttentionSection
                     signal={needsAttention}
@@ -409,13 +409,19 @@ export function DashboardPage() {
                 </DashboardGroup>
               </div>
 
-              <div className="min-w-0 xl:col-span-5 xl:order-5">
-                <DashboardGroup eyebrow="تحصيل" title="التحصيل والمتأخرات" ariaLabel="التحصيل والمتأخرات" sectionId="collections" showHeader={false}>
-                  <CollectionsSection
+              <div className="min-w-0 xl:col-span-7 xl:order-3">
+                <DashboardGroup eyebrow="الأداء المالي" title="أداء المكتب" ariaLabel="الأداء المالي" sectionId="financial-performance" priority="primary" showHeader={false}>
+                  <FinancialPerformanceSection
                     snapshot={snapshot}
-                    isLoading={isLoading}
-                    isError={hasDashboardError && !snapshot}
+                    vacancyAnalytics={vacancyAnalytics}
+                    vacancyDetailsUnavailable={vacancyDetailsUnavailable}
                     settings={settings}
+                    window={performanceWindow}
+                    onWindowChange={setPerformanceWindow}
+                    chartRows={chartRows}
+                    chartIsLoading={cashflowQuery.isLoading}
+                    chartIsError={cashflowQuery.isError && !cashflowQuery.data}
+                    onChartRetry={retryCashflow}
                   />
                 </DashboardGroup>
               </div>
@@ -433,19 +439,13 @@ export function DashboardPage() {
                 </DashboardGroup>
               </div>
 
-              <div className="min-w-0 xl:col-span-7 xl:order-2">
-                <DashboardGroup eyebrow="الأداء المالي" title="أداء المكتب" ariaLabel="الأداء المالي" sectionId="financial-performance" priority="primary" showHeader={false}>
-                  <FinancialPerformanceSection
+              <div className="min-w-0 xl:col-span-5 xl:order-5">
+                <DashboardGroup eyebrow="تحصيل" title="التحصيل والمتأخرات" ariaLabel="التحصيل والمتأخرات" sectionId="collections" showHeader={false}>
+                  <CollectionsSection
                     snapshot={snapshot}
-                    vacancyAnalytics={vacancyAnalytics}
-                    vacancyDetailsUnavailable={vacancyDetailsUnavailable}
+                    isLoading={isLoading}
+                    isError={hasDashboardError && !snapshot}
                     settings={settings}
-                    window={performanceWindow}
-                    onWindowChange={setPerformanceWindow}
-                    chartRows={chartRows}
-                    chartIsLoading={cashflowQuery.isLoading}
-                    chartIsError={cashflowQuery.isError && !cashflowQuery.data}
-                    onChartRetry={retryCashflow}
                   />
                 </DashboardGroup>
               </div>
