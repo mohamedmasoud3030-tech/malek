@@ -42,6 +42,68 @@ async function getJournalBalance(db: PGlite, sourceId: string) {
   };
 }
 
+/** Calendar-safe ISO date (YYYY-MM-DD) from PGlite date/text values. */
+function toIsoDate(value: unknown): string {
+  if (value instanceof Date) {
+    const y = value.getUTCFullYear();
+    const m = String(value.getUTCMonth() + 1).padStart(2, '0');
+    const d = String(value.getUTCDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+  const raw = String(value ?? '');
+  const match = raw.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (!match) throw new Error(`expected ISO date, got ${raw}`);
+  return match[1];
+}
+
+function addCalendarDays(iso: string, days: number): string {
+  const [year, month, day] = iso.split('-').map(Number);
+  const utc = Date.UTC(year, month - 1, day + days);
+  const next = new Date(utc);
+  const y = next.getUTCFullYear();
+  const m = String(next.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(next.getUTCDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function lastDayOfMonthContaining(iso: string): string {
+  const [year, month] = iso.split('-').map(Number);
+  const last = new Date(Date.UTC(year, month, 0));
+  const y = last.getUTCFullYear();
+  const m = String(last.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(last.getUTCDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+/**
+ * Next settlement window after an authoritative billing period.
+ * Starts the day after `periodEnd` and ends on the last day of that month
+ * (or the start day itself when that day is already month-end).
+ */
+function subsequentNonOverlappingPeriod(periodEnd: string): { start: string; end: string } {
+  const start = addCalendarDays(periodEnd, 1);
+  const end = lastDayOfMonthContaining(start);
+  return { start, end };
+}
+
+type AuthoritativeInvoicePeriod = {
+  id: string;
+  amount: number;
+  billing_period_start: string;
+  billing_period_end: string;
+  issue_date: string;
+  due_date: string;
+};
+
+function paymentDatesFromInvoice(invoice: AuthoritativeInvoicePeriod): { first: string; second: string } {
+  const first = invoice.issue_date || invoice.billing_period_start;
+  const candidate = invoice.due_date && invoice.due_date > first
+    ? invoice.due_date
+    : invoice.billing_period_end;
+  const second = candidate > first ? candidate : addCalendarDays(first, 1);
+  return { first, second };
+}
+
 describe('MALIK Product Workflow Consolidation Database Integration Scenarios', () => {
   let db: PGlite;
 
@@ -93,7 +155,7 @@ describe('MALIK Product Workflow Consolidation Database Integration Scenarios', 
       -- enough for every fixture date AND the harness run date, exactly like
       -- the property-management/master-lease GL suites do.
       insert into public.accounting_periods (company_id, name, start_date, end_date, status)
-      values ('${COMPANY_A}', 'WORKFLOW-2026-27', date '2026-01-01', date '2027-12-31', 'OPEN')
+      values ('${COMPANY_A}', 'WORKFLOW-OPEN-SPAN', date '2020-01-01', date '2039-12-31', 'OPEN')
       on conflict do nothing;
     `);
   });
@@ -190,23 +252,51 @@ describe('MALIK Product Workflow Consolidation Database Integration Scenarios', 
     const genRes = await db.query<{ n: number }>(`select public.generate_invoices_from_active_contracts() as n;`);
     expect(genRes.rows[0].n).toBeGreaterThan(0);
 
-    const invRes = await db.query<{ id: string; amount: number }>(`
-      select id, amount from public.invoices where contract_id = 'a4000000-0000-4000-8000-000000000001' limit 1;
+    const invRes = await db.query<{
+      id: string;
+      amount: number;
+      billing_period_start: string;
+      billing_period_end: string;
+      issue_date: string;
+      due_date: string;
+    }>(`
+      select id, amount,
+             to_char(billing_period_start, 'YYYY-MM-DD') as billing_period_start,
+             to_char(billing_period_end, 'YYYY-MM-DD') as billing_period_end,
+             to_char(issue_date, 'YYYY-MM-DD') as issue_date,
+             to_char(due_date, 'YYYY-MM-DD') as due_date
+        from public.invoices
+       where contract_id = 'a4000000-0000-4000-8000-000000000001'
+       limit 1;
     `);
-    const invoiceId = invRes.rows[0].id;
+    const invoice: AuthoritativeInvoicePeriod = {
+      id: invRes.rows[0].id,
+      amount: Number(invRes.rows[0].amount),
+      billing_period_start: toIsoDate(invRes.rows[0].billing_period_start),
+      billing_period_end: toIsoDate(invRes.rows[0].billing_period_end),
+      issue_date: toIsoDate(invRes.rows[0].issue_date),
+      due_date: toIsoDate(invRes.rows[0].due_date),
+    };
+    const invoiceId = invoice.id;
+    expect(invoice.billing_period_start <= invoice.billing_period_end).toBe(true);
 
     // Verify invoice journal entries are balanced (DEBIT == CREDIT)
     const invBal = await getJournalBalance(db, invoiceId);
     expect(invBal.debit).toBeCloseTo(invBal.credit, 3);
     expect(invBal.debit).toBeGreaterThan(0);
 
-    // 9 & 10. Record partial then final payment via authoritative payment atomic
+    // 9 & 10. Record partial then final payment on the generated billing period —
+    // never a hard-coded calendar month. The generator uses current_date; the
+    // test follows whatever period it actually wrote.
+    const payDates = paymentDatesFromInvoice(invoice);
+    expect(payDates.first >= invoice.billing_period_start).toBe(true);
+    expect(payDates.second >= payDates.first).toBe(true);
     await db.query(`
       select public.record_invoice_payment_atomic(jsonb_build_object(
         'invoice_id', '${invoiceId}',
         'amount', 400,
         'method', 'cash',
-        'date', '2026-08-03',
+        'date', '${payDates.first}',
         'request_id', 'pay-req-001'
       ));
     `);
@@ -215,7 +305,7 @@ describe('MALIK Product Workflow Consolidation Database Integration Scenarios', 
         'invoice_id', '${invoiceId}',
         'amount', 600,
         'method', 'cash',
-        'date', '2026-08-04',
+        'date', '${payDates.second}',
         'request_id', 'pay-req-002'
       ));
     `);
@@ -324,12 +414,36 @@ describe('MALIK Product Workflow Consolidation Database Integration Scenarios', 
   it('Scenario 4 — Owner settlement lifecycle: draft, approve, pay, verify balances, and controlled cancellation', async () => {
     await assume(db, ADMIN_A, COMPANY_A);
 
+    // Settlement period is the same authoritative invoice billing window
+    // generated in Scenario 1 — not a hard-coded August.
+    const billed = await db.query<{
+      billing_period_start: string;
+      billing_period_end: string;
+      next_start: string;
+      next_end: string;
+    }>(`
+      select to_char(billing_period_start, 'YYYY-MM-DD') as billing_period_start,
+             to_char(billing_period_end, 'YYYY-MM-DD') as billing_period_end,
+             to_char((billing_period_end + 1), 'YYYY-MM-DD') as next_start,
+             to_char((date_trunc('month', billing_period_end + 1) + interval '1 month' - interval '1 day')::date, 'YYYY-MM-DD') as next_end
+        from public.invoices
+       where contract_id = 'a4000000-0000-4000-8000-000000000001'
+       limit 1;
+    `);
+    const periodStart = toIsoDate(billed.rows[0].billing_period_start);
+    const periodEnd = toIsoDate(billed.rows[0].billing_period_end);
+    const sqlNext = {
+      start: toIsoDate(billed.rows[0].next_start),
+      end: toIsoDate(billed.rows[0].next_end),
+    };
+    expect(periodStart <= periodEnd).toBe(true);
+
     // 1. Create draft settlement via create_owner_settlement_draft_atomic
     const draftRes = await db.query<{ create_owner_settlement_draft_atomic: any }>(`
       select public.create_owner_settlement_draft_atomic(jsonb_build_object(
         'owner_id', 'a1000000-0000-4000-8000-000000000001',
-        'period_start', '2026-08-01',
-        'period_end', '2026-08-31',
+        'period_start', '${periodStart}',
+        'period_end', '${periodEnd}',
         'request_id', 'a0000000-0000-4000-8000-000000000001'
       )) as create_owner_settlement_draft_atomic;
     `);
@@ -375,11 +489,15 @@ describe('MALIK Product Workflow Consolidation Database Integration Scenarios', 
     expect(Number(ownerFundsEvent.rows[0].amount_delta)).toBeLessThanOrEqual(0);
 
     // 5. Controlled reversal via cancel_owner_settlement_atomic on a draft/approved settlement
+    const nextPeriod = subsequentNonOverlappingPeriod(periodEnd);
+    expect(nextPeriod).toEqual(sqlNext);
+    expect(nextPeriod.start > periodEnd).toBe(true);
+    expect(nextPeriod.end >= nextPeriod.start).toBe(true);
     const draft2 = await db.query<{ create_owner_settlement_draft_atomic: any }>(`
       select public.create_owner_settlement_draft_atomic(jsonb_build_object(
         'owner_id', 'a1000000-0000-4000-8000-000000000001',
-        'period_start', '2026-09-01',
-        'period_end', '2026-09-30',
+        'period_start', '${nextPeriod.start}',
+        'period_end', '${nextPeriod.end}',
         'request_id', 'a0000000-0000-4000-8000-000000000010'
       )) as create_owner_settlement_draft_atomic;
     `);
@@ -501,5 +619,78 @@ describe('MALIK Product Workflow Consolidation Database Integration Scenarios', 
     expect(checkA.rows[0].title).toBe('مجمع الشراكة');
 
     await db.query('RESET ROLE;');
+  });
+
+  it('date-boundary regression — payments and settlements follow the generated invoice period, not the wall-clock month', async () => {
+    await assume(db, ADMIN_A, COMPANY_A);
+    const billed = await db.query<{
+      billing_period_start: unknown;
+      billing_period_end: unknown;
+      issue_date: unknown;
+      due_date: unknown;
+    }>(`
+      select billing_period_start, billing_period_end, issue_date, due_date
+        from public.invoices
+       where contract_id = 'a4000000-0000-4000-8000-000000000001'
+       limit 1;
+    `);
+    expect(billed.rows).toHaveLength(1);
+    const invoice = {
+      id: 'n/a',
+      amount: 0,
+      billing_period_start: toIsoDate(billed.rows[0].billing_period_start),
+      billing_period_end: toIsoDate(billed.rows[0].billing_period_end),
+      issue_date: toIsoDate(billed.rows[0].issue_date),
+      due_date: toIsoDate(billed.rows[0].due_date),
+    };
+    const payDates = paymentDatesFromInvoice(invoice);
+    expect(payDates.first >= invoice.billing_period_start).toBe(true);
+    expect(payDates.second >= invoice.billing_period_start).toBe(true);
+
+    const receipts = await db.query<{ date_time: unknown }>(`
+      select r.date_time
+        from public.receipts r
+        join public.receipt_allocations ra on ra.receipt_id = r.id
+       where ra.invoice_id in (
+         select id from public.invoices
+          where contract_id = 'a4000000-0000-4000-8000-000000000001'
+       )
+    `);
+    expect(receipts.rows.length).toBeGreaterThan(0);
+    for (const row of receipts.rows) {
+      const paidOn = toIsoDate(row.date_time);
+      expect(paidOn >= invoice.billing_period_start).toBe(true);
+    }
+
+    const settlements = await db.query<{ period_start: unknown; period_end: unknown; status: string }>(`
+      select period_start, period_end, status
+        from public.owner_settlements
+       where owner_id = 'a1000000-0000-4000-8000-000000000001'
+       order by period_start
+    `);
+    expect(settlements.rows.length).toBeGreaterThanOrEqual(2);
+    const first = {
+      start: toIsoDate(settlements.rows[0].period_start),
+      end: toIsoDate(settlements.rows[0].period_end),
+    };
+    expect(first.start).toBe(invoice.billing_period_start);
+    expect(first.end).toBe(invoice.billing_period_end);
+
+    const second = {
+      start: toIsoDate(settlements.rows[1].period_start),
+      end: toIsoDate(settlements.rows[1].period_end),
+    };
+    expect(second.start > first.end).toBe(true);
+    expect(second.end >= second.start).toBe(true);
+  });
+});
+
+describe('workflow date-boundary helpers (calendar independent)', () => {
+  it('derives a non-overlapping next period across month-end, year-end, and leap-year February', () => {
+    expect(subsequentNonOverlappingPeriod('2026-08-31')).toEqual({ start: '2026-09-01', end: '2026-09-30' });
+    expect(subsequentNonOverlappingPeriod('2026-12-31')).toEqual({ start: '2027-01-01', end: '2027-01-31' });
+    expect(subsequentNonOverlappingPeriod('2024-02-29')).toEqual({ start: '2024-03-01', end: '2024-03-31' });
+    expect(subsequentNonOverlappingPeriod('2025-02-28')).toEqual({ start: '2025-03-01', end: '2025-03-31' });
+    expect(subsequentNonOverlappingPeriod('2026-09-30')).toEqual({ start: '2026-10-01', end: '2026-10-31' });
   });
 });

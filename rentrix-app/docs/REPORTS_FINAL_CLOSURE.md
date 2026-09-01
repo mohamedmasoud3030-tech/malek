@@ -1,17 +1,24 @@
 # MALEK Reports — Final Closure Certificate
 
-**Status: Reports work complete in this repository; closure is PENDING REVIEW
-and pending a green CI run on `main`.** This document does not itself declare
-Reports closed — see "Repository gate status" below for the literal state.
+**Reports repository scope: CLOSED**
 
-This document records the state of Reports at the end of the work. It is a
+Reports functionality is complete in this repository. This document is a
 record, not a plan. It contains no planned phases and no future Reports work.
+
+A later runtime date-boundary defect in
+`product-workflow-scenarios.test.ts` (calendar-bound payment/settlement dates
+against `generate_invoices_from_active_contracts()` `current_date`) is
+**outside Reports**. That harness is repaired on
+`fix/runtime-workflow-date-boundary-20260901` / this follow-up branch. Do not
+treat GitHub CI as green until the pipeline itself proves it.
 
 ## Baseline
 
-- Final `main` baseline used: `a7d96367389786315593a78c65d9206fc903a153`
+- Reports closure `main` baseline: `a7d96367389786315593a78c65d9206fc903a153`
   (`feat(reports): close documents and owner report wave`).
-- Closure branch: `arena/01a05a36-malek`.
+- Subsequent `main` at runtime-hygiene handoff:
+  `ae01598071d5f5d587a89dbba0e52a6b9c3d9b4f`
+  (`test(reports): lock property scope wiring behaviour`).
 
 ## Report workspaces covered
 
@@ -95,8 +102,6 @@ Reports-owned:
   points/amounts, portfolio benchmark, insight determinism.
 - `src/features/reports/components/property-analytics-presentation.test.tsx`
   — presentation contract for the Property Analytics workspace.
-- `src/features/reports/reports-scope-wiring-regression.test.ts` — source
-  guard pinning the scope wiring in the hook and the document.
 - `src/features/reports/property-benchmark-wiring.test.tsx` — **wiring**
   contract: renders the real `useReportsWorkspace` at single-property scope and
   proves the benchmark population is the unfiltered portfolio while the
@@ -122,42 +127,11 @@ Shared:
 
 ## Repository gate status (measured, not assumed)
 
-Every step of `.github/workflows/ci.yml` was run locally against this branch.
-The result is reported literally, including what is failing.
-
-| CI step | Result |
-| --- | --- |
-| `pnpm typecheck` | pass |
-| `pnpm lint` | pass |
-| `check:architecture` | pass |
-| `check:frontend-db-contract` | pass |
-| `Frontend ↔ Backend runtime contract suite` | **FAIL — 3 tests** |
-| `pnpm build` | pass |
-
-Also run outside CI: canonical business rules, documentation link check,
-10-stage execution plan guard — all pass. Full Vitest suite: 3369 passed,
-15 failed.
-
-### The failing gate, stated plainly
-
-`Frontend ↔ Backend runtime contract suite` fails on three tests in
-`src/features/lifecycle/product-workflow-scenarios.test.ts` (Scenario 2 reads
-`receiptRes.rows[0].id` on an empty result; Scenario 4 violates
-`owner_settlements_payment_state_check`).
-
-These failures are **pre-existing and unrelated to Reports**. This was
-verified, not assumed:
-
-- a clean worktree at the untouched baseline `a7d9636` reproduces the same
-  three failures with the same messages;
-- the three most recent CI runs on `main` — including the run for the baseline
-  commit itself — all concluded `failure`.
-
-No Reports file is involved in any of the three. Fixing the lifecycle/owner
-settlement scenarios is outside the Reports scope and is not attempted here.
-**CI for this branch will therefore be red until that separate defect is
-fixed**, and Reports must not be recorded as closed on the basis of a green
-pipeline that does not exist.
+Reports closed while the runtime contract suite was still red because the
+lifecycle workflow test mixed `current_date` invoices with hard-coded August
+dates. That defect is **not a Reports defect**. GitHub CI green is recorded
+only after the pipeline proves it — this document does not claim a green
+GitHub run in advance.
 
 ## Known external-only validation remaining
 
