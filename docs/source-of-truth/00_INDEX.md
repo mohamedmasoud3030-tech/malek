@@ -61,6 +61,7 @@ The following decisions are locked for target reconstruction:
 - Relevant registers support **Cards ⇄ Table** through one shared foundation; phone defaults to Cards but optional Table scrolls only inside its container.
 - Entity dossiers own relationship/operations; heavy financial analysis belongs in Money/Reports.
 - Payment behavior never rewrites the contractual due schedule; contract history is versioned/append-only according to its governing lifecycle.
+- MALEK may inherit controlled brand/ecosystem cues from the parent LENA platform, but **LENA's “السحر والجمال / Magic & Beauty” world identity is not an internal MALEK UI theme**. Routine MALEK surfaces remain property-operations/financial, calm, data-first and trust-oriented.
 - Final technical rename of `rentrix-app` is allowed only after reconstruction/parity/release gates and is mechanical, not a rewrite.
 
 Older source-of-truth wording in Documents 1/5/6 has been reconciled to this lock. Historical design guides do not override it.
@@ -127,7 +128,7 @@ Document 7 uses:
 | Documents 01–08 | CANONICAL | Domain authorities |
 | `governance/final-decision-register.json` | SUPPORTING / LOCKED DECISIONS | Referenced governance decisions |
 | `governance/10-stage-master-plan.json` | SUPPORTING / GOVERNANCE AUTHORITY | Governed stage credit |
-| `docs/execution/MALEK_MAGIC_CITY_UI_BLUEPRINT.md` | SUPPORTING / ACTIVE EXECUTION | Visual execution translation of `UX-001..UX-008`, runtime screenshot self-review loop and phased UI work; cannot override Document 6 |
+| `docs/execution/MALEK_RUNTIME_UI_UX_RECONSTRUCTION_BLUEPRINT.md` | SUPPORTING / ACTIVE EXECUTION | Runtime-audit-driven UI/UX reconstruction plan, screenshot self-review loop and phased work; cannot override Document 6 |
 | `docs/execution/**` | SUPPORTING | Execution/reviewer evidence ledgers |
 | `docs/decisions/**` | SUPPORTING | Immutable decision history |
 | `docs/malek-target/**` | DRAFT / SUPPORTING | Planning work used to derive this lock; cannot override this pack |
