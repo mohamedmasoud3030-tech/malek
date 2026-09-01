@@ -94,7 +94,6 @@ export function LeasingHubWorkspace() {
       title={activeSectionDefinition.label}
       description={activeSectionDefinition.description}
       size="wide"
-      visualVariant="malek-pro"
     >
       {isRequestedForbidden ? (
         <AccessDenied message="ليس لديك صلاحية لعرض هذا القسم من التأجير." />
