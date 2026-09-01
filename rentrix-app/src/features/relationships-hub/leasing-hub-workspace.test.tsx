@@ -54,7 +54,7 @@ describe('Leasing workspace', () => {
   it('renders one shell titled التأجير with contracts as the default journey', async () => {
     const { container } = renderHub();
     expect((await screen.findByTestId('contracts-embedded')).textContent).toBe('yes');
-    expect(screen.getByText('العقود')).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'العقود' })).toBeTruthy();
     expect(container.querySelectorAll('[data-page-layout]')).toHaveLength(1);
     expect(container.querySelectorAll('[data-page-header]')).toHaveLength(1);
   });
