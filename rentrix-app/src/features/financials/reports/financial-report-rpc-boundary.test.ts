@@ -5,11 +5,11 @@ import { describe, expect, it } from 'vitest';
 const featureDir = resolve(import.meta.dirname);
 const authorityMigration = resolve(
   featureDir,
-  '../../../../supabase/migrations/20260901000064_financial_report_rpc_permission_boundary.sql',
+  '../../../../../supabase/migrations/20260901000064_financial_report_rpc_permission_boundary.sql',
 );
 const catalogMigration = resolve(
   featureDir,
-  '../../../../supabase/migrations/20260901000065_financial_reports_view_permission_catalog.sql',
+  '../../../../../supabase/migrations/20260901000065_financial_reports_view_permission_catalog.sql',
 );
 
 describe('financial report RPC database authority', () => {
