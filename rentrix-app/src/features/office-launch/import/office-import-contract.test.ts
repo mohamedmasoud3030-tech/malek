@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { buildCanonicalOfficeImportPreview } from './office-import-contract';
+import { parseXlsxMatrix } from './office-import';
+import {
+  buildCanonicalOfficeImportPreview,
+  buildCanonicalOfficeImportTemplate,
+} from './office-import-contract';
 
 describe('canonical office import contract', () => {
   it('accepts the unit statuses owned by the canonical unit schema', () => {
@@ -27,5 +31,14 @@ describe('canonical office import contract', () => {
     ]);
     expect(preview.canCommit).toBe(false);
     expect(preview.issues.some((issue) => issue.field === 'type')).toBe(true);
+  });
+
+  it('generates an XLSX unit template that passes its own canonical preview gate', async () => {
+    const template = buildCanonicalOfficeImportTemplate('units', 'xlsx');
+    const bytes = new Uint8Array(await template.blob.arrayBuffer());
+    const matrix = await parseXlsxMatrix(bytes);
+    const preview = buildCanonicalOfficeImportPreview('units', matrix);
+    expect(preview.canCommit).toBe(true);
+    expect(preview.issues).toEqual([]);
   });
 });
