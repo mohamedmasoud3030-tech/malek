@@ -45,6 +45,18 @@ describe('canonical register visual contract', () => {
     expect(listPage).not.toContain('embeddedHeader');
   });
 
+  it('forces commissions through the canonical workspace shell instead of a feature-local shell', () => {
+    const commissionsPage = readFileSync(resolve(srcDir, 'features/commissions/commissions-page.tsx'), 'utf8');
+    const commissionsView = readFileSync(resolve(srcDir, 'features/commissions/components/commissions-view.tsx'), 'utf8');
+
+    expect(commissionsPage).toContain('EmbeddableWorkspace');
+    expect(commissionsPage).toContain('workspaceName="commissions"');
+    expect(commissionsPage).not.toContain('PageLayout');
+    expect(commissionsPage).not.toContain('<div data-embedded-workspace');
+    expect(commissionsView).not.toContain('PageHeader');
+    expect(commissionsView).not.toContain('data-finance-header');
+  });
+
   it('keeps sticky identity/actions for wide desktop only and trims lower-priority tablet columns', () => {
     expect(entityTable).toContain('xl:sticky xl:start-0');
     expect(entityTable).toContain('xl:sticky xl:end-0');
