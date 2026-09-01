@@ -22,7 +22,7 @@ export type EmbeddableWorkspaceProps = Readonly<{
   backLabel?: string;
   primaryAction?: ReactNode;
   secondaryActions?: ReactNode;
-  /** Temporary caller compatibility; MALEK now has one visual system. */
+  /** Temporary caller compatibility; ignored because MALEK has one visual system. */
   visualVariant?: 'malek-pro';
   children: ReactNode;
 }>;
@@ -50,7 +50,6 @@ export function EmbeddableWorkspace({
   backLabel,
   primaryAction,
   secondaryActions,
-  visualVariant = 'malek-pro',
   children,
 }: EmbeddableWorkspaceProps) {
   if (embedded) {
@@ -61,7 +60,6 @@ export function EmbeddableWorkspace({
         data-embedded-workspace
         data-workspace={workspaceName}
         data-malek-surface
-        data-visual-wave={visualVariant}
         className="min-w-0 space-y-2.5 sm:space-y-3"
       >
         {hasActions ? (
@@ -91,7 +89,6 @@ export function EmbeddableWorkspace({
       size={size}
       className={className}
       contentClassName={contentClassName}
-      visualVariant={visualVariant}
     >
       <PageHeader
         title={title}
