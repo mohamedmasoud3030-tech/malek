@@ -48,7 +48,6 @@ export function CommissionsWorkspace({ embedded = false }: CommissionsWorkspaceP
       dir="rtl"
       lang="ar"
       size="wide"
-      visualVariant="malek-pro"
       primaryAction={(
         <Button onClick={formState.openCreate} className="min-h-11">
           <Plus className="me-2 size-4" />
