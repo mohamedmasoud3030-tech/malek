@@ -187,12 +187,24 @@ export function ContractsListE2EFixture() {
           </Button>
         )}
         search={{ value: searchTerm, onChange: setSearchTerm, placeholder: 'بحث باسم المستأجر، الوحدة، العقار، أو رقم العقد' }}
-        filters={<FilterTabs options={contractLeaseModeOptions} value={leaseMode} onChange={setLeaseMode} tone="contracts" />}
+        filters={
+          <FilterTabs
+            options={contractLeaseModeOptions}
+            value={leaseMode}
+            onChange={(value) => setLeaseMode(value as LeaseModeFilter)}
+            tone="contracts"
+          />
+        }
         advancedFilters={(
           <div className="grid min-w-0 gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-start" data-contract-advanced-filters>
             <div className="min-w-0 space-y-1.5">
               <p className="text-[11px] font-black text-muted-foreground">حالة العقد</p>
-              <FilterTabs options={contractStatusFilterOptions} value={status} onChange={setStatus} tone="contracts" />
+              <FilterTabs
+                options={contractStatusFilterOptions}
+                value={status}
+                onChange={(value) => setStatus(value as ContractStatusFilter)}
+                tone="contracts"
+              />
             </div>
             <div className="min-w-0 space-y-1.5">
               <p className="text-[11px] font-black text-muted-foreground">قرب الانتهاء</p>
