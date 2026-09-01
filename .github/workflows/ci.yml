@@ -56,7 +56,15 @@ jobs:
       - name: Shared primitive accessibility gate
         run: pnpm --filter ./rentrix-app run test:a11y-primitives
       - name: Full application test gate
-        run: pnpm --filter ./rentrix-app test
+        run: pnpm --filter ./rentrix-app exec vitest run --config vite.config.ts --exclude src/components/ui/primitives.axe.test.tsx --reporter=default --reporter=json --outputFile=vitest-results.json
+      - name: Upload Vitest diagnostics
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: vitest-results
+          path: rentrix-app/vitest-results.json
+          if-no-files-found: ignore
+          retention-days: 1
       - name: Lint
         run: pnpm lint
       - name: Architecture check
