@@ -22,8 +22,6 @@ export type EmbeddableWorkspaceProps = Readonly<{
   backLabel?: string;
   primaryAction?: ReactNode;
   secondaryActions?: ReactNode;
-  /** Temporary caller compatibility; ignored because MALEK has one visual system. */
-  visualVariant?: 'malek-pro';
   children: ReactNode;
 }>;
 
@@ -32,7 +30,7 @@ export type EmbeddableWorkspaceProps = Readonly<{
  *
  * A standalone route owns PageLayout + PageHeader. An embedded workspace owns
  * content and reachable actions only. There is intentionally no API for a
- * second embedded page identity.
+ * second embedded page identity or an alternate visual system.
  */
 export function EmbeddableWorkspace({
   embedded = false,
