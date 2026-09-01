@@ -57,6 +57,19 @@ describe('canonical register visual contract', () => {
     expect(commissionsView).not.toContain('data-finance-header');
   });
 
+  it('forces simple core registers through ListPage instead of hand-built workspace/filter composition', () => {
+    const properties = readFileSync(resolve(srcDir, 'features/properties/properties-list-page.tsx'), 'utf8');
+    const units = readFileSync(resolve(srcDir, 'features/units/units-page.tsx'), 'utf8');
+    const tenants = readFileSync(resolve(srcDir, 'features/tenants/TenantsPage.tsx'), 'utf8');
+
+    for (const source of [properties, units, tenants]) {
+      expect(source).toContain('ListPage');
+      expect(source).not.toContain('import { EmbeddableWorkspace }');
+      expect(source).not.toContain('import { FilterBar }');
+    }
+    expect(tenants).toContain('workspaceName="tenants"');
+  });
+
   it('keeps sticky identity/actions for wide desktop only and trims lower-priority tablet columns', () => {
     expect(entityTable).toContain('xl:sticky xl:start-0');
     expect(entityTable).toContain('xl:sticky xl:end-0');
