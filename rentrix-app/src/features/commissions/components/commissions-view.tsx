@@ -7,7 +7,6 @@ import {
   CheckCircle2,
   Clock3,
   Edit,
-  Plus,
   RotateCcw,
   Undo2,
 } from "lucide-react";
@@ -28,7 +27,6 @@ import { EntityTable, type ColumnDef } from "@/components/ui/entity-table";
 import { FilterBar } from "@/components/ui/filter-bar";
 import { Input } from "@/components/ui/input";
 import { RegisterMetricStrip } from "@/components/layout/register-summary";
-import { PageHeader } from "@/components/layout/page-header";
 import { Select } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { formatMoney } from "@/hooks/useCompanyFormatters";
@@ -83,6 +81,10 @@ type Props = Readonly<{
   onReverseAtomic?: (id: string, reason: string) => Promise<unknown>;
 }>;
 
+/**
+ * Commission workspace body only. Route identity/actions belong to the shared
+ * workspace shell so this component renders identically standalone or embedded.
+ */
 export function CommissionsView(props: Props) {
   const {
     rows,
@@ -144,18 +146,6 @@ export function CommissionsView(props: Props) {
 
   return (
     <section className="space-y-5" data-finance-root>
-      <div data-finance-header>
-        <PageHeader
-          title="العمولات"
-          primaryAction={
-            <Button onClick={onCreate} className="min-h-11 bg-primary text-primary-foreground">
-              <Plus className="me-2 size-4" />
-              إضافة عمولة
-            </Button>
-          }
-        />
-      </div>
-
       <section data-finance-section aria-label="ملخص العمولات">
         <RegisterMetricStrip
           aria-label="ملخص العمولات"
@@ -186,11 +176,9 @@ export function CommissionsView(props: Props) {
               </Select>
             </>
           }
-
-        activeFilters={activeFilters}
-        onClearAllFilters={() => onFiltersChange({ query: "", status: "all", type: "all" })}
-      />
-
+          activeFilters={activeFilters}
+          onClearAllFilters={() => onFiltersChange({ query: "", status: "all", type: "all" })}
+        />
       </section>
 
       <section data-finance-section aria-label="حالات التحميل والخطأ">
@@ -401,30 +389,30 @@ function CommissionRows({
   );
 
   const commissionColumns = useMemo((): ColumnDef<CommissionRecord>[] => [
-        {
-          key: "staff_name", priority: 'identity' as const,
-          header: "المستفيد",
-          render: (row) => (
-            <span className="max-w-56 whitespace-normal break-words">
-              <span className="font-bold">{row.staff_name ?? "—"}</span>
-              <p className="text-xs text-muted-foreground">{formatSourceLabel(row.type, row.source_id)}</p>
-            </span>
-          ),
-        },
-        { key: "type", priority: 'secondary' as const, header: "النوع", render: (row) => commissionTypeLabels[row.type ?? ""] ?? row.type ?? "—" },
-        { key: "amount", priority: 'primary' as const, header: "المبلغ", render: (row) => <span dir="ltr" className="tabular-nums font-bold">{money(row.amount)}</span> },
-        {
-          key: "status", priority: 'secondary' as const,
-          header: "الحالة",
-          render: (row) => (
-            <span className="flex flex-col items-start gap-1">
-              <StatusBadge tone={commissionStatusTone[row.status ?? ""] ?? "neutral"}>{commissionStatusLabels[row.status ?? ""] ?? row.status ?? "—"}</StatusBadge>
-              {nextActionLabels[row.status ?? ""] ? <span className="text-xs font-semibold text-muted-foreground">{nextActionLabels[row.status ?? ""]}</span> : null}
-            </span>
-          ),
-        },
-        { key: "actions", priority: 'actions' as const, header: "إجراءات", render: actionsFor },
-      ], [actionsFor]);
+    {
+      key: "staff_name", priority: 'identity' as const,
+      header: "المستفيد",
+      render: (row) => (
+        <span className="max-w-56 whitespace-normal break-words">
+          <span className="font-bold">{row.staff_name ?? "—"}</span>
+          <p className="text-xs text-muted-foreground">{formatSourceLabel(row.type, row.source_id)}</p>
+        </span>
+      ),
+    },
+    { key: "type", priority: 'secondary' as const, header: "النوع", render: (row) => commissionTypeLabels[row.type ?? ""] ?? row.type ?? "—" },
+    { key: "amount", priority: 'primary' as const, header: "المبلغ", render: (row) => <span dir="ltr" className="tabular-nums font-bold">{money(row.amount)}</span> },
+    {
+      key: "status", priority: 'secondary' as const,
+      header: "الحالة",
+      render: (row) => (
+        <span className="flex flex-col items-start gap-1">
+          <StatusBadge tone={commissionStatusTone[row.status ?? ""] ?? "neutral"}>{commissionStatusLabels[row.status ?? ""] ?? row.status ?? "—"}</StatusBadge>
+          {nextActionLabels[row.status ?? ""] ? <span className="text-xs font-semibold text-muted-foreground">{nextActionLabels[row.status ?? ""]}</span> : null}
+        </span>
+      ),
+    },
+    { key: "actions", priority: 'actions' as const, header: "إجراءات", render: actionsFor },
+  ], [actionsFor]);
 
   return (
     <EntityTable
