@@ -24,8 +24,6 @@ interface ListPageProps {
   toolbarActions?: ReactNode;
   /** Optional stable storage key shared by the page toolbar and its register. */
   viewModeStorageKey?: string;
-  /** Legacy input retained only until the last consumer is removed; it has no runtime effect. */
-  embeddedHeader?: 'full' | 'actions-only' | 'none';
   children: ReactNode;
   className?: string;
   dir?: 'rtl' | 'ltr';
