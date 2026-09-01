@@ -4,7 +4,10 @@ import { describe, expect, it } from 'vitest';
 
 describe('ai-assistant production runtime contract', () => {
   it('keeps the direct database control fallback that recovered the live Edge Function from 503 responses', () => {
-    const source = readFileSync(resolve(process.cwd(), '../../supabase/functions/ai-assistant/index.ts'), 'utf8');
+    const source = readFileSync(
+      resolve(import.meta.dirname, '../../../../../', 'supabase/functions/ai-assistant/index.ts'),
+      'utf8',
+    );
 
     expect(source).toContain('npm:postgres@3.4.3');
     expect(source).toContain('callControlRpcDirect');
