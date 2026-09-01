@@ -51,7 +51,7 @@ import { hasCompleteCompanyIdentity, type DocumentCompanySettings } from '@/serv
 import { runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
 import type { ProfessionalReportGroup, PropertyReportPayload, ReportCellFormat, ReportChartData } from '@/services/documents/documentPayloads';
 import { getAuthoritativeReportsCollectionRate } from '../reports-collection-efficiency';
-import { getTodayLocalDateString, type ExpiringContractRow } from '../reports-page.helpers';
+import { buildOccupancyRows, getTodayLocalDateString, type ExpiringContractRow } from '../reports-page.helpers';
 import type { ReportsWorkspaceModel } from '../use-reports-workspace';
 import type { ReportsFilterState } from '../reports-workspace-filters';
 import { arabicMonthLabel, formatPointChange, formatSignedAmountChange, monthEndIso, monthKeyOf, previousPeriodRange } from './report-period';
@@ -614,8 +614,9 @@ export function aggregatePropertyReportData(input: PropertyReadModelInput): Prop
   const occupancy = occupancyFromRows(input.occupancyRows);
   const arrearsBuckets = aggregateArrearsBuckets(input.arrears);
   const vacancyCount = input.vacancyAnalytics?.vacantRows.length ?? 0;
-  const longestVacancyDays = input.vacancyAnalytics
-    ? input.vacancyAnalytics.vacantRows.reduce((max, row) => Math.max(max, row.daysVacant), 0)
+  const hasVacancies = vacancyCount > 0;
+  const longestVacancyDays = hasVacancies
+    ? input.vacancyAnalytics!.vacantRows.reduce((max, row) => Math.max(max, row.daysVacant), 0)
     : null;
 
   return {
@@ -641,7 +642,7 @@ export function aggregatePropertyReportData(input: PropertyReadModelInput): Prop
     expiringRentExposed: input.expiringRentExposed,
     expiringRowsSlice: input.expiringRows,
     longestVacancyDays,
-    averageVacancyDays: input.vacancyAnalytics?.averageVacancyDays ?? null,
+    averageVacancyDays: hasVacancies ? (input.vacancyAnalytics?.averageVacancyDays ?? null) : null,
     vacancyCount,
     vacancyRows: input.vacancyRows ?? null,
     monthlyCollectionTrend: input.monthlyCollectionTrend,
@@ -764,6 +765,11 @@ export async function loadPropertyReportData(params: {
   const vacancyAnalytics = model.sections.occupancy.vacancyAnalytics;
 
   const allContracts = model.filters.contractRows;
+  const propertyTitlesById = new Map(
+    allContracts
+      .filter((contract) => contract.properties?.id && contract.properties?.title)
+      .map((contract) => [contract.properties!.id, contract.properties!.title!] as const),
+  );
   const scopedContracts = allContracts.filter((contract) => !propertyId || contract.property_id === propertyId);
   const allUnits = await listUnits();
   const scopedUnits = allUnits.filter((unit) => !propertyId || unit.property_id === propertyId);
@@ -815,7 +821,7 @@ export async function loadPropertyReportData(params: {
 
   /* Previous comparable period — same-length window immediately before. */
   const prevRange = previousPeriodRange(from, to);
-  const collectionRateCurrent = isPortfolioScope ? model.hero.collectionRate : null;
+  const collectionRateCurrent = isPortfolioScope ? (model.sections.collections.collectionRate ?? null) : null;
   let collectionRatePrevious: number | null = null;
   let previous: PropertyReportData['previous'] = null;
 
@@ -827,12 +833,11 @@ export async function loadPropertyReportData(params: {
       getExpenseBreakdownReport(prevFilters),
       isPortfolioScope ? getAuthoritativeReportsCollectionRate(prevRange) : Promise.resolve<number | null>(null),
     ]);
-    const propertyTitlesById = new Map(
-      allContracts
-        .filter((contract) => contract.properties?.id && contract.properties?.title)
-        .map((contract) => [contract.properties!.id, contract.properties!.title!] as const),
-    );
-    const prevVacancy = buildVacancyAnalytics(allUnits, allContracts, propertyTitlesById, prevRange.to);
+    // Previous-period occupancy must use the SAME property/unit scope as the
+    // current report. Comparing a selected property with the prior portfolio
+    // would fabricate a trend that never existed.
+    const prevVacancy = buildVacancyAnalytics(scopedUnits, scopedContracts, propertyTitlesById, prevRange.to);
+    const hasPreviousVacancies = prevVacancy.vacantRows.length > 0;
     previous = {
       occupancyRate: prevVacancy.totalUnits > 0 ? (prevVacancy.occupiedUnits / prevVacancy.totalUnits) * 100 : null,
       due: prevSummary?.invoiced ?? null,
@@ -842,38 +847,38 @@ export async function loadPropertyReportData(params: {
       expenses: prevExpenses?.totalExpenses ?? null,
       maintenanceCount: countMaintenanceInPeriod(maintenanceRows, prevRange.from, prevRange.to),
       maintenanceOpen: countMaintenanceOpenAsOf(maintenanceRows, prevRange.to),
-      averageVacancyDays: prevVacancy.averageVacancyDays,
+      averageVacancyDays: hasPreviousVacancies ? prevVacancy.averageVacancyDays : null,
       collectionRate: prevRate,
     };
     collectionRatePrevious = prevRate;
   }
 
-  /* Portfolio benchmark (single-property scope only) — same read models, so
-     the comparison population is complete and not misleading. */
+  /* Portfolio benchmark (single-property scope only). The current property is
+     scoped, but the benchmark population must come from the UNFILTERED unit
+     universe. `model.sections.occupancy.occupancyRows` is property-scoped on a
+     selected-property report and therefore cannot be used as the benchmark. */
   let portfolio: PropertyReportData['portfolio'] = null;
   if (!isPortfolioScope) {
-    const portfolioRows = model.sections.occupancy.occupancyRows.filter((row) => row.propertyId !== propertyId);
+    const fullPortfolioRows = buildOccupancyRows(allUnits, propertyTitlesById);
+    const portfolioRows = fullPortfolioRows.filter((row) => row.propertyId !== propertyId);
     const pOccupied = portfolioRows.reduce((sum, row) => sum + row.occupied, 0);
     const pVacant = portfolioRows.reduce((sum, row) => sum + row.vacant, 0);
     const pNonRentable = portfolioRows.reduce((sum, row) => sum + (row.nonRentable ?? 0), 0);
-    const hasPortfolioExpenseSource = (model.sections.expenses.report?.byProperty ?? []).some((row) => row.propertyId !== propertyId);
-    const pExpense = (model.sections.expenses.report?.byProperty ?? []).filter((row) => row.propertyId !== propertyId).reduce((sum, row) => sum + row.total, 0);
-    // Occupancy denominator is the full three-way unit universe: occupied +
-    // vacant + non-rentable. Dropping non-rentable units would overstate the
-    // portfolio benchmark the selected property is measured against.
     const portfolioTotal = pOccupied + pVacant + pNonRentable;
+    const expenseBenchmark = model.sections.propertyPerformance.benchmark
+      .find((row) => row.key === 'expense_per_occupied')?.portfolio ?? null;
     portfolio = portfolioRows.length > 0 ? {
       occupancyRate: portfolioTotal > 0 ? (pOccupied / portfolioTotal) * 100 : null,
       totalUnits: portfolioTotal,
       occupiedUnits: pOccupied,
       vacantUnits: pVacant,
       nonRentableUnits: pNonRentable,
-      expensePerOccupiedUnit: hasPortfolioExpenseSource && pOccupied > 0 ? pExpense / pOccupied : null,
+      expensePerOccupiedUnit: expenseBenchmark,
     } : null;
   }
 
   const propertyTitle = propertyId
-    ? (model.sections.occupancy.occupancyRows.find((row) => row.propertyId === propertyId)?.property ?? 'العقار المحدد')
+    ? (propertyTitlesById.get(propertyId) ?? model.sections.occupancy.occupancyRows.find((row) => row.propertyId === propertyId)?.property ?? 'العقار المحدد')
     : null;
 
   const vacancyRows = vacancyAnalytics?.vacantRows.map((row) => ({
@@ -882,6 +887,7 @@ export async function loadPropertyReportData(params: {
     daysVacant: row.daysVacant,
     referenceRent: row.referenceRent,
   })) ?? null;
+  const hasCurrentVacancies = (vacancyAnalytics?.vacantRows.length ?? 0) > 0;
 
   return {
     propertyTitle,
@@ -894,7 +900,7 @@ export async function loadPropertyReportData(params: {
     collectionRateCurrent,
     collectionRatePrevious,
     asOf,
-    occupancy: occupancyFromRows(model.sections.occupancy.occupancyRows),
+    occupancy,
     summary: summary ?? null,
     overdueTotal,
     arrearsAsOf: agedReport?.asOf ?? null,
@@ -906,8 +912,10 @@ export async function loadPropertyReportData(params: {
     expiringCount: expiringRows.length,
     expiringRentExposed: expiringRentExposed,
     expiringRowsSlice: expiringRows,
-    longestVacancyDays: vacancyAnalytics ? vacancyAnalytics.vacantRows.reduce((max, row) => Math.max(max, row.daysVacant), 0) : null,
-    averageVacancyDays: vacancyAnalytics?.averageVacancyDays ?? null,
+    longestVacancyDays: hasCurrentVacancies
+      ? vacancyAnalytics!.vacantRows.reduce((max, row) => Math.max(max, row.daysVacant), 0)
+      : null,
+    averageVacancyDays: hasCurrentVacancies ? (vacancyAnalytics?.averageVacancyDays ?? null) : null,
     vacancyCount: vacancyAnalytics?.vacantRows.length ?? 0,
     vacancyRows,
     monthlyCollectionTrend,
