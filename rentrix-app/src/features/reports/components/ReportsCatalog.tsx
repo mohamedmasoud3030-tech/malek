@@ -11,7 +11,7 @@ function ReportCatalogCard({ product }: Readonly<{ product: ReportProduct }>) {
     void navigate({
       to: '/reports',
       search: (previous: Record<string, unknown>) => {
-        const next = { ...previous, report: product.id };
+        const next: Record<string, unknown> = { ...previous, report: product.id };
         delete next.workspace;
         delete next.section;
         delete next.view;
