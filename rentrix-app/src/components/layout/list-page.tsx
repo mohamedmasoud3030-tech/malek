@@ -17,6 +17,9 @@ interface ListPageProps {
     placeholder?: string;
   };
   filters?: ReactNode;
+  advancedFilters?: ReactNode;
+  advancedFilterTitle?: string;
+  advancedFilterDescription?: string;
   /** Active filter chips shown once under the toolbar, each removable. */
   activeFilters?: readonly ActiveFilterItem[];
   onClearAllFilters?: () => void;
@@ -56,6 +59,9 @@ export function ListPage({
   backLabel,
   search,
   filters,
+  advancedFilters,
+  advancedFilterTitle,
+  advancedFilterDescription,
   activeFilters,
   onClearAllFilters,
   toolbarActions,
@@ -89,6 +95,9 @@ export function ListPage({
         searchPlaceholder={search?.placeholder}
         searchAriaLabel={`بحث في ${title}`}
         filters={filters}
+        advancedFilters={advancedFilters}
+        advancedFilterTitle={advancedFilterTitle}
+        advancedFilterDescription={advancedFilterDescription}
         activeFilters={activeFilters}
         onClearAllFilters={onClearAllFilters}
         actions={toolbarActions}
