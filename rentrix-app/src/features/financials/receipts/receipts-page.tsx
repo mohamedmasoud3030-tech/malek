@@ -1,8 +1,8 @@
 import { Link, useSearch } from '@tanstack/react-router';
-import { ArrowRight, Ban, CalendarDays, CheckCircle2, Clock3, Eye, Printer, ReceiptText, ShieldCheck, Wallet, WalletCards } from 'lucide-react';
+import { ArrowRight, Ban, Clock3, Eye, Printer, ReceiptText, ShieldCheck, Wallet, WalletCards } from 'lucide-react';
 import { useDeferredValue, useMemo, useState } from 'react';
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
-import { RegisterHeading, RegisterMetricStrip } from '@/components/layout/register-summary';
+import { RegisterMetricStrip } from '@/components/layout/register-summary';
 import { ActionMenu } from '@/components/ui/action-menu';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -199,7 +199,6 @@ function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Rea
 
   const openVoidDialog = (receipt: ReceiptRecord) => setVoidDialog({ receipt, reason: '' });
   const closeVoidDialog = () => setVoidDialog({ receipt: null, reason: '' });
-  // Keep the cashier's filtered list untouched by printing in a new tab.
   const openReceiptPrintView = (receiptId: string) => openReceiptPrintTab(receiptId);
 
   const handleConfirmVoid = () => {
@@ -255,7 +254,6 @@ function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Rea
       embedded={embedded}
       visualVariant="malek-pro"
       title="الإيصالات"
-
       secondaryActions={<Button variant="secondary" className="min-h-11" asChild><Link to="/financials"><ArrowRight className="me-2 size-4" />المالية</Link></Button>}
       primaryAction={selectedReceiptId ? (
         <Button onClick={() => openReceiptPrintView(selectedReceiptId)}><Printer className="me-2 size-4" />طباعة المحدد</Button>
@@ -373,18 +371,6 @@ function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Rea
       ) : null}
 
       <section data-receipts-register className="min-w-0 space-y-2.5">
-        <header className="flex min-h-11 items-center justify-between gap-3 px-1">
-          <div className="flex min-w-0 items-center gap-2.5">
-            <span className="grid size-8 shrink-0 place-items-center rounded-lg border border-primary/10 bg-primary/[0.06] text-primary">
-              <ReceiptText className="size-4" aria-hidden="true" />
-            </span>
-            <div className="min-w-0">
-              <h2 className="truncate text-sm font-black">سجل الإيصالات</h2>
-              <p className="truncate text-xs font-medium text-muted-foreground">{filteredReceipts.length} إيصال ضمن النتائج الحالية</p>
-            </div>
-          </div>
-        </header>
-
         <div className={selectedReceiptId ? 'grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(22rem,28rem)] xl:items-start' : 'grid min-w-0 gap-4'}>
           <div className="min-w-0 space-y-2.5">
             <EntityTable
