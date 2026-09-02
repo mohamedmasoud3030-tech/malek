@@ -2,6 +2,7 @@ import { Clock3, Flame, PlusCircle, Printer, Wrench } from 'lucide-react';
 import { useState } from 'react';
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { RegisterAttention, RegisterMetricStrip } from '@/components/layout/register-summary';
+import type { ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { Button } from '@/components/ui/button';
 import { DataTableColumnsMenu } from '@/components/ui/data-table';
 import { FilterBar } from '@/components/ui/filter-bar';
@@ -26,7 +27,7 @@ import { MaintenanceList } from './maintenance-list';
 import { defaultMaintenanceColumns, maintenanceColumnOptions, maintenancePriorityLabels, maintenanceStatusLabels } from './maintenance-list';
 import { MaintenanceRequestForm } from './maintenance-request-form';
 import type { MaintenancePriorityFilter, MaintenanceStatusFilter } from '../maintenance-helpers';
-import type { MaintenanceAttentionFilter } from '../maintenance-attention';
+import { maintenanceAttentionLabels, type MaintenanceAttentionFilter } from '../maintenance-attention';
 import { useMaintenancePageController } from '../useMaintenancePageController';
 import { formatCount } from '@/lib/formatters';
 
@@ -46,11 +47,21 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
   const canApproveMaintenance = canAccess('maintenance.approve');
 
   const clearAllFilters = () => {
+    controller.setQuery('');
     controller.setStatusFilter('all');
     controller.setPriorityFilter('all');
     controller.setPropertyFilterId('');
     controller.setAttentionFilter('all');
   };
+
+  const selectedPropertyLabel = controller.properties.find((property) => property.id === controller.propertyFilterId)?.title;
+  const activeFilters: ActiveFilterItem[] = [
+    ...(controller.query.trim() ? [{ key: 'query', label: 'بحث', value: controller.query.trim(), onRemove: () => controller.setQuery('') }] : []),
+    ...(controller.statusFilter !== 'all' ? [{ key: 'status', label: 'الحالة', value: maintenanceStatusLabels[controller.statusFilter as keyof typeof maintenanceStatusLabels] ?? String(controller.statusFilter), onRemove: () => controller.setStatusFilter('all') }] : []),
+    ...(controller.priorityFilter !== 'all' ? [{ key: 'priority', label: 'الأولوية', value: maintenancePriorityLabels[controller.priorityFilter as keyof typeof maintenancePriorityLabels] ?? String(controller.priorityFilter), onRemove: () => controller.setPriorityFilter('all') }] : []),
+    ...(controller.attentionFilter !== 'all' ? [{ key: 'attention', label: 'المتابعة', value: maintenanceAttentionLabels[controller.attentionFilter], onRemove: () => controller.setAttentionFilter('all') }] : []),
+    ...(controller.propertyFilterId ? [{ key: 'property', label: 'العقار', value: selectedPropertyLabel ?? 'عقار محدد', onRemove: () => controller.setPropertyFilterId('') }] : []),
+  ];
 
   const currencyLabel =
     documentSettings.companySettings.currencySymbol ||
@@ -186,6 +197,12 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
       </section>
 
       <FilterBar
+        searchValue={controller.query}
+        onSearchChange={controller.setQuery}
+        searchPlaceholder="ابحث بالعنوان أو المرجع أو العقار أو الوحدة أو مزود الخدمة"
+        searchAriaLabel="بحث في طلبات الصيانة"
+        activeFilters={activeFilters}
+        onClearAllFilters={clearAllFilters}
         filters={(
           <>
             <Select
@@ -239,11 +256,7 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
               visibleKeys={visibleColumnKeys}
               onChange={setVisibleColumnKeys}
             />
-            {controller.hasFilters ? (
-              <Button type="button" variant="secondary" onClick={clearAllFilters}>
-                مسح الفلاتر
-              </Button>
-            ) : null}
+            {printAction}
           </>
         )}
       />
@@ -338,7 +351,6 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
       title="طلبات الصيانة"
       count={controller.visibleMaintenanceRows.length}
       primaryAction={createAction ?? undefined}
-      secondaryActions={printAction}
     >
       {body}
     </EmbeddableWorkspace>
