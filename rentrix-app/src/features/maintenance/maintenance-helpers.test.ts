@@ -43,6 +43,7 @@ const secondRequest: Maintenance = {
   id: 'maintenance-2',
   property_id: 'property-2',
   unit_id: null,
+  title: 'تسرب مياه',
   priority: 'medium',
   status: 'in_progress',
 };
