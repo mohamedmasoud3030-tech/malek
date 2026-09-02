@@ -1,6 +1,54 @@
-import type { ReactNode } from 'react';
-import type { LucideIcon } from 'lucide-react';
+import { useCallback, useState, type ReactNode } from 'react';
+import { ChevronDown, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+const DASHBOARD_COLLAPSE_STORAGE_PREFIX = 'malek:dashboard:collapsed:';
+
+function readStoredCollapse(storageKey: string): boolean | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const stored = window.localStorage.getItem(storageKey);
+    if (stored === '1') return true;
+    if (stored === '0') return false;
+  } catch {
+    // Storage may be unavailable in hardened/private browser contexts.
+  }
+  return null;
+}
+
+function writeStoredCollapse(storageKey: string, collapsed: boolean): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(storageKey, collapsed ? '1' : '0');
+  } catch {
+    // Storage may be unavailable in hardened/private browser contexts.
+  }
+}
+
+/**
+ * Persisted collapse state for a dashboard section, under
+ * `malek:dashboard:collapsed:<key>`. Falls back to the caller's default when
+ * storage is unavailable or the user has never chosen a preference.
+ */
+export function useDashboardSectionCollapse(key: string, defaultCollapsed = false) {
+  const storageKey = `${DASHBOARD_COLLAPSE_STORAGE_PREFIX}${key}`;
+  const [collapsed, setCollapsedState] = useState(() => readStoredCollapse(storageKey) ?? defaultCollapsed);
+
+  const setCollapsed = useCallback((next: boolean) => {
+    setCollapsedState(next);
+    writeStoredCollapse(storageKey, next);
+  }, [storageKey]);
+
+  const toggle = useCallback(() => {
+    setCollapsedState((current) => {
+      const next = !current;
+      writeStoredCollapse(storageKey, next);
+      return next;
+    });
+  }, [storageKey]);
+
+  return { collapsed, setCollapsed, toggle } as const;
+}
 
 export type DashboardSignalTone = 'neutral' | 'info' | 'success' | 'warning' | 'danger';
 
@@ -51,6 +99,7 @@ export function DashboardSignalHeader({
   icon: Icon,
   tone = 'neutral',
   trailing,
+  collapse,
 }: Readonly<{
   id: string;
   title: string;
@@ -58,6 +107,13 @@ export function DashboardSignalHeader({
   icon: LucideIcon;
   tone?: DashboardSignalTone;
   trailing?: ReactNode;
+  collapse?: Readonly<{
+    collapsed: boolean;
+    onToggle: () => void;
+    controlsId: string;
+    expandLabel?: string;
+    collapseLabel?: string;
+  }>;
 }>) {
   return (
     <div className="flex min-h-12 items-center justify-between gap-3 px-3.5 py-2.5 sm:min-h-14 sm:px-4 lg:min-h-12 lg:py-2" data-dashboard-signal-header>
@@ -70,7 +126,23 @@ export function DashboardSignalHeader({
           {meta ? <p className="mt-0.5 line-clamp-1 text-[11px] font-medium leading-4 text-muted-foreground">{meta}</p> : null}
         </div>
       </div>
-      {trailing ? <div className="flex shrink-0 items-center gap-1.5 text-xs">{trailing}</div> : null}
+      {trailing || collapse ? (
+        <div className="flex shrink-0 items-center gap-1.5 text-xs">
+          {trailing}
+          {collapse ? (
+            <button
+              type="button"
+              onClick={collapse.onToggle}
+              aria-expanded={!collapse.collapsed}
+              aria-controls={collapse.controlsId}
+              aria-label={collapse.collapsed ? (collapse.expandLabel ?? 'إظهار التفاصيل') : (collapse.collapseLabel ?? 'إخفاء التفاصيل')}
+              className="grid size-9 place-items-center rounded-lg text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/25"
+            >
+              <ChevronDown className={cn('size-4 transition-transform', collapse.collapsed ? '' : 'rotate-180')} aria-hidden="true" />
+            </button>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }
