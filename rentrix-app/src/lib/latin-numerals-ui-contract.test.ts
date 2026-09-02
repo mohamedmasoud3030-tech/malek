@@ -7,6 +7,7 @@ const arabicIndicDigitPattern = /[٠-٩]/;
 const intentionalInputNormalizationFiles = new Set([
   'features/contracts/hooks/useContractFilters.ts',
   'features/owners/utils/owner-ui-helpers.ts',
+  'features/ai-assistant/speech/assistant-speech-text.ts',
   'lib/bankCsvParser.ts',
 ]);
 
