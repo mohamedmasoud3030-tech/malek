@@ -1,0 +1,33 @@
+name: Validate maintenance harvest once
+
+on:
+  push:
+    paths:
+      - '.github/workflows/validate-maintenance-harvest-once.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/harvest-maintenance-1754
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: rentrix-app/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+        working-directory: rentrix-app
+      - run: pnpm exec tsc -p tsconfig.json --noEmit
+        working-directory: rentrix-app
+      - run: pnpm vitest run src/features/maintenance/maintenance-helpers.test.ts src/features/maintenance/maintenance-runtime-wiring.contract.test.ts
+        working-directory: rentrix-app
+      - run: pnpm build
+        working-directory: rentrix-app
