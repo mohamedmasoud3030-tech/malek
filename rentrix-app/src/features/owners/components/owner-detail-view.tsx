@@ -15,6 +15,7 @@ import type { OwnerDetailState } from '../types';
 import { getOwnerDisplayName } from '../services/owner-service';
 import { OwnerDossierBody, type OwnerDossierSection } from './owner-dossier-body';
 import { OwnerFinancialAuthoritySection } from './owner-financial-authority-section';
+import { OwnerPortalLinkAction } from './OwnerPortalLinkAction';
 
 type OwnerDetailSection = OwnerDossierSection | 'financials';
 
@@ -104,8 +105,13 @@ function OwnerDetailReady({
     { id: 'records', label: 'السجل والمستندات', icon: FileText },
   ] as const;
 
-  const actions = canEditOwner || canViewReports ? (
+  // Owner portal export is a secondary header action; the component renders
+  // nothing unless the user holds the owner.portal.link permission.
+  const canExportOwnerPortalLink = canAccess(authorization, 'owner.portal.link');
+
+  const actions = canEditOwner || canViewReports || canExportOwnerPortalLink ? (
     <div className="flex flex-wrap gap-2">
+      <OwnerPortalLinkAction ownerId={owner.id} />
       {canViewReports ? (
         <Button asChild variant="outline" className="min-h-11">
           <Link

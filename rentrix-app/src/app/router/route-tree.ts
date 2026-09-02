@@ -410,6 +410,17 @@ const tenantPortalRoute = createRoute({
   component: lazyRouteComponent(() => import('@/features/tenant-portal/tenant-portal-page'), 'TenantPortalPage'),
   staticData: { title: 'بوابة المستأجر' },
 });
+// Owner Portal: an isolated read-only owner-facing surface. Like the tenant
+// portal it lives OUTSIDE the office protected shell (no office navigation,
+// no office permissions). The exported bearer token in the URL is the only
+// external scope input; owner/company scope is resolved server-side by
+// get_owner_portal_snapshot.
+const ownerPortalRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/owner-portal',
+  component: lazyRouteComponent(() => import('@/features/owner-portal/owner-portal-page'), 'OwnerPortalPage'),
+  staticData: { title: 'بوابة مالك العقار' },
+});
 const privacyRoute = createRoute({ getParentRoute: () => rootRoute, path: '/privacy', component: lazyRouteComponent(() => import('@/routes/privacy'), 'PrivacyRouteComponent'), staticData: { title: 'سياسة الخصوصية' } });
 const termsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/terms', component: lazyRouteComponent(() => import('@/routes/terms'), 'TermsRouteComponent'), staticData: { title: 'شروط الاستخدام' } });
 // Public-safe support destination for unauthenticated visitors (login/forgot
@@ -433,6 +444,7 @@ export const routeTree = rootRoute.addChildren([
   resetPasswordRoute,
   landingRoute,
   tenantPortalRoute,
+  ownerPortalRoute,
   landingCompatRoute,
   privacyRoute,
   termsRoute,

@@ -24,7 +24,7 @@ export function OwnerPortalLinkAction({ ownerId }: Readonly<{ ownerId: string }>
   if (!canAccess('owner.portal.link')) return null;
 
   return (
-    <Button type="button" variant="secondary" disabled={mutation.isPending} onClick={() => mutation.mutate()}>
+    <Button type="button" variant="secondary" className="min-h-11" disabled={mutation.isPending} onClick={() => mutation.mutate()}>
       {mutation.isPending ? <Loader2 className="me-2 size-4 animate-spin" /> : <Link2 className="me-2 size-4" />}
       إنشاء ونسخ رابط عرض
     </Button>
