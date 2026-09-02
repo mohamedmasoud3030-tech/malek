@@ -23,7 +23,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git fetch --prune origin '+refs/heads/*:refs/remotes/origin/*'
 
           default_branch="${{ github.event.repository.default_branch }}"
@@ -37,65 +38,30 @@ jobs:
             [ -n "$head" ] && keep["$head"]=1
           done < <(gh api --paginate "repos/${GITHUB_REPOSITORY}/pulls?state=open&per_page=100" --jq '.[] | select(.head.repo.full_name == env.GITHUB_REPOSITORY) | .head.ref')
 
-          mapfile -t branches < <(
-            git for-each-ref --format='%(refname:strip=3)' refs/remotes/origin \
-              | grep -v '^HEAD$' \
-              | sort
-          )
-
-          candidates=()
-          tips=()
-          preserved=()
+          mapfile -t branches < <(git for-each-ref --format='%(refname:strip=3)' refs/remotes/origin | grep -v '^HEAD$' | sort)
+          candidates=(); tips=(); preserved=()
 
           for branch in "${branches[@]}"; do
-            if [[ -n "${keep[$branch]:-}" ]]; then
-              preserved+=("$branch")
-              continue
-            fi
+            if [[ -n "${keep[$branch]:-}" ]]; then preserved+=("$branch"); continue; fi
             sha=$(git rev-parse "refs/remotes/origin/$branch")
-            candidates+=("$branch")
-            tips+=("$sha")
+            candidates+=("$branch"); tips+=("$sha")
           done
 
           main_sha=$(git rev-parse "refs/remotes/origin/$default_branch")
           tree_sha=$(git rev-parse "${main_sha}^{tree}")
-
           parents=(-p "$main_sha")
-          for sha in "${tips[@]}"; do
-            parents+=(-p "$sha")
-          done
+          for sha in "${tips[@]}"; do parents+=(-p "$sha"); done
 
-          archive_commit=$(printf '%s\n' \
-            'Archive stale branch histories before repository cleanup.' \
-            '' \
-            'This synthetic commit intentionally keeps the main tree unchanged while retaining every archived branch tip as a parent.' \
-            | git commit-tree "$tree_sha" "${parents[@]}")
-
+          archive_commit=$(printf '%s\n' 'Archive stale branch histories before repository cleanup.' '' 'Synthetic commit: main tree unchanged; archived branch tips retained as parents.' | git commit-tree "$tree_sha" "${parents[@]}")
           git push origin "$archive_commit:refs/tags/$archive_tag"
 
-          deleted=()
-          moved=()
-          failed=()
-
+          deleted=(); moved=(); failed=()
           for i in "${!candidates[@]}"; do
-            branch="${candidates[$i]}"
-            archived_sha="${tips[$i]}"
+            branch="${candidates[$i]}"; archived_sha="${tips[$i]}"
             current_sha=$(git ls-remote origin "refs/heads/$branch" | awk '{print $1}')
-
-            if [[ -z "$current_sha" ]]; then
-              continue
-            fi
-
-            if [[ "$current_sha" != "$archived_sha" ]]; then
-              moved+=("$branch")
-              continue
-            fi
-
-            if git push origin --delete "$branch"; then
-              deleted+=("$branch")
-            else
-              failed+=("$branch")
-            fi
+            [[ -z "$current_sha" ]] && continue
+            if [[ "$current_sha" != "$archived_sha" ]]; then moved+=("$branch"); continue; fi
+            if git push origin --delete "$branch"; then deleted+=("$branch"); else failed+=("$branch"); fi
           done
 
           echo "ARCHIVE_TAG=$archive_tag"
@@ -104,27 +70,8 @@ jobs:
           echo "PRESERVED_ACTIVE_OR_OPEN_PR_COUNT=${#preserved[@]}"
           echo "MOVED_DURING_RUN_COUNT=${#moved[@]}"
           echo "FAILED_COUNT=${#failed[@]}"
-          printf 'DELETED_BRANCHES=%s\n' "$(printf '%s\n' "${deleted[@]}" | jq -R -s -c 'split("\n")[:-1]')"
           printf 'PRESERVED_BRANCHES=%s\n' "$(printf '%s\n' "${preserved[@]}" | jq -R -s -c 'split("\n")[:-1]')"
           printf 'MOVED_BRANCHES=%s\n' "$(printf '%s\n' "${moved[@]}" | jq -R -s -c 'split("\n")[:-1]')"
           printf 'FAILED_BRANCHES=%s\n' "$(printf '%s\n' "${failed[@]}" | jq -R -s -c 'split("\n")[:-1]')"
 
-          {
-            echo '## One-time stale branch archive + cleanup'
-            echo
-            echo "Archive tag: \`$archive_tag\`"
-            echo
-            echo "Archived branch tips: ${#candidates[@]}"
-            echo
-            echo "Deleted stale branch refs: ${#deleted[@]}"
-            echo
-            echo "Preserved active/open-PR branches: ${#preserved[@]}"
-            echo
-            echo "Branches that moved during cleanup and were therefore preserved: ${#moved[@]}"
-            echo
-            echo "Failures: ${#failed[@]}"
-          } >> "$GITHUB_STEP_SUMMARY"
-
-          if (( ${#failed[@]} > 0 )); then
-            exit 1
-          fi
+          (( ${#failed[@]} == 0 ))
