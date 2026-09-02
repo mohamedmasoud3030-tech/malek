@@ -10,6 +10,10 @@ export type MaintenanceFilters = Readonly<{
   status: MaintenanceStatusFilter;
   priority: MaintenancePriorityFilter;
   propertyId: string;
+  /** Free-text query matched against request identity and contextual labels. */
+  query?: string;
+  /** Optional pre-composed property/unit/provider labels keyed by request id. */
+  searchableContextById?: ReadonlyMap<string, string>;
 }>;
 
 export type MaintenanceSummary = Readonly<{
@@ -46,13 +50,36 @@ export function buildMaintenanceLocationLabel(
   return `${propertyLabel} / ${unitLabel}`;
 }
 
+function normalizeSearchText(value: unknown): string {
+  return String(value ?? '')
+    .normalize('NFKD')
+    .replace(/[\u064B-\u065F\u0670]/g, '')
+    .replace(/[أإآ]/g, 'ا')
+    .replace(/ة/g, 'ه')
+    .replace(/ى/g, 'ي')
+    .trim()
+    .toLocaleLowerCase('ar');
+}
+
 export function filterMaintenanceRequests(rows: Maintenance[], filters: MaintenanceFilters): Maintenance[] {
+  const normalizedQuery = normalizeSearchText(filters.query);
+
   return rows.filter((row) => {
     const statusMatches = filters.status === 'all' || normalizeMaintenanceStatus(row.status) === filters.status;
     const priorityMatches = filters.priority === 'all' || normalizeMaintenancePriority(row.priority) === filters.priority;
     const propertyMatches = !filters.propertyId || row.property_id === filters.propertyId;
+    const searchableText = normalizeSearchText([
+      row.title,
+      row.description,
+      row.reference,
+      row.no,
+      row.assigned_to,
+      row.technician_name,
+      filters.searchableContextById?.get(row.id),
+    ].filter(Boolean).join(' '));
+    const queryMatches = !normalizedQuery || searchableText.includes(normalizedQuery);
 
-    return statusMatches && priorityMatches && propertyMatches;
+    return statusMatches && priorityMatches && propertyMatches && queryMatches;
   });
 }
 

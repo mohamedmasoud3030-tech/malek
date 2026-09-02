@@ -107,6 +107,8 @@ describe('MaintenancePage recovery states', () => {
     expect(html).toContain('عاجلة');
     expect(html).toContain('تم التنفيذ');
     expect(html).toContain('شركة التبريد');
+    expect(html).toContain('بحث في طلبات الصيانة');
+    expect(html).toContain('ابحث بالعنوان أو المرجع أو العقار أو الوحدة أو مزود الخدمة');
   });
 
   it('renders a retryable load error state', () => {

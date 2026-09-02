@@ -68,6 +68,32 @@ describe('maintenance helpers', () => {
     expect(rows).toEqual([baseRequest]);
   });
 
+  it('searches request identity with Arabic normalization', () => {
+    const rows = filterMaintenanceRequests([baseRequest, secondRequest], {
+      status: 'all',
+      priority: 'all',
+      propertyId: '',
+      query: 'اصلاح',
+    });
+
+    expect(rows).toEqual([baseRequest]);
+  });
+
+  it('searches contextual property, unit, and provider labels without changing the data source', () => {
+    const rows = filterMaintenanceRequests([baseRequest, secondRequest], {
+      status: 'all',
+      priority: 'all',
+      propertyId: '',
+      query: 'شركة التبريد',
+      searchableContextById: new Map([
+        [baseRequest.id, 'برج النخيل A-12 شركة التبريد'],
+        [secondRequest.id, 'مبنى الواحة'],
+      ]),
+    });
+
+    expect(rows).toEqual([baseRequest]);
+  });
+
   it('summarizes visible maintenance requests without financial side effects', () => {
     const summary = summarizeMaintenanceRequests([baseRequest, secondRequest]);
 
