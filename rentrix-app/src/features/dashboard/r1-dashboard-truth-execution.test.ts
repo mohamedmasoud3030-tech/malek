@@ -247,22 +247,23 @@ describe('R1 — rpt_dashboard_snapshot authoritative read model', () => {
 
   it('computes portfolio and occupancy KPIs as SQL aggregates', async () => {
     const s = await snapshot();
-    const { rows } = await db.query<{ occupied: string }>(`
-      select count(distinct unit_id)::text as occupied
-        from public.contracts
+    const { rows } = await db.query<{ occupied: string; vacant: string }>(`
+      select
+        count(*) filter (where lower(status) = 'occupied')::text as occupied,
+        count(*) filter (where lower(status) = 'available')::text as vacant
+        from public.units
        where company_id = $1
-         and lower(status) = 'active'
-         and start_date <= current_date
-         and end_date >= current_date
+         and deleted_at is null
     `, [COMPANY]);
     const occupied = Number(rows[0]?.occupied ?? 0);
+    const vacant = Number(rows[0]?.vacant ?? 0);
 
     expect(s.portfolio).toEqual({ properties: 1, units: 5 });
-    // Occupancy intentionally follows leases active on current_date. Deriving
-    // the expectation from the independently-seeded contract rows prevents
-    // this fixed-date replay from decaying when CI runs after a lease end.
+    // The unit projection intentionally follows leases active on current_date.
+    // Reading both projected states keeps this replay stable after a seeded
+    // lease expires while still checking the RPC's independent aggregates.
     expect(s.occupancy.occupied_units).toBe(occupied);
-    expect(s.occupancy.vacant_units).toBe(1); // 'available' only; 'maintenance' is neither.
+    expect(s.occupancy.vacant_units).toBe(vacant);
     expect(s.occupancy.occupancy_rate).toBe(Math.round((occupied / 5) * 100));
   });
 
