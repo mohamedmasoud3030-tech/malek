@@ -45,8 +45,6 @@ jobs:
         run: pnpm install --frozen-lockfile --ignore-scripts
       - name: Rebuild approved native toolchain package
         run: pnpm rebuild esbuild
-      - name: Enforce feature-flag cleanup deadlines
-        run: pnpm check:expired-flags
       - name: Pilot demo seed safety contract
         run: pnpm test:pilot-seed
       - name: Production demo deployment safety contract

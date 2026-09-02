@@ -26,9 +26,9 @@ describe('utilities real implementation - no mock data', () => {
     expect(content).toContain('.maybeSingle()');
   });
 
-  it('page file does not contain hardcoded mock bills', () => {
-    const pagePath = resolve(import.meta.dirname, './utilities-page.tsx');
-    const content = readFileSync(pagePath, 'utf8');
+  it('production workspace does not contain hardcoded mock bills', () => {
+    const workspacePath = resolve(import.meta.dirname, './components/utilities-workspace.tsx');
+    const content = readFileSync(workspacePath, 'utf8');
     expect(content).not.toContain('INV-2026-001');
     expect(content).not.toContain('E-902148');
     expect(content).not.toContain('meter-1');

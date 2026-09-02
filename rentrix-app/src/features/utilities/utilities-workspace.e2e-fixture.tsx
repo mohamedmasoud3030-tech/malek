@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { UtilitiesPage } from './utilities-page';
+import { UtilitiesWorkspace } from './components/utilities-workspace';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -11,7 +11,7 @@ export function UtilitiesWorkspaceE2EFixture() {
   return (
     <QueryClientProvider client={queryClient}>
       <div dir="rtl" data-e2e-utilities-workspace>
-        <UtilitiesPage />
+        <UtilitiesWorkspace mode="standalone" />
       </div>
     </QueryClientProvider>
   );

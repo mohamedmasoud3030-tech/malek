@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { DocumentsVaultPage } from './documents-vault-page';
+import { DocumentsVaultWorkspace } from './components/documents-vault-workspace';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -11,7 +11,7 @@ export function DocumentsVaultWorkspaceE2EFixture() {
   return (
     <QueryClientProvider client={queryClient}>
       <div dir="rtl" data-e2e-vault-workspace>
-        <DocumentsVaultPage />
+        <DocumentsVaultWorkspace mode="standalone" />
       </div>
     </QueryClientProvider>
   );

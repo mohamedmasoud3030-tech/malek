@@ -14,6 +14,15 @@ describe('public landing performance contract', () => {
     expect(routeTreeSource).toContain("lazyRouteComponent(() => import('@/routes/_protected')");
   });
 
+  it('keeps hermetic E2E fixtures out of the production login route graph', () => {
+    const loginRouteSource = readSource('../../routes/_auth.login.tsx');
+
+    expect(loginRouteSource).toContain('import.meta.env.VITE_E2E');
+    expect(loginRouteSource).toContain("import('./_auth.login.e2e-fixture')");
+    expect(loginRouteSource).not.toContain("@/features/dashboard/dashboard-workspace.e2e-fixture");
+    expect(loginRouteSource).not.toContain("@/features/reports/reports-workspace.e2e-fixture");
+  });
+
   it('keeps manual chunking vendor-only so optional vendors stay on their lazy paths', () => {
     const viteConfigSource = readSource('../../../vite.config.ts');
 
