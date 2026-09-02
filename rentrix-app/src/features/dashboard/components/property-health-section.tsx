@@ -18,6 +18,7 @@ import {
   DashboardSignalSide,
   dashboardSectionActionClass,
   dashboardSignalRowClass,
+  useDashboardSectionCollapse,
 } from './dashboard-signal-primitives';
 
 /** Only the worst/highest-priority properties belong on the command center. */
@@ -51,9 +52,18 @@ function healthMeta(row: PropertyHealthRow): string {
  * Property health — transparent, deterministic indicators. Every label is
  * explained by the metrics printed next to it; there is no opaque score.
  */
+const PROPERTY_HEALTH_CONTENT_ID = 'property-health-content';
+
 export const PropertyHealthSection = memo(function PropertyHealthSection({ rows, isLoading, isError = false }: PropertyHealthSectionProps) {
   const visibleRows = rows.slice(0, PROPERTY_HEALTH_VISIBLE_LIMIT);
   const criticalCount = rows.reduce((count, row) => count + (row.status === 'critical' ? 1 : 0), 0);
+  const attentionRequired = criticalCount > 0;
+
+  // Persisted per-user preference; collapsed by default. Attention required
+  // (a critical property issue) always wins over the stored preference so a
+  // problem is never hidden behind a collapsed section.
+  const [persistedCollapsed, setPersistedCollapsed] = useDashboardSectionCollapse('property-health', true);
+  const collapsed = attentionRequired ? false : persistedCollapsed;
 
   return (
     <DashboardSignalPanel labelledBy="property-health-title" className="h-full">
@@ -70,47 +80,55 @@ export const PropertyHealthSection = memo(function PropertyHealthSection({ rows,
         icon={Stethoscope}
         tone={criticalCount > 0 ? 'danger' : rows.some((row) => row.status === 'watch') ? 'warning' : 'success'}
         trailing={<Link to="/properties" data-dashboard-section-action className={dashboardSectionActionClass}>المحفظة</Link>}
+        collapsible={!attentionRequired}
+        collapsed={collapsed}
+        onToggleCollapse={() => setPersistedCollapsed(!persistedCollapsed)}
+        controlsId={PROPERTY_HEALTH_CONTENT_ID}
       />
 
-      {isLoading ? <DashboardSignalLoading label="جارٍ تحميل صحة العقارات" /> : null}
+      {!collapsed ? (
+        <div id={PROPERTY_HEALTH_CONTENT_ID}>
+          {isLoading ? <DashboardSignalLoading label="جارٍ تحميل صحة العقارات" /> : null}
 
-      {!isLoading && isError ? (
-        <DashboardSignalEmpty
-          role="alert"
-          title="تعذر تحميل صحة العقارات"
-          description="افتح المحفظة العقارية للتحقق. لن نعرض قائمة فارغة عند فشل التحميل."
-        />
-      ) : null}
+          {!isLoading && isError ? (
+            <DashboardSignalEmpty
+              role="alert"
+              title="تعذر تحميل صحة العقارات"
+              description="افتح المحفظة العقارية للتحقق. لن نعرض قائمة فارغة عند فشل التحميل."
+            />
+          ) : null}
 
-      {!isLoading && !isError && rows.length === 0 ? (
-        <DashboardSignalEmpty title="لا توجد عقارات بوحدات بعد" description="أضف عقارك ووحداتك لتظهر صحتها هنا." />
-      ) : null}
+          {!isLoading && !isError && rows.length === 0 ? (
+            <DashboardSignalEmpty title="لا توجد عقارات بوحدات بعد" description="أضف عقارك ووحداتك لتظهر صحتها هنا." />
+          ) : null}
 
-      {!isLoading && !isError && visibleRows.length > 0 ? (
-        <DashboardSignalList label="صحة العقارات ذات الأولوية">
-          {visibleRows.map((row) => (
-            <li key={row.propertyId} role="listitem" className="min-w-0">
-              <Link
-                to="/properties/$propertyId"
-                params={{ propertyId: row.propertyId }}
-                className={dashboardSignalRowClass(statusTone[row.status])}
-                data-dashboard-queue-link
-                aria-label={`${row.title} — ${propertyHealthLabels[row.status]} — ${healthMeta(row)}`}
-              >
-                <DashboardSignalMain title={row.title} meta={healthMeta(row)} />
-                <DashboardSignalSide>
-                  <StatusBadge tone={statusTone[row.status]}>
-                    <Building2 className="size-3" aria-hidden="true" />
-                    {propertyHealthLabels[row.status]}
-                  </StatusBadge>
-                  <span className={cn('hidden text-[11px] font-bold tabular-nums sm:inline', row.occupancyRate < 80 ? 'text-danger' : 'text-muted-foreground')} dir="ltr">
-                    {row.occupancyRate}%
-                  </span>
-                </DashboardSignalSide>
-              </Link>
-            </li>
-          ))}
-        </DashboardSignalList>
+          {!isLoading && !isError && visibleRows.length > 0 ? (
+            <DashboardSignalList label="صحة العقارات ذات الأولوية">
+              {visibleRows.map((row) => (
+                <li key={row.propertyId} role="listitem" className="min-w-0">
+                  <Link
+                    to="/properties/$propertyId"
+                    params={{ propertyId: row.propertyId }}
+                    className={dashboardSignalRowClass(statusTone[row.status])}
+                    data-dashboard-queue-link
+                    aria-label={`${row.title} — ${propertyHealthLabels[row.status]} — ${healthMeta(row)}`}
+                  >
+                    <DashboardSignalMain title={row.title} meta={healthMeta(row)} />
+                    <DashboardSignalSide>
+                      <StatusBadge tone={statusTone[row.status]}>
+                        <Building2 className="size-3" aria-hidden="true" />
+                        {propertyHealthLabels[row.status]}
+                      </StatusBadge>
+                      <span className={cn('hidden text-[11px] font-bold tabular-nums sm:inline', row.occupancyRate < 80 ? 'text-danger' : 'text-muted-foreground')} dir="ltr">
+                        {row.occupancyRate}%
+                      </span>
+                    </DashboardSignalSide>
+                  </Link>
+                </li>
+              ))}
+            </DashboardSignalList>
+          ) : null}
+        </div>
       ) : null}
     </DashboardSignalPanel>
   );
