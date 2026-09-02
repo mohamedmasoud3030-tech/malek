@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { MaintenancePage } from './maintenance-page';
+import { MaintenanceWorkspace } from './components/maintenance-workspace';
 
 const maintenanceMocks = vi.hoisted(() => ({
   createMutation: { isPending: false, mutate: vi.fn() },
@@ -76,7 +76,7 @@ const maintenanceRow = {
   deleted_at: null,
 };
 
-describe('MaintenancePage recovery states', () => {
+describe('MaintenanceWorkspace recovery states', () => {
   beforeEach(() => {
     maintenanceMocks.maintenanceQuery.data = [];
     maintenanceMocks.maintenanceQuery.error = null;
@@ -99,7 +99,7 @@ describe('MaintenancePage recovery states', () => {
     maintenanceMocks.providerCategoriesQuery.data = [{ id: 'category-1', name: 'تكييف' }];
     maintenanceMocks.providerOptionsQuery.data = [{ id: 'provider-1', name: 'شركة التبريد', phone: '90000000', categoryIds: ['category-1'] }];
 
-    const html = renderToStaticMarkup(<MaintenancePage />);
+    const html = renderToStaticMarkup(<MaintenanceWorkspace mode="embedded" />);
 
     expect(html).toContain('إصلاح المكيف');
     expect(html).toContain('برج النخيل / A-12');
@@ -117,7 +117,7 @@ describe('MaintenancePage recovery states', () => {
     maintenanceMocks.maintenanceQuery.error = new Error('تعذر تحميل صيانة الاختبار');
     maintenanceMocks.maintenanceQuery.isError = true;
 
-    const html = renderToStaticMarkup(<MaintenancePage />);
+    const html = renderToStaticMarkup(<MaintenanceWorkspace mode="embedded" />);
 
     expect(html).toContain('تعذر تحميل طلبات الصيانة');
     // In test environment VITE_SUPABASE_URL is absent → getEnvDiagnostics() takes priority

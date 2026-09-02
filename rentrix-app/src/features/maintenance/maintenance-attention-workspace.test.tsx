@@ -6,7 +6,7 @@
  */
 import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { MaintenancePage } from './maintenance-page';
+import { MaintenanceWorkspace } from './components/maintenance-workspace';
 
 const maintenanceMocks = vi.hoisted(() => ({
   createMutation: { isPending: false, mutate: vi.fn() },
@@ -114,7 +114,7 @@ describe('maintenance operational attention in the register (P3)', () => {
       row({ id: 'fresh', title: 'بلاغ اليوم' }),
     ];
 
-    const html = renderToStaticMarkup(<MaintenancePage />);
+    const html = renderToStaticMarkup(<MaintenanceWorkspace mode="embedded" />);
 
     expect(html).toContain('بانتظار الإغلاق');
     expect(html).toContain('متوقفة عن التقدم');
@@ -123,7 +123,7 @@ describe('maintenance operational attention in the register (P3)', () => {
   it('shows how long each request has been waiting', () => {
     maintenanceMocks.maintenanceQuery.data = [row({ id: 'stalled', request_date: '2026-08-01' })];
 
-    const html = renderToStaticMarkup(<MaintenancePage />);
+    const html = renderToStaticMarkup(<MaintenanceWorkspace mode="embedded" />);
 
     expect(html).toContain('منذ 26 يوم');
   });
@@ -131,7 +131,7 @@ describe('maintenance operational attention in the register (P3)', () => {
   it('flags a scheduled visit the office already missed', () => {
     maintenanceMocks.maintenanceQuery.data = [row({ id: 'missed', scheduled_date: '2026-08-20' })];
 
-    const html = renderToStaticMarkup(<MaintenancePage />);
+    const html = renderToStaticMarkup(<MaintenanceWorkspace mode="embedded" />);
 
     expect(html).toContain('تجاوزت موعد الزيارة');
   });
@@ -139,7 +139,7 @@ describe('maintenance operational attention in the register (P3)', () => {
   it('offers an operational follow-up filter next to status and priority', () => {
     maintenanceMocks.maintenanceQuery.data = [row({ id: 'fresh' })];
 
-    const html = renderToStaticMarkup(<MaintenancePage />);
+    const html = renderToStaticMarkup(<MaintenanceWorkspace mode="embedded" />);
 
     expect(html).toContain('تصفية حسب المتابعة التشغيلية');
   });
@@ -147,7 +147,7 @@ describe('maintenance operational attention in the register (P3)', () => {
   it('keeps a healthy register free of attention noise', () => {
     maintenanceMocks.maintenanceQuery.data = [row({ id: 'fresh', title: 'بلاغ اليوم' })];
 
-    const html = renderToStaticMarkup(<MaintenancePage />);
+    const html = renderToStaticMarkup(<MaintenanceWorkspace mode="embedded" />);
 
     expect(html).toContain('بلاغ اليوم');
     // Only the filter option mentions each attention state; no metric chip and
