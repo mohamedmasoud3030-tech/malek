@@ -52,13 +52,6 @@ describe('single canonical builder boundary', () => {
     }
   });
 
-  it('DocumentTemplates contains no document-model builders anymore (thin adapters only)', () => {
-    const source = readFileSync(resolve(documentsDir, 'DocumentTemplates.tsx'), 'utf8');
-    expect(source).not.toMatch(/function build\w*Model/);
-    expect(source).not.toContain('UnifiedDocumentModel');
-    expect(source).toContain('documentService.');
-  });
-
   it('print/PDF HTML assembly is confined to renderer internals', () => {
     for (const file of productionFiles) {
       const name = relative(documentsDir, file);

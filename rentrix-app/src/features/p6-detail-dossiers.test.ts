@@ -10,8 +10,6 @@ describe('P6 — route-native dossier architecture guard', () => {
       './tenants/components/TenantPreviewDialog.tsx',
       './people/components/PersonDossier.tsx',
       './lands/components/LandDossier.tsx',
-      './contracts/components/ContractPreviewDialog.tsx',
-      './properties/components/PropertyPreviewDialog.tsx',
       './units/components/UnitPreviewDialog.tsx',
     ];
     for (const file of files) expect(read(file), file).toContain('EntityPreviewDialog');

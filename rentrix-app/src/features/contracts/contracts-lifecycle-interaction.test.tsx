@@ -65,7 +65,6 @@ vi.mock('./useContractDocuments', () => ({
   useUploadContractDocument: () => ({ mutate: vi.fn(), isPending: false }),
   useDeleteContractDocument: () => ({ mutate: vi.fn(), isPending: false }),
 }));
-vi.mock('@/services/pdfService', () => ({ exportContractToPdf: vi.fn() }));
 vi.mock('@/services/action-service', () => ({ shareOrCopy: vi.fn().mockResolvedValue('copied') }));
 
 function activeContract() {

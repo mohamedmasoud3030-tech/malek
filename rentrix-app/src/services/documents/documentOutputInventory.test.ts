@@ -188,8 +188,6 @@ describe('single rendering engine', () => {
   it('only DocumentController imports the renderer for output', () => {
     const allowed = new Set([
       'services/documents/DocumentController.ts',
-      // Compatibility adapter: imports the error type only (checked below).
-      'services/documents/DocumentTemplates.tsx',
     ]);
     for (const file of collectFiles(documentsDir, isProductionSource)) {
       const name = rel(file);
@@ -198,12 +196,6 @@ describe('single rendering engine', () => {
       if (!/from '\.\/DocumentRenderer'/.test(source)) continue;
       expect(allowed.has(name), `${name} must not import DocumentRenderer`).toBe(true);
     }
-  });
-
-  it('DocumentTemplates imports only the renderer error type, never the renderer itself', () => {
-    const source = read(resolve(documentsDir, 'DocumentTemplates.tsx'));
-    expect(source).toContain("import { DocumentRenderError } from './DocumentRenderer'");
-    expect(source).not.toMatch(/DocumentRenderer\s*\.\s*(printDocument|downloadDocumentPdf)/);
   });
 
   it('feature code never reaches past the service into the engine or controller', () => {

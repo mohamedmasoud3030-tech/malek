@@ -72,7 +72,7 @@ const RAW_DOCUMENT_ERROR_PASSTHROUGH =
  * reviewed inventory.
  */
 export const DOCUMENT_OUTPUT_INVOCATION =
-  /documentService\s*\.\s*(printDocument|downloadDocumentPdf|print|downloadPdf|renderPdf)\b|\b(printInvoiceDocument|exportInvoiceDocument|printExpenseVoucher|exportExpenseVoucher)\s*\(|DocumentTemplates\s*\./;
+  /documentService\s*\.\s*(printDocument|downloadDocumentPdf|print|downloadPdf|renderPdf)\b|\b(printInvoiceDocument|exportInvoiceDocument|printExpenseVoucher|exportExpenseVoucher)\s*\(/;
 
 /** True when the module produces a document (and so must be inventoried). */
 export function invokesDocumentOutput(source: string): boolean {

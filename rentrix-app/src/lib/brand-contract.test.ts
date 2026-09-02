@@ -80,10 +80,6 @@ const DISPLAY_NAME_ALLOWLIST = new Map<string, string>([
     'Fixture company name proving the renderer echoes tenant identity, not a hardcoded brand.',
   ],
   [
-    'src/services/documents/DocumentTemplates.test.ts',
-    'Fixture company name proving templates echo tenant identity, not a hardcoded brand.',
-  ],
-  [
     'src/features/financials/expenses/expense-actions.test.ts',
     'Fixture company name passed into the voucher printer.',
   ],

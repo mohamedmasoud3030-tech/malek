@@ -53,12 +53,10 @@ describe('P6b — owner and property operational dossiers (closeout)', () => {
     expect(propertyService).not.toContain("record.entityId === propertyId || record.entityType === 'properties'");
   });
 
-  it('shares one property dossier content between the preview dialog and the full overview', () => {
+  it('uses the canonical property dossier content in the full overview', () => {
     const content = read('./properties/components/property-dossier-content.tsx');
-    const preview = read('./properties/components/PropertyPreviewDialog.tsx');
     const overview = read('./properties/overview/property-overview-page.tsx');
     expect(content).toContain('export function PropertyDossierContent');
-    expect(preview).toContain('PropertyDossierContent');
     expect(overview).toContain('PropertyDossierContent');
   });
 
