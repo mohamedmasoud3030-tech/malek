@@ -49,6 +49,11 @@ test.describe('Service Providers workspace', () => {
 
     await page.locator('select[aria-label="تصفية مزودي الخدمات حسب الحالة"]:visible').selectOption('inactive');
 
+    if ((page.viewportSize()?.width ?? 1440) < 768) {
+      await page.getByRole('button', { name: 'عرض النتائج', exact: true }).click();
+      await expect(page.locator('[data-unified-filter-sheet]')).toHaveCount(0);
+    }
+
     await expect(page.getByText('مؤسسة الحلول السريعة', { exact: true }).filter({ visible: true }).first()).toBeVisible();
     await expect(page.getByText('شركة الأفق للتبريد', { exact: true }).filter({ visible: true })).toHaveCount(0);
 

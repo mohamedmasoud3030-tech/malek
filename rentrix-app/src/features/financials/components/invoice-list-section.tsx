@@ -131,7 +131,7 @@ export function InvoiceListSection({
                 priority: 'identity',
                 render: (invoice) => (
                   <div className="min-w-0">
-                    <p className="font-black tabular-nums">{invoice.reference ?? invoice.id.slice(0, 8)}</p>
+                    <p className="font-black tabular-nums">{invoice.reference ?? 'فاتورة بلا مرجع'}</p>
                     <p className="mt-0.5 text-[11px] font-semibold text-muted-foreground">إصدار {formatDate(invoice.issue_date)}</p>
                   </div>
                 ),

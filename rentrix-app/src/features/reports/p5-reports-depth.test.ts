@@ -29,7 +29,7 @@ describe('P5 — reports depth contract', () => {
     expect(accounting).toContain('IncomeStatementPanel');
     expect(accounting).toContain('BalanceSheetPanel');
     expect(accounting).toContain('TrialBalancePanel');
-    expect(statements).toContain("type { CashFlowReport } from '@/features/accounting/wp05Services'");
+    expect(statements).toContain("type { CashFlowReport } from '@/features/accounting/reports/accountingReportsFacade'");
     expect(statements).toContain('cashFlow: CashFlowReport | undefined');
     expect(statements).toContain('VatReturnReport');
     expect(statements).not.toContain('CashFlowStatementReport');

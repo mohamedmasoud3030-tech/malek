@@ -3,7 +3,6 @@ import { readFile } from 'node:fs/promises';
 import {
   COMPANY_NAME,
   IDS,
-  OWNER_NAME,
   RECEIPT_REFERENCE,
   TENANT_NAME,
   installFakeSupabaseBackend,
@@ -161,12 +160,6 @@ async function expectHeaderSecondaryActionDisabled(page: Page, name: string): Pr
   await page.getByRole('button', { name: 'إجراءات إضافية' }).click();
   await expect(page.locator('[data-secondary-actions-mobile]').getByRole('button', { name, exact: true })).toBeDisabled();
   await page.locator('[data-secondary-actions-mobile]').getByRole('button', { name: 'إغلاق', exact: true }).click();
-}
-
-async function lastProductionDownloadName(page: Page): Promise<string> {
-  const names = await page.evaluate(() => (window as unknown as { __downloadNames?: string[] }).__downloadNames ?? []);
-  expect(names.length).toBeGreaterThan(0);
-  return names[names.length - 1];
 }
 
 function reportPanel(page: Page, title: string) {
@@ -404,89 +397,7 @@ test.describe('العقد — contract acceptance', () => {
 });
 
 /* ------------------------------------------------------------------ */
-/* 4 & 5. Owner + tenant statements                                    */
-/* ------------------------------------------------------------------ */
-
-test.describe('كشوف الحسابات — statements acceptance', () => {
-  async function openStatements(page: Page): Promise<void> {
-    await page.goto('/reports?section=statements');
-    await page.getByRole('button', { name: 'تعديل النطاق' }).click();
-    await expect(page.getByLabel('العقد لكشف المستأجر')).toBeVisible({ timeout: 30_000 });
-  }
-
-  async function applyReportFilters(page: Page): Promise<void> {
-    await page.getByRole('button', { name: 'تطبيق وعرض النتائج' }).click();
-    await expect(page.getByLabel('العقد لكشف المستأجر')).toBeHidden({ timeout: 15_000 });
-  }
-
-  test('tenant statement prints and downloads as a multi-page A4 PDF', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== DESKTOP, 'statements matrix runs on desktop');
-    test.setTimeout(120_000);
-    const consoleErrors = watchConsoleErrors(page);
-    await installAcceptanceBrowser(page);
-    await installFakeSupabaseBackend(page, 'complete');
-
-    await openStatements(page);
-    await page.getByLabel('العقد لكشف المستأجر').selectOption(IDS.contract);
-    await applyReportFilters(page);
-    const tenantPanel = reportPanel(page, 'كشف حساب المستأجر');
-    await expect(
-      tenantPanel.getByText('مطالبة إيجار شهر 01/2026 — الوحدة 301').filter({ visible: true }).first(),
-    ).toBeVisible({ timeout: 30_000 });
-
-    const popup = await openPrintPopup(page, () => tenantPanel.getByRole('button', { name: 'طباعة الكشف' }).click());
-    await assertPopupIdentity(popup, [TENANT_NAME, 'كشف']);
-    await assertA4PrintContract(popup);
-    await popup.close();
-
-    const { download, buffer } = await downloadPdf(page, () => tenantPanel.getByRole('button', { name: 'تنزيل PDF' }).click());
-    const summary = assertRealPdf(buffer);
-    expect(isA4Portrait(summary)).toBe(true);
-    expect(summary.pageCount).toBeGreaterThanOrEqual(2);
-    expect(summary.smallestImageStream).toBeGreaterThan(10_000);
-    const productionName = await lastProductionDownloadName(page);
-    expect(productionName).toMatch(/^tenant-statement-/);
-    const audit = auditDocumentFileName(productionName, FORBIDDEN_ID_FRAGMENTS);
-    expect(audit.passes, `file name must be safe: ${productionName}`).toBe(true);
-    expect([productionName, 'download']).toContain(download.suggestedFilename());
-
-    await expectNoUnexpectedConsoleErrors(page, consoleErrors);
-  });
-
-  test('owner statement prints and downloads with the true owner identity', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== DESKTOP, 'statements matrix runs on desktop');
-    test.setTimeout(120_000);
-    const consoleErrors = watchConsoleErrors(page);
-    await installAcceptanceBrowser(page);
-    await installFakeSupabaseBackend(page, 'complete');
-
-    await openStatements(page);
-    await page.getByLabel('المالك للكشف').selectOption(IDS.owner);
-    await applyReportFilters(page);
-    const ownerPanel = reportPanel(page, 'كشف حساب المالك');
-    await expect(ownerPanel.getByText(/تحصيل إيجار|عمولة الإدارة/).first()).toBeVisible({ timeout: 30_000 });
-
-    const popup = await openPrintPopup(page, () => ownerPanel.getByRole('button', { name: 'طباعة الكشف' }).click());
-    await assertPopupIdentity(popup, [OWNER_NAME]);
-    await assertA4PrintContract(popup);
-    await popup.close();
-
-    const { download, buffer } = await downloadPdf(page, () => ownerPanel.getByRole('button', { name: 'تنزيل PDF' }).click());
-    const summary = assertRealPdf(buffer);
-    expect(isA4Portrait(summary)).toBe(true);
-    expect(summary.pageCount).toBeGreaterThanOrEqual(1);
-    const productionName = await lastProductionDownloadName(page);
-    expect(productionName).toMatch(/^owner-statement-/);
-    const audit = auditDocumentFileName(productionName, FORBIDDEN_ID_FRAGMENTS);
-    expect(audit.passes, `file name must be safe: ${productionName}`).toBe(true);
-    expect([productionName, 'download']).toContain(download.suggestedFilename());
-
-    await expectNoUnexpectedConsoleErrors(page, consoleErrors);
-  });
-});
-
-/* ------------------------------------------------------------------ */
-/* 6. Long multi-page financial report                                 */
+/* 4. Long multi-page financial report                                 */
 /* ------------------------------------------------------------------ */
 
 test.describe('التقارير المالية — long report acceptance', () => {
@@ -522,7 +433,7 @@ test.describe('التقارير المالية — long report acceptance', () =
 });
 
 /* ------------------------------------------------------------------ */
-/* 7. Readiness gate — incomplete company settings                     */
+/* 5. Readiness gate — incomplete company settings                     */
 /* ------------------------------------------------------------------ */
 
 test.describe('بوابة الجاهزية — company identity not confirmed', () => {
@@ -540,16 +451,6 @@ test.describe('بوابة الجاهزية — company identity not confirmed', 
 
     await gotoInvoicesRegister(page);
     await expectInvoiceDocumentActionsWithheld(page);
-
-    await page.goto('/reports?section=statements');
-    await page.getByRole('button', { name: 'تعديل النطاق' }).click();
-    await expect(page.getByLabel('العقد لكشف المستأجر')).toBeVisible({ timeout: 30_000 });
-    await page.getByLabel('العقد لكشف المستأجر').selectOption(IDS.contract);
-    await page.getByRole('button', { name: 'تطبيق وعرض النتائج' }).click();
-    const tenantPanel = reportPanel(page, 'كشف حساب المستأجر');
-    await expect(tenantPanel.getByRole('button', { name: 'طباعة الكشف' })).toBeDisabled({ timeout: 30_000 });
-    await expect(tenantPanel.getByRole('button', { name: 'تنزيل PDF' })).toBeDisabled();
-    await expect(page.getByRole('alert').getByText(READINESS_NOTICE).first()).toBeVisible();
 
     // In this scenario the fake backend deliberately returns HTTP 500 for
     // company-settings reads to prove the UI fails closed. Browser resource

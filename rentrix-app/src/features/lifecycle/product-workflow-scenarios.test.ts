@@ -647,8 +647,8 @@ describe('MALIK Product Workflow Consolidation Database Integration Scenarios', 
     expect(payDates.first >= invoice.billing_period_start).toBe(true);
     expect(payDates.second >= invoice.billing_period_start).toBe(true);
 
-    const receipts = await db.query<{ date_time: unknown }>(`
-      select r.date_time
+    const receipts = await db.query<{ date_time: string }>(`
+      select to_char(r.date_time::date, 'YYYY-MM-DD') as date_time
         from public.receipts r
         join public.receipt_allocations ra on ra.receipt_id = r.id
        where ra.invoice_id in (

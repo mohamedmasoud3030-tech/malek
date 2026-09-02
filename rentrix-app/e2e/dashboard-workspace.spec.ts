@@ -538,6 +538,7 @@ test('real dashboard route exposes loading, empty, error and stale states honest
   await page.setViewportSize({ width: 375, height: 812 });
 
   await page.context().clearCookies();
+  await page.goto('/login', { waitUntil: 'domcontentloaded' });
   await page.evaluate(() => window.localStorage.clear());
   await openDashboardRoute(page, 'light', 'empty');
   await expect(page.getByText('لا توجد متأخرات — كل الفواتير ضمن الاستحقاق.')).toBeVisible();
@@ -546,6 +547,7 @@ test('real dashboard route exposes loading, empty, error and stale states honest
   await expect(page.locator('[data-dashboard-office-pulse] [data-kpi-card]')).toHaveCount(4);
 
   await page.context().clearCookies();
+  await page.goto('/login', { waitUntil: 'domcontentloaded' });
   await page.evaluate(() => window.localStorage.clear());
   await openDashboardRoute(page, 'light', 'snapshot-error');
   await expect(page.getByText('تعذر تحميل بيانات اليوم')).toBeVisible();
@@ -553,6 +555,7 @@ test('real dashboard route exposes loading, empty, error and stale states honest
   await expect(page.locator('[data-dashboard-owner-obligations-link]')).toHaveCount(0);
 
   await page.context().clearCookies();
+  await page.goto('/login', { waitUntil: 'domcontentloaded' });
   await page.evaluate(() => window.localStorage.clear());
   await openDashboardRoute(page, 'light', 'stale-refetch-error');
   await expect(page.locator('[data-dashboard-office-pulse]')).toBeVisible();

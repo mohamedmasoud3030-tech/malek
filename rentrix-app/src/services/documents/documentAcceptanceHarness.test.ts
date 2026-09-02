@@ -133,7 +133,7 @@ describe('fake Supabase backend — fail-closed', () => {
 });
 
 describe('console-error tolerance is narrow', () => {
-  const specSource = read('wp06-document-output.spec.ts');
+  const specSource = read('document-platform-acceptance.spec.ts');
 
   it('tolerates only the known unreachable realtime endpoint', () => {
     expect(specSource).toContain('realtime/v1/websocket');
@@ -151,6 +151,7 @@ describe('console-error tolerance is narrow', () => {
   });
 
   it('still asserts on unexpected console errors in the document scenarios', () => {
-    expect(specSource).toContain('expect(unexpectedConsoleErrors(consoleErrors)).toEqual([])');
+    expect(specSource).toContain('expect(unexpected).toEqual([])');
+    expect(specSource).toContain('expectNoUnexpectedConsoleErrors(page, consoleErrors)');
   });
 });
