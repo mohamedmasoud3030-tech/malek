@@ -13,6 +13,14 @@ import { getTodayLocalDateString } from '@/features/reports/reports-page.helpers
 import { DocumentReadinessNotice } from '@/features/settings/components/document-readiness-notice';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
 import { useAuth } from '@/hooks/use-auth';
+import { normalizeMaintenanceStatus } from '@/lib/maintenanceStatus';
+import type { Maintenance } from '../maintenance-service';
+import {
+  printMaintenanceWorkOrder,
+  downloadMaintenanceWorkOrderPdf,
+  printMaintenanceCompletion,
+  downloadMaintenanceCompletionPdf,
+} from '../documents/maintenance-documents';
 import { MaintenanceDetailsOverlay, MaintenanceResolveOverlay } from './maintenance-detail-resolve-overlays';
 import { MaintenanceList } from './maintenance-list';
 import { defaultMaintenanceColumns, maintenanceColumnOptions, maintenancePriorityLabels, maintenanceStatusLabels } from './maintenance-list';
@@ -76,6 +84,54 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
       },
       fallbackMessage: 'تعذرت طباعة كشف الصيانة.',
     });
+  };
+
+  /**
+   * Row-level document actions. Work orders exist for any real request that
+   * is actually actionable field work (not cancelled). The completion
+   * certificate requires lifecycle truth: a canonical resolved/closed status
+   * AND a recorded completion timestamp — a certificate is never offered
+   * merely because a request exists, and printing never mutates state.
+   */
+  const maintenanceDocumentActions = (row: Maintenance) => {
+    const status = normalizeMaintenanceStatus(row.status);
+    const propertyTitle = controller.properties.find((property) => property.id === row.property_id)?.title ?? null;
+    const unitNumber = controller.allUnits.find((unit) => unit.id === row.unit_id)?.unit_number ?? null;
+    const providerName = controller.providerOptions.find((provider) => provider.id === row.service_provider_id)?.name ?? null;
+    const reference = row.reference ?? row.no ?? null;
+    const settings = documentSettings.companySettings;
+    const disabled = !documentSettings.isReady;
+
+    const actions: { id: string; label: string; kind: 'print' | 'download'; disabled?: boolean; onClick: () => void }[] = [];
+
+    if (status !== 'cancelled') {
+      const workOrderParams = { maintenance: row, settings, propertyTitle, unitNumber, reference, assignedProvider: providerName };
+      actions.push(
+        { id: 'work-order-print', label: 'طباعة أمر العمل', kind: 'print', disabled, onClick: () => void printMaintenanceWorkOrder(workOrderParams) },
+        { id: 'work-order-pdf', label: 'أمر العمل PDF', kind: 'download', disabled, onClick: () => void downloadMaintenanceWorkOrderPdf(workOrderParams) },
+      );
+    }
+
+    const completionTimestamp = row.completed_at ?? row.resolved_at ?? null;
+    if ((status === 'resolved' || status === 'closed') && completionTimestamp) {
+      const completionParams = {
+        maintenance: row,
+        settings,
+        propertyTitle,
+        unitNumber,
+        reference,
+        completionDate: completionTimestamp.slice(0, 10),
+        workPerformed: row.work_description ?? null,
+        providerName,
+        notes: row.notes ?? null,
+      };
+      actions.push(
+        { id: 'completion-print', label: 'طباعة شهادة الإنجاز', kind: 'print', disabled, onClick: () => void printMaintenanceCompletion(completionParams) },
+        { id: 'completion-pdf', label: 'شهادة الإنجاز PDF', kind: 'download', disabled, onClick: () => void downloadMaintenanceCompletionPdf(completionParams) },
+      );
+    }
+
+    return actions;
   };
 
   const printAction = (
@@ -222,6 +278,7 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
           onEdit={(request) => { if (!controller.hasLoadError) controller.openEditForm(request); }}
           onStatusAction={(request, action) => { if (!controller.hasLoadError) controller.handleStatusAction(request, action); }}
           visibleColumnKeys={visibleColumnKeys}
+          documentActions={maintenanceDocumentActions}
         />
       </section>
 

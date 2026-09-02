@@ -1,4 +1,4 @@
-import { Edit, Eye } from "lucide-react";
+import { Download, Edit, Eye, Printer } from "lucide-react";
 import { useMemo, type ReactNode } from 'react';
 import { ActionMenu } from "@/components/ui/action-menu";
 import { Button } from "@/components/ui/button";
@@ -80,6 +80,18 @@ export type MaintenanceListProps = Readonly<{
   ) => void;
   attentionByRequestId?: ReadonlyMap<string, MaintenanceAttention>;
   visibleColumnKeys: readonly string[];
+  /**
+   * Optional per-row document actions supplied by the workspace. The list
+   * only renders what the workspace decided is authoritative for the row
+   * (e.g. a completion certificate exists only for resolved/closed work).
+   */
+  documentActions?: (row: Maintenance) => readonly {
+    id: string;
+    label: string;
+    kind: 'print' | 'download';
+    disabled?: boolean;
+    onClick: () => void;
+  }[];
 }>;
 
 export function MaintenanceList(props: MaintenanceListProps) {
@@ -100,6 +112,7 @@ export function MaintenanceList(props: MaintenanceListProps) {
     onStatusAction,
     attentionByRequestId,
     visibleColumnKeys,
+    documentActions,
   } = props;
   const { canAccess } = useAuth();
   const canEdit = canAccess("maintenance.edit");
@@ -213,6 +226,13 @@ export function MaintenanceList(props: MaintenanceListProps) {
             onClick: () => onStatusAction(row, action.status),
             disabled: actionsPending,
           })),
+          ...(documentActions?.(row) ?? []).map((action) => ({
+            id: action.id,
+            label: action.label,
+            icon: action.kind === 'print' ? Printer : Download,
+            onClick: action.onClick,
+            disabled: action.disabled,
+          })),
         ];
 
         return (
@@ -226,7 +246,7 @@ export function MaintenanceList(props: MaintenanceListProps) {
         );
       },
     },
-  ], []);
+  ], [documentActions]);
 
   return (
     <div data-maintenance-list>

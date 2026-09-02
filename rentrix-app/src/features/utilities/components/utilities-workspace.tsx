@@ -68,6 +68,7 @@ import {
   type UtilityObligation,
   type UtilityObligationUrgency,
 } from '../utility-obligations';
+import { printUtilitySplit, downloadUtilitySplitPdf } from '../documents/utility-split-document';
 
 const utilityIcons: Record<UtilityType, typeof Zap> = {
   electricity: Zap,
@@ -343,6 +344,33 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
   const error = metersQuery.error ?? billsQuery.error ?? propertiesQuery.error;
   const isError = Boolean(error);
 
+  /**
+   * Utility split sheet: canonical `deriveUtilityObligations` rows and their
+   * `summarizeUtilityObligations` summary are passed verbatim — no shares,
+   * outstanding totals, or responsible-party allocations are recomputed here.
+   */
+  const splitPropertyTitle = propertyFilter !== 'all' ? propertyName(propertyFilter) : null;
+  const handlePrintSplit = () => {
+    void printUtilitySplit({
+      obligations,
+      summary: obligationsSummary,
+      settings: documentSettings.companySettings,
+      propertyTitle: splitPropertyTitle,
+      periodFrom: null,
+      periodTo: operatingDate,
+    });
+  };
+  const handleDownloadSplitPdf = () => {
+    void downloadUtilitySplitPdf({
+      obligations,
+      summary: obligationsSummary,
+      settings: documentSettings.companySettings,
+      propertyTitle: splitPropertyTitle,
+      periodFrom: null,
+      periodTo: operatingDate,
+    });
+  };
+
   const meterColumns: ColumnDef<UtilityMeter>[] = [
     {
       key: 'meter', priority: 'identity' as const,
@@ -485,6 +513,8 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
       items={[
         { id: 'print', label: 'طباعة', icon: Printer, onClick: handlePrint },
         { id: 'pdf', label: 'تنزيل PDF', icon: Download, onClick: handleDownloadPdf },
+        { id: 'split-print', label: 'طباعة كشف توزيع المرافق', icon: Printer, onClick: handlePrintSplit, disabled: obligations.length === 0 },
+        { id: 'split-pdf', label: 'كشف توزيع المرافق PDF', icon: Download, onClick: handleDownloadSplitPdf, disabled: obligations.length === 0 },
       ]}
     />
   );

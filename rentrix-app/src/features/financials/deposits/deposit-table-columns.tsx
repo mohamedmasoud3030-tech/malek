@@ -30,6 +30,8 @@ function getClaimTone(status: DepositClaimRecord['status']): 'success' | 'info' 
 export type DepositTableActions = {
   handlePrint: (deposit: DepositRecord) => void;
   handleDownloadPdf: (deposit: DepositRecord) => void;
+  handlePrintReceivedVoucher: (deposit: DepositRecord) => void;
+  handleDownloadReceivedVoucherPdf: (deposit: DepositRecord) => void;
   openDepositAction: (deposit: DepositRecord, type: 'claim' | 'refund') => void;
   isDocumentReady: boolean;
 };
@@ -41,6 +43,14 @@ export function createDepositColumns(
   const depositActions = (deposit: DepositRecord) => [
     { id: 'print', label: 'طباعة', icon: Printer, onClick: () => actions.handlePrint(deposit), disabled: !actions.isDocumentReady },
     { id: 'pdf', label: 'تنزيل PDF', icon: Download, onClick: () => actions.handleDownloadPdf(deposit), disabled: !actions.isDocumentReady },
+    // Received voucher is backed by the canonical deposit record itself:
+    // original deposit_amount and received_date, never reconstructed balances.
+    ...(deposit.deposit_amount > 0 && deposit.received_date
+      ? [
+          { id: 'received-voucher-print', label: 'طباعة سند استلام التأمين', icon: Printer, onClick: () => actions.handlePrintReceivedVoucher(deposit), disabled: !actions.isDocumentReady },
+          { id: 'received-voucher-pdf', label: 'سند استلام التأمين PDF', icon: Download, onClick: () => actions.handleDownloadReceivedVoucherPdf(deposit), disabled: !actions.isDocumentReady },
+        ]
+      : []),
     ...(deposit.remaining_amount > 0
       ? [
           { id: 'claim', label: 'طلب تخصيص (بإثبات)', icon: ShieldAlert, onClick: () => actions.openDepositAction(deposit, 'claim') },
@@ -134,6 +144,15 @@ export type ClaimTableActions = {
   onApply: (claim: DepositClaimRecord) => void;
   onOpenReverse: (claim: DepositClaimRecord) => void;
   currentUserId: string;
+  /**
+   * Deducted voucher for THIS applied claim only. Exposed exclusively when
+   * `claim.status === 'APPLIED'`: the voucher documents a specific posted
+   * application event, so PENDING/APPROVED/REJECTED/REVERSED claims never
+   * produce one, and no other claim is ever auto-selected in its place.
+   */
+  handlePrintDeductedVoucher: (claim: DepositClaimRecord) => void;
+  handleDownloadDeductedVoucherPdf: (claim: DepositClaimRecord) => void;
+  isDocumentReady: boolean;
 };
 
 export function createClaimColumns(
@@ -197,6 +216,15 @@ export function createClaimColumns(
               <Undo2 className="size-3.5" /> إلغاء
             </Button>
           ) : null}
+          {claim.status === 'APPLIED' ? (
+            <ActionMenu
+              label="سند الخصم"
+              items={[
+                { id: 'deducted-voucher-print', label: 'طباعة سند الخصم', icon: Printer, onClick: () => actions.handlePrintDeductedVoucher(claim), disabled: !actions.isDocumentReady },
+                { id: 'deducted-voucher-pdf', label: 'سند الخصم PDF', icon: Download, onClick: () => actions.handleDownloadDeductedVoucherPdf(claim), disabled: !actions.isDocumentReady },
+              ]}
+            />
+          ) : null}
         </div>
       ),
     },
@@ -205,6 +233,15 @@ export function createClaimColumns(
 
 export type RefundTableActions = {
   onOpenReverseRefund: (event: DepositRefundEventRecord) => void;
+  /**
+   * Returned voucher for THIS refund event only. Exposed exclusively for a
+   * POSTED, non-reversed event: a reversed refund never yields a final
+   * returned voucher, and multiple refund events never fall back to an
+   * implicit first/latest pick — each row documents its own event.
+   */
+  handlePrintReturnedVoucher: (event: DepositRefundEventRecord) => void;
+  handleDownloadReturnedVoucherPdf: (event: DepositRefundEventRecord) => void;
+  isDocumentReady: boolean;
 };
 
 export function createRefundColumns(
@@ -243,12 +280,24 @@ export function createRefundColumns(
     {
       key: 'actions',
       header: 'إجراءات',
-      render: (event) =>
-        event.status === 'POSTED' ? (
-          <Button size="sm" variant="outline" onClick={() => actions.onOpenReverseRefund(event)}>
-            <Undo2 className="size-3.5" /> إلغاء الاسترداد
-          </Button>
-        ) : null,
+      render: (event) => {
+        const isFinalPosted = event.status === 'POSTED' && !event.reversed_at;
+        if (!isFinalPosted) return null;
+        return (
+          <div className="flex flex-wrap items-center gap-1">
+            <Button size="sm" variant="outline" onClick={() => actions.onOpenReverseRefund(event)}>
+              <Undo2 className="size-3.5" /> إلغاء الاسترداد
+            </Button>
+            <ActionMenu
+              label="سند رد التأمين"
+              items={[
+                { id: 'returned-voucher-print', label: 'طباعة سند رد التأمين', icon: Printer, onClick: () => actions.handlePrintReturnedVoucher(event), disabled: !actions.isDocumentReady },
+                { id: 'returned-voucher-pdf', label: 'سند رد التأمين PDF', icon: Download, onClick: () => actions.handleDownloadReturnedVoucherPdf(event), disabled: !actions.isDocumentReady },
+              ]}
+            />
+          </div>
+        );
+      },
     },
   ];
 }

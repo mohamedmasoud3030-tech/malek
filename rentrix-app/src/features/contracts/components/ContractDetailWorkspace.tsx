@@ -13,6 +13,7 @@ import {
   getExpiryDescription,
 } from '../components/ContractDetailSections';
 import { ContractEvidenceSection } from '../evidence/ContractEvidenceSection';
+import { ContractDocumentActionsSection } from '../documents/ContractDocumentActionsSection';
 import { ContractApprovalSection } from '../lifecycle/contract-approval-workflow';
 import { contractStatusLabels, contractStatusTone } from '../contractSchema';
 import { normalizeContractStatus } from '@/lib/contractStatus';
@@ -101,7 +102,10 @@ export function ContractDetailWorkspace({
       <SectionTabPanel id="documents" activeId={activeTab}>
         <div className="grid min-w-0 gap-4 xl:grid-cols-2" data-contract-documents-composition>
           <ContractEvidenceSection contractId={contract.id} />
-          <ContractDocumentsShell contractId={contract.id} />
+          <div className="min-w-0 space-y-4">
+            <ContractDocumentActionsSection contract={contract} />
+            <ContractDocumentsShell contractId={contract.id} />
+          </div>
           <div className="xl:col-span-2">
             <ContractTimelineSection contract={contract} settings={settings} />
           </div>
