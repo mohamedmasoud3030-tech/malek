@@ -131,8 +131,8 @@ describe('premium catalog — preservation of every legacy surface', () => {
   });
 
   it('routes every product target to a real (section, view) pair', () => {
-    const analyticsIds = new Set(ANALYTICS_REPORT_VIEWS.map((view) => view.id));
-    const accountingIds = new Set(ACCOUNTING_REPORT_VIEWS.map((view) => view.id));
+    const analyticsIds = new Set<string>(ANALYTICS_REPORT_VIEWS.map((view) => view.id));
+    const accountingIds = new Set<string>(ACCOUNTING_REPORT_VIEWS.map((view) => view.id));
     for (const product of REPORT_PRODUCTS) {
       expect(product.targets.length).toBeGreaterThan(0);
       for (const target of product.targets) {
@@ -203,7 +203,7 @@ describe('premium catalog — secure sharing', () => {
   it('never embeds financial values in the prepared share text', () => {
     const payload = buildReportProductSharePayload('https://malek.app', {
       reportId: 'owner-comprehensive-statement',
-      filters: { from: '2026-08-01', to: '2026-08-31' },
+      filters: { from: '2026-08-01', to: '2026-08-31', propertyId: '', unitId: '', tenantId: '', contractId: '', asOf: '', ownerId: '' },
     }, {
       reportLabel: 'كشف المالك الشامل',
       summaryText: 'الفترة: 2026-08-01 → 2026-08-31',

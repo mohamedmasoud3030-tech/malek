@@ -22,7 +22,7 @@ import {
 } from '@/services/documents/documentPayloadAdapters';
 import { downloadBlob } from '@/lib/tabular-export';
 import { buildXlsxBlob } from '@/lib/xlsx-export';
-import { loadOwnerReportContext, printOwnerReport, downloadOwnerReportPdf } from '../documents/professional-owner-report';
+import { loadPremiumOwnerReportPayload } from '../documents/premium-owner-report';
 
 /**
  * A statement is a legal/financial document: without its authoritative
@@ -172,7 +172,7 @@ export function runOwnerReportDocumentAction(params: Readonly<{
       if (params.statement.error) {
         throw new DocumentReadinessError('تعذر إصدار كشف المالك التفصيلي: كشف المالك المحمّل يحتوي على خطأ في المصدر المعتمد.');
       }
-      const context = await loadOwnerReportContext({
+      const payload = await loadPremiumOwnerReportPayload({
         ownerId: params.ownerId,
         from: params.period.from || params.statement.periodFrom || '—',
         to: params.period.to || params.statement.periodTo || '—',
@@ -180,9 +180,9 @@ export function runOwnerReportDocumentAction(params: Readonly<{
         statement: params.statement,
       });
       if (mode === 'print') {
-        await printOwnerReport({ settings: params.settings, context });
+        await documentService.printDocument('owner_report', { settings: params.settings, payload });
       } else {
-        await downloadOwnerReportPdf({ settings: params.settings, context });
+        await documentService.downloadDocumentPdf('owner_report', { settings: params.settings, payload });
       }
     },
     fallbackMessage: mode === 'print'
@@ -198,16 +198,15 @@ export async function buildOwnerReportPdfFile(params: Readonly<{
   statement: OwnerStatementReport;
   period: { from?: string; to?: string; propertyId?: string | null };
 }>): Promise<File> {
-  const context = await loadOwnerReportContext({
+  const payload = await loadPremiumOwnerReportPayload({
     ownerId: params.ownerId,
     from: params.period.from || params.statement.periodFrom || '—',
     to: params.period.to || params.statement.periodTo || '—',
     propertyId: params.period.propertyId || null,
     statement: params.statement,
   });
-  const { buildOwnerReportPayload } = await import('../documents/professional-owner-report');
   return documentService.buildDocumentPdfFile('owner_report', {
     settings: params.settings,
-    payload: buildOwnerReportPayload(context),
+    payload,
   });
 }

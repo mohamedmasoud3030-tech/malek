@@ -32,7 +32,7 @@ const settings = {
 };
 
 async function renderer() {
-  return (await import('./DocumentRenderer')).DocumentRenderer as {
+  return (await import('./DocumentRenderer')).DocumentRenderer as unknown as {
     printDocument: ReturnType<typeof vi.fn>;
     downloadDocumentPdf: ReturnType<typeof vi.fn>;
   };
