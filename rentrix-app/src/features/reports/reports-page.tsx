@@ -16,6 +16,8 @@ import {
 } from './reports-section-model';
 import type { ReportViewId } from './report-view-registry';
 import { WORKSPACE_SEARCH_KEY, type ReportDrillHandler, type ReportWorkspaceId } from './report-workspaces';
+import { getReportProduct } from './report-products';
+import { ReportsCatalog } from './components/ReportsCatalog';
 import { ReportsPrimaryNavigation } from './workspace/ReportsPrimaryNavigation';
 import { ReportsWorkspace } from './workspace/ReportsWorkspace';
 import { useReportsWorkspace } from './use-reports-workspace';
@@ -38,6 +40,36 @@ export function ReportsPage() {
   );
   const reportsTitle = translateSharedLabel('financialsSectionReports');
   const pageDescription = translateSharedLabel('reportsPageDescription');
+
+  /**
+   * The /reports landing is the premium catalog: exactly the five report
+   * products, no KPI numbers, charts, financial totals or filter chrome.
+   * The consolidated workspace below remains the compatibility surface for
+   * every existing `?workspace=`/`?section=`/`?view=` deep link (and the
+   * drill-through / legacy-URL targets), so nothing that used to be
+   * reachable can be lost by removing the landing analytics.
+   */
+  const legacyLocationRequested = WORKSPACE_SEARCH_KEY in search
+    || REPORTS_SECTION_SEARCH_KEY in search
+    || 'view' in search;
+
+  // A `?report=` link (the pre-route catalog experiment) upgrades itself to
+  // the real product route, carrying the current scope over.
+  const premiumProductId = search.report;
+  useEffect(() => {
+    const product = getReportProduct(premiumProductId);
+    if (!product) return;
+    void navigate({
+      to: '/reports/$reportId',
+      params: { reportId: product.id },
+      replace: true,
+      search: (previous: Record<string, unknown>) => {
+        const next = { ...previous };
+        delete next.report;
+        return next;
+      },
+    });
+  }, [premiumProductId, navigate]);
 
   const handleOpenReport = useCallback(
     (nextWorkspace: ReportWorkspaceId, nextView?: ReportViewId) => {
@@ -77,6 +109,17 @@ export function ReportsPage() {
 
   if (!canViewReports) {
     return <AccessDenied message="عرض التقارير متاح فقط للصلاحيات المخولة." />;
+  }
+
+  if (!legacyLocationRequested) {
+    return (
+      <PageLayout dir="rtl" lang="ar" size="wide">
+        <PageHeader title={reportsTitle} description={pageDescription} />
+        <div data-reports-catalog-landing data-report-landing dir="rtl" lang="ar" className="min-w-0">
+          <ReportsCatalog />
+        </div>
+      </PageLayout>
+    );
   }
 
   return (

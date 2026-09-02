@@ -13,7 +13,7 @@
  * CONTRACT
  *  - Deterministic: the same logical model always yields the same key,
  *    regardless of the ORDER in which object properties were assigned.
- *  - Operation-scoped: the channel (`print` / `pdf`) is part of the key, so
+ *  - Operation-scoped: the channel (`print` / `pdf` / `pdf-file`) is part of the key, so
  *    a print and a PDF of the same document never coalesce — they are two
  *    distinct user-visible operations producing different outputs.
  *  - Total: it can never throw. Circular references, `bigint`, `symbol`,
@@ -127,7 +127,7 @@ export function stableDigest(input: string): string {
   return `${hashA.toString(16).padStart(8, '0')}${hashB.toString(16).padStart(8, '0')}${lengthLane}`;
 }
 
-export type DocumentRenderChannel = 'print' | 'pdf';
+export type DocumentRenderChannel = 'print' | 'pdf' | 'pdf-file';
 
 /**
  * Operation-scoped identity for one document render.

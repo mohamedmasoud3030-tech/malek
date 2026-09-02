@@ -11,6 +11,7 @@
  * logged here.
  */
 
+import type { ReportProductId } from './report-products';
 import type { ReportSectionId } from './reports-page.sections';
 import type { ReportViewId } from './report-view-registry';
 import type { ReportsFilterState } from './reports-workspace-filters';
@@ -87,6 +88,55 @@ export function buildReportSharePayload(
   input: Readonly<{ reportLabel: string; summaryText?: string }>,
 ): ReportSharePayload {
   const url = buildReportShareUrl(origin, target);
+  const shareText = buildReportShareText({ ...input, url });
+  return { shareText, url };
+}
+
+/* ------------------------------------------------------------------ */
+/* Premium report-product sharing                                      */
+/* ------------------------------------------------------------------ */
+
+export type ReportProductShareTarget = Readonly<{
+  reportId: ReportProductId;
+  /** Product sub-view/target id; omitted means the product's default target. */
+  view?: string;
+  filters: ReportShareTarget['filters'];
+}>;
+
+/**
+ * Build the canonical premium-product deep link (`/reports/<id>?…`). The
+ * target route applies the same permission gate as the app shell, so the
+ * link is secure by construction: recipients must sign in with
+ * `financial.reports.view` to open the report — nothing is exposed by the
+ * link itself.
+ */
+export function buildReportProductShareUrl(origin: string, target: ReportProductShareTarget): string {
+  const params = new URLSearchParams();
+  if (target.view) params.set('view', target.view);
+  if (target.filters.from) params.set('from', target.filters.from);
+  if (target.filters.to) params.set('to', target.filters.to);
+  if (target.filters.asOf) params.set('asOf', target.filters.asOf);
+  for (const key of [
+    'propertyId',
+    'unitId',
+    'tenantId',
+    'ownerId',
+    'contractId',
+  ] as const) {
+    const value = target.filters[key];
+    if (value) params.set(key, value);
+  }
+  const query = params.toString();
+  return `${origin.replace(/\/+$/, '')}/reports/${encodeURIComponent(target.reportId)}${query ? `?${query}` : ''}`;
+}
+
+/** Premium convenience builder: product URL + prepared share message. */
+export function buildReportProductSharePayload(
+  origin: string,
+  target: ReportProductShareTarget,
+  input: Readonly<{ reportLabel: string; summaryText?: string }>,
+): ReportSharePayload {
+  const url = buildReportProductShareUrl(origin, target);
   const shareText = buildReportShareText({ ...input, url });
   return { shareText, url };
 }

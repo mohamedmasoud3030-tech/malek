@@ -63,6 +63,17 @@ export const documentService = {
     await DocumentController.downloadDocumentPdf(type, input);
   },
 
+  /**
+   * Canonical typed PDF *file* build: the same document as `downloadDocumentPdf`,
+   * returned as a File for secure attachment sharing. Readiness gating stays in
+   * the caller's handler (`runGuardedDocumentAction`) so this boundary never
+   * silently produces a half-built document.
+   */
+  async buildDocumentPdfFile<T extends DocumentTypeId>(type: T, input: DocumentBuildInput<T>): Promise<File> {
+    assertSupported(type);
+    return DocumentController.buildDocumentPdfFile(type, input);
+  },
+
   /** @deprecated compatibility request shape — migrate to `printDocument`. */
   async print(request: DocumentRequest): Promise<void> {
     assertSupported(request.type);

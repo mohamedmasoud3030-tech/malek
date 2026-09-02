@@ -308,6 +308,9 @@ export function buildAcceptanceSeed(mode: CompanySettingsMode): AcceptanceSeed {
     cost_centers: [],
     expenses: [],
     maintenance_records: [],
+    owner_settlements: [],
+    utility_bills: [],
+    utility_meters: [],
     owner_agreements: [],
     receipt_allocations: [],
     user_permission_grants: [],
@@ -373,6 +376,33 @@ export function buildAcceptanceSeed(mode: CompanySettingsMode): AcceptanceSeed {
     rpt_trial_balance: (args) => buildTrialBalancePayload(typeof args.p_as_of === 'string' ? args.p_as_of : '2026-08-06'),
     rpt_tenant_statement: () => buildTenantStatementPayload(),
     rpt_owner_statement: (args) => buildOwnerStatementPayload(args),
+    // The professional owner pack reads the canonical financial position next
+    // to the statement; seed a truthful, internally consistent shape for the
+    // demo owner so owner-report print/PDF runs hermetically.
+    rpt_owner_financial_position: () => ({
+      owner_id: IDS.owner,
+      basis: 'ACCRUAL_OMR_3DP',
+      operating_model: 'OWNER_AGENCY',
+      period: {
+        tenant_collections: 8400,
+        management_fees: { amount: 420, breakdown: { basis: 'RATE', percentage: 5 } },
+        owner_expenses: 420,
+        fee_vat: 21,
+        authorized_adjustments: 0,
+        adjustments_note: null,
+        net_payable: 7539,
+      },
+      lifecycle_all_time: {
+        settled_pending_net: 7539,
+        paid_net: 4200,
+        remaining_payable: 3339,
+        draft_count: 0,
+        approved_count: 1,
+        paid_count: 1,
+        cancelled_count: 0,
+      },
+      owner_funds: { held: 3339 },
+    }),
     rpt_income_statement: (args) => ({
       period: { from: args.p_from ?? '2026-01-01', to: args.p_to ?? '2026-12-31' },
       revenue: [
