@@ -1,4 +1,4 @@
-import { Clock3, Flame, PlusCircle, Printer, Wrench } from 'lucide-react';
+import { Clock3, PlusCircle, Printer, Wrench, type LucideIcon } from 'lucide-react';
 import { useState } from 'react';
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { RegisterAttention, RegisterMetricStrip } from '@/components/layout/register-summary';
@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { DataTableColumnsMenu } from '@/components/ui/data-table';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { Select } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
 import { documentService } from '@/services/documents/DocumentService';
 import { toReportDocumentPayload, type ReportDocumentData } from '@/services/documents/documentPayloadAdapters';
 import { runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
@@ -27,7 +28,7 @@ import { MaintenanceList } from './maintenance-list';
 import { defaultMaintenanceColumns, maintenanceColumnOptions, maintenancePriorityLabels, maintenanceStatusLabels } from './maintenance-list';
 import { MaintenanceRequestForm } from './maintenance-request-form';
 import type { MaintenancePriorityFilter, MaintenanceStatusFilter } from '../maintenance-helpers';
-import { maintenanceAttentionLabels, type MaintenanceAttentionFilter } from '../maintenance-attention';
+import { maintenanceAttentionLabels, type MaintenanceAttentionFilter, type MaintenanceAttentionFlag } from '../maintenance-attention';
 import { useMaintenancePageController } from '../useMaintenancePageController';
 import { formatCount } from '@/lib/formatters';
 
@@ -66,6 +67,20 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
   const currencyLabel =
     documentSettings.companySettings.currencySymbol ||
     documentSettings.companySettings.currency;
+
+  // Compact clickable substitutes for the awaiting-closure / stalled /
+  // schedule-missed metric cards — each sets the existing attention filter
+  // instead of duplicating the Select below as a read-only number.
+  type AttentionChip = { id: MaintenanceAttentionFlag; label: string; count: number; icon?: LucideIcon };
+  const attentionChips: AttentionChip[] = controller.isLoading
+    ? []
+    : (
+        [
+          { id: 'awaiting_closure', label: maintenanceAttentionLabels.awaiting_closure, count: controller.attentionSummary.awaitingClosure },
+          { id: 'stalled', label: maintenanceAttentionLabels.stalled, count: controller.attentionSummary.stalled, icon: Clock3 },
+          { id: 'schedule_missed', label: maintenanceAttentionLabels.schedule_missed, count: controller.attentionSummary.scheduleMissed },
+        ] satisfies AttentionChip[]
+      ).filter((chip) => chip.count > 0);
 
   const handlePrintMaintenanceList = () => {
     void runGuardedDocumentAction({
@@ -188,12 +203,36 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
             { id: 'total', label: 'الطلبات', value: formatCount(controller.maintenanceSummary.total), icon: Wrench, hideWhenEmpty: true },
             { id: 'open', label: 'مفتوحة', value: formatCount(controller.maintenanceSummary.open), hideWhenEmpty: true },
             { id: 'progress', label: 'قيد التنفيذ', value: formatCount(controller.maintenanceSummary.inProgress), hideWhenEmpty: true },
-            { id: 'urgent', label: 'عاجلة', value: formatCount(controller.maintenanceSummary.urgent), icon: Flame, tone: 'danger', hideWhenEmpty: true },
-            { id: 'awaiting-closure', label: 'بانتظار الإغلاق', value: formatCount(controller.attentionSummary.awaitingClosure), tone: 'warning', hideWhenEmpty: true },
-            { id: 'stalled', label: 'متوقفة عن التقدم', value: formatCount(controller.attentionSummary.stalled), icon: Clock3, tone: 'warning', hideWhenEmpty: true },
-            { id: 'schedule-missed', label: 'تجاوزت الموعد', value: formatCount(controller.attentionSummary.scheduleMissed), tone: 'warning', hideWhenEmpty: true },
           ]}
         />
+        {attentionChips.length > 0 ? (
+          <div className="flex flex-wrap gap-1.5" role="group" aria-label="فلاتر المتابعة التشغيلية السريعة">
+            {attentionChips.map((chip) => {
+              const isActive = controller.attentionFilter === chip.id;
+              const Icon = chip.icon;
+              return (
+                <button
+                  key={chip.id}
+                  type="button"
+                  onClick={() => controller.setAttentionFilter(isActive ? 'all' : chip.id)}
+                  aria-pressed={isActive}
+                  data-maintenance-attention-chip={chip.id}
+                  className={cn(
+                    'inline-flex min-h-8 items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold transition-colors outline-none',
+                    'focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/25',
+                    isActive
+                      ? 'border-warning bg-warning-bg text-warning-text'
+                      : 'border-border/70 bg-card text-muted-foreground hover:bg-warning-bg/60 hover:text-warning-text',
+                  )}
+                >
+                  {Icon ? <Icon className="size-3" aria-hidden="true" /> : null}
+                  <span>{chip.label}</span>
+                  <span className="tabular-nums">{formatCount(chip.count)}</span>
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
       </section>
 
       <FilterBar
