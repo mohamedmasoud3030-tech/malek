@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
-import { Building2, Edit, FileChartColumn, FileText, UserRoundCog } from 'lucide-react';
+import { Building2, Edit, FileChartColumn, FileText, Landmark, UserRoundCog } from 'lucide-react';
 import { DataRefreshAlert } from '@/components/data-refresh-alert';
 import { Button } from '@/components/ui/button';
 import { SectionTabPanel, SectionTabs } from '@/components/ui/section-tabs';
@@ -12,7 +12,11 @@ import { useAuth } from '@/hooks/use-auth';
 import { useDialogNavigate } from '@/app/router/background-location';
 import type { OwnerActivityRecord } from '@/services/owner-workspace-service';
 import type { OwnerDetailState } from '../types';
+import { getOwnerDisplayName } from '../services/owner-service';
 import { OwnerDossierBody, type OwnerDossierSection } from './owner-dossier-body';
+import { OwnerFinancialAuthoritySection } from './owner-financial-authority-section';
+
+type OwnerDetailSection = OwnerDossierSection | 'financials';
 
 export function OwnerDetailView({
   state,
@@ -82,15 +86,21 @@ function OwnerDetailReady({
 }>) {
   const { authorization } = useAuth();
   const dialogNavigate = useDialogNavigate();
-  const [activeSection, setActiveSection] = useState<OwnerDossierSection>('overview');
+  const [activeSection, setActiveSection] = useState<OwnerDetailSection>('overview');
   const { owner } = state.snapshot;
   // Owner writes are governed by the canonical owners write gate (owners.hub.view):
   // effective grant (or ADMIN/MANAGER role) determines edit availability.
   const canEditOwner = canAccess(authorization, 'owners.hub.view');
   const canViewReports = canAccess(authorization, financialOperationPermissions.viewReports);
+  const canOpenOwnerSettlements = canAccess(authorization, 'financial.owner_settlements.view');
+  // The financial authority tab surfaces server-authoritative settlement
+  // figures; it is only offered to users permitted to read owner settlements
+  // or financial reports (the RPCs themselves also fail closed).
+  const canViewFinancialAuthority = canOpenOwnerSettlements || canViewReports;
   const sections = [
     { id: 'overview', label: 'نظرة عامة', icon: UserRoundCog },
     { id: 'portfolio', label: 'العقارات والعقود', icon: Building2 },
+    ...(canViewFinancialAuthority ? ([{ id: 'financials', label: 'الموقف المالي', icon: Landmark }] as const) : []),
     { id: 'records', label: 'السجل والمستندات', icon: FileText },
   ] as const;
 
@@ -138,6 +148,18 @@ function OwnerDetailReady({
       <SectionTabPanel id="portfolio" activeId={activeSection}>
       <OwnerDossierBody snapshot={state.snapshot} section="portfolio" />
       </SectionTabPanel>
+      {canViewFinancialAuthority ? (
+        <SectionTabPanel id="financials" activeId={activeSection}>
+          {/* Mount only after the user opens the tab so the authority RPCs run on demand. */}
+          {activeSection === 'financials' ? (
+            <OwnerFinancialAuthoritySection
+              ownerId={owner.id}
+              ownerName={getOwnerDisplayName(owner)}
+              canOpenOwnerSettlements={canOpenOwnerSettlements}
+            />
+          ) : null}
+        </SectionTabPanel>
+      ) : null}
       <SectionTabPanel id="records" activeId={activeSection}>
       <OwnerDossierBody snapshot={state.snapshot} activity={activity} section="records" />
       </SectionTabPanel>
