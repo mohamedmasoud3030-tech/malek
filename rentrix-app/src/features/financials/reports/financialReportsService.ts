@@ -6,16 +6,18 @@ export {
   getBalanceSheetReport,
   getIncomeStatementReport,
   getTrialBalanceReport,
-  normalizeBalanceSheetReport,
-  normalizeIncomeStatementReport,
-  normalizeTrialBalanceReport,
   type BalanceSheetReport,
   type BalanceSheetSectionItem,
   type IncomeStatementLine,
   type IncomeStatementReport,
   type TrialBalanceAccount,
   type TrialBalanceReport,
-} from './accounting-reports-service';
+} from '@/features/accounting/reports/accountingReportsFacade';
+
+export function normalizeBalanceSheetReport(payload: unknown) { return payload; }
+export function normalizeIncomeStatementReport(payload: unknown) { return payload; }
+export function normalizeTrialBalanceReport(payload: unknown) { return payload; }
+
 export {
   getOwnerStatementReport,
   getTenantStatementReport,

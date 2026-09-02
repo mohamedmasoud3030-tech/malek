@@ -32,7 +32,6 @@ describe('feature flag definitions', () => {
       'owner-agreements-v2',
       'dashboard-v2',
       'commission-lifecycle-v2',
-      'next-accounting',
     ];
     const actualKeys = flags.map((flag) => flag.key);
 

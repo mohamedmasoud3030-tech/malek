@@ -3,7 +3,7 @@ import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { formatMoney } from '@/features/financials/components/financials-formatters';
-import type { CashFlowReport } from '@/features/accounting/wp05Services';
+import type { CashFlowReport } from '@/features/accounting/reports/accountingReportsFacade';
 import type { VatReturnReport } from '@/features/financials/reports/financial-statements-service';
 import { ReportColumns, ReportPanel, ReportPanelSkeleton, ReportSummaryStrip } from '@/components/ui/report-section-primitives';
 import { formatLatinNumber } from '@/lib/formatters';
@@ -109,8 +109,8 @@ export function RegulatorySummaryPanels({
         description="حركة النقدية والبنوك 1111/1120 من القيود المرحّلة، مع رصيد افتتاحي وختامي وفحص اتزان. هذا هو مسار Cash Flow المحاسبي؛ المقارنة التشغيلية بين التحصيل والمصروفات منفصلة."
         icon={WalletCards}
         action={cashFlow ? (
-          <StatusBadge tone={cashFlow.is_balanced ? 'success' : 'danger'}>
-            {cashFlow.is_balanced ? 'متوازن' : 'غير متوازن'}
+          <StatusBadge tone={cashFlow.isBalanced ? 'success' : 'danger'}>
+            {cashFlow.isBalanced ? 'متوازن' : 'غير متوازن'}
           </StatusBadge>
         ) : undefined}
       >
@@ -127,18 +127,18 @@ export function RegulatorySummaryPanels({
           </div>
         ) : (
           <ResponsiveCardGrid className="p-4" gap="sm">
-            <KpiCard label="الرصيد الافتتاحي" value={formatMoney(cashFlow.opening_cash)} icon={WalletCards} compact />
+            <KpiCard label="الرصيد الافتتاحي" value={formatMoney(cashFlow.openingCash)} icon={WalletCards} compact />
             <KpiCard label="التشغيل" value={formatMoney(cashFlow.operating)} icon={WalletCards} compact />
             <KpiCard label="الاستثمار" value={formatMoney(cashFlow.investing)} icon={Scale} compact />
             <KpiCard label="التمويل" value={formatMoney(cashFlow.financing)} icon={Scale} compact />
             <KpiCard label="غير مصنف" value={formatMoney(cashFlow.unclassified)} icon={AlertTriangle} compact />
-            <KpiCard label="صافي التغير" value={formatMoney(cashFlow.total_change)} icon={CalendarRange} compact />
-            <KpiCard label="الرصيد الختامي" value={formatMoney(cashFlow.closing_cash)} icon={WalletCards} compact />
+            <KpiCard label="صافي التغير" value={formatMoney(cashFlow.totalChange)} icon={CalendarRange} compact />
+            <KpiCard label="الرصيد الختامي" value={formatMoney(cashFlow.closingCash)} icon={WalletCards} compact />
             <KpiCard
               label="فرق الاتزان"
               value={formatMoney(cashFlow.variance)}
               icon={Scale}
-              sub={cashFlow.is_balanced ? 'الافتتاحي + الحركة = الختامي' : 'يحتاج مراجعة قبل الاعتماد'}
+              sub={cashFlow.isBalanced ? 'الافتتاحي + الحركة = الختامي' : 'يحتاج مراجعة قبل الاعتماد'}
               compact
             />
           </ResponsiveCardGrid>

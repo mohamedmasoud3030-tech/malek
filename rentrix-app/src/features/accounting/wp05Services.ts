@@ -8,6 +8,10 @@
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
 import type { Json } from '@/types/database';
+import {
+  getReconciliationReport,
+  assertReconciliation as assertReconciliationCanonical,
+} from '@/features/accounting/reports/reconciliation/reconciliationService';
 
 function asRecord(v: unknown): Record<string, unknown> {
   return (v && typeof v === 'object' && !Array.isArray(v) ? v : {}) as Record<string, unknown>;
@@ -48,18 +52,12 @@ export type ReconciliationRow = {
 };
 
 export async function getReconciliation(asOf?: string): Promise<ReconciliationRow[]> {
-  const p_as_of = asOf ?? todayLocalDate();
-  const { data, error } = await supabase.rpc('wp05_reconcile_all', { p_as_of });
-  if (error) {
+  try {
+    return await getReconciliationReport(asOf);
+  } catch (error) {
     handleSupabaseError(error, 'تعذر تحميل مطابقة دفتر الأستاذ');
     return [];
   }
-  // data may be array directly (since function returns table)
-  if (Array.isArray(data)) {
-    return data.map(normalizeReconciliationRow);
-  }
-  const rows = asArray(asRecord(data).rows ?? data);
-  return rows.map(normalizeReconciliationRow);
 }
 
 function normalizeReconciliationRow(v: unknown): ReconciliationRow {
@@ -80,10 +78,7 @@ function normalizeReconciliationRow(v: unknown): ReconciliationRow {
 }
 
 export async function assertReconciliation(asOf?: string): Promise<{ success: boolean; details?: unknown }> {
-  const p_as_of = asOf ?? todayLocalDate();
-  const { data, error } = await supabase.rpc('wp05_assert_reconciliation', { p_as_of });
-  if (error) throw error;
-  return asRecord(data) as { success: boolean; details?: unknown };
+  return assertReconciliationCanonical(asOf);
 }
 
 // ---------------------------------------------------------------------------

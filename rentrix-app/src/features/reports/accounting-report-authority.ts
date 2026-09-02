@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import {
   getCashFlowReport,
-  getReconciliation,
+  getReconciliationReport as getReconciliation,
   type CashFlowReport,
   type ReconciliationRow,
-} from '@/features/accounting/wp05Services';
+} from '@/features/accounting/reports/accountingReportsFacade';
 
 export const REQUIRED_RECONCILIATION_ACCOUNT_NOS = ['1201', '1300', '2000', '2200', '2300'] as const;
 
