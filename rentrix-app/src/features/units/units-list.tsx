@@ -9,20 +9,13 @@ import { ActionMenu } from "@/components/ui/action-menu";
 import { EntityCell } from "@/components/ui/entity-cell";
 import { EntityTable, type ColumnDef } from "@/components/ui/entity-table";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { formatMoney } from "@/hooks/useCompanyFormatters";
 import { useAuth } from "@/hooks/use-auth";
 import type { Unit } from "@/types/domain";
-import { unitStatusLabels } from "./unit-schema";
+import { unitStatusLabels, unitStatusToneFor } from "./unit-schema";
+import { UnitRentCell } from "./components/unit-cells";
 import { UnitFormModal } from "./unit-form-modal";
 import { useSoftDeleteUnit } from "./use-units";
 import { useUnitContractDrafts } from "@/features/contracts/queries/useUnitContractDrafts";
-
-const unitStatusTone = {
-  available: "success",
-  occupied: "info",
-  maintenance: "warning",
-  reserved: "neutral",
-} as const;
 
 const unitColumnOptions = [
   { key: "unit_number", label: "رقم الوحدة", locked: true },
@@ -105,7 +98,7 @@ export function UnitsList({
       priority: "primary",
       render: (unit) => (
         <span className="flex flex-wrap gap-1.5">
-          <StatusBadge tone={unitStatusTone[unit.status]}>
+          <StatusBadge tone={unitStatusToneFor(unit.status)}>
             {unitStatusLabels[unit.status]}
           </StatusBadge>
           {canViewContracts && unitDraftsByUnitId.has(unit.id) ? <StatusBadge tone="warning">مسودة عقد قيد الإعداد</StatusBadge> : null}
@@ -116,11 +109,7 @@ export function UnitsList({
       key: "rent_amount",
       header: "الإيجار",
       priority: "secondary",
-      render: (unit) => (
-        <span dir="ltr" className="block font-bold">
-          {formatMoney(unit.rent_amount)}
-        </span>
-      ),
+      render: (unit) => <UnitRentCell amount={unit.rent_amount} />,
     },
     {
       key: "notes",

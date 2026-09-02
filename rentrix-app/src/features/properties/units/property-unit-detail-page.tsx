@@ -13,9 +13,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { formatMoney } from '@/hooks/useCompanyFormatters';
 import { PropertyInfoItem } from '../components/property-info-item';
 import { useProperty } from '../use-properties';
-import { unitStatusLabels } from '@/features/units/unit-schema';
-
-const unitStatusTone = { available: 'success', occupied: 'info', maintenance: 'warning', reserved: 'neutral' } as const;
+import { unitStatusLabels, unitStatusToneFor } from '@/features/units/unit-schema';
 
 export function PropertyUnitDetailPage() {
   const params = useParams({ strict: false });
@@ -63,7 +61,7 @@ export function PropertyUnitDetailPage() {
             backLabel="العودة للوحدات"
             status={
               <span className="flex flex-wrap gap-1.5">
-                <StatusBadge tone={unitStatusTone[unit.status as keyof typeof unitStatusTone] ?? 'neutral'}>
+                <StatusBadge tone={unitStatusToneFor(unit.status)}>
                   {unitStatusLabels[unit.status as keyof typeof unitStatusLabels] ?? unit.status}
                 </StatusBadge>
                 {pendingDraft ? <StatusBadge tone="warning">مسودة عقد قيد الإعداد</StatusBadge> : null}

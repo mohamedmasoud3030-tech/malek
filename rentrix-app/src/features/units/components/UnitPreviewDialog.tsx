@@ -7,7 +7,7 @@ import { ErrorState } from '@/components/ui/error-state';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useCompanyFormatters } from '@/hooks/useCompanyFormatters';
 import { useUnitDetail } from '../use-units';
-import { normalizeUnitStatus, unitStatusLabels } from '../unit-schema';
+import { normalizeUnitStatus, unitStatusLabels, unitStatusTones } from '../unit-schema';
 
 export function UnitPreviewDialog({
   unitId,
@@ -57,7 +57,7 @@ export function UnitPreviewDialog({
                   </p>
                 </div>
               </div>
-              {status ? <StatusBadge tone={status === 'occupied' ? 'success' : status === 'available' ? 'info' : 'warning'}>{unitStatusLabels[status]}</StatusBadge> : null}
+              {status ? <StatusBadge tone={unitStatusTones[status]}>{unitStatusLabels[status]}</StatusBadge> : null}
             </div>
             <DetailFields
               columns={3}

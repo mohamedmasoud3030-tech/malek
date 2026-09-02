@@ -28,14 +28,9 @@ import { formatMoney, formatNumber } from "@/hooks/useCompanyFormatters";
 import { useAuth } from "@/hooks/use-auth";
 import { UnitFormModal } from "./unit-form-modal";
 import { UnitPreviewDialog } from "./components/UnitPreviewDialog";
+import { UnitRentCell } from "./components/unit-cells";
+import { unitStatusTones } from "./unit-schema";
 import type { Unit } from "@/types/domain";
-
-const unitStatusTone = {
-  available: "success",
-  occupied: "info",
-  maintenance: "warning",
-  reserved: "neutral",
-} as const;
 
 const unitRegisterColumnOptions = [
   { key: "unit_number", label: "الوحدة", locked: true },
@@ -120,7 +115,7 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
       render: (unit) => {
         const unitStatus = getUnitPageStatus(unit);
         return (
-          <StatusBadge tone={unitStatusTone[unitStatus]}>
+          <StatusBadge tone={unitStatusTones[unitStatus]}>
             {ctrl.statusLabels[unitStatus]}
           </StatusBadge>
         );
@@ -130,11 +125,7 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
       key: "rent",
       header: "الإيجار",
       priority: "secondary",
-      render: (unit) => (
-        <span dir="ltr" className="block font-bold tabular-nums">
-          {formatMoney(unit.rent_amount)}
-        </span>
-      ),
+      render: (unit) => <UnitRentCell amount={unit.rent_amount} />,
     },
     {
       key: "notes",

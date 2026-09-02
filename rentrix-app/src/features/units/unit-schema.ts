@@ -26,6 +26,35 @@ export const unitStatusLabels: Record<UnitStatus, string> = {
   reserved: 'محجوزة',
 };
 
+/**
+ * Canonical status→tone semantics shared by every unit surface (portfolio
+ * register, property units register, unit detail, unit preview).
+ *
+ * `available` is the only rentable-vacancy status (success = actionable
+ * inventory); `occupied` is healthy operation (info); `maintenance` and
+ * `reserved` are NOT rentable vacancy — maintenance demands attention
+ * (warning) and reserved is intentionally parked (neutral). This mirrors the
+ * vacancy semantics in features/units/vacancy-analytics.ts, where vacancy
+ * means `available` only.
+ */
+export const unitStatusTones = {
+  available: 'success',
+  occupied: 'info',
+  maintenance: 'warning',
+  reserved: 'neutral',
+} as const satisfies Record<UnitStatus, string>;
+
+export type UnitStatusTone = (typeof unitStatusTones)[UnitStatus];
+
+/** Tolerant tone lookup for raw DB status strings (legacy `rented` included). */
+export function unitStatusToneFor(status: string): UnitStatusTone {
+  try {
+    return unitStatusTones[normalizeUnitStatus(status)];
+  } catch {
+    return 'neutral';
+  }
+}
+
 export function isUnitOperationallyManagedStatus(status: UnitStatus): boolean {
   return status === 'occupied' || status === 'maintenance';
 }
