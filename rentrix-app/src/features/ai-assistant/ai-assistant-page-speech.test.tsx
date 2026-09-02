@@ -161,7 +161,7 @@ beforeEach(() => {
   const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
     if (url.includes('/functions/v1/ai-assistant')) {
-      const body = {
+      const body: { reply: string | null; grounded: boolean; caveats: string[]; meta: { source: string } } = {
         reply: null,
         grounded: true,
         caveats: ['قراءة فقط'],
@@ -199,12 +199,18 @@ function renderPage() {
 }
 
 async function askQuickAction(clicks: ReturnType<typeof userEvent.setup>, title: string): Promise<void> {
-  const action = screen.getByRole('button', { name: title });
+  // Secondary operational actions live behind the progressive "المزيد"
+  // disclosure; expand it when the requested quick action is not visible yet.
+  let action = screen.queryByRole('button', { name: title });
+  if (!action) {
+    await clicks.click(screen.getByRole('button', { name: 'المزيد' }));
+    action = screen.getByRole('button', { name: title });
+  }
   await clicks.click(action);
 }
 
 function assistantReplyBubbles(): HTMLElement[] {
-  return [...document.querySelectorAll('[data-ai-speech-message-id]')];
+  return [...document.querySelectorAll<HTMLElement>('[data-ai-speech-message-id]')];
 }
 
 /**

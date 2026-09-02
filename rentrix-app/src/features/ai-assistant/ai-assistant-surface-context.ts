@@ -29,18 +29,20 @@ function sanitizeId(raw: string | undefined | null): string | null {
 
 type SurfacePattern = {
   entityType: Exclude<AiAssistantSurfaceEntityType, null>;
-  /** Which path segment holds the entity id (1-based from the segments). */
+  /** Which path segment (0-based, after filtering empty segments) holds the entity id. */
   idSegment: number;
-  /** Matched when the path segment equals this value (no id). */
-  fixedSegment?: string;
+  /** When set, this segment must equal the given literal for the pattern to match. */
+  literalSegments?: Readonly<Record<number, string>>;
 };
 
 /**
  * Entity detail shapes, in match order (most specific first). Segment index
- * 0 is the first segment after the leading empty string.
+ * 0 is the first non-empty path segment (e.g. `properties` in
+ * `/properties/:propertyId`).
  */
 const ENTITY_PATTERNS: readonly SurfacePattern[] = [
-  { entityType: 'unit', idSegment: 4 }, // /properties/:propertyId/units/:unitId
+  // /properties/:propertyId/units/:unitId (canonical unit detail route)
+  { entityType: 'unit', idSegment: 3, literalSegments: { 2: 'units' } },
   { entityType: 'property', idSegment: 1 }, // /properties/:propertyId (+ /units)
   { entityType: 'contract', idSegment: 1 }, // /contracts/:contractId
   { entityType: 'tenant', idSegment: 1 }, // /tenants/:tenantId
@@ -72,7 +74,6 @@ export function deriveAiAssistantSurfaceContext(
   const section = sectionForRoot(base);
 
   const candidate = ENTITY_PATTERNS.find((pattern) => {
-    if (pattern.fixedSegment && segments[0] !== pattern.fixedSegment) return false;
     const expectedRoot =
       pattern.entityType === 'unit' || pattern.entityType === 'property'
         ? 'properties'
@@ -83,7 +84,13 @@ export function deriveAiAssistantSurfaceContext(
             : pattern.entityType === 'owner'
               ? 'owners'
               : 'people';
-    return segments[0] === expectedRoot && segments.length > pattern.idSegment;
+    if (segments[0] !== expectedRoot || segments.length <= pattern.idSegment) return false;
+    if (pattern.literalSegments) {
+      for (const [index, literal] of Object.entries(pattern.literalSegments)) {
+        if (segments[Number(index)] !== literal) return false;
+      }
+    }
+    return true;
   });
 
   if (!candidate) {

@@ -11,7 +11,12 @@ const violations = [];
 // cross-feature access until its integration seam is reviewed and added here.
 const featureDependencyAllowList = new Map([
   ['admin-support', new Set(['auth'])],
-  ['ai-assistant', new Set(['financials'])],
+  // ai-assistant reads the canonical maintenance lifecycle seam
+  // (normalize/attention derivation + the Maintenance row type) so its
+  // operational snapshot reuses the single maintenance vocabulary instead of
+  // duplicating it. Reviewed integration seam: query-only, no writes, and the
+  // maintenance workspace stays the authority for lifecycle transitions.
+  ['ai-assistant', new Set(['financials', 'maintenance'])],
   ['automation', new Set(['communication'])],
   ['audit', new Set(['auth', 'settings'])],
   // UX-049: commissions source selector queries contracts, leads, lands, people, and
