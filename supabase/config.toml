@@ -15,6 +15,12 @@ schema_paths = []
 enabled = true
 sql_paths = ["./seed.sql"]
 
+# The AI assistant is authenticated through the user's Supabase JWT. Keep this
+# explicit so automated production deployments cannot accidentally weaken the
+# runtime boundary.
+[functions.ai-assistant]
+verify_jwt = true
+
 # Scheduled worker uses a dedicated 32+ character invocation secret and performs
 # its own constant-time check. No Production schedule is enabled by this config.
 [functions.background-worker]
