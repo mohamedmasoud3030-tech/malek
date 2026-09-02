@@ -91,10 +91,10 @@ export function getMaintenanceStatusActions(status: 'open' | 'in_progress' | 're
 }
 
 /**
- * Owns all MaintenancePage data fetching (maintenance requests, properties,
- * units), filter state, and the three overlay workflows (create/edit request,
- * details view, resolve-with-cost). MaintenancePage composes this hook with
- * MaintenanceList and the overlay components and stays render-only.
+ * Owns all MaintenanceWorkspace data fetching (maintenance requests,
+ * properties, units), filter state, and the three overlay workflows
+ * (create/edit request, details view, resolve-with-cost). The production
+ * workspace composes this hook with MaintenanceList and the overlays.
  */
 export function useMaintenancePageController() {
   const activeCompanyId = useActiveCompanyId();
