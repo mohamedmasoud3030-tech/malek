@@ -103,6 +103,21 @@ beforeAll(async () => {
        'd1000000-0000-4000-8000-000000000071', date '2026-01-03', date '2026-11-10', 100, 'active', '${COMPANY}');
   `);
 
+  // Unit occupancy is the explicit aggregate fixture under test. Contract
+  // projection triggers consult wall-clock current_date, which would make this
+  // fixed 2026 replay decay after a lease end date; restore the intended
+  // snapshot statuses after seeding the dated contracts so the SQL aggregate
+  // proof stays deterministic in every future CI run.
+  await db.exec(`
+    update public.units
+       set status = 'occupied'
+     where id in (
+       'd1000000-0000-4000-8000-000000000101',
+       'd1000000-0000-4000-8000-000000000102',
+       'd1000000-0000-4000-8000-000000000106'
+     );
+  `);
+
   // >1000 overdue invoices attached to contract 201, all inside the period,
   // all due before AS_OF. generate_series keeps the seed fast and exact.
   await db.exec(`

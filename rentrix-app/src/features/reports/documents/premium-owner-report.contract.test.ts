@@ -5,14 +5,14 @@ import { describe, expect, it } from 'vitest';
 
 const here = resolve(dirname(fileURLToPath(import.meta.url)));
 const source = readFileSync(resolve(here, 'premium-owner-report.ts'), 'utf8');
-const statements = readFileSync(resolve(here, '../components/StatementsSection.tsx'), 'utf8');
+const actions = readFileSync(resolve(here, '../premium/statement-report-actions.ts'), 'utf8');
 
 describe('premium owner statement — preservation and evidence contract', () => {
   it('enriches the Golden Owner Report rather than replacing its financial truth', () => {
     expect(source).toContain('buildOwnerReportPayload');
     expect(source).toContain('loadOwnerReportContext');
     expect(source).toContain('groups: [base.groups[0], assetGroup, ...base.groups.slice(1)]');
-    expect(statements).toContain('loadPremiumOwnerReportPayload');
+    expect(actions).toContain('loadPremiumOwnerReportPayload');
   });
 
   it('uses only existing RLS-scoped read services for unit and collection evidence', () => {
