@@ -217,11 +217,14 @@ describe('UnitsPage controller regression', () => {
     expect(searchInput.placeholder).toBe('رقم الوحدة، الدور، العقار');
   });
 
-  it('displays unit count in the shared summary strip', async () => {
+  it('keeps the shared summary strip focused on operational KPIs without duplicating total unit count', async () => {
     await act(async () => { root.render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><UnitsPage /></QueryClientProvider>); });
     const summary = container.querySelector('[data-unit-summary]');
     expect(summary).toBeTruthy();
-    expect(summary?.textContent).toContain('الوحدات');
-    expect(summary?.textContent).toContain('3');
+    expect(summary?.textContent).toContain('الإشغال');
+    expect(summary?.textContent).toContain('33%');
+    expect(summary?.textContent).toContain('متاحة');
+    expect(summary?.textContent).toContain('صيانة');
+    expect(summary?.textContent).not.toContain('الوحدات');
   });
 });
