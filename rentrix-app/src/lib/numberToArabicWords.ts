@@ -91,6 +91,20 @@ function convertIntegerPart(n: number): string {
   return parts.join(' و');
 }
 
+/**
+ * Converts a non-negative integer (up to 999,999) into formal Arabic words.
+ *
+ * Exported for the assistant speech layer (TTS): monetary amounts and
+ * percentages are spoken as words so three-decimal OMR values read
+ * naturally. The tafqeet API below keeps its exact behaviour.
+ */
+export function integerToArabicWords(value: number): string {
+  if (!Number.isFinite(value) || value < 0) return '';
+  const integer = Math.floor(value);
+  if (integer >= 1_000_000) return '';
+  return convertIntegerPart(integer);
+}
+
 export type CurrencyConfig = {
   mainUnitSingular: string; // e.g. "ريال عماني"
   mainUnitPlural: string;   // e.g. "ريالات عمانية"

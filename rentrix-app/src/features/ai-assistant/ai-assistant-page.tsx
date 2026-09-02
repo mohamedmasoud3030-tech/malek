@@ -13,6 +13,8 @@ import type { AiAssistantAction, AiAssistantMessage, AiAssistantResponse } from 
 import { useSmartAssistant } from './use-smart-assistant';
 import { isAiAssistantConfigurationError } from './services/ai-assistant-service';
 import { buildAiNavigationTargets } from './ai-assistant-navigation';
+import { AssistantSpeechControl } from './speech/assistant-speech-control';
+import { useAssistantSpeech } from './speech/use-assistant-speech';
 
 type AssistantAction = {
   action: AiAssistantAction;
@@ -85,6 +87,7 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
   const [input, setInput] = useState('');
   const [configurationMissing, setConfigurationMissing] = useState(!env.isConfigured);
   const assistant = useSmartAssistant();
+  const { autoSpeak, setAutoSpeak, speakCompletedMessage } = useAssistantSpeech();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const pending = assistant.isPending;
@@ -107,7 +110,11 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
       { prompt, action, history },
       {
         onSuccess: (response) => {
-          setMessages((current) => [...current, createMessage('assistant', formatAssistantResponse(response), action)]);
+          const reply = createMessage('assistant', formatAssistantResponse(response), action);
+          setMessages((current) => [...current, reply]);
+          // Voice is an extra modality: the text above is canonical, and audio
+          // only plays automatically when the user opted in (default OFF).
+          speakCompletedMessage(reply);
         },
         onError: (error) => {
           if (isAiAssistantConfigurationError(error)) setConfigurationMissing(true);
@@ -166,6 +173,7 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
                     )}
                   >
                     <p className="whitespace-pre-wrap break-words">{message.content}</p>
+                    {!isUser ? <AssistantSpeechControl messageId={message.id} content={message.content} /> : null}
                     {navigationTargets.length > 0 ? (
                       <div className="mt-2 flex flex-wrap gap-1.5" data-ai-navigation>
                         {navigationTargets.map((target) => (
@@ -277,14 +285,28 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
   return (
     <PageLayout size="wide" dir="rtl" lang="ar" className="p-0">
       <div className="mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-border/70 bg-card shadow-card">
-        <div className="flex shrink-0 items-center gap-2 border-b border-border/70 bg-muted/20 px-4 py-3">
-          <div className="grid size-8 place-items-center rounded-full bg-primary text-primary-foreground">
-            <Bot className="size-4" />
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border/70 bg-muted/20 px-4 py-3">
+          <div className="flex min-w-0 items-center gap-2">
+            <div className="grid size-8 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
+              <Bot className="size-4" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-bold">المساعد الذكي</p>
+              <p className="truncate text-xs text-muted-foreground">مساعد {APP_BRAND_NAME} للقراءة والتحليل</p>
+            </div>
           </div>
-          <div>
-            <p className="text-sm font-bold">المساعد الذكي</p>
-            <p className="text-xs text-muted-foreground">مساعد {APP_BRAND_NAME} للقراءة والتحليل</p>
-          </div>
+          <label
+            className="flex min-h-11 shrink-0 cursor-pointer select-none items-center gap-2 rounded-lg border border-border/60 bg-background/50 px-3 py-1.5 text-xs font-bold text-foreground/80 transition hover:bg-muted"
+            title="عند التفعيل، تُنطق ردود المساعد الجديدة تلقائياً"
+          >
+            <span className="whitespace-nowrap">التحدث التلقائي</span>
+            <input
+              type="checkbox"
+              checked={autoSpeak}
+              onChange={(event) => setAutoSpeak(event.target.checked)}
+              aria-label="التحدث تلقائياً بردود المساعد"
+            />
+          </label>
         </div>
         {configurationMissing ? (
           <Card role="alert" className="m-3 border-warning/40 bg-warning/10">
