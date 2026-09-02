@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { ROUTE_CONTRACT } from '@/app/navigation/route-contract';
 import {
   buildAiNavigationTargets,
   isAllowedAiNavigationTarget,
@@ -13,6 +14,19 @@ const ALL_ACTIONS: readonly AiAssistantAction[] = [
   'summarize_month',
   'draft_tenant_payment_reminder',
   'explain_property_financial_snapshot',
+  'explain_current_surface',
+  'identify_riskiest_overdue_tenants',
+  'list_contracts_needing_action_this_week',
+  'locate_dormant_funds',
+  'list_vacant_units_needing_followup',
+  'identify_lowest_performing_properties',
+  'list_overdue_or_critical_maintenance',
+  'prioritize_office_actions_top5',
+  'generate_daily_brief',
+  'draft_contract_renewal_followup',
+  'draft_maintenance_followup',
+  'draft_owner_summary',
+  'draft_internal_note',
 ];
 
 describe('buildAiNavigationTargets', () => {
@@ -42,6 +56,27 @@ describe('buildAiNavigationTargets', () => {
 
   it('never derives destinations from model output (closed union only)', () => {
     expect(buildAiNavigationTargets('post_journal' as AiAssistantAction)).toEqual([]);
+  });
+
+  it('gives every v3 operational action only canonical route-contract destinations', () => {
+    const canonicalRoutes = new Set(ROUTE_CONTRACT.map((entry) => entry.canonical));
+    for (const action of ALL_ACTIONS) {
+      for (const target of buildAiNavigationTargets(action)) {
+        expect(canonicalRoutes.has(target.to), `${action} → ${target.to} must be a canonical MALEK route`).toBe(true);
+        expect(isAllowedAiNavigationTarget(target)).toBe(true);
+      }
+    }
+  });
+
+  it('routes the new operational actions to their owning workspaces', () => {
+    expect(buildAiNavigationTargets('list_overdue_or_critical_maintenance')[0]?.to).toBe('/maintenance');
+    expect(buildAiNavigationTargets('locate_dormant_funds')[0]?.to).toBe('/financials');
+    expect(buildAiNavigationTargets('generate_daily_brief')[0]?.to).toBe('/dashboard');
+    expect(buildAiNavigationTargets('prioritize_office_actions_top5')[0]?.to).toBe('/dashboard');
+    expect(buildAiNavigationTargets('identify_riskiest_overdue_tenants').map((target) => target.to)).toContain('/reports');
+    expect(buildAiNavigationTargets('list_vacant_units_needing_followup').map((target) => target.to)).toContain('/properties');
+    expect(buildAiNavigationTargets('draft_owner_summary')[0]?.to).toBe('/owners');
+    expect(buildAiNavigationTargets('draft_maintenance_followup').map((target) => target.to)).toContain('/communication');
   });
 });
 

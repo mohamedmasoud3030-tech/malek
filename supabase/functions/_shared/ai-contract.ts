@@ -3,7 +3,7 @@ export type JsonObject = Record<string, unknown>;
 export type ChatRole = "system" | "user" | "assistant";
 export type ChatMessage = { role: ChatRole; content: string };
 
-export const AI_PROMPT_VERSION = "malek-ops-ar-v2";
+export const AI_PROMPT_VERSION = "malek-ops-ar-v3";
 export const AI_OUTPUT_SCHEMA_VERSION = "assistant-response-v1";
 export const AI_ACTIONS = [
   "freeform",
@@ -13,6 +13,19 @@ export const AI_ACTIONS = [
   "summarize_month",
   "draft_tenant_payment_reminder",
   "explain_property_financial_snapshot",
+  "explain_current_surface",
+  "identify_riskiest_overdue_tenants",
+  "list_contracts_needing_action_this_week",
+  "locate_dormant_funds",
+  "list_vacant_units_needing_followup",
+  "identify_lowest_performing_properties",
+  "list_overdue_or_critical_maintenance",
+  "prioritize_office_actions_top5",
+  "generate_daily_brief",
+  "draft_contract_renewal_followup",
+  "draft_maintenance_followup",
+  "draft_owner_summary",
+  "draft_internal_note",
 ] as const;
 export type AiAction = (typeof AI_ACTIONS)[number];
 

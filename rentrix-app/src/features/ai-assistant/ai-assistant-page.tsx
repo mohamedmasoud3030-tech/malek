@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowUpRight, Bot, Loader2, Send, Sparkles } from 'lucide-react';
+import { AlertTriangle, ArrowUpRight, Bot, ChevronDown, Loader2, Send, Sparkles } from 'lucide-react';
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { PageLayout } from '@/components/layout/page-layout';
@@ -9,10 +9,13 @@ import { APP_BRAND_NAME } from '@/lib/brand';
 import { env } from '@/lib/env';
 import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
-import type { AiAssistantAction, AiAssistantMessage, AiAssistantResponse } from './types';
+import type { AiAssistantAction, AiAssistantMessage, AiAssistantResponse, AiAssistantSurfaceContext } from './types';
 import { useSmartAssistant } from './use-smart-assistant';
 import { isAiAssistantConfigurationError } from './services/ai-assistant-service';
 import { buildAiNavigationTargets } from './ai-assistant-navigation';
+import { deriveAiAssistantSurfaceContext } from './ai-assistant-surface-context';
+import { AssistantSpeechControl } from './speech/assistant-speech-control';
+import { useAssistantSpeech } from './speech/use-assistant-speech';
 
 type AssistantAction = {
   action: AiAssistantAction;
@@ -20,11 +23,17 @@ type AssistantAction = {
   prompt: string;
 };
 
+/** Always-visible operational quick actions — the office owner's daily four. */
 const assistantActions = [
   {
     action: 'summarize_overdue_invoices',
     title: 'مين متأخر؟',
     prompt: 'مين متأخر عليا وإجمالي المتأخرات كام؟',
+  },
+  {
+    action: 'generate_daily_brief',
+    title: 'مستحق النهارده',
+    prompt: 'إيه المستحق النهارده وإيه أهم حاجة أعملها؟',
   },
   {
     action: 'summarize_contract_renewals',
@@ -36,12 +45,54 @@ const assistantActions = [
     title: 'الوحدات الفاضية',
     prompt: 'عندي كام وحدة فاضية ونسبة الإشغال كام؟',
   },
+] as const satisfies AssistantAction[];
+
+/** Progressive disclosure: shown only after the user asks for more. */
+const moreAssistantActions = [
+  {
+    action: 'list_overdue_or_critical_maintenance',
+    title: 'الصيانة المفتوحة',
+    prompt: 'إيه طلبات الصيانة المفتوحة أو الحرجة؟',
+  },
+  {
+    action: 'prioritize_office_actions_top5',
+    title: 'أهم 5 إجراءات',
+    prompt: 'إيه أهم 5 حاجات المكتب لازم يعملها النهارده؟',
+  },
   {
     action: 'summarize_month',
     title: 'ملخص الشهر',
     prompt: 'اعمل لي ملخص الشهر ده.',
   },
+  {
+    action: 'locate_dormant_funds',
+    title: 'فلوس واقفة',
+    prompt: 'فين الفلوس الواقفة أو التأمينات المحتجزة؟',
+  },
 ] as const satisfies AssistantAction[];
+
+/** Contextual entity quick action labels (per surface entity type). */
+const surfaceActionTitles: Record<NonNullable<AiAssistantSurfaceContext['entityType']>, string> = {
+  property: 'ملخص العقار ده',
+  unit: 'الوحدة دي عاملة إيه؟',
+  contract: 'العقد ده عامل إيه؟',
+  tenant: 'المستأجر ده عليه إيه؟',
+  owner: 'ملخص المالك ده',
+  person: 'ملخص الملف ده',
+};
+
+/**
+ * Where is the user right now? Derived from the live location so the same
+ * canonical component works on the full route and the floating global panel.
+ * Safe by construction: only sanitized route-shaped ids leave this step, and
+ * the service still verifies them against authoritative rows before use.
+ */
+function readSurfaceContext(): AiAssistantSurfaceContext {
+  if (typeof window === 'undefined') {
+    return { route: '/', entityType: null, entityId: null, entityLabel: null, section: null };
+  }
+  return deriveAiAssistantSurfaceContext(window.location.pathname);
+}
 
 const initialMessage: AiAssistantMessage = {
   id: 'assistant-welcome',
@@ -83,12 +134,27 @@ function formatAssistantResponse(response: AiAssistantResponse): string {
 export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
   const [messages, setMessages] = useState<AiAssistantMessage[]>([initialMessage]);
   const [input, setInput] = useState('');
+  const [showMoreActions, setShowMoreActions] = useState(false);
   const [configurationMissing, setConfigurationMissing] = useState(!env.isConfigured);
   const assistant = useSmartAssistant();
+  const { autoSpeak, setAutoSpeak, speakCompletedMessage } = useAssistantSpeech();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const pending = assistant.isPending;
   const errorMessage = configurationMissing ? null : getErrorMessage(assistant.error);
+  const surface = readSurfaceContext();
+  const surfaceAction: AssistantAction | null = surface.entityType && surface.entityId
+    ? {
+        action: 'explain_current_surface',
+        title: surfaceActionTitles[surface.entityType],
+        prompt: 'اشرح لي وضع الصفحة اللي أنا فيها دلوقتي.',
+      }
+    : null;
+  const visibleActions: readonly AssistantAction[] = [
+    ...(surfaceAction ? [surfaceAction] : []),
+    ...assistantActions,
+    ...(showMoreActions ? moreAssistantActions : []),
+  ];
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
@@ -104,10 +170,14 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
     setInput('');
 
     assistant.mutate(
-      { prompt, action, history },
+      { prompt, action, history, surface: readSurfaceContext() },
       {
         onSuccess: (response) => {
-          setMessages((current) => [...current, createMessage('assistant', formatAssistantResponse(response), action)]);
+          const reply = createMessage('assistant', formatAssistantResponse(response), action);
+          setMessages((current) => [...current, reply]);
+          // Voice is an extra modality: the text above is canonical, and audio
+          // only plays automatically when the user opted in (default OFF).
+          speakCompletedMessage(reply);
         },
         onError: (error) => {
           if (isAiAssistantConfigurationError(error)) setConfigurationMissing(true);
@@ -166,6 +236,7 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
                     )}
                   >
                     <p className="whitespace-pre-wrap break-words">{message.content}</p>
+                    {!isUser ? <AssistantSpeechControl messageId={message.id} content={message.content} /> : null}
                     {navigationTargets.length > 0 ? (
                       <div className="mt-2 flex flex-wrap gap-1.5" data-ai-navigation>
                         {navigationTargets.map((target) => (
@@ -207,7 +278,7 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
 
       <div className={cn('shrink-0 border-t border-border/50 bg-card', embedded ? 'px-2 py-1.5' : 'bg-muted/20 px-3 py-2')}>
         <div className="flex max-w-full gap-1.5 overflow-x-auto overscroll-x-contain no-scrollbar">
-          {assistantActions.map((item) => (
+          {visibleActions.map((item) => (
             <button
               key={item.action}
               type="button"
@@ -222,6 +293,19 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
               {item.title}
             </button>
           ))}
+          <button
+            type="button"
+            onClick={() => setShowMoreActions((current) => !current)}
+            disabled={configurationMissing}
+            aria-expanded={showMoreActions}
+            className={cn(
+              'inline-flex shrink-0 items-center gap-1 rounded-full border border-dashed border-border bg-transparent text-xs font-medium text-muted-foreground transition hover:bg-muted disabled:opacity-50',
+              embedded ? 'min-h-10 px-2.5' : 'min-h-11 px-3',
+            )}
+          >
+            <ChevronDown className={cn('size-3 transition-transform', showMoreActions && 'rotate-180')} />
+            {showMoreActions ? 'أقل' : 'المزيد'}
+          </button>
         </div>
       </div>
 
@@ -277,14 +361,28 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
   return (
     <PageLayout size="wide" dir="rtl" lang="ar" className="p-0">
       <div className="mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-border/70 bg-card shadow-card">
-        <div className="flex shrink-0 items-center gap-2 border-b border-border/70 bg-muted/20 px-4 py-3">
-          <div className="grid size-8 place-items-center rounded-full bg-primary text-primary-foreground">
-            <Bot className="size-4" />
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border/70 bg-muted/20 px-4 py-3">
+          <div className="flex min-w-0 items-center gap-2">
+            <div className="grid size-8 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
+              <Bot className="size-4" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-bold">المساعد الذكي</p>
+              <p className="truncate text-xs text-muted-foreground">مساعد {APP_BRAND_NAME} للقراءة والتحليل</p>
+            </div>
           </div>
-          <div>
-            <p className="text-sm font-bold">المساعد الذكي</p>
-            <p className="text-xs text-muted-foreground">مساعد {APP_BRAND_NAME} للقراءة والتحليل</p>
-          </div>
+          <label
+            className="flex min-h-11 shrink-0 cursor-pointer select-none items-center gap-2 rounded-lg border border-border/60 bg-background/50 px-3 py-1.5 text-xs font-bold text-foreground/80 transition hover:bg-muted"
+            title="عند التفعيل، تُنطق ردود المساعد الجديدة تلقائياً"
+          >
+            <span className="whitespace-nowrap">التحدث التلقائي</span>
+            <input
+              type="checkbox"
+              checked={autoSpeak}
+              onChange={(event) => setAutoSpeak(event.target.checked)}
+              aria-label="التحدث تلقائياً بردود المساعد"
+            />
+          </label>
         </div>
         {configurationMissing ? (
           <Card role="alert" className="m-3 border-warning/40 bg-warning/10">
