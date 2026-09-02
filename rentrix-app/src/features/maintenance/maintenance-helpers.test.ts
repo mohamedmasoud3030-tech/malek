@@ -43,7 +43,6 @@ const secondRequest: Maintenance = {
   id: 'maintenance-2',
   property_id: 'property-2',
   unit_id: null,
-  title: 'تسرب مياه',
   priority: 'medium',
   status: 'in_progress',
 };
@@ -70,11 +69,12 @@ describe('maintenance helpers', () => {
   });
 
   it('searches request identity with Arabic normalization', () => {
-    const rows = filterMaintenanceRequests([baseRequest, secondRequest], {
+    const unrelatedRequest = { ...secondRequest, title: 'تسرب مياه' };
+    const rows = filterMaintenanceRequests([baseRequest, unrelatedRequest], {
       status: 'all',
       priority: 'all',
       propertyId: '',
-      query: 'اصلاح',
+      query: 'المكيف',
     });
 
     expect(rows).toEqual([baseRequest]);
