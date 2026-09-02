@@ -91,17 +91,18 @@ export function getMaintenanceStatusActions(status: 'open' | 'in_progress' | 're
 }
 
 /**
- * Owns all MaintenancePage data fetching (maintenance requests, properties,
- * units), filter state, and the three overlay workflows (create/edit request,
- * details view, resolve-with-cost). MaintenancePage composes this hook with
- * MaintenanceList and the overlay components and stays render-only.
+ * Owns all MaintenanceWorkspace data fetching (maintenance requests,
+ * properties, units), filter state, and the three overlay workflows
+ * (create/edit request, details view, resolve-with-cost). The production
+ * workspace composes this hook with MaintenanceList and the overlays.
  */
 export function useMaintenancePageController() {
   const activeCompanyId = useActiveCompanyId();
   const navigate = useNavigate();
-  const search = useSearch({ strict: false }) as Record<string, unknown>;
-  const requestedId = typeof search.requestId === 'string' ? search.requestId : '';
-  const requestedQuickAdd = search.quickAdd === 'maintenance';
+  const routeSearch = useSearch({ strict: false }) as Record<string, unknown>;
+  const requestedId = typeof routeSearch.requestId === 'string' ? routeSearch.requestId : '';
+  const requestedQuickAdd = routeSearch.quickAdd === 'maintenance';
+  const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<MaintenanceStatusFilter>('all');
   const [priorityFilter, setPriorityFilter] = useState<MaintenancePriorityFilter>('all');
   const [propertyFilterId, setPropertyFilterId] = useState('');
@@ -142,6 +143,14 @@ export function useMaintenancePageController() {
   const providerOptions = providerOptionsQuery.data ?? [];
   const filteredProviderOptions = getCompatibleServiceProviderOptions(providerOptions, selectedProviderCategoryId);
   const maintenanceRows = maintenanceQuery.data ?? [];
+  const searchableContextById = useMemo(() => new Map(
+    maintenanceRows.map((row) => {
+      const propertyLabel = properties.find((property) => property.id === row.property_id)?.title;
+      const unitLabel = allUnits.find((unit) => unit.id === row.unit_id)?.unit_number;
+      const providerLabel = providerOptions.find((provider) => provider.id === row.service_provider_id)?.name;
+      return [row.id, [propertyLabel, unitLabel, providerLabel].filter(Boolean).join(' ')] as const;
+    }),
+  ), [allUnits, maintenanceRows, properties, providerOptions]);
 
   useEffect(() => {
     if (!requestedQuickAdd) return;
@@ -199,8 +208,10 @@ export function useMaintenancePageController() {
       status: statusFilter,
       priority: priorityFilter,
       propertyId: propertyFilterId,
+      query,
+      searchableContextById,
     }),
-    [maintenanceRows, priorityFilter, propertyFilterId, statusFilter],
+    [maintenanceRows, priorityFilter, propertyFilterId, query, searchableContextById, statusFilter],
   );
   // Operational attention (stalled work, requests awaiting closure, missed
   // scheduled visits) is derived from the same rows the register already
@@ -230,7 +241,7 @@ export function useMaintenancePageController() {
   const loadError = maintenanceQuery.error ?? propertiesQuery.error ?? providerCategoriesQuery.error ?? providerOptionsQuery.error;
   const hasLoadError = maintenanceQuery.isError || propertiesQuery.isError || providerCategoriesQuery.isError || providerOptionsQuery.isError;
   const isLoading = maintenanceQuery.isLoading || propertiesQuery.isLoading || providerCategoriesQuery.isLoading || providerOptionsQuery.isLoading;
-  const hasFilters = statusFilter !== 'all' || priorityFilter !== 'all' || propertyFilterId.length > 0 || attentionFilter !== 'all';
+  const hasFilters = query.trim().length > 0 || statusFilter !== 'all' || priorityFilter !== 'all' || propertyFilterId.length > 0 || attentionFilter !== 'all';
   const isEditingResolvedRequest = editingRequest?.status === 'resolved' || editingRequest?.status === 'closed';
 
   const firstCreateError = Object.values(form.formState.errors)
@@ -346,6 +357,8 @@ export function useMaintenancePageController() {
   };
 
   return {
+    query,
+    setQuery,
     statusFilter,
     setStatusFilter,
     priorityFilter,
