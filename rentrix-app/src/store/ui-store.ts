@@ -29,7 +29,7 @@ const getInitialTheme = (): Theme => {
   return (localStorage.getItem('rentrix-theme') as Theme | null) ?? 'dark';
 };
 
-const ASSISTANT_AUTO_SPEAK_STORAGE_KEY = 'rentrix-assistant-auto-speak';
+export const ASSISTANT_AUTO_SPEAK_STORAGE_KEY = 'rentrix-assistant-auto-speak';
 
 /** OFF by default — audio must never be enabled unexpectedly for existing users. */
 const getInitialAssistantAutoSpeak = (): boolean => {
