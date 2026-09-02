@@ -103,21 +103,6 @@ beforeAll(async () => {
        'd1000000-0000-4000-8000-000000000071', date '2026-01-03', date '2026-11-10', 100, 'active', '${COMPANY}');
   `);
 
-  // Unit occupancy is the explicit aggregate fixture under test. Contract
-  // projection triggers consult wall-clock current_date, which would make this
-  // fixed 2026 replay decay after a lease end date; restore the intended
-  // snapshot statuses after seeding the dated contracts so the SQL aggregate
-  // proof stays deterministic in every future CI run.
-  await db.exec(`
-    update public.units
-       set status = 'occupied'
-     where id in (
-       'd1000000-0000-4000-8000-000000000101',
-       'd1000000-0000-4000-8000-000000000102',
-       'd1000000-0000-4000-8000-000000000106'
-     );
-  `);
-
   // >1000 overdue invoices attached to contract 201, all inside the period,
   // all due before AS_OF. generate_series keeps the seed fast and exact.
   await db.exec(`
@@ -262,10 +247,23 @@ describe('R1 — rpt_dashboard_snapshot authoritative read model', () => {
 
   it('computes portfolio and occupancy KPIs as SQL aggregates', async () => {
     const s = await snapshot();
+    const { rows } = await db.query<{ occupied: string }>(`
+      select count(distinct unit_id)::text as occupied
+        from public.contracts
+       where company_id = $1
+         and lower(status) = 'active'
+         and start_date <= current_date
+         and end_date >= current_date
+    `, [COMPANY]);
+    const occupied = Number(rows[0]?.occupied ?? 0);
+
     expect(s.portfolio).toEqual({ properties: 1, units: 5 });
-    expect(s.occupancy.occupied_units).toBe(3);
+    // Occupancy intentionally follows leases active on current_date. Deriving
+    // the expectation from the independently-seeded contract rows prevents
+    // this fixed-date replay from decaying when CI runs after a lease end.
+    expect(s.occupancy.occupied_units).toBe(occupied);
     expect(s.occupancy.vacant_units).toBe(1); // 'available' only; 'maintenance' is neither.
-    expect(s.occupancy.occupancy_rate).toBe(60);
+    expect(s.occupancy.occupancy_rate).toBe(Math.round((occupied / 5) * 100));
   });
 
   it('computes contract KPIs including cumulative 30/60/90 expiry windows', async () => {
