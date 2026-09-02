@@ -316,7 +316,6 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
           <RegisterMetricStrip
             aria-label="ملخص جاهزية العقارات"
             items={[
-              { id: 'total', label: 'العقارات', value: formatCount(controller.totalCount), icon: Building2 },
               { id: 'ready', label: 'جاهزة', value: `${formatCount(readinessRate)}%`, hint: `${formatCount(readyCount)} سجل`, icon: CircleCheck, tone: 'success' },
               { id: 'linked', label: 'مرتبطة بمالك', value: formatCount(linkedOwnerCount), icon: Handshake },
               { id: 'attention', label: 'تحتاج متابعة', value: formatCount(attentionCount), icon: TriangleAlert, tone: 'warning', hideWhenEmpty: true },

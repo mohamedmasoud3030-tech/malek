@@ -64,7 +64,6 @@ export function OwnersWorkspace({ embedded = false }: OwnersWorkspaceProps) {
         <RegisterMetricStrip
           aria-label="ملخص الملاك والملكية"
           items={[
-            { id: 'total', label: 'الملاك', value: formatCount(controller.summary.totalOwners), icon: Users },
             { id: 'active', label: 'نشطون', value: formatCount(controller.summary.activeOwners), icon: Users, tone: 'success' },
             { id: 'coverage', label: 'تغطية الربط', value: `${formatCount(linkedCoverage)}%`, hint: `${formatCount(controller.summary.linkedPropertiesCount)} عقار`, icon: LinkIcon },
             { id: 'unlinked', label: 'بلا مالك', value: formatCount(controller.summary.propertiesWithoutLinkedOwner), icon: Building2, tone: 'warning', hideWhenEmpty: true },
@@ -89,7 +88,7 @@ export function OwnersWorkspace({ embedded = false }: OwnersWorkspaceProps) {
           data-owner-relationships
           className="min-w-0 overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card"
         >
-          <header className="border-b border-border/70 bg-muted/35 px-4 py-4 sm:px-5">
+          <header className="border-b border-border/70 bg-muted/35 px-4 py-3 sm:px-5 sm:py-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
@@ -117,7 +116,7 @@ export function OwnersWorkspace({ embedded = false }: OwnersWorkspaceProps) {
             </div>
           </header>
 
-          <div className="min-h-52 p-4 sm:p-5">
+          <div className="min-h-40 p-3.5 sm:min-h-52 sm:p-5">
             {controller.selectedOwner ? (
               <OwnerRelationshipsList
                 linkedProperties={controller.linkedProperties}
@@ -126,7 +125,7 @@ export function OwnersWorkspace({ embedded = false }: OwnersWorkspaceProps) {
                 onEndLink={controller.handleEndPropertyOwnership}
               />
             ) : (
-              <div className="grid min-h-44 place-items-center rounded-xl border border-dashed border-border/80 bg-muted/20 p-6 text-center">
+              <div className="grid min-h-32 place-items-center rounded-xl border border-dashed border-border/80 bg-muted/20 p-4 text-center sm:min-h-44 sm:p-6">
                 <div>
                   <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-primary/9 text-primary">
                     <LinkIcon className="size-5" aria-hidden="true" />

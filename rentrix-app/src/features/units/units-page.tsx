@@ -237,7 +237,6 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
           <RegisterMetricStrip
             aria-label="ملخص تشغيل الوحدات"
             items={[
-              { id: 'total', label: 'الوحدات', value: formatNumber(totalUnits), icon: DoorOpen },
               { id: 'occupancy', label: 'الإشغال', value: `${formatNumber(occupancyRate)}%`, hint: `${formatNumber(ctrl.kpis.occupiedCount)} مشغولة`, icon: CircleGauge },
               { id: 'available', label: 'متاحة', value: formatNumber(ctrl.kpis.availableCount), icon: Home, tone: 'success', hideWhenEmpty: true },
               { id: 'maintenance', label: 'صيانة', value: formatNumber(maintenanceCount), icon: Wrench, tone: 'warning', hideWhenEmpty: true },

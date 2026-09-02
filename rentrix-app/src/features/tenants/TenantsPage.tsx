@@ -32,22 +32,21 @@ function getTenantLocationText(tenant: TenantWorkspaceRow) {
   };
 }
 
-function TenantSummary({ rows, total }: Readonly<{ rows: TenantWorkspaceRow[]; total: number }>) {
+function TenantSummary({ rows }: Readonly<{ rows: TenantWorkspaceRow[] }>) {
   const activeContracts = rows.reduce((sum, tenant) => sum + tenant.activeContractCount, 0);
   const arrearsCount = rows.filter((tenant) => tenant.hasArrears).length;
   const assignedCount = rows.filter((tenant) => tenant.propertyTitle !== null || tenant.unitNumber !== null).length;
 
   const items = [
-    { label: 'إجمالي المستأجرين', value: total, icon: Users, hint: 'جميع السجلات المطابقة' },
     { label: 'العقود النشطة', value: activeContracts, icon: KeyRound, hint: 'ضمن الصفحة الحالية' },
-    { label: 'مرتبطون بوحدات', value: assignedCount, icon: Building2, hint: 'لديهم عقار أو وحدة حالية' },
+    { label: 'مرتبطون بوحدات', value: assignedCount, icon: Building2, hint: 'ضمن الصفحة الحالية' },
     { label: 'بحاجة لمتابعة', value: arrearsCount, icon: AlertTriangle, hint: 'ضمن الصفحة الحالية' },
   ];
 
   return (
-    <section data-tenant-summary aria-label="ملخص المستأجرين">
+    <section data-tenant-summary aria-label="ملخص الصفحة الحالية للمستأجرين">
       <RegisterMetricStrip
-        aria-label="ملخص المستأجرين"
+        aria-label="ملخص الصفحة الحالية للمستأجرين"
         items={items.map((item) => ({
           id: item.label,
           label: item.label,
@@ -201,7 +200,7 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
           />
         )}
       >
-        {!tenantsQuery.isLoading && !tenantsQuery.isError ? <TenantSummary rows={rows} total={totalCount} /> : null}
+        {!tenantsQuery.isLoading && !tenantsQuery.isError ? <TenantSummary rows={rows} /> : null}
 
         <section data-tenant-register className="min-w-0 space-y-2.5">
           <EntityTable
