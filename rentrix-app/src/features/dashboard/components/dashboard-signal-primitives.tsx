@@ -27,27 +27,27 @@ function writeStoredCollapse(storageKey: string, collapsed: boolean): void {
 
 /**
  * Persisted collapse state for a dashboard section, under
- * `malek:dashboard:collapsed:<key>`. Falls back to the caller's default when
- * storage is unavailable or the user has never chosen a preference.
+ * `malek:dashboard:collapsed:<key>`. Falls back to `defaultCollapsed` until
+ * the user makes an explicit choice; callers remain free to override the
+ * effective value they pass to `DashboardSignalHeader` (e.g. to force a
+ * section open when it needs attention) without losing the user's stored
+ * preference.
  */
-export function useDashboardSectionCollapse(key: string, defaultCollapsed = false) {
+export function useDashboardSectionCollapse(key: string, defaultCollapsed: boolean) {
   const storageKey = `${DASHBOARD_COLLAPSE_STORAGE_PREFIX}${key}`;
-  const [collapsed, setCollapsedState] = useState(() => readStoredCollapse(storageKey) ?? defaultCollapsed);
+  const [collapsed, setCollapsedState] = useState<boolean>(
+    () => readStoredCollapse(storageKey) ?? defaultCollapsed,
+  );
 
-  const setCollapsed = useCallback((next: boolean) => {
-    setCollapsedState(next);
-    writeStoredCollapse(storageKey, next);
-  }, [storageKey]);
-
-  const toggle = useCallback(() => {
-    setCollapsedState((current) => {
-      const next = !current;
+  const setCollapsed = useCallback(
+    (next: boolean) => {
+      setCollapsedState(next);
       writeStoredCollapse(storageKey, next);
-      return next;
-    });
-  }, [storageKey]);
+    },
+    [storageKey],
+  );
 
-  return { collapsed, setCollapsed, toggle } as const;
+  return [collapsed, setCollapsed] as const;
 }
 
 export type DashboardSignalTone = 'neutral' | 'info' | 'success' | 'warning' | 'danger';
@@ -99,7 +99,10 @@ export function DashboardSignalHeader({
   icon: Icon,
   tone = 'neutral',
   trailing,
-  collapse,
+  collapsible = false,
+  collapsed = false,
+  onToggleCollapse,
+  controlsId,
 }: Readonly<{
   id: string;
   title: string;
@@ -107,13 +110,12 @@ export function DashboardSignalHeader({
   icon: LucideIcon;
   tone?: DashboardSignalTone;
   trailing?: ReactNode;
-  collapse?: Readonly<{
-    collapsed: boolean;
-    onToggle: () => void;
-    controlsId: string;
-    expandLabel?: string;
-    collapseLabel?: string;
-  }>;
+  /** Renders a collapse/expand toggle. Persist the underlying state with `useDashboardSectionCollapse`. */
+  collapsible?: boolean;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
+  /** id of the element the toggle controls, for `aria-controls`. */
+  controlsId?: string;
 }>) {
   return (
     <div className="flex min-h-12 items-center justify-between gap-3 px-3.5 py-2.5 sm:min-h-14 sm:px-4 lg:min-h-12 lg:py-2" data-dashboard-signal-header>
@@ -126,19 +128,20 @@ export function DashboardSignalHeader({
           {meta ? <p className="mt-0.5 line-clamp-1 text-[11px] font-medium leading-4 text-muted-foreground">{meta}</p> : null}
         </div>
       </div>
-      {trailing || collapse ? (
+      {trailing || collapsible ? (
         <div className="flex shrink-0 items-center gap-1.5 text-xs">
           {trailing}
-          {collapse ? (
+          {collapsible ? (
             <button
               type="button"
-              onClick={collapse.onToggle}
-              aria-expanded={!collapse.collapsed}
-              aria-controls={collapse.controlsId}
-              aria-label={collapse.collapsed ? (collapse.expandLabel ?? 'إظهار التفاصيل') : (collapse.collapseLabel ?? 'إخفاء التفاصيل')}
-              className="grid size-9 place-items-center rounded-lg text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/25"
+              onClick={onToggleCollapse}
+              aria-expanded={!collapsed}
+              aria-controls={controlsId}
+              data-dashboard-signal-collapse-toggle
+              className="grid size-7 shrink-0 place-items-center rounded-lg text-muted-foreground outline-none transition-colors hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/25"
             >
-              <ChevronDown className={cn('size-4 transition-transform', collapse.collapsed ? '' : 'rotate-180')} aria-hidden="true" />
+              <ChevronDown className={cn('size-4 transition-transform', !collapsed && 'rotate-180')} aria-hidden="true" />
+              <span className="sr-only">{collapsed ? 'إظهار القسم' : 'إخفاء القسم'}</span>
             </button>
           ) : null}
         </div>
