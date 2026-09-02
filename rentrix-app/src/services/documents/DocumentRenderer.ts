@@ -349,6 +349,31 @@ export const DocumentRenderer = {
       await downloadLatinDocumentPdf(model);
     });
   },
+
+  /**
+   * Builds the SAME real application/pdf file as `downloadDocumentPdf` but
+   * returns it as a `File` instead of saving it. This is the honest source
+   * for "share the generated PDF" flows: whatever the browser can attach,
+   * it attaches exactly the file the print product would have produced —
+   * nothing is fabricated for sharing. Callers fall back to download or a
+   * secure link when the browser cannot share files.
+   */
+  async buildDocumentPdfFile(model: UnifiedDocumentModel): Promise<File> {
+    return withSingleFlight(documentIdentityKey('pdf-file', model), async () => {
+      const filename = `${sanitizeDocumentFileName(model.fileName)}.pdf`;
+      if (modelHasArabicText(model)) {
+        const { doc } = await buildArabicDocumentPdf(model);
+        return new File([doc.output('blob')], filename, { type: 'application/pdf' });
+      }
+      try {
+        const doc = buildLatinPdf(model);
+        return new File([doc.output('blob')], filename, { type: 'application/pdf' });
+      } catch (error) {
+        if (error instanceof DocumentRenderError) throw error;
+        throw new DocumentRenderError(PDF_GENERATION_FAILED_MESSAGE, error);
+      }
+    });
+  },
 };
 
 export type { A4PageShell };

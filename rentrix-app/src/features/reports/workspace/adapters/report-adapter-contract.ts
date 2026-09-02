@@ -2,15 +2,12 @@ import type { ReportsWorkspaceModel } from '../../use-reports-workspace';
 import type { ReportsFilterState } from '../../reports-workspace-filters';
 import type { ReportViewId } from '../../report-view-registry';
 import type { ReportDrillHandler } from '../../report-workspaces';
+import type { StatementProductFocus } from '../../report-products';
 
 /**
- * WP-C — the single props interface every report adapter implements.
- *
- * The workspace router therefore treats accounting, statements and analytics
- * identically: it hands each adapter the same read model, the same scope, the
- * same export capability and the same drill-through handler, and the adapter
- * decides which body to render. Adding a report family means adding an
- * adapter, not editing the router.
+ * Single props interface every report adapter implements. Premium products
+ * may narrow the statements presentation while reusing the exact same read
+ * model, filters and authoritative loaders.
  */
 export type ReportAdapterProps = Readonly<{
   view: ReportViewId;
@@ -18,4 +15,5 @@ export type ReportAdapterProps = Readonly<{
   filters: ReportsFilterState;
   canExportReports: boolean;
   onDrill: ReportDrillHandler;
+  statementFocus?: StatementProductFocus;
 }>;

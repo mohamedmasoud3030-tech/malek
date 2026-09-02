@@ -101,7 +101,10 @@ const APPROVED_DOCUMENT_CALL_SITES: ReadonlySet<string> = new Set([
   'features/reports/components/OccupancySection.tsx',
   'features/reports/components/OverdueSection.tsx',
   'features/reports/components/ServicesReportSection.tsx',
-  'features/reports/components/StatementsSection.tsx',
+  // The consolidated statements surface delegates its Print/PDF/Excel output
+  // to the shared premium action module (single implementation for the
+  // catalog products); the migrated module carries the reviewed guard.
+  'features/reports/premium/statement-report-actions.ts',
   'features/reports/documents/report-documents.ts',
   'features/reports/documents/professional-owner-report.ts',
   'features/reports/documents/professional-property-report.ts',

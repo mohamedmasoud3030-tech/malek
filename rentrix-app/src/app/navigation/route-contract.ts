@@ -104,6 +104,7 @@ export const ROUTE_CONTRACT: readonly RouteContractEntry[] = [
 
   // Reports
   { canonical: '/reports', titleAr: 'المحاسبة والتقارير', sidebarRoot: '/reports', isPrimaryNav: true, inMobileNav: false, permission: 'financial.reports.view', legacyAliases: [], viewBinding: null },
+  { canonical: '/reports/$reportId', titleAr: 'تقرير MALEK', sidebarRoot: '/reports', isPrimaryNav: false, inMobileNav: false, permission: 'financial.reports.view', legacyAliases: [], viewBinding: null, targetIANote: 'Premium report product route — opened from the /reports catalog; export permissions stay page-level.' },
   { canonical: '/accounting', titleAr: 'المحاسبة والتقارير', sidebarRoot: '/reports', isPrimaryNav: false, inMobileNav: false, permission: 'financial.reports.view', legacyAliases: [], viewBinding: { param: 'section', section: 'accounting', view: 'general_ledger' } },
 
   // Tools/settings

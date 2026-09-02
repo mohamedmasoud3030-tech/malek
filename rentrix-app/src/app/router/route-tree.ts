@@ -320,6 +320,16 @@ const reportsRoute = createRoute({
   component: lazyRouteComponent(() => import('@/features/reports/reports-page'), 'ReportsPage'),
   staticData: { title: 'المحاسبة والتقارير' }
 });
+const reportProductRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/reports/$reportId',
+  // Same guard as the reports catalog: opening a premium report product is
+  // report viewing; print/PDF/Excel stay behind the separate export
+  // permission inside the page.
+  beforeLoad: requirePermission('financial.reports.view'),
+  component: lazyRouteComponent(() => import('@/features/reports/premium/report-product-page'), 'ReportProductPage'),
+  staticData: { title: 'تقرير' }
+});
 const aiAssistantRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: '/ai-assistant',
@@ -471,6 +481,7 @@ export const routeTree = rootRoute.addChildren([
     bankReconciliationRoute,
     accountingRoute,
     reportsRoute,
+    reportProductRoute,
     aiAssistantRoute,
     helpSupportRoute,
     adminSupportRoute,

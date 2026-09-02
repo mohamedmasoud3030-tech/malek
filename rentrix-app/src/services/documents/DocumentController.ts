@@ -26,6 +26,17 @@ export const DocumentController = {
     await DocumentRenderer.downloadDocumentPdf(model);
   },
 
+  /**
+   * Canonical typed path: builds the model, then returns the generated PDF as
+   * a File (no download). Powers truthful file-attachment sharing — see
+   * `DocumentRenderer.buildDocumentPdfFile`.
+   */
+  async buildDocumentPdfFile<T extends DocumentTypeId>(type: T, input: DocumentBuildInput<T>): Promise<File> {
+    const model = documentEngine.buildDocument(type, input);
+    const { DocumentRenderer } = await import('./DocumentRenderer');
+    return DocumentRenderer.buildDocumentPdfFile(model);
+  },
+
   /** Compatibility path for the historical `{ type, payload }` request shape. */
   async print(request: DocumentRequest): Promise<void> {
     const model = documentEngine.build(request);

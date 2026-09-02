@@ -1,6 +1,4 @@
-import { Download, FileSpreadsheet, Printer } from 'lucide-react';
-import { ActionMenu } from '@/components/ui/action-menu';
-import { Button } from '@/components/ui/button';
+import { ReportDocumentActions } from './report-document-actions';
 
 type ReportOutputActionsProps = Readonly<{
   downloadLabel: string;
@@ -14,6 +12,9 @@ type ReportOutputActionsProps = Readonly<{
 /**
  * One visible report action. Less common formats stay in a compact menu so
  * every report panel does not grow its own row of competing export buttons.
+ *
+ * This is the compact presentation of the ONE shared implementation
+ * (`ReportDocumentActions`) — the buttons live here, the behavior does not.
  */
 export function ReportOutputActions({
   downloadLabel,
@@ -24,25 +25,15 @@ export function ReportOutputActions({
   disabled = false,
 }: ReportOutputActionsProps) {
   return (
-    <div className="flex items-center gap-1">
-      <Button
-        type="button"
-        size="sm"
-        variant="outline"
-        onClick={onDownloadPdf}
-        disabled={disabled}
-        className="min-h-11 gap-1.5 text-xs"
-      >
-        <Download className="size-3.5" aria-hidden="true" />
-        {downloadLabel}
-      </Button>
-      <ActionMenu
-        label={menuLabel}
-        items={[
-          ...(onPrint ? [{ id: 'print', label: 'طباعة', icon: Printer, disabled, onClick: onPrint }] : []),
-          ...(onDownloadExcel ? [{ id: 'excel', label: 'تنزيل Excel', icon: FileSpreadsheet, onClick: onDownloadExcel }] : []),
-        ]}
-      />
-    </div>
+    <ReportDocumentActions
+      reportLabel={downloadLabel}
+      layout="compact"
+      primaryDownloadLabel={downloadLabel}
+      menuLabel={menuLabel}
+      onDownloadPdf={onDownloadPdf}
+      onPrint={onPrint}
+      onDownloadExcel={onDownloadExcel}
+      disabled={disabled}
+    />
   );
 }

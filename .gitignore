@@ -27,6 +27,7 @@ rentrix-app/playwright-report/
 supabase/config.toml
 __pycache__/
 rentrix-app/e2e/evidence/*.png
+rentrix-app/e2e/evidence/
 
 # WP-DB0 audit output (regenerate with `pnpm db0:audit`)
 .db0-artifacts/

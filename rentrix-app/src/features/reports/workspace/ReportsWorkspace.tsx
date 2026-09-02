@@ -4,6 +4,7 @@ import type { ReportsFilterState } from '../reports-workspace-filters';
 import type { ReportViewId } from '../report-view-registry';
 import type { ReportSectionId } from '../reports-page.sections';
 import type { ReportDrillHandler, ReportWorkspaceId } from '../report-workspaces';
+import type { StatementProductFocus } from '../report-products';
 import { ReportsShell } from './ReportsShell';
 import { ReportsViewPanel } from './ReportsViewPanel';
 
@@ -19,16 +20,18 @@ type ReportsWorkspaceProps = Readonly<{
   onDrill: ReportDrillHandler;
   onFiltersChange: (filters: ReportsFilterState) => void;
   onResetCurrentMonth: () => void;
+  /** Premium products own their own internal navigation, so legacy workspace tabs stay hidden. */
+  hideWorkspaceNavigation?: boolean;
+  /** Focuses the shared statements data source without duplicating its loaders. */
+  statementFocus?: StatementProductFocus;
 }>;
 
 /**
  * Reports workspace composition root.
  *
- * Owner-facing navigation is workspace-first: the directory opens one of the
- * seven business workspaces and the shell presents its sub-views. The legacy
- * accounting/statements/analytics section ids remain internal routing
- * contracts only, so deep links and authoritative report adapters keep
- * working without exposing implementation categories to the user.
+ * The legacy workspace registry remains a compatibility/read-model boundary.
+ * Premium report products may reuse it with their own navigation while keeping
+ * the same filters, loaders, permission checks and authoritative data paths.
  */
 export function ReportsWorkspace({
   model,
@@ -42,6 +45,8 @@ export function ReportsWorkspace({
   onDrill,
   onFiltersChange,
   onResetCurrentMonth,
+  hideWorkspaceNavigation = false,
+  statementFocus,
 }: ReportsWorkspaceProps) {
   return (
     <div className="min-w-0 space-y-3">
@@ -54,6 +59,7 @@ export function ReportsWorkspace({
         onOpenReport={onOpenReport}
         onFiltersChange={onFiltersChange}
         onResetCurrentMonth={onResetCurrentMonth}
+        hideWorkspaceNavigation={hideWorkspaceNavigation}
       />
 
       {model.isIncomplete ? (
@@ -75,6 +81,7 @@ export function ReportsWorkspace({
           filters={filters}
           canExportReports={canExportReports && !model.isIncomplete}
           onDrill={onDrill}
+          statementFocus={statementFocus}
         />
       </div>
     </div>

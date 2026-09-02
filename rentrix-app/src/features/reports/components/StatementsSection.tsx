@@ -7,35 +7,17 @@ import {
 } from '@/features/financials/reports/useFinancialReports';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
 import { DocumentReadinessNotice } from '@/features/settings/components/document-readiness-notice';
-import { downloadBlob } from '@/lib/tabular-export';
-import { buildXlsxBlob } from '@/lib/xlsx-export';
-import { documentService } from '@/services/documents/DocumentService';
-import { DocumentReadinessError, runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
-import {
-  toTenantStatementDocumentPayload,
-  type TenantStatementData,
-} from '@/services/documents/documentPayloadAdapters';
 import { useAuthoritativeGlCashFlow } from '../accounting-report-authority';
-import { loadOwnerReportContext, printOwnerReport, downloadOwnerReportPdf } from '../documents/professional-owner-report';
+import {
+  downloadOwnerStatementExcel,
+  downloadTenantStatementExcel,
+  runOwnerReportDocumentAction,
+  runTenantStatementDocumentAction,
+} from '../premium/statement-report-actions';
+import type { StatementProductFocus } from '../report-products';
 import { ReportColumns } from '@/components/ui/report-section-primitives';
 import { OwnerStatementPanel, TenantStatementPanel } from './statements/statement-account-panels';
 import { OfficeSummaryPanel, RegulatorySummaryPanels, StatementSelectionStrip } from './statements/statement-summary-panels';
-
-/**
- * A statement is a legal/financial document: without its authoritative
- * snapshot there is nothing truthful to render, so output is refused rather
- * than emitting an empty or partially-populated statement.
- */
-const MISSING_STATEMENT_DATA_MESSAGE =
-  'تعذر إصدار الكشف: لا توجد بيانات كشف حساب مُحمَّلة للفترة أو الطرف المحدد. يرجى تحديد النطاق وعرض النتائج أولاً.';
-
-function deriveTenantOpeningBalance(statement: TenantStatementReport): number {
-  const firstLine = statement.lines[0];
-  if (!firstLine) return statement.finalBalance || 0;
-  // Each authoritative line exposes its post-movement running balance.
-  // Reverse the first movement to recover the opening balance; never hardcode 0.
-  return (firstLine.balance || 0) - (firstLine.debit || 0) + (firstLine.credit || 0);
-}
 
 type ReceiptRow = Readonly<{
   id: string;
@@ -62,6 +44,7 @@ export function StatementsSection({
   isOwnerStatementLoading,
   isLoading,
   filters,
+  focus = 'all',
 }: Readonly<{
   agedReport: NonNullable<ReturnType<typeof useAgedReceivablesReport>['data']> | undefined;
   receiptRows: ReceiptRow[];
@@ -79,196 +62,122 @@ export function StatementsSection({
   isOwnerStatementLoading: boolean;
   isLoading: boolean;
   filters?: { from: string; to: string; propertyId?: string; ownerId?: string };
+  focus?: StatementProductFocus;
 }>) {
   const tenantRows = (agedReport?.rows ?? []).slice(0, 6);
   const ownerMovementRows = (expenseBreakdown?.byProperty ?? []).slice(0, 6);
   const totalCollections = dailyRows.reduce((total, row) => total + row.totalPaid, 0);
   const glCashFlowQuery = useAuthoritativeGlCashFlow(filters?.from, filters?.to);
+  const showTenant = focus === 'all' || focus === 'tenant';
+  const showOwner = focus === 'all' || focus === 'owner';
+  const showFinancial = focus === 'all' || focus === 'financial';
 
   const { companySettings: documentSettings, isReady: isDocumentSettingsReady } = useDocumentSettings();
 
-  const buildTenantStatementData = (): TenantStatementData | null => {
-    if (!tenantStatement) return null;
-    return {
-      tenantName: tenantStatement.tenantName || 'مستأجر غير محدد',
-      periodFrom: filters?.from || tenantStatement.startDate || '—',
-      periodTo: filters?.to || tenantStatement.endDate || '—',
-      propertyTitle: tenantStatement.propertyName || 'عقار غير محدد',
-      unitNumber: tenantStatement.unitName || '—',
-      openingBalance: deriveTenantOpeningBalance(tenantStatement),
-      totalInvoiced: tenantStatement.lines.reduce((total, line) => total + (line.debit || 0), 0),
-      totalPaid: tenantStatement.lines.reduce((total, line) => total + (line.credit || 0), 0),
-      closingBalance: tenantStatement.finalBalance || 0,
-      lines: tenantStatement.lines.map((line) => ({
-        date: line.date || '—',
-        type: line.type === 'invoice' ? 'مطالبة' : line.type === 'receipt' ? 'تحصيل' : 'حركة',
-        description: line.description || 'حركة حساب',
-        debit: line.debit || 0,
-        credit: line.credit || 0,
-        balance: line.balance || 0,
-      })),
-    };
-  };
+  // The premium catalog and this consolidated surface share ONE document
+  // action implementation (features/reports/premium/statement-report-actions)
+  // so printed output can never drift between entry points.
+  const handlePrintTenantStatement = () => runTenantStatementDocumentAction({
+    isReady: isDocumentSettingsReady,
+    settings: documentSettings,
+    statement: tenantStatement,
+    period: { from: filters?.from, to: filters?.to },
+  }, 'print');
 
-  const handlePrintTenantStatement = async () => {
-    await runGuardedDocumentAction({
-      isReady: isDocumentSettingsReady,
-      operation: async () => {
-        const data = buildTenantStatementData();
-        if (!data) throw new DocumentReadinessError(MISSING_STATEMENT_DATA_MESSAGE);
-        await documentService.printDocument('tenant_statement', { settings: documentSettings, payload: toTenantStatementDocumentPayload(data) });
-      },
-      fallbackMessage: 'تعذرت طباعة الكشف.',
-    });
-  };
+  const handleDownloadTenantStatement = () => runTenantStatementDocumentAction({
+    isReady: isDocumentSettingsReady,
+    settings: documentSettings,
+    statement: tenantStatement,
+    period: { from: filters?.from, to: filters?.to },
+  }, 'pdf');
 
-  const handleDownloadTenantStatement = async () => {
-    await runGuardedDocumentAction({
-      isReady: isDocumentSettingsReady,
-      operation: async () => {
-        const data = buildTenantStatementData();
-        if (!data) throw new DocumentReadinessError(MISSING_STATEMENT_DATA_MESSAGE);
-        await documentService.downloadDocumentPdf('tenant_statement', { settings: documentSettings, payload: toTenantStatementDocumentPayload(data) });
-      },
-      fallbackMessage: 'تعذر تنزيل ملف PDF.',
-    });
-  };
+  const handleDownloadTenantExcel = () => downloadTenantStatementExcel(tenantStatement, selectedContractId);
 
-  const handleDownloadTenantExcel = () => {
-    if (!tenantStatement) return;
-    const rows = tenantStatement.lines.map((line) => [
-      line.date || '—',
-      line.type === 'invoice' ? 'فاتورة / استحقاق' : line.type === 'receipt' ? 'دفعة / إيصال' : line.type === 'credit' ? 'دائن / عكس' : 'حركة حساب',
-      line.description || 'حركة حساب',
-      line.debit || 0,
-      line.credit || 0,
-      line.balance || 0,
-    ] as const);
-    downloadBlob(
-      buildXlsxBlob({
-        name: 'كشف المستأجر',
-        headers: ['التاريخ', 'نوع الحركة', 'البيان / المرجع', 'مدين', 'دائن', 'الرصيد الجاري'],
-        rows,
-      }),
-      `tenant-statement-${selectedContractId || 'statement'}.xlsx`,
-    );
-  };
+  const handlePrintProfessionalOwnerReport = () => runOwnerReportDocumentAction({
+    isReady: isDocumentSettingsReady,
+    settings: documentSettings,
+    ownerId: selectedOwnerId,
+    statement: ownerStatement,
+    period: { from: filters?.from, to: filters?.to, propertyId: filters?.propertyId },
+  }, 'print');
 
-  const runProfessionalOwnerReport = async (mode: 'print' | 'pdf') => {
-    await runGuardedDocumentAction({
-      isReady: isDocumentSettingsReady,
-      operation: async () => {
-        if (!selectedOwnerId) {
-          throw new DocumentReadinessError('تعذر إصدار كشف المالك التفصيلي: لم يتم تحديد المالك. اختر مالكًا من فلاتر التقرير أولاً.');
-        }
-        if (!ownerStatement) {
-          throw new DocumentReadinessError('تعذر إصدار كشف المالك التفصيلي: لا توجد بيانات كشف مالك معتمدة للفترة أو النطاق المحدد.');
-        }
-        if (ownerStatement.error) {
-          throw new DocumentReadinessError('تعذر إصدار كشف المالك التفصيلي: كشف المالك المحمّل يحتوي على خطأ في المصدر المعتمد.');
-        }
-        const context = await loadOwnerReportContext({
-          ownerId: selectedOwnerId,
-          from: filters?.from || ownerStatement.periodFrom || '—',
-          to: filters?.to || ownerStatement.periodTo || '—',
-          propertyId: filters?.propertyId || null,
-          statement: ownerStatement,
-        });
-        if (mode === 'print') {
-          await printOwnerReport({ settings: documentSettings, context });
-        } else {
-          await downloadOwnerReportPdf({ settings: documentSettings, context });
-        }
-      },
-      fallbackMessage: mode === 'print'
-        ? 'تعذرت طباعة كشف المالك التفصيلي.'
-        : 'تعذر تنزيل كشف المالك التفصيلي كملف PDF.',
-    });
-  };
+  const handleDownloadProfessionalOwnerReport = () => runOwnerReportDocumentAction({
+    isReady: isDocumentSettingsReady,
+    settings: documentSettings,
+    ownerId: selectedOwnerId,
+    statement: ownerStatement,
+    period: { from: filters?.from, to: filters?.to, propertyId: filters?.propertyId },
+  }, 'pdf');
 
-  const handlePrintProfessionalOwnerReport = () => runProfessionalOwnerReport('print');
-  const handleDownloadProfessionalOwnerReport = () => runProfessionalOwnerReport('pdf');
-
-  const handleDownloadOwnerExcel = () => {
-    if (!ownerStatement) return;
-    // Financial truth: opening/closing running balance is NOT available from
-    // an authoritative read source (rpt_owner_statement does not expose one).
-    // We never derive it from zero — the column is omitted entirely rather
-    // than carrying a fabricated cumulative figure.
-    const rows = ownerStatement.transactions.map((transaction) => [
-      transaction.date || '—',
-      transaction.type === 'receipt' ? 'تحصيل' : transaction.type === 'expense' ? 'مصروف' : transaction.type === 'settlement' ? 'تسوية / صرف' : 'حركة مالية',
-      transaction.propertyName || 'غير محدد',
-      transaction.details || 'حركة مالية',
-      transaction.gross || 0,
-      transaction.deduction || 0,
-      transaction.net || 0,
-    ] as const);
-    downloadBlob(
-      buildXlsxBlob({
-        name: 'كشف المالك',
-        headers: ['التاريخ', 'نوع الحركة', 'العقار', 'البيان', 'الإجمالي', 'الاستقطاع', 'صافي الحركة'],
-        rows,
-      }),
-      `owner-statement-${selectedOwnerId || 'statement'}.xlsx`,
-    );
-  };
+  const handleDownloadOwnerExcel = () => downloadOwnerStatementExcel(ownerStatement, selectedOwnerId);
 
   return (
     <div className="space-y-4">
-      {!isDocumentSettingsReady && <DocumentReadinessNotice />}
-      <StatementSelectionStrip
-        selectedContractId={selectedContractId}
-        selectedOwnerId={selectedOwnerId}
-        from={filters?.from}
-        to={filters?.to}
-        isDocumentReady={isDocumentSettingsReady}
-      />
-
-      <ReportColumns>
-        <TenantStatementPanel
+      {!isDocumentSettingsReady && (showTenant || showOwner) ? <DocumentReadinessNotice /> : null}
+      {(showTenant || showOwner) ? (
+        <StatementSelectionStrip
           selectedContractId={selectedContractId}
-          statement={tenantStatement}
-          error={tenantStatementError}
-          isLoading={isTenantStatementLoading}
-          fallbackRows={tenantRows}
-          receipts={receiptRows}
-          onPrint={handlePrintTenantStatement}
-          onDownloadPdf={handleDownloadTenantStatement}
-          onDownloadExcel={handleDownloadTenantExcel}
-          actionsDisabled={!isDocumentSettingsReady}
-        />
-        <OwnerStatementPanel
           selectedOwnerId={selectedOwnerId}
-          statement={ownerStatement}
-          error={ownerStatementError}
-          isLoading={isOwnerStatementLoading}
-          fallbackRows={ownerMovementRows}
-          onPrint={handlePrintProfessionalOwnerReport}
-          onDownloadPdf={handleDownloadProfessionalOwnerReport}
-          onDownloadExcel={handleDownloadOwnerExcel}
-          actionsDisabled={!isDocumentSettingsReady}
+          from={filters?.from}
+          to={filters?.to}
+          isDocumentReady={isDocumentSettingsReady}
         />
-      </ReportColumns>
+      ) : null}
 
-      <OfficeSummaryPanel
-        invoiced={financialSummary?.invoiced ?? 0}
-        collections={totalCollections}
-        expenses={financialSummary?.expenses ?? 0}
-        outstanding={financialSummary?.outstanding ?? 0}
-        invoicesCount={financialSummary?.invoicesCount ?? 0}
-        paymentsCount={financialSummary?.paymentsCount ?? 0}
-        expensesCount={financialSummary?.expensesCount ?? 0}
-        receiptsCount={receiptRows.length}
-      />
+      {(showTenant || showOwner) ? (
+        <ReportColumns>
+          {showTenant ? (
+            <TenantStatementPanel
+              selectedContractId={selectedContractId}
+              statement={tenantStatement}
+              error={tenantStatementError}
+              isLoading={isTenantStatementLoading}
+              fallbackRows={tenantRows}
+              receipts={receiptRows}
+              onPrint={handlePrintTenantStatement}
+              onDownloadPdf={handleDownloadTenantStatement}
+              onDownloadExcel={handleDownloadTenantExcel}
+              actionsDisabled={!isDocumentSettingsReady}
+            />
+          ) : null}
+          {showOwner ? (
+            <OwnerStatementPanel
+              selectedOwnerId={selectedOwnerId}
+              statement={ownerStatement}
+              error={ownerStatementError}
+              isLoading={isOwnerStatementLoading}
+              fallbackRows={ownerMovementRows}
+              onPrint={handlePrintProfessionalOwnerReport}
+              onDownloadPdf={handleDownloadProfessionalOwnerReport}
+              onDownloadExcel={handleDownloadOwnerExcel}
+              actionsDisabled={!isDocumentSettingsReady}
+            />
+          ) : null}
+        </ReportColumns>
+      ) : null}
 
-      <RegulatorySummaryPanels
-        cashFlow={glCashFlowQuery.data}
-        cashFlowError={glCashFlowQuery.error}
-        isCashFlowLoading={glCashFlowQuery.isLoading}
-        vatReturn={vatReturn}
-        isLoading={isLoading}
-      />
+      {showFinancial ? (
+        <>
+          <OfficeSummaryPanel
+            invoiced={financialSummary?.invoiced ?? 0}
+            collections={totalCollections}
+            expenses={financialSummary?.expenses ?? 0}
+            outstanding={financialSummary?.outstanding ?? 0}
+            invoicesCount={financialSummary?.invoicesCount ?? 0}
+            paymentsCount={financialSummary?.paymentsCount ?? 0}
+            expensesCount={financialSummary?.expensesCount ?? 0}
+            receiptsCount={receiptRows.length}
+          />
+
+          <RegulatorySummaryPanels
+            cashFlow={glCashFlowQuery.data}
+            cashFlowError={glCashFlowQuery.error}
+            isCashFlowLoading={glCashFlowQuery.isLoading}
+            vatReturn={vatReturn}
+            isLoading={isLoading}
+          />
+        </>
+      ) : null}
     </div>
   );
 }

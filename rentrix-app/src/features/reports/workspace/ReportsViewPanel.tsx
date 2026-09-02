@@ -5,12 +5,8 @@ import type { ReportAdapterProps } from './adapters/report-adapter-contract';
 import type { ReportSectionId } from '../reports-page.sections';
 import type { ReportViewId } from '../report-view-registry';
 import type { ReportDrillHandler } from '../report-workspaces';
+import type { StatementProductFocus } from '../report-products';
 
-/**
- * WP-C — per-section code splitting (C.4). Each adapter chunk — and, inside it,
- * each report body — is pulled only when its section is activated, so opening
- * the reports page never downloads all report bodies.
- */
 const AccountingReportsAdapter = lazy(() =>
   import('./adapters/AccountingReportsAdapter').then((m) => ({ default: m.AccountingReportsAdapter })),
 );
@@ -28,15 +24,11 @@ type ReportsViewPanelProps = Readonly<
     activeSection: ReportSectionId;
     activeView: ReportViewId;
     onDrill: ReportDrillHandler;
+    statementFocus?: StatementProductFocus;
   }
 >;
 
-/**
- * WP-C — the single place that turns `(section, view)` into a rendered report.
- * One adapter per section owns its view switch; the drill-through handler is
- * forwarded so every report body can route into the owning workspace with the
- * current scope preserved.
- */
+/** Single renderer that turns a preserved `(section, view)` read model into the opened report body. */
 export function ReportsViewPanel({
   activeSection,
   activeView,
@@ -44,8 +36,15 @@ export function ReportsViewPanel({
   filters,
   canExportReports,
   onDrill,
+  statementFocus,
 }: ReportsViewPanelProps) {
-  const adapterProps: Omit<ReportAdapterProps, 'view'> = { model, filters, canExportReports, onDrill };
+  const adapterProps: Omit<ReportAdapterProps, 'view'> = {
+    model,
+    filters,
+    canExportReports,
+    onDrill,
+    statementFocus,
+  };
 
   return (
     <div className="min-w-0" key={activeSection}>

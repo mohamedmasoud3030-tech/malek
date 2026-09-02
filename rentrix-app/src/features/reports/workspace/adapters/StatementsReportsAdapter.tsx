@@ -6,13 +6,10 @@ const StatementsSection = lazy(() =>
 );
 
 /**
- * WP-C adapter — statements section.
- *
- * Tenant/owner statements, the office operating movement, the GL-backed cash
- * flow (1111/1120) and VAT are all read from their authoritative services
- * through the workspace model. The adapter only forwards the active scope so
- * the section can resolve which statement party the user selected.
+ * Statements stay on their authoritative shared loaders. The premium catalog
+ * only chooses which party-facing portion is visible; it never introduces a
+ * second statement query or calculation path.
  */
-export function StatementsReportsAdapter({ model, filters }: ReportAdapterProps) {
-  return <StatementsSection {...model.sections.statements} filters={filters} />;
+export function StatementsReportsAdapter({ model, filters, statementFocus }: ReportAdapterProps) {
+  return <StatementsSection {...model.sections.statements} filters={filters} focus={statementFocus} />;
 }
