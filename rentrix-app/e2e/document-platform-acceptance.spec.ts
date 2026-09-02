@@ -186,6 +186,18 @@ function mobileInvoiceCard(page: Page): Locator {
     .first();
 }
 
+function invoicePrintAction(page: Page): Locator {
+  return isInvoiceMobile(page)
+    ? mobileInvoiceCard(page).getByRole('button', { name: /^طباعة/ }).first()
+    : page.getByRole('menuitem', { name: 'طباعة', exact: true }).first();
+}
+
+function invoicePdfAction(page: Page): Locator {
+  return isInvoiceMobile(page)
+    ? mobileInvoiceCard(page).getByRole('button', { name: /^تنزيل/ }).first()
+    : page.getByRole('menuitem', { name: 'PDF', exact: true }).first();
+}
+
 async function gotoInvoicesRegister(page: Page): Promise<Locator> {
   await page.goto('/invoices');
   await expect(page).toHaveURL(/\/financials\?section=collections&view=invoices(?:&|$)/);
@@ -199,8 +211,10 @@ async function gotoInvoicesRegister(page: Page): Promise<Locator> {
 }
 
 async function openInvoiceDocumentActions(page: Page): Promise<void> {
-  const alreadyOpen = page.getByRole('menuitem', { name: 'طباعة', exact: true }).first();
-  if (await alreadyOpen.isVisible().catch(() => false)) return;
+  if (!isInvoiceMobile(page)) {
+    const alreadyOpen = page.getByRole('menuitem', { name: 'طباعة', exact: true }).first();
+    if (await alreadyOpen.isVisible().catch(() => false)) return;
+  }
 
   if (isInvoiceMobile(page)) {
     const card = mobileInvoiceCard(page);
@@ -208,16 +222,15 @@ async function openInvoiceDocumentActions(page: Page): Promise<void> {
     if ((await outerTrigger.getAttribute('aria-expanded')) !== 'true') await outerTrigger.click();
     const outerPanel = card.locator('[data-entity-table-mobile-actions-panel]');
     await expect(outerPanel).toBeVisible();
-    await outerPanel.getByRole('button', { name: 'إجراءات إضافية للفاتورة', exact: true }).click();
   } else {
     await visibleInvoiceRegister(page)
-      .getByRole('button', { name: 'إجراءات إضافية للفاتورة', exact: true })
+      .getByRole('button', { name: 'إجراءات الفاتورة', exact: true })
       .first()
       .click();
   }
 
-  await expect(page.getByRole('menuitem', { name: 'طباعة', exact: true }).first()).toBeVisible({ timeout: 15_000 });
-  await expect(page.getByRole('menuitem', { name: 'PDF', exact: true }).first()).toBeVisible({ timeout: 15_000 });
+  await expect(invoicePrintAction(page)).toBeVisible({ timeout: 15_000 });
+  await expect(invoicePdfAction(page)).toBeVisible({ timeout: 15_000 });
 }
 
 async function openContractDocumentActions(page: Page): Promise<void> {
@@ -233,16 +246,14 @@ async function expectInvoiceDocumentActionsWithheld(page: Page): Promise<void> {
   const register = visibleInvoiceRegister(page);
   if (isInvoiceMobile(page)) {
     const card = mobileInvoiceCard(page);
-    const outerTrigger = card.locator('[data-entity-table-mobile-actions]');
-    await expect(outerTrigger).toBeVisible();
-    await outerTrigger.click();
-    const panel = card.locator('[data-entity-table-mobile-actions-panel]');
-    await expect(panel).toBeVisible();
-    await expect(panel.getByRole('button', { name: /^تحصيل/ }).first()).toBeVisible();
-    await expect(panel.getByRole('button', { name: 'إجراءات إضافية للفاتورة', exact: true })).toHaveCount(0);
+    await expect(card.getByRole('button', { name: /^تحصيل/ }).first()).toBeVisible();
+    await expect(card.getByRole('button', { name: /^طباعة/ })).toHaveCount(0);
+    await expect(card.getByRole('button', { name: /^تنزيل/ })).toHaveCount(0);
   } else {
-    await expect(register.getByRole('button', { name: /^تحصيل/ }).first()).toBeVisible();
-    await expect(register.getByRole('button', { name: 'إجراءات إضافية للفاتورة', exact: true })).toHaveCount(0);
+    const actions = register.getByRole('button', { name: 'إجراءات الفاتورة', exact: true }).first();
+    await expect(actions).toBeVisible();
+    await actions.click();
+    await expect(page.getByRole('menuitem', { name: 'تحصيل', exact: true })).toBeVisible();
   }
   await expect(page.getByRole('menuitem', { name: 'طباعة', exact: true })).toHaveCount(0);
   await expect(page.getByRole('menuitem', { name: 'PDF', exact: true })).toHaveCount(0);
@@ -261,7 +272,7 @@ test.describe('الفاتورة — invoice acceptance', () => {
 
     await gotoInvoicesRegister(page);
     await openInvoiceDocumentActions(page);
-    const printOption = page.getByRole('menuitem', { name: 'طباعة', exact: true }).first();
+    const printOption = invoicePrintAction(page);
     const popup = await openPrintPopup(page, () => printOption.click());
     await assertPopupIdentity(popup, [TENANT_NAME, '420', 'إيجار شهر يوليو 2026']);
     await assertA4PrintContract(popup);
@@ -282,7 +293,7 @@ test.describe('الفاتورة — invoice acceptance', () => {
 
     await gotoInvoicesRegister(page);
     await openInvoiceDocumentActions(page);
-    const pdfOption = page.getByRole('menuitem', { name: 'PDF', exact: true }).first();
+    const pdfOption = invoicePdfAction(page);
     const { download, buffer } = await downloadPdf(page, () => pdfOption.click());
     const summary = assertRealPdf(buffer);
     expect(isA4Portrait(summary)).toBe(true);
@@ -308,7 +319,7 @@ test.describe('الفاتورة — invoice acceptance', () => {
     page.on('download', (download) => downloads.push(download));
 
     await openInvoiceDocumentActions(page);
-    await page.getByRole('menuitem', { name: 'طباعة', exact: true }).first().dblclick();
+    await invoicePrintAction(page).dblclick();
     await page.waitForTimeout(2000);
     expect(popups.length).toBe(1);
     const [popup] = popups;
@@ -317,7 +328,7 @@ test.describe('الفاتورة — invoice acceptance', () => {
 
     await openInvoiceDocumentActions(page);
     const downloadPromise = page.waitForEvent('download', { timeout: 120_000 });
-    await page.getByRole('menuitem', { name: 'PDF', exact: true }).first().dblclick();
+    await invoicePdfAction(page).dblclick();
     await downloadPromise;
     await page.waitForTimeout(2500);
     expect(downloads.length).toBe(1);
@@ -526,13 +537,13 @@ test.describe('الجوال — mobile acceptance', () => {
 
     await gotoInvoicesRegister(page);
     await openInvoiceDocumentActions(page);
-    const popup = await openPrintPopup(page, () => page.getByRole('menuitem', { name: 'طباعة', exact: true }).first().click());
+    const popup = await openPrintPopup(page, () => invoicePrintAction(page).click());
     await assertPopupIdentity(popup, [TENANT_NAME, '420']);
     await assertA4PrintContract(popup);
     await popup.close();
 
     await openInvoiceDocumentActions(page);
-    const { download, buffer } = await downloadPdf(page, () => page.getByRole('menuitem', { name: 'PDF', exact: true }).first().click());
+    const { download, buffer } = await downloadPdf(page, () => invoicePdfAction(page).click());
     const summary = assertRealPdf(buffer);
     expect(isA4Portrait(summary)).toBe(true);
     expect(auditDocumentFileName(download.suggestedFilename(), FORBIDDEN_ID_FRAGMENTS).passes).toBe(true);

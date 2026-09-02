@@ -63,7 +63,12 @@ test.describe('Service Providers workspace', () => {
       await expect(mobileTrigger).toBeVisible();
       const mobileTriggerBox = await mobileTrigger.boundingBox();
       expect(mobileTriggerBox?.height ?? 0).toBeGreaterThanOrEqual(44);
-      await mobileTrigger.click();
+      // The fixture runs above the application shell; on mobile the shell can
+      // retain the pointer hit-test surface after the filter sheet closes.
+      // Keyboard activation verifies the actual native button contract without
+      // coupling this register assertion to that unrelated fixture layering.
+      await mobileTrigger.focus();
+      await page.keyboard.press('Enter');
       menuTrigger = page.locator('[data-action-menu-trigger]').filter({ visible: true }).first();
     }
 

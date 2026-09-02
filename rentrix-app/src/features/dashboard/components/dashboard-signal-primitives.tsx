@@ -138,7 +138,7 @@ export function DashboardSignalHeader({
               aria-expanded={!collapsed}
               aria-controls={controlsId}
               data-dashboard-signal-collapse-toggle
-              className="grid size-7 shrink-0 place-items-center rounded-lg text-muted-foreground outline-none transition-colors hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/25"
+              className="grid size-11 shrink-0 place-items-center rounded-lg text-muted-foreground outline-none transition-colors hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/25"
             >
               <ChevronDown className={cn('size-4 transition-transform', !collapsed && 'rotate-180')} aria-hidden="true" />
               <span className="sr-only">{collapsed ? 'إظهار القسم' : 'إخفاء القسم'}</span>
