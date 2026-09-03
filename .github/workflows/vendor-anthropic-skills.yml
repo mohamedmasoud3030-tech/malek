@@ -1,9 +1,9 @@
 name: Vendor Anthropic Skills
 
 on:
-  push:
+  pull_request:
     branches:
-      - chore/vendor-anthropic-skills
+      - main
     paths:
       - .github/workflows/vendor-anthropic-skills.yml
 
@@ -12,11 +12,13 @@ permissions:
 
 jobs:
   vendor:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout MALEK
+      - name: Checkout MALEK branch
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
 
       - name: Clone Anthropic skills at pinned commit
@@ -31,6 +33,8 @@ jobs:
           diff -qr /tmp/anthropic-skills/skills ./skills
 
       - name: Commit vendored skills
+        env:
+          HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -40,4 +44,4 @@ jobs:
             exit 0
           fi
           git commit -m "chore(skills): vendor Anthropic skills unchanged"
-          git push origin HEAD:${GITHUB_REF_NAME}
+          git push origin HEAD:${HEAD_BRANCH}
