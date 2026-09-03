@@ -36,6 +36,22 @@ describe('PageHeader — العنوان الموحد للصفحات', () => {
     expect(html).toContain('tabular-nums');
   });
 
+  it('keeps the title/count and primary action in one balanced identity row', () => {
+    const html = renderToStaticMarkup(
+      <PageHeader
+        title="العقارات"
+        count={12}
+        description="إدارة المحفظة"
+        primaryAction={<button type="button">إضافة عقار</button>}
+      />,
+    );
+    expect(html).toContain('data-page-header-primary-row');
+    expect(html).toContain('data-page-primary-action');
+    expect(html).toContain('إضافة عقار');
+    expect(html).toContain('max-w-[52%]');
+    expect(html).toContain('إدارة المحفظة');
+  });
+
   it('renders primary and secondary actions', () => {
     const html = renderToStaticMarkup(
       <PageHeader
