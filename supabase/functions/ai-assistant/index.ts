@@ -3,6 +3,7 @@ import {
   AI_OUTPUT_SCHEMA_VERSION,
   AI_PLANNING_SCHEMA_VERSION,
   AI_PROMPT_VERSION,
+  CONTEXT_SECTIONS,
   type AssistantOutput,
   type AssistantPlanning,
   type ChatMessage,
@@ -10,6 +11,11 @@ import {
   type ValidatedAssistantRequest,
 } from "../_shared/ai-contract.ts";
 import { AI_KB_VERSION, BUSINESS_KB_TEXT } from "../_shared/ai-business-kb.ts";
+import {
+  mergeServerContextSections,
+  readServerContextSections,
+  SERVER_CONTEXT_SECTION_TIMEOUT_MS,
+} from "../_shared/ai-context-reader.ts";
 import {
   assembleModelContext,
   deterministicResponse,
@@ -43,6 +49,15 @@ const directDbUrl = Deno.env.get("SUPABASE_DB_URL")?.trim();
 const directDb = directDbUrl
   ? postgres(directDbUrl, { prepare: false, max: 1, idle_timeout: 10, connect_timeout: 5 })
   : null;
+/**
+ * Context source for the model path. "server" (default): the Edge Function
+ * re-reads the requested data sections itself through PostgREST under the
+ * caller's own RLS role, overlaying the client-shipped versions (fresh data,
+ * per-section client fallback on any failure). "client": legacy behavior —
+ * the client-built snapshot is used as-is (kill switch).
+ */
+const contextSource: "server" | "client" =
+  Deno.env.get("AI_CONTEXT_SOURCE")?.trim() === "client" ? "client" : "server";
 
 type AuthSuccess = { userId: string };
 type ProviderConfiguration = { apiKey: string; model: string; url: string };
@@ -286,8 +301,9 @@ function buildAdvisoryMessages(request: ValidatedAssistantRequest): ChatMessage[
   const system = [
     `Prompt version: ${AI_PROMPT_VERSION}. Output schema: ${AI_OUTPUT_SCHEMA_VERSION}.`,
     PERSONA,
-    "هذه استشارة بيزنس عامة عن إدارة العقارات وسوق مسقط — تجيب من قاعدة المعرفة المرفقة فقط.",
+    "هذه استشارة بيزنس عامة عن إدارة العقارات وسوق عُمان (مسقط ومناطقها) — تجيب من قاعدة المعرفة المرفقة فقط.",
     "استند فقط إلى ما في قاعدة المعرفة. إذا لم يكن السؤال مغطى بها، قل ذلك بصراحة واقترح أقرب موضوع مغطى؛ لا تخترع أرقاماً أو نسباً.",
+    "تحديد المنطقة: استخرج منطقة المستخدم من السؤال أو آخر رسائل المحادثة (مسقط، نزوي/الداخلية، صلالة، صحار…). إذا كانت واضحة: استعمل أرقام تلك المنطقة حصراً وسمِّها في الرد. إذا لم تكن واضحة: افترض مسقط ببيان صريح في سطر واحد («أعتمد أرقام مسقط افتراضاً؛ إن كان مكتبك في نزوي أو منطقة أخرى أخبرني بكلمة واحدة») — ولا تخلط أرقام مناطق مختلفة في الرد الواحد.",
     "اذكر ضمن caveats دائماً أن الأرقام «تقديرات إرشادية من مراجع سوق عامة وليست أرقاماً معتمدة أو التزاماً قانونياً/محاسبياً».",
     SECURITY_RULES,
     `<knowledge_base version="${AI_KB_VERSION}">`,
@@ -369,12 +385,40 @@ async function handlePostRequest(request: Request): Promise<Response> {
 
   // On-demand assembly: the model receives exactly the sections it asked for
   // (full catalog when planning was skipped or degraded), budget-trimmed.
-  const modelContext = assembleModelContext(effectiveRequest.context, plannedSections);
+  // In server mode the requested sections are re-read HERE through PostgREST
+  // under the caller's own RLS role (fresh, narrow, per-section fallback to
+  // the client-shipped value on any failure). maintenanceSnapshot is never
+  // server-read — its derivation stays owned by the maintenance feature — and
+  // the deterministic fast path above never pays for these reads.
+  let modelContext = assembleModelContext(effectiveRequest.context, plannedSections);
+  let effectiveContextSource: "server" | "client" = "client";
+  let contextFailures: string[] = [];
+  if (kind === "data" && contextSource === "server") {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")?.trim();
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")?.trim();
+    const accessToken = request.headers.get("Authorization") ?? "";
+    if (supabaseUrl && anonKey && accessToken) {
+      const fetched = await readServerContextSections(plannedSections ?? [...CONTEXT_SECTIONS], {
+        supabaseUrl,
+        anonKey,
+        accessToken,
+        timeoutMs: positiveIntegerEnv("AI_CONTEXT_READ_TIMEOUT_MS", SERVER_CONTEXT_SECTION_TIMEOUT_MS, 500, 30_000),
+      }).catch(() => null);
+      if (fetched) {
+        modelContext = assembleModelContext(
+          mergeServerContextSections(effectiveRequest.context, fetched.sections),
+          plannedSections,
+        );
+        effectiveContextSource = "server";
+        contextFailures = [...fetched.failures];
+      }
+    }
+  }
   try {
     const messages = kind === "advisory" ? buildAdvisoryMessages(assistantRequest) : buildAnswerMessages(effectiveRequest, modelContext.context);
     const result = await adapter.generate({ model: configuration.model, messages, maxOutputTokens: MAX_OUTPUT_TOKENS, timeoutMs: PROVIDER_TIMEOUT_MS });
-    console.log("AI request completed", { requestId: assistantRequest.requestId, provider: adapter.provider, model: configuration.model, action: effectiveRequest.action, kind, contextSections: modelContext.sections.length, contextTrimmed: modelContext.trimmed, durationMs: result.durationMs, inputTokens: result.usage.inputTokens, outputTokens: result.usage.outputTokens });
-    return successResponse(result.output, "model", { kind, resolvedAction: effectiveRequest.action, contextSections: modelContext.sections, contextTrimmed: modelContext.trimmed, durationMs: result.durationMs });
+    console.log("AI request completed", { requestId: assistantRequest.requestId, provider: adapter.provider, model: configuration.model, action: effectiveRequest.action, kind, contextSource: effectiveContextSource, contextFailures: contextFailures.length, contextSections: modelContext.sections.length, contextTrimmed: modelContext.trimmed, durationMs: result.durationMs, inputTokens: result.usage.inputTokens, outputTokens: result.usage.outputTokens });
+    return successResponse(result.output, "model", { kind, resolvedAction: effectiveRequest.action, contextSource: effectiveContextSource, ...(contextFailures.length > 0 ? { contextFailures } : {}), contextSections: modelContext.sections, contextTrimmed: modelContext.trimmed, durationMs: result.durationMs });
   } catch (error) {
     console.error("AI provider failed; deterministic fallback returned", { requestId: assistantRequest.requestId, provider: adapter.provider, kind, failureClass: error instanceof ProviderAdapterError ? error.code : "UNKNOWN" });
     return successResponse(fallbackResponse(effectiveRequest), "fallback", { degraded: true, kind });

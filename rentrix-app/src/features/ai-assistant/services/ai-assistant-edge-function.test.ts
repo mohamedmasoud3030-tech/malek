@@ -122,6 +122,38 @@ describe("AI assistant edge function", () => {
     expect(content).toContain("deterministicResponse(effectiveRequest)");
   });
 
+  it("re-reads the requested sections server-side under the caller's RLS role, with per-section client fallback", () => {
+    const content = edge();
+    const reader = readRepoFile("supabase/functions/_shared/ai-context-reader.ts");
+    // Env kill switch: default server mode, explicit opt-out to legacy client mode.
+    expect(content).toContain('Deno.env.get("AI_CONTEXT_SOURCE")?.trim() === "client"');
+    // Server reads run on the model data path only — never on deterministic or advisory.
+    expect(content).toContain('if (kind === "data" && contextSource === "server")');
+    // The user's own token travels to PostgREST (same RLS role as the client),
+    // and per-section failures fall back to the client-shipped value.
+    expect(content).toContain("readServerContextSections(plannedSections ?? [...CONTEXT_SECTIONS]");
+    expect(content).toContain("mergeServerContextSections(effectiveRequest.context, fetched.sections)");
+    expect(content).toContain("contextSource: effectiveContextSource");
+    expect(content).toContain("contextFailures");
+    // The reader is read-only: GETs against the same tables the client uses,
+    // never writes, and never reads maintenance records (client-owned derivation).
+    expect(reader).not.toContain("method: \"POST\"");
+    expect(reader).not.toContain("maintenance_records");
+    expect(reader).toContain("Bearer ${config.accessToken}");
+    expect(reader).toContain("apikey: config.anonKey");
+    // Server sections are contract-validated before they may overlay the client context.
+    expect(reader).toContain("isStrictContextSection(section, value)");
+  });
+
+  it("advisory answers are region-aware: the model picks the user's Oman region from the conversation", () => {
+    const content = edge();
+    // The prompt is no longer Muscat-only and carries an explicit region rule.
+    expect(content).toContain("سوق عُمان (مسقط ومناطقها)");
+    expect(content).toContain("تحديد المنطقة");
+    expect(content).toContain("نزوي/الداخلية");
+    expect(content).toContain("لا تخلط أرقام مناطق مختلفة");
+  });
+
   it("carries a consistent persona: operating partner, direct next step, relevance-gated market comparison", () => {
     const content = edge();
     expect(content).toContain("الشريك التشغيلي اليومي");

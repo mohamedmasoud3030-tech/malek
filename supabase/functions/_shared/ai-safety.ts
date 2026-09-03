@@ -258,6 +258,38 @@ function hasStrictContextKeys(value: JsonObject): boolean {
   );
 }
 
+/** Row arrays each section may carry (row-shape contract per field). */
+const SECTION_ROW_CONTRACTS: Readonly<
+  Partial<Record<ContextSection, { rowField: string; rowContract: keyof typeof contextKeyContract }>>
+> = {
+  overdueInvoices: { rowField: "topInvoices", rowContract: "overdueInvoice" },
+  contractRenewals: { rowField: "upcomingContracts", rowContract: "contractRenewal" },
+  maintenanceSnapshot: { rowField: "topRequests", rowContract: "maintenanceRequest" },
+  vacancyDetail: { rowField: "topVacantUnits", rowContract: "vacantUnit" },
+  propertyPerformance: { rowField: "topOutstanding", rowContract: "propertyOutstanding" },
+};
+
+/**
+ * Validates ONE data section against its contract (allowed keys, row-shape
+ * keys, JSON shape). Server-read sections pass through this before they may
+ * overlay the client context, so a malformed server read can never poison
+ * the model context — it simply falls back to the client value.
+ */
+export function isStrictContextSection(section: ContextSection, value: unknown): boolean {
+  if (!hasOnlyKeys(value, section)) return false;
+  const spec = SECTION_ROW_CONTRACTS[section];
+  if (spec) {
+    const rows = isRecord(value) ? value[spec.rowField] : undefined;
+    if (
+      rows !== undefined &&
+      !(Array.isArray(rows) && rows.every((row) => hasOnlyKeys(row, spec.rowContract)))
+    ) {
+      return false;
+    }
+  }
+  return validateJsonShape(value);
+}
+
 function readContext(value: unknown): JsonObject | null {
   if (!isRecord(value) || !hasStrictContextKeys(value)) return null;
   if (!validateJsonShape(value)) return null;

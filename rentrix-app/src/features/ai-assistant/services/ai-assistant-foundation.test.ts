@@ -9,9 +9,12 @@ import {
 } from "../../../../../supabase/functions/_shared/ai-safety";
 import {
   AI_KB_VERSION,
+  BUSINESS_KB_COUNTRIES,
   BUSINESS_KB_MAX_CHARS,
   BUSINESS_KB_SOURCES,
   BUSINESS_KB_TEXT,
+  findBusinessKbCountry,
+  renderBusinessKbText,
 } from "../../../../../supabase/functions/_shared/ai-business-kb";
 import {
   PLANNING_INTENTS,
@@ -303,5 +306,27 @@ describe("AI assistant evaluation set", () => {
     // The closed planning union includes advisory alongside the real actions.
     expect(PLANNING_INTENTS).toContain("advisory");
     expect(PLANNING_INTENTS).toContain("freeform");
+  });
+
+  it("structures the KB data-driven and region-aware (Oman-first, country-extensible)", () => {
+    // Country level: one country object per supported market, Oman first.
+    expect(BUSINESS_KB_COUNTRIES[0].id).toBe("om");
+    const oman = findBusinessKbCountry("om");
+    expect(oman.id).toBe("om");
+    expect(findBusinessKbCountry("unknown")).toBe(BUSINESS_KB_COUNTRIES[0]);
+    // Region level: every region is labeled and carries its own rent table.
+    const regionIds = oman.regions.map((region) => region.id);
+    expect(regionIds).toContain("muscat");
+    expect(regionIds).toContain("nizwa");
+    expect(oman.regions.every((region) => region.rents.length > 0)).toBe(true);
+    // Nizwa (first customer) has real benchmarks, not a pointer to Muscat.
+    const nizwa = oman.regions.find((region) => region.id === "nizwa");
+    expect(nizwa?.rents.map((row) => row.range)).toContain("100-250");
+    // The rendered text labels both regions so the model can pick per user.
+    expect(renderBusinessKbText()).toContain("مسقط");
+    expect(renderBusinessKbText()).toContain("نزوي");
+    // Deterministic rendering, always within budget.
+    expect(renderBusinessKbText()).toBe(BUSINESS_KB_TEXT);
+    expect(renderBusinessKbText("om").length).toBeLessThanOrEqual(BUSINESS_KB_MAX_CHARS);
   });
 });
