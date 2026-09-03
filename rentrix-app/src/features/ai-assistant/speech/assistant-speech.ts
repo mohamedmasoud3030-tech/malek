@@ -1,10 +1,14 @@
 /**
  * Assistant speech engine — one MALEK response speaks at a time.
  *
- * Web Speech is deliberately kept behind a tiny state machine. The engine
+ * Web Speech is deliberately kept behind a small state machine. The engine
  * owns native queue cleanup, keeps utterances strongly referenced for mobile
- * Safari, and treats a browser-reported pending/speaking state as active even
- * if an earlier callback already moved our React state back to idle.
+ * Safari, and treats browser-reported pending/speaking state as active even
+ * if an earlier callback already moved React state back to idle.
+ *
+ * WebKit gets one utterance at a time. Safari/WKWebView can stall when several
+ * SpeechSynthesisUtterance objects are queued eagerly; the next chunk is
+ * therefore submitted only from the previous chunk's onend callback.
  */
 import { buildAssistantSpeechText } from './assistant-speech-text';
 
@@ -114,6 +118,15 @@ function pickArabicVoice(voices: ReadonlyArray<SpeechVoiceLike>): SpeechVoiceLik
   return best;
 }
 
+function shouldSequenceNativeQueue(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  const userAgent = navigator.userAgent ?? '';
+  // All iOS browsers and WKWebViews use WebKit. Desktop Safari also benefits
+  // from conservative one-at-a-time queuing. Android's AppleWebKit token is
+  // intentionally excluded because it normally runs Blink, not WebKit.
+  return /AppleWebKit/i.test(userAgent) && !/Android/i.test(userAgent);
+}
+
 /** Splits speech text into bounded chunks on sentence boundaries. */
 export function chunkSpeechText(text: string, maxChunkChars: number = MAX_CHUNK_CHARS): string[] {
   const sentences = text
@@ -163,8 +176,11 @@ export function chunkSpeechText(text: string, maxChunkChars: number = MAX_CHUNK_
 type Session = {
   token: number;
   messageId: string;
+  chunks: string[];
   totalChunks: number;
   finishedChunks: number;
+  nextChunkIndex: number;
+  sequential: boolean;
   /** Strong refs are required by Safari/iOS while native synthesis owns them. */
   utterances: UtteranceLike[];
 };
@@ -239,16 +255,88 @@ function endSession(session: Session, naturally: boolean): void {
   });
 }
 
-function startChunkedSpeech(
+function configureUtterance(
+  utterance: UtteranceLike,
+  session: Session,
+  voice: SpeechVoiceLike | null,
+): void {
+  utterance.lang = SPEECH_UTTERANCE_LANG;
+  // SpeechSynthesisUtterance.voice must receive the native voice object,
+  // not a cloned POJO. WebKit is particularly strict about this.
+  utterance.voice = voice;
+  utterance.rate = 1;
+  utterance.pitch = 1;
+  utterance.onstart = () => {
+    if (activeSession?.token === session.token && state.status !== 'playing') {
+      setState({ status: 'playing' });
+    }
+  };
+  utterance.onerror = (event) => {
+    if (activeSession?.token !== session.token) return;
+    const error = event?.error ?? 'unknown';
+    if (typeof console !== 'undefined') {
+      console.debug('[malek-assistant-speech] speech failed', error);
+    }
+    // Our own cancel path detaches callbacks before calling cancel(). If a
+    // cancel/interruption reaches this handler it came from the platform, so
+    // fail closed to idle instead of leaving a permanently stuck session.
+    endSession(session, false);
+  };
+}
+
+function speakSequentialChunk(
   synthesis: SpeechSynthesisLike,
   session: Session,
-  text: string,
+  voice: SpeechVoiceLike | null,
 ): void {
+  if (activeSession?.token !== session.token) return;
+  const index = session.nextChunkIndex;
+  const chunk = session.chunks[index];
+  if (chunk === undefined) {
+    endSession(session, true);
+    return;
+  }
+
+  const utterance = createUtterance(chunk);
+  if (!utterance) {
+    endSession(session, false);
+    return;
+  }
+  session.nextChunkIndex += 1;
+  session.utterances.push(utterance);
+  configureUtterance(utterance, session, voice);
+  utterance.onend = () => {
+    if (activeSession?.token !== session.token) return;
+    session.finishedChunks += 1;
+    if (session.finishedChunks >= session.totalChunks) {
+      endSession(session, true);
+      return;
+    }
+    // Crucial for Safari/WKWebView: do not preload the native queue. Feed the
+    // next chunk only after WebKit has fully ended the previous utterance.
+    speakSequentialChunk(synthesis, session, voice);
+  };
+
+  try {
+    synthesis.speak(utterance);
+  } catch {
+    endSession(session, false);
+  }
+}
+
+function startChunkedSpeech(synthesis: SpeechSynthesisLike, session: Session, text: string): void {
   const chunks = chunkSpeechText(text);
   const voice = pickArabicVoice(synthesis.getVoices());
+  session.chunks = chunks;
   session.totalChunks = chunks.length;
   session.finishedChunks = 0;
+  session.nextChunkIndex = 0;
   session.utterances.length = 0;
+
+  if (session.sequential) {
+    speakSequentialChunk(synthesis, session, voice);
+    return;
+  }
 
   for (let index = 0; index < chunks.length; index += 1) {
     const utterance = createUtterance(chunks[index]);
@@ -256,19 +344,10 @@ function startChunkedSpeech(
       endSession(session, false);
       return;
     }
-    utterance.lang = SPEECH_UTTERANCE_LANG;
-    // SpeechSynthesisUtterance.voice must receive the native voice object,
-    // not a cloned POJO. WebKit is particularly strict about this.
-    utterance.voice = voice;
-    utterance.rate = 1;
-    utterance.pitch = 1;
+    session.utterances.push(utterance);
+    configureUtterance(utterance, session, voice);
 
     const isLast = index === chunks.length - 1;
-    utterance.onstart = () => {
-      if (activeSession?.token === session.token && state.status !== 'playing') {
-        setState({ status: 'playing' });
-      }
-    };
     utterance.onend = () => {
       if (activeSession?.token !== session.token) return;
       session.finishedChunks += 1;
@@ -276,17 +355,7 @@ function startChunkedSpeech(
         endSession(session, true);
       }
     };
-    utterance.onerror = (event) => {
-      if (activeSession?.token !== session.token) return;
-      const error = event?.error ?? 'unknown';
-      if (error === 'canceled' || error === 'interrupted') return;
-      if (typeof console !== 'undefined') {
-        console.debug('[malek-assistant-speech] speech failed', error);
-      }
-      endSession(session, false);
-    };
 
-    session.utterances.push(utterance);
     try {
       synthesis.speak(utterance);
     } catch {
@@ -337,8 +406,11 @@ export function playAssistantMessage(messageId: string, rawText: string): boolea
   const session: Session = {
     token: sessionToken,
     messageId,
+    chunks: [],
     totalChunks: 0,
     finishedChunks: 0,
+    nextChunkIndex: 0,
+    sequential: shouldSequenceNativeQueue(),
     utterances: [],
   };
   activeSession = session;
