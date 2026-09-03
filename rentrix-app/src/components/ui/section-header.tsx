@@ -16,7 +16,7 @@ export function SectionHeader({ title, description, eyebrow, action, className }
     <div data-section-header className={cn('mb-3 flex min-w-0 items-start justify-between gap-3 lg:mb-4 lg:gap-4', className)}>
       <div className="min-w-0 flex-1">
         {eyebrow ? (
-          <p className="mb-0.5 text-[0.6875rem] font-extrabold leading-4 text-primary" data-section-eyebrow>
+          <p className="mb-0.5 text-[0.6875rem] font-bold leading-4 text-primary/75" data-section-eyebrow>
             {eyebrow}
           </p>
         ) : null}

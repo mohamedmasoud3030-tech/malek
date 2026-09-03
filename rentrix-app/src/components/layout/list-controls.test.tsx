@@ -27,7 +27,8 @@ describe('FilterBar — سطح البحث والفلاتر الموحد', () => 
 
     // The toolbar is a quiet edge-to-edge strip; it never becomes a card.
     expect(html).toContain('border-y border-border/50');
-    expect(html).toContain('!bg-transparent');
+    expect(html).toContain('bg-transparent');
+    expect(html).not.toContain('!bg-transparent');
     expect(html).toContain('!px-0');
     expect(html).toContain('shadow-none');
     // Quick filters sit inline at md+ so routine filtering stays one step away.

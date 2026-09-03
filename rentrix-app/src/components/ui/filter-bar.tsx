@@ -72,7 +72,7 @@ export function FilterBar({
         data-register-toolbar
         aria-label="البحث والتصفية"
         className={cn(
-          'flex min-w-0 items-center gap-2 !rounded-none !border-x-0 border-y border-border/50 !bg-transparent !px-0 py-1.5 shadow-none sm:py-2',
+          'flex min-w-0 items-center gap-2 !rounded-none !border-x-0 border-y border-border/50 bg-transparent !px-0 py-1.5 shadow-none sm:py-2',
           className,
         )}
       >

@@ -99,7 +99,7 @@ function ActionButton({ action, className }: Readonly<{ action: EntityCardAction
       size="sm"
       aria-label={action.ariaLabel}
       className={cn(
-        'min-w-0 gap-1.5 rounded-xl border px-3 text-[11.5px] font-semibold shadow-none',
+        'min-w-0 gap-1.5 rounded-lg border px-3 text-[11.5px] font-semibold shadow-none',
         getActionClassName(action.variant),
         className,
       )}
