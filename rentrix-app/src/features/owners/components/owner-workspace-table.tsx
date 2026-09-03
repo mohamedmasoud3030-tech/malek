@@ -1,4 +1,4 @@
-import { Eye, LinkIcon, Pencil } from 'lucide-react';
+import { Eye, Pencil, UserRound } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { ActionMenu } from '@/components/ui/action-menu';
@@ -7,22 +7,15 @@ import { DataTableColumnsMenu } from '@/components/ui/data-table';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { EmptyState } from '@/components/ui/state-surfaces';
 import { EntityCell } from '@/components/ui/entity-cell';
-import { FilterBar } from '@/components/ui/filter-bar';
 import { formatLatinNumber } from '@/lib/formatters';
 import { OwnerPreviewDialog } from './OwnerPreviewDialog';
 import type { Owner } from '../services/owner-service';
-import {
-  getOwnerDisplayLabel,
-  getOwnerPropertyOwnershipLabel,
-  type OwnerWorkspaceRow,
-} from '../utils/owner-ui-helpers';
+import { getOwnerDisplayLabel, type OwnerWorkspaceRow } from '../utils/owner-ui-helpers';
 
 const ownerColumnOptions = [
   { key: 'name', label: 'اسم المالك', locked: true },
   { key: 'contact', label: 'الهاتف والإيميل' },
   { key: 'property_count', label: 'عدد العقارات' },
-  { key: 'property_links', label: 'العقارات' },
-  { key: 'ownership', label: 'الملكية/الدور' },
   { key: 'contracts', label: 'العقود النشطة' },
   { key: 'actions', label: 'الإجراءات', locked: true },
 ] as const;
@@ -38,67 +31,19 @@ function OwnerContact({ owner }: Readonly<{ owner: Owner }>) {
   );
 }
 
-function OwnerPropertyLinks({ row }: Readonly<{ row: OwnerWorkspaceRow }>) {
-  const navigate = useNavigate();
-  if (!row.properties.length) return <span className="text-muted-foreground">—</span>;
-  return (
-    <div className="flex flex-wrap gap-2">
-      {row.properties.map((property) => (
-        <Button
-          key={`${row.owner.id}-${property.id}`}
-          variant="secondary"
-          size="sm"
-          onClick={() => void navigate({ to: '/properties/$propertyId', params: { propertyId: property.id } })}
-        >
-          {property.title}
-        </Button>
-      ))}
-    </div>
-  );
-}
-
-function OwnershipSummary({ row }: Readonly<{ row: OwnerWorkspaceRow }>) {
-  if (!row.properties.length) return <span className="text-muted-foreground">—</span>;
-  return (
-    <div className="space-y-1 text-xs text-muted-foreground">
-      {row.properties.map((property) => (
-        <div key={`${row.owner.id}-${property.id}-ownership`}>{getOwnerPropertyOwnershipLabel(property)}</div>
-      ))}
-    </div>
-  );
-}
-
 export type OwnerWorkspaceTableProps = Readonly<{
   rows: OwnerWorkspaceRow[];
-  search: string;
-  selectedOwner: Owner | null;
   onCreateOwner: () => void;
   onEditOwner: (owner: Owner) => void;
-  onSearchChange: (search: string) => void;
-  onSelectOwner: (ownerId: string) => void;
 }>;
 
-export function OwnerWorkspaceTable({
-  rows,
-  search,
-  selectedOwner: _selectedOwner,
-  onCreateOwner,
-  onEditOwner,
-  onSearchChange,
-  onSelectOwner,
-}: OwnerWorkspaceTableProps) {
+export function OwnerWorkspaceTable({ rows, onCreateOwner, onEditOwner }: OwnerWorkspaceTableProps) {
+  const navigate = useNavigate();
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultOwnerColumns]);
   const [previewOwnerId, setPreviewOwnerId] = useState<string | null>(null);
-  const hasSearch = Boolean(search.trim());
 
   const openPreview = (ownerId: string) => setPreviewOwnerId(ownerId);
-  const emptyState = (
-    <EmptyState
-      title={hasSearch ? 'لا توجد نتائج مطابقة' : 'لا يوجد ملاك'}
-      description={hasSearch ? 'جرّب البحث باسم أو هاتف أو بريد أو اسم عقار آخر.' : 'أضف أول مالك لبدء ربطه بالعقارات.'}
-      action={hasSearch ? undefined : <Button onClick={onCreateOwner}>إضافة مالك</Button>}
-    />
-  );
+  const openDetail = (ownerId: string) => void navigate({ to: '/owners/$ownerId', params: { ownerId } });
 
   const columns = useMemo((): ColumnDef<OwnerWorkspaceRow>[] => [
     {
@@ -114,8 +59,6 @@ export function OwnerWorkspaceTable({
     },
     { key: 'contact', header: 'الهاتف والإيميل', priority: 'secondary', render: (row) => <OwnerContact owner={row.owner} /> },
     { key: 'property_count', header: 'عدد العقارات', priority: 'secondary', render: (row) => formatLatinNumber(row.propertyCount, 'ar') },
-    { key: 'property_links', header: 'العقارات', priority: 'detail', render: (row) => <OwnerPropertyLinks row={row} /> },
-    { key: 'ownership', header: 'الملكية/الدور', priority: 'detail', render: (row) => <OwnershipSummary row={row} /> },
     {
       key: 'contracts',
       header: 'العقود النشطة',
@@ -132,30 +75,32 @@ export function OwnerWorkspaceTable({
             label={`إجراءات ${getOwnerDisplayLabel(row.owner)}`}
             items={[
               { id: 'preview', label: 'معاينة', icon: Eye, onClick: () => openPreview(row.owner.id) },
-              { id: 'relationships', label: 'العلاقات', icon: LinkIcon, onClick: () => onSelectOwner(row.owner.id) },
+              { id: 'details', label: 'فتح ملف المالك', icon: UserRound, onClick: () => openDetail(row.owner.id) },
               { id: 'edit', label: 'تعديل', icon: Pencil, onClick: () => onEditOwner(row.owner) },
             ]}
           />
         </div>
       ),
     },
-  ], [onEditOwner, onSelectOwner, openPreview]);
+  ], [navigate, onEditOwner]);
+
+  const emptyState = (
+    <EmptyState
+      title="لا يوجد ملاك"
+      description="أضف أول مالك لبدء ربطه بالعقارات."
+      action={<Button onClick={onCreateOwner}>إضافة مالك</Button>}
+    />
+  );
 
   return (
     <div className="space-y-3" data-owner-workspace-table>
-      <FilterBar
-        searchValue={search}
-        onSearchChange={onSearchChange}
-        searchPlaceholder="بحث باسم المالك أو الهاتف أو الإيميل أو العقار"
-        searchAriaLabel="بحث في الملاك"
-        actions={(
-          <DataTableColumnsMenu
-            columns={ownerColumnOptions}
-            visibleKeys={visibleColumnKeys}
-            onChange={setVisibleColumnKeys}
-          />
-        )}
-      />
+      <div className="flex justify-end">
+        <DataTableColumnsMenu
+          columns={ownerColumnOptions}
+          visibleKeys={visibleColumnKeys}
+          onChange={setVisibleColumnKeys}
+        />
+      </div>
       {rows.length > 0 ? (
         <EntityTable
           aria-label="جدول الملاك"
@@ -176,11 +121,11 @@ export function OwnerWorkspaceTable({
           })}
           mobileCardActions={(row) => [
             {
-              label: 'العلاقات',
-              icon: LinkIcon,
+              label: 'فتح الملف',
+              icon: UserRound,
               variant: 'secondary',
-              onClick: () => onSelectOwner(row.owner.id),
-              ariaLabel: `علاقات ${getOwnerDisplayLabel(row.owner)}`,
+              onClick: () => openDetail(row.owner.id),
+              ariaLabel: `فتح ملف ${getOwnerDisplayLabel(row.owner)}`,
             },
             {
               label: 'تعديل',
