@@ -14,11 +14,6 @@ type RegisterCase = {
   requireActions?: boolean;
 };
 
-/**
- * Cross-register mobile hierarchy lock (interface architecture).
- * Every high-traffic operational register must declare EntityTable/DataTable
- * column priorities so the horizontally scrollable table keeps a consistent identity/action contract.
- */
 describe('interface register mobile hierarchy', () => {
   const cases: RegisterCase[] = [
     { file: 'features/properties/properties-list-page.tsx', datum: 'status' },
@@ -55,30 +50,43 @@ describe('interface register mobile hierarchy', () => {
     expect(source, file).not.toContain('mobileVisibleSecondaryKey');
     expect(source, file).toMatch(/priority:\s*['"]identity['"]/);
     expect(source, file).toMatch(/priority:\s*['"]primary['"]/);
-    if (requireActions) {
-      expect(source, file).toMatch(/priority:\s*['"]actions['"]/);
-    }
-    // Active filter chips must not be polluted with column priorities.
+    if (requireActions) expect(source, file).toMatch(/priority:\s*['"]actions['"]/);
     expect(source, file).not.toMatch(/key:\s*['"][^'"]+['"]\s*,\s*priority:\s*['"][^'"]+['"]\s*,\s*label:/);
   });
 });
 
+describe('owners canonical list contract', () => {
+  it('uses the shared list runtime and keeps relationship management out of the directory', () => {
+    const page = read('features/owners/OwnersPage.tsx');
+    const table = read('features/owners/components/owner-workspace-table.tsx');
+    const detail = read('features/owners/components/owner-detail-view.tsx');
+
+    expect(page).toContain('<ListPage');
+    expect(page).toContain('workspaceName="owners"');
+    expect(page).not.toContain('OwnerMobileRelationships');
+    expect(page).not.toContain('data-owner-relationships');
+    expect(page).not.toContain('OwnershipLinkForm');
+    expect(table).not.toContain("id: 'relationships'");
+    expect(table).not.toContain("key: 'ownership'");
+    expect(detail).toContain('<OwnerRelationshipManager');
+    expect(detail).toContain("id=\"portfolio\"");
+  });
+});
+
 describe('dashboard queue error honesty', () => {
-  it('does not paint successful empty queues while snapshot load failed', () => {
+  it('keeps authoritative errors honest without restoring removed duplicate detail sections', () => {
     const collections = read('features/dashboard/components/collections-section.tsx');
-    const expiring = read('features/dashboard/components/upcoming-contracts-section.tsx');
-    const maintenance = read('features/dashboard/components/maintenance-section.tsx');
     const needsAttention = read('features/dashboard/components/needs-attention-section.tsx');
     const page = read('features/dashboard/dashboard-page.tsx');
+
     expect(collections).toContain('isError');
-    expect(expiring).toContain('isError');
-    expect(maintenance).toContain('isError');
     expect(needsAttention).toContain('isError');
     expect(collections).toContain('تعذر تحميل المتأخرات');
-    expect(expiring).toContain('تعذر تحميل العقود القريبة من الانتهاء');
-    expect(maintenance).toContain('تعذر تحميل الصيانة العاجلة');
     expect(needsAttention).toContain('تعذر تحميل الحالات التي تحتاج انتباهاً');
-    expect(page.match(/isError=\{hasDashboardError && !snapshot\}/g)?.length).toBeGreaterThanOrEqual(3);
     expect(page).toContain('DataRefreshAlert');
+    expect(page).not.toContain('<MaintenanceSection');
+    expect(page).not.toContain('<UpcomingContractsSection');
+    expect(page).not.toContain('<PropertyHealthSection');
+    expect(page).not.toContain('<OwnerObligationsSection');
   });
 });
