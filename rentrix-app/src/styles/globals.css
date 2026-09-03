@@ -45,6 +45,9 @@
     color: hsl(var(--foreground));
     font-size: 15px;
     line-height: 1.6;
+    /* Arabic-first readability: default body copy renders in the self-hosted
+       Cairo 500 cut (matches the heavier weight ladder in tokens.css). */
+    font-weight: 500;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }

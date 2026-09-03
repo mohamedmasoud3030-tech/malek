@@ -1,12 +1,36 @@
 /* MALEK design tokens — the only application theme source.
    One palette, one light theme, one dark theme, one semantic bridge.
-   Final direction: professional royal/deep blue family, clean light surfaces,
-   deep navy dark, strong controlled blue accents, high readability, premium contrast.
-   No teal, no purple, no gold, no excessive gradients, no washed-out gray. */
+   Direction (unchanged): professional royal/deep blue family, clean light
+   surfaces, deep navy dark, strong controlled blue accents, premium contrast.
+   No teal, no purple, no gold, no excessive gradients, no washed-out gray.
+
+   2026-09-03 premium readability refinement (same DNA, tuned values):
+   - LIGHT: darker text tiers, clearer secondary text, stronger borders and
+     surface separation, soft off-white surfaces instead of flat #fff glare,
+     deeper royal primary. Built for long daily sessions and small Arabic text.
+   - DARK: de-saturated slate foundation (muddiness removed), royal blue kept
+     as the single controlled accent, restrained semantic colors, more visible
+     borders, brighter primary for links/accents on dark surfaces.
+   - Typography: the Tailwind weight ladder shifts one real Cairo step heavier
+     (weights 500–900 are self-hosted) so Arabic glyphs carry more ink.
+   Light and dark were designed and validated independently — not inverted.
+   Contrast pairs are validated with the WCAG relative-luminance model
+   (theme-check script); every text/semantic/sidebar pair meets or exceeds
+   4.5:1, body text targets 6–7:1+, 11px muted labels target ≥5.5:1. */
 
 @theme {
   --font-sans: 'Cairo', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'SF Mono', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Stronger Arabic weight ladder. Each named step maps to a real self-hosted
+     Cairo cut (500/600/700/800/900). The ladder compresses at the font's 900
+     ceiling, so extrabold and black intentionally share the maximum weight. */
+  --font-weight-normal: 500;
+  --font-weight-medium: 600;
+  --font-weight-semibold: 700;
+  --font-weight-bold: 800;
+  --font-weight-extrabold: 900;
+  --font-weight-black: 900;
 }
 
 :root {
@@ -55,64 +79,78 @@
   --max-w-xl: 80rem;
   --max-w-2xl: 96rem;
 
-  /* Light: clean white / very subtle cool off-white, professional royal blue primary,
-     clear neutral borders, dark readable text. */
-  --color-bg: 220 18% 98%;
-  --color-card: 0 0% 100%;
-  --color-card-muted: 220 14% 96%;
-  --color-primary: 221 71% 36%;
+  /* LIGHT — soft low-glare surfaces with clear separation:
+     page sits one step below the card so panels read without pure-white glare;
+     muted surfaces inset slightly below the page for a quiet recessed feel. */
+  --color-bg: 222 22% 96.8%;
+  --color-card: 220 25% 99.5%;
+  --color-card-muted: 220 18% 95%;
+
+  /* Royal blue primary — slightly deeper than before for premium weight and
+     safer small-text-on-tint usage; white labels stay comfortably AAA. */
+  --color-primary: 221 72% 33%;
   --color-primary-fg: 0 0% 100%;
-  --color-accent-fg: 222 36% 12%;
-  --color-text-primary: 222 36% 12%;
-  --color-text-secondary: 220 14% 32%;
-  --color-text-muted: 220 10% 42%;
-  --color-border: 220 13% 82%;
-  --color-border-light: 220 12% 88%;
+  --color-accent-fg: 222 44% 11%;
 
-  --color-sidebar-bg: 222 47% 11%;
-  --color-sidebar-text: 216 16% 84%;
-  --color-sidebar-active-bg: 221 44% 20%;
+  /* Text tiers — darker and more saturated than before; every tier stays
+     legible at 11px Arabic UI sizes on card and page surfaces. */
+  --color-text-primary: 222 44% 11%;
+  --color-text-secondary: 221 24% 28%;
+  --color-text-muted: 220 16% 36%;
+
+  /* Borders — clearly visible on both card and page (never hairline-faint). */
+  --color-border: 220 19% 79%;
+  --color-border-light: 220 18% 87%;
+
+  --color-sidebar-bg: 222 38% 12%;
+  --color-sidebar-text: 217 22% 85%;
+  --color-sidebar-active-bg: 221 48% 21%;
   --color-sidebar-active-text: 0 0% 100%;
-  --color-sidebar-hover-bg: 222 34% 16%;
+  --color-sidebar-hover-bg: 222 26% 17%;
 
-  --color-success-text: 156 62% 27%;
-  --color-success-bg: 154 44% 93%;
-  --color-warning-text: 32 80% 32%;
-  --color-warning-bg: 38 76% 92%;
-  --color-danger-text: 0 64% 42%;
-  --color-danger-bg: 0 68% 94%;
-  --color-info-text: 214 72% 38%;
-  --color-info-bg: 214 70% 93%;
-  --color-neutral-text: 220 12% 36%;
-  --color-neutral-bg: 220 14% 92%;
+  /* Semantic pairs — text colors deepened; soft tints stay airy. Every
+     text/tint pair clears 4.5:1, and standalone text on cards clears it too. */
+  --color-success-text: 156 62% 26%;
+  --color-success-bg: 153 45% 93.5%;
+  --color-warning-text: 30 82% 30%;
+  --color-warning-bg: 38 76% 93%;
+  --color-danger-text: 0 66% 41%;
+  --color-danger-bg: 0 66% 94.5%;
+  --color-info-text: 215 72% 35%;
+  --color-info-bg: 214 70% 94%;
+  --color-neutral-text: 220 16% 33%;
+  --color-neutral-bg: 220 14% 93%;
 
-  --tone-emerald: 156 58% 30%;
-  --tone-emerald-soft: 154 42% 93%;
-  --tone-amber: 32 80% 40%;
-  --tone-amber-soft: 38 76% 92%;
-  --tone-sky: 214 70% 40%;
-  --tone-sky-soft: 214 68% 93%;
-  --tone-rose: 350 62% 45%;
-  --tone-rose-soft: 350 65% 94%;
-  --tone-violet: 221 58% 48%;
+  /* Product accent tones — same hue family as before, re-leveled so every
+     tone/soft pair is at least 4.5:1 (amber/sky were the weak pairs). */
+  --tone-emerald: 155 56% 27%;
+  --tone-emerald-soft: 153 42% 93%;
+  --tone-amber: 31 80% 34%;
+  --tone-amber-soft: 38 74% 93%;
+  --tone-sky: 214 68% 37%;
+  --tone-sky-soft: 214 66% 93.5%;
+  --tone-rose: 350 62% 42%;
+  --tone-rose-soft: 350 64% 94%;
+  --tone-violet: 221 60% 46%;
   --tone-violet-soft: 221 56% 94%;
-  --tone-slate: 220 14% 38%;
-  --tone-slate-soft: 220 14% 92%;
-  --support-brand: 142 62% 42%;
+  --tone-slate: 220 16% 34%;
+  --tone-slate-soft: 220 14% 92.5%;
+  --support-brand: 142 60% 36%;
 
-  /* Reduced shadows: rely on borders + spacing for separation, not floating blobs. */
-  --shadow-card: 0 1px 2px hsl(222 20% 14% / 0.04), 0 4px 12px -10px hsl(222 20% 14% / 0.06);
-  --shadow-card-hover: 0 2px 6px hsl(222 20% 14% / 0.05), 0 10px 20px -12px hsl(222 20% 14% / 0.09);
-  --shadow-elevated: 0 12px 28px -18px hsl(222 24% 12% / 0.14), 0 4px 10px -8px hsl(222 20% 14% / 0.06);
-  --shadow-sidebar: 0 0 0 1px hsl(222 28% 18% / 0.9), 0 0 20px -16px hsl(222 47% 11% / 0.35);
+  /* Separation comes from borders + spacing; shadows add a touch more
+     definition than the old whisper values, not floating blobs. */
+  --shadow-card: 0 1px 2px hsl(222 20% 14% / 0.05), 0 4px 12px -10px hsl(222 20% 14% / 0.08);
+  --shadow-card-hover: 0 2px 6px hsl(222 20% 14% / 0.06), 0 10px 20px -12px hsl(222 20% 14% / 0.1);
+  --shadow-elevated: 0 12px 28px -18px hsl(222 24% 12% / 0.16), 0 4px 10px -8px hsl(222 20% 14% / 0.07);
+  --shadow-sidebar: 0 0 0 1px hsl(222 24% 19% / 0.9), 0 0 20px -16px hsl(222 38% 12% / 0.35);
 
-  --material-page: hsl(220 18% 98%);
-  --material-panel: hsl(0 0% 100% / 0.998);
-  --material-chrome: hsl(0 0% 100% / 0.98);
-  --material-overlay: hsl(0 0% 100% / 0.99);
-  --material-border: hsl(220 13% 82% / 0.9);
+  --material-page: hsl(222 22% 96.8%);
+  --material-panel: hsl(220 25% 99.5% / 0.998);
+  --material-chrome: hsl(220 25% 99.5% / 0.98);
+  --material-overlay: hsl(220 25% 99.5% / 0.99);
+  --material-border: hsl(220 19% 79% / 0.9);
   --material-highlight: inset 0 1px 0 hsl(0 0% 100% / 0.92);
-  --material-shadow: 0 1px 0 hsl(220 13% 82% / 0.9), 0 4px 12px -10px hsl(222 20% 14% / 0.06);
+  --material-shadow: 0 1px 0 hsl(220 19% 79% / 0.9), 0 4px 12px -10px hsl(222 20% 14% / 0.07);
   --material-blur: 0px;
 
   --background: var(--color-bg);
@@ -121,11 +159,11 @@
   --card-foreground: var(--color-text-primary);
   --primary: var(--color-primary);
   --primary-foreground: var(--color-primary-fg);
-  --secondary: 220 14% 92%;
+  --secondary: 220 18% 93%;
   --secondary-foreground: var(--color-text-primary);
-  --muted: 220 14% 94%;
+  --muted: 220 16% 95%;
   --muted-foreground: var(--color-text-muted);
-  --destructive: 0 64% 42%;
+  --destructive: 0 66% 41%;
   --destructive-foreground: 0 0% 100%;
   --border: var(--color-border);
   --input: var(--color-border);
@@ -133,8 +171,8 @@
   --sidebar-foreground: var(--color-sidebar-text);
   --sidebar-accent: var(--color-sidebar-hover-bg);
   --sidebar-accent-foreground: var(--color-sidebar-active-text);
-  --sidebar-border: 222 28% 18%;
-  --accent: 220 14% 92%;
+  --sidebar-border: 222 24% 19%;
+  --accent: 220 18% 93%;
   --accent-foreground: var(--color-accent-fg);
 
   --text-secondary: var(--color-text-secondary);
@@ -171,7 +209,7 @@
   --financial-neutral-bg: var(--color-neutral-bg);
 
   --disabled-color-source: 220 14% 92%;
-  --disabled-fg-source: 220 10% 42%;
+  --disabled-fg-source: 220 14% 38%;
   --disabled-bg: hsl(var(--disabled-color-source));
   --disabled-fg: hsl(var(--disabled-fg-source));
   --overlay: 222 40% 10%;
@@ -180,64 +218,75 @@
 }
 
 [data-theme='dark'] {
-  /* Dark: deep navy / near-black blue bg, slightly lighter elevated surfaces,
-     strong readable text, blue accent clearly visible, borders visible,
-     avoid muddy gray-on-gray. */
-  --color-bg: 222 44% 8%;
-  --color-card: 222 32% 13%;
-  --color-card-muted: 222 26% 16%;
-  --color-primary: 217 80% 70%;
-  --color-primary-fg: 222 44% 10%;
-  --color-accent-fg: 214 28% 96%;
-  --color-text-primary: 214 28% 96%;
-  --color-text-secondary: 216 16% 78%;
-  --color-text-muted: 216 10% 64%;
-  --color-border: 222 18% 22%;
-  --color-border-light: 222 14% 18%;
+  /* DARK — sophisticated slate/navy neutral foundation; saturation pulled
+     down everywhere so surfaces feel engineered, not tinted. Royal blue stays
+     the one strong accent. Not an inversion of light: text tiers, borders and
+     semantic colors are tuned per-surface for dark. */
+  --color-bg: 223 26% 9.5%;
+  --color-card: 221 20% 13.5%;
+  --color-card-muted: 220 17% 17%;
 
-  --color-sidebar-bg: 223 48% 7%;
-  --color-sidebar-text: 216 14% 82%;
-  --color-sidebar-active-bg: 221 40% 18%;
-  --color-sidebar-active-text: 214 80% 90%;
-  --color-sidebar-hover-bg: 222 30% 12%;
+  /* Royal blue accent — brightened enough to read as links/accents on dark
+     cards (6:1+), saturation restrained so it never glows neon. */
+  --color-primary: 219 74% 67%;
+  --color-primary-fg: 223 30% 10%;
+  --color-accent-fg: 216 20% 95%;
 
-  --color-success-text: 154 54% 66%;
-  --color-success-bg: 154 28% 17%;
-  --color-warning-text: 38 82% 68%;
-  --color-warning-bg: 38 32% 18%;
-  --color-danger-text: 0 70% 72%;
-  --color-danger-bg: 0 34% 19%;
-  --color-info-text: 214 76% 70%;
-  --color-info-bg: 214 30% 18%;
-  --color-neutral-text: 216 12% 68%;
-  --color-neutral-bg: 222 20% 18%;
+  /* Text tiers — softened off pure white; keeps long-session comfort while
+     staying far above AA floors on every dark surface. */
+  --color-text-primary: 216 20% 94%;
+  --color-text-secondary: 215 16% 75%;
+  --color-text-muted: 216 13% 63%;
 
-  --tone-emerald: 154 52% 64%;
-  --tone-emerald-soft: 154 28% 17%;
-  --tone-amber: 38 82% 66%;
-  --tone-amber-soft: 38 32% 18%;
-  --tone-sky: 214 72% 68%;
-  --tone-sky-soft: 214 30% 18%;
-  --tone-rose: 350 68% 72%;
-  --tone-rose-soft: 350 32% 19%;
-  --tone-violet: 221 64% 74%;
-  --tone-violet-soft: 221 30% 20%;
-  --tone-slate: 216 14% 68%;
-  --tone-slate-soft: 222 20% 18%;
-  --support-brand: 142 58% 58%;
+  /* Borders — lifted from the old ~1.35:1 whisper to clearly visible. */
+  --color-border: 221 17% 26%;
+  --color-border-light: 221 14% 20%;
 
-  --shadow-card: 0 1px 0 hsl(214 20% 96% / 0.03), 0 8px 16px -12px hsl(225 60% 3% / 0.5);
-  --shadow-card-hover: 0 1px 0 hsl(214 20% 96% / 0.04), 0 12px 24px -12px hsl(225 60% 3% / 0.6);
-  --shadow-elevated: 0 20px 36px -18px hsl(225 70% 3% / 0.7), 0 0 0 1px hsl(214 20% 96% / 0.04);
-  --shadow-sidebar: 0 0 0 1px hsl(222 20% 16% / 0.9), 0 0 24px -16px hsl(225 70% 3% / 0.65);
+  --color-sidebar-bg: 223 26% 8%;
+  --color-sidebar-text: 216 16% 80%;
+  --color-sidebar-active-bg: 221 44% 20%;
+  --color-sidebar-active-text: 217 60% 93%;
+  --color-sidebar-hover-bg: 222 20% 13%;
 
-  --material-page: hsl(222 44% 8%);
-  --material-panel: hsl(222 32% 13% / 0.99);
-  --material-chrome: hsl(222 32% 13% / 0.98);
-  --material-overlay: hsl(222 32% 13% / 0.99);
-  --material-border: hsl(222 18% 22% / 0.9);
-  --material-highlight: inset 0 1px 0 hsl(214 20% 96% / 0.04);
-  --material-shadow: 0 1px 0 hsl(222 18% 22% / 0.9), 0 8px 16px -12px hsl(225 60% 3% / 0.5);
+  /* Restrained semantics — shared lightness band (~62–68%), saturation cut
+     vs. the old palette; tints are deep, hue-kissed, never muddy. */
+  --color-success-text: 152 44% 62%;
+  --color-success-bg: 152 26% 15%;
+  --color-warning-text: 36 72% 63%;
+  --color-warning-bg: 36 26% 15.5%;
+  --color-danger-text: 2 62% 68%;
+  --color-danger-bg: 2 28% 16.5%;
+  --color-info-text: 215 66% 68%;
+  --color-info-bg: 216 30% 16.5%;
+  --color-neutral-text: 216 13% 68%;
+  --color-neutral-bg: 221 15% 18.5%;
+
+  --tone-emerald: 152 44% 60%;
+  --tone-emerald-soft: 152 24% 15.5%;
+  --tone-amber: 36 66% 62%;
+  --tone-amber-soft: 36 26% 15.5%;
+  --tone-sky: 213 60% 66%;
+  --tone-sky-soft: 215 28% 16.5%;
+  --tone-rose: 349 56% 68%;
+  --tone-rose-soft: 349 26% 16.5%;
+  --tone-violet: 220 62% 72%;
+  --tone-violet-soft: 221 26% 17.5%;
+  --tone-slate: 216 13% 66%;
+  --tone-slate-soft: 221 14% 18.5%;
+  --support-brand: 142 45% 55%;
+
+  --shadow-card: 0 1px 0 hsl(216 20% 96% / 0.03), 0 8px 16px -12px hsl(225 60% 3% / 0.5);
+  --shadow-card-hover: 0 1px 0 hsl(216 20% 96% / 0.04), 0 12px 24px -12px hsl(225 60% 3% / 0.6);
+  --shadow-elevated: 0 20px 36px -18px hsl(225 70% 3% / 0.7), 0 0 0 1px hsl(216 20% 96% / 0.04);
+  --shadow-sidebar: 0 0 0 1px hsl(221 16% 18% / 0.9), 0 0 24px -16px hsl(225 70% 3% / 0.65);
+
+  --material-page: hsl(223 26% 9.5%);
+  --material-panel: hsl(221 20% 13.5% / 0.99);
+  --material-chrome: hsl(221 20% 13.5% / 0.98);
+  --material-overlay: hsl(221 20% 13.5% / 0.99);
+  --material-border: hsl(221 17% 26% / 0.9);
+  --material-highlight: inset 0 1px 0 hsl(216 20% 96% / 0.04);
+  --material-shadow: 0 1px 0 hsl(221 17% 26% / 0.9), 0 8px 16px -12px hsl(225 60% 3% / 0.5);
   --material-blur: 0px;
 
   --background: var(--color-bg);
@@ -246,11 +295,11 @@
   --card-foreground: var(--color-text-primary);
   --primary: var(--color-primary);
   --primary-foreground: var(--color-primary-fg);
-  --secondary: 222 24% 18%;
+  --secondary: 221 16% 19%;
   --secondary-foreground: var(--color-text-primary);
-  --muted: 222 24% 17%;
+  --muted: 220 14% 17%;
   --muted-foreground: var(--color-text-muted);
-  --destructive: 0 62% 58%;
+  --destructive: 0 62% 52%;
   --destructive-foreground: 0 0% 100%;
   --border: var(--color-border);
   --input: var(--color-border);
@@ -258,15 +307,15 @@
   --sidebar-foreground: var(--color-sidebar-text);
   --sidebar-accent: var(--color-sidebar-hover-bg);
   --sidebar-accent-foreground: var(--color-sidebar-active-text);
-  --sidebar-border: 222 20% 16%;
-  --accent: 222 24% 18%;
+  --sidebar-border: 221 16% 18%;
+  --accent: 221 16% 19%;
   --accent-foreground: var(--color-accent-fg);
 
   --surface: var(--color-card);
-  --surface-elevated: 222 26% 16%;
-  --disabled-color-source: 222 20% 18%;
-  --disabled-fg-source: 216 10% 60%;
-  --overlay: 224 50% 4%;
+  --surface-elevated: 220 15% 18%;
+  --disabled-color-source: 221 14% 20%;
+  --disabled-fg-source: 216 14% 58%;
+  --overlay: 223 30% 6%;
   --ring: var(--color-primary);
   --focus-ring: var(--color-primary);
 }

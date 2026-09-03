@@ -36,7 +36,7 @@
   width: 3px;
   border-radius: 999px;
   content: '';
-  background: linear-gradient(180deg, hsl(var(--primary)), hsl(var(--info) / 0.58));
+  background: linear-gradient(180deg, hsl(var(--primary)), hsl(var(--info-text) / 0.58));
 }
 
 [data-theme='dark'] [data-malek-surface] [data-page-header] {
