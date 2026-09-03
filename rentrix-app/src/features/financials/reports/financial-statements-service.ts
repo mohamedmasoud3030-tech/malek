@@ -4,8 +4,8 @@ import { toFinancialNumber } from '../financialMath';
 export type ReportPeriod = { from: string | null; to: string | null };
 
 /**
- * @deprecated Compatibility contract for legacy `rpt_cash_flow` fixtures.
- * Product UI uses WP05 `CashFlowReport` from the accounting authority.
+ * Compatibility shape for historical `rpt_cash_flow` payload fixtures.
+ * Product reports use the authoritative WP05 GL cash-flow contract instead.
  */
 export type CashFlowStatementReport = {
   period: ReportPeriod;
@@ -40,7 +40,7 @@ function asString(value: unknown): string | null {
   return typeof value === 'string' ? value : null;
 }
 
-/** @deprecated Test-fixture normalizer for the retired `rpt_cash_flow` payload only. */
+/** Normalize historical `rpt_cash_flow` fixture payloads only. */
 export function normalizeCashFlowStatementReport(payload: unknown): CashFlowStatementReport {
   const root = asRecord(payload);
   const period = asRecord(root.period);
