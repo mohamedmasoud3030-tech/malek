@@ -147,6 +147,7 @@ export function StatementsSection({
               error={ownerStatementError}
               isLoading={isOwnerStatementLoading}
               fallbackRows={ownerMovementRows}
+              period={{ from: filters?.from, to: filters?.to, propertyId: filters?.propertyId }}
               onPrint={handlePrintProfessionalOwnerReport}
               onDownloadPdf={handleDownloadProfessionalOwnerReport}
               onDownloadExcel={handleDownloadOwnerExcel}
