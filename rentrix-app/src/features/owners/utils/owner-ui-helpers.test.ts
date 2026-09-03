@@ -90,7 +90,6 @@ describe('owner UI helpers', () => {
 
   it('keeps a scheduled ownership link active through its end date', () => {
     const scheduled = propertyOwnerLink('property-1', 'owner-1', '2026-05-16');
-
     expect(isActivePropertyOwnerLink(scheduled, '2026-05-15')).toBe(true);
     expect(isActivePropertyOwnerLink(scheduled, '2026-05-16')).toBe(true);
     expect(isActivePropertyOwnerLink(scheduled, '2026-05-17')).toBe(false);
@@ -105,12 +104,7 @@ describe('owner UI helpers', () => {
       starts_on: '2026-05-01',
       ends_on: '2026-06-01',
     };
-
-    expect(emptyPropertyOwnershipLinkFormValues).toMatchObject({
-      is_primary: true,
-      starts_on: '',
-      ends_on: '',
-    });
+    expect(emptyPropertyOwnershipLinkFormValues).toMatchObject({ is_primary: true, starts_on: '', ends_on: '' });
     expect(validatePropertyOwnershipLinkForm(values)).toBeNull();
     expect(propertyOwnershipLinkFormToPayload(values)).toEqual({
       ownership_percentage: 55.5,
@@ -136,15 +130,16 @@ describe('owner UI helpers', () => {
     });
   });
 
-  it('builds searchable owner workspace rows without financial balances', () => {
+  it('builds searchable owner directory rows without retired ownership presentation payloads', () => {
     const rows = buildOwnerWorkspaceRows([baseOwner], [property('property-1', ['owner-1'])], [{ id: 'contract-1', property_id: 'property-1' }]);
 
     expect(rows[0]).toMatchObject({
       propertyCount: 1,
       activeContractCount: 1,
       propertyNames: 'عقار property-1',
-      ownershipSummary: 'عقار property-1: 100% أساسي',
     });
+    expect(rows[0]).not.toHaveProperty('properties');
+    expect(rows[0]).not.toHaveProperty('ownershipSummary');
     expect(filterOwnerWorkspaceRows(rows, 'مالك')).toHaveLength(1);
     expect(filterOwnerWorkspaceRows(rows, 'property-1')).toHaveLength(1);
     expect(filterOwnerWorkspaceRows(rows, 'غير موجود')).toHaveLength(0);
@@ -162,11 +157,7 @@ describe('owner UI helpers', () => {
     ]);
 
     expect(isActivePropertyOwnerLink(endedProperty.property_owners[0])).toBe(false);
-    expect(rows[0]).toMatchObject({
-      propertyCount: 1,
-      activeContractCount: 1,
-      propertyNames: 'عقار property-1',
-    });
+    expect(rows[0]).toMatchObject({ propertyCount: 1, activeContractCount: 1, propertyNames: 'عقار property-1' });
     expect(summarizeOwners([baseOwner], [activeProperty, endedProperty])).toMatchObject({
       linkedPropertiesCount: 1,
       propertiesWithoutLinkedOwner: 1,
