@@ -18,15 +18,18 @@ describe('mobile UI unification contract', () => {
     expect(designIndex).toBeGreaterThan(mobileIndex);
   });
 
-  it('restores quiet page and filter chrome on phones despite later visual paint rules', () => {
+  it('restores quiet page, filter, and tab chrome on phones despite later visual paint rules', () => {
     const mobileCss = read('src/styles/mobile-unification.css');
     const pageHeader = read('src/components/layout/page-header.tsx');
     const filterBar = read('src/components/ui/filter-bar.tsx');
+    const sectionTabs = read('src/components/ui/section-tabs.tsx');
 
     expect(pageHeader).toContain('document chrome');
     expect(filterBar).toContain('quiet edge-to-edge strip');
+    expect(sectionTabs).toContain('quiet underline');
     expect(mobileCss).toContain('html [data-malek-surface] [data-page-header]');
     expect(mobileCss).toContain("html [data-operational-route='true'] [data-malek-surface] [data-filter-bar]");
+    expect(mobileCss).toContain("html [data-operational-route='true'] [data-malek-surface] [role='tablist']");
     expect(mobileCss).toContain('background: transparent;');
     expect(mobileCss).toContain('box-shadow: none;');
   });
