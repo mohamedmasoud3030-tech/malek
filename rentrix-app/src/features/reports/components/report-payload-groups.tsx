@@ -8,13 +8,14 @@
  * are only formatted for screen display with the canonical app formatters.
  * Screen and print therefore read the same authoritative values.
  *
- * Kept intentionally light (plain tables, not EntityTable): these are
- * small, bounded per-group breakdowns (maintenance/expenses/utilities/fees/
- * settlements/reconciliation), not open-ended registers — a heavier
- * paginated/register component would be the wrong tool here and would
- * fight the "compact sections, not one giant table" direction.
+ * Kept intentionally light (canonical Table primitive, not EntityTable):
+ * these are small, bounded per-group breakdowns (maintenance/expenses/
+ * utilities/fees/settlements/reconciliation), not open-ended registers — a
+ * heavier paginated/register component would be the wrong tool here and
+ * would fight the "compact sections, not one giant table" direction.
  */
 import type { ReactNode } from 'react';
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type {
   ProfessionalReportBlock,
   ProfessionalReportGroup,
@@ -58,36 +59,34 @@ function ReportGroupTable({ table }: Readonly<{ table: Extract<ProfessionalRepor
       ) : null}
       {hasRows ? (
         <div className="mobile-scroll-x overflow-x-auto overscroll-x-contain">
-          <table className="w-full min-w-full border-collapse text-[12.5px] leading-5">
-            <caption className="sr-only">{table.title ?? 'تفاصيل التقرير'}</caption>
-            <thead>
-              <tr className="border-b border-border/55 bg-muted/10">
+          <Table density="compact" className="min-w-full">
+            <TableCaption className="sr-only">{table.title ?? 'تفاصيل التقرير'}</TableCaption>
+            <TableHeader>
+              <TableRow className="bg-muted/10 hover:bg-muted/10">
                 {table.columns.map((column) => (
-                  <th key={column} scope="col" className="whitespace-nowrap px-3 py-2 text-start text-[11px] font-semibold text-muted-foreground">
+                  <TableHead key={column} scope="col" className="text-muted-foreground">
                     {column}
-                  </th>
+                  </TableHead>
                 ))}
-              </tr>
-            </thead>
-            <tbody>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {table.rows.map((row, rowIndex) => (
-                <tr key={rowIndex} className="border-b border-border/40 last:border-b-0 even:bg-muted/10">
+                <TableRow key={rowIndex} className="even:bg-muted/10">
                   {row.map((cell, cellIndex) => (
-                    <td key={cellIndex} className="px-3 py-2 align-top">{renderCell(cell)}</td>
+                    <TableCell key={cellIndex} className="align-top">{renderCell(cell)}</TableCell>
                   ))}
-                </tr>
+                </TableRow>
               ))}
-            </tbody>
-            {table.totals ? (
-              <tfoot>
-                <tr className="border-t-2 border-border/70 bg-muted/25 font-extrabold">
+              {table.totals ? (
+                <TableRow className="border-t-2 border-border/70 bg-muted/25 font-extrabold hover:bg-muted/25">
                   {table.totals.map((cell, cellIndex) => (
-                    <td key={cellIndex} className="px-3 py-2">{renderCell(cell)}</td>
+                    <TableCell key={cellIndex}>{renderCell(cell)}</TableCell>
                   ))}
-                </tr>
-              </tfoot>
-            ) : null}
-          </table>
+                </TableRow>
+              ) : null}
+            </TableBody>
+          </Table>
         </div>
       ) : (
         <p className="px-3 py-4 text-center text-xs text-muted-foreground">{table.emptyNote ?? 'لا توجد بيانات لهذا القسم.'}</p>
