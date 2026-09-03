@@ -3,7 +3,6 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { ActionMenu } from '@/components/ui/action-menu';
 import { Button } from '@/components/ui/button';
-import { DataTableColumnsMenu } from '@/components/ui/data-table';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { EmptyState } from '@/components/ui/state-surfaces';
 import { EntityCell } from '@/components/ui/entity-cell';
@@ -12,7 +11,7 @@ import { OwnerPreviewDialog } from './OwnerPreviewDialog';
 import type { Owner } from '../services/owner-service';
 import { getOwnerDisplayLabel, type OwnerWorkspaceRow } from '../utils/owner-ui-helpers';
 
-const ownerColumnOptions = [
+export const ownerColumnOptions = [
   { key: 'name', label: 'اسم المالك', locked: true },
   { key: 'contact', label: 'الهاتف والإيميل' },
   { key: 'property_count', label: 'عدد العقارات' },
@@ -20,7 +19,7 @@ const ownerColumnOptions = [
   { key: 'actions', label: 'الإجراءات', locked: true },
 ] as const;
 
-const defaultOwnerColumns = ownerColumnOptions.map((column) => column.key);
+export const defaultOwnerColumns = ownerColumnOptions.map((column) => column.key);
 
 function OwnerContact({ owner }: Readonly<{ owner: Owner }>) {
   return (
@@ -33,13 +32,13 @@ function OwnerContact({ owner }: Readonly<{ owner: Owner }>) {
 
 export type OwnerWorkspaceTableProps = Readonly<{
   rows: OwnerWorkspaceRow[];
+  visibleColumnKeys: string[];
   onCreateOwner: () => void;
   onEditOwner: (owner: Owner) => void;
 }>;
 
-export function OwnerWorkspaceTable({ rows, onCreateOwner, onEditOwner }: OwnerWorkspaceTableProps) {
+export function OwnerWorkspaceTable({ rows, visibleColumnKeys, onCreateOwner, onEditOwner }: OwnerWorkspaceTableProps) {
   const navigate = useNavigate();
-  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultOwnerColumns]);
   const [previewOwnerId, setPreviewOwnerId] = useState<string | null>(null);
 
   const openPreview = (ownerId: string) => setPreviewOwnerId(ownerId);
@@ -93,14 +92,7 @@ export function OwnerWorkspaceTable({ rows, onCreateOwner, onEditOwner }: OwnerW
   );
 
   return (
-    <div className="space-y-3" data-owner-workspace-table>
-      <div className="flex justify-end">
-        <DataTableColumnsMenu
-          columns={ownerColumnOptions}
-          visibleKeys={visibleColumnKeys}
-          onChange={setVisibleColumnKeys}
-        />
-      </div>
+    <div data-owner-workspace-table>
       {rows.length > 0 ? (
         <EntityTable
           aria-label="جدول الملاك"
