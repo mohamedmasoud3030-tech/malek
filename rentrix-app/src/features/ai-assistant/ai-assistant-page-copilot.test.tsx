@@ -11,7 +11,8 @@ import { AiAssistantPage } from './ai-assistant-page';
  * embedded panel render the same component) must
  *   1. surface a contextual quick action when the user is on an entity page;
  *   2. keep the secondary operational actions behind progressive disclosure;
- *   3. send the derived surface context (validated ids only) with the request.
+ *   3. send the derived surface context (validated ids only) with the request;
+ *   4. route high-value natural questions into the existing closed actions.
  */
 
 type Row = Record<string, unknown>;
@@ -76,6 +77,7 @@ vi.mock('@tanstack/react-router', () => ({
 vi.mock('@/lib/supabase', () => ({
   supabase: {
     from: (table: string) => fakeTable(TABLES[table] ?? []),
+    rpc: vi.fn(),
     auth: {
       getSession: async () => ({ data: { session: { access_token: 'mock-token' } }, error: null }),
     },
@@ -142,6 +144,18 @@ describe('AiAssistantPage contextual copilot UI', () => {
     expect(screen.queryByRole('button', { name: 'ملخص العقار ده' })).not.toBeInTheDocument();
   });
 
+  it('routes natural what-matters-now language to the canonical daily brief action', async () => {
+    window.history.pushState({}, '', '/ai-assistant');
+    const clicks = userEvent.setup();
+    renderPage();
+
+    await clicks.type(screen.getByLabelText('رسالة المساعد'), 'إيه المهم دلوقتي؟');
+    await clicks.click(screen.getByRole('button', { name: 'إرسال' }));
+
+    await waitFor(() => expect(requestBodies).toHaveLength(1), { timeout: 5000 });
+    expect(requestBodies[0].action).toBe('generate_daily_brief');
+  });
+
   it('surfaces a contextual quick action on a property page and sends the validated surface context', async () => {
     window.history.pushState({}, '', '/properties/prop-1');
     const clicks = userEvent.setup();
@@ -166,6 +180,8 @@ describe('AiAssistantPage contextual copilot UI', () => {
     });
     // The entity snapshot is loaded from the authoritative row, not the URL.
     expect(context.entity).toMatchObject({ type: 'property', id: 'prop-1', name: 'برج صحار' });
+    expect(screen.getByText('شرح السياق')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'فتح ملف العقار' })).toHaveAttribute('href', '/properties/prop-1');
   });
 
   it('degrades to a null entity when the routed id cannot be verified', async () => {

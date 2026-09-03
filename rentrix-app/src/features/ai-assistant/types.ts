@@ -96,6 +96,13 @@ export type AiAssistantEntityContext = {
   outstandingAmount: number;
   oldestOverdueDate?: string | null;
   nextDueDate?: string | null;
+  openMaintenanceCount?: number;
+  urgentMaintenanceCount?: number;
+  stalledMaintenanceCount?: number;
+  ownerCurrentPeriodNetPayable?: number;
+  ownerRemainingPayable?: number;
+  ownerHeldFunds?: number;
+  ownerApprovedSettlements?: number;
 };
 
 export type AiAssistantMaintenanceRequest = {
