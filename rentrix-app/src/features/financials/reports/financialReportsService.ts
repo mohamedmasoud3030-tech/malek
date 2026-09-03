@@ -13,10 +13,6 @@ export {
   type TrialBalanceReport,
 } from '@/features/accounting/reports/accountingReportsFacade';
 
-export function normalizeBalanceSheetReport(payload: unknown) { return payload; }
-export function normalizeIncomeStatementReport(payload: unknown) { return payload; }
-export function normalizeTrialBalanceReport(payload: unknown) { return payload; }
-
 export {
   getOwnerStatementReport,
   getTenantStatementReport,
