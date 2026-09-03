@@ -63,6 +63,9 @@ export type PropertyOwnerWithOwner = PropertyOwner & {
 };
 
 export type PropertyWithOwners = Property & {
+  // Invariant enforced at the service boundary: always an array (possibly
+  // empty). PostgREST may return null for zero-row embeds; callers must
+  // never receive null here.
   property_owners: PropertyOwnerWithOwner[];
 };
 
@@ -247,6 +250,26 @@ function getTodayLocalDate(): string {
   return getTodayLocalDateString();
 }
 
+/**
+ * Enforce the PropertyWithOwners invariant: property_owners is always an
+ * array. PostgREST returns null (not []) for a left-join embed when the
+ * related table has zero matching rows. Callers throughout the codebase
+ * (summarizeOwners, buildOwnerWorkspaceRows, getLinkedPropertiesForOwner,
+ * getAvailablePropertiesForLink) call .filter() directly on the field and
+ * will crash with "Cannot read properties of undefined (reading 'filter')"
+ * if it arrives as null.
+ *
+ * This function is the single enforcement point — the only place where a
+ * raw PostgREST PropertyWithOwners row is allowed to exist before it reaches
+ * any consumer. Do not add ?. workarounds at call sites.
+ */
+function normalizePropertyWithOwners(raw: PropertyWithOwners & { property_owners: PropertyOwnerWithOwner[] | null | undefined }): PropertyWithOwners {
+  return {
+    ...raw,
+    property_owners: raw.property_owners ?? [],
+  };
+}
+
 export async function listOwners(): Promise<Owner[]> {
   // Soft-deleted owners must not appear in the hub register. Operational
   // selectors already filter deleted_at; the main list previously did not,
@@ -340,18 +363,25 @@ export async function listPropertyOwners(propertyId: string): Promise<PropertyOw
     .order('created_at', { ascending: true })
     .order('id', { ascending: true })
     .returns<PropertyOwnerWithOwner[]>());
-  return rows;
+  // PostgREST can return null for the embedded owner relation when the
+  // owners row is missing (e.g. deleted). Normalize to null so callers
+  // receive a well-typed array whose elements may have owner: null.
+  return rows.map((link) => ({ ...link, owner: Array.isArray(link.owner) ? (link.owner[0] ?? null) : link.owner }));
 }
 
 export async function listPropertiesWithOwners(): Promise<PropertyWithOwners[]> {
-  const { rows } = await fetchAllRows<PropertyWithOwners>(() => supabase
+  const { rows } = await fetchAllRows<PropertyWithOwners & { property_owners: PropertyOwnerWithOwner[] | null | undefined }>(() => supabase
     .from('properties')
     .select('*, property_owners(*, owner:owners(*))')
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
     .order('id', { ascending: false })
-    .returns<PropertyWithOwners[]>());
-  return rows;
+    .returns<(PropertyWithOwners & { property_owners: PropertyOwnerWithOwner[] | null | undefined })[]>());
+  // Enforce the invariant: property_owners is always an array.
+  // PostgREST returns null (not []) when a property has no ownership rows.
+  // Every consumer downstream calls .filter() on this field; a null value
+  // triggers "Cannot read properties of undefined (reading 'filter')".
+  return rows.map(normalizePropertyWithOwners);
 }
 
 export async function linkOwnerToProperty(payload: PropertyOwnerPayload): Promise<PropertyOwner> {
