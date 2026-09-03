@@ -1,6 +1,6 @@
-// Compatibility facade for the remaining supported financial-report surface.
-// Domain implementations live in focused modules below; retired loaders are
-// removed instead of being kept alive through this facade.
+// Canonical reports facade: implementation lives in domain-specific modules.
+// Keep only exports with real consumers or contract value; do not grow a
+// second report implementation here.
 export {
   getBalanceSheetReport,
   getIncomeStatementReport,
