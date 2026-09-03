@@ -98,10 +98,7 @@ export function OperationsHubWorkspace({
     }
 
     return (
-      <div
-        data-hub-workspace-grid="operations"
-        className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-end gap-x-2 gap-y-2.5 sm:gap-x-3 sm:gap-y-3"
-      >
+      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-end gap-x-2 gap-y-2.5 sm:gap-x-3 sm:gap-y-3">
         {isActiveSectionVisible ? (
           <div className="col-start-1 row-start-1 min-w-0">
             <SectionTabs
