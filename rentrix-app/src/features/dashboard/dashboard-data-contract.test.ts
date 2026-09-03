@@ -5,12 +5,9 @@ import { describe, expect, it } from 'vitest';
 /**
  * Dashboard Truth architecture guard.
  *
- * The command center must never rebuild client-side truth:
- *   - one authoritative RPC (rpt_dashboard_snapshot) is the KPI source,
- *   - the collection sparkline reads the server daily aggregate RPC,
- *   - the monthly chart consumes the canonical Reports cashflow service,
- *   - no dataset fan-out becomes a KPI, and no rows.length or client
- *     filtering of capped reads is presented as an authoritative number.
+ * The compact command center keeps one authoritative snapshot for KPIs,
+ * server aggregate series for charts, and only supplemental reads required to
+ * classify actionable conditions in the unified attention queue.
  */
 describe('dashboard frontend/backend data contract', () => {
   const read = (file: string) => readFileSync(resolve(import.meta.dirname, file), 'utf8');
@@ -41,27 +38,27 @@ describe('dashboard frontend/backend data contract', () => {
       read('components/needs-attention-section.tsx'),
       read('components/occupancy-section.tsx'),
       read('components/collections-section.tsx'),
-      read('components/maintenance-section.tsx'),
-      read('components/upcoming-contracts-section.tsx'),
-      read('components/property-health-section.tsx'),
     ].join('\n');
-    // Retired client-derivation patterns must never return.
     expect(sources).not.toContain('activeContracts.length');
     expect(sources).not.toMatch(/filter\([^)]*\)\.length/);
     expect(sources).not.toContain('pageSize: 500');
   });
 
-  it('keeps the page free of raw table/count queries and keeps retry semantics explicit', () => {
+  it('keeps the page free of raw table/count queries and removed detail-section renderers', () => {
     const pageSource = read('dashboard-page.tsx');
     expect(pageSource).toContain('retry: false');
     expect(pageSource).not.toContain('listBankStatementLines');
     expect(pageSource).not.toContain('fetchPendingSettlementsCount');
+    expect(pageSource).not.toContain('MaintenanceSection');
+    expect(pageSource).not.toContain('UpcomingContractsSection');
+    expect(pageSource).not.toContain('PropertyHealthSection');
+    expect(pageSource).not.toContain('OwnerObligationsSection');
   });
 
   it('keeps the monthly chart on the canonical Reports cashflow service', () => {
     const pageSource = read('dashboard-page.tsx');
     expect(pageSource).toContain('useFinancialCashflowReport');
-    expect(pageSource).not.toContain('supabase.from(\'payments\'');
-    expect(pageSource).not.toContain('supabase.from(\'expenses\'');
+    expect(pageSource).not.toContain("supabase.from('payments'");
+    expect(pageSource).not.toContain("supabase.from('expenses'");
   });
 });
