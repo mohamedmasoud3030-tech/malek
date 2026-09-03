@@ -1,6 +1,7 @@
 import {
   AI_OUTPUT_SCHEMA_VERSION,
   AI_PLANNING_SCHEMA_VERSION,
+  CONTEXT_SECTIONS,
   PLANNING_INTENTS,
   type AiProviderAdapter,
   type JsonObject,
@@ -114,6 +115,11 @@ const PLANNING_SCHEMA: StrictSchema = {
     required: ["intent"],
     properties: {
       intent: { type: "string", enum: [...PLANNING_INTENTS] },
+      sections: {
+        type: "array",
+        maxItems: CONTEXT_SECTIONS.length,
+        items: { type: "string", enum: [...CONTEXT_SECTIONS] },
+      },
     },
   },
 };

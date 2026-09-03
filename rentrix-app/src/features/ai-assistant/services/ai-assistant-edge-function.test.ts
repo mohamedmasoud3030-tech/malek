@@ -102,6 +102,26 @@ describe("AI assistant edge function", () => {
     expect(content).toMatch(/successResponse\(result\.output, ["']model["'], \{ kind, resolvedAction/);
   });
 
+  it("assembles the model context on demand: the planner picks sections, the server trims to the prompt budget", () => {
+    const content = edge();
+    const safetyContent = safety();
+    // The planner is told the closed section catalog with selection rules.
+    expect(content).toContain("SECTIONS_GUIDES");
+    expect(content).toContain('["overdueInvoices", ');
+    expect(content).toContain("الحد الأدنى الذي يجيب السؤال");
+    // The model path always goes through the assembler; meta reports it.
+    expect(content).toContain("assembleModelContext(effectiveRequest.context, plannedSections)");
+    expect(content).toContain("contextSections: modelContext.sections");
+    expect(content).toContain("contextTrimmed: modelContext.trimmed");
+    expect(content).toContain("buildAnswerMessages(effectiveRequest, modelContext.context)");
+    // The request gate and the prompt budget are separate, named constants.
+    expect(safetyContent).toContain("CONTEXT_REQUEST_MAX_CHARS = 24_000");
+    expect(safetyContent).toContain("MODEL_CONTEXT_BUDGET_CHARS = 9_000");
+    expect(safetyContent).toContain("export function assembleModelContext");
+    // The deterministic fast path still reads the request context directly.
+    expect(content).toContain("deterministicResponse(effectiveRequest)");
+  });
+
   it("carries a consistent persona: operating partner, direct next step, relevance-gated market comparison", () => {
     const content = edge();
     expect(content).toContain("الشريك التشغيلي اليومي");

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import evaluationCases from "./ai-assistant-evaluation.json";
 import {
+  assembleModelContext,
   deterministicResponse,
   fallbackResponse,
   isHighRiskInstruction,
@@ -201,6 +202,88 @@ describe("AI assistant evaluation set", () => {
     expect(validateAssistantPlanning({ intent: "SELECT * FROM users" })).toBeNull();
     expect(validateAssistantPlanning({})).toBeNull();
     expect(validateAssistantPlanning(null)).toBeNull();
+  });
+
+  it("validates planning data sections against the closed context catalog", () => {
+    expect(validateAssistantPlanning({ intent: "freeform", sections: ["overdueInvoices"] })).toEqual({
+      intent: "freeform",
+      sections: ["overdueInvoices"],
+    });
+    expect(
+      validateAssistantPlanning({
+        intent: "summarize_overdue_invoices",
+        sections: ["overdueInvoices", "contractRenewals"],
+      }),
+    ).toEqual({
+      intent: "summarize_overdue_invoices",
+      sections: ["overdueInvoices", "contractRenewals"],
+    });
+    // Unknown names, duplicates, empty or oversized lists fail the whole plan.
+    expect(validateAssistantPlanning({ intent: "freeform", sections: ["users_table"] })).toBeNull();
+    expect(validateAssistantPlanning({ intent: "freeform", sections: ["surface"] })).toBeNull();
+    expect(validateAssistantPlanning({ intent: "freeform", sections: ["overdueInvoices", "overdueInvoices"] })).toBeNull();
+    expect(validateAssistantPlanning({ intent: "freeform", sections: [] })).toBeNull();
+    expect(validateAssistantPlanning({ intent: "freeform", sections: "overdueInvoices" })).toBeNull();
+  });
+
+  it("assembles the model context on demand: minimal sections, always-on surface/entity, budget trim", () => {
+    const fullContext = {
+      asOf: "2026-09-04",
+      sampleLimit: 500,
+      surface: { route: "/properties/p1", entityType: "property", entityId: "p1", entityLabel: "برج صحار", section: "properties" },
+      entity: { type: "property", id: "p1", name: "برج صحار", outstandingAmount: 10 },
+      overdueInvoices: {
+        invoiceCount: 2,
+        totalOutstanding: 100,
+        oldestDueDate: "2026-08-01",
+        topInvoices: [
+          { invoiceId: "i1", contractId: "c1", dueDate: "2026-08-01", remainingAmount: 60, status: "OPEN", tenantName: "أ", propertyName: "برج", daysOverdue: 30 },
+          { invoiceId: "i2", contractId: "c2", dueDate: "2026-08-10", remainingAmount: 40, status: "OPEN", tenantName: "ب", propertyName: "برج", daysOverdue: 20 },
+        ],
+        dueTodayCount: 0,
+        dueTodayAmount: 0,
+      },
+      contractRenewals: { lookaheadDays: 90, contractCount: 1, totalRentAmount: 400, upcomingContracts: [{ contractId: "c1", propertyId: "p1", tenantId: "t1", unitId: "u1", endDate: "2026-10-01", rentAmount: 400 }] },
+    };
+
+    // Minimal selection: only the requested section travels, plus the
+    // always-on root scalars, surface and entity.
+    const minimal = assembleModelContext(fullContext, ["overdueInvoices"]);
+    expect(minimal.sections).toEqual(["overdueInvoices"]);
+    expect(minimal.trimmed).toBe(false);
+    expect(minimal.context.overdueInvoices).toEqual(fullContext.overdueInvoices);
+    expect(minimal.context.contractRenewals).toBeUndefined();
+    expect(minimal.context.asOf).toBe("2026-09-04");
+    expect(minimal.context.surface).toEqual(fullContext.surface);
+    expect(minimal.context.entity).toEqual(fullContext.entity);
+    // The input is never mutated.
+    expect((fullContext.overdueInvoices as { topInvoices: unknown[] }).topInvoices).toHaveLength(2);
+
+    // Unknown/empty selections degrade to the full catalog.
+    expect(assembleModelContext(fullContext, ["nope"]).sections).toHaveLength(8);
+    expect(assembleModelContext(fullContext, []).sections).toHaveLength(8);
+    expect(assembleModelContext(fullContext).sections).toHaveLength(8);
+
+    // Budget trim: a context that exceeds the prompt budget loses its last
+    // rows first, deterministically, and is flagged trimmed.
+    const bigRows = Array.from({ length: 100 }, (_, index) => ({
+      invoiceId: `i${index}`,
+      contractId: "c1",
+      dueDate: "2026-08-01",
+      remainingAmount: 1,
+      status: "OPEN",
+      tenantName: "مستأجر",
+      propertyName: "عقار",
+      daysOverdue: 1,
+    }));
+    const oversized = { ...fullContext, overdueInvoices: { ...fullContext.overdueInvoices, topInvoices: bigRows } };
+    expect(JSON.stringify(oversized).length).toBeGreaterThan(9_000);
+    const trimmed = assembleModelContext(oversized, ["overdueInvoices"]);
+    expect(JSON.stringify(trimmed.context).length).toBeLessThanOrEqual(9_000);
+    expect(trimmed.trimmed).toBe(true);
+    expect((trimmed.context.overdueInvoices as { topInvoices: unknown[] }).topInvoices.length).toBeLessThan(100);
+    // The original request context is untouched by trimming.
+    expect((oversized.overdueInvoices as { topInvoices: unknown[] }).topInvoices).toHaveLength(100);
   });
 
   it("keeps the business knowledge base versioned, bounded and fully cited", () => {

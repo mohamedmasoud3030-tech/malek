@@ -4,13 +4,14 @@ import {
   AI_PLANNING_SCHEMA_VERSION,
   AI_PROMPT_VERSION,
   type AssistantOutput,
+  type AssistantPlanning,
   type ChatMessage,
   type JsonObject,
-  type PlanningIntent,
   type ValidatedAssistantRequest,
 } from "../_shared/ai-contract.ts";
 import { AI_KB_VERSION, BUSINESS_KB_TEXT } from "../_shared/ai-business-kb.ts";
 import {
+  assembleModelContext,
   deterministicResponse,
   fallbackResponse,
   isHighRiskInstruction,
@@ -244,12 +245,27 @@ const INTENT_GUIDES: ReadonlyArray<readonly [string, string]> = [
   ["freeform", "تحيات أو شكر أو كلام عام أو سؤال خارج النطاق"],
 ];
 
+/** One-line Arabic guide per selectable data section, for the planner. */
+const SECTIONS_GUIDES: ReadonlyArray<readonly [string, string]> = [
+  ["overdueInvoices", "الفواتير المتأخرة (أعداد ومبالغ وتواريخ)"],
+  ["contractRenewals", "العقود التي تنتهي ضمن نافذة التجديد"],
+  ["propertyFinancialSnapshot", "لقطة العقارات والوحدات ونسبة الإشغال"],
+  ["reportSummary", "الدفعات والمصروفات لآخر 30 يوماً"],
+  ["maintenanceSnapshot", "طلبات الصيانة المفتوحة"],
+  ["vacancyDetail", "قائمة الوحدات الشاغرة"],
+  ["propertyPerformance", "توزيع التأخر على العقارات"],
+  ["depositHeld", "التأمينات المستحفظ عليها"],
+];
+
 function buildPlanningMessages(request: ValidatedAssistantRequest): ChatMessage[] {
   const system = [
     `Prompt version: ${AI_PROMPT_VERSION}. Output schema: ${AI_PLANNING_SCHEMA_VERSION}.`,
     "أنت عارض النية لمساعد MALEK التشغيلي. صنّف طلب المستخدم الأخير في قيمة واحدة فقط من نيات (intent) التالية:",
     ...INTENT_GUIDES.map(([intent, guide]) => `- ${intent}: ${guide}`),
     "قاعدة: إذا كان السؤال عن وضع/أرقام «بياناتي/الشركة/العقارات المسجلة» فنية من النيات التشغيلية. إذا كان عن السوق أو عقار لم يُسجل بعد أو نسبة/تقدير عام فـ advisory.",
+    "واختار (sections) أقل مجموعة من أقسام بيانات الشركة التي يحتاجها السؤال للإجابة:",
+    ...SECTIONS_GUIDES.map(([section, guide]) => `- ${section}: ${guide}`),
+    "قاعدة الاختيار: الحد الأدنى الذي يجيب السؤال (مثلاً «مين متأخر» → overdueInvoices فقط؛ «إيه المهم دلوقتي» → مجموعة أوسع). سجل الصفحة والكيان المفتوح (surface/entity) مثبّتون دائماً ولا تُدرجوهما. عند الشك اختر المجموعة الأوسع.",
     SECURITY_RULES,
     "أعد JSON مطابقاً للمخطط فقط.",
   ].join("\n");
@@ -282,7 +298,7 @@ function buildAdvisoryMessages(request: ValidatedAssistantRequest): ChatMessage[
   return [{ role: "system", content: system }, ...request.history, { role: "user", content: untrustedEnvelope(request, { mode: "advisory" }) }];
 }
 
-function buildAnswerMessages(request: ValidatedAssistantRequest): ChatMessage[] {
+function buildAnswerMessages(request: ValidatedAssistantRequest, context: JsonObject): ChatMessage[] {
   const system = [
     `Prompt version: ${AI_PROMPT_VERSION}. Output schema: ${AI_OUTPUT_SCHEMA_VERSION}.`,
     PERSONA,
@@ -291,26 +307,27 @@ function buildAnswerMessages(request: ValidatedAssistantRequest): ChatMessage[] 
     "مقارنة السوق: فقط إذا كان رقم من بيانات المستخدم يقارن مباشرة بمؤشر معروف (نسبة الإشغال، مستوى الإيجار)، أضف سطراً واحداً موجزاً مع بيان أنها «تقديرات إرشادية من مراجع السوق». لا تضف مقارنة السوق في ردود أخرى.",
     "أعد JSON مطابقاً للمخطط فقط، بالعربية وباختصار.",
   ].join("\n");
-  return [{ role: "system", content: system }, ...request.history, { role: "user", content: untrustedEnvelope(request, request.context) }];
+  return [{ role: "system", content: system }, ...request.history, { role: "user", content: untrustedEnvelope(request, context) }];
 }
 
 /**
- * Freeform planning: one tiny classifier call decides the intent. Returns
- * null on any failure so the caller degrades to the normal full-answer path.
+ * Freeform planning: one tiny classifier call decides the intent AND the
+ * data sections the answer needs (on-demand context assembly). Returns null
+ * on any failure so the caller degrades to the normal full-context path.
  */
 async function planFreeformIntent(
   adapter: OpenAiCompatibleAdapter,
   configuration: ProviderConfiguration,
   request: ValidatedAssistantRequest,
-): Promise<PlanningIntent | null> {
+): Promise<AssistantPlanning | null> {
   try {
     const result = await adapter.classify({
       model: configuration.model,
       messages: buildPlanningMessages(request),
-      maxOutputTokens: 60,
+      maxOutputTokens: 90,
       timeoutMs: 10_000,
     });
-    return result.output.intent;
+    return result.output;
   } catch {
     return null;
   }
@@ -330,28 +347,34 @@ async function handlePostRequest(request: Request): Promise<Response> {
   const adapter = new OpenAiCompatibleAdapter(configuration.url, configuration.apiKey);
 
   // Freeform planning: the model itself classifies the prompt in any
-  // phrasing. The client's keyword guess stays a hint, not a decision. A
-  // planning failure degrades to the classic full-answer path.
+  // phrasing AND picks the data sections the answer needs. The client's
+  // keyword guess stays a hint, not a decision. A planning failure degrades
+  // to the classic full-context path.
   let effectiveRequest = assistantRequest;
   let kind: "data" | "advisory" = "data";
+  let plannedSections: string[] | undefined;
   if (effectiveRequest.action === "freeform") {
     const planned = await planFreeformIntent(adapter, configuration, assistantRequest);
-    if (planned && planned !== "freeform") {
-      if (planned === "advisory") {
+    if (planned && planned.intent !== "freeform") {
+      if (planned.intent === "advisory") {
         kind = "advisory";
       } else {
-        effectiveRequest = { ...assistantRequest, action: planned };
+        plannedSections = planned.sections;
+        effectiveRequest = { ...assistantRequest, action: planned.intent };
         const resolved = deterministicResponse(effectiveRequest);
-        if (resolved) return successResponse(resolved, "deterministic", { kind: "data", resolvedAction: planned });
+        if (resolved) return successResponse(resolved, "deterministic", { kind: "data", resolvedAction: planned.intent });
       }
     }
   }
 
+  // On-demand assembly: the model receives exactly the sections it asked for
+  // (full catalog when planning was skipped or degraded), budget-trimmed.
+  const modelContext = assembleModelContext(effectiveRequest.context, plannedSections);
   try {
-    const messages = kind === "advisory" ? buildAdvisoryMessages(assistantRequest) : buildAnswerMessages(effectiveRequest);
+    const messages = kind === "advisory" ? buildAdvisoryMessages(assistantRequest) : buildAnswerMessages(effectiveRequest, modelContext.context);
     const result = await adapter.generate({ model: configuration.model, messages, maxOutputTokens: MAX_OUTPUT_TOKENS, timeoutMs: PROVIDER_TIMEOUT_MS });
-    console.log("AI request completed", { requestId: assistantRequest.requestId, provider: adapter.provider, model: configuration.model, action: effectiveRequest.action, kind, durationMs: result.durationMs, inputTokens: result.usage.inputTokens, outputTokens: result.usage.outputTokens });
-    return successResponse(result.output, "model", { kind, resolvedAction: effectiveRequest.action, durationMs: result.durationMs });
+    console.log("AI request completed", { requestId: assistantRequest.requestId, provider: adapter.provider, model: configuration.model, action: effectiveRequest.action, kind, contextSections: modelContext.sections.length, contextTrimmed: modelContext.trimmed, durationMs: result.durationMs, inputTokens: result.usage.inputTokens, outputTokens: result.usage.outputTokens });
+    return successResponse(result.output, "model", { kind, resolvedAction: effectiveRequest.action, contextSections: modelContext.sections, contextTrimmed: modelContext.trimmed, durationMs: result.durationMs });
   } catch (error) {
     console.error("AI provider failed; deterministic fallback returned", { requestId: assistantRequest.requestId, provider: adapter.provider, kind, failureClass: error instanceof ProviderAdapterError ? error.code : "UNKNOWN" });
     return successResponse(fallbackResponse(effectiveRequest), "fallback", { degraded: true, kind });

@@ -1,13 +1,30 @@
 import {
   AI_ACTIONS,
+  CONTEXT_SECTIONS,
   type AiAction,
   type AssistantOutput,
   type ChatMessage,
+  type ContextSection,
   type JsonObject,
   type ValidatedAssistantRequest,
   isRecord,
   readBoundedString,
 } from "./ai-contract.ts";
+
+/**
+ * Request acceptance budget: the client may ship the full bounded snapshot.
+ * Shape validation (strict keys, bounded rows/strings) stays the minimization
+ * guard; the size cap only protects the transport.
+ */
+export const CONTEXT_REQUEST_MAX_CHARS = 24_000;
+
+/**
+ * Model prompt budget: what the MODEL sees is assembled on demand from the
+ * planning call's selected sections, and must fit this budget. If the
+ * selection still exceeds it, row arrays shrink deterministically (last row
+ * first, in rounds) and the result is flagged `trimmed`.
+ */
+export const MODEL_CONTEXT_BUDGET_CHARS = 9_000;
 
 const requestIdPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -245,7 +262,73 @@ function readContext(value: unknown): JsonObject | null {
   if (!isRecord(value) || !hasStrictContextKeys(value)) return null;
   if (!validateJsonShape(value)) return null;
   const serialized = JSON.stringify(value);
-  return serialized.length <= 9_000 ? value : null;
+  return serialized.length <= CONTEXT_REQUEST_MAX_CHARS ? value : null;
+}
+
+/** Row arrays that can shrink when the assembled context exceeds the budget. */
+const SECTION_ROW_FIELDS: Readonly<Partial<Record<ContextSection, string>>> = {
+  overdueInvoices: "topInvoices",
+  contractRenewals: "upcomingContracts",
+  maintenanceSnapshot: "topRequests",
+  vacancyDetail: "topVacantUnits",
+  propertyPerformance: "topOutstanding",
+};
+
+export type AssembledModelContext = {
+  context: JsonObject;
+  sections: ContextSection[];
+  /** True when row arrays had to shrink to fit the prompt budget. */
+  trimmed: boolean;
+};
+
+/**
+ * On-demand context assembly — the "tool calling" seam: the model asked for
+ * specific sections, the server hands over exactly those (plus the always-on
+ * root scalars, surface and entity). `requested` undefined/empty/unknown
+ * degrades to the full catalog, preserving the pre-planning behavior.
+ * Pure and deterministic; never mutates its input.
+ */
+export function assembleModelContext(
+  context: JsonObject,
+  requested?: readonly string[],
+): AssembledModelContext {
+  const catalog = CONTEXT_SECTIONS as readonly string[];
+  const known = new Set(catalog);
+  let selected = (requested ?? catalog)
+    .filter((name) => known.has(name))
+    .filter((name, index, list) => list.indexOf(name) === index);
+  if (selected.length === 0) selected = [...catalog];
+
+  const assembled: JsonObject = {};
+  if (typeof context.asOf === "string") assembled.asOf = context.asOf;
+  if (isFiniteNumber(context.sampleLimit)) assembled.sampleLimit = Number(context.sampleLimit);
+  if (isRecord(context.surface)) assembled.surface = context.surface;
+  if (isRecord(context.entity)) assembled.entity = context.entity;
+  for (const name of catalog) {
+    if (!selected.includes(name)) continue;
+    const value = context[name];
+    if (isRecord(value)) assembled[name] = JSON.parse(JSON.stringify(value));
+  }
+
+  let trimmed = false;
+  let serialized = JSON.stringify(assembled);
+  while (serialized.length > MODEL_CONTEXT_BUDGET_CHARS) {
+    let removedAny = false;
+    for (const name of selected) {
+      const field = SECTION_ROW_FIELDS[name as ContextSection];
+      if (!field) continue;
+      const section = assembled[name];
+      const rows = isRecord(section) ? (section as JsonObject)[field] : undefined;
+      if (Array.isArray(rows) && rows.length > 0) {
+        rows.pop();
+        removedAny = true;
+      }
+    }
+    if (!removedAny) break;
+    trimmed = true;
+    serialized = JSON.stringify(assembled);
+  }
+  return { context: assembled, sections: selected as ContextSection[], trimmed };
 }
 
 export function validateAssistantRequest(body: unknown): RequestValidation {
