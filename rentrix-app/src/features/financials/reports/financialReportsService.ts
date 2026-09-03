@@ -1,7 +1,6 @@
-// Compatibility facade: this module preserves the original public surface of
-// the financial reports service. Implementation now lives in domain-specific
-// modules under this directory; this file only re-exports so existing
-// consumers and RPC names/types are unaffected.
+// Compatibility facade for the remaining supported financial-report surface.
+// Domain implementations live in focused modules below; retired loaders are
+// removed instead of being kept alive through this facade.
 export {
   getBalanceSheetReport,
   getIncomeStatementReport,
