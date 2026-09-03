@@ -326,7 +326,7 @@ export function OwnerStatementPanel({
               columns={ownerColumns}
               keyOf={(row) => row.rowKey}
               emptyTitle="لا توجد حركات مالية في الفترة"
-              emptyDescription="قد تظل أقسام الصيانة أو المرافق أو التسويات متاحة أدناه إذا كان لها سجل في الفترة."
+              emptyDescription="ستظهر أقسام الصيانة أو المرافق أو التسويات أدناه إذا كان لها سجل في الفترة."
             />
             <p className="mt-2 text-xs leading-5 text-muted-foreground">
               الرصيد الجاري لا يُعرض لأن سلطة كشف المالك الحالية لا توفّر رصيد افتتاح معتمدًا. لا يعيد هذا العرض احتساب أي رقم مالي.
