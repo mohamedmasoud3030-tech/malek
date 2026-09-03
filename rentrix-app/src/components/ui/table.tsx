@@ -170,10 +170,6 @@ export function TableError({
   colSpan: number;
   title?: string;
   onRetry?: () => void;
-}: {
-  colSpan: number;
-  title?: string;
-  onRetry?: () => void;
 }) {
   return (
     <TableStateRow colSpan={colSpan} className="text-danger">
