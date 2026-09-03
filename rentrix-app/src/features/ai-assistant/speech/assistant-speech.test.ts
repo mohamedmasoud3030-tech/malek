@@ -2,6 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   chunkSpeechText,
+  classifyArabicVoiceGender,
   disposeAssistantSpeech,
   getAssistantSpeechState,
   isAssistantSpeechSupported,
@@ -185,6 +186,49 @@ describe('play', () => {
     stopAssistantSpeech();
     playAssistantMessage('m2', 'اختبار');
     expect(fake.queue[0].voice?.lang).toBe('ar-AE');
+  });
+
+  it('prefers a feminine Arabic voice over a masculine one, even across locales', () => {
+    // Feminine ar-SA beats masculine ar-OM: gender outweighs locale.
+    fake.voices = [
+      { name: 'Hamdan - Arabic (Oman)', lang: 'ar-OM', localService: true },
+      { name: 'Microsoft Zariyah Online (Natural) - Arabic (Saudi Arabia)', lang: 'ar-SA', localService: false },
+    ];
+    playAssistantMessage('m1', 'اختبار');
+    expect(fake.queue[0].voice?.name).toContain('Zariyah');
+    expect(fake.queue[0].pitch).toBe(1);
+
+    // Feminine beats masculine within the same locale.
+    fake.voices = [
+      { name: 'Majed - Arabic (Saudi Arabia)', lang: 'ar-SA', localService: true },
+      { name: 'Microsoft Hoda - Arabic (Egypt)', lang: 'ar-EG', localService: true },
+    ];
+    stopAssistantSpeech();
+    playAssistantMessage('m2', 'اختبار');
+    expect(fake.queue[0].voice?.name).toContain('Hoda');
+  });
+
+  it('raises pitch when only a masculine Arabic voice exists on the device', () => {
+    fake.voices = [
+      { name: 'Google US English', lang: 'en-US', localService: true },
+      { name: 'Maged - Arabic (Egypt)', lang: 'ar-EG', localService: true },
+    ];
+    playAssistantMessage('m1', 'اختبار');
+    expect(fake.queue[0].voice?.name).toContain('Maged');
+    expect(fake.queue[0].pitch).toBeGreaterThan(1);
+  });
+
+  it('classifies Arabic voice gender from catalogue names', () => {
+    expect(classifyArabicVoiceGender('Microsoft Zariyah Online (Natural) - Arabic (Saudi Arabia)')).toBe('female');
+    expect(classifyArabicVoiceGender('Microsoft Hala - Arabic (Saudi Arabia)')).toBe('female');
+    expect(classifyArabicVoiceGender('Laila (Enhanced)')).toBe('female');
+    expect(classifyArabicVoiceGender('Arabic Female Voice')).toBe('female');
+    expect(classifyArabicVoiceGender('Maged')).toBe('male');
+    expect(classifyArabicVoiceGender('Microsoft Hamed Online (Natural) - Arabic (Saudi Arabia)')).toBe('male');
+    expect(classifyArabicVoiceGender('Arabic Male Voice')).toBe('male');
+    // Name-boundary safety: "Salem" must not match inside "Jerusalem".
+    expect(classifyArabicVoiceGender('Jerusalem Arabic')).toBe('unknown');
+    expect(classifyArabicVoiceGender('Google العربية')).toBe('unknown');
   });
 
   it('does not start when the message has no speakable content', () => {
