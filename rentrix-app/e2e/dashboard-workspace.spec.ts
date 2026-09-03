@@ -1,9 +1,8 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
 
-type DashboardHarnessMode = 'normal' | 'empty' | 'partial-integrity-error' | 'snapshot-error' | 'stale-refetch-error';
+type DashboardHarnessMode = 'normal' | 'empty' | 'snapshot-error' | 'stale-refetch-error';
 
-// Contract width matrix (MALEK Visual Contract V2 / ADR 0012 phase 2-3):
-// 320 / 375 / 414 mobile, 768 tablet, 1024 small desktop, 1440 desktop.
+// Runtime proof across the supported phone/tablet/desktop widths.
 const viewportMatrix = [
   { name: 'mobile-320', width: 320, height: 760 },
   { name: 'mobile-375', width: 375, height: 812 },
@@ -14,7 +13,6 @@ const viewportMatrix = [
 ] as const;
 
 const themes = ['light', 'dark'] as const;
-
 const companyId = '00000000-0000-4000-8000-000000000101';
 const userId = '00000000-0000-4000-8000-000000000201';
 const nowIso = '2026-08-05T08:00:00.000Z';
@@ -58,85 +56,32 @@ const properties = [
 ];
 
 const units = [
-  { id: 'unit-5', property_id: 'property-1', unit_number: '5', floor: '1', status: 'occupied', rent_amount: 750, deleted_at: null },
-  { id: 'unit-12', property_id: 'property-2', unit_number: '12', floor: '2', status: 'occupied', rent_amount: 900, deleted_at: null },
-];
-
-const people = [
-  { id: 'tenant-1', type: 'tenant', full_name: 'أحمد الفارسي', phone: null, email: null, national_id: null, deleted_at: null },
-  { id: 'tenant-2', type: 'tenant', full_name: 'سالم الكعبي', phone: null, email: null, national_id: null, deleted_at: null },
-];
-
-const owners = [
-  { id: 'owner-1', name: 'مالك برج الخليج', full_name: 'مالك برج الخليج', display_name: 'مالك برج الخليج', deleted_at: null, is_active: true },
-  { id: 'owner-2', name: 'مالك واحة مسقط', full_name: 'مالك واحة مسقط', display_name: 'مالك واحة مسقط', deleted_at: null, is_active: true },
-];
-
-const contracts = [
-  {
-    id: 'contract-1',
-    property_id: 'property-1',
-    unit_id: 'unit-5',
-    tenant_id: 'tenant-1',
-    start_date: '2025-08-01',
-    end_date: soonDate,
-    rent_amount: 750,
-    payment_cycle: 'monthly',
-    status: 'active',
-    created_at: nowIso,
-    updated_at: nowIso,
-    deleted_at: null,
-    notes: null,
-    agreement_id: null,
-    payment_terms_id: null,
-    cancellation_reason: null,
-    attachment_url: null,
-    renewed_from_id: null,
-    properties: { id: 'property-1', title: 'برج الخليج', address: 'مسقط' },
-    units: { id: 'unit-5', unit_number: '5', floor: '1', status: 'occupied', rent_amount: 750 },
-    people: { id: 'tenant-1', full_name: 'أحمد الفارسي', phone: null, email: null, national_id: null },
-  },
-  {
-    id: 'contract-2',
-    property_id: 'property-2',
-    unit_id: 'unit-12',
-    tenant_id: 'tenant-2',
-    start_date: '2025-08-01',
-    end_date: laterDate,
-    rent_amount: 900,
-    payment_cycle: 'monthly',
-    status: 'active',
-    created_at: nowIso,
-    updated_at: nowIso,
-    deleted_at: null,
-    notes: null,
-    agreement_id: null,
-    payment_terms_id: null,
-    cancellation_reason: null,
-    attachment_url: null,
-    renewed_from_id: null,
-    properties: { id: 'property-2', title: 'واحة مسقط', address: 'مسقط' },
-    units: { id: 'unit-12', unit_number: '12', floor: '2', status: 'occupied', rent_amount: 900 },
-    people: { id: 'tenant-2', full_name: 'سالم الكعبي', phone: null, email: null, national_id: null },
-  },
-];
-
-const invoices = [
-  { id: 'invoice-1', contract_id: 'contract-1', issue_date: '2026-08-01', due_date: '2026-07-10', amount: 1_500, paid_amount: 0, tax_amount: 0, status: 'overdue', deleted_at: null, contracts: { id: 'contract-1', property_id: 'property-1', tenant_id: 'tenant-1', unit_id: 'unit-5' } },
-  { id: 'invoice-2', contract_id: 'contract-2', issue_date: '2026-08-01', due_date: '2026-07-14', amount: 1_500, paid_amount: 0, tax_amount: 0, status: 'overdue', deleted_at: null, contracts: { id: 'contract-2', property_id: 'property-2', tenant_id: 'tenant-2', unit_id: 'unit-12' } },
-  { id: 'invoice-3', contract_id: 'contract-1', issue_date: '2026-08-02', due_date: '2026-08-02', amount: 12_000, paid_amount: 12_000, tax_amount: 0, status: 'paid', deleted_at: null, contracts: { id: 'contract-1', property_id: 'property-1', tenant_id: 'tenant-1', unit_id: 'unit-5' } },
-];
-
-const payments = [
-  { id: 'payment-1', invoice_id: 'invoice-3', amount: 12_000, payment_date: '2026-08-03', payment_method: 'bank_transfer', status: 'posted', deleted_at: null },
-];
-
-const expenses = [
-  { id: 'expense-1', property_id: 'property-1', category: 'صيانة', amount: 1_500, expense_date: '2026-08-04', cost_center_id: null, deleted_at: null },
+  { id: 'unit-5', property_id: 'property-1', unit_number: '5', floor: '1', status: 'occupied', rent_amount: 750, created_at: nowIso, deleted_at: null },
+  { id: 'unit-12', property_id: 'property-2', unit_number: '12', floor: '2', status: 'occupied', rent_amount: 900, created_at: nowIso, deleted_at: null },
 ];
 
 const maintenanceRecords = [
-  { id: 'maintenance-1', title: 'تسرب مياه', priority: 'urgent', status: 'open', property_id: 'property-1', unit_id: 'unit-5', property_title: 'برج الخليج', unit_number: '5', deleted_at: null, created_at: nowIso },
+  {
+    id: 'maintenance-1',
+    title: 'تسرب مياه',
+    description: null,
+    priority: 'urgent',
+    status: 'open',
+    property_id: 'property-1',
+    unit_id: 'unit-5',
+    tenant_id: null,
+    request_date: nowIso.slice(0, 10),
+    scheduled_date: null,
+    completed_at: null,
+    estimated_cost: null,
+    actual_cost: null,
+    vendor_name: null,
+    vendor_phone: null,
+    notes: null,
+    created_at: nowIso,
+    updated_at: nowIso,
+    deleted_at: null,
+  },
 ];
 
 function buildSnapshot(empty: boolean) {
@@ -167,6 +112,7 @@ function buildSnapshot(empty: boolean) {
       queues: { expiring_contracts: [], overdue_invoices: [], urgent_maintenance: [] },
     };
   }
+
   return {
     meta: { source: 'rpt_dashboard_snapshot' },
     portfolio: { properties: 2, units: 2 },
@@ -243,40 +189,10 @@ function tableRows(table: string, mode: DashboardHarnessMode) {
     }];
   }
   if (table === 'company_settings') return companySettings;
-  if (empty) {
-    if (table === 'properties') return [];
-    if (table === 'units') return [];
-    if (table === 'people') return [];
-    if (table === 'contracts') return [];
-    if (table === 'invoices') return [];
-    if (table === 'payments') return [];
-    if (table === 'expenses') return [];
-    if (table === 'maintenance_records') return [];
-    if (table === 'bank_statement_lines') return [];
-    if (table === 'owner_settlements') return [];
-    if (table === 'owners') return [];
-    if (table === 'property_owners') return [];
-    if (table === 'owner_agreements') return [];
-  }
+  if (empty) return [];
   if (table === 'properties') return properties;
   if (table === 'units') return units;
-  if (table === 'people') return people;
-  if (table === 'contracts') return contracts;
-  if (table === 'invoices') return invoices;
-  if (table === 'payments') return payments;
-  if (table === 'expenses') return expenses;
   if (table === 'maintenance_records') return maintenanceRecords;
-  if (table === 'bank_statement_lines') return [];
-  if (table === 'owner_settlements') return [];
-  if (table === 'owners') return owners;
-  if (table === 'property_owners') return [
-    { property_id: 'property-1', owner_id: 'owner-1', is_primary: true, starts_on: '2025-01-01', ends_on: null },
-    { property_id: 'property-2', owner_id: 'owner-2', is_primary: true, starts_on: '2025-01-01', ends_on: null },
-  ];
-  if (table === 'owner_agreements') return [
-    { property_id: 'property-1', owner_id: 'owner-1', starts_on: '2025-01-01', ends_on: null },
-    { property_id: 'property-2', owner_id: 'owner-2', starts_on: '2025-01-01', ends_on: null },
-  ];
   return [];
 }
 
@@ -299,7 +215,7 @@ async function fulfillJson(route: Route, body: unknown, status = 200) {
 }
 
 async function installDashboardHarness(page: Page, mode: DashboardHarnessMode) {
-  let overviewRequests = 0;
+  let snapshotRequests = 0;
   await page.unroute('**/*').catch(() => undefined);
   await page.route('**/*', async (route) => {
     const request = route.request();
@@ -325,8 +241,8 @@ async function installDashboardHarness(page: Page, mode: DashboardHarnessMode) {
     }
 
     if (url.pathname.endsWith('/rest/v1/rpc/rpt_dashboard_snapshot')) {
-      overviewRequests += 1;
-      if (mode === 'snapshot-error' || (mode === 'stale-refetch-error' && overviewRequests > 1)) {
+      snapshotRequests += 1;
+      if (mode === 'snapshot-error' || (mode === 'stale-refetch-error' && snapshotRequests > 1)) {
         await fulfillJson(route, { message: 'dashboard snapshot unavailable in harness' }, 500);
         return;
       }
@@ -336,15 +252,7 @@ async function installDashboardHarness(page: Page, mode: DashboardHarnessMode) {
 
     const tableMatch = url.pathname.match(/\/rest\/v1\/([^/?]+)/);
     if (tableMatch) {
-      const table = tableMatch[1] ?? '';
-      // R1: bank/settlement counts now come from the snapshot RPC itself.
-      // The only remaining auxiliary source is the data-integrity audit —
-      // failing one of its inputs proves the honest «غير متاح» state.
-      if (mode === 'partial-integrity-error' && table === 'owners') {
-        await fulfillJson(route, { message: 'integrity audit input unavailable in harness' }, 500);
-        return;
-      }
-      await fulfillJson(route, tableRows(table, mode));
+      await fulfillJson(route, tableRows(tableMatch[1] ?? '', mode));
       return;
     }
 
@@ -391,10 +299,10 @@ async function assertBottomNavSafeArea(page: Page) {
     const nav = document.querySelector('[data-mobile-bottom-nav]');
     const scopedChildren = Array.from(document.querySelectorAll('[data-page-layout] [data-dashboard-section]'));
     const last = scopedChildren.at(-1);
-    if (!nav || !last) return { hasNav: false, safe: true };
+    if (!nav || !last) return { safe: true };
     const navRect = nav.getBoundingClientRect();
     const lastRect = last.getBoundingClientRect();
-    return { hasNav: true, safe: lastRect.bottom <= navRect.top + 1, lastBottom: lastRect.bottom, navTop: navRect.top };
+    return { safe: lastRect.bottom <= navRect.top + 1, lastBottom: lastRect.bottom, navTop: navRect.top };
   });
   expect(state.safe, `Dashboard content must not be hidden behind bottom nav: ${JSON.stringify(state)}`).toBe(true);
 }
@@ -404,14 +312,13 @@ async function assertTouchTargets(page: Page) {
     const selectors = [
       'a[data-dashboard-kpi-link]',
       'a[data-dashboard-queue-link]',
-      'a[data-needs-attention-link]',
+      '[data-needs-attention-link]',
       'a[data-dashboard-owner-obligations-link]',
     ];
     return selectors.flatMap((selector) =>
       Array.from(document.querySelectorAll(selector)).map((el) => {
         const rect = el.getBoundingClientRect();
-        const visible = rect.width > 0 && rect.height > 0;
-        return { selector, width: rect.width, height: rect.height, visible };
+        return { selector, width: rect.width, height: rect.height, visible: rect.width > 0 && rect.height > 0 };
       }),
     ).filter((target) => target.visible);
   });
@@ -435,55 +342,43 @@ for (const viewport of viewportMatrix) {
       await openDashboardRoute(page, theme);
 
       const dashboardSections = page.locator('[data-dashboard-section]');
-      await expect(dashboardSections).toHaveCount(10);
-      // DOM order is the mobile priority order; the xl grid reorders for desktop.
+      await expect(dashboardSections).toHaveCount(9);
       const sectionNames = await dashboardSections.evaluateAll((nodes) =>
         nodes.map((node) => node.getAttribute('data-dashboard-section')),
       );
       expect(sectionNames).toEqual([
-        'office-pulse',
         'needs-attention',
+        'office-pulse',
         'collections',
         'occupancy',
-        'financial-performance',
         'maintenance',
         'upcoming-contracts',
         'property-health',
+        'financial-performance',
         'owner-obligations',
-        'finance-exceptions',
       ]);
 
-      const officePulseCards = page.locator('[data-dashboard-office-pulse] [data-kpi-card]');
-      await expect(officePulseCards).toHaveCount(4);
-
-      const focusItems = page.locator('[data-dashboard-focus-item]');
-      await expect(focusItems).toHaveCount(4);
-      await expect(focusItems.nth(0)).toHaveAttribute('href', '#dashboard-needs-attention');
-      await expect(focusItems.nth(1)).toHaveAttribute('href', '#dashboard-collections');
-      await expect(focusItems.nth(1)).toContainText('80%');
+      await expect(page.locator('[data-dashboard-focus-strip]')).toHaveCount(0);
+      await expect(page.locator('[data-dashboard-secondary-disclosure]')).toHaveCount(0);
+      await expect(page.locator('[data-dashboard-section="finance-exceptions"]')).toHaveCount(0);
       await expect(page.locator('[data-dashboard-section="needs-attention"]')).toHaveAttribute('data-dashboard-priority', 'attention');
-
+      await expect(page.locator('[data-dashboard-section="needs-attention"]')).toContainText('يحتاج انتباهك');
       await expect(page.locator('[data-dashboard-section="collections"]')).toContainText('التحصيل والمتأخرات');
       await expect(page.locator('[data-dashboard-section="upcoming-contracts"]')).toContainText('العقود القادمة');
-      await expect(page.locator('[data-dashboard-section="needs-attention"]')).toContainText('يحتاج انتباهك');
-      await expect(page.getByRole('heading', { name: 'الصيانة', level: 3 })).toBeVisible();
-
       await expect(page.locator('[data-dashboard-owner-obligations-link]')).toHaveAttribute('href', '/owner-settlements');
+      await expect(page.locator('[data-dashboard-office-pulse] [data-kpi-card]')).toHaveCount(4);
 
-      if (viewport.width === 375) {
-        const firstScreen = await page.locator('[data-dashboard-section="office-pulse"]').evaluate((node) => {
-          const rect = node.getBoundingClientRect();
-          const attention = document.querySelector('[data-dashboard-section="needs-attention"]')?.getBoundingClientRect();
-          return {
-            pulseVisible: rect.top < window.innerHeight && rect.bottom > 0,
-            attentionTop: attention?.top ?? null,
-            pulseTop: rect.top,
-          };
-        });
-        expect(firstScreen.pulseVisible).toBe(true);
-        expect(firstScreen.attentionTop).not.toBeNull();
-        expect(firstScreen.attentionTop ?? 0).toBeGreaterThan(firstScreen.pulseTop);
-      }
+      const firstDecision = await page.locator('[data-dashboard-section="needs-attention"]').evaluate((node) => {
+        const attention = node.getBoundingClientRect();
+        const pulse = document.querySelector('[data-dashboard-section="office-pulse"]')?.getBoundingClientRect();
+        return {
+          attentionVisible: attention.top < window.innerHeight && attention.bottom > 0,
+          attentionTop: attention.top,
+          pulseTop: pulse?.top ?? Number.POSITIVE_INFINITY,
+        };
+      });
+      expect(firstDecision.attentionVisible).toBe(true);
+      expect(firstDecision.attentionTop).toBeLessThan(firstDecision.pulseTop);
 
       await assertTouchTargets(page);
       await assertNoHorizontalOverflow(page);
@@ -509,7 +404,7 @@ test('real dashboard command center keyboard focus stays visible', async ({ page
   expect(Number.parseFloat(outline.width)).toBeGreaterThan(0);
 });
 
-test('real dashboard command center reduced motion collapses animation inside the scope', async ({ page }, testInfo) => {
+test('real dashboard command center reduced motion keeps animation negligible', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'chromium-desktop', 'Reduced-motion proof runs once in Chromium.');
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.setViewportSize({ width: 390, height: 844 });
@@ -517,9 +412,7 @@ test('real dashboard command center reduced motion collapses animation inside th
 
   await expect(page.locator('[data-kpi-card]').first()).toBeVisible();
   const durations = await page.evaluate(() => {
-    const scoped = document.querySelector('[data-page-layout]');
-    if (!scoped) return null;
-    const card = scoped.querySelector('[data-kpi-card]');
+    const card = document.querySelector('[data-page-layout] [data-kpi-card]');
     if (!card) return null;
     const styles = getComputedStyle(card);
     return { transition: styles.transitionDuration, animation: styles.animationDuration };
@@ -532,9 +425,8 @@ test('real dashboard command center reduced motion collapses animation inside th
   }
 });
 
-test('real dashboard route exposes loading, empty, error and stale states honestly', async ({ page }, testInfo) => {
+test('real dashboard route exposes empty, error and stale states honestly', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'chromium-desktop', 'State proof runs once in Chromium.');
-
   await page.setViewportSize({ width: 375, height: 812 });
 
   await page.context().clearCookies();

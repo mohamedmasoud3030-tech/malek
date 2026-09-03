@@ -31,11 +31,13 @@ const severityTone: Record<NeedsAttentionItem['severity'], 'danger' | 'warning' 
 };
 
 /**
- * «يحتاج انتباهك» — one ranked, actionable queue instead of ten unrelated
- * metrics. Every item is a real condition sourced from an existing
- * authoritative signal and deep-links into the workflow that owns it.
+ * «يحتاج انتباهك» — one ranked, actionable queue instead of unrelated metrics.
+ * The badge counts decision items, not raw records, so an aggregate action such
+ * as maintenance remains one clear owner task even when several records sit
+ * behind it.
  */
-export const NeedsAttentionSection = memo(function NeedsAttentionSection({ signal, isLoading, isError = false, isPartial = false }: NeedsAttentionSectionProps) {  const navigate = useNavigate();
+export const NeedsAttentionSection = memo(function NeedsAttentionSection({ signal, isLoading, isError = false, isPartial = false }: NeedsAttentionSectionProps) {
+  const navigate = useNavigate();
   const location = useLocation();
   const visibleItems = signal.items.slice(0, NEEDS_ATTENTION_VISIBLE_LIMIT);
   const hiddenCount = signal.totalCount - visibleItems.length;
@@ -55,10 +57,10 @@ export const NeedsAttentionSection = memo(function NeedsAttentionSection({ signa
           isLoading
             ? 'جارٍ تجميع الأولويات'
             : isPartial
-              ? `${signal.totalCount} حالة ظاهرة · بعض المصادر غير متاحة`
+              ? `${signal.totalCount} أولوية ظاهرة · بعض المصادر غير متاحة`
               : signal.totalCount > 0
-                ? `${signal.totalCount} حالة تحتاج قراراً أو متابعة${dangerCount > 0 ? ` · منها ${dangerCount} عاجلة` : ''}`
-                : 'لا توجد حالات عاجلة الآن'
+                ? `${signal.totalCount} أولوية تحتاج قراراً أو متابعة${dangerCount > 0 ? ` · منها ${dangerCount} عاجلة` : ''}`
+                : 'لا توجد أولويات عاجلة الآن'
         }
         icon={isPartial ? ShieldQuestion : signal.totalCount > 0 ? AlertCircle : CheckCircle2}
         tone={isPartial ? 'info' : dangerCount > 0 ? 'danger' : signal.totalCount > 0 ? 'warning' : 'success'}
@@ -74,12 +76,12 @@ export const NeedsAttentionSection = memo(function NeedsAttentionSection({ signa
         ) : undefined}
       />
 
-      {isLoading ? <DashboardSignalLoading label="جارٍ تحميل الحالات التي تحتاج انتباهاً" /> : null}
+      {isLoading ? <DashboardSignalLoading label="جارٍ تحميل الأولويات التي تحتاج انتباهاً" /> : null}
 
       {!isLoading && isError ? (
         <DashboardSignalEmpty
           role="alert"
-          title="تعذر تحميل الحالات التي تحتاج انتباهاً"
+          title="تعذر تحميل الأولويات"
           description="راجع تنبيه أعلى الصفحة ثم أعد المحاولة. لن نعرض قائمة فارغة عند فشل التحميل."
         />
       ) : null}
@@ -88,7 +90,7 @@ export const NeedsAttentionSection = memo(function NeedsAttentionSection({ signa
         <DashboardSignalEmpty
           role="status"
           title="تعذر اكتمال قائمة الأولويات"
-          description="لم تظهر حالات من المصادر المتاحة، لكن لا يمكن تأكيد خلو القائمة حتى تنجح بقية القراءات."
+          description="لم تظهر أولويات من المصادر المتاحة، لكن لا يمكن تأكيد خلو القائمة حتى تنجح بقية القراءات."
         />
       ) : null}
 
@@ -101,7 +103,7 @@ export const NeedsAttentionSection = memo(function NeedsAttentionSection({ signa
 
       {!isLoading && !isError && visibleItems.length > 0 ? (
         <>
-          <DashboardSignalList label="الحالات التي تحتاج انتباهاً">
+          <DashboardSignalList label="الأولويات التي تحتاج انتباهاً">
             {visibleItems.map((item) => {
               const tone = severityTone[item.severity];
               const ariaLabel = `${item.title} — ${item.meta}`;
@@ -156,7 +158,7 @@ export const NeedsAttentionSection = memo(function NeedsAttentionSection({ signa
           </DashboardSignalList>
           {hiddenCount > 0 ? (
             <p className="border-t border-border/60 bg-muted/[0.08] px-3.5 py-2 text-[11px] font-bold text-muted-foreground sm:px-4" data-dashboard-attention-more>
-              +{hiddenCount} حالات أخرى في مساحات العمل المرتبطة
+              +{hiddenCount} أولويات أخرى في مساحات العمل المرتبطة
             </p>
           ) : null}
         </>
