@@ -5,8 +5,9 @@
    STYLE AUTHORITY ORDER:
      1. tokens.css                   design tokens — the only theme source
      2. ux-foundation.css            structure, geometry and responsive/a11y behavior
-     3. design-system-foundation.css shared base/component behavior
-     4. malek-visual-system.css      final MALEK visual authority — imported LAST
+     3. mobile-unification.css       mobile-only reconciliation of shared register geometry
+     4. design-system-foundation.css shared base/component behavior
+     5. malek-visual-system.css      final MALEK visual authority — imported LAST
 
    Responsive grid density belongs to the page/component that owns the grid.
    There is intentionally no global selector that rewrites 4/5/6-column grids.
@@ -14,6 +15,7 @@
 @import 'tailwindcss';
 @import './tokens.css';
 @import './ux-foundation.css';
+@import './mobile-unification.css';
 @import './design-system-foundation.css';
 @import './malek-visual-system.css';
 
