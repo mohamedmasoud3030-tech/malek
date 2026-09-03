@@ -12,7 +12,12 @@ import { cn } from '@/lib/utils';
 import type { AiAssistantAction, AiAssistantMessage, AiAssistantResponse, AiAssistantSurfaceContext } from './types';
 import { useSmartAssistant } from './use-smart-assistant';
 import { isAiAssistantConfigurationError } from './services/ai-assistant-service';
+import { inferAiAssistantAction } from './ai-assistant-intent';
 import { buildAiNavigationTargets } from './ai-assistant-navigation';
+import {
+  buildAiAssistantResponsePresentation,
+  type AiAssistantResponsePresentation,
+} from './ai-assistant-response-model';
 import { deriveAiAssistantSurfaceContext } from './ai-assistant-surface-context';
 import { AssistantSpeechControl } from './speech/assistant-speech-control';
 import { useAssistantSpeech } from './speech/use-assistant-speech';
@@ -21,6 +26,11 @@ type AssistantAction = {
   action: AiAssistantAction;
   title: string;
   prompt: string;
+};
+
+type AssistantUiMessage = AiAssistantMessage & {
+  surface?: AiAssistantSurfaceContext;
+  presentation?: AiAssistantResponsePresentation;
 };
 
 /** Always-visible operational quick actions — the office owner's daily four. */
@@ -94,10 +104,10 @@ function readSurfaceContext(): AiAssistantSurfaceContext {
   return deriveAiAssistantSurfaceContext(window.location.pathname);
 }
 
-const initialMessage: AiAssistantMessage = {
+const initialMessage: AssistantUiMessage = {
   id: 'assistant-welcome',
   role: 'assistant',
-  content: `مرحباً! أنا مساعد ${APP_BRAND_NAME} الذكي.\nاسألني بالعربي العادي عن التحصيل، الشغور، العقود أو ملخص الفترة.`,
+  content: `مرحباً! أنا مساعد ${APP_BRAND_NAME} الذكي.\nاسألني: إيه المهم دلوقتي؟ اشرح السجل ده، أروح فين، أو حضّر لي الخطوة الجاية للمراجعة.`,
   createdAt: new Date().toISOString(),
 };
 
@@ -108,13 +118,21 @@ function createMessageId(role: AiAssistantMessage['role']): string {
   return `${role}-${Date.now()}`;
 }
 
-function createMessage(role: AiAssistantMessage['role'], content: string, action?: AiAssistantAction): AiAssistantMessage {
+function createMessage(
+  role: AiAssistantMessage['role'],
+  content: string,
+  action?: AiAssistantAction,
+  surface?: AiAssistantSurfaceContext,
+  presentation?: AiAssistantResponsePresentation,
+): AssistantUiMessage {
   return {
     id: createMessageId(role),
     role,
     content,
     action,
     createdAt: new Date().toISOString(),
+    surface,
+    presentation,
   };
 }
 
@@ -131,8 +149,14 @@ function formatAssistantResponse(response: AiAssistantResponse): string {
   return response.reply;
 }
 
+function attentionClass(tone: AiAssistantResponsePresentation['attention'][number]['tone']): string {
+  if (tone === 'critical') return 'border-destructive/20 bg-destructive/5 text-destructive';
+  if (tone === 'warning') return 'border-warning/30 bg-warning/10 text-warning-foreground';
+  return 'border-border bg-muted/50 text-muted-foreground';
+}
+
 export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
-  const [messages, setMessages] = useState<AiAssistantMessage[]>([initialMessage]);
+  const [messages, setMessages] = useState<AssistantUiMessage[]>([initialMessage]);
   const [input, setInput] = useState('');
   const [showMoreActions, setShowMoreActions] = useState(false);
   const [configurationMissing, setConfigurationMissing] = useState(!env.isConfigured);
@@ -164,16 +188,26 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
     const prompt = rawPrompt.trim();
     if (!prompt || pending || configurationMissing) return;
 
-    const userMessage = createMessage('user', prompt, action);
+    const currentSurface = readSurfaceContext();
+    const resolvedAction = action ?? inferAiAssistantAction(prompt, currentSurface);
+    const userMessage = createMessage('user', prompt, resolvedAction, currentSurface);
     const history = messages.map(({ role, content }) => ({ role, content }));
     setMessages((current) => [...current, userMessage]);
     setInput('');
 
     assistant.mutate(
-      { prompt, action, history, surface: readSurfaceContext() },
+      { prompt, action: resolvedAction, history, surface: currentSurface },
       {
         onSuccess: (response) => {
-          const reply = createMessage('assistant', formatAssistantResponse(response), action);
+          const responseSurface = response.context.surface ?? currentSurface;
+          const presentation = buildAiAssistantResponsePresentation(response, resolvedAction, responseSurface);
+          const reply = createMessage(
+            'assistant',
+            formatAssistantResponse(response),
+            resolvedAction,
+            responseSurface,
+            presentation,
+          );
           setMessages((current) => [...current, reply]);
           // Voice is an extra modality: the text above is canonical, and audio
           // only plays automatically when the user opted in (default OFF).
@@ -202,16 +236,19 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
           {messages.map((message) => {
             const isUser = message.role === 'user';
             const isWelcome = message.id === 'assistant-welcome';
-            const navigationTargets = isUser || (embedded && !message.action)
+            const navigationTargets = isUser || isWelcome
               ? []
-              : buildAiNavigationTargets(message.action, { freeform: true });
+              : buildAiNavigationTargets(message.action, {
+                  freeform: !message.action,
+                  surface: message.surface,
+                });
 
             return (
               <div key={message.id} className={cn('flex w-full', isUser ? 'justify-end' : 'justify-start')}>
                 <div
                   className={cn(
                     'flex gap-2',
-                    isUser ? 'max-w-[86%] flex-row-reverse' : 'max-w-[88%] flex-row',
+                    isUser ? 'max-w-[86%] flex-row-reverse' : 'max-w-[92%] flex-row',
                     embedded && isWelcome && 'max-w-full',
                   )}
                 >
@@ -235,21 +272,76 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
                       embedded && isWelcome && 'rounded-none border-0 bg-transparent px-0.5 py-0.5 text-[12.5px] leading-5 shadow-none',
                     )}
                   >
+                    {!isUser && !isWelcome && message.presentation ? (
+                      <div className="mb-2 flex flex-wrap items-center gap-1.5" data-ai-response-kind>
+                        <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
+                          {message.presentation.modeLabel}
+                        </span>
+                        {message.presentation.contextLabel ? (
+                          <span className="max-w-48 truncate text-[10px] font-medium text-muted-foreground">
+                            {message.presentation.contextLabel}
+                          </span>
+                        ) : null}
+                      </div>
+                    ) : null}
                     <p className="whitespace-pre-wrap break-words">{message.content}</p>
                     {!isUser ? <AssistantSpeechControl messageId={message.id} content={message.content} /> : null}
+
+                    {!isUser && message.presentation?.attention.length ? (
+                      <div className="mt-2 border-t border-border/50 pt-2" data-ai-attention>
+                        <p className="mb-1 text-[10px] font-bold text-muted-foreground">يحتاج انتباه</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {message.presentation.attention.map((item) => (
+                            <span
+                              key={item.label}
+                              className={cn('rounded-full border px-2 py-0.5 text-[10px] font-bold', attentionClass(item.tone))}
+                            >
+                              {item.label}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+
                     {navigationTargets.length > 0 ? (
-                      <div className="mt-2 flex flex-wrap gap-1.5" data-ai-navigation>
-                        {navigationTargets.map((target) => (
-                          <Link
-                            key={`${target.to}-${target.label}`}
-                            to={target.to}
-                            search={target.search}
-                            className="inline-flex items-center gap-1 rounded-full border border-primary/25 bg-primary/5 px-2.5 py-1 text-[11px] font-bold text-primary transition hover:bg-primary/10"
-                          >
-                            <ArrowUpRight className="size-3" aria-hidden="true" />
-                            {target.label}
-                          </Link>
-                        ))}
+                      <div className="mt-2 border-t border-border/50 pt-2" data-ai-navigation>
+                        <p className="mb-1 text-[10px] font-bold text-muted-foreground">الانتقال</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {navigationTargets.map((target) => (
+                            <Link
+                              key={`${target.to}-${target.label}`}
+                              to={target.to}
+                              search={target.search}
+                              className="inline-flex items-center gap-1 rounded-full border border-primary/25 bg-primary/5 px-2.5 py-1 text-[11px] font-bold text-primary transition hover:bg-primary/10"
+                            >
+                              <ArrowUpRight className="size-3" aria-hidden="true" />
+                              {target.label}
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {!isUser && message.presentation?.suggestedActions.length ? (
+                      <div className="mt-2 border-t border-border/50 pt-2" data-ai-draft-actions>
+                        <p className="mb-1 text-[10px] font-bold text-muted-foreground">تحضير للمراجعة</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {message.presentation.suggestedActions.map((suggestion) => (
+                            <button
+                              key={suggestion.action}
+                              type="button"
+                              onClick={() => submitPrompt(suggestion.prompt, suggestion.action)}
+                              disabled={pending || configurationMissing}
+                              className="inline-flex min-h-8 items-center gap-1 rounded-full border border-border bg-muted/40 px-2.5 py-1 text-[11px] font-bold text-foreground transition hover:bg-muted disabled:opacity-50"
+                            >
+                              <Sparkles className="size-3" aria-hidden="true" />
+                              {suggestion.title}
+                            </button>
+                          ))}
+                        </div>
+                        <p className="mt-1 text-[10px] leading-4 text-muted-foreground">
+                          المسودة لا تُرسل ولا تنفذ أي إجراء تلقائياً.
+                        </p>
                       </div>
                     ) : null}
                   </div>
@@ -326,7 +418,7 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
                 submitPrompt(input);
               }
             }}
-            placeholder={embedded ? 'اسأل المساعد...' : 'اسأل مثلاً: مين متأخر؟ عندي كام وحدة فاضية؟'}
+            placeholder={embedded ? 'اسأل: إيه المهم؟ اشرح السجل ده...' : 'اسأل مثلاً: إيه المهم دلوقتي؟ اشرح السجل ده. أروح فين؟'}
             disabled={pending || configurationMissing}
             aria-label="رسالة المساعد"
             className={cn(
@@ -347,7 +439,7 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
         </form>
         {!embedded ? (
           <p className="mt-1.5 px-1 text-[11px] leading-4 text-muted-foreground">
-            قراءة وتحليل فقط — أي اعتماد أو تسجيل نهائي يظل بيد المستخدم المخول.
+            قراءة وتحليل وتحضير مسودات فقط — أي اعتماد أو تسجيل نهائي يظل بيد المستخدم المخول.
           </p>
         ) : null}
       </div>
@@ -368,7 +460,7 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
             </div>
             <div className="min-w-0">
               <p className="text-sm font-bold">المساعد الذكي</p>
-              <p className="truncate text-xs text-muted-foreground">مساعد {APP_BRAND_NAME} للقراءة والتحليل</p>
+              <p className="truncate text-xs text-muted-foreground">طبقة تشغيل ذكية داخل {APP_BRAND_NAME}</p>
             </div>
           </div>
           <label

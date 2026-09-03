@@ -28,11 +28,11 @@ describe('deriveAiAssistantSurfaceContext', () => {
     expect(context.section).toBe('properties');
   });
 
-  it('detects contract, tenant, owner, and person detail surfaces', () => {
+  it('detects contract, tenant, owner, and person detail surfaces with their owning sections', () => {
     expect(deriveAiAssistantSurfaceContext(`/contracts/${uuid}`)).toMatchObject({ entityType: 'contract', entityId: uuid, section: 'contracts' });
-    expect(deriveAiAssistantSurfaceContext(`/tenants/${uuid}`)).toMatchObject({ entityType: 'tenant', entityId: uuid });
-    expect(deriveAiAssistantSurfaceContext(`/owners/${uuid}`)).toMatchObject({ entityType: 'owner', entityId: uuid });
-    expect(deriveAiAssistantSurfaceContext(`/people/${uuid}`)).toMatchObject({ entityType: 'person', entityId: uuid });
+    expect(deriveAiAssistantSurfaceContext(`/tenants/${uuid}`)).toMatchObject({ entityType: 'tenant', entityId: uuid, section: 'tenants' });
+    expect(deriveAiAssistantSurfaceContext(`/owners/${uuid}`)).toMatchObject({ entityType: 'owner', entityId: uuid, section: 'owners' });
+    expect(deriveAiAssistantSurfaceContext(`/people/${uuid}`)).toMatchObject({ entityType: 'person', entityId: uuid, section: 'people' });
   });
 
   it('drops unsafe or non-entity ids and degrades to section-only context', () => {
@@ -57,10 +57,14 @@ describe('deriveAiAssistantSurfaceContext', () => {
     expect(context.entityId).toBe(uuid);
   });
 
-  it('maps known sections without entities', () => {
+  it('maps operational registers back to their canonical owning sections', () => {
     expect(deriveAiAssistantSurfaceContext('/dashboard')).toMatchObject({ entityType: null, entityId: null, section: 'dashboard' });
-    expect(deriveAiAssistantSurfaceContext('/financials')).toMatchObject({ section: 'financials' });
+    for (const route of ['/financials', '/finance/collections', '/invoices', '/receipts', '/arrears', '/expenses', '/deposits', '/owner-settlements']) {
+      expect(deriveAiAssistantSurfaceContext(route)).toMatchObject({ entityType: null, entityId: null, section: 'financials' });
+    }
     expect(deriveAiAssistantSurfaceContext('/maintenance')).toMatchObject({ section: 'maintenance' });
+    expect(deriveAiAssistantSurfaceContext('/utilities')).toMatchObject({ section: 'maintenance' });
+    expect(deriveAiAssistantSurfaceContext('/communication')).toMatchObject({ section: 'communication' });
     expect(deriveAiAssistantSurfaceContext('/reports')).toMatchObject({ section: 'reports' });
   });
 

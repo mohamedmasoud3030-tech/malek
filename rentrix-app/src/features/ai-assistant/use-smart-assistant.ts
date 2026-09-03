@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-import { requestAiAssistantResponse } from './services/ai-assistant-service';
+import { requestAiOperatingResponse } from './services/ai-assistant-operating-service';
 
 /**
  * Assistant errors are rendered by the canonical conversation surface.
@@ -8,6 +8,6 @@ import { requestAiAssistantResponse } from './services/ai-assistant-service';
  */
 export function useSmartAssistant() {
   return useMutation({
-    mutationFn: requestAiAssistantResponse,
+    mutationFn: requestAiOperatingResponse,
   });
 }

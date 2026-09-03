@@ -5,7 +5,7 @@ import {
   isAllowedAiNavigationTarget,
   type AiNavigationTarget,
 } from './ai-assistant-navigation';
-import type { AiAssistantAction } from './types';
+import type { AiAssistantAction, AiAssistantSurfaceContext } from './types';
 
 const ALL_ACTIONS: readonly AiAssistantAction[] = [
   'summarize_overdue_invoices',
@@ -28,6 +28,19 @@ const ALL_ACTIONS: readonly AiAssistantAction[] = [
   'draft_owner_summary',
   'draft_internal_note',
 ];
+
+function surface(
+  entityType: NonNullable<AiAssistantSurfaceContext['entityType']>,
+  entityId: string,
+): AiAssistantSurfaceContext {
+  return {
+    route: `/${entityType}s/${entityId}`,
+    entityType,
+    entityId,
+    entityLabel: null,
+    section: entityType === 'property' ? 'properties' : `${entityType}s`,
+  };
+}
 
 describe('buildAiNavigationTargets', () => {
   it('maps each declared action to the canonical in-app report/workspace', () => {
@@ -77,6 +90,38 @@ describe('buildAiNavigationTargets', () => {
     expect(buildAiNavigationTargets('list_vacant_units_needing_followup').map((target) => target.to)).toContain('/properties');
     expect(buildAiNavigationTargets('draft_owner_summary')[0]?.to).toBe('/owners');
     expect(buildAiNavigationTargets('draft_maintenance_followup').map((target) => target.to)).toContain('/communication');
+  });
+
+  it('adds the verified current record and useful owning workspaces for explain-current-surface', () => {
+    const contractTargets = buildAiNavigationTargets('explain_current_surface', {
+      freeform: false,
+      surface: surface('contract', 'contract-123'),
+    });
+    expect(contractTargets.map((target) => target.to)).toEqual([
+      '/contracts/contract-123',
+      '/reports',
+      '/communication',
+    ]);
+    expect(contractTargets.every(isAllowedAiNavigationTarget)).toBe(true);
+
+    const ownerTargets = buildAiNavigationTargets('explain_current_surface', {
+      freeform: false,
+      surface: surface('owner', 'owner-123'),
+    });
+    expect(ownerTargets.map((target) => target.to)).toEqual([
+      '/owners/owner-123',
+      '/owner-settlements',
+      '/reports',
+    ]);
+    expect(ownerTargets.every(isAllowedAiNavigationTarget)).toBe(true);
+  });
+
+  it('rejects unsafe ids instead of constructing a detail link', () => {
+    const targets = buildAiNavigationTargets('explain_current_surface', {
+      freeform: false,
+      surface: surface('owner', 'owner;delete'),
+    });
+    expect(targets.some((target) => target.to.startsWith('/owners/'))).toBe(false);
   });
 });
 
