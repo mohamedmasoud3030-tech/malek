@@ -1,5 +1,5 @@
 import { useMemo, useState, type FormEvent } from 'react';
-import { Plus } from 'lucide-react';
+import { LinkIcon, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EntityForm } from '@/components/ui/entity-form';
 import {
@@ -35,7 +35,8 @@ export function OwnerRelationshipManager({
   const linkMutation = useLinkOwnerToProperty();
   const updateMutation = useUpdatePropertyOwnerLink();
   const unlinkMutation = useUnlinkOwnerFromProperty();
-  const [formOpen, setFormOpen] = useState(false);
+  const [managerOpen, setManagerOpen] = useState(false);
+  const [formMode, setFormMode] = useState(false);
   const [editingLink, setEditingLink] = useState<EditingPropertyOwnerLink | null>(null);
   const [values, setValues] = useState<PropertyOwnershipLinkFormValues>(emptyPropertyOwnershipLinkFormValues);
   const [formError, setFormError] = useState<string | null>(null);
@@ -55,25 +56,32 @@ export function OwnerRelationshipManager({
     ));
   }, [editingLink, ownerId, properties]);
 
-  const resetForm = () => {
+  if (!canManage) return null;
+
+  const resetFormState = () => {
     setEditingLink(null);
     setValues(emptyPropertyOwnershipLinkFormValues);
     setFormError(null);
-    setFormOpen(false);
+    setFormMode(false);
+  };
+
+  const closeManager = () => {
+    resetFormState();
+    setManagerOpen(false);
   };
 
   const openCreate = () => {
     setEditingLink(null);
     setValues(emptyPropertyOwnershipLinkFormValues);
     setFormError(null);
-    setFormOpen(true);
+    setFormMode(true);
   };
 
   const openEdit = (link: PropertyOwner) => {
     setEditingLink({ id: link.id, propertyId: link.property_id, ownerId: link.owner_id });
     setValues(propertyOwnerLinkToFormValues(link));
     setFormError(null);
-    setFormOpen(true);
+    setFormMode(true);
   };
 
   const setField = <K extends keyof PropertyOwnershipLinkFormValues>(field: K, value: PropertyOwnershipLinkFormValues[K]) => {
@@ -101,7 +109,7 @@ export function OwnerRelationshipManager({
           ...propertyOwnershipLinkFormToPayload(values),
         });
       }
-      resetForm();
+      resetFormState();
     } catch (error) {
       setFormError(error instanceof Error ? error.message : 'تعذر حفظ علاقة الملكية.');
     }
@@ -110,75 +118,65 @@ export function OwnerRelationshipManager({
   const handleEnd = async (link: PropertyOwner) => {
     try {
       await unlinkMutation.mutateAsync({ linkId: link.id, propertyId: link.property_id, ownerId: link.owner_id });
-      if (editingLink?.id === link.id) resetForm();
+      if (editingLink?.id === link.id) resetFormState();
     } catch (error) {
       setFormError(error instanceof Error ? error.message : 'تعذر إنهاء علاقة الملكية.');
     }
   };
 
   return (
-    <section data-owner-relationship-manager className="space-y-3" aria-label="علاقات الملكية">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h3 className="text-sm font-black text-foreground">علاقات الملكية</h3>
-          <p className="mt-1 text-xs font-medium text-muted-foreground">
-            العقارات ونسب الملكية الخاصة بهذا المالك تُدار من ملفه فقط.
-          </p>
-        </div>
-        {canManage ? (
-          <Button type="button" variant="secondary" className="min-h-11" onClick={openCreate} disabled={availableProperties.length === 0}>
-            <Plus className="me-2 size-4" />
-            ربط عقار
-          </Button>
-        ) : null}
-      </div>
+    <div data-owner-relationship-manager className="flex justify-end">
+      <Button type="button" variant="secondary" className="min-h-11" onClick={() => setManagerOpen(true)}>
+        <LinkIcon className="me-2 size-4" />
+        إدارة علاقات الملكية
+      </Button>
 
-      {propertiesQuery.isLoading ? (
-        <p className="text-sm text-muted-foreground">جارٍ تحميل علاقات الملكية…</p>
-      ) : propertiesQuery.isError ? (
-        <div className="rounded-xl border border-danger/25 bg-danger/5 p-3 text-sm text-danger">
-          تعذر تحميل علاقات الملكية.
-          <Button type="button" variant="ghost" className="ms-2 min-h-11" onClick={() => propertiesQuery.refetch()}>إعادة المحاولة</Button>
-        </div>
-      ) : linkedProperties.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">لا توجد عقارات مرتبطة بهذا المالك بعد.</p>
-      ) : canManage ? (
-        <OwnerRelationshipsList
-          linkedProperties={linkedProperties}
-          endLinkPending={unlinkMutation.isPending}
-          onEditLink={openEdit}
-          onEndLink={handleEnd}
-        />
-      ) : (
-        <div className="space-y-2">
-          {linkedProperties.flatMap(({ property, links }) => links.map((link) => (
-            <div key={link.id} className="rounded-xl border border-border bg-muted/20 p-3 text-sm">
-              <p className="font-bold">{property.title}</p>
-              <p className="mt-1 text-xs text-muted-foreground">نسبة الملكية: {link.ownership_percentage}%{link.is_primary ? ' · مالك أساسي' : ''}</p>
-            </div>
-          )))}
-        </div>
-      )}
-
-      {canManage ? (
-        <EntityForm.Overlay
-          open={formOpen}
-          onOpenChange={(open) => { if (!open) resetForm(); else setFormOpen(true); }}
-          title={editingLink ? 'تعديل علاقة الملكية' : 'ربط عقار بالمالك'}
-          description="تدار علاقة الملكية داخل ملف المالك؛ ولا تُنشئ حركة مالية بحد ذاتها."
-        >
+      <EntityForm.Overlay
+        open={managerOpen}
+        onOpenChange={(open) => { if (!open) closeManager(); else setManagerOpen(true); }}
+        title={formMode ? (editingLink ? 'تعديل علاقة الملكية' : 'ربط عقار بالمالك') : 'إدارة علاقات الملكية'}
+        description={formMode
+          ? 'تعديل أو إنشاء علاقة الملكية داخل ملف المالك دون إنشاء حركة مالية.'
+          : 'العقارات ونسب الملكية لهذا المالك. العرض الأساسي يظل في قسم العقارات والعقود.'}
+      >
+        {formMode ? (
           <OwnershipLinkForm
             values={values}
             availableProperties={availableProperties}
             editingLink={editingLink}
             error={formError}
             isSaving={linkMutation.isPending || updateMutation.isPending}
-            onCancelEdit={resetForm}
+            onCancelEdit={resetFormState}
             onSubmit={handleSubmit}
             onValueChange={setField}
           />
-        </EntityForm.Overlay>
-      ) : null}
-    </section>
+        ) : (
+          <div className="space-y-3">
+            <div className="flex justify-end">
+              <Button type="button" className="min-h-11" onClick={openCreate} disabled={availableProperties.length === 0}>
+                <Plus className="me-2 size-4" />
+                ربط عقار
+              </Button>
+            </div>
+            {formError ? <p className="text-sm font-semibold text-danger">{formError}</p> : null}
+            {propertiesQuery.isLoading ? (
+              <p className="text-sm text-muted-foreground">جارٍ تحميل علاقات الملكية…</p>
+            ) : propertiesQuery.isError ? (
+              <div className="rounded-xl border border-danger/25 bg-danger/5 p-3 text-sm text-danger">
+                تعذر تحميل علاقات الملكية.
+                <Button type="button" variant="ghost" className="ms-2 min-h-11" onClick={() => propertiesQuery.refetch()}>إعادة المحاولة</Button>
+              </div>
+            ) : (
+              <OwnerRelationshipsList
+                linkedProperties={linkedProperties}
+                endLinkPending={unlinkMutation.isPending}
+                onEditLink={openEdit}
+                onEndLink={handleEnd}
+              />
+            )}
+          </div>
+        )}
+      </EntityForm.Overlay>
+    </div>
   );
 }
