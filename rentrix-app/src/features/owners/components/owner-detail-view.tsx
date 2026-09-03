@@ -16,6 +16,7 @@ import { getOwnerDisplayName } from '../services/owner-service';
 import { OwnerDossierBody, type OwnerDossierSection } from './owner-dossier-body';
 import { OwnerFinancialAuthoritySection } from './owner-financial-authority-section';
 import { OwnerPortalLinkAction } from './OwnerPortalLinkAction';
+import { OwnerRelationshipManager } from './owner-relationship-manager';
 
 type OwnerDetailSection = OwnerDossierSection | 'financials';
 
@@ -89,14 +90,9 @@ function OwnerDetailReady({
   const dialogNavigate = useDialogNavigate();
   const [activeSection, setActiveSection] = useState<OwnerDetailSection>('overview');
   const { owner } = state.snapshot;
-  // Owner writes are governed by the canonical owners write gate (owners.hub.view):
-  // effective grant (or ADMIN/MANAGER role) determines edit availability.
   const canEditOwner = canAccess(authorization, 'owners.hub.view');
   const canViewReports = canAccess(authorization, financialOperationPermissions.viewReports);
   const canOpenOwnerSettlements = canAccess(authorization, 'financial.owner_settlements.view');
-  // The financial authority tab surfaces server-authoritative settlement
-  // figures; it is only offered to users permitted to read owner settlements
-  // or financial reports (the RPCs themselves also fail closed).
   const canViewFinancialAuthority = canOpenOwnerSettlements || canViewReports;
   const sections = [
     { id: 'overview', label: 'نظرة عامة', icon: UserRoundCog },
@@ -105,8 +101,6 @@ function OwnerDetailReady({
     { id: 'records', label: 'السجل والمستندات', icon: FileText },
   ] as const;
 
-  // Owner portal export is a secondary header action; the component renders
-  // nothing unless the user holds the owner.portal.link permission.
   const canExportOwnerPortalLink = canAccess(authorization, 'owner.portal.link');
 
   const actions = canEditOwner || canViewReports || canExportOwnerPortalLink ? (
@@ -149,14 +143,18 @@ function OwnerDetailReady({
         compactMobile
       />
       <SectionTabPanel id="overview" activeId={activeSection}>
-      <OwnerDossierBody snapshot={state.snapshot} activity={activity} section="overview" />
+        <OwnerDossierBody snapshot={state.snapshot} activity={activity} section="overview" />
       </SectionTabPanel>
       <SectionTabPanel id="portfolio" activeId={activeSection}>
-      <OwnerDossierBody snapshot={state.snapshot} section="portfolio" />
+        <div className="space-y-4">
+          <OwnerDossierBody snapshot={state.snapshot} section="portfolio" />
+          {activeSection === 'portfolio' ? (
+            <OwnerRelationshipManager ownerId={owner.id} canManage={canEditOwner} />
+          ) : null}
+        </div>
       </SectionTabPanel>
       {canViewFinancialAuthority ? (
         <SectionTabPanel id="financials" activeId={activeSection}>
-          {/* Mount only after the user opens the tab so the authority RPCs run on demand. */}
           {activeSection === 'financials' ? (
             <OwnerFinancialAuthoritySection
               ownerId={owner.id}
@@ -167,7 +165,7 @@ function OwnerDetailReady({
         </SectionTabPanel>
       ) : null}
       <SectionTabPanel id="records" activeId={activeSection}>
-      <OwnerDossierBody snapshot={state.snapshot} activity={activity} section="records" />
+        <OwnerDossierBody snapshot={state.snapshot} activity={activity} section="records" />
       </SectionTabPanel>
     </PageLayout>
   );
