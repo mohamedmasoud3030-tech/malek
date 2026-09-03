@@ -121,10 +121,26 @@ function pickArabicVoice(voices: ReadonlyArray<SpeechVoiceLike>): SpeechVoiceLik
 function shouldSequenceNativeQueue(): boolean {
   if (typeof navigator === 'undefined') return false;
   const userAgent = navigator.userAgent ?? '';
-  // All iOS browsers and WKWebViews use WebKit. Desktop Safari also benefits
-  // from conservative one-at-a-time queuing. Android's AppleWebKit token is
-  // intentionally excluded because it normally runs Blink, not WebKit.
-  return /AppleWebKit/i.test(userAgent) && !/Android/i.test(userAgent);
+  if (!/AppleWebKit/i.test(userAgent)) return false;
+
+  // Every browser on iPhone/iPad/iPod is WebKit, including CriOS/FxiOS/EdgiOS,
+  // and WKWebView often omits the Safari token entirely. iPadOS can also
+  // advertise itself as Macintosh when desktop-site mode is enabled.
+  const isIOSDevice =
+    /iPhone|iPad|iPod/i.test(userAgent) ||
+    (/Macintosh/i.test(userAgent) && (navigator.maxTouchPoints ?? 0) > 1);
+  if (isIOSDevice) return true;
+
+  // Android and desktop Chromium-based browsers also expose AppleWebKit in
+  // their UA, but their speech engine should keep the normal eager native
+  // queue. Misclassifying them is what collapses long-response tests to one
+  // queued utterance.
+  if (/Android/i.test(userAgent)) return false;
+  if (/(?:Chrome|Chromium|Edg|OPR|SamsungBrowser)\//i.test(userAgent)) return false;
+
+  // Real desktop Safari and Apple-hosted WebKit wrappers on macOS get the
+  // conservative one-at-a-time path. Generic test/Chromium UAs do not.
+  return /Safari\//i.test(userAgent) || /Macintosh|Mac OS X/i.test(userAgent);
 }
 
 /** Splits speech text into bounded chunks on sentence boundaries. */
