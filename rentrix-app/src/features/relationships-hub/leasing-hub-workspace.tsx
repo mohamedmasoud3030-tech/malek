@@ -40,7 +40,7 @@ const sectionComponents: Record<LeasingHubSectionId, ComponentType> = {
 
 function SectionFallback() {
   return (
-    <div className="space-y-2.5" role="status" aria-label="جارٍ تحميل قسم التأجير">
+    <div className="col-span-full row-start-2 space-y-2.5" role="status" aria-label="جارٍ تحميل قسم التأجير">
       <Skeleton className="h-12 rounded-xl" />
       <Skeleton className="h-40 rounded-xl" />
     </div>
@@ -98,15 +98,17 @@ export function LeasingHubWorkspace() {
       {isRequestedForbidden ? (
         <AccessDenied message="ليس لديك صلاحية لعرض هذا القسم من التأجير." />
       ) : (
-        <>
+        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-end gap-x-2 gap-y-2.5 sm:gap-x-3 sm:gap-y-3">
           {isActiveSectionVisible ? (
-            <SectionTabs
-              items={visibleSections}
-              activeId={activeSection}
-              onChange={handleSectionChange}
-              ariaLabel="أقسام التأجير"
-              compactMobile
-            />
+            <div className="col-start-1 row-start-1 min-w-0">
+              <SectionTabs
+                items={visibleSections}
+                activeId={activeSection}
+                onChange={handleSectionChange}
+                ariaLabel="أقسام التأجير"
+                compactMobile
+              />
+            </div>
           ) : null}
 
           {leasingHubSections
@@ -121,13 +123,14 @@ export function LeasingHubWorkspace() {
                   role="tabpanel"
                   aria-labelledby={section.showInPrimaryNavigation ? `section-tab-${section.id}` : undefined}
                   data-leasing-section={section.id}
+                  className={isActive ? 'contents' : undefined}
                   hidden={!isActive}
                 >
                   <Suspense fallback={<SectionFallback />}><SectionBody /></Suspense>
                 </div>
               );
             })}
-        </>
+        </div>
       )}
     </EmbeddableWorkspace>
   );

@@ -34,8 +34,8 @@ interface ListPageProps {
   dir?: 'rtl' | 'ltr';
   /**
    * When true, skip the page shell (layout + header) so this list can be
-   * embedded inside a hub that already supplies them. Actions still render
-   * via EmbeddableWorkspace's action rail.
+   * embedded inside a hub that already supplies them. Actions stay owned by
+   * EmbeddableWorkspace and join the hub's shared navigation toolbar.
    */
   embedded?: boolean;
 }
