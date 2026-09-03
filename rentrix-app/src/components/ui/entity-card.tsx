@@ -44,9 +44,10 @@ type EntityCardIdentity = Readonly<{
 }>;
 
 /**
- * Entity identity now drives only the fallback chip label. Mobile register rows
- * intentionally stay visually quiet: one neutral shell, optional status badge,
- * strong title, secondary metadata, and compact actions.
+ * Entity identity metadata kept for accessibility labels and non-card
+ * consumers. Register cards intentionally stay visually quiet: one neutral
+ * shell, an optional status badge, strong title, compact facts, and a single
+ * primary action — never a repeated type chip.
  */
 export const entityCardTypeMap: Record<string, EntityCardIdentity> = {
   record: { label: 'سجل', icon: Users, bg: 'bg-muted/45', text: 'text-muted-foreground' },
@@ -120,7 +121,7 @@ function EntityCardShell({ id, className, children }: Readonly<{
       data-entity-card
       data-entity-id={id}
       className={cn(
-        'relative w-full min-w-0 overflow-hidden rounded-2xl border border-border/70 bg-card px-4 py-3 text-start shadow-none',
+        'relative w-full min-w-0 overflow-hidden rounded-2xl border border-border/70 bg-card px-3.5 py-2.5 text-start shadow-none',
         '[&_[data-status-badge]]:min-h-5 [&_[data-status-badge]]:gap-1 [&_[data-status-badge]]:px-1.5 [&_[data-status-badge]]:py-0 [&_[data-status-badge]]:text-[10.5px] [&_[data-status-badge]]:leading-4',
         className,
       )}
@@ -138,7 +139,7 @@ function MetaGrid({ items, primary = false }: Readonly<{ items: EntityCardMetaIt
       data-entity-table-mobile-secondary-meta={primary ? undefined : ''}
       className={cn(
         primary
-          ? cn('mt-3 grid gap-2 border-t border-border/55 pt-3', columnClass)
+          ? cn('mt-2.5 grid gap-1.5 border-t border-border/55 pt-2.5', columnClass)
           : 'mt-2 grid gap-1.5 text-[12px] leading-4.5 text-muted-foreground',
       )}
     >
@@ -194,22 +195,21 @@ export function EntityCard({
 
   const body = (
     <div className="min-w-0">
-      <div className="flex min-w-0 items-start justify-between gap-3">
+      <div className="flex min-w-0 items-start justify-between gap-2.5">
         <div className="min-w-0 flex-1">
-          <div className="line-clamp-2 break-words text-[15px] font-semibold leading-5 text-foreground [overflow-wrap:anywhere]">
+          <div className="line-clamp-2 break-words text-[14.5px] font-semibold leading-5 text-foreground [overflow-wrap:anywhere]">
             {name}
           </div>
           {subtitle ? (
-            <div className="mt-1 line-clamp-2 break-words text-[12.5px] font-medium leading-4.5 text-foreground/86 [overflow-wrap:anywhere]">
+            <div className="mt-0.5 line-clamp-2 break-words text-[12px] font-medium leading-4.5 text-foreground/75 [overflow-wrap:anywhere]">
               {subtitle}
             </div>
           ) : null}
         </div>
-        {badge ?? (
-          <span className="inline-flex min-h-5 shrink-0 items-center rounded-full border border-border/60 bg-muted/35 px-1.5 py-0 text-[10.5px] font-semibold leading-4 text-muted-foreground">
-            {identity.label}
-          </span>
-        )}
+        {/* A register card shows a badge only when it carries real state.
+            Repeating the record type on every card of a single-type register
+            is noise, so the fallback chip is intentionally gone. */}
+        {badge}
       </div>
 
       {primaryMeta?.length ? <MetaGrid items={primaryMeta} primary /> : null}
@@ -237,7 +237,7 @@ export function EntityCard({
       )}
 
       {hasActions ? (
-        <div className="mt-3 flex items-center gap-2 border-t border-border/55 pt-3" role="presentation">
+        <div className="mt-2.5 flex items-center gap-2 border-t border-border/55 pt-2.5" role="presentation">
           {primaryAction ? <ActionButton action={primaryAction} className="min-w-0 flex-1" /> : null}
           {secondaryAction ? <ActionButton action={secondaryAction} className={primaryAction ? 'shrink-0' : 'min-w-0 flex-1'} /> : null}
           {overflowActions?.length ? (

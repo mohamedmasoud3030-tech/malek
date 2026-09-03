@@ -225,6 +225,8 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
             </EntityForm.Field>
           </>
         }
+        activeFilters={ctrl.activeFilters}
+        onClearAllFilters={ctrl.clearFilters}
         toolbarActions={(
           <DataTableColumnsMenu
             columns={unitRegisterColumnOptions}
@@ -257,9 +259,11 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
             error={ctrl.isError ? new Error("تعذر تحميل الوحدات") : null}
             errorTitle="تعذر تحميل الوحدات"
             onRetry={ctrl.refetchAll}
-            emptyTitle="لا توجد وحدات مطابقة"
-            emptyDescription={canCreateUnit ? "غيّر البحث أو الفلاتر لعرض وحدات أخرى، أو أضف وحدة مرتبطة بعقار قائم." : "غيّر البحث أو الفلاتر لعرض وحدات أخرى."}
-            emptyAction={canCreateUnit ? (
+            emptyTitle={ctrl.hasFilterValues ? 'لا توجد وحدات مطابقة' : 'لم تُضف وحدات بعد'}
+            emptyDescription={ctrl.hasFilterValues
+              ? (canCreateUnit ? "غيّر البحث أو الفلاتر لعرض وحدات أخرى، أو أضف وحدة مرتبطة بعقار قائم." : "جرّب إزالة فلتر أو كلمة بحث مختلفة.")
+              : (canCreateUnit ? 'ابدأ بإضافة أول وحدة لأحد عقاراتك.' : 'لا توجد وحدات مسجلة الآن.')}
+            emptyAction={!ctrl.hasFilterValues && canCreateUnit ? (
               <Button onClick={ctrl.openCreate}>
                 <Plus className="me-2 size-4" />
                 إضافة وحدة
@@ -267,9 +271,9 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
             ) : undefined}
             mobileCardType="unit"
             mobileBadgeKey="status"
+            mobileCardSecondaryToOverflow
             mobileSupportingKey="property"
             mobilePrimaryMetaKeys={["rent", "floor"]}
-            mobileSecondaryMetaKeys={["notes"]}
             mobileCardPrimaryAction={(unit) => ({
               label: "معاينة",
               icon: Eye,

@@ -14,34 +14,34 @@
   max-width: min(100%, 96rem);
 }
 
-/* Page identity */
+/* Page identity — quiet document chrome on every viewport.
+   The canonical PageHeader is the one place that states where the user is;
+   wrapping it in another rounded card repeated the register's own box rhythm
+   and wasted vertical space on phones. A single start rail keeps orientation
+   without promoting the header into a surface of its own. */
 [data-malek-surface] [data-page-header] {
   position: relative;
-  overflow: hidden;
-  padding: 1rem;
-  border: 1px solid hsl(var(--border) / 0.82);
-  border-radius: 1rem;
-  background:
-    linear-gradient(135deg, hsl(var(--card) / 0.98), hsl(var(--primary) / 0.045)),
-    hsl(var(--card));
-  box-shadow: var(--shadow-card);
+  overflow: visible;
+  padding: 0.25rem 0 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 [data-malek-surface] [data-page-header]::before {
   position: absolute;
-  inset-block: 0;
-  inset-inline-start: 0;
+  inset-block: 0.35rem;
+  inset-inline-start: calc(var(--app-page-gutter-inline, 0.75rem) * -1);
   width: 3px;
+  border-radius: 999px;
   content: '';
   background: linear-gradient(180deg, hsl(var(--primary)), hsl(var(--info) / 0.58));
 }
 
 [data-theme='dark'] [data-malek-surface] [data-page-header] {
-  border-color: hsl(var(--border));
-  background:
-    linear-gradient(135deg, hsl(var(--card)), hsl(var(--primary) / 0.08)),
-    hsl(var(--card));
-  box-shadow: 0 18px 48px hsl(var(--background) / 0.34);
+  background: transparent;
+  box-shadow: none;
 }
 
 [data-malek-surface] [data-ui-button] {
@@ -173,6 +173,16 @@
   background: hsl(var(--background));
   border-color: hsl(var(--border));
   font-size: 0.9375rem;
+}
+
+/* Desktop and laptops with a precise pointer do not need the 44px touch
+   floor on every toolbar control. Calmer 40px toolbar keeps registers dense
+   while phones/tablets keep the touch-first geometry. */
+@media (pointer: fine) and (min-width: 1024px) {
+  [data-operational-route='true'] [data-malek-surface] [data-filter-bar] :is(input, select) {
+    min-height: 40px;
+    font-size: 0.875rem;
+  }
 }
 
 [data-operational-route='true'] [data-malek-surface] :is([data-entity-card], [data-mobile-card]) {
@@ -481,13 +491,13 @@
     background: hsl(var(--background));
   }
 
+  /* Phone chrome stays flat too: the operational PageHeader is document
+     chrome on every viewport, while the toolbar keeps its own compact
+     framed row. */
   [data-operational-route='true'] [data-malek-surface] [data-page-header] {
-    border-radius: 1rem;
-    padding: 1rem;
-    border: 1px solid hsl(var(--border));
-    background:
-      linear-gradient(135deg, hsl(var(--card)), hsl(var(--primary) / 0.055)),
-      hsl(var(--card));
+    padding: 0;
+    border: 0;
+    background: transparent;
   }
 
   [data-operational-route='true'] [data-malek-surface] [data-filter-bar] {

@@ -232,7 +232,7 @@ export function PropertyDetailPage() {
               </div>
             </nav>
 
-            <div className="min-w-0 space-y-6" data-property-detail-body>
+            <div className="min-w-0 space-y-4 lg:space-y-5" data-property-detail-body>
               {tab === 'ownership' ? (
                 <PropertyOwnerAgreementsSection propertyId={propertyId} />
               ) : tab === 'financials' ? (

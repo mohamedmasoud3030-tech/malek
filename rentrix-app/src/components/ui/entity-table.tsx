@@ -98,6 +98,13 @@ export interface EntityTableProps<T> {
   mobileSecondaryMetaKeys?: readonly string[];
   /** Structured secondary actions for cards. */
   mobileCardActions?: (row: T) => EntityCardAction[];
+  /**
+   * When the card already has an explicit primary action, move ALL structured
+   * secondary actions into the overflow menu instead of rendering the first
+   * one as a second equal-weight button. Keeps the phone card face to one
+   * obvious next step. Defaults to false for backward compatibility.
+   */
+  mobileCardSecondaryToOverflow?: boolean;
   /** Explicit card primary action (e.g. Collect). */
   mobileCardPrimaryAction?: (row: T) => EntityCardAction | undefined;
   /** Optional shared toolbar content rendered inside the register chrome. */
@@ -309,7 +316,7 @@ const DesktopTableSkeleton = memo(function DesktopTableSkeleton({ rows, cols }: 
   return (
     <Card className="overflow-hidden rounded-2xl border-border/60 bg-muted/[0.16] p-2 shadow-none" data-entity-table-grid>
       <div data-entity-table-scroll className="mobile-scroll-x overflow-x-auto overscroll-x-contain">
-        <Table density="default" className="min-w-full border-separate border-spacing-x-0 border-spacing-y-2 text-[12.5px]">
+        <Table density="default" className="min-w-full border-separate border-spacing-x-0 border-spacing-y-1.5 text-[12.5px]">
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               {Array.from({ length: totalColumns }, (_, index) => (
@@ -323,7 +330,7 @@ const DesktopTableSkeleton = memo(function DesktopTableSkeleton({ rows, cols }: 
             {Array.from({ length: rows }, (_, rowIndex) => (
               <TableRow key={rowIndex} className="hover:bg-transparent">
                 {Array.from({ length: totalColumns }, (_, columnIndex) => (
-                  <TableCell key={columnIndex} className="border-y border-border/55 bg-card px-3 py-3 first:rounded-s-[16px] first:border-s first:ps-4 last:rounded-e-[16px] last:border-e last:pe-4">
+                  <TableCell key={columnIndex} className="border-y border-border/55 bg-card px-3 py-2.5 first:rounded-s-xl first:border-s first:ps-4 last:rounded-e-xl last:border-e last:pe-4">
                     <Skeleton className="h-4 w-full" />
                   </TableCell>
                 ))}
@@ -338,7 +345,7 @@ const DesktopTableSkeleton = memo(function DesktopTableSkeleton({ rows, cols }: 
 
 const MobileRegisterSkeleton = memo(function MobileRegisterSkeleton({ rows }: { rows: number }) {
   return (
-    <div className="grid gap-2.5" aria-hidden="true" data-entity-table-mobile-skeleton>
+    <div className="grid gap-2" aria-hidden="true" data-entity-table-mobile-skeleton>
       {Array.from({ length: rows }, (_, index) => (
         <div key={index} className="rounded-2xl border border-border/70 bg-card px-4 py-3 shadow-none">
           <div className="flex items-start justify-between gap-3">
@@ -369,7 +376,7 @@ const PaginationBar = memo(function PaginationBar({ pagination }: { pagination: 
   const { page, onPageChange } = pagination;
   return (
     <nav
-      className="flex flex-col gap-2 rounded-2xl border border-border/60 bg-card px-3 py-2 text-[11.5px] font-medium text-muted-foreground sm:flex-row sm:items-center sm:justify-between"
+      className="flex flex-col gap-2 rounded-xl border-0 border-t bg-transparent px-1 py-1.5 text-[11.5px] font-medium text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:border-t"
       aria-label="ترقيم الصفحات"
     >
       <span>
@@ -408,6 +415,7 @@ function MobileRegisterListItem<T>({
   actionsColumn,
   structuredActions,
   explicitPrimaryAction,
+  secondaryToOverflow,
   onRowClick,
 }: Readonly<{
   row: T;
@@ -422,6 +430,7 @@ function MobileRegisterListItem<T>({
   actionsColumn?: ResolvedColumn<T>;
   structuredActions?: EntityCardAction[];
   explicitPrimaryAction?: EntityCardAction;
+  secondaryToOverflow?: boolean;
   onRowClick?: (row: T) => void;
 }>) {
   const [actionsOpen, setActionsOpen] = useState(false);
@@ -430,8 +439,13 @@ function MobileRegisterListItem<T>({
   const hasStructuredActions = structuredActions !== undefined;
   const actionList = structuredActions ?? [];
   const primaryAction = explicitPrimaryAction;
-  const secondaryAction = actionList[0];
-  const overflowActions = actionList.length > 1 ? actionList.slice(1) : [];
+  // With secondaryToOverflow, a card that has one explicit primary action
+  // keeps every other action in the overflow so the face stays scannable and
+  // one-hand friendly. Registers that have not opted in keep the previous
+  // face layout unchanged.
+  const foldSecondary = Boolean(primaryAction) && Boolean(secondaryToOverflow);
+  const secondaryAction = foldSecondary ? undefined : actionList[0];
+  const overflowActions = foldSecondary ? actionList : actionList.length > 1 ? actionList.slice(1) : [];
 
   return (
     <li role="listitem" data-entity-table-mobile-card className="min-w-0">
@@ -560,6 +574,7 @@ function EntityTableImpl<T>({
   mobileSecondaryMetaKeys,
   mobileCardActions,
   mobileCardPrimaryAction,
+  mobileCardSecondaryToOverflow,
   toolbar,
   visibleColumnKeys,
   'aria-label': ariaLabel,
@@ -703,7 +718,7 @@ function EntityTableImpl<T>({
 
         {presentationMode === 'cards' ? (
           <div data-entity-table-mobile data-entity-table-cards>
-            <ul role="list" aria-label={ariaLabel} className="grid gap-2.5" data-entity-table-mobile-list>
+            <ul role="list" aria-label={ariaLabel} className="grid gap-2" data-entity-table-mobile-list>
               {rows.map((row) => {
                 const rowKey = keyOf(row);
                 const cardType = typeof mobileCardType === 'function' ? mobileCardType(row) : mobileCardType;
@@ -723,6 +738,7 @@ function EntityTableImpl<T>({
                     actionsColumn={actionsColumn}
                     structuredActions={mobileCardActions ? mobileCardActions(row) : undefined}
                     explicitPrimaryAction={explicitPrimaryAction}
+                    secondaryToOverflow={mobileCardSecondaryToOverflow}
                     onRowClick={explicitPrimaryAction ? undefined : onRowClick}
                   />
                 );
@@ -742,7 +758,7 @@ function EntityTableImpl<T>({
                 data-entity-table
                 density="default"
                 aria-label={ariaLabel}
-                className="min-w-full border-separate border-spacing-x-0 border-spacing-y-2 text-[12.5px] leading-5 [&_td_[data-status-badge]]:min-h-5 [&_td_[data-status-badge]]:gap-1 [&_td_[data-status-badge]]:px-1.5 [&_td_[data-status-badge]]:py-0 [&_td_[data-status-badge]]:text-[10.5px] [&_td_[data-status-badge]]:leading-4"
+                className="min-w-full border-separate border-spacing-x-0 border-spacing-y-1.5 text-[12.5px] leading-5 [&_td_[data-status-badge]]:min-h-5 [&_td_[data-status-badge]]:gap-1 [&_td_[data-status-badge]]:px-1.5 [&_td_[data-status-badge]]:py-0 [&_td_[data-status-badge]]:text-[10.5px] [&_td_[data-status-badge]]:leading-4"
               >
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
@@ -780,7 +796,7 @@ function EntityTableImpl<T>({
                           aria-expanded={hasExpansion ? isExpanded : undefined}
                         >
                           {hasExpansion ? (
-                            <TableCell className={cn('w-11 border-y border-border/60 bg-card px-2 text-center', 'first:rounded-s-[16px] first:border-s first:ps-3')} data-row-action>
+                            <TableCell className={cn('w-11 border-y border-border/60 bg-card px-2 text-center', 'first:rounded-s-xl first:border-s first:ps-3')} data-row-action>
                               <button
                                 type="button"
                                 className="grid size-11 place-items-center rounded-xl text-muted-foreground outline-none transition hover:bg-primary/8 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/20"
@@ -798,10 +814,10 @@ function EntityTableImpl<T>({
                               key={column.key}
                               data-column-priority={column.resolvedPriority}
                               className={cn(
-                                'border-y border-border/60 bg-card px-3 py-3 align-top text-[12.5px] leading-5',
-                                (!hasExpansion && columnIndex === 0) && 'rounded-s-[16px] border-s ps-4',
+                                'border-y border-border/60 bg-card px-3 py-2.5 align-top text-[12.5px] leading-5',
+                                (!hasExpansion && columnIndex === 0) && 'rounded-s-xl border-s ps-4',
                                 hasExpansion && columnIndex === 0 && 'ps-3',
-                                columnIndex === tableColumns.length - 1 && 'rounded-e-[16px] border-e pe-4',
+                                columnIndex === tableColumns.length - 1 && 'rounded-e-xl border-e pe-4',
                                 priorityClass(column.resolvedPriority, column.sticky !== false),
                                 column.className,
                               )}

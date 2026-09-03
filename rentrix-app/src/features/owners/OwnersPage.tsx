@@ -1,4 +1,5 @@
-import { Building2, LinkIcon, Plus, Users } from 'lucide-react';
+import { Building2, ChevronDown, LinkIcon, Plus, Users } from 'lucide-react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { EntityForm } from '@/components/ui/entity-form';
@@ -11,12 +12,75 @@ import { getOwnerDisplayLabel } from './utils/owner-ui-helpers';
 import { getOwnerPageErrorMessage, useOwnersPageController } from './useOwnersPageController';
 import { formatCount } from '@/lib/formatters';
 
+type OwnerMobileRelationshipsProps = Readonly<{
+  open: boolean;
+  onToggle: () => void;
+  owner: { id: string } | null;
+  canLink: boolean;
+  onLinkProperty: () => void;
+} & Parameters<typeof OwnerRelationshipsList>[0]>;
+
+/**
+ * Progressive disclosure for the owner relationships panel on phones and
+ * tablets. Desktop keeps the contextual side panel; below xl the relationships
+ * start collapsed so the register itself owns the first view, and the card /
+ * table «العلاقات» action opens it directly at the selected owner.
+ */
+function OwnerMobileRelationships({
+  open,
+  onToggle,
+  owner,
+  canLink,
+  onLinkProperty,
+  ...listProps
+}: OwnerMobileRelationshipsProps) {
+  if (!owner) return null;
+
+  return (
+    <div data-owner-relationships-mobile className="min-w-0 xl:hidden">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        className="flex min-h-11 w-full items-center justify-between gap-2 rounded-xl border border-border/60 bg-card px-3.5 text-start outline-none transition-colors hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-primary/20"
+      >
+        <span className="flex min-w-0 items-center gap-2">
+          <LinkIcon className="size-4 shrink-0 text-primary" aria-hidden="true" />
+          <span className="min-w-0 text-[13px] font-black text-foreground">
+            علاقات الملكية
+            <span className="ms-1.5 text-[11px] font-semibold text-muted-foreground">
+              {listProps.linkedProperties.length > 0
+                ? `${formatCount(listProps.linkedProperties.length)} عقار`
+                : 'بلا عقارات مرتبطة'}
+            </span>
+          </span>
+        </span>
+        <ChevronDown className={`size-4 shrink-0 text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden="true" />
+      </button>
+      <div hidden={!open} className="space-y-3 border-s-2 border-s-primary/35 px-1 pb-1 pt-3">
+        <OwnerRelationshipsList {...listProps} />
+        <Button
+          type="button"
+          variant="secondary"
+          className="min-h-11 w-full"
+          disabled={!canLink}
+          onClick={onLinkProperty}
+        >
+          <Plus className="me-2 size-4" />
+          ربط عقار
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export type OwnersWorkspaceProps = Readonly<{
   embedded?: boolean;
 }>;
 
 export function OwnersWorkspace({ embedded = false }: OwnersWorkspaceProps) {
   const controller = useOwnersPageController();
+  const [mobileRelationshipsOpen, setMobileRelationshipsOpen] = useState(false);
 
   if (controller.isLoading || controller.hasLoadError) {
     return (
@@ -80,13 +144,28 @@ export function OwnersWorkspace({ embedded = false }: OwnersWorkspaceProps) {
             onCreateOwner={controller.openCreateForm}
             onEditOwner={controller.openEditForm}
             onSearchChange={controller.setOwnerSearch}
-            onSelectOwner={controller.setSelectedOwnerId}
+            onSelectOwner={(ownerId) => {
+              controller.setSelectedOwnerId(ownerId);
+              setMobileRelationshipsOpen(true);
+            }}
           />
         </section>
 
+        <OwnerMobileRelationships
+          open={mobileRelationshipsOpen}
+          onToggle={() => setMobileRelationshipsOpen((open) => !open)}
+          owner={controller.selectedOwner}
+          linkedProperties={controller.linkedProperties}
+          endLinkPending={controller.unlinkPending}
+          onEditLink={controller.beginEditLink}
+          onEndLink={controller.handleEndPropertyOwnership}
+          onLinkProperty={controller.openLinkForm}
+          canLink={controller.availableProperties.length > 0}
+        />
+
         <aside
           data-owner-relationships
-          className="min-w-0 overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card"
+          className="hidden min-w-0 overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card xl:block"
         >
           <header className="border-b border-border/70 bg-muted/35 px-4 py-3 sm:px-5 sm:py-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">

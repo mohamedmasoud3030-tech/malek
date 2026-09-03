@@ -1,5 +1,6 @@
 import './dashboard-v2.css';
 import { memo, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { DataRefreshAlert } from '@/components/data-refresh-alert';
 import { PageHeader } from '@/components/layout/page-header';
@@ -52,6 +53,69 @@ const dashboardGroupAccent: Record<string, string> = {
 };
 
 type DashboardGroupPriority = 'primary' | 'attention' | 'supporting';
+
+/**
+ * Progressive disclosure authority for the command center. Wide desktop keeps
+ * every decision zone visible; phones and tablets collapse the supporting
+ * tail behind one explicit summary so the first view answers the immediate
+ * questions without a long fully-expanded page. Environments without a real
+ * viewport (tests, SSR) stay wide so content remains mounted and reachable.
+ */
+function useWideDashboardLayout() {
+  const [isWide, setIsWide] = useState<boolean>(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return true;
+    return window.matchMedia('(min-width: 1280px)').matches;
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+    const media = window.matchMedia('(min-width: 1280px)');
+    const onChange = (event: MediaQueryListEvent) => setIsWide(event.matches);
+    setIsWide(media.matches);
+    media.addEventListener('change', onChange);
+    return () => media.removeEventListener('change', onChange);
+  }, []);
+
+  return isWide;
+}
+
+const DashboardSecondaryDisclosure = memo(function DashboardSecondaryDisclosure({
+  expanded,
+  onToggle,
+  children,
+}: Readonly<{
+  expanded: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+}>) {
+  return (
+    <div
+      data-dashboard-secondary-disclosure
+      className="order-8 min-w-0"
+    >
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={expanded}
+        className="flex min-h-11 w-full items-center justify-between gap-2 rounded-xl border border-border/60 bg-card px-3.5 text-start outline-none transition-colors hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-primary/20"
+      >
+        <span className="min-w-0">
+          <span className="block text-[13px] font-black text-foreground">مؤشرات إضافية</span>
+          <span className="block text-[11px] font-medium text-muted-foreground">
+            صحة العقارات، مستحقات الملاك، والاستثناءات المالية
+          </span>
+        </span>
+        <ChevronDown
+          className={`size-4 shrink-0 text-muted-foreground transition-transform ${expanded ? 'rotate-180' : ''}`}
+          aria-hidden="true"
+        />
+      </button>
+      <div className="space-y-4 pt-1" hidden={!expanded}>
+        {children}
+      </div>
+    </div>
+  );
+});
 type DashboardFocusTone = 'info' | 'success' | 'warning' | 'danger';
 
 const dashboardFocusToneClass: Record<DashboardFocusTone, string> = {
@@ -188,6 +252,8 @@ export function DashboardPage() {
   const { authorization } = useAuth();
   const canManageSetup = authorization?.role === 'ADMIN' || authorization?.role === 'MANAGER';
   const now = useMemo(() => new Date(), []);
+  const isWideDashboard = useWideDashboardLayout();
+  const [secondaryExpanded, setSecondaryExpanded] = useState(false);
   const settings = useCompanyFormatters();
   const today = toDateInputValue(now);
 
@@ -352,7 +418,7 @@ export function DashboardPage() {
     <PageLayout size="wide">
       <PageHeader
         title="اليوم"
-        description="مركز قيادة اليوم: الأداء، الأولويات، التحصيل، الإشغال، العقود والالتزامات في مسار واحد."
+        description="كل ما يحتاج قراراً اليوم في مسار واحد."
         showTodayContext
       />
 
@@ -390,7 +456,7 @@ export function DashboardPage() {
             <DashboardFocusStrip snapshot={snapshot} needsAttention={needsAttention} />
 
             <div className="grid min-w-0 grid-cols-1 gap-3 lg:gap-4 xl:grid-cols-12 xl:items-start">
-              <div className="order-1 min-w-0 xl:col-span-12 xl:order-1">
+              <div className="order-2 min-w-0 xl:col-span-12 xl:order-1">
                 <DashboardGroup eyebrow="الآن" title="نبض المكتب" ariaLabel="نبض المكتب" sectionId="office-pulse" priority="primary">
                   <OfficePulse
                     snapshot={snapshot}
@@ -402,7 +468,7 @@ export function DashboardPage() {
                 </DashboardGroup>
               </div>
 
-              <div className="order-2 min-w-0 xl:col-span-5 xl:order-2">
+              <div className="order-1 min-w-0 xl:col-span-5 xl:order-2">
                 <DashboardGroup eyebrow="أولويات" title="يحتاج انتباهك" ariaLabel="الحالات التي تحتاج انتباهاً" sectionId="needs-attention" priority="attention" showHeader={false}>
                   <NeedsAttentionSection
                     signal={needsAttention}
@@ -413,7 +479,7 @@ export function DashboardPage() {
                 </DashboardGroup>
               </div>
 
-              <div className="order-5 min-w-0 xl:col-span-5 xl:order-5">
+              <div className="order-3 min-w-0 xl:col-span-5 xl:order-5">
                 <DashboardGroup eyebrow="تحصيل" title="التحصيل والمتأخرات" ariaLabel="التحصيل والمتأخرات" sectionId="collections" showHeader={false}>
                   <CollectionsSection
                     snapshot={snapshot}
@@ -424,7 +490,7 @@ export function DashboardPage() {
                 </DashboardGroup>
               </div>
 
-              <div className="order-4 min-w-0 xl:col-span-7 xl:order-4">
+              <div className="order-5 min-w-0 xl:col-span-7 xl:order-4">
                 <DashboardGroup eyebrow="المحفظة" title="الإشغال والشغور" ariaLabel="الإشغال والشغور" sectionId="occupancy" showHeader={false}>
                   <OccupancySection
                     snapshot={snapshot}
@@ -437,7 +503,7 @@ export function DashboardPage() {
                 </DashboardGroup>
               </div>
 
-              <div className="order-3 min-w-0 xl:col-span-7 xl:order-3">
+              <div className="order-4 min-w-0 xl:col-span-7 xl:order-3">
                 <DashboardGroup eyebrow="الأداء المالي" title="أداء المكتب" ariaLabel="الأداء المالي" sectionId="financial-performance" priority="primary" showHeader={false}>
                   <FinancialPerformanceSection
                     snapshot={snapshot}
@@ -494,31 +560,64 @@ export function DashboardPage() {
                 </DashboardGroup>
               </div>
 
-              <div className="order-8 min-w-0 xl:col-span-5 xl:order-8">
-                <DashboardGroup eyebrow="المحفظة" title="صحة العقارات" ariaLabel="صحة العقارات" sectionId="property-health" showHeader={false}>
-                  <PropertyHealthSection
-                    rows={propertyHealthRows}
-                    isLoading={unitsQuery.isLoading || maintenanceQuery.isLoading}
-                    isError={(unitsQuery.isError && !unitsQuery.data) || (maintenanceQuery.isError && !maintenanceQuery.data)}
-                  />
-                </DashboardGroup>
-              </div>
-
-              <div className="order-9 min-w-0 xl:col-span-12 xl:order-9">
-                <div className="grid min-w-0 gap-4 lg:gap-5 xl:grid-cols-12 xl:items-start" data-dashboard-closing-row>
-                  <div className="min-w-0 xl:col-span-7">
-                    <DashboardGroup eyebrow="ملاك" title="مستحقات الملاك" ariaLabel="مستحقات الملاك" sectionId="owner-obligations">
-                      <OwnerObligationsSection snapshot={snapshot} isLoading={isLoading} settings={settings} />
+              {isWideDashboard ? (
+                <>
+                  <div className="min-w-0 xl:col-span-5 xl:order-8">
+                    <DashboardGroup eyebrow="المحفظة" title="صحة العقارات" ariaLabel="صحة العقارات" sectionId="property-health" showHeader={false}>
+                      <PropertyHealthSection
+                        rows={propertyHealthRows}
+                        isLoading={unitsQuery.isLoading || maintenanceQuery.isLoading}
+                        isError={(unitsQuery.isError && !unitsQuery.data) || (maintenanceQuery.isError && !maintenanceQuery.data)}
+                      />
                     </DashboardGroup>
                   </div>
 
-                  <div className="min-w-0 xl:col-span-5">
-                    <DashboardGroup eyebrow="التزامات" title="استثناءات مالية" ariaLabel="استثناءات مالية" sectionId="finance-exceptions" showHeader={false}>
-                      <FinanceExceptionsSection snapshot={snapshot} isLoading={isLoading} />
+                  <div className="min-w-0 xl:col-span-12 xl:order-9">
+                    <div className="grid min-w-0 gap-4 lg:gap-5 xl:grid-cols-12 xl:items-start" data-dashboard-closing-row>
+                      <div className="min-w-0 xl:col-span-7">
+                        <DashboardGroup eyebrow="ملاك" title="مستحقات الملاك" ariaLabel="مستحقات الملاك" sectionId="owner-obligations">
+                          <OwnerObligationsSection snapshot={snapshot} isLoading={isLoading} settings={settings} />
+                        </DashboardGroup>
+                      </div>
+
+                      <div className="min-w-0 xl:col-span-5">
+                        <DashboardGroup eyebrow="التزامات" title="استثناءات مالية" ariaLabel="استثناءات مالية" sectionId="finance-exceptions" showHeader={false}>
+                          <FinanceExceptionsSection snapshot={snapshot} isLoading={isLoading} />
+                        </DashboardGroup>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <DashboardSecondaryDisclosure
+                  expanded={secondaryExpanded}
+                  onToggle={() => setSecondaryExpanded((open) => !open)}
+                >
+                  <div className="min-w-0">
+                    <DashboardGroup eyebrow="المحفظة" title="صحة العقارات" ariaLabel="صحة العقارات" sectionId="property-health" showHeader={false}>
+                      <PropertyHealthSection
+                        rows={propertyHealthRows}
+                        isLoading={unitsQuery.isLoading || maintenanceQuery.isLoading}
+                        isError={(unitsQuery.isError && !unitsQuery.data) || (maintenanceQuery.isError && !maintenanceQuery.data)}
+                      />
                     </DashboardGroup>
                   </div>
-                </div>
-              </div>
+
+                  <div className="grid min-w-0 gap-4 lg:gap-5" data-dashboard-closing-row>
+                    <div className="min-w-0">
+                      <DashboardGroup eyebrow="ملاك" title="مستحقات الملاك" ariaLabel="مستحقات الملاك" sectionId="owner-obligations" showHeader={false}>
+                        <OwnerObligationsSection snapshot={snapshot} isLoading={isLoading} settings={settings} />
+                      </DashboardGroup>
+                    </div>
+
+                    <div className="min-w-0">
+                      <DashboardGroup eyebrow="التزامات" title="استثناءات مالية" ariaLabel="استثناءات مالية" sectionId="finance-exceptions" showHeader={false}>
+                        <FinanceExceptionsSection snapshot={snapshot} isLoading={isLoading} />
+                      </DashboardGroup>
+                    </div>
+                  </div>
+                </DashboardSecondaryDisclosure>
+              )}
             </div>
           </>
         )}

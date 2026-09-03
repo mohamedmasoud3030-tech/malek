@@ -1,4 +1,5 @@
 import { useDeferredValue, useMemo, useState } from 'react';
+import type { ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { useNavigate } from '@tanstack/react-router';
 import { useProperties } from '@/features/properties/use-properties';
 import type { Property, Unit } from '@/types/domain';
@@ -60,6 +61,26 @@ export function useUnitsListController() {
   }), [deferredSearch, occupancy, propertyById, propertyId, status, units]);
 
   const kpis = useMemo(() => computeUnitKpis(units), [units]);
+
+  // Canonical register filter language: every active narrowing surfaces once
+  // as a removable chip and a single Clear All, exactly like Properties.
+  const hasFilterValues = search.trim().length > 0 || propertyId !== 'all' || status !== 'all' || occupancy !== 'all';
+  const activeFilters = useMemo((): ActiveFilterItem[] => [
+    ...(search.trim()
+      ? [{ key: 'search', label: 'بحث', value: search.trim(), onRemove: () => setSearch('') }]
+      : []),
+    ...(propertyId !== 'all'
+      ? [{ key: 'property', label: 'العقار', value: propertyById.get(propertyId)?.title ?? 'عقار محدد', onRemove: () => setPropertyId('all') }]
+      : []),
+    ...(status !== 'all'
+      ? [{ key: 'status', label: 'الحالة', value: unitStatusLabels[status as UnitStatus], onRemove: () => setStatus('all') }]
+      : []),
+    ...(occupancy !== 'all'
+      ? [{ key: 'occupancy', label: 'الإشغال', value: occupancy === 'occupied' ? 'مشغولة فقط' : 'غير مشغولة', onRemove: () => setOccupancy('all') }]
+      : []),
+  ], [occupancy, propertyById, propertyId, search, status]);
+  const clearFilters = () => { setSearch(''); setPropertyId('all'); setStatus('all'); setOccupancy('all'); };
+
   const isLoading = unitsQuery.isLoading && propertiesQuery.isLoading;
   const isError = unitsQuery.isError || propertiesQuery.isError;
 
@@ -101,6 +122,9 @@ export function useUnitsListController() {
     unitsQuery,
     propertiesQuery,
     refetchAll,
+    hasFilterValues,
+    activeFilters,
+    clearFilters,
     statusValues: unitStatusValues,
     statusLabels: unitStatusLabels,
   };
