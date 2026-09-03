@@ -4,10 +4,8 @@ import { toFinancialNumber } from '../financialMath';
 export type ReportPeriod = { from: string | null; to: string | null };
 
 /**
- * @deprecated Compatibility contract for legacy `rpt_cash_flow` consumers.
- * New product UI must use WP05 `CashFlowReport` / `wp05_rpt_cash_flow_gl`,
- * which is backed by posted 1111/1120 GL movement and carries opening/closing
- * cash plus reconciliation variance.
+ * Compatibility shape for historical `rpt_cash_flow` payload fixtures.
+ * Product reports use the authoritative WP05 GL cash-flow contract instead.
  */
 export type CashFlowStatementReport = {
   period: ReportPeriod;
@@ -42,7 +40,7 @@ function asString(value: unknown): string | null {
   return typeof value === 'string' ? value : null;
 }
 
-/** @deprecated Normalize only legacy `rpt_cash_flow` compatibility payloads. */
+/** Normalize historical `rpt_cash_flow` fixture payloads only. */
 export function normalizeCashFlowStatementReport(payload: unknown): CashFlowStatementReport {
   const root = asRecord(payload);
   const period = asRecord(root.period);
@@ -72,20 +70,6 @@ export function normalizeVatReturnReport(payload: unknown): VatReturnReport {
     totalTaxAmount: asNumber(root.total_tax_amount),
     invoiceCount: Math.trunc(asNumber(root.invoice_count)),
   };
-}
-
-/**
- * @deprecated Product reports must use `getCashFlowReport` from
- * `@/features/accounting/wp05Services`. Kept temporarily for compatibility
- * with historical callers and fixtures only.
- */
-export async function getCashFlowStatementReport(filters: StatementReportFilters): Promise<CashFlowStatementReport> {
-  const { data, error } = await supabase.rpc('rpt_cash_flow', {
-    p_from_date: filters.dateFrom,
-    p_to_date: filters.dateTo,
-  });
-  if (error) throw error;
-  return normalizeCashFlowStatementReport(data);
 }
 
 export async function getVatReturnReport(filters: StatementReportFilters): Promise<VatReturnReport> {

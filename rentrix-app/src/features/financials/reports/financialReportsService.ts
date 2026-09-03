@@ -1,7 +1,6 @@
-// Compatibility facade: this module preserves the original public surface of
-// the financial reports service. Implementation now lives in domain-specific
-// modules under this directory; this file only re-exports so existing
-// consumers and RPC names/types are unaffected.
+// Canonical reports facade: implementation lives in domain-specific modules.
+// Keep only exports with real consumers or contract value; do not grow a
+// second report implementation here.
 export {
   getBalanceSheetReport,
   getIncomeStatementReport,
@@ -14,10 +13,6 @@ export {
   type TrialBalanceReport,
 } from '@/features/accounting/reports/accountingReportsFacade';
 
-export function normalizeBalanceSheetReport(payload: unknown) { return payload; }
-export function normalizeIncomeStatementReport(payload: unknown) { return payload; }
-export function normalizeTrialBalanceReport(payload: unknown) { return payload; }
-
 export {
   getOwnerStatementReport,
   getTenantStatementReport,
@@ -29,7 +24,6 @@ export {
   type TenantStatementReport,
 } from './statements-reports-service';
 export {
-  getCashFlowStatementReport,
   getVatReturnReport,
   normalizeCashFlowStatementReport,
   normalizeVatReturnReport,

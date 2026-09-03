@@ -16,7 +16,6 @@ import {
 } from './reports-section-model';
 import type { ReportViewId } from './report-view-registry';
 import { WORKSPACE_SEARCH_KEY, type ReportDrillHandler, type ReportWorkspaceId } from './report-workspaces';
-import { getReportProduct } from './report-products';
 import { ReportsCatalog } from './components/ReportsCatalog';
 import { ReportsPrimaryNavigation } from './workspace/ReportsPrimaryNavigation';
 import { ReportsWorkspace } from './workspace/ReportsWorkspace';
@@ -52,24 +51,6 @@ export function ReportsPage() {
   const legacyLocationRequested = WORKSPACE_SEARCH_KEY in search
     || REPORTS_SECTION_SEARCH_KEY in search
     || 'view' in search;
-
-  // A `?report=` link (the pre-route catalog experiment) upgrades itself to
-  // the real product route, carrying the current scope over.
-  const premiumProductId = search.report;
-  useEffect(() => {
-    const product = getReportProduct(premiumProductId);
-    if (!product) return;
-    void navigate({
-      to: '/reports/$reportId',
-      params: { reportId: product.id },
-      replace: true,
-      search: (previous: Record<string, unknown>) => {
-        const next = { ...previous };
-        delete next.report;
-        return next;
-      },
-    });
-  }, [premiumProductId, navigate]);
 
   const handleOpenReport = useCallback(
     (nextWorkspace: ReportWorkspaceId, nextView?: ReportViewId) => {

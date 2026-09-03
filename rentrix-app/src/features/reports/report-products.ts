@@ -153,11 +153,6 @@ export const REPORT_PRODUCTS: readonly ReportProduct[] = [
   },
 ] as const;
 
-/** Real route (not a dialog) for opening a premium product. */
-export function reportProductPath(product: ReportProduct | Pick<ReportProduct, 'id'>): string {
-  return `/reports/${product.id}`;
-}
-
 export function getReportProduct(value: unknown): ReportProduct | undefined {
   if (typeof value !== 'string') return undefined;
   return REPORT_PRODUCTS.find((product) => product.id === value.trim());
@@ -170,27 +165,3 @@ export function getReportProductTarget(product: ReportProduct, value: unknown): 
   }
   return product.targets[0];
 }
-
-/**
- * Compatibility ownership table. Old report surfaces remain reachable, but
- * every useful legacy view is assigned to exactly one premium report product.
- * This is also the deletion/hiding safety map for future cleanup work.
- */
-export const LEGACY_REPORT_DESTINATION_MAP: Readonly<Record<string, ReportProductId>> = Object.freeze({
-  overview: 'portfolio-property-performance',
-  collections: 'collections-arrears-cheques',
-  overdue: 'collections-arrears-cheques',
-  follow_up: 'collections-arrears-cheques',
-  collection_movement: 'collections-arrears-cheques',
-  property_analytics: 'portfolio-property-performance',
-  occupancy: 'portfolio-property-performance',
-  expiring: 'portfolio-property-performance',
-  operations_overview: 'portfolio-property-performance',
-  maintenance_analytics: 'portfolio-property-performance',
-  expenses: 'portfolio-property-performance',
-  services: 'portfolio-property-performance',
-  accounting_reports: 'financial-settlement-pack',
-  general_ledger: 'financial-settlement-pack',
-  deferred_revenue: 'financial-settlement-pack',
-  statements: 'owner-comprehensive-statement',
-});
