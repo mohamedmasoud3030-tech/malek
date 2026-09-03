@@ -66,6 +66,27 @@ export type PropertyWorkflowRelations = Readonly<{
   units?: readonly PropertyListUnit[] | null;
 }>;
 
+/**
+ * Onboarding readiness of a property. This is a separate concept from
+ * `Property['status']` (the lifecycle field).
+ *
+ * Two independent axes govern a property:
+ *
+ *   1. **Lifecycle status** (`Property['status']`): 'active' | 'inactive' | 'sold'
+ *      Set by the operator. Controls which operations are permitted — contracts
+ *      require 'active'; archiving blocks when non-archived units exist. This
+ *      field is persisted in the database.
+ *
+ *   2. **Onboarding readiness** (`PropertyWorkflowHealth`): derived at query
+ *      time from the embedded ownership and agreement relations. Answers the
+ *      question "is this property configured to generate revenue?" It is never
+ *      persisted and never changes when the operator edits `status`.
+ *
+ * A property with `status='active'` can still have `workflow_health='missing_owner'`
+ * if no ownership link exists. Reaching `workflow_health='ready'` does not
+ * change `status`. The UI shows them in separate columns ('الحالة' vs
+ * 'المالك والتشغيل') for precisely this reason.
+ */
 export type PropertyWorkflowHealth =
   | 'ready'
   | 'missing_owner'
@@ -81,6 +102,20 @@ function coversDate(startsOn: string | null, endsOn: string | null, asOf: string
   return (!startsOn || startsOn <= asOf) && (!endsOn || endsOn >= asOf);
 }
 
+/**
+ * Derives onboarding readiness (`workflow_health`) from embedded ownership and
+ * agreement data.
+ *
+ * This is the single authority for the `workflow_health` field. It is called
+ * after every list or detail query so the derived field is always consistent
+ * with the source relations and is never stale from a cached or persisted value.
+ *
+ * Note: `property.property_owners` arriving as null (PostgREST behavior for a
+ * zero-row embed) is handled by the `?? []` guards — this function does not
+ * crash on null embeds.
+ *
+ * @see PropertyWorkflowHealth for the distinction from `Property['status']`.
+ */
 export function derivePropertyWorkflowHealth(
   property: PropertyWorkflowRelations,
   asOf = toDateOnlyISO(),
