@@ -168,13 +168,18 @@ describe('PropertiesListPage controller regression', () => {
     expect(summary?.textContent).toContain('النوع');
     expect(summary?.textContent).toContain('سكني');
 
-    const secondaryMeta = card?.querySelector<HTMLElement>('[data-entity-table-mobile-secondary-meta]');
-    expect(secondaryMeta?.textContent).toContain('العنوان');
-    expect(secondaryMeta?.textContent).toContain('الرياض');
+    // 2026-09 register hierarchy contract: the phone card face keeps identity,
+    // status and the units/type facts only. Address detail lives in preview
+    // and the dossier, so no secondary-meta block is rendered.
+    expect(card?.querySelector('[data-entity-table-mobile-secondary-meta]')).toBeNull();
+    expect(card?.textContent).not.toContain('الرياض');
 
+    // One obvious primary action stays on the face; edit/archive are
+    // consolidated into the card's overflow menu.
     expect(container.querySelector('[data-entity-table-mobile-actions]')).toBeNull();
     expect(card?.textContent).toContain('فتح الملف');
-    expect(card?.textContent).toContain('تعديل البيانات');
+    expect(card?.textContent).not.toContain('تعديل البيانات');
+    expect(card?.querySelector('[data-action-menu]')).toBeTruthy();
   });
 
   it('opens edit modal from the contextual property action menu', async () => {

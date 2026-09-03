@@ -119,7 +119,9 @@
     padding-top: 0.5rem;
   }
 
-  [data-entity-table-mobile-list] [data-entity-card] > [role='presentation'] > :first-child {
+  /* A lone action owns the row; primary + overflow share one row so the
+     card never pays for a wrapped second action line. */
+  [data-entity-table-mobile-list] [data-entity-card] > [role='presentation'] > :only-child {
     flex: 1 1 100%;
   }
 

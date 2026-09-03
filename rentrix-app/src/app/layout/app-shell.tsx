@@ -416,13 +416,15 @@ export function AppShell() {
             </div>
 
             <div className="z-10 flex shrink-0 items-center gap-0.5" data-header-utility-side data-header-right-controls>
-              {/* Tablet: explicit global search. */}
+              {/* Tablet + desktop: explicit global search. Desktop previously
+                  hid this behind the keyboard shortcut only, so the fastest
+                  way to reach any record was invisible. */}
               <HeaderControl
                 label="البحث"
                 title="البحث"
                 onClick={openSearch}
                 data-header-search-button
-                className="hidden md:grid lg:hidden"
+                className="hidden md:grid"
               >
                 <Search className="size-[22px]" aria-hidden="true" />
               </HeaderControl>

@@ -19,7 +19,7 @@ export function PropertyOverview() {
       emptyTitle="العقار غير موجود"
     >
       {property && (
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-4 lg:space-y-5">
           <PropertyOnboardingWorkflow propertyId={propertyId} />
 
           <PropertyDossierContent propertyId={propertyId} />

@@ -63,12 +63,12 @@ export function PageHeader({
   return (
     <div
       data-page-header
-      className={cn('min-w-0 space-y-2', className)}
+      className={cn('min-w-0 space-y-1.5', className)}
     >
       <header
         data-global-page-context
         data-unified-surface="page-header"
-        className="flex min-w-0 flex-col gap-2 border-b border-border/60 pb-2.5 sm:flex-row sm:items-end sm:justify-between sm:gap-4 sm:pb-4"
+        className="flex min-w-0 flex-col gap-2 border-b border-border/60 pb-2 sm:flex-row sm:items-end sm:justify-between sm:gap-4 sm:pb-3.5"
         aria-label={todayContext
           ? isArabic
             ? `${title} — ${todayContext.todayLabel} ${todayContext.weekday} ${todayContext.date}`

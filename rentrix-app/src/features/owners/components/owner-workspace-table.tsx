@@ -165,8 +165,8 @@ export function OwnerWorkspaceTable({
           visibleColumnKeys={visibleColumnKeys}
           mobileCardType="owner"
           mobileSupportingKey="contact"
+          mobileCardSecondaryToOverflow
           mobilePrimaryMetaKeys={['contracts', 'property_count']}
-          mobileSecondaryMetaKeys={['ownership']}
           mobileCardPrimaryAction={(row) => ({
             label: 'معاينة',
             icon: Eye,

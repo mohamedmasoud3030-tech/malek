@@ -107,8 +107,11 @@ describe('UnitsList mobile card density', () => {
     expect(summary).not.toBeNull();
     expect(summary?.textContent).toContain('الإيجار');
 
-    const secondaryMeta = card?.querySelector<HTMLElement>('[data-entity-table-mobile-secondary-meta]');
-    expect(secondaryMeta?.textContent).toContain('تسليم مفتاح تم');
+    // Register cards no longer render a secondary-meta block: notes remain in
+    // the unit detail surface, keeping the phone card to identity, status and
+    // the rent fact only.
+    expect(card?.querySelector('[data-entity-table-mobile-secondary-meta]')).toBeNull();
+    expect(card?.textContent).not.toContain('تسليم مفتاح تم');
 
     expect(host.querySelector('[data-entity-table-mobile-actions]')).toBeNull();
     expect(card?.querySelector('[data-entity-card-primary]')).not.toBeNull();

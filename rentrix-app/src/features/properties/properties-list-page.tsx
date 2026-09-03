@@ -350,9 +350,9 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
             }}
             mobileCardType="property"
             mobileBadgeKey="status"
+            mobileCardSecondaryToOverflow
             mobileSupportingKey="owner"
             mobilePrimaryMetaKeys={["units", "type"]}
-            mobileSecondaryMetaKeys={["address"]}
             mobileCardPrimaryAction={(property) => ({
               label: 'فتح الملف',
               icon: Building2,

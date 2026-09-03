@@ -210,8 +210,8 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
             visibleColumnKeys={visibleColumnKeys}
             mobileCardType="tenant"
             mobileSupportingKey="property"
-            mobilePrimaryMetaKeys={['contracts']}
-            mobileSecondaryMetaKeys={['arrears']}
+            mobileCardSecondaryToOverflow
+            mobilePrimaryMetaKeys={['contracts', 'arrears']}
             mobileCardPrimaryAction={(tenant) => ({
               label: 'معاينة',
               icon: Eye,

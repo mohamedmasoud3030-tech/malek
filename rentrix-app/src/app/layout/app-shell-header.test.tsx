@@ -154,16 +154,18 @@ describe('AppShell — redesigned MALEK header & navigation', () => {
     });
   });
 
-  it('provides an explicit tablet Search control on the utility side', () => {
+  it('provides an explicit Search control on the utility side for tablet and desktop', () => {
     act(() => { root.render(<AppShell />); });
 
     const header = host.querySelector<HTMLElement>('[data-app-shell-header]');
     const searchButton = header?.querySelector<HTMLElement>('[data-header-search-button]');
     expect(searchButton).not.toBeNull();
     expect(searchButton?.getAttribute('aria-label')).toBe('البحث');
+    // Phones portal their own compact search; every wider viewport shares the
+    // canonical header control so global search is never invisible.
     expect(searchButton?.className).toContain('hidden');
     expect(searchButton?.className).toContain('md:grid');
-    expect(searchButton?.className).toContain('lg:hidden');
+    expect(searchButton?.className).not.toContain('lg:hidden');
   });
 
   it('keeps Day + Date OUT of the top header (moved to the Today context)', () => {
