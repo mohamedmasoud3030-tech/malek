@@ -1,10 +1,16 @@
+import { useState } from 'react';
 import { Building2, Plus, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { DataTableColumnsMenu } from '@/components/ui/data-table';
 import { ListPage } from '@/components/layout/list-page';
 import { RegisterMetricStrip } from '@/components/layout/register-summary';
 import { AsyncContentState } from '@/components/async-content-state';
 import { OwnerFormDialog } from './components/owner-form-dialog';
-import { OwnerWorkspaceTable } from './components/owner-workspace-table';
+import {
+  defaultOwnerColumns,
+  ownerColumnOptions,
+  OwnerWorkspaceTable,
+} from './components/owner-workspace-table';
 import { getOwnerPageErrorMessage, useOwnersPageController } from './useOwnersPageController';
 import { formatCount } from '@/lib/formatters';
 
@@ -14,6 +20,7 @@ export type OwnersWorkspaceProps = Readonly<{
 
 export function OwnersWorkspace({ embedded = false }: OwnersWorkspaceProps) {
   const controller = useOwnersPageController();
+  const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultOwnerColumns]);
 
   if (controller.isLoading || controller.hasLoadError) {
     return (
@@ -48,6 +55,7 @@ export function OwnersWorkspace({ embedded = false }: OwnersWorkspaceProps) {
       <ListPage
         embedded={embedded}
         workspaceName="owners"
+        viewModeStorageKey="malek:list-page:owners"
         dir="rtl"
         title="الملاك"
         count={controller.summary.totalOwners}
@@ -62,6 +70,13 @@ export function OwnersWorkspace({ embedded = false }: OwnersWorkspaceProps) {
           onChange: controller.setOwnerSearch,
           placeholder: 'بحث باسم المالك أو الهاتف أو الإيميل أو العقار',
         }}
+        toolbarActions={(
+          <DataTableColumnsMenu
+            columns={ownerColumnOptions}
+            visibleKeys={visibleColumnKeys}
+            onChange={setVisibleColumnKeys}
+          />
+        )}
       >
         <RegisterMetricStrip
           aria-label="ملخص الملاك"
@@ -75,6 +90,7 @@ export function OwnersWorkspace({ embedded = false }: OwnersWorkspaceProps) {
         <section data-owner-register className="min-w-0 space-y-2.5">
           <OwnerWorkspaceTable
             rows={controller.filteredOwnerRows}
+            visibleColumnKeys={visibleColumnKeys}
             onCreateOwner={controller.openCreateForm}
             onEditOwner={controller.openEditForm}
           />
