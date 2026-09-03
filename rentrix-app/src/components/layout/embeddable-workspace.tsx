@@ -68,15 +68,14 @@ export function EmbeddableWorkspace({
         {hasActions ? (
           <div
             data-embedded-workspace-actions
+            aria-label={`إجراءات ${title}`}
             className="col-start-2 row-start-1 flex min-w-0 max-w-[48vw] justify-end self-end justify-self-end"
           >
-            <div data-workspace-actions aria-label={`إجراءات ${title}`}>
-              <PageHeaderActions
-                title={title}
-                primaryAction={primaryAction}
-                secondaryActions={secondaryActions}
-              />
-            </div>
+            <PageHeaderActions
+              title={title}
+              primaryAction={primaryAction}
+              secondaryActions={secondaryActions}
+            />
           </div>
         ) : null}
         <div
