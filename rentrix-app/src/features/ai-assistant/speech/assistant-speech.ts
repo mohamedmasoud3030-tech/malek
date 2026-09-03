@@ -73,6 +73,57 @@ const ARABIC_VOICE_LOCALE_SCORES: Readonly<Record<string, number>> = {
   'ar-tn': 70,
 };
 
+/**
+ * MALEK speaks with a feminine voice. Web Speech voices expose no gender
+ * field, so gender is inferred from the well-known first names used by the
+ * Microsoft (Azure/Edge), Apple and Google Arabic voice catalogues.
+ *
+ * Gender outweighs locale on purpose: a feminine ar-EG voice must beat a
+ * masculine ar-OM voice, otherwise devices that only ship a male Omani voice
+ * would silently fall back to a man speaking.
+ */
+const FEMALE_ARABIC_VOICE_NAMES: ReadonlyArray<string> = [
+  // Microsoft / Azure neural voices (Edge & Windows)
+  'aysha', 'ayesha', 'zariyah', 'hala', 'hoda', 'salma', 'fatima', 'laila', 'layla',
+  'leila', 'amina', 'rana', 'sana', 'sanaa', 'noura', 'nora', 'iman', 'mouna',
+  'amal', 'amany', 'reem', 'maryam', 'mariam', 'zeina', 'dalia',
+  // Arabic-script equivalents some engines report
+  'عائشة', 'زارية', 'هالة', 'هدى', 'سلمى', 'فاطمة', 'ليلى', 'أمينة', 'رنا', 'سناء',
+  'نورة', 'إيمان', 'منى', 'أمل', 'أماني', 'ريم', 'مريم', 'زينة', 'داليا',
+];
+
+const MALE_ARABIC_VOICE_NAMES: ReadonlyArray<string> = [
+  'abdullah', 'hamdan', 'hamed', 'hamid', 'shakir', 'bassel', 'taim', 'fahed',
+  'rami', 'omar', 'jamal', 'moaz', 'naayf', 'laith', 'hedi', 'saleh', 'majed',
+  'maged', 'salem', 'tarik', 'tariq', 'kareem', 'karim', 'ali', 'ismael',
+  'عبدالله', 'عبد الله', 'حمدان', 'حامد', 'شاكر', 'باسل', 'تيم', 'فهد', 'رامي',
+  'عمر', 'جمال', 'معاذ', 'نايف', 'ليث', 'صالح', 'ماجد', 'سالم', 'طارق', 'كريم',
+];
+
+function buildNamePattern(names: ReadonlyArray<string>): RegExp {
+  return new RegExp(`(?:^|[^\\p{L}])(?:${names.join('|')})(?:[^\\p{L}]|$)`, 'iu');
+}
+
+const FEMALE_VOICE_PATTERN = buildNamePattern(FEMALE_ARABIC_VOICE_NAMES);
+const MALE_VOICE_PATTERN = buildNamePattern(MALE_ARABIC_VOICE_NAMES);
+
+const FEMALE_VOICE_BONUS = 40;
+const MALE_VOICE_PENALTY = 30;
+
+/** Classifies a voice as feminine, masculine, or unknown from its display name. */
+export function classifyArabicVoiceGender(name: string): 'female' | 'male' | 'unknown' {
+  const candidate = (name ?? '').trim();
+  if (!candidate) return 'unknown';
+  // "female" contains "male", so the feminine keyword must win first.
+  if (/female|feminine|أنثى|امرأة/i.test(candidate) || FEMALE_VOICE_PATTERN.test(candidate)) {
+    return 'female';
+  }
+  if (/\bmale\b|masculine|ذكر|رجل/i.test(candidate) || MALE_VOICE_PATTERN.test(candidate)) {
+    return 'male';
+  }
+  return 'unknown';
+}
+
 function getSpeechSynthesis(): SpeechSynthesisLike | null {
   if (typeof window === 'undefined') return null;
   const candidate = (window as unknown as { speechSynthesis?: unknown }).speechSynthesis;
@@ -99,6 +150,9 @@ function scoreArabicVoice(voice: SpeechVoiceLike): number {
   const locale = (voice.lang ?? '').trim().toLowerCase().replace('_', '-');
   let score = ARABIC_VOICE_LOCALE_SCORES[locale] ?? (locale.startsWith('ar') ? 60 : 0);
   if (score === 0) return 0;
+  const gender = classifyArabicVoiceGender(voice.name);
+  if (gender === 'female') score += FEMALE_VOICE_BONUS;
+  else if (gender === 'male') score -= MALE_VOICE_PENALTY;
   if (voice.localService) score += 3;
   if (/neural|natural|online/i.test(voice.name)) score += 4;
   if (voice.default) score += 1;
@@ -271,6 +325,9 @@ function endSession(session: Session, naturally: boolean): void {
   });
 }
 
+/** Pitch used to feminize a device that only ships masculine Arabic voices. */
+const MALE_VOICE_FALLBACK_PITCH = 1.35;
+
 function configureUtterance(
   utterance: UtteranceLike,
   session: Session,
@@ -281,7 +338,10 @@ function configureUtterance(
   // not a cloned POJO. WebKit is particularly strict about this.
   utterance.voice = voice;
   utterance.rate = 1;
-  utterance.pitch = 1;
+  // Devices with no feminine Arabic voice fall back to a known-masculine one;
+  // a raised pitch keeps MALEK's persona feminine even there.
+  utterance.pitch =
+    voice && classifyArabicVoiceGender(voice.name) === 'male' ? MALE_VOICE_FALLBACK_PITCH : 1;
   utterance.onstart = () => {
     if (activeSession?.token === session.token && state.status !== 'playing') {
       setState({ status: 'playing' });
