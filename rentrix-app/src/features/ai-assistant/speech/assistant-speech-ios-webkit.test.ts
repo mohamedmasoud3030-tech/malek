@@ -79,18 +79,36 @@ class IosWebKitSpeechSynthesis {
   }
 }
 
+class EagerQueueSpeechSynthesis extends IosWebKitSpeechSynthesis {
+  speak(utterance: Utterance): void {
+    if (utterance.voice && utterance.voice !== this.voice) {
+      throw new TypeError('Speech engine requires the native voice instance');
+    }
+    this.queue.push(utterance);
+    this.speaking = true;
+    this.pending = this.queue.length > 1;
+    utterance.onstart?.();
+  }
+}
+
 let synthesis: IosWebKitSpeechSynthesis;
 const IOS_UA =
   'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1';
+const DESKTOP_CHROME_UA =
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36';
 
-beforeEach(() => {
-  Object.defineProperty(navigator, 'userAgent', { value: IOS_UA, configurable: true });
-  synthesis = new IosWebKitSpeechSynthesis();
+function installSynthesis(engine: IosWebKitSpeechSynthesis): void {
+  synthesis = engine;
   Object.defineProperty(window, 'speechSynthesis', {
     value: synthesis,
     configurable: true,
     writable: true,
   });
+}
+
+beforeEach(() => {
+  Object.defineProperty(navigator, 'userAgent', { value: IOS_UA, configurable: true });
+  installSynthesis(new IosWebKitSpeechSynthesis());
   Object.defineProperty(window, 'SpeechSynthesisUtterance', {
     configurable: true,
     writable: true,
@@ -146,6 +164,24 @@ describe('iOS WebKit speech hardening', () => {
     expect(safety).toBeGreaterThan(1);
     expect(getAssistantSpeechState().status).toBe('idle');
     expect(getAssistantSpeechState().completedMessageId).toBe('long');
+  });
+
+  it('does not misclassify desktop Chromium as sequential WebKit', () => {
+    Object.defineProperty(navigator, 'userAgent', {
+      value: DESKTOP_CHROME_UA,
+      configurable: true,
+    });
+    installSynthesis(new EagerQueueSpeechSynthesis());
+    resetAssistantSpeechForTests();
+
+    const reply = Array.from(
+      { length: 35 },
+      (_, index) => `جملة كروم رقم ${index + 1} عن التحصيل والفواتير.`,
+    ).join(' ');
+
+    expect(playAssistantMessage('chrome-long', reply)).toBe(true);
+    expect(synthesis.queue.length).toBeGreaterThan(1);
+    expect(synthesis.pending).toBe(true);
   });
 
   it('replays the same message and then plays a later message', () => {
