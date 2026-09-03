@@ -29,13 +29,23 @@ export function normalizeSearchText(value: string) {
     .replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 0x06f0));
 }
 
-export function getDaysUntilEnd(contract: ContractListItem) {
-  return parseContractDisplayDate(contract.end_date) ? getContractRemainingDays(contract.end_date) : null;
+/** Days before `end_date` at which an active contract counts as expiring soon. */
+export const CONTRACT_EXPIRING_SOON_DAYS = 30;
+
+/**
+ * Expiry only needs the term and the status. Accepting the narrow shape (rather
+ * than a whole `ContractListItem`) lets the canonical lifecycle rules reuse
+ * this predicate on register rows without duplicating the window.
+ */
+export type ContractExpirySubject = Pick<ContractListItem, 'end_date' | 'status'>;
+
+export function getDaysUntilEnd(contract: ContractExpirySubject, today: Date = new Date()) {
+  return parseContractDisplayDate(contract.end_date) ? getContractRemainingDays(contract.end_date, today) : null;
 }
 
-export function isExpiringSoon(contract: ContractListItem) {
-  const days = getDaysUntilEnd(contract);
-  return isContractStatus(contract.status, 'active') && days !== null && days >= 0 && days <= 30;
+export function isExpiringSoon(contract: ContractExpirySubject, today: Date = new Date()) {
+  const days = getDaysUntilEnd(contract, today);
+  return isContractStatus(contract.status, 'active') && days !== null && days >= 0 && days <= CONTRACT_EXPIRING_SOON_DAYS;
 }
 
 function getSearchText(contract: ContractListItem) {

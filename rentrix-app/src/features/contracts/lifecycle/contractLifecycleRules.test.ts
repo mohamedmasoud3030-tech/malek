@@ -6,6 +6,9 @@ import {
   canRenewContract,
   canSubmitContractForApproval,
   canTerminateContract,
+  contractNextActionLabels,
+  contractNextActionShortLabels,
+  getContractNextAction,
   isContractApproved,
   isContractApprovalPending,
   isContractRejected,
@@ -123,6 +126,60 @@ describe('contract approval sub-state rules (S04-T03)', () => {
       expect(canApproveContract(contract)).toBe(false);
       expect(canRejectContract(contract)).toBe(false);
       expect(canActivateContract(contract)).toBe(false);
+    }
+  });
+});
+
+describe('getContractNextAction (register next-step projection)', () => {
+  // Pinned reference date so the expiry branch is exact, not clock-dependent.
+  const today = new Date('2026-08-27T00:00:00');
+  const withTerm = (overrides: Partial<ContractDetail>): ContractDetail => ({
+    ...createContract('active'),
+    end_date: '2027-12-31',
+    ...overrides,
+  });
+
+  it('walks the approval chain one canonical step at a time', () => {
+    const fresh = withTerm({ status: 'draft', approval_status: null });
+    expect(getContractNextAction(fresh, today)).toBe('submit_for_approval');
+
+    const pending = withTerm({ status: 'draft', approval_status: 'PENDING' });
+    expect(getContractNextAction(pending, today)).toBe('approve_or_reject');
+
+    const approved = withTerm({ status: 'draft', approval_status: 'APPROVED' });
+    expect(getContractNextAction(approved, today)).toBe('activate');
+
+    const rejected = withTerm({ status: 'draft', approval_status: 'REJECTED' });
+    expect(getContractNextAction(rejected, today)).toBe('submit_for_approval');
+  });
+
+  it('recommends renewal only when the term is actually ending', () => {
+    expect(getContractNextAction(withTerm({}), today)).toBeNull();
+    expect(getContractNextAction(withTerm({ end_date: '2026-09-10' }), today)).toBe('renew');
+    expect(getContractNextAction(withTerm({ status: 'expired', end_date: '2026-06-30' }), today)).toBe('renew');
+  });
+
+  it('prefers the short-stay extension over renewal while the stay is still running', () => {
+    const shortStay = withTerm({ lease_mode: 'short_stay', end_date: '2026-09-10' });
+    expect(getContractNextAction(shortStay, today)).toBe('extend_short_stay');
+
+    // Once the stay has passed its end date the extension is no longer legal.
+    const lapsed = withTerm({ lease_mode: 'short_stay', end_date: '2026-08-20' });
+    expect(getContractNextAction(lapsed, today)).toBeNull();
+  });
+
+  it('never recommends termination and reports nothing for terminal contracts', () => {
+    // Termination stays a discretionary menu action, never a suggested step.
+    expect(getContractNextAction(withTerm({}), today)).toBeNull();
+    expect(canTerminateContract(withTerm({}))).toBe(true);
+    expect(getContractNextAction(withTerm({ status: 'terminated' }), today)).toBeNull();
+  });
+
+  it('keeps one label set for every canonical action', () => {
+    const actions = Object.keys(contractNextActionLabels);
+    expect(actions).toEqual(Object.keys(contractNextActionShortLabels));
+    for (const action of actions) {
+      expect(contractNextActionLabels[action as keyof typeof contractNextActionLabels].length).toBeGreaterThan(0);
     }
   });
 });

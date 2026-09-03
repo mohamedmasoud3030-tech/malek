@@ -90,6 +90,37 @@ export function getMaintenanceStatusActions(status: 'open' | 'in_progress' | 're
   return [];
 }
 
+export type MaintenanceStatusActionPermission = 'maintenance.edit' | 'maintenance.approve' | 'maintenance.cancel';
+
+/**
+ * Permission required to run each canonical transition.
+ *
+ * The register row menu and the details overlay both surface the same actions,
+ * so the mapping lives beside the action matrix rather than being re-derived
+ * per surface — one surface must never offer a transition another hides.
+ */
+export function getMaintenanceStatusActionPermission(
+  status: Exclude<MaintenanceStatusFilter, 'all'>,
+): MaintenanceStatusActionPermission {
+  if (status === 'cancelled') return 'maintenance.cancel';
+  if (status === 'closed') return 'maintenance.approve';
+  return 'maintenance.edit';
+}
+
+/**
+ * The first canonical action this operator may run — the visible "next action".
+ *
+ * Purely a projection of `getMaintenanceStatusActions`: it adds no transition
+ * and grants nothing. Terminal statuses return `null`, so a closed or cancelled
+ * request can never be offered an invalid next step.
+ */
+export function getPrimaryMaintenanceAction(
+  status: 'open' | 'in_progress' | 'resolved' | 'closed' | 'cancelled',
+  canRun: (status: Exclude<MaintenanceStatusFilter, 'all'>) => boolean,
+): MaintenanceAction | null {
+  return getMaintenanceStatusActions(status).find((action) => canRun(action.status)) ?? null;
+}
+
 /**
  * Owns all MaintenanceWorkspace data fetching (maintenance requests,
  * properties, units), filter state, and the three overlay workflows
@@ -227,6 +258,16 @@ export function useMaintenancePageController() {
     () => summarizeMaintenanceAttention(filteredMaintenanceRows, operatingDate),
     [filteredMaintenanceRows, operatingDate],
   );
+  /**
+   * Attention for the request open in the details overlay. A filter can hide a
+   * row while its preview is still open, so fall back to the same canonical
+   * derivation and operating date rather than reporting "no attention".
+   */
+  const detailsAttention = useMemo(() => {
+    if (!detailsRequest) return null;
+    return attentionByRequestId.get(detailsRequest.id) ?? deriveMaintenanceAttention(detailsRequest, operatingDate);
+  }, [attentionByRequestId, detailsRequest, operatingDate]);
+
   const visibleMaintenanceRows = useMemo(() => {
     if (attentionFilter === 'all') return filteredMaintenanceRows;
     return filteredMaintenanceRows.filter((row) => {
@@ -389,6 +430,7 @@ export function useMaintenancePageController() {
     setAttentionFilter,
     attentionByRequestId,
     attentionSummary,
+    detailsAttention,
     maintenanceSummary,
     loadError,
     hasLoadError,

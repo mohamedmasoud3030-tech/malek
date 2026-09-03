@@ -20,6 +20,7 @@ import {
 } from './contractListExport';
 import { useCompanySettingsContract } from '../settings/useCompanySettings';
 import { useContractFilters, type LeaseModeFilter } from './hooks/useContractFilters';
+import { useContractAttention } from './useContractAttention';
 import { useContracts, useSoftDeleteContract } from './useContracts';
 import { useAuth } from '@/hooks/use-auth';
 import { toast } from 'sonner';
@@ -106,6 +107,11 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
   const totalPages = hasClientFilter ? 1 : Math.max(1, Math.ceil((contractsQuery.data?.count ?? 0) / pageSize));
 
   const { filteredContracts, hasActiveFilters } = useContractFilters({ contracts, expiringOnly, leaseMode, searchTerm, status });
+
+  // Operational attention for exactly the contracts on screen: one batched
+  // invoice read for the visible id set (never one query per row), then the
+  // domain projection in `contract-attention.ts`.
+  const contractAttention = useContractAttention(filteredContracts);
 
   const errorToastShownRef = useRef(false);
   useEffect(() => {
@@ -227,9 +233,10 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
           </>
         )}
       >
-        <ContractKpiGrid companySettings={companySettings} contracts={contracts} filteredContracts={filteredContracts} totalCount={contractsQuery.data?.count ?? contracts.length} />
+        <ContractKpiGrid attention={contractAttention} companySettings={companySettings} contracts={contracts} filteredContracts={filteredContracts} totalCount={contractsQuery.data?.count ?? contracts.length} />
 
         <ContractResults
+          attentionByContractId={contractAttention.attentionByContractId}
           companySettings={companySettings}
           contracts={filteredContracts}
           expandedId={expandedId}

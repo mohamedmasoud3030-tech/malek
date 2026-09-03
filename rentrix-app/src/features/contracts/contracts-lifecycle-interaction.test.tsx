@@ -13,6 +13,36 @@ const terminateContractMock = vi.fn();
 let contractRows: any[] = [];
 let contractDetail: any = null;
 
+/**
+ * The register now reads invoice context through the canonical batched query
+ * hook (`useDossierInvoicesForContracts`). Mocking at that seam — rather than
+ * at the domain hook — keeps the real attention derivation under test while
+ * avoiding a QueryClient provider in a static render.
+ */
+const contractInvoiceMocks = vi.hoisted(() => ({
+  rows: [] as Array<{
+    id: string;
+    reference: string | null;
+    contract_id: string;
+    status: string;
+    amount: number;
+    paid_amount: number;
+    due_date: string;
+  }>,
+  isError: false,
+}));
+
+vi.mock('@/features/financials/invoices/useInvoices', () => ({
+  useDossierInvoicesForContracts: (contractIds: readonly string[]) => ({
+    // Mirrors `enabled: contractIds.length > 0`: no ids means no read at all.
+    data: contractIds.length === 0 ? undefined : contractInvoiceMocks.rows,
+    error: contractInvoiceMocks.isError ? new Error('تعذر تحميل الفواتير') : null,
+    isError: contractInvoiceMocks.isError,
+    isPending: false,
+    isLoading: false,
+  }),
+}));
+
 vi.mock('../settings/useCompanySettings', async () => {
   const { testCompanySettingsContract } = await import('../../test/companySettingsContractMock');
   return {
