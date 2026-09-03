@@ -268,13 +268,10 @@ export function OwnerStatementPanel({
       });
   }, [hasOwnerStatement, selectedOwnerId, statement, period.from, period.to, period.propertyId]);
 
-  const summaryGroup = fullStatement?.groups.find((group) => group.blocks.some((block) => block.kind === 'kpis')) ?? null;
-  const supplementalGroups = fullStatement?.groups.filter((group) => {
-    if (group === summaryGroup) return false;
-    return !group.blocks.some(
-      (block) => block.kind === 'table' && block.table.title === 'الحركة المالية اليومية التفصيلية',
-    );
-  }) ?? [];
+  const [summaryGroup, ...remainingGroups] = fullStatement?.groups ?? [];
+  const supplementalGroups = remainingGroups.filter((group) => !group.blocks.some(
+    (block) => block.kind === 'table' && block.table.title === 'الحركة المالية اليومية التفصيلية',
+  ));
 
   return (
     <ReportPanel
