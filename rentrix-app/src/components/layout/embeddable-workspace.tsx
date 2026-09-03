@@ -31,6 +31,11 @@ export type EmbeddableWorkspaceProps = Readonly<{
  * A standalone route owns PageLayout + PageHeader. An embedded workspace owns
  * content and reachable actions only. There is intentionally no API for a
  * second embedded page identity or an alternate visual system.
+ *
+ * In hub grids, the embedded root participates as `display: contents`: actions
+ * occupy the hub navigation row and workspace content occupies the row beneath
+ * it. This keeps one canonical action system without wasting a standalone row
+ * on a small create/action button.
  */
 export function EmbeddableWorkspace({
   embedded = false,
@@ -58,10 +63,13 @@ export function EmbeddableWorkspace({
         data-embedded-workspace
         data-workspace={workspaceName}
         data-malek-surface
-        className="min-w-0 space-y-2.5 sm:space-y-3"
+        className="contents"
       >
         {hasActions ? (
-          <div data-embedded-workspace-actions className="flex justify-end">
+          <div
+            data-embedded-workspace-actions
+            className="col-start-2 row-start-1 flex min-w-0 max-w-[48vw] justify-end self-end justify-self-end"
+          >
             <div data-workspace-actions aria-label={`إجراءات ${title}`}>
               <PageHeaderActions
                 title={title}
@@ -71,11 +79,16 @@ export function EmbeddableWorkspace({
             </div>
           </div>
         ) : null}
-        <EntityTableViewModeProvider
-          storageKey={viewModeStorageKey ?? `malek:list-page:${title}`}
+        <div
+          data-embedded-workspace-content
+          className="col-span-full row-start-2 min-w-0 space-y-2.5 sm:space-y-3"
         >
-          {children}
-        </EntityTableViewModeProvider>
+          <EntityTableViewModeProvider
+            storageKey={viewModeStorageKey ?? `malek:list-page:${title}`}
+          >
+            {children}
+          </EntityTableViewModeProvider>
+        </div>
       </div>
     );
   }
