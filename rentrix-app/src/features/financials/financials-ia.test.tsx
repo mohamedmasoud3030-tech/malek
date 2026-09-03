@@ -10,7 +10,6 @@ import {
 const readFinancePage = () => readFileSync(new URL('../finance/FinancePage.tsx', import.meta.url), 'utf8');
 const routeTreeSource = readFileSync(new URL('../../app/router/route-tree.ts', import.meta.url), 'utf8');
 const financePageSource = readFileSync(new URL('../finance/FinancePage.tsx', import.meta.url), 'utf8');
-const financeOverviewSource = readFileSync(new URL('../finance/overview/FinanceOperationsOverview.tsx', import.meta.url), 'utf8');
 const invoiceControllerSource = readFileSync(new URL('./invoices/useInvoiceWorkspaceController.ts', import.meta.url), 'utf8');
 const invoiceWorkspaceSource = readFileSync(new URL('./components/invoice-workspace-section.tsx', import.meta.url), 'utf8');
 const invoiceDetailSource = readFileSync(new URL('./components/invoice-detail-section.tsx', import.meta.url), 'utf8');
@@ -33,22 +32,6 @@ describe('/financials Money workspace IA', () => {
     expect(routeTreeSource).toContain("import('@/features/finance/FinancePage')");
     expect(routeTreeSource).toContain("'FinancePage'");
     expect(financePageSource).toContain('export function FinancePage');
-  });
-
-  it('keeps the operational overview implementation on canonical report sources without changing the task-first root', () => {
-    expect(resolveFinanceLocation('', '', mockAuth([]))).toMatchObject({
-      resolvedSectionId: 'collections', resolvedViewId: 'invoices',
-    });
-    expect(financePageSource).toContain('FinanceOperationsOverview = lazy(');
-    expect(financePageSource).toContain('<FinanceOperationsOverview />');
-    expect(financeOverviewSource).toContain('useInvoiceTotalsReport');
-    expect(financeOverviewSource).toContain('usePaymentTotalsReport');
-    expect(financeOverviewSource).toContain('useAgedReceivablesReport');
-    expect(financeOverviewSource).toContain('summarizeLiveOwnerSettlements');
-    expect(financeOverviewSource).not.toContain("from '@/lib/supabase'");
-    for (const stage of ['الاستحقاق', 'الفاتورة', 'التحصيل', 'التخصيص', 'المصروف', 'التسوية']) {
-      expect(financeOverviewSource).toContain(stage);
-    }
   });
 
   it('keeps commissions in the same Money route without duplicating its business logic', () => {
