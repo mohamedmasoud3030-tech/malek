@@ -6,7 +6,7 @@
 
 **Evidence convention:** every claim cites an exact file path, exported symbol, route, import, DB object, or doc. Where item-level enumeration of all ~1,200 source files was not individually performed, the relevant cell says `UNKNOWN_NEEDS_REVIEW` rather than asserting a state. Status vocabulary, risk vocabulary, and `IMPLEMENTED_*`/governance-status conventions used in the repo are respected (the repo's own four truth-layers — canonical rule / repository reality / governed credit / runtime — are kept distinct).
 
-> ⚠️ **Scope honesty:** this is a ~1,200-source-file / ~175k-LOC frontend plus a 72-migration Supabase backend. Census tables that require enumerating every route/page/component/hook/DB object are populated to the depth the static tree supports and are explicitly flagged where exhaustive per-item confirmation was not possible in this pass. Nothing is asserted as dead without stating which reachability axes were checked (route tree, lazy import, navigation, barrel export, dynamic import, non-test inbound import).
+> ⚠️ **Scope honesty:** this is a ~1,200-source-file / ~175k-LOC frontend plus a 70-migration Supabase backend. Census tables that require enumerating every route/page/component/hook/DB object are populated to the depth the static tree supports and are explicitly flagged where exhaustive per-item confirmation was not possible in this pass. Nothing is asserted as dead without stating which reachability axes were checked (route tree, lazy import, navigation, barrel export, dynamic import, non-test inbound import).
 
 ---
 
@@ -21,10 +21,10 @@ MALEK is a large, **Arabic-first (RTL), dark-first property/portfolio management
 - **The application contains a large amount of implemented-but-hidden / redirect-only / specialist material** by design (documented in the Target Architecture Lock): Deposits, Automation, Data Integrity, Audit/System, raw accounting/journal surfaces, generic People/Documents-vault are intentionally hidden from routine UX but not deleted.
 - **Large duplicate-surface risk surfaces exist** around finance/settings/governance where older standalone register pages and newer workspace shells coexist (e.g. `finance/*` vs `financials/*`, `features/settings` vs `features/governance-hub`, `features/finance` Money shell vs `/financials`).
 - **Brand files carry two export spellings of one identity**: `MalekBrandWordmark` (`components/brand/malek-wordmark.tsx`) is used by the authenticated shell, while `MalikBrand`/`MalikMark` (`malik-brand.tsx`, `malik-mark.tsx`) are used on landing/login/public-support/PWA-prompt. Both are **active** — the `Malik`/`Malek` split is cosmetic naming, not dead residue.
-- **A visible-vs-canonical authorization split is intentional and documented**: routine UX shows "Office Owner / Employee" personas, while the authoritative backend model is 6 roles (`ADMIN, MANAGER, ACCOUNTANT, OPERATIONS, USER, VIEWER`) resolved into 62 typed `AppPermission` capabilities. Browser UI is never a security boundary.
+- **A visible-vs-canonical authorization split is intentional and documented**: routine UX shows "Office Owner / Employee" personas, while the authoritative backend model is 6 roles (`ADMIN, MANAGER, ACCOUNTANT, OPERATIONS, USER, VIEWER`) resolved into 61 typed `AppPermission` capabilities (verified by counting the `appPermissions` array in `permissions.ts`). Browser UI is never a security boundary.
 - **Mobile primary navigation** is a bottom-sheet (dock: menu/notifications/AI) — `mobileNavItems` is intentionally empty (destination model abandoned).
 - **State**: One small Zustand store (`ui-store.ts`) + command palette store; React Query for server cache; most per-page state lives in feature hooks and URL search params (section/view/quickAdd).
-- **Testing** is unusually deep: 497 Vitest test files inside `src` plus 27 Playwright specs under `rentrix-app/e2e`, plus dozens of non-`.test` guard tests (`.visual-wave-1`, `.pglite`, `.axe`), plus repo-level SQL migration/RLS/authority scripts.
+- **Testing** is unusually deep: 497 in-src Vitest files (the `.test.*`/`.spec.*` set already includes the `.visual-wave-1`, `.pglite`, `.axe` sub-categories) plus 21 Playwright spec files under `rentrix-app/e2e` (with 4 harness support files under `e2e/support/`), plus repo-level SQL migration/RLS/authority scripts.
 
 **Biggest census findings (see §29–§33):**
 1. **Dual finance-shell question** — Money canonical route is `/financials` (component `features/finance/FinancePage.tsx`, sections model `features/finance/shell/financeShellModel.ts`) which internally mounts per-register `*Workspace` components that live under `features/financials/*`. This is a *shell-owns-registers* pattern (CANONICAL), and its many sibling redirect routes (`/invoices`, `/receipts`, `/expenses`, `/arrears`, `/deposits`, `/owner-settlements`, `/bank-reconciliation`, `/finance/*`) are compatibility.
@@ -51,9 +51,9 @@ MALEK is a large, **Arabic-first (RTL), dark-first property/portfolio management
 | Styling | Tailwind CSS v4 + PostCSS, `components.json` (shadcn-style) | `postcss.config.js`, `rentrix-app/components.json` |
 | Data access | Feature services/hooks → Supabase `.from/RPC` via `src/lib/supabase.ts` | evidence below §14 |
 | Auth architecture | Supabase Auth sessions; route-level `beforeLoad` guards; office personas over 6-role backend | `route-tree.ts`, `route-guards.ts`, `permissions.ts` |
-| Authorization | 62 capability perms, 6 roles, effective-permission loading | `src/features/auth/{permissions.ts,effective-permissions.ts}` |
+| Authorization | 61 capability perms, 6 roles, effective-permission loading | `src/features/auth/{permissions.ts,effective-permissions.ts}` |
 | DB integration | Supabase Postgres + generated types `src/types/database.ts` | `@supabase/supabase-js`, types |
-| RLS / RPC | Extensive SECURITY DEFINER RPC + RLS migration surface (72 migrations) | `supabase/migrations/`, `DATABASE_RULES.md` |
+| RLS / RPC | Extensive SECURITY DEFINER RPC + RLS migration surface (70 `.sql` migrations) | `supabase/migrations/`, `DATABASE_RULES.md` |
 | Edge Functions | `ai-assistant`, `background-worker` (+ `_shared/*`) | `supabase/functions/**` |
 | Major shared UI/runtime primitives | `components/ui/*` (DataTable/EntityTable, PageHeader, PageLayout, dialogs, entity-preview-dialog, forms, bottom-sheet, filters, export-menu…), `components/layout/list-page`, `components/documents/contextual-documents-panel`, services/documents renderer | §8 |
 | Governance / SoT docs | `docs/source-of-truth/00_INDEX.md`…`08_CLOSEOUT…`; `governance/*`; `CLAUDE.md`/`AGENTS.md`/`DATABASE_RULES.md` | — |
@@ -77,7 +77,7 @@ Dependency direction target (from `docs/source-of-truth/05_*`):
 | 3 | Routing | `src/app/router/*`, `src/routes/*` | Registration, guards, lazy pages, redirects, legacy preview redirect | `app-router.tsx` → `RouterProvider` | route-tree, pages | Shared | CANONICAL | — |
 | 4 | Navigation contract | `src/app/navigation/{route-contract.ts,route-nav-map.ts,app-nav-items.ts,terminology-registry.ts}` | Single IA authority + guards | imported by tests & shell | permissions | Shared | CANONICAL (route-contract) | app-nav-items + route-nav-map overlap; terminology-registry extra |
 | 5 | Authn | `src/features/auth/*` (login-page, password-recovery, auth-service, use-auth, route-guards) | Sign-in, recovery, session context | pages, guards | lib/supabase | Auth | CANONICAL | — |
-| 6 | Authz | `src/features/auth/{permissions.ts,effective-permissions.ts,route-guards.ts,permission-request*}` | 6-role→62-perm model, effective grants, request/review lifecycle | consumed app-wide | — | Auth/Governance | CANONICAL (UI mirror; DB is authority) | `mock-role-simulator.ts`, granular-* test mirrors |
+| 6 | Authz | `src/features/auth/{permissions.ts,effective-permissions.ts,route-guards.ts,permission-request*}` | 6-role→61-perm model, effective grants, request/review lifecycle | consumed app-wide | — | Auth/Governance | CANONICAL (UI mirror; DB is authority) | `mock-role-simulator.ts`, granular-* test mirrors |
 | 7 | Data access | `src/lib/supabase.ts`; per-feature `*Service.ts`, `*Service/` under `src/services/` | All Supabase/DB reads/writes + RPC calls | feature hooks | types/database | Feature | CANONICAL | see §14 for duplicates |
 | 8 | Query cache | `src/lib/query-keys.ts`, `src/lib/data/query-keys.ts`, providers/query-client | Cache invalidation | hooks | React Query | Shared | CANONICAL | **two query-keys files** (§23 duplicate) |
 | 9 | Shared UI primitives | `src/components/ui/*` (68 files incl. tests) | buttons, cards, table/data-table/entity-table, dialog, bottom-sheet, form, filter, status-badge, export-menu, primitives | `src/components/ui/index.ts` barrel | lib/utils, cva | Shared | CANONICAL | see §23 for competing lists/tables |
@@ -90,8 +90,8 @@ Dependency direction target (from `docs/source-of-truth/05_*`):
 | 16 | AI assistant | `src/features/ai-assistant/**` (36 files) incl. `services/`, `speech/` | global read/explain/suggest/navigate/draft assistant, TTS/voice | AI page `/ai-assistant`, global action, dock | edge fn `ai-assistant`, guardrails | AI | CANONICAL | copilot surfaces + page + speech |
 | 17 | PWA / notifications / background | `src/lib/pwa-*.ts`, notifications-menu, `app-notifications-service.ts`; Edge fn `background-worker` | SW/update lifecycle, install, app notifications | shell/root | workbox | Runtime | CANONICAL (PWA) | notif menu vs in-page notification settings |
 | 18 | Tenant/Owner portals | `src/features/tenant-portal/*`, `src/features/owner-portal/*` | constrained read-only external surfaces | `/tenant-portal`, `/owner-portal` (root, outside auth shell) | server snapshot RPCs | External/Portals | CANONICAL | `features/tenants/tenant-portal-admin-service.ts` links portal perms |
-| 19 | Testing | in-`src` Vitest (497 files) + `e2e/*.spec.ts` (27) + repo scripts | unit/integration/contract/guard/E2E | CI/package scripts | vitest/playwright/axe | Shared | CANONICAL | see §21 |
-| 20 | DB contracts | `supabase/migrations/*.sql` (72 + README + `rls_per_table`), `DATABASE_RULES.md`, `governance/*` | schema/RLS/RPC/functions, canonical authority, migration hygiene | server + service layer | — | Backend | CANONICAL | `db0`/`guardian`/`wp05` alternate audit systems (§23) |
+| 19 | Testing | in-`src` Vitest (497 files) + `e2e/*.spec.ts` (21) + repo scripts | unit/integration/contract/guard/E2E | CI/package scripts | vitest/playwright/axe | Shared | CANONICAL | see §21 |
+| 20 | DB contracts | `supabase/migrations/*.sql` (70 + README + `rls_per_table`), `DATABASE_RULES.md`, `governance/*` | schema/RLS/RPC/functions, canonical authority, migration hygiene | server + service layer | — | Backend | CANONICAL | `db0`/`guardian`/`wp05` alternate audit systems (§23) |
 
 ---
 
@@ -106,7 +106,7 @@ Dependency direction target (from `docs/source-of-truth/05_*`):
 | Lands | `/lands`, `/lands/$landId` | `features/lands/lands-page.tsx`, `routes/_protected.lands.$landId` | entity-table/lands-view | lands services | `lands.view` | land dossier | yes | ACTIVE (Phase2 standalone) |
 | Owners | `/owners…`, `/owners/$ownerId{/edit}` | `features/owners/**` (54 files incl OwnerSettlementWorkspace) | entity-table, dossier, status-badge | owner-workspace-service, owner-settlements-service | `owners.hub.view`, `owners.detail.view`; settlement perms | preview dialog, settlement workspace | extensive | ACTIVE |
 | People directory | `/people…` | `features/people/people-list-page`, PersonDossier | entity-table | people service | `contracts.*` (reuse) | person dossier/dialog | yes | ACTIVE; canonical identity underneath |
-| Tenants | `/tenants…` | `features/tenants/TenantsPage`, TenantPreviewDialog | entity-table | tenantWorkspaceService | `contracts.view` | tenant detail via TenantPreviewDialog | yes | ACTIVE; note detail route reuses a Dialog as page (§29) |
+| Tenants | `/tenants…` | `features/tenants/TenantsPage`, `features/tenants/components/TenantPreviewDialog.tsx` (exports `TenantDetailPage` page + `TenantDossierContent` + `TenantPreviewDialog`) | entity-table | tenantWorkspaceService / useTenantDossier | `contracts.view` | tenant dossier page + preview dialog share `TenantDossierContent` | yes | ACTIVE; dossier content is shared between the page and the preview dialog (§29) |
 | Contracts/Leasing | `/contracts…` | `features/relationships-hub/leasing-hub-workspace`, `features/contracts/**` (78 files) | entity-table(ContractTable), contract-form-modal, schedule-preview | contract services/hooks, RPC (terminate, soft-delete, one-live-draft) | `contracts.view/create/edit/approve/cancel` | contract-form-modal, schedule preview, documents | very heavy | ACTIVE |
 | Financials (Money) | `/financials` (shell) | `features/finance/FinancePage.tsx` mounting `financials/*` workspaces | entity-table, filter-bar, form | financial service layer, RPCs | finance workspace + granular (see list) | receipt detail, invoice detail | heavy | ACTIVE CANONICAL shell |
 | Invoices | shell view `collections/invoices` + `/invoices`(redirect) | `financials/invoices/invoices-page` (InvoicesWorkspace), invoice-list-section | data-table | invoiceService.ts | `financial.invoices.generate/export` | invoice detail section | yes | ACTIVE via shell; standalone route REDIRECT_ONLY |
@@ -114,9 +114,9 @@ Dependency direction target (from `docs/source-of-truth/05_*`):
 | Payments/Collections | `quickAdd=collect`, quick-payment-form | `financials/payments/*`, `financials/components/quick-payment-form` | form | paymentService.ts | `financial.payments.create` | — | paymentService.test | ACTIVE |
 | Expenses | shell `expenses` view | `financials/expenses/*`, expenses-section | data-table | expenseService.ts, operational-expenses | `expenses.view/write` | expense-actions | yes | ACTIVE |
 | Arrears | shell `collections/arrears` | `financials/arrears/*`, overdue-invoices-table | data-table | arrears-service | `arrears.view` | — | yes | ACTIVE |
-| Deposits | shell `funds/deposits` | `financials/deposits/*`, deposits-workspace | data-table | deposit-service | `financial.deposits.view` | deposit-action-forms, voucher doc | yes | ACTIVE_HIDDEN (primary nav hidden per lock) |
+| Deposits | shell `funds/deposits` (view) | `financials/deposits/*`, deposits-workspace | data-table | deposit-service | `financial.deposits.view` | deposit-action-forms, voucher doc | yes | ACTIVE — a permission-gated view inside the Money `funds` primary section; has no global-nav root (not ACTIVE_HIDDEN) |
 | Owner settlements | shell `funds/owner_settlements` | `owners/owner-settlements-page`, `owners/components/OwnerSettlementWorkspace` | data-table | owner-settlements-service | `financial.owner_settlements.*` approve/pay | request binding | yes | ACTIVE |
-| Fixed monthly accruals (fees) | shell `fees/fixed_monthly_accruals` | `financials/fixed-monthly-accruals/*` | data-table | accrual-service | view/execute/reverse | — | — | ACTIVE_HIDDEN |
+| Fixed monthly accruals (fees) | shell `fees/fixed_monthly_accruals` (view) | `financials/fixed-monthly-accruals/*` | data-table | accrual-service | view/execute/reverse | — | — | ACTIVE — a permission-gated view in the Money `fees` primary section |
 | Commissions | `/commissions` | `features/commissions/*` | data-table/commissions-view | commissions services | `commissions.view` | — | yes | ACTIVE (nav under Money? deep link) |
 | Bank reconciliation | shell `banking` | `financials/reconciliation/*` | data-table | bankReconciliationService + bankCsv import | `financial.bank_reconciliation.*` match | CSV import wizard | yes | ACTIVE_HIDDEN-ish |
 | Maintenance/Services | `/maintenance` | `features/maintenance/**`, `routes/_protected.maintenance` | entity-table/maintenance-list | maintenance-service | `maintenance.*` | detail/resolve overlays, request-form | heavy (r8/r13/lifecycle) | ACTIVE |
@@ -188,7 +188,7 @@ All below require a session. Route-level extra permission listed. **Sidebar root
 | `/owners/$ownerId` | `features/owners/owner-detail-page` OwnerDetailPage | Portfolio | `owners.detail.view` | from list | ACTIVE | dossier |
 | `/owners/$ownerId/edit` | `routes/_protected.owners.$ownerId.edit` | Portfolio | `owners.hub.view` | action | ACTIVE | |
 | `/tenants` | `features/tenants/TenantsPage` TenantsWorkspace | Leasing | `contracts.view` | leasing child | ACTIVE | |
-| `/tenants/$tenantId` | `features/tenants/components/TenantPreviewDialog` TenantDetailPage | Leasing | `contracts.view` | from list | ACTIVE | ⚠ detail route renders a **Dialog** component (§29) |
+| `/tenants/$tenantId` | `features/tenants/components/TenantPreviewDialog` `TenantDetailPage` (a real page) | Leasing | `contracts.view` | from list | ACTIVE | dossier page + preview dialog share `TenantDossierContent` (§29) |
 | `/people` | `features/people/people-list-page` PeopleListPage | Leasing | `contracts.view` | (no global nav; via contracts) | ACTIVE | canonical identity directory |
 | `/people/new` | `routes/_protected.people.new` | Leasing | `contracts.create` | action | ACTIVE | |
 | `/people/$personId` | `features/people/components/PersonDossier` PersonDetailPage | Leasing | `contracts.view` | from list | ACTIVE | |
@@ -236,7 +236,7 @@ All below require a session. Route-level extra permission listed. **Sidebar root
 - `REDIRECT_ROUTES` list in `route-contract.ts` enumerates the redirect-only set explicitly (route-contract is the single authority; matches route-tree).
 - Several routes are **ALIAS via search**, not paths (`/units`, `/utilities`, `/documents-vault`, all legacy finance): canonical reach is `workspace?section=…&view=…`.
 - **No route registers a component but never renders** except intentional redirects; the biggest "route exists but no page behind it" is normal (redirects). `reports-page` is imported widely (many screens link into reports), confirming reports workspace is a hub target, not dead.
-- `/tenant/$tenantId` renders a **dialog component** as a full page — notable UX/architecture inconsistency (§29).
+- `/tenants/$tenantId` renders `TenantDetailPage` — a real dossier page that shares `TenantDossierContent` with the in-workspace `TenantPreviewDialog` (content reuse, not a dialog used as a page).
 
 ---
 
@@ -258,7 +258,7 @@ Rows for page-level screens owned by a route. Multi-entity "hubs" with `section`
 | Owner detail | `features/owners/owner-detail-page.tsx` | `/owners/$ownerId` | Owners | dossier | owner | ACTIVE |
 | Owner edit | `routes/_protected.owners.$ownerId.edit.tsx` | `/owners/$ownerId/edit` | Owners | edit | owner | ACTIVE |
 | Tenants workspace | `features/tenants/TenantsPage.tsx` | `/tenants` | Tenants | tenant register | tenant | ACTIVE |
-| Tenant detail | `features/tenants/components/TenantPreviewDialog.tsx` | `/tenants/$tenantId` | Tenants | **Dialog-as-page** | tenant | ACTIVE; divergence concern |
+| Tenant detail | `features/tenants/components/TenantPreviewDialog.tsx` (`TenantDetailPage`) | `/tenants/$tenantId` | Tenants | real dossier page | tenant | ACTIVE; page shares `TenantDossierContent` with the preview dialog |
 | People list | `features/people/people-list-page.tsx` | `/people` | People | person directory | person | ACTIVE |
 | Person dossier | `features/people/components/PersonDossier` | `/people/$personId` | People | dossier | person | ACTIVE |
 | Person new/edit | `routes/_protected.people.{new,$personId.edit}.tsx` | `/people/new`,`…/edit` | People | create/edit | person | ACTIVE |
@@ -345,7 +345,7 @@ Sub-capabilities deliberately enumerated separately above (schedule preview, voi
 
 ## 8. Component Census (shared primitives + duplicates)
 
-Source: `src/components/**` (98 files: 30 non-test UI primitives + layout + brand + documents) plus feature-local component sets. Shared barrel: `components/ui/index.ts`.
+Source: `src/components/**` (98 files total incl. 35 test files). Production (non-test) files by subfolder: `components/ui` = 42 (41 primitives + `index.ts` barrel), `components/layout` = 11, `components/brand` = 3, `components/documents` = 2, plus top-level `components/*` production files. Shared barrel: `components/ui/index.ts`.
 
 ### 8.1 Shared global primitives (CANONICAL candidates)
 
@@ -412,9 +412,9 @@ Source: `components/ui/{dialog,entity-preview-dialog,confirm-dialog,bottom-sheet
 | `EntityPreviewDialog` | `components/ui/entity-preview-dialog.tsx` | preview | generic entity | dossiers | sheet | dialog | full dossier page | CANONICAL |
 | `ConfirmDialog` | `components/ui/confirm-dialog.tsx` | confirm | generic | destructive actions | — | — | — | CANONICAL |
 | `BottomSheet` | `components/ui/bottom-sheet.tsx` | sheet | generic | mobile nav/preview | bottom sheet | (n/a on desktop usually) | — | CANONICAL |
-| Tenant detail **as dialog page** | `features/tenants/components/TenantPreviewDialog.tsx` | preview↔page | tenant | `/tenants/$tenantId` **and** in-workspace | — | — | dossier | PARTIALLY — reused both as page and dialog (§29) |
+| Tenant dossier (page) vs preview dialog | `features/tenants/components/TenantPreviewDialog.tsx` (`TenantDetailPage` + `TenantDossierContent` + `TenantPreviewDialog`) | page + preview dialog sharing dossier content | tenant | page `/tenants/$tenantId`; preview dialog in Tenants workspace | page | dialog | — | ACTIVE — shared `TenantDossierContent` is a clean reuse, not "dialog-as-page" (§29) |
 | Person dossier dialog/page | `features/people/components/PersonDossier` | dossier | person | `/people/$personId` | — | — | — | ACTIVE |
-| Contract form modal | `features/contracts/contract-form-modal.tsx` | create/edit form | contract | Leasing hub / contracts | — | — | `ContractFormPage` (route) | DUPLICATED with route page? (see §10) |
+| Contract form modal | `features/contracts/contract-form-modal.tsx` (`ContractFormModal`) | create/edit form | contract | mounted by `ContractFormPage` (route `/contracts/new`,`…/edit`) and by `ContractsListPage` (in-list) | — | — | — | ACTIVE — single shared form; `ContractFormPage` is a thin shell rendering this modal |
 | Contract schedule preview | `features/contracts/contract-schedule-preview.ts`(.test) | preview panel | contract | form | — | — | — | ACTIVE |
 | Invoice detail | `financials/components/invoice-detail-section.tsx` | detail | invoice | Money list | — | — | — | ACTIVE |
 | Receipt detail card | `financials/components/receipt-detail-card.tsx` | quick detail | receipt | Money receipts (embedded) | — | — | `features/financials/receipts/receipt-detail-page.tsx` (ReceiptDetailPage) used for standalone `/receipts?receiptId=` | card ACTIVE (embedded); page ACTIVE (deep-link detail) |
@@ -432,7 +432,7 @@ Source: `components/ui/{dialog,entity-preview-dialog,confirm-dialog,bottom-sheet
 
 Also note the removed "EntityPreviewHost via search" legacy mechanism is handled by `app/router/legacy-preview-redirect.tsx` converting `?previewKind=…&previewId=…` → canonical URL (COMPATIBILITY layer; many dialogs previously opened this way).
 
-**Entity inconsistency note:** tenant is exposed both as a full page `/tenants/$tenantId` (via TenantPreviewDialog) and as a preview in the Tenants workspace — the same component serving two presentation roles. Owner/Owner settlement also appears in Money shell (`OwnerSettlementWorkspace`) and owner dossier — cross-surface consistency is enforced only by shared components.
+**Entity inconsistency note (revised after verification):** the tenant dossier exists both as a full page `/tenants/$tenantId` (`TenantDetailPage`) and as an in-workspace preview dialog (`TenantPreviewDialog`); both render the same shared `TenantDossierContent`, which is a deliberate content-reuse pattern (a dossier body rendered in a page vs in a preview) rather than a divergence. Owner/Owner-settlement content is likewise shared across the Money shell and the owner dossier via shared components. Cross-surface consistency is enforced by sharing the dossier body component.
 
 ---
 
@@ -443,7 +443,7 @@ Shared form scaffolding: `components/ui/entity-form.tsx`, `hooks/use-crud-form-s
 | Form | File | Entity/Action | Type | Validation | Mutation layer | Permissions | Dialog/Page | Duplicate? | Status |
 |---|---|---|---|---|---|---|---|---|---|
 | Property create/edit | `features/properties/property-form-page.tsx` | property | create/edit | zod (schema) | property service | properties.create/edit | route page | (old modal not found) | ACTIVE |
-| Contract create/edit | `features/contracts/ContractFormPage.tsx` **and** `contract-form-modal.tsx` | contract | create/edit | `contractSchema.ts` | contract service | contracts.create/edit/approve | route page + hub modal | **DUPLICATED surface** (route page + modal) | ACTIVE |
+| Contract create/edit | `features/contracts/contract-form-modal.tsx` (`ContractFormModal`) | contract | create/edit | `contractSchema.ts` | contract service | contracts.create/edit/approve | `ContractFormPage` (thin route shell) + `ContractsListPage` | single shared modal, not duplicated | ACTIVE |
 | Owner edit | `routes/_protected.owners.$ownerId.edit.tsx` | owner | edit | schema | owner service | owners.hub.view | route | — | ACTIVE |
 | Person new/edit | `routes/_protected.people.{new,$personId.edit}.tsx` | person | create/edit | schema | people service | contracts.create/edit | route | — | ACTIVE |
 | Service provider new/edit | `routes/_protected.service-providers.*.tsx`, `service-provider-schema.ts` | provider | create/edit | schema | provider service | service_providers.write | route | — | ACTIVE |
@@ -593,13 +593,13 @@ Representative map (see also §4/§11):
 | Tenant/owner portal | portals | — | server snapshot RPCs | portal projections | R | portal claim | ✔ | `tenants/tenant-portal-admin-service.ts` (admin link mgmt) |
 | Notifications | header | — | `app/layout/app-notifications-service.ts` | notifications RPC `mark_app_notification_read` | RW | — | ✔ | — |
 
-**Direct-DB/bypass watch:** repo guards target "no presentation direct Supabase data-plane access" and "no unsafe direct financial writes" (`check-architecture.mjs`, `supabase-client-boundary.test`, `r10-financial-as-any-guard`, `check-gl-write-boundary`, `frontend-backend-db-contract`). Rule `SEC-009` and `DATABASE_RULES.md` ban browser free-form journal writes. Competing wrappers: `lib/companySettings.ts` vs `settings/companySettingsService.ts`; owner option loading in `services/owner-options.ts` + `hooks/use-owner-options.ts`; report aggregation across `financials/reports`, `accounting/reports`, `reports` (needs consolidation review, §23).
+**Direct-DB/bypass watch:** repo guards target "no presentation direct Supabase data-plane access" and "no unsafe direct financial writes" (`rentrix-app/scripts/check-architecture.mjs`, `rentrix-app/src/lib/supabase-client-boundary.test.ts`, `rentrix-app/src/lib/r10-financial-as-any-guard.test.ts`, `scripts/check-no-new-legacy-journal-writes.mjs`, `frontend-backend-db-contract`). Rule `SEC-009` and `DATABASE_RULES.md` ban browser free-form journal writes. Competing wrappers: `lib/companySettings.ts` vs `settings/companySettingsService.ts`; owner option loading in `services/owner-options.ts` + `hooks/use-owner-options.ts`; report aggregation across `financials/reports`, `accounting/reports`, `reports` (needs consolidation review, §23).
 
 ---
 
 ## 15. DB Contract Map (repo-level; read-only)
 
-Source: `supabase/migrations/*.sql` (72 numbered `20260901*` + `20260830223142` + README + `rls_per_table/`), `src/types/database.ts`, `DATABASE_RULES.md`, canonical docs 3/4/5. This is a structural map from migration names and client references; it does **not** modify DB.
+Source: `supabase/migrations/*.sql` (70 timestamp-numbered migrations: `20260830223142` + `20260901000000`–`…068`; dir also holds `README.md` and `rls_per_table/` reference material), `src/types/database.ts`, `DATABASE_RULES.md`, canonical docs 3/4/5. This is a structural map from migration names and client references; it does **not** modify DB.
 
 | Area | DB objects (evidence) | App consumers | Security | Usage/notes |
 |---|---|---|---|---|
@@ -625,7 +625,7 @@ DB objects with **no obvious direct app consumer** and flagged possible-legacy/r
 
 ## 16. Auth & Permissions Map
 
-Auth stack: Supabase sessions; TanStack Router `beforeLoad` guards. UI persona model = Office Owner/Employee over the authoritative six-role + 62-capability backend model.
+Auth stack: Supabase sessions; TanStack Router `beforeLoad` guards. UI persona model = Office Owner/Employee over the authoritative six-role + 61-capability backend model.
 
 Route-guard inventory (from `route-tree.ts` `requirePermission` + `route-guards.ts` + `app/providers`):
 
@@ -760,7 +760,7 @@ Offline-first nuance: because navigateFallback is disabled and PWA registration 
 ## 21. Test Architecture Census
 
 - **In-src Vitest:** 497 files under `rentrix-app/src` matching `*.test.ts(x)`/`*.spec.ts`. Categories: unit (per-feature `*.test`), contract (`*-contract.test`, `frontend-design-drift`, `ux-completion-contract`, `route-contract`, `supabase-client-boundary`), pglite integration (`*.pglite.test.ts`), a11y/axe (`primitives.axe`, `*.axe`), visual/layout (`*.visual-wave-1`), architecture guards (`architecture-guard-v2.test`, `canonical-table-usage`, `active-register-inventory`), security (`r5-authorization-matrix`, `platform-security-contract`, `supabase-error`), money/business-rules (`money`, `financial-*`, `omr-precision`, `r*` lifecycle).
-- **E2E (Playwright):** `rentrix-app/e2e/*.spec.ts` (27) covering login, dashboard, contracts entity-table, owners, maintenance, reports-premium-catalog, service-providers, new-modules, documents-vault/route, document-platform, ux-foundation, design-system, plus `e2e/support/{fake-supabase-backend,pdf-artifact,screenshot-validity}` harnesses.
+- **E2E (Playwright):** `rentrix-app/e2e/*.spec.ts` (21) covering login, dashboard, contracts entity-table, owners, maintenance, reports-premium-catalog, service-providers, new-modules, documents-vault/route, document-platform, ux-foundation, design-system, plus `e2e/support/{fake-supabase-backend,pdf-artifact,screenshot-validity,document-acceptance-session}` harnesses.
 - **Repo-level scripts/tests (JS):** migration hygiene/rollback, canonical business rules, 10-stage execution plan, enterprise-freeze, gl-write-boundary, doc-link checks, pilot-seed, production-demo-preflight, qa-preflight; supabase test runners (`test:supabase`, `test:supabase:rls`, `privileged-key-scan`); db0 audit/gen-types/gate; guardian governance. Not run here (analysis only).
 - **Fixtures/mocks:** `e2e/support/fake-supabase-backend.ts`, `services/mock-role-simulator.ts`, `*e2e-fixture.tsx` VITE_E2E components, `p0/replay-stubs.ts`, `p1/replay-bootstrap.ts` (replay/seed helpers).
 
@@ -792,7 +792,7 @@ What exists but a normal user may never discover from the UI (all reachable by d
 | System settings | yes | no nav | settings?section=system-settings (`/system`) | yes | system.view | specialist | YES | same |
 | Automation | yes | no nav (hidden tab) | settings?section=automation (`/automation`) | yes | automation.view | specialist | YES | same |
 | Admin support ops | yes | no nav | `/admin-support` | yes | support.operations.view | specialist | YES | route only |
-| Deposits | yes | not in Money primary tabs (hidden section) | Money funds/deposits (deep link `/deposits` redirect) | yes | financial.deposits.view | lock: deposits hidden from routine UX | YES | financeShellModel funds; governance doc |
+| Deposits (as a Money sub-view) | yes | not a global 7-roots nav root, but present as the `deposits` view under the Money `funds` primary section | Money funds/deposits (deep link `/deposits` redirect) | yes (in Money) | financial.deposits.view | no global-nav root; permission-gated view | YES | financeShellModel: funds `showInPrimaryNavigation:true`; deposits view `permission: financial.deposits.view` |
 | Fixed monthly accruals | yes | Money "fees" section (routine? fees primary) | Money fees | yes | accrual.* | partially | YES | financeShellModel fees |
 | Journal / GL accounting raw | yes (data) | Reports accounting (read); no journal entry UI | reports | yes (read) | financial.reports.view | journal write server-only, no browser authoring | YES | SEC-009 |
 | Change password | yes | no top nav | settings?section=security (`/change-password`) | yes | auth.password.change | hidden in hub nav but accessible | YES | |
@@ -821,8 +821,8 @@ The canonical Target Architecture Lock explicitly says "Deposits, Automation, Da
 | Report filter | `ReportsFilterSurface`/`FiltersPanel` (reports) | `FilterBar`/`ActiveFilterBar` (ui) | feature-specific filters | ui FilterBar | reports vs registers | reports owns domain filters | MEDIUM |
 | Table columns menu | `DataTableColumnsMenu` (ui) | per-table column menus | — | ui | data-table | — | LOW |
 | Empty/Loading/Error | `state-surfaces.tsx` | `loading-state`/`error-state` | `AsyncContentState` | — | pages | overlapping state comps | MEDIUM |
-| Contract surface | route `ContractFormPage` | `contract-form-modal` | — | both? | Leasing | page + modal duplicate | MEDIUM |
-| Tenant presentation | `TenantPreviewDialog` as page `/tenants/$tenantId` | in-workspace preview | full dossier | — | tenants | dialog-as-page | MEDIUM (§29) |
+| Contract create/edit entry | route shell `ContractFormPage` mounts `ContractFormModal`; `ContractsListPage` also mounts it | — | — | `ContractFormModal` | Leasing | two *mount points* of one shared form (not a duplicate implementation) | LOW (entry duplication only) |
+| Tenant dossier body | `features/tenants/components/TenantPreviewDialog.tsx` `TenantDossierContent` | `features/owners/*` dossier components | — | tenants | dossier body shared by the detail page and the preview dialog | none (intentional shared content) |
 | Reporting nav | `app-nav-items.ts` navGroups/workspaceChildNavItems | `route-contract.ts` ROUTE_CONTRACT | `route-nav-map.ts` | route-contract | shell/tests | three IA authorities (guarded) | MEDIUM |
 | Compatibility seams | `services/documents/{legacyPayloadAdapters,documentCompatibilityTypes}` | `documentPayloads` | — | documentPayloads | documents | legacy doc payload support | LOW (COMPATIBILITY) |
 | Cash-flow | canonical cash-flow RPC `…066` | legacy cash-flow compat `…067` | — | canonical | reporting | compat repair migration | LOW |
@@ -972,7 +972,7 @@ Remaining meaningful files are grouped by their category tables in §3–§18; t
 1. **Document says 7 primary roots** — matches navGroups/routes (no contradiction).
 2. **Doc: "Office Owner/Employee persona"** — implementation shows six-role model surfaced directly in parts of UI? Permissions map uses ADMIN..VIEWER; governance "users-permissions" management surfaces roles. The *routine persona simplification* is only partially materialized; many surfaces still reference ADMIN/MANAGER wording. → PARTIAL/CONFLICT candidate; needs human read (per §26 governance separation).
 3. **`receipts` detail route & `/receipts` route** exist in code but Money consolidates; route-tree comment shows `/receipts` only serves `?receiptId`. Doc 8 UX says money flows centralized. No doc contradiction; code has an intentional seam.
-4. **`/tenants/$tenantId` renders TenantPreviewDialog (a dialog) as a full page** — inconsistent presentation semantics vs "dossiers are pages" (contract/owner/property all have dedicated pages). Likely an IA migration leftover where tenants detail wasn't rebuilt to a dossier. → CONFLICT with UX contract ("entity dossiers own relationships/operations"). Flag for review.
+4. **Tenant dossier page/dialog** — `features/tenants/components/TenantPreviewDialog.tsx` exports three things: `TenantDossierContent` (shared body), `TenantDetailPage` (a real `PageLayout` dossier used by `/tenants/$tenantId`), and `TenantPreviewDialog` (the in-workspace preview). The earlier draft of this report misread this as "dialog rendered as a full page"; verification shows it is a real page sharing its dossier body with the preview dialog. No CONFLICT. (Only cosmetic oddity: the page export lives in a file named `TenantPreviewDialog.tsx`.)
 5. **People/Leads/Communication domains gated under `contracts.*` / route-contract sidebar-root Leasing** but are distinct Phase-2 first-class routes — functional but IA slightly stretched (no contradiction, note).
 6. **Reports service triple-root** (`reports`/`accounting/reports`/`financials/reports`) — documentation (05 says prohibit new page-specific data authorities when domain service owns concept) suggests this overlaps authority → PARTIAL/CONFLICT worth human decision.
 7. **Settings still exposes a legacy `settings/` page name mounted as company tab while a `settings-workspace-model.ts` + `settings-workspace.e2e-fixture` exist** — two workspace models; UNKNOWN which is canonical beyond tests.
@@ -986,12 +986,12 @@ Remaining meaningful files are grouped by their category tables in §3–§18; t
 
 1. **Reports data layer consolidation** — pick one canonical service root among `features/reports`, `features/accounting/reports`, `features/financials/reports` (or an explicit layering). Code cannot decide.
 2. **Settings canonical workspace** — confirm whether `settings/settings-page.tsx` (SettingsWorkspace) is the intended company surface vs a newer `settings-workspace-model`; reconcile naming/`registry` split.
-3. **Tenant detail presentation** — convert `/tenants/$tenantId` from `TenantPreviewDialog` reuse to a real dossier page, or document dialog-as-page as intentional.
+3. **Tenant dossier file naming** — resolved: `/tenants/$tenantId` already renders a real `TenantDetailPage`. No presentation change needed. Optional only: rename/move the `TenantDetailPage` export out of the `TenantPreviewDialog.tsx` file for clarity.
 4. **`onboarding/*` lifecycle** — it is confirmed ACTIVE as a Dashboard checklist (`dashboard-page.tsx` renders `OnboardingChecklist`). Decision needed only on its future when companies are always fully onboarded.
 5. **`receipt-detail-page.tsx` vs embedded card** — both are live (ReceiptDetailPage for `/receipts?receiptId=`; card embedded in Money). Decide whether the two receipt-detail renderers should be unified.
 6. **`query-keys` duplication** — whether to consolidate into one file.
 7. **Finance legacy routes retention horizon** — how long `/receipts`, `/finance/*`, etc. must keep redirecting (deep-link contract).
-8. **Per-object DB ownership** — full table/view/RPC-to-consumer matrix (72 migrations) requires a DB tooling pass + live schema; not done statically here.
+8. **Per-object DB ownership** — full table/view/RPC-to-consumer matrix (70 migrations) requires a DB tooling pass + live schema; not done statically here.
 
 ---
 
@@ -1003,7 +1003,7 @@ Prioritized, low-risk-first, respecting "never delete without proof" and repo ch
 2. **Unify receipt-detail rendering** — decide whether to keep two receipt-detail renderers (embedded card in Money vs `ReceiptDetailPage` for `/receipts?receiptId=`) or collapse into one component.
 3. **Rename/deprecate `settings/settings-page.tsx` name or the workspace-model** so one canonical company-settings surface is named clearly.
 4. **Establish single canonical reports data authority** (map `accounting/reports` + `financials/reports` consumers into `reports` or a shared accounting service) — highest consolidation risk; do under SEC-009/authority review, not casually.
-5. **Rebuild tenant detail as a dossier** (align to UX contract) or codify dialog-as-page in Document 6.
+5. *(removed — N/A)* No tenant-detail rebuild is needed; `TenantDetailPage` already renders a real dossier page. (Keep the dossier body shared between the page and the preview dialog.)
 6. **Define retention policy for REDIRECT_ROUTES** and keep route-contract as the single alias source.
 7. **Opportunistic dead-code removal** only after the inbound-import/route/nav proof described here is confirmed by the repo's own `check-architecture` + guard scripts.
 8. **Document the six-role vs Owner/Employee persona materialization** as CONFLICT/PARTIAL in Document 7 with a decision.
@@ -1016,25 +1016,28 @@ All steps must run the narrowest repo checks first (`pnpm check:architecture`, t
 
 ### Application Census Totals
 
-Counts are as-derived from the static tree; "Hidden/Partial/Duplicate/Legacy/Orphaned/Dead/Unknown" reflect the states identified in this report, not every file re-classified.
+Counts are as-derived from the static tree; "Hidden/Partial/Duplicate/Legacy/Orphaned/Dead/Unknown" reflect the states identified in this report, not every file re-classified. Column semantics: **Total / Active / Partial / Legacy / Orphaned / Dead / Unknown are mutually exclusive counts that sum to Total where a Total is given.** "Hidden" and "Duplicate" are *cross-cutting flags* that in several rows are a subset of Active (e.g. an ACTIVE_HIDDEN page is still Active) and therefore are not summed against Total.
 
 | Category | Total (approx) | Active | Hidden | Partial | Duplicate | Legacy | Orphaned | Dead cand. | Unknown |
 |---|---|---|---|---|---|---|---|---|---|
-| Routes (registered, `path:` defs in route-tree) | 67 | 46 | 6 (DEV/specialist reachable) | 1 (`/receipts` partial) | — | 0 | 0 | 0 | 0 |
-| Routes redirect-only (`REDIRECT_ROUTES`, legacy→workspace) | 20 (+1 `/receipts` partial already counted above = 21 list entries) | 0 | 20 | — | — | 20 (compat) | 0 | 0 | 0 |
+| Routes (registered `path:` defs) | 67 | 46 (real pages; includes specialist/external subset) | 0 (hidden/specialist are a subset of Active, not separate routes) | 1 (`/receipts` partial) | — | 0 | 0 | 0 | 0 |
+| Legacy redirect-only routes (`REDIRECT_ROUTES` minus `/receipts`) | 20 | 0 | 0 | 0 | — | 20 (compat) | 0 | 0 | 0 |
+| `REDIRECT_ROUTES` list total (route-contract authority) | 21 | — | — | 1 (`/receipts`) | — | 20 | 0 | 0 | 0 |
+
+*Routes partition is exhaustive and mutually exclusive: 20 redirect-only + 1 partial (`/receipts`) + 46 active pages = 67 path definitions. Within the 46 active pages, a specialist subset (e.g. `/admin-support`, DEV-only `/dev/design-system`, external `/tenant-portal`, `/owner-portal`) is not in routine nav but is reachable — that is a cross-cutting attribute, not a separate route class.*
 | Pages/screens (route-owned) | ~40 | ~33 | 3 | 1 | — | — | 0 | 0 | ~3 |
-| Features/capabilities | ~80+ | ~70 | ~8 | ~2 | ~5 | — | ~2 | 0 | ~2 |
-| Components (src/components) | ~98 (incl tests) | ~60 prod | ~6 | — | ~6 pairings | malik | 0 | 0 | ~2 |
+| Features/capabilities | ~80+ | ~70 | ~8 (subset of active; specialist/deep-link) | ~2 | ~5 | — | 0 | 0 | ~2 |
+| Components (src/components) | 98 (63 prod non-test + 35 tests) | ~63 prod | ~6 (subset of prod, incl. DEV-only/specialist) | — | ~6 pairings | 0 | 0 | 0 | ~2 |
 | Dialogs/preview surfaces | ~30 | ~26 | ~2 | 1 | 2 (incl. two receipt-detail renderers) | — | 0 | 0 | 1 |
-| Forms | ~25 | ~22 | 2 | 1 | 1 (contract page+modal) | — | 0 | 0 | 1 |
+| Forms | ~25 | ~22 | 2 | 1 | 0 (contract create/edit is one shared `ContractFormModal`) | — | 0 | 0 | 1 |
 | Tables/lists/registers (foundation-bound) | ~30 bound | 30 | ~4 hidden | — | layers | — | 0 | 0 | 0 |
 | Hooks | ~60+ | ~55 | — | — | ~3 pairs | — | — | 0 | few |
 | Stores | 2 (ui, palette) | 2 | — | — | — | — | — | 0 | 0 |
 | Reports capabilities | ~30 | ~28 | — | — | ~6 roots | legacy compat | 0 | 0 | 0 |
 | Settings capabilities | ~16 | 8 primary + 8 hidden | 8 | — | — | — | 0 | 0 | 0 |
-| DB migrations | 72 | ~55 active | — | — | cash-flow compat | revoked set | — | revoked intentional | full map UNKNOWN |
+| DB migrations (`.sql`) | 70 | ~55 active | — | — | cash-flow compat (`…067`) | revoked set (`…018/019/020/056`) | 0 | revoked intentional | per-object map UNKNOWN |
 | Tests (in-src) | 497 | — | — | — | — | some legacy-target | — | — | — |
-| E2E specs | 27 | 27 | — | — | — | some legacy-target | — | — | — |
+| E2E spec files (`e2e/*.spec.ts`) | 21 | 21 | — | — | — | some legacy-target | — | — | — |
 
 *Totals are approximate because 497 in-src tests and many feature-local components were not all individually re-classified; exact per-row statuses for every file are `UNKNOWN_NEEDS_REVIEW` where the tree was sampled rather than enumerated.*
 
@@ -1045,7 +1048,7 @@ Counts are as-derived from the static tree; "Hidden/Partial/Duplicate/Legacy/Orp
 | HIGH | Reports/accounting data authority split across 3 feature roots | `features/reports`, `features/accounting/reports`, `features/financials/reports` | drift, duplicate cost | human decision + consolidation plan (SEC/authority review) |
 | HIGH | Settings has two workspace models + registry seam | `settings/settings-page.tsx` vs `settings-workspace-model.ts`/registry | ambiguity, doc-vs-code | decide canonical; codify |
 | HIGH | Money has canonical shell + 21 legacy redirect routes + standalone register pages | route-tree, FinancePage, financials/*-page | IA complexity, deep-link maintenance | keep redirects; confirm retention |
-| MEDIUM | Tenant detail = Dialog reused as page | `tenants/components/TenantPreviewDialog.tsx` @ `/tenants/$tenantId` | violates dossier UX contract | rebuild dossier or document intent |
+| LOW | Tenant dossier file naming (page export in `TenantPreviewDialog.tsx`) | `tenants/components/TenantPreviewDialog.tsx` | cosmetic | rename/move `TenantDetailPage` export for clarity |
 | MEDIUM | Duplicate query-key authority | `lib/query-keys.ts` vs `lib/data/query-keys.ts` | drift in cache invalidation | consolidate into one canonical file |
 | MEDIUM | Two receipt-detail renderers | `receipts-page.tsx` embedded card vs `receipt-detail-page.tsx` (`/receipts?receiptId=`) | duplicated receipt-detail UI | unify into one component |
 | LOW | rolePermissions client defaults duplicate effective permissions | `permissions.ts` vs `effective-permissions.ts` | drift | keep as documented compat; guard only |
@@ -1059,7 +1062,7 @@ Counts are as-derived from the static tree; "Hidden/Partial/Duplicate/Legacy/Orp
 | System settings | implemented | `/settings?section=system-settings` | admin; specialist |
 | Automation | implemented | `/settings?section=automation` | specialist; background worker |
 | Admin support ops | implemented | `/admin-support` | triage/investigation; support.operations |
-| Deposits | implemented | Money funds/deposits (deep link) | deposit lifecycle, hidden per lock |
+| Deposits | implemented | Money `funds` section → `deposits` view (permission `financial.deposits.view`) | deposit lifecycle; not a global nav root but reachable in Money |
 | Fixed monthly accruals | implemented | Money fees/fixed_monthly_accruals | management-fee booking |
 | GL/accounting read | implemented | Reports accounting | journal writes remain server-only |
 | Change password | implemented | `/settings?section=security` | security |
@@ -1090,7 +1093,7 @@ Per task constraint, nothing is declared safe-to-delete without strong evidence;
 |---|---|---|---|
 | Reports/accounting single authority | reports vs accounting/reports vs financials/reports | three valid layering stories | explicit layering doc; reports workspace consumes accounting service |
 | Settings canonical surface | settings-page(SettingsWorkspace) vs settings-workspace-model | naming/evolution ambiguous | make SettingsWorkspace canonical; archive model name |
-| Tenant detail presentation | dialog-as-page vs rebuild dossier | product/UX | rebuild dossier (align to UX) |
+| Tenant dossier file naming | rename/move the page export vs leave as-is | both live; purely naming | leave as-is; optionally rename for clarity |
 | Onboarding future | retire after full onboarding vs keep always | it is live as a Dashboard checklist (`OnboardingChecklist`) | leave active; revisit only if companies are guaranteed always-onboarded |
 | Receipt-detail page | remove vs re-wire | superseded by card | remove after proving unreachable via route/nav/tests |
 | Brand export naming (`Malik` vs `Malek`) | rename one vs leave two spellings of one identity | both are live/used; purely naming | keep both, optionally unify export names (visuals are one identity) |
@@ -1098,4 +1101,99 @@ Per task constraint, nothing is declared safe-to-delete without strong evidence;
 
 ---
 
-*End of census. No files modified; report is read-only analysis grounded in the cited evidence. Items not exhaustively enumerated at row-level are explicitly marked `UNKNOWN_NEEDS_REVIEW`.*
+---
+
+## 32. Accuracy Verification (deep re-audit vs code)
+
+This section records a systematic accuracy audit of the report above against the actual source (code treated as the sole source of truth). It does not add new scope; it only states what was re-verified, what was wrong, and what was corrected in-place throughout the earlier sections.
+
+**Method:** exact counts were taken from source with shell/python, not by hand. File/route claims were re-checked for existence, imports (including **relative** imports, lazy route targets, and barrel/mount consumers — never only direct-feature-path imports), route registration, navigation wiring, and permission/data plumbing. Hidden / orphaned / dead / legacy classifications were re-derived; any claim that could not be proven to HIGH confidence was either corrected to what the code shows or flagged UNKNOWN.
+
+### Numeric / total corrections (verified by counting source)
+
+| Claim in original report | Was | Verified actual | Source of truth |
+|---|---|---|---|
+| Supabase migrations | 72 | **70** `.sql` files (`20260830223142` + `20260901000000`–`…068`); the 72 was dir entries incl. `README.md` + `rls_per_table/` | `ls supabase/migrations/*.sql \| wc -l` |
+| Playwright E2E specs | 27 | **21** `e2e/*.spec.ts` (27 counted total `e2e` files incl. 4 `support/*.ts` + `evidence/`) | `ls rentrix-app/e2e/*.spec.ts` |
+| `AppPermission` capabilities | 62 | **61** | count of `appPermissions` array in `features/auth/permissions.ts` |
+| Registered route `path:` defs | ~95 (earlier draft) | **67** unique | `route-tree.ts` `path:` scan |
+| Route partition | hidden column double-counted | **20 redirect-only + 1 partial (`/receipts`) + 46 active = 67**; specialist routes are a subset of Active | `REDIRECT_ROUTES` (21) + component presence |
+| `components/ui` "non-test UI primitives" | 30 | **41** primitives (42 incl. `index.ts`) | `find components/ui` (non-test) |
+| Components totals | ~98 | **98** files (63 prod non-test + 35 test files) | `find src/components` |
+| `components/layout` / `brand` / `documents` prod files | (implicit) | 11 / 3 / 2 | counting |
+| In-src Vitest files | 497 | **497** (includes `.visual-wave-1/.pglite/.axe` sub-kinds) | `find src ... *.test.*/*.spec.*` |
+
+### Classification / factual corrections
+
+| Area | Original claim | Corrected to (code evidence) |
+|---|---|---|
+| Tenant detail route (`/tenants/$tenantId`) | "dialog rendered as a full page"; `CONFLICT` with UX (§29, §6, §5, §4, §23, summary) | **Real `TenantDetailPage`** (PageLayout dossier). File exports `TenantDetailPage` + shared `TenantDossierContent` + `TenantPreviewDialog`; page and preview dialog share the dossier body — intentional content reuse, not dialog-as-page. Only cosmetic oddity is the page living in `TenantPreviewDialog.tsx`. |
+| Contract create/edit | "DUPLICATED surface (route page + modal)" (§9/§10/§23) | **Single shared `ContractFormModal`** mounted by thin shell `ContractFormPage` (`/contracts/new`,`…/edit`) and by `ContractsListPage`. Two mount points, one implementation. |
+| Deposits | "hidden from Money primary tabs / ACTIVE_HIDDEN per lock" (§4/§22) | Money `funds` section is in primary nav (`showInPrimaryNavigation:true`) and `deposits` is a normal **permission-gated view** (`financial.deposits.view`); it is not globally nav-hidden, only not a 7-roots destination. |
+| Fixed-monthly accruals | ACTIVE_HIDDEN (§4) | ACTIVE permission-gated view in Money `fees` primary section. |
+| `/invoices` page | "orphaned behind redirect" | Legacy standalone path redirects to Money; `InvoicesWorkspace` export is consumed by the shell (active). |
+| `receipt-detail-page` | earlier "orphan" label | ACTIVE — `ReceiptsWorkspace` renders `ReceiptDetailPage` for `/receipts?receiptId=` (relative import). |
+| `onboarding/` | earlier "no entry" | ACTIVE — Dashboard renders `OnboardingChecklist`. |
+| Brand `malik-*` | earlier "residue" | ACTIVE on landing/login/public-support/PWA; `MalekBrandWordmark` (shell) wraps the same identity. |
+| `statements-reports-service` | (suspected unused) | ACTIVE via **relative** import from `financials/reports/financialReportsService.ts` → consumed by reports workspace. Confirms direct-import search alone is insufficient. |
+| `supabase-client-boundary.test` path | cited under `components/` | Real path `rentrix-app/src/lib/supabase-client-boundary.test.ts` (§14). |
+| `e2e/support` harness list | missing `document-acceptance-session.ts` | added (§21). |
+
+### Reports duplicate-risk (kept, evidence strengthened)
+
+The "three reporting service roots" finding is **supported, not overstated**: `reports/` workspace components import both `financials/reports/*` (`financialReportsService`, `financial-statements-service`, `arrears-reports-service`, `deferred-revenue-service`) and `accounting/reports/*` (`GeneralLedgerCoreSection`, statements panels). These coexist and both feed the Reports workspace — a genuine authority-overlap to resolve by human decision (§30-1), kept as HIGH risk.
+
+### Spot-check of file existence (sampling)
+
+69 file paths cited across the route/page/component/service tables were checked for existence and **0 were missing**. This does not prove every one of the ~1,200 referenced rows correct; it bounds the risk.
+
+### Verification summary table
+
+| Area | Items Checked | Errors Found | Corrections Made | Remaining Uncertainty | Confidence |
+|---|---|---|---|---|---|
+| Repo ground-truth numbers (migrations, e2e, tests, perms, LOC) | exact counts from source | 4 (migrations 72→70, e2e 27→21, perms 62→61, route partition) | yes | none for these totals | HIGH (counted) |
+| Route census (67 paths, redirect/alias, owners, guards) | all route `path:` defs + REDIRECT_ROUTES + sampled owners/guards | route total overstatement; hidden double-count; 1 partial accounting | yes | exact ACTIVE/HIDDEN split of the 46 pages is judgment + role-dependent | HIGH for counts; MEDIUM for per-page hidden flags |
+| Page/route owner mapping | 35 sampled page files exist + route lazy targets | tenant-detail mischaracterization | yes | a few page owners rely on the route-tree read (no runtime run) | HIGH (sampled) |
+| Components (shared primitives, duplicates) | counts + representative existence | "30 primitives" undercount; "malik legacy" cell | yes | not every feature-local component pair diffed | HIGH for counts; MEDIUM for full duplicate list |
+| Dialogs / forms census | contract-form + tenant-detail + receipt-detail traced | contract "duplicate"; tenant "dialog-as-page" | yes | full dialog trigger-map not re-walked | MEDIUM–HIGH |
+| Data-access & DB contract map | guards existence, service consumers, reports 3-root | supabase-boundary path; statements service reachability | yes | per-object DB ownership UNKNOWN (needs DB tooling) | MEDIUM |
+| Auth/permissions | appPermissions count, role map | 62→61 | yes | per-route/permission membership not exhaustively re-derived | HIGH for count; MEDIUM for per-role detail |
+| Settings / Governance | hub sections + registry + money sections read | deposits/fixed-monthly "hidden" labels | yes | which company sections are "visible vs hidden" is role-gated | MEDIUM–HIGH |
+| Hidden / orphaned / dead / legacy | re-derived via route + lazy + relative-import + mount-point checks | orphan labels for receipt-detail/onboarding (prior) + this pass verified reachability | yes | some "hidden" classification is role-dependent | HIGH that nothing was falsely *deleted* as dead; MEDIUM on exhaustive hidden set |
+| Reports / printing / documents | 3-root consumers, doc engine spec files, 24-doc specs | none beyond 3-root framing | — | screen-vs-print parity not runtime-verified | MEDIUM |
+| AI / PWA / notifications | file existence + wiring sampled | none | — | runtime (speech/SW/offline) not exercised | MEDIUM |
+| Summary tables | math re-derived (routes 20+1+46=67; column semantics added) | route double-count; orphan/duplicate cells stale after body fixes; migrations/e2e/perms | yes | other rows are intentionally approximate (~) | HIGH after this pass for the rows with exact totals; MEDIUM for `~` rows |
+
+---
+
+### Accuracy closeout (frank)
+
+**Total errors found in the original report** (across the first review pass and this deep audit): **~18 distinct inaccuracies/misclassifications**, of which this deep audit added the majority (migrations 70, e2e 21, perms 61, tenant-dossier, contract-form, deposits/fixed-monthly hidden labels, ui-primitive count, path citation fixes, and multiple stale summary cells). The prior pass had already corrected the route total and the `receipt-detail`/`onboarding` orphan labels.
+
+**The 10 worst errors / misclassifications found:**
+
+1. **Tenant detail route mislabeled "dialog rendered as a full page" and flagged a `CONFLICT`** — the route actually renders a real `TenantDetailPage` dossier that shares `TenantDossierContent` with the preview dialog. Wrong in §4, §5, §6, §9, §23, §29, §30, §31, and the summary. *(Highest-impact misclassification.)*
+2. **Route census overcount (~95)** — true count is **67** `path:` definitions, with a mutually exclusive 20-redirect / 1-partial / 46-active split.
+3. **Supabase migrations stated as 72** — the directory holds **70** `.sql` migrations (72 was entries incl. `README.md` + `rls_per_table/`).
+4. **Playwright E2E specs stated as 27** — there are **21** `*.spec.ts` files (27 was all `e2e/` files incl. 4 support harnesses).
+5. **AppPermission capabilities stated as 62** — the `appPermissions` array has **61** entries.
+6. **Deposits labeled "hidden from Money primary tabs / ACTIVE_HIDDEN"** — the `funds` Money section is in primary nav and `deposits` is a normal permission-gated view (`financial.deposits.view`); it is only not-a-global-root.
+7. **Contract create/edit labeled a "DUPLICATED surface"** — `ContractFormPage` is a thin shell that renders the single shared `ContractFormModal` (also mounted by `ContractsListPage`). Not a duplicate implementation.
+8. **`components/ui` "non-test primitives = 30"** — actual **41** primitives (42 incl. `index.ts`); whole-component production total is 63 files.
+9. **Fixed-monthly accruals labeled ACTIVE_HIDDEN** — it is an ACTIVE permission-gated view in the Money `fees` primary section.
+10. **Summary-table contradictions** — features "~2 orphaned" (0 orphaned), components "Legacy=malik" (0 legacy), and a route "hidden" column that double-counted pages (now a mutually-exclusive partition + explicit column-semantics caveat).
+
+**What is still NOT certain (honest):**
+- **Exhaustive per-item classification of ~1,200 files was not fully re-derived.** Numeric totals and a 69-file path sample were verified; the full ACTIVE/HIDDEN/DUPLICATE ledger for every feature-local component, hook, and test file remains `UNKNOWN_NEEDS_REVIEW`.
+- **Per-role visibility** (which ACTIVE_HIDDEN labels are actually hidden for a given role) is role-dependent and was reasoned from permission maps, not exercised at runtime.
+- **DB per-object ownership** across 70 migrations was not enumerated object-by-object (needs DB tooling/live schema).
+- **The approximate (`~`) totals** (pages ~40, hooks ~60+, dialogs ~30, forms ~25, reports ~30, settings ~16) are estimates, not exact counts.
+- **Runtime behavior** (offline/PWA, TTS/speech, live RLS/role enforcement, print-parity) was not exercised; only static wiring was inspected.
+
+**Realistic confidence in the report after this audit:**
+- **Numeric / structural claims:** ~92–95% (routes, migrations, e2e, permissions, tests, LOC, component counts — all directly counted or sampled with 0 misses).
+- **Per-item status classifications across the whole tree:** ~70% (representative tables verified; exhaustive per-file re-derivation not performed).
+- **Overall report confidence: ~80%.** Not 100% — the remaining uncertainty is the exhaustive per-item status ledger, role-dependent hidden flags, DB object-level ownership, and un-run runtime behavior, all flagged above.
+
+---
+*End of corrected census + accuracy audit. Report remains read-only analysis; no application code was modified. All cells that could not be verified to HIGH confidence are explicitly marked `UNKNOWN_NEEDS_REVIEW` or flagged in §32.*
