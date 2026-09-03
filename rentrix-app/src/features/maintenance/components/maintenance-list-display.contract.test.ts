@@ -13,4 +13,28 @@ describe('maintenance list display architecture', () => {
     expect(source).toContain('priority: "actions"');
     expect(source).toContain('data-maintenance-list');
   });
+
+it('keeps the mobile hierarchy operational without lengthening the card', () => {
+    // Issue (identity) → location (supporting) → status (badge) → priority +
+    // attention (primary facts) → ownership (compact secondary line).
+    expect(source).toContain('mobileBadgeKey="status"');
+    expect(source).toContain('mobileSupportingKey="location"');
+    expect(source).toContain('mobilePrimaryMetaKeys={["priority", "attention"]}');
+    expect(source).toContain('mobileSecondaryMetaKeys={["provider"]}');
+  });
+
+  it('shows request age inside the attention datum', () => {
+    expect(source).toContain('منذ {attention.ageDays} يوم');
+  });
+
+  it('carries the assignee inside the ownership cell instead of adding a card row', () => {
+    expect(source).toContain('row.assigned_to || row.technician_name');
+    expect(source).toContain('الفني: ');
+    // Ownership stays one question, so the register keeps a single column.
+    expect(source.match(/header: "مزود الخدمة"/g)).toHaveLength(1);
+  });
+
+  it('shares one status-action permission rule with the details overlay', () => {
+    expect(source).toContain('canAccess(getMaintenanceStatusActionPermission(status))');
+  });
 });

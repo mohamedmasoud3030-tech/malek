@@ -12,6 +12,9 @@ import { ContractResults } from './components/ContractResults';
 import { contractColumnOptions, defaultContractColumns } from './components/ContractTable';
 import { contractStatusValues } from './contractSchema';
 import { useContractFilters, type LeaseModeFilter } from './hooks/useContractFilters';
+import { deriveContractAttention, summarizeContractAttention } from './contract-attention';
+import type { ContractAttentionState } from './useContractAttention';
+import { getTodayLocalDateString } from '@/features/financials/financials-date-utils';
 import type { ContractListItem, ContractStatusFilter } from './services/contractService';
 
 const contractStatusFilterLabels: Record<ContractStatusFilter, string> = {
@@ -150,6 +153,24 @@ const fixtureContracts: ContractListItem[] = [
   },
 ];
 
+/**
+ * Static fixtures have no invoice source, so attention is derived from the
+ * canonical projection with an empty invoice slice: expiry and lifecycle
+ * signals are real, payment attention is simply absent (never faked).
+ */
+const fixtureAttention: ContractAttentionState = (() => {
+  const today = getTodayLocalDateString();
+  const attentionByContractId = new Map(
+    fixtureContracts.map((contract) => [contract.id, deriveContractAttention(contract, [], today)]),
+  );
+  return {
+    attentionByContractId,
+    summary: summarizeContractAttention(attentionByContractId.values()),
+    isLoadingInvoiceContext: false,
+    hasInvoiceContextError: false,
+  };
+})();
+
 export function ContractsListE2EFixture() {
   const [status, setStatus] = useState<ContractStatusFilter>('all');
   const [leaseMode, setLeaseMode] = useState<LeaseModeFilter>('all');
@@ -238,12 +259,14 @@ export function ContractsListE2EFixture() {
         )}
       >
         <ContractKpiGrid
+          attention={fixtureAttention}
           companySettings={defaultCompanySettingsContract}
           contracts={fixtureContracts}
           filteredContracts={filteredContracts}
           totalCount={fixtureContracts.length}
         />
         <ContractResults
+          attentionByContractId={fixtureAttention.attentionByContractId}
           companySettings={defaultCompanySettingsContract}
           contracts={filteredContracts}
           expandedId={expandedId}

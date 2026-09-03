@@ -31,9 +31,15 @@ export function getContractInclusiveDays(startDate: string, endDate: string): nu
   return Math.max(1, Math.round((endTime - startTime) / CONTRACT_DAY_IN_MS) + 1);
 }
 
-export function getContractRemainingDays(endDate: string): number {
-  const today = new Date();
+/**
+ * Whole days from `referenceDate` (local midnight) to `endDate`.
+ *
+ * The reference date is injectable so callers that already resolved "today"
+ * once — contract attention, in particular — derive expiry from the same
+ * instant as every other signal instead of reading the clock a second time.
+ */
+export function getContractRemainingDays(endDate: string, referenceDate: Date = new Date()): number {
   const endTime = new Date(endDate).getTime();
-  const todayTime = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
-  return Math.ceil((endTime - todayTime) / CONTRACT_DAY_IN_MS);
+  const referenceTime = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate()).getTime();
+  return Math.ceil((endTime - referenceTime) / CONTRACT_DAY_IN_MS);
 }

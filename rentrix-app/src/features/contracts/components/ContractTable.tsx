@@ -17,19 +17,85 @@ import { normalizeContractStatus } from "@/lib/contractStatus";
 import { unitStatusLabels, type UnitStatus } from "@/features/units/unit-schema";
 import type { ContractListItem } from "../services/contractService";
 import { getDaysUntilEnd, isExpiringSoon } from "../hooks/useContractFilters";
+import {
+  type ContractAttention,
+  type ContractAttentionSeverity,
+} from "../contract-attention";
+import { contractNextActionShortLabels, getContractNextAction } from "../lifecycle/contractLifecycleRules";
 
-function DetailBox({ label, children }: { label: string; children: ReactNode }) {
+function DetailBox({ label, children, className }: { label: string; children: ReactNode; className?: string }) {
   return (
-    <div className="min-w-0 border-t border-border/60 pt-3 first:border-t-0">
+    <div className={cn("min-w-0 border-t border-border/60 pt-3 first:border-t-0", className)}>
       <p className="mb-1.5 text-xs font-bold text-muted-foreground">{label}</p>
       <div className="space-y-1 text-sm leading-6">{children}</div>
     </div>
   );
 }
 
+/** Attention severity maps straight onto the canonical StatusBadge tones. */
+const attentionToneBySeverity: Record<ContractAttentionSeverity, "danger" | "warning" | "info"> = {
+  danger: "danger",
+  warning: "warning",
+  info: "info",
+};
+
 /** Rows predating the Short Stay column default to long-term leasing. */
 function isShortStayContract(contract: Pick<ContractListItem, "lease_mode">) {
   return contract.lease_mode === "short_stay";
+}
+
+/**
+ * Row-expansion operational summary: why this contract needs attention, what
+ * the payment exposure is, and the one canonical next step. Deliberately short
+ * — the full contract workspace stays the place for the complete record.
+ */
+function ContractAttentionPanel({
+  attention,
+  companySettings,
+  contract,
+}: {
+  attention: ContractAttention | undefined;
+  companySettings: CompanySettingsContract;
+  contract: ContractListItem;
+}) {
+  const nextAction = attention?.nextAction ?? getContractNextAction(contract);
+  const reasons = attention?.reasons ?? [];
+  const paymentLoaded = attention ? attention.invoiceContextLoaded : false;
+
+  return (
+    <DetailBox label="المتابعة والإجراء التالي" className="md:col-span-2">
+      {reasons.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-1.5">
+          {reasons.map((reason) => (
+            <StatusBadge key={reason.flag} tone={attentionToneBySeverity[reason.severity]}>
+              {reason.detail ? `${reason.label} — ${reason.detail}` : reason.label}
+            </StatusBadge>
+          ))}
+        </div>
+      ) : !paymentLoaded ? (
+        <p className="text-muted-foreground">جارٍ التحقق من حالة المدفوعات…</p>
+      ) : (
+        <p className="text-muted-foreground">لا توجد متابعة مطلوبة على هذا العقد.</p>
+      )}
+
+      {paymentLoaded ? (
+        <p className="text-muted-foreground" data-contract-payment-attention>
+          المدفوعات: {attention && attention.overdueInvoiceCount > 0
+            ? `${attention.overdueInvoiceCount} فاتورة متأخرة بإجمالي ${formatContractMoney(companySettings, attention.overdueAmount)}`
+            : attention && attention.receivableInvoiceCount > 0
+              ? `${attention.receivableInvoiceCount} فاتورة غير مسددة بإجمالي ${formatContractMoney(companySettings, attention.outstandingAmount)}`
+              : "لا توجد فواتير غير مسددة"}
+        </p>
+      ) : null}
+
+      <p>
+        <span className="text-muted-foreground">الإجراء التالي: </span>
+        <span className="font-bold text-primary">
+          {nextAction ? contractNextActionShortLabels[nextAction] : "لا يوجد إجراء مطلوب"}
+        </span>
+      </p>
+    </DetailBox>
+  );
 }
 
 export const contractColumnOptions = [
@@ -39,12 +105,15 @@ export const contractColumnOptions = [
   { key: "period", label: "الفترة" },
   { key: "rent_amount", label: "قيمة الإيجار" },
   { key: "status", label: "الحالة" },
+  { key: "attention", label: "المتابعة" },
+  { key: "next_action", label: "الإجراء التالي" },
   { key: "actions", label: "الإجراءات", locked: true },
 ] as const;
 
 export const defaultContractColumns = contractColumnOptions.map((column) => column.key);
 
 export function ContractTable({
+  attentionByContractId,
   companySettings,
   contracts,
   expandedId,
@@ -61,6 +130,14 @@ export function ContractTable({
   setExpandedId,
   visibleColumnKeys,
 }: {
+  /**
+   * Operational attention per contract, produced by `useContractAttention`
+   * from one batched invoice read. Optional so static fixtures (and any caller
+   * without invoice context) still render: the next-action column falls back to
+   * the canonical lifecycle rules, and payment attention is simply withheld
+   * rather than reported as clean.
+   */
+  attentionByContractId?: ReadonlyMap<string, ContractAttention>;
   companySettings: CompanySettingsContract;
   contracts: ContractListItem[];
   expandedId: string | null;
@@ -82,16 +159,9 @@ export function ContractTable({
       key: "contract_number",
       header: "العقد رقم",
       priority: "identity",
-      render: (contract) => {
-        const expiringSoon = isExpiringSoon(contract);
-        const daysUntilEnd = getDaysUntilEnd(contract);
-        return (
-          <>
-            <p className="font-bold">{getContractNumber(contract)}</p>
-            {expiringSoon && <p className="mt-1 text-xs font-semibold text-warning">ينتهي خلال {daysUntilEnd} يوم</p>}
-          </>
-        );
-      },
+      // Expiry is no longer restated here: the dedicated attention column owns
+      // that signal, so the identity stays one clean, scannable reference.
+      render: (contract) => <p className="font-bold">{getContractNumber(contract)}</p>,
     },
     {
       key: "tenant",
@@ -144,6 +214,53 @@ export function ContractTable({
       ),
     },
     {
+      key: "attention",
+      header: "المتابعة",
+      priority: "secondary",
+      render: (contract) => {
+        const attention = attentionByContractId?.get(contract.id);
+        const primaryReason = attention?.primaryReason ?? null;
+        if (!primaryReason) {
+          // Distinguish "verified clean" from "payment context not loaded yet".
+          if (attention && !attention.invoiceContextLoaded) {
+            return <span className="text-xs text-muted-foreground">جارٍ التحقق من المدفوعات…</span>;
+          }
+          return <span className="text-xs text-muted-foreground">لا يحتاج متابعة</span>;
+        }
+        const additional = attention ? attention.reasons.length - 1 : 0;
+        return (
+          <span className="flex min-w-0 flex-wrap items-center gap-1.5">
+            <StatusBadge tone={attentionToneBySeverity[primaryReason.severity]}>
+              {primaryReason.label}
+            </StatusBadge>
+            {primaryReason.detail ? (
+              <span className="text-xs text-muted-foreground">{primaryReason.detail}</span>
+            ) : null}
+            {additional > 0 ? (
+              <span className="text-xs font-bold text-muted-foreground" title="أسباب متابعة إضافية">
+                +{additional}
+              </span>
+            ) : null}
+          </span>
+        );
+      },
+    },
+    {
+      key: "next_action",
+      header: "الإجراء التالي",
+      priority: "detail",
+      render: (contract) => {
+        // Canonical lifecycle rules stay the only source of the next step.
+        const nextAction = attentionByContractId?.get(contract.id)?.nextAction ?? getContractNextAction(contract);
+        if (!nextAction) return <span className="text-xs text-muted-foreground">—</span>;
+        return (
+          <span className="whitespace-nowrap text-xs font-bold text-primary">
+            {contractNextActionShortLabels[nextAction]}
+          </span>
+        );
+      },
+    },
+    {
       key: "actions",
       header: "إجراءات",
       priority: "actions",
@@ -177,7 +294,7 @@ export function ContractTable({
         </div>
       ),
     },
-  ], [companySettings, onDelete, onEdit, onPreview]);
+  ], [attentionByContractId, companySettings, onDelete, onEdit, onPreview]);
 
   return (
     <EntityTable
@@ -197,7 +314,13 @@ export function ContractTable({
       mobileCardType="contract"
       mobileBadgeKey="status"
       mobileSupportingKey="tenant"
-      mobilePrimaryMetaKeys={["unit", "rent_amount", "period"]}
+      // Card hierarchy: identity = contract number, supporting = tenant,
+      // badge = status, then attention first among the quick facts (that is the
+      // datum that decides whether the row needs a human), with unit and period
+      // beside it. Rent and the next step drop to the compact secondary line so
+      // the card carries the operational signal without growing taller.
+      mobilePrimaryMetaKeys={["attention", "unit", "period"]}
+      mobileSecondaryMetaKeys={["rent_amount", "next_action"]}
       mobileCardPrimaryAction={(contract) => ({
         label: "عرض العقد",
         variant: "default",
@@ -223,6 +346,11 @@ export function ContractTable({
       onRowClick={(contract) => setExpandedId((current) => current === contract.id ? null : contract.id)}
       renderRowExpansion={(contract) => (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-x-5">
+          <ContractAttentionPanel
+            attention={attentionByContractId?.get(contract.id)}
+            companySettings={companySettings}
+            contract={contract}
+          />
           <DetailBox label="بيانات المستأجر">
             <p className="font-bold">{contract.people?.full_name ?? "—"}</p>
             <p className="text-muted-foreground">هاتف: {contract.people?.phone ?? "—"}</p>

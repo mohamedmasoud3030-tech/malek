@@ -77,6 +77,35 @@ vi.mock('./useContracts', () => ({
   useSoftDeleteContract: () => contractsMocks.deleteMutation,
 }));
 
+/**
+ * The register reads invoice context through the canonical batched query hook.
+ * Mocking at that seam (not at the domain hook) keeps the real attention
+ * derivation under test while avoiding a QueryClient provider in a static render.
+ */
+const contractInvoiceMocks = vi.hoisted(() => ({
+  rows: [] as Array<{
+    id: string;
+    reference: string | null;
+    contract_id: string;
+    status: string;
+    amount: number;
+    paid_amount: number;
+    due_date: string;
+  }>,
+  isError: false,
+}));
+
+vi.mock('@/features/financials/invoices/useInvoices', () => ({
+  useDossierInvoicesForContracts: (contractIds: readonly string[]) => ({
+    // Mirrors `enabled: contractIds.length > 0`: no ids means no read at all.
+    data: contractIds.length === 0 ? undefined : contractInvoiceMocks.rows,
+    error: contractInvoiceMocks.isError ? new Error('تعذر تحميل الفواتير') : null,
+    isError: contractInvoiceMocks.isError,
+    isPending: false,
+    isLoading: false,
+  }),
+}));
+
 function setViewportWidth(width: number) {
   Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: width });
   window.dispatchEvent(new Event('resize'));
@@ -89,6 +118,8 @@ describe('ContractsListPage load states', () => {
     contractsMocks.contractsQuery.error = null;
     contractsMocks.contractsQuery.isError = false;
     contractsMocks.contractsQuery.isLoading = false;
+    contractInvoiceMocks.rows = [];
+    contractInvoiceMocks.isError = false;
   });
 
   it('renders a retryable error state when contract loading fails', () => {
@@ -142,7 +173,12 @@ describe('ContractsListPage load states', () => {
     expect(summary?.textContent).toContain('الفترة');
     expect(summary?.textContent).toContain(startDateLabel);
     expect(summary?.textContent).toContain(endDateLabel);
-    expect(summary?.textContent).toContain('قيمة الإيجار');
+    // Operational hierarchy: attention leads the primary quick facts, and rent
+    // moves to the compact secondary line rather than adding a fourth row.
+    expect(summary?.textContent).toContain('المتابعة');
+    const secondaryMeta = card?.querySelector<HTMLElement>('[data-entity-table-mobile-secondary-meta]');
+    expect(secondaryMeta?.textContent).toContain('قيمة الإيجار');
+    expect(secondaryMeta?.textContent).toContain('الإجراء التالي');
 
     expect(host.querySelector('[data-entity-table-mobile-actions]')).toBeNull();
     const columnsControl = host.querySelector<HTMLElement>('[data-contract-columns-control]');
@@ -181,6 +217,73 @@ describe('ContractsListPage load states', () => {
     // longer re-declares «التأجير»/«سجل العقود» as a competing visual authority.
     expect(html).not.toContain('>التأجير<');
     expect(html).not.toContain('>سجل العقود<');
+  });
+  it('surfaces payment attention through the canonical column and mobile metadata', () => {
+    setViewportWidth(375);
+    contractsMocks.contractsQuery.data = { rows: [contractFixture], count: 1 };
+    contractInvoiceMocks.rows = [
+      {
+        id: 'invoice-1',
+        reference: 'INV-1',
+        contract_id: contractFixture.id,
+        status: 'UNPAID',
+        amount: 1250,
+        paid_amount: 0,
+        due_date: '2020-01-01',
+      },
+    ];
+
+    const html = renderToStaticMarkup(<ContractsListPage />);
+    const host = document.createElement('div');
+    host.innerHTML = html;
+
+    // The register attention banner names the problem and the exposure.
+    const banner = host.querySelector<HTMLElement>('[data-register-attention]');
+    expect(banner).not.toBeNull();
+    expect(banner?.textContent).toContain('عقود تحتاج متابعة');
+    expect(banner?.textContent).toContain('مستحقات غير مسددة');
+
+    // The card carries the attention datum through EntityTable configuration,
+    // never through a page-local card component.
+    const card = host.querySelector<HTMLElement>('[data-entity-table-mobile-card]');
+    const summary = card?.querySelector<HTMLElement>('[data-entity-table-mobile-summary]');
+    expect(summary?.textContent).toContain('المتابعة');
+    expect(summary?.textContent).toContain('فواتير متأخرة');
+    // Rent moves to the compact secondary line instead of adding a row.
+    const secondary = card?.querySelector<HTMLElement>('[data-entity-table-mobile-secondary-meta]');
+    expect(secondary?.textContent).toContain('قيمة الإيجار');
+    expect(secondary?.textContent).toContain('الإجراء التالي');
+  });
+
+  it('reports the canonical lifecycle next action on the register', () => {
+    const draftContract: ContractListItem = { ...contractFixture, id: 'contract-draft', status: 'draft', approval_status: null };
+    contractsMocks.contractsQuery.data = { rows: [draftContract], count: 1 };
+
+    const html = renderToStaticMarkup(<ContractsListPage />);
+
+    expect(html).toContain('الإجراء التالي');
+    expect(html).toContain('إرسال للاعتماد');
+    // Nothing is owed, so no payment noise is invented for a clean contract.
+    expect(html).not.toContain('فواتير متأخرة');
+  });
+
+  it('distinguishes a verified clean contract from unverified payment context', () => {
+    contractsMocks.contractsQuery.data = { rows: [contractFixture], count: 1 };
+    contractInvoiceMocks.isError = true;
+
+    const html = renderToStaticMarkup(<ContractsListPage />);
+
+    expect(html).toContain('جارٍ التحقق من المدفوعات…');
+    expect(html).not.toContain('لا يحتاج متابعة');
+  });
+
+  it('stays quiet when nothing needs attention', () => {
+    contractsMocks.contractsQuery.data = { rows: [contractFixture], count: 1 };
+
+    const html = renderToStaticMarkup(<ContractsListPage />);
+
+    expect(html).not.toContain('data-register-attention');
+    expect(html).toContain('لا يحتاج متابعة');
   });
 });
 

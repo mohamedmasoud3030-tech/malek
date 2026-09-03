@@ -1,8 +1,10 @@
 import { ContractTable } from './ContractTable';
 import type { CompanySettingsContract } from '@/lib/companySettings';
 import type { ContractListItem } from '../services/contractService';
+import type { ContractAttention } from '../contract-attention';
 
 export function ContractResults({
+  attentionByContractId,
   companySettings,
   contracts,
   expandedId,
@@ -20,6 +22,8 @@ export function ContractResults({
   setExpandedId,
   visibleColumnKeys,
 }: {
+  /** Operational attention per contract (see `useContractAttention`). */
+  attentionByContractId?: ReadonlyMap<string, ContractAttention>;
   companySettings: CompanySettingsContract;
   contracts: ContractListItem[];
   expandedId: string | null;
@@ -40,6 +44,7 @@ export function ContractResults({
   return (
     <section data-contract-register className="min-w-0">
       <ContractTable
+        attentionByContractId={attentionByContractId}
         companySettings={companySettings}
         contracts={contracts}
         expandedId={expandedId}

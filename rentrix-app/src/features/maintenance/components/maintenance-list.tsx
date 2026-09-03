@@ -12,7 +12,10 @@ import {
   buildMaintenanceLocationLabel,
   type MaintenanceStatusFilter,
 } from "../maintenance-helpers";
-import { getMaintenanceStatusActions } from "../useMaintenancePageController";
+import {
+  getMaintenanceStatusActionPermission,
+  getMaintenanceStatusActions,
+} from "../useMaintenancePageController";
 import {
   maintenanceAttentionLabels,
   type MaintenanceAttention,
@@ -116,14 +119,11 @@ export function MaintenanceList(props: MaintenanceListProps) {
   } = props;
   const { canAccess } = useAuth();
   const canEdit = canAccess("maintenance.edit");
-  const canApprove = canAccess("maintenance.approve");
-  const canCancel = canAccess("maintenance.cancel");
 
-  const canRunStatusAction = (status: Exclude<MaintenanceStatusFilter, "all">) => {
-    if (status === "cancelled") return canCancel;
-    if (status === "closed") return canApprove;
-    return canEdit;
-  };
+  // Single source of truth for "may this operator run this transition", shared
+  // with the details overlay so both surfaces offer exactly the same actions.
+  const canRunStatusAction = (status: Exclude<MaintenanceStatusFilter, "all">) =>
+    canAccess(getMaintenanceStatusActionPermission(status));
 
   const columns = useMemo((): ColumnDef<Maintenance>[] => [
     {
@@ -142,9 +142,22 @@ export function MaintenanceList(props: MaintenanceListProps) {
       key: "provider",
       header: "مزود الخدمة",
       priority: "detail",
-      render: (row) =>
-        providerOptions.find((provider) => provider.id === row.service_provider_id)?.name
-        ?? (row.service_provider_id ? "مزود مؤرشف أو غير متاح" : "غير معين"),
+      // "Who owns this work" is one question, so the executing party is one
+      // cell: the contracted provider plus the technician actually assigned.
+      // This adds the assignee to the mobile card without adding a row.
+      render: (row) => {
+        const providerName = providerOptions.find((provider) => provider.id === row.service_provider_id)?.name
+          ?? (row.service_provider_id ? "مزود مؤرشف أو غير متاح" : "غير معين");
+        const assignee = row.assigned_to || row.technician_name || null;
+        return (
+          <span className="block min-w-0">
+            <span className="block truncate">{providerName}</span>
+            {assignee ? (
+              <span className="block truncate text-xs text-muted-foreground">الفني: {assignee}</span>
+            ) : null}
+          </span>
+        );
+      },
     },
     {
       key: "status",

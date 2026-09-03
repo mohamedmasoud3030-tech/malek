@@ -1,16 +1,20 @@
+import { PlayCircle } from 'lucide-react';
 import { MONEY_STEP } from '@/lib/money';
 import type { UseFormReturn } from 'react-hook-form';
 import { EntityForm } from '@/components/ui/entity-form';
 import { ContextualDocumentsSection } from '@/components/documents/contextual-documents-section';
 import { EntityPreviewDialog } from '@/components/ui/entity-preview-dialog';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { SelectionCard } from '@/components/ui/selection-card';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
 import { formatDefaultCompanyMoney } from '@/lib/companyFormatters';
+import { cn } from '@/lib/utils';
 import type { ServiceProviderCategory, ServiceProviderOption } from '@/features/service-providers/service-provider-service';
 import type { Maintenance } from '../maintenance-service';
-import type { MaintenanceResolveFormValues } from '../useMaintenancePageController';
+import type { MaintenanceAction, MaintenanceResolveFormValues } from '../useMaintenancePageController';
+import { maintenanceAttentionLabels, type MaintenanceAttention } from '../maintenance-attention';
 import {
   maintenancePriorityLabels,
   maintenancePriorityTone,
@@ -36,13 +40,39 @@ export type MaintenanceDetailsOverlayProps = Readonly<{
   request: Maintenance | null;
   providerOptions: ServiceProviderOption[];
   providerCategories: ServiceProviderCategory[];
+  /**
+   * Canonical operational attention for the selected request, supplied by the
+   * workspace controller. The overlay presents it — it never recomputes it.
+   */
+  attention?: MaintenanceAttention | null;
+  /**
+   * The first canonical status action this operator may run. `null` for
+   * terminal states, so no invalid step can be offered from the preview.
+   */
+  nextAction?: MaintenanceAction | null;
+  nextActionDisabled?: boolean;
+  /** Routes through the same canonical workflow the register row menu uses. */
+  onRunNextAction?: (action: MaintenanceAction) => void;
   onOpenChange: (open: boolean) => void;
 }>;
 
 /** Read-only details preview for a single maintenance request. */
-export function MaintenanceDetailsOverlay({ request, providerOptions, providerCategories, onOpenChange }: MaintenanceDetailsOverlayProps) {
+export function MaintenanceDetailsOverlay({
+  request,
+  providerOptions,
+  providerCategories,
+  attention,
+  nextAction,
+  nextActionDisabled = false,
+  onRunNextAction,
+  onOpenChange,
+}: MaintenanceDetailsOverlayProps) {
   const providerName = providerOptions.find((provider) => provider.id === request?.service_provider_id)?.name;
   const categoryName = providerCategories.find((category) => category.id === request?.service_provider_category_id)?.name;
+  const assignee = request?.assigned_to || request?.technician_name || null;
+  const attentionFlags = attention?.flags ?? [];
+  const ageDays = attention?.ageDays ?? null;
+  const hasAttention = attentionFlags.length > 0;
   return (
     <EntityPreviewDialog
       open={request != null}
@@ -52,6 +82,62 @@ export function MaintenanceDetailsOverlay({ request, providerOptions, providerCa
     >
       {request ? (
         <div className="space-y-4 text-sm">
+          {/*
+            Operational summary first: what state this request is really in,
+            how long it has been sitting, and the one action that moves it
+            forward. Everything below is supporting detail.
+          */}
+          <section
+            data-maintenance-detail-attention
+            aria-label="المتابعة التشغيلية للطلب"
+            className={cn(
+              'rounded-xl border p-3',
+              hasAttention ? 'border-warning/30 bg-warning-bg' : 'border-border/70 bg-muted/20',
+            )}
+          >
+            <p className="text-xs font-bold text-muted-foreground">المتابعة التشغيلية</p>
+            <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5">
+              {hasAttention ? (
+                attentionFlags.map((flag) => (
+                  <StatusBadge key={flag} tone={flag === 'awaiting_closure' ? 'info' : 'warning'}>
+                    {maintenanceAttentionLabels[flag]}
+                  </StatusBadge>
+                ))
+              ) : (
+                <span data-maintenance-detail-attention-clear className="text-xs font-medium text-muted-foreground">
+                  لا توجد متابعة مطلوبة على هذا الطلب.
+                </span>
+              )}
+              {ageDays !== null ? (
+                <span
+                  data-maintenance-detail-age
+                  className={cn(
+                    'text-xs font-semibold tabular-nums',
+                    attention?.isStalled ? 'text-warning-text' : 'text-muted-foreground',
+                  )}
+                >
+                  {ageDays === 0 ? 'مُبلّغ اليوم' : `منذ ${ageDays} يوم`}
+                </span>
+              ) : null}
+            </div>
+            {nextAction && onRunNextAction ? (
+              <div className="mt-2.5 border-t border-border/50 pt-2.5">
+                <p className="text-xs font-medium text-muted-foreground">الإجراء التالي</p>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="mt-1.5 w-full sm:w-auto"
+                  disabled={nextActionDisabled}
+                  data-maintenance-detail-next-action={nextAction.status}
+                  onClick={() => onRunNextAction(nextAction)}
+                >
+                  <PlayCircle className="me-1.5 size-4" aria-hidden="true" />
+                  {nextAction.label}
+                </Button>
+              </div>
+            ) : null}
+          </section>
+
           <dl className="grid grid-cols-1 gap-x-5 sm:grid-cols-2" data-maintenance-detail-fields>
             <div className="border-b border-border/60 py-3">
               <dt className="text-xs font-medium text-muted-foreground">الحالة</dt>
@@ -71,19 +157,24 @@ export function MaintenanceDetailsOverlay({ request, providerOptions, providerCa
               </dd>
             </div>
 
+            {/*
+              One assignment answer instead of two half-answers: the contracted
+              provider and the technician actually responsible read as a single
+              "who owns this work" cell.
+            */}
             <div className="border-b border-border/60 py-3">
-              <dt className="text-xs font-medium text-muted-foreground">الفني / المسؤول</dt>
-              <dd className="mt-1 font-medium">{request.assigned_to || request.technician_name || '—'}</dd>
+              <dt className="text-xs font-medium text-muted-foreground">الجهة المنفذة</dt>
+              <dd className="mt-1">
+                <span className="block font-medium">{providerName || (request.service_provider_id ? 'مزود مؤرشف أو غير متاح' : 'غير معين')}</span>
+                <span className="mt-0.5 block text-xs text-muted-foreground" data-maintenance-detail-assignee>
+                  الفني المسؤول: {assignee ?? 'غير محدد'}
+                </span>
+              </dd>
             </div>
 
             <div className="border-b border-border/60 py-3">
               <dt className="text-xs font-medium text-muted-foreground">نوع الخدمة</dt>
               <dd className="mt-1 font-medium">{categoryName || (request.service_provider_category_id ? 'نوع مؤرشف أو غير متاح' : '—')}</dd>
-            </div>
-
-            <div className="border-b border-border/60 py-3">
-              <dt className="text-xs font-medium text-muted-foreground">مزود الخدمة</dt>
-              <dd className="mt-1 font-medium">{providerName || (request.service_provider_id ? 'مزود مؤرشف أو غير متاح' : '—')}</dd>
             </div>
 
             <div className="border-b border-border/60 py-3">

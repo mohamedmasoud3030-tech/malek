@@ -17,4 +17,18 @@ describe('contract register display architecture', () => {
     expect(existsSync(resolve(import.meta.dirname, './ContractMobileCard.tsx'))).toBe(false);
     expect(table).not.toContain('ContractMobileCard');
   });
+
+it('exposes attention and next action through canonical column and mobile metadata config', () => {
+    expect(table).toContain('{ key: "attention", label: "المتابعة" }');
+    expect(table).toContain('{ key: "next_action", label: "الإجراء التالي" }');
+    expect(table).toContain('mobilePrimaryMetaKeys={["attention", "unit", "period"]}');
+    expect(table).toContain('mobileSecondaryMetaKeys={["rent_amount", "next_action"]}');
+  });
+
+  it('takes the next step from the canonical lifecycle rules, not a UI-local copy', () => {
+    expect(table).toContain('getContractNextAction');
+    expect(table).not.toContain('canRenewContract(contract)');
+    expect(table).not.toContain('canTerminateContract(contract)');
+    expect(table).not.toContain('isContractApprovalPending(contract)');
+  });
 });

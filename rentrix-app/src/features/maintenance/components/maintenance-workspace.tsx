@@ -1,5 +1,5 @@
 import { Clock3, PlusCircle, Printer, Wrench, type LucideIcon } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { RegisterAttention, RegisterMetricStrip } from '@/components/layout/register-summary';
 import type { ActiveFilterItem } from '@/components/ui/active-filter-bar';
@@ -29,7 +29,12 @@ import { defaultMaintenanceColumns, maintenanceColumnOptions, maintenancePriorit
 import { MaintenanceRequestForm } from './maintenance-request-form';
 import type { MaintenancePriorityFilter, MaintenanceStatusFilter } from '../maintenance-helpers';
 import { maintenanceAttentionLabels, type MaintenanceAttentionFilter, type MaintenanceAttentionFlag } from '../maintenance-attention';
-import { useMaintenancePageController } from '../useMaintenancePageController';
+import {
+  getMaintenanceStatusActionPermission,
+  getPrimaryMaintenanceAction,
+  useMaintenancePageController,
+  type MaintenanceAction,
+} from '../useMaintenancePageController';
 import { formatCount } from '@/lib/formatters';
 
 export type MaintenanceWorkspaceMode = 'standalone' | 'embedded';
@@ -158,6 +163,35 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
     }
 
     return actions;
+  };
+
+  const maintenanceActionsPending =
+    controller.updateStatusMutation.isPending || controller.resolveMutation.isPending;
+
+  /**
+   * The one next action for the request open in the details overlay, projected
+   * from the same canonical status-action matrix the register row menu uses and
+   * gated by the same permissions. Terminal states yield null, so the preview
+   * can never offer an invalid step.
+   */
+  const detailsNextAction = useMemo<MaintenanceAction | null>(() => {
+    const row = controller.detailsRequest;
+    if (!row) return null;
+    return getPrimaryMaintenanceAction(normalizeMaintenanceStatus(row.status), (status) =>
+      canAccess(getMaintenanceStatusActionPermission(status)),
+    );
+  }, [canAccess, controller.detailsRequest]);
+
+  /**
+   * Runs through `controller.handleStatusAction`, so every existing guard is
+   * preserved: closure still opens the cost/confirmation overlay and
+   * cancellation still requires a reason.
+   */
+  const runDetailsNextAction = (action: MaintenanceAction) => {
+    const row = controller.detailsRequest;
+    if (!row || controller.hasLoadError || maintenanceActionsPending) return;
+    controller.closeDetailsRequest();
+    controller.handleStatusAction(row, action.status);
   };
 
   const printAction = (
@@ -307,10 +341,7 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
           properties={controller.properties}
           allUnits={controller.allUnits}
           providerOptions={controller.providerOptions}
-          actionsPending={
-            controller.updateStatusMutation.isPending ||
-            controller.resolveMutation.isPending
-          }
+          actionsPending={maintenanceActionsPending}
           isLoading={controller.isLoading}
           error={controller.hasLoadError ? controller.loadError : undefined}
           onRetry={controller.retryMaintenanceWorkspace}
@@ -358,6 +389,10 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
 
       <MaintenanceDetailsOverlay
         request={controller.detailsRequest}
+        attention={controller.detailsAttention}
+        nextAction={detailsNextAction}
+        nextActionDisabled={maintenanceActionsPending || controller.hasLoadError}
+        onRunNextAction={detailsNextAction ? runDetailsNextAction : undefined}
         providerOptions={controller.providerOptions}
         providerCategories={controller.providerCategories}
         onOpenChange={(open) => {
