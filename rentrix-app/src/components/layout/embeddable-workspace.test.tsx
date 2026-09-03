@@ -86,8 +86,8 @@ describe('EmbeddableWorkspace — embedded mode', () => {
     expect(screen.getByText('محتوى مهم')).toBeTruthy();
   });
 
-  it('keeps page actions reachable instead of dropping them with the header', () => {
-    render(
+  it('keeps page actions reachable in the shared hub toolbar', () => {
+    const { container } = render(
       <EmbeddableWorkspace
         embedded
         title="عنوان"
@@ -100,16 +100,21 @@ describe('EmbeddableWorkspace — embedded mode', () => {
 
     expect(screen.getByRole('button', { name: 'إجراء رئيسي' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'إجراء ثانوي' })).toBeTruthy();
+    expect(container.querySelector('[data-embedded-workspace]')?.className).toContain('contents');
+    expect(container.querySelector('[data-embedded-workspace-actions]')?.className).toContain('row-start-1');
+    expect(container.querySelector('[data-embedded-workspace-actions]')?.className).toContain('col-start-2');
+    expect(container.querySelector('[data-embedded-workspace-content]')?.className).toContain('row-start-2');
+    expect(container.querySelector('[data-embedded-workspace-content]')?.className).toContain('col-span-full');
   });
 
-  it('omits the action rail entirely when a workspace has no actions', () => {
+  it('omits the shared action block when a workspace has no actions', () => {
     const { container } = render(
       <EmbeddableWorkspace embedded title="عنوان">
         <p>محتوى</p>
       </EmbeddableWorkspace>,
     );
 
-    expect(container.querySelector('[data-workspace-actions]')).toBeNull();
+    expect(container.querySelector('[data-embedded-workspace-actions]')).toBeNull();
   });
 });
 

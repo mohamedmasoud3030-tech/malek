@@ -48,9 +48,9 @@ export const financialReportKeys = {
 };
 
 /**
- * R6 — Reports Read Models: every hook accepts { enabled } so the workspace
- * fetches ONLY the open report (Open tab → fetch report), never the whole
- * catalog up-front. `enabled` composes with input-completeness gates.
+ * Reports read models: every hook accepts { enabled } so the workspace fetches
+ * only the open report, never the whole catalog up-front. `enabled` composes
+ * with input-completeness gates.
  */
 export type ReportQueryOptions = Readonly<{ enabled?: boolean }>;
 

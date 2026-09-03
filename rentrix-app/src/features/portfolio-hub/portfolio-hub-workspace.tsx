@@ -36,7 +36,7 @@ const sectionComponents: Record<PortfolioHubSectionId, ComponentType> = {
 
 function SectionFallback() {
   return (
-    <div className="space-y-3" role="status" aria-label="جارٍ تحميل قسم المحفظة">
+    <div className="col-span-full row-start-2 space-y-3" role="status" aria-label="جارٍ تحميل قسم المحفظة">
       <Skeleton className="h-24" />
       <Skeleton className="h-64" />
     </div>
@@ -95,9 +95,11 @@ export function PortfolioHubWorkspace({
     }
 
     return (
-      <>
+      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-end gap-x-2 gap-y-2.5 sm:gap-x-3 sm:gap-y-3">
         {isActiveSectionVisible ? (
-          <SectionTabs items={visibleSections} activeId={activeSection} onChange={handleSectionChange} ariaLabel="أقسام المحفظة" compactMobile />
+          <div className="col-start-1 row-start-1 min-w-0">
+            <SectionTabs items={visibleSections} activeId={activeSection} onChange={handleSectionChange} ariaLabel="أقسام المحفظة" compactMobile />
+          </div>
         ) : null}
         {portfolioHubSections
           .filter((section) => mountedSections.current.has(section.id) && accessibleSections.some((accessible) => accessible.id === section.id))
@@ -111,13 +113,14 @@ export function PortfolioHubWorkspace({
                 role="tabpanel"
                 aria-labelledby={section.showInPrimaryNavigation ? `section-tab-${section.id}` : undefined}
                 data-portfolio-section={section.id}
+                className={isActive ? 'contents' : undefined}
                 hidden={!isActive}
               >
                 <Suspense fallback={<SectionFallback />}><SectionBody /></Suspense>
               </div>
             );
           })}
-      </>
+      </div>
     );
   }, [hasNoAccessibleSections, isRequestedSectionForbidden, activeSection, accessibleSections, visibleSections, isActiveSectionVisible, handleSectionChange]);
 

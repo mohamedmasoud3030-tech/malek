@@ -768,7 +768,7 @@ function EntityTableImpl<T>({
                         key={column.key}
                         data-column-priority={column.resolvedPriority}
                         className={cn(
-                          'h-8 bg-transparent px-3 text-[11px] font-semibold tracking-normal text-muted-foreground/90 first:ps-4 last:pe-4',
+                          'h-8 bg-transparent px-3 text-[11px] font-semibold tracking-normal text-muted-foreground first:ps-4 last:pe-4',
                           priorityClass(column.resolvedPriority, column.sticky !== false),
                           column.className,
                         )}
