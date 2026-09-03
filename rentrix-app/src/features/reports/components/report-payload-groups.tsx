@@ -1,7 +1,6 @@
 /**
- * ReportPayloadGroups — renders a `ProfessionalReportGroup[]` (the same
- * structure `buildOwnerReportPayload` / `loadPremiumOwnerReportPayload`
- * hand to print/PDF) as in-app sections.
+ * ReportPayloadGroup — renders a `ProfessionalReportGroup` from the same
+ * canonical owner-report payload used by print/PDF.
  *
  * This is intentionally a pure presentation layer: it walks the payload's
  * kpis/table/chart/note blocks and renders them with existing app
@@ -140,16 +139,6 @@ export function ReportPayloadGroup({ group, className }: Readonly<{ group: Profe
     <div className={cn('space-y-2.5', className)}>
       {group.blocks.map((block, index) => (
         <ReportGroupBlock key={index} block={block} />
-      ))}
-    </div>
-  );
-}
-
-export function ReportPayloadGroups({ groups, className }: Readonly<{ groups: readonly ProfessionalReportGroup[]; className?: string }>) {
-  return (
-    <div className={cn('space-y-4', className)}>
-      {groups.map((group, index) => (
-        <ReportPayloadGroup key={index} group={group} />
       ))}
     </div>
   );
