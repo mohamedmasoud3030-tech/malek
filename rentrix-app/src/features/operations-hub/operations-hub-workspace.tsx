@@ -39,7 +39,7 @@ const sectionComponents: Record<OperationsHubSectionId, ComponentType> = {
 
 function SectionFallback() {
   return (
-    <div className="space-y-3" role="status" aria-label="جارٍ تحميل قسم الخدمات">
+    <div className="col-span-full row-start-2 space-y-3" role="status" aria-label="جارٍ تحميل قسم الخدمات">
       <Skeleton className="h-24" />
       <Skeleton className="h-64" />
     </div>
