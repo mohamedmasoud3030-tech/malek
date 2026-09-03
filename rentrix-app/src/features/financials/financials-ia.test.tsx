@@ -35,9 +35,9 @@ describe('/financials Money workspace IA', () => {
     expect(financePageSource).toContain('export function FinancePage');
   });
 
-  it('opens the Money root as an operational overview while preserving direct register journeys', () => {
+  it('keeps the operational overview implementation on canonical report sources without changing the task-first root', () => {
     expect(resolveFinanceLocation('', '', mockAuth([]))).toMatchObject({
-      resolvedSectionId: 'overview', resolvedViewId: 'overview',
+      resolvedSectionId: 'collections', resolvedViewId: 'invoices',
     });
     expect(financePageSource).toContain('FinanceOperationsOverview = lazy(');
     expect(financePageSource).toContain('<FinanceOperationsOverview />');
@@ -113,12 +113,10 @@ describe('Money view-level permissions', () => {
     expect(isViewPermitted(mockAuth(['financial.owner_settlements.view']), settlements)).toBe(true);
   });
 
-  it('keeps overview/invoices/receipts authenticated-only and arrears permissioned', () => {
-    const overview = FINANCE_VIEWS.find((view) => view.id === 'overview')!;
+  it('keeps invoices/receipts authenticated-only and arrears permissioned', () => {
     const invoices = FINANCE_VIEWS.find((view) => view.id === 'invoices')!;
     const receipts = FINANCE_VIEWS.find((view) => view.id === 'receipts')!;
     const arrears = FINANCE_VIEWS.find((view) => view.id === 'arrears')!;
-    expect(isViewPermitted(mockAuth([]), overview)).toBe(true);
     expect(isViewPermitted(mockAuth([]), invoices)).toBe(true);
     expect(isViewPermitted(mockAuth([]), receipts)).toBe(true);
     expect(isViewPermitted(mockAuth([]), arrears)).toBe(false);
