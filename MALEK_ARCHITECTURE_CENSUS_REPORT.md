@@ -307,7 +307,7 @@ Rows for page-level screens owned by a route. Multi-entity "hubs" with `section`
 | Contract creation/activation | Leasing | create & activate lease | contracts/ContractFormPage, contractSchema, contract-activation-authority | /contracts/new | route | contract service + activation RPCs | contracts.create/edit/approve | heavy | ACTIVE |
 | Contract schedule preview | Leasing | preview billing schedule | contracts/contract-schedule-preview | contract form | route | schedule RPC/calc | view | yes | ACTIVE |
 | Contract soft-delete/terminate | Leasing | end/delete contract | contracts actions/services; `soft-delete-contract-*`, `terminate_contract` RPC | contract dossier | route | RPCs | contracts.* | yes | ACTIVE |
-| Invoice generation/preview | Money | generate invoice | financials/invoices/invoice-actions, invoiceService, invoice-list-section | Money | shell | RPC (invoice generation) | financial.invoices.generate | heavy | ACTIVE; standalone /invoices page orphaned behind redirect |
+| Invoice generation/preview | Money | generate invoice | financials/invoices/invoice-actions, invoiceService, invoice-list-section | Money | shell | RPC (invoice generation) | financial.invoices.generate | heavy | ACTIVE; legacy standalone `/invoices` path redirects into the Money shell (workspace export still used by shell) |
 | Quick collect/payment | Money | collect a payment | financials/components/quick-payment-form, payments/paymentService | Money quickAdd=collect | shell | RPC payment | financial.payments.create | heavy | ACTIVE |
 | Receipt allocation/print | Money | allocate & print receipt | receipts/receiptService, receipt-print, receipt-detail-card | Money receipts | shell | RPC | payments.create/receipts.void | yes | ACTIVE |
 | Void receipt | Money | void receipt | receipt-actions | Money | shell | RPC | financial.receipts.void | yes | ACTIVE |
@@ -661,7 +661,7 @@ Route-guard inventory (from `route-tree.ts` `requirePermission` + `route-guards.
 
 ## 17. Settings & Governance Deep Census
 
-Settings surface is split: **(A) Governance Hub** (`features/governance-hub`) is the `/settings` page and owns section routing; **(B) Company settings registry** (`features/settings`) provides the "company" tab content; **(C) older standalone settings pages** remain (some mounted as tabs, some possibly orphaned).
+Settings surface is split: **(A) Governance Hub** (`features/governance-hub`) is the `/settings` page and owns section routing; **(B) Company settings registry** (`features/settings`) provides the "company" tab content; **(C) older standalone settings pages** remain as lazy-mount targets for the hub's sections (all confirmed active, not orphaned — see below).
 
 Governance hub sections (`governance-hub-sections.ts`) and their primary-nav visibility:
 
@@ -1020,12 +1020,12 @@ Counts are as-derived from the static tree; "Hidden/Partial/Duplicate/Legacy/Orp
 
 | Category | Total (approx) | Active | Hidden | Partial | Duplicate | Legacy | Orphaned | Dead cand. | Unknown |
 |---|---|---|---|---|---|---|---|---|---|
-| Routes (registered) | ~95 | ~55 | ~6 (DEV/specialist reachable) | 1 (`/receipts`) | — | 1 (`/landing` alias) | 0 | 0 | 0 |
-| Routes redirect-only | ~21 | 0 | 21 | — | — | 21 (compat) | 0 | 0 | 0 |
+| Routes (registered, `path:` defs in route-tree) | 67 | 46 | 6 (DEV/specialist reachable) | 1 (`/receipts` partial) | — | 0 | 0 | 0 | 0 |
+| Routes redirect-only (`REDIRECT_ROUTES`, legacy→workspace) | 20 (+1 `/receipts` partial already counted above = 21 list entries) | 0 | 20 | — | — | 20 (compat) | 0 | 0 | 0 |
 | Pages/screens (route-owned) | ~40 | ~33 | 3 | 1 | — | — | 0 | 0 | ~3 |
 | Features/capabilities | ~80+ | ~70 | ~8 | ~2 | ~5 | — | ~2 | 0 | ~2 |
 | Components (src/components) | ~98 (incl tests) | ~60 prod | ~6 | — | ~6 pairings | malik | 0 | 0 | ~2 |
-| Dialogs/preview surfaces | ~30 | ~26 | ~2 | 1 | 2 | — | 1 (receipt-detail) | 0 | 1 |
+| Dialogs/preview surfaces | ~30 | ~26 | ~2 | 1 | 2 (incl. two receipt-detail renderers) | — | 0 | 0 | 1 |
 | Forms | ~25 | ~22 | 2 | 1 | 1 (contract page+modal) | — | 0 | 0 | 1 |
 | Tables/lists/registers (foundation-bound) | ~30 bound | 30 | ~4 hidden | — | layers | — | 0 | 0 | 0 |
 | Hooks | ~60+ | ~55 | — | — | ~3 pairs | — | — | 0 | few |
