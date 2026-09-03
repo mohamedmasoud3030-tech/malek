@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowUpRight, Bot, ChevronDown, Loader2, Send, Sparkles } from 'lucide-react';
+import { AlertTriangle, ArrowUpRight, Bot, ChevronDown, Mic, Send, Sparkles, Square } from 'lucide-react';
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { PageLayout } from '@/components/layout/page-layout';
@@ -19,8 +19,10 @@ import {
   type AiAssistantResponsePresentation,
 } from './ai-assistant-response-model';
 import { deriveAiAssistantSurfaceContext } from './ai-assistant-surface-context';
+import { AssistantStreamingText } from './assistant-streaming-text';
 import { AssistantSpeechControl } from './speech/assistant-speech-control';
 import { useAssistantSpeech } from './speech/use-assistant-speech';
+import { useAssistantVoiceInput } from './speech/use-assistant-voice-input';
 
 type AssistantAction = {
   action: AiAssistantAction;
@@ -161,7 +163,11 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
   const [showMoreActions, setShowMoreActions] = useState(false);
   const [configurationMissing, setConfigurationMissing] = useState(!env.isConfigured);
   const assistant = useSmartAssistant();
-  const { autoSpeak, setAutoSpeak, speakCompletedMessage } = useAssistantSpeech();
+  const { autoSpeak, setAutoSpeak, speakCompletedMessage, stop: stopSpeech } = useAssistantSpeech();
+  // Live dictation lands straight into the compose box as the transcript forms.
+  const voiceInput = useAssistantVoiceInput({
+    onTranscript: (transcript) => setInput(transcript),
+  });
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const pending = assistant.isPending;
@@ -225,6 +231,16 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
     submitPrompt(input);
   }
 
+  function toggleVoiceInput() {
+    if (voiceInput.listening) {
+      voiceInput.stop();
+      return;
+    }
+    // Silence the assistant before opening the mic so it never hears itself.
+    stopSpeech();
+    voiceInput.start();
+  }
+
   const chatContent = (
     <div className={cn('flex h-full flex-col', embedded ? 'min-h-0' : 'min-h-[70dvh]')}>
       <div
@@ -284,7 +300,11 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
                         ) : null}
                       </div>
                     ) : null}
-                    <p className="whitespace-pre-wrap break-words">{message.content}</p>
+                    {isUser || isWelcome ? (
+                      <p className="whitespace-pre-wrap break-words">{message.content}</p>
+                    ) : (
+                      <AssistantStreamingText className="whitespace-pre-wrap break-words" content={message.content} />
+                    )}
                     {!isUser ? <AssistantSpeechControl messageId={message.id} content={message.content} /> : null}
 
                     {!isUser && message.presentation?.attention.length ? (
@@ -357,10 +377,11 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
                   <Bot className="size-4" />
                 </div>
                 <div className="rounded-2xl rounded-bl-md border border-border/60 bg-card px-3.5 py-2.5 text-[13px] leading-6 shadow-sm">
-                  <span className="inline-flex items-center gap-2 text-muted-foreground">
-                    <Loader2 className="size-3.5 animate-spin" />
-                    يكتب...
-                  </span>
+                  <AssistantStreamingText
+                    content=""
+                    isPending
+                    className="text-muted-foreground"
+                  />
                 </div>
               </div>
             </div>
@@ -427,6 +448,23 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
             )}
             rows={1}
           />
+          {voiceInput.supported ? (
+            <Button
+              type="button"
+              size="icon"
+              onClick={toggleVoiceInput}
+              disabled={configurationMissing}
+              className={cn(
+                'size-11 shrink-0 rounded-xl',
+                voiceInput.listening && 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
+              )}
+              aria-label={voiceInput.listening ? 'إيقاف التسجيل الصوتي' : 'التسجيل الصوتي'}
+              aria-pressed={voiceInput.listening}
+              title={voiceInput.listening ? 'إيقاف' : 'تحدث وسيُكتب ما تسمعه في الخانة'}
+            >
+              {voiceInput.listening ? <Square className="size-3.5 fill-current" /> : <Mic className="size-4" />}
+            </Button>
+          ) : null}
           <Button
             type="submit"
             size="icon"
@@ -437,6 +475,11 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
             <Send className="size-4" />
           </Button>
         </form>
+        {voiceInput.error ? (
+          <p role="alert" className="mt-1.5 px-1 text-[11px] leading-4 text-destructive">
+            {voiceInput.error}
+          </p>
+        ) : null}
         {!embedded ? (
           <p className="mt-1.5 px-1 text-[11px] leading-4 text-muted-foreground">
             قراءة وتحليل وتحضير مسودات فقط — أي اعتماد أو تسجيل نهائي يظل بيد المستخدم المخول.
