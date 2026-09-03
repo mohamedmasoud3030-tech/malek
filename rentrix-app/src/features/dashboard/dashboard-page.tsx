@@ -23,18 +23,11 @@ import { FinancialPerformanceSection } from './components/financial-performance-
 import { NeedsAttentionSection } from './components/needs-attention-section';
 import { OccupancySection } from './components/occupancy-section';
 import { CollectionsSection } from './components/collections-section';
-import { MaintenanceSection } from './components/maintenance-section';
-import { UpcomingContractsSection } from './components/upcoming-contracts-section';
-import { PropertyHealthSection } from './components/property-health-section';
-import { OwnerObligationsSection } from './components/owner-obligations-section';
-import { UtilityObligationsSection } from './components/utility-obligations-section';
 import { buildNeedsAttentionSignal } from './needs-attention-signal';
-import { buildMaintenanceDashboardSummary } from './maintenance-dashboard-summary';
-import { buildPropertyHealthRows } from './property-health-signal';
 import { buildMaintenanceFollowUpSignal } from './maintenance-follow-up-signal';
 import { useMaintenance } from '@/features/maintenance/use-maintenance';
 import { buildUtilityObligationsSignal } from './utility-obligations-signal';
-import { buildExpiringContracts, toDateInputValue } from './dashboard-utils';
+import { toDateInputValue } from './dashboard-utils';
 import { buildMonthlyCashflowChartRows, getFinancialPerformanceRange, type FinancialPerformanceWindow } from './financial-performance';
 
 const dashboardGroupAccent: Record<string, string> = {
@@ -43,10 +36,6 @@ const dashboardGroupAccent: Record<string, string> = {
   'needs-attention': 'bg-warning',
   occupancy: 'bg-info',
   collections: 'bg-success',
-  maintenance: 'bg-warning',
-  'upcoming-contracts': 'bg-primary',
-  'property-health': 'bg-info',
-  'owner-obligations': 'bg-success',
 };
 
 type DashboardGroupPriority = 'primary' | 'attention' | 'supporting';
@@ -95,15 +84,10 @@ const DashboardGroup = memo(function DashboardGroup({
 /**
  * MALEK Property Office Command Center.
  *
- * The page is deliberately owner-first: one semantic reading order is shared by
- * mobile, desktop and assistive technology. The first section answers what needs
- * a decision now; the remaining sections explain the office state without a
- * second navigation rail or hidden dashboard-only disclosure layer.
- *
- * Financial and operational truth remains server-authoritative through
- * rpt_dashboard_snapshot; the monthly cash series comes from the canonical
- * Reports cashflow service and the daily collection sparkline from
- * rpt_daily_collection.
+ * This surface is deliberately decision-first and compact. Detailed maintenance,
+ * contract-expiry, property-health, utility and owner-settlement registers live
+ * in their canonical workspaces and are represented here only when they require
+ * attention. The dashboard must not duplicate those full detail surfaces.
  */
 export function DashboardPage() {
   const { authorization } = useAuth();
@@ -146,11 +130,6 @@ export function DashboardPage() {
       hasInvoice: (snapshot?.billing.invoicesTotalCount ?? 0) > 0,
     }),
     [snapshot],
-  );
-
-  const expiringContracts = useMemo(
-    () => buildExpiringContracts(snapshot?.queues.expiringContracts),
-    [snapshot?.queues.expiringContracts],
   );
 
   const periodStart = toDateInputValue(new Date(now.getFullYear(), now.getMonth(), 1));
@@ -210,10 +189,6 @@ export function DashboardPage() {
     () => buildMaintenanceFollowUpSignal(maintenanceQuery.data, today, propertyTitleMap, unitNumberMap),
     [maintenanceQuery.data, today, propertyTitleMap, unitNumberMap],
   );
-  const maintenanceSummary = useMemo(
-    () => buildMaintenanceDashboardSummary(maintenanceQuery.data, today, snapshot?.maintenance.urgentOpen),
-    [maintenanceQuery.data, snapshot?.maintenance.urgentOpen, today],
-  );
 
   const attentionSourcesComplete = !(isError || isRefetchError)
     && !unitsQuery.isError
@@ -229,16 +204,6 @@ export function DashboardPage() {
       isComplete: attentionSourcesComplete,
     }),
     [snapshot, vacancyAnalytics, utilityObligations, maintenanceFollowUp, attentionSourcesComplete],
-  );
-
-  const propertyHealthRows = useMemo(
-    () => buildPropertyHealthRows({
-      units: unitsQuery.data,
-      vacantRows: vacancyAnalytics.vacantRows,
-      maintenance: maintenanceQuery.data,
-      propertyTitles: propertyTitleMap,
-    }),
-    [unitsQuery.data, vacancyAnalytics.vacantRows, maintenanceQuery.data, propertyTitleMap],
   );
 
   const hasDashboardError = isError || isRefetchError;
@@ -357,56 +322,6 @@ export function DashboardPage() {
               </div>
 
               <div className="min-w-0 xl:col-span-12">
-                <DashboardGroup eyebrow="خدمات" title="الصيانة والخدمات" ariaLabel="الصيانة والخدمات" sectionId="maintenance" showHeader={false}>
-                  <div className="grid min-w-0 gap-3 xl:grid-cols-12 xl:items-start">
-                    <div className="min-w-0 xl:col-span-7">
-                      <MaintenanceSection
-                        summary={maintenanceSummary}
-                        urgentRows={snapshot?.queues.urgentMaintenance ?? []}
-                        followUp={maintenanceFollowUp}
-                        isLoading={isLoading}
-                        isError={hasDashboardError && !snapshot}
-                        maintenanceIsLoading={maintenanceQuery.isLoading}
-                        maintenanceIsError={maintenanceQuery.isError && !maintenanceQuery.data}
-                      />
-                    </div>
-                    <div className="min-w-0 xl:col-span-5">
-                      <UtilityObligationsSection
-                        signal={utilityObligations}
-                        isLoading={utilityBillsQuery.isLoading}
-                        isError={utilityBillsQuery.isError && !utilityBillsQuery.data}
-                        settings={settings}
-                      />
-                    </div>
-                  </div>
-                </DashboardGroup>
-              </div>
-
-              <div className="min-w-0 xl:col-span-7">
-                <DashboardGroup eyebrow="عقود" title="العقود القادمة" ariaLabel="العقود القريبة من الانتهاء" sectionId="upcoming-contracts" showHeader={false}>
-                  <UpcomingContractsSection
-                    rows={expiringContracts}
-                    expiring30={snapshot?.contracts.expiring30}
-                    expiring60={snapshot?.contracts.expiring60}
-                    expiring90={snapshot?.contracts.expiring90}
-                    isLoading={isLoading}
-                    isError={hasDashboardError && !snapshot}
-                    settings={settings}
-                  />
-                </DashboardGroup>
-              </div>
-
-              <div className="min-w-0 xl:col-span-5">
-                <DashboardGroup eyebrow="المحفظة" title="صحة العقارات" ariaLabel="صحة العقارات" sectionId="property-health" showHeader={false}>
-                  <PropertyHealthSection
-                    rows={propertyHealthRows}
-                    isLoading={unitsQuery.isLoading || maintenanceQuery.isLoading}
-                    isError={(unitsQuery.isError && !unitsQuery.data) || (maintenanceQuery.isError && !maintenanceQuery.data)}
-                  />
-                </DashboardGroup>
-              </div>
-
-              <div className="min-w-0 xl:col-span-7">
                 <DashboardGroup eyebrow="الأداء المالي" title="أداء المكتب" ariaLabel="الأداء المالي" sectionId="financial-performance" priority="primary" showHeader={false}>
                   <FinancialPerformanceSection
                     snapshot={snapshot}
@@ -420,12 +335,6 @@ export function DashboardPage() {
                     chartIsError={cashflowQuery.isError && !cashflowQuery.data}
                     onChartRetry={retryCashflow}
                   />
-                </DashboardGroup>
-              </div>
-
-              <div className="min-w-0 xl:col-span-5" data-dashboard-closing-row>
-                <DashboardGroup eyebrow="ملاك" title="مستحقات الملاك" ariaLabel="مستحقات الملاك" sectionId="owner-obligations">
-                  <OwnerObligationsSection snapshot={snapshot} isLoading={isLoading} settings={settings} />
                 </DashboardGroup>
               </div>
             </div>
