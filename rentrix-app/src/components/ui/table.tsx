@@ -4,21 +4,19 @@ import { cn } from '@/lib/utils';
 import { Skeleton } from './skeleton';
 
 /**
- * Canonical MALEK table sizing.
+ * Canonical MALEK table sizing and visual presentation.
  *
- * One table primitive owns spacing, type scale, separators and overflow across
- * the product. Columns keep natural width so narrow viewports scroll cleanly
- * instead of crushing, wrapping or overlapping cell content.
- *
- * The header/row base ink is intentionally marked important: some legacy
- * route-scoped visual rules still exist for operational workspace chrome, but
- * no route is allowed to create a second table skin. Cards/Table remain two
- * presentation options; when Table is selected, every page uses this skin.
+ * One table primitive owns spacing, type scale, separators, base ink and
+ * overflow across the product. Columns keep natural width so narrow viewports
+ * scroll cleanly instead of crushing, wrapping or overlapping cell content.
+ * Register/page call sites may add geometry, but they must not create another
+ * table skin. Cards and Table remain two presentation options everywhere.
  */
 const tableVariants = cva(
   [
     'w-full min-w-max caption-bottom text-[12px] leading-4 tabular-nums',
     '[&_td+td]:border-s [&_td+td]:border-border/60 [&_th+th]:border-s [&_th+th]:border-border/70',
+    '[&_[data-column-priority=identity]]:font-bold',
     // Phone table mode is intentionally Excel-like: one compact row height,
     // narrow cell padding, and the whole row scrolls as one surface. Identity
     // and action columns must never pin to either edge on phones.
