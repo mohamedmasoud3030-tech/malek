@@ -195,4 +195,10 @@ export type AiAssistantResponse = {
   grounded: boolean;
   caveats: string[];
   source: 'deterministic' | 'model' | 'fallback';
+  /**
+   * `advisory` marks a general business-knowledge answer (market rates,
+   * rent estimation, management practice) that is NOT based on the
+   * company's own data. Absent or `data` = the normal grounded path.
+   */
+  kind?: 'data' | 'advisory';
 };

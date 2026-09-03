@@ -6,7 +6,17 @@ import {
   isHighRiskInstruction,
   validateAssistantRequest,
 } from "../../../../../supabase/functions/_shared/ai-safety";
-import { validateAssistantOutput } from "../../../../../supabase/functions/_shared/ai-contract";
+import {
+  AI_KB_VERSION,
+  BUSINESS_KB_MAX_CHARS,
+  BUSINESS_KB_SOURCES,
+  BUSINESS_KB_TEXT,
+} from "../../../../../supabase/functions/_shared/ai-business-kb";
+import {
+  PLANNING_INTENTS,
+  validateAssistantOutput,
+  validateAssistantPlanning,
+} from "../../../../../supabase/functions/_shared/ai-contract";
 
 const requestId = "018f4f36-7c7a-7c2a-8b1d-2c3d4e5f6071";
 const context = {
@@ -178,5 +188,37 @@ describe("AI assistant evaluation set", () => {
       history: [],
     });
     expect(result.ok).toBe(false);
+  });
+
+  it("validates planning intents against the closed action union plus advisory", () => {
+    expect(validateAssistantPlanning({ intent: "freeform" })).toEqual({ intent: "freeform" });
+    expect(validateAssistantPlanning({ intent: "summarize_overdue_invoices" })).toEqual({
+      intent: "summarize_overdue_invoices",
+    });
+    expect(validateAssistantPlanning({ intent: "advisory" })).toEqual({ intent: "advisory" });
+    // Unknown or free-text intents must fail closed.
+    expect(validateAssistantPlanning({ intent: "delete_company" })).toBeNull();
+    expect(validateAssistantPlanning({ intent: "SELECT * FROM users" })).toBeNull();
+    expect(validateAssistantPlanning({})).toBeNull();
+    expect(validateAssistantPlanning(null)).toBeNull();
+  });
+
+  it("keeps the business knowledge base versioned, bounded and fully cited", () => {
+    expect(AI_KB_VERSION).toMatch(/^malek-biz-om-v\d+$/);
+    // The KB must always fit the prompt window with headroom.
+    expect(BUSINESS_KB_TEXT.length).toBeGreaterThan(500);
+    expect(BUSINESS_KB_TEXT.length).toBeLessThanOrEqual(BUSINESS_KB_MAX_CHARS);
+    // Every entry is an https source with an access date.
+    expect(BUSINESS_KB_SOURCES.length).toBeGreaterThanOrEqual(3);
+    for (const source of BUSINESS_KB_SOURCES) {
+      expect(source.url).toMatch(/^https:\/\//);
+      expect(source.accessed).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      expect(source.name.length).toBeGreaterThan(0);
+    }
+    // The KB carries the mandatory advisory disclaimer.
+    expect(BUSINESS_KB_TEXT).toContain("تقديرات إرشادية");
+    // The closed planning union includes advisory alongside the real actions.
+    expect(PLANNING_INTENTS).toContain("advisory");
+    expect(PLANNING_INTENTS).toContain("freeform");
   });
 });

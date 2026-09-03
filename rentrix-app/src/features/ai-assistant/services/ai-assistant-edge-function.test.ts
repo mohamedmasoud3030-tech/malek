@@ -59,13 +59,55 @@ describe("AI assistant edge function", () => {
     expect(content).toContain("قراءة فقط");
   });
 
-  it("does not retry paid provider calls and returns a deterministic fallback", () => {
+  it("never retries paid provider calls: one answer call, one planning call, deterministic fallback", () => {
     const content = edge();
+    // Exactly one paid ANSWER call site (advisory and data share it) and
+    // exactly one tiny PLANNING call site — no retry loops around either.
     expect(content.match(/adapter\.generate\(/g)).toHaveLength(1);
-    expect(content).toContain("fallbackResponse(assistantRequest)");
+    expect(content.match(/adapter\.classify\(/g)).toHaveLength(1);
+    expect(content).toContain("fallbackResponse(effectiveRequest)");
     expect(content).toMatch(
-      /successResponse\(fallbackResponse\(assistantRequest\), ["']fallback["']/,
+      /successResponse\(fallbackResponse\(effectiveRequest\), ["']fallback["']/,
     );
+    // A planning failure degrades to the classic full-answer path.
+    const planner = content.slice(
+      content.indexOf("async function planFreeformIntent"),
+      content.indexOf("Deno.serve"),
+    );
+    expect(planner).toContain("catch {");
+    expect(planner).toContain("return null;");
+  });
+
+  it("classifies freeform prompts with the model and reuses the deterministic path for resolved actions", () => {
+    const content = edge();
+    expect(content).toContain("planFreeformIntent");
+    expect(content).toContain('if (effectiveRequest.action === "freeform")');
+    // A model-resolved closed action answers deterministically and reports it.
+    expect(content).toContain("deterministicResponse(effectiveRequest)");
+    expect(content).toContain("resolvedAction: planned");
+  });
+
+  it("answers advisory questions from the versioned KB without injecting user context", () => {
+    const content = edge();
+    expect(content).toContain("buildAdvisoryMessages");
+    expect(content).toContain('let kind: "data" | "advisory" = "data"');
+    // The KB is injected verbatim with its version reference, inside a labelled block.
+    expect(content).toContain('<knowledge_base version="${AI_KB_VERSION}">');
+    expect(content).toContain("AI_KB_VERSION");
+    expect(content).toContain("BUSINESS_KB_TEXT");
+    // The advisory envelope carries no user data sections.
+    expect(content).toContain('{ mode: "advisory" }');
+    // Every response path carries its kind in meta.
+    expect(content).toContain('kind: "data"');
+    expect(content).toMatch(/successResponse\(result\.output, ["']model["'], \{ kind, resolvedAction/);
+  });
+
+  it("carries a consistent persona: operating partner, direct next step, relevance-gated market comparison", () => {
+    const content = edge();
+    expect(content).toContain("الشريك التشغيلي اليومي");
+    expect(content).toContain("اختم دائماً بخطوة عملية قصيرة");
+    // Market comparisons are gated to directly relevant figures.
+    expect(content).toContain("مقارنة السوق: فقط إذا كان رقم من بيانات المستخدم يقارن مباشرة بمؤشر معروف");
   });
 
   it("allowlists HTTPS provider hosts and requires an explicit model and secret", () => {

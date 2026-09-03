@@ -3,8 +3,9 @@ export type JsonObject = Record<string, unknown>;
 export type ChatRole = "system" | "user" | "assistant";
 export type ChatMessage = { role: ChatRole; content: string };
 
-export const AI_PROMPT_VERSION = "malek-ops-ar-v3";
+export const AI_PROMPT_VERSION = "malek-ops-ar-v4";
 export const AI_OUTPUT_SCHEMA_VERSION = "assistant-response-v1";
+export const AI_PLANNING_SCHEMA_VERSION = "assistant-planning-v1";
 export const AI_ACTIONS = [
   "freeform",
   "summarize_overdue_invoices",
@@ -28,6 +29,19 @@ export const AI_ACTIONS = [
   "draft_internal_note",
 ] as const;
 export type AiAction = (typeof AI_ACTIONS)[number];
+
+/**
+ * Planning intents: the closed action union plus `advisory` — a general
+ * property-business question (market rates, rent estimation, management
+ * practice) answered from the versioned business knowledge base instead of
+ * the user's own data.
+ */
+export const PLANNING_INTENTS = [...AI_ACTIONS, "advisory"] as const;
+export type PlanningIntent = (typeof PLANNING_INTENTS)[number];
+
+export type AssistantPlanning = {
+  intent: PlanningIntent;
+};
 
 export type ValidatedAssistantRequest = {
   requestId: string;
@@ -54,6 +68,12 @@ export type ProviderResult = {
   usage: ProviderUsage;
 };
 
+export type ProviderClassificationResult = {
+  output: AssistantPlanning;
+  durationMs: number;
+  usage: ProviderUsage;
+};
+
 export type ProviderRequest = {
   model: string;
   messages: ChatMessage[];
@@ -61,9 +81,16 @@ export type ProviderRequest = {
   timeoutMs: number;
 };
 
+/**
+ * One narrow adapter boundary: every provider call returns strict
+ * JSON-schema output that is validated against its contract before it is
+ * trusted. `generate` answers (response schema); `classify` runs the tiny
+ * freeform planning call (planning schema).
+ */
 export interface AiProviderAdapter {
   readonly provider: string;
   generate(request: ProviderRequest): Promise<ProviderResult>;
+  classify(request: ProviderRequest): Promise<ProviderClassificationResult>;
 }
 
 export function isRecord(value: unknown): value is JsonObject {
@@ -98,4 +125,15 @@ export function validateAssistantOutput(
     if (caveats.length > 5) return null;
   }
   return { answer, grounded: value.grounded, caveats };
+}
+
+const planningIntents = new Set<string>(PLANNING_INTENTS);
+
+export function validateAssistantPlanning(
+  value: unknown,
+): AssistantPlanning | null {
+  if (!isRecord(value)) return null;
+  const intent = typeof value.intent === "string" ? value.intent.trim() : "";
+  if (!planningIntents.has(intent)) return null;
+  return { intent: intent as PlanningIntent };
 }

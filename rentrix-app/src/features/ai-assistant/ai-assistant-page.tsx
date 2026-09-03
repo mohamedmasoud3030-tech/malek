@@ -109,7 +109,7 @@ function readSurfaceContext(): AiAssistantSurfaceContext {
 const initialMessage: AssistantUiMessage = {
   id: 'assistant-welcome',
   role: 'assistant',
-  content: `مرحباً! أنا مساعد ${APP_BRAND_NAME} الذكي.\nاسألني: إيه المهم دلوقتي؟ اشرح السجل ده، أروح فين، أو حضّر لي الخطوة الجاية للمراجعة.`,
+  content: `مرحباً! أنا مساعد ${APP_BRAND_NAME} الذكي — شريكك التشغيلي اليومي.\nاسألني عن وضعك: إيه المهم دلوقتي؟ اشرح السجل ده أو حضّر الخطوة الجاية للمراجعة.\nأو عن السوق: تقدير إيجار، نسبة إدارة مقترحة، وأفضل الممارسات — كتقديرات إرشادية موثقة.`,
   createdAt: new Date().toISOString(),
 };
 

@@ -5,7 +5,7 @@ import type {
   AiAssistantSurfaceContext,
 } from './types';
 
-export type AiAssistantResponseMode = 'brief' | 'explanation' | 'draft' | 'analysis';
+export type AiAssistantResponseMode = 'brief' | 'explanation' | 'draft' | 'analysis' | 'advisory';
 export type AiAssistantAttentionTone = 'critical' | 'warning' | 'info';
 
 export type AiAssistantAttentionItem = Readonly<{
@@ -46,7 +46,8 @@ function daysBetween(from: string, to: string): number | null {
   return Math.round((right - left) / 86_400_000);
 }
 
-function responseMode(action?: AiAssistantAction): AiAssistantResponseMode {
+function responseMode(kind: AiAssistantResponse['kind'], action?: AiAssistantAction): AiAssistantResponseMode {
+  if (kind === 'advisory') return 'advisory';
   if (action && DRAFT_ACTIONS.has(action)) return 'draft';
   if (action === 'generate_daily_brief' || action === 'prioritize_office_actions_top5') return 'brief';
   if (action === 'explain_current_surface' || action === 'explain_property_financial_snapshot') return 'explanation';
@@ -58,6 +59,7 @@ function modeLabel(mode: AiAssistantResponseMode): string {
     case 'brief': return 'ملخص تشغيلي';
     case 'explanation': return 'شرح السياق';
     case 'draft': return 'مسودة للمراجعة';
+    case 'advisory': return 'نصيحة إرشادية';
     default: return 'تحليل تشغيلي';
   }
 }
@@ -166,12 +168,23 @@ export function buildAiAssistantResponsePresentation(
   action?: AiAssistantAction,
   surface?: AiAssistantSurfaceContext,
 ): AiAssistantResponsePresentation {
-  const mode = responseMode(action);
+  const mode = responseMode(response.kind, action);
+  const advisory = mode === 'advisory';
   return {
     mode,
     modeLabel: modeLabel(mode),
-    contextLabel: contextualLabel(response.context, surface),
-    attention: mode === 'draft' ? [] : buildAttention(response.context),
-    suggestedActions: buildSuggestedActions(response.context, action, surface),
+    // Advisory replies are about the market, not about the open entity.
+    contextLabel: advisory ? null : contextualLabel(response.context, surface),
+    attention: mode === 'draft' || advisory ? [] : buildAttention(response.context),
+    suggestedActions: advisory
+      ? [
+          // Pull the owner back from market talk to their own numbers.
+          {
+            action: 'generate_daily_brief',
+            title: 'شوف الوضع الحالي',
+            prompt: 'إيه المهم دلوقتي؟',
+          },
+        ]
+      : buildSuggestedActions(response.context, action, surface),
   };
 }

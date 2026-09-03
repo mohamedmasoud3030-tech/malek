@@ -1,11 +1,16 @@
 import {
   AI_OUTPUT_SCHEMA_VERSION,
+  AI_PLANNING_SCHEMA_VERSION,
+  PLANNING_INTENTS,
   type AiProviderAdapter,
   type JsonObject,
+  type ProviderClassificationResult,
   type ProviderRequest,
   type ProviderResult,
+  type ProviderUsage,
   isRecord,
   validateAssistantOutput,
+  validateAssistantPlanning,
 } from "./ai-contract.ts";
 
 export class ProviderAdapterError extends Error {
@@ -33,10 +38,7 @@ async function fetchWithTimeout(
   }
 }
 
-function readUsage(value: JsonObject): {
-  inputTokens?: number;
-  outputTokens?: number;
-} {
+function readUsage(value: JsonObject): ProviderUsage {
   if (!isRecord(value.usage)) return {};
   return {
     inputTokens:
@@ -84,6 +86,38 @@ function readSafeProviderError(value: unknown): {
   };
 }
 
+type StrictSchema = Readonly<{ name: string; schema: JsonObject }>;
+
+const ANSWER_SCHEMA: StrictSchema = {
+  name: AI_OUTPUT_SCHEMA_VERSION,
+  schema: {
+    type: "object",
+    additionalProperties: false,
+    required: ["answer", "grounded", "caveats"],
+    properties: {
+      answer: { type: "string", minLength: 1, maxLength: 6000 },
+      grounded: { type: "boolean" },
+      caveats: {
+        type: "array",
+        maxItems: 5,
+        items: { type: "string", maxLength: 500 },
+      },
+    },
+  },
+};
+
+const PLANNING_SCHEMA: StrictSchema = {
+  name: AI_PLANNING_SCHEMA_VERSION,
+  schema: {
+    type: "object",
+    additionalProperties: false,
+    required: ["intent"],
+    properties: {
+      intent: { type: "string", enum: [...PLANNING_INTENTS] },
+    },
+  },
+};
+
 export class OpenAiCompatibleAdapter implements AiProviderAdapter {
   readonly provider = "openai-compatible";
 
@@ -92,8 +126,55 @@ export class OpenAiCompatibleAdapter implements AiProviderAdapter {
     private readonly apiKey: string,
   ) {}
 
+  /** Answers a request and validates the response contract. */
   async generate(request: ProviderRequest): Promise<ProviderResult> {
     const startedAt = Date.now();
+    const { content, usage } = await this.completeJson(request, ANSWER_SCHEMA);
+    const output = validateAssistantOutput(JSON.parse(content));
+    if (!output) {
+      throw new ProviderAdapterError(
+        "MALFORMED_OUTPUT",
+        "AI provider output failed schema validation.",
+      );
+    }
+    return {
+      output,
+      durationMs: Date.now() - startedAt,
+      usage,
+    };
+  }
+
+  /**
+   * Tiny planning call: classifies a freeform prompt into the closed intent
+   * union. Same strict JSON-schema transport as answers — provider-agnostic.
+   */
+  async classify(
+    request: ProviderRequest,
+  ): Promise<ProviderClassificationResult> {
+    const startedAt = Date.now();
+    const { content, usage } = await this.completeJson(request, PLANNING_SCHEMA);
+    const output = validateAssistantPlanning(JSON.parse(content));
+    if (!output) {
+      throw new ProviderAdapterError(
+        "MALFORMED_OUTPUT",
+        "AI provider planning output failed schema validation.",
+      );
+    }
+    return {
+      output,
+      durationMs: Date.now() - startedAt,
+      usage,
+    };
+  }
+
+  /**
+   * Shared strict-JSON transport for both provider call kinds. Never retries:
+   * a failed paid call must surface to the caller, which owns the fallback.
+   */
+  private async completeJson(
+    request: ProviderRequest,
+    schema: StrictSchema,
+  ): Promise<{ content: string; usage: ProviderUsage }> {
     let response: Response;
     try {
       response = await fetchWithTimeout(
@@ -111,22 +192,9 @@ export class OpenAiCompatibleAdapter implements AiProviderAdapter {
             response_format: {
               type: "json_schema",
               json_schema: {
-                name: AI_OUTPUT_SCHEMA_VERSION,
+                name: schema.name,
                 strict: true,
-                schema: {
-                  type: "object",
-                  additionalProperties: false,
-                  required: ["answer", "grounded", "caveats"],
-                  properties: {
-                    answer: { type: "string", minLength: 1, maxLength: 6000 },
-                    grounded: { type: "boolean" },
-                    caveats: {
-                      type: "array",
-                      maxItems: 5,
-                      items: { type: "string", maxLength: 500 },
-                    },
-                  },
-                },
+                schema: schema.schema,
               },
             },
           }),
@@ -162,27 +230,6 @@ export class OpenAiCompatibleAdapter implements AiProviderAdapter {
         "AI provider returned a malformed envelope.",
       );
 
-    const content = readContent(body);
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(content);
-    } catch {
-      throw new ProviderAdapterError(
-        "MALFORMED_OUTPUT",
-        "AI provider did not return valid JSON.",
-      );
-    }
-    const output = validateAssistantOutput(parsed);
-    if (!output)
-      throw new ProviderAdapterError(
-        "MALFORMED_OUTPUT",
-        "AI provider output failed schema validation.",
-      );
-
-    return {
-      output,
-      durationMs: Date.now() - startedAt,
-      usage: readUsage(body),
-    };
+    return { content: readContent(body), usage: readUsage(body) };
   }
 }
