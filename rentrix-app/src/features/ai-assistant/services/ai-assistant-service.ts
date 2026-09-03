@@ -228,7 +228,7 @@ async function fetchContractNameMap(contractIds: readonly string[]): Promise<Map
     for (const chunk of chunkForInFilter(uniqueIds)) {
       const { data, error } = await supabase
         .from('contracts')
-        .select('id, property_id, tenant_id, people:tenant_id(full_name), properties:property_id(title, name)')
+        .select('id, property_id, tenant_id, people:people!contracts_tenant_id_fkey(full_name), properties:properties!contracts_property_id_fkey(title, name)')
         .in('id', chunk)
         .returns<ContractNameRow[]>();
       if (error || !Array.isArray(data)) return map;
@@ -437,7 +437,7 @@ async function loadEntityContext(
     if (entityType === 'contract') {
       const { data, error } = await supabase
         .from('contracts')
-        .select('id, status, rent_amount, start_date, end_date, tenant_id, property_id, unit_id, people:tenant_id(full_name), properties:property_id(title, name), units:unit_id(name, unit_number)')
+        .select('id, status, rent_amount, start_date, end_date, tenant_id, property_id, unit_id, people:people!contracts_tenant_id_fkey(full_name), properties:properties!contracts_property_id_fkey(title, name), units:units!contracts_unit_id_fkey(name, unit_number)')
         .eq('id', entityId)
         .is('deleted_at', null)
         .limit(1)
