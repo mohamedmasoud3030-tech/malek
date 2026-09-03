@@ -15,9 +15,9 @@ describe('owner statement in-app vertical slice contract', () => {
     expect(panel).not.toContain('const settlementMovement =');
   });
 
-  it('keeps the long daily ledger in EntityTable while rendering the remaining canonical groups', () => {
+  it('keeps the long daily ledger in EntityTable while preserving canonical group order', () => {
     expect(panel).toContain('aria-label="حركات كشف حساب المالك"');
-    expect(panel).toContain("block.kind === 'kpis'");
+    expect(panel).toContain('const [summaryGroup, ...remainingGroups] = fullStatement?.groups ?? []');
     expect(panel).toContain("block.table.title === 'الحركة المالية اليومية التفصيلية'");
     expect(panel).toContain('supplementalGroups.map');
   });
