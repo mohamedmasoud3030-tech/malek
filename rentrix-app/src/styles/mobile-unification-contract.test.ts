@@ -25,6 +25,7 @@ describe('mobile UI unification contract', () => {
     const sectionTabs = read('src/components/ui/section-tabs.tsx');
 
     expect(pageHeader).toContain('document chrome');
+    expect(pageHeader).toContain('data-page-header-primary-row');
     expect(filterBar).toContain('quiet edge-to-edge strip');
     expect(sectionTabs).toContain('quiet underline');
     expect(mobileCss).toContain('html [data-malek-surface] [data-page-header]');
@@ -34,12 +35,14 @@ describe('mobile UI unification contract', () => {
     expect(mobileCss).toContain('box-shadow: none;');
   });
 
-  it('keeps EntityTable registers on the same two-column phone density as shared card grids', () => {
+  it('keeps EntityTable registers two-column on phones without nesting another facts grid inside each card', () => {
     const mobileCss = read('src/styles/mobile-unification.css');
     const responsiveGrid = read('src/components/ui/responsive-card-grid.tsx');
 
     expect(mobileCss).toContain('[data-entity-table-mobile-list]');
     expect(mobileCss).toContain('grid-template-columns: repeat(2, minmax(0, 1fr));');
+    expect(mobileCss).toContain('[data-entity-table-mobile-list] [data-entity-table-mobile-summary]');
+    expect(mobileCss).toContain('grid-template-columns: minmax(0, 1fr);');
     expect(responsiveGrid).toContain("'grid min-w-0 grid-cols-2'");
   });
 
