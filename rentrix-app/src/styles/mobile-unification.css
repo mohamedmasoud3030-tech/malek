@@ -44,6 +44,23 @@
     box-shadow: none;
   }
 
+  /* SectionTabs is one underline rail everywhere. Operational visual paint had
+     turned the same primitive into a segmented pill only in some workspaces. */
+  html [data-operational-route='true'] [data-malek-surface] [role='tablist'] {
+    gap: 0.125rem;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  html [data-operational-route='true'] [data-malek-surface] [role='tab'],
+  html [data-operational-route='true'] [data-malek-surface] [role='tab'][aria-selected='true'] {
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
   /* The Cards/Table switch stays beside search and filter, but text labels on
      a 320–390px phone consume too much of the search row. Keep the accessible
      group/name and icon state while making the visual control compact. */
@@ -83,6 +100,11 @@
   [data-entity-table-mobile-list] [data-entity-card] {
     min-width: 0;
     padding: 0.625rem;
+    box-shadow: none;
+  }
+
+  html [data-malek-surface] [data-entity-table-mobile-list] [data-entity-card]:hover:not(:active) {
+    border-color: hsl(var(--border));
     box-shadow: none;
   }
 
