@@ -3,8 +3,8 @@ import { Download, HandCoins, Printer } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { DataTableColumnsMenu } from '@/components/ui/data-table';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
+import { toDateOnlyISO } from '@/lib/formatters';
 import { getSafeRemainingAmount } from '../financialMath';
-import { getTodayLocalDateString } from '../financials-date-utils';
 import { isInvoiceCollectible } from '../invoices/quick-collect';
 import {
   getInvoiceGrossAmount,
@@ -139,7 +139,7 @@ export function InvoiceListSection({
   onPageChange,
 }: InvoiceListSectionProps) {
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultInvoiceColumns]);
-  const today = getTodayLocalDateString();
+  const today = toDateOnlyISO(new Date());
 
   const invoiceColumns = useMemo((): ColumnDef<InvoiceListItem>[] => [
     {
