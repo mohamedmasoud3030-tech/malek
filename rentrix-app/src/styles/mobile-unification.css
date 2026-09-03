@@ -1,0 +1,134 @@
+/* MALEK mobile unification contract.
+ *
+ * This layer exists only to reconcile mobile-only structural drift between
+ * canonical shared primitives and older feature wrappers. It must remain
+ * presentation/geometry-only: no business state, data semantics, or desktop
+ * layout ownership belongs here.
+ *
+ * Import order: after ux-foundation.css and before the remaining visual layers.
+ * Selectors that reconcile later visual-layer rules intentionally carry one
+ * extra element selector so canonical phone geometry wins without !important.
+ */
+
+@media (max-width: 639px) {
+  /* PageHeader's component contract is quiet document chrome. A later visual
+     rule had re-promoted it into a padded card with gradient, border and
+     shadow. Restore the intended phone hierarchy while keeping the component's
+     own inner hairline/title/action composition. */
+  html [data-malek-surface] [data-page-header],
+  html[data-theme] [data-malek-surface] [data-page-header] {
+    overflow: visible;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  html [data-malek-surface] [data-page-header]::before,
+  html[data-theme] [data-malek-surface] [data-page-header]::before {
+    display: none;
+  }
+
+  /* FilterBar is the single canonical search/filter toolbar and already owns
+     its border-y rhythm. Later generic/operational paint rules turned it back
+     into a separate card. On phones keep search + view + filter as one quiet
+     edge-to-edge control row in every workspace. */
+  html [data-malek-surface] [data-filter-bar],
+  html[data-theme] [data-malek-surface] [data-filter-bar],
+  html [data-operational-route='true'] [data-malek-surface] [data-filter-bar] {
+    padding-inline: 0;
+    border-inline: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  /* The Cards/Table switch stays beside search and filter, but text labels on
+     a 320–390px phone consume too much of the search row. Keep the accessible
+     group/name and icon state while making the visual control compact. */
+  [data-entity-table-view-toggle] {
+    min-height: 44px;
+    padding: 0;
+    border-radius: 0.75rem;
+    box-shadow: none;
+  }
+
+  [data-entity-table-view-toggle] button {
+    min-width: 44px;
+    min-height: 44px;
+    gap: 0;
+    padding-inline: 0.625rem;
+    font-size: 0;
+  }
+
+  [data-entity-table-view-toggle] button svg {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  /* Register cards follow the same 2-column phone rhythm as
+     ResponsiveCardGrid. The previous EntityTable-only 1-column fallback made
+     equivalent registers look like different products. */
+  [data-entity-table-mobile-list],
+  [data-entity-table-mobile-skeleton] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.625rem;
+  }
+
+  /* Two-column cards must stay scan-first. Keep the primary facts, remove the
+     duplicated secondary detail that remains available in preview/detail, and
+     let actions wrap rather than squeeze below 44px targets. */
+  html [data-malek-surface] [data-entity-table-mobile-list] [data-entity-card],
+  [data-entity-table-mobile-list] [data-entity-card] {
+    min-width: 0;
+    padding: 0.625rem;
+    box-shadow: none;
+  }
+
+  [data-entity-table-mobile-list] [data-entity-table-mobile-secondary-meta] {
+    display: none;
+  }
+
+  [data-entity-table-mobile-list] [data-entity-card] > [role='presentation'] {
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+  }
+
+  [data-entity-table-mobile-list] [data-entity-card] > [role='presentation'] > :first-child {
+    flex: 1 1 100%;
+  }
+
+  [data-entity-table-mobile-list] [data-entity-card] > [role='presentation'] button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Finance still carries one legacy feature wrapper around the canonical
+     FilterBar. Neutralize only that wrapper on phones so invoices/receipts/
+     expenses share the same quiet search-filter surface as core registers. */
+  [data-finance-filter-bar] {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  /* Maintenance attention is already a first-class filter in the shared
+     FilterBar sheet. The old quick-chip row duplicated that control and used a
+     smaller interaction rhythm, so phones keep the single canonical path. */
+  [data-maintenance-attention-chip] {
+    display: none;
+  }
+
+  /* Embedded and standalone registers keep one compact action geometry. */
+  [data-embedded-workspace-actions],
+  [data-page-actions],
+  [data-register-toolbar] {
+    min-width: 0;
+    max-width: 100%;
+  }
+}
