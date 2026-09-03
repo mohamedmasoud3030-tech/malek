@@ -2,7 +2,6 @@ import { useQuery } from '@tanstack/react-query';
 import {
   getAgedReceivablesReport,
   getArrearsSummaryReport,
-  getCashFlowStatementReport,
   getCollectionSummaryReport,
   getDailyCollectionReport,
   getExpenseBreakdownReport,
@@ -35,7 +34,6 @@ export const financialReportKeys = {
   propertyCollectionBreakdown: (filters: FinancialReportFilters) => [...financialReportKeys.all, 'propertyCollectionBreakdown', filters] as const,
   financialPeriodSummary: (filters: FinancialReportFilters) => [...financialReportKeys.all, 'financialPeriodSummary', filters] as const,
   financialCashflow: (filters: FinancialReportFilters) => [...financialReportKeys.all, 'financialCashflow', filters] as const,
-  cashFlowStatement: (filters: Pick<FinancialReportFilters, 'dateFrom' | 'dateTo'>) => [...financialReportKeys.all, 'cashFlowStatement', filters] as const,
   vatReturn: (filters: Pick<FinancialReportFilters, 'dateFrom' | 'dateTo'>) => [...financialReportKeys.all, 'vatReturn', filters] as const,
   invoiceTotals: (filters: FinancialReportFilters) => [...financialReportKeys.all, 'invoiceTotals', filters] as const,
   paymentTotals: (filters: FinancialReportFilters) => [...financialReportKeys.all, 'paymentTotals', filters] as const,
@@ -100,14 +98,6 @@ export function useFinancialCashflowReport(filters: FinancialReportFilters, opti
   return useQuery({
     queryKey: financialReportKeys.financialCashflow(filters),
     queryFn: () => getFinancialCashflowReport(filters),
-    enabled: (options.enabled ?? true) && (hasRequiredDateRange(filters)),
-  });
-}
-
-export function useCashFlowStatementReport(filters: Pick<FinancialReportFilters, 'dateFrom' | 'dateTo'>, options: ReportQueryOptions = {}) {
-  return useQuery({
-    queryKey: financialReportKeys.cashFlowStatement(filters),
-    queryFn: () => getCashFlowStatementReport(filters),
     enabled: (options.enabled ?? true) && (hasRequiredDateRange(filters)),
   });
 }
@@ -183,7 +173,6 @@ export function useArrearsSummaryReport(filters: ArrearsReportFilters, options: 
     enabled: (options.enabled ?? true) && (hasRequiredAsOf(filters)),
   });
 }
-
 
 export function useTenantStatementReport(contractId: string | undefined, options: ReportQueryOptions = {}) {
   return useQuery({
