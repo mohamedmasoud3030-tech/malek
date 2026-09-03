@@ -4,16 +4,19 @@ import { cn } from '@/lib/utils';
 import { Skeleton } from './skeleton';
 
 /**
- * Canonical MALEK table sizing.
+ * Canonical MALEK table sizing and visual presentation.
  *
- * One table primitive owns spacing, type scale, separators and overflow across
- * the product. Columns keep natural width so narrow viewports scroll cleanly
- * instead of crushing, wrapping or overlapping cell content.
+ * One table primitive owns spacing, type scale, separators, base ink and
+ * overflow across the product. Columns keep natural width so narrow viewports
+ * scroll cleanly instead of crushing, wrapping or overlapping cell content.
+ * Register/page call sites may add geometry, but they must not create another
+ * table skin. Cards and Table remain two presentation options everywhere.
  */
 const tableVariants = cva(
   [
     'w-full min-w-max caption-bottom text-[12px] leading-4 tabular-nums',
     '[&_td+td]:border-s [&_td+td]:border-border/60 [&_th+th]:border-s [&_th+th]:border-border/70',
+    '[&_[data-column-priority=identity]]:font-bold',
     // Phone table mode is intentionally Excel-like: one compact row height,
     // narrow cell padding, and the whole row scrolls as one surface. Identity
     // and action columns must never pin to either edge on phones.
@@ -39,7 +42,7 @@ export function Table({ className, density, ...props }: TableProps) {
 }
 
 export function TableHeader({ className, ...props }: HTMLAttributes<HTMLTableSectionElement>) {
-  return <thead className={cn('[&_tr]:border-b [&_tr]:border-border/75', className)} {...props} />;
+  return <thead className={cn('!bg-card !text-foreground [&_tr]:border-b [&_tr]:border-border/75', className)} {...props} />;
 }
 
 export function TableBody({ className, ...props }: HTMLAttributes<HTMLTableSectionElement>) {
@@ -55,8 +58,8 @@ export function TableRow({
     <tr
       data-selected={selected ? 'true' : undefined}
       className={cn(
-        'border-b border-border/60 bg-card transition-colors hover:bg-muted/25',
-        selected && 'bg-primary/7 hover:bg-primary/10',
+        '!bg-card border-b border-border/60 transition-colors hover:!bg-muted/25',
+        selected && '!bg-primary/7 hover:!bg-primary/10',
         className,
       )}
       {...props}
@@ -68,7 +71,7 @@ export function TableHead({ className, ...props }: ThHTMLAttributes<HTMLTableCel
   return (
     <th
       className={cn(
-        'h-9 whitespace-nowrap bg-muted/45 px-2 text-start align-middle text-[11px] font-bold leading-4 text-foreground/75 sm:px-2.5',
+        'h-9 whitespace-nowrap !bg-card px-2 text-start align-middle text-[11px] !font-extrabold leading-4 text-foreground/75 sm:px-2.5',
         className,
       )}
       {...props}
