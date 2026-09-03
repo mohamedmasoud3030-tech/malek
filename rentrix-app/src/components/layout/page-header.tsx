@@ -39,7 +39,14 @@ function getTodayContext(isArabic: boolean) {
  *
  * The header behaves like document chrome rather than another card: identity
  * first, context immediately beneath it, one obvious primary action at the
- * edge. Time context is opt-in instead of repeated across the whole product.
+ * opposite edge of the identity row. Time context is opt-in instead of
+ * repeated across the whole product.
+ *
+ * On phones the title/count and primary action remain peers on the same row;
+ * description/time context then use the full width beneath them. This avoids
+ * the previous stacked action block that made compact pages feel vertically
+ * heavy and visually unbalanced.
+ *
  * Presentation belongs to the shared visual-wave contract on every viewport;
  * this component must not hard-reset the mobile surface with utility overrides.
  */
@@ -68,57 +75,65 @@ export function PageHeader({
       <header
         data-global-page-context
         data-unified-surface="page-header"
-        className="flex min-w-0 flex-col gap-2 border-b border-border/60 pb-2 sm:flex-row sm:items-end sm:justify-between sm:gap-4 sm:pb-3.5"
+        className="min-w-0 border-b border-border/60 pb-2 sm:pb-3.5"
         aria-label={todayContext
           ? isArabic
             ? `${title} — ${todayContext.todayLabel} ${todayContext.weekday} ${todayContext.date}`
             : `${title} — ${todayContext.todayLabel}, ${todayContext.weekday} ${todayContext.date}`
           : title}
       >
-        <div className="min-w-0 flex-1 space-y-1">
-          <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <h1
-              data-global-page-title
-              className="min-w-0 text-[1.35rem] font-black leading-7 tracking-[-0.02em] [overflow-wrap:anywhere] sm:text-[1.65rem] sm:leading-9"
-            >
-              {title}
-            </h1>
-            {count !== undefined ? (
-              <span
-                className="inline-flex min-h-6 shrink-0 items-center rounded-full bg-muted/60 px-2 py-0.5 text-xs font-bold tabular-nums text-muted-foreground"
-                aria-label={`${isArabic ? 'عدد السجلات' : 'Records'} ${count}`}
+        <div
+          data-page-header-primary-row
+          className="flex min-w-0 items-start justify-between gap-3 sm:items-end sm:gap-4"
+        >
+          <div className="min-w-0 flex-1">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <h1
+                data-global-page-title
+                className="min-w-0 text-[1.35rem] font-black leading-7 tracking-[-0.02em] [overflow-wrap:anywhere] sm:text-[1.65rem] sm:leading-9"
               >
-                {count}
-              </span>
-            ) : null}
+                {title}
+              </h1>
+              {count !== undefined ? (
+                <span
+                  className="inline-flex min-h-6 shrink-0 items-center rounded-full bg-muted/60 px-2 py-0.5 text-xs font-bold tabular-nums text-muted-foreground"
+                  aria-label={`${isArabic ? 'عدد السجلات' : 'Records'} ${count}`}
+                >
+                  {count}
+                </span>
+              ) : null}
+            </div>
           </div>
 
-          {description ? (
-            <p className="max-w-3xl text-[0.8125rem] font-medium leading-5 text-muted-foreground [overflow-wrap:anywhere] sm:text-sm sm:leading-6">
-              {description}
-            </p>
-          ) : null}
-
-          {todayContext ? (
+          {resolvedPrimaryAction ? (
             <div
-              data-global-today-context
-              className="inline-flex min-w-0 items-center gap-1.5 text-xs font-semibold text-muted-foreground"
+              data-page-primary-action
+              className="max-w-[52%] shrink-0 [&>*]:max-w-full sm:max-w-none"
             >
-              <CalendarDays className="size-3.5 shrink-0 text-primary" aria-hidden="true" />
-              <span data-global-day-label className="font-black text-foreground">{todayContext.todayLabel}</span>
-              <span aria-hidden="true">·</span>
-              <span data-global-today-date className="min-w-0 truncate">
-                <span data-global-today-weekday>{todayContext.weekday}</span>
-                <span aria-hidden="true">، </span>
-                <span data-global-today-day-date>{todayContext.date}</span>
-              </span>
+              {resolvedPrimaryAction}
             </div>
           ) : null}
         </div>
 
-        {resolvedPrimaryAction ? (
-          <div data-page-primary-action className="shrink-0 self-start sm:self-center">
-            {resolvedPrimaryAction}
+        {description ? (
+          <p className="mt-1 max-w-3xl text-[0.8125rem] font-medium leading-5 text-muted-foreground [overflow-wrap:anywhere] sm:mt-1.5 sm:text-sm sm:leading-6">
+            {description}
+          </p>
+        ) : null}
+
+        {todayContext ? (
+          <div
+            data-global-today-context
+            className="mt-1 inline-flex min-w-0 items-center gap-1.5 text-xs font-semibold text-muted-foreground sm:mt-1.5"
+          >
+            <CalendarDays className="size-3.5 shrink-0 text-primary" aria-hidden="true" />
+            <span data-global-day-label className="font-black text-foreground">{todayContext.todayLabel}</span>
+            <span aria-hidden="true">·</span>
+            <span data-global-today-date className="min-w-0 truncate">
+              <span data-global-today-weekday>{todayContext.weekday}</span>
+              <span aria-hidden="true">، </span>
+              <span data-global-today-day-date>{todayContext.date}</span>
+            </span>
           </div>
         ) : null}
       </header>
