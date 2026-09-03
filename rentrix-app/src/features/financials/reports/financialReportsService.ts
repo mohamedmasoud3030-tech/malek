@@ -29,7 +29,6 @@ export {
   type TenantStatementReport,
 } from './statements-reports-service';
 export {
-  getCashFlowStatementReport,
   getVatReturnReport,
   normalizeCashFlowStatementReport,
   normalizeVatReturnReport,
