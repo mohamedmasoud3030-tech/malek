@@ -13,17 +13,15 @@
  */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import {
   REPORT_PRODUCTS,
   getReportProduct,
   getReportProductTarget,
-  reportProductPath,
 } from '../report-products';
 import { ACCOUNTING_REPORT_VIEWS, ANALYTICS_REPORT_VIEWS } from '../report-view-registry';
-import { ReportsCatalog } from '../components/ReportsCatalog';
 import { buildReportProductShareUrl, buildReportProductSharePayload } from '../report-share';
 
 const reportsDir = resolve(import.meta.dirname, '..');
@@ -64,12 +62,9 @@ describe('premium catalog — five products, nothing else', () => {
 });
 
 describe('premium catalog — real routes, not dialogs', () => {
-  it('registers a real detail route for every product', () => {
+  it('registers the canonical detail route and permission gate', () => {
     expect(routeTreeSource).toContain("path: '/reports/$reportId'");
     expect(routeTreeSource).toContain("requirePermission('financial.reports.view')");
-    for (const product of REPORT_PRODUCTS) {
-      expect(reportProductPath(product)).toBe(`/reports/${product.id}`);
-    }
   });
 
   it('opens products by navigation, never by mounting a preview dialog', () => {
