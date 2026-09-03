@@ -87,7 +87,7 @@ describe('EmbeddableWorkspace — embedded mode', () => {
   });
 
   it('keeps page actions reachable instead of dropping them with the header', () => {
-    render(
+    const { container } = render(
       <EmbeddableWorkspace
         embedded
         title="عنوان"
@@ -100,6 +100,11 @@ describe('EmbeddableWorkspace — embedded mode', () => {
 
     expect(screen.getByRole('button', { name: 'إجراء رئيسي' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'إجراء ثانوي' })).toBeTruthy();
+    expect(container.querySelector('[data-embedded-workspace]')?.className).toContain('contents');
+    expect(container.querySelector('[data-embedded-workspace-actions]')?.className).toContain('row-start-1');
+    expect(container.querySelector('[data-embedded-workspace-actions]')?.className).toContain('col-start-2');
+    expect(container.querySelector('[data-embedded-workspace-content]')?.className).toContain('row-start-2');
+    expect(container.querySelector('[data-embedded-workspace-content]')?.className).toContain('col-span-full');
   });
 
   it('omits the action rail entirely when a workspace has no actions', () => {
