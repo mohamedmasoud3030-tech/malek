@@ -1,13 +1,17 @@
-import { Landmark, ReceiptText, Scale, UserRound, UsersRound, WalletCards } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { ReceiptText, Scale, UserRound, UsersRound, WalletCards } from 'lucide-react';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { formatMoney, getErrorMessage } from '@/features/financials/components/financials-formatters';
 import type { OwnerStatementReport, TenantStatementReport } from '@/features/financials/reports/financialReportsService';
+import type { OwnerReportPayload } from '@/services/documents/documentPayloads';
 import { createReceiptPrintHref } from '../../reports-page.helpers';
 import { ReportList, ReportListRow, ReportPanel, ReportPanelSkeleton, ReportState } from '@/components/ui/report-section-primitives';
 import { ReportOutputActions } from '../report-output-actions';
+import { ReportPayloadGroup } from '../report-payload-groups';
 import { formatLatinNumber } from '@/lib/formatters';
+import { loadPremiumOwnerReportPayload } from '../../documents/premium-owner-report';
 
 type ReceiptRow = Readonly<{
   id: string;
@@ -174,12 +178,24 @@ export function TenantStatementPanel({
   );
 }
 
+/**
+ * OwnerStatementPanel — mirrors the canonical printed owner statement.
+ *
+ * The workspace keeps `EntityTable` for the potentially long daily movement
+ * ledger, but every statement section around it comes from the SAME premium
+ * payload used by print/PDF (`loadPremiumOwnerReportPayload`). That payload
+ * owns the authoritative summary, property/unit context, maintenance,
+ * recorded expenses, utilities/services, management fees, settlements and
+ * final reconciliation. No formula, RPC or accounting semantic is duplicated
+ * here.
+ */
 export function OwnerStatementPanel({
   selectedOwnerId,
   statement,
   error,
   isLoading,
   fallbackRows,
+  period,
   onPrint,
   onDownloadPdf,
   onDownloadExcel,
@@ -190,21 +206,16 @@ export function OwnerStatementPanel({
   error: unknown;
   isLoading: boolean;
   fallbackRows: OwnerFallbackRow[];
+  period: { from?: string; to?: string; propertyId?: string };
   onPrint: () => void;
   onDownloadPdf: () => void;
   onDownloadExcel: () => void;
   actionsDisabled?: boolean;
 }>) {
-  // Financial truth: opening running balance is NOT available from the
-  // authoritative owner statement source, so a cumulative running balance
-  // column is never shown in the panel or the Excel export.
   const ledgerRows: OwnerLedgerRow[] = (statement?.transactions ?? []).map((transaction, index) => ({
     ...transaction,
     rowKey: `${transaction.date ?? 'line'}-${index}`,
   }));
-  const settlementMovement = ledgerRows
-    .filter((row) => row.type === 'settlement')
-    .reduce((sum, row) => sum + Math.abs(row.net || 0), 0);
   const properties = [...new Set(ledgerRows.map((row) => row.propertyName).filter((value): value is string => Boolean(value)))];
   const ownerColumns: ColumnDef<OwnerLedgerRow>[] = [
     { key: 'date', header: 'التاريخ', priority: 'identity', render: (row) => <span dir="ltr" className="tabular-nums">{row.date ?? '—'}</span> },
@@ -216,10 +227,56 @@ export function OwnerStatementPanel({
     { key: 'net', header: 'صافي الحركة', priority: 'primary', render: (row) => <strong dir="ltr">{formatMoney(row.net)}</strong> },
   ];
 
+  const hasOwnerStatement = Boolean(selectedOwnerId && statement && !statement.error);
+  const [fullStatement, setFullStatement] = useState<OwnerReportPayload | null>(null);
+  const [isLoadingFullStatement, setIsLoadingFullStatement] = useState(false);
+  const [fullStatementError, setFullStatementError] = useState<unknown>(null);
+  const requestIdRef = useRef(0);
+
+  useEffect(() => {
+    if (!hasOwnerStatement || !selectedOwnerId || !statement || !period.from || !period.to) {
+      requestIdRef.current += 1;
+      setFullStatement(null);
+      setFullStatementError(null);
+      setIsLoadingFullStatement(false);
+      return;
+    }
+
+    const requestId = ++requestIdRef.current;
+    setIsLoadingFullStatement(true);
+    setFullStatementError(null);
+
+    loadPremiumOwnerReportPayload({
+      ownerId: selectedOwnerId,
+      from: period.from,
+      to: period.to,
+      propertyId: period.propertyId ?? null,
+      statement,
+    })
+      .then((payload) => {
+        if (requestIdRef.current !== requestId) return;
+        setFullStatement(payload);
+      })
+      .catch((loadError: unknown) => {
+        if (requestIdRef.current !== requestId) return;
+        setFullStatementError(loadError);
+        setFullStatement(null);
+      })
+      .finally(() => {
+        if (requestIdRef.current !== requestId) return;
+        setIsLoadingFullStatement(false);
+      });
+  }, [hasOwnerStatement, selectedOwnerId, statement, period.from, period.to, period.propertyId]);
+
+  const [summaryGroup, ...remainingGroups] = fullStatement?.groups ?? [];
+  const supplementalGroups = remainingGroups.filter((group) => !group.blocks.some(
+    (block) => block.kind === 'table' && block.table.title === 'الحركة المالية اليومية التفصيلية',
+  ));
+
   return (
     <ReportPanel
       title="كشف حساب المالك"
-      description="حركة المالك للفترة: العقارات، إجمالي التحصيل/الحركة، الاستقطاعات والتسويات. الرصيد الجاري لا يُعرض لأن مصدر كشف المالك لا يوفّر رصيدًا افتتاحيًا معتمدًا."
+      description="كشف تشغيلي ومالي موحّد يطابق بنية نسخة الطباعة: الملخص، الحركة اليومية، الصيانة والمصروفات والمرافق، التسويات والحساب الختامي."
       icon={UsersRound}
       action={statement ? (
         <ReportOutputActions
@@ -238,37 +295,54 @@ export function OwnerStatementPanel({
         <div className="p-4"><ReportState kind="error" message={getErrorMessage(error, 'تعذر تحميل كشف المالك.')} /></div>
       ) : selectedOwnerId && statement?.error ? (
         <div className="p-4"><ReportState kind="error" message={getErrorMessage(statement.error, 'تعذر تحميل كشف المالك.')} /></div>
-      ) : selectedOwnerId && statement && ledgerRows.length > 0 ? (
+      ) : hasOwnerStatement && statement ? (
         <div className="space-y-4 p-3 sm:p-4">
           <div className="rounded-xl border border-border/70 bg-muted/20 p-3 text-sm">
             <p className="font-black">{statement.ownerName ?? 'مالك غير محدد'}</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              الفترة: {statement.periodFrom ?? '—'} إلى {statement.periodTo ?? '—'} · العمولة: {ownerCommissionSummary(statement.commissionType, statement.commissionValue)}
+              الفترة: {statement.periodFrom ?? period.from ?? '—'} إلى {statement.periodTo ?? period.to ?? '—'} · العمولة: {ownerCommissionSummary(statement.commissionType, statement.commissionValue)}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              العقارات في الحركة: {properties.length ? properties.join('، ') : 'غير محددة في مصدر الكشف'}
+              نطاق العقارات: {fullStatement?.scopeLabel ?? (properties.length ? properties.join('، ') : 'جميع عقارات المالك المُدارة')}
             </p>
           </div>
-          <ResponsiveCardGrid>
-            <KpiCard label="إجمالي الحركة/التحصيل" value={formatMoney(statement.totalGross)} icon={ReceiptText} accent="primary" compact />
-            <KpiCard label="مصروفات/عمولات واستقطاعات" value={formatMoney(statement.totalDeductions)} icon={Landmark} accent="amber" compact />
-            <KpiCard label="حركات التسوية/الصرف" value={formatMoney(settlementMovement)} icon={WalletCards} accent="sky" compact />
-            <KpiCard label="الصافي المستحق وفق الكشف" value={formatMoney(statement.totalNet)} icon={Scale} accent={statement.totalNet >= 0 ? 'emerald' : 'rose'} compact />
-          </ResponsiveCardGrid>
-          <EntityTable
-            aria-label="حركات كشف حساب المالك"
-            rows={ledgerRows}
-            columns={ownerColumns}
-            keyOf={(row) => row.rowKey}
-            emptyTitle="لا توجد حركات في كشف المالك"
-            emptyDescription="غيّر المالك أو فترة التقرير ثم أعد المحاولة."
-          />
-          <p className="text-xs leading-5 text-muted-foreground">
-            «حركات التسوية/الصرف» تجمع الحركات المصنفة كتسوية في الكشف، ولا تعني بالضرورة أنها مبالغ مدفوعة للمالك إلا إذا كان السجل المالي يثبت ذلك.
-          </p>
+
+          {isLoadingFullStatement ? (
+            <ReportPanelSkeleton />
+          ) : fullStatementError ? (
+            <ReportState
+              kind="error"
+              message={getErrorMessage(fullStatementError, 'تعذر تحميل الملخص والتفاصيل الإضافية لكشف المالك. تظل الحركة المالية الأساسية متاحة أدناه.')}
+            />
+          ) : summaryGroup ? (
+            <ReportPayloadGroup group={summaryGroup} />
+          ) : null}
+
+          <div>
+            <p className="mb-2 text-xs font-black text-muted-foreground">الحركة المالية اليومية</p>
+            <EntityTable
+              aria-label="حركات كشف حساب المالك"
+              rows={ledgerRows}
+              columns={ownerColumns}
+              keyOf={(row) => row.rowKey}
+              emptyTitle="لا توجد حركات مالية في الفترة"
+              emptyDescription="ستظهر أقسام الصيانة أو المرافق أو التسويات أدناه إذا كان لها سجل في الفترة."
+            />
+            <p className="mt-2 text-xs leading-5 text-muted-foreground">
+              الرصيد الجاري لا يُعرض لأن سلطة كشف المالك الحالية لا توفّر رصيد افتتاح معتمدًا. لا يعيد هذا العرض احتساب أي رقم مالي.
+            </p>
+          </div>
+
+          {!isLoadingFullStatement && !fullStatementError && supplementalGroups.length > 0 ? (
+            <div className="space-y-5 border-t border-border/60 pt-4">
+              {supplementalGroups.map((group, index) => (
+                <ReportPayloadGroup key={index} group={group} />
+              ))}
+            </div>
+          ) : null}
         </div>
       ) : selectedOwnerId ? (
-        <div className="p-4"><ReportState message="لا توجد حركات في كشف المالك للفترة المحددة." /></div>
+        <div className="p-4"><ReportState message="لا توجد بيانات كشف مالك معتمدة للفترة المحددة." /></div>
       ) : fallbackRows.length > 0 ? (
         <ReportList>
           {fallbackRows.map((row) => (
