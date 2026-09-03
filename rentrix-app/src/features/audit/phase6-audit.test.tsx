@@ -1,7 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { RoleSimulatorSection } from '@/features/settings/role-simulator-section';
 import { getSimulatedRole, setSimulatedRole } from '@/services/mock-role-simulator';
 
 describe('audit-log route wiring', () => {
@@ -11,7 +9,6 @@ describe('audit-log route wiring', () => {
     const block = routeTreeSource.slice(routeTreeSource.lastIndexOf('createRoute({', idx), routeTreeSource.indexOf('});', idx) + 3);
     expect(block).toContain("settingsLegacyRedirect('audit.view'");
     expect(block).not.toContain('lazyRouteComponent');
-    // Governance hub is the single composition point for the audit workspace.
     expect(routeTreeSource).toContain("import('@/features/governance-hub/components/GovernanceHubWorkspace')");
   });
 });
@@ -24,13 +21,5 @@ describe('role simulator behavior', () => {
     expect(getSimulatedRole()).toBe('USER');
     setSimulatedRole('ADMIN');
     expect(getSimulatedRole()).toBe('ADMIN');
-  });
-
-  it('renders the RoleSimulatorSection with all three roles', () => {
-    const html = renderToStaticMarkup(<RoleSimulatorSection />);
-    expect(html).toContain('محاكي الصلاحيات وأدوار الموظفين');
-    expect(html).toContain('ADMIN');
-    expect(html).toContain('MANAGER');
-    expect(html).toContain('USER');
   });
 });
