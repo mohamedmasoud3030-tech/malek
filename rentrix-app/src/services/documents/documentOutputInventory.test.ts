@@ -1,18 +1,6 @@
 /**
- * WP-06 — repository-wide Print/PDF call-site inventory lock (source scan).
- *
- * `documentPlatform.boundaries.test.ts` proves feature code does not import
- * the PDF toolchain. This file closes the complementary hole: it scans every
- * reachable authenticated feature source for Print/PDF *call sites* and
- * proves each one is routed through the canonical platform and guarded at
- * the handler.
- *
- * Why a source scan: a page test only covers the page it renders, so a NEW
- * Print/PDF action added to an unrelated screen would ship unguarded and
- * unnoticed. This scan fails on the new file instead.
- *
- * Nothing here asserts authorization; permission behavior stays owned by the
- * security track. The inventory only asserts the *document* boundary.
+ * Repository-wide Print/PDF call-site inventory lock.
+ * Keeps every production document output routed through the canonical platform.
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
@@ -48,32 +36,15 @@ const componentFiles = collectFiles(componentsDir, isProductionSource);
 const serviceFiles = collectFiles(resolve(srcDir, 'services'), isProductionSource);
 
 const read = (file: string) => readFileSync(file, 'utf8');
-
-/**
- * Source with comments and string literals blanked out, so a scan matches
- * real CODE only. Without this, the very comments that document a removed
- * bypass would trip the guard that forbids it.
- */
 const readCode = (file: string): string =>
   read(file)
     .replace(/\/\*[\s\S]*?\*\//g, ' ')
     .replace(/(^|[^:])\/\/[^\n]*/g, '$1 ');
 const rel = (file: string) => relative(srcDir, file).split('\\').join('/');
 
-/**
- * The canonical, reviewed inventory of feature modules that invoke a
- * Print/PDF output action. Adding a Print/PDF call site to any other module
- * fails the inventory test below — the new surface must be reviewed against
- * the readiness/guard contract and then listed here.
- *
- * route → document type → guard are documented in the canonical pack
- * `docs/source-of-truth/06_UX_IA_AND_DESIGN_CONTRACT.md`.
- */
 const APPROVED_DOCUMENT_CALL_SITES: ReadonlySet<string> = new Set([
-  // contracts — contract/legal document & domain adapters
   'features/contracts/actions/contractDetailActions.ts',
   'features/contracts/documents/contract-documents.ts',
-  // financials — invoice, receipt, expense voucher, deposit clearance, deposit voucher
   'features/financials/invoices/invoice-actions.ts',
   'features/financials/invoices/useInvoiceWorkspaceController.ts',
   'features/financials/expenses/expense-actions.ts',
@@ -81,18 +52,11 @@ const APPROVED_DOCUMENT_CALL_SITES: ReadonlySet<string> = new Set([
   'features/financials/receipts/receipt-detail-page.tsx',
   'features/financials/deposits/deposit-clearance-document.ts',
   'features/financials/deposits/deposit-voucher-document.ts',
-  // owners — owner settlement statement & domain adapters
   'features/owners/components/OwnerSettlementWorkspace.tsx',
-  'features/owners/documents/owner-documents.ts',
-  // properties — unit lifecycle passport
-  'features/properties/documents/unit-passport-document.ts',
-  // maintenance — work order and completion certificate
   'features/maintenance/components/maintenance-workspace.tsx',
   'features/maintenance/documents/maintenance-documents.ts',
-  // utilities — utility CAM split sheet
   'features/utilities/components/utilities-workspace.tsx',
   'features/utilities/documents/utility-split-document.ts',
-  // accounting/reports workspace & domain adapters
   'features/reports/components/AccountingReportsSection.tsx',
   'features/reports/components/CollectionsSection.tsx',
   'features/reports/components/DeferredRevenueReportSection.tsx',
@@ -101,9 +65,6 @@ const APPROVED_DOCUMENT_CALL_SITES: ReadonlySet<string> = new Set([
   'features/reports/components/OccupancySection.tsx',
   'features/reports/components/OverdueSection.tsx',
   'features/reports/components/ServicesReportSection.tsx',
-  // The consolidated statements surface delegates its Print/PDF/Excel output
-  // to the shared premium action module (single implementation for the
-  // catalog products); the migrated module carries the reviewed guard.
   'features/reports/premium/statement-report-actions.ts',
   'features/reports/documents/report-documents.ts',
   'features/reports/documents/professional-owner-report.ts',
@@ -114,16 +75,13 @@ describe('Print/PDF call-site inventory', () => {
   it('every feature module that produces a document is in the reviewed inventory', () => {
     const found = featureFiles.filter((file) => invokesDocumentOutput(read(file))).map(rel);
     const unlisted = found.filter((file) => !APPROVED_DOCUMENT_CALL_SITES.has(file));
-
     expect(
       unlisted,
-      'A new Print/PDF call site appeared. Route it through documentService with a handler-level '
-        + 'readiness guard (runGuardedDocumentAction), then add it to '
-        + 'APPROVED_DOCUMENT_CALL_SITES.',
+      'A new Print/PDF call site appeared. Route it through documentService with a handler-level readiness guard, then add it to APPROVED_DOCUMENT_CALL_SITES.',
     ).toEqual([]);
   });
 
-  it('the inventory has no stale entries (every listed module still produces documents)', () => {
+  it('the inventory has no stale entries', () => {
     const found = new Set(featureFiles.filter((file) => invokesDocumentOutput(read(file))).map(rel));
     const stale = [...APPROVED_DOCUMENT_CALL_SITES].filter((file) => !found.has(file));
     expect(stale, 'Remove modules that no longer produce documents from the inventory.').toEqual([]);
@@ -131,13 +89,6 @@ describe('Print/PDF call-site inventory', () => {
 });
 
 describe('no parallel document engine outside the platform', () => {
-  /**
-   * Applies the SHARED boundary rules (the same objects
-   * `documentBoundaryRules.test.ts` proves actually fire on synthetic bypass
-   * fixtures) to real repository source. Rules and scan can therefore never
-   * drift apart: weakening a rule fails the rules test, and adding a bypass
-   * fails this scan.
-   */
   const rendererInternals = new Set([
     'services/documents/DocumentRenderer.ts',
     'services/documents/renderer/documentHtml.ts',
@@ -145,9 +96,6 @@ describe('no parallel document engine outside the platform', () => {
     'services/documents/renderer/offscreen.ts',
     'services/documents/renderer/latinPdf.ts',
     'services/documents/renderer/documentIdentity.ts',
-    // The rules module necessarily CONTAINS the forbidden patterns (they are
-    // its detection regexes), so it can never be scanned by itself. Its own
-    // correctness is proven by documentBoundaryRules.test.ts instead.
     'services/documents/documentBoundaryRules.ts',
   ]);
 
@@ -186,9 +134,7 @@ describe('no parallel document engine outside the platform', () => {
 
 describe('single rendering engine', () => {
   it('only DocumentController imports the renderer for output', () => {
-    const allowed = new Set([
-      'services/documents/DocumentController.ts',
-    ]);
+    const allowed = new Set(['services/documents/DocumentController.ts']);
     for (const file of collectFiles(documentsDir, isProductionSource)) {
       const name = rel(file);
       if (name === 'services/documents/DocumentRenderer.ts' || name.startsWith('services/documents/renderer/')) continue;
@@ -215,47 +161,30 @@ describe('single rendering engine', () => {
 });
 
 describe('handler-level readiness at every call site', () => {
-  /**
-   * Every inventory module must reference the readiness rule. Either it
-   * consumes `useDocumentSettings().isReady` / a derived flag and passes it
-   * to `runGuardedDocumentAction`, or (for pure action modules) it re-derives
-   * identity completeness itself.
-   */
   it('each inventoried module enforces readiness, not only a disabled prop', () => {
     const offenders: string[] = [];
     for (const file of featureFiles) {
       const name = rel(file);
       if (!APPROVED_DOCUMENT_CALL_SITES.has(name)) continue;
       const source = read(file);
-
       const guardsHandler =
         /runGuardedDocumentAction\s*\(/.test(source)
         || /requireDocumentReadiness\s*\(/.test(source)
         || /hasCompleteCompanyIdentity\s*\(/.test(source);
-
-      // Thin action modules receive already-asserted settings and are covered
-      // by their caller's guard; they must still not fabricate settings.
       const isThinActionModule = /^features\/financials\/(invoices\/invoice-actions|expenses\/expense-actions)\.ts$/.test(name);
-
       if (!guardsHandler && !isThinActionModule) offenders.push(name);
     }
     expect(
       offenders,
-      'These modules produce documents without a handler-level readiness guard. '
-        + 'Wrap the handler in runGuardedDocumentAction({ isReady, operation, fallbackMessage }).',
+      'These modules produce documents without a handler-level readiness guard. Wrap the handler in runGuardedDocumentAction.',
     ).toEqual([]);
   });
 
   it('no document call site fabricates company identity to satisfy the engine', () => {
     for (const file of featureFiles) {
       const name = rel(file);
-      // Scoped to document call sites: the settings feature legitimately
-      // declares currency defaults for the settings FORM, which is a
-      // different concern from what a document renders.
       if (!APPROVED_DOCUMENT_CALL_SITES.has(name)) continue;
       const source = read(file);
-      // A literal companyName/currency in feature code means the real
-      // company_settings record was bypassed.
       expect(source, `${rel(file)} must not hard-code a document company name`).not.toMatch(
         /companyName\s*:\s*['"`](?!\s*['"`])/,
       );
@@ -270,8 +199,6 @@ describe('handler-level readiness at every call site', () => {
       const name = rel(file);
       if (!APPROVED_DOCUMENT_CALL_SITES.has(name)) continue;
       const source = read(file);
-      // Scope to DOCUMENT failures only: a mutation's own onError toast is a
-      // separate concern owned by that mutation, not by this platform.
       const documentErrorPassthrough =
         /(?:printDocument|downloadDocumentPdf|printExpenseVoucher|exportExpenseVoucher|printInvoiceDocument|exportInvoiceDocument)[\s\S]{0,400}?catch\s*\(\s*error\s*\)\s*\{[\s\S]{0,200}?toast\.error\(\s*error instanceof Error \? error\.message/;
       expect(source, `${name} must surface document errors through runDocumentAction/runGuardedDocumentAction`).not.toMatch(
