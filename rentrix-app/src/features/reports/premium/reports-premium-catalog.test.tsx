@@ -17,7 +17,6 @@ import { describe, expect, it, vi } from 'vitest';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import {
-  LEGACY_REPORT_DESTINATION_MAP,
   REPORT_PRODUCTS,
   getReportProduct,
   getReportProductTarget,
@@ -48,26 +47,19 @@ describe('premium catalog — five products, nothing else', () => {
       expect(product.englishTitle).toMatch(/^[A-Za-z,& ]+$/);
       expect(product.businessQuestion.length).toBeGreaterThan(10);
       expect(product.description).toMatch(/[\u0600-\u06FF]/);
-      // Catalog copy must stay business language, never developer terminology.
       for (const text of [product.title, product.description, product.businessQuestion]) {
         expect(text).not.toMatch(/RPC|adapter|read model|payload|registry|snapshot|section/i);
       }
-      // No decorative or financial numbers on catalog cards.
       expect(`${product.description} ${product.businessQuestion}`).not.toMatch(/\d/);
     }
   });
 
   it('never presents a fabricated cheque lifecycle', () => {
     const collections = REPORT_PRODUCTS.find((product) => product.id === 'collections-arrears-cheques')!;
-    // The product states truthfully that unsupported cheque cycles are not shown.
     expect(collections.description).toContain('لا تُعرض دورة شيكات غير موجودة في المصدر');
-    // ...and no target pretends to be a cheque custody surface.
     for (const target of collections.targets) {
       expect(target.view).not.toMatch(/cheque|pdc/i);
     }
-    // (The absence of cheque custody tables in the data layer is proven by
-    // the db contract gate; the catalog simply never advertises what the
-    // source cannot supply.)
   });
 });
 
@@ -90,8 +82,6 @@ describe('premium catalog — real routes, not dialogs', () => {
     const page = read('reports-page.tsx');
     expect(page).toContain('<ReportsCatalog');
     expect(page).toContain('legacyLocationRequested');
-    // The catalog branch returns before any workspace chrome: no filters,
-    // no KPI layer and no charts can render on the landing itself.
     const landingBlock = page.slice(page.indexOf('if (!legacyLocationRequested)'), page.indexOf('return (\n    <PageLayout dir="rtl" lang="ar" size="wide">\n      <PageHeader title={reportsTitle} description={pageDescription} />\n\n      <div data-finance-root'));
     expect(landingBlock).toContain('data-reports-catalog-landing');
     expect(landingBlock).not.toContain('ReportsFilterSurface');
@@ -99,11 +89,8 @@ describe('premium catalog — real routes, not dialogs', () => {
   });
 
   it('renders the catalog card grid without any financial values', () => {
-    // Pure component render through the server renderer with a router stub.
     const markup = renderToStaticMarkup(
       createElement('div', null, [
-        // The real component is exercised in the browser evidence run; this
-        // render proof locks the card content contract.
         ...REPORT_PRODUCTS.map((product) =>
           createElement('article', { key: product.id, 'data-report-product': product.id }, product.title, product.businessQuestion),
         ),
@@ -118,16 +105,15 @@ describe('premium catalog — real routes, not dialogs', () => {
 });
 
 describe('premium catalog — preservation of every legacy surface', () => {
-  it('assigns every legacy report view to exactly one premium product', () => {
+  it('derives exactly one premium owner for every legacy report view from canonical product targets', () => {
     const allViews = [...ANALYTICS_REPORT_VIEWS.map((view) => view.id), ...ACCOUNTING_REPORT_VIEWS.map((view) => view.id)];
     for (const view of allViews) {
-      const destination = LEGACY_REPORT_DESTINATION_MAP[view];
-      expect(destination, `legacy view ${view} must have a premium destination`).toBeDefined();
-      expect(REPORT_PRODUCTS.some((product) => product.id === destination), `${destination} must be a real product`).toBe(true);
+      const owners = REPORT_PRODUCTS.filter((product) => product.targets.some((target) => target.view === view));
+      expect(owners, `legacy view ${view} must have one premium owner`).toHaveLength(1);
     }
-    // The statements section belongs to the owner product's family (party
-    // statements); the mapping stays complete for deep links from /accounting.
-    expect(LEGACY_REPORT_DESTINATION_MAP.statements).toBe('owner-comprehensive-statement');
+
+    const ownerProduct = getReportProduct('owner-comprehensive-statement');
+    expect(ownerProduct?.targets.some((target) => target.section === 'statements')).toBe(true);
   });
 
   it('routes every product target to a real (section, view) pair', () => {
@@ -161,7 +147,6 @@ describe('premium catalog — one shared action implementation', () => {
   it('makes the shared component the only action implementation in the premium page', () => {
     const page = read('premium/report-product-page.tsx');
     expect(page).toContain('<ReportDocumentActions');
-    // The premium page renders no bespoke toast-only button and no raw print call.
     expect(page).not.toMatch(/window\.print\(/);
     expect(page).not.toMatch(/toast\.(success|error)\([^)]*\)\s*;\s*\}/);
   });
@@ -216,10 +201,8 @@ describe('premium catalog — secure sharing', () => {
   it('falls back truthfully when file sharing is unavailable', () => {
     const actions = read('components/report-document-actions.tsx');
     expect(actions).toContain('canSharePdfFile');
-    // Fallback chain present: link copy → download → neutral error message.
     expect(actions).toContain('تم نسخ الرابط الآمن');
     expect(actions).toContain('انسخ الرابط من شريط العنوان');
-    // Never a fake: the attachment comes from a real File builder.
     expect(actions).toContain('buildFile');
   });
 });
