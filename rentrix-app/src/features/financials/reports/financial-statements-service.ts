@@ -3,6 +3,22 @@ import { toFinancialNumber } from '../financialMath';
 
 export type ReportPeriod = { from: string | null; to: string | null };
 
+/**
+ * @deprecated Compatibility contract for legacy `rpt_cash_flow` fixtures.
+ * Product UI uses WP05 `CashFlowReport` from the accounting authority.
+ */
+export type CashFlowStatementReport = {
+  period: ReportPeriod;
+  operating: {
+    receipts: number;
+    expenses: number;
+    netOperating: number;
+  };
+  investing: { amount: number; note: string | null };
+  financing: { amount: number; note: string | null };
+  netChange: number;
+};
+
 export type VatReturnReport = {
   period: ReportPeriod;
   totalSalesAmount: number;
@@ -22,6 +38,27 @@ function asNumber(value: unknown): number {
 
 function asString(value: unknown): string | null {
   return typeof value === 'string' ? value : null;
+}
+
+/** @deprecated Test-fixture normalizer for the retired `rpt_cash_flow` payload only. */
+export function normalizeCashFlowStatementReport(payload: unknown): CashFlowStatementReport {
+  const root = asRecord(payload);
+  const period = asRecord(root.period);
+  const operating = asRecord(root.operating);
+  const investing = asRecord(root.investing);
+  const financing = asRecord(root.financing);
+
+  return {
+    period: { from: asString(period.from), to: asString(period.to) },
+    operating: {
+      receipts: asNumber(operating.receipts),
+      expenses: asNumber(operating.expenses),
+      netOperating: asNumber(operating.net_operating),
+    },
+    investing: { amount: asNumber(investing.amount), note: asString(investing.note) },
+    financing: { amount: asNumber(financing.amount), note: asString(financing.note) },
+    netChange: asNumber(root.net_change),
+  };
 }
 
 export function normalizeVatReturnReport(payload: unknown): VatReturnReport {
