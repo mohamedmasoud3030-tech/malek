@@ -43,7 +43,7 @@ function makeContract(overrides: Partial<ContractListItem> = {}): ContractListIt
     updated_at: '2026-01-01T00:00:00.000Z',
     deleted_at: null,
     renewed_from_id: null,
-    properties: { id: 'property-1', title: 'عقار', address: null },
+    properties: { id: 'property-1', title: 'عقار', address: 'مسقط' },
     units: { id: 'unit-1', unit_number: '1', floor: null, status: 'occupied', rent_amount: 1000 },
     people: { id: 'tenant-1', full_name: 'مستأجر', phone: null, email: null, national_id: null },
     ...overrides,
@@ -52,8 +52,7 @@ function makeContract(overrides: Partial<ContractListItem> = {}): ContractListIt
 }
 
 // An expiring contract: ends within 30 days of today.
-// We use a date far in the past to ensure the contract always reads as expiring
-// in test — isExpiringSoon() checks end_date within 30 days of now.
+// Derive the date relative to runtime so this regression remains stable as time moves.
 function expiringContract(id: string, rentAmount = 500): ContractListItem {
   const soon = new Date();
   soon.setDate(soon.getDate() + 10);
@@ -137,7 +136,7 @@ describe('ContractKpiGrid dual-scope behavior (intentional asymmetry)', () => {
     ];
     const filteredContracts = [allContracts[0]]; // Only exp-1 matches search
 
-    const listSummary = summarizeContracts(allContracts);    // What ContractKpiGrid uses for expiry
+    const listSummary = summarizeContracts(allContracts); // What ContractKpiGrid uses for expiry
     const visibleSummary = summarizeContracts(filteredContracts); // What ContractKpiGrid uses for rent
 
     // Expiry warnings: unfiltered count (correct behavior — exp-2 and exp-3
