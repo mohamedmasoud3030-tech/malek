@@ -77,8 +77,9 @@ describe('buildNeedsAttentionSignal', () => {
     expect(signal.totalCount).toBe(0);
   });
 
-  it('merges real conditions from the snapshot queues into one queue', () => {
+  it('merges real conditions from the authoritative sources into decision items', () => {
     const snapshot = makeSnapshot({
+      maintenance: { open: 1, inProgress: 0, urgentOpen: 1 },
       queues: {
         overdueInvoices: [{
           invoiceId: 'inv-1', reference: 'INV-1', dueDate: '2026-08-01', daysOverdue: 28,
@@ -101,14 +102,37 @@ describe('buildNeedsAttentionSignal', () => {
 
     expect(signal.totalCount).toBe(3);
     const overdue = signal.items.find((item) => item.key === 'overdue-inv-1');
-    const urgent = signal.items.find((item) => item.key === 'urgent-maintenance-mnt-1');
+    const maintenance = signal.items.find((item) => item.key === 'maintenance-action');
     const expiring = signal.items.find((item) => item.key === 'expiring-con-1');
     expect(overdue?.severity).toBe('danger');
     expect(overdue?.to).toBe('/arrears');
-    expect(urgent?.severity).toBe('danger');
-    expect(urgent?.to).toBe('/maintenance');
-    expect(expiring?.severity).toBe('danger'); // ≤ 7 days is urgent
+    expect(maintenance?.severity).toBe('danger');
+    expect(maintenance?.to).toBe('/maintenance');
+    expect(expiring?.severity).toBe('danger');
     expect(expiring?.contractId).toBe('con-1');
+  });
+
+  it('keeps urgent maintenance and follow-up as one owner decision instead of duplicate queue rows', () => {
+    const signal = buildNeedsAttentionSignal({
+      snapshot: makeSnapshot({ maintenance: { open: 3, inProgress: 1, urgentOpen: 1 } }),
+      vacancyAnalytics: emptyVacancy,
+      utilityObligations: EMPTY_UTILITY_OBLIGATIONS_SIGNAL,
+      maintenanceFollowUp: {
+        stalledCount: 1,
+        awaitingClosureCount: 1,
+        scheduleMissedCount: 0,
+        actionableCount: 2,
+        oldestOpenAgeDays: 12,
+        rows: [],
+      },
+    });
+
+    const maintenanceItems = signal.items.filter((item) => item.to === '/maintenance');
+    expect(maintenanceItems).toHaveLength(1);
+    expect(maintenanceItems[0]?.key).toBe('maintenance-action');
+    expect(maintenanceItems[0]?.severity).toBe('danger');
+    expect(maintenanceItems[0]?.title).toContain('1 طلب صيانة عاجل');
+    expect(maintenanceItems[0]?.meta).toContain('2 يحتاج متابعة تشغيلية');
   });
 
   it('ranks by severity first, then by age inside the severity', () => {
@@ -143,9 +167,7 @@ describe('buildNeedsAttentionSignal', () => {
       const rank = { danger: 0, warning: 1, info: 2 } as const;
       return rank[a] - rank[b];
     }));
-    // Oldest overdue invoice leads the danger group.
     expect(signal.items[0].title).toBe('قديم');
-    // The long vacancy joins as a warning, never silently dropped.
     expect(signal.items.some((item) => item.key === 'vacant-unit-9' && item.severity === 'warning')).toBe(true);
     expect(signal.items.some((item) => item.key === 'bank-reconciliation')).toBe(true);
   });

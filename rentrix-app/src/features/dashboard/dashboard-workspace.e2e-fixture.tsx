@@ -5,7 +5,6 @@ import { SectionHeader } from '@/components/ui/section-header';
 import { formatCompanyDate, formatCompanyMoney, formatCompanyNumber } from '@/lib/companyFormatters';
 import { defaultCompanySettingsContract } from '@/lib/companySettings';
 import { CollectionsSection } from './components/collections-section';
-import { FinanceExceptionsSection } from './components/finance-exceptions-section';
 import { FinancialPerformanceSection } from './components/financial-performance-section';
 import { MaintenanceSection } from './components/maintenance-section';
 import { NeedsAttentionSection } from './components/needs-attention-section';
@@ -23,10 +22,7 @@ import type { MaintenanceFollowUpSignal } from './maintenance-follow-up-signal';
 import { buildNeedsAttentionSignal } from './needs-attention-signal';
 import type { MaintenanceDashboardSummary } from './maintenance-dashboard-summary';
 import type { MonthlyCashflowChartRow } from './financial-performance';
-import {
-  buildPropertyHealthRows,
-  type PropertyHealthRow,
-} from './property-health-signal';
+import type { PropertyHealthRow } from './property-health-signal';
 
 const soonDate = toDateInputValue(new Date(Date.now() + 9 * 24 * 60 * 60 * 1000));
 const laterDate = toDateInputValue(new Date(Date.now() + 18 * 24 * 60 * 60 * 1000));
@@ -156,34 +152,32 @@ const fixtureChartRows: readonly MonthlyCashflowChartRow[] = [
   { month: '2026-07', label: 'يوليو', collected: 12_000, expenses: 1_500 },
 ];
 
-const fixtureUnits = [
-  { id: 'unit-1', property_id: 'property-1', unit_number: '1', status: 'occupied' },
-  { id: 'unit-2', property_id: 'property-1', unit_number: '2', status: 'occupied' },
-  { id: 'unit-3', property_id: 'property-1', unit_number: '3', status: 'available' },
-  { id: 'unit-4', property_id: 'property-1', unit_number: '4', status: 'occupied' },
-  { id: 'unit-5', property_id: 'property-2', unit_number: '5', status: 'occupied' },
-  { id: 'unit-6', property_id: 'property-2', unit_number: '6', status: 'occupied' },
-  { id: 'unit-7', property_id: 'property-2', unit_number: '7', status: 'available' },
-  { id: 'unit-8', property_id: 'property-2', unit_number: '8', status: 'occupied' },
-  { id: 'unit-9', property_id: 'property-2', unit_number: '9', status: 'available' },
-] as const;
-
-const fixtureMaintenanceRows = [
-  { id: 'mnt-1', property_id: 'property-1', unit_id: 'unit-3', title: 'تسرب مياه', priority: 'urgent', status: 'open' },
-  { id: 'mnt-2', property_id: 'property-2', unit_id: null, title: 'عطل مصعد', priority: 'high', status: 'in_progress' },
-] as const;
-
-const fixturePropertyTitles = new Map<string, string>([
-  ['property-1', 'برج الخليج'],
-  ['property-2', 'واحة مسقط'],
-]);
-
-const fixturePropertyHealthRows: readonly PropertyHealthRow[] = buildPropertyHealthRows({
-  units: fixtureUnits as never,
-  vacantRows: fixtureVacancyAnalytics.vacantRows,
-  maintenance: fixtureMaintenanceRows as never,
-  propertyTitles: fixturePropertyTitles,
-});
+const fixturePropertyHealthRows: readonly PropertyHealthRow[] = [
+  {
+    propertyId: 'property-1',
+    title: 'برج الخليج',
+    totalUnits: 7,
+    occupiedUnits: 6,
+    vacantUnits: 1,
+    occupancyRate: 86,
+    longestVacancyDays: 10,
+    openMaintenance: 1,
+    urgentMaintenance: 1,
+    status: 'critical',
+  },
+  {
+    propertyId: 'property-2',
+    title: 'واحة مسقط',
+    totalUnits: 8,
+    occupiedUnits: 6,
+    vacantUnits: 2,
+    occupancyRate: 75,
+    longestVacancyDays: 70,
+    openMaintenance: 1,
+    urgentMaintenance: 0,
+    status: 'watch',
+  },
+];
 
 const fixtureNeedsAttention = buildNeedsAttentionSignal({
   snapshot: fixtureSnapshot,
@@ -191,7 +185,6 @@ const fixtureNeedsAttention = buildNeedsAttentionSignal({
   utilityObligations: fixtureUtilityObligations,
   maintenanceFollowUp: fixtureMaintenanceFollowUp,
 });
-
 const expiringRows = buildExpiringContracts(fixtureSnapshot.queues.expiringContracts);
 
 export function DashboardWorkspaceE2EFixture() {
@@ -201,49 +194,28 @@ export function DashboardWorkspaceE2EFixture() {
         <PageLayout>
           <PageHeader title="اليوم" />
           <div className="grid min-w-0 gap-5">
+            <section aria-label="الحالات التي تحتاج انتباهاً" data-dashboard-section="needs-attention">
+              <SectionHeader eyebrow="1 · أولويات" title="يحتاج انتباهك" />
+              <NeedsAttentionSection signal={fixtureNeedsAttention} isLoading={false} />
+            </section>
+
             <section aria-label="نبض المكتب" data-dashboard-section="office-pulse">
-              <SectionHeader eyebrow="1 · الآن" title="نبض المكتب" />
+              <SectionHeader eyebrow="2 · الآن" title="نبض المكتب" />
               <OfficePulse snapshot={fixtureSnapshot} isLoading={false} settings={defaultCompanySettingsContract} />
             </section>
 
-            <section aria-label="الأداء المالي" data-dashboard-section="financial-performance">
-              <SectionHeader eyebrow="2 · الأداء المالي" title="أداء المكتب" />
-              <FinancialPerformanceSection
-                snapshot={fixtureSnapshot}
-                vacancyAnalytics={fixtureVacancyAnalytics}
-                vacancyDetailsUnavailable={false}
-                settings={fixtureSettings}
-                window="six_months"
-                onWindowChange={() => undefined}
-                chartRows={fixtureChartRows}
-                chartIsLoading={false}
-                chartIsError={false}
-                onChartRetry={() => undefined}
-              />
-            </section>
-
-            <section aria-label="الحالات التي تحتاج انتباهاً" data-dashboard-section="needs-attention">
-              <SectionHeader eyebrow="3 · أولويات" title="يحتاج انتباهك" />
-              <NeedsAttentionSection signal={fixtureNeedsAttention} isLoading={false} />
+            <section aria-label="التحصيل والمتأخرات" data-dashboard-section="collections">
+              <SectionHeader eyebrow="3 · تحصيل" title="التحصيل والمتأخرات" />
+              <CollectionsSection snapshot={fixtureSnapshot} isLoading={false} settings={defaultCompanySettingsContract} />
             </section>
 
             <section aria-label="الإشغال والشغور" data-dashboard-section="occupancy">
               <SectionHeader eyebrow="4 · المحفظة" title="الإشغال والشغور" />
-              <OccupancySection
-                snapshot={fixtureSnapshot}
-                analytics={fixtureVacancyAnalytics}
-                isLoading={false}
-                settings={fixtureSettings}
-              />
-            </section>
-
-            <section aria-label="التحصيل والمتأخرات" data-dashboard-section="collections">
-              <SectionHeader eyebrow="5 · تحصيل" title="التحصيل والمتأخرات" />
-              <CollectionsSection snapshot={fixtureSnapshot} isLoading={false} settings={defaultCompanySettingsContract} />
+              <OccupancySection snapshot={fixtureSnapshot} analytics={fixtureVacancyAnalytics} isLoading={false} settings={fixtureSettings} />
             </section>
 
             <section aria-label="الصيانة والخدمات" data-dashboard-section="maintenance">
-              <SectionHeader eyebrow="6 · خدمات" title="الصيانة والخدمات" />
+              <SectionHeader eyebrow="5 · خدمات" title="الصيانة والخدمات" />
               <div className="grid gap-3 md:grid-cols-2">
                 <MaintenanceSection
                   summary={fixtureMaintenanceSummary}
@@ -258,7 +230,7 @@ export function DashboardWorkspaceE2EFixture() {
             </section>
 
             <section aria-label="العقود القريبة من الانتهاء" data-dashboard-section="upcoming-contracts">
-              <SectionHeader eyebrow="7 · عقود" title="العقود القادمة" />
+              <SectionHeader eyebrow="6 · عقود" title="العقود القادمة" />
               <UpcomingContractsSection
                 rows={expiringRows}
                 expiring30={fixtureSnapshot.contracts.expiring30}
@@ -270,16 +242,29 @@ export function DashboardWorkspaceE2EFixture() {
             </section>
 
             <section aria-label="صحة العقارات" data-dashboard-section="property-health">
-              <SectionHeader eyebrow="8 · المحفظة" title="صحة العقارات" />
+              <SectionHeader eyebrow="7 · المحفظة" title="صحة العقارات" />
               <PropertyHealthSection rows={fixturePropertyHealthRows} isLoading={false} />
+            </section>
+
+            <section aria-label="الأداء المالي" data-dashboard-section="financial-performance">
+              <SectionHeader eyebrow="8 · الأداء المالي" title="أداء المكتب" />
+              <FinancialPerformanceSection
+                snapshot={fixtureSnapshot}
+                vacancyAnalytics={fixtureVacancyAnalytics}
+                vacancyDetailsUnavailable={false}
+                settings={fixtureSettings}
+                window="six_months"
+                onWindowChange={() => undefined}
+                chartRows={fixtureChartRows}
+                chartIsLoading={false}
+                chartIsError={false}
+                onChartRetry={() => undefined}
+              />
             </section>
 
             <section aria-label="مستحقات الملاك" data-dashboard-section="owner-obligations">
               <SectionHeader eyebrow="9 · ملاك" title="مستحقات الملاك" />
-              <div className="grid gap-3 md:grid-cols-2">
-                <OwnerObligationsSection snapshot={fixtureSnapshot} isLoading={false} settings={defaultCompanySettingsContract} />
-                <FinanceExceptionsSection snapshot={fixtureSnapshot} isLoading={false} />
-              </div>
+              <OwnerObligationsSection snapshot={fixtureSnapshot} isLoading={false} settings={defaultCompanySettingsContract} />
             </section>
           </div>
         </PageLayout>

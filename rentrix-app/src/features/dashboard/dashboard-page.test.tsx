@@ -78,6 +78,8 @@ vi.mock('./daily-collection-series', () => ({
     },
     isLoading: false,
     isError: false,
+    isFetching: false,
+    refetch: vi.fn().mockResolvedValue(undefined),
   }),
 }));
 
@@ -95,25 +97,26 @@ vi.mock('@/features/financials/reports/useFinancialReports', () => ({
       },
       isLoading: false,
       isError: false,
+      isFetching: false,
       refetch: vi.fn().mockResolvedValue(undefined),
     };
   },
 }));
 
 vi.mock('@/features/units/use-units', () => ({
-  useAllUnits: () => ({ data: unitFixtures, isLoading: false, isError: false }),
+  useAllUnits: () => ({ data: unitFixtures, isLoading: false, isError: false, isFetching: false, refetch: vi.fn().mockResolvedValue(undefined) }),
 }));
 
 vi.mock('@/features/contracts/useContracts', () => ({
-  useAllContracts: () => ({ data: { rows: [], truncated: false }, isLoading: false, isError: false }),
+  useAllContracts: () => ({ data: { rows: [], truncated: false }, isLoading: false, isError: false, isFetching: false, refetch: vi.fn().mockResolvedValue(undefined) }),
 }));
 
 vi.mock('@/features/utilities/use-utilities', () => ({
-  useUtilityBills: () => ({ data: [], isLoading: false, isError: false }),
+  useUtilityBills: () => ({ data: [], isLoading: false, isError: false, isFetching: false, refetch: vi.fn().mockResolvedValue(undefined) }),
 }));
 
 vi.mock('@/features/maintenance/use-maintenance', () => ({
-  useMaintenance: () => ({ data: maintenanceFixtures, isLoading: false, isError: false }),
+  useMaintenance: () => ({ data: maintenanceFixtures, isLoading: false, isError: false, isFetching: false, refetch: vi.fn().mockResolvedValue(undefined) }),
 }));
 
 vi.mock('@/features/properties/property-service', () => ({
@@ -195,7 +198,7 @@ describe('Dashboard command center query boundary tests', () => {
     await act(async () => { await new Promise((resolve) => setTimeout(resolve, 50)); });
   }
 
-  it('renders the ten command-center sections from the authoritative snapshot', async () => {
+  it('renders the nine owner-facing command-center sections in one semantic reading order', async () => {
     (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
     await renderPage();
     expect(getDashboardSnapshot).toHaveBeenCalled();
@@ -213,39 +216,27 @@ describe('Dashboard command center query boundary tests', () => {
     const sectionOrder = Array.from(container?.querySelectorAll('[data-dashboard-section]') ?? [])
       .map((section) => section.getAttribute('data-dashboard-section'));
     expect(sectionOrder).toEqual([
-      'office-pulse',
       'needs-attention',
+      'office-pulse',
       'collections',
       'occupancy',
-      'financial-performance',
       'maintenance',
       'upcoming-contracts',
       'property-health',
+      'financial-performance',
       'owner-obligations',
-      'finance-exceptions',
     ]);
   });
 
-  it('adds a compact focus strip for the four highest-value dashboard anchors', async () => {
+  it('does not add a duplicate focus rail or hide owner information behind dashboard-only disclosure', async () => {
     (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
     await renderPage();
 
-    const focusStrip = container?.querySelector<HTMLElement>('[data-dashboard-focus-strip]');
-    expect(focusStrip).not.toBeNull();
-    expect(focusStrip?.getAttribute('aria-label')).toBe('محاور التركيز في لوحة اليوم');
-
-    const items = Array.from(focusStrip?.querySelectorAll<HTMLAnchorElement>('[data-dashboard-focus-item]') ?? []);
-    expect(items).toHaveLength(4);
-    expect(items.map((item) => item.getAttribute('href'))).toEqual([
-      '#dashboard-needs-attention',
-      '#dashboard-collections',
-      '#dashboard-occupancy',
-      '#dashboard-maintenance',
-    ]);
-    expect(focusStrip?.textContent).toContain('الأولوية الآن');
-    expect(focusStrip?.textContent).toContain('التحصيل');
-    expect(focusStrip?.textContent).toContain('80%');
+    expect(container?.querySelector('[data-dashboard-focus-strip]')).toBeNull();
+    expect(container?.querySelector('[data-dashboard-secondary-disclosure]')).toBeNull();
+    expect(container?.querySelector('[data-dashboard-section="finance-exceptions"]')).toBeNull();
     expect(container?.querySelector('[data-dashboard-section="needs-attention"]')?.getAttribute('data-dashboard-priority')).toBe('attention');
+    expect(container?.querySelector('[data-dashboard-section="property-health"]')?.textContent).toContain('برج الخليج');
   });
 
   it('keeps page identity plus day and date in the canonical PageHeader without a routine refresh action', async () => {
@@ -267,11 +258,10 @@ describe('Dashboard command center query boundary tests', () => {
     expect(pulse?.querySelectorAll('[data-kpi-card]')).toHaveLength(4);
     const pulseText = pulse?.textContent ?? '';
     expect(pulseText).toContain('التحصيل هذا الشهر');
-    expect(pulseText).toContain('80%'); // collection rate and occupancy come straight from the snapshot
+    expect(pulseText).toContain('80%');
     expect(pulseText).toContain('4 مشغولة · 1 شاغرة');
     expect(pulseText).toContain('فاتورة متأخرة');
     expect(pulseText).toContain('التحصيل ناقص المصروفات المسجلة');
-    // The sparkline renders from the authoritative daily series.
     expect(pulse?.querySelector('[data-dashboard-sparkline]')).not.toBeNull();
   });
 
@@ -302,12 +292,9 @@ describe('Dashboard command center query boundary tests', () => {
     expect(section).not.toBeNull();
     const links = Array.from(section?.querySelectorAll('[data-needs-attention-link]') ?? []);
     expect(links.length).toBeGreaterThanOrEqual(3);
-    // Severity-first ranking: the overdue invoice (18 days) leads the queue.
     expect(links[0]?.textContent).toContain('أحمد الفارسي');
     expect(links[0]?.getAttribute('href')).toBe('/arrears');
-    // Urgent maintenance routes into Services.
-    expect(links.some((link) => link.getAttribute('href') === '/maintenance')).toBe(true);
-    // The expiring contract opens the contract dossier workflow.
+    expect(links.filter((link) => link.getAttribute('href') === '/maintenance')).toHaveLength(1);
     const contractRow = links.find((link) => link.textContent?.includes('سالم الكعبي'));
     expect(contractRow).not.toBeUndefined();
     await act(async () => contractRow?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
@@ -319,11 +306,10 @@ describe('Dashboard command center query boundary tests', () => {
     await renderPage();
     const section = container?.querySelector('[data-dashboard-section="occupancy"]');
     expect(section?.textContent).toContain('الإشغال والشغور');
-    expect(section?.textContent).toContain('80%'); // snapshot occupancy rate, not a recount
+    expect(section?.textContent).toContain('80%');
     expect(section?.textContent).toContain('مشغولة / شاغرة');
     expect(section?.textContent).toContain('0–15 يوم');
     expect(section?.textContent).toContain('+60 يوم');
-    // The single available unit has been vacant since its creation date (June 2026).
     expect(section?.querySelector('[data-dashboard-queue-link]')).not.toBeNull();
     expect(section?.textContent).toContain('برج الخليج');
   });
@@ -350,7 +336,6 @@ describe('Dashboard command center query boundary tests', () => {
     expect(summary).not.toBeNull();
     expect(section?.textContent).toContain('متوسط زمن الإنجاز');
     expect(section?.textContent).toContain('تسرب مياه');
-    // The utility obligations panel keeps its place in the services group.
     expect(section?.textContent).toContain('التزامات المرافق');
   });
 
@@ -364,27 +349,27 @@ describe('Dashboard command center query boundary tests', () => {
     expect(section?.textContent).toContain('سالم الكعبي');
   });
 
-  it('classifies property health transparently from occupancy, vacancy and maintenance', async () => {
+  it('classifies property health transparently and keeps it directly visible', async () => {
     (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
     await renderPage();
     const section = container?.querySelector('[data-dashboard-section="property-health"]');
     expect(section?.textContent).toContain('برج الياسمين');
     expect(section?.textContent).toContain('برج الخليج');
-    // برج الياسمين is fully occupied with no open maintenance → جيد.
     expect(section?.textContent).toContain('جيد');
-    // برج الخليج carries the vacant unit → needs follow-up or intervention.
     expect(section?.textContent).toMatch(/يحتاج متابعة|يحتاج تدخل/);
+    expect(section?.querySelector('[data-dashboard-signal-collapse-toggle]')).toBeNull();
   });
 
-  it('keeps owner obligations and financial exceptions on the closing row', async () => {
+  it('keeps owner obligations visible while financial exceptions stay in the unified decision queue', async () => {
     (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
     await renderPage();
     const ownerLink = container?.querySelector<HTMLAnchorElement>('[data-dashboard-owner-obligations-link]');
     expect(ownerLink?.getAttribute('href')).toBe('/owner-settlements');
     expect(container?.querySelector('[data-dashboard-owner-obligations-breakdown]')).not.toBeNull();
-    const exceptions = container?.querySelector('[data-dashboard-section="finance-exceptions"]');
-    expect(exceptions?.textContent).toContain('حركات بنكية غير مطابقة');
-    expect(exceptions?.textContent).toContain('تسويات ملاك تنتظر الإجراء');
+    expect(container?.querySelector('[data-dashboard-section="finance-exceptions"]')).toBeNull();
+    const attention = container?.querySelector('[data-dashboard-section="needs-attention"]');
+    expect(attention?.textContent).toContain('حركة بنكية غير مطابقة');
+    expect(attention?.textContent).toContain('تسوية ملاك');
   });
 
   it('keeps setup shortcuts permission-gated for ADMIN/MANAGER only', async () => {
@@ -449,7 +434,6 @@ describe('Dashboard command center query boundary tests', () => {
 
     const text = container?.textContent ?? '';
     expect(text).toContain('تعذر تحديث بيانات اليوم');
-    // The last good view survives the failed refresh.
     expect(container?.querySelector('[data-dashboard-office-pulse]')).not.toBeNull();
     expect(container?.querySelector('[data-dashboard-owner-obligations-link]')).not.toBeNull();
   });

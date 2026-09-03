@@ -1,16 +1,16 @@
 /**
  * Command center — unified "needs attention" queue.
  *
- * Today previously split attention across several cards, forcing the office
- * owner to interpret each one separately. This module merges the EXISTING
- * authoritative signals into one ranked queue:
+ * The queue is intentionally decision-oriented rather than a second copy of
+ * every dashboard list. Existing authoritative signals are merged into a small
+ * ranked set of actions:
  *
- * - overdue invoices / urgent maintenance / expiring contracts: bounded queue
- *   rows from the server read model (rpt_dashboard_snapshot) — presentation
- *   context, with the server counts remaining authoritative;
- * - long vacancy: the shared vacancy derivation (complete units read);
- * - utility obligations / maintenance follow-up: their shared derivations
- *   over complete paged reads;
+ * - overdue invoices / expiring contracts: bounded queue rows from
+ *   rpt_dashboard_snapshot;
+ * - maintenance: one combined action surface backed by the authoritative urgent
+ *   count plus the shared maintenance follow-up derivation;
+ * - long vacancy: the shared vacancy derivation over the complete units read;
+ * - utility obligations: the shared complete-set derivation;
  * - owner settlements and bank exceptions: snapshot KPI counts.
  *
  * Nothing is counted here from capped datasets, and no business rule is
@@ -39,7 +39,7 @@ export type NeedsAttentionItem = Readonly<{
 
 export type NeedsAttentionSignal = Readonly<{
   items: readonly NeedsAttentionItem[];
-  /** Every merged item, before any presentation cap. */
+  /** Number of decision items before any presentation cap, not a raw record count. */
   totalCount: number;
   /** False when one or more contributing reads were unavailable. */
   isComplete: boolean;
@@ -89,14 +89,26 @@ export function buildNeedsAttentionSignal(params: {
     });
   }
 
-  // 2) Urgent maintenance — reported emergencies still open.
-  for (const row of snapshot.queues.urgentMaintenance) {
+  // 2) Maintenance — one decision item instead of repeating urgent rows and a
+  // second follow-up aggregate for the same workspace.
+  const urgentMaintenanceCount = snapshot.maintenance.urgentOpen;
+  const maintenanceFollowUpCount = maintenanceFollowUp.actionableCount;
+  if (urgentMaintenanceCount > 0 || maintenanceFollowUpCount > 0) {
+    const hasUrgent = urgentMaintenanceCount > 0;
     items.push({
-      key: `urgent-maintenance-${row.id}`,
-      severity: 'danger',
-      ageDays: 0,
-      title: row.title || 'طلب صيانة عاجل',
-      meta: `صيانة عاجلة · ${formatQueueLocation(row.propertyTitle, row.unitNumber)}`,
+      key: 'maintenance-action',
+      severity: hasUrgent ? 'danger' : 'warning',
+      ageDays: maintenanceFollowUp.oldestOpenAgeDays ?? 0,
+      title: hasUrgent
+        ? `${urgentMaintenanceCount} طلب صيانة عاجل يحتاج تدخلاً`
+        : `${maintenanceFollowUpCount} طلب صيانة يحتاج متابعة`,
+      meta: hasUrgent && maintenanceFollowUpCount > 0
+        ? `${urgentMaintenanceCount} عاجل مفتوح · ${maintenanceFollowUpCount} يحتاج متابعة تشغيلية`
+        : hasUrgent
+          ? 'ابدأ بالحالات العاجلة من سجل الصيانة'
+          : maintenanceFollowUp.stalledCount > 0
+            ? `${maintenanceFollowUp.stalledCount} متوقف عن التقدم`
+            : 'طلبات تجاوزت مواعيدها أو بانتظار الإغلاق',
       to: '/maintenance',
     });
   }
@@ -129,21 +141,7 @@ export function buildNeedsAttentionSignal(params: {
     });
   }
 
-  // 5) Stalled maintenance follow-up (one aggregate item, oldest first).
-  if (maintenanceFollowUp.actionableCount > 0) {
-    items.push({
-      key: 'maintenance-follow-up',
-      severity: 'warning',
-      ageDays: maintenanceFollowUp.oldestOpenAgeDays ?? 0,
-      title: `${maintenanceFollowUp.actionableCount} طلب صيانة يحتاج متابعة`,
-      meta: maintenanceFollowUp.stalledCount > 0
-        ? `${maintenanceFollowUp.stalledCount} متوقف عن التقدم`
-        : 'طلبات تجاوزت مواعيدها أو بانتظار الإغلاق',
-      to: '/maintenance',
-    });
-  }
-
-  // 6) Utility obligations — late claims rank above imminently due ones.
+  // 5) Utility obligations — late claims rank above imminently due ones.
   if (utilityObligations.summary.overdueCount > 0) {
     items.push({
       key: 'utilities-overdue',
@@ -165,7 +163,7 @@ export function buildNeedsAttentionSignal(params: {
     });
   }
 
-  // 7) Owner settlements waiting on the office.
+  // 6) Owner settlements waiting on the office.
   if (snapshot.ownerFunds.settlementsApproved > 0) {
     items.push({
       key: 'owner-settlements-approved',
@@ -187,7 +185,7 @@ export function buildNeedsAttentionSignal(params: {
     });
   }
 
-  // 8) Bank lines waiting for matching.
+  // 7) Bank lines waiting for matching.
   if (snapshot.exceptions.unmatchedBankLines > 0) {
     items.push({
       key: 'bank-reconciliation',

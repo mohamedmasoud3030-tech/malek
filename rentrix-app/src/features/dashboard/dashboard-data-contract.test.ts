@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 /**
- * R1 — Dashboard Truth architecture guard.
+ * Dashboard Truth architecture guard.
  *
  * The command center must never rebuild client-side truth:
  *   - one authoritative RPC (rpt_dashboard_snapshot) is the KPI source,
@@ -12,13 +12,12 @@ import { describe, expect, it } from 'vitest';
  *   - no dataset fan-out becomes a KPI, and no rows.length or client
  *     filtering of capped reads is presented as an authoritative number.
  */
-describe('dashboard frontend/backend data contract (R1)', () => {
+describe('dashboard frontend/backend data contract', () => {
   const read = (file: string) => readFileSync(resolve(import.meta.dirname, file), 'utf8');
 
   it('loads the snapshot exclusively through the authoritative read model RPC', () => {
     const snapshotSource = read('dashboard-snapshot.ts');
     expect(snapshotSource).toContain("supabase.rpc('rpt_dashboard_snapshot'");
-    // No table reads and no legacy report/list fan-out from the snapshot module.
     expect(snapshotSource).not.toContain('supabase.from(');
     expect(snapshotSource).not.toContain('listContracts');
     expect(snapshotSource).not.toContain('listMaintenance');
@@ -46,7 +45,7 @@ describe('dashboard frontend/backend data contract (R1)', () => {
       read('components/upcoming-contracts-section.tsx'),
       read('components/property-health-section.tsx'),
     ].join('\n');
-    // The forbidden client-derivation patterns from the pre-R1 dashboard.
+    // Retired client-derivation patterns must never return.
     expect(sources).not.toContain('activeContracts.length');
     expect(sources).not.toMatch(/filter\([^)]*\)\.length/);
     expect(sources).not.toContain('pageSize: 500');
@@ -62,7 +61,6 @@ describe('dashboard frontend/backend data contract (R1)', () => {
   it('keeps the monthly chart on the canonical Reports cashflow service', () => {
     const pageSource = read('dashboard-page.tsx');
     expect(pageSource).toContain('useFinancialCashflowReport');
-    // The dashboard picks the window; it never recomputes money series itself.
     expect(pageSource).not.toContain('supabase.from(\'payments\'');
     expect(pageSource).not.toContain('supabase.from(\'expenses\'');
   });

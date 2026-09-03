@@ -124,9 +124,7 @@ describe('MALEK mobile shell & navigation polish pass (Section O verification ma
       renderWithClient(<AppShell />);
       const header = host.querySelector<HTMLElement>('[data-app-shell-header]');
       expect(header).not.toBeNull();
-      // Legacy top-menu marker is gone.
       expect(header?.querySelector('[data-mobile-top-menu]')).toBeNull();
-      // The header menu button exists only as a tablet affordance (hidden on phone).
       const menuButton = header?.querySelector<HTMLButtonElement>('[data-header-menu-button]');
       expect(menuButton).not.toBeNull();
       expect(menuButton?.className).toContain('hidden');
@@ -333,7 +331,6 @@ describe('MALEK mobile shell & navigation polish pass (Section O verification ma
       expect(today?.textContent).toContain('اليوم');
       expect(today?.querySelector('[data-global-today-weekday]')?.textContent).not.toBe('');
       expect(today?.querySelector('[data-global-today-day-date]')?.textContent).not.toBe('');
-      // Document chrome: the strip is an inline text layer, not a card.
       expect(today?.className).not.toContain('min-h-14');
       expect(today?.className).not.toContain('rounded-2xl');
     });
@@ -347,7 +344,7 @@ describe('MALEK mobile shell & navigation polish pass (Section O verification ma
       const dashboardCss = readFileSync(resolve(process.cwd(), 'src/features/dashboard/dashboard-v2.css'), 'utf8');
       expect(dashboardCss).toContain('--dashboard-section-gap: 0.85rem');
       expect(dashboardCss).toContain('--dashboard-cluster-gap: 0.5rem');
-      expect(dashboardCss).toContain('[data-dashboard-focus-strip]');
+      expect(dashboardCss).not.toContain('[data-dashboard-focus-strip]');
       expect(dashboardCss).toContain("[data-dashboard-priority='attention']");
     });
   });

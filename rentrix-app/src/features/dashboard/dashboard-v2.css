@@ -15,43 +15,6 @@
   }
 }
 
-/* Compact first-scan rail: operational shortcuts, not another KPI card. */
-[data-dashboard-focus-strip] {
-  scroll-margin-block-start: calc(var(--app-header-height, 3rem) + var(--dashboard-section-gap));
-  border-radius: 0.75rem;
-  border-color: hsl(var(--border) / 0.55);
-  background: hsl(var(--muted) / 0.16);
-  box-shadow: none;
-}
-
-[data-dashboard-focus-scroll] {
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
-}
-
-[data-dashboard-focus-scroll]::-webkit-scrollbar {
-  display: none;
-}
-
-[data-dashboard-focus-item] {
-  border-color: transparent;
-  background: transparent;
-  box-shadow: none;
-  transition: background-color var(--duration-fast) var(--motion-ease-standard);
-}
-
-[data-dashboard-focus-item] + [data-dashboard-focus-item] {
-  border-inline-start-color: hsl(var(--border) / 0.55);
-  border-inline-start-width: 1px;
-  border-start-start-radius: 0;
-  border-end-start-radius: 0;
-}
-
-[data-dashboard-focus-item]:hover,
-[data-dashboard-focus-item]:focus-visible {
-  background: hsl(var(--background) / 0.75);
-}
-
 [data-dashboard-page] [data-dashboard-section] {
   scroll-margin-block-start: calc(
     var(--app-header-height, 3rem) + var(--dashboard-section-gap)
@@ -63,8 +26,8 @@
   border-color: hsl(var(--primary) / 0.16);
 }
 
-/* Needs Attention is structurally distinct because the audit identified it as
-   the daily queue. Emphasis uses the canonical warning tokens only. */
+/* Needs Attention is structurally distinct because it is the daily decision queue.
+   Emphasis uses the canonical warning tokens only. */
 [data-dashboard-page] [data-dashboard-priority='attention'] {
   border-inline-start: 3px solid hsl(var(--warning-text) / 0.58);
   padding-inline-start: 0.75rem;
@@ -95,21 +58,4 @@
 
 [data-dashboard-page] :where([data-component-card], [data-kpi-card]) {
   min-width: 0;
-}
-
-@media (max-width: 639px) {
-  [data-dashboard-focus-strip] {
-    margin-inline: calc(var(--app-page-gutter-inline) * -0.15);
-  }
-
-  [data-dashboard-focus-item] {
-    min-width: 7rem;
-    padding-inline: 0.7rem;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  [data-dashboard-focus-item] {
-    transition-duration: 0.01ms !important;
-  }
 }
