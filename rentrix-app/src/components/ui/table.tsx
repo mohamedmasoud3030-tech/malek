@@ -9,6 +9,11 @@ import { Skeleton } from './skeleton';
  * One table primitive owns spacing, type scale, separators and overflow across
  * the product. Columns keep natural width so narrow viewports scroll cleanly
  * instead of crushing, wrapping or overlapping cell content.
+ *
+ * The header/row base ink is intentionally marked important: some legacy
+ * route-scoped visual rules still exist for operational workspace chrome, but
+ * no route is allowed to create a second table skin. Cards/Table remain two
+ * presentation options; when Table is selected, every page uses this skin.
  */
 const tableVariants = cva(
   [
@@ -39,7 +44,7 @@ export function Table({ className, density, ...props }: TableProps) {
 }
 
 export function TableHeader({ className, ...props }: HTMLAttributes<HTMLTableSectionElement>) {
-  return <thead className={cn('[&_tr]:border-b [&_tr]:border-border/75', className)} {...props} />;
+  return <thead className={cn('!bg-card !text-foreground [&_tr]:border-b [&_tr]:border-border/75', className)} {...props} />;
 }
 
 export function TableBody({ className, ...props }: HTMLAttributes<HTMLTableSectionElement>) {
@@ -55,8 +60,8 @@ export function TableRow({
     <tr
       data-selected={selected ? 'true' : undefined}
       className={cn(
-        'border-b border-border/60 bg-card transition-colors hover:bg-muted/25',
-        selected && 'bg-primary/7 hover:bg-primary/10',
+        '!bg-card border-b border-border/60 transition-colors hover:!bg-muted/25',
+        selected && '!bg-primary/7 hover:!bg-primary/10',
         className,
       )}
       {...props}
@@ -68,7 +73,7 @@ export function TableHead({ className, ...props }: ThHTMLAttributes<HTMLTableCel
   return (
     <th
       className={cn(
-        'h-9 whitespace-nowrap bg-muted/45 px-2 text-start align-middle text-[11px] font-bold leading-4 text-foreground/75 sm:px-2.5',
+        'h-9 whitespace-nowrap !bg-card px-2 text-start align-middle text-[11px] !font-extrabold leading-4 text-foreground/75 sm:px-2.5',
         className,
       )}
       {...props}
@@ -161,6 +166,10 @@ export function TableError({
   colSpan,
   title = 'تعذر تحميل البيانات',
   onRetry,
+}: {
+  colSpan: number;
+  title?: string;
+  onRetry?: () => void;
 }: {
   colSpan: number;
   title?: string;
