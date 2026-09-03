@@ -63,13 +63,31 @@ describe('owners canonical list contract', () => {
 
     expect(page).toContain('<ListPage');
     expect(page).toContain('workspaceName="owners"');
+    expect(page).toContain('viewModeStorageKey="malek:list-page:owners"');
     expect(page).not.toContain('OwnerMobileRelationships');
     expect(page).not.toContain('data-owner-relationships');
     expect(page).not.toContain('OwnershipLinkForm');
     expect(table).not.toContain("id: 'relationships'");
     expect(table).not.toContain("key: 'ownership'");
+    expect(table).not.toContain('<DataTableColumnsMenu');
     expect(detail).toContain('<OwnerRelationshipManager');
     expect(detail).toContain("id=\"portfolio\"");
+  });
+
+  it('keeps header action then canonical toolbar then summary then one register', () => {
+    const page = read('features/owners/OwnersPage.tsx');
+    const primaryActionIndex = page.indexOf('primaryAction={');
+    const searchIndex = page.indexOf('search={{');
+    const toolbarIndex = page.indexOf('toolbarActions={');
+    const summaryIndex = page.indexOf('<RegisterMetricStrip');
+    const registerIndex = page.indexOf('data-owner-register');
+
+    expect(primaryActionIndex).toBeGreaterThan(-1);
+    expect(searchIndex).toBeGreaterThan(primaryActionIndex);
+    expect(toolbarIndex).toBeGreaterThan(searchIndex);
+    expect(summaryIndex).toBeGreaterThan(toolbarIndex);
+    expect(registerIndex).toBeGreaterThan(summaryIndex);
+    expect(page.match(/data-owner-register/g)).toHaveLength(1);
   });
 });
 
