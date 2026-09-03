@@ -10,6 +10,7 @@ import {
 const readFinancePage = () => readFileSync(new URL('../finance/FinancePage.tsx', import.meta.url), 'utf8');
 const routeTreeSource = readFileSync(new URL('../../app/router/route-tree.ts', import.meta.url), 'utf8');
 const financePageSource = readFileSync(new URL('../finance/FinancePage.tsx', import.meta.url), 'utf8');
+const financeOverviewSource = readFileSync(new URL('../finance/overview/FinanceOperationsOverview.tsx', import.meta.url), 'utf8');
 const invoiceControllerSource = readFileSync(new URL('./invoices/useInvoiceWorkspaceController.ts', import.meta.url), 'utf8');
 const invoiceWorkspaceSource = readFileSync(new URL('./components/invoice-workspace-section.tsx', import.meta.url), 'utf8');
 const invoiceDetailSource = readFileSync(new URL('./components/invoice-detail-section.tsx', import.meta.url), 'utf8');
@@ -32,6 +33,22 @@ describe('/financials Money workspace IA', () => {
     expect(routeTreeSource).toContain("import('@/features/finance/FinancePage')");
     expect(routeTreeSource).toContain("'FinancePage'");
     expect(financePageSource).toContain('export function FinancePage');
+  });
+
+  it('opens the Money root as an operational overview while preserving direct register journeys', () => {
+    expect(resolveFinanceLocation('', '', mockAuth([]))).toMatchObject({
+      resolvedSectionId: 'overview', resolvedViewId: 'overview',
+    });
+    expect(financePageSource).toContain('FinanceOperationsOverview = lazy(');
+    expect(financePageSource).toContain('<FinanceOperationsOverview />');
+    expect(financeOverviewSource).toContain('useInvoiceTotalsReport');
+    expect(financeOverviewSource).toContain('usePaymentTotalsReport');
+    expect(financeOverviewSource).toContain('useAgedReceivablesReport');
+    expect(financeOverviewSource).toContain('summarizeLiveOwnerSettlements');
+    expect(financeOverviewSource).not.toContain("from '@/lib/supabase'");
+    for (const stage of ['الاستحقاق', 'الفاتورة', 'التحصيل', 'التخصيص', 'المصروف', 'التسوية']) {
+      expect(financeOverviewSource).toContain(stage);
+    }
   });
 
   it('keeps commissions in the same Money route without duplicating its business logic', () => {
@@ -96,10 +113,12 @@ describe('Money view-level permissions', () => {
     expect(isViewPermitted(mockAuth(['financial.owner_settlements.view']), settlements)).toBe(true);
   });
 
-  it('keeps invoices/receipts authenticated-only and arrears permissioned', () => {
+  it('keeps overview/invoices/receipts authenticated-only and arrears permissioned', () => {
+    const overview = FINANCE_VIEWS.find((view) => view.id === 'overview')!;
     const invoices = FINANCE_VIEWS.find((view) => view.id === 'invoices')!;
     const receipts = FINANCE_VIEWS.find((view) => view.id === 'receipts')!;
     const arrears = FINANCE_VIEWS.find((view) => view.id === 'arrears')!;
+    expect(isViewPermitted(mockAuth([]), overview)).toBe(true);
     expect(isViewPermitted(mockAuth([]), invoices)).toBe(true);
     expect(isViewPermitted(mockAuth([]), receipts)).toBe(true);
     expect(isViewPermitted(mockAuth([]), arrears)).toBe(false);

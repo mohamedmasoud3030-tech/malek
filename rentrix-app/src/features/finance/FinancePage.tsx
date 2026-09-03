@@ -27,6 +27,9 @@ function SectionFallback() {
   );
 }
 
+const FinanceOperationsOverview = lazy(async () => ({
+  default: (await import('./overview/FinanceOperationsOverview')).FinanceOperationsOverview,
+}));
 const InvoicesWorkspace = lazy(async () => ({
   default: (await import('@/features/financials/invoices/invoices-page')).InvoicesWorkspace,
 }));
@@ -138,7 +141,7 @@ export function FinancePage() {
     <PageLayout dir="rtl" lang="ar" size="wide">
       <PageHeader
         title="المال"
-        description="الفواتير والتحصيل والمصروفات والتسويات والأمانات والبنوك من مكان واحد."
+        description="المستحق والمحصّل والمتأخر والمصروفات وتسويات الملاك أولًا، ثم التفاصيل عند الحاجة."
       />
 
       <div data-finance-root className="min-w-0 space-y-3 sm:space-y-4">
@@ -181,6 +184,12 @@ export function FinancePage() {
         ) : null}
 
         <section id="finance-workspace-panel" className="min-w-0" aria-label="مساحة العمل المالية الحالية">
+          {activeSection === 'overview' && activeView === 'overview' ? (
+            <div id="finance-view-panel-overview" role="tabpanel" aria-labelledby="finance-section-tab-overview">
+              <Suspense fallback={<SectionFallback />}><FinanceOperationsOverview /></Suspense>
+            </div>
+          ) : null}
+
           {activeSection === 'collections' && activeView === 'invoices' ? (
             <div id="finance-view-panel-invoices" role="tabpanel" aria-labelledby="finance-view-tab-invoices">
               <Suspense fallback={<SectionFallback />}><InvoicesWorkspace embedded /></Suspense>
@@ -192,12 +201,6 @@ export function FinancePage() {
             </div>
           ) : null}
           {activeSection === 'collections' && activeView === 'arrears' ? (
-            /*
-             * Arrears is a specialist view (showInSectionNavigation: false), so
-             * no tab ever controls it. It is a standalone region named by the
-             * specialist-view heading rather than an orphan tabpanel whose
-             * aria-labelledby would point at an element that is never rendered.
-             */
             <div id="finance-view-panel-arrears" role="region" aria-labelledby={specialistViewLabelId}>
               <Suspense fallback={<SectionFallback />}><ArrearsWorkspace embedded /></Suspense>
             </div>

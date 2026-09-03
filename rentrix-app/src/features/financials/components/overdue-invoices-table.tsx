@@ -91,18 +91,23 @@ export function OverdueInvoicesTable({ rows, onSelectInvoice, onCollectInvoice }
       mobileSupportingKey="tenant"
       mobilePrimaryMetaKeys={['remaining', 'due_date', 'days_overdue']}
       mobileSecondaryMetaKeys={['context', 'bucket']}
-      mobileCardPrimaryAction={(row) => ({
+      mobileCardPrimaryAction={(row) => onCollectInvoice ? ({
+        label: 'تحصيل الآن',
+        icon: HandCoins,
+        variant: 'default',
+        ariaLabel: `تحصيل ${row.invoiceReference ?? 'الفاتورة'}`,
+        onClick: () => onCollectInvoice(row.invoiceId),
+      }) : ({
         label: 'عرض الفاتورة',
         variant: 'default',
         ariaLabel: `عرض ${row.invoiceReference ?? 'الفاتورة'}`,
         onClick: () => onSelectInvoice(row.invoiceId),
       })}
       mobileCardActions={(row) => onCollectInvoice ? [{
-        label: 'تحصيل',
-        icon: HandCoins,
+        label: 'عرض الفاتورة',
         variant: 'secondary' as const,
-        ariaLabel: `تحصيل ${row.invoiceReference ?? 'الفاتورة'}`,
-        onClick: () => onCollectInvoice(row.invoiceId),
+        ariaLabel: `عرض ${row.invoiceReference ?? 'الفاتورة'}`,
+        onClick: () => onSelectInvoice(row.invoiceId),
       }] : []}
     />
   );
