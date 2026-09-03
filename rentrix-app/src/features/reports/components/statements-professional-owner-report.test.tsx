@@ -190,6 +190,6 @@ describe('StatementsSection professional owner report wiring', () => {
 
   it('explains truthfully why the owner running balance is unavailable', () => {
     renderOwnerSection();
-    expect(screen.getByText(/لا يُعرض لأن مصدر كشف المالك لا يوفّر رصيدًا افتتاحيًا معتمدًا/)).toBeDefined();
+    expect(screen.getByText(/الرصيد الجاري لا يُعرض لأن سلطة كشف المالك الحالية لا توفّر رصيد افتتاح معتمدًا/)).toBeDefined();
   });
 });
