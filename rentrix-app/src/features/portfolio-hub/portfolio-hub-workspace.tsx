@@ -36,7 +36,7 @@ const sectionComponents: Record<PortfolioHubSectionId, ComponentType> = {
 
 function SectionFallback() {
   return (
-    <div className="space-y-3" role="status" aria-label="جارٍ تحميل قسم المحفظة">
+    <div className="col-span-full row-start-2 space-y-3" role="status" aria-label="جارٍ تحميل قسم المحفظة">
       <Skeleton className="h-24" />
       <Skeleton className="h-64" />
     </div>
