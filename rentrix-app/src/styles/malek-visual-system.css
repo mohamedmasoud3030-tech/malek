@@ -199,55 +199,6 @@
   box-shadow: var(--shadow-card-hover);
 }
 
-[data-operational-route='true'] [data-malek-surface] [data-entity-table-wrapper] {
-  overflow: hidden;
-  border-radius: 1rem;
-  background: hsl(var(--card));
-  border: 1px solid hsl(var(--border));
-}
-
-[data-operational-route='true'] [data-malek-surface] [data-entity-table] thead {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  background: hsl(var(--muted) / 0.92);
-  color: hsl(var(--foreground) / 0.92);
-}
-
-[data-operational-route='true'] [data-malek-surface] [data-entity-table] thead th {
-  height: 2.75rem;
-  background: transparent;
-  color: hsl(var(--muted-foreground));
-  border-color: hsl(var(--border));
-  border-bottom-color: hsl(var(--border));
-  font-size: 0.8125rem;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-  text-transform: none;
-}
-
-[data-operational-route='true'] [data-malek-surface] [data-entity-table] tbody td {
-  font-size: 0.875rem;
-  line-height: 1.5;
-}
-
-[data-operational-route='true'] [data-malek-surface] [data-entity-table] tbody tr {
-  transition: background-color 140ms ease;
-}
-
-[data-operational-route='true'] [data-malek-surface] [data-entity-table] tbody tr:nth-child(even) {
-  background: hsl(var(--muted) / 0.22);
-}
-
-[data-operational-route='true'] [data-malek-surface] [data-entity-table] tbody tr:hover {
-  background: hsl(var(--muted) / 0.65);
-}
-
-[data-theme='dark'] [data-operational-route='true'] [data-malek-surface] [data-entity-table] thead {
-  background: hsl(var(--muted) / 0.8);
-  color: hsl(var(--foreground));
-}
-
 [data-operational-route='true'] [data-malek-surface] [role='tablist'] {
   gap: 0.125rem;
   padding: 0.2rem;
@@ -347,36 +298,6 @@
     font-size: 1.125rem;
     line-height: 1.35;
   }
-}
-
-/* Register table presentation */
-[data-entity-table] thead th {
-  border-bottom: 1px solid hsl(var(--border));
-  background: hsl(var(--card));
-  color: hsl(var(--muted-foreground));
-  font-size: 0.8125rem;
-  font-weight: 800;
-  letter-spacing: 0.01em;
-}
-
-[data-entity-table] tbody td {
-  border-bottom: 1px solid hsl(var(--border-light));
-  color: hsl(var(--foreground));
-  font-size: 0.875rem;
-  line-height: 1.5;
-}
-
-[data-entity-table] tbody tr {
-  background: hsl(var(--card));
-  transition: background-color var(--duration-fast) var(--motion-ease-standard);
-}
-
-[data-entity-table] tbody tr:hover {
-  background: hsl(var(--muted) / 0.6);
-}
-
-[data-entity-table] [data-column-priority='identity'] {
-  font-weight: 700;
 }
 
 /* Semantic KPI accents */
