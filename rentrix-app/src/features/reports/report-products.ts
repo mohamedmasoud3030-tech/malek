@@ -153,11 +153,6 @@ export const REPORT_PRODUCTS: readonly ReportProduct[] = [
   },
 ] as const;
 
-/** Real route (not a dialog) for opening a premium product. */
-export function reportProductPath(product: ReportProduct | Pick<ReportProduct, 'id'>): string {
-  return `/reports/${product.id}`;
-}
-
 export function getReportProduct(value: unknown): ReportProduct | undefined {
   if (typeof value !== 'string') return undefined;
   return REPORT_PRODUCTS.find((product) => product.id === value.trim());
