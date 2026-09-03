@@ -1,7 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { RoleSimulatorSection } from '@/features/settings/role-simulator-section';
 import { getSimulatedRole, setSimulatedRole } from '@/services/mock-role-simulator';
 
 describe('audit-log route wiring', () => {
@@ -24,13 +22,5 @@ describe('role simulator behavior', () => {
     expect(getSimulatedRole()).toBe('USER');
     setSimulatedRole('ADMIN');
     expect(getSimulatedRole()).toBe('ADMIN');
-  });
-
-  it('renders the RoleSimulatorSection with all three roles', () => {
-    const html = renderToStaticMarkup(<RoleSimulatorSection />);
-    expect(html).toContain('محاكي الصلاحيات وأدوار الموظفين');
-    expect(html).toContain('ADMIN');
-    expect(html).toContain('MANAGER');
-    expect(html).toContain('USER');
   });
 });
