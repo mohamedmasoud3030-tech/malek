@@ -30,6 +30,7 @@ function makeContract(overrides: Partial<ContractListItem> = {}): ContractListIt
     property_id: 'property-1',
     unit_id: 'unit-1',
     tenant_id: 'tenant-1',
+    agreement_id: null,
     start_date: '2026-01-01',
     end_date: '2026-12-31',
     rent_amount: 1000,
