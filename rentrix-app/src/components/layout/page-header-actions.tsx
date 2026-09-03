@@ -2,29 +2,20 @@ import { MoreVertical } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
-import { cn } from '@/lib/utils';
 
 interface PageHeaderActionsProps {
   primaryAction?: ReactNode;
   secondaryActions?: ReactNode;
-  backTo?: string;
-  backLabel?: string;
   title?: string;
 }
 
 /**
- * Mobile-aware actions rail for PageHeader and EmbeddableWorkspace.
- * - Primary action always visible (compact on mobile).
- * - Secondary actions inline on desktop, collapsed into accessible overflow on mobile.
- * - Destructive actions visually separated (handled by button variants).
- * - Touch targets 44px min.
- * - Safe-area padding preserved via BottomSheet.
- * - Menus stay within viewport (BottomSheet).
- * - Icon-only buttons have accessible names via Button's aria-label (caller responsibility, but we enforce via overflow).
+ * Canonical mobile-aware action group shared by PageHeader and embedded workspaces.
+ * Primary actions stay visible; secondary actions remain inline on desktop and
+ * move into the accessible mobile overflow sheet. Touch targets keep the 44px floor.
  */
 export function PageHeaderActions({ primaryAction, secondaryActions, title }: PageHeaderActionsProps) {
   const [overflowOpen, setOverflowOpen] = useState(false);
-
   const hasSecondary = Boolean(secondaryActions);
   const hasPrimary = Boolean(primaryAction);
 
@@ -33,16 +24,12 @@ export function PageHeaderActions({ primaryAction, secondaryActions, title }: Pa
   return (
     <>
       <div
-        className={cn(
-          'flex min-w-0 max-w-full items-center justify-end gap-1.5 overflow-hidden sm:max-w-none sm:gap-2',
-          'shrink-0',
-        )}
+        className="flex min-w-0 max-w-full shrink-0 items-center justify-end gap-1.5 overflow-hidden sm:max-w-none sm:gap-2"
         data-page-actions
       >
-        {/* Secondary actions — desktop inline, mobile hidden */}
         {hasSecondary ? (
           <div
-            className="hidden min-w-0 sm:flex items-center gap-1.5 overflow-hidden sm:gap-2"
+            className="hidden min-w-0 items-center gap-1.5 overflow-hidden sm:flex sm:gap-2"
             aria-label="إجراءات ثانوية"
             data-secondary-actions-desktop
           >
@@ -50,7 +37,6 @@ export function PageHeaderActions({ primaryAction, secondaryActions, title }: Pa
           </div>
         ) : null}
 
-        {/* Mobile overflow button for secondary actions */}
         {hasSecondary ? (
           <div className="sm:hidden" data-secondary-overflow-trigger>
             <Button
@@ -69,28 +55,22 @@ export function PageHeaderActions({ primaryAction, secondaryActions, title }: Pa
           </div>
         ) : null}
 
-        {/* Primary action — always visible, compact on mobile */}
         {hasPrimary ? (
-          <div className="shrink-0" data-primary-action>
-            {/* Ensure touch target 44px; caller should use Button with min-h-11 */}
-            <div className="flex items-center">
-              {/* Wrap to enforce min touch target even if child is icon-only */}
-              <div className="min-h-11 flex items-center">{primaryAction}</div>
-            </div>
+          <div className="flex min-h-11 shrink-0 items-center" data-primary-action>
+            {primaryAction}
           </div>
         ) : null}
       </div>
 
-      {/* Mobile bottom sheet overflow */}
       {hasSecondary ? (
-        <BottomSheet open={overflowOpen} onClose={() => setOverflowOpen(false)} title={title ? `إجراءات ${title}` : 'إجراءات إضافية'}>
+        <BottomSheet
+          open={overflowOpen}
+          onClose={() => setOverflowOpen(false)}
+          title={title ? `إجراءات ${title}` : 'إجراءات إضافية'}
+        >
           <div className="grid gap-2" data-secondary-actions-mobile>
-            {/* Clone secondary actions with full-width styling for mobile */}
-            <div className="grid gap-2">
-              {/* We render secondaryActions twice but second time we force full width via CSS */}
-              <div className="grid gap-2 [&_button]:min-h-12 [&_button]:w-full [&_button]:justify-start">
-                {secondaryActions}
-              </div>
+            <div className="grid gap-2 [&_button]:min-h-12 [&_button]:w-full [&_button]:justify-start">
+              {secondaryActions}
             </div>
             <Button variant="secondary" className="mt-2 min-h-11 w-full" onClick={() => setOverflowOpen(false)}>
               إغلاق
