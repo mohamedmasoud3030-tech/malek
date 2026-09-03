@@ -134,9 +134,9 @@ function ReportGroupBlock({ block }: Readonly<{ block: ProfessionalReportBlock }
   return <ReportGroupNote note={block.note} />;
 }
 
-export function ReportPayloadGroup({ group, className }: Readonly<{ group: ProfessionalReportGroup; className?: string }>) {
+export function ReportPayloadGroup({ group }: Readonly<{ group: ProfessionalReportGroup }>) {
   return (
-    <div className={cn('space-y-2.5', className)}>
+    <div className="space-y-2.5">
       {group.blocks.map((block, index) => (
         <ReportGroupBlock key={index} block={block} />
       ))}
