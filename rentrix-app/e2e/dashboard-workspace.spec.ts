@@ -331,10 +331,6 @@ async function assertTouchTargets(page: Page) {
   }
 }
 
-test.beforeEach(async ({}, testInfo) => {
-  test.skip(testInfo.project.name !== 'chromium-desktop', 'The explicit dashboard matrix runs once in Chromium.');
-});
-
 for (const viewport of viewportMatrix) {
   for (const theme of themes) {
     test(`real dashboard command center ${viewport.name} ${theme} RTL`, async ({ page }, testInfo) => {
@@ -388,8 +384,7 @@ for (const viewport of viewportMatrix) {
   }
 }
 
-test('real dashboard command center keyboard focus stays visible', async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name !== 'chromium-desktop', 'Keyboard proof runs once in Chromium.');
+test('real dashboard command center keyboard focus stays visible', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await openDashboardRoute(page, 'light');
 
@@ -404,8 +399,7 @@ test('real dashboard command center keyboard focus stays visible', async ({ page
   expect(Number.parseFloat(outline.width)).toBeGreaterThan(0);
 });
 
-test('real dashboard command center reduced motion keeps animation negligible', async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name !== 'chromium-desktop', 'Reduced-motion proof runs once in Chromium.');
+test('real dashboard command center reduced motion keeps animation negligible', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.setViewportSize({ width: 390, height: 844 });
   await openDashboardRoute(page, 'light');
@@ -426,7 +420,6 @@ test('real dashboard command center reduced motion keeps animation negligible', 
 });
 
 test('real dashboard route exposes empty, error and stale states honestly', async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name !== 'chromium-desktop', 'State proof runs once in Chromium.');
   await page.setViewportSize({ width: 375, height: 812 });
 
   await page.context().clearCookies();
