@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowUpRight, Bot, ChevronDown, Mic, Send, Sparkles, Square } from 'lucide-react';
+import { AlertTriangle, ArrowUpRight, Bot, ChevronDown, Mic, Phone, Send, Sparkles, Square } from 'lucide-react';
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { PageLayout } from '@/components/layout/page-layout';
@@ -11,6 +11,7 @@ import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import type { AiAssistantAction, AiAssistantMessage, AiAssistantResponse, AiAssistantSurfaceContext } from './types';
 import { useSmartAssistant } from './use-smart-assistant';
+import { ASSISTANT_IDENTITY, ASSISTANT_TAGLINE, buildAssistantAttribution } from './assistant-identity';
 import { isAiAssistantConfigurationError } from './services/ai-assistant-service';
 import { inferAiAssistantAction } from './ai-assistant-intent';
 import { buildAiNavigationTargets } from './ai-assistant-navigation';
@@ -23,6 +24,7 @@ import { AssistantStreamingText } from './assistant-streaming-text';
 import { AssistantSpeechControl } from './speech/assistant-speech-control';
 import { useAssistantSpeech } from './speech/use-assistant-speech';
 import { useAssistantVoiceInput } from './speech/use-assistant-voice-input';
+import { AssistantLiveCall } from './speech/assistant-live-call';
 
 type AssistantAction = {
   action: AiAssistantAction;
@@ -114,7 +116,7 @@ function readSurfaceContext(): AiAssistantSurfaceContext {
 const initialMessage: AssistantUiMessage = {
   id: 'assistant-welcome',
   role: 'assistant',
-  content: `مرحباً! أنا مساعد ${APP_BRAND_NAME} الذكي — شريكك التشغيلي اليومي.\nاسألني عن وضعك: إيه المهم دلوقتي؟ اشرح السجل ده أو حضّر الخطوة الجاية للمراجعة.\nأو عن السوق: تقدير إيجار، نسبة إدارة مقترحة، وأفضل الممارسات — كتقديرات إرشادية موثقة.`,
+  content: `أهلاً! أنا ${ASSISTANT_IDENTITY.nameAr} — مساعد تطبيق ${ASSISTANT_IDENTITY.productAr} الذكي وشريكك التشغيلي اليومي.\n\n${ASSISTANT_TAGLINE}\n\nاسألني عن وضعك: إيه المهم دلوقتي؟ اشرح السجل ده أو حضّر الخطوة الجاية للمراجعة. أو عن السوق والقانون: تقدير إيجار، نسبة إدارة مقترحة، ومرجع تشريعي إرشادي — كتوجيهات موثقة.`,
   createdAt: new Date().toISOString(),
 };
 
@@ -166,12 +168,29 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
   const [messages, setMessages] = useState<AssistantUiMessage[]>([initialMessage]);
   const [input, setInput] = useState('');
   const [showMoreActions, setShowMoreActions] = useState(false);
+  const [liveCallOpen, setLiveCallOpen] = useState(false);
   const [configurationMissing, setConfigurationMissing] = useState(!env.isConfigured);
   const assistant = useSmartAssistant();
-  const { autoSpeak, setAutoSpeak, speakCompletedMessage, stop: stopSpeech } = useAssistantSpeech();
+  const {
+    state: speechState,
+    autoSpeak,
+    setAutoSpeak,
+    play: playSpeech,
+    speakCompletedMessage,
+    stop: stopSpeech,
+  } = useAssistantSpeech();
+  const liveCallOpenRef = useRef(liveCallOpen);
+  liveCallOpenRef.current = liveCallOpen;
   // Live dictation lands straight into the compose box as the transcript forms.
+  // When the user pauses/commits in the live-call mode we auto-send the turn,
+  // so the voice conversation keeps flowing without tapping send.
   const voiceInput = useAssistantVoiceInput({
     onTranscript: (transcript) => setInput(transcript),
+    onFinal: (transcript) => {
+      const prompt = transcript.trim();
+      if (!prompt || !liveCallOpenRef.current) return;
+      submitPrompt(prompt);
+    },
   });
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -220,9 +239,13 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
             presentation,
           );
           setMessages((current) => [...current, reply]);
-          // Voice is an extra modality: the text above is canonical, and audio
-          // only plays automatically when the user opted in (default OFF).
-          speakCompletedMessage(reply);
+          // Text stays canonical. Live-call mode always reads the completed
+          // answer; regular chat still honours the user's auto-speak setting.
+          if (liveCallOpenRef.current) {
+            playSpeech(reply);
+          } else {
+            speakCompletedMessage(reply);
+          }
         },
         onError: (error) => {
           if (isAiAssistantConfigurationError(error)) setConfigurationMissing(true);
@@ -234,6 +257,25 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     submitPrompt(input);
+  }
+
+  function closeLiveCall() {
+    // Flip the ref before stopping recognition so a final onend event cannot
+    // submit a partial turn while the user is hanging up.
+    liveCallOpenRef.current = false;
+    setLiveCallOpen(false);
+    voiceInput.stop();
+    stopSpeech();
+  }
+
+  function toggleLiveCall() {
+    if (liveCallOpenRef.current) {
+      closeLiveCall();
+      return;
+    }
+    stopSpeech();
+    liveCallOpenRef.current = true;
+    setLiveCallOpen(true);
   }
 
   function toggleVoiceInput() {
@@ -394,6 +436,12 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
         </div>
       </div>
 
+      {!embedded ? (
+        <p className="px-3 pt-1 text-center text-[10px] leading-4 text-muted-foreground/70" data-ai-attribution>
+          {buildAssistantAttribution()}
+        </p>
+      ) : null}
+
       <div className={cn('shrink-0 border-t border-border/50 bg-card', embedded ? 'px-2 py-1.5' : 'bg-muted/20 px-3 py-2')}>
         <div className="flex max-w-full gap-1.5 overflow-x-auto overscroll-x-contain no-scrollbar">
           {visibleActions.map((item) => (
@@ -404,7 +452,7 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
               disabled={pending || configurationMissing}
               className={cn(
                 'inline-flex shrink-0 items-center gap-1 rounded-full border border-border bg-card text-xs font-medium text-foreground transition hover:bg-muted disabled:opacity-50',
-                embedded ? 'min-h-10 px-2.5' : 'min-h-11 px-3',
+                embedded ? 'min-h-11 px-2.5' : 'min-h-11 px-3',
               )}
             >
               <Sparkles className="size-3" />
@@ -418,14 +466,44 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
             aria-expanded={showMoreActions}
             className={cn(
               'inline-flex shrink-0 items-center gap-1 rounded-full border border-dashed border-border bg-transparent text-xs font-medium text-muted-foreground transition hover:bg-muted disabled:opacity-50',
-              embedded ? 'min-h-10 px-2.5' : 'min-h-11 px-3',
+              embedded ? 'min-h-11 px-2.5' : 'min-h-11 px-3',
             )}
           >
             <ChevronDown className={cn('size-3 transition-transform', showMoreActions && 'rotate-180')} />
             {showMoreActions ? 'أقل' : 'المزيد'}
           </button>
+          <button
+            type="button"
+            onClick={toggleLiveCall}
+            disabled={configurationMissing}
+            aria-pressed={liveCallOpen}
+            className={cn(
+              'inline-flex shrink-0 items-center gap-1 rounded-full border text-xs font-medium transition disabled:opacity-50',
+              embedded ? 'min-h-11 px-2.5' : 'min-h-11 px-3',
+              liveCallOpen
+                ? 'border-primary bg-primary/10 text-primary'
+                : 'border-border bg-card text-foreground hover:bg-muted',
+            )}
+          >
+            <Phone className="size-3" />
+            {liveCallOpen ? 'إيقاف المكالمة' : 'مكالمة لايف'}
+          </button>
         </div>
       </div>
+
+      {liveCallOpen ? (
+        <div className="mx-3 mt-2">
+          <AssistantLiveCall
+            pending={pending}
+            supported={voiceInput.supported}
+            listening={voiceInput.listening}
+            speaking={speechState.status === 'playing' || speechState.status === 'paused'}
+            onStart={() => voiceInput.start({ autoCommitOnFinal: true })}
+            onStop={voiceInput.stop}
+            onClose={closeLiveCall}
+          />
+        </div>
+      ) : null}
 
       {errorMessage ? (
         <div role="alert" className="mx-3 mt-2 rounded-xl border border-destructive/20 bg-destructive/5 px-3 py-2 text-xs text-destructive">

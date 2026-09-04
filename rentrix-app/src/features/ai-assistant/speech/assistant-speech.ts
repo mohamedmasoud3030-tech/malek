@@ -87,9 +87,17 @@ const FEMALE_ARABIC_VOICE_NAMES: ReadonlyArray<string> = [
   'aysha', 'ayesha', 'zariyah', 'hala', 'hoda', 'salma', 'fatima', 'laila', 'layla',
   'leila', 'amina', 'rana', 'sana', 'sanaa', 'noura', 'nora', 'iman', 'mouna',
   'amal', 'amany', 'reem', 'maryam', 'mariam', 'zeina', 'dalia',
+  // Additional well-known female Arabic voices (local & online catalogues)
+  'sabina', 'sabrine', 'sara', 'sarah', 'farah', 'rania', 'ranya', 'nadia',
+  'salwa', 'yasmin', 'yasmeen', 'zainab', 'zeinab', 'bayadir', 'hasna',
+  'maysa', 'dina', 'aya', 'huda', 'hanan', 'lina', 'lama',
+  'bushra', 'suad', 'lavinia', 'balqis', 'yara', 'joud',
   // Arabic-script equivalents some engines report
   'عائشة', 'زارية', 'هالة', 'هدى', 'سلمى', 'فاطمة', 'ليلى', 'أمينة', 'رنا', 'سناء',
   'نورة', 'إيمان', 'منى', 'أمل', 'أماني', 'ريم', 'مريم', 'زينة', 'داليا',
+  'سارة', 'فرح', 'رانيا', 'نادية', 'سلوى', 'ياسمين', 'زينب', 'حسناء', 'ميساء',
+  'دينا', 'آية', 'حنان', 'لينا', 'لمى', 'بشرى', 'سعاد', 'بلقيس', 'يارا',
+  'جود', 'شهد', 'نور', 'كاملة', 'مروة', 'تقى', 'ريمي', 'سجى',
 ];
 
 const MALE_ARABIC_VOICE_NAMES: ReadonlyArray<string> = [
@@ -337,11 +345,17 @@ function configureUtterance(
   // SpeechSynthesisUtterance.voice must receive the native voice object,
   // not a cloned POJO. WebKit is particularly strict about this.
   utterance.voice = voice;
-  utterance.rate = 1;
-  // Devices with no feminine Arabic voice fall back to a known-masculine one;
-  // a raised pitch keeps MALEK's persona feminine even there.
+  // A gentle, human pace (not robotic == fast, flat). Slightly under 1 so
+  // every word lands naturally; the persona reads as calm and attentive.
+  utterance.rate = 0.96;
+  // Feminine-first persona: a natural neural voice already reads as human,
+  // so pitch stays at the engine's neutral 1.0 to avoid an artificial
+  // "chipmunk" lift. Devices that only ship a known-masculine Arabic voice
+  // get a clearly feminine lift via the fallback pitch instead.
   utterance.pitch =
-    voice && classifyArabicVoiceGender(voice.name) === 'male' ? MALE_VOICE_FALLBACK_PITCH : 1;
+    voice && classifyArabicVoiceGender(voice.name) === 'male'
+      ? MALE_VOICE_FALLBACK_PITCH
+      : 1;
   utterance.onstart = () => {
     if (activeSession?.token === session.token && state.status !== 'playing') {
       setState({ status: 'playing' });

@@ -28,8 +28,16 @@ export type AssistantVoiceInputState = Readonly<{
 export type AssistantVoiceInputCallbacks = Readonly<{
   /** Fired on every transcript change while listening (live dictation). */
   onTranscript?: (transcript: string) => void;
-  /** Fired once with the final transcript when the user explicitly stops. */
+  /** Fired once with the committed transcript when the session is intentionally committed. */
   onFinal?: (transcript: string) => void;
+}>;
+
+export type AssistantVoiceInputStartOptions = Readonly<{
+  /**
+   * Live-call mode: use a single-utterance recognition session and commit as
+   * soon as the browser finalizes the spoken phrase.
+   */
+  autoCommitOnFinal?: boolean;
 }>;
 
 type RecognitionResultLike = Readonly<{
@@ -110,6 +118,7 @@ let recognition: RecognitionLike | null = null;
 let finalText = '';
 let interimText = '';
 let stopRequested = false;
+let autoCommitOnFinal = false;
 /** Terminal error already reported — end handlers must not clobber it. */
 let terminalError = false;
 let callbacks: AssistantVoiceInputCallbacks = {};
@@ -145,6 +154,7 @@ function mergeTranscript(): string {
 function handleResult(instance: RecognitionLike, event: RecognitionEventLike): void {
   if (recognition !== instance) return;
   let currentInterim = '';
+  let receivedFinal = false;
   for (let index = event.resultIndex; index < event.results.length; index += 1) {
     const result = event.results[index];
     const alternative = result?.[0];
@@ -152,6 +162,7 @@ function handleResult(instance: RecognitionLike, event: RecognitionEventLike): v
     const text = (alternative.transcript ?? '').trim();
     if (!text) continue;
     if (result.isFinal) {
+      receivedFinal = true;
       finalText = finalText ? `${finalText} ${text}` : text;
     } else {
       // A fresh interim batch replaces the previous fragment.
@@ -166,6 +177,15 @@ function handleResult(instance: RecognitionLike, event: RecognitionEventLike): v
     ...(terminalError || !state.error ? {} : { error: null }),
   });
   callbacks.onTranscript?.(transcript);
+
+  if (receivedFinal && autoCommitOnFinal && recognition === instance) {
+    stopRequested = true;
+    try {
+      instance.stop();
+    } catch {
+      handleEnd(instance);
+    }
+  }
 }
 
 function handleError(instance: RecognitionLike, code: string | undefined): void {
@@ -189,9 +209,11 @@ function handleError(instance: RecognitionLike, code: string | undefined): void 
 function handleEnd(instance: RecognitionLike): void {
   if (recognition !== instance) return;
   const transcript = mergeTranscript();
+  const shouldCommit =
+    !terminalError && (stopRequested || (autoCommitOnFinal && transcript.trim().length > 0));
   recognition = null;
-  if (stopRequested) {
-    // Explicit stop commits the transcript exactly once.
+  autoCommitOnFinal = false;
+  if (shouldCommit) {
     callbacks.onFinal?.(transcript);
     setState({ status: 'idle', transcript: '', error: null });
     return;
@@ -207,7 +229,7 @@ function handleEnd(instance: RecognitionLike): void {
  * Returns false when a session is already active or the platform lacks
  * Web Speech Recognition — at most ONE session is ever active.
  */
-export function startAssistantVoiceInput(): boolean {
+export function startAssistantVoiceInput(options: AssistantVoiceInputStartOptions = {}): boolean {
   if (recognition && state.status === 'listening') return false;
   const Ctor = getRecognitionCtor();
   if (!Ctor) {
@@ -218,11 +240,12 @@ export function startAssistantVoiceInput(): boolean {
   finalText = '';
   interimText = '';
   stopRequested = false;
+  autoCommitOnFinal = options.autoCommitOnFinal === true;
   terminalError = false;
 
   const instance: RecognitionLike = new Ctor();
   instance.lang = VOICE_INPUT_LANG;
-  instance.continuous = true;
+  instance.continuous = !autoCommitOnFinal;
   instance.interimResults = true;
   instance.maxAlternatives = 1;
   instance.onresult = (event) => handleResult(instance, event);
@@ -297,6 +320,7 @@ export function resetAssistantVoiceInputForTests(): void {
   finalText = '';
   interimText = '';
   stopRequested = false;
+  autoCommitOnFinal = false;
   terminalError = false;
   callbacks = {};
   listeners.clear();

@@ -17,6 +17,11 @@ import {
   renderBusinessKbText,
 } from "../_shared/ai-business-kb.ts";
 import {
+  LEGAL_KB_VERSION,
+  findLegalCountry,
+  renderLegalText,
+} from "../_shared/ai-legal-kb.ts";
+import {
   mergeServerContextSections,
   readServerContextSections,
   SERVER_CONTEXT_SECTION_TIMEOUT_MS,
@@ -311,6 +316,8 @@ function buildAdvisoryMessages(request: ValidatedAssistantRequest): ChatMessage[
   const countryId = detectAdvisoryCountryId(request.prompt, request.history);
   const country = findBusinessKbCountry(countryId);
   const kbText = renderBusinessKbText(countryId);
+  const legalCountry = findLegalCountry(countryId);
+  const legalText = renderLegalText(countryId);
   const regionNames = country.regions.map((region) => region.nameAr).join("، ");
   const defaultRegion = country.regions.find((region) => region.id === country.defaultRegionId)?.nameAr
     ?? country.regions[0].nameAr;
@@ -325,6 +332,9 @@ function buildAdvisoryMessages(request: ValidatedAssistantRequest): ChatMessage[
     `<knowledge_base version="${AI_KB_VERSION}" country="${country.id}">`,
     kbText,
     "</knowledge_base>",
+    `<legal_knowledge version="${LEGAL_KB_VERSION}" country="${legalCountry.id}">`,
+    legalText,
+    "</legal_knowledge>",
     "أعد JSON مطابقاً للمخطط فقط، بالعربية، بأجوبة قصيرة عملية.",
   ].join("\n");
   return [{ role: "system", content: system }, ...request.history, { role: "user", content: untrustedEnvelope(request, { mode: "advisory" }) }];
@@ -337,6 +347,7 @@ function buildAnswerMessages(request: ValidatedAssistantRequest, context: JsonOb
     SECURITY_RULES,
     "استند فقط إلى حقائق السياق. عند نقص الدليل اجعل grounded=false واذكر النقص ضمن caveats.",
     "مقارنة السوق: فقط إذا كان رقم من بيانات المستخدم يقارن مباشرة بمؤشر معروف (نسبة الإشغال، مستوى الإيجار)، أضف سطراً واحداً موجزاً مع بيان أنها «تقديرات إرشادية من مراجع السوق». لا تضف مقارنة السوق في ردود أخرى.",
+    "الالتزام القانوني: لا تذكر رقم مادة/مرسوم/نسبة ضريبية ما لم يكن نصاً ضمن بيانات السياق، ولا تخترعه. أي ما له طابع قانوني (تسجيل عقد إيجار، إخلاء، تملك غير عماني، نقل ملكية، رسوم) تجيبه كناحية «قراءة إرشادية — راجع الجهة المختصة» وتقصر على الثابت الوارد في المرجع القانوني المرفق.",
     "أعد JSON مطابقاً للمخطط فقط، بالعربية وباختصار.",
   ].join("\n");
   return [{ role: "system", content: system }, ...request.history, { role: "user", content: untrustedEnvelope(request, context) }];

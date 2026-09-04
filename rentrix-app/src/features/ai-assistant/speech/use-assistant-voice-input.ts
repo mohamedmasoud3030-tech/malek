@@ -4,13 +4,14 @@ import {
   setAssistantVoiceInputCallbacks,
   startAssistantVoiceInput,
   stopAssistantVoiceInput,
+  type AssistantVoiceInputStartOptions,
   subscribeAssistantVoiceInputState,
 } from './assistant-voice-input';
 
 export type AssistantVoiceInputHandlers = Readonly<{
   /** Live dictation: the merged transcript lands in the compose box as it forms. */
   onTranscript?: (transcript: string) => void;
-  /** Fired once when the user explicitly stops, with the committed transcript. */
+  /** Fired once when the current speech session is committed. */
   onFinal?: (transcript: string) => void;
 }>;
 
@@ -22,7 +23,7 @@ export type AssistantVoiceInputUi = Readonly<{
   transcript: string;
   /** Latest Arabic error message, if any. */
   error: string | null;
-  start: () => boolean;
+  start: (options?: AssistantVoiceInputStartOptions) => boolean;
   stop: () => void;
 }>;
 
@@ -58,7 +59,10 @@ export function useAssistantVoiceInput(handlers: AssistantVoiceInputHandlers): A
     };
   }, []);
 
-  const start = useCallback(() => startAssistantVoiceInput(), []);
+  const start = useCallback(
+    (options?: AssistantVoiceInputStartOptions) => startAssistantVoiceInput(options),
+    [],
+  );
   const stop = useCallback(() => stopAssistantVoiceInput(), []);
 
   return {
