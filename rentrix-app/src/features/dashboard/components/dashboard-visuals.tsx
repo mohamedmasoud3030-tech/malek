@@ -106,55 +106,6 @@ export const RadialMetric = memo(function RadialMetric({
 });
 
 /**
- * Minimal daily-collection sparkline. Pure decoration next to the collection
- * KPI — hidden by the caller when there is no authoritative series.
- */
-export const Sparkline = memo(function Sparkline({
-  values,
-  label,
-  className,
-  strokeClass = 'text-primary',
-}: Readonly<{
-  values: readonly number[];
-  label: string;
-  className?: string;
-  strokeClass?: string;
-}>) {
-  if (values.length < 2) return null;
-
-  const width = 96;
-  const height = 28;
-  const max = Math.max(...values, 0);
-  const min = Math.min(...values, 0);
-  const span = max - min || 1;
-  const stepX = width / (values.length - 1);
-  const points = values
-    .map((value, index) => `${(index * stepX).toFixed(1)},${(height - 3 - ((value - min) / span) * (height - 6)).toFixed(1)}`)
-    .join(' ');
-
-  return (
-    <svg
-      width={width}
-      height={height}
-      viewBox={`0 0 ${width} ${height}`}
-      role="img"
-      aria-label={label}
-      className={cn('block max-w-full', strokeClass, className)}
-      data-dashboard-sparkline
-    >
-      <polyline
-        points={points}
-        fill="none"
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="stroke-current"
-      />
-    </svg>
-  );
-});
-
-/**
  * Two-value horizontal comparison (collections vs expenses). Widths are
  * relative to the larger value; the actual numbers stay visible as text.
  */

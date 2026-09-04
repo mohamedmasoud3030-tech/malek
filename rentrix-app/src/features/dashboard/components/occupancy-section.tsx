@@ -48,10 +48,11 @@ export const OccupancySection = memo(function OccupancySection({
   settings,
 }: OccupancySectionProps) {
   const { money, date, number } = settings;
-  const occupancyRate = snapshot?.occupancy.occupancyRate ?? analytics.occupancyRate;
-  const occupiedUnits = snapshot?.occupancy.occupiedUnits ?? analytics.occupiedUnits;
-  const vacantUnits = snapshot?.occupancy.vacantUnits ?? analytics.availableUnits;
-  const canTrustHistory = !detailsUnavailable && !isError;
+  const occupancyRate = snapshot?.occupancy.occupancyRate ?? 0;
+  const occupiedUnits = snapshot?.occupancy.occupiedUnits ?? 0;
+  const vacantUnits = snapshot?.occupancy.vacantUnits ?? 0;
+  const snapshotUnavailable = !snapshot && !isLoading;
+  const canTrustHistory = Boolean(snapshot) && !detailsUnavailable && !isError;
   const agingBuckets = buildVacancyAgingBuckets(analytics.vacantRows);
   const longestRows = analytics.vacantRows.slice(0, 3);
   const changePoints = Math.round(analytics.occupancyChangePoints);
@@ -67,7 +68,13 @@ export const OccupancySection = memo(function OccupancySection({
         trailing={<Link to="/reports" data-dashboard-section-action className={dashboardSectionActionClass}>التقرير الكامل</Link>}
       />
 
-      {isLoading ? <DashboardSignalLoading label="جارٍ تحميل الإشغال والشغور" /> : (
+      {isLoading ? <DashboardSignalLoading label="جارٍ تحميل الإشغال والشغور" /> : snapshotUnavailable ? (
+        <DashboardSignalEmpty
+          role="alert"
+          title="تعذر تحميل مؤشر الإشغال المعتمد"
+          description="تفاصيل الوحدات المحلية لا تُستخدم كبديل عن مؤشر لوحة التحكم المعتمد."
+        />
+      ) : (
         <div className="grid min-w-0 gap-4 border-t border-border/70 bg-muted/20 p-3 sm:grid-cols-[auto_minmax(0,1fr)] sm:p-4" data-dashboard-occupancy-summary>
           <div className="flex items-center gap-3">
             <RadialMetric
@@ -127,7 +134,7 @@ export const OccupancySection = memo(function OccupancySection({
         </div>
       )}
 
-      {!isLoading && isError ? (
+      {!isLoading && !snapshotUnavailable && isError ? (
         <DashboardSignalEmpty
           role="alert"
           title="تعذر تحميل سجل الوحدات الشاغرة"
@@ -135,14 +142,14 @@ export const OccupancySection = memo(function OccupancySection({
         />
       ) : null}
 
-      {!isLoading && !isError && detailsUnavailable && vacantUnits > 0 ? (
+      {!isLoading && !snapshotUnavailable && !isError && detailsUnavailable && vacantUnits > 0 ? (
         <DashboardSignalEmpty
           title="تفاصيل مدة الشغور غير مكتملة"
           description="عدد الوحدات الشاغرة صحيح من سجل الوحدات، لكن متوسط الأيام متوقف حتى يكتمل تاريخ العقود."
         />
       ) : null}
 
-      {!isLoading && !isError && longestRows.length > 0 ? (
+      {!isLoading && !snapshotUnavailable && !isError && longestRows.length > 0 ? (
         <>
           <DashboardSignalList label="أطول الوحدات الشاغرة">
             {longestRows.map((row) => {

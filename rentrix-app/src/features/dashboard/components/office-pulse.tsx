@@ -7,16 +7,12 @@ import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { formatCompanyMoney } from '@/lib/companyFormatters';
 import type { CompanySettingsContract } from '@/lib/companySettings';
 import type { DashboardSnapshot } from '../dashboard-snapshot';
-import type { DailyCollectionSeries } from '../daily-collection-series';
-import { MiniBarsCompare, RadialMetric, Sparkline } from './dashboard-visuals';
+import { MiniBarsCompare, RadialMetric } from './dashboard-visuals';
 
 interface OfficePulseProps {
   snapshot: DashboardSnapshot | undefined;
   isLoading: boolean;
   settings: CompanySettingsContract;
-  /** Authoritative daily collection series for the current month (optional sparkline). */
-  dailySeries?: DailyCollectionSeries;
-  dailySeriesLoading?: boolean;
 }
 
 /**
@@ -27,7 +23,7 @@ interface OfficePulseProps {
  * is never presented as office revenue: the cash-pulse surface stays
  * explicitly labelled «collections minus recorded expenses».
  */
-export const OfficePulse = memo(function OfficePulse({ snapshot, isLoading, settings, dailySeries, dailySeriesLoading = false }: OfficePulseProps) {
+export const OfficePulse = memo(function OfficePulse({ snapshot, isLoading, settings }: OfficePulseProps) {
   if (isLoading) {
     return <LoadingState variant="cards" rows={4} label="جارٍ تحميل نبض المكتب" />;
   }
@@ -49,8 +45,6 @@ export const OfficePulse = memo(function OfficePulse({ snapshot, isLoading, sett
   const over90Count = snapshot?.arrears.over90Count ?? 0;
   const averageDaysOverdue = snapshot?.arrears.averageDaysOverdue ?? 0;
 
-  const sparkValues = dailySeries?.rows.map((row) => row.total) ?? [];
-  const showSparkline = !dailySeriesLoading && sparkValues.length >= 2;
   const pulseCardClass = 'h-full border-border/55 bg-card/95 shadow-sm';
   const pulseLinkClass = 'group block min-w-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2';
 
@@ -75,9 +69,6 @@ export const OfficePulse = memo(function OfficePulse({ snapshot, isLoading, sett
             accent={collectionRate >= 80 ? 'emerald' : collectionRate >= 50 ? 'amber' : 'rose'}
             compact
             className={pulseCardClass}
-            visual={showSparkline ? (
-              <Sparkline values={sparkValues} label="حركة التحصيل اليومي خلال الشهر" />
-            ) : undefined}
           />
         </Link>
 

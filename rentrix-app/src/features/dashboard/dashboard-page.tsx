@@ -17,7 +17,6 @@ import { buildVacancyAnalytics } from '@/features/units/vacancy-analytics';
 import { listPropertyTitles } from '@/features/properties/property-service';
 import { useFinancialCashflowReport } from '@/features/financials/reports/useFinancialReports';
 import { getDashboardSnapshot } from './dashboard-snapshot';
-import { useDailyCollectionSeries } from './daily-collection-series';
 import { OfficePulse } from './components/office-pulse';
 import { FinancialPerformanceSection } from './components/financial-performance-section';
 import { NeedsAttentionSection } from './components/needs-attention-section';
@@ -30,14 +29,6 @@ import { buildUtilityObligationsSignal } from './utility-obligations-signal';
 import { toDateInputValue } from './dashboard-utils';
 import { buildMonthlyCashflowChartRows, getFinancialPerformanceRange, type FinancialPerformanceWindow } from './financial-performance';
 
-const dashboardGroupAccent: Record<string, string> = {
-  'office-pulse': 'bg-primary',
-  'financial-performance': 'bg-info',
-  'needs-attention': 'bg-warning',
-  occupancy: 'bg-info',
-  collections: 'bg-success',
-};
-
 type DashboardGroupPriority = 'primary' | 'attention' | 'supporting';
 
 const DashboardGroup = memo(function DashboardGroup({
@@ -49,8 +40,8 @@ const DashboardGroup = memo(function DashboardGroup({
   showHeader = true,
   children,
 }: Readonly<{
-  eyebrow: string;
-  title: string;
+  eyebrow?: string;
+  title?: string;
   ariaLabel: string;
   sectionId: string;
   priority?: DashboardGroupPriority;
@@ -65,17 +56,12 @@ const DashboardGroup = memo(function DashboardGroup({
       data-dashboard-section={sectionId}
       data-dashboard-priority={priority}
     >
-      {showHeader ? (
+      {showHeader && eyebrow && title ? (
         <div className="flex min-w-0 items-end gap-2.5 border-b border-border/45 pb-1.5" data-dashboard-group-header>
-          <span
-            className={`mb-0.5 h-5 w-1 shrink-0 rounded-full ${dashboardGroupAccent[sectionId] ?? 'bg-primary'}`}
-            aria-hidden="true"
-          />
+          <span className="mb-0.5 h-5 w-1 shrink-0 rounded-full bg-primary" aria-hidden="true" />
           <SectionHeader eyebrow={eyebrow} title={title} className="mb-0 min-w-0 flex-1 px-0" />
         </div>
-      ) : (
-        <h2 className="sr-only">{title}</h2>
-      )}
+      ) : null}
       {children}
     </section>
   );
@@ -131,9 +117,6 @@ export function DashboardPage() {
     }),
     [snapshot],
   );
-
-  const periodStart = toDateInputValue(new Date(now.getFullYear(), now.getMonth(), 1));
-  const dailySeriesQuery = useDailyCollectionSeries(periodStart, today);
 
   const [performanceWindow, setPerformanceWindow] = useState<FinancialPerformanceWindow>('six_months');
   const performanceRange = useMemo(
@@ -208,15 +191,13 @@ export function DashboardPage() {
 
   const hasDashboardError = isError || isRefetchError;
   const snapshotUnavailable = hasDashboardError && !snapshot;
-  const hasSupplementalError = dailySeriesQuery.isError
-    || cashflowQuery.isError
+  const hasSupplementalError = cashflowQuery.isError
     || utilityBillsQuery.isError
     || unitsQuery.isError
     || (hasVacantUnit && contractsQuery.isError)
     || propertyTitlesQuery.isError
     || maintenanceQuery.isError;
-  const supplementalIsFetching = dailySeriesQuery.isFetching
-    || cashflowQuery.isFetching
+  const supplementalIsFetching = cashflowQuery.isFetching
     || utilityBillsQuery.isFetching
     || unitsQuery.isFetching
     || contractsQuery.isFetching
@@ -224,7 +205,6 @@ export function DashboardPage() {
     || maintenanceQuery.isFetching;
   const retrySupplemental = () => {
     void Promise.all([
-      dailySeriesQuery.refetch(),
       cashflowQuery.refetch(),
       utilityBillsQuery.refetch(),
       unitsQuery.refetch(),
@@ -275,7 +255,7 @@ export function DashboardPage() {
 
             <div className="grid min-w-0 grid-cols-1 gap-3 lg:gap-4 xl:grid-cols-12 xl:items-start">
               <div className="min-w-0 xl:col-span-12">
-                <DashboardGroup eyebrow="أولويات" title="يحتاج انتباهك" ariaLabel="الحالات التي تحتاج انتباهاً" sectionId="needs-attention" priority="attention" showHeader={false}>
+                <DashboardGroup ariaLabel="الحالات التي تحتاج انتباهاً" sectionId="needs-attention" priority="attention" showHeader={false}>
                   <NeedsAttentionSection
                     signal={needsAttention}
                     isLoading={isLoading}
@@ -291,14 +271,12 @@ export function DashboardPage() {
                     snapshot={snapshot}
                     isLoading={isLoading}
                     settings={settings}
-                    dailySeries={dailySeriesQuery.data}
-                    dailySeriesLoading={dailySeriesQuery.isLoading}
                   />
                 </DashboardGroup>
               </div>
 
               <div className="min-w-0 xl:col-span-5">
-                <DashboardGroup eyebrow="تحصيل" title="التحصيل والمتأخرات" ariaLabel="التحصيل والمتأخرات" sectionId="collections" showHeader={false}>
+                <DashboardGroup ariaLabel="التحصيل والمتأخرات" sectionId="collections" showHeader={false}>
                   <CollectionsSection
                     snapshot={snapshot}
                     isLoading={isLoading}
@@ -309,7 +287,7 @@ export function DashboardPage() {
               </div>
 
               <div className="min-w-0 xl:col-span-7">
-                <DashboardGroup eyebrow="المحفظة" title="الإشغال والشغور" ariaLabel="الإشغال والشغور" sectionId="occupancy" showHeader={false}>
+                <DashboardGroup ariaLabel="الإشغال والشغور" sectionId="occupancy" showHeader={false}>
                   <OccupancySection
                     snapshot={snapshot}
                     analytics={vacancyAnalytics}
@@ -322,11 +300,8 @@ export function DashboardPage() {
               </div>
 
               <div className="min-w-0 xl:col-span-12">
-                <DashboardGroup eyebrow="الأداء المالي" title="أداء المكتب" ariaLabel="الأداء المالي" sectionId="financial-performance" priority="primary" showHeader={false}>
+                <DashboardGroup ariaLabel="الأداء المالي" sectionId="financial-performance" showHeader={false}>
                   <FinancialPerformanceSection
-                    snapshot={snapshot}
-                    vacancyAnalytics={vacancyAnalytics}
-                    vacancyDetailsUnavailable={vacancyDetailsUnavailable}
                     settings={settings}
                     window={performanceWindow}
                     onWindowChange={setPerformanceWindow}

@@ -5,8 +5,6 @@ import { LoadingState } from '@/components/ui/loading-state';
 import { ReportBarChart } from '@/components/ui/report-bar-chart';
 import { formatCompanyMoney } from '@/lib/companyFormatters';
 import type { CompanySettingsContract } from '@/lib/companySettings';
-import type { VacancyAnalytics } from '@/features/units/vacancy-analytics';
-import type { DashboardSnapshot } from '../dashboard-snapshot';
 import {
   financialPerformanceWindowLabels,
   type FinancialPerformanceWindow,
@@ -16,9 +14,6 @@ import { DashboardSignalPanel } from './dashboard-signal-primitives';
 import { cn } from '@/lib/utils';
 
 interface FinancialPerformanceSectionProps {
-  snapshot: DashboardSnapshot | undefined;
-  vacancyAnalytics: VacancyAnalytics;
-  vacancyDetailsUnavailable: boolean;
   settings: CompanySettingsContract;
   window: FinancialPerformanceWindow;
   onWindowChange: (window: FinancialPerformanceWindow) => void;

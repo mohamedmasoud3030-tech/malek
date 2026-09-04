@@ -153,9 +153,6 @@ export function DashboardWorkspaceE2EFixture() {
             <section aria-label="الأداء المالي" data-dashboard-section="financial-performance">
               <SectionHeader eyebrow="5 · الأداء المالي" title="أداء المكتب" />
               <FinancialPerformanceSection
-                snapshot={fixtureSnapshot}
-                vacancyAnalytics={fixtureVacancyAnalytics}
-                vacancyDetailsUnavailable={false}
                 settings={fixtureSettings}
                 window="six_months"
                 onWindowChange={() => undefined}
