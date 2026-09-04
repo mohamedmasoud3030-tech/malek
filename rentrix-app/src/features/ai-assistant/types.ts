@@ -3,9 +3,11 @@ export type AiAssistantAction =
   | 'summarize_contract_renewals'
   | 'summarize_vacancy'
   | 'summarize_month'
+  | 'summarize_expenses'
   | 'draft_tenant_payment_reminder'
   | 'explain_property_financial_snapshot'
   | 'explain_current_surface'
+  | 'explain_owner_financial_position'
   | 'identify_riskiest_overdue_tenants'
   | 'list_contracts_needing_action_this_week'
   | 'locate_dormant_funds'
@@ -201,4 +203,10 @@ export type AiAssistantResponse = {
    * company's own data. Absent or `data` = the normal grounded path.
    */
   kind?: 'data' | 'advisory';
+  /**
+   * True when the server trimmed row arrays to fit the prompt budget while
+   * assembling the model context — surfaced to the user as transparency,
+   * never used to alter the answer.
+   */
+  contextTrimmed?: boolean;
 };

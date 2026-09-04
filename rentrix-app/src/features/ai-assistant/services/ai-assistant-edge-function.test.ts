@@ -91,10 +91,11 @@ describe("AI assistant edge function", () => {
     const content = edge();
     expect(content).toContain("buildAdvisoryMessages");
     expect(content).toContain('let kind: "data" | "advisory" = "data"');
-    // The KB is injected verbatim with its version reference, inside a labelled block.
-    expect(content).toContain('<knowledge_base version="${AI_KB_VERSION}">');
-    expect(content).toContain("AI_KB_VERSION");
-    expect(content).toContain("BUSINESS_KB_TEXT");
+    // The country-rendered KB is injected verbatim with its version reference,
+    // inside a labelled block that names the detected market.
+    expect(content).toContain('<knowledge_base version="${AI_KB_VERSION}" country="${country.id}">');
+    expect(content).toContain("renderBusinessKbText(countryId)");
+    expect(content).toContain("detectAdvisoryCountryId(request.prompt, request.history)");
     // The advisory envelope carries no user data sections.
     expect(content).toContain('{ mode: "advisory" }');
     // Every response path carries its kind in meta.
@@ -145,13 +146,15 @@ describe("AI assistant edge function", () => {
     expect(reader).toContain("isStrictContextSection(section, value)");
   });
 
-  it("advisory answers are region-aware: the model picks the user's Oman region from the conversation", () => {
+  it("advisory answers are region-aware: the market is detected deterministically, the model picks the region", () => {
     const content = edge();
-    // The prompt is no longer Muscat-only and carries an explicit region rule.
-    expect(content).toContain("سوق عُمان (مسقط ومناطقها)");
-    expect(content).toContain("تحديد المنطقة");
-    expect(content).toContain("نزوي/الداخلية");
+    // Country comes from the deterministic detector, never from the model;
+    // the prompt is parameterized per country and keeps the region rule.
+    expect(content).toContain("detectAdvisoryCountryId");
+    expect(content).toContain("findBusinessKbCountry(countryId)");
+    expect(content).toContain("تحديد المنطقة داخل");
     expect(content).toContain("لا تخلط أرقام مناطق مختلفة");
+    expect(content).toContain("defaultRegionId");
   });
 
   it("carries a consistent persona: operating partner, direct next step, relevance-gated market comparison", () => {
@@ -178,5 +181,15 @@ describe("AI assistant edge function", () => {
     expect(content).not.toContain("placehold.co");
     expect(content).toContain("buildAiAssistantContext");
     expect(content).toContain("crypto.randomUUID()");
+  });
+
+  it("frontend service covers the server worst case with a bounded client timeout", () => {
+    const content = readRepoFile(
+      "rentrix-app/src/features/ai-assistant/services/ai-assistant-service.ts",
+    );
+    // Server worst case: 10s planning + 20s provider + server reads/quota
+    // RPCs. The client patience budget must exceed it without being unbounded.
+    expect(content).toContain("controller.abort(), 45_000");
+    expect(content).not.toContain("controller.abort(), 30_000");
   });
 });

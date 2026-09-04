@@ -100,6 +100,38 @@ describe('buildAiAssistantResponsePresentation', () => {
     ]);
   });
 
+  it('offers the owner financial position follow-up on owner dossiers without chaining on itself', () => {
+    const ownerContext: AiAssistantContext = {
+      ...context(),
+      entity: {
+        type: 'owner',
+        id: 'o1',
+        name: 'خالد',
+        propertyCount: 2,
+        activeContractCount: 2,
+        outstandingAmount: 0,
+      },
+      surface: {
+        route: '/owners/o1',
+        entityType: 'owner',
+        entityId: 'o1',
+        entityLabel: 'خالد',
+        section: 'owners',
+      },
+    };
+    const presentation = buildAiAssistantResponsePresentation(
+      { ...response(), context: ownerContext },
+      'explain_current_surface',
+    );
+    expect(presentation.suggestedActions.map((item) => item.action)).toContain('explain_owner_financial_position');
+
+    const selfPresentation = buildAiAssistantResponsePresentation(
+      { ...response(), context: ownerContext },
+      'explain_owner_financial_position',
+    );
+    expect(selfPresentation.suggestedActions.map((item) => item.action)).not.toContain('explain_owner_financial_position');
+  });
+
   it('does not chain another action from a draft response', () => {
     const presentation = buildAiAssistantResponsePresentation(response(), 'draft_tenant_payment_reminder');
     expect(presentation.mode).toBe('draft');
@@ -122,5 +154,22 @@ describe('buildAiAssistantResponsePresentation', () => {
   it('keeps the data presentation untouched when kind is data or absent', () => {
     expect(buildAiAssistantResponsePresentation({ ...response(), kind: 'data' }, 'explain_current_surface').mode).toBe('explanation');
     expect(buildAiAssistantResponsePresentation(response(), 'explain_current_surface').modeLabel).toBe('شرح السياق');
+  });
+
+  it('surfaces context trimming as a transparency chip on data answers only', () => {
+    const trimmed = buildAiAssistantResponsePresentation(
+      { ...response(), contextTrimmed: true },
+      'summarize_month',
+    );
+    expect(trimmed.attention.some((item) => item.tone === 'info' && item.label.includes('اقتُطع'))).toBe(true);
+
+    const untrimmed = buildAiAssistantResponsePresentation(response(), 'summarize_month');
+    expect(untrimmed.attention.some((item) => item.label.includes('اقتُطع'))).toBe(false);
+
+    // Advisory replies never carry data-context trimming.
+    const advisory = buildAiAssistantResponsePresentation(
+      { ...response(), kind: 'advisory', contextTrimmed: true },
+    );
+    expect(advisory.attention).toEqual([]);
   });
 });

@@ -125,6 +125,7 @@ const OPERATIONAL_ACTIONS = [
   'prioritize_office_actions_top5',
   'generate_daily_brief',
   'explain_current_surface',
+  'summarize_expenses',
 ] as const;
 
 describe('client context ↔ edge contract round trip', () => {
@@ -202,6 +203,60 @@ describe('entity-aware explain_current_surface', () => {
     const output = deterministicResponse(result.value);
     expect(output?.grounded).toBe(true);
     expect(output?.answer).toMatch(/[\u0600-\u06ff]/);
+  });
+});
+
+describe('owner financial position', () => {
+  it('answers deterministically from the enriched owner entity fields', () => {
+    const entity: AiAssistantEntityContext = {
+      type: 'owner',
+      id: 'o1',
+      name: 'خالد الشيزاوي',
+      propertyCount: 2,
+      activeContractCount: 2,
+      outstandingAmount: 180.5,
+      ownerCurrentPeriodNetPayable: 512.345,
+      ownerRemainingPayable: 222.111,
+      ownerHeldFunds: 50.125,
+      ownerApprovedSettlements: 2,
+    };
+    const result = validate('explain_owner_financial_position', entity);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const output = deterministicResponse(result.value);
+    expect(output).not.toBeNull();
+    expect(output?.grounded).toBe(true);
+    expect(output?.answer).toContain('512.345 ر.ع.');
+    expect(output?.answer).toContain('222.111 ر.ع.');
+    expect(output?.answer).toContain('50.125 ر.ع.');
+    expect(output?.answer).toContain('خالد الشيزاوي');
+  });
+
+  it('never fabricates financial figures when the authority enrichment is missing', () => {
+    const entity: AiAssistantEntityContext = {
+      type: 'owner',
+      id: 'o1',
+      name: 'خالد الشيزاوي',
+      propertyCount: 2,
+      activeContractCount: 2,
+      outstandingAmount: 0,
+    };
+    const result = validate('explain_owner_financial_position', entity);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const output = deterministicResponse(result.value);
+    expect(output?.grounded).toBe(true);
+    expect(output?.answer).not.toContain('0.000 ر.ع.');
+    expect(output?.answer).toContain('كشف المالك');
+  });
+
+  it('degrades honestly outside an owner dossier', () => {
+    const result = validate('explain_owner_financial_position');
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const output = deterministicResponse(result.value);
+    expect(output?.grounded).toBe(false);
+    expect(output?.answer).toContain('افتح ملف المالك');
   });
 });
 

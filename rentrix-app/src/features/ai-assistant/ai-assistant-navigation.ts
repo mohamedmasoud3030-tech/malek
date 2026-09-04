@@ -45,6 +45,7 @@ const COMMUNICATION_CENTER: AiNavigationTarget = { label: 'فتح مركز ال�
 const MAINTENANCE_WORKSPACE: AiNavigationTarget = { label: 'فتح الصيانة', to: '/maintenance' };
 const PROPERTIES_WORKSPACE: AiNavigationTarget = { label: 'فتح العقارات', to: '/properties' };
 const FINANCIALS_WORKSPACE: AiNavigationTarget = { label: 'فتح العمليات المالية', to: '/financials' };
+const EXPENSES_WORKSPACE: AiNavigationTarget = { label: 'فتح المصروفات', to: '/expenses' };
 const TODAY_WORKSPACE: AiNavigationTarget = { label: 'فتح شاشة اليوم', to: '/dashboard' };
 const OWNERS_WORKSPACE: AiNavigationTarget = { label: 'فتح الملاك', to: '/owners' };
 const OWNER_SETTLEMENTS: AiNavigationTarget = { label: 'فتح تسويات الملاك', to: '/owner-settlements' };
@@ -54,9 +55,11 @@ const NAVIGATION_BY_ACTION: Readonly<Record<AiAssistantAction, readonly AiNaviga
   summarize_contract_renewals: [CONTRACTS_WORKSPACE],
   summarize_vacancy: [OCCUPANCY_REPORT],
   summarize_month: [OFFICE_PERFORMANCE],
+  summarize_expenses: [EXPENSES_WORKSPACE, FINANCIALS_WORKSPACE],
   draft_tenant_payment_reminder: [COMMUNICATION_CENTER],
   explain_property_financial_snapshot: [OFFICE_PERFORMANCE],
   explain_current_surface: [],
+  explain_owner_financial_position: [OWNER_SETTLEMENTS, OWNERS_WORKSPACE],
   identify_riskiest_overdue_tenants: [OVERDUE_REPORT, COMMUNICATION_CENTER],
   list_contracts_needing_action_this_week: [CONTRACTS_WORKSPACE],
   locate_dormant_funds: [FINANCIALS_WORKSPACE],
@@ -82,6 +85,7 @@ const ALLOWED_NAVIGATION_ROUTES: ReadonlySet<string> = new Set([
   '/contracts',
   '/communication',
   '/financials',
+  '/expenses',
   '/maintenance',
   '/properties',
   '/owners',
