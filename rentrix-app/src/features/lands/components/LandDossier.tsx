@@ -7,7 +7,6 @@ import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DetailFields } from '@/components/ui/detail-fields';
-import { EntityPreviewDialog } from '@/components/ui/entity-preview-dialog';
 import { ErrorState } from '@/components/ui/error-state';
 import { LoadingState } from '@/components/ui/loading-state';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -54,10 +53,6 @@ export function LandDossierContent({ landId, section }: Readonly<{ landId: strin
       {(!section || section === 'records') ? <ContextualDocumentsSection entityType="land" entityId={land.id} entityLabel="الأرض" /> : null}
     </div>
   );
-}
-
-export function LandPreviewDialog({ landId, open, onOpenChange }: Readonly<{ landId: string; open: boolean; onOpenChange: (open: boolean) => void }>) {
-  return <EntityPreviewDialog open={open} onOpenChange={onOpenChange} title="ملف الأرض" description="البيانات والملكية والعمولات والنشاط والمستندات حسب الصلاحية."><LandDossierContent landId={landId} /></EntityPreviewDialog>;
 }
 
 export function LandDetailPage({ landId }: Readonly<{ landId: string }>) {

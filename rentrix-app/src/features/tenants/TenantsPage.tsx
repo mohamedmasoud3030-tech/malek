@@ -73,7 +73,7 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
   const [page, setPage] = useState(typeof routeSearch.page === 'number' && routeSearch.page > 0 ? routeSearch.page : 1);
   const [formOpen, setFormOpen] = useState(false);
   const [editingPersonId, setEditingPersonId] = useState<string | undefined>();
-  const [previewTenantId, setPreviewTenantId] = useState<string | null>(null);
+  const [previewTenant, setPreviewTenant] = useState<TenantWorkspaceRow | null>(null);
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultTenantColumns]);
 
   useEffect(() => {
@@ -89,8 +89,8 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
   const openCreate = () => { setEditingPersonId(undefined); setFormOpen(true); };
   const openEdit = (personId: string) => { setEditingPersonId(personId); setFormOpen(true); };
   const closeForm = () => { setFormOpen(false); setEditingPersonId(undefined); tenantsQuery.refetch(); };
-  const openPreview = (tenant: TenantWorkspaceRow) => setPreviewTenantId(tenant.person.id);
-  const closePreview = () => setPreviewTenantId(null);
+  const openPreview = (tenant: TenantWorkspaceRow) => setPreviewTenant(tenant);
+  const closePreview = () => setPreviewTenant(null);
   const openFullDetail = (tenant: TenantWorkspaceRow) => void navigate({ to: '/tenants/$tenantId', params: { tenantId: tenant.person.id } });
   const openContract = (contractId: string) => void navigate({ to: '/contracts/$contractId', params: { contractId } });
 
@@ -155,13 +155,13 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
               }] : []),
               {
                 id: 'preview',
-                label: 'معاينة',
+                label: 'معاينة سريعة',
                 icon: Eye,
                 onClick: () => openPreview(tenant),
               },
               {
                 id: 'details',
-                label: 'التفاصيل الكاملة',
+                label: 'فتح الملف الكامل',
                 icon: Users,
                 onClick: () => openFullDetail(tenant),
               },
@@ -213,7 +213,7 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
             mobileCardSecondaryToOverflow
             mobilePrimaryMetaKeys={['contracts', 'arrears']}
             mobileCardPrimaryAction={(tenant) => ({
-              label: 'معاينة',
+              label: 'معاينة سريعة',
               icon: Eye,
               variant: 'default',
               onClick: () => openPreview(tenant),
@@ -221,7 +221,7 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
             })}
             mobileCardActions={(tenant) => [
               {
-                label: 'التفاصيل الكاملة',
+                label: 'فتح الملف الكامل',
                 icon: Users,
                 variant: 'secondary',
                 onClick: () => openFullDetail(tenant),
@@ -259,10 +259,11 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
       </ListPage>
 
       <TenantPreviewDialog
-        tenantId={previewTenantId ?? ''}
-        open={previewTenantId !== null}
+        tenant={previewTenant}
+        open={previewTenant !== null}
         onOpenChange={(open) => { if (!open) closePreview(); }}
         onEdit={(personId) => { closePreview(); openEdit(personId); }}
+        onOpenContract={openContract}
       />
       <PersonFormModal open={formOpen} onClose={closeForm} personId={editingPersonId} defaultType="tenant" />
     </>

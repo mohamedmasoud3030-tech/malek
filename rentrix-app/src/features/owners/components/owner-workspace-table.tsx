@@ -1,4 +1,4 @@
-import { Eye, Pencil, UserRound } from 'lucide-react';
+import { Eye, FolderOpen, Pencil } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { ActionMenu } from '@/components/ui/action-menu';
@@ -39,10 +39,12 @@ export type OwnerWorkspaceTableProps = Readonly<{
 
 export function OwnerWorkspaceTable({ rows, visibleColumnKeys, onCreateOwner, onEditOwner }: OwnerWorkspaceTableProps) {
   const navigate = useNavigate();
-  const [previewOwnerId, setPreviewOwnerId] = useState<string | null>(null);
+  const [previewRow, setPreviewRow] = useState<OwnerWorkspaceRow | null>(null);
 
-  const openPreview = (ownerId: string) => setPreviewOwnerId(ownerId);
-  const openDetail = (ownerId: string) => void navigate({ to: '/owners/$ownerId', params: { ownerId } });
+  const openPreview = (row: OwnerWorkspaceRow) => setPreviewRow(row);
+  const openFullPage = (ownerId: string) => {
+    void navigate({ to: '/owners/$ownerId', params: { ownerId } });
+  };
 
   const columns = useMemo((): ColumnDef<OwnerWorkspaceRow>[] => [
     {
@@ -73,15 +75,15 @@ export function OwnerWorkspaceTable({ rows, visibleColumnKeys, onCreateOwner, on
           <ActionMenu
             label={`إجراءات ${getOwnerDisplayLabel(row.owner)}`}
             items={[
-              { id: 'preview', label: 'معاينة', icon: Eye, onClick: () => openPreview(row.owner.id) },
-              { id: 'details', label: 'فتح ملف المالك', icon: UserRound, onClick: () => openDetail(row.owner.id) },
+              { id: 'full-page', label: 'فتح الملف الكامل', icon: FolderOpen, onClick: () => openFullPage(row.owner.id) },
+              { id: 'preview', label: 'معاينة سريعة', icon: Eye, onClick: () => openPreview(row) },
               { id: 'edit', label: 'تعديل', icon: Pencil, onClick: () => onEditOwner(row.owner) },
             ]}
           />
         </div>
       ),
     },
-  ], [navigate, onEditOwner]);
+  ], [onEditOwner]);
 
   const emptyState = (
     <EmptyState
@@ -97,7 +99,7 @@ export function OwnerWorkspaceTable({ rows, visibleColumnKeys, onCreateOwner, on
         <EntityTable
           aria-label="جدول الملاك"
           rows={rows}
-          onRowClick={(row) => openPreview(row.owner.id)}
+          onRowClick={(row) => openPreview(row)}
           columns={columns}
           visibleColumnKeys={visibleColumnKeys}
           mobileCardType="owner"
@@ -105,18 +107,18 @@ export function OwnerWorkspaceTable({ rows, visibleColumnKeys, onCreateOwner, on
           mobileCardSecondaryToOverflow
           mobilePrimaryMetaKeys={['contracts', 'property_count']}
           mobileCardPrimaryAction={(row) => ({
-            label: 'معاينة',
+            label: 'معاينة سريعة',
             icon: Eye,
             variant: 'default',
-            onClick: () => openPreview(row.owner.id),
+            onClick: () => openPreview(row),
             ariaLabel: `معاينة ${getOwnerDisplayLabel(row.owner)}`,
           })}
           mobileCardActions={(row) => [
             {
-              label: 'فتح الملف',
-              icon: UserRound,
+              label: 'فتح الملف الكامل',
+              icon: FolderOpen,
               variant: 'secondary',
-              onClick: () => openDetail(row.owner.id),
+              onClick: () => openFullPage(row.owner.id),
               ariaLabel: `فتح ملف ${getOwnerDisplayLabel(row.owner)}`,
             },
             {
@@ -134,9 +136,10 @@ export function OwnerWorkspaceTable({ rows, visibleColumnKeys, onCreateOwner, on
       ) : emptyState}
 
       <OwnerPreviewDialog
-        ownerId={previewOwnerId}
-        open={previewOwnerId !== null}
-        onOpenChange={(open) => { if (!open) setPreviewOwnerId(null); }}
+        row={previewRow}
+        open={previewRow !== null}
+        onOpenChange={(open) => { if (!open) setPreviewRow(null); }}
+        onEdit={onEditOwner}
       />
     </div>
   );

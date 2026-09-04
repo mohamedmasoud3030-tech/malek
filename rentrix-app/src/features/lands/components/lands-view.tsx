@@ -1,10 +1,11 @@
-import { Archive, Edit, Layers, MapPinned, Plus, Tag, TrendingUp } from 'lucide-react';
+import { Archive, Edit, Eye, FolderOpen, Layers, MapPinned, Plus, Tag, TrendingUp } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import { AsyncContentState } from '@/components/async-content-state';
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
-import { useDialogNavigate } from '@/app/router/background-location';
 import type { ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { ActionMenu } from '@/components/ui/action-menu';
+import { LandPreviewDialog } from './land-preview-dialog';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EntityForm } from '@/components/ui/entity-form';
@@ -78,7 +79,8 @@ export function LandsView({
   embedded = false,
 }: Props) {
   const [archiveCandidate, setArchiveCandidate] = useState<LandRecord | null>(null);
-  const dialogNavigate = useDialogNavigate();
+  const [previewLand, setPreviewLand] = useState<LandRecord | null>(null);
+  const navigate = useNavigate();
   const ownersQuery = useOwnerOptions();
   const owners = ownersQuery.data ?? [];
   const activeRows = rows.filter((row) => row.status !== 'archived').length;
@@ -102,11 +104,17 @@ export function LandsView({
     return owner?.display_name || owner?.full_name || owner?.name || 'مالك مسجل';
   };
 
+  const openFullPage = (row: LandRecord) => {
+    void navigate({ to: '/lands/$landId', params: { landId: row.id } });
+  };
+
   const rowActions = (row: LandRecord) => (
     <div className="flex" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
       <ActionMenu
         label={`إجراءات ${row.name || row.plot_no || 'الأرض'}`}
         items={[
+          { id: 'full-page', label: 'فتح ملف الأرض', icon: FolderOpen, onClick: () => openFullPage(row) },
+          { id: 'preview', label: 'معاينة سريعة', icon: Eye, onClick: () => setPreviewLand(row) },
           { id: 'edit', label: 'تعديل', icon: Edit, onClick: () => onEdit(row) },
           ...(row.status !== 'archived' ? [{ id: 'archive', label: 'أرشفة', icon: Archive, danger: true, disabled: isArchiving, onClick: () => setArchiveCandidate(row) }] : []),
         ]}
@@ -192,9 +200,49 @@ export function LandsView({
           rows={rows}
           columns={columns}
           keyOf={(row) => row.id}
-          onRowClick={(row) => dialogNavigate({ to: '/lands/$landId', params: { landId: row.id } })}
+          onRowClick={(row) => setPreviewLand(row)}
+          mobileBadgeKey="status"
+          mobilePrimaryMetaKeys={['location', 'area', 'owner', 'value']}
+          mobileCardPrimaryAction={(row) => ({
+            label: 'معاينة سريعة',
+            icon: Eye,
+            variant: 'default' as const,
+            ariaLabel: `معاينة ${row.name || row.plot_no || 'الأرض'}`,
+            onClick: () => setPreviewLand(row),
+          })}
+          mobileCardActions={(row) => [
+            {
+              label: 'فتح ملف الأرض',
+              icon: FolderOpen,
+              variant: 'secondary' as const,
+              ariaLabel: `فتح ملف ${row.name || row.plot_no || 'الأرض'}`,
+              onClick: () => openFullPage(row),
+            },
+            {
+              label: 'تعديل',
+              icon: Edit,
+              variant: 'secondary' as const,
+              ariaLabel: `تعديل ${row.name || row.plot_no || 'الأرض'}`,
+              onClick: () => onEdit(row),
+            },
+            ...(row.status !== 'archived' ? [{
+              label: 'أرشفة',
+              icon: Archive,
+              variant: 'danger' as const,
+              ariaLabel: `أرشفة ${row.name || row.plot_no || 'الأرض'}`,
+              onClick: () => setArchiveCandidate(row),
+            }] : []),
+          ]}
         />
       </AsyncContentState>
+
+      <LandPreviewDialog
+        land={previewLand}
+        ownerLabel={previewLand ? ownerLabel(previewLand.owner_id) : 'غير مرتبط بمالك'}
+        open={previewLand !== null}
+        onOpenChange={(open) => { if (!open) setPreviewLand(null); }}
+        onEdit={(land) => { setPreviewLand(null); onEdit(land); }}
+      />
 
       <EntityForm.Overlay
         open={formOpen}

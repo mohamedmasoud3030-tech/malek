@@ -27,11 +27,10 @@ describe('owner workspace table display architecture', () => {
   });
 
   it('keeps contextual owner actions without internal identifiers', () => {
-    // Preview + explicit full-file actions are unified across registers;
+    // Quick Preview + explicit full-file labels are unified across registers;
     // relationship management is not a directory row action.
-    expect(source).toContain("label: 'معاينة'");
-    expect(source).toContain("label: 'فتح ملف المالك'");
-    expect(source).toContain("label: 'فتح الملف'");
+    expect(source).toContain("label: 'معاينة سريعة'");
+    expect(source).toContain("label: 'فتح الملف الكامل'");
     expect(source).toContain("label: 'تعديل'");
     expect(source).not.toContain("label: 'العلاقات'");
     expect(source).not.toContain('معرّف السجل');

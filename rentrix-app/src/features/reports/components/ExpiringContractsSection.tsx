@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { AlertTriangle, FileText, TrendingDown } from 'lucide-react';
-import { useDialogNavigate } from '@/app/router/background-location';
+import { useNavigate } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { formatDate, formatMoney } from '@/features/financials/components/financials-formatters';
@@ -43,7 +43,7 @@ export function ExpiringContractsSection({
   canExportReports,
   isLoading,
 }: ExpiringContractsSectionProps) {
-  const dialogNavigate = useDialogNavigate();
+  const navigate = useNavigate();
 
   const exposedIncome = useMemo(() => {
     const expiringRent = expiringRows.reduce((total, row) => total + row.monthlyRent, 0);
@@ -132,7 +132,7 @@ export function ExpiringContractsSection({
                   <Button
                     variant="secondary"
                     className="min-h-11"
-                    onClick={() => dialogNavigate({ to: '/contracts/$contractId', params: { contractId: row.contractId } })}
+                    onClick={() => void navigate({ to: '/contracts/$contractId', params: { contractId: row.contractId } })}
                   >
                     مراجعة التجديد
                   </Button>
