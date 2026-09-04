@@ -1,4 +1,5 @@
 import { getOwnerFinancialAuthority } from '@/features/financials/services/owner-financial-authority-service';
+import { formatAssistantOmr } from '../assistant-formatters';
 import type { AiAssistantRequest, AiAssistantResponse } from '../types';
 import { requestAiAssistantResponse } from './ai-assistant-service';
 
@@ -7,9 +8,6 @@ function currentMonthStart(asOf: string): string | null {
   return match ? `${match[1]}-${match[2]}-01` : null;
 }
 
-function formatOmr(value: number): string {
-  return `${Number(value || 0).toFixed(3)} ر.ع.`;
-}
 
 type OwnerFinancialPosition = Readonly<{
   currentPeriodNet: number;
@@ -76,9 +74,9 @@ export async function requestAiOperatingResponse(
   const name = entity.name ? `«${entity.name}»` : 'المالك الحالي';
   const portfolioLine = `${entity.propertyCount ?? 0} عقار ظاهر و${entity.activeContractCount ?? 0} عقد نشط`;
   const collectionLine = entity.outstandingAmount > 0
-    ? `المتأخر على فواتير عقاراته ${formatOmr(entity.outstandingAmount)}`
+    ? `المتأخر على فواتير عقاراته ${formatAssistantOmr(entity.outstandingAmount)}`
     : 'لا توجد متأخرات ظاهرة على فواتير عقاراته';
-  const financialLine = `الموقف المالي المعتمد من ${from} حتى ${response.context.asOf}: صافي مستحق الفترة ${formatOmr(position.currentPeriodNet)}، والمتبقي المستحق للمالك ${formatOmr(position.remainingPayable)}، والأموال المحتجزة ${formatOmr(position.heldFunds)}، مع ${position.approvedSettlements} تسوية معتمدة ضمن دورة التسويات.`;
+  const financialLine = `الموقف المالي المعتمد من ${from} حتى ${response.context.asOf}: صافي مستحق الفترة ${formatAssistantOmr(position.currentPeriodNet)}، والمتبقي المستحق للمالك ${formatAssistantOmr(position.remainingPayable)}، والأموال المحتجزة ${formatAssistantOmr(position.heldFunds)}، مع ${position.approvedSettlements} تسوية معتمدة ضمن دورة التسويات.`;
 
   const reply = request.action === 'explain_owner_financial_position'
     ? [
