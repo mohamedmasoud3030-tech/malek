@@ -68,7 +68,10 @@ describe('billing readiness service — FOM-007 remediation', () => {
     expect(schedule).toContain('AGREEMENT_MISSING');
     expect(schedule).toContain('MODEL_SNAPSHOT_MISSING');
     expect(service).toContain('TAX_PROFILE_MISSING');
-    expect(service).toContain('resolve_active_tax_profile');
+    // Governance: the row's tax check must use the governed company-derived
+    // wrapper, never the service-role-only internal resolver.
+    expect(service).toContain('resolve_current_company_tax_profile');
+    expect(service).not.toContain('resolve_active_tax_profile');
     expect(service).toContain('BLOCKED');
   });
 

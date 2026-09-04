@@ -59,9 +59,13 @@ export type FinanceReadiness = {
   paymentMethods: { state: ReadinessState };
 };
 
-async function tryResolveActiveTaxProfile(companyId: string, date: string) {
-  const { data, error } = await supabase.rpc('resolve_active_tax_profile', {
-    p_company_id: companyId,
+// The active tax profile/fee treatment is resolved through the governed
+// browser boundary (migration 000070), which takes the company from the JWT
+// only. The internals (resolve_active_tax_profile / resolve_active_fee_tax_-
+// treatment) accept an arbitrary company id and stay service-role-only, so
+// calling them from here would return 42501 for every signed-in user.
+async function tryResolveActiveTaxProfile(date: string) {
+  const { data, error } = await supabase.rpc('resolve_current_company_tax_profile', {
     p_effective_date: date,
   });
   if (error) {
@@ -74,9 +78,8 @@ async function tryResolveActiveTaxProfile(companyId: string, date: string) {
   return { active: (row as never) ?? null, errorCode: null };
 }
 
-async function tryResolveActiveFeeTax(companyId: string, feeKind: string, date: string) {
-  const { data, error } = await supabase.rpc('resolve_active_fee_tax_treatment', {
-    p_company_id: companyId,
+async function tryResolveActiveFeeTax(feeKind: string, date: string) {
+  const { data, error } = await supabase.rpc('resolve_current_company_fee_tax_treatment', {
     p_fee_kind: feeKind,
     p_effective_date: date,
   });
@@ -97,7 +100,7 @@ export async function getFinanceReadiness(companyId: string): Promise<FinanceRea
   // Rent tax
   let rentTax: TaxReadiness;
   try {
-    const { active, errorCode } = await tryResolveActiveTaxProfile(companyId, today);
+    const { active, errorCode } = await tryResolveActiveTaxProfile(today);
     if (active) {
       const a = active as Record<string, unknown>;
       rentTax = {
@@ -151,7 +154,7 @@ export async function getFinanceReadiness(companyId: string): Promise<FinanceRea
 
   async function getFeeReadiness(feeKind: 'RATE_MANAGEMENT_FEE' | 'FIXED_MONTHLY'): Promise<FeeTaxReadiness> {
     try {
-      const { active, errorCode } = await tryResolveActiveFeeTax(companyId, feeKind, today);
+      const { active, errorCode } = await tryResolveActiveFeeTax(feeKind, today);
       if (active) {
         const a = active as Record<string, unknown>;
         return {

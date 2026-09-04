@@ -64,7 +64,11 @@ Do not use `DROP`, rename, type narrowing, or destructive data transformation so
 ## Seed rules
 
 - Schema DDL and disposable Demo data never share a migration.
-- Global reference catalogs may be deterministic seed data.
+- Global reference catalogs may be deterministic seed data, but every row the runtime
+  needs in order to function (permission catalog entries, tax codes, other foreign-key
+  targets) must also be carried by a migration: `supabase db push` never applies
+  `seed.sql`, so a seed-only reference row exists in development and CI yet is absent in
+  production, and fail-closed resolvers silently deny the capability there.
 - Company/user/contract/invoice/payment/receipt/deposit/journal Demo scenarios are seeded through governed application/RPC paths.
 - Production-like environments are never implicitly reseeded.
 

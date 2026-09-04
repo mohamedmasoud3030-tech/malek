@@ -1,4 +1,9 @@
 -- MALEK canonical reference data.
+-- Every block below is re-asserted here with values identical to the owning
+-- migration (20260901000069 for the permission/tax/onboarding catalogs).
+-- Production deploys with `supabase db push`, which never applies this file, so
+-- migrations remain the only executable schema-and-reference bootstrap path;
+-- do not add a row here without the matching migration.
 -- This file contains only global/system reference data. It contains no company,
 -- user, contract, invoice, payment, receipt, journal or other disposable demo
 -- transaction. Demo transactions are created through the authoritative runtime
@@ -18,7 +23,9 @@ values
   ('communication.view','عرض التواصل والمتابعات',false,true),
   ('company.settings.manage','إدارة إعدادات الشركة',true,true),
   ('contracts.view','عرض العقود والمستأجرين',false,true),
-  ('contracts.write','إضافة وتعديل العقود',false,true),
+  -- requestable=false mirrors 20260901000051: broad compatibility parents are
+  -- role-matrix aliases only and must never become employee-requestable.
+  ('contracts.write','إضافة وتعديل العقود',false,false),
   ('cost_centers.manage','إدارة مراكز التكلفة',false,true),
   ('documents.write','رفع واستبدال وأرشفة المستندات',false,true),
   ('expenses.view','عرض المصروفات',false,true),
@@ -42,12 +49,12 @@ values
   ('lands.view','عرض الأراضي',false,true),
   ('leads.view','عرض العملاء المحتملين',false,true),
   ('maintenance.view','عرض الصيانة',false,true),
-  ('maintenance.write','إنشاء ومتابعة وتنفيذ الصيانة',false,true),
+  ('maintenance.write','إنشاء ومتابعة وتنفيذ الصيانة',false,false),
   ('owners.detail.view','عرض ملف المالك',false,true),
   ('owners.hub.view','عرض سجل الملاك',false,true),
   ('permission_requests.review','مراجعة طلبات الصلاحية',false,false),
   ('properties.view','عرض العقارات والوحدات',false,true),
-  ('properties.write','إضافة وتعديل العقارات',false,true),
+  ('properties.write','إضافة وتعديل العقارات',false,false),
   ('service_providers.view','عرض مزودي الخدمات',false,true),
   ('service_providers.write','إضافة وتعديل وأرشفة مزودي الخدمات',false,true),
   ('settings.manage','إدارة الإعدادات القديمة',true,true),

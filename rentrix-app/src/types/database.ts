@@ -9487,6 +9487,19 @@ export type Database = {
         };
         Returns: { profile_id: string | null; tax_code: string | null; tax_rate: number | null; effective_from: string | null; effective_to: string | null }[];
       };
+      resolve_current_company_fee_tax_treatment: {
+        Args: {
+          p_fee_kind: string | null;
+          p_effective_date: string | null;
+        };
+        Returns: { treatment_id: string | null; tax_profile_id: string | null; tax_code: string | null; tax_rate: number | null; effective_from: string | null; effective_to: string | null }[];
+      };
+      resolve_current_company_tax_profile: {
+        Args: {
+          p_effective_date: string | null;
+        };
+        Returns: { profile_id: string | null; tax_code: string | null; tax_rate: number | null; effective_from: string | null; effective_to: string | null }[];
+      };
       resolve_maintenance_with_expense: {
         Args: {
           p_request_id: string | null;

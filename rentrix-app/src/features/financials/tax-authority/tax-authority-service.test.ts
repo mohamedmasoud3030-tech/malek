@@ -15,7 +15,13 @@ describe('tax authority service — governed boundaries', () => {
   it('uses authoritative RPCs for tax profiles, not raw table writes', () => {
     expect(service).toContain('create_tax_profile_atomic');
     expect(service).toContain('approve_tax_profile_atomic');
-    expect(service).toContain('resolve_active_tax_profile');
+    // Browser-side tax resolution must go through the governed wrappers that
+    // derive the company from the JWT (migration 000070). The parameterised
+    // internals are service-role-only by design, so any browser call to them
+    // fails closed with 42501 — they must never reappear in this surface.
+    expect(service).not.toContain('resolve_active_tax_profile');
+    expect(readiness).toContain('resolve_current_company_tax_profile');
+    expect(readiness).not.toContain('p_company_id');
     expect(service).not.toMatch(/supabase\.from\(['\"]company_tax_profiles['\"]\)\.insert/);
     expect(service).not.toMatch(/supabase\.from\(['\"]company_tax_profiles['\"]\)\.update/);
     expect(service).not.toMatch(/supabase\.from\(['\"]company_tax_profiles['\"]\)\.delete/);
@@ -24,7 +30,8 @@ describe('tax authority service — governed boundaries', () => {
   it('uses authoritative RPCs for fee tax treatments', () => {
     expect(service).toContain('create_fee_tax_treatment_atomic');
     expect(service).toContain('approve_fee_tax_treatment_atomic');
-    expect(service).toContain('resolve_active_fee_tax_treatment');
+    expect(service).not.toContain('resolve_active_fee_tax_treatment');
+    expect(readiness).toContain('resolve_current_company_fee_tax_treatment');
     expect(service).not.toMatch(/supabase\.from\(['\"]company_fee_tax_treatments['\"]\)\.insert/);
   });
 

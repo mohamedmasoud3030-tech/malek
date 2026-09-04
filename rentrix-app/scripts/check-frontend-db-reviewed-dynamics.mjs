@@ -55,7 +55,10 @@ const REVIEWED = new Map([
   ['mutation|features/settings/paymentTermsService.ts|payment_terms_templates|insert', 1],
   ['mutation|features/settings/paymentTermsService.ts|payment_terms_templates|update', 2],
   ['rpc-payload|features/reports/reports-collection-efficiency.ts|rpt_dashboard_snapshot', 1],
-  ['rpc-payload|features/financials/tax-authority/tax-authority-service.ts|resolve_active_tax_profile', 1],
+  // The tax-authority service no longer casts a resolver payload: the browser
+  // path moved to the typed governed wrappers resolve_current_company_tax_-
+  // profile / resolve_current_company_fee_tax_treatment (migration 000070),
+  // whose argument lists are static, so there is nothing left to review here.
   ['rpc-payload|features/owners/services/owner-settlements-service.ts|create_owner_settlement_draft_atomic', 1],
 ]);
 

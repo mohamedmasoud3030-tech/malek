@@ -115,10 +115,12 @@ export async function getBillingReadiness(companyId: string): Promise<BillingObl
     let taxCheckFailed = false;
 
     if (!blockedReason) {
-      // Tax readiness check — fail closed on inability to verify (Defect A3)
+      // Tax readiness check — fail closed on inability to verify (Defect A3).
+      // The governed wrapper resolves the company from the JWT, so a caller can
+      // never probe another company's tax configuration; TAX_PROFILE_MISSING and
+      // every other error keep failing closed below.
       try {
-        const { error: taxError } = await supabase.rpc('resolve_active_tax_profile', {
-          p_company_id: companyId,
+        const { error: taxError } = await supabase.rpc('resolve_current_company_tax_profile', {
           p_effective_date: issueDateStr,
         });
         if (taxError) {
