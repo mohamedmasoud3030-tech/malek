@@ -466,7 +466,7 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
             aria-expanded={showMoreActions}
             className={cn(
               'inline-flex shrink-0 items-center gap-1 rounded-full border border-dashed border-border bg-transparent text-xs font-medium text-muted-foreground transition hover:bg-muted disabled:opacity-50',
-              embedded ? 'min-h-10 px-2.5' : 'min-h-11 px-3',
+              embedded ? 'min-h-11 px-2.5' : 'min-h-11 px-3',
             )}
           >
             <ChevronDown className={cn('size-3 transition-transform', showMoreActions && 'rotate-180')} />
@@ -479,7 +479,7 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
             aria-pressed={liveCallOpen}
             className={cn(
               'inline-flex shrink-0 items-center gap-1 rounded-full border text-xs font-medium transition disabled:opacity-50',
-              embedded ? 'min-h-10 px-2.5' : 'min-h-11 px-3',
+              embedded ? 'min-h-11 px-2.5' : 'min-h-11 px-3',
               liveCallOpen
                 ? 'border-primary bg-primary/10 text-primary'
                 : 'border-border bg-card text-foreground hover:bg-muted',
