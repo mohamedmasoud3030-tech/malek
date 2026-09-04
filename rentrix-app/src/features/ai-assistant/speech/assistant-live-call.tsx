@@ -72,10 +72,9 @@ export function AssistantLiveCall({
 
   const stop = useCallback(() => {
     setActive(false);
-    onStop();
     stopAssistantSpeech();
     onClose?.();
-  }, [onClose, onStop]);
+  }, [onClose]);
 
   if (!supported) {
     return (
