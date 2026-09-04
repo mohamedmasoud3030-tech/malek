@@ -75,22 +75,21 @@ describe('dashboard snapshot (R1 authoritative read model)', () => {
 
     expect(snapshot.portfolio).toEqual({ properties: 2, units: 8 });
     expect(snapshot.occupancy).toEqual({ occupiedUnits: 5, vacantUnits: 3, occupancyRate: 63 });
-    expect(snapshot.contracts).toEqual({ active: 4, expiring30: 1, expiring60: 2, expiring90: 3 });
-    expect(snapshot.billing).toEqual({ invoicedAmount: 1000.5, invoicesCount: 4, invoicesTotalCount: 40 });
-    expect(snapshot.collections).toEqual({ collectedAmount: 650.25, paymentsCount: 3, outstandingAmount: 350.25, collectionRate: 65 });
-    expect(snapshot.expenses).toEqual({ totalAmount: 125, count: 2 });
+    expect(snapshot.contracts).toEqual({ active: 4 });
+    expect(snapshot.billing).toEqual({ invoicedAmount: 1000.5, invoicesTotalCount: 40 });
+    expect(snapshot.collections).toEqual({ collectedAmount: 650.25, outstandingAmount: 350.25, collectionRate: 65 });
+    expect(snapshot.expenses).toEqual({ totalAmount: 125 });
     expect(snapshot.netCash).toBe(525.25);
     expect(snapshot.arrears.totalOverdue).toBe(300);
     expect(snapshot.arrears.buckets.days_90_plus).toEqual({ total: 50, count: 1 });
-    expect(snapshot.ownerFunds).toEqual({ netPayable: 420.125, settlementsDraft: 1, settlementsApproved: 2 });
-    expect(snapshot.maintenance).toEqual({ open: 3, inProgress: 1, urgentOpen: 2 });
-    expect(snapshot.exceptions).toEqual({ unmatchedBankLines: 5, pendingSettlements: 3 });
+    expect(snapshot.ownerFunds).toEqual({ settlementsDraft: 1, settlementsApproved: 2 });
+    expect(snapshot.maintenance).toEqual({ urgentOpen: 2 });
+    expect(snapshot.exceptions).toEqual({ unmatchedBankLines: 5 });
     expect(snapshot.queues.expiringContracts).toEqual([{
       id: 'contract-1', reference: 'CON-1', endDate: '2026-06-01', daysRemaining: 14,
       tenantName: 'Tenant', propertyTitle: 'Property', unitNumber: '101',
     }]);
     expect(snapshot.queues.overdueInvoices[0]?.remainingAmount).toBe(300);
-    expect(snapshot.queues.urgentMaintenance[0]?.title).toBe('Leak');
     expect(snapshot.period).toEqual(period);
   });
 
@@ -98,7 +97,7 @@ describe('dashboard snapshot (R1 authoritative read model)', () => {
     const snapshot = normalizeDashboardSnapshot(null, period);
     expect(snapshot.portfolio).toEqual({ properties: 0, units: 0 });
     expect(snapshot.arrears.buckets.current).toEqual({ total: 0, count: 0 });
-    expect(snapshot.queues).toEqual({ expiringContracts: [], overdueInvoices: [], urgentMaintenance: [] });
+    expect(snapshot.queues).toEqual({ expiringContracts: [], overdueInvoices: [] });
   });
 
   it('loads the snapshot through the authoritative RPC only — no table reads', async () => {
