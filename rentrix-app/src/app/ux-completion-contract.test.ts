@@ -65,12 +65,16 @@ describe('UX completion contract', () => {
 
   it('keeps owner actions contextual and hides internal record identifiers', () => {
     const owners = source('features/owners/components/owner-workspace-table.tsx');
+    const ownerDetail = source('features/owners/components/owner-detail-view.tsx');
     expect(owners).not.toContain('معرّف السجل');
     expect(owners).not.toContain('<Link to="/reports"');
-    // Owner detail access is the shared preview action across the registers.
+    // Owner detail access is the shared preview action across the registers,
+    // with the full file only through the explicit action; relationship
+    // management lives in the owner file, not the directory row.
     expect(owners).toContain('معاينة');
-    expect(owners).toContain('العلاقات');
+    expect(owners).toContain('فتح ملف المالك');
     expect(owners).toContain('تعديل');
+    expect(ownerDetail).toContain('<OwnerRelationshipManager');
   });
 
   it('requires confirmation before utility meter and bill archive actions', () => {

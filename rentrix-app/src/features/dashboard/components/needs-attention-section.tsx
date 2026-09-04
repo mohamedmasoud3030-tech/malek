@@ -81,7 +81,7 @@ export const NeedsAttentionSection = memo(function NeedsAttentionSection({ signa
       {!isLoading && isError ? (
         <DashboardSignalEmpty
           role="alert"
-          title="تعذر تحميل الأولويات"
+          title="تعذر تحميل الحالات التي تحتاج انتباهاً"
           description="راجع تنبيه أعلى الصفحة ثم أعد المحاولة. لن نعرض قائمة فارغة عند فشل التحميل."
         />
       ) : null}
