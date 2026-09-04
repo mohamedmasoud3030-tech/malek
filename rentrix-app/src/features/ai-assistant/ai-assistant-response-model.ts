@@ -50,7 +50,7 @@ function responseMode(kind: AiAssistantResponse['kind'], action?: AiAssistantAct
   if (kind === 'advisory') return 'advisory';
   if (action && DRAFT_ACTIONS.has(action)) return 'draft';
   if (action === 'generate_daily_brief' || action === 'prioritize_office_actions_top5') return 'brief';
-  if (action === 'explain_current_surface' || action === 'explain_property_financial_snapshot') return 'explanation';
+  if (action === 'explain_current_surface' || action === 'explain_property_financial_snapshot' || action === 'explain_owner_financial_position') return 'explanation';
   return 'analysis';
 }
 
@@ -122,6 +122,13 @@ function buildSuggestedActions(
       title: 'حضّر ملخص للمالك',
       prompt: 'حضّر لي مسودة ملخص للمالك الحالي للمراجعة قبل الإرسال.',
     });
+    if (action !== 'explain_owner_financial_position') {
+      suggestions.push({
+        action: 'explain_owner_financial_position',
+        title: 'الموقف المالي للمالك',
+        prompt: 'إيه الموقف المالي للمالك الحالي من التسويات؟',
+      });
+    }
   }
 
   if ((entity?.type === 'tenant' || entity?.type === 'person') && entity.outstandingAmount > 0) {

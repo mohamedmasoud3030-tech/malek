@@ -124,6 +124,10 @@ const contextKeyContract: Readonly<Record<string, readonly string[]>> = {
     "outstandingAmount",
     "oldestOverdueDate",
     "nextDueDate",
+    "ownerCurrentPeriodNetPayable",
+    "ownerRemainingPayable",
+    "ownerHeldFunds",
+    "ownerApprovedSettlements",
   ],
   maintenanceSnapshot: [
     "openCount",
@@ -714,6 +718,40 @@ export function deterministicResponse(
       answer: `${intro} المتأخرات الظاهرة ${formatOmr(outstanding)}، الوحدات الشاغرة ${vacant} من الوحدات المسجلة، ونسبة الإشغال ${occupancy.toFixed(2)}٪. من نفس الشاشة يمكنك سؤالي عن المتأخرين أو العقود أو الصيانة، واستخدام أزرار التنقل للانتقال مباشرة إلى الشاشة المناسبة.`,
       grounded: true,
       caveats: ["لقطة قراءة فقط من البيانات الظاهرة ضمن صلاحيتك وقت الطلب."],
+    };
+  }
+  if (action === "explain_owner_financial_position") {
+    const entity = sectionAt(context, "entity");
+    if (!entity || entity.type !== "owner") {
+      return {
+        answer: "لتقرير الموقف المالي لمالك محدد افتح ملف المالك ثم اسأل من هناك — لا تُقدَّر أرقام مالية دون السياق المعتمد.",
+        grounded: false,
+        caveats: ["لم تُقرأ أي أرقام مالية من خارج ملف المالك المفتوح."],
+      };
+    }
+    const name = typeof entity.name === "string" && entity.name ? `«${entity.name}»` : "المالك الحالي";
+    const properties = isFiniteNumber(entity.propertyCount) ? Number(entity.propertyCount) : 0;
+    const contracts = isFiniteNumber(entity.activeContractCount) ? Number(entity.activeContractCount) : 0;
+    const outstanding = isFiniteNumber(entity.outstandingAmount) ? Number(entity.outstandingAmount) : 0;
+    const collectionLine = outstanding > 0
+      ? `المتأخر الظاهر على فواتير عقاراته ${formatOmr(outstanding)}`
+      : "لا توجد متأخرات ظاهرة على فواتير عقاراته";
+    const portfolioLine = `يملك ${properties} عقاراً ظاهراً و${contracts} عقداً نشطاً، و${collectionLine}.`;
+    const net = isFiniteNumber(entity.ownerCurrentPeriodNetPayable) ? Number(entity.ownerCurrentPeriodNetPayable) : null;
+    const remaining = isFiniteNumber(entity.ownerRemainingPayable) ? Number(entity.ownerRemainingPayable) : null;
+    const held = isFiniteNumber(entity.ownerHeldFunds) ? Number(entity.ownerHeldFunds) : null;
+    const approved = isFiniteNumber(entity.ownerApprovedSettlements) ? Number(entity.ownerApprovedSettlements) : null;
+    if (net !== null && remaining !== null && held !== null && approved !== null) {
+      return {
+        answer: `الموقف المالي لـ${name}: ${portfolioLine} صافي مستحق الفترة الحالية ${formatOmr(net)}، والمتبقي المستحق للمالك ${formatOmr(remaining)}، والأموال المحتجزة ${formatOmr(held)}، مع ${approved} تسوية معتمدة ضمن دورة التسويات. راجع كشف المالك أو شاشة التسويات قبل أي اعتماد أو صرف.`,
+        grounded: true,
+        caveats: ["أرقام الموقف المالي مسترجعة من الخدمة المالية المعتمدة ضمن صلاحية المستخدم؛ لم يُنفذ أي اعتماد أو صرف."],
+      };
+    }
+    return {
+      answer: `ملف ${name}: ${portfolioLine} التفاصيل المالية المعتمدة (صافي المستحق، المتبقي، المحتجز) تتطلب قراءة كشف المالك — افتحه أو شاشة تسويات الملاك للمراجعة المعتمدة.`,
+      grounded: true,
+      caveats: ["لا تُقدَّر الأرقام المالية عند تعذر القراءة المعتمدة."],
     };
   }
   if (action === "identify_riskiest_overdue_tenants") {

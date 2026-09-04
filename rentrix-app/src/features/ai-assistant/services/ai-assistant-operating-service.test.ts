@@ -127,4 +127,42 @@ describe('requestAiOperatingResponse', () => {
     await requestAiOperatingResponse({ ...request, action: 'generate_daily_brief' });
     expect(ownerAuthority).not.toHaveBeenCalled();
   });
+
+  it('uses canonical owner authority for the dedicated owner financial position action', async () => {
+    ownerAuthority.mockResolvedValue({
+      position: {
+        owner_id: 'owner-1',
+        period: { net_payable: 512.345 },
+        lifecycle_all_time: { remaining_payable: 222.111, approved_count: 2 },
+        owner_funds: { held: 50.125 },
+      },
+      statement: { total_gross: 0, total_deductions: 0, total_net: null },
+    });
+
+    const { requestAiOperatingResponse } = await import('./ai-assistant-operating-service');
+    const result = await requestAiOperatingResponse({ ...request, action: 'explain_owner_financial_position' });
+
+    expect(ownerAuthority).toHaveBeenCalledWith('owner-1', '2026-09-01', '2026-09-03');
+    expect(result.reply).toContain('الموقف المالي لـ«محمد»');
+    expect(result.reply).toContain('512.345 ر.ع.');
+    expect(result.reply).toContain('222.111 ر.ع.');
+    expect(result.reply).toContain('50.125 ر.ع.');
+    expect(result.context.entity).toMatchObject({
+      ownerCurrentPeriodNetPayable: 512.345,
+      ownerRemainingPayable: 222.111,
+      ownerHeldFunds: 50.125,
+      ownerApprovedSettlements: 2,
+    });
+  });
+
+  it('degrades to the base grounded response for the dedicated action when owner authority is unavailable', async () => {
+    ownerAuthority.mockRejectedValue(new Error('owner report unavailable'));
+    const base = baseResponse();
+    requestBase.mockResolvedValue(base);
+
+    const { requestAiOperatingResponse } = await import('./ai-assistant-operating-service');
+    await expect(
+      requestAiOperatingResponse({ ...request, action: 'explain_owner_financial_position' }),
+    ).resolves.toEqual(base);
+  });
 });

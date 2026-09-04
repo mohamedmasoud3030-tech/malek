@@ -16,6 +16,7 @@ const ALL_ACTIONS: readonly AiAssistantAction[] = [
   'draft_tenant_payment_reminder',
   'explain_property_financial_snapshot',
   'explain_current_surface',
+  'explain_owner_financial_position',
   'identify_riskiest_overdue_tenants',
   'list_contracts_needing_action_this_week',
   'locate_dormant_funds',
@@ -93,6 +94,8 @@ describe('buildAiNavigationTargets', () => {
     expect(buildAiNavigationTargets('draft_maintenance_followup').map((target) => target.to)).toContain('/communication');
     expect(buildAiNavigationTargets('summarize_expenses')[0]).toEqual({ label: 'فتح المصروفات', to: '/expenses' });
     expect(buildAiNavigationTargets('summarize_expenses').map((target) => target.to)).toContain('/financials');
+    expect(buildAiNavigationTargets('explain_owner_financial_position')[0]).toEqual({ label: 'فتح تسويات الملاك', to: '/owner-settlements' });
+    expect(buildAiNavigationTargets('explain_owner_financial_position').map((target) => target.to)).toContain('/owners');
   });
 
   it('adds the verified current record and useful owning workspaces for explain-current-surface', () => {

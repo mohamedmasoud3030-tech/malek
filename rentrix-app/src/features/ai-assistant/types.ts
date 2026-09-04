@@ -7,6 +7,7 @@ export type AiAssistantAction =
   | 'draft_tenant_payment_reminder'
   | 'explain_property_financial_snapshot'
   | 'explain_current_surface'
+  | 'explain_owner_financial_position'
   | 'identify_riskiest_overdue_tenants'
   | 'list_contracts_needing_action_this_week'
   | 'locate_dormant_funds'

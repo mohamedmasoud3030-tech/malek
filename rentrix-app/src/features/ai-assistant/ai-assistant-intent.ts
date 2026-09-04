@@ -145,6 +145,18 @@ const EXPENSE_INTENT = [
   'expense',
 ] as const;
 
+const OWNER_POSITION_INTENT = [
+  'موقف المالك',
+  'الموقف المالي للمالك',
+  'مالية المالك',
+  'رصيد المالك',
+  'مستحقات المالك',
+  'تسويات المالك',
+  'owner balance',
+  'owner financial',
+  'owner position',
+] as const;
+
 const NAVIGATION_INTENT = [
   'اروح فين',
   'فين اروح',
@@ -194,6 +206,14 @@ export function inferAiAssistantAction(
 
   if (includesAny(prompt, DRAFT_INTENT.map(normalizePrompt))) {
     return inferDraftAction(prompt, surface);
+  }
+
+  if (
+    surface?.entityType === 'owner'
+    && surface.entityId
+    && includesAny(prompt, OWNER_POSITION_INTENT.map(normalizePrompt))
+  ) {
+    return 'explain_owner_financial_position';
   }
 
   if (surface?.entityType && surface.entityId && includesAny(prompt, EXPLAIN_INTENT.map(normalizePrompt))) {

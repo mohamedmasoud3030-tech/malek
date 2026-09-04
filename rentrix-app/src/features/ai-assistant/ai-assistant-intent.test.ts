@@ -27,7 +27,16 @@ describe('inferAiAssistantAction', () => {
     expect(inferAiAssistantAction('اشرح السجل ده', property)).toBe('explain_current_surface');
     expect(inferAiAssistantAction('أروح فين بعد كده؟', property)).toBe('explain_current_surface');
     expect(inferAiAssistantAction('ليه محتاج اهتمام؟', surface('contract', 'contract-1', 'contracts'))).toBe('explain_current_surface');
-    expect(inferAiAssistantAction('رصيد المالك ده كام؟', surface('owner', 'owner-1', 'owners'))).toBe('explain_current_surface');
+  });
+
+  it('routes owner balance questions on an owner dossier to the dedicated financial position action', () => {
+    const owner = surface('owner', 'owner-1', 'owners');
+    expect(inferAiAssistantAction('رصيد المالك ده كام؟', owner)).toBe('explain_owner_financial_position');
+    expect(inferAiAssistantAction('إيه الموقف المالي للمالك؟', owner)).toBe('explain_owner_financial_position');
+    expect(inferAiAssistantAction('مستحقات المالك وتسوياته إيه؟', owner)).toBe('explain_owner_financial_position');
+    // The dedicated action requires the verified owner dossier.
+    expect(inferAiAssistantAction('إيه الموقف المالي للمالك؟', surface('property', 'prop-1', 'properties'))).toBeUndefined();
+    expect(inferAiAssistantAction('رصيد المالك ده كام؟', surface())).toBeUndefined();
   });
 
   it('maps preparation language only to existing reviewable draft actions', () => {

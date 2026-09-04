@@ -59,6 +59,7 @@ const NAVIGATION_BY_ACTION: Readonly<Record<AiAssistantAction, readonly AiNaviga
   draft_tenant_payment_reminder: [COMMUNICATION_CENTER],
   explain_property_financial_snapshot: [OFFICE_PERFORMANCE],
   explain_current_surface: [],
+  explain_owner_financial_position: [OWNER_SETTLEMENTS, OWNERS_WORKSPACE],
   identify_riskiest_overdue_tenants: [OVERDUE_REPORT, COMMUNICATION_CENTER],
   list_contracts_needing_action_this_week: [CONTRACTS_WORKSPACE],
   locate_dormant_funds: [FINANCIALS_WORKSPACE],

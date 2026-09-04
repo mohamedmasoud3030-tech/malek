@@ -243,6 +243,7 @@ const INTENT_GUIDES: ReadonlyArray<readonly [string, string]> = [
   ["summarize_month", "ملخص الشهر/آخر 30 يوماً (دفعات ومصروفات)"],
   ["summarize_expenses", "المصروفات/النفقات المسجلة في آخر 30 أو 90 يوماً"],
   ["explain_current_surface", "شرح الصفحة أو السجل الذي المستخدم فيه الآن"],
+  ["explain_owner_financial_position", "الموقف المالي لمالك محدد (صافي المستحق، المتبقي، المحتجز، التسويات)"],
   ["explain_property_financial_snapshot", "لقطة الوضع المالي العام للعقارات"],
   ["identify_riskiest_overdue_tenants", "أعلى/أخطر المستأجرين تأخراً"],
   ["list_contracts_needing_action_this_week", "العقود التي تحتاج إجراءً هذا الأسبوع"],

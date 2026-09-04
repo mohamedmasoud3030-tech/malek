@@ -100,6 +100,38 @@ describe('buildAiAssistantResponsePresentation', () => {
     ]);
   });
 
+  it('offers the owner financial position follow-up on owner dossiers without chaining on itself', () => {
+    const ownerContext: AiAssistantContext = {
+      ...context(),
+      entity: {
+        type: 'owner',
+        id: 'o1',
+        name: 'خالد',
+        propertyCount: 2,
+        activeContractCount: 2,
+        outstandingAmount: 0,
+      },
+      surface: {
+        route: '/owners/o1',
+        entityType: 'owner',
+        entityId: 'o1',
+        entityLabel: 'خالد',
+        section: 'owners',
+      },
+    };
+    const presentation = buildAiAssistantResponsePresentation(
+      { ...response(), context: ownerContext },
+      'explain_current_surface',
+    );
+    expect(presentation.suggestedActions.map((item) => item.action)).toContain('explain_owner_financial_position');
+
+    const selfPresentation = buildAiAssistantResponsePresentation(
+      { ...response(), context: ownerContext },
+      'explain_owner_financial_position',
+    );
+    expect(selfPresentation.suggestedActions.map((item) => item.action)).not.toContain('explain_owner_financial_position');
+  });
+
   it('does not chain another action from a draft response', () => {
     const presentation = buildAiAssistantResponsePresentation(response(), 'draft_tenant_payment_reminder');
     expect(presentation.mode).toBe('draft');
