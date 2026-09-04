@@ -45,3 +45,5 @@ jobs:
           git add -A
           git commit -m "refactor(finance,settings): apply workspace dedup patch"
           git push origin HEAD:"$GITHUB_REF_NAME"
+
+# retrigger after exact patch transport fix
