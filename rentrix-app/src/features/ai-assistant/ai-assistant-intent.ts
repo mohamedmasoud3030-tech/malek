@@ -135,6 +135,16 @@ const MONTH_INTENT = [
   'monthly summary',
 ] as const;
 
+const EXPENSE_INTENT = [
+  'مصروفات',
+  'مصاريف',
+  'النفقات',
+  'صرفنا',
+  'صرفت كام',
+  'expenses',
+  'expense',
+] as const;
+
 const NAVIGATION_INTENT = [
   'اروح فين',
   'فين اروح',
@@ -196,6 +206,12 @@ export function inferAiAssistantAction(
   if (includesAny(prompt, VACANCY_INTENT.map(normalizePrompt))) return 'summarize_vacancy';
   if (includesAny(prompt, OVERDUE_INTENT.map(normalizePrompt))) return 'summarize_overdue_invoices';
   if (includesAny(prompt, DORMANT_FUNDS_INTENT.map(normalizePrompt))) return 'locate_dormant_funds';
+  // The explicit "monthly summary" ask keeps its own action even when the
+  // prompt also mentions expenses; a bare expense ask wins the expense action.
+  if (
+    includesAny(prompt, EXPENSE_INTENT.map(normalizePrompt))
+    && !includesAny(prompt, ['ملخص الشهر'].map(normalizePrompt))
+  ) return 'summarize_expenses';
   if (includesAny(prompt, MONTH_INTENT.map(normalizePrompt))) return 'summarize_month';
 
   if (

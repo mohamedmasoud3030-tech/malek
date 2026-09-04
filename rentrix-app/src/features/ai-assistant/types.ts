@@ -3,6 +3,7 @@ export type AiAssistantAction =
   | 'summarize_contract_renewals'
   | 'summarize_vacancy'
   | 'summarize_month'
+  | 'summarize_expenses'
   | 'draft_tenant_payment_reminder'
   | 'explain_property_financial_snapshot'
   | 'explain_current_surface'

@@ -125,6 +125,7 @@ const OPERATIONAL_ACTIONS = [
   'prioritize_office_actions_top5',
   'generate_daily_brief',
   'explain_current_surface',
+  'summarize_expenses',
 ] as const;
 
 describe('client context ↔ edge contract round trip', () => {

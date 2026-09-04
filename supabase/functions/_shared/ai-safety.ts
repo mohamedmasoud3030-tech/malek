@@ -640,6 +640,21 @@ export function deterministicResponse(
       caveats: ["الملخص يستخدم آخر 30 يوماً حتى تاريخ الطلب، وليس فترة محاسبية مغلقة."],
     };
   }
+  if (action === "summarize_expenses") {
+    const count30 = integerAt(context, "reportSummary", "expensesLast30Days");
+    const amount30 = numberAt(context, "reportSummary", "expenseAmountLast30Days");
+    const amount90 = numberAt(context, "propertyFinancialSnapshot", "expensesLast90Days");
+    const average = count30 > 0 ? amount30 / count30 : 0;
+    const averageLine = average > 0 ? ` (متوسط نحو ${formatOmr(average)} لكل عملية)` : "";
+    const ninetyLine = amount90 > 0
+      ? ` إجمالي المصروفات المسجلة خلال آخر 90 يوماً ${formatOmr(amount90)}.`
+      : "";
+    return {
+      answer: `خلال آخر 30 يوماً سُجلت ${count30} عملية مصروفات بإجمالي ${formatOmr(amount30)}${averageLine}.${ninetyLine} راجع سجل المصروفات المعتمد قبل أي قرار — هذه أرقام تشغيلية وليست إقفالاً محاسبياً.`,
+      grounded: true,
+      caveats: ["الملخص قراءة فقط من المصروفات المسجلة ضمن صلاحيتك حتى تاريخ الطلب."],
+    };
+  }
   if (action === "explain_property_financial_snapshot") {
     const properties = numberAt(
       context,

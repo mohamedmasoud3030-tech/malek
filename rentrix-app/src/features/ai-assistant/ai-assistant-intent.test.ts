@@ -41,6 +41,14 @@ describe('inferAiAssistantAction', () => {
     expect(inferAiAssistantAction('إيه العقود اللي هتخلص قريب؟', surface())).toBe('summarize_contract_renewals');
     expect(inferAiAssistantAction('عندي كام وحدة فاضية؟', surface())).toBe('summarize_vacancy');
     expect(inferAiAssistantAction('إيه طلبات الصيانة المفتوحة؟', surface())).toBe('list_overdue_or_critical_maintenance');
+    expect(inferAiAssistantAction('إيه المصروفات في آخر 30 يوم؟', surface())).toBe('summarize_expenses');
+    expect(inferAiAssistantAction('كام صرفنا الشهر ده؟', surface())).toBe('summarize_expenses');
+  });
+
+  it('keeps the monthly summary distinct from the expense summary', () => {
+    expect(inferAiAssistantAction('اعمل لي ملخص الشهر ده', surface())).toBe('summarize_month');
+    expect(inferAiAssistantAction('ملخص الشهر من دفعات ومصروفات', surface())).toBe('summarize_month');
+    expect(inferAiAssistantAction('مصروفات الشهر ده كام؟', surface())).toBe('summarize_expenses');
   });
 
   it('leaves unrelated prompts on the existing free-form path', () => {

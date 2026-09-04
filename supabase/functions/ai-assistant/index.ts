@@ -241,6 +241,7 @@ const INTENT_GUIDES: ReadonlyArray<readonly [string, string]> = [
   ["summarize_contract_renewals", "العقود التي تنتهي/تتجدد قريباً"],
   ["summarize_vacancy", "الوحدات الفاضية ونسبة الإشغال"],
   ["summarize_month", "ملخص الشهر/آخر 30 يوماً (دفعات ومصروفات)"],
+  ["summarize_expenses", "المصروفات/النفقات المسجلة في آخر 30 أو 90 يوماً"],
   ["explain_current_surface", "شرح الصفحة أو السجل الذي المستخدم فيه الآن"],
   ["explain_property_financial_snapshot", "لقطة الوضع المالي العام للعقارات"],
   ["identify_riskiest_overdue_tenants", "أعلى/أخطر المستأجرين تأخراً"],

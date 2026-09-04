@@ -77,6 +77,11 @@ const moreAssistantActions = [
     prompt: 'اعمل لي ملخص الشهر ده.',
   },
   {
+    action: 'summarize_expenses',
+    title: 'المصروفات',
+    prompt: 'إيه المصروفات في آخر 30 يوم وإجماليها كام؟',
+  },
+  {
     action: 'locate_dormant_funds',
     title: 'فلوس واقفة',
     prompt: 'فين الفلوس الواقفة أو التأمينات المحتجزة؟',

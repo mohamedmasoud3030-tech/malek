@@ -12,6 +12,7 @@ const ALL_ACTIONS: readonly AiAssistantAction[] = [
   'summarize_contract_renewals',
   'summarize_vacancy',
   'summarize_month',
+  'summarize_expenses',
   'draft_tenant_payment_reminder',
   'explain_property_financial_snapshot',
   'explain_current_surface',
@@ -90,6 +91,8 @@ describe('buildAiNavigationTargets', () => {
     expect(buildAiNavigationTargets('list_vacant_units_needing_followup').map((target) => target.to)).toContain('/properties');
     expect(buildAiNavigationTargets('draft_owner_summary')[0]?.to).toBe('/owners');
     expect(buildAiNavigationTargets('draft_maintenance_followup').map((target) => target.to)).toContain('/communication');
+    expect(buildAiNavigationTargets('summarize_expenses')[0]).toEqual({ label: 'فتح المصروفات', to: '/expenses' });
+    expect(buildAiNavigationTargets('summarize_expenses').map((target) => target.to)).toContain('/financials');
   });
 
   it('adds the verified current record and useful owning workspaces for explain-current-surface', () => {
