@@ -182,4 +182,14 @@ describe("AI assistant edge function", () => {
     expect(content).toContain("buildAiAssistantContext");
     expect(content).toContain("crypto.randomUUID()");
   });
+
+  it("frontend service covers the server worst case with a bounded client timeout", () => {
+    const content = readRepoFile(
+      "rentrix-app/src/features/ai-assistant/services/ai-assistant-service.ts",
+    );
+    // Server worst case: 10s planning + 20s provider + server reads/quota
+    // RPCs. The client patience budget must exceed it without being unbounded.
+    expect(content).toContain("controller.abort(), 45_000");
+    expect(content).not.toContain("controller.abort(), 30_000");
+  });
 });

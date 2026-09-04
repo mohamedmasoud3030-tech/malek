@@ -155,4 +155,21 @@ describe('buildAiAssistantResponsePresentation', () => {
     expect(buildAiAssistantResponsePresentation({ ...response(), kind: 'data' }, 'explain_current_surface').mode).toBe('explanation');
     expect(buildAiAssistantResponsePresentation(response(), 'explain_current_surface').modeLabel).toBe('شرح السياق');
   });
+
+  it('surfaces context trimming as a transparency chip on data answers only', () => {
+    const trimmed = buildAiAssistantResponsePresentation(
+      { ...response(), contextTrimmed: true },
+      'summarize_month',
+    );
+    expect(trimmed.attention.some((item) => item.tone === 'info' && item.label.includes('اقتُطع'))).toBe(true);
+
+    const untrimmed = buildAiAssistantResponsePresentation(response(), 'summarize_month');
+    expect(untrimmed.attention.some((item) => item.label.includes('اقتُطع'))).toBe(false);
+
+    // Advisory replies never carry data-context trimming.
+    const advisory = buildAiAssistantResponsePresentation(
+      { ...response(), kind: 'advisory', contextTrimmed: true },
+    );
+    expect(advisory.attention).toEqual([]);
+  });
 });

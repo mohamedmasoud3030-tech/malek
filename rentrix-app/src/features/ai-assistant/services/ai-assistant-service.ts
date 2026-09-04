@@ -95,6 +95,7 @@ type FunctionSuccessBody = {
   meta?: {
     source?: 'deterministic' | 'model' | 'fallback';
     kind?: 'data' | 'advisory';
+    contextTrimmed?: boolean;
   };
 };
 
@@ -732,6 +733,7 @@ function readSuccessBody(value: unknown): FunctionSuccessBody {
         kind: value.meta.kind === 'advisory' || value.meta.kind === 'data'
           ? (value.meta.kind as 'data' | 'advisory')
           : undefined,
+        contextTrimmed: value.meta.contextTrimmed === true,
       }
     : undefined;
   const caveats = Array.isArray(value.caveats) && value.caveats.length <= 5
@@ -769,7 +771,11 @@ async function invokeAiAssistant(prompt: string, action: AiAssistantAction | und
 
   const accessToken = await getAccessToken();
   const controller = new AbortController();
-  const timeout = globalThis.setTimeout(() => controller.abort(), 30_000);
+  // Client-side patience budget. The server's worst case is a 10s planning
+  // call plus a 20s provider answer, on top of server-side context reads and
+  // quota/budget RPCs — 30s could abort a legitimate slow-but-successful
+  // response. 45s stays bounded while covering the documented worst case.
+  const timeout = globalThis.setTimeout(() => controller.abort(), 45_000);
   let response: Response;
   try {
     response = await fetch(`${env.supabaseUrl}/functions/v1/ai-assistant`, {
@@ -811,6 +817,7 @@ async function invokeAiAssistant(prompt: string, action: AiAssistantAction | und
     caveats: successBody.caveats,
     source: successBody.meta.source,
     kind: successBody.meta.kind,
+    contextTrimmed: successBody.meta.contextTrimmed ? true : undefined,
   };
 }
 

@@ -203,4 +203,10 @@ export type AiAssistantResponse = {
    * company's own data. Absent or `data` = the normal grounded path.
    */
   kind?: 'data' | 'advisory';
+  /**
+   * True when the server trimmed row arrays to fit the prompt budget while
+   * assembling the model context — surfaced to the user as transparency,
+   * never used to alter the answer.
+   */
+  contextTrimmed?: boolean;
 };

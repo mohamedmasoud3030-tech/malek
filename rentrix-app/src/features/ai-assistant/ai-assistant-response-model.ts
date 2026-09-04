@@ -177,12 +177,16 @@ export function buildAiAssistantResponsePresentation(
 ): AiAssistantResponsePresentation {
   const mode = responseMode(response.kind, action);
   const advisory = mode === 'advisory';
+  const attention = mode === 'draft' || advisory ? [] : buildAttention(response.context);
+  if (response.contextTrimmed && mode !== 'draft' && mode !== 'advisory') {
+    attention.push({ label: 'اقتُطع جزء من اللقطة لضمان سرعة الرد', tone: 'info' });
+  }
   return {
     mode,
     modeLabel: modeLabel(mode),
     // Advisory replies are about the market, not about the open entity.
     contextLabel: advisory ? null : contextualLabel(response.context, surface),
-    attention: mode === 'draft' || advisory ? [] : buildAttention(response.context),
+    attention,
     suggestedActions: advisory
       ? [
           // Pull the owner back from market talk to their own numbers.
