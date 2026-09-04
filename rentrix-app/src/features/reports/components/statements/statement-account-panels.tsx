@@ -1,4 +1,3 @@
-import { useEffect, useRef, useState } from 'react';
 import { ReceiptText, Scale, UserRound, UsersRound, WalletCards } from 'lucide-react';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { KpiCard } from '@/components/ui/kpi-card';
@@ -10,7 +9,6 @@ import { ReportPanel, ReportPanelSkeleton, ReportState } from '@/components/ui/r
 import { ReportOutputActions } from '../report-output-actions';
 import { ReportPayloadGroup } from '../report-payload-groups';
 import { formatLatinNumber } from '@/lib/formatters';
-import { loadPremiumOwnerReportPayload } from '../../documents/premium-owner-report';
 
 type StatementPanelOutputActions = Readonly<{
   onPrint: () => void;
@@ -135,9 +133,8 @@ export function TenantStatementPanel({
  * OwnerStatementPanel — mirrors the canonical printed owner statement.
  *
  * The workspace keeps `EntityTable` for the potentially long daily movement
- * ledger, but every statement section around it comes from the SAME premium
- * payload used by print/PDF (`loadPremiumOwnerReportPayload`). That payload
- * owns the authoritative summary, property/unit context, maintenance,
+ * ledger, while the workspace supplies the SAME prepared premium payload used
+ * by print/PDF. That shared payload owns property/unit context, maintenance,
  * recorded expenses, utilities/services, management fees, settlements and
  * final reconciliation. No formula, RPC or accounting semantic is duplicated
  * here.
@@ -147,6 +144,9 @@ export function OwnerStatementPanel({
   statement,
   error,
   isLoading,
+  fullStatement,
+  fullStatementError,
+  isLoadingFullStatement = false,
   period,
   outputActions,
 }: Readonly<{
@@ -154,6 +154,9 @@ export function OwnerStatementPanel({
   statement: OwnerStatementReport | undefined;
   error: unknown;
   isLoading: boolean;
+  fullStatement?: OwnerReportPayload;
+  fullStatementError?: unknown;
+  isLoadingFullStatement?: boolean;
   period: { from?: string; to?: string; propertyId?: string };
   outputActions?: StatementPanelOutputActions;
 }>) {
@@ -173,46 +176,6 @@ export function OwnerStatementPanel({
   ];
 
   const hasOwnerStatement = Boolean(selectedOwnerId && statement && !statement.error);
-  const [fullStatement, setFullStatement] = useState<OwnerReportPayload | null>(null);
-  const [isLoadingFullStatement, setIsLoadingFullStatement] = useState(false);
-  const [fullStatementError, setFullStatementError] = useState<unknown>(null);
-  const requestIdRef = useRef(0);
-
-  useEffect(() => {
-    if (!hasOwnerStatement || !selectedOwnerId || !statement || !period.from || !period.to) {
-      requestIdRef.current += 1;
-      setFullStatement(null);
-      setFullStatementError(null);
-      setIsLoadingFullStatement(false);
-      return;
-    }
-
-    const requestId = ++requestIdRef.current;
-    setIsLoadingFullStatement(true);
-    setFullStatementError(null);
-
-    loadPremiumOwnerReportPayload({
-      ownerId: selectedOwnerId,
-      from: period.from,
-      to: period.to,
-      propertyId: period.propertyId ?? null,
-      statement,
-    })
-      .then((payload) => {
-        if (requestIdRef.current !== requestId) return;
-        setFullStatement(payload);
-      })
-      .catch((loadError: unknown) => {
-        if (requestIdRef.current !== requestId) return;
-        setFullStatementError(loadError);
-        setFullStatement(null);
-      })
-      .finally(() => {
-        if (requestIdRef.current !== requestId) return;
-        setIsLoadingFullStatement(false);
-      });
-  }, [hasOwnerStatement, selectedOwnerId, statement, period.from, period.to, period.propertyId]);
-
   const [summaryGroup, ...remainingGroups] = fullStatement?.groups ?? [];
   const supplementalGroups = remainingGroups.filter((group) => !group.blocks.some(
     (block) => block.kind === 'table' && block.table.title === 'الحركة المالية اليومية التفصيلية',
