@@ -1,4 +1,3 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ErrorState } from '@/components/ui/error-state';
 import { LoadingState } from '@/components/ui/loading-state';
 import type { AgedReceivablesReport, ArrearsSummaryReport, OverdueInvoicesReport } from '../reports/financialReportsService';
@@ -6,7 +5,7 @@ import { ArrearsAgingBuckets } from './arrears-aging-buckets';
 import { ArrearsFilters } from './arrears-filters';
 import { ArrearsSummaryCards } from './arrears-summary-cards';
 import { filterOverdueInvoiceRows, type ArrearsBucketFilter } from './arrears-workflow-helpers';
-import { formatDate, getErrorMessage } from './financials-formatters';
+import { getErrorMessage } from './financials-formatters';
 import { OverdueInvoicesTable } from './overdue-invoices-table';
 
 type ArrearsWorkflowSectionProps = Readonly<{
@@ -49,15 +48,10 @@ export function ArrearsWorkflowSection({
   const hasOverdueRows = overdueRows.length > 0;
   const hasFilteredRows = filteredRows.length > 0;
 
+  // The finance-hub tab strip and the register below carry the context that
+  // the old panel header repeated; one workspace, no second title block.
   return (
-    <Card className="border-border/70">
-      <CardHeader className="space-y-2">
-        <CardTitle>متابعة تحصيل المتأخرات</CardTitle>
-        <p className="text-sm text-muted-foreground">
-          متابعة الفواتير المتأخرة وأعمار الذمم حتى {formatDate(asOf)}، مع الانتقال للتحصيل عندما تسمح الصلاحية.
-        </p>
-      </CardHeader>
-      <CardContent className="space-y-5">
+    <div className="min-w-0 space-y-2.5 sm:space-y-3.5">
         <ArrearsFilters
           asOf={asOf}
           search={search}
@@ -96,7 +90,6 @@ export function ArrearsWorkflowSection({
         {canShowRows && hasFilteredRows ? (
           <OverdueInvoicesTable rows={filteredRows} onSelectInvoice={onSelectInvoice} onCollectInvoice={onCollectInvoice} />
         ) : null}
-      </CardContent>
-    </Card>
+    </div>
   );
 }
