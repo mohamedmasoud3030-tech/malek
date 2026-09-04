@@ -67,6 +67,15 @@ describe('dashboard frontend/backend data contract', () => {
     expect(utilityHookSource).toContain('enabled: options?.enabled ?? true');
   });
 
+  it('keeps authoritative snapshot failure owned by the page boundary only', () => {
+    const pageSource = read('dashboard-page.tsx');
+    const collectionsSource = read('components/collections-section.tsx');
+    const attentionSource = read('components/needs-attention-section.tsx');
+    expect(pageSource).toContain("title={snapshotUnavailable ? 'تعذر تحميل بيانات اليوم' : 'تعذر تحديث بيانات اليوم'}");
+    expect(collectionsSource).not.toContain('isError');
+    expect(attentionSource).not.toContain('isError');
+  });
+
   it('keeps cashflow failure and retry owned by the performance panel instead of the global attention alert', () => {
     const pageSource = read('dashboard-page.tsx');
     expect(pageSource).toContain('chartIsError={cashflowQuery.isError && !cashflowQuery.data}');
