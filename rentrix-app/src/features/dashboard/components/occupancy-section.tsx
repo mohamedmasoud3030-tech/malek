@@ -97,7 +97,7 @@ export const OccupancySection = memo(function OccupancySection({
                 />
               ) : (
                 <p className="mt-1 text-[11px] font-medium text-muted-foreground">
-                  {analytics.totalUnits > 0 ? `${number(analytics.totalUnits)} وحدة في المحفظة` : 'لا توجد وحدات مسجلة'}
+                  {snapshot ? `${number(snapshot.portfolio.units)} وحدة في المحفظة` : 'بيانات المحفظة غير متاحة'}
                 </p>
               )}
             </div>
