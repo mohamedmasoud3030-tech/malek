@@ -26,8 +26,8 @@ export function ArrearsWorkspace({ embedded = false }: ArrearsWorkspaceProps) {
       description="متابعة المبالغ المتأخرة وأعمار الديون — الفلاتر محفوظة أثناء التنقل."
       secondaryActions={(
         <>
-          <Button variant="secondary" className="min-h-11" asChild><Link to="/invoices"><FileText className="me-2 size-4" aria-hidden="true" />الفواتير</Link></Button>
-          <Button variant="secondary" className="min-h-11" asChild><Link to="/receipts"><ReceiptText className="me-2 size-4" aria-hidden="true" />الإيصالات</Link></Button>
+          <Button variant="secondary" className="min-h-11" asChild><Link to="/financials" search={{ section: "collections", view: "invoices" }}><FileText className="me-2 size-4" aria-hidden="true" />الفواتير</Link></Button>
+          <Button variant="secondary" className="min-h-11" asChild><Link to="/financials" search={{ section: "collections", view: "receipts" }}><ReceiptText className="me-2 size-4" aria-hidden="true" />الإيصالات</Link></Button>
           <Button variant="secondary" className="min-h-11" asChild><Link to="/reports"><BarChart3 className="me-2 size-4" aria-hidden="true" />تقارير المتأخرات</Link></Button>
         </>
       )}
@@ -35,8 +35,4 @@ export function ArrearsWorkspace({ embedded = false }: ArrearsWorkspaceProps) {
       <ArrearsWorkspaceSection />
     </EmbeddableWorkspace>
   );
-}
-
-export function ArrearsPage() {
-  return <ArrearsWorkspace />;
 }

@@ -61,14 +61,12 @@ describe('Services workspace contract', () => {
     expect(component).not.toContain('AutomationWorkspace');
   });
 
-  it('keeps compatibility routes pointed at their single owning workspace', () => {
-    expect(routeDefinition('/utilities')).toContain("to: '/maintenance'");
-    expect(routeDefinition('/utilities')).toContain("section: 'utilities'");
-    expect(routeDefinition('/documents-vault')).toContain("to: '/maintenance'");
-    expect(routeDefinition('/documents-vault')).toContain("section: 'documents_vault'");
-    expect(routeDefinition('/automation')).toContain("requirePermission('automation.view')");
-    expect(routeDefinition('/automation')).toContain("to: '/settings'");
-    expect(routeDefinition('/automation')).toContain("section: 'automation'");
+  it('keeps retired compatibility URL aliases out of the route tree entirely', () => {
+    for (const path of ['/utilities', '/documents-vault', '/automation']) {
+      expect(routeTree, `retired ${path} must not be registered`).not.toContain(`path: '${path}'`);
+    }
+    // The hub keeps the search-param deep links that used to be URLs.
+    expect(routeTree).toContain("path: '/maintenance'");
   });
 });
 

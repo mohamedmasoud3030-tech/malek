@@ -132,9 +132,11 @@ describe('premium catalog — preservation of every legacy surface', () => {
     }
   });
 
-  it('keeps the account route redirect flowing into the preserved compatibility workspace', () => {
-    expect(routeTreeSource).toContain("to: '/reports'");
-    expect(routeTreeSource).toContain("section: 'accounting', view: 'general_ledger'");
+  it('keeps accounting deep links flowing into the single /reports workspace', () => {
+    expect(routeTreeSource).toContain("path: '/reports'");
+    expect(routeTreeSource).not.toContain("path: '/accounting'");
+    const financial = REPORT_PRODUCTS.find((product) => product.id === 'financial-settlement-pack')!;
+    expect(financial.targets.some((target) => target.section === 'accounting' && target.view === 'general_ledger')).toBe(true);
   });
 });
 

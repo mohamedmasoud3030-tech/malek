@@ -1,5 +1,5 @@
 import type { CompanySettingsDraft, CompanySettingsPreviewModel } from './settingsForm';
-import type { SettingsSectionId } from './settingsSections';
+import type { SettingsSectionId } from './registry/sectionRegistry';
 
 export type SettingsSummaryTile = Readonly<{
   label: string;

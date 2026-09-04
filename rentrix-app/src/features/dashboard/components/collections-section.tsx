@@ -59,7 +59,7 @@ export const CollectionsSection = memo(function CollectionsSection({ snapshot, i
         meta={snapshot ? collectionPeriodTitle(snapshot.period.month, snapshot.period.year) : 'الفترة الحالية'}
         icon={HandCoins}
         tone={hasOverdue ? 'warning' : 'success'}
-        trailing={<Link to="/arrears" data-dashboard-section-action className={dashboardSectionActionClass}>عرض الكل</Link>}
+        trailing={<Link to="/financials" search={{ section: "collections", view: "arrears" }} data-dashboard-section-action className={dashboardSectionActionClass}>عرض الكل</Link>}
       />
 
       {isLoading ? <DashboardSignalLoading label="جارٍ تحميل التحصيل والمتأخرات" /> : (

@@ -221,7 +221,3 @@ export function ExpensesWorkspace({ embedded = false }: ExpensesWorkspaceProps) 
     </EmbeddableWorkspace>
   );
 }
-
-export function ExpensesPage() {
-  return <ExpensesWorkspace />;
-}

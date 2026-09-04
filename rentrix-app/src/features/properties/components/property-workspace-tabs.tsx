@@ -128,7 +128,7 @@ export function PropertyFinancialsTab({ propertyId }: PropertyTabProps) {
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-bold text-foreground">الفواتير والتحصيلات الخاصة بالعقار</h3>
         <Button size="sm" variant="outline" className="min-h-11" asChild>
-          <Link to="/invoices">مراجعة الفواتير الشاملة</Link>
+          <Link to="/financials" search={{ section: "collections", view: "invoices" }}>مراجعة الفواتير الشاملة</Link>
         </Button>
       </div>
       {propertyInvoices.length === 0 ? (

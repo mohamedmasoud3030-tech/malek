@@ -293,8 +293,8 @@ export function useCommandSearch(query: string) {
           title: invoice.reference || 'فاتورة مسجلة',
           subtitle: `${tenantName} • استحقاق ${invoice.due_date}`,
           category: 'invoices',
-          route: '/invoices',
-          search: { invoiceId: invoice.id },
+          route: '/financials',
+          search: { section: 'collections', view: 'invoices', invoiceId: invoice.id },
         });
       }
 

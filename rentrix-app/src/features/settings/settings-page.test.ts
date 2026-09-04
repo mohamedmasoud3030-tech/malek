@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { preventSettingsUnload } from './settings-page';
-import { isSettingsSectionId, resolveSettingsSection } from './settingsSections';
+import { isSettingsSectionId, resolveSettingsSection } from './registry/sectionRegistry';
 
 vi.mock('./useCompanySettings', () => ({
   useCompanySettings: () => ({ isLoading: true }),

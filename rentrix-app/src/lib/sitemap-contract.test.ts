@@ -37,10 +37,14 @@ describe('MALEK public sitemap contract', () => {
     expect(paths).not.toContain('/finance');
   });
 
-  it('covers the public landing surface', () => {
+  it('covers only the current public surfaces', () => {
     const sitemap = read('public/sitemap.xml');
     expect(sitemap).toContain('<loc>https://malek-plus.vercel.app/</loc>');
-    expect(sitemap).toContain('<loc>https://malek-plus.vercel.app/landing</loc>');
+    expect(sitemap).toContain('<loc>https://malek-plus.vercel.app/privacy</loc>');
+    expect(sitemap).toContain('<loc>https://malek-plus.vercel.app/terms</loc>');
+    // The /landing marketing URL alias was retired with the route cleanup; /
+    // is the single public entry, currently forwarding to the auth flow.
+    expect(sitemap).not.toContain('<loc>https://malek-plus.vercel.app/landing</loc>');
   });
 
   it('publishes an absolute sitemap URL in robots.txt', () => {

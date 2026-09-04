@@ -145,14 +145,14 @@ export function OverdueInvoicesPanel({ rows, action, isLoading }: Readonly<{ row
                 {selected.propertyId ? <Button variant="secondary" onClick={() => openTarget({ to: '/properties/$propertyId', params: { propertyId: selected.propertyId! } })}><Building2 className="me-1 size-4" />العقار</Button> : null}
                 {selected.propertyId && selected.unitId ? <Button variant="secondary" onClick={() => openTarget({ to: '/properties/$propertyId/units/$unitId', params: { propertyId: selected.propertyId!, unitId: selected.unitId! } })}>الوحدة</Button> : null}
                 <Button variant="secondary" onClick={() => openTarget({ to: '/contracts/$contractId', params: { contractId: selected.contractId } })}><FileText className="me-1 size-4" />العقد</Button>
-                <Button variant="secondary" onClick={() => openTarget({ to: '/invoices', search: { invoiceId: selected.invoiceId } })}><ReceiptText className="me-1 size-4" />الفاتورة</Button>
+                <Button variant="secondary" onClick={() => openTarget({ to: '/financials', search: { section: 'collections', view: 'invoices', invoiceId: selected.invoiceId } })}><ReceiptText className="me-1 size-4" />الفاتورة</Button>
               </div>
             </div>
 
             <div className="rounded-xl border border-primary/25 bg-primary/5 p-4 text-sm leading-6">
               <p className="font-bold">الإجراء التالي</p>
               <p className="mt-1 text-muted-foreground">ابدأ تحصيل هذه الفاتورة من سجل الفواتير التشغيلي. لا نعرض سبب تأخير أو آخر تحصيل أو Timeline لأن مصدر التقرير الحالي لا يوفرها بصورة موثوقة.</p>
-              <Button className="mt-3" onClick={() => openTarget({ to: '/invoices', search: { invoiceId: selected.invoiceId, collect: 1 } })}>بدء التحصيل</Button>
+              <Button className="mt-3" onClick={() => openTarget({ to: '/financials', search: { section: 'collections', view: 'invoices', invoiceId: selected.invoiceId, collect: 1 } })}>بدء التحصيل</Button>
             </div>
           </div>
         ) : null}

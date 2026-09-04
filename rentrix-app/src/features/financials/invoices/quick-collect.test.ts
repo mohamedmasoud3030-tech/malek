@@ -79,8 +79,8 @@ describe('findNextCollectibleInvoiceId', () => {
 
 describe('createInvoiceCollectHref', () => {
   it('builds the deep link with the invoice id and collect flag, url-encoded', () => {
-    expect(createInvoiceCollectHref('inv-123')).toBe('/invoices?invoiceId=inv-123&collect=1');
-    expect(createInvoiceCollectHref('inv id/42')).toBe('/invoices?invoiceId=inv%20id%2F42&collect=1');
+    expect(createInvoiceCollectHref('inv-123')).toBe('/financials?section=collections&view=invoices&invoiceId=inv-123&collect=1');
+    expect(createInvoiceCollectHref('inv id/42')).toBe('/financials?section=collections&view=invoices&invoiceId=inv%20id%2F42&collect=1');
   });
 });
 

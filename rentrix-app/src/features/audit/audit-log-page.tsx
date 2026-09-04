@@ -69,6 +69,3 @@ export function AuditLogWorkspace({ variant = 'standalone' }: AuditLogWorkspaceP
 }
 
 /** Standalone /audit-log route entry point — preserves historical behavior exactly. */
-export function AuditLogPage() {
-  return <AuditLogWorkspace variant="standalone" />;
-}

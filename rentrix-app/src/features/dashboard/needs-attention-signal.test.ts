@@ -105,7 +105,8 @@ describe('buildNeedsAttentionSignal', () => {
     const maintenance = signal.items.find((item) => item.key === 'maintenance-action');
     const expiring = signal.items.find((item) => item.key === 'expiring-con-1');
     expect(overdue?.severity).toBe('danger');
-    expect(overdue?.to).toBe('/arrears');
+    expect(overdue?.to).toBe('/financials');
+    expect(overdue?.search).toEqual({ section: 'collections', view: 'arrears' });
     expect(maintenance?.severity).toBe('danger');
     expect(maintenance?.to).toBe('/maintenance');
     expect(expiring?.severity).toBe('danger');
@@ -192,7 +193,8 @@ describe('buildNeedsAttentionSignal', () => {
 
     const approved = signal.items.find((item) => item.key === 'owner-settlements-approved');
     const draft = signal.items.find((item) => item.key === 'owner-settlements-draft');
-    expect(approved?.to).toBe('/owner-settlements');
+    expect(approved?.to).toBe('/financials');
+    expect(approved?.search).toEqual({ section: 'funds', view: 'owner_settlements' });
     expect(approved?.severity).toBe('warning');
     expect(draft?.severity).toBe('info');
     expect(signal.items.find((item) => item.key === 'utilities-overdue')?.severity).toBe('danger');

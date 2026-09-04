@@ -77,7 +77,7 @@ describe('route blank-state guard — every path must have component or redirect
     const token = `path: '/receipts'`;
     const idx = source.indexOf(token);
     const window = source.slice(Math.max(0, idx - 800), idx + 2500);
-    expect(window).toContain(`lazyRouteComponent(() => import('@/features/financials/receipts/receipts-page')`);
+    expect(window).toContain(`'ReceiptsWorkspace'`);
     expect(window).toContain('receiptId');
   });
 });

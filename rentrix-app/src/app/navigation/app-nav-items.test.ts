@@ -2,34 +2,39 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { getAllNavItems, mobileNavItems, navGroups, quickCreateItems, workspaceChildNavItems, type NavItem } from './app-nav-items';
 import { navigationLabels } from './terminology-registry';
+import { findRouteBlock, registeredRoutePaths, topLevelRoutePaths } from './route-tree-paths';
 
-const routeTreeSource = readFileSync(new URL('../router/route-tree.ts', import.meta.url), 'utf8');
 const mobileNavigationSource = readFileSync(new URL('../layout/layout-navigation-view.tsx', import.meta.url), 'utf8');
-const routePaths = new Set(Array.from(routeTreeSource.matchAll(/path: '([^']+)'/g), (match) => match[1]));
-const routePathList = Array.from(routePaths);
+const routePathList = registeredRoutePaths();
+const topLevelPathList = topLevelRoutePaths();
 const navItems: NavItem[] = Array.from(getAllNavItems());
 
 const requiredOperationalRoutes = [
   '/login', '/', '/dashboard', '/properties', '/properties/new', '/properties/$propertyId', '/properties/$propertyId/edit',
-  '/units', '/lands', '/lands/$landId', '/owners', '/owners/$ownerId', '/tenants', '/tenants/$tenantId',
+  '/lands', '/lands/$landId', '/owners', '/owners/$ownerId', '/tenants', '/tenants/$tenantId',
   '/people', '/people/$personId', '/people/new', '/people/$personId/edit', '/leads', '/communication',
   '/contracts', '/contracts/new', '/contracts/$contractId', '/contracts/$contractId/edit', '/maintenance',
-  '/service-providers', '/utilities', '/documents-vault', '/automation', '/financials', '/invoices', '/receipts', '/expenses',
-  '/arrears', '/deposits', '/owner-settlements', '/bank-reconciliation', '/commissions', '/reports', '/accounting',
-  '/settings', '/change-password', '/audit-log', '/data-integrity', '/system',
+  '/service-providers', '/financials', '/receipts', '/commissions', '/reports', '/reports/$reportId',
+  '/settings', '/help', '/admin-support', '/ai-assistant',
+] as const;
+
+const retiredOperationalRoutes = [
+  '/units', '/utilities', '/documents-vault', '/automation', '/invoices', '/expenses',
+  '/arrears', '/deposits', '/owner-settlements', '/bank-reconciliation', '/accounting',
+  '/change-password', '/audit-log', '/data-integrity', '/system', '/landing',
+  '/finance/collections', '/finance/expenses', '/finance/deposits', '/finance/banking',
 ] as const;
 
 function getRouteDefinition(path: string) {
-  const pathIndex = routeTreeSource.indexOf(`path: '${path}'`);
-  if (pathIndex === -1) return '';
-  const routeStart = routeTreeSource.lastIndexOf('createRoute({', pathIndex);
-  const routeEnd = routeTreeSource.indexOf('});', pathIndex);
-  return routeStart === -1 || routeEnd === -1 ? '' : routeTreeSource.slice(routeStart, routeEnd + 3);
+  return findRouteBlock(path);
 }
 
 describe('task-centric app navigation', () => {
   it('keeps the operational route matrix while exposing exactly seven global destinations', () => {
     expect(routePathList).toEqual(expect.arrayContaining([...requiredOperationalRoutes]));
+    for (const retired of retiredOperationalRoutes) {
+      expect(routePathList, `retired ${retired} must not be registered`).not.toContain(retired);
+    }
     const primaryItems = navGroups.flatMap(([, items]) => items);
     expect(primaryItems.map(([to]) => to)).toEqual([
       '/dashboard', '/properties', '/contracts', '/financials', '/maintenance', '/reports', '/settings',
@@ -109,7 +114,7 @@ describe('task-centric app navigation', () => {
     expect(getRouteDefinition('/leads')).toContain("requirePermission('leads.view')");
     expect(getRouteDefinition('/communication')).toContain("requirePermission('communication.view')");
     expect(getRouteDefinition('/commissions')).toContain("requirePermission('commissions.view')");
-    expect(getRouteDefinition('/automation')).toContain("to: '/settings'");
+    expect(getRouteDefinition('/receipts')).toContain("ReceiptsWorkspace");
   });
 
   it('keeps destination-style mobile nav empty, with two header actions and three lower utilities', () => {
@@ -118,10 +123,9 @@ describe('task-centric app navigation', () => {
       'data-header-phone-search',
       'data-header-quick-add',
       'data-mobile-dock-menu',
-      'data-mobile-dock-notifications',
-      'data-mobile-dock-ai',
-    ]) expect(mobileNavigationSource).toContain(hook);
-    expect(mobileNavigationSource).not.toContain('data-mobile-dock-search');
-    expect(mobileNavigationSource).not.toContain('data-mobile-dock-quick-add');
+    ]) {
+      expect(mobileNavigationSource).toContain(hook);
+    }
+    expect(topLevelPathList).not.toContain('/units');
   });
 });

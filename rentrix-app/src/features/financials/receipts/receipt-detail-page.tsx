@@ -35,8 +35,8 @@ function ReceiptPageHeader({ description = 'جارٍ تحميل بيانات ا�
     <PageHeader
       title="إيصال استلام نقدية"
       description={description}
-      backTo="/receipts"
-      backLabel="الإيصالات"
+      backTo="/financials"
+      backLabel="المالية"
     />
   );
 }
@@ -146,7 +146,7 @@ export function ReceiptDetailPage() {
             <div className="flex flex-wrap gap-2">
               <Button onClick={() => void receiptQuery.refetch()}>إعادة المحاولة</Button>
               <Button asChild variant="secondary">
-                <Link to="/receipts">
+                <Link to="/financials" search={{ section: "collections", view: "receipts" }}>
                   <ArrowRight className="me-2 size-4" />
                   العودة لقائمة الإيصالات
                 </Link>
@@ -177,8 +177,8 @@ export function ReceiptDetailPage() {
         <PageHeader
           title="إيصال استلام نقدية"
           description={`رقم الإيصال: ${receipt.receipt_number}`}
-          backTo="/receipts"
-          backLabel="الإيصالات"
+          backTo="/financials"
+          backLabel="المالية"
           primaryAction={(
             <Button variant="primary" onClick={handlePrint} disabled={isPrinting || !canUseReceiptDocument}>
               <Printer className="me-2 size-4" />
@@ -275,7 +275,7 @@ export function ReceiptDetailPage() {
               <div className="mt-2 flex min-w-0 flex-wrap items-center justify-between gap-4">
                 <span className="min-w-0 break-all font-bold" dir="ltr">{receipt.invoice_reference ?? 'فاتورة بلا مرجع'}</span>
                 <Button variant="secondary" size="sm" className="print:hidden" asChild>
-                  <Link to="/invoices">
+                  <Link to="/financials" search={{ section: "collections", view: "invoices" }}>
                     عرض الفاتورة
                     <ExternalLink className="me-1 size-3" />
                   </Link>

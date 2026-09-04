@@ -289,12 +289,10 @@ export const helpArticles: readonly HelpArticle[] = [
 const contextualArticleByRoute: readonly [prefix: string, articleId: string][] =
   [
     ["/financials", "collections-receipts"],
-    ["/finance/", "collections-receipts"],
     ["/receipts", "collections-receipts"],
     ["/contracts", "contract-lifecycle"],
     ["/properties", "property-unit-setup"],
     ["/reports", "reports-documents"],
-    ["/accounting", "reports-documents"],
     ["/settings", "permissions"],
     ["/ai-assistant", "ai-assistant"],
   ];

@@ -227,7 +227,7 @@ const HeaderUserMenu = memo(function HeaderUserMenu({
                 </Link>
               ) : null}
 
-              <Link to="/change-password" role="menuitem" className={itemClass} onClick={() => setOpen(false)}>
+              <Link to="/settings" search={{ section: "security" }} role="menuitem" className={itemClass} onClick={() => setOpen(false)}>
                 <KeyRound className="size-[1.125rem] shrink-0 text-muted-foreground" aria-hidden="true" />
                 <span>تغيير كلمة المرور</span>
               </Link>

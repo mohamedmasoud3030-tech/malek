@@ -7,6 +7,8 @@ import {
 } from '../form/sectionDrafts';
 import type { SettingsSectionId, SettingsSectionKind, SettingsSectionRenderProps } from './types';
 
+export type { SettingsSectionId } from './types';
+
 /**
  * Declarative Settings registry. All sections remain supported; the primary
  * navigation flag keeps specialist setup out of the routine office-settings UI

@@ -199,7 +199,7 @@ function invoicePdfAction(page: Page): Locator {
 }
 
 async function gotoInvoicesRegister(page: Page): Promise<Locator> {
-  await page.goto('/invoices');
+  await page.goto('/financials?section=collections&view=invoices');
   await expect(page).toHaveURL(/\/financials\?section=collections&view=invoices(?:&|$)/);
   await expect(page.getByRole('heading', { name: 'المال', level: 1, exact: true })).toBeVisible({ timeout: 20_000 });
   await expect(page.getByRole('region', { name: 'قائمة الفواتير', exact: true })).toBeVisible({ timeout: 20_000 });

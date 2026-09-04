@@ -2,7 +2,7 @@ import { ChevronLeft, Settings2 } from 'lucide-react';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { cn } from '@/lib/utils';
-import type { SettingsSectionId } from '../settingsSections';
+import type { SettingsSectionId } from '../registry/sectionRegistry';
 
 export function SettingsHero({
   companyName,

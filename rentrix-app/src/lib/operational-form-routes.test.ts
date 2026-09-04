@@ -6,29 +6,35 @@ describe('protected operational form scope', () => {
     '/dashboard',
     '/properties',
     '/properties/property-1',
-    '/units',
     '/people',
     '/tenants/tenant-1',
     '/owners',
     '/contracts/contract-1',
     '/maintenance',
     '/settings',
-    '/portfolio',
-    '/relationships',
+    '/ai-assistant',
+    '/help',
+    '/admin-support',
+    '/communication',
   ])('enables the operational form contract for %s', (pathname) => {
     expect(isOperationalFormRoute(pathname)).toBe(true);
   });
 
   it.each([
     '/financials',
-    '/finance/collections',
-    '/finance/expenses',
-    '/finance/deposits',
-    '/finance/banking',
+    '/receipts',
     '/reports',
     '/commissions',
-    '/owner-settlements',
-  ])('keeps Finance and Reporting outside the operational form scope for %s', (pathname) => {
+    '/landing',
+    '/units',
+    '/portfolio',
+    '/relationships',
+    '/utilities',
+    '/documents-vault',
+    '/invoices',
+    '/expenses',
+    '/arrears',
+  ])('keeps Finance, Reporting and legacy aliases outside the operational form scope for %s', (pathname) => {
     expect(isOperationalFormRoute(pathname)).toBe(false);
   });
 });

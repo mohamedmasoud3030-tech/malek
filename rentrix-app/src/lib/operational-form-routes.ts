@@ -1,26 +1,16 @@
 const operationalFormRoutePrefixes = [
   '/dashboard',
   '/properties',
-  '/units',
   '/people',
   '/tenants',
   '/owners',
   '/contracts',
   '/maintenance',
   '/settings',
-  '/system',
-  '/audit-log',
-  '/data-integrity',
-  '/utilities',
-  '/automation',
-  '/documents-vault',
   '/ai-assistant',
   '/help',
   '/admin-support',
   '/communication',
-  '/portfolio',
-  '/relationships',
-  '/change-password',
 ] as const;
 
 export function isOperationalFormRoute(pathname: string): boolean {

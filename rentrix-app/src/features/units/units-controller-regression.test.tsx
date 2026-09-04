@@ -11,7 +11,7 @@ import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act } from 'react';
-import { UnitsPage } from './units-page';
+import { UnitsWorkspace } from './units-page';
 import { computeUnitKpis, getUnitPageStatus } from './use-units-list-controller';
 import type { Unit } from '@/types/domain';
 
@@ -106,7 +106,7 @@ describe('getUnitPageStatus', () => {
   });
 });
 
-describe('UnitsPage controller regression', () => {
+describe('UnitsWorkspace controller regression', () => {
   let container: HTMLDivElement;
   let root: ReturnType<typeof createRoot>;
 
@@ -125,7 +125,7 @@ describe('UnitsPage controller regression', () => {
   });
 
   it('renders one dense desktop table row per unit plus the shared Cards⇄Table register', async () => {
-    await act(async () => { root.render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><UnitsPage /></QueryClientProvider>); });
+    await act(async () => { root.render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><UnitsWorkspace /></QueryClientProvider>); });
 
     const desktopRows = container.querySelectorAll('tbody tr');
     expect(desktopRows.length).toBe(3);
@@ -137,7 +137,7 @@ describe('UnitsPage controller regression', () => {
   });
 
   it('renders KPI cards with computed values', async () => {
-    await act(async () => { root.render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><UnitsPage /></QueryClientProvider>); });
+    await act(async () => { root.render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><UnitsWorkspace /></QueryClientProvider>); });
     const text = container.textContent ?? '';
     expect(text).toContain('3');
     expect(text).toContain('1');
@@ -145,7 +145,7 @@ describe('UnitsPage controller regression', () => {
   });
 
   it('renders filter selects: property, status, occupancy', async () => {
-    await act(async () => { root.render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><UnitsPage /></QueryClientProvider>); });
+    await act(async () => { root.render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><UnitsWorkspace /></QueryClientProvider>); });
     const selects = container.querySelectorAll('select');
     expect(selects.length).toBe(3);
 
@@ -157,7 +157,7 @@ describe('UnitsPage controller regression', () => {
   });
 
   it('opens create modal on add button click', async () => {
-    await act(async () => { root.render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><UnitsPage /></QueryClientProvider>); });
+    await act(async () => { root.render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><UnitsWorkspace /></QueryClientProvider>); });
     const addBtn = Array.from(container.querySelectorAll('button')).find(b => b.textContent?.includes('إضافة وحدة'));
     expect(addBtn).toBeTruthy();
     await act(async () => { addBtn?.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
@@ -165,7 +165,7 @@ describe('UnitsPage controller regression', () => {
   });
 
   it('opens edit modal from the row action without property selection', async () => {
-    await act(async () => { root.render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><UnitsPage /></QueryClientProvider>); });
+    await act(async () => { root.render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><UnitsWorkspace /></QueryClientProvider>); });
     const actionTrigger = container.querySelector<HTMLButtonElement>('[data-action-menu-trigger]');
     expect(actionTrigger).toBeTruthy();
     await act(async () => { actionTrigger?.click(); });
@@ -178,7 +178,7 @@ describe('UnitsPage controller regression', () => {
   });
 
   it('opens the unit preview dialog from desktop row click', async () => {
-    await act(async () => { root.render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><UnitsPage /></QueryClientProvider>); });
+    await act(async () => { root.render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><UnitsWorkspace /></QueryClientProvider>); });
     const row = container.querySelector('tbody tr') as HTMLElement;
     expect(row).toBeTruthy();
     await act(async () => { row.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
@@ -189,7 +189,7 @@ describe('UnitsPage controller regression', () => {
   });
 
   it('opens the unit preview dialog from keyboard row activation', async () => {
-    await act(async () => { root.render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><UnitsPage /></QueryClientProvider>); });
+    await act(async () => { root.render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><UnitsWorkspace /></QueryClientProvider>); });
     const row = container.querySelector('tbody tr') as HTMLElement;
     expect(row?.tabIndex).toBe(0);
     await act(async () => { row.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); });
@@ -199,7 +199,7 @@ describe('UnitsPage controller regression', () => {
   });
 
   it('routes the explicit full-page action to the unit dossier', async () => {
-    await act(async () => { root.render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><UnitsPage /></QueryClientProvider>); });
+    await act(async () => { root.render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><UnitsWorkspace /></QueryClientProvider>); });
     const actionTrigger = container.querySelector<HTMLButtonElement>('[data-action-menu-trigger]');
     expect(actionTrigger).toBeTruthy();
     await act(async () => { actionTrigger?.click(); });
@@ -214,14 +214,14 @@ describe('UnitsPage controller regression', () => {
   });
 
   it('renders search input with correct placeholder', async () => {
-    await act(async () => { root.render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><UnitsPage /></QueryClientProvider>); });
+    await act(async () => { root.render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><UnitsWorkspace /></QueryClientProvider>); });
     const searchInput = container.querySelector('input[placeholder*="رقم"]') as HTMLInputElement;
     expect(searchInput).toBeTruthy();
     expect(searchInput.placeholder).toBe('رقم الوحدة، الدور، العقار');
   });
 
   it('keeps the shared summary strip focused on operational KPIs without duplicating total unit count', async () => {
-    await act(async () => { root.render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><UnitsPage /></QueryClientProvider>); });
+    await act(async () => { root.render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><UnitsWorkspace /></QueryClientProvider>); });
     const summary = container.querySelector('[data-unit-summary]');
     expect(summary).toBeTruthy();
     expect(summary?.textContent).toContain('الإشغال');

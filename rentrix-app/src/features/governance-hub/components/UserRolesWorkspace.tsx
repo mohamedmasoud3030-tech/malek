@@ -128,8 +128,8 @@ function requestScopeLabel(resourceRoute: string | null | undefined) {
   if (resourceRoute.startsWith('/financials')) return 'المال';
   if (resourceRoute.startsWith('/properties')) return 'المحفظة';
   if (resourceRoute.startsWith('/contracts') || resourceRoute.startsWith('/tenants') || resourceRoute.startsWith('/people')) return 'التأجير';
-  if (resourceRoute.startsWith('/maintenance') || resourceRoute.startsWith('/utilities')) return 'الخدمات';
-  if (resourceRoute.startsWith('/reports') || resourceRoute.startsWith('/accounting')) return 'التقارير';
+  if (resourceRoute.startsWith('/maintenance')) return 'الخدمات';
+  if (resourceRoute.startsWith('/reports')) return 'التقارير';
   if (resourceRoute.startsWith('/settings')) return 'الإعدادات';
   return 'قسم محدد';
 }

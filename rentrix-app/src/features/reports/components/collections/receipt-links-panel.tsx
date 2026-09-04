@@ -5,7 +5,7 @@ import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { formatDate, formatMoney } from '@/features/financials/components/financials-formatters';
 import { formatInvoiceStatusLabel } from '@/features/financials/components/invoice-status-labels';
-import { createReceiptPrintHref } from '../../reports-page.helpers';
+import { createReceiptPrintHref } from '@/features/financials/receipts/receipt-print';
 import { ReportPanel } from '@/components/ui/report-section-primitives';
 
 export type CollectionReceiptRow = Readonly<{

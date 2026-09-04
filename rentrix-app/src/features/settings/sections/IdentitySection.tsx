@@ -10,7 +10,7 @@ import type { CompanySettingsDraft, CompanySettingsDraftField, CompanySettingsPr
 import { useSettingsSection } from '../form/useSettingsSection';
 import { SettingsFormField, SettingsPreviewField, SettingsSelectField } from '../components/settings-form-fields';
 import { SectionCard } from '../components/settings-section-card';
-import type { SettingsSectionId } from '../settingsSections';
+import type { SettingsSectionId } from '../registry/sectionRegistry';
 
 const currencyOptions = supportedCurrencies;
 const localeOptions = supportedCompanyLocales;

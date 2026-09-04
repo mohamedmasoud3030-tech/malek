@@ -116,7 +116,7 @@ export function TenantDossierContent({ tenantId, section }: Readonly<{ tenantId:
               <div key={invoice.id} className="flex flex-wrap items-center justify-between gap-2 py-3">
                 <span className="min-w-0 flex-1 truncate font-bold">{businessReferenceOrLabel(invoice, 'فاتورة مسجلة')}</span>
                 <span className="text-sm">الاستحقاق {invoice.due_date} · المتبقي {companyFormatters.money(Math.max(0, Number(invoice.amount) - Number(invoice.paid_amount)))}</span>
-                <Button asChild variant="secondary" className="min-h-11"><Link to="/invoices" search={{ invoiceId: invoice.id } as never}>فتح الفاتورة</Link></Button>
+                <Button asChild variant="secondary" className="min-h-11"><Link to="/financials" search={{ section: "collections", view: "invoices", invoiceId: invoice.id } as never}>فتح الفاتورة</Link></Button>
               </div>
             ))}
           </div>

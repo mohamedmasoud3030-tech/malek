@@ -10,7 +10,7 @@ import {
   type CompanySettingsDraftField,
 } from './settingsForm';
 import { buildSettingsSummaryTiles } from './settings-workspace-model';
-import type { SettingsSectionId } from './settingsSections';
+import type { SettingsSectionId } from './registry/sectionRegistry';
 
 const initialDraft: CompanySettingsDraft = {
   company_name: 'Rentrix',

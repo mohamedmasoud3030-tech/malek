@@ -1,10 +1,5 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { AuditLogPage, AuditLogWorkspace } from '@/features/audit/audit-log-page';
-import { ChangePasswordPage, ChangePasswordWorkspace } from '@/features/auth/change-password-page';
-import { SettingsPage, SettingsWorkspace } from '@/features/settings/settings-page';
-import { DataIntegrityPage, DataIntegrityWorkspace } from '@/features/system/data-integrity-page';
-import { SystemPage, SystemWorkspace } from '@/features/system/system-page';
 import {
   getAccessibleGovernanceHubSections,
   getVisibleGovernanceHubSections,
@@ -55,12 +50,9 @@ describe('governance and legacy route wiring', () => {
     expect(routeTreeSource).toContain("'GovernanceHubWorkspace'");
   });
 
-  it('keeps advanced settings surfaces as redirect-only URL aliases (workspace lives in the hub)', () => {
+  it('keeps advanced settings surfaces as hub sections only (legacy URL aliases retired)', () => {
     for (const route of ['/system', '/audit-log', '/data-integrity', '/change-password']) {
-      const idx = routeTreeSource.indexOf(`path: '${route}'`);
-      const block = routeTreeSource.slice(routeTreeSource.lastIndexOf('createRoute({', idx), routeTreeSource.indexOf('});', idx) + 3);
-      expect(block).toContain("settingsLegacyRedirect(");
-      expect(block).not.toContain('lazyRouteComponent');
+      expect(routeTreeSource, `retired ${route} must not be registered`).not.toContain(`path: '${route}'`);
     }
     // The page entries themselves are composed inside the governance hub.
     expect(routeTreeSource).not.toContain("import('@/features/system/system-page')");
@@ -69,33 +61,36 @@ describe('governance and legacy route wiring', () => {
     expect(routeTreeSource).not.toContain("import('@/features/auth/change-password-page')");
   });
 
-  it('keeps every page entry explicitly in standalone mode', () => {
-    expect(SettingsPage()).toMatchObject({ type: SettingsWorkspace, props: { variant: 'standalone' } });
-    expect(SystemPage()).toMatchObject({ type: SystemWorkspace, props: { variant: 'standalone' } });
-    expect(AuditLogPage()).toMatchObject({ type: AuditLogWorkspace, props: { variant: 'standalone' } });
-    expect(DataIntegrityPage()).toMatchObject({ type: DataIntegrityWorkspace, props: { variant: 'standalone' } });
-    expect(ChangePasswordPage()).toMatchObject({ type: ChangePasswordWorkspace, props: { variant: 'standalone' } });
+  it('keeps every workspace entry embedded in the hub with no standalone wrapper', () => {
+    expect(routeTreeSource).toContain("import('@/features/governance-hub/components/GovernanceHubWorkspace')");
+    for (const path of [
+      '../settings/settings-page.tsx',
+      '../system/system-page.tsx',
+      '../audit/audit-log-page.tsx',
+      '../system/data-integrity-page.tsx',
+      '../auth/change-password-page.tsx',
+    ]) {
+      const source = readSource(path);
+      expect(source, path).not.toMatch(/export function [A-Za-z]+Page\(/);
+    }
   });
 });
 
 describe('embedded workspace architecture contract', () => {
   const contracts = [
-    ['../settings/settings-page.tsx', 'SettingsPage', 'SettingsWorkspace'],
-    ['../system/system-page.tsx', 'SystemPage', 'SystemWorkspace'],
-    ['../audit/audit-log-page.tsx', 'AuditLogPage', 'AuditLogWorkspace'],
-    ['../system/data-integrity-page.tsx', 'DataIntegrityPage', 'DataIntegrityWorkspace'],
-    ['../auth/change-password-page.tsx', 'ChangePasswordPage', 'ChangePasswordWorkspace'],
+    ['../settings/settings-page.tsx', 'SettingsWorkspace'],
+    ['../system/system-page.tsx', 'SystemWorkspace'],
+    ['../audit/audit-log-page.tsx', 'AuditLogWorkspace'],
+    ['../system/data-integrity-page.tsx', 'DataIntegrityWorkspace'],
+    ['../auth/change-password-page.tsx', 'ChangePasswordWorkspace'],
   ] as const;
 
-  it.each(contracts)('%s exposes embedded mode while preserving its standalone page wrapper', (path, page, workspace) => {
+  it.each(contracts)('%s exposes embedded mode only (no duplicate standalone page wrapper)', (path, workspace) => {
     const source = readSource(path);
-    const standaloneWrapper = new RegExp(
-      `export function ${page}\\(\\)\\s*\\{\\s*return <${workspace} variant=["']standalone["'] \\/>;\\s*\\}`,
-      'm',
-    );
-
-    expect(source).toContain("variant === 'embedded'");
-    expect(source).toMatch(standaloneWrapper);
+    expect(source).toContain(`variant = 'standalone'`);
+    expect(source).toContain(`variant === 'embedded'`);
+    expect(source).toContain(`export function ${workspace}`);
+    expect(source).not.toMatch(/export function [A-Za-z]+Page\(/);
   });
 
   it('keeps visited workspace content mounted so unsaved drafts survive switches', () => {

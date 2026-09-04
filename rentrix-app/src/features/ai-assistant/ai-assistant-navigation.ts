@@ -45,10 +45,10 @@ const COMMUNICATION_CENTER: AiNavigationTarget = { label: 'فتح مركز ال�
 const MAINTENANCE_WORKSPACE: AiNavigationTarget = { label: 'فتح الصيانة', to: '/maintenance' };
 const PROPERTIES_WORKSPACE: AiNavigationTarget = { label: 'فتح العقارات', to: '/properties' };
 const FINANCIALS_WORKSPACE: AiNavigationTarget = { label: 'فتح العمليات المالية', to: '/financials' };
-const EXPENSES_WORKSPACE: AiNavigationTarget = { label: 'فتح المصروفات', to: '/expenses' };
+const EXPENSES_WORKSPACE: AiNavigationTarget = { label: 'فتح المصروفات', to: '/financials', search: { section: 'expenses', view: 'expenses' } };
 const TODAY_WORKSPACE: AiNavigationTarget = { label: 'فتح شاشة اليوم', to: '/dashboard' };
 const OWNERS_WORKSPACE: AiNavigationTarget = { label: 'فتح الملاك', to: '/owners' };
-const OWNER_SETTLEMENTS: AiNavigationTarget = { label: 'فتح تسويات الملاك', to: '/owner-settlements' };
+const OWNER_SETTLEMENTS: AiNavigationTarget = { label: 'فتح تسويات الملاك', to: '/financials', search: { section: 'funds', view: 'owner_settlements' } };
 
 const NAVIGATION_BY_ACTION: Readonly<Record<AiAssistantAction, readonly AiNavigationTarget[]>> = {
   summarize_overdue_invoices: [OVERDUE_REPORT],
@@ -85,11 +85,9 @@ const ALLOWED_NAVIGATION_ROUTES: ReadonlySet<string> = new Set([
   '/contracts',
   '/communication',
   '/financials',
-  '/expenses',
   '/maintenance',
   '/properties',
   '/owners',
-  '/owner-settlements',
 ]);
 
 const SAFE_ID_PATTERN = /^[A-Za-z0-9_-]{1,128}$/;

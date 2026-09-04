@@ -25,9 +25,6 @@ import { createReceiptPrintHref, openReceiptPrintTab } from './receipt-print';
 import { useApproveReceiptVoid, usePendingReceiptVoidRequests, useReceipt, useReceipts, useRequestReceiptVoid } from './useReceipts';
 import { formatLatinNumber } from '@/lib/formatters';
 
-// Keep the public helper reachable from this page (used by tests and older call sites).
-export { createReceiptPrintHref };
-
 type MethodFilter = 'all' | ReceiptRecord['payment_method'];
 
 const receiptColumnOptions = [
@@ -477,8 +474,4 @@ export function ReceiptsWorkspace({ embedded = false }: ReceiptsWorkspaceProps) 
   if (!embedded && receiptIdFromSearch) return <ReceiptDetailPage />;
 
   return <ReceiptsHistoryContent embedded={embedded} initialSelectedReceiptId={receiptIdFromSearch} />;
-}
-
-export function ReceiptsPage() {
-  return <ReceiptsWorkspace />;
 }

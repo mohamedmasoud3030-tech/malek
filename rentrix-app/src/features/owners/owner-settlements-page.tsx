@@ -63,9 +63,3 @@ export function OwnerSettlementsWorkspace({ embedded = false }: OwnerSettlements
     </EmbeddableWorkspace>
   );
 }
-
-export function OwnerSettlementsPage() {
-  return <OwnerSettlementsWorkspace />;
-}
-
-export default OwnerSettlementsPage;

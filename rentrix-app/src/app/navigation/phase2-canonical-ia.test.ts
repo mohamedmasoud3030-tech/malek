@@ -28,7 +28,7 @@ describe('Task-centric canonical IA', () => {
   });
 
   it('keeps Portfolio routine navigation focused while retaining specialist Lands capability', () => {
-    for (const path of ['/properties', '/units', '/lands', '/owners']) expect(getNavRoot(path)).toBe('/properties');
+    for (const path of ['/properties', '/lands', '/owners']) expect(getNavRoot(path)).toBe('/properties');
     expect(workspaceChildNavItems['/properties'].map(([to]) => to)).toEqual(['/properties', '/properties']);
     expect(workspaceChildNavItems['/properties'].map(([, labelKey]) => labelKey)).toEqual(['units', 'owners']);
     expect(portfolioHubSource).toContain('LandsWorkspace');
@@ -76,21 +76,19 @@ describe('Task-centric canonical IA', () => {
     expect(servicesSectionsSource).not.toContain("| 'automation'");
     expect(servicesSource).not.toContain('AutomationWorkspace');
     expect(servicesSource).toContain('title={title ?? activeSectionDefinition.label}');
-    expect(routeTreeSource).toContain("path: '/automation'");
-    expect(routeTreeSource).toContain("to: '/settings'");
   });
 
   it('treats Automation as a guarded settings deep link, not routine navigation', () => {
     expect(workspaceChildNavItems['/settings'].map(([, labelKey]) => labelKey)).toEqual(['companySettings', 'usersPermissions']);
     expect(governanceSectionsSource).toMatch(/id: 'automation'[\s\S]*?showInPrimaryNavigation: false/);
-    expect(routeTreeSource).toContain("path: '/automation'");
-    expect(routeTreeSource).toContain("requirePermission('automation.view')");
-    expect(routeTreeSource).toContain("section: 'automation'");
+    // Automation has a single canonical destination: the guarded settings
+    // section deep link. No legacy /automation route may be registered.
+    expect(routeTreeSource).not.toContain("path: '/automation'");
   });
 
   it('keeps standalone compatibility routes without treating them as global products', () => {
     const primary = navGroups.flatMap(([, items]) => items.map(([to]) => to));
-    for (const path of ['/commissions', '/owners', '/tenants', '/people', '/lands', '/utilities', '/service-providers', '/automation']) {
+    for (const path of ['/commissions', '/owners', '/tenants', '/people', '/lands', '/service-providers']) {
       expect(hasRoute(path)).toBe(true);
       expect(primary).not.toContain(path);
     }
@@ -98,14 +96,13 @@ describe('Task-centric canonical IA', () => {
 
   it('keeps Reports independent from Money', () => {
     expect(getNavRoot('/reports')).toBe('/reports');
-    expect(getNavRoot('/accounting')).toBe('/reports');
     expect(getNavRoot('/reports')).not.toBe('/financials');
   });
 
   it('route contract agrees with the workspace mental model', () => {
     const roots: Record<string, string> = {
       '/people': '/contracts', '/tenants': '/contracts', '/lands': '/properties', '/owners': '/properties',
-      '/commissions': '/financials', '/service-providers': '/maintenance', '/utilities': '/maintenance', '/documents-vault': '/maintenance',
+      '/commissions': '/financials', '/service-providers': '/maintenance', '/receipts': '/financials',
     };
     for (const [path, root] of Object.entries(roots)) {
       const entry = ROUTE_CONTRACT.find((candidate) => candidate.canonical === path)!;
