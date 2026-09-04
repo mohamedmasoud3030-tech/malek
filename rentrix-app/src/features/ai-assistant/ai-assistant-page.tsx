@@ -452,7 +452,7 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
               disabled={pending || configurationMissing}
               className={cn(
                 'inline-flex shrink-0 items-center gap-1 rounded-full border border-border bg-card text-xs font-medium text-foreground transition hover:bg-muted disabled:opacity-50',
-                embedded ? 'min-h-10 px-2.5' : 'min-h-11 px-3',
+                embedded ? 'min-h-11 px-2.5' : 'min-h-11 px-3',
               )}
             >
               <Sparkles className="size-3" />
