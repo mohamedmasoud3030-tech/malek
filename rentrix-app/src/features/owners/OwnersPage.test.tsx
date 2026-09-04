@@ -93,7 +93,7 @@ describe('Owner detail recovery states', () => {
     const snapshot: OwnerDetailSnapshot = {
       owner,
       properties: [property],
-      units: [{ id: 'unit-1', property_id: property.id, unit_number: '101', floor: null, status: 'occupied', rent_amount: 100 }],
+      units: [{ id: 'unit-1', property_id: property.id, unit_number: '101', floor: null, status: 'occupied', rent_amount: 100, created_at: '2026-01-01T00:00:00Z' }],
       contracts: [
         { id: 'contract-1', reference: 'CNT-1', property_id: property.id, unit_id: 'unit-1', start_date: '2026-01-01', end_date: '2026-12-31', status: 'active' },
         { id: 'contract-2', reference: 'CNT-2', property_id: property.id, unit_id: 'unit-1', start_date: '2025-01-01', end_date: '2025-12-31', status: 'expired' },
