@@ -67,6 +67,14 @@ describe('dashboard frontend/backend data contract', () => {
     expect(utilityHookSource).toContain('enabled: options?.enabled ?? true');
   });
 
+  it('keeps cashflow failure and retry owned by the performance panel instead of the global attention alert', () => {
+    const pageSource = read('dashboard-page.tsx');
+    expect(pageSource).toContain('chartIsError={cashflowQuery.isError && !cashflowQuery.data}');
+    expect(pageSource).toContain('onChartRetry={retryCashflow}');
+    expect(pageSource).not.toContain('const hasSupplementalError = cashflowQuery.isError');
+    expect(pageSource).not.toContain('const supplementalIsFetching = cashflowQuery.isFetching');
+  });
+
   it('activates vacancy detail reads only from authoritative snapshot vacancy truth', () => {
     const pageSource = read('dashboard-page.tsx');
     const occupancySource = read('components/occupancy-section.tsx');
