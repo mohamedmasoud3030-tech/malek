@@ -17,7 +17,7 @@ import {
 import type { StatementProductFocus } from '../report-products';
 import { ReportColumns } from '@/components/ui/report-section-primitives';
 import { OwnerStatementPanel, TenantStatementPanel } from './statements/statement-account-panels';
-import { OfficeSummaryPanel, RegulatorySummaryPanels, StatementSelectionStrip } from './statements/statement-summary-panels';
+import { OfficeSummaryPanel, RegulatorySummaryPanels } from './statements/statement-summary-panels';
 
 type ReceiptRow = Readonly<{
   id: string;
@@ -114,16 +114,6 @@ export function StatementsSection({
   return (
     <div className="space-y-4">
       {!isDocumentSettingsReady && (showTenant || showOwner) ? <DocumentReadinessNotice /> : null}
-      {(showTenant || showOwner) ? (
-        <StatementSelectionStrip
-          selectedContractId={selectedContractId}
-          selectedOwnerId={selectedOwnerId}
-          from={filters?.from}
-          to={filters?.to}
-          isDocumentReady={isDocumentSettingsReady}
-        />
-      ) : null}
-
       {(showTenant || showOwner) ? (
         <ReportColumns>
           {showTenant ? (
