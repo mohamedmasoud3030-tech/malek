@@ -1,4 +1,5 @@
-import { CheckCircle2, FileCheck, MinusCircle, Wallet, Plus } from 'lucide-react';
+import { CheckCircle2, FileCheck, MinusCircle, Wallet } from 'lucide-react';
+import { useImperativeHandle, type Ref } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { EntityTable } from '@/components/ui/entity-table';
@@ -18,7 +19,16 @@ import {
 } from './deposit-action-forms';
 import { useDepositWorkspaceController } from './use-deposit-workspace-controller';
 
-export function DepositsWorkspace() {
+export type DepositsWorkspaceHandle = Readonly<{
+  /** Opens the create-deposit form; wired to the workspace-level primary action. */
+  openCreateForm: () => void;
+}>;
+
+type DepositsWorkspaceProps = Readonly<{
+  ref?: Ref<DepositsWorkspaceHandle>;
+}>;
+
+export function DepositsWorkspace({ ref }: DepositsWorkspaceProps = {}) {
   const controller = useDepositWorkspaceController();
   const {
     depositsQuery,
@@ -42,6 +52,10 @@ export function DepositsWorkspace() {
     approveMut,
     applyMut,
   } = controller;
+
+  useImperativeHandle(ref, () => ({
+    openCreateForm: () => setActionType('create'),
+  }), [setActionType]);
 
   const { handlePrint, handleDownloadPdf } = createDepositDocumentActions({
     isReady: documentSettings.isReady,
@@ -150,16 +164,6 @@ export function DepositsWorkspace() {
 
   return (
     <div className="space-y-4">
-      <section className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div className="max-w-3xl">
-          <h2 className="text-base font-bold tracking-tight">تأمينات المستأجرين</h2>
-        </div>
-        <Button onClick={() => setActionType('create')} className="min-h-11 gap-2 sm:shrink-0">
-          <Plus className="size-4" />
-          تسجيل وديعة جديدة
-        </Button>
-      </section>
-
       {!documentSettings.isReady && !documentSettings.isLoading ? <DocumentReadinessNotice /> : null}
 
       <RegisterMetricStrip

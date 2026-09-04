@@ -161,7 +161,7 @@ export function SettingsWorkspace({
   if (companySettingsQuery.isError && !draft) {
     return (
       <SettingsVariantShell variant={variant} dir={pageLanguage.direction} lang={pageLanguage.locale} contentClassName="space-y-3">
-        <SettingsHero companyName="—" hasUnsavedChanges={false} />
+        {variant === 'embedded' ? null : <SettingsHero companyName="—" hasUnsavedChanges={false} />}
         <Card role="alert">
           <CardHeader>
             <CardTitle>تعذر تحميل إعدادات الشركة</CardTitle>
@@ -178,7 +178,7 @@ export function SettingsWorkspace({
   if (companySettingsQuery.isLoading || !draft) {
     return (
       <SettingsVariantShell variant={variant} dir={pageLanguage.direction} lang={pageLanguage.locale} contentClassName="space-y-3">
-        <SettingsHero companyName="…" hasUnsavedChanges={false} />
+        {variant === 'embedded' ? null : <SettingsHero companyName="…" hasUnsavedChanges={false} />}
         <Card>
           <CardHeader><CardTitle>إعدادات الشركة</CardTitle><p className="text-sm text-muted-foreground">جارٍ تحميل الإعدادات المحفوظة...</p></CardHeader>
           <CardContent>
@@ -194,6 +194,12 @@ export function SettingsWorkspace({
   }
 
   const preview = getCompanySettingsPreviewModel(draft);
+  /**
+   * Embedded in the governance hub, the hub's single PageHeader already owns
+   * the page identity; the hero (badge + h1 + description) would be a second
+   * header. Standalone entry points still need it.
+   */
+  const showHero = variant !== 'embedded';
   const summaryTiles = buildSettingsSummaryTiles({
     draft,
     preview,
@@ -225,7 +231,7 @@ export function SettingsWorkspace({
       lang={pageLanguage.locale}
       contentClassName={cn('min-w-0 space-y-2 pb-2 md:space-y-4', isDirty && 'pb-24 md:pb-8')}
     >
-      <SettingsHero companyName={preview.companyName} hasUnsavedChanges={isDirty} />
+      {showHero ? <SettingsHero companyName={preview.companyName} hasUnsavedChanges={isDirty} /> : null}
       {companySettingsQuery.isError ? (
         <DataRefreshAlert
           title="تعذر تحديث إعدادات الشركة"

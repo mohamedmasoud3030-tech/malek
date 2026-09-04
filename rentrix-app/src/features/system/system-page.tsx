@@ -48,27 +48,38 @@ export function SystemWorkspace({ variant = 'standalone' }: SystemWorkspaceProps
   const { authorization } = useAuth();
   const visibleLinks = governanceLinks.filter((item) => canAccess(authorization, item.permission));
 
+  /**
+   * Embedded in the governance hub, the tab strip already exposes the company
+   * surface, and the "how governance works" cards restate each tab's own
+   * description. Only access to destinations outside the hub's routine tabs
+   * stays here. The standalone shell keeps the full historical presentation.
+   */
+  const embeddedVisibleLinks = visibleLinks.filter((item) => !(item.to === '/settings' && item.search?.section === 'company'));
+  const bodyLinks = variant === 'embedded' ? embeddedVisibleLinks : visibleLinks;
+
   const body = (
     <>
-      <ResponsiveCardGrid desktopColumns={4}>
-        {governancePrinciples.map((principle) => (
-          <Card key={principle.label} variant="muted">
-            <CardContent className="p-4">
-              <p className="text-xs font-bold text-muted-foreground">{principle.label}</p>
-              <p className="mt-1 text-lg font-black">{principle.value}</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">{principle.description}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </ResponsiveCardGrid>
+      {variant === 'embedded' ? null : (
+        <ResponsiveCardGrid desktopColumns={4}>
+          {governancePrinciples.map((principle) => (
+            <Card key={principle.label} variant="muted">
+              <CardContent className="p-4">
+                <p className="text-xs font-bold text-muted-foreground">{principle.label}</p>
+                <p className="mt-1 text-lg font-black">{principle.value}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">{principle.description}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </ResponsiveCardGrid>
+      )}
 
-      {visibleLinks.length === 0 ? (
+      {bodyLinks.length === 0 ? (
         <div className="rounded-2xl border border-border bg-muted/20 px-6 py-10 text-center text-sm text-muted-foreground">
           لا توجد وظائف نظامية متاحة لصلاحياتك الحالية.
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
-          {visibleLinks.map((item) => {
+          {bodyLinks.map((item) => {
             const Icon = item.icon;
             return (
               <Card key={`${item.to}:${item.title}`} className="rounded-2xl transition-shadow hover:shadow-card-hover">

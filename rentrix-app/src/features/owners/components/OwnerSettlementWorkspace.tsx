@@ -21,6 +21,7 @@ import {
   Wallet,
 } from 'lucide-react';
 import { AsyncContentState } from '@/components/async-content-state';
+import { RegisterMetricStrip } from '@/components/layout/register-summary';
 import { useAuth } from '@/hooks/use-auth';
 import { canAccess } from '@/features/auth/permissions';
 import { Button } from '@/components/ui/button';
@@ -28,8 +29,6 @@ import { ActionMenu } from '@/components/ui/action-menu';
 import { EntityForm } from '@/components/ui/entity-form';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { Input } from '@/components/ui/input';
-import { KpiCard } from '@/components/ui/kpi-card';
-import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { formatDate, formatMoney } from '@/features/financials/components/financials-formatters';
@@ -343,31 +342,28 @@ export function OwnerSettlementWorkspace({ ownerId }: Readonly<{ ownerId?: strin
 
   return (
     <div className="space-y-4">
-      <section className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div className="max-w-3xl">
-          <h2 className="text-base font-bold tracking-tight">مركز تسويات ومحاسبة الملاك</h2>
-          <p className="mt-1 text-sm leading-6 text-muted-foreground">
-            مسودات حقيقية من قاعدة البيانات، ثم اعتماد وصرف ذري مع سجل تدقيق وقيد يومية متوازن.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2 sm:shrink-0">
-          <Button variant="outline" className="min-h-11" onClick={() => settlementsQuery.refetch()} disabled={settlementsQuery.isFetching}>
-            <RefreshCw className="size-4" />
-            تحديث
-          </Button>
-          <Button className="min-h-11" onClick={() => handleDraftOpenChange(true)} disabled={targetsQuery.isPending || targets.length === 0}>
-            <Plus className="size-4" />
-            إنشاء مسودة تسوية
-          </Button>
-        </div>
-      </section>
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <Button variant="outline" className="min-h-11" onClick={() => settlementsQuery.refetch()} disabled={settlementsQuery.isFetching}>
+          <RefreshCw className="size-4" />
+          تحديث
+        </Button>
+        <Button className="min-h-11" onClick={() => handleDraftOpenChange(true)} disabled={targetsQuery.isPending || targets.length === 0}>
+          <Plus className="size-4" />
+          إنشاء مسودة تسوية
+        </Button>
+      </div>
 
-      <ResponsiveCardGrid desktopColumns={4}>
-        <KpiCard label="إجمالي المقبوضات" value={formatMoney(totals.gross)} icon={Wallet} accent="emerald" sub="تحصيلات مثبتة داخل التسويات" />
-        <KpiCard label="أتعاب المكتب" value={formatMoney(totals.fees)} icon={Landmark} accent="primary" sub="أتعاب كل تسوية حسب اتفاقها" />
-        <KpiCard label="المصروفات والضرائب" value={formatMoney(totals.expenses + totals.feeVat)} icon={DollarSign} accent="rose" sub="مصروفات المالك وضريبة الأتعاب من الخادم" />
-        <KpiCard label="صافي مستحقات الملاك" value={formatMoney(totals.outstandingNet)} icon={BadgeCheck} accent="sky" sub="مسودات ومعتمدة لم تُصرف بعد — تُستبعد المدفوعة والملغاة" />
-      </ResponsiveCardGrid>
+      {/* Canonical register summary: one compact strip, the same pattern used
+          by invoices, receipts, deposits, and accruals — not a KPI-card wall. */}
+      <RegisterMetricStrip
+        aria-label="ملخص تسويات الملاك"
+        items={[
+          { id: 'gross', label: 'إجمالي المقبوضات', value: formatMoney(totals.gross), icon: Wallet, hideWhenEmpty: true },
+          { id: 'fees', label: 'أتعاب المكتب', value: formatMoney(totals.fees), icon: Landmark, hideWhenEmpty: true },
+          { id: 'expenses', label: 'المصروفات والضرائب', value: formatMoney(totals.expenses + totals.feeVat), icon: DollarSign, hideWhenEmpty: true },
+          { id: 'outstanding', label: 'صافي مستحقات الملاك', value: formatMoney(totals.outstandingNet), icon: BadgeCheck, tone: totals.outstandingNet > 0 ? 'warning' : 'default', hint: 'مسودات ومعتمدة لم تُصرف بعد' },
+        ]}
+      />
 
       <SettlementSupervisionBanner
         settlements={settlements}
@@ -384,13 +380,9 @@ export function OwnerSettlementWorkspace({ ownerId }: Readonly<{ ownerId?: strin
       ) : null}
 
       <section className="space-y-3 rounded-2xl border border-border/60 bg-card p-3 shadow-card sm:p-4" aria-label="سجل تسويات الملاك">
-        <header className="flex items-center justify-between gap-3">
-          <div>
-            <h3 className="text-sm font-black">التسويات المسجلة</h3>
-            <p className="mt-1 text-xs text-muted-foreground">جدول مدمج مع إفصاح تدريجي على الهاتف.</p>
-          </div>
-          <StatusBadge tone="neutral">{settlements.length} سجل</StatusBadge>
-        </header>
+        <p className="text-xs font-bold text-muted-foreground" aria-live="polite">
+          {settlements.length} تسوية مسجلة · اضغط الإجراءات للمعاينة والاعتماد والصرف
+        </p>
         <AsyncContentState
           status={listStatus}
           error={settlementsQuery.error}

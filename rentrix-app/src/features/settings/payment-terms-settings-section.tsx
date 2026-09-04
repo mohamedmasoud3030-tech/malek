@@ -1,6 +1,7 @@
 import { Plus, X } from 'lucide-react';
 import { useState, type KeyboardEvent } from 'react';
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EntityForm } from '@/components/ui/entity-form';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
@@ -47,6 +48,9 @@ export function PaymentTermsSettingsSection() {
   const [editingId, setEditingId] = useState<string | undefined>();
   const [draft, setDraft] = useState<PaymentTermsFormValues>(defaultFormValues);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+  // Archiving a template is sensitive-but-reversible; confirm instead of a
+  // single list click.
+  const [pendingArchiveTerm, setPendingArchiveTerm] = useState<PaymentTermsRecord | null>(null);
   const terms = paymentTermsQuery.data ?? [];
 
   const closeEditor = () => {
@@ -155,7 +159,9 @@ export function PaymentTermsSettingsSection() {
             </div>
             <div className="flex shrink-0 gap-1.5">
               <Button type="button" size="sm" variant="secondary" className="px-2.5" onClick={() => openEditEditor(term)}>تعديل</Button>
-              <Button type="button" size="sm" variant="ghost" className="px-2.5 text-muted-foreground" onClick={() => archivePaymentTerms.mutate(term.id)} disabled={archivePaymentTerms.isPending}>أرشفة</Button>
+              {term.is_active === false ? null : (
+                <Button type="button" size="sm" variant="ghost" className="px-2.5 text-muted-foreground" onClick={() => setPendingArchiveTerm(term)} disabled={archivePaymentTerms.isPending}>أرشفة</Button>
+              )}
             </div>
           </div>
         ))}
@@ -172,6 +178,22 @@ export function PaymentTermsSettingsSection() {
           </div>
         ) : null}
       </div>
+
+      <ConfirmDialog
+        open={pendingArchiveTerm !== null}
+        onOpenChange={(open) => { if (!open) setPendingArchiveTerm(null); }}
+        variant="warning"
+        title={pendingArchiveTerm ? `أرشفة قالب «${pendingArchiveTerm.name}»؟` : 'أرشفة قالب شروط السداد؟'}
+        description="لن يظهر القالب في العقود الجديدة بعد الأرشفة. العقود القائمة لا تتغير، ويمكن إعادة تفعيل القالب من محرر الشروط."
+        confirmLabel="أرشفة القالب"
+        isLoading={archivePaymentTerms.isPending}
+        onConfirm={() => {
+          if (!pendingArchiveTerm) return;
+          archivePaymentTerms.mutate(pendingArchiveTerm.id, {
+            onSettled: () => setPendingArchiveTerm(null),
+          });
+        }}
+      />
     </div>
   );
 }

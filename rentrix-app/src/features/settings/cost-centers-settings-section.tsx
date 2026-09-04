@@ -1,6 +1,7 @@
 import { useMemo, useState, type KeyboardEvent } from 'react';
 import { Archive, Pencil, RefreshCcw, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EntityForm } from '@/components/ui/entity-form';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
@@ -41,6 +42,9 @@ export function CostCentersSettingsSection() {
   const archiveMutation = useArchiveCostCenter();
   const [editingId, setEditingId] = useState<string | undefined>();
   const [form, setForm] = useState<CostCenterFormValues>(emptyForm);
+  // Archiving is sensitive-but-reversible; a confirm step makes its effect
+  // explicit instead of firing from a single click in the list.
+  const [pendingArchive, setPendingArchive] = useState<CostCenterRecord | null>(null);
 
   const properties = propertiesQuery.data?.rows ?? [];
   const costCenters = costCentersQuery.data ?? [];
@@ -171,16 +175,34 @@ export function CostCentersSettingsSection() {
                     <Pencil className="me-2 size-3.5" />
                     تعديل
                   </Button>
-                  <Button type="button" variant="secondary" className="min-h-11 px-3 py-1.5 text-xs" onClick={() => archiveMutation.mutate(costCenter.id)} disabled={isBusy}>
-                    <Archive className="me-2 size-3.5" />
-                    أرشفة
-                  </Button>
+                  {costCenter.is_active === false ? null : (
+                    <Button type="button" variant="secondary" className="min-h-11 px-3 py-1.5 text-xs" onClick={() => setPendingArchive(costCenter)} disabled={isBusy}>
+                      <Archive className="me-2 size-3.5" />
+                      أرشفة
+                    </Button>
+                  )}
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={pendingArchive !== null}
+        onOpenChange={(open) => { if (!open) setPendingArchive(null); }}
+        variant="warning"
+        title={pendingArchive ? `أرشفة «${pendingArchive.name}»؟` : 'أرشفة مركز التكلفة؟'}
+        description="سيصبح المركز غير متاح للاختيار في المصروفات والتقارير الجديدة. السجلات الحالية لا تتغير، ويمكن إعادة تفعيل المركز من محرر المركز."
+        confirmLabel="أرشفة المركز"
+        isLoading={archiveMutation.isPending}
+        onConfirm={() => {
+          if (!pendingArchive) return;
+          archiveMutation.mutate(pendingArchive.id, {
+            onSettled: () => setPendingArchive(null),
+          });
+        }}
+      />
     </div>
   );
 }

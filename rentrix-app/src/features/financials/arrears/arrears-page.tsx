@@ -24,7 +24,9 @@ export function ArrearsWorkspace({ embedded = false }: ArrearsWorkspaceProps) {
       embedded={embedded}
       title="المتأخرات"
       description="متابعة المبالغ المتأخرة وأعمار الديون — الفلاتر محفوظة أثناء التنقل."
-      secondaryActions={(
+      // Inside the finance hub, invoice/receipt tabs and reports already sit
+      // one click away; these shortcuts exist for the standalone entry only.
+      secondaryActions={embedded ? undefined : (
         <>
           <Button variant="secondary" className="min-h-11" asChild><Link to="/financials" search={{ section: "collections", view: "invoices" }}><FileText className="me-2 size-4" aria-hidden="true" />الفواتير</Link></Button>
           <Button variant="secondary" className="min-h-11" asChild><Link to="/financials" search={{ section: "collections", view: "receipts" }}><ReceiptText className="me-2 size-4" aria-hidden="true" />الإيصالات</Link></Button>
