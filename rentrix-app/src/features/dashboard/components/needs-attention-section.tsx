@@ -19,7 +19,6 @@ export const NEEDS_ATTENTION_VISIBLE_LIMIT = 6;
 interface NeedsAttentionSectionProps {
   signal: NeedsAttentionSignal;
   isLoading: boolean;
-  isError?: boolean;
   /** Some contributing sources failed; visible rows are valid but incomplete. */
   isPartial?: boolean;
 }
@@ -36,7 +35,7 @@ const severityTone: Record<NeedsAttentionItem['severity'], 'danger' | 'warning' 
  * as maintenance remains one clear owner task even when several records sit
  * behind it.
  */
-export const NeedsAttentionSection = memo(function NeedsAttentionSection({ signal, isLoading, isError = false, isPartial = false }: NeedsAttentionSectionProps) {
+export const NeedsAttentionSection = memo(function NeedsAttentionSection({ signal, isLoading, isPartial = false }: NeedsAttentionSectionProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const visibleItems = signal.items.slice(0, NEEDS_ATTENTION_VISIBLE_LIMIT);
@@ -78,15 +77,8 @@ export const NeedsAttentionSection = memo(function NeedsAttentionSection({ signa
 
       {isLoading ? <DashboardSignalLoading label="جارٍ تحميل الأولويات التي تحتاج انتباهاً" /> : null}
 
-      {!isLoading && isError ? (
-        <DashboardSignalEmpty
-          role="alert"
-          title="تعذر تحميل الحالات التي تحتاج انتباهاً"
-          description="راجع تنبيه أعلى الصفحة ثم أعد المحاولة. لن نعرض قائمة فارغة عند فشل التحميل."
-        />
-      ) : null}
 
-      {!isLoading && !isError && isPartial && signal.totalCount === 0 ? (
+      {!isLoading && isPartial && signal.totalCount === 0 ? (
         <DashboardSignalEmpty
           role="status"
           title="تعذر اكتمال قائمة الأولويات"
@@ -94,14 +86,14 @@ export const NeedsAttentionSection = memo(function NeedsAttentionSection({ signa
         />
       ) : null}
 
-      {!isLoading && !isError && !isPartial && signal.totalCount === 0 ? (
+      {!isLoading && !isPartial && signal.totalCount === 0 ? (
         <DashboardSignalEmpty
           title="كل شيء تحت السيطرة"
           description="لا متأخرات عاجلة ولا صيانة طارئة ولا عقود على وشك الانتهاء. راجع المؤشرات للأداء الحالي."
         />
       ) : null}
 
-      {!isLoading && !isError && visibleItems.length > 0 ? (
+      {!isLoading && visibleItems.length > 0 ? (
         <>
           <DashboardSignalList label="الأولويات التي تحتاج انتباهاً">
             {visibleItems.map((item) => {
