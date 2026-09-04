@@ -52,9 +52,13 @@ export async function getAuthoritativeReportsCollectionRate(
   return rate;
 }
 
-export function useAuthoritativeReportsCollectionRate(range: CollectionEfficiencyRange) {
+export function useAuthoritativeReportsCollectionRate(
+  range: CollectionEfficiencyRange,
+  enabled = true,
+) {
   return useQuery({
     queryKey: ['reports', 'authoritative-collection-rate', range.from, range.to],
     queryFn: () => getAuthoritativeReportsCollectionRate(range),
+    enabled: enabled && Boolean(range.from && range.to),
   });
 }

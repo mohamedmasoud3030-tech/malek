@@ -6,34 +6,17 @@ import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { formatMoney, getErrorMessage } from '@/features/financials/components/financials-formatters';
 import type { OwnerStatementReport, TenantStatementReport } from '@/features/financials/reports/financialReportsService';
 import type { OwnerReportPayload } from '@/services/documents/documentPayloads';
-import { createReceiptPrintHref } from '@/features/financials/receipts/receipt-print';
-import { ReportList, ReportListRow, ReportPanel, ReportPanelSkeleton, ReportState } from '@/components/ui/report-section-primitives';
+import { ReportPanel, ReportPanelSkeleton, ReportState } from '@/components/ui/report-section-primitives';
 import { ReportOutputActions } from '../report-output-actions';
 import { ReportPayloadGroup } from '../report-payload-groups';
 import { formatLatinNumber } from '@/lib/formatters';
 import { loadPremiumOwnerReportPayload } from '../../documents/premium-owner-report';
 
-type ReceiptRow = Readonly<{
-  id: string;
-  receipt_number: string;
-  payment_date: string;
-  amount: number;
-  tenant_name: string | null;
-}>;
-
-type TenantFallbackRow = Readonly<{
-  contractId: string;
-  tenantName: string | null;
-  totalOutstanding: number;
-  totalOverdue: number;
-  invoiceCount: number;
-}>;
-
-type OwnerFallbackRow = Readonly<{
-  propertyId: string;
-  propertyTitle: string | null;
-  total: number;
-  count: number;
+type StatementPanelOutputActions = Readonly<{
+  onPrint: () => void;
+  onDownloadPdf: () => void;
+  onDownloadExcel: () => void;
+  disabled?: boolean;
 }>;
 
 type TenantLedgerRow = TenantStatementReport['lines'][number] & { rowKey: string };
@@ -69,23 +52,13 @@ export function TenantStatementPanel({
   statement,
   error,
   isLoading,
-  fallbackRows,
-  receipts,
-  onPrint,
-  onDownloadPdf,
-  onDownloadExcel,
-  actionsDisabled = false,
+  outputActions,
 }: Readonly<{
   selectedContractId: string;
   statement: TenantStatementReport | undefined;
   error: unknown;
   isLoading: boolean;
-  fallbackRows: TenantFallbackRow[];
-  receipts: ReceiptRow[];
-  onPrint: () => void;
-  onDownloadPdf: () => void;
-  onDownloadExcel: () => void;
-  actionsDisabled?: boolean;
+  outputActions?: StatementPanelOutputActions;
 }>) {
   const ledgerRows: TenantLedgerRow[] = (statement?.lines ?? []).map((line, index) => ({
     ...line,
@@ -108,14 +81,14 @@ export function TenantStatementPanel({
       title="كشف حساب المستأجر"
       description="دفتر حركة فعلي للعقد المحدد: افتتاحي، استحقاقات، تحصيلات/عكوس، رصيد جارٍ وختامي."
       icon={UserRound}
-      action={statement ? (
+      action={statement && outputActions ? (
         <ReportOutputActions
           downloadLabel="تنزيل كشف المستأجر PDF"
           menuLabel="خيارات إخراج كشف المستأجر"
-          onDownloadPdf={onDownloadPdf}
-          onPrint={onPrint}
-          onDownloadExcel={onDownloadExcel}
-          disabled={actionsDisabled}
+          onDownloadPdf={outputActions.onDownloadPdf}
+          onPrint={outputActions.onPrint}
+          onDownloadExcel={outputActions.onDownloadExcel}
+          disabled={outputActions.disabled}
         />
       ) : undefined}
     >
@@ -151,26 +124,6 @@ export function TenantStatementPanel({
         </div>
       ) : selectedContractId ? (
         <div className="p-4"><ReportState message="لا توجد حركات في كشف المستأجر لهذا العقد." /></div>
-      ) : fallbackRows.length > 0 ? (
-        <ReportList>
-          {fallbackRows.map((row) => (
-            <ReportListRow
-              key={row.contractId}
-              title={row.tenantName ?? 'مستأجر غير محدد'}
-              subtitle={`${formatLatinNumber(row.invoiceCount, 'ar')} فواتير`}
-              meta={`متأخر ${formatMoney(row.totalOverdue)}`}
-              value={<span dir="ltr">{formatMoney(row.totalOutstanding)}</span>}
-            />
-          ))}
-          {receipts.slice(0, 3).map((receipt) => (
-            <ReportListRow
-              key={`receipt-${receipt.id}`}
-              title={<a className="inline-flex min-h-11 items-center hover:text-primary hover:underline" href={createReceiptPrintHref(receipt.id)}>{receipt.receipt_number}</a>}
-              subtitle={receipt.tenant_name ?? 'مستأجر غير محدد'}
-              value={<span dir="ltr">{formatMoney(receipt.amount)}</span>}
-            />
-          ))}
-        </ReportList>
       ) : (
         <div className="p-4"><ReportState message="اختر عقدًا من فلاتر التقرير لعرض كشف المستأجر الحقيقي." /></div>
       )}
@@ -194,23 +147,15 @@ export function OwnerStatementPanel({
   statement,
   error,
   isLoading,
-  fallbackRows,
   period,
-  onPrint,
-  onDownloadPdf,
-  onDownloadExcel,
-  actionsDisabled = false,
+  outputActions,
 }: Readonly<{
   selectedOwnerId: string;
   statement: OwnerStatementReport | undefined;
   error: unknown;
   isLoading: boolean;
-  fallbackRows: OwnerFallbackRow[];
   period: { from?: string; to?: string; propertyId?: string };
-  onPrint: () => void;
-  onDownloadPdf: () => void;
-  onDownloadExcel: () => void;
-  actionsDisabled?: boolean;
+  outputActions?: StatementPanelOutputActions;
 }>) {
   const ledgerRows: OwnerLedgerRow[] = (statement?.transactions ?? []).map((transaction, index) => ({
     ...transaction,
@@ -278,14 +223,14 @@ export function OwnerStatementPanel({
       title="كشف حساب المالك"
       description="كشف تشغيلي ومالي موحّد يطابق بنية نسخة الطباعة: الملخص، الحركة اليومية، الصيانة والمصروفات والمرافق، التسويات والحساب الختامي."
       icon={UsersRound}
-      action={statement ? (
+      action={statement && outputActions ? (
         <ReportOutputActions
           downloadLabel="تنزيل كشف المالك PDF"
           menuLabel="خيارات إخراج كشف المالك"
-          onDownloadPdf={onDownloadPdf}
-          onPrint={onPrint}
-          onDownloadExcel={onDownloadExcel}
-          disabled={actionsDisabled}
+          onDownloadPdf={outputActions.onDownloadPdf}
+          onPrint={outputActions.onPrint}
+          onDownloadExcel={outputActions.onDownloadExcel}
+          disabled={outputActions.disabled}
         />
       ) : undefined}
     >
@@ -343,17 +288,6 @@ export function OwnerStatementPanel({
         </div>
       ) : selectedOwnerId ? (
         <div className="p-4"><ReportState message="لا توجد بيانات كشف مالك معتمدة للفترة المحددة." /></div>
-      ) : fallbackRows.length > 0 ? (
-        <ReportList>
-          {fallbackRows.map((row) => (
-            <ReportListRow
-              key={row.propertyId}
-              title={row.propertyTitle ?? 'عقار غير محدد'}
-              subtitle={`${formatLatinNumber(row.count, 'ar')} حركة مصروفات`}
-              value={<span dir="ltr">{formatMoney(row.total)}</span>}
-            />
-          ))}
-        </ReportList>
       ) : (
         <div className="p-4"><ReportState message="اختر مالكًا من فلاتر التقرير لعرض كشف المالك الحقيقي." /></div>
       )}

@@ -377,7 +377,11 @@ function OpenReportProduct({
 }>) {
   const navigate = useNavigate();
   const Icon = product.icon;
-  const model = useReportsWorkspace(filters, { section: target.section, view: target.view });
+  const model = useReportsWorkspace(
+    filters,
+    { section: target.section, view: target.view },
+    { statementFocus: product.statementFocus },
+  );
   const { capabilities, documentUnavailableHint } = useReportProductDocumentActions({
     target,
     model,

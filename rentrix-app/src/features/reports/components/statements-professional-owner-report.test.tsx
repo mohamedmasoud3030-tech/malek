@@ -96,17 +96,17 @@ const position = {
   owner_funds: { held: 0 },
 };
 
-function renderOwnerSection(overrides: { ownerStatement?: OwnerStatementReport | undefined; selectedOwnerId?: string } = {}) {
+function renderOwnerSection(overrides: {
+  ownerStatement?: OwnerStatementReport | undefined;
+  selectedOwnerId?: string;
+  focus?: 'all' | 'owner';
+} = {}) {
   const hasStatementOverride = Object.prototype.hasOwnProperty.call(overrides, 'ownerStatement');
   const statementValue = hasStatementOverride ? overrides.ownerStatement : ownerStatement;
   return render(
     <StatementsSection
-      agedReport={undefined}
-      receiptRows={[]}
       financialSummary={undefined}
-      expenseBreakdown={undefined}
       vatReturn={undefined}
-      dailyRows={[]}
       tenantStatement={undefined}
       ownerStatement={statementValue}
       selectedContractId=""
@@ -117,6 +117,7 @@ function renderOwnerSection(overrides: { ownerStatement?: OwnerStatementReport |
       isOwnerStatementLoading={false}
       isLoading={false}
       filters={{ from: '2026-02-01', to: '2026-02-28', propertyId: undefined, ownerId: 'o-01' }}
+      focus={overrides.focus}
     />,
   );
 }
@@ -125,6 +126,7 @@ describe('StatementsSection professional owner report wiring', () => {
   afterEach(() => cleanup());
 
   beforeEach(() => {
+    docSettingsState.isReady = true;
     vi.mocked(getOwnerFinancialAuthority).mockResolvedValue({
       position: position as never,
       statement: { total_gross: 5000, total_deductions: 250, total_net: 4750 },
@@ -175,10 +177,17 @@ describe('StatementsSection professional owner report wiring', () => {
     expect(screen.queryByRole('button', { name: 'خيارات إخراج كشف المالك' })).toBeNull();
   });
 
-  it('shows the document workspace strip with identity readiness indicator', () => {
+  it('shows the canonical readiness notice without restoring the deleted status strip', () => {
+    docSettingsState.isReady = false;
     renderOwnerSection();
-    expect(screen.getByText('هوية المستند')).toBeDefined();
-    expect(screen.getByText('جاهز للإصدار')).toBeDefined();
+    expect(screen.getByText('أكمل بيانات الشركة الأساسية في الإعدادات قبل طباعة هذا المستند.')).toBeDefined();
+    expect(screen.queryByText('هوية المستند')).toBeNull();
+  });
+
+  it('does not duplicate product-owned output actions inside the owner-focused body', () => {
+    renderOwnerSection({ focus: 'owner' });
+    expect(screen.queryByRole('button', { name: 'تنزيل كشف المالك PDF' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'خيارات إخراج كشف المالك' })).toBeNull();
   });
 
   it('does NOT show a running balance column in the owner panel (authority unavailable)', () => {

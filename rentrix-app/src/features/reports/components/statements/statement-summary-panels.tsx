@@ -16,7 +16,6 @@ export function OfficeSummaryPanel({
   invoicesCount,
   paymentsCount,
   expensesCount,
-  receiptsCount,
 }: Readonly<{
   invoiced: number;
   collections: number;
@@ -25,7 +24,6 @@ export function OfficeSummaryPanel({
   invoicesCount: number;
   paymentsCount: number;
   expensesCount: number;
-  receiptsCount: number;
 }>) {
   return (
     <ReportPanel
@@ -40,7 +38,7 @@ export function OfficeSummaryPanel({
             { label: 'فواتير الفترة', value: formatMoney(invoiced), detail: `${formatLatinNumber(invoicesCount, 'ar')} فواتير` },
             { label: 'تحصيلات الفترة', value: formatMoney(collections), detail: `${formatLatinNumber(paymentsCount, 'ar')} مدفوعات` },
             { label: 'مصروفات الفترة', value: formatMoney(expenses), detail: `${formatLatinNumber(expensesCount, 'ar')} مصروفات` },
-            { label: 'الرصيد المستحق', value: formatMoney(outstanding), detail: `${formatLatinNumber(receiptsCount, 'ar')} إيصالات` },
+            { label: 'الرصيد المستحق', value: formatMoney(outstanding), detail: 'المتبقي غير المسدد ضمن الفترة' },
           ]}
         />
       </div>

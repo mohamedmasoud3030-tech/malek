@@ -332,11 +332,7 @@ const fixtureModel: ReportsWorkspaceModel = {
       isLoading: false,
     },
     statements: {
-      agedReport: undefined,
-      receiptRows: [],
       financialSummary: undefined,
-      expenseBreakdown: undefined,
-      dailyRows: [],
       vatReturn: undefined,
       tenantStatement: undefined,
       ownerStatement: undefined,

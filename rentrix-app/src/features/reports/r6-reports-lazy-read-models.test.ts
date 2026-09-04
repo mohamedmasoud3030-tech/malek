@@ -31,7 +31,7 @@ describe('R6 — reports workspace fetches only the open report', () => {
   });
 
   it('the workspace derives per-view activation from the ReportLocation', () => {
-    expect(workspaceSource).toContain('export function useReportsWorkspace(filters: ReportsFilterState, location: ReportLocation)');
+    expect(workspaceSource).toContain('options: ReportsWorkspaceOptions = {}');
     for (const flag of [
       'needsOverview',
       'needsCollections',
@@ -41,7 +41,9 @@ describe('R6 — reports workspace fetches only the open report', () => {
       'needsMaintenance',
       'needsAccountingReports',
       'needsDeferredRevenue',
-      'needsStatements',
+      'needsTenantStatement',
+      'needsOwnerStatement',
+      'needsFinancialStatements',
     ]) {
       expect(workspaceSource).toContain(flag);
     }
@@ -49,6 +51,7 @@ describe('R6 — reports workspace fetches only the open report', () => {
 
   it('no heavy report query is mounted without an enabled gate', () => {
     const gatedCalls = [
+      'useFinancialPeriodSummaryReport(financialFilters, { enabled:',
       'useCollectionSummaryReport(financialFilters, { enabled:',
       'useFinancialCashflowReport(financialFilters, { enabled:',
       'useVatReturnReport(financialFilters, { enabled:',
@@ -88,18 +91,24 @@ describe('R6 — reports workspace fetches only the open report', () => {
     expect(hooksSource).not.toContain('useCashFlowStatementReport(');
     expect(statementServiceSource).not.toContain('getCashFlowStatementReport');
     expect(statementServiceSource).not.toContain("supabase.rpc('rpt_cash_flow'");
-    expect(statementsSource).toContain('useAuthoritativeGlCashFlow(filters?.from, filters?.to)');
+    expect(statementsSource).toContain('useAuthoritativeGlCashFlow(filters?.from, filters?.to, showFinancial)');
     expect(authoritySource).toContain('enabled: enabled && Boolean(from && to)');
 
     expect(workspaceSource).not.toContain("useAllContracts('all');");
     expect(workspaceSource).not.toContain("useMaintenance('all', '');");
     expect(workspaceSource).not.toContain('useOwners();');
     expect(workspaceSource).not.toContain('useAllUnits();');
+    expect(workspaceSource).not.toContain('needsStatements');
+    expect(workspaceSource).toContain('useVatReturnReport(financialFilters, { enabled: needsFinancialStatements })');
+    expect(workspaceSource).toContain('useTenantStatementReport(filters.contractId || undefined, { enabled: needsTenantStatement })');
+    expect(workspaceSource).toContain('useOwnerStatementReport(filters.ownerId || undefined, financialFilters, { enabled: needsOwnerStatement })');
   });
 
-  it('the reports page passes the resolved location into the workspace', () => {
+  it('the reports page passes the resolved location while premium products also pass statement focus', () => {
     const pageSource = readFileSync(resolve(import.meta.dirname, 'reports-page.tsx'), 'utf8');
+    const premiumSource = readFileSync(resolve(import.meta.dirname, 'premium/report-product-page.tsx'), 'utf8');
     expect(pageSource).toContain('useReportsWorkspace(filters, { section: activeSection, view: activeView })');
+    expect(premiumSource).toContain('{ statementFocus: product.statementFocus }');
   });
 
   it('documents the bounded-read limitation honestly (no silent truncation)', () => {

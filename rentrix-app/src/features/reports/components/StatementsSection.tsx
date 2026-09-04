@@ -1,7 +1,5 @@
-import type { DailyCollectionReportRow, OwnerStatementReport, TenantStatementReport } from '@/features/financials/reports/financialReportsService';
+import type { OwnerStatementReport, TenantStatementReport } from '@/features/financials/reports/financialReportsService';
 import {
-  useAgedReceivablesReport,
-  useExpenseBreakdownReport,
   useFinancialPeriodSummaryReport,
   useVatReturnReport,
 } from '@/features/financials/reports/useFinancialReports';
@@ -19,21 +17,9 @@ import { ReportColumns } from '@/components/ui/report-section-primitives';
 import { OwnerStatementPanel, TenantStatementPanel } from './statements/statement-account-panels';
 import { OfficeSummaryPanel, RegulatorySummaryPanels } from './statements/statement-summary-panels';
 
-type ReceiptRow = Readonly<{
-  id: string;
-  receipt_number: string;
-  payment_date: string;
-  amount: number;
-  tenant_name: string | null;
-}>;
-
 export function StatementsSection({
-  agedReport,
-  receiptRows,
   financialSummary,
-  expenseBreakdown,
   vatReturn,
-  dailyRows,
   tenantStatement,
   ownerStatement,
   selectedContractId,
@@ -46,12 +32,8 @@ export function StatementsSection({
   filters,
   focus = 'all',
 }: Readonly<{
-  agedReport: NonNullable<ReturnType<typeof useAgedReceivablesReport>['data']> | undefined;
-  receiptRows: ReceiptRow[];
   financialSummary: NonNullable<ReturnType<typeof useFinancialPeriodSummaryReport>['data']> | undefined;
-  expenseBreakdown: NonNullable<ReturnType<typeof useExpenseBreakdownReport>['data']> | undefined;
   vatReturn: NonNullable<ReturnType<typeof useVatReturnReport>['data']> | undefined;
-  dailyRows: DailyCollectionReportRow[];
   tenantStatement: TenantStatementReport | undefined;
   ownerStatement: OwnerStatementReport | undefined;
   selectedContractId: string;
@@ -64,13 +46,11 @@ export function StatementsSection({
   filters?: { from: string; to: string; propertyId?: string; ownerId?: string };
   focus?: StatementProductFocus;
 }>) {
-  const tenantRows = (agedReport?.rows ?? []).slice(0, 6);
-  const ownerMovementRows = (expenseBreakdown?.byProperty ?? []).slice(0, 6);
-  const totalCollections = dailyRows.reduce((total, row) => total + row.totalPaid, 0);
-  const glCashFlowQuery = useAuthoritativeGlCashFlow(filters?.from, filters?.to);
   const showTenant = focus === 'all' || focus === 'tenant';
   const showOwner = focus === 'all' || focus === 'owner';
   const showFinancial = focus === 'all' || focus === 'financial';
+  const showPartyDocumentControls = focus === 'all';
+  const glCashFlowQuery = useAuthoritativeGlCashFlow(filters?.from, filters?.to, showFinancial);
 
   const { companySettings: documentSettings, isReady: isDocumentSettingsReady } = useDocumentSettings();
 
@@ -113,7 +93,7 @@ export function StatementsSection({
 
   return (
     <div className="space-y-4">
-      {!isDocumentSettingsReady && (showTenant || showOwner) ? <DocumentReadinessNotice /> : null}
+      {showPartyDocumentControls && !isDocumentSettingsReady && (showTenant || showOwner) ? <DocumentReadinessNotice /> : null}
       {(showTenant || showOwner) ? (
         <ReportColumns>
           {showTenant ? (
@@ -122,12 +102,12 @@ export function StatementsSection({
               statement={tenantStatement}
               error={tenantStatementError}
               isLoading={isTenantStatementLoading}
-              fallbackRows={tenantRows}
-              receipts={receiptRows}
-              onPrint={handlePrintTenantStatement}
-              onDownloadPdf={handleDownloadTenantStatement}
-              onDownloadExcel={handleDownloadTenantExcel}
-              actionsDisabled={!isDocumentSettingsReady}
+              outputActions={showPartyDocumentControls ? {
+                onPrint: handlePrintTenantStatement,
+                onDownloadPdf: handleDownloadTenantStatement,
+                onDownloadExcel: handleDownloadTenantExcel,
+                disabled: !isDocumentSettingsReady,
+              } : undefined}
             />
           ) : null}
           {showOwner ? (
@@ -136,12 +116,13 @@ export function StatementsSection({
               statement={ownerStatement}
               error={ownerStatementError}
               isLoading={isOwnerStatementLoading}
-              fallbackRows={ownerMovementRows}
               period={{ from: filters?.from, to: filters?.to, propertyId: filters?.propertyId }}
-              onPrint={handlePrintProfessionalOwnerReport}
-              onDownloadPdf={handleDownloadProfessionalOwnerReport}
-              onDownloadExcel={handleDownloadOwnerExcel}
-              actionsDisabled={!isDocumentSettingsReady}
+              outputActions={showPartyDocumentControls ? {
+                onPrint: handlePrintProfessionalOwnerReport,
+                onDownloadPdf: handleDownloadProfessionalOwnerReport,
+                onDownloadExcel: handleDownloadOwnerExcel,
+                disabled: !isDocumentSettingsReady,
+              } : undefined}
             />
           ) : null}
         </ReportColumns>
@@ -151,13 +132,12 @@ export function StatementsSection({
         <>
           <OfficeSummaryPanel
             invoiced={financialSummary?.invoiced ?? 0}
-            collections={totalCollections}
+            collections={financialSummary?.paid ?? 0}
             expenses={financialSummary?.expenses ?? 0}
             outstanding={financialSummary?.outstanding ?? 0}
             invoicesCount={financialSummary?.invoicesCount ?? 0}
             paymentsCount={financialSummary?.paymentsCount ?? 0}
             expensesCount={financialSummary?.expensesCount ?? 0}
-            receiptsCount={receiptRows.length}
           />
 
           <RegulatorySummaryPanels

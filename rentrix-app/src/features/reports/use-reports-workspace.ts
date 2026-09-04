@@ -49,6 +49,7 @@ import {
   usePropertyTitles,
 } from './reports-page.helpers';
 import type { ReportsFilterState } from './reports-workspace-filters';
+import type { StatementProductFocus } from './report-products';
 import type { ReportLocation, ReportViewId } from './reports-section-model';
 
 function firstErrorOf(...errors: ReadonlyArray<unknown>): unknown {
@@ -68,7 +69,15 @@ function viewNeeds(view: ReportViewId, location: ReportLocation) {
   return active;
 }
 
-export function useReportsWorkspace(filters: ReportsFilterState, location: ReportLocation) {
+type ReportsWorkspaceOptions = Readonly<{
+  statementFocus?: StatementProductFocus;
+}>;
+
+export function useReportsWorkspace(
+  filters: ReportsFilterState,
+  location: ReportLocation,
+  options: ReportsWorkspaceOptions = {},
+) {
   const financialFilters = useMemo(
     () => ({
       dateFrom: filters.from,
@@ -121,7 +130,12 @@ export function useReportsWorkspace(filters: ReportsFilterState, location: Repor
   const needsMaintenance = isAnalytics && (view === 'maintenance_analytics' || view === 'operations_overview' || needsOverview || needsPropertyPerformance);
   const needsAccountingReports = isAccounting && view === 'accounting_reports';
   const needsDeferredRevenue = isAccounting && view === 'deferred_revenue';
-  const needsStatements = isStatements || needsAccountingReports;
+  const statementFocus = options.statementFocus ?? 'all';
+  const needsTenantStatement = isStatements && (statementFocus === 'all' || statementFocus === 'tenant');
+  const needsOwnerStatement = isStatements && (statementFocus === 'all' || statementFocus === 'owner');
+  const needsFinancialStatements = isStatements && (statementFocus === 'all' || statementFocus === 'financial');
+  const needsFinancialSummary = needsOverview || needsCollections || needsOverdue || needsPropertyPerformance || needsFinancialStatements;
+  const needsCollectionRate = needsOverview || needsCollections || needsOverdue;
 
   /**
    * Previous comparable period for the Property Analytics workspace. Same
@@ -160,29 +174,29 @@ export function useReportsWorkspace(filters: ReportsFilterState, location: Repor
     contractId: filters.contractId || undefined,
   }), [filters.asOf, filters.contractId, filters.propertyId, filters.tenantId, filters.unitId, previousRange]);
 
-  const financialSummaryQuery = useFinancialPeriodSummaryReport(financialFilters);
-  const collectionRateQuery = useAuthoritativeReportsCollectionRate({ from: filters.from, to: filters.to });
+  const financialSummaryQuery = useFinancialPeriodSummaryReport(financialFilters, { enabled: needsFinancialSummary });
+  const collectionRateQuery = useAuthoritativeReportsCollectionRate({ from: filters.from, to: filters.to }, needsCollectionRate);
 
   const collectionSummaryQuery = useCollectionSummaryReport(financialFilters, { enabled: needsOverview || needsCollections });
   const propertyCollectionBreakdownQuery = usePropertyCollectionBreakdownReport(financialFilters, { enabled: needsPropertyPerformance });
   const financialCashflowQuery = useFinancialCashflowReport(financialFilters, { enabled: needsOverview });
-  const vatReturnQuery = useVatReturnReport(financialFilters, { enabled: needsStatements });
-  const dailyCollectionQuery = useDailyCollectionReport(financialFilters, { enabled: needsCollections || needsStatements });
-  const expenseBreakdownQuery = useExpenseBreakdownReport(expenseFilters, { enabled: needsExpenses || needsStatements });
+  const vatReturnQuery = useVatReturnReport(financialFilters, { enabled: needsFinancialStatements });
+  const dailyCollectionQuery = useDailyCollectionReport(financialFilters, { enabled: needsCollections });
+  const expenseBreakdownQuery = useExpenseBreakdownReport(expenseFilters, { enabled: needsExpenses });
   const portfolioExpenseQuery = useExpenseBreakdownReport(portfolioExpenseFilters, { enabled: needsPropertyPerformance && Boolean(filters.propertyId) });
   const overdueInvoicesQuery = useOverdueInvoicesReport(arrearsFilters, { enabled: needsOverdue });
-  const agedReceivablesQuery = useAgedReceivablesReport(arrearsFilters, { enabled: needsOverdue || needsStatements });
+  const agedReceivablesQuery = useAgedReceivablesReport(arrearsFilters, { enabled: needsOverdue });
   const arrearsSummaryQuery = useArrearsSummaryReport(arrearsFilters, { enabled: needsOverdue });
   const contractsQuery = useAllContracts('all', { enabled: true });
   const ownersQuery = useOwners({ enabled: true });
-  const tenantStatementQuery = useTenantStatementReport(filters.contractId || undefined, { enabled: needsStatements });
-  const ownerStatementQuery = useOwnerStatementReport(filters.ownerId || undefined, financialFilters, { enabled: needsStatements });
+  const tenantStatementQuery = useTenantStatementReport(filters.contractId || undefined, { enabled: needsTenantStatement });
+  const ownerStatementQuery = useOwnerStatementReport(filters.ownerId || undefined, financialFilters, { enabled: needsOwnerStatement });
   const unitsQuery = useAllUnits({ enabled: needsOccupancy });
   const maintenanceQuery = useMaintenance('all', '', { enabled: needsMaintenance });
   const trialBalanceQuery = useAccountingTrialBalanceReport(filters.asOf, { enabled: needsAccountingReports });
   const incomeStatementQuery = useAccountingIncomeStatementReport(financialFilters, { enabled: needsAccountingReports });
   const balanceSheetQuery = useAccountingBalanceSheetReport(filters.asOf, { enabled: needsAccountingReports });
-  const receiptsQuery = useReceipts({ limit: latestReceiptLimit }, { enabled: needsCollections || needsDeferredRevenue || needsStatements });
+  const receiptsQuery = useReceipts({ limit: latestReceiptLimit }, { enabled: needsCollections || needsDeferredRevenue });
   const costCentersQuery = useCostCenters();
   const propertyTitlesQuery = usePropertyTitles({ enabled: needsOccupancy });
   const needsPreviousPeriod = needsPropertyPerformance && previousRange != null;
@@ -489,11 +503,7 @@ export function useReportsWorkspace(filters: ReportsFilterState, location: Repor
         isLoading: isLoadingAny(trialBalanceQuery.isLoading, incomeStatementQuery.isLoading, balanceSheetQuery.isLoading),
       },
       statements: {
-        agedReport: agedReceivablesQuery.data,
-        receiptRows,
         financialSummary: financialSummaryQuery.data,
-        expenseBreakdown: expenseBreakdownQuery.data,
-        dailyRows: dailyCollectionQuery.data?.rows ?? [],
         vatReturn: vatReturnQuery.data,
         tenantStatement: tenantStatementQuery.data,
         ownerStatement: ownerStatementQuery.data,
@@ -503,7 +513,7 @@ export function useReportsWorkspace(filters: ReportsFilterState, location: Repor
         ownerStatementError: ownerStatementQuery.error,
         isTenantStatementLoading: tenantStatementQuery.isLoading,
         isOwnerStatementLoading: ownerStatementQuery.isLoading,
-        isLoading: isLoadingAny(agedReceivablesQuery.isLoading, receiptsQuery.isLoading, financialSummaryQuery.isLoading, expenseBreakdownQuery.isLoading, dailyCollectionQuery.isLoading, vatReturnQuery.isLoading),
+        isLoading: isLoadingAny(financialSummaryQuery.isLoading, vatReturnQuery.isLoading),
       },
     },
   } as const;
