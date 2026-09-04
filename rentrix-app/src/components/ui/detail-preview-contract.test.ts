@@ -60,7 +60,9 @@ describe('unified detail preview contract', () => {
     expect(ownerWorkspace).toContain('<OwnerPreviewDialog');
     const ownerPreview = readFileSync(new URL('../../features/owners/components/OwnerPreviewDialog.tsx', import.meta.url), 'utf8');
     expect(ownerPreview).toContain('<EntityPreviewDialog');
-    expect(ownerWorkspace).not.toContain("navigate({ to: '/owners/$ownerId'");
+    // The full owner page is reached only through the explicit «فتح ملف المالك» action.
+    expect(ownerWorkspace).toContain("navigate({ to: '/owners/$ownerId'");
+    expect(ownerWorkspace).toContain('فتح ملف المالك');
     expect(maintenanceWorkspace).toContain('<MaintenanceDetailsOverlay');
     expect(maintenanceOverlay).toContain('<EntityPreviewDialog');
     expect(maintenanceOverlay).not.toContain('title="تفاصيل طلب الصيانة"');

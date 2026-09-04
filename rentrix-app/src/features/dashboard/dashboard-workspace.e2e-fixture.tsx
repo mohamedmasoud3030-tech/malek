@@ -6,26 +6,16 @@ import { formatCompanyDate, formatCompanyMoney, formatCompanyNumber } from '@/li
 import { defaultCompanySettingsContract } from '@/lib/companySettings';
 import { CollectionsSection } from './components/collections-section';
 import { FinancialPerformanceSection } from './components/financial-performance-section';
-import { MaintenanceSection } from './components/maintenance-section';
 import { NeedsAttentionSection } from './components/needs-attention-section';
 import { OccupancySection } from './components/occupancy-section';
 import { OfficePulse } from './components/office-pulse';
-import { OwnerObligationsSection } from './components/owner-obligations-section';
-import { PropertyHealthSection } from './components/property-health-section';
-import { UpcomingContractsSection } from './components/upcoming-contracts-section';
-import { UtilityObligationsSection } from './components/utility-obligations-section';
 import type { DashboardSnapshot } from './dashboard-snapshot';
-import { buildExpiringContracts, toDateInputValue } from './dashboard-utils';
 import type { UtilityObligationsSignal } from './utility-obligations-signal';
 import type { VacancyAnalytics } from '@/features/units/vacancy-analytics';
 import type { MaintenanceFollowUpSignal } from './maintenance-follow-up-signal';
 import { buildNeedsAttentionSignal } from './needs-attention-signal';
-import type { MaintenanceDashboardSummary } from './maintenance-dashboard-summary';
 import type { MonthlyCashflowChartRow } from './financial-performance';
-import type { PropertyHealthRow } from './property-health-signal';
 
-const soonDate = toDateInputValue(new Date(Date.now() + 9 * 24 * 60 * 60 * 1000));
-const laterDate = toDateInputValue(new Date(Date.now() + 18 * 24 * 60 * 60 * 1000));
 const fixtureSettings = {
   ...defaultCompanySettingsContract,
   money: (value: number | null | undefined) => formatCompanyMoney(defaultCompanySettingsContract, value),
@@ -62,12 +52,10 @@ const fixtureSnapshot: DashboardSnapshot = {
   exceptions: { unmatchedBankLines: 2, pendingSettlements: 1 },
   queues: {
     expiringContracts: [
-      { id: 'contract-1', reference: 'CON-1001', endDate: soonDate, daysRemaining: 9, tenantName: 'أحمد الفارسي', propertyTitle: 'برج الخليج', unitNumber: '5' },
-      { id: 'contract-2', reference: 'CON-1002', endDate: laterDate, daysRemaining: 18, tenantName: 'سالم الكعبي', propertyTitle: 'واحة مسقط', unitNumber: '12' },
+      { id: 'contract-1', reference: 'CON-1001', endDate: '2026-07-24', daysRemaining: 9, tenantName: 'أحمد الفارسي', propertyTitle: 'برج الخليج', unitNumber: '5' },
     ],
     overdueInvoices: [
       { invoiceId: 'invoice-1', reference: 'INV-2001', dueDate: '2026-06-10', daysOverdue: 35, remainingAmount: 1_500, tenantName: 'أحمد الفارسي', propertyTitle: 'برج الخليج', unitNumber: '5' },
-      { invoiceId: 'invoice-2', reference: 'INV-2002', dueDate: '2026-06-12', daysOverdue: 33, remainingAmount: 1_500, tenantName: 'سالم الكعبي', propertyTitle: 'واحة مسقط', unitNumber: '12' },
     ],
     urgentMaintenance: [
       { id: 'maintenance-1', title: 'تسرب مياه', priority: 'urgent', propertyTitle: 'برج الخليج', unitNumber: '5' },
@@ -87,9 +75,8 @@ const fixtureUtilityObligations: UtilityObligationsSignal = {
   },
   rows: [
     { billId: 'utility-1', title: 'فاتورة UB-1001', meta: 'متأخرة 12 يوم · المستأجر', remainingAmount: 42.5, urgency: 'overdue', daysOverdue: 12, daysUntilDue: -12 },
-    { billId: 'utility-2', title: 'فاتورة UB-1002', meta: 'تستحق خلال 4 يوم · المالك', remainingAmount: 18, urgency: 'due_soon', daysOverdue: 0, daysUntilDue: 4 },
   ],
-  actionableCount: 2,
+  actionableCount: 1,
 };
 
 const fixtureVacancyAnalytics: VacancyAnalytics = {
@@ -109,38 +96,19 @@ const fixtureVacancyAnalytics: VacancyAnalytics = {
       unitId: 'unit-7', propertyId: 'property-2', unitNumber: '7', propertyTitle: 'واحة مسقط',
       referenceRent: 280, lastContractEndDate: '2026-05-20', vacancySince: '2026-05-20', vacancySinceSource: 'contract_end', daysVacant: 70,
     },
-    {
-      unitId: 'unit-9', propertyId: 'property-2', unitNumber: '9', propertyTitle: 'واحة مسقط',
-      referenceRent: 200, lastContractEndDate: '2026-06-25', vacancySince: '2026-06-25', vacancySinceSource: 'contract_end', daysVacant: 20,
-    },
-    {
-      unitId: 'unit-3', propertyId: 'property-1', unitNumber: '3', propertyTitle: 'برج الخليج',
-      referenceRent: null, lastContractEndDate: null, vacancySince: '2026-07-05', vacancySinceSource: 'unit_created', daysVacant: 10,
-    },
   ],
   vacancyRiskRows: [],
 };
 
 const fixtureMaintenanceFollowUp: MaintenanceFollowUpSignal = {
   stalledCount: 1,
-  awaitingClosureCount: 1,
-  scheduleMissedCount: 1,
-  actionableCount: 2,
+  awaitingClosureCount: 0,
+  scheduleMissedCount: 0,
+  actionableCount: 1,
   oldestOpenAgeDays: 34,
   rows: [
     { requestId: 'mnt-1', title: 'تسرب في مواسير الحمام', location: 'برج الخليج · الوحدة 3', flag: 'stalled', flagLabel: 'متوقفة عن التقدم', ageDays: 34 },
-    { requestId: 'mnt-2', title: 'عطل مصعد الطابق الأرضي', location: 'واحة مسقط', flag: 'schedule_missed', flagLabel: 'تجاوزت موعد الزيارة', ageDays: 12 },
   ],
-};
-
-const fixtureMaintenanceSummary: MaintenanceDashboardSummary = {
-  total: 24,
-  active: 4,
-  completed: 18,
-  urgentOpen: 1,
-  averageResolutionDays: 2.4,
-  previousAverageResolutionDays: 2.9,
-  resolutionChangePercent: -17,
 };
 
 const fixtureChartRows: readonly MonthlyCashflowChartRow[] = [
@@ -152,40 +120,12 @@ const fixtureChartRows: readonly MonthlyCashflowChartRow[] = [
   { month: '2026-07', label: 'يوليو', collected: 12_000, expenses: 1_500 },
 ];
 
-const fixturePropertyHealthRows: readonly PropertyHealthRow[] = [
-  {
-    propertyId: 'property-1',
-    title: 'برج الخليج',
-    totalUnits: 7,
-    occupiedUnits: 6,
-    vacantUnits: 1,
-    occupancyRate: 86,
-    longestVacancyDays: 10,
-    openMaintenance: 1,
-    urgentMaintenance: 1,
-    status: 'critical',
-  },
-  {
-    propertyId: 'property-2',
-    title: 'واحة مسقط',
-    totalUnits: 8,
-    occupiedUnits: 6,
-    vacantUnits: 2,
-    occupancyRate: 75,
-    longestVacancyDays: 70,
-    openMaintenance: 1,
-    urgentMaintenance: 0,
-    status: 'watch',
-  },
-];
-
 const fixtureNeedsAttention = buildNeedsAttentionSignal({
   snapshot: fixtureSnapshot,
   vacancyAnalytics: fixtureVacancyAnalytics,
   utilityObligations: fixtureUtilityObligations,
   maintenanceFollowUp: fixtureMaintenanceFollowUp,
 });
-const expiringRows = buildExpiringContracts(fixtureSnapshot.queues.expiringContracts);
 
 export function DashboardWorkspaceE2EFixture() {
   return (
@@ -198,56 +138,20 @@ export function DashboardWorkspaceE2EFixture() {
               <SectionHeader eyebrow="1 · أولويات" title="يحتاج انتباهك" />
               <NeedsAttentionSection signal={fixtureNeedsAttention} isLoading={false} />
             </section>
-
             <section aria-label="نبض المكتب" data-dashboard-section="office-pulse">
               <SectionHeader eyebrow="2 · الآن" title="نبض المكتب" />
               <OfficePulse snapshot={fixtureSnapshot} isLoading={false} settings={defaultCompanySettingsContract} />
             </section>
-
             <section aria-label="التحصيل والمتأخرات" data-dashboard-section="collections">
               <SectionHeader eyebrow="3 · تحصيل" title="التحصيل والمتأخرات" />
               <CollectionsSection snapshot={fixtureSnapshot} isLoading={false} settings={defaultCompanySettingsContract} />
             </section>
-
             <section aria-label="الإشغال والشغور" data-dashboard-section="occupancy">
               <SectionHeader eyebrow="4 · المحفظة" title="الإشغال والشغور" />
               <OccupancySection snapshot={fixtureSnapshot} analytics={fixtureVacancyAnalytics} isLoading={false} settings={fixtureSettings} />
             </section>
-
-            <section aria-label="الصيانة والخدمات" data-dashboard-section="maintenance">
-              <SectionHeader eyebrow="5 · خدمات" title="الصيانة والخدمات" />
-              <div className="grid gap-3 md:grid-cols-2">
-                <MaintenanceSection
-                  summary={fixtureMaintenanceSummary}
-                  urgentRows={fixtureSnapshot.queues.urgentMaintenance}
-                  followUp={fixtureMaintenanceFollowUp}
-                  isLoading={false}
-                  maintenanceIsLoading={false}
-                  maintenanceIsError={false}
-                />
-                <UtilityObligationsSection signal={fixtureUtilityObligations} isLoading={false} settings={fixtureSettings} />
-              </div>
-            </section>
-
-            <section aria-label="العقود القريبة من الانتهاء" data-dashboard-section="upcoming-contracts">
-              <SectionHeader eyebrow="6 · عقود" title="العقود القادمة" />
-              <UpcomingContractsSection
-                rows={expiringRows}
-                expiring30={fixtureSnapshot.contracts.expiring30}
-                expiring60={fixtureSnapshot.contracts.expiring60}
-                expiring90={fixtureSnapshot.contracts.expiring90}
-                isLoading={false}
-                settings={fixtureSettings}
-              />
-            </section>
-
-            <section aria-label="صحة العقارات" data-dashboard-section="property-health">
-              <SectionHeader eyebrow="7 · المحفظة" title="صحة العقارات" />
-              <PropertyHealthSection rows={fixturePropertyHealthRows} isLoading={false} />
-            </section>
-
             <section aria-label="الأداء المالي" data-dashboard-section="financial-performance">
-              <SectionHeader eyebrow="8 · الأداء المالي" title="أداء المكتب" />
+              <SectionHeader eyebrow="5 · الأداء المالي" title="أداء المكتب" />
               <FinancialPerformanceSection
                 snapshot={fixtureSnapshot}
                 vacancyAnalytics={fixtureVacancyAnalytics}
@@ -260,11 +164,6 @@ export function DashboardWorkspaceE2EFixture() {
                 chartIsError={false}
                 onChartRetry={() => undefined}
               />
-            </section>
-
-            <section aria-label="مستحقات الملاك" data-dashboard-section="owner-obligations">
-              <SectionHeader eyebrow="9 · ملاك" title="مستحقات الملاك" />
-              <OwnerObligationsSection snapshot={fixtureSnapshot} isLoading={false} settings={defaultCompanySettingsContract} />
             </section>
           </div>
         </PageLayout>

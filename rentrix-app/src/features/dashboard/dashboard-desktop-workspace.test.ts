@@ -21,7 +21,10 @@ describe('dashboard desktop workspace contract', () => {
     expect(page).toContain('xl:grid-cols-12');
     expect(page).toContain('xl:col-span-7');
     expect(page).toContain('xl:col-span-5');
-    expect(page).toContain('data-dashboard-closing-row');
+    // Closing row is the full-width office performance panel; the retired
+    // owner-obligations closing section must stay removed.
+    expect(page).toContain('sectionId="financial-performance"');
+    expect(page).not.toContain('data-dashboard-closing-row');
   });
 
   it('does not repeat section titles when the panel already names itself', () => {

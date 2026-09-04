@@ -2,7 +2,6 @@ import { getTodayLocalDateString } from '@/features/financials/financials-date-u
 import type { Owner, PropertyOwner, PropertyOwnerUpdatePayload, PropertyWithOwners } from '../services/owner-service';
 import { ownerFormSchema, type OwnerFormInput, type OwnerFormValues } from '../owner-schema';
 
-// Re-export so existing imports keep working.
 export type { OwnerFormValues };
 
 export type PropertyOwnershipLinkFormValues = {
@@ -22,14 +21,10 @@ export const emptyPropertyOwnershipLinkFormValues: PropertyOwnershipLinkFormValu
 };
 
 export function validatePropertyOwnershipLinkForm(values: PropertyOwnershipLinkFormValues): string | null {
-  if (!values.property_id) {
-    return 'اختر العقار أولاً';
-  }
-
+  if (!values.property_id) return 'اختر العقار أولاً';
   if (values.starts_on && values.ends_on && values.ends_on < values.starts_on) {
     return 'تاريخ نهاية الملكية يجب ألا يسبق تاريخ البداية';
   }
-
   return null;
 }
 
@@ -74,10 +69,7 @@ export const emptyOwnerFormValues: OwnerFormInput = {
 };
 
 export function ownerToFormValues(owner: Owner | null): OwnerFormInput {
-  if (!owner) {
-    return emptyOwnerFormValues;
-  }
-
+  if (!owner) return emptyOwnerFormValues;
   return {
     full_name: owner.full_name,
     display_name: owner.display_name ?? '',
@@ -112,10 +104,6 @@ export function getOwnerDisplayLabel(owner: Pick<Owner, 'full_name' | 'display_n
   return owner.display_name?.trim() || owner.full_name;
 }
 
-/**
- * A dated ownership link stays active through its end date.  Treating every
- * non-null end date as already ended made scheduled handovers disappear early.
- */
 export function isActivePropertyOwnerLink(
   link: Pick<PropertyOwner, 'ends_on'>,
   asOf = getTodayLocalDateString(),
@@ -129,13 +117,9 @@ function getActivePropertyOwnerLinks(property: Pick<PropertyWithOwners, 'propert
 
 export function summarizeOwners(owners: Owner[], properties: PropertyWithOwners[]): OwnerSummary {
   const linkedPropertyIds = new Set<string>();
-
   for (const property of properties) {
-    if (getActivePropertyOwnerLinks(property).length > 0) {
-      linkedPropertyIds.add(property.id);
-    }
+    if (getActivePropertyOwnerLinks(property).length > 0) linkedPropertyIds.add(property.id);
   }
-
   return {
     totalOwners: owners.length,
     activeOwners: owners.filter((owner) => owner.is_active).length,
@@ -148,25 +132,22 @@ export function countLinkedPropertiesForOwner(ownerId: string, properties: Prope
   return properties.filter((property) => getActivePropertyOwnerLinks(property).some((link) => link.owner_id === ownerId)).length;
 }
 
-export type OwnerWorkspaceProperty = {
-  id: string;
-  title: string;
-  ownershipPercentage: number;
-  isPrimary: boolean;
-};
-
 export type OwnerWorkspaceRow = {
   owner: Owner;
-  properties: OwnerWorkspaceProperty[];
   propertyCount: number;
   activeContractCount: number;
+  /** Retained only as searchable directory text; ownership detail belongs in the owner file. */
   propertyNames: string;
-  ownershipSummary: string;
 };
 
 type ActivePropertyContract = Readonly<{
   id: string;
   property_id: string;
+}>;
+
+type OwnerWorkspaceProperty = Readonly<{
+  id: string;
+  title: string;
 }>;
 
 function getCodePointOffset(value: string, baseCodePoint: number): number {
@@ -181,14 +162,6 @@ function normalizeOwnerSearchText(value: string): string {
     .replaceAll('ى', 'ي')
     .replaceAll(/[٠-٩]/g, (digit) => String(getCodePointOffset(digit, 0x0660)))
     .replaceAll(/[۰-۹]/g, (digit) => String(getCodePointOffset(digit, 0x06f0)));
-}
-
-function formatOwnershipRole(isPrimary: boolean): string {
-  return isPrimary ? 'أساسي' : 'شريك';
-}
-
-function formatOwnershipLink(link: Pick<PropertyOwner, 'ownership_percentage' | 'is_primary'>): string {
-  return `${link.ownership_percentage}% ${formatOwnershipRole(link.is_primary)}`;
 }
 
 function getOwnerWorkspaceSearchText(row: OwnerWorkspaceRow): string {
@@ -208,38 +181,28 @@ function getActiveContractCount(propertyIds: Set<string>, activeContracts: Activ
 function buildWorkspaceProperties(ownerId: string, properties: PropertyWithOwners[]): OwnerWorkspaceProperty[] {
   return properties.flatMap((property) => getActivePropertyOwnerLinks(property)
     .filter((link) => link.owner_id === ownerId)
-    .map((link) => ({
-      id: property.id,
-      title: property.title,
-      ownershipPercentage: link.ownership_percentage,
-      isPrimary: link.is_primary,
-    })));
+    .map(() => ({ id: property.id, title: property.title })));
 }
 
-export function buildOwnerWorkspaceRows(owners: Owner[], properties: PropertyWithOwners[], activeContracts: ActivePropertyContract[]): OwnerWorkspaceRow[] {
+export function buildOwnerWorkspaceRows(
+  owners: Owner[],
+  properties: PropertyWithOwners[],
+  activeContracts: ActivePropertyContract[],
+): OwnerWorkspaceRow[] {
   return owners.map((owner) => {
     const ownerProperties = buildWorkspaceProperties(owner.id, properties);
     const propertyIds = new Set(ownerProperties.map((property) => property.id));
     return {
       owner,
-      properties: ownerProperties,
       propertyCount: propertyIds.size,
       activeContractCount: getActiveContractCount(propertyIds, activeContracts),
       propertyNames: ownerProperties.map((property) => property.title).join('، '),
-      ownershipSummary: ownerProperties.map((property) => `${property.title}: ${property.ownershipPercentage}% ${formatOwnershipRole(property.isPrimary)}`).join('، '),
     };
   });
 }
 
 export function filterOwnerWorkspaceRows(rows: OwnerWorkspaceRow[], search: string): OwnerWorkspaceRow[] {
   const normalizedSearch = normalizeOwnerSearchText(search.trim());
-  if (!normalizedSearch) {
-    return rows;
-  }
-
+  if (!normalizedSearch) return rows;
   return rows.filter((row) => getOwnerWorkspaceSearchText(row).includes(normalizedSearch));
-}
-
-export function getOwnerPropertyOwnershipLabel(property: OwnerWorkspaceProperty): string {
-  return `${property.title} · ${formatOwnershipLink({ ownership_percentage: property.ownershipPercentage, is_primary: property.isPrimary })}`;
 }

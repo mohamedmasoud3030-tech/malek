@@ -5,6 +5,7 @@ const DashboardWorkspaceE2EFixture = lazy(() => import('@/features/dashboard/das
 const ReportsWorkspaceE2EFixture = lazy(() => import('@/features/reports/reports-workspace.e2e-fixture').then((module) => ({ default: module.ReportsWorkspaceE2EFixture })));
 const SettingsWorkspaceE2EFixture = lazy(() => import('@/features/settings/settings-workspace.e2e-fixture').then((module) => ({ default: module.SettingsWorkspaceE2EFixture })));
 const OwnerDetailE2EFixture = lazy(() => import('@/features/owners/owner-detail.e2e-fixture').then((module) => ({ default: module.OwnerDetailE2EFixture })));
+const OwnersWorkspaceE2EFixture = lazy(() => import('@/features/owners/owners-workspace.e2e-fixture').then((module) => ({ default: module.OwnersWorkspaceE2EFixture })));
 const PropertiesListE2EFixture = lazy(() => import('@/features/properties/properties-list.e2e-fixture').then((module) => ({ default: module.PropertiesListE2EFixture })));
 const ContractsListE2EFixture = lazy(() => import('@/features/contracts/contracts-list.e2e-fixture').then((module) => ({ default: module.ContractsListE2EFixture })));
 const ContractDetailE2EFixture = lazy(() => import('@/features/contracts/contract-detail.e2e-fixture').then((module) => ({ default: module.ContractDetailE2EFixture })));
@@ -37,6 +38,8 @@ export function LoginE2EFixture({ fallback }: Readonly<{ fallback: ReactNode }>)
     fixture = <SettingsWorkspaceE2EFixture />;
   } else if (search.get('e2e-owner-detail-workspace') === '1') {
     fixture = <OwnerDetailE2EFixture />;
+  } else if (search.get('e2e-owners-workspace') === '1') {
+    fixture = <OwnersWorkspaceE2EFixture />;
   } else if (search.get('e2e-maintenance-workspace') === '1') {
     fixture = <MaintenanceWorkspaceE2EFixture />;
   } else if (search.get('e2e-utilities-workspace') === '1') {

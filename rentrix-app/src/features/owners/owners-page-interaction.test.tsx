@@ -117,16 +117,19 @@ describe('OwnersPage actual owner-model mobile workflow interactions', () => {
     expect(document.body.textContent).toContain('اسم المالك مطلوب');
   });
 
-  it('exposes detail, statement, relationships, and edit actions in the shared table', async () => {
+  it('exposes preview, full-file, and edit actions in the shared table', async () => {
     await act(async () => root.render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><OwnersPage /></QueryClientProvider>));
 
-    expect(container.textContent).toContain('عقار المالك');
+    // Ownership data is a canonical count column; per-row property/ownership
+    // presentation stays out of the directory.
+    expect(container.textContent).toContain('عدد العقارات');
     const actionMenu = container.querySelector('button[aria-haspopup="menu"]');
     expect(actionMenu).toBeTruthy();
     await act(async () => actionMenu?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
     const menuItems = Array.from(document.body.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'));
-    // Detail access is the shared preview action (معاينة) across the registers.
-    expect(menuItems.map((item) => item.textContent)).toEqual(expect.arrayContaining(['معاينة', 'العلاقات', 'تعديل']));
+    // Detail access is the shared preview action (معاينة) across the registers;
+    // the full file opens only through the explicit action.
+    expect(menuItems.map((item) => item.textContent)).toEqual(expect.arrayContaining(['معاينة', 'فتح ملف المالك', 'تعديل']));
 
     const editButton = menuItems.find((button) => button.textContent?.trim() === 'تعديل');
     expect(editButton).toBeTruthy();

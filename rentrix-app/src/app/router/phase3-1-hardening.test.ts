@@ -12,7 +12,7 @@ const propertyDetail = readFileSync(new URL('../../features/properties/property-
 const unitDetail = readFileSync(new URL('../../features/properties/units/property-unit-detail-page.tsx', import.meta.url), 'utf8');
 const peopleNew = readFileSync(new URL('../../routes/_protected.people.new.tsx', import.meta.url), 'utf8');
 const peopleEdit = readFileSync(new URL('../../routes/_protected.people.$personId.edit.tsx', import.meta.url), 'utf8');
-const dashboard = readFileSync(new URL('../../features/dashboard/components/upcoming-contracts-section.tsx', import.meta.url), 'utf8');
+const dashboard = readFileSync(new URL('../../features/dashboard/components/needs-attention-section.tsx', import.meta.url), 'utf8');
 const ownerPreview = readFileSync(new URL('../../features/owners/components/OwnerPreviewDialog.tsx', import.meta.url), 'utf8');
 const ownerDossierBody = readFileSync(new URL('../../features/owners/components/owner-dossier-body.tsx', import.meta.url), 'utf8');
 const ownerWorkspace = readFileSync(new URL('../../features/owners/components/owner-workspace-table.tsx', import.meta.url), 'utf8');
@@ -101,6 +101,8 @@ describe('Permissions + canonical routes', () => {
     expect(dashboard).toContain("to: '/contracts/$contractId'");
     expect(tenants).toContain("to: '/contracts/$contractId'");
     expect(ownerPreview + ownerDossierBody).toContain("to: '/properties/$propertyId'");
-    expect(ownerWorkspace).toContain("to: '/properties/$propertyId'");
+    // Property navigation is not placed on directory rows; it happens from the
+    // owner file/preview (canonical #1783 owner directory).
+    expect(ownerWorkspace).not.toContain("to: '/properties/$propertyId'");
   });
 });

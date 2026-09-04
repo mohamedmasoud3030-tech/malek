@@ -21,15 +21,19 @@ describe('owner workspace table display architecture', () => {
     expect(source).toContain("priority: 'identity'");
     expect(source).toContain("priority: 'primary'");
     expect(source).toContain("priority: 'actions'");
-    expect(source).toContain("priority: 'detail'");
+    // The retired per-row detail column must stay out of the canonical directory.
+    expect(source).not.toContain("priority: 'detail'");
     expect(source).not.toContain("mobileVisibleSecondaryKey=\"contracts\"");
   });
 
   it('keeps contextual owner actions without internal identifiers', () => {
-    // Preview action label is unified across registers.
+    // Preview + explicit full-file actions are unified across registers;
+    // relationship management is not a directory row action.
     expect(source).toContain("label: 'معاينة'");
-    expect(source).toContain("label: 'العلاقات'");
+    expect(source).toContain("label: 'فتح ملف المالك'");
+    expect(source).toContain("label: 'فتح الملف'");
     expect(source).toContain("label: 'تعديل'");
+    expect(source).not.toContain("label: 'العلاقات'");
     expect(source).not.toContain('معرّف السجل');
   });
 });
