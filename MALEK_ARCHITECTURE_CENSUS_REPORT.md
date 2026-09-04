@@ -1010,19 +1010,22 @@ This roadmap is evidence-first. It does **not** schedule refactors for areas pro
 
 **Exit:** report no longer recommends merging canonical layers.
 
-### P1 — Two proven low-risk cleanup items
+### P1 — Two proven low-risk cleanup items — ✅ IMPLEMENTED (2026-09-04)
 
-**1. Fix active-register canonical route metadata**
-- Change fixed-monthly-accrual inventory route from `section=funds` to `section=fees`.
-- Preserve resolver compatibility for old `funds/fixed_monthly_accruals` deep links.
-- Add/adjust a focused guard so inventory metadata cannot drift from `financeShellModel`.
+> **Status:** Both P1 items shipped on a dedicated implementation branch (`refactor/architecture-census-p1-cleanup`, PR #1788, merge commit `435de8e1`). This was a separate code PR — not the documentation branch. All required gates were green (build, browser-smoke PR gate, canonical business rules, 10-stage/decision parity, release blockers, security scans). No business/DB semantic change.
 
-**2. Consolidate query-key helper overlap**
-- Move Lands and Leads from `createEntityQueryKeys` in `lib/data/query-keys.ts` to `defineEntityKeys` in `lib/query-keys.ts`.
-- Preserve exact `[scope, 'list', filters]` key shape.
-- Delete `lib/data/query-keys.ts` and its dedicated test **only after** Lands/Leads + query-key tests prove parity.
+**1. Fix active-register canonical route metadata** — ✅ done
+- Changed the fixed-monthly-accrual inventory route in `active-register-inventory.ts` from the stale `section=funds` to canonical `section=fees`.
+- Resolver compatibility for old `funds/fixed_monthly_accruals` deep links is preserved — `resolveFinanceLocation('funds','fixed_monthly_accruals',…)` already canonicalises to `fees`; no resolver/business change was needed.
+- Added a focused guard `features/active-register-inventory-finance-routes.test.ts` that (a) pins fixed-monthly accruals to the `fees` section, (b) asserts every inventory `/financials` deep link resolves to the exact section/view it declares (metadata ↔ `financeShellModel` parity, so drift fails CI), and (c) confirms legacy `funds` links still normalise to `fees`.
 
-**Exit:** no business/DB semantic change; targeted tests + architecture checks green.
+**2. Consolidate query-key helper overlap** — ✅ done
+- Migrated Lands (`features/lands/use-lands.ts`) and Leads (`features/leads/use-leads.ts`) from `createEntityQueryKeys` (`lib/data/query-keys.ts`) to the canonical `defineEntityKeys` (`lib/query-keys.ts`).
+- Exact runtime key shape preserved: `all = [scope]`, `list(filters) = [scope,'list',filters]`; invalidation and the Lands dossier sub-key are unchanged (cache/invalidation parity).
+- Added `lib/query-keys.test.ts` covering the canonical helper including the Lands/Leads list-key shape and prefix invalidation.
+- Deleted `lib/data/query-keys.ts` and its dedicated test **after** parity was proven; no third helper introduced.
+
+**Exit:** ✅ met — no business/DB semantic change; targeted tests + typecheck + build + architecture guards all green.
 
 ### P2 — Exhaustive reachability / safe-delete ledger
 - Enumerate every production source file.
@@ -1030,6 +1033,8 @@ This roadmap is evidence-first. It does **not** schedule refactors for areas pro
 - Classify only as `ACTIVE`, `COMPATIBILITY`, `SPECIALIST`, `TEST_ONLY`, `ORPHAN_CONFIRMED`, or `UNKNOWN`.
 - Require at least two independent reachability checks before deletion.
 - Produce a HIGH-confidence delete list; if none exists, delete nothing.
+
+> **Partial progress (2026-09-04):** A focused reachability re-audit of the stale `cleanup/canonical-dead-code-20260903` set already shipped on a separate branch (`cleanup/canonical-dead-frontend-files`, PR #1789, merge commit `87c55fc1`). Six files — three unmounted document output adapters (`features/contracts/contractDocumentsService.ts`, `features/owners/documents/owner-documents.ts`, `features/properties/documents/unit-passport-document.ts`) plus their colocated unit tests — had **0 external references** for every exported symbol (no static/dynamic import, barrel, route, nav/permission, e2e, or script use) and were deleted with coherent updates to `documentOutputInventory.test.ts` and `documents-vault-service.test.ts`. The other originally-candidate landing components (`FinalCta`, `Showcase`, `Security`) were **retained**: they are actively asserted by `brand-contract.test.ts` and `landing-performance-contract.test.ts` and belong to the intentionally-disconnected landing surface, so they are not provably dead. The exhaustive repo-wide P2 ledger is still outstanding.
 
 ### P3 — Boundary cleanup, one domain at a time
 - Build symbol-level maps for shared-root domain services and type/schema definitions.
@@ -1087,8 +1092,8 @@ No HIGH-severity implementation defect was proven by this static census. The pri
 |---|---|---|---|---|
 | MEDIUM | Full per-file reachability/status ledger is incomplete | ~1,200-file scope; representative sampling only | blocks trustworthy dead-code deletion | P2 exhaustive reachability ledger |
 | MEDIUM | DB per-object ownership remains unknown | 70 migrations; no live schema object→consumer map | limits backend cleanup/security ownership confidence | P4 live DB inventory |
-| MEDIUM | Active-register inventory has stale fixed-monthly canonical path metadata | inventory says `funds`; finance shell/tests say `fees` | metadata/guard drift; resolver masks it | P1 metadata fix + guard |
-| LOW–MEDIUM | Query-key helper overlap | richer `lib/query-keys.ts` vs list-only `lib/data/query-keys.ts` used by Lands/Leads | needless utility duplication | P1 migrate Lands/Leads then remove old helper after tests |
+| ~~MEDIUM~~ ✅ RESOLVED | ~~Active-register inventory has stale fixed-monthly canonical path metadata~~ | was: inventory `funds` vs shell `fees` | metadata/guard drift (resolver masked it) | **Fixed in #1788 (`435de8e1`): inventory now `section=fees`; parity guard added** |
+| ~~LOW–MEDIUM~~ ✅ RESOLVED | ~~Query-key helper overlap~~ | was: richer `lib/query-keys.ts` vs list-only `lib/data/query-keys.ts` (Lands/Leads) | needless utility duplication | **Consolidated in #1788 (`435de8e1`): Lands/Leads migrated; old helper + test deleted after parity proven** |
 | MEDIUM | Routine persona still exposes six-role terminology | permissions/governance code | UX/product-model inconsistency, not auth defect | explicit product decision |
 | LOW | Manual `route-tree.ts` remains large | 515-line centralized router | maintainability/merge-conflict risk | split only if churn justifies it |
 | LOW | Tenant dossier file naming | real page exported from `TenantPreviewDialog.tsx` | cosmetic | optional P5 rename |
