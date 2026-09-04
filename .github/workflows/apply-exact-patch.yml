@@ -32,8 +32,9 @@ jobs:
         run: |
           set -euo pipefail
           git apply .github/uploaded.patch
-          test "$(git diff --name-only | wc -l)" -eq 20
-          git diff --check
+          test "$(git status --porcelain --untracked-files=all | wc -l)" -eq 20
+          git add -A rentrix-app
+          git diff --cached --check
 
       - name: Commit only product changes
         shell: bash
