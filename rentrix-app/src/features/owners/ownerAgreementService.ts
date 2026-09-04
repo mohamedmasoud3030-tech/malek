@@ -27,11 +27,80 @@ export type OwnerAgreementFormPayload = Pick<OwnerAgreementInsert,
   deposit_custodian?: DepositParty | null;
 };
 
+/**
+ * One explicit ownership share submitted with the property/agreement creation
+ * payload. Mirrors the canonical property_owners row semantics consumed by the
+ * atomic creation RPC (`create_property_with_ownership_atomic`).
+ */
+export type PropertyOwnershipShare = Readonly<{
+  owner_id: string;
+  ownership_percentage: number;
+  is_primary: boolean;
+}>;
+
 export interface CreatePropertyWithAgreementPayload {
   title: string; type: string; address: string; owner_id: string; owner_name?: string | null; purchase_value?: number | null; current_value?: number | null; status?: string; notes?: string | null;
   agreement_type: AgreementType; collection_role?: CollectionRole; commission_type: CommissionType; commission_value: number; agreement_starts_on: string; agreement_ends_on?: string | null;
+  /**
+   * Complete ownership payload created together with the property and
+   * agreement in one atomic database transaction. Exactly one share must be
+   * the primary owner (matching `owner_id`), no owner may repeat, and the
+   * percentages must total exactly 100. Omitted for callers that keep the
+   * legacy single-owner default (primary owner at 100%).
+   */
+  ownership?: readonly PropertyOwnershipShare[];
 }
 export interface CreatePropertyWithAgreementResult { property_id: string; agreement_id: string; }
+
+/**
+ * Normalizes the client-side ownership payload into the explicit share list
+ * sent to the atomic RPC, and fails closed on the same invariants the RPC
+ * enforces (exactly one primary matching the property owner, no duplicate
+ * owners, percentages within (0, 100] summing to exactly 100). Kept at the
+ * service boundary so a hand-crafted call cannot bypass the contract.
+ */
+export function normalizePropertyOwnershipPayload(
+  ownerId: string,
+  ownership?: readonly PropertyOwnershipShare[],
+): PropertyOwnershipShare[] {
+  // Omitted payload keeps the legacy single-owner default (primary at 100%).
+  // An EXPLICITLY empty array is not a default request: it is an invalid
+  // ownership payload and fails closed exactly like the RPC's
+  // OWNERSHIP_PRIMARY_REQUIRED.
+  if (ownership === undefined) {
+    return [{ owner_id: ownerId, ownership_percentage: 100, is_primary: true }];
+  }
+  if (ownership.length === 0) {
+    throw new Error('يجب تحديد مالك أساسي واحد فقط في نسب الملكية.');
+  }
+
+  const primaryShares = ownership.filter((share) => share.is_primary);
+  if (primaryShares.length !== 1) {
+    throw new Error('يجب تحديد مالك أساسي واحد فقط في نسب الملكية.');
+  }
+  if (primaryShares[0]?.owner_id !== ownerId) {
+    throw new Error('المالك الأساسي في بيانات الملكية يختلف عن المالك المحدد للعقار.');
+  }
+
+  const seenOwnerIds = new Set<string>();
+  let total = 0;
+  for (const share of ownership) {
+    if (!share.owner_id) throw new Error('كل سجل ملكية يجب أن يحدد المالك.');
+    if (seenOwnerIds.has(share.owner_id)) {
+      throw new Error('لا يمكن تكرار المالك نفسه في نسب الملكية.');
+    }
+    seenOwnerIds.add(share.owner_id);
+    const percentage = Number(share.ownership_percentage);
+    if (!Number.isFinite(percentage) || percentage <= 0 || percentage > 100) {
+      throw new Error('نسبة الملكية يجب أن تكون أكبر من صفر وألا تتجاوز 100%.');
+    }
+    total += percentage;
+  }
+  if (total !== 100) {
+    throw new Error('مجموع نسب الملكية يجب أن يساوي 100% بالضبط.');
+  }
+  return [...ownership];
+}
 
 function normalizeAgreementPayload(payload: OwnerAgreementFormPayload): OwnerAgreementFormPayload {
   if (!payload.owner_id) throw new Error('اختر المالك للاتفاقية.');
@@ -91,12 +160,18 @@ export function assertAgreementOwnerHasOwnership(
 
 export async function createPropertyWithAgreement(payload: CreatePropertyWithAgreementPayload): Promise<CreatePropertyWithAgreementResult> {
   if (payload.agreement_type !== 'property_management') throw new Error('الاستئجار الرئيسي غير متاح في الإصدار الحالي.');
-  const { data, error } = await supabase.rpc('create_property_with_versioned_agreement_atomic', {
+  // TD-01 / R-01: the complete ownership payload travels with the creation
+  // call so the property, agreement, and ownership split commit in ONE
+  // database transaction (create_property_with_ownership_atomic). There is no
+  // separate client-side ownership-write round trip after creation anymore.
+  const ownership = normalizePropertyOwnershipPayload(payload.owner_id, payload.ownership);
+  const { data, error } = await supabase.rpc('create_property_with_ownership_atomic', {
     p_title: payload.title, p_type: payload.type, p_address: payload.address, p_owner_id: payload.owner_id,
     p_agreement_type: payload.agreement_type, p_collection_role: payload.collection_role ?? 'OWNER_IS_CREDITOR', p_commission_type: payload.commission_type, p_commission_value: payload.commission_value,
     p_agreement_starts_on: payload.agreement_starts_on, p_agreement_ends_on: payload.agreement_ends_on ?? null,
     p_owner_name: payload.owner_name ?? null, p_purchase_value: payload.purchase_value ?? null, p_current_value: payload.current_value ?? null,
     p_status: payload.status ?? 'active', p_notes: payload.notes ?? null,
+    p_ownership: ownership,
   });
   if (error) throw new Error(formatAgreementError(error.message));
   if (!isCreatePropertyWithAgreementResult(data)) throw new Error('تعذر التحقق من استجابة إنشاء العقار والاتفاقية.');

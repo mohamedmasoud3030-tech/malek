@@ -8612,6 +8612,27 @@ export type Database = {
         };
         Returns: Json;
       };
+      create_property_with_ownership_atomic: {
+        Args: {
+          p_title: string | null;
+          p_type: string | null;
+          p_address: string | null;
+          p_owner_id: string | null;
+          p_agreement_type: string | null;
+          p_commission_type: string | null;
+          p_commission_value: number | null;
+          p_agreement_starts_on: string | null;
+          p_agreement_ends_on?: string | null;
+          p_owner_name?: string | null;
+          p_purchase_value?: number | null;
+          p_current_value?: number | null;
+          p_status?: string | null;
+          p_notes?: string | null;
+          p_collection_role?: string | null;
+          p_ownership?: Json | null;
+        };
+        Returns: Json;
+      };
       create_property_with_versioned_agreement_atomic: {
         Args: {
           p_title: string | null;

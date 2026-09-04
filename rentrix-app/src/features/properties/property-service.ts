@@ -307,53 +307,9 @@ export async function updateProperty(propertyId: string, payload: PropertyFormVa
   return data;
 }
 
-export type CoOwnerShare = Readonly<{ owner_id: string; percentage: number }>;
-
-type PropertyOwnerInsert = Database['public']['Tables']['property_owners']['Insert'];
-type PropertyOwnerUpdate = Database['public']['Tables']['property_owners']['Update'];
-
-/**
- * Applies the ownership split captured in the property creation workflow:
- * adjusts the primary owner's percentage (the atomic creation RPC links the
- * primary owner at 100%) and inserts the extra co-owner links. Lives at the
- * service boundary so presentation components never touch the
- * property_owners table directly.
- */
-export async function applyPropertyOwnershipSplit(params: Readonly<{
-  propertyId: string;
-  primaryPercentage: number;
-  extraOwners: readonly CoOwnerShare[];
-  startsOn: string;
-}>): Promise<void> {
-  const { propertyId, primaryPercentage, extraOwners, startsOn } = params;
-
-  if (primaryPercentage !== 100) {
-    const updatePayload: PropertyOwnerUpdate = { ownership_percentage: primaryPercentage };
-    const { error } = await supabase
-      .from('property_owners')
-      .update(updatePayload)
-      .eq('property_id', propertyId)
-      .eq('is_primary', true);
-    if (error) throw new Error(getCrudWriteErrorMessage({ action: 'update', entityPlural: 'ملكية العقار', error }));
-  }
-
-  for (const coOwner of extraOwners) {
-    if (!coOwner.owner_id || Number(coOwner.percentage) <= 0) continue;
-    const insertPayload: PropertyOwnerInsert = {
-      property_id: propertyId,
-      owner_id: coOwner.owner_id,
-      ownership_percentage: Number(coOwner.percentage),
-      is_primary: false,
-      starts_on: startsOn,
-    };
-    const { error } = await supabase.from('property_owners').insert(insertPayload);
-    if (error) throw new Error(getCrudWriteErrorMessage({ action: 'create', entityPlural: 'ملكية العقار', error }));
-  }
-}
-
 export async function softDeleteProperty(propertyId: string): Promise<void> {
   await assertPropertyCanBeArchived(propertyId);
-  const updatePayload: PropertyUpdate = { deleted_at: new Date().toISOString() };
-  const { error } = await supabase.from('properties').update(updatePayload).eq('id', propertyId).is('deleted_at', null);
+  const archivePayload: PropertyUpdate = { deleted_at: new Date().toISOString() };
+  const { error } = await supabase.from('properties').update(archivePayload).eq('id', propertyId).is('deleted_at', null);
   if (error) throw new Error(getCrudWriteErrorMessage({ action: 'archive', entityPlural: 'العقارات', error }));
 }

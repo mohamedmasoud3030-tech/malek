@@ -16,7 +16,6 @@ import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
 import { getActionableSupabaseErrorMessage } from '@/lib/supabase-error';
 import { propertyStatusLabels, propertyStatusValues } from './property-schema';
 import { translatePropertyType } from './components/property-status';
-import { applyPropertyOwnershipSplit } from './property-service';
 import { useProperty, useUpdateProperty } from './use-properties';
 import { PropertyFormCoreFields } from './components/property-form-core-fields';
 import { MONEY_STEP } from '@/lib/money';
@@ -160,8 +159,14 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
   const operationalOwners = useMemo(() => ownersQuery.data ?? [], [ownersQuery.data]);
   const canCreateProperty = !ownersQuery.isLoading && !ownersQuery.isError && operationalOwners.length > 0;
 
+  // The visible total counts only rows that actually name an owner: an
+  // owner-less placeholder row contributes 0%, exactly as the persisted
+  // ownership payload treats it. This keeps the wizard's «100%» gate aligned
+  // with the exact-100% ownership contract enforced by the atomic creation RPC.
   const totalPercentage = useMemo(() => {
-    return Number(primaryPercentage || 0) + extraOwners.reduce((sum, o) => sum + Number(o.percentage || 0), 0);
+    return Number(primaryPercentage || 0) + extraOwners
+      .filter((owner) => Boolean(owner.owner_id))
+      .reduce((sum, owner) => sum + Number(owner.percentage || 0), 0);
   }, [primaryPercentage, extraOwners]);
 
   const handleSubmit = form.handleSubmit(async (values) => {
@@ -189,16 +194,18 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
         notes: parsed.notes ? parsed.notes.trim() : null,
       };
 
-      const created = await createMutation.mutateAsync(payload);
-      const propertyId = created?.property_id;
-      if (propertyId) {
-        await applyPropertyOwnershipSplit({
-          propertyId,
-          primaryPercentage,
-          extraOwners,
-          startsOn: values.agreement_starts_on,
-        });
-      }
+      // TD-01 / R-01: the complete ownership split (primary share + co-owners)
+      // is part of the single atomic creation payload. The property, the
+      // agreement, and every ownership row now commit in one database
+      // transaction; there is no separate ownership-write round trip after
+      // creation that could fail or be skipped independently.
+      const ownership = [
+        { owner_id: parsed.owner_id, ownership_percentage: Number(primaryPercentage) || 0, is_primary: true },
+        ...extraOwners
+          .filter((owner) => Boolean(owner.owner_id) && Number(owner.percentage) > 0)
+          .map((owner) => ({ owner_id: owner.owner_id, ownership_percentage: Number(owner.percentage), is_primary: false })),
+      ];
+      await createMutation.mutateAsync({ ...payload, ownership });
       onClose();
     } catch (error) {
       setSubmitError(getActionableSupabaseErrorMessage(error, 'تعذر حفظ العقار واتفاقية التشغيل. حاول مرة أخرى.'));

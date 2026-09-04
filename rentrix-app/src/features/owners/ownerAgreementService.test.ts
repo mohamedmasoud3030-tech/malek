@@ -5,6 +5,7 @@ import {
   getAgreementActiveOn,
   getEligibleAgreementOwners,
   groupAgreementsByTemporalStatus,
+  normalizePropertyOwnershipPayload,
   propertyOwnershipCoversAgreementRange,
   type OwnerAgreement,
 } from './ownerAgreementService';
@@ -157,5 +158,65 @@ describe('owner agreement data boundary', () => {
     expect(source).toContain("from('owner_agreements')");
     expect(source).not.toContain("from('property_owners')");
     expect(source).not.toContain('property_owners!inner');
+  });
+});
+
+describe('normalizePropertyOwnershipPayload (TD-01 atomic ownership payload)', () => {
+  it('defaults to a single primary owner at 100% when no split is supplied', () => {
+    expect(normalizePropertyOwnershipPayload('owner-1')).toEqual([
+      { owner_id: 'owner-1', ownership_percentage: 100, is_primary: true },
+    ]);
+  });
+
+  it('fails closed on an explicitly empty payload (same as the RPC)', () => {
+    expect(() => normalizePropertyOwnershipPayload('owner-1', [])).toThrow('يجب تحديد مالك أساسي واحد فقط في نسب الملكية');
+  });
+
+  it('passes a valid explicit split through unchanged', () => {
+    const split = [
+      { owner_id: 'owner-1', ownership_percentage: 60, is_primary: true },
+      { owner_id: 'owner-2', ownership_percentage: 40, is_primary: false },
+    ];
+    expect(normalizePropertyOwnershipPayload('owner-1', split)).toEqual(split);
+  });
+
+  it('fails closed when the split does not total exactly 100', () => {
+    expect(() => normalizePropertyOwnershipPayload('owner-1', [
+      { owner_id: 'owner-1', ownership_percentage: 60, is_primary: true },
+      { owner_id: 'owner-2', ownership_percentage: 30, is_primary: false },
+    ])).toThrow('مجموع نسب الملكية يجب أن يساوي 100% بالضبط');
+  });
+
+  it('fails closed on duplicate owners', () => {
+    expect(() => normalizePropertyOwnershipPayload('owner-1', [
+      { owner_id: 'owner-1', ownership_percentage: 50, is_primary: true },
+      { owner_id: 'owner-1', ownership_percentage: 50, is_primary: false },
+    ])).toThrow('لا يمكن تكرار المالك نفسه في نسب الملكية');
+  });
+
+  it('fails closed unless exactly one primary owner matching the property owner exists', () => {
+    expect(() => normalizePropertyOwnershipPayload('owner-1', [
+      { owner_id: 'owner-2', ownership_percentage: 60, is_primary: true },
+      { owner_id: 'owner-1', ownership_percentage: 40, is_primary: false },
+    ])).toThrow('المالك الأساسي في بيانات الملكية يختلف عن المالك المحدد للعقار');
+
+    expect(() => normalizePropertyOwnershipPayload('owner-1', [
+      { owner_id: 'owner-1', ownership_percentage: 50, is_primary: true },
+      { owner_id: 'owner-2', ownership_percentage: 50, is_primary: true },
+    ])).toThrow('يجب تحديد مالك أساسي واحد فقط في نسب الملكية');
+
+    expect(() => normalizePropertyOwnershipPayload('owner-1', [
+      { owner_id: 'owner-1', ownership_percentage: 50, is_primary: false },
+      { owner_id: 'owner-2', ownership_percentage: 50, is_primary: false },
+    ])).toThrow('يجب تحديد مالك أساسي واحد فقط في نسب الملكية');
+  });
+
+  it('fails closed on out-of-range percentages', () => {
+    expect(() => normalizePropertyOwnershipPayload('owner-1', [
+      { owner_id: 'owner-1', ownership_percentage: 101, is_primary: true },
+    ])).toThrow('أكبر من صفر وألا تتجاوز 100%');
+    expect(() => normalizePropertyOwnershipPayload('owner-1', [
+      { owner_id: 'owner-1', ownership_percentage: 0, is_primary: true },
+    ])).toThrow('أكبر من صفر وألا تتجاوز 100%');
   });
 });

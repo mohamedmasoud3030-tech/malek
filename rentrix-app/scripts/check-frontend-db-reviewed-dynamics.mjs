@@ -31,7 +31,10 @@ const TYPES_PATH = join(SOURCE_ROOT, 'types', 'database.ts');
 
 const REVIEWED = new Map([
   ['mutation|features/units/unit-service.ts|units|insert', 1],
-  ['mutation|features/properties/property-service.ts|properties|update', 2],
+  // Only updateProperty's payload stays dynamic (normalizePropertyPayload result);
+  // softDeleteProperty's archive payload is a static { deleted_at } literal and is
+  // resolved by the primary contract checker instead.
+  ['mutation|features/properties/property-service.ts|properties|update', 1],
   ['mutation|features/people/people-service.ts|people|insert', 1],
   ['mutation|features/owners/services/owner-service.ts|owners|insert', 1],
   ['mutation|features/owners/services/owner-service.ts|owners|update', 1],
@@ -48,7 +51,10 @@ const REVIEWED = new Map([
   ['mutation|features/maintenance/maintenance-service.ts|maintenance_records|update', 1],
   ['mutation|features/owners/services/owner-service.ts|property_owners|insert', 1],
   ['mutation|features/owners/services/owner-service.ts|property_owners|update', 1],
-  ['mutation|features/properties/property-service.ts|property_owners|update', 1],
+  // property-service no longer performs a direct property_owners update: the
+  // whole ownership split (primary share + co-owner rows) moved into the
+  // atomic creation RPC create_property_with_ownership_atomic (migration
+  // 00069), which the primary scanner auto-discovers as a literal .rpc() call.
   ['mutation|features/settings/companySettingsService.ts|company_settings|update', 1],
   ['mutation|features/settings/costCenterService.ts|cost_centers|insert', 1],
   ['mutation|features/settings/costCenterService.ts|cost_centers|update', 2],
