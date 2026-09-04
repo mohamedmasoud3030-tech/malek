@@ -1,3 +1,4 @@
+import { formatAssistantOmr } from './assistant-formatters';
 import type {
   AiAssistantAction,
   AiAssistantContext,
@@ -35,9 +36,6 @@ const DRAFT_ACTIONS = new Set<AiAssistantAction>([
   'draft_internal_note',
 ]);
 
-function formatOmr(value: number): string {
-  return `${Number(value || 0).toFixed(3)} ر.ع.`;
-}
 
 function daysBetween(from: string, to: string): number | null {
   const left = Date.parse(`${from}T00:00:00Z`);
@@ -67,7 +65,7 @@ function modeLabel(mode: AiAssistantResponseMode): string {
 function buildAttention(context: AiAssistantContext): AiAssistantAttentionItem[] {
   const items: AiAssistantAttentionItem[] = [];
   if (context.overdueInvoices.dueTodayAmount > 0) {
-    items.push({ label: `مستحق اليوم ${formatOmr(context.overdueInvoices.dueTodayAmount)}`, tone: 'warning' });
+    items.push({ label: `مستحق اليوم ${formatAssistantOmr(context.overdueInvoices.dueTodayAmount)}`, tone: 'warning' });
   }
 
   const maintenance = context.maintenanceSnapshot;
