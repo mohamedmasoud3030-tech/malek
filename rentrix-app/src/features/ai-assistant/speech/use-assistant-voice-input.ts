@@ -11,7 +11,7 @@ import {
 export type AssistantVoiceInputHandlers = Readonly<{
   /** Live dictation: the merged transcript lands in the compose box as it forms. */
   onTranscript?: (transcript: string) => void;
-  /** Fired once when the user explicitly stops, with the committed transcript. */
+  /** Fired once when the current speech session is committed. */
   onFinal?: (transcript: string) => void;
 }>;
 
