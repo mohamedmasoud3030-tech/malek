@@ -2,7 +2,7 @@ import type { ComponentType } from 'react';
 import { Building2, FileText, Landmark, ReceiptText, UserRound } from 'lucide-react';
 import type { ReportSectionId } from './reports-page.sections';
 import type { ReportViewId } from './report-view-registry';
-import type { ReportWorkspaceId } from './report-workspaces';
+import { getReportWorkspace, type ReportFilterFieldId, type ReportWorkspaceId } from './report-workspaces';
 
 export type ReportProductId =
   | 'owner-comprehensive-statement'
@@ -20,6 +20,8 @@ export type ReportProductTarget = Readonly<{
   workspace: ReportWorkspaceId;
   section: ReportSectionId;
   view: ReportViewId;
+  /** Optional product-specific scope. Otherwise the owning workspace filter fields apply. */
+  visibleFilterFields?: readonly ReportFilterFieldId[];
   /**
    * Which canonical document the premium action bar may offer for this
    * target. Only documented, source-backed builders are allowed; a target
@@ -56,6 +58,7 @@ const ownerTargets: readonly ReportProductTarget[] = [
     workspace: 'statements',
     section: 'statements',
     view: '',
+    visibleFilterFields: ['period', 'property', 'owner'],
     documentKind: 'owner-pack',
   },
 ];
@@ -68,6 +71,7 @@ const tenantTargets: readonly ReportProductTarget[] = [
     workspace: 'statements',
     section: 'statements',
     view: '',
+    visibleFilterFields: ['period', 'property', 'contract'],
     documentKind: 'tenant-statement',
   },
 ];
@@ -91,7 +95,7 @@ const portfolioTargets: readonly ReportProductTarget[] = [
 ];
 
 const financialTargets: readonly ReportProductTarget[] = [
-  { id: 'financial-movement', label: 'الحركة والتسويات', description: 'الحركة المالية والكاش فلو من المصادر المعتمدة دون إنشاء دفتر موازٍ.', workspace: 'statements', section: 'statements', view: '' },
+  { id: 'financial-movement', label: 'الحركة والتسويات', description: 'الحركة المالية والكاش فلو من المصادر المعتمدة دون إنشاء دفتر موازٍ.', workspace: 'statements', section: 'statements', view: '', visibleFilterFields: ['period'] },
   { id: 'statements', label: 'القوائم وميزان المراجعة', description: 'ميزان المراجعة وقائمة الدخل والمركز المالي.', workspace: 'financial_review', section: 'accounting', view: 'accounting_reports' },
   { id: 'ledger', label: 'دفتر الأستاذ', description: 'دفتر الأستاذ والشجرة من GL المعتمد.', workspace: 'financial_review', section: 'accounting', view: 'general_ledger' },
   { id: 'revenue', label: 'تسوية الإيرادات', description: 'مراجعة الإيراد المؤجل والتسوية المرتبطة به.', workspace: 'financial_review', section: 'accounting', view: 'deferred_revenue' },
@@ -152,6 +156,10 @@ export const REPORT_PRODUCTS: readonly ReportProduct[] = [
     targets: financialTargets,
   },
 ] as const;
+
+export function getReportProductFilterFields(target: ReportProductTarget): readonly ReportFilterFieldId[] {
+  return target.visibleFilterFields ?? getReportWorkspace(target.workspace)?.visibleFilterFields ?? [];
+}
 
 export function getReportProduct(value: unknown): ReportProduct | undefined {
   if (typeof value !== 'string') return undefined;
