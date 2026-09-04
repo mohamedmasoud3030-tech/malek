@@ -6,6 +6,7 @@ import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { APP_BRAND_NAME } from '@/lib/brand';
 import { DEFAULT_CURRENCY, formatMoney, normalizeCurrency } from '@/lib/formatters';
 import { loadTenantPortalSnapshot } from './tenant-portal-service';
+import { tenantPortalWindowNote } from './tenant-portal-read-model';
 import type { TenantPortalLoadResult } from './tenant-portal-read-model';
 
 function money(value: number, currency: string = DEFAULT_CURRENCY) {
@@ -44,6 +45,12 @@ function documentTypeLabel(type: string) {
  * revocable bearer token; the server derives tenant/company scope from it.
  * This page contains no office navigation and no mutation controls.
  */
+
+/** Honest disclosure when the bounded projection truncated a list window. */
+function WindowNote({ text }: Readonly<{ text: string | null }>) {
+  if (!text) return null;
+  return <p className="mt-2 rounded-lg bg-muted/40 px-3 py-2 text-xs font-semibold text-muted-foreground">{text}</p>;
+}
 export function TenantPortalPage() {
   const token = useMemo(
     () => typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('token'),
@@ -146,6 +153,7 @@ export function TenantPortalPage() {
                   ))}
                 </div>
               )}
+              <WindowNote text={tenantPortalWindowNote(snapshot.dueSchedule.length, snapshot.dueScheduleTotal)} />
             </section>
 
             <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
@@ -169,6 +177,7 @@ export function TenantPortalPage() {
                   ))}
                 </div>
               )}
+              <WindowNote text={tenantPortalWindowNote(snapshot.services.length, snapshot.servicesTotal)} />
             </section>
 
             <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
@@ -183,6 +192,7 @@ export function TenantPortalPage() {
                   ))}
                 </div>
               )}
+              <WindowNote text={tenantPortalWindowNote(snapshot.receipts.length, snapshot.receiptsTotal)} />
             </section>
 
             <section className="grid gap-3 lg:grid-cols-2">
@@ -198,6 +208,7 @@ export function TenantPortalPage() {
                     ))}
                   </div>
                 )}
+                <WindowNote text={tenantPortalWindowNote(snapshot.documents.length, snapshot.documentsTotal)} />
               </div>
 
               <div className="rounded-2xl border border-border bg-card p-4 sm:p-5">
@@ -212,6 +223,7 @@ export function TenantPortalPage() {
                     ))}
                   </div>
                 )}
+                <WindowNote text={tenantPortalWindowNote(snapshot.maintenance.length, snapshot.maintenanceTotal)} />
               </div>
             </section>
           </main>

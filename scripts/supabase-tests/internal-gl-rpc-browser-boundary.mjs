@@ -126,16 +126,24 @@ async function seed(db) {
   // Company B looks like any real production company: a provisioned chart of
   // accounts and an OPEN accounting period. This removes the accidental
   // business preconditions that previously masked the missing authorization.
+  // The open period is derived from the CURRENT date (never hard-coded), so
+  // posting-dependent scenarios stay executable on any future run date.
   await db.query(`select public.provision_company_chart_of_accounts('${COMPANY_B}')`);
   await db.query(`
     insert into public.accounting_periods (company_id, name, start_date, end_date, status)
-    values ('${COMPANY_B}', '2026-08', date '2026-08-01', date '2026-08-31', 'OPEN')
+    select '${COMPANY_B}', to_char(date_trunc('month', current_date), 'YYYY-MM'),
+           date_trunc('month', current_date)::date,
+           (date_trunc('month', current_date) + interval '1 month - 1 day')::date,
+           'OPEN'
   `);
   // Company A needs an open period too so the governed wrapper scenario can post.
   await db.query(`select public.provision_company_chart_of_accounts('${COMPANY_A}')`);
   await db.query(`
     insert into public.accounting_periods (company_id, name, start_date, end_date, status)
-    values ('${COMPANY_A}', '2026-08', date '2026-08-01', date '2026-08-31', 'OPEN')
+    select '${COMPANY_A}', to_char(date_trunc('month', current_date), 'YYYY-MM'),
+           date_trunc('month', current_date)::date,
+           (date_trunc('month', current_date) + interval '1 month - 1 day')::date,
+           'OPEN'
   `);
 }
 

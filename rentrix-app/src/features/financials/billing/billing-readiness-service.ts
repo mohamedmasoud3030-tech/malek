@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
-import { fetchAllRows } from '@/lib/paginatedRead';
+import { fetchAllRows, fetchAllRowsInBatches } from '@/lib/paginatedRead';
 import { getTodayLocalDateString } from '@/features/financials/financials-date-utils';
 import {
   deriveBillingStatus,
@@ -74,14 +74,26 @@ export async function getBillingReadiness(companyId: string): Promise<BillingObl
   );
 
   const today = new Date();
-  const obligations: BillingObligation[] = [];
 
-  for (const c of contracts) {
+  // Pass 1 — pure per-contract schedule math (single authoritative algorithm
+  // from billing-schedule.ts, Defect A6). No database round trips here.
+  type PreparedObligation = {
+    contract: (typeof contracts)[number];
+    periodStart: Date;
+    periodStartStr: string;
+    periodEndStr: string;
+    issueDate: Date;
+    issueDateStr: string;
+    dueDateStr: string;
+    paymentCycle: string;
+    billingDay: number;
+    graceDays: number;
+    blockedReason: string | null;
+  };
+  const prepared: PreparedObligation[] = contracts.map((c) => {
     const paymentCycle = c.payment_cycle as string;
     const billingDay = Number(c.billing_day ?? 1);
     const graceDays = Number(c.grace_days ?? 0);
-
-    // Use single authoritative algorithm from billing-schedule.ts (Defect A6)
     const period = getBillingPeriodForCycle(paymentCycle, today);
     const periodStartStr = formatLocalDate(period.start);
     const periodEndStr = formatLocalDate(period.end);
@@ -90,56 +102,128 @@ export async function getBillingReadiness(companyId: string): Promise<BillingObl
     const dueDate = getDueDate(period.end, graceDays);
     const dueDateStr = formatLocalDate(dueDate);
 
-    // Check invoice existence
-    const { data: existingInvoices, error: invError } = await supabase
-      .from('invoices')
-      .select('id')
-      .eq('contract_id', c.id)
-      .eq('charge_type', 'RENT')
-      .eq('billing_period_start', periodStartStr)
-      .is('deleted_at', null)
-      .not('document_status', 'in', '("VOIDED","REVERSED")')
-      .limit(1);
-    if (invError) handleSupabaseError(invError, 'تعذر التحقق من الفواتير');
-
-    const invoiceExists = (existingInvoices?.length ?? 0) > 0;
-    const invoiceId = invoiceExists ? (existingInvoices![0] as { id: string }).id : null;
-
-    // Check blocking conditions
-    let blockedReason: string | null = getContractBlockedReason({
+    // Check blocking conditions (pure snapshot inspection, no queries)
+    const blockedReason = getContractBlockedReason({
       agreement_id: c.agreement_id,
       collection_role_snapshot: c.collection_role_snapshot,
       operating_model_snapshot: c.operating_model_snapshot,
     });
 
-    let taxCheckFailed = false;
+    return {
+      contract: c,
+      periodStart: period.start,
+      periodStartStr,
+      periodEndStr,
+      issueDate,
+      issueDateStr,
+      dueDateStr,
+      paymentCycle,
+      billingDay,
+      graceDays,
+      blockedReason,
+    };
+  });
 
-    if (!blockedReason) {
-      // Tax readiness check — fail closed on inability to verify (Defect A3)
-      try {
-        const { error: taxError } = await supabase.rpc('resolve_active_tax_profile', {
-          p_company_id: companyId,
-          p_effective_date: issueDateStr,
-        });
-        if (taxError) {
-          if (taxError.message.includes('TAX_PROFILE_MISSING')) {
-            blockedReason = `TAX_PROFILE_MISSING: لا يوجد ملف ضريبي نافذ يغطي ${issueDateStr}`;
-          } else {
-            // Any other tax RPC error → CHECK_FAILED fail closed, never READY
-            taxCheckFailed = true;
-            blockedReason = `TAX_CHECK_FAILED: ${taxError.message}`;
-          }
+  // Pass 2 — invoice existence for ALL contracts in one batched read instead
+  // of one round trip per contract (billing-readiness query fan-out fix).
+  // Same filter semantics as the previous per-contract probe; a deterministic
+  // (contract_id, billing_period_start) → lowest invoice id map replaces the
+  // unordered `.limit(1)` probe.
+  const invoiceIdByKey = new Map<string, string>();
+  if (prepared.length > 0) {
+    type InvoiceProbe = { id: string; contract_id: string; billing_period_start: string };
+    const periodStarts = [...new Set(prepared.map((p) => p.periodStartStr))];
+    let invoiceRows: readonly InvoiceProbe[] = [];
+    try {
+      const result = await fetchAllRowsInBatches<InvoiceProbe, string>(
+        prepared.map((p) => p.contract.id),
+        (batch) =>
+          supabase
+            .from('invoices')
+            .select('id, contract_id, billing_period_start')
+            .in('contract_id', [...batch])
+            .in('billing_period_start', periodStarts)
+            .eq('charge_type', 'RENT')
+            .is('deleted_at', null)
+            .not('document_status', 'in', '("VOIDED","REVERSED")')
+            .order('contract_id', { ascending: true })
+            .order('billing_period_start', { ascending: true })
+            .order('id', { ascending: true })
+            .returns() as never,
+      );
+      invoiceRows = result.rows;
+    } catch (error) {
+      handleSupabaseError(error, 'تعذر التحقق من الفواتير');
+    }
+    for (const row of invoiceRows) {
+      const key = `${row.contract_id}|${row.billing_period_start}`;
+      // Rows arrive ordered by (contract_id, billing_period_start, id):
+      // the first hit per key is the lowest id, kept for determinism.
+      if (!invoiceIdByKey.has(key)) invoiceIdByKey.set(key, row.id);
+    }
+  }
+
+  // Pass 3 — tax readiness, fail-closed on inability to verify (Defect A3),
+  // resolved once per distinct issue date (not once per contract). The set of
+  // dates is bounded by the billing cycles present, so the fan-out is O(cycles)
+  // instead of O(contracts). Blocked obligations never reach the tax authority.
+  const taxIssueDates = [...new Set(
+    prepared
+      .filter((p) => !p.blockedReason)
+      .map((p) => p.issueDateStr),
+  )];
+  const taxResultByIssueDate = new Map<string, { missing: boolean; checkFailed: boolean; blockedReason: string | null }>();
+  for (const issueDateStr of taxIssueDates) {
+    try {
+      const { error: taxError } = await supabase.rpc('resolve_active_tax_profile', {
+        p_company_id: companyId,
+        p_effective_date: issueDateStr,
+      });
+      if (taxError) {
+        if (taxError.message.includes('TAX_PROFILE_MISSING')) {
+          taxResultByIssueDate.set(issueDateStr, {
+            missing: true,
+            checkFailed: false,
+            blockedReason: `TAX_PROFILE_MISSING: لا يوجد ملف ضريبي نافذ يغطي ${issueDateStr}`,
+          });
+        } else {
+          // Any other tax RPC error → CHECK_FAILED fail closed, never READY
+          taxResultByIssueDate.set(issueDateStr, {
+            missing: false,
+            checkFailed: true,
+            blockedReason: `TAX_CHECK_FAILED: ${taxError.message}`,
+          });
         }
-      } catch (e) {
-        taxCheckFailed = true;
-        blockedReason = e instanceof Error ? e.message : String(e);
+      } else {
+        taxResultByIssueDate.set(issueDateStr, { missing: false, checkFailed: false, blockedReason: null });
+      }
+    } catch (e) {
+      taxResultByIssueDate.set(issueDateStr, {
+        missing: false,
+        checkFailed: true,
+        blockedReason: e instanceof Error ? e.message : String(e),
+      });
+    }
+  }
+
+  const obligations: BillingObligation[] = prepared.map((p) => {
+    const invoiceId = invoiceIdByKey.get(`${p.contract.id}|${p.periodStartStr}`) ?? null;
+    const invoiceExists = invoiceId !== null;
+
+    let blockedReason = p.blockedReason;
+    let taxCheckFailed = false;
+    if (!blockedReason) {
+      const tax = taxResultByIssueDate.get(p.issueDateStr);
+      if (tax && (tax.missing || tax.checkFailed)) {
+        blockedReason = tax.blockedReason;
+        taxCheckFailed = tax.checkFailed;
       }
     }
 
     // Derive truthful status via authoritative single algorithm (Defect A1, A2, A3)
     const { status, blockedReason: finalBlockedReason } = deriveBillingStatus({
-      periodStart: period.start,
-      issueDate,
+      periodStart: p.periodStart,
+      issueDate: p.issueDate,
       today,
       invoiceExists,
       blockedReason,
@@ -149,32 +233,32 @@ export async function getBillingReadiness(companyId: string): Promise<BillingObl
     // FAILED and RECOVERED removed — no authoritative billing-attempt history exists today (Defect A2)
     // If future enhancement adds billing_attempts table, reintroduce with proof from authority.
 
-    obligations.push({
-      contract_id: c.id as string,
-      property_id: (c.property_id as string) ?? null,
-      unit_id: (c.unit_id as string) ?? null,
-      tenant_id: c.tenant_id as string,
-      rent_amount: Number(c.rent_amount ?? 0),
-      payment_cycle: paymentCycle,
-      billing_day: billingDay,
-      grace_days: graceDays,
-      payment_terms_id: (c.payment_terms_id as string) ?? null,
-      agreement_id: (c.agreement_id as string) ?? null,
-      collection_role: (c.collection_role_snapshot as string) ?? null,
-      operating_model: (c.operating_model_snapshot as string) ?? null,
-      start_date: c.start_date as string,
-      end_date: c.end_date as string,
-      period_start: periodStartStr,
-      period_end: periodEndStr,
-      issue_date: issueDateStr,
-      due_date: dueDateStr,
+    return {
+      contract_id: p.contract.id as string,
+      property_id: (p.contract.property_id as string) ?? null,
+      unit_id: (p.contract.unit_id as string) ?? null,
+      tenant_id: p.contract.tenant_id as string,
+      rent_amount: Number(p.contract.rent_amount ?? 0),
+      payment_cycle: p.paymentCycle,
+      billing_day: p.billingDay,
+      grace_days: p.graceDays,
+      payment_terms_id: (p.contract.payment_terms_id as string) ?? null,
+      agreement_id: (p.contract.agreement_id as string) ?? null,
+      collection_role: (p.contract.collection_role_snapshot as string) ?? null,
+      operating_model: (p.contract.operating_model_snapshot as string) ?? null,
+      start_date: p.contract.start_date as string,
+      end_date: p.contract.end_date as string,
+      period_start: p.periodStartStr,
+      period_end: p.periodEndStr,
+      issue_date: p.issueDateStr,
+      due_date: p.dueDateStr,
       invoice_exists: invoiceExists,
       invoice_id: invoiceId,
       blocked_reason: finalBlockedReason,
       status,
       isRecoverable: status === 'BLOCKED' || status === 'DUE',
-    });
-  }
+    } satisfies BillingObligation;
+  });
 
   return obligations;
 }

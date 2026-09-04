@@ -88,7 +88,27 @@ export type TenantPortalSnapshot = Readonly<{
   receipts: readonly TenantPortalReceipt[];
   documents: readonly TenantPortalDocument[];
   maintenance: readonly TenantPortalMaintenanceRecord[];
+  /**
+   * The server projection bounds every list to a recent window (50 rows) and
+   * reports the full matching row count in these additive keys. Totals in
+   * `paidPosition` and the due schedule status remain complete regardless.
+   */
+  dueScheduleTotal?: number;
+  servicesTotal?: number;
+  receiptsTotal?: number;
+  documentsTotal?: number;
+  maintenanceTotal?: number;
 }>;
+
+/**
+ * The portal may only present a list as complete when it really is. When the
+ * bounded projection truncated the window, the UI must say so explicitly
+ * (same fail-honest doctrine as the paged-read contract).
+ */
+export function tenantPortalWindowNote(shown: number, total: number | undefined): string | null {
+  if (typeof total !== 'number' || total <= shown) return null;
+  return `يعرض ${shown} من أصل ${total}`;
+}
 
 /** Section ids the v1 portal may render — no office module may be added. */
 export const TENANT_PORTAL_V1_SECTIONS = [
