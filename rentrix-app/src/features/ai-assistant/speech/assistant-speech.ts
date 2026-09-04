@@ -345,11 +345,16 @@ function configureUtterance(
   // SpeechSynthesisUtterance.voice must receive the native voice object,
   // not a cloned POJO. WebKit is particularly strict about this.
   utterance.voice = voice;
-  utterance.rate = 1;
-  // Devices with no feminine Arabic voice fall back to a known-masculine one;
-  // a raised pitch keeps MALEK's persona feminine even there.
+  // A gentle, human pace (not robotic == fast, flat). Slightly under 1 so
+  // every word lands naturally; the persona reads as calm and attentive.
+  utterance.rate = 0.96;
+  // Feminine-first persona: a touch above 1 keeps her warm and crisp on a
+  // neutral voice; devices that only ship a known-masculine Arabic voice get
+  // a clearly feminine lift via the fallback pitch instead of sounding robotic.
   utterance.pitch =
-    voice && classifyArabicVoiceGender(voice.name) === 'male' ? MALE_VOICE_FALLBACK_PITCH : 1;
+    voice && classifyArabicVoiceGender(voice.name) === 'male'
+      ? MALE_VOICE_FALLBACK_PITCH
+      : 1.04;
   utterance.onstart = () => {
     if (activeSession?.token === session.token && state.status !== 'playing') {
       setState({ status: 'playing' });

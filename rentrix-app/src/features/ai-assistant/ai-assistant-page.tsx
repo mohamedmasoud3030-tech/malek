@@ -11,6 +11,7 @@ import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import type { AiAssistantAction, AiAssistantMessage, AiAssistantResponse, AiAssistantSurfaceContext } from './types';
 import { useSmartAssistant } from './use-smart-assistant';
+import { ASSISTANT_IDENTITY, ASSISTANT_TAGLINE, buildAssistantAttribution } from './assistant-identity';
 import { isAiAssistantConfigurationError } from './services/ai-assistant-service';
 import { inferAiAssistantAction } from './ai-assistant-intent';
 import { buildAiNavigationTargets } from './ai-assistant-navigation';
@@ -115,7 +116,7 @@ function readSurfaceContext(): AiAssistantSurfaceContext {
 const initialMessage: AssistantUiMessage = {
   id: 'assistant-welcome',
   role: 'assistant',
-  content: `مرحباً! أنا مساعد ${APP_BRAND_NAME} الذكي — شريكك التشغيلي اليومي.\nاسألني عن وضعك: إيه المهم دلوقتي؟ اشرح السجل ده أو حضّر الخطوة الجاية للمراجعة.\nأو عن السوق: تقدير إيجار، نسبة إدارة مقترحة، وأفضل الممارسات — كتقديرات إرشادية موثقة.`,
+  content: `أهلاً! أنا ${ASSISTANT_IDENTITY.nameAr} — مساعد تطبيق ${ASSISTANT_IDENTITY.productAr} الذكي وشريكك التشغيلي اليومي.\n\n${ASSISTANT_TAGLINE}\n\nاسألني عن وضعك: إيه المهم دلوقتي؟ اشرح السجل ده أو حضّر الخطوة الجاية للمراجعة. أو عن السوق والقانون: تقدير إيجار، نسبة إدارة مقترحة، ومرجع تشريعي إرشادي — كتوجيهات موثقة.`,
   createdAt: new Date().toISOString(),
 };
 
@@ -404,6 +405,12 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
           ) : null}
         </div>
       </div>
+
+      {!embedded ? (
+        <p className="px-3 pt-1 text-center text-[10px] leading-4 text-muted-foreground/70" data-ai-attribution>
+          {buildAssistantAttribution()}
+        </p>
+      ) : null}
 
       <div className={cn('shrink-0 border-t border-border/50 bg-card', embedded ? 'px-2 py-1.5' : 'bg-muted/20 px-3 py-2')}>
         <div className="flex max-w-full gap-1.5 overflow-x-auto overscroll-x-contain no-scrollbar">
