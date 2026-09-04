@@ -182,7 +182,9 @@ describe('UnitsPage controller regression', () => {
     const row = container.querySelector('tbody tr') as HTMLElement;
     expect(row).toBeTruthy();
     await act(async () => { row.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
-    expect(document.body.textContent).toContain('معاينة الوحدة');
+    const dialog = document.body.querySelector('[role="dialog"]');
+    expect(dialog?.textContent).toContain('وحدة 101');
+    expect(dialog?.querySelector('button[aria-label="إغلاق المعاينة"]')).toBeTruthy();
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 
@@ -191,17 +193,18 @@ describe('UnitsPage controller regression', () => {
     const row = container.querySelector('tbody tr') as HTMLElement;
     expect(row?.tabIndex).toBe(0);
     await act(async () => { row.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); });
-    expect(document.body.textContent).toContain('معاينة الوحدة');
+    const dialog = document.body.querySelector('[role="dialog"]');
+    expect(dialog?.textContent).toContain('وحدة 101');
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 
-  it('routes the explicit full-detail action to the unit dossier', async () => {
+  it('routes the explicit full-page action to the unit dossier', async () => {
     await act(async () => { root.render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><UnitsPage /></QueryClientProvider>); });
     const actionTrigger = container.querySelector<HTMLButtonElement>('[data-action-menu-trigger]');
     expect(actionTrigger).toBeTruthy();
     await act(async () => { actionTrigger?.click(); });
     const fullDetail = Array.from(document.body.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'))
-      .find((button) => button.textContent?.trim() === 'التفاصيل الكاملة');
+      .find((button) => button.textContent?.trim() === 'فتح ملف الوحدة');
     expect(fullDetail).toBeTruthy();
     await act(async () => { fullDetail?.click(); });
     expect(mockNavigate).toHaveBeenCalledWith({

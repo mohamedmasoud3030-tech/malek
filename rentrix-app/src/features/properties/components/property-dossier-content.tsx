@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { useDialogNavigate } from '@/app/router/background-location';
+import { useNavigate } from '@tanstack/react-router';
 import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
 import { formatCompanyMoney, formatCompanyDate, formatCompanyNumber } from '@/lib/companyFormatters';
 import { businessReferenceOrLabel } from '@/lib/business-reference';
@@ -61,7 +61,7 @@ function getOwnerName(link: { owner?: { display_name?: string | null; full_name?
  * actions (agreements, edit, tabs) live in their own surfaces.
  */
 export function PropertyDossierContent({ propertyId }: Readonly<{ propertyId: string }>) {
-  const dialogNavigate = useDialogNavigate();
+  const navigate = useNavigate();
   const companySettings = useCompanySettingsContract();
   const propertyQuery = useProperty(propertyId);
   const unitsQuery = useUnits(propertyId);
@@ -135,7 +135,7 @@ export function PropertyDossierContent({ propertyId }: Readonly<{ propertyId: st
               <li key={unit.id}>
                 <button
                   type="button"
-                  onClick={() => dialogNavigate({ to: '/properties/$propertyId/units/$unitId', params: { propertyId, unitId: unit.id } })}
+                  onClick={() => void navigate({ to: '/properties/$propertyId/units/$unitId', params: { propertyId, unitId: unit.id } })}
                   className="flex min-h-11 w-full flex-wrap items-center gap-2 py-3 text-start text-sm transition hover:text-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
                 >
                   <span className="font-bold">وحدة {unit.unit_number}</span>
@@ -179,7 +179,7 @@ export function PropertyDossierContent({ propertyId }: Readonly<{ propertyId: st
                     <span dir="ltr">{formatCompanyDate(companySettings, contract.start_date)} → {formatCompanyDate(companySettings, contract.end_date)}</span>
                   </p>
                 </div>
-                <Button variant="secondary" className="min-h-11 shrink-0" onClick={() => dialogNavigate({ to: '/contracts/$contractId', params: { contractId: contract.id } })}>
+                <Button variant="secondary" className="min-h-11 shrink-0" onClick={() => void navigate({ to: '/contracts/$contractId', params: { contractId: contract.id } })}>
                   فتح العقد
                 </Button>
               </li>

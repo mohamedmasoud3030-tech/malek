@@ -105,6 +105,5 @@ describe('dashboard queue error honesty', () => {
     expect(page).not.toContain('<MaintenanceSection');
     expect(page).not.toContain('<UpcomingContractsSection');
     expect(page).not.toContain('<PropertyHealthSection');
-    expect(page).not.toContain('<OwnerObligationsSection');
-  });
+    expect(page).not.toContain('<OwnerObligationsSection');  });
 });

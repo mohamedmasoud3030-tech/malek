@@ -1,4 +1,5 @@
 import { EntityPreviewDialog } from '@/components/ui/entity-preview-dialog';
+import { PreviewFacts, type PreviewFactRow } from '@/components/ui/quick-preview';
 import { ContextualDocumentsSection } from '@/components/documents/contextual-documents-section';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { formatLatinNumber } from '@/lib/formatters';
@@ -23,15 +24,6 @@ type UtilityBillDetailOverlayProps = Readonly<{
   money: (value: number) => string;
   onOpenChange: (open: boolean) => void;
 }>;
-
-function Fact({ label, children }: Readonly<{ label: string; children: React.ReactNode }>) {
-  return (
-    <div className="min-w-0 border-b border-border/60 py-3">
-      <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
-      <dd className="mt-1 break-words text-sm font-semibold [overflow-wrap:anywhere]">{children}</dd>
-    </div>
-  );
-}
 
 /**
  * P3 — the utility claim in one place.
@@ -67,60 +59,59 @@ export function UtilityBillDetailOverlay({
       description={bill ? `${meter ? utilityTypeLabels[meter.utility_type] : 'مرفق غير محدد'} · ${propertyTitle}` : undefined}
     >
       {bill ? (
-        <div className="space-y-5" data-utility-bill-detail>
-          <section aria-labelledby="utility-bill-summary-title">
-            <h3 id="utility-bill-summary-title" className="text-sm font-black">الاستحقاق والسداد</h3>
-            <dl className="mt-1 grid grid-cols-1 gap-x-5 sm:grid-cols-2 lg:grid-cols-3">
-              <Fact label="المبلغ"><span dir="ltr">{money(bill.amount)}</span></Fact>
-              <Fact label="المسدد"><span dir="ltr" className="text-success">{money(bill.paid_amount)}</span></Fact>
-              <Fact label="المتبقي">
-                <span dir="ltr" className={(obligation?.remainingAmount ?? 0) > 0 ? 'text-danger' : 'text-muted-foreground'}>
-                  {money(obligation?.remainingAmount ?? 0)}
-                </span>
-              </Fact>
-              <Fact label="حالة السداد">
-                <StatusBadge tone={bill.status === 'paid' ? 'success' : bill.status === 'partially_paid' ? 'warning' : 'neutral'}>
-                  {utilityBillStatusLabels[bill.status]}
-                </StatusBadge>
-              </Fact>
-              <Fact label="الاستحقاق التشغيلي">
-                {obligation ? (
+        <div className="space-y-4" data-utility-bill-detail>
+          <PreviewFacts
+            rows={[
+              { label: 'المبلغ', value: <span dir="ltr">{money(bill.amount)}</span> },
+              { label: 'المسدد', value: <span dir="ltr" className="text-success">{money(bill.paid_amount)}</span> },
+              {
+                label: 'المتبقي',
+                value: (
+                  <span dir="ltr" className={(obligation?.remainingAmount ?? 0) > 0 ? 'text-danger' : 'text-muted-foreground'}>
+                    {money(obligation?.remainingAmount ?? 0)}
+                  </span>
+                ),
+              },
+              {
+                label: 'حالة السداد',
+                value: (
+                  <StatusBadge tone={bill.status === 'paid' ? 'success' : bill.status === 'partially_paid' ? 'warning' : 'neutral'}>
+                    {utilityBillStatusLabels[bill.status]}
+                  </StatusBadge>
+                ),
+              },
+              {
+                label: 'الاستحقاق التشغيلي',
+                value: obligation ? (
                   <StatusBadge tone={utilityObligationUrgencyTone[obligation.urgency]}>
                     {utilityObligationUrgencyLabels[obligation.urgency]}
                   </StatusBadge>
-                ) : '—'}
-              </Fact>
-              <Fact label="تاريخ الاستحقاق"><span dir="ltr" className="tabular-nums">{bill.due_date || '—'}</span></Fact>
-              <Fact label="المسؤول عن السداد">{responsiblePartyLabels[bill.responsible_party]}</Fact>
-              <Fact label="من دفع فعليًا">{bill.actual_payer ? responsiblePartyLabels[bill.actual_payer] : 'غير مسجل'}</Fact>
-              <Fact label="العداد">
-                {meter ? <span dir="ltr" className="tabular-nums">{meter.meter_number}</span> : 'بدون عداد محدد'}
-              </Fact>
-              <Fact label="فترة الفاتورة">
-                <span dir="ltr" className="tabular-nums">
-                  {bill.billing_period_start || '—'} → {bill.billing_period_end || '—'}
-                </span>
-              </Fact>
-            </dl>
-          </section>
-
-          <section aria-labelledby="utility-readings-title">
-            <h3 id="utility-readings-title" className="text-sm font-black">قراءات العداد</h3>
-            <dl className="mt-1 grid grid-cols-1 gap-x-5 sm:grid-cols-3">
-              <Fact label="القراءة السابقة">
-                {bill.previous_reading != null ? <span dir="ltr" className="tabular-nums">{formatLatinNumber(Number(bill.previous_reading), 'ar')}</span> : 'غير مسجلة'}
-              </Fact>
-              <Fact label="القراءة الحالية">
-                {bill.current_reading != null ? <span dir="ltr" className="tabular-nums">{formatLatinNumber(Number(bill.current_reading), 'ar')}</span> : 'غير مسجلة'}
-              </Fact>
-              <Fact label="الاستهلاك">
-                {consumption != null ? <span dir="ltr" className="tabular-nums">{formatLatinNumber(Number(consumption), 'ar')}</span> : 'غير محسوب — لم تُسجَّل القراءتان'}
-              </Fact>
-            </dl>
-          </section>
+                ) : '—',
+              },
+              { label: 'تاريخ الاستحقاق', value: <span dir="ltr" className="tabular-nums">{bill.due_date || '—'}</span> },
+              { label: 'المسؤول عن السداد', value: responsiblePartyLabels[bill.responsible_party] },
+              { label: 'من دفع فعليًا', value: bill.actual_payer ? responsiblePartyLabels[bill.actual_payer] : 'غير مسجل' },
+              { label: 'العداد', value: meter ? <span dir="ltr" className="tabular-nums">{meter.meter_number}</span> : 'بدون عداد محدد' },
+              {
+                label: 'فترة الفاتورة',
+                value: <span dir="ltr" className="tabular-nums">{bill.billing_period_start || '—'} → {bill.billing_period_end || '—'}</span>,
+              },
+              {
+                label: 'قراءات العداد',
+                wide: true,
+                value: (
+                  <span className="flex flex-wrap gap-x-4 gap-y-1">
+                    <span><span className="text-muted-foreground">القراءة السابقة:</span> <span dir="ltr" className="tabular-nums">{bill.previous_reading != null ? formatLatinNumber(Number(bill.previous_reading), 'ar') : 'غير مسجلة'}</span></span>
+                    <span><span className="text-muted-foreground">القراءة الحالية:</span> <span dir="ltr" className="tabular-nums">{bill.current_reading != null ? formatLatinNumber(Number(bill.current_reading), 'ar') : 'غير مسجلة'}</span></span>
+                    <span><span className="text-muted-foreground">الاستهلاك:</span> <span dir="ltr" className="tabular-nums">{consumption != null ? formatLatinNumber(Number(consumption), 'ar') : 'غير محسوب'}</span></span>
+                  </span>
+                ),
+              },
+            ] satisfies PreviewFactRow[]}
+          />
 
           {bill.notes ? (
-            <section className="border-b border-border/60 pb-4" aria-label="ملاحظات الفاتورة">
+            <section className="rounded-xl border border-border/60 p-3" aria-label="ملاحظات الفاتورة">
               <p className="text-xs font-medium text-muted-foreground">ملاحظات</p>
               <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed">{bill.notes}</p>
             </section>

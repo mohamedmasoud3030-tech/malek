@@ -89,13 +89,16 @@ describe('PropertiesListPage mobile workflow interactions', () => {
     expect(document.body.textContent).toContain('قيمة العمولة');
   });
 
-  it('keeps the property dossier as the obvious row action and moves secondary work into context', async () => {
+  it('opens the quick preview from the row and keeps the dossier as an explicit action in context', async () => {
     await act(async () => root.render(<PropertiesListPage />));
 
     const row = container.querySelector('tbody tr') as HTMLElement | null;
     expect(row).toBeTruthy();
     await act(async () => row?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
-    expect(mockNavigate).toHaveBeenCalledWith({ to: '/properties/$propertyId', params: { propertyId: 'property-1' } });
+    const dialog = document.body.querySelector('[role="dialog"]');
+    expect(dialog?.textContent).toContain('عمارة الندى');
+    expect(dialog?.querySelector('button[aria-label="إغلاق المعاينة"]')).toBeTruthy();
+    expect(mockNavigate).not.toHaveBeenCalled();
 
     // Desktop rows expose one canonical overflow trigger; the dossier action is
     // intentionally inside that menu rather than beside it.
@@ -106,10 +109,10 @@ describe('PropertiesListPage mobile workflow interactions', () => {
     expect(actionTrigger).toBeTruthy();
     await act(async () => actionTrigger?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
 
-    const editButton = Array.from(document.body.querySelectorAll('button')).find((button) => button.textContent?.trim() === 'تعديل البيانات');
-    expect(editButton).toBeTruthy();
-    await act(async () => editButton?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
-    expect(document.body.textContent).toContain('تعديل عقار');
+    const fullPageButton = Array.from(document.body.querySelectorAll('button')).find((button) => button.textContent?.trim() === 'فتح الملف الكامل');
+    expect(fullPageButton).toBeTruthy();
+    await act(async () => fullPageButton?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+    expect(mockNavigate).toHaveBeenCalledWith({ to: '/properties/$propertyId', params: { propertyId: 'property-1' } });
   });
 
   it('exposes an empty-state create action', async () => {

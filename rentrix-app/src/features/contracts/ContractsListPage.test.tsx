@@ -184,8 +184,8 @@ describe('ContractsListPage load states', () => {
     const columnsControl = host.querySelector<HTMLElement>('[data-contract-columns-control]');
     expect(columnsControl?.className).toContain('hidden');
     expect(columnsControl?.className).toContain('md:flex');
-    expect(card?.textContent).toContain('عرض العقد');
-    expect(card?.textContent).toContain('تعديل');
+    expect(card?.textContent).toContain('معاينة سريعة');
+    expect(card?.textContent).toContain('فتح العقد بالكامل');
     expect(card?.querySelector('[data-action-menu]')).toBeTruthy();
   });
 

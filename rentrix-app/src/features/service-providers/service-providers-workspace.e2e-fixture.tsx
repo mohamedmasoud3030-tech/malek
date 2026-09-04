@@ -229,7 +229,7 @@ export function ServiceProvidersWorkspaceE2EFixture() {
                   render: (provider) => (
                     <ActionMenu
                       label={`إجراءات ${provider.name}`}
-                      items={[{ id: "view", label: "عرض", onClick: () => undefined }]}
+                      items={[{ id: "preview", label: "معاينة سريعة", onClick: () => undefined }]}
                     />
                   ),
                 },
