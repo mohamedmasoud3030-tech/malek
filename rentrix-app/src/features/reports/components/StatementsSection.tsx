@@ -115,7 +115,7 @@ export function StatementsSection({
                 onPrint: handlePrintTenantStatement,
                 onDownloadPdf: handleDownloadTenantStatement,
                 onDownloadExcel: handleDownloadTenantExcel,
-                disabled: !isDocumentSettingsReady || isOwnerReportPayloadLoading || Boolean(ownerReportPayloadError),
+                disabled: !isDocumentSettingsReady,
               } : undefined}
             />
           ) : null}
@@ -133,7 +133,7 @@ export function StatementsSection({
                 onPrint: handlePrintProfessionalOwnerReport,
                 onDownloadPdf: handleDownloadProfessionalOwnerReport,
                 onDownloadExcel: handleDownloadOwnerExcel,
-                disabled: !isDocumentSettingsReady,
+                disabled: !isDocumentSettingsReady || isOwnerReportPayloadLoading || Boolean(ownerReportPayloadError),
               } : undefined}
             />
           ) : null}
