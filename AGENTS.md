@@ -13,6 +13,20 @@ This file is the contributor/agent entry point. Product truth lives in the MALEK
 
 The Canonical Pack contains eight documents covering product scope, operating models, domain model, accounting, architecture, UX, implementation traceability, and release gates.
 
+## Project skills — load on demand
+
+Canonical task skills live under `skills/`; start with `skills/README.md`. They are agent-agnostic repository procedures.
+
+- `architecture-decision` — architecture, durable trade-offs, ADRs and threat modeling.
+- `implementation-planning` — executable plans for non-trivial approved changes.
+- `implementation` — default coding/refactor/bug-fix workflow, including source verification, prove-it testing and old-code cleanup.
+- `review` — risk-routed final review, report-only unless fixes are requested.
+- `database` — SQL, migrations, RPCs, RLS, grants, indexes and DB contracts.
+
+Specialized skills kept because they match current work are `frontend-design`, `webapp-testing` and `skill-creator`.
+
+Load only what the task needs. Project/canonical rules outrank generic skill advice. Verify changing framework/library behavior against the repository-pinned version and official sources instead of assuming a remembered API.
+
 ## Four truth layers — never collapse them
 
 Always report these separately:
