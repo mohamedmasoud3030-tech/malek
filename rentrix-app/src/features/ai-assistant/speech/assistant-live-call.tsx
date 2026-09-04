@@ -3,7 +3,6 @@ import { Mic, MicOff, PhoneOff, Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { stopAssistantSpeech } from './assistant-speech';
-import { startAssistantVoiceInput, stopAssistantVoiceInput } from './assistant-voice-input';
 
 /**
  * Live "phone call" conversation mode — a hands-free voice loop.
@@ -19,12 +18,24 @@ import { startAssistantVoiceInput, stopAssistantVoiceInput } from './assistant-v
 type LiveCallProps = Readonly<{
   /** True while a reply is being generated. */
   pending: boolean;
+  /** Canonical microphone capability/state from the shared voice-input engine. */
+  supported: boolean;
+  listening: boolean;
+  /** Starts one utterance and commits it automatically when finalized. */
+  onStart: () => boolean;
+  onStop: () => void;
   /** Called when the live-call control is dismissed. */
   onClose?: () => void;
 }>;
 
-export function AssistantLiveCall({ pending, onClose }: LiveCallProps) {
-  const [listening, setListening] = useState(false);
+export function AssistantLiveCall({
+  pending,
+  supported,
+  listening,
+  onStart,
+  onStop,
+  onClose,
+}: LiveCallProps) {
   const [active, setActive] = useState(false);
   const pendingRef = useRef(pending);
   pendingRef.current = pending;
@@ -36,23 +47,19 @@ export function AssistantLiveCall({ pending, onClose }: LiveCallProps) {
   useEffect(() => {
     const wasPending = prevPendingRef.current;
     prevPendingRef.current = pending;
-    if (active && wasPending && !pending) startMicRef.current();
-  }, [pending, active]);
-
-  const supported = typeof window !== 'undefined' && 'webkitSpeechRecognition' in window;
+    if (active && wasPending && !pending && !listening) startMicRef.current();
+  }, [pending, active, listening]);
 
   const openMic = useCallback(() => {
     if (pendingRef.current) return;
-    setListening(true);
     stopAssistantSpeech();
-    startAssistantVoiceInput();
-  }, []);
+    onStart();
+  }, [onStart]);
   startMicRef.current = openMic;
 
   const closeMic = useCallback(() => {
-    setListening(false);
-    stopAssistantVoiceInput();
-  }, []);
+    onStop();
+  }, [onStop]);
 
   const begin = useCallback(() => {
     if (!supported) return;
@@ -62,11 +69,10 @@ export function AssistantLiveCall({ pending, onClose }: LiveCallProps) {
 
   const stop = useCallback(() => {
     setActive(false);
-    setListening(false);
-    stopAssistantVoiceInput();
+    onStop();
     stopAssistantSpeech();
     onClose?.();
-  }, [onClose]);
+  }, [onClose, onStop]);
 
   if (!supported) {
     return (
