@@ -507,7 +507,7 @@ function OpenReportProduct({
             onDrill={handleDrill}
             onFiltersChange={onFiltersChange}
             onResetCurrentMonth={handleResetCurrentMonth}
-            hideWorkspaceNavigation
+            hideWorkspaceChrome
             statementFocus={product.statementFocus}
           />
         </div>
