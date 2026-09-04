@@ -44,5 +44,3 @@ export {
   assertReconciliation,
 };
 
-/** Compatibility alias */
-export const getReconciliation = getReconciliationReport;

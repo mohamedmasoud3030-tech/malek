@@ -56,6 +56,3 @@ export function MalekBrandWordmark({ className, size = 'header' }: MalekBrandWor
     </span>
   );
 }
-
-// Alias retained for import compatibility; both names resolve to the canonical lockup.
-export const MalekWordmark = MalekBrandWordmark;

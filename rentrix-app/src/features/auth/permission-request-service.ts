@@ -98,9 +98,6 @@ export async function setEmployeePermission(
   return data as { user_id: string; permission: AppPermission; allowed: boolean };
 }
 
-/** @deprecated Use the audience-specific list function. */
-export const listPermissionRequests = listMyPermissionRequests;
-
 export async function decidePermissionRequest(
   id: string,
   decision: Exclude<PermissionRequestStatus, 'PENDING'>,

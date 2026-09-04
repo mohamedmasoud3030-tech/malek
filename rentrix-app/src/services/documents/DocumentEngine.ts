@@ -37,7 +37,6 @@ import { formatLatinDate, formatLatinNumber, toDateOnlyISO } from '@/lib/formatt
 import {
   assertDocumentCompanySettings,
   deriveHonestReference,
-  MissingDocumentSettingsError,
   type DocumentCompanySettings,
 } from './companyIdentity';
 import { currencyFractionDigits } from './currencyPrecision';
@@ -97,27 +96,6 @@ import {
   type LegacyTenantStatementPayload,
   type LegacyTrialBalancePayload,
 } from './legacyPayloadAdapters';
-
-/* ------------------------------------------------------------------ */
-/* Backward-compatible public types                                     */
-/* ------------------------------------------------------------------ */
-
-/**
- * Historical engine settings shape. Kept as an alias so existing callers
- * keep compiling; new code should use `DocumentCompanySettings`.
- */
-export type DocumentSettings = { company: import('./legacyPayloadAdapters').LegacyDocumentSettingsIdentity };
-
-/** @deprecated use `MissingDocumentSettingsError` (canonical, same class). */
-export const MissingCompanyIdentityError = MissingDocumentSettingsError;
-export type MissingCompanyIdentityError = MissingDocumentSettingsError;
-
-/** Legacy payload type names kept for `pdfService` and migrating callers. */
-export type OwnerStatementDataPayload = LegacyOwnerStatementPayload;
-export type TenantStatementDataPayload = LegacyTenantStatementPayload;
-export type TrialBalancePayload = LegacyTrialBalancePayload;
-export type IncomeStatementPayload = LegacyIncomeStatementPayload;
-export type BalanceSheetPayload = LegacyBalanceSheetPayload;
 
 /* ------------------------------------------------------------------ */
 /* Validation                                                           */

@@ -149,6 +149,3 @@ export function OperationsHubWorkspace({
     </EmbeddableWorkspace>
   );
 }
-
-/** @deprecated Prefer OperationsHubWorkspace — kept for existing imports. */
-export { OperationsHubWorkspace as OperationsHub };
