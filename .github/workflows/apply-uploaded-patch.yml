@@ -1,0 +1,57 @@
+name: Apply uploaded patch exactly
+
+on:
+  push:
+    branches:
+      - apply/finance-settings-dedup-patch-atomic
+    paths:
+      - .github/workflows/apply-uploaded-patch.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply-patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: apply/finance-settings-dedup-patch-atomic
+          fetch-depth: 0
+
+      - name: Reconstruct and verify uploaded patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .github/patch-part-*.b64 > /tmp/uploaded.patch.b64
+          test "$(wc -c < /tmp/uploaded.patch.b64)" -eq 88600
+          echo "ca333cc4f5b0567404059d51c346fda460db9b4478b00115045d04ef4bbe4027  /tmp/uploaded.patch.b64" | sha256sum -c -
+          base64 -d /tmp/uploaded.patch.b64 > /tmp/uploaded.patch
+          test "$(wc -c < /tmp/uploaded.patch)" -eq 66448
+          echo "32e24e5a1412b4e6eed35b5034c3e5468e8c55cbe08aded1405224ebe82adc5d  /tmp/uploaded.patch" | sha256sum -c -
+
+      - name: Validate patch against current main-based branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git apply --check /tmp/uploaded.patch
+
+      - name: Apply patch and validate diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          git apply /tmp/uploaded.patch
+          git diff --check
+          test "$(git diff --name-only | wc -l)" -eq 20
+
+      - name: Commit exact patch only
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/patch-part-*.b64 .github/workflows/apply-uploaded-patch.yml
+          git add -A
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Apply finance and settings workspace dedup patch"
+          git push origin HEAD:apply/finance-settings-dedup-patch-atomic
