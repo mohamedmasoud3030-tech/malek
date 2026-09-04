@@ -118,6 +118,8 @@ export function DashboardPage() {
     [snapshot],
   );
 
+  const supplementalEnabled = Boolean(snapshot);
+
   const [performanceWindow, setPerformanceWindow] = useState<FinancialPerformanceWindow>('six_months');
   const performanceRange = useMemo(
     () => getFinancialPerformanceRange(performanceWindow, now),
@@ -126,7 +128,7 @@ export function DashboardPage() {
   const cashflowQuery = useFinancialCashflowReport({
     dateFrom: performanceRange.dateFrom,
     dateTo: performanceRange.dateTo,
-  });
+  }, { enabled: supplementalEnabled });
   const chartRows = useMemo(
     () => buildMonthlyCashflowChartRows(cashflowQuery.data?.rows),
     [cashflowQuery.data],
@@ -135,13 +137,13 @@ export function DashboardPage() {
     cashflowQuery.refetch().catch(() => undefined);
   }, [cashflowQuery]);
 
-  const utilityBillsQuery = useUtilityBills();
+  const utilityBillsQuery = useUtilityBills(undefined, { enabled: supplementalEnabled });
   const utilityObligations = useMemo(
     () => buildUtilityObligationsSignal(utilityBillsQuery.data, today),
     [utilityBillsQuery.data, today],
   );
 
-  const needsVacancyDetails = (snapshot?.occupancy.vacantUnits ?? 0) > 0;
+  const needsVacancyDetails = supplementalEnabled && (snapshot?.occupancy.vacantUnits ?? 0) > 0;
   const unitsQuery = useAllUnits({ enabled: needsVacancyDetails });
   const contractsQuery = useAllContracts('all', { enabled: needsVacancyDetails });
   const propertyTitlesQuery = useQuery({
@@ -161,13 +163,20 @@ export function DashboardPage() {
   const vacancyDetailsUnavailable = needsVacancyDetails
     && (unitsQuery.isError || contractsQuery.isError || propertyTitlesQuery.isError || Boolean(contractsQuery.data?.truncated));
 
-  const maintenanceQuery = useMaintenance('all', '');
+  const maintenanceQuery = useMaintenance('all', '', { enabled: supplementalEnabled });
   const maintenanceFollowUp = useMemo(
     () => buildMaintenanceFollowUpSignal(maintenanceQuery.data, today),
     [maintenanceQuery.data, today],
   );
 
-  const attentionSourcesComplete = !(isError || isRefetchError)
+  const attentionSourcesLoading = supplementalEnabled && (
+    utilityBillsQuery.isLoading
+    || maintenanceQuery.isLoading
+    || (needsVacancyDetails && (unitsQuery.isLoading || contractsQuery.isLoading || propertyTitlesQuery.isLoading))
+  );
+  const attentionSourcesComplete = supplementalEnabled
+    && !attentionSourcesLoading
+    && !(isError || isRefetchError)
     && !(needsVacancyDetails && (unitsQuery.isError || contractsQuery.isError || propertyTitlesQuery.isError))
     && !maintenanceQuery.isError
     && !utilityBillsQuery.isError;
@@ -249,7 +258,7 @@ export function DashboardPage() {
                 <DashboardGroup ariaLabel="الحالات التي تحتاج انتباهاً" sectionId="needs-attention" priority="attention" showHeader={false}>
                   <NeedsAttentionSection
                     signal={needsAttention}
-                    isLoading={isLoading}
+                    isLoading={isLoading || attentionSourcesLoading}
                     isError={hasDashboardError && !snapshot}
                     isPartial={!needsAttention.isComplete}
                   />
