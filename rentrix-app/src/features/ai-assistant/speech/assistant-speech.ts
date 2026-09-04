@@ -87,9 +87,17 @@ const FEMALE_ARABIC_VOICE_NAMES: ReadonlyArray<string> = [
   'aysha', 'ayesha', 'zariyah', 'hala', 'hoda', 'salma', 'fatima', 'laila', 'layla',
   'leila', 'amina', 'rana', 'sana', 'sanaa', 'noura', 'nora', 'iman', 'mouna',
   'amal', 'amany', 'reem', 'maryam', 'mariam', 'zeina', 'dalia',
+  // Additional well-known female Arabic voices (local & online catalogues)
+  'sabina', 'sabrine', 'sara', 'sarah', 'farah', 'rania', 'ranya', 'nadia', 'nadia',
+  'salwa', 'salma', 'yasmin', 'yasmeen', 'zainab', 'zeinab', 'bayadir', 'hasna',
+  'maysa', 'amany', 'dina', 'dina', 'aya', 'huda', 'hanan', 'lina', 'lama',
+  'bushra', 'suad', 'lavinia', 'layla', 'balqis', 'yara', 'joud', 'reem',
   // Arabic-script equivalents some engines report
   'عائشة', 'زارية', 'هالة', 'هدى', 'سلمى', 'فاطمة', 'ليلى', 'أمينة', 'رنا', 'سناء',
   'نورة', 'إيمان', 'منى', 'أمل', 'أماني', 'ريم', 'مريم', 'زينة', 'داليا',
+  'سارة', 'فرح', 'رانيا', 'نادية', 'سلوى', 'ياسمين', 'زينب', 'حسناء', 'ميساء',
+  'دينا', 'آية', 'هدى', 'حنان', 'لينا', 'لمى', 'بشرى', 'سعاد', 'بلقيس', 'يارا',
+  'جود', 'شهد', 'نور', 'كاملة', 'مروة', 'تقى', 'ريمي', 'سجى',
 ];
 
 const MALE_ARABIC_VOICE_NAMES: ReadonlyArray<string> = [

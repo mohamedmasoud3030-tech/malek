@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowUpRight, Bot, ChevronDown, Mic, Send, Sparkles, Square } from 'lucide-react';
+import { AlertTriangle, ArrowUpRight, Bot, ChevronDown, Mic, Phone, Send, Sparkles, Square } from 'lucide-react';
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { PageLayout } from '@/components/layout/page-layout';
@@ -23,6 +23,7 @@ import { AssistantStreamingText } from './assistant-streaming-text';
 import { AssistantSpeechControl } from './speech/assistant-speech-control';
 import { useAssistantSpeech } from './speech/use-assistant-speech';
 import { useAssistantVoiceInput } from './speech/use-assistant-voice-input';
+import { AssistantLiveCall } from './speech/assistant-live-call';
 
 type AssistantAction = {
   action: AiAssistantAction;
@@ -166,12 +167,22 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
   const [messages, setMessages] = useState<AssistantUiMessage[]>([initialMessage]);
   const [input, setInput] = useState('');
   const [showMoreActions, setShowMoreActions] = useState(false);
+  const [liveCallOpen, setLiveCallOpen] = useState(false);
   const [configurationMissing, setConfigurationMissing] = useState(!env.isConfigured);
   const assistant = useSmartAssistant();
   const { autoSpeak, setAutoSpeak, speakCompletedMessage, stop: stopSpeech } = useAssistantSpeech();
   // Live dictation lands straight into the compose box as the transcript forms.
+  // When the user pauses/commits in the live-call mode we auto-send the turn,
+  // so the voice conversation keeps flowing without tapping send.
   const voiceInput = useAssistantVoiceInput({
     onTranscript: (transcript) => setInput(transcript),
+    onFinal: (transcript) => {
+      const prompt = transcript.trim();
+      if (!prompt || !liveCallOpen) return;
+      // Stop the mic so it never hears the assistant's own reply, then send.
+      voiceInput.stop();
+      submitPrompt(prompt);
+    },
   });
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -424,8 +435,33 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
             <ChevronDown className={cn('size-3 transition-transform', showMoreActions && 'rotate-180')} />
             {showMoreActions ? 'أقل' : 'المزيد'}
           </button>
+          <button
+            type="button"
+            onClick={() => setLiveCallOpen((current) => !current)}
+            disabled={configurationMissing}
+            aria-pressed={liveCallOpen}
+            className={cn(
+              'inline-flex shrink-0 items-center gap-1 rounded-full border text-xs font-medium transition disabled:opacity-50',
+              embedded ? 'min-h-10 px-2.5' : 'min-h-11 px-3',
+              liveCallOpen
+                ? 'border-primary bg-primary/10 text-primary'
+                : 'border-border bg-card text-foreground hover:bg-muted',
+            )}
+          >
+            <Phone className="size-3" />
+            {liveCallOpen ? 'إيقاف المكالمة' : 'مكالمة لايف'}
+          </button>
         </div>
       </div>
+
+      {liveCallOpen ? (
+        <div className="mx-3 mt-2">
+          <AssistantLiveCall
+            pending={pending}
+            onClose={() => setLiveCallOpen(false)}
+          />
+        </div>
+      ) : null}
 
       {errorMessage ? (
         <div role="alert" className="mx-3 mt-2 rounded-xl border border-destructive/20 bg-destructive/5 px-3 py-2 text-xs text-destructive">
