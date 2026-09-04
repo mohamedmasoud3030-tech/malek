@@ -22,11 +22,12 @@ describe('dashboard frontend/backend data contract', () => {
     expect(snapshotSource).not.toContain('getFinancialPeriodSummaryReport');
   });
 
-  it('reads the collection series from the server daily aggregate, never from row reads', () => {
-    const seriesSource = read('daily-collection-series.ts');
-    expect(seriesSource).toContain("supabase.rpc('rpt_daily_collection'");
-    expect(seriesSource).not.toContain('supabase.from(');
-    expect(seriesSource).toContain('retry: false');
+  it('does not mount a decorative daily-collection query beside the authoritative snapshot', () => {
+    const pageSource = read('dashboard-page.tsx');
+    const pulseSource = read('components/office-pulse.tsx');
+    expect(pageSource).not.toContain('useDailyCollectionSeries');
+    expect(pageSource).not.toContain('daily-collection-series');
+    expect(pulseSource).not.toContain('Sparkline');
   });
 
   it('never derives an authoritative KPI from rows.length or client filtering', () => {

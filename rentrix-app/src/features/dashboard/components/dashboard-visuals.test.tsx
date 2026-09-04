@@ -7,7 +7,6 @@ import {
   MiniBarsCompare,
   ProgressMeter,
   RadialMetric,
-  Sparkline,
   TrendDelta,
 } from './dashboard-visuals';
 
@@ -25,15 +24,6 @@ describe('dashboard visualization vocabulary', () => {
     expect(container.textContent).toContain('100%');
     const negative = render(<RadialMetric percent={-5} label="نسبة الإشغال" />);
     expect(negative.textContent).toContain('0%');
-  });
-
-  it('hides the sparkline when there is no real series instead of drawing a fake trend', () => {
-    const container = render(<Sparkline values={[]} label="حركة التحصيل" />);
-    expect(container.querySelector('[data-dashboard-sparkline]')).toBeNull();
-    const single = render(<Sparkline values={[5]} label="حركة التحصيل" />);
-    expect(single.querySelector('[data-dashboard-sparkline]')).toBeNull();
-    const real = render(<Sparkline values={[1, 4, 2]} label="حركة التحصيل" />);
-    expect(real.querySelector('[data-dashboard-sparkline]')).not.toBeNull();
   });
 
   it('exposes progress values through a progressbar role with the textual value beside it', () => {

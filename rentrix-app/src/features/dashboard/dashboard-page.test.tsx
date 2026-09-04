@@ -36,12 +36,6 @@ vi.mock('@/features/settings/useCompanySettings', () => ({
   useCompanySettingsContract: () => ({ locale: 'ar-OM', currency: 'OMR', currencyDecimals: 3, dateFormat: 'YYYY-MM-DD' }),
 }));
 vi.mock('./dashboard-snapshot', () => ({ getDashboardSnapshot: vi.fn() }));
-vi.mock('./daily-collection-series', () => ({
-  useDailyCollectionSeries: () => ({
-    data: { rows: [{ date: '2026-06-01', total: 400 }], total: 400 },
-    isLoading: false, isError: false, isFetching: false, refetch: vi.fn().mockResolvedValue(undefined),
-  }),
-}));
 vi.mock('@/features/financials/reports/useFinancialReports', () => ({
   useFinancialCashflowReport: (filters: { dateFrom: string; dateTo: string }) => {
     cashflowCalls.push(filters);

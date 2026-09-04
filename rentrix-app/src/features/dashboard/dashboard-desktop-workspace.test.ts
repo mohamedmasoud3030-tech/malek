@@ -27,8 +27,9 @@ describe('dashboard desktop workspace contract', () => {
     expect(page).not.toContain('data-dashboard-closing-row');
   });
 
-  it('does not repeat section titles when the panel already names itself', () => {
+  it('does not repeat section titles when the inner signal panel already owns the heading', () => {
     expect(page).toContain('showHeader={false}');
+    expect(page).not.toContain('<h2 className="sr-only">{title}</h2>');
     expect(page).toContain('sectionId="office-pulse"');
   });
 });

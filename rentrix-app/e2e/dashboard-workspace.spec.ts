@@ -260,7 +260,7 @@ for (const viewport of viewportMatrix) {
       }
       await expect(page.locator('[data-dashboard-section="needs-attention"]')).toHaveAttribute('data-dashboard-priority', 'attention');
       await expect(page.locator('[data-dashboard-office-pulse] [data-kpi-card]')).toHaveCount(4);
-      await expect(page.locator('[data-dashboard-section="needs-attention"]')).toContainText('تسرب مياه');
+      await expect(page.locator('[data-dashboard-section="needs-attention"]')).toContainText('طلب صيانة عاجل يحتاج تدخلاً');
       await expect(page.locator('[data-dashboard-section="needs-attention"]')).toContainText('حركة بنكية غير مطابقة');
       await assertNoHorizontalOverflow(page);
       await page.screenshot({ path: testInfo.outputPath(`dashboard-compact-${viewport.name}-${theme}.png`), fullPage: true });
