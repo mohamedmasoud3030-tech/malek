@@ -130,12 +130,25 @@ function useReportProductDocumentActions(params: Readonly<{
     switch (documentKind) {
       case 'owner-pack': {
         const ownerId = statements.selectedOwnerId || filters.ownerId || null;
+        if (!ownerId) {
+          return { capabilities: {}, documentUnavailableHint: 'اختر مالكًا من فلاتر التقرير لتجهيز كشف المالك الشامل.' };
+        }
+        if (statements.isOwnerStatementLoading || statements.isOwnerReportPayloadLoading) {
+          return { capabilities: {}, documentUnavailableHint: 'جارٍ تجهيز كشف المالك الشامل من المصادر المعتمدة.' };
+        }
+        if (statements.ownerStatementError || !statements.ownerStatement || statements.ownerStatement.error) {
+          return { capabilities: {}, documentUnavailableHint: 'تعذر تجهيز كشف مالك معتمد للنطاق الحالي.' };
+        }
+        if (statements.ownerReportPayloadError || !statements.ownerReportPayload) {
+          return { capabilities: {}, documentUnavailableHint: 'تعذر تجهيز تفاصيل كشف المالك الشامل؛ أعد تحميل التقرير.' };
+        }
         const ownerParams = {
           isReady: true,
           settings,
           ownerId,
           statement: statements.ownerStatement,
           period: { ...period, propertyId: filters.propertyId },
+          payload: statements.ownerReportPayload,
         };
         return {
           documentUnavailableHint: null,
@@ -143,28 +156,34 @@ function useReportProductDocumentActions(params: Readonly<{
             onPrint: () => runOwnerReportDocumentAction(ownerParams, 'print'),
             onDownloadPdf: () => runOwnerReportDocumentAction(ownerParams, 'pdf'),
             onDownloadExcel: () => downloadOwnerStatementExcel(statements.ownerStatement, ownerId),
-            buildPdfFile: async () => {
-              if (!statements.ownerStatement || !ownerId) {
-                throw Object.assign(new Error('لا يوجد كشف مالك معتمد للمجموعة المحددة بعد.'), { name: 'DocumentReadinessError' });
-              }
-              return buildOwnerReportPdfFile({
-                settings,
-                ownerId,
-                statement: statements.ownerStatement,
-                period: { ...period, propertyId: filters.propertyId },
-              });
-            },
+            buildPdfFile: () => buildOwnerReportPdfFile({
+              settings,
+              ownerId,
+              statement: statements.ownerStatement!,
+              period: { ...period, propertyId: filters.propertyId },
+              payload: statements.ownerReportPayload,
+            }),
           },
         };
       }
       case 'tenant-statement': {
+        const contractId = statements.selectedContractId || filters.contractId || null;
+        if (!contractId) {
+          return { capabilities: {}, documentUnavailableHint: 'اختر عقدًا من فلاتر التقرير لتجهيز كشف المستأجر.' };
+        }
+        if (statements.isTenantStatementLoading) {
+          return { capabilities: {}, documentUnavailableHint: 'جارٍ تجهيز كشف المستأجر من المصدر المعتمد.' };
+        }
+        if (statements.tenantStatementError || !statements.tenantStatement || statements.tenantStatement.error) {
+          return { capabilities: {}, documentUnavailableHint: 'تعذر تجهيز كشف مستأجر معتمد للعقد الحالي.' };
+        }
         const tenantParams = { isReady: true, settings, statement: statements.tenantStatement, period };
         return {
           documentUnavailableHint: null,
           capabilities: {
             onPrint: () => runTenantStatementDocumentAction(tenantParams, 'print'),
             onDownloadPdf: () => runTenantStatementDocumentAction(tenantParams, 'pdf'),
-            onDownloadExcel: () => downloadTenantStatementExcel(statements.tenantStatement, statements.selectedContractId || filters.contractId),
+            onDownloadExcel: () => downloadTenantStatementExcel(statements.tenantStatement, contractId),
             buildPdfFile: () => buildTenantStatementPdfFile({ settings, statement: statements.tenantStatement, period }),
           },
         };
