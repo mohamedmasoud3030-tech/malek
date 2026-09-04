@@ -7,7 +7,7 @@ import type { ReportsWorkspaceModel } from '../use-reports-workspace';
 import type { ReportsFilterState } from '../reports-workspace-filters';
 import type { ReportViewId } from '../report-view-registry';
 import { getActiveReportMeta } from '../reports-page.meta';
-import { getReportWorkspace, type ReportWorkspaceId } from '../report-workspaces';
+import { getReportWorkspace, type ReportFilterFieldId, type ReportWorkspaceId } from '../report-workspaces';
 import { ReportsFilterSurface } from '../components/ReportsFilterSurface';
 import { WorkspaceSubViewTabs } from './WorkspaceSubViewTabs';
 
@@ -22,6 +22,7 @@ type ReportsShellProps = Readonly<{
   onResetCurrentMonth: () => void;
   /** Premium product pages own the page title and target navigation; keep only shared filters/body chrome. */
   hideWorkspaceChrome?: boolean;
+  visibleFilterFields?: readonly ReportFilterFieldId[];
 }>;
 
 type MetricButtonProps = Readonly<{
@@ -67,6 +68,7 @@ export function ReportsShell({
   onFiltersChange,
   onResetCurrentMonth,
   hideWorkspaceChrome = false,
+  visibleFilterFields,
 }: ReportsShellProps) {
   const companySettings = useCompanySettingsContract();
   const money = (value: number | null | undefined) => formatCompanyMoney(companySettings, value);
@@ -133,7 +135,7 @@ export function ReportsShell({
           costCenterRows={model.filters.costCenterRows}
           ownerRows={model.filters.ownerRows}
           contractRows={model.filters.contractRows}
-          visibleFields={workspace?.visibleFilterFields}
+          visibleFields={visibleFilterFields ?? workspace?.visibleFilterFields}
           onChange={onFiltersChange}
           onResetCurrentMonth={onResetCurrentMonth}
         />
