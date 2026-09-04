@@ -19,7 +19,7 @@ import {
   printRentRollReport,
 } from '../documents/report-documents';
 import { downloadPropertyReportPdf, printPropertyReport } from '../documents/professional-property-report';
-import { getInitialReportsFilters, type ReportsFilterState } from '../reports-workspace-filters';
+import { getInitialReportsFilters, scopeReportsFiltersToFields, type ReportsFilterState } from '../reports-workspace-filters';
 import {
   buildWorkspaceSearch,
   diffReportFiltersFromSearch,
@@ -28,6 +28,7 @@ import {
 import { WORKSPACE_SEARCH_KEY, type ReportDrillHandler } from '../report-workspaces';
 import {
   getReportProduct,
+  getReportProductFilterFields,
   getReportProductTarget,
   type ReportProduct,
   type ReportProductTarget,
@@ -313,14 +314,17 @@ export function ReportProductPage() {
   }, [search]);
 
   const openTarget = useCallback((next: ReportProductTarget) => {
+    const nextFilters = scopeReportsFiltersToFields(filters, getReportProductFilterFields(next));
     void navigate({
       to: '/reports/$reportId',
       params: { reportId: String(params.reportId ?? '') },
       search: (previous: Record<string, unknown>) => {
         const merged: Record<string, unknown> = { ...previous };
-        for (const key of ['from', 'to', 'asOf', 'propertyId', 'unitId', 'tenantId', 'ownerId', 'contractId'] as const) {
-          const value = filters[key];
-          if (value) merged[key] = value;
+        const scopeKeys = ['from', 'to', 'asOf', 'propertyId', 'unitId', 'tenantId', 'ownerId', 'contractId', 'costCenterId', 'status'] as const;
+        for (const key of scopeKeys) delete merged[key];
+        for (const key of scopeKeys) {
+          const value = nextFilters[key];
+          if (value && !(key === 'status' && value === 'all')) merged[key] = value;
         }
         // Keep the product route free of legacy workspace routing keys; the
         // premium page owns its own (product, target) pair.
@@ -396,15 +400,20 @@ function OpenReportProduct({
 }>) {
   const navigate = useNavigate();
   const Icon = product.icon;
+  const visibleFilterFields = getReportProductFilterFields(target);
+  const scopedFilters = useMemo(
+    () => scopeReportsFiltersToFields(filters, visibleFilterFields),
+    [filters, visibleFilterFields],
+  );
   const model = useReportsWorkspace(
-    filters,
+    scopedFilters,
     { section: target.section, view: target.view },
     { statementFocus: product.statementFocus },
   );
   const { capabilities, documentUnavailableHint } = useReportProductDocumentActions({
     target,
     model,
-    filters,
+    filters: scopedFilters,
     canExportReports,
   });
 
@@ -414,19 +423,19 @@ function OpenReportProduct({
       reportId: product.id,
       view: product.targets.length > 1 ? target.id : undefined,
       filters: {
-        from: filters.from,
-        to: filters.to,
-        asOf: filters.asOf,
-        propertyId: filters.propertyId,
-        unitId: filters.unitId,
-        tenantId: filters.tenantId,
-        ownerId: filters.ownerId,
-        contractId: filters.contractId,
+        from: scopedFilters.from,
+        to: scopedFilters.to,
+        asOf: scopedFilters.asOf,
+        propertyId: scopedFilters.propertyId,
+        unitId: scopedFilters.unitId,
+        tenantId: scopedFilters.tenantId,
+        ownerId: scopedFilters.ownerId,
+        contractId: scopedFilters.contractId,
       },
     }, {
       reportLabel: product.targets.length > 1 ? `${product.title} — ${target.label}` : product.title,
       summaryText: [
-        `الفترة: ${filters.from || '—'} → ${filters.to || '—'}`,
+        `الفترة: ${scopedFilters.from || '—'} → ${scopedFilters.to || '—'}`,
         model.firstError ? 'قد تُعرض نتائج جزئية؛ بعض المصادر لم تكتمل.' : '',
       ].filter(Boolean).join('\n'),
     });
@@ -436,7 +445,7 @@ function OpenReportProduct({
       url: payload.url,
       buildFile: capabilities.buildPdfFile,
     };
-  }, [capabilities.buildPdfFile, filters, model.firstError, product, target]);
+  }, [capabilities.buildPdfFile, model.firstError, product, scopedFilters, target]);
 
   // Legacy drill-through stays honest: the deep link reopens the preserved
   // compat workspace with the same scope, so no capability is lost.
@@ -453,8 +462,8 @@ function OpenReportProduct({
   }, [navigate]);
 
   const handleResetCurrentMonth = useCallback(() => {
-    onFiltersChange({ ...filters, ...getCurrentMonthFilters() });
-  }, [filters, onFiltersChange]);
+    onFiltersChange({ ...scopedFilters, ...getCurrentMonthFilters() });
+  }, [onFiltersChange, scopedFilters]);
 
   return (
     <PageLayout dir="rtl" lang="ar" size="wide">
@@ -513,7 +522,7 @@ function OpenReportProduct({
         <div className="min-w-0" data-active-report-workspace data-report-product-workspace>
           <ReportsWorkspace
             model={model}
-            filters={filters}
+            filters={scopedFilters}
             canExportReports={canExportReports}
             activeWorkspace={target.workspace}
             activeSection={target.section}
@@ -531,6 +540,7 @@ function OpenReportProduct({
             onFiltersChange={onFiltersChange}
             onResetCurrentMonth={handleResetCurrentMonth}
             hideWorkspaceChrome
+            visibleFilterFields={visibleFilterFields}
             statementFocus={product.statementFocus}
           />
         </div>
