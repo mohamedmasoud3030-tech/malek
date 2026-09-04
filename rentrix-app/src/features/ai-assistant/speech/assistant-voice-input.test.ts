@@ -116,6 +116,24 @@ describe('assistant voice-input engine (ar-OM dictation)', () => {
     expect(getAssistantVoiceInputState().status).toBe('listening');
   });
 
+  it('auto-commits the first finalized utterance in live-call mode', () => {
+    installRecognition();
+    const onFinal = vi.fn();
+    setAssistantVoiceInputCallbacks({ onFinal });
+
+    expect(startAssistantVoiceInput({ autoCommitOnFinal: true })).toBe(true);
+    const instance = activeInstance();
+    expect(instance.continuous).toBe(false);
+
+    instance.emitResult('احسب الإيجار المناسب', true);
+
+    expect(instance.stopCalls).toBe(1);
+    expect(onFinal).toHaveBeenCalledTimes(1);
+    expect(onFinal).toHaveBeenCalledWith('احسب الإيجار المناسب');
+    expect(getAssistantVoiceInputState().status).toBe('idle');
+    expect(getAssistantVoiceInputState().transcript).toBe('');
+  });
+
   it('streams the live transcript to subscribers and callbacks', () => {
     installRecognition();
     const onTranscript = vi.fn();
