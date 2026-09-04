@@ -1,0 +1,4 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "ignoreCommand": "node rentrix-app/scripts/vercel-project-guard.mjs"
+}
