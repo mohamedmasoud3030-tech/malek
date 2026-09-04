@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query';
 import { useCallback, useMemo } from 'react';
 import {
   useAccountingBalanceSheetReport,
@@ -20,6 +21,7 @@ import {
   usePropertyCollectionBreakdownReport,
   useTenantStatementReport,
   useVatReturnReport,
+  financialReportKeys,
 } from '@/features/financials/reports/useFinancialReports';
 import { summarizeMaintenanceRequests } from '@/features/maintenance/maintenance-helpers';
 import { useMaintenance } from '@/features/maintenance/use-maintenance';
@@ -27,6 +29,7 @@ import { useCostCenters } from '@/features/settings/useCostCenters';
 import { useAllUnits } from '@/features/units/use-units';
 import { buildVacancyAnalytics } from '@/features/units/vacancy-analytics';
 import { previousPeriodRange } from './documents/report-period';
+import { loadPremiumOwnerReportPayload } from './documents/premium-owner-report';
 import {
   buildPropertyAnalyticsComparison,
   buildPropertyAnalyticsExecutive,
@@ -191,6 +194,22 @@ export function useReportsWorkspace(
   const ownersQuery = useOwners({ enabled: true });
   const tenantStatementQuery = useTenantStatementReport(filters.contractId || undefined, { enabled: needsTenantStatement });
   const ownerStatementQuery = useOwnerStatementReport(filters.ownerId || undefined, financialFilters, { enabled: needsOwnerStatement });
+  const ownerReportPayloadQuery = useQuery({
+    queryKey: [
+      ...financialReportKeys.ownerStatement(filters.ownerId || '', { dateFrom: filters.from, dateTo: filters.to }),
+      'premium',
+      filters.propertyId || '',
+    ],
+    queryFn: () => loadPremiumOwnerReportPayload({
+      ownerId: filters.ownerId,
+      from: filters.from,
+      to: filters.to,
+      propertyId: filters.propertyId || null,
+      statement: ownerStatementQuery.data!,
+    }),
+    enabled: needsOwnerStatement
+      && Boolean(filters.ownerId && filters.from && filters.to && ownerStatementQuery.data && !ownerStatementQuery.data.error),
+  });
   const unitsQuery = useAllUnits({ enabled: needsOccupancy });
   const maintenanceQuery = useMaintenance('all', '', { enabled: needsMaintenance });
   const trialBalanceQuery = useAccountingTrialBalanceReport(filters.asOf, { enabled: needsAccountingReports });
@@ -376,7 +395,7 @@ export function useReportsWorkspace(
       dailyCollectionQuery, expenseBreakdownQuery, portfolioExpenseQuery, overdueInvoicesQuery,
       agedReceivablesQuery, arrearsSummaryQuery, trialBalanceQuery,
       incomeStatementQuery, balanceSheetQuery, contractsQuery, ownersQuery,
-      tenantStatementQuery, ownerStatementQuery, unitsQuery, maintenanceQuery,
+      tenantStatementQuery, ownerStatementQuery, ownerReportPayloadQuery, unitsQuery, maintenanceQuery,
       receiptsQuery, costCentersQuery, propertyTitlesQuery,
       // Comparison sources: a failure here only removes the comparison, it
       // never marks the workspace incomplete — but the user can still retry.
@@ -389,7 +408,7 @@ export function useReportsWorkspace(
     dailyCollectionQuery, expenseBreakdownQuery, portfolioExpenseQuery, overdueInvoicesQuery,
     agedReceivablesQuery, arrearsSummaryQuery, trialBalanceQuery,
     incomeStatementQuery, balanceSheetQuery, contractsQuery, ownersQuery,
-    tenantStatementQuery, ownerStatementQuery, unitsQuery, maintenanceQuery,
+    tenantStatementQuery, ownerStatementQuery, ownerReportPayloadQuery, unitsQuery, maintenanceQuery,
     receiptsQuery, costCentersQuery, propertyTitlesQuery,
     previousSummaryQuery, previousExpenseQuery, previousOverdueQuery,
   ]);
@@ -413,6 +432,7 @@ export function useReportsWorkspace(
     ownersQuery.error,
     tenantStatementQuery.error,
     ownerStatementQuery.error,
+    ownerReportPayloadQuery.error,
     unitsQuery.error,
     maintenanceQuery.error,
     receiptsQuery.error,
@@ -507,12 +527,15 @@ export function useReportsWorkspace(
         vatReturn: vatReturnQuery.data,
         tenantStatement: tenantStatementQuery.data,
         ownerStatement: ownerStatementQuery.data,
+        ownerReportPayload: ownerReportPayloadQuery.data,
         selectedContractId: filters.contractId,
         selectedOwnerId: filters.ownerId,
         tenantStatementError: tenantStatementQuery.error,
         ownerStatementError: ownerStatementQuery.error,
+        ownerReportPayloadError: ownerReportPayloadQuery.error,
         isTenantStatementLoading: tenantStatementQuery.isLoading,
         isOwnerStatementLoading: ownerStatementQuery.isLoading,
+        isOwnerReportPayloadLoading: ownerReportPayloadQuery.isLoading,
         isLoading: isLoadingAny(financialSummaryQuery.isLoading, vatReturnQuery.isLoading),
       },
     },
