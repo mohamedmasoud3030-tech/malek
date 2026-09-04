@@ -56,6 +56,17 @@ describe('dashboard frontend/backend data contract', () => {
     expect(pageSource).not.toContain('OwnerObligationsSection');
   });
 
+  it('does not start supplemental reads before the authoritative snapshot exists', () => {
+    const pageSource = read('dashboard-page.tsx');
+    const utilityHookSource = read('../utilities/use-utilities.ts');
+    expect(pageSource).toContain('const supplementalEnabled = Boolean(snapshot);');
+    expect(pageSource).toContain('{ enabled: supplementalEnabled }');
+    expect(pageSource).toContain('useUtilityBills(undefined, { enabled: supplementalEnabled })');
+    expect(pageSource).toContain("useMaintenance('all', '', { enabled: supplementalEnabled })");
+    expect(pageSource).toContain('attentionSourcesLoading');
+    expect(utilityHookSource).toContain('enabled: options?.enabled ?? true');
+  });
+
   it('activates vacancy detail reads only from authoritative snapshot vacancy truth', () => {
     const pageSource = read('dashboard-page.tsx');
     const occupancySource = read('components/occupancy-section.tsx');
