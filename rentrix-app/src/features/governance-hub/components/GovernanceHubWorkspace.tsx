@@ -2,7 +2,6 @@ import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingState } from '@/components/ui/loading-state';
 import { SectionTabPanel, SectionTabs } from '@/components/ui/section-tabs';
 import { CostCentersSettingsSection } from '@/features/settings/cost-centers-settings-section';
@@ -15,6 +14,7 @@ import {
 import {
   getAccessibleGovernanceHubSections,
   getVisibleGovernanceHubSections,
+  governanceHubSections,
   type GovernanceHubSectionId,
 } from '../governance-hub-sections';
 
@@ -29,15 +29,7 @@ const SystemWorkspace = lazy(() => import('@/features/system/system-page').then(
 const TabFallback = () => <LoadingState variant="section" label="جارٍ تحميل القسم..." />;
 
 function CostCentersWorkspace() {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>مراكز التكلفة</CardTitle>
-        <p className="text-sm text-muted-foreground">تصنيف المصروفات والتقارير حسب العقار أو النشاط، ضمن الصلاحية المخصصة.</p>
-      </CardHeader>
-      <CardContent><CostCentersSettingsSection /></CardContent>
-    </Card>
-  );
+  return <CostCentersSettingsSection />;
 }
 
 export function GovernanceHubWorkspace() {
@@ -89,6 +81,14 @@ export function GovernanceHubWorkspace() {
 
   const resolvedActiveTab = accessibleSections.some((section) => section.id === activeTab) ? activeTab : fallbackSection;
   const shouldRenderTab = (tab: GovernanceHubSectionId) => accessibleSections.some((section) => section.id === tab) && (mountedTabs.has(tab) || resolvedActiveTab === tab);
+  /**
+   * One header pattern for the whole workspace: the hub owns PageHeader for
+   * every tab and shows the active section's own description. Per-section
+   * detail copy stays in the section cards (company) or the panels below, so
+   * the header never repeats the text the panel already renders.
+   */
+  const activeSectionDefinition = governanceHubSections.find((section) => section.id === resolvedActiveTab);
+  const headerDescription = activeSectionDefinition?.description ?? 'الشركة، المستخدمون والصلاحيات، والإعدادات التشغيلية.';
 
   const requestedSub = typeof search.sub === 'string' ? search.sub : null;
   useEffect(() => {
@@ -111,9 +111,7 @@ export function GovernanceHubWorkspace() {
 
   return (
     <PageLayout dir="rtl" lang="ar" contentClassName="min-w-0 space-y-2 md:space-y-4">
-      {resolvedActiveTab !== 'company' ? (
-        <PageHeader title="الإعدادات" description="الشركة، المستخدمون والصلاحيات، والأتمتة." />
-      ) : null}
+      <PageHeader title="الإعدادات" description={headerDescription} />
 
       {accessibleSections.length === 0 ? (
         <div className="rounded-2xl border border-border bg-muted/20 px-6 py-10 text-center text-sm text-muted-foreground">لا توجد أقسام إعدادات متاحة لصلاحياتك الحالية.</div>

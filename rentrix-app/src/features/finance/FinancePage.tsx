@@ -138,7 +138,7 @@ export function FinancePage() {
     <PageLayout dir="rtl" lang="ar" size="wide">
       <PageHeader
         title="المال"
-        description="الفواتير والتحصيل والمصروفات والتسويات والأمانات والبنوك من مكان واحد."
+        description="ابدأ من الفواتير: راجع الأرصدة والمشكلات، ثم نفّذ التحصيل والتسويات من مساحة العمل نفسها."
       />
 
       <div data-finance-root className="min-w-0 space-y-3 sm:space-y-4">
@@ -205,7 +205,7 @@ export function FinancePage() {
 
           {activeSection === 'fees' && activeView === 'fixed_monthly_accruals' ? (
             <div id="finance-view-panel-fixed_monthly_accruals" role="tabpanel" aria-labelledby="finance-view-tab-fixed_monthly_accruals">
-              <Suspense fallback={<SectionFallback />}><FixedMonthlyAccrualWorkspace /></Suspense>
+              <Suspense fallback={<SectionFallback />}><FixedMonthlyAccrualWorkspace embedded /></Suspense>
             </div>
           ) : null}
           {activeSection === 'fees' && activeView === 'commissions' ? (
@@ -222,7 +222,7 @@ export function FinancePage() {
 
           {activeSection === 'funds' && activeView === 'deposits' ? (
             <div id="finance-view-panel-deposits" role="tabpanel" aria-labelledby="finance-view-tab-deposits">
-              <Suspense fallback={<SectionFallback />}><DepositsWorkspace /></Suspense>
+              <Suspense fallback={<SectionFallback />}><DepositsWorkspace embedded /></Suspense>
             </div>
           ) : null}
           {activeSection === 'funds' && activeView === 'owner_settlements' ? (

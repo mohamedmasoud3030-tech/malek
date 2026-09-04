@@ -141,6 +141,9 @@ export function ExpensesWorkspace({ embedded = false }: ExpensesWorkspaceProps) 
         </Button>
       )}
       secondaryActions={
+        // CSV export is a workspace action and stays everywhere. The hub
+        // navigation buttons duplicate the app sidebar / finance tabs, so
+        // they only render on the standalone compatibility entry.
         <>
           <Button
             variant="secondary"
@@ -151,18 +154,22 @@ export function ExpensesWorkspace({ embedded = false }: ExpensesWorkspaceProps) 
             <Download className="me-2 size-4" aria-hidden="true" />
             تصدير CSV
           </Button>
-          <Button variant="secondary" className="min-h-11" asChild>
-            <Link to="/financials">
-              <ArrowLeft className="me-2 size-4" />
-              المالية
-            </Link>
-          </Button>
-          <Button variant="secondary" className="min-h-11" asChild>
-            <Link to="/reports">
-              <ReceiptText className="me-2 size-4" />
-              المحاسبة والتقارير
-            </Link>
-          </Button>
+          {embedded ? null : (
+            <>
+              <Button variant="secondary" className="min-h-11" asChild>
+                <Link to="/financials">
+                  <ArrowLeft className="me-2 size-4" />
+                  المالية
+                </Link>
+              </Button>
+              <Button variant="secondary" className="min-h-11" asChild>
+                <Link to="/reports">
+                  <ReceiptText className="me-2 size-4" />
+                  المحاسبة والتقارير
+                </Link>
+              </Button>
+            </>
+          )}
         </>
       }
     >

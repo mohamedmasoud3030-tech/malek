@@ -1,7 +1,8 @@
-import { CalendarRange, Play, RefreshCw, RotateCcw, ShieldAlert } from 'lucide-react';
+import { Play, RefreshCw, RotateCcw, ShieldAlert } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { RegisterMetricStrip } from '@/components/layout/register-summary';
 import { ActionMenu } from '@/components/ui/action-menu';
@@ -37,7 +38,16 @@ function statusPresentation(row: FixedMonthlyAccrualRow) {
   return { label: 'يحتاج مراجعة', variant: 'danger' as const };
 }
 
-export function FixedMonthlyAccrualWorkspace() {
+export type FixedMonthlyAccrualWorkspaceProps = Readonly<{
+  /**
+   * embedded: rendered inside the finance hub, which already supplies the page
+   * shell — the workspace body renders without a second layout or header.
+   * standalone: owns the page shell for compatibility deep links.
+   */
+  embedded?: boolean;
+}>;
+
+export function FixedMonthlyAccrualWorkspace({ embedded = false }: FixedMonthlyAccrualWorkspaceProps = {}) {
   const { authorization } = useAuth();
   const companySettings = useCompanySettingsContract();
   /** Canonical company-aware money rendering — never a hand-rolled currency string. */
@@ -217,97 +227,89 @@ export function FixedMonthlyAccrualWorkspace() {
   ], [canReverse, formatOmr]);
 
   return (
-    <section className="space-y-4" aria-label="استحقاقات أتعاب الإدارة الشهرية">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <CalendarRange className="size-5 text-primary" aria-hidden="true" />
-            استحقاقات أتعاب الإدارة الشهرية
-          </CardTitle>
-          <CardDescription>
-            احسب استحقاقات أتعاب الإدارة للفترة المحددة وفق الاتفاقيات السارية.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-3">
-            <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-2">
-              <div className="min-w-0 space-y-1.5">
-                <Label htmlFor="fixed-accrual-from">من</Label>
-                <Input
-                  id="fixed-accrual-from"
-                  type="date"
-                  dir="ltr"
-                  lang="en-GB"
-                  className="text-start tabular-nums"
-                  value={dateFrom}
-                  onChange={(event) => setDateFrom(event.target.value)}
-                />
-              </div>
-              <span className="pb-2.5 text-xs font-bold text-muted-foreground" aria-hidden="true">—</span>
-              <div className="min-w-0 space-y-1.5">
-                <Label htmlFor="fixed-accrual-to">إلى</Label>
-                <Input
-                  id="fixed-accrual-to"
-                  type="date"
-                  dir="ltr"
-                  lang="en-GB"
-                  className="text-start tabular-nums"
-                  value={dateTo}
-                  max={initialRange.to}
-                  onChange={(event) => setDateTo(event.target.value)}
-                />
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {canExecute ? (
-                <Button
-                  onClick={() => void handleExecute()}
-                  loading={isExecuting}
-                  leftIcon={<Play className="size-4" />}
-                >
-                  احتساب الاستحقاقات
-                </Button>
-              ) : null}
+    <EmbeddableWorkspace
+      embedded={embedded}
+      title="أتعاب الإدارة الشهرية"
+      description="احسب استحقاقات أتعاب الإدارة للفترة المحددة وفق الاتفاقيات السارية."
+      workspaceName="fixed-monthly-accruals"
+    >
+      <div className="min-w-0 space-y-2.5 sm:space-y-3">
+        <div className="grid min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
+          <div className="min-w-0 space-y-1.5">
+            <Label htmlFor="fixed-accrual-from">من</Label>
+            <Input
+              id="fixed-accrual-from"
+              type="date"
+              dir="ltr"
+              lang="en-GB"
+              className="text-start tabular-nums"
+              value={dateFrom}
+              onChange={(event) => setDateFrom(event.target.value)}
+            />
+          </div>
+          <div className="min-w-0 space-y-1.5">
+            <Label htmlFor="fixed-accrual-to">إلى</Label>
+            <Input
+              id="fixed-accrual-to"
+              type="date"
+              dir="ltr"
+              lang="en-GB"
+              className="text-start tabular-nums"
+              value={dateTo}
+              max={initialRange.to}
+              onChange={(event) => setDateTo(event.target.value)}
+            />
+          </div>
+          <div className="flex flex-wrap gap-2 sm:justify-self-end">
+            <Button
+              variant="outline"
+              className="min-h-11"
+              onClick={() => void load()}
+              loading={isLoading}
+              leftIcon={<RefreshCw className="size-4" />}
+            >
+              تحديث
+            </Button>
+            {canExecute ? (
               <Button
-                variant="outline"
-                onClick={() => void load()}
-                loading={isLoading}
-                leftIcon={<RefreshCw className="size-4" />}
+                className="min-h-11"
+                onClick={() => void handleExecute()}
+                loading={isExecuting}
+                leftIcon={<Play className="size-4" />}
               >
-                تحديث
+                احتساب الاستحقاقات
               </Button>
-            </div>
+            ) : null}
           </div>
+        </div>
 
-          <div className="flex gap-2 rounded-xl border border-warning/30 bg-warning/5 p-3 text-xs leading-5 text-foreground">
-            <ShieldAlert className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden="true" />
-            <p><strong>الضريبة غير محتسبة حاليًا:</strong> إعداد الضريبة المطلوب لهذا الاستحقاق غير مكتمل. راجع جاهزية المالية والضريبة قبل التنفيذ.</p>
+        <div className="flex gap-2 rounded-xl border border-warning/30 bg-warning/5 p-2.5 text-xs leading-5 text-foreground">
+          <ShieldAlert className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden="true" />
+          <p><strong>الضريبة غير محتسبة حاليًا:</strong> إعداد الضريبة المطلوب لهذا الاستحقاق غير مكتمل. راجع جاهزية المالية والضريبة قبل التنفيذ.</p>
+        </div>
+
+        {error ? (
+          <div role="alert" className="rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+            {error}
           </div>
+        ) : null}
+        {notice ? (
+          <div role="status" className="rounded-xl border border-success/30 bg-success/5 px-3 py-2 text-sm text-success">
+            {notice}
+          </div>
+        ) : null}
 
-          {error ? (
-            <div role="alert" className="rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-              {error}
-            </div>
-          ) : null}
-          {notice ? (
-            <div role="status" className="rounded-xl border border-success/30 bg-success/5 px-3 py-2 text-sm text-success">
-              {notice}
-            </div>
-          ) : null}
-        </CardContent>
-      </Card>
-
-      {data ? (
-        <RegisterMetricStrip
-          aria-label="ملخص الاستحقاقات"
-          items={[
-            { id: 'days', label: 'عدد الأيام', value: data.totalCount },
-            { id: 'net', label: 'الصافي', value: formatOmr(data.netAmount) },
-            { id: 'tax', label: 'الضريبة', value: formatOmr(data.taxAmount) },
-            { id: 'gross', label: 'الإجمالي', value: formatOmr(data.grossAmount) },
-          ]}
-        />
-      ) : null}
+        {data ? (
+          <RegisterMetricStrip
+            aria-label="ملخص الاستحقاقات"
+            items={[
+              { id: 'days', label: 'عدد الأيام', value: data.totalCount },
+              { id: 'net', label: 'الصافي', value: formatOmr(data.netAmount) },
+              { id: 'tax', label: 'الضريبة', value: formatOmr(data.taxAmount) },
+              { id: 'gross', label: 'الإجمالي', value: formatOmr(data.grossAmount) },
+            ]}
+          />
+        ) : null}
 
       {reversalAccrualId ? (
         <Card variant="outlined">
@@ -340,18 +342,10 @@ export function FixedMonthlyAccrualWorkspace() {
         </Card>
       ) : null}
 
-      <section className="space-y-2" aria-labelledby="fixed-accrual-register-title">
-        <div className="flex flex-wrap items-end justify-between gap-2 px-0.5">
-          <div>
-            <h3 id="fixed-accrual-register-title" className="text-sm font-black">سجل الاستحقاقات</h3>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              الاستحقاقات والمبالغ وحالتها خلال الفترة المحددة.
-            </p>
-          </div>
+        <div className="min-w-0 space-y-2">
           {data?.truncated ? (
-            <span className="text-xs font-bold text-warning">أول 500 سجل فقط · قلّل نطاق التاريخ</span>
-          ) : null}
-        </div>
+          <p className="px-0.5 text-xs font-bold text-warning">أول 500 سجل فقط · قلّل نطاق التاريخ</p>
+        ) : null}
 
         <EntityTable
           rows={data?.accruals ?? []}
@@ -364,8 +358,9 @@ export function FixedMonthlyAccrualWorkspace() {
           emptyDescription="لا توجد استحقاقات في النطاق المحدد. غيّر نطاق التاريخ أو احتسب الاستحقاقات."
           aria-label="سجل استحقاقات أتعاب الإدارة الشهرية"
         />
-      </section>
-    </section>
+      </div>
+      </div>
+    </EmbeddableWorkspace>
   );
 }
 

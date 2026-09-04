@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
 import type { CompanySettingsPreviewModel } from '../settingsForm';
 import type { SettingsSectionId } from '../registry/sectionRegistry';
-import { SettingsPreviewField } from '../components/settings-form-fields';
 import { SectionCard } from '../components/settings-section-card';
 
 export type SystemSectionProps = Readonly<{
@@ -101,21 +100,6 @@ export function SystemSection({
         </div>
       </div>
 
-      <details className="rounded-xl border bg-muted/15 p-2.5 [&[open]>summary]:mb-2">
-        <summary className="cursor-pointer text-xs font-black">تفاصيل إعدادات الشركة</summary>
-        <dl className="grid gap-2 pt-2 sm:grid-cols-2">
-          <SettingsPreviewField label="اسم الشركة" value={preview.companyName} />
-          <SettingsPreviewField label="الاسم القانوني" value={preview.legalName} muted={preview.legalName === 'غير محدد'} />
-          <SettingsPreviewField label="اللغة الافتراضية" value={`${preview.defaultLanguage} (${preview.locale})`} />
-          <SettingsPreviewField label="العملة الافتراضية" value={preview.defaultCurrency} />
-          <SettingsPreviewField label="الدولة" value={preview.country} />
-          <SettingsPreviewField label="المنطقة الزمنية" value={preview.timezone} />
-          <SettingsPreviewField label="بادئة الفواتير" value={preview.invoicePrefix} />
-          <SettingsPreviewField label="بادئة العقود" value={preview.contractPrefix} />
-          <SettingsPreviewField label="بادئة الإيصالات" value={preview.receiptPrefix} />
-          <SettingsPreviewField label="ضريبة القيمة المضافة الافتراضية" value={preview.defaultVatRate} />
-        </dl>
-      </details>
     </SectionCard>
   );
 }

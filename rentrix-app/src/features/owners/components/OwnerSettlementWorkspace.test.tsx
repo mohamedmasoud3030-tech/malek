@@ -91,9 +91,12 @@ vi.mock('@/features/settings/useDocumentSettings', () => ({
 }));
 
 describe('OwnerSettlementWorkspace full coverage tests', () => {
-  it('renders workspace with KPI cards and settlement rows', () => {
+  it('renders workspace with the canonical register summary strip and settlement rows', () => {
     const html = renderToStaticMarkup(<OwnerSettlementWorkspace />);
-    expect(html).toContain('مركز تسويات ومحاسبة الملاك');
+    // One finance-register presentation pattern: compact summary strip, no
+    // second page title or KPI-card wall inside the hub workspace.
+    expect(html).toContain('ملخص تسويات الملاك');
+    expect(html).not.toContain('مركز تسويات ومحاسبة الملاك');
     expect(html).toContain('إنشاء مسودة تسوية');
     expect(html).toContain('عقار الخوض');
     expect(html).toContain('أحمد المالكي');

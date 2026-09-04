@@ -256,7 +256,9 @@ function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Rea
     <EmbeddableWorkspace
       embedded={embedded}
       title="الإيصالات"
-      secondaryActions={<Button variant="secondary" className="min-h-11" asChild><Link to="/financials"><ArrowRight className="me-2 size-4" />المالية</Link></Button>}
+      // Inside the finance hub this register already lives on the /financials
+      // tab; the standalone compatibility entry still needs its back action.
+      secondaryActions={embedded ? undefined : <Button variant="secondary" className="min-h-11" asChild><Link to="/financials"><ArrowRight className="me-2 size-4" />المالية</Link></Button>}
     >
       <RegisterMetricStrip
         aria-label="ملخص الإيصالات"
@@ -370,61 +372,59 @@ function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Rea
       ) : null}
 
       <section data-receipts-register className="min-w-0 space-y-2.5">
-        <div className="min-w-0 space-y-2.5">
-            <EntityTable
-              aria-label="جدول الإيصالات"
-              rows={filteredReceipts}
-              columns={receiptColumns}
-              visibleColumnKeys={visibleColumnKeys}
-              keyOf={(receipt) => receipt.id}
-              isLoading={receiptsQuery.isLoading}
-              error={receiptsQuery.error}
-              onRetry={() => { void receiptsQuery.refetch(); }}
-              emptyTitle="لا توجد إيصالات مطابقة"
-              emptyDescription={hasFilters ? 'غيّر البحث أو الفلاتر لعرض إيصالات أخرى.' : 'لا توجد إيصالات منشورة حتى الآن.'}
-              onRowClick={(receipt) => setPreviewReceiptId(receipt.id)}
-              mobileBadgeKey="status"
-              mobileSupportingKey="context"
-              mobilePrimaryMetaKeys={["amount", "payment_date"]}
-              mobileSecondaryMetaKeys={["method", "invoice_id"]}
-              mobileCardPrimaryAction={(receipt) => ({
-                label: 'معاينة سريعة',
-                icon: Eye,
-                variant: 'default' as const,
-                ariaLabel: `معاينة الإيصال ${receipt.receipt_number}`,
-                onClick: () => setPreviewReceiptId(receipt.id),
-              })}
-              mobileCardActions={(receipt) => [
-                {
+        <EntityTable
+            aria-label="جدول الإيصالات"
+            rows={filteredReceipts}
+            columns={receiptColumns}
+            visibleColumnKeys={visibleColumnKeys}
+            keyOf={(receipt) => receipt.id}
+            isLoading={receiptsQuery.isLoading}
+            error={receiptsQuery.error}
+            onRetry={() => { void receiptsQuery.refetch(); }}
+            emptyTitle="لا توجد إيصالات مطابقة"
+            emptyDescription={hasFilters ? 'غيّر البحث أو الفلاتر لعرض إيصالات أخرى.' : 'لا توجد إيصالات منشورة حتى الآن.'}
+            onRowClick={(receipt) => setPreviewReceiptId(receipt.id)}
+            mobileBadgeKey="status"
+            mobileSupportingKey="context"
+            mobilePrimaryMetaKeys={["amount", "payment_date"]}
+            mobileSecondaryMetaKeys={["method", "invoice_id"]}
+            mobileCardPrimaryAction={(receipt) => ({
+              label: 'معاينة سريعة',
+              icon: Eye,
+              variant: 'default' as const,
+              ariaLabel: `معاينة الإيصال ${receipt.receipt_number}`,
+              onClick: () => setPreviewReceiptId(receipt.id),
+            })}
+            mobileCardActions={(receipt) => [
+              {
                   label: 'طباعة',
                   icon: Printer,
                   variant: 'secondary' as const,
                   ariaLabel: `طباعة الإيصال ${receipt.receipt_number}`,
                   onClick: () => openReceiptPrintView(receipt.id),
-                },
-                ...(canVoidReceipt && receipt.status === 'posted' ? [{
+              },
+              ...(canVoidReceipt && receipt.status === 'posted' ? [{
                   label: 'طلب إلغاء',
                   icon: Ban,
                   variant: 'danger' as const,
                   ariaLabel: `طلب إلغاء الإيصال ${receipt.receipt_number}`,
                   onClick: () => openVoidDialog(receipt),
-                }] : []),
-              ]}
-            />
+              }] : []),
+            ]}
+          />
 
-            {(hasMoreReceipts || receiptsLimit > RECEIPTS_PAGE_SIZE) ? (
-              <div className="flex flex-col items-center justify-between gap-3 rounded-xl border border-border/70 bg-muted/15 p-3 sm:flex-row">
-                <p className="text-xs font-bold text-muted-foreground" aria-live="polite">
+          {(hasMoreReceipts || receiptsLimit > RECEIPTS_PAGE_SIZE) ? (
+            <div className="flex flex-col items-center justify-between gap-3 rounded-xl border border-border/70 bg-muted/15 p-3 sm:flex-row">
+              <p className="text-xs font-bold text-muted-foreground" aria-live="polite">
                   {describeReceiptsViewport(receipts.length, hasMoreReceipts)}
-                </p>
-                {hasMoreReceipts ? (
+              </p>
+              {hasMoreReceipts ? (
                   <Button variant="outline" className="min-h-11 rounded-lg" onClick={loadMoreReceipts} disabled={receiptsQuery.isFetching}>
                     {receiptsQuery.isFetching ? 'جارٍ التحميل...' : `عرض ${formatLatinNumber(RECEIPTS_PAGE_SIZE, 'ar')} إيصال أقدم`}
                   </Button>
-                ) : null}
-              </div>
-            ) : null}
-        </div>
+              ) : null}
+            </div>
+          ) : null}
       </section>
 
       <ReceiptPreviewDialog

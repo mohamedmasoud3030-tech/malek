@@ -4,7 +4,6 @@ import { APP_BRAND_FILE_SLUG } from '@/lib/brand';
 import { Controller } from 'react-hook-form';
 import { Building2, Download, Edit, Eye, Printer, ReceiptText, Tags, WalletCards } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { ActionMenu } from '@/components/ui/action-menu';
 import { EntityForm } from '@/components/ui/entity-form';
@@ -219,8 +218,7 @@ export const ExpensesSection = forwardRef<ExpensesSectionHandle, ExpensesSection
             }], [propertyById, costCenterById, documentSettings.isReady, exportExpenseVoucher, printExpenseVoucher, openEditForm, onUpdateExpense]);
 
   return (
-    <Card className="overflow-hidden rounded-2xl">
-      <CardContent className="space-y-5 p-3 sm:p-5">
+    <div className="min-w-0 space-y-2.5 sm:space-y-3">
         <RegisterMetricStrip
           aria-label="ملخص المصروفات"
           items={[
@@ -302,7 +300,6 @@ export const ExpensesSection = forwardRef<ExpensesSectionHandle, ExpensesSection
             },
           ]}
         />
-      </CardContent>
 
       <EntityForm.Overlay
         open={formOpen}
@@ -395,6 +392,6 @@ export const ExpensesSection = forwardRef<ExpensesSectionHandle, ExpensesSection
           </div>
         ) : null}
       </EntityForm.Overlay>
-    </Card>
+    </div>
   );
 });
