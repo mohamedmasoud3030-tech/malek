@@ -1,4 +1,4 @@
-import { listContractsForProperty, type ContractListItem } from '@/features/contracts/services/contractService';
+import { listContractsForProperties, type ContractListItem } from '@/features/contracts/services/contractService';
 import { loadInvoices, loadPayments } from '@/features/financials/reports/financial-reporting/report-loaders';
 import {
   getInvoiceReportGrossAmount,
@@ -7,9 +7,8 @@ import {
   type PaymentWithInvoiceContext,
 } from '@/features/financials/reports/financial-report-rows';
 import { isContractStatus } from '@/lib/contractStatus';
-import { listUnits } from '@/features/units/unit-service';
+import { listUnitsForProperties, type OwnerUnit } from '@/features/owners/services/owner-service';
 import { buildVacancyAnalytics } from '@/features/units/vacancy-analytics';
-import type { Unit } from '@/types/domain';
 import type { OwnerReportPayload, ProfessionalReportGroup, ReportCellFormat } from '@/services/documents/documentPayloads';
 import {
   buildOwnerReportPayload,
@@ -74,7 +73,7 @@ type OwnerUnitReportRow = Readonly<{
 }>;
 
 function buildUnitRows(params: {
-  units: readonly Unit[];
+  units: readonly OwnerUnit[];
   contracts: readonly ContractListItem[];
   invoices: readonly InvoiceReportRow[];
   payments: readonly PaymentWithInvoiceContext[];
@@ -213,15 +212,12 @@ export async function loadPremiumOwnerReportPayload(params: OwnerReportLoaderPar
     return { ...base, reportTitle: 'كشف المالك الشامل' };
   }
 
-  const [contractsByProperty, allUnits, invoices, payments] = await Promise.all([
-    Promise.all(propertyIds.map((propertyId) => listContractsForProperty(propertyId))),
-    listUnits(),
+  const [contracts, units, invoices, payments] = await Promise.all([
+    listContractsForProperties(propertyIds),
+    listUnitsForProperties(propertyIds),
     loadInvoices({ dateFrom: params.from, dateTo: params.to, propertyId: params.propertyId ?? undefined }),
     loadPayments({ dateFrom: params.from, dateTo: params.to, propertyId: params.propertyId ?? undefined }),
   ]);
-
-  const contracts = contractsByProperty.flat();
-  const units = allUnits.filter((unit) => propertySet.has(unit.property_id));
   const scopedInvoices = invoices.filter((invoice) => invoice.contracts?.property_id && propertySet.has(invoice.contracts.property_id));
   const scopedPayments = payments.filter((payment) => payment.contract?.property_id && propertySet.has(payment.contract.property_id));
   const unitRows = buildUnitRows({
