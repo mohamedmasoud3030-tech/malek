@@ -4,17 +4,13 @@ import { describe, expect, it } from 'vitest';
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), 'utf8');
 
 describe('P6b — owner and property operational dossiers (closeout)', () => {
-  it('keeps the owner dossier body on the full page and the quick preview glance-first', () => {
+  it('shares one owner dossier body between the preview dialog and the full page', () => {
     const body = read('./owners/components/owner-dossier-body.tsx');
     const preview = read('./owners/components/OwnerPreviewDialog.tsx');
     const detail = read('./owners/components/owner-detail-view.tsx');
     expect(body).toContain('export function OwnerDossierBody');
+    expect(preview).toContain('OwnerDossierBody');
     expect(detail).toContain('OwnerDossierBody');
-    // The Quick Preview is a glance-first inspection on the canonical shell —
-    // the dossier body (tables, history, documents) is not miniaturized into it.
-    expect(preview).toContain('<EntityPreviewDialog');
-    expect(preview).toContain('PreviewFacts');
-    expect(preview).not.toContain('OwnerDossierBody');
   });
 
   it('surfaces the operational owner context: identity, KPIs, properties, units, contracts, activity, documents', () => {
@@ -91,12 +87,10 @@ describe('P6b — owner and property operational dossiers (closeout)', () => {
   it('gates owner edit affordances with the canonical owners write gate (owners.hub.view)', () => {
     const detailView = read('./owners/components/owner-detail-view.tsx');
     const preview = read('./owners/components/OwnerPreviewDialog.tsx');
-    // The full page owns the write gate.
-    expect(detailView).toContain("canAccess(authorization, 'owners.hub.view')");
-    expect(detailView).toContain('canEditOwner');
-    // The preview is read-only inspection; its edit action is supplied by the
-    // permissions-gated workspace parent.
-    expect(preview).not.toContain('canAccess(');
+    for (const source of [detailView, preview]) {
+      expect(source).toContain("canAccess(authorization, 'owners.hub.view')");
+      expect(source).toContain('canEditOwner');
+    }
     const routeTree = read('../app/router/route-tree.ts');
     expect(routeTree).toContain("path: '/owners/$ownerId/edit'");
     expect(routeTree).toContain("requirePermission('owners.hub.view')");

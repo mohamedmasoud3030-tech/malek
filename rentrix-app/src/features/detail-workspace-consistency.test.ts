@@ -32,12 +32,10 @@ describe('detail workspace consistency', () => {
 
     expect(units).toContain('<UnitPreviewDialog');
     expect(units).toContain('onRowClick={openPreview}');
-    expect(units).toContain('فتح ملف الوحدة');
-    expect(units).toContain('معاينة سريعة');
+    expect(units).toContain('التفاصيل الكاملة');
 
     expect(owners).toContain('<OwnerPreviewDialog');
-    expect(owners).toContain('onRowClick={(row) => openPreview(row)}');
-    expect(owners).toContain('فتح الملف الكامل');
+    expect(owners).toContain('onRowClick={(row) => openPreview(row.owner.id)}');
     expect(owners).not.toContain('state: { backgroundLocation: location }');
 
     expect(tenants).toContain('<TenantPreviewDialog');

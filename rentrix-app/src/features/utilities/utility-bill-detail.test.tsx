@@ -99,7 +99,7 @@ describe('utility bill detail overlay (P3)', () => {
       trigger.click();
     });
     const detailAction = Array.from(document.body.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'))
-      .find((button) => button.textContent?.trim() === 'معاينة سريعة');
+      .find((button) => button.textContent?.trim() === 'التفاصيل');
     expect(detailAction).not.toBeUndefined();
     await act(async () => {
       detailAction?.click();

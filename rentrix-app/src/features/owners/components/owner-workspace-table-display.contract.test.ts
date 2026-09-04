@@ -26,9 +26,8 @@ describe('owner workspace table display architecture', () => {
   });
 
   it('keeps contextual owner actions without internal identifiers', () => {
-    // Quick Preview label is unified across registers.
-    expect(source).toContain("label: 'معاينة سريعة'");
-    expect(source).toContain("label: 'فتح الملف الكامل'");
+    // Preview action label is unified across registers.
+    expect(source).toContain("label: 'معاينة'");
     expect(source).toContain("label: 'العلاقات'");
     expect(source).toContain("label: 'تعديل'");
     expect(source).not.toContain('معرّف السجل');

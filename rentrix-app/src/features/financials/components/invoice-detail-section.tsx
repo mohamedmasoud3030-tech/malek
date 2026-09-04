@@ -1,6 +1,5 @@
 import { CircleCheck, Download, HandCoins, Printer, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { PreviewFacts } from '@/components/ui/quick-preview';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import type { Payment } from '@/types/domain';
 import { getInvoiceGrossAmount, type InvoiceDetail } from '../invoices/invoiceService';
@@ -102,16 +101,32 @@ export function InvoiceDetailSection({
       {invoiceDetail ? (
         <div className="grid min-w-0 gap-4 lg:grid-cols-12 lg:items-start">
           <div className="min-w-0 space-y-4 lg:col-span-7">
-          <PreviewFacts
-            rows={[
-              { label: 'رقم الفاتورة', value: invoiceDetail.reference ?? 'فاتورة بلا مرجع' },
-              { label: 'تاريخ الاستحقاق', value: formatDate(invoiceDetail.due_date) },
-              { label: 'الإجمالي شامل VAT', value: <span dir="ltr">{formatMoney(grossAmount)}</span> },
-              { label: 'VAT', value: <span dir="ltr">{formatMoney(invoiceDetail.tax_amount)}</span> },
-              { label: 'المدفوع', value: <span dir="ltr">{formatMoney(invoiceDetail.paid_amount)}</span> },
-              { label: 'المتبقي', value: <span dir="ltr">{formatMoney(remaining)}</span> },
-            ]}
-          />
+          <ResponsiveCardGrid gap="sm">
+            <div className="rounded-2xl border bg-muted/30 p-4">
+              <p className="text-sm text-muted-foreground">رقم الفاتورة</p>
+              <p className="mt-2 font-black">{invoiceDetail.reference ?? 'فاتورة بلا مرجع'}</p>
+            </div>
+            <div className="rounded-2xl border bg-muted/30 p-4">
+              <p className="text-sm text-muted-foreground">تاريخ الاستحقاق</p>
+              <p className="mt-2 font-black">{formatDate(invoiceDetail.due_date)}</p>
+            </div>
+            <div className="rounded-2xl border bg-muted/30 p-4">
+              <p className="text-sm text-muted-foreground">الإجمالي شامل VAT</p>
+              <p className="mt-2 font-black">{formatMoney(grossAmount)}</p>
+            </div>
+            <div className="rounded-2xl border bg-muted/30 p-4">
+              <p className="text-sm text-muted-foreground">VAT</p>
+              <p className="mt-2 font-black">{formatMoney(invoiceDetail.tax_amount)}</p>
+            </div>
+            <div className="rounded-2xl border bg-muted/30 p-4">
+              <p className="text-sm text-muted-foreground">المدفوع</p>
+              <p className="mt-2 font-black">{formatMoney(invoiceDetail.paid_amount)}</p>
+            </div>
+            <div className="rounded-2xl border bg-muted/30 p-4">
+              <p className="text-sm text-muted-foreground">المتبقي</p>
+              <p className="mt-2 font-black">{formatMoney(remaining)}</p>
+            </div>
+          </ResponsiveCardGrid>
 
           <div className="rounded-2xl border p-4">
             <h4 className="font-black">سجل المدفوعات</h4>

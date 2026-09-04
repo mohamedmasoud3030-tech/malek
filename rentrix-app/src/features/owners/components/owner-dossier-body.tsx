@@ -14,7 +14,7 @@ import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
-import { useNavigate } from '@tanstack/react-router';
+import { useDialogNavigate } from '@/app/router/background-location';
 import { formatCompanyMoney, formatCompanyNumber, formatCompanyDate } from '@/lib/companyFormatters';
 import { businessReferenceOrLabel } from '@/lib/business-reference';
 import { getOwnerDisplayName } from '../services/owner-service';
@@ -48,7 +48,7 @@ export function OwnerDossierBody({
   section?: OwnerDossierSection;
 }>) {
   const companySettings = useCompanySettingsContract();
-  const navigate = useNavigate();
+  const dialogNavigate = useDialogNavigate();
   const { owner, properties, units, contracts } = snapshot;
 
   const activeContracts = contracts.filter((contract) => contract.status === 'active');
@@ -130,7 +130,7 @@ export function OwnerDossierBody({
                 keyOf={(property) => property.id}
                 emptyTitle="لا توجد عقارات مرتبطة"
                 emptyDescription="لا توجد علاقة ملكية نشطة موثقة لهذا المالك. يمكنك ربط المالك بعقار من صفحة العقارات."
-                onRowClick={(property) => void navigate({ to: '/properties/$propertyId', params: { propertyId: property.id } })}
+                onRowClick={(property) => dialogNavigate({ to: '/properties/$propertyId', params: { propertyId: property.id } })}
                 mobilePrimaryMetaKeys={['address', 'ownership', 'units', 'active_contracts']}
               />
             </div>
@@ -156,7 +156,7 @@ export function OwnerDossierBody({
                     <li key={unit.id}>
                       <button
                         type="button"
-                        onClick={() => void navigate({
+                        onClick={() => dialogNavigate({
                           to: '/properties/$propertyId/units/$unitId',
                           params: { propertyId: unit.property_id, unitId: unit.id },
                         })}
@@ -204,7 +204,7 @@ export function OwnerDossierBody({
                           <span dir="ltr">{formatCompanyDate(companySettings, contract.start_date)} → {formatCompanyDate(companySettings, contract.end_date)}</span>
                         </p>
                       </div>
-                      <Button variant="secondary" className="min-h-11 shrink-0" onClick={() => void navigate({ to: '/contracts/$contractId', params: { contractId: contract.id } })}>
+                      <Button variant="secondary" className="min-h-11 shrink-0" onClick={() => dialogNavigate({ to: '/contracts/$contractId', params: { contractId: contract.id } })}>
                         فتح العقد
                       </Button>
                     </li>

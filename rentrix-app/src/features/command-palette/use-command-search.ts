@@ -304,10 +304,8 @@ export function useCommandSearch(query: string) {
           title: receipt.reference || 'إيصال مسجل',
           subtitle: `تحصيل بقيمة ${receipt.amount} • ${receipt.date_time}`,
           category: 'receipts',
-          // In-app inspection opens inside the Money workspace as a Quick
-          // Preview; /receipts?receiptId= stays the print-only surface.
-          route: '/financials',
-          search: { section: 'collections', view: 'receipts', receiptId: receipt.id },
+          route: '/receipts',
+          search: { receiptId: receipt.id },
         });
       }
 

@@ -1,5 +1,5 @@
-import { Link, useNavigate, useParams } from '@tanstack/react-router';
-import { Activity, Edit, FileText, Link2, ReceiptText, UserRound } from 'lucide-react';
+import { Link, useParams } from '@tanstack/react-router';
+import { Activity, Edit, FileText, ReceiptText, UserRound } from 'lucide-react';
 import { useState } from 'react';
 import { ContextualDocumentsSection } from '@/components/documents/contextual-documents-section';
 import { EntityDetailHeader } from '@/components/layout/entity-detail-header';
@@ -7,7 +7,6 @@ import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
 import { DetailFields } from '@/components/ui/detail-fields';
 import { EntityPreviewDialog } from '@/components/ui/entity-preview-dialog';
-import { PreviewFacts } from '@/components/ui/quick-preview';
 import { ErrorState } from '@/components/ui/error-state';
 import { LoadingState } from '@/components/ui/loading-state';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -19,7 +18,7 @@ import { formatCompanyDateTime } from '@/lib/companyFormatters';
 import { contractStatusLabels, contractStatusTone, normalizeContractStatus } from '@/lib/contractStatus';
 import { personTypeLabels } from '../person-schema';
 import { usePersonDossier } from '../use-people';
-import type { Person } from '@/types/domain';
+import { useDialogNavigate } from '@/app/router/background-location';
 
 type PersonSection = 'overview' | 'contracts' | 'financials' | 'records';
 
@@ -31,7 +30,7 @@ const personSections = [
 ] as const;
 
 export function PersonDossierContent({ personId, section }: Readonly<{ personId: string; section?: PersonSection }>) {
-  const navigate = useNavigate();
+  const dialogNavigate = useDialogNavigate();
   const { canAccess } = useAuth();
   const companyFormatters = useCompanyFormatters();
   const canViewFinancial = canAccess('arrears.view');
@@ -89,7 +88,7 @@ export function PersonDossierContent({ personId, section }: Readonly<{ personId:
                     <StatusBadge tone={contractStatusTone[normalizeContractStatus(contract.status)]}>
                       {contractStatusLabels[normalizeContractStatus(contract.status)]}
                     </StatusBadge>
-                    <Button variant="secondary" className="min-h-11" onClick={() => void navigate({ to: '/contracts/$contractId', params: { contractId: contract.id } })}>فتح العقد</Button>
+                    <Button variant="secondary" className="min-h-11" onClick={() => dialogNavigate({ to: '/contracts/$contractId', params: { contractId: contract.id } })}>فتح العقد</Button>
                   </div>
                 </li>
               ))}
@@ -160,58 +159,16 @@ export function PersonDossierContent({ personId, section }: Readonly<{ personId:
   );
 }
 
-/**
- * Person Quick Preview — glance-first.
- * Identity, contact and classification. Relationships, contracts, financial
- * context and documents stay on «فتح ملف الشخص».
- */
-export function PersonPreviewDialog({
-  person,
-  open,
-  onOpenChange,
-  onEdit,
-}: Readonly<{
-  person: Person | null;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onEdit?: (personId: string) => void;
-}>) {
-  const navigate = useNavigate();
+export function PersonPreviewDialog({ personId, open, onOpenChange }: Readonly<{ personId: string; open: boolean; onOpenChange: (open: boolean) => void }>) {
   return (
     <EntityPreviewDialog
       open={open}
       onOpenChange={onOpenChange}
-      title={person?.full_name ?? 'معاينة الشخص'}
-      description={person ? personTypeLabels[person.type] : undefined}
-      footer={person ? (
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            className="min-h-11 flex-1 sm:flex-none"
-            onClick={() => void navigate({ to: '/people/$personId', params: { personId: person.id } })}
-          >
-            <Link2 className="me-2 size-4" aria-hidden="true" />
-            فتح ملف الشخص
-          </Button>
-          {onEdit ? (
-            <Button type="button" variant="secondary" className="min-h-11" onClick={() => onEdit(person.id)}>
-              <Edit className="me-2 size-4" aria-hidden="true" />
-              تعديل
-            </Button>
-          ) : null}
-        </div>
-      ) : undefined}
+      title="ملف الشخص"
+      description="بيانات الشخص وعلاقاته وعقوده وسياقه المالي حسب الصلاحية."
+      actions={<Button asChild><Link to="/people/$personId/edit" params={{ personId }}><Edit className="me-2 size-4" />تعديل</Link></Button>}
     >
-      {person ? (
-        <PreviewFacts
-          rows={[
-            { label: 'النوع', value: personTypeLabels[person.type] },
-            { label: 'الهاتف', value: person.phone ? <span dir="ltr">{person.phone}</span> : 'غير موثق' },
-            { label: 'البريد', value: person.email ? <span dir="ltr">{person.email}</span> : 'غير موثق' },
-            { label: 'رقم الهوية', value: person.national_id ? <span dir="ltr">{person.national_id}</span> : 'غير موثق' },
-            { label: 'العنوان', value: person.address ?? 'غير موثق', wide: true },
-          ]}
-        />
-      ) : null}
+      <PersonDossierContent personId={personId} section="overview" />
     </EntityPreviewDialog>
   );
 }

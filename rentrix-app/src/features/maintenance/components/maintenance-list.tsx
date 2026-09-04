@@ -222,8 +222,8 @@ export function MaintenanceList(props: MaintenanceListProps) {
         const allowedStatusActions = availableStatusActions.filter((action) => canRunStatusAction(action.status));
         const menuItems = [
           {
-            id: "preview",
-            label: "معاينة سريعة",
+            id: "details",
+            label: "التفاصيل",
             icon: Eye,
             onClick: () => onViewDetails(row),
           },
@@ -279,10 +279,10 @@ export function MaintenanceList(props: MaintenanceListProps) {
         mobilePrimaryMetaKeys={["priority", "attention"]}
         mobileSecondaryMetaKeys={["provider"]}
         mobileCardPrimaryAction={(row) => ({
-          label: "معاينة سريعة",
+          label: "عرض الطلب",
           icon: Eye,
           variant: "default",
-          ariaLabel: `معاينة ${row.title}`,
+          ariaLabel: `عرض تفاصيل ${row.title}`,
           onClick: () => onViewDetails(row),
         })}
         mobileCardActions={(row) => {
@@ -308,7 +308,6 @@ export function MaintenanceList(props: MaintenanceListProps) {
         emptyTitle={emptyTitle}
         emptyDescription={emptyDescription}
         emptyAction={emptyAction}
-        onRowClick={(row) => onViewDetails(row)}
       />
     </div>
   );

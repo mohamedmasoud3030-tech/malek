@@ -1,10 +1,9 @@
 import { useMemo, useState } from 'react';
-import { AlertTriangle, Building2, Eye, FileText, ReceiptText, UserRound } from 'lucide-react';
-import { useNavigate } from '@tanstack/react-router';
+import { AlertTriangle, Building2, FileText, ReceiptText, UserRound } from 'lucide-react';
+import { useDialogNavigate } from '@/app/router/background-location';
 import { ActionMenu } from '@/components/ui/action-menu';
 import { EntityTable, EntityTableViewModeProvider, type ColumnDef } from '@/components/ui/entity-table';
 import { EntityPreviewDialog } from '@/components/ui/entity-preview-dialog';
-import { PreviewFacts, type PreviewFactRow } from '@/components/ui/quick-preview';
 import { Button } from '@/components/ui/button';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { Select } from '@/components/ui/select';
@@ -41,7 +40,7 @@ export function OverdueInvoicesPanel({ rows, action, isLoading }: Readonly<{ row
   const [selected, setSelected] = useState<OverdueInvoiceReportRow | null>(null);
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<ArrearsSort>('oldest');
-  const navigate = useNavigate();
+  const dialogNavigate = useDialogNavigate();
   const visibleRows = useMemo(() => rows
     .filter((row) => matchesArrearsSearch(row, query))
     .sort((a, b) => sort === 'amount_desc'
@@ -50,7 +49,7 @@ export function OverdueInvoicesPanel({ rows, action, isLoading }: Readonly<{ row
 
   const openTarget = (target: { to: string; params?: Record<string, string>; search?: Record<string, unknown> }) => {
     setSelected(null);
-    void navigate(target as never);
+    dialogNavigate(target);
   };
   const columns = useMemo((): ColumnDef<OverdueInvoiceReportRow>[] => [
     { key: 'invoice', header: 'الفاتورة', priority: 'identity', render: (row) => <Button variant="link" className="min-h-11 px-1 font-black" onClick={() => setSelected(row)}>{row.invoiceReference ?? 'فاتورة بلا مرجع'}</Button> },
@@ -79,7 +78,7 @@ export function OverdueInvoicesPanel({ rows, action, isLoading }: Readonly<{ row
         <div className="flex" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
           <ActionMenu
             label={`إجراءات ${row.invoiceReference ?? 'الفاتورة'}`}
-            items={[{ id: 'preview', label: 'معاينة سريعة', icon: Eye, onClick: () => setSelected(row) }]}
+            items={[{ id: 'view', label: 'عرض', onClick: () => setSelected(row) }]}
           />
         </div>
       ),
@@ -119,24 +118,23 @@ export function OverdueInvoicesPanel({ rows, action, isLoading }: Readonly<{ row
       <EntityPreviewDialog open={Boolean(selected)} onOpenChange={(open) => { if (!open) setSelected(null); }} title={selected ? `تفاصيل المتأخرات — ${selected.invoiceReference ?? 'فاتورة مسجلة'}` : 'تفاصيل المتأخرات'} description="Drill-down سياقي إلى السجلات الأصلية بدون فقد سياق التقرير.">
         {selected ? (
           <div className="space-y-4">
-            <PreviewFacts
-              rows={[
-                { label: 'المستأجر', value: selected.tenantName ?? 'غير محدد' },
-                {
-                  label: 'العقار / الوحدة',
-                  value: [selected.propertyTitle, selected.unitNumber ? `وحدة ${selected.unitNumber}` : null].filter(Boolean).join(' · ') || 'غير محدد',
-                },
-                { label: 'العقد', value: selected.contractReference ?? 'عقد بلا مرجع' },
-                { label: 'الاستحقاق', value: formatDate(selected.dueDate) },
-                { label: 'أيام التأخير', value: `${selected.daysOverdue} يوم` },
-                { label: 'المتبقي', value: <span dir="ltr">{formatMoney(selected.remainingAmount)}</span> },
-                {
-                  label: 'التعتيق',
-                  value: <StatusBadge tone={selected.daysOverdue > 90 ? 'warning' : 'neutral'}>{getAgingLabel(selected.daysOverdue)}</StatusBadge>,
-                },
-                { label: 'الحالة', value: formatInvoiceStatusLabel(selected.status) },
-              ] satisfies PreviewFactRow[]}
-            />
+            <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {[
+                ['المستأجر', selected.tenantName ?? 'غير محدد'],
+                ['الهاتف', selected.tenantPhone ?? 'غير مسجل'],
+                ['العقار', selected.propertyTitle ?? 'غير محدد'],
+                ['الوحدة', selected.unitNumber ?? 'غير محددة'],
+                ['العقد', selected.contractReference ?? 'عقد بلا مرجع'],
+                ['الفاتورة', selected.invoiceReference ?? 'فاتورة بلا مرجع'],
+                ['الاستحقاق', formatDate(selected.dueDate)],
+                ['أيام التأخير', `${selected.daysOverdue} يوم`],
+                ['المبلغ الأصلي', formatMoney(selected.amount)],
+                ['المدفوع', formatMoney(selected.paidAmount)],
+                ['المتبقي', formatMoney(selected.remainingAmount)],
+                ['التعتيق', getAgingLabel(selected.daysOverdue)],
+                ['الحالة', formatInvoiceStatusLabel(selected.status)],
+              ].map(([label, value]) => <div key={label} className="rounded-xl border border-border/70 bg-muted/20 p-3"><dt className="text-xs text-muted-foreground">{label}</dt><dd className="mt-1 font-bold">{value}</dd></div>)}
+            </dl>
 
             <div className="rounded-xl border border-border/70 p-4">
               <p className="font-bold">السجلات المرتبطة</p>

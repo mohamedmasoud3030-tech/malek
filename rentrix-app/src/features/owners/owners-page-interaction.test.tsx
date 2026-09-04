@@ -125,9 +125,8 @@ describe('OwnersPage actual owner-model mobile workflow interactions', () => {
     expect(actionMenu).toBeTruthy();
     await act(async () => actionMenu?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
     const menuItems = Array.from(document.body.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'));
-    // Detail access is the shared Quick Preview action across the registers,
-    // with the full file only through the explicit «فتح الملف الكامل» item.
-    expect(menuItems.map((item) => item.textContent)).toEqual(expect.arrayContaining(['معاينة سريعة', 'فتح الملف الكامل', 'العلاقات', 'تعديل']));
+    // Detail access is the shared preview action (معاينة) across the registers.
+    expect(menuItems.map((item) => item.textContent)).toEqual(expect.arrayContaining(['معاينة', 'العلاقات', 'تعديل']));
 
     const editButton = menuItems.find((button) => button.textContent?.trim() === 'تعديل');
     expect(editButton).toBeTruthy();

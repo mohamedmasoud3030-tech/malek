@@ -1,8 +1,8 @@
-import { Edit, Eye, FolderOpen, IdCard, Plus, Trash2, UserCheck, UserRound, Users } from "lucide-react";
+import { Edit, IdCard, Plus, Trash2, UserCheck, UserRound, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { PersonFormModal } from "./person-form-modal";
-import { PersonPreviewDialog } from "./components/PersonDossier";
+import { useDialogNavigate } from "@/app/router/background-location";
 import { ActionMenu } from "@/components/ui/action-menu";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -49,8 +49,8 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editPersonId, setEditPersonId] = useState<string | undefined>();
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [previewPerson, setPreviewPerson] = useState<Person | null>(null);
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultPeopleColumns]);
+  const dialogNavigate = useDialogNavigate();
   const debouncedSearch = useDebounce(search, 300);
 
   useEffect(() => {
@@ -197,8 +197,7 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
           <ActionMenu
             label={`إجراءات ${person.full_name}`}
             items={[
-              { id: 'full-page', label: 'فتح الملف الكامل', icon: FolderOpen, onClick: () => void navigate({ to: '/people/$personId', params: { personId: person.id } }) },
-              { id: 'preview', label: 'معاينة سريعة', icon: Eye, onClick: () => setPreviewPerson(person) },
+              { id: 'view', label: 'عرض', onClick: () => dialogNavigate({ to: '/people/$personId', params: { personId: person.id } }) },
               { id: 'edit', label: 'تعديل', icon: Edit, onClick: () => openEdit(person.id) },
               { id: 'archive', label: 'أرشفة', icon: Trash2, danger: true, onClick: () => setDeleteId(person.id) },
             ]}
@@ -206,7 +205,7 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
         </div>
       ),
     },
-  ], [navigate, openEdit]);
+  ], [dialogNavigate, openEdit]);
 
   return (
     <>
@@ -280,21 +279,7 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
             visibleColumnKeys={visibleColumnKeys}
             mobileCardType={(person) => person.type}
             mobilePrimaryMetaKeys={["phone", "email"]}
-            mobileCardPrimaryAction={(person) => ({
-              label: 'معاينة سريعة',
-              icon: Eye,
-              variant: 'default',
-              ariaLabel: `معاينة ${person.full_name}`,
-              onClick: () => setPreviewPerson(person),
-            })}
             mobileCardActions={(person) => [
-              {
-                label: "فتح الملف الكامل",
-                icon: FolderOpen,
-                variant: "secondary",
-                ariaLabel: `فتح ملف ${person.full_name}`,
-                onClick: () => void navigate({ to: '/people/$personId', params: { personId: person.id } }),
-              },
               {
                 label: "تعديل",
                 icon: Edit,
@@ -340,17 +325,10 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
               total: totalCount,
               onPageChange: setPage,
             }}
-            onRowClick={(person) => setPreviewPerson(person)}
+            onRowClick={(person) => dialogNavigate({ to: '/people/$personId', params: { personId: person.id } })}
           />
         </section>
       </ListPage>
-
-      <PersonPreviewDialog
-        person={previewPerson}
-        open={previewPerson !== null}
-        onOpenChange={(open) => { if (!open) setPreviewPerson(null); }}
-        onEdit={(personId) => { setPreviewPerson(null); openEdit(personId); }}
-      />
 
       <PersonFormModal
         open={modalOpen}

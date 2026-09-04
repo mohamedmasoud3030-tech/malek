@@ -2,9 +2,9 @@ import { Link } from "@tanstack/react-router";
 import {
   Building2,
   CircleGauge,
+  DoorOpen,
   Edit,
   Eye,
-  FolderOpen,
   Home,
   Plus,
   Wrench,
@@ -54,12 +54,11 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
   const canCreateUnit = canAccess("properties.create");
   const canEditUnit = canAccess("properties.edit");
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultUnitRegisterColumns]);
-  const [previewUnit, setPreviewUnit] = useState<Unit | null>(null);
+  const [previewUnitId, setPreviewUnitId] = useState<string | null>(null);
   if (ctrl.isLoading) return <LoadingState variant="route" />;
 
-  const openPreview = (unit: Unit) => setPreviewUnit(unit);
-  const closePreview = () => setPreviewUnit(null);
-  const previewPropertyTitle = previewUnit ? ctrl.propertyById.get(previewUnit.property_id)?.title : undefined;
+  const openPreview = (unit: Unit) => setPreviewUnitId(unit.id);
+  const closePreview = () => setPreviewUnitId(null);
 
   const totalUnits = ctrl.units.length;
   const occupancyRate = totalUnits > 0
@@ -144,16 +143,16 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
             label={`إجراءات وحدة ${unit.unit_number}`}
             items={[
               {
-                id: 'full-page',
-                label: 'فتح ملف الوحدة',
-                icon: FolderOpen,
-                onClick: () => ctrl.navigateToUnit(unit),
-              },
-              {
                 id: 'preview',
-                label: 'معاينة سريعة',
+                label: 'معاينة',
                 icon: Eye,
                 onClick: () => openPreview(unit),
+              },
+              {
+                id: 'details',
+                label: 'التفاصيل الكاملة',
+                icon: DoorOpen,
+                onClick: () => ctrl.navigateToUnit(unit),
               },
               ...(canEditUnit ? [{
                 id: 'edit',
@@ -276,7 +275,7 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
             mobileSupportingKey="property"
             mobilePrimaryMetaKeys={["rent", "floor"]}
             mobileCardPrimaryAction={(unit) => ({
-              label: "معاينة سريعة",
+              label: "معاينة",
               icon: Eye,
               variant: "default",
               ariaLabel: `معاينة وحدة ${unit.unit_number}`,
@@ -284,8 +283,8 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
             })}
             mobileCardActions={(unit) => [
               {
-                label: "فتح ملف الوحدة",
-                icon: FolderOpen,
+                label: "التفاصيل الكاملة",
+                icon: DoorOpen,
                 variant: "secondary" as const,
                 ariaLabel: `فتح ملف وحدة ${unit.unit_number}`,
                 onClick: () => ctrl.navigateToUnit(unit),
@@ -303,11 +302,9 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
       </ListPage>
 
       <UnitPreviewDialog
-        unit={previewUnit}
-        propertyTitle={previewPropertyTitle}
-        open={previewUnit !== null}
+        unitId={previewUnitId}
+        open={previewUnitId !== null}
         onOpenChange={(open) => { if (!open) closePreview(); }}
-        onEdit={(unit) => { closePreview(); ctrl.openEdit(unit); }}
       />
 
       {canCreateUnit ? (

@@ -163,13 +163,11 @@ describe('Global UnitsPage Real Rendered User-Interaction Tests', () => {
       row.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
 
-    const dialog = document.body.querySelector('[role="dialog"]');
-    expect(dialog?.textContent).toContain('وحدة 101');
-    expect(dialog?.querySelector('button[aria-label="إغلاق المعاينة"]')).toBeTruthy();
+    expect(document.body.textContent).toContain('معاينة الوحدة');
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 
-  it('proves the explicit full-page action routes to the unit dossier', async () => {
+  it('proves the explicit full-detail action routes to the unit dossier', async () => {
     await act(async () => {
       root.render(
         <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
@@ -184,7 +182,7 @@ describe('Global UnitsPage Real Rendered User-Interaction Tests', () => {
       actionTrigger?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
     const fullDetail = Array.from(document.body.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'))
-      .find((button) => button.textContent?.includes('فتح ملف الوحدة'));
+      .find((button) => button.textContent?.includes('التفاصيل الكاملة'));
     expect(fullDetail).toBeTruthy();
 
     await act(async () => {

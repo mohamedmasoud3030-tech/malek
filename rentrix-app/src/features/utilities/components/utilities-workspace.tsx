@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Activity, AlertCircle, CheckCircle2, Download, Droplets, Eye, Flame, Plus, Printer, ShieldCheck, Trash2, Wifi, Zap } from 'lucide-react';
+import { Activity, AlertCircle, CheckCircle2, Download, Droplets, FileText, Flame, Plus, Printer, ShieldCheck, Trash2, Wifi, Zap } from 'lucide-react';
 import { AsyncContentState } from '@/components/async-content-state';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
@@ -497,7 +497,7 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
           <ActionMenu
             label={`إجراءات ${bill.bill_number ?? 'فاتورة المرافق'}`}
             items={[
-              { id: 'preview', label: 'معاينة سريعة', icon: Eye, onClick: () => setBillToPreview(bill) },
+              { id: 'details', label: 'التفاصيل', icon: FileText, onClick: () => setBillToPreview(bill) },
               { id: 'archive', label: 'أرشفة', icon: Trash2, danger: true, onClick: () => setBillToArchive(bill) },
             ]}
           />
@@ -671,13 +671,6 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
               keyOf={(bill) => bill.id}
               onRowClick={(bill) => setBillToPreview(bill)}
               mobileBadgeKey="status"
-              mobileCardPrimaryAction={(bill) => ({
-                label: 'معاينة سريعة',
-                icon: Eye,
-                variant: 'default' as const,
-                ariaLabel: `معاينة ${bill.bill_number ?? 'فاتورة المرافق'}`,
-                onClick: () => setBillToPreview(bill),
-              })}
               mobilePrimaryMetaKeys={['due', 'remaining', 'responsible', 'property']}
               emptyTitle={urgencyFilter === 'all' ? 'لا توجد فواتير مطابقة' : `لا توجد فواتير ${utilityObligationUrgencyLabels[urgencyFilter]}`}
               emptyDescription={

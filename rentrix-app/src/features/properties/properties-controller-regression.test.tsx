@@ -132,15 +132,12 @@ describe('PropertiesListPage controller regression', () => {
     // (in happy-dom, overlay stays open until state change)
   });
 
-  it('opens the quick preview from table row click (never row navigation)', async () => {
+  it('navigates to property detail from table row click', async () => {
     await act(async () => { root.render(<PropertiesListPage />); });
     const row = container.querySelector('tbody tr') as HTMLElement;
     expect(row).toBeTruthy();
     await act(async () => { row.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
-    const dialog = document.body.querySelector('[role="dialog"]');
-    expect(dialog?.textContent).toContain('عمارة الندى');
-    expect(dialog?.querySelector('button[aria-label="إغلاق المعاينة"]')).toBeTruthy();
-    expect(mockNavigate).not.toHaveBeenCalled();
+    expect(mockNavigate).toHaveBeenCalledWith({ to: '/properties/$propertyId', params: { propertyId: 'p1' } });
   });
 
   it('renders mobile property cards with scan-level summary fields and one clear dossier action', async () => {
@@ -177,17 +174,12 @@ describe('PropertiesListPage controller regression', () => {
     expect(card?.querySelector('[data-entity-table-mobile-secondary-meta]')).toBeNull();
     expect(card?.textContent).not.toContain('الرياض');
 
-    // One obvious primary action stays on the face; the dossier/edit/archive
-    // live inside the card's overflow menu.
+    // One obvious primary action stays on the face; edit/archive are
+    // consolidated into the card's overflow menu.
     expect(container.querySelector('[data-entity-table-mobile-actions]')).toBeNull();
-    expect(card?.textContent).toContain('معاينة سريعة');
+    expect(card?.textContent).toContain('فتح الملف');
     expect(card?.textContent).not.toContain('تعديل البيانات');
     expect(card?.querySelector('[data-action-menu]')).toBeTruthy();
-    // Opening the overflow proves the explicit full-page action exists on mobile.
-    const cardTrigger = card?.querySelector<HTMLButtonElement>('[data-action-menu-trigger]');
-    expect(cardTrigger).toBeTruthy();
-    await act(async () => { cardTrigger?.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
-    expect(Array.from(document.body.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')).some((button) => button.textContent?.includes('فتح الملف الكامل'))).toBe(true);
   });
 
   it('opens edit modal from the contextual property action menu', async () => {

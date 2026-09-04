@@ -1,5 +1,4 @@
 import { FileText } from 'lucide-react';
-import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { EntityPreviewDialog } from '@/components/ui/entity-preview-dialog';
@@ -7,9 +6,7 @@ import { DocumentReadinessNotice } from '@/features/settings/components/document
 import { useInvoiceWorkspaceController } from '../invoices/useInvoiceWorkspaceController';
 import { InvoiceDetailSection } from './invoice-detail-section';
 import { InvoiceListSection } from './invoice-list-section';
-import { InvoicePreviewDialog } from './invoice-preview-dialog';
 import { BillingReadinessSection } from '../billing/billing-readiness-section';
-import type { InvoiceListItem } from '../invoices/invoiceService';
 
 type GenerateInvoicesDialogProps = {
   open: boolean;
@@ -53,7 +50,6 @@ function GenerateInvoicesDialog({ open, isGenerating, onOpenChange, onConfirm }:
 
 export function InvoiceWorkspaceSection() {
   const ctrl = useInvoiceWorkspaceController();
-  const [previewInvoice, setPreviewInvoice] = useState<InvoiceListItem | null>(null);
 
   return (
     <>
@@ -81,7 +77,6 @@ export function InvoiceWorkspaceSection() {
         onInvoiceSearchChange={ctrl.changeSearch}
         onGenerateInvoices={() => { if (ctrl.canGenerateInvoices) ctrl.setGenerateDialogOpen(true); }}
         onSelectInvoice={ctrl.onSelectInvoiceRow}
-        onPreviewInvoice={setPreviewInvoice}
         canCollectPayments={ctrl.canCreatePayment}
         onCollectInvoice={ctrl.onCollectInvoice}
         onPrintInvoice={ctrl.canExportInvoiceDocuments ? ctrl.onPrintInvoice : undefined}
@@ -100,24 +95,10 @@ export function InvoiceWorkspaceSection() {
         onConfirm={ctrl.onConfirmGenerateInvoices}
       />
 
-      <InvoicePreviewDialog
-        invoice={previewInvoice}
-        open={previewInvoice !== null}
-        onOpenChange={(open) => { if (!open) setPreviewInvoice(null); }}
-        onOpenWorkspace={(invoiceId) => {
-          setPreviewInvoice(null);
-          ctrl.onSelectInvoiceRow(invoiceId);
-        }}
-        onCollect={(invoiceId) => {
-          setPreviewInvoice(null);
-          ctrl.onCollectInvoice(invoiceId);
-        }}
-      />
-
       <EntityPreviewDialog
         open={Boolean(ctrl.selectedInvoiceId)}
         onOpenChange={(open) => { if (!open) ctrl.setSelectedInvoiceId(''); }}
-        title="مساحة الفاتورة والتحصيل"
+        title="الفاتورة والتحصيل"
         description={ctrl.invoiceDetail
           ? `${ctrl.invoiceDetail.contracts?.people?.full_name ?? 'مستأجر غير محدد'} · ${ctrl.invoiceDetail.contracts?.properties?.title ?? 'عقار غير محدد'} · ${ctrl.invoiceDetail.reference ?? 'فاتورة بلا مرجع'}`
           : 'تحميل بيانات الفاتورة...'}

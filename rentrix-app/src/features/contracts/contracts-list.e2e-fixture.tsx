@@ -176,7 +176,7 @@ export function ContractsListE2EFixture() {
   const [leaseMode, setLeaseMode] = useState<LeaseModeFilter>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [expiringOnly, setExpiringOnly] = useState(false);
-  const [previewContractId, setPreviewContractId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultContractColumns]);
 
   const { filteredContracts, hasActiveFilters } = useContractFilters({
@@ -269,6 +269,7 @@ export function ContractsListE2EFixture() {
           attentionByContractId={fixtureAttention.attentionByContractId}
           companySettings={defaultCompanySettingsContract}
           contracts={filteredContracts}
+          expandedId={expandedId}
           emptyDescription={hasActiveFilters ? 'لا توجد عقود مطابقة لبيانات الاختبار.' : 'لا توجد عقود في بيانات الاختبار.'}
           emptyTitle="لا توجد عقود مطابقة"
           error={null}
@@ -276,9 +277,9 @@ export function ContractsListE2EFixture() {
           isLoading={false}
           onDelete={() => undefined}
           onEdit={() => undefined}
-          onOpenFull={() => undefined}
-          onPreview={(contractId: string) => setPreviewContractId(contractId)}
+          onPreview={() => undefined}
           onRetry={() => undefined}
+          setExpandedId={setExpandedId}
           visibleColumnKeys={visibleColumnKeys}
         />
       </ListPage>

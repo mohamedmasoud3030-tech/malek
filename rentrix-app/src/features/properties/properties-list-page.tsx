@@ -2,10 +2,8 @@ import {
   Building2,
   CircleCheck,
   Edit,
-  Eye,
   FileSpreadsheet,
   FileText,
-  FolderOpen,
   Handshake,
   Plus,
   Trash2,
@@ -13,7 +11,6 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { PropertyFormModal } from "./property-form-modal";
-import { PropertyPreviewDialog } from "./components/property-preview-dialog";
 import { formatPropertyUnitSummary } from "./property-card-utils";
 import { usePropertyListController } from "./use-property-list-controller";
 import { ListPage } from "@/components/layout/list-page";
@@ -101,7 +98,6 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
   const canArchive = canAccess('properties.archive');
   const canExport = canAccess('properties.view');
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultPropertyColumns]);
-  const [previewProperty, setPreviewProperty] = useState<PropertyListItem | null>(null);
   const readyCount = controller.properties.filter(
     (property) => property.workflow_health === "ready",
   ).length;
@@ -232,15 +228,9 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
                       items={[
                         {
                           id: 'open',
-                          label: 'فتح الملف الكامل',
-                          icon: FolderOpen,
+                          label: 'فتح الملف',
+                          icon: Building2,
                           onClick: () => controller.navigateToProperty(property.id),
-                        },
-                        {
-                          id: 'preview',
-                          label: 'معاينة سريعة',
-                          icon: Eye,
-                          onClick: () => setPreviewProperty(property),
                         },
                         ...(canEdit ? [{
                           id: 'edit',
@@ -338,7 +328,7 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
             aria-label="جدول العقارات"
             rows={controller.properties}
             keyOf={(property) => property.id}
-            onRowClick={(property) => setPreviewProperty(property)}
+            onRowClick={(property) => controller.navigateToProperty(property.id)}
             visibleColumnKeys={visibleColumnKeys}
             isLoading={controller.propertiesQuery.isLoading}
             error={controller.propertiesQuery.isError ? controller.propertiesQuery.error : null}
@@ -364,20 +354,13 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
             mobileSupportingKey="owner"
             mobilePrimaryMetaKeys={["units", "type"]}
             mobileCardPrimaryAction={(property) => ({
-              label: 'معاينة سريعة',
-              icon: Eye,
+              label: 'فتح الملف',
+              icon: Building2,
               variant: 'default',
-              ariaLabel: `معاينة ${property.title ?? 'العقار'}`,
-              onClick: () => setPreviewProperty(property),
+              ariaLabel: `فتح ملف ${property.title ?? 'العقار'}`,
+              onClick: () => controller.navigateToProperty(property.id),
             })}
             mobileCardActions={(property) => [
-              {
-                label: 'فتح الملف الكامل',
-                icon: FolderOpen,
-                variant: 'secondary' as const,
-                ariaLabel: `فتح ملف ${property.title ?? 'العقار'}`,
-                onClick: () => controller.navigateToProperty(property.id),
-              },
               ...(canEdit ? [{
                 label: "تعديل البيانات",
                 icon: Edit,
@@ -427,14 +410,6 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
           onConfirm={controller.confirmArchive}
         />
       ) : null}
-
-      <PropertyPreviewDialog
-        property={previewProperty}
-        open={previewProperty !== null}
-        onOpenChange={(open) => { if (!open) setPreviewProperty(null); }}
-        onEdit={canEdit ? (propertyId) => { setPreviewProperty(null); controller.openEditModal(propertyId); } : undefined}
-        onArchive={canArchive ? (propertyId, title) => { setPreviewProperty(null); controller.requestArchive(propertyId, title); } : undefined}
-      />
     </>
   );
 }

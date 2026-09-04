@@ -1,8 +1,7 @@
-import { Link, useNavigate, useParams } from '@tanstack/react-router';
-import { Activity, ArrowUpRight, Edit, FileText, ReceiptText, UserRound } from 'lucide-react';
+import { Link, useParams } from '@tanstack/react-router';
+import { Activity, Edit, FileText, ReceiptText, UserRound } from 'lucide-react';
 import { useState } from 'react';
 import { EntityPreviewDialog } from '@/components/ui/entity-preview-dialog';
-import { PreviewFacts } from '@/components/ui/quick-preview';
 import { ContextualDocumentsSection } from '@/components/documents/contextual-documents-section';
 import { EntityDetailHeader } from '@/components/layout/entity-detail-header';
 import { PageLayout } from '@/components/layout/page-layout';
@@ -18,10 +17,8 @@ import { useCompanyFormatters } from '@/hooks/useCompanyFormatters';
 import { businessReferenceOrLabel } from '@/lib/business-reference';
 import { formatCompanyDateTime } from '@/lib/companyFormatters';
 import { useTenantDossier } from '../useTenantWorkspace';
-
+import { useDialogNavigate } from '@/app/router/background-location';
 import { TenantPortalLinkAction } from './TenantPortalLinkAction';
-import { formatLatinNumber } from '@/lib/formatters';
-import type { TenantWorkspaceRow } from '../tenantWorkspaceService';
 
 type TenantSection = 'overview' | 'contracts' | 'ledger' | 'records';
 
@@ -33,7 +30,7 @@ const tenantSections = [
 ] as const;
 
 export function TenantDossierContent({ tenantId, section }: Readonly<{ tenantId: string; section?: TenantSection }>) {
-  const navigate = useNavigate();
+  const dialogNavigate = useDialogNavigate();
   const { canAccess } = useAuth();
   const companyFormatters = useCompanyFormatters();
   const canViewFinancial = canAccess('arrears.view');
@@ -90,7 +87,7 @@ export function TenantDossierContent({ tenantId, section }: Readonly<{ tenantId:
                     <StatusBadge tone={contractStatusTone[normalizeContractStatus(contract.status)]}>
                       {contractStatusLabels[normalizeContractStatus(contract.status)]}
                     </StatusBadge>
-                    <Button variant="secondary" className="min-h-11" onClick={() => void navigate({ to: '/contracts/$contractId', params: { contractId: contract.id } })}>فتح العقد</Button>
+                    <Button variant="secondary" className="min-h-11" onClick={() => dialogNavigate({ to: '/contracts/$contractId', params: { contractId: contract.id } })}>فتح العقد</Button>
                   </div>
                 </li>
               ))}
@@ -121,13 +118,38 @@ export function TenantDossierContent({ tenantId, section }: Readonly<{ tenantId:
             ))}
           </div>
 
-          {statementContract ? (
-            <div className="flex flex-wrap gap-2 border-t border-border/60 pt-3">
+          <div className="border-t border-border/60 pt-4">
+            <p className="text-sm font-bold">الدفعات وإثباتاتها</p>
+            {dossier.receipts.length === 0 ? (
+              <p className="mt-2 text-sm text-muted-foreground">لا توجد دفعات أو إثباتات دفع مسجلة لهذا المستأجر.</p>
+            ) : (
+              <ul className="mt-2 divide-y divide-border/60" aria-label="دفعات المستأجر وإثباتاتها">
+                {dossier.receipts.map((receipt) => (
+                  <li key={receipt.id} className="grid grid-cols-1 gap-1.5 py-3 text-sm sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center sm:gap-3">
+                    <span className="truncate font-bold">{receipt.reference ?? receipt.no ?? 'دفعة مسجلة'}</span>
+                    <span className="text-muted-foreground">{receipt.date_time.slice(0, 10)}{receipt.channel ? ` · ${receipt.channel}` : ''}</span>
+                    <span className="font-bold tabular-nums" dir="ltr">{companyFormatters.money(Number(receipt.amount))}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div className="flex flex-wrap gap-2 border-t border-border/60 pt-3">
+            {statementContract ? (
               <Button asChild variant="outline" className="min-h-11">
-                <Link to="/reports" search={{ section: 'accounting', view: 'general_ledger' } as never}>كشف حسابي للعقد</Link>
+                <Link
+                  to="/reports"
+                  search={{ section: 'statements', tenantId, contractId: statementContract.id } as never}
+                >
+                  كشف الحساب الكامل
+                </Link>
               </Button>
-            </div>
-          ) : null}
+            ) : null}
+            <Button asChild variant="secondary" className="min-h-11">
+              <Link to="/reports" search={{ section: 'analytics', view: 'overdue', tenantId } as never}>تقرير المتأخرات</Link>
+            </Button>
+          </div>
         </section>
       ) : null}
 
@@ -156,72 +178,10 @@ export function TenantDossierContent({ tenantId, section }: Readonly<{ tenantId:
   );
 }
 
-/**
- * Tenant Quick Preview — glance-first.
- * Identity, contact, current tenancy location, contract and account flags.
- * The full dossier (contracts, ledger, activity, documents) lives on
- * «فتح ملف المستأجر».
- */
-export function TenantPreviewDialog({
-  tenant,
-  open,
-  onOpenChange,
-  onEdit,
-  onOpenContract,
-}: Readonly<{
-  tenant: TenantWorkspaceRow | null;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onEdit?: (personId: string) => void;
-  onOpenContract?: (contractId: string) => void;
-}>) {
-  const navigate = useNavigate();
-  const person = tenant?.person;
-  const hasLocation = Boolean(tenant?.propertyTitle || tenant?.unitNumber);
-
+export function TenantPreviewDialog({ tenantId, open, onOpenChange, onEdit }: Readonly<{ tenantId: string; open: boolean; onOpenChange: (open: boolean) => void; onEdit?: (personId: string) => void }>) {
   return (
-    <EntityPreviewDialog
-      open={open}
-      onOpenChange={onOpenChange}
-      title={person?.full_name ?? 'معاينة المستأجر'}
-      status={tenant?.hasArrears ? <StatusBadge tone="warning">له متأخرات</StatusBadge> : undefined}
-      footer={person ? (
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            className="min-h-11 flex-1 sm:flex-none"
-            onClick={() => void navigate({ to: '/tenants/$tenantId', params: { tenantId: person.id } })}
-          >
-            <ArrowUpRight className="me-2 size-4" aria-hidden="true" />
-            فتح ملف المستأجر
-          </Button>
-          {tenant?.primaryContractId && onOpenContract ? (
-            <Button type="button" variant="secondary" className="min-h-11" onClick={() => onOpenContract(tenant.primaryContractId!)}>
-              <FileText className="me-2 size-4" aria-hidden="true" />
-              فتح العقد
-            </Button>
-          ) : null}
-          {onEdit ? (
-            <Button type="button" variant="secondary" className="min-h-11" onClick={() => onEdit(person.id)}>
-              <Edit className="me-2 size-4" aria-hidden="true" />
-              تعديل
-            </Button>
-          ) : null}
-        </div>
-      ) : undefined}
-    >
-      {person ? (
-        <PreviewFacts
-          rows={[
-            { label: 'الهاتف', value: person.phone ? <span dir="ltr">{person.phone}</span> : 'غير موثق' },
-            { label: 'البريد', value: person.email ? <span dir="ltr">{person.email}</span> : 'غير موثق' },
-            { label: 'رقم الهوية', value: person.national_id ? <span dir="ltr">{person.national_id}</span> : 'غير موثق' },
-            { label: 'العقار / الوحدة', value: hasLocation ? [tenant!.propertyTitle, tenant!.unitNumber ? `وحدة ${tenant!.unitNumber}` : null].filter(Boolean).join(' · ') : 'غير مرتبط بوحدة' },
-            { label: 'العقود النشطة', value: formatLatinNumber(tenant?.activeContractCount ?? 0, 'ar') },
-            { label: 'المتأخرات', value: tenant?.hasArrears ? 'توجد متأخرات تستوجب متابعة' : 'لا توجد متأخرات' },
-            { label: 'سجل فواتير', value: tenant?.hasInvoices ? 'يوجد سجل فواتير' : 'لا توجد فواتير', wide: true },
-          ]}
-        />
-      ) : null}
+    <EntityPreviewDialog open={open} onOpenChange={onOpenChange} title="ملف المستأجر" description="العلاقات والعقود والفواتير والمستندات حسب الصلاحية." actions={onEdit ? <Button onClick={() => onEdit(tenantId)}><Edit className="me-2 size-4" />تعديل</Button> : undefined}>
+      <TenantDossierContent tenantId={tenantId} section="overview" />
     </EntityPreviewDialog>
   );
 }
