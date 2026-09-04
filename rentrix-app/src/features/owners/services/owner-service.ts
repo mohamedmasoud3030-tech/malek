@@ -73,7 +73,7 @@ export type OwnerProperty = Property & {
   property_owners: PropertyOwner[];
 };
 
-export type OwnerUnit = Pick<Unit, 'id' | 'property_id' | 'unit_number' | 'floor' | 'status' | 'rent_amount'>;
+export type OwnerUnit = Pick<Unit, 'id' | 'property_id' | 'unit_number' | 'floor' | 'status' | 'rent_amount' | 'created_at'>;
 export type OwnerContract = Pick<Contract, 'id' | 'property_id' | 'unit_id' | 'start_date' | 'end_date' | 'status' | 'reference'>;
 export type OwnerInvoice = Pick<Invoice, 'id' | 'contract_id' | 'amount' | 'paid_amount' | 'status' | 'deleted_at' | 'reference' | 'due_date' | 'created_at'>;
 
@@ -455,7 +455,7 @@ export async function listUnitsForProperties(propertyIds: readonly string[]): Pr
 
   const { rows } = await fetchAllRowsInBatches<OwnerUnit, string>(propertyIds, (propertyIdBatch) => supabase
     .from('units')
-    .select('id, property_id, unit_number, floor, status, rent_amount')
+    .select('id, property_id, unit_number, floor, status, rent_amount, created_at')
     .in('property_id', [...propertyIdBatch])
     .is('deleted_at', null)
     .order('property_id', { ascending: true })
