@@ -3,7 +3,6 @@ import type { UtilityBill } from '@/features/utilities/utilities-service';
 import {
   buildUtilityObligationsSignal,
   EMPTY_UTILITY_OBLIGATIONS_SIGNAL,
-  UTILITY_QUEUE_ROW_LIMIT,
 } from './utility-obligations-signal';
 
 const TODAY = '2026-08-27';
@@ -27,13 +26,13 @@ function bill(overrides: Partial<UtilityBill>): UtilityBill {
   } as UtilityBill;
 }
 
-describe('Today utility obligations signal (P3)', () => {
+describe('Today utility obligations summary', () => {
   it('returns the neutral signal when there is nothing to read', () => {
     expect(buildUtilityObligationsSignal(undefined, TODAY)).toBe(EMPTY_UTILITY_OBLIGATIONS_SIGNAL);
     expect(buildUtilityObligationsSignal([], TODAY)).toBe(EMPTY_UTILITY_OBLIGATIONS_SIGNAL);
   });
 
-  it('counts late plus imminently due claims as the Today action number', () => {
+  it('counts late plus imminently due obligations without rebuilding bill rows', () => {
     const signal = buildUtilityObligationsSignal(
       [
         bill({ id: 'a', due_date: '2026-08-10' }),
@@ -47,44 +46,29 @@ describe('Today utility obligations signal (P3)', () => {
     expect(signal.actionableCount).toBe(2);
     expect(signal.summary.overdueCount).toBe(1);
     expect(signal.summary.dueSoonCount).toBe(1);
-    // Scheduled and settled claims stay out of the action hierarchy.
-    expect(signal.rows.map((row) => row.billId)).toEqual(['a', 'b']);
+    expect('rows' in signal).toBe(false);
   });
 
-  it('bounds the presentation rows without shrinking the counted total', () => {
-    const bills = Array.from({ length: 7 }, (_, index) =>
-      bill({ id: `late-${index}`, bill_number: `UB-${index}`, due_date: '2026-08-10' }),
-    );
-
-    const signal = buildUtilityObligationsSignal(bills, TODAY);
-
-    expect(signal.rows).toHaveLength(UTILITY_QUEUE_ROW_LIMIT);
-    expect(signal.actionableCount).toBe(7);
-    expect(signal.summary.overdueCount).toBe(7);
-  });
-
-  it('writes operator language for each queue row instead of raw fields', () => {
+  it('keeps complete-set money totals and the oldest overdue age', () => {
     const signal = buildUtilityObligationsSignal(
       [
-        bill({ id: 'late', bill_number: 'UB-9', due_date: '2026-08-20', responsible_party: 'landlord' }),
-        bill({ id: 'today', bill_number: null, due_date: TODAY, responsible_party: 'company' }),
-        bill({ id: 'soon', bill_number: 'UB-11', due_date: '2026-08-31', responsible_party: 'tenant' }),
+        bill({ id: 'old', due_date: '2026-08-01', amount: 100, paid_amount: 30 }),
+        bill({ id: 'new', due_date: '2026-08-20', amount: 50, paid_amount: 0 }),
       ],
       TODAY,
     );
 
-    expect(signal.rows[0]).toMatchObject({ title: 'فاتورة UB-9', meta: 'متأخرة 7 يوم · المالك' });
-    expect(signal.rows[1]).toMatchObject({ title: 'فاتورة مرافق بلا مرجع', meta: 'تستحق اليوم · شركة الإدارة' });
-    expect(signal.rows[2]).toMatchObject({ title: 'فاتورة UB-11', meta: 'تستحق خلال 4 يوم · المستأجر' });
+    expect(signal.summary.overdueAmount).toBe(120);
+    expect(signal.oldestOverdueDays).toBe(26);
   });
 
-  it('carries the remaining obligation, not the invoiced amount, into the queue', () => {
+  it('keeps scheduled future obligations out of the Today action count', () => {
     const signal = buildUtilityObligationsSignal(
-      [bill({ id: 'partial', due_date: '2026-08-10', amount: 100, paid_amount: 30 })],
+      [bill({ id: 'future', due_date: '2026-11-30' })],
       TODAY,
     );
 
-    expect(signal.rows[0].remainingAmount).toBe(70);
-    expect(signal.summary.overdueAmount).toBe(70);
+    expect(signal.actionableCount).toBe(0);
+    expect(signal.oldestOverdueDays).toBe(0);
   });
 });
