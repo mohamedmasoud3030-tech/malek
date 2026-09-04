@@ -259,6 +259,25 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
     submitPrompt(input);
   }
 
+  function closeLiveCall() {
+    // Flip the ref before stopping recognition so a final onend event cannot
+    // submit a partial turn while the user is hanging up.
+    liveCallOpenRef.current = false;
+    setLiveCallOpen(false);
+    voiceInput.stop();
+    stopSpeech();
+  }
+
+  function toggleLiveCall() {
+    if (liveCallOpenRef.current) {
+      closeLiveCall();
+      return;
+    }
+    stopSpeech();
+    liveCallOpenRef.current = true;
+    setLiveCallOpen(true);
+  }
+
   function toggleVoiceInput() {
     if (voiceInput.listening) {
       voiceInput.stop();
@@ -455,7 +474,7 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
           </button>
           <button
             type="button"
-            onClick={() => setLiveCallOpen((current) => !current)}
+            onClick={toggleLiveCall}
             disabled={configurationMissing}
             aria-pressed={liveCallOpen}
             className={cn(
@@ -481,7 +500,7 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
             speaking={speechState.status === 'playing' || speechState.status === 'paused'}
             onStart={() => voiceInput.start({ autoCommitOnFinal: true })}
             onStop={voiceInput.stop}
-            onClose={() => setLiveCallOpen(false)}
+            onClose={closeLiveCall}
           />
         </div>
       ) : null}
