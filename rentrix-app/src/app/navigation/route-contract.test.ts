@@ -141,4 +141,25 @@ describe('route-contract — single source of truth', () => {
     const paths = topLevelRoutePaths();
     expect(new Set(paths).size).toBe(paths.length);
   });
+
+  it('every top-level registration is contract-declared or an intentional structural public surface', () => {
+    // Preserves the #1794 duplicate-entry regression lock while using the
+    // structural full-path resolver introduced by this PR.
+    const canonicals = new Set(ROUTE_CONTRACT.map((entry) => entry.canonical));
+    const structuralPublicRoutes = new Set([
+      '/forgot-password',
+      '/reset-password',
+      '/tenant-portal',
+      '/owner-portal',
+      '/dev/design-system',
+    ]);
+
+    for (const path of topLevelRoutePaths()) {
+      expect(
+        canonicals.has(path) || structuralPublicRoutes.has(path),
+        `top-level route ${path} is not declared in ROUTE_CONTRACT or the reviewed structural-public allowlist`,
+      ).toBe(true);
+    }
+  });
+
 });

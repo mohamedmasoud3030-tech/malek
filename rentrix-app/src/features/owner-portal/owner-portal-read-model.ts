@@ -83,7 +83,27 @@ export type OwnerPortalSnapshot = Readonly<{
   settlements: readonly OwnerPortalSettlement[];
   maintenance: readonly OwnerPortalMaintenance[];
   documents: readonly OwnerPortalDocument[];
+  /**
+   * The server projection bounds every list to a recent window (50 rows) and
+   * reports the full matching row count in these additive keys. The summary
+   * figures remain computed over the complete scoped set regardless.
+   */
+  propertiesTotal?: number;
+  unitsTotal?: number;
+  settlementsTotal?: number;
+  maintenanceTotal?: number;
+  documentsTotal?: number;
 }>;
+
+/**
+ * The portal may only present a list as complete when it really is. When the
+ * bounded projection truncated the window, the UI must say so explicitly
+ * (same fail-honest doctrine as the paged-read contract).
+ */
+export function ownerPortalWindowNote(shown: number, total: number | undefined): string | null {
+  if (typeof total !== 'number' || total <= shown) return null;
+  return `يعرض ${shown} من أصل ${total}`;
+}
 
 export type OwnerPortalLoadResult =
   | Readonly<{ status: 'ready'; snapshot: OwnerPortalSnapshot }>

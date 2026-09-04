@@ -7,6 +7,7 @@ import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { APP_BRAND_NAME } from '@/lib/brand';
 import { DEFAULT_CURRENCY, formatMoney, normalizeCurrency } from '@/lib/formatters';
 import { loadOwnerPortalSnapshot } from './owner-portal-service';
+import { ownerPortalWindowNote } from './owner-portal-read-model';
 import type {
   OwnerPortalLoadResult,
   OwnerPortalProperty,
@@ -27,6 +28,12 @@ function date(value: string | null | undefined) {
 
 function percentage(value: number) {
   return new Intl.NumberFormat('ar-OM-u-nu-latn', { maximumFractionDigits: 1 }).format(Number(value) || 0);
+}
+
+/** Honest disclosure when the bounded projection truncated a list window. */
+function WindowNote({ text }: Readonly<{ text: string | null }>) {
+  if (!text) return null;
+  return <p className="border-t border-border/60 p-4 text-xs font-semibold text-muted-foreground">{text}</p>;
 }
 
 const propertyColumns: ColumnDef<OwnerPortalProperty>[] = [
@@ -178,15 +185,23 @@ export function OwnerPortalPage() {
                   emptyTitle="لا توجد عقارات مرتبطة بهذا المالك"
                   emptyDescription="سيظهر هنا أي عقار مرتبط بهذا الرابط عند توفره."
                 />
+                {ownerPortalWindowNote(snapshot.properties.length, snapshot.propertiesTotal) ? (
+                  <p className="text-xs font-semibold text-muted-foreground">{ownerPortalWindowNote(snapshot.properties.length, snapshot.propertiesTotal)}</p>
+                ) : null}
                 {snapshot.units.length ? (
-                  <EntityTable
-                    aria-label="وحدات المالك"
-                    rows={[...snapshot.units]}
-                    columns={unitColumns}
-                    keyOf={(unit) => unit.id}
-                    mobileBadgeKey="status"
-                    mobilePrimaryMetaKeys={['property', 'rent']}
-                  />
+                  <>
+                    <EntityTable
+                      aria-label="وحدات المالك"
+                      rows={[...snapshot.units]}
+                      columns={unitColumns}
+                      keyOf={(unit) => unit.id}
+                      mobileBadgeKey="status"
+                      mobilePrimaryMetaKeys={['property', 'rent']}
+                    />
+                    {ownerPortalWindowNote(snapshot.units.length, snapshot.unitsTotal) ? (
+                      <p className="text-xs font-semibold text-muted-foreground">{ownerPortalWindowNote(snapshot.units.length, snapshot.unitsTotal)}</p>
+                    ) : null}
+                  </>
                 ) : null}
               </div>
             </section>
@@ -212,6 +227,9 @@ export function OwnerPortalPage() {
                   emptyTitle="لا توجد تسويات مسجلة"
                   emptyDescription="ستظهر التسويات الخاصة بهذا المالك هنا عند تسجيلها."
                 />
+                {ownerPortalWindowNote(snapshot.settlements.length, snapshot.settlementsTotal) ? (
+                  <p className="mt-2 text-xs font-semibold text-muted-foreground">{ownerPortalWindowNote(snapshot.settlements.length, snapshot.settlementsTotal)}</p>
+                ) : null}
               </div>
             </section>
 
@@ -221,6 +239,7 @@ export function OwnerPortalPage() {
                 {snapshot.maintenance.length === 0 ? <p className="p-4 text-sm text-muted-foreground">لا توجد طلبات صيانة مرتبطة بالأملاك.</p> : (
                   <div className="divide-y divide-border/70">{snapshot.maintenance.map((item) => <div key={item.id} className="p-4 text-sm"><div className="flex justify-between gap-3"><p className="font-bold">{item.title}</p><span className="text-xs text-muted-foreground">{item.status}</span></div><p className="mt-1 text-xs text-muted-foreground">{item.propertyTitle}{item.unitNumber ? ` · وحدة ${item.unitNumber}` : ''} · {date(item.createdAt)}</p></div>)}</div>
                 )}
+                <WindowNote text={ownerPortalWindowNote(snapshot.maintenance.length, snapshot.maintenanceTotal)} />
               </div>
 
               <div className="overflow-hidden rounded-2xl border border-border bg-card">
@@ -228,6 +247,7 @@ export function OwnerPortalPage() {
                 {snapshot.documents.length === 0 ? <p className="p-4 text-sm text-muted-foreground">لا توجد مستندات متاحة للعرض في هذا الرابط.</p> : (
                   <div className="divide-y divide-border/70">{snapshot.documents.map((item) => <div key={item.id} className="p-4 text-sm"><p className="font-bold">{item.title}</p><p className="mt-1 text-xs text-muted-foreground">{item.scope === 'owner' ? 'ملف المالك' : item.scope === 'property' ? 'العقار' : 'التسوية'} · {date(item.createdAt)}</p></div>)}</div>
                 )}
+                <WindowNote text={ownerPortalWindowNote(snapshot.documents.length, snapshot.documentsTotal)} />
               </div>
             </section>
           </main>
