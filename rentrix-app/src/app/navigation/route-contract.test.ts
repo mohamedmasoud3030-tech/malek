@@ -10,6 +10,22 @@ function hasRoutePath(path: string): boolean {
   return routeTreeSource.includes(`path: '${path}'`);
 }
 
+// Surfaces registered in route-tree.ts whose parent is a top-level segment.
+// Returns { parent, path } for every createRoute call with a static path.
+function topLevelRegisteredPaths(): { parent: string; path: string }[] {
+  const blocks = routeTreeSource.split('createRoute({').slice(1);
+  const out: { parent: string; path: string }[] = [];
+  for (const block of blocks) {
+    const parentMatch = block.match(/getParentRoute: \(\) => (\w+)/);
+    const pathMatch = block.match(/path: '([^']+)'/);
+    if (!parentMatch || !pathMatch) continue;
+    if (pathMatch[1].startsWith('/')) {
+      out.push({ parent: parentMatch[1], path: pathMatch[1] });
+    }
+  }
+  return out;
+}
+
 describe('route-contract — single source of truth', () => {
   it('every canonical in contract is registered in route-tree.ts', () => {
     for (const entry of ROUTE_CONTRACT) {
@@ -30,6 +46,44 @@ describe('route-contract — single source of truth', () => {
   it('has no duplicate canonical entries', () => {
     const canonicals = ROUTE_CONTRACT.map((e) => e.canonical);
     expect(new Set(canonicals).size).toBe(canonicals.length);
+  });
+
+  it('every top-level registration in route-tree.ts is a contract route, redirect, or declared public surface', () => {
+    // Regression lock for duplicate route trees: a NEW capability cannot ship
+    // as a second top-level route without passing through the contract, where
+    // it must be declared canonical, an alias, or a reviewed public surface.
+    const knownCanonical = new Set<string>([
+      ...ROUTE_CONTRACT.map((entry) => entry.canonical),
+      ...REDIRECT_ROUTES,
+      ...ROUTE_CONTRACT.flatMap((entry) => [...entry.legacyAliases]),
+    ]);
+    // Structural entry points that intentionally live outside the office IA
+    // (auth flows, isolated token portals, dev tooling). Any addition here is
+    // a product decision and must be justified in review.
+    const structuralPublicRoutes = new Set([
+      '/login',
+      '/forgot-password',
+      '/reset-password',
+      '/tenant-portal',
+      '/owner-portal',
+      '/dev/design-system',
+    ]);
+    const topRouteParents = new Set(['rootRoute', 'authRoute', 'protectedRoute']);
+
+    const topLevel = topLevelRegisteredPaths().filter((entry) => topRouteParents.has(entry.parent));
+    expect(topLevel.length).toBeGreaterThan(50); // parser sanity: the registry is fully scanned
+
+    for (const { path } of topLevel) {
+      const covered = knownCanonical.has(path) || structuralPublicRoutes.has(path);
+      expect(covered, `top-level route ${path} is not declared in ROUTE_CONTRACT/REDIRECT_ROUTES`).toBe(true);
+    }
+  });
+
+  it('no capability path is registered twice at the top level', () => {
+    // Two route objects for the same top-level path = a second competing
+    // implementation sneaking in beside the canonical one.
+    const paths = topLevelRegisteredPaths().map((entry) => `${entry.parent}${entry.path}`);
+    expect(new Set(paths).size).toBe(paths.length);
   });
 
   it('all sidebarRoot values exist in routeNavRoot values', () => {

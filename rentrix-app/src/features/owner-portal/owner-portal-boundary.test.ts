@@ -7,6 +7,9 @@ import { OWNER_PORTAL_SECTIONS } from './owner-portal-read-model';
 const featureDir = resolve(import.meta.dirname);
 const portalProjectionMigration = resolve(featureDir, '../../../../supabase/migrations/20260901000045_owner_portal_canonical_projection.sql');
 const portalCompanyScopeMigration = resolve(featureDir, '../../../../supabase/migrations/20260901000062_owner_portal_vault_company_scope.sql');
+// Current authority for the public Owner Portal snapshot after the bounded
+// projection migration (also removes the migration-45 legacy wrapper seam).
+const portalBoundedMigration = resolve(featureDir, '../../../../supabase/migrations/20260904000000_bound_anonymous_portal_projections.sql');
 
 function featureFiles(): string[] {
   return readdirSync(featureDir).filter((file) => file.endsWith('.ts') || file.endsWith('.tsx'));
@@ -59,6 +62,53 @@ describe('Owner Portal read-only boundary', () => {
     const source = readFileSync(portalProjectionMigration, 'utf8');
     expect(source).toContain("in ('DRAFT', 'APPROVED')");
     expect(source).not.toMatch(/PAID[\s\S]{0,100}net_payable|net_payable[\s\S]{0,100}PAID/i);
+  });
+
+  it('bounds every anon-facing list to a 50-row window with an honest total', () => {
+    const source = readFileSync(portalBoundedMigration, 'utf8');
+    const ownerBody = source.slice(
+      source.indexOf('create or replace function public.get_owner_portal_snapshot'),
+    );
+    expect(ownerBody.match(/row_number\(\) over/g)?.length).toBe(5);
+    expect(ownerBody.match(/filter \(where r\.rn <= 50\)/g)?.length).toBe(5);
+    for (const total of [
+      'propertiesTotal',
+      'unitsTotal',
+      'settlementsTotal',
+      'maintenanceTotal',
+      'documentsTotal',
+    ]) {
+      expect(ownerBody).toContain(`'${total}'`);
+    }
+  });
+
+  it('keeps summary aggregates complete while lists are bounded', () => {
+    const source = readFileSync(portalBoundedMigration, 'utf8');
+    const ownerBody = source.slice(
+      source.indexOf('create or replace function public.get_owner_portal_snapshot'),
+    );
+    // grossCollected/ownerExpenses aggregate the complete ranked set, and the
+    // payable rule stays DRAFT+APPROVED over the full settlement table.
+    expect(ownerBody).toContain("in ('APPROVED','PAID') then r.gross_collected");
+    expect(ownerBody).toContain("in ('DRAFT', 'APPROVED')");
+    expect(ownerBody).toContain('from public.owner_settlements s');
+  });
+
+  it('is self-contained and removes the superseded legacy projection seam', () => {
+    const source = readFileSync(portalBoundedMigration, 'utf8');
+    const ownerBody = source.slice(
+      source.indexOf('create or replace function public.get_owner_portal_snapshot'),
+    );
+    const legacyRefs = ownerBody.match(/app_private\.get_owner_portal_snapshot_legacy\(/g) ?? [];
+    // The ONLY reference left is the removal itself: no runtime reuse.
+    expect(legacyRefs.length).toBe(1);
+    expect(ownerBody).toContain('drop function if exists app_private.get_owner_portal_snapshot_legacy(uuid);');
+    // Canonical vault metadata scope and company isolation from v45/v62 carry over.
+    expect(ownerBody).toContain('from public.vault_documents vd');
+    expect(ownerBody).toContain('where vd.company_id = v_company');
+    expect(ownerBody).not.toMatch(/from\s+public\.attachments\b/);
+    expect(ownerBody).not.toContain('file_url');
+    expect(ownerBody).not.toContain('storage_path');
   });
 
   it('contains no office-core browser mutation in the portal feature source', () => {

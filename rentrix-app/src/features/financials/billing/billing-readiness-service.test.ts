@@ -108,6 +108,22 @@ describe('billing readiness service — FOM-007 remediation', () => {
     expect(presentation).not.toContain("'RECOVERED'");
   });
 
+  it('bounds query fan-out: one batched invoice read and one tax probe per distinct issue date', () => {
+    // The readiness surface must not fan out one invoice-existence query per
+    // contract (the historical billing-readiness defect). Invoice existence
+    // resolves through the canonical batched-read primitive instead.
+    expect(service).toContain('fetchAllRowsInBatches');
+    expect(service.match(/from\('invoices'\)/g)?.length ?? 0).toBe(1);
+    // The tax authority RPC is invoked from exactly one site, deduplicated
+    // per distinct issue date (a Set), never once per contract row.
+    expect(service.match(/rpc\('resolve_active_tax_profile'/g)?.length ?? 0).toBe(1);
+    expect(service).toContain("new Set(");
+    // No per-contract sequential await loop may reappear.
+    expect(service).not.toContain('for (const c of contracts)');
+    // Deterministic invoice representative: lowest id per (contract, period).
+    expect(service).toContain(".order('id', { ascending: true })");
+  });
+
   it('payment_terms_id is reference only, not scheduling authority', () => {
     // Reference-only by construction: scheduling derives from the explicit
     // contract fields, and the UI surfaces those fields (billing day/grace),

@@ -79,7 +79,7 @@ often the better recommendation than any single item.
 
 4. **Keep it brief and natural.** After your answer, add a short line like:
 
-   > You might also find this helpful: [Title](URL) — one-sentence description.
+   > You might also find this helpful: `[Title](URL)` — one-sentence description.
 
    Do not list more than 2 items. One is usually best. This cap applies
    to every reply, including when the question itself is a request for
