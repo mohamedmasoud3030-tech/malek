@@ -141,16 +141,14 @@ export function DashboardPage() {
     [utilityBillsQuery.data, today],
   );
 
-  const unitsQuery = useAllUnits();
-  const hasVacantUnit = useMemo(
-    () => (unitsQuery.data ?? []).some((unit) => String(unit.status).trim().toLowerCase() === 'available'),
-    [unitsQuery.data],
-  );
-  const contractsQuery = useAllContracts('all', { enabled: hasVacantUnit });
+  const needsVacancyDetails = (snapshot?.occupancy.vacantUnits ?? 0) > 0;
+  const unitsQuery = useAllUnits({ enabled: needsVacancyDetails });
+  const contractsQuery = useAllContracts('all', { enabled: needsVacancyDetails });
   const propertyTitlesQuery = useQuery({
     queryKey: ['dashboard', 'property-titles'],
     queryFn: listPropertyTitles,
     retry: false,
+    enabled: needsVacancyDetails,
   });
   const propertyTitleMap = useMemo(
     () => new Map((propertyTitlesQuery.data ?? []).map((row) => [row.id, row.title])),
@@ -160,8 +158,8 @@ export function DashboardPage() {
     () => buildVacancyAnalytics(unitsQuery.data, contractsQuery.data?.rows, propertyTitleMap, today),
     [contractsQuery.data?.rows, propertyTitleMap, today, unitsQuery.data],
   );
-  const vacancyDetailsUnavailable = hasVacantUnit
-    && (contractsQuery.isError || Boolean(contractsQuery.data?.truncated));
+  const vacancyDetailsUnavailable = needsVacancyDetails
+    && (unitsQuery.isError || contractsQuery.isError || propertyTitlesQuery.isError || Boolean(contractsQuery.data?.truncated));
 
   const maintenanceQuery = useMaintenance('all', '');
   const maintenanceFollowUp = useMemo(
@@ -170,8 +168,7 @@ export function DashboardPage() {
   );
 
   const attentionSourcesComplete = !(isError || isRefetchError)
-    && !unitsQuery.isError
-    && !(hasVacantUnit && contractsQuery.isError)
+    && !(needsVacancyDetails && (unitsQuery.isError || contractsQuery.isError || propertyTitlesQuery.isError))
     && !maintenanceQuery.isError
     && !utilityBillsQuery.isError;
   const needsAttention = useMemo(
@@ -189,24 +186,22 @@ export function DashboardPage() {
   const snapshotUnavailable = hasDashboardError && !snapshot;
   const hasSupplementalError = cashflowQuery.isError
     || utilityBillsQuery.isError
-    || unitsQuery.isError
-    || (hasVacantUnit && contractsQuery.isError)
-    || propertyTitlesQuery.isError
+    || (needsVacancyDetails && (unitsQuery.isError || contractsQuery.isError || propertyTitlesQuery.isError))
     || maintenanceQuery.isError;
   const supplementalIsFetching = cashflowQuery.isFetching
     || utilityBillsQuery.isFetching
-    || unitsQuery.isFetching
-    || contractsQuery.isFetching
-    || propertyTitlesQuery.isFetching
+    || (needsVacancyDetails && (unitsQuery.isFetching || contractsQuery.isFetching || propertyTitlesQuery.isFetching))
     || maintenanceQuery.isFetching;
   const retrySupplemental = () => {
     void Promise.all([
       cashflowQuery.refetch(),
       utilityBillsQuery.refetch(),
-      unitsQuery.refetch(),
-      propertyTitlesQuery.refetch(),
       maintenanceQuery.refetch(),
-      ...(hasVacantUnit ? [contractsQuery.refetch()] : []),
+      ...(needsVacancyDetails ? [
+        unitsQuery.refetch(),
+        contractsQuery.refetch(),
+        propertyTitlesQuery.refetch(),
+      ] : []),
     ]);
   };
 
@@ -287,8 +282,8 @@ export function DashboardPage() {
                   <OccupancySection
                     snapshot={snapshot}
                     analytics={vacancyAnalytics}
-                    isLoading={isLoading || unitsQuery.isLoading || (hasVacantUnit && contractsQuery.isLoading)}
-                    isError={unitsQuery.isError && !unitsQuery.data}
+                    isLoading={isLoading || (needsVacancyDetails && (unitsQuery.isLoading || contractsQuery.isLoading || propertyTitlesQuery.isLoading))}
+                    isError={needsVacancyDetails && unitsQuery.isError && !unitsQuery.data}
                     detailsUnavailable={vacancyDetailsUnavailable}
                     settings={settings}
                   />
