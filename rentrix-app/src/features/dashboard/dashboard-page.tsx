@@ -276,7 +276,6 @@ export function DashboardPage() {
                   <CollectionsSection
                     snapshot={snapshot}
                     isLoading={isLoading}
-                    isError={hasDashboardError && !snapshot}
                     settings={settings}
                   />
                 </DashboardGroup>
