@@ -7,7 +7,6 @@ import { cn } from '@/lib/utils';
 import type { DashboardSnapshot } from '../dashboard-snapshot';
 import { MetricStat, ProgressMeter } from './dashboard-visuals';
 import {
-  DashboardSignalEmpty,
   DashboardSignalHeader,
   DashboardSignalLoading,
   DashboardSignalPanel,
@@ -17,7 +16,6 @@ import {
 interface CollectionsSectionProps {
   snapshot: DashboardSnapshot | undefined;
   isLoading: boolean;
-  isError?: boolean;
   settings: CompanySettingsContract;
 }
 
@@ -40,7 +38,7 @@ function collectionPeriodTitle(month: number, year: number): string {
  * aging from the snapshot. Bucket boundaries are the server's fixed cohorts —
  * they are never rebucketed in the browser.
  */
-export const CollectionsSection = memo(function CollectionsSection({ snapshot, isLoading, isError = false, settings }: CollectionsSectionProps) {
+export const CollectionsSection = memo(function CollectionsSection({ snapshot, isLoading, settings }: CollectionsSectionProps) {
   const money = (value: number) => formatCompanyMoney(settings, value);
 
   const invoiced = snapshot?.billing.invoicedAmount ?? 0;
@@ -90,7 +88,7 @@ export const CollectionsSection = memo(function CollectionsSection({ snapshot, i
               ) : null}
             </div>
 
-            {isError ? null : hasOverdue ? (
+            {hasOverdue ? (
               <div className="mt-2 grid grid-cols-2 gap-2" data-dashboard-arrears-aging>
                 {AGING_BUCKETS.map((bucket) => {
                   const data = snapshot?.arrears.buckets[bucket.key];
@@ -117,13 +115,6 @@ export const CollectionsSection = memo(function CollectionsSection({ snapshot, i
         </div>
       )}
 
-      {!isLoading && isError ? (
-        <DashboardSignalEmpty
-          role="alert"
-          title="تعذر تحميل المتأخرات"
-          description="راجع تنبيه أعلى الصفحة ثم أعد المحاولة. لن نعرض قائمة فارغة عند فشل التحميل."
-        />
-      ) : null}
     </DashboardSignalPanel>
   );
 });
