@@ -31,8 +31,10 @@ export type NeedsAttentionItem = Readonly<{
   ageDays: number;
   title: string;
   meta: string;
-  /** Router path of the owning workspace. */
+  /** Canonical router path of the owning workspace. */
   to: string;
+  /** Canonical search state of the owning workspace (hub section/view). */
+  search?: Readonly<Record<string, string>>;
   /** Set for items that open a contract dossier through the modal route. */
   contractId?: string;
 }>;
@@ -85,7 +87,8 @@ export function buildNeedsAttentionSignal(params: {
       ageDays: row.daysOverdue,
       title: row.tenantName ?? 'مستأجر غير محدد',
       meta: `فاتورة متأخرة ${row.daysOverdue} يوم · ${formatQueueLocation(row.propertyTitle, row.unitNumber)}`,
-      to: '/arrears',
+      to: '/financials',
+      search: { section: 'collections', view: 'arrears' },
     });
   }
 
@@ -137,7 +140,8 @@ export function buildNeedsAttentionSignal(params: {
       ageDays: row.daysVacant,
       title: `وحدة ${row.unitNumber}`,
       meta: `شاغرة منذ ${row.daysVacant} يوم · ${row.propertyTitle}`,
-      to: '/units',
+      to: '/properties',
+      search: { section: 'units' },
     });
   }
 
@@ -149,7 +153,8 @@ export function buildNeedsAttentionSignal(params: {
       ageDays: utilityObligations.rows[0]?.urgency === 'overdue' ? utilityObligations.rows[0].daysOverdue : 0,
       title: `${utilityObligations.summary.overdueCount} فاتورة مرافق متأخرة`,
       meta: 'سداد المرافق المتأخرة مطلوب الآن',
-      to: '/utilities',
+      to: '/maintenance',
+      search: { section: 'utilities' },
     });
   }
   if (utilityObligations.summary.dueSoonCount > 0) {
@@ -159,7 +164,8 @@ export function buildNeedsAttentionSignal(params: {
       ageDays: 0,
       title: `${utilityObligations.summary.dueSoonCount} فاتورة مرافق تستحق قريباً`,
       meta: 'راجع المطالبة والمسؤول عن السداد',
-      to: '/utilities',
+      to: '/maintenance',
+      search: { section: 'utilities' },
     });
   }
 
@@ -171,7 +177,8 @@ export function buildNeedsAttentionSignal(params: {
       ageDays: 0,
       title: `${snapshot.ownerFunds.settlementsApproved} تسوية ملاك معتمدة بانتظار الصرف`,
       meta: 'أكمل الصرف من تسويات الملاك',
-      to: '/owner-settlements',
+      to: '/financials',
+      search: { section: 'funds', view: 'owner_settlements' },
     });
   }
   if (snapshot.ownerFunds.settlementsDraft > 0) {
@@ -181,7 +188,8 @@ export function buildNeedsAttentionSignal(params: {
       ageDays: 0,
       title: `${snapshot.ownerFunds.settlementsDraft} تسوية ملاك بانتظار الاعتماد`,
       meta: 'راجع المسودة واعتمدها',
-      to: '/owner-settlements',
+      to: '/financials',
+      search: { section: 'funds', view: 'owner_settlements' },
     });
   }
 
@@ -193,7 +201,8 @@ export function buildNeedsAttentionSignal(params: {
       ageDays: 0,
       title: `${snapshot.exceptions.unmatchedBankLines} حركة بنكية غير مطابقة`,
       meta: 'طابق حركات كشف البنك',
-      to: '/bank-reconciliation',
+      to: '/financials',
+      search: { section: 'banking', view: 'bank_reconciliation' },
     });
   }
 

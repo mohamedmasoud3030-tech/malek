@@ -19,9 +19,3 @@ export function DepositsWorkspace({ embedded = false }: DepositsWorkspaceProps) 
     </EmbeddableWorkspace>
   );
 }
-
-export function DepositsPage() {
-  return <DepositsWorkspace />;
-}
-
-export default DepositsPage;

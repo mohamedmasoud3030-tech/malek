@@ -1,7 +1,6 @@
 import { Navigate, useLocation } from '@tanstack/react-router';
 import { AppShell } from '@/app/layout/app-shell';
 import { BackgroundLocationProvider } from '@/app/router/background-location';
-import { LegacyPreviewRedirect } from '@/app/router/legacy-preview-redirect';
 import { EntityFormVisualProvider } from '@/components/ui/entity-form';
 import { LoadingState } from '@/components/ui/loading-state';
 import type { AppPermission } from '@/features/auth/permissions';
@@ -9,7 +8,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { isOperationalFormRoute } from '@/lib/operational-form-routes';
 
 function workspacePermissionForPath(pathname: string): AppPermission | null {
-  if (pathname === '/units' || pathname === '/properties' || pathname.startsWith('/properties/')) {
+  if (pathname === '/properties' || pathname.startsWith('/properties/')) {
     return 'properties.view';
   }
   if (
@@ -19,18 +18,13 @@ function workspacePermissionForPath(pathname: string): AppPermission | null {
   ) {
     return 'contracts.view';
   }
-  if (
-    pathname === '/financials' || pathname === '/finance/collections' ||
-    pathname === '/invoices' || pathname === '/receipts'
-  ) {
+  if (pathname === '/financials' || pathname === '/receipts' || pathname.startsWith('/financials/')) {
     return 'financial.workspace.view';
   }
-  if (
-    pathname === '/maintenance' || pathname === '/utilities' || pathname === '/documents-vault'
-  ) {
+  if (pathname === '/maintenance' || pathname.startsWith('/maintenance/')) {
     return 'maintenance.view';
   }
-  if (pathname === '/reports' || pathname === '/accounting') {
+  if (pathname === '/reports' || pathname.startsWith('/reports/')) {
     return 'financial.reports.view';
   }
   return null;
@@ -59,7 +53,6 @@ export function ProtectedRouteComponent() {
           data-operational-route={isOperationalRoute ? 'true' : undefined}
         >
           <AppShell />
-          <LegacyPreviewRedirect />
         </div>
       </BackgroundLocationProvider>
     </EntityFormVisualProvider>

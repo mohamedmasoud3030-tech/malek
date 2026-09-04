@@ -20,6 +20,16 @@ const ADVANCED_DEEP_LINKS = [
   '/communication',
   '/documents-vault',
   '/deposits',
+  '/invoices',
+  '/expenses',
+  '/arrears',
+  '/owner-settlements',
+  '/bank-reconciliation',
+  '/units',
+  '/utilities',
+  '/accounting',
+  '/change-password',
+  '/landing',
 ] as const;
 
 describe('MALEK Target Blueprint — daily product IA contract', () => {

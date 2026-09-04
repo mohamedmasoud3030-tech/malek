@@ -15,13 +15,11 @@ describe('P2 — contextual documents contract', () => {
     // Routine Services children stay reduced to daily work; the vault stays a
     // real Services section reachable in place via its section deep link.
     expect(servicesChildren.some(([to, , , , , search]) => to === '/maintenance' && search?.section === 'documents_vault')).toBe(false);
-    // documents_vault remains a real Services section (aggregate authority),
-    // while the standalone route is only a compatibility deep link.
+    // documents_vault remains a real Services section (aggregate authority);
+    // the standalone /documents-vault route is retired — internal navigation
+    // reaches the vault only through /maintenance?section=documents_vault.
     expect(operations).toContain("id: 'documents_vault'");
-    expect(routeTree).toContain("path: '/documents-vault'");
-    expect(routeTree).toContain("to: '/maintenance'");
-    expect(routeTree).toContain("section: 'documents_vault'");
-    expect(routeTree).not.toContain('_protected.documents-vault');
+    expect(routeTree).not.toContain("path: '/documents-vault'");
   });
 
   it('uses one shared foundation for contract, property, owner, unit, and maintenance contexts', () => {

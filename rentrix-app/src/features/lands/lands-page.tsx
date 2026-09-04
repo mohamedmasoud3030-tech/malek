@@ -100,8 +100,3 @@ export function LandsWorkspace({ embedded = false }: LandsWorkspaceProps) {
     />
   );
 }
-
-
-export function LandsPage() {
-  return <LandsWorkspace />;
-}

@@ -10,8 +10,9 @@ describe('P4 — settings and admin cleanup contract', () => {
     expect(nav).not.toContain("'/ai-assistant'");
     expect(nav).not.toContain("'/change-password'");
     expect(routeTree).toContain("path: '/ai-assistant'");
-    expect(routeTree).toContain("path: '/change-password'");
-    expect(routeTree).toContain("to: '/settings'");
+    // Change password has a single canonical destination inside settings;
+    // its legacy standalone route is retired.
+    expect(routeTree).not.toContain("path: '/change-password'");
   });
 
   it('exposes AI as an independent global action and keeps automation in Settings governance', () => {

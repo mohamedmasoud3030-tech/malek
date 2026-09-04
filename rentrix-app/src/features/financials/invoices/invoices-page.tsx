@@ -26,7 +26,3 @@ export function InvoicesWorkspace({ embedded = false }: InvoicesWorkspaceProps) 
     </EmbeddableWorkspace>
   );
 }
-
-export function InvoicesPage() {
-  return <InvoicesWorkspace />;
-}

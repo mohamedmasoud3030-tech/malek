@@ -77,6 +77,3 @@ export function DataIntegrityWorkspace({ variant = 'standalone' }: DataIntegrity
 }
 
 /** Standalone /data-integrity route entry point — preserves historical behavior exactly. */
-export function DataIntegrityPage() {
-  return <DataIntegrityWorkspace variant="standalone" />;
-}

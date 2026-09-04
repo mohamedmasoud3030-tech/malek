@@ -8,7 +8,7 @@ import type {
 import { OfficeSection } from '../sections/OfficeSection';
 import { IdentitySection } from '../sections/IdentitySection';
 import { DocumentsSection } from '../sections/DocumentsSection';
-import type { SettingsSectionId } from '../settingsSections';
+import type { SettingsSectionId } from '../registry/sectionRegistry';
 
 type CompanyProfileSectionsProps = Readonly<{
   activeSection: SettingsSectionId;

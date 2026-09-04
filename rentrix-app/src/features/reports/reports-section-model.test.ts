@@ -69,9 +69,7 @@ describe('reports section URL sync and KPI drill-downs', () => {
 describe('/accounting legacy bookmark semantics', () => {
   const routeTreeSource = readFileSync(new URL('../../app/router/route-tree.ts', import.meta.url), 'utf8');
 
-  it('preserves /accounting redirecting to accounting section and general_ledger view exactly', () => {
-    expect(routeTreeSource).toContain("path: '/accounting'");
-    expect(routeTreeSource).toContain("section: 'accounting'");
-    expect(routeTreeSource).toContain("view: 'general_ledger'");
+  it('/accounting is retired; reports section deep link is the single canonical destination', () => {
+    expect(routeTreeSource).not.toContain("path: '/accounting'");
   });
 });

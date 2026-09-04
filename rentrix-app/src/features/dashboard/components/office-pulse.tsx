@@ -82,7 +82,7 @@ export const OfficePulse = memo(function OfficePulse({ snapshot, isLoading, sett
         </Link>
 
         <Link
-          to="/units"
+          to="/properties" search={{ section: "units" }}
           data-dashboard-kpi-link
           className={pulseLinkClass}
           aria-label={`نسبة الإشغال ${occupancyRate}% — انتقل إلى سجل الوحدات`}
@@ -107,7 +107,7 @@ export const OfficePulse = memo(function OfficePulse({ snapshot, isLoading, sett
         </Link>
 
         <Link
-          to="/arrears"
+          to="/financials" search={{ section: "collections", view: "arrears" }}
           data-dashboard-kpi-link
           className={pulseLinkClass}
           aria-label={`المتأخرات ${money(totalOverdue)} — انتقل إلى المتأخرات`}

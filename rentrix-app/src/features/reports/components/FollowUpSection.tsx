@@ -216,7 +216,7 @@ export function FollowUpSection({
               <div className="rounded-xl border border-border/70 p-4">
                 <p className="font-bold">الإجراءات التشغيلية</p>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <Button onClick={() => openTarget({ to: '/invoices', search: { invoiceId: selected.invoiceId, collect: 1 } })}>
+                  <Button onClick={() => openTarget({ to: '/financials', search: { section: 'collections', view: 'invoices', invoiceId: selected.invoiceId, collect: 1 } })}>
                     <ReceiptText className="me-1 size-4" aria-hidden="true" />
                     بدء التحصيل من الفواتير
                   </Button>
@@ -230,7 +230,7 @@ export function FollowUpSection({
                     <FileText className="me-1 size-4" aria-hidden="true" />
                     العقد
                   </Button>
-                  <Button variant="secondary" onClick={() => openTarget({ to: '/invoices', search: { invoiceId: selected.invoiceId } })}>
+                  <Button variant="secondary" onClick={() => openTarget({ to: '/financials', search: { section: 'collections', view: 'invoices', invoiceId: selected.invoiceId } })}>
                     الفاتورة
                   </Button>
                 </div>

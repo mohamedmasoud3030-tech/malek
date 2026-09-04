@@ -5,7 +5,7 @@ import {
   settingsSections,
   type SettingsSectionId,
   type SettingsSectionListItem,
-} from '../settingsSections';
+} from '../registry/sectionRegistry';
 
 export function SettingsWorkspaceNav({
   activeSection,

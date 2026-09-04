@@ -17,7 +17,6 @@ const contractDetailRoute = readFileSync(new URL('../../features/contracts/pages
 const ownerDetailRoute = readFileSync(new URL('../../features/owners/owner-detail-page.tsx', import.meta.url), 'utf8');
 const propertyDetailRoute = readFileSync(new URL('../../features/properties/overview/property-overview-page.tsx', import.meta.url), 'utf8');
 const unitDetailRoute = readFileSync(new URL('../../features/properties/units/property-unit-detail-page.tsx', import.meta.url), 'utf8');
-const legacyRedirect = readFileSync(new URL('../../app/router/legacy-preview-redirect.tsx', import.meta.url), 'utf8');
 const protectedRoute = readFileSync(new URL('../../routes/_protected.tsx', import.meta.url), 'utf8');
 
 describe('unified detail preview contract', () => {
@@ -96,9 +95,8 @@ describe('unified detail preview contract', () => {
   it('Phase 3.1: global event bus deleted, replaced by route-native background location', () => {
     expect(existsSync(new URL('./entity-preview-events.ts', import.meta.url))).toBe(false);
     expect(existsSync(new URL('./entity-preview-host.tsx', import.meta.url))).toBe(false);
-    expect(legacyRedirect).toContain('previewKind');
-    expect(legacyRedirect).toContain('previewId');
-    expect(protectedRoute).toContain('LegacyPreviewRedirect');
+    expect(existsSync(new URL('../../app/router/legacy-preview-redirect.tsx', import.meta.url))).toBe(false);
+    expect(protectedRoute).not.toContain('LegacyPreviewRedirect');
     expect(protectedRoute).not.toContain('EntityPreviewHost');
   });
 

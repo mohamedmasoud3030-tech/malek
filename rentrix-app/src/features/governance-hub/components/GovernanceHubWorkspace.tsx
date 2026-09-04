@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingState } from '@/components/ui/loading-state';
 import { SectionTabPanel, SectionTabs } from '@/components/ui/section-tabs';
 import { CostCentersSettingsSection } from '@/features/settings/cost-centers-settings-section';
-import type { SettingsSectionId } from '@/features/settings/settingsSections';
+import type { SettingsSectionId } from '@/features/settings/registry/sectionRegistry';
 import { useAuth } from '@/hooks/use-auth';
 import {
   buildCompanySettingsSearch,

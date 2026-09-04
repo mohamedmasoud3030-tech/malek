@@ -3,12 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { getSimulatedRole, setSimulatedRole } from '@/services/mock-role-simulator';
 
 describe('audit-log route wiring', () => {
-  it('keeps /audit-log a redirect-only alias; the page is composed by the governance hub', () => {
+  it('/audit-log standalone route is retired; the governance hub is the single composition point', () => {
     const routeTreeSource = readFileSync(new URL('../../app/router/route-tree.ts', import.meta.url), 'utf8');
-    const idx = routeTreeSource.indexOf("path: '/audit-log'");
-    const block = routeTreeSource.slice(routeTreeSource.lastIndexOf('createRoute({', idx), routeTreeSource.indexOf('});', idx) + 3);
-    expect(block).toContain("settingsLegacyRedirect('audit.view'");
-    expect(block).not.toContain('lazyRouteComponent');
+    expect(routeTreeSource).not.toContain("path: '/audit-log'");
     // Governance hub is the single composition point for the audit workspace.
     expect(routeTreeSource).toContain("import('@/features/governance-hub/components/GovernanceHubWorkspace')");
   });

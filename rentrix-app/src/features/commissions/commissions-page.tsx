@@ -83,7 +83,3 @@ export function CommissionsWorkspace({ embedded = false }: CommissionsWorkspaceP
     </EmbeddableWorkspace>
   );
 }
-
-export function CommissionsPage() {
-  return <CommissionsWorkspace />;
-}

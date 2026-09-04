@@ -16,7 +16,7 @@ import { SettingsWorkspaceNav } from './components/settings-workspace-nav';
 import { getCompanySettingsPreviewModel } from './settingsForm';
 import { buildSettingsSummaryTiles } from './settings-workspace-model';
 import { settingsSectionRegistry, type SettingsSectionDefinition } from './registry/sectionRegistry';
-import { settingsSections, type SettingsSectionId } from './settingsSections';
+import { settingsSections, type SettingsSectionId } from './registry/sectionRegistry';
 import type { SettingsSectionRenderProps } from './registry/types';
 import { useSettingsPageController } from './useSettingsPageController';
 
@@ -273,8 +273,4 @@ export function SettingsWorkspace({
       <DirtyRouteNavigationGuard isDirty={isDirty} disabled={isSaving || companySettingsQuery.isError} onDiscard={discardDraft} />
     </SettingsVariantShell>
   );
-}
-
-export function SettingsPage() {
-  return <SettingsWorkspace variant="standalone" />;
 }

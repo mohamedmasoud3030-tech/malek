@@ -71,8 +71,6 @@ const propertyUnitsRoute = createRoute({ getParentRoute: () => propertyDetailRou
 const propertyUnitDetailRoute = createRoute({ getParentRoute: () => propertyDetailRoute, path: '/units/$unitId', component: lazyRouteComponent(() => import('@/features/properties/units/property-unit-detail-page'), 'PropertyUnitDetailPage'), staticData: { title: 'تفاصيل الوحدة بالعقار' } });
 const propertyEditRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/properties/$propertyId/edit', beforeLoad: requirePermission('properties.edit'), component: lazyRouteComponent(() => import('@/features/properties/property-form-page'), 'PropertyFormPage'), staticData: { title: 'تعديل عقار' } });
 
-// Asset-supporting routes: units stays inside property workspace; lands is now first-class standalone (Phase 2).
-const unitsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/units', beforeLoad: () => { throw redirect({ to: '/properties', search: (previous: Record<string, unknown>) => ({ ...previous, section: 'units' }) }); }, staticData: { title: 'الوحدات' } });
 const landsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/lands', beforeLoad: requirePermission('lands.view'), component: lazyRouteComponent(() => import('@/features/lands/lands-page'), 'LandsWorkspace'), staticData: { title: 'الأراضي' } });
 const landDetailRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/lands/$landId', beforeLoad: requirePermission('lands.view'), component: lazyRouteComponent(() => import('@/routes/_protected.lands.$landId'), 'LandDetailRouteComponent'), staticData: { title: 'ملف الأرض' } });
 
@@ -129,73 +127,8 @@ const financialsRoute = createRoute({
   staticData: { title: 'المال' }
 });
 
-// Finance operational detail routes remain available behind one primary Finance entry.
-const financeCollectionsRoute = createRoute({
-  getParentRoute: () => protectedRoute,
-  path: '/finance/collections',
-  beforeLoad: ({ search }) => {
-    const section = (search as Record<string, unknown>).section;
-    const view = section === 'receipts' ? 'receipts' : 'invoices';
-    throw redirect({
-      to: '/financials',
-      search: (previous: Record<string, unknown>) => ({ ...previous, section: 'collections', view })
-    });
-  },
-  staticData: { title: 'التحصيل والفواتير' }
-});
-
-const financeExpensesArrearsRoute = createRoute({
-  getParentRoute: () => protectedRoute,
-  path: '/finance/expenses',
-  beforeLoad: async ({ search }) => {
-    await requirePermission('expenses.view')();
-    const section = (search as Record<string, unknown>).section;
-    if (section === 'arrears') {
-      throw redirect({
-        to: '/financials',
-        search: (previous: Record<string, unknown>) => ({ ...previous, section: 'collections', view: 'arrears' })
-      });
-    }
-    throw redirect({
-      to: '/financials',
-      search: (previous: Record<string, unknown>) => ({ ...previous, section: 'expenses', view: 'expenses' })
-    });
-  },
-  staticData: { title: 'المصروفات والمتأخرات' }
-});
-
-const financeDepositsSettlementsRoute = createRoute({
-  getParentRoute: () => protectedRoute,
-  path: '/finance/deposits',
-  beforeLoad: async ({ search }) => {
-    await requirePermission('financial.deposits.view')();
-    const section = (search as Record<string, unknown>).section;
-    const view = section === 'owner_settlements' ? 'owner_settlements' : 'deposits';
-    throw redirect({
-      to: '/financials',
-      search: (previous: Record<string, unknown>) => ({ ...previous, section: 'funds', view })
-    });
-  },
-  staticData: { title: 'التأمينات وتسويات الملاك' }
-});
-
-const financeBankingCommissionsRoute = createRoute({
-  getParentRoute: () => protectedRoute,
-  path: '/finance/banking',
-  beforeLoad: async ({ search }) => {
-    await requirePermission('financial.bank_reconciliation.view')();
-    const section = (search as Record<string, unknown>).section;
-    if (section === 'commissions') {
-      throw redirect({ to: '/commissions' });
-    }
-    throw redirect({
-      to: '/financials',
-      search: (previous: Record<string, unknown>) => ({ ...previous, section: 'banking', view: 'bank_reconciliation' })
-    });
-  },
-  staticData: { title: 'البنوك' }
-});
-
+// Finance operational detail routes resolve through one primary Money hub
+// entry so every Money capability shares one canonical implementation.
 const commissionsRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: '/commissions',
@@ -215,97 +148,8 @@ const receiptsRoute = createRoute({
       search: (previous: Record<string, unknown>) => ({ ...previous, ...(search as Record<string, unknown>), section: 'collections', view: 'receipts' })
     });
   },
-  component: lazyRouteComponent(() => import('@/features/financials/receipts/receipts-page'), 'ReceiptsPage'),
+  component: lazyRouteComponent(() => import('@/features/financials/receipts/receipts-page'), 'ReceiptsWorkspace'),
   staticData: { title: 'الإيصالات' }
-});
-
-const expensesRoute = createRoute({
-  getParentRoute: () => protectedRoute,
-  path: '/expenses',
-  beforeLoad: async ({ search }) => {
-    await requirePermission('expenses.view')();
-    throw redirect({
-      to: '/financials',
-      search: (previous: Record<string, unknown>) => ({ ...previous, ...(search as Record<string, unknown>), section: 'expenses', view: 'expenses' })
-    });
-  },
-  staticData: { title: 'المصروفات' }
-});
-
-const invoicesRoute = createRoute({
-  getParentRoute: () => protectedRoute,
-  path: '/invoices',
-  beforeLoad: ({ search }) => {
-    throw redirect({
-      to: '/financials',
-      search: (previous: Record<string, unknown>) => ({ ...previous, ...(search as Record<string, unknown>), section: 'collections', view: 'invoices' })
-    });
-  },
-  staticData: { title: 'الفواتير' }
-});
-
-const arrearsRoute = createRoute({
-  getParentRoute: () => protectedRoute,
-  path: '/arrears',
-  beforeLoad: async () => {
-    await requirePermission('arrears.view')();
-    throw redirect({
-      to: '/financials',
-      search: (previous: Record<string, unknown>) => ({ ...previous, section: 'collections', view: 'arrears' })
-    });
-  },
-  staticData: { title: 'المتأخرات' }
-});
-
-const bankReconciliationRoute = createRoute({
-  getParentRoute: () => protectedRoute,
-  path: '/bank-reconciliation',
-  beforeLoad: async () => {
-    await requirePermission('financial.bank_reconciliation.view')();
-    throw redirect({
-      to: '/financials',
-      search: (previous: Record<string, unknown>) => ({ ...previous, section: 'banking' })
-    });
-  },
-  staticData: { title: 'المطابقة البنكية' }
-});
-
-const depositsRoute = createRoute({
-  getParentRoute: () => protectedRoute,
-  path: '/deposits',
-  beforeLoad: async () => {
-    await requirePermission('financial.deposits.view')();
-    throw redirect({
-      to: '/financials',
-      search: (previous: Record<string, unknown>) => ({ ...previous, section: 'funds', view: 'deposits' })
-    });
-  },
-  staticData: { title: 'التأمينات' }
-});
-
-const ownerSettlementsRoute = createRoute({
-  getParentRoute: () => protectedRoute,
-  path: '/owner-settlements',
-  beforeLoad: async () => {
-    await requirePermission('financial.owner_settlements.view')();
-    throw redirect({
-      to: '/financials',
-      search: (previous: Record<string, unknown>) => ({ ...previous, section: 'funds', view: 'owner_settlements' })
-    });
-  },
-  staticData: { title: 'تسويات الملاك' }
-});
-
-const accountingRoute = createRoute({
-  getParentRoute: () => protectedRoute,
-  path: '/accounting',
-  beforeLoad: () => {
-    throw redirect({
-      to: '/reports',
-      search: (previous: Record<string, unknown>) => ({ ...previous, section: 'accounting', view: 'general_ledger' })
-    });
-  },
-  staticData: { title: 'المحاسبة والتقارير' }
 });
 
 const reportsRoute = createRoute({
@@ -350,33 +194,6 @@ const adminSupportRoute = createRoute({
   staticData: { title: 'عمليات الدعم والتحقيق' },
 });
 
-const automationRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/automation', beforeLoad: async () => { await requirePermission('automation.view')(); throw redirect({ to: '/settings', search: (previous: Record<string, unknown>) => ({ ...previous, section: 'automation' }) }); }, staticData: { title: 'الأتمتة' } });
-const utilitiesRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/utilities', beforeLoad: () => { throw redirect({ to: '/maintenance', search: (previous: Record<string, unknown>) => ({ ...previous, section: 'utilities' }) }); }, staticData: { title: 'المرافق والعدادات' } });
-// Legacy compatibility only: retained for old bookmarks, never exposed in product navigation.
-// Redirects to the single approved authority: the documents vault tab inside Operations Hub.
-const documentsVaultRoute = createRoute({
-  getParentRoute: () => protectedRoute,
-  path: '/documents-vault',
-  beforeLoad: () => {
-    throw redirect({
-      to: '/maintenance',
-      search: (previous: Record<string, unknown>) => ({ ...previous, section: 'documents_vault' }),
-    });
-  },
-  staticData: { title: 'المستندات — توافق قديم' },
-});
-
-const settingsLegacyRedirect = (permission: AppPermission, section: string) => async () => {
-  await requirePermission(permission)();
-  throw redirect({
-    to: '/settings',
-    search: (previous: Record<string, unknown>) => ({ ...previous, section }),
-  });
-};
-const systemRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/system', beforeLoad: settingsLegacyRedirect('system.view', 'system-settings'), staticData: { title: 'النظام والحوكمة' } });
-const auditLogRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/audit-log', beforeLoad: settingsLegacyRedirect('audit.view', 'audit-log'), staticData: { title: 'سجل التدقيق' } });
-const dataIntegrityRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/data-integrity', beforeLoad: settingsLegacyRedirect('integrity.view', 'data-integrity'), staticData: { title: 'سلامة البيانات' } });
-const changePasswordRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/change-password', beforeLoad: settingsLegacyRedirect('auth.password.change', 'security'), staticData: { title: 'تغيير كلمة المرور' } });
 const settingsRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: '/settings',
@@ -428,7 +245,6 @@ const termsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/terms'
 // support-ticket intake. The full authenticated support workspace stays at
 // /help under protectedRoute.
 const publicSupportRoute = createRoute({ getParentRoute: () => rootRoute, path: '/support', component: lazyRouteComponent(() => import('@/features/help-support/public-support-page'), 'PublicSupportPage'), staticData: { title: 'الدعم والتواصل' } });
-const landingCompatRoute = createRoute({ getParentRoute: () => rootRoute, path: '/landing', beforeLoad: () => { throw redirect({ to: '/' }); } });
 const designSystemRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/dev/design-system',
@@ -445,7 +261,6 @@ export const routeTree = rootRoute.addChildren([
   landingRoute,
   tenantPortalRoute,
   ownerPortalRoute,
-  landingCompatRoute,
   privacyRoute,
   termsRoute,
   publicSupportRoute,
@@ -460,7 +275,6 @@ export const routeTree = rootRoute.addChildren([
       propertyUnitDetailRoute,
     ]),
     propertyEditRoute,
-    unitsRoute,
     landsRoute,
     landDetailRoute,
     ownersRoute,
@@ -479,31 +293,13 @@ export const routeTree = rootRoute.addChildren([
     contractDetailRoute,
     contractEditRoute,
     financialsRoute,
-    financeCollectionsRoute,
-    financeExpensesArrearsRoute,
-    financeDepositsSettlementsRoute,
-    financeBankingCommissionsRoute,
     commissionsRoute,
     receiptsRoute,
-    expensesRoute,
-    invoicesRoute,
-    arrearsRoute,
-    depositsRoute,
-    ownerSettlementsRoute,
-    bankReconciliationRoute,
-    accountingRoute,
     reportsRoute,
     reportProductRoute,
     aiAssistantRoute,
     helpSupportRoute,
     adminSupportRoute,
-    automationRoute,
-    utilitiesRoute,
-    documentsVaultRoute,
-    systemRoute,
-    auditLogRoute,
-    dataIntegrityRoute,
-    changePasswordRoute,
     maintenanceRoute,
     serviceProvidersRoute,
     serviceProviderNewRoute,

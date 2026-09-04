@@ -144,6 +144,7 @@ export const NeedsAttentionSection = memo(function NeedsAttentionSection({ signa
                   ) : (
                     <Link
                       to={item.to}
+                      search={item.search}
                       className={dashboardSignalRowClass(tone)}
                       data-dashboard-queue-link
                       data-needs-attention-link

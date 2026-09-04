@@ -70,21 +70,20 @@ describe('permission visibility — task-centric IA must not widen access', () =
     expect(routeHasPermission('/service-providers/$providerId/edit', 'service_providers.write')).toBe(true);
   });
 
-  it('Money children keep their financial permissions', () => {
+  it('Money children keep their financial permissions on the canonical surface', () => {
     expect(routeHasPermission('/commissions', 'commissions.view')).toBe(true);
-    expect(routeHasPermission('/expenses', 'expenses.view')).toBe(true);
-    expect(routeHasPermission('/arrears', 'arrears.view')).toBe(true);
-    expect(routeHasPermission('/deposits', 'financial.deposits.view')).toBe(true);
-    expect(routeHasPermission('/owner-settlements', 'financial.owner_settlements.view')).toBe(true);
-    expect(routeHasPermission('/bank-reconciliation', 'financial.bank_reconciliation.view')).toBe(true);
+    expect(routeHasPermission('/receipts', 'financial.workspace.view')).toBe(true);
+    // Retired standalone finance routes must not be registered at all.
+    for (const retired of ['/expenses', '/arrears', '/deposits', '/owner-settlements', '/bank-reconciliation', '/invoices']) {
+      expect(routeTreeSource, `retired ${retired} must not be registered`).not.toContain(`path: '${retired}'`);
+    }
   });
 
-  it('settings children keep their governed permissions', () => {
+  it('settings remain governed through the hub section model, not legacy routes', () => {
     expect(routeHasPermission('/settings', 'settings.manage')).toBe(false);
-    expect(routeHasPermission('/audit-log', 'audit.view')).toBe(true);
-    expect(routeHasPermission('/data-integrity', 'integrity.view')).toBe(true);
-    expect(routeHasPermission('/system', 'system.view')).toBe(true);
-    expect(routeHasPermission('/change-password', 'auth.password.change')).toBe(true);
+    for (const retired of ['/audit-log', '/data-integrity', '/system', '/change-password', '/automation']) {
+      expect(routeTreeSource, `retired ${retired} must not be registered`).not.toContain(`path: '${retired}'`);
+    }
   });
 
   it('does not invent a people.view permission', () => {

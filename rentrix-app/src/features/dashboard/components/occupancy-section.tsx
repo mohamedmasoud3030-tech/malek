@@ -150,7 +150,7 @@ export const OccupancySection = memo(function OccupancySection({
               return (
                 <li key={row.unitId} role="listitem" className="min-w-0">
                   <Link
-                    to="/units"
+                    to="/properties" search={{ section: "units" }}
                     className={dashboardSignalRowClass(tone)}
                     data-dashboard-queue-link
                     aria-label={`وحدة ${row.unitNumber} — ${row.propertyTitle} — شاغرة منذ ${number(row.daysVacant)} يوم`}

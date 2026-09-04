@@ -25,7 +25,7 @@ const ROUTES: Readonly<Record<string, string>> = {
   property: '/properties/new',
   unit: '/properties',
   contract: '/contracts/new',
-  invoice: '/invoices',
+  invoice: '/financials?section=collections&view=invoices',
 };
 
 /**

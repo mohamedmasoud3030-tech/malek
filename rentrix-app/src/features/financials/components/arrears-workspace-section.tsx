@@ -17,7 +17,7 @@ export function ArrearsWorkspaceSection() {
     void router.navigate({ href: createInvoiceCollectHref(invoiceId) });
   };
   const onViewInvoice = (invoiceId: string) => {
-    void router.navigate({ href: `/invoices?invoiceId=${encodeURIComponent(invoiceId)}` });
+    void router.navigate({ href: `/financials?section=collections&view=invoices&invoiceId=${encodeURIComponent(invoiceId)}` });
   };
   const [arrearsAsOf, setArrearsAsOf] = useState(() => getTodayLocalDateString());
   const [arrearsSearch, setArrearsSearch] = useState('');

@@ -280,10 +280,6 @@ function valueOrDash(value: string | null | undefined) {
   return value?.trim() ? value : '—';
 }
 
-export function createReceiptPrintHref(receiptId: string) {
-  return `/receipts?receiptId=${encodeURIComponent(receiptId)}`;
-}
-
 export function toDateInputValue(date: Date) {
   return toDateOnlyISO(date);
 }

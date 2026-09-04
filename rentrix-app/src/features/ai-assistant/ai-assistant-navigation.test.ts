@@ -92,9 +92,13 @@ describe('buildAiNavigationTargets', () => {
     expect(buildAiNavigationTargets('list_vacant_units_needing_followup').map((target) => target.to)).toContain('/properties');
     expect(buildAiNavigationTargets('draft_owner_summary')[0]?.to).toBe('/owners');
     expect(buildAiNavigationTargets('draft_maintenance_followup').map((target) => target.to)).toContain('/communication');
-    expect(buildAiNavigationTargets('summarize_expenses')[0]).toEqual({ label: 'فتح المصروفات', to: '/expenses' });
+    expect(buildAiNavigationTargets('summarize_expenses')[0]).toEqual({
+      label: 'فتح المصروفات', to: '/financials', search: { section: 'expenses', view: 'expenses' },
+    });
     expect(buildAiNavigationTargets('summarize_expenses').map((target) => target.to)).toContain('/financials');
-    expect(buildAiNavigationTargets('explain_owner_financial_position')[0]).toEqual({ label: 'فتح تسويات الملاك', to: '/owner-settlements' });
+    expect(buildAiNavigationTargets('explain_owner_financial_position')[0]).toEqual({
+      label: 'فتح تسويات الملاك', to: '/financials', search: { section: 'funds', view: 'owner_settlements' },
+    });
     expect(buildAiNavigationTargets('explain_owner_financial_position').map((target) => target.to)).toContain('/owners');
   });
 
@@ -116,7 +120,7 @@ describe('buildAiNavigationTargets', () => {
     });
     expect(ownerTargets.map((target) => target.to)).toEqual([
       '/owners/owner-123',
-      '/owner-settlements',
+      '/financials',
       '/reports',
     ]);
     expect(ownerTargets.every(isAllowedAiNavigationTarget)).toBe(true);

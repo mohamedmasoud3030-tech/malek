@@ -110,6 +110,3 @@ export function SystemWorkspace({ variant = 'standalone' }: SystemWorkspaceProps
 }
 
 /** Standalone /system route entry point — preserves historical behavior exactly. */
-export function SystemPage() {
-  return <SystemWorkspace variant="standalone" />;
-}

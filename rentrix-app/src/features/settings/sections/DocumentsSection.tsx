@@ -3,7 +3,7 @@ import type { CompanySettingsDraft, CompanySettingsDraftField, CompanySettingsVa
 import { useSettingsSection } from '../form/useSettingsSection';
 import { SettingsFormField } from '../components/settings-form-fields';
 import { SectionCard } from '../components/settings-section-card';
-import type { SettingsSectionId } from '../settingsSections';
+import type { SettingsSectionId } from '../registry/sectionRegistry';
 
 export type DocumentsSectionProps = Readonly<{
   activeSection: SettingsSectionId;

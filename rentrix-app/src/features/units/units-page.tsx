@@ -334,7 +334,3 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
     </>
   );
 }
-
-export function UnitsPage() {
-  return <UnitsWorkspace />;
-}

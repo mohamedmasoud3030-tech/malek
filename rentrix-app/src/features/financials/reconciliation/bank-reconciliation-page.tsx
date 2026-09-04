@@ -372,9 +372,6 @@ export function BankReconciliationWorkspace({ embedded = false }: BankReconcilia
   );
 }
 
-export function BankReconciliationPage() {
-  return <BankReconciliationWorkspace />;
-}
 
 function BankStatementLinesTable({
   companySettings,

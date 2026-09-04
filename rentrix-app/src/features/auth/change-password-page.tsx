@@ -105,7 +105,3 @@ export function ChangePasswordWorkspace({ variant = 'standalone' }: ChangePasswo
     </PageLayout>
   );
 }
-
-export function ChangePasswordPage() {
-  return <ChangePasswordWorkspace variant="standalone" />;
-}

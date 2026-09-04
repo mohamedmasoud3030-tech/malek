@@ -3,7 +3,7 @@ import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act } from 'react';
-import { UnitsPage } from './units-page';
+import { UnitsWorkspace } from './units-page';
 
 const mockNavigate = vi.fn();
 const createUnitMock = vi.fn();
@@ -76,7 +76,7 @@ vi.mock('@/features/properties/use-properties', () => ({
   }),
 }));
 
-describe('Global UnitsPage Real Rendered User-Interaction Tests', () => {
+describe('Global UnitsWorkspace Real Rendered User-Interaction Tests', () => {
   let container: HTMLDivElement | null = null;
   let root: any = null;
 
@@ -103,7 +103,7 @@ describe('Global UnitsPage Real Rendered User-Interaction Tests', () => {
     await act(async () => {
       root.render(
         <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-          <UnitsPage />
+          <UnitsWorkspace />
         </QueryClientProvider>,
       );
     });
@@ -124,7 +124,7 @@ describe('Global UnitsPage Real Rendered User-Interaction Tests', () => {
     await act(async () => {
       root.render(
         <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-          <UnitsPage />
+          <UnitsWorkspace />
         </QueryClientProvider>,
       );
     });
@@ -147,11 +147,11 @@ describe('Global UnitsPage Real Rendered User-Interaction Tests', () => {
     expect(document.body.textContent).not.toContain('اختيار العقار مطلوب');
   });
 
-  it('proves clicking a desktop row in UnitsPage opens the shared unit preview', async () => {
+  it('proves clicking a desktop row in UnitsWorkspace opens the shared unit preview', async () => {
     await act(async () => {
       root.render(
         <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-          <UnitsPage />
+          <UnitsWorkspace />
         </QueryClientProvider>,
       );
     });
@@ -173,7 +173,7 @@ describe('Global UnitsPage Real Rendered User-Interaction Tests', () => {
     await act(async () => {
       root.render(
         <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-          <UnitsPage />
+          <UnitsWorkspace />
         </QueryClientProvider>,
       );
     });
@@ -201,7 +201,7 @@ describe('Global UnitsPage Real Rendered User-Interaction Tests', () => {
     await act(async () => {
       root.render(
         <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-          <UnitsPage />
+          <UnitsWorkspace />
         </QueryClientProvider>,
       );
     });

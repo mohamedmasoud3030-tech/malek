@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 
 const routeTree = readFileSync(new URL('./route-tree.ts', import.meta.url), 'utf8');
 const background = readFileSync(new URL('./background-location.tsx', import.meta.url), 'utf8');
-const legacyRedirect = readFileSync(new URL('./legacy-preview-redirect.tsx', import.meta.url), 'utf8');
 const contractDetail = readFileSync(new URL('../../features/contracts/pages/ContractDetailPage.tsx', import.meta.url), 'utf8');
 const ownerDetail = readFileSync(new URL('../../features/owners/owner-detail-page.tsx', import.meta.url), 'utf8');
 const tenantDetail = readFileSync(new URL('../../features/tenants/components/TenantPreviewDialog.tsx', import.meta.url), 'utf8');
@@ -37,24 +36,13 @@ describe('Event bus removal', () => {
     }
   });
 
-  it('legacy event bus files stay deleted', () => {
+  it('legacy event bus files and the legacy previewKind redirect stay deleted', () => {
     expect(existsSync(new URL('../../components/ui/entity-preview-events.ts', import.meta.url))).toBe(false);
     expect(existsSync(new URL('../../components/ui/entity-preview-host.tsx', import.meta.url))).toBe(false);
+    expect(existsSync(new URL('./legacy-preview-redirect.tsx', import.meta.url))).toBe(false);
     expect(protectedRoute).not.toContain('EntityPreviewHost');
+    expect(protectedRoute).not.toContain('LegacyPreviewRedirect');
     expect(protectedRoute).toContain('BackgroundLocationProvider');
-    expect(protectedRoute).toContain('LegacyPreviewRedirect');
-  });
-});
-
-describe('Legacy preview query → canonical URL', () => {
-  it('redirects legacy previewKind/previewId to canonical entity routes', () => {
-    expect(legacyRedirect).toContain('previewKind');
-    expect(legacyRedirect).toContain('previewId');
-    expect(legacyRedirect).toContain("to = '/properties/$propertyId'");
-    expect(legacyRedirect).toContain("to = '/contracts/$contractId'");
-    expect(legacyRedirect).toContain("to = '/owners/$ownerId'");
-    expect(legacyRedirect).toContain('replace: true');
-    expect(legacyRedirect).toContain('delete next.previewKind');
   });
 });
 

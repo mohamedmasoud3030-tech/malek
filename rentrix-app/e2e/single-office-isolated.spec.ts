@@ -49,7 +49,7 @@ test.describe('single-office isolated launch acceptance', () => {
     });
 
     await login(page);
-    await page.goto(`/invoices?invoiceId=${INVOICE_ID}&collect=1`);
+    await page.goto(`/financials?section=collections&view=invoices&invoiceId=${INVOICE_ID}&collect=1`);
 
     const paymentForm = page.locator('#quick-payment-form');
     await expect(paymentForm).toBeVisible({ timeout: 15000 });
@@ -126,10 +126,10 @@ test.describe('single-office isolated launch acceptance', () => {
 
     const routes = [
       { path: '/properties', evidence: 'عقار اختبار المكتب الواحد' },
-      { path: '/units', evidence: 'SO-E2E-1' },
+      { path: '/properties?section=units', evidence: 'SO-E2E-1' },
       { path: '/contracts', evidence: 'مستأجر اختبار المكتب الواحد' },
-      { path: '/invoices', evidence: 'الفواتير' },
-      { path: '/receipts', evidence: 'الإيصالات' },
+      { path: '/financials?section=collections&view=invoices', evidence: 'الفواتير' },
+      { path: '/financials?section=collections&view=receipts', evidence: 'الإيصالات' },
       { path: '/reports', evidence: 'التقارير' },
       { path: '/maintenance', evidence: 'الصيانة' },
       { path: '/settings', evidence: 'الإعدادات' },

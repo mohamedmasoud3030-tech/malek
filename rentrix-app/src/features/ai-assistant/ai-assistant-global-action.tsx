@@ -1,6 +1,6 @@
 import { Maximize2, Sparkles, X } from 'lucide-react';
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
-import { Link, useNavigate, useSearch } from '@tanstack/react-router';
+import { Link } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import { LoadingState } from '@/components/ui/loading-state';
 import { cn } from '@/lib/utils';
@@ -18,15 +18,8 @@ export const OPEN_AI_ASSISTANT_EVENT = 'malek:open-ai-assistant';
  * full assistant workspace instead of pretending to be a full-screen sheet.
  */
 export function AiAssistantGlobalAction({ showTrigger = true }: Readonly<{ showTrigger?: boolean }>) {
-  const search = useSearch({ strict: false }) as Record<string, unknown>;
-  const navigate = useNavigate();
-  const requestedByLegacyUrl = search.globalAction === 'ai-assistant';
-  const [open, setOpen] = useState(requestedByLegacyUrl);
+  const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (requestedByLegacyUrl) setOpen(true);
-  }, [requestedByLegacyUrl]);
 
   useEffect(() => {
     const openAssistant = () => setOpen(true);
@@ -37,37 +30,13 @@ export function AiAssistantGlobalAction({ showTrigger = true }: Readonly<{ showT
   useEffect(() => {
     if (!open) return;
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setOpen(false);
-        if (!requestedByLegacyUrl) return;
-        void navigate({
-          to: '.',
-          replace: true,
-          search: (previous: Record<string, unknown>) => {
-            const next = { ...previous };
-            delete next.globalAction;
-            return next;
-          },
-        });
-      }
+      if (event.key === 'Escape') setOpen(false);
     };
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [open, navigate, requestedByLegacyUrl]);
+  }, [open]);
 
-  const close = () => {
-    setOpen(false);
-    if (!requestedByLegacyUrl) return;
-    void navigate({
-      to: '.',
-      replace: true,
-      search: (previous: Record<string, unknown>) => {
-        const next = { ...previous };
-        delete next.globalAction;
-        return next;
-      },
-    });
-  };
+  const close = () => setOpen(false);
 
   return (
     <>

@@ -60,7 +60,7 @@ export function findNextCollectibleInvoiceId(
  * and focus the payment form once the invoice detail finishes loading.
  */
 export function createInvoiceCollectHref(invoiceId: string): string {
-  return `/invoices?invoiceId=${encodeURIComponent(invoiceId)}&collect=1`;
+  return `/financials?section=collections&view=invoices&invoiceId=${encodeURIComponent(invoiceId)}&collect=1`;
 }
 
 /** Parses the invoice deep-link search params (tolerates loose casing/types). */

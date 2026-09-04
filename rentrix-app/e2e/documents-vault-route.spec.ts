@@ -3,12 +3,13 @@ import { installFakeSupabaseBackend } from './support/fake-supabase-backend';
 import { installAcceptanceBrowser } from './support/document-acceptance-session';
 
 /**
- * Browser acceptance for the contextual Documents Vault route.
+ * Browser acceptance for the contextual Documents Vault section.
  *
- * `/documents-vault` remains a supported deep link into the real Services
- * workspace, but documents are intentionally not a routine primary tab. This
- * matches the canonical contextual-documents contract: deep links stay valid
- * without promoting a global vault beside daily Maintenance / Utilities.
+ * The canonical deep link is `/maintenance?section=documents_vault` inside the
+ * Services hub: the vault is intentionally not a routine primary tab, and the
+ * former `/documents-vault` standalone URL alias is retired. This matches the
+ * canonical contextual-documents contract — deep links stay valid through the
+ * hub without promoting a global vault beside daily Maintenance / Utilities.
  */
 
 function watchConsoleErrors(page: Page): string[] {
@@ -25,15 +26,15 @@ function isExpectedHermeticNoise(text: string): boolean {
   return text.includes('realtime/v1/websocket') && text.includes('ERR_NAME_NOT_RESOLVED');
 }
 
-test.describe('Documents Vault route consolidation', () => {
-  test('/documents-vault redirects to the real contextual documents section', async ({ page }) => {
+test.describe('Documents Vault contextual section', () => {
+  test('canonical Services deep link renders the real contextual documents section', async ({ page }) => {
     const consoleErrors = watchConsoleErrors(page);
     await installAcceptanceBrowser(page);
     await installFakeSupabaseBackend(page, 'complete');
 
-    await page.goto('/documents-vault', { waitUntil: 'domcontentloaded' });
+    await page.goto('/maintenance?section=documents_vault', { waitUntil: 'domcontentloaded' });
 
-    // 1. Final URL is the single Services authority.
+    // 1. URL stays at the single Services authority.
     await expect(page).toHaveURL(/\/maintenance\?section=documents_vault(?:&|$)/);
 
     // 2. Documents Vault UI is rendered as the embedded cross-entity index,
@@ -58,11 +59,11 @@ test.describe('Documents Vault route consolidation', () => {
     expect(unexpected).toEqual([]);
   });
 
-  test('route authority switches cleanly between contextual documents and routine Maintenance', async ({ page }) => {
+  test('contextual documents and routine Maintenance switch cleanly on the hub URL', async ({ page }) => {
     await installAcceptanceBrowser(page);
     await installFakeSupabaseBackend(page, 'complete');
 
-    await page.goto('/documents-vault', { waitUntil: 'domcontentloaded' });
+    await page.goto('/maintenance?section=documents_vault', { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL(/\/maintenance\?section=documents_vault(?:&|$)/);
     await expect(page.locator('[data-operations-section="documents_vault"]')).toBeVisible();
     await expect(page.getByRole('tab', { name: 'الصيانة' })).toHaveCount(0);
@@ -75,9 +76,9 @@ test.describe('Documents Vault route consolidation', () => {
     await expect(page.getByRole('tab', { name: 'الصيانة' })).toHaveAttribute('aria-selected', 'true');
     await expect(page.getByRole('tab', { name: 'المرافق والعدادات' })).toBeVisible();
 
-    // The supported deep link still resolves back to the contextual section,
+    // The canonical deep link still resolves back to the contextual section,
     // again without surfacing a specialist documents tab in routine nav.
-    await page.goto('/documents-vault', { waitUntil: 'domcontentloaded' });
+    await page.goto('/maintenance?section=documents_vault', { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL(/\/maintenance\?section=documents_vault(?:&|$)/);
     await expect(page.locator('[data-operations-section="documents_vault"]')).toBeVisible();
     await expect(page.getByRole('tab', { name: 'المستندات التشغيلية' })).toHaveCount(0);

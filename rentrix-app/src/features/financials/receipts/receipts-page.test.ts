@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { AuthorizationContext } from '@/features/auth/permissions';
 import type { ReceiptRecord } from './receiptService';
-import { canLoadMoreReceipts, canVoidReceipts, countPostedReceiptsForDate, createReceiptPrintHref, describeReceiptsViewport, nextReceiptsLimit, RECEIPTS_PAGE_SIZE, sumPostedReceiptAmount, sumPostedReceiptsForDate } from './receipts-page';
+import { createReceiptPrintHref } from './receipt-print';
+import { canLoadMoreReceipts, canVoidReceipts, countPostedReceiptsForDate, describeReceiptsViewport, nextReceiptsLimit, RECEIPTS_PAGE_SIZE, sumPostedReceiptAmount, sumPostedReceiptsForDate } from './receipts-page';
 
 function authorization(role: AuthorizationContext['role']): AuthorizationContext {
   return {

@@ -2,7 +2,7 @@ import {
   isSettingsSectionId,
   resolveSettingsSection,
   type SettingsSectionId,
-} from '@/features/settings/settingsSections';
+} from '@/features/settings/registry/sectionRegistry';
 import type { GovernanceHubSectionId } from './governance-hub-sections';
 
 type VisibleGovernanceSection = Readonly<{ id: GovernanceHubSectionId }>;

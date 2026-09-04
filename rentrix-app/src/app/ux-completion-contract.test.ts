@@ -178,10 +178,9 @@ describe('UX completion contract', () => {
     expect(settings).toMatch(/id: 'cost-centers'[\s\S]*?showInPrimaryNavigation: false/);
     expect(settings).toMatch(/id: 'payment-terms'[\s\S]*?showInPrimaryNavigation: false/);
 
-    expect(routes).toContain("path: '/automation'");
-    expect(routes).toContain("section: 'automation'");
+    expect(routes).not.toContain("path: '/automation'");
+    expect(routes).not.toContain("path: '/documents-vault'");
     expect(routes).toContain("path: '/lands'");
     expect(routes).toContain("path: '/service-providers'");
-    expect(routes).toContain("path: '/documents-vault'");
   });
 });
