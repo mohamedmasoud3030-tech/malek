@@ -205,7 +205,7 @@ export function renderLegalText(countryId?: string): string {
   const text = `
 قاعدة مرجعية قانونية/نظامية لسوق ${country.nameAr} (قراءة إرشادية من مصادر تشريعية عامة — ليست استشارة قانونية أو نصاً معتمداً؛ يُراجع دائمًا نص القانون/اللائحة والجهة المختصة):
 
-الأدوات التشريعية الحاكمة ($country.nameAr):
+الأدوات التشريعية الحاكمة (${country.nameAr}):
 ${instruments}
 
 الأقسام:
