@@ -175,6 +175,14 @@ describe('reports closure — presentation contracts', () => {
     expect(read('workspace/ReportsShell.tsx')).toContain('getActiveReportMeta');
   });
 
+  it('does not repeat statement filter/readiness state in a second selection strip', () => {
+    const section = read('components/StatementsSection.tsx');
+    const summaryPanels = read('components/statements/statement-summary-panels.tsx');
+    expect(section).not.toContain('StatementSelectionStrip');
+    expect(summaryPanels).not.toContain('StatementSelectionStrip');
+    expect(summaryPanels).not.toContain('SelectionItem');
+  });
+
   it('keeps report output actions behind the shared control', () => {
     const section = read('components/PropertyAnalyticsSection.tsx');
     expect(section).toContain('<ReportOutputActions');
