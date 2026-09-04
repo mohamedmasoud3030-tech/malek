@@ -2,6 +2,8 @@ import type { ContractListItem } from '@/features/contracts/services/contractSer
 import { isContractStatus } from '@/lib/contractStatus';
 import type { Unit } from '@/types/domain';
 
+export type VacancyAnalyticsUnit = Pick<Unit, 'id' | 'property_id' | 'unit_number' | 'status' | 'rent_amount' | 'created_at'>;
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 export const VACANCY_RISK_WINDOW_DAYS = 60;
 
@@ -178,7 +180,7 @@ function hasCommittedSuccessor(current: ContractListItem, contracts: readonly Co
  *   successor/renewal.
  */
 export function buildVacancyAnalytics(
-  units: readonly Unit[] | undefined,
+  units: readonly VacancyAnalyticsUnit[] | undefined,
   contracts: readonly ContractListItem[] | undefined,
   propertyTitles: ReadonlyMap<string, string> | undefined,
   asOf: string,
