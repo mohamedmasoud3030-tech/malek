@@ -29,10 +29,14 @@ export function useUtilityMeters(propertyId?: string) {
   });
 }
 
-export function useUtilityBills(filter?: { propertyId?: string; status?: UtilityBillStatus; meterId?: string }) {
+export function useUtilityBills(
+  filter?: { propertyId?: string; status?: UtilityBillStatus; meterId?: string },
+  options?: Readonly<{ enabled?: boolean }>,
+) {
   return useQuery({
     queryKey: ['utility-bills', filter ?? {}],
     queryFn: () => listUtilityBills(filter),
+    enabled: options?.enabled ?? true,
   });
 }
 
