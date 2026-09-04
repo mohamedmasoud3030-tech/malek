@@ -1,6 +1,6 @@
 import type { CanonicalContractStatus } from '@/lib/contractStatus';
 import { getContractStatusVariants } from '@/lib/contractStatus';
-import { fetchAllRows } from '@/lib/paginatedRead';
+import { fetchAllRows, fetchAllRowsInBatches } from '@/lib/paginatedRead';
 import { supabase } from '@/lib/supabase';
 import type { Database } from '@/types/database';
 import type { Contract, Person, Property, Unit } from '@/types/domain';
@@ -87,6 +87,29 @@ export async function listContractsForProperty(propertyId: string): Promise<Cont
   return rows;
 }
 
+/**
+ * Fetch every contract for a property set through bounded `.in(...)` batches.
+ * Multi-property report consumers must not fan out one complete read per property.
+ */
+export async function listContractsForProperties(propertyIds: readonly string[]): Promise<ContractListItem[]> {
+  const uniquePropertyIds = [...new Set(propertyIds.filter(Boolean))].sort();
+  if (uniquePropertyIds.length === 0) return [];
+
+  const { rows } = await fetchAllRowsInBatches<ContractListItem, string>(
+    uniquePropertyIds,
+    (propertyIdBatch) =>
+      supabase
+        .from('contracts')
+        .select(CONTRACT_BASE_SELECT)
+        .is('deleted_at', null)
+        .in('property_id', [...propertyIdBatch])
+        .order('property_id', { ascending: true })
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
+        .returns<ContractListItem[]>(),
+  );
+  return rows;
+}
 export async function listAllContracts(status: ContractStatusFilter = 'all'): Promise<AllContractsRead> {
   const buildQuery = () => {
     let query = supabase
