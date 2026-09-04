@@ -209,6 +209,149 @@ describe('P0-1 database replay reproduces the authoritative catalog from migrati
     );
     expect(rows).toEqual(migrationOnly);
   });
+
+
+  it('upgrades a previously seeded settings.manage database without translating legacy authority', async () => {
+    // Model the production-upgrade shape explicitly: replay only through the
+    // last pre-fix migration, then recreate the legacy seed-only alias and
+    // permission state that could already exist in a deployed database.
+    const legacy = await createFullReplayedDatabase({
+      throughMigration: '20260901000065',
+      applySeed: false,
+    });
+    expect(legacy.failed, JSON.stringify(legacy.failed.slice(-5))).toEqual([]);
+    const legacyDb = legacy.db;
+
+    const legacyCompany = '92000000-0000-4000-8000-0000000000d0';
+    const legacyAdmin = '92000000-0000-4000-8000-0000000000d1';
+    const legacyEmployee = '92000000-0000-4000-8000-0000000000d2';
+    const pendingRequest = '92000000-0000-4000-8000-0000000000d3';
+    const approvedRequest = '92000000-0000-4000-8000-0000000000d4';
+
+    await legacyDb.query(
+      `insert into public.companies(id, name, slug, is_active)
+       values($1, 'Legacy Permission Upgrade', 'legacy-permission-upgrade', true)`,
+      [legacyCompany],
+    );
+    for (const [id, email, name, role] of [
+      [legacyAdmin, 'legacy-admin@test.invalid', 'Legacy Admin', 'ADMIN'],
+      [legacyEmployee, 'legacy-employee@test.invalid', 'Legacy Employee', 'USER'],
+    ] as const) {
+      await legacyDb.query(
+        `insert into auth.users(id, email, raw_app_meta_data) values($1,$2,'{}')`,
+        [id, email],
+      );
+      await legacyDb.query(
+        `insert into public.users(id,email,name,full_name,role,status,is_active,deleted_at)
+         values($1,$2,$3,$3,$4,'ACTIVE',true,null)`,
+        [id, email, name, role],
+      );
+    }
+
+    await legacyDb.query(
+      `insert into public.app_permission_catalog(permission,label_ar,admin_only,requestable)
+       values('settings.manage','إدارة الإعدادات القديمة',true,true)`,
+    );
+    await legacyDb.query(
+      `insert into public.user_permission_grants(company_id,user_id,permission,granted_by)
+       values($1,$2,'settings.manage',$3)`,
+      [legacyCompany, legacyEmployee, legacyAdmin],
+    );
+    await legacyDb.query(
+      `insert into public.user_permission_overrides(company_id,user_id,permission,allowed,set_by,reason)
+       values($1,$2,'settings.manage',true,$3,'legacy seeded override')`,
+      [legacyCompany, legacyEmployee, legacyAdmin],
+    );
+    await legacyDb.query(
+      `insert into public.permission_requests(
+         id,company_id,requester_user_id,permission,resource_route,reason,status
+       ) values($1,$2,$3,'settings.manage','/settings','legacy pending','PENDING')`,
+      [pendingRequest, legacyCompany, legacyEmployee],
+    );
+    await legacyDb.query(
+      `insert into public.permission_requests(
+         id,company_id,requester_user_id,permission,resource_route,reason,status,
+         reviewer_user_id,decided_at,decision_reason
+       ) values($1,$2,$3,'settings.manage','/settings','legacy approved','APPROVED',
+         $4,now(),'historical approval')`,
+      [approvedRequest, legacyCompany, legacyEmployee, legacyAdmin],
+    );
+
+    const paritySql = readFileSync(
+      resolve(migrationsDir, '20260904000001_authoritative_permission_catalog_parity.sql'),
+      'utf8',
+    );
+    await legacyDb.exec(paritySql);
+
+    const catalog = await legacyDb.query<{ permission: string }>(
+      'select permission from public.app_permission_catalog order by permission',
+    );
+    expect(catalog.rows.map((row) => row.permission)).toEqual([...appPermissions].sort());
+    expect(catalog.rows.some((row) => row.permission === 'settings.manage')).toBe(false);
+
+    const grants = await legacyDb.query<{ permission: string; revoked: boolean }>(
+      `select permission, revoked_at is not null as revoked
+         from public.user_permission_grants
+        where company_id=$1 and user_id=$2
+        order by permission`,
+      [legacyCompany, legacyEmployee],
+    );
+    expect(grants.rows).toEqual([{ permission: 'settings.manage', revoked: true }]);
+    expect(grants.rows.some((row) => row.permission === 'company.settings.manage')).toBe(false);
+
+    const overrides = await legacyDb.query<{ count: number }>(
+      `select count(*)::int as count
+         from public.user_permission_overrides
+        where company_id=$1 and user_id=$2`,
+      [legacyCompany, legacyEmployee],
+    );
+    expect(overrides.rows[0]?.count).toBe(0);
+
+    const requests = await legacyDb.query<{
+      id: string;
+      status: string;
+      decision_reason: string | null;
+    }>(
+      `select id::text, status::text, decision_reason
+         from public.permission_requests
+        where id in ($1::uuid,$2::uuid)
+        order by id`,
+      [pendingRequest, approvedRequest],
+    );
+    expect(requests.rows).toEqual([
+      {
+        id: pendingRequest,
+        status: 'REJECTED',
+        decision_reason: 'PERMISSION_RETIRED: settings.manage removed; no automatic grant translation performed',
+      },
+      {
+        id: approvedRequest,
+        status: 'APPROVED',
+        decision_reason: 'historical approval',
+      },
+    ]);
+
+    // Prove the migration's own guard rejects EXTRA authority, not merely
+    // missing role-matrix rows. The unexpected row exists before the migration
+    // transaction, so a rejected rerun must leave it untouched after rollback.
+    await legacyDb.query(
+      `insert into public.app_permission_catalog(permission,label_ar,admin_only,requestable)
+       values('unexpected.permission','صلاحية غير متوقعة',false,false)`,
+    );
+    const exactGuardError = await errorOf(() => legacyDb.exec(paritySql));
+    expect(exactGuardError).toMatch(/PERMISSION_CATALOG_EXACT_SET_MISMATCH/);
+    expect(exactGuardError).toMatch(/unexpected\.permission/);
+    await legacyDb.exec('rollback;').catch(() => undefined);
+
+    const unexpected = await legacyDb.query<{ count: number }>(
+      `select count(*)::int as count
+         from public.app_permission_catalog
+        where permission='unexpected.permission'`,
+    );
+    expect(unexpected.rows[0]?.count).toBe(1);
+
+    await legacyDb.close();
+  });
 });
 
 describe('P0-1 non-admin roles do not silently lose capabilities', () => {
