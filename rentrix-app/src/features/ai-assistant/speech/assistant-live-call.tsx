@@ -18,9 +18,10 @@ import { stopAssistantSpeech } from './assistant-speech';
 type LiveCallProps = Readonly<{
   /** True while a reply is being generated. */
   pending: boolean;
-  /** Canonical microphone capability/state from the shared voice-input engine. */
+  /** Canonical microphone/speech state from the shared engines. */
   supported: boolean;
   listening: boolean;
+  speaking: boolean;
   /** Starts one utterance and commits it automatically when finalized. */
   onStart: () => boolean;
   onStop: () => void;
@@ -32,26 +33,28 @@ export function AssistantLiveCall({
   pending,
   supported,
   listening,
+  speaking,
   onStart,
   onStop,
   onClose,
 }: LiveCallProps) {
   const [active, setActive] = useState(false);
-  const pendingRef = useRef(pending);
-  pendingRef.current = pending;
-  const prevPendingRef = useRef(pending);
+  const blocked = pending || speaking;
+  const blockedRef = useRef(blocked);
+  blockedRef.current = blocked;
+  const prevBlockedRef = useRef(blocked);
   const startMicRef = useRef<() => void>(() => {});
 
-  // Once a reply completes (pending true → false) while still in the active
-  // call, re-open the microphone so the conversation keeps flowing hands-free.
+  // Re-open only after BOTH reply generation and text-to-speech finish. This
+  // prevents the microphone from hearing (or cutting off) the assistant.
   useEffect(() => {
-    const wasPending = prevPendingRef.current;
-    prevPendingRef.current = pending;
-    if (active && wasPending && !pending && !listening) startMicRef.current();
-  }, [pending, active, listening]);
+    const wasBlocked = prevBlockedRef.current;
+    prevBlockedRef.current = blocked;
+    if (active && wasBlocked && !blocked && !listening) startMicRef.current();
+  }, [blocked, active, listening]);
 
   const openMic = useCallback(() => {
-    if (pendingRef.current) return;
+    if (blockedRef.current) return;
     stopAssistantSpeech();
     onStart();
   }, [onStart]);
@@ -102,7 +105,9 @@ export function AssistantLiveCall({
         {listening ? (
           <span className="font-medium text-foreground">🎙️ أسمعك… تحدث، وسيُرسَل الرد وتُقرَأ الإجابة صوتياً.</span>
         ) : pending ? (
-          <span className="font-medium text-foreground">الرد يُجهَّز… بعدها أفتح الميكروفون لتكمل الحوار.</span>
+          <span className="font-medium text-foreground">الرد يُجهَّز…</span>
+        ) : speaking ? (
+          <span className="font-medium text-foreground">🔊 لينا بترد عليك… الميكروفون هيفتح بعد انتهاء الصوت.</span>
         ) : (
           <span>اضغط الميكروفون لتتحدث مباشرة (حوار صوتي لايف).</span>
         )}
