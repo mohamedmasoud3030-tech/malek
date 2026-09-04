@@ -102,6 +102,9 @@ describe('R6 — reports workspace fetches only the open report', () => {
     expect(workspaceSource).toContain('useVatReturnReport(financialFilters, { enabled: needsFinancialStatements })');
     expect(workspaceSource).toContain('useTenantStatementReport(filters.contractId || undefined, { enabled: needsTenantStatement })');
     expect(workspaceSource).toContain('useOwnerStatementReport(filters.ownerId || undefined, financialFilters, { enabled: needsOwnerStatement })');
+    expect(workspaceSource).toContain('enabled: needsOwnerStatement');
+    expect(workspaceSource).toContain('ownerReportPayloadQuery');
+    expect(workspaceSource).toContain('loadPremiumOwnerReportPayload');
   });
 
   it('the reports page passes the resolved location while premium products also pass statement focus', () => {
