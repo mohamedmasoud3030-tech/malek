@@ -193,17 +193,14 @@ export function DashboardPage() {
 
   const hasDashboardError = isError || isRefetchError;
   const snapshotUnavailable = hasDashboardError && !snapshot;
-  const hasSupplementalError = cashflowQuery.isError
-    || utilityBillsQuery.isError
+  const hasSupplementalError = utilityBillsQuery.isError
     || (needsVacancyDetails && (unitsQuery.isError || contractsQuery.isError || propertyTitlesQuery.isError))
     || maintenanceQuery.isError;
-  const supplementalIsFetching = cashflowQuery.isFetching
-    || utilityBillsQuery.isFetching
+  const supplementalIsFetching = utilityBillsQuery.isFetching
     || (needsVacancyDetails && (unitsQuery.isFetching || contractsQuery.isFetching || propertyTitlesQuery.isFetching))
     || maintenanceQuery.isFetching;
   const retrySupplemental = () => {
     void Promise.all([
-      cashflowQuery.refetch(),
       utilityBillsQuery.refetch(),
       maintenanceQuery.refetch(),
       ...(needsVacancyDetails ? [
