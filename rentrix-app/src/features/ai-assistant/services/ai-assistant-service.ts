@@ -94,6 +94,7 @@ type FunctionSuccessBody = {
   caveats?: string[];
   meta?: {
     source?: 'deterministic' | 'model' | 'fallback';
+    kind?: 'data' | 'advisory';
   };
 };
 
@@ -726,7 +727,12 @@ function readErrorBody(value: unknown): FunctionErrorBody {
 function readSuccessBody(value: unknown): FunctionSuccessBody {
   if (!isRecord(value)) return {};
   const meta = isRecord(value.meta) && ['deterministic', 'model', 'fallback'].includes(String(value.meta.source))
-    ? { source: value.meta.source as 'deterministic' | 'model' | 'fallback' }
+    ? {
+        source: value.meta.source as 'deterministic' | 'model' | 'fallback',
+        kind: value.meta.kind === 'advisory' || value.meta.kind === 'data'
+          ? (value.meta.kind as 'data' | 'advisory')
+          : undefined,
+      }
     : undefined;
   const caveats = Array.isArray(value.caveats) && value.caveats.length <= 5
     && value.caveats.every((entry) => typeof entry === 'string' && entry.length <= 500)
@@ -804,6 +810,7 @@ async function invokeAiAssistant(prompt: string, action: AiAssistantAction | und
     grounded: successBody.grounded,
     caveats: successBody.caveats,
     source: successBody.meta.source,
+    kind: successBody.meta.kind,
   };
 }
 

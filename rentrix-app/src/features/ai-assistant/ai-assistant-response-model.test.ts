@@ -106,4 +106,21 @@ describe('buildAiAssistantResponsePresentation', () => {
     expect(presentation.attention).toEqual([]);
     expect(presentation.suggestedActions).toEqual([]);
   });
+
+  it('presents advisory replies with the advisory label, no data chips, and a pull-back to live data', () => {
+    const presentation = buildAiAssistantResponsePresentation({ ...response(), kind: 'advisory' });
+    expect(presentation.mode).toBe('advisory');
+    expect(presentation.modeLabel).toBe('نصيحة إرشادية');
+    // Advisory talk is about the market, not the open entity or its risks.
+    expect(presentation.contextLabel).toBeNull();
+    expect(presentation.attention).toEqual([]);
+    expect(presentation.suggestedActions).toEqual([
+      { action: 'generate_daily_brief', title: 'شوف الوضع الحالي', prompt: 'إيه المهم دلوقتي؟' },
+    ]);
+  });
+
+  it('keeps the data presentation untouched when kind is data or absent', () => {
+    expect(buildAiAssistantResponsePresentation({ ...response(), kind: 'data' }, 'explain_current_surface').mode).toBe('explanation');
+    expect(buildAiAssistantResponsePresentation(response(), 'explain_current_surface').modeLabel).toBe('شرح السياق');
+  });
 });

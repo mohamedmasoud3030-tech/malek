@@ -1,12 +1,26 @@
 import { describe, expect, it } from "vitest";
 import evaluationCases from "./ai-assistant-evaluation.json";
 import {
+  assembleModelContext,
   deterministicResponse,
   fallbackResponse,
   isHighRiskInstruction,
   validateAssistantRequest,
 } from "../../../../../supabase/functions/_shared/ai-safety";
-import { validateAssistantOutput } from "../../../../../supabase/functions/_shared/ai-contract";
+import {
+  AI_KB_VERSION,
+  BUSINESS_KB_COUNTRIES,
+  BUSINESS_KB_MAX_CHARS,
+  BUSINESS_KB_SOURCES,
+  BUSINESS_KB_TEXT,
+  findBusinessKbCountry,
+  renderBusinessKbText,
+} from "../../../../../supabase/functions/_shared/ai-business-kb";
+import {
+  PLANNING_INTENTS,
+  validateAssistantOutput,
+  validateAssistantPlanning,
+} from "../../../../../supabase/functions/_shared/ai-contract";
 
 const requestId = "018f4f36-7c7a-7c2a-8b1d-2c3d4e5f6071";
 const context = {
@@ -178,5 +192,141 @@ describe("AI assistant evaluation set", () => {
       history: [],
     });
     expect(result.ok).toBe(false);
+  });
+
+  it("validates planning intents against the closed action union plus advisory", () => {
+    expect(validateAssistantPlanning({ intent: "freeform" })).toEqual({ intent: "freeform" });
+    expect(validateAssistantPlanning({ intent: "summarize_overdue_invoices" })).toEqual({
+      intent: "summarize_overdue_invoices",
+    });
+    expect(validateAssistantPlanning({ intent: "advisory" })).toEqual({ intent: "advisory" });
+    // Unknown or free-text intents must fail closed.
+    expect(validateAssistantPlanning({ intent: "delete_company" })).toBeNull();
+    expect(validateAssistantPlanning({ intent: "SELECT * FROM users" })).toBeNull();
+    expect(validateAssistantPlanning({})).toBeNull();
+    expect(validateAssistantPlanning(null)).toBeNull();
+  });
+
+  it("validates planning data sections against the closed context catalog", () => {
+    expect(validateAssistantPlanning({ intent: "freeform", sections: ["overdueInvoices"] })).toEqual({
+      intent: "freeform",
+      sections: ["overdueInvoices"],
+    });
+    expect(
+      validateAssistantPlanning({
+        intent: "summarize_overdue_invoices",
+        sections: ["overdueInvoices", "contractRenewals"],
+      }),
+    ).toEqual({
+      intent: "summarize_overdue_invoices",
+      sections: ["overdueInvoices", "contractRenewals"],
+    });
+    // Unknown names, duplicates, empty or oversized lists fail the whole plan.
+    expect(validateAssistantPlanning({ intent: "freeform", sections: ["users_table"] })).toBeNull();
+    expect(validateAssistantPlanning({ intent: "freeform", sections: ["surface"] })).toBeNull();
+    expect(validateAssistantPlanning({ intent: "freeform", sections: ["overdueInvoices", "overdueInvoices"] })).toBeNull();
+    expect(validateAssistantPlanning({ intent: "freeform", sections: [] })).toBeNull();
+    expect(validateAssistantPlanning({ intent: "freeform", sections: "overdueInvoices" })).toBeNull();
+  });
+
+  it("assembles the model context on demand: minimal sections, always-on surface/entity, budget trim", () => {
+    const fullContext = {
+      asOf: "2026-09-04",
+      sampleLimit: 500,
+      surface: { route: "/properties/p1", entityType: "property", entityId: "p1", entityLabel: "برج صحار", section: "properties" },
+      entity: { type: "property", id: "p1", name: "برج صحار", outstandingAmount: 10 },
+      overdueInvoices: {
+        invoiceCount: 2,
+        totalOutstanding: 100,
+        oldestDueDate: "2026-08-01",
+        topInvoices: [
+          { invoiceId: "i1", contractId: "c1", dueDate: "2026-08-01", remainingAmount: 60, status: "OPEN", tenantName: "أ", propertyName: "برج", daysOverdue: 30 },
+          { invoiceId: "i2", contractId: "c2", dueDate: "2026-08-10", remainingAmount: 40, status: "OPEN", tenantName: "ب", propertyName: "برج", daysOverdue: 20 },
+        ],
+        dueTodayCount: 0,
+        dueTodayAmount: 0,
+      },
+      contractRenewals: { lookaheadDays: 90, contractCount: 1, totalRentAmount: 400, upcomingContracts: [{ contractId: "c1", propertyId: "p1", tenantId: "t1", unitId: "u1", endDate: "2026-10-01", rentAmount: 400 }] },
+    };
+
+    // Minimal selection: only the requested section travels, plus the
+    // always-on root scalars, surface and entity.
+    const minimal = assembleModelContext(fullContext, ["overdueInvoices"]);
+    expect(minimal.sections).toEqual(["overdueInvoices"]);
+    expect(minimal.trimmed).toBe(false);
+    expect(minimal.context.overdueInvoices).toEqual(fullContext.overdueInvoices);
+    expect(minimal.context.contractRenewals).toBeUndefined();
+    expect(minimal.context.asOf).toBe("2026-09-04");
+    expect(minimal.context.surface).toEqual(fullContext.surface);
+    expect(minimal.context.entity).toEqual(fullContext.entity);
+    // The input is never mutated.
+    expect((fullContext.overdueInvoices as { topInvoices: unknown[] }).topInvoices).toHaveLength(2);
+
+    // Unknown/empty selections degrade to the full catalog.
+    expect(assembleModelContext(fullContext, ["nope"]).sections).toHaveLength(8);
+    expect(assembleModelContext(fullContext, []).sections).toHaveLength(8);
+    expect(assembleModelContext(fullContext).sections).toHaveLength(8);
+
+    // Budget trim: a context that exceeds the prompt budget loses its last
+    // rows first, deterministically, and is flagged trimmed.
+    const bigRows = Array.from({ length: 100 }, (_, index) => ({
+      invoiceId: `i${index}`,
+      contractId: "c1",
+      dueDate: "2026-08-01",
+      remainingAmount: 1,
+      status: "OPEN",
+      tenantName: "مستأجر",
+      propertyName: "عقار",
+      daysOverdue: 1,
+    }));
+    const oversized = { ...fullContext, overdueInvoices: { ...fullContext.overdueInvoices, topInvoices: bigRows } };
+    expect(JSON.stringify(oversized).length).toBeGreaterThan(9_000);
+    const trimmed = assembleModelContext(oversized, ["overdueInvoices"]);
+    expect(JSON.stringify(trimmed.context).length).toBeLessThanOrEqual(9_000);
+    expect(trimmed.trimmed).toBe(true);
+    expect((trimmed.context.overdueInvoices as { topInvoices: unknown[] }).topInvoices.length).toBeLessThan(100);
+    // The original request context is untouched by trimming.
+    expect((oversized.overdueInvoices as { topInvoices: unknown[] }).topInvoices).toHaveLength(100);
+  });
+
+  it("keeps the business knowledge base versioned, bounded and fully cited", () => {
+    expect(AI_KB_VERSION).toMatch(/^malek-biz-om-v\d+$/);
+    // The KB must always fit the prompt window with headroom.
+    expect(BUSINESS_KB_TEXT.length).toBeGreaterThan(500);
+    expect(BUSINESS_KB_TEXT.length).toBeLessThanOrEqual(BUSINESS_KB_MAX_CHARS);
+    // Every entry is an https source with an access date.
+    expect(BUSINESS_KB_SOURCES.length).toBeGreaterThanOrEqual(3);
+    for (const source of BUSINESS_KB_SOURCES) {
+      expect(source.url).toMatch(/^https:\/\//);
+      expect(source.accessed).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      expect(source.name.length).toBeGreaterThan(0);
+    }
+    // The KB carries the mandatory advisory disclaimer.
+    expect(BUSINESS_KB_TEXT).toContain("تقديرات إرشادية");
+    // The closed planning union includes advisory alongside the real actions.
+    expect(PLANNING_INTENTS).toContain("advisory");
+    expect(PLANNING_INTENTS).toContain("freeform");
+  });
+
+  it("structures the KB data-driven and region-aware (Oman-first, country-extensible)", () => {
+    // Country level: one country object per supported market, Oman first.
+    expect(BUSINESS_KB_COUNTRIES[0].id).toBe("om");
+    const oman = findBusinessKbCountry("om");
+    expect(oman.id).toBe("om");
+    expect(findBusinessKbCountry("unknown")).toBe(BUSINESS_KB_COUNTRIES[0]);
+    // Region level: every region is labeled and carries its own rent table.
+    const regionIds = oman.regions.map((region) => region.id);
+    expect(regionIds).toContain("muscat");
+    expect(regionIds).toContain("nizwa");
+    expect(oman.regions.every((region) => region.rents.length > 0)).toBe(true);
+    // Nizwa (first customer) has real benchmarks, not a pointer to Muscat.
+    const nizwa = oman.regions.find((region) => region.id === "nizwa");
+    expect(nizwa?.rents.map((row) => row.range)).toContain("100-250");
+    // The rendered text labels both regions so the model can pick per user.
+    expect(renderBusinessKbText()).toContain("مسقط");
+    expect(renderBusinessKbText()).toContain("نزوي");
+    // Deterministic rendering, always within budget.
+    expect(renderBusinessKbText()).toBe(BUSINESS_KB_TEXT);
+    expect(renderBusinessKbText("om").length).toBeLessThanOrEqual(BUSINESS_KB_MAX_CHARS);
   });
 });
