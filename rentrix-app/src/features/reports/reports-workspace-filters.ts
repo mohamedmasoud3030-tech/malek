@@ -1,5 +1,6 @@
 import type { FinancialReportStatus } from '@/features/financials/reports/financial-report-rows';
 import { getCurrentMonthFilters, type FilterState } from './reports-page.helpers';
+import type { ReportFilterFieldId } from './report-workspaces';
 
 /**
  * Wave 4 report-filter contract. The legacy FilterState stays source-compatible
@@ -12,6 +13,29 @@ export type ReportsFilterState = FilterState & Readonly<{
   tenantId?: string;
   status?: FinancialReportStatus;
 }>;
+
+/**
+ * Remove entity/status dimensions that the active product does not own.
+ * Hidden filters must never keep affecting a report, export or shared link.
+ * Period/as-of are retained because some workspaces use an implicit as-of
+ * even when it is not rendered as a separate control.
+ */
+export function scopeReportsFiltersToFields(
+  filters: ReportsFilterState,
+  visibleFields: readonly ReportFilterFieldId[],
+): ReportsFilterState {
+  const fields = new Set(visibleFields);
+  return {
+    ...filters,
+    propertyId: fields.has('property') ? filters.propertyId : '',
+    unitId: fields.has('unit') ? filters.unitId : '',
+    tenantId: fields.has('tenant') ? filters.tenantId : '',
+    ownerId: fields.has('owner') ? filters.ownerId : '',
+    contractId: fields.has('contract') ? filters.contractId : '',
+    costCenterId: fields.has('costCenter') ? filters.costCenterId : '',
+    status: fields.has('status') ? filters.status : 'all',
+  };
+}
 
 function readSearchString(search: Record<string, unknown> | undefined, key: string) {
   const value = search?.[key];
