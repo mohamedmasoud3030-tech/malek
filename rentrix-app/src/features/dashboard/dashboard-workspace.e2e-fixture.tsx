@@ -27,18 +27,16 @@ const fixtureSnapshot: DashboardSnapshot = {
   period: { dateFrom: '2026-07-01', dateTo: '2026-07-15', asOf: '2026-07-15', month: 7, year: 2026 },
   portfolio: { properties: 2, units: 15 },
   occupancy: { occupiedUnits: 12, vacantUnits: 3, occupancyRate: 80 },
-  contracts: { active: 8, expiring30: 2, expiring60: 3, expiring90: 4 },
-  billing: { invoicedAmount: 15_000, invoicesCount: 10, invoicesTotalCount: 60 },
-  collections: { collectedAmount: 12_000, paymentsCount: 8, outstandingAmount: 3_000, collectionRate: 80 },
-  expenses: { totalAmount: 1_500, count: 3 },
+  contracts: { active: 8 },
+  billing: { invoicedAmount: 15_000, invoicesTotalCount: 60 },
+  collections: { collectedAmount: 12_000, outstandingAmount: 3_000, collectionRate: 80 },
+  expenses: { totalAmount: 1_500 },
   netCash: 10_500,
   arrears: {
     totalOverdue: 3_000,
     overdueCount: 2,
     averageDaysOverdue: 28,
-    over90Amount: 0,
     over90Count: 0,
-    totalOutstanding: 3_000,
     buckets: {
       current: { total: 0, count: 0 },
       days_1_30: { total: 1_500, count: 1 },
@@ -47,18 +45,15 @@ const fixtureSnapshot: DashboardSnapshot = {
       days_90_plus: { total: 0, count: 0 },
     },
   },
-  ownerFunds: { netPayable: 50.75, settlementsDraft: 1, settlementsApproved: 1 },
-  maintenance: { open: 2, inProgress: 1, urgentOpen: 1 },
-  exceptions: { unmatchedBankLines: 2, pendingSettlements: 1 },
+  ownerFunds: { settlementsDraft: 1, settlementsApproved: 1 },
+  maintenance: { urgentOpen: 1 },
+  exceptions: { unmatchedBankLines: 2 },
   queues: {
     expiringContracts: [
       { id: 'contract-1', reference: 'CON-1001', endDate: '2026-07-24', daysRemaining: 9, tenantName: 'أحمد الفارسي', propertyTitle: 'برج الخليج', unitNumber: '5' },
     ],
     overdueInvoices: [
       { invoiceId: 'invoice-1', reference: 'INV-2001', dueDate: '2026-06-10', daysOverdue: 35, remainingAmount: 1_500, tenantName: 'أحمد الفارسي', propertyTitle: 'برج الخليج', unitNumber: '5' },
-    ],
-    urgentMaintenance: [
-      { id: 'maintenance-1', title: 'تسرب مياه', priority: 'urgent', propertyTitle: 'برج الخليج', unitNumber: '5' },
     ],
   },
 };
@@ -73,10 +68,8 @@ const fixtureUtilityObligations: UtilityObligationsSignal = {
     outstandingAmount: 60.5,
     remainingByResponsibleParty: { tenant: 42.5, landlord: 18, company: 0 },
   },
-  rows: [
-    { billId: 'utility-1', title: 'فاتورة UB-1001', meta: 'متأخرة 12 يوم · المستأجر', remainingAmount: 42.5, urgency: 'overdue', daysOverdue: 12, daysUntilDue: -12 },
-  ],
-  actionableCount: 1,
+  actionableCount: 2,
+  oldestOverdueDays: 12,
 };
 
 const fixtureVacancyAnalytics: VacancyAnalytics = {
@@ -106,9 +99,6 @@ const fixtureMaintenanceFollowUp: MaintenanceFollowUpSignal = {
   scheduleMissedCount: 0,
   actionableCount: 1,
   oldestOpenAgeDays: 34,
-  rows: [
-    { requestId: 'mnt-1', title: 'تسرب في مواسير الحمام', location: 'برج الخليج · الوحدة 3', flag: 'stalled', flagLabel: 'متوقفة عن التقدم', ageDays: 34 },
-  ],
 };
 
 const fixtureChartRows: readonly MonthlyCashflowChartRow[] = [
