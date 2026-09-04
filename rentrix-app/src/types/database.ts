@@ -9516,6 +9516,12 @@ export type Database = {
         };
         Returns: Json;
       };
+      resolve_tax_authority_readiness: {
+        Args: {
+          p_effective_dates: (string)[] | null;
+        };
+        Returns: { effective_date: string | null; tax_scope: string | null; readiness_status: string | null }[];
+      };
       resolve_unit_operational_status: {
         Args: {
           p_unit_id: string | null;

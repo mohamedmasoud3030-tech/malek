@@ -56,6 +56,13 @@ export async function createFullReplayedDatabase(options?: {
   excludeMigrations?: string[];
   includeLaterGoverned?: boolean;
   writeEvidence?: boolean;
+  /**
+   * Set to false to replay the migration chain WITHOUT `supabase/seed.sql`.
+   * Use this to prove that authority which must be migration-backed (for
+   * example `public.app_permission_catalog`) really is reproducible from the
+   * migrations alone, rather than only in a seeded environment.
+   */
+  applySeed?: boolean;
 }): Promise<ReplayResult> {
   const db = new PGlite({ extensions: { btree_gist, citext, pgcrypto, uuid_ossp } });
   await db.exec('create schema if not exists extensions;');
@@ -126,7 +133,8 @@ export async function createFullReplayedDatabase(options?: {
   // remain migration-only because they model partial historical states.
   const isFullCanonicalReplay = canonicalChain
     && !options?.throughMigration
-    && (options?.excludeMigrations?.length ?? 0) === 0;
+    && (options?.excludeMigrations?.length ?? 0) === 0
+    && options?.applySeed !== false;
   if (isFullCanonicalReplay && failed.length === 0) {
     try {
       await db.exec(readFileSync(join(repoRoot, 'supabase', 'seed.sql'), 'utf8'));

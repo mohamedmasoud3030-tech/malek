@@ -215,6 +215,15 @@ async function main() {
     ['SD-35', 'authenticated', 'public.set_owner_agreements_updated_at()', false],
     ['SD-36', 'service_role', 'public.post_journal_event(jsonb)', true],
     ['SD-37', 'authenticated', 'public.approve_owner_settlement_atomic(jsonb)', true],
+    // P0-2 tax-authority readiness boundary: the internal resolvers stay
+    // server-only, and only the governed readiness wrapper is browser-callable.
+    ['SD-38', 'authenticated', 'public.resolve_active_tax_profile(uuid,date)', false],
+    ['SD-39', 'service_role', 'public.resolve_active_tax_profile(uuid,date)', true],
+    ['SD-40', 'authenticated', 'public.resolve_active_fee_tax_treatment(uuid,text,date)', false],
+    ['SD-41', 'service_role', 'public.resolve_active_fee_tax_treatment(uuid,text,date)', true],
+    ['SD-42', 'authenticated', 'public.resolve_tax_authority_readiness(date[])', true],
+    ['SD-43', 'anon', 'public.resolve_tax_authority_readiness(date[])', false],
+    ['SD-44', 'service_role', 'public.resolve_tax_authority_readiness(date[])', true],
   ];
   for (const [id, role, signature, expected] of grantCases) {
     const actual = await hasExecute(db, role, signature);

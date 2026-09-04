@@ -7,6 +7,22 @@
 
 ---
 
+## RESOLUTION STATUS — the two P0 findings below are now IMPLEMENTED (2026-09-04)
+
+This audit is a point-in-time record and is kept verbatim below. Its two **P0**
+findings have since been fixed on branch `arena/01a06c64-malek`; read this block
+before acting on either finding.
+
+| # | Finding | Status | Fix |
+|---|---|---|---|
+| 1 | FE/DB permission catalog divergence (`appPermissions` vs `public.app_permission_catalog`) | **RESOLVED** | `supabase/migrations/20260904000001_authoritative_permission_catalog_parity.sql` inserts the 39 classified authoritative codes into the migration-backed catalog and corrects the legacy compatibility parents to `requestable=false`; `supabase/seed.sql` no longer writes `app_permission_catalog` at all (it was never authorization authority and silently reverted migration `…00051`); the retired legacy alias `settings.manage` was removed from `permissions.ts` (`appPermissions` is now **60**, all migration-backed). Regression locks: `rentrix-app/src/features/auth/permission-catalog-authority.test.ts` (source parity across catalog / route guards / navigation gates / role matrix) and `rentrix-app/src/features/auth/permission-catalog-authority.pglite.test.ts` (per-role effective projection from a **seedless** migration-chain replay). |
+| 2 | `resolve_active_tax_profile` / `resolve_active_fee_tax_treatment` called from the browser → 42501 | **RESOLVED** | `supabase/migrations/20260904000002_tax_authority_readiness_browser_boundary.sql` adds the governed browser-safe wrapper `public.resolve_tax_authority_readiness(date[])` (`SECURITY DEFINER`, pinned `search_path`, `is_app_user()` + `financial.workspace.view` + `require_company_id()` gates, readiness-only payload — no tax rate, tax code or profile id), and re-asserts the two internal resolvers as `service_role`-only. One canonical client path: `rentrix-app/src/features/financials/tax-authority/tax-readiness-boundary.ts`, consumed by `billing-readiness-service.ts` and `finance-readiness-service.ts`. The dead browser helpers `getActiveTaxProfile`, `getActiveTaxProfileForCompany` and `getActiveFeeTaxTreatment` were deleted from `tax-authority-service.ts`. Proofs: `rentrix-app/src/features/financials/tax-authority/tax-readiness-boundary.pglite.test.ts` and `scripts/supabase-tests/tax-readiness-browser-boundary.mjs` (wired into `pnpm db:guardian` and `pnpm test:supabase`). |
+
+The remaining P1/P2 findings in this document are **unchanged and still open**.
+
+
+---
+
 ## 0. Method and why this is not another grep
 
 Most "capability audit" documents fail because they infer capability from folder names and file
@@ -83,8 +99,8 @@ is additive.
 
 | # | Finding | Severity |
 |---|---|---|
-| 1 | 40/61 FE permission codes are absent from `app_permission_catalog`; `current_user_has_effective_app_permission()` fails closed on them → 14 routes unreachable for every non-ADMIN role | **P0 / CRITICAL** |
-| 2 | `resolve_active_tax_profile` + `resolve_active_fee_tax_treatment` are `service_role`-only but are called from the browser → readiness pages throw 42501 | **P0** |
+| 1 | 40/61 FE permission codes are absent from `app_permission_catalog`; `current_user_has_effective_app_permission()` fails closed on them → 14 routes unreachable for every non-ADMIN role | **P0 / CRITICAL — RESOLVED, see “RESOLUTION STATUS” above** |
+| 2 | `resolve_active_tax_profile` + `resolve_active_fee_tax_treatment` are `service_role`-only but are called from the browser → readiness pages throw 42501 | **P0 — RESOLVED, see “RESOLUTION STATUS” above** |
 | 3 | Entire accounting governance stack (WP05 reconciliation, S08 frozen reviews, S09 corrections, period close) is a finished client service with no surface | **P1 / HIGH** |
 | 4 | Credit notes (`invoice_credits`) fully governed, fully granted, zero UI, and required by the source-of-truth docs | **P1 / HIGH** |
 | 5 | `due_from_owner` (GAP-008) declared VERIFIED_IMPLEMENTED in docs, SQL-complete, pgTAP-covered, but no finance surface exists | **P1 / HIGH** |

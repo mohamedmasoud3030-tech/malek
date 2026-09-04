@@ -63,7 +63,11 @@ const REVIEWED = new Map([
   ['mutation|features/settings/paymentTermsService.ts|payment_terms_templates|insert', 1],
   ['mutation|features/settings/paymentTermsService.ts|payment_terms_templates|update', 2],
   ['rpc-payload|features/reports/reports-collection-efficiency.ts|rpt_dashboard_snapshot', 1],
-  ['rpc-payload|features/financials/tax-authority/tax-authority-service.ts|resolve_active_tax_profile', 1],
+  // The dynamic resolve_active_tax_profile browser payload is gone: the dead
+  // getActiveTaxProfile / getActiveTaxProfileForCompany helpers were deleted and
+  // tax readiness now flows through the single governed boundary
+  // features/financials/tax-authority/tax-readiness-boundary.ts, whose literal
+  // rpc payload the primary scanner resolves automatically.
   ['rpc-payload|features/owners/services/owner-settlements-service.ts|create_owner_settlement_draft_atomic', 1],
 ]);
 

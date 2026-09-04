@@ -37,6 +37,11 @@ const layers = [
     cmd: ['node', ['scripts/supabase-tests/internal-gl-rpc-browser-boundary.mjs']],
   },
   {
+    id: 'tax-readiness-boundary',
+    title: 'Tax authority readiness RPC browser EXECUTE boundary (P0-2)',
+    cmd: ['node', ['scripts/supabase-tests/tax-readiness-browser-boundary.mjs']],
+  },
+  {
     id: 'security-definer-governance',
     title: 'Effective SECURITY DEFINER governance audit',
     cmd: ['node', ['scripts/supabase-tests/security-definer-governance-audit.mjs']],

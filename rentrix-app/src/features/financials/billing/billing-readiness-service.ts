@@ -3,6 +3,13 @@ import { handleSupabaseError } from '@/lib/supabase-error';
 import { fetchAllRows, fetchAllRowsInBatches } from '@/lib/paginatedRead';
 import { getTodayLocalDateString } from '@/features/financials/financials-date-utils';
 import {
+  TAX_PROFILE_MISSING,
+  TAX_READINESS_READY,
+  TAX_SCOPE_RENT,
+  indexTaxAuthorityReadiness,
+  resolveTaxAuthorityReadiness,
+} from '@/features/financials/tax-authority/tax-readiness-boundary';
+import {
   deriveBillingStatus,
   formatLocalDate,
   getBillingPeriodForCycle,
@@ -163,46 +170,49 @@ export async function getBillingReadiness(companyId: string): Promise<BillingObl
     }
   }
 
-  // Pass 3 — tax readiness, fail-closed on inability to verify (Defect A3),
-  // resolved once per distinct issue date (not once per contract). The set of
-  // dates is bounded by the billing cycles present, so the fan-out is O(cycles)
-  // instead of O(contracts). Blocked obligations never reach the tax authority.
+  // Pass 3 — tax readiness, fail-closed on inability to verify (Defect A3).
+  // Resolved once for every distinct issue date through the single governed
+  // browser boundary (tax-readiness-boundary.ts ->
+  // public.resolve_tax_authority_readiness), which derives the company from the
+  // authenticated caller and delegates to the service_role-only internal tax
+  // resolvers. One batched round trip replaces the previous per-date call to an
+  // RPC the browser could never execute. Blocked obligations never reach the
+  // tax authority.
   const taxIssueDates = [...new Set(
     prepared
       .filter((p) => !p.blockedReason)
       .map((p) => p.issueDateStr),
   )];
   const taxResultByIssueDate = new Map<string, { missing: boolean; checkFailed: boolean; blockedReason: string | null }>();
-  for (const issueDateStr of taxIssueDates) {
+  const markTaxCheckFailed = (issueDateStr: string, reason: string) => {
+    taxResultByIssueDate.set(issueDateStr, {
+      missing: false,
+      checkFailed: true,
+      blockedReason: `TAX_CHECK_FAILED: ${reason}`,
+    });
+  };
+  if (taxIssueDates.length > 0) {
     try {
-      const { error: taxError } = await supabase.rpc('resolve_active_tax_profile', {
-        p_company_id: companyId,
-        p_effective_date: issueDateStr,
-      });
-      if (taxError) {
-        if (taxError.message.includes('TAX_PROFILE_MISSING')) {
+      const readiness = indexTaxAuthorityReadiness(await resolveTaxAuthorityReadiness(taxIssueDates));
+      for (const issueDateStr of taxIssueDates) {
+        const status = readiness.get(issueDateStr)?.[TAX_SCOPE_RENT];
+        if (status === TAX_READINESS_READY) {
+          taxResultByIssueDate.set(issueDateStr, { missing: false, checkFailed: false, blockedReason: null });
+        } else if (status === TAX_PROFILE_MISSING) {
           taxResultByIssueDate.set(issueDateStr, {
             missing: true,
             checkFailed: false,
             blockedReason: `TAX_PROFILE_MISSING: لا يوجد ملف ضريبي نافذ يغطي ${issueDateStr}`,
           });
         } else {
-          // Any other tax RPC error → CHECK_FAILED fail closed, never READY
-          taxResultByIssueDate.set(issueDateStr, {
-            missing: false,
-            checkFailed: true,
-            blockedReason: `TAX_CHECK_FAILED: ${taxError.message}`,
-          });
+          // A date the tax authority did not answer for is never treated as
+          // ready: unknown scope/status or a missing row fails closed.
+          markTaxCheckFailed(issueDateStr, `لم تُرجع سلطة الضريبة حالة ${issueDateStr}`);
         }
-      } else {
-        taxResultByIssueDate.set(issueDateStr, { missing: false, checkFailed: false, blockedReason: null });
       }
     } catch (e) {
-      taxResultByIssueDate.set(issueDateStr, {
-        missing: false,
-        checkFailed: true,
-        blockedReason: e instanceof Error ? e.message : String(e),
-      });
+      const reason = e instanceof Error ? e.message : String(e);
+      for (const issueDateStr of taxIssueDates) markTaxCheckFailed(issueDateStr, reason);
     }
   }
 
