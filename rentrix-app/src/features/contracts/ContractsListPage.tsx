@@ -3,6 +3,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { AlertTriangle, FileSpreadsheet, FileText, Plus } from 'lucide-react';
 import type { ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { ContractKpiGrid } from './components/ContractKpiGrid';
+import { ContractPreviewDialog } from './components/contract-preview-dialog';
 import { ContractResults } from './components/ContractResults';
 import { contractColumnOptions, defaultContractColumns } from './components/ContractTable';
 import { ContractFormModal } from './contract-form-modal';
@@ -87,7 +88,7 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
   const [leaseMode, setLeaseMode] = useState<LeaseModeFilter>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [expiringOnly, setExpiringOnly] = useState(false);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [previewContractId, setPreviewContractId] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [editContractId, setEditContractId] = useState<string | undefined>();
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -129,9 +130,13 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
     setModalOpen(true);
   };
   const closeModal = () => { setModalOpen(false); setEditContractId(undefined); };
-  const handlePreview = (id: string) => {
+  const openFullContract = (id: string) => {
     void navigate({ to: '/contracts/$contractId', params: { contractId: id } });
   };
+  const handlePreview = (id: string) => setPreviewContractId(id);
+  const previewContract = previewContractId
+    ? filteredContracts.find((contract) => contract.id === previewContractId) ?? null
+    : null;
   const resetFilters = () => { setStatus('all'); setLeaseMode('all'); setSearchTerm(''); setExpiringOnly(false); setPage(1); };
   const activeFilters: ActiveFilterItem[] = [];
   if (searchTerm.trim()) {
@@ -239,7 +244,6 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
           attentionByContractId={contractAttention.attentionByContractId}
           companySettings={companySettings}
           contracts={filteredContracts}
-          expandedId={expandedId}
           emptyDescription={hasActiveFilters ? 'جرّب تغيير عبارة البحث أو نوع الإيجار أو فلتر الحالة لعرض عقود أخرى.' : 'ابدأ بإنشاء أول عقد وربطه بالعقار والوحدة والمستأجر.'}
           emptyTitle={hasActiveFilters ? 'لا توجد عقود مطابقة' : 'لا توجد عقود'}
           error={contractsQuery.error}
@@ -248,10 +252,10 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
           onCreate={!hasActiveFilters && canCreate ? openCreate : undefined}
           onDelete={canCancel ? setDeleteId : undefined}
           onEdit={canEdit ? openEdit : undefined}
+          onOpenFull={openFullContract}
           onPreview={handlePreview}
           onRetry={() => contractsQuery.refetch()}
           pagination={!hasClientFilter && totalPages > 1 ? { page, pageSize, total: contractsQuery.data?.count ?? 0, onPageChange: setPage } : undefined}
-          setExpandedId={setExpandedId}
           visibleColumnKeys={visibleColumnKeys}
         />
       </ListPage>
@@ -269,6 +273,16 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
           onConfirm={confirmDelete}
         />
       ) : null}
+
+      <ContractPreviewDialog
+        contract={previewContract}
+        attention={previewContract ? contractAttention.attentionByContractId.get(previewContract.id) : undefined}
+        companySettings={companySettings}
+        open={previewContractId !== null}
+        onOpenChange={(open) => { if (!open) setPreviewContractId(null); }}
+        onEdit={canEdit ? (id) => { setPreviewContractId(null); openEdit(id); } : undefined}
+        onDelete={canCancel ? (id) => { setPreviewContractId(null); setDeleteId(id); } : undefined}
+      />
     </>
   );
 }

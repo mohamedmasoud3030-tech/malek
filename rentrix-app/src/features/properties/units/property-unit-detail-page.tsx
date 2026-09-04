@@ -2,6 +2,7 @@ import { Link, useParams } from '@tanstack/react-router';
 import { BarChart3, Edit, FilePlus2 } from 'lucide-react';
 import { useState } from 'react';
 import { AsyncContentState } from '@/components/async-content-state';
+import { ContextualDocumentsSection } from '@/components/documents/contextual-documents-section';
 import { DataRefreshAlert } from '@/components/data-refresh-alert';
 import { EntityDetailHeader } from '@/components/layout/entity-detail-header';
 import { Button } from '@/components/ui/button';
@@ -125,6 +126,8 @@ export function PropertyUnitDetailPage() {
               <p className="mt-1 leading-7">{unit.notes ?? '—'}</p>
             </div>
           </div>
+
+          <ContextualDocumentsSection entityType="unit" entityId={unit.id} entityLabel="الوحدة" />
 
           <UnitFormModal propertyId={propertyId} unit={unit} open={editOpen} onOpenChange={setEditOpen} />
         </div>

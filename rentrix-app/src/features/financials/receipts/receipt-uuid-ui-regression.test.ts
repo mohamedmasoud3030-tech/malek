@@ -19,10 +19,10 @@ describe('receipt UI — no raw UUID as primary visible label', () => {
     expect(page).not.toContain('إيصال ${receipt.id}');
   });
 
-  it('shows the reference-backed number as the primary detail heading', () => {
-    const card = readSource('../components/receipt-detail-card.tsx');
-    expect(card).toContain('{receiptDetail.receipt_number}');
-    expect(card).not.toContain('{receiptDetail.id}');
+  it('shows the reference-backed number as the primary preview heading', () => {
+    const preview = readSource('./ReceiptPreviewDialog.tsx');
+    expect(preview).toContain('receipt.receipt_number');
+    expect(preview).not.toContain('{receipt.id}');
   });
 
   it('never fabricates a receipt reference from an internal payment id', () => {

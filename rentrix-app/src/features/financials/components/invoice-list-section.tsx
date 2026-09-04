@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { Download, HandCoins, Printer } from 'lucide-react';
+import { Download, Eye, FolderOpen, HandCoins, Printer } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { DataTableColumnsMenu } from '@/components/ui/data-table';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
@@ -71,6 +71,7 @@ type InvoiceListSectionProps = {
   onInvoiceSearchChange: (search: string) => void;
   onGenerateInvoices: () => void;
   onSelectInvoice: (invoiceId: string) => void;
+  onPreviewInvoice?: (invoice: InvoiceListItem) => void;
   canCollectPayments?: boolean;
   onCollectInvoice?: (invoiceId: string) => void;
   onPrintInvoice?: (invoiceId: string) => void;
@@ -82,7 +83,7 @@ type InvoiceListSectionProps = {
   onPageChange: (page: number) => void;
 };
 
-function billingPeriodLabel(invoice: InvoiceListItem) {
+export function billingPeriodLabel(invoice: InvoiceListItem) {
   const start = invoice.billing_period_start;
   const end = invoice.billing_period_end;
   if (!start && !end) return '—';
@@ -128,6 +129,7 @@ export function InvoiceListSection({
   onInvoiceSearchChange,
   onGenerateInvoices,
   onSelectInvoice,
+  onPreviewInvoice,
   canCollectPayments = false,
   onCollectInvoice,
   onPrintInvoice,
@@ -252,8 +254,15 @@ export function InvoiceListSection({
       priority: 'actions',
       render: (invoice) => {
         const showCollect = canCollectPayments && onCollectInvoice && isInvoiceCollectible(invoice);
-        if (!showCollect && !onPrintInvoice && !onExportInvoice) return null;
+        if (!showCollect && !onPrintInvoice && !onExportInvoice && !onSelectInvoice) return null;
         const menuItems = [
+          ...(onPreviewInvoice ? [{
+            id: 'preview',
+            label: 'معاينة سريعة',
+            icon: Eye,
+            onClick: () => onPreviewInvoice(invoice),
+          }] : []),
+          { id: 'open-workspace', label: 'فتح مساحة الفاتورة', icon: FolderOpen, onClick: () => onSelectInvoice(invoice.id) },
           ...(showCollect ? [{
             id: 'collect',
             label: 'تحصيل',
@@ -329,7 +338,10 @@ export function InvoiceListSection({
                 ? 'غيّر البحث أو الحالة أو الفلاتر للوصول إلى الفاتورة المطلوبة.'
                 : 'لا توجد فواتير مسجلة في هذا المكتب حتى الآن.'
             }
-            onRowClick={(invoice) => onSelectInvoice(invoice.id)}
+            onRowClick={(invoice) => {
+              if (onPreviewInvoice) onPreviewInvoice(invoice);
+              else onSelectInvoice(invoice.id);
+            }}
             pagination={{ page, pageSize, total, onPageChange }}
             mobileCardType="invoice"
             mobileBadgeKey="status"
@@ -337,18 +349,30 @@ export function InvoiceListSection({
             mobilePrimaryMetaKeys={['remaining', 'due_date']}
             mobileSecondaryMetaKeys={['property_unit', 'billing_period', 'gross']}
             mobileCardPrimaryAction={(invoice) => ({
-              label: isInvoiceCollectible(invoice) && canCollectPayments && onCollectInvoice ? 'تحصيل' : 'عرض الفاتورة',
-              icon: isInvoiceCollectible(invoice) && canCollectPayments && onCollectInvoice ? HandCoins : undefined,
-              variant: 'default',
-              ariaLabel: isInvoiceCollectible(invoice) && canCollectPayments && onCollectInvoice
-                ? `تحصيل ${invoice.reference ?? 'الفاتورة'}`
-                : `عرض ${invoice.reference ?? 'الفاتورة'}`,
+              label: 'معاينة سريعة',
+              icon: Eye,
+              variant: 'default' as const,
+              ariaLabel: `معاينة ${invoice.reference ?? 'الفاتورة'}`,
               onClick: () => {
-                if (isInvoiceCollectible(invoice) && canCollectPayments && onCollectInvoice) onCollectInvoice(invoice.id);
+                if (onPreviewInvoice) onPreviewInvoice(invoice);
                 else onSelectInvoice(invoice.id);
               },
             })}
             mobileCardActions={(invoice) => [
+              {
+                label: 'فتح مساحة الفاتورة',
+                icon: FolderOpen,
+                variant: 'secondary' as const,
+                ariaLabel: `فتح مساحة ${invoice.reference ?? 'الفاتورة'}`,
+                onClick: () => onSelectInvoice(invoice.id),
+              },
+              ...(isInvoiceCollectible(invoice) && canCollectPayments && onCollectInvoice ? [{
+                label: 'تحصيل',
+                icon: HandCoins,
+                variant: 'secondary' as const,
+                ariaLabel: `تحصيل ${invoice.reference ?? 'الفاتورة'}`,
+                onClick: () => onCollectInvoice(invoice.id),
+              }] : []),
               ...(onPrintInvoice ? [{
                 label: 'طباعة',
                 icon: Printer,

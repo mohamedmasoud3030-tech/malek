@@ -1,4 +1,4 @@
-import { useDialogNavigate } from '@/app/router/background-location';
+import { useNavigate } from '@tanstack/react-router';
 import { FileSignature } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,7 +19,7 @@ const commissionTypeLabels = { RATE: 'نسبة من التحصيل', FIXED_MONTH
 export function OwnerAgreementsSection({ ownerId }: Readonly<{ ownerId: string }>) {
   const companySettings = useCompanySettingsContract();
   const agreementsQuery = useOwnerAgreementsForOwner(ownerId);
-  const dialogNavigate = useDialogNavigate();
+  const navigate = useNavigate();
   const agreements = agreementsQuery.data ?? [];
 
   if (agreementsQuery.isLoading) {
@@ -99,7 +99,7 @@ export function OwnerAgreementsSection({ ownerId }: Readonly<{ ownerId: string }
                     variant="secondary"
                     className="min-h-11 shrink-0"
                     onClick={() =>
-                      dialogNavigate({
+                      void navigate({
                         to: '/properties/$propertyId',
                         params: { propertyId: agreement.property_id },
                         search: { tab: 'ownership' } as never,

@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
 import { ClipboardList, FileText, ReceiptText, UserRound } from 'lucide-react';
-import { useDialogNavigate } from '@/app/router/background-location';
+import { useNavigate } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import { EntityPreviewDialog } from '@/components/ui/entity-preview-dialog';
+import { PreviewFacts, type PreviewFactRow } from '@/components/ui/quick-preview';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { formatDate, formatMoney } from '@/features/financials/components/financials-formatters';
 import type { OverdueInvoiceReportRow } from '@/features/financials/reports/financialReportsService';
@@ -52,7 +53,7 @@ export function FollowUpSection({
   isLoading: boolean;
 }>) {
   const [selected, setSelected] = useState<OverdueInvoiceReportRow | null>(null);
-  const dialogNavigate = useDialogNavigate();
+  const navigate = useNavigate();
 
   const queue = useMemo(
     () =>
@@ -70,7 +71,7 @@ export function FollowUpSection({
 
   const openTarget = (target: { to: string; params?: Record<string, string>; search?: Record<string, unknown> }) => {
     setSelected(null);
-    dialogNavigate(target);
+    void navigate(target as never);
   };
 
   const exportAction = canExportReports ? (
@@ -198,23 +199,19 @@ export function FollowUpSection({
         >
           {selected ? (
             <div className="space-y-4">
-              <dl className="grid gap-3 sm:grid-cols-2">
-                {[
-                  ['العقار / الوحدة', [selected.propertyTitle, selected.unitNumber ? `وحدة ${selected.unitNumber}` : null].filter(Boolean).join(' · ') || 'غير محدد'],
-                  ['الهاتف', selected.tenantPhone ?? 'غير مسجل'],
-                  ['العقد', selected.contractReference ?? 'عقد بلا مرجع'],
-                  ['الفاتورة', selected.invoiceReference ?? 'فاتورة بلا مرجع'],
-                  ['الاستحقاق', formatDate(selected.dueDate)],
-                  ['أيام التأخير', `${formatLatinNumber(selected.daysOverdue, 'ar')} يوم`],
-                  ['المتبقي', formatMoney(selected.remainingAmount)],
-                  ['درجة المتابعة', getFollowUpTier(selected.daysOverdue).label],
-                ].map(([label, value]) => (
-                  <div key={label} className="rounded-xl border border-border/70 bg-muted/20 p-3">
-                    <dt className="text-xs text-muted-foreground">{label}</dt>
-                    <dd className="mt-1 font-bold">{value}</dd>
-                  </div>
-                ))}
-              </dl>
+              <PreviewFacts
+                rows={[
+                  {
+                    label: 'العقار / الوحدة',
+                    value: [selected.propertyTitle, selected.unitNumber ? `وحدة ${selected.unitNumber}` : null].filter(Boolean).join(' · ') || 'غير محدد',
+                  },
+                  { label: 'الفاتورة', value: selected.invoiceReference ?? 'فاتورة بلا مرجع' },
+                  { label: 'الاستحقاق', value: formatDate(selected.dueDate) },
+                  { label: 'أيام التأخير', value: `${formatLatinNumber(selected.daysOverdue, 'ar')} يوم` },
+                  { label: 'المتبقي', value: <span dir="ltr">{formatMoney(selected.remainingAmount)}</span> },
+                  { label: 'درجة المتابعة', value: getFollowUpTier(selected.daysOverdue).label },
+                ] satisfies PreviewFactRow[]}
+              />
 
               <div className="rounded-xl border border-border/70 p-4">
                 <p className="font-bold">الإجراءات التشغيلية</p>

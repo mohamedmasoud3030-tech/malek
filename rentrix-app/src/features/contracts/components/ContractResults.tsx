@@ -7,7 +7,6 @@ export function ContractResults({
   attentionByContractId,
   companySettings,
   contracts,
-  expandedId,
   emptyDescription,
   emptyTitle,
   error,
@@ -16,17 +15,16 @@ export function ContractResults({
   onCreate,
   onDelete,
   onEdit,
+  onOpenFull,
   onPreview,
   onRetry,
   pagination,
-  setExpandedId,
   visibleColumnKeys,
 }: {
   /** Operational attention per contract (see `useContractAttention`). */
   attentionByContractId?: ReadonlyMap<string, ContractAttention>;
   companySettings: CompanySettingsContract;
   contracts: ContractListItem[];
-  expandedId: string | null;
   emptyDescription: string;
   emptyTitle: string;
   error: unknown;
@@ -35,10 +33,11 @@ export function ContractResults({
   onCreate?: () => void;
   onDelete?: (id: string) => void;
   onEdit?: (id: string) => void;
+  /** Navigates directly to the canonical contract page. */
+  onOpenFull: (id: string) => void;
   onPreview: (id: string) => void;
   onRetry: () => void;
   pagination?: { page: number; pageSize: number; total: number; onPageChange: (page: number) => void };
-  setExpandedId: (updater: (value: string | null) => string | null) => void;
   visibleColumnKeys: readonly string[];
 }) {
   return (
@@ -47,7 +46,6 @@ export function ContractResults({
         attentionByContractId={attentionByContractId}
         companySettings={companySettings}
         contracts={contracts}
-        expandedId={expandedId}
         emptyDescription={emptyDescription}
         emptyTitle={emptyTitle}
         error={isError ? error : undefined}
@@ -55,10 +53,10 @@ export function ContractResults({
         onCreate={onCreate}
         onDelete={onDelete}
         onEdit={onEdit}
+        onOpenFull={onOpenFull}
         onPreview={onPreview}
         onRetry={onRetry}
         pagination={pagination}
-        setExpandedId={setExpandedId}
         visibleColumnKeys={visibleColumnKeys}
       />
     </section>

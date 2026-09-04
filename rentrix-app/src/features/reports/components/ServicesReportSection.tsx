@@ -3,7 +3,7 @@ import { ArrowLeft, CircleDollarSign, ReceiptText, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { useDialogNavigate } from '@/app/router/background-location';
+import { useNavigate } from '@tanstack/react-router';
 import {
   responsiblePartyLabels,
   utilityBillStatusLabels,
@@ -81,7 +81,7 @@ export function ServicesReportSection({
   filters: ReportsFilterState;
   canExportReports: boolean;
 }>) {
-  const dialogNavigate = useDialogNavigate();
+  const navigate = useNavigate();
   const propertyId = filters.propertyId || undefined;
   const billsQuery = useUtilityBills({ propertyId });
   const metersQuery = useUtilityMeters(propertyId);
@@ -236,7 +236,7 @@ export function ServicesReportSection({
   const openUtilitiesScreen = () => {
     // Reports identify the action; the utilities workspace performs it — same
     // hand-off contract as the follow-up queue.
-    dialogNavigate({ to: '/maintenance', search: { section: 'utilities' } });
+    void navigate({ to: '/maintenance', search: { section: 'utilities' } });
   };
 
   const shareActions = canExportReports ? (

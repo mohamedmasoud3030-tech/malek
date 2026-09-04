@@ -77,7 +77,7 @@ describe('dashboard queue error honesty', () => {
     expect(collections).toContain('تعذر تحميل المتأخرات');
     expect(expiring).toContain('تعذر تحميل العقود القريبة من الانتهاء');
     expect(maintenance).toContain('تعذر تحميل الصيانة العاجلة');
-    expect(needsAttention).toContain('تعذر تحميل الحالات التي تحتاج انتباهاً');
+    expect(needsAttention).toContain('تعذر تحميل الأولويات');
     expect(page.match(/isError=\{hasDashboardError && !snapshot\}/g)?.length).toBeGreaterThanOrEqual(3);
     expect(page).toContain('DataRefreshAlert');
   });

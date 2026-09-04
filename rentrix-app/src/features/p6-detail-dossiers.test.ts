@@ -9,7 +9,7 @@ describe('P6 — route-native dossier architecture guard', () => {
       './owners/components/OwnerPreviewDialog.tsx',
       './tenants/components/TenantPreviewDialog.tsx',
       './people/components/PersonDossier.tsx',
-      './lands/components/LandDossier.tsx',
+      './lands/components/land-preview-dialog.tsx',
       './units/components/UnitPreviewDialog.tsx',
     ];
     for (const file of files) expect(read(file), file).toContain('EntityPreviewDialog');
@@ -19,6 +19,7 @@ describe('P6 — route-native dossier architecture guard', () => {
     expect(read('./people/components/PersonDossier.tsx')).toContain('PersonDetailPage');
     expect(read('./tenants/components/TenantPreviewDialog.tsx')).toContain('TenantDetailPage');
     expect(read('./lands/components/LandDossier.tsx')).toContain('LandDetailPage');
+    expect(read('./lands/components/land-preview-dialog.tsx')).toContain('فتح ملف الأرض');
     expect(read('./people/people-list-page.tsx')).toContain("'/people/$personId'");
     expect(read('./tenants/TenantsPage.tsx')).toContain("'/tenants/$tenantId'");
     expect(read('./lands/components/lands-view.tsx')).toContain("'/lands/$landId'");

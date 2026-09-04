@@ -31,7 +31,7 @@ describe('P2 — contextual documents contract', () => {
       '../features/contracts/contractDocumentsShell.tsx',
       '../features/properties/components/property-workspace-tabs.tsx',
       '../features/owners/components/owner-dossier-body.tsx',
-      '../features/units/components/UnitPreviewDialog.tsx',
+      '../features/properties/units/property-unit-detail-page.tsx',
       '../features/maintenance/components/maintenance-detail-resolve-overlays.tsx',
     ]) {
       expect(read(path), path).toContain('ContextualDocuments');

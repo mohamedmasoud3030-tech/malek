@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { AlarmClock, ArrowLeft, Scale, Wrench } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { useDialogNavigate } from '@/app/router/background-location';
+import { useNavigate } from '@tanstack/react-router';
 import { formatDate, formatMoney } from '@/features/financials/components/financials-formatters';
 import {
   maintenancePriorityLabels,
@@ -89,7 +89,7 @@ export type MaintenanceReportProps = Readonly<{
  *   the same module the maintenance workspace and dashboard use.
  */
 export function MaintenanceReportSection({ rows, summary, canExportReports, isLoading }: MaintenanceReportProps) {
-  const dialogNavigate = useDialogNavigate();
+  const navigate = useNavigate();
   const todayStr = getTodayLocalDateString();
 
   const activeRows = useMemo(
@@ -283,7 +283,7 @@ export function MaintenanceReportSection({ rows, summary, canExportReports, isLo
   ) : undefined;
 
   const openRequestInMaintenanceScreen = (row: Maintenance) => {
-    dialogNavigate({
+    void navigate({
       to: '/maintenance',
       search: { section: 'maintenance', requestId: row.id },
     });

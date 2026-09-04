@@ -1,8 +1,9 @@
-import { BriefcaseBusiness, Edit, FolderCog, Plus, Trash2, Wrench } from 'lucide-react';
+import { BriefcaseBusiness, Edit, Eye, FolderCog, FolderOpen, Plus, Trash2, Wrench } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useDialogNavigate } from '@/app/router/background-location';
 import { ActionMenu } from '@/components/ui/action-menu';
+import { ServiceProviderPreviewDialog } from './components/service-provider-preview-dialog';
 import type { ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -39,6 +40,7 @@ export function ServiceProvidersWorkspace({ embedded = false }: Readonly<{ embed
   const [page, setPage] = useState(typeof url.page === 'number' && url.page > 0 ? url.page : 1);
   const [categoryManagerOpen, setCategoryManagerOpen] = useState(false);
   const [archiveTarget, setArchiveTarget] = useState<ServiceProviderListItem | null>(null);
+  const [previewProvider, setPreviewProvider] = useState<ServiceProviderListItem | null>(null);
   const debouncedSearch = useDebounce(search, 300);
   const params = useMemo(() => ({ search: debouncedSearch, status, categoryId, page, pageSize: PAGE_SIZE }), [categoryId, debouncedSearch, page, status]);
   const providersQuery = useServiceProviders(params);
@@ -100,7 +102,8 @@ export function ServiceProvidersWorkspace({ embedded = false }: Readonly<{ embed
           <ActionMenu
             label={`إجراءات ${provider.name}`}
             items={[
-              { id: 'view', label: 'عرض', onClick: () => void navigate({ to: '/service-providers/$providerId', params: { providerId: provider.id } }) },
+              { id: 'full-page', label: 'فتح الملف الكامل', icon: FolderOpen, onClick: () => void navigate({ to: '/service-providers/$providerId', params: { providerId: provider.id } }) },
+              { id: 'preview', label: 'معاينة سريعة', icon: Eye, onClick: () => setPreviewProvider(provider) },
               ...(canWrite ? [
                 { id: 'edit', label: 'تعديل', icon: Edit, onClick: () => dialogNavigate({ to: '/service-providers/$providerId/edit', params: { providerId: provider.id } }) },
                 { id: 'archive', label: 'أرشفة', icon: Trash2, danger: true, onClick: () => setArchiveTarget(provider) },
@@ -178,31 +181,54 @@ export function ServiceProvidersWorkspace({ embedded = false }: Readonly<{ embed
               emptyDescription={hasFilters ? 'غيّر البحث أو الفلاتر لعرض سجلات أخرى.' : 'أضف أول مزود خدمة لبدء التعيين في أعمال الصيانة.'}
               emptyAction={hasFilters ? <Button variant="secondary" onClick={clearFilters}>مسح الفلاتر</Button> : createAction}
               pagination={{ page, pageSize: PAGE_SIZE, total, onPageChange: setPage }}
-              onRowClick={(provider) => void navigate({ to: '/service-providers/$providerId', params: { providerId: provider.id } })}
+              onRowClick={(provider) => setPreviewProvider(provider)}
               mobileBadgeKey="status"
               mobilePrimaryMetaKeys={["categories", "contact", "jobs"]}
-              mobileCardActions={(provider) => canWrite ? [
+              mobileCardPrimaryAction={(provider) => ({
+                label: 'معاينة سريعة',
+                icon: Eye,
+                variant: 'default' as const,
+                ariaLabel: `معاينة ${provider.name}`,
+                onClick: () => setPreviewProvider(provider),
+              })}
+              mobileCardActions={(provider) => [
                 {
-                  label: 'تعديل',
-                  icon: Edit,
+                  label: 'فتح الملف الكامل',
+                  icon: FolderOpen,
                   variant: 'secondary' as const,
-                  ariaLabel: `تعديل ${provider.name}`,
-                  onClick: () => dialogNavigate({ to: '/service-providers/$providerId/edit', params: { providerId: provider.id } }),
+                  ariaLabel: `فتح ملف ${provider.name}`,
+                  onClick: () => void navigate({ to: '/service-providers/$providerId', params: { providerId: provider.id } }),
                 },
-                {
-                  label: 'أرشفة',
-                  icon: Trash2,
-                  variant: 'danger' as const,
-                  ariaLabel: `أرشفة ${provider.name}`,
-                  onClick: () => setArchiveTarget(provider),
-                },
-              ] : []}
+                ...(canWrite ? [
+                  {
+                    label: 'تعديل',
+                    icon: Edit,
+                    variant: 'secondary' as const,
+                    ariaLabel: `تعديل ${provider.name}`,
+                    onClick: () => dialogNavigate({ to: '/service-providers/$providerId/edit', params: { providerId: provider.id } }),
+                  },
+                  {
+                    label: 'أرشفة',
+                    icon: Trash2,
+                    variant: 'danger' as const,
+                    ariaLabel: `أرشفة ${provider.name}`,
+                    onClick: () => setArchiveTarget(provider),
+                  },
+                ] : []),
+              ]}
             />
           </div>
         </section>
       </ListPage>
 
       <ServiceProviderCategoriesDialog open={categoryManagerOpen} onOpenChange={setCategoryManagerOpen} />
+      <ServiceProviderPreviewDialog
+        provider={previewProvider}
+        open={previewProvider !== null}
+        onOpenChange={(open) => { if (!open) setPreviewProvider(null); }}
+        onEdit={canWrite ? (provider) => { setPreviewProvider(null); dialogNavigate({ to: '/service-providers/$providerId/edit', params: { providerId: provider.id } }); } : undefined}
+      />
+
       <ConfirmDialog
         open={Boolean(archiveTarget)}
         onOpenChange={(next) => { if (!next && !archiveMutation.isPending) setArchiveTarget(null); }}

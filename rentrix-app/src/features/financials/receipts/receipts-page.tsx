@@ -17,10 +17,10 @@ import { canAccess, financialOperationPermissions, type AuthorizationContext } f
 import { useAuth } from '@/hooks/use-auth';
 import { formatDate, formatMoney, formatShortId } from '../components/financials-formatters';
 import { getTodayLocalDateString } from '../financials-date-utils';
-import { ReceiptDetailCard } from '../components/receipt-detail-card';
 import { formatReceiptContext, paymentMethodLabels, receiptStatusLabels } from '../components/receipt-formatters';
 import type { ReceiptRecord } from './receiptService';
 import { ReceiptDetailPage } from './receipt-detail-page';
+import { ReceiptPreviewDialog } from './ReceiptPreviewDialog';
 import { createReceiptPrintHref, openReceiptPrintTab } from './receipt-print';
 import { useApproveReceiptVoid, usePendingReceiptVoidRequests, useReceipt, useReceipts, useRequestReceiptVoid } from './useReceipts';
 import { formatLatinNumber } from '@/lib/formatters';
@@ -164,7 +164,7 @@ function VoidReceiptDialog({
 
 function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Readonly<{ embedded: boolean; initialSelectedReceiptId?: string }>) {
   const { authorization } = useAuth();
-  const [selectedReceiptId, setSelectedReceiptId] = useState(initialSelectedReceiptId);
+  const [previewReceiptId, setPreviewReceiptId] = useState(initialSelectedReceiptId);
   const [query, setQuery] = useState('');
   const [method, setMethod] = useState<MethodFilter>('all');
   const [from, setFrom] = useState('');
@@ -175,13 +175,19 @@ function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Rea
 
   const deferredQuery = useDeferredValue(query.trim().toLowerCase());
   const receiptsQuery = useReceipts({ limit: receiptsLimit });
-  const selectedDetailQuery = useReceipt(selectedReceiptId);
+  const receipts = receiptsQuery.data ?? [];
+  // Deep links may target a receipt outside the loaded window; the dedicated
+  // read resolves it while the list stays exactly where it was.
+  const selectedDetailQuery = useReceipt(previewReceiptId);
+  const previewReceipt = useMemo<ReceiptRecord | null>(
+    () => receipts.find((receipt) => receipt.id === previewReceiptId) ?? selectedDetailQuery.data ?? null,
+    [receipts, previewReceiptId, selectedDetailQuery.data],
+  );
   const canVoidReceipt = canVoidReceipts(authorization);
   const pendingVoidRequestsQuery = usePendingReceiptVoidRequests(canVoidReceipt);
   const requestVoidMutation = useRequestReceiptVoid();
   const approveVoidMutation = useApproveReceiptVoid();
 
-  const receipts = receiptsQuery.data ?? [];
   const hasMoreReceipts = canLoadMoreReceipts(receipts.length, receiptsLimit);
   const loadMoreReceipts = () => setReceiptsLimit((current) => nextReceiptsLimit(current));
   const filteredReceipts = useMemo(() => receipts.filter((receipt) => {
@@ -233,7 +239,7 @@ function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Rea
         <ActionMenu
           label={`إجراءات الإيصال ${receipt.receipt_number}`}
           items={[
-            { id: 'view', label: 'عرض', icon: Eye, onClick: () => setSelectedReceiptId(receipt.id) },
+            { id: 'preview', label: 'معاينة سريعة', icon: Eye, onClick: () => setPreviewReceiptId(receipt.id) },
             { id: 'print', label: 'طباعة', icon: Printer, onClick: () => openReceiptPrintView(receipt.id) },
             ...(canVoidReceipt && receipt.status === 'posted' ? [{
               id: 'void',
@@ -254,9 +260,6 @@ function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Rea
       embedded={embedded}
       title="الإيصالات"
       secondaryActions={<Button variant="secondary" className="min-h-11" asChild><Link to="/financials"><ArrowRight className="me-2 size-4" />المالية</Link></Button>}
-      primaryAction={selectedReceiptId ? (
-        <Button onClick={() => openReceiptPrintView(selectedReceiptId)}><Printer className="me-2 size-4" />طباعة المحدد</Button>
-      ) : undefined}
     >
       <RegisterMetricStrip
         aria-label="ملخص الإيصالات"
@@ -370,8 +373,7 @@ function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Rea
       ) : null}
 
       <section data-receipts-register className="min-w-0 space-y-2.5">
-        <div className={selectedReceiptId ? 'grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(22rem,28rem)] xl:items-start' : 'grid min-w-0 gap-4'}>
-          <div className="min-w-0 space-y-2.5">
+        <div className="min-w-0 space-y-2.5">
             <EntityTable
               aria-label="جدول الإيصالات"
               rows={filteredReceipts}
@@ -383,11 +385,18 @@ function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Rea
               onRetry={() => { void receiptsQuery.refetch(); }}
               emptyTitle="لا توجد إيصالات مطابقة"
               emptyDescription={hasFilters ? 'غيّر البحث أو الفلاتر لعرض إيصالات أخرى.' : 'لا توجد إيصالات منشورة حتى الآن.'}
-              onRowClick={(receipt) => setSelectedReceiptId(receipt.id)}
+              onRowClick={(receipt) => setPreviewReceiptId(receipt.id)}
               mobileBadgeKey="status"
               mobileSupportingKey="context"
               mobilePrimaryMetaKeys={["amount", "payment_date"]}
               mobileSecondaryMetaKeys={["method", "invoice_id"]}
+              mobileCardPrimaryAction={(receipt) => ({
+                label: 'معاينة سريعة',
+                icon: Eye,
+                variant: 'default' as const,
+                ariaLabel: `معاينة الإيصال ${receipt.receipt_number}`,
+                onClick: () => setPreviewReceiptId(receipt.id),
+              })}
               mobileCardActions={(receipt) => [
                 {
                   label: 'طباعة',
@@ -418,17 +427,17 @@ function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Rea
                 ) : null}
               </div>
             ) : null}
-          </div>
-
-          <ReceiptDetailCard
-            selectedReceiptId={selectedReceiptId}
-            receiptDetail={selectedDetailQuery.data}
-            isLoading={selectedDetailQuery.isLoading}
-            isError={selectedDetailQuery.isError}
-            error={selectedDetailQuery.error}
-          />
         </div>
       </section>
+
+      <ReceiptPreviewDialog
+        receipt={previewReceipt}
+        open={previewReceiptId !== ''}
+        onOpenChange={(open) => { if (!open) setPreviewReceiptId(''); }}
+        onPrint={openReceiptPrintView}
+        canRequestVoid={canVoidReceipt}
+        onRequestVoid={(receipt) => { setPreviewReceiptId(''); openVoidDialog(receipt); }}
+      />
 
       <VoidReceiptDialog
         state={voidDialog}
@@ -456,10 +465,10 @@ export type ReceiptsWorkspaceProps = Readonly<{
  * queries, and mutations are never duplicated.
  *
  * `?receiptId=` opens the single-receipt document. Standalone that renders the
- * full-bleed printable view (the /receipts route keeps serving it directly, so
+ * print-compatible view (the /receipts route keeps serving it directly, so
  * existing print links are untouched). Embedded, the hub already owns the page
- * shell, so the list stays visible and the selected receipt is shown inline
- * rather than nesting a second document shell inside a tab.
+ * shell, so the deep-linked receipt opens as a Quick Preview above the intact
+ * register instead of nesting a second document shell inside a tab.
  */
 export function ReceiptsWorkspace({ embedded = false }: ReceiptsWorkspaceProps) {
   const searchParams = useSearch({ strict: false }) as Record<string, unknown>;

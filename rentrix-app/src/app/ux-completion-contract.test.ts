@@ -117,13 +117,17 @@ describe('UX completion contract', () => {
 
   it('keeps owner, people, password, lands, and property surfaces on safe operator language', () => {
     const ownerPreview = source('features/owners/components/OwnerPreviewDialog.tsx');
+    const ownerList = source('features/owners/components/owner-workspace-table.tsx');
     const personForm = source('features/people/person-form-modal.tsx');
     const password = source('features/auth/change-password-page.tsx');
     const lands = source('features/lands/components/lands-view.tsx');
     const propertyForm = source('features/properties/property-form-modal.tsx');
 
-    expect(ownerPreview).toContain('getActionableSupabaseErrorMessage');
+    // The owner Quick Preview is row-data backed (no detail query of its own),
+    // so no raw provider message can surface; the register owns safe errors.
+    expect(ownerPreview).not.toContain('error.message');
     expect(ownerPreview).not.toContain('detailQuery.error.message');
+    expect(ownerList).not.toContain('error.message');
     expect(personForm).toContain('getActionableSupabaseErrorMessage');
     expect(personForm).not.toContain('error instanceof Error ? error.message');
     expect(password).not.toContain('جلسة Supabase');
