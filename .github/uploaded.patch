@@ -997,7 +997,8 @@ index b54f1c1..685ed55 100644
 +  // single list click.
 +  const [pendingArchiveTerm, setPendingArchiveTerm] = useState<PaymentTermsRecord | null>(null);
    const terms = paymentTermsQuery.data ?? [];
-    const closeEditor = () => {
+ 
+   const closeEditor = () => {
 @@ -155,7 +159,9 @@ export function PaymentTermsSettingsSection() {
              </div>
              <div className="flex shrink-0 gap-1.5">
