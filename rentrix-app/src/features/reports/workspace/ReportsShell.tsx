@@ -20,7 +20,8 @@ type ReportsShellProps = Readonly<{
   onOpenReport?: (workspace: ReportWorkspaceId, view: ReportViewId) => void;
   onFiltersChange: (filters: ReportsFilterState) => void;
   onResetCurrentMonth: () => void;
-  hideWorkspaceNavigation?: boolean;
+  /** Premium product pages own the page title and target navigation; keep only shared filters/body chrome. */
+  hideWorkspaceChrome?: boolean;
 }>;
 
 type MetricButtonProps = Readonly<{
@@ -65,7 +66,7 @@ export function ReportsShell({
   onOpenReport,
   onFiltersChange,
   onResetCurrentMonth,
-  hideWorkspaceNavigation = false,
+  hideWorkspaceChrome = false,
 }: ReportsShellProps) {
   const companySettings = useCompanySettingsContract();
   const money = (value: number | null | undefined) => formatCompanyMoney(companySettings, value);
@@ -82,37 +83,41 @@ export function ReportsShell({
   return (
     <div className="space-y-2.5">
       <div data-report-summary-layer className="space-y-2.5 border-b border-border/55 pb-3">
-        <div className="flex min-w-0 flex-wrap items-start justify-between gap-x-4 gap-y-2">
-          <div className="min-w-0 flex-1">
-            <h2 className="min-w-0 text-lg font-black leading-7 text-foreground">{meta.title}</h2>
-            {meta.description ? (
-              <p className="mt-0.5 max-w-3xl text-[13px] font-medium leading-5 text-muted-foreground">{meta.description}</p>
+        {(!hideWorkspaceChrome || (isCollections && summary)) ? (
+          <div className="flex min-w-0 flex-wrap items-start justify-between gap-x-4 gap-y-2">
+            {!hideWorkspaceChrome ? (
+              <div className="min-w-0 flex-1">
+                <h2 className="min-w-0 text-lg font-black leading-7 text-foreground">{meta.title}</h2>
+                {meta.description ? (
+                  <p className="mt-0.5 max-w-3xl text-[13px] font-medium leading-5 text-muted-foreground">{meta.description}</p>
+                ) : null}
+              </div>
+            ) : null}
+
+            {isCollections && summary ? (
+              <div className="flex shrink-0 items-center gap-2">
+                <MetricButton
+                  label="كفاءة التحصيل"
+                  value={hasCollectionRate ? `${Math.round(collectionRate)}%` : '—'}
+                  detail={hasCollectionRate ? `${money(summary.paid ?? 0)} من ${money(summary.invoiced ?? 0)}` : 'المؤشر المعتمد غير متاح حاليًا'}
+                  icon={Receipt}
+                  onClick={() => onOpenView('collections')}
+                />
+                {(summary.outstanding ?? 0) > 0 ? (
+                  <MetricButton
+                    label="الرصيد المستحق"
+                    value={money(summary.outstanding ?? 0)}
+                    detail="يشمل الجاري والمتأخر"
+                    icon={AlertTriangle}
+                    onClick={() => onOpenView('overdue')}
+                  />
+                ) : null}
+              </div>
             ) : null}
           </div>
+        ) : null}
 
-          {isCollections && summary ? (
-            <div className="flex shrink-0 items-center gap-2">
-              <MetricButton
-                label="كفاءة التحصيل"
-                value={hasCollectionRate ? `${Math.round(collectionRate)}%` : '—'}
-                detail={hasCollectionRate ? `${money(summary.paid ?? 0)} من ${money(summary.invoiced ?? 0)}` : 'المؤشر المعتمد غير متاح حاليًا'}
-                icon={Receipt}
-                onClick={() => onOpenView('collections')}
-              />
-              {(summary.outstanding ?? 0) > 0 ? (
-                <MetricButton
-                  label="الرصيد المستحق"
-                  value={money(summary.outstanding ?? 0)}
-                  detail="يشمل الجاري والمتأخر"
-                  icon={AlertTriangle}
-                  onClick={() => onOpenView('overdue')}
-                />
-              ) : null}
-            </div>
-          ) : null}
-        </div>
-
-        {workspace && !hideWorkspaceNavigation ? (
+        {workspace && !hideWorkspaceChrome ? (
           <WorkspaceSubViewTabs
             activeWorkspace={activeWorkspace}
             activeView={activeView}
