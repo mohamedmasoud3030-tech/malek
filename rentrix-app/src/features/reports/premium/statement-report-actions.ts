@@ -14,6 +14,7 @@
  */
 import type { OwnerStatementReport, TenantStatementReport } from '@/features/financials/reports/financialReportsService';
 import type { DocumentCompanySettings } from '@/services/documents/companyIdentity';
+import type { OwnerReportPayload } from '@/services/documents/documentPayloads';
 import { documentService } from '@/services/documents/DocumentService';
 import { DocumentReadinessError, runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
 import {
@@ -159,6 +160,7 @@ export function runOwnerReportDocumentAction(params: Readonly<{
   ownerId: string | null | undefined;
   statement: OwnerStatementReport | null | undefined;
   period: { from?: string; to?: string; propertyId?: string | null };
+  payload?: OwnerReportPayload | null;
 }>, mode: 'print' | 'pdf'): Promise<void> {
   return runGuardedDocumentAction({
     isReady: params.isReady,
@@ -172,7 +174,7 @@ export function runOwnerReportDocumentAction(params: Readonly<{
       if (params.statement.error) {
         throw new DocumentReadinessError('تعذر إصدار كشف المالك التفصيلي: كشف المالك المحمّل يحتوي على خطأ في المصدر المعتمد.');
       }
-      const payload = await loadPremiumOwnerReportPayload({
+      const payload = params.payload ?? await loadPremiumOwnerReportPayload({
         ownerId: params.ownerId,
         from: params.period.from || params.statement.periodFrom || '—',
         to: params.period.to || params.statement.periodTo || '—',
@@ -197,8 +199,9 @@ export async function buildOwnerReportPdfFile(params: Readonly<{
   ownerId: string;
   statement: OwnerStatementReport;
   period: { from?: string; to?: string; propertyId?: string | null };
+  payload?: OwnerReportPayload | null;
 }>): Promise<File> {
-  const payload = await loadPremiumOwnerReportPayload({
+  const payload = params.payload ?? await loadPremiumOwnerReportPayload({
     ownerId: params.ownerId,
     from: params.period.from || params.statement.periodFrom || '—',
     to: params.period.to || params.statement.periodTo || '—',
