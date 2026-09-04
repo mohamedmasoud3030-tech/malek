@@ -124,7 +124,6 @@ describe('buildNeedsAttentionSignal', () => {
         scheduleMissedCount: 0,
         actionableCount: 2,
         oldestOpenAgeDays: 12,
-        rows: [],
       },
     });
 
@@ -185,8 +184,8 @@ describe('buildNeedsAttentionSignal', () => {
           overdueCount: 1, overdueAmount: 12, dueSoonCount: 2, dueSoonAmount: 20,
           outstandingCount: 3, outstandingAmount: 32, remainingByResponsibleParty: { tenant: 0, landlord: 32, company: 0 },
         },
-        rows: [{ billId: 'bill-1', title: 'فاتورة', meta: 'متأخرة', remainingAmount: 12, urgency: 'overdue', daysOverdue: 15, daysUntilDue: -15 }],
         actionableCount: 3,
+        oldestOverdueDays: 15,
       },
       maintenanceFollowUp: EMPTY_MAINTENANCE_FOLLOW_UP_SIGNAL,
     });
