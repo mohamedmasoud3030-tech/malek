@@ -171,7 +171,16 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
   const [liveCallOpen, setLiveCallOpen] = useState(false);
   const [configurationMissing, setConfigurationMissing] = useState(!env.isConfigured);
   const assistant = useSmartAssistant();
-  const { autoSpeak, setAutoSpeak, speakCompletedMessage, stop: stopSpeech } = useAssistantSpeech();
+  const {
+    state: speechState,
+    autoSpeak,
+    setAutoSpeak,
+    play: playSpeech,
+    speakCompletedMessage,
+    stop: stopSpeech,
+  } = useAssistantSpeech();
+  const liveCallOpenRef = useRef(liveCallOpen);
+  liveCallOpenRef.current = liveCallOpen;
   // Live dictation lands straight into the compose box as the transcript forms.
   // When the user pauses/commits in the live-call mode we auto-send the turn,
   // so the voice conversation keeps flowing without tapping send.
@@ -179,9 +188,7 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
     onTranscript: (transcript) => setInput(transcript),
     onFinal: (transcript) => {
       const prompt = transcript.trim();
-      if (!prompt || !liveCallOpen) return;
-      // Stop the mic so it never hears the assistant's own reply, then send.
-      voiceInput.stop();
+      if (!prompt || !liveCallOpenRef.current) return;
       submitPrompt(prompt);
     },
   });
@@ -232,9 +239,13 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
             presentation,
           );
           setMessages((current) => [...current, reply]);
-          // Voice is an extra modality: the text above is canonical, and audio
-          // only plays automatically when the user opted in (default OFF).
-          speakCompletedMessage(reply);
+          // Text stays canonical. Live-call mode always reads the completed
+          // answer; regular chat still honours the user's auto-speak setting.
+          if (liveCallOpenRef.current) {
+            playSpeech(reply);
+          } else {
+            speakCompletedMessage(reply);
+          }
         },
         onError: (error) => {
           if (isAiAssistantConfigurationError(error)) setConfigurationMissing(true);
@@ -465,6 +476,11 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
         <div className="mx-3 mt-2">
           <AssistantLiveCall
             pending={pending}
+            supported={voiceInput.supported}
+            listening={voiceInput.listening}
+            speaking={speechState.status === 'playing' || speechState.status === 'paused'}
+            onStart={() => voiceInput.start({ autoCommitOnFinal: true })}
+            onStop={voiceInput.stop}
             onClose={() => setLiveCallOpen(false)}
           />
         </div>
