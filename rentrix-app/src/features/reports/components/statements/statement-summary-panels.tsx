@@ -8,47 +8,6 @@ import type { VatReturnReport } from '@/features/financials/reports/financial-st
 import { ReportColumns, ReportPanel, ReportPanelSkeleton, ReportSummaryStrip } from '@/components/ui/report-section-primitives';
 import { formatLatinNumber } from '@/lib/formatters';
 
-export function StatementSelectionStrip({
-  selectedContractId,
-  selectedOwnerId,
-  from,
-  to,
-  isDocumentReady,
-}: Readonly<{
-  selectedContractId: string;
-  selectedOwnerId: string;
-  from?: string;
-  to?: string;
-  isDocumentReady?: boolean;
-}>) {
-  return (
-    <ResponsiveCardGrid
-      as="section"
-      desktopColumns={4}
-      gap="sm"
-      className="rounded-xl border border-border/70 bg-muted/20 p-3"
-      aria-label="حالة إصدار الكشوفات"
-    >
-      <SelectionItem label="كشف المستأجر" value={selectedContractId ? 'عقد محدد' : 'اختر عقدًا'} ready={Boolean(selectedContractId)} />
-      <SelectionItem label="كشف المالك" value={selectedOwnerId ? 'مالك محدد' : 'اختر مالكًا'} ready={Boolean(selectedOwnerId)} />
-      <SelectionItem label="فترة الكشف" value={`${from || '—'} إلى ${to || '—'}`} ready />
-      <SelectionItem label="هوية المستند" value={isDocumentReady ? 'جاهز للإصدار' : 'بيانات المكتب ناقصة'} ready={isDocumentReady ?? false} />
-    </ResponsiveCardGrid>
-  );
-}
-
-function SelectionItem({ label, value, ready }: Readonly<{ label: string; value: string; ready: boolean }>) {
-  return (
-    <div className="flex min-w-0 items-center justify-between gap-3 rounded-lg bg-background px-3 py-2.5">
-      <div className="min-w-0">
-        <p className="text-xs font-semibold text-muted-foreground">{label}</p>
-        <p className="mt-1 truncate text-sm font-bold">{value}</p>
-      </div>
-      <StatusBadge tone={ready ? 'success' : 'neutral'}>{ready ? 'جاهز' : 'مطلوب'}</StatusBadge>
-    </div>
-  );
-}
-
 export function OfficeSummaryPanel({
   invoiced,
   collections,
