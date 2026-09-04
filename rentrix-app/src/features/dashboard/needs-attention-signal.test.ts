@@ -14,13 +14,13 @@ function makeSnapshot(overrides: Partial<DashboardSnapshot> = {}): DashboardSnap
     period: { dateFrom: '2026-08-01', dateTo: '2026-08-29', asOf: '2026-08-29', month: 8, year: 2026 },
     portfolio: { properties: 1, units: 4 },
     occupancy: { occupiedUnits: 3, vacantUnits: 1, occupancyRate: 75 },
-    contracts: { active: 3, expiring30: 1, expiring60: 1, expiring90: 1 },
-    billing: { invoicedAmount: 1000, invoicesCount: 5, invoicesTotalCount: 40 },
-    collections: { collectedAmount: 800, paymentsCount: 4, outstandingAmount: 200, collectionRate: 80 },
-    expenses: { totalAmount: 100, count: 2 },
+    contracts: { active: 3 },
+    billing: { invoicedAmount: 1000, invoicesTotalCount: 40 },
+    collections: { collectedAmount: 800, outstandingAmount: 200, collectionRate: 80 },
+    expenses: { totalAmount: 100 },
     netCash: 700,
     arrears: {
-      totalOverdue: 200, overdueCount: 1, averageDaysOverdue: 12, over90Amount: 0, over90Count: 0, totalOutstanding: 200,
+      totalOverdue: 200, overdueCount: 1, averageDaysOverdue: 12, over90Count: 0,
       buckets: {
         current: { total: 0, count: 0 },
         days_1_30: { total: 200, count: 1 },
@@ -29,10 +29,10 @@ function makeSnapshot(overrides: Partial<DashboardSnapshot> = {}): DashboardSnap
         days_90_plus: { total: 0, count: 0 },
       },
     },
-    ownerFunds: { netPayable: 0, settlementsDraft: 0, settlementsApproved: 0 },
-    maintenance: { open: 1, inProgress: 0, urgentOpen: 0 },
-    exceptions: { unmatchedBankLines: 0, pendingSettlements: 0 },
-    queues: { expiringContracts: [], overdueInvoices: [], urgentMaintenance: [] },
+    ownerFunds: { settlementsDraft: 0, settlementsApproved: 0 },
+    maintenance: { urgentOpen: 0 },
+    exceptions: { unmatchedBankLines: 0 },
+    queues: { expiringContracts: [], overdueInvoices: [] },
     ...overrides,
   };
 }
@@ -79,13 +79,12 @@ describe('buildNeedsAttentionSignal', () => {
 
   it('merges real conditions from the authoritative sources into decision items', () => {
     const snapshot = makeSnapshot({
-      maintenance: { open: 1, inProgress: 0, urgentOpen: 1 },
+      maintenance: { urgentOpen: 1 },
       queues: {
         overdueInvoices: [{
           invoiceId: 'inv-1', reference: 'INV-1', dueDate: '2026-08-01', daysOverdue: 28,
           remainingAmount: 200, tenantName: 'أحمد', propertyTitle: 'برج أ', unitNumber: '3',
         }],
-        urgentMaintenance: [{ id: 'mnt-1', title: 'تسرب', priority: 'urgent', propertyTitle: 'برج أ', unitNumber: '5' }],
         expiringContracts: [{
           id: 'con-1', reference: 'CON-1', endDate: '2026-09-05', daysRemaining: 7,
           tenantName: 'سالم', propertyTitle: 'برج أ', unitNumber: '2',
@@ -115,7 +114,7 @@ describe('buildNeedsAttentionSignal', () => {
 
   it('keeps urgent maintenance and follow-up as one owner decision instead of duplicate queue rows', () => {
     const signal = buildNeedsAttentionSignal({
-      snapshot: makeSnapshot({ maintenance: { open: 3, inProgress: 1, urgentOpen: 1 } }),
+      snapshot: makeSnapshot({ maintenance: { urgentOpen: 1 } }),
       vacancyAnalytics: emptyVacancy,
       utilityObligations: EMPTY_UTILITY_OBLIGATIONS_SIGNAL,
       maintenanceFollowUp: {
@@ -142,10 +141,9 @@ describe('buildNeedsAttentionSignal', () => {
           { invoiceId: 'inv-new', reference: null, dueDate: '2026-08-20', daysOverdue: 9, remainingAmount: 10, tenantName: 'جديد', propertyTitle: null, unitNumber: null },
           { invoiceId: 'inv-old', reference: null, dueDate: '2026-07-01', daysOverdue: 59, remainingAmount: 10, tenantName: 'قديم', propertyTitle: null, unitNumber: null },
         ],
-        urgentMaintenance: [],
         expiringContracts: [{ id: 'con-2', reference: null, endDate: '2026-09-20', daysRemaining: 22, tenantName: 'عقد', propertyTitle: null, unitNumber: null }],
       },
-      exceptions: { unmatchedBankLines: 3, pendingSettlements: 0 },
+      exceptions: { unmatchedBankLines: 3 },
     });
 
     const signal = buildNeedsAttentionSignal({
@@ -174,7 +172,7 @@ describe('buildNeedsAttentionSignal', () => {
 
   it('surfaces owner settlements and utility obligations with the correct workflow routes', () => {
     const snapshot = makeSnapshot({
-      ownerFunds: { netPayable: 30, settlementsDraft: 1, settlementsApproved: 2 },
+      ownerFunds: { settlementsDraft: 1, settlementsApproved: 2 },
     });
     const signal = buildNeedsAttentionSignal({
       snapshot,
