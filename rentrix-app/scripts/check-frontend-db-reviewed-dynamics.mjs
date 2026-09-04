@@ -31,9 +31,11 @@ const TYPES_PATH = join(SOURCE_ROOT, 'types', 'database.ts');
 
 const REVIEWED = new Map([
   ['mutation|features/units/unit-service.ts|units|insert', 1],
-  // Only updateProperty's payload stays dynamic (normalizePropertyPayload result);
-  // softDeleteProperty's archive payload is a static { deleted_at } literal and is
-  // resolved by the primary contract checker instead.
+  // Only updateProperty's payload is dynamic (its columns come from
+  // normalizePropertyPayload at runtime). softDeleteProperty's
+  // `updatePayload: PropertyUpdate = { deleted_at: ... }` is a static
+  // literal that the primary checker resolves automatically, so it is not
+  // counted here.
   ['mutation|features/properties/property-service.ts|properties|update', 1],
   ['mutation|features/people/people-service.ts|people|insert', 1],
   ['mutation|features/owners/services/owner-service.ts|owners|insert', 1],

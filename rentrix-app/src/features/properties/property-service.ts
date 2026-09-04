@@ -294,10 +294,14 @@ export async function updateProperty(propertyId: string, payload: PropertyFormVa
   if (validated.status === 'inactive' || validated.status === 'sold') {
     await assertPropertyHasNoActiveContracts(propertyId, `تغيير حالة`);
   }
-  const updatePayload: PropertyUpdate = normalizePropertyPayload(validated);
+  // Distinct name from softDeleteProperty's static archive literal so the
+  // reviewed-dynamic scanner keeps flagging this payload (its columns come
+  // from normalizePropertyPayload at runtime) as dynamic rather than
+  // resolving it to the soft-delete object.
+  const propertyUpdatePayload: PropertyUpdate = normalizePropertyPayload(validated);
   const { data, error } = await supabase
     .from('properties')
-    .update(updatePayload)
+    .update(propertyUpdatePayload)
     .eq('id', propertyId)
     .is('deleted_at', null)
     .select('*')
@@ -309,7 +313,7 @@ export async function updateProperty(propertyId: string, payload: PropertyFormVa
 
 export async function softDeleteProperty(propertyId: string): Promise<void> {
   await assertPropertyCanBeArchived(propertyId);
-  const archivePayload: PropertyUpdate = { deleted_at: new Date().toISOString() };
-  const { error } = await supabase.from('properties').update(archivePayload).eq('id', propertyId).is('deleted_at', null);
+  const updatePayload: PropertyUpdate = { deleted_at: new Date().toISOString() };
+  const { error } = await supabase.from('properties').update(updatePayload).eq('id', propertyId).is('deleted_at', null);
   if (error) throw new Error(getCrudWriteErrorMessage({ action: 'archive', entityPlural: 'العقارات', error }));
 }
