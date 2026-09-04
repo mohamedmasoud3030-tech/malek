@@ -1,6 +1,7 @@
 import { AlertTriangle, ArrowUpRight, Bot, ChevronDown, Mic, Phone, Send, Sparkles, Square } from 'lucide-react';
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
+import { useMutation } from '@tanstack/react-query';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,9 +11,9 @@ import { env } from '@/lib/env';
 import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import type { AiAssistantAction, AiAssistantMessage, AiAssistantResponse, AiAssistantSurfaceContext } from './types';
-import { useSmartAssistant } from './use-smart-assistant';
 import { ASSISTANT_IDENTITY, ASSISTANT_TAGLINE, buildAssistantAttribution } from './assistant-identity';
 import { isAiAssistantConfigurationError } from './services/ai-assistant-service';
+import { requestAiOperatingResponse } from './services/ai-assistant-operating-service';
 import { inferAiAssistantAction } from './ai-assistant-intent';
 import { buildAiNavigationTargets } from './ai-assistant-navigation';
 import {
@@ -170,7 +171,7 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
   const [showMoreActions, setShowMoreActions] = useState(false);
   const [liveCallOpen, setLiveCallOpen] = useState(false);
   const [configurationMissing, setConfigurationMissing] = useState(!env.isConfigured);
-  const assistant = useSmartAssistant();
+  const assistant = useMutation({ mutationFn: requestAiOperatingResponse });
   const {
     state: speechState,
     autoSpeak,
