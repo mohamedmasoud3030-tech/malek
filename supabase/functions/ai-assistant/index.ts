@@ -10,7 +10,12 @@ import {
   type JsonObject,
   type ValidatedAssistantRequest,
 } from "../_shared/ai-contract.ts";
-import { AI_KB_VERSION, BUSINESS_KB_TEXT } from "../_shared/ai-business-kb.ts";
+import {
+  AI_KB_VERSION,
+  detectAdvisoryCountryId,
+  findBusinessKbCountry,
+  renderBusinessKbText,
+} from "../_shared/ai-business-kb.ts";
 import {
   mergeServerContextSections,
   readServerContextSections,
@@ -300,16 +305,25 @@ function buildPlanningMessages(request: ValidatedAssistantRequest): ChatMessage[
  * versioned business knowledge base only — no user data is injected.
  */
 function buildAdvisoryMessages(request: ValidatedAssistantRequest): ChatMessage[] {
+  // The market is picked deterministically from the conversation (prompt
+  // first, then recent history) — never by the model — and only that
+  // country's rendered KB is injected.
+  const countryId = detectAdvisoryCountryId(request.prompt, request.history);
+  const country = findBusinessKbCountry(countryId);
+  const kbText = renderBusinessKbText(countryId);
+  const regionNames = country.regions.map((region) => region.nameAr).join("، ");
+  const defaultRegion = country.regions.find((region) => region.id === country.defaultRegionId)?.nameAr
+    ?? country.regions[0].nameAr;
   const system = [
     `Prompt version: ${AI_PROMPT_VERSION}. Output schema: ${AI_OUTPUT_SCHEMA_VERSION}.`,
     PERSONA,
-    "هذه استشارة بيزنس عامة عن إدارة العقارات وسوق عُمان (مسقط ومناطقها) — تجيب من قاعدة المعرفة المرفقة فقط.",
+    `هذه استشارة بيزنس عامة عن إدارة العقارات وسوق ${country.nameAr} — تجيب من قاعدة المعرفة المرفقة فقط.`,
     "استند فقط إلى ما في قاعدة المعرفة. إذا لم يكن السؤال مغطى بها، قل ذلك بصراحة واقترح أقرب موضوع مغطى؛ لا تخترع أرقاماً أو نسباً.",
-    "تحديد المنطقة: استخرج منطقة المستخدم من السؤال أو آخر رسائل المحادثة (مسقط، نزوي/الداخلية، صلالة، صحار…). إذا كانت واضحة: استعمل أرقام تلك المنطقة حصراً وسمِّها في الرد. إذا لم تكن واضحة: افترض مسقط ببيان صريح في سطر واحد («أعتمد أرقام مسقط افتراضاً؛ إن كان مكتبك في نزوي أو منطقة أخرى أخبرني بكلمة واحدة») — ولا تخلط أرقام مناطق مختلفة في الرد الواحد.",
+    `تحديد المنطقة داخل ${country.nameAr}: استخرج منطقة المستخدم من السؤال أو آخر رسائل المحادثة (${regionNames}). إذا كانت واضحة: استعمل أرقام تلك المنطقة حصراً وسمِّها في الرد. إذا لم تكن واضحة: افترض ${defaultRegion} ببيان صريح في سطر واحد — ولا تخلط أرقام مناطق مختلفة في الرد الواحد.`,
     "اذكر ضمن caveats دائماً أن الأرقام «تقديرات إرشادية من مراجع سوق عامة وليست أرقاماً معتمدة أو التزاماً قانونياً/محاسبياً».",
     SECURITY_RULES,
-    `<knowledge_base version="${AI_KB_VERSION}">`,
-    BUSINESS_KB_TEXT,
+    `<knowledge_base version="${AI_KB_VERSION}" country="${country.id}">`,
+    kbText,
     "</knowledge_base>",
     "أعد JSON مطابقاً للمخطط فقط، بالعربية، بأجوبة قصيرة عملية.",
   ].join("\n");

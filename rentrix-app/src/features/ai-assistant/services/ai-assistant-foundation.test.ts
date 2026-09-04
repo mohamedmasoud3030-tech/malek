@@ -13,6 +13,7 @@ import {
   BUSINESS_KB_MAX_CHARS,
   BUSINESS_KB_SOURCES,
   BUSINESS_KB_TEXT,
+  detectAdvisoryCountryId,
   findBusinessKbCountry,
   renderBusinessKbText,
 } from "../../../../../supabase/functions/_shared/ai-business-kb";
@@ -290,7 +291,7 @@ describe("AI assistant evaluation set", () => {
   });
 
   it("keeps the business knowledge base versioned, bounded and fully cited", () => {
-    expect(AI_KB_VERSION).toMatch(/^malek-biz-om-v\d+$/);
+    expect(AI_KB_VERSION).toMatch(/^malek-biz-v\d+$/);
     // The KB must always fit the prompt window with headroom.
     expect(BUSINESS_KB_TEXT.length).toBeGreaterThan(500);
     expect(BUSINESS_KB_TEXT.length).toBeLessThanOrEqual(BUSINESS_KB_MAX_CHARS);
@@ -328,5 +329,45 @@ describe("AI assistant evaluation set", () => {
     // Deterministic rendering, always within budget.
     expect(renderBusinessKbText()).toBe(BUSINESS_KB_TEXT);
     expect(renderBusinessKbText("om").length).toBeLessThanOrEqual(BUSINESS_KB_MAX_CHARS);
+  });
+
+  it("serves the Saudi market as a second, fully sourced country block within budget", () => {
+    const saudi = findBusinessKbCountry("sa");
+    expect(saudi.id).toBe("sa");
+    expect(saudi.currencyAr).toBe("ر.س");
+    expect(saudi.defaultRegionId).toBe("riyadh");
+    // Region level mirrors the Oman contract: labeled regions, own rent tables.
+    const regionIds = saudi.regions.map((region) => region.id);
+    expect(regionIds).toContain("riyadh");
+    expect(regionIds).toContain("jeddah");
+    expect(regionIds).toContain("eastern");
+    expect(saudi.regions.every((region) => region.rents.length > 0)).toBe(true);
+    // Riyadh carries the flagship benchmark rows from the cited sources.
+    const riyadh = saudi.regions.find((region) => region.id === "riyadh");
+    expect(riyadh?.rents.map((row) => row.range)).toContain("2,500-4,100");
+    expect(riyadh?.rents.map((row) => row.range)).toContain("10,000-30,000");
+    // The rendered Saudi text labels its regions and stays within budget.
+    const rendered = renderBusinessKbText("sa");
+    expect(rendered).toContain("الرياض");
+    expect(rendered).toContain("جدة");
+    expect(rendered).toContain("إيجار");
+    expect(rendered.length).toBeLessThanOrEqual(BUSINESS_KB_MAX_CHARS);
+    expect(rendered.length).toBeGreaterThan(500);
+  });
+
+  it("detects the advisory market deterministically from the prompt and recent history", () => {
+    expect(detectAdvisoryCountryId("كم إيجار شقة غرفتين في الرياض؟", [])).toBe("sa");
+    expect(detectAdvisoryCountryId("نسبة إدارة العقار في جدة", [])).toBe("sa");
+    expect(detectAdvisoryCountryId("إيجار شقة في نزوى", [])).toBe("om");
+    expect(detectAdvisoryCountryId("سعر الشقق في مسقط", [])).toBe("om");
+    // The generic Arabic word for rent alone never implies a market.
+    expect(detectAdvisoryCountryId("كم نسبة الإيجار المناسبة؟", [])).toBeUndefined();
+    // Newer history (last entry) wins over older history; the prompt wins over both.
+    expect(detectAdvisoryCountryId("قدّر لي الإيجار", [
+      { content: "شقق في مسقط" },
+      { content: "شقق في جدة" },
+    ])).toBe("sa");
+    expect(detectAdvisoryCountryId("وكم في الدمام؟", [{ content: "شقق في الرياض" }])).toBe("sa");
+    expect(detectAdvisoryCountryId("وكم في مسقط؟", [{ content: "شقق في الرياض" }])).toBe("om");
   });
 });

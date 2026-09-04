@@ -15,7 +15,7 @@
  *   multi-country roadmap (add a country object + sources, nothing else).
  */
 
-export const AI_KB_VERSION = "malek-biz-om-v2";
+export const AI_KB_VERSION = "malek-biz-v3";
 
 /** Hard budget so the rendered KB always fits the prompt window. */
 export const BUSINESS_KB_MAX_CHARS = 4_000;
@@ -70,6 +70,51 @@ export const BUSINESS_KB_SOURCES: readonly BusinessKbSource[] = [
   {
     name: "TravelTables — Nizwa rent index (2023)",
     url: "https://traveltables.com/nizwa-oman/",
+    accessed: "2026-09-04",
+  },
+  {
+    name: "Sands of Wealth — Average apartment rent in Riyadh (2025-09)",
+    url: "https://sandsofwealth.com/blogs/news/average-apartment-rent-riyadh",
+    accessed: "2026-09-04",
+  },
+  {
+    name: "Sands of Wealth — Updated Rents in Saudi Arabia (2026)",
+    url: "https://sandsofwealth.com/blogs/news/saudi-arabia-rents",
+    accessed: "2026-09-04",
+  },
+  {
+    name: "Jarnias Cyril — Cost of living in Saudi Arabia (2026-01)",
+    url: "https://www.jarniascyril.com/expatriation/moving-to-saudi-arabia-as-an-expat-complete-guide/cost-of-living-saudi-arabia-expats/",
+    accessed: "2026-09-04",
+  },
+  {
+    name: "Sands of Wealth — Buying and renting out in Saudi Arabia (2026)",
+    url: "https://sandsofwealth.com/blogs/news/saudi-arabia-buy-rent-out",
+    accessed: "2026-09-04",
+  },
+  {
+    name: "Sands of Wealth — Riyadh rental yields (2026)",
+    url: "https://sandsofwealth.com/blogs/news/riyadh-rental-yields",
+    accessed: "2026-09-04",
+  },
+  {
+    name: "Riyadh Residential — Rental market dashboard (Q1 2026)",
+    url: "https://riyadhresidential.com/dashboards/rental-market-dashboard/",
+    accessed: "2026-09-04",
+  },
+  {
+    name: "Expat Focus — Saudi Arabia lease agreements (Ejar)",
+    url: "https://www.expatfocus.com/saudi-arabia/guide/saudi-arabia-lease-agreements",
+    accessed: "2026-09-04",
+  },
+  {
+    name: "Expat Focus — Saudi Arabia property letting (2025)",
+    url: "https://www.expatfocus.com/saudi-arabia/guide/saudi-arabia-property-letting",
+    accessed: "2026-09-04",
+  },
+  {
+    name: "Habitare — VAT on real estate in Saudi Arabia (2026)",
+    url: "https://habitare.sa/en/value-added-tax-vat-on-real-estate-in-saudi-arabia/",
     accessed: "2026-09-04",
   },
 ] as const;
@@ -182,10 +227,152 @@ const OMAN: BusinessKbCountry = {
   ].join("\n"),
 };
 
-export const BUSINESS_KB_COUNTRIES: readonly BusinessKbCountry[] = [OMAN] as const;
+const SAUDI_ARABIA: BusinessKbCountry = {
+  id: "sa",
+  nameAr: "السعودية",
+  currencyAr: "ر.س",
+  defaultRegionId: "riyadh",
+  regions: [
+    {
+      id: "riyadh",
+      nameAr: "الرياض",
+      noteAr: "أعلى سوق في المملكة؛ تجميد إيجارات 5 سنوات من 25 سبتمبر 2025 يحد الزيادات داخل النطاق العمراني.",
+      rents: [
+        { typeAr: "استوديو", range: "1,600-6,000" },
+        { typeAr: "غرفة وصالة", range: "2,500-4,100", note: "وسط الرياض 3,100-4,100" },
+        { typeAr: "غرفتان", range: "3,000-7,000" },
+        { typeAr: "ثلاث غرف", range: "4,000-7,000+" },
+        { typeAr: "فيلا", range: "10,000-30,000" },
+      ],
+    },
+    {
+      id: "jeddah",
+      nameAr: "جدة",
+      rents: [{ typeAr: "شقق (نطاق عام)", range: "1,200-6,250" }],
+    },
+    {
+      id: "eastern",
+      nameAr: "الدمام والمنطقة الشرقية",
+      noteAr: "من أدنى المناطق سعراً للمتر المربع وطنياً.",
+      rents: [{ typeAr: "شقق (نطاق عام)", range: "1,375-3,750" }],
+    },
+    {
+      id: "other",
+      nameAr: "مدن أخرى (أبها، حائل، نجران…)",
+      noteAr: "الأقل تكلفة على المستوى الوطني.",
+      rents: [{ typeAr: "شقق (نطاق عام)", range: "1,375-2,250" }],
+    },
+  ],
+  national: {
+    managementFeesAr: [
+      "الإدارة الكاملة السائدة 5-10% من الإيجار المحصل سنوياً (مرجع شائع 5-8%، و8-10% نموذجي للإدارة عن بُعد).",
+      "رسوم التأجير (إيجاد مستأجر جديد): نصف إلى شهر إيجار لمرة واحدة لكل مستأجر.",
+      "عمولة الوسيط السائدة نحو 2.5% من إيجار السنة (تدفع مرة واحدة).",
+    ].join("\n"),
+    contractRulesAr: [
+      "تسجيل العقد على منصة إيجار إلزامي (الهيئة العامة للعقار) — العقد غير المسجل غير قابل للتنفيذ قانونياً.",
+      "المدة القياسية سنة واحدة؛ العقود فوق 3 أشهر تتجدد تلقائياً ما لم يُقدم إشعار 60 يوماً قبل الانتهاء.",
+      "سقف التأمين 5% من إجمالي قيمة العقد ويُحفظ عبر منصة إيجار.",
+      "الدفع الرقمي إلزامي للسكني (مدى/سداد) منذ يناير 2024، والسائد دفع إيجار السنة مقدماً.",
+      "رسوم تسجيل إيجار سكني: 125 ر.س أول سنة و250 ر.س للتجديد السنوي.",
+      "زيادة الإيجار خارج الرياض عبر طلب رسمي في إيجار قبل 90 يوماً من الانتهاء.",
+    ].join("\n"),
+    feesAndTaxesAr: [
+      "الإيجار السكني معفى من ضريبة القيمة المضافة؛ الإيجار التجاري يخضع لـ 15%.",
+      "ضريبة التصرفات العقارية 5% على بيع العقارات السكنية (للمقارنة — لا تُفرض على التأجير).",
+      "دخل الإيجار السكني للأفراد عموماً بدون ضريبة دخل شخصية — تحقق دائماً من زاتكا.",
+    ].join("\n"),
+    opsBenchmarksAr: [
+      "احتياطي الصيانة: 0.75-1.5% من قيمة العقار سنوياً.",
+      "التكلفة الشاملة لحمل العقار المؤجر: نحو 25-35% من دخل الإيجار.",
+      "صافي العائد السكني في الرياض نحو 4.3% (الإجمالي أعلى قبل التكاليف).",
+      "إيجار المتر المربع للشقق وطنياً: 32-75 ر.س/م² شهرياً (الرياض في الطرف الأعلى والشرقية في الأدنى).",
+    ].join("\n"),
+  },
+  bestPracticesAr: [
+    "سجّل العقد على إيجار فور التوقيع واحفظ التأمين ضمن المنصة وضمن السقف.",
+    "وثّق كل دفعة عبر القنوات الرقمية المعتمدة (مدى/سداد) واربطها بالعقد.",
+    "ابدأ إجراءات التجديد أو الإشعار قبل نهاية العقد بـ 90 يوماً على الأقل.",
+    "في الرياض: التزم بتجميد الإيجارات الحالي وقيّد أي زيادة بالمستندات الرسمية.",
+    "اختر مدير عقار مرخصاً (ترخيص فال) للتعامل مع التسجيل والمنازعات.",
+    "تقرير دوري للمالك: تحصيل، مصروفات، صيانة، شواغر، وحالة عقود إيجار.",
+  ].join("\n"),
+};
+
+export const BUSINESS_KB_COUNTRIES: readonly BusinessKbCountry[] = [OMAN, SAUDI_ARABIA] as const;
 
 export function findBusinessKbCountry(countryId?: string): BusinessKbCountry {
   return BUSINESS_KB_COUNTRIES.find((country) => country.id === countryId) ?? BUSINESS_KB_COUNTRIES[0];
+}
+
+/**
+ * Deterministic country keywords for advisory routing. Each entry names the
+ * market unambiguously; the generic Arabic word for "rent" is deliberately
+ * absent so an Oman question like «نسبة الإيجار» can never land on KSA.
+ */
+const COUNTRY_KEYWORDS: Readonly<Record<string, readonly string[]>> = {
+  om: [
+    "عمان",
+    "عُمان",
+    "مسقط",
+    "نزوى",
+    "نزوي",
+    "صلالة",
+    "صحار",
+    "الرستاق",
+    "البريمي",
+    "oman",
+    "muscat",
+    "nizwa",
+    "salalah",
+    "sohar",
+  ],
+  sa: [
+    "السعودية",
+    "السعوديه",
+    "سعودي",
+    "الرياض",
+    "جدة",
+    "الدمام",
+    "الخبر",
+    "المنطقة الشرقية",
+    "مكة المكرمة",
+    "المدينة المنورة",
+    "نجران",
+    "أبها",
+    "منصة إيجار",
+    "saudi",
+    "riyadh",
+    "jeddah",
+    "dammam",
+    "khobar",
+    "ksa",
+  ],
+};
+
+function normalizeAdvisoryText(value: string): string {
+  return value.toLowerCase().replace(/[\u064B-\u065F\u0670\u0640]/g, "");
+}
+
+/**
+ * Picks the advisory market from the prompt first, then the most recent
+ * history turns. Deterministic and keyword-only; the model never decides
+ * which country's figures to use. Undefined = the default country (Oman).
+ */
+export function detectAdvisoryCountryId(
+  prompt: string,
+  history: ReadonlyArray<{ content: string }>,
+): string | undefined {
+  const candidates = [prompt, ...[...history].reverse().map((entry) => entry.content)];
+  for (const entry of candidates) {
+    const text = normalizeAdvisoryText(entry);
+    for (const [countryId, keywords] of Object.entries(COUNTRY_KEYWORDS)) {
+      if (keywords.some((keyword) => text.includes(normalizeAdvisoryText(keyword)))) {
+        return countryId;
+      }
+    }
+  }
+  return undefined;
 }
 
 function renderRegionBlock(country: BusinessKbCountry, region: BusinessKbRegion): string {
