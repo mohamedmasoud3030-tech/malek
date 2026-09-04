@@ -94,7 +94,43 @@ set requestable = false
 where permission in ('properties.write', 'contracts.write', 'maintenance.write');
 
 -- ---------------------------------------------------------------------------
--- 3. Fail-closed parity guard. The catalog is the single permission authority,
+-- 3. Retire the seed-only settings.manage alias on UPGRADE paths as well as
+--    fresh replays. Older seeded databases can already contain this row and
+--    related permission state. Do not translate any of that state to
+--    company.settings.manage: that would silently widen an obsolete grant into
+--    a live admin-only capability.
+--
+--    Preserve audit history where possible:
+--      * active explicit grants are revoked in place;
+--      * pending requests are rejected in place, while already-decided request
+--        history remains untouched;
+--      * owner overrides are current authorization state, not immutable audit,
+--        so they are deleted explicitly before the catalog row is removed.
+-- ---------------------------------------------------------------------------
+update public.user_permission_grants
+set revoked_at = coalesce(revoked_at, now())
+where permission = 'settings.manage'
+  and revoked_at is null;
+
+update public.permission_requests
+set status = 'REJECTED',
+    decided_at = coalesce(decided_at, now()),
+    decision_reason = coalesce(
+      decision_reason,
+      'PERMISSION_RETIRED: settings.manage removed; no automatic grant translation performed'
+    ),
+    updated_at = now()
+where permission = 'settings.manage'
+  and status = 'PENDING';
+
+delete from public.user_permission_overrides
+where permission = 'settings.manage';
+
+delete from public.app_permission_catalog
+where permission = 'settings.manage';
+
+-- ---------------------------------------------------------------------------
+-- 4. Fail-closed parity guard. The catalog is the single permission authority,
 --    so a six-role matrix code without a catalog row would silently deny a
 --    legitimate non-admin capability. Abort the migration instead.
 -- ---------------------------------------------------------------------------
@@ -132,7 +168,10 @@ declare
     'service_providers.view','service_providers.write','support.operations.view','support.requests.triage',
     'support.user_lookup.view','system.view','tenant.portal.link','users.manage'
   ];
+  v_actual_catalog text[];
+  v_expected_sorted text[];
   v_missing text[];
+  v_unexpected text[];
   v_not_requestable text[];
 begin
   select array_agg(m.permission order by m.permission)
@@ -146,6 +185,37 @@ begin
     raise exception
       'PERMISSION_CATALOG_INCOMPLETE: six-role matrix references % with no public.app_permission_catalog row',
       v_missing;
+  end if;
+
+  -- Exact-set lock, not mere containment. This catches stale seed-only rows
+  -- (including settings.manage) and any future unexpected capability that
+  -- would otherwise make ADMIN or server projections broader than the typed
+  -- application vocabulary.
+  select array_agg(c.permission order by c.permission)
+    into v_actual_catalog
+    from public.app_permission_catalog c;
+
+  select array_agg(e.permission order by e.permission)
+    into v_expected_sorted
+    from unnest(v_expected_catalog) as e(permission);
+
+  if v_actual_catalog is distinct from v_expected_sorted then
+    select array_agg(e.permission order by e.permission)
+      into v_missing
+      from unnest(v_expected_catalog) as e(permission)
+      where not exists (
+        select 1 from public.app_permission_catalog c where c.permission = e.permission
+      );
+
+    select array_agg(c.permission order by c.permission)
+      into v_unexpected
+      from public.app_permission_catalog c
+      where not (c.permission = any(v_expected_catalog));
+
+    raise exception
+      'PERMISSION_CATALOG_EXACT_SET_MISMATCH: missing %, unexpected %',
+      coalesce(v_missing, array[]::text[]),
+      coalesce(v_unexpected, array[]::text[]);
   end if;
 
   select array_agg(c.permission order by c.permission)
