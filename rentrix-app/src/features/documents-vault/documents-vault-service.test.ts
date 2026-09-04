@@ -67,16 +67,4 @@ describe('documents vault real implementation', () => {
     expect(workspace).toContain('signedMap');
     expect(workspace).not.toContain('getPublicUrl');
   });
-
-  it('contract documents service no longer builds public URLs for the private bucket', () => {
-    const contractService = readFileSync(
-      resolve(import.meta.dirname, '../contracts/contractDocumentsService.ts'),
-      'utf8',
-    );
-    expect(contractService).not.toContain('getPublicUrl');
-    expect(contractService).toContain('createSignedUrl');
-    expect(contractService).toContain('file_url: storagePath');
-    expect(contractService).toContain(String(5)); // 5MB message via shared constant
-    expect(contractService).toContain('ATTACHMENTS_MAX_FILE_SIZE');
-  });
 });

@@ -81,11 +81,8 @@ const APPROVED_DOCUMENT_CALL_SITES: ReadonlySet<string> = new Set([
   'features/financials/receipts/receipt-detail-page.tsx',
   'features/financials/deposits/deposit-clearance-document.ts',
   'features/financials/deposits/deposit-voucher-document.ts',
-  // owners — owner settlement statement & domain adapters
+  // owners — owner settlement statement
   'features/owners/components/OwnerSettlementWorkspace.tsx',
-  'features/owners/documents/owner-documents.ts',
-  // properties — unit lifecycle passport
-  'features/properties/documents/unit-passport-document.ts',
   // maintenance — work order and completion certificate
   'features/maintenance/components/maintenance-workspace.tsx',
   'features/maintenance/documents/maintenance-documents.ts',
