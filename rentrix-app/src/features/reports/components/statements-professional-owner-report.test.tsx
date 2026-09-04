@@ -29,6 +29,10 @@ vi.mock('@/features/settings/useDocumentSettings', () => ({
   useDocumentSettings: () => docSettingsState,
 }));
 
+vi.mock('@/features/settings/components/document-readiness-notice', () => ({
+  DocumentReadinessNotice: () => <div>أكمل بيانات الشركة الأساسية في الإعدادات قبل طباعة هذا المستند.</div>,
+}));
+
 vi.mock('@/services/documents/DocumentService', () => ({
   documentService: {
     printDocument: vi.fn().mockResolvedValue(undefined),
