@@ -216,7 +216,7 @@ describe('P0-1 database replay reproduces the authoritative catalog from migrati
     // last pre-fix migration, then recreate the legacy seed-only alias and
     // permission state that could already exist in a deployed database.
     const legacy = await createFullReplayedDatabase({
-      throughMigration: '20260901000065',
+      throughMigration: '20260904000000',
       applySeed: false,
     });
     expect(legacy.failed, JSON.stringify(legacy.failed.slice(-5))).toEqual([]);
