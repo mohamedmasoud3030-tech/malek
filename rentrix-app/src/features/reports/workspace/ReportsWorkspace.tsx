@@ -20,8 +20,8 @@ type ReportsWorkspaceProps = Readonly<{
   onDrill: ReportDrillHandler;
   onFiltersChange: (filters: ReportsFilterState) => void;
   onResetCurrentMonth: () => void;
-  /** Premium products own their own internal navigation, so legacy workspace tabs stay hidden. */
-  hideWorkspaceNavigation?: boolean;
+  /** Premium product pages own the page title and target navigation, so shared workspace chrome stays hidden. */
+  hideWorkspaceChrome?: boolean;
   /** Focuses the shared statements data source without duplicating its loaders. */
   statementFocus?: StatementProductFocus;
 }>;
@@ -45,7 +45,7 @@ export function ReportsWorkspace({
   onDrill,
   onFiltersChange,
   onResetCurrentMonth,
-  hideWorkspaceNavigation = false,
+  hideWorkspaceChrome = false,
   statementFocus,
 }: ReportsWorkspaceProps) {
   return (
@@ -59,7 +59,7 @@ export function ReportsWorkspace({
         onOpenReport={onOpenReport}
         onFiltersChange={onFiltersChange}
         onResetCurrentMonth={onResetCurrentMonth}
-        hideWorkspaceNavigation={hideWorkspaceNavigation}
+        hideWorkspaceChrome={hideWorkspaceChrome}
       />
 
       {model.isIncomplete ? (
