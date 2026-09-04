@@ -6,11 +6,14 @@ import { describe, expect, it } from 'vitest';
 const here = resolve(dirname(fileURLToPath(import.meta.url)));
 const panel = readFileSync(resolve(here, 'statement-account-panels.tsx'), 'utf8');
 const section = readFileSync(resolve(here, '../StatementsSection.tsx'), 'utf8');
+const workspace = readFileSync(resolve(here, '../../use-reports-workspace.ts'), 'utf8');
 
 describe('owner statement in-app vertical slice contract', () => {
-  it('reuses the premium owner payload instead of rebuilding report math in the panel', () => {
-    expect(panel).toContain('loadPremiumOwnerReportPayload');
-    expect(panel).toContain('statement,');
+  it('loads the premium owner payload once in the workspace and keeps the panel presentation-only', () => {
+    expect(workspace).toContain('loadPremiumOwnerReportPayload');
+    expect(workspace).toContain('ownerReportPayloadQuery');
+    expect(panel).not.toContain('loadPremiumOwnerReportPayload');
+    expect(panel).not.toMatch(/useEffect|useState|useRef/);
     expect(panel).toContain('ReportPayloadGroup');
     expect(panel).not.toContain('const settlementMovement =');
   });
@@ -22,7 +25,9 @@ describe('owner statement in-app vertical slice contract', () => {
     expect(panel).toContain('supplementalGroups.map');
   });
 
-  it('wires the same owner/period/property scope used by print into the in-app panel', () => {
+  it('wires the same prepared owner payload and scope into the panel and document actions', () => {
+    expect(section).toContain('fullStatement={ownerReportPayload}');
+    expect(section).toContain('payload: ownerReportPayload');
     expect(section).toContain('period={{ from: filters?.from, to: filters?.to, propertyId: filters?.propertyId }}');
   });
 });
