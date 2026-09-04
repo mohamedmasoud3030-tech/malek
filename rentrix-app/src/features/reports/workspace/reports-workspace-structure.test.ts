@@ -43,10 +43,18 @@ describe('WP-C C.1 — workspace is split by responsibility', () => {
     expect(shellSource).toContain('data-report-summary-layer');
     expect(shellSource).not.toContain('FinanceKpiGrid');
     expect(shellSource).not.toContain('SectionTabs');
+    expect(shellSource).toContain('hideWorkspaceChrome');
+    expect(shellSource).not.toContain('hideWorkspaceNavigation');
 
     const rootSource = read(root);
     expect(rootSource).not.toContain('ReportsSectionTabs');
     expect(rootSource).not.toContain('SectionTabs');
+    expect(rootSource).toContain('hideWorkspaceChrome');
+    expect(rootSource).not.toContain('hideWorkspaceNavigation');
+
+    const premiumPage = read(resolve(reportsDir, 'premium/report-product-page.tsx'));
+    expect(premiumPage).toContain('hideWorkspaceChrome');
+    expect(premiumPage).not.toContain('hideWorkspaceNavigation');
 
     const panelSource = read(panel);
     expect(panelSource).toContain('AccountingReportsAdapter');
