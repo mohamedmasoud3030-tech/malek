@@ -74,25 +74,24 @@ const mockSnapshot = {
   period: { dateFrom: '2026-06-01', dateTo: '2026-06-28', asOf: '2026-06-28', month: 6, year: 2026 },
   portfolio: { properties: 2, units: 2 },
   occupancy: { occupiedUnits: 1, vacantUnits: 1, occupancyRate: 50 },
-  contracts: { active: 1, expiring30: 1, expiring60: 1, expiring90: 1 },
-  billing: { invoicedAmount: 15000, invoicesCount: 10, invoicesTotalCount: 42 },
-  collections: { collectedAmount: 12000, paymentsCount: 8, outstandingAmount: 3000, collectionRate: 80 },
-  expenses: { totalAmount: 1500, count: 3 },
+  contracts: { active: 1 },
+  billing: { invoicedAmount: 15000, invoicesTotalCount: 42 },
+  collections: { collectedAmount: 12000, outstandingAmount: 3000, collectionRate: 80 },
+  expenses: { totalAmount: 1500 },
   netCash: 10500,
   arrears: {
-    totalOverdue: 3000, overdueCount: 2, averageDaysOverdue: 18, over90Amount: 0, over90Count: 0, totalOutstanding: 3000,
+    totalOverdue: 3000, overdueCount: 2, averageDaysOverdue: 18, over90Count: 0,
     buckets: {
       current: { total: 0, count: 0 }, days_1_30: { total: 1500, count: 1 }, days_31_60: { total: 1500, count: 1 },
       days_61_90: { total: 0, count: 0 }, days_90_plus: { total: 0, count: 0 },
     },
   },
-  ownerFunds: { netPayable: 25.5, settlementsDraft: 1, settlementsApproved: 1 },
-  maintenance: { open: 1, inProgress: 0, urgentOpen: 1 },
-  exceptions: { unmatchedBankLines: 2, pendingSettlements: 1 },
+  ownerFunds: { settlementsDraft: 1, settlementsApproved: 1 },
+  maintenance: { urgentOpen: 1 },
+  exceptions: { unmatchedBankLines: 2 },
   queues: {
     expiringContracts: [{ id: 'contract-1', reference: 'CON-1', endDate: '2026-07-08', daysRemaining: 10, tenantName: 'سالم الكعبي', propertyTitle: 'برج الياسمين', unitNumber: '1' }],
     overdueInvoices: [{ invoiceId: 'invoice-1', reference: 'INV-1', dueDate: '2026-06-10', daysOverdue: 18, remainingAmount: 1500, tenantName: 'أحمد الفارسي', propertyTitle: 'برج الخليج', unitNumber: '5' }],
-    urgentMaintenance: [{ id: 'maintenance-1', title: 'تسرب مياه', priority: 'urgent', propertyTitle: 'برج الخليج', unitNumber: '5' }],
   },
 };
 
