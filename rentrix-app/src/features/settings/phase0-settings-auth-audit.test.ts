@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { canAccess, getAuthorizationContextFromUser } from '@/features/auth/permissions';
+import { appPermissions, canAccess, getAuthorizationContextFromUser } from '@/features/auth/permissions';
 
 const repoRoot = resolve(__dirname, '../../../..');
 
@@ -27,10 +27,13 @@ describe('Phase 0 Settings + Auth audit invariants', () => {
     const manager = getAuthorizationContextFromUser({ id: 'manager-1', email: 'manager@example.com', app_metadata: { user_role: 'MANAGER' } });
     const user = getAuthorizationContextFromUser({ id: 'user-1', email: 'user@example.com', app_metadata: { user_role: 'USER' } });
 
-    expect(canAccess(admin, 'settings.manage')).toBe(true);
-    expect(canAccess(manager, 'settings.manage')).toBe(false);
-    expect(canAccess(manager, 'permission_requests.review')).toBe(true);
+    // company.settings.manage is the canonical settings authority. The legacy
+    // settings.manage alias was retired: it had no route guard, navigation gate,
+    // feature consumer, server reference or app_permission_catalog row.
+    expect(canAccess(admin, 'company.settings.manage')).toBe(true);
     expect(canAccess(manager, 'company.settings.manage')).toBe(false);
-    expect(canAccess(user, 'settings.manage')).toBe(false);
+    expect(canAccess(manager, 'permission_requests.review')).toBe(true);
+    expect(canAccess(user, 'company.settings.manage')).toBe(false);
+    expect(appPermissions as readonly string[]).not.toContain('settings.manage');
   });
 });

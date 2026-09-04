@@ -12,6 +12,8 @@ const presentationPath = resolve(import.meta.dirname, './billing-readiness-prese
 const presentation = readFileSync(presentationPath, 'utf8');
 const workspacePath = resolve(import.meta.dirname, '../components/invoice-workspace-section.tsx');
 const workspace = readFileSync(workspacePath, 'utf8');
+const boundaryPath = resolve(import.meta.dirname, '../tax-authority/tax-readiness-boundary.ts');
+const boundary = readFileSync(boundaryPath, 'utf8');
 
 describe('billing readiness service — FOM-007 remediation', () => {
   it('lists active contracts with explicit billing policy via pagination contract', () => {
@@ -68,8 +70,24 @@ describe('billing readiness service — FOM-007 remediation', () => {
     expect(schedule).toContain('AGREEMENT_MISSING');
     expect(schedule).toContain('MODEL_SNAPSHOT_MISSING');
     expect(service).toContain('TAX_PROFILE_MISSING');
-    expect(service).toContain('resolve_active_tax_profile');
+    expect(service).toContain('resolveTaxAuthorityReadiness');
     expect(service).toContain('BLOCKED');
+  });
+
+  it('reaches the tax authority only through the governed browser boundary', () => {
+    // resolve_active_tax_profile / resolve_active_fee_tax_treatment are
+    // service_role-only (migration 20260901000020). A direct browser call can
+    // only ever fail with SQLSTATE 42501, so readiness must go through the
+    // purpose-specific wrapper public.resolve_tax_authority_readiness.
+    expect(service).not.toContain('resolve_active_tax_profile');
+    expect(service).not.toContain('resolve_active_fee_tax_treatment');
+    expect(service).toContain('@/features/financials/tax-authority/tax-readiness-boundary');
+    expect(boundary).toContain("rpc('resolve_tax_authority_readiness'");
+    // The wrapper is the single browser path: it never accepts a company id and
+    // never re-exposes the internal resolver.
+    expect(boundary).not.toMatch(/p_company_id\s*:/);
+    expect(boundary).not.toContain("rpc('resolve_active_tax_profile'");
+    expect(boundary).not.toContain("rpc('resolve_active_fee_tax_treatment'");
   });
 
   it('tax check fails closed with CHECK_FAILED, never READY on error (Defect A3)', () => {
@@ -108,16 +126,18 @@ describe('billing readiness service — FOM-007 remediation', () => {
     expect(presentation).not.toContain("'RECOVERED'");
   });
 
-  it('bounds query fan-out: one batched invoice read and one tax probe per distinct issue date', () => {
+  it('bounds query fan-out: one batched invoice read and one batched tax readiness call', () => {
     // The readiness surface must not fan out one invoice-existence query per
     // contract (the historical billing-readiness defect). Invoice existence
     // resolves through the canonical batched-read primitive instead.
     expect(service).toContain('fetchAllRowsInBatches');
     expect(service.match(/from\('invoices'\)/g)?.length ?? 0).toBe(1);
-    // The tax authority RPC is invoked from exactly one site, deduplicated
-    // per distinct issue date (a Set), never once per contract row.
-    expect(service.match(/rpc\('resolve_active_tax_profile'/g)?.length ?? 0).toBe(1);
+    // The governed tax readiness boundary is invoked from exactly one site and
+    // carries every distinct issue date (a Set) in a single batched call, never
+    // one round trip per contract row or per cycle.
+    expect(service.match(/resolveTaxAuthorityReadiness\(/g)?.length ?? 0).toBe(1);
     expect(service).toContain("new Set(");
+    expect(boundary.match(/rpc\('resolve_tax_authority_readiness'/g)?.length ?? 0).toBe(1);
     // No per-contract sequential await loop may reappear.
     expect(service).not.toContain('for (const c of contracts)');
     // Deterministic invoice representative: lowest id per (contract, period).

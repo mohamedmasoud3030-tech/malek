@@ -10,22 +10,41 @@ const workspacePath = resolve(import.meta.dirname, './tax-profile-workspace.tsx'
 const workspace = readFileSync(workspacePath, 'utf8');
 const readinessSectionPath = resolve(import.meta.dirname, './finance-readiness-section.tsx');
 const readinessSection = readFileSync(readinessSectionPath, 'utf8');
+const boundaryPath = resolve(import.meta.dirname, './tax-readiness-boundary.ts');
+const boundary = readFileSync(boundaryPath, 'utf8');
 
 describe('tax authority service — governed boundaries', () => {
-  it('uses authoritative RPCs for tax profiles, not raw table writes', () => {
+  it('uses authoritative RPCs for tax profile commands, not raw table writes', () => {
     expect(service).toContain('create_tax_profile_atomic');
     expect(service).toContain('approve_tax_profile_atomic');
-    expect(service).toContain('resolve_active_tax_profile');
     expect(service).not.toMatch(/supabase\.from\(['\"]company_tax_profiles['\"]\)\.insert/);
     expect(service).not.toMatch(/supabase\.from\(['\"]company_tax_profiles['\"]\)\.update/);
     expect(service).not.toMatch(/supabase\.from\(['\"]company_tax_profiles['\"]\)\.delete/);
   });
 
-  it('uses authoritative RPCs for fee tax treatments', () => {
+  it('uses authoritative RPCs for fee tax treatment commands', () => {
     expect(service).toContain('create_fee_tax_treatment_atomic');
     expect(service).toContain('approve_fee_tax_treatment_atomic');
-    expect(service).toContain('resolve_active_fee_tax_treatment');
     expect(service).not.toMatch(/supabase\.from\(['\"]company_fee_tax_treatments['\"]\)\.insert/);
+  });
+
+  it('never calls the service_role-only tax resolvers from the browser', () => {
+    // resolve_active_tax_profile / resolve_active_fee_tax_treatment are internal
+    // helpers (migration 20260901000020 revoked browser EXECUTE and aborts if it
+    // is re-opened). The dead getActiveTaxProfile / getActiveTaxProfileForCompany
+    // / getActiveFeeTaxTreatment helpers were removed; tax readiness now flows
+    // through the single governed boundary module.
+    for (const source of [service, readiness, boundary]) {
+      expect(source).not.toMatch(/rpc\(\s*'resolve_active_tax_profile'/);
+      expect(source).not.toMatch(/rpc\(\s*'resolve_active_fee_tax_treatment'/);
+    }
+    expect(service).not.toContain('getActiveTaxProfile');
+    expect(service).not.toContain('getActiveFeeTaxTreatment');
+    expect(boundary).toContain("rpc('resolve_tax_authority_readiness'");
+    // The governed boundary takes dates only: company scope is derived from the
+    // authenticated caller, never accepted as an argument.
+    expect(boundary).not.toMatch(/p_company_id\s*:/);
+    expect(readiness).toContain('resolveTaxAuthorityReadiness');
   });
 
   it('never reintroduces company_settings.vat_rate as invoice authority', () => {

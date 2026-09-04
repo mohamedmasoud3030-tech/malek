@@ -72,6 +72,10 @@ const DISPLAY_NAME_ALLOWLIST = new Map<string, string>([
     'Audits files by their repository path (rentrix-app/...), which is unchanged.',
   ],
   [
+    'src/features/auth/permission-catalog-authority.test.ts',
+    'Audits the permission catalog and its consumers by their repository path (rentrix-app/...), which is unchanged.',
+  ],
+  [
     'src/features/owners/components/OwnerSettlementWorkspace.test.tsx',
     'Fixture company name for an owner settlement snapshot.',
   ],

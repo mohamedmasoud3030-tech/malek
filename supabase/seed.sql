@@ -3,60 +3,15 @@
 -- user, contract, invoice, payment, receipt, journal or other disposable demo
 -- transaction. Demo transactions are created through the authoritative runtime
 -- RPC paths by the existing isolated single-office seed runner.
+--
+-- This file declares NO authorization authority. public.app_permission_catalog
+-- is owned exclusively by the migration chain (migrations 00005 / 00039 /
+-- 00044 / 00051 / 00065 and 20260904000001_authoritative_permission_catalog_parity).
+-- Seeding the catalog here ran after the chain, so it silently reverted
+-- migration 00051's requestable=false decision and left 39 permission codes
+-- resolvable only in seeded environments.
 
 begin;
-
-insert into public.app_permission_catalog
-  (permission, label_ar, admin_only, requestable)
-values
-  ('app.dashboard.view','عرض لوحة التحكم',false,false),
-  ('arrears.view','عرض المتأخرات',false,true),
-  ('audit.view','عرض سجل التدقيق',true,true),
-  ('auth.password.change','تغيير كلمة المرور',false,false),
-  ('automation.view','عرض الأتمتة',false,true),
-  ('commissions.view','عرض العمولات',false,true),
-  ('communication.view','عرض التواصل والمتابعات',false,true),
-  ('company.settings.manage','إدارة إعدادات الشركة',true,true),
-  ('contracts.view','عرض العقود والمستأجرين',false,true),
-  ('contracts.write','إضافة وتعديل العقود',false,true),
-  ('cost_centers.manage','إدارة مراكز التكلفة',false,true),
-  ('documents.write','رفع واستبدال وأرشفة المستندات',false,true),
-  ('expenses.view','عرض المصروفات',false,true),
-  ('expenses.write','إضافة وتعديل المصروفات',false,true),
-  ('financial.workspace.view','عرض المالية والتحصيل',false,true),
-  ('financial.bank_reconciliation.match','تنفيذ المطابقة البنكية',false,true),
-  ('financial.bank_reconciliation.view','عرض المطابقة البنكية',false,true),
-  ('financial.deposits.view','عرض التأمينات',false,true),
-  ('financial.fixed_monthly_accruals.execute','تنفيذ الاستحقاقات اليومية للعمولة الشهرية',false,true),
-  ('financial.fixed_monthly_accruals.reverse','عكس استحقاق يومي للعمولة الشهرية',false,true),
-  ('financial.fixed_monthly_accruals.view','عرض الاستحقاقات اليومية للعمولة الشهرية',false,true),
-  ('financial.invoices.export','تصدير الفواتير',false,true),
-  ('financial.invoices.generate','إنشاء الفواتير',false,true),
-  ('financial.owner_settlements.approve','اعتماد تسويات الملاك',true,true),
-  ('financial.owner_settlements.pay','صرف تسويات الملاك',true,true),
-  ('financial.owner_settlements.view','عرض تسويات الملاك',false,true),
-  ('financial.payments.create','تسجيل التحصيلات',false,true),
-  ('financial.receipts.void','إلغاء الإيصالات',true,true),
-  ('financial.reports.export','تصدير التقارير المالية',false,true),
-  ('integrity.view','عرض سلامة البيانات',true,true),
-  ('lands.view','عرض الأراضي',false,true),
-  ('leads.view','عرض العملاء المحتملين',false,true),
-  ('maintenance.view','عرض الصيانة',false,true),
-  ('maintenance.write','إنشاء ومتابعة وتنفيذ الصيانة',false,true),
-  ('owners.detail.view','عرض ملف المالك',false,true),
-  ('owners.hub.view','عرض سجل الملاك',false,true),
-  ('permission_requests.review','مراجعة طلبات الصلاحية',false,false),
-  ('properties.view','عرض العقارات والوحدات',false,true),
-  ('properties.write','إضافة وتعديل العقارات',false,true),
-  ('service_providers.view','عرض مزودي الخدمات',false,true),
-  ('service_providers.write','إضافة وتعديل وأرشفة مزودي الخدمات',false,true),
-  ('settings.manage','إدارة الإعدادات القديمة',true,true),
-  ('system.view','عرض إعدادات النظام والحوكمة',true,true),
-  ('users.manage','إدارة المستخدمين والأدوار',true,true)
-on conflict (permission) do update set
-  label_ar=excluded.label_ar,
-  admin_only=excluded.admin_only,
-  requestable=excluded.requestable;
 
 insert into public.tax_code_catalog
   (code, name_ar, name_en, description, is_active)

@@ -1,5 +1,18 @@
 import { supabase } from '@/lib/supabase';
 import { getTodayLocalDateString } from '@/features/financials/financials-date-utils';
+import {
+  FEE_TAX_TREATMENT_MISSING,
+  TAX_PROFILE_MISSING,
+  TAX_READINESS_READY,
+  TAX_SCOPE_FIXED_MONTHLY,
+  TAX_SCOPE_RATE_MANAGEMENT_FEE,
+  TAX_SCOPE_RENT,
+  indexTaxAuthorityReadiness,
+  resolveTaxAuthorityReadiness,
+  type TaxAuthorityFeeScope,
+  type TaxAuthorityReadinessStatus,
+  type TaxAuthorityScope,
+} from './tax-readiness-boundary';
 
 export type ReadinessState = 'READY' | 'MISSING' | 'BLOCKED' | 'DRAFT_NEEDS_APPROVAL';
 
@@ -26,7 +39,7 @@ export type TaxReadiness = {
 };
 
 export type FeeTaxReadiness = {
-  feeKind: 'RATE_MANAGEMENT_FEE' | 'FIXED_MONTHLY';
+  feeKind: TaxAuthorityFeeScope;
   state: ReadinessState;
   activeTreatment: {
     id: string;
@@ -59,156 +72,194 @@ export type FinanceReadiness = {
   paymentMethods: { state: ReadinessState };
 };
 
-async function tryResolveActiveTaxProfile(companyId: string, date: string) {
-  const { data, error } = await supabase.rpc('resolve_active_tax_profile', {
-    p_company_id: companyId,
-    p_effective_date: date,
-  });
-  if (error) {
-    if (error.message.includes('TAX_PROFILE_MISSING')) {
-      return { active: null, errorCode: 'TAX_PROFILE_MISSING' as const };
-    }
-    throw error;
-  }
-  const row = Array.isArray(data) ? (data[0] as Record<string, unknown>) : (data as Record<string, unknown>);
-  return { active: (row as never) ?? null, errorCode: null };
+/**
+ * READY / MISSING authority for every tax scope, resolved in one governed
+ * round trip through public.resolve_tax_authority_readiness. The internal
+ * resolvers (resolve_active_tax_profile / resolve_active_fee_tax_treatment) are
+ * service_role-only and are never called from the browser.
+ */
+async function loadTaxAuthorityReadiness(
+  today: string,
+): Promise<Readonly<Record<string, TaxAuthorityReadinessStatus>>> {
+  const readiness = indexTaxAuthorityReadiness(await resolveTaxAuthorityReadiness([today]));
+  return readiness.get(today) ?? {};
 }
 
-async function tryResolveActiveFeeTax(companyId: string, feeKind: string, date: string) {
-  const { data, error } = await supabase.rpc('resolve_active_fee_tax_treatment', {
-    p_company_id: companyId,
-    p_fee_kind: feeKind,
-    p_effective_date: date,
-  });
-  if (error) {
-    if (error.message.includes('FEE_TAX_TREATMENT_MISSING')) {
-      return { active: null, errorCode: 'FEE_TAX_TREATMENT_MISSING' as const };
-    }
-    throw error;
-  }
-  const row = Array.isArray(data) ? (data[0] as Record<string, unknown>) : (data as Record<string, unknown>);
-  return { active: (row as never) ?? null, errorCode: null };
+/**
+ * Presentation detail for a scope the authority already reported as READY.
+ * The rows are read under the existing company RLS policy
+ * (company_tax_profiles_company_read / company_fee_tax_treatments_company_read),
+ * so this never widens what the caller may see; it only supplies the rate and
+ * window the readiness card displays. The READY/MISSING decision itself always
+ * comes from the governed resolver above.
+ */
+async function readCoveringTaxProfile(companyId: string, date: string) {
+  const { data } = await supabase
+    .from('company_tax_profiles')
+    .select('id, tax_code, tax_rate, effective_from, effective_to, version_no, status')
+    .eq('company_id', companyId)
+    .in('status', ['APPROVED', 'ACTIVE', 'SUPERSEDED'])
+    .lte('effective_from', date)
+    .or(`effective_to.is.null,effective_to.gte.${date}`)
+    .order('effective_from', { ascending: false })
+    .order('version_no', { ascending: false })
+    .limit(1);
+  const row = data?.[0] as Record<string, unknown> | undefined;
+  if (!row) return null;
+  return {
+    id: String(row.id ?? ''),
+    tax_code: String(row.tax_code ?? ''),
+    tax_rate: Number(row.tax_rate ?? 0),
+    effective_from: String(row.effective_from ?? ''),
+    effective_to: (row.effective_to as string) ?? null,
+    version_no: Number(row.version_no ?? 0),
+    status: String(row.status ?? 'ACTIVE'),
+  };
+}
+
+async function readCoveringFeeTaxTreatment(companyId: string, feeKind: TaxAuthorityFeeScope, date: string) {
+  const { data } = await supabase
+    .from('company_fee_tax_treatments')
+    .select('id, tax_code, tax_rate, effective_from, effective_to, version_no, status')
+    .eq('company_id', companyId)
+    .eq('fee_kind', feeKind)
+    .eq('status', 'ACTIVE')
+    .lte('effective_from', date)
+    .or(`effective_to.is.null,effective_to.gte.${date}`)
+    .order('effective_from', { ascending: false })
+    .order('version_no', { ascending: false })
+    .limit(1);
+  const row = data?.[0] as Record<string, unknown> | undefined;
+  if (!row) return null;
+  return {
+    id: String(row.id ?? ''),
+    tax_code: String(row.tax_code ?? ''),
+    tax_rate: Number(row.tax_rate ?? 0),
+    effective_from: String(row.effective_from ?? ''),
+    effective_to: (row.effective_to as string) ?? null,
+    version_no: Number(row.version_no ?? 0),
+    status: String(row.status ?? 'ACTIVE'),
+  };
+}
+
+async function readLatestTaxDraft(companyId: string) {
+  const { data } = await supabase
+    .from('company_tax_profiles')
+    .select('id, tax_code, tax_rate, effective_from, status, created_by')
+    .eq('company_id', companyId)
+    .eq('status', 'DRAFT')
+    .order('created_at', { ascending: false })
+    .limit(1);
+  const row = data?.[0] as Record<string, unknown> | undefined;
+  if (!row) return null;
+  return {
+    id: String(row.id ?? ''),
+    tax_code: String(row.tax_code ?? ''),
+    tax_rate: Number(row.tax_rate ?? 0),
+    effective_from: String(row.effective_from ?? ''),
+    status: String(row.status ?? 'DRAFT'),
+    created_by: String(row.created_by ?? ''),
+  };
+}
+
+async function readLatestFeeTaxDraft(companyId: string, feeKind: TaxAuthorityFeeScope) {
+  const { data } = await supabase
+    .from('company_fee_tax_treatments')
+    .select('id, tax_code, tax_rate, effective_from, status, created_by')
+    .eq('company_id', companyId)
+    .eq('fee_kind', feeKind)
+    .eq('status', 'DRAFT')
+    .order('created_at', { ascending: false })
+    .limit(1);
+  const row = data?.[0] as Record<string, unknown> | undefined;
+  if (!row) return null;
+  return {
+    id: String(row.id ?? ''),
+    tax_code: String(row.tax_code ?? ''),
+    tax_rate: Number(row.tax_rate ?? 0),
+    effective_from: String(row.effective_from ?? ''),
+    status: String(row.status ?? 'DRAFT'),
+    created_by: String(row.created_by ?? ''),
+  };
 }
 
 export async function getFinanceReadiness(companyId: string): Promise<FinanceReadiness> {
   const today = getTodayLocalDateString();
   const checkedAt = new Date().toISOString();
 
-  // Rent tax
-  let rentTax: TaxReadiness;
+  // One governed readiness resolution covers rent tax and both fee tax scopes.
+  // A failure to reach the authority blocks every tax card: readiness is never
+  // inferred from an authorization or transport error.
+  let scopes: Readonly<Record<string, TaxAuthorityReadinessStatus>>;
+  let readinessError: string | null = null;
   try {
-    const { active, errorCode } = await tryResolveActiveTaxProfile(companyId, today);
-    if (active) {
-      const a = active as Record<string, unknown>;
-      rentTax = {
-        state: 'READY',
-        activeProfile: {
-          id: String((a.profile_id as string) ?? (a.id as string) ?? ''),
-          tax_code: String(a.tax_code ?? ''),
-          tax_rate: Number(a.tax_rate ?? 0),
-          effective_from: String(a.effective_from ?? ''),
-          effective_to: (a.effective_to as string) ?? null,
-          version_no: Number((a.version_no as number) ?? 0),
-          status: String((a.status as string) ?? 'ACTIVE'),
-        },
-        latestDraft: null,
-        errorCode: null,
-      };
-    } else {
-      const { data: drafts } = await supabase
-        .from('company_tax_profiles')
-        .select('id, tax_code, tax_rate, effective_from, status, created_by')
-        .eq('company_id', companyId)
-        .eq('status', 'DRAFT')
-        .order('created_at', { ascending: false })
-        .limit(1);
-      const latestDraft = drafts && (drafts[0] as Record<string, unknown>) ? (drafts[0] as Record<string, unknown>) : null;
-      rentTax = {
-        state: latestDraft ? 'DRAFT_NEEDS_APPROVAL' : 'MISSING',
-        activeProfile: null,
-        latestDraft: latestDraft
-          ? {
-              id: String(latestDraft.id as string),
-              tax_code: String(latestDraft.tax_code as string),
-              tax_rate: Number(latestDraft.tax_rate as number),
-              effective_from: String(latestDraft.effective_from as string),
-              status: String(latestDraft.status as string),
-              created_by: String(latestDraft.created_by as string),
-            }
-          : null,
-        errorCode: errorCode as string | null,
-      };
-    }
+    scopes = await loadTaxAuthorityReadiness(today);
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
+    scopes = {};
+    readinessError = e instanceof Error ? e.message : String(e);
+  }
+
+  let rentTax: TaxReadiness;
+  const rentStatus = scopes[TAX_SCOPE_RENT];
+  if (readinessError !== null || rentStatus === undefined) {
     rentTax = {
       state: 'BLOCKED',
       activeProfile: null,
       latestDraft: null,
-      errorCode: msg,
+      errorCode: readinessError ?? TAX_PROFILE_MISSING,
+    };
+  } else if (rentStatus === TAX_READINESS_READY) {
+    rentTax = {
+      state: 'READY',
+      activeProfile: await readCoveringTaxProfile(companyId, today),
+      latestDraft: null,
+      errorCode: null,
+    };
+  } else {
+    const latestDraft = await readLatestTaxDraft(companyId);
+    rentTax = {
+      state: latestDraft ? 'DRAFT_NEEDS_APPROVAL' : 'MISSING',
+      activeProfile: null,
+      latestDraft,
+      errorCode: TAX_PROFILE_MISSING,
     };
   }
 
-  async function getFeeReadiness(feeKind: 'RATE_MANAGEMENT_FEE' | 'FIXED_MONTHLY'): Promise<FeeTaxReadiness> {
-    try {
-      const { active, errorCode } = await tryResolveActiveFeeTax(companyId, feeKind, today);
-      if (active) {
-        const a = active as Record<string, unknown>;
-        return {
-          feeKind,
-          state: 'READY',
-          activeTreatment: {
-            id: String((a.treatment_id as string) ?? (a.id as string) ?? ''),
-            tax_code: String(a.tax_code ?? ''),
-            tax_rate: Number(a.tax_rate ?? 0),
-            effective_from: String(a.effective_from ?? ''),
-            effective_to: (a.effective_to as string) ?? null,
-            version_no: Number((a.version_no as number) ?? 0),
-            status: String((a.status as string) ?? 'ACTIVE'),
-          },
-          latestDraft: null,
-          errorCode: null,
-        };
-      } else {
-        const { data: drafts } = await supabase
-          .from('company_fee_tax_treatments')
-          .select('id, tax_code, tax_rate, effective_from, status, created_by')
-          .eq('company_id', companyId)
-          .eq('fee_kind', feeKind)
-          .eq('status', 'DRAFT')
-          .order('created_at', { ascending: false })
-          .limit(1);
-        const latestDraft = drafts && (drafts[0] as Record<string, unknown>) ? (drafts[0] as Record<string, unknown>) : null;
-        return {
-          feeKind,
-          state: latestDraft ? 'DRAFT_NEEDS_APPROVAL' : 'MISSING',
-          activeTreatment: null,
-          latestDraft: latestDraft
-            ? {
-                id: String(latestDraft.id as string),
-                tax_code: String(latestDraft.tax_code as string),
-                tax_rate: Number(latestDraft.tax_rate as number),
-                effective_from: String(latestDraft.effective_from as string),
-                status: String(latestDraft.status as string),
-                created_by: String(latestDraft.created_by as string),
-              }
-            : null,
-          errorCode: errorCode as string | null,
-        };
-      }
-    } catch (e) {
+  async function getFeeReadiness(
+    feeKind: TaxAuthorityFeeScope,
+    scope: TaxAuthorityScope,
+  ): Promise<FeeTaxReadiness> {
+    const status = scopes[scope];
+    if (readinessError !== null || status === undefined) {
       return {
         feeKind,
         state: 'BLOCKED',
         activeTreatment: null,
         latestDraft: null,
-        errorCode: e instanceof Error ? e.message : String(e),
+        errorCode: readinessError ?? FEE_TAX_TREATMENT_MISSING,
       };
     }
+    if (status === TAX_READINESS_READY) {
+      return {
+        feeKind,
+        state: 'READY',
+        activeTreatment: await readCoveringFeeTaxTreatment(companyId, feeKind, today),
+        latestDraft: null,
+        errorCode: null,
+      };
+    }
+    const latestDraft = await readLatestFeeTaxDraft(companyId, feeKind);
+    return {
+      feeKind,
+      state: latestDraft ? 'DRAFT_NEEDS_APPROVAL' : 'MISSING',
+      activeTreatment: null,
+      latestDraft,
+      errorCode: FEE_TAX_TREATMENT_MISSING,
+    };
   }
 
-  const rateFeeTax = await getFeeReadiness('RATE_MANAGEMENT_FEE');
-  const fixedFeeTax = await getFeeReadiness('FIXED_MONTHLY');
+  const rateFeeTax = await getFeeReadiness('RATE_MANAGEMENT_FEE', TAX_SCOPE_RATE_MANAGEMENT_FEE);
+  const fixedFeeTax = await getFeeReadiness('FIXED_MONTHLY', TAX_SCOPE_FIXED_MONTHLY);
 
   // Accounting period readiness
   let accountingPeriod: FinanceReadiness['accountingPeriod'];

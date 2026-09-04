@@ -5,10 +5,11 @@
  *     one round trip per contract;
  *   - invoices are keyed per (contract, billing period) so an invoice for a
  *     different period never counts as this period's invoice;
- *   - the tax authority probe is deduplicated to ONE call per distinct issue
- *     date and is never called for blocked obligations;
+ *   - the tax authority is probed through ONE batched governed readiness call
+ *     carrying every distinct issue date, and is never called for blocked
+ *     obligations;
  *   - fail-closed tax semantics stay intact (TAX_PROFILE_MISSING → BLOCKED,
- *     any other failure → CHECK_FAILED);
+ *     an unanswered date or any boundary failure → CHECK_FAILED);
  *   - zero active contracts → zero database round trips after the contract
  *     scan itself.
  */
@@ -60,6 +61,31 @@ function contract(overrides: Partial<ContractRow> & { id: string }): ContractRow
 
 const COMPANY = 'company-under-test';
 
+const TAX_READINESS_RPC = 'resolve_tax_authority_readiness';
+
+/**
+ * The governed boundary answers with one row per (date, tax scope). Billing
+ * readiness only consumes the RENT scope; the fee scopes are returned too so
+ * the mock matches the real wrapper contract.
+ */
+function mockTaxReadiness(rentStatus: 'READY' | 'TAX_PROFILE_MISSING', options?: { omitRentRow?: boolean }) {
+  supabaseMock.rpc.mockImplementation((name: string, args?: { p_effective_dates?: string[] }) => {
+    if (name !== TAX_READINESS_RPC) return Promise.resolve({ data: [], error: null });
+    const dates = args?.p_effective_dates ?? [];
+    const data = dates.flatMap((date) => {
+      const rows: Record<string, string>[] = [
+        { effective_date: date, tax_scope: 'RATE_MANAGEMENT_FEE', readiness_status: 'FEE_TAX_TREATMENT_MISSING' },
+        { effective_date: date, tax_scope: 'FIXED_MONTHLY', readiness_status: 'FEE_TAX_TREATMENT_MISSING' },
+      ];
+      if (!options?.omitRentRow) {
+        rows.unshift({ effective_date: date, tax_scope: 'RENT', readiness_status: rentStatus });
+      }
+      return rows;
+    });
+    return Promise.resolve({ data, error: null });
+  });
+}
+
 function currentPeriodStart(): string {
   const period = getBillingPeriodForCycle('monthly', new Date());
   return formatLocalDate(period.start);
@@ -71,7 +97,7 @@ async function readinessWith(contracts: ContractRow[], invoices: unknown[]) {
   supabaseMock.from.mockImplementation((table: string) =>
     table === 'contracts' ? contractsChain : invoicesChain,
   );
-  supabaseMock.rpc.mockResolvedValue({ data: [{ id: 'tax-profile' }], error: null });
+  mockTaxReadiness('READY');
   const { getBillingReadiness } = await import('./billing-readiness-service');
   const obligations = await getBillingReadiness(COMPANY);
   return { obligations, contractsChain, invoicesChain };
@@ -112,7 +138,7 @@ describe('billing readiness — batched fan-out contract', () => {
     expect(byId.get('c3')?.status).toBe('DUE');
   });
 
-  it('probes the tax authority once per distinct issue date and never for blocked obligations', async () => {
+  it('probes the tax authority in one batched governed call and never for blocked obligations', async () => {
     const { obligations } = await readinessWith(
       [
         // same cycle + same billing day → same issue date → one probe shared
@@ -127,40 +153,53 @@ describe('billing readiness — batched fan-out contract', () => {
       [],
     );
 
-    const dates = supabaseMock.rpc.mock.calls
-      .filter(([name]) => name === 'resolve_active_tax_profile')
-      .map(([, args]) => args.p_effective_date as string);
+    const taxCalls = supabaseMock.rpc.mock.calls.filter(([name]) => name === TAX_READINESS_RPC);
+    // One batched round trip, not one call per cycle.
+    expect(taxCalls).toHaveLength(1);
+    const dates = (taxCalls[0]?.[1] as { p_effective_dates: string[] }).p_effective_dates;
     expect(dates).toHaveLength(2);
     expect(new Set(dates).size).toBe(2);
+    // The internal, service_role-only resolver is never called from the browser.
+    expect(
+      supabaseMock.rpc.mock.calls.filter(([name]) =>
+        name === 'resolve_active_tax_profile' || name === 'resolve_active_fee_tax_treatment'),
+    ).toHaveLength(0);
 
     const byId = new Map(obligations.map((o) => [o.contract_id, o]));
     expect(byId.get('c4')?.status).toBe('BLOCKED');
     expect(byId.get('c4')?.blocked_reason).toContain('AGREEMENT_MISSING');
   });
 
-  it('keeps fail-closed tax semantics: missing profile → BLOCKED, other error → CHECK_FAILED', async () => {
+  it('keeps fail-closed tax semantics: missing profile → BLOCKED, boundary failure → CHECK_FAILED', async () => {
     const contractsChain = makeChain({ data: [contract({ id: 'c1' })], error: null });
     const invoicesChain = makeChain({ data: [], error: null });
     supabaseMock.from.mockImplementation((table: string) =>
       table === 'contracts' ? contractsChain : invoicesChain,
     );
-    supabaseMock.rpc.mockResolvedValue({
-      data: null,
-      error: { message: 'TAX_PROFILE_MISSING: no active profile' },
-    });
+    // The governed wrapper reports a missing profile as a status row, not as an
+    // exception, so TAX_PROFILE_MISSING survives the boundary change.
+    mockTaxReadiness('TAX_PROFILE_MISSING');
     vi.resetModules();
     const { getBillingReadiness } = await import('./billing-readiness-service');
     const missing = await getBillingReadiness(COMPANY);
     expect(missing[0]?.status).toBe('BLOCKED');
     expect(missing[0]?.blocked_reason).toContain('TAX_PROFILE_MISSING');
 
+    // An authorization/transport failure at the boundary must never read as
+    // "tax configured".
     supabaseMock.rpc.mockResolvedValue({
       data: null,
-      error: { message: 'connection reset' },
+      error: { message: 'permission denied for function resolve_tax_authority_readiness' },
     });
     const failed = await getBillingReadiness(COMPANY);
     expect(failed[0]?.status).toBe('CHECK_FAILED');
     expect(failed[0]?.blocked_reason).toContain('TAX_CHECK_FAILED');
+
+    // A date the authority did not answer for fails closed too.
+    mockTaxReadiness('READY', { omitRentRow: true });
+    const unanswered = await getBillingReadiness(COMPANY);
+    expect(unanswered[0]?.status).toBe('CHECK_FAILED');
+    expect(unanswered[0]?.blocked_reason).toContain('TAX_CHECK_FAILED');
   });
 
   it('skips the invoice batch read entirely when there are no active contracts', async () => {

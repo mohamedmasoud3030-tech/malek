@@ -4,6 +4,19 @@ export const authorizationRoles = ['ADMIN', 'MANAGER', 'ACCOUNTANT', 'OPERATIONS
 
 export type AuthorizationRole = (typeof authorizationRoles)[number];
 
+/**
+ * Canonical application permission vocabulary.
+ *
+ * This list is NOT an authorization authority — it is the client-side spelling
+ * of `public.app_permission_catalog`, which is the single authority. Every code
+ * below must exist in the migration-backed catalog; a code that only exists
+ * here (or only in `supabase/seed.sql`) fails closed server-side for every role
+ * including ADMIN. Parity is regression-locked by
+ * `permission-catalog-authority.test.ts` (source parity: catalog vs. this list,
+ * route guards, navigation gates and the role matrix) and
+ * `permission-catalog-authority.pglite.test.ts` (runtime parity: a PGlite replay
+ * of the migration chain alone, with no seed, projected per role).
+ */
 export const appPermissions = [
   'app.dashboard.view',
   'audit.view',
@@ -47,7 +60,6 @@ export const appPermissions = [
   'communication.view',
   'automation.view',
   'auth.password.change',
-  'settings.manage',
   'expenses.view',
   'expenses.write',
   'arrears.view',
@@ -113,7 +125,6 @@ export const permissionLabelsAr: Readonly<Record<AppPermission, string>> = {
   'communication.view': 'عرض التواصل والمتابعات',
   'automation.view': 'عرض الأتمتة',
   'auth.password.change': 'تغيير كلمة المرور',
-  'settings.manage': 'إدارة الإعدادات (توافق قديم)',
   'expenses.view': 'عرض المصروفات',
   'expenses.write': 'إضافة وتعديل المصروفات',
   'arrears.view': 'عرض المتأخرات',

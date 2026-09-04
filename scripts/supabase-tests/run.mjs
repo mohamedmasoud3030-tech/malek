@@ -35,6 +35,11 @@ const layers = [
     cmd: ['node', [join(HERE, 'internal-gl-rpc-browser-boundary.mjs')]],
   },
   {
+    id: 'tax-readiness-boundary',
+    title: 'Tax authority readiness RPC browser EXECUTE boundary (P0-2)',
+    cmd: ['node', [join(HERE, 'tax-readiness-browser-boundary.mjs')]],
+  },
+  {
     id: 'client-visibility',
     title: 'Client session, data-visibility, and function contracts',
     cmd: [
@@ -57,6 +62,8 @@ const layers = [
         'src/features/auth/login-page.test.tsx',
         'src/features/auth/password-recovery-page.test.tsx',
         'src/features/auth/r5-authorization-matrix.test.ts',
+        'src/features/auth/permission-catalog-authority.pglite.test.ts',
+        'src/features/financials/tax-authority/tax-readiness-boundary.pglite.test.ts',
         'src/features/ai-assistant/services/ai-assistant-edge-function.test.ts',
         'src/hooks/use-company.test.tsx',
         'src/hooks/use-company-regression.test.ts',
