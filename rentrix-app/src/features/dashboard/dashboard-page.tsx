@@ -256,7 +256,6 @@ export function DashboardPage() {
                   <NeedsAttentionSection
                     signal={needsAttention}
                     isLoading={isLoading || attentionSourcesLoading}
-                    isError={hasDashboardError && !snapshot}
                     isPartial={!needsAttention.isComplete}
                   />
                 </DashboardGroup>
