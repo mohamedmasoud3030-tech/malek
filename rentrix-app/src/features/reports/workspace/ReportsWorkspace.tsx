@@ -3,7 +3,7 @@ import type { ReportsWorkspaceModel } from '../use-reports-workspace';
 import type { ReportsFilterState } from '../reports-workspace-filters';
 import type { ReportViewId } from '../report-view-registry';
 import type { ReportSectionId } from '../reports-page.sections';
-import type { ReportDrillHandler, ReportWorkspaceId } from '../report-workspaces';
+import type { ReportDrillHandler, ReportFilterFieldId, ReportWorkspaceId } from '../report-workspaces';
 import type { StatementProductFocus } from '../report-products';
 import { ReportsShell } from './ReportsShell';
 import { ReportsViewPanel } from './ReportsViewPanel';
@@ -22,6 +22,7 @@ type ReportsWorkspaceProps = Readonly<{
   onResetCurrentMonth: () => void;
   /** Premium product pages own the page title and target navigation, so shared workspace chrome stays hidden. */
   hideWorkspaceChrome?: boolean;
+  visibleFilterFields?: readonly ReportFilterFieldId[];
   /** Focuses the shared statements data source without duplicating its loaders. */
   statementFocus?: StatementProductFocus;
 }>;
@@ -46,6 +47,7 @@ export function ReportsWorkspace({
   onFiltersChange,
   onResetCurrentMonth,
   hideWorkspaceChrome = false,
+  visibleFilterFields,
   statementFocus,
 }: ReportsWorkspaceProps) {
   return (
@@ -60,6 +62,7 @@ export function ReportsWorkspace({
         onFiltersChange={onFiltersChange}
         onResetCurrentMonth={onResetCurrentMonth}
         hideWorkspaceChrome={hideWorkspaceChrome}
+        visibleFilterFields={visibleFilterFields}
       />
 
       {model.isIncomplete ? (
