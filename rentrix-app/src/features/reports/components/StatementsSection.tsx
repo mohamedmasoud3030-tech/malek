@@ -1,4 +1,5 @@
 import type { OwnerStatementReport, TenantStatementReport } from '@/features/financials/reports/financialReportsService';
+import type { OwnerReportPayload } from '@/services/documents/documentPayloads';
 import {
   useFinancialPeriodSummaryReport,
   useVatReturnReport,
@@ -22,12 +23,15 @@ export function StatementsSection({
   vatReturn,
   tenantStatement,
   ownerStatement,
+  ownerReportPayload,
   selectedContractId,
   selectedOwnerId,
   tenantStatementError,
   ownerStatementError,
+  ownerReportPayloadError,
   isTenantStatementLoading,
   isOwnerStatementLoading,
+  isOwnerReportPayloadLoading = false,
   isLoading,
   filters,
   focus = 'all',
@@ -36,12 +40,15 @@ export function StatementsSection({
   vatReturn: NonNullable<ReturnType<typeof useVatReturnReport>['data']> | undefined;
   tenantStatement: TenantStatementReport | undefined;
   ownerStatement: OwnerStatementReport | undefined;
+  ownerReportPayload?: OwnerReportPayload;
   selectedContractId: string;
   selectedOwnerId: string;
   tenantStatementError: unknown;
   ownerStatementError: unknown;
+  ownerReportPayloadError?: unknown;
   isTenantStatementLoading: boolean;
   isOwnerStatementLoading: boolean;
+  isOwnerReportPayloadLoading?: boolean;
   isLoading: boolean;
   filters?: { from: string; to: string; propertyId?: string; ownerId?: string };
   focus?: StatementProductFocus;
@@ -79,6 +86,7 @@ export function StatementsSection({
     ownerId: selectedOwnerId,
     statement: ownerStatement,
     period: { from: filters?.from, to: filters?.to, propertyId: filters?.propertyId },
+    payload: ownerReportPayload,
   }, 'print');
 
   const handleDownloadProfessionalOwnerReport = () => runOwnerReportDocumentAction({
@@ -87,6 +95,7 @@ export function StatementsSection({
     ownerId: selectedOwnerId,
     statement: ownerStatement,
     period: { from: filters?.from, to: filters?.to, propertyId: filters?.propertyId },
+    payload: ownerReportPayload,
   }, 'pdf');
 
   const handleDownloadOwnerExcel = () => downloadOwnerStatementExcel(ownerStatement, selectedOwnerId);
@@ -106,7 +115,7 @@ export function StatementsSection({
                 onPrint: handlePrintTenantStatement,
                 onDownloadPdf: handleDownloadTenantStatement,
                 onDownloadExcel: handleDownloadTenantExcel,
-                disabled: !isDocumentSettingsReady,
+                disabled: !isDocumentSettingsReady || isOwnerReportPayloadLoading || Boolean(ownerReportPayloadError),
               } : undefined}
             />
           ) : null}
@@ -116,6 +125,9 @@ export function StatementsSection({
               statement={ownerStatement}
               error={ownerStatementError}
               isLoading={isOwnerStatementLoading}
+              fullStatement={ownerReportPayload}
+              fullStatementError={ownerReportPayloadError}
+              isLoadingFullStatement={isOwnerReportPayloadLoading}
               period={{ from: filters?.from, to: filters?.to, propertyId: filters?.propertyId }}
               outputActions={showPartyDocumentControls ? {
                 onPrint: handlePrintProfessionalOwnerReport,
