@@ -150,7 +150,7 @@ export function buildNeedsAttentionSignal(params: {
     items.push({
       key: 'utilities-overdue',
       severity: 'danger',
-      ageDays: utilityObligations.rows[0]?.urgency === 'overdue' ? utilityObligations.rows[0].daysOverdue : 0,
+      ageDays: utilityObligations.oldestOverdueDays,
       title: `${utilityObligations.summary.overdueCount} فاتورة مرافق متأخرة`,
       meta: 'سداد المرافق المتأخرة مطلوب الآن',
       to: '/maintenance',
