@@ -52,11 +52,14 @@ async function loadSnapshot(fn: string, token: string): Promise<Record<string, u
   return JSON.parse(rows[0].snap) as Record<string, unknown>;
 }
 
-async function snapshotArray(snapshot: Record<string, unknown>, key: string): Promise<unknown[]> {
+async function snapshotArray<T = unknown>(
+  snapshot: Record<string, unknown>,
+  key: string,
+): Promise<T[]> {
   const snap = snapshot.snapshot as Record<string, unknown>;
   const value = snap[key];
   expect(Array.isArray(value), `${key} must remain an array`).toBe(true);
-  return value as unknown[];
+  return value as T[];
 }
 
 function snapshotField<T = unknown>(snapshot: Record<string, unknown>, key: string): T {
