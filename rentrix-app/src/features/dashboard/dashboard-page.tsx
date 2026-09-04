@@ -164,13 +164,9 @@ export function DashboardPage() {
     && (contractsQuery.isError || Boolean(contractsQuery.data?.truncated));
 
   const maintenanceQuery = useMaintenance('all', '');
-  const unitNumberMap = useMemo(
-    () => new Map((unitsQuery.data ?? []).map((unit) => [unit.id, unit.unit_number ?? ''])),
-    [unitsQuery.data],
-  );
   const maintenanceFollowUp = useMemo(
-    () => buildMaintenanceFollowUpSignal(maintenanceQuery.data, today, propertyTitleMap, unitNumberMap),
-    [maintenanceQuery.data, today, propertyTitleMap, unitNumberMap],
+    () => buildMaintenanceFollowUpSignal(maintenanceQuery.data, today),
+    [maintenanceQuery.data, today],
   );
 
   const attentionSourcesComplete = !(isError || isRefetchError)
