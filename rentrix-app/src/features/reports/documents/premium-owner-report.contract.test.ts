@@ -16,10 +16,12 @@ describe('premium owner statement — preservation and evidence contract', () =>
   });
 
   it('uses only existing RLS-scoped read services for unit and collection evidence', () => {
-    for (const authority of ['listContractsForProperty', 'listUnits', 'loadInvoices', 'loadPayments', 'buildVacancyAnalytics']) {
+    for (const authority of ['listContractsForProperties', 'listUnitsForProperties', 'loadInvoices', 'loadPayments', 'buildVacancyAnalytics']) {
       expect(source).toContain(authority);
     }
     expect(source).not.toMatch(/\.insert\(|\.update\(|\.delete\(|supabase\.rpc\(/);
+    expect(source).not.toContain('Promise.all(propertyIds.map');
+    expect(source).not.toContain('listUnits()');
   });
 
   it('keeps the owner-facing unit and collection evidence in the printed product', () => {
