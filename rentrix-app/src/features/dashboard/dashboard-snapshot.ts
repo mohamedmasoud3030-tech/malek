@@ -41,55 +41,43 @@ export type DashboardOccupancy = {
 
 export type DashboardContracts = {
   active: number;
-  expiring30: number;
-  expiring60: number;
-  expiring90: number;
 };
 
 export type DashboardBilling = {
   invoicedAmount: number;
-  invoicesCount: number;
   /** All-time active invoice count — onboarding progress truth, not a period KPI. */
   invoicesTotalCount: number;
 };
 
 export type DashboardCollections = {
   collectedAmount: number;
-  paymentsCount: number;
   outstandingAmount: number;
   collectionRate: number;
 };
 
 export type DashboardExpenses = {
   totalAmount: number;
-  count: number;
 };
 
 export type DashboardArrears = {
   totalOverdue: number;
   overdueCount: number;
   averageDaysOverdue: number;
-  over90Amount: number;
   over90Count: number;
-  totalOutstanding: number;
   buckets: Record<DashboardAgingBucketKey, DashboardAgingBucket>;
 };
 
 export type DashboardOwnerFunds = {
-  netPayable: number;
   settlementsDraft: number;
   settlementsApproved: number;
 };
 
 export type DashboardMaintenance = {
-  open: number;
-  inProgress: number;
   urgentOpen: number;
 };
 
 export type DashboardExceptions = {
   unmatchedBankLines: number;
-  pendingSettlements: number;
 };
 
 export type DashboardQueueContractRow = {
@@ -113,18 +101,9 @@ export type DashboardQueueInvoiceRow = {
   unitNumber: string | null;
 };
 
-export type DashboardQueueMaintenanceRow = {
-  id: string;
-  title: string | null;
-  priority: string | null;
-  propertyTitle: string | null;
-  unitNumber: string | null;
-};
-
 export type DashboardQueues = {
   expiringContracts: DashboardQueueContractRow[];
   overdueInvoices: DashboardQueueInvoiceRow[];
-  urgentMaintenance: DashboardQueueMaintenanceRow[];
 };
 
 export type DashboardSnapshot = {
@@ -221,16 +200,6 @@ function normalizeQueues(value: unknown): DashboardQueues {
         unitNumber: toNullableText(record.unit_number),
       };
     }),
-    urgentMaintenance: asArray(raw.urgent_maintenance).map((row) => {
-      const record = asRecord(row);
-      return {
-        id: toText(record.id),
-        title: toNullableText(record.title),
-        priority: toNullableText(record.priority),
-        propertyTitle: toNullableText(record.property_title),
-        unitNumber: toNullableText(record.unit_number),
-      };
-    }),
   };
 }
 
@@ -260,48 +229,36 @@ export function normalizeDashboardSnapshot(data: unknown, period: DashboardPerio
     },
     contracts: {
       active: toNumber(contracts.active),
-      expiring30: toNumber(contracts.expiring_30),
-      expiring60: toNumber(contracts.expiring_60),
-      expiring90: toNumber(contracts.expiring_90),
     },
     billing: {
       invoicedAmount: toNumber(billing.invoiced_amount),
-      invoicesCount: toNumber(billing.invoices_count),
       invoicesTotalCount: toNumber(billing.invoices_total_count),
     },
     collections: {
       collectedAmount: toNumber(collections.collected_amount),
-      paymentsCount: toNumber(collections.payments_count),
       outstandingAmount: toNumber(collections.outstanding_amount),
       collectionRate: toNumber(collections.collection_rate),
     },
     expenses: {
       totalAmount: toNumber(expenses.total_amount),
-      count: toNumber(expenses.count),
     },
     netCash: toNumber(raw.net_cash),
     arrears: {
       totalOverdue: toNumber(arrears.total_overdue),
       overdueCount: toNumber(arrears.overdue_count),
       averageDaysOverdue: toNumber(arrears.average_days_overdue),
-      over90Amount: toNumber(arrears.over_90_amount),
       over90Count: toNumber(arrears.over_90_count),
-      totalOutstanding: toNumber(arrears.total_outstanding),
       buckets: normalizeAgingBuckets(arrears.buckets),
     },
     ownerFunds: {
-      netPayable: toNumber(ownerFunds.net_payable),
       settlementsDraft: toNumber(ownerFunds.settlements_draft),
       settlementsApproved: toNumber(ownerFunds.settlements_approved),
     },
     maintenance: {
-      open: toNumber(maintenance.open),
-      inProgress: toNumber(maintenance.in_progress),
       urgentOpen: toNumber(maintenance.urgent_open),
     },
     exceptions: {
       unmatchedBankLines: toNumber(exceptions.unmatched_bank_lines),
-      pendingSettlements: toNumber(exceptions.pending_settlements),
     },
     queues: normalizeQueues(raw.queues),
   };
