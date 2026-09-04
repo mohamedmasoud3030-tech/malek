@@ -34,12 +34,12 @@ Historical technical identifiers may still say Rentrix. User-visible product nam
 
 ## Useful Claude helpers
 
-- `/execute-task <task>` — default autonomous implementation workflow.
-- `/final-review` — high-confidence final diff review before commit/PR.
-- `code-explorer` — trace an existing feature before changing it.
-- `code-architect` — design a non-trivial change against existing patterns.
-- `code-reviewer` — high-confidence bug/regression review.
-- `frontend-design` skill — use for new or materially reshaped UI, while still obeying MALEK's canonical UX/design contract and shared design system.
+Claude discovers thin adapters under `.claude/skills/`; canonical project procedures remain under root `skills/` so every agent uses the same workflows.
+
+- `architecture-decision`, `implementation-planning`, `implementation`, `review`, `database` — MALEK core skills.
+- `frontend-design` — substantial new or materially reshaped UI.
+- `/execute-task <task>` and `/final-review` — Claude-specific command wrappers.
+- `code-explorer`, `code-architect`, `code-reviewer` — vendored specialist agents when a focused second pass helps.
 
 ## Validation
 

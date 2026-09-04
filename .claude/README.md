@@ -6,6 +6,7 @@ This directory contains the repository-scoped Claude Code helpers used by Claude
 
 - `agents/`: a small vendored subset of Anthropic's official `feature-dev` agents (`code-explorer`, `code-architect`, `code-reviewer`).
 - `skills/frontend-design/`: Anthropic's official `frontend-design` skill, vendored so cloud sessions do not depend on runtime plugin installation.
+- `skills/{architecture-decision,implementation-planning,implementation,review,database}/`: thin Claude discovery adapters pointing to canonical root `skills/` procedures.
 - `commands/`: MALEK-specific autonomous task and final-review workflows.
 - `rules/`: small path-aware guardrails for Git, frontend/UI, database/finance, and validation.
 
@@ -31,4 +32,4 @@ For analysis-heavy work, explicitly invoke `code-explorer` or `code-architect`. 
 
 See `THIRD_PARTY.md`. Keep vendored files unmodified where practical. If a vendored file is changed, mark the modification and preserve the Apache-2.0 attribution/license requirements.
 
-Project-specific instructions belong in `CLAUDE.md` or `.claude/rules/`, not inside vendored Anthropic files.
+Project-wide instructions belong in `AGENTS.md`; reusable task procedures belong in root `skills/`. Claude-only discovery adapters stay thin under `.claude/skills/`. Do not duplicate canonical skill bodies here. Vendored Anthropic files remain unmodified where practical.
