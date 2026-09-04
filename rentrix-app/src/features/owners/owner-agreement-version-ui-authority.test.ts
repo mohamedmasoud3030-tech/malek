@@ -8,7 +8,9 @@ const propertyForm = readFileSync(new URL('../properties/property-form-modal.tsx
 describe('GAP-004 owner-agreement version authority', () => {
   it('uses atomic identity plus first-version boundaries for both creation journeys', () => {
     expect(service).toContain("rpc('create_owner_agreement_with_version_atomic'");
-    expect(service).toContain("rpc('create_property_with_versioned_agreement_atomic'");
+    // TD-01 / R-01: the property-creation journey now sends the complete
+    // ownership payload through the single-transaction RPC.
+    expect(service).toContain("rpc('create_property_with_ownership_atomic'");
   });
 
   it('keeps amendment history without exposing internal version numbering', () => {

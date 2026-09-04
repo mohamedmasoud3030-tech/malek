@@ -294,10 +294,14 @@ export async function updateProperty(propertyId: string, payload: PropertyFormVa
   if (validated.status === 'inactive' || validated.status === 'sold') {
     await assertPropertyHasNoActiveContracts(propertyId, `تغيير حالة`);
   }
-  const updatePayload: PropertyUpdate = normalizePropertyPayload(validated);
+  // Distinct name from softDeleteProperty's static archive literal so the
+  // reviewed-dynamic scanner keeps flagging this payload (its columns come
+  // from normalizePropertyPayload at runtime) as dynamic rather than
+  // resolving it to the soft-delete object.
+  const propertyUpdatePayload: PropertyUpdate = normalizePropertyPayload(validated);
   const { data, error } = await supabase
     .from('properties')
-    .update(updatePayload)
+    .update(propertyUpdatePayload)
     .eq('id', propertyId)
     .is('deleted_at', null)
     .select('*')
@@ -305,50 +309,6 @@ export async function updateProperty(propertyId: string, payload: PropertyFormVa
     .returns<Property>();
   if (error) throw new Error(getCrudWriteErrorMessage({ action: 'update', entityPlural: 'العقارات', error }));
   return data;
-}
-
-export type CoOwnerShare = Readonly<{ owner_id: string; percentage: number }>;
-
-type PropertyOwnerInsert = Database['public']['Tables']['property_owners']['Insert'];
-type PropertyOwnerUpdate = Database['public']['Tables']['property_owners']['Update'];
-
-/**
- * Applies the ownership split captured in the property creation workflow:
- * adjusts the primary owner's percentage (the atomic creation RPC links the
- * primary owner at 100%) and inserts the extra co-owner links. Lives at the
- * service boundary so presentation components never touch the
- * property_owners table directly.
- */
-export async function applyPropertyOwnershipSplit(params: Readonly<{
-  propertyId: string;
-  primaryPercentage: number;
-  extraOwners: readonly CoOwnerShare[];
-  startsOn: string;
-}>): Promise<void> {
-  const { propertyId, primaryPercentage, extraOwners, startsOn } = params;
-
-  if (primaryPercentage !== 100) {
-    const updatePayload: PropertyOwnerUpdate = { ownership_percentage: primaryPercentage };
-    const { error } = await supabase
-      .from('property_owners')
-      .update(updatePayload)
-      .eq('property_id', propertyId)
-      .eq('is_primary', true);
-    if (error) throw new Error(getCrudWriteErrorMessage({ action: 'update', entityPlural: 'ملكية العقار', error }));
-  }
-
-  for (const coOwner of extraOwners) {
-    if (!coOwner.owner_id || Number(coOwner.percentage) <= 0) continue;
-    const insertPayload: PropertyOwnerInsert = {
-      property_id: propertyId,
-      owner_id: coOwner.owner_id,
-      ownership_percentage: Number(coOwner.percentage),
-      is_primary: false,
-      starts_on: startsOn,
-    };
-    const { error } = await supabase.from('property_owners').insert(insertPayload);
-    if (error) throw new Error(getCrudWriteErrorMessage({ action: 'create', entityPlural: 'ملكية العقار', error }));
-  }
 }
 
 export async function softDeleteProperty(propertyId: string): Promise<void> {
