@@ -15,7 +15,7 @@
  *   multi-country roadmap (add a country object + sources, nothing else).
  */
 
-export const AI_KB_VERSION = "malek-biz-v3";
+export const AI_KB_VERSION = "malek-biz-v4";
 
 /** Hard budget so the rendered KB always fits the prompt window. */
 export const BUSINESS_KB_MAX_CHARS = 4_000;
@@ -65,6 +65,36 @@ export const BUSINESS_KB_SOURCES: readonly BusinessKbSource[] = [
   {
     name: "Living Cost — Nizwa (2026-03)",
     url: "https://www.livingcost.org/cost-of-living/nizwa-oman",
+    accessed: "2026-09-04",
+  },
+  {
+    name: "السوق المفتوح (OpenSooq) — إعلانات عقارات نزوى واللاداخلية للبيع والإيجار",
+    url: "https://om.opensooq.com/ar/%D8%A7%D9%84%D8%AF%D8%A7%D8%AE%D9%84%D9%8A%D8%A9/%D9%86%D8%B2%D9%88%D9%89",
+    accessed: "2026-09-04",
+  },
+  {
+    name: "السوق المفتوح (OpenSooq) — أراضٍ للبيع في نزوى (الداخلية)",
+    url: "https://om.opensooq.com/ar/%D8%A7%D9%84%D8%AF%D8%A7%D8%AE%D9%84%D9%8A%D8%A9/%D9%86%D8%B2%D9%88%D9%89/%D8%B9%D9%82%D8%A7%D8%B1%D8%A7%D8%AA/%D8%A3%D8%B1%D8%A7%D8%B6%D9%8A-%D9%84%D9%84%D8%A8%D9%8A%D8%B9",
+    accessed: "2026-09-04",
+  },
+  {
+    name: "Bayut Oman — leading real-estate portal (rent & sale)",
+    url: "https://www.bayut.om/en/",
+    accessed: "2026-09-04",
+  },
+  {
+    name: "OmanDeLux — specialized Oman real-estate platform (rent/resale/industrial)",
+    url: "https://omandelux.com/",
+    accessed: "2026-09-04",
+  },
+  {
+    name: "Homelist — Oman property listings (Muscat & nationwide)",
+    url: "https://homelist.om/",
+    accessed: "2026-09-04",
+  },
+  {
+    name: "Muscat Properties — new-build & off-plan Oman real estate",
+    url: "https://muscat.properties/",
     accessed: "2026-09-04",
   },
   {
@@ -171,10 +201,21 @@ const OMAN: BusinessKbCountry = {
     {
       id: "nizwa",
       nameAr: "نزوي (الداخلية)",
-      noteAr: "أرخص عادةً بثلث إلى نصف قيمة مسقط للمقارنات المماثلة؛ السوق أصغر والمراجع أقل تنوعاً — عند تقدير استثماري دقيق استشر معلومة محلية حديثة.",
+      noteAr: "أرخص عادةً بثلث إلى نصف قيمة مسقط للمقارنات المماثلة؛ الأراضي السكنية تُعلن في نزوى بين 5,000-40,000 ر.ع حسب المخطط — استشر معلومة محلية حديثة للتقدير الدقيق.",
       rents: [
         { typeAr: "غرفة وصالة", range: "100-250", note: "المراجع تتباين؛ الوحدات الجديدة/المطلة أعلى" },
         { typeAr: "ثلاث غرف", range: "150-350" },
+        { typeAr: "غرفة يومية (منبسط/ملحق)", range: "6-20", note: "إيجار يومي/أسبوعي في الأحياء القريبة من التقنية" },
+        { typeAr: "استراحة/شاليه يومي", range: "20-150", note: "مصيف/بركة الموز/الجبل الأخضر — موسمي" },
+      ],
+    },
+    {
+      id: "dakhiliyah-other",
+      nameAr: "بقية الداخلية (بهلاء، منح، الحمراء، إزكي، بدبد، سمائل، أدم)",
+      noteAr: "مماثلة أو أقل قلّيلاً من نزوى؛ الطلب الموسمي في الجبل الأخضر/الحمراء وعلى الطريق السياحي يرفع أسعار الإيجار القصير.",
+      rents: [
+        { typeAr: "غرفة وصالة", range: "90-220" },
+        { typeAr: "ثلاث غرف", range: "130-320" },
       ],
     },
     {
@@ -194,7 +235,8 @@ const OMAN: BusinessKbCountry = {
       "النطاق السائد 5-12% من إجمالي الإيجار الشهري (مراجع مسقط: 5-10% الشائع، ومراجع أخرى 8-12% للخدمات الشاملة).",
       "الخدمات الأساسية (تحصيل الإيجار، تنسيق الصيانة، الجولات): نحو 8%. الخدمات المتقدمة (تسويق، دعم قانوني، مجتمعات فاخرة): 10-12%.",
       "بديل شائع: مبلغ شهري ثابت متفق عليه لكل وحدة في عقد الإدارة.",
-      "مثال إرشادي: 15 وحدة × 350 ر.ع = 5,250 ر.ع شهرياً → 8% تعطي ~420 ر.ع شهرياً (~5,040 ر.ع سنوياً).",
+      "قاعدة الاختيار بين النسبة والمبلغ الثابت: النسبة أفضل عندما تكون الإيجارات مرتفعة/قابلة للنمو والتحصيل جيد (تشارك في الارتفاع)، والمبلغ الثابت أفضل عندما تكون الإيجارات منخفضة، وسيطة، أو وحداتن كثيرة موحّدة — لأنه يضمن دخل إدارة مستقراً ويُقيِّم جهودك المقبولة. عند وحدات متنوعة (شقق/غرف/محلات/مخازن) قسّم الرسوم: نسبة على المحلّات والمخازن + مبلغ ثابت لكل وحدة سكنية.",
+      "مثال إرشادي (إجمالي 6,000 ر.ع شهرياً): نسبة 8% تعني ~480 ر.ع شهرياً؛ مبلغ ثابت 30 ر.ع × 25 وحدة = 750 ر.ع شهرياً — ميّز بالمقارنة قبل الاقتراح.",
     ].join("\n"),
     contractRulesAr: [
       "العقد القياسي 12 شهراً قابلاً للتجديد؛ إشعار المغادرة على الأقل 3 أشهر.",
