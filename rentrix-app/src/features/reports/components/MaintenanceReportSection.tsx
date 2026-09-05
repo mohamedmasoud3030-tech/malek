@@ -12,7 +12,7 @@ import {
   maintenancePriorityTone,
   maintenanceStatusLabels,
   maintenanceStatusTone,
-} from '@/features/maintenance/components/maintenance-list';
+} from '@/lib/maintenanceStatus';
 import {
   deriveMaintenanceAttention,
   maintenanceAttentionLabels,

@@ -11,6 +11,7 @@ import { useCompanySettingsContract } from '@/features/settings/useCompanySettin
 import { useBankAccounts } from './useBankReconciliation';
 import { previewBankCsvFile, previewBankStatementBatch, importBankStatementBatch, toImportPayloadRows, type BankImportPreview, type BankImportResult } from './bankCsvImportService';
 import { toast } from 'sonner';
+import { formatFileSize } from '@/lib/formatters';
 
 type Step = 'select' | 'preview' | 'mapping' | 'review' | 'importing' | 'completed';
 
@@ -180,7 +181,7 @@ export function BankCsvImportWorkflow({ open, onOpenChange, defaultBankAccountId
               <div className="rounded-xl border bg-muted/30 p-3 text-sm">
                 <p className="font-bold">{file.name}</p>
                 <p className="text-xs text-muted-foreground">
-                  الحجم: {(file.size / 1024).toFixed(1)} KB — {preview?.encoding ?? '—'} — فاصل: {preview?.delimiter === ';' ? 'فاصلة منقوطة ;' : 'فاصلة ,'} {preview?.detectedDelimiterConfidence ? `(${preview.detectedDelimiterConfidence})` : ''}
+                  الحجم: {formatFileSize(file.size)} — {preview?.encoding ?? '—'} — فاصل: {preview?.delimiter === ';' ? 'فاصلة منقوطة ;' : 'فاصلة ,'} {preview?.detectedDelimiterConfidence ? `(${preview.detectedDelimiterConfidence})` : ''}
                 </p>
               </div>
             ) : null}

@@ -20,7 +20,7 @@ import {
   maintenancePriorityTone,
   maintenanceStatusLabels,
   maintenanceStatusTone,
-} from './maintenance-list';
+} from '@/lib/maintenanceStatus';
 
 export type ChargeTarget = 'landlord' | 'tenant' | 'office';
 

@@ -11,17 +11,14 @@ import { isContractStatus } from '@/lib/contractStatus';
 import { listUnitsForProperties, type OwnerUnit } from '@/features/owners/services/owner-service';
 import { unitStatusLabelFor } from '@/features/units/unit-schema';
 import { buildVacancyAnalytics } from '@/features/units/vacancy-analytics';
-import type { OwnerReportPayload, ProfessionalReportGroup, ReportCellFormat } from '@/services/documents/documentPayloads';
+import type { OwnerReportPayload, ProfessionalReportGroup } from '@/services/documents/documentPayloads';
 import {
   buildOwnerReportPayload,
   loadOwnerReportContext,
   type OwnerReportLoaderParams,
 } from './professional-owner-report';
+import { amount, dateLabel, text } from './report-cells';
 
-const text = (value: string | null | undefined): ReportCellFormat => ({ kind: 'text', value: value?.trim() || '—' });
-const amount = (value: number | null | undefined): ReportCellFormat => (
-  value == null ? text('—') : { kind: 'amount', value }
-);
 
 function contractOverlapsPeriod(contract: ContractListItem, from: string, to: string): boolean {
   if (isContractStatus(contract.status, 'draft') || isContractStatus(contract.status, 'terminated') && contract.start_date > to) return false;
@@ -132,7 +129,7 @@ function buildOwnerAssetGroup(params: {
           text(row.unitStatus),
           text(row.tenantName),
           amount(row.rentAmount),
-          text(row.contractEnd?.slice(0, 10)),
+          text(dateLabel(row.contractEnd)),
         ]),
       },
     });
@@ -148,7 +145,7 @@ function buildOwnerAssetGroup(params: {
           amount(row.collected),
           amount(row.outstanding),
           text(row.paymentState),
-          text(row.lastPaymentDate?.slice(0, 10)),
+          text(dateLabel(row.lastPaymentDate)),
           text(formatPaymentMethodLabel(row.lastPaymentMethod)),
           text(row.invoiceReferences),
         ]),

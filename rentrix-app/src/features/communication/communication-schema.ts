@@ -16,31 +16,6 @@ export const COMMUNICATION_CHANNEL_VALUES = ['phone', 'whatsapp', 'email', 'meet
 export const COMMUNICATION_DIRECTION_VALUES = ['inbound', 'outbound', 'internal'] as const;
 export const COMMUNICATION_STATUS_VALUES = ['logged', 'follow_up', 'resolved', 'archived'] as const;
 
-export type CommunicationChannel = (typeof COMMUNICATION_CHANNEL_VALUES)[number];
-export type CommunicationDirection = (typeof COMMUNICATION_DIRECTION_VALUES)[number];
-export type CommunicationStatus = (typeof COMMUNICATION_STATUS_VALUES)[number];
-
-export const COMMUNICATION_CHANNEL_LABELS: Record<CommunicationChannel, string> = {
-  phone: 'هاتف',
-  whatsapp: 'واتساب',
-  email: 'بريد إلكتروني',
-  meeting: 'اجتماع',
-  note: 'ملاحظة تشغيلية',
-};
-
-export const COMMUNICATION_DIRECTION_LABELS: Record<CommunicationDirection, string> = {
-  inbound: 'وارد',
-  outbound: 'صادر',
-  internal: 'تشغيلي',
-};
-
-export const COMMUNICATION_STATUS_LABELS: Record<CommunicationStatus, string> = {
-  logged: 'مسجل',
-  follow_up: 'يحتاج متابعة',
-  resolved: 'مغلق',
-  archived: 'مؤرشف',
-};
-
 const trimmedShort = (max: number) =>
   z
     .string()

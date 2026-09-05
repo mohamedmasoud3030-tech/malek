@@ -66,12 +66,6 @@ export const outboundProviderCapabilities = [
   },
 ] as const;
 
-export function getOutboundProviderCapability(channel: OutboundChannel) {
-  return outboundProviderCapabilities.find(
-    (capability) => capability.channel === channel,
-  );
-}
-
 export type NotificationTemplate = Readonly<{
   id: string;
   name: string;

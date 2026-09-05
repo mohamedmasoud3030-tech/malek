@@ -40,8 +40,6 @@ const STEP_001_ALLOWLIST: ReadonlyArray<{ file: string; mustContain: string }> =
 /** Files allowed to use toFixed(2) — every use is a NON-money value. */
 const TO_FIXED_2_ALLOWLIST: ReadonlyArray<{ file: string; reason: string }> = [
   { file: 'features/ai-assistant/services/ai-assistant-service.ts', reason: 'occupancy percentage' },
-  { file: 'features/documents-vault/components/documents-vault-workspace.tsx', reason: 'file size in MB' },
-  { file: 'features/documents-vault/documents-vault-service.ts', reason: 'file size limit message in MB' },
 ];
 
 /** Files allowed to use Math.round(x*100)/100 — every use is a percentage. */

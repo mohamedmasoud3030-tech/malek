@@ -54,6 +54,28 @@ function selectItem(item: ActionMenuEntry): void {
   else item.onClick();
 }
 
+/**
+ * Selecting an item unmounts the menu synchronously, so the second click of
+ * a double-click (or double-tap) would land on whatever the menu was
+ * covering — on a mobile card that is the card body or its primary action,
+ * i.e. an unrelated operation fired by accident. Swallow only that follow-up
+ * click: the browser marks it as part of the same click sequence
+ * (`detail >= 2`), so a deliberate later click elsewhere is never affected.
+ */
+function shieldDoubleClickFollowUp(): void {
+  if (typeof document === 'undefined') return;
+  const onClickCapture = (event: MouseEvent) => {
+    document.removeEventListener('click', onClickCapture, true);
+    window.clearTimeout(expiry);
+    if (event.detail >= 2) {
+      event.stopPropagation();
+      event.preventDefault();
+    }
+  };
+  const expiry = window.setTimeout(() => document.removeEventListener('click', onClickCapture, true), 600);
+  document.addEventListener('click', onClickCapture, true);
+}
+
 function isDestructive(item: ActionMenuEntry): boolean {
   return isActionMenuItem(item) ? Boolean(item.destructive) : item.variant === 'destructive' || Boolean(item.danger);
 }
@@ -62,7 +84,7 @@ export function ActionMenu({ items, label = 'الإجراءات', align = 'end',
   // Disabled actions are deliberately unavailable rather than focusable/selectable.
   const visibleItems = items.filter((item) => !item.disabled);
   const [open, setOpen] = useState(false);
-  const [menuPosition, setMenuPosition] = useState<{ top: number; left?: number; right?: number }>({ top: 0 });
+  const [menuPosition, setMenuPosition] = useState<{ top?: number; bottom?: number; left?: number; right?: number }>({ top: 0 });
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
@@ -72,7 +94,15 @@ export function ActionMenu({ items, label = 'الإجراءات', align = 'end',
   const positionMenu = () => {
     const rect = triggerRef.current?.getBoundingClientRect();
     if (!rect) return;
-    setMenuPosition({ top: rect.bottom + 4, ...(align === 'start' ? { left: rect.left } : align === 'center' ? { left: rect.left + rect.width / 2 } : { right: window.innerWidth - rect.right }) });
+    // The menu is a fixed-position portal, so it cannot be scrolled into
+    // view: when a trigger sits low in the viewport (mobile cards near the
+    // bottom bar), open upward so the last items stay reachable.
+    const menuHeight = menuRef.current?.offsetHeight ?? 0;
+    const spaceBelow = window.innerHeight - rect.bottom - 4;
+    const spaceAbove = rect.top - 4;
+    const openUpward = menuHeight > 0 && spaceBelow < menuHeight && spaceAbove > spaceBelow;
+    const vertical = openUpward ? { bottom: window.innerHeight - rect.top + 4 } : { top: rect.bottom + 4 };
+    setMenuPosition({ ...vertical, ...(align === 'start' ? { left: rect.left } : align === 'center' ? { left: rect.left + rect.width / 2 } : { right: window.innerWidth - rect.right }) });
   };
   const close = (restoreFocus = false) => {
     setOpen(false);
@@ -153,7 +183,7 @@ export function ActionMenu({ items, label = 'الإجراءات', align = 'end',
           role="menu"
           dir={typeof document !== 'undefined' && document.documentElement.dir === 'ltr' ? 'ltr' : 'rtl'}
           style={menuPosition}
-          className={cn('fixed z-[100] min-w-44 overflow-hidden rounded-xl border border-border/80 bg-card p-1 shadow-elevated', align === 'center' && '-translate-x-1/2')}
+          className={cn('fixed z-[100] max-h-[calc(100dvh-1rem)] min-w-44 overflow-y-auto rounded-xl border border-border/80 bg-card p-1 shadow-elevated', align === 'center' && '-translate-x-1/2')}
         >
           {visibleItems.map((item, index) => (
             <button
@@ -169,7 +199,11 @@ export function ActionMenu({ items, label = 'الإجراءات', align = 'end',
                 else if (event.key === 'End') { event.preventDefault(); focusItem(visibleItems.length - 1); }
                 else if (event.key === 'Escape') { event.preventDefault(); close(true); }
               }}
-              onClick={() => { selectItem(item); close(true); }}
+              onClick={(event) => {
+                selectItem(item);
+                close(true);
+                if (event.detail > 0) shieldDoubleClickFollowUp();
+              }}
             >
               {getIcon(item)}<span className="min-w-0 truncate">{item.label}</span>
             </button>
@@ -180,7 +214,3 @@ export function ActionMenu({ items, label = 'الإجراءات', align = 'end',
     </div>
   );
 }
-
-export interface QuickAction { id: string; label: string; icon: ComponentType<{ className?: string }>; variant?: 'primary' | 'secondary' | 'destructive' | 'ghost'; onClick: () => void; disabled?: boolean; loading?: boolean; className?: string; }
-export function QuickActionBar({ actions, className }: { actions: QuickAction[]; className?: string }) { if (actions.every((action) => action.disabled)) return null; return <div className={cn('flex flex-wrap gap-2', className)}>{actions.map((action) => { const Icon = action.icon; return <Button key={action.id} variant={action.variant ?? 'secondary'} size="sm" onClick={action.onClick} disabled={action.disabled || action.loading} className={cn('min-h-11 gap-2', action.className)}>{action.loading ? <span className="size-4 rounded-full border-2 border-current border-t-transparent" /> : <Icon className="size-4" aria-hidden="true" />}{action.label}</Button>; })}</div>; }
-export function MobileActionGrid({ actions, className }: { actions: QuickAction[]; className?: string }) { const visibleActions = actions.filter((action) => !action.disabled); if (!visibleActions.length) return null; return <div className={cn('grid grid-cols-2 gap-2 [&>*:last-child:nth-child(odd)]:col-span-2', className)}>{visibleActions.map((action) => { const Icon = action.icon; return <Button key={action.id} variant={action.variant ?? 'secondary'} onClick={action.onClick} disabled={action.disabled} className="min-h-14 flex-col gap-1.5 py-3"><Icon className="size-5" aria-hidden="true" /><span className="text-xs font-bold">{action.label}</span></Button>; })}</div>; }

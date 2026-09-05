@@ -87,11 +87,6 @@ export async function listAutomationNotifications(limit = 50, unreadOnly = false
   return (data ?? []) as AutomationNotification[];
 }
 
-export async function markNotificationRead(id: string): Promise<void> {
-  const { error } = await ((supabase as any).from('automation_notifications').update({ is_read: true } as any).eq('id', id) as any);
-  if (error) handleSupabaseError(error, 'تعذر تحديث حالة الإشعار');
-}
-
 export type BackgroundJobStatus = Readonly<{
   id: string;
   job_type: string;

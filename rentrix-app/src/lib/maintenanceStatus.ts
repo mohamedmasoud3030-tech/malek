@@ -1,5 +1,38 @@
+import type { SemanticTone } from '@/components/ui/status-badge';
+
 export type CanonicalMaintenanceStatus = 'open' | 'in_progress' | 'resolved' | 'closed' | 'cancelled';
 export type CanonicalMaintenancePriority = 'low' | 'medium' | 'high' | 'urgent';
+
+/** Canonical maintenance lifecycle vocabulary — one label/tone per status for lists, dossiers, and reports. */
+export const maintenanceStatusLabels: Record<CanonicalMaintenanceStatus, string> = {
+  open: 'مفتوح',
+  in_progress: 'قيد التنفيذ',
+  resolved: 'تم التنفيذ',
+  closed: 'مغلق',
+  cancelled: 'ملغى',
+};
+
+export const maintenanceStatusTone: Record<CanonicalMaintenanceStatus, SemanticTone> = {
+  open: 'info',
+  in_progress: 'warning',
+  resolved: 'success',
+  closed: 'neutral',
+  cancelled: 'neutral',
+};
+
+export const maintenancePriorityLabels: Record<CanonicalMaintenancePriority, string> = {
+  low: 'منخفضة',
+  medium: 'متوسطة',
+  high: 'عالية',
+  urgent: 'عاجلة',
+};
+
+export const maintenancePriorityTone: Record<CanonicalMaintenancePriority, SemanticTone> = {
+  low: 'neutral',
+  medium: 'info',
+  high: 'warning',
+  urgent: 'danger',
+};
 
 /**
  * Reads remain compatible with historic maintenance rows written before the

@@ -39,11 +39,11 @@ function safeRatio(numerator: number, denominator: number) {
   return Math.max(0, Math.min(100, (numerator / denominator) * 100));
 }
 
-export function formatPercent(value: number) {
+function formatPercent(value: number) {
   return `${formatLatinNumber(Math.round(value), 'ar')}%`;
 }
 
-export function getRatioTone(value: number, goodThreshold: number, warningThreshold: number): ReportHealthInsight['tone'] {
+function getRatioTone(value: number, goodThreshold: number, warningThreshold: number): ReportHealthInsight['tone'] {
   if (value >= goodThreshold) return 'good';
   if (value >= warningThreshold) return 'warning';
   return 'critical';

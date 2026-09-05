@@ -18,17 +18,13 @@ import { useDialogNavigate } from '@/app/router/background-location';
 import { useAuth } from '@/hooks/use-auth';
 import { useServiceProviderDossier } from './use-service-providers';
 import { formatCount } from '@/lib/formatters';
-import type { SemanticTone } from '@/components/ui/status-badge';
-
-const maintenanceStatusLabels: Record<string, string> = { open: 'مفتوح', in_progress: 'قيد التنفيذ', resolved: 'تم الحل', closed: 'مغلق' };
-const maintenancePriorityLabels: Record<string, string> = { low: 'منخفضة', medium: 'متوسطة', high: 'عالية', urgent: 'عاجلة' };
-
-function statusTone(status: string | null): SemanticTone {
-  if (status === 'open') return 'info';
-  if (status === 'in_progress') return 'warning';
-  if (status === 'resolved') return 'success';
-  return 'neutral';
-}
+import {
+  maintenancePriorityLabels,
+  maintenanceStatusLabels,
+  maintenanceStatusTone,
+  normalizeMaintenancePriority,
+  normalizeMaintenanceStatus,
+} from '@/lib/maintenanceStatus';
 
 type ProviderSection = 'overview' | 'operations' | 'documents';
 
@@ -70,8 +66,8 @@ export function ServiceProviderDetailPage() {
     { key: 'title', priority: 'identity' as const, header: 'الطلب', render: (job) => <div><p className="font-bold">{job.title ?? 'طلب صيانة'}</p><p className="text-xs text-muted-foreground" dir="ltr">{job.reference ?? ''}</p></div> },
     { key: 'location', priority: 'secondary' as const, header: 'الموقع', render: (job) => `${job.properties?.title ?? 'عقار غير محدد'}${job.units?.unit_number ? ` / ${job.units.unit_number}` : ''}` },
     { key: 'category', priority: 'detail' as const, header: 'نوع الخدمة', render: (job) => job.category?.name ?? 'غير محدد' },
-    { key: 'priority', priority: 'secondary' as const, header: 'الأولوية', render: (job) => maintenancePriorityLabels[job.priority ?? ''] ?? job.priority ?? '—' },
-    { key: 'status', priority: 'primary' as const, header: 'الحالة', render: (job) => <StatusBadge tone={statusTone(job.status)}>{maintenanceStatusLabels[job.status ?? ''] ?? job.status ?? '—'}</StatusBadge> },
+    { key: 'priority', priority: 'secondary' as const, header: 'الأولوية', render: (job) => (job.priority ? maintenancePriorityLabels[normalizeMaintenancePriority(job.priority)] : '—') },
+    { key: 'status', priority: 'primary' as const, header: 'الحالة', render: (job) => (job.status ? <StatusBadge tone={maintenanceStatusTone[normalizeMaintenanceStatus(job.status)]}>{maintenanceStatusLabels[normalizeMaintenanceStatus(job.status)]}</StatusBadge> : '—') },
   ], []);
   const openJobs = maintenanceJobs.filter((job) => job.status === 'open' || job.status === 'in_progress').length;
   const resolvedJobs = maintenanceJobs.filter((job) => job.status === 'resolved' || job.status === 'closed').length;

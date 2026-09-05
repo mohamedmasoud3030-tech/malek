@@ -19,12 +19,6 @@ export function getAccessiblePortfolioSections(
   return portfolioHubSections.filter((section) => canViewPortfolioSection(authorization, section));
 }
 
-export function getVisiblePortfolioSections(
-  authorization: AuthorizationContext | null | undefined,
-): readonly PortfolioHubSection[] {
-  return getAccessiblePortfolioSections(authorization).filter((section) => section.showInPrimaryNavigation);
-}
-
 const sectionIds = new Set<string>(portfolioHubSections.map((section) => section.id));
 
 export function isPortfolioHubSectionId(value: unknown): value is PortfolioHubSectionId {

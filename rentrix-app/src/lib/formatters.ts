@@ -123,6 +123,22 @@ export function formatCount(value: number | null | undefined, locale?: string): 
   return formatNumber({ value, locale, maximumFractionDigits: 0, minimumFractionDigits: 0 });
 }
 
+/**
+ * Canonical binary file-size label (`1.5 KB`, `2.25 MB`). Latin numerals via
+ * `formatCount`-compatible `formatNumber`, unit always the Latin abbreviation
+ * so Arabic and English surfaces read the same figure. Not money: no minor
+ * unit, no currency. Bytes below 1 KB stay in KB with one decimal so tiny
+ * attachments never render as `0 B`.
+ */
+export function formatFileSize(bytes: number | null | undefined, locale?: string): string {
+  if (bytes === null || bytes === undefined || !Number.isFinite(bytes) || bytes < 0) return '—';
+  const kb = bytes / 1024;
+  if (kb < 1024) {
+    return `${formatNumber({ value: kb, locale, minimumFractionDigits: 1, maximumFractionDigits: 1 })} KB`;
+  }
+  return `${formatNumber({ value: kb / 1024, locale, minimumFractionDigits: 1, maximumFractionDigits: 2 })} MB`;
+}
+
 export type DateFormatOptions = {
   value: string | number | Date | null | undefined;
   locale?: string | string[];

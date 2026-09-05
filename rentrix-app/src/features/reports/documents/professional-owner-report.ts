@@ -23,12 +23,12 @@
  */
 import type { OwnerStatementReport } from '@/features/financials/reports/financialReportsService';
 import { getExpenseChargedToLabel } from '@/features/financials/expenses/operational-expenses';
+import { getOwnerStatementTransactionTypeLabel } from '@/features/financials/reports/statement-ledger';
 import { formatCommissionTypeLabel } from '@/features/owners/owner-agreement-labels';
 import { getOwnerFinancialAuthority, type OwnerFinancialPosition } from '@/features/owners/services/owner-financial-service';
 import { listOwnerSettlements, type OwnerSettlementRecord } from '@/features/owners/services/owner-settlements-service';
 import { listOwnerProperties } from '@/features/owners/services/owner-service';
-import { maintenanceStatusLabels } from '@/features/maintenance/components/maintenance-list';
-import { normalizeMaintenanceStatus } from '@/lib/maintenanceStatus';
+import { maintenanceStatusLabels, normalizeMaintenanceStatus } from '@/lib/maintenanceStatus';
 import { listMaintenance, type Maintenance } from '@/features/maintenance/maintenance-service';
 import {
   listUtilityBills,
@@ -39,6 +39,7 @@ import {
 import { getDocumentTemplateEntry, truthfulStatusLabel } from '@/services/documents/documentRegistry';
 import type { OwnerReportPayload, ProfessionalReportGroup, ReportCellFormat } from '@/services/documents/documentPayloads';
 import { getTodayLocalDateString } from '../reports-page.helpers';
+import { amount, dateLabel, text } from './report-cells';
 
 /* ------------------------------------------------------------------ */
 /* Vocabulary comes from the owning features (maintenance status,      */
@@ -79,18 +80,10 @@ export type OwnerReportContext = {
 /* Cell helpers                                                        */
 /* ------------------------------------------------------------------ */
 
-const text = (value: string | null | undefined): ReportCellFormat => ({ kind: 'text', value: value?.trim() || '—' });
-const amount = (value: number | null | undefined): ReportCellFormat => ({ kind: 'amount', value: value ?? 0 });
-const signCell = (value: number | null | undefined): ReportCellFormat => ({ kind: 'amount', value: value ?? 0 });
 
 /* ------------------------------------------------------------------ */
 /* Payload builder (pure & deterministic — the print action feeds it)  */
 /* ------------------------------------------------------------------ */
-
-const dateLabel = (value: string | null | undefined): string => {
-  if (!value) return '—';
-  return value.slice(0, 10);
-};
 
 export function buildOwnerReportPayload(context: OwnerReportContext): OwnerReportPayload {
   const { ownerName, periodFrom, periodTo, scopeLabel, generatedAt, statement, position, settlements, maintenanceRows, utilityBills, propertyTitles } = context;
@@ -135,14 +128,9 @@ export function buildOwnerReportPayload(context: OwnerReportContext): OwnerRepor
   /* --- Group 2 — detailed daily financial movement (all transactions) --- */
   const allTransactions = statement?.transactions ?? [];
   const movementRows: ReportCellFormat[][] = allTransactions.map((tx) => {
-    const typeLabel = tx.type === 'payment' ? 'تحصيل إيجار'
-      : tx.type === 'receipt' ? 'تحصيل'
-      : tx.type === 'expense' ? 'مصروف مُحمَّل على المالك'
-      : tx.type === 'settlement' ? 'تسوية / صرف'
-      : 'حركة مالية';
     return [
       text(dateLabel(tx.date)),
-      text(typeLabel),
+      text(getOwnerStatementTransactionTypeLabel(tx.type)),
       text(tx.propertyName),
       text(tx.details),
       amount(tx.gross),
@@ -216,7 +204,7 @@ export function buildOwnerReportPayload(context: OwnerReportContext): OwnerRepor
       table: {
         title: 'تفاصيل المصروفات المسجلة',
         columns: ['التاريخ', 'العقار', 'البيان والمرجع', 'القيمة المسجلة'],
-        rows: expenseTransactions.map((tx) => [text(dateLabel(tx.date)), text(tx.propertyName), text(tx.details), signCell(tx.gross)]),
+        rows: expenseTransactions.map((tx) => [text(dateLabel(tx.date)), text(tx.propertyName), text(tx.details), amount(tx.gross)]),
         totals: [
           text('إجمالي المصروفات المسجلة'),
           text(''),
