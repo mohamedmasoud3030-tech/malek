@@ -2,7 +2,8 @@ import type { ComponentType } from 'react';
 import { Building2, FileText, Landmark, ReceiptText, UserRound } from 'lucide-react';
 import type { ReportSectionId } from './reports-page.sections';
 import type { ReportViewId } from './report-view-registry';
-import { getReportWorkspace, type ReportFilterFieldId, type ReportWorkspaceId } from './report-workspaces';
+import type { ReportFilterFieldId } from './reports-workspace-filters';
+import { getReportWorkspace, type ReportWorkspaceId } from './report-workspaces';
 
 export type ReportProductId =
   | 'owner-comprehensive-statement'
