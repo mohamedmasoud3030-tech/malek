@@ -52,7 +52,7 @@ import {
   usePropertyTitles,
 } from './reports-page.helpers';
 import type { ReportsFilterState } from './reports-workspace-filters';
-import type { ReportViewId, StatementProductFocus } from './report-products';
+import type { StatementProductFocus } from './report-products';
 import type { ReportLocation } from './report-route';
 
 function firstErrorOf(...errors: ReadonlyArray<unknown>): unknown {
@@ -64,13 +64,6 @@ function firstErrorOf(...errors: ReadonlyArray<unknown>): unknown {
 
 function isLoadingAny(...flags: ReadonlyArray<boolean | undefined>): boolean {
   return flags.some(Boolean);
-}
-
-/** R6 — active report bodies remain lazy; compact directories stay cached for filters. */
-function viewNeeds(view: ReportViewId, location: ReportLocation) {
-  const active = (views: ReportViewId[]) =>
-    views.includes(view) && views.includes(location.view);
-  return active;
 }
 
 type ReportsWorkspaceOptions = Readonly<{
@@ -898,4 +891,3 @@ export function useReportsWorkspace(
 }
 
 export type ReportsWorkspaceModel = ReturnType<typeof useReportsWorkspace>;
-export { viewNeeds };

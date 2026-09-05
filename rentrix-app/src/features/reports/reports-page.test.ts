@@ -3,7 +3,11 @@ import type { ContractListItem } from '@/features/contracts/services/contractSer
 import { contractRowFixtureDefaults } from '@/test/contractRowFixture';
 import { createReceiptPrintHref } from '@/features/financials/receipts/receipt-print';
 import { buildAgingBucketChartRows, buildExpiringContractsRows, buildOccupancyRows, buildPaymentsTrendRows, buildPropertyPerformanceRows, buildRentRollRows } from './reports-page.helpers';
-import { buildReportCsvFilename, escapeCsvValue, toDateInputValue } from './reports-page';
+import { escapeCsvValue } from '@/lib/csvExport';
+import {
+  buildReportCsvFilename,
+  toDateInputValue,
+} from './reports-page.helpers';
 
 function createContract(overrides: Partial<ContractListItem>): ContractListItem {
   return {

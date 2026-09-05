@@ -9,17 +9,11 @@ import {
 import { translateSharedLabel } from '@/lib/i18n';
 import { ReportsCatalog } from './components/ReportsCatalog';
 
-export { escapeCsvValue } from '@/lib/csvExport';
-export {
-  buildReportCsvFilename,
-  getTodayLocalDateString,
-  toDateInputValue,
-} from './reports-page.helpers';
-
 /**
  * Canonical Reports landing. All live report bodies have dedicated product
  * routes; historical query URLs are redirected by the route boundary before
- * this component is mounted.
+ * this component is mounted. Utility modules are imported from their own
+ * paths — this page component exposes no re-export surface.
  */
 export function ReportsPage() {
   const { authorization } = useAuth();
