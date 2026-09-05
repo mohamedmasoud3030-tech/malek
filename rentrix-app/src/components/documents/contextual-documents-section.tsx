@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { ContextualDocumentsPanel } from './contextual-documents-panel';
 import { ATTACHMENTS_ACCEPT } from '@/lib/attachments-contract';
+import { formatFileSize } from '@/lib/formatters';
 import { getActionableSupabaseErrorMessage } from '@/lib/supabase-error';
 import { useOptionalAuth } from '@/hooks/use-auth';
 import {
@@ -95,7 +96,7 @@ export function ContextualDocumentsSection({
         typeLabel: documentCategoryLabels[document.category] ?? 'مستند',
         ...richDocumentMetadata(document.metadata),
         fileName: document.file_name,
-        fileSize: document.file_size ? `${(document.file_size / 1024).toFixed(1)} ك.ب` : null,
+        fileSize: formatFileSize(document.file_size),
         mimeType: document.mime_type,
         relatedEntity: entityLabel,
       }))}

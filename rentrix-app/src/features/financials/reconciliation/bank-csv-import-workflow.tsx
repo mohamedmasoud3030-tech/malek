@@ -7,6 +7,10 @@ import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { formatCompanyMoney } from '@/lib/companyFormatters';
+import { formatFileSize } from '@/lib/formatters';
+
+/** Cap for an uploaded bank statement; mirrors the attachment limit for CSV payloads. */
+const MAX_BANK_CSV_FILE_BYTES = 5 * 1024 * 1024;
 import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
 import { useBankAccounts } from './useBankReconciliation';
 import { previewBankCsvFile, previewBankStatementBatch, importBankStatementBatch, toImportPayloadRows, type BankImportPreview, type BankImportResult } from './bankCsvImportService';
@@ -60,8 +64,10 @@ export function BankCsvImportWorkflow({ open, onOpenChange, defaultBankAccountId
     setError(null);
     setIsParsing(true);
     try {
-      if (selectedFile.size > 5 * 1024 * 1024) {
-        throw new Error('حجم الملف يتجاوز 5MB');
+      if (selectedFile.size > MAX_BANK_CSV_FILE_BYTES) {
+        throw new Error(
+          `حجم الملف يتجاوز ${formatFileSize(MAX_BANK_CSV_FILE_BYTES, { unitLabels: 'arabic', fractionDigits: 0 })}`,
+        );
       }
       const lowerName = selectedFile.name.toLowerCase();
       if (!lowerName.endsWith('.csv') && selectedFile.type !== 'text/csv' && !lowerName.endsWith('.txt')) {
@@ -180,7 +186,7 @@ export function BankCsvImportWorkflow({ open, onOpenChange, defaultBankAccountId
               <div className="rounded-xl border bg-muted/30 p-3 text-sm">
                 <p className="font-bold">{file.name}</p>
                 <p className="text-xs text-muted-foreground">
-                  الحجم: {(file.size / 1024).toFixed(1)} KB — {preview?.encoding ?? '—'} — فاصل: {preview?.delimiter === ';' ? 'فاصلة منقوطة ;' : 'فاصلة ,'} {preview?.detectedDelimiterConfidence ? `(${preview.detectedDelimiterConfidence})` : ''}
+                  الحجم: {formatFileSize(file.size) ?? '—'} — {preview?.encoding ?? '—'} — فاصل: {preview?.delimiter === ';' ? 'فاصلة منقوطة ;' : 'فاصلة ,'} {preview?.detectedDelimiterConfidence ? `(${preview.detectedDelimiterConfidence})` : ''}
                 </p>
               </div>
             ) : null}

@@ -220,37 +220,59 @@ export function formatLatinTime(
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Backwards-compatible aliases (used during the migration away from prototypes).
-// New code should use the formatLatin* functions directly.
+// File sizes
 // ──────────────────────────────────────────────────────────────────────────────
 
-export function toLatinLocaleString(
-  value: number | Date | string | null | undefined,
-  locales?: string | string[],
-  options?: Intl.NumberFormatOptions | Intl.DateTimeFormatOptions,
-): string {
-  if (value === null || value === undefined) return '';
-  if (value instanceof Date) return formatLatinDateTime(value, locales, options as Intl.DateTimeFormatOptions);
-  if (typeof value === 'number') return formatLatinNumber(value, locales, options as Intl.NumberFormatOptions);
-  const trimmed = String(value).trim();
-  if (trimmed !== '' && !Number.isNaN(Number(trimmed))) return formatLatinNumber(Number(trimmed), locales, options as Intl.NumberFormatOptions);
-  const parsed = new Date(value);
-  if (!Number.isNaN(parsed.getTime())) return formatLatinDateTime(parsed, locales, options as Intl.DateTimeFormatOptions);
-  return String(value);
-}
+const FILE_SIZE_BASE = 1024;
+const FILE_SIZE_LATIN_UNITS = ['B', 'KB', 'MB', 'GB', 'TB'] as const;
+const FILE_SIZE_ARABIC_UNITS = ['بايت', 'كيلوبايت', 'ميغابايت', 'جيجابايت', 'تيرابايت'] as const;
 
-export function toLatinLocaleDateString(
-  value: Date | string | null | undefined,
-  locales?: string | string[],
-  options?: Intl.DateTimeFormatOptions,
-): string {
-  return formatLatinDate(value, locales, options);
-}
+export type FileSizeFormatOptions = {
+  /** Unit vocabulary: Latin for data surfaces, Arabic words for prose. */
+  unitLabels?: 'latin' | 'arabic';
+  locale?: string | string[];
+  /** Digits after the decimal point for scaled units; bytes stay integral. */
+  fractionDigits?: number;
+};
 
-export function toLatinLocaleTimeString(
-  value: Date | string | null | undefined,
-  locales?: string | string[],
-  options?: Intl.DateTimeFormatOptions,
-): string {
-  return formatLatinTime(value, locales, options);
+/**
+ * Renders a byte count in the largest binary unit that keeps the number at or
+ * above one, and returns `null` when there is no measurable size to display.
+ *
+ * Uploaded-file lists, upload limits and import previews each divided by 1024 by
+ * hand, so the same document read «12.4 KB» in the vault and «12.4 ك.ب» in the
+ * contextual panel, and quoted limits were literal text that could drift from
+ * the constants they describe. Callers pass the constant and get one shape.
+ */
+export function formatFileSize(
+  bytes: number | null | undefined,
+  options: FileSizeFormatOptions = {},
+): string | null {
+  const value = typeof bytes === 'number' ? bytes : Number(bytes);
+  if (!Number.isFinite(value) || value <= 0) return null;
+
+  const units = options.unitLabels === 'arabic' ? FILE_SIZE_ARABIC_UNITS : FILE_SIZE_LATIN_UNITS;
+  const fractionDigits = Math.max(0, Math.min(3, options.fractionDigits ?? 1));
+  const locale = options.locale ?? DEFAULT_LOCALE;
+
+  let exponent = 0;
+  while (exponent < units.length - 1 && value >= FILE_SIZE_BASE ** (exponent + 1)) exponent += 1;
+  let scaled = value / FILE_SIZE_BASE ** exponent;
+  // Rounding up to the base means the next unit is the honest one, so a
+  // 1 048 550 byte file never reads as «1024.0 KB».
+  if (exponent < units.length - 1 && scaled.toFixed(fractionDigits) === FILE_SIZE_BASE.toFixed(fractionDigits)) {
+    exponent += 1;
+    scaled = value / FILE_SIZE_BASE ** exponent;
+  }
+
+  const number = exponent === 0
+    ? formatLatinNumber(Math.round(scaled), locale, { maximumFractionDigits: 0, useGrouping: false })
+    : formatLatinNumber(scaled, locale, {
+        minimumFractionDigits: fractionDigits,
+        maximumFractionDigits: fractionDigits,
+        // A measurement reads as a magnitude, not as a ledger figure: 1023 B and
+        // 2000.0 TB carry no thousands separator.
+        useGrouping: false,
+      });
+  return `${number} ${units[exponent]}`;
 }

@@ -1,9 +1,12 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_CURRENCY,
   currencyMetadata,
   formatDate,
   formatDateTime,
+  formatFileSize,
   formatLatinDate,
   formatLatinDateTime,
   formatLatinNumber,
@@ -16,9 +19,6 @@ import {
   normalizeCurrency,
   normalizeLocale,
   supportedCurrencies,
-  toLatinLocaleDateString,
-  toLatinLocaleString,
-  toLatinLocaleTimeString,
 } from './formatters';
 
 describe('shared formatter design-system utilities', () => {
@@ -145,14 +145,6 @@ describe('Latin numeral enforcement — dates', () => {
   });
 });
 
-describe('numeric strings — not interpreted as dates before numbers', () => {
-  it('toLatinLocaleString treats pure numeric strings as numbers', () => {
-    const result = toLatinLocaleString('1234', 'ar');
-    expect(result).not.toMatch(/[\u0660-\u0669]/);
-    expect(result).toContain('1');
-  });
-});
-
 describe('normalizeLocale — Unicode extension handling', () => {
   it('adds -u-nu-latn to bare ar locale', () => {
     expect(normalizeLocale('ar')).toBe('ar-u-nu-latn');
@@ -176,25 +168,6 @@ describe('normalizeLocale — Unicode extension handling', () => {
     expect(Array.isArray(result)).toBe(true);
     expect((result as string[])[0]).toBe('ar-OM-u-nu-latn');
     expect((result as string[])[1]).toBe('en');
-  });
-});
-
-describe('backwards-compatible aliases', () => {
-  it('toLatinLocaleString works for numbers', () => {
-    const result = toLatinLocaleString(42, 'ar');
-    expect(result).not.toMatch(/[\u0660-\u0669]/);
-  });
-
-  it('toLatinLocaleDateString works for dates', () => {
-    const d = new Date('2026-07-01T00:00:00Z');
-    const result = toLatinLocaleDateString(d, 'ar-OM');
-    expect(result).not.toMatch(/[\u0660-\u0669]/);
-  });
-
-  it('toLatinLocaleTimeString works for dates', () => {
-    const d = new Date('2026-07-01T12:00:00Z');
-    const result = toLatinLocaleTimeString(d, 'ar');
-    expect(result).not.toMatch(/[\u0660-\u0669]/);
   });
 });
 
@@ -237,7 +210,78 @@ describe('no prototype side effects', () => {
     expect((Date.prototype as any).toLatinLocaleDateString).toBeUndefined();
   });
 
-  it('Date.prototype does not have toLatinLocaleTimeString', () => {
+  // The aliases are gone; the prototype pollution they once wrapped must not return.
+  it('Date.prototype has no Latin formatting methods', () => {
     expect((Date.prototype as any).toLatinLocaleTimeString).toBeUndefined();
+  });
+
+  it('formatters does not re-export the retired aliases', () => {
+    const source = readFileSync(resolve(import.meta.dirname, 'formatters.ts'), 'utf8');
+    expect(source).not.toMatch(/toLatinLocale/);
+  });
+});
+
+describe('formatFileSize', () => {
+  const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
+
+  it('yields nothing to show when there is no measurable size', () => {
+    for (const value of [0, -1, Number.NaN, Number.POSITIVE_INFINITY, null, undefined]) {
+      expect(formatFileSize(value)).toBeNull();
+    }
+  });
+
+  it('keeps sub-kilobyte files in bytes instead of showing a fraction', () => {
+    expect(formatFileSize(1)).toBe('1 B');
+    expect(formatFileSize(900)).toBe('900 B');
+    expect(formatFileSize(1023)).toBe('1023 B');
+  });
+
+  it('scales to the largest unit that keeps the number at or above one', () => {
+    expect(formatFileSize(1024)).toBe('1.0 KB');
+    expect(formatFileSize(12_700)).toBe('12.4 KB');
+    expect(formatFileSize(3_758_096_384)).toBe('3.5 GB');
+  });
+
+  it('promotes a value whose rounding reaches the next base', () => {
+    expect(formatFileSize(1_048_550)).toBe('1.0 MB');
+  });
+
+  it('honours the caller fraction digits', () => {
+    expect(formatFileSize(MAX_ATTACHMENT_BYTES, { fractionDigits: 0 })).toBe('5 MB');
+    expect(formatFileSize(1_572_864, { fractionDigits: 2 })).toBe('1.50 MB');
+  });
+
+  it('renders Arabic unit words for prose and Latin units for data surfaces', () => {
+    expect(
+      formatFileSize(MAX_ATTACHMENT_BYTES, { unitLabels: 'arabic', fractionDigits: 0 }),
+    ).toBe('5 ميغابايت');
+  });
+
+  it('always uses Latin digits so a size reads the same in any locale', () => {
+    expect(formatFileSize(12_700, { locale: 'ar-OM' })).toBe('12.4 KB');
+  });
+
+  it('caps the top unit rather than inventing a petabyte tier', () => {
+    expect(formatFileSize(2_000 * 1024 ** 4)).toBe('2000.0 TB');
+  });
+
+  // Consolidation guard: these surfaces once divided by 1024 themselves, which is
+  // how «12.4 KB» and «12.4 ك.ب» ended up describing the same uploaded document,
+  // and how a literal “5MB” drifted from the constant the check actually uses.
+  it('is the only byte formatter behind the migrated surfaces', () => {
+    const consumers = [
+      '../components/documents/contextual-documents-section.tsx',
+      '../components/ui/file-attachment-field.tsx',
+      '../features/documents-vault/components/documents-vault-workspace.tsx',
+      '../features/documents-vault/documents-vault-service.ts',
+      '../features/financials/reconciliation/bank-csv-import-workflow.tsx',
+      '../features/settings/office-launch/import/office-import.ts',
+    ];
+    for (const relative of consumers) {
+      const source = readFileSync(resolve(import.meta.dirname, relative), 'utf8');
+      expect(source).not.toMatch(/\/ 1024/);
+      expect(source).not.toMatch(/\.toFixed\(\d\)\s*}\s*(KB|ك\.ب|MB)/);
+      expect(source).toContain('formatFileSize');
+    }
   });
 });
