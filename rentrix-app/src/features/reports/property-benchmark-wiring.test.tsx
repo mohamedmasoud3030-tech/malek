@@ -84,6 +84,11 @@ vi.mock('@/features/accounting/reports/accountingReportsHooks', () => ({
   useAccountingBalanceSheetReport: () => okQuery(null),
 }));
 vi.mock('@/features/financials/reports/useFinancialReports', () => ({
+  financialReportKeys: {
+    all: ['financialReports'] as const,
+    ownerStatement: (ownerId: string, filters: Record<string, unknown>) =>
+      ['financialReports', 'ownerStatement', ownerId, filters] as const,
+  },
   useExpenseBreakdownReport: (filters: Record<string, unknown>) => {
     expenseCalls.push(filters);
     // Mirror the real service: a propertyId filter narrows byProperty.
