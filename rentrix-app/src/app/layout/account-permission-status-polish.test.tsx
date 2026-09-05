@@ -119,6 +119,12 @@ describe('account permission status polish', () => {
     });
     const menu = host.querySelector<HTMLElement>('[data-account-menu-panel]');
     expect(menu).not.toBeNull();
+    // A menu element may contain only its items: the guidance card and the identity
+    // header belong to the panel, and only the actions carry the menu role.
+    const actionList = menu?.querySelector<HTMLElement>('[role="menu"]');
+    expect(actionList).not.toBeNull();
+    expect(actionList?.querySelector('[role="status"]')).toBeNull();
+    expect(actionList?.textContent).toContain('تسجيل الخروج');
     return menu;
   }
 

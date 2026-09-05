@@ -294,13 +294,32 @@ describe('MALEK mobile shell & navigation polish pass (Section O verification ma
       expect(userBtn).not.toBeNull();
       act(() => { userBtn?.click(); });
 
-      const userMenu = host.querySelector<HTMLElement>('[role="menu"][aria-label="قائمة المستخدم"]');
+      // The panel owns the geometry and the account context; the menu role wraps
+      // only its menuitems, which is what the role requires.
+      const panel = host.querySelector<HTMLElement>('[data-account-menu-panel]');
+      expect(panel).not.toBeNull();
+      expect(panel?.className).toContain('w-[min(17rem,calc(100vw-1.5rem))]');
+      expect(panel?.className).toContain('absolute end-0 top-[calc(100%+0.5rem)]');
+      expect(panel?.textContent).toContain('admin@malek.test');
+
+      const userMenu = panel?.querySelector<HTMLElement>('[role="menu"][aria-label="قائمة المستخدم"]');
       expect(userMenu).not.toBeNull();
-      expect(userMenu?.className).toContain('w-[min(17rem,calc(100vw-1.5rem))]');
-      expect(userMenu?.textContent).toContain('admin@malek.test');
+      expect(userMenu?.querySelector('[role="status"]')).toBeNull();
+      const items = Array.from(userMenu?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []);
+      expect(items).toHaveLength(4);
       expect(userMenu?.textContent).toContain('إعدادات المنشأة');
       expect(userMenu?.textContent).toContain('تسجيل الخروج');
 
+      // Shared menu keyboard contract: arrows move between items and Escape hands
+      // focus back to the trigger instead of stranding it in a closed surface.
+      items[0].focus();
+      act(() => { items[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })); });
+      expect(document.activeElement).toBe(items[1]);
+      act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); });
+      expect(host.querySelector('[role="menu"][aria-label="قائمة المستخدم"]')).toBeNull();
+      expect(document.activeElement).toBe(userBtn);
+
+      act(() => { userBtn?.click(); });
       const backdrop = host.querySelector<HTMLElement>('.fixed.inset-0.z-40');
       expect(backdrop).not.toBeNull();
       act(() => { backdrop?.dispatchEvent(new MouseEvent('click', { bubbles: true })); });

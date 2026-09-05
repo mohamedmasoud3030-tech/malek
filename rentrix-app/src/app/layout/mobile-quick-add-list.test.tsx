@@ -127,6 +127,65 @@ describe('Mobile chrome Quick Add — header actions + compact dock', () => {
     expect(report, report.join('\n')).toEqual([]);
   });
 
+  // Declaring role="menu" obligates the menu keyboard contract, so the quick-add
+  // popup has to satisfy the same navigation as the canonical action menu.
+  it('moves focus through the destinations and hands it back to the trigger on Escape', async () => {
+    openQuickAdd();
+    await act(async () => {
+      await new Promise<void>((resolveFrame) => {
+        requestAnimationFrame(() => resolveFrame());
+      });
+    });
+
+    const menu = host.querySelector<HTMLElement>('[role="menu"]');
+    expect(menu).not.toBeNull();
+    const items = Array.from(menu?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []);
+    expect(items).toHaveLength(4);
+
+    // Opening moves focus into the menu instead of leaving it on the trigger.
+    expect(document.activeElement).toBe(items[0]);
+    expect(menu?.getAttribute('aria-labelledby')).toBeTruthy();
+
+    act(() => {
+      items[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
+    });
+    expect(document.activeElement).toBe(items[3]);
+
+    act(() => {
+      items[3].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    });
+    expect(document.activeElement).toBe(items[0]);
+
+    act(() => {
+      items[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+    });
+    expect(document.activeElement).toBe(items[3]);
+
+    act(() => {
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    });
+    expect(host.querySelector('[role="menu"]')).toBeNull();
+    expect(document.activeElement).toBe(
+      document.querySelector('[data-header-quick-add]'),
+    );
+  });
+
+  // The trigger controls the popup, not the popup title.
+  it('exposes the open state and the controlled panel on the trigger', () => {
+    act(() => root.render(<MobileFloatingControl onMenu={() => undefined} />));
+    const closedTrigger = document.querySelector<HTMLButtonElement>('[data-header-quick-add]');
+    expect(closedTrigger?.getAttribute('aria-expanded')).toBe('false');
+    expect(closedTrigger?.getAttribute('aria-controls')).toBeNull();
+
+    act(() => { closedTrigger?.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
+    const openTrigger = document.querySelector<HTMLButtonElement>('[data-header-quick-add]');
+    const panelId = openTrigger?.getAttribute('aria-controls');
+    expect(panelId).toBeTruthy();
+    const panel = host.querySelector<HTMLElement>(`#${CSS.escape(panelId!)}`);
+    expect(panel?.getAttribute('role')).toBe('menu');
+    expect(openTrigger?.getAttribute('aria-expanded')).toBe('true');
+  });
+
   it('disables Quick Add when the role has no permitted write actions', () => {
     mockRole = 'USER';
     act(() => root.render(<MobileFloatingControl onMenu={() => undefined} />));
