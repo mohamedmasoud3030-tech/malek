@@ -35,6 +35,8 @@ permission, RLS, or reporting authority.
 | Document/export/share language | The existing guarded document platform described copied links and unavailable actions as reports, even for account statements. | The same action component and authority are reused with statement wording. Export permissions, document readiness, data completeness, PDF/Excel/print behavior, and server values are unchanged. |
 | Owner dossier | The owner action “كشف المالك الكامل” was terse and did not establish an account-statement transition. The dossier subtitle sent financial detail to a generic reports space. | Owner action now says “فتح كشف حساب المالك,” and the dossier explains that it opens the owner account statement. |
 | Tenant preview and person dossier | Tenant and person links named an account statement but not the contextual destination consistently. | Links now say “فتح كشف حساب العقد” and “فتح كشف حساب المستأجر للعقد”; both provide the contract ID required by the tenant statement authority. |
+| Statement entry-point permissions | The tenant preview offered its statement link from the ledger section, which is gated by `arrears.view`, while the destination route requires `financial.reports.view` — an affordance that bounced the user to `/login`. | Every statement entry point (owner dossier, tenant preview, person dossier, contract detail) is now offered only when `financial.reports.view` is held, matching the route guard. No server-side authority changed. |
+| Product target rail | The premium page hand-rolled a second partial ARIA tablist (`role="tab"` without roving focus, `aria-controls`, or arrow-key handling) while the app already owns a canonical `SectionTabs` rail, and the body panel's `aria-labelledby` pointed at the retired workspace tab id. | The page composes the canonical `SectionTabs`/`SectionTabPanel` pair under one `idPrefix`, so relations resolve and RTL arrow keys work; `ReportViewPanel` emits no tabpanel of its own. No new abstraction was added. |
 | Contract detail | One action combined two product categories as “كشف وتقارير العقد,” although it opens only the tenant statement. | The action is now “فتح كشف حساب العقد,” has a statement-specific ID/icon, and targets the selected contract. |
 | Direct dispatcher and data bodies | Replacing statement routes/sections would risk a duplicate renderer or calculation path. | `components/report-view-panel.tsx` remains the only direct lazy body dispatcher; only route chrome/IA and inputs to existing presentation controls change. |
 
@@ -46,18 +48,28 @@ targets, and a compact `sm` label for the contextual back action. The statement
 context changes from one column to two at `sm` and three at `xl`; long names
 use `break-words`. The analytical catalog keeps its existing responsive grid.
 
-Visual browser checks must still verify the following after a browser is
-available:
+## Browser validation (executed)
 
-1. Desktop: entity context, document actions, and return control do not crowd
-   each other at common desktop widths.
-2. Tablet: statement context and filter controls wrap without clipping.
-3. Mobile: back action remains reachable, all action targets are at least the
-   existing 44px minimum, long names wrap, and catalog guidance does not
-   obscure analytical cards.
-4. Loading, empty, authorization, and incomplete/error states retain their
-   authoritative existing body panels and use the correct report/statement
-   identity in surrounding chrome.
+Real headless Chromium (Playwright 1.61.1, Chrome for Testing 149) executed the
+Reports/Statements suites against the running application and the hermetic
+fake-Supabase acceptance backend. All three configured projects
+(`chromium-desktop`, `chromium-tablet`, `chromium-mobile`) pass:
+
+1. Desktop 1440: entity context, document actions, and return control coexist
+   without crowding; print opens a real scoped A4 RTL popup; the PDF is a
+   genuine multi-page `application/pdf` artifact; share falls back honestly
+   when the Web Share API is absent.
+2. Tablet 768 and mobile 375/390: one readable catalog column, no horizontal
+   overflow, statement context and filters wrap without clipping.
+3. The product target rail was verified as an honest tab/tabpanel pair: exactly
+   one tab is in the tab order, every `aria-controls`/`aria-labelledby`
+   relation resolves to a real element, and RTL arrow-key navigation moves the
+   selected target and the body it controls.
+4. Money on printed documents keeps three-decimal OMR rendering; the printed
+   document carries the company identity and never the app screen.
+
+The browser run is what exposed a catalog title assertion that had never matched
+the canonical product title; source-level suites had passed it unnoticed.
 
 ## Authority protections reviewed
 
@@ -76,5 +88,6 @@ available:
 Source-level coverage and focused application tests must assert: exactly three
 analytical catalog cards; no statement card in the catalog; statement identity,
 context, and entity return wiring; report/catalog return wiring; direct
-`ReportViewPanel` dispatch; and preserved document authority. Browser evidence
-is reported separately and only if it is actually executable.
+`ReportViewPanel` dispatch; statement entry-point permission parity; and
+preserved document authority. Browser evidence is recorded above and was
+produced by actual Chromium execution, not simulation.
