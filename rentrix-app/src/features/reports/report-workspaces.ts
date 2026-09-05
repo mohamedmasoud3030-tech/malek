@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import type { ReportSectionId } from './reports-page.sections';
 import type { ReportViewId } from './report-view-registry';
-import type { ReportsFilterState } from './reports-workspace-filters';
+import type { ReportFilterFieldId, ReportsFilterState } from './reports-workspace-filters';
 
 /**
  * MALEK Reports Center — workspace registry.
@@ -38,18 +38,6 @@ export type ReportWorkspaceId =
   | 'properties'
   | 'statements'
   | 'financial_review';
-
-/** Global report filter fields that a workspace may choose to expose. */
-export type ReportFilterFieldId =
-  | 'period'
-  | 'asOf'
-  | 'property'
-  | 'unit'
-  | 'tenant'
-  | 'contract'
-  | 'status'
-  | 'costCenter'
-  | 'owner';
 
 export type ReportWorkspaceSubView = Readonly<{
   /** Internal routing view id (legacy-compatible). */
