@@ -37,7 +37,6 @@ let agreementVersion = '';
 let invoiceId = '';
 let periodOldId = '';
 let periodCurrentId = '';
-let periodFutureId = '';
 
 async function rpc(name: string, payload: Record<string, unknown>) {
   const { rows } = await db.query<{ value: string }>(
@@ -63,10 +62,6 @@ async function netDebit(accountNo: string): Promise<number> {
   );
   return Number(rows[0]?.value ?? 0);
 }
-async function netCredit(accountNo: string) {
-  return -(await netDebit(accountNo));
-}
-
 async function invoiceRow(id: string) {
   const rows = await query<{
     id: string;
@@ -104,14 +99,6 @@ async function tenantBalance(tenantId: string) {
   const rows = await query<{ balance_due: string }>(
     `select balance_due::text from public.tenant_balances where tenant_id = $1::uuid`,
     [tenantId],
-  );
-  return rows[0];
-}
-
-async function ownerBalance(ownerId: string) {
-  const rows = await query<{ total_income: string; net_balance: string }>(
-    `select total_income::text, net_balance::text from public.owner_balances where owner_id = $1::uuid`,
-    [ownerId],
   );
   return rows[0];
 }
@@ -239,7 +226,7 @@ beforeAll(async () => {
   periodCurrentId = await ensurePeriod(cur.first, cur.last);
 
   // Future period
-  periodFutureId = await ensurePeriod(nxt.first, nxt.last);
+  await ensurePeriod(nxt.first, nxt.last);
 
   // Create S08 cutover to satisfy owner_funds_event guard for historical 2000
   // Use cutover date 2019-12-31 so all 2020+ events are after cutover
@@ -358,13 +345,6 @@ describe('Group3 collections, payments & period close', () => {
     // GL should still be only one receipt posting for this invoice (1111 = GROSS, not 2*GROSS)
     expect(await netDebit('1111')).toBe(GROSS);
 
-    // Also verify idempotency for receipt void request
-    const voidContractTmp = 'c3000000-0000-4000-8000-000000000202';
-    const voidRows = await query<{ receipt_id: string }>(
-      `select receipt_id::text from public.payments where contract_id = $1::uuid order by created_at desc limit 1`,
-      [voidContractTmp],
-    );
-    // If void contract not yet created, skip second part; main idempotency proven above
   });
 
   it('receipt void/reversal preserves history and restores balances', async () => {
@@ -695,13 +675,7 @@ describe('Group3 collections, payments & period close', () => {
     // At least one void audit
     expect(Number(auditPayments[0].count)).toBeGreaterThanOrEqual(1);
 
-    // Verify no deleted financial history
-    const deletedReceipts = await query<{ cnt: string }>(
-      `select count(*)::text as cnt from public.receipts where deleted_at is not null and company_id = $1::uuid`,
-      [COMPANY],
-    );
-    // Soft deletes may exist for other reasons, but posted receipts should not be hard deleted
-    // Check that voided receipt still exists (not hard deleted)
+    // Check that the voided receipt still exists (not hard deleted).
     const voidedStillExists = await query<{ cnt: string }>(
       `select count(*)::text as cnt from public.receipts where status = 'VOID' and company_id = $1::uuid`,
       [COMPANY],
@@ -779,7 +753,7 @@ describe('Group3 collections, payments & period close', () => {
       [creditContract2],
     );
     const creditInvId2 = creditInvRows2[0].id;
-    const credit2 = await rpc('create_invoice_credit_atomic', {
+    await rpc('create_invoice_credit_atomic', {
       invoice_id: creditInvId2,
       amount: 105,
       credit_type: 'PARTIAL',

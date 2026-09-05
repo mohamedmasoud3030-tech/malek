@@ -230,7 +230,6 @@ function buildNoteBlock(note: ReportNote): string {
 const SVG_WIDTH = 700;
 const SVG_PLOT_LEFT = 20;
 const SVG_PLOT_RIGHT = 20;
-const SVG_LEGEND_Y = 3;
 const SVG_AXIS_Y = 236;
 const SVG_CHART_BOTTOM = 236;
 const SVG_TOP_PAD = 30;
@@ -333,7 +332,6 @@ function buildHBarSvg(chart: ReportChart, yMax: number): string {
   const seriesName = series?.name;
   const rowCount = Math.max(1, categories.length);
   const labelWidth = 150;
-  const plotWidth = SVG_WIDTH - SVG_PLOT_LEFT - SVG_PLOT_RIGHT - labelWidth;
   const rowHeight = Math.min(30, Math.max(14, 220 / rowCount));
   const barHeight = Math.max(6, rowHeight * 0.62);
   const plotHeight = rowCount * rowHeight;

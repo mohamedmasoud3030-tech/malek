@@ -2,7 +2,6 @@ import type { CanonicalContractStatus } from '@/lib/contractStatus';
 import { getContractStatusVariants } from '@/lib/contractStatus';
 import { fetchAllRows, fetchAllRowsInBatches } from '@/lib/paginatedRead';
 import { supabase } from '@/lib/supabase';
-import type { Database } from '@/types/database';
 import type { Contract, Person, Property, Unit } from '@/types/domain';
 import type { ContractPayload, RenewalPayload } from '../contractSchema';
 

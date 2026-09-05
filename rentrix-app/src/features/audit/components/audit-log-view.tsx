@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import { Link } from '@tanstack/react-router';
-import { ShieldCheck } from 'lucide-react';
 import { DataErrorScreen } from '@/components/data-error-screen';
 import { DataRefreshAlert } from '@/components/data-refresh-alert';
 import { Alert } from '@/components/ui/alert';

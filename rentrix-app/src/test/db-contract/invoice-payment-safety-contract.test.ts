@@ -10,13 +10,6 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-function readMigrationSource(filename: string): string {
-  return readFileSync(
-    resolve(__dirname, '../../../../supabase/migrations', filename),
-    'utf8',
-  );
-}
-
 function allMigrationSources(): Map<string, string> {
   const root = resolve(__dirname, '../../../../supabase/migrations');
   const out = new Map<string, string>();

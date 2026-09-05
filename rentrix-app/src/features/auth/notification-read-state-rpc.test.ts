@@ -11,7 +11,7 @@
  */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
-import { assumeIdentity, createFullReplayedDatabase } from '../../p1/replay-bootstrap';
+import { createFullReplayedDatabase } from '../../p1/replay-bootstrap';
 
 const COMPANY_A = 'a6000000-0000-4000-8000-00000000000a';
 const COMPANY_B = 'a6000000-0000-4000-8000-00000000000b';

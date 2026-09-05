@@ -13,11 +13,6 @@ describe('CommissionSourceSelector (UX-049)', () => {
     'utf8',
   );
 
-  const pageSource = readFileSync(
-    resolve(import.meta.dirname, './commissions-page.tsx'),
-    'utf8',
-  );
-
   const selectorSource = readFileSync(
     resolve(import.meta.dirname, './components/CommissionSourceSelector.tsx'),
     'utf8',

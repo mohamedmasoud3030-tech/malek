@@ -26,13 +26,9 @@ type OwnerLinkFixture = (typeof ownerLinks)[number];
 type AgreementFixture = { starts_on: string; ends_on: string | null };
 
 vi.mock('@tanstack/react-router', () => ({
-  useNavigate: () => (opts: { search: { tab: string } }) => {
-    lastNavigation = opts;
-  },
+  useNavigate: () => () => undefined,
   Link: ({ children }: { children: React.ReactNode }) => children,
 }));
-
-let lastNavigation: { search: { tab: string } } | null = null;
 
 const ownersResult = vi.hoisted(() => ({
   value: { data: [] as OwnerLinkFixture[], isLoading: false },

@@ -36,7 +36,6 @@ export function AssistantSpeechControl({ messageId, content }: AssistantSpeechCo
 
   if (!speechState.supported) return null;
 
-  const isActive = speechState.status !== 'idle' && speechState.messageId === messageId;
   const isOwnPaused = speechState.status === 'paused' && speechState.messageId === messageId;
   const isOwnPlaying = speechState.status === 'playing' && speechState.messageId === messageId;
 

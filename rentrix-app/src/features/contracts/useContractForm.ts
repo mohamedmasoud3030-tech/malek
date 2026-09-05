@@ -12,21 +12,14 @@ import { useUnitContractConflicts } from './queries/useUnitContractConflicts';
 import { useUnitContractDrafts } from './queries/useUnitContractDrafts';
 import {
   contractSchema,
-  contractStatusLabels,
-  contractStatusValues,
   leaseModeValues,
-  paymentCycleLabels,
-  paymentCycleValues,
   type ContractFormValues,
 } from './contractSchema';
 import {
-  buildContractUnitOptionLabel,
   getContractUnitDefaultRent,
   getContractUnitSelectionIssue,
-  isUnitSelectableForContract,
 } from './contract-unit-options';
 import type { Contract, Property } from '@/types/domain';
-import type { Person } from '@/types/domain';
 import type { PaginatedResult } from '@/features/properties/property-service';
 import type { PaginatedPeople } from '@/features/people/people-service';
 import { normalizeContractStatus } from '@/lib/contractStatus';

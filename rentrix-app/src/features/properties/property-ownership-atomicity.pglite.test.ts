@@ -120,7 +120,6 @@ async function ownershipRows(propertyId: string) {
   return rows;
 }
 
-const primary100: readonly OwnershipEntry[] = [{ owner_id: OWNER_P, ownership_percentage: 100, is_primary: true }];
 const split60_40: readonly OwnershipEntry[] = [
   { owner_id: OWNER_P, ownership_percentage: 60, is_primary: true },
   { owner_id: OWNER_C1, ownership_percentage: 40, is_primary: false },

@@ -1,5 +1,5 @@
 import { useMemo, useState, type FormEvent } from 'react';
-import { ClipboardCheck, FileCheck2, ShieldAlert } from 'lucide-react';
+import { ClipboardCheck, FileCheck2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,7 +16,6 @@ import {
   parseChecklistResponses,
   type ChecklistResponseItem,
   type ContractInspection,
-  type InspectionTemplate,
 } from './contract-evidence-service';
 import { useContractEvidenceDocuments, useContractEvidenceMutations, useContractEvidenceState } from './use-contract-evidence';
 import type { SemanticTone } from '@/components/ui/status-badge';

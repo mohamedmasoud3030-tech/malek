@@ -1,7 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
 import { fetchAllRows, fetchAllRowsInBatches } from '@/lib/paginatedRead';
-import { getTodayLocalDateString } from '@/features/financials/financials-date-utils';
 import {
   TAX_PROFILE_MISSING,
   TAX_READINESS_READY,

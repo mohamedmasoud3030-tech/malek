@@ -7,7 +7,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import type { CompanySettingsContract } from '@/lib/companySettings';
 import { contractStatusLabels, contractStatusTone, leaseModeLabels, paymentCycleLabels } from '../contractSchema';
 import { normalizeContractStatus } from '@/lib/contractStatus';
-import { unitStatusLabels, type UnitStatus } from '@/features/units/unit-schema';
+import { unitStatusLabels } from '@/features/units/unit-schema';
 import { getContractNumber } from '../contractListExport';
 import { formatContractDate, formatContractMoney } from '../contractDisplayFormatters';
 import type { ContractListItem } from '../services/contractService';

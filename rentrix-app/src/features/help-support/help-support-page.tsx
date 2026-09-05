@@ -35,7 +35,6 @@ import { sanitizeSupportRoute } from "./help-context";
 import {
   getContextualHelpArticleId,
   getHelpArticle,
-  helpArticles,
   helpCategoryLabels,
   searchHelpArticles,
   type HelpArticle,

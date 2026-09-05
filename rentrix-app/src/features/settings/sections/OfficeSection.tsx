@@ -1,6 +1,6 @@
 import type { ChangeEvent } from 'react';
-import { EntityForm } from '@/components/ui/entity-form';
 import { Textarea } from '@/components/ui/textarea';
+import { OfficeLaunchPanel } from '../office-launch/OfficeLaunchPanel';
 import { APP_BRAND_NAME } from '@/lib/brand';
 import { supportedCountries } from '@/lib/companySettings';
 import type { CompanySettingsDraft, CompanySettingsDraftField, CompanySettingsValidationErrors } from '../settingsForm';
@@ -79,6 +79,8 @@ export function OfficeSection({
           {section.errors.address ? <span className="block px-0.5 text-[11px] text-destructive">{section.errors.address}</span> : null}
         </label>
       </fieldset>
+
+      <OfficeLaunchPanel draft={draft} />
     </SectionCard>
   );
 }

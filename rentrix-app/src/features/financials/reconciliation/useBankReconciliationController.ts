@@ -8,7 +8,6 @@ import type {
   BankReconciliationFilters,
   BankReconciliationMatchValues,
   BankStatementImportValues,
-  BankStatementLine,
   BankStatementLineFormValues,
 } from './types';
 import {
