@@ -3,6 +3,7 @@ import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
 import { downloadBlob } from '@/lib/tabular-export';
 import { buildXlsxBlob } from '@/lib/xlsx-export';
 import {
+  buildAgedArrearsTable,
   downloadAgedArrearsReportPdf,
   downloadPortfolioPerformanceReportPdf,
   downloadRentRollReportPdf,
@@ -264,32 +265,12 @@ export function useReportProductDocumentActions(
             onDownloadPdf: () =>
               downloadAgedArrearsReportPdf({ report, settings }),
             onDownloadExcel: () => {
+              const table = buildAgedArrearsTable(report);
               downloadBlob(
                 buildXlsxBlob({
                   name: 'أعمار المتأخرات',
-                  headers: [
-                    'المستأجر',
-                    'العقار / الوحدة',
-                    'غير متأخر',
-                    '1–30',
-                    '31–60',
-                    '61–90',
-                    '+90',
-                    'الإجمالي',
-                  ],
-                  rows: report.rows.map(
-                    (row) =>
-                      [
-                        row.tenantName ?? '—',
-                        `${row.propertyTitle ?? '—'}${row.unitNumber ? ` (${row.unitNumber})` : ''}`,
-                        row.buckets.current?.total ?? 0,
-                        row.buckets.days_1_30?.total ?? 0,
-                        row.buckets.days_31_60?.total ?? 0,
-                        row.buckets.days_61_90?.total ?? 0,
-                        row.buckets.days_90_plus?.total ?? 0,
-                        row.totalOutstanding,
-                      ] as const,
-                  ),
+                  headers: table.headers,
+                  rows: table.rows,
                   rightToLeft: true,
                 }),
                 `arrears-aging-${report.asOf}.xlsx`,

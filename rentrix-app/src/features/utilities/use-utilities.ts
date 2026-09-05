@@ -14,6 +14,7 @@ import {
 export {
   responsiblePartyLabels,
   utilityBillStatusLabels,
+  utilityBillStatusTone,
   utilityTypeLabels,
 } from './utilities-service';
 export type { ResponsibleParty, UtilityBill } from './utilities-service';

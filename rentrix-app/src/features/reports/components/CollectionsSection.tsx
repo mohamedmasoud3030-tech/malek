@@ -1,6 +1,11 @@
 import { FileSpreadsheet, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatMoney } from '@/features/financials/components/financials-formatters';
+import {
+  formatPaymentMethodLabel,
+  formatReceiptStatusLabel,
+  paymentMethodLabels,
+} from '@/features/financials/components/receipt-formatters';
 import type { DailyCollectionReportRow } from '@/features/financials/reports/financialReportsService';
 import { useCollectionSummaryReport } from '@/features/financials/reports/useFinancialReports';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
@@ -36,14 +41,6 @@ import {
   xlsxFilenameFromCsv,
 } from '@/lib/tabular-export';
 import { ReportDocumentActions } from './report-document-actions';
-
-const paymentMethodLabels = {
-  cash: 'نقدًا',
-  bank_transfer: 'تحويل بنكي',
-  card: 'بطاقة',
-  check: 'شيك',
-  other: 'أخرى',
-} as const;
 
 export function CollectionsSection({
   summary,
@@ -118,9 +115,9 @@ export function CollectionsSection({
         columns: [
           'التاريخ',
           'عدد العمليات',
-          'نقداً',
-          'تحويل بنكي',
-          'شيكات',
+          paymentMethodLabels.cash,
+          paymentMethodLabels.bank_transfer,
+          paymentMethodLabels.check,
           'إجمالي التحصيل',
         ],
         rows: rows.map((row) => [
@@ -156,11 +153,9 @@ export function CollectionsSection({
           receipt.tenant_name ?? 'غير محدد',
           `${receipt.property_title ?? 'عقار غير محدد'} / ${receipt.unit_number ?? '—'}`,
           receipt.invoice_reference ?? '—',
-          paymentMethodLabels[
-            receipt.payment_method as keyof typeof paymentMethodLabels
-          ] ?? receipt.payment_method,
+          formatPaymentMethodLabel(receipt.payment_method),
           `${formatLatinNumber(receipt.amount, 'ar-OM')} ${currencySymbol}`,
-          receipt.status === 'posted' ? 'مرحّل' : 'ملغى',
+          formatReceiptStatusLabel(receipt.status),
         ]),
       },
     ],
@@ -330,7 +325,7 @@ export function CollectionsSection({
           value={dominantMethodShare}
           helper={
             dominantMethod
-              ? `${paymentMethodLabels[dominantMethod[0]]} · ${formatMoney(dominantMethod[1])}`
+              ? `${formatPaymentMethodLabel(dominantMethod[0])} · ${formatMoney(dominantMethod[1])}`
               : 'لا توجد تحصيلات'
           }
           tone={

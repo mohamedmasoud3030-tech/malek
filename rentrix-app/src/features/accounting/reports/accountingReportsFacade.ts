@@ -14,7 +14,6 @@ export type {
   BalanceSheetSectionItem,
   CashFlowReport,
   ReconciliationRow,
-  AccountingReportFilters,
 } from '@/features/accounting/reports/contracts';
 
 import {
@@ -24,10 +23,7 @@ import {
   getCashFlowReport,
 } from '@/features/accounting/reports/statements/accountingReportsService';
 
-import {
-  getReconciliationReport,
-  assertReconciliation,
-} from '@/features/accounting/reports/reconciliation/reconciliationService';
+import { getReconciliationReport } from '@/features/accounting/reports/reconciliation/reconciliationService';
 
 export {
   getTrialBalanceReport,
@@ -35,5 +31,4 @@ export {
   getBalanceSheetReport,
   getCashFlowReport,
   getReconciliationReport,
-  assertReconciliation,
 };

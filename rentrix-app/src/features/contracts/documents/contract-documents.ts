@@ -1,12 +1,18 @@
 /**
  * Contract feature document adapters and actions.
  *
- * Provides typed payload adapters and guarded print/PDF actions for:
+ * Guarded print/PDF actions exist only for the documents a contract surface
+ * actually issues today:
  *  - #1 Lease Summary Sheet (reusing 'contract')
  *  - #2 Move-In / Move-Out Snagging ('unit_inspection')
+ *
+ * Typed payload adapters (no UI action yet) are kept for the registered
+ * templates that have no issuing surface:
  *  - #3 Lease Renewal / Vacate Notice ('lease_notice')
  *  - #10 Tenant Final Clearance ('tenant_clearance')
  *  - #24 Eviction / Rental Dispute Legal Dossier ('legal_dossier')
+ * When a surface issues one of these, route it through `documentService`
+ * with `runGuardedDocumentAction` exactly like the two actions above.
  *
  * Strict pass-through of domain data: no client-side financial calculations.
  */
@@ -203,50 +209,6 @@ export function toLeaseNoticePayload(params: {
   };
 }
 
-export function printLeaseNotice(params: {
-  contract: ContractDetail;
-  settings: DocumentCompanySettings;
-  noticeKind: 'renewal' | 'vacate' | 'non_renewal';
-  noticeDate: string;
-  effectiveDate?: string | null;
-  approvedMessage?: string | null;
-  reference?: string | null;
-  notes?: string | null;
-}): Promise<void> {
-  const { settings, ...rest } = params;
-  return runGuardedDocumentAction({
-    isReady: hasCompleteCompanyIdentity(settings),
-    operation: () =>
-      documentService.printDocument('lease_notice', {
-        settings,
-        payload: toLeaseNoticePayload(rest),
-      }),
-    fallbackMessage: 'تعذرت طباعة الإشعار العقاري.',
-  });
-}
-
-export function downloadLeaseNoticePdf(params: {
-  contract: ContractDetail;
-  settings: DocumentCompanySettings;
-  noticeKind: 'renewal' | 'vacate' | 'non_renewal';
-  noticeDate: string;
-  effectiveDate?: string | null;
-  approvedMessage?: string | null;
-  reference?: string | null;
-  notes?: string | null;
-}): Promise<void> {
-  const { settings, ...rest } = params;
-  return runGuardedDocumentAction({
-    isReady: hasCompleteCompanyIdentity(settings),
-    operation: () =>
-      documentService.downloadDocumentPdf('lease_notice', {
-        settings,
-        payload: toLeaseNoticePayload(rest),
-      }),
-    fallbackMessage: 'تعذر تصدير الإشعار العقاري كملف PDF.',
-  });
-}
-
 /* ------------------------------------------------------------------ */
 /* #10 Tenant Final Clearance ('tenant_clearance')                     */
 /* ------------------------------------------------------------------ */
@@ -296,56 +258,6 @@ export function toTenantClearancePayload(params: {
   };
 }
 
-export function printTenantClearance(params: {
-  contract: ContractDetail;
-  settings: DocumentCompanySettings;
-  clearanceDate: string;
-  clearanceStatus: 'cleared' | 'outstanding' | 'pending';
-  outstandingAmount?: number | null;
-  depositDisposition?: string | null;
-  depositAmount?: number | null;
-  maintenanceNotes?: string | null;
-  utilityNotes?: string | null;
-  reference?: string | null;
-  notes?: string | null;
-}): Promise<void> {
-  const { settings, ...rest } = params;
-  return runGuardedDocumentAction({
-    isReady: hasCompleteCompanyIdentity(settings),
-    operation: () =>
-      documentService.printDocument('tenant_clearance', {
-        settings,
-        payload: toTenantClearancePayload(rest),
-      }),
-    fallbackMessage: 'تعذرت طباعة شهادة المخالصة.',
-  });
-}
-
-export function downloadTenantClearancePdf(params: {
-  contract: ContractDetail;
-  settings: DocumentCompanySettings;
-  clearanceDate: string;
-  clearanceStatus: 'cleared' | 'outstanding' | 'pending';
-  outstandingAmount?: number | null;
-  depositDisposition?: string | null;
-  depositAmount?: number | null;
-  maintenanceNotes?: string | null;
-  utilityNotes?: string | null;
-  reference?: string | null;
-  notes?: string | null;
-}): Promise<void> {
-  const { settings, ...rest } = params;
-  return runGuardedDocumentAction({
-    isReady: hasCompleteCompanyIdentity(settings),
-    operation: () =>
-      documentService.downloadDocumentPdf('tenant_clearance', {
-        settings,
-        payload: toTenantClearancePayload(rest),
-      }),
-    fallbackMessage: 'تعذر تصدير شهادة المخالصة كملف PDF.',
-  });
-}
-
 /* ------------------------------------------------------------------ */
 /* #24 Eviction / Dispute Legal Dossier ('legal_dossier')              */
 /* ------------------------------------------------------------------ */
@@ -390,48 +302,3 @@ export function toLegalDossierPayload(params: {
   };
 }
 
-export function printLegalDossier(params: {
-  contract: ContractDetail;
-  settings: DocumentCompanySettings;
-  timelineEvents: Array<{ date: string; eventType: string; description: string; source?: string | null }>;
-  unpaidInvoiceRefs?: Array<{ reference: string; amount: number; dueDate?: string | null }> | null;
-  totalArrearsAmount?: number | null;
-  noticeRefs?: string[] | null;
-  caseStatus?: string | null;
-  reference?: string | null;
-  notes?: string | null;
-}): Promise<void> {
-  const { settings, ...rest } = params;
-  return runGuardedDocumentAction({
-    isReady: hasCompleteCompanyIdentity(settings),
-    operation: () =>
-      documentService.printDocument('legal_dossier', {
-        settings,
-        payload: toLegalDossierPayload(rest),
-      }),
-    fallbackMessage: 'تعذرت طباعة ملف الأدلة القانونية.',
-  });
-}
-
-export function downloadLegalDossierPdf(params: {
-  contract: ContractDetail;
-  settings: DocumentCompanySettings;
-  timelineEvents: Array<{ date: string; eventType: string; description: string; source?: string | null }>;
-  unpaidInvoiceRefs?: Array<{ reference: string; amount: number; dueDate?: string | null }> | null;
-  totalArrearsAmount?: number | null;
-  noticeRefs?: string[] | null;
-  caseStatus?: string | null;
-  reference?: string | null;
-  notes?: string | null;
-}): Promise<void> {
-  const { settings, ...rest } = params;
-  return runGuardedDocumentAction({
-    isReady: hasCompleteCompanyIdentity(settings),
-    operation: () =>
-      documentService.downloadDocumentPdf('legal_dossier', {
-        settings,
-        payload: toLegalDossierPayload(rest),
-      }),
-    fallbackMessage: 'تعذر تصدير ملف الأدلة القانونية كملف PDF.',
-  });
-}

@@ -1,3 +1,4 @@
+import type { SemanticTone } from '@/components/ui/status-badge';
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
 import { fetchAllRows } from '@/lib/paginatedRead';
@@ -78,6 +79,18 @@ export const utilityBillStatusLabels: Record<UtilityBillStatus, string> = {
   unpaid: 'مستحقة السداد',
   partially_paid: 'مدفوعة جزئياً',
   paid: 'مسددة بالكامل',
+};
+
+/**
+ * One semantic tone per utility-bill settlement status, rendered through the
+ * canonical `StatusBadge` wherever a bill appears (utilities workspace, bill
+ * detail, services report). Operational urgency (overdue / due soon) is a
+ * separate badge from `utility-obligations.ts`, never folded into this tone.
+ */
+export const utilityBillStatusTone: Record<UtilityBillStatus, SemanticTone> = {
+  unpaid: 'warning',
+  partially_paid: 'info',
+  paid: 'success',
 };
 
 function toNumberOrNull(value: unknown): number | null {

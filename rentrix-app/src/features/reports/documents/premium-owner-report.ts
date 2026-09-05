@@ -1,4 +1,5 @@
 import { listContractsForProperties, type ContractListItem } from '@/features/contracts/services/contractService';
+import { formatPaymentMethodLabel } from '@/features/financials/components/receipt-formatters';
 import { loadInvoices, loadPayments } from '@/features/financials/reports/financial-reporting/report-loaders';
 import {
   getInvoiceReportGrossAmount,
@@ -8,6 +9,7 @@ import {
 } from '@/features/financials/reports/financial-report-rows';
 import { isContractStatus } from '@/lib/contractStatus';
 import { listUnitsForProperties, type OwnerUnit } from '@/features/owners/services/owner-service';
+import { unitStatusLabelFor } from '@/features/units/unit-schema';
 import { buildVacancyAnalytics } from '@/features/units/vacancy-analytics';
 import type { OwnerReportPayload, ProfessionalReportGroup, ReportCellFormat } from '@/services/documents/documentPayloads';
 import {
@@ -20,24 +22,6 @@ const text = (value: string | null | undefined): ReportCellFormat => ({ kind: 't
 const amount = (value: number | null | undefined): ReportCellFormat => (
   value == null ? text('—') : { kind: 'amount', value }
 );
-
-const unitStatusLabel = (status: string | null | undefined): string => {
-  const value = String(status ?? '').trim().toLowerCase();
-  if (value === 'occupied' || value === 'rented') return 'مشغولة';
-  if (value === 'available') return 'شاغرة';
-  if (value === 'reserved') return 'محجوزة';
-  if (value === 'maintenance') return 'صيانة';
-  return value || 'غير محددة';
-};
-
-const paymentMethodLabel = (method: string | null | undefined): string => {
-  const value = String(method ?? '').trim().toLowerCase();
-  if (value === 'cash') return 'نقدي';
-  if (value === 'bank_transfer' || value === 'bank') return 'تحويل بنكي';
-  if (value === 'card') return 'بطاقة';
-  if (value === 'check' || value === 'cheque') return 'شيك';
-  return value || '—';
-};
 
 function contractOverlapsPeriod(contract: ContractListItem, from: string, to: string): boolean {
   if (isContractStatus(contract.status, 'draft') || isContractStatus(contract.status, 'terminated') && contract.start_date > to) return false;
@@ -114,7 +98,7 @@ function buildUnitRows(params: {
         propertyTitle: propertyTitles.get(unit.property_id) ?? 'عقار غير محدد',
         unitId: unit.id,
         unitNumber: unit.unit_number,
-        unitStatus: unitStatusLabel(unit.status),
+        unitStatus: unit.status ? unitStatusLabelFor(unit.status) : 'غير محددة',
         tenantName: displayContract?.people?.full_name ?? '—',
         rentAmount: displayContract?.rent_amount ?? unit.rent_amount ?? null,
         contractEnd: displayContract?.end_date ?? null,
@@ -165,7 +149,7 @@ function buildOwnerAssetGroup(params: {
           amount(row.outstanding),
           text(row.paymentState),
           text(row.lastPaymentDate?.slice(0, 10)),
-          text(paymentMethodLabel(row.lastPaymentMethod)),
+          text(formatPaymentMethodLabel(row.lastPaymentMethod)),
           text(row.invoiceReferences),
         ]),
       },

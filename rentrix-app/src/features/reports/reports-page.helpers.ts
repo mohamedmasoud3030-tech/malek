@@ -1,9 +1,8 @@
 import type { ContractListItem } from '@/features/contracts/services/contractService';
 import type { Maintenance } from '@/features/maintenance/maintenance-service';
-import type { CanonicalContractStatus } from '@/lib/contractStatus';
-import { isContractStatus, normalizeContractStatus } from '@/lib/contractStatus';
+import { contractStatusLabels, isContractStatus, normalizeContractStatus } from '@/lib/contractStatus';
+import { paymentCycleLabels } from '@/features/contracts/contractSchema';
 import type {
-  AgedReceivablesBucket,
   DailyCollectionReportRow,
   OverdueInvoiceReportRow,
   OverdueInvoicesReport,
@@ -254,24 +253,6 @@ export type RentRollReportRow = {
 
 export const latestReceiptLimit = 100;
 export const expiringContractWindowDays = 60;
-export const agingBucketKeys: Array<AgedReceivablesBucket['key']> = ['current', 'days_1_30', 'days_31_60', 'days_61_90', 'days_90_plus'];
-// Keyed by canonical status: rows are normalised with
-// `normalizeContractStatus` before lookup, so the legacy 'ACTIVE'/'ENDED'
-// spellings the database still permits never reach this map.
-export const contractStatusLabels: Record<CanonicalContractStatus, string> = {
-  draft: 'مسودة',
-  active: 'نشط',
-  expired: 'منتهي',
-  terminated: 'منهى',
-};
-
-const paymentCycleLabels: Record<ContractListItem['payment_cycle'], string> = {
-  monthly: 'شهري',
-  quarterly: 'ربع سنوي',
-  semi_annual: 'نصف سنوي',
-  annual: 'سنوي',
-};
-
 function monthKey(date: string) {
   return date.slice(0, 7);
 }
@@ -477,7 +458,7 @@ export function buildPaymentsTrendRows(params: {
 
 export function buildAgingBucketChartRows(
   buckets: Record<string, { label: string; total: number; invoiceCount: number }> | undefined,
-  bucketKeys: string[],
+  bucketKeys: readonly string[],
 ): AgingBucketChartRow[] {
   return bucketKeys.map((key) => {
     const bucket = buckets?.[key];
@@ -489,10 +470,7 @@ export function buildAgingBucketChartRows(
   });
 }
 
-export function buildRentRollRows(
-  contracts: ContractListItem[],
-  statusLabels: Record<CanonicalContractStatus, string>,
-): RentRollReportRow[] {
+export function buildRentRollRows(contracts: ContractListItem[]): RentRollReportRow[] {
   return contracts
     .map((contract) => ({
       contractId: contract.id,
@@ -502,8 +480,9 @@ export function buildRentRollRows(
       unitNumber: valueOrDash(contract.units?.unit_number),
       rentAmount: contract.rent_amount,
       paymentCycle: paymentCycleLabels[contract.payment_cycle],
-      // Index by the canonical status so legacy 'ACTIVE'/'ENDED' rows still render labels
-      statusLabel: statusLabels[normalizeContractStatus(contract.status)],
+      // Canonical contract vocabulary (`@/lib/contractStatus`), indexed by the
+      // normalised status so legacy 'ACTIVE'/'ENDED' rows still render labels.
+      statusLabel: contractStatusLabels[normalizeContractStatus(contract.status)],
       startDate: contract.start_date,
       endDate: contract.end_date,
     }))

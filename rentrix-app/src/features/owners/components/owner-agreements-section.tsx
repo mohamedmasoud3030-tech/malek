@@ -6,10 +6,9 @@ import { EmptyState } from '@/components/ui/state-surfaces';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
 import { formatCompanyDate, formatCompanyMoney, formatCompanyNumber } from '@/lib/companyFormatters';
+import { commissionTypeLabels } from '../owner-agreement-labels';
 import { groupAgreementsByTemporalStatus } from '../ownerAgreementService';
 import { useOwnerAgreementsForOwner } from '../useOwnerAgreements';
-
-const commissionTypeLabels = { RATE: 'نسبة من التحصيل', FIXED_MONTHLY: 'مبلغ شهري ثابت' } as const;
 
 /**
  * Owner-dossier view of the management agreements across this owner's

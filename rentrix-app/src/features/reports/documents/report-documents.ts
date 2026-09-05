@@ -16,34 +16,37 @@ import { hasCompleteCompanyIdentity, type DocumentCompanySettings } from '@/serv
 import { runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
 import type { GenericReportPayload } from '@/services/documents/documentPayloads';
 import type { AgedReceivablesReport } from '@/features/financials/reports/arrears-reports-service';
+import { agingBucketLabels, agingBucketOrder } from '@/features/financials/reports/aging-buckets';
 import type { OccupancyChartRow, RentRollReportRow } from '../reports-page.helpers';
 
 // ---------------------------------------------------------------------------
 // #7 Aged Arrears Breakdown
 // ---------------------------------------------------------------------------
 
-export function toAgedArrearsPayload(report: AgedReceivablesReport): GenericReportPayload {
-  const rows: string[][] = report.rows.map((row) => [
-    row.tenantName ?? '—',
-    `${row.propertyTitle ?? '—'}${row.unitNumber ? ` (${row.unitNumber})` : ''}`,
-    String(row.buckets.current?.total ?? 0),
-    String(row.buckets.days_1_30?.total ?? 0),
-    String(row.buckets.days_31_60?.total ?? 0),
-    String(row.buckets.days_61_90?.total ?? 0),
-    String(row.buckets.days_90_plus?.total ?? 0),
-    String(row.totalOutstanding),
-  ]);
+/**
+ * One tabular shape for the aged-arrears table (print/PDF and Excel share it):
+ * tenant, property/unit, one column per canonical aging bucket, outstanding.
+ */
+export function buildAgedArrearsTable(report: AgedReceivablesReport) {
+  return {
+    headers: ['المستأجر', 'العقار / الوحدة', ...agingBucketOrder.map((key) => agingBucketLabels[key]), 'إجمالي المستحق'],
+    rows: report.rows.map((row) => [
+      row.tenantName ?? '—',
+      `${row.propertyTitle ?? '—'}${row.unitNumber ? ` (${row.unitNumber})` : ''}`,
+      ...agingBucketOrder.map((key) => row.buckets[key]?.total ?? 0),
+      row.totalOutstanding,
+    ]),
+    totals: [
+      'الإجمالي العام',
+      '',
+      ...agingBucketOrder.map((key) => report.buckets[key]?.total ?? 0),
+      report.totalOutstanding,
+    ],
+  };
+}
 
-  const totals = [
-    'الإجمالي العام',
-    '',
-    String(report.buckets.current?.total ?? 0),
-    String(report.buckets.days_1_30?.total ?? 0),
-    String(report.buckets.days_31_60?.total ?? 0),
-    String(report.buckets.days_61_90?.total ?? 0),
-    String(report.buckets.days_90_plus?.total ?? 0),
-    String(report.totalOutstanding),
-  ];
+export function toAgedArrearsPayload(report: AgedReceivablesReport): GenericReportPayload {
+  const table = buildAgedArrearsTable(report);
 
   return {
     reportTitle: 'كشف أعمار الديون والمتأخرات المستحقة',
@@ -52,9 +55,9 @@ export function toAgedArrearsPayload(report: AgedReceivablesReport): GenericRepo
     sections: [
       {
         title: 'تفصيل المتأخرات حسب فترات الاستحقاق',
-        columns: ['المستأجر', 'العقار / الوحدة', 'غير متأخر', '1–30 يوم', '31–60 يوم', '61–90 يوم', '+90 يوم', 'إجمالي المستحق'],
-        rows,
-        totals,
+        columns: table.headers,
+        rows: table.rows.map((row) => row.map(String)),
+        totals: table.totals.map(String),
       },
     ],
     totalSummary: `إجمالي المستحق القائم: ${report.totalOutstanding} | إجمالي المتأخر الفعلي: ${report.totalOverdue}`,

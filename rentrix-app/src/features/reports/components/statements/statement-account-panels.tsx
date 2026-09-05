@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/report-section-primitives';
 import { ReportPayloadGroup } from '../report-payload-groups';
 import { formatLatinNumber } from '@/lib/formatters';
+import { commissionTypeLabels, formatCommissionTypeLabel } from '@/features/owners/owner-agreement-labels';
 
 type TenantLedgerRow = TenantStatementReport['lines'][number] & {
   rowKey: string;
@@ -54,9 +55,9 @@ function ownerLineType(type: string | null) {
 }
 
 function ownerCommissionSummary(type: string | null, value: number) {
-  if (type === 'RATE') return `نسبة ${formatLatinNumber(value, 'ar')}٪`;
-  if (type === 'FIXED_MONTHLY') return `مبلغ شهري ${formatMoney(value)}`;
-  return 'غير محددة';
+  if (type === 'RATE') return `${commissionTypeLabels.RATE} ${formatLatinNumber(value, 'ar')}٪`;
+  if (type === 'FIXED_MONTHLY') return `${commissionTypeLabels.FIXED_MONTHLY} ${formatMoney(value)}`;
+  return formatCommissionTypeLabel(type);
 }
 
 export function TenantStatementPanel({

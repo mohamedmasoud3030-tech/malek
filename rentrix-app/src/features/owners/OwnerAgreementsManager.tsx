@@ -24,6 +24,7 @@ import {
   type OwnerAgreementVersion,
   type OwnerAgreementVersionTerms,
 } from './ownerAgreementService';
+import { commissionTypeLabels } from './owner-agreement-labels';
 import { useCreateOwnerAgreement, useCreateOwnerAgreementVersion, useOwnerAgreements, useOwnerAgreementVersions } from './useOwnerAgreements';
 import { useQuery } from '@tanstack/react-query';
 import { MONEY_STEP } from '@/lib/money';
@@ -54,7 +55,6 @@ type VersionFormState = {
 
 const emptyForm: AgreementFormState = { owner_id: '', agreement_type: 'property_management', collection_role: 'OWNER_IS_CREDITOR', commission_type: 'RATE', commission_value: '10', starts_on: '', ends_on: '', notes: '' };
 const agreementTypeLabels = { property_management: 'إدارة عقار' } as const;
-const commissionTypeLabels = { RATE: 'نسبة', FIXED_MONTHLY: 'مبلغ شهري ثابت' } as const;
 const earliestAmendmentDate = format(addDays(new Date(), 1), 'yyyy-MM-dd');
 
 const agreementFormSteps = [
