@@ -73,9 +73,48 @@ test.describe('Service Providers workspace', () => {
     }
 
     await expect(menuTrigger).toBeVisible();
+    await menuTrigger.scrollIntoViewIfNeeded();
     const triggerBox = await menuTrigger.boundingBox();
     expect(triggerBox?.height ?? 0).toBeGreaterThanOrEqual(44);
-    await menuTrigger.click();
-    await expect(page.getByRole('menuitem', { name: 'عرض', exact: true }).filter({ visible: true }).first()).toBeVisible();
+
+    // The menu belongs to the provider the active filter left on screen.
+    await expect(menuTrigger).toHaveAccessibleName('إجراءات مؤسسة الحلول السريعة');
+
+    // Canonical row-action vocabulary. The legacy bare «عرض» item no longer
+    // exists, so asserting it could never describe the real register.
+    const isMobile = (page.viewportSize()?.width ?? 1440) < 768;
+    if (isMobile) {
+      // The fixture mounts itself as a fixed full-viewport layer, so the auth
+      // shell keeps the pointer hit-test above it. Keyboard activation drives
+      // the same native button contract and additionally proves the menu's
+      // roving focus.
+      await menuTrigger.focus();
+      await page.keyboard.press('ArrowDown');
+    } else {
+      await menuTrigger.click();
+    }
+
+    const menu = page.getByRole('menu');
+    await expect(menu).toBeVisible();
+    await expect(menu.getByRole('menuitem', { name: 'فتح الملف الكامل', exact: true })).toBeVisible();
+    const previewItem = menu.getByRole('menuitem', { name: 'معاينة سريعة', exact: true });
+    await expect(previewItem).toBeVisible();
+    expect((await previewItem.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
+
+    // The action must actually drive the quick preview for that provider.
+    if (isMobile) {
+      await expect(menu.getByRole('menuitem', { name: 'فتح الملف الكامل', exact: true })).toBeFocused();
+      await page.keyboard.press('ArrowDown');
+      await expect(previewItem).toBeFocused();
+      await page.keyboard.press('Enter');
+    } else {
+      await previewItem.click();
+    }
+
+    const preview = page.getByRole('dialog', { name: 'مؤسسة الحلول السريعة' });
+    await expect(preview).toBeVisible();
+    await expect(preview.getByText('نشط').first()).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(preview).toBeHidden();
   });
 });

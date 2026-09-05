@@ -3,6 +3,7 @@ import { useState } from "react";
 import { ListPage } from "@/components/layout/list-page";
 import { ActionMenu } from "@/components/ui/action-menu";
 import { EntityForm } from "@/components/ui/entity-form";
+import { ServiceProviderPreviewDialog } from "./components/service-provider-preview-dialog";
 import { Button } from "@/components/ui/button";
 import { EntityCell } from "@/components/ui/entity-cell";
 import { EntityTable } from "@/components/ui/entity-table";
@@ -93,6 +94,8 @@ export function ServiceProvidersWorkspaceE2EFixture() {
   const [formOpen, setFormOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
+  const [previewProvider, setPreviewProvider] =
+    useState<ServiceProviderListItem | null>(null);
   const filtered = providers.filter(
     (provider) =>
       (status === "all" || provider.is_active === (status === "active")) &&
@@ -229,7 +232,18 @@ export function ServiceProvidersWorkspaceE2EFixture() {
                   render: (provider) => (
                     <ActionMenu
                       label={`إجراءات ${provider.name}`}
-                      items={[{ id: "preview", label: "معاينة سريعة", onClick: () => undefined }]}
+                      items={[
+                        {
+                          id: "full-page",
+                          label: "فتح الملف الكامل",
+                          onClick: () => undefined,
+                        },
+                        {
+                          id: "preview",
+                          label: "معاينة سريعة",
+                          onClick: () => setPreviewProvider(provider),
+                        },
+                      ]}
                     />
                   ),
                 },
@@ -240,6 +254,13 @@ export function ServiceProvidersWorkspaceE2EFixture() {
           </div>
         </section>
       </ListPage>
+      <ServiceProviderPreviewDialog
+        provider={previewProvider}
+        open={previewProvider !== null}
+        onOpenChange={(open) => {
+          if (!open) setPreviewProvider(null);
+        }}
+      />
       <EntityForm.Overlay
         open={formOpen}
         onOpenChange={setFormOpen}
