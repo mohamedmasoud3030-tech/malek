@@ -239,33 +239,36 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
 
         {/* Guided 3-step Wizard Tracker */}
         <div className="md:col-span-2 flex flex-wrap gap-2 border-b border-border pb-3 text-xs font-semibold" role="tablist" aria-label="خطوات إنشاء العقار">
-          <button
+          <Button
             type="button"
+            variant="outline"
             role="tab"
             aria-selected={step === 1}
             onClick={() => setStep(1)}
-            className={`min-h-11 rounded-lg border px-3 py-1.5 ${step === 1 ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted/50 text-muted-foreground hover:bg-muted'}`}
+            className={`min-h-11 rounded-lg px-3 font-semibold ${step === 1 ? 'border-primary bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground' : 'border-border bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'}`}
           >
             الخطوة 1: بيانات العقار
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="outline"
             role="tab"
             aria-selected={step === 2}
             onClick={() => { if (canAdvanceToStep2()) setStep(2); else setSubmitError('يرجى إكمال الحقول الإلزامية في الخطوة 1 (اسم العقار، النوع، العنوان) قبل الانتقال.'); }}
-            className={`min-h-11 rounded-lg border px-3 py-1.5 ${step === 2 ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted/50 text-muted-foreground hover:bg-muted'}`}
+            className={`min-h-11 rounded-lg px-3 font-semibold ${step === 2 ? 'border-primary bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground' : 'border-border bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'}`}
           >
             الخطوة 2: المالك، نوع الاتفاقية، قيمة العمولة
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="outline"
             role="tab"
             aria-selected={step === 3}
             onClick={() => { if (canAdvanceToStep3()) setStep(3); else setSubmitError('يرجى اختيار المالك وتحديد قيمة العمولة قبل الانتقال للمراجعة.'); }}
-            className={`min-h-11 rounded-lg border px-3 py-1.5 ${step === 3 ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted/50 text-muted-foreground hover:bg-muted'}`}
+            className={`min-h-11 rounded-lg px-3 font-semibold ${step === 3 ? 'border-primary bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground' : 'border-border bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'}`}
           >
             الخطوة 3: المراجعة والانتقال للوحدات
-          </button>
+          </Button>
         </div>
 
         {step === 1 && (

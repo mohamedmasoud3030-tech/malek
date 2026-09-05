@@ -19,6 +19,7 @@ import {
   type InspectionTemplate,
 } from './contract-evidence-service';
 import { useContractEvidenceDocuments, useContractEvidenceMutations, useContractEvidenceState } from './use-contract-evidence';
+import type { SemanticTone } from '@/components/ui/status-badge';
 
 const registrationStatusLabels: Record<string, string> = { SUBMITTED: 'قيد التحقق', REGISTERED: 'مسجل رسمياً', REJECTED: 'مرفوض', CANCELLED: 'ملغي' };
 const inspectionStatusLabels: Record<string, string> = { DRAFT: 'مسودة', COMPLETED: 'بانتظار المراجعة', REVIEWED: 'مراجع', CHANGES_REQUESTED: 'مطلوب تعديل' };
@@ -35,14 +36,14 @@ function errorMessage(error: unknown): string {
   return message || 'تعذر تنفيذ الإجراء. حاول مرة أخرى.';
 }
 
-function registrationTone(status?: string): 'success' | 'warning' | 'danger' | 'neutral' {
+function registrationTone(status?: string): SemanticTone {
   if (status === 'REGISTERED') return 'success';
   if (status === 'SUBMITTED') return 'warning';
   if (status === 'REJECTED') return 'danger';
   return 'neutral';
 }
 
-function inspectionTone(status?: string): 'success' | 'warning' | 'danger' | 'neutral' {
+function inspectionTone(status?: string): SemanticTone {
   if (status === 'REVIEWED') return 'success';
   if (status === 'COMPLETED') return 'warning';
   if (status === 'CHANGES_REQUESTED') return 'danger';

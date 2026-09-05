@@ -102,9 +102,11 @@ export function NotificationsMenu({
 
   return (
     <div ref={rootRef} className="relative">
-      <button
+      <Button
         ref={triggerRef}
         type="button"
+        variant="ghost"
+        size="icon"
         onClick={() => setIsOpen((open) => !open)}
         aria-label={totalCount > 0 ? `${sharedLabel('notifications')} (${totalCount})` : sharedLabel('notifications')}
         aria-haspopup="dialog"
@@ -112,10 +114,8 @@ export function NotificationsMenu({
         aria-controls={isOpen ? menuId : undefined}
         data-header-notifications-trigger={chrome === 'header' ? 'true' : undefined}
         className={cn(
-          'pressable relative inline-flex size-11 min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg border-0 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary/20 motion-reduce:transition-none',
-          totalCount > 0
-            ? 'text-danger hover:bg-danger/10 hover:text-danger'
-            : 'text-foreground hover:bg-muted hover:text-foreground',
+          'relative shrink-0 rounded-lg',
+          totalCount > 0 ? 'text-danger hover:bg-danger/10 hover:text-danger' : undefined,
         )}
       >
         <Bell className={cn('size-[22px]', totalCount > 0 && 'text-danger')} aria-hidden="true" />
@@ -127,7 +127,7 @@ export function NotificationsMenu({
             {totalCount > 99 ? '99+' : totalCount}
           </span>
         ) : null}
-      </button>
+      </Button>
 
       {isOpen ? (
         <>
@@ -158,14 +158,16 @@ export function NotificationsMenu({
                   أحداث حصلت بالفعل. الأشياء التي تحتاج إجراء موجودة في «اليوم».
                 </p>
               </div>
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon"
                 onClick={() => setIsOpen(false)}
-                className="grid size-7 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground md:hidden"
+                className="shrink-0 rounded-lg text-muted-foreground md:hidden"
                 aria-label="إغلاق التنبيهات"
               >
-                <X className="size-3.5" />
-              </button>
+                <X className="size-4" />
+              </Button>
             </div>
 
             {isInitialLoading ? (

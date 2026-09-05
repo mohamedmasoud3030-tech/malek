@@ -20,6 +20,16 @@ interface KpiCardProps {
    * bars). Presentation only — the value above stays the readable truth.
    */
   visual?: ReactNode;
+  /**
+   * Makes the whole card an in-page drill control (e.g. "narrow this list to
+   * the figure above"). The card renders as a real button, keeps a 44px target
+   * and announces itself with `drillAriaLabel`. Route-level drill-downs should
+   * wrap the card in a `<Link asChild>`-style `Button`/anchor at the call site
+   * instead — this prop never navigates.
+   */
+  onDrill?: () => void;
+  /** Required when the visible label/value pair is not descriptive alone. */
+  drillAriaLabel?: string;
 }
 
 /**
@@ -37,14 +47,18 @@ export function KpiCard({
   className,
   accent = 'primary',
   visual,
+  onDrill,
+  drillAriaLabel,
 }: KpiCardProps) {
-  return (
+  const card = (
     <article
       data-kpi-card
       data-accent={accent}
+      data-drillable={onDrill ? 'true' : undefined}
       className={cn(
         'min-w-0 rounded-xl border border-border/65 bg-card p-3 sm:p-3.5 shadow-card',
         'transition-shadow duration-200 hover:shadow-card-hover',
+        onDrill && 'h-full',
         className,
       )}
     >
@@ -78,5 +92,19 @@ export function KpiCard({
         {visual ? <div className="mt-2 min-w-0">{visual}</div> : null}
       </div>
     </article>
+  );
+
+  if (!onDrill) return card;
+
+  return (
+    <button
+      type="button"
+      onClick={onDrill}
+      aria-label={drillAriaLabel ?? `${label}: ${value} — عرض التفاصيل`}
+      data-kpi-drill
+      className="block min-h-11 w-full rounded-xl text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+    >
+      {card}
+    </button>
   );
 }

@@ -1,11 +1,12 @@
 import type { CompanySettingsDraft, CompanySettingsPreviewModel } from './settingsForm';
 import type { SettingsSectionId } from './registry/sectionRegistry';
+import type { SemanticTone } from '@/components/ui/status-badge';
 
 export type SettingsSummaryTile = Readonly<{
   label: string;
   value: string;
   helper: string;
-  tone: 'success' | 'info' | 'warning' | 'danger' | 'neutral';
+  tone: SemanticTone;
   section?: SettingsSectionId;
 }>;
 

@@ -28,7 +28,7 @@ import { formatMoney, formatNumber } from "@/hooks/useCompanyFormatters";
 import { useAuth } from "@/hooks/use-auth";
 import { UnitFormModal } from "./unit-form-modal";
 import { UnitPreviewDialog } from "./components/UnitPreviewDialog";
-import { UnitRentCell } from "./components/unit-cells";
+import { AmountText } from "@/components/ui/amount";
 import { unitStatusTones } from "./unit-schema";
 import type { Unit } from "@/types/domain";
 
@@ -126,7 +126,7 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
       key: "rent",
       header: "الإيجار",
       priority: "secondary",
-      render: (unit) => <UnitRentCell amount={unit.rent_amount} />,
+      render: (unit) => <AmountText className="block">{formatMoney(unit.rent_amount)}</AmountText>,
     },
     {
       key: "notes",

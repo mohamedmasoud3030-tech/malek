@@ -1,8 +1,11 @@
 import { ChevronLeft, Settings2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { cn } from '@/lib/utils';
 import type { SettingsSectionId } from '../registry/sectionRegistry';
+// Same tile the workspace model builds — the hero never re-declares it.
+import type { SettingsSummaryTile } from '../settings-workspace-model';
 
 export function SettingsHero({
   companyName,
@@ -46,19 +49,11 @@ export function SettingsHero({
   );
 }
 
-type OverviewTile = Readonly<{
-  label: string;
-  value: string;
-  helper: string;
-  tone: 'success' | 'info' | 'warning' | 'danger' | 'neutral';
-  section?: SettingsSectionId;
-}>;
-
 export function OverviewRow({
   tiles,
   onOpenSection,
 }: Readonly<{
-  tiles: readonly OverviewTile[];
+  tiles: readonly SettingsSummaryTile[];
   onOpenSection?: (section: SettingsSectionId) => void;
 }>) {
   return (
@@ -86,17 +81,18 @@ export function OverviewRow({
 
         if (targetSection && onOpenSection) {
           return (
-            <button
+            <Button
               key={tile.label}
               type="button"
+              variant="ghost"
               className={cn(
-                'min-h-16 min-w-0 rounded-xl border border-border/60 bg-card p-2.5 text-start transition-[border-color,box-shadow,transform,background-color] md:rounded-2xl md:p-3 lg:p-4',
-                'hover:-translate-y-0.5 hover:border-primary/35 hover:bg-primary/[0.025] hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                'min-h-16 min-w-0 justify-start rounded-xl border border-border/60 bg-card p-2.5 md:rounded-2xl md:p-3 lg:p-4',
+                'hover:-translate-y-0.5 hover:border-primary/35 hover:bg-primary/[0.025] hover:shadow-sm focus-visible:ring-ring',
               )}
               onClick={() => onOpenSection(targetSection)}
             >
               {content}
-            </button>
+            </Button>
           );
         }
 

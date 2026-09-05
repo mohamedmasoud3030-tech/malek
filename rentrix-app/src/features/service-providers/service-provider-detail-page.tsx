@@ -18,11 +18,12 @@ import { useDialogNavigate } from '@/app/router/background-location';
 import { useAuth } from '@/hooks/use-auth';
 import { useServiceProviderDossier } from './use-service-providers';
 import { formatCount } from '@/lib/formatters';
+import type { SemanticTone } from '@/components/ui/status-badge';
 
 const maintenanceStatusLabels: Record<string, string> = { open: 'مفتوح', in_progress: 'قيد التنفيذ', resolved: 'تم الحل', closed: 'مغلق' };
 const maintenancePriorityLabels: Record<string, string> = { low: 'منخفضة', medium: 'متوسطة', high: 'عالية', urgent: 'عاجلة' };
 
-function statusTone(status: string | null): 'info' | 'warning' | 'success' | 'neutral' {
+function statusTone(status: string | null): SemanticTone {
   if (status === 'open') return 'info';
   if (status === 'in_progress') return 'warning';
   if (status === 'resolved') return 'success';

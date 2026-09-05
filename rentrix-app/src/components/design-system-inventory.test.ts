@@ -131,4 +131,140 @@ describe('design-system inventory & regression contract — Phase 5 enforcement'
       expect(c).toContain('data-page-header');
     }
   });
+  // ─────────────────────────────────────────────────────────────────────────
+  // Feature-local copies of unified primitives (2026-09-05 consolidation)
+  //
+  // `components/ui` (+ `components/layout`) is the ONLY home for shared
+  // product primitives. Several features had grown private copies — a whole
+  // parallel "finance visual foundations" layer, a per-feature checkbox, an
+  // info-item, a money cell, a report link, a landing heading that shadowed
+  // the canonical `SectionHeader` name. They were deleted and their call
+  // sites moved onto the canonical components. These guards keep them gone.
+  // ─────────────────────────────────────────────────────────────────────────
+
+  const DELETED_FEATURE_DUPLICATES = [
+    // replaced by Alert / FilterBar / KpiCard / ResponsiveCardGrid / StatusBadge
+    // + AmountText, with the finance status mapping kept as domain logic in
+    // features/financials/finance-status-mapping.ts
+    'features/financials/components/finance-reporting-visual-foundations.tsx',
+    // replaced by canonical ReportPanel/ReportList/ReportListRow/ReportState
+    'features/dashboard/components/dashboard-signal-primitives.tsx',
+    // replaced by canonical DetailFields
+    'features/properties/components/property-info-item.tsx',
+    // replaced by canonical AmountText
+    'features/units/components/unit-cells.tsx',
+    // replaced by canonical Checkbox
+    'features/owners/components/owner-checkbox.tsx',
+    // SafeAnchor replaced by canonical EntityLink
+    'features/reports/components/common.tsx',
+    // renamed: the canonical SectionHeader name belongs to components/ui alone
+    'features/landing/components/SectionHeader.tsx',
+  ] as const;
+
+  it('keeps the deleted feature-local copies of unified primitives deleted', () => {
+    for (const rel of DELETED_FEATURE_DUPLICATES) {
+      expect(existsSync(resolve(SRC, rel)), `${rel} must stay deleted — use the canonical components/ui primitive`).toBe(false);
+    }
+  });
+
+  it('prohibits feature-local components that shadow a canonical primitive name', () => {
+    const canonicalNames = new Set<string>();
+    for (const dir of ['components/ui', 'components/layout']) {
+      for (const f of collectFiles(resolve(SRC, dir)).filter((f) => !/\.test\./.test(f))) {
+        const c = readFileSync(f, 'utf8');
+        for (const m of c.matchAll(/export\s+(?:function|const)\s+([A-Z][A-Za-z0-9_]*)/g)) canonicalNames.add(m[1]);
+        for (const m of c.matchAll(/export\s*\{([^}]*)\}/g)) {
+          for (const part of m[1].split(',')) {
+            const name = part.trim().split(/\s+as\s+/).pop()!.replace(/^type\s+/, '').trim();
+            if (/^[A-Z]/.test(name)) canonicalNames.add(name);
+          }
+        }
+      }
+    }
+    expect(canonicalNames.size).toBeGreaterThan(50);
+
+    const offenders: string[] = [];
+    for (const f of collectFiles(resolve(SRC, 'features')).filter((f) => !/\.test\.|e2e-fixture/.test(f))) {
+      const c = readFileSync(f, 'utf8');
+      for (const m of c.matchAll(/export\s+(?:function|const)\s+([A-Z][A-Za-z0-9_]*)/g)) {
+        if (canonicalNames.has(m[1])) offenders.push(`${m[1]} ← ${f.replace(`${SRC}/`, '')}`);
+      }
+    }
+    expect(offenders, `feature-local components must not shadow canonical primitives:\n${offenders.join('\n')}`).toEqual([]);
+  });
+
+  it('prohibits parallel design-system layers inside features', () => {
+    // A file named *primitives*/*foundations*/*design-system* inside a feature
+    // is a second design system by definition. There are no exceptions left:
+    // the finance visual foundations and the dashboard signal primitives were
+    // both folded into components/ui (Alert/FilterBar/KpiCard/StatusBadge/
+    // AmountText and ReportPanel/ReportList/ReportListRow/ReportState).
+    const ALLOWED = new Set<string>([]);
+    const offenders = collectFiles(resolve(SRC, 'features'))
+      .filter((f) => !/\.test\.|e2e-fixture/.test(f))
+      .filter((f) => /(primitives|foundations|design-system)\.(ts|tsx)$/.test(f))
+      .map((f) => f.replace(`${SRC}/`, ''))
+      .filter((rel) => !ALLOWED.has(rel));
+    expect(offenders, `parallel primitive layers are prohibited inside features:\n${offenders.join('\n')}`).toEqual([]);
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Raw HTML controls & the tone vocabulary (2026-09-05 consolidation)
+  //
+  // A raw `<button>`/`<form>` is a second button/second form: it skips the
+  // canonical press affordance, the 44px floor, `data-ui-button`, the
+  // `data-entity-form` marker and the focus-first-invalid-field behaviour.
+  // Likewise a re-spelled tone union is a parallel token system (UX-008).
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /** Full-screen dismiss overlays are not controls; nothing else is exempt. */
+  const RAW_CONTROL_ALLOWLIST = new Set<string>([
+    'features/command-palette/command-palette-dialog.tsx',
+  ]);
+
+  it('keeps every raw <button>/<form> out of app code (canonical Button / EntityForm only)', () => {
+    const prodFiles = collectFiles(SRC).filter(
+      (f) => !/\.test\.|e2e-fixture/.test(f) && !/components\/ui\//.test(f),
+    );
+    const offenders: string[] = [];
+    for (const f of prodFiles) {
+      const rel = f.replace(`${SRC}/`, '');
+      if (RAW_CONTROL_ALLOWLIST.has(rel)) continue;
+      const c = readFileSync(f, 'utf8');
+      for (const m of c.matchAll(/<(button|form)[\s>]/g)) {
+        offenders.push(`${rel} → <${m[1]}>`);
+      }
+    }
+    expect(
+      offenders,
+      `raw HTML controls must go through components/ui (Button / EntityForm.Root):\n${offenders.join('\n')}`,
+    ).toEqual([]);
+  });
+
+  const SEMANTIC_TONE_LITERALS = ['success', 'warning', 'danger', 'info', 'neutral', 'primary', 'secondary'];
+  const TONE_UNION = new RegExp(
+    `(?:'(?:${SEMANTIC_TONE_LITERALS.join('|')})'\\s*\\|\\s*)+'(?:${SEMANTIC_TONE_LITERALS.join('|')})'`,
+    'g',
+  );
+
+  it('keeps the semantic tone vocabulary spelled in exactly one place', () => {
+    // 4+ semantic literals in a union is a re-declaration of the canonical
+    // `SemanticTone`. Narrower unions (a 3-step severity scale, say) are a
+    // domain constraint, not a second vocabulary, and stay allowed.
+    const offenders: string[] = [];
+    for (const f of collectFiles(SRC).filter((x) => !/\.test\.|e2e-fixture/.test(x))) {
+      const rel = f.replace(`${SRC}/`, '');
+      // The vocabulary's home — the only file allowed to spell it out. Every
+      // other file (including the rest of components/ui) derives its subset.
+      if (rel.endsWith('components/ui/status-badge.tsx')) continue;
+      const c = readFileSync(f, 'utf8');
+      for (const m of c.matchAll(TONE_UNION)) {
+        if ((m[0].match(/'/g) ?? []).length / 2 >= 4) offenders.push(`${rel} → ${m[0]}`);
+      }
+    }
+    expect(
+      offenders,
+      `import SemanticTone from @/components/ui/status-badge instead of re-spelling it:\n${offenders.join('\n')}`,
+    ).toEqual([]);
+  });
 });

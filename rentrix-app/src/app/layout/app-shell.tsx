@@ -4,6 +4,7 @@ import { CircleHelp, KeyRound, LogOut, Menu, Moon, Search, Settings, ShieldAlert
 import { toast } from 'sonner';
 import { MalekBrandWordmark } from '@/components/brand/malek-wordmark';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
+import { Button } from '@/components/ui/button';
 import { canAccessRoute, getWriteAccessState, type AuthorizationContext, type WriteAccessState } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
 import { APP_BRAND_NAME, APP_BRAND_TAGLINE_AR } from '@/lib/brand';
@@ -80,12 +81,14 @@ const HeaderBrandIdentity = memo(function HeaderBrandIdentity() {
  * icon controls (Theme, User, Menu, Search). 44×44 touch target, ~22px glyph,
  * transparent at rest, subtle surface on hover/press/focus.
  */
-const chromeButtonClass =
-  'grid size-11 min-h-11 min-w-11 shrink-0 place-items-center rounded-xl border-0 bg-transparent text-foreground outline-none transition-colors hover:bg-muted hover:text-foreground active:bg-muted/80 focus-visible:ring-2 focus-visible:ring-primary/20';
-
 /**
  * Header control — standalone icon, no visible box, 44×44 touch target.
  * Clearly visible, aligned, consistent size, not dominating.
+ *
+ * A thin app-shell adapter over the canonical `Button` (`variant="ghost"`,
+ * `size="icon"`): it only adds the shell's rounded-xl chrome and the guarantee
+ * that every header control is explicitly labelled. It never re-implements the
+ * button.
  */
 const HeaderControl = memo(function HeaderControl({
   label,
@@ -97,14 +100,16 @@ const HeaderControl = memo(function HeaderControl({
 } & Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children' | 'aria-label'>>) {
   const { className, ...rest } = props;
   return (
-    <button
+    <Button
       type="button"
+      variant="ghost"
+      size="icon"
       aria-label={label}
-      className={cn(chromeButtonClass, className)}
+      className={cn('shrink-0 rounded-xl', className)}
       {...rest}
     >
       {children}
-    </button>
+    </Button>
   );
 });
 
@@ -148,8 +153,8 @@ const HeaderUserMenu = memo(function HeaderUserMenu({
     };
   }, [open]);
 
-  const itemClass =
-    'flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-start text-sm font-semibold text-foreground outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary/20';
+  // Menu-row layout on top of the canonical ghost `Button` — no second button.
+  const itemClass = 'min-h-11 justify-start gap-3 rounded-xl px-3 text-sm font-semibold';
   const statusCardClass = accessStatus?.tone === 'warning'
     ? 'border-[hsl(var(--color-warning-text)/0.22)] bg-[hsl(var(--color-warning-bg)/0.08)] text-warning'
     : 'border-[hsl(var(--color-info-text)/0.22)] bg-[hsl(var(--color-info-bg)/0.08)] text-info';
@@ -157,15 +162,17 @@ const HeaderUserMenu = memo(function HeaderUserMenu({
 
   return (
     <div ref={rootRef} className="relative grid size-11 shrink-0 place-items-center" data-header-user-menu>
-      <button
+      <Button
         ref={triggerRef}
         type="button"
+        variant="ghost"
+        size="icon"
         aria-label={accessStatus ? `فتح قائمة المستخدم — ${accessStatus.buttonLabelSuffix}` : 'فتح قائمة المستخدم'}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
         onClick={() => setOpen((value) => !value)}
-        className={cn(chromeButtonClass, open && 'bg-muted text-foreground')}
+        className={cn('shrink-0 rounded-xl', open && 'bg-muted text-foreground')}
       >
         <UserRound className="size-[22px]" aria-hidden="true" />
         {accessStatus ? (
@@ -175,7 +182,7 @@ const HeaderUserMenu = memo(function HeaderUserMenu({
             aria-hidden="true"
           />
         ) : null}
-      </button>
+      </Button>
 
       {open ? (
         <>
@@ -221,32 +228,34 @@ const HeaderUserMenu = memo(function HeaderUserMenu({
 
             <div className="space-y-0.5 p-1.5">
               {canOpenSettings ? (
-                <Link to="/settings" role="menuitem" className={itemClass} onClick={() => setOpen(false)}>
-                  <Settings className="size-[1.125rem] shrink-0 text-muted-foreground" aria-hidden="true" />
-                  <span>إعدادات المنشأة</span>
-                </Link>
+                <Button asChild variant="ghost" fullWidth role="menuitem" className={itemClass}>
+                  <Link to="/settings" onClick={() => setOpen(false)}>
+                    <Settings className="size-[1.125rem] shrink-0 text-muted-foreground" aria-hidden="true" />
+                    <span>إعدادات المنشأة</span>
+                  </Link>
+                </Button>
               ) : null}
 
-              <Link to="/settings" search={{ section: "security" }} role="menuitem" className={itemClass} onClick={() => setOpen(false)}>
-                <KeyRound className="size-[1.125rem] shrink-0 text-muted-foreground" aria-hidden="true" />
-                <span>تغيير كلمة المرور</span>
-              </Link>
+              <Button asChild variant="ghost" fullWidth role="menuitem" className={itemClass}>
+                <Link to="/settings" search={{ section: "security" }} onClick={() => setOpen(false)}>
+                  <KeyRound className="size-[1.125rem] shrink-0 text-muted-foreground" aria-hidden="true" />
+                  <span>تغيير كلمة المرور</span>
+                </Link>
+              </Button>
 
-              <Link
-                to="/help"
-                search={{ from: supportFrom }}
-                role="menuitem"
-                className={itemClass}
-                onClick={() => setOpen(false)}
-              >
-                <CircleHelp className="size-[1.125rem] shrink-0 text-muted-foreground" aria-hidden="true" />
-                <span>المساعدة والدعم</span>
-              </Link>
+              <Button asChild variant="ghost" fullWidth role="menuitem" className={itemClass}>
+                <Link to="/help" search={{ from: supportFrom }} onClick={() => setOpen(false)}>
+                  <CircleHelp className="size-[1.125rem] shrink-0 text-muted-foreground" aria-hidden="true" />
+                  <span>المساعدة والدعم</span>
+                </Link>
+              </Button>
 
               <div className="my-1 h-px bg-border" aria-hidden="true" />
 
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                fullWidth
                 role="menuitem"
                 className={cn(itemClass, 'text-destructive hover:bg-destructive/8')}
                 onClick={() => {
@@ -256,7 +265,7 @@ const HeaderUserMenu = memo(function HeaderUserMenu({
               >
                 <LogOut className="size-[1.125rem] shrink-0" aria-hidden="true" />
                 <span>تسجيل الخروج</span>
-              </button>
+              </Button>
             </div>
           </div>
         </>
@@ -405,7 +414,7 @@ export function AppShell() {
                 aria-haspopup="dialog"
                 aria-expanded={mobileNavOpen}
                 data-header-menu-button
-                className="hidden md:grid lg:hidden"
+                className="hidden md:inline-flex lg:hidden"
               >
                 <Menu className="size-[22px]" aria-hidden="true" />
               </HeaderControl>
@@ -424,7 +433,7 @@ export function AppShell() {
                 title="البحث"
                 onClick={openSearch}
                 data-header-search-button
-                className="hidden md:grid"
+                className="hidden md:inline-flex"
               >
                 <Search className="size-[22px]" aria-hidden="true" />
               </HeaderControl>

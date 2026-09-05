@@ -71,21 +71,22 @@ function ProductTargetTabs({
       {product.targets.map((nextTarget) => {
         const active = nextTarget.id === activeTargetId;
         return (
-          <button
+          <Button
             key={nextTarget.id}
             type="button"
+            variant="outline"
             role="tab"
             aria-selected={active}
             onClick={() => onOpen(nextTarget)}
             className={cn(
-              'inline-flex min-h-11 items-center rounded-lg border px-2.5 text-xs font-black transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
+              'min-h-11 rounded-lg px-2.5 text-xs font-black focus-visible:ring-2 focus-visible:ring-primary/30',
               active
-                ? 'border-primary/35 bg-primary/10 text-primary'
+                ? 'border-primary/35 bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary'
                 : 'border-border/70 bg-background text-muted-foreground hover:border-primary/30 hover:text-foreground',
             )}
           >
             {nextTarget.label}
-          </button>
+          </Button>
         );
       })}
     </div>

@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, type FormEvent, type KeyboardEvent } from 'react';
 import { Link } from '@tanstack/react-router';
 import { AlertTriangle, ArrowLeft, ArrowUpRight, Eye, EyeOff, Headphones, LockKeyhole, Mail, Menu } from 'lucide-react';
+import { EntityForm } from "@/components/ui/entity-form";
 import { lenaHousePublicEntry } from '@/lib/lena-endorsement';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -84,7 +85,7 @@ export function LoginPage() {
         </header>
 
         <div className="w-full rounded-2xl border border-border/70 bg-card px-5 py-6 shadow-card sm:px-6 sm:py-7" data-login-card>
-          <form className="space-y-4" onSubmit={handleSubmit} noValidate={false} aria-describedby={hasFieldError ? 'login-error' : undefined}>
+          <EntityForm.Root className="gap-4" onSubmit={handleSubmit} noValidate={false} aria-describedby={hasFieldError ? 'login-error' : undefined}>
             <div className="grid gap-1.5">
               <label htmlFor="login-email" className="text-sm font-semibold text-foreground">البريد الإلكتروني</label>
               <div className="relative">
@@ -98,9 +99,9 @@ export function LoginPage() {
               <div className="relative">
                 <LockKeyhole className="pointer-events-none absolute inset-y-0 start-3.5 my-auto size-[18px] text-muted-foreground" aria-hidden="true" />
                 <Input id="login-password" className="h-12 rounded-xl bg-card ps-11 pe-10 text-base focus-visible:ring-2 focus-visible:ring-primary/20 md:text-sm" type={isPasswordVisible ? 'text' : 'password'} value={password} onChange={(event) => { setPassword(event.target.value); setFormError(null); }} onKeyDown={handlePasswordKeyDown} onKeyUp={handleCapsLockDetect} required autoComplete="current-password" dir="ltr" placeholder="••••••••" disabled={isSubmitting || Boolean(runtimeError)} aria-invalid={hasFieldError || undefined} aria-describedby={isCapsLock ? 'caps-lock-warning' : undefined} />
-                <button type="button" className="absolute inset-y-0 end-1 my-auto grid size-11 min-h-11 min-w-11 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20" onClick={() => setIsPasswordVisible((visible) => !visible)} aria-label={isPasswordVisible ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'} disabled={isSubmitting || Boolean(runtimeError)}>
+                <Button type="button" variant="ghost" size="icon" className="absolute inset-y-0 end-1 my-auto rounded-lg text-muted-foreground hover:bg-muted/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/20" onClick={() => setIsPasswordVisible((visible) => !visible)} aria-label={isPasswordVisible ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'} disabled={isSubmitting || Boolean(runtimeError)}>
                   {isPasswordVisible ? <EyeOff className="size-[18px]" /> : <Eye className="size-[18px]" />}
-                </button>
+                </Button>
               </div>
               {isCapsLock ? <p id="caps-lock-warning" className="flex items-center gap-1.5 text-xs text-warning" role="status"><AlertTriangle className="size-3.5" />مفتاح Caps Lock مفعّل</p> : null}
               <div className="flex justify-end">
@@ -113,7 +114,7 @@ export function LoginPage() {
             <Button className="h-12 w-full gap-2 rounded-xl text-base font-bold shadow-sm transition-all active:scale-[0.99] md:text-sm" type="submit" disabled={isSubmitting || Boolean(runtimeError)} aria-busy={isSubmitting}>
               {isSubmitting ? <><span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />جارٍ التحقق...</> : <>تسجيل الدخول<ArrowLeft className="size-4 rtl:rotate-180" /></>}
             </Button>
-          </form>
+          </EntityForm.Root>
         </div>
 
         {/* Parent company endorsement — secondary to Login, not a support CTA. Native <a> to LENA's independent site. */}

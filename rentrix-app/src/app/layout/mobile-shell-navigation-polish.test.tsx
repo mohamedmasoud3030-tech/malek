@@ -128,7 +128,8 @@ describe('MALEK mobile shell & navigation polish pass (Section O verification ma
       const menuButton = header?.querySelector<HTMLButtonElement>('[data-header-menu-button]');
       expect(menuButton).not.toBeNull();
       expect(menuButton?.className).toContain('hidden');
-      expect(menuButton?.className).toContain('md:grid');
+      // Canonical `Button` is inline-flex; the contract is "visible from md".
+      expect(menuButton?.className).toMatch(/md:(grid|inline-flex)/);
     });
 
     it('the explicit dock Menu opens the shared primary-navigation bottom sheet', () => {

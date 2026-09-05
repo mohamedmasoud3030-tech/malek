@@ -99,14 +99,16 @@ export function PwaInstallPrompt() {
           </div>
         </div>
 
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon"
           onClick={handleDismiss}
           aria-label="إغلاق رسالة تثبيت التطبيق"
-          className="grid size-11 shrink-0 place-items-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 motion-reduce:transition-none"
+          className="shrink-0 rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground"
         >
           <X className="size-4" aria-hidden="true" />
-        </button>
+        </Button>
       </div>
     </div>
   );

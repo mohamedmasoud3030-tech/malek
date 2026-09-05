@@ -46,6 +46,15 @@ export const unitStatusTones = {
 
 export type UnitStatusTone = (typeof unitStatusTones)[UnitStatus];
 
+/** Tolerant label lookup for raw DB status strings; falls back to the raw value. */
+export function unitStatusLabelFor(status: string): string {
+  try {
+    return unitStatusLabels[normalizeUnitStatus(status)];
+  } catch {
+    return status;
+  }
+}
+
 /** Tolerant tone lookup for raw DB status strings (legacy `rented` included). */
 export function unitStatusToneFor(status: string): UnitStatusTone {
   try {

@@ -1,4 +1,5 @@
 import { ChevronLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import {
@@ -41,14 +42,16 @@ export function SettingsWorkspaceNav({
               const Icon = section.icon;
               const selected = section.id === activeSection;
               return (
-                <button
+                <Button
                   key={section.id}
                   type="button"
+                  variant="ghost"
+                  fullWidth
                   aria-current={selected ? 'page' : undefined}
                   className={cn(
-                    'group flex min-h-12 w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-start transition-[background-color,color,box-shadow]',
-                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25',
-                    selected ? 'bg-primary text-primary-foreground shadow-sm' : 'text-foreground hover:bg-muted/60',
+                    'group min-h-12 justify-start gap-2.5 rounded-xl px-2.5 py-2 font-normal',
+                    'focus-visible:ring-primary/25',
+                    selected ? 'bg-primary text-primary-foreground shadow-sm hover:bg-primary hover:text-primary-foreground' : 'text-foreground hover:bg-muted/60 hover:text-foreground',
                   )}
                   onClick={() => onChange(section.id)}
                 >
@@ -60,7 +63,7 @@ export function SettingsWorkspaceNav({
                   </span>
                   <span className="min-w-0 flex-1 truncate text-sm font-black">{section.label}</span>
                   <ChevronLeft className="size-4 shrink-0 opacity-50" aria-hidden="true" />
-                </button>
+                </Button>
               );
             })}
           </div>

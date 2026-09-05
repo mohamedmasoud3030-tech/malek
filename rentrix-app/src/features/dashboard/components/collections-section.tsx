@@ -1,17 +1,13 @@
 import { memo } from 'react';
 import { Link } from '@tanstack/react-router';
 import { HandCoins, Layers3 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { ReportPanel } from '@/components/ui/report-section-primitives';
 import { formatCompanyMoney } from '@/lib/companyFormatters';
 import type { CompanySettingsContract } from '@/lib/companySettings';
 import { cn } from '@/lib/utils';
 import type { DashboardSnapshot } from '../dashboard-snapshot';
 import { MetricStat, ProgressMeter } from './dashboard-visuals';
-import {
-  DashboardSignalHeader,
-  DashboardSignalLoading,
-  DashboardSignalPanel,
-  dashboardSectionActionClass,
-} from './dashboard-signal-primitives';
 
 interface CollectionsSectionProps {
   snapshot: DashboardSnapshot | undefined;
@@ -50,71 +46,77 @@ export const CollectionsSection = memo(function CollectionsSection({ snapshot, i
   const hasOverdue = totalOverdue > 0 || overdueCount > 0;
 
   return (
-    <DashboardSignalPanel labelledBy="collections-title" className="h-full">
-      <DashboardSignalHeader
-        id="collections-title"
-        title="التحصيل والمتأخرات"
-        meta={snapshot ? collectionPeriodTitle(snapshot.period.month, snapshot.period.year) : 'الفترة الحالية'}
-        icon={HandCoins}
-        tone={hasOverdue ? 'warning' : 'success'}
-        trailing={<Link to="/financials" search={{ section: "collections", view: "arrears" }} data-dashboard-section-action className={dashboardSectionActionClass}>عرض الكل</Link>}
-      />
+    <ReportPanel
+      dense
+      tone={hasOverdue ? 'warning' : 'success'}
+      icon={HandCoins}
+      title="التحصيل والمتأخرات"
+      titleId="collections-title"
+      aria-labelledby="collections-title"
+      description={snapshot ? collectionPeriodTitle(snapshot.period.month, snapshot.period.year) : 'الفترة الحالية'}
+      action={
+        <Button variant="ghost" size="sm" asChild className="min-h-11 rounded-lg px-2 text-[11px] font-bold text-primary">
+          <Link to="/financials" search={{ section: "collections", view: "arrears" }} data-dashboard-section-action>
+            عرض الكل
+          </Link>
+        </Button>
+      }
+      className="h-full"
+      isLoading={isLoading}
+      loadingLabel="جارٍ تحميل التحصيل والمتأخرات"
+    >
+      <div className="min-w-0 space-y-3 p-3 sm:p-4" data-dashboard-collections-summary>
+        <ProgressMeter
+          percent={collectionRate}
+          label="نسبة التحصيل من استحقاقات الفترة"
+          valueText={`${collectionRate}%`}
+          barClass={collectionRate >= 80 ? 'bg-success' : collectionRate >= 50 ? 'bg-warning' : 'bg-danger'}
+        />
 
-      {isLoading ? <DashboardSignalLoading label="جارٍ تحميل التحصيل والمتأخرات" /> : (
-        <div className="min-w-0 space-y-3 border-t border-border/70 p-3 sm:p-4" data-dashboard-collections-summary>
-          <ProgressMeter
-            percent={collectionRate}
-            label="نسبة التحصيل من استحقاقات الفترة"
-            valueText={`${collectionRate}%`}
-            barClass={collectionRate >= 80 ? 'bg-success' : collectionRate >= 50 ? 'bg-warning' : 'bg-danger'}
-          />
-
-          <div className="grid min-w-0 grid-cols-1 gap-x-4 rounded-xl bg-muted/30 px-3 py-1 sm:grid-cols-3">
-            <MetricStat label="المستحق" value={money(invoiced)} />
-            <MetricStat label="المحصّل" value={money(collected)} />
-            <MetricStat label="المتبقي" value={money(outstanding)} />
-          </div>
-
-          <div className="min-w-0">
-            <div className="flex min-w-0 items-center justify-between gap-2">
-              <p className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
-                <Layers3 className="size-3.5" aria-hidden="true" />
-                أعمار المتأخرات
-              </p>
-              {hasOverdue ? (
-                <p className="shrink-0 text-[11px] font-extrabold tabular-nums text-danger" dir="ltr" data-dashboard-arrears-total>
-                  {money(totalOverdue)} · {overdueCount} فاتورة
-                </p>
-              ) : null}
-            </div>
-
-            {hasOverdue ? (
-              <div className="mt-2 grid grid-cols-2 gap-2" data-dashboard-arrears-aging>
-                {AGING_BUCKETS.map((bucket) => {
-                  const data = snapshot?.arrears.buckets[bucket.key];
-                  const total = data?.total ?? 0;
-                  const count = data?.count ?? 0;
-                  return (
-                    <div key={bucket.key} className={cn('min-w-0 rounded-lg border border-border/60 px-2.5 py-2', count === 0 && 'opacity-70')}>
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-[11px] font-bold text-muted-foreground">{bucket.label}</p>
-                        <span className={cn('h-1.5 w-8 rounded-full', count > 0 ? bucket.barClass : 'bg-muted')} aria-hidden="true" />
-                      </div>
-                      <p className={cn('mt-1 truncate text-sm font-black tabular-nums', total > 0 ? bucket.textClass : 'text-muted-foreground')} dir="ltr">
-                        {money(total)}
-                      </p>
-                      <p className="text-[11px] font-medium text-muted-foreground">{count} فاتورة</p>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <p className="mt-2 text-xs font-medium text-muted-foreground">لا توجد متأخرات — كل الفواتير ضمن الاستحقاق.</p>
-            )}
-          </div>
+        <div className="grid min-w-0 grid-cols-1 gap-x-4 rounded-xl bg-muted/30 px-3 py-1 sm:grid-cols-3">
+          <MetricStat label="المستحق" value={money(invoiced)} />
+          <MetricStat label="المحصّل" value={money(collected)} />
+          <MetricStat label="المتبقي" value={money(outstanding)} />
         </div>
-      )}
 
-    </DashboardSignalPanel>
+        <div className="min-w-0">
+          <div className="flex min-w-0 items-center justify-between gap-2">
+            <p className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
+              <Layers3 className="size-3.5" aria-hidden="true" />
+              أعمار المتأخرات
+            </p>
+            {hasOverdue ? (
+              <p className="shrink-0 text-[11px] font-extrabold tabular-nums text-danger" dir="ltr" data-dashboard-arrears-total>
+                {money(totalOverdue)} · {overdueCount} فاتورة
+              </p>
+            ) : null}
+          </div>
+
+          {hasOverdue ? (
+            <div className="mt-2 grid grid-cols-2 gap-2" data-dashboard-arrears-aging>
+              {AGING_BUCKETS.map((bucket) => {
+                const data = snapshot?.arrears.buckets[bucket.key];
+                const total = data?.total ?? 0;
+                const count = data?.count ?? 0;
+                return (
+                  <div key={bucket.key} className={cn('min-w-0 rounded-lg border border-border/60 px-2.5 py-2', count === 0 && 'opacity-70')}>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[11px] font-bold text-muted-foreground">{bucket.label}</p>
+                      <span className={cn('h-1.5 w-8 rounded-full', count > 0 ? bucket.barClass : 'bg-muted')} aria-hidden="true" />
+                    </div>
+                    <p className={cn('mt-1 truncate text-sm font-black tabular-nums', total > 0 ? bucket.textClass : 'text-muted-foreground')} dir="ltr">
+                      {money(total)}
+                    </p>
+                    <p className="text-[11px] font-medium text-muted-foreground">{count} فاتورة</p>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="mt-2 text-xs font-medium text-muted-foreground">لا توجد متأخرات — كل الفواتير ضمن الاستحقاق.</p>
+          )}
+        </div>
+      </div>
+    </ReportPanel>
   );
 });

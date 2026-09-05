@@ -13,6 +13,9 @@ import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { StatusBadge } from '@/components/ui/status-badge';
+// Canonical unit status vocabulary — the dossier never keeps a private copy
+// (its old one contradicted unit-schema: available/occupied tones were swapped).
+import { unitStatusLabelFor, unitStatusToneFor } from '@/features/units/unit-schema';
 import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
 import { useNavigate } from '@tanstack/react-router';
 import { formatCompanyMoney, formatCompanyNumber, formatCompanyDate } from '@/lib/companyFormatters';
@@ -23,20 +26,6 @@ import type { OwnerDetailSnapshot } from '../services/owner-service';
 import { OwnerAgreementsSection } from './owner-agreements-section';
 
 export type OwnerDossierSection = 'overview' | 'portfolio' | 'records';
-
-const unitStatusLabels: Record<string, string> = {
-  occupied: 'مشغولة',
-  available: 'متاحة',
-  maintenance: 'صيانة',
-  reserved: 'محجوزة',
-};
-
-function unitStatusTone(status: string): 'success' | 'info' | 'warning' | 'neutral' {
-  if (status === 'occupied') return 'success';
-  if (status === 'available') return 'info';
-  if (status === 'maintenance' || status === 'reserved') return 'warning';
-  return 'neutral';
-}
 
 export function OwnerDossierBody({
   snapshot,
@@ -154,21 +143,23 @@ export function OwnerDossierBody({
                 <ul className="divide-y divide-border/60" aria-label="قائمة وحدات المالك">
                   {units.slice(0, 12).map((unit) => (
                     <li key={unit.id}>
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
+                        fullWidth
                         onClick={() => void navigate({
                           to: '/properties/$propertyId/units/$unitId',
                           params: { propertyId: unit.property_id, unitId: unit.id },
                         })}
-                        className="flex min-h-11 w-full flex-wrap items-center gap-2 py-3 text-start text-sm transition hover:text-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
+                        className="min-h-11 flex-wrap justify-start gap-2 rounded-none px-0 py-3 text-sm font-normal hover:bg-transparent hover:text-primary focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-primary/20"
                       >
                         <span className="font-bold">وحدة {unit.unit_number}</span>
                         <span className="text-xs text-muted-foreground">{propertyTitleById.get(unit.property_id) ?? 'عقار غير محدد'}{unit.floor ? ` · الدور ${unit.floor}` : ''}</span>
                         <span className="ms-auto flex items-center gap-2">
-                          <StatusBadge tone={unitStatusTone(unit.status)}>{unitStatusLabels[unit.status] ?? unit.status}</StatusBadge>
+                          <StatusBadge tone={unitStatusToneFor(unit.status)}>{unitStatusLabelFor(unit.status)}</StatusBadge>
                           <span className="text-xs font-semibold tabular-nums" dir="ltr">{formatCompanyMoney(companySettings, unit.rent_amount)}</span>
                         </span>
-                      </button>
+                      </Button>
                     </li>
                   ))}
                 </ul>

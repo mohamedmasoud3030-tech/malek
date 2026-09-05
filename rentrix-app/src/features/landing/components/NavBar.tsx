@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Languages, Menu, X, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { MalikBrand } from '@/components/brand/malik-brand';
 import { useLanguage } from '../i18n/LanguageContext';
 
@@ -49,15 +50,16 @@ export function NavBar({ anchoredToHome = false }: { anchoredToHome?: boolean })
         </div>
 
         <div className="flex items-center gap-2">
-          <button
+          <Button
             type="button"
+            variant="outline"
             onClick={toggle}
-            className="flex min-h-11 items-center gap-1.5 rounded-xl border border-border bg-background px-3 py-2 text-xs font-bold text-foreground transition hover:bg-muted"
+            className="min-h-11 gap-1.5 rounded-xl border-border bg-background px-3 text-xs font-bold hover:bg-muted"
             aria-label="Switch language"
           >
             <Languages className="size-4" />
             <span>{isArabic ? 'EN' : 'ع'}</span>
-          </button>
+          </Button>
           <Link
             to="/login"
             className="hidden min-h-11 items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground shadow-sm transition hover:bg-primary/90 sm:inline-flex"
@@ -65,14 +67,16 @@ export function NavBar({ anchoredToHome = false }: { anchoredToHome?: boolean })
             {t.nav.start}
             <ArrowIcon className="size-4" />
           </Link>
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="icon"
             onClick={() => setOpen((value) => !value)}
-            className="grid size-10 place-items-center rounded-xl border border-border bg-background text-foreground lg:hidden"
+            className="rounded-xl border-border bg-background text-foreground hover:bg-muted lg:hidden"
             aria-label={open ? 'Close menu' : 'Open menu'}
           >
             {open ? <X className="size-5" /> : <Menu className="size-5" />}
-          </button>
+          </Button>
         </div>
       </nav>
 

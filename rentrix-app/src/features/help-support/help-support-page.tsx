@@ -52,53 +52,16 @@ import {
   type SupportRequestInput,
   type SupportUrgency,
 } from "./support-service";
-const articleOwnerLabels = {
-  product: "المنتج",
-  operations: "العمليات",
-  security: "الأمن",
-  finance: "المالية",
-} as const;
-const categoryLabels: Readonly<Record<SupportCategory, string>> = {
-  HOW_TO: "سؤال عن طريقة العمل",
-  ACCESS: "الحساب أو الصلاحيات",
-  TECHNICAL: "خطأ تقني أو أداء",
-  DATA_QUALITY: "سلامة أو جودة البيانات",
-  PAYMENT_POSTING: "تحصيل أو قيد مالي غير واضح",
-  SECURITY: "أمن أو خصوصية",
-};
-const urgencyLabels: Readonly<Record<SupportUrgency, string>> = {
-  LOW: "منخفضة — سؤال لا يوقف العمل",
-  NORMAL: "عادية — يوجد مسار بديل",
-  HIGH: "عالية — مهمة أساسية متوقفة",
-  CRITICAL: "حرجة — أمن، فقد بيانات، أو أثر مالي محتمل",
-};
-const statusLabels = {
-  ACKNOWLEDGED: "تم الاستلام",
-  IN_REVIEW: "قيد المراجعة",
-  WAITING_USER: "بانتظار ردك",
-  RESOLVED: "تم الحل",
-  CLOSED: "مغلق",
-} as const;
-const supportQueryKey = ["support", "my-requests"] as const;
-function currentSupportContextPath(): string {
-  if (typeof window === "undefined") return "/help";
-  const from = new URLSearchParams(window.location.search).get("from");
-  return sanitizeSupportRoute(from || window.location.pathname);
-}
-function getInitialArticle(): string {
-  if (typeof window === "undefined") return "first-office-setup";
-  const requested = new URLSearchParams(window.location.search).get("article");
-  return (
-    getHelpArticle(requested)?.id ??
-    getContextualHelpArticleId(
-      new URLSearchParams(window.location.search).get("from") || "/dashboard",
-    )
-  );
-}
-function buildDeepLink(article: HelpArticle["links"][number]): string {
-  if (!article.search) return article.to;
-  return `${article.to}?${new URLSearchParams(article.search).toString()}`;
-}
+import {
+  articleOwnerLabels,
+  buildDeepLink,
+  categoryLabels,
+  currentSupportContextPath,
+  getInitialArticle,
+  statusLabels,
+  supportQueryKey,
+  urgencyLabels,
+} from "./help-support-labels";
 function ArticleCard({
   article,
   expanded,
@@ -111,9 +74,11 @@ function ArticleCard({
   const panelId = `help-article-${article.id}`;
   return (
     <Card data-help-article={article.id} className="overflow-hidden">
-      <button
+      <Button
         type="button"
-        className="flex min-h-14 w-full items-start justify-between gap-3 p-4 text-start outline-none hover:bg-muted/40 focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-primary/20"
+        variant="ghost"
+        fullWidth
+        className="min-h-14 items-start justify-between gap-3 rounded-none p-4 font-normal hover:bg-muted/40 focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-primary/20"
         aria-expanded={expanded}
         aria-controls={panelId}
         onClick={onToggle}
@@ -128,7 +93,7 @@ function ArticleCard({
           className={`mt-1 size-5 shrink-0 transition-transform motion-reduce:transition-none ${expanded ? "rotate-180" : ""}`}
           aria-hidden="true"
         />
-      </button>
+      </Button>
       {expanded ? (
         <CardContent id={panelId} className="space-y-4 border-t pt-4">
           <ol className="space-y-2 text-sm leading-7">
@@ -396,7 +361,7 @@ function SupportIntake() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={submit} className="space-y-4" noValidate>
+            <EntityForm.Root onSubmit={submit} className="gap-4" noValidate>
               <div className="grid gap-4 sm:grid-cols-2">
                 <EntityForm.Field label="النوع">
                   <Select
@@ -525,7 +490,7 @@ function SupportIntake() {
                 <Send className="me-2 size-4" />
                 {mutation.isPending ? "جارٍ الإرسال..." : "إرسال داخل MALEK"}
               </Button>
-            </form>
+            </EntityForm.Root>
           </CardContent>
         </Card>
         <div className="space-y-4">

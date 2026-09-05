@@ -1,3 +1,4 @@
+import { ArrowUpLeft } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -24,8 +25,7 @@ const toneStyles: Record<NonNullable<EntityCellProps['tone']>, string> = {
  * ContractCard) so a record looks the same whether the screen renders it
  * as a card (mobile) or a table row (desktop).
  */
-export function EntityCell({ icon: Icon, title, subtitle, meta, tone = 'primary' }: EntityCellProps) {
-  return (
+export function EntityCell({ icon: Icon, title, subtitle, meta, tone = 'primary' }: EntityCellProps) {  return (
     <div className="flex items-center gap-2.5 min-w-0">
       {Icon ? (
         <div className={cn('grid size-9 shrink-0 place-items-center rounded-xl', toneStyles[tone])}>
@@ -38,5 +38,38 @@ export function EntityCell({ icon: Icon, title, subtitle, meta, tone = 'primary'
         {meta ? <p className="mt-0.5 text-xs font-bold leading-5 text-muted-foreground">{meta}</p> : null}
       </div>
     </div>
+  );
+}
+
+type EntityLinkProps = Readonly<{
+  href: string;
+  children: ReactNode;
+  className?: string;
+}>;
+
+/**
+ * Canonical inline record link — "open the record this figure belongs to".
+ *
+ * Report panels, dossier summaries and table cells all need the same quiet
+ * affordance: primary-coloured bold text with the RTL forward arrow. Feature
+ * copies (`SafeAnchor`, per-register link spans) are prohibited; this is the
+ * one place the treatment lives.
+ *
+ * It renders a plain anchor so it also works for external/printable output.
+ * For in-app navigation prefer `<Link>` from the router with the same classes.
+ */
+export function EntityLink({ href, children, className }: EntityLinkProps) {
+  return (
+    <a
+      href={href}
+      data-entity-link
+      className={cn(
+        'inline-flex items-center gap-1 font-bold text-primary hover:underline',
+        className,
+      )}
+    >
+      {children}
+      <ArrowUpLeft className="size-3 shrink-0" aria-hidden="true" />
+    </a>
   );
 }

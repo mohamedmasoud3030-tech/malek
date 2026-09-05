@@ -1,6 +1,17 @@
 import { Reveal } from './Reveal';
 
-type SectionHeaderProps = {
+/**
+ * Public marketing heading for the landing page.
+ *
+ * Deliberately NOT the app design-system `SectionHeader`
+ * (`@/components/ui/section-header`): the landing surface is a public
+ * marketing page with reveal-on-scroll motion, a kicker chip, dark/light tone
+ * and centred display type, none of which belong in the operational register
+ * header. It is named `LandingSectionHeading` so the two can never be
+ * confused or cross-imported, and so the canonical `SectionHeader` name stays
+ * owned by `components/ui` alone.
+ */
+type LandingSectionHeadingProps = {
   kicker: string;
   title: string;
   subtitle?: string;
@@ -8,13 +19,13 @@ type SectionHeaderProps = {
   align?: 'center' | 'start';
 };
 
-export function SectionHeader({
+export function LandingSectionHeading({
   kicker,
   title,
   subtitle,
   tone = 'dark',
   align = 'center',
-}: SectionHeaderProps) {
+}: LandingSectionHeadingProps) {
   const isDark = tone === 'dark';
   return (
     <Reveal

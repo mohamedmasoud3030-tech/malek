@@ -164,11 +164,16 @@ describe('44px touch-target floor', () => {
     expect(reports).toContain('min-h-11');
     expect(reports).not.toContain('min-h-10');
 
+    // The toggle is the canonical icon `Button` now, so the 44px box is owned by
+    // the primitive: assert the call site uses it, and that the primitive keeps
+    // the floor.
     const login = readFileSync(join(SRC_ROOT, 'features/auth/login-page.tsx'), 'utf8');
-    const passwordToggle = login.match(/<button type="button" className="([^"]+)"(?=[\s\S]*?aria-label=\{isPasswordVisible)/);
-    expect(passwordToggle?.[1]).toContain('size-11');
-    expect(passwordToggle?.[1]).toContain('min-h-11');
-    expect(passwordToggle?.[1]).toContain('min-w-11');
-    expect(passwordToggle?.[1]).not.toContain('size-10');
+    expect(login).not.toMatch(/<button/);
+    const passwordToggle = login.match(/<Button\b[^\n]*aria-label=\{isPasswordVisible/);
+    expect(passwordToggle?.[0], 'password toggle must be a canonical Button').toContain('size="icon"');
+    expect(passwordToggle?.[0]).toContain('aria-label={isPasswordVisible');
+
+    const buttonSource = readFileSync(join(SRC_ROOT, 'components/ui/button.tsx'), 'utf8');
+    expect(buttonSource).toContain("icon: 'size-11 min-h-11 min-w-11");
   });
 });

@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
+import type { SemanticTone } from '@/components/ui/status-badge';
 
 /**
  * Command center visualization vocabulary.
@@ -20,7 +21,7 @@ export const TrendDelta = memo(function TrendDelta({
 }: Readonly<{
   direction: 'up' | 'down' | 'neutral';
   text: string;
-  tone?: 'success' | 'warning' | 'danger' | 'neutral';
+  tone?: SemanticTone;
   className?: string;
 }>) {
   const toneClass =

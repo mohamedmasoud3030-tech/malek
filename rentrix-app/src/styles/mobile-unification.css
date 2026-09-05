@@ -143,17 +143,6 @@
     min-width: 44px;
   }
 
-  /* Finance still carries one legacy feature wrapper around the canonical
-     FilterBar. Neutralize only that wrapper on phones so invoices/receipts/
-     expenses share the same quiet search-filter surface as core registers. */
-  [data-finance-filter-bar] {
-    padding: 0;
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-    box-shadow: none;
-  }
-
   /* Maintenance attention is already a first-class filter in the shared
      FilterBar sheet. The old quick-chip row duplicated that control and used a
      smaller interaction rhythm, so phones keep the single canonical path. */

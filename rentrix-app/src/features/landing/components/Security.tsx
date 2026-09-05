@@ -1,6 +1,6 @@
 import { ShieldCheck, History, Database, Radar } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
-import { SectionHeader } from './SectionHeader';
+import { LandingSectionHeading } from './landing-section-heading';
 import { Reveal } from './Reveal';
 
 const ITEM_ICONS = [ShieldCheck, History, Database, Radar];
@@ -16,7 +16,7 @@ export function Security() {
       />
       <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-28">
         <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] lg:gap-16">
-          <SectionHeader
+          <LandingSectionHeading
             tone="light"
             align="start"
             kicker={t.security.kicker}

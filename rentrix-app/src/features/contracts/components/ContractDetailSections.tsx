@@ -9,9 +9,9 @@ import { formatContractDate, formatContractDateTime, formatContractDayCount, for
 import { contractStatusLabels, contractStatusTone, leaseModeLabels, paymentCycleLabels } from '../contractSchema';
 import { isContractStatus, normalizeContractStatus } from '@/lib/contractStatus';
 import type { ContractDetail } from '../services/contractService';
+import type { SemanticTone } from '@/components/ui/status-badge';
 
-type TimelineTone = 'success' | 'warning' | 'danger' | 'info' | 'neutral';
-type TimelineItem = Readonly<{ title: string; value: string; description: string; tone: TimelineTone }>;
+type TimelineItem = Readonly<{ title: string; value: string; description: string; tone: SemanticTone }>;
 
 export function getExpiryDescription(settings: CompanySettingsContract, contract: ContractDetail): string {
   if (isContractStatus(contract.status, 'terminated')) return 'تم إنهاء العقد ولا توجد مدة متبقية معروضة.';
@@ -22,7 +22,7 @@ export function getExpiryDescription(settings: CompanySettingsContract, contract
 
 function getTimeline(settings: CompanySettingsContract, contract: ContractDetail): TimelineItem[] {
   const expiryDays = getContractRemainingDays(contract.end_date);
-  let expiryTone: TimelineTone = 'success';
+  let expiryTone: SemanticTone = 'success';
   if (isContractStatus(contract.status, 'terminated')) expiryTone = 'danger';
   else if (expiryDays < 0) expiryTone = 'neutral';
   else if (expiryDays <= 30) expiryTone = 'warning';

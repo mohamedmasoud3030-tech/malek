@@ -12,8 +12,9 @@ import { invoiceStatusLabels } from '@/features/financials/components/invoice-st
 import { paymentMethodLabels } from '@/features/financials/components/receipt-formatters';
 import type { ContractPaymentsSnapshot } from './services/contractPaymentService';
 import { useContractPayments } from './useContractPayments';
+import type { SemanticTone } from '@/components/ui/status-badge';
 
-const invoiceStatusTone: Record<string, 'neutral' | 'info' | 'warning' | 'success' | 'danger'> = {
+const invoiceStatusTone: Record<string, SemanticTone> = {
   draft: 'neutral', issued: 'info', UNPAID: 'info',
   partial: 'warning', PARTIALLY_PAID: 'warning',
   paid: 'success', PAID: 'success',

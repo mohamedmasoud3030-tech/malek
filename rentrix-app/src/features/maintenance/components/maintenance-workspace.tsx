@@ -245,24 +245,25 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
               const isActive = controller.attentionFilter === chip.id;
               const Icon = chip.icon;
               return (
-                <button
+                <Button
                   key={chip.id}
                   type="button"
+                  variant="outline"
                   onClick={() => controller.setAttentionFilter(isActive ? 'all' : chip.id)}
                   aria-pressed={isActive}
                   data-maintenance-attention-chip={chip.id}
                   className={cn(
-                    'inline-flex min-h-8 items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold transition-colors outline-none',
+                    'min-h-11 gap-1.5 rounded-full px-2.5 text-[11px] font-bold',
                     'focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/25',
                     isActive
-                      ? 'border-warning bg-warning-bg text-warning-text'
+                      ? 'border-warning bg-warning-bg text-warning-text hover:bg-warning-bg hover:text-warning-text'
                       : 'border-border/70 bg-card text-muted-foreground hover:bg-warning-bg/60 hover:text-warning-text',
                   )}
                 >
                   {Icon ? <Icon className="size-3" aria-hidden="true" /> : null}
                   <span>{chip.label}</span>
                   <span className="tabular-nums">{formatCount(chip.count)}</span>
-                </button>
+                </Button>
               );
             })}
           </div>

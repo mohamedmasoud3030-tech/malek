@@ -136,7 +136,8 @@ describe('AppShell — redesigned MALEK header & navigation', () => {
     expect(menuButton?.getAttribute('aria-haspopup')).toBe('dialog');
     // Visible only on tablet (md–lg), not on phone.
     expect(menuButton?.className).toContain('hidden');
-    expect(menuButton?.className).toContain('md:grid');
+    // Canonical `Button` is inline-flex; the contract is "visible from md".
+    expect(menuButton?.className).toMatch(/md:(grid|inline-flex)/);
     expect(menuButton?.className).toContain('lg:hidden');
 
     act(() => {
@@ -164,7 +165,7 @@ describe('AppShell — redesigned MALEK header & navigation', () => {
     // Phones portal their own compact search; every wider viewport shares the
     // canonical header control so global search is never invisible.
     expect(searchButton?.className).toContain('hidden');
-    expect(searchButton?.className).toContain('md:grid');
+    expect(searchButton?.className).toMatch(/md:(grid|inline-flex)/);
     expect(searchButton?.className).not.toContain('lg:hidden');
   });
 

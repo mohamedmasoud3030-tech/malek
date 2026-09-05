@@ -2,7 +2,8 @@ import { FolderOpen, HandCoins } from 'lucide-react';
 import { EntityPreviewDialog } from '@/components/ui/entity-preview-dialog';
 import { PreviewFacts } from '@/components/ui/quick-preview';
 import { Button } from '@/components/ui/button';
-import { FinanceStatusBadge, mapInvoiceStatusToFinanceKind } from './finance-reporting-visual-foundations';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { getFinanceStatusTone, mapInvoiceStatusToFinanceKind } from '../finance-status-mapping';
 import { formatDate, formatInvoiceStatusLabel, formatMoney } from './financials-formatters';
 import { getInvoiceGrossAmount, type InvoiceListItem } from '../invoices/invoiceService';
 import { getSafeRemainingAmount } from '../financialMath';
@@ -41,7 +42,7 @@ export function InvoicePreviewDialog({
         : undefined
       : undefined}
       status={invoice ? (
-        <FinanceStatusBadge kind={mapInvoiceStatusToFinanceKind(invoice.status)} label={formatInvoiceStatusLabel(invoice.status)} />
+        <StatusBadge tone={getFinanceStatusTone(mapInvoiceStatusToFinanceKind(invoice.status))}>{formatInvoiceStatusLabel(invoice.status)}</StatusBadge>
       ) : undefined}
       footer={invoice ? (
         <div className="flex flex-wrap items-center gap-2">

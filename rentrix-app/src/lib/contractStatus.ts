@@ -14,6 +14,7 @@
  * (عقد منتهي المدة). Unknown/empty values fall back to 'draft' so display code
  * always resolves to a safe, neutral bucket instead of rendering blanks.
  */
+import type { SemanticTone } from '@/components/ui/status-badge';
 export type CanonicalContractStatus = 'draft' | 'active' | 'expired' | 'terminated';
 
 export const contractStatusLabels: Record<CanonicalContractStatus, string> = {
@@ -23,9 +24,7 @@ export const contractStatusLabels: Record<CanonicalContractStatus, string> = {
   terminated: 'ملغي',
 };
 
-type ContractStatusTone = 'success' | 'warning' | 'danger' | 'info' | 'neutral';
-
-export const contractStatusTone: Record<CanonicalContractStatus, ContractStatusTone> = {
+export const contractStatusTone: Record<CanonicalContractStatus, SemanticTone> = {
   draft: 'neutral',
   active: 'success',
   expired: 'warning',

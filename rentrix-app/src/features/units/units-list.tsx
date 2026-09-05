@@ -12,7 +12,8 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { useAuth } from "@/hooks/use-auth";
 import type { Unit } from "@/types/domain";
 import { unitStatusLabels, unitStatusToneFor } from "./unit-schema";
-import { UnitRentCell } from "./components/unit-cells";
+import { AmountText } from "@/components/ui/amount";
+import { formatMoney } from "@/hooks/useCompanyFormatters";
 import { UnitFormModal } from "./unit-form-modal";
 import { useSoftDeleteUnit } from "./use-units";
 import { useUnitContractDrafts } from "@/features/contracts/queries/useUnitContractDrafts";
@@ -109,7 +110,7 @@ export function UnitsList({
       key: "rent_amount",
       header: "الإيجار",
       priority: "secondary",
-      render: (unit) => <UnitRentCell amount={unit.rent_amount} />,
+      render: (unit) => <AmountText className="block">{formatMoney(unit.rent_amount)}</AmountText>,
     },
     {
       key: "notes",

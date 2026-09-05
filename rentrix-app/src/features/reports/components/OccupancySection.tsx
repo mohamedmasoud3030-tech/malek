@@ -10,7 +10,7 @@ import { documentService } from '@/services/documents/DocumentService';
 import { runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
 import { toReportDocumentPayload, type ReportDocumentData } from '@/services/documents/documentPayloadAdapters';
 import { buildExpiringContractsRows, buildOccupancyRows, getTodayLocalDateString } from '../reports-page.helpers';
-import { SafeAnchor } from './common';
+import { EntityLink } from '@/components/ui/entity-cell';
 import {
   ReportColumns,
   ReportInsightNote,
@@ -239,7 +239,7 @@ export function OccupancySection({
                   key={row.contractId}
                   title={row.tenantName}
                   subtitle={`${row.propertyTitle} · ${row.unitNumber} · ${formatDate(row.endDate)}`}
-                  meta={<SafeAnchor href={`/contracts/${encodeURIComponent(row.contractId)}`} label={formatShortId(row.contractId)} />}
+                  meta={<EntityLink href={`/contracts/${encodeURIComponent(row.contractId)}`}>{formatShortId(row.contractId)}</EntityLink>}
                   value={<StatusBadge tone={row.daysRemaining <= 15 ? 'danger' : 'warning'}>{number(row.daysRemaining)} يوم</StatusBadge>}
                 />
               ))}

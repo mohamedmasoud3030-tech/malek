@@ -13,6 +13,7 @@ import {
   type DepositRefundEventRecord,
   type DepositStatus,
 } from './deposit-service';
+import type { SemanticTone } from '@/components/ui/status-badge';
 
 function getDepositTone(status: DepositStatus): 'success' | 'info' | 'warning' {
   if (status === 'refunded') return 'success';
@@ -20,7 +21,7 @@ function getDepositTone(status: DepositStatus): 'success' | 'info' | 'warning' {
   return 'warning';
 }
 
-function getClaimTone(status: DepositClaimRecord['status']): 'success' | 'info' | 'warning' | 'danger' {
+function getClaimTone(status: DepositClaimRecord['status']): SemanticTone {
   if (status === 'APPLIED' || status === 'APPROVED') return 'success';
   if (status === 'REJECTED') return 'danger';
   if (status === 'REVERSED') return 'warning';

@@ -49,7 +49,13 @@ describe('mobile UI unification contract', () => {
   it('removes mobile-only presentation drift from finance filters and maintenance quick chips', () => {
     const mobileCss = read('src/styles/mobile-unification.css');
 
-    expect(mobileCss).toContain('[data-finance-filter-bar]');
+    // Finance no longer wraps the canonical FilterBar in a feature-local shell
+    // (`FinanceFilterBar` was deleted with the parallel finance foundations),
+    // so its phone-only override is gone with it: invoices now share the exact
+    // canonical toolbar as every other register.
+    expect(mobileCss).not.toContain('[data-finance-filter-bar]');
+    expect(read('src/features/financials/components/invoice-filters.tsx')).toContain('@/components/ui/filter-bar');
+    expect(read('src/features/financials/components/invoice-list-section.tsx')).not.toContain('FinanceFilterBar');
     expect(mobileCss).toContain('[data-maintenance-attention-chip]');
     expect(mobileCss).toContain('display: none;');
   });

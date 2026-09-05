@@ -1,4 +1,5 @@
 import { AlertTriangle, BookOpenCheck, Receipt } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { getErrorMessage } from '@/features/financials/components/financials-formatters';
 import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
 import { formatCompanyMoney } from '@/lib/companyFormatters';
@@ -36,11 +37,12 @@ type MetricButtonProps = Readonly<{
 
 function MetricButton({ label, value, detail, icon: Icon, onClick, tone = 'default' }: MetricButtonProps) {
   return (
-    <button
+    <Button
       type="button"
+      variant="outline"
       onClick={onClick}
       className={cn(
-        'group inline-flex min-h-11 items-center gap-2 rounded-lg border border-border/70 px-2.5 text-start transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/30',
+        'group min-h-11 justify-start gap-2 rounded-lg border-border/70 px-2.5 font-normal focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/30',
         tone === 'warning' ? 'hover:bg-destructive/[0.035]' : 'hover:bg-primary/[0.025]',
       )}
     >
@@ -50,7 +52,7 @@ function MetricButton({ label, value, detail, icon: Icon, onClick, tone = 'defau
         <span className="block text-sm font-black leading-5 tabular-nums text-foreground">{value}</span>
         <span className="hidden text-[11px] font-semibold text-muted-foreground md:block">{detail}</span>
       </span>
-    </button>
+    </Button>
   );
 }
 
