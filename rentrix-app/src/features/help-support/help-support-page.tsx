@@ -31,10 +31,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { sanitizeSupportRoute } from "./help-context";
 import {
-  getContextualHelpArticleId,
-  getHelpArticle,
   helpCategoryLabels,
   searchHelpArticles,
   type HelpArticle,
