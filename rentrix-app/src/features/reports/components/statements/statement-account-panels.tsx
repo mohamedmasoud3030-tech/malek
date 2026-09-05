@@ -206,7 +206,7 @@ export function TenantStatementPanel({
             columns={tenantColumns}
             keyOf={(row) => row.rowKey}
             emptyTitle="لا توجد حركات في كشف المستأجر"
-            emptyDescription="غيّر العقد أو نطاق التقرير ثم أعد المحاولة."
+            emptyDescription="غيّر العقد ثم أعد المحاولة."
           />
         </div>
       ) : selectedContractId ? (
@@ -215,7 +215,7 @@ export function TenantStatementPanel({
         </div>
       ) : (
         <div className="p-4">
-          <ReportState message="اختر عقدًا من فلاتر التقرير لعرض كشف المستأجر الحقيقي." />
+          <ReportState message="اختر عقدًا لعرض كشف حساب المستأجر المعتمد." />
         </div>
       )}
     </ReportPanel>
@@ -419,7 +419,7 @@ export function OwnerStatementPanel({
         </div>
       ) : (
         <div className="p-4">
-          <ReportState message="اختر مالكًا من فلاتر التقرير لعرض كشف المالك الحقيقي." />
+          <ReportState message="اختر مالكًا لعرض كشف حساب المالك المعتمد." />
         </div>
       )}
     </ReportPanel>

@@ -48,7 +48,7 @@ Future report work must extend this stack rather than introduce a second rendere
 
 ## Product-route boundary
 
-`report-products.ts` owns the product/target metadata and `report-route.ts` owns deep-link normalization. `premium/report-product-page.tsx` is the one shared product shell, and `components/report-view-panel.tsx` is its direct canonical body dispatcher. Presentation work must preserve this product-route contract and extend report-specific shared primitives rather than restoring a workspace shell or modifying unrelated app-wide primitives.
+`report-products.ts` owns the product/target metadata and its `kind` presentation classification; `report-route.ts` owns deep-link normalization. `/reports` lists analytical/operational report products only. Owner and tenant account statements retain their canonical direct product route but are entered from owner, tenant/person-contract, and contract context. `premium/report-product-page.tsx` is the shared direct route: it uses report chrome for reports and entity-first statement chrome for statements. `components/report-view-panel.tsx` remains its direct canonical body dispatcher. Presentation work must preserve this product-route contract and extend shared primitives rather than restoring a workspace shell, a second registry, or unrelated app-wide primitives.
 
 ## Screen ↔ document parity contract
 

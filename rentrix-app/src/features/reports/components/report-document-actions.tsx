@@ -42,6 +42,8 @@ export type ReportDocumentShareInput = Readonly<{
 
 type ReportDocumentActionsProps = Readonly<{
   reportLabel: string;
+  /** Keeps statement wording distinct while sharing the guarded action control. */
+  contentKind?: 'report' | 'statement';
   /** `full` = every supported action visible; `compact` = download + menu. */
   layout?: 'full' | 'compact';
   primaryDownloadLabel?: string;
@@ -122,6 +124,7 @@ function downloadFile(file: File): void {
  */
 export function ReportDocumentActions({
   reportLabel,
+  contentKind = 'report',
   layout = 'full',
   primaryDownloadLabel = 'تنزيل PDF',
   menuLabel = 'مزيد من إجراءات الإخراج',
@@ -156,6 +159,8 @@ export function ReportDocumentActions({
         }
       : undefined);
   const showWhatsApp = resolvedShare !== undefined && whatsapp !== false;
+  const contentNoun = contentKind === 'statement' ? 'الكشف' : 'التقرير';
+  const safeLinkNoun = contentKind === 'statement' ? 'للكشف' : 'للتقرير';
 
   const excelDisabled =
     disabled || (!onDownloadExcel && !(excelRows && excelRows.rows.length > 0));
@@ -237,25 +242,25 @@ export function ReportDocumentActions({
         if (await copyText(resolvedShare.url)) {
           downloadFile(file);
           toast.success(
-            'شارك هذا المتصفح لا يرفق الملفات مباشرة — نزّلنا لك PDF جاهز للإرفاق، ونسخنا الرابط الآمن للتقرير.',
+            `شارك هذا المتصفح لا يرفق الملفات مباشرة — نزّلنا لك PDF جاهزًا للإرفاق، ونسخنا الرابط الآمن ${safeLinkNoun}.`,
           );
           return;
         }
         downloadFile(file);
         toast.success(
-          'نزّلنا لك ملف PDF جاهزًا للمشاركة؛ هذا المتصفح لا يدعم إرفاق الملفات أو نسخ الرابط.',
+          `نزّلنا لك ملف PDF جاهزًا لمشاركة ${contentNoun}؛ هذا المتصفح لا يدعم إرفاق الملفات أو نسخ الرابط.`,
         );
       } catch (error) {
         if (await copyText(resolvedShare.url)) {
           toast.success(
-            'تعذر تجهيز PDF للمشاركة المباشرة — تم نسخ الرابط الآمن للتقرير بدلًا منه.',
+            `تعذر تجهيز PDF للمشاركة المباشرة — تم نسخ الرابط الآمن ${safeLinkNoun} بدلًا منه.`,
           );
           return;
         }
         toast.error(
           documentActionErrorMessage(
             error,
-            'تعذرت مشاركة التقرير في هذا المتصفح. انسخ الرابط من شريط العنوان.',
+            `تعذرت مشاركة ${contentNoun} في هذا المتصفح. انسخ الرابط من شريط العنوان.`,
           ),
         );
       } finally {
@@ -280,10 +285,10 @@ export function ReportDocumentActions({
       }
     }
     if (await copyText(resolvedShare.url)) {
-      toast.success('تم نسخ رابط التقرير.');
+      toast.success(`تم نسخ رابط ${contentNoun}.`);
       return;
     }
-    toast.error('المشاركة غير مدعومة هنا. انسخ الرابط من شريط العنوان.');
+    toast.error(`مشاركة ${contentNoun} غير مدعومة هنا. انسخ الرابط من شريط العنوان.`);
   };
 
   const buttonClass = 'min-h-11 gap-1.5 text-xs';

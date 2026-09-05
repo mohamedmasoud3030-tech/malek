@@ -43,29 +43,33 @@ export function useReportProductDocumentActions(
     target: ReportProductTarget;
     model: ReportsWorkspaceModel;
     filters: ReportsFilterState;
+    contentKind: 'report' | 'statement';
     canExportReports: boolean;
   }>,
 ): Readonly<{
   capabilities: PremiumDocumentCapabilities;
   documentUnavailableHint: string | null;
 }> {
-  const { target, model, filters, canExportReports } = params;
+  const { target, model, filters, contentKind, canExportReports } = params;
   const { companySettings, isReady } = useDocumentSettings();
+  const isStatement = contentKind === 'statement';
   const documentKind = target.documentKind;
 
   return useMemo(() => {
     if (!canExportReports) {
       return {
         capabilities: {},
-        documentUnavailableHint:
-          'الطباعة و PDF والمشاركة المباشرة تتطلب صلاحية تصدير التقارير؛ المعاينة متاحة كما هي.',
+        documentUnavailableHint: isStatement
+          ? 'طباعة كشف الحساب وPDF ومشاركته تتطلب صلاحية تصدير التقارير؛ القراءة متاحة كما هي.'
+          : 'الطباعة وPDF والمشاركة المباشرة تتطلب صلاحية تصدير التقارير؛ المعاينة متاحة كما هي.',
       };
     }
     if (!isReady) {
       return {
         capabilities: {},
-        documentUnavailableHint:
-          'أكمل بيانات الشركة الأساسية في الإعدادات لتفعيل الطباعة و PDF والمشاركة المباشرة.',
+        documentUnavailableHint: isStatement
+          ? 'أكمل بيانات الشركة الأساسية في الإعدادات لتفعيل طباعة كشف الحساب وPDF ومشاركته.'
+          : 'أكمل بيانات الشركة الأساسية في الإعدادات لتفعيل الطباعة وPDF والمشاركة المباشرة.',
       };
     }
     if (!documentKind) {
@@ -83,7 +87,7 @@ export function useReportProductDocumentActions(
           return {
             capabilities: {},
             documentUnavailableHint:
-              'اختر مالكًا من فلاتر التقرير لتجهيز كشف المالك الشامل.',
+              'اختر المالك لتجهيز كشف حسابه الشامل.',
           };
         }
         if (
@@ -93,7 +97,7 @@ export function useReportProductDocumentActions(
           return {
             capabilities: {},
             documentUnavailableHint:
-              'جارٍ تجهيز كشف المالك الشامل من المصادر المعتمدة.',
+              'جارٍ تجهيز كشف حساب المالك من المصادر المعتمدة.',
           };
         }
         if (
@@ -103,7 +107,7 @@ export function useReportProductDocumentActions(
         ) {
           return {
             capabilities: {},
-            documentUnavailableHint: 'تعذر تجهيز كشف مالك معتمد للنطاق الحالي.',
+            documentUnavailableHint: 'تعذر تجهيز كشف حساب مالك معتمد للنطاق الحالي.',
           };
         }
         if (
@@ -113,7 +117,7 @@ export function useReportProductDocumentActions(
           return {
             capabilities: {},
             documentUnavailableHint:
-              'تعذر تجهيز تفاصيل كشف المالك الشامل؛ أعد تحميل التقرير.',
+              'تعذر تجهيز تفاصيل كشف حساب المالك؛ أعد تحميل الصفحة.',
           };
         }
         const ownerParams = {
@@ -150,7 +154,7 @@ export function useReportProductDocumentActions(
           return {
             capabilities: {},
             documentUnavailableHint:
-              'اختر عقدًا من فلاتر التقرير لتجهيز كشف المستأجر.',
+              'اختر عقدًا لتجهيز كشف حساب المستأجر.',
           };
         }
         if (statements.isTenantStatementLoading) {
@@ -332,5 +336,5 @@ export function useReportProductDocumentActions(
       default:
         return { capabilities: {}, documentUnavailableHint: null };
     }
-  }, [canExportReports, companySettings, documentKind, filters, model]);
+  }, [canExportReports, companySettings, documentKind, filters, isReady, isStatement, model]);
 }

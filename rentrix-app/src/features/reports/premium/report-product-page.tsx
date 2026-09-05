@@ -10,6 +10,7 @@ import {
   financialOperationPermissions,
 } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
+import { formatMoney } from '@/features/financials/components/financials-formatters';
 import { cn } from '@/lib/utils';
 import {
   getInitialReportsFilters,
@@ -36,6 +37,7 @@ import { ReportViewPanel } from '../components/report-view-panel';
 import { useReportsWorkspace } from '../use-reports-workspace';
 import { getCurrentMonthFilters } from '../reports-page.helpers';
 import { useReportProductDocumentActions } from './report-product-document-actions';
+import { StatementProductHeader, type StatementContextItem } from './statement-product-header';
 
 /* ------------------------------------------------------------------ */
 /* Product target tabs — one compact switcher per premium product.     */
@@ -201,6 +203,7 @@ function OpenReportProduct({
 }>) {
   const navigate = useNavigate();
   const Icon = product.icon;
+  const isStatement = product.kind === 'statement';
   const visibleFilterFields = getReportProductFilterFields(target);
   const scopedFilters = useMemo(
     () => scopeReportsFiltersToFields(filters, visibleFilterFields),
@@ -216,6 +219,7 @@ function OpenReportProduct({
       target,
       model,
       filters: scopedFilters,
+      contentKind: product.kind,
       canExportReports,
     });
 
@@ -289,13 +293,140 @@ function OpenReportProduct({
     onFiltersChange({ ...scopedFilters, ...getCurrentMonthFilters() });
   }, [onFiltersChange, scopedFilters]);
 
+  const ownerStatement = model.sections.statements.ownerStatement;
+  const ownerReportPayload = model.sections.statements.ownerReportPayload;
+  const tenantStatement = model.sections.statements.tenantStatement;
+  const statementTitle =
+    product.statementFocus === 'owner'
+      ? 'كشف حساب المالك'
+      : product.statementFocus === 'tenant'
+        ? 'كشف حساب المستأجر'
+        : product.title;
+  const statementDescription =
+    product.statementFocus === 'owner'
+      ? 'سجل مالي مفصل للمالك ضمن الفترة المحددة، مع الأرصدة والحركات المعتمدة.'
+      : 'سجل مالي للعقد والمستأجر، يعرض الحركات والأرصدة ضمن سياق العقد المعتمد.';
+  const statementContext: StatementContextItem[] =
+    product.statementFocus === 'owner'
+      ? [
+          {
+            label: 'المالك',
+            value: ownerStatement?.ownerName || 'اختر المالك',
+          },
+          {
+            label: 'نطاق العقارات',
+            value: ownerReportPayload?.scopeLabel || 'كل عقارات المالك',
+          },
+          {
+            label: 'فترة الكشف',
+            value: `${ownerStatement?.periodFrom || scopedFilters.from || '—'} — ${ownerStatement?.periodTo || scopedFilters.to || '—'}`,
+          },
+          {
+            label: 'صافي الحركة',
+            value: ownerStatement
+              ? formatMoney(ownerStatement.totalNet)
+              : 'يظهر بعد تحميل كشف الحساب',
+          },
+        ]
+      : [
+          {
+            label: 'المستأجر',
+            value: tenantStatement?.tenantName || 'اختر العقد',
+          },
+          {
+            label: 'العقار والوحدة',
+            value:
+              [tenantStatement?.propertyName, tenantStatement?.unitName]
+                .filter(Boolean)
+                .join(' — ') || 'تظهر بعد اختيار العقد',
+          },
+          {
+            label: 'مدة العقد',
+            value:
+              tenantStatement?.startDate && tenantStatement?.endDate
+                ? `${tenantStatement.startDate} — ${tenantStatement.endDate}`
+                : 'تظهر من العقد المختار',
+          },
+          {
+            label: 'الرصيد الختامي',
+            value: tenantStatement
+              ? formatMoney(tenantStatement.finalBalance)
+              : 'يظهر بعد تحميل كشف الحساب',
+          },
+        ];
+  const statementBack = () => {
+    if (product.statementFocus === 'owner' && scopedFilters.ownerId) {
+      void navigate({
+        to: '/owners/$ownerId',
+        params: { ownerId: scopedFilters.ownerId },
+      });
+      return;
+    }
+    if (product.statementFocus === 'tenant' && scopedFilters.contractId) {
+      void navigate({
+        to: '/contracts/$contractId',
+        params: { contractId: scopedFilters.contractId },
+      });
+      return;
+    }
+    onBack();
+  };
+  const statementBackLabel =
+    product.statementFocus === 'owner' && scopedFilters.ownerId
+      ? 'العودة إلى ملف المالك'
+      : product.statementFocus === 'tenant' && scopedFilters.contractId
+        ? 'العودة إلى العقد'
+        : 'العودة إلى التقارير';
+  const documentActions = (
+    <ReportDocumentActions
+      reportLabel={
+        product.targets.length > 1
+          ? `${isStatement ? statementTitle : product.title} — ${target.label}`
+          : isStatement
+            ? statementTitle
+            : product.title
+      }
+      contentKind={product.kind}
+      whatsapp={false}
+      disabled={model.isIncomplete}
+      {...capabilities}
+      share={canExportReports ? shareInput : undefined}
+    />
+  );
+
   return (
     <PageLayout dir="rtl" lang="ar" size="wide">
-      <div data-report-product-page={product.id} className="min-w-0 space-y-3">
-        <header
-          className="rounded-xl border border-border/70 bg-card/85 p-3 shadow-sm sm:p-4"
-          data-report-product-header
-        >
+      <div
+        data-report-product-page={product.id}
+        data-product-kind={product.kind}
+        data-statement-product-page={isStatement ? product.id : undefined}
+        className="min-w-0 space-y-3"
+      >
+        {isStatement ? (
+          <StatementProductHeader
+            title={statementTitle}
+            description={statementDescription}
+            icon={Icon}
+            contextItems={statementContext}
+            actions={documentActions}
+            notice={
+              documentUnavailableHint ? (
+                <p
+                  className="rounded-lg border border-border/55 bg-background/70 px-2.5 py-1.5 text-[11px] font-semibold leading-4 text-muted-foreground"
+                  role="note"
+                >
+                  {documentUnavailableHint}
+                </p>
+              ) : null
+            }
+            backLabel={statementBackLabel}
+            onBack={statementBack}
+          />
+        ) : (
+          <header
+            className="rounded-xl border border-border/70 bg-card/85 p-3 shadow-sm sm:p-4"
+            data-report-product-header
+          >
           <div className="flex min-w-0 flex-wrap items-start justify-between gap-2.5">
             <div className="flex min-w-0 flex-1 items-start gap-2.5">
               <Button
@@ -330,17 +461,7 @@ function OpenReportProduct({
             </div>
 
             <div className="shrink-0" data-report-product-actions>
-              <ReportDocumentActions
-                reportLabel={
-                  product.targets.length > 1
-                    ? `${product.title} — ${target.label}`
-                    : product.title
-                }
-                whatsapp={false}
-                disabled={model.isIncomplete}
-                {...capabilities}
-                share={canExportReports ? shareInput : undefined}
-              />
+              {documentActions}
             </div>
           </div>
           {documentUnavailableHint ? (
@@ -360,23 +481,37 @@ function OpenReportProduct({
               />
             </div>
           ) : null}
-        </header>
+          </header>
+        )}
 
-        <section className="min-w-0 space-y-3" data-report-product-content>
+        <section
+          className="min-w-0 space-y-3"
+          data-report-product-content={!isStatement ? '' : undefined}
+          data-statement-product-content={isStatement ? '' : undefined}
+        >
           <ReportsFilterSurface
             filters={scopedFilters}
             costCenterRows={model.filters.costCenterRows}
             ownerRows={model.filters.ownerRows}
             contractRows={model.filters.contractRows}
             visibleFields={visibleFilterFields}
+            contentKind={product.kind}
             onChange={onFiltersChange}
             onResetCurrentMonth={handleResetCurrentMonth}
           />
 
           {model.isIncomplete ? (
             <DataRefreshAlert
-              title="نتائج التقرير غير مكتملة"
-              description="تعذر تحديث مصدر واحد أو أكثر. قد تبقى النتائج السابقة ظاهرة للمراجعة، لكن الطباعة والتصدير متوقفان حتى ينجح تحديث جميع المصادر."
+              title={
+                isStatement
+                  ? 'كشف الحساب غير مكتمل التحديث'
+                  : 'نتائج التقرير غير مكتملة'
+              }
+              description={
+                isStatement
+                  ? 'تعذر تحديث مصدر واحد أو أكثر. قد تبقى الحركات السابقة ظاهرة للمراجعة، لكن طباعة كشف الحساب وتصديره متوقفان حتى ينجح تحديث جميع المصادر.'
+                  : 'تعذر تحديث مصدر واحد أو أكثر. قد تبقى النتائج السابقة ظاهرة للمراجعة، لكن الطباعة والتصدير متوقفان حتى ينجح تحديث جميع المصادر.'
+              }
               onRetry={() => {
                 void model.retryFailedSources();
               }}
@@ -384,10 +519,17 @@ function OpenReportProduct({
           ) : null}
 
           <div
-            data-stale-report-content={model.isIncomplete ? 'true' : undefined}
+            data-stale-report-content={
+              !isStatement && model.isIncomplete ? 'true' : undefined
+            }
+            data-stale-statement-content={
+              isStatement && model.isIncomplete ? 'true' : undefined
+            }
             aria-label={
               model.isIncomplete
-                ? 'نتائج تقرير غير مكتملة للقراءة فقط'
+                ? isStatement
+                  ? 'كشف حساب غير مكتمل للقراءة فقط'
+                  : 'نتائج تقرير غير مكتملة للقراءة فقط'
                 : undefined
             }
           >

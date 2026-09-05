@@ -36,6 +36,13 @@ export type { ReportProductId } from '@/lib/report-product-ids';
 export type StatementProductFocus = 'owner' | 'tenant' | 'financial' | 'all';
 
 /**
+ * Presentation identity deliberately separates analysis products from
+ * entity/account statements while retaining one canonical route metadata
+ * source. It is not a second catalog or renderer registry.
+ */
+export type ReportProductKind = 'report' | 'statement';
+
+/**
  * One addressable body of a report product. Product targets deliberately own
  * their renderer location and filter scope; no workspace/navigation registry
  * participates in the canonical Reports UX.
@@ -58,6 +65,8 @@ export type ReportProductTarget = Readonly<{
 
 export type ReportProduct = Readonly<{
   id: ReportProductId;
+  /** A statement is entity/account evidence, never a catalogued analysis product. */
+  kind: ReportProductKind;
   title: string;
   englishTitle: string;
   description: string;
@@ -69,7 +78,6 @@ export type ReportProduct = Readonly<{
 }>;
 
 const PERIOD_PROPERTY_OWNER = ['period', 'property', 'owner'] as const;
-const PERIOD_PROPERTY_CONTRACT = ['period', 'property', 'contract'] as const;
 const COLLECTION_SCOPE = [
   'period',
   'asOf',
@@ -105,7 +113,10 @@ const tenantTargets: readonly ReportProductTarget[] = [
       'استحقاقات العقد، التحصيلات والعكوس والرصيد الجاري من مصدر كشف المستأجر المعتمد.',
     section: 'statements',
     view: '',
-    visibleFilterFields: PERIOD_PROPERTY_CONTRACT,
+    // The tenant statement RPC is contract-scoped. It does not accept a
+    // client-selected reporting range, so presenting period inputs here would
+    // falsely imply that they alter the authoritative statement.
+    visibleFilterFields: ['contract'],
     documentKind: 'tenant-statement',
   },
 ];
@@ -255,8 +266,9 @@ const financialTargets: readonly ReportProductTarget[] = [
 export const REPORT_PRODUCTS: readonly ReportProduct[] = [
   {
     id: 'owner-comprehensive-statement',
-    title: 'كشف المالك الشامل',
-    englishTitle: 'Owner Comprehensive Statement',
+    kind: 'statement',
+    title: 'كشف حساب المالك الشامل',
+    englishTitle: 'Owner Statement',
     description:
       'مستند الثقة الرئيسي للمالك: التحصيل، المصروفات، الصيانة، العمولات، الشغور والتسويات في كشف واحد.',
     businessQuestion:
@@ -268,6 +280,7 @@ export const REPORT_PRODUCTS: readonly ReportProduct[] = [
   },
   {
     id: 'tenant-statement',
+    kind: 'statement',
     title: 'كشف حساب المستأجر',
     englishTitle: 'Tenant Statement',
     description:
@@ -281,6 +294,7 @@ export const REPORT_PRODUCTS: readonly ReportProduct[] = [
   },
   {
     id: 'collections-arrears-cheques',
+    kind: 'report',
     title: 'التحصيل والمتأخرات والشيكات',
     englishTitle: 'Collections, Arrears & Cheques',
     description:
@@ -293,6 +307,7 @@ export const REPORT_PRODUCTS: readonly ReportProduct[] = [
   },
   {
     id: 'portfolio-property-performance',
+    kind: 'report',
     title: 'أداء المحفظة والعقارات',
     englishTitle: 'Portfolio & Property Performance',
     description:
@@ -305,6 +320,7 @@ export const REPORT_PRODUCTS: readonly ReportProduct[] = [
   },
   {
     id: 'financial-settlement-pack',
+    kind: 'report',
     title: 'الحزمة المالية والتسويات',
     englishTitle: 'Financial & Settlement Pack',
     description:
@@ -327,6 +343,13 @@ export function getReportProductFilterFields(
 export function getReportProduct(value: unknown): ReportProduct | undefined {
   if (typeof value !== 'string') return undefined;
   return REPORT_PRODUCTS.find((product) => product.id === value.trim());
+}
+
+/** Derived catalog projection: entity statements stay contextual to dossiers. */
+export function isStatementProduct(
+  product: ReportProduct,
+): product is ReportProduct & Readonly<{ kind: 'statement' }> {
+  return product.kind === 'statement';
 }
 
 /** Canonical product target lookup: only target IDs are valid on new URLs. */

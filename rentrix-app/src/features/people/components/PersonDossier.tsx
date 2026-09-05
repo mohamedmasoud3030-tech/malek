@@ -286,7 +286,7 @@ export function PersonDossierContent({
                       } as never
                     }
                   >
-                    كشف الحساب الكامل
+                    فتح كشف حساب المستأجر للعقد
                   </Link>
                 </Button>
               ) : null}

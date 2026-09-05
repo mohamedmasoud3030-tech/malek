@@ -13,7 +13,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { REPORT_PRODUCTS } from './report-products';
+import { REPORT_PRODUCTS, isStatementProduct } from './report-products';
 import {
   previousPeriodRange,
   formatPointChange,
@@ -289,10 +289,12 @@ describe('reports closure — presentation contracts', () => {
 /* ------------------------------------------------------------------ */
 
 describe('reports closure — Reports Center reachability', () => {
-  it('gives every catalogued product one distinct identity and route target', () => {
+  it('keeps five distinct direct products while limiting the catalog experience to three analytical reports', () => {
     const titles = REPORT_PRODUCTS.map((product) => product.title);
     expect(new Set(titles).size).toBe(titles.length);
     expect(REPORT_PRODUCTS).toHaveLength(5);
+    expect(REPORT_PRODUCTS.filter(isStatementProduct)).toHaveLength(2);
+    expect(REPORT_PRODUCTS.filter((product) => !isStatementProduct(product))).toHaveLength(3);
     for (const product of REPORT_PRODUCTS)
       expect(product.targets.length).toBeGreaterThan(0);
   });

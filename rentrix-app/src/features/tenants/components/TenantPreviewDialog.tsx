@@ -275,7 +275,7 @@ export function TenantDossierContent({
                     } as never
                   }
                 >
-                  كشف حسابي للعقد
+                  فتح كشف حساب العقد
                 </Link>
               </Button>
             </div>

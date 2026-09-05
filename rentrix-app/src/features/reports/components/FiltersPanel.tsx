@@ -35,6 +35,8 @@ export function FiltersPanel({
   ownerRows,
   contractRows,
   visibleFields,
+  contentKind = 'report',
+  showPeriodReset = true,
   onChange,
   onResetCurrentMonth,
 }: Readonly<{
@@ -43,6 +45,8 @@ export function FiltersPanel({
   ownerRows: Owner[];
   contractRows: ContractListItem[];
   visibleFields?: readonly ReportFilterFieldId[];
+  contentKind?: 'report' | 'statement';
+  showPeriodReset?: boolean;
   onChange: (filters: ReportsFilterState) => void;
   onResetCurrentMonth: () => void;
 }>) {
@@ -62,9 +66,18 @@ export function FiltersPanel({
     () => contractsInUnit.filter((contract) => !filters.tenantId || contract.people?.id === filters.tenantId),
     [contractsInUnit, filters.tenantId],
   );
+  const isStatement = contentKind === 'statement';
+  const filterTitle = isStatement ? 'نطاق كشف الحساب' : 'فلاتر التقرير';
+  const filterDescription = isStatement
+    ? showPeriodReset
+      ? 'راجع نطاق الفترة المعتمد قبل قراءة كشف الحساب.'
+      : 'اختر العقد لقراءة كشف الحساب المعتمد.'
+    : 'اختر فقط ما تحتاجه لتضييق نتائج التقرير.';
 
   return (
     <FilterBar
+      advancedFilterTitle={filterTitle}
+      advancedFilterDescription={filterDescription}
       filters={(
         <>
           {fields.has('period') ? (
@@ -158,12 +171,14 @@ export function FiltersPanel({
           ) : null}
         </>
       )}
-      actions={(
-        <Button onClick={onResetCurrentMonth} variant="secondary">
-          <RefreshCcw className="me-2 size-4" aria-hidden="true" />
-          الشهر الحالي
-        </Button>
-      )}
+      actions={
+        showPeriodReset ? (
+          <Button onClick={onResetCurrentMonth} variant="secondary">
+            <RefreshCcw className="me-2 size-4" aria-hidden="true" />
+            الشهر الحالي
+          </Button>
+        ) : undefined
+      }
     />
   );
 }

@@ -35,7 +35,7 @@ export function ReportsPage() {
   return (
     <PageLayout dir="rtl" lang="ar" size="wide">
       <PageHeader
-        title={translateSharedLabel('financialsSectionReports')}
+        title={translateSharedLabel('reports')}
         description={translateSharedLabel('reportsPageDescription')}
       />
       <div

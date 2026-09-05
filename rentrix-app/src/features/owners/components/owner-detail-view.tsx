@@ -150,7 +150,7 @@ function OwnerDetailReady({
               search={{ view: 'statement', ownerId: owner.id } as never}
             >
               <FileChartColumn className="me-2 size-4" aria-hidden="true" />
-              كشف المالك الكامل
+              فتح كشف حساب المالك
             </Link>
           </Button>
         ) : null}
@@ -178,7 +178,7 @@ function OwnerDetailReady({
       ) : null}
       <EntityDetailHeader
         title="ملف المالك"
-        subtitle="بيانات المالك واتفاقيات الإدارة والعقارات المرتبطة والمستندات الأساسية. المالية التفصيلية في مساحة المال والتقارير."
+        subtitle="بيانات المالك واتفاقيات الإدارة والعقارات المرتبطة والمستندات الأساسية. افتح كشف الحساب من هنا لمراجعة الحركات والأرصدة المالية."
         backTo="/owners"
         backLabel="الملاك"
         actions={actions}

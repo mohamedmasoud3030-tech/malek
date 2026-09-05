@@ -24,7 +24,6 @@ export const navigationLabels: Readonly<Record<string, string>> = {
   financials: 'المالية',
   accountingReports: 'التقارير',
   reports: 'التقارير',
-  reportsAndStatements: 'التقارير والكشوف',
   settings: 'الإعدادات',
   companySettings: 'الشركة',
   usersPermissions: 'المستخدمون والصلاحيات',
@@ -78,6 +77,6 @@ export const workspaceLabels: Record<string, string> = {
 // «لوحة التحكم»/«التشغيل والصيانة») and a redundant `canonicalTerms` map
 // were removed here. They were orphan (zero consumers) and contradicted the
 // active task-centric `navigationLabels` used by the sidebar and hub page
-// headers (اليوم/المحفظة/التأجير/المال/الخدمات/التقارير والكشوف).
+// headers (اليوم/المحفظة/التأجير/المال/الخدمات/التقارير).
 // Single source of truth for visible naming is `navigationLabels` +
 // `workspaceLabels` below.

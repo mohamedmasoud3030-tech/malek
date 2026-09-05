@@ -15,6 +15,8 @@ type ReportsFilterSurfaceProps = Readonly<{
   ownerRows: Owner[];
   contractRows: ContractListItem[];
   visibleFields?: readonly ReportFilterFieldId[];
+  /** Statement filter wording must never describe the account record as a report. */
+  contentKind?: 'report' | 'statement';
   onChange: (filters: ReportsFilterState) => void;
   onResetCurrentMonth: () => void;
 }>;
@@ -37,6 +39,7 @@ export function ReportsFilterSurface({
   ownerRows,
   contractRows,
   visibleFields,
+  contentKind = 'report',
   onChange,
   onResetCurrentMonth,
 }: ReportsFilterSurfaceProps) {
@@ -50,15 +53,26 @@ export function ReportsFilterSurface({
     }),
     [filters, labels],
   );
-  const scopeLabel = summary.activeCount === 0 ? 'الشهر الحالي' : summary.label;
+  const isStatement = contentKind === 'statement';
+  const scopeLabel =
+    summary.activeCount === 0
+      ? isStatement
+        ? 'اختر العقد'
+        : 'الشهر الحالي'
+      : summary.label;
+  const scopeNoun = isStatement ? 'الكشف' : 'التقرير';
+  const supportsPeriodReset = visibleFields?.includes('period') ?? true;
 
   return (
-    <div className="min-w-0 space-y-2">
+    <div
+      className="min-w-0 space-y-2"
+      data-statement-filter-surface={isStatement ? '' : undefined}
+    >
       <div
         className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5"
-        data-report-filter-surface
+        data-report-filter-surface={!isStatement ? '' : undefined}
         role="region"
-        aria-label="نطاق التقرير الحالي"
+        aria-label={`نطاق ${scopeNoun} الحالي`}
       >
         <span className="inline-flex min-h-8 items-center gap-1.5 rounded-full bg-muted/40 px-2.5 text-[11px] font-bold text-muted-foreground">
           <CalendarRange className="size-3.5" aria-hidden="true" />
@@ -72,6 +86,8 @@ export function ReportsFilterSurface({
         ownerRows={ownerRows}
         contractRows={contractRows}
         visibleFields={visibleFields}
+        contentKind={contentKind}
+        showPeriodReset={supportsPeriodReset}
         onChange={onChange}
         onResetCurrentMonth={onResetCurrentMonth}
       />

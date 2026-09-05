@@ -10,8 +10,9 @@ import { buildAcceptanceSession } from './support/document-acceptance-session';
  * Fresh runtime evidence for the premium reports catalog batch.
  *
  * Runs the REAL app against the hermetic fake Supabase acceptance backend:
- * catalog-only landing (five products, zero KPI/charts/filters), one real
- * route per product, print popup in Arabic RTL, a genuine multi-page PDF
+ * catalog-only landing (three analytical products, zero KPI/charts/filters), one
+ * real route per analytical product, contextual account statements, print popup
+ * in Arabic RTL, a genuine multi-page PDF
  * artifact, and the truthful share fallback. Screenshots land in
  * `e2e/evidence/reports-premium-catalog/` for PR review.
  *
@@ -159,16 +160,22 @@ test('premium reports catalog — full product journey with print/PDF/share evid
   test.setTimeout(420_000);
   const facts: Record<string, unknown>[] = [];
 
-  /* 1 — /reports is the catalog: five products, no KPI/charts/filters. */
+  /* 1 — /reports is the analytical catalog: three reports, no KPI/charts/filters. */
   let context = await preparedContext(browser, { width: 1440, height: 1000 });
   let page = await context.newPage();
   await seed(page);
   await open(page, '/reports');
   const cards = page.locator('[data-report-product]');
-  await expect(cards).toHaveCount(5);
+  await expect(cards).toHaveCount(3);
+  await expect(
+    page.locator('[data-report-product="collections-arrears-cheques"]'),
+  ).toContainText('تقارير التحصيل والمتأخرات');
   await expect(
     page.locator('[data-report-product="owner-comprehensive-statement"]'),
-  ).toContainText('كشف المالك الشامل');
+  ).toHaveCount(0);
+  await expect(page.locator('[data-statement-entry-guidance]')).toContainText(
+    'هل تبحث عن كشف حساب؟',
+  );
   summary.landing = {
     cards: await cards.count(),
     kpiLayer: await page.locator('[data-report-summary-layer]').count(),
@@ -186,18 +193,18 @@ test('premium reports catalog — full product journey with print/PDF/share evid
   // Keyboard-first opening: focus the card action, Enter → real route.
   await setTheme(page, 'light');
   await page
-    .locator('[data-report-product="owner-comprehensive-statement"] button')
+    .locator('[data-report-product="collections-arrears-cheques"] button')
     .first()
     .focus();
   await page.keyboard.press('Enter');
-  await page.waitForURL('**/reports/owner-comprehensive-statement');
+  await page.waitForURL('**/reports/collections-arrears-cheques');
   facts.push({
     id: 'catalog-opens-real-route',
     url: new URL(page.url()).pathname,
   });
   await context.close();
 
-  /* 2 — mobile catalog: two columns at 390 and 360, no horizontal overflow. */
+  /* 2 — mobile catalog: one readable column at 390 and 360, no horizontal overflow. */
   for (const [width, theme, name] of [
     [390, 'light', '03-catalog-mobile-390-light'],
     [360, 'dark', '04-catalog-mobile-360-dark'],
@@ -218,12 +225,14 @@ test('premium reports catalog — full product journey with print/PDF/share evid
           document.documentElement.clientWidth,
       };
     });
+    expect(grid.columns).toBe(1);
+    expect(grid.overflow).toBeLessThanOrEqual(0);
     facts.push({ id: `catalog-mobile-${width}`, theme, ...grid });
     await capture(page, name);
     await context.close();
   }
 
-  /* 3 — owner flagship: preview, print popup (RTL A4), real PDF, share fallback. */
+  /* 3 — owner account statement: contextual chrome, print popup (RTL A4), real PDF, share fallback. */
   context = await preparedContext(browser, { width: 1440, height: 1000 });
   page = await context.newPage();
   await seed(page);
@@ -235,10 +244,14 @@ test('premium reports catalog — full product journey with print/PDF/share evid
     page.locator('[data-report-product-page="owner-comprehensive-statement"]'),
   ).toBeVisible();
   const headerText = (
-    await page.locator('[data-report-product-header]').innerText()
+    await page.locator('[data-statement-product-header]').innerText()
   ).replace(/\s+/g, ' ');
-  facts.push({ id: 'owner-header', text: headerText.slice(0, 180) });
-  await capture(page, '05-owner-report-desktop-light');
+  facts.push({ id: 'owner-statement-header', text: headerText.slice(0, 180) });
+  await expect(page.locator('[data-statement-identity]')).toContainText('كشف حساب مرتبط بكيان');
+  await expect(page.locator('[data-statement-entity-context]')).toContainText('المالك');
+  await expect(page.locator('[data-statement-entity-context]')).toContainText('صافي الحركة');
+  await expect(page.getByRole('button', { name: 'العودة إلى ملف المالك' })).toBeVisible();
+  await capture(page, '05-owner-statement-desktop-light');
 
   // Print → the scoped A4 RTL popup (never the app screen).
   const popupPromise = page.waitForEvent('popup', { timeout: 60_000 });
@@ -330,10 +343,10 @@ test('premium reports catalog — full product journey with print/PDF/share evid
   });
   expect(fallback.mentionsSecureLink).toBe(true);
   expect(fallback.clip).toContain('/reports/owner-comprehensive-statement');
-  await capture(page, '09-owner-report-after-share');
+  await capture(page, '09-owner-statement-after-share');
   await context.close();
 
-  /* 4 — tenant product (dark) reuses the shared action bar. */
+  /* 4 — tenant account statement (dark) has contract context and shared action authority. */
   context = await preparedContext(browser, {
     width: 1440,
     height: 1000,
@@ -343,12 +356,16 @@ test('premium reports catalog — full product journey with print/PDF/share evid
   await seed(page);
   await open(
     page,
-    `/reports/tenant-statement?contractId=${IDS.contract}&from=2026-01-01&to=2026-12-31`,
+    `/reports/tenant-statement?contractId=${IDS.contract}`,
   );
   await expect(
     page.locator('[data-report-product-page="tenant-statement"]'),
   ).toBeVisible();
-  await capture(page, '10-tenant-report-desktop-dark');
+  await expect(page.locator('[data-statement-identity]')).toContainText('كشف حساب مرتبط بكيان');
+  await expect(page.locator('[data-statement-entity-context]')).toContainText('مدة العقد');
+  await expect(page.locator('[data-statement-entity-context]')).toContainText('الرصيد الختامي');
+  await expect(page.getByRole('button', { name: 'العودة إلى العقد' })).toBeVisible();
+  await capture(page, '10-tenant-statement-desktop-dark');
   await context.close();
 
   /* 5 — collections product: sub-target tabs + honest empty state. */
@@ -447,7 +464,7 @@ test('premium reports catalog — full product journey with print/PDF/share evid
   await capture(page, '16-unknown-product');
   await context.close();
 
-  /* 9 — mobile detail page keeps the two-pane actions reachable. */
+  /* 9 — mobile account statement keeps context, return, and actions reachable. */
   context = await preparedContext(browser, { width: 390, height: 844 });
   page = await context.newPage();
   await seed(page);
@@ -463,7 +480,7 @@ test('premium reports catalog — full product journey with print/PDF/share evid
         document.documentElement.clientWidth,
     ),
   });
-  await capture(page, '17-owner-report-mobile-390');
+  await capture(page, '17-owner-statement-mobile-390');
   await context.close();
 
   mkdirSync(EVIDENCE_DIR, { recursive: true });
@@ -475,7 +492,7 @@ test('premium reports catalog — full product journey with print/PDF/share evid
   // dashboard, this evidence run must fail.
   expect(summary.landing).toEqual(
     expect.objectContaining({
-      cards: 5,
+      cards: 3,
       kpiLayer: 0,
       charts: 0,
       filterSurface: 0,

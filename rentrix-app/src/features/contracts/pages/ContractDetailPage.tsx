@@ -1,5 +1,5 @@
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
-import { BarChart3, CalendarPlus, Edit } from 'lucide-react';
+import { CalendarPlus, Edit, FileText } from 'lucide-react';
 import { useState } from 'react';
 import { AsyncContentState } from '@/components/async-content-state';
 import { DataRefreshAlert } from '@/components/data-refresh-alert';
@@ -108,9 +108,9 @@ export function ContractDetailPage() {
     ...(canViewReports
       ? [
           {
-            id: 'reports',
-            label: 'كشف وتقارير العقد',
-            icon: <BarChart3 className="size-4" />,
+            id: 'tenant-statement',
+            label: 'فتح كشف حساب العقد',
+            icon: <FileText className="size-4" />,
             onSelect: () => {
               void navigate({
                 to: '/reports/$reportId',

@@ -56,7 +56,6 @@ const sharedTranslationEntries = [
   ['accounting', 'المحاسبة', 'Accounting'],
   ['reports', 'التقارير', 'Reports'],
   ['statements', 'كشوف الحساب', 'Statements'],
-  ['reportsAndStatements', 'التقارير والكشوف', 'Reports & statements'],
   ['aiAssistant', 'المساعد الذكي', 'AI assistant'],
   ['maintenance', 'الصيانة', 'Maintenance'],
   ['serviceProviders', 'مزودو الخدمات', 'Service providers'],
@@ -103,10 +102,9 @@ const sharedTranslationEntries = [
   // between "financials", "financialOverview", and "reports" labels.
   ['financialsPageDescription', 'فهرس العمليات المالية اليومية: الفواتير، التحصيل، المصروفات، التسويات، والمطابقة.', 'Day-to-day financial operations: invoices, collections, expenses, settlements, and reconciliation.'],
   ['financialsPageHint', 'كل عملية لها صفحتها المستقلة بصلاحياتها الخاصة.', 'Each workflow has its own page with its own permissions.'],
-  ['reportsPageDescription', 'ملخصات واضحة وكشوف جاهزة حسب الفترة والعقار أو المالك.', 'Clear summaries and ready statements by period, property, or owner.'],
+  ['reportsPageDescription', 'تقارير تحليلية وتشغيلية لفهم الأداء والمتابعة واتخاذ القرار حسب الفترة والعقار.', 'Analytical and operational reports for performance, follow-up, and decisions by period and property.'],
   ['reportsPageHint', 'ابدأ بالخلاصة، ثم استخدم الجدول والفلاتر والتصدير عندما تحتاج التفاصيل.', 'Start with the summary, then use the table, filters, and export when you need detail.'],
   ['financialsSectionSummary', 'الملخص السريع', 'Quick summary'],
-  ['financialsSectionReports', 'التقارير والكشوف', 'Reports & statements'],
 ] as const satisfies ReadonlyArray<SharedTranslationEntry>;
 
 function getEntryLabel(entry: SharedTranslationEntry, language: SupportedLanguage): string {
