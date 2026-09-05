@@ -1,10 +1,9 @@
 import { Link } from '@tanstack/react-router';
-import { Activity, Edit, FileText, MapPinned, WalletCards } from 'lucide-react';
+import { Activity, FileText, MapPinned, WalletCards } from 'lucide-react';
 import { useState } from 'react';
 import { ContextualDocumentsSection } from '@/components/documents/contextual-documents-section';
 import { EntityDetailHeader } from '@/components/layout/entity-detail-header';
 import { PageLayout } from '@/components/layout/page-layout';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DetailFields } from '@/components/ui/detail-fields';
 import { ErrorState } from '@/components/ui/error-state';

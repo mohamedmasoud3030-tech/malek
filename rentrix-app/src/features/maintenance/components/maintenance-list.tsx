@@ -1,7 +1,6 @@
 import { Download, Edit, Eye, Printer } from "lucide-react";
 import { useMemo, type ReactNode } from 'react';
 import { ActionMenu } from "@/components/ui/action-menu";
-import { Button } from "@/components/ui/button";
 import { EntityTable, type ColumnDef } from "@/components/ui/entity-table";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { useAuth } from "@/hooks/use-auth";

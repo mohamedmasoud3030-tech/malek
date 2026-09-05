@@ -3,8 +3,6 @@ import {
   toMaintenanceWorkOrderPayload,
   toMaintenanceCompletionPayload,
   printMaintenanceWorkOrder,
-  downloadMaintenanceWorkOrderPdf,
-  printMaintenanceCompletion,
   downloadMaintenanceCompletionPdf,
 } from './maintenance-documents';
 import { documentService } from '@/services/documents/DocumentService';

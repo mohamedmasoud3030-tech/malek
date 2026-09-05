@@ -1,5 +1,5 @@
 import type { Payment } from '@/types/domain';
-import type { FinancialReportFilters, FinancialReportStatus } from '../financial-report-rows';
+import type { FinancialReportFilters } from '../financial-report-rows';
 
 export type { FinancialReportFilters, FinancialReportStatus } from '../financial-report-rows';
 

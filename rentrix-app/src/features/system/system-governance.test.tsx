@@ -11,7 +11,7 @@ import { assertSessionPermission } from '@/features/auth/route-guards';
 import { DataIntegrityView } from './components/data-integrity-view';
 import { getDataIntegrityViewState } from './data-integrity-page';
 import { DATA_INTEGRITY_MAX_PAGES, DATA_INTEGRITY_PAGE_SIZE, buildDataIntegritySnapshot, fetchPaginatedRows } from './services/data-integrity-service';
-import { getAllNavItems, navGroups, type NavItem } from '@/app/navigation/app-nav-items';
+import { getAllNavItems, type NavItem } from '@/app/navigation/app-nav-items';
 
 
 vi.mock('@/features/auth/effective-permissions', async () => {

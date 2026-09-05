@@ -16,8 +16,6 @@
  * Each report type has its own interface reflecting the authoritative RPC shape.
  */
 
-import type { ChartAccount, AccountingPeriod, JournalLineInput, JournalEventInput } from '@/features/accounting/accountingDomain';
-import type { Database } from '@/types/database';
 
 /** Report filters common to all accounting period-backed reports. */
 export type AccountingReportFilters = {

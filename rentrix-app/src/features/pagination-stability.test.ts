@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { chunkForInFilter, fetchAllRows, PAGED_READ_PAGE_SIZE } from '@/lib/paginatedRead';
+import { chunkForInFilter, fetchAllRows } from '@/lib/paginatedRead';
 
 describe('server-side pagination stability, chunking, and deterministic tie-breaking contract', () => {
   it('1. Enforces deterministic tie-breaking (.order("id")) across large dataset services', () => {
@@ -46,7 +46,6 @@ describe('server-side pagination stability, chunking, and deterministic tie-brea
   it('3. fetchAllRows pages forward across pages without duplicate or missing rows', async () => {
     const allRows = Array.from({ length: 2500 }, (_, i) => ({ id: `row-${i}`, val: i }));
     const queryFactory = () => {
-      let pageIndex = 0;
       return {
         range: (from: number, to: number) => {
           const slice = allRows.slice(from, to + 1);

@@ -25,11 +25,6 @@ function walk(directory: string, files: string[] = []): string[] {
 }
 
 const SOURCE_ROOT = resolve(__dirname, '../../');
-const ALLOWED_TABLES = new Set<string>([
-  // The contract table itself — no raw writes allowed.
-  'contracts',
-]);
-
 describe('contract writes are routed through atomic RPCs', () => {
   const files = walk(SOURCE_ROOT);
 

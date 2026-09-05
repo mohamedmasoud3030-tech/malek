@@ -31,7 +31,7 @@ import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { formatDate, formatMoney } from '@/features/financials/components/financials-formatters';
+import { formatMoney } from '@/features/financials/components/financials-formatters';
 import { getTodayLocalDateString } from '@/features/reports/reports-page.helpers';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
 import { documentService } from '@/services/documents/DocumentService';

@@ -4,7 +4,7 @@
  * Validates that PropertyFormCoreFields accepts a typed form without
  * requiring `as unknown as` casts at the call-site.
  */
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import { createRoot } from 'react-dom/client';
 import { act } from 'react';
 import { useForm } from 'react-hook-form';

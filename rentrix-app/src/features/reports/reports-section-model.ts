@@ -1,4 +1,4 @@
-import { reportSections, type ReportSectionId } from './reports-page.sections';
+import type { ReportSectionId } from './reports-page.sections';
 import {
   DEFAULT_ACCOUNTING_VIEW,
   DEFAULT_ANALYTICS_VIEW,

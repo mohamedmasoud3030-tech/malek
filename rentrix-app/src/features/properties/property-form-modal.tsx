@@ -14,7 +14,7 @@ import { useCreatePropertyWithAgreement } from '@/features/owners/useOwnerAgreem
 import { useOperationalOwners } from '@/features/owners/useOwners';
 import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
 import { getActionableSupabaseErrorMessage } from '@/lib/supabase-error';
-import { propertyStatusLabels, propertyStatusValues } from './property-schema';
+import { propertyStatusValues } from './property-schema';
 import { translatePropertyType } from './components/property-status';
 import { useProperty, useUpdateProperty } from './use-properties';
 import { PropertyFormCoreFields } from './components/property-form-core-fields';

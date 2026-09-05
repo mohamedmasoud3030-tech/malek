@@ -151,12 +151,6 @@ function mapBill(row: any): UtilityBill {
   };
 }
 
-function calculateConsumption(values: Partial<UtilityBillFormValues>): number | null {
-  if (values.consumption_units != null) return Number(values.consumption_units);
-  if (values.previous_reading == null || values.current_reading == null) return null;
-  return Number(values.current_reading) - Number(values.previous_reading);
-}
-
 /**
  * Parse the raw form input through the form schema (rejects
  * missing required fields) and then through the payload schema

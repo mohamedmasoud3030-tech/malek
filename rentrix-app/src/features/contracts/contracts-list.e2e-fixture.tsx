@@ -176,7 +176,7 @@ export function ContractsListE2EFixture() {
   const [leaseMode, setLeaseMode] = useState<LeaseModeFilter>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [expiringOnly, setExpiringOnly] = useState(false);
-  const [previewContractId, setPreviewContractId] = useState<string | null>(null);
+  const [, setPreviewContractId] = useState<string | null>(null);
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultContractColumns]);
 
   const { filteredContracts, hasActiveFilters } = useContractFilters({

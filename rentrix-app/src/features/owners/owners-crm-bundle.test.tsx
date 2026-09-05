@@ -5,7 +5,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { canAccess, canShowNavigationItem, getAuthorizationContextFromUser } from '@/features/auth/permissions';
-import { getAllNavItems, navGroups, type NavItem } from '@/app/navigation/app-nav-items';
+import { getAllNavItems, type NavItem } from '@/app/navigation/app-nav-items';
 import { CommissionsView } from '@/features/commissions/components/commissions-view';
 import { CommunicationHubView } from '@/features/communication/components/communication-hub-view';
 import { LandsView } from '@/features/lands/components/lands-view';

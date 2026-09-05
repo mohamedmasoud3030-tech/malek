@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { FileUp, AlertTriangle, CheckCircle2, Upload, X } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EntityForm } from '@/components/ui/entity-form';
 import { Input } from '@/components/ui/input';
@@ -10,7 +10,6 @@ import { formatCompanyMoney } from '@/lib/companyFormatters';
 import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
 import { useBankAccounts } from './useBankReconciliation';
 import { previewBankCsvFile, previewBankStatementBatch, importBankStatementBatch, toImportPayloadRows, type BankImportPreview, type BankImportResult } from './bankCsvImportService';
-import type { BankCsvParseResult } from '@/lib/bankCsvParser';
 import { toast } from 'sonner';
 
 type Step = 'select' | 'preview' | 'mapping' | 'review' | 'importing' | 'completed';

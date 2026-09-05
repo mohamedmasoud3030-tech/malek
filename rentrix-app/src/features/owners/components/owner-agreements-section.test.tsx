@@ -9,11 +9,8 @@ vi.mock('../useOwnerAgreements', () => ({
   useOwnerAgreementsForOwner: () => agreementsResult.value,
 }));
 vi.mock('@/app/router/background-location', () => ({
-  useDialogNavigate: () => (to: unknown) => {
-    lastNavigation = to;
-  },
+  useDialogNavigate: () => () => undefined,
 }));
-let lastNavigation: unknown;
 
 function renderSection() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });

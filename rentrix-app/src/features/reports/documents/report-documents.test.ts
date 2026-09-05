@@ -6,8 +6,6 @@ import {
   toVacancyLossPayload,
   toRentRollPayload,
   printAgedArrearsReport,
-  printVatStatementReport,
-  printRentRollReport,
 } from './report-documents';
 import { documentService } from '@/services/documents/DocumentService';
 import type { AgedReceivablesReport } from '@/features/financials/reports/arrears-reports-service';

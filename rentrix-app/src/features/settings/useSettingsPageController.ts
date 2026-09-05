@@ -12,7 +12,6 @@ import {
   companySettingsDraftToLocalSettings,
   companySettingsDraftToPayload,
   companySettingsRecordToDraft,
-  getCompanySettingsPreviewModel,
   hasCompanySettingsValidationErrors,
   validateCompanySettingsDraft,
   type CompanySettingsDraft,

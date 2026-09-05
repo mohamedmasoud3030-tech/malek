@@ -7,7 +7,6 @@ import {
   Landmark,
   Link2,
   Plus,
-  ShieldCheck,
   Unlink,
 } from 'lucide-react';
 import { DataRefreshAlert } from '@/components/data-refresh-alert';

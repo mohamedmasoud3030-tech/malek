@@ -21,7 +21,7 @@ import { formatReceiptContext, paymentMethodLabels, receiptStatusLabels } from '
 import type { ReceiptRecord } from './receiptService';
 import { ReceiptDetailPage } from './receipt-detail-page';
 import { ReceiptPreviewDialog } from './ReceiptPreviewDialog';
-import { createReceiptPrintHref, openReceiptPrintTab } from './receipt-print';
+import { openReceiptPrintTab } from './receipt-print';
 import { useApproveReceiptVoid, usePendingReceiptVoidRequests, useReceipt, useReceipts, useRequestReceiptVoid } from './useReceipts';
 import { formatLatinNumber } from '@/lib/formatters';
 import type { SemanticTone } from '@/components/ui/status-badge';

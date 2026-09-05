@@ -6,7 +6,7 @@ import type { OwnerStatementReport } from '@/features/financials/reports/financi
 import { listOwnerSettlements, type OwnerSettlementRecord } from '@/features/owners/services/owner-settlements-service';
 import { listOwnerProperties } from '@/features/owners/services/owner-service';
 import { listMaintenance, type Maintenance } from '@/features/maintenance/maintenance-service';
-import { listUtilityBills, responsiblePartyLabels, type UtilityBill } from '@/features/utilities/utilities-service';
+import { listUtilityBills, type UtilityBill } from '@/features/utilities/utilities-service';
 
 vi.mock('@/services/documents/DocumentService', () => ({
   documentService: {

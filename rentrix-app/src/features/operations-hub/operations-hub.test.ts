@@ -16,13 +16,6 @@ import {
 import type { AuthorizationContext } from '@/features/auth/permissions';
 
 const routeTree = readFileSync(resolve(import.meta.dirname, '../../app/router/route-tree.ts'), 'utf8');
-const routeDefinition = (path: string) => {
-  const pathIndex = routeTree.indexOf(`path: '${path}'`);
-  const routeStart = routeTree.lastIndexOf('createRoute({', pathIndex);
-  const routeEnd = routeTree.indexOf('});', pathIndex);
-  return routeTree.slice(routeStart, routeEnd + 3);
-};
-
 const admin: AuthorizationContext = { userId: 'admin', email: null, role: 'ADMIN' };
 const user: AuthorizationContext = { userId: 'user', email: null, role: 'USER' };
 

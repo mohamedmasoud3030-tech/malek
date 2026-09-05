@@ -15,11 +15,8 @@ import { companySettingsRecordToContract } from './companySettingsContractAdapte
 import type { CompanySettingsRecord, CompanySettingsUpdatePayload } from './companySettingsService';
 import {
   companySettingsDraftFields,
-  hasCompanySettingsValidationErrors,
   normalizeVatRate,
   stringifyBoolean,
-  validateCompanySettingsDraft,
-  validateSettingsSectionDraft,
   type CompanySettingsDraft,
   type CompanySettingsDraftField,
   type CompanySettingsDocumentsDraft,

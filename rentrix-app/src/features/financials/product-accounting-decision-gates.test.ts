@@ -30,8 +30,6 @@ const requiredDecisionGates = [
   'deferred revenue',
 ] as const;
 
-const relatedFeatureGaps = ['FGR-008', 'FGR-009', 'FGR-010', 'FGR-011', 'FGR-012', 'FGR-013'] as const;
-
 describe('product accounting decision gates', () => {
   it('documents every decided Phase 5 accounting/product gate and required implementation proof', () => {
     const adr = readRepoFile('docs/decisions/0001-product-accounting-policies.md');

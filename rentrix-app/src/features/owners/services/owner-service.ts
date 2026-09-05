@@ -10,8 +10,6 @@ import {
   ownerUpdateSchema,
   coerceOwnerFormToPayload,
   coerceOwnerUpdateToPayload,
-  type OwnerFormInput,
-  type OwnerUpdateInput,
 } from '../owner-schema';
 import type { Database } from '@/types/database';
 import type { Contract, Invoice, Property, Unit } from '@/types/domain';

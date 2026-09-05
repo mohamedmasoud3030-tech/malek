@@ -1,11 +1,11 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/use-auth';
 import { useActiveCompanyId } from '@/hooks/use-company';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useCommandPaletteStore } from './command-palette-store';
-import { STATIC_COMMANDS, type StaticCommand } from './command-registry';
+import { STATIC_COMMANDS } from './command-registry';
 
 export interface SearchResultItem {
   id: string;

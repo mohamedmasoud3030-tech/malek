@@ -209,10 +209,6 @@ async function askQuickAction(clicks: ReturnType<typeof userEvent.setup>, title:
   await clicks.click(action);
 }
 
-function assistantReplyBubbles(): HTMLElement[] {
-  return [...document.querySelectorAll<HTMLElement>('[data-ai-speech-message-id]')];
-}
-
 /**
  * The speech control renders directly under the message <p> in the same
  * bubble, so locate the reply by its (exact) text and take the sibling

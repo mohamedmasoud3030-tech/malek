@@ -2,10 +2,8 @@ import {
   Building2,
   CircleCheck,
   Download,
-  Edit,
   Handshake,
   Plus,
-  Trash2,
   TriangleAlert,
 } from 'lucide-react';
 import { ListPage } from '@/components/layout/list-page';

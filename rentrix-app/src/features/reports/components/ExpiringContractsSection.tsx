@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { AlertTriangle, FileText, TrendingDown } from 'lucide-react';
+import { AlertTriangle, FileText } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';

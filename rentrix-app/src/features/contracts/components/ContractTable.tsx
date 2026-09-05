@@ -11,7 +11,7 @@ import {
   formatContractDate,
   formatContractMoney,
 } from "../contractDisplayFormatters";
-import { contractStatusLabels, contractStatusTone, leaseModeLabels, paymentCycleLabels } from "../contractSchema";
+import { contractStatusLabels, contractStatusTone, leaseModeLabels } from "../contractSchema";
 import { normalizeContractStatus } from "@/lib/contractStatus";
 import type { ContractListItem } from "../services/contractService";
 import type { ContractAttention, ContractAttentionSeverity } from "../contract-attention";

@@ -364,6 +364,8 @@ describe('RC1 collections, credits and historical tax basis', () => {
   });
 
   it('credits and reverses the original OFFICE_IS_CREDITOR economic model, even after profile B is activated', async () => {
+    const originalCreditInvoice = await invoiceRow(creditInvoice);
+    expect(originalCreditInvoice.invoice_agreement_version_id).toBe(creditAgreementVersion);
     // B is intentionally a later/current configuration. A credit to the invoice
     // posted under profile A must stay at A's 5.000 rate and 5.000 tax component.
     await db.exec(`
