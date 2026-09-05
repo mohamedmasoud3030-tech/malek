@@ -160,7 +160,7 @@ export function DocumentsVaultWorkspace({ mode = 'standalone' }: DocumentsVaultW
             typeLabel: document.category ? vaultCategoryLabels[document.category] : 'مستند',
             reference: document.relatedEntityTitle,
             fileName: document.fileName,
-            fileSize: document.fileSize ? formatFileSize(document.fileSize) : null,
+            fileSize: formatFileSize(document.fileSize),
             mimeType: document.mimeType,
             url: signedMap[document.id] ?? null,
             relatedEntity: document.relatedEntityTitle,

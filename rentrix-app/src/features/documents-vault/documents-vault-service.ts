@@ -1,10 +1,10 @@
 import { ATTACHMENTS_ALLOWED_MIME_TYPES, ATTACHMENTS_MAX_FILE_SIZE } from '@/lib/attachments-contract';
+import { formatFileSize } from '@/lib/formatters';
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
 import { buildTenantVaultPath, requireActiveCompanyIdForStorage } from '@/lib/tenant-storage-path';
 import type { DocumentEntityType } from '@/services/documents/contextualDocumentsService';
 import { fetchAllRows } from '@/lib/paginatedRead';
-import { formatFileSize } from '@/lib/formatters';
 
 export type VaultCategory = 'all' | 'contracts' | 'identity' | 'receipts' | 'maintenance' | 'expenses' | 'utilities' | 'other';
 
@@ -124,7 +124,9 @@ export type UploadVaultDocumentParams = {
 export function validateVaultFile(file: Pick<File, 'size' | 'type'>) {
   if (file.size <= 0) throw new Error('الملف فارغ ولا يمكن رفعه.');
   if (file.size > VAULT_MAX_FILE_SIZE) {
-    throw new Error(`حجم الملف يتجاوز الحد المسموح (5MB). حجم الملف الحالي: ${formatFileSize(file.size)}`);
+    throw new Error(
+      `حجم الملف يتجاوز الحد المسموح (${formatFileSize(VAULT_MAX_FILE_SIZE, { fractionDigits: 0 })}). حجم الملف الحالي: ${formatFileSize(file.size, { fractionDigits: 2 })}`,
+    );
   }
   if (!VAULT_ALLOWED_MIME_TYPES.has(file.type)) {
     throw new Error(`نوع الملف غير مدعوم: ${file.type || 'غير معروف'}. الأنواع المدعومة: PDF، JPEG، PNG، WebP`);

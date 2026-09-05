@@ -17,7 +17,7 @@ export function LegalPage({ slug }: { slug: LegalSlug }) {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <NavBar anchoredToHome />
+      <NavBar />
       <main>
         <PageLayout dir={isArabic ? 'rtl' : 'ltr'} lang={lang} contentClassName="max-w-4xl py-8 sm:py-10">
           <PageHeader

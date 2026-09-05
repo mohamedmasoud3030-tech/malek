@@ -123,21 +123,6 @@ export function formatCount(value: number | null | undefined, locale?: string): 
   return formatNumber({ value, locale, maximumFractionDigits: 0, minimumFractionDigits: 0 });
 }
 
-/**
- * Canonical binary file-size label (`1.5 KB`, `2.25 MB`). Latin numerals via
- * `formatCount`-compatible `formatNumber`, unit always the Latin abbreviation
- * so Arabic and English surfaces read the same figure. Not money: no minor
- * unit, no currency. Bytes below 1 KB stay in KB with one decimal so tiny
- * attachments never render as `0 B`.
- */
-export function formatFileSize(bytes: number | null | undefined, locale?: string): string {
-  if (bytes === null || bytes === undefined || !Number.isFinite(bytes) || bytes < 0) return '—';
-  const kb = bytes / 1024;
-  if (kb < 1024) {
-    return `${formatNumber({ value: kb, locale, minimumFractionDigits: 1, maximumFractionDigits: 1 })} KB`;
-  }
-  return `${formatNumber({ value: kb / 1024, locale, minimumFractionDigits: 1, maximumFractionDigits: 2 })} MB`;
-}
 
 export type DateFormatOptions = {
   value: string | number | Date | null | undefined;
@@ -236,37 +221,71 @@ export function formatLatinTime(
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Backwards-compatible aliases (used during the migration away from prototypes).
-// New code should use the formatLatin* functions directly.
+// File sizes
 // ──────────────────────────────────────────────────────────────────────────────
 
-export function toLatinLocaleString(
-  value: number | Date | string | null | undefined,
-  locales?: string | string[],
-  options?: Intl.NumberFormatOptions | Intl.DateTimeFormatOptions,
-): string {
-  if (value === null || value === undefined) return '';
-  if (value instanceof Date) return formatLatinDateTime(value, locales, options as Intl.DateTimeFormatOptions);
-  if (typeof value === 'number') return formatLatinNumber(value, locales, options as Intl.NumberFormatOptions);
-  const trimmed = String(value).trim();
-  if (trimmed !== '' && !Number.isNaN(Number(trimmed))) return formatLatinNumber(Number(trimmed), locales, options as Intl.NumberFormatOptions);
-  const parsed = new Date(value);
-  if (!Number.isNaN(parsed.getTime())) return formatLatinDateTime(parsed, locales, options as Intl.DateTimeFormatOptions);
-  return String(value);
-}
+const FILE_SIZE_BASE = 1024;
+const FILE_SIZE_LATIN_UNITS = ['B', 'KB', 'MB', 'GB', 'TB'] as const;
+const FILE_SIZE_ARABIC_UNITS = ['بايت', 'كيلوبايت', 'ميغابايت', 'جيجابايت', 'تيرابايت'] as const;
 
-export function toLatinLocaleDateString(
-  value: Date | string | null | undefined,
-  locales?: string | string[],
-  options?: Intl.DateTimeFormatOptions,
-): string {
-  return formatLatinDate(value, locales, options);
-}
+export type FileSizeFormatOptions = {
+  /** Unit vocabulary: Latin for data surfaces, Arabic words for prose. */
+  unitLabels?: 'latin' | 'arabic';
+  locale?: string | string[];
+  /**
+   * Digits after the decimal point for scaled units. Unset scales with the unit:
+   * bytes are integral, KB keeps one decimal, MB and above allow a second so a
+   * 2.25 MB attachment never collapses to `2.3 MB`.
+   */
+  fractionDigits?: number;
+};
 
-export function toLatinLocaleTimeString(
-  value: Date | string | null | undefined,
-  locales?: string | string[],
-  options?: Intl.DateTimeFormatOptions,
-): string {
-  return formatLatinTime(value, locales, options);
+/**
+ * Renders a byte count in the largest binary unit that keeps the number at or
+ * above one, and returns `null` when there is no measurable size to display.
+ *
+ * Uploaded-file lists, upload limits and import previews each divided by 1024 by
+ * hand, so the same document read «12.4 KB» in the vault and «12.4 ك.ب» in the
+ * contextual panel, and quoted limits were literal text that could drift from
+ * the constants they describe. Callers pass the constant and get one shape.
+ */
+export function formatFileSize(
+  bytes: number | null | undefined,
+  options: FileSizeFormatOptions = {},
+): string | null {
+  const value = typeof bytes === 'number' ? bytes : Number(bytes);
+  if (!Number.isFinite(value) || value <= 0) return null;
+
+  const units = options.unitLabels === 'arabic' ? FILE_SIZE_ARABIC_UNITS : FILE_SIZE_LATIN_UNITS;
+  const locale = options.locale ?? DEFAULT_LOCALE;
+
+  // How many decimals a tier shows; the promotion rule below has to agree with it.
+  const digitsFor = (exponent: number) =>
+    options.fractionDigits !== undefined
+      ? Math.max(0, Math.min(3, options.fractionDigits))
+      : exponent === 1 ? 1 : exponent === 0 ? 0 : 2;
+
+  let exponent = 0;
+  while (exponent < units.length - 1 && value >= FILE_SIZE_BASE ** (exponent + 1)) exponent += 1;
+  let scaled = value / FILE_SIZE_BASE ** exponent;
+  // Rounding up to the base means the next unit is the honest one, so a
+  // 1 048 550 byte file never reads as «1024.0 KB».
+  while (
+    exponent < units.length - 1 &&
+    Number((value / FILE_SIZE_BASE ** exponent).toFixed(digitsFor(exponent))) >= FILE_SIZE_BASE
+  ) {
+    exponent += 1;
+    scaled = value / FILE_SIZE_BASE ** exponent;
+  }
+
+  const digits = digitsFor(exponent);
+  const number = formatLatinNumber(exponent === 0 ? Math.round(scaled) : scaled, locale, {
+    // MB and above may use the second decimal (2.25 MB), but never pad to it.
+    minimumFractionDigits: exponent === 0 ? 0 : options.fractionDigits !== undefined ? digits : 1,
+    maximumFractionDigits: digits,
+    // A measurement reads as a magnitude, not as a ledger figure: 1023 B and
+    // 2000 TB carry no thousands separator.
+    useGrouping: false,
+  });
+  return `${number} ${units[exponent]}`;
 }

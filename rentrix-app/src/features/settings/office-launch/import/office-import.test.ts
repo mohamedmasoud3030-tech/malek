@@ -73,7 +73,7 @@ describe('office import preview', () => {
 
 describe('XLSX reader', () => {
   it('rejects an oversized workbook before ZIP parsing', async () => {
-    await expect(parseXlsxMatrix(new Uint8Array(OFFICE_IMPORT_MAX_FILE_BYTES + 1))).rejects.toThrow('5 ميجابايت');
+    await expect(parseXlsxMatrix(new Uint8Array(OFFICE_IMPORT_MAX_FILE_BYTES + 1))).rejects.toThrow('5 ميغابايت');
   });
 
   it('reads the native MALEK XLSX format without an external spreadsheet dependency', async () => {

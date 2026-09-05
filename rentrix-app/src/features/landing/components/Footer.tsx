@@ -8,7 +8,6 @@ import { APP_HOST, CONTACT_EMAIL, whatsappLink } from '../constants';
 export function Footer() {
   const { t, isArabic } = useLanguage();
   const year = new Date().getFullYear();
-  const productHrefs = ['#features', '#showcase', '#how', '#faq'];
   const companyHrefs = [
     whatsappLink(
       isArabic ? `مرحباً، أريد الاستفسار عن ${APP_BRAND_NAME}.` : `Hi, I want to ask about ${APP_BRAND_NAME}.`,
@@ -28,19 +27,6 @@ export function Footer() {
               {t.footer.motto}
             </p>
           </div>
-
-          <nav aria-label={t.footer.productTitle}>
-            <h3 className="text-sm font-extrabold text-foreground">{t.footer.productTitle}</h3>
-            <ul className="mt-4 space-y-2.5">
-              {t.footer.productLinks.map((link, index) => (
-                <li key={link}>
-                  <a href={productHrefs[index]} className="text-sm text-muted-foreground transition hover:text-foreground">
-                    {link}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </nav>
 
           <nav aria-label={t.footer.companyTitle}>
             <h3 className="text-sm font-extrabold text-foreground">{t.footer.companyTitle}</h3>
