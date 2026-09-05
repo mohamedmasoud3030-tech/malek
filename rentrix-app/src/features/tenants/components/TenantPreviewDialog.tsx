@@ -51,6 +51,7 @@ export function TenantDossierContent({
   const { canAccess } = useAuth();
   const companyFormatters = useCompanyFormatters();
   const canViewFinancial = canAccess('arrears.view');
+  const canViewReports = canAccess('financial.reports.view');
   const canViewActivity = canAccess('communication.view');
   const query = useTenantDossier(tenantId, canViewFinancial, canViewActivity);
   const dossier = query.data;
@@ -262,7 +263,7 @@ export function TenantDossierContent({
               ))}
           </div>
 
-          {statementContract ? (
+          {canViewReports && statementContract ? (
             <div className="flex flex-wrap gap-2 border-t border-border/60 pt-3">
               <Button asChild variant="outline" className="min-h-11">
                 <Link

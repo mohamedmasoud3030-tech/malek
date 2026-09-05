@@ -191,6 +191,43 @@ describe('entity account statements — contextual direct-route chrome', () => {
       read('../contracts/pages/ContractDetailPage.tsx'),
     ).toContain('فتح كشف حساب العقد');
   });
+
+  it('offers every statement entry point only when the report route permission is held', () => {
+    // /reports/$reportId is guarded by `financial.reports.view`. An entry
+    // point that ignores that permission advertises a destination the route
+    // will bounce, so every statement action must sit behind the same gate.
+    for (const [file, action] of [
+      ['../owners/components/owner-detail-view.tsx', 'فتح كشف حساب المالك'],
+      ['../tenants/components/TenantPreviewDialog.tsx', 'فتح كشف حساب العقد'],
+      ['../people/components/PersonDossier.tsx', 'فتح كشف حساب المستأجر للعقد'],
+    ] as const) {
+      const source = read(file);
+      expect(
+        source,
+        `${file} reads the reports view permission`,
+      ).toMatch(
+        /canAccess\(\s*(authorization,\s*)?('financial\.reports\.view'|financialOperationPermissions\.viewReports)/,
+      );
+      const actionIndex = source.indexOf(action);
+      expect(actionIndex, `${file} renders ${action}`).toBeGreaterThan(-1);
+      // The gate must wrap the block that renders the action, not merely sit
+      // somewhere earlier in the file.
+      expect(
+        source,
+        `${file} gates ${action} behind canViewReports`,
+      ).toMatch(new RegExp(`canViewReports\\s*[?&][\\s\\S]{0,900}?${action}`));
+    }
+
+    // The contract menu builds its actions declaratively behind the gate.
+    const contract = read('../contracts/pages/ContractDetailPage.tsx');
+    expect(contract).toContain('canViewReports');
+    expect(
+      contract.slice(
+        contract.indexOf('...(canViewReports'),
+        contract.indexOf('فتح كشف حساب العقد'),
+      ),
+    ).toContain("id: 'tenant-statement'");
+  });
 });
 
 describe('premium catalog — canonical target ownership', () => {
