@@ -1,5 +1,5 @@
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
-import { BarChart3, CalendarPlus, Edit } from 'lucide-react';
+import { CalendarPlus, Edit, FileText } from 'lucide-react';
 import { useState } from 'react';
 import { AsyncContentState } from '@/components/async-content-state';
 import { DataRefreshAlert } from '@/components/data-refresh-alert';
@@ -25,10 +25,17 @@ import { contractStatusLabels, contractStatusTone } from '../contractSchema';
 import { ContractRenewalDialog } from '../lifecycle/ContractRenewalDialog';
 import { ContractShortStayExtensionDialog } from '../lifecycle/ContractShortStayExtensionDialog';
 import { ContractTerminationDialog } from '../lifecycle/ContractTerminationDialog';
-import { canExtendShortStayContract, canRenewContract, canTerminateContract } from '../lifecycle/contractLifecycleRules';
+import {
+  canExtendShortStayContract,
+  canRenewContract,
+  canTerminateContract,
+} from '../lifecycle/contractLifecycleRules';
 import { useContract } from '../useContracts';
 
-const getContractDetailErrorMessage = (error: unknown) => error instanceof Error ? error.message : 'حدث خطأ غير متوقع أثناء تحميل العقد.';
+const getContractDetailErrorMessage = (error: unknown) =>
+  error instanceof Error
+    ? error.message
+    : 'حدث خطأ غير متوقع أثناء تحميل العقد.';
 
 export function ContractDetailPage() {
   const { contractId } = useParams({ strict: false }) as { contractId: string };
@@ -56,7 +63,9 @@ export function ContractDetailPage() {
         status={status}
         error={contractQuery.error}
         errorTitle="تعذر تحميل العقد"
-        errorFallbackMessage={getContractDetailErrorMessage(contractQuery.error)}
+        errorFallbackMessage={getContractDetailErrorMessage(
+          contractQuery.error,
+        )}
         errorAction={<Button onClick={retry}>إعادة المحاولة</Button>}
         emptyTitle="العقد غير موجود"
         emptyDescription="ربما تم حذف العقد أو لا تملك صلاحية الوصول إليه."
@@ -69,34 +78,63 @@ export function ContractDetailPage() {
   const contract = contractQuery.data;
   const contractStatus = normalizeContractStatus(contract.status);
   const renewalAllowed = canEditContract && canRenewContract(contract);
-  const terminationAllowed = canCancelContract && canTerminateContract(contract);
-  const extensionAllowed = canEditContract && canGenerateInvoices && canExtendShortStayContract(contract);
-  const openRenewal = () => { if (renewalAllowed) setRenewOpen(true); };
-  const openExtension = () => { if (extensionAllowed) setExtendOpen(true); };
-  const openTermination = () => { if (terminationAllowed) setTerminateOpen(true); };
+  const terminationAllowed =
+    canCancelContract && canTerminateContract(contract);
+  const extensionAllowed =
+    canEditContract &&
+    canGenerateInvoices &&
+    canExtendShortStayContract(contract);
+  const openRenewal = () => {
+    if (renewalAllowed) setRenewOpen(true);
+  };
+  const openExtension = () => {
+    if (extensionAllowed) setExtendOpen(true);
+  };
+  const openTermination = () => {
+    if (terminationAllowed) setTerminateOpen(true);
+  };
   const handleShare = () => shareContractLink(contract);
   const contractMenuActions: ActionMenuItem[] = [
-    ...(extensionAllowed ? [{
-      id: 'extend-short-stay',
-      label: 'تمديد الإقامة',
-      icon: <CalendarPlus className="size-4" />,
-      onSelect: openExtension,
-    }] : []),
-    ...(canViewReports ? [{
-      id: 'reports',
-      label: 'كشف وتقارير العقد',
-      icon: <BarChart3 className="size-4" />,
-      onSelect: () => {
-        void navigate({
-          to: '/reports',
-          search: { section: 'statements', contractId: contract.id, tenantId: contract.tenant_id ?? undefined } as never,
-        });
-      },
-    }] : []),
+    ...(extensionAllowed
+      ? [
+          {
+            id: 'extend-short-stay',
+            label: 'تمديد الإقامة',
+            icon: <CalendarPlus className="size-4" />,
+            onSelect: openExtension,
+          },
+        ]
+      : []),
+    ...(canViewReports
+      ? [
+          {
+            id: 'tenant-statement',
+            label: 'فتح كشف حساب العقد',
+            icon: <FileText className="size-4" />,
+            onSelect: () => {
+              void navigate({
+                to: '/reports/$reportId',
+                params: { reportId: 'tenant-statement' },
+                search: {
+                  view: 'statement',
+                  contractId: contract.id,
+                  tenantId: contract.tenant_id ?? undefined,
+                } as never,
+              });
+            },
+          },
+        ]
+      : []),
     ...buildContractActions({
-      onPrint: documentSettings.isReady ? () => printContractView(contract, documentSettings.companySettings) : undefined,
-      onPdf: documentSettings.isReady ? () => exportContractPdf(contract, documentSettings.companySettings) : undefined,
-      onWhatsApp: contract.people?.phone ? () => shareContractViaWhatsApp(contract) : undefined,
+      onPrint: documentSettings.isReady
+        ? () => printContractView(contract, documentSettings.companySettings)
+        : undefined,
+      onPdf: documentSettings.isReady
+        ? () => exportContractPdf(contract, documentSettings.companySettings)
+        : undefined,
+      onWhatsApp: contract.people?.phone
+        ? () => shareContractViaWhatsApp(contract)
+        : undefined,
       onShare: handleShare,
       onRenew: renewalAllowed ? openRenewal : undefined,
       onTerminate: terminationAllowed ? openTermination : undefined,
@@ -107,17 +145,25 @@ export function ContractDetailPage() {
     <PageLayout dir="rtl" size="wide">
       {contractQuery.isError ? (
         <DataRefreshAlert
-          onRetry={() => { void contractQuery.refetch(); }}
+          onRetry={() => {
+            void contractQuery.refetch();
+          }}
           isRefreshing={contractQuery.isFetching}
         />
       ) : null}
-      {!documentSettings.isReady && !documentSettings.isLoading ? <DocumentReadinessNotice /> : null}
+      {!documentSettings.isReady && !documentSettings.isLoading ? (
+        <DocumentReadinessNotice />
+      ) : null}
       <EntityDetailHeader
         title={contract.reference ?? 'عقد الإيجار'}
         subtitle={`${contract.people?.full_name ?? 'مستأجر غير محدد'} · ${contract.properties?.title ?? 'عقار غير محدد'} · الوحدة ${contract.units?.unit_number ?? '—'}`}
-        status={<StatusBadge tone={contractStatusTone[contractStatus]}>{contractStatusLabels[contractStatus]}</StatusBadge>}
+        status={
+          <StatusBadge tone={contractStatusTone[contractStatus]}>
+            {contractStatusLabels[contractStatus]}
+          </StatusBadge>
+        }
         backTo="/contracts"
-        actions={(
+        actions={
           <>
             {canEditContract ? (
               <Button asChild className="min-h-11">
@@ -127,9 +173,11 @@ export function ContractDetailPage() {
                 </Link>
               </Button>
             ) : null}
-            {contractMenuActions.length > 0 ? <ActionMenu items={contractMenuActions} label="إجراءات العقد" /> : null}
+            {contractMenuActions.length > 0 ? (
+              <ActionMenu items={contractMenuActions} label="إجراءات العقد" />
+            ) : null}
           </>
-        )}
+        }
       />
       <ContractDetailWorkspace contract={contract} settings={companySettings} />
       {renewalAllowed ? (
@@ -137,11 +185,28 @@ export function ContractDetailPage() {
           contract={contract}
           open={renewOpen}
           onOpenChange={setRenewOpen}
-          onRenewed={async (result) => navigate({ to: '/contracts/$contractId', params: { contractId: result.new_contract_id } })}
+          onRenewed={async (result) =>
+            navigate({
+              to: '/contracts/$contractId',
+              params: { contractId: result.new_contract_id },
+            })
+          }
         />
       ) : null}
-      {extensionAllowed ? <ContractShortStayExtensionDialog contract={contract} open={extendOpen} onOpenChange={setExtendOpen} /> : null}
-      {terminationAllowed ? <ContractTerminationDialog contractId={contract.id} open={terminateOpen} onOpenChange={setTerminateOpen} /> : null}
+      {extensionAllowed ? (
+        <ContractShortStayExtensionDialog
+          contract={contract}
+          open={extendOpen}
+          onOpenChange={setExtendOpen}
+        />
+      ) : null}
+      {terminationAllowed ? (
+        <ContractTerminationDialog
+          contractId={contract.id}
+          open={terminateOpen}
+          onOpenChange={setTerminateOpen}
+        />
+      ) : null}
     </PageLayout>
   );
 }

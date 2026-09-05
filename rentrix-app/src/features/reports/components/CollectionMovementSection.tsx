@@ -1,13 +1,30 @@
 import { ReceiptText, WalletCards } from 'lucide-react';
-import { formatDate, formatMoney } from '@/features/financials/components/financials-formatters';
+import {
+  formatDate,
+  formatMoney,
+} from '@/features/financials/components/financials-formatters';
 import type { DailyCollectionReportRow } from '@/features/financials/reports/financialReportsService';
 import type { CollectionSummaryReport } from '@/features/financials/reports/financial-reporting/report-types';
-import { ReportColumns, ReportInsightNote, ReportList, ReportListRow, ReportPanel, ReportState, ReportSummaryStrip } from '@/components/ui/report-section-primitives';
+import {
+  ReportColumns,
+  ReportInsightNote,
+  ReportList,
+  ReportListRow,
+  ReportPanel,
+  ReportState,
+  ReportSummaryStrip,
+} from '@/components/ui/report-section-primitives';
 import { formatLatinNumber } from '@/lib/formatters';
-import { buildReportCsvFilename, toDailyCollectionCsv } from '../reports-page.helpers';
+import {
+  buildReportCsvFilename,
+  toDailyCollectionCsv,
+} from '../reports-page.helpers';
 import { DailyCollectionsPanel } from './collections/daily-collections-panel';
-import { ReceiptLinksPanel, type CollectionReceiptRow } from './collections/receipt-links-panel';
-import { ReportShareActions } from './ReportShareActions';
+import {
+  ReceiptLinksPanel,
+  type CollectionReceiptRow,
+} from './collections/receipt-links-panel';
+import { ReportDocumentActions } from './report-document-actions';
 
 const paymentMethodLabels = {
   cash: 'نقدًا',
@@ -55,34 +72,48 @@ export function CollectionMovementSection({
   isLoading,
 }: CollectionMovementProps) {
   const hasAuthoritativeSummary = Boolean(summary);
-  const collectedLabel = hasAuthoritativeSummary ? formatMoney(summary!.paid) : '—';
+  const collectedLabel = hasAuthoritativeSummary
+    ? formatMoney(summary!.paid)
+    : '—';
 
   // Transactional movement context from the served daily rows.
-  const paymentsCount = rows.reduce((total, row) => total + row.paymentsCount, 0);
+  const paymentsCount = rows.reduce(
+    (total, row) => total + row.paymentsCount,
+    0,
+  );
   const busiestDay = rows.reduce<DailyCollectionReportRow | undefined>(
-    (busiest, row) => (busiest === undefined || row.totalPaid > busiest.totalPaid ? row : busiest),
+    (busiest, row) =>
+      busiest === undefined || row.totalPaid > busiest.totalPaid
+        ? row
+        : busiest,
     undefined,
   );
   const methodTotals = rows.reduce(
     (totals, row) => {
-      for (const key of Object.keys(totals) as PaymentMethodKey[]) totals[key] += row.methodTotals[key];
+      for (const key of Object.keys(totals) as PaymentMethodKey[])
+        totals[key] += row.methodTotals[key];
       return totals;
     },
     { cash: 0, bank_transfer: 0, card: 0, check: 0, other: 0 },
   );
-  const methodMovementTotal = Object.values(methodTotals).reduce((total, value) => total + value, 0);
-  const methodRows = (Object.entries(methodTotals) as Array<[PaymentMethodKey, number]>)
+  const methodMovementTotal = Object.values(methodTotals).reduce(
+    (total, value) => total + value,
+    0,
+  );
+  const methodRows = (
+    Object.entries(methodTotals) as Array<[PaymentMethodKey, number]>
+  )
     .filter(([, total]) => total > 0)
     .sort((a, b) => b[1] - a[1]);
   const hasMovement = rows.length > 0 || receiptRows.length > 0;
 
   const movementActions = canExportReports ? (
-    <ReportShareActions
+    <ReportDocumentActions
       className="flex flex-wrap gap-2"
       reportLabel="حركة التحصيل اليومية"
-      target={{
-        section: 'analytics',
-        view: 'collection_movement',
+      reportShareTarget={{
+        reportId: 'collections-arrears-cheques',
+        view: 'movement',
         filters: {
           from,
           to,
@@ -94,10 +125,15 @@ export function CollectionMovementSection({
           contractId: '',
         },
       }}
-      summaryText={hasAuthoritativeSummary
-        ? `المحصّل في الفترة: ${collectedLabel} | عدد الدفعات: ${formatLatinNumber(paymentsCount, 'ar')}`
-        : `عدد الدفعات المعروضة: ${formatLatinNumber(paymentsCount, 'ar')} | ملخص الفترة المعتمد غير متاح`}
-      csv={{ filename: buildReportCsvFilename('collection-movement'), rows: toDailyCollectionCsv(rows) }}
+      reportShareSummary={
+        hasAuthoritativeSummary
+          ? `المحصّل في الفترة: ${collectedLabel} | عدد الدفعات: ${formatLatinNumber(paymentsCount, 'ar')}`
+          : `عدد الدفعات المعروضة: ${formatLatinNumber(paymentsCount, 'ar')} | ملخص الفترة المعتمد غير متاح`
+      }
+      csv={{
+        filename: buildReportCsvFilename('collection-movement'),
+        rows: toDailyCollectionCsv(rows),
+      }}
     />
   ) : undefined;
 
@@ -118,7 +154,9 @@ export function CollectionMovementSection({
               {
                 label: 'المحصّل في الفترة',
                 value: collectedLabel,
-                detail: hasAuthoritativeSummary ? 'قيمة معتمدة من ملخص الفترة' : 'الملخص المعتمد غير متاح',
+                detail: hasAuthoritativeSummary
+                  ? 'قيمة معتمدة من ملخص الفترة'
+                  : 'الملخص المعتمد غير متاح',
                 tone: hasAuthoritativeSummary ? 'good' : undefined,
               },
               {
@@ -129,7 +167,9 @@ export function CollectionMovementSection({
               {
                 label: 'أعلى يوم تحصيلًا',
                 value: busiestDay ? formatMoney(busiestDay.totalPaid) : '—',
-                detail: busiestDay ? formatDate(busiestDay.paymentDate) : 'لا توجد حركة',
+                detail: busiestDay
+                  ? formatDate(busiestDay.paymentDate)
+                  : 'لا توجد حركة',
               },
               {
                 label: 'الإيصالات المعروضة',
@@ -156,21 +196,29 @@ export function CollectionMovementSection({
           isLoading={isLoading}
         >
           {methodRows.length === 0 ? (
-            <div className="p-4"><ReportState message="لا توجد دفعات مسجلة لعرض توزيع طرق السداد." /></div>
+            <div className="p-4">
+              <ReportState message="لا توجد دفعات مسجلة لعرض توزيع طرق السداد." />
+            </div>
           ) : (
             <ReportList>
               {methodRows.map(([method, total]) => {
-                const share = methodMovementTotal > 0 ? Math.round((total / methodMovementTotal) * 100) : 0;
+                const share =
+                  methodMovementTotal > 0
+                    ? Math.round((total / methodMovementTotal) * 100)
+                    : 0;
                 return (
                   <ReportListRow
                     key={method}
                     title={paymentMethodLabels[method]}
                     subtitle={`${formatLatinNumber(share, 'ar')}٪ من حركة الفترة المعروضة`}
-                    meta={(
+                    meta={
                       <span className="block h-1.5 w-24 overflow-hidden rounded-full bg-muted">
-                        <span className="block h-full rounded-full bg-primary" style={{ width: `${Math.max(4, share)}%` }} />
+                        <span
+                          className="block h-full rounded-full bg-primary"
+                          style={{ width: `${Math.max(4, share)}%` }}
+                        />
                       </span>
-                    )}
+                    }
                     value={<span dir="ltr">{formatMoney(total)}</span>}
                   />
                 );

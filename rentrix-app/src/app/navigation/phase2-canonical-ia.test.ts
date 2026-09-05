@@ -116,7 +116,7 @@ describe('Task-centric canonical IA', () => {
     expect(primaryItems).toHaveLength(7);
     expect(navGroups).toHaveLength(2);
     expect(primaryItems.map(([, labelKey]) => navigationLabels[labelKey])).toEqual([
-      'اليوم', 'المحفظة', 'التأجير', 'المال', 'الخدمات', 'التقارير والكشوف', 'الإعدادات',
+      'اليوم', 'المحفظة', 'التأجير', 'المال', 'الخدمات', 'التقارير', 'الإعدادات',
     ]);
     expect(getAllNavItems().length).toBeGreaterThan(7);
     expect(mobileNavItems).toHaveLength(0);

@@ -10,16 +10,21 @@ import { describe, expect, it } from 'vitest';
  * source contracts keep that invariant visible next to the existing
  * task-first contracts.
  */
-const read = (relativePath: string) => readFileSync(new URL(relativePath, import.meta.url), 'utf8');
+const read = (relativePath: string) =>
+  readFileSync(new URL(relativePath, import.meta.url), 'utf8');
 
 const financePage = read('./FinancePage.tsx');
 const depositsPage = read('../financials/deposits/deposits-page.tsx');
 const depositsBody = read('../financials/deposits/deposits-workspace.tsx');
-const accrualWorkspace = read('../financials/fixed-monthly-accruals/fixed-monthly-accrual-workspace.tsx');
+const accrualWorkspace = read(
+  '../financials/fixed-monthly-accruals/fixed-monthly-accrual-workspace.tsx',
+);
 const receiptsPage = read('../financials/receipts/receipts-page.tsx');
 const expensesPage = read('../financials/expenses/expenses-page.tsx');
 const arrearsPage = read('../financials/arrears/arrears-page.tsx');
-const arrearsWorkflow = read('../financials/components/arrears-workflow-section.tsx');
+const arrearsWorkflow = read(
+  '../financials/components/arrears-workflow-section.tsx',
+);
 
 describe('money hub embedded workspaces', () => {
   it('embeds deposits and fixed accruals so no nested page shell appears', () => {
@@ -42,9 +47,13 @@ describe('money hub embedded workspaces', () => {
     expect(accrualWorkspace).toContain('embedded = false');
     // Removed legacy chrome: the panel title block (CardTitle) and the second
     // register heading. The accessible table aria-label stays.
-    expect(accrualWorkspace).not.toContain('<CardTitle className="flex items-center gap-2 text-base">');
+    expect(accrualWorkspace).not.toContain(
+      '<CardTitle className="flex items-center gap-2 text-base">',
+    );
     expect(accrualWorkspace).not.toContain('سجل الاستحقاقات</h3>');
-    expect(accrualWorkspace).toContain('aria-label="سجل استحقاقات أتعاب الإدارة الشهرية"');
+    expect(accrualWorkspace).toContain(
+      'aria-label="سجل استحقاقات أتعاب الإدارة الشهرية"',
+    );
     expect(accrualWorkspace).toContain('احتساب الاستحقاقات');
     expect(accrualWorkspace).toContain('RegisterMetricStrip');
   });
@@ -52,17 +61,23 @@ describe('money hub embedded workspaces', () => {
   it('drops hub-duplicating navigation buttons when views render embedded', () => {
     // Receipts: the «return to /financials» shortcut only makes sense outside
     // the finance hub.
-    expect(receiptsPage).toMatch(/embedded \? undefined : <Button[^>]*asChild><Link to="\/financials"/);
+    expect(receiptsPage).toMatch(
+      /embedded \? undefined : <Button[^>]*asChild><Link to="\/financials"/,
+    );
     // Expenses: CSV export stays; the hub/reports jumps are standalone-only.
     expect(expensesPage).toContain('تصدير CSV');
     expect(expensesPage).toMatch(/\{embedded \? null : \(\n\s*<>/);
     // Arrears: invoice/receipt tabs are the hub subview strip itself.
-    expect(arrearsPage).toMatch(/secondaryActions=\{embedded \? undefined : \(/);
+    expect(arrearsPage).toMatch(
+      /secondaryActions=\{\s*embedded \? undefined : \(/,
+    );
   });
 
   it('renders the arrears investigation flow as register content, not a titled card', () => {
-    expect(arrearsWorkflow).not.toContain('<CardTitle>متابعة تحصيل المتأخرات</CardTitle>');
-    expect(arrearsWorkflow).not.toContain('from \'@/components/ui/card\'');
+    expect(arrearsWorkflow).not.toContain(
+      '<CardTitle>متابعة تحصيل المتأخرات</CardTitle>',
+    );
+    expect(arrearsWorkflow).not.toContain("from '@/components/ui/card'");
     expect(arrearsWorkflow).toContain('ArrearsFilters');
     expect(arrearsWorkflow).toContain('ArrearsSummaryCards');
     expect(arrearsWorkflow).toContain('OverdueInvoicesTable');

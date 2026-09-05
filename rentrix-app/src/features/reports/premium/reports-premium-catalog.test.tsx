@@ -1,38 +1,61 @@
 /**
  * MALEK Reports — premium catalog contract.
  *
- * Locks the product decision that turned /reports into a five-product
- * catalog with real detail routes:
- *  - the landing is a catalog only: no KPI numbers, charts, financial
- *    totals, filters or generic preview dialogs;
- *  - every product opens a real route (/reports/$reportId), never a modal;
- *  - every legacy report view is owned by exactly one premium product, so
- *    the consolidation never loses a reachable surface;
+ * Locks the product decision that keeps `/reports` analytical while retaining
+ * entity-first statements on their canonical direct product routes:
+ *  - the landing is a report catalog only: no KPI numbers, charts, financial
+ *    totals, filters, generic preview dialogs, or statement cards;
+ *  - reports and statements share a real route (/reports/$reportId), never a
+ *    modal, but statement entry belongs to the selected entity context;
+ *  - every retained report body is owned by exactly one product target;
  *  - the shared action component is the only place Print/PDF/Excel/share
  *    button logic lives, and share only attaches genuinely built PDFs.
  */
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { REPORT_PRODUCT_IDS } from '@/lib/report-product-ids';
 import {
   REPORT_PRODUCTS,
   getReportProduct,
   getReportProductTarget,
+  isStatementProduct,
 } from '../report-products';
-import { ACCOUNTING_REPORT_VIEWS, ANALYTICS_REPORT_VIEWS } from '../report-view-registry';
-import { buildReportProductShareUrl, buildReportProductSharePayload } from '../report-share';
+import {
+  buildReportProductShareUrl,
+  buildReportProductSharePayload,
+} from '../report-share';
 
 const reportsDir = resolve(import.meta.dirname, '..');
-const read = (relative: string) => readFileSync(resolve(reportsDir, relative), 'utf8');
-const routeTreeSource = readFileSync(resolve(reportsDir, '../../app/router/route-tree.ts'), 'utf8');
+const read = (relative: string) =>
+  readFileSync(resolve(reportsDir, relative), 'utf8').replaceAll('"', "'");
+const routeTreeSource = readFileSync(
+  resolve(reportsDir, '../../app/router/route-tree.ts'),
+  'utf8',
+).replaceAll('"', "'");
 
-describe('premium catalog — five products, nothing else', () => {
-  it('creates exactly the five approved report products', () => {
+describe('premium products — one registry, distinct experiences', () => {
+  it('keeps all five approved products in one registry and classifies the two entity statements', () => {
     expect(REPORT_PRODUCTS.map((product) => product.id)).toEqual([
       'owner-comprehensive-statement',
       'tenant-statement',
+      'collections-arrears-cheques',
+      'portfolio-property-performance',
+      'financial-settlement-pack',
+    ]);
+    expect(REPORT_PRODUCTS.map((product) => product.id)).toEqual(
+      REPORT_PRODUCT_IDS,
+    );
+    expect(
+      REPORT_PRODUCTS.filter(isStatementProduct).map((product) => product.id),
+    ).toEqual(['owner-comprehensive-statement', 'tenant-statement']);
+    expect(
+      REPORT_PRODUCTS.filter((product) => !isStatementProduct(product)).map(
+        (product) => product.id,
+      ),
+    ).toEqual([
       'collections-arrears-cheques',
       'portfolio-property-performance',
       'financial-settlement-pack',
@@ -45,98 +68,211 @@ describe('premium catalog — five products, nothing else', () => {
       expect(product.englishTitle).toMatch(/^[A-Za-z,& ]+$/);
       expect(product.businessQuestion.length).toBeGreaterThan(10);
       expect(product.description).toMatch(/[\u0600-\u06FF]/);
-      for (const text of [product.title, product.description, product.businessQuestion]) {
-        expect(text).not.toMatch(/RPC|adapter|read model|payload|registry|snapshot|section/i);
+      for (const text of [
+        product.title,
+        product.description,
+        product.businessQuestion,
+      ]) {
+        expect(text).not.toMatch(
+          /RPC|adapter|read model|payload|registry|snapshot|section/i,
+        );
       }
-      expect(`${product.description} ${product.businessQuestion}`).not.toMatch(/\d/);
+      expect(`${product.description} ${product.businessQuestion}`).not.toMatch(
+        /\d/,
+      );
     }
   });
 
+  it('keeps the tenant statement contract-scoped instead of presenting a fabricated reporting period', () => {
+    const tenantStatement = getReportProduct('tenant-statement')!;
+    expect(tenantStatement.kind).toBe('statement');
+    expect(tenantStatement.targets).toHaveLength(1);
+    expect(tenantStatement.targets[0].visibleFilterFields).toEqual(['contract']);
+  });
+
   it('never presents a fabricated cheque lifecycle', () => {
-    const collections = REPORT_PRODUCTS.find((product) => product.id === 'collections-arrears-cheques')!;
-    expect(collections.description).toContain('لا تُعرض دورة شيكات غير موجودة في المصدر');
+    const collections = REPORT_PRODUCTS.find(
+      (product) => product.id === 'collections-arrears-cheques',
+    )!;
+    expect(collections.description).toContain(
+      'لا تُعرض دورة شيكات غير موجودة في المصدر',
+    );
     for (const target of collections.targets) {
       expect(target.view).not.toMatch(/cheque|pdc/i);
     }
   });
 });
 
-describe('premium catalog — real routes, not dialogs', () => {
+describe('reports catalog — analytical routes, not dialogs', () => {
   it('registers the canonical detail route and permission gate', () => {
     expect(routeTreeSource).toContain("path: '/reports/$reportId'");
-    expect(routeTreeSource).toContain("requirePermission('financial.reports.view')");
+    expect(routeTreeSource).toContain(
+      "requirePermission('financial.reports.view')",
+    );
   });
 
-  it('opens products by navigation, never by mounting a preview dialog', () => {
+  it('opens analytical products by navigation, excludes statement cards, and never mounts a preview dialog', () => {
     const catalog = read('components/ReportsCatalog.tsx');
     expect(catalog).toContain("to: '/reports/$reportId'");
+    expect(catalog).toContain('REPORT_PRODUCTS.filter');
+    expect(catalog).toContain('!isStatementProduct(product)');
+    expect(catalog).toContain('data-statement-entry-guidance');
     expect(catalog).not.toMatch(/<Dialog|showModal|createPortal/);
   });
 
   it('keeps the /reports landing catalog-only', () => {
     const page = read('reports-page.tsx');
     expect(page).toContain('<ReportsCatalog');
-    expect(page).toContain('legacyLocationRequested');
-    const landingBlock = page.slice(page.indexOf('if (!legacyLocationRequested)'), page.indexOf('return (\n    <PageLayout dir="rtl" lang="ar" size="wide">\n      <PageHeader title={reportsTitle} description={pageDescription} />\n\n      <div data-finance-root'));
-    expect(landingBlock).toContain('data-reports-catalog-landing');
-    expect(landingBlock).not.toContain('ReportsFilterSurface');
-    expect(landingBlock).not.toContain('KpiCard');
+    expect(page).toContain('data-reports-catalog-landing');
+    expect(page).not.toContain('ReportsFilterSurface');
+    expect(page).not.toContain('KpiCard');
+    expect(page).not.toContain('ReportsWorkspace');
   });
 
-  it('renders the catalog card grid without any financial values', () => {
+  it('keeps the three analytical catalog-card identities free of financial values', () => {
+    const analyticalProducts = REPORT_PRODUCTS.filter(
+      (product) => !isStatementProduct(product),
+    );
     const markup = renderToStaticMarkup(
       createElement('div', null, [
-        ...REPORT_PRODUCTS.map((product) =>
-          createElement('article', { key: product.id, 'data-report-product': product.id }, product.title, product.businessQuestion),
+        ...analyticalProducts.map((product) =>
+          createElement(
+            'article',
+            { key: product.id, 'data-report-product': product.id },
+            product.title,
+            product.businessQuestion,
+          ),
         ),
       ]),
     );
-    for (const product of REPORT_PRODUCTS) {
+    for (const product of analyticalProducts) {
       expect(markup).toContain(`data-report-product="${product.id}"`);
       expect(markup).toContain(product.title);
+    }
+    for (const statement of REPORT_PRODUCTS.filter(isStatementProduct)) {
+      expect(markup).not.toContain(`data-report-product="${statement.id}"`);
     }
     expect(markup).not.toMatch(/OMR|ر\.ع|\d{3,}/);
   });
 });
 
-describe('premium catalog — preservation of every legacy surface', () => {
-  it('derives exactly one premium owner for every legacy report view from canonical product targets', () => {
-    const allViews = [...ANALYTICS_REPORT_VIEWS.map((view) => view.id), ...ACCOUNTING_REPORT_VIEWS.map((view) => view.id)];
-    for (const view of allViews) {
-      const owners = REPORT_PRODUCTS.filter((product) => product.targets.some((target) => target.view === view));
-      expect(owners, `legacy view ${view} must have one premium owner`).toHaveLength(1);
-    }
+describe('entity account statements — contextual direct-route chrome', () => {
+  it('uses statement-first identity, entity context, and entity return without replacing the body dispatcher', () => {
+    const productPage = read('premium/report-product-page.tsx');
+    const statementHeader = read('premium/statement-product-header.tsx');
 
-    const ownerProduct = getReportProduct('owner-comprehensive-statement');
-    expect(ownerProduct?.targets.some((target) => target.section === 'statements')).toBe(true);
+    expect(productPage).toContain("product.kind === 'statement'");
+    expect(productPage).toContain('<StatementProductHeader');
+    expect(productPage).toContain("to: '/owners/$ownerId'");
+    expect(productPage).toContain("to: '/contracts/$contractId'");
+    expect(productPage).toContain('<ReportViewPanel');
+    expect(statementHeader).toContain('كشف حساب مرتبط بكيان');
+    expect(statementHeader).toContain('data-statement-entity-context');
+    expect(statementHeader).toContain('data-statement-product-actions');
+    expect(read('components/ReportsFilterSurface.tsx')).toContain(
+      'data-statement-filter-surface',
+    );
+    expect(read('components/ReportsFilterSurface.tsx')).toContain(
+      "visibleFields?.includes('period')",
+    );
   });
 
-  it('routes every product target to a real (section, view) pair', () => {
-    const analyticsIds = new Set<string>(ANALYTICS_REPORT_VIEWS.map((view) => view.id));
-    const accountingIds = new Set<string>(ACCOUNTING_REPORT_VIEWS.map((view) => view.id));
+  it('keeps account-statement entry points in owner, tenant/person, and contract context', () => {
+    expect(read('../owners/components/owner-detail-view.tsx')).toContain(
+      'فتح كشف حساب المالك',
+    );
+    expect(read('../tenants/components/TenantPreviewDialog.tsx')).toContain(
+      'فتح كشف حساب العقد',
+    );
+    expect(read('../people/components/PersonDossier.tsx')).toContain(
+      'فتح كشف حساب المستأجر للعقد',
+    );
+    expect(
+      read('../contracts/pages/ContractDetailPage.tsx'),
+    ).toContain('فتح كشف حساب العقد');
+  });
+
+  it('offers every statement entry point only when the report route permission is held', () => {
+    // /reports/$reportId is guarded by `financial.reports.view`. An entry
+    // point that ignores that permission advertises a destination the route
+    // will bounce, so every statement action must sit behind the same gate.
+    for (const [file, action] of [
+      ['../owners/components/owner-detail-view.tsx', 'فتح كشف حساب المالك'],
+      ['../tenants/components/TenantPreviewDialog.tsx', 'فتح كشف حساب العقد'],
+      ['../people/components/PersonDossier.tsx', 'فتح كشف حساب المستأجر للعقد'],
+    ] as const) {
+      const source = read(file);
+      expect(
+        source,
+        `${file} reads the reports view permission`,
+      ).toMatch(
+        /canAccess\(\s*(authorization,\s*)?('financial\.reports\.view'|financialOperationPermissions\.viewReports)/,
+      );
+      const actionIndex = source.indexOf(action);
+      expect(actionIndex, `${file} renders ${action}`).toBeGreaterThan(-1);
+      // The gate must wrap the block that renders the action, not merely sit
+      // somewhere earlier in the file.
+      expect(
+        source,
+        `${file} gates ${action} behind canViewReports`,
+      ).toMatch(new RegExp(`canViewReports\\s*[?&][\\s\\S]{0,900}?${action}`));
+    }
+
+    // The contract menu builds its actions declaratively behind the gate.
+    const contract = read('../contracts/pages/ContractDetailPage.tsx');
+    expect(contract).toContain('canViewReports');
+    expect(
+      contract.slice(
+        contract.indexOf('...(canViewReports'),
+        contract.indexOf('فتح كشف حساب العقد'),
+      ),
+    ).toContain("id: 'tenant-statement'");
+  });
+});
+
+describe('premium catalog — canonical target ownership', () => {
+  it('assigns every retained body location to one product target, without a second view registry', () => {
+    const bodyLocations = REPORT_PRODUCTS.flatMap((product) =>
+      product.targets
+        .filter((target) => target.section !== 'statements')
+        .map((target) => `${target.section}:${target.view}`),
+    );
+    expect(bodyLocations).toHaveLength(15);
+    expect(new Set(bodyLocations).size).toBe(bodyLocations.length);
+
+    const ownerProduct = getReportProduct('owner-comprehensive-statement');
+    expect(
+      ownerProduct?.targets.some((target) => target.section === 'statements'),
+    ).toBe(true);
+  });
+
+  it('resolves each product target and falls back only to that product’s first target', () => {
     for (const product of REPORT_PRODUCTS) {
       expect(product.targets.length).toBeGreaterThan(0);
       for (const target of product.targets) {
-        if (target.section === 'statements') {
-          expect(target.view).toBe('');
-        } else if (target.section === 'analytics') {
-          expect(analyticsIds.has(target.view)).toBe(true);
-        } else {
-          expect(accountingIds.has(target.view)).toBe(true);
-        }
+        expect(getReportProductTarget(product, target.id).id).toBe(target.id);
       }
-      expect(getReportProductTarget(product, undefined).id).toBe(product.targets[0].id);
-      expect(getReportProductTarget(product, 'nope').id).toBe(product.targets[0].id);
-      const second = product.targets[1] ?? product.targets[0];
-      expect(getReportProductTarget(product, second.id).id).toBe(second.id);
+      expect(getReportProductTarget(product, undefined).id).toBe(
+        product.targets[0].id,
+      );
+      expect(getReportProductTarget(product, 'nope').id).toBe(
+        product.targets[0].id,
+      );
     }
   });
 
-  it('keeps accounting deep links flowing into the single /reports workspace', () => {
+  it('maps accounting reports to the canonical financial product route', () => {
     expect(routeTreeSource).toContain("path: '/reports'");
     expect(routeTreeSource).not.toContain("path: '/accounting'");
-    const financial = REPORT_PRODUCTS.find((product) => product.id === 'financial-settlement-pack')!;
-    expect(financial.targets.some((target) => target.section === 'accounting' && target.view === 'general_ledger')).toBe(true);
+    const financial = REPORT_PRODUCTS.find(
+      (product) => product.id === 'financial-settlement-pack',
+    )!;
+    expect(
+      financial.targets.some(
+        (target) =>
+          target.section === 'accounting' && target.view === 'general_ledger',
+      ),
+    ).toBe(true);
   });
 });
 
@@ -148,11 +284,20 @@ describe('premium catalog — one shared action implementation', () => {
     expect(page).not.toMatch(/toast\.(success|error)\([^)]*\)\s*;\s*\}/);
   });
 
-  it('delegates the legacy action surfaces to the same implementation', () => {
-    const share = read('components/ReportShareActions.tsx');
-    const output = read('components/report-output-actions.tsx');
-    expect(share).toContain('<ReportDocumentActions');
-    expect(output).toContain('<ReportDocumentActions');
+  it('mounts the one shared action primitive directly, with no forwarding report-action shell', () => {
+    for (const body of [
+      'components/OverviewSection.tsx',
+      'components/CollectionsSection.tsx',
+      'components/PropertyAnalyticsSection.tsx',
+    ]) {
+      expect(read(body)).toContain('<ReportDocumentActions');
+    }
+    expect(
+      existsSync(resolve(reportsDir, 'components/ReportShareActions.tsx')),
+    ).toBe(false);
+    expect(
+      existsSync(resolve(reportsDir, 'components/report-output-actions.tsx')),
+    ).toBe(false);
   });
 
   it('only offers document actions backed by a canonical builder for the open target', () => {
@@ -166,7 +311,8 @@ describe('premium catalog — one shared action implementation', () => {
     ]);
     for (const product of REPORT_PRODUCTS) {
       for (const target of product.targets) {
-        if (target.documentKind) expect(documentKinds.has(target.documentKind)).toBe(true);
+        if (target.documentKind)
+          expect(documentKinds.has(target.documentKind)).toBe(true);
       }
     }
   });
@@ -177,21 +323,47 @@ describe('premium catalog — secure sharing', () => {
     const url = buildReportProductShareUrl('https://malek.app/', {
       reportId: 'tenant-statement',
       view: 'statement',
-      filters: { from: '2026-08-01', to: '2026-08-31', contractId: 'c-1', asOf: '', ownerId: '', propertyId: '', tenantId: '', unitId: '' },
+      filters: {
+        from: '2026-08-01',
+        to: '2026-08-31',
+        contractId: 'c-1',
+        asOf: '',
+        ownerId: '',
+        propertyId: '',
+        tenantId: '',
+        unitId: '',
+      },
     });
-    expect(url).toBe('https://malek.app/reports/tenant-statement?view=statement&from=2026-08-01&to=2026-08-31&contractId=c-1');
+    expect(url).toBe(
+      'https://malek.app/reports/tenant-statement?view=statement&from=2026-08-01&to=2026-08-31&contractId=c-1',
+    );
   });
 
   it('never embeds financial values in the prepared share text', () => {
-    const payload = buildReportProductSharePayload('https://malek.app', {
-      reportId: 'owner-comprehensive-statement',
-      filters: { from: '2026-08-01', to: '2026-08-31', propertyId: '', unitId: '', tenantId: '', contractId: '', asOf: '', ownerId: '' },
-    }, {
-      reportLabel: 'كشف المالك الشامل',
-      summaryText: 'الفترة: 2026-08-01 → 2026-08-31',
-    });
+    const payload = buildReportProductSharePayload(
+      'https://malek.app',
+      {
+        reportId: 'owner-comprehensive-statement',
+        filters: {
+          from: '2026-08-01',
+          to: '2026-08-31',
+          propertyId: '',
+          unitId: '',
+          tenantId: '',
+          contractId: '',
+          asOf: '',
+          ownerId: '',
+        },
+      },
+      {
+        reportLabel: 'كشف المالك الشامل',
+        summaryText: 'الفترة: 2026-08-01 → 2026-08-31',
+      },
+    );
     expect(payload.shareText).toContain('كشف المالك الشامل');
-    expect(payload.shareText).toContain('https://malek.app/reports/owner-comprehensive-statement');
+    expect(payload.shareText).toContain(
+      'https://malek.app/reports/owner-comprehensive-statement',
+    );
     expect(payload.shareText.length).toBeLessThanOrEqual(1_400);
   });
 

@@ -91,8 +91,8 @@ const ar = {
         description: 'إنشاء عقود الإيجار وتجديدها وتتبع حالاتها، وحالة كل وحدة: مشغولة أو شاغرة، بلمحة واحدة.',
       },
       {
-        title: 'مركز التقارير والكشوف',
-        description: 'تحصيلات، متأخرات، إشغال، كشوف ملاك ومستأجرين، تدفق نقدي وإقرار ضريبي — فلاتر موحدة وتصدير فوري.',
+        title: 'مركز التقارير التحليلية',
+        description: 'تحصيلات، متأخرات، إشغال، تدفق نقدي وإقرار ضريبي للتقارير التحليلية؛ وتُفتح كشوف حساب الملاك والمستأجرين من ملفاتهم وسياق العقد.',
       },
       {
         title: 'الصيانة والتواصل',
@@ -328,7 +328,7 @@ const en: Messages = {
   },
   stats: [
     { value: 20, suffix: '+', label: 'Integrated modules' },
-    { value: 10, suffix: '+', label: 'Ready reports & statements' },
+    { value: 10, suffix: '+', label: 'Ready reporting tools' },
     { value: 100, suffix: '%', label: 'Native Arabic RTL' },
     { value: 3, suffix: '', label: 'Granular access roles' },
   ],
@@ -388,8 +388,8 @@ const en: Messages = {
         description: 'Create, renew and track lease contracts, and see every unit as occupied or vacant at a glance.',
       },
       {
-        title: 'Reports & statements hub',
-        description: 'Collections, arrears, occupancy, owner and tenant statements, cash flow and VAT return — unified filters and instant export.',
+        title: 'Analytical reports hub',
+        description: 'Collections, arrears, occupancy, cash flow and VAT reporting; owner and tenant account statements open from their entity and contract context.',
       },
       {
         title: 'Maintenance & communication',

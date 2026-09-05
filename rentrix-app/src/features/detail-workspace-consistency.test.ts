@@ -14,7 +14,7 @@ describe('detail workspace consistency', () => {
 
     expect(ownerView).toContain('ariaLabel="أقسام ملف المالك"');
     expect(ownerBody).not.toContain("data-owner-detail-financials");
-    expect(ownerView).toContain('المالية التفصيلية في مساحة المال والتقارير');
+    expect(ownerView).toContain('افتح كشف الحساب من هنا لمراجعة الحركات والأرصدة المالية');
     expect(tenant).toContain('ariaLabel="أقسام ملف المستأجر"');
     expect(tenant).toContain('section={activeSection}');
     expect(provider).toContain('ariaLabel="أقسام ملف مزود الخدمة"');

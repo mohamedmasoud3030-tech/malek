@@ -22,36 +22,144 @@
  *   the same production components; not production routes.
  */
 export const ACTIVE_REGISTER_INVENTORY = [
-  { component: 'features/people/people-list-page.tsx', routes: ['/people', '/people/$personId', '/people/new', '/people/$personId/edit'] },
-  { component: 'features/tenants/TenantsPage.tsx', routes: ['/tenants', '/tenants/$tenantId'] },
-  { component: 'features/owners/components/owner-workspace-table.tsx', routes: ['/owners', '/owners/$ownerId', '/owners/$ownerId/edit'] },
-  { component: 'features/owners/components/owner-dossier-body.tsx', routes: ['/owners/$ownerId'] },
-  { component: 'features/owners/components/OwnerSettlementWorkspace.tsx', routes: ['/financials?section=funds&view=owner_settlements'] },
-  { component: 'features/contracts/components/ContractTable.tsx', routes: ['/contracts', '/contracts/$contractId'] },
-  { component: 'features/contracts/contractPaymentsTab.tsx', routes: ['/contracts/$contractId'] },
-  { component: 'features/lands/components/lands-view.tsx', routes: ['/lands', '/lands/$landId'] },
+  {
+    component: 'features/people/people-list-page.tsx',
+    routes: [
+      '/people',
+      '/people/$personId',
+      '/people/new',
+      '/people/$personId/edit',
+    ],
+  },
+  {
+    component: 'features/tenants/TenantsPage.tsx',
+    routes: ['/tenants', '/tenants/$tenantId'],
+  },
+  {
+    component: 'features/owners/components/owner-workspace-table.tsx',
+    routes: ['/owners', '/owners/$ownerId', '/owners/$ownerId/edit'],
+  },
+  {
+    component: 'features/owners/components/owner-dossier-body.tsx',
+    routes: ['/owners/$ownerId'],
+  },
+  {
+    component: 'features/owners/components/OwnerSettlementWorkspace.tsx',
+    routes: ['/financials?section=funds&view=owner_settlements'],
+  },
+  {
+    component: 'features/contracts/components/ContractTable.tsx',
+    routes: ['/contracts', '/contracts/$contractId'],
+  },
+  {
+    component: 'features/contracts/contractPaymentsTab.tsx',
+    routes: ['/contracts/$contractId'],
+  },
+  {
+    component: 'features/lands/components/lands-view.tsx',
+    routes: ['/lands', '/lands/$landId'],
+  },
   { component: 'features/leads/components/leads-view.tsx', routes: ['/leads'] },
-  { component: 'features/communication/components/communication-hub-view.tsx', routes: ['/communication'] },
-  { component: 'features/units/units-list.tsx', routes: ['/properties/$propertyId/units'] },
-  { component: 'features/units/units-page.tsx', routes: ['/properties?section=units'] },
-  { component: 'features/properties/properties-list-page.tsx', routes: ['/properties', '/properties/$propertyId'] },
-  { component: 'features/maintenance/components/maintenance-list.tsx', routes: ['/maintenance'] },
-  { component: 'features/utilities/components/utilities-workspace.tsx', routes: ['/maintenance?section=utilities'] },
-  { component: 'features/automation/components/automation-center-view.tsx', routes: ['/settings?section=automation'] },
-  { component: 'features/audit/components/audit-log-view.tsx', routes: ['/settings?section=audit-log'] },
-  { component: 'features/commissions/components/commissions-view.tsx', routes: ['/commissions'] },
-  { component: 'features/financials/components/invoice-list-section.tsx', routes: ['/financials?section=collections&view=invoices'] },
-  { component: 'features/financials/components/overdue-invoices-table.tsx', routes: ['/financials?section=collections&view=arrears'] },
-  { component: 'features/financials/components/expenses-section.tsx', routes: ['/financials?section=expenses&view=expenses'] },
-  { component: 'features/financials/deposits/deposits-workspace.tsx', routes: ['/financials?section=funds&view=deposits'] },
-  { component: 'features/financials/fixed-monthly-accruals/fixed-monthly-accrual-workspace.tsx', routes: ['/financials?section=fees&view=fixed_monthly_accruals'] },
-  { component: 'features/financials/receipts/receipts-page.tsx', routes: ['/financials?section=collections&view=receipts', '/receipts?receiptId='] },
-  { component: 'features/financials/reconciliation/bank-reconciliation-page.tsx', routes: ['/financials?section=banking&view=bank_reconciliation'] },
-  { component: 'features/service-providers/service-providers-page.tsx', routes: ['/service-providers'] },
-  { component: 'features/service-providers/service-provider-detail-page.tsx', routes: ['/service-providers/$providerId'] },
-  { component: 'features/service-providers/components/service-provider-categories-dialog.tsx', routes: ['/service-providers'] },
-  { component: 'features/reports/components/collections/daily-collections-panel.tsx', routes: ['/reports?workspace=collections&view=collections', '/reports?workspace=collections&view=collection_movement'] },
-  { component: 'features/reports/components/collections/rent-roll-panel.tsx', routes: ['/reports?workspace=collections&view=collections'] },
-  { component: 'features/reports/components/overdue/overdue-invoices-panel.tsx', routes: ['/reports?workspace=collections&view=overdue'] },
-  { component: 'features/reports/components/GeneralLedgerCoreSection.tsx', routes: ['/reports?workspace=financial_review&view=general_ledger'] },
+  {
+    component: 'features/communication/components/communication-hub-view.tsx',
+    routes: ['/communication'],
+  },
+  {
+    component: 'features/units/units-list.tsx',
+    routes: ['/properties/$propertyId/units'],
+  },
+  {
+    component: 'features/units/units-page.tsx',
+    routes: ['/properties?section=units'],
+  },
+  {
+    component: 'features/properties/properties-list-page.tsx',
+    routes: ['/properties', '/properties/$propertyId'],
+  },
+  {
+    component: 'features/maintenance/components/maintenance-list.tsx',
+    routes: ['/maintenance'],
+  },
+  {
+    component: 'features/utilities/components/utilities-workspace.tsx',
+    routes: ['/maintenance?section=utilities'],
+  },
+  {
+    component: 'features/automation/components/automation-center-view.tsx',
+    routes: ['/settings?section=automation'],
+  },
+  {
+    component: 'features/audit/components/audit-log-view.tsx',
+    routes: ['/settings?section=audit-log'],
+  },
+  {
+    component: 'features/commissions/components/commissions-view.tsx',
+    routes: ['/commissions'],
+  },
+  {
+    component: 'features/financials/components/invoice-list-section.tsx',
+    routes: ['/financials?section=collections&view=invoices'],
+  },
+  {
+    component: 'features/financials/components/overdue-invoices-table.tsx',
+    routes: ['/financials?section=collections&view=arrears'],
+  },
+  {
+    component: 'features/financials/components/expenses-section.tsx',
+    routes: ['/financials?section=expenses&view=expenses'],
+  },
+  {
+    component: 'features/financials/deposits/deposits-workspace.tsx',
+    routes: ['/financials?section=funds&view=deposits'],
+  },
+  {
+    component:
+      'features/financials/fixed-monthly-accruals/fixed-monthly-accrual-workspace.tsx',
+    routes: ['/financials?section=fees&view=fixed_monthly_accruals'],
+  },
+  {
+    component: 'features/financials/receipts/receipts-page.tsx',
+    routes: [
+      '/financials?section=collections&view=receipts',
+      '/receipts?receiptId=',
+    ],
+  },
+  {
+    component:
+      'features/financials/reconciliation/bank-reconciliation-page.tsx',
+    routes: ['/financials?section=banking&view=bank_reconciliation'],
+  },
+  {
+    component: 'features/service-providers/service-providers-page.tsx',
+    routes: ['/service-providers'],
+  },
+  {
+    component: 'features/service-providers/service-provider-detail-page.tsx',
+    routes: ['/service-providers/$providerId'],
+  },
+  {
+    component:
+      'features/service-providers/components/service-provider-categories-dialog.tsx',
+    routes: ['/service-providers'],
+  },
+  {
+    component:
+      'features/reports/components/collections/daily-collections-panel.tsx',
+    routes: [
+      '/reports/collections-arrears-cheques?view=period',
+      '/reports/collections-arrears-cheques?view=movement',
+    ],
+  },
+  {
+    component: 'features/reports/components/collections/rent-roll-panel.tsx',
+    routes: ['/reports/collections-arrears-cheques?view=period'],
+  },
+  {
+    component: 'features/reports/components/overdue/overdue-invoices-panel.tsx',
+    routes: ['/reports/collections-arrears-cheques?view=arrears'],
+  },
+  {
+    component: 'features/reports/components/GeneralLedgerCoreSection.tsx',
+    routes: ['/reports/financial-settlement-pack?view=ledger'],
+  },
 ] as const;

@@ -5,7 +5,7 @@
 MALEK exposes two top-level destinations that concern money but serve different jobs:
 
 - `/financials` is the operational Money workspace for invoices, receipts, expenses, commissions, management-fee accruals, deposits, owner settlements, and bank reconciliation.
-- `/reports` is the canonical reporting/accounting workspace for analysis, statements, GL-backed accounting reports, reconciliation evidence, filtering, and exports.
+- `/reports` is the canonical reporting/accounting catalog. Every report opens on a canonical product route (`/reports/$reportId`, with a supported optional `view`) for analysis, statements, GL-backed accounting reports, reconciliation evidence, filtering, and exports.
 
 The routes intentionally share lower-level reporting/data services where appropriate, but they do not share navigation ownership or page composition.
 
@@ -22,7 +22,7 @@ A second distinction is equally important: the Money workspace must be organized
 7. Keep arrears analysis deep-linkable, but routine overdue collection is reachable through invoice status filtering rather than advertising a duplicate daily destination.
 8. Invoice identity must expose business context — reference, tenant, property/unit, billing period, due date, amount/remaining, and status — before asking the operator to open detail.
 9. Billing-readiness diagnostics belong to the invoice-generation action, not above the daily invoice register.
-10. Preserve compatibility deep links by resolving them into the canonical Money or Reports workspace rather than reviving retired page shells.
+10. Preserve compatibility deep links by resolving them into the canonical Money route or a canonical Reports product route before any retired renderer mounts.
 11. Keep bilingual shared terminology in `rentrix-app/src/lib/i18n.ts`; do not create route-local language state.
 12. Do not change financial calculations, permissions, RPCs, RLS, or persistence merely to change the information architecture.
 
@@ -66,8 +66,9 @@ A second distinction is equally important: the Money workspace must be organized
 - `rentrix-app/src/features/finance/shell/financeShellModel.ts` — canonical Finance sections, views, permissions, and deep-link resolution.
 - `rentrix-app/src/features/financials/components/invoice-list-section.tsx` — canonical invoice register and direct collection affordance.
 - `rentrix-app/src/features/financials/invoices/invoiceService.ts` — invoice/context read contract.
-- `rentrix-app/src/features/reports/reports-page.tsx` — canonical Reports workspace.
-- `rentrix-app/src/features/accounting/reports/accountingReportsFacade.ts` — canonical accounting-report read boundary.
+- `rentrix-app/src/features/reports/reports-page.tsx` — canonical Reports catalog.
+- `rentrix-app/src/features/reports/premium/report-product-page.tsx` — shared canonical report-product renderer.
+- `rentrix-app/src/features/reports/report-products.ts` and `report-route.ts` — product metadata and canonical deep-link normalization.
 - `rentrix-app/src/app/navigation/app-nav-items.ts` — task-centric product navigation.
 - `rentrix-app/src/features/finance/finance-task-first-ux.test.ts` — focused UX/IA guard.
 - PR #1577 — Finance Hub unification.

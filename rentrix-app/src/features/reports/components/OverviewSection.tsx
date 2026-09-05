@@ -1,5 +1,8 @@
 import { Gauge, LayoutDashboard } from 'lucide-react';
-import { formatDate, formatMoney } from '@/features/financials/components/financials-formatters';
+import {
+  formatDate,
+  formatMoney,
+} from '@/features/financials/components/financials-formatters';
 import type {
   CollectionSummaryReport,
   ExpenseBreakdownPropertyRow,
@@ -10,10 +13,16 @@ import type { MaintenanceSummary } from '@/features/maintenance/maintenance-help
 import { formatLatinNumber } from '@/lib/formatters';
 import { buildExecutiveHealthInsights } from '../reports-insights';
 import { OperationalPrioritiesPanel } from './OperationalPrioritiesPanel';
-import type { ExpiringContractRow, OccupancyChartRow } from '../reports-page.helpers';
-import { buildReportCsvFilename, toFinancialSummaryCsv } from '../reports-page.helpers';
-import type { ReportDrillHandler } from '../report-workspaces';
-import { ReportShareActions } from './ReportShareActions';
+import type {
+  ExpiringContractRow,
+  OccupancyChartRow,
+} from '../reports-page.helpers';
+import {
+  buildReportCsvFilename,
+  toFinancialSummaryCsv,
+} from '../reports-page.helpers';
+import type { ReportDrillHandler } from '../report-route';
+import { ReportDocumentActions } from './report-document-actions';
 import {
   ReportDrillAction,
   ReportInsightNote,
@@ -99,8 +108,10 @@ export function OverviewSection({
     }),
     { occupied: 0, vacant: 0, nonRentable: 0 },
   );
-  const totalUnits = occupancy.occupied + occupancy.vacant + occupancy.nonRentable;
-  const occupancyRate = totalUnits > 0 ? (occupancy.occupied / totalUnits) * 100 : 0;
+  const totalUnits =
+    occupancy.occupied + occupancy.vacant + occupancy.nonRentable;
+  const occupancyRate =
+    totalUnits > 0 ? (occupancy.occupied / totalUnits) * 100 : 0;
 
   const invoiced = collectionSummary?.invoiced ?? report.invoiced;
   const paid = collectionSummary?.paid ?? report.paid;
@@ -114,10 +125,15 @@ export function OverviewSection({
   const hasOverdueAuthority = overdueSummary !== undefined;
   const overdueTotal = overdueSummary?.totalOverdue ?? 0;
 
-  const expensesTotal = expenseRows.reduce((total, row) => total + row.total, 0);
-  const openMaintenance = (maintenanceSummary.open ?? 0) + (maintenanceSummary.inProgress ?? 0);
+  const expensesTotal = expenseRows.reduce(
+    (total, row) => total + row.total,
+    0,
+  );
+  const openMaintenance =
+    (maintenanceSummary.open ?? 0) + (maintenanceSummary.inProgress ?? 0);
 
-  const hasCollectionRate = typeof collectionRate === 'number' && Number.isFinite(collectionRate);
+  const hasCollectionRate =
+    typeof collectionRate === 'number' && Number.isFinite(collectionRate);
   const collectionRateLabel = hasCollectionRate
     ? `${formatLatinNumber(Math.round(collectionRate), 'ar')}%`
     : 'غير متاحة';
@@ -201,34 +217,44 @@ export function OverviewSection({
         eyebrow="القراءة التنفيذية"
         icon={LayoutDashboard}
         isLoading={isLoading}
-        action={canExportReports ? (
-          <ReportShareActions
-            className="flex flex-wrap gap-2"
-            reportLabel="خلاصة أداء المكتب"
-            target={{
-              section: 'analytics',
-              view: 'overview',
-              filters: {
-                from,
-                to,
-                asOf: to,
-                propertyId: '',
-                unitId: '',
-                tenantId: '',
-                ownerId: '',
-                contractId: '',
-              },
-            }}
-            summaryText={`المستحق ${formatMoney(invoiced)} | المحصّل ${formatMoney(paid)} | المتبقي ${formatMoney(outstanding)} | كفاءة التحصيل ${collectionRateLabel}`}
-            csv={{ filename: buildReportCsvFilename('financial-summary'), rows: financialSummaryRows }}
-          />
-        ) : null}
+        action={
+          canExportReports ? (
+            <ReportDocumentActions
+              className="flex flex-wrap gap-2"
+              reportLabel="خلاصة أداء المكتب"
+              reportShareTarget={{
+                reportId: 'portfolio-property-performance',
+                view: 'office',
+                filters: {
+                  from,
+                  to,
+                  asOf: to,
+                  propertyId: '',
+                  unitId: '',
+                  tenantId: '',
+                  ownerId: '',
+                  contractId: '',
+                },
+              }}
+              reportShareSummary={`المستحق ${formatMoney(invoiced)} | المحصّل ${formatMoney(paid)} | المتبقي ${formatMoney(outstanding)} | كفاءة التحصيل ${collectionRateLabel}`}
+              csv={{
+                filename: buildReportCsvFilename('financial-summary'),
+                rows: financialSummaryRows,
+              }}
+            />
+          ) : null
+        }
       >
         <div className="px-4 pb-4 pt-3 sm:px-5">
-          <ReportSummaryStrip dataReportSummary="office-overview" items={summaryItems} />
+          <ReportSummaryStrip
+            dataReportSummary="office-overview"
+            items={summaryItems}
+          />
         </div>
         <div className="px-4 pb-4 sm:px-5">
-          <ReportInsightNote title="الخلاصة التنفيذية">{executiveSummary}</ReportInsightNote>
+          <ReportInsightNote title="الخلاصة التنفيذية">
+            {executiveSummary}
+          </ReportInsightNote>
         </div>
       </ReportPanel>
 
@@ -248,12 +274,12 @@ export function OverviewSection({
         eyebrow="نسب معتمدة"
         icon={Gauge}
         isLoading={isLoading}
-        action={(
+        action={
           <ReportDrillAction
             label="التحصيل والمتأخرات"
-            onClick={() => onDrill('collections', 'collections')}
+            onClick={() => onDrill('analytics', 'collections')}
           />
-        )}
+        }
       >
         <div className="grid gap-3 p-4 sm:grid-cols-2 sm:p-5">
           {healthRatios.map((insight) => (

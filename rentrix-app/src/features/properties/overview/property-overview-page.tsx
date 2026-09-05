@@ -9,13 +9,16 @@ import { PropertyDossierContent } from '../components/property-dossier-content';
 
 export function PropertyOverview() {
   const params = useParams({ strict: false });
-  const propertyId = typeof params.propertyId === 'string' ? params.propertyId : '';
+  const propertyId =
+    typeof params.propertyId === 'string' ? params.propertyId : '';
   const propertyQuery = useProperty(propertyId);
   const property = propertyQuery.data;
 
   return (
     <AsyncContentState
-      status={propertyQuery.isLoading ? 'loading' : !property ? 'empty' : 'ready'}
+      status={
+        propertyQuery.isLoading ? 'loading' : !property ? 'empty' : 'ready'
+      }
       emptyTitle="العقار غير موجود"
     >
       {property && (
@@ -24,21 +27,29 @@ export function PropertyOverview() {
 
           <PropertyDossierContent propertyId={propertyId} />
 
-          <Card className="border-primary/15 bg-primary/5" data-property-report-link>
+          <Card
+            className="border-primary/15 bg-primary/5"
+            data-property-report-link
+          >
             <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
                 <p className="flex items-center gap-2 font-black">
-                  <BarChart3 className="size-4 text-primary" aria-hidden="true" />
+                  <BarChart3
+                    className="size-4 text-primary"
+                    aria-hidden="true"
+                  />
                   تقرير أداء العقار
                 </p>
                 <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                  افتح التحليل الكامل للإشغال والمصروفات وأداء هذا العقار داخل مركز التقارير.
+                  افتح التحليل الكامل للإشغال والمصروفات وأداء هذا العقار داخل
+                  مركز التقارير.
                 </p>
               </div>
               <Button asChild variant="outline" className="min-h-11 shrink-0">
                 <Link
-                  to="/reports"
-                  search={{ section: 'analytics', view: 'property_analytics', propertyId } as never}
+                  to="/reports/$reportId"
+                  params={{ reportId: 'portfolio-property-performance' }}
+                  search={{ view: 'property', propertyId } as never}
                 >
                   عرض التقرير الكامل
                 </Link>

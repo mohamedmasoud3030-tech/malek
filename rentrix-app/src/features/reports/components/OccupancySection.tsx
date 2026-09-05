@@ -2,14 +2,27 @@ import { Building2, CalendarClock, DoorOpen } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { defaultCompanyLocalSettings } from '@/lib/companySettings';
 import { formatCompanyNumber } from '@/lib/companyFormatters';
-import { formatDate, formatShortId } from '@/features/financials/components/financials-formatters';
+import {
+  formatDate,
+  formatShortId,
+} from '@/features/financials/components/financials-formatters';
 import { useCompanyFormatters } from '@/hooks/useCompanyFormatters';
-import { VACANCY_RISK_WINDOW_DAYS, type VacancyAnalytics } from '@/features/units/vacancy-analytics';
+import {
+  VACANCY_RISK_WINDOW_DAYS,
+  type VacancyAnalytics,
+} from '@/features/units/vacancy-analytics';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
 import { documentService } from '@/services/documents/DocumentService';
 import { runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
-import { toReportDocumentPayload, type ReportDocumentData } from '@/services/documents/documentPayloadAdapters';
-import { buildExpiringContractsRows, buildOccupancyRows, getTodayLocalDateString } from '../reports-page.helpers';
+import {
+  toReportDocumentPayload,
+  type ReportDocumentData,
+} from '@/services/documents/documentPayloadAdapters';
+import {
+  buildExpiringContractsRows,
+  buildOccupancyRows,
+  getTodayLocalDateString,
+} from '../reports-page.helpers';
 import { EntityLink } from '@/components/ui/entity-cell';
 import {
   ReportColumns,
@@ -21,7 +34,7 @@ import {
   ReportSummaryStrip,
 } from '@/components/ui/report-section-primitives';
 import { formatLatinNumber } from '@/lib/formatters';
-import { ReportShareActions } from './ReportShareActions';
+import { ReportDocumentActions } from './report-document-actions';
 
 export function OccupancySection({
   occupancyRows,
@@ -48,7 +61,10 @@ export function OccupancySection({
   const occupancyChangeLabel = `${occupancyChange >= 0 ? '+' : ''}${occupancyChange.toFixed(1)} نقطة`;
   const nonRentableCount = vacancyAnalytics.nonRentableUnits;
 
-  const { companySettings: documentSettings, isReady: isDocumentSettingsReady } = useDocumentSettings();
+  const {
+    companySettings: documentSettings,
+    isReady: isDocumentSettingsReady,
+  } = useDocumentSettings();
 
   const buildOccupancyReportData = (): ReportDocumentData => {
     const todayStr = getTodayLocalDateString();
@@ -60,17 +76,45 @@ export function OccupancySection({
       sections: [
         {
           title: 'الإشغال حسب العقار',
-          columns: ['العقار', 'إجمالي الوحدات', 'المشغولة', 'الشاغرة فعلاً', 'غير قابلة للتأجير', 'نسبة الإشغال'],
+          columns: [
+            'العقار',
+            'إجمالي الوحدات',
+            'المشغولة',
+            'الشاغرة فعلاً',
+            'غير قابلة للتأجير',
+            'نسبة الإشغال',
+          ],
           rows: occupancyRows.map((row) => {
             const total = row.occupied + row.vacant + row.nonRentable;
-            const rate = total > 0 ? Math.round((row.occupied / total) * 100) : 0;
-            return [row.property, total, row.occupied, row.vacant, row.nonRentable, `${rate}%`];
+            const rate =
+              total > 0 ? Math.round((row.occupied / total) * 100) : 0;
+            return [
+              row.property,
+              total,
+              row.occupied,
+              row.vacant,
+              row.nonRentable,
+              `${rate}%`,
+            ];
           }),
-          totals: ['الإجمالي العام', `${totalUnits}`, `${vacancyAnalytics.occupiedUnits}`, `${vacancyAnalytics.availableUnits}`, `${nonRentableCount}`, `${roundedOccupancyRate}%`],
+          totals: [
+            'الإجمالي العام',
+            `${totalUnits}`,
+            `${vacancyAnalytics.occupiedUnits}`,
+            `${vacancyAnalytics.availableUnits}`,
+            `${nonRentableCount}`,
+            `${roundedOccupancyRate}%`,
+          ],
         },
         {
           title: 'الوحدات الشاغرة حسب مدة الشغور',
-          columns: ['الوحدة', 'العقار', 'الإيجار المرجعي', 'أيام الشغور', 'آخر عقد انتهى'],
+          columns: [
+            'الوحدة',
+            'العقار',
+            'الإيجار المرجعي',
+            'أيام الشغور',
+            'آخر عقد انتهى',
+          ],
           rows: vacancyAnalytics.vacantRows.map((row) => [
             row.unitNumber,
             row.propertyTitle,
@@ -81,13 +125,20 @@ export function OccupancySection({
         },
         {
           title: `عقود مرشحة للشغور خلال ${VACANCY_RISK_WINDOW_DAYS} يوم`,
-          columns: ['المستأجر', 'العقار والوحدة', 'تاريخ الانتهاء', 'الأيام المتبقية'],
-          rows: historyComplete ? vacancyAnalytics.vacancyRiskRows.map((row) => [
-            row.tenantName,
-            `${row.propertyTitle} · ${row.unitNumber}`,
-            row.endDate,
-            `${row.daysRemaining} يوم`,
-          ]) : [],
+          columns: [
+            'المستأجر',
+            'العقار والوحدة',
+            'تاريخ الانتهاء',
+            'الأيام المتبقية',
+          ],
+          rows: historyComplete
+            ? vacancyAnalytics.vacancyRiskRows.map((row) => [
+                row.tenantName,
+                `${row.propertyTitle} · ${row.unitNumber}`,
+                row.endDate,
+                `${row.daysRemaining} يوم`,
+              ])
+            : [],
         },
       ],
       totalSummary: [
@@ -103,7 +154,11 @@ export function OccupancySection({
   const handlePrintOccupancyReport = async () => {
     await runGuardedDocumentAction({
       isReady: isDocumentSettingsReady,
-      operation: () => documentService.printDocument('generic_report', { settings: documentSettings, payload: toReportDocumentPayload(buildOccupancyReportData()) }),
+      operation: () =>
+        documentService.printDocument('generic_report', {
+          settings: documentSettings,
+          payload: toReportDocumentPayload(buildOccupancyReportData()),
+        }),
       fallbackMessage: 'تعذرت طباعة التقرير.',
     });
   };
@@ -111,7 +166,11 @@ export function OccupancySection({
   const handleDownloadOccupancyReport = async () => {
     await runGuardedDocumentAction({
       isReady: isDocumentSettingsReady,
-      operation: () => documentService.downloadDocumentPdf('generic_report', { settings: documentSettings, payload: toReportDocumentPayload(buildOccupancyReportData()) }),
+      operation: () =>
+        documentService.downloadDocumentPdf('generic_report', {
+          settings: documentSettings,
+          payload: toReportDocumentPayload(buildOccupancyReportData()),
+        }),
       fallbackMessage: 'تعذر تنزيل ملف PDF.',
     });
   };
@@ -121,11 +180,42 @@ export function OccupancySection({
       <ReportSummaryStrip
         dataReportSummary="occupancy"
         items={[
-          { label: 'نسبة الإشغال', value: `${roundedOccupancyRate}%`, detail: `${number(vacancyAnalytics.occupiedUnits)} من ${number(totalUnits)} وحدة`, tone: occupancyRate >= 90 ? 'good' : occupancyRate < 75 ? 'warning' : undefined },
-          { label: 'نسبة الشغور', value: `${roundedVacancyRate}%`, detail: `${number(vacancyAnalytics.availableUnits)} متاحة للتأجير` },
-          { label: 'غير قابلة للتأجير', value: number(nonRentableCount), detail: 'صيانة أو حجز — ليست شواغر' },
-          { label: 'متوسط أيام الشغور', value: historyComplete ? `${number(vacancyAnalytics.averageVacancyDays)} يوم` : '—', detail: historyComplete && longestVacant ? `الأطول ${number(longestVacant.daysVacant)} يوم` : 'يتطلب تاريخ عقود كامل' },
-          { label: 'إيجار مرجعي للشواغر', value: money(vacancyAnalytics.referenceVacantRent), detail: 'سعر مرجعي وليس إيرادًا محققًا' },
+          {
+            label: 'نسبة الإشغال',
+            value: `${roundedOccupancyRate}%`,
+            detail: `${number(vacancyAnalytics.occupiedUnits)} من ${number(totalUnits)} وحدة`,
+            tone:
+              occupancyRate >= 90
+                ? 'good'
+                : occupancyRate < 75
+                  ? 'warning'
+                  : undefined,
+          },
+          {
+            label: 'نسبة الشغور',
+            value: `${roundedVacancyRate}%`,
+            detail: `${number(vacancyAnalytics.availableUnits)} متاحة للتأجير`,
+          },
+          {
+            label: 'غير قابلة للتأجير',
+            value: number(nonRentableCount),
+            detail: 'صيانة أو حجز — ليست شواغر',
+          },
+          {
+            label: 'متوسط أيام الشغور',
+            value: historyComplete
+              ? `${number(vacancyAnalytics.averageVacancyDays)} يوم`
+              : '—',
+            detail:
+              historyComplete && longestVacant
+                ? `الأطول ${number(longestVacant.daysVacant)} يوم`
+                : 'يتطلب تاريخ عقود كامل',
+          },
+          {
+            label: 'إيجار مرجعي للشواغر',
+            value: money(vacancyAnalytics.referenceVacantRent),
+            detail: 'سعر مرجعي وليس إيرادًا محققًا',
+          },
         ]}
       />
 
@@ -141,50 +231,63 @@ export function OccupancySection({
           description="مشغولة، شاغرة فعلاً، وغير قابلة للتأجير (صيانة/حجز). الشاغر الحقيقي هو المتاح للتأجير فقط."
           eyebrow="استغلال المحفظة"
           icon={Building2}
-          action={canExportReports ? (
-            <ReportShareActions
-              className="flex flex-wrap gap-2"
-              reportLabel="تقرير الإشغال والشغور التشغيلي"
-              target={{
-                section: 'analytics',
-                view: 'occupancy',
-                filters: {
-                  from: getTodayLocalDateString(),
-                  to: getTodayLocalDateString(),
-                  asOf: getTodayLocalDateString(),
-                  propertyId: '',
-                  unitId: '',
-                  tenantId: '',
-                  ownerId: '',
-                  contractId: '',
-                },
-              }}
-              summaryText={`الإشغال: ${roundedOccupancyRate}% | الشغور: ${roundedVacancyRate}% | غير قابلة للتأجير: ${nonRentableCount} | متوسط الشغور: ${historyComplete ? vacancyAnalytics.averageVacancyDays : '—'} يوم`}
-              onPrint={handlePrintOccupancyReport}
-              onDownloadPdf={handleDownloadOccupancyReport}
-            />
-          ) : undefined}
+          action={
+            canExportReports ? (
+              <ReportDocumentActions
+                className="flex flex-wrap gap-2"
+                reportLabel="تقرير الإشغال والشغور التشغيلي"
+                reportShareTarget={{
+                  reportId: 'portfolio-property-performance',
+                  view: 'occupancy',
+                  filters: {
+                    from: getTodayLocalDateString(),
+                    to: getTodayLocalDateString(),
+                    asOf: getTodayLocalDateString(),
+                    propertyId: '',
+                    unitId: '',
+                    tenantId: '',
+                    ownerId: '',
+                    contractId: '',
+                  },
+                }}
+                reportShareSummary={`الإشغال: ${roundedOccupancyRate}% | الشغور: ${roundedVacancyRate}% | غير قابلة للتأجير: ${nonRentableCount} | متوسط الشغور: ${historyComplete ? vacancyAnalytics.averageVacancyDays : '—'} يوم`}
+                onPrint={handlePrintOccupancyReport}
+                onDownloadPdf={handleDownloadOccupancyReport}
+              />
+            ) : undefined
+          }
           isLoading={isLoading}
         >
           {occupancyRows.length === 0 ? (
-            <div className="p-4"><ReportState message="لا توجد وحدات متاحة لحساب الإشغال." /></div>
+            <div className="p-4">
+              <ReportState message="لا توجد وحدات متاحة لحساب الإشغال." />
+            </div>
           ) : (
             <ReportList>
               {occupancyRows.map((row) => {
-                const propertyTotal = row.occupied + row.vacant + row.nonRentable;
-                const rate = propertyTotal > 0 ? Math.round((row.occupied / propertyTotal) * 100) : 0;
-                const nonRentableSuffix = row.nonRentable > 0
-                  ? ` · ${formatCompanyNumber(defaultCompanyLocalSettings, row.nonRentable)} غير قابلة للتأجير`
-                  : '';
+                const propertyTotal =
+                  row.occupied + row.vacant + row.nonRentable;
+                const rate =
+                  propertyTotal > 0
+                    ? Math.round((row.occupied / propertyTotal) * 100)
+                    : 0;
+                const nonRentableSuffix =
+                  row.nonRentable > 0
+                    ? ` · ${formatCompanyNumber(defaultCompanyLocalSettings, row.nonRentable)} غير قابلة للتأجير`
+                    : '';
                 return (
                   <ReportListRow
                     key={row.propertyId}
-                    title={(
+                    title={
                       <span>
                         {row.property}
-                        {!row.hasTitle ? <span className="ms-2 text-xs text-muted-foreground">اسم العقار غير موثق</span> : null}
+                        {!row.hasTitle ? (
+                          <span className="ms-2 text-xs text-muted-foreground">
+                            اسم العقار غير موثق
+                          </span>
+                        ) : null}
                       </span>
-                    )}
+                    }
                     subtitle={`${formatCompanyNumber(defaultCompanyLocalSettings, row.occupied)} مشغولة · ${formatCompanyNumber(defaultCompanyLocalSettings, row.vacant)} شاغرة${nonRentableSuffix}`}
                     meta={`${formatLatinNumber(propertyTotal, 'ar')} وحدة`}
                     value={<span dir="ltr">{rate}%</span>}
@@ -203,9 +306,13 @@ export function OccupancySection({
           isLoading={isLoading}
         >
           {!historyComplete ? (
-            <div className="p-4"><ReportState message="تاريخ العقود غير مكتمل؛ تم إيقاف تحليل مدة الشغور حتى لا نعرض أيامًا مضللة." /></div>
+            <div className="p-4">
+              <ReportState message="تاريخ العقود غير مكتمل؛ تم إيقاف تحليل مدة الشغور حتى لا نعرض أيامًا مضللة." />
+            </div>
           ) : vacancyAnalytics.vacantRows.length === 0 ? (
-            <div className="p-4"><ReportState message="لا توجد وحدات شاغرة حاليًا." /></div>
+            <div className="p-4">
+              <ReportState message="لا توجد وحدات شاغرة حاليًا." />
+            </div>
           ) : (
             <ReportList>
               {vacancyAnalytics.vacantRows.slice(0, 12).map((row) => (
@@ -213,8 +320,24 @@ export function OccupancySection({
                   key={row.unitId}
                   title={`وحدة ${row.unitNumber}`}
                   subtitle={`${row.propertyTitle} · ${row.lastContractEndDate ? `آخر عقد انتهى ${date(row.lastContractEndDate)}` : 'لم يسبق تأجيرها في السجل'}`}
-                  meta={row.referenceRent !== null ? `مرجعي ${money(row.referenceRent)}` : 'السعر المرجعي غير مسجل'}
-                  value={<StatusBadge tone={row.daysVacant >= 60 ? 'danger' : row.daysVacant >= 30 ? 'warning' : 'info'}>{number(row.daysVacant)} يوم</StatusBadge>}
+                  meta={
+                    row.referenceRent !== null
+                      ? `مرجعي ${money(row.referenceRent)}`
+                      : 'السعر المرجعي غير مسجل'
+                  }
+                  value={
+                    <StatusBadge
+                      tone={
+                        row.daysVacant >= 60
+                          ? 'danger'
+                          : row.daysVacant >= 30
+                            ? 'warning'
+                            : 'info'
+                      }
+                    >
+                      {number(row.daysVacant)} يوم
+                    </StatusBadge>
+                  }
                 />
               ))}
             </ReportList>
@@ -229,9 +352,13 @@ export function OccupancySection({
           isLoading={isLoading}
         >
           {!historyComplete ? (
-            <div className="p-4"><ReportState message="تاريخ العقود غير مكتمل؛ لن نصنف عقودًا كمرشحة للشغور من قراءة ناقصة." /></div>
+            <div className="p-4">
+              <ReportState message="تاريخ العقود غير مكتمل؛ لن نصنف عقودًا كمرشحة للشغور من قراءة ناقصة." />
+            </div>
           ) : vacancyAnalytics.vacancyRiskRows.length === 0 ? (
-            <div className="p-4"><ReportState message="لا توجد عقود قريبة من الانتهاء بلا تجديد أو عقد لاحق ظاهر في السجل." /></div>
+            <div className="p-4">
+              <ReportState message="لا توجد عقود قريبة من الانتهاء بلا تجديد أو عقد لاحق ظاهر في السجل." />
+            </div>
           ) : (
             <ReportList>
               {vacancyAnalytics.vacancyRiskRows.slice(0, 12).map((row) => (
@@ -239,8 +366,20 @@ export function OccupancySection({
                   key={row.contractId}
                   title={row.tenantName}
                   subtitle={`${row.propertyTitle} · ${row.unitNumber} · ${formatDate(row.endDate)}`}
-                  meta={<EntityLink href={`/contracts/${encodeURIComponent(row.contractId)}`}>{formatShortId(row.contractId)}</EntityLink>}
-                  value={<StatusBadge tone={row.daysRemaining <= 15 ? 'danger' : 'warning'}>{number(row.daysRemaining)} يوم</StatusBadge>}
+                  meta={
+                    <EntityLink
+                      href={`/contracts/${encodeURIComponent(row.contractId)}`}
+                    >
+                      {formatShortId(row.contractId)}
+                    </EntityLink>
+                  }
+                  value={
+                    <StatusBadge
+                      tone={row.daysRemaining <= 15 ? 'danger' : 'warning'}
+                    >
+                      {number(row.daysRemaining)} يوم
+                    </StatusBadge>
+                  }
                 />
               ))}
             </ReportList>
@@ -250,4 +389,3 @@ export function OccupancySection({
     </div>
   );
 }
-

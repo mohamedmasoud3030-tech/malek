@@ -8,7 +8,9 @@ import type { Maintenance } from '@/features/maintenance/maintenance-service';
 import type { MaintenanceSummary } from '@/features/maintenance/maintenance-helpers';
 
 vi.mock('@/features/settings/useCompanySettings', () => ({
-  useCompanySettings: () => ({ data: { company_name: 'مكتب الاختبار', currency: 'OMR' } }),
+  useCompanySettings: () => ({
+    data: { company_name: 'مكتب الاختبار', currency: 'OMR' },
+  }),
 }));
 
 vi.mock('@/app/router/background-location', () => ({
@@ -21,7 +23,9 @@ function isoDaysFromToday(days: number): string {
   return date.toISOString().slice(0, 10);
 }
 
-function makeRequest(overrides: Partial<Maintenance> & { id: string }): Maintenance {
+function makeRequest(
+  overrides: Partial<Maintenance> & { id: string },
+): Maintenance {
   return {
     no: null,
     property_id: 'p1',
@@ -59,21 +63,48 @@ function makeRequest(overrides: Partial<Maintenance> & { id: string }): Maintena
   } as Maintenance;
 }
 
-const emptySummary: MaintenanceSummary = { total: 0, open: 0, inProgress: 0, urgent: 0 };
+const emptySummary: MaintenanceSummary = {
+  total: 0,
+  open: 0,
+  inProgress: 0,
+  urgent: 0,
+};
 
-function renderSection(rows: Maintenance[], summary: MaintenanceSummary = emptySummary, canExportReports = true) {
+function renderSection(
+  rows: Maintenance[],
+  summary: MaintenanceSummary = emptySummary,
+  canExportReports = true,
+) {
   return renderToStaticMarkup(
-    <MaintenanceReportSection rows={rows} summary={summary} canExportReports={canExportReports} isLoading={false} />,
+    <MaintenanceReportSection
+      rows={rows}
+      summary={summary}
+      canExportReports={canExportReports}
+      isLoading={false}
+    />,
   );
 }
 
 describe('MaintenanceReportSection — operational attention contracts', () => {
   it('renders the canonical report pattern and the attention panel that answers "what needs attention now"', () => {
-    const markup = renderSection([
-      makeRequest({ id: 'm1', status: 'open', request_date: isoDaysFromToday(-20), title: 'تسريب مياه' }),
-      makeRequest({ id: 'm2', status: 'resolved', title: 'تبديل إنارة' }),
-      makeRequest({ id: 'm3', status: 'in_progress', scheduled_date: isoDaysFromToday(-1), title: 'صيانة مكيف' }),
-    ], { total: 3, open: 1, inProgress: 1, urgent: 0 });
+    const markup = renderSection(
+      [
+        makeRequest({
+          id: 'm1',
+          status: 'open',
+          request_date: isoDaysFromToday(-20),
+          title: 'تسريب مياه',
+        }),
+        makeRequest({ id: 'm2', status: 'resolved', title: 'تبديل إنارة' }),
+        makeRequest({
+          id: 'm3',
+          status: 'in_progress',
+          scheduled_date: isoDaysFromToday(-1),
+          title: 'صيانة مكيف',
+        }),
+      ],
+      { total: 3, open: 1, inProgress: 1, urgent: 0 },
+    );
 
     expect(markup).toContain('data-report-summary');
     expect(markup).toContain('data-report-visual');
@@ -87,25 +118,33 @@ describe('MaintenanceReportSection — operational attention contracts', () => {
   });
 
   it('never counts cancelled work as completed or in the completion denominator', () => {
-    const markup = renderSection([
-      makeRequest({ id: 'm1', status: 'resolved' }),
-      makeRequest({ id: 'm2', status: 'closed' }),
-      makeRequest({ id: 'm3', status: 'cancelled', title: 'طلب ملغى' }),
-      makeRequest({ id: 'm4', status: 'open' }),
-    ], { total: 4, open: 1, inProgress: 0, urgent: 0 });
+    const markup = renderSection(
+      [
+        makeRequest({ id: 'm1', status: 'resolved' }),
+        makeRequest({ id: 'm2', status: 'closed' }),
+        makeRequest({ id: 'm3', status: 'cancelled', title: 'طلب ملغى' }),
+        makeRequest({ id: 'm4', status: 'open' }),
+      ],
+      { total: 4, open: 1, inProgress: 0, urgent: 0 },
+    );
 
     // 2 completed of 3 non-cancelled = 67% — not 2/4 = 50%.
     expect(markup).toMatch(/67(?:<!-- -->)?%/);
     expect(markup).not.toMatch(/50(?:<!-- -->)?%/);
     expect(markup).toContain('2 منجز من 3 غير ملغى');
-    expect(markup).toContain('قرار إلغاء — لا تُحسب منجزة ولا تدخل معدل الإنجاز');
+    expect(markup).toContain(
+      'قرار إلغاء — لا تُحسب منجزة ولا تدخل معدل الإنجاز',
+    );
   });
 
   it('derives the urgent backlog from the active workload only', () => {
-    const markup = renderSection([
-      makeRequest({ id: 'm1', status: 'open', priority: 'urgent' }),
-      makeRequest({ id: 'm2', status: 'resolved', priority: 'urgent' }),
-    ], { total: 2, open: 1, inProgress: 0, urgent: 2 });
+    const markup = renderSection(
+      [
+        makeRequest({ id: 'm1', status: 'open', priority: 'urgent' }),
+        makeRequest({ id: 'm2', status: 'resolved', priority: 'urgent' }),
+      ],
+      { total: 2, open: 1, inProgress: 0, urgent: 2 },
+    );
 
     expect(markup).toContain('عاجلة نشطة');
     expect(markup).toContain('1 طلبات عاجلة فعالة');
@@ -124,35 +163,56 @@ describe('MaintenanceReportSection — operational attention contracts', () => {
   });
 
   it('hands every active request to the maintenance screen for execution', () => {
-    const markup = renderSection([makeRequest({ id: 'm1', title: 'تسريب مياه' })]);
+    const markup = renderSection([
+      makeRequest({ id: 'm1', title: 'تسريب مياه' }),
+    ]);
     expect(markup).toContain('فتح الطلب');
     expect(markup).toContain('في شاشة الصيانة');
   });
 
   it('does not invent a completion ratio when every request is cancelled', () => {
-    const markup = renderSection([makeRequest({ id: 'm1', status: 'cancelled' })], { total: 1, open: 0, inProgress: 0, urgent: 0 });
+    const markup = renderSection(
+      [makeRequest({ id: 'm1', status: 'cancelled' })],
+      { total: 1, open: 0, inProgress: 0, urgent: 0 },
+    );
     expect(markup).toContain('معدل الإنجاز غير متاح');
     expect(markup).not.toContain('معدل الإنجاز</p>');
   });
 
   it('keeps share, print and export behind the export permission', () => {
-    const markup = renderSection([makeRequest({ id: 'm1' })], { total: 1, open: 1, inProgress: 0, urgent: 0 }, false);
+    const markup = renderSection(
+      [makeRequest({ id: 'm1' })],
+      { total: 1, open: 1, inProgress: 0, urgent: 0 },
+      false,
+    );
     expect(markup).not.toContain('data-report-share-actions');
   });
 });
 
 describe('MaintenanceReportSection — source semantic contracts', () => {
-  const src = readFileSync(resolve(process.cwd(), 'src/features/reports/components/MaintenanceReportSection.tsx'), 'utf8');
+  const src = readFileSync(
+    resolve(
+      process.cwd(),
+      'src/features/reports/components/MaintenanceReportSection.tsx',
+    ),
+    'utf8',
+  ).replaceAll('"', "'");
 
   it('normalizes lifecycle values before any status comparison', () => {
-    expect(src).toContain('const status = normalizeMaintenanceStatus(row.status);');
+    expect(src).toContain(
+      'const status = normalizeMaintenanceStatus(row.status);',
+    );
     expect(src).toContain("status === 'open' || status === 'in_progress'");
-    expect(src).toContain("normalizeMaintenanceStatus(row.status) === 'cancelled'");
+    expect(src).toContain(
+      "normalizeMaintenanceStatus(row.status) === 'cancelled'",
+    );
     expect(src).toContain("status === 'resolved' || status === 'closed'");
   });
 
   it('keeps cancelled work outside the completion ratio', () => {
-    expect(src).toContain('const actionableCount = rows.length - cancelledCount');
+    expect(src).toContain(
+      'const actionableCount = rows.length - cancelledCount',
+    );
     expect(src).toContain('completedCount / actionableCount');
     expect(src).not.toContain('completedCount / summary.total');
   });
@@ -178,7 +238,9 @@ describe('MaintenanceReportSection — source semantic contracts', () => {
   });
 
   it('derives attention from the canonical maintenance-attention module, not a parallel rule', () => {
-    expect(src).toContain("from '@/features/maintenance/maintenance-attention'");
+    expect(src).toContain(
+      "from '@/features/maintenance/maintenance-attention'",
+    );
     expect(src).toContain('summarizeMaintenanceAttention(rows, todayStr)');
     expect(src).not.toContain('MAINTENANCE_STALLED_AFTER_DAYS =');
   });
