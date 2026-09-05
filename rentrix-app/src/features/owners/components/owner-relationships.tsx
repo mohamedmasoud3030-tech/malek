@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { EntityForm } from '@/components/ui/entity-form';
 import { Input } from '@/components/ui/input';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { OwnerCheckbox } from './owner-checkbox';
+import { Checkbox } from '@/components/ui/checkbox';
 import { OwnerPropertySelect } from './owner-property-select';
 import type { PropertyOwner, PropertyWithOwners } from '../services/owner-service';
 import type { PropertyOwnershipLinkFormValues } from '../utils/owner-ui-helpers';
@@ -75,7 +75,7 @@ export function OwnershipLinkForm({ values, availableProperties, editingLink, er
         <EntityForm.Field label="تاريخ البداية"><Input type="date" value={values.starts_on} onChange={(e) => onValueChange('starts_on', e.target.value)} /></EntityForm.Field>
         <EntityForm.Field label="تاريخ النهاية"><Input type="date" value={values.ends_on} onChange={(e) => onValueChange('ends_on', e.target.value)} /></EntityForm.Field>
       </div>
-      <OwnerCheckbox checked={values.is_primary} label="مالك أساسي" onCheckedChange={(checked) => onValueChange('is_primary', checked)} className="flex items-center gap-3 rounded-2xl border border-border bg-muted/30 p-3 text-sm font-bold" />
+      <Checkbox checked={values.is_primary} label="مالك أساسي" onCheckedChange={(checked) => onValueChange('is_primary', checked)} />
       <EntityForm.Actions
         onCancel={onCancelEdit}
         isSubmitting={isSaving}

@@ -34,7 +34,7 @@ describe('bank reconciliation error vs empty honesty', () => {
     expect(page).toContain('!hasBlockingAccountsError && !hasBlockingLinesError ? (');
     expect(page).toContain('hasStaleReadError');
     expect(page).toContain('<DataRefreshAlert');
-    expect(page).toContain('<FinanceKpiGrid desktopColumns={4}>');
+    expect(page).toContain('<ResponsiveCardGrid data-finance-kpi-grid=""');
   });
 });
 

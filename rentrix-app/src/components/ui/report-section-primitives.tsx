@@ -3,7 +3,20 @@ import { AlertCircle, ArrowLeft, Inbox, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import type { SemanticTone } from '@/components/ui/status-badge';
 import { cn } from '@/lib/utils';
+
+/** Semantic tint for the panel's icon tile. `primary` is the report default. */
+export type ReportPanelTone = Exclude<SemanticTone, 'secondary'>;
+
+const panelIconTone: Record<ReportPanelTone, string> = {
+  primary: 'border border-primary/15 bg-primary/10 text-primary shadow-sm',
+  neutral: 'bg-muted text-muted-foreground ring-1 ring-current/10',
+  info: 'bg-info-bg text-info-text ring-1 ring-current/10',
+  success: 'bg-success-bg text-success-text ring-1 ring-current/10',
+  warning: 'bg-warning-bg text-warning-text ring-1 ring-current/10',
+  danger: 'bg-danger-bg text-danger-text ring-1 ring-current/10',
+};
 
 export type ReportPanelProps = Readonly<{
   title: string;
@@ -15,29 +28,105 @@ export type ReportPanelProps = Readonly<{
   className?: string;
   contentClassName?: string;
   eyebrow?: string;
+  /** Semantic tint of the icon tile — lets a signal panel carry urgency. */
+  tone?: ReportPanelTone;
+  /**
+   * Command-center density: one compact header row (icon + title + trailing
+   * action on a single line) instead of the roomier report header. Used by the
+   * Today dashboard so it stays a brief, not a card gallery.
+   */
+  dense?: boolean;
+  /** Element id applied to the title so the panel can be `aria-labelledby`. */
+  titleId?: string;
+  /** Accessible name for the panel's own loading state. */
+  loadingLabel?: string;
+  'aria-labelledby'?: string;
+  'aria-label'?: string;
 }>;
 
-export function ReportPanel({ title, description, icon: Icon, action, children, isLoading = false, className, contentClassName, eyebrow }: ReportPanelProps) {
+export function ReportPanel({
+  title,
+  description,
+  icon: Icon,
+  action,
+  children,
+  isLoading = false,
+  className,
+  contentClassName,
+  eyebrow,
+  tone = 'primary',
+  dense = false,
+  titleId,
+  loadingLabel,
+  'aria-labelledby': ariaLabelledBy,
+  'aria-label': ariaLabel,
+}: ReportPanelProps) {
   return (
-    <Card data-report-panel className={cn('min-w-0 overflow-hidden rounded-2xl border-border/60 shadow-card', className)}>
-      <CardHeader className="flex flex-col gap-3 border-b border-border/60 px-4 py-3.5 sm:flex-row sm:items-start sm:justify-between sm:px-5 sm:py-4">
-        <div className="flex min-w-0 items-start gap-3">
-          {Icon ? <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-primary/15 bg-primary/10 text-primary shadow-sm"><Icon className="size-[1.125rem]" aria-hidden="true" /></span> : null}
+    <Card
+      data-report-panel
+      data-report-panel-density={dense ? 'dense' : undefined}
+      role={ariaLabelledBy || ariaLabel ? 'region' : undefined}
+      aria-labelledby={ariaLabelledBy}
+      aria-label={ariaLabel}
+      className={cn('relative min-w-0 overflow-hidden rounded-2xl border-border/60 shadow-card', className)}
+    >
+      <CardHeader
+        className={cn(
+          'border-b border-border/60',
+          dense
+            ? 'flex min-h-12 flex-row items-center justify-between gap-3 px-3.5 py-2.5 sm:min-h-14 sm:px-4 lg:min-h-12 lg:py-2'
+            : 'flex flex-col gap-3 px-4 py-3.5 sm:flex-row sm:items-start sm:justify-between sm:px-5 sm:py-4',
+        )}
+      >
+        <div className={cn('flex min-w-0 gap-3', dense ? 'items-center gap-2.5 sm:gap-3' : 'items-start')}>
+          {Icon ? (
+            <span
+              className={cn(
+                'grid shrink-0 place-items-center',
+                dense ? 'size-9 rounded-lg' : 'size-10 rounded-xl',
+                panelIconTone[tone],
+              )}
+            >
+              <Icon className={dense ? 'size-4' : 'size-[1.125rem]'} aria-hidden="true" />
+            </span>
+          ) : null}
           <div className="min-w-0">
             {eyebrow ? <p className="mb-1 text-xs font-extrabold text-primary">{eyebrow}</p> : null}
-            <CardTitle className="text-sm font-extrabold sm:text-[15px]">{title}</CardTitle>
-            {description ? <CardDescription className="mt-1 max-w-3xl leading-5">{description}</CardDescription> : null}
+            <CardTitle
+              id={titleId}
+              className={cn(
+                'font-extrabold',
+                dense ? 'truncate text-[13.5px] leading-5 sm:text-sm' : 'text-sm sm:text-[15px]',
+              )}
+            >
+              {title}
+            </CardTitle>
+            {description ? (
+              <CardDescription
+                className={cn(
+                  dense
+                    ? 'mt-0.5 line-clamp-1 text-[11px] font-medium leading-4'
+                    : 'mt-1 max-w-3xl leading-5',
+                )}
+              >
+                {description}
+              </CardDescription>
+            ) : null}
           </div>
         </div>
-        {action ? <div className="shrink-0" data-print-actions>{action}</div> : null}
+        {action ? (
+          <div className={cn('shrink-0', dense && 'flex items-center gap-1.5 text-xs')} data-print-actions>
+            {action}
+          </div>
+        ) : null}
       </CardHeader>
-      <CardContent className={cn('p-0', contentClassName)}>{isLoading ? <ReportPanelSkeleton /> : children}</CardContent>
+      <CardContent className={cn('p-0', contentClassName)}>{isLoading ? <ReportPanelSkeleton ariaLabel={loadingLabel} /> : children}</CardContent>
     </Card>
   );
 }
 
-export function ReportPanelSkeleton({ className }: Readonly<{ className?: string }>) {
-  return <div className={cn('space-y-3 p-4 sm:p-5', className)} role="status" aria-live="polite" aria-label="جارٍ تحميل التقرير"><Skeleton className="h-4 w-36" /><Skeleton className="h-16 w-full rounded-xl" /><Skeleton className="h-16 w-full rounded-xl" /><Skeleton className="h-16 w-4/5 rounded-xl" /></div>;
+export function ReportPanelSkeleton({ className, ariaLabel = 'جارٍ تحميل التقرير' }: Readonly<{ className?: string; ariaLabel?: string }>) {
+  return <div className={cn('space-y-3 p-4 sm:p-5', className)} role="status" aria-live="polite" aria-label={ariaLabel}><Skeleton className="h-4 w-36" /><Skeleton className="h-16 w-full rounded-xl" /><Skeleton className="h-16 w-full rounded-xl" /><Skeleton className="h-16 w-4/5 rounded-xl" /></div>;
 }
 
 export function ReportState({ kind = 'empty', title, message, className }: Readonly<{ kind?: 'empty' | 'error'; title?: string; message: string; className?: string }>) {
@@ -160,12 +249,108 @@ export function ReportSegmentedTabs<TId extends string>({
   );
 }
 
-export function ReportList({ children, className }: Readonly<{ children: React.ReactNode; className?: string }>) {
-  return <div className={cn('divide-y divide-border/60', className)}>{children}</div>;
+/**
+ * Canonical divided list inside a panel.
+ *
+ * `as="ul"` keeps real list semantics for ranked queues (the Today dashboard's
+ * «يحتاج انتباهك» and longest-vacancies lists); the default `div` stays for
+ * report bodies that group heterogeneous rows.
+ */
+export function ReportList({
+  children,
+  className,
+  as: Component = 'div',
+  label,
+}: Readonly<{ children: React.ReactNode; className?: string; as?: 'div' | 'ul'; label?: string }>) {
+  return (
+    <Component
+      className={cn('divide-y divide-border/60', className)}
+      role={Component === 'ul' ? 'list' : undefined}
+      aria-label={label}
+    >
+      {children}
+    </Component>
+  );
 }
 
-export function ReportListRow({ title, subtitle, value, meta, action, className }: Readonly<{ title: React.ReactNode; subtitle?: React.ReactNode; value?: React.ReactNode; meta?: React.ReactNode; action?: React.ReactNode; className?: string }>) {
-  return <div className={cn('grid min-w-0 gap-2 px-4 py-3.5 transition-colors hover:bg-muted/25 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:px-5', className)}><div className="min-w-0"><div className="break-words text-sm font-bold leading-5">{title}</div>{subtitle ? <div className="mt-1 break-words text-xs leading-5 text-muted-foreground">{subtitle}</div> : null}{meta ? <div className="mt-2 text-xs text-muted-foreground sm:hidden">{meta}</div> : null}</div><div className="flex items-center justify-between gap-3 sm:justify-end">{meta ? <div className="hidden text-xs text-muted-foreground sm:block">{meta}</div> : null}{value ? <div className="shrink-0 text-sm font-extrabold tabular-nums">{value}</div> : null}{action ? <div className="shrink-0">{action}</div> : null}</div></div>;
+/** Semantic tint rendered as a leading (RTL: start) stripe on a row. */
+export type ReportRowTone = Exclude<SemanticTone, 'primary' | 'secondary'>;
+
+const rowToneStripe: Record<ReportRowTone, string> = {
+  neutral: 'border-s-transparent',
+  info: 'border-s-info-text/55',
+  success: 'border-s-success-text/55',
+  warning: 'border-s-warning-text/55',
+  danger: 'border-s-danger-text/60',
+};
+
+/**
+ * Canonical panel row.
+ *
+ * `dense` is the command-center rhythm (50px minimum row, 13/11px type) used by
+ * the Today dashboard; the default stays the roomier report rhythm. `tone`
+ * expresses urgency with a start stripe plus the row's own text — never colour
+ * alone. `as="li"` lets a ranked queue keep real list semantics.
+ *
+ * The row is presentational: when it is clickable, the caller wraps it in the
+ * canonical `Link`/`Button` that owns navigation and the focus ring.
+ */
+export function ReportListRow({
+  title,
+  subtitle,
+  value,
+  meta,
+  action,
+  className,
+  dense = false,
+  tone,
+  as: Component = 'div',
+}: Readonly<{
+  title: React.ReactNode;
+  subtitle?: React.ReactNode;
+  value?: React.ReactNode;
+  meta?: React.ReactNode;
+  action?: React.ReactNode;
+  className?: string;
+  dense?: boolean;
+  tone?: ReportRowTone;
+  as?: 'div' | 'li';
+}>) {
+  return (
+    <Component
+      className={cn(
+        'grid min-w-0 transition-colors hover:bg-muted/25',
+        dense
+          ? 'min-h-[3.125rem] grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-3.5 py-2 sm:px-4'
+          : 'gap-2 px-4 py-3.5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:px-5',
+        tone ? cn('border-s-2', rowToneStripe[tone]) : undefined,
+        className,
+      )}
+    >
+      <div className="min-w-0">
+        <div className={cn('break-words font-bold', dense ? 'truncate text-[13px] leading-5' : 'text-sm leading-5')}>{title}</div>
+        {subtitle ? (
+          <div className={cn('break-words text-muted-foreground', dense ? 'mt-0.5 truncate text-[11px] font-medium leading-4' : 'mt-1 text-xs leading-5')}>
+            {subtitle}
+          </div>
+        ) : null}
+        {meta ? (
+          <div className={cn('text-muted-foreground sm:hidden', dense ? 'mt-0.5 truncate text-[11px] leading-4' : 'mt-2 text-xs')}>
+            {meta}
+          </div>
+        ) : null}
+      </div>
+      <div className="flex items-center justify-between gap-3 sm:justify-end">
+        {meta ? (
+          <div className={cn('hidden text-muted-foreground sm:block', dense ? 'text-[11px]' : 'text-xs')}>{meta}</div>
+        ) : null}
+        {value ? (
+          <div className={cn('shrink-0 font-extrabold tabular-nums', dense ? 'text-[13px]' : 'text-sm')}>{value}</div>
+        ) : null}
+        {action ? <div className="shrink-0">{action}</div> : null}
+      </div>
+    </Component>
+  );
 }
 
 export function ReportColumns({ children, className }: Readonly<{ children: React.ReactNode; className?: string }>) {

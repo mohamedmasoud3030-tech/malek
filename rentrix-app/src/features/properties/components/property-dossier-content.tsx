@@ -12,38 +12,12 @@ import { businessReferenceOrLabel } from '@/lib/business-reference';
 import { usePropertyOwners } from '@/features/owners/useOwners';
 import { useProperty } from '../use-properties';
 import { useUnits } from '@/features/units/use-units';
-import { unitStatusLabels, type UnitStatus } from '@/features/units/unit-schema';
+import { unitStatusLabelFor, unitStatusToneFor } from '@/features/units/unit-schema';
+import { formatInvoiceStatusLabel } from '@/features/financials/components/invoice-status-labels';
+import { getFinanceStatusTone, mapInvoiceStatusToFinanceKind } from '@/features/financials/finance-status-mapping';
 import { usePropertyContractsTab, usePropertyInvoicesTab } from '../use-property-workspace-tabs';
 import { contractStatusLabels, contractStatusTone, normalizeContractStatus } from '@/lib/contractStatus';
 import { PropertyIdentityCard, PropertyUnitsSummaryCard } from '../overview/property-overview-cards';
-
-function unitStatusTone(status: string): 'success' | 'info' | 'warning' | 'neutral' {
-  if (status === 'occupied') return 'success';
-  if (status === 'available') return 'info';
-  if (status === 'maintenance' || status === 'reserved') return 'warning';
-  return 'neutral';
-}
-
-const invoiceStatusLabels: Record<string, string> = {
-  PAID: 'مدفوعة',
-  paid: 'مدفوعة',
-  PARTIALLY_PAID: 'مدفوعة جزئياً',
-  partial: 'مدفوعة جزئياً',
-  UNPAID: 'غير مدفوعة',
-  unpaid: 'غير مدفوعة',
-  OVERDUE: 'متأخرة',
-  overdue: 'متأخرة',
-  VOID: 'ملغاة',
-  void: 'ملغاة',
-};
-
-function invoiceStatusTone(status: string): 'success' | 'warning' | 'danger' | 'neutral' {
-  const normalized = status.toUpperCase();
-  if (normalized === 'PAID') return 'success';
-  if (normalized === 'OVERDUE') return 'danger';
-  if (normalized === 'VOID') return 'neutral';
-  return 'warning';
-}
 
 function getInvoiceRemaining(invoice: { amount: number; paid_amount: number }): number {
   return Math.max(0, Number(invoice.amount) - Number(invoice.paid_amount));
@@ -133,18 +107,20 @@ export function PropertyDossierContent({ propertyId }: Readonly<{ propertyId: st
           <ul className="divide-y divide-border/60" aria-label="قائمة وحدات العقار">
             {units.slice(0, 10).map((unit) => (
               <li key={unit.id}>
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  fullWidth
                   onClick={() => void navigate({ to: '/properties/$propertyId/units/$unitId', params: { propertyId, unitId: unit.id } })}
-                  className="flex min-h-11 w-full flex-wrap items-center gap-2 py-3 text-start text-sm transition hover:text-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
+                  className="min-h-11 flex-wrap justify-start gap-2 rounded-none px-0 py-3 text-sm font-normal hover:bg-transparent hover:text-primary focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-primary/20"
                 >
                   <span className="font-bold">وحدة {unit.unit_number}</span>
                   <span className="text-xs text-muted-foreground">{unit.floor ? `الدور ${unit.floor}` : 'بدون دور'}</span>
                   <span className="ms-auto flex items-center gap-2">
-                    <StatusBadge tone={unitStatusTone(unit.status)}>{unitStatusLabels[unit.status as UnitStatus] ?? unit.status}</StatusBadge>
+                    <StatusBadge tone={unitStatusToneFor(unit.status)}>{unitStatusLabelFor(unit.status)}</StatusBadge>
                     <span className="text-xs font-semibold tabular-nums" dir="ltr">{formatCompanyMoney(companySettings, unit.rent_amount)}</span>
                   </span>
-                </button>
+                </Button>
               </li>
             ))}
           </ul>
@@ -212,7 +188,7 @@ export function PropertyDossierContent({ propertyId }: Readonly<{ propertyId: st
               <li key={invoice.id} className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm">
                 <span className="min-w-0 flex-1 truncate font-bold">{businessReferenceOrLabel(invoice, 'فاتورة مسجلة')}</span>
                 <span className="flex flex-wrap items-center gap-2">
-                  <StatusBadge tone={invoiceStatusTone(invoice.status)}>{invoiceStatusLabels[invoice.status] ?? invoice.status}</StatusBadge>
+                  <StatusBadge tone={getFinanceStatusTone(mapInvoiceStatusToFinanceKind(invoice.status))}>{formatInvoiceStatusLabel(invoice.status)}</StatusBadge>
                   <span className="font-semibold tabular-nums" dir="ltr">{formatCompanyMoney(companySettings, getInvoiceRemaining(invoice))}</span>
                 </span>
               </li>

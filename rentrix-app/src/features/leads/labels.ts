@@ -1,5 +1,6 @@
 /** Lead status and source labels. */
 
+import type { SemanticTone } from '@/components/ui/status-badge';
 export const leadStatusLabels: Record<string, string> = {
   new: 'جديد',
   contacted: 'تم التواصل',
@@ -17,7 +18,7 @@ export const leadSourceLabels: Record<string, string> = {
   website: 'الموقع',
 };
 
-export const leadStatusTone: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'neutral'> = {
+export const leadStatusTone: Record<string, SemanticTone> = {
   new: 'info',
   contacted: 'warning',
   qualified: 'success',

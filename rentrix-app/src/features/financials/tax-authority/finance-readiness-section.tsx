@@ -9,8 +9,9 @@ import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useActiveCompanyId } from '@/hooks/use-company';
 import { getFinanceReadiness, type FinanceReadiness, type ReadinessState } from './finance-readiness-service';
+import type { SemanticTone } from '@/components/ui/status-badge';
 
-function toneForState(state: ReadinessState): 'success' | 'warning' | 'danger' | 'info' {
+function toneForState(state: ReadinessState): SemanticTone {
   if (state === 'READY') return 'success';
   if (state === 'DRAFT_NEEDS_APPROVAL') return 'warning';
   if (state === 'MISSING') return 'danger';

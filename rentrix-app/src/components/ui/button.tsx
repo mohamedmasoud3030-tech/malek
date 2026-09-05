@@ -42,7 +42,9 @@ export const buttonVariants = cva(
         md: 'min-h-11 min-w-11 rounded-lg px-4 py-2 text-sm',
         lg: 'min-h-11 min-w-11 rounded-xl px-5 py-2.5 text-base',
         xl: 'min-h-12 min-w-12 rounded-xl px-6 py-3 text-base',
-        icon: 'size-11 rounded-lg p-0',
+        // 44×44 touch-target floor declared explicitly (size-11 alone reads as a
+    // box, the min-* pair is what the touch-target contracts assert on).
+    icon: 'size-11 min-h-11 min-w-11 rounded-lg p-0',
       },
       fullWidth: {
         true: 'w-full',

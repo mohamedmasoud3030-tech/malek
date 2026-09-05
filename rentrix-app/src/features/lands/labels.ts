@@ -1,5 +1,6 @@
 /** Land status and category labels. */
 
+import type { SemanticTone } from '@/components/ui/status-badge';
 export const landStatusLabels: Record<string, string> = {
   available: 'متاحة',
   reserved: 'محجوزة',
@@ -14,7 +15,7 @@ export const landCategoryLabels: Record<string, string> = {
   investment: 'استثماري',
 };
 
-export const landStatusTone: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'neutral'> = {
+export const landStatusTone: Record<string, SemanticTone> = {
   available: 'success',
   reserved: 'warning',
   sold: 'info',

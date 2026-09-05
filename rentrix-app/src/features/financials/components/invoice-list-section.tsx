@@ -14,13 +14,9 @@ import {
 import { calculateDaysOverdue } from '../reports/financialReportsService';
 import { formatDate, formatInvoiceStatusLabel, formatMoney } from './financials-formatters';
 import { InvoiceFilters, type InvoiceFilterOption } from './invoice-filters';
-import {
-  FinanceSection,
-  FinanceFilterBar,
-  FinanceStatusBadge,
-  mapInvoiceStatusToFinanceKind,
-  FinanceAmount,
-} from './finance-reporting-visual-foundations';
+import { AmountText } from '@/components/ui/amount';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { getFinanceStatusTone, mapInvoiceStatusToFinanceKind } from '../finance-status-mapping';
 import { ActionMenu } from '@/components/ui/action-menu';
 
 const invoiceColumnOptions = [
@@ -215,7 +211,7 @@ export function InvoiceListSection({
         const grossAmount = getInvoiceGrossAmount(invoice);
         return (
           <span className="inline-flex flex-col">
-            <FinanceAmount>{formatMoney(grossAmount)}</FinanceAmount>
+            <AmountText className="text-[13px] tracking-tight">{formatMoney(grossAmount)}</AmountText>
             {invoice.tax_amount ? <span className="text-[11px] text-muted-foreground">VAT {formatMoney(invoice.tax_amount)}</span> : null}
           </span>
         );
@@ -225,7 +221,7 @@ export function InvoiceListSection({
       key: 'paid_amount',
       header: 'المدفوع',
       priority: 'detail',
-      render: (invoice) => <FinanceAmount className="text-success">{formatMoney(invoice.paid_amount)}</FinanceAmount>,
+      render: (invoice) => <AmountText className="text-[13px] tracking-tight text-success">{formatMoney(invoice.paid_amount)}</AmountText>,
     },
     {
       key: 'remaining',
@@ -234,7 +230,7 @@ export function InvoiceListSection({
       render: (invoice) => {
         const grossAmount = getInvoiceGrossAmount(invoice);
         const remaining = getSafeRemainingAmount(grossAmount, invoice.paid_amount);
-        return <FinanceAmount className={remaining > 0 ? 'text-base font-black text-destructive' : 'text-base font-black text-success'}>{formatMoney(remaining)}</FinanceAmount>;
+        return <AmountText className={remaining > 0 ? 'text-base font-black text-destructive' : 'text-base font-black text-success'}>{formatMoney(remaining)}</AmountText>;
       },
     },
     {
@@ -242,10 +238,9 @@ export function InvoiceListSection({
       header: 'الحالة',
       priority: 'secondary',
       render: (invoice) => (
-        <FinanceStatusBadge
-          kind={mapInvoiceStatusToFinanceKind(invoice.status)}
-          label={formatInvoiceStatusLabel(invoice.status)}
-        />
+        <StatusBadge tone={getFinanceStatusTone(mapInvoiceStatusToFinanceKind(invoice.status))}>
+          {formatInvoiceStatusLabel(invoice.status)}
+        </StatusBadge>
       ),
     },
     {
@@ -287,38 +282,36 @@ export function InvoiceListSection({
 
   return (
     <div className="space-y-3" data-invoice-register>
-      <FinanceSection ariaLabel="البحث وحالة الفواتير">
-        <FinanceFilterBar ariaLabel="البحث وحالة الفواتير" className="rounded-xl border border-border/70 bg-card p-2 shadow-card">
-          <InvoiceFilters
-            status={status}
-            invoiceSearch={invoiceSearch}
-            isGenerating={isGenerating}
-            canGenerateInvoices={canGenerateInvoices}
-            dateFrom={dateFrom}
-            dateTo={dateTo}
-            tenantId={tenantId}
-            propertyId={propertyId}
-            tenantOptions={tenantOptions}
-            propertyOptions={propertyOptions}
-            columnVisibilityControl={(
-              <DataTableColumnsMenu
-                columns={invoiceColumnOptions}
-                visibleKeys={visibleColumnKeys}
-                onChange={setVisibleColumnKeys}
-              />
-            )}
-            onStatusChange={onStatusChange}
-            onInvoiceSearchChange={onInvoiceSearchChange}
-            onGenerateInvoices={onGenerateInvoices}
-            onDateFromChange={onDateFromChange}
-            onDateToChange={onDateToChange}
-            onTenantChange={onTenantChange}
-            onPropertyChange={onPropertyChange}
-          />
-        </FinanceFilterBar>
-      </FinanceSection>
+      <section aria-label="البحث وحالة الفواتير" data-finance-section className="space-y-3">
+        <InvoiceFilters
+          status={status}
+          invoiceSearch={invoiceSearch}
+          isGenerating={isGenerating}
+          canGenerateInvoices={canGenerateInvoices}
+          dateFrom={dateFrom}
+          dateTo={dateTo}
+          tenantId={tenantId}
+          propertyId={propertyId}
+          tenantOptions={tenantOptions}
+          propertyOptions={propertyOptions}
+          columnVisibilityControl={(
+            <DataTableColumnsMenu
+              columns={invoiceColumnOptions}
+              visibleKeys={visibleColumnKeys}
+              onChange={setVisibleColumnKeys}
+            />
+          )}
+          onStatusChange={onStatusChange}
+          onInvoiceSearchChange={onInvoiceSearchChange}
+          onGenerateInvoices={onGenerateInvoices}
+          onDateFromChange={onDateFromChange}
+          onDateToChange={onDateToChange}
+          onTenantChange={onTenantChange}
+          onPropertyChange={onPropertyChange}
+        />
+      </section>
 
-      <FinanceSection ariaLabel="قائمة الفواتير">
+      <section aria-label="قائمة الفواتير" data-finance-section className="space-y-3">
         <div data-finance-table-wrapper>
           <p className="text-xs font-bold text-muted-foreground" aria-live="polite">
             {total} فاتورة مطابقة · اضغط الصف للمعاينة أو «تحصيل» للدفع مباشرة
@@ -391,7 +384,7 @@ export function InvoiceListSection({
             columns={invoiceColumns}
           />
         </div>
-      </FinanceSection>
+      </section>
     </div>
   );
 }

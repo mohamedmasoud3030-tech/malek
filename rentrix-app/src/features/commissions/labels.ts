@@ -6,6 +6,7 @@
  * commissions domain (not shared across the application).
  */
 
+import type { SemanticTone } from '@/components/ui/status-badge';
 export const commissionStatusLabels: Record<string, string> = {
   pending: 'قيد المراجعة',
   approved: 'معتمدة للتتبع',
@@ -36,7 +37,7 @@ export const commissionTypeLabels: Record<string, string> = {
   land: 'أرض',
 };
 
-export const commissionStatusTone: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'neutral'> = {
+export const commissionStatusTone: Record<string, SemanticTone> = {
   pending: 'warning',
   approved: 'info',
   paid: 'success',

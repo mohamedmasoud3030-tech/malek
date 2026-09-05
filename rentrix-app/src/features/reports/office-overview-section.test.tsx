@@ -101,7 +101,8 @@ describe('Office Overview — decision surface, not a second dashboard', () => {
 
   it('stays compact: three panels, no duplicated report detail and no second toolbar', () => {
     const markup = render();
-    const panels = markup.match(/data-report-panel/g) ?? [];
+    // Panel marker only — `data-report-panel-*` sub-attributes must not inflate the count.
+    const panels = markup.match(/data-report-panel(?![\w-])/g) ?? [];
 
     expect(panels).toHaveLength(3);
     expect(markup).toContain('خلاصة المكتب');

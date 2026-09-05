@@ -183,7 +183,7 @@ export function AdminSupportOperationsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form
+          <EntityForm.Root
             className="flex flex-col gap-2 sm:flex-row"
             onSubmit={(event: FormEvent) => {
               event.preventDefault();
@@ -210,7 +210,7 @@ export function AdminSupportOperationsPage() {
                 مسح
               </Button>
             ) : null}
-          </form>
+          </EntityForm.Root>
         </CardContent>
       </Card>
 

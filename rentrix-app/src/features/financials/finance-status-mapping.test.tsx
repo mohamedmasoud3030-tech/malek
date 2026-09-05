@@ -1,15 +1,23 @@
 // @vitest-environment happy-dom
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { AmountText } from '@/components/ui/amount';
 import {
   getFinanceStatusTone,
   mapInvoiceStatusToFinanceKind,
   buildDrillDownSearch,
-  FinanceStatusBadge,
-  FinanceAmount,
-} from './finance-reporting-visual-foundations';
+} from './finance-status-mapping';
 
-describe('Wave 2 finance reporting visual foundations', () => {
+/**
+ * Wave 2 finance reporting contract.
+ *
+ * Finance no longer ships its own visual foundations: statuses resolve through
+ * `finance-status-mapping` and render with the canonical `StatusBadge`, and
+ * amounts render with the canonical `AmountText` island. These tests pin the
+ * mapping and the "never colour-only" rendering rule on the shared primitives.
+ */
+describe('Wave 2 finance reporting semantics', () => {
   it('maps invoice statuses to semantic finance kinds without business logic change', () => {
     expect(mapInvoiceStatusToFinanceKind('paid')).toBe('paid');
     expect(mapInvoiceStatusToFinanceKind('partial')).toBe('partial');
@@ -50,49 +58,49 @@ describe('Wave 2 finance reporting visual foundations', () => {
     expect((result as Record<string, unknown>).extra).toBeUndefined();
   });
 
-  it('renders one semantic status indicator with a visible text label', () => {
-    const { container } = render(<FinanceStatusBadge kind="paid" label="مدفوعة" />);
-    const wrapper = container.querySelector('[data-finance-status]');
+  it('renders one canonical status indicator with a visible text label', () => {
+    const kind = mapInvoiceStatusToFinanceKind('paid');
+    const { container } = render(
+      <StatusBadge tone={getFinanceStatusTone(kind)}>مدفوعة</StatusBadge>,
+    );
     const badge = container.querySelector('[data-status-badge]');
-    const indicators = container.querySelectorAll('[data-status-dot], [data-finance-status-icon]');
 
-    expect(wrapper).not.toBeNull();
-    expect(wrapper?.getAttribute('data-kind')).toBe('paid');
+    expect(badge).not.toBeNull();
     expect(badge?.getAttribute('data-tone')).toBe('success');
-    expect(indicators).toHaveLength(1);
+    expect(container.querySelectorAll('[data-status-dot]')).toHaveLength(0);
     expect(container.textContent).toContain('مدفوعة');
   });
 
-  it('can disable the status indicator without removing the text label', () => {
-    const { container } = render(<FinanceStatusBadge kind="draft" label="مسودة" withDot={false} />);
-    expect(container.querySelectorAll('[data-status-dot], [data-finance-status-icon]')).toHaveLength(0);
+  it('can add the status dot without removing the text label', () => {
+    const kind = mapInvoiceStatusToFinanceKind('draft');
+    const { container } = render(
+      <StatusBadge tone={getFinanceStatusTone(kind)} dot>
+        مسودة
+      </StatusBadge>,
+    );
+    expect(container.querySelectorAll('[data-status-dot]')).toHaveLength(1);
     expect(container.textContent).toContain('مسودة');
   });
 
-  it('FinanceAmount renders as LTR island with tabular-nums inside RTL', () => {
-    const { container } = render(<FinanceAmount>1,234.560 OMR</FinanceAmount>);
-    const amount = container.querySelector('[data-finance-amount]');
+  it('status mapping is not color-only because the label is always present', () => {
+    const kind = mapInvoiceStatusToFinanceKind('overdue');
+    const { container } = render(
+      <StatusBadge tone={getFinanceStatusTone(kind)}>متأخرة</StatusBadge>,
+    );
+    expect(container.textContent).toContain('متأخرة');
+    expect(container.querySelector('[data-status-badge]')?.getAttribute('data-tone')).toBe('danger');
+  });
+
+  it('amounts render as an LTR tabular island inside RTL', () => {
+    const { container } = render(
+      <div dir="rtl">
+        <AmountText>1,234.560 OMR</AmountText>
+      </div>,
+    );
+    const amount = container.querySelector('[data-amount-text]');
     expect(amount).not.toBeNull();
     expect(amount?.textContent).toContain('1,234.560');
     expect(amount?.getAttribute('dir')).toBe('ltr');
     expect(amount?.className).toContain('tabular-nums');
-  });
-
-  it('FinanceAmount preserves RTL stability with LTR islands', () => {
-    const { container } = render(
-      <div dir="rtl">
-        <FinanceAmount>100.000</FinanceAmount>
-      </div>,
-    );
-    const el = container.querySelector('[data-finance-amount]');
-    expect(el).not.toBeNull();
-    expect(el?.getAttribute('dir')).toBe('ltr');
-  });
-
-  it('status mapping is not color-only because label and indicator are both present', () => {
-    const { container } = render(<FinanceStatusBadge kind="overdue" label="متأخرة" />);
-    expect(container.textContent).toContain('متأخرة');
-    expect(container.querySelector('[data-status-badge]')?.getAttribute('data-tone')).toBe('danger');
-    expect(container.querySelectorAll('[data-status-dot], [data-finance-status-icon]')).toHaveLength(1);
   });
 });

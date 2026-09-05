@@ -24,6 +24,7 @@ import { ReceiptPreviewDialog } from './ReceiptPreviewDialog';
 import { createReceiptPrintHref, openReceiptPrintTab } from './receipt-print';
 import { useApproveReceiptVoid, usePendingReceiptVoidRequests, useReceipt, useReceipts, useRequestReceiptVoid } from './useReceipts';
 import { formatLatinNumber } from '@/lib/formatters';
+import type { SemanticTone } from '@/components/ui/status-badge';
 
 type MethodFilter = 'all' | ReceiptRecord['payment_method'];
 
@@ -89,7 +90,7 @@ export function countPostedReceiptsForDate(receipts: readonly ReceiptRecord[], d
   return receipts.filter((receipt) => receipt.status === 'posted' && receipt.payment_date === day).length;
 }
 
-function receiptStatusTone(status: string): 'success' | 'neutral' | 'danger' | 'warning' {
+function receiptStatusTone(status: string): SemanticTone {
   if (status === 'posted') return 'success';
   if (status === 'void' || status === 'voided' || status === 'cancelled') return 'danger';
   if (status === 'draft') return 'neutral';

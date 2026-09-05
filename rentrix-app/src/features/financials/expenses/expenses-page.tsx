@@ -19,13 +19,7 @@ import {
   type OperationalExpenseFilterValues,
 } from './operational-expenses';
 import { useCreateExpenseAtomic, useExpenses, useUpdateExpense } from './useExpenses';
-import {
-  FinanceKpiGrid,
-  FinanceKpiCard,
-  FinanceAlert,
-  FinanceSection,
-  FinanceCluster,
-} from '../components/finance-reporting-visual-foundations';
+import { Alert } from '@/components/ui/alert';
 
 const expenseSchema = z.object({
   property_id: z.string().trim().min(1, 'اختر العقار'),
@@ -174,10 +168,10 @@ export function ExpensesWorkspace({ embedded = false }: ExpensesWorkspaceProps) 
       }
     >
       <div data-finance-root className="space-y-5">
-        <FinanceSection ariaLabel="تنبيهات حرجة">
+        <section aria-label="تنبيهات حرجة" data-finance-section className="space-y-3">
           {expensesTruncated ? (
-            <FinanceAlert
-              tone="warning"
+            <Alert
+              variant="warning"
               title="يُعرض حتى 20,000 سجل حاليًا"
               description="ضيّق الفلاتر (العقار أو الفترة) لعرض باقي السجلات. الفلاتر محفوظة أثناء التنقل."
             />
@@ -191,18 +185,18 @@ export function ExpensesWorkspace({ embedded = false }: ExpensesWorkspaceProps) 
             />
           ) : null}
           {expensesQuery.isError ? (
-            <FinanceCluster>
+            <div className="space-y-3">
               <EmptyState
                 title="تعذر تحميل المصروفات"
                 description="أعد المحاولة أو غيّر عوامل التصفية الحالية. الخطأ لا يظهر كحالة فارغة."
                 role="alert"
                 ariaLive="assertive"
               />
-            </FinanceCluster>
+            </div>
           ) : null}
-        </FinanceSection>
+        </section>
 
-        <FinanceSection ariaLabel="جدول المصروفات والفلاتر">
+        <section aria-label="جدول المصروفات والفلاتر" data-finance-section className="space-y-3">
           <ExpensesSection
             ref={expensesSectionRef}
             expenses={expenses}
@@ -223,7 +217,7 @@ export function ExpensesWorkspace({ embedded = false }: ExpensesWorkspaceProps) 
             isUpdateExpensePending={updateExpense.isPending}
             isUpdateExpenseSuccess={updateExpense.isSuccess}
           />
-        </FinanceSection>
+        </section>
       </div>
     </EmbeddableWorkspace>
   );

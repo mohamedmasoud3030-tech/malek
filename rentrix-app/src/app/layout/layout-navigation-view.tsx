@@ -2,6 +2,7 @@ import { Link, useLocation } from '@tanstack/react-router';
 import { createPortal } from 'react-dom';
 import { useEffect, useId, useRef, useState, type Ref } from 'react';
 import { ChevronDown, Lock, LogOut, Menu, Plus, Search, Sparkles, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { OPEN_AI_ASSISTANT_EVENT } from '@/features/ai-assistant/ai-assistant-global-action';
 import { useCommandPaletteStore } from '@/features/command-palette/command-palette-store';
 import { canShowNavigationItem, canAccessRoute, type AuthorizationContext, type AppPermission } from '@/features/auth/permissions';
@@ -138,9 +139,11 @@ export function NavigationLinks({
                   <div className="flex items-center gap-1">
                     <div className="min-w-0 flex-1">{renderItem(item)}</div>
                     {expanded && children.length > 0 ? (
-                      <button
+                      <Button
                         type="button"
-                        className="me-1 grid size-11 shrink-0 place-items-center rounded-lg text-sidebar-foreground/60 outline-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-primary/20 [[data-mobile-nav-sheet]_&]:text-muted-foreground [[data-mobile-nav-sheet]_&]:hover:bg-muted [[data-mobile-nav-sheet]_&]:hover:text-foreground"
+                        variant="ghost"
+                        size="icon"
+                        className="me-1 shrink-0 rounded-lg text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground [[data-mobile-nav-sheet]_&]:text-muted-foreground [[data-mobile-nav-sheet]_&]:hover:bg-muted [[data-mobile-nav-sheet]_&]:hover:text-foreground"
                         aria-label={`${isOpen ? 'طي' : 'توسيع'} ${navLabel(item[1], sharedLabel)}`}
                         aria-expanded={isOpen}
                         aria-controls={childrenId}
@@ -151,7 +154,7 @@ export function NavigationLinks({
                         })}
                       >
                         <ChevronDown className={cn('size-4 transition-transform', !isOpen && '-rotate-90')} aria-hidden="true" />
-                      </button>
+                      </Button>
                     ) : null}
                   </div>
                   {expanded && children.length > 0 ? (
@@ -166,18 +169,20 @@ export function NavigationLinks({
         );
       })}
 
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        fullWidth
         onClick={() => { void handleMobileLogout(); }}
         disabled={loggingOut}
         data-mobile-nav-logout
-        className="hidden min-h-12 w-full items-center gap-3 rounded-xl border border-destructive/20 px-3 text-start text-[15px] font-bold text-destructive outline-none transition-colors hover:bg-destructive/5 focus-visible:ring-2 focus-visible:ring-destructive/20 disabled:opacity-50 [[data-mobile-nav-sheet]_&]:flex"
+        className="hidden min-h-12 justify-start gap-3 rounded-xl border border-destructive/20 px-3 text-[15px] font-bold text-destructive hover:bg-destructive/5 focus-visible:ring-destructive/20 [[data-mobile-nav-sheet]_&]:flex"
       >
         <span className="grid size-8 shrink-0 place-items-center">
           <LogOut className="size-5" aria-hidden="true" />
         </span>
         <span>{loggingOut ? 'جارٍ تسجيل الخروج...' : 'تسجيل الخروج'}</span>
-      </button>
+      </Button>
 
       <PermissionRequestDialog
         open={lockedRequest !== null}
@@ -217,10 +222,11 @@ export function MobileFloatingControl({
     ([, , , permission]) => !permission || canAccessRoute(authorization, permission),
   );
 
-  const utilityActionClass =
-    'grid size-11 min-h-11 min-w-11 shrink-0 place-items-center rounded-xl border-0 bg-transparent text-foreground outline-none transition-colors duration-150 hover:bg-muted hover:text-foreground active:bg-muted/80 focus-visible:ring-2 focus-visible:ring-primary/20';
-  const headerActionClass =
-    'grid size-11 min-h-11 min-w-11 shrink-0 place-items-center rounded-xl border-0 bg-transparent text-foreground outline-none transition-colors duration-150 hover:bg-muted hover:text-foreground active:bg-muted/80 focus-visible:ring-2 focus-visible:ring-primary/20 md:hidden';
+  // Layout deltas on top of the canonical `Button variant="ghost" size="icon"`
+  // (44×44, shared hover/press/focus language). These never re-style the
+  // control itself — only its corner radius and responsive visibility.
+  const utilityActionClass = 'shrink-0 rounded-xl';
+  const headerActionClass = 'shrink-0 rounded-xl md:hidden';
 
   useEffect(() => {
     const target = document.querySelector<HTMLElement>('[data-header-utility-side]');
@@ -337,9 +343,11 @@ export function MobileFloatingControl({
   const headerActions = headerTarget
     ? createPortal(
       <>
-        <button
+        <Button
           ref={quickTriggerRef}
           type="button"
+          variant="ghost"
+          size="icon"
           onClick={() => setQuickOpen((value) => !value)}
           aria-label="فتح الإضافة السريعة"
           aria-haspopup="menu"
@@ -351,9 +359,11 @@ export function MobileFloatingControl({
           disabled={visibleQuickActions.length === 0}
         >
           <Plus className="size-6" aria-hidden="true" />
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="ghost"
+          size="icon"
           onClick={openSearch}
           aria-label="البحث السريع للنظام والكيانات"
           title="البحث"
@@ -362,7 +372,7 @@ export function MobileFloatingControl({
           className={cn(headerActionClass, 'order-[-1]')}
         >
           <Search className="size-6" aria-hidden="true" />
-        </button>
+        </Button>
       </>,
       headerTarget,
     )
@@ -384,14 +394,16 @@ export function MobileFloatingControl({
             <p className="text-xs font-bold tracking-wide text-muted-foreground" data-mobile-quick-add-title id={quickAddTitleId}>
               إضافة سريعة
             </p>
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon"
               onClick={() => setQuickOpen(false)}
-              className="grid size-11 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="shrink-0 rounded-lg text-muted-foreground"
               aria-label="إغلاق الإضافة السريعة"
             >
               <X className="size-4" />
-            </button>
+            </Button>
           </div>
           <div
             role="menu"
@@ -431,9 +443,11 @@ export function MobileFloatingControl({
           data-mobile-dock-surface
           className="pointer-events-auto relative flex w-auto items-center gap-1 rounded-full border border-border bg-card px-1.5 py-1 shadow-sm"
         >
-          <button
+          <Button
             ref={menuRef}
             type="button"
+            variant="ghost"
+            size="icon"
             onClick={onMenu}
             aria-label="فتح القائمة"
             aria-haspopup="dialog"
@@ -443,14 +457,16 @@ export function MobileFloatingControl({
             className={utilityActionClass}
           >
             <Menu className="size-[21px]" aria-hidden="true" />
-          </button>
+          </Button>
 
           <div className="relative" data-mobile-dock-notifications>
             <NotificationsMenu authorization={authorization} />
           </div>
 
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             onClick={openAiAssistant}
             aria-label="فتح المساعد الذكي"
             title="المساعد الذكي"
@@ -458,7 +474,7 @@ export function MobileFloatingControl({
             className={utilityActionClass}
           >
             <Sparkles className="size-[21px]" aria-hidden="true" />
-          </button>
+          </Button>
         </div>
       </div>
     </>

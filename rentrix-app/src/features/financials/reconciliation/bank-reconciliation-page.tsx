@@ -23,7 +23,8 @@ import { ErrorState, WriteErrorCard } from '@/components/ui/error-state';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { Input } from '@/components/ui/input';
 import { LoadingState } from '@/components/ui/loading-state';
-import { FinanceKpiGrid, FinanceKpiCard } from '../components/finance-reporting-visual-foundations';
+import { KpiCard } from '@/components/ui/kpi-card';
+import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { formatCompanyDate, formatCompanyMoney } from '@/lib/companyFormatters';
@@ -130,19 +131,18 @@ export function BankReconciliationWorkspace({ embedded = false }: BankReconcilia
       )}
     >
       {!hasBlockingAccountsError && !hasBlockingLinesError ? (
-        <FinanceKpiGrid desktopColumns={4}>
-          <FinanceKpiCard label="إجمالي الحركات" value={ctrl.summary.totalLines} sub="ضمن الفلاتر الحالية" icon={Landmark} accent="primary" />
-          <FinanceKpiCard label="غير مطابقة" value={ctrl.summary.unmatchedCount} sub="تحتاج إلى مراجعة" icon={Unlink} accent="primary" trend="down" trendValue="مراجعة" onDrill={() => ctrl.setFilters({ ...ctrl.filters, status: 'unmatched' })} />
-          <FinanceKpiCard label="مطابقة" value={ctrl.summary.matchedCount} sub="تم ربطها بسجلات النظام" icon={CheckCircle2} accent="primary" trend="up" trendValue="مطابق" onDrill={() => ctrl.setFilters({ ...ctrl.filters, status: 'matched' })} />
-          <FinanceKpiCard
+        <ResponsiveCardGrid data-finance-kpi-grid="" desktopColumns={2} gap="sm">
+          <KpiCard label="إجمالي الحركات" value={ctrl.summary.totalLines} sub="ضمن الفلاتر الحالية" icon={Landmark} accent="primary" />
+          <KpiCard label="غير مطابقة" value={ctrl.summary.unmatchedCount} sub="تحتاج إلى مراجعة" icon={Unlink} accent="primary" trend="down" trendValue="مراجعة" onDrill={() => ctrl.setFilters({ ...ctrl.filters, status: 'unmatched' })} />
+          <KpiCard label="مطابقة" value={ctrl.summary.matchedCount} sub="تم ربطها بسجلات النظام" icon={CheckCircle2} accent="primary" trend="up" trendValue="مطابق" onDrill={() => ctrl.setFilters({ ...ctrl.filters, status: 'matched' })} />
+          <KpiCard
             label="صافي غير مطابق"
             value={formatCompanyMoney(companySettings, ctrl.summary.unmatchedAmount)}
             sub="إجمالي المبالغ غير المحسومة"
             icon={Banknote}
             accent="primary"
-            unit={companySettings.defaultCurrency}
           />
-        </FinanceKpiGrid>
+        </ResponsiveCardGrid>
       ) : null}
 
       <FilterBar
@@ -452,10 +452,12 @@ function SuggestedMatches({
     <div className="grid gap-2 rounded-2xl border border-border/60 bg-background/65 p-3">
       <p className="text-sm font-black">اقتراحات مطابقة محتملة</p>
       {candidates.map((candidate) => (
-        <button
+        <Button
           key={`${candidate.entity_type}:${candidate.entity_id}`}
           type="button"
-          className="min-h-11 rounded-xl border border-border bg-card p-3 text-start text-sm transition hover:border-primary/35 hover:bg-primary/5 disabled:opacity-50"
+          variant="outline"
+          fullWidth
+          className="min-h-11 justify-start rounded-xl border-border bg-card p-3 text-sm font-normal hover:border-primary/35 hover:bg-primary/5"
           disabled={!isInteractive}
           onClick={() => onUse(candidate)}
         >
@@ -464,7 +466,7 @@ function SuggestedMatches({
           <span>{candidate.label}</span>
           <span className="mx-2">—</span>
           <span dir="ltr" className="font-black tabular-nums">{formatCompanyMoney(companySettings, candidate.amount)}</span>
-        </button>
+        </Button>
       ))}
     </div>
   );

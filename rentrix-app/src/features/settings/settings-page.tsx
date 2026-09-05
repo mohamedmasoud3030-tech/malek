@@ -1,5 +1,6 @@
 import { Suspense, useEffect, useState, type ReactNode } from 'react';
 import { RefreshCcw } from 'lucide-react';
+import { EntityForm } from "@/components/ui/entity-form";
 import { DataRefreshAlert } from '@/components/data-refresh-alert';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
@@ -264,13 +265,13 @@ export function SettingsWorkspace({
                 </Button>
               </div>
             ) : null}
-            <form id="settings-company-form" className="min-w-0 space-y-2.5 md:space-y-4" onSubmit={handleSubmit}>
+            <EntityForm.Root id="settings-company-form" className="min-w-0 gap-2.5 md:gap-4" onSubmit={handleSubmit}>
               {accessibleDefinitions
                 .filter((section) => mountedSections.has(section.id))
                 .map((section) => (
                   <SettingsSectionView key={section.id} definition={section} renderProps={sectionRenderProps} />
                 ))}
-            </form>
+            </EntityForm.Root>
             <SettingsSaveBar isDirty={isDirty} isSaving={isSaving} onDiscard={discardDraft} />
           </div>
         </div>

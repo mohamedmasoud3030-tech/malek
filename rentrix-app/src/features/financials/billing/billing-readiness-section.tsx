@@ -19,8 +19,9 @@ import {
   billingStatusLabel,
   paymentCycleLabel,
 } from './billing-readiness-presentation';
+import type { SemanticTone } from '@/components/ui/status-badge';
 
-function toneForStatus(status: BillingStatus): 'success' | 'warning' | 'danger' | 'info' | 'neutral' {
+function toneForStatus(status: BillingStatus): SemanticTone {
   switch (status) {
     case 'GENERATED':
       return 'success';

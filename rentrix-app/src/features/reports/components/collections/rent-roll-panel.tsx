@@ -3,12 +3,12 @@ import { Building2 } from 'lucide-react';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { formatDate, formatMoney } from '@/features/financials/components/financials-formatters';
 import type { RentRollReportRow } from '../../reports-page.helpers';
-import { SafeAnchor } from '../common';
+import { EntityLink } from '@/components/ui/entity-cell';
 import { ReportPanel, ReportState } from '@/components/ui/report-section-primitives';
 
 export function RentRollPanel({ rows, action, isLoading }: Readonly<{ rows: RentRollReportRow[]; action?: React.ReactNode; isLoading: boolean }>) {
   const rentRollColumns: ColumnDef<RentRollReportRow>[] = useMemo(() => [
-    { key: 'contract', header: 'العقد', priority: 'identity', render: (row) => <SafeAnchor href={`/contracts/${encodeURIComponent(row.contractId)}`} label={row.contractReference ?? 'عقد بلا مرجع'} /> },
+    { key: 'contract', header: 'العقد', priority: 'identity', render: (row) => <EntityLink href={`/contracts/${encodeURIComponent(row.contractId)}`}>{row.contractReference ?? 'عقد بلا مرجع'}</EntityLink> },
     { key: 'tenant', header: 'المستأجر', priority: 'secondary', render: (row) => row.tenantName },
     { key: 'property', header: 'العقار/الوحدة', priority: 'secondary', render: (row) => `${row.propertyTitle} · ${row.unitNumber}` },
     { key: 'rent', header: 'الإيجار', priority: 'secondary', render: (row) => <span className="font-bold" dir="ltr">{formatMoney(row.rentAmount)}</span> },

@@ -59,7 +59,16 @@ const featureDependencyAllowList = new Map([
   ['onboarding', new Set(['owners'])],
   // operations-hub composes maintenance/utilities/automation/documents-vault.
   ['operations-hub', new Set(['auth', 'automation', 'documents-vault', 'maintenance', 'service-providers', 'utilities'])],
-  ['owners', new Set(['auth', 'financials', 'properties', 'reports', 'settings'])],
+  // the owner dossier lists that owner's units and renders their status with the
+  // canonical units vocabulary (unitStatusLabelFor / unitStatusToneFor from
+  // units/unit-schema). It previously kept a private copy of both maps, and that
+  // copy CONTRADICTED the register (available/occupied tones were swapped,
+  // reserved differed), so the same unit status read green on one screen and blue
+  // on another. Reviewed integration seam: label/tone vocabulary only — no unit
+  // queries, no writes — and the units register stays the single authority for
+  // what a status means and how it is coloured. Same seam already granted to
+  // properties (unit cards), dashboard (vacancy KPI), reports and maintenance.
+  ['owners', new Set(['auth', 'financials', 'properties', 'reports', 'settings', 'units'])],
   // people dossier (getPersonDossier) reads the canonical dossier invoice
   // read (listDossierInvoicesForContracts) from financials/invoices — the
   // same query-only invoice-read seam already granted to owners, tenants and

@@ -97,13 +97,20 @@ describe('dashboard queue error honesty', () => {
     const needsAttention = read('features/dashboard/components/needs-attention-section.tsx');
     const page = read('features/dashboard/dashboard-page.tsx');
 
-    expect(collections).toContain('isError');
-    expect(needsAttention).toContain('isError');
-    expect(collections).toContain('تعذر تحميل المتأخرات');
-    expect(needsAttention).toContain('تعذر تحميل الحالات التي تحتاج انتباهاً');
+    // Snapshot failure is owned by ONE boundary — the page alert. Sections must
+    // not grow a second private error state (`isError` + their own copy): that
+    // is how the duplicate detail sections came back before. They render from
+    // the snapshot they are given and stay silent when it is unavailable.
+    // Mirrors dashboard-data-contract.test.ts, which pins the same decision.
     expect(page).toContain('DataRefreshAlert');
+    expect(page).toContain(
+      "title={snapshotUnavailable ? 'تعذر تحميل بيانات اليوم' : 'تعذر تحديث بيانات اليوم'}",
+    );
+    expect(collections).not.toContain('isError');
+    expect(needsAttention).not.toContain('isError');
     expect(page).not.toContain('<MaintenanceSection');
     expect(page).not.toContain('<UpcomingContractsSection');
     expect(page).not.toContain('<PropertyHealthSection');
-    expect(page).not.toContain('<OwnerObligationsSection');  });
+    expect(page).not.toContain('<OwnerObligationsSection');
+  });
 });

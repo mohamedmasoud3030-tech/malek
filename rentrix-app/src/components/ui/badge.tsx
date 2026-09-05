@@ -10,17 +10,11 @@ import {
   Wallet,
 } from 'lucide-react';
 import type { HTMLAttributes, ReactNode } from 'react';
+import type { SemanticTone } from '@/components/ui/status-badge';
 import { cn } from '@/lib/utils';
 
-export type BadgeVariant =
-  | 'default'
-  | 'primary'
-  | 'neutral'
-  | 'success'
-  | 'warning'
-  | 'danger'
-  | 'info'
-  | 'outline';
+/** Badge variants are the semantic tones (minus `secondary`) plus the two chrome variants. */
+export type BadgeVariant = 'default' | Exclude<SemanticTone, 'secondary'> | 'outline';
 
 /**
  * Visual-only business states. These carry an icon in addition to color so

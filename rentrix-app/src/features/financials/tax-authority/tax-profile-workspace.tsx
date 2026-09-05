@@ -23,6 +23,7 @@ import {
   type FeeTaxTreatmentRecord,
 } from './tax-authority-service';
 import { getTodayLocalDateString } from '@/features/financials/financials-date-utils';
+import type { SemanticTone } from '@/components/ui/status-badge';
 
 function statusLabel(status: string) {
   if (status === 'ACTIVE') return 'ساري';
@@ -31,7 +32,7 @@ function statusLabel(status: string) {
   return 'غير نشط';
 }
 
-function statusTone(status: string): 'success' | 'warning' | 'info' | 'neutral' {
+function statusTone(status: string): SemanticTone {
   if (status === 'ACTIVE') return 'success';
   if (status === 'DRAFT') return 'warning';
   if (status === 'SUPERSEDED') return 'info';

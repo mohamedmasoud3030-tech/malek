@@ -13,6 +13,7 @@
  * competing ledger.
  */
 import type { ResponsibleParty, UtilityBill } from './utilities-service';
+import type { SemanticTone } from '@/components/ui/status-badge';
 
 /** Near window used by the operational surfaces to mean "due very soon". */
 export const UTILITY_DUE_SOON_WINDOW_DAYS = 7;
@@ -56,7 +57,7 @@ export const utilityObligationUrgencyLabels: Record<UtilityObligationUrgency, st
   settled: 'مسددة',
 };
 
-export const utilityObligationUrgencyTone: Record<UtilityObligationUrgency, 'danger' | 'warning' | 'info' | 'success'> = {
+export const utilityObligationUrgencyTone: Record<UtilityObligationUrgency, SemanticTone> = {
   overdue: 'danger',
   due_soon: 'warning',
   scheduled: 'info',

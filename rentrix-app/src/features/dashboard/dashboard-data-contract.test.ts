@@ -87,7 +87,7 @@ describe('dashboard frontend/backend data contract', () => {
   it('activates vacancy detail reads only from authoritative snapshot vacancy truth', () => {
     const pageSource = read('dashboard-page.tsx');
     const occupancySource = read('components/occupancy-section.tsx');
-    expect(pageSource).toContain('const needsVacancyDetails = (snapshot?.occupancy.vacantUnits ?? 0) > 0;');
+    expect(pageSource).toContain('const needsVacancyDetails = supplementalEnabled && (snapshot?.occupancy.vacantUnits ?? 0) > 0;');
     expect(pageSource).toContain('useAllUnits({ enabled: needsVacancyDetails })');
     expect(pageSource).toContain("useAllContracts('all', { enabled: needsVacancyDetails })");
     expect(pageSource).toContain('enabled: needsVacancyDetails');

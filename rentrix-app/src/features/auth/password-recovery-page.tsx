@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { AlertTriangle, ArrowLeft, CheckCircle2, Mail } from 'lucide-react';
+import { EntityForm } from '@/components/ui/entity-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { APP_BRAND_LOCKUP_ASSET, APP_BRAND_NAME } from '@/lib/brand';
@@ -58,7 +59,7 @@ export function ForgotPasswordPage() {
           <Button asChild variant="secondary" className="min-h-11 w-full"><Link to="/login">العودة إلى تسجيل الدخول</Link></Button>
         </div>
       ) : (
-        <form className="space-y-4" onSubmit={submit}>
+        <EntityForm.Root className="gap-4" onSubmit={submit} noValidate={false}>
           <label htmlFor="recovery-email" className="block text-sm font-semibold">البريد الإلكتروني</label>
           <div className="relative">
             <Mail className="pointer-events-none absolute inset-y-0 start-3.5 my-auto size-4 text-muted-foreground" aria-hidden="true" />
@@ -67,7 +68,7 @@ export function ForgotPasswordPage() {
           {error ? <div role="alert" className="flex items-start gap-2 rounded-xl border border-danger/30 bg-danger/5 p-3 text-sm text-danger"><AlertTriangle className="mt-0.5 size-4 shrink-0" />{error}</div> : null}
           <Button type="submit" className="h-12 w-full" disabled={isSubmitting || email.trim() === ''} aria-busy={isSubmitting}>{isSubmitting ? 'جارٍ الإرسال...' : 'إرسال رابط الاستعادة'}</Button>
           <Button asChild variant="ghost" className="min-h-11 w-full"><Link to="/login"><ArrowLeft className="me-2 size-4 rtl:rotate-180" />العودة إلى تسجيل الدخول</Link></Button>
-        </form>
+        </EntityForm.Root>
       )}
     </AuthCard>
   );
@@ -143,14 +144,14 @@ export function ResetPasswordPage() {
           <Button asChild className="min-h-11 w-full"><Link to="/forgot-password">طلب رابط جديد</Link></Button>
         </div>
       ) : (
-        <form className="space-y-4" onSubmit={submit}>
+        <EntityForm.Root className="gap-4" onSubmit={submit} noValidate={false}>
           <label htmlFor="new-password" className="block text-sm font-semibold">كلمة المرور الجديدة</label>
           <Input id="new-password" type="password" autoComplete="new-password" minLength={8} required autoFocus className="h-12" value={password} onChange={(event) => { setPassword(event.target.value); setError(null); }} disabled={isSubmitting} />
           <label htmlFor="confirm-new-password" className="block text-sm font-semibold">تأكيد كلمة المرور</label>
           <Input id="confirm-new-password" type="password" autoComplete="new-password" minLength={8} required className="h-12" value={confirmPassword} onChange={(event) => { setConfirmPassword(event.target.value); setError(null); }} disabled={isSubmitting} />
           {error ? <div role="alert" className="flex items-start gap-2 rounded-xl border border-danger/30 bg-danger/5 p-3 text-sm text-danger"><AlertTriangle className="mt-0.5 size-4 shrink-0" />{error}</div> : null}
           <Button type="submit" className="h-12 w-full" disabled={isSubmitting || !password || !confirmPassword} aria-busy={isSubmitting}>{isSubmitting ? 'جارٍ التحديث...' : 'تحديث كلمة المرور'}</Button>
-        </form>
+        </EntityForm.Root>
       )}
     </AuthCard>
   );

@@ -46,7 +46,11 @@ describe('reports center — touch-target contract', () => {
 
   it('keeps the workspace sub-view tabs at min-h-11', () => {
     const source = readFileSync(resolve(reportsDir, 'workspace/WorkspaceSubViewTabs.tsx'), 'utf8');
-    expect(source).toContain('min-h-11 items-center rounded-lg border');
+    // Canonical outline `Button` role="tab" controls that keep the 44px floor.
+    expect(source).not.toMatch(/<button/);
+    expect(source).toContain('role="tab"');
+    expect(source).toContain('variant="outline"');
+    expect(source).toContain('min-h-11 rounded-lg');
     expect(source).not.toContain('min-h-9');
   });
 });

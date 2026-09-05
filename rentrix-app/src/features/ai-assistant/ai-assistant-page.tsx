@@ -1,4 +1,5 @@
 import { AlertTriangle, ArrowUpRight, Bot, ChevronDown, Mic, Phone, Send, Sparkles, Square } from 'lucide-react';
+import { EntityForm } from '@/components/ui/entity-form';
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useMutation } from '@tanstack/react-query';
@@ -395,16 +396,17 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
                         <p className="mb-1 text-[10px] font-bold text-muted-foreground">تحضير للمراجعة</p>
                         <div className="flex flex-wrap gap-1.5">
                           {message.presentation.suggestedActions.map((suggestion) => (
-                            <button
+                            <Button
                               key={suggestion.action}
                               type="button"
+                              variant="outline"
                               onClick={() => submitPrompt(suggestion.prompt, suggestion.action)}
                               disabled={pending || configurationMissing}
-                              className="inline-flex min-h-8 items-center gap-1 rounded-full border border-border bg-muted/40 px-2.5 py-1 text-[11px] font-bold text-foreground transition hover:bg-muted disabled:opacity-50"
+                              className="min-h-11 gap-1 rounded-full border-border bg-muted/40 px-2.5 text-[11px] font-bold hover:bg-muted"
                             >
                               <Sparkles className="size-3" aria-hidden="true" />
                               {suggestion.title}
-                            </button>
+                            </Button>
                           ))}
                         </div>
                         <p className="mt-1 text-[10px] leading-4 text-muted-foreground">
@@ -446,49 +448,52 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
       <div className={cn('shrink-0 border-t border-border/50 bg-card', embedded ? 'px-2 py-1.5' : 'bg-muted/20 px-3 py-2')}>
         <div className="flex max-w-full gap-1.5 overflow-x-auto overscroll-x-contain no-scrollbar">
           {visibleActions.map((item) => (
-            <button
+            <Button
               key={item.action}
               type="button"
+              variant="outline"
               onClick={() => submitPrompt(item.prompt, item.action)}
               disabled={pending || configurationMissing}
               className={cn(
-                'inline-flex shrink-0 items-center gap-1 rounded-full border border-border bg-card text-xs font-medium text-foreground transition hover:bg-muted disabled:opacity-50',
+                'shrink-0 gap-1 rounded-full border-border bg-card text-xs font-medium hover:bg-muted',
                 embedded ? 'min-h-11 px-2.5' : 'min-h-11 px-3',
               )}
             >
               <Sparkles className="size-3" />
               {item.title}
-            </button>
+            </Button>
           ))}
-          <button
+          <Button
             type="button"
+            variant="outline"
             onClick={() => setShowMoreActions((current) => !current)}
             disabled={configurationMissing}
             aria-expanded={showMoreActions}
             className={cn(
-              'inline-flex shrink-0 items-center gap-1 rounded-full border border-dashed border-border bg-transparent text-xs font-medium text-muted-foreground transition hover:bg-muted disabled:opacity-50',
+              'shrink-0 gap-1 rounded-full border-dashed border-border bg-transparent text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground',
               embedded ? 'min-h-11 px-2.5' : 'min-h-11 px-3',
             )}
           >
             <ChevronDown className={cn('size-3 transition-transform', showMoreActions && 'rotate-180')} />
             {showMoreActions ? 'أقل' : 'المزيد'}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="outline"
             onClick={toggleLiveCall}
             disabled={configurationMissing}
             aria-pressed={liveCallOpen}
             className={cn(
-              'inline-flex shrink-0 items-center gap-1 rounded-full border text-xs font-medium transition disabled:opacity-50',
+              'shrink-0 gap-1 rounded-full text-xs font-medium',
               embedded ? 'min-h-11 px-2.5' : 'min-h-11 px-3',
               liveCallOpen
-                ? 'border-primary bg-primary/10 text-primary'
+                ? 'border-primary bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary'
                 : 'border-border bg-card text-foreground hover:bg-muted',
             )}
           >
             <Phone className="size-3" />
             {liveCallOpen ? 'إيقاف المكالمة' : 'مكالمة لايف'}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -513,7 +518,7 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
       ) : null}
 
       <div className={cn('shrink-0 border-t border-border/60 bg-card', embedded ? 'p-2' : 'p-3')}>
-        <form onSubmit={handleSubmit} className="flex items-end gap-2">
+        <EntityForm.Root onSubmit={handleSubmit} className="flex items-end gap-2">
           <Textarea
             value={input}
             onChange={(event) => setInput(event.target.value)}
@@ -558,7 +563,7 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
           >
             <Send className="size-4" />
           </Button>
-        </form>
+        </EntityForm.Root>
         {voiceInput.error ? (
           <p role="alert" className="mt-1.5 px-1 text-[11px] leading-4 text-destructive">
             {voiceInput.error}

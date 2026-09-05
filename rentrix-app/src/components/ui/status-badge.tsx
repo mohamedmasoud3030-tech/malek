@@ -1,8 +1,13 @@
 import { Children, isValidElement, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
-/** Semantic tones — canonical for new code. */
-type SemanticTone = 'success' | 'warning' | 'danger' | 'info' | 'neutral' | 'primary' | 'secondary';
+/**
+ * Semantic tones — the canonical tone vocabulary, and the ONLY place it is
+ * spelled out. Domain surfaces map their own statuses onto these values and
+ * render them with `StatusBadge`; import this type instead of re-declaring the
+ * union (a second spelling is a parallel token system — UX-008 — and it drifts).
+ */
+export type SemanticTone = 'success' | 'warning' | 'danger' | 'info' | 'neutral' | 'primary' | 'secondary';
 
 /** Product accents shared by light and dark themes. */
 type ProductTone = 'emerald' | 'amber' | 'sky' | 'rose' | 'violet' | 'slate';
@@ -10,7 +15,8 @@ type ProductTone = 'emerald' | 'amber' | 'sky' | 'rose' | 'violet' | 'slate';
 /** Legacy color tones — kept for compatibility and resolved to product accents. */
 type LegacyTone = 'blue' | 'green' | 'red' | 'gray' | 'gold';
 
-type StatusTone = SemanticTone | ProductTone | LegacyTone;
+/** Everything `StatusBadge` accepts: semantic tones plus product/legacy accents. */
+export type StatusTone = SemanticTone | ProductTone | LegacyTone;
 type ResolvedTone = SemanticTone | ProductTone;
 
 const legacyToProduct: Record<LegacyTone, ProductTone> = {
@@ -70,7 +76,7 @@ function resolveVisualTone(tone: ResolvedTone): SemanticTone {
 function containsCustomStatusIndicator(children: ReactNode): boolean {
   return Children.toArray(children).some((child) => {
     if (!isValidElement<Record<string, unknown>>(child)) return false;
-    return Boolean(child.props['data-status-dot'] || child.props['data-finance-status-icon']);
+    return Boolean(child.props['data-status-dot']);
   });
 }
 

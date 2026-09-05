@@ -1,4 +1,5 @@
 import { AlertTriangle, Loader2, Search, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from '@tanstack/react-router';
 import { cn } from '@/lib/utils';
@@ -113,23 +114,27 @@ export function CommandPaletteDialog() {
             className="min-h-11 min-w-0 flex-1 border-0 bg-transparent px-1 text-[16px] font-medium text-foreground outline-none placeholder:text-muted-foreground"
           />
           {query ? (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon"
               onClick={() => setQuery('')}
-              className="grid size-11 min-h-11 min-w-11 shrink-0 place-items-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="shrink-0 rounded-xl text-muted-foreground"
               aria-label="مسح البحث"
             >
               <X className="size-4" aria-hidden="true" />
-            </button>
+            </Button>
           ) : (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon"
               onClick={close}
-              className="grid size-11 min-h-11 min-w-11 shrink-0 place-items-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="shrink-0 rounded-xl text-muted-foreground"
               aria-label="إغلاق البحث"
             >
               <X className="size-4" aria-hidden="true" />
-            </button>
+            </Button>
           )}
         </div>
 
@@ -142,17 +147,19 @@ export function CommandPaletteDialog() {
               {visibleStatic.map((command) => {
                 const Icon = command.icon;
                 return (
-                  <button
+                  <Button
                     key={command.id}
                     type="button"
+                    variant="ghost"
+                    fullWidth
                     onClick={() => goToStaticCommand(command)}
-                    className="flex min-h-12 w-full items-center gap-3 rounded-xl px-2.5 text-start text-sm font-semibold text-foreground outline-none transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:ring-2 focus-visible:ring-primary/20"
+                    className="min-h-12 justify-start gap-3 rounded-xl px-2.5 text-sm font-semibold focus-visible:bg-muted"
                   >
                     <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/8 text-primary">
                       <Icon className="size-[18px]" aria-hidden="true" />
                     </span>
                     <span className="min-w-0 flex-1 truncate">{command.title}</span>
-                  </button>
+                  </Button>
                 );
               })}
             </div>
@@ -178,11 +185,13 @@ export function CommandPaletteDialog() {
               ) : null}
 
               {!isError && entities.map((entity) => (
-                <button
+                <Button
                   key={`${entity.category}:${entity.id}`}
                   type="button"
+                  variant="ghost"
+                  fullWidth
                   onClick={() => goToEntity(entity)}
-                  className="flex min-h-12 w-full items-center gap-3 rounded-xl px-2.5 text-start outline-none transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:ring-2 focus-visible:ring-primary/20"
+                  className="min-h-12 justify-start gap-3 rounded-xl px-2.5 font-normal focus-visible:bg-muted"
                 >
                   <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-muted text-[11px] font-bold text-muted-foreground">
                     {categoryLabels[entity.category].slice(0, 2)}
@@ -191,7 +200,7 @@ export function CommandPaletteDialog() {
                     <span className="block truncate text-sm font-bold text-foreground">{entity.title}</span>
                     <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">{entity.subtitle}</span>
                   </span>
-                </button>
+                </Button>
               ))}
             </div>
           ) : null}

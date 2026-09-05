@@ -12,7 +12,7 @@ import { useUnits } from '@/features/units/use-units';
 import { useUnitContractDrafts } from '@/features/contracts/queries/useUnitContractDrafts';
 import { useAuth } from '@/hooks/use-auth';
 import { formatMoney } from '@/hooks/useCompanyFormatters';
-import { PropertyInfoItem } from '../components/property-info-item';
+import { DetailFields } from '@/components/ui/detail-fields';
 import { useProperty } from '../use-properties';
 import { unitStatusLabels, unitStatusToneFor } from '@/features/units/unit-schema';
 
@@ -108,9 +108,14 @@ export function PropertyUnitDetailPage() {
           />
 
           <div className="grid gap-4 md:grid-cols-2">
-            <PropertyInfoItem label="رقم الوحدة" value={`وحدة ${unit.unit_number}`} />
-            <PropertyInfoItem label="الدور" value={unit.floor ?? '—'} />
-            <PropertyInfoItem label="قيمة الإيجار المسجلة" value={formatMoney(unit.rent_amount)} />
+            <DetailFields
+              className="md:col-span-2"
+              fields={[
+                { label: 'رقم الوحدة', value: `وحدة ${unit.unit_number}` },
+                { label: 'الدور', value: unit.floor ?? '—' },
+                { label: 'قيمة الإيجار المسجلة', value: formatMoney(unit.rent_amount) },
+              ]}
+            />
             <div className="rounded-xl border border-border/70 bg-card p-4 shadow-card md:col-span-2">
               <p className="text-xs font-medium text-muted-foreground">العقار التابع له</p>
               <p className="mt-1">

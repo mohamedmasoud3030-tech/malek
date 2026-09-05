@@ -1,4 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type PropsWithChildren } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/use-auth';
@@ -386,13 +387,13 @@ export function CompanyProvider({ children }: PropsWithChildren) {
             لم يتم فتح مساحة العمل لحماية البيانات ومنع إنشاء سجلات بدون شركة.
             تحقق من الاتصال ثم أعد المحاولة. إذا استمرت المشكلة، راجع مسؤول النظام لتفعيل عضويتك في الشركة.
           </p>
-          <button
+          <Button
             type="button"
-            className="mt-5 min-h-11 rounded-xl bg-primary px-5 py-2 text-sm font-bold text-primary-foreground focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
+            className="mt-5 rounded-xl px-5"
             onClick={() => setReloadVersion((version) => version + 1)}
           >
             إعادة المحاولة
-          </button>
+          </Button>
         </section>
       </main>
     );

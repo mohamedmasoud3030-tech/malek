@@ -14,7 +14,7 @@ import {
   type OwnerFormValues,
 } from '../utils/owner-ui-helpers';
 import type { OwnerFormInput } from '../owner-schema';
-import { OwnerCheckbox } from './owner-checkbox';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export type OwnerFormDialogProps = Readonly<{ owner: Owner | null; open: boolean; onOpenChange: (open: boolean) => void }>;
 
@@ -113,7 +113,7 @@ export function OwnerFormDialog({ owner, open, onOpenChange }: OwnerFormDialogPr
         <EntityForm.Field label="ملاحظات">
           <Textarea value={values.notes ?? ''} onChange={(event) => setField('notes', event.target.value)} />
         </EntityForm.Field>
-        <OwnerCheckbox checked={values.is_active ?? false} label="مالك نشط" onCheckedChange={(checked) => setField('is_active', checked)} />
+        <Checkbox checked={values.is_active ?? false} label="مالك نشط" onCheckedChange={(checked) => setField('is_active', checked)} />
         <EntityForm.Actions onCancel={() => onOpenChange(false)} isSubmitting={isPending} submitLabel={isEditing ? 'حفظ التعديلات' : 'إنشاء المالك'} />
       </EntityForm.Root>
     </EntityForm.Overlay>

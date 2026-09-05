@@ -1,6 +1,8 @@
 import { memo } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Building2, CalendarClock } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { ReportList, ReportListRow, ReportPanel, ReportState } from '@/components/ui/report-section-primitives';
 import { StatusBadge } from '@/components/ui/status-badge';
 import type { VacancyAnalytics } from '@/features/units/vacancy-analytics';
 import {
@@ -10,17 +12,14 @@ import {
 } from '@/features/units/vacancy-analytics';
 import type { DashboardSnapshot } from '../dashboard-snapshot';
 import { DistributionStrip, RadialMetric, TrendDelta } from './dashboard-visuals';
-import {
-  DashboardSignalEmpty,
-  DashboardSignalHeader,
-  DashboardSignalList,
-  DashboardSignalLoading,
-  DashboardSignalMain,
-  DashboardSignalPanel,
-  DashboardSignalSide,
-  dashboardSectionActionClass,
-  dashboardSignalRowClass,
-} from './dashboard-signal-primitives';
+
+/** Caller-owned interactivity for a canonical presentational row. */
+const queueRowLinkClass =
+  'block w-full min-w-0 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/25';
+
+/** In-panel state strip: quiet, dashed, never a nested card. */
+const inPanelStateClass =
+  'min-h-0 rounded-none border-0 border-t border-dashed border-border/60 bg-muted/[0.08] py-3 sm:min-h-0';
 
 interface OccupancySectionProps {
   snapshot: DashboardSnapshot | undefined;
@@ -58,24 +57,32 @@ export const OccupancySection = memo(function OccupancySection({
   const changePoints = Math.round(analytics.occupancyChangePoints);
 
   return (
-    <DashboardSignalPanel labelledBy="occupancy-title" className="h-full">
-      <DashboardSignalHeader
-        id="occupancy-title"
-        title="الإشغال والشغور"
-        meta="حالة المحفظة الآن ومؤشر إعادة التأجير"
-        icon={Building2}
-        tone={vacantUnits > 0 ? 'info' : 'success'}
-        trailing={<Link to="/reports" data-dashboard-section-action className={dashboardSectionActionClass}>التقرير الكامل</Link>}
-      />
-
-      {isLoading ? <DashboardSignalLoading label="جارٍ تحميل الإشغال والشغور" /> : snapshotUnavailable ? (
-        <DashboardSignalEmpty
-          role="alert"
+    <ReportPanel
+      dense
+      tone={vacantUnits > 0 ? 'info' : 'success'}
+      icon={Building2}
+      title="الإشغال والشغور"
+      titleId="occupancy-title"
+      aria-labelledby="occupancy-title"
+      description="حالة المحفظة الآن ومؤشر إعادة التأجير"
+      action={
+        <Button variant="ghost" size="sm" asChild className="min-h-11 rounded-lg px-2 text-[11px] font-bold text-primary">
+          <Link to="/reports" data-dashboard-section-action>التقرير الكامل</Link>
+        </Button>
+      }
+      className="h-full"
+      isLoading={isLoading}
+      loadingLabel="جارٍ تحميل الإشغال والشغور"
+    >
+      {snapshotUnavailable ? (
+        <ReportState
+          kind="error"
           title="تعذر تحميل مؤشر الإشغال المعتمد"
-          description="تفاصيل الوحدات المحلية لا تُستخدم كبديل عن مؤشر لوحة التحكم المعتمد."
+          message="تفاصيل الوحدات المحلية لا تُستخدم كبديل عن مؤشر لوحة التحكم المعتمد."
+          className={inPanelStateClass}
         />
       ) : (
-        <div className="grid min-w-0 gap-4 border-t border-border/70 bg-muted/20 p-3 sm:grid-cols-[auto_minmax(0,1fr)] sm:p-4" data-dashboard-occupancy-summary>
+        <div className="grid min-w-0 gap-4 bg-muted/20 p-3 sm:grid-cols-[auto_minmax(0,1fr)] sm:p-4" data-dashboard-occupancy-summary>
           <div className="flex items-center gap-3">
             <RadialMetric
               percent={occupancyRate}
@@ -135,49 +142,56 @@ export const OccupancySection = memo(function OccupancySection({
       )}
 
       {!isLoading && !snapshotUnavailable && isError ? (
-        <DashboardSignalEmpty
-          role="alert"
+        <ReportState
+          kind="error"
           title="تعذر تحميل سجل الوحدات الشاغرة"
-          description="لن نحول رقم غير المشغولة القديم إلى شغور، لأن الصيانة والحجز ليسا وحدات متاحة للتأجير."
+          message="لن نحول رقم غير المشغولة القديم إلى شغور، لأن الصيانة والحجز ليستا وحدات متاحة للتأجير."
+          className={inPanelStateClass}
         />
       ) : null}
 
       {!isLoading && !snapshotUnavailable && !isError && detailsUnavailable && vacantUnits > 0 ? (
-        <DashboardSignalEmpty
+        <ReportState
+          kind="empty"
           title="تفاصيل مدة الشغور غير مكتملة"
-          description="عدد الوحدات الشاغرة صحيح من سجل الوحدات، لكن متوسط الأيام متوقف حتى يكتمل تاريخ العقود."
+          message="عدد الوحدات الشاغرة صحيح من سجل الوحدات، لكن متوسط الأيام متوقف حتى يكتمل تاريخ العقود."
+          className={inPanelStateClass}
         />
       ) : null}
 
       {!isLoading && !snapshotUnavailable && !isError && longestRows.length > 0 ? (
         <>
-          <DashboardSignalList label="أطول الوحدات الشاغرة">
+          <ReportList as="ul" label="أطول الوحدات الشاغرة">
             {longestRows.map((row) => {
               const tone = row.daysVacant >= 60 ? 'danger' : row.daysVacant >= 30 ? 'warning' : 'info';
               return (
-                <li key={row.unitId} role="listitem" className="min-w-0">
+                <li key={row.unitId} className="min-w-0">
                   <Link
                     to="/properties" search={{ section: "units" }}
-                    className={dashboardSignalRowClass(tone)}
+                    className={queueRowLinkClass}
                     data-dashboard-queue-link
                     aria-label={`وحدة ${row.unitNumber} — ${row.propertyTitle} — شاغرة منذ ${number(row.daysVacant)} يوم`}
                   >
-                    <DashboardSignalMain
+                    <ReportListRow
+                      dense
+                      tone={tone}
                       title={`وحدة ${row.unitNumber}`}
-                      meta={row.propertyTitle}
-                      detail={row.referenceRent !== null ? `إيجار مرجعي: ${money(row.referenceRent)}` : 'الإيجار المرجعي غير مسجل'}
+                      subtitle={row.propertyTitle}
+                      meta={row.referenceRent !== null ? `إيجار مرجعي: ${money(row.referenceRent)}` : 'الإيجار المرجعي غير مسجل'}
+                      action={
+                        <span className="flex flex-col items-end gap-1 text-[11px] font-semibold text-muted-foreground">
+                          <StatusBadge tone={tone}>{number(row.daysVacant)} يوم</StatusBadge>
+                          <span className="hidden sm:inline">
+                            {row.lastContractEndDate ? `آخر عقد ${date(row.lastContractEndDate)}` : 'لم يسبق تأجيرها'}
+                          </span>
+                        </span>
+                      }
                     />
-                    <DashboardSignalSide>
-                      <StatusBadge tone={tone}>{number(row.daysVacant)} يوم</StatusBadge>
-                      <span className="hidden sm:inline">
-                        {row.lastContractEndDate ? `آخر عقد ${date(row.lastContractEndDate)}` : 'لم يسبق تأجيرها'}
-                      </span>
-                    </DashboardSignalSide>
                   </Link>
                 </li>
               );
             })}
-          </DashboardSignalList>
+          </ReportList>
 
           {canTrustHistory ? (
             <div className="flex items-center gap-2 border-t border-border/70 px-3 py-2 text-[11px] font-bold text-muted-foreground sm:px-4" data-dashboard-longest-vacancy>
@@ -188,6 +202,6 @@ export const OccupancySection = memo(function OccupancySection({
           ) : null}
         </>
       ) : null}
-    </DashboardSignalPanel>
+    </ReportPanel>
   );
 });

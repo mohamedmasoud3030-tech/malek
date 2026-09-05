@@ -86,7 +86,11 @@ describe('Permissions + canonical routes', () => {
   });
 
   it('canonical route navigation remains in related workspaces', () => {
-    expect(dashboard).toContain("to: '/contracts/$contractId'");
+    // The Today queue drills into the owning contract through a real link on
+    // the canonical route (declarative `Link`, background location preserved
+    // via router state) rather than an imperative navigate call.
+    expect(dashboard).toContain('to="/contracts/$contractId"');
+    expect(dashboard).toContain('backgroundLocation: location');
     expect(tenants).toContain("to: '/contracts/$contractId'");
     expect(ownerPreview + ownerDossierBody).toContain("to: '/properties/$propertyId'");
     // Property navigation is not placed on directory rows; it happens from the

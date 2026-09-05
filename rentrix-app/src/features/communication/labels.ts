@@ -1,5 +1,6 @@
 /** Communication channel, direction, and status labels. */
 
+import type { SemanticTone } from '@/components/ui/status-badge';
 export const communicationChannelLabels: Record<string, string> = {
   phone: 'هاتف',
   whatsapp: 'واتساب',
@@ -21,7 +22,7 @@ export const communicationStatusLabels: Record<string, string> = {
   archived: 'مؤرشف',
 };
 
-export const communicationStatusTone: Record<string, 'success' | 'warning' | 'neutral' | 'info'> = {
+export const communicationStatusTone: Record<string, SemanticTone> = {
   logged: 'info',
   follow_up: 'warning',
   resolved: 'success',

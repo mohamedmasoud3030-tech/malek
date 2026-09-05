@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { LayoutDashboard, FileBarChart, Settings2, ClipboardList, Play, X, Building2, ScrollText, WalletCards, Wrench, Bot, Zap } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { useLanguage } from '../i18n/LanguageContext';
-import { SectionHeader } from './SectionHeader';
+import { LandingSectionHeading } from './landing-section-heading';
 import { Reveal } from './Reveal';
 
 const TAB_META = [
@@ -48,7 +49,7 @@ export function Showcase() {
         className="absolute -top-32 end-[-6%] size-[420px] rounded-full bg-primary/10 blur-[110px]"
       />
       <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-28">
-        <SectionHeader
+        <LandingSectionHeading
           tone="light"
           kicker={t.showcase.kicker}
           title={t.showcase.title}
@@ -56,10 +57,11 @@ export function Showcase() {
         />
 
         <Reveal className="mt-8 flex justify-center">
-          <button
+          <Button
             type="button"
+            variant="outline"
             onClick={() => setVideoOpen(true)}
-            className="group inline-flex items-center gap-3 rounded-full border border-primary/20 bg-background px-6 py-3 text-sm font-extrabold text-brand-700 shadow-[0_14px_30px_-14px_rgba(37,84,235,0.5)] transition duration-300 hover:border-primary/40 hover:shadow-[0_20px_40px_-16px_rgba(37,84,235,0.55)]"
+            className="group gap-3 rounded-full border-primary/20 bg-background px-6 py-3 text-sm font-extrabold text-brand-700 shadow-[0_14px_30px_-14px_rgba(37,84,235,0.5)] duration-300 hover:border-primary/40 hover:bg-background hover:text-brand-700 hover:shadow-[0_20px_40px_-16px_rgba(37,84,235,0.55)]"
           >
             <span className="relative grid size-9 place-items-center rounded-full bg-primary text-primary-foreground transition group-hover:scale-105">
               <span aria-hidden="true" className="absolute inset-0 rounded-full bg-primary/50 " />
@@ -67,7 +69,7 @@ export function Showcase() {
             </span>
             {t.showcase.watchVideo}
             <span className="text-xs font-bold text-muted-foreground">3:22</span>
-          </button>
+          </Button>
         </Reveal>
 
         <Reveal className="mt-12">
@@ -79,13 +81,14 @@ export function Showcase() {
                 const copy = t.showcase.tabs[i];
                 const isActive = i === active;
                 return (
-                  <button
+                  <Button
                     key={tab.id}
                     type="button"
+                    variant="outline"
                     onClick={() => setActive(i)}
-                    className={`group flex min-w-[200px] items-center gap-3 rounded-2xl border p-4 text-start transition duration-300 lg:min-w-0 ${
+                    className={`group min-w-[200px] justify-start gap-3 rounded-2xl p-4 font-normal duration-300 lg:min-w-0 ${
                       isActive
-                        ? 'border-brand-600 bg-background shadow-[0_16px_40px_-16px_rgba(37,84,235,0.45)]'
+                        ? 'border-brand-600 bg-background shadow-[0_16px_40px_-16px_rgba(37,84,235,0.45)] hover:bg-background'
                         : 'border-border/70 bg-background/80 hover:border-primary/30 hover:bg-background'
                     }`}
                   >
@@ -110,7 +113,7 @@ export function Showcase() {
                         {copy.caption}
                       </span>
                     </span>
-                  </button>
+                  </Button>
                 );
               })}
             </div>
@@ -166,14 +169,16 @@ export function Showcase() {
               className="relative w-full max-w-4xl"
               onClick={(event) => event.stopPropagation()}
             >
-              <button
+              <Button
                 type="button"
+                variant="outline"
+                size="icon"
                 onClick={() => setVideoOpen(false)}
                 aria-label={t.showcase.closeVideo}
-                className="absolute -top-12 end-0 grid size-10 place-items-center rounded-full border border-white/15 bg-muted/50 text-primary-foreground transition hover:bg-background/20"
+                className="absolute -top-12 end-0 rounded-full border-white/15 bg-muted/50 text-primary-foreground hover:bg-background/20 hover:text-primary-foreground"
               >
                 <X className="size-5" aria-hidden="true" />
-              </button>
+              </Button>
               <video
                 src={DEMO_VIDEO_SRC}
                 controls
