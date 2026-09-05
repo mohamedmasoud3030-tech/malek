@@ -274,20 +274,45 @@ function mobileInvoiceCard(page: Page): Locator {
     .first();
 }
 
+/**
+ * Both registers expose print/PDF through the same canonical `ActionMenu`
+ * contract: desktop through the row's «إجراءات الفاتورة» trigger, mobile
+ * through the `EntityCard` overflow trigger named after the invoice itself
+ * («المزيد حول فاتورة بلا مرجع …»). The open menu is bound to the invoice
+ * row in `openInvoiceDocumentActions` before these items are used.
+ */
 function invoicePrintAction(page: Page): Locator {
-  return isInvoiceMobile(page)
-    ? mobileInvoiceCard(page)
-        .getByRole('button', { name: /^طباعة/ })
-        .first()
-    : page.getByRole('menuitem', { name: 'طباعة', exact: true }).first();
+  return page.getByRole('menuitem', { name: 'طباعة', exact: true }).first();
 }
 
 function invoicePdfAction(page: Page): Locator {
-  return isInvoiceMobile(page)
-    ? mobileInvoiceCard(page)
-        .getByRole('button', { name: /^تنزيل/ })
-        .first()
-    : page.getByRole('menuitem', { name: 'PDF', exact: true }).first();
+  return page.getByRole('menuitem', { name: 'PDF', exact: true }).first();
+}
+
+function mobileInvoiceOverflowTrigger(page: Page): Locator {
+  return mobileInvoiceCard(page).getByRole('button', {
+    name: new RegExp(`^المزيد حول ${INVOICE_IDENTITY}`),
+  });
+}
+
+/**
+ * Opens the invoice card's own overflow menu on mobile and returns the menu
+ * element the trigger references through `aria-controls`, so every menu item
+ * asserted afterwards provably belongs to this invoice and not to another
+ * card or a stale open menu.
+ */
+async function openMobileInvoiceOverflowMenu(page: Page): Promise<Locator> {
+  const trigger = mobileInvoiceOverflowTrigger(page);
+  await expect(trigger).toBeVisible({ timeout: 15_000 });
+  if ((await trigger.getAttribute('aria-expanded')) !== 'true')
+    await trigger.click();
+  await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+  const menuId = await trigger.getAttribute('aria-controls');
+  expect(menuId, 'overflow trigger must reference its menu').toBeTruthy();
+  const menu = page.locator(`[role="menu"][id="${menuId}"]`);
+  await expect(menu).toBeVisible();
+  await expect(page.getByRole('menu')).toHaveCount(1);
+  return menu;
 }
 
 async function gotoInvoicesRegister(page: Page): Promise<Locator> {
@@ -311,26 +336,26 @@ async function gotoInvoicesRegister(page: Page): Promise<Locator> {
 }
 
 async function openInvoiceDocumentActions(page: Page): Promise<void> {
-  if (!isInvoiceMobile(page)) {
-    const alreadyOpen = page
-      .getByRole('menuitem', { name: 'طباعة', exact: true })
-      .first();
-    if (await alreadyOpen.isVisible().catch(() => false)) return;
-  }
+  const alreadyOpen = page
+    .getByRole('menuitem', { name: 'طباعة', exact: true })
+    .first();
+  if (await alreadyOpen.isVisible().catch(() => false)) return;
 
   if (isInvoiceMobile(page)) {
-    const card = mobileInvoiceCard(page);
-    const outerTrigger = card.locator('[data-entity-table-mobile-actions]');
-    if ((await outerTrigger.getAttribute('aria-expanded')) !== 'true')
-      await outerTrigger.click();
-    const outerPanel = card.locator('[data-entity-table-mobile-actions-panel]');
-    await expect(outerPanel).toBeVisible();
-  } else {
-    await visibleInvoiceRegister(page)
-      .getByRole('button', { name: 'إجراءات الفاتورة', exact: true })
-      .first()
-      .click();
+    const menu = await openMobileInvoiceOverflowMenu(page);
+    await expect(
+      menu.getByRole('menuitem', { name: 'طباعة', exact: true }),
+    ).toBeVisible({ timeout: 15_000 });
+    await expect(
+      menu.getByRole('menuitem', { name: 'PDF', exact: true }),
+    ).toBeVisible({ timeout: 15_000 });
+    return;
   }
+
+  await visibleInvoiceRegister(page)
+    .getByRole('button', { name: 'إجراءات الفاتورة', exact: true })
+    .first()
+    .click();
 
   await expect(invoicePrintAction(page)).toBeVisible({ timeout: 15_000 });
   await expect(invoicePdfAction(page)).toBeVisible({ timeout: 15_000 });
@@ -356,11 +381,14 @@ async function expectInvoiceDocumentActionsWithheld(page: Page): Promise<void> {
   const register = visibleInvoiceRegister(page);
   if (isInvoiceMobile(page)) {
     const card = mobileInvoiceCard(page);
-    await expect(
-      card.getByRole('button', { name: /^تحصيل/ }).first(),
-    ).toBeVisible();
     await expect(card.getByRole('button', { name: /^طباعة/ })).toHaveCount(0);
     await expect(card.getByRole('button', { name: /^تنزيل/ })).toHaveCount(0);
+    // The row keeps its operational action while the document actions are
+    // withheld — proving the card was not emptied wholesale.
+    const menu = await openMobileInvoiceOverflowMenu(page);
+    await expect(
+      menu.getByRole('menuitem', { name: 'تحصيل', exact: true }),
+    ).toBeVisible();
   } else {
     const actions = register
       .getByRole('button', { name: 'إجراءات الفاتورة', exact: true })

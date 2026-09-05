@@ -39,15 +39,6 @@ export async function listExpenses(filters: ExpenseFilters): Promise<PagedExpens
  * changes are represented by balanced reversal and replacement journal entries;
  * metadata-only changes do not duplicate ledger movements.
  */
-export type UpdateExpenseResult = {
-  expenseId: string;
-  amountChanged: boolean;
-  oldAmount: number;
-  newAmount: number;
-  requestId: string;
-  idempotent: boolean;
-};
-
 export async function updateExpense(id: string, payload: ExpensePayload): Promise<Expense> {
   try {
     const requestId = crypto.randomUUID();

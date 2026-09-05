@@ -5,7 +5,9 @@ import { ContextualDocumentsSection } from '@/components/documents/contextual-do
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { formatDefaultCompanyMoney } from '@/lib/companyFormatters';
+import { formatDate, formatInvoiceStatusLabel, formatMoney } from '@/features/financials/components/financials-formatters';
+import { getInvoiceStatusTone } from '@/features/financials/finance-status-mapping';
+import { contractStatusLabels, contractStatusTone, normalizeContractStatus } from '@/lib/contractStatus';
 import {
   usePropertyActivityTab,
   usePropertyContractsTab,
@@ -83,15 +85,15 @@ export function PropertyContractsTab({ propertyId }: PropertyTabProps) {
             <CardContent className="p-4 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="font-bold text-sm">{contract.people?.full_name ?? 'مستأجر'}</span>
-                <StatusBadge tone={contract.status === 'active' ? 'success' : 'neutral'}>
-                  {contract.status === 'active' ? 'نشط' : contract.status}
+                <StatusBadge tone={contractStatusTone[normalizeContractStatus(contract.status)]}>
+                  {contractStatusLabels[normalizeContractStatus(contract.status)]}
                 </StatusBadge>
               </div>
               <p className="text-xs text-muted-foreground">
-                الوحدة: {contract.units?.unit_number ?? '—'} | الإيجار: {formatDefaultCompanyMoney(contract.rent_amount)}
+                الوحدة: {contract.units?.unit_number ?? '—'} | الإيجار: {formatMoney(contract.rent_amount)}
               </p>
               <p className="text-xs text-muted-foreground">
-                الفترة: {contract.start_date} إلى {contract.end_date}
+                الفترة: {formatDate(contract.start_date)} إلى {formatDate(contract.end_date)}
               </p>
             </CardContent>
           </Card>
@@ -144,12 +146,12 @@ export function PropertyFinancialsTab({ propertyId }: PropertyTabProps) {
             <Card key={invoice.id} className="p-4 space-y-1">
               <div className="flex items-center justify-between">
                 <span className="font-bold text-sm">{invoice.reference ?? 'فاتورة بلا مرجع'}</span>
-                <StatusBadge tone={invoice.status === 'paid' ? 'success' : 'warning'}>
-                  {invoice.status === 'paid' ? 'مدفوعة' : invoice.status}
+                <StatusBadge tone={getInvoiceStatusTone(invoice.status)}>
+                  {formatInvoiceStatusLabel(invoice.status)}
                 </StatusBadge>
               </div>
               <p className="text-xs text-muted-foreground">
-                المبلغ: {formatDefaultCompanyMoney(invoice.amount)} | تاريخ الاستحقاق: {invoice.due_date}
+                المبلغ: {formatMoney(invoice.amount)} | تاريخ الاستحقاق: {formatDate(invoice.due_date)}
               </p>
             </Card>
           ))}

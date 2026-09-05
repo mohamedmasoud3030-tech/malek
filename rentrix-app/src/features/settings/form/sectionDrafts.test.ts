@@ -9,7 +9,6 @@ import {
   type CompanySettingsDraft,
 } from './sectionDrafts';
 import { useSettingsSection } from './useSettingsSection';
-import { sectionDraftToSectionPayload, assertSectionFieldOwnership } from './sectionPersistence';
 
 const validDraft: CompanySettingsDraft = {
   company_name: 'Rentrix',
@@ -147,21 +146,5 @@ describe('useSettingsSection', () => {
 
     expect(result.current.isSectionValid).toBe(false);
     expect(result.current.validationErrors.currency).toBe('العملة مطلوبة');
-  });
-});
-
-describe('section persistence contract (D.4, definition only)', () => {
-  it('extracts exactly the section-owned fields into a section payload', () => {
-    const payload = sectionDraftToSectionPayload(validDraft, 'notifications');
-    expect(payload).toEqual({
-      notification_email_enabled: 'true',
-      notification_sms_enabled: 'false',
-    });
-  });
-
-  it('composes the four section payloads into the full draft without gaps or duplicates', () => {
-    const composed = assertSectionFieldOwnership(validDraft);
-    expect(Object.keys(composed).sort()).toEqual(Object.keys(validDraft).sort());
-    expect(composed).toMatchObject(validDraft);
   });
 });

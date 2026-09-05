@@ -186,7 +186,7 @@ export function TenantPortalPage() {
                 <div className="mt-3 divide-y divide-border/70">
                   {snapshot.receipts.map((receipt) => (
                     <div key={`${receipt.reference}-${receipt.date}`} className="grid grid-cols-[1fr_auto] gap-3 py-3 text-sm">
-                      <div><p className="font-bold">{receipt.reference}</p><p className="mt-1 text-xs text-muted-foreground">{date(receipt.date)} · {receipt.status === 'void' ? 'ملغي' : 'مثبت'}</p></div>
+                      <div><p className="font-bold">{receipt.reference}</p><p className="mt-1 text-xs text-muted-foreground">{date(receipt.date)} · {receipt.status === 'void' ? 'ملغى' : 'مثبت'}</p></div>
                       <p className="font-black">{money(receipt.amount, receipt.currency)}</p>
                     </div>
                   ))}

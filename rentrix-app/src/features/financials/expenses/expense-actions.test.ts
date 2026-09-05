@@ -45,7 +45,6 @@ describe('expense document actions', () => {
         amount: 75,
         description: 'إصلاح مضخة',
         propertyTitle: 'برج صحار',
-        kind: 'expense',
       },
     });
     expect(documentService.downloadDocumentPdf).not.toHaveBeenCalled();

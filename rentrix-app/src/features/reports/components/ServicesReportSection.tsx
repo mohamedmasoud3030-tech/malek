@@ -7,6 +7,7 @@ import { useNavigate } from '@tanstack/react-router';
 import {
   responsiblePartyLabels,
   utilityBillStatusLabels,
+  utilityBillStatusTone,
   utilityTypeLabels,
   useUtilityBills,
   useUtilityMeters,
@@ -25,6 +26,7 @@ import {
   formatMoney,
   normalizeCurrency,
 } from '@/lib/formatters';
+import { formatDate } from '@/features/financials/components/financials-formatters';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
 import type { CsvRow } from '@/lib/csvExport';
 import { documentService } from '@/services/documents/DocumentService';
@@ -50,26 +52,12 @@ import {
 } from '@/components/ui/report-section-primitives';
 import { ReportDocumentActions } from './report-document-actions';
 
-const statusTone = {
-  unpaid: 'warning',
-  partially_paid: 'info',
-  paid: 'success',
-} as const;
-
 const money = (value: number | null | undefined, currency: string) =>
   formatMoney({
     amount: value,
     currency: normalizeCurrency(currency),
     locale: 'ar-OM-u-nu-latn',
   });
-
-function formatDateValue(value: string) {
-  const parsed = new Date(`${value}T00:00:00`);
-  if (Number.isNaN(parsed.getTime())) return value;
-  return new Intl.DateTimeFormat('ar-OM-u-nu-latn', {
-    dateStyle: 'medium',
-  }).format(parsed);
-}
 
 function isWithinScope(row: UtilityBill, filters: ReportsFilterState) {
   if (row.due_date < filters.from || row.due_date > filters.to) return false;
@@ -391,7 +379,7 @@ export function ServicesReportSection({
         const obligation = obligationByBillId.get(row.id);
         return (
           <div>
-            <div>{formatDateValue(row.due_date)}</div>
+            <div>{formatDate(row.due_date)}</div>
             {obligation?.urgency === 'overdue' ? (
               <p className="mt-0.5 text-xs font-bold text-danger">{`متأخرة ${formatLatinNumber(obligation.daysOverdue, 'ar')} يوم`}</p>
             ) : null}
@@ -420,7 +408,7 @@ export function ServicesReportSection({
       header: 'الحالة',
       priority: 'primary',
       render: (row) => (
-        <StatusBadge tone={statusTone[row.status]}>
+        <StatusBadge tone={utilityBillStatusTone[row.status]}>
           {utilityBillStatusLabels[row.status]}
         </StatusBadge>
       ),

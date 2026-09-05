@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import type { OverdueInvoiceReportRow } from '../reports/financialReportsService';
+import {
+  getAgingBucketKeyFromDaysOverdue,
+  getAgingBucketLabel,
+  type OverdueInvoiceReportRow,
+} from '../reports/financialReportsService';
 import {
   OVER_90_BUCKET_KEY,
+  arrearsBucketOptions,
   filterOverdueInvoiceRows,
-  getArrearsBucketLabel,
-  getBucketKeyFromDaysOverdue,
+  getOverdueRowBucketKey,
   safePercentage,
 } from './arrears-workflow-helpers';
 
@@ -30,15 +34,23 @@ function createRow(overrides: Partial<OverdueInvoiceReportRow>): OverdueInvoiceR
 }
 
 describe('arrears workflow helpers', () => {
-  it('maps bucket labels and days overdue into stable Arabic workflow buckets', () => {
-    expect(getArrearsBucketLabel('current')).toBe('حالي');
-    expect(getArrearsBucketLabel(OVER_90_BUCKET_KEY)).toBe('90+ يوم');
-    expect(getBucketKeyFromDaysOverdue(-5)).toBe('current');
-    expect(getBucketKeyFromDaysOverdue(Number.NaN)).toBe('current');
-    expect(getBucketKeyFromDaysOverdue(30)).toBe('days_1_30');
-    expect(getBucketKeyFromDaysOverdue(31)).toBe('days_31_60');
-    expect(getBucketKeyFromDaysOverdue(61)).toBe('days_61_90');
-    expect(getBucketKeyFromDaysOverdue(91)).toBe(OVER_90_BUCKET_KEY);
+  it('labels workflow buckets with the single canonical aging vocabulary', () => {
+    expect(getAgingBucketLabel('current')).toBe('غير متأخر');
+    expect(getAgingBucketLabel(OVER_90_BUCKET_KEY)).toBe('أكثر من 90 يوم');
+    expect(arrearsBucketOptions.map((option) => option.label)).toEqual([
+      'كل الأعمار', 'غير متأخر', '1–30 يوم', '31–60 يوم', '61–90 يوم', 'أكثر من 90 يوم',
+    ]);
+  });
+
+  it('maps days overdue into stable buckets and prefers a server bucket when present', () => {
+    expect(getAgingBucketKeyFromDaysOverdue(-5)).toBe('current');
+    expect(getAgingBucketKeyFromDaysOverdue(Number.NaN)).toBe('current');
+    expect(getAgingBucketKeyFromDaysOverdue(30)).toBe('days_1_30');
+    expect(getAgingBucketKeyFromDaysOverdue(31)).toBe('days_31_60');
+    expect(getAgingBucketKeyFromDaysOverdue(61)).toBe('days_61_90');
+    expect(getAgingBucketKeyFromDaysOverdue(91)).toBe(OVER_90_BUCKET_KEY);
+    expect(getOverdueRowBucketKey({ daysOverdue: 5, bucket: OVER_90_BUCKET_KEY })).toBe(OVER_90_BUCKET_KEY);
+    expect(getOverdueRowBucketKey({ daysOverdue: 45 })).toBe('days_31_60');
   });
 
   it('calculates safe percentages without NaN or Infinity output', () => {

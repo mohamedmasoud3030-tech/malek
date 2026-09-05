@@ -11,7 +11,7 @@
  */
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
-import type { JournalBatch, JournalEventInput, JournalLine, JournalLineInput, JournalBatchesList, JournalLinesList } from './accountingDomain';
+import type { JournalBatch, JournalEventInput, JournalLine, JournalLineInput } from './accountingDomain';
 
 export type JournalBatchFilters = Readonly<{
   status?: JournalBatch['status'] | null;
@@ -114,28 +114,6 @@ export async function listJournalLines(batchId: string): Promise<JournalLine[]> 
   } catch (error) {
     handleSupabaseError(error, 'تعذر تحميل بنود القيد');
     return [];
-  }
-}
-
-export async function listJournalBatchesEnvelope(): Promise<JournalBatchesList | null> {
-  try {
-    const { data, error } = await supabase.rpc('list_journal_batches', { p_payload: {} });
-    if (error) throw error;
-    return (data ?? {}) as JournalBatchesList;
-  } catch (error) {
-    handleSupabaseError(error, 'تعذر تحميل قيود اليومية');
-    return null;
-  }
-}
-
-export async function listJournalLinesEnvelope(batchId: string): Promise<JournalLinesList | null> {
-  try {
-    const { data, error } = await supabase.rpc('list_journal_lines', { p_batch_id: batchId });
-    if (error) throw error;
-    return (data ?? {}) as JournalLinesList;
-  } catch (error) {
-    handleSupabaseError(error, 'تعذر تحميل بنود القيد');
-    return null;
   }
 }
 

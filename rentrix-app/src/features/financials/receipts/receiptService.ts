@@ -3,9 +3,6 @@ import { chunkForInFilter } from '@/lib/paginatedRead';
 import type { Contract, Invoice, Payment, Person, Property, Unit } from '@/types/domain';
 import { formatReceiptNumber } from '../components/receipt-formatters';
 
-// Keep the public helper on this module for existing services/tests.
-export { formatReceiptNumber };
-
 export type ReceiptListParams = { limit?: number };
 
 export type ReceiptRecord = {

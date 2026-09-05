@@ -7,24 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { formatCompanyDate, formatDefaultCompanyMoney } from '@/lib/companyFormatters';
-import { invoiceStatusLabels } from '@/features/financials/components/invoice-status-labels';
-import { paymentMethodLabels } from '@/features/financials/components/receipt-formatters';
+import { formatDate, formatInvoiceStatusLabel, formatMoney } from '@/features/financials/components/financials-formatters';
+import { getInvoiceStatusTone } from '@/features/financials/finance-status-mapping';
+import { formatPaymentMethodLabel } from '@/features/financials/components/receipt-formatters';
 import type { ContractPaymentsSnapshot } from './services/contractPaymentService';
 import { useContractPayments } from './useContractPayments';
-import type { SemanticTone } from '@/components/ui/status-badge';
-
-const invoiceStatusTone: Record<string, SemanticTone> = {
-  draft: 'neutral', issued: 'info', UNPAID: 'info',
-  partial: 'warning', PARTIALLY_PAID: 'warning',
-  paid: 'success', PAID: 'success',
-  overdue: 'danger', OVERDUE: 'danger',
-  void: 'neutral', VOID: 'neutral',
-};
-
-function formatDate(value: string): string {
-  return formatCompanyDate(null, value);
-}
 
 function getPaymentsErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'تعذر تحميل مدفوعات وفواتير العقد.';
@@ -36,9 +23,9 @@ type Payment = ContractPaymentsSnapshot['payments'][number];
 function ContractPaymentsSummary({ snapshot }: Readonly<{ snapshot: ContractPaymentsSnapshot }>) {
   return (
     <ResponsiveCardGrid desktopColumns={3}>
-      <KpiCard label="إجمالي الفواتير" value={formatDefaultCompanyMoney(snapshot.summary.totalInvoiced)} icon={WalletCards} accent="primary" compact />
-      <KpiCard label="إجمالي المدفوع" value={formatDefaultCompanyMoney(snapshot.summary.totalPaid)} icon={WalletCards} accent="emerald" compact />
-      <KpiCard label="المتبقي" value={formatDefaultCompanyMoney(snapshot.summary.totalRemaining)} icon={WalletCards} accent="amber" compact />
+      <KpiCard label="إجمالي الفواتير" value={formatMoney(snapshot.summary.totalInvoiced)} icon={WalletCards} accent="primary" compact />
+      <KpiCard label="إجمالي المدفوع" value={formatMoney(snapshot.summary.totalPaid)} icon={WalletCards} accent="emerald" compact />
+      <KpiCard label="المتبقي" value={formatMoney(snapshot.summary.totalRemaining)} icon={WalletCards} accent="amber" compact />
     </ResponsiveCardGrid>
   );
 }
@@ -50,14 +37,14 @@ function ContractInvoicesTable({ snapshot }: Readonly<{ snapshot: ContractPaymen
     {
       key: 'status', header: 'الحالة', priority: 'secondary' as const,
       render: (inv) => (
-        <StatusBadge tone={invoiceStatusTone[inv.status ?? ''] ?? 'neutral'}>
-          {invoiceStatusLabels[inv.status]}
+        <StatusBadge tone={getInvoiceStatusTone(inv.status)}>
+          {formatInvoiceStatusLabel(inv.status)}
         </StatusBadge>
       ),
     },
-    { key: 'amount', priority: 'detail' as const, header: 'المبلغ', render: (inv) => <span className="font-bold">{formatDefaultCompanyMoney(inv.amount)}</span> },
-    { key: 'paid_amount', priority: 'detail' as const, header: 'المدفوع', render: (inv) => <span className="font-bold text-success tabular-nums">{formatDefaultCompanyMoney(inv.paid_amount)}</span> },
-    { key: 'remaining', priority: 'primary' as const, header: 'المتبقي', render: (inv) => <span className="font-bold">{formatDefaultCompanyMoney(inv.remaining_amount)}</span> },
+    { key: 'amount', priority: 'detail' as const, header: 'المبلغ', render: (inv) => <span className="font-bold">{formatMoney(inv.amount)}</span> },
+    { key: 'paid_amount', priority: 'detail' as const, header: 'المدفوع', render: (inv) => <span className="font-bold text-success tabular-nums">{formatMoney(inv.paid_amount)}</span> },
+    { key: 'remaining', priority: 'primary' as const, header: 'المتبقي', render: (inv) => <span className="font-bold">{formatMoney(inv.remaining_amount)}</span> },
   ], []);
 
   return (
@@ -75,8 +62,8 @@ function ContractInvoicesTable({ snapshot }: Readonly<{ snapshot: ContractPaymen
 function ContractPaymentsTable({ snapshot }: Readonly<{ snapshot: ContractPaymentsSnapshot }>) {
   const columns: ColumnDef<Payment>[] = [
     { key: 'payment_date', priority: 'identity' as const, header: 'تاريخ الدفع', render: (p) => formatDate(p.payment_date) },
-    { key: 'amount', priority: 'detail' as const, header: 'المبلغ', render: (p) => <span className="font-bold">{formatDefaultCompanyMoney(p.amount)}</span> },
-    { key: 'method', priority: 'detail' as const, header: 'طريقة الدفع', render: (p) => paymentMethodLabels[p.payment_method] },
+    { key: 'amount', priority: 'detail' as const, header: 'المبلغ', render: (p) => <span className="font-bold">{formatMoney(p.amount)}</span> },
+    { key: 'method', priority: 'detail' as const, header: 'طريقة الدفع', render: (p) => formatPaymentMethodLabel(p.payment_method) },
     { key: 'invoice_id', priority: 'secondary' as const, header: 'مرجع الفاتورة', render: (p) => <span className="font-mono text-xs font-bold">{p.invoice_reference ?? 'فاتورة بلا مرجع'}</span> },
     { key: 'receipt_ref', priority: 'detail' as const, header: 'مرجع الإيصال', render: (p) => <span className="font-mono text-xs font-bold">{p.receipt_reference}</span> },
     { key: 'ref_number', priority: 'detail' as const, header: 'مرجع خارجي', render: (p) => p.reference_number ?? '—' },

@@ -4,6 +4,12 @@ import { ActionMenu } from "@/components/ui/action-menu";
 import { EntityTable, type ColumnDef } from "@/components/ui/entity-table";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { useAuth } from "@/hooks/use-auth";
+import {
+  maintenancePriorityLabels,
+  maintenancePriorityTone,
+  maintenanceStatusLabels,
+  maintenanceStatusTone,
+} from "@/lib/maintenanceStatus";
 import type { Property, Unit } from "@/types/domain";
 import type { ServiceProviderOption } from "@/features/service-providers/service-provider-service";
 import type { Maintenance } from "../maintenance-service";
@@ -19,36 +25,6 @@ import {
   maintenanceAttentionLabels,
   type MaintenanceAttention,
 } from "../maintenance-attention";
-
-export const maintenanceStatusLabels = {
-  open: "مفتوح",
-  in_progress: "قيد التنفيذ",
-  resolved: "تم التنفيذ",
-  closed: "مغلق",
-  cancelled: "ملغى",
-} as const;
-
-export const maintenanceStatusTone = {
-  open: "info",
-  in_progress: "warning",
-  resolved: "success",
-  closed: "neutral",
-  cancelled: "neutral",
-} as const;
-
-export const maintenancePriorityLabels = {
-  low: "منخفضة",
-  medium: "متوسطة",
-  high: "عالية",
-  urgent: "عاجلة",
-} as const;
-
-export const maintenancePriorityTone = {
-  low: "neutral",
-  medium: "info",
-  high: "warning",
-  urgent: "danger",
-} as const;
 
 export const maintenanceColumnOptions = [
   { key: "title", label: "العنوان", locked: true },

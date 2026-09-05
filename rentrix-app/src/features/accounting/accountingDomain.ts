@@ -10,7 +10,6 @@
 import type { Database } from '@/types/database';
 
 export const OMR_PRECISION = 3 as const;
-export const OMR_ROUNDING_UNIT = 0.001 as const;
 
 /** Round a monetary value to the canonical OMR unit (0.001), server-style. */
 export function roundOmr3(value: number): number {
@@ -85,30 +84,6 @@ export type JournalEventInput = Readonly<{
   lines: JournalLineInput[];
 }>;
 
-export type PostJournalEventResult = Readonly<{
-  success: boolean;
-  idempotent?: boolean;
-  batch_id: string;
-  status: JournalBatchStatus;
-  accounting_period_id?: string | null;
-  period_resolution_reason?: string | null;
-  effective_date?: string;
-  posted_at?: string;
-  debits?: number;
-  credits?: number;
-  lines?: Array<{ line_id: string; account_id: string; debit: number; credit: number }>;
-}>;
-
-export type ReverseJournalBatchResult = Readonly<{
-  success: boolean;
-  idempotent?: boolean;
-  original_batch_id: string;
-  reversal_batch_id: string;
-  status: JournalBatchStatus;
-  reversal_period_id?: string | null;
-  reversal_period_reason?: string | null;
-}>;
-
 export type AccountingPeriodInput = Readonly<{
   name?: string | null;
   start_date: string;
@@ -122,10 +97,6 @@ export type AccountingPeriodStatusInput = Readonly<{
   reason?: string | null;
 }>;
 
-export type ChartOfAccountsList = Readonly<{ company_id: string; accounts: ChartAccount[] }>;
-export type AccountingPeriodsList = Readonly<{ company_id: string; periods: AccountingPeriod[] }>;
-export type JournalBatchesList = Readonly<{ company_id: string; batches: JournalBatch[] }>;
-export type JournalLinesList = Readonly<{ batch_id: string; lines: JournalLine[] }>;
 export type ProvisionResult = Readonly<{
   success: boolean;
   company_id: string;

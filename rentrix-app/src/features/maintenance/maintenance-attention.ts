@@ -55,14 +55,6 @@ export const maintenanceAttentionLabels: Record<MaintenanceAttentionFlag, string
   schedule_missed: 'تجاوزت موعد الزيارة',
 };
 
-export const EMPTY_MAINTENANCE_ATTENTION_SUMMARY: MaintenanceAttentionSummary = {
-  stalled: 0,
-  awaitingClosure: 0,
-  scheduleMissed: 0,
-  needingAttention: 0,
-  oldestOpenAgeDays: 0,
-};
-
 function toDayNumber(value: string | null | undefined): number | null {
   const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value ?? '');
   if (!match) return null;

@@ -50,9 +50,10 @@ describe('/financials Money workspace IA', () => {
     expect(source).toContain('SectionTabs');
   });
 
-  it('contains six Money sections and separates management-fee accrual from custody funds', () => {
+  it('contains five routine Money sections (no retired overview cockpit) and separates management-fee accrual from custody funds', () => {
     const model = readFileSync(new URL('../finance/shell/financeShellModel.ts', import.meta.url), 'utf8');
-    for (const id of ['overview', 'collections', 'expenses', 'fees', 'funds', 'banking']) expect(model).toContain(`id: '${id}'`);
+    for (const id of ['collections', 'expenses', 'fees', 'funds', 'banking']) expect(model).toContain(`id: '${id}'`);
+    expect(model).not.toContain("id: 'overview'");
     expect(model).toContain("id: 'commissions'");
     expect(FINANCE_VIEWS.find((view) => view.id === 'fixed_monthly_accruals')?.sectionId).toBe('fees');
   });

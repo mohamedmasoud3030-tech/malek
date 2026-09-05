@@ -6,7 +6,6 @@ import type { Database } from '@/types/database';
 
 export type Maintenance = Database['public']['Tables']['maintenance_records']['Row'];
 export type MaintenanceStatus = Maintenance['status'] | 'all';
-export type MaintenancePayload = Database['public']['Tables']['maintenance_records']['Insert'];
 export type MaintenanceUpdate = Pick<Database['public']['Tables']['maintenance_records']['Update'],
   | 'property_id'
   | 'unit_id'

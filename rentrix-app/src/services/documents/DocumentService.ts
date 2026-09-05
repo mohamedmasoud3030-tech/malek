@@ -1,7 +1,6 @@
 import { DocumentController } from './DocumentController';
 import { getDocumentTemplateEntry, listDocumentTemplateEntries } from './documentRegistry';
 import type { DocumentBuildInput, DocumentTypeId } from './documentPayloads';
-import type { DocumentRequest } from './types';
 
 /**
  * Supported document outputs for the current local template engine.
@@ -46,9 +45,8 @@ function assertSupported(type: string): void {
  * preview and triggers the browser print dialog; download produces a real
  * `application/pdf` file. Neither is implemented in terms of the other.
  *
- * Prefer the canonical typed methods (`printDocument`/`downloadDocumentPdf`)
- * with payloads from `documentPayloads.ts`; the legacy `print`/
- * `downloadPdf` request shape stays only for compatibility-era callers.
+ * Every caller passes a typed payload from `documentPayloads.ts`; there is
+ * no second request shape.
  */
 export const documentService = {
   /** Canonical typed print. */
@@ -74,23 +72,4 @@ export const documentService = {
     return DocumentController.buildDocumentPdfFile(type, input);
   },
 
-  /** @deprecated compatibility request shape — migrate to `printDocument`. */
-  async print(request: DocumentRequest): Promise<void> {
-    assertSupported(request.type);
-    await DocumentController.print(request);
-  },
-
-  /** @deprecated compatibility request shape — migrate to `downloadDocumentPdf`. */
-  async downloadPdf(request: DocumentRequest): Promise<void> {
-    assertSupported(request.type);
-    await DocumentController.downloadPdf(request);
-  },
-
-  /** @deprecated use the canonical `downloadDocumentPdf` — kept temporarily for callers mid-migration. */
-  async renderPdf(request: DocumentRequest): Promise<void> {
-    // Delegates straight to the controller so the compat path never routes
-    // through another deprecated member.
-    assertSupported(request.type);
-    await DocumentController.downloadPdf(request);
-  },
 };

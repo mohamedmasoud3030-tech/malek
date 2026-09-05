@@ -4,8 +4,8 @@ import { ActionMenu } from '@/components/ui/action-menu';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
-import type { OverdueInvoiceReportRow } from '../reports/financialReportsService';
-import { ARABIC_LOCALE, EMPTY_FIELD_VALUE, getArrearsBucketLabel, getOverdueRowBucketKey } from './arrears-workflow-helpers';
+import { getAgingBucketLabel, type OverdueInvoiceReportRow } from '../reports/financialReportsService';
+import { ARABIC_LOCALE, EMPTY_FIELD_VALUE, getOverdueRowBucketKey } from './arrears-workflow-helpers';
 import { formatDate, formatInvoiceStatusLabel, formatMoney } from './financials-formatters';
 import { formatLatinNumber } from '@/lib/formatters';
 
@@ -53,7 +53,7 @@ export function OverdueInvoicesTable({ rows, onSelectInvoice, onCollectInvoice }
       header: 'الحالة',
       render: (row) => <StatusBadge tone="neutral">{formatInvoiceStatusLabel(row.status)}</StatusBadge>,
     },
-    { key: 'bucket', priority: 'detail' as const, header: 'العمر', render: (row) => getArrearsBucketLabel(getOverdueRowBucketKey(row)) },
+    { key: 'bucket', priority: 'detail' as const, header: 'العمر', render: (row) => getAgingBucketLabel(getOverdueRowBucketKey(row)) },
     ...(onCollectInvoice
       ? ([
           {

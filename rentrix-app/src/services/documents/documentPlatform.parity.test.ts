@@ -116,7 +116,7 @@ describe('print/PDF parity — one engine model drives both outputs', () => {
 
     const expenseNegative = documentEngine.buildDocument('expense_voucher', {
       settings,
-      payload: { amount: -150.5, kind: 'expense', category: 'تسوية', description: 'قيد تسوية سالب' },
+      payload: { amount: -150.5, category: 'تسوية', description: 'قيد تسوية سالب' },
     });
     const flatNegative = expenseNegative.tables[0].rows.flat().join(' | ');
     expect(flatNegative).toContain('-150.500 ر.ع');

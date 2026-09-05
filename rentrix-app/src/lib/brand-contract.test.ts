@@ -109,11 +109,6 @@ const DISPLAY_NAME_ALLOWLIST = new Map<string, string>([
   ],
 
   [
-    'src/services/mock-role-simulator.ts',
-    'Persisted localStorage key rentrix_simulated_role.',
-  ],
-
-  [
     'src/hooks/use-auth.tsx',
     'Auth session storage key rentrix-auth-session — renaming would sign every user out.',
   ],

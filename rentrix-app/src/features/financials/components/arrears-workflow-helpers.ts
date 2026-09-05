@@ -1,44 +1,25 @@
 import { toFinancialNumber } from '../financialMath';
-import type { AgingBucketKey, OverdueInvoiceReportRow } from '../reports/financialReportsService';
+import {
+  agingBucketOrder,
+  getAgingBucketKeyFromDaysOverdue,
+  getAgingBucketLabel,
+  type AgingBucketKey,
+  type OverdueInvoiceReportRow,
+} from '../reports/financialReportsService';
 
 export const ARABIC_LOCALE = 'ar';
 export const EMPTY_FIELD_VALUE = '—';
 export const OVER_90_BUCKET_KEY = 'days_90_plus' satisfies AgingBucketKey;
 
-export const arrearsBucketKeys = ['current', 'days_1_30', 'days_31_60', 'days_61_90', OVER_90_BUCKET_KEY] as const satisfies AgingBucketKey[];
-
 export type ArrearsBucketFilter = AgingBucketKey | 'all';
 
-const allBucketsOption = { value: 'all', label: 'كل الأعمار' } as const;
-
-export const arrearsBucketLabels: Record<AgingBucketKey, string> = {
-  current: 'حالي',
-  days_1_30: '1–30 يوم',
-  days_31_60: '31–60 يوم',
-  days_61_90: '61–90 يوم',
-  [OVER_90_BUCKET_KEY]: '90+ يوم',
-};
-
 export const arrearsBucketOptions: { value: ArrearsBucketFilter; label: string }[] = [
-  allBucketsOption,
-  ...arrearsBucketKeys.map((bucketKey) => ({ value: bucketKey, label: arrearsBucketLabels[bucketKey] })),
+  { value: 'all', label: 'كل الأعمار' },
+  ...agingBucketOrder.map((bucketKey) => ({ value: bucketKey, label: getAgingBucketLabel(bucketKey) })),
 ];
 
-export function getArrearsBucketLabel(bucket: AgingBucketKey) {
-  return arrearsBucketLabels[bucket];
-}
-
-export function getBucketKeyFromDaysOverdue(daysOverdue: number | null | undefined): AgingBucketKey {
-  const safeDays = toFinancialNumber(daysOverdue);
-  if (safeDays <= 0) return 'current';
-  if (safeDays <= 30) return 'days_1_30';
-  if (safeDays <= 60) return 'days_31_60';
-  if (safeDays <= 90) return 'days_61_90';
-  return OVER_90_BUCKET_KEY;
-}
-
 export function getOverdueRowBucketKey(row: Pick<OverdueInvoiceReportRow, 'daysOverdue'> & { bucket?: AgingBucketKey | null }): AgingBucketKey {
-  return row.bucket ?? getBucketKeyFromDaysOverdue(row.daysOverdue);
+  return row.bucket ?? getAgingBucketKeyFromDaysOverdue(row.daysOverdue);
 }
 
 export function safePercentage(value: number | null | undefined, total: number | null | undefined) {

@@ -4,6 +4,7 @@ import {
   currencyMetadata,
   formatDate,
   formatDateTime,
+  formatFileSize,
   formatLatinDate,
   formatLatinDateTime,
   formatLatinNumber,
@@ -22,6 +23,18 @@ import {
 } from './formatters';
 
 describe('shared formatter design-system utilities', () => {
+  it('formats file sizes once for every attachment surface — Latin numerals, KB under a mebibyte, MB above', () => {
+    expect(formatFileSize(512)).toBe('0.5 KB');
+    expect(formatFileSize(1536)).toBe('1.5 KB');
+    expect(formatFileSize(1024 * 1024 - 1)).toBe('1,024.0 KB');
+    expect(formatFileSize(5 * 1024 * 1024 + 1)).toBe('5.0 MB');
+    expect(formatFileSize(2.25 * 1024 * 1024)).toBe('2.25 MB');
+    expect(formatFileSize(0)).toBe('0.0 KB');
+    expect(formatFileSize(null)).toBe('—');
+    expect(formatFileSize(-1)).toBe('—');
+    expect(formatFileSize(1536, 'en')).toBe('1.5 KB');
+  });
+
   it('keeps the required supported currencies and OMR default', () => {
     expect(supportedCurrencies).toEqual(['OMR', 'AED', 'SAR', 'QAR', 'KWD', 'BHD', 'USD', 'EGP']);
     expect(DEFAULT_CURRENCY).toBe('OMR');

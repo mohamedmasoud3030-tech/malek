@@ -5,6 +5,11 @@ import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { formatDate, formatMoney } from '@/features/financials/components/financials-formatters';
 import { formatInvoiceStatusLabel } from '@/features/financials/components/invoice-status-labels';
+import {
+  formatPaymentMethodLabel,
+  formatReceiptStatusLabel,
+  getReceiptStatusTone,
+} from '@/features/financials/components/receipt-formatters';
 import { createReceiptPrintHref } from '@/features/financials/receipts/receipt-print';
 import { ReportPanel } from '@/components/ui/report-section-primitives';
 
@@ -24,14 +29,6 @@ export type CollectionReceiptRow = Readonly<{
   reference_number?: string | null;
   status: 'posted' | 'void';
 }>;
-
-const paymentMethodLabels: Record<string, string> = {
-  cash: 'نقدًا',
-  bank_transfer: 'تحويل بنكي',
-  card: 'بطاقة',
-  check: 'شيك',
-  other: 'أخرى',
-};
 
 export function ReceiptLinksPanel({ rows, isLoading }: Readonly<{ rows: CollectionReceiptRow[]; isLoading: boolean }>) {
   const columns = useMemo((): ColumnDef<CollectionReceiptRow>[] => [
@@ -84,7 +81,7 @@ export function ReceiptLinksPanel({ rows, isLoading }: Readonly<{ rows: Collecti
       key: 'method',
       header: 'طريقة الدفع',
       priority: 'detail',
-      render: (receipt) => paymentMethodLabels[receipt.payment_method] ?? receipt.payment_method,
+      render: (receipt) => formatPaymentMethodLabel(receipt.payment_method),
     },
     {
       key: 'amount',
@@ -97,8 +94,8 @@ export function ReceiptLinksPanel({ rows, isLoading }: Readonly<{ rows: Collecti
       header: 'الحالة',
       priority: 'primary',
       render: (receipt) => (
-        <StatusBadge tone={receipt.status === 'posted' ? 'success' : 'danger'}>
-          {receipt.status === 'posted' ? 'مرحّل' : 'ملغى'}
+        <StatusBadge tone={getReceiptStatusTone(receipt.status)}>
+          {formatReceiptStatusLabel(receipt.status)}
         </StatusBadge>
       ),
     },

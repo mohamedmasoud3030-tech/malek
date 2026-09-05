@@ -3,6 +3,7 @@ import {
   formatDate,
   formatMoney,
 } from '@/features/financials/components/financials-formatters';
+import { formatPaymentMethodLabel } from '@/features/financials/components/receipt-formatters';
 import type { DailyCollectionReportRow } from '@/features/financials/reports/financialReportsService';
 import type { CollectionSummaryReport } from '@/features/financials/reports/financial-reporting/report-types';
 import {
@@ -26,15 +27,9 @@ import {
 } from './collections/receipt-links-panel';
 import { ReportDocumentActions } from './report-document-actions';
 
-const paymentMethodLabels = {
-  cash: 'نقدًا',
-  bank_transfer: 'تحويل بنكي',
-  card: 'بطاقة',
-  check: 'شيك',
-  other: 'أخرى',
-} as const;
-
-type PaymentMethodKey = keyof typeof paymentMethodLabels;
+/** The five canonical payment methods the daily-collections RPC totals by. */
+const emptyMethodTotals = { cash: 0, bank_transfer: 0, card: 0, check: 0, other: 0 };
+type PaymentMethodKey = keyof typeof emptyMethodTotals;
 
 type CollectionMovementProps = Readonly<{
   summary: CollectionSummaryReport | undefined;
@@ -94,7 +89,7 @@ export function CollectionMovementSection({
         totals[key] += row.methodTotals[key];
       return totals;
     },
-    { cash: 0, bank_transfer: 0, card: 0, check: 0, other: 0 },
+    { ...emptyMethodTotals },
   );
   const methodMovementTotal = Object.values(methodTotals).reduce(
     (total, value) => total + value,
@@ -209,7 +204,7 @@ export function CollectionMovementSection({
                 return (
                   <ReportListRow
                     key={method}
-                    title={paymentMethodLabels[method]}
+                    title={formatPaymentMethodLabel(method)}
                     subtitle={`${formatLatinNumber(share, 'ar')}٪ من حركة الفترة المعروضة`}
                     meta={
                       <span className="block h-1.5 w-24 overflow-hidden rounded-full bg-muted">
@@ -233,7 +228,7 @@ export function CollectionMovementSection({
             {!hasMovement
               ? 'لا توجد دفعات أو إيصالات في هذه الفترة؛ وسّع النطاق الزمني أو راجع فلاتر النطاق.'
               : busiestDay
-                ? `أعلى حركة سُجلت يوم ${formatDate(busiestDay.paymentDate)} بقيمة ${formatMoney(busiestDay.totalPaid)}${methodRows[0] ? `، وأكثر طرق السداد استخدامًا ${paymentMethodLabels[methodRows[0][0]]}` : ''}. مؤشرات الفوترة والكفاءة التنفيذية تبقى في ملخص التحصيل.`
+                ? `أعلى حركة سُجلت يوم ${formatDate(busiestDay.paymentDate)} بقيمة ${formatMoney(busiestDay.totalPaid)}${methodRows[0] ? `، وأكثر طرق السداد استخدامًا ${formatPaymentMethodLabel(methodRows[0][0])}` : ''}. مؤشرات الفوترة والكفاءة التنفيذية تبقى في ملخص التحصيل.`
                 : 'لا يوجد جدول تحصيل يومي ضمن الفترة، لكن توجد إيصالات معروضة أدناه.'}
           </ReportInsightNote>
         </div>

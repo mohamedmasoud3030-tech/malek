@@ -25,7 +25,8 @@ import {
 } from '../documents/maintenance-documents';
 import { MaintenanceDetailsOverlay, MaintenanceResolveOverlay } from './maintenance-detail-resolve-overlays';
 import { MaintenanceList } from './maintenance-list';
-import { defaultMaintenanceColumns, maintenanceColumnOptions, maintenancePriorityLabels, maintenanceStatusLabels } from './maintenance-list';
+import { defaultMaintenanceColumns, maintenanceColumnOptions } from './maintenance-list';
+import { maintenancePriorityLabels, maintenanceStatusLabels } from '@/lib/maintenanceStatus';
 import { MaintenanceRequestForm } from './maintenance-request-form';
 import type { MaintenancePriorityFilter, MaintenanceStatusFilter } from '../maintenance-helpers';
 import { maintenanceAttentionLabels, type MaintenanceAttentionFilter, type MaintenanceAttentionFlag } from '../maintenance-attention';

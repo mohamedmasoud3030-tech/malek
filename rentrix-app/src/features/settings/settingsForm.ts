@@ -3,8 +3,7 @@
  *
  * The per-section draft types, field maps, and validators now live in
  * `./form/sectionDrafts`; the per-section isolation hook lives in
- * `./form/useSettingsSection`; the section persistence contract lives in
- * `./form/sectionPersistence`. This module keeps the historical import path
+ * `./form/useSettingsSection`. This module keeps the historical import path
  * (`@/features/settings/settingsForm`) and every historical export working:
  * it owns the whole-record adapter functions (record ↔ draft ↔ payload —
  * inherently cross-section because a single Supabase row is saved as one

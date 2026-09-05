@@ -2,40 +2,20 @@
 //
 // The form uses the form-level schema (string values). The service
 // layer re-parses with the payload schema (typed values) before
-// any Supabase write. The two layers share constants and labels
-// so the UI and the backend agree on the same enums.
+// any Supabase write. The enum value tuples below are the single
+// source for the utility vocabulary; the Arabic labels for them live
+// once, in `utilities-service.ts` (`utilityTypeLabels`,
+// `responsiblePartyLabels`, `utilityBillStatusLabels`).
 
 import { z, type RefinementCtx } from 'zod';
 
 export const UTILITY_TYPE_VALUES = ['electricity', 'water', 'sanitation', 'internet', 'gas', 'other'] as const;
 export const RESPONSIBLE_PARTY_VALUES = ['tenant', 'landlord', 'company'] as const;
 export const UTILITY_BILL_STATUS_VALUES = ['unpaid', 'partially_paid', 'paid'] as const;
-export const PAYOUT_METHOD_VALUES = ['bank_transfer', 'check', 'cash'] as const;
 
 export type UtilityType = (typeof UTILITY_TYPE_VALUES)[number];
 export type ResponsibleParty = (typeof RESPONSIBLE_PARTY_VALUES)[number];
 export type UtilityBillStatus = (typeof UTILITY_BILL_STATUS_VALUES)[number];
-
-export const UTILITY_TYPE_LABELS: Record<UtilityType, string> = {
-  electricity: 'كهرباء',
-  water: 'مياه',
-  sanitation: 'صرف صحي',
-  internet: 'إنترنت وتواصل',
-  gas: 'غاز',
-  other: 'مرافق أخرى',
-};
-
-export const RESPONSIBLE_PARTY_LABELS: Record<ResponsibleParty, string> = {
-  tenant: 'المستأجر',
-  landlord: 'المالك',
-  company: 'شركة الإدارة',
-};
-
-export const UTILITY_BILL_STATUS_LABELS: Record<UtilityBillStatus, string> = {
-  unpaid: 'مستحقة السداد',
-  partially_paid: 'مدفوعة جزئياً',
-  paid: 'مسددة بالكامل',
-};
 
 /** Reusable date-string validator (YYYY-MM-DD). */
 const isoDate = z

@@ -22,6 +22,10 @@ const maintenanceOverlay = readFileSync(
   resolve(import.meta.dirname, '../maintenance/components/maintenance-workspace.tsx'),
   'utf8',
 );
+const maintenanceStatusVocabulary = readFileSync(
+  resolve(import.meta.dirname, '../../lib/maintenanceStatus.ts'),
+  'utf8',
+);
 const maintenanceTransitionMigration = readFileSync(
   resolve(import.meta.dirname, '../../../../supabase/migrations/20260901000053_maintenance_transition_permission_alignment.sql'),
   'utf8',
@@ -49,7 +53,11 @@ describe('maintenance lifecycle action permissions', () => {
     expect(maintenanceTransitionMigration).toContain(
       "when 'cancelled' then public.current_user_has_effective_app_permission('maintenance.cancel')",
     );
-    expect(maintenanceList).toContain('cancelled: "ملغى"');
+    // The cancelled label is owned by the shared lifecycle vocabulary and the
+    // register renders it from there instead of a local copy.
+    expect(maintenanceStatusVocabulary).toContain("cancelled: 'ملغى'");
+    expect(maintenanceList).toContain("from \"@/lib/maintenanceStatus\"");
+    expect(maintenanceList).not.toContain('ملغى');
   });
 
   it('routes every maintenance surface through the one status-action permission rule', () => {

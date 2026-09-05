@@ -14,7 +14,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useCompanyFormatters } from '@/hooks/useCompanyFormatters';
 import { formatCompanyDateTime } from '@/lib/companyFormatters';
 import { useLandDossier } from '../use-lands';
-import { landStatusLabels, landCategoryLabels } from '../labels';
+import { landStatusLabels, landCategoryLabels, landStatusTone } from '../labels';
 
 type LandSection = 'overview' | 'commissions' | 'records';
 
@@ -39,7 +39,7 @@ export function LandDossierContent({ landId, section }: Readonly<{ landId: strin
       {(!section || section === 'overview') ? <Card><CardHeader><div className="flex items-center gap-3"><span className="grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary"><MapPinned className="size-6" /></span><div><CardTitle>{land.name || land.plot_no || 'أرض مسجلة'}</CardTitle><p className="mt-1 text-sm text-muted-foreground">{land.location || 'الموقع غير موثق'}</p></div></div></CardHeader><CardContent><DetailFields columns={3} fields={[
         { label: 'رقم القطعة', value: land.plot_no ?? 'غير موثق' },
         { label: 'التصنيف', value: landCategoryLabels[land.category ?? ''] ?? land.category ?? '—' },
-        { label: 'الحالة', value: <StatusBadge tone={land.status === 'available' ? 'success' : land.status === 'reserved' ? 'warning' : 'neutral'}>{landStatusLabels[land.status ?? ''] ?? land.status ?? '—'}</StatusBadge> },
+        { label: 'الحالة', value: <StatusBadge tone={landStatusTone[land.status ?? ''] ?? 'neutral'}>{landStatusLabels[land.status ?? ''] ?? land.status ?? '—'}</StatusBadge> },
         { label: 'المساحة', value: land.area == null ? 'غير موثقة' : `${land.area} م²` },
         { label: 'المالك', value: dossier.owner ? <Link to="/owners/$ownerId" params={{ ownerId: dossier.owner.id }} className="text-primary underline-offset-4 hover:underline">{ownerName}</Link> : ownerName },
         { label: 'سعر المالك', value: land.owner_price == null ? 'غير موثق' : companyFormatters.money(land.owner_price) },

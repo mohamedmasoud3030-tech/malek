@@ -23,7 +23,6 @@ describe('utilities real implementation - no mock data', () => {
     expect(content).toContain(".order('due_date', { ascending: false })");
     // Secondary id order prevents duplicate/missing pages on timestamp ties.
     expect(content.match(/\.order\('id', \{ ascending: false \}\)/g)?.length ?? 0).toBeGreaterThanOrEqual(2);
-    expect(content).toContain('.maybeSingle()');
   });
 
   it('production workspace does not contain hardcoded mock bills', () => {

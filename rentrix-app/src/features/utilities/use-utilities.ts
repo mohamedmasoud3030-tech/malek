@@ -6,18 +6,15 @@ import {
   listUtilityMeters,
   softDeleteUtilityBill,
   softDeleteUtilityMeter,
-  updateUtilityBill,
-  updateUtilityMeter,
-  type UtilityBill,
   type UtilityBillFormValues,
   type UtilityBillStatus,
-  type UtilityMeter,
   type UtilityMeterFormValues,
 } from './utilities-service';
 
 export {
   responsiblePartyLabels,
   utilityBillStatusLabels,
+  utilityBillStatusTone,
   utilityTypeLabels,
 } from './utilities-service';
 export type { ResponsibleParty, UtilityBill } from './utilities-service';
@@ -50,16 +47,6 @@ export function useCreateUtilityMeter() {
   });
 }
 
-export function useUpdateUtilityMeter() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, values }: { id: string; values: Partial<UtilityMeterFormValues> }) => updateUtilityMeter(id, values),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['utility-meters'] });
-    },
-  });
-}
-
 export function useDeleteUtilityMeter() {
   const qc = useQueryClient();
   return useMutation({
@@ -80,16 +67,6 @@ export function useCreateUtilityBill() {
   });
 }
 
-export function useUpdateUtilityBill() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, values }: { id: string; values: Partial<UtilityBillFormValues> }) => updateUtilityBill(id, values),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['utility-bills'] });
-    },
-  });
-}
-
 export function useDeleteUtilityBill() {
   const qc = useQueryClient();
   return useMutation({
@@ -99,8 +76,3 @@ export function useDeleteUtilityBill() {
     },
   });
 }
-
-export type UtilityMetersAndBills = {
-  meters: UtilityMeter[];
-  bills: UtilityBill[];
-};

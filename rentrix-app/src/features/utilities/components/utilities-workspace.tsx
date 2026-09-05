@@ -50,6 +50,7 @@ import {
 import {
   responsiblePartyLabels,
   utilityBillStatusLabels,
+  utilityBillStatusTone,
   utilityTypeLabels,
   type UtilityBill,
   type UtilityBillStatus,
@@ -78,12 +79,6 @@ const utilityIcons: Record<UtilityType, typeof Zap> = {
   gas: Flame,
   other: ShieldCheck,
 };
-
-function utilityBillStatusTone(status: UtilityBillStatus): 'success' | 'warning' | 'danger' {
-  if (status === 'paid') return 'success';
-  if (status === 'partially_paid') return 'warning';
-  return 'danger';
-}
 
 export type UtilitiesWorkspaceMode = 'standalone' | 'embedded';
 export type UtilitiesWorkspaceProps = Readonly<{ mode?: UtilitiesWorkspaceMode }>;
@@ -481,7 +476,7 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
         const urgency = obligationByBillId.get(bill.id)?.urgency;
         return (
           <div className="flex flex-wrap items-center gap-1.5">
-            <StatusBadge tone={utilityBillStatusTone(bill.status)}>{utilityBillStatusLabels[bill.status]}</StatusBadge>
+            <StatusBadge tone={utilityBillStatusTone[bill.status]}>{utilityBillStatusLabels[bill.status]}</StatusBadge>
             {urgency && urgency !== 'settled' && urgency !== 'scheduled' ? (
               <StatusBadge tone={utilityObligationUrgencyTone[urgency]}>{utilityObligationUrgencyLabels[urgency]}</StatusBadge>
             ) : null}

@@ -21,23 +21,6 @@ import { z } from 'zod';
 export const LAND_STATUS_VALUES = ['available', 'reserved', 'sold', 'archived'] as const;
 export const LAND_CATEGORY_VALUES = ['residential', 'commercial', 'agricultural', 'investment'] as const;
 
-export type LandStatus = (typeof LAND_STATUS_VALUES)[number];
-export type LandCategory = (typeof LAND_CATEGORY_VALUES)[number];
-
-export const LAND_STATUS_LABELS: Record<LandStatus, string> = {
-  available: 'متاحة',
-  reserved: 'محجوزة',
-  sold: 'مباعة',
-  archived: 'مؤرشفة',
-};
-
-export const LAND_CATEGORY_LABELS: Record<LandCategory, string> = {
-  residential: 'سكني',
-  commercial: 'تجاري',
-  agricultural: 'زراعي',
-  investment: 'استثماري',
-};
-
 const trimmedString = (max: number) =>
   z
     .string()

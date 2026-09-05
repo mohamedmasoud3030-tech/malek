@@ -15,6 +15,7 @@ import {
   type ContextualDocumentRow,
   type DocumentEntityType,
 } from '@/services/documents/contextualDocumentsService';
+import { formatFileSize } from '@/lib/formatters';
 
 function humanDate(value: string | undefined): string | null {
   if (!value) return null;
@@ -95,7 +96,7 @@ export function ContextualDocumentsSection({
         typeLabel: documentCategoryLabels[document.category] ?? 'مستند',
         ...richDocumentMetadata(document.metadata),
         fileName: document.file_name,
-        fileSize: document.file_size ? `${(document.file_size / 1024).toFixed(1)} ك.ب` : null,
+        fileSize: document.file_size ? formatFileSize(document.file_size) : null,
         mimeType: document.mime_type,
         relatedEntity: entityLabel,
       }))}

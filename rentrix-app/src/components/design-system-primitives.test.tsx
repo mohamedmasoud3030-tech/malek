@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { DetailFields } from '@/components/ui/detail-fields';
@@ -39,10 +40,11 @@ describe('DetailFields', () => {
 });
 
 describe('StatusBadge semantic tones', () => {
-  it('renders the same visual treatment for a product tone and its legacy color alias', () => {
-    const product = renderToStaticMarkup(<StatusBadge tone="emerald">نشط</StatusBadge>);
-    const legacy = renderToStaticMarkup(<StatusBadge tone="green">نشط</StatusBadge>);
-    expect(product).toBe(legacy);
+  it('exposes the semantic tone verbatim as data-tone (no color-alias layer remains)', () => {
+    const html = renderToStaticMarkup(<StatusBadge tone="success">نشط</StatusBadge>);
+    expect(html).toContain('data-tone="success"');
+    const source = readFileSync(new URL('./ui/status-badge.tsx', import.meta.url), 'utf8');
+    expect(source).not.toMatch(/LegacyTone|ProductTone|legacyToProduct/);
   });
 
   it('maps every semantic tone without throwing', () => {

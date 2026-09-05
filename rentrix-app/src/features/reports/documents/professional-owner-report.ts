@@ -22,46 +22,29 @@
  *  - Empty operational sections are omitted (no fixed empty pages).
  */
 import type { OwnerStatementReport } from '@/features/financials/reports/financialReportsService';
+import { getExpenseChargedToLabel } from '@/features/financials/expenses/operational-expenses';
+import { getOwnerStatementTransactionTypeLabel } from '@/features/financials/reports/statement-ledger';
+import { formatCommissionTypeLabel } from '@/features/owners/owner-agreement-labels';
 import { getOwnerFinancialAuthority, type OwnerFinancialPosition } from '@/features/owners/services/owner-financial-service';
 import { listOwnerSettlements, type OwnerSettlementRecord } from '@/features/owners/services/owner-settlements-service';
 import { listOwnerProperties } from '@/features/owners/services/owner-service';
+import { maintenanceStatusLabels, normalizeMaintenanceStatus } from '@/lib/maintenanceStatus';
 import { listMaintenance, type Maintenance } from '@/features/maintenance/maintenance-service';
-import { listUtilityBills, type UtilityBill } from '@/features/utilities/utilities-service';
-import { responsiblePartyLabels } from '@/features/utilities/utilities-service';
-import { documentService } from '@/services/documents/DocumentService';
-import { hasCompleteCompanyIdentity, type DocumentCompanySettings } from '@/services/documents/companyIdentity';
-import { runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
+import {
+  listUtilityBills,
+  responsiblePartyLabels,
+  utilityBillStatusLabels,
+  type UtilityBill,
+} from '@/features/utilities/utilities-service';
 import { getDocumentTemplateEntry, truthfulStatusLabel } from '@/services/documents/documentRegistry';
 import type { OwnerReportPayload, ProfessionalReportGroup, ReportCellFormat } from '@/services/documents/documentPayloads';
 import { getTodayLocalDateString } from '../reports-page.helpers';
+import { amount, dateLabel, text } from './report-cells';
 
 /* ------------------------------------------------------------------ */
-/* Truthful label maps (mirroring the operational UI labels)           */
+/* Vocabulary comes from the owning features (maintenance status,      */
+/* charged-to party, commission basis, utility labels) — no local maps.  */
 /* ------------------------------------------------------------------ */
-
-const MAINTENANCE_STATUS_LABELS: Record<string, string> = {
-  open: 'مفتوح',
-  in_progress: 'قيد التنفيذ',
-  resolved: 'تم التنفيذ',
-  closed: 'مغلق',
-  cancelled: 'ملغى',
-};
-
-const CHARGED_TO_LABELS: Record<string, string> = {
-  owner: 'المالك',
-  landlord: 'المالك',
-  company: 'المكتب',
-  tenant: 'المستأجر',
-};
-
-const COMMISSION_TYPE_LABELS: Record<string, string> = {
-  RATE: 'نسبة مئوية',
-  PERCENTAGE: 'نسبة مئوية',
-  FLAT: 'مبلغ ثابت',
-  FIXED: 'مبلغ ثابت',
-  percentage: 'نسبة مئوية',
-  fixed: 'مبلغ ثابت',
-};
 
 const settlementStatusLabel = (status: string): string => {
   const entry = getDocumentTemplateEntry('owner_settlement');
@@ -97,18 +80,10 @@ export type OwnerReportContext = {
 /* Cell helpers                                                        */
 /* ------------------------------------------------------------------ */
 
-const text = (value: string | null | undefined): ReportCellFormat => ({ kind: 'text', value: value?.trim() || '—' });
-const amount = (value: number | null | undefined): ReportCellFormat => ({ kind: 'amount', value: value ?? 0 });
-const signCell = (value: number | null | undefined): ReportCellFormat => ({ kind: 'amount', value: value ?? 0 });
 
 /* ------------------------------------------------------------------ */
 /* Payload builder (pure & deterministic — the print action feeds it)  */
 /* ------------------------------------------------------------------ */
-
-const dateLabel = (value: string | null | undefined): string => {
-  if (!value) return '—';
-  return value.slice(0, 10);
-};
 
 export function buildOwnerReportPayload(context: OwnerReportContext): OwnerReportPayload {
   const { ownerName, periodFrom, periodTo, scopeLabel, generatedAt, statement, position, settlements, maintenanceRows, utilityBills, propertyTitles } = context;
@@ -153,14 +128,9 @@ export function buildOwnerReportPayload(context: OwnerReportContext): OwnerRepor
   /* --- Group 2 — detailed daily financial movement (all transactions) --- */
   const allTransactions = statement?.transactions ?? [];
   const movementRows: ReportCellFormat[][] = allTransactions.map((tx) => {
-    const typeLabel = tx.type === 'payment' ? 'تحصيل إيجار'
-      : tx.type === 'receipt' ? 'تحصيل'
-      : tx.type === 'expense' ? 'مصروف مُحمَّل على المالك'
-      : tx.type === 'settlement' ? 'تسوية / صرف'
-      : 'حركة مالية';
     return [
       text(dateLabel(tx.date)),
-      text(typeLabel),
+      text(getOwnerStatementTransactionTypeLabel(tx.type)),
       text(tx.propertyName),
       text(tx.details),
       amount(tx.gross),
@@ -216,9 +186,9 @@ export function buildOwnerReportPayload(context: OwnerReportContext): OwnerRepor
           text(dateLabel(request.request_date ?? request.created_at)),
           text(request.property_id ? propertyTitles?.get(request.property_id) ?? '—' : '—'),
           text(request.title || request.no || request.reference || '—'),
-          text(request.status ? MAINTENANCE_STATUS_LABELS[request.status] ?? request.status : '—'),
+          text(request.status ? maintenanceStatusLabels[normalizeMaintenanceStatus(request.status)] : '—'),
           text(request.technician_name),
-          text(CHARGED_TO_LABELS[String(request.charged_to ?? '').toLowerCase()] ?? request.charged_to ?? '—'),
+          text(request.charged_to ? getExpenseChargedToLabel(request.charged_to) : '—'),
           request.cost != null ? amount(request.cost) : text('—'),
           text(request.expense_id ? 'نعم' : '—'),
         ]),
@@ -234,7 +204,7 @@ export function buildOwnerReportPayload(context: OwnerReportContext): OwnerRepor
       table: {
         title: 'تفاصيل المصروفات المسجلة',
         columns: ['التاريخ', 'العقار', 'البيان والمرجع', 'القيمة المسجلة'],
-        rows: expenseTransactions.map((tx) => [text(dateLabel(tx.date)), text(tx.propertyName), text(tx.details), signCell(tx.gross)]),
+        rows: expenseTransactions.map((tx) => [text(dateLabel(tx.date)), text(tx.propertyName), text(tx.details), amount(tx.gross)]),
         totals: [
           text('إجمالي المصروفات المسجلة'),
           text(''),
@@ -261,7 +231,7 @@ export function buildOwnerReportPayload(context: OwnerReportContext): OwnerRepor
           amount(bill.paid_amount),
           amount(bill.amount - bill.paid_amount),
           text(responsiblePartyLabels[bill.responsible_party] ?? bill.responsible_party),
-          text(UTILITY_STATUS_LABELS[bill.status] ?? bill.status),
+          text(utilityBillStatusLabels[bill.status] ?? bill.status),
         ]),
         totals: [
           text('إجمالي فواتير المرافق'),
@@ -298,7 +268,7 @@ export function buildOwnerReportPayload(context: OwnerReportContext): OwnerRepor
     if (statement?.commissionType) {
       feeRows.push([
         text('أساس عمولة الإدارة المسجل'),
-        text(`${COMMISSION_TYPE_LABELS[statement.commissionType] ?? statement.commissionType} ${statement.commissionValue != null ? (statement.commissionType?.toUpperCase() === 'RATE' || statement.commissionType?.toUpperCase() === 'PERCENTAGE' ? `(${statement.commissionValue}%)` : `(${statement.commissionValue})`) : ''}`),
+        text(`${formatCommissionTypeLabel(statement.commissionType)} ${statement.commissionValue != null ? (statement.commissionType === 'RATE' ? `(${statement.commissionValue}%)` : `(${statement.commissionValue})`) : ''}`),
       ]);
     }
     if (position) {
@@ -413,43 +383,6 @@ export function buildOwnerReportPayload(context: OwnerReportContext): OwnerRepor
     ],
     groups,
   };
-}
-
-const UTILITY_STATUS_LABELS: Record<string, string> = {
-  unpaid: 'مستحقة السداد',
-  partially_paid: 'مدفوعة جزئياً',
-  paid: 'مسددة بالكامل',
-};
-
-/* ------------------------------------------------------------------ */
-/* Guarded print/PDF actions                                           */
-/* ------------------------------------------------------------------ */
-
-function runOwnerReportAction(params: {
-  settings: DocumentCompanySettings;
-  context: OwnerReportContext;
-  mode: 'print' | 'pdf';
-}): Promise<void> {
-  const { settings, context, mode } = params;
-  return runGuardedDocumentAction({
-    isReady: hasCompleteCompanyIdentity(settings),
-    operation: () => {
-      const payload = buildOwnerReportPayload(context);
-      if (mode === 'print') {
-        return documentService.printDocument('owner_report', { settings, payload });
-      }
-      return documentService.downloadDocumentPdf('owner_report', { settings, payload });
-    },
-    fallbackMessage: mode === 'print' ? 'تعذرت طباعة كشف المالك التفصيلي.' : 'تعذر تصدير كشف المالك التفصيلي كملف PDF.',
-  });
-}
-
-export function printOwnerReport(params: { settings: DocumentCompanySettings; context: OwnerReportContext }): Promise<void> {
-  return runOwnerReportAction({ settings: params.settings, context: params.context, mode: 'print' });
-}
-
-export function downloadOwnerReportPdf(params: { settings: DocumentCompanySettings; context: OwnerReportContext }): Promise<void> {
-  return runOwnerReportAction({ settings: params.settings, context: params.context, mode: 'pdf' });
 }
 
 /* ------------------------------------------------------------------ */

@@ -24,6 +24,13 @@ import {
 import { downloadBlob } from '@/lib/tabular-export';
 import { buildXlsxBlob } from '@/lib/xlsx-export';
 import { loadPremiumOwnerReportPayload } from '../documents/premium-owner-report';
+import {
+  deriveTenantOpeningBalance,
+  getOwnerStatementTransactionTypeLabel,
+  getTenantStatementLineTypeLabel,
+  OWNER_STATEMENT_GENERIC_TRANSACTION_LABEL,
+  TENANT_STATEMENT_GENERIC_LINE_LABEL,
+} from '@/features/financials/reports/statement-ledger';
 
 /**
  * A statement is a legal/financial document: without its authoritative
@@ -32,13 +39,6 @@ import { loadPremiumOwnerReportPayload } from '../documents/premium-owner-report
  */
 export const MISSING_STATEMENT_DATA_MESSAGE =
   'تعذر إصدار الكشف: لا توجد بيانات كشف حساب مُحمَّلة للفترة أو الطرف المحدد. يرجى تحديد النطاق وعرض النتائج أولاً.';
-
-/** Each authoritative line exposes its post-movement running balance; reverse the first movement to recover the opening balance — never hardcode 0. */
-export function deriveTenantOpeningBalance(statement: TenantStatementReport): number {
-  const firstLine = statement.lines[0];
-  if (!firstLine) return statement.finalBalance || 0;
-  return (firstLine.balance || 0) - (firstLine.debit || 0) + (firstLine.credit || 0);
-}
 
 export function buildTenantStatementDocumentData(
   tenantStatement: TenantStatementReport | null | undefined,
@@ -57,8 +57,8 @@ export function buildTenantStatementDocumentData(
     closingBalance: tenantStatement.finalBalance || 0,
     lines: tenantStatement.lines.map((line) => ({
       date: line.date || '—',
-      type: line.type === 'invoice' ? 'مطالبة' : line.type === 'receipt' ? 'تحصيل' : 'حركة',
-      description: line.description || 'حركة حساب',
+      type: getTenantStatementLineTypeLabel(line.type),
+      description: line.description || TENANT_STATEMENT_GENERIC_LINE_LABEL,
       debit: line.debit || 0,
       credit: line.credit || 0,
       balance: line.balance || 0,
@@ -107,8 +107,8 @@ export function downloadTenantStatementExcel(statement: TenantStatementReport | 
   if (!statement) return;
   const rows = statement.lines.map((line) => [
     line.date || '—',
-    line.type === 'invoice' ? 'فاتورة / استحقاق' : line.type === 'receipt' ? 'دفعة / إيصال' : line.type === 'credit' ? 'دائن / عكس' : 'حركة حساب',
-    line.description || 'حركة حساب',
+    getTenantStatementLineTypeLabel(line.type),
+    line.description || TENANT_STATEMENT_GENERIC_LINE_LABEL,
     line.debit || 0,
     line.credit || 0,
     line.balance || 0,
@@ -132,9 +132,9 @@ export function downloadTenantStatementExcel(statement: TenantStatementReport | 
 export function ownerStatementExcelRows(statement: OwnerStatementReport): readonly (readonly (string | number)[])[] {
   return statement.transactions.map((transaction) => [
     transaction.date || '—',
-    transaction.type === 'receipt' ? 'تحصيل' : transaction.type === 'expense' ? 'مصروف' : transaction.type === 'settlement' ? 'تسوية / صرف' : 'حركة مالية',
+    getOwnerStatementTransactionTypeLabel(transaction.type),
     transaction.propertyName || 'غير محدد',
-    transaction.details || 'حركة مالية',
+    transaction.details || OWNER_STATEMENT_GENERIC_TRANSACTION_LABEL,
     transaction.gross || 0,
     transaction.deduction || 0,
     transaction.net || 0,

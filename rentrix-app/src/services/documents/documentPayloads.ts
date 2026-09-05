@@ -3,11 +3,9 @@
  *
  * `DocumentEngine.buildDocument(type, { settings, payload })` is the single
  * source of truth for building a `UnifiedDocumentModel`. Each document type
- * has one typed payload here; legacy request shapes are normalized into
- * these payloads by `legacyPayloadAdapters.ts`, and the compatibility
- * wrappers in `DocumentTemplates.tsx` map their historical data interfaces
- * onto them as well. No financial values are invented anywhere: every field
- * mirrors data the caller already holds.
+ * has exactly one typed payload here, produced by the domain adapters in
+ * `documentPayloadAdapters.ts`. No financial values are invented anywhere:
+ * every field mirrors data the caller already holds.
  */
 import type { DocumentCompanySettings } from './companyIdentity';
 
@@ -16,7 +14,6 @@ export type DocumentTypeId =
   | 'invoice'
   | 'receipt'
   | 'expense_voucher'
-  | 'payment'
   | 'owner_statement'
   | 'tenant_statement'
   | 'trial_balance'
@@ -110,12 +107,6 @@ export type ExpenseVoucherPayload = {
   amount: number;
   description?: string | null;
   propertyTitle?: string | null;
-  /**
-   * `payment` stays a documented legacy alias: no live caller owns it, so it
-   * renders as a neutral money-movement voucher rather than pretending to be
-   * a dedicated payment design.
-   */
-  kind: 'expense' | 'payment';
 };
 
 export type StatementTransaction = {
@@ -618,7 +609,6 @@ export type CanonicalDocumentPayloadMap = {
   invoice: InvoiceDocumentPayload;
   receipt: ReceiptDocumentPayload;
   expense_voucher: ExpenseVoucherPayload;
-  payment: ExpenseVoucherPayload;
   owner_statement: OwnerStatementPayload;
   tenant_statement: TenantStatementPayload;
   trial_balance: TrialBalanceReportPayload;

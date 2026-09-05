@@ -44,6 +44,3 @@ export const depositDeductionBalanceSchema = depositDeductionPayloadSchema.exten
     ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'مبلغ الخصم يتجاوز الرصيد المتبقي', path: ['deduction_amount'] });
   }
 });
-
-export type DepositPayload = z.output<typeof depositPayloadSchema>;
-export type DepositDeductionPayloadInput = z.output<typeof depositDeductionPayloadSchema>;

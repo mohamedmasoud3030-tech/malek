@@ -1,5 +1,5 @@
 import { Archive, Edit, Eye, FolderOpen, Layers, MapPinned, Plus, Tag, TrendingUp } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { AsyncContentState } from '@/components/async-content-state';
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
@@ -20,20 +20,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
 import { useOwnerOptions } from '@/hooks/use-owner-options';
-import { formatMoney, formatNumber } from '@/hooks/useCompanyFormatters';
+import { useCompanyFormatters } from '@/hooks/useCompanyFormatters';
 import type { LandFilters, LandRecord } from '../types';
 import type { LandFormValues } from '../land-schema';
 import { MONEY_STEP } from '@/lib/money';
 import { landStatusLabels, landCategoryLabels, landStatusTone } from '../labels';
-
-function money(value: number | null | undefined) {
-  return value == null ? '—' : formatMoney(value);
-}
-
-function area(value: number | null | undefined) {
-  return value == null ? '—' : `${formatNumber(value)} م²`;
-}
-
 
 type Props = Readonly<{
   rows: LandRecord[];
@@ -82,6 +73,9 @@ export function LandsView({
   const [previewLand, setPreviewLand] = useState<LandRecord | null>(null);
   const navigate = useNavigate();
   const ownersQuery = useOwnerOptions();
+  const { money: formatMoney, number: formatNumber } = useCompanyFormatters();
+  const money = useCallback((value: number | null | undefined) => (value == null ? '—' : formatMoney(value)), [formatMoney]);
+  const area = useCallback((value: number | null | undefined) => (value == null ? '—' : `${formatNumber(value)} م²`), [formatNumber]);
   const owners = ownersQuery.data ?? [];
   const activeRows = rows.filter((row) => row.status !== 'archived').length;
   const availableRows = rows.filter((row) => row.status === 'available').length;
@@ -139,7 +133,7 @@ export function LandsView({
     { key: 'value', priority: 'detail' as const, header: 'القيمة', render: (row) => <span dir="ltr">{money(row.owner_price ?? row.purchase_price)}</span> },
     { key: 'status', priority: 'primary' as const, header: 'الحالة', render: (row) => <StatusBadge tone={landStatusTone[row.status ?? ""] ?? "neutral"}>{landStatusLabels[row.status ?? ''] ?? 'حالة أخرى'}</StatusBadge> },
     { key: 'actions', priority: 'actions' as const, header: 'إجراءات', render: rowActions },
-  ], []);
+  ], [money, area]);
 
   return (
     <EmbeddableWorkspace

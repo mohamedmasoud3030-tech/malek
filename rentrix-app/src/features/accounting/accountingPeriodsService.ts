@@ -8,7 +8,7 @@
  */
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
-import type { AccountingPeriod, AccountingPeriodInput, AccountingPeriodStatus, AccountingPeriodStatusInput, AccountingPeriodsList } from './accountingDomain';
+import type { AccountingPeriod, AccountingPeriodInput, AccountingPeriodStatus, AccountingPeriodStatusInput } from './accountingDomain';
 
 type JsonRecord = Record<string, unknown>;
 
@@ -103,17 +103,6 @@ export async function updateAccountingPeriodStatus(input: AccountingPeriodStatus
     };
   } catch (error) {
     handleSupabaseError(error, 'تعذر تحديث حالة الفترة المحاسبية');
-    return null;
-  }
-}
-
-export async function listAccountingPeriodsEnvelope(): Promise<AccountingPeriodsList | null> {
-  try {
-    const { data, error } = await supabase.rpc('list_accounting_periods');
-    if (error) throw error;
-    return (data ?? {}) as AccountingPeriodsList;
-  } catch (error) {
-    handleSupabaseError(error, 'تعذر تحميل الفترات المحاسبية');
     return null;
   }
 }

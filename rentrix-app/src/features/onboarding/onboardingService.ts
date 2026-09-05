@@ -60,12 +60,6 @@ export async function waiveOnboardingRequirement(
   return data;
 }
 
-export async function revokeOnboardingWaiver(code: string): Promise<unknown> {
-  const { data, error } = await supabase.rpc('revoke_onboarding_waiver_atomic', { p_code: code });
-  if (error) throw error;
-  return data;
-}
-
 export async function completeCompanyOnboarding(): Promise<unknown> {
   const { data, error } = await supabase.rpc('complete_company_onboarding_atomic');
   if (error) throw error;

@@ -13,7 +13,6 @@ import {
   FileSpreadsheet,
   HandCoins,
   Landmark,
-  LayoutDashboard,
   ReceiptText,
   WalletCards,
 } from 'lucide-react';
@@ -21,7 +20,6 @@ import type { LucideIcon } from 'lucide-react';
 import { canAccess, type AppPermission, type AuthorizationContext } from '@/features/auth/permissions';
 
 export type FinanceSectionId =
-  | 'overview'
   | 'collections'
   | 'expenses'
   | 'fees'
@@ -29,7 +27,6 @@ export type FinanceSectionId =
   | 'banking';
 
 export type FinanceViewId =
-  | 'overview'
   | 'invoices'
   | 'receipts'
   | 'arrears'
@@ -70,8 +67,6 @@ export const FINANCE_SECTIONS: readonly FinanceSectionDefinition[] = [
     showInPrimaryNavigation: true,
   },
   { id: 'banking', label: 'البنوك', icon: Landmark, defaultViewId: 'bank_reconciliation', showInPrimaryNavigation: true },
-  // Compatibility only. The old cockpit is no longer a routine destination.
-  { id: 'overview', label: 'وضع المال', icon: LayoutDashboard, defaultViewId: 'overview', showInPrimaryNavigation: false },
 ];
 
 export const FINANCE_VIEWS: readonly FinanceViewDefinition[] = [
@@ -84,7 +79,6 @@ export const FINANCE_VIEWS: readonly FinanceViewDefinition[] = [
   { id: 'owner_settlements', sectionId: 'funds', label: 'تسويات الملاك', icon: HandCoins, permission: 'financial.owner_settlements.view' },
   { id: 'deposits', sectionId: 'funds', label: 'تأمينات المستأجرين', icon: FileCheck, permission: 'financial.deposits.view' },
   { id: 'bank_reconciliation', sectionId: 'banking', label: 'المطابقة البنكية', icon: Landmark, permission: 'financial.bank_reconciliation.view' },
-  { id: 'overview', sectionId: 'overview', label: 'وضع المال', icon: LayoutDashboard, permission: null, showInSectionNavigation: false },
 ];
 
 export function isViewPermitted(
@@ -159,7 +153,7 @@ export function resolveFinanceLocation(
   const sec = rawSection.toLowerCase().trim();
   const vi = rawView.toLowerCase().trim();
 
-  // Old /financials and ?section=overview links now land on the primary job.
+  // Bare /financials and retired ?section=overview deep links land on the primary job.
   if (!sec || sec === 'overview') {
     sId = 'collections';
     vId = 'invoices';

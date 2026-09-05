@@ -48,19 +48,3 @@ export const portfolioHubSections: readonly PortfolioHubSection[] = [
     showInPrimaryNavigation: true,
   },
 ] as const;
-
-export type PortfolioHubPermission = Exclude<PortfolioHubSection['permission'], null>;
-
-export function getAccessiblePortfolioHubSections(
-  canAccess: (permission: PortfolioHubPermission) => boolean,
-) {
-  return portfolioHubSections.filter(
-    (section) => section.permission === null || canAccess(section.permission),
-  );
-}
-
-export function getVisiblePortfolioHubSections(
-  canAccess: (permission: PortfolioHubPermission) => boolean,
-) {
-  return getAccessiblePortfolioHubSections(canAccess).filter((section) => section.showInPrimaryNavigation);
-}

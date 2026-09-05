@@ -1,3 +1,4 @@
+import type { SemanticTone } from '@/components/ui/status-badge';
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
 import { fetchAllRows } from '@/lib/paginatedRead';
@@ -6,17 +7,22 @@ import {
   utilityMeterPayloadSchema,
   utilityBillFormSchema,
   utilityBillPayloadSchema,
+  type ResponsibleParty,
+  type UtilityBillStatus,
   type UtilityMeterFormValues,
   type UtilityBillFormValues,
+  type UtilityType,
 } from './utility-schema';
 
-// Re-export so existing call sites can keep importing form values
-// from utilities-service without learning the new module.
-export type { UtilityMeterFormValues, UtilityBillFormValues } from './utility-schema';
-
-export type UtilityType = 'electricity' | 'water' | 'sanitation' | 'internet' | 'gas' | 'other';
-export type ResponsibleParty = 'tenant' | 'landlord' | 'company';
-export type UtilityBillStatus = 'unpaid' | 'partially_paid' | 'paid';
+// The utility vocabulary (enum tuples + types) is owned by the schema; this
+// module is the single home for its Arabic labels and the RPC-backed loaders.
+export type {
+  ResponsibleParty,
+  UtilityBillFormValues,
+  UtilityBillStatus,
+  UtilityMeterFormValues,
+  UtilityType,
+} from './utility-schema';
 
 export type UtilityMeter = {
   id: string;
@@ -73,6 +79,18 @@ export const utilityBillStatusLabels: Record<UtilityBillStatus, string> = {
   unpaid: 'مستحقة السداد',
   partially_paid: 'مدفوعة جزئياً',
   paid: 'مسددة بالكامل',
+};
+
+/**
+ * One semantic tone per utility-bill settlement status, rendered through the
+ * canonical `StatusBadge` wherever a bill appears (utilities workspace, bill
+ * detail, services report). Operational urgency (overdue / due soon) is a
+ * separate badge from `utility-obligations.ts`, never folded into this tone.
+ */
+export const utilityBillStatusTone: Record<UtilityBillStatus, SemanticTone> = {
+  unpaid: 'warning',
+  partially_paid: 'info',
+  paid: 'success',
 };
 
 function toNumberOrNull(value: unknown): number | null {
@@ -246,36 +264,6 @@ export async function createUtilityMeter(values: UtilityMeterFormValues): Promis
   return mapMeter(data);
 }
 
-export async function updateUtilityMeter(id: string, values: Partial<UtilityMeterFormValues>): Promise<UtilityMeter> {
-  if (!id) throw new Error('معرف العداد مطلوب');
-
-  // For partial updates we re-validate only the provided fields.
-  // The payload schema enforces the same length caps and the
-  // responsible_party / utility_type enums.
-  const trimmed: Record<string, unknown> = {};
-  if (values.property_id !== undefined) trimmed.property_id = values.property_id;
-  if (values.unit_id !== undefined) trimmed.unit_id = values.unit_id;
-  if (values.utility_type !== undefined) trimmed.utility_type = values.utility_type;
-  if (values.meter_number !== undefined) trimmed.meter_number = values.meter_number;
-  if (values.account_number !== undefined) trimmed.account_number = values.account_number;
-  if (values.provider_name !== undefined) trimmed.provider_name = values.provider_name;
-  if (values.responsible_party !== undefined) trimmed.responsible_party = values.responsible_party;
-  if (values.is_active !== undefined) trimmed.is_active = values.is_active;
-  if (values.notes !== undefined) trimmed.notes = values.notes;
-
-  const { data, error } = await ((supabase as any)
-    .from('utility_meters')
-    .update(trimmed)
-    .eq('id', id)
-    .is('deleted_at', null)
-    .select('*')
-    .single() as any);
-
-  if (error) handleSupabaseError(error, 'تعذر تحديث عداد المرافق');
-  if (!data) throw new Error('العداد غير موجود');
-  return mapMeter(data);
-}
-
 export async function softDeleteUtilityMeter(id: string): Promise<void> {
   const { error } = await ((supabase as any)
     .from('utility_meters')
@@ -339,66 +327,6 @@ export async function createUtilityBill(values: UtilityBillFormValues): Promise<
 
   if (error) handleSupabaseError(error, 'تعذر إنشاء فاتورة المرافق');
   if (!data) throw new Error('لم يتم إنشاء الفاتورة');
-  return mapBill(data);
-}
-
-async function resolveBillAmounts(id: string, values: Partial<UtilityBillFormValues>) {
-  if (values.amount !== undefined && values.paid_amount !== undefined) {
-    return { amount: values.amount, paidAmount: values.paid_amount ?? 0 };
-  }
-
-  const { data, error } = await ((supabase as any)
-    .from('utility_bills')
-    .select('amount,paid_amount')
-    .eq('id', id)
-    .is('deleted_at', null)
-    .maybeSingle() as any);
-  if (error) handleSupabaseError(error, 'تعذر تحميل رصيد فاتورة المرافق');
-  const row = Array.isArray(data) ? data[0] ?? null : data;
-  if (!row) throw new Error('فاتورة المرافق غير موجودة أو غير متاحة لصلاحياتك.');
-
-  return {
-    amount: values.amount ?? Number(row.amount ?? 0),
-    paidAmount: values.paid_amount ?? Number(row.paid_amount ?? 0),
-  };
-}
-
-export async function updateUtilityBill(id: string, values: Partial<UtilityBillFormValues>): Promise<UtilityBill> {
-  if (!id) throw new Error('معرف الفاتورة مطلوب');
-
-  const payload: Record<string, unknown> = {};
-  if (values.meter_id !== undefined) payload.meter_id = values.meter_id || null;
-  if (values.property_id !== undefined) payload.property_id = values.property_id;
-  if (values.unit_id !== undefined) payload.unit_id = values.unit_id || null;
-  if (values.bill_number !== undefined) payload.reference_no = values.bill_number?.trim() || null;
-  if (values.billing_period_start !== undefined) payload.billing_period_start = values.billing_period_start || null;
-  if (values.billing_period_end !== undefined) payload.billing_period_end = values.billing_period_end || null;
-  if (values.previous_reading !== undefined) payload.previous_reading = values.previous_reading;
-  if (values.current_reading !== undefined) payload.current_reading = values.current_reading;
-  if (values.consumption_units !== undefined) payload.consumption_units = values.consumption_units;
-  if (values.amount !== undefined) payload.amount = values.amount;
-  if (values.paid_amount !== undefined) payload.paid_amount = values.paid_amount;
-  if (values.due_date !== undefined) payload.due_date = values.due_date;
-  if (values.responsible_party !== undefined) payload.charged_to = mapResponsibleToChargedTo(values.responsible_party);
-  if (values.actual_payer !== undefined) payload.actual_payer = values.actual_payer;
-  if (values.attachment_url !== undefined) payload.attachment_url = values.attachment_url || null;
-  if (values.notes !== undefined) payload.notes = values.notes?.trim() || null;
-
-  if (values.amount !== undefined || values.paid_amount !== undefined) {
-    const { amount, paidAmount } = await resolveBillAmounts(id, values);
-    payload.status = mapBillStatusToDb(deriveBillStatus(paidAmount, amount));
-  }
-
-  const { data, error } = await ((supabase as any)
-    .from('utility_bills')
-    .update(payload)
-    .eq('id', id)
-    .is('deleted_at', null)
-    .select('*')
-    .single() as any);
-
-  if (error) handleSupabaseError(error, 'تعذر تحديث فاتورة المرافق');
-  if (!data) throw new Error('الفاتورة غير موجودة');
   return mapBill(data);
 }
 

@@ -1,12 +1,13 @@
 import { AlertTriangle, Clock, FileWarning, TrendingDown, WalletCards } from 'lucide-react';
 import { RegisterMetricStrip } from '@/components/layout/register-summary';
 import { toFinancialNumber } from '../financialMath';
-import type {
-  AgedReceivablesBucket,
-  AgedReceivablesReport,
-  AgingBucketKey,
-  ArrearsSummaryReport,
-  OverdueInvoicesReport,
+import {
+  getAgingBucketLabel,
+  type AgedReceivablesBucket,
+  type AgedReceivablesReport,
+  type AgingBucketKey,
+  type ArrearsSummaryReport,
+  type OverdueInvoicesReport,
 } from '../reports/financialReportsService';
 import { ARABIC_LOCALE, OVER_90_BUCKET_KEY } from './arrears-workflow-helpers';
 import { formatMoney } from './financials-formatters';
@@ -42,7 +43,7 @@ export function ArrearsSummaryCards({
         { id: 'overdue', label: 'المتأخرات', value: formatMoney(totalOverdue), icon: AlertTriangle, tone: totalOverdue > 0 ? 'danger' : 'default', hideWhenEmpty: true },
         { id: 'count', label: 'فواتير متأخرة', value: overdueInvoiceCount, icon: FileWarning, hideWhenEmpty: true },
         { id: 'avg', label: 'متوسط التأخير', value: `${formatLatinNumber(averageDaysOverdue, ARABIC_LOCALE, { maximumFractionDigits: 1 })} يوم`, icon: Clock, hideWhenEmpty: averageDaysOverdue === 0 },
-        { id: 'over90', label: '90+ يوم', value: formatMoney(over90Amount), icon: TrendingDown, tone: 'danger', hideWhenEmpty: true },
+        { id: 'over90', label: getAgingBucketLabel(OVER_90_BUCKET_KEY), value: formatMoney(over90Amount), icon: TrendingDown, tone: 'danger', hideWhenEmpty: true },
         { id: 'outstanding', label: 'المتبقي', value: formatMoney(totalOutstanding), icon: WalletCards, hideWhenEmpty: true },
       ]}
     />

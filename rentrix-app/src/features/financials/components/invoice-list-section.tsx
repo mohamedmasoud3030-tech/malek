@@ -15,7 +15,7 @@ import { formatDate, formatInvoiceStatusLabel, formatMoney } from './financials-
 import { InvoiceFilters, type InvoiceFilterOption } from './invoice-filters';
 import { AmountText } from '@/components/ui/amount';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { getFinanceStatusTone, mapInvoiceStatusToFinanceKind } from '../finance-status-mapping';
+import { getInvoiceStatusTone } from '../finance-status-mapping';
 import { ActionMenu } from '@/components/ui/action-menu';
 
 const invoiceColumnOptions = [
@@ -237,7 +237,7 @@ export function InvoiceListSection({
       header: 'الحالة',
       priority: 'secondary',
       render: (invoice) => (
-        <StatusBadge tone={getFinanceStatusTone(mapInvoiceStatusToFinanceKind(invoice.status))}>
+        <StatusBadge tone={getInvoiceStatusTone(invoice.status)}>
           {formatInvoiceStatusLabel(invoice.status)}
         </StatusBadge>
       ),

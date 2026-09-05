@@ -9,8 +9,10 @@ import {
 } from '@/features/financials/components/financials-formatters';
 import {
   maintenancePriorityLabels,
+  maintenancePriorityTone,
   maintenanceStatusLabels,
-} from '@/features/maintenance/components/maintenance-list';
+  maintenanceStatusTone,
+} from '@/lib/maintenanceStatus';
 import {
   deriveMaintenanceAttention,
   maintenanceAttentionLabels,
@@ -48,21 +50,6 @@ import {
 import { formatLatinNumber } from '@/lib/formatters';
 import { ReportDocumentActions } from './report-document-actions';
 import type { CsvRow } from '@/lib/csvExport';
-
-const reportMaintenanceStatusTone = {
-  open: 'info',
-  in_progress: 'warning',
-  resolved: 'success',
-  closed: 'neutral',
-  cancelled: 'neutral',
-} as const;
-
-const reportMaintenancePriorityTone = {
-  low: 'neutral',
-  medium: 'info',
-  high: 'warning',
-  urgent: 'danger',
-} as const;
 
 /** Triage order for the active work list: urgent first, then high → low. */
 const priorityTriageWeight = {
@@ -547,7 +534,7 @@ export function MaintenanceReportSection({
                     meta={
                       <span className="flex flex-wrap items-center gap-1.5">
                         <StatusBadge
-                          tone={reportMaintenancePriorityTone[priority]}
+                          tone={maintenancePriorityTone[priority]}
                         >
                           {maintenancePriorityLabels[priority]}
                         </StatusBadge>
@@ -564,7 +551,7 @@ export function MaintenanceReportSection({
                       </span>
                     }
                     value={
-                      <StatusBadge tone={reportMaintenanceStatusTone[status]}>
+                      <StatusBadge tone={maintenanceStatusTone[status]}>
                         {maintenanceStatusLabels[status]}
                       </StatusBadge>
                     }
@@ -711,7 +698,7 @@ export function MaintenanceReportSection({
                       title={
                         <span className="flex items-center gap-2">
                           <StatusBadge
-                            tone={reportMaintenancePriorityTone[priority]}
+                            tone={maintenancePriorityTone[priority]}
                           >
                             {maintenancePriorityLabels[priority]}
                           </StatusBadge>

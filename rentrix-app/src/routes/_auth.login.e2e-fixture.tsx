@@ -25,11 +25,6 @@ const OwnerDetailE2EFixture = lazy(() =>
     default: module.OwnerDetailE2EFixture,
   })),
 );
-const OwnersWorkspaceE2EFixture = lazy(() =>
-  import('@/features/owners/owners-workspace.e2e-fixture').then((module) => ({
-    default: module.OwnersWorkspaceE2EFixture,
-  })),
-);
 const PropertiesListE2EFixture = lazy(() =>
   import('@/features/properties/properties-list.e2e-fixture').then(
     (module) => ({ default: module.PropertiesListE2EFixture }),
@@ -53,16 +48,6 @@ const FinancialsHubE2EFixture = lazy(() =>
 const MaintenanceE2EFixture = lazy(() =>
   import('@/features/maintenance/maintenance.e2e-fixture').then((module) => ({
     default: module.MaintenanceE2EFixture,
-  })),
-);
-const AiAssistantE2EFixture = lazy(() =>
-  import('@/features/ai-assistant/ai-assistant.e2e-fixture').then((module) => ({
-    default: module.AiAssistantE2EFixture,
-  })),
-);
-const AutomationE2EFixture = lazy(() =>
-  import('@/features/automation/automation.e2e-fixture').then((module) => ({
-    default: module.AutomationE2EFixture,
   })),
 );
 const MaintenanceWorkspaceE2EFixture = lazy(() =>
@@ -95,16 +80,6 @@ const ServiceProvidersWorkspaceE2EFixture = lazy(() =>
     (module) => ({ default: module.ServiceProvidersWorkspaceE2EFixture }),
   ),
 );
-const StateSurfacesE2EFixture = lazy(() =>
-  import('@/features/browser-ux/state-surfaces.e2e-fixture').then((module) => ({
-    default: module.StateSurfacesE2EFixture,
-  })),
-);
-const DialogFocusE2EFixture = lazy(() =>
-  import('@/features/browser-ux/dialog-focus.e2e-fixture').then((module) => ({
-    default: module.DialogFocusE2EFixture,
-  })),
-);
 
 export function LoginE2EFixture({
   fallback,
@@ -128,8 +103,6 @@ export function LoginE2EFixture({
     fixture = <SettingsWorkspaceE2EFixture />;
   } else if (search.get('e2e-owner-detail-workspace') === '1') {
     fixture = <OwnerDetailE2EFixture />;
-  } else if (search.get('e2e-owners-workspace') === '1') {
-    fixture = <OwnersWorkspaceE2EFixture />;
   } else if (search.get('e2e-maintenance-workspace') === '1') {
     fixture = <MaintenanceWorkspaceE2EFixture />;
   } else if (search.get('e2e-utilities-workspace') === '1') {
@@ -152,14 +125,6 @@ export function LoginE2EFixture({
     fixture = <FinancialsHubE2EFixture />;
   } else if (search.get('e2e-showcase-maintenance') === '1') {
     fixture = <MaintenanceE2EFixture />;
-  } else if (search.get('e2e-showcase-ai') === '1') {
-    fixture = <AiAssistantE2EFixture />;
-  } else if (search.get('e2e-showcase-automation') === '1') {
-    fixture = <AutomationE2EFixture />;
-  } else if (search.get('e2e-dialog-focus') === '1') {
-    fixture = <DialogFocusE2EFixture />;
-  } else if (search.get('e2e-state-surfaces') === '1') {
-    fixture = <StateSurfacesE2EFixture />;
   }
 
   return fixture ?? fallback;

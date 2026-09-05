@@ -5,6 +5,7 @@ import {
   toFinancialNumber,
 } from '@/features/financials/financialMath';
 import { getInvoiceGrossAmount } from '@/features/financials/invoices/invoiceService';
+import { formatReceiptNumber } from '@/features/financials/components/receipt-formatters';
 
 export type ContractInvoicePaymentRow = Readonly<{
   id: string;
@@ -15,6 +16,7 @@ export type ContractInvoicePaymentRow = Readonly<{
   amount: number;
   payment_method: Payment['payment_method'];
   reference_number: string | null;
+  /** Server-generated company-scoped receipt reference (REC-…), never a fabricated id. */
   receipt_reference: string;
   invoice_reference: string | null;
 }>;
@@ -64,11 +66,13 @@ type PaymentRow = Pick<
   | 'payment_method'
   | 'payment_date'
   | 'reference_number'
+  | 'receipt_id'
 >;
 
 function toPaymentRow(
   payment: PaymentRow,
   invoice: InvoiceRow,
+  receiptReferenceById: ReadonlyMap<string, string>,
 ): ContractInvoicePaymentRow {
   return {
     id: payment.id,
@@ -79,9 +83,23 @@ function toPaymentRow(
     amount: payment.amount ?? 0,
     payment_method: payment.payment_method ?? '',
     reference_number: payment.reference_number,
-    receipt_reference: payment.reference_number || 'إيصال مسجل',
+    // Same identity rule as the receipts register: the receipts.reference
+    // business number, else the honest "no commercial reference" label.
+    receipt_reference: receiptReferenceById.get(payment.receipt_id ?? payment.id) ?? formatReceiptNumber(payment.id),
     invoice_reference: invoice.reference,
   };
+}
+
+async function loadReceiptReferences(payments: readonly PaymentRow[]): Promise<Map<string, string>> {
+  const receiptIds = Array.from(new Set(payments.map((payment) => payment.receipt_id ?? payment.id)));
+  if (receiptIds.length === 0) return new Map();
+  const { data, error } = await supabase
+    .from('receipts')
+    .select('id, reference')
+    .in('id', receiptIds)
+    .returns<Array<{ id: string; reference: string | null }>>();
+  if (error) throw error;
+  return new Map((data ?? []).flatMap((row) => (row.reference ? [[row.id, row.reference] as const] : [])));
 }
 
 function buildSummary(
@@ -125,7 +143,7 @@ export async function getContractPaymentsSnapshot(
       ? await supabase
           .from('payments')
           .select(
-            'id, invoice_id, amount, payment_method, payment_date, reference_number',
+            'id, invoice_id, amount, payment_method, payment_date, reference_number, receipt_id',
           )
           .in('invoice_id', invoiceIds)
           .is('deleted_at', null)
@@ -138,6 +156,7 @@ export async function getContractPaymentsSnapshot(
   const invoicesById = new Map(
     invoiceRows.map((invoice) => [invoice.id, invoice]),
   );
+  const receiptReferenceById = await loadReceiptReferences(paymentRows ?? []);
   const paymentsByInvoiceId = new Map<string, ContractInvoicePaymentRow[]>();
   const payments = (paymentRows ?? []).flatMap((payment) => {
     const invoice = payment.invoice_id ? invoicesById.get(payment.invoice_id) : undefined;
@@ -145,7 +164,7 @@ export async function getContractPaymentsSnapshot(
       return [];
     }
 
-    const row = toPaymentRow(payment, invoice);
+    const row = toPaymentRow(payment, invoice, receiptReferenceById);
     paymentsByInvoiceId.set(payment.invoice_id ?? '', [
       ...(paymentsByInvoiceId.get(payment.invoice_id ?? '') ?? []),
       row,

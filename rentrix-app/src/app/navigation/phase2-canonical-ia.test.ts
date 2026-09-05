@@ -57,7 +57,9 @@ describe('Task-centric canonical IA', () => {
     for (const routineSection of ['collections', 'fees', 'expenses', 'funds', 'banking']) {
       expect(financeModelSource).toMatch(new RegExp(`id: '${routineSection}'[\\s\\S]*?showInPrimaryNavigation: true`));
     }
-    expect(financeModelSource).toMatch(/id: 'overview'[\s\S]*?showInPrimaryNavigation: false/);
+    // The retired cockpit section is gone; only its deep-link redirect survives.
+    expect(financeModelSource).not.toMatch(/id: 'overview'/);
+    expect(financeModelSource).toContain("sec === 'overview'");
     expect(financeModelSource).toMatch(/id: 'arrears'[\s\S]*?showInSectionNavigation: false/);
     expect(financeModelSource).toContain("id: 'commissions'");
     expect(financePageSource).toContain('<CommissionsWorkspace embedded />');

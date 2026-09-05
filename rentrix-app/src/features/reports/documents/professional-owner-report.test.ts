@@ -1,19 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { buildOwnerReportPayload, downloadOwnerReportPdf, loadOwnerReportContext, printOwnerReport, type OwnerReportContext } from './professional-owner-report';
-import { documentService } from '@/services/documents/DocumentService';
+import { buildOwnerReportPayload, loadOwnerReportContext, type OwnerReportContext } from './professional-owner-report';
 import { getOwnerFinancialAuthority, type OwnerFinancialPosition } from '@/features/owners/services/owner-financial-service';
 import type { OwnerStatementReport } from '@/features/financials/reports/financialReportsService';
 import { listOwnerSettlements, type OwnerSettlementRecord } from '@/features/owners/services/owner-settlements-service';
 import { listOwnerProperties } from '@/features/owners/services/owner-service';
 import { listMaintenance, type Maintenance } from '@/features/maintenance/maintenance-service';
 import { listUtilityBills, type UtilityBill } from '@/features/utilities/utilities-service';
-
-vi.mock('@/services/documents/DocumentService', () => ({
-  documentService: {
-    printDocument: vi.fn().mockResolvedValue(undefined),
-    downloadDocumentPdf: vi.fn().mockResolvedValue(undefined),
-  },
-}));
 
 vi.mock('@/features/owners/services/owner-financial-service', () => ({
   getOwnerFinancialAuthority: vi.fn(),
@@ -27,19 +19,18 @@ vi.mock('@/features/owners/services/owner-service', () => ({
 vi.mock('@/features/maintenance/maintenance-service', () => ({
   listMaintenance: vi.fn(),
 }));
-vi.mock('@/features/utilities/utilities-service', () => ({
-  listUtilityBills: vi.fn(),
-  responsiblePartyLabels: { tenant: 'المستأجر', landlord: 'المالك', company: 'شركة الإدارة' },
-}));
-
-const validSettings = {
-  companyName: 'شركة مسار العقارية',
-  registrationNumber: '12345678',
-  taxNumber: 'OM12345678',
-  currency: 'OMR',
-  address: 'مسقط',
-  documentPrefixes: {},
-};
+vi.mock('@/features/utilities/utilities-service', async () => {
+  // Only the RPC-backed loader is stubbed; the canonical label vocabularies
+  // pass through so this suite proves the report prints the real labels.
+  const actual = await vi.importActual<typeof import('@/features/utilities/utilities-service')>(
+    '@/features/utilities/utilities-service',
+  );
+  return {
+    listUtilityBills: vi.fn(),
+    responsiblePartyLabels: actual.responsiblePartyLabels,
+    utilityBillStatusLabels: actual.utilityBillStatusLabels,
+  };
+});
 
 const position: OwnerFinancialPosition = {
   owner_id: 'o-01',
@@ -346,22 +337,6 @@ describe('professional-owner-report adapter', () => {
     expect(movementTable!.table.columns).not.toContain('الرصيد الجاري');
     expect(movementTable!.table.columns).not.toContain('الرصيد الافتتاحي');
     expect(movementTable!.table.columns).not.toContain('الرصيد الختامي');
-  });
-
-  it('delegates print and PDF download to documentService with the owner_report type', async () => {
-    const context: OwnerReportContext = { ...baseContext, position };
-
-    await printOwnerReport({ settings: validSettings, context });
-    expect(documentService.printDocument).toHaveBeenCalledWith('owner_report', expect.objectContaining({
-      settings: validSettings,
-      payload: expect.objectContaining({ ownerName: 'سالم الحارثي' }),
-    }));
-
-    await downloadOwnerReportPdf({ settings: validSettings, context });
-    expect(documentService.downloadDocumentPdf).toHaveBeenCalledWith('owner_report', expect.objectContaining({
-      settings: validSettings,
-      payload: expect.objectContaining({ reportType: 'Owner_Financial_Report_Pack' }),
-    }));
   });
 });
 

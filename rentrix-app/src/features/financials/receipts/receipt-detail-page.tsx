@@ -17,18 +17,12 @@ import { documentService } from '@/services/documents/DocumentService';
 import { toReceiptDocumentPayload } from '@/services/documents/documentPayloadAdapters';
 import { DocumentReadinessError, runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
 import { formatDate, formatMoney } from '../components/financials-formatters';
-import { formatReceiptContext, paymentMethodLabels, receiptStatusLabels } from '../components/receipt-formatters';
+import { formatPaymentMethodLabel, formatReceiptContext, formatReceiptStatusLabel, getReceiptStatusTone } from '../components/receipt-formatters';
 import { toFinancialNumber } from '../financialMath';
 import { useReceipt } from './useReceipts';
 
 /** A receipt cannot be issued before its authoritative row is loaded. */
 const MISSING_RECEIPT_MESSAGE = 'تعذر إصدار الإيصال: لم يتم تحميل بيانات الإيصال بعد. يرجى الانتظار حتى اكتمال التحميل ثم إعادة المحاولة.';
-
-function receiptDetailStatusTone(status: string): 'success' | 'danger' | 'warning' {
-  if (status === 'posted') return 'success';
-  if (status === 'void') return 'danger';
-  return 'warning';
-}
 
 function ReceiptPageHeader({ description = 'جارٍ تحميل بيانات الإيصال...' }: Readonly<{ description?: string }>) {
   return (
@@ -65,7 +59,7 @@ export function ReceiptDetailPage() {
         unitNumber: receipt.unit_number ?? '—',
         invoiceNumber: receipt.invoice_reference ?? 'فاتورة بلا مرجع',
         amount: toFinancialNumber(receipt.amount),
-        paymentMethod: paymentMethodLabels[receipt.payment_method] ?? receipt.payment_method,
+        paymentMethod: formatPaymentMethodLabel(receipt.payment_method),
         reference: receipt.reference_number ?? undefined,
         notes: receipt.reference_number ? `مرجع السداد: ${receipt.reference_number}` : undefined,
       },
@@ -158,8 +152,6 @@ export function ReceiptDetailPage() {
     );
   }
 
-  const statusTone = receiptDetailStatusTone(receipt.status);
-
   return (
     <PageLayout
       dir="rtl"
@@ -229,7 +221,7 @@ export function ReceiptDetailPage() {
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
-            <StatusBadge tone={statusTone}>{receiptStatusLabels[receipt.status]}</StatusBadge>
+            <StatusBadge tone={getReceiptStatusTone(receipt.status)}>{formatReceiptStatusLabel(receipt.status)}</StatusBadge>
           </div>
         </CardHeader>
         <CardContent className="space-y-6 p-6 sm:p-8 print:p-0 print:pt-6">
@@ -254,7 +246,7 @@ export function ReceiptDetailPage() {
             <div className="mt-4 grid gap-2 text-sm sm:grid-cols-2 sm:gap-x-6">
               <div className="flex justify-between gap-4">
                 <span className="text-muted-foreground">طريقة الدفع:</span>
-                <span className="font-bold">{paymentMethodLabels[receipt.payment_method] ?? receipt.payment_method}</span>
+                <span className="font-bold">{formatPaymentMethodLabel(receipt.payment_method)}</span>
               </div>
               <div className="flex justify-between gap-4">
                 <span className="text-muted-foreground">تاريخ الدفع:</span>

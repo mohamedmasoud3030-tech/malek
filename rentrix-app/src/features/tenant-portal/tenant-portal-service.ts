@@ -35,12 +35,3 @@ export async function loadTenantPortalSnapshot(token: string | null | undefined)
   return { status: 'ready', snapshot: payload.snapshot };
 }
 
-/** Canonical source tables the server projection may read. */
-export const TENANT_PORTAL_ALLOWED_PROJECTION_SOURCES = [
-  'people',
-  'units',
-  'properties',
-  'contracts',
-  'invoices',
-  'receipts',
-] as const;

@@ -119,7 +119,8 @@ describe('call-site detection', () => {
   it.each([
     ["documentService.printDocument('receipt', x)", true],
     ['documentService.downloadDocumentPdf(t, x)', true],
-    ['documentService.downloadPdf(request)', true],
+    ["documentService.buildDocumentPdfFile('tenant_statement', x)", true],
+    ['documentService.downloadPdf(request)', false],
     ['printInvoiceDocument(invoice, context)', true],
     ["import { Printer } from 'lucide-react';", false],
     ['<Button onClick={onPrint}>طباعة</Button>', false],

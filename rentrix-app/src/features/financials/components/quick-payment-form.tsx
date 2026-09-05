@@ -7,6 +7,7 @@ import { SelectionCard } from '@/components/ui/selection-card';
 import type { Payment } from '@/types/domain';
 import { QUICK_PAYMENT_AMOUNT_INPUT_ID, QUICK_PAYMENT_FORM_ID } from '../invoices/quick-collect';
 import { formatMoney } from './financials-formatters';
+import { formatPaymentMethodLabel } from './receipt-formatters';
 import { toFinancialNumber } from '../financialMath';
 
 // RC1 has authoritative control accounts only for physical cash (1111) and
@@ -14,12 +15,12 @@ import { toFinancialNumber } from '../financialMath';
 // clearing-account policy exists; the server rejects those methods too.
 const methods: Payment['payment_method'][] = ['cash', 'bank_transfer'];
 
-const methodDetails: Record<Payment['payment_method'], { label: string; desc: string }> = {
-  cash: { label: 'نقدي', desc: 'دفع مباشر نقداً' },
-  bank_transfer: { label: 'تحويل بنكي', desc: 'إيداع أو تحويل حساب' },
-  card: { label: 'بطاقة', desc: 'دفع إلكتروني شبكة' },
-  check: { label: 'شيك', desc: 'شيك بنكي مصدق' },
-  other: { label: 'أخرى', desc: 'سداد بطريقة إضافية' },
+const methodDescriptions: Record<Payment['payment_method'], string> = {
+  cash: 'دفع مباشر نقداً',
+  bank_transfer: 'إيداع أو تحويل حساب',
+  card: 'دفع إلكتروني شبكة',
+  check: 'شيك بنكي مصدق',
+  other: 'سداد بطريقة إضافية',
 };
 
 type QuickPaymentFormProps = {
@@ -88,8 +89,8 @@ export function QuickPaymentForm({ remainingAmount, amount, method, paymentDate,
                 <SelectionCard
                   key={item}
                   selected={method === item}
-                  title={methodDetails[item].label}
-                  description={methodDetails[item].desc}
+                  title={formatPaymentMethodLabel(item)}
+                  description={methodDescriptions[item]}
                   onClick={() => onMethodChange(item)}
                 />
               ))}

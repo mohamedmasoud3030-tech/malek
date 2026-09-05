@@ -80,11 +80,6 @@ export type OwnerFinancialSummary = Readonly<{
   outstandingInvoicesCount: number;
 }>;
 
-export type OwnerHubSnapshot = Readonly<{
-  owners: Owner[];
-  properties: PropertyWithOwners[];
-}>;
-
 export type OwnerDetailSnapshot = Readonly<{
   owner: Owner;
   properties: OwnerProperty[];
@@ -489,11 +484,6 @@ export async function listInvoicesForContracts(contractIds: readonly string[]): 
     .order('id', { ascending: true })
     .returns<OwnerInvoice[]>());
   return rows;
-}
-
-export async function fetchOwnerHubSnapshot(): Promise<OwnerHubSnapshot> {
-  const [owners, properties] = await Promise.all([listOwners(), listPropertiesWithOwners()]);
-  return { owners, properties };
 }
 
 export async function fetchOwnerDetailSnapshot(ownerId: string): Promise<OwnerDetailSnapshot> {

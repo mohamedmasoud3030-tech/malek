@@ -29,6 +29,7 @@
  */
 import type { ContractListItem } from '@/features/contracts/services/contractService';
 import type { AgedReceivablesReport, OverdueInvoiceReportRow } from '@/features/financials/reports/arrears-reports-service';
+import { agingBucketLabels, agingBucketOrder } from '@/features/financials/reports/aging-buckets';
 import type {
   DailyCollectionReportRow,
   ExpenseBreakdownReport,
@@ -54,6 +55,7 @@ import { getAuthoritativeReportsCollectionRate } from '../reports-collection-eff
 import { buildOccupancyRows, getTodayLocalDateString, type ExpiringContractRow } from '../reports-page.helpers';
 import type { ReportsWorkspaceModel } from '../use-reports-workspace';
 import type { ReportsFilterState } from '../reports-workspace-filters';
+import { amount, countCell, dateLabel, percentOf, text } from './report-cells';
 import { arabicMonthLabel, formatPointChange, formatSignedAmountChange, monthEndIso, monthKeyOf, previousPeriodRange } from './report-period';
 
 /* ------------------------------------------------------------------ */
@@ -75,14 +77,6 @@ function unitStatusLabel(status: string | null | undefined): string {
   if (isRentableUnitStatus(status)) return 'شاغرة';
   return 'غير قابلة للتأجير';
 }
-
-const ARREARS_BUCKET_LABELS: Array<{ key: string; label: string }> = [
-  { key: 'current', label: 'غير متأخر بعد' },
-  { key: 'days_1_30', label: '1–30 يوم' },
-  { key: 'days_31_60', label: '31–60 يوم' },
-  { key: 'days_61_90', label: '61–90 يوم' },
-  { key: 'days_90_plus', label: '+90 يوم' },
-];
 
 /* ------------------------------------------------------------------ */
 /* Report data type (read models → deterministic metrics)              */
@@ -160,15 +154,6 @@ export type PropertyReportData = {
 /* Cell helpers (engine formats amounts/percent, adapters only shape)  */
 /* ------------------------------------------------------------------ */
 
-const text = (value: string | null | undefined): ReportCellFormat => ({ kind: 'text', value: value?.trim() || '—' });
-/**
- * Money cell. An UNAVAILABLE amount renders as `—`, never as `0` — a printed
- * zero must always mean a real zero from an authoritative source.
- */
-const amount = (value: number | null | undefined): ReportCellFormat => (value != null ? { kind: 'amount', value } : text('—'));
-const percentOf = (value: number | null | undefined): ReportCellFormat => (value != null ? { kind: 'percent', value } : text('—'));
-const countCell = (value: number | null | undefined): ReportCellFormat => (value != null ? { kind: 'text', value: String(value) } : text('—'));
-const dateLabel = (value: string | null | undefined): string => (value ? value.slice(0, 10) : '—');
 
 /** Signed absolute change (amounts/counts — never percent-of-percent). */
 const amountDelta = formatSignedAmountChange;
@@ -208,7 +193,7 @@ function maintenanceInPeriod(request: Maintenance, from: string, to: string): bo
   return Boolean(date && date >= from && date <= to);
 }
 
-export function monthsBetween(from: string, to: string): string[] {
+function monthsBetween(from: string, to: string): string[] {
   const months: string[] = [];
   let cursor = `${from.slice(0, 7)}-01`;
   const endKey = to.slice(0, 7);
@@ -224,7 +209,7 @@ export function monthsBetween(from: string, to: string): string[] {
 
 function aggregateArrearsBuckets(aged: AgedReceivablesReport | null): Array<{ label: string; total: number }> | null {
   if (!aged) return null;
-  return ARREARS_BUCKET_LABELS.map(({ key, label }) => ({ label, total: aged.buckets[key as keyof typeof aged.buckets]?.total ?? 0 }));
+  return agingBucketOrder.map((key) => ({ label: agingBucketLabels[key], total: aged.buckets[key]?.total ?? 0 }));
 }
 
 function countMaintenanceInPeriod(rows: readonly Maintenance[], from: string, to: string): number {
@@ -718,7 +703,7 @@ export function buildOccupancyTrend(
 const preparingMessage = (mode: 'print' | 'pdf') =>
   mode === 'print' ? 'تعذرت طباعة تقرير أداء العقار.' : 'تعذر تصدير تقرير أداء العقار كملف PDF.';
 
-export function runPropertyReportAction(params: {
+function runPropertyReportAction(params: {
   settings: DocumentCompanySettings;
   data: PropertyReportData;
   mode: 'print' | 'pdf';

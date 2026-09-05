@@ -10,18 +10,13 @@
  *   3. Balance Sheet — assets = liabilities + equity
  *   4. Cash Flow — operating + investing + financing change
  *   5. Reconciliation — subledger vs GL variance analysis
- *   6. Statements — tenant/owner periodic statements
+ *
+ * Tenant/owner periodic statements are subledger reports, not GL statements;
+ * they live in `features/financials/reports/statements-reports-service.ts`.
  *
  * DO NOT collapse unrelated payloads into generic interfaces.
  * Each report type has its own interface reflecting the authoritative RPC shape.
  */
-
-/** Report filters common to all accounting period-backed reports. */
-export type AccountingReportFilters = {
-  company_id: string;
-  as_of?: string;
-  period_id?: string;
-};
 
 /** Trial Balance — per-account balances. */
 export type TrialBalanceReport = {
@@ -88,26 +83,6 @@ export type CashFlowReport = {
   currency: string;
 };
 
-export type CashFlowDrillthroughRow = {
-  classification: string;
-  account_id: string;
-  account_no: string;
-  account_name: string;
-  batch_id: string;
-  source_type: string;
-  source_id: string;
-  event_id: string;
-  effective_date: string;
-  posted_at: string | null;
-  debit: number;
-  credit: number;
-  amount: number;
-  line_description: string | null;
-  ref_source_id: string | null;
-  ref_entity_type: string | null;
-  ref_entity_id: string | null;
-};
-
 /** Reconciliation — subledger vs GL variance analysis. */
 export type ReconciliationRow = {
   reconciliation_class: string;
@@ -122,9 +97,6 @@ export type ReconciliationRow = {
   subledger_count: number;
   gl_count: number;
 };
-
-/** Cash Flow Drillthrough — detailed line items behind a cash flow row. */
-export type CashFlowPeriod = { from: string | null; to: string | null };
 
 /** RPC response types for type-safe access. */
 export type TrialBalanceRpcRow = {
@@ -185,15 +157,4 @@ export type ReconciliationRpcRow = {
   reconciliation_status: string | null;
   subledger_count: number | string | null;
   gl_count: number | string | null;
-};
-
-export type StatementRpcResponse = {
-  line_items?: Array<{
-    account_no: string | null;
-    account_name: string | null;
-    debit: number | string | null;
-    credit: number | string | null;
-    description: string | null;
-    effective_date: string | null;
-  }>;
 };

@@ -8,7 +8,7 @@ import { openReceiptPrintTab } from '../receipts/receipt-print';
 import type { ReceiptRecord } from '../receipts/receiptService';
 import { formatDate, formatMoney, formatShortId, getErrorMessage } from './financials-formatters';
 import { QuickPaymentForm } from './quick-payment-form';
-import { formatReceiptContext, getPaymentReceiptBinding, paymentMethodLabels } from './receipt-formatters';
+import { formatPaymentMethodLabel, formatReceiptContext, getPaymentReceiptBinding } from './receipt-formatters';
 
 export type CollectionSuccess = {
   receiptId: string;
@@ -123,7 +123,7 @@ export function InvoiceDetailSection({
                   <div key={payment.id} className={`flex flex-col gap-2 rounded-xl p-3 sm:flex-row sm:items-center sm:justify-between ${binding.isVoid ? 'border border-dashed border-danger/40 bg-muted/10' : 'bg-muted/30'}`}>
                     <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
                       <span>{formatDate(payment.payment_date)}</span>
-                      <span className="text-sm text-muted-foreground">{paymentMethodLabels[payment.payment_method] ?? payment.payment_method}</span>
+                      <span className="text-sm text-muted-foreground">{formatPaymentMethodLabel(payment.payment_method)}</span>
                       <span className={binding.isVoid ? 'font-bold text-danger' : 'font-bold'}>{formatMoney(payment.amount)}</span>
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
@@ -149,7 +149,7 @@ export function InvoiceDetailSection({
                   <div className="min-w-0">
                     <p className="font-black text-success">تم تسجيل الدفعة بنجاح</p>
                     <p className="mt-1 text-sm font-bold text-muted-foreground">
-                      تم تحصيل {formatMoney(collectionSuccess.amount)} ({paymentMethodLabels[collectionSuccess.method] ?? collectionSuccess.method})
+                      تم تحصيل {formatMoney(collectionSuccess.amount)} ({formatPaymentMethodLabel(collectionSuccess.method)})
                       {collectionReceiptNumber ? <> — إيصال القبض <span className="tabular-nums" dir="ltr">{collectionReceiptNumber}</span></> : null}.
                     </p>
                   </div>

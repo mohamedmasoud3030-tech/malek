@@ -143,9 +143,13 @@ describe('UX completion contract', () => {
     expect(statements).not.toContain('formatShortId(');
     expect(statements).not.toContain('statement.commissionType ??');
     expect(statements).not.toContain('settlement في مصدر الكشف');
-    expect(statements).toContain("if (type === 'RATE') return `نسبة");
+    // Commission basis is worded through the canonical owner-agreement
+    // vocabulary (one label set for dossier, manager, statements and the
+    // printed owner pack) — never the raw RATE / FIXED_MONTHLY token.
+    expect(statements).toContain("from '@/features/owners/owner-agreement-labels'");
+    expect(statements).toContain("if (type === 'RATE') return `${commissionTypeLabels.RATE}");
     expect(statements).toContain(
-      "if (type === 'FIXED_MONTHLY') return `مبلغ شهري",
+      "if (type === 'FIXED_MONTHLY') return `${commissionTypeLabels.FIXED_MONTHLY}",
     );
 
     expect(system).not.toContain('SQL مباشرة');
@@ -213,13 +217,13 @@ describe('UX completion contract', () => {
       /id: 'automation'[\s\S]*?showInPrimaryNavigation: false/,
     );
 
-    expect(finance).toMatch(/id: 'fees'[\s\S]*?showInPrimaryNavigation: false/);
-    expect(finance).toMatch(
-      /id: 'funds'[\s\S]*?showInPrimaryNavigation: false/,
-    );
-    expect(finance).toMatch(
-      /id: 'banking'[\s\S]*?showInPrimaryNavigation: false/,
-    );
+    // Money keeps its five routine sections; the retired overview cockpit is gone
+    // and only its deep-link redirect (?section=overview → collections) survives.
+    expect(finance).not.toMatch(/id: 'overview'/);
+    expect(finance).toContain("sec === 'overview'");
+    expect(finance).toMatch(/id: 'fees'[\s\S]*?showInPrimaryNavigation: true/);
+    expect(finance).toMatch(/id: 'funds'[\s\S]*?showInPrimaryNavigation: true/);
+    expect(finance).toMatch(/id: 'banking'[\s\S]*?showInPrimaryNavigation: true/);
     expect(portfolio).toMatch(
       /id: 'lands'[\s\S]*?showInPrimaryNavigation: false/,
     );
