@@ -169,7 +169,7 @@ test('premium reports catalog — full product journey with print/PDF/share evid
   await expect(cards).toHaveCount(3);
   await expect(
     page.locator('[data-report-product="collections-arrears-cheques"]'),
-  ).toContainText('تقارير التحصيل والمتأخرات');
+  ).toContainText('التحصيل والمتأخرات والشيكات');
   await expect(
     page.locator('[data-report-product="owner-comprehensive-statement"]'),
   ).toHaveCount(0);
@@ -376,10 +376,71 @@ test('premium reports catalog — full product journey with print/PDF/share evid
     page,
     '/reports/collections-arrears-cheques?view=period&from=2026-01-01&to=2026-12-31',
   );
+  const tabRail = page.locator('[data-report-product-tabs]');
   facts.push({
     id: 'collections-tabs',
-    tabs: await page.locator('[data-report-product-tabs] [role="tab"]').count(),
+    tabs: await tabRail.locator('[role="tab"]').count(),
   });
+
+  // The target rail and the body must be one honest tab/tabpanel pair: every
+  // relation has to resolve to a real element, exactly one tab stays in the
+  // tab order, and the rail must be reachable by RTL arrow keys. A rail that
+  // renders `role="tab"` without these is announced but not operable.
+  const tabSemantics = await tabRail.evaluate((rail) => {
+    const tabs = Array.from(rail.querySelectorAll<HTMLElement>('[role="tab"]'));
+    // Scoped to the product rail's own panel: report bodies may render their
+    // own nested tabpanels, and the first match in document order is not ours.
+    const panel = document.querySelector<HTMLElement>(
+      '[role="tabpanel"][id^="report-product-panel-"]',
+    );
+    // Inactive tabs legitimately carry no `aria-controls`: only the selected
+    // tab's body exists. A relation that is present must still resolve.
+    const dangling = tabs
+      .map((tab) => tab.getAttribute('aria-controls'))
+      .filter((id) => id !== null && !document.getElementById(id));
+    const selectedControls = rail.querySelector<HTMLElement>(
+      '[role="tab"][aria-selected="true"]',
+    )?.getAttribute('aria-controls');
+    const labelId = panel?.getAttribute('aria-labelledby') ?? '';
+    return {
+      count: tabs.length,
+      hasTablistName: rail.querySelector('[role="tablist"]')?.getAttribute('aria-label')?.trim().length ?? 0,
+      inTabOrder: tabs.filter((tab) => tab.tabIndex === 0).length,
+      danglingControls: dangling,
+      selectedTabControlsExistingPanel: Boolean(
+        selectedControls && document.getElementById(selectedControls),
+      ),
+      panelLabelResolves: Boolean(labelId) && Boolean(document.getElementById(labelId)),
+      panelLabelIsSelectedTab:
+        panel?.getAttribute('aria-labelledby') ===
+        rail.querySelector('[role="tab"][aria-selected="true"]')?.id,
+    };
+  });
+  expect(tabSemantics.count).toBeGreaterThanOrEqual(2);
+  expect(tabSemantics.hasTablistName).toBeGreaterThan(0);
+  expect(tabSemantics.inTabOrder, 'one tab in the tab order').toBe(1);
+  expect(tabSemantics.danglingControls, 'resolved aria-controls').toEqual([]);
+  expect(tabSemantics.selectedTabControlsExistingPanel).toBe(true);
+  expect(tabSemantics.panelLabelResolves, 'resolved aria-labelledby').toBe(true);
+  expect(tabSemantics.panelLabelIsSelectedTab).toBe(true);
+
+  const selectedLabel = () =>
+    tabRail
+      .locator('[role="tab"][aria-selected="true"]')
+      .innerText()
+      .then((text) => text.trim());
+  const beforeKeyboard = await selectedLabel();
+  await tabRail.locator('[role="tab"][aria-selected="true"]').focus();
+  await page.keyboard.press('ArrowLeft');
+  await expect
+    .poll(() => selectedLabel(), { timeout: 10_000 })
+    .not.toBe(beforeKeyboard);
+  facts.push({
+    id: 'collections-tabs-keyboard',
+    beforeKeyboard,
+    afterKeyboard: await selectedLabel(),
+  });
+
   await capture(page, '11-collections-period');
   await open(
     page,
