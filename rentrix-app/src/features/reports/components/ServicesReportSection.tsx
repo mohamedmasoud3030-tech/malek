@@ -20,14 +20,24 @@ import {
   utilityBillRemaining,
   utilityObligationUrgencyLabels,
 } from '@/features/utilities/utility-obligations';
-import { formatLatinNumber, formatMoney, normalizeCurrency } from '@/lib/formatters';
+import {
+  formatLatinNumber,
+  formatMoney,
+  normalizeCurrency,
+} from '@/lib/formatters';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
 import type { CsvRow } from '@/lib/csvExport';
 import { documentService } from '@/services/documents/DocumentService';
 import { runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
-import { toReportDocumentPayload, type ReportDocumentData } from '@/services/documents/documentPayloadAdapters';
+import {
+  toReportDocumentPayload,
+  type ReportDocumentData,
+} from '@/services/documents/documentPayloadAdapters';
 import type { ReportsFilterState } from '../reports-workspace-filters';
-import { buildReportCsvFilename, usePropertyTitles } from '../reports-page.helpers';
+import {
+  buildReportCsvFilename,
+  usePropertyTitles,
+} from '../reports-page.helpers';
 import {
   ReportColumns,
   ReportInsightNote,
@@ -38,7 +48,7 @@ import {
   ReportState,
   ReportSummaryStrip,
 } from '@/components/ui/report-section-primitives';
-import { ReportShareActions } from './ReportShareActions';
+import { ReportDocumentActions } from './report-document-actions';
 
 const statusTone = {
   unpaid: 'warning',
@@ -46,12 +56,19 @@ const statusTone = {
   paid: 'success',
 } as const;
 
-const money = (value: number | null | undefined, currency: string) => formatMoney({ amount: value, currency: normalizeCurrency(currency), locale: 'ar-OM-u-nu-latn' });
+const money = (value: number | null | undefined, currency: string) =>
+  formatMoney({
+    amount: value,
+    currency: normalizeCurrency(currency),
+    locale: 'ar-OM-u-nu-latn',
+  });
 
 function formatDateValue(value: string) {
   const parsed = new Date(`${value}T00:00:00`);
   if (Number.isNaN(parsed.getTime())) return value;
-  return new Intl.DateTimeFormat('ar-OM-u-nu-latn', { dateStyle: 'medium' }).format(parsed);
+  return new Intl.DateTimeFormat('ar-OM-u-nu-latn', {
+    dateStyle: 'medium',
+  }).format(parsed);
 }
 
 function isWithinScope(row: UtilityBill, filters: ReportsFilterState) {
@@ -86,7 +103,10 @@ export function ServicesReportSection({
   const billsQuery = useUtilityBills({ propertyId });
   const metersQuery = useUtilityMeters(propertyId);
   const propertyTitlesQuery = usePropertyTitles();
-  const { companySettings: documentSettings, isReady: isDocumentSettingsReady } = useDocumentSettings();
+  const {
+    companySettings: documentSettings,
+    isReady: isDocumentSettingsReady,
+  } = useDocumentSettings();
   const currency = normalizeCurrency(documentSettings.currency);
 
   const rows = useMemo(
@@ -98,54 +118,94 @@ export function ServicesReportSection({
     [metersQuery.data],
   );
   const propertyTitleById = useMemo(
-    () => new Map((propertyTitlesQuery.data ?? []).map((row) => [row.id, (row.title ?? '').trim()] as const)),
+    () =>
+      new Map(
+        (propertyTitlesQuery.data ?? []).map(
+          (row) => [row.id, (row.title ?? '').trim()] as const,
+        ),
+      ),
     [propertyTitlesQuery.data],
   );
 
   // Operational urgency is the canonical obligation derivation — the exact
   // module the utilities workspace triages with, anchored to the report's as-of date.
-  const obligations = useMemo(() => deriveUtilityObligations(rows, filters.asOf), [rows, filters.asOf]);
+  const obligations = useMemo(
+    () => deriveUtilityObligations(rows, filters.asOf),
+    [rows, filters.asOf],
+  );
   const obligationByBillId = useMemo(
-    () => new Map(obligations.map((obligation) => [obligation.billId, obligation])),
+    () =>
+      new Map(obligations.map((obligation) => [obligation.billId, obligation])),
     [obligations],
   );
-  const obligationsSummary = useMemo(() => summarizeUtilityObligations(obligations), [obligations]);
+  const obligationsSummary = useMemo(
+    () => summarizeUtilityObligations(obligations),
+    [obligations],
+  );
 
   const triagedRows = useMemo(
-    () => [...rows].sort((a, b) => {
-      const obligationA = obligationByBillId.get(a.id);
-      const obligationB = obligationByBillId.get(b.id);
-      if (!obligationA || !obligationB) return obligationA ? -1 : obligationB ? 1 : a.id.localeCompare(b.id);
-      return compareUtilityObligationUrgency(obligationA, obligationB) || a.id.localeCompare(b.id);
-    }),
+    () =>
+      [...rows].sort((a, b) => {
+        const obligationA = obligationByBillId.get(a.id);
+        const obligationB = obligationByBillId.get(b.id);
+        if (!obligationA || !obligationB)
+          return obligationA ? -1 : obligationB ? 1 : a.id.localeCompare(b.id);
+        return (
+          compareUtilityObligationUrgency(obligationA, obligationB) ||
+          a.id.localeCompare(b.id)
+        );
+      }),
     [rows, obligationByBillId],
   );
 
-  const totalBilled = rows.reduce((sum, row) => sum + (Number(row.amount) || 0), 0);
-  const totalPaid = rows.reduce((sum, row) => sum + (Number(row.paid_amount) || 0), 0);
+  const totalBilled = rows.reduce(
+    (sum, row) => sum + (Number(row.amount) || 0),
+    0,
+  );
+  const totalPaid = rows.reduce(
+    (sum, row) => sum + (Number(row.paid_amount) || 0),
+    0,
+  );
   const paidCount = rows.filter((row) => row.status === 'paid').length;
   const proofCount = rows.filter((row) => Boolean(row.attachment_url)).length;
-  const unpaidWithoutProof = rows.filter((row) => row.status !== 'paid' && !row.attachment_url).length;
+  const unpaidWithoutProof = rows.filter(
+    (row) => row.status !== 'paid' && !row.attachment_url,
+  ).length;
   const isLoading = billsQuery.isLoading || metersQuery.isLoading;
   const hasError = billsQuery.isError || metersQuery.isError;
 
   // Payment progress is derived only from bills actually in scope — with no
   // bills it is undefined, never an invented 0%.
-  const paymentProgress = totalBilled > 0 ? (totalPaid / totalBilled) * 100 : null;
-  const overdueShare = totalBilled > 0 ? (obligationsSummary.overdueAmount / totalBilled) * 100 : null;
+  const paymentProgress =
+    totalBilled > 0 ? (totalPaid / totalBilled) * 100 : null;
+  const overdueShare =
+    totalBilled > 0
+      ? (obligationsSummary.overdueAmount / totalBilled) * 100
+      : null;
 
-  const partyRows = useMemo(() => RESPONSIBLE_PARTIES.map((party) => {
-    const partyBills = rows.filter((row) => row.responsible_party === party);
-    const billedAmount = partyBills.reduce((sum, row) => sum + (Number(row.amount) || 0), 0);
-    const unsettledCount = partyBills.filter((row) => obligationByBillId.get(row.id)?.urgency !== 'settled').length;
-    return {
-      party,
-      billCount: partyBills.length,
-      billedAmount,
-      unsettledCount,
-      outstanding: obligationsSummary.remainingByResponsibleParty[party],
-    };
-  }), [rows, obligationByBillId, obligationsSummary]);
+  const partyRows = useMemo(
+    () =>
+      RESPONSIBLE_PARTIES.map((party) => {
+        const partyBills = rows.filter(
+          (row) => row.responsible_party === party,
+        );
+        const billedAmount = partyBills.reduce(
+          (sum, row) => sum + (Number(row.amount) || 0),
+          0,
+        );
+        const unsettledCount = partyBills.filter(
+          (row) => obligationByBillId.get(row.id)?.urgency !== 'settled',
+        ).length;
+        return {
+          party,
+          billCount: partyBills.length,
+          billedAmount,
+          unsettledCount,
+          outstanding: obligationsSummary.remainingByResponsibleParty[party],
+        };
+      }),
+    [rows, obligationByBillId, obligationsSummary],
+  );
 
   const csvRows: CsvRow[] = triagedRows.map((row) => {
     const meter = row.meter_id ? meterById.get(row.meter_id) : undefined;
@@ -155,11 +215,15 @@ export function ServicesReportSection({
       service: meter ? utilityTypeLabels[meter.utility_type] : 'خدمة عامة',
       property: propertyTitleById.get(row.property_id) || '',
       dueDate: row.due_date,
-      urgency: obligation ? utilityObligationUrgencyLabels[obligation.urgency] : '',
+      urgency: obligation
+        ? utilityObligationUrgencyLabels[obligation.urgency]
+        : '',
       daysOverdue: obligation?.daysOverdue ?? 0,
       status: utilityBillStatusLabels[row.status],
       responsibleParty: responsiblePartyLabels[row.responsible_party],
-      actualPayer: row.actual_payer ? responsiblePartyLabels[row.actual_payer] : '—',
+      actualPayer: row.actual_payer
+        ? responsiblePartyLabels[row.actual_payer]
+        : '—',
       amount: row.amount,
       paid: row.paid_amount,
       remaining: utilityBillRemaining(row),
@@ -179,16 +243,37 @@ export function ServicesReportSection({
           { label: 'عدد الفواتير', value: rows.length },
           { label: 'إجمالي المستحق', value: money(totalBilled, currency) },
           { label: 'المسدد', value: money(totalPaid, currency) },
-          { label: 'غير المسدد (قيد السداد)', value: money(obligationsSummary.outstandingAmount, currency) },
-          { label: 'متأخر السداد بعد موعده', value: money(obligationsSummary.overdueAmount, currency) },
-          { label: 'تستحق خلال أيام قليلة', value: money(obligationsSummary.dueSoonAmount, currency) },
+          {
+            label: 'غير المسدد (قيد السداد)',
+            value: money(obligationsSummary.outstandingAmount, currency),
+          },
+          {
+            label: 'متأخر السداد بعد موعده',
+            value: money(obligationsSummary.overdueAmount, currency),
+          },
+          {
+            label: 'تستحق خلال أيام قليلة',
+            value: money(obligationsSummary.dueSoonAmount, currency),
+          },
           { label: 'فواتير معها إثبات دفع', value: proofCount },
           { label: 'فواتير غير مسددة بدون إثبات', value: unpaidWithoutProof },
         ],
       },
       {
         title: 'تفاصيل الفواتير بترتيب أولوية السداد',
-        columns: ['الفاتورة', 'الخدمة', 'العقار', 'الاستحقاق', 'الحالة', 'المسؤول', 'الدافع فعليًا', 'القيمة', 'المسدد', 'المتبقي', 'أولوية السداد'],
+        columns: [
+          'الفاتورة',
+          'الخدمة',
+          'العقار',
+          'الاستحقاق',
+          'الحالة',
+          'المسؤول',
+          'الدافع فعليًا',
+          'القيمة',
+          'المسدد',
+          'المتبقي',
+          'أولوية السداد',
+        ],
         rows: triagedRows.map((row) => {
           const meter = row.meter_id ? meterById.get(row.meter_id) : undefined;
           const obligation = obligationByBillId.get(row.id);
@@ -203,7 +288,9 @@ export function ServicesReportSection({
             money(row.amount, currency),
             money(row.paid_amount, currency),
             money(utilityBillRemaining(row), currency),
-            obligation ? utilityObligationUrgencyLabels[obligation.urgency] : '—',
+            obligation
+              ? utilityObligationUrgencyLabels[obligation.urgency]
+              : '—',
           ];
         }),
       },
@@ -214,10 +301,11 @@ export function ServicesReportSection({
   const handlePrint = async () => {
     await runGuardedDocumentAction({
       isReady: isDocumentSettingsReady,
-      operation: () => documentService.printDocument('generic_report', {
-        settings: documentSettings,
-        payload: toReportDocumentPayload(reportData()),
-      }),
+      operation: () =>
+        documentService.printDocument('generic_report', {
+          settings: documentSettings,
+          payload: toReportDocumentPayload(reportData()),
+        }),
       fallbackMessage: 'تعذرت طباعة تقرير الخدمات.',
     });
   };
@@ -225,10 +313,11 @@ export function ServicesReportSection({
   const handlePdf = async () => {
     await runGuardedDocumentAction({
       isReady: isDocumentSettingsReady,
-      operation: () => documentService.downloadDocumentPdf('generic_report', {
-        settings: documentSettings,
-        payload: toReportDocumentPayload(reportData()),
-      }),
+      operation: () =>
+        documentService.downloadDocumentPdf('generic_report', {
+          settings: documentSettings,
+          payload: toReportDocumentPayload(reportData()),
+        }),
       fallbackMessage: 'تعذر تنزيل تقرير الخدمات بصيغة PDF.',
     });
   };
@@ -240,19 +329,32 @@ export function ServicesReportSection({
   };
 
   const shareActions = canExportReports ? (
-    <ReportShareActions
+    <ReportDocumentActions
       className="flex flex-wrap gap-2"
       reportLabel="تقرير الخدمات والمرافق"
-      target={{ section: 'analytics', view: 'services', filters }}
-      summaryText={`إجمالي المستحق ${money(totalBilled, currency)} · غير المسدد ${money(obligationsSummary.outstandingAmount, currency)} · المتأخر ${money(obligationsSummary.overdueAmount, currency)}`}
+      reportShareTarget={{
+        reportId: 'portfolio-property-performance',
+        view: 'services',
+        filters,
+      }}
+      reportShareSummary={`إجمالي المستحق ${money(totalBilled, currency)} · غير المسدد ${money(obligationsSummary.outstandingAmount, currency)} · المتأخر ${money(obligationsSummary.overdueAmount, currency)}`}
       onPrint={handlePrint}
       onDownloadPdf={handlePdf}
-      csv={{ filename: buildReportCsvFilename('utilities-services'), rows: csvRows }}
+      csv={{
+        filename: buildReportCsvFilename('utilities-services'),
+        rows: csvRows,
+      }}
     />
   ) : undefined;
 
   if (hasError) {
-    return <ReportState kind="error" title="تعذر تحميل تقرير الخدمات" message="تعذر تحميل فواتير أو عدادات المرافق من المصدر المعتمد. أعد المحاولة بعد التحقق من الاتصال." />;
+    return (
+      <ReportState
+        kind="error"
+        title="تعذر تحميل تقرير الخدمات"
+        message="تعذر تحميل فواتير أو عدادات المرافق من المصدر المعتمد. أعد المحاولة بعد التحقق من الاتصال."
+      />
+    );
   }
 
   const billColumns: ColumnDef<UtilityBill>[] = [
@@ -264,8 +366,12 @@ export function ServicesReportSection({
         const meter = row.meter_id ? meterById.get(row.meter_id) : undefined;
         return (
           <div className="min-w-0">
-            <div className="font-bold">{row.bill_number || 'فاتورة بدون رقم'}</div>
-            <div className="mt-0.5 text-xs text-muted-foreground">{meter ? utilityTypeLabels[meter.utility_type] : 'خدمة عامة'}</div>
+            <div className="font-bold">
+              {row.bill_number || 'فاتورة بدون رقم'}
+            </div>
+            <div className="mt-0.5 text-xs text-muted-foreground">
+              {meter ? utilityTypeLabels[meter.utility_type] : 'خدمة عامة'}
+            </div>
           </div>
         );
       },
@@ -274,7 +380,8 @@ export function ServicesReportSection({
       key: 'property',
       header: 'العقار',
       priority: 'secondary',
-      render: (row) => propertyTitleById.get(row.property_id) || 'عقار غير محدد',
+      render: (row) =>
+        propertyTitleById.get(row.property_id) || 'عقار غير محدد',
     },
     {
       key: 'due',
@@ -313,22 +420,31 @@ export function ServicesReportSection({
       header: 'الحالة',
       priority: 'primary',
       render: (row) => (
-        <StatusBadge tone={statusTone[row.status]}>{utilityBillStatusLabels[row.status]}</StatusBadge>
+        <StatusBadge tone={statusTone[row.status]}>
+          {utilityBillStatusLabels[row.status]}
+        </StatusBadge>
       ),
     },
     {
       key: 'remaining',
       header: 'المتبقي',
       priority: 'primary',
-      render: (row) => <span dir="ltr" className="font-bold tabular-nums">{money(utilityBillRemaining(row), currency)}</span>,
+      render: (row) => (
+        <span dir="ltr" className="font-bold tabular-nums">
+          {money(utilityBillRemaining(row), currency)}
+        </span>
+      ),
     },
     {
       key: 'proof',
       header: 'إثبات الدفع',
       priority: 'detail',
-      render: (row) => (row.attachment_url
-        ? <StatusBadge tone="success">يوجد إثبات</StatusBadge>
-        : <span className="text-xs text-muted-foreground">—</span>),
+      render: (row) =>
+        row.attachment_url ? (
+          <StatusBadge tone="success">يوجد إثبات</StatusBadge>
+        ) : (
+          <span className="text-xs text-muted-foreground">—</span>
+        ),
     },
   ];
 
@@ -337,11 +453,34 @@ export function ServicesReportSection({
       <ReportSummaryStrip
         dataReportSummary="services"
         items={[
-          { label: 'إجمالي المستحق', value: money(totalBilled, currency), detail: `${formatLatinNumber(rows.length, 'ar')} فاتورة` },
-          { label: 'المسدد', value: money(totalPaid, currency), detail: `${formatLatinNumber(paidCount, 'ar')} فاتورة مسددة بالكامل` },
-          { label: 'غير المسدد', value: money(obligationsSummary.outstandingAmount, currency), detail: `${formatLatinNumber(obligationsSummary.outstandingCount, 'ar')} فاتورة قيد السداد`, tone: obligationsSummary.outstandingAmount > 0 ? 'warning' : undefined },
-          { label: 'متأخر السداد', value: money(obligationsSummary.overdueAmount, currency), detail: `${formatLatinNumber(obligationsSummary.overdueCount, 'ar')} فاتورة بعد موعدها`, tone: obligationsSummary.overdueCount > 0 ? 'critical' : undefined },
-          { label: 'إثباتات الدفع', value: `${formatLatinNumber(proofCount, 'ar')}/${formatLatinNumber(rows.length, 'ar')}`, detail: 'فواتير مرتبطة بإثبات' },
+          {
+            label: 'إجمالي المستحق',
+            value: money(totalBilled, currency),
+            detail: `${formatLatinNumber(rows.length, 'ar')} فاتورة`,
+          },
+          {
+            label: 'المسدد',
+            value: money(totalPaid, currency),
+            detail: `${formatLatinNumber(paidCount, 'ar')} فاتورة مسددة بالكامل`,
+          },
+          {
+            label: 'غير المسدد',
+            value: money(obligationsSummary.outstandingAmount, currency),
+            detail: `${formatLatinNumber(obligationsSummary.outstandingCount, 'ar')} فاتورة قيد السداد`,
+            tone:
+              obligationsSummary.outstandingAmount > 0 ? 'warning' : undefined,
+          },
+          {
+            label: 'متأخر السداد',
+            value: money(obligationsSummary.overdueAmount, currency),
+            detail: `${formatLatinNumber(obligationsSummary.overdueCount, 'ar')} فاتورة بعد موعدها`,
+            tone: obligationsSummary.overdueCount > 0 ? 'critical' : undefined,
+          },
+          {
+            label: 'إثباتات الدفع',
+            value: `${formatLatinNumber(proofCount, 'ar')}/${formatLatinNumber(rows.length, 'ar')}`,
+            detail: 'فواتير مرتبطة بإثبات',
+          },
         ]}
       />
 
@@ -361,13 +500,29 @@ export function ServicesReportSection({
             label="نسبة السداد من المستحق"
             value={paymentProgress}
             helper={`${money(totalPaid, currency)} من ${money(totalBilled, currency)}`}
-            tone={paymentProgress >= 90 ? 'good' : paymentProgress >= 60 ? 'warning' : 'critical'}
+            tone={
+              paymentProgress >= 90
+                ? 'good'
+                : paymentProgress >= 60
+                  ? 'warning'
+                  : 'critical'
+            }
           />
           <ReportProgress
             label="حصة المتأخر من المستحق"
             value={overdueShare}
-            helper={obligationsSummary.overdueCount > 0 ? `${formatLatinNumber(obligationsSummary.overdueCount, 'ar')} فواتير بعد موعدها` : 'لا فواتير متأخرة'}
-            tone={overdueShare <= 0 ? 'good' : overdueShare <= 25 ? 'warning' : 'critical'}
+            helper={
+              obligationsSummary.overdueCount > 0
+                ? `${formatLatinNumber(obligationsSummary.overdueCount, 'ar')} فواتير بعد موعدها`
+                : 'لا فواتير متأخرة'
+            }
+            tone={
+              overdueShare <= 0
+                ? 'good'
+                : overdueShare <= 25
+                  ? 'warning'
+                  : 'critical'
+            }
           />
         </div>
       )}
@@ -378,7 +533,7 @@ export function ServicesReportSection({
         eyebrow="الخدمات"
         icon={Zap}
         isLoading={isLoading}
-        action={(
+        action={
           <div className="flex flex-wrap items-center gap-2">
             <Button
               variant="outline"
@@ -392,10 +547,15 @@ export function ServicesReportSection({
             </Button>
             {shareActions}
           </div>
-        )}
+        }
       >
         {rows.length === 0 && !isLoading ? (
-          <div className="p-4"><ReportState title="لا توجد خدمات في هذا النطاق" message="غيّر الفترة أو نطاق العقار/الوحدة لعرض فواتير الخدمات المسجلة." /></div>
+          <div className="p-4">
+            <ReportState
+              title="لا توجد خدمات في هذا النطاق"
+              message="غيّر الفترة أو نطاق العقار/الوحدة لعرض فواتير الخدمات المسجلة."
+            />
+          </div>
         ) : (
           <div className="p-4">
             <EntityTable
@@ -419,20 +579,30 @@ export function ServicesReportSection({
           isLoading={isLoading}
         >
           <ReportList>
-            {partyRows.map(({ party, billCount, billedAmount, unsettledCount, outstanding }) => (
-              <ReportListRow
-                key={party}
-                title={responsiblePartyLabels[party as ResponsibleParty]}
-                subtitle={`${formatLatinNumber(billCount, 'ar')} فاتورة في النطاق · ${formatLatinNumber(unsettledCount, 'ar')} غير مسددة · مستحق ${money(billedAmount, currency)}`}
-                value={<span dir="ltr">{money(outstanding, currency)}</span>}
-              />
-            ))}
+            {partyRows.map(
+              ({
+                party,
+                billCount,
+                billedAmount,
+                unsettledCount,
+                outstanding,
+              }) => (
+                <ReportListRow
+                  key={party}
+                  title={responsiblePartyLabels[party as ResponsibleParty]}
+                  subtitle={`${formatLatinNumber(billCount, 'ar')} فاتورة في النطاق · ${formatLatinNumber(unsettledCount, 'ar')} غير مسددة · مستحق ${money(billedAmount, currency)}`}
+                  value={<span dir="ltr">{money(outstanding, currency)}</span>}
+                />
+              ),
+            )}
           </ReportList>
         </ReportPanel>
 
         <div className="space-y-4">
           <ReportInsightNote title="ملكية التكلفة">
-            كل فاتورة هنا تحتفظ بجهة التحمل المسجلة — المالك أو المكتب أو المستأجر — وبالدافع الفعلي إن وُجد، بدون إعادة تصنيف مالي داخل التقرير.
+            كل فاتورة هنا تحتفظ بجهة التحمل المسجلة — المالك أو المكتب أو
+            المستأجر — وبالدافع الفعلي إن وُجد، بدون إعادة تصنيف مالي داخل
+            التقرير.
           </ReportInsightNote>
 
           <ReportPanel

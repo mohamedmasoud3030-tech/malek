@@ -33,15 +33,17 @@ describe('premium report product filter ownership', () => {
     expect(scoped.status).toBe('all');
   });
 
-  it('keeps contract scope but removes owner scope from the tenant statement', () => {
+  it('keeps the tenant statement contract-scoped and removes non-authoritative report filters', () => {
     const product = getReportProduct('tenant-statement')!;
     const target = getReportProductTarget(product, 'statement');
     const fields = getReportProductFilterFields(target);
     const scoped = scopeReportsFiltersToFields(dirty, fields);
 
-    expect(fields).toEqual(['period', 'property', 'contract']);
-    expect(scoped.propertyId).toBe('property-1');
+    expect(fields).toEqual(['contract']);
+    expect(scoped.propertyId).toBe('');
     expect(scoped.contractId).toBe('contract-1');
+    expect(scoped.from).toBe('');
+    expect(scoped.to).toBe('');
     expect(scoped.ownerId).toBe('');
     expect(scoped.unitId).toBe('');
     expect(scoped.tenantId).toBe('');

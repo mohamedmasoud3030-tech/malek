@@ -6,26 +6,41 @@ import { describe, expect, it, vi } from 'vitest';
 import { OverviewSection } from './components/OverviewSection';
 
 vi.mock('@/features/settings/useCompanySettings', () => ({
-  useCompanySettings: () => ({ data: { company_name: 'مكتب الاختبار', currency: 'OMR' } }),
-  useCompanySettingsContract: () => ({ currency: 'OMR', currencySymbol: 'ر.ع', decimals: 3 }),
+  useCompanySettings: () => ({
+    data: { company_name: 'مكتب الاختبار', currency: 'OMR' },
+  }),
+  useCompanySettingsContract: () => ({
+    currency: 'OMR',
+    currencySymbol: 'ر.ع',
+    decimals: 3,
+  }),
 }));
 
 const overviewSource = readFileSync(
   resolve(process.cwd(), 'src/features/reports/components/OverviewSection.tsx'),
   'utf8',
-);
+).replaceAll('"', "'");
 const prioritiesSource = readFileSync(
-  resolve(process.cwd(), 'src/features/reports/components/OperationalPrioritiesPanel.tsx'),
+  resolve(
+    process.cwd(),
+    'src/features/reports/components/OperationalPrioritiesPanel.tsx',
+  ),
   'utf8',
-);
-const adapterSource = readFileSync(
-  resolve(process.cwd(), 'src/features/reports/workspace/adapters/AnalyticsReportsAdapter.tsx'),
+).replaceAll('"', "'");
+const dispatcherSource = readFileSync(
+  resolve(
+    process.cwd(),
+    'src/features/reports/components/report-view-panel.tsx',
+  ),
   'utf8',
-);
-const shellSource = readFileSync(
-  resolve(process.cwd(), 'src/features/reports/workspace/ReportsShell.tsx'),
+).replaceAll('"', "'");
+const productPageSource = readFileSync(
+  resolve(
+    process.cwd(),
+    'src/features/reports/premium/report-product-page.tsx',
+  ),
   'utf8',
-);
+).replaceAll('"', "'");
 
 const baseProps = {
   summary: {
@@ -48,7 +63,14 @@ const baseProps = {
   },
   collectionRate: 73,
   occupancyRows: [
-    { property: 'برج المها', propertyId: 'p-1', shortPropertyId: 'p-1', hasTitle: true, occupied: 8, vacant: 2 },
+    {
+      property: 'برج المها',
+      propertyId: 'p-1',
+      shortPropertyId: 'p-1',
+      hasTitle: true,
+      occupied: 8,
+      vacant: 2,
+    },
   ],
   expiringRows: [
     {
@@ -61,7 +83,9 @@ const baseProps = {
       monthlyRent: 400,
     },
   ],
-  expenseRows: [{ propertyId: 'p-1', propertyTitle: 'برج المها', total: 1_200, count: 4 }],
+  expenseRows: [
+    { propertyId: 'p-1', propertyTitle: 'برج المها', total: 1_200, count: 4 },
+  ],
   overdueSummary: {
     asOf: '2026-08-31',
     totalOverdue: 1_100,
@@ -82,7 +106,9 @@ type OverviewProps = React.ComponentProps<typeof OverviewSection>;
 
 const render = (overrides: Record<string, unknown> = {}) =>
   renderToStaticMarkup(
-    <OverviewSection {...({ ...baseProps, ...overrides } as unknown as OverviewProps)} />,
+    <OverviewSection
+      {...({ ...baseProps, ...overrides } as unknown as OverviewProps)}
+    />,
   );
 
 describe('Office Overview — decision surface, not a second dashboard', () => {
@@ -129,7 +155,9 @@ describe('Office Overview — decision surface, not a second dashboard', () => {
 
     expect(markup).toContain('data-report-share-actions');
     expect(markup).toContain('data-print-actions');
-    expect(overviewSource).toContain("import { ReportShareActions } from './ReportShareActions'");
+    expect(overviewSource).toContain(
+      "import { ReportDocumentActions } from './report-document-actions'",
+    );
     expect(overviewSource).not.toContain('csvRowsToXlsxBlob');
     expect(overviewSource).not.toContain('downloadBlob');
   });
@@ -167,14 +195,18 @@ describe('Office Overview — financial authority is consumed, never recomputed'
     expect(markup).toContain('يشمل الجاري والمتأخر');
     expect(markup).toContain('تجاوز تاريخ استحقاقه حتى');
     expect(overviewSource).toContain('outstanding ≠ overdue');
-    expect(overviewSource).not.toContain('overdueSummary?.totalOverdue ?? report.outstanding');
+    expect(overviewSource).not.toContain(
+      'overdueSummary?.totalOverdue ?? report.outstanding',
+    );
   });
 
   it('never substitutes the outstanding balance when arrears authority is missing', () => {
     const markup = render({ overdueSummary: undefined });
 
     expect(markup).toContain('مؤشر المتأخرات غير متاح');
-    expect(overviewSource).toContain('const overdueTotal = overdueSummary?.totalOverdue ?? 0;');
+    expect(overviewSource).toContain(
+      'const overdueTotal = overdueSummary?.totalOverdue ?? 0;',
+    );
     expect(overviewSource).toContain('hasOverdueAuthority');
   });
 
@@ -193,7 +225,9 @@ describe('Office Overview — financial authority is consumed, never recomputed'
     const markup = render();
 
     expect(markup).toContain('8 مشغولة من 10');
-    expect(overviewSource).toContain('occupied: totals.occupied + row.occupied');
+    expect(overviewSource).toContain(
+      'occupied: totals.occupied + row.occupied',
+    );
     expect(overviewSource).toContain('vacant: totals.vacant + row.vacant');
     expect(overviewSource).not.toContain('vacancyAnalytics');
     expect(overviewSource).not.toMatch(/daysVacant|vacancyRate/);
@@ -202,14 +236,14 @@ describe('Office Overview — financial authority is consumed, never recomputed'
 
 describe('Office Overview — routing to the owning workspace', () => {
   it('sends every operational priority to the workspace that owns it', () => {
-    expect(prioritiesSource).toContain("workspace: 'collections'");
+    expect(prioritiesSource).toContain("section: 'analytics'");
     expect(prioritiesSource).toContain("view: 'follow_up'");
-    expect(prioritiesSource).toContain("workspace: 'leasing'");
+    expect(prioritiesSource).toContain("section: 'analytics'");
     expect(prioritiesSource).toContain("view: 'occupancy'");
     expect(prioritiesSource).toContain("view: 'expiring'");
-    expect(prioritiesSource).toContain("workspace: 'operations'");
+    expect(prioritiesSource).toContain("section: 'analytics'");
     expect(prioritiesSource).toContain("view: 'maintenance_analytics'");
-    expect(overviewSource).toContain("onDrill('collections', 'collections')");
+    expect(overviewSource).toContain("onDrill('analytics', 'collections')");
   });
 
   it('uses the shared drill primitive instead of a locally styled button', () => {
@@ -219,24 +253,25 @@ describe('Office Overview — routing to the owning workspace', () => {
     expect(prioritiesSource).not.toContain('<button');
   });
 
-  it('threads the active report scope from the analytics adapter', () => {
-    expect(adapterSource).toContain('collectionRate={model.sections.collections.collectionRate}');
-    expect(adapterSource).not.toContain('cashflowRows={model.sections.overview.cashflowRows}');
-    expect(adapterSource).not.toContain('receiptRows={model.sections.collections.receiptRows}');
+  it('threads the active report scope from the canonical dispatcher', () => {
+    expect(dispatcherSource).toContain(
+      'collectionRate={model.sections.collections.collectionRate}',
+    );
+    expect(dispatcherSource).not.toContain(
+      'cashflowRows={model.sections.overview.cashflowRows}',
+    );
+    expect(dispatcherSource).not.toContain(
+      'receiptRows={model.sections.collections.receiptRows}',
+    );
   });
 });
 
-describe('Reports shell — one header hierarchy, one authoritative headline read', () => {
-  it('reads the headline rate from the hero model without fabricating a 0%', () => {
-    expect(shellSource).toContain('const collectionRate = model.hero.collectionRate;');
-    expect(shellSource).not.toMatch(/summary\?\.paid[\s\S]{0,120}summary\?\.invoiced/);
-    expect(shellSource).toContain("model.sections.collections.collectionRate !== undefined");
-    expect(shellSource).toContain("'المؤشر المعتمد غير متاح حاليًا'");
-  });
-
-  it('keeps the workspace title and description owned by the shell alone', () => {
-    expect(shellSource).toContain('{meta.title}');
-    expect(shellSource).toContain('{meta.description}');
-    expect(overviewSource).not.toContain('meta.title');
+describe('Canonical product header — one header hierarchy', () => {
+  it('owns the page heading and direct product composition without a workspace shell', () => {
+    expect(productPageSource).toContain('data-report-product-header');
+    expect(productPageSource).toContain('<ReportsFilterSurface');
+    expect(productPageSource).toContain('<ReportViewPanel');
+    expect(productPageSource).not.toContain('<ReportsWorkspace');
+    expect(overviewSource).not.toContain('<PageHeader');
   });
 });

@@ -2,306 +2,71 @@ import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { ArrowRight, FileText } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AccessDenied } from '@/components/layout/access-denied';
+import { DataRefreshAlert } from '@/components/data-refresh-alert';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
-import { canAccess, financialOperationPermissions } from '@/features/auth/permissions';
+import {
+  canAccess,
+  financialOperationPermissions,
+} from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
-import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
-import { buildXlsxBlob } from '@/lib/xlsx-export';
-import { downloadBlob } from '@/lib/tabular-export';
-import { cn } from '@/lib/utils';
+import { formatMoney } from '@/features/financials/components/financials-formatters';
 import {
-  downloadAgedArrearsReportPdf,
-  downloadPortfolioPerformanceReportPdf,
-  downloadRentRollReportPdf,
-  printAgedArrearsReport,
-  printPortfolioPerformanceReport,
-  printRentRollReport,
-} from '../documents/report-documents';
-import { downloadPropertyReportPdf, printPropertyReport } from '../documents/professional-property-report';
-import { getInitialReportsFilters, scopeReportsFiltersToFields, type ReportsFilterState } from '../reports-workspace-filters';
+  getInitialReportsFilters,
+  scopeReportsFiltersToFields,
+  type ReportsFilterState,
+} from '../reports-workspace-filters';
 import {
-  buildWorkspaceSearch,
+  buildReportProductSearch,
   diffReportFiltersFromSearch,
-  REPORTS_SECTION_SEARCH_KEY,
-} from '../reports-section-model';
-import { WORKSPACE_SEARCH_KEY, type ReportDrillHandler } from '../report-workspaces';
+  type ReportDrillHandler,
+} from '../report-route';
 import {
   getReportProduct,
   getReportProductFilterFields,
   getReportProductTarget,
+  getReportProductTargetForLocation,
   type ReportProduct,
   type ReportProductTarget,
 } from '../report-products';
 import { buildReportProductSharePayload } from '../report-share';
 import { ReportDocumentActions } from '../components/report-document-actions';
-import { ReportsWorkspace } from '../workspace/ReportsWorkspace';
-import { useReportsWorkspace, type ReportsWorkspaceModel } from '../use-reports-workspace';
+import { ReportsFilterSurface } from '../components/ReportsFilterSurface';
+import { SectionTabPanel, SectionTabs } from '@/components/ui/section-tabs';
+import { ReportViewPanel } from '../components/report-view-panel';
+import { useReportsWorkspace } from '../use-reports-workspace';
 import { getCurrentMonthFilters } from '../reports-page.helpers';
-import {
-  buildOwnerReportPdfFile,
-  buildTenantStatementPdfFile,
-  downloadOwnerStatementExcel,
-  downloadTenantStatementExcel,
-  runOwnerReportDocumentAction,
-  runTenantStatementDocumentAction,
-} from './statement-report-actions';
-
-/* ------------------------------------------------------------------ */
-/* Product target tabs — one compact switcher per premium product.     */
-/* ------------------------------------------------------------------ */
-
-function ProductTargetTabs({
-  product,
-  activeTargetId,
-  onOpen,
-}: Readonly<{
-  product: ReportProduct;
-  activeTargetId: string;
-  onOpen: (target: ReportProductTarget) => void;
-}>) {
-  if (product.targets.length <= 1) return null;
-  return (
-    <div
-      className="flex min-w-0 flex-wrap items-center gap-1"
-      role="tablist"
-      aria-label={`أجزاء ${product.title}`}
-      data-report-product-tabs
-    >
-      {product.targets.map((nextTarget) => {
-        const active = nextTarget.id === activeTargetId;
-        return (
-          <Button
-            key={nextTarget.id}
-            type="button"
-            variant="outline"
-            role="tab"
-            aria-selected={active}
-            onClick={() => onOpen(nextTarget)}
-            className={cn(
-              'min-h-11 rounded-lg px-2.5 text-xs font-black focus-visible:ring-2 focus-visible:ring-primary/30',
-              active
-                ? 'border-primary/35 bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary'
-                : 'border-border/70 bg-background text-muted-foreground hover:border-primary/30 hover:text-foreground',
-            )}
-          >
-            {nextTarget.label}
-          </Button>
-        );
-      })}
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/* Canonical document capabilities per (product, target)               */
-/* ------------------------------------------------------------------ */
-
-type PremiumDocumentCapabilities = Readonly<{
-  onPrint?: () => void | Promise<void>;
-  onDownloadPdf?: () => void | Promise<void>;
-  onDownloadExcel?: () => void;
-  buildPdfFile?: () => Promise<File>;
-}>;
-
-function useReportProductDocumentActions(params: Readonly<{
-  target: ReportProductTarget;
-  model: ReportsWorkspaceModel;
-  filters: ReportsFilterState;
-  canExportReports: boolean;
-}>): Readonly<{ capabilities: PremiumDocumentCapabilities; documentUnavailableHint: string | null }> {
-  const { target, model, filters, canExportReports } = params;
-  const { companySettings, isReady } = useDocumentSettings();
-  const documentKind = target.documentKind;
-
-  return useMemo(() => {
-    if (!canExportReports) {
-      return { capabilities: {}, documentUnavailableHint: 'الطباعة و PDF والمشاركة المباشرة تتطلب صلاحية تصدير التقارير؛ المعاينة متاحة كما هي.' };
-    }
-    if (!isReady) {
-      return { capabilities: {}, documentUnavailableHint: 'أكمل بيانات الشركة الأساسية في الإعدادات لتفعيل الطباعة و PDF والمشاركة المباشرة.' };
-    }
-    if (!documentKind) {
-      return { capabilities: {}, documentUnavailableHint: null };
-    }
-
-    const settings = companySettings;
-    const statements = model.sections.statements;
-    const period = { from: filters.from, to: filters.to };
-
-    switch (documentKind) {
-      case 'owner-pack': {
-        const ownerId = statements.selectedOwnerId || filters.ownerId || null;
-        if (!ownerId) {
-          return { capabilities: {}, documentUnavailableHint: 'اختر مالكًا من فلاتر التقرير لتجهيز كشف المالك الشامل.' };
-        }
-        if (statements.isOwnerStatementLoading || statements.isOwnerReportPayloadLoading) {
-          return { capabilities: {}, documentUnavailableHint: 'جارٍ تجهيز كشف المالك الشامل من المصادر المعتمدة.' };
-        }
-        if (statements.ownerStatementError || !statements.ownerStatement || statements.ownerStatement.error) {
-          return { capabilities: {}, documentUnavailableHint: 'تعذر تجهيز كشف مالك معتمد للنطاق الحالي.' };
-        }
-        if (statements.ownerReportPayloadError || !statements.ownerReportPayload) {
-          return { capabilities: {}, documentUnavailableHint: 'تعذر تجهيز تفاصيل كشف المالك الشامل؛ أعد تحميل التقرير.' };
-        }
-        const ownerParams = {
-          isReady: true,
-          settings,
-          ownerId,
-          statement: statements.ownerStatement,
-          period: { ...period, propertyId: filters.propertyId },
-          payload: statements.ownerReportPayload,
-        };
-        return {
-          documentUnavailableHint: null,
-          capabilities: {
-            onPrint: () => runOwnerReportDocumentAction(ownerParams, 'print'),
-            onDownloadPdf: () => runOwnerReportDocumentAction(ownerParams, 'pdf'),
-            onDownloadExcel: () => downloadOwnerStatementExcel(statements.ownerStatement, ownerId),
-            buildPdfFile: () => buildOwnerReportPdfFile({
-              settings,
-              ownerId,
-              statement: statements.ownerStatement!,
-              period: { ...period, propertyId: filters.propertyId },
-              payload: statements.ownerReportPayload,
-            }),
-          },
-        };
-      }
-      case 'tenant-statement': {
-        const contractId = statements.selectedContractId || filters.contractId || null;
-        if (!contractId) {
-          return { capabilities: {}, documentUnavailableHint: 'اختر عقدًا من فلاتر التقرير لتجهيز كشف المستأجر.' };
-        }
-        if (statements.isTenantStatementLoading) {
-          return { capabilities: {}, documentUnavailableHint: 'جارٍ تجهيز كشف المستأجر من المصدر المعتمد.' };
-        }
-        if (statements.tenantStatementError || !statements.tenantStatement || statements.tenantStatement.error) {
-          return { capabilities: {}, documentUnavailableHint: 'تعذر تجهيز كشف مستأجر معتمد للعقد الحالي.' };
-        }
-        const tenantParams = { isReady: true, settings, statement: statements.tenantStatement, period };
-        return {
-          documentUnavailableHint: null,
-          capabilities: {
-            onPrint: () => runTenantStatementDocumentAction(tenantParams, 'print'),
-            onDownloadPdf: () => runTenantStatementDocumentAction(tenantParams, 'pdf'),
-            onDownloadExcel: () => downloadTenantStatementExcel(statements.tenantStatement, contractId),
-            buildPdfFile: () => buildTenantStatementPdfFile({ settings, statement: statements.tenantStatement, period }),
-          },
-        };
-      }
-      case 'rent-roll': {
-        const rows = model.sections.collections.rentRollRows;
-        return {
-          documentUnavailableHint: rows.length === 0
-            ? 'سجل العقود يبنى من عقود النطاق الحالي؛ يتفعل الإخراج عند وجود بيانات.'
-            : null,
-          capabilities: {
-            onPrint: () => printRentRollReport({ rows, settings }),
-            onDownloadPdf: () => downloadRentRollReportPdf({ rows, settings }),
-            onDownloadExcel: () => {
-              if (rows.length === 0) return;
-              downloadBlob(
-                buildXlsxBlob({
-                  name: 'سجل العقود والإيجارات',
-                  headers: ['المستأجر', 'العقار', 'الوحدة', 'الإيجار', 'دورة الدفع', 'حالة العقد', 'تاريخ البدء', 'تاريخ الانتهاء'],
-                  rows: rows.map((row) => [
-                    row.tenantName,
-                    row.propertyTitle,
-                    row.unitNumber,
-                    row.rentAmount,
-                    row.paymentCycle,
-                    row.statusLabel,
-                    row.startDate,
-                    row.endDate,
-                  ] as const),
-                  rightToLeft: true,
-                }),
-                `rent-roll-${filters.from || 'all'}_${filters.to || 'now'}.xlsx`,
-              );
-            },
-          },
-        };
-      }
-      case 'aged-arrears': {
-        const report = model.sections.overdue.agedReport;
-        if (!report) {
-          return {
-            capabilities: {},
-            documentUnavailableHint: 'كشف الأعمار يُبنى من مصدر المتأخرات المعتمد؛ يتفعل الإخراج عند اكتمال تحميله.',
-          };
-        }
-        return {
-          documentUnavailableHint: null,
-          capabilities: {
-            onPrint: () => printAgedArrearsReport({ report, settings }),
-            onDownloadPdf: () => downloadAgedArrearsReportPdf({ report, settings }),
-            onDownloadExcel: () => {
-              downloadBlob(
-                buildXlsxBlob({
-                  name: 'أعمار المتأخرات',
-                  headers: ['المستأجر', 'العقار / الوحدة', 'غير متأخر', '1–30', '31–60', '61–90', '+90', 'الإجمالي'],
-                  rows: report.rows.map((row) => [
-                    row.tenantName ?? '—',
-                    `${row.propertyTitle ?? '—'}${row.unitNumber ? ` (${row.unitNumber})` : ''}`,
-                    row.buckets.current?.total ?? 0,
-                    row.buckets.days_1_30?.total ?? 0,
-                    row.buckets.days_31_60?.total ?? 0,
-                    row.buckets.days_61_90?.total ?? 0,
-                    row.buckets.days_90_plus?.total ?? 0,
-                    row.totalOutstanding,
-                  ] as const),
-                  rightToLeft: true,
-                }),
-                `arrears-aging-${report.asOf}.xlsx`,
-              );
-            },
-          },
-        };
-      }
-      case 'property-pack': {
-        return {
-          documentUnavailableHint: null,
-          capabilities: {
-            onPrint: () => printPropertyReport({ settings, model, filters }),
-            onDownloadPdf: () => downloadPropertyReportPdf({ settings, model, filters }),
-          },
-        };
-      }
-      case 'portfolio-performance': {
-        const occupancyRows = model.sections.occupancy.occupancyRows;
-        return {
-          documentUnavailableHint: occupancyRows.length === 0
-            ? 'صورة المحفظة تُبنى من أداء الإشغال المعتمد؛ يتفعل الإخراج عند توفر بيانات الوحدات.'
-            : null,
-          capabilities: {
-            onPrint: () => printPortfolioPerformanceReport({ occupancyRows, settings, periodFrom: filters.from, periodTo: filters.to }),
-            onDownloadPdf: () => downloadPortfolioPerformanceReportPdf({ occupancyRows, settings, periodFrom: filters.from, periodTo: filters.to }),
-          },
-        };
-      }
-      default:
-        return { capabilities: {}, documentUnavailableHint: null };
-    }
-  }, [canExportReports, companySettings, documentKind, filters, model]);
-}
+import { useReportProductDocumentActions } from './report-product-document-actions';
+import { StatementProductHeader, type StatementContextItem } from './statement-product-header';
 
 /* ------------------------------------------------------------------ */
 /* The premium report product page (real route: /reports/$reportId)    */
 /* ------------------------------------------------------------------ */
+
+const REPORT_PRODUCT_TABS_ID_PREFIX = 'report-product';
 
 export function ReportProductPage() {
   const navigate = useNavigate();
   const params = useParams({ strict: false }) as { reportId?: string };
   const search = useSearch({ strict: false }) as Record<string, unknown>;
   const { authorization } = useAuth();
-  const canExportReports = canAccess(authorization, financialOperationPermissions.exportReports);
-  const canViewReports = canAccess(authorization, financialOperationPermissions.viewReports);
+  const canExportReports = canAccess(
+    authorization,
+    financialOperationPermissions.exportReports,
+  );
+  const canViewReports = canAccess(
+    authorization,
+    financialOperationPermissions.viewReports,
+  );
 
   const product = getReportProduct(params.reportId);
-  const target = product ? getReportProductTarget(product, search.view ?? search.target) : undefined;
+  const target = product
+    ? getReportProductTarget(product, search.view)
+    : undefined;
 
-  const [filters, setFilters] = useState<ReportsFilterState>(() => getInitialReportsFilters(search ?? {}));
+  const [filters, setFilters] = useState<ReportsFilterState>(() =>
+    getInitialReportsFilters(search ?? {}),
+  );
 
   // URL (deep links / shared links) → state, one-way — the same contract the
   // reports workspace uses, so both modes agree on the active scope.
@@ -314,40 +79,43 @@ export function ReportProductPage() {
     if (patch) setFilters((current) => ({ ...current, ...patch }));
   }, [search]);
 
-  const openTarget = useCallback((next: ReportProductTarget) => {
-    const nextFilters = scopeReportsFiltersToFields(filters, getReportProductFilterFields(next));
-    void navigate({
-      to: '/reports/$reportId',
-      params: { reportId: String(params.reportId ?? '') },
-      search: (previous: Record<string, unknown>) => {
-        const merged: Record<string, unknown> = { ...previous };
-        const scopeKeys = ['from', 'to', 'asOf', 'propertyId', 'unitId', 'tenantId', 'ownerId', 'contractId', 'costCenterId', 'status'] as const;
-        for (const key of scopeKeys) delete merged[key];
-        for (const key of scopeKeys) {
-          const value = nextFilters[key];
-          if (value && !(key === 'status' && value === 'all')) merged[key] = value;
-        }
-        // Keep the product route free of legacy workspace routing keys; the
-        // premium page owns its own (product, target) pair.
-        delete merged[WORKSPACE_SEARCH_KEY];
-        delete merged[REPORTS_SECTION_SEARCH_KEY];
-        delete merged.report;
-        delete merged.target;
-        merged.view = next.id;
-        return merged;
-      },
-    });
-  }, [filters, navigate, params.reportId]);
+  const openTarget = useCallback(
+    (next: ReportProductTarget) => {
+      const nextFilters = scopeReportsFiltersToFields(
+        filters,
+        getReportProductFilterFields(next),
+      );
+      void navigate({
+        to: '/reports/$reportId',
+        params: { reportId: String(params.reportId ?? '') },
+        search: (previous: Record<string, unknown>) =>
+          buildReportProductSearch(previous, next, nextFilters),
+      });
+    },
+    [filters, navigate, params.reportId],
+  );
 
   if (!product || !target) {
     return (
       <PageLayout dir="rtl" lang="ar">
-        <div className="mx-auto max-w-md rounded-xl border border-border/70 bg-card/80 p-6 text-center" role="status" data-report-product-not-found>
-          <p className="text-sm font-black text-foreground">هذا التقرير غير موجود ضمن كتالوج MALEK.</p>
-          <p className="mt-1 text-xs font-semibold text-muted-foreground">
-            قد تكون معرفته قد تغيّرت؛ العودة إلى الكتالوج تعرض التقارير المدعومة الحالية.
+        <div
+          className="mx-auto max-w-md rounded-xl border border-border/70 bg-card/80 p-6 text-center"
+          role="status"
+          data-report-product-not-found
+        >
+          <p className="text-sm font-black text-foreground">
+            هذا التقرير غير موجود ضمن كتالوج MALEK.
           </p>
-          <Button type="button" variant="secondary" className="mt-4 min-h-11 text-xs font-black" onClick={() => void navigate({ to: '/reports' })}>
+          <p className="mt-1 text-xs font-semibold text-muted-foreground">
+            قد تكون معرفته قد تغيّرت؛ العودة إلى الكتالوج تعرض التقارير المدعومة
+            الحالية.
+          </p>
+          <Button
+            type="button"
+            variant="secondary"
+            className="mt-4 min-h-11 text-xs font-black"
+            onClick={() => void navigate({ to: '/reports' })}
+          >
             العودة إلى كتالوج التقارير
           </Button>
         </div>
@@ -367,17 +135,7 @@ export function ReportProductPage() {
       canExportReports={canExportReports}
       onFiltersChange={setFilters}
       onOpenTarget={openTarget}
-      onBack={() => void navigate({
-        to: '/reports',
-        search: (previous: Record<string, unknown>) => {
-          const next = { ...previous };
-          delete next[WORKSPACE_SEARCH_KEY];
-          delete next[REPORTS_SECTION_SEARCH_KEY];
-          delete next.view;
-          delete next.report;
-          return next;
-        },
-      })}
+      onBack={() => void navigate({ to: '/reports', search: {} })}
     />
   );
 }
@@ -401,6 +159,7 @@ function OpenReportProduct({
 }>) {
   const navigate = useNavigate();
   const Icon = product.icon;
+  const isStatement = product.kind === 'statement';
   const visibleFilterFields = getReportProductFilterFields(target);
   const scopedFilters = useMemo(
     () => scopeReportsFiltersToFields(filters, visibleFilterFields),
@@ -411,65 +170,219 @@ function OpenReportProduct({
     { section: target.section, view: target.view },
     { statementFocus: product.statementFocus },
   );
-  const { capabilities, documentUnavailableHint } = useReportProductDocumentActions({
-    target,
-    model,
-    filters: scopedFilters,
-    canExportReports,
-  });
+  const { capabilities, documentUnavailableHint } =
+    useReportProductDocumentActions({
+      target,
+      model,
+      filters: scopedFilters,
+      contentKind: product.kind,
+      canExportReports,
+    });
 
   const shareInput = useMemo(() => {
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
-    const payload = buildReportProductSharePayload(origin, {
-      reportId: product.id,
-      view: product.targets.length > 1 ? target.id : undefined,
-      filters: {
-        from: scopedFilters.from,
-        to: scopedFilters.to,
-        asOf: scopedFilters.asOf,
-        propertyId: scopedFilters.propertyId,
-        unitId: scopedFilters.unitId,
-        tenantId: scopedFilters.tenantId,
-        ownerId: scopedFilters.ownerId,
-        contractId: scopedFilters.contractId,
+    const payload = buildReportProductSharePayload(
+      origin,
+      {
+        reportId: product.id,
+        view: product.targets.length > 1 ? target.id : undefined,
+        filters: {
+          from: scopedFilters.from,
+          to: scopedFilters.to,
+          asOf: scopedFilters.asOf,
+          propertyId: scopedFilters.propertyId,
+          unitId: scopedFilters.unitId,
+          tenantId: scopedFilters.tenantId,
+          ownerId: scopedFilters.ownerId,
+          contractId: scopedFilters.contractId,
+        },
       },
-    }, {
-      reportLabel: product.targets.length > 1 ? `${product.title} — ${target.label}` : product.title,
-      summaryText: [
-        `الفترة: ${scopedFilters.from || '—'} → ${scopedFilters.to || '—'}`,
-        model.firstError ? 'قد تُعرض نتائج جزئية؛ بعض المصادر لم تكتمل.' : '',
-      ].filter(Boolean).join('\n'),
-    });
+      {
+        reportLabel:
+          product.targets.length > 1
+            ? `${product.title} — ${target.label}`
+            : product.title,
+        summaryText: [
+          `الفترة: ${scopedFilters.from || '—'} → ${scopedFilters.to || '—'}`,
+          model.firstError ? 'قد تُعرض نتائج جزئية؛ بعض المصادر لم تكتمل.' : '',
+        ]
+          .filter(Boolean)
+          .join('\n'),
+      },
+    );
     return {
       title: product.title,
       text: payload.shareText,
       url: payload.url,
       buildFile: capabilities.buildPdfFile,
     };
-  }, [capabilities.buildPdfFile, model.firstError, product, scopedFilters, target]);
+  }, [
+    capabilities.buildPdfFile,
+    model.firstError,
+    product,
+    scopedFilters,
+    target,
+  ]);
 
-  // Legacy drill-through stays honest: the deep link reopens the preserved
-  // compat workspace with the same scope, so no capability is lost.
-  const handleDrill: ReportDrillHandler = useCallback((targetWorkspace, targetView, filterPatch) => {
-    void navigate({
-      to: '/reports',
-      search: (previous: Record<string, unknown>) => {
-        const next = { ...previous };
-        delete next.report;
-        delete next.view;
-        return buildWorkspaceSearch(next, targetWorkspace, targetView, filterPatch);
-      },
-    });
-  }, [navigate]);
+  // Drill-through resolves to the product that owns the retained body. It
+  // never reopens a workspace shell or writes legacy route keys.
+  const handleDrill: ReportDrillHandler = useCallback(
+    (section, view, filterPatch) => {
+      const destination = getReportProductTargetForLocation(section, view);
+      if (!destination) return;
+      void navigate({
+        to: '/reports/$reportId',
+        params: { reportId: destination.product.id },
+        search: (previous: Record<string, unknown>) =>
+          buildReportProductSearch(
+            previous,
+            destination.target,
+            scopedFilters,
+            filterPatch,
+          ),
+      });
+    },
+    [navigate, scopedFilters],
+  );
 
   const handleResetCurrentMonth = useCallback(() => {
     onFiltersChange({ ...scopedFilters, ...getCurrentMonthFilters() });
   }, [onFiltersChange, scopedFilters]);
 
+  const ownerStatement = model.sections.statements.ownerStatement;
+  const ownerReportPayload = model.sections.statements.ownerReportPayload;
+  const tenantStatement = model.sections.statements.tenantStatement;
+  const statementTitle =
+    product.statementFocus === 'owner'
+      ? 'كشف حساب المالك'
+      : product.statementFocus === 'tenant'
+        ? 'كشف حساب المستأجر'
+        : product.title;
+  const statementDescription =
+    product.statementFocus === 'owner'
+      ? 'سجل مالي مفصل للمالك ضمن الفترة المحددة، مع الأرصدة والحركات المعتمدة.'
+      : 'سجل مالي للعقد والمستأجر، يعرض الحركات والأرصدة ضمن سياق العقد المعتمد.';
+  const statementContext: StatementContextItem[] =
+    product.statementFocus === 'owner'
+      ? [
+          {
+            label: 'المالك',
+            value: ownerStatement?.ownerName || 'اختر المالك',
+          },
+          {
+            label: 'نطاق العقارات',
+            value: ownerReportPayload?.scopeLabel || 'كل عقارات المالك',
+          },
+          {
+            label: 'فترة الكشف',
+            value: `${ownerStatement?.periodFrom || scopedFilters.from || '—'} — ${ownerStatement?.periodTo || scopedFilters.to || '—'}`,
+          },
+          {
+            label: 'صافي الحركة',
+            value: ownerStatement
+              ? formatMoney(ownerStatement.totalNet)
+              : 'يظهر بعد تحميل كشف الحساب',
+          },
+        ]
+      : [
+          {
+            label: 'المستأجر',
+            value: tenantStatement?.tenantName || 'اختر العقد',
+          },
+          {
+            label: 'العقار والوحدة',
+            value:
+              [tenantStatement?.propertyName, tenantStatement?.unitName]
+                .filter(Boolean)
+                .join(' — ') || 'تظهر بعد اختيار العقد',
+          },
+          {
+            label: 'مدة العقد',
+            value:
+              tenantStatement?.startDate && tenantStatement?.endDate
+                ? `${tenantStatement.startDate} — ${tenantStatement.endDate}`
+                : 'تظهر من العقد المختار',
+          },
+          {
+            label: 'الرصيد الختامي',
+            value: tenantStatement
+              ? formatMoney(tenantStatement.finalBalance)
+              : 'يظهر بعد تحميل كشف الحساب',
+          },
+        ];
+  const statementBack = () => {
+    if (product.statementFocus === 'owner' && scopedFilters.ownerId) {
+      void navigate({
+        to: '/owners/$ownerId',
+        params: { ownerId: scopedFilters.ownerId },
+      });
+      return;
+    }
+    if (product.statementFocus === 'tenant' && scopedFilters.contractId) {
+      void navigate({
+        to: '/contracts/$contractId',
+        params: { contractId: scopedFilters.contractId },
+      });
+      return;
+    }
+    onBack();
+  };
+  const statementBackLabel =
+    product.statementFocus === 'owner' && scopedFilters.ownerId
+      ? 'العودة إلى ملف المالك'
+      : product.statementFocus === 'tenant' && scopedFilters.contractId
+        ? 'العودة إلى العقد'
+        : 'العودة إلى التقارير';
+  const documentActions = (
+    <ReportDocumentActions
+      reportLabel={
+        product.targets.length > 1
+          ? `${isStatement ? statementTitle : product.title} — ${target.label}`
+          : isStatement
+            ? statementTitle
+            : product.title
+      }
+      contentKind={product.kind}
+      whatsapp={false}
+      disabled={model.isIncomplete}
+      {...capabilities}
+      share={canExportReports ? shareInput : undefined}
+    />
+  );
+
   return (
     <PageLayout dir="rtl" lang="ar" size="wide">
-      <div data-report-product-page={product.id} className="min-w-0 space-y-3">
-        <header className="rounded-xl border border-border/70 bg-card/85 p-3 shadow-sm sm:p-4" data-report-product-header>
+      <div
+        data-report-product-page={product.id}
+        data-product-kind={product.kind}
+        data-statement-product-page={isStatement ? product.id : undefined}
+        className="min-w-0 space-y-3"
+      >
+        {isStatement ? (
+          <StatementProductHeader
+            title={statementTitle}
+            description={statementDescription}
+            icon={Icon}
+            contextItems={statementContext}
+            actions={documentActions}
+            notice={
+              documentUnavailableHint ? (
+                <p
+                  className="rounded-lg border border-border/55 bg-background/70 px-2.5 py-1.5 text-[11px] font-semibold leading-4 text-muted-foreground"
+                  role="note"
+                >
+                  {documentUnavailableHint}
+                </p>
+              ) : null
+            }
+            backLabel={statementBackLabel}
+            onBack={statementBack}
+          />
+        ) : (
+          <header
+            className="rounded-xl border border-border/70 bg-card/85 p-3 shadow-sm sm:p-4"
+            data-report-product-header
+          >
           <div className="flex min-w-0 flex-wrap items-start justify-between gap-2.5">
             <div className="flex min-w-0 flex-1 items-start gap-2.5">
               <Button
@@ -487,8 +400,13 @@ function OpenReportProduct({
                 <Icon className="size-4.5 sm:size-5" aria-hidden="true" />
               </span>
               <div className="min-w-0">
-                <h1 className="text-base font-black leading-6 text-foreground sm:text-lg">{product.title}</h1>
-                <p className="mt-0.5 flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground" dir="ltr">
+                <h1 className="text-base font-black leading-6 text-foreground sm:text-lg">
+                  {product.title}
+                </h1>
+                <p
+                  className="mt-0.5 flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground"
+                  dir="ltr"
+                >
                   <FileText className="size-3" aria-hidden="true" />
                   {product.englishTitle}
                 </p>
@@ -499,52 +417,105 @@ function OpenReportProduct({
             </div>
 
             <div className="shrink-0" data-report-product-actions>
-              <ReportDocumentActions
-                reportLabel={product.targets.length > 1 ? `${product.title} — ${target.label}` : product.title}
-                whatsapp={false}
-                disabled={model.isIncomplete}
-                {...capabilities}
-                share={shareInput}
-              />
+              {documentActions}
             </div>
           </div>
           {documentUnavailableHint ? (
-            <p className="mt-2 rounded-lg border border-border/55 bg-muted/25 px-2.5 py-1.5 text-[11px] font-semibold leading-4 text-muted-foreground" role="note">
+            <p
+              className="mt-2 rounded-lg border border-border/55 bg-muted/25 px-2.5 py-1.5 text-[11px] font-semibold leading-4 text-muted-foreground"
+              role="note"
+            >
               {documentUnavailableHint}
             </p>
           ) : null}
           {product.targets.length > 1 ? (
-            <div className="mt-3 border-t border-border/55 pt-2.5">
-              <ProductTargetTabs product={product} activeTargetId={target.id} onOpen={onOpenTarget} />
+            <div className="mt-3 border-t border-border/55 pt-2.5" data-report-product-tabs>
+              <SectionTabs
+                items={product.targets.map((nextTarget) => ({
+                  id: nextTarget.id,
+                  label: nextTarget.label,
+                }))}
+                activeId={target.id}
+                onChange={(activeTargetId) => {
+                  const next = product.targets.find(
+                    (candidate) => candidate.id === activeTargetId,
+                  );
+                  if (next) onOpenTarget(next);
+                }}
+                ariaLabel={`أجزاء ${product.title}`}
+                idPrefix={REPORT_PRODUCT_TABS_ID_PREFIX}
+              />
             </div>
           ) : null}
-        </header>
+          </header>
+        )}
 
-        <div className="min-w-0" data-active-report-workspace data-report-product-workspace>
-          <ReportsWorkspace
-            model={model}
+        <section
+          className="min-w-0 space-y-3"
+          data-report-product-content={!isStatement ? '' : undefined}
+          data-statement-product-content={isStatement ? '' : undefined}
+        >
+          <ReportsFilterSurface
             filters={scopedFilters}
-            canExportReports={canExportReports}
-            activeWorkspace={target.workspace}
-            activeSection={target.section}
-            activeView={target.view}
-            onOpenView={(nextView) => {
-              const match = product.targets.find((candidate) => candidate.view === nextView);
-              if (match) onOpenTarget(match);
-            }}
-            onOpenReport={(nextWorkspace, nextView) => {
-              const match = product.targets.find((candidate) => candidate.workspace === nextWorkspace && candidate.view === nextView)
-                ?? product.targets.find((candidate) => candidate.workspace === nextWorkspace);
-              if (match) onOpenTarget(match);
-            }}
-            onDrill={handleDrill}
-            onFiltersChange={onFiltersChange}
+            costCenterRows={model.filters.costCenterRows}
+            ownerRows={model.filters.ownerRows}
+            contractRows={model.filters.contractRows}
+            visibleFields={visibleFilterFields}
+            contentKind={product.kind}
+            onChange={onFiltersChange}
             onResetCurrentMonth={handleResetCurrentMonth}
-            hideWorkspaceChrome
-            visibleFilterFields={visibleFilterFields}
-            statementFocus={product.statementFocus}
           />
-        </div>
+
+          {model.isIncomplete ? (
+            <DataRefreshAlert
+              title={
+                isStatement
+                  ? 'كشف الحساب غير مكتمل التحديث'
+                  : 'نتائج التقرير غير مكتملة'
+              }
+              description={
+                isStatement
+                  ? 'تعذر تحديث مصدر واحد أو أكثر. قد تبقى الحركات السابقة ظاهرة للمراجعة، لكن طباعة كشف الحساب وتصديره متوقفان حتى ينجح تحديث جميع المصادر.'
+                  : 'تعذر تحديث مصدر واحد أو أكثر. قد تبقى النتائج السابقة ظاهرة للمراجعة، لكن الطباعة والتصدير متوقفان حتى ينجح تحديث جميع المصادر.'
+              }
+              onRetry={() => {
+                void model.retryFailedSources();
+              }}
+            />
+          ) : null}
+
+          <div
+            data-stale-report-content={
+              !isStatement && model.isIncomplete ? 'true' : undefined
+            }
+            data-stale-statement-content={
+              isStatement && model.isIncomplete ? 'true' : undefined
+            }
+            aria-label={
+              model.isIncomplete
+                ? isStatement
+                  ? 'كشف حساب غير مكتمل للقراءة فقط'
+                  : 'نتائج تقرير غير مكتملة للقراءة فقط'
+                : undefined
+            }
+          >
+            <SectionTabPanel
+              id={target.id}
+              activeId={target.id}
+              idPrefix={REPORT_PRODUCT_TABS_ID_PREFIX}
+            >
+              <ReportViewPanel
+                activeSection={target.section}
+                activeView={target.view}
+                model={model}
+                filters={scopedFilters}
+                canExportReports={canExportReports && !model.isIncomplete}
+                onDrill={handleDrill}
+                statementFocus={product.statementFocus}
+              />
+            </SectionTabPanel>
+          </div>
+        </section>
       </div>
     </PageLayout>
   );

@@ -47,22 +47,37 @@ function surface(
 describe('buildAiNavigationTargets', () => {
   it('maps each declared action to the canonical in-app report/workspace', () => {
     expect(buildAiNavigationTargets('summarize_overdue_invoices')).toEqual([
-      { label: 'فتح المتأخرات', to: '/reports', search: { section: 'analytics', view: 'overdue' } },
+      {
+        label: 'فتح المتأخرات',
+        to: '/reports/collections-arrears-cheques',
+        search: { view: 'arrears' },
+      },
     ]);
-    expect(buildAiNavigationTargets('summarize_contract_renewals')[0]?.to).toBe('/contracts');
+    expect(buildAiNavigationTargets('summarize_contract_renewals')[0]?.to).toBe(
+      '/contracts',
+    );
     expect(buildAiNavigationTargets('summarize_vacancy')[0]).toEqual({
       label: 'فتح الإشغال والشغور',
-      to: '/reports',
-      search: { section: 'analytics', view: 'occupancy' },
+      to: '/reports/portfolio-property-performance',
+      search: { view: 'occupancy' },
     });
-    expect(buildAiNavigationTargets('summarize_month')[0]?.to).toBe('/reports');
-    expect(buildAiNavigationTargets('draft_tenant_payment_reminder')[0]?.to).toBe('/communication');
-    expect(buildAiNavigationTargets('explain_property_financial_snapshot')[0]?.to).toBe('/reports');
+    expect(buildAiNavigationTargets('summarize_month')[0]?.to).toBe(
+      '/reports/portfolio-property-performance',
+    );
+    expect(
+      buildAiNavigationTargets('draft_tenant_payment_reminder')[0]?.to,
+    ).toBe('/communication');
+    expect(
+      buildAiNavigationTargets('explain_property_financial_snapshot')[0]?.to,
+    ).toBe('/reports/portfolio-property-performance');
   });
 
   it('offers only canonical navigation for free-form questions', () => {
     const targets = buildAiNavigationTargets(undefined, { freeform: true });
-    expect(targets.map((target) => target.to).sort()).toEqual(['/financials', '/reports']);
+    expect(targets.map((target) => target.to).sort()).toEqual([
+      '/financials',
+      '/reports',
+    ]);
   });
 
   it('returns no targets when no action and no free-form context exists', () => {
@@ -70,46 +85,93 @@ describe('buildAiNavigationTargets', () => {
   });
 
   it('never derives destinations from model output (closed union only)', () => {
-    expect(buildAiNavigationTargets('post_journal' as AiAssistantAction)).toEqual([]);
+    expect(
+      buildAiNavigationTargets('post_journal' as AiAssistantAction),
+    ).toEqual([]);
   });
 
   it('gives every v3 operational action only canonical route-contract destinations', () => {
-    const canonicalRoutes = new Set(ROUTE_CONTRACT.map((entry) => entry.canonical));
+    const canonicalRoutes = new Set(
+      ROUTE_CONTRACT.map((entry) => entry.canonical),
+    );
     for (const action of ALL_ACTIONS) {
       for (const target of buildAiNavigationTargets(action)) {
-        expect(canonicalRoutes.has(target.to), `${action} → ${target.to} must be a canonical MALEK route`).toBe(true);
+        const isProductRoute =
+          target.to.startsWith('/reports/') &&
+          canonicalRoutes.has('/reports/$reportId');
+        expect(
+          canonicalRoutes.has(target.to) || isProductRoute,
+          `${action} → ${target.to} must be a canonical MALEK route`,
+        ).toBe(true);
         expect(isAllowedAiNavigationTarget(target)).toBe(true);
       }
     }
   });
 
   it('routes the new operational actions to their owning workspaces', () => {
-    expect(buildAiNavigationTargets('list_overdue_or_critical_maintenance')[0]?.to).toBe('/maintenance');
-    expect(buildAiNavigationTargets('locate_dormant_funds')[0]?.to).toBe('/financials');
-    expect(buildAiNavigationTargets('generate_daily_brief')[0]?.to).toBe('/dashboard');
-    expect(buildAiNavigationTargets('prioritize_office_actions_top5')[0]?.to).toBe('/dashboard');
-    expect(buildAiNavigationTargets('identify_riskiest_overdue_tenants').map((target) => target.to)).toContain('/reports');
-    expect(buildAiNavigationTargets('list_vacant_units_needing_followup').map((target) => target.to)).toContain('/properties');
-    expect(buildAiNavigationTargets('draft_owner_summary')[0]?.to).toBe('/owners');
-    expect(buildAiNavigationTargets('draft_maintenance_followup').map((target) => target.to)).toContain('/communication');
+    expect(
+      buildAiNavigationTargets('list_overdue_or_critical_maintenance')[0]?.to,
+    ).toBe('/maintenance');
+    expect(buildAiNavigationTargets('locate_dormant_funds')[0]?.to).toBe(
+      '/financials',
+    );
+    expect(buildAiNavigationTargets('generate_daily_brief')[0]?.to).toBe(
+      '/dashboard',
+    );
+    expect(
+      buildAiNavigationTargets('prioritize_office_actions_top5')[0]?.to,
+    ).toBe('/dashboard');
+    expect(
+      buildAiNavigationTargets('identify_riskiest_overdue_tenants').map(
+        (target) => target.to,
+      ),
+    ).toContain('/reports/collections-arrears-cheques');
+    expect(
+      buildAiNavigationTargets('list_vacant_units_needing_followup').map(
+        (target) => target.to,
+      ),
+    ).toContain('/properties');
+    expect(buildAiNavigationTargets('draft_owner_summary')[0]?.to).toBe(
+      '/owners',
+    );
+    expect(
+      buildAiNavigationTargets('draft_maintenance_followup').map(
+        (target) => target.to,
+      ),
+    ).toContain('/communication');
     expect(buildAiNavigationTargets('summarize_expenses')[0]).toEqual({
-      label: 'فتح المصروفات', to: '/financials', search: { section: 'expenses', view: 'expenses' },
+      label: 'فتح المصروفات',
+      to: '/financials',
+      search: { section: 'expenses', view: 'expenses' },
     });
-    expect(buildAiNavigationTargets('summarize_expenses').map((target) => target.to)).toContain('/financials');
-    expect(buildAiNavigationTargets('explain_owner_financial_position')[0]).toEqual({
-      label: 'فتح تسويات الملاك', to: '/financials', search: { section: 'funds', view: 'owner_settlements' },
+    expect(
+      buildAiNavigationTargets('summarize_expenses').map((target) => target.to),
+    ).toContain('/financials');
+    expect(
+      buildAiNavigationTargets('explain_owner_financial_position')[0],
+    ).toEqual({
+      label: 'فتح تسويات الملاك',
+      to: '/financials',
+      search: { section: 'funds', view: 'owner_settlements' },
     });
-    expect(buildAiNavigationTargets('explain_owner_financial_position').map((target) => target.to)).toContain('/owners');
+    expect(
+      buildAiNavigationTargets('explain_owner_financial_position').map(
+        (target) => target.to,
+      ),
+    ).toContain('/owners');
   });
 
   it('adds the verified current record and useful owning workspaces for explain-current-surface', () => {
-    const contractTargets = buildAiNavigationTargets('explain_current_surface', {
-      freeform: false,
-      surface: surface('contract', 'contract-123'),
-    });
+    const contractTargets = buildAiNavigationTargets(
+      'explain_current_surface',
+      {
+        freeform: false,
+        surface: surface('contract', 'contract-123'),
+      },
+    );
     expect(contractTargets.map((target) => target.to)).toEqual([
       '/contracts/contract-123',
-      '/reports',
+      '/reports/collections-arrears-cheques',
       '/communication',
     ]);
     expect(contractTargets.every(isAllowedAiNavigationTarget)).toBe(true);
@@ -121,7 +183,7 @@ describe('buildAiNavigationTargets', () => {
     expect(ownerTargets.map((target) => target.to)).toEqual([
       '/owners/owner-123',
       '/financials',
-      '/reports',
+      '/reports/portfolio-property-performance',
     ]);
     expect(ownerTargets.every(isAllowedAiNavigationTarget)).toBe(true);
   });
@@ -131,7 +193,9 @@ describe('buildAiNavigationTargets', () => {
       freeform: false,
       surface: surface('owner', 'owner;delete'),
     });
-    expect(targets.some((target) => target.to.startsWith('/owners/'))).toBe(false);
+    expect(targets.some((target) => target.to.startsWith('/owners/'))).toBe(
+      false,
+    );
   });
 });
 

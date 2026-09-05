@@ -40,7 +40,7 @@ describe('task-centric app navigation', () => {
       '/dashboard', '/properties', '/contracts', '/financials', '/maintenance', '/reports', '/settings',
     ]);
     expect(primaryItems.map(([, labelKey]) => navigationLabels[labelKey])).toEqual([
-      'اليوم', 'المحفظة', 'التأجير', 'المال', 'الخدمات', 'التقارير والكشوف', 'الإعدادات',
+      'اليوم', 'المحفظة', 'التأجير', 'المال', 'الخدمات', 'التقارير', 'الإعدادات',
     ]);
   });
 

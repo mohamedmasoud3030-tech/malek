@@ -16,7 +16,6 @@
  * Each report type has its own interface reflecting the authoritative RPC shape.
  */
 
-
 /** Report filters common to all accounting period-backed reports. */
 export type AccountingReportFilters = {
   company_id: string;
@@ -124,26 +123,6 @@ export type ReconciliationRow = {
   gl_count: number;
 };
 
-/** Statements — tenant/owner periodic statements. */
-export type StatementReport = {
-  asOf: string | null;
-  company_id: string;
-  period: { from: string | null; to: string | null };
-  line_items: StatementLine[];
-  total_debits: number;
-  total_credits: number;
-  is_balanced: boolean;
-};
-
-export type StatementLine = {
-  account_no: string;
-  account_name: string;
-  debit: number; // OMR 3dp
-  credit: number; // OMR 3dp
-  description: string | null;
-  effective_date: string | null;
-};
-
 /** Cash Flow Drillthrough — detailed line items behind a cash flow row. */
 export type CashFlowPeriod = { from: string | null; to: string | null };
 
@@ -163,9 +142,21 @@ export type IncomeStatementRpcResponse = {
 };
 
 export type BalanceSheetRpcResponse = {
-  assets?: Array<{ code: string | null; name: string | null; amount: number | string | null }>;
-  liabilities?: Array<{ code: string | null; name: string | null; amount: number | string | null }>;
-  equity?: Array<{ code: string | null; name: string | null; amount: number | string | null }>;
+  assets?: Array<{
+    code: string | null;
+    name: string | null;
+    amount: number | string | null;
+  }>;
+  liabilities?: Array<{
+    code: string | null;
+    name: string | null;
+    amount: number | string | null;
+  }>;
+  equity?: Array<{
+    code: string | null;
+    name: string | null;
+    amount: number | string | null;
+  }>;
 };
 
 export type CashFlowRpcResponse = {

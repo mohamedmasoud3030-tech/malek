@@ -43,7 +43,7 @@ The defect is the **vacant count/label and any downstream risk logic using that 
 - current property PDF occupancy block created from `occupancyFromRows`
 - any portfolio benchmark using the binary occupancy rows
 
-**Phase 2 requirement:** choose one explicit presentation contract. Preferred direction is to preserve `buildVacancyAnalytics` semantics (`available` is the only vacancy state) and evolve report row types to carry `nonRentable` separately instead of silently folding it into `vacant`.
+**Future presentation requirement:** choose one explicit presentation contract. Preferred direction is to preserve `buildVacancyAnalytics` semantics (`available` is the only vacancy state) and evolve report row types to carry `nonRentable` separately instead of silently folding it into `vacant`.
 
 ## G2 — Historical occupancy uses contract coverage, current snapshot uses unit status
 
@@ -51,7 +51,7 @@ The defect is the **vacant count/label and any downstream risk logic using that 
 
 Current occupancy comes from current unit status. Historical comparison/trend reconstructs occupancy from contract coverage (`unitOccupiedAsOf` / `buildVacancyAnalytics` historical logic).
 
-This is not inherently wrong, but it compares two different evidence sources. The property document already labels the trend as contractual coverage; Phase 2 must preserve that distinction and must not present the trend as a pure replay of historical `unit.status`.
+This is not inherently wrong, but it compares two different evidence sources. The property document already labels the trend as contractual coverage; Future presentation work must preserve that distinction and must not present the trend as a pure replay of historical `unit.status`.
 
 Additional caveat: historical occupancy functions use the supplied/current unit universe as denominator. A unit created after the historical comparison date can therefore affect a historical rate unless the caller supplies a historically valid unit universe. Treat this as an authority caveat requiring focused verification before changing formulas.
 
@@ -70,19 +70,6 @@ Any future opening/closing balance feature must be sourced from an explicit back
 The client settlement status union exposes `pending | approved | paid | cancelled`; server `DRAFT` can normalize to `pending` through fallback logic.
 
 Do not add a visible DRAFT state during presentation refactoring unless the lifecycle product contract is intentionally changed. Record/verify whether this collapse is deliberate before surfacing workflow-state copy.
-
-## G5 — Statements workspace has no named default view
-
-**Severity:** Low architectural/IA gap.
-
-`report-workspaces.ts` defines:
-
-- workspace `statements`
-- `defaultSection: 'statements'`
-- `defaultView: ''`
-- no subviews
-
-The underlying statement panels/services exist, but the workspace registry does not expose a named default view. Phase 2 should clarify the presentation/navigation contract without rebuilding statement financial logic.
 
 ## G6 — Overloaded `net`
 
@@ -118,6 +105,6 @@ The originally proposed new regression test for "occupancy-rate divergence when 
 
 A future test should be added only when the product/engineering decision for G1 is implemented, so the test protects the chosen canonical vacancy classification rather than freezing the known semantic mismatch.
 
-## Exact Phase 2 starting point
+## Guardrail for future presentation work
 
-Phase 2 may begin after these artifacts are reviewed. Start by building the shared Reports Presentation System on semantically clean collection surfaces. Do not redesign property occupancy/vacancy cards, property performance vacancy counts, or related PDF blocks until G1 is resolved explicitly.
+Do not redesign property occupancy/vacancy cards, property-performance vacancy counts, or related PDF blocks until G1 is resolved explicitly. Any future work must preserve the canonical product-route architecture and the authority boundaries recorded here.

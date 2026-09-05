@@ -46,7 +46,7 @@ export const navGroups: readonly NavGroup[] = [
     ['/maintenance', 'services', 'الصيانة والمرافق وما يحتاج متابعة', Wrench, 'maintenance.view'],
   ]],
   ['التحليل والإدارة', [
-    ['/reports', 'reportsAndStatements', 'التقارير والتحليلات والكشوف', BarChart3, 'financial.reports.view'],
+    ['/reports', 'reports', 'التقارير التحليلية والتشغيلية', BarChart3, 'financial.reports.view'],
     ['/settings', 'settings', 'الشركة والمستخدمون والصلاحيات والإعدادات التشغيلية', Settings],
   ]],
 ];

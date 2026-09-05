@@ -1,9 +1,7 @@
 /**
  * Operational and Financial Reports document adapters and actions:
  * - #7 Aged Arrears Breakdown (reusing 'generic_report')
- * - #9 Quarterly / Annual VAT Statement (reusing 'generic_report')
  * - #12 Annual Portfolio Performance Report (reusing 'generic_report')
- * - #14 Vacancy Loss Assessment (reusing 'generic_report')
  * - #18 Building Rent Roll (reusing 'generic_report')
  *
  * Canonical authorities:
@@ -18,7 +16,6 @@ import { hasCompleteCompanyIdentity, type DocumentCompanySettings } from '@/serv
 import { runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
 import type { GenericReportPayload } from '@/services/documents/documentPayloads';
 import type { AgedReceivablesReport } from '@/features/financials/reports/arrears-reports-service';
-import type { VatReturnReport } from '@/features/financials/reports/financial-statements-service';
 import type { OccupancyChartRow, RentRollReportRow } from '../reports-page.helpers';
 
 // ---------------------------------------------------------------------------
@@ -93,65 +90,6 @@ export function downloadAgedArrearsReportPdf(params: {
         payload: toAgedArrearsPayload(report),
       }),
     fallbackMessage: 'تعذر تصدير تقرير أعمار الديون كملف PDF.',
-  });
-}
-
-// ---------------------------------------------------------------------------
-// #9 Quarterly / Annual VAT Statement
-// ---------------------------------------------------------------------------
-
-export function toVatStatementPayload(report: VatReturnReport): GenericReportPayload {
-  const rows: string[][] = [
-    ['إجمالي المبيعات والإيرادات الخاضعة للضريبة', String(report.totalSalesAmount)],
-    ['إجمالي ضريبة القيمة المضافة المستحقة (VAT)', String(report.totalTaxAmount)],
-    ['عدد الفواتير الصادرة ضمن الفترة', String(report.invoiceCount)],
-  ];
-
-  return {
-    reportTitle: 'إقرار / كشف ضريبة القيمة المضافة (VAT Statement)',
-    reportType: 'VAT_Return_Statement',
-    periodFrom: report.period.from,
-    periodTo: report.period.to,
-    sections: [
-      {
-        title: 'ملخص الحركة الضريبية للفترة',
-        columns: ['البيان الضريبي', 'المبلغ / العدد'],
-        rows,
-      },
-    ],
-    totalSummary: `صافي الضريبة المستحقة: ${report.totalTaxAmount}`,
-  };
-}
-
-export function printVatStatementReport(params: {
-  report: VatReturnReport;
-  settings: DocumentCompanySettings;
-}): Promise<void> {
-  const { report, settings } = params;
-  return runGuardedDocumentAction({
-    isReady: hasCompleteCompanyIdentity(settings),
-    operation: () =>
-      documentService.printDocument('generic_report', {
-        settings,
-        payload: toVatStatementPayload(report),
-      }),
-    fallbackMessage: 'تعذرت طباعة كشف ضريبة القيمة المضافة.',
-  });
-}
-
-export function downloadVatStatementReportPdf(params: {
-  report: VatReturnReport;
-  settings: DocumentCompanySettings;
-}): Promise<void> {
-  const { report, settings } = params;
-  return runGuardedDocumentAction({
-    isReady: hasCompleteCompanyIdentity(settings),
-    operation: () =>
-      documentService.downloadDocumentPdf('generic_report', {
-        settings,
-        payload: toVatStatementPayload(report),
-      }),
-    fallbackMessage: 'تعذر تصدير كشف ضريبة القيمة المضافة كملف PDF.',
   });
 }
 
@@ -235,92 +173,6 @@ export function downloadPortfolioPerformanceReportPdf(params: {
         payload: toPortfolioPerformancePayload(rest),
       }),
     fallbackMessage: 'تعذر تصدير تقرير أداء المحفظة كملف PDF.',
-  });
-}
-
-// ---------------------------------------------------------------------------
-// #14 Vacancy Loss Assessment
-// ---------------------------------------------------------------------------
-
-export type VacancyLossItem = {
-  propertyTitle: string;
-  unitNumber: string;
-  unitType?: string | null;
-  marketRent?: number | null;
-  daysVacant?: number | null;
-  estimatedLoss?: number | null;
-};
-
-export function toVacancyLossPayload(params: {
-  items: readonly VacancyLossItem[];
-  asOf?: string | null;
-  methodologyNote?: string | null;
-}): GenericReportPayload {
-  const { items, asOf, methodologyNote } = params;
-
-  let totalLoss = 0;
-
-  const rows: string[][] = items.map((item) => {
-    if (item.estimatedLoss) totalLoss += item.estimatedLoss;
-    return [
-      item.propertyTitle,
-      item.unitNumber,
-      item.unitType ?? '—',
-      item.marketRent !== undefined && item.marketRent !== null ? String(item.marketRent) : '—',
-      item.daysVacant !== undefined && item.daysVacant !== null ? String(item.daysVacant) : '—',
-      item.estimatedLoss !== undefined && item.estimatedLoss !== null ? String(item.estimatedLoss) : '—',
-    ];
-  });
-
-  return {
-    reportTitle: 'كشف تقييم فاقد الشغور والفرص الإيجارية الضائعة',
-    reportType: 'Vacancy_Loss_Assessment',
-    periodTo: asOf ?? null,
-    sections: [
-      {
-        title: 'الوحدات الشاغرة وحساب فاقد الفرصة البديلة',
-        columns: ['العقار', 'رقم الوحدة', 'نوع الوحدة', 'الإيجار المقدر', 'أيام الشغور', 'فاقد الشغور المقدر'],
-        rows,
-        totals: totalLoss > 0 ? ['إجمالي فاقد الشغور المقدر', '', '', '', '', String(totalLoss)] : undefined,
-      },
-    ],
-    totalSummary: methodologyNote ?? (totalLoss > 0 ? `إجمالي الفاقد التقديري المحسوب: ${totalLoss}` : null),
-  };
-}
-
-export function printVacancyLossReport(params: {
-  items: readonly VacancyLossItem[];
-  settings: DocumentCompanySettings;
-  asOf?: string | null;
-  methodologyNote?: string | null;
-}): Promise<void> {
-  const { settings, ...rest } = params;
-  return runGuardedDocumentAction({
-    isReady: hasCompleteCompanyIdentity(settings),
-    operation: () =>
-      documentService.printDocument('generic_report', {
-        settings,
-        payload: toVacancyLossPayload(rest),
-      }),
-    fallbackMessage: 'تعذرت طباعة كشف فاقد الشغور.',
-  });
-}
-
-export function downloadVacancyLossReportPdf(params: {
-  items: readonly VacancyLossItem[];
-  settings: DocumentCompanySettings;
-  asOf?: string | null;
-  methodologyNote?: string | null;
-}): Promise<void> {
-  const { settings, ...rest } = params;
-  return runGuardedDocumentAction({
-    isReady: hasCompleteCompanyIdentity(settings),
-    operation: () =>
-      documentService.downloadDocumentPdf('generic_report', {
-        settings,
-        payload: toVacancyLossPayload(rest),
-      }),
-    fallbackMessage: 'تعذر تصدير كشف فاقد الشغور كملف PDF.',
   });
 }
 

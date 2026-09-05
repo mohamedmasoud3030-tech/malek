@@ -1,13 +1,22 @@
 import { useMemo } from 'react';
-import { ArrowLeft, CalendarClock, ReceiptText, ShieldAlert, Wrench } from 'lucide-react';
+import {
+  ArrowLeft,
+  CalendarClock,
+  ReceiptText,
+  ShieldAlert,
+  Wrench,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatMoney } from '@/features/financials/components/financials-formatters';
 import type { ExpenseBreakdownReport } from '@/features/financials/reports/financial-reporting/report-types';
 import type { Maintenance } from '@/features/maintenance/maintenance-service';
 import type { MaintenanceSummary } from '@/features/maintenance/maintenance-helpers';
-import { normalizeMaintenancePriority, normalizeMaintenanceStatus } from '@/lib/maintenanceStatus';
+import {
+  normalizeMaintenancePriority,
+  normalizeMaintenanceStatus,
+} from '@/lib/maintenanceStatus';
 import { formatLatinNumber } from '@/lib/formatters';
-import type { ReportDrillHandler } from '../report-workspaces';
+import type { ReportDrillHandler } from '../report-route';
 import {
   ReportInsightNote,
   ReportList,
@@ -50,48 +59,70 @@ export function OperationsOverviewSection({
     [maintenanceRows],
   );
 
-  const openRequests = (maintenanceSummary.open ?? 0) + (maintenanceSummary.inProgress ?? 0);
+  const openRequests =
+    (maintenanceSummary.open ?? 0) + (maintenanceSummary.inProgress ?? 0);
   const totalRequests = maintenanceSummary.total ?? 0;
   const urgentOpenRequests = useMemo(
-    () => maintenanceRows.filter((row) => {
-      const status = normalizeMaintenanceStatus(row.status);
-      return (status === 'open' || status === 'in_progress')
-        && normalizeMaintenancePriority(row.priority) === 'urgent';
-    }).length,
+    () =>
+      maintenanceRows.filter((row) => {
+        const status = normalizeMaintenanceStatus(row.status);
+        return (
+          (status === 'open' || status === 'in_progress') &&
+          normalizeMaintenancePriority(row.priority) === 'urgent'
+        );
+      }).length,
     [maintenanceRows],
   );
   const completedRequests = useMemo(
-    () => maintenanceRows.filter((row) => {
-      const status = normalizeMaintenanceStatus(row.status);
-      return status === 'resolved' || status === 'closed';
-    }).length,
+    () =>
+      maintenanceRows.filter((row) => {
+        const status = normalizeMaintenanceStatus(row.status);
+        return status === 'resolved' || status === 'closed';
+      }).length,
     [maintenanceRows],
   );
   const actionableRequests = useMemo(
-    () => maintenanceRows.filter((row) => normalizeMaintenanceStatus(row.status) !== 'cancelled').length,
+    () =>
+      maintenanceRows.filter(
+        (row) => normalizeMaintenanceStatus(row.status) !== 'cancelled',
+      ).length,
     [maintenanceRows],
   );
 
   // Urgency ratio is restricted to the active backlog. The summary's `urgent`
   // count spans all rows, including resolved/cancelled records, so it is not a
   // valid numerator for "urgent among open".
-  const urgencyRatio = openRequests > 0 ? (urgentOpenRequests / openRequests) * 100 : null;
+  const urgencyRatio =
+    openRequests > 0 ? (urgentOpenRequests / openRequests) * 100 : null;
 
   // Completion ratio excludes cancelled work: cancelled ≠ completed.
-  const completionRatio = actionableRequests > 0 ? (completedRequests / actionableRequests) * 100 : null;
+  const completionRatio =
+    actionableRequests > 0
+      ? (completedRequests / actionableRequests) * 100
+      : null;
 
   const topExpenseProperties = useMemo(
-    () => [...(expenseReport?.byProperty ?? [])].sort((a, b) => b.total - a.total).slice(0, 3),
+    () =>
+      [...(expenseReport?.byProperty ?? [])]
+        .sort((a, b) => b.total - a.total)
+        .slice(0, 3),
     [expenseReport?.byProperty],
   );
 
   const topExpenseCategories = useMemo(
-    () => [...(expenseReport?.byCategory ?? [])].sort((a, b) => b.total - a.total).slice(0, 3),
+    () =>
+      [...(expenseReport?.byCategory ?? [])]
+        .sort((a, b) => b.total - a.total)
+        .slice(0, 3),
     [expenseReport?.byCategory],
   );
 
   const insightBody = (() => {
-    if (urgentOpenRequests > 0 && openRequests > 0 && (urgentOpenRequests / openRequests) >= 0.5) {
+    if (
+      urgentOpenRequests > 0 &&
+      openRequests > 0 &&
+      urgentOpenRequests / openRequests >= 0.5
+    ) {
       return `نصف الطلبات المفتوحة أو أكثر مصنّفة عاجلة (${formatLatinNumber(urgentOpenRequests, 'ar')} من ${formatLatinNumber(openRequests, 'ar')}). راجع جدولة التنفيذ وأولويات الفريق.`;
     }
     if (openRequests > 0 && completionRatio !== null && completionRatio < 40) {
@@ -99,9 +130,10 @@ export function OperationsOverviewSection({
     }
     if (topExpenseProperties.length > 0) {
       const top = topExpenseProperties[0];
-      const share = expenseReport?.totalExpenses && expenseReport.totalExpenses > 0
-        ? (top.total / expenseReport.totalExpenses) * 100
-        : 0;
+      const share =
+        expenseReport?.totalExpenses && expenseReport.totalExpenses > 0
+          ? (top.total / expenseReport.totalExpenses) * 100
+          : 0;
       if (share > 65) {
         return `عقار واحد يتحمل أكثر من ${Math.round(share)}٪ من المصروفات المسجلة. راجع الصيانة والخدمات المرتبطة بهذا العقار.`;
       }
@@ -141,16 +173,24 @@ export function OperationsOverviewSection({
               },
               urgencyRatio !== null
                 ? {
-                  label: 'عاجلة من المفتوحة',
-                  value: `${formatLatinNumber(Math.round(urgencyRatio), 'ar')}%`,
-                  detail: `${formatLatinNumber(urgentOpenRequests, 'ar')} طلب عاجل`,
-                  tone: urgencyRatio >= 50 ? 'critical' : urgencyRatio >= 25 ? 'warning' : 'default',
-                }
+                    label: 'عاجلة من المفتوحة',
+                    value: `${formatLatinNumber(Math.round(urgencyRatio), 'ar')}%`,
+                    detail: `${formatLatinNumber(urgentOpenRequests, 'ar')} طلب عاجل`,
+                    tone:
+                      urgencyRatio >= 50
+                        ? 'critical'
+                        : urgencyRatio >= 25
+                          ? 'warning'
+                          : 'default',
+                  }
                 : {
-                  label: 'طلبات عاجلة',
-                  value: formatLatinNumber(urgentOpenRequests, 'ar'),
-                  detail: urgentOpenRequests === 0 ? 'لا طلبات عاجلة' : 'بدون طلبات مفتوحة',
-                },
+                    label: 'طلبات عاجلة',
+                    value: formatLatinNumber(urgentOpenRequests, 'ar'),
+                    detail:
+                      urgentOpenRequests === 0
+                        ? 'لا طلبات عاجلة'
+                        : 'بدون طلبات مفتوحة',
+                  },
             ]}
           />
         </div>
@@ -171,7 +211,7 @@ export function OperationsOverviewSection({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => onDrill('operations', 'expenses')}
+              onClick={() => onDrill('analytics', 'expenses')}
               className="min-h-11 gap-1.5 text-xs font-black text-primary"
             >
               التفاصيل الكاملة
@@ -196,7 +236,11 @@ export function OperationsOverviewSection({
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => onDrill('properties', undefined, { propertyId: row.propertyId })}
+                        onClick={() =>
+                          onDrill('analytics', 'property_analytics', {
+                            propertyId: row.propertyId,
+                          })
+                        }
                         className="min-h-11 px-2 text-muted-foreground hover:text-primary"
                         aria-label={`عرض تفاصيل ${row.propertyTitle ?? 'عقار غير محدد'}`}
                       >
@@ -210,7 +254,9 @@ export function OperationsOverviewSection({
               {topExpenseCategories.length > 0 && (
                 <>
                   <div className="border-t border-border/60 px-4 pb-1 pt-3 sm:px-5">
-                    <p className="text-xs font-extrabold text-muted-foreground">أعلى التصنيفات</p>
+                    <p className="text-xs font-extrabold text-muted-foreground">
+                      أعلى التصنيفات
+                    </p>
                   </div>
                   <ReportList>
                     {topExpenseCategories.map((row) => (
@@ -238,7 +284,7 @@ export function OperationsOverviewSection({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => onDrill('operations', 'maintenance_analytics')}
+              onClick={() => onDrill('analytics', 'maintenance_analytics')}
               className="min-h-11 gap-1.5 text-xs font-black text-primary"
             >
               تحليلات الصيانة
@@ -284,7 +330,13 @@ export function OperationsOverviewSection({
                         ? `${formatLatinNumber(urgentOpenRequests, 'ar')} عاجل من ${formatLatinNumber(openRequests, 'ar')} مفتوح`
                         : 'لا طلبات عاجلة في الطلبات المفتوحة'
                     }
-                    tone={urgencyRatio >= 50 ? 'critical' : urgencyRatio >= 25 ? 'warning' : 'good'}
+                    tone={
+                      urgencyRatio >= 50
+                        ? 'critical'
+                        : urgencyRatio >= 25
+                          ? 'warning'
+                          : 'good'
+                    }
                   />
                 )}
                 {completionRatio !== null && (
@@ -292,7 +344,13 @@ export function OperationsOverviewSection({
                     label="معدل إنجاز الطلبات"
                     value={completionRatio}
                     helper={`${formatLatinNumber(completedRequests, 'ar')} منجز من ${formatLatinNumber(actionableRequests, 'ar')} غير ملغى`}
-                    tone={completionRatio >= 75 ? 'good' : completionRatio >= 40 ? 'warning' : 'critical'}
+                    tone={
+                      completionRatio >= 75
+                        ? 'good'
+                        : completionRatio >= 40
+                          ? 'warning'
+                          : 'critical'
+                    }
                   />
                 )}
               </div>
@@ -310,12 +368,13 @@ export function OperationsOverviewSection({
       >
         <div className="flex items-center justify-between gap-3 p-4 sm:p-5">
           <p className="text-sm font-semibold text-muted-foreground">
-            اختر عقارًا من نطاق التقرير لعرض فواتير الخدمات والمرافق وإثباتات الدفع.
+            اختر عقارًا من نطاق التقرير لعرض فواتير الخدمات والمرافق وإثباتات
+            الدفع.
           </p>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => onDrill('operations', 'services')}
+            onClick={() => onDrill('analytics', 'services')}
             className="min-h-11 shrink-0 gap-1.5 text-xs font-black text-primary"
           >
             الخدمات والمرافق
@@ -325,7 +384,10 @@ export function OperationsOverviewSection({
       </ReportPanel>
 
       <ReportInsightNote title="قاعدة العرض المالي">
-        لا تجمع هذه الورشة تكلفة الصيانة مع المصروفات المسجلة في رقم واحد: سجل الصيانة قد يكون ممثلًا أصلًا بسند مصروف مرحَّل، والجمع المباشر يعيد احتسابه مرتين. عند الحاجة إلى إجمالي تشغيلي معتمد، يُبنى من المصدر المحاسبي وليس من واجهة العرض.
+        لا تجمع هذه الورشة تكلفة الصيانة مع المصروفات المسجلة في رقم واحد: سجل
+        الصيانة قد يكون ممثلًا أصلًا بسند مصروف مرحَّل، والجمع المباشر يعيد
+        احتسابه مرتين. عند الحاجة إلى إجمالي تشغيلي معتمد، يُبنى من المصدر
+        المحاسبي وليس من واجهة العرض.
       </ReportInsightNote>
     </div>
   );

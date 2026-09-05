@@ -23,9 +23,15 @@ interface OfficePulseProps {
  * is never presented as office revenue: the cash-pulse surface stays
  * explicitly labelled «collections minus recorded expenses».
  */
-export const OfficePulse = memo(function OfficePulse({ snapshot, isLoading, settings }: OfficePulseProps) {
+export const OfficePulse = memo(function OfficePulse({
+  snapshot,
+  isLoading,
+  settings,
+}: OfficePulseProps) {
   if (isLoading) {
-    return <LoadingState variant="cards" rows={4} label="جارٍ تحميل نبض المكتب" />;
+    return (
+      <LoadingState variant="cards" rows={4} label="جارٍ تحميل نبض المكتب" />
+    );
   }
 
   const money = (value: number) => formatCompanyMoney(settings, value);
@@ -46,14 +52,18 @@ export const OfficePulse = memo(function OfficePulse({ snapshot, isLoading, sett
   const averageDaysOverdue = snapshot?.arrears.averageDaysOverdue ?? 0;
 
   const pulseCardClass = 'h-full border-border/55 bg-card/95 shadow-sm';
-  const pulseLinkClass = 'group block min-w-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2';
+  const pulseLinkClass =
+    'group block min-w-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2';
 
   return (
     <div
       data-dashboard-office-pulse
       className="relative overflow-hidden rounded-2xl border border-border/65 bg-card p-1.5 sm:p-2"
     >
-      <span className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-primary/35 to-transparent" aria-hidden="true" />
+      <span
+        className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-primary/35 to-transparent"
+        aria-hidden="true"
+      />
       <ResponsiveCardGrid gap="sm" aria-label="نبض المكتب" desktopColumns={4}>
         <Link
           to="/financials"
@@ -66,14 +76,21 @@ export const OfficePulse = memo(function OfficePulse({ snapshot, isLoading, sett
             value={money(collected)}
             sub={`من ${money(invoiced)} مستحقات · نسبة التحصيل ${collectionRate}%`}
             icon={HandCoins}
-            accent={collectionRate >= 80 ? 'emerald' : collectionRate >= 50 ? 'amber' : 'rose'}
+            accent={
+              collectionRate >= 80
+                ? 'emerald'
+                : collectionRate >= 50
+                  ? 'amber'
+                  : 'rose'
+            }
             compact
             className={pulseCardClass}
           />
         </Link>
 
         <Link
-          to="/properties" search={{ section: "units" }}
+          to="/properties"
+          search={{ section: 'units' }}
           data-dashboard-kpi-link
           className={pulseLinkClass}
           aria-label={`نسبة الإشغال ${occupancyRate}% — انتقل إلى سجل الوحدات`}
@@ -83,22 +100,35 @@ export const OfficePulse = memo(function OfficePulse({ snapshot, isLoading, sett
             value={`${occupancyRate}%`}
             sub={`${occupiedUnits} مشغولة · ${vacantUnits} شاغرة`}
             icon={Building2}
-            accent={occupancyRate >= 90 ? 'emerald' : occupancyRate >= 75 ? 'amber' : 'rose'}
+            accent={
+              occupancyRate >= 90
+                ? 'emerald'
+                : occupancyRate >= 75
+                  ? 'amber'
+                  : 'rose'
+            }
             compact
             className={pulseCardClass}
-            visual={(
+            visual={
               <RadialMetric
                 percent={occupancyRate}
                 label={`نسبة الإشغال ${occupancyRate}%`}
                 size={64}
-                fillClass={occupancyRate >= 90 ? 'text-success' : occupancyRate >= 75 ? 'text-warning' : 'text-danger'}
+                fillClass={
+                  occupancyRate >= 90
+                    ? 'text-success'
+                    : occupancyRate >= 75
+                      ? 'text-warning'
+                      : 'text-danger'
+                }
               />
-            )}
+            }
           />
         </Link>
 
         <Link
-          to="/financials" search={{ section: "collections", view: "arrears" }}
+          to="/financials"
+          search={{ section: 'collections', view: 'arrears' }}
           data-dashboard-kpi-link
           className={pulseLinkClass}
           aria-label={`المتأخرات ${money(totalOverdue)} — انتقل إلى المتأخرات`}
@@ -112,14 +142,22 @@ export const OfficePulse = memo(function OfficePulse({ snapshot, isLoading, sett
                 : 'لا توجد متأخرات مسجلة'
             }
             icon={AlertOctagon}
-            accent={totalOverdue === 0 ? 'emerald' : over90Count > 0 ? 'rose' : 'amber'}
+            accent={
+              totalOverdue === 0
+                ? 'emerald'
+                : over90Count > 0
+                  ? 'rose'
+                  : 'amber'
+            }
             compact
             className={pulseCardClass}
           />
         </Link>
 
         <Link
-          to="/reports"
+          to="/reports/$reportId"
+          params={{ reportId: 'portfolio-property-performance' }}
+          search={{ view: 'office' }}
           data-dashboard-kpi-link
           className={pulseLinkClass}
           aria-label="نبض سيولة المكتب — انتقل إلى التقارير"
@@ -132,14 +170,24 @@ export const OfficePulse = memo(function OfficePulse({ snapshot, isLoading, sett
             accent={netCash >= 0 ? 'emerald' : 'rose'}
             compact
             className={pulseCardClass}
-            visual={(
+            visual={
               <MiniBarsCompare
                 items={[
-                  { label: 'المحصّل', value: collected, displayValue: money(collected), barClass: 'bg-success' },
-                  { label: 'المصروفات', value: expenses, displayValue: money(expenses), barClass: 'bg-danger/80' },
+                  {
+                    label: 'المحصّل',
+                    value: collected,
+                    displayValue: money(collected),
+                    barClass: 'bg-success',
+                  },
+                  {
+                    label: 'المصروفات',
+                    value: expenses,
+                    displayValue: money(expenses),
+                    barClass: 'bg-danger/80',
+                  },
                 ]}
               />
-            )}
+            }
           />
         </Link>
       </ResponsiveCardGrid>

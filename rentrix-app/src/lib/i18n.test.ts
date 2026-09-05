@@ -95,11 +95,9 @@ describe('lightweight i18n and direction foundation', () => {
 describe('ADR-0008 — /financials and /reports UX-clarity i18n keys', () => {
   const uxClarityKeys = [
     'financialsSectionSummary',
-    'financialsSectionReports',
     'financialsPageDescription',
     'reportsPageDescription',
     'financialsPageHint',
-    'reportsPageHint',
   ] as const;
 
   it.each(uxClarityKeys)('"%s" has a non-empty Arabic translation', (key) => {
@@ -112,14 +110,6 @@ describe('ADR-0008 — /financials and /reports UX-clarity i18n keys', () => {
     const value = i18nResources.en.common[key];
     expect(value).toBeDefined();
     expect(value?.trim().length ?? 0).toBeGreaterThan(0);
-  });
-
-  it('"financialsSectionSummary" and "financialsSectionReports" are intentionally different', () => {
-    // These two keys are the contrast pair. If they ever collapse to the same
-    // string, the sidebar will read "X ... X" instead of "Quick ... Detailed".
-    expect(translateSharedLabel('financialsSectionSummary')).not.toBe(
-      translateSharedLabel('financialsSectionReports'),
-    );
   });
 
   it('"financialsPageDescription" and "reportsPageDescription" describe different jobs', () => {
@@ -147,10 +137,11 @@ describe('ADR-0008 — UX-clarity keys have real route consumers', () => {
   // description/hint block, so financialsPageDescription/financialsPageHint/
   // financialsSectionSummary have no route consumer anymore (their translations
   // stay valid and are still covered by the translation checks above). The
-  // /reports now carries its description inside the reports cockpit. The
-  // retired WorkspaceHint no longer consumes reportsPageHint.
+  // The /reports page now carries its analytical description above its report
+  // catalog. `reportsPageHint` was deleted outright: its only consumer was the
+  // retired WorkspaceHint, and its copy promised a summary/table/filters landing
+  // that the catalog deliberately does not have.
   const uxClarityConsumerCases = [
-    ['financialsSectionReports', 'features/reports/reports-page.tsx'],
     ['reportsPageDescription', 'features/reports/reports-page.tsx'],
   ] as const;
 

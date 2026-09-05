@@ -27,9 +27,10 @@ export type ReportsFilterState = FilterState & Readonly<{
 
 /**
  * Remove entity/status dimensions that the active product does not own.
- * Hidden filters must never keep affecting a report, export or shared link.
- * Period/as-of are retained because some workspaces use an implicit as-of
- * even when it is not rendered as a separate control.
+ * Hidden filters must never keep affecting a report, export, or shared link.
+ * Date dimensions are cleared unless the product exposes their exact semantic
+ * field. This is especially important for contract-scoped account statements,
+ * whose authoritative RPC does not accept a client-selected reporting period.
  */
 export function scopeReportsFiltersToFields(
   filters: ReportsFilterState,
@@ -38,6 +39,9 @@ export function scopeReportsFiltersToFields(
   const fields = new Set(visibleFields);
   return {
     ...filters,
+    from: fields.has('period') ? filters.from : '',
+    to: fields.has('period') ? filters.to : '',
+    asOf: fields.has('asOf') ? filters.asOf : '',
     propertyId: fields.has('property') ? filters.propertyId : '',
     unitId: fields.has('unit') ? filters.unitId : '',
     tenantId: fields.has('tenant') ? filters.tenantId : '',

@@ -6,23 +6,23 @@ Status: supporting audit artifact. Canonical business rules remain owned by the 
 
 ## Financial metrics
 
-| Metric | Arabic meaning | Definition | Canonical source / boundary | Time semantics | Notes |
-|---|---|---|---|---|---|
-| `invoiced` | المستحق / المفوتر للفترة | Sum of gross invoice face value for the filtered report scope | `financial-reporting/report-calculations.ts` → invoice summary | Period/filter scoped | Distinct from contractual rent and from collected cash |
-| `paid` | المحصل | Sum of actual payment amounts in the filtered payment scope | `financial-reporting/report-calculations.ts` → payment summary | Payment-date / period | Cash-basis receipt metric |
-| `outstanding` | المتبقي | Remaining invoice balance (`gross - paid_amount`) for invoices with remaining > 0 | `financial-reporting/report-calculations.ts` | Snapshot/filter cutoff | Can include not-yet-due receivables |
-| `totalOutstanding` | إجمالي المتبقي | Sum across all aged-receivable buckets including `current` | `arrears-reports-service.ts` → aged receivables summary | As-of | Always >= `totalOverdue` |
-| `totalOverdue` | المتأخرات | Remaining balances whose due date is overdue; `current` bucket excluded | `arrears-reports-service.ts` | As-of | Do not label all outstanding as overdue |
-| `referenceRevenue` | إيجارات العقود حسب دورتها | Sum of `rent_amount` for active contracts in property performance | `buildPropertyPerformanceRows` | Current active-contract state | Not monthly-normalized; not billed; not collected |
-| `gross_rent_collected` | إجمالي الإيجار المحصل للتسوية | Actual tenant collections included in an owner settlement | settlement backend/service authority | Settlement period / lifecycle record | Distinct from `referenceRevenue` |
-| `management_fee_amount` | أتعاب الإدارة | Management fee applied to the settlement | settlement authority | Settlement record | Office revenue; not owner rent revenue |
-| `fee_vat_amount` | ضريبة أتعاب الإدارة | VAT charged on management fee | settlement authority (`tax_amount` normalized to fee VAT field) | Settlement record | Do not mix with utilities/taxes unrelated to the fee |
-| `owner_expenses` | مصروفات محملة على المالك | Posted owner-charged expenses included in settlement calculation | settlement/accounting authority | Settlement record | Maintenance activity is not automatically included |
-| `net_payable_amount` | صافي المستحق للمالك في التسوية | `gross_rent_collected - management_fee_amount - fee_vat_amount - owner_expenses` | server-derived settlement field | Settlement record | Canonical owner-payable net for that settlement |
-| `outstandingNet` | صافي مستحقات الملاك غير المصروفة | Sum of settlement `net_payable_amount` for pending/approved settlements only | `summarizeLiveOwnerSettlements` | Current lifecycle liability | PAID and CANCELLED excluded |
-| settlement `net` | صافي التسويات التاريخي | Sum of non-cancelled settlement net values including PAID | settlement totals service | Lifecycle/historical | Never substitute for `outstandingNet` |
-| `netCash` | صافي الحركة النقدية للفترة | `paid - expenses` | `summarizeFinancialPeriodSummaryReport` | Period / cash basis | Never label as owner payable or profit |
-| owner-statement row `net` | صافي حركة كشف المالك | Server/RPC-derived `gross - deduction` per statement row | `rpt_owner_statement` via `statements-reports-service.ts` | Statement transaction / selected scope | Distinct from both settlement net and `netCash` |
+| Metric                    | Arabic meaning                   | Definition                                                                        | Canonical source / boundary                                     | Time semantics                         | Notes                                                  |
+| ------------------------- | -------------------------------- | --------------------------------------------------------------------------------- | --------------------------------------------------------------- | -------------------------------------- | ------------------------------------------------------ |
+| `invoiced`                | المستحق / المفوتر للفترة         | Sum of gross invoice face value for the filtered report scope                     | `financial-reporting/report-calculations.ts` → invoice summary  | Period/filter scoped                   | Distinct from contractual rent and from collected cash |
+| `paid`                    | المحصل                           | Sum of actual payment amounts in the filtered payment scope                       | `financial-reporting/report-calculations.ts` → payment summary  | Payment-date / period                  | Cash-basis receipt metric                              |
+| `outstanding`             | المتبقي                          | Remaining invoice balance (`gross - paid_amount`) for invoices with remaining > 0 | `financial-reporting/report-calculations.ts`                    | Snapshot/filter cutoff                 | Can include not-yet-due receivables                    |
+| `totalOutstanding`        | إجمالي المتبقي                   | Sum across all aged-receivable buckets including `current`                        | `arrears-reports-service.ts` → aged receivables summary         | As-of                                  | Always >= `totalOverdue`                               |
+| `totalOverdue`            | المتأخرات                        | Remaining balances whose due date is overdue; `current` bucket excluded           | `arrears-reports-service.ts`                                    | As-of                                  | Do not label all outstanding as overdue                |
+| `referenceRevenue`        | إيجارات العقود حسب دورتها        | Sum of `rent_amount` for active contracts in property performance                 | `buildPropertyPerformanceRows`                                  | Current active-contract state          | Not monthly-normalized; not billed; not collected      |
+| `gross_rent_collected`    | إجمالي الإيجار المحصل للتسوية    | Actual tenant collections included in an owner settlement                         | settlement backend/service authority                            | Settlement period / lifecycle record   | Distinct from `referenceRevenue`                       |
+| `management_fee_amount`   | أتعاب الإدارة                    | Management fee applied to the settlement                                          | settlement authority                                            | Settlement record                      | Office revenue; not owner rent revenue                 |
+| `fee_vat_amount`          | ضريبة أتعاب الإدارة              | VAT charged on management fee                                                     | settlement authority (`tax_amount` normalized to fee VAT field) | Settlement record                      | Do not mix with utilities/taxes unrelated to the fee   |
+| `owner_expenses`          | مصروفات محملة على المالك         | Posted owner-charged expenses included in settlement calculation                  | settlement/accounting authority                                 | Settlement record                      | Maintenance activity is not automatically included     |
+| `net_payable_amount`      | صافي المستحق للمالك في التسوية   | `gross_rent_collected - management_fee_amount - fee_vat_amount - owner_expenses`  | server-derived settlement field                                 | Settlement record                      | Canonical owner-payable net for that settlement        |
+| `outstandingNet`          | صافي مستحقات الملاك غير المصروفة | Sum of settlement `net_payable_amount` for pending/approved settlements only      | `summarizeLiveOwnerSettlements`                                 | Current lifecycle liability            | PAID and CANCELLED excluded                            |
+| settlement `net`          | صافي التسويات التاريخي           | Sum of non-cancelled settlement net values including PAID                         | settlement totals service                                       | Lifecycle/historical                   | Never substitute for `outstandingNet`                  |
+| `netCash`                 | صافي الحركة النقدية للفترة       | `paid - expenses`                                                                 | `summarizeFinancialPeriodSummaryReport`                         | Period / cash basis                    | Never label as owner payable or profit                 |
+| owner-statement row `net` | صافي حركة كشف المالك             | Server/RPC-derived `gross - deduction` per statement row                          | `rpt_owner_statement` via `statements-reports-service.ts`       | Statement transaction / selected scope | Distinct from both settlement net and `netCash`        |
 
 ## Settlement lifecycle
 
@@ -39,13 +39,13 @@ Caveat: server `DRAFT` may normalize to client `pending`; this is tracked as a d
 
 ## Arrears aging
 
-| Bucket | Meaning |
-|---|---|
-| `current` | Not overdue yet, or no usable due date |
-| `days_1_30` | 1–30 calendar days overdue |
-| `days_31_60` | 31–60 days overdue |
-| `days_61_90` | 61–90 days overdue |
-| `days_90_plus` | >90 days overdue |
+| Bucket         | Meaning                                |
+| -------------- | -------------------------------------- |
+| `current`      | Not overdue yet, or no usable due date |
+| `days_1_30`    | 1–30 calendar days overdue             |
+| `days_31_60`   | 31–60 days overdue                     |
+| `days_61_90`   | 61–90 days overdue                     |
+| `days_90_plus` | >90 days overdue                       |
 
 `totalOutstanding` includes `current`; `totalOverdue` excludes it.
 
@@ -100,17 +100,17 @@ This is a different semantic axis from current unit-status occupancy and must re
 
 ## Vacancy analytics
 
-| Metric | Definition | Authority |
-|---|---|---|
-| `vacancyRate` | `availableUnits / totalUnits` | `buildVacancyAnalytics` |
-| `averageVacancyDays` | Mean `daysVacant` over truly available units | `buildVacancyAnalytics` |
-| `vacancySince` | Latest effective contract end; fallback to unit creation date | `buildVacancyAnalytics` |
-| `referenceVacantRent` | Sum of reference rent for available/vacant units | `buildVacancyAnalytics` |
-| `occupancyChangePoints` | Current occupancy rate minus previous-month occupancy rate | `buildVacancyAnalytics` |
+| Metric                  | Definition                                                    | Authority               |
+| ----------------------- | ------------------------------------------------------------- | ----------------------- |
+| `vacancyRate`           | `availableUnits / totalUnits`                                 | `buildVacancyAnalytics` |
+| `averageVacancyDays`    | Mean `daysVacant` over truly available units                  | `buildVacancyAnalytics` |
+| `vacancySince`          | Latest effective contract end; fallback to unit creation date | `buildVacancyAnalytics` |
+| `referenceVacantRent`   | Sum of reference rent for available/vacant units              | `buildVacancyAnalytics` |
+| `occupancyChangePoints` | Current occupancy rate minus previous-month occupancy rate    | `buildVacancyAnalytics` |
 
 `referenceVacantRent` is opportunity-cost context, not a receivable.
 
-## Naming rules for Phase 2
+## Naming rules for future presentation work
 
 Do not display a generic `net` without context. Prefer explicit presentation/view-model names such as:
 

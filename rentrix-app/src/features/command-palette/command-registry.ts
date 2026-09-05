@@ -97,9 +97,9 @@ export const STATIC_COMMANDS: StaticCommand[] = [
     keywords: ['المرافق', 'العدادات', 'الكهرباء', 'المياه', 'utilities', 'meters'], icon: Zap,
   },
   {
-    id: 'reports', title: 'التقارير والكشوف', category: 'navigation', canonicalRoute: '/reports',
+    id: 'reports', title: 'التقارير', category: 'navigation', canonicalRoute: '/reports',
     permission: 'financial.reports.view',
-    keywords: ['التقارير', 'المحاسبة', 'الأستاذ العام', 'كشف الحساب', 'reports', 'accounting'], icon: BarChart3,
+    keywords: ['التقارير', 'التحليلات', 'المحاسبة', 'الأستاذ العام', 'reports', 'accounting'], icon: BarChart3,
   },
   {
     id: 'settings', title: 'الإعدادات', category: 'system', canonicalRoute: '/settings', permission: null,

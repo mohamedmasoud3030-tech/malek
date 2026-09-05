@@ -119,7 +119,7 @@ describe('Owner detail recovery states', () => {
     expect(html).toContain('العقارات المرتبطة');
     expect(html).toContain('العقود النشطة');
     expect(html).toContain('اتفاقيات الإدارة');
-    expect(html).toContain('المالية التفصيلية في مساحة المال والتقارير');
+    expect(html).toContain('افتح كشف الحساب من هنا لمراجعة الحركات والأرصدة المالية');
     expect(html).not.toContain('مستحقات المستأجرين');
     expect(html).not.toContain('الموقف المالي للمالك');
     expect(html).toContain('/owners');
@@ -139,9 +139,9 @@ describe('Owner detail recovery states', () => {
 
     expect(html).not.toContain('تسويات المالك');
     expect(html).not.toContain('الموقف المالي للمالك');
-    // The dossier header points operators to the Money/Reports workspaces for
-    // detailed finances instead of embedding settlement data here.
-    expect(html).toContain('المالية التفصيلية في مساحة المال والتقارير');
+    // The dossier header opens the owner account statement without embedding
+    // settlement data in the dossier itself.
+    expect(html).toContain('افتح كشف الحساب من هنا لمراجعة الحركات والأرصدة المالية');
   });
 
   it('hides the settlements section when settlements are not provided', () => {

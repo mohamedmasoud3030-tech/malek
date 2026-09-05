@@ -1,36 +1,44 @@
 /**
  * R6 — Reports Read Models: «Open tab → fetch report» contract.
  *
- * The reports workspace previously mounted EVERY report dataset up-front
+ * The retained Reports read model previously mounted EVERY report dataset up-front
  * («Load everything → maybe user opens tab»). This suite locks the new
  * contract at two levels:
  *
- *   1. Source guard: useReportsWorkspace receives the active ReportLocation
+ *   1. Source guard: useReportsWorkspace receives the active canonical ReportLocation
  *      and passes { enabled } gates into every heavy query hook — no heavy
  *      hook call remains without an activation gate.
- *   2. Behavioral proof: rendering the workspace hook with a given location
+ *   2. Behavioral proof: rendering the read-model hook with a given location
  *      fires ONLY that location's service calls (spied at the service layer).
  */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const workspaceSource = readFileSync(resolve(import.meta.dirname, 'use-reports-workspace.ts'), 'utf8');
-const hooksSource = readFileSync(
-  resolve(import.meta.dirname, '../financials/reports/useFinancialReports.ts'),
-  'utf8',
-);
+const source = (relativePath: string) =>
+  readFileSync(resolve(import.meta.dirname, relativePath), 'utf8')
+    .replaceAll('"', "'")
+    .replace(/\s+/g, ' ');
 
-describe('R6 — reports workspace fetches only the open report', () => {
+const workspaceSource = source('use-reports-workspace.ts');
+const hooksSource = source('../financials/reports/useFinancialReports.ts');
+const compactWorkspaceSource = workspaceSource.replace(/\s/g, '');
+
+describe('R6 — Reports fetches only the open canonical body', () => {
   it('every financial report hook accepts an { enabled } activation option', () => {
     expect(hooksSource).toContain('export type ReportQueryOptions');
-    const hookCount = (hooksSource.match(/export function use\w+\(/g) ?? []).length;
-    const optionCount = (hooksSource.match(/options: ReportQueryOptions = \{\}/g) ?? []).length;
+    const hookCount = (hooksSource.match(/export function use\w+\(/g) ?? [])
+      .length;
+    const optionCount = (
+      hooksSource.match(/options: ReportQueryOptions = \{\}/g) ?? []
+    ).length;
     expect(optionCount).toBe(hookCount);
-    expect(hooksSource).toContain('(options.enabled ?? true) && (hasRequiredDateRange(filters))');
+    expect(hooksSource).toContain(
+      '(options.enabled ?? true) && (hasRequiredDateRange(filters))',
+    );
   });
 
-  it('the workspace derives per-view activation from the ReportLocation', () => {
+  it('the read model derives per-view activation from the canonical ReportLocation', () => {
     expect(workspaceSource).toContain('options: ReportsWorkspaceOptions = {}');
     for (const flag of [
       'needsOverview',
@@ -72,66 +80,68 @@ describe('R6 — reports workspace fetches only the open report', () => {
       'useReceipts({ limit: latestReceiptLimit }, { enabled:',
     ];
     for (const call of gatedCalls) {
-      expect(workspaceSource, `missing activation gate: ${call}`).toContain(call);
+      expect(
+        compactWorkspaceSource,
+        `missing activation gate: ${call}`,
+      ).toContain(call.replace(/\s/g, ''));
     }
 
-    const statementsSource = readFileSync(
-      resolve(import.meta.dirname, 'components/StatementsSection.tsx'),
-      'utf8',
-    );
-    const authoritySource = readFileSync(
-      resolve(import.meta.dirname, 'accounting-report-authority.ts'),
-      'utf8',
-    );
-    const statementServiceSource = readFileSync(
-      resolve(import.meta.dirname, '../financials/reports/financial-statements-service.ts'),
-      'utf8',
+    const statementsSource = source('components/StatementsSection.tsx');
+    const authoritySource = source('accounting-report-authority.ts');
+    const statementServiceSource = source(
+      '../financials/reports/financial-statements-service.ts',
     );
     expect(workspaceSource).not.toContain('useCashFlowStatementReport(');
     expect(hooksSource).not.toContain('useCashFlowStatementReport(');
     expect(statementServiceSource).not.toContain('getCashFlowStatementReport');
-    expect(statementServiceSource).not.toContain("supabase.rpc('rpt_cash_flow'");
-    expect(statementsSource).toContain('useAuthoritativeGlCashFlow(filters?.from, filters?.to, showFinancial)');
-    expect(authoritySource).toContain('enabled: enabled && Boolean(from && to)');
+    expect(statementServiceSource).not.toContain(
+      "supabase.rpc('rpt_cash_flow'",
+    );
+    expect(statementsSource).toMatch(
+      /useAuthoritativeGlCashFlow\(\s*filters\?\.from,\s*filters\?\.to,\s*showFinancial,?\s*\)/,
+    );
+    expect(authoritySource).toContain(
+      'enabled: enabled && Boolean(from && to)',
+    );
 
     expect(workspaceSource).not.toContain("useAllContracts('all');");
     expect(workspaceSource).not.toContain("useMaintenance('all', '');");
     expect(workspaceSource).not.toContain('useOwners();');
     expect(workspaceSource).not.toContain('useAllUnits();');
     expect(workspaceSource).not.toContain('needsStatements');
-    expect(workspaceSource).toContain('useVatReturnReport(financialFilters, { enabled: needsFinancialStatements })');
-    expect(workspaceSource).toContain('useTenantStatementReport(filters.contractId || undefined, { enabled: needsTenantStatement })');
-    expect(workspaceSource).toContain('useOwnerStatementReport(filters.ownerId || undefined, financialFilters, { enabled: needsOwnerStatement })');
     expect(workspaceSource).toContain('enabled: needsOwnerStatement');
     expect(workspaceSource).toContain('ownerReportPayloadQuery');
     expect(workspaceSource).toContain('loadPremiumOwnerReportPayload');
   });
 
-  it('the reports page passes the resolved location while premium products also pass statement focus', () => {
-    const pageSource = readFileSync(resolve(import.meta.dirname, 'reports-page.tsx'), 'utf8');
-    const premiumSource = readFileSync(resolve(import.meta.dirname, 'premium/report-product-page.tsx'), 'utf8');
-    expect(pageSource).toContain('useReportsWorkspace(filters, { section: activeSection, view: activeView })');
-    expect(premiumSource).toContain('{ statementFocus: product.statementFocus }');
+  it('the product page passes its explicit target location and statement focus to the retained read model', () => {
+    const pageSource = source('reports-page.tsx');
+    const premiumSource = source('premium/report-product-page.tsx');
+    expect(pageSource).toContain('<ReportsCatalog');
+    expect(pageSource).not.toContain('useReportsWorkspace');
+    expect(premiumSource).toContain('useReportsWorkspace(');
+    expect(premiumSource).toContain(
+      '{ section: target.section, view: target.view }',
+    );
+    expect(premiumSource).toContain(
+      '{ statementFocus: product.statementFocus }',
+    );
   });
 
   it('documents the bounded-read limitation honestly (no silent truncation)', () => {
-    const helpers = readFileSync(resolve(import.meta.dirname, 'reports-page.helpers.ts'), 'utf8');
+    const helpers = source('reports-page.helpers.ts');
     expect(helpers).toContain('latestReceiptLimit = 100');
-    const paginatedRead = readFileSync(
-      resolve(import.meta.dirname, '../financials/reports/report-paginated-read.ts'),
-      'utf8',
+    const paginatedRead = source(
+      '../financials/reports/report-paginated-read.ts',
     );
     expect(paginatedRead).toContain('تعذر تحميل كامل بيانات');
-    const contractService = readFileSync(
-      resolve(import.meta.dirname, '../contracts/services/contractService.ts'),
-      'utf8',
-    );
+    const contractService = source('../contracts/services/contractService.ts');
     expect(contractService).toContain('truncated: boolean');
   });
 
-  it('export uses the same workspace model the screen renders (single source)', () => {
-    const pageSource = readFileSync(resolve(import.meta.dirname, 'reports-page.tsx'), 'utf8');
-    expect(pageSource).toContain('model={workspace}');
-    expect(pageSource).not.toContain('exportWorkspace');
+  it('document output uses the same product read model the body renders (single source)', () => {
+    const productPage = source('premium/report-product-page.tsx');
+    expect(productPage).toContain('model={model}');
+    expect(productPage).not.toContain('exportWorkspace');
   });
 });

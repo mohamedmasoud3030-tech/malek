@@ -1,7 +1,10 @@
 import { AlertTriangle, Building2, FileText, Wrench } from 'lucide-react';
-import { formatDate, formatMoney } from '@/features/financials/components/financials-formatters';
+import {
+  formatDate,
+  formatMoney,
+} from '@/features/financials/components/financials-formatters';
 import { formatLatinNumber } from '@/lib/formatters';
-import type { ReportDrillHandler } from '../report-workspaces';
+import type { ReportDrillHandler } from '../report-route';
 import {
   ReportDrillAction,
   ReportList,
@@ -26,8 +29,8 @@ type Priority = Readonly<{
   detail: string;
   value: string;
   icon: typeof AlertTriangle;
-  workspace: Parameters<ReportDrillHandler>[0];
-  view?: Parameters<ReportDrillHandler>[1];
+  section: Parameters<ReportDrillHandler>[0];
+  view: Parameters<ReportDrillHandler>[1];
 }>;
 
 /**
@@ -47,50 +50,54 @@ export function OperationalPrioritiesPanel({
   const priorityCandidates: Array<Priority | null> = [
     overdueTotal > 0
       ? {
-        id: 'overdue',
-        label: 'رتّب متابعة المتأخرات',
-        detail: overdueAsOf ? `تجاوز تاريخ الاستحقاق حتى ${formatDate(overdueAsOf)}` : 'مبالغ تجاوزت تاريخ استحقاقها',
-        value: formatMoney(overdueTotal),
-        icon: AlertTriangle,
-        workspace: 'collections',
-        view: 'follow_up',
-      }
+          id: 'overdue',
+          label: 'رتّب متابعة المتأخرات',
+          detail: overdueAsOf
+            ? `تجاوز تاريخ الاستحقاق حتى ${formatDate(overdueAsOf)}`
+            : 'مبالغ تجاوزت تاريخ استحقاقها',
+          value: formatMoney(overdueTotal),
+          icon: AlertTriangle,
+          section: 'analytics',
+          view: 'follow_up',
+        }
       : null,
     vacantUnits > 0
       ? {
-        id: 'vacancy',
-        label: 'تابع الوحدات الشاغرة',
-        detail: 'وحدات تحتاج تأجيرًا أو قرار تسويق',
-        value: formatLatinNumber(vacantUnits, 'ar'),
-        icon: Building2,
-        workspace: 'leasing',
-        view: 'occupancy',
-      }
+          id: 'vacancy',
+          label: 'تابع الوحدات الشاغرة',
+          detail: 'وحدات تحتاج تأجيرًا أو قرار تسويق',
+          value: formatLatinNumber(vacantUnits, 'ar'),
+          icon: Building2,
+          section: 'analytics',
+          view: 'occupancy',
+        }
       : null,
     expiringContracts > 0
       ? {
-        id: 'renewals',
-        label: 'ابدأ قرارات التجديد',
-        detail: 'عقود تنتهي خلال 60 يومًا',
-        value: formatLatinNumber(expiringContracts, 'ar'),
-        icon: FileText,
-        workspace: 'leasing',
-        view: 'expiring',
-      }
+          id: 'renewals',
+          label: 'ابدأ قرارات التجديد',
+          detail: 'عقود تنتهي خلال 60 يومًا',
+          value: formatLatinNumber(expiringContracts, 'ar'),
+          icon: FileText,
+          section: 'analytics',
+          view: 'expiring',
+        }
       : null,
     openMaintenance > 0
       ? {
-        id: 'maintenance',
-        label: 'أغلق أعمال الصيانة المفتوحة',
-        detail: 'طلبات مفتوحة أو قيد التنفيذ',
-        value: formatLatinNumber(openMaintenance, 'ar'),
-        icon: Wrench,
-        workspace: 'operations',
-        view: 'maintenance_analytics',
-      }
+          id: 'maintenance',
+          label: 'أغلق أعمال الصيانة المفتوحة',
+          detail: 'طلبات مفتوحة أو قيد التنفيذ',
+          value: formatLatinNumber(openMaintenance, 'ar'),
+          icon: Wrench,
+          section: 'analytics',
+          view: 'maintenance_analytics',
+        }
       : null,
   ];
-  const priorities = priorityCandidates.filter((priority): priority is Priority => priority !== null);
+  const priorities = priorityCandidates.filter(
+    (priority): priority is Priority => priority !== null,
+  );
 
   return (
     <ReportPanel
@@ -111,24 +118,26 @@ export function OperationalPrioritiesPanel({
             return (
               <ReportListRow
                 key={priority.id}
-                title={(
+                title={
                   <span className="flex min-w-0 items-center gap-2">
                     <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-warning/10 text-warning-foreground">
                       <Icon className="size-4" aria-hidden="true" />
                     </span>
-                    <span className="min-w-0 break-words">{priority.label}</span>
+                    <span className="min-w-0 break-words">
+                      {priority.label}
+                    </span>
                   </span>
-                )}
+                }
                 subtitle={priority.detail}
                 value={<span dir="ltr">{priority.value}</span>}
-                action={(
+                action={
                   <ReportDrillAction
                     label="فتح"
                     variant="ghost"
                     ariaLabel={priority.label}
-                    onClick={() => onDrill(priority.workspace, priority.view)}
+                    onClick={() => onDrill(priority.section, priority.view)}
                   />
-                )}
+                }
               />
             );
           })}

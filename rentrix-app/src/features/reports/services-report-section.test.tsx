@@ -4,20 +4,48 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { ServicesReportSection } from './components/ServicesReportSection';
-import type { ResponsibleParty, UtilityBill } from '@/features/utilities/use-utilities';
+import type {
+  ResponsibleParty,
+  UtilityBill,
+} from '@/features/utilities/use-utilities';
 import type { UtilityMeter } from '@/features/utilities/utilities-service';
 import type { ReportsFilterState } from './reports-workspace-filters';
 
 vi.mock('@/features/utilities/use-utilities', () => ({
-  responsiblePartyLabels: { tenant: 'المستأجر', landlord: 'المالك', company: 'شركة الإدارة' },
-  utilityBillStatusLabels: { unpaid: 'مستحقة السداد', partially_paid: 'مدفوعة جزئياً', paid: 'مسددة بالكامل' },
-  utilityTypeLabels: { electricity: 'كهرباء', water: 'مياه', sanitation: 'صرف صحي', internet: 'إنترنت وتواصل', gas: 'غاز', other: 'مرافق أخرى' },
-  useUtilityBills: vi.fn(() => ({ data: [], isLoading: false, isError: false })),
-  useUtilityMeters: vi.fn(() => ({ data: [], isLoading: false, isError: false })),
+  responsiblePartyLabels: {
+    tenant: 'المستأجر',
+    landlord: 'المالك',
+    company: 'شركة الإدارة',
+  },
+  utilityBillStatusLabels: {
+    unpaid: 'مستحقة السداد',
+    partially_paid: 'مدفوعة جزئياً',
+    paid: 'مسددة بالكامل',
+  },
+  utilityTypeLabels: {
+    electricity: 'كهرباء',
+    water: 'مياه',
+    sanitation: 'صرف صحي',
+    internet: 'إنترنت وتواصل',
+    gas: 'غاز',
+    other: 'مرافق أخرى',
+  },
+  useUtilityBills: vi.fn(() => ({
+    data: [],
+    isLoading: false,
+    isError: false,
+  })),
+  useUtilityMeters: vi.fn(() => ({
+    data: [],
+    isLoading: false,
+    isError: false,
+  })),
 }));
 
 vi.mock('@/features/settings/useCompanySettings', () => ({
-  useCompanySettings: () => ({ data: { company_name: 'مكتب الاختبار', currency: 'OMR' } }),
+  useCompanySettings: () => ({
+    data: { company_name: 'مكتب الاختبار', currency: 'OMR' },
+  }),
 }));
 
 vi.mock('@/app/router/background-location', () => ({
@@ -26,10 +54,18 @@ vi.mock('@/app/router/background-location', () => ({
 
 vi.mock('./reports-page.helpers', () => ({
   buildReportCsvFilename: (slug: string) => `${slug}-test.csv`,
-  usePropertyTitles: () => ({ data: [{ id: 'p1', title: 'عقار النخيل' }, { id: 'p2', title: null }] }),
+  usePropertyTitles: () => ({
+    data: [
+      { id: 'p1', title: 'عقار النخيل' },
+      { id: 'p2', title: null },
+    ],
+  }),
 }));
 
-import { useUtilityBills, useUtilityMeters } from '@/features/utilities/use-utilities';
+import {
+  useUtilityBills,
+  useUtilityMeters,
+} from '@/features/utilities/use-utilities';
 
 const mockedUseUtilityBills = vi.mocked(useUtilityBills);
 const mockedUseUtilityMeters = vi.mocked(useUtilityMeters);
@@ -40,7 +76,9 @@ function isoDaysFromToday(days: number): string {
   return date.toISOString().slice(0, 10);
 }
 
-function makeBill(overrides: Partial<UtilityBill> & { id: string }): UtilityBill {
+function makeBill(
+  overrides: Partial<UtilityBill> & { id: string },
+): UtilityBill {
   return {
     meter_id: null,
     property_id: 'p1',
@@ -65,17 +103,70 @@ function makeBill(overrides: Partial<UtilityBill> & { id: string }): UtilityBill
 }
 
 const meters: UtilityMeter[] = [
-  { id: 'm1', property_id: 'p1', unit_id: 'u1', utility_type: 'electricity', meter_number: 'EL-1', account_number: 'A-1', provider_name: 'كهرباء عمان', responsible_party: 'landlord' as ResponsibleParty, is_active: true, notes: null, created_at: isoDaysFromToday(-100) },
-  { id: 'm2', property_id: 'p1', unit_id: 'u1', utility_type: 'water', meter_number: 'WA-1', account_number: 'A-2', provider_name: null, responsible_party: 'tenant' as ResponsibleParty, is_active: true, notes: null, created_at: isoDaysFromToday(-100) },
+  {
+    id: 'm1',
+    property_id: 'p1',
+    unit_id: 'u1',
+    utility_type: 'electricity',
+    meter_number: 'EL-1',
+    account_number: 'A-1',
+    provider_name: 'كهرباء عمان',
+    responsible_party: 'landlord' as ResponsibleParty,
+    is_active: true,
+    notes: null,
+    created_at: isoDaysFromToday(-100),
+  },
+  {
+    id: 'm2',
+    property_id: 'p1',
+    unit_id: 'u1',
+    utility_type: 'water',
+    meter_number: 'WA-1',
+    account_number: 'A-2',
+    provider_name: null,
+    responsible_party: 'tenant' as ResponsibleParty,
+    is_active: true,
+    notes: null,
+    created_at: isoDaysFromToday(-100),
+  },
 ];
 
 const bills: UtilityBill[] = [
   // Overdue: unpaid, due 5 days before the as-of date, no proof attached.
-  makeBill({ id: 'b1', meter_id: 'm1', bill_number: 'UT-001', amount: 100, paid_amount: 0, due_date: isoDaysFromToday(-5), status: 'unpaid', responsible_party: 'landlord' }),
+  makeBill({
+    id: 'b1',
+    meter_id: 'm1',
+    bill_number: 'UT-001',
+    amount: 100,
+    paid_amount: 0,
+    due_date: isoDaysFromToday(-5),
+    status: 'unpaid',
+    responsible_party: 'landlord',
+  }),
   // Due soon: partially paid, due in 3 days, proof attached.
-  makeBill({ id: 'b2', meter_id: 'm2', bill_number: 'UT-002', amount: 200, paid_amount: 50, due_date: isoDaysFromToday(3), status: 'partially_paid', responsible_party: 'tenant', actual_payer: 'tenant', attachment_url: 'proof-2.pdf' }),
+  makeBill({
+    id: 'b2',
+    meter_id: 'm2',
+    bill_number: 'UT-002',
+    amount: 200,
+    paid_amount: 50,
+    due_date: isoDaysFromToday(3),
+    status: 'partially_paid',
+    responsible_party: 'tenant',
+    actual_payer: 'tenant',
+    attachment_url: 'proof-2.pdf',
+  }),
   // Settled: fully paid in the past.
-  makeBill({ id: 'b3', property_id: 'p2', bill_number: 'UT-003', amount: 50, paid_amount: 50, due_date: isoDaysFromToday(-10), status: 'paid', responsible_party: 'company' }),
+  makeBill({
+    id: 'b3',
+    property_id: 'p2',
+    bill_number: 'UT-003',
+    amount: 50,
+    paid_amount: 50,
+    due_date: isoDaysFromToday(-10),
+    status: 'paid',
+    responsible_party: 'company',
+  }),
 ];
 
 const filters: ReportsFilterState = {
@@ -89,10 +180,26 @@ const filters: ReportsFilterState = {
   unitId: '',
 };
 
-function renderSection(canExportReports = true, scopedBills: UtilityBill[] | undefined = bills) {
-  mockedUseUtilityBills.mockReturnValue({ data: scopedBills, isLoading: false, isError: false } as ReturnType<typeof useUtilityBills>);
-  mockedUseUtilityMeters.mockReturnValue({ data: meters, isLoading: false, isError: false } as ReturnType<typeof useUtilityMeters>);
-  return renderToStaticMarkup(<ServicesReportSection filters={filters} canExportReports={canExportReports} />);
+function renderSection(
+  canExportReports = true,
+  scopedBills: UtilityBill[] | undefined = bills,
+) {
+  mockedUseUtilityBills.mockReturnValue({
+    data: scopedBills,
+    isLoading: false,
+    isError: false,
+  } as ReturnType<typeof useUtilityBills>);
+  mockedUseUtilityMeters.mockReturnValue({
+    data: meters,
+    isLoading: false,
+    isError: false,
+  } as ReturnType<typeof useUtilityMeters>);
+  return renderToStaticMarkup(
+    <ServicesReportSection
+      filters={filters}
+      canExportReports={canExportReports}
+    />,
+  );
 }
 
 describe('ServicesReportSection — payment/review obligations contracts', () => {
@@ -165,28 +272,38 @@ describe('ServicesReportSection — payment/review obligations contracts', () =>
 });
 
 describe('ServicesReportSection — source semantic contracts', () => {
-  const src = readFileSync(resolve(process.cwd(), 'src/features/reports/components/ServicesReportSection.tsx'), 'utf8');
+  const src = readFileSync(
+    resolve(
+      process.cwd(),
+      'src/features/reports/components/ServicesReportSection.tsx',
+    ),
+    'utf8',
+  ).replaceAll('"', "'");
 
   it('uses the canonical utilities obligation module instead of a parallel overdue rule', () => {
     expect(src).toContain("from '@/features/utilities/utility-obligations'");
     expect(src).toContain('deriveUtilityObligations(rows, filters.asOf)');
     expect(src).toContain('summarizeUtilityObligations(obligations)');
     expect(src).toContain('compareUtilityObligationUrgency');
-    expect(src).not.toContain("due_date < filters.asOf");
+    expect(src).not.toContain('due_date < filters.asOf');
   });
 
   it('keeps remaining amounts on the shared OMR-grid helper', () => {
     expect(src).toContain('utilityBillRemaining(row)');
-    expect(src).not.toContain('row.amount || 0) - Number(row.paid_amount || 0)');
+    expect(src).not.toContain(
+      'row.amount || 0) - Number(row.paid_amount || 0)',
+    );
   });
 
   it('never invents payment ratios without bills in scope', () => {
-    expect(src).toContain('const paymentProgress = totalBilled > 0');
-    expect(src).toContain('const overdueShare = totalBilled > 0');
+    expect(src).toMatch(/const paymentProgress =\s*totalBilled > 0/);
+    expect(src).toMatch(/const overdueShare =\s*totalBilled > 0/);
   });
 
   it('uses canonical shared controls: EntityTable, primitives, Button — no local copies', () => {
-    expect(src).toContain("import { EntityTable, type ColumnDef } from '@/components/ui/entity-table'");
+    expect(src).toContain(
+      "import { EntityTable, type ColumnDef } from '@/components/ui/entity-table'",
+    );
     expect(src).toContain("import { Button } from '@/components/ui/button'");
     expect(src).toContain("from '@/components/ui/report-section-primitives'");
     expect(src).toContain('ReportSummaryStrip');
