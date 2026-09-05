@@ -23,11 +23,20 @@ describe('mobile RTL and accessibility UX quality contract', () => {
     expect(propertyDetailSource).toContain('aria-label="أقسام العقار"');
   });
 
-  it('2. Multi-step guided property wizard exposes accessible tablist and tab roles with visible state', () => {
-    expect(propertyModalSource).toContain('role="tablist"');
-    expect(propertyModalSource).toContain('role="tab"');
-    expect(propertyModalSource).toContain('aria-selected={step === 1}');
-    expect(propertyModalSource).toContain('aria-selected={step === 2}');
-    expect(propertyModalSource).toContain('aria-selected={step === 3}');
+  it('2. Multi-step guided property wizard announces steps as steps, not as an incomplete tab widget', () => {
+    // This header once claimed role="tablist"/role="tab" while owning no
+    // role="tabpanel", no aria-controls and no arrow-key navigation. Assistive
+    // technology therefore announced a tab widget whose keyboard contract did
+    // not exist, and reported no selection state to a customer mid-form.
+    // Validated wizard steps are steps: the header is a labelled nav whose
+    // current entry carries aria-current="step".
+    expect(propertyModalSource).toContain('<nav');
+    expect(propertyModalSource).toContain('aria-label="خطوات إنشاء العقار"');
+    for (const step of [1, 2, 3]) {
+      expect(propertyModalSource).toContain(`aria-current={step === ${step} ? 'step' : undefined}`);
+    }
+    expect(propertyModalSource).not.toContain('role="tablist"');
+    expect(propertyModalSource).not.toContain('role="tab"');
+    expect(propertyModalSource).not.toContain('aria-selected=');
   });
 });
