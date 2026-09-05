@@ -1,4 +1,4 @@
-import { readFileSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 const readSource = (path: string) =>
@@ -115,15 +115,14 @@ describe('public landing performance contract', () => {
     expect(viteConfigSource).toMatch(/return "preload-runtime"/);
   });
 
-  it('keeps first-view artwork compact and the demo video user-initiated', () => {
+  // The marketing page is retired: no first-view artwork, demo video or product
+  // tour ships with the app, so the public bundle must not grow one again.
+  it('keeps the retired marketing payload out of the public bundle', () => {
     const publicRoot = new URL('../../../public/', import.meta.url);
-    const heroBytes = statSync(
-      new URL('landing/dashboard.webp', publicRoot),
-    ).size;
-    const showcaseSource = readSource('./components/Showcase.tsx');
-
-    expect(heroBytes).toBeLessThan(60_000);
-    expect(showcaseSource).toContain('{videoOpen ? (');
+    expect(existsSync(new URL('landing', publicRoot))).toBe(false);
+    expect(
+      existsSync(new URL('./components/Showcase.tsx', import.meta.url)),
+    ).toBe(false);
   });
 
   it('keeps the landing brand mark lightweight and free of legacy icon assets', () => {
