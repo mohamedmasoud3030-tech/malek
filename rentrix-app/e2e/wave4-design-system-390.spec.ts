@@ -48,6 +48,19 @@ async function assertTouchTargets(page: Page, label: string) {
         style.opacity !== '0'
       );
     };
+    const isScreenReaderOnly = (element: HTMLElement) => {
+      const rect = element.getBoundingClientRect();
+      const style = getComputedStyle(element);
+      const clipped =
+        style.clipPath.startsWith('inset(') || style.clip.startsWith('rect(0');
+      return (
+        style.position === 'absolute' &&
+        clipped &&
+        rect.width <= 1 &&
+        rect.height <= 1
+      );
+    };
+    const seen = new Set<HTMLElement>();
     return Array.from(
       document.querySelectorAll<HTMLElement>(
         'button, a[href], [role="button"], input, select',
@@ -55,6 +68,20 @@ async function assertTouchTargets(page: Page, label: string) {
     )
       .filter(isVisible)
       .filter((element) => element.getAttribute('aria-hidden') !== 'true')
+      // A screen-reader-only control is not the touch affordance a customer
+      // aims at: the label carrying its text is. Measuring the clipped 1px
+      // input reported correct markup as a violation, while measuring the
+      // wrapping label checks the target that really has to be 44x44.
+      .map((element) =>
+        isScreenReaderOnly(element)
+          ? element.closest<HTMLElement>('label, button, a[href], [role="button"]') ?? element
+          : element,
+      )
+      .filter((element) => {
+        if (!isVisible(element) || seen.has(element)) return false;
+        seen.add(element);
+        return true;
+      })
       .map((element) => {
         const rect = element.getBoundingClientRect();
         return {

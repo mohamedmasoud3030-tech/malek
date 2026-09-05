@@ -237,13 +237,16 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
       <EntityForm.Root className="md:grid-cols-2" onSubmit={handleSubmit} aria-busy={isSubmitting}>
         <EntityForm.ErrorSummary className="md:col-span-2" message={submitError} />
 
-        {/* Guided 3-step Wizard Tracker */}
-        <div className="md:col-span-2 flex flex-wrap gap-2 border-b border-border pb-3 text-xs font-semibold" role="tablist" aria-label="خطوات إنشاء العقار">
+        {/*
+          Guided 3-step wizard tracker. These are wizard steps, not tabs: the
+          steps are validated, they own no tabpanel, and a tablist would promise
+          arrow-key navigation this widget does not implement.
+        */}
+        <nav className="md:col-span-2 flex flex-wrap gap-2 border-b border-border pb-3 text-xs font-semibold" aria-label="خطوات إنشاء العقار">
           <Button
             type="button"
             variant="outline"
-            role="tab"
-            aria-selected={step === 1}
+            aria-current={step === 1 ? 'step' : undefined}
             onClick={() => setStep(1)}
             className={`min-h-11 rounded-lg px-3 font-semibold ${step === 1 ? 'border-primary bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground' : 'border-border bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'}`}
           >
@@ -252,8 +255,7 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
           <Button
             type="button"
             variant="outline"
-            role="tab"
-            aria-selected={step === 2}
+            aria-current={step === 2 ? 'step' : undefined}
             onClick={() => { if (canAdvanceToStep2()) setStep(2); else setSubmitError('يرجى إكمال الحقول الإلزامية في الخطوة 1 (اسم العقار، النوع، العنوان) قبل الانتقال.'); }}
             className={`min-h-11 rounded-lg px-3 font-semibold ${step === 2 ? 'border-primary bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground' : 'border-border bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'}`}
           >
@@ -262,14 +264,13 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
           <Button
             type="button"
             variant="outline"
-            role="tab"
-            aria-selected={step === 3}
+            aria-current={step === 3 ? 'step' : undefined}
             onClick={() => { if (canAdvanceToStep3()) setStep(3); else setSubmitError('يرجى اختيار المالك وتحديد قيمة العمولة قبل الانتقال للمراجعة.'); }}
             className={`min-h-11 rounded-lg px-3 font-semibold ${step === 3 ? 'border-primary bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground' : 'border-border bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'}`}
           >
             الخطوة 3: المراجعة والانتقال للوحدات
           </Button>
-        </div>
+        </nav>
 
         {step === 1 && (
           <>

@@ -4,20 +4,20 @@ import { PageLayout } from '@/components/layout/page-layout';
 import { LoadingState } from '@/components/ui/loading-state';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { APP_BRAND_NAME } from '@/lib/brand';
-import { DEFAULT_CURRENCY, formatMoney, normalizeCurrency } from '@/lib/formatters';
+import { DEFAULT_CURRENCY, formatLatinDate, formatMoney, normalizeCurrency } from '@/lib/formatters';
 import { loadTenantPortalSnapshot } from './tenant-portal-service';
 import { tenantPortalWindowNote } from './tenant-portal-read-model';
 import type { TenantPortalLoadResult } from './tenant-portal-read-model';
 
+const TENANT_PORTAL_LOCALE = 'ar-OM-u-nu-latn';
+
 function money(value: number, currency: string = DEFAULT_CURRENCY) {
-  return formatMoney({ amount: value, currency: normalizeCurrency(currency), locale: 'ar-OM-u-nu-latn' });
+  return formatMoney({ amount: value, currency: normalizeCurrency(currency), locale: TENANT_PORTAL_LOCALE });
 }
 
 function date(value: string | null | undefined) {
   if (!value) return '—';
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return value;
-  return new Intl.DateTimeFormat('ar-OM-u-nu-latn', { dateStyle: 'medium' }).format(parsed);
+  return formatLatinDate(value, TENANT_PORTAL_LOCALE, { dateStyle: 'medium' });
 }
 
 function financialStatusLabel(status: 'paid' | 'open' | 'overdue') {
