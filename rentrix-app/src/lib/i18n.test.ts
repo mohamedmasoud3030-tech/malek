@@ -98,7 +98,6 @@ describe('ADR-0008 — /financials and /reports UX-clarity i18n keys', () => {
     'financialsPageDescription',
     'reportsPageDescription',
     'financialsPageHint',
-    'reportsPageHint',
   ] as const;
 
   it.each(uxClarityKeys)('"%s" has a non-empty Arabic translation', (key) => {
@@ -138,8 +137,10 @@ describe('ADR-0008 — UX-clarity keys have real route consumers', () => {
   // description/hint block, so financialsPageDescription/financialsPageHint/
   // financialsSectionSummary have no route consumer anymore (their translations
   // stay valid and are still covered by the translation checks above). The
-  // /reports now carries its analytical description above its report catalog.
-  // The retired WorkspaceHint no longer consumes reportsPageHint.
+  // The /reports page now carries its analytical description above its report
+  // catalog. `reportsPageHint` was deleted outright: its only consumer was the
+  // retired WorkspaceHint, and its copy promised a summary/table/filters landing
+  // that the catalog deliberately does not have.
   const uxClarityConsumerCases = [
     ['reportsPageDescription', 'features/reports/reports-page.tsx'],
   ] as const;

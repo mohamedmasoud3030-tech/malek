@@ -103,7 +103,6 @@ const sharedTranslationEntries = [
   ['financialsPageDescription', 'فهرس العمليات المالية اليومية: الفواتير، التحصيل، المصروفات، التسويات، والمطابقة.', 'Day-to-day financial operations: invoices, collections, expenses, settlements, and reconciliation.'],
   ['financialsPageHint', 'كل عملية لها صفحتها المستقلة بصلاحياتها الخاصة.', 'Each workflow has its own page with its own permissions.'],
   ['reportsPageDescription', 'تقارير تحليلية وتشغيلية لفهم الأداء والمتابعة واتخاذ القرار حسب الفترة والعقار.', 'Analytical and operational reports for performance, follow-up, and decisions by period and property.'],
-  ['reportsPageHint', 'ابدأ بالخلاصة، ثم استخدم الجدول والفلاتر والتصدير عندما تحتاج التفاصيل.', 'Start with the summary, then use the table, filters, and export when you need detail.'],
   ['financialsSectionSummary', 'الملخص السريع', 'Quick summary'],
 ] as const satisfies ReadonlyArray<SharedTranslationEntry>;
 
