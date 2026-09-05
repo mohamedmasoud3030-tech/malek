@@ -4,6 +4,7 @@ import { MoreHorizontal, MoreVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { focusMenuItem, useMenuKeyboardNavigation } from './menu-keyboard';
+import { shieldDoubleClickFollowUp } from './menu-click-shield';
 
 export interface ActionMenuItem {
   id: string;
@@ -53,28 +54,6 @@ function getIcon(item: ActionMenuEntry): ReactNode {
 function selectItem(item: ActionMenuEntry): void {
   if (isActionMenuItem(item)) item.onSelect();
   else item.onClick();
-}
-
-/**
- * Selecting an item unmounts the menu synchronously, so the second click of
- * a double-click (or double-tap) would land on whatever the menu was covering
- * — on a mobile card that is the card body or its primary action, i.e. an
- * unrelated operation fired by accident. Swallow only that follow-up click: the
- * browser marks it as part of the same click sequence (`detail >= 2`), so a
- * deliberate later click elsewhere is never affected.
- */
-function shieldDoubleClickFollowUp(): void {
-  if (typeof document === 'undefined') return;
-  const onClickCapture = (event: MouseEvent) => {
-    document.removeEventListener('click', onClickCapture, true);
-    window.clearTimeout(expiry);
-    if (event.detail >= 2) {
-      event.stopPropagation();
-      event.preventDefault();
-    }
-  };
-  const expiry = window.setTimeout(() => document.removeEventListener('click', onClickCapture, true), 600);
-  document.addEventListener('click', onClickCapture, true);
 }
 
 function isDestructive(item: ActionMenuEntry): boolean {

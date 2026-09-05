@@ -325,7 +325,6 @@ async function openMobileInvoiceOverflowMenu(page: Page): Promise<Locator> {
   await expect(page.getByRole('menu')).toHaveCount(1);
   return invoiceActionsMenu(page);
 }
-}
 
 async function gotoInvoicesRegister(page: Page): Promise<Locator> {
   await page.goto('/financials?section=collections&view=invoices');
@@ -348,7 +347,6 @@ async function gotoInvoicesRegister(page: Page): Promise<Locator> {
 }
 
 async function openInvoiceDocumentActions(page: Page): Promise<void> {
-async function openInvoiceDocumentActions(page: Page): Promise<void> {
   const printOption = invoicePrintAction(page);
   if (await printOption.isVisible().catch(() => false)) return;
 
@@ -369,8 +367,6 @@ async function openInvoiceDocumentActions(page: Page): Promise<void> {
   await expect(printOption).toBeVisible({ timeout: 15_000 });
   await expect(invoicePdfAction(page)).toBeVisible({ timeout: 15_000 });
 }
-  await expect(invoicePdfAction(page)).toBeVisible({ timeout: 15_000 });
-}
 
 async function openContractDocumentActions(page: Page): Promise<void> {
   const trigger = page.getByRole('button', {
@@ -388,9 +384,6 @@ async function openContractDocumentActions(page: Page): Promise<void> {
   ).toBeVisible({ timeout: 15_000 });
 }
 
-async function expectInvoiceDocumentActionsWithheld(page: Page): Promise<void> {
-  const register = visibleInvoiceRegister(page);
-  if (isInvoiceMobile(page)) {
 async function expectInvoiceDocumentActionsWithheld(page: Page): Promise<void> {
   const register = visibleInvoiceRegister(page);
   // Collection stays available while the company identity is unconfirmed and
@@ -417,32 +410,6 @@ async function expectInvoiceDocumentActionsWithheld(page: Page): Promise<void> {
   ).toHaveCount(0);
   await expect(
     menu.getByRole('menuitem', { name: 'PDF', exact: true }),
-  ).toHaveCount(0);
-}
-  } else {
-    const actions = register
-      .locator('tr', { hasText: INVOICE_IDENTITY })
-      .getByRole('button', { name: 'إجراءات الفاتورة', exact: true });
-    await expect(actions).toBeVisible();
-    await actions.click();
-    await expect(
-      invoiceActionsMenu(page).getByRole('menuitem', {
-        name: 'تحصيل',
-        exact: true,
-      }),
-    ).toBeVisible();
-  }
-  await expect(
-    invoiceActionsMenu(page).getByRole('menuitem', {
-      name: 'طباعة',
-      exact: true,
-    }),
-  ).toHaveCount(0);
-  await expect(
-    invoiceActionsMenu(page).getByRole('menuitem', {
-      name: 'PDF',
-      exact: true,
-    }),
   ).toHaveCount(0);
 }
 
@@ -531,15 +498,14 @@ test.describe('الفاتورة — invoice acceptance', () => {
     await popup.waitForLoadState('domcontentloaded');
     await popup.close();
 
-    // A double-tap closes the menu as soon as the first click selects the item,
-    // so the second tap lands on the card underneath and opens the quick view.
-    // The contract under test is that the *document action* is not duplicated,
-    // therefore the test returns to the register before exercising the download
-    // instead of asserting through a legitimately hidden background surface.
-    await page.keyboard.press('Escape');
+    // Selecting an item unmounts the menu synchronously, so the second click of
+    // a double-tap used to land on the invoice card underneath and open its quick
+    // view. The shared click shield swallows exactly that follow-up click, so the
+    // register has to come back clean — this is the browser-side proof of it, and
+    // it fails the moment the shield is removed.
     await expect(
       page.getByRole('dialog').filter({ hasText: INVOICE_IDENTITY }),
-    ).toBeHidden();
+    ).toHaveCount(0);
 
     await openInvoiceDocumentActions(page);
     const downloadPromise = page.waitForEvent('download', { timeout: 120_000 });

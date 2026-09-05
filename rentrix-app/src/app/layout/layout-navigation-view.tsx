@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState, type Ref } from 'react';
 import { ChevronDown, Lock, LogOut, Menu, Plus, Search, Sparkles, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { focusMenuItem, useMenuKeyboardNavigation } from '@/components/ui/menu-keyboard';
+import { shieldDoubleClickFollowUp } from '@/components/ui/menu-click-shield';
 import { OPEN_AI_ASSISTANT_EVENT } from '@/features/ai-assistant/ai-assistant-global-action';
 import { useCommandPaletteStore } from '@/features/command-palette/command-palette-store';
 import { canShowNavigationItem, canAccessRoute, type AuthorizationContext, type AppPermission } from '@/features/auth/permissions';
@@ -431,7 +432,12 @@ export function MobileFloatingControl({
                 search={search as Record<string, string> | undefined}
                 role="menuitem"
                 data-mobile-quick-add-item
-                onClick={() => setQuickOpen(false)}
+                // The sheet unmounts on the first tap, so a double-tap's second
+                // click would land on the navigation row underneath.
+                onClick={(event) => {
+                  setQuickOpen(false);
+                  if (event.detail > 0) shieldDoubleClickFollowUp();
+                }}
                 className="flex min-h-12 items-center gap-3 rounded-xl px-3 text-[14px] font-bold text-foreground outline-none transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:ring-2 focus-visible:ring-primary/20"
               >
                 <Icon className="size-[18px] shrink-0 text-primary" aria-hidden="true" />

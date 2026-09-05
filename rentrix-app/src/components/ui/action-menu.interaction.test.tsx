@@ -110,8 +110,12 @@ describe('ActionMenu keyboard contract', () => {
       const trigger = container.querySelector<HTMLButtonElement>('[aria-haspopup="menu"]')!;
       act(() => trigger.click());
       const menu = document.querySelector<HTMLElement>('[role="menu"]')!;
-      expect(menu.style.bottom).toBe('44px');
-      expect(menu.style.top).toBe('');
+      // Placement is owned by the shared `resolveActionMenuPlacement` contract,
+      // which anchors by `top`: the flipped menu's bottom edge sits four pixels
+      // above the trigger (560 - 4 - 180 = 376). An implementation that never
+      // flipped would report 604px here, so the failure mode stays caught.
+      expect(menu.style.top).toBe('376px');
+      expect(menu.style.bottom).toBe('');
     } finally {
       rectSpy.mockRestore();
       heightSpy.mockRestore();
