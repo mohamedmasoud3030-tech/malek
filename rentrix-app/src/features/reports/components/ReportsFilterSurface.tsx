@@ -4,8 +4,7 @@ import { invoiceStatusLabels } from '@/features/financials/components/invoice-st
 import type { ContractListItem } from '@/features/contracts/services/contractService';
 import type { Owner } from '@/features/owners/services/owner-service';
 import type { CostCenterRecord } from '@/features/settings/costCenterService';
-import type { ReportsFilterState } from '../reports-workspace-filters';
-import type { ReportFilterFieldId } from '../report-workspaces';
+import type { ReportFilterFieldId, ReportsFilterState } from '../reports-workspace-filters';
 import { buildReportFilterSummary } from '../reports-filter-summary';
 import { describeReportFilterSelections, getSelectedFilterEntities } from '../reports-filters.shared';
 import { FiltersPanel } from './FiltersPanel';
