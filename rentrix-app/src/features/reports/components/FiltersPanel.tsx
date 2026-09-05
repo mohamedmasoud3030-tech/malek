@@ -9,8 +9,7 @@ import { invoiceStatusLabels } from '@/features/financials/components/invoice-st
 import type { ContractListItem } from '@/features/contracts/services/contractService';
 import type { Owner } from '@/features/owners/services/owner-service';
 import type { CostCenterRecord } from '@/features/settings/costCenterService';
-import type { ReportsFilterState } from '../reports-workspace-filters';
-import type { ReportFilterFieldId } from '../report-workspaces';
+import type { ReportFilterFieldId, ReportsFilterState } from '../reports-workspace-filters';
 
 function uniqueById<T extends { id: string }>(values: Array<T | null | undefined>): T[] {
   return [...new Map(values.filter((value): value is T => Boolean(value)).map((value) => [value.id, value])).values()];
