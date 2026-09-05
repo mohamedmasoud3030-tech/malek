@@ -1,9 +1,9 @@
 import { DataRefreshAlert } from '@/components/data-refresh-alert';
 import type { ReportsWorkspaceModel } from '../use-reports-workspace';
-import type { ReportsFilterState } from '../reports-workspace-filters';
+import type { ReportFilterFieldId, ReportsFilterState } from '../reports-workspace-filters';
 import type { ReportViewId } from '../report-view-registry';
 import type { ReportSectionId } from '../reports-page.sections';
-import type { ReportDrillHandler, ReportFilterFieldId, ReportWorkspaceId } from '../report-workspaces';
+import type { ReportDrillHandler, ReportWorkspaceId } from '../report-workspaces';
 import type { StatementProductFocus } from '../report-products';
 import { ReportsShell } from './ReportsShell';
 import { ReportsViewPanel } from './ReportsViewPanel';
