@@ -5,7 +5,7 @@ import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { LoadingState } from '@/components/ui/loading-state';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { APP_BRAND_NAME } from '@/lib/brand';
-import { DEFAULT_CURRENCY, formatMoney, normalizeCurrency } from '@/lib/formatters';
+import { DEFAULT_CURRENCY, formatLatinDate, formatLatinNumber, formatMoney, normalizeCurrency } from '@/lib/formatters';
 import { loadOwnerPortalSnapshot } from './owner-portal-service';
 import { ownerPortalWindowNote } from './owner-portal-read-model';
 import type {
@@ -15,19 +15,19 @@ import type {
   OwnerPortalUnit,
 } from './owner-portal-read-model';
 
+const OWNER_PORTAL_LOCALE = 'ar-OM-u-nu-latn';
+
 function money(value: number, currency: string = DEFAULT_CURRENCY) {
-  return formatMoney({ amount: value, currency: normalizeCurrency(currency), locale: 'ar-OM-u-nu-latn' });
+  return formatMoney({ amount: value, currency: normalizeCurrency(currency), locale: OWNER_PORTAL_LOCALE });
 }
 
 function date(value: string | null | undefined) {
   if (!value) return '—';
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return value;
-  return new Intl.DateTimeFormat('ar-OM-u-nu-latn', { dateStyle: 'medium' }).format(parsed);
+  return formatLatinDate(value, OWNER_PORTAL_LOCALE, { dateStyle: 'medium' });
 }
 
 function percentage(value: number) {
-  return new Intl.NumberFormat('ar-OM-u-nu-latn', { maximumFractionDigits: 1 }).format(Number(value) || 0);
+  return formatLatinNumber(Number(value) || 0, OWNER_PORTAL_LOCALE, { maximumFractionDigits: 1 });
 }
 
 /** Honest disclosure when the bounded projection truncated a list window. */

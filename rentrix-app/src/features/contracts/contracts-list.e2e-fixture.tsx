@@ -9,6 +9,7 @@ import { FilterTabs } from '@/components/ui/filter-tabs';
 import { defaultCompanySettingsContract } from '@/lib/companySettings';
 import { ContractKpiGrid } from './components/ContractKpiGrid';
 import { ContractResults } from './components/ContractResults';
+import { ContractPreviewDialog } from './components/contract-preview-dialog';
 import { contractColumnOptions, defaultContractColumns } from './components/ContractTable';
 import { contractStatusValues } from './contractSchema';
 import { useContractFilters, type LeaseModeFilter } from './hooks/useContractFilters';
@@ -176,7 +177,7 @@ export function ContractsListE2EFixture() {
   const [leaseMode, setLeaseMode] = useState<LeaseModeFilter>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [expiringOnly, setExpiringOnly] = useState(false);
-  const [, setPreviewContractId] = useState<string | null>(null);
+  const [previewContractId, setPreviewContractId] = useState<string | null>(null);
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultContractColumns]);
 
   const { filteredContracts, hasActiveFilters } = useContractFilters({
@@ -186,6 +187,12 @@ export function ContractsListE2EFixture() {
     searchTerm,
     status,
   });
+
+  // Mirrors ContractsListPage: the preview is resolved from the *filtered*
+  // rows, so the dialog always shows what the activated row displayed.
+  const previewContract = previewContractId
+    ? filteredContracts.find((contract) => contract.id === previewContractId) ?? null
+    : null;
 
   const activeFilters: ActiveFilterItem[] = [];
   if (searchTerm.trim()) activeFilters.push({ key: 'search', label: 'البحث', value: searchTerm.trim(), onRemove: () => setSearchTerm('') });
@@ -282,6 +289,17 @@ export function ContractsListE2EFixture() {
           visibleColumnKeys={visibleColumnKeys}
         />
       </ListPage>
+
+      {/* Same preview surface the production list renders on row activation. */}
+      <ContractPreviewDialog
+        contract={previewContract}
+        attention={previewContract ? fixtureAttention.attentionByContractId.get(previewContract.id) : undefined}
+        companySettings={defaultCompanySettingsContract}
+        open={previewContractId !== null}
+        onOpenChange={(open) => { if (!open) setPreviewContractId(null); }}
+        onEdit={() => undefined}
+        onDelete={() => undefined}
+      />
     </main>
   );
 }
