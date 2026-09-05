@@ -1,6 +1,17 @@
 import type { FinancialReportStatus } from '@/features/financials/reports/financial-report-rows';
 import { getCurrentMonthFilters, type FilterState } from './reports-page.helpers';
-import type { ReportFilterFieldId } from './report-workspaces';
+
+/** Global report filter fields that a workspace or premium product may expose. */
+export type ReportFilterFieldId =
+  | 'period'
+  | 'asOf'
+  | 'property'
+  | 'unit'
+  | 'tenant'
+  | 'contract'
+  | 'status'
+  | 'costCenter'
+  | 'owner';
 
 /**
  * Wave 4 report-filter contract. The legacy FilterState stays source-compatible
