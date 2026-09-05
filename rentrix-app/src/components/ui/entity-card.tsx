@@ -3,7 +3,7 @@ import { Briefcase, Building2, Contact, DoorOpen, FileText, MapPinned, ReceiptTe
 import type { ReactNode } from 'react';
 import { ActionMenu } from '@/components/ui/action-menu';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { cn, nodeToText } from '@/lib/utils';
 
 export type EntityCardType =
   | 'record'
@@ -242,7 +242,7 @@ export function EntityCard({
           {secondaryAction ? <ActionButton action={secondaryAction} className={primaryAction ? 'shrink-0' : 'min-w-0 flex-1'} /> : null}
           {overflowActions?.length ? (
             <ActionMenu
-              label={`المزيد حول ${actionLabelText(name) || identity.label}`}
+              label={`المزيد حول ${nodeToText(name).trim() || identity.label}`}
               className="shrink-0"
               items={overflowActions.map((action, index) => ({
                 id: `${id}-overflow-${index}`,

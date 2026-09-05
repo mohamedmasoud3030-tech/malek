@@ -48,7 +48,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { cn } from '@/lib/utils';
+import { cn, nodeToText } from '@/lib/utils';
 
 export type ColumnPriority = 'identity' | 'primary' | 'secondary' | 'detail' | 'actions';
 
@@ -293,17 +293,6 @@ function toMetaItem<T>(column: ResolvedColumn<T>, row: T): EntityCardMetaItem {
     label: column.header,
     value: column.render(row),
   };
-}
-
-/** Best-effort visible text of a cell render, used for accessible labels. */
-function nodeToText(node: ReactNode): string {
-  if (node == null || typeof node === 'boolean') return '';
-  if (typeof node === 'string' || typeof node === 'number') return String(node);
-  if (Array.isArray(node)) return node.map(nodeToText).join(' ').trim();
-  if (typeof node === 'object' && 'props' in node) {
-    return nodeToText((node as { props: { children?: ReactNode } }).props.children);
-  }
-  return '';
 }
 
 function isNestedInteractive(target: EventTarget | null, currentTarget: EventTarget | null) {
