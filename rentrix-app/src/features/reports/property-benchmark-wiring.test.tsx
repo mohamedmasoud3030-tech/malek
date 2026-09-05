@@ -23,7 +23,9 @@
  * If the scoped rows are ever passed as the benchmark population again, (1)
  * collapses to an empty benchmark and this suite fails.
  */
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook } from '@testing-library/react';
+import type { PropsWithChildren } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import type { Unit } from '@/types/domain';
 
@@ -143,10 +145,16 @@ function renderWorkspace(propertyId: string) {
   expenseCalls.length = 0;
   overdueCalls.length = 0;
   summaryCalls.length = 0;
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  const wrapper = ({ children }: PropsWithChildren) => (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  );
   return renderHook(() => useReportsWorkspace(
     filtersFor(propertyId) as never,
     { section: 'analytics', view: 'property_analytics' },
-  ));
+  ), { wrapper });
 }
 
 describe('property benchmark wiring — unfiltered portfolio population', () => {
