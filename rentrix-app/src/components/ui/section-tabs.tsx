@@ -4,7 +4,8 @@ import { cn } from '@/lib/utils';
 export type SectionTabItem<TId extends string> = Readonly<{
   id: TId;
   label: string;
-  icon: React.ComponentType<{ className?: string }>;
+  /** Optional: label-only rails (e.g. report product targets) omit icons. */
+  icon?: React.ComponentType<{ className?: string }>;
 }>;
 
 type SectionTabsProps<TId extends string> = Readonly<{
@@ -83,6 +84,7 @@ export function SectionTabs<TId extends string>({
       >
         {items.map((item, index) => {
           const isActive = activeId === item.id;
+          const Icon = item.icon;
           return (
             <button
               key={item.id}
@@ -94,18 +96,30 @@ export function SectionTabs<TId extends string>({
               tabIndex={isActive ? 0 : -1}
               aria-selected={isActive}
               aria-controls={panelId ?? (isActive ? `${idPrefix}-panel-${item.id}` : undefined)}
-              aria-label={compactMobile ? item.label : undefined}
+              aria-label={compactMobile && Icon ? item.label : undefined}
               id={`${idPrefix}-tab-${item.id}`}
               className={cn(
                 'relative flex min-h-11 shrink-0 items-center gap-1.5 px-3 py-1 text-[12px] font-semibold outline-none transition-colors focus-visible:ring-4 focus-visible:ring-primary/15 motion-reduce:transition-none',
-                compactMobile && !isActive && 'max-sm:min-w-11 max-sm:justify-center max-sm:px-2',
+                compactMobile && !isActive && Icon && 'max-sm:min-w-11 max-sm:justify-center max-sm:px-2',
                 isActive
                   ? 'text-foreground after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:rounded-full after:bg-primary'
                   : 'text-muted-foreground hover:bg-muted/30 hover:text-foreground',
               )}
             >
-              <item.icon className={cn('size-3.5', isActive && 'text-primary')} aria-hidden="true" />
-              <span className={cn('whitespace-nowrap', compactMobile && !isActive && 'max-sm:hidden')}>{item.label}</span>
+              {Icon ? (
+                <Icon
+                  className={cn('size-3.5', isActive && 'text-primary')}
+                  aria-hidden="true"
+                />
+              ) : null}
+              <span
+                className={cn(
+                  'whitespace-nowrap',
+                  compactMobile && !isActive && Icon && 'max-sm:hidden',
+                )}
+              >
+                {item.label}
+              </span>
             </button>
           );
         })}

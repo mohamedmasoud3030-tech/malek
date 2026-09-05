@@ -11,7 +11,6 @@ import {
 } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
 import { formatMoney } from '@/features/financials/components/financials-formatters';
-import { cn } from '@/lib/utils';
 import {
   getInitialReportsFilters,
   scopeReportsFiltersToFields,
@@ -33,6 +32,7 @@ import {
 import { buildReportProductSharePayload } from '../report-share';
 import { ReportDocumentActions } from '../components/report-document-actions';
 import { ReportsFilterSurface } from '../components/ReportsFilterSurface';
+import { SectionTabPanel, SectionTabs } from '@/components/ui/section-tabs';
 import { ReportViewPanel } from '../components/report-view-panel';
 import { useReportsWorkspace } from '../use-reports-workspace';
 import { getCurrentMonthFilters } from '../reports-page.helpers';
@@ -40,54 +40,10 @@ import { useReportProductDocumentActions } from './report-product-document-actio
 import { StatementProductHeader, type StatementContextItem } from './statement-product-header';
 
 /* ------------------------------------------------------------------ */
-/* Product target tabs — one compact switcher per premium product.     */
-/* ------------------------------------------------------------------ */
-
-function ProductTargetTabs({
-  product,
-  activeTargetId,
-  onOpen,
-}: Readonly<{
-  product: ReportProduct;
-  activeTargetId: string;
-  onOpen: (target: ReportProductTarget) => void;
-}>) {
-  if (product.targets.length <= 1) return null;
-  return (
-    <div
-      className="flex min-w-0 flex-wrap items-center gap-1"
-      role="tablist"
-      aria-label={`أجزاء ${product.title}`}
-      data-report-product-tabs
-    >
-      {product.targets.map((nextTarget) => {
-        const active = nextTarget.id === activeTargetId;
-        return (
-          <Button
-            key={nextTarget.id}
-            type="button"
-            variant="outline"
-            role="tab"
-            aria-selected={active}
-            onClick={() => onOpen(nextTarget)}
-            className={cn(
-              'min-h-11 rounded-lg px-2.5 text-xs font-black focus-visible:ring-2 focus-visible:ring-primary/30',
-              active
-                ? 'border-primary/35 bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary'
-                : 'border-border/70 bg-background text-muted-foreground hover:border-primary/30 hover:text-foreground',
-            )}
-          >
-            {nextTarget.label}
-          </Button>
-        );
-      })}
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
 /* The premium report product page (real route: /reports/$reportId)    */
 /* ------------------------------------------------------------------ */
+
+const REPORT_PRODUCT_TABS_ID_PREFIX = 'report-product';
 
 export function ReportProductPage() {
   const navigate = useNavigate();
@@ -473,11 +429,21 @@ function OpenReportProduct({
             </p>
           ) : null}
           {product.targets.length > 1 ? (
-            <div className="mt-3 border-t border-border/55 pt-2.5">
-              <ProductTargetTabs
-                product={product}
-                activeTargetId={target.id}
-                onOpen={onOpenTarget}
+            <div className="mt-3 border-t border-border/55 pt-2.5" data-report-product-tabs>
+              <SectionTabs
+                items={product.targets.map((nextTarget) => ({
+                  id: nextTarget.id,
+                  label: nextTarget.label,
+                }))}
+                activeId={target.id}
+                onChange={(activeTargetId) => {
+                  const next = product.targets.find(
+                    (candidate) => candidate.id === activeTargetId,
+                  );
+                  if (next) onOpenTarget(next);
+                }}
+                ariaLabel={`أجزاء ${product.title}`}
+                idPrefix={REPORT_PRODUCT_TABS_ID_PREFIX}
               />
             </div>
           ) : null}
@@ -533,15 +499,21 @@ function OpenReportProduct({
                 : undefined
             }
           >
-            <ReportViewPanel
-              activeSection={target.section}
-              activeView={target.view}
-              model={model}
-              filters={scopedFilters}
-              canExportReports={canExportReports && !model.isIncomplete}
-              onDrill={handleDrill}
-              statementFocus={product.statementFocus}
-            />
+            <SectionTabPanel
+              id={target.id}
+              activeId={target.id}
+              idPrefix={REPORT_PRODUCT_TABS_ID_PREFIX}
+            >
+              <ReportViewPanel
+                activeSection={target.section}
+                activeView={target.view}
+                model={model}
+                filters={scopedFilters}
+                canExportReports={canExportReports && !model.isIncomplete}
+                onDrill={handleDrill}
+                statementFocus={product.statementFocus}
+              />
+            </SectionTabPanel>
           </div>
         </section>
       </div>

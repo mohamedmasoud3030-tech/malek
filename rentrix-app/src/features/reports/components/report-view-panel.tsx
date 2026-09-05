@@ -1,6 +1,5 @@
 import { lazy, Suspense } from 'react';
 import { LoadingState } from '@/components/ui/loading-state';
-import { SectionTabPanel } from '@/components/ui/section-tabs';
 import type { ReportsFilterState } from '../reports-workspace-filters';
 import type {
   ReportSectionId,
@@ -282,13 +281,12 @@ export function ReportViewPanel({
     }
   }
 
+  // The product page owns the tab/tabpanel pairing (its target rail uses the
+  // same `idPrefix`), so the dispatcher stays pure body routing and emits no
+  // dangling `aria-labelledby` of its own.
   return (
     <div className="min-w-0" key={activeSection}>
-      <Suspense fallback={<SectionFallback />}>
-        <SectionTabPanel id={activeSection} activeId={activeSection}>
-          {body}
-        </SectionTabPanel>
-      </Suspense>
+      <Suspense fallback={<SectionFallback />}>{body}</Suspense>
     </div>
   );
 }

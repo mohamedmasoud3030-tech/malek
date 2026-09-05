@@ -53,14 +53,32 @@ describe('reports center — touch-target contract', () => {
     expect(primitive).toContain('min-h-11 shrink-0 gap-1.5');
   });
 
-  it('keeps canonical product target tabs at min-h-11', () => {
+  /**
+   * The product page no longer hand-rolls its own ARIA tablist: it composes
+   * the canonical `SectionTabs` rail, which owns the 44px target, roving
+   * focus and RTL arrow-key navigation. Locking the primitive is what keeps
+   * the page's touch contract true.
+   */
+  it('routes product target switching through the canonical SectionTabs rail', () => {
     const source = readFileSync(
       resolve(reportsDir, 'premium/report-product-page.tsx'),
       'utf8',
     );
     expect(source).toContain('data-report-product-tabs');
-    expect(source).toContain('role="tab"');
-    expect(source).toContain('min-h-11 rounded-lg');
-    expect(source).not.toContain('min-h-9');
+    expect(source).toContain('<SectionTabs');
+    expect(source).toContain('<SectionTabPanel');
+    // A second, partial tab pattern on the same page would silently fork the
+    // keyboard contract, so the page must not re-implement one.
+    expect(source).not.toContain('role="tablist"');
+    expect(source).not.toContain('ProductTargetTabs');
+
+    const primitive = readFileSync(
+      resolve(reportsDir, '../../components/ui/section-tabs.tsx'),
+      'utf8',
+    );
+    expect(primitive).toContain('min-h-11');
+    expect(primitive).toContain('role="tab"');
+    expect(primitive).toContain('aria-controls');
+    expect(primitive).toContain('ArrowLeft');
   });
 });
