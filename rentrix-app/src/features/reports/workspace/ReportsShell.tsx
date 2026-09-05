@@ -4,10 +4,10 @@ import { useCompanySettingsContract } from '@/features/settings/useCompanySettin
 import { formatCompanyMoney } from '@/lib/companyFormatters';
 import { cn } from '@/lib/utils';
 import type { ReportsWorkspaceModel } from '../use-reports-workspace';
-import type { ReportsFilterState } from '../reports-workspace-filters';
+import type { ReportFilterFieldId, ReportsFilterState } from '../reports-workspace-filters';
 import type { ReportViewId } from '../report-view-registry';
 import { getActiveReportMeta } from '../reports-page.meta';
-import { getReportWorkspace, type ReportFilterFieldId, type ReportWorkspaceId } from '../report-workspaces';
+import { getReportWorkspace, type ReportWorkspaceId } from '../report-workspaces';
 import { ReportsFilterSurface } from '../components/ReportsFilterSurface';
 import { WorkspaceSubViewTabs } from './WorkspaceSubViewTabs';
 
