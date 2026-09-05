@@ -274,20 +274,28 @@ function mobileInvoiceCard(page: Page): Locator {
     .first();
 }
 
+/**
+ * Both register surfaces expose invoice document actions through the shared
+ * action menu, which renders as a portal-level `role="menu"`: a card face never
+ * carries a print or download button. Scoping to the open menu keeps the
+ * assertion on the affordance the customer actually uses.
+ */
+function invoiceActionsMenu(page: Page): Locator {
+  return page.getByRole('menu');
+}
+
 function invoicePrintAction(page: Page): Locator {
-  return isInvoiceMobile(page)
-    ? mobileInvoiceCard(page)
-        .getByRole('button', { name: /^طباعة/ })
-        .first()
-    : page.getByRole('menuitem', { name: 'طباعة', exact: true }).first();
+  return invoiceActionsMenu(page).getByRole('menuitem', {
+    name: 'طباعة',
+    exact: true,
+  });
 }
 
 function invoicePdfAction(page: Page): Locator {
-  return isInvoiceMobile(page)
-    ? mobileInvoiceCard(page)
-        .getByRole('button', { name: /^تنزيل/ })
-        .first()
-    : page.getByRole('menuitem', { name: 'PDF', exact: true }).first();
+  return invoiceActionsMenu(page).getByRole('menuitem', {
+    name: 'PDF',
+    exact: true,
+  });
 }
 
 async function gotoInvoicesRegister(page: Page): Promise<Locator> {
@@ -311,28 +319,31 @@ async function gotoInvoicesRegister(page: Page): Promise<Locator> {
 }
 
 async function openInvoiceDocumentActions(page: Page): Promise<void> {
-  if (!isInvoiceMobile(page)) {
-    const alreadyOpen = page
-      .getByRole('menuitem', { name: 'طباعة', exact: true })
-      .first();
-    if (await alreadyOpen.isVisible().catch(() => false)) return;
-  }
+  const printOption = invoicePrintAction(page);
+  if (await printOption.isVisible().catch(() => false)) return;
 
   if (isInvoiceMobile(page)) {
-    const card = mobileInvoiceCard(page);
-    const outerTrigger = card.locator('[data-entity-table-mobile-actions]');
-    if ((await outerTrigger.getAttribute('aria-expanded')) !== 'true')
-      await outerTrigger.click();
-    const outerPanel = card.locator('[data-entity-table-mobile-actions-panel]');
-    await expect(outerPanel).toBeVisible();
+    // The invoice register supplies structured mobile-card actions, so the card
+    // keeps its secondary operations in its own overflow menu — the register
+    // never renders the actions-column disclosure on a card face.
+    const overflow = mobileInvoiceCard(page).locator(
+      '[data-action-menu-trigger]',
+    );
+    await expect(overflow).toBeVisible();
+    // Bound to the row under test, not merely to the register.
+    await expect(overflow).toHaveAccessibleName(new RegExp(INVOICE_IDENTITY));
+    await overflow.scrollIntoViewIfNeeded();
+    await overflow.click();
   } else {
+    // Bound to the row that carries the invoice under test. The register labels
+    // every row's menu the same way, so containment is what makes this specific.
     await visibleInvoiceRegister(page)
+      .locator('tr', { hasText: INVOICE_IDENTITY })
       .getByRole('button', { name: 'إجراءات الفاتورة', exact: true })
-      .first()
       .click();
   }
 
-  await expect(invoicePrintAction(page)).toBeVisible({ timeout: 15_000 });
+  await expect(printOption).toBeVisible({ timeout: 15_000 });
   await expect(invoicePdfAction(page)).toBeVisible({ timeout: 15_000 });
 }
 
@@ -355,27 +366,46 @@ async function openContractDocumentActions(page: Page): Promise<void> {
 async function expectInvoiceDocumentActionsWithheld(page: Page): Promise<void> {
   const register = visibleInvoiceRegister(page);
   if (isInvoiceMobile(page)) {
-    const card = mobileInvoiceCard(page);
+    // Collection remains available while the company identity is unconfirmed;
+    // the document actions are withheld. Both facts are only observable in the
+    // card's overflow menu, so the check opens it instead of looking for face
+    // buttons the register does not render.
+    const overflow = mobileInvoiceCard(page).locator(
+      '[data-action-menu-trigger]',
+    );
+    await expect(overflow).toBeVisible();
+    await expect(overflow).toHaveAccessibleName(new RegExp(INVOICE_IDENTITY));
+    await overflow.click();
     await expect(
-      card.getByRole('button', { name: /^تحصيل/ }).first(),
-    ).toBeVisible();
-    await expect(card.getByRole('button', { name: /^طباعة/ })).toHaveCount(0);
-    await expect(card.getByRole('button', { name: /^تنزيل/ })).toHaveCount(0);
+      invoiceActionsMenu(page).getByRole('menuitem', {
+        name: 'تحصيل',
+        exact: true,
+      }),
+    ).toBeVisible({ timeout: 15_000 });
   } else {
     const actions = register
-      .getByRole('button', { name: 'إجراءات الفاتورة', exact: true })
-      .first();
+      .locator('tr', { hasText: INVOICE_IDENTITY })
+      .getByRole('button', { name: 'إجراءات الفاتورة', exact: true });
     await expect(actions).toBeVisible();
     await actions.click();
     await expect(
-      page.getByRole('menuitem', { name: 'تحصيل', exact: true }),
+      invoiceActionsMenu(page).getByRole('menuitem', {
+        name: 'تحصيل',
+        exact: true,
+      }),
     ).toBeVisible();
   }
   await expect(
-    page.getByRole('menuitem', { name: 'طباعة', exact: true }),
+    invoiceActionsMenu(page).getByRole('menuitem', {
+      name: 'طباعة',
+      exact: true,
+    }),
   ).toHaveCount(0);
   await expect(
-    page.getByRole('menuitem', { name: 'PDF', exact: true }),
+    invoiceActionsMenu(page).getByRole('menuitem', {
+      name: 'PDF',
+      exact: true,
+    }),
   ).toHaveCount(0);
 }
 
@@ -463,6 +493,16 @@ test.describe('الفاتورة — invoice acceptance', () => {
     const [popup] = popups;
     await popup.waitForLoadState('domcontentloaded');
     await popup.close();
+
+    // A double-tap closes the menu as soon as the first click selects the item,
+    // so the second tap lands on the card underneath and opens the quick view.
+    // The contract under test is that the *document action* is not duplicated,
+    // therefore the test returns to the register before exercising the download
+    // instead of asserting through a legitimately hidden background surface.
+    await page.keyboard.press('Escape');
+    await expect(
+      page.getByRole('dialog').filter({ hasText: INVOICE_IDENTITY }),
+    ).toBeHidden();
 
     await openInvoiceDocumentActions(page);
     const downloadPromise = page.waitForEvent('download', { timeout: 120_000 });
@@ -839,3 +879,4 @@ test.describe('الجوال — mobile acceptance', () => {
     ).toBeVisible();
   });
 });
+
