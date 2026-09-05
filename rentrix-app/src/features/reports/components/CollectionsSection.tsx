@@ -6,15 +6,36 @@ import { useCollectionSummaryReport } from '@/features/financials/reports/useFin
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
 import { documentService } from '@/services/documents/DocumentService';
 import { runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
-import { toReportDocumentPayload, type ReportDocumentData } from '@/services/documents/documentPayloadAdapters';
-import { buildReportCsvFilename, downloadCsv, toDailyCollectionCsv, type RentRollReportRow } from '../reports-page.helpers';
-import { ReportColumns, ReportInsightNote, ReportProgress, ReportState, ReportSummaryStrip } from '@/components/ui/report-section-primitives';
+import {
+  toReportDocumentPayload,
+  type ReportDocumentData,
+} from '@/services/documents/documentPayloadAdapters';
+import {
+  buildReportCsvFilename,
+  downloadCsv,
+  toDailyCollectionCsv,
+  type RentRollReportRow,
+} from '../reports-page.helpers';
+import {
+  ReportColumns,
+  ReportInsightNote,
+  ReportProgress,
+  ReportState,
+  ReportSummaryStrip,
+} from '@/components/ui/report-section-primitives';
 import { DailyCollectionsPanel } from './collections/daily-collections-panel';
-import { ReceiptLinksPanel, type CollectionReceiptRow } from './collections/receipt-links-panel';
+import {
+  ReceiptLinksPanel,
+  type CollectionReceiptRow,
+} from './collections/receipt-links-panel';
 import { RentRollPanel } from './collections/rent-roll-panel';
 import { formatLatinNumber } from '@/lib/formatters';
-import { csvRowsToXlsxBlob, downloadBlob, xlsxFilenameFromCsv } from '@/lib/tabular-export';
-import { ReportShareActions } from './ReportShareActions';
+import {
+  csvRowsToXlsxBlob,
+  downloadBlob,
+  xlsxFilenameFromCsv,
+} from '@/lib/tabular-export';
+import { ReportDocumentActions } from './report-document-actions';
 
 const paymentMethodLabels = {
   cash: 'نقدًا',
@@ -24,8 +45,20 @@ const paymentMethodLabels = {
   other: 'أخرى',
 } as const;
 
-export function CollectionsSection({ summary, collectionRate, rows, receiptRows, rentRollRows, canExportReports, isLoading, from, to }: Readonly<{
-  summary: NonNullable<ReturnType<typeof useCollectionSummaryReport>['data']> | undefined;
+export function CollectionsSection({
+  summary,
+  collectionRate,
+  rows,
+  receiptRows,
+  rentRollRows,
+  canExportReports,
+  isLoading,
+  from,
+  to,
+}: Readonly<{
+  summary:
+    | NonNullable<ReturnType<typeof useCollectionSummaryReport>['data']>
+    | undefined;
   /** Dashboard Truth RPC value. Presentation must render it, never derive paid / invoiced here. */
   collectionRate?: number;
   rows: DailyCollectionReportRow[];
@@ -41,24 +74,38 @@ export function CollectionsSection({ summary, collectionRate, rows, receiptRows,
   // reconstructed from rendered rows.
   const dailyRowsTotal = rows.reduce((total, row) => total + row.totalPaid, 0);
   const totalCollected = summary?.paid ?? dailyRowsTotal;
-  const isCollectionRateAvailable = typeof collectionRate === 'number' && Number.isFinite(collectionRate);
+  const isCollectionRateAvailable =
+    typeof collectionRate === 'number' && Number.isFinite(collectionRate);
   const collectionRateLabel = isCollectionRateAvailable
     ? `${formatLatinNumber(Math.round(collectionRate!), 'ar')}%`
     : 'غير متاحة';
 
-  const methodTotals = rows.reduce((totals, row) => {
-    for (const key of Object.keys(totals) as Array<keyof typeof totals>) totals[key] += row.methodTotals[key];
-    return totals;
-  }, { cash: 0, bank_transfer: 0, card: 0, check: 0, other: 0 });
-  const dominantMethod = (Object.entries(methodTotals) as Array<[keyof typeof methodTotals, number]>)
-    .sort((a, b) => b[1] - a[1])[0];
-  const paymentMethodTotal = Object.values(methodTotals).reduce((total, value) => total + value, 0);
-  const dominantMethodShare = dominantMethod && paymentMethodTotal > 0
-    ? (dominantMethod[1] / paymentMethodTotal) * 100
-    : 0;
+  const methodTotals = rows.reduce(
+    (totals, row) => {
+      for (const key of Object.keys(totals) as Array<keyof typeof totals>)
+        totals[key] += row.methodTotals[key];
+      return totals;
+    },
+    { cash: 0, bank_transfer: 0, card: 0, check: 0, other: 0 },
+  );
+  const dominantMethod = (
+    Object.entries(methodTotals) as Array<[keyof typeof methodTotals, number]>
+  ).sort((a, b) => b[1] - a[1])[0];
+  const paymentMethodTotal = Object.values(methodTotals).reduce(
+    (total, value) => total + value,
+    0,
+  );
+  const dominantMethodShare =
+    dominantMethod && paymentMethodTotal > 0
+      ? (dominantMethod[1] / paymentMethodTotal) * 100
+      : 0;
 
-  const { companySettings: documentSettings, isReady: isDocumentSettingsReady } = useDocumentSettings();
-  const currencySymbol = documentSettings.currencySymbol || documentSettings.currency;
+  const {
+    companySettings: documentSettings,
+    isReady: isDocumentSettingsReady,
+  } = useDocumentSettings();
+  const currencySymbol =
+    documentSettings.currencySymbol || documentSettings.currency;
 
   const buildCollectionsReportData = (): ReportDocumentData => ({
     reportTitle: 'كشف حركة التحصيلات اليومية والتدفقات النقدية',
@@ -68,7 +115,14 @@ export function CollectionsSection({ summary, collectionRate, rows, receiptRows,
     sections: [
       {
         title: 'جدول المقبوضات حسب التاريخ وطرق السداد',
-        columns: ['التاريخ', 'عدد العمليات', 'نقداً', 'تحويل بنكي', 'شيكات', 'إجمالي التحصيل'],
+        columns: [
+          'التاريخ',
+          'عدد العمليات',
+          'نقداً',
+          'تحويل بنكي',
+          'شيكات',
+          'إجمالي التحصيل',
+        ],
         rows: rows.map((row) => [
           row.paymentDate,
           row.paymentsCount,
@@ -77,17 +131,34 @@ export function CollectionsSection({ summary, collectionRate, rows, receiptRows,
           `${formatLatinNumber(row.methodTotals.check, 'ar-OM')}`,
           `${formatLatinNumber(row.totalPaid, 'ar-OM')} ${currencySymbol}`,
         ]),
-        totals: ['الإجمالي العام', '', '', '', '', `${formatLatinNumber(dailyRowsTotal, 'ar-OM')} ${currencySymbol}`],
+        totals: [
+          'الإجمالي العام',
+          '',
+          '',
+          '',
+          '',
+          `${formatLatinNumber(dailyRowsTotal, 'ar-OM')} ${currencySymbol}`,
+        ],
       },
       {
         title: 'سياق الإيصالات والتحصيلات',
-        columns: ['الإيصال', 'المستأجر', 'العقار / الوحدة', 'الفاتورة', 'طريقة الدفع', 'المبلغ', 'الحالة'],
+        columns: [
+          'الإيصال',
+          'المستأجر',
+          'العقار / الوحدة',
+          'الفاتورة',
+          'طريقة الدفع',
+          'المبلغ',
+          'الحالة',
+        ],
         rows: receiptRows.map((receipt) => [
           receipt.receipt_number,
           receipt.tenant_name ?? 'غير محدد',
           `${receipt.property_title ?? 'عقار غير محدد'} / ${receipt.unit_number ?? '—'}`,
           receipt.invoice_reference ?? '—',
-          paymentMethodLabels[receipt.payment_method as keyof typeof paymentMethodLabels] ?? receipt.payment_method,
+          paymentMethodLabels[
+            receipt.payment_method as keyof typeof paymentMethodLabels
+          ] ?? receipt.payment_method,
           `${formatLatinNumber(receipt.amount, 'ar-OM')} ${currencySymbol}`,
           receipt.status === 'posted' ? 'مرحّل' : 'ملغى',
         ]),
@@ -99,7 +170,11 @@ export function CollectionsSection({ summary, collectionRate, rows, receiptRows,
   const handlePrintCollectionsReport = async () => {
     await runGuardedDocumentAction({
       isReady: isDocumentSettingsReady,
-      operation: () => documentService.printDocument('generic_report', { settings: documentSettings, payload: toReportDocumentPayload(buildCollectionsReportData()) }),
+      operation: () =>
+        documentService.printDocument('generic_report', {
+          settings: documentSettings,
+          payload: toReportDocumentPayload(buildCollectionsReportData()),
+        }),
       fallbackMessage: 'تعذرت طباعة التقرير.',
     });
   };
@@ -107,18 +182,22 @@ export function CollectionsSection({ summary, collectionRate, rows, receiptRows,
   const handleDownloadCollectionsReport = async () => {
     await runGuardedDocumentAction({
       isReady: isDocumentSettingsReady,
-      operation: () => documentService.downloadDocumentPdf('generic_report', { settings: documentSettings, payload: toReportDocumentPayload(buildCollectionsReportData()) }),
+      operation: () =>
+        documentService.downloadDocumentPdf('generic_report', {
+          settings: documentSettings,
+          payload: toReportDocumentPayload(buildCollectionsReportData()),
+        }),
       fallbackMessage: 'تعذر تنزيل ملف PDF.',
     });
   };
 
   const dailyActions = canExportReports ? (
-    <ReportShareActions
+    <ReportDocumentActions
       className="flex flex-wrap gap-2"
       reportLabel="كشف حركة التحصيلات اليومية والتدفقات النقدية"
-      target={{
-        section: 'analytics',
-        view: 'collections',
+      reportShareTarget={{
+        reportId: 'collections-arrears-cheques',
+        view: 'period',
         filters: {
           from,
           to,
@@ -130,10 +209,13 @@ export function CollectionsSection({ summary, collectionRate, rows, receiptRows,
           contractId: '',
         },
       }}
-      summaryText={`إجمالي المبلغ المحصل: ${formatMoney(totalCollected)} | كفاءة التحصيل: ${collectionRateLabel}`}
+      reportShareSummary={`إجمالي المبلغ المحصل: ${formatMoney(totalCollected)} | كفاءة التحصيل: ${collectionRateLabel}`}
       onPrint={handlePrintCollectionsReport}
       onDownloadPdf={handleDownloadCollectionsReport}
-      csv={{ filename: buildReportCsvFilename('daily-collection'), rows: toDailyCollectionCsv(rows) }}
+      csv={{
+        filename: buildReportCsvFilename('daily-collection'),
+        rows: toDailyCollectionCsv(rows),
+      }}
     />
   ) : undefined;
 
@@ -143,7 +225,12 @@ export function CollectionsSection({ summary, collectionRate, rows, receiptRows,
       <Button
         variant="secondary"
         size="sm"
-        onClick={() => downloadBlob(csvRowsToXlsxBlob(rentRollRows, 'سجل الإيجارات'), xlsxFilenameFromCsv(rentRollCsvFilename))}
+        onClick={() =>
+          downloadBlob(
+            csvRowsToXlsxBlob(rentRollRows, 'سجل الإيجارات'),
+            xlsxFilenameFromCsv(rentRollCsvFilename),
+          )
+        }
         className="min-h-11 gap-1.5 text-xs"
         disabled={rentRollRows.length === 0}
       >
@@ -179,12 +266,16 @@ export function CollectionsSection({ summary, collectionRate, rows, receiptRows,
           {
             label: 'المفوتر',
             value: summary ? formatMoney(summary.invoiced) : '—',
-            detail: summary ? `${formatLatinNumber(summary.invoicesCount, 'ar')} فاتورة` : 'بيانات الفترة غير متاحة',
+            detail: summary
+              ? `${formatLatinNumber(summary.invoicesCount, 'ar')} فاتورة`
+              : 'بيانات الفترة غير متاحة',
           },
           {
             label: 'المحصّل',
             value: summary ? formatMoney(summary.paid) : '—',
-            detail: summary ? `${formatLatinNumber(summary.receiptsCount, 'ar')} إيصال` : 'بيانات الفترة غير متاحة',
+            detail: summary
+              ? `${formatLatinNumber(summary.receiptsCount, 'ar')} إيصال`
+              : 'بيانات الفترة غير متاحة',
           },
           {
             label: 'الرصيد المستحق',
@@ -215,8 +306,18 @@ export function CollectionsSection({ summary, collectionRate, rows, receiptRows,
           <ReportProgress
             label="نسبة التحصيل من الفواتير"
             value={collectionRate!}
-            helper={summary ? `${formatMoney(summary.paid)} من ${formatMoney(summary.invoiced)}` : 'تفاصيل الفترة غير متاحة'}
-            tone={collectionRate! >= 85 ? 'good' : collectionRate! >= 65 ? 'warning' : 'critical'}
+            helper={
+              summary
+                ? `${formatMoney(summary.paid)} من ${formatMoney(summary.invoiced)}`
+                : 'تفاصيل الفترة غير متاحة'
+            }
+            tone={
+              collectionRate! >= 85
+                ? 'good'
+                : collectionRate! >= 65
+                  ? 'warning'
+                  : 'critical'
+            }
           />
         ) : (
           <ReportState
@@ -227,16 +328,34 @@ export function CollectionsSection({ summary, collectionRate, rows, receiptRows,
         <ReportProgress
           label="تركيز طريقة السداد الأولى"
           value={dominantMethodShare}
-          helper={dominantMethod ? `${paymentMethodLabels[dominantMethod[0]]} · ${formatMoney(dominantMethod[1])}` : 'لا توجد تحصيلات'}
-          tone={dominantMethodShare <= 65 ? 'good' : dominantMethodShare <= 85 ? 'warning' : 'critical'}
+          helper={
+            dominantMethod
+              ? `${paymentMethodLabels[dominantMethod[0]]} · ${formatMoney(dominantMethod[1])}`
+              : 'لا توجد تحصيلات'
+          }
+          tone={
+            dominantMethodShare <= 65
+              ? 'good'
+              : dominantMethodShare <= 85
+                ? 'warning'
+                : 'critical'
+          }
         />
       </div>
 
-      <DailyCollectionsPanel rows={rows} action={dailyActions} isLoading={isLoading} />
+      <DailyCollectionsPanel
+        rows={rows}
+        action={dailyActions}
+        isLoading={isLoading}
+      />
 
       <ReportColumns>
         <ReceiptLinksPanel rows={receiptRows} isLoading={isLoading} />
-        <RentRollPanel rows={rentRollRows} action={rentRollAction} isLoading={isLoading} />
+        <RentRollPanel
+          rows={rentRollRows}
+          action={rentRollAction}
+          isLoading={isLoading}
+        />
       </ReportColumns>
     </div>
   );

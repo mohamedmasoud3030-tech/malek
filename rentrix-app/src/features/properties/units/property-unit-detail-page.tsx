@@ -14,18 +14,25 @@ import { useAuth } from '@/hooks/use-auth';
 import { formatMoney } from '@/hooks/useCompanyFormatters';
 import { DetailFields } from '@/components/ui/detail-fields';
 import { useProperty } from '../use-properties';
-import { unitStatusLabels, unitStatusToneFor } from '@/features/units/unit-schema';
+import {
+  unitStatusLabels,
+  unitStatusToneFor,
+} from '@/features/units/unit-schema';
 
 export function PropertyUnitDetailPage() {
   const params = useParams({ strict: false });
-  const propertyId = typeof params.propertyId === 'string' ? params.propertyId : '';
+  const propertyId =
+    typeof params.propertyId === 'string' ? params.propertyId : '';
   const unitId = typeof params.unitId === 'string' ? params.unitId : '';
   const propertyQuery = useProperty(propertyId);
   const unitsQuery = useUnits(propertyId);
   const { canAccess } = useAuth();
   const canViewReports = canAccess('financial.reports.view');
   const [editOpen, setEditOpen] = useState(false);
-  const unitDraftsQuery = useUnitContractDrafts({ propertyId, unitIds: unitId ? [unitId] : [] });
+  const unitDraftsQuery = useUnitContractDrafts({
+    propertyId,
+    unitIds: unitId ? [unitId] : [],
+  });
 
   const property = propertyQuery.data;
   const unit = unitsQuery.data?.find((candidate) => candidate.id === unitId);
@@ -37,11 +44,25 @@ export function PropertyUnitDetailPage() {
       : unitDraftsQuery.isError
         ? unitDraftsQuery.error
         : undefined;
-  const retry = () => { void Promise.all([unitsQuery.refetch(), propertyQuery.refetch(), unitDraftsQuery.refetch()]); };
+  const retry = () => {
+    void Promise.all([
+      unitsQuery.refetch(),
+      propertyQuery.refetch(),
+      unitDraftsQuery.refetch(),
+    ]);
+  };
 
   return (
     <AsyncContentState
-      status={unit ? 'ready' : unitsQuery.isLoading ? 'loading' : unitsQuery.isError ? 'error' : 'empty'}
+      status={
+        unit
+          ? 'ready'
+          : unitsQuery.isLoading
+            ? 'loading'
+            : unitsQuery.isError
+              ? 'error'
+              : 'empty'
+      }
       error={unitsQuery.error}
       errorTitle="تعذر تحميل تفاصيل الوحدة"
       errorAction={<Button onClick={retry}>إعادة المحاولة</Button>}
@@ -52,7 +73,11 @@ export function PropertyUnitDetailPage() {
           {refreshError ? (
             <DataRefreshAlert
               onRetry={retry}
-              isRefreshing={unitsQuery.isFetching || propertyQuery.isFetching || unitDraftsQuery.isFetching}
+              isRefreshing={
+                unitsQuery.isFetching ||
+                propertyQuery.isFetching ||
+                unitDraftsQuery.isFetching
+              }
             />
           ) : null}
           <EntityDetailHeader
@@ -63,9 +88,15 @@ export function PropertyUnitDetailPage() {
             status={
               <span className="flex flex-wrap gap-1.5">
                 <StatusBadge tone={unitStatusToneFor(unit.status)}>
-                  {unitStatusLabels[unit.status as keyof typeof unitStatusLabels] ?? unit.status}
+                  {unitStatusLabels[
+                    unit.status as keyof typeof unitStatusLabels
+                  ] ?? unit.status}
                 </StatusBadge>
-                {pendingDraft ? <StatusBadge tone="warning">مسودة عقد قيد الإعداد</StatusBadge> : null}
+                {pendingDraft ? (
+                  <StatusBadge tone="warning">
+                    مسودة عقد قيد الإعداد
+                  </StatusBadge>
+                ) : null}
               </span>
             }
             actions={
@@ -73,8 +104,15 @@ export function PropertyUnitDetailPage() {
                 {canViewReports ? (
                   <Button asChild variant="outline" className="min-h-11">
                     <Link
-                      to="/reports"
-                      search={{ section: 'analytics', view: 'property_analytics', propertyId, unitId: unit.id } as never}
+                      to="/reports/$reportId"
+                      params={{ reportId: 'portfolio-property-performance' }}
+                      search={
+                        {
+                          view: 'property',
+                          propertyId,
+                          unitId: unit.id,
+                        } as never
+                      }
                     >
                       <BarChart3 className="me-1 size-4" aria-hidden="true" />
                       تحليل الوحدة
@@ -83,7 +121,10 @@ export function PropertyUnitDetailPage() {
                 ) : null}
                 {pendingDraft ? (
                   <Button asChild variant="secondary" className="min-h-11">
-                    <Link to="/contracts/$contractId" params={{ contractId: pendingDraft.id }}>
+                    <Link
+                      to="/contracts/$contractId"
+                      params={{ contractId: pendingDraft.id }}
+                    >
                       <FilePlus2 className="me-1 size-4" aria-hidden="true" />
                       مراجعة المسودة
                     </Link>
@@ -99,7 +140,11 @@ export function PropertyUnitDetailPage() {
                     </Link>
                   </Button>
                 ) : null}
-                <Button variant="secondary" className="min-h-11" onClick={() => setEditOpen(true)}>
+                <Button
+                  variant="secondary"
+                  className="min-h-11"
+                  onClick={() => setEditOpen(true)}
+                >
                   <Edit className="me-1 size-4" aria-hidden="true" />
                   تعديل الوحدة
                 </Button>
@@ -113,28 +158,50 @@ export function PropertyUnitDetailPage() {
               fields={[
                 { label: 'رقم الوحدة', value: `وحدة ${unit.unit_number}` },
                 { label: 'الدور', value: unit.floor ?? '—' },
-                { label: 'قيمة الإيجار المسجلة', value: formatMoney(unit.rent_amount) },
+                {
+                  label: 'قيمة الإيجار المسجلة',
+                  value: formatMoney(unit.rent_amount),
+                },
               ]}
             />
             <div className="rounded-xl border border-border/70 bg-card p-4 shadow-card md:col-span-2">
-              <p className="text-xs font-medium text-muted-foreground">العقار التابع له</p>
+              <p className="text-xs font-medium text-muted-foreground">
+                العقار التابع له
+              </p>
               <p className="mt-1">
                 {property ? (
-                  <Link to="/properties/$propertyId" params={{ propertyId: property.id }} className="font-semibold text-primary hover:underline">
+                  <Link
+                    to="/properties/$propertyId"
+                    params={{ propertyId: property.id }}
+                    className="font-semibold text-primary hover:underline"
+                  >
                     {property.title}
                   </Link>
-                ) : '—'}
+                ) : (
+                  '—'
+                )}
               </p>
             </div>
             <div className="rounded-xl border border-border/70 bg-card p-4 shadow-card md:col-span-2">
-              <p className="text-xs font-medium text-muted-foreground">ملاحظات الوحدة</p>
+              <p className="text-xs font-medium text-muted-foreground">
+                ملاحظات الوحدة
+              </p>
               <p className="mt-1 leading-7">{unit.notes ?? '—'}</p>
             </div>
           </div>
 
-          <ContextualDocumentsSection entityType="unit" entityId={unit.id} entityLabel="الوحدة" />
+          <ContextualDocumentsSection
+            entityType="unit"
+            entityId={unit.id}
+            entityLabel="الوحدة"
+          />
 
-          <UnitFormModal propertyId={propertyId} unit={unit} open={editOpen} onOpenChange={setEditOpen} />
+          <UnitFormModal
+            propertyId={propertyId}
+            unit={unit}
+            open={editOpen}
+            onOpenChange={setEditOpen}
+          />
         </div>
       )}
     </AsyncContentState>

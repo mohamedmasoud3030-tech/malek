@@ -1,7 +1,8 @@
 import { readFileSync, statSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
-const readSource = (path: string) => readFileSync(new URL(path, import.meta.url), 'utf8');
+const readSource = (path: string) =>
+  readFileSync(new URL(path, import.meta.url), 'utf8');
 
 describe('public landing performance contract', () => {
   it('keeps authenticated providers and Supabase out of the public entry path', () => {
@@ -9,9 +10,13 @@ describe('public landing performance contract', () => {
     const routeTreeSource = readSource('../../app/router/route-tree.ts');
 
     expect(appSource).not.toContain('AppProviders');
-    expect(routeTreeSource).not.toMatch(/^import .*['"]@\/lib\/supabase['"];?$/m);
+    expect(routeTreeSource).not.toMatch(
+      /^import .*['"]@\/lib\/supabase['"];?$/m,
+    );
     expect(routeTreeSource).toContain("await import('@/lib/supabase')");
-    expect(routeTreeSource).toContain("lazyRouteComponent(() => import('@/routes/_protected')");
+    expect(routeTreeSource).toMatch(
+      /lazyRouteComponent\(\s*\(\) => import\('@\/routes\/_protected'\)/,
+    );
   });
 
   it('keeps hermetic E2E fixtures out of the production login route graph', () => {
@@ -19,8 +24,12 @@ describe('public landing performance contract', () => {
 
     expect(loginRouteSource).toContain('import.meta.env.VITE_E2E');
     expect(loginRouteSource).toContain("import('./_auth.login.e2e-fixture')");
-    expect(loginRouteSource).not.toContain("@/features/dashboard/dashboard-workspace.e2e-fixture");
-    expect(loginRouteSource).not.toContain("@/features/reports/reports-workspace.e2e-fixture");
+    expect(loginRouteSource).not.toContain(
+      '@/features/dashboard/dashboard-workspace.e2e-fixture',
+    );
+    expect(loginRouteSource).not.toContain(
+      '@/features/reports/reports-product.e2e-fixture',
+    );
   });
 
   it('keeps manual chunking vendor-only so optional vendors stay on their lazy paths', () => {
@@ -40,22 +49,39 @@ describe('public landing performance contract', () => {
     // whole chunk (vendor-pdf: 835 KiB) into the entry's static graph and
     // modulepreload list even for the unauthenticated login page.
     const start = viteConfigSource.indexOf('manualChunks(id) {');
-    expect(start, 'vite.config.ts should keep its vendor split strategy').toBeGreaterThan(-1);
-    const body = viteConfigSource.slice(start, viteConfigSource.indexOf('\n        },', start));
+    expect(
+      start,
+      'vite.config.ts should keep its vendor split strategy',
+    ).toBeGreaterThan(-1);
+    const body = viteConfigSource.slice(
+      start,
+      viteConfigSource.indexOf('\n        },', start),
+    );
 
     // The node_modules guard must exist and precede every vendor chunk
     // assignment (the preload-helper exception may precede it).
     const guard = 'if (!id.includes("node_modules")) return;';
     const guardAt = body.indexOf(guard);
-    expect(guardAt, 'manualChunks must early-return for application modules').toBeGreaterThan(-1);
+    expect(
+      guardAt,
+      'manualChunks must early-return for application modules',
+    ).toBeGreaterThan(-1);
     const firstAssignment = body.indexOf('return "vendor-');
-    expect(guardAt, 'the node_modules guard must come before any vendor chunk assignment').toBeLessThan(firstAssignment);
+    expect(
+      guardAt,
+      'the node_modules guard must come before any vendor chunk assignment',
+    ).toBeLessThan(firstAssignment);
 
     // Every manually assigned chunk must be a vendor group or the single
     // reviewed `preload-runtime` build-runtime chunk — application code is
     // never forced into a named chunk.
-    const assignedChunks = [...body.matchAll(/return\s+["']([^"']+)["']/g)].map((m) => m[1]);
-    expect(assignedChunks.length, 'the reviewed vendor groups should stay assigned').toBeGreaterThan(0);
+    const assignedChunks = [...body.matchAll(/return\s+["']([^"']+)["']/g)].map(
+      (m) => m[1],
+    );
+    expect(
+      assignedChunks.length,
+      'the reviewed vendor groups should stay assigned',
+    ).toBeGreaterThan(0);
     for (const chunk of assignedChunks) {
       const isVendor = chunk.startsWith('vendor-');
       const isReviewedRuntime = chunk === 'preload-runtime';
@@ -91,7 +117,9 @@ describe('public landing performance contract', () => {
 
   it('keeps first-view artwork compact and the demo video user-initiated', () => {
     const publicRoot = new URL('../../../public/', import.meta.url);
-    const heroBytes = statSync(new URL('landing/dashboard.webp', publicRoot)).size;
+    const heroBytes = statSync(
+      new URL('landing/dashboard.webp', publicRoot),
+    ).size;
     const showcaseSource = readSource('./components/Showcase.tsx');
 
     expect(heroBytes).toBeLessThan(60_000);
@@ -122,6 +150,8 @@ describe('public landing performance contract', () => {
     expect(indexHtml).not.toContain('fonts.gstatic.com');
     // Deferred on window load, injected by the typed app entry (OD-12).
     expect(entry).toContain('loadProductFonts();');
-    expect(productFonts).toContain("win.addEventListener('load', install, { once: true })");
+    expect(productFonts).toContain(
+      "win.addEventListener('load', install, { once: true })",
+    );
   });
 });

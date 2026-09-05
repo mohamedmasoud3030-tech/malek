@@ -17,15 +17,18 @@ const PR_INTERACTIVE_FILES = [
   'components/ExpiringContractsSection.tsx',
   'components/CollectionMovementSection.tsx',
   'components/OperationsOverviewSection.tsx',
-  'workspace/WorkspaceSubViewTabs.tsx',
-  'workspace/ReportsShell.tsx',
+  'premium/report-product-page.tsx',
+  'components/report-document-actions.tsx',
 ] as const;
 
 describe('reports center — touch-target contract', () => {
   it('keeps every new interactive control at the 44px minimum target', () => {
     for (const file of PR_INTERACTIVE_FILES) {
       const source = readFileSync(resolve(reportsDir, file), 'utf8');
-      expect(source, `${file} must not ship sub-44px interactive controls`).not.toMatch(/min-h-(8|9|10)\b/);
+      expect(
+        source,
+        `${file} must not ship sub-44px interactive controls`,
+      ).not.toMatch(/min-h-(8|9|10)\b/);
     }
   });
 
@@ -35,21 +38,28 @@ describe('reports center — touch-target contract', () => {
    * therefore locks the canonical usage plus the primitive's own target.
    */
   it('routes property drill affordances through the canonical ReportDrillAction', () => {
-    const source = readFileSync(resolve(reportsDir, 'components/PropertyAnalyticsSection.tsx'), 'utf8');
+    const source = readFileSync(
+      resolve(reportsDir, 'components/PropertyAnalyticsSection.tsx'),
+      'utf8',
+    );
     const drillTargets = source.match(/<ReportDrillAction/g) ?? [];
     expect(drillTargets.length).toBeGreaterThanOrEqual(5);
     expect(source).not.toMatch(/<button/);
 
-    const primitive = readFileSync(resolve(reportsDir, '../../components/ui/report-section-primitives.tsx'), 'utf8');
+    const primitive = readFileSync(
+      resolve(reportsDir, '../../components/ui/report-section-primitives.tsx'),
+      'utf8',
+    );
     expect(primitive).toContain('min-h-11 shrink-0 gap-1.5');
   });
 
-  it('keeps the workspace sub-view tabs at min-h-11', () => {
-    const source = readFileSync(resolve(reportsDir, 'workspace/WorkspaceSubViewTabs.tsx'), 'utf8');
-    // Canonical outline `Button` role="tab" controls that keep the 44px floor.
-    expect(source).not.toMatch(/<button/);
+  it('keeps canonical product target tabs at min-h-11', () => {
+    const source = readFileSync(
+      resolve(reportsDir, 'premium/report-product-page.tsx'),
+      'utf8',
+    );
+    expect(source).toContain('data-report-product-tabs');
     expect(source).toContain('role="tab"');
-    expect(source).toContain('variant="outline"');
     expect(source).toContain('min-h-11 rounded-lg');
     expect(source).not.toContain('min-h-9');
   });

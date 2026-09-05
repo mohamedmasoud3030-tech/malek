@@ -4,28 +4,48 @@ import { describe, expect, it } from 'vitest';
 
 const servicePath = resolve(import.meta.dirname, './tax-authority-service.ts');
 const service = readFileSync(servicePath, 'utf8');
-const readinessPath = resolve(import.meta.dirname, './finance-readiness-service.ts');
+const readinessPath = resolve(
+  import.meta.dirname,
+  './finance-readiness-service.ts',
+);
 const readiness = readFileSync(readinessPath, 'utf8');
-const workspacePath = resolve(import.meta.dirname, './tax-profile-workspace.tsx');
+const workspacePath = resolve(
+  import.meta.dirname,
+  './tax-profile-workspace.tsx',
+);
 const workspace = readFileSync(workspacePath, 'utf8');
-const readinessSectionPath = resolve(import.meta.dirname, './finance-readiness-section.tsx');
+const readinessSectionPath = resolve(
+  import.meta.dirname,
+  './finance-readiness-section.tsx',
+);
 const readinessSection = readFileSync(readinessSectionPath, 'utf8');
-const boundaryPath = resolve(import.meta.dirname, './tax-readiness-boundary.ts');
+const boundaryPath = resolve(
+  import.meta.dirname,
+  './tax-readiness-boundary.ts',
+);
 const boundary = readFileSync(boundaryPath, 'utf8');
 
 describe('tax authority service — governed boundaries', () => {
   it('uses authoritative RPCs for tax profile commands, not raw table writes', () => {
     expect(service).toContain('create_tax_profile_atomic');
     expect(service).toContain('approve_tax_profile_atomic');
-    expect(service).not.toMatch(/supabase\.from\(['\"]company_tax_profiles['\"]\)\.insert/);
-    expect(service).not.toMatch(/supabase\.from\(['\"]company_tax_profiles['\"]\)\.update/);
-    expect(service).not.toMatch(/supabase\.from\(['\"]company_tax_profiles['\"]\)\.delete/);
+    expect(service).not.toMatch(
+      /supabase\.from\(['\"]company_tax_profiles['\"]\)\.insert/,
+    );
+    expect(service).not.toMatch(
+      /supabase\.from\(['\"]company_tax_profiles['\"]\)\.update/,
+    );
+    expect(service).not.toMatch(
+      /supabase\.from\(['\"]company_tax_profiles['\"]\)\.delete/,
+    );
   });
 
   it('uses authoritative RPCs for fee tax treatment commands', () => {
     expect(service).toContain('create_fee_tax_treatment_atomic');
     expect(service).toContain('approve_fee_tax_treatment_atomic');
-    expect(service).not.toMatch(/supabase\.from\(['\"]company_fee_tax_treatments['\"]\)\.insert/);
+    expect(service).not.toMatch(
+      /supabase\.from\(['\"]company_fee_tax_treatments['\"]\)\.insert/,
+    );
   });
 
   it('never calls the service_role-only tax resolvers from the browser', () => {
@@ -92,14 +112,26 @@ describe('tax authority service — governed boundaries', () => {
     expect(readiness).toContain('BLOCKED');
     expect(readiness).toContain('DRAFT_NEEDS_APPROVAL');
     // Every state maps to tone + operator label + corrective message.
-    expect(readinessSection).toContain("if (state === 'READY') return 'success'");
-    expect(readinessSection).toContain("if (state === 'MISSING') return 'danger'");
-    expect(readinessSection).toContain("if (state === 'DRAFT_NEEDS_APPROVAL') return 'warning'");
+    expect(readinessSection).toContain(
+      "if (state === 'READY') return 'success'",
+    );
+    expect(readinessSection).toContain(
+      "if (state === 'MISSING') return 'danger'",
+    );
+    expect(readinessSection).toContain(
+      "if (state === 'DRAFT_NEEDS_APPROVAL') return 'warning'",
+    );
     expect(readinessSection).toContain('labelForState(state)');
-    expect(readinessSection).toContain('readinessMessage(state, missingMessage)');
+    expect(readinessSection).toContain(
+      'readinessMessage(state, missingMessage)',
+    );
     // Domain-specific corrective copy stays per-card, not raw reason codes.
-    expect(readinessSection).toContain('أكمل إعداد ضريبة الإيجار قبل إصدار الفواتير.');
-    expect(readinessSection).toContain('أكمل إعداد ضريبة أتعاب الإدارة قبل تسجيل التحصيل المرتبط بها.');
+    expect(readinessSection).toContain(
+      'أكمل إعداد ضريبة الإيجار قبل إصدار الفواتير.',
+    );
+    expect(readinessSection).toContain(
+      'أكمل إعداد ضريبة أتعاب الإدارة قبل تسجيل التحصيل المرتبط بها.',
+    );
   });
 
   it('fail-closed behavior for invoicing and accrual', () => {
@@ -107,8 +139,12 @@ describe('tax authority service — governed boundaries', () => {
     expect(readiness).toContain('FEE_TAX_TREATMENT_MISSING');
     // Fail-closed semantics in operator copy: invoicing/collection cannot run
     // until the corresponding tax setup completes.
-    expect(readinessSection).toContain('أكمل إعداد ضريبة الإيجار قبل إصدار الفواتير.');
-    expect(readinessSection).toContain('أكمل إعداد ضريبة الأتعاب الشهرية قبل تسجيل الاستحقاق.');
+    expect(readinessSection).toContain(
+      'أكمل إعداد ضريبة الإيجار قبل إصدار الفواتير.',
+    );
+    expect(readinessSection).toContain(
+      'أكمل إعداد ضريبة الأتعاب الشهرية قبل تسجيل الاستحقاق.',
+    );
     // The readiness service still blocks, not guesses, when checks fail.
     expect(readiness).toContain("'BLOCKED'");
   });
@@ -116,11 +152,17 @@ describe('tax authority service — governed boundaries', () => {
   it('links user to exact corrective action', () => {
     // Non-ready tax cards deep-link to the canonical settings surface where
     // the tax profiles/treatments workspace lives.
-    expect(readinessSection).toContain("to=\"/settings\"");
+    expect(readinessSection).toContain('to="/settings"');
     expect(readinessSection).toContain("companySection: 'finance-readiness'");
     expect(readinessSection).toContain('فتح إعدادات الضريبة');
     // Accounting readiness keeps its canonical Reports deep link.
-    expect(readinessSection).toContain("search={{ section: 'accounting' } as never}");
+    expect(readinessSection).toContain('to="/reports/$reportId"');
+    expect(readinessSection).toContain(
+      "params={{ reportId: 'financial-settlement-pack' }}",
+    );
+    expect(readinessSection).toContain(
+      "search={{ view: 'statements' } as never}",
+    );
   });
 
   it('uses company-scoped, governed, audited boundaries', () => {

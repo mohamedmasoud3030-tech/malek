@@ -1,14 +1,29 @@
-import { Download, FileSpreadsheet, FileText, MessageCircle, Printer, Share2 } from 'lucide-react';
+import {
+  Download,
+  FileSpreadsheet,
+  FileText,
+  MessageCircle,
+  Printer,
+  Share2,
+} from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { ActionMenu } from '@/components/ui/action-menu';
 import { Button } from '@/components/ui/button';
 import type { CsvRow } from '@/lib/csvExport';
-import { csvRowsToXlsxBlob, downloadBlob, xlsxFilenameFromCsv } from '@/lib/tabular-export';
+import {
+  csvRowsToXlsxBlob,
+  downloadBlob,
+  xlsxFilenameFromCsv,
+} from '@/lib/tabular-export';
 import { buildXlsxBlob } from '@/lib/xlsx-export';
 import { openWhatsAppComposer } from '@/lib/whatsapp-share';
 import { documentActionErrorMessage } from '@/services/documents/runDocumentAction';
 import { downloadCsv } from '../reports-page.helpers';
+import {
+  buildReportProductSharePayload,
+  type ReportProductShareTarget,
+} from '../report-share';
 
 export type ReportDocumentShareInput = Readonly<{
   /** Canonical deep link back into the same report (authenticated route). */
@@ -42,6 +57,9 @@ type ReportDocumentActionsProps = Readonly<{
   }>;
   csv?: Readonly<{ filename: string; rows: CsvRow[] }>;
   share?: ReportDocumentShareInput;
+  /** Canonical product destination used to prepare a secure report share link. */
+  reportShareTarget?: ReportProductShareTarget;
+  reportShareSummary?: string;
   /** Optional recipient phone for the manual WhatsApp composer. */
   phone?: string;
   /** Explicitly enable/disable the manual WhatsApp composer (default: on when `share` exists). */
@@ -59,13 +77,16 @@ const WHATSAPP_MESSAGES = {
 /** True when the browser can attach files to the OS share sheet. */
 export function canSharePdfFile(file: File): boolean {
   const navigatorRef = typeof navigator !== 'undefined' ? navigator : undefined;
-  return typeof navigatorRef?.share === 'function'
-    && typeof navigatorRef.canShare === 'function'
-    && navigatorRef.canShare({ files: [file] });
+  return (
+    typeof navigatorRef?.share === 'function' &&
+    typeof navigatorRef.canShare === 'function' &&
+    navigatorRef.canShare({ files: [file] })
+  );
 }
 
 async function copyText(text: string): Promise<boolean> {
-  if (typeof navigator === 'undefined' || !navigator.clipboard?.writeText) return false;
+  if (typeof navigator === 'undefined' || !navigator.clipboard?.writeText)
+    return false;
   try {
     await navigator.clipboard.writeText(text);
     return true;
@@ -97,8 +118,7 @@ function downloadFile(file: File): void {
  *  - failures surface only the document platform's user-safe Arabic
  *    messages, never raw errors.
  *
- * Legacy surfaces (`ReportShareActions`, `ReportOutputActions`) mount this
- * component too, so there is no competing action implementation in Reports.
+ * Every report body and product header mounts this component directly.
  */
 export function ReportDocumentActions({
   reportLabel,
@@ -111,16 +131,34 @@ export function ReportDocumentActions({
   excelRows,
   csv,
   share,
+  reportShareTarget,
+  reportShareSummary,
   phone,
   whatsapp,
   disabled = false,
   className,
 }: ReportDocumentActionsProps) {
   const [busy, setBusy] = useState(false);
-  const showWhatsApp = share !== undefined && whatsapp !== false;
+  const generatedShare = reportShareTarget
+    ? buildReportProductSharePayload(
+        typeof window !== 'undefined' ? window.location.origin : '',
+        reportShareTarget,
+        { reportLabel, summaryText: reportShareSummary },
+      )
+    : undefined;
+  const resolvedShare =
+    share ??
+    (generatedShare
+      ? {
+          title: reportLabel,
+          text: generatedShare.shareText,
+          url: generatedShare.url,
+        }
+      : undefined);
+  const showWhatsApp = resolvedShare !== undefined && whatsapp !== false;
 
-  const excelDisabled = disabled
-    || (!onDownloadExcel && !(excelRows && excelRows.rows.length > 0));
+  const excelDisabled =
+    disabled || (!onDownloadExcel && !(excelRows && excelRows.rows.length > 0));
 
   const handleExcel = () => {
     if (onDownloadExcel) {
@@ -130,7 +168,12 @@ export function ReportDocumentActions({
     if (!excelRows || excelRows.rows.length === 0) return;
     try {
       downloadBlob(
-        buildXlsxBlob({ name: reportLabel, headers: excelRows.headers, rows: excelRows.rows, rightToLeft: true }),
+        buildXlsxBlob({
+          name: reportLabel,
+          headers: excelRows.headers,
+          rows: excelRows.rows,
+          rightToLeft: true,
+        }),
         excelRows.filename,
       );
     } catch (error) {
@@ -154,10 +197,10 @@ export function ReportDocumentActions({
   };
 
   const handleWhatsApp = () => {
-    if (!share || !showWhatsApp) return;
+    if (!resolvedShare || !showWhatsApp) return;
     const outcome = openWhatsAppComposer({
       phone,
-      text: share.text,
+      text: resolvedShare.text,
       webComposer: false,
     });
     if (!outcome.result.ok) {
@@ -165,55 +208,78 @@ export function ReportDocumentActions({
       return;
     }
     if (!outcome.opened) {
-      toast.error('تعذر فتح واتساب. سُمح للمتصفح بفتح نافذة جديدة ثم أعد المحاولة.');
+      toast.error(
+        'تعذر فتح واتساب. سُمح للمتصفح بفتح نافذة جديدة ثم أعد المحاولة.',
+      );
       return;
     }
     toast.success('تم فتح واتساب لإرسال الرسالة يدويًا.');
   };
 
   const handleShare = async () => {
-    if (!share) return;
+    if (!resolvedShare) return;
     // Preferred truthful path: share the actual generated PDF document.
-    if (share.buildFile) {
+    if (resolvedShare.buildFile) {
       setBusy(true);
       try {
-        const file = await share.buildFile();
+        const file = await resolvedShare.buildFile();
         if (canSharePdfFile(file)) {
           try {
-            await navigator.share({ files: [file], title: share.title });
+            await navigator.share({
+              files: [file],
+              title: resolvedShare.title,
+            });
             return;
           } catch {
             // User cancelled the share sheet — fall through to the link copy.
           }
         }
-        if (await copyText(share.url)) {
+        if (await copyText(resolvedShare.url)) {
           downloadFile(file);
-          toast.success('شارك هذا المتصفح لا يرفق الملفات مباشرة — نزّلنا لك PDF جاهز للإرفاق، ونسخنا الرابط الآمن للتقرير.');
+          toast.success(
+            'شارك هذا المتصفح لا يرفق الملفات مباشرة — نزّلنا لك PDF جاهز للإرفاق، ونسخنا الرابط الآمن للتقرير.',
+          );
           return;
         }
         downloadFile(file);
-        toast.success('نزّلنا لك ملف PDF جاهزًا للمشاركة؛ هذا المتصفح لا يدعم إرفاق الملفات أو نسخ الرابط.');
+        toast.success(
+          'نزّلنا لك ملف PDF جاهزًا للمشاركة؛ هذا المتصفح لا يدعم إرفاق الملفات أو نسخ الرابط.',
+        );
       } catch (error) {
-        if (await copyText(share.url)) {
-          toast.success('تعذر تجهيز PDF للمشاركة المباشرة — تم نسخ الرابط الآمن للتقرير بدلًا منه.');
+        if (await copyText(resolvedShare.url)) {
+          toast.success(
+            'تعذر تجهيز PDF للمشاركة المباشرة — تم نسخ الرابط الآمن للتقرير بدلًا منه.',
+          );
           return;
         }
-        toast.error(documentActionErrorMessage(error, 'تعذرت مشاركة التقرير في هذا المتصفح. انسخ الرابط من شريط العنوان.'));
+        toast.error(
+          documentActionErrorMessage(
+            error,
+            'تعذرت مشاركة التقرير في هذا المتصفح. انسخ الرابط من شريط العنوان.',
+          ),
+        );
       } finally {
         setBusy(false);
       }
       return;
     }
     // Link/text sharing for environments without a document attachment.
-    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+    if (
+      typeof navigator !== 'undefined' &&
+      typeof navigator.share === 'function'
+    ) {
       try {
-        await navigator.share({ title: share.title, text: share.text, url: share.url });
+        await navigator.share({
+          title: resolvedShare.title,
+          text: resolvedShare.text,
+          url: resolvedShare.url,
+        });
         return;
       } catch {
         // User cancelled the share sheet — keep the chance to copy the link.
       }
     }
-    if (await copyText(share.url)) {
+    if (await copyText(resolvedShare.url)) {
       toast.success('تم نسخ رابط التقرير.');
       return;
     }
@@ -222,7 +288,7 @@ export function ReportDocumentActions({
 
   const buttonClass = 'min-h-11 gap-1.5 text-xs';
 
-  const shareButton = share ? (
+  const shareButton = resolvedShare ? (
     <Button
       key="share"
       type="button"
@@ -253,20 +319,21 @@ export function ReportDocumentActions({
     </Button>
   ) : null;
 
-  const excelButtons = (onDownloadExcel || (excelRows && excelRows.rows.length > 0)) ? (
-    <Button
-      key="excel"
-      type="button"
-      variant="secondary"
-      size="sm"
-      className={buttonClass}
-      onClick={handleExcel}
-      disabled={excelDisabled}
-    >
-      <FileSpreadsheet className="size-3.5" aria-hidden="true" />
-      Excel
-    </Button>
-  ) : null;
+  const excelButtons =
+    onDownloadExcel || (excelRows && excelRows.rows.length > 0) ? (
+      <Button
+        key="excel"
+        type="button"
+        variant="secondary"
+        size="sm"
+        className={buttonClass}
+        onClick={handleExcel}
+        disabled={excelDisabled}
+      >
+        <FileSpreadsheet className="size-3.5" aria-hidden="true" />
+        Excel
+      </Button>
+    ) : null;
 
   const csvButton = csv ? (
     <Button
@@ -300,14 +367,47 @@ export function ReportDocumentActions({
 
   if (layout === 'compact') {
     const menuItems = [
-      ...(onPrint ? [{ id: 'print', label: 'طباعة', icon: Printer, disabled, onClick: () => void onPrint() }] : []),
-      ...(onDownloadExcel || excelRows
-        ? [{ id: 'excel', label: 'تنزيل Excel', icon: FileSpreadsheet, disabled: excelDisabled, onClick: handleExcel }]
+      ...(onPrint
+        ? [
+            {
+              id: 'print',
+              label: 'طباعة',
+              icon: Printer,
+              disabled,
+              onClick: () => void onPrint(),
+            },
+          ]
         : []),
-      ...(share ? [{ id: 'share', label: 'مشاركة آمنة', icon: Share2, disabled: disabled || busy, onClick: () => void handleShare() }] : []),
+      ...(onDownloadExcel || excelRows
+        ? [
+            {
+              id: 'excel',
+              label: 'تنزيل Excel',
+              icon: FileSpreadsheet,
+              disabled: excelDisabled,
+              onClick: handleExcel,
+            },
+          ]
+        : []),
+      ...(resolvedShare
+        ? [
+            {
+              id: 'share',
+              label: 'مشاركة آمنة',
+              icon: Share2,
+              disabled: disabled || busy,
+              onClick: () => void handleShare(),
+            },
+          ]
+        : []),
     ];
     return (
-      <div className={className} data-report-document-actions data-report-share-actions data-layout="compact">
+      <div
+        className={className}
+        data-report-document-actions
+        data-report-share-actions
+        data-layout="compact"
+      >
         <div className="flex items-center gap-1">
           {onDownloadPdf ? (
             <Button
@@ -331,7 +431,11 @@ export function ReportDocumentActions({
   }
 
   return (
-    <div className={className} data-report-document-actions data-report-share-actions>
+    <div
+      className={className}
+      data-report-document-actions
+      data-report-share-actions
+    >
       <div className="flex min-w-0 flex-wrap items-center gap-1">
         {printButton}
         {onDownloadPdf ? (

@@ -4,13 +4,19 @@ import { describe, expect, it } from 'vitest';
 
 describe('ExpensesSection — Phase 2B semantic contracts', () => {
   const src = readFileSync(
-    resolve(process.cwd(), 'src/features/reports/components/ExpensesSection.tsx'),
+    resolve(
+      process.cwd(),
+      'src/features/reports/components/ExpensesSection.tsx',
+    ),
     'utf8',
-  );
-  const adapter = readFileSync(
-    resolve(process.cwd(), 'src/features/reports/workspace/adapters/AnalyticsReportsAdapter.tsx'),
+  ).replaceAll('"', "'");
+  const dispatcher = readFileSync(
+    resolve(
+      process.cwd(),
+      'src/features/reports/components/report-view-panel.tsx',
+    ),
     'utf8',
-  );
+  ).replaceAll('"', "'");
 
   it('uses the selected report period for documents and share targets', () => {
     expect(src).toContain('from: string;');
@@ -21,15 +27,19 @@ describe('ExpensesSection — Phase 2B semantic contracts', () => {
     expect(src).not.toContain('getTodayLocalDateString');
   });
 
-  it('threads the active workspace filters and drill handler from the analytics adapter', () => {
-    expect(adapter).toContain('from={filters.from}');
-    expect(adapter).toContain('to={filters.to}');
-    expect(adapter).toContain('onDrill={onDrill}');
+  it('threads the active product filters and drill handler from the canonical dispatcher', () => {
+    expect(dispatcher).toContain('from={filters.from}');
+    expect(dispatcher).toContain('to={filters.to}');
+    expect(dispatcher).toContain('onDrill={onDrill}');
   });
 
   it('does not invent a zero average when the period has no expense rows', () => {
-    expect(src).toContain('const averageExpense = expensesCount > 0 ? totalExpenses / expensesCount : undefined');
-    expect(src).toContain("averageExpense !== undefined ? formatMoney(averageExpense) : '—'");
+    expect(src).toMatch(
+      /const averageExpense =\s*expensesCount > 0 \? totalExpenses \/ expensesCount : undefined/,
+    );
+    expect(src).toContain(
+      "averageExpense !== undefined ? formatMoney(averageExpense) : '—'",
+    );
   });
 
   it('uses canonical report primitives and Button for drill-through', () => {
@@ -58,6 +68,8 @@ describe('ExpensesSection — Phase 2B semantic contracts', () => {
     expect(src).toContain('topCategoryShare > 60');
     expect(src).toContain('topPropertyShare > 65');
     expect(src).toContain('قراءة المصروفات');
-    expect(src).toContain("onDrill('operations', 'operations_overview', { propertyId: row.propertyId })");
+    expect(src).toMatch(
+      /onDrill\(\s*'analytics',\s*'operations_overview',\s*\{\s*propertyId: row.propertyId/,
+    );
   });
 });

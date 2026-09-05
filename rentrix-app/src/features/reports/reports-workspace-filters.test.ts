@@ -10,19 +10,19 @@ describe('reports contextual deep-link filters', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-08-24T08:00:00.000Z'));
 
-    expect(getInitialReportsFilters({
-      from: '2026-07-01',
-      to: '2026-07-31',
-      asOf: '2026-07-31',
-      propertyId: 'property-1',
-      unitId: 'unit-2',
-      tenantId: 'tenant-3',
-      ownerId: 'owner-4',
-      contractId: 'contract-5',
-      costCenterId: 'cost-center-6',
-      section: 'analytics',
-      view: 'overdue',
-    })).toMatchObject({
+    expect(
+      getInitialReportsFilters({
+        from: '2026-07-01',
+        to: '2026-07-31',
+        asOf: '2026-07-31',
+        propertyId: 'property-1',
+        unitId: 'unit-2',
+        tenantId: 'tenant-3',
+        ownerId: 'owner-4',
+        contractId: 'contract-5',
+        costCenterId: 'cost-center-6',
+      }),
+    ).toMatchObject({
       from: '2026-07-01',
       to: '2026-07-31',
       asOf: '2026-07-31',
