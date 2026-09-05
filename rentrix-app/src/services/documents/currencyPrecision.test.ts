@@ -50,7 +50,7 @@ describe('engine money rendering follows the real currency', () => {
   const renderedAmount = (settings: DocumentCompanySettings, amount: number): string => {
     const model = documentEngine.buildDocument('expense_voucher', {
       settings,
-      payload: { amount, description: 'مصروف تشغيلي', date: '2026-07-01', kind: 'expense' },
+      payload: { amount, description: 'مصروف تشغيلي', date: '2026-07-01' },
     });
     const amountRow = model.tables[0].rows.find((row) => row[0] === 'المبلغ المصروف');
     return amountRow?.[1] ?? '';

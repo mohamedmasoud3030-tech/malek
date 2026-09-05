@@ -18,6 +18,7 @@ import {
   uniqueStrings,
 } from './financial-report-rows';
 import { fetchCompleteReportRows } from './report-paginated-read';
+import { agingBucketLabels, agingBucketOrder, getAgingBucketKeyFromDaysOverdue, type AgingBucketKey } from './aging-buckets';
 
 export type ArrearsReportFilters = {
   asOf: string;
@@ -26,8 +27,6 @@ export type ArrearsReportFilters = {
   tenantId?: string;
   contractId?: string;
 };
-
-export type AgingBucketKey = 'current' | 'days_1_30' | 'days_31_60' | 'days_61_90' | 'days_90_plus';
 
 export type AgedReceivablesBucket = {
   key: AgingBucketKey;
@@ -102,15 +101,6 @@ export type DashboardArrearsReports = {
   agedReceivables: AgedReceivablesReport;
 };
 
-const agingBucketLabels: Record<AgingBucketKey, string> = {
-  current: 'غير متأخر',
-  days_1_30: '1–30 يوم',
-  days_31_60: '31–60 يوم',
-  days_61_90: '61–90 يوم',
-  days_90_plus: 'أكثر من 90 يوم',
-};
-
-const agingBucketOrder: AgingBucketKey[] = ['current', 'days_1_30', 'days_31_60', 'days_61_90', 'days_90_plus'];
 /**
  * Receivable statuses in EVERY casing found in live data. The previous
  * lowercase-only list silently hid every modern UPPERCASE-status invoice
@@ -147,11 +137,10 @@ export function calculateDaysOverdue(dueDate: string | null | undefined, asOf: s
 
 export function getAgingBucketKey(dueDate: string | null | undefined, asOf: string): AgingBucketKey {
   if (!dueDate || dueDate > asOf) return 'current';
-  const daysOverdue = calculateDaysOverdue(dueDate, asOf);
-  if (daysOverdue <= 30) return 'days_1_30';
-  if (daysOverdue <= 60) return 'days_31_60';
-  if (daysOverdue <= 90) return 'days_61_90';
-  return 'days_90_plus';
+  // Date-based aging: an invoice due on `asOf` is already in arrears here
+  // (the same `due_date <= asOf` rule the overdue filters in this module use),
+  // so day 0 is classified as day 1 before the shared cohort thresholds apply.
+  return getAgingBucketKeyFromDaysOverdue(Math.max(1, calculateDaysOverdue(dueDate, asOf)));
 }
 
 function isReceivableInvoiceStatus(status: Invoice['status']) {

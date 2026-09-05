@@ -12,8 +12,7 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/use-auth';
 import { canAccess } from '@/features/auth/permissions';
 import { formatCompactDate, getTodayLocalDateString } from '@/features/financials/financials-date-utils';
-import { formatCompanyMoney } from '@/lib/companyFormatters';
-import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
+import { useCompanyFormatters } from '@/hooks/useCompanyFormatters';
 import {
   executeFixedMonthlyAccruals,
   listFixedMonthlyAccruals,
@@ -49,9 +48,7 @@ export type FixedMonthlyAccrualWorkspaceProps = Readonly<{
 
 export function FixedMonthlyAccrualWorkspace({ embedded = false }: FixedMonthlyAccrualWorkspaceProps = {}) {
   const { authorization } = useAuth();
-  const companySettings = useCompanySettingsContract();
-  /** Canonical company-aware money rendering — never a hand-rolled currency string. */
-  const formatOmr = useCallback((value: number) => formatCompanyMoney(companySettings, value), [companySettings]);
+  const { money: formatOmr } = useCompanyFormatters();
   const initialRange = useMemo(currentMonthRange, []);
   const [dateFrom, setDateFrom] = useState(initialRange.from);
   const [dateTo, setDateTo] = useState(initialRange.to);

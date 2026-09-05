@@ -24,7 +24,7 @@ import { EntityForm } from "@/components/ui/entity-form";
 import { Select } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EntityTable, type ColumnDef } from "@/components/ui/entity-table";
-import { formatMoney, formatNumber } from "@/hooks/useCompanyFormatters";
+import { useCompanyFormatters } from "@/hooks/useCompanyFormatters";
 import { useAuth } from "@/hooks/use-auth";
 import { UnitFormModal } from "./unit-form-modal";
 import { UnitPreviewDialog } from "./components/UnitPreviewDialog";
@@ -51,6 +51,7 @@ export type UnitsWorkspaceProps = Readonly<{
 export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
   const ctrl = useUnitsListController();
   const { canAccess } = useAuth();
+  const { money: formatMoney, number: formatNumber } = useCompanyFormatters();
   const canCreateUnit = canAccess("properties.create");
   const canEditUnit = canAccess("properties.edit");
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultUnitRegisterColumns]);
@@ -166,7 +167,7 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
         </div>
       ),
     },
-  ], [canEditUnit, ctrl]);
+  ], [canEditUnit, ctrl, formatMoney]);
 
   return (
     <>

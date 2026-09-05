@@ -238,8 +238,8 @@ export function DesignSystemShowcase() {
           <StatusBadgePill key={s} status={s} />
         ))}
         <div className="w-full" />
-        <StatusBadge tone="emerald">StatusBadge emerald</StatusBadge>
-        <StatusBadge tone="rose">StatusBadge rose</StatusBadge>
+        <StatusBadge tone="success">StatusBadge success</StatusBadge>
+        <StatusBadge tone="danger">StatusBadge danger</StatusBadge>
       </Section>
 
       <Section title="Dialogs / Feedback" description="Alert · LoadingState · Skeleton (dialogs reuse existing Radix Dialog)">

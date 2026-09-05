@@ -1,6 +1,6 @@
 import { DetailFields } from '@/components/ui/detail-fields';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { formatMoney, formatNumber, formatDate } from '@/hooks/useCompanyFormatters';
+import { useCompanyFormatters } from '@/hooks/useCompanyFormatters';
 import type { Property } from '@/types/domain';
 import { propertyStatusTone, translatePropertyType } from '../components/property-status';
 import { propertyStatusLabels } from '../property-schema';
@@ -8,6 +8,7 @@ import { summarizePropertyUnits } from '../property-unit-summary';
 import type { Unit } from '@/types/domain';
 
 export function PropertyIdentityCard({ property }: Readonly<{ property: Property }>) {
+  const { money: formatMoney, date: formatDate } = useCompanyFormatters();
   return (
     <section aria-labelledby="property-identity-heading">
       <header className="border-b border-border/60 pb-2.5">
@@ -39,6 +40,7 @@ export function PropertyIdentityCard({ property }: Readonly<{ property: Property
 }
 
 export function PropertyUnitsSummaryCard({ units }: Readonly<{ units: Unit[] }>) {
+  const { money: formatMoney, number: formatNumber } = useCompanyFormatters();
   const unitSummary = summarizePropertyUnits(units);
 
   return (

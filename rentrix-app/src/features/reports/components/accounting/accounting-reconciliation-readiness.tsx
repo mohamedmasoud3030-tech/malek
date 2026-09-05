@@ -5,7 +5,7 @@ import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { formatMoney } from '@/features/financials/components/financials-formatters';
-import type { ReconciliationRow } from '@/features/accounting/wp05Services';
+import type { ReconciliationRow } from '@/features/accounting/reports/accountingReportsFacade';
 import type { ReconciliationReadiness } from '../../accounting-report-authority';
 
 const columns: ColumnDef<ReconciliationRow>[] = [
@@ -47,7 +47,7 @@ const columns: ColumnDef<ReconciliationRow>[] = [
     header: 'الحالة',
     priority: 'actions',
     render: (row) => (
-      <StatusBadge tone={row.reconciliation_status === 'PASS' && row.abs_variance <= 0.001 ? 'green' : 'danger'}>
+      <StatusBadge tone={row.reconciliation_status === 'PASS' && row.abs_variance <= 0.001 ? 'success' : 'danger'}>
         {row.reconciliation_status === 'PASS' && row.abs_variance <= 0.001 ? 'مطابق' : 'فرق يحتاج معالجة'}
       </StatusBadge>
     ),
@@ -156,7 +156,7 @@ export function AccountingReconciliationReadiness({
               ) : null}
             </CardDescription>
           </div>
-          <StatusBadge tone={isPass ? 'green' : 'danger'}>
+          <StatusBadge tone={isPass ? 'success' : 'danger'}>
             {isPass ? `جاهز — ${readiness.total} فحوص` : `${readiness.failed} من ${readiness.total} تحتاج مراجعة`}
           </StatusBadge>
         </div>

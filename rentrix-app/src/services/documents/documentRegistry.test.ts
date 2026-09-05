@@ -34,8 +34,7 @@ const minimalPayloads: CanonicalDocumentPayloadMap = {
   contract: { status: 'draft', rentAmount: 500 },
   invoice: { amount: 100, description: 'إيجار' },
   receipt: { amount: 50 },
-  expense_voucher: { amount: 25, kind: 'expense' },
-  payment: { amount: 25, kind: 'payment' },
+  expense_voucher: { amount: 25 },
   owner_statement: {
     ownerName: 'مالك',
     totalRent: 0,
@@ -135,7 +134,6 @@ describe('document template registry completeness', () => {
       'invoice',
       'receipt',
       'expense_voucher',
-      'payment',
       'owner_statement',
       'tenant_statement',
       'trial_balance',

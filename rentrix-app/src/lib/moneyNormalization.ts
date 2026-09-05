@@ -54,7 +54,3 @@ export function normalizeMoneyInput(value: unknown, options: MoneyNormalizationO
 
   return normalizeMoneyNumber(value, options);
 }
-
-export function normalizeNonNegativeMoney(value: unknown, options: Omit<MoneyNormalizationOptions, 'min'> = {}): number {
-  return normalizeMoneyInput(value, { ...options, min: 0 });
-}

@@ -44,8 +44,6 @@ export interface RejectedBankRow {
   field?: CanonicalBankField;
 }
 
-export type BankRowStatus = 'new' | 'exact_duplicate' | 'possible_duplicate';
-
 export interface BankCsvParseResult {
   fileName: string;
   fileSize: number;
@@ -469,8 +467,4 @@ export async function computeFileFingerprint(content: string): Promise<string> {
     // fallback below
   }
   return `fallback-${stableHash(`bank-csv-file-v1\n${canonical}`)}-${canonical.length}`;
-}
-
-export function formatBankAmount(amount: number): string {
-  return amount.toFixed(3);
 }

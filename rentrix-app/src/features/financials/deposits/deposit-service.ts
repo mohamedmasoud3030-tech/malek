@@ -130,17 +130,15 @@ export const depositClaimStatusLabels: Record<DepositClaimStatus, string> = {
   REVERSED: 'تم الإلغاء (تعويضي)',
 };
 
+/** Refund events are ledger postings: posted, or reversed by a compensating entry. */
+export const depositRefundEventStatusLabels: Record<DepositRefundEventRecord['status'], string> = {
+  POSTED: 'مرحّل',
+  REVERSED: 'معكوس (قيد تعويضي)',
+};
+
 export const depositClaimKindLabels: Record<DepositClaimKind, string> = {
   INVOICE_ARREARS: 'تسوية متأخرات فاتورة',
   DAMAGE: 'تعويض عن أضرار',
-};
-
-/** Legacy reason vocabulary retained for display compatibility. */
-export const deductionReasonLabels: Record<string, string> = {
-  maintenance_damage: 'أضرار',
-  unpaid_arrears: 'متأخرات إيجار',
-  cleaning_fee: 'رسوم تنظيف',
-  other: 'أخرى',
 };
 
 function getLocalDateString(date = new Date()): string {

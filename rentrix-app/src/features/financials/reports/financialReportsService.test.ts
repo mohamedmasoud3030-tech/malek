@@ -526,7 +526,11 @@ describe('financialReportsService aggregation helpers', () => {
     };
 
     expect(getAgingBucketKey('2026-05-20', filters.asOf)).toBe('current');
+    // Due on the as-of date counts as arrears (same rule as the overdue filters).
+    expect(getAgingBucketKey('2026-05-14', filters.asOf)).toBe('days_1_30');
     expect(getAgingBucketKey('2026-04-15', filters.asOf)).toBe('days_1_30');
+    expect(getAgingBucketKey('2026-04-14', filters.asOf)).toBe('days_1_30');
+    expect(getAgingBucketKey('2026-04-13', filters.asOf)).toBe('days_31_60');
     expect(getAgingBucketKey('2026-03-15', filters.asOf)).toBe('days_31_60');
     expect(getAgingBucketKey('2026-02-13', filters.asOf)).toBe('days_61_90');
     expect(getAgingBucketKey('2026-02-12', filters.asOf)).toBe('days_90_plus');
@@ -955,15 +959,19 @@ describe('financialReportsService Supabase queries', () => {
         deleted_at: null,
         contracts: { id: 'contract_1', property_id: 'property_1', tenant_id: 'tenant_1' },
       }],
+      payments: [],
+      expenses: [],
     });
-    const { getInvoiceTotalsReport } = await import('./financialReportsService');
+    const { getCollectionSummaryReport } = await import('./financialReportsService');
 
-    await expect(getInvoiceTotalsReport({
+    await expect(getCollectionSummaryReport({
       dateFrom: '2026-05-01',
       dateTo: '2026-05-31',
       contractId: 'contract_1',
       status: 'partial',
-    })).resolves.toEqual({ totalAmount: 200, totalPaid: 50, totalOutstanding: 150, invoicesCount: 1 });
+    })).resolves.toEqual({
+      invoiced: 200, paid: 0, outstanding: 150, receiptsCount: 0, invoicesCount: 1, expensesTotal: 0,
+    });
 
     expect(log).toEqual(expect.arrayContaining([
       { table: 'invoices', method: 'is', args: ['deleted_at', null] },
@@ -979,15 +987,16 @@ describe('financialReportsService Supabase queries', () => {
       payments: [{ id: 'payment_1', invoice_id: 'invoice_1', amount: 75, payment_date: '2026-05-14', deleted_at: null }],
       invoices: [{ id: 'invoice_1', contract_id: 'contract_1', deleted_at: null }],
       contracts: [{ id: 'contract_1', property_id: 'property_1', tenant_id: 'tenant_1' }],
+      expenses: [],
     });
-    const { getPaymentTotalsReport } = await import('./financialReportsService');
+    const { getCollectionSummaryReport } = await import('./financialReportsService');
 
-    await expect(getPaymentTotalsReport({
+    await expect(getCollectionSummaryReport({
       dateFrom: '2026-05-01',
       dateTo: '2026-05-31',
       propertyId: 'property_1',
       tenantId: 'tenant_1',
-    })).resolves.toEqual({ totalPaid: 75, paymentsCount: 1 });
+    })).resolves.toMatchObject({ paid: 75, receiptsCount: 1 });
 
     expect(log).toEqual(expect.arrayContaining([
       { table: 'payments', method: 'is', args: ['deleted_at', null] },

@@ -27,10 +27,18 @@ vi.mock('@/features/owners/services/owner-service', () => ({
 vi.mock('@/features/maintenance/maintenance-service', () => ({
   listMaintenance: vi.fn(),
 }));
-vi.mock('@/features/utilities/utilities-service', () => ({
-  listUtilityBills: vi.fn(),
-  responsiblePartyLabels: { tenant: 'المستأجر', landlord: 'المالك', company: 'شركة الإدارة' },
-}));
+vi.mock('@/features/utilities/utilities-service', async () => {
+  // Only the RPC-backed loader is stubbed; the canonical label vocabularies
+  // pass through so this suite proves the report prints the real labels.
+  const actual = await vi.importActual<typeof import('@/features/utilities/utilities-service')>(
+    '@/features/utilities/utilities-service',
+  );
+  return {
+    listUtilityBills: vi.fn(),
+    responsiblePartyLabels: actual.responsiblePartyLabels,
+    utilityBillStatusLabels: actual.utilityBillStatusLabels,
+  };
+});
 
 const validSettings = {
   companyName: 'شركة مسار العقارية',

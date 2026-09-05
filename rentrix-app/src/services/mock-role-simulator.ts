@@ -1,8 +1,8 @@
 import { useSyncExternalStore } from 'react';
-import type { UserRole } from '@/domain/types';
+import { authorizationRoles, type AuthorizationRole as UserRole } from '@/features/auth/permissions';
 
 const KEY = 'rentrix_simulated_role';
-const VALID_ROLES: ReadonlySet<string> = new Set(['ADMIN', 'MANAGER', 'ACCOUNTANT', 'OPERATIONS', 'USER', 'VIEWER']);
+const VALID_ROLES: ReadonlySet<string> = new Set(authorizationRoles);
 let memoryRole: UserRole = 'ADMIN';
 
 export function getSimulatedRole(): UserRole {

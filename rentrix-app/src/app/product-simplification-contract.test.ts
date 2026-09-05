@@ -76,8 +76,8 @@ describe('production product simplification contract', () => {
 
     expect(FINANCE_SECTIONS.filter((section) => section.showInPrimaryNavigation).map((section) => section.id))
       .toEqual(['collections', 'fees', 'expenses', 'funds', 'banking']);
-    expect(FINANCE_SECTIONS.filter((section) => !section.showInPrimaryNavigation).map((section) => section.id))
-      .toEqual(['overview']);
+    // The retired cockpit section no longer exists; only its deep-link redirect survives.
+    expect(FINANCE_SECTIONS.filter((section) => !section.showInPrimaryNavigation)).toEqual([]);
   });
 
   it('keeps Services routine navigation focused on maintenance and utilities', () => {

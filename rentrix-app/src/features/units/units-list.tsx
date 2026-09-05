@@ -13,7 +13,7 @@ import { useAuth } from "@/hooks/use-auth";
 import type { Unit } from "@/types/domain";
 import { unitStatusLabels, unitStatusToneFor } from "./unit-schema";
 import { AmountText } from "@/components/ui/amount";
-import { formatMoney } from "@/hooks/useCompanyFormatters";
+import { useCompanyFormatters } from "@/hooks/useCompanyFormatters";
 import { UnitFormModal } from "./unit-form-modal";
 import { useSoftDeleteUnit } from "./use-units";
 import { useUnitContractDrafts } from "@/features/contracts/queries/useUnitContractDrafts";
@@ -33,6 +33,7 @@ export function UnitsList({
   unitsQuery,
 }: Readonly<{ propertyId: string; unitsQuery: UseQueryResult<Unit[]> }>) {
   const { canAccess } = useAuth();
+  const { money: formatMoney } = useCompanyFormatters();
   const canCreateUnit = canAccess("properties.create");
   const canEditUnit = canAccess("properties.edit");
   const canArchiveUnit = canAccess("properties.archive");
@@ -158,7 +159,7 @@ export function UnitsList({
         </div>
       ),
     },
-  ], [canArchiveUnit, canCreateContract, canEditUnit, canViewContracts, deleteMutation.isPending, navigate, openForEdit, startLeasing, unitDraftsByUnitId]);
+  ], [canArchiveUnit, canCreateContract, canEditUnit, canViewContracts, deleteMutation.isPending, formatMoney, navigate, openForEdit, startLeasing, unitDraftsByUnitId]);
 
   return (
     <section aria-labelledby="property-units-register-heading">

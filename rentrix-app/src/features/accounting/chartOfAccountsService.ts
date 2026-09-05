@@ -8,7 +8,7 @@
  */
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
-import type { ChartAccount, ChartOfAccountsList, ProvisionResult } from './accountingDomain';
+import type { ChartAccount, ProvisionResult } from './accountingDomain';
 
 type JsonRecord = Record<string, unknown>;
 
@@ -83,18 +83,6 @@ export async function ensureRequiredAccounts(): Promise<ProvisionResult | null> 
     };
   } catch (error) {
     handleSupabaseError(error, 'تعذر تجهيز دليل الحسابات');
-    return null;
-  }
-}
-
-/** Convenience typed read of the raw RPC envelope (used by tests/tools). */
-export async function listChartOfAccountsEnvelope(): Promise<ChartOfAccountsList | null> {
-  try {
-    const { data, error } = await supabase.rpc('list_chart_of_accounts');
-    if (error) throw error;
-    return (data ?? {}) as ChartOfAccountsList;
-  } catch (error) {
-    handleSupabaseError(error, 'تعذر تحميل دليل الحسابات');
     return null;
   }
 }

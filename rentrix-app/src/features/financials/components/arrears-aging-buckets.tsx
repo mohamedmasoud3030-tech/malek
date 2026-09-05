@@ -1,5 +1,5 @@
-import type { AgedReceivablesReport } from '../reports/financialReportsService';
-import { ARABIC_LOCALE, EMPTY_FIELD_VALUE, arrearsBucketKeys, getArrearsBucketLabel, safePercentage } from './arrears-workflow-helpers';
+import { agingBucketOrder, getAgingBucketLabel, type AgedReceivablesReport } from '../reports/financialReportsService';
+import { ARABIC_LOCALE, EMPTY_FIELD_VALUE, safePercentage } from './arrears-workflow-helpers';
 import { formatMoney } from './financials-formatters';
 import { formatLatinNumber } from '@/lib/formatters';
 
@@ -25,7 +25,7 @@ export function ArrearsAgingBuckets({ agedReceivablesReport }: ArrearsAgingBucke
         <span className="rounded-full bg-background px-3 py-1 text-xs font-bold text-muted-foreground">الإجمالي {formatMoney(totalOutstanding)}</span>
       </div>
       <div className="grid grid-cols-2 gap-3 [&>*:last-child:nth-child(odd)]:col-span-2">
-        {arrearsBucketKeys.map((bucketKey) => {
+        {agingBucketOrder.map((bucketKey) => {
           const bucket = agedReceivablesReport?.buckets[bucketKey];
           const amount = bucket?.total ?? 0;
           const count = bucket?.invoiceCount ?? 0;
@@ -33,7 +33,7 @@ export function ArrearsAgingBuckets({ agedReceivablesReport }: ArrearsAgingBucke
           return (
             <div key={bucketKey} className="min-w-0 rounded-2xl border bg-background p-3">
               <div className="flex items-center justify-between gap-2">
-                <p className="text-sm font-black">{getArrearsBucketLabel(bucketKey)}</p>
+                <p className="text-sm font-black">{getAgingBucketLabel(bucketKey)}</p>
                 <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-bold text-secondary-foreground">{formatPercentage(percentage)}</span>
               </div>
               <p className="mt-3 text-lg font-black">{formatMoney(amount)}</p>

@@ -161,9 +161,13 @@ describe('UX completion contract', () => {
     expect(governance).toContain("id: 'automation'");
     expect(governance).toMatch(/id: 'automation'[\s\S]*?showInPrimaryNavigation: false/);
 
-    expect(finance).toMatch(/id: 'fees'[\s\S]*?showInPrimaryNavigation: false/);
-    expect(finance).toMatch(/id: 'funds'[\s\S]*?showInPrimaryNavigation: false/);
-    expect(finance).toMatch(/id: 'banking'[\s\S]*?showInPrimaryNavigation: false/);
+    // Money keeps its five routine sections; the retired overview cockpit is gone
+    // and only its deep-link redirect (?section=overview → collections) survives.
+    expect(finance).not.toMatch(/id: 'overview'/);
+    expect(finance).toContain("sec === 'overview'");
+    expect(finance).toMatch(/id: 'fees'[\s\S]*?showInPrimaryNavigation: true/);
+    expect(finance).toMatch(/id: 'funds'[\s\S]*?showInPrimaryNavigation: true/);
+    expect(finance).toMatch(/id: 'banking'[\s\S]*?showInPrimaryNavigation: true/);
     expect(portfolio).toMatch(/id: 'lands'[\s\S]*?showInPrimaryNavigation: false/);
     expect(leasing).toMatch(/id: 'people'[\s\S]*?showInPrimaryNavigation: false/);
     expect(leasing).toMatch(/id: 'leads'[\s\S]*?showInPrimaryNavigation: false/);

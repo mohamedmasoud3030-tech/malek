@@ -32,6 +32,7 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { formatMoney } from '@/features/financials/components/financials-formatters';
+import { formatPaymentMethodLabel } from '@/features/financials/components/receipt-formatters';
 import { getTodayLocalDateString } from '@/features/reports/reports-page.helpers';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
 import { documentService } from '@/services/documents/DocumentService';
@@ -441,16 +442,16 @@ export function OwnerSettlementWorkspace({ ownerId }: Readonly<{ ownerId?: strin
               <p className="rounded-xl bg-muted/35 p-3 text-xs font-medium leading-5 text-muted-foreground">
                 سيُصرف مبلغ <strong className="tabular-nums" dir="ltr">{formatMoney(selectedSettlement.net_payable_amount)}</strong> إلى {selectedSettlement.owner_name} عن {selectedSettlement.property_title}
                 {' '}({selectedSettlement.period_start} إلى {selectedSettlement.period_end})
-                {' '}عبر {payoutMethod === 'bank_transfer' ? 'تحويل بنكي' : payoutMethod === 'check' ? 'شيك مصرفي' : 'نقدًا'}.
+                {' '}عبر {formatPaymentMethodLabel(payoutMethod)}.
               </p>
             </EntityForm.Section>
           ) : null}
           <EntityForm.Section title="بيانات الصرف" description="عند التأكيد تُنشئ قاعدة البيانات قيد مالك مستحق/نقدية متوازنًا.">
             <EntityForm.Field label="وسيلة الصرف *">
               <Select required value={payoutMethod} onChange={(event) => setPayoutMethod(event.target.value as ProcessPayoutPayload['payout_method'])}>
-                <option value="bank_transfer">تحويل بنكي</option>
-                <option value="check">شيك مصرفي</option>
-                <option value="cash">نقدًا</option>
+                {(['bank_transfer', 'check', 'cash'] as const).map((method) => (
+                  <option key={method} value={method}>{formatPaymentMethodLabel(method)}</option>
+                ))}
               </Select>
             </EntityForm.Field>
             <EntityForm.Field label="رقم المرجع / المعاملة *">

@@ -13,7 +13,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { getActionableSupabaseErrorMessage } from '@/lib/supabase-error';
-import { formatMoney, formatNumber, formatDate } from '@/hooks/useCompanyFormatters';
+import { useCompanyFormatters } from '@/hooks/useCompanyFormatters';
 import { listOwners, listPropertyOwners, type Owner } from './services/owner-service';
 import {
   assertAgreementOwnerHasOwnership,
@@ -73,6 +73,7 @@ function getOwnerName(owners: readonly Owner[], ownerId: string) {
 }
 
 function AgreementRow({ agreement, versions, owners, onAmend, tone }: { agreement: OwnerAgreement; versions: readonly OwnerAgreementVersion[]; owners: readonly Owner[]; onAmend: (agreement: OwnerAgreement, current: OwnerAgreementVersion | null) => void; tone: 'success' | 'info' | 'neutral' }) {
+  const { money: formatMoney, number: formatNumber, date: formatDate } = useCompanyFormatters();
   const current = versions.find((version) => version.superseded_at === null) ?? null;
   const displayedCommissionType = current?.commission_type ?? agreement.commission_type;
   const displayedCommissionValue = current?.commission_value ?? agreement.commission_value;
@@ -111,6 +112,7 @@ function AgreementRow({ agreement, versions, owners, onAmend, tone }: { agreemen
 }
 
 export function OwnerAgreementsManager({ propertyId }: { propertyId: string }) {
+  const { money: formatMoney, number: formatNumber, date: formatDate } = useCompanyFormatters();
   const agreementsQuery = useOwnerAgreements(propertyId);
   const ownershipQuery = useQuery({
     queryKey: ['property_owners', propertyId, 'agreement-options'],

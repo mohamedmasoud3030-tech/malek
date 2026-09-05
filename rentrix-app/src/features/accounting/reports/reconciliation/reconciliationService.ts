@@ -27,9 +27,6 @@ function todayIsoDate(): string {
   return `${year}-${month}-${day}`;
 }
 
-/** Row-level reconciliation data from the wp05_reconcile_all RPC. */
-export type ReconciliationResult = ReconciliationRow;
-
 /** Run reconciliation as-of a given date (defaults to today). */
 export async function getReconciliationReport(
   asOf?: string

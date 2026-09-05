@@ -10,7 +10,6 @@ describe('document service boundary', () => {
         { type: 'invoice', templateAvailable: true, externalProviderRequired: false },
         { type: 'receipt', templateAvailable: true, externalProviderRequired: false },
         { type: 'expense_voucher', templateAvailable: true, externalProviderRequired: false },
-        { type: 'payment', templateAvailable: true, externalProviderRequired: false },
         { type: 'owner_statement', templateAvailable: true, externalProviderRequired: false },
         { type: 'tenant_statement', templateAvailable: true, externalProviderRequired: false },
         { type: 'trial_balance', templateAvailable: true, externalProviderRequired: false },

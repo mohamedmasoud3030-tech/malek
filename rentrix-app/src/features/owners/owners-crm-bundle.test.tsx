@@ -96,7 +96,8 @@ describe('Approved CRM module views', () => {
   });
 
   it('renders commissions without settlement or ledger behavior', () => {
-    const html = renderToStaticMarkup(<CommissionsView rows={[]} filters={{ query: '', status: 'all', type: 'all' }} draft={{ staff_name: '', type: 'contract', status: 'pending', source_id: '', deal_value: '', percentage: '2.5', amount: '' }} editingCommission={null} formOpen={false} isLoading={false} isSaving={false} isArchiving={false} error={null} writeError={null} onFiltersChange={() => undefined} onDraftChange={() => undefined} onCreate={() => undefined} onEdit={() => undefined} onFormOpenChange={() => undefined} onSubmit={() => undefined} onArchive={() => undefined} onRetry={() => undefined} />);
+    const queryClient = new QueryClient();
+    const html = renderToStaticMarkup(<QueryClientProvider client={queryClient}><CommissionsView rows={[]} filters={{ query: '', status: 'all', type: 'all' }} draft={{ staff_name: '', type: 'contract', status: 'pending', source_id: '', deal_value: '', percentage: '2.5', amount: '' }} editingCommission={null} formOpen={false} isLoading={false} isSaving={false} isArchiving={false} error={null} writeError={null} onFiltersChange={() => undefined} onDraftChange={() => undefined} onCreate={() => undefined} onEdit={() => undefined} onFormOpenChange={() => undefined} onSubmit={() => undefined} onArchive={() => undefined} onRetry={() => undefined} /></QueryClientProvider>);
 
     expect(html).toContain('إضافة عمولة');
     expect(html).not.toContain('تسوية');

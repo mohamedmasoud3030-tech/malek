@@ -7,6 +7,7 @@ import { formatDepositContractReference } from './deposit-contract-options';
 import {
   depositClaimKindLabels,
   depositClaimStatusLabels,
+  depositRefundEventStatusLabels,
   depositStatusLabels,
   type DepositClaimRecord,
   type DepositRecord,
@@ -274,7 +275,7 @@ export function createRefundColumns(
       header: 'الحالة',
       render: (event) => (
         <StatusBadge tone={event.status === 'POSTED' ? 'success' : 'warning'}>
-          {event.status === 'POSTED' ? 'مرحّل' : 'ملغى'}
+          {depositRefundEventStatusLabels[event.status]}
         </StatusBadge>
       ),
     },

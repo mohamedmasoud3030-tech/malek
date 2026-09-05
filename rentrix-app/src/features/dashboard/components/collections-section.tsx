@@ -3,6 +3,7 @@ import { Link } from '@tanstack/react-router';
 import { HandCoins, Layers3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ReportPanel } from '@/components/ui/report-section-primitives';
+import { getAgingBucketLabel } from '@/features/financials/reports/aging-buckets';
 import { formatCompanyMoney } from '@/lib/companyFormatters';
 import type { CompanySettingsContract } from '@/lib/companySettings';
 import { cn } from '@/lib/utils';
@@ -15,11 +16,13 @@ interface CollectionsSectionProps {
   settings: CompanySettingsContract;
 }
 
+// Overdue cohorts only (the `current` bucket is not arrears). Labels come from
+// the canonical aging vocabulary; the dashboard owns just the severity styling.
 const AGING_BUCKETS = [
-  { key: 'days_1_30', label: '1–30 يوم', textClass: 'text-warning', barClass: 'bg-warning/70' },
-  { key: 'days_31_60', label: '31–60 يوم', textClass: 'text-warning', barClass: 'bg-warning' },
-  { key: 'days_61_90', label: '61–90 يوم', textClass: 'text-danger', barClass: 'bg-danger/80' },
-  { key: 'days_90_plus', label: '+90 يوم', textClass: 'text-danger', barClass: 'bg-danger' },
+  { key: 'days_1_30', textClass: 'text-warning', barClass: 'bg-warning/70' },
+  { key: 'days_31_60', textClass: 'text-warning', barClass: 'bg-warning' },
+  { key: 'days_61_90', textClass: 'text-danger', barClass: 'bg-danger/80' },
+  { key: 'days_90_plus', textClass: 'text-danger', barClass: 'bg-danger' },
 ] as const;
 
 const monthNameFormatter = new Intl.DateTimeFormat('ar', { month: 'long' });
@@ -101,7 +104,7 @@ export const CollectionsSection = memo(function CollectionsSection({ snapshot, i
                 return (
                   <div key={bucket.key} className={cn('min-w-0 rounded-lg border border-border/60 px-2.5 py-2', count === 0 && 'opacity-70')}>
                     <div className="flex items-center justify-between gap-2">
-                      <p className="text-[11px] font-bold text-muted-foreground">{bucket.label}</p>
+                      <p className="text-[11px] font-bold text-muted-foreground">{getAgingBucketLabel(bucket.key)}</p>
                       <span className={cn('h-1.5 w-8 rounded-full', count > 0 ? bucket.barClass : 'bg-muted')} aria-hidden="true" />
                     </div>
                     <p className={cn('mt-1 truncate text-sm font-black tabular-nums', total > 0 ? bucket.textClass : 'text-muted-foreground')} dir="ltr">

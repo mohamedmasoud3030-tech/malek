@@ -8,7 +8,7 @@ vi.mock('@/lib/supabase', () => ({
   supabase: supabaseMock,
 }));
 
-describe('WP05 GL-backed cash flow authority', () => {
+describe('GL-backed cash flow authority (accountingReportsService)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -17,21 +17,21 @@ describe('WP05 GL-backed cash flow authority', () => {
     supabaseMock.rpc.mockResolvedValue({
       data: {
         period: { from: '2026-08-01', to: '2026-08-31' },
-        opening_cash: '100.125',
-        operating: '25.250',
-        investing: '-10.000',
-        financing: '5.000',
-        unclassified: '0.000',
-        total_change: '20.250',
-        closing_cash: '120.375',
-        variance: '0.000',
+        opening_cash: 100.125,
+        operating: 25.25,
+        investing: -10,
+        financing: 5,
+        unclassified: 0,
+        total_change: 20.25,
+        closing_cash: 120.375,
+        variance: 0,
         is_balanced: true,
         currency: 'OMR',
       },
       error: null,
     });
 
-    const { getCashFlowReport } = await import('./wp05Services');
+    const { getCashFlowReport } = await import('./accountingReportsService');
     const report = await getCashFlowReport('2026-08-01', '2026-08-31');
 
     expect(supabaseMock.rpc).toHaveBeenCalledWith('rpt_cash_flow_gl', {
@@ -40,15 +40,15 @@ describe('WP05 GL-backed cash flow authority', () => {
     });
     expect(report).toEqual({
       period: { from: '2026-08-01', to: '2026-08-31' },
-      opening_cash: 100.125,
+      openingCash: 100.125,
       operating: 25.25,
       investing: -10,
       financing: 5,
       unclassified: 0,
-      total_change: 20.25,
-      closing_cash: 120.375,
+      totalChange: 20.25,
+      closingCash: 120.375,
       variance: 0,
-      is_balanced: true,
+      isBalanced: true,
       currency: 'OMR',
     });
   });
@@ -59,7 +59,7 @@ describe('WP05 GL-backed cash flow authority', () => {
       error: { message: 'cash-flow authority unavailable' },
     });
 
-    const { getCashFlowReport } = await import('./wp05Services');
+    const { getCashFlowReport } = await import('./accountingReportsService');
     await expect(getCashFlowReport('2026-08-01', '2026-08-31')).rejects.toEqual({
       message: 'cash-flow authority unavailable',
     });

@@ -26,8 +26,12 @@ import { getOwnerFinancialAuthority, type OwnerFinancialPosition } from '@/featu
 import { listOwnerSettlements, type OwnerSettlementRecord } from '@/features/owners/services/owner-settlements-service';
 import { listOwnerProperties } from '@/features/owners/services/owner-service';
 import { listMaintenance, type Maintenance } from '@/features/maintenance/maintenance-service';
-import { listUtilityBills, type UtilityBill } from '@/features/utilities/utilities-service';
-import { responsiblePartyLabels } from '@/features/utilities/utilities-service';
+import {
+  listUtilityBills,
+  responsiblePartyLabels,
+  utilityBillStatusLabels,
+  type UtilityBill,
+} from '@/features/utilities/utilities-service';
 import { documentService } from '@/services/documents/DocumentService';
 import { hasCompleteCompanyIdentity, type DocumentCompanySettings } from '@/services/documents/companyIdentity';
 import { runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
@@ -261,7 +265,7 @@ export function buildOwnerReportPayload(context: OwnerReportContext): OwnerRepor
           amount(bill.paid_amount),
           amount(bill.amount - bill.paid_amount),
           text(responsiblePartyLabels[bill.responsible_party] ?? bill.responsible_party),
-          text(UTILITY_STATUS_LABELS[bill.status] ?? bill.status),
+          text(utilityBillStatusLabels[bill.status] ?? bill.status),
         ]),
         totals: [
           text('إجمالي فواتير المرافق'),
@@ -414,12 +418,6 @@ export function buildOwnerReportPayload(context: OwnerReportContext): OwnerRepor
     groups,
   };
 }
-
-const UTILITY_STATUS_LABELS: Record<string, string> = {
-  unpaid: 'مستحقة السداد',
-  partially_paid: 'مدفوعة جزئياً',
-  paid: 'مسددة بالكامل',
-};
 
 /* ------------------------------------------------------------------ */
 /* Guarded print/PDF actions                                           */

@@ -5,7 +5,7 @@ import { PreviewFacts } from '@/components/ui/quick-preview';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { formatDate, formatMoney } from '../components/financials-formatters';
-import { formatReceiptContext, paymentMethodLabels, receiptStatusLabels } from '../components/receipt-formatters';
+import { formatPaymentMethodLabel, formatReceiptContext, formatReceiptStatusLabel, getReceiptStatusTone } from '../components/receipt-formatters';
 import type { ReceiptRecord } from './receiptService';
 
 /**
@@ -46,8 +46,8 @@ export function ReceiptPreviewDialog({
       title={receipt ? `إيصال ${receipt.receipt_number}` : 'معاينة الإيصال'}
       description={receipt?.receipt_number ? `مرجع: ${receipt.receipt_number}` : undefined}
       status={receipt ? (
-        <StatusBadge tone={receipt.status === 'posted' ? 'success' : 'danger'}>
-          {receiptStatusLabels[receipt.status]}
+        <StatusBadge tone={getReceiptStatusTone(receipt.status)}>
+          {formatReceiptStatusLabel(receipt.status)}
         </StatusBadge>
       ) : undefined}
       footer={receipt ? (
@@ -88,7 +88,7 @@ export function ReceiptPreviewDialog({
           <PreviewFacts
             rows={[
               { label: 'تاريخ الدفع', value: formatDate(receipt.payment_date) },
-              { label: 'طريقة الدفع', value: paymentMethodLabels[receipt.payment_method] ?? receipt.payment_method },
+              { label: 'طريقة الدفع', value: formatPaymentMethodLabel(receipt.payment_method) },
               { label: 'المرجع', value: receipt.reference_number ? <span dir="ltr">{receipt.reference_number}</span> : '—' },
               {
                 label: 'الفاتورة المرتبطة',
