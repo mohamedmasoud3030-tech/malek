@@ -43,14 +43,13 @@ const { PortfolioHubWorkspace } = await import('./portfolio-hub-workspace');
 function renderHub({
   initialUrl = '/properties',
   role = 'ADMIN' as AuthorizationRole | null,
-  mode = 'standalone' as 'standalone' | 'embedded',
 } = {}) {
   currentRole = role;
   const rootRoute = createRootRoute();
   const hubRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: '/properties',
-    component: () => <PortfolioHubWorkspace mode={mode} />,
+    component: () => <PortfolioHubWorkspace />,
     validateSearch: (search: Record<string, unknown>) => search,
   });
   const router = createRouter({
@@ -142,11 +141,11 @@ describe('Portfolio workspace', () => {
     expect(screen.getByTestId('properties-count').textContent).toBe('1');
   });
 
-  it('omits its own page shell in embedded mode', async () => {
-    const { container } = renderHub({ mode: 'embedded' });
+  it('renders as the root-level page owner with exactly one page shell', async () => {
+    const { container } = renderHub();
     await screen.findByTestId('properties-body');
-    expect(container.querySelectorAll('[data-page-layout]')).toHaveLength(0);
-    expect(container.querySelectorAll('[data-page-header]')).toHaveLength(0);
+    expect(container.querySelectorAll('[data-page-layout]')).toHaveLength(1);
+    expect(container.querySelectorAll('[data-page-header]')).toHaveLength(1);
   });
 
   it('never duplicates the shell across routine Portfolio sections', async () => {

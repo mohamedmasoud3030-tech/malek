@@ -21,7 +21,6 @@ export const leadFormSchema = z.object({
 });
 
 export const leadPayloadSchema = leadFormSchema;
-export type LeadPayload = z.output<typeof leadPayloadSchema>;
 
 const allowedTransitions: Record<z.output<typeof leadStatusSchema>, readonly z.output<typeof leadStatusSchema>[]> = {
   new: ['new', 'contacted', 'lost', 'archived'], contacted: ['contacted', 'qualified', 'lost', 'archived'],

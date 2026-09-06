@@ -12,7 +12,7 @@ export function ServiceProviderNewRouteComponent() {
     else void navigate({ to: '/service-providers' });
   };
   const backgroundContent = background?.pathname === '/maintenance'
-    ? <OperationsHubWorkspace defaultSection="service_providers" mode="standalone" />
+    ? <OperationsHubWorkspace defaultSection="service_providers" />
     : <ServiceProvidersWorkspace />;
 
   return (

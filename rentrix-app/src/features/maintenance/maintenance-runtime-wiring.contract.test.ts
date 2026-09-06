@@ -11,7 +11,7 @@ const controller = readFileSync(resolve(import.meta.dirname, 'useMaintenancePage
 describe('maintenance production runtime wiring', () => {
   it('keeps the authenticated route wired through the operations hub to the live workspace', () => {
     expect(route).toContain("import { OperationsHubWorkspace }");
-    expect(route).toContain('<OperationsHubWorkspace defaultSection="maintenance" mode="standalone" />');
+    expect(route).toContain('<OperationsHubWorkspace defaultSection="maintenance" />');
     expect(hub).toContain("await import('@/features/maintenance/components/maintenance-workspace')");
     expect(hub).toContain('<MaintenanceWorkspace mode="embedded" />');
     expect(hub).toContain('maintenance: MaintenanceBody');

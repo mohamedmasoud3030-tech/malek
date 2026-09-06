@@ -42,16 +42,15 @@ const { OperationsHubWorkspace } = await import('./operations-hub-workspace');
 type RenderOptions = Readonly<{
   initialUrl?: string;
   role?: AuthorizationRole | null;
-  mode?: 'standalone' | 'embedded';
 }>;
 
-function renderServices({ initialUrl = '/maintenance', role = 'ADMIN', mode = 'standalone' }: RenderOptions = {}) {
+function renderServices({ initialUrl = '/maintenance', role = 'ADMIN' }: RenderOptions = {}) {
   currentRole = role;
   const rootRoute = createRootRoute();
   const route = createRoute({
     getParentRoute: () => rootRoute,
     path: '/maintenance',
-    component: () => <OperationsHubWorkspace defaultSection="maintenance" mode={mode} />,
+    component: () => <OperationsHubWorkspace defaultSection="maintenance" />,
     validateSearch: (search: Record<string, unknown>) => search,
   });
   const router = createRouter({
@@ -147,12 +146,7 @@ describe('Services workspace', () => {
     expect(screen.queryByTestId('maintenance-body')).toBeNull();
   });
 
-  it('omits its shell when embedded and never duplicates it after navigation', async () => {
-    const embedded = renderServices({ mode: 'embedded' });
-    await screen.findByTestId('maintenance-body');
-    expect(embedded.container.querySelectorAll('[data-page-layout]')).toHaveLength(0);
-    embedded.unmount();
-
+  it('owns exactly one page shell and never duplicates it after navigation', async () => {
     const user = userEvent.setup();
     const standalone = renderServices();
     await screen.findByTestId('maintenance-body');

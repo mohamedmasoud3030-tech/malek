@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react';
 import { Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -114,48 +113,6 @@ export function MobileFormStepperFooter({
           <ChevronLeft className="ms-1 size-4 rtl:rotate-180" aria-hidden="true" />
         </Button>
       )}
-    </div>
-  );
-}
-
-/** Convenience composition: header + content + footer (content is the caller's current step). */
-export function MobileFormStepper({
-  steps,
-  current,
-  onBack,
-  onNext,
-  onCancel,
-  isLast,
-  isSubmitting,
-  submitDisabled = false,
-  submitLabel = 'تأكيد',
-  children,
-}: Readonly<{
-  steps: readonly MobileFormStep[];
-  current: number;
-  onBack: () => void;
-  onNext: () => void;
-  onCancel: () => void;
-  isLast: boolean;
-  isSubmitting?: boolean;
-  submitDisabled?: boolean;
-  submitLabel?: string;
-  children: ReactNode;
-}>) {
-  return (
-    <div className="md:hidden" data-mobile-form-stepper>
-      <MobileFormStepperHeader steps={steps} current={current} />
-      <div className="mt-4">{children}</div>
-      <MobileFormStepperFooter
-        current={current}
-        steps={steps}
-        onBack={onBack}
-        onNext={onNext}
-        onCancel={onCancel}
-        isSubmitting={isSubmitting}
-        submitDisabled={submitDisabled}
-        submitLabel={submitLabel}
-      />
     </div>
   );
 }

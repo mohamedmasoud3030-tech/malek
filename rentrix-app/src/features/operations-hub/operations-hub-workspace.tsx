@@ -46,18 +46,18 @@ function SectionFallback() {
   );
 }
 
+/**
+ * The Services hub is a root-level workspace surface, like the other hubs.
+ * Hub-inside-hub embedding (`mode`/`title`/`description` overrides) was left
+ * over from the previous hub phase with no production consumer; the hub always
+ * owns its page shell and derives its page identity from the active section.
+ */
 export type OperationsHubWorkspaceProps = Readonly<{
   defaultSection: OperationsHubSectionId;
-  title?: string;
-  description?: string;
-  mode?: 'standalone' | 'embedded';
 }>;
 
 export function OperationsHubWorkspace({
   defaultSection,
-  title,
-  description,
-  mode = 'standalone',
 }: OperationsHubWorkspaceProps) {
   const { authorization } = useAuth();
   const navigate = useNavigate();
@@ -140,9 +140,8 @@ export function OperationsHubWorkspace({
 
   return (
     <EmbeddableWorkspace
-      embedded={mode === 'embedded'}
-      title={title ?? activeSectionDefinition.label}
-      description={description ?? activeSectionDefinition.description}
+      title={activeSectionDefinition.label}
+      description={activeSectionDefinition.description}
       size="wide"
     >
       {content}

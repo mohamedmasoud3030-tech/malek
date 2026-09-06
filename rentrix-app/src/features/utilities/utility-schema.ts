@@ -65,7 +65,6 @@ export const utilityMeterFormSchema = z.object({
   notes: z.string().trim().max(2000).optional().or(z.literal('')),
 });
 
-export type UtilityMeterFormInput = z.input<typeof utilityMeterFormSchema>;
 export type UtilityMeterFormValues = z.output<typeof utilityMeterFormSchema>;
 
 /**
@@ -83,8 +82,6 @@ export const utilityMeterPayloadSchema = z.object({
   is_active: z.boolean(),
   notes: z.string().max(2000).nullable().optional(),
 });
-
-export type UtilityMeterPayload = z.output<typeof utilityMeterPayloadSchema>;
 
 // ── Bill schemas ────────────────────────────────────────────────────────────
 
@@ -149,7 +146,6 @@ export const utilityBillFormSchema = z
   })
   .superRefine(validateUtilityBillRelationships);
 
-export type UtilityBillFormInput = z.input<typeof utilityBillFormSchema>;
 export type UtilityBillFormValues = z.output<typeof utilityBillFormSchema>;
 
 /** Service-layer bill payload. */
@@ -173,5 +169,3 @@ export const utilityBillPayloadSchema = z
     notes: z.string().max(2000).nullable(),
   })
   .superRefine(validateUtilityBillRelationships);
-
-export type UtilityBillPayload = z.output<typeof utilityBillPayloadSchema>;

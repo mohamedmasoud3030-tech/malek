@@ -8,7 +8,6 @@ import {
   resumeAssistantSpeech,
   stopAssistantSpeech,
   subscribeAssistantSpeechState,
-  type AssistantSpeechState,
 } from './assistant-speech';
 
 /**
@@ -68,5 +67,3 @@ export function useAssistantSpeech() {
     speakCompletedMessage,
   };
 }
-
-export type AssistantSpeechUiState = AssistantSpeechState;

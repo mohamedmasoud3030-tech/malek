@@ -18,7 +18,7 @@ export function ServiceProviderEditRouteComponent() {
   };
 
   let backgroundContent = <ServiceProvidersWorkspace />;
-  if (background?.pathname === '/maintenance') backgroundContent = <OperationsHubWorkspace defaultSection="service_providers" mode="standalone" />;
+  if (background?.pathname === '/maintenance') backgroundContent = <OperationsHubWorkspace defaultSection="service_providers" />;
   else if (background?.pathname.startsWith('/service-providers/') && providerId) backgroundContent = <ServiceProviderDetailPage />;
 
   return (

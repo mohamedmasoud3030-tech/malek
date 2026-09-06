@@ -8,5 +8,5 @@ import { OperationsHubWorkspace } from '@/features/operations-hub/operations-hub
  * ?section= while keeping their original guards.
  */
 export function MaintenanceRouteComponent() {
-  return <OperationsHubWorkspace defaultSection="maintenance" mode="standalone" />;
+  return <OperationsHubWorkspace defaultSection="maintenance" />;
 }

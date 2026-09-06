@@ -43,18 +43,18 @@ function SectionFallback() {
   );
 }
 
+/**
+ * The Portfolio hub is a root-level workspace surface. Hub-inside-hub embedding
+ * (the previous hub phase's `mode`/`title`/`description` overrides) had no
+ * production consumer; the seven-root IA never nests a hub, so the hub always
+ * owns its page shell and derives its page identity from the active section.
+ */
 export type PortfolioHubWorkspaceProps = Readonly<{
   defaultSection?: PortfolioHubSectionId;
-  title?: string;
-  description?: string;
-  mode?: 'standalone' | 'embedded';
 }>;
 
 export function PortfolioHubWorkspace({
   defaultSection = 'properties',
-  title,
-  description,
-  mode = 'standalone',
 }: PortfolioHubWorkspaceProps) {
   const { authorization } = useAuth();
   const navigate = useNavigate();
@@ -126,9 +126,8 @@ export function PortfolioHubWorkspace({
 
   return (
     <EmbeddableWorkspace
-      embedded={mode === 'embedded'}
-      title={title ?? activeSectionDefinition.label}
-      description={description ?? activeSectionDefinition.description}
+      title={activeSectionDefinition.label}
+      description={activeSectionDefinition.description}
       size="wide"
     >
       {content}
@@ -137,5 +136,5 @@ export function PortfolioHubWorkspace({
 }
 
 export function PortfolioHubPage() {
-  return <PortfolioHubWorkspace defaultSection="properties" mode="standalone" />;
+  return <PortfolioHubWorkspace defaultSection="properties" />;
 }

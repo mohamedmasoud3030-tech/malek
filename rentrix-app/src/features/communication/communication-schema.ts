@@ -74,7 +74,6 @@ export const communicationFormSchema = z.object({
   related_entity_id: optionalUuid,
 });
 
-export type CommunicationFormInput = z.input<typeof communicationFormSchema>;
 export type CommunicationFormValues = z.output<typeof communicationFormSchema>;
 
 /**
