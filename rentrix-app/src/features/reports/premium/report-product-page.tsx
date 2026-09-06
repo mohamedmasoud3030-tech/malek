@@ -333,16 +333,34 @@ function OpenReportProduct({
       : product.statementFocus === 'tenant' && scopedFilters.contractId
         ? 'العودة إلى العقد'
         : 'العودة إلى التقارير';
-  const documentActions = (
+  const documentActionsLabel =
+    product.targets.length > 1
+      ? `${isStatement ? statementTitle : product.title} — ${target.label}`
+      : isStatement
+        ? statementTitle
+        : product.title;
+  // The statement header gives actions their own dedicated row above the
+  // title, so the full labelled button set (طباعة / PDF / Excel / مشاركة)
+  // has room. The analytical header instead places actions beside the title
+  // in the same flex row — on a narrow viewport, four labelled buttons don't
+  // fit next to the title and wrap on top of it. Compact collapses that same
+  // action set to one primary download button plus an overflow menu, so the
+  // header never grows past the space actually available beside the title.
+  const statementDocumentActions = (
     <ReportDocumentActions
-      reportLabel={
-        product.targets.length > 1
-          ? `${isStatement ? statementTitle : product.title} — ${target.label}`
-          : isStatement
-            ? statementTitle
-            : product.title
-      }
+      reportLabel={documentActionsLabel}
       contentKind={product.kind}
+      whatsapp={false}
+      disabled={model.isIncomplete}
+      {...capabilities}
+      share={canExportReports ? shareInput : undefined}
+    />
+  );
+  const analyticalDocumentActions = (
+    <ReportDocumentActions
+      reportLabel={documentActionsLabel}
+      contentKind={product.kind}
+      layout="compact"
       whatsapp={false}
       disabled={model.isIncomplete}
       {...capabilities}
@@ -364,7 +382,7 @@ function OpenReportProduct({
             description={statementDescription}
             icon={Icon}
             contextItems={statementContext}
-            actions={documentActions}
+            actions={statementDocumentActions}
             notice={
               documentUnavailableHint ? (
                 <p
@@ -417,7 +435,7 @@ function OpenReportProduct({
             </div>
 
             <div className="shrink-0" data-report-product-actions>
-              {documentActions}
+              {analyticalDocumentActions}
             </div>
           </div>
           {documentUnavailableHint ? (
