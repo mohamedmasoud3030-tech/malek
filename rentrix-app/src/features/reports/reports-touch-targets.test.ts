@@ -81,4 +81,32 @@ describe('reports center — touch-target contract', () => {
     expect(primitive).toContain('aria-controls');
     expect(primitive).toContain('ArrowLeft');
   });
+
+  /**
+   * Mobile-overlap regression: the analytical report header places its
+   * document actions in the same flex row as the report title. With every
+   * action rendered as a full labelled button (`layout="full"`, the
+   * component's default), three or four actions do not fit beside the title
+   * on a narrow viewport and wrap on top of it. The analytical header must
+   * therefore use the component's `compact` layout (one primary download
+   * button plus an overflow menu), which the statement header does not need
+   * because it gives actions their own row above the title.
+   */
+  it('keeps the analytical report header actions compact so they cannot overlap the title on mobile', () => {
+    const source = readFileSync(
+      resolve(reportsDir, 'premium/report-product-page.tsx'),
+      'utf8',
+    );
+    const analyticalActionsBlock = source.slice(
+      source.indexOf('const analyticalDocumentActions ='),
+      source.indexOf('return (', source.indexOf('const analyticalDocumentActions =')),
+    );
+    expect(analyticalActionsBlock).toContain('layout="compact"');
+
+    const statementActionsBlock = source.slice(
+      source.indexOf('const statementDocumentActions ='),
+      source.indexOf('const analyticalDocumentActions ='),
+    );
+    expect(statementActionsBlock).not.toContain('layout="compact"');
+  });
 });

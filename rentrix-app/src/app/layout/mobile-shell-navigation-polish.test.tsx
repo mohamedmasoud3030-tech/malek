@@ -334,6 +334,20 @@ describe('MALEK mobile shell & navigation polish pass (Section O verification ma
       expect(uxCss).toContain('padding-block-end: calc(\n      var(--mobile-floating-control-height) + 1rem + env(safe-area-inset-bottom, 0px)\n    );');
     });
 
+    it('backs the phone dock clearance with physical fallbacks so content is never covered', () => {
+      const uxCss = readFileSync(resolve(process.cwd(), 'src/styles/ux-foundation.css'), 'utf8');
+      // The dock is positioned with physical geometry, so the page-side
+      // clearance it reserves must survive engines that drop unsupported
+      // logical properties: padding-bottom (fallback) then the identical
+      // padding-block-end on both canonical hosts inside the phone block.
+      expect(uxCss).toContain('padding-bottom: var(--mobile-dock-clearance);');
+      expect(uxCss).toContain('padding-block-end: var(--mobile-dock-clearance);');
+      const mainClearanceBlock = uxCss.slice(
+        uxCss.indexOf('[data-app-shell] main#main-content'),
+      );
+      expect(mainClearanceBlock).toContain('padding-bottom: calc(\n      var(--mobile-floating-control-height) + 1rem + env(safe-area-inset-bottom, 0px)\n    );');
+    });
+
     it('app shell prevents horizontal scroll and inherits the single document direction authority', () => {
       renderWithClient(<AppShell />);
       const shell = host.querySelector<HTMLElement>('[data-app-shell]');

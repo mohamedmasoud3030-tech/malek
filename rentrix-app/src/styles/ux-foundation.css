@@ -194,10 +194,20 @@
   }
 
   [data-page-layout] {
+    /* Physical fallback BEFORE the logical declaration: the dock itself is
+       positioned with physical geometry, so an engine that drops unsupported
+       logical properties must still reserve the same clearance — otherwise
+       page content scrolls under the dock exactly like the reported Reports
+       screenshots. In horizontal-tb writing modes both declarations address
+       the same box edge, so modern engines see no difference. */
+    padding-bottom: var(--mobile-dock-clearance);
     padding-block-end: var(--mobile-dock-clearance);
   }
 
   [data-app-shell] main#main-content {
+    padding-bottom: calc(
+      var(--mobile-floating-control-height) + 1rem + env(safe-area-inset-bottom, 0px)
+    );
     padding-block-end: calc(
       var(--mobile-floating-control-height) + 1rem + env(safe-area-inset-bottom, 0px)
     );

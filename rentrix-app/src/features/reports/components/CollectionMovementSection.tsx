@@ -102,7 +102,11 @@ export function CollectionMovementSection({
     .sort((a, b) => b[1] - a[1]);
   const hasMovement = rows.length > 0 || receiptRows.length > 0;
 
-  const movementActions = canExportReports ? (
+  // Export actions are data-driven: with no movement in the period there is
+  // nothing to export (an Excel/CSV would be empty and the share summary would
+  // describe nothing), so the panel header hides them exactly when the section
+  // itself reports "لا توجد حركة تحصيل" — never a decorative export button.
+  const movementActions = canExportReports && hasMovement ? (
     <ReportDocumentActions
       className="flex flex-wrap gap-2"
       reportLabel="حركة التحصيل اليومية"
