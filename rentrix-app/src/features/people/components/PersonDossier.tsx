@@ -12,6 +12,7 @@ import { ContextualDocumentsSection } from '@/components/documents/contextual-do
 import { EntityDetailHeader } from '@/components/layout/entity-detail-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/state-surfaces';
 import { DetailFields } from '@/components/ui/detail-fields';
 import { EntityPreviewDialog } from '@/components/ui/entity-preview-dialog';
 import { PreviewFacts } from '@/components/ui/quick-preview';
@@ -63,14 +64,21 @@ export function PersonDossierContent({
   if (dossierQuery.isError)
     return (
       <ErrorState
-        title="تعذر تحميل ملف الشخص"
+          title="تعذر تحميل ملف الشخص"
         error={dossierQuery.error}
         onRetry={() => {
           void dossierQuery.refetch();
         }}
+        />
+    );
+  if (!dossier)
+    return (
+      <EmptyState
+        title="لم يُعثر على ملف الشخص"
+        description="لم يرجع مصدر البيانات ملفاً لهذا الشخص."
+        action={<Button type="button" onClick={() => { void dossierQuery.refetch(); }}>إعادة المحاولة</Button>}
       />
     );
-  if (!dossier) return null;
 
   const outstanding = dossier.invoices.reduce(
     (sum, invoice) =>
@@ -458,7 +466,7 @@ export function PersonDetailPage({
   return (
     <PageLayout dir="rtl" size="wide">
       <EntityDetailHeader
-        title="ملف الشخص"
+          title="ملف الشخص"
         subtitle="البيانات والعلاقات والمستندات والنشاط الموثق."
         backTo="/people"
         backLabel="الأشخاص"
@@ -470,7 +478,7 @@ export function PersonDetailPage({
             </Link>
           </Button>
         }
-      />
+        />
       <SectionTabs
         items={personSections}
         activeId={activeSection}
@@ -479,7 +487,7 @@ export function PersonDetailPage({
         panelId="person-detail-panel"
         idPrefix="person-detail"
         compactMobile
-      />
+        />
       <div
         id="person-detail-panel"
         role="tabpanel"

@@ -46,4 +46,31 @@ describe('detail workspace consistency', () => {
     expect(tenants).not.toContain('useDialogNavigate');
     expect(tenants).not.toContain('backgroundLocation');
   });
+  it('keeps non-ready states inside the canonical page shell (no chrome swap)', () => {
+    const units = read('./units/units-page.tsx');
+    // The units register never renders a bare route spinner; the table owns
+    // the loading rhythm inside the ListPage shell, and the metric strip
+    // shows neutral placeholders until data resolves.
+    expect(units).not.toContain('<LoadingState variant="route" />');
+    expect(units).toContain('isLoading={ctrl.unitsQuery.isLoading || ctrl.propertiesQuery.isLoading}');
+    expect(units).toContain("ctrl.isLoading ? '—'");
+
+    const ownerView = read('./owners/components/owner-detail-view.tsx');
+    for (const status of ['loading', 'error', 'unavailable']) {
+      const branch = new RegExp(
+        `if \\(state\\.status === '${status}'\\) \\{[\\s\\S]{0,400}?<PageLayout`,
+      );
+      expect(ownerView, `owner ${status} branch must render inside PageLayout`).toMatch(branch);
+    }
+
+    const provider = read('./service-providers/service-provider-detail-page.tsx');
+    expect(provider, 'provider loading branch must render inside PageLayout').toMatch(
+      /dossierQuery\.isLoading\)[\s\S]{0,120}?<PageLayout/,
+    );
+
+    const bankRecon = read('./financials/reconciliation/bank-reconciliation-page.tsx');
+    expect(bankRecon, 'bank reconciliation loading line must be an announced status region').toMatch(
+      /<p role="status" aria-live="polite"[^>]*>\s*جارٍ تحميل الاقتراحات/,
+    );
+  });
 });

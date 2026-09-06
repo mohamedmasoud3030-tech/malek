@@ -14,6 +14,8 @@ import { useAuth } from '@/hooks/use-auth';
 import { useCompanyFormatters } from '@/hooks/useCompanyFormatters';
 import { formatCompanyDateTime } from '@/lib/companyFormatters';
 import { useLandDossier } from '../use-lands';
+import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/state-surfaces';
 import { landStatusLabels, landCategoryLabels, landStatusTone } from '../labels';
 
 type LandSection = 'overview' | 'commissions' | 'records';
@@ -31,7 +33,14 @@ export function LandDossierContent({ landId, section }: Readonly<{ landId: strin
   const dossier = query.data;
   if (query.isLoading) return <LoadingState label="جارٍ تحميل ملف الأرض" />;
   if (query.isError) return <ErrorState title="تعذر تحميل ملف الأرض" error={query.error} onRetry={() => { void query.refetch(); }} />;
-  if (!dossier) return null;
+  if (!dossier)
+    return (
+      <EmptyState
+        title="لم يُعثر على ملف الأرض"
+        description="لم يرجع مصدر البيانات ملفاً لهذه الأرض."
+        action={<Button type="button" onClick={() => { void query.refetch(); }}>إعادة المحاولة</Button>}
+      />
+    );
   const land = dossier.land;
   const ownerName = dossier.owner?.display_name?.trim() || dossier.owner?.full_name?.trim() || 'غير مرتبط بمالك';
   return (

@@ -17,7 +17,20 @@ export function PropertyOverview() {
   return (
     <AsyncContentState
       status={
-        propertyQuery.isLoading ? 'loading' : !property ? 'empty' : 'ready'
+        propertyQuery.isLoading
+          ? 'loading'
+          : propertyQuery.isError
+            ? 'error'
+            : !property
+              ? 'empty'
+              : 'ready'
+      }
+      error={propertyQuery.error}
+      errorTitle="تعذر تحميل العقار"
+      errorAction={
+        <Button type="button" onClick={() => { void propertyQuery.refetch(); }}>
+          إعادة المحاولة
+        </Button>
       }
       emptyTitle="العقار غير موجود"
     >

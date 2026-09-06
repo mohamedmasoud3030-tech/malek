@@ -14,6 +14,7 @@ import { ContextualDocumentsSection } from '@/components/documents/contextual-do
 import { EntityDetailHeader } from '@/components/layout/entity-detail-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/state-surfaces';
 import { DetailFields } from '@/components/ui/detail-fields';
 import { ErrorState } from '@/components/ui/error-state';
 import { LoadingState } from '@/components/ui/loading-state';
@@ -59,14 +60,21 @@ export function TenantDossierContent({
   if (query.isError)
     return (
       <ErrorState
-        title="تعذر تحميل ملف المستأجر"
+          title="تعذر تحميل ملف المستأجر"
         error={query.error}
         onRetry={() => {
           void query.refetch();
         }}
+        />
+    );
+  if (!dossier)
+    return (
+      <EmptyState
+        title="لم يُعثر على ملف المستأجر"
+        description="لم يرجع مصدر البيانات ملفاً لهذا المستأجر."
+        action={<Button type="button" onClick={() => { void query.refetch(); }}>إعادة المحاولة</Button>}
       />
     );
-  if (!dossier) return null;
 
   const activeContracts = dossier.contracts.filter(
     (contract) => contract.status === 'active',
@@ -476,7 +484,7 @@ export function TenantDetailPage({
   return (
     <PageLayout dir="rtl" size="wide">
       <EntityDetailHeader
-        title="ملف المستأجر"
+          title="ملف المستأجر"
         subtitle="علاقات المستأجر وعقوده وسياقه المالي."
         backTo="/tenants"
         backLabel="المستأجرون"
@@ -491,7 +499,7 @@ export function TenantDetailPage({
             </Button>
           </div>
         }
-      />
+        />
       <SectionTabs
         items={tenantSections}
         activeId={activeSection}
@@ -500,7 +508,7 @@ export function TenantDetailPage({
         panelId="tenant-detail-panel"
         idPrefix="tenant-detail"
         compactMobile
-      />
+        />
       <div
         id="tenant-detail-panel"
         role="tabpanel"
