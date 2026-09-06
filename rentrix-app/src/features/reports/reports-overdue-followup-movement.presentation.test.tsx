@@ -291,4 +291,37 @@ describe('Collection Movement report — transactional movement semantics', () =
     );
     expect(withoutExport).not.toContain('data-report-share-actions');
   });
+
+  it('hides export actions when the period carries no movement data', () => {
+    // Same export permission as the always-shown case above, but with no daily
+    // rows and no receipts: the section reports the empty state, so there is
+    // nothing to export and the header must not render export actions.
+    const noMovement = renderToStaticMarkup(
+      <CollectionMovementSection
+        summary={undefined}
+        rows={[]}
+        receiptRows={[]}
+        from="2026-08-01"
+        to="2026-08-27"
+        canExportReports
+        isLoading={false}
+      />,
+    );
+    expect(noMovement).toContain('لا توجد حركة تحصيل في الفترة المحددة.');
+    expect(noMovement).not.toContain('data-report-share-actions');
+
+    // The moment movement exists again, the actions return.
+    const movementArrives = renderToStaticMarkup(
+      <CollectionMovementSection
+        summary={movementSummary as never}
+        rows={dailyRows as never}
+        receiptRows={[]}
+        from="2026-08-01"
+        to="2026-08-27"
+        canExportReports
+        isLoading={false}
+      />,
+    );
+    expect(movementArrives).toContain('data-report-share-actions');
+  });
 });
